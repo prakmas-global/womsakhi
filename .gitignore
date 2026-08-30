@@ -1,0 +1,42 @@
+# Dependencies and build output — regenerable, and enormous.
+node_modules/
+.next/
+out/
+build/
+dist/
+.turbo/
+
+# Python
+venv/
+.venv/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# Secrets. Never commit these — .env.example is the template that IS committed.
+.env
+.env.local
+.env.*.local
+*.pem
+*.key
+
+# Private uploads: identity documents live here. They must never leave the host.
+private_media/
+uploads/
+
+# Editor and OS
+.DS_Store
+.vscode/
+.idea/
+*.swp
+
+# Logs and scratch
+*.log
+logs/
+.cache/
+
+# Backups
+*.bak
+*.old

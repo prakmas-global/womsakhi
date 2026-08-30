@@ -1,0 +1,343 @@
+/* ==================================================================
+   WomenCrafts Design System — TOKENS
+   ------------------------------------------------------------------
+   The single source of truth for every colour, font and surface in the
+   app. Nothing else in the codebase should contain a raw hex value.
+
+   Palette sampled from the "Let's Talk About Women's Health" reference
+   infographic: deep indigo/navy · vivid magenta/cerise · royal purple ·
+   soft pink-lavender canvas, with warm bone surfaces.
+
+   Two kinds of token live here:
+     • @theme  — palette scales Tailwind turns into utilities
+                 (bg-brand-600, text-ink, …)
+     • :root   — semantic tokens read by the design-system CSS classes
+                 (--surface, --background, chart theming, …)
+
+   Change a value here and it changes everywhere, in both themes.
+   The live values are documented at /design-system.
+================================================================== */
+
+/* `static` keeps every token in the output CSS. By default Tailwind emits only
+   the theme variables some utility actually references, which silently drops
+   unused steps (brand-800/900 vanished) — fine for a plain app, wrong for a
+   design system whose tokens are a published contract other code reads. */
+@theme static {
+  /* ── Type scale below `text-xs` ───────────────────────────────────────────
+     226 usages across the app wrote their own size as an arbitrary value, in
+     NINETEEN distinct steps: 0.6, 0.62, 0.65, 0.66, 0.68, 0.7, 0.72, 0.75,
+     0.78, 0.8, 0.82, 0.83, 0.86, 0.92, 0.95rem…
+
+     0.68rem, 0.7rem and 0.72rem are 10.9px, 11.2px and 11.5px. Nobody chose
+     three of those on purpose — each was copied from whichever file was
+     nearest, and the differences are invisible on screen while being very
+     visible in a diff.
+
+     Tailwind stops at `text-xs` (12px) because most apps should. This one has
+     real need of smaller: dense admin tables, badge counts, table meta. So the
+     scale is EXTENDED rather than escaped from, which is the same argument as
+     colour — see ADR-013. Four steps, on whole pixels at the default 16px root:
+
+       text-3xs   10px    badge counts, table micro-meta
+       text-2xs   11px    table meta, chips, timestamps
+       text-xs    12px    (Tailwind's own) secondary labels
+       text-xsm   13px    dense body copy in cards
+       text-smd   15px    lead-in copy just under `text-base`
+     ───────────────────────────────────────────────────────────────────────── */
+  --text-3xs: 0.625rem;
+  --text-2xs: 0.6875rem;
+  --text-xsm: 0.8125rem;
+  --text-smd: 0.9375rem;
+
+  /* ---- Brand — magenta / cerise (primary actions, section titles) ---- */
+  --color-brand-50: #fdeef6;
+  --color-brand-100: #fbd7e8;
+  --color-brand-200: #f6afd0;
+  --color-brand-300: #f083b6;
+  --color-brand-400: #e85a9b;
+  --color-brand-500: #dd3585;
+  --color-brand-600: #d21f7c;
+  --color-brand-700: #b11667;
+  --color-brand-800: #8f1253;
+  --color-brand-900: #700e41;
+  --color-brand: #d21f7c;
+
+  /* ---- Violet — royal purple (secondary actions, icon circles) ---- */
+  --color-violet-50: #f3ecfa;
+  --color-violet-100: #e6d7f3;
+  --color-violet-200: #ccb0e6;
+  --color-violet-300: #b088d7;
+  --color-violet-400: #9866c7;
+  --color-violet-500: #834fb6;
+  --color-violet-600: #7440a6;
+  --color-violet-700: #5f338a;
+  --color-violet-800: #4a286d;
+  --color-violet-900: #382053;
+
+  /* ---- Ink — deep indigo / navy (display headings, body titles) ---- */
+  --color-ink-50: #eeecf5;
+  --color-ink-100: #d6d1e8;
+  --color-ink-200: #a89fce;
+  --color-ink-300: #7a6cb0;
+  --color-ink-400: #514191;
+  --color-ink-500: #38266f;
+  --color-ink-600: #2d1a63;
+  --color-ink-700: #251551;
+  --color-ink-800: #1d1140;
+  --color-ink-900: #150c30;
+  --color-ink: #2d1a63;
+
+  /* ---- Text scale ----------------------------------------------------
+     Four steps for text, in decreasing emphasis. These replace the raw
+     Tailwind greys the app used to use (`text-slate-400/500/600`), which
+     had two problems: they measured 2.39:1 and 4.32:1 against the card
+     surface — both under the 4.5:1 minimum — and being Tailwind greys
+     rather than tokens, they never followed the theme. An orange app
+     still had blue-grey captions.
+
+     The values here are only the fallback for a page with no theme
+     applied. The real ones are computed per theme, per mode, and are
+     searched until they MEET contrast rather than being eyeballed —
+     see `theme-engine/surfaces.ts`.
+
+       text-ink         headings, primary copy      >= 7:1
+       text-ink-muted   secondary copy, labels      >= 4.5:1
+       text-ink-subtle  meta: dates, counts, hints  >= 4.5:1
+       text-ink-faint   DECORATIVE ONLY             >= 3:1
+
+     `ink-faint` is not for text a person has to read. If you are about to
+     use it on a sentence, use `ink-subtle`.
+     ------------------------------------------------------------------ */
+  --color-ink-muted: #4a5568;
+  --color-ink-subtle: #56607a;
+  --color-ink-faint: #8b93a7;
+
+  /* ---- Status badges -------------------------------------------------
+     Semantic, not themed: green means good and red means stop whatever
+     palette the user chose. Only the INK is derived, because every
+     measured pair failed AA — emerald 3.47:1, brand 4.22:1, rose 3.42:1.
+
+     Use as a pair, never mixed with raw Tailwind:
+       bg-status-ok-bg text-status-ok-ink
+     ------------------------------------------------------------------ */
+  --color-status-ok-bg: #e9f7ef;
+  --color-status-ok-ink: #0a6b45;
+  --color-status-ok-border: #bfe3d0;
+  --color-status-ok-solid: #12805a;
+
+  --color-status-warn-bg: #fdf3e3;
+  --color-status-warn-ink: #7a4b06;
+  --color-status-warn-border: #ecd6a8;
+  --color-status-warn-solid: #96600a;
+
+  --color-status-danger-bg: #fdecec;
+  --color-status-danger-ink: #8e1f22;
+  --color-status-danger-border: #f0c4c4;
+  --color-status-danger-solid: #b02a2e;
+
+  --color-status-info-bg: #eaf1fd;
+  --color-status-info-ink: #1d4b8f;
+  --color-status-info-border: #c3d5f2;
+  --color-status-info-solid: #2760ad;
+
+  /* Brand text on a brand tint — `text-brand-600` on `bg-brand-50` was
+     4.22:1, just under. Pair these two, never brand-600 on brand-50. */
+  --color-brand-tint: #ffeef6;
+  --color-brand-ink: #a3125c;
+
+  /* Keyboard focus outline. Only the no-theme fallback — the theme engine
+     replaces it with that theme's brand ink, which is already solved for
+     contrast against every surface it can land on. */
+  --color-focus: #a3125c;
+  --color-violet-tint: #f6f1fd;
+  --color-violet-ink: #5b2f8f;
+
+  /* ---- Surfaces & lines ----------------------------------------------
+     These existed as CSS variables but were never registered as Tailwind
+     utilities, so there was no `bg-surface` to reach for — and 620 places
+     reached for `bg-slate-50` / `border-slate-100` instead. Those are raw
+     greys: they never followed the theme, so an orange app kept blue-grey
+     wells and dividers.
+
+       bg-canvas          the page behind everything
+       bg-surface         a card
+       bg-surface-hover   a row under the pointer
+       bg-surface-inset   a well, a track, a quiet panel
+       border-line        the default hairline
+       border-line-strong a divider that needs to be seen
+
+     Values here are only the no-theme fallback; the real ones are derived
+     per theme in `theme-engine/surfaces.ts`.
+     ------------------------------------------------------------------ */
+  --color-canvas: #ece0ea;
+  --color-surface: #fbf8fa;
+  --color-surface-hover: #f3edf1;
+  --color-surface-inset: #f0e9ee;
+  --color-line: #e6dce4;
+  --color-line-strong: #d5c7d2;
+
+  /* ---- Learned conventions -------------------------------------------
+     A rating star is gold and a favourite heart is red everywhere; those
+     meanings are learned rather than chosen, so they do not rotate with
+     the theme. Tokens all the same, so the choice is deliberate and lives
+     in one place. */
+  --color-rating: #eab308;
+  --color-rating-empty: #e2dae0;
+  --color-favourite: #e5484d;
+
+  /* ---- Typography ---- */
+  /*
+    Latin first, then one family per script the app is translated into.
+    A browser walks this list per CHARACTER, so Latin text still renders in
+    Inter while a Tamil string in the same paragraph falls through to
+    Noto Sans Tamil — no per-locale switching needed anywhere in the app.
+
+    These were previously declared in layout.tsx and referenced by nothing, so
+    Hindi and Urdu silently used whatever the device happened to have. Loading a
+    font and never naming it in a stack is the same as not loading it.
+  */
+  --font-scripts: var(--font-devanagari), var(--font-arabic), var(--font-tamil),
+    var(--font-bengali), var(--font-telugu), var(--font-gujarati),
+    var(--font-kannada), var(--font-malayalam), var(--font-gurmukhi),
+    var(--font-odia);
+  --font-sans: var(--font-inter), var(--font-scripts), ui-sans-serif, system-ui,
+    -apple-system, "Segoe UI", Roboto, sans-serif;
+  --font-display: var(--font-poppins), var(--font-inter), var(--font-scripts),
+    ui-sans-serif, system-ui, sans-serif;
+}
+
+/* ==================================================================
+   Semantic tokens — LIGHT
+================================================================== */
+:root {
+  /* Sidebar width. Overwritten server-side from the layout cookie
+     (layout-engine/LayoutStyle.tsx) and live during a drag by
+     useSidebarVariable, so the rail, the top bar and the content area all
+     follow one number. Declared here so the shell has a width before any of
+     that runs. */
+  --wc-sidebar-width: 248px;
+
+  /* Page canvas. Kept a step deeper than --surface so panels lift off it. */
+  --background: #ece0ea;
+  --foreground: #2d1a63;
+
+  /* Panel colour. Warm bone rather than pure white — softer on the eye.
+     Every white surface in the app resolves to this one token. */
+  --surface: #f5f5f0;
+  --surface-hover: #efefe8; /* hover / active step on a surface */
+  --surface-inset: #ebebe3; /* pressed wells, inputs */
+
+  /* Radii — the app's rounding scale */
+  --wc-radius-sm: 0.6rem;
+  --wc-radius-md: 0.75rem;
+  --wc-radius-lg: 1rem;
+  --wc-radius-xl: 1.25rem;
+  --wc-radius-2xl: 1.5rem;
+
+  /* Elevation — neumorphic mauve-tinted shade + white highlight */
+  --wc-shadow-raised:
+    9px 9px 22px rgba(150, 104, 150, 0.3),
+    -8px -8px 20px rgba(255, 255, 255, 0.9);
+  --wc-shadow-soft:
+    5px 5px 14px rgba(150, 104, 150, 0.24),
+    -5px -5px 12px rgba(255, 255, 255, 0.9);
+  --wc-shadow-inset:
+    inset 3px 3px 7px rgba(150, 104, 150, 0.24),
+    inset -3px -3px 7px rgba(255, 255, 255, 0.9);
+  --wc-shadow-overlay:
+    0 18px 44px -14px rgba(80, 40, 120, 0.4);
+  --wc-shadow-modal:
+    0 34px 80px -24px rgba(80, 40, 120, 0.5),
+    0 10px 26px -14px rgba(80, 40, 120, 0.28),
+    inset 0 1px 0 rgba(255, 255, 255, 0.8);
+
+  /* Hairlines */
+  --wc-border-subtle: #e4e0ec;
+  --wc-ring-focus: rgba(210, 31, 124, 0.4);
+
+  /* Charts (read by the Recharts wrappers via useChartTheme) */
+  --chart-grid: #eceaf3;
+  --chart-tick: #94a3b8;
+  --chart-tt-bg: #f5f5f0;
+  --chart-tt-border: #e3e3d9;
+  --chart-tt-text: #1e293b;
+
+  /* Skeleton shimmer */
+  --skeleton-base: #e6dcef;
+  --skeleton-sheen: rgba(255, 255, 255, 0.65);
+
+  /* Scrollbar */
+  --scrollbar-thumb: #d9c6d9;
+}
+
+/* ==================================================================
+   Semantic tokens — DARK (indigo/violet family, matching the brand)
+================================================================== */
+.dark {
+  --background: #16112a;
+  --surface: #221b3c;
+  --surface-hover: #2c2450;
+  --surface-inset: #1b1533;
+
+  --dk-surface: #221b3c;
+  --dk-surface-2: #2c2450;
+  --dk-border: #382e58;
+  --dk-strong: #f1ecfa;
+  --dk-title: #e9e4f5;
+  --dk-body: #cbc4e2;
+  --dk-muted: #bcb4d6;
+  --dk-dim: #b1a8cf;
+
+  --wc-shadow-raised:
+    8px 8px 22px rgba(0, 0, 0, 0.5),
+    -6px -6px 16px rgba(255, 255, 255, 0.02);
+  --wc-shadow-soft:
+    5px 5px 14px rgba(0, 0, 0, 0.45),
+    -4px -4px 10px rgba(255, 255, 255, 0.02);
+  --wc-shadow-inset:
+    inset 3px 3px 7px rgba(0, 0, 0, 0.5),
+    inset -3px -3px 7px rgba(255, 255, 255, 0.03);
+  --wc-shadow-modal:
+    0 34px 90px -20px rgba(0, 0, 0, 0.75),
+    inset 0 1px 0 rgba(255, 255, 255, 0.05);
+
+  --wc-border-subtle: #382e58;
+
+  /* Tinted surfaces (badges / icon squares) become dark tints. The -600 steps
+     stay vivid because they back solid brand buttons; the text-only tones are
+     brightened so chips stay readable on dark. */
+  --color-brand-50: #3a1226;
+  --color-brand-100: #491730;
+  --color-violet-50: #2a2148;
+  --color-violet-100: #33285b;
+  --color-emerald-50: #0f2b1f;
+  --color-emerald-100: #143a27;
+  --color-emerald-600: #34d399;
+  --color-amber-50: #2d2210;
+  --color-amber-100: #3b2c12;
+  --color-amber-600: #fbbf24;
+  --color-sky-50: #0f2536;
+  --color-sky-100: #16334c;
+  --color-sky-600: #38bdf8;
+  --color-blue-50: #111f38;
+  --color-blue-100: #17294c;
+  --color-blue-600: #60a5fa;
+  --color-rose-50: #301322;
+  --color-rose-100: #3d182f;
+  --color-fuchsia-50: #2b1030;
+  --color-fuchsia-100: #37143f;
+  --color-fuchsia-600: #e879f9;
+
+  --chart-grid: #2f2750;
+  --chart-tick: #8a82a8;
+  --chart-tt-bg: #221b3c;
+  --chart-tt-border: #382e58;
+  --chart-tt-text: #e9e4f5;
+
+  --skeleton-base: #2c2447;
+  --skeleton-sheen: rgba(255, 255, 255, 0.07);
+
+  --scrollbar-thumb: #3a3160;
+
+  color-scheme: dark;
+}

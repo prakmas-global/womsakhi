@@ -1,0 +1,6 @@
+{
+  "to": "check.1786899064462@example.com",
+  "subject": "Confirm your WomSakhi email",
+  "text": "Hi Check,\n\nConfirm your WomSakhi email address:\nhttp://localhost:3000/verify-email?token=ibTiuua-JqZSFkZpB7WfqGvKE1OH8sXWN5gEc5LxZY8\n\nThis link expires in 24 hours.",
+  "sent_at": "2026-08-16T16:51:04.955433+00:00"
+}

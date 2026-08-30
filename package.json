@@ -1,0 +1,11 @@
+{
+  "name": "womsakhi",
+  "version": "1.0.0",
+  "private": true,
+  "description": "WomSakhi platform \u2014 run the Next.js frontend and FastAPI + MongoDB backend together with one command.",
+  "scripts": {
+    "dev": "bash ./dev.sh",
+    "start": "bash ./dev.sh",
+    "stop": "bash ./stop.sh"
+  }
+}

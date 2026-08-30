@@ -1,0 +1,6 @@
+{
+  "to": "permtest@womsakhi.com",
+  "subject": "Confirm your WomSakhi email",
+  "text": "Hi Perm,\n\nConfirm your WomSakhi email address:\nhttp://localhost:3000/verify-email?token=vXtlnlrcAVCkByWcF3tRwjLYkkDpWgPsJUhbO-bNVJ4\n\nThis link expires in 24 hours.",
+  "sent_at": "2026-08-15T02:15:43.792126+00:00"
+}

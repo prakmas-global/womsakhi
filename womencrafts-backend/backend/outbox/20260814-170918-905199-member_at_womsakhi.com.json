@@ -1,0 +1,6 @@
+{
+  "to": "member@womsakhi.com",
+  "subject": "Confirm your WomSakhi email",
+  "text": "Hi Ananya,\n\nConfirm your WomSakhi email address:\nhttp://localhost:3000/verify-email?token=E1I9WjnqIxrXmgH2xK-b9kH3bSYbkXTeQjx8WbKUC10\n\nThis link expires in 24 hours.",
+  "sent_at": "2026-08-14T17:09:18.906640+00:00"
+}

@@ -1,0 +1,190 @@
+/* ------------------------------------------------------------------
+   The design system is the source of truth for every colour, font,
+   surface and component class. This file only adds app-level base
+   styling on top of it (document chrome, cursors, selection).
+
+   Tokens are documented live at /design-system.
+
+   NB: @import rules must come first — CSS drops any that follow a
+   normal rule, which would silently take the whole theme with them.
+------------------------------------------------------------------- */
+@import "tailwindcss";
+@import "../design-system/tokens.css";
+@import "../design-system/styles.css";
+
+/* class-based dark mode: toggled by a `.dark` class on <html> */
+@custom-variant dark (&:where(.dark, .dark *));
+
+html {
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-sans);
+  overflow-x: clip;
+}
+
+/* Thin, subtle scrollbars */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--scrollbar-thumb) transparent;
+}
+*::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+*::-webkit-scrollbar-thumb {
+  background-color: var(--scrollbar-thumb);
+  border-radius: 9999px;
+}
+*::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+/* Brand gradient wordmark (magenta -> purple) */
+.text-brand-gradient {
+  background: linear-gradient(90deg, #d21f7c 0%, #a5279a 52%, #7440a6 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  color: transparent;
+}
+
+/* ── Brand-colored text caret + selection (entire app) ── */
+input,
+textarea,
+select,
+[contenteditable="true"] {
+  caret-color: var(--color-brand-600, #e6117e);
+}
+.dark input,
+.dark textarea,
+.dark select,
+.dark [contenteditable="true"] {
+  caret-color: #f272b0;
+}
+
+::selection {
+  background-color: rgba(230, 17, 126, 0.18);
+}
+.dark ::selection {
+  background-color: rgba(242, 114, 176, 0.28);
+}
+
+/* ── Themed mouse cursors (magenta arrow + hand), app-wide ──
+   Set the base arrow on the root only and let it INHERIT. Using `*` here would
+   force the arrow onto every child (td/span/svg) and defeat the hand cursor on
+   the contents of clickable rows/buttons/links. */
+html,
+body {
+  cursor: url("/cur-arrow.png") 5 3, auto;
+  cursor: image-set(url("/cur-arrow.png") 1x, url("/cur-arrow-2x.png") 2x) 5 3, auto;
+}
+a,
+button,
+select,
+summary,
+label[for],
+[role="button"],
+[role="option"],
+[role="tab"],
+.cursor-pointer,
+input[type="checkbox"],
+input[type="radio"],
+input[type="submit"],
+input[type="button"],
+input[type="file"] {
+  cursor: url("/cur-pointer.png") 11 2, pointer !important;
+  cursor: image-set(url("/cur-pointer.png") 1x, url("/cur-pointer-2x.png") 2x) 11 2, pointer !important;
+}
+/* keep the text I-beam for typing fields */
+input[type="text"],
+input[type="email"],
+input[type="password"],
+input[type="tel"],
+input[type="search"],
+input[type="number"],
+input[type="url"],
+input[type="date"],
+input:not([type]),
+textarea {
+  cursor: text !important;
+}
+[disabled],
+button:disabled,
+.cursor-not-allowed {
+  cursor: not-allowed !important;
+}
+
+/* ──────────────────────────────────────────────────────────
+   Where am I?
+
+   Before this rule, exactly one thing in the app showed keyboard
+   focus: `.btn`. Thirty-four files set `outline-none` — which is how
+   you make a text field look right — and nothing put a focus style
+   back. So tabbing through the admin left no visible trace at all:
+   focus was real and moving, but invisible, and a keyboard user had
+   no way to tell where Enter would land.
+
+   Defined once, here, for everything interactive, rather than asked
+   of each component — the same reason colour comes from a token and
+   not from each file's judgement.
+
+   `:focus-visible` rather than `:focus` means a mouse click does not
+   draw it; only keyboard navigation does.
+
+   Specificity: `button:focus-visible` scores one element + one class,
+   which beats Tailwind's `.outline-none`. A component that
+   deliberately draws its own ring uses a `focus-visible:` utility,
+   which scores higher again and wins — so this is a floor, not an
+   override.
+   ────────────────────────────────────────────────────────── */
+a:focus-visible,
+button:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible,
+summary:focus-visible,
+[role="button"]:focus-visible,
+[role="switch"]:focus-visible,
+[role="option"]:focus-visible,
+[role="tab"]:focus-visible,
+[role="menuitem"]:focus-visible,
+[tabindex]:not([tabindex="-1"]):focus-visible {
+  outline: 2px solid var(--color-focus);
+  /* Sits just outside the control, so the outline never lands on a
+     brand-coloured button where brand-on-brand would vanish. */
+  outline-offset: 2px;
+  border-radius: inherit;
+}
+
+/* ──────────────────────────────────────────────────────────
+   Right-to-left. Most of the layout uses flex/grid and needs
+   nothing; these are the few places with a baked-in side.
+   ────────────────────────────────────────────────────────── */
+[dir="rtl"] .wc-shell { box-shadow: -6px 0 24px rgba(150, 104, 150, 0.12); }
+[dir="rtl"] .wc-card,
+[dir="rtl"] .wc-soft {
+  /* mirror the light source so the neumorphic edge still reads correctly */
+  box-shadow:
+    -9px 9px 22px rgba(150, 104, 150, 0.30),
+    8px -8px 20px rgba(255, 255, 255, 0.9);
+}
+[dir="rtl"] .wc-inset {
+  box-shadow:
+    inset -3px 3px 7px rgba(150, 104, 150, 0.24),
+    inset 3px -3px 7px rgba(255, 255, 255, 0.9);
+}
+
+
+/* Sakhi breathes while her clip is paused, so a held frame never reads as a
+   broken image. Deliberately slow — anything faster looks like a loading state. */
+@keyframes sakhi-float {
+  0%, 100% { transform: translateY(0) scale(1); }
+  50%      { transform: translateY(-4px) scale(1.006); }
+}
+.sakhi-float { animation: sakhi-float 5.5s ease-in-out infinite; }
+@media (prefers-reduced-motion: reduce) { .sakhi-float { animation: none; } }

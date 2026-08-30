@@ -1,0 +1,410 @@
+/* ==================================================================
+   WomenCrafts Design System — COMPONENT CLASSES
+   ------------------------------------------------------------------
+   The shared surface + button classes every primitive is built from.
+   Each rule reads tokens.css only — no raw hex values below this line.
+================================================================== */
+
+/* ---- Surfaces ----------------------------------------------------- */
+
+/* Raised panel — the standard card. */
+.wc-card {
+  background-color: var(--surface);
+  border-radius: var(--wc-radius-xl);
+  box-shadow: var(--wc-shadow-raised);
+}
+
+/* Lighter raised surface for nested tiles, chips and inner cards. */
+.wc-soft {
+  background-color: var(--surface);
+  border-radius: var(--wc-radius-lg);
+  box-shadow: var(--wc-shadow-soft);
+}
+
+/* Pressed / inset look for inputs and wells. */
+.wc-inset {
+  background-color: var(--surface-inset);
+  border: 1px solid rgba(255, 255, 255, 0.6);
+  box-shadow: var(--wc-shadow-inset);
+}
+.dark .wc-inset {
+  border-color: rgba(255, 255, 255, 0.04);
+}
+
+/* Fixed shell surfaces (sidebar, topbar) get a soft edge, not a hard border. */
+.wc-shell {
+  background-color: var(--surface);
+  box-shadow: 6px 0 24px rgba(150, 104, 150, 0.12);
+}
+.wc-shell-top {
+  background-color: color-mix(in srgb, var(--surface) 92%, transparent);
+  box-shadow: 0 6px 20px rgba(150, 104, 150, 0.1);
+}
+.dark .wc-shell {
+  box-shadow: 6px 0 24px rgba(0, 0, 0, 0.35);
+}
+.dark .wc-shell-top {
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.3);
+}
+
+/* Floating modal surface. */
+.wc-modal {
+  background-color: var(--surface);
+  border: 1px solid rgba(255, 255, 255, 0.7);
+  box-shadow: var(--wc-shadow-modal);
+}
+.dark .wc-modal {
+  border-color: rgba(255, 255, 255, 0.08);
+}
+
+/* Floating overlay panel (menus, dropdown popovers). */
+.wc-overlay {
+  background-color: var(--surface);
+  border: 1px solid var(--wc-border-subtle);
+  border-radius: var(--wc-radius-2xl);
+  box-shadow: var(--wc-shadow-overlay);
+}
+
+/* ---- Buttons ------------------------------------------------------
+   One system app-wide:
+   primary = magenta · secondary = purple · outline = neutral utility
+   danger = rose · ghost = magenta text link
+------------------------------------------------------------------- */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  border-radius: var(--wc-radius-md);
+  padding: 0.625rem 1.1rem;
+  font-family: var(--font-sans);
+  font-weight: 600;
+  font-size: 0.875rem;
+  line-height: 1.25rem;
+  white-space: nowrap;
+  transition: background-color 0.15s ease, box-shadow 0.15s ease, color 0.15s ease;
+  cursor: url("/cur-pointer.png") 11 2, pointer;
+  cursor: image-set(url("/cur-pointer.png") 1x, url("/cur-pointer-2x.png") 2x) 11 2, pointer;
+}
+.btn-sm {
+  padding: 0.45rem 0.85rem;
+  font-size: 0.8rem;
+  border-radius: var(--wc-radius-sm);
+}
+.btn-block {
+  width: 100%;
+}
+.btn:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+.btn:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 3px var(--wc-ring-focus);
+}
+
+.btn-primary {
+  background-color: var(--color-brand-600);
+  color: #fff;
+  box-shadow: 0 8px 18px -8px color-mix(in srgb, var(--color-brand-600) 55%, transparent);
+}
+.btn-primary:hover {
+  background-color: var(--color-brand-700);
+}
+
+.btn-secondary {
+  background-color: var(--color-violet-600);
+  color: #fff;
+  box-shadow: 0 8px 18px -8px color-mix(in srgb, var(--color-violet-600) 50%, transparent);
+}
+.btn-secondary:hover {
+  background-color: var(--color-violet-700);
+}
+
+.btn-outline {
+  background-color: var(--surface);
+  color: var(--color-ink-muted);
+  border: 1px solid var(--wc-border-subtle);
+}
+.btn-outline:hover {
+  background-color: var(--surface-hover);
+}
+
+/* Hardcoded #e11d48 measured 4.24:1 on the card — the one contrast failure
+   left in the app, and invisible to a class-based codemod because it lives in
+   CSS rather than a className. The status tokens are derived to clear every
+   surface, so this now reads in both modes and under every theme. */
+.btn-danger {
+  background-color: var(--surface);
+  color: var(--status-danger-ink);
+  border: 1px solid var(--status-danger-border);
+}
+.btn-danger:hover {
+  background-color: var(--status-danger-bg);
+}
+
+.btn-ghost {
+  background-color: transparent;
+  color: var(--color-brand-600);
+  padding: 0.25rem;
+}
+.btn-ghost:hover {
+  color: var(--color-brand-700);
+}
+
+.dark .btn-outline {
+  background-color: var(--dk-surface-2);
+  color: var(--dk-body);
+  border-color: var(--dk-border);
+}
+.dark .btn-outline:hover {
+  background-color: var(--surface-hover);
+}
+.dark .btn-danger {
+  background-color: var(--status-danger-bg);
+  color: var(--status-danger-ink);
+  border-color: var(--status-danger-border);
+}
+.dark .btn-danger:hover {
+  background-color: var(--status-danger-border);
+}
+
+/* ---- Motion -------------------------------------------------------- */
+@keyframes wc-shimmer {
+  100% {
+    transform: translateX(100%);
+  }
+}
+
+.wc-skeleton {
+  position: relative;
+  overflow: hidden;
+  background-color: var(--skeleton-base);
+  border-radius: 0.5rem;
+}
+.wc-skeleton::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  transform: translateX(-100%);
+  background: linear-gradient(90deg, transparent, var(--skeleton-sheen), transparent);
+  animation: wc-shimmer 1.5s infinite;
+}
+
+/* Content fade/slide-in on every route change. */
+@keyframes wc-page-enter {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+.wc-page-enter {
+  animation: wc-page-enter 0.32s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+/* Bottom sheets rise from the edge they're anchored to. */
+@keyframes wc-sheet-enter {
+  from {
+    transform: translateY(100%);
+  }
+  to {
+    transform: translateY(0);
+  }
+}
+.wc-sheet-enter {
+  animation: wc-sheet-enter 0.28s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+/* Toasts arrive from the edge they are pinned to. Short — it reports something
+   already finished, so a long entrance delays the news it exists to deliver. */
+@keyframes wc-toast-in {
+  from {
+    opacity: 0;
+    transform: translateX(1rem);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+.wc-toast-in {
+  animation: wc-toast-in 0.18s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .wc-page-enter,
+  .wc-sheet-enter,
+  .wc-toast-in {
+    animation: none;
+  }
+  .wc-skeleton::after {
+    animation: none;
+  }
+}
+
+/* ==================================================================
+   Utility remapping — REMOVED 2026-08-16
+   ------------------------------------------------------------------
+   This block used to point raw Tailwind neutrals (`bg-white`,
+   `bg-slate-50`, `text-slate-500`, …) at design-system tokens, so
+   pages written before the design system stayed consistent.
+
+   Every one of those usages is now migrated — the codemod moved 1,878
+   of them onto `text-ink-*`, `bg-surface-*` and `border-line`, and the
+   count is enforced at zero by `checks/tokens.mjs`.
+
+   Keeping the block would be worse than dead weight: it quietly makes
+   `bg-slate-50` *work*, so the next person writing it sees nothing
+   wrong, and the raw-colour problem grows back one className at a time.
+================================================================== */
+
+
+/* ================================================================== *
+   Layout engine — motion
+   ------------------------------------------------------------------
+   Every collapse, expand and hide animates. Instant jumps make a
+   layout feel like it broke rather than like it moved: the eye has
+   nothing to follow, so the new arrangement has to be re-read from
+   scratch. A short transition tells you WHERE something went.
+
+   Durations are deliberately short. 200ms is long enough to follow
+   and short enough that it never feels like waiting; the rail uses a
+   slightly softer curve because it travels further.
+   ================================================================== */
+
+.wc-rail {
+  transition:
+    width 220ms cubic-bezier(0.4, 0, 0.2, 1),
+    box-shadow 220ms ease;
+  /* Promoted up front so the first hover doesn't stutter while the
+     browser decides to make a layer for it. */
+  will-change: width;
+}
+
+/* Open because of hover: it is floating above the page, so it needs an
+   edge. Without the shadow it reads as the page having jumped sideways
+   rather than as a panel sliding over it. */
+.wc-rail-floating {
+  box-shadow: 8px 0 32px -12px rgb(0 0 0 / 0.28);
+}
+
+/* Labels fade and slide with the rail rather than popping.
+   ------------------------------------------------------------------
+   This is what actually made the rail feel like it "snapped". The width
+   was animating fine, but the labels were being conditionally rendered
+   — so they appeared and vanished in a single frame while the panel was
+   still moving. The eye reads that as a jump, not a slide.
+
+   So the labels are ALWAYS in the DOM. They are clipped by the rail's
+   own overflow while it is narrow, and they fade in slightly behind the
+   width so text arrives once there is room for it.
+
+   `white-space: nowrap` matters as much as the fade: without it every
+   label re-wraps onto several lines as the rail narrows, which is both
+   ugly and expensive to lay out sixty times a second. */
+.wc-rail-label {
+  white-space: nowrap;
+  overflow: hidden;
+  transition:
+    opacity 180ms ease 40ms,
+    flex-basis 180ms cubic-bezier(0.4, 0, 0.2, 1),
+    width 180ms cubic-bezier(0.4, 0, 0.2, 1);
+}
+.wc-rail-label[data-hidden="true"] {
+  opacity: 0;
+  pointer-events: none;
+
+  /* ---------------------------------------------------------------- *
+     It must occupy NO SPACE, not merely be invisible.
+
+     `visibility: hidden` keeps the box in the layout. The label is a
+     flex child with `flex-1`, so a hidden-but-present label still ate
+     the whole row and pushed the ICON off the left edge of a 64px
+     rail — every nav item rendered as an empty pill.
+
+     Collapsing the flex basis to zero animates just as smoothly and
+     actually gives the width back, so the icon can centre.
+   * ---------------------------------------------------------------- */
+  flex: 0 0 0px;
+  width: 0;
+  min-width: 0;
+  margin: 0;
+  overflow: hidden;
+  /* Out of the reading order too: the icon already carries an aria-label,
+     so an announced label here would duplicate it. */
+  visibility: hidden;
+  transition:
+    opacity 120ms ease,
+    flex-basis 180ms cubic-bezier(0.4, 0, 0.2, 1),
+    width 180ms cubic-bezier(0.4, 0, 0.2, 1),
+    visibility 0s linear 180ms;
+}
+
+/* Nav groups opening and closing. `grid-template-rows` animates where
+   `height: auto` cannot, so this works without measuring anything. */
+.wc-collapse {
+  display: grid;
+  grid-template-rows: 0fr;
+  transition: grid-template-rows 200ms cubic-bezier(0.4, 0, 0.2, 1);
+}
+.wc-collapse[data-open="true"] {
+  grid-template-rows: 1fr;
+}
+.wc-collapse > * {
+  overflow: hidden;
+}
+
+/* Flyout labels beside a collapsed rail. */
+.wc-flyout {
+  transition:
+    opacity 140ms ease,
+    transform 140ms ease;
+  opacity: 0;
+  transform: translateX(-4px);
+  pointer-events: none;
+}
+.group:hover > .wc-flyout,
+.group:focus-within > .wc-flyout {
+  opacity: 1;
+  transform: translateX(0);
+}
+
+/* Widgets appearing, disappearing and changing span. */
+.wc-widget {
+  transition:
+    opacity 180ms ease,
+    transform 180ms ease;
+}
+
+/* ------------------------------------------------------------------ *
+   Someone who has asked their system for less motion means it. This is
+   an accessibility setting, not a preference to weigh against the
+   design — for a vestibular disorder, sliding panels cause nausea.
+   Everything still WORKS; it just arrives instantly.
+ * ------------------------------------------------------------------ */
+@media (prefers-reduced-motion: reduce) {
+  .wc-rail,
+  .wc-rail-label,
+  .wc-collapse,
+  .wc-flyout,
+  .wc-widget {
+    transition-duration: 0.01ms !important;
+    transition-delay: 0ms !important;
+  }
+}
+
+/* ------------------------------------------------------------------ *
+   Scrollable list inside a resized card.
+
+   A card dragged shorter than its list has to cut a row somewhere. A
+   hard edge through the middle of a row reads as a rendering bug; a
+   short fade reads as "there is more below", which is what is true.
+ * ------------------------------------------------------------------ */
+.wc-scroll-fade {
+  -webkit-mask-image: linear-gradient(to bottom, #000 calc(100% - 1.25rem), transparent 100%);
+  mask-image: linear-gradient(to bottom, #000 calc(100% - 1.25rem), transparent 100%);
+}

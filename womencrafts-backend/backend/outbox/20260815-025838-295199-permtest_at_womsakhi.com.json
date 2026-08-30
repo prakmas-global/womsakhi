@@ -1,0 +1,6 @@
+{
+  "to": "permtest@womsakhi.com",
+  "subject": "Reset your WomSakhi password",
+  "text": "Someone on the WomSakhi team started a password reset for your account. Open this link within 24 hours to set a new password: http://localhost:3000/reset-password?token=k28NaFTDqhpQaQNBbqtBFkfuC9_v5OBWmLvfwBU5b7w",
+  "sent_at": "2026-08-15T02:58:38.295744+00:00"
+}

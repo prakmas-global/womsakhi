@@ -1,0 +1,594 @@
+[
+  {
+    "name": "woman-vendor-handing-parcel",
+    "category": "illustrations",
+    "file": "png/illustrations/woman-vendor-handing-parcel.png",
+    "width": 820,
+    "height": 696,
+    "source_box": [
+      6,
+      21,
+      211,
+      195
+    ],
+    "native_width": 205,
+    "native_height": 174,
+    "scale": 4
+  },
+  {
+    "name": "woman-order-notification",
+    "category": "illustrations",
+    "file": "png/illustrations/woman-order-notification.png",
+    "width": 688,
+    "height": 694,
+    "source_box": [
+      222,
+      18,
+      395,
+      192
+    ],
+    "native_width": 173,
+    "native_height": 174,
+    "scale": 4
+  },
+  {
+    "name": "woman-shop-owner",
+    "category": "illustrations",
+    "file": "png/illustrations/woman-shop-owner.png",
+    "width": 760,
+    "height": 735,
+    "source_box": [
+      395,
+      10,
+      586,
+      195
+    ],
+    "native_width": 191,
+    "native_height": 185,
+    "scale": 4
+  },
+  {
+    "name": "women-business-handshake",
+    "category": "illustrations",
+    "file": "png/illustrations/women-business-handshake.png",
+    "width": 736,
+    "height": 676,
+    "source_box": [
+      589,
+      23,
+      774,
+      192
+    ],
+    "native_width": 185,
+    "native_height": 169,
+    "scale": 4
+  },
+  {
+    "name": "woman-packing-orders",
+    "category": "illustrations",
+    "file": "png/illustrations/woman-packing-orders.png",
+    "width": 757,
+    "height": 724,
+    "source_box": [
+      779,
+      12,
+      969,
+      193
+    ],
+    "native_width": 190,
+    "native_height": 181,
+    "scale": 4
+  },
+  {
+    "name": "woman-chalkboard-teaching",
+    "category": "illustrations",
+    "file": "png/illustrations/woman-chalkboard-teaching.png",
+    "width": 544,
+    "height": 636,
+    "source_box": [
+      969,
+      32,
+      1105,
+      192
+    ],
+    "native_width": 136,
+    "native_height": 160,
+    "scale": 4
+  },
+  {
+    "name": "women-group-circle",
+    "category": "illustrations",
+    "file": "png/illustrations/women-group-circle.png",
+    "width": 968,
+    "height": 577,
+    "source_box": [
+      1120,
+      50,
+      1362,
+      195
+    ],
+    "native_width": 242,
+    "native_height": 145,
+    "scale": 4
+  },
+  {
+    "name": "two-women-support",
+    "category": "illustrations",
+    "file": "png/illustrations/two-women-support.png",
+    "width": 644,
+    "height": 620,
+    "source_box": [
+      1370,
+      37,
+      1531,
+      193
+    ],
+    "native_width": 161,
+    "native_height": 156,
+    "scale": 4
+  },
+  {
+    "name": "women-celebrating",
+    "category": "illustrations",
+    "file": "png/illustrations/women-celebrating.png",
+    "width": 796,
+    "height": 720,
+    "source_box": [
+      6,
+      205,
+      207,
+      385
+    ],
+    "native_width": 201,
+    "native_height": 180,
+    "scale": 4
+  },
+  {
+    "name": "elder-woman-mentoring",
+    "category": "illustrations",
+    "file": "png/illustrations/elder-woman-mentoring.png",
+    "width": 784,
+    "height": 629,
+    "source_box": [
+      209,
+      229,
+      405,
+      387
+    ],
+    "native_width": 196,
+    "native_height": 158,
+    "scale": 4
+  },
+  {
+    "name": "woman-teaching-children",
+    "category": "illustrations",
+    "file": "png/illustrations/woman-teaching-children.png",
+    "width": 775,
+    "height": 728,
+    "source_box": [
+      409,
+      203,
+      603,
+      385
+    ],
+    "native_width": 194,
+    "native_height": 182,
+    "scale": 4
+  },
+  {
+    "name": "woman-walking-with-bag",
+    "category": "illustrations",
+    "file": "png/illustrations/woman-walking-with-bag.png",
+    "width": 584,
+    "height": 781,
+    "source_box": [
+      612,
+      199,
+      759,
+      395
+    ],
+    "native_width": 147,
+    "native_height": 196,
+    "scale": 4
+  },
+  {
+    "name": "woman-meditating",
+    "category": "illustrations",
+    "file": "png/illustrations/woman-meditating.png",
+    "width": 682,
+    "height": 652,
+    "source_box": [
+      773,
+      232,
+      944,
+      395
+    ],
+    "native_width": 171,
+    "native_height": 163,
+    "scale": 4
+  },
+  {
+    "name": "woman-writing-notes",
+    "category": "illustrations",
+    "file": "png/illustrations/woman-writing-notes.png",
+    "width": 560,
+    "height": 690,
+    "source_box": [
+      950,
+      221,
+      1090,
+      395
+    ],
+    "native_width": 140,
+    "native_height": 174,
+    "scale": 4
+  },
+  {
+    "name": "woman-reading-document",
+    "category": "illustrations",
+    "file": "png/illustrations/woman-reading-document.png",
+    "width": 609,
+    "height": 652,
+    "source_box": [
+      1098,
+      224,
+      1251,
+      387
+    ],
+    "native_width": 153,
+    "native_height": 163,
+    "scale": 4
+  },
+  {
+    "name": "woman-planning-board",
+    "category": "illustrations",
+    "file": "png/illustrations/woman-planning-board.png",
+    "width": 595,
+    "height": 677,
+    "source_box": [
+      1256,
+      219,
+      1405,
+      389
+    ],
+    "native_width": 149,
+    "native_height": 170,
+    "scale": 4
+  },
+  {
+    "name": "woman-with-trolley-bag",
+    "category": "illustrations",
+    "file": "png/illustrations/woman-with-trolley-bag.png",
+    "width": 537,
+    "height": 736,
+    "source_box": [
+      1391,
+      205,
+      1526,
+      389
+    ],
+    "native_width": 135,
+    "native_height": 184,
+    "scale": 4
+  },
+  {
+    "name": "mother-baby-laptop",
+    "category": "illustrations",
+    "file": "png/illustrations/mother-baby-laptop.png",
+    "width": 629,
+    "height": 669,
+    "source_box": [
+      5,
+      398,
+      163,
+      566
+    ],
+    "native_width": 158,
+    "native_height": 168,
+    "scale": 4
+  },
+  {
+    "name": "woman-planting-sapling",
+    "category": "illustrations",
+    "file": "png/illustrations/woman-planting-sapling.png",
+    "width": 662,
+    "height": 693,
+    "source_box": [
+      171,
+      395,
+      338,
+      570
+    ],
+    "native_width": 167,
+    "native_height": 175,
+    "scale": 4
+  },
+  {
+    "name": "mascot-robot-waving",
+    "category": "mascot",
+    "file": "png/mascot/mascot-robot-waving.png",
+    "width": 528,
+    "height": 640,
+    "source_box": [
+      350,
+      403,
+      482,
+      564
+    ],
+    "native_width": 132,
+    "native_height": 161,
+    "scale": 4
+  },
+  {
+    "name": "mascot-robot-cheering",
+    "category": "mascot",
+    "file": "png/mascot/mascot-robot-cheering.png",
+    "width": 609,
+    "height": 652,
+    "source_box": [
+      494,
+      400,
+      647,
+      563
+    ],
+    "native_width": 153,
+    "native_height": 163,
+    "scale": 4
+  },
+  {
+    "name": "mascot-robot-reading",
+    "category": "mascot",
+    "file": "png/mascot/mascot-robot-reading.png",
+    "width": 416,
+    "height": 624,
+    "source_box": [
+      660,
+      408,
+      764,
+      564
+    ],
+    "native_width": 104,
+    "native_height": 156,
+    "scale": 4
+  },
+  {
+    "name": "icon-shopping-basket",
+    "category": "icons",
+    "file": "png/icons/icon-shopping-basket.png",
+    "width": 554,
+    "height": 496,
+    "source_box": [
+      777,
+      443,
+      917,
+      567
+    ],
+    "native_width": 140,
+    "native_height": 124,
+    "scale": 4
+  },
+  {
+    "name": "icon-wallet",
+    "category": "icons",
+    "file": "png/icons/icon-wallet.png",
+    "width": 454,
+    "height": 414,
+    "source_box": [
+      929,
+      459,
+      1043,
+      563
+    ],
+    "native_width": 114,
+    "native_height": 104,
+    "scale": 4
+  },
+  {
+    "name": "icon-calendar",
+    "category": "icons",
+    "file": "png/icons/icon-calendar.png",
+    "width": 480,
+    "height": 464,
+    "source_box": [
+      1054,
+      448,
+      1174,
+      564
+    ],
+    "native_width": 120,
+    "native_height": 116,
+    "scale": 4
+  },
+  {
+    "name": "icon-padlock",
+    "category": "icons",
+    "file": "png/icons/icon-padlock.png",
+    "width": 478,
+    "height": 443,
+    "source_box": [
+      1182,
+      449,
+      1302,
+      561
+    ],
+    "native_width": 120,
+    "native_height": 112,
+    "scale": 4
+  },
+  {
+    "name": "icon-paper-plane",
+    "category": "icons",
+    "file": "png/icons/icon-paper-plane.png",
+    "width": 376,
+    "height": 328,
+    "source_box": [
+      1317,
+      452,
+      1411,
+      535
+    ],
+    "native_width": 94,
+    "native_height": 83,
+    "scale": 4
+  },
+  {
+    "name": "icon-signpost",
+    "category": "icons",
+    "file": "png/icons/icon-signpost.png",
+    "width": 376,
+    "height": 558,
+    "source_box": [
+      1424,
+      424,
+      1518,
+      564
+    ],
+    "native_width": 94,
+    "native_height": 140,
+    "scale": 4
+  },
+  {
+    "name": "banner-team-collaboration",
+    "category": "banners",
+    "file": "png/banners/banner-team-collaboration.png",
+    "width": 2006,
+    "height": 610,
+    "source_box": [
+      7,
+      582,
+      509,
+      736
+    ],
+    "native_width": 502,
+    "native_height": 154,
+    "scale": 4
+  },
+  {
+    "name": "banner-market-sunset",
+    "category": "banners",
+    "file": "png/banners/banner-market-sunset.png",
+    "width": 1945,
+    "height": 602,
+    "source_box": [
+      525,
+      582,
+      1012,
+      734
+    ],
+    "native_width": 487,
+    "native_height": 152,
+    "scale": 4
+  },
+  {
+    "name": "banner-abstract-gradient",
+    "category": "banners",
+    "file": "png/banners/banner-abstract-gradient.png",
+    "width": 2004,
+    "height": 601,
+    "source_box": [
+      1028,
+      582,
+      1529,
+      734
+    ],
+    "native_width": 501,
+    "native_height": 152,
+    "scale": 4
+  },
+  {
+    "name": "avatar-woman-teal-shirt",
+    "category": "avatars",
+    "file": "png/avatars/avatar-woman-teal-shirt.png",
+    "width": 916,
+    "height": 1017,
+    "source_box": [
+      17,
+      746,
+      246,
+      1001
+    ],
+    "native_width": 229,
+    "native_height": 255,
+    "scale": 4
+  },
+  {
+    "name": "avatar-woman-elder-saree",
+    "category": "avatars",
+    "file": "png/avatars/avatar-woman-elder-saree.png",
+    "width": 977,
+    "height": 1025,
+    "source_box": [
+      256,
+      744,
+      501,
+      1001
+    ],
+    "native_width": 245,
+    "native_height": 257,
+    "scale": 4
+  },
+  {
+    "name": "avatar-woman-hijab",
+    "category": "avatars",
+    "file": "png/avatars/avatar-woman-hijab.png",
+    "width": 928,
+    "height": 1012,
+    "source_box": [
+      507,
+      748,
+      739,
+      1001
+    ],
+    "native_width": 232,
+    "native_height": 253,
+    "scale": 4
+  },
+  {
+    "name": "avatar-woman-blazer",
+    "category": "avatars",
+    "file": "png/avatars/avatar-woman-blazer.png",
+    "width": 958,
+    "height": 1032,
+    "source_box": [
+      748,
+      742,
+      988,
+      1001
+    ],
+    "native_width": 240,
+    "native_height": 259,
+    "scale": 4
+  },
+  {
+    "name": "avatar-woman-blue-saree",
+    "category": "avatars",
+    "file": "png/avatars/avatar-woman-blue-saree.png",
+    "width": 896,
+    "height": 1036,
+    "source_box": [
+      998,
+      742,
+      1222,
+      1001
+    ],
+    "native_width": 224,
+    "native_height": 259,
+    "scale": 4
+  },
+  {
+    "name": "avatar-woman-pink-glasses",
+    "category": "avatars",
+    "file": "png/avatars/avatar-woman-pink-glasses.png",
+    "width": 984,
+    "height": 1032,
+    "source_box": [
+      1232,
+      742,
+      1478,
+      1001
+    ],
+    "native_width": 246,
+    "native_height": 259,
+    "scale": 4
+  }
+]

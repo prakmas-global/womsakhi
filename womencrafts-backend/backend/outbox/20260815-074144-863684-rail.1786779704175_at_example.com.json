@@ -1,0 +1,6 @@
+{
+  "to": "rail.1786779704175@example.com",
+  "subject": "Your WomSakhi account is approved",
+  "text": "Hi Rail,\n\nYour WomSakhi account has been approved. Sign in: http://localhost:3000/signin",
+  "sent_at": "2026-08-15T07:41:44.866699+00:00"
+}

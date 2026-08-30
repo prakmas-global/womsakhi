@@ -1,0 +1,222 @@
+{
+  "main": {
+    "id": "ef44d93982e8e146",
+    "type": "split",
+    "children": [
+      {
+        "id": "3868bd9d020174c0",
+        "type": "tabs",
+        "children": [
+          {
+            "id": "cde7fe7d12ffde92",
+            "type": "leaf",
+            "state": {
+              "type": "graph",
+              "state": {},
+              "icon": "lucide-git-fork",
+              "title": "Graph view"
+            }
+          }
+        ]
+      }
+    ],
+    "direction": "vertical"
+  },
+  "left": {
+    "id": "d21926031121fd7b",
+    "type": "split",
+    "children": [
+      {
+        "id": "ed387d412807c177",
+        "type": "tabs",
+        "children": [
+          {
+            "id": "39887e75f1fda75e",
+            "type": "leaf",
+            "state": {
+              "type": "file-explorer",
+              "state": {
+                "sortOrder": "alphabetical",
+                "autoReveal": false,
+                "showSearch": false,
+                "searchQuery": ""
+              },
+              "icon": "lucide-folder-closed",
+              "title": "Files"
+            }
+          },
+          {
+            "id": "815fdce3867d11b2",
+            "type": "leaf",
+            "state": {
+              "type": "search",
+              "state": {
+                "query": "",
+                "matchingCase": false,
+                "explainSearch": false,
+                "collapseAll": false,
+                "extraContext": false,
+                "sortOrder": "alphabetical"
+              },
+              "icon": "lucide-search",
+              "title": "Search"
+            }
+          },
+          {
+            "id": "9d992af31efd8c0c",
+            "type": "leaf",
+            "state": {
+              "type": "bookmarks",
+              "state": {
+                "showSearch": false,
+                "searchQuery": ""
+              },
+              "icon": "lucide-bookmark",
+              "title": "Bookmarks"
+            }
+          }
+        ]
+      }
+    ],
+    "direction": "horizontal",
+    "width": 381.13671875
+  },
+  "right": {
+    "id": "0760095a787c0384",
+    "type": "split",
+    "children": [
+      {
+        "id": "98844d9b268411fd",
+        "type": "tabs",
+        "children": [
+          {
+            "id": "dd44d29dc249abb4",
+            "type": "leaf",
+            "state": {
+              "type": "backlink",
+              "state": {
+                "file": "Home.md",
+                "collapseAll": false,
+                "extraContext": false,
+                "sortOrder": "alphabetical",
+                "showSearch": false,
+                "searchQuery": "",
+                "backlinkCollapsed": false,
+                "unlinkedCollapsed": true
+              },
+              "icon": "links-coming-in",
+              "title": "Backlinks"
+            }
+          },
+          {
+            "id": "afb3deea3aa2de12",
+            "type": "leaf",
+            "state": {
+              "type": "outgoing-link",
+              "state": {
+                "file": "Home.md",
+                "linksCollapsed": false,
+                "unlinkedCollapsed": true
+              },
+              "icon": "links-going-out",
+              "title": "Outgoing links"
+            }
+          },
+          {
+            "id": "627e102fff693c91",
+            "type": "leaf",
+            "state": {
+              "type": "tag",
+              "state": {
+                "sortOrder": "frequency",
+                "useHierarchy": true,
+                "showSearch": false,
+                "searchQuery": ""
+              },
+              "icon": "lucide-tags",
+              "title": "Tags"
+            }
+          },
+          {
+            "id": "2dae548fb089ea15",
+            "type": "leaf",
+            "state": {
+              "type": "all-properties",
+              "state": {
+                "sortOrder": "frequency",
+                "showSearch": false,
+                "searchQuery": ""
+              },
+              "icon": "lucide-archive",
+              "title": "All properties"
+            }
+          },
+          {
+            "id": "9a6cac6cc9b80b52",
+            "type": "leaf",
+            "state": {
+              "type": "outline",
+              "state": {
+                "file": "Home.md",
+                "followCursor": false,
+                "showSearch": false,
+                "searchQuery": ""
+              },
+              "icon": "lucide-list",
+              "title": "Outline"
+            }
+          }
+        ]
+      }
+    ],
+    "direction": "horizontal",
+    "width": 300,
+    "collapsed": true
+  },
+  "left-ribbon": {
+    "hiddenItems": {
+      "switcher:Open quick switcher": false,
+      "graph:Open graph view": false,
+      "canvas:Create new canvas": false,
+      "daily-notes:Open today's daily note": false,
+      "templates:Insert template": false,
+      "command-palette:Open command palette": false,
+      "bases:Create new base": false
+    }
+  },
+  "active": "cde7fe7d12ffde92",
+  "lastOpenFiles": [
+    "Home.md",
+    "Cannot trap yourself.md",
+    "operations/Testing.md",
+    "Untitled.canvas",
+    "decisions/ADR-013 Colour only ever comes from a token.md",
+    "reference/Glossary.md",
+    "reference/Data model.md",
+    "reference/API surface.md",
+    "engines/Layout engine.md",
+    "useContainerSize.md",
+    "Adapt, never crop.md",
+    "README.md",
+    "decisions/ADR-009 Layout stores fractions per breakpoint.md",
+    "decisions/ADR-008 Money is stored in minor units.md",
+    "decisions/ADR-007 Ownership comes from the token.md",
+    "decisions/ADR-006 Language lives on the account.md",
+    "decisions/ADR-004 Approving a grant is the ledger entry.md",
+    "decisions/ADR-005 Moderation hides, never deletes.md",
+    "decisions/ADR-003 Anonymous reports still identify the reporter.md",
+    "decisions/ADR-002 Theme via CSS variables, not classes.md",
+    "decisions/ADR-001 Everything personal is free.md",
+    "engines/Theme engine.md",
+    "modules/Money.md",
+    "Tokens reference variables, so themes are free.md",
+    "reference/Third-party services.md",
+    "reference",
+    "modules/Sakhi.md",
+    "modules/Safety.md",
+    "modules",
+    "engines",
+    "operations",
+    "decisions"
+  ]
+}

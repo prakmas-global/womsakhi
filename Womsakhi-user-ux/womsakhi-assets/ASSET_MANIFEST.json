@@ -1,0 +1,223 @@
+{
+  "package": "womsakhi-assets.zip",
+  "total_assets": 31,
+  "assets": [
+    {
+      "asset": "01-course-working-laptop-smiling.png",
+      "requested_size": "1024x1024",
+      "format": "PNG",
+      "source": "Generated WomSakhi master asset sheet",
+      "note": "Raster master extracted from the generated visual sheet; final vector/transparent master should be regenerated independently for production-critical use."
+    },
+    {
+      "asset": "02-course-reading-open-book.png",
+      "requested_size": "1024x1024",
+      "format": "PNG",
+      "source": "Generated WomSakhi master asset sheet",
+      "note": "Raster master extracted from the generated visual sheet; final vector/transparent master should be regenerated independently for production-critical use."
+    },
+    {
+      "asset": "03-course-presenting-to-group.png",
+      "requested_size": "1024x1024",
+      "format": "PNG",
+      "source": "Generated WomSakhi master asset sheet",
+      "note": "Raster master extracted from the generated visual sheet; final vector/transparent master should be regenerated independently for production-critical use."
+    },
+    {
+      "asset": "04-course-counting-coins-calculator.png",
+      "requested_size": "1024x1024",
+      "format": "PNG",
+      "source": "Generated WomSakhi master asset sheet",
+      "note": "Raster master extracted from the generated visual sheet; final vector/transparent master should be regenerated independently for production-critical use."
+    },
+    {
+      "asset": "05-course-meditation.png",
+      "requested_size": "1024x1024",
+      "format": "PNG",
+      "source": "Generated WomSakhi master asset sheet",
+      "note": "Raster master extracted from the generated visual sheet; final vector/transparent master should be regenerated independently for production-critical use."
+    },
+    {
+      "asset": "06-course-photographing-handmade-product.png",
+      "requested_size": "1024x1024",
+      "format": "PNG",
+      "source": "Generated WomSakhi master asset sheet",
+      "note": "Raster master extracted from the generated visual sheet; final vector/transparent master should be regenerated independently for production-critical use."
+    },
+    {
+      "asset": "07-course-confident-microphone.png",
+      "requested_size": "1024x1024",
+      "format": "PNG",
+      "source": "Generated WomSakhi master asset sheet",
+      "note": "Raster master extracted from the generated visual sheet; final vector/transparent master should be regenerated independently for production-critical use."
+    },
+    {
+      "asset": "08-course-writing-notebook.png",
+      "requested_size": "1024x1024",
+      "format": "PNG",
+      "source": "Generated WomSakhi master asset sheet",
+      "note": "Raster master extracted from the generated visual sheet; final vector/transparent master should be regenerated independently for production-critical use."
+    },
+    {
+      "asset": "09-course-reviewing-tablet-charts.png",
+      "requested_size": "1024x1024",
+      "format": "PNG",
+      "source": "Generated WomSakhi master asset sheet",
+      "note": "Raster master extracted from the generated visual sheet; final vector/transparent master should be regenerated independently for production-critical use."
+    },
+    {
+      "asset": "10-course-teaching-another-woman.png",
+      "requested_size": "1024x1024",
+      "format": "PNG",
+      "source": "Generated WomSakhi master asset sheet",
+      "note": "Raster master extracted from the generated visual sheet; final vector/transparent master should be regenerated independently for production-critical use."
+    },
+    {
+      "asset": "11-course-sewing-machine.png",
+      "requested_size": "1024x1024",
+      "format": "PNG",
+      "source": "Generated WomSakhi master asset sheet",
+      "note": "Raster master extracted from the generated visual sheet; final vector/transparent master should be regenerated independently for production-critical use."
+    },
+    {
+      "asset": "12-course-holding-certificate.png",
+      "requested_size": "1024x1024",
+      "format": "PNG",
+      "source": "Generated WomSakhi master asset sheet",
+      "note": "Raster master extracted from the generated visual sheet; final vector/transparent master should be regenerated independently for production-critical use."
+    },
+    {
+      "asset": "13-course-two-women-handshake.png",
+      "requested_size": "1024x1024",
+      "format": "PNG",
+      "source": "Generated WomSakhi master asset sheet",
+      "note": "Raster master extracted from the generated visual sheet; final vector/transparent master should be regenerated independently for production-critical use."
+    },
+    {
+      "asset": "14-course-video-call-mentor.png",
+      "requested_size": "1024x1024",
+      "format": "PNG",
+      "source": "Generated WomSakhi master asset sheet",
+      "note": "Raster master extracted from the generated visual sheet; final vector/transparent master should be regenerated independently for production-critical use."
+    },
+    {
+      "asset": "15-course-handmade-market-stall.png",
+      "requested_size": "1024x1024",
+      "format": "PNG",
+      "source": "Generated WomSakhi master asset sheet",
+      "note": "Raster master extracted from the generated visual sheet; final vector/transparent master should be regenerated independently for production-critical use."
+    },
+    {
+      "asset": "16-course-cooking-packing-orders.png",
+      "requested_size": "1024x1024",
+      "format": "PNG",
+      "source": "Generated WomSakhi master asset sheet",
+      "note": "Raster master extracted from the generated visual sheet; final vector/transparent master should be regenerated independently for production-critical use."
+    },
+    {
+      "asset": "17-banner-sunrise-woman-mug-right.png",
+      "requested_size": "1536x640",
+      "format": "PNG",
+      "source": "Generated WomSakhi master asset sheet",
+      "note": "Raster master extracted from the generated visual sheet; final vector/transparent master should be regenerated independently for production-critical use."
+    },
+    {
+      "asset": "18-banner-woman-laptop-empty-left.png",
+      "requested_size": "1536x640",
+      "format": "PNG",
+      "source": "Generated WomSakhi master asset sheet",
+      "note": "Raster master extracted from the generated visual sheet; final vector/transparent master should be regenerated independently for production-critical use."
+    },
+    {
+      "asset": "19-banner-lavender-peach-abstract.png",
+      "requested_size": "1536x640",
+      "format": "PNG",
+      "source": "Generated WomSakhi master asset sheet",
+      "note": "Raster master extracted from the generated visual sheet; final vector/transparent master should be regenerated independently for production-critical use."
+    },
+    {
+      "asset": "20-empty-desk-closed-laptop-plant.png",
+      "requested_size": "1024x1024",
+      "format": "PNG",
+      "source": "Generated WomSakhi master asset sheet",
+      "note": "Raster master extracted from the generated visual sheet; final vector/transparent master should be regenerated independently for production-critical use."
+    },
+    {
+      "asset": "21-empty-open-notebook-pen.png",
+      "requested_size": "1024x1024",
+      "format": "PNG",
+      "source": "Generated WomSakhi master asset sheet",
+      "note": "Raster master extracted from the generated visual sheet; final vector/transparent master should be regenerated independently for production-critical use."
+    },
+    {
+      "asset": "22-empty-magnifying-glass-blank-page.png",
+      "requested_size": "1024x1024",
+      "format": "PNG",
+      "source": "Generated WomSakhi master asset sheet",
+      "note": "Raster master extracted from the generated visual sheet; final vector/transparent master should be regenerated independently for production-critical use."
+    },
+    {
+      "asset": "23-empty-gift-box-ribbons.png",
+      "requested_size": "1024x1024",
+      "format": "PNG",
+      "source": "Generated WomSakhi master asset sheet",
+      "note": "Raster master extracted from the generated visual sheet; final vector/transparent master should be regenerated independently for production-critical use."
+    },
+    {
+      "asset": "24-portrait-indian-woman-warm-smile-01.png",
+      "requested_size": "1024x1024",
+      "format": "PNG",
+      "source": "Generated WomSakhi master asset sheet",
+      "note": "Raster master extracted from the generated visual sheet; final vector/transparent master should be regenerated independently for production-critical use."
+    },
+    {
+      "asset": "25-portrait-indian-woman-warm-smile-02.png",
+      "requested_size": "1024x1024",
+      "format": "PNG",
+      "source": "Generated WomSakhi master asset sheet",
+      "note": "Raster master extracted from the generated visual sheet; final vector/transparent master should be regenerated independently for production-critical use."
+    },
+    {
+      "asset": "26-portrait-indian-woman-glasses.png",
+      "requested_size": "1024x1024",
+      "format": "PNG",
+      "source": "Generated WomSakhi master asset sheet",
+      "note": "Raster master extracted from the generated visual sheet; final vector/transparent master should be regenerated independently for production-critical use."
+    },
+    {
+      "asset": "27-portrait-indian-woman-warm-smile-03.png",
+      "requested_size": "1024x1024",
+      "format": "PNG",
+      "source": "Generated WomSakhi master asset sheet",
+      "note": "Raster master extracted from the generated visual sheet; final vector/transparent master should be regenerated independently for production-critical use."
+    },
+    {
+      "asset": "28-portrait-indian-woman-hijab.png",
+      "requested_size": "1024x1024",
+      "format": "PNG",
+      "source": "Generated WomSakhi master asset sheet",
+      "note": "Raster master extracted from the generated visual sheet; final vector/transparent master should be regenerated independently for production-critical use."
+    },
+    {
+      "asset": "29-portrait-indian-woman-curly-hair.png",
+      "requested_size": "1024x1024",
+      "format": "PNG",
+      "source": "Generated WomSakhi master asset sheet",
+      "note": "Raster master extracted from the generated visual sheet; final vector/transparent master should be regenerated independently for production-critical use."
+    },
+    {
+      "asset": "30-portrait-indian-woman-sari.png",
+      "requested_size": "1024x1024",
+      "format": "PNG",
+      "source": "Generated WomSakhi master asset sheet",
+      "note": "Raster master extracted from the generated visual sheet; final vector/transparent master should be regenerated independently for production-critical use."
+    },
+    {
+      "asset": "31-portrait-indian-woman-headphones.png",
+      "requested_size": "1024x1024",
+      "format": "PNG",
+      "source": "Generated WomSakhi master asset sheet",
+      "note": "Raster master extracted from the generated visual sheet; final vector/transparent master should be regenerated independently for production-critical use."
+    }
+  ]
+}

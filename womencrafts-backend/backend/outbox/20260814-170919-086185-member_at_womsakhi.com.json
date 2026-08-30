@@ -1,0 +1,6 @@
+{
+  "to": "member@womsakhi.com",
+  "subject": "Your WomSakhi account is approved",
+  "text": "Hi Ananya,\n\nYour WomSakhi account has been approved. Sign in: http://localhost:3000/signin",
+  "sent_at": "2026-08-14T17:09:19.089111+00:00"
+}

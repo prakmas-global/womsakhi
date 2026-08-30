@@ -1,0 +1,253 @@
+"use client";
+
+import { use, useState } from "react";
+import Link from "next/link";
+import * as Icons from "lucide-react";
+
+import {
+  ActionBtn, Btn, Card, copy, EmptyState, NoteBtn, Pill, RailSkeleton, ScreenSkeleton,
+  SectionHead,
+} from "@/components/ux/kit";
+import { HomeShell } from "@/components/ux/home/HomeShell";
+import { useBookings } from "@/components/ux/live";
+import { useAction } from "@/lib/use-action";
+import { apiCancelBooking, apiLeaveFeedback } from "@/lib/member-api";
+
+/**
+ * One booking.
+ *
+ * The reference number is large and copyable, because it is the thing she will
+ * be asked for at a door or on a call. Cancelling asks once and names who it
+ * costs — a booking someone else is holding a place for is not a tab she is
+ * closing.
+ */
+export default function BookingDetail({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = use(params);
+  const { data: BOOKINGS, source, refetch } = useBookings();
+
+  // Same bug as the list had: this set local state and never told the server.
+  const cancel = useAction(
+    async (bookingId: string) => apiCancelBooking(bookingId),
+    {
+      onDone: refetch,
+      optimistic: () => setCancelled(true),
+      rollback: () => setCancelled(false),
+      fallbackError: "We could not cancel it. Your booking still stands — try again.",
+    },
+  );
+  const b = BOOKINGS.find((x) => x.id === id);
+  const [asking, setAsking] = useState(false);
+  const [cancelled, setCancelled] = useState(false);
+  const [copied, setCopied] = useState(false);
+
+  // "Not here" is a claim, and it cannot be made while the answer is still on
+  // its way. Saying it during the fetch means every booking she opens flashes
+  // "that booking is not here" before showing itself.
+  if (!b && source === "loading") {
+    return (
+      <HomeShell skeleton="detail" rail={<RailSkeleton />}>
+        <ScreenSkeleton shape="detail" />
+      </HomeShell>
+    );
+  }
+
+  if (!b) {
+    return (
+      <HomeShell>
+        <Card>
+          <EmptyState
+            icon="CalendarX"
+            title="That booking is not here"
+            body="It may have been cancelled, or the link may be old."
+            action={<Btn href="/app/bookings" variant="primary" iconEnd="ArrowRight">All bookings</Btn>}
+          />
+        </Card>
+      </HomeShell>
+    );
+  }
+
+  // Cancelled by her just now, or already cancelled on the server. The second
+  // half was missing, so a booking the server had cancelled still offered a
+  // live Cancel button and answered with a 400 she had done nothing to earn.
+  const live = !cancelled && b.state !== "Cancelled" && b.state !== "Finished";
+
+  return (
+    <HomeShell
+      rail={
+        <div className="space-y-[15px]">
+          <Card>
+            <SectionHead title="Show this on the day" />
+            {/* Large and copyable — this is what she is asked for at a door. */}
+            <button
+              onClick={() => { setCopied(true); window.setTimeout(() => setCopied(false), 1800); }}
+              className="ux-press ux-hov ux-sq flex w-full flex-col items-center rounded-[14px] px-4 py-5"
+              style={{ background: "var(--ux-surface-2)" }}
+            >
+              <span className="font-mono text-[26px] font-bold tracking-[0.06em]" style={{ color: "var(--ux-ink)" }}>
+                {b.ref}
+              </span>
+              <span className="mt-2 flex items-center gap-1.5 text-[11.5px] font-medium" style={{ color: "var(--ux-brand)" }}>
+                <Icons.Copy className="h-[13px] w-[13px]" /> {copied ? "Copied" : "Tap to copy"}
+              </span>
+            </button>
+            <p className="mt-3 text-[12px] leading-relaxed" style={{ color: "var(--ux-muted)" }}>
+              {b.kind === "Mentor"
+                ? "You will not be asked for this — the call opens from your diary."
+                : "Have this ready at the door. Your name works too."}
+            </p>
+          </Card>
+
+          <Card>
+            <SectionHead title="What it cost" />
+            <div className="flex items-baseline justify-between">
+              <span className="text-[12.5px]" style={{ color: "var(--ux-muted)" }}>{b.cost}</span>
+              {b.cost.includes("paid") && <Pill tone="green" size="sm">Paid</Pill>}
+            </div>
+            {live && (
+              <>
+                <div className="my-4 h-px" style={{ background: "var(--ux-line)" }} />
+                <Btn href="/app/payments" variant="outline" size="sm" full icon="Receipt">Receipt</Btn>
+              </>
+            )}
+          </Card>
+        </div>
+      }
+    >
+      <Link href="/app/bookings"
+            className="ux-hov -my-1 mb-3.5 inline-flex items-center gap-1.5 py-1 text-[12.5px] font-medium"
+            style={{ color: "var(--ux-brand)" }}>
+        <Icons.ArrowLeft className="ux-ico h-4 w-4" /> All bookings
+      </Link>
+
+      <Card className="mb-[15px]">
+        <div className="flex items-start gap-4">
+          <span className="h-[72px] w-[72px] shrink-0 overflow-hidden rounded-[16px]"
+                style={{ background: "var(--ux-brand-tint)" }}>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src={b.art} alt="" className="h-full w-full object-cover" />
+          </span>
+          <div className="min-w-0 flex-1">
+            <div className="flex items-start gap-2">
+              <h1 className="min-w-0 flex-1 text-[22px] font-bold leading-tight"
+                  style={{ color: cancelled ? "var(--ux-muted)" : "var(--ux-ink)" }}>
+                {b.what}
+              </h1>
+              <Pill tone={cancelled ? "neutral" : b.state === "Confirmed" ? "green" : b.state === "Waitlisted" ? "orange" : "neutral"}>
+                {cancelled ? "Cancelled" : b.state}
+              </Pill>
+            </div>
+            <p className="mt-2.5 flex flex-wrap items-center gap-x-4 gap-y-1.5 text-[13px]" style={{ color: "var(--ux-muted)" }}>
+              <span className="inline-flex items-center gap-1.5"><Icons.Clock className="h-4 w-4" /> {b.when}</span>
+              <span className="inline-flex items-center gap-1.5"><Icons.MapPin className="h-4 w-4" /> {b.where}</span>
+            </p>
+            {b.state === "Waitlisted" && !cancelled && (
+              <p className="mt-3 rounded-[11px] p-3 text-[12.5px] leading-relaxed"
+                 style={{ background: "var(--ux-tint-orange)", color: "var(--ux-ink-2)" }}>
+                You are third on the list. We will message you the moment a place opens — you do not need to
+                check back.
+              </p>
+            )}
+          </div>
+        </div>
+
+        {asking ? (
+          <div className="ux-slide-up mt-4 flex items-center justify-between gap-4 rounded-[13px] p-3.5"
+               style={{ background: "var(--ux-tint-orange)" }}>
+            <p className="text-[12.5px] leading-snug" style={{ color: "var(--ux-ink-2)" }}>
+              {b.kind === "Mentor"
+                ? "She has kept this hour free for you. Cancel it?"
+                : b.kind === "Event"
+                  ? "Your stall fee comes back in 5–7 working days. Cancel it?"
+                  : "Your place goes to the next woman on the list. Cancel it?"}
+            </p>
+            <span className="flex shrink-0 items-center gap-2">
+              <Btn variant="outline" size="sm" onClick={() => setAsking(false)}>Keep it</Btn>
+              <Btn variant="primary" size="sm"
+                   className={cancel.busy ? "pointer-events-none opacity-60" : ""}
+                   onClick={async () => { if (await cancel.run(id)) setAsking(false); }}>
+                {cancel.busy ? "Cancelling…" : "Yes, cancel"}
+              </Btn>
+            </span>
+          </div>
+        ) : (
+          <div className="mt-4 flex items-center justify-end gap-2 border-t pt-4" style={{ borderColor: "var(--ux-line)" }}>
+            {live && (
+              <>
+                {/* Said "It is in your diary" and wrote nothing: there is no
+                    reminder or calendar endpoint here. Her diary is built from
+                    her bookings, so this one is already in it. */}
+                <Btn href="/app/schedule" variant="outline" icon="CalendarDays">In your diary</Btn>
+                <Btn variant="ghost" onClick={() => setAsking(true)}>Cancel booking</Btn>
+              </>
+            )}
+            {live && b.kind === "Mentor" && (
+              <ActionBtn variant="primary" icon="Video" doneIcon="Copy"
+                         done="Link copied — open it in your browser"
+                         act={() => copy(`https://meet.womsakhi.in/${b.id}`, "Link copied — open it in your browser", "Copy it by hand: meet.womsakhi.in/" + b.id)}>
+                Join the call
+              </ActionBtn>
+            )}
+            {cancelled && <Btn href={b.kind === "Mentor" ? "/app/mentors" : "/app/events"} variant="soft" icon="RotateCcw">Book again</Btn>}
+            {/* Went nowhere, and named a recipient who would never have seen
+                it either way. /me/feedback reaches the team. */}
+            {b.state === "Finished" && (
+              <NoteBtn label="Leave a note" size="md" icon="Star" stars
+                       title={`How was ${b.what}?`} to="the WomSakhi team"
+                       placeholder="What went well, and what would have helped? The team reads every one of these."
+                       send={(n) => apiLeaveFeedback({
+                         text: n.text, rating: n.rating,
+                         type: b.kind === "Mentor" ? "Mentoring Session" : "Program Feedback",
+                         program: b.what,
+                       })}
+                       sent="Thank you — the team has your note"
+                       sentBody="It goes to the people who run WomSakhi. It is not shown publicly."
+                       sentLink={null} />
+            )}
+          </div>
+        )}
+
+        {cancel.error && (
+          <p className="ux-slide-up mt-3 text-[12.5px]" style={{ color: "var(--ux-orange-ink)" }}>
+            {cancel.error}
+          </p>
+        )}
+      </Card>
+
+      <div className="grid grid-cols-[minmax(0,1fr)_300px] gap-[15px]">
+        <Card>
+          <SectionHead title="What to expect" />
+          <ol className="ux-stagger space-y-3.5">
+            {(b.kind === "Mentor"
+              ? [["A reminder an hour before", "By message, with the joining link"],
+                 ["Forty-five minutes together", "Video or voice — your choice on the day"],
+                 ["Two lines each afterwards", "What to do next, so neither of you forgets"]]
+              : [["Arrive a little early", "Doors open thirty minutes before"],
+                 ["Bring your reference or your name", "Either works at the door"],
+                 ["A recording or notes afterwards", "Sent within two days"]]
+            ).map(([t, note], i) => (
+              <li key={t} className="flex items-start gap-3">
+                <span className="grid h-[24px] w-[24px] shrink-0 place-items-center rounded-full text-[11px] font-bold"
+                      style={{ background: "var(--ux-brand-tint)", color: "var(--ux-brand)" }}>{i + 1}</span>
+                <div className="min-w-0">
+                  <p className="text-[13.5px] font-semibold" style={{ color: "var(--ux-ink)" }}>{t}</p>
+                  <p className="mt-0.5 text-[12.5px] leading-snug" style={{ color: "var(--ux-muted)" }}>{note}</p>
+                </div>
+              </li>
+            ))}
+          </ol>
+        </Card>
+
+        <Card>
+          <SectionHead title="If something changes" icon="Info" />
+          <p className="text-[12.5px] leading-relaxed" style={{ color: "var(--ux-ink-2)" }}>
+            Cancelling is always allowed and never counts against you. Telling someone early is just kinder —
+            it lets the place go to a woman who can use it.
+          </p>
+          <div className="mt-3.5">
+            <Btn href="/app/help" variant="outline" size="sm" full iconEnd="ArrowRight">Get help</Btn>
+          </div>
+        </Card>
+      </div>
+    </HomeShell>
+  );
+}

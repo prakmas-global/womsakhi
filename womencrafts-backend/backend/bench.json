@@ -1,0 +1,247 @@
+{
+ "/me/summary": {
+  "p50": 56,
+  "max": 57,
+  "bytes": 2216,
+  "queries": 6,
+  "status": 200
+ },
+ "/me/profile": {
+  "p50": 26,
+  "max": 28,
+  "bytes": 410,
+  "queries": 1,
+  "status": 200
+ },
+ "/me/bookings": {
+  "p50": 28,
+  "max": 28,
+  "bytes": 1700,
+  "queries": 1,
+  "status": 200
+ },
+ "/me/programs": {
+  "p50": 57,
+  "max": 58,
+  "bytes": 8380,
+  "queries": 2,
+  "status": 200
+ },
+ "/me/notifications": {
+  "p50": 27,
+  "max": 29,
+  "bytes": 1862,
+  "queries": 1,
+  "status": 200
+ },
+ "/me/certificates": {
+  "p50": 28,
+  "max": 29,
+  "bytes": 2037,
+  "queries": 1,
+  "status": 200
+ },
+ "/me/documents": {
+  "p50": 28,
+  "max": 28,
+  "bytes": 2,
+  "queries": 1,
+  "status": 200
+ },
+ "/me/progress": {
+  "p50": 28,
+  "max": 28,
+  "bytes": 838,
+  "queries": 2,
+  "status": 200
+ },
+ "/me/referrals": {
+  "p50": 80,
+  "max": 85,
+  "bytes": 242,
+  "queries": 3,
+  "status": 200
+ },
+ "/me/messages": {
+  "p50": 69,
+  "max": 86,
+  "bytes": 2,
+  "queries": 2,
+  "status": 200
+ },
+ "/me/library": {
+  "p50": 28,
+  "max": 28,
+  "bytes": 3273,
+  "queries": 1,
+  "status": 200
+ },
+ "/me/unread": {
+  "p50": 56,
+  "max": 70,
+  "bytes": 32,
+  "queries": 2,
+  "status": 200
+ },
+ "/wallet": {
+  "p50": 55,
+  "max": 60,
+  "bytes": 2062,
+  "queries": 2,
+  "status": 200
+ },
+ "/wallet/support": {
+  "p50": 28,
+  "max": 33,
+  "bytes": 2,
+  "queries": 1,
+  "status": 200
+ },
+ "/community/circles": {
+  "p50": 56,
+  "max": 65,
+  "bytes": 7278,
+  "queries": 2,
+  "status": 200
+ },
+ "/community/stories": {
+  "p50": 27,
+  "max": 28,
+  "bytes": 2276,
+  "queries": 1,
+  "status": 200
+ },
+ "/growth/mentors": {
+  "p50": 28,
+  "max": 29,
+  "bytes": 11114,
+  "queries": 1,
+  "status": 200
+ },
+ "/catalog/programs": {
+  "p50": 28,
+  "max": 28,
+  "bytes": 4458,
+  "queries": 1,
+  "status": 200
+ },
+ "/catalog/services": {
+  "p50": 1,
+  "max": 3,
+  "bytes": 12267,
+  "queries": 0,
+  "status": 200
+ },
+ "/safety": {
+  "p50": 83,
+  "max": 87,
+  "bytes": 1098,
+  "queries": 3,
+  "status": 200
+ },
+ "/safety/helplines": {
+  "p50": 1,
+  "max": 1,
+  "bytes": 784,
+  "queries": 0,
+  "status": 200
+ },
+ "/payments/methods": {
+  "p50": 1,
+  "max": 2,
+  "bytes": 244,
+  "queries": 0,
+  "status": 200
+ },
+ "/notifications": {
+  "p50": 53,
+  "max": 56,
+  "bytes": 2548,
+  "queries": 2,
+  "status": 200
+ },
+ "/verification/status": {
+  "p50": 28,
+  "max": 29,
+  "bytes": 129,
+  "queries": 1,
+  "status": 200
+ },
+ "/saved": {
+  "p50": 54,
+  "max": 56,
+  "bytes": 224,
+  "queries": 2,
+  "status": 200
+ },
+ "/schemes": {
+  "p50": 28,
+  "max": 29,
+  "bytes": 2578,
+  "queries": 1,
+  "status": 200
+ },
+ "/cover": {
+  "p50": 28,
+  "max": 30,
+  "bytes": 1725,
+  "queries": 1,
+  "status": 200
+ },
+ "/wellbeing/health": {
+  "p50": 31,
+  "max": 40,
+  "bytes": 1286,
+  "queries": 1,
+  "status": 200
+ },
+ "/wellbeing/rights": {
+  "p50": 28,
+  "max": 29,
+  "bytes": 1456,
+  "queries": 1,
+  "status": 200
+ },
+ "/wellbeing/family": {
+  "p50": 28,
+  "max": 28,
+  "bytes": 1089,
+  "queries": 1,
+  "status": 200
+ },
+ "/wellbeing/travel": {
+  "p50": 26,
+  "max": 28,
+  "bytes": 1025,
+  "queries": 1,
+  "status": 200
+ },
+ "/group-buy": {
+  "p50": 28,
+  "max": 31,
+  "bytes": 1543,
+  "queries": 1,
+  "status": 200
+ },
+ "/assess": {
+  "p50": 28,
+  "max": 28,
+  "bytes": 802,
+  "queries": 1,
+  "status": 200
+ },
+ "/digital": {
+  "p50": 28,
+  "max": 28,
+  "bytes": 1028,
+  "queries": 1,
+  "status": 200
+ },
+ "/search?q=tailor": {
+  "p50": 33,
+  "max": 2495,
+  "bytes": 1254,
+  "queries": 9,
+  "status": 200
+ }
+}

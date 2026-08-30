@@ -1,0 +1,1076 @@
+/*
+  The redesigned member experience — its own palette.
+  Every value sampled from the supplied screens rather than guessed.
+
+  Deliberately NOT merged into the existing design system. The admin app is
+  magenta (#d21f7c) on a warm bone canvas; this is violet (#6642c1) on near
+  white. Two products, two palettes — folding them together would drag one out
+  of shape. Prefixed --ux-* so nothing here can collide with the Tailwind
+  namespaces the main app reserves (see AGENTS.md on the reserved Tailwind token namespaces).
+
+  ── Dark theme ─────────────────────────────────────────────────────────────
+  The supplied screens are light only, so dark is derived, not copied. The rule
+  followed: keep the hue and the relationships, invert the lightness. Surfaces
+  become deep violet-navy rather than grey, because a grey dark mode under a
+  violet brand reads as a different product. Flagged to the user as
+  interpretation — the light values are measured, these are reasoned.
+*/
+
+.ux {
+  /* surfaces — sampled: canvas and card are BOTH #fefefe; a 1px #edeef3
+     border is what separates them, not a fill difference */
+  --ux-canvas: #fefefe;
+  --ux-surface: #ffffff;
+  --ux-surface-2: #faf9fd;
+  --ux-line: #edeef3;
+  --ux-line-strong: #e2e3ec;
+
+  /* ink */
+  --ux-ink: #161734;          /* headings, sidebar labels */
+  --ux-ink-2: #3b3d5c;
+  /* Both darkened after measuring. The sampled #6e7391 reads 4.21:1 on the
+     violet quick-action tint and #9aa0b8 read 2.35:1 — under the 4.5:1 that
+     small text needs. These are the nearest values that clear it on EVERY
+     surface they land on, including the six coloured tints, rather than only
+     on white where they happened to look fine. */
+  --ux-muted: #5c6180;        /* "Course • Beginner" — 5.47:1 worst case */
+  --ux-faint: #63688a;        /* timestamps, chevrons — 4.91:1 worst case */
+
+  /* brand violet */
+  --ux-brand: #6642c1;        /* links, "See All" */
+  --ux-brand-600: #7648b3;    /* primary button */
+  --ux-brand-700: #5b32a6;
+  --ux-brand-900: #4a2895;    /* the dark "Complete Your Profile" card */
+  /* What sits ON the brand-900 slab. Written as literal hex in two components
+     before, which is how the button on it came to be 4.31:1 — below AA, in the
+     sidebar, on every screen. The button is white because no violet clears 4.5:1
+     for white text while still separating from the slab it sits on. */
+  --ux-on-brand-2: #cdbdf0;        /* 5.98:1 on brand-900 */
+  --ux-on-brand-track: rgba(0, 0, 0, 0.20);
+  --ux-on-brand-fill: #c9a8f5;     /* 5.13:1 — a graphic, needs 3:1 */
+  --ux-on-brand-btn: #ffffff;      /* 10.35:1 against the slab */
+  --ux-on-brand-btn-ink: #4a2895;  /* 10.35:1 on that white */
+  /* The bed a video or a poster sits on. Deliberately near-black in BOTH
+     themes — a light letterbox around a photograph fights the photograph. */
+  --ux-media-bed: #141130;
+  --ux-brand-tint: #f8f3fd;   /* active nav pill */
+  --ux-brand-tint-2: #f4ecfe; /* progress track */
+  --ux-on-brand: #ffffff;
+  /* Filled surfaces that carry WHITE text — buttons, sent message bubbles.
+     Separate from the accent because the accent also paints progress fills and
+     dots, which only need 3:1. In dark mode `--ux-brand-600` reads 3.89:1
+     against white, so every primary button's right-hand gradient stop was
+     failing AA and nothing caught it: a gradient has no single background
+     colour, so the contrast pass skips it entirely. */
+  --ux-fill:   #5b32a6;       /* 8.57:1 with white */
+  --ux-fill-2: #7648b3;       /* 6.27:1 with white */
+
+  /* ── The six accent families ───────────────────────────────────────────
+     Generated in OKLCH, not picked by eye, and the difference is measurable.
+     Every tint shares ONE lightness and ONE chroma, so no tile outweighs its
+     neighbour — the sampled set drifted 1.2 L-points and pink visibly sat
+     heavier than green. The hues are spaced 44 degrees apart at the tightest;
+     the old orange and amber were 13 degrees apart, which is not two colours.
+
+     Two strengths per family, because WCAG asks two different things. Icons
+     and bars are graphics and need 3:1. Text needs 4.5:1, which on tints this
+     pale is a much darker colour — so it gets its own token rather than
+     dragging the whole palette down and taking the warmth with it. */
+  --ux-tint-violet: #f6f4ff;
+  --ux-tint-orange: #fff3f0;
+  --ux-tint-blue:   #eff7ff;
+  --ux-tint-green:  #eff9f1;
+  --ux-tint-pink:   #fff2f7;
+  --ux-tint-lilac:  #f6f4ff;
+  --ux-tint-amber:  #fdf6e3;   /* ink clears AA at 4.60:1 */
+
+  /* graphics — measured 3.01 to 3.03 on the worst surface each lands on */
+  --ux-violet: #9b79f2;
+  --ux-orange: #eb6342;
+  --ux-blue:   #1891f2;
+  --ux-green:  #00a44b;
+  --ux-pink:   #e160a4;
+  --ux-amber:  #b48700;
+
+  /* text on a tint — measured 4.51 to 4.56 */
+  --ux-violet-ink: #7d5ccb;
+  --ux-orange-ink: #c34728;
+  --ux-blue-ink:   #0073c7;
+  --ux-green-ink:  #00823a;
+  --ux-pink-ink:   #ba4484;
+  --ux-amber-ink:  #8f6a00;
+
+  --ux-track: #e9eaf4;
+
+  --ux-r-card: 16px;
+  --ux-r-inner: 12px;
+  --ux-r-pill: 999px;
+  --ux-shadow-card: 0 1px 2px rgba(22, 23, 52, 0.04);
+  --ux-shadow-lift: 0 8px 24px -12px rgba(74, 40, 149, 0.28);
+  --ux-shadow-raise: 0 20px 40px -18px rgba(74, 40, 149, 0.45),
+                     0 6px 14px -8px rgba(74, 40, 149, 0.18);
+  --ux-shadow-pop: 0 24px 64px -20px rgba(22, 23, 52, 0.35);
+  --ux-scrim: rgba(22, 23, 52, 0.55);
+}
+
+/* Derived, not measured — see the note at the top. */
+.dark .ux,
+.ux.dark {
+  --ux-canvas: #14122a;
+  --ux-surface: #1c1936;
+  --ux-surface-2: #232043;
+  --ux-line: #2e2a4f;
+  --ux-line-strong: #3a3560;
+
+  --ux-ink: #f2f0fb;
+  --ux-ink-2: #d6d2ec;
+  --ux-muted: #a09bc2;        /* 5.10:1 on the darkest surface it lands on */
+  --ux-faint: #9692b2;        /* was #7d78a0 — 3.25:1 on the raised card */
+
+  --ux-brand: #a98bf5;
+  --ux-brand-600: #8f6ae8;
+  --ux-brand-700: #7c56d8;
+  --ux-brand-900: #2c1a5c;
+  --ux-on-brand-2: #cdbdf0;        /* 8.61:1 on the darker slab */
+  --ux-on-brand-track: rgba(0, 0, 0, 0.28);
+  --ux-on-brand-fill: #c9a8f5;     /* 7.38:1 */
+  --ux-on-brand-btn: #ffffff;      /* 14.90:1 */
+  --ux-on-brand-btn-ink: #2c1a5c;
+  --ux-media-bed: #100e26;
+  --ux-brand-tint: #251f45;
+  --ux-brand-tint-2: #2b2350;
+  --ux-on-brand: #ffffff;
+  /* Lighter than the light-mode pair, but still dark enough for white to clear
+     AA on both gradient stops — which `--ux-brand-600` (3.89:1) did not. */
+  --ux-fill:   #6b46c9;       /* 6.28:1 with white */
+  --ux-fill-2: #7c56d8;       /* 5.02:1 with white */
+
+  --ux-tint-violet: #2a2637;
+  --ux-tint-orange: #36241f;
+  --ux-tint-blue:   #1e2a38;
+  --ux-tint-green:  #1e2d21;
+  --ux-tint-pink:   #35232b;
+  --ux-tint-lilac:  #2a2637;
+  --ux-tint-amber:  #2e2615;   /* ink clears AA at 4.68:1; #332a18 was 4.42 */
+
+  /* Dark mode needs only one strength. Solving for 4.5:1 here lands around
+     L 0.72, which is luminous enough to work as a shape as well as a word —
+     whereas solving graphics at 3:1 returns the DIMMEST colour that passes,
+     and a dim accent on a dark ground reads as a hole, not a highlight. */
+  --ux-violet: #9d7bf5;
+  --ux-orange: #ed6644;
+  --ux-blue:   #1c93f5;
+  --ux-green:  #00a64b;
+  --ux-pink:   #e363a7;
+  --ux-amber:  #b68900;
+
+  --ux-violet-ink: #9c7dee;
+  --ux-orange-ink: #e8694a;
+  --ux-blue-ink:   #2b94ef;
+  --ux-green-ink:  #1fa551;
+  --ux-pink-ink:   #df66a5;
+  --ux-amber-ink:  #b68900;
+
+  --ux-track: #2e2a4f;
+  --ux-shadow-card: 0 1px 2px rgba(0, 0, 0, 0.3);
+  --ux-shadow-lift: 0 8px 24px -12px rgba(0, 0, 0, 0.5);
+  --ux-shadow-raise: 0 20px 40px -18px rgba(0, 0, 0, 0.72),
+                     0 6px 14px -8px rgba(0, 0, 0, 0.5);
+  --ux-shadow-pop: 0 24px 64px -20px rgba(0, 0, 0, 0.7);
+  --ux-scrim: rgba(6, 5, 18, 0.72);
+}
+
+.ux {
+  background: var(--ux-canvas);
+  color: var(--ux-ink);
+}
+
+/* One card definition, so a radius change lands everywhere at once. */
+.ux-card {
+  background: var(--ux-surface);
+  border: 1px solid var(--ux-line);
+  border-radius: var(--ux-r-card);
+  box-shadow: var(--ux-shadow-card);
+}
+.ux-scroll-x {
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+.ux-scroll-x::-webkit-scrollbar { display: none; }
+
+/* ── Motion ────────────────────────────────────────────────────────────────
+   One vocabulary, so nothing moves at a speed or curve nothing else uses.
+
+   Two rules hold it together. Motion is only ever transform and opacity —
+   animating width, top or box-shadow makes the browser re-lay-out the page
+   every frame and a card rail starts to stutter. And every duration here is
+   short: 160ms reads as responsive, 400ms reads as slow the second time
+   somebody sees it, and they will see it hundreds of times.
+
+   Everything is switched off wholesale under prefers-reduced-motion at the
+   bottom of this file. That is not a nicety — vestibular disorders are real,
+   and I already shipped one bug in this project by treating that setting as
+   "never animate" rather than "do not animate without being asked". */
+.ux {
+  --ux-t-fast: 140ms;
+  --ux-t: 200ms;
+  --ux-t-slow: 320ms;
+  --ux-ease: cubic-bezier(.4, 0, .2, 1);
+  --ux-ease-out: cubic-bezier(.16, 1, .3, 1);   /* decelerating — things arriving */
+  --ux-ease-spring: cubic-bezier(.34, 1.56, .64, 1);
+}
+
+/* A card you can act on lifts toward you. A card you cannot, does not — the
+   movement is what tells you it is interactive. */
+.ux-lift {
+  transition: transform var(--ux-t) var(--ux-ease-out),
+              box-shadow var(--ux-t) var(--ux-ease-out);
+  will-change: transform;
+}
+.ux-lift:hover { transform: translateY(-3px); box-shadow: var(--ux-shadow-lift); }
+.ux-lift:active { transform: translateY(-1px); transition-duration: var(--ux-t-fast); }
+
+.ux-press { transition: transform var(--ux-t-fast) var(--ux-ease); }
+.ux-press:active { transform: scale(.975); }
+
+/* Content arrives rather than appearing. Staggered by index so a grid reads
+   left-to-right instead of flashing in as one block. */
+@keyframes ux-rise {
+  from { opacity: 0; transform: translateY(10px); }
+  to   { opacity: 1; transform: none; }
+}
+/* `backwards`, never `both`. `both` holds the final keyframe forever, and a
+   filling animation outranks the declared style — so a card that arrived with
+   `transform: none` could never afterwards be lifted by a hover. `backwards`
+   still covers the delay before it starts, which is the only part that needs
+   covering. */
+.ux-rise {
+  animation: ux-rise var(--ux-t-slow) var(--ux-ease-out) backwards;
+  animation-delay: calc(var(--i, 0) * 45ms);
+}
+
+@keyframes ux-fade { from { opacity: 0 } to { opacity: 1 } }
+.ux-fade { animation: ux-fade var(--ux-t) var(--ux-ease) backwards; }
+
+@keyframes ux-pop {
+  0%   { opacity: 0; transform: scale(.86); }
+  100% { opacity: 1; transform: none; }
+}
+.ux-pop {
+  animation: ux-pop var(--ux-t) var(--ux-ease-spring) backwards;
+  animation-delay: calc(var(--i, 0) * 60ms);
+}
+
+/* The shimmer that says "loading" without pretending to be content. */
+@keyframes ux-shimmer { to { background-position: 200% 0 } }
+.ux-skeleton {
+  background: linear-gradient(90deg, var(--ux-surface-2) 25%,
+              var(--ux-line) 37%, var(--ux-surface-2) 63%);
+  background-size: 200% 100%;
+  animation: ux-shimmer 1.4s linear infinite;
+  border-radius: 8px;
+}
+
+/* A focus ring nobody has to hunt for. Keyboard only — :focus-visible, so a
+   mouse click does not leave a ring behind it. */
+.ux :where(a, button, input, textarea, select, [tabindex]):focus-visible {
+  outline: 2px solid var(--ux-brand);
+  outline-offset: 3px;
+  border-radius: 6px;
+}
+
+/* ── Surface treatments ────────────────────────────────────────────────────
+   Three techniques, each where it earns its keep, and two deliberately left
+   out.
+
+   Squircle is corner smoothing — the corner curve starts further from the
+   corner, so the join into the straight edge is invisible. It costs nothing and
+   improves every rounded box, so it is applied to all of them.
+
+   Clay is for surfaces you act on: a soft drop shadow in the brand's hue plus
+   an inner highlight at the top and an inner shade at the bottom, which reads
+   as a thick, pressable slab. It stays off text-heavy cards, where the inner
+   shading starts to fight the words.
+
+   Glass is only for layers that float ABOVE the page — the topbar, the search
+   palette, the account menu. On a content card the blur is expensive and the
+   text contrast depends on whatever happens to scroll underneath, which is not
+   something anyone can guarantee.
+
+   Neumorphism is not here on purpose. Its whole idea is that a control is the
+   same colour as its background, separated only by soft shadow — which is the
+   definition of a control this app's own contrast check would reject, and the
+   people using it include women reading a cheap screen in daylight.
+
+   Metal is used exactly once, on earned credentials, where cold and hard is the
+   right feeling. Everywhere else it fights a warm brand. */
+
+@supports (corner-shape: squircle) {
+  .ux .ux-card,
+  .ux .ux-clay,
+  .ux .ux-glass,
+  .ux .ux-sheet,
+  .ux .ux-metal,
+  .ux .ux-sq { corner-shape: squircle; }
+}
+
+.ux-clay {
+  border-radius: 18px;
+  box-shadow:
+    inset 0 7px 9px -7px rgba(255, 255, 255, 0.9),
+    inset 0 -8px 12px -8px rgba(63, 34, 122, 0.22),
+    0 10px 20px -14px rgba(74, 40, 149, 0.4);
+  transition: box-shadow var(--ux-t) var(--ux-ease-out),
+              transform var(--ux-t) var(--ux-ease-out);
+}
+.ux-clay:hover {
+  box-shadow:
+    inset 0 7px 9px -7px rgba(255, 255, 255, 0.95),
+    inset 0 -10px 14px -8px rgba(63, 34, 122, 0.26),
+    0 18px 30px -16px rgba(74, 40, 149, 0.5);
+}
+/* Pressing a clay surface should push it in, not lift it — the inner shading
+   swaps ends, which is what a thumb on soft plastic actually looks like. */
+.ux-clay:active {
+  transform: translateY(1px) scale(0.994);
+  box-shadow:
+    inset 0 8px 12px -7px rgba(63, 34, 122, 0.26),
+    inset 0 -6px 8px -7px rgba(255, 255, 255, 0.6),
+    0 4px 10px -8px rgba(74, 40, 149, 0.4);
+}
+
+/* The inner highlight is a white sheen. On a dark surface white at 90% is a
+   glare, so it drops to a hint and the shade below it deepens instead. */
+.dark .ux-clay,
+.ux.dark .ux-clay {
+  box-shadow:
+    inset 0 7px 9px -7px rgba(255, 255, 255, 0.14),
+    inset 0 -8px 12px -8px rgba(0, 0, 0, 0.5),
+    0 10px 20px -14px rgba(0, 0, 0, 0.6);
+}
+.dark .ux-clay:hover,
+.ux.dark .ux-clay:hover {
+  box-shadow:
+    inset 0 7px 9px -7px rgba(255, 255, 255, 0.2),
+    inset 0 -10px 14px -8px rgba(0, 0, 0, 0.55),
+    0 18px 30px -16px rgba(0, 0, 0, 0.7);
+}
+.dark .ux-clay:active,
+.ux.dark .ux-clay:active {
+  box-shadow:
+    inset 0 8px 12px -7px rgba(0, 0, 0, 0.55),
+    inset 0 -6px 8px -7px rgba(255, 255, 255, 0.1),
+    0 4px 10px -8px rgba(0, 0, 0, 0.6);
+}
+
+/* Glass is for ONE thing: the topbar band, which is a thin strip and always has
+   the same content sliding under it. It is deliberately not used on menus or
+   the search palette — at 66% over a busy page the words behind showed through
+   the words in front, which is the opposite of what a menu is for. */
+.ux-glass {
+  background: color-mix(in srgb, var(--ux-surface) 74%, transparent);
+  border: 1px solid color-mix(in srgb, var(--ux-line-strong) 60%, transparent);
+  box-shadow: var(--ux-shadow-pop);
+}
+@supports (backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px)) {
+  .ux-glass {
+    -webkit-backdrop-filter: blur(20px) saturate(150%);
+    backdrop-filter: blur(20px) saturate(150%);
+    background: color-mix(in srgb, var(--ux-surface) 66%, transparent);
+  }
+}
+
+/**
+ * A sheet: menus, popovers, the search palette.
+ *
+ * Opaque, with a frosted edge treatment rather than a frosted body. Two reasons
+ * it cannot be glass. Readability first — a menu sits over dense content, and
+ * anything you can read through you cannot read. And structurally: the account
+ * menu lives inside the glass topbar, and an element whose ancestor already has
+ * a backdrop-filter cannot sample the page behind that ancestor, so its blur
+ * would silently do nothing while its transparency did plenty.
+ */
+.ux-sheet {
+  background: var(--ux-surface);
+  border: 1px solid var(--ux-line-strong);
+  box-shadow: var(--ux-shadow-pop);
+}
+.ux-sheet::before {
+  content: "";
+  position: absolute;
+  inset: 0 0 auto 0;
+  height: 1px;
+  pointer-events: none;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.6), transparent);
+}
+.dark .ux-sheet::before,
+.ux.dark .ux-sheet::before {
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.14), transparent);
+}
+
+/* A hairline of light along the top edge, which is what makes glass read as a
+   pane rather than as a flat translucent rectangle. */
+.ux-glass::before {
+  content: "";
+  position: absolute;
+  inset: 0 0 auto 0;
+  height: 1px;
+  pointer-events: none;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.55), transparent);
+}
+.dark .ux-glass::before,
+.ux.dark .ux-glass::before {
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.16), transparent);
+}
+
+/* Brushed metal, for things she earned. The stripes are a repeating gradient
+   at a shallow angle; the sheen is a second, wider one across it. */
+.ux-metal {
+  background:
+    linear-gradient(103deg, rgba(255, 255, 255, 0.55) 0%, transparent 32%, rgba(255, 255, 255, 0.3) 55%, transparent 78%),
+    repeating-linear-gradient(103deg, #d9d6e6 0 2px, #eceaf4 2px 4px);
+  border: 1px solid #c8c4da;
+  color: #3b3d5c;
+}
+.dark .ux-metal,
+.ux.dark .ux-metal {
+  background:
+    linear-gradient(103deg, rgba(255, 255, 255, 0.16) 0%, transparent 32%, rgba(255, 255, 255, 0.09) 55%, transparent 78%),
+    repeating-linear-gradient(103deg, #3a3560 0 2px, #464073 2px 4px);
+  border-color: #514a80;
+  color: #f2f0fb;
+}
+
+/* ── Micro-interactions ────────────────────────────────────────────────────
+   Everything below is driven by a hover on a container, not by a hover on the
+   moving part itself. That matters: if the arrow only slides when the pointer
+   is on the arrow, nobody ever sees it. The card is the target; the pieces
+   inside respond together.
+
+   All of it is transform and opacity, and all of it is 140-320ms. */
+
+/* ── A card coming toward you ──────────────────────────────────────────────
+   "Raised" is sold by four things happening at once, and the old rule only did
+   one of them — a 3px nudge upward, which reads as a twitch rather than as
+   depth.
+
+   1. SCALE. Something approaching gets bigger. This is the strongest cue by a
+      distance, and its absence is why the previous version felt flat.
+   2. LIFT. Twice as far as before, so the movement is legible.
+   3. SHADOW. It grows, softens and drops further down — a card further from the
+      surface throws a longer shadow, and a shadow that stays put contradicts
+      the lift.
+   4. THE OTHERS RECEDE. Handled by .ux-deck below. Depth is relative: one card
+      coming forward and the rest holding still is half the effect.
+
+   Kept to transform and box-shadow so none of it triggers layout. 1.8% is
+   deliberately small — at 5% the text visibly resamples and the card reads as
+   zooming rather than rising. */
+.ux-i {
+  position: relative;
+  transform: translateY(0) scale(1);
+  transition: transform var(--ux-t-slow) var(--ux-ease-out),
+              box-shadow var(--ux-t-slow) var(--ux-ease-out),
+              border-color var(--ux-t) var(--ux-ease),
+              filter var(--ux-t) var(--ux-ease);
+  will-change: transform;
+}
+.ux-i:hover {
+  transform: translateY(-6px) scale(1.018);
+  box-shadow: var(--ux-shadow-raise);
+  border-color: var(--ux-brand);
+  /* Raised means raised: it has to pass over its neighbours, not under them. */
+  z-index: 2;
+}
+/* Pressing pushes it back down past its resting place, which is what makes the
+   release feel like a release. */
+.ux-i:active {
+  transform: translateY(-1px) scale(0.997);
+  box-shadow: var(--ux-shadow-card);
+  transition-duration: var(--ux-t-fast);
+}
+
+/**
+ * A deck of cards.
+ *
+ * Wrap a group and hovering one card makes every OTHER card in it step back a
+ * little and dim. This is the part that turns a lift into "come to the front":
+ * without it the eye has nothing to measure the raised card against.
+ *
+ * `:has()` does it in CSS with no state, no JS and no re-render.
+ */
+.ux-deck:has(> .ux-i:hover) > .ux-i:not(:hover),
+.ux-deck:has(.ux-i:hover) .ux-i:not(:hover) {
+  transform: scale(0.986);
+  /* Colour, not opacity. The reveal animation on these same cards animates
+     `opacity`, and a running animation outranks a rule — so the dim silently
+     did nothing on every screen that also reveals on scroll. Desaturating also
+     looks better than fading: the card steps back rather than turning
+     see-through over whatever is behind it. */
+  filter: saturate(0.55) brightness(0.985);
+}
+.dark .ux-deck:has(> .ux-i:hover) > .ux-i:not(:hover),
+.dark .ux-deck:has(.ux-i:hover) .ux-i:not(:hover),
+.ux.dark .ux-deck:has(.ux-i:hover) .ux-i:not(:hover) {
+  filter: saturate(0.55) brightness(0.82);
+}
+
+/* A hairline of light along the top edge of a raised card — the highlight a
+   real raised surface would catch. */
+.ux-i::after {
+  content: "";
+  position: absolute;
+  inset: 0 0 auto 0;
+  height: 1px;
+  border-radius: inherit;
+  pointer-events: none;
+  opacity: 0;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.75), transparent);
+  transition: opacity var(--ux-t-slow) var(--ux-ease-out);
+}
+.ux-i:hover::after { opacity: 1; }
+.dark .ux-i::after,
+.ux.dark .ux-i::after {
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.22), transparent);
+}
+
+/* An icon that turns slightly and grows when its card is hovered. Twelve
+   degrees, not forty-five: it should read as the thing waking up, not
+   spinning. */
+.ux-ico {
+  transition: transform var(--ux-t) var(--ux-ease-spring);
+  will-change: transform;
+}
+.ux-i:hover .ux-ico,
+.ux-hov:hover .ux-ico { transform: rotate(-8deg) scale(1.12); }
+
+/* A tile whose icon should spin the other way — used to break the rhythm on
+   alternating cards so six tiles do not all tilt identically. */
+.ux-i:hover .ux-ico-alt,
+.ux-hov:hover .ux-ico-alt { transform: rotate(8deg) scale(1.12); }
+
+/* A full turn, for things that genuinely mean "again": refresh, shuffle. */
+.ux-ico-turn { transition: transform var(--ux-t-slow) var(--ux-ease-out); }
+.ux-i:hover .ux-ico-turn,
+.ux-hov:hover .ux-ico-turn { transform: rotate(180deg); }
+
+/* Chevrons and arrows travel in the direction they point. */
+.ux-arrow { transition: transform var(--ux-t) var(--ux-ease-out); }
+.ux-i:hover .ux-arrow,
+.ux-hov:hover .ux-arrow { transform: translateX(3px); }
+[dir="rtl"] .ux-i:hover .ux-arrow,
+[dir="rtl"] .ux-hov:hover .ux-arrow { transform: translateX(-3px); }
+
+/* Artwork breathes toward the viewer. The wrapper must clip, or the image
+   grows past the card corner. */
+.ux-art { transition: transform var(--ux-t-slow) var(--ux-ease-out); will-change: transform; }
+.ux-hov:hover .ux-art { transform: scale(1.06); }
+/* Inside a RAISED card the artwork travels further than the card does. Layers
+   moving at different rates is parallax, and it is the cheapest way to make a
+   flat rectangle look like it has thickness. */
+.ux-i:hover .ux-art { transform: scale(1.09) translateY(-3px); }
+
+/* A single sweep of light across a card. Pure decoration, so it is behind a
+   pseudo-element and never intercepts a click. */
+.ux-sheen { position: relative; overflow: hidden; }
+.ux-sheen::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: linear-gradient(105deg, transparent 38%, rgba(255, 255, 255, 0.22) 50%, transparent 62%);
+  transform: translateX(-120%);
+  transition: transform 620ms var(--ux-ease-out);
+}
+.ux-sheen:hover::after { transform: translateX(120%); }
+
+/* An avatar stack that opens like a hand of cards. */
+.ux-fan > * { transition: transform var(--ux-t) var(--ux-ease-spring); }
+.ux-fan:hover > * { transform: translateX(3px); }
+.ux-fan:hover > *:first-child { transform: translateX(-3px); }
+
+/* Gentle, endless, and small enough to sit behind text: hero artwork only. */
+@keyframes ux-float {
+  0%, 100% { transform: translateY(0); }
+  50%      { transform: translateY(-7px); }
+}
+.ux-float { animation: ux-float 5.5s var(--ux-ease) infinite; }
+
+/* The unread dot, so a number that changed while she was reading is noticed. */
+@keyframes ux-ping {
+  0%   { transform: scale(1);   opacity: 0.55; }
+  70%  { transform: scale(2.1); opacity: 0; }
+  100% { transform: scale(2.1); opacity: 0; }
+}
+.ux-ping::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: 999px;
+  background: var(--ux-brand-600);
+  animation: ux-ping 2.4s var(--ux-ease-out) infinite;
+}
+
+/* Rows that arrive one after another down a list. Capped at ten steps so the
+   twentieth row is not still waiting most of a second later. */
+.ux-stagger > * {
+  animation: ux-rise var(--ux-t-slow) var(--ux-ease-out) backwards;
+}
+.ux-stagger > *:nth-child(1)  { animation-delay: 0ms }
+.ux-stagger > *:nth-child(2)  { animation-delay: 45ms }
+.ux-stagger > *:nth-child(3)  { animation-delay: 90ms }
+.ux-stagger > *:nth-child(4)  { animation-delay: 135ms }
+.ux-stagger > *:nth-child(5)  { animation-delay: 180ms }
+.ux-stagger > *:nth-child(6)  { animation-delay: 225ms }
+.ux-stagger > *:nth-child(7)  { animation-delay: 270ms }
+.ux-stagger > *:nth-child(8)  { animation-delay: 315ms }
+.ux-stagger > *:nth-child(n+9) { animation-delay: 360ms }
+
+/* A left edge that grows down the active nav item instead of blinking on. */
+.ux-nav { position: relative; }
+.ux-nav::before {
+  content: "";
+  position: absolute;
+  inset-inline-start: 0;
+  top: 50%;
+  width: 3px;
+  height: 0;
+  border-radius: 999px;
+  background: var(--ux-brand);
+  transform: translateY(-50%);
+  transition: height var(--ux-t) var(--ux-ease-spring);
+}
+.ux-nav[aria-current="page"]::before { height: 18px; }
+.ux-nav .ux-ico { transition: transform var(--ux-t) var(--ux-ease-spring); }
+.ux-nav:hover .ux-ico { transform: translateX(2px) scale(1.08); }
+
+/* An SVG line that draws itself once. The dash length is set inline from the
+   measured path length, because a guess either clips the line or delays it. */
+@keyframes ux-draw { to { stroke-dashoffset: 0 } }
+.ux-draw { animation: ux-draw 1.1s var(--ux-ease-out) both; }
+
+/* Panels and sheets arriving from an edge. */
+@keyframes ux-slide-up {
+  from { opacity: 0; transform: translateY(14px) scale(.99); }
+  to   { opacity: 1; transform: none; }
+}
+.ux-slide-up { animation: ux-slide-up var(--ux-t-slow) var(--ux-ease-out) backwards; }
+
+/* A value that changed under her: a single soft flash, never a loop. */
+@keyframes ux-flash {
+  0%   { background-color: var(--ux-brand-tint-2); }
+  100% { background-color: transparent; }
+}
+.ux-flash { animation: ux-flash 900ms var(--ux-ease) both; }
+
+/* ── Aurora, grain and gradient type ──────────────────────────────────────
+   Three effects that carry the hero.
+
+   The aurora is four soft colour blobs drifting behind the banner on their own
+   slow cycles. It is not a video and not a canvas: four radial gradients on two
+   pseudo-elements, animated with transform only, so it costs one composited
+   layer and no main-thread work at all.
+
+   The grain is a single inlined SVG turbulence tile at very low opacity. Large
+   flat gradients band on 8-bit displays — visible stair-steps across the
+   banner — and a little noise dithers the steps away. It is what stops a big
+   gradient looking cheap. */
+
+@keyframes ux-aurora-a {
+  0%, 100% { transform: translate3d(0, 0, 0) scale(1); }
+  33%      { transform: translate3d(6%, -8%, 0) scale(1.14); }
+  66%      { transform: translate3d(-5%, 5%, 0) scale(0.94); }
+}
+@keyframes ux-aurora-b {
+  0%, 100% { transform: translate3d(0, 0, 0) scale(1.06); }
+  40%      { transform: translate3d(-8%, 6%, 0) scale(0.92); }
+  75%      { transform: translate3d(5%, -4%, 0) scale(1.16); }
+}
+
+.ux-aurora { position: relative; isolation: isolate; overflow: hidden; }
+.ux-aurora::before,
+.ux-aurora::after {
+  content: "";
+  position: absolute;
+  inset: -40%;
+  z-index: -1;
+  pointer-events: none;
+  will-change: transform;
+}
+.ux-aurora::before {
+  background:
+    radial-gradient(38% 52% at 18% 32%, oklch(0.72 0.20 350 / 0.55), transparent 68%),
+    radial-gradient(34% 46% at 72% 22%, oklch(0.78 0.17  85 / 0.42), transparent 66%);
+  animation: ux-aurora-a 19s var(--ux-ease) infinite;
+}
+.ux-aurora::after {
+  background:
+    radial-gradient(42% 56% at 62% 78%, oklch(0.62 0.22 294 / 0.6), transparent 70%),
+    radial-gradient(30% 40% at 12% 82%, oklch(0.70 0.19 250 / 0.38), transparent 68%);
+  animation: ux-aurora-b 24s var(--ux-ease) infinite;
+}
+
+/* One tile of fractal noise, inlined so it costs no request. `overlay` lets it
+   darken and lighten rather than just greying the whole thing down. */
+.ux-grain::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  opacity: 0.34;
+  mix-blend-mode: overlay;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='140' height='140' filter='url(%23n)' opacity='0.45'/%3E%3C/svg%3E");
+}
+
+/* Type that carries the brand gradient. background-clip: text paints the
+   gradient through the letterforms — the colour has to be transparent or it
+   covers the very thing it is clipped to. */
+.ux-gradient-text {
+  background: linear-gradient(96deg, #ffffff 0%, oklch(0.94 0.06 85) 46%, oklch(0.90 0.10 350) 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  -webkit-text-fill-color: transparent;
+}
+
+/* ── Pointer-aware and scroll-aware motion ─────────────────────────────────
+   The layer above responds to hover. This one responds to WHERE the pointer is
+   and to how far down the page a thing has scrolled, which is the difference
+   between an interface that reacts and one that feels alive.
+
+   Two custom properties carry the pointer, set once per frame by
+   `usePointer` in kit/motion.tsx: --px and --py, both 0..1 within the element.
+   Nothing here reads the pointer itself, so the CSS stays declarative and the
+   JS stays a two-line writer. */
+
+@property --ux-angle {
+  syntax: "<angle>";
+  inherits: false;
+  initial-value: 0deg;
+}
+
+/* A soft light that follows the cursor across a surface. Painted in a
+   pseudo-element so it never sits between the pointer and a control. */
+.ux-spot { position: relative; isolation: isolate; }
+.ux-spot::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity var(--ux-t-slow) var(--ux-ease-out);
+  background: radial-gradient(
+    240px circle at calc(var(--px, 0.5) * 100%) calc(var(--py, 0.5) * 100%),
+    color-mix(in srgb, var(--ux-brand) 22%, transparent),
+    transparent 62%
+  );
+}
+.ux-spot:hover::after { opacity: 1; }
+
+/**
+ * A border that lights up where the cursor is.
+ *
+ * The trick is a gradient filling the whole box, masked down to the border ring
+ * — fill the padding-box and the border-box, then XOR them, and only the 1px
+ * frame survives. Animating a border-image or four box-shadows instead would
+ * repaint the card on every pointer move; this is one composited layer whose
+ * only changing input is a custom property.
+ */
+.ux-edge { position: relative; }
+.ux-edge::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  border-radius: inherit;
+  padding: 1px;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity var(--ux-t-slow) var(--ux-ease-out);
+  background: radial-gradient(
+    180px circle at calc(var(--px, 0.5) * 100%) calc(var(--py, 0.5) * 100%),
+    color-mix(in srgb, var(--ux-brand) 85%, transparent),
+    transparent 70%
+  );
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+}
+.ux-edge:hover::before { opacity: 1; }
+
+/* Tilt. The rotation is small on purpose — eight degrees looks like a toy, two
+   looks like the card has weight. perspective lives on the parent so several
+   cards in a row do not each get their own vanishing point. */
+.ux-tilt-scene { perspective: 900px; }
+.ux-tilt {
+  transform-style: preserve-3d;
+  transition: transform var(--ux-t-slow) var(--ux-ease-out);
+}
+.ux-tilt:hover {
+  /* Lift and scale FIRST, then rotate — so the card rises toward the viewer and
+     tips about its own centre, rather than swinging around a point below it. */
+  transform:
+    translateY(-6px)
+    scale(1.018)
+    rotateX(calc((var(--py, 0.5) - 0.5) * -4deg))
+    rotateY(calc((var(--px, 0.5) - 0.5) * 5deg));
+  transition-duration: var(--ux-t-fast);
+}
+
+/* Magnetic: the control leans toward the pointer as it approaches. Capped at a
+   few pixels, or the button stops being where she is aiming. */
+.ux-magnet {
+  transition: transform var(--ux-t) var(--ux-ease-spring);
+}
+.ux-magnet:hover {
+  transform: translate(
+    calc((var(--px, 0.5) - 0.5) * 7px),
+    calc((var(--py, 0.5) - 0.5) * 5px)
+  );
+}
+
+/* A conic edge that turns slowly — for the one card that should look "live".
+   The angle is a registered property, so it interpolates instead of jumping. */
+@keyframes ux-orbit { to { --ux-angle: 360deg; } }
+.ux-orbit {
+  position: relative;
+  isolation: isolate;
+}
+.ux-orbit::before {
+  content: "";
+  position: absolute;
+  inset: -1px;
+  z-index: -1;
+  border-radius: inherit;
+  padding: 1px;
+  background: conic-gradient(
+    from var(--ux-angle),
+    transparent 0deg,
+    color-mix(in srgb, var(--ux-brand) 70%, transparent) 40deg,
+    transparent 120deg,
+    transparent 360deg
+  );
+  /* Draw only the border ring: fill everything, then punch out the middle. */
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  animation: ux-orbit 6s linear infinite;
+}
+
+/* Ripple from the point of contact. `--rx`/`--ry` are written by the pointer
+   hook on pointerdown; the animation is one shot and restarts by key change. */
+@keyframes ux-ripple {
+  from { transform: scale(0); opacity: 0.32; }
+  to   { transform: scale(2.6); opacity: 0; }
+}
+.ux-ripple { position: relative; overflow: hidden; }
+.ux-ripple > .ux-ripple-ink {
+  position: absolute;
+  left: var(--rx, 50%);
+  top: var(--ry, 50%);
+  width: 140%;
+  aspect-ratio: 1;
+  translate: -50% -50%;
+  border-radius: 999px;
+  pointer-events: none;
+  background: currentColor;
+  animation: ux-ripple 620ms var(--ux-ease-out) forwards;
+}
+
+/* ── Scroll-driven reveal ─────────────────────────────────────────────────
+   `animation-timeline: view()` ties the animation to the element's own trip
+   through the scrollport, off the main thread. This is what replaces the
+   IntersectionObserver-plus-class-toggle dance: no observer, no re-render, no
+   jank, and it scrubs backwards when she scrolls back up.
+
+   `view()` binds to the nearest scrollport, which in this shell is #ux-scroll
+   rather than the document — that is why the app scrolls a column. */
+@supports (animation-timeline: view()) {
+  @media (prefers-reduced-motion: no-preference) {
+    .ux-onscroll {
+      animation: ux-rise-far linear both;
+      animation-timeline: view();
+      animation-range: entry 0% cover 22%;
+    }
+    /**
+     * A card that is BOTH revealed on scroll and raised on hover reveals by
+     * fading only.
+     *
+     * `animation-timeline: view()` never finishes — it is scrubbed by scroll
+     * position, so it is permanently running, and a running animation's
+     * `transform` outranks any transition on the same element. Every job row
+     * carried both classes and not one of them moved on hover; the class was
+     * there, the rule was there, and the animation quietly owned the property.
+     *
+     * Dropping to `ux-fade` keeps the reveal and gives `transform` back.
+     */
+    .ux-i.ux-onscroll { animation-name: ux-fade; }
+
+    /* A gentler one for large blocks, which look silly travelling far. */
+    .ux-onscroll-soft {
+      animation: ux-fade linear both;
+      animation-timeline: view();
+      animation-range: entry 0% cover 18%;
+    }
+  }
+}
+@keyframes ux-rise-far {
+  from { opacity: 0; transform: translateY(26px) scale(0.985); }
+  to   { opacity: 1; transform: none; }
+}
+
+/* ── Menus that leave as carefully as they arrive ─────────────────────────
+   `@starting-style` gives an element a "before it existed" state, and
+   `transition-behavior: allow-discrete` lets `display` participate — so a
+   popover can fade OUT instead of being yanked from the DOM mid-animation. */
+.ux-enter {
+  transition:
+    opacity var(--ux-t) var(--ux-ease-out),
+    transform var(--ux-t) var(--ux-ease-out),
+    overlay var(--ux-t) allow-discrete,
+    display var(--ux-t) allow-discrete;
+}
+@starting-style {
+  .ux-enter { opacity: 0; transform: translateY(-8px) scale(0.97); }
+}
+
+/* ── Between screens ──────────────────────────────────────────────────────
+   The shell is named, so the browser treats the sidebar and topbar as the same
+   elements across a navigation and leaves them alone. Only the content column
+   and the rail cross over, which is what makes moving between screens read as
+   changing what you are looking at rather than reloading where you are. */
+::view-transition-group(ux-shell-nav),
+::view-transition-group(ux-shell-top) { animation-duration: 0s; }
+
+::view-transition-old(ux-main),
+::view-transition-new(ux-main),
+::view-transition-old(ux-rail),
+::view-transition-new(ux-rail) {
+  animation-duration: 260ms;
+  animation-timing-function: cubic-bezier(.16, 1, .3, 1);
+}
+@keyframes ux-vt-out { to { opacity: 0; transform: translateY(-8px); } }
+@keyframes ux-vt-in { from { opacity: 0; transform: translateY(12px); } }
+::view-transition-old(ux-main), ::view-transition-old(ux-rail) { animation-name: ux-vt-out; }
+::view-transition-new(ux-main), ::view-transition-new(ux-rail) { animation-name: ux-vt-in; }
+
+/* The brand lockup. A logo must not tilt — `ux-ico` rotates, which is right for
+   an icon answering a hover and wrong for a mark that has one correct
+   orientation. It grows very slightly instead, and its halo comes up with it. */
+.ux-brand-mark { transition: transform var(--ux-t) var(--ux-ease-spring); }
+.ux-hov:hover .ux-brand-mark { transform: scale(1.06); }
+.ux-brand-halo {
+  transition: opacity var(--ux-t) var(--ux-ease-out), transform var(--ux-t) var(--ux-ease-out);
+  opacity: 0.85;
+}
+.ux-hov:hover .ux-brand-halo { opacity: 1; transform: scale(1.72); }
+
+/* A range that matches everything else. Left to itself the browser draws an OS
+   control that ignores every token on the page.
+
+   The input is 24px tall while the visible track stays 6px: the element itself
+   is what a pointer has to hit, and a 6px-tall target is one most people miss
+   on the first try. The track is drawn by ::-webkit-slider-runnable-track so
+   the extra height is invisible padding rather than a fat bar. */
+.ux-range {
+  appearance: none;
+  -webkit-appearance: none;
+  height: 24px;
+  background: transparent;
+  outline: none;
+  cursor: pointer;
+}
+.ux-range::-webkit-slider-runnable-track {
+  height: 6px;
+  border-radius: 999px;
+  background: var(--ux-track);
+}
+.ux-range::-webkit-slider-thumb {
+  appearance: none;
+  -webkit-appearance: none;
+  width: 18px;
+  height: 18px;
+  /* centre an 18px thumb on a 6px track */
+  margin-top: -6px;
+  border-radius: 999px;
+  background: var(--ux-brand-600);
+  border: 3px solid var(--ux-surface);
+  box-shadow: 0 2px 6px -1px rgba(74, 40, 149, 0.5);
+  cursor: pointer;
+  transition: transform var(--ux-t-fast) var(--ux-ease-spring);
+}
+.ux-range::-webkit-slider-thumb:hover { transform: scale(1.18); }
+.ux-range:active::-webkit-slider-thumb { transform: scale(0.94); }
+.ux-range::-moz-range-track { height: 6px; border-radius: 999px; background: var(--ux-track); }
+.ux-range::-moz-range-thumb {
+  width: 18px;
+  height: 18px;
+  border-radius: 999px;
+  background: var(--ux-brand-600);
+  border: 3px solid var(--ux-surface);
+  cursor: pointer;
+}
+
+/* Headings should not leave one orphaned word on the last line. */
+.ux h1, .ux h2, .ux h3 { text-wrap: balance; }
+.ux p { text-wrap: pretty; }
+
+@media (prefers-reduced-motion: reduce) {
+  .ux *,
+  .ux *::before,
+  .ux *::after {
+    animation-duration: 1ms !important;
+    animation-delay: 0ms !important;
+    transition-duration: 1ms !important;
+  }
+  /* Duration alone is not enough for the ones that hold a transform or repeat
+     forever — those have to be cancelled outright. */
+  .ux-lift:hover,
+  .ux-i:hover { transform: none; }
+  .ux-i:active { transform: none; }
+  .ux-deck:has(> .ux-i:hover) > .ux-i:not(:hover),
+  .ux-deck:has(.ux-i:hover) .ux-i:not(:hover) { transform: none; filter: none; }
+  .ux-i:hover .ux-art { transform: none; }
+  .ux-i:hover .ux-ico,
+  .ux-hov:hover .ux-ico,
+  .ux-i:hover .ux-ico-alt,
+  .ux-hov:hover .ux-ico-alt,
+  .ux-i:hover .ux-ico-turn,
+  .ux-hov:hover .ux-ico-turn,
+  .ux-i:hover .ux-arrow,
+  .ux-hov:hover .ux-arrow,
+  .ux-i:hover .ux-art,
+  .ux-hov:hover .ux-art,
+  .ux-fan:hover > *,
+  .ux-fan:hover > *:first-child,
+  .ux-nav:hover .ux-ico { transform: none; }
+  .ux-sheen::after { display: none; }
+  .ux-float { animation: none; }
+  .ux-aurora::before,
+  .ux-aurora::after { animation: none; }
+  .ux-ping::before { animation: none; opacity: 0; }
+  /* Pointer-driven motion is still motion. The spotlight stays — it is light,
+     not movement — but nothing is allowed to move under the cursor. */
+  .ux-tilt:hover,
+  .ux-magnet:hover { transform: none; }
+  /* The edge is light, not movement, so it stays — but it must not chase. */
+  .ux-orbit::before { animation: none; opacity: 0.35; }
+  .ux-ripple > .ux-ripple-ink { animation: none; display: none; }
+  /* The shimmer is an infinite animation, so `animation-duration: 1ms` above
+     does not calm it — it makes it worse. A 1.4s sweep squeezed into 1ms is
+     re-sampled at a different point every frame, which is a random flicker at
+     screen rate: a strobe, shown to the people who asked for less motion.
+     It has to be cancelled outright, leaving a flat block that still holds the
+     right space. */
+  .ux-skeleton {
+    animation: none;
+    background: var(--ux-surface-2);
+  }
+  .ux-onscroll,
+  .ux-onscroll-soft { animation: none; opacity: 1; transform: none; }
+  .ux-hov:hover .ux-brand-mark { transform: none; }
+  .ux-hov:hover .ux-brand-halo { transform: scale(1.5); }
+}

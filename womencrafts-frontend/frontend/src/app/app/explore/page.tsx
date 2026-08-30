@@ -1,0 +1,220 @@
+"use client";
+
+import { Suspense, useMemo, useState } from "react";
+import Link from "next/link";
+import { useSearchParams } from "next/navigation";
+import * as Icons from "lucide-react";
+
+import {
+  Btn, Card, Chip, EmptyState, IconTile, Pill,
+  SectionHead, SourceNote, plural
+} from "@/components/ux/kit";
+import { HomeShell } from "@/components/ux/home/HomeShell";
+import { DISCOVER_ART, KINDS, type Find, type Kind } from "@/components/ux/discover/data";
+import { CITY } from "@/components/ux/local/data";
+import { useDiscover } from "@/components/ux/growth";
+
+/**
+ * Discover — a lens over the whole app, not a copy of it.
+ *
+ * Every item here belongs to another module, so opening one goes to the module
+ * that owns it. A second, subtly different copy of a job listing living in
+ * Discover is how two screens end up disagreeing about the same job.
+ */
+export default function DiscoverPage() {
+  return (
+    <Suspense fallback={<HomeShell active="/app/explore"><Card>Loading…</Card></HomeShell>}>
+      <Discover />
+    </Suspense>
+  );
+}
+
+function Row({ f, i }: { f: Find; i: number }) {
+  return (
+    <Link
+      href={f.href}
+      className="ux-i ux-sq ux-onscroll flex items-center gap-3.5 rounded-[14px] border p-3.5"
+      style={{ borderColor: "var(--ux-line)", background: "var(--ux-surface)", ["--i" as string]: i }}
+    >
+      {f.art ? (
+        <span className="h-[54px] w-[54px] shrink-0 overflow-hidden rounded-[12px]" style={{ background: `var(${f.tint})` }}>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src={f.art} alt="" className="ux-art h-full w-full object-cover" />
+        </span>
+      ) : (
+        <IconTile icon={f.icon} tint={f.tint} ink={f.ink} size={54} radius={12} />
+      )}
+      <div className="min-w-0 flex-1">
+        <div className="flex items-start gap-2">
+          <h3 className="min-w-0 flex-1 truncate text-[14px] font-semibold" style={{ color: "var(--ux-ink)" }}>
+            {f.title}
+          </h3>
+          {f.isNew && <Pill tone="brand" size="sm">New</Pill>}
+          {f.near && <Pill tone="green" size="sm">Near you</Pill>}
+        </div>
+        <p className="mt-0.5 truncate text-[12px]" style={{ color: "var(--ux-muted)" }}>{f.sub}</p>
+        <p className="mt-1 truncate text-[12px] font-medium" style={{ color: "var(--ux-ink-2)" }}>{f.meta}</p>
+      </div>
+      <span className="shrink-0 rounded-full px-2.5 py-[4px] text-[11px] font-semibold"
+            style={{ background: `var(${f.tint})`, color: `var(${f.ink}-ink)` }}>
+        {f.kind}
+      </span>
+      <Icons.ArrowRight className="ux-arrow h-[17px] w-[17px] shrink-0" style={{ color: "var(--ux-faint)" }} />
+    </Link>
+  );
+}
+
+function Discover() {
+  const params = useSearchParams();
+  const [kinds, setKinds] = useState<Kind[]>(() => {
+    const k = params.get("kind");
+    return k && (KINDS as string[]).includes(k) ? [k as Kind] : [];
+  });
+  const [nearOnly, setNearOnly] = useState(false);
+  // Assembled from the modules that own each record, so a job posted this
+  // morning turns up here rather than in a list that shipped with the app.
+  const { data: FINDS, source } = useDiscover();
+
+  const shown = useMemo(() => FINDS.filter((f) => {
+    if (kinds.length && !kinds.includes(f.kind)) return false;
+    if (nearOnly && !f.near) return false;
+    return true;
+  }), [kinds, nearOnly, FINDS]);
+
+  const filtering = kinds.length > 0 || nearOnly;
+  /**
+   * Themed rows, built from what is actually in the feed.
+   *
+   * `COLLECTIONS` was a curated list of fixture ids — `f1`, `f4`, `f7` — and
+   * the moment this screen read the server those ids matched nothing, so every
+   * themed row rendered empty. Grouping the real records by kind keeps the
+   * shape of the page without pretending an editor picked them.
+   */
+  const collections = useMemo(() => {
+    const groups: { id: string; title: string; items: Find[] }[] = [
+      { id: "near", title: `Near you in ${CITY}`, items: FINDS.filter((f) => f.near) },
+      { id: "work", title: "Work you could apply for", items: FINDS.filter((f) => f.kind === "Work") },
+      { id: "learn", title: "Learn something new", items: FINDS.filter((f) => f.kind === "Course") },
+      { id: "people", title: "Women who will sit with you", items: FINDS.filter((f) => f.kind === "Mentor") },
+    ];
+    // A row with nothing in it is a heading with a gap under it.
+    return groups.filter((g) => g.items.length);
+  }, [FINDS]);
+  const counts = useMemo(() => {
+    const m = new Map<Kind, number>();
+    for (const f of FINDS) m.set(f.kind, (m.get(f.kind) ?? 0) + 1);
+    return m;
+  }, [FINDS]);
+
+  return (
+    <HomeShell
+      active="/app/explore"
+      rail={
+        <div className="space-y-[15px]">
+          <Card className="ux-onscroll-soft">
+            <SectionHead title="What is here" sub="Everything WomSakhi can point you at" />
+            <ul className="ux-stagger space-y-2.5">
+              {KINDS.map((k) => {
+                const f = FINDS.find((x) => x.kind === k)!;
+                return (
+                  <li key={k}>
+                    <button
+                      onClick={() => setKinds(kinds.includes(k) ? kinds.filter((x) => x !== k) : [k])}
+                      className="ux-hov flex w-full items-center gap-3 rounded-[10px] px-2 py-2 text-start transition-colors"
+                      style={{ background: kinds.includes(k) ? "var(--ux-brand-tint)" : "transparent" }}
+                    >
+                      <IconTile icon={f.icon} tint={f.tint} ink={f.ink} size={34} radius={10} />
+                      <span className="min-w-0 flex-1 truncate text-[12.5px]"
+                            style={{ color: kinds.includes(k) ? "var(--ux-brand)" : "var(--ux-ink-2)",
+                                     fontWeight: kinds.includes(k) ? 600 : 400 }}>
+                        {plural(k, 2)}
+                      </span>
+                      <span className="shrink-0 text-[11.5px]" style={{ color: "var(--ux-faint)" }}>
+                        {counts.get(k) ?? 0}
+                      </span>
+                    </button>
+                  </li>
+                );
+              })}
+            </ul>
+          </Card>
+
+          <div className="ux-clay ux-onscroll-soft relative overflow-hidden p-[18px]"
+               style={{ background: "linear-gradient(140deg, var(--ux-tint-lilac), var(--ux-tint-blue))" }}>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src={DISCOVER_ART.hero} alt=""
+                 className="ux-float pointer-events-none absolute -bottom-3 -end-4 h-[100px] w-[100px] object-contain" />
+            <h3 className="relative w-[60%] text-[14px] font-semibold" style={{ color: "var(--ux-ink)" }}>
+              Tell Sakhi what you want
+            </h3>
+            <p className="relative mt-2 w-[60%] text-[12px] leading-relaxed" style={{ color: "var(--ux-muted)" }}>
+              Say it in your own words and she will find it across all of this.
+            </p>
+            <div className="relative mt-3 w-[60%]">
+              <Btn href="/app/sakhi" variant="soft" size="sm" iconEnd="ArrowRight">Ask Sakhi</Btn>
+            </div>
+          </div>
+        </div>
+      }
+    >
+      <h1 className="text-[24px] font-bold" style={{ color: "var(--ux-ink)" }}>Discover</h1>
+      <p className="mt-1.5 text-[13px]" style={{ color: "var(--ux-muted)" }}>
+        Courses, work, mentors, circles, events and schemes — {FINDS.length} things in one place.
+      </p>
+
+      <SourceNote source={source} what="suggestions" />
+
+      <div className="mb-[15px] mt-[18px] flex flex-wrap items-center gap-2">
+        {KINDS.map((k) => (
+          <Chip key={k} selected={kinds.includes(k)}
+                onClick={() => setKinds(kinds.includes(k) ? kinds.filter((x) => x !== k) : [...kinds, k])}>
+            {plural(k, 2)}
+          </Chip>
+        ))}
+        <span className="mx-1 h-6 w-px" style={{ background: "var(--ux-line)" }} />
+        <Chip selected={nearOnly} onClick={() => setNearOnly(!nearOnly)} icon="MapPin">Near me</Chip>
+        {filtering && (
+          <Btn variant="ghost" size="sm" icon="X" onClick={() => { setKinds([]); setNearOnly(false); }}>Clear</Btn>
+        )}
+      </div>
+
+      {filtering ? (
+        shown.length ? (
+          <>
+            <p className="mb-3 text-[12.5px]" style={{ color: "var(--ux-muted)" }}>
+              {shown.length} {plural("result", shown.length)}
+            </p>
+            <div className="ux-deck ux-stagger space-y-[13px]">
+              {shown.map((f, i) => <Row key={f.id} f={f} i={i} />)}
+            </div>
+          </>
+        ) : (
+          <Card>
+            <EmptyState
+              icon="SearchX"
+              title="Nothing matches that"
+              body="Try one fewer filter, or ask Sakhi in your own words."
+              action={<Btn onClick={() => { setKinds([]); setNearOnly(false); }} variant="soft">Show everything</Btn>}
+            />
+          </Card>
+        )
+      ) : (
+        /* Themed rows, so the page has a shape rather than being a heap. */
+        <div className="space-y-[26px]">
+          {collections.map((c) => (
+            <section key={c.id}>
+              <SectionHead title={c.title} action="See all"
+                           onAction={() => {
+                             setKinds(Array.from(new Set(c.items.map((f) => f.kind))));
+                             setNearOnly(c.id === "near");
+                           }} />
+              <div className="ux-deck ux-stagger space-y-[13px]">
+                {c.items.slice(0, 4).map((f, i) => <Row key={f.id} f={f} i={i} />)}
+              </div>
+            </section>
+          ))}
+        </div>
+      )}
+    </HomeShell>
+  );
+}
