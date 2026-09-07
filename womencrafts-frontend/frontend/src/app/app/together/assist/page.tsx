@@ -1,11 +1,10 @@
 "use client";
 
 import { useCallback, useMemo, useState } from "react";
-import Link from "next/link";
 import { useRouter } from "next/navigation";
 
 import { HomeShell } from "@/components/ux/home/HomeShell";
-import { Btn, Card, EmptyState, I, IconTile, Pill, SectionHead, Stat, v } from "@/components/ux/kit";
+import { Back, Btn, Card, EmptyState, I, IconTile, Pill, SectionHead, Stat, v } from "@/components/ux/kit";
 import { formatRupees } from "@/components/ux/kit";
 import { ASSIST_QUEUE, HELPED, assistEarned, noPhone, type AssistTask, type Helped } from "@/components/ux/together/data";
 
@@ -49,11 +48,7 @@ export default function AssistPage() {
   return (
     <HomeShell active="/app/together">
       <div className="flex flex-col gap-5">
-        <Link href={"/app/together"}
-                className="ux-press inline-flex w-fit items-center gap-1.5 text-[0.8125rem] font-semibold"
-                style={{ color: v("--ux-muted") }}>
-          <I name="ArrowLeft" className="h-[15px] w-[15px]" /> Back to Together
-        </Link>
+        <Back to="/app/together" label="Back to Together" />
 
         <header>
           <p className="text-[0.6875rem] font-extrabold uppercase tracking-[0.2em]" style={{ color: v("--ux-brand") }}>

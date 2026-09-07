@@ -1,11 +1,10 @@
 "use client";
 
 import { useCallback, useMemo, useState } from "react";
-import Link from "next/link";
 import { useRouter } from "next/navigation";
 
 import { HomeShell } from "@/components/ux/home/HomeShell";
-import { Btn, Card, I, IconTile, Pill, Progress, SectionHead, Stat, v } from "@/components/ux/kit";
+import { Back, Btn, Card, I, IconTile, Pill, Progress, SectionHead, Stat, v } from "@/components/ux/kit";
 import {
   CHECKS, IRON_WEEKS, TIRED_SIGNS, dueNow, freeCount, ironStreak, type Check,
 } from "@/components/ux/wellness/data";
@@ -56,11 +55,7 @@ export default function StrengthPage() {
   return (
     <HomeShell active="/app/health">
       <div className="flex flex-col gap-5">
-        <Link href={"/app/health"}
-                className="ux-press inline-flex w-fit items-center gap-1.5 text-[0.8125rem] font-semibold"
-                style={{ color: v("--ux-muted") }}>
-          <I name="ArrowLeft" className="h-[15px] w-[15px]" /> Back to health
-        </Link>
+        <Back to="/app/health" label="Back to health" />
 
         <header>
           <p className="text-[0.6875rem] font-extrabold uppercase tracking-[0.2em]" style={{ color: v("--ux-brand") }}>

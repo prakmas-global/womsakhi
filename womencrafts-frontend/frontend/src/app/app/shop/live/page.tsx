@@ -1,11 +1,10 @@
 "use client";
 
 import { useCallback, useMemo, useState } from "react";
-import Link from "next/link";
 import { useRouter } from "next/navigation";
 
 import { HomeShell } from "@/components/ux/home/HomeShell";
-import { Btn, Card, EmptyState, I, IconTile, Pill, SectionHead, Stat, v } from "@/components/ux/kit";
+import { Back, Btn, Card, EmptyState, I, IconTile, Pill, SectionHead, Stat, v } from "@/components/ux/kit";
 import { formatRupees } from "@/components/ux/kit";
 import { LIVES, type LiveSale } from "@/components/ux/shopplus/data";
 
@@ -52,11 +51,7 @@ export default function LivePage() {
   return (
     <HomeShell active="/app/shop">
       <div className="flex flex-col gap-5">
-        <Link href={"/app/shop"}
-                className="ux-press inline-flex w-fit items-center gap-1.5 text-[0.8125rem] font-semibold"
-                style={{ color: v("--ux-muted") }}>
-          <I name="ArrowLeft" className="h-[15px] w-[15px]" /> Back to your shops
-        </Link>
+        <Back to="/app/shop" label="Back to your shops" />
 
         <header className="flex flex-wrap items-end gap-4">
           <div className="min-w-0 flex-1">

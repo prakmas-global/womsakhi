@@ -5,7 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 
 import { HomeShell } from "@/components/ux/home/HomeShell";
-import { Btn, Card, EmptyState, I, IconTile, Pill, SectionHead, v } from "@/components/ux/kit";
+import { Back, Btn, Card, EmptyState, I, IconTile, Pill, SectionHead, v } from "@/components/ux/kit";
 import { formatRupees } from "@/components/ux/kit";
 import { ITEMS, TIE_LABEL, sellerOf, sortedItems } from "@/components/ux/market/data";
 
@@ -71,11 +71,7 @@ export default function ItemPage({ params }: { params: Promise<{ id: string }> }
   return (
     <HomeShell active="/app/market">
       <div className="flex flex-col gap-5">
-        <Link href="/app/market"
-              className="ux-press inline-flex w-fit items-center gap-1.5 text-[0.8125rem] font-semibold"
-              style={{ color: v("--ux-muted") }}>
-          <I name="ArrowLeft" className="h-[15px] w-[15px]" /> Back to the market
-        </Link>
+        <Back to="/app/market" label="Back to the market" />
 
         <Card pad={0} style={{ overflow: "hidden" }}>
           <div className="flex flex-wrap items-start gap-4 p-5" style={{ background: v(item.tint) }}>

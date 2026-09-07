@@ -537,5 +537,6 @@ export { Money, formatMoney as formatRupees, formatMoneyOrFree, formatWholeRupee
 export { Sheet } from "./sheet";
 export { Avatar } from "./avatar";
 export { Field, TextInput } from "./field";
+export { Back } from "./back";
 export { ConfirmButton } from "./confirm";
 export { Rows, rowMemo } from "./rows";

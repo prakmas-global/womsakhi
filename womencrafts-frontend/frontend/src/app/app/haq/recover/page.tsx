@@ -1,11 +1,10 @@
 "use client";
 
 import { useCallback, useMemo, useState } from "react";
-import Link from "next/link";
 import { useRouter } from "next/navigation";
 
 import { HomeShell } from "@/components/ux/home/HomeShell";
-import { Btn, Card, EmptyState, I, SectionHead, Stat, v } from "@/components/ux/kit";
+import { Back, Btn, Card, EmptyState, I, SectionHead, Stat, v } from "@/components/ux/kit";
 import { formatRupees } from "@/components/ux/kit";
 import { LATE, type Late } from "@/components/ux/haq/data";
 import { LateRow } from "@/components/ux/haq/parts";
@@ -47,11 +46,7 @@ export default function RecoverPage() {
     <HomeShell active="/app/haq">
       <div className="flex flex-col gap-5">
 
-        <Link href={"/app/haq"}
-                className="ux-press inline-flex w-fit items-center gap-1.5 text-[0.8125rem] font-semibold"
-                style={{ color: v("--ux-muted") }}>
-          <I name="ArrowLeft" className="h-[15px] w-[15px]" /> Back to Haq
-        </Link>
+        <Back to="/app/haq" label="Back to Haq" />
 
         <header>
           <p className="text-[0.6875rem] font-extrabold uppercase tracking-[0.2em]" style={{ color: v("--ux-brand") }}>

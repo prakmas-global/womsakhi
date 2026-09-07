@@ -1,11 +1,10 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import Link from "next/link";
 import { useRouter } from "next/navigation";
 
 import { HomeShell } from "@/components/ux/home/HomeShell";
-import { Btn, Card, Chip, EmptyState, I, SectionHead, Stat, v } from "@/components/ux/kit";
+import { Back, Btn, Card, Chip, EmptyState, I, SectionHead, Stat, v } from "@/components/ux/kit";
 import { formatRupees } from "@/components/ux/kit";
 import { MOVES, POCKETS } from "@/components/ux/vault/data";
 
@@ -40,11 +39,7 @@ export default function HistoryPage() {
   return (
     <HomeShell active="/app/vault">
       <div className="flex flex-col gap-5">
-        <Link href={"/app/vault"}
-                className="ux-press inline-flex w-fit items-center gap-1.5 text-[0.8125rem] font-semibold"
-                style={{ color: v("--ux-muted") }}>
-          <I name="ArrowLeft" className="h-[15px] w-[15px]" /> Back to your locker
-        </Link>
+        <Back to="/app/vault" label="Back to your locker" />
 
         <header className="flex flex-wrap items-end gap-4">
           <div className="min-w-0 flex-1">

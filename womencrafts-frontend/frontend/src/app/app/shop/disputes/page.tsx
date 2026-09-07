@@ -1,11 +1,10 @@
 "use client";
 
 import { useCallback, useMemo, useState } from "react";
-import Link from "next/link";
 import { useRouter } from "next/navigation";
 
 import { HomeShell } from "@/components/ux/home/HomeShell";
-import { Btn, Card, I, Pill, SectionHead, v } from "@/components/ux/kit";
+import { Back, Btn, Card, I, Pill, SectionHead, v } from "@/components/ux/kit";
 import { formatRupees } from "@/components/ux/kit";
 import { DISPUTES, type Dispute } from "@/components/ux/eight/data";
 
@@ -48,11 +47,7 @@ export default function DisputesPage() {
   return (
     <HomeShell active="/app/shop">
       <div className="flex flex-col gap-5">
-        <Link href={"/app/shop"}
-                className="ux-press inline-flex w-fit items-center gap-1.5 text-[0.8125rem] font-semibold"
-                style={{ color: v("--ux-muted") }}>
-          <I name="ArrowLeft" className="h-[15px] w-[15px]" /> Back to your shops
-        </Link>
+        <Back to="/app/shop" label="Back to your shops" />
 
         <header>
           <p className="text-[0.6875rem] font-extrabold uppercase tracking-[0.2em]" style={{ color: v("--ux-brand") }}>
