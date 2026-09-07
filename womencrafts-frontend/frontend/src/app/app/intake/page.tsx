@@ -78,7 +78,7 @@ export default function IntakePage() {
           <div className="ux-clay ux-onscroll-soft relative overflow-hidden p-[20px]"
                style={{ background: "linear-gradient(140deg, var(--ux-tint-lilac), var(--ux-tint-green))" }}>
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src="/ux/art/mascot-robot-waving.webp" alt=""
+            <img loading="lazy" decoding="async" src="/ux/art/mascot-robot-waving.webp" alt=""
                  className="ux-float pointer-events-none absolute -bottom-3 -end-4 h-[96px] w-[96px] object-contain" />
             <h3 className="relative w-[62%] text-[0.875rem] font-semibold" style={{ color: "var(--ux-ink)" }}>
               Or just say it

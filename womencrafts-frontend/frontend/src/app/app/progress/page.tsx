@@ -117,7 +117,7 @@ export default function JourneyPage() {
         <span aria-hidden className="pointer-events-none absolute -end-12 -top-16 h-[240px] w-[240px] rounded-full"
               style={{ background: "radial-gradient(circle, rgba(255,255,255,0.16), transparent 68%)" }} />
         {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img src="/ux/art/scene-woman-planting-sapling.webp" alt=""
+        <img loading="lazy" decoding="async" src="/ux/art/scene-woman-planting-sapling.webp" alt=""
              className="ux-float pointer-events-none absolute -bottom-2 end-6 h-[132px] w-auto object-contain" />
         <div className="relative max-w-[64%]">
           <p className="text-[0.8125rem]" style={{ color: "rgba(255,255,255,0.82)" }}>Earned through WomSakhi so far</p>

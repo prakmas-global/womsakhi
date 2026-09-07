@@ -282,7 +282,7 @@ export default function ExchangeThread({ params }: { params: Promise<{ id: strin
       <Card pad={0} className="flex flex-col overflow-hidden" style={{ minHeight: 420 }}>
         <div className="flex items-center gap-3 border-b px-[20px] py-3.5" style={{ borderColor: "var(--ux-line)" }}>
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src={swap.avatar} alt="" className="h-[40px] w-[40px] shrink-0 rounded-full object-cover"
+          <img loading="lazy" decoding="async" src={swap.avatar} alt="" className="h-[40px] w-[40px] shrink-0 rounded-full object-cover"
                style={{ background: "var(--ux-brand-tint)" }} />
           <div className="min-w-0 flex-1">
             <p className="truncate text-[0.875rem] font-semibold" style={{ color: "var(--ux-ink)" }}>{swap.who}</p>

@@ -260,7 +260,7 @@ export function MomentumStrip() {
         style={{ borderColor: "var(--ux-line)", background: "var(--ux-surface)" }}
       >
         {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img src="/ux/art/mascot-robot-waving.webp" alt=""
+        <img loading="lazy" decoding="async" src="/ux/art/mascot-robot-waving.webp" alt=""
              className="ux-float h-[64px] w-[64px] shrink-0 object-contain" />
         <div className="min-w-0 flex-1">
           <p className="flex items-center gap-2 text-[0.8125rem] font-semibold" style={{ color: "var(--ux-brand)" }}>

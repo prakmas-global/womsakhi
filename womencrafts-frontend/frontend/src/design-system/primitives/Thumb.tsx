@@ -31,7 +31,7 @@ function Thumb({
   }
   // eslint-disable-next-line @next/next/no-img-element
   return (
-    <img
+    <img loading="lazy" decoding="async"
       src={photo}
       alt={alt}
       onError={() => setFailed(true)}

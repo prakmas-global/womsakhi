@@ -37,7 +37,7 @@ export function LogoMark({
         />
       )}
       {/* eslint-disable-next-line @next/next/no-img-element */}
-      <img
+      <img loading="lazy" decoding="async"
         src={src}
         alt={alt}
         className={`w-auto object-contain ${className}`}
@@ -62,7 +62,7 @@ export function LogoWordmark({
   // rather than a colour change.
   // eslint-disable-next-line @next/next/no-img-element
   return (
-    <img
+    <img loading="lazy" decoding="async"
       src={src}
       alt={alt}
       className={`block w-auto dark:brightness-110 dark:drop-shadow-[0_0_10px_rgba(242,114,176,0.45)] ${className}`}

@@ -13,6 +13,7 @@ import { useAuth } from "@/context/AuthContext";
 import { useTheme } from "@/context/ThemeContext";
 import { useMe } from "./me";
 import { MODES, itemForPath, modeForPath, type Mode } from "./nav";
+import { Avatar } from "./kit";
 import { useSearchHotkey } from "./useSearchHotkey";
 import { MobileNav, ModeChips, SafetyPin } from "./MobileNav";
 
@@ -127,10 +128,9 @@ export function ModeRail({
         <div className="overflow-hidden rounded-[12px]" style={{ border: "1px solid var(--ux-line)" }}>
           <div className="h-[54px]" style={{ background: "linear-gradient(96deg, var(--ux-brand-900), var(--ux-fill) 60%, var(--ux-rib-3))" }} />
           <div className="px-3 pb-3">
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src={me.avatar} alt=""
-                 className="-mt-[24px] h-[52px] w-[52px] rounded-full object-cover"
-                 style={{ border: "3px solid var(--ux-surface)" }} />
+            <div className="-mt-[24px] w-fit rounded-full" style={{ border: "3px solid var(--ux-surface)" }}>
+              <Avatar src={me.avatar} name={me.first || "You"} size={52} />
+            </div>
             <p className="mt-2 truncate text-[0.875rem] font-bold" style={{ color: "var(--ux-ink)" }}>{me.first}</p>
             <p className="mt-0.5 text-[0.6875rem]" style={{ color: "var(--ux-muted)" }}>Member</p>
 
@@ -453,7 +453,7 @@ export function Topbar({ user, mode, current }: { user: { name: string; avatar: 
             className="ux-press flex items-center gap-2.5 rounded-[12px] py-1 pe-2 ps-1 transition-colors hover:bg-[var(--ux-surface-2)]"
           >
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src={user.avatar} alt="" className="h-[38px] w-[38px] rounded-full object-cover" />
+            <Avatar src={user.avatar} name={user.name || "You"} size={38} />
             {/* Cut to "Hi, Priy…" at 390px. The avatar identifies the menu
                 perfectly well; the greeting is a nicety with room only on a
                 laptop. */}

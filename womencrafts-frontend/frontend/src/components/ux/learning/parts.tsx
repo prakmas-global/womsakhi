@@ -19,7 +19,7 @@ export function CourseCard({ c, w }: { c: Course; w?: number }) {
       style={{ width: w, padding: 0 }}>
       <div className="relative overflow-hidden">
         {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img src={c.thumb} alt="" className="ux-art h-[110px] w-full object-cover" />
+        <img loading="lazy" decoding="async" src={c.thumb} alt="" className="ux-art h-[110px] w-full object-cover" />
         {c.tag && <span className="absolute start-2.5 top-2.5"><Pill tone={TAG_TONE[c.tag]} size="sm">{c.tag}</Pill></span>}
       </div>
       <div className="p-3">
@@ -61,7 +61,7 @@ export function ResumeCard({ c }: { c: Course }) {
     <Link href={href} className="ux-card ux-hov flex gap-4 overflow-hidden" style={{ padding: 0 }}>
       <div className="relative h-[152px] w-[232px] shrink-0">
         {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img src={c.thumb} alt="" className="h-full w-full object-cover" />
+        <img loading="lazy" decoding="async" src={c.thumb} alt="" className="h-full w-full object-cover" />
         <span className="absolute inset-0 grid place-items-center">
           <span className="grid h-[52px] w-[52px] place-items-center rounded-full backdrop-blur"
                 style={{ background: "rgba(255,255,255,.82)" }}>
@@ -122,7 +122,7 @@ export function LearnerCard() {
     <Card>
       <div className="flex items-center gap-3">
         {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img src="/ux/art/avatar-woman-purple-kurta.webp" alt="" className="h-[52px] w-[52px] rounded-full object-cover" />
+        <img loading="lazy" decoding="async" src="/ux/art/avatar-woman-purple-kurta.webp" alt="" className="h-[52px] w-[52px] rounded-full object-cover" />
         <div className="min-w-0 flex-1">
           <h2 className="flex items-center gap-1.5 text-[1rem] font-semibold" style={{ color: "var(--ux-ink)" }}>
             {LEARNER.name}
@@ -182,7 +182,7 @@ export function AchievementsCard() {
         {ACHIEVEMENTS.map((a) => (
           <div key={a.name} className="text-center">
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src={a.img} alt="" className="mx-auto h-[58px] w-[58px]" />
+            <img loading="lazy" decoding="async" src={a.img} alt="" className="mx-auto h-[58px] w-[58px]" />
             <p className="mt-1.5 text-[0.6875rem] font-semibold leading-tight" style={{ color: "var(--ux-ink)" }}>{a.name}</p>
             <p className="mt-0.5 text-[0.6875rem] leading-tight" style={{ color: "var(--ux-muted)" }}>{a.body}</p>
           </div>
@@ -220,7 +220,7 @@ export function AskSakhiCard() {
         I&apos;m here to guide you to the best learning opportunities.
       </p>
       {/* eslint-disable-next-line @next/next/no-img-element */}
-      <img src="/ux/art/avatar-woman-pink-glasses.webp" alt=""
+      <img loading="lazy" decoding="async" src="/ux/art/avatar-woman-pink-glasses.webp" alt=""
            className="pointer-events-none absolute -bottom-1 end-1 h-[96px] w-[96px] object-contain" />
       <div className="mt-4 w-[70%]"><Btn variant="primary" full iconEnd="ArrowRight">Chat with Sakhi</Btn></div>
     </div>

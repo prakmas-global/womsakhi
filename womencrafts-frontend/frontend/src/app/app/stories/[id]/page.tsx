@@ -142,7 +142,7 @@ export default function StoryDetail({ params }: { params: Promise<{ id: string }
         <div className="relative h-[240px] overflow-hidden" style={{ background: "var(--ux-tint-lilac)" }}>
           {s.cover && (
             /* eslint-disable-next-line @next/next/no-img-element */
-            <img src={s.cover} alt="" className="h-full w-full object-cover" />
+            <img loading="lazy" decoding="async" src={s.cover} alt="" className="h-full w-full object-cover" />
           )}
           {/* The scrim is on the text's own container, so white stays readable
               even if the cover fails to load — or, as here, if there is none. */}
@@ -151,7 +151,7 @@ export default function StoryDetail({ params }: { params: Promise<{ id: string }
             {s.author_avatar
               ? (
                 /* eslint-disable-next-line @next/next/no-img-element */
-                <img src={s.author_avatar} alt=""
+                <img loading="lazy" decoding="async" src={s.author_avatar} alt=""
                      className="h-[62px] w-[62px] shrink-0 rounded-full border-2 border-white object-cover" />
               )
               : (
@@ -229,7 +229,7 @@ export default function StoryDetail({ params }: { params: Promise<{ id: string }
                     {o.author_avatar
                       ? (
                         /* eslint-disable-next-line @next/next/no-img-element */
-                        <img src={o.author_avatar} alt="" className="ux-art h-full w-full object-cover" />
+                        <img loading="lazy" decoding="async" src={o.author_avatar} alt="" className="ux-art h-full w-full object-cover" />
                       )
                       : o.author_name.trim().charAt(0).toUpperCase()}
                   </span>

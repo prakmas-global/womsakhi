@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import * as Icons from "@/components/ux/icons";
+import { matchFor, matchTone } from "@/services/job-match";
 
 import { Btn, I, IconTile, Pill, Progress, SectionHead, Card } from "../kit";
 import { usePointer } from "../kit/motion";
@@ -42,6 +43,9 @@ export function JobRow({
   job, i, saved, onSave,
 }: { job: Job; i: number; saved: boolean; onSave: (id: string) => void }) {
   const point = usePointer<HTMLDivElement>();
+  // Computed from her skills against the ones the listing asks for, rather than
+  // read from a `match` field that live listings never populate.
+  const fit = matchFor(job.skills);
   return (
     <div ref={point}
          className="ux-i ux-sq ux-spot ux-onscroll relative rounded-[12px] border p-[16px]"
@@ -97,7 +101,7 @@ export function JobRow({
               her profile — so this rendered a "0" ring on every row, in a dial
               that looks measured. A score of zero is not a low match; it is no
               match having been calculated. */}
-          {job.match > 0 && <MatchRing pct={job.match} />}
+          {fit.pct !== null && <MatchRing pct={fit.pct} />}
           <button
             onClick={() => onSave(job.id)}
             aria-pressed={saved}
@@ -114,6 +118,20 @@ export function JobRow({
           </button>
         </div>
       </div>
+
+      {/* Why it fits. A percentage on its own tells her nothing she can act on;
+          "you have 4 of the 5, the one you are missing is Analytics" tells her
+          whether to apply anyway and what to learn if she does not. */}
+      {fit.because && (
+        <p className="mt-3 flex items-start gap-2 rounded-[8px] px-3 py-2.5 text-[0.75rem] leading-snug"
+           style={{ background: "var(--ux-surface-2)", color: "var(--ux-ink-2)" }}>
+          <Icons.Sparkles className="mt-[2px] h-[0.8125rem] w-[0.8125rem] shrink-0"
+                          style={{ color: `var(${matchTone(fit.pct).ink})` }} />
+          <span>
+            <b style={{ color: "var(--ux-ink)" }}>{matchTone(fit.pct).label}.</b> {fit.because}
+          </span>
+        </p>
+      )}
 
       <div className="mt-3 flex items-center justify-between gap-3 border-t pt-3" style={{ borderColor: "var(--ux-line)" }}>
         <span className="text-[0.75rem]" style={{ color: "var(--ux-faint)" }}>

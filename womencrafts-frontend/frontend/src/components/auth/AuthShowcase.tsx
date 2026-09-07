@@ -379,7 +379,7 @@ export default function AuthShowcase() {
           aria-hidden
         >
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
+          <img loading="lazy" decoding="async"
             src={HERO_SRC}
             alt=""
             className="h-full w-full object-cover object-[70%_28%]"
@@ -394,7 +394,7 @@ export default function AuthShowcase() {
               emerges from the ground rather than sitting in a rectangle.
 
               These live INSIDE the conditional deliberately. Hiding only the
-              <img> on error left the two gradients painting a dark block with
+              <img loading="lazy" decoding="async"> on error left the two gradients painting a dark block with
               a hard vertical edge down the middle of the panel — the artwork
               missing looked far worse than the artwork never having been there. */}
           <span className="absolute inset-0"
@@ -427,12 +427,12 @@ export default function AuthShowcase() {
           {/* ── Brand ── */}
           <div className="flex items-center gap-3">
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src="/ux/brand/womsakhi-mark.webp" alt="" aria-hidden
+            <img loading="lazy" decoding="async" src="/ux/brand/womsakhi-mark.webp" alt="" aria-hidden
                  className="object-contain"
                  style={{ width: "clamp(2.25rem,5.2vh,2.875rem)", height: "clamp(2.25rem,5.2vh,2.875rem)" }} />
             <div>
               {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src="/ux/brand/womsakhi-wordmark.webp" alt="WomSakhi"
+              <img loading="lazy" decoding="async" src="/ux/brand/womsakhi-wordmark.webp" alt="WomSakhi"
                    className="object-contain" style={{ height: "clamp(1.3125rem,3.1vh,1.6875rem)" }} />
               <p className="mt-1 text-[0.6875rem] font-semibold tracking-[0.19em]" style={{ color: "var(--a-muted)" }}>
                 EMPOWERING HER JOURNEY
@@ -499,7 +499,7 @@ export default function AuthShowcase() {
             <div className="flex -space-x-2.5" aria-hidden>
               {FACES.map((src) => (
                 // eslint-disable-next-line @next/next/no-img-element
-                <img key={src} src={src} alt=""
+                <img loading="lazy" decoding="async" key={src} src={src} alt=""
                      className="rounded-full object-cover"
                      style={{
                        width: "clamp(1.625rem,3.8vh,2rem)", height: "clamp(1.625rem,3.8vh,2rem)",

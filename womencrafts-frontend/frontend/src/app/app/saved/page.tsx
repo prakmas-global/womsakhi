@@ -123,7 +123,7 @@ export default function SavedPage() {
             >
               {it.art ? (
                 /* eslint-disable-next-line @next/next/no-img-element */
-                <img src={it.art} alt="" width={52} height={52}
+                <img loading="lazy" decoding="async" src={it.art} alt="" width={52} height={52}
                      className="ux-sq h-[52px] w-[52px] shrink-0 rounded-[12px] object-cover"
                      style={{ filter: it.gone ? "grayscale(1)" : "none" }} />
               ) : (

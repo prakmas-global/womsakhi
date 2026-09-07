@@ -118,7 +118,7 @@ export default function BookingsPage() {
                   <span className="h-[54px] w-[54px] shrink-0 overflow-hidden rounded-[12px]"
                         style={{ background: "var(--ux-brand-tint)" }}>
                     {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img src={b.art} alt="" className="ux-art h-full w-full object-cover" />
+                    <img loading="lazy" decoding="async" src={b.art} alt="" className="ux-art h-full w-full object-cover" />
                   </span>
                   <div className="min-w-0 flex-1">
                     <div className="flex items-start gap-2">

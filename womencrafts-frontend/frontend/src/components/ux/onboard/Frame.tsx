@@ -73,7 +73,7 @@ export function OnboardAside({
     <div className="ux-clay ux-sq relative overflow-hidden p-[24px]"
          style={{ background: "linear-gradient(150deg, var(--ux-tint-lilac), var(--ux-tint-pink))" }}>
       {/* eslint-disable-next-line @next/next/no-img-element */}
-      <img src={art} alt="" className="ux-float pointer-events-none absolute -bottom-4 -end-5 h-[128px] w-[128px] object-contain" />
+      <img loading="lazy" decoding="async" src={art} alt="" className="ux-float pointer-events-none absolute -bottom-4 -end-5 h-[128px] w-[128px] object-contain" />
       <h2 className="relative w-[68%] text-[1rem] font-semibold" style={{ color: "var(--ux-ink)" }}>{title}</h2>
       <p className="relative mt-2.5 w-[68%] text-[0.8125rem] leading-relaxed" style={{ color: "var(--ux-ink-2)" }}>{body}</p>
       {/* The art is anchored bottom-end, and this list is what reaches the

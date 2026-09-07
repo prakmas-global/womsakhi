@@ -106,7 +106,7 @@ export default function SkillExchangePage() {
           <div className="ux-clay ux-onscroll-soft relative overflow-hidden p-[20px]"
                style={{ background: "linear-gradient(140deg, var(--ux-tint-violet), var(--ux-tint-green))" }}>
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src={EXCHANGE_ART.hero} alt=""
+            <img loading="lazy" decoding="async" src={EXCHANGE_ART.hero} alt=""
                  className="ux-float pointer-events-none absolute -bottom-3 -end-4 h-[100px] w-[100px] object-contain" />
             <h2 className="relative w-[60%] text-[0.875rem] font-semibold" style={{ color: "var(--ux-ink)" }}>
               You know more than you think
@@ -165,7 +165,7 @@ export default function SkillExchangePage() {
                          style={{ color: "var(--ux-muted)" }}>
                         <span className="inline-flex items-center gap-1.5">
                           {/* eslint-disable-next-line @next/next/no-img-element */}
-                          <img src={s.avatar} alt="" className="h-[20px] w-[20px] rounded-full object-cover" />
+                          <img loading="lazy" decoding="async" src={s.avatar} alt="" className="h-[20px] w-[20px] rounded-full object-cover" />
                           {s.who}
                         </span>
                         <span className="inline-flex items-center gap-1"><Icons.MapPin className="h-3.5 w-3.5" /> {s.place}</span>
@@ -250,7 +250,7 @@ export default function SkillExchangePage() {
                 <span className="h-[48px] w-[48px] shrink-0 overflow-hidden rounded-full"
                       style={{ background: "var(--ux-brand-tint)" }}>
                   {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img src={m.avatar} alt="" className="ux-art h-full w-full object-cover" />
+                  <img loading="lazy" decoding="async" src={m.avatar} alt="" className="ux-art h-full w-full object-cover" />
                 </span>
                 <div className="min-w-0 flex-1">
                   <div className="flex items-start gap-2">

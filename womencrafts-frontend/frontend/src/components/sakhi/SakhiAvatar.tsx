@@ -33,7 +33,7 @@ export default function SakhiAvatar({
   playing,
   size,
   className = "",
-  talkingSrc = "/sakhi-talking.webp",
+  talkingSrc = "/sakhi-talking-160.png",
   stillSrc = "/sakhi-still.webp",
   idleSrc,
 }: {

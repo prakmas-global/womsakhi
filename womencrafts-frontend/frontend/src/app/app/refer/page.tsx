@@ -86,7 +86,7 @@ export default function ReferPage() {
         <span aria-hidden className="pointer-events-none absolute -end-12 -top-16 h-[220px] w-[220px] rounded-full"
               style={{ background: "radial-gradient(circle, rgba(255,255,255,0.16), transparent 68%)" }} />
         {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img src={ACCOUNT_ART.refer} alt=""
+        <img loading="lazy" decoding="async" src={ACCOUNT_ART.refer} alt=""
              className="ux-float pointer-events-none absolute -bottom-2 end-6 h-[124px] w-auto object-contain" />
         <div className="relative max-w-[62%]">
           {/* The condition travels with the number, always. */}
@@ -145,7 +145,7 @@ export default function ReferPage() {
                   <span className="h-[48px] w-[48px] shrink-0 overflow-hidden rounded-full"
                         style={{ background: "var(--ux-brand-tint)" }}>
                     {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img src={r.avatar} alt="" className="ux-art h-full w-full object-cover" />
+                    <img loading="lazy" decoding="async" src={r.avatar} alt="" className="ux-art h-full w-full object-cover" />
                   </span>
                   <div className="min-w-0 flex-1">
                     <div className="flex items-start gap-2">

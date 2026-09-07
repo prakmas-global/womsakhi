@@ -44,7 +44,7 @@ export function FirstRun({ name }: { name?: string }) {
           <span aria-hidden className="absolute end-[6%] top-1/2 h-[220px] w-[220px] -translate-y-1/2 rounded-full"
                 style={{ background: "radial-gradient(closest-side, rgba(255,255,255,0.28), transparent 72%)" }} />
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src="/ux/brand/womsakhi-emblem.webp" alt=""
+          <img loading="lazy" decoding="async" src="/ux/brand/womsakhi-emblem.webp" alt=""
                className="ux-float absolute end-[4%] top-1/2 h-[168px] w-auto -translate-y-1/2 object-contain"
                style={{ filter: "drop-shadow(0 12px 28px rgba(0,0,0,0.34))" }} draggable={false} />
         </div>
@@ -119,7 +119,7 @@ export function FirstRun({ name }: { name?: string }) {
       <Card className="ux-onscroll mt-[16px]">
         <div className="flex items-center gap-4">
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src="/ux/art/scene-women-celebrating.webp" alt=""
+          <img loading="lazy" decoding="async" src="/ux/art/scene-women-celebrating.webp" alt=""
                className="h-[84px] w-[84px] shrink-0 object-contain" />
           <div className="min-w-0 flex-1">
             <h3 className="text-[0.875rem] font-semibold" style={{ color: "var(--ux-ink)" }}>

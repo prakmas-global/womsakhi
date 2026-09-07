@@ -132,7 +132,7 @@ export default function AccountSettings() {
             {/* Hers, from her profile — not the fixture face, which is what
                 every woman saw here. */}
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src={profile?.avatar || ME.avatar} alt="" className="h-full w-full object-cover" />
+            <img loading="lazy" decoding="async" src={profile?.avatar || ME.avatar} alt="" className="h-full w-full object-cover" />
           </span>
           <div className="min-w-0 flex-1">
             <p className="text-[0.875rem] font-semibold" style={{ color: "var(--ux-ink)" }}>Your photo</p>

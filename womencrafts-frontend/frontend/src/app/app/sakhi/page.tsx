@@ -408,7 +408,7 @@ export default function SakhiPage() {
       <div className="flex flex-col gap-4">
         <header className="flex flex-wrap items-center gap-3">
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src="/sakhi-face.webp" alt="" className="h-[42px] w-[42px] rounded-full object-cover" />
+          <img loading="lazy" decoding="async" src="/sakhi-face.webp" alt="" className="h-[42px] w-[42px] rounded-full object-cover" />
           <div className="min-w-0 flex-1">
             <h1 className="text-[1.25rem] font-bold tracking-tight" style={{ color: "var(--ux-ink)" }}>Ask Sakhi</h1>
             <p className="text-[0.8125rem]" style={{ color: "var(--ux-muted)" }}>

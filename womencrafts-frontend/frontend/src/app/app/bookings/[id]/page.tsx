@@ -133,7 +133,7 @@ export default function BookingDetail({ params }: { params: Promise<{ id: string
           <span className="h-[72px] w-[72px] shrink-0 overflow-hidden rounded-[16px]"
                 style={{ background: "var(--ux-brand-tint)" }}>
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src={b.art} alt="" className="h-full w-full object-cover" />
+            <img loading="lazy" decoding="async" src={b.art} alt="" className="h-full w-full object-cover" />
           </span>
           <div className="min-w-0 flex-1">
             <div className="flex items-start gap-2">

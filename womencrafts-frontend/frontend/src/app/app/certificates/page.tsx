@@ -166,7 +166,7 @@ export default function CertificatesPage() {
                 <span className="h-[54px] w-[54px] shrink-0 overflow-hidden rounded-[12px]"
                       style={{ background: "var(--ux-tint-violet)" }}>
                   {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img src={ACCOUNT_ART.certificate} alt="" className="ux-art h-full w-full object-cover" />
+                  <img loading="lazy" decoding="async" src={ACCOUNT_ART.certificate} alt="" className="ux-art h-full w-full object-cover" />
                 </span>
                 <div className="min-w-0 flex-1">
                   <h2 className="truncate text-[0.875rem] font-semibold" style={{ color: "var(--ux-ink)" }}>{c.title}</h2>

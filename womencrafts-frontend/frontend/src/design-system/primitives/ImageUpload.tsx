@@ -148,7 +148,7 @@ export default function ImageUpload({
           >
             {value ? (
               // eslint-disable-next-line @next/next/no-img-element
-              <img src={value} alt={name || "Uploaded image"} className="h-full w-full object-cover" />
+              <img loading="lazy" decoding="async" src={value} alt={name || "Uploaded image"} className="h-full w-full object-cover" />
             ) : (
               <span
                 className={`flex h-full w-full items-center justify-center bg-linear-to-br from-brand-500 to-violet-600 font-display font-bold text-white ${
@@ -230,7 +230,7 @@ export default function ImageUpload({
       {value ? (
         <div className="wc-inset group relative overflow-hidden rounded-2xl">
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src={value} alt="Uploaded" className="h-40 w-full object-cover" />
+          <img loading="lazy" decoding="async" src={value} alt="Uploaded" className="h-40 w-full object-cover" />
           <div className="absolute inset-0 flex items-center justify-center gap-2 bg-ink/55 opacity-0 backdrop-blur-[2px] transition group-hover:opacity-100">
             <label htmlFor={inputId} className="btn btn-outline btn-sm cursor-pointer">
               <UploadCloud className="h-3.5 w-3.5" />

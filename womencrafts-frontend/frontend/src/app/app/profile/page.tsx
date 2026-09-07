@@ -117,7 +117,7 @@ export default function Profile() {
             <span className="ux-hov block h-[92px] w-[92px] overflow-hidden rounded-full"
                   style={{ background: "var(--ux-brand-tint)" }}>
               {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src={avatar} alt="" className="ux-art h-full w-full object-cover" />
+              <img loading="lazy" decoding="async" src={avatar} alt="" className="ux-art h-full w-full object-cover" />
             </span>
             {/* Was a <button> with no handler at all. It goes where the photo
                 is actually changed. */}

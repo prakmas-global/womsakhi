@@ -82,7 +82,7 @@ export default function GroupBuyPage() {
           <div className="ux-clay relative overflow-hidden p-[20px]"
                style={{ background: "linear-gradient(140deg, var(--ux-tint-orange), var(--ux-tint-green))" }}>
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src={MORE_ART.group} alt=""
+            <img loading="lazy" decoding="async" src={MORE_ART.group} alt=""
                  className="ux-float pointer-events-none absolute -bottom-3 -end-4 h-[100px] w-[100px] object-contain" />
             <h3 className="relative w-[60%] text-[0.875rem] font-semibold" style={{ color: "var(--ux-ink)" }}>
               Start one yourself
@@ -127,7 +127,7 @@ export default function GroupBuyPage() {
                 <div className="flex">
                   <span className="h-[164px] w-[176px] shrink-0 overflow-hidden" style={{ background: "var(--ux-tint-orange)" }}>
                     {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img src={g.art} alt="" className="ux-art h-full w-full object-cover" />
+                    <img loading="lazy" decoding="async" src={g.art} alt="" className="ux-art h-full w-full object-cover" />
                   </span>
                   <div className="flex min-w-0 flex-1 flex-col p-[16px]">
                     <div className="flex items-start gap-2">

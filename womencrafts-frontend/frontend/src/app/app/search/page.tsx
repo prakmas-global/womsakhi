@@ -74,7 +74,7 @@ function Results() {
           <div className="relative overflow-hidden rounded-[16px] p-[20px]"
                style={{ background: "linear-gradient(140deg, var(--ux-tint-lilac), var(--ux-tint-blue))" }}>
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src="/ux/art/mascot-robot-reading.webp" alt=""
+            <img loading="lazy" decoding="async" src="/ux/art/mascot-robot-reading.webp" alt=""
                  className="ux-float pointer-events-none absolute -bottom-3 -end-3 h-[92px] w-[92px] object-contain" />
             <h3 className="relative w-[62%] text-[0.875rem] font-semibold" style={{ color: "var(--ux-ink)" }}>
               Can’t find it?
@@ -168,7 +168,7 @@ function Hit({ h, q, i }: { h: SearchHit; q: string; i: number }) {
             <span className="h-[54px] w-[54px] shrink-0 overflow-hidden rounded-[12px]"
                   style={{ background: `var(${h.tint})` }}>
               {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src={h.img} alt="" className="ux-art h-full w-full object-cover" />
+              <img loading="lazy" decoding="async" src={h.img} alt="" className="ux-art h-full w-full object-cover" />
             </span>
           ) : (
             <IconTile icon={h.icon} tint={h.tint} ink={h.ink} size={54} radius={12} />

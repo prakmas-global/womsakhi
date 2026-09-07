@@ -179,7 +179,7 @@ export default function OrderDetail({ params }: { params: Promise<{ id: string }
           <span className="h-[76px] w-[76px] shrink-0 overflow-hidden rounded-[16px]"
                 style={{ background: "var(--ux-tint-orange)" }}>
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src={o.art} alt="" className="h-full w-full object-cover" />
+            <img loading="lazy" decoding="async" src={o.art} alt="" className="h-full w-full object-cover" />
           </span>
           <div className="min-w-0 flex-1">
             <div className="flex items-start gap-2">

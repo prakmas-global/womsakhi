@@ -102,7 +102,7 @@ function Hero({ first }: { first: string }) {
              style={{ background: "linear-gradient(112deg, var(--ux-brand-900) 0%, var(--ux-fill) 44%, var(--ux-rib-3) 108%)",
                       minHeight: 264 }}>
       {/* eslint-disable-next-line @next/next/no-img-element */}
-      <img src="/ux/art/hero-shop-owner.webp" alt="" aria-hidden
+      <img loading="lazy" decoding="async" src="/ux/art/hero-shop-owner.webp" alt="" aria-hidden
            /* `contain` and full height, not `cover` at 112%. Taller than its
               box and pinned to the bottom, the top 12% of the picture — her
               head — was being cut off by the hero's `overflow-hidden`. */
@@ -427,7 +427,7 @@ function Pot() {
       <div className="mt-4 flex items-center">
         {AVATARS.map((n, i) => (
           // eslint-disable-next-line @next/next/no-img-element
-          <img key={n} src={`/ux/art/avatar-woman-${n}.webp`} alt=""
+          <img loading="lazy" decoding="async" key={n} src={`/ux/art/avatar-woman-${n}.webp`} alt=""
                className="h-[26px] w-[26px] rounded-full object-cover"
                style={{ border: "2px solid var(--ux-surface)", marginLeft: i ? -8 : 0 }} />
         ))}
@@ -473,11 +473,11 @@ function Feed() {
         <>
           <Link href={`/app/stories/${lead.id}`} className="ux-hov block">
             <div className="flex items-center gap-3">
-              {/* Guarded: `<img src="">` makes the browser re-request the whole
+              {/* Guarded: `<img loading="lazy" decoding="async" src="">` makes the browser re-request the whole
                   page and then fail to decode it as an image. */}
               {lead.avatar ? (
                 // eslint-disable-next-line @next/next/no-img-element
-                <img src={lead.avatar} alt="" className="h-[36px] w-[36px] shrink-0 rounded-full object-cover" />
+                <img loading="lazy" decoding="async" src={lead.avatar} alt="" className="h-[36px] w-[36px] shrink-0 rounded-full object-cover" />
               ) : (
                 <span className="grid h-[36px] w-[36px] shrink-0 place-items-center rounded-full text-[0.8125rem] font-bold"
                       style={{ background: "var(--ux-brand-tint)", color: "var(--ux-brand)" }} aria-hidden>
@@ -496,7 +496,7 @@ function Feed() {
             </p>
             {lead.cover && (
               // eslint-disable-next-line @next/next/no-img-element
-              <img src={lead.cover} alt="" className="mt-3 h-[120px] w-full rounded-[12px] object-cover" />
+              <img loading="lazy" decoding="async" src={lead.cover} alt="" className="mt-3 h-[120px] w-full rounded-[12px] object-cover" />
             )}
             <div className="mt-3 flex gap-4 text-[0.75rem] font-semibold" style={{ color: "var(--ux-muted)" }}>
               <span className="flex items-center gap-1.5"><Icons.Heart className="h-[14px] w-[14px]" />{lead.likes ?? 0}</span>
@@ -515,7 +515,7 @@ function Feed() {
                   <Link href={`/app/stories/${s.id}`} className="ux-row -mx-1.5 flex items-center gap-2.5 rounded-[12px] px-1.5 py-2">
                     {s.avatar ? (
                       // eslint-disable-next-line @next/next/no-img-element
-                      <img src={s.avatar} alt="" className="h-[26px] w-[26px] shrink-0 rounded-full object-cover" />
+                      <img loading="lazy" decoding="async" src={s.avatar} alt="" className="h-[26px] w-[26px] shrink-0 rounded-full object-cover" />
                     ) : (
                       <span className="grid h-[26px] w-[26px] shrink-0 place-items-center rounded-full text-[0.6875rem] font-bold"
                             style={{ background: "var(--ux-brand-tint)", color: "var(--ux-brand)" }} aria-hidden>
@@ -549,7 +549,7 @@ function Strip() {
              style={{ background: "linear-gradient(100deg, var(--ux-brand-900), var(--ux-fill) 48%, var(--ux-rib-3) 128%)" }}>
       <div className="relative flex flex-col items-start gap-5 sm:flex-row sm:items-center">
         {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img src="/ux/art/scene-women-group-circle.webp" alt="" aria-hidden
+        <img loading="lazy" decoding="async" src="/ux/art/scene-women-group-circle.webp" alt="" aria-hidden
              className="hidden w-[180px] shrink-0 sm:block"
              style={{ maskImage: "radial-gradient(72% 76% at 50% 50%, #000 58%, transparent 92%)",
                       WebkitMaskImage: "radial-gradient(72% 76% at 50% 50%, #000 58%, transparent 92%)" }} />

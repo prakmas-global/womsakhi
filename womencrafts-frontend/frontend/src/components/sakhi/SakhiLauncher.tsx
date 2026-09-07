@@ -64,7 +64,9 @@ export default function SakhiLauncher() {
           >
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
-              src="/sakhi.png"
+              src="/sakhi-avatar.png"
+              width={160} height={160}
+              /* 1240x1269 and 1.8MB before, drawn at 46px. Now 160px / 47KB. */
               alt=""
               draggable={false}
               className="h-[46px] w-[46px] rounded-full object-cover md:h-14 md:w-14"

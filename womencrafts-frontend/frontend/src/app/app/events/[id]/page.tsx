@@ -183,7 +183,7 @@ export default function EventDetail({ params }: { params: Promise<{ id: string }
       <Card className="mb-[16px] overflow-hidden" pad={0}>
         <div className="relative h-[210px] overflow-hidden" style={{ background: `var(${e.tint})` }}>
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src={e.art} alt="" className="h-full w-full object-cover" />
+          <img loading="lazy" decoding="async" src={e.art} alt="" className="h-full w-full object-cover" />
           <span aria-hidden className="absolute inset-0"
                 style={{ background: "linear-gradient(0deg, rgba(0,0,0,0.5), transparent 58%)" }} />
           <span className="absolute start-4 top-4 grid h-[62px] w-[56px] place-items-center rounded-[12px]"

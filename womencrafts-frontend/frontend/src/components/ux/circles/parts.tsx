@@ -27,7 +27,7 @@ export function CircleCard({ c, i }: { c: Circle; i: number }) {
     >
       <div className="relative h-[104px] overflow-hidden" style={{ background: `var(${c.tint})` }}>
         {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img src={c.art} alt="" className="ux-art h-full w-full object-cover" />
+        <img loading="lazy" decoding="async" src={c.art} alt="" className="ux-art h-full w-full object-cover" />
         <span className="absolute end-2.5 top-2.5">
           <Pill tone={KIND_TONE[c.kind]} size="sm">{c.kind}</Pill>
         </span>
@@ -136,7 +136,7 @@ export function TurnOrder({
                 none — the initial is always there. */}
             {m.avatar ? (
               // eslint-disable-next-line @next/next/no-img-element
-              <img src={m.avatar} alt="" className="h-[28px] w-[28px] shrink-0 rounded-full object-cover" />
+              <img loading="lazy" decoding="async" src={m.avatar} alt="" className="h-[28px] w-[28px] shrink-0 rounded-full object-cover" />
             ) : (
               <span className="grid h-[28px] w-[28px] shrink-0 place-items-center rounded-full text-[0.6875rem] font-semibold"
                     style={{ background: "var(--ux-tint-violet)", color: "var(--ux-violet)" }}>

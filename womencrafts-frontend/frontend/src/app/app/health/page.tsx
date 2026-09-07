@@ -89,7 +89,7 @@ export default function HealthPage() {
           <div className="ux-clay relative overflow-hidden p-[20px]"
                style={{ background: "linear-gradient(140deg, var(--ux-tint-pink), var(--ux-tint-lilac))" }}>
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src={WELLBEING_ART.health} alt=""
+            <img loading="lazy" decoding="async" src={WELLBEING_ART.health} alt=""
                  className="ux-float pointer-events-none absolute -bottom-3 -end-4 h-[100px] w-[100px] object-contain" />
             <h3 className="relative w-[60%] text-[0.875rem] font-semibold" style={{ color: "var(--ux-ink)" }}>
               Ten minutes a day

@@ -208,7 +208,7 @@ export default function MentorDetail({ params }: { params: Promise<{ id: string 
           <span className="h-[92px] w-[92px] shrink-0 overflow-hidden rounded-[20px]"
                 style={{ background: `var(${m.tint})` }}>
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src={m.photo} alt="" className="h-full w-full object-cover" />
+            <img loading="lazy" decoding="async" src={m.photo} alt="" className="h-full w-full object-cover" />
           </span>
           <div className="min-w-0 flex-1">
             <h1 className="text-[1.25rem] font-bold leading-tight" style={{ color: "var(--ux-ink)" }}>{m.name}</h1>
@@ -273,7 +273,7 @@ export default function MentorDetail({ params }: { params: Promise<{ id: string 
                   <span className="h-[46px] w-[46px] shrink-0 overflow-hidden rounded-[12px]"
                         style={{ background: `var(${o.tint})` }}>
                     {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img src={o.photo} alt="" className="ux-art h-full w-full object-cover" />
+                    <img loading="lazy" decoding="async" src={o.photo} alt="" className="ux-art h-full w-full object-cover" />
                   </span>
                   <div className="min-w-0 flex-1">
                     <h3 className="truncate text-[0.875rem] font-semibold" style={{ color: "var(--ux-ink)" }}>{o.name}</h3>

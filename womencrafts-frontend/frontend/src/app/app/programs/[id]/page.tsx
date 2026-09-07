@@ -174,7 +174,7 @@ export default function CourseDetail({ params }: { params: Promise<{ id: string 
                 <span className="h-[46px] w-[46px] shrink-0 overflow-hidden rounded-full"
                       style={{ background: "var(--ux-tint-orange)" }}>
                   {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img src="/ux/art/avatar-woman-blazer.webp" alt="" className="ux-art h-full w-full object-cover" />
+                  <img loading="lazy" decoding="async" src="/ux/art/avatar-woman-blazer.webp" alt="" className="ux-art h-full w-full object-cover" />
                 </span>
                 <div className="min-w-0 flex-1">
                   <p className="truncate text-[0.875rem] font-semibold" style={{ color: "var(--ux-ink)" }}>{course.author}</p>
@@ -200,7 +200,7 @@ export default function CourseDetail({ params }: { params: Promise<{ id: string 
       <Card className="mb-[16px] overflow-hidden" pad={0}>
         <div className="relative h-[180px] overflow-hidden" style={{ background: "var(--ux-tint-violet)" }}>
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src={course.thumb} alt="" className="h-full w-full object-cover" />
+          <img loading="lazy" decoding="async" src={course.thumb} alt="" className="h-full w-full object-cover" />
           <span aria-hidden className="absolute inset-0"
                 style={{ background: "linear-gradient(0deg, rgba(0,0,0,0.55), transparent 60%)" }} />
           {course.tag && <span className="absolute start-4 top-4"><Pill tone="brand" size="sm">{course.tag}</Pill></span>}
@@ -309,7 +309,7 @@ export default function CourseDetail({ params }: { params: Promise<{ id: string 
                   <span className="h-[54px] w-[70px] shrink-0 overflow-hidden rounded-[12px]"
                         style={{ background: "var(--ux-tint-violet)" }}>
                     {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img src={c.thumb} alt="" className="ux-art h-full w-full object-cover" />
+                    <img loading="lazy" decoding="async" src={c.thumb} alt="" className="ux-art h-full w-full object-cover" />
                   </span>
                   <div className="min-w-0 flex-1">
                     <h3 className="truncate text-[0.875rem] font-semibold" style={{ color: "var(--ux-ink)" }}>{c.title}</h3>

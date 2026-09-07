@@ -3,6 +3,7 @@
 import { memo } from "react";
 import Link from "next/link";
 import * as Icons from "@/components/ux/icons";
+import { matchFor, matchTone } from "@/services/job-match";
 
 import type { Application, Opportunity } from "@/lib/growth-api";
 import type { GroupBuy } from "@/lib/entitlements-api";
@@ -153,6 +154,34 @@ const card = {
   boxShadow: "var(--ux-shadow-card), inset 0 1px 0 var(--ux-sheen)",
 } as const;
 
+/**
+ * Why this one fits her.
+ *
+ * The board drew a match percentage from a `match` field that live listings
+ * never populate, so it was either absent or a number with no derivation. This
+ * compares the skills the listing actually asks for against the ones she has
+ * listed, and says the result in a sentence — because "92%" tells her nothing
+ * she can act on and "you have 4 of the 5, the one missing is Analytics" tells
+ * her whether to apply anyway.
+ *
+ * Always leads with what she HAS. Leading with the gap is how a woman who is
+ * qualified talks herself out of applying.
+ */
+function MatchNote({ skills, compact = false }: { skills?: string[]; compact?: boolean }) {
+  const fit = matchFor(skills ?? []);
+  if (!fit.because) return null;
+  const tone = matchTone(fit.pct);
+  return (
+    <p className={`flex items-start gap-1.5 ${compact ? "mt-1.5 text-[0.6875rem]" : "mt-2 rounded-[8px] px-2.5 py-2 text-[0.75rem]"} leading-snug`}
+       style={compact ? { color: "var(--ux-muted)" }
+                      : { background: "var(--ux-surface-2)", color: "var(--ux-ink-2)" }}>
+      <Icons.Sparkles className="mt-[2px] h-[0.75rem] w-[0.75rem] shrink-0"
+                      style={{ color: `var(${tone.ink})` }} />
+      <span><b style={{ color: "var(--ux-ink)" }}>{tone.label}.</b> {fit.because}</span>
+    </p>
+  );
+}
+
 /* ══ A · LEDGER ═══════════════════════════════════════════════════════════ */
 
 /**
@@ -243,6 +272,7 @@ export const Ledger = memo(function Ledger({ d, act }: { d: EarnData; act: Acts 
                 <div className="mt-0.5 text-[0.75rem] font-normal" style={{ color: "var(--ux-faint)" }}>
                   {o.org} · {o.kind} · {o.location}
                 </div>
+                <MatchNote skills={o.skills} compact />
               </td>
               <td className="p-3 tabular-nums" style={{ color: "var(--ux-ink-2)" }}>{o.pay}</td>
               <td className="p-3 text-end text-[1rem] font-extrabold tabular-nums"
@@ -342,6 +372,7 @@ export const Feed = memo(function Feed({ d, act }: { d: EarnData; act: Acts }) {
             <time className="ms-auto shrink-0 text-[0.6875rem]" style={{ color: "var(--ux-faint)" }}>{top.deadline_label}</time>
           </div>
           <p className="m-0 text-[1rem] font-bold" style={{ color: "var(--ux-ink)" }}>{top.title}</p>
+          <MatchNote skills={top.skills} />
           <p className="my-2 text-[1.5rem] font-extrabold tabular-nums tracking-[-0.03em]"
              style={{ color: "var(--ux-green-ink)" }}>
             {top.pay}

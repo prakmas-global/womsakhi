@@ -57,7 +57,7 @@ export default function MentorsPage() {
                 {MY_SESSIONS.map((s) => (
                   <div key={s.id} className="ux-hov flex items-center gap-3">
                     {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img src={s.photo} alt="" className="h-[38px] w-[38px] shrink-0 rounded-full object-cover"
+                    <img loading="lazy" decoding="async" src={s.photo} alt="" className="h-[38px] w-[38px] shrink-0 rounded-full object-cover"
                          style={{ background: "var(--ux-brand-tint)" }} />
                     <div className="min-w-0 flex-1">
                       <p className="truncate text-[0.8125rem] font-medium" style={{ color: "var(--ux-ink)" }}>{s.mentor}</p>
@@ -95,7 +95,7 @@ export default function MentorsPage() {
           <div className="ux-clay ux-onscroll-soft relative overflow-hidden p-[20px]"
                style={{ background: "linear-gradient(140deg, var(--ux-tint-orange), var(--ux-tint-lilac))" }}>
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src={MENTOR_ART.hero} alt=""
+            <img loading="lazy" decoding="async" src={MENTOR_ART.hero} alt=""
                  className="ux-float pointer-events-none absolute -bottom-3 -end-4 h-[104px] w-[104px] object-contain" />
             <h2 className="relative w-[60%] text-[0.875rem] font-semibold" style={{ color: "var(--ux-ink)" }}>
               Become a mentor
@@ -164,7 +164,7 @@ export default function MentorsPage() {
                     <span className="h-[70px] w-[70px] shrink-0 overflow-hidden rounded-[16px]"
                           style={{ background: `var(${m.tint})` }}>
                       {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img src={m.photo} alt="" className="ux-art h-full w-full object-cover" />
+                      <img loading="lazy" decoding="async" src={m.photo} alt="" className="ux-art h-full w-full object-cover" />
                     </span>
 
                     <div className="min-w-0 flex-1">
@@ -252,7 +252,7 @@ export default function MentorsPage() {
                 <span className="h-[52px] w-[52px] shrink-0 overflow-hidden rounded-full"
                       style={{ background: "var(--ux-brand-tint)" }}>
                   {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img src={s.photo} alt="" className="ux-art h-full w-full object-cover" />
+                  <img loading="lazy" decoding="async" src={s.photo} alt="" className="ux-art h-full w-full object-cover" />
                 </span>
                 <div className="min-w-0 flex-1">
                   <div className="flex items-start gap-2">

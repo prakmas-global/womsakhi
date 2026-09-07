@@ -171,7 +171,7 @@ export default function CircleDetail({ params }: { params: Promise<{ id: string 
       <Card className="mb-[16px] overflow-hidden" pad={0}>
         <div className="relative h-[150px] overflow-hidden" style={{ background: `var(${c.tint})` }}>
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src={c.art} alt="" className="h-full w-full object-cover" />
+          <img loading="lazy" decoding="async" src={c.art} alt="" className="h-full w-full object-cover" />
           <span aria-hidden className="absolute inset-0"
                 style={{ background: "linear-gradient(0deg, rgba(0,0,0,0.42), transparent 62%)" }} />
         </div>
@@ -231,7 +231,7 @@ export default function CircleDetail({ params }: { params: Promise<{ id: string 
                    style={{ borderColor: "var(--ux-line)", ["--i" as string]: i }}>
                 {m.avatar ? (
                   // eslint-disable-next-line @next/next/no-img-element
-                  <img src={m.avatar} alt="" className="h-[36px] w-[36px] shrink-0 rounded-full object-cover" />
+                  <img loading="lazy" decoding="async" src={m.avatar} alt="" className="h-[36px] w-[36px] shrink-0 rounded-full object-cover" />
                 ) : (
                   <span className="grid h-[36px] w-[36px] shrink-0 place-items-center rounded-full text-[0.8125rem] font-semibold"
                         style={{ background: "var(--ux-tint-violet)", color: "var(--ux-violet)" }}>
@@ -264,7 +264,7 @@ export default function CircleDetail({ params }: { params: Promise<{ id: string 
                 <div key={p.id} className="ux-i ux-sq flex items-start gap-3 rounded-[12px] border p-3"
                      style={{ borderColor: "var(--ux-line)", ["--i" as string]: i }}>
                   {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img src={p.avatar} alt="" className="h-[38px] w-[38px] shrink-0 rounded-full object-cover" />
+                  <img loading="lazy" decoding="async" src={p.avatar} alt="" className="h-[38px] w-[38px] shrink-0 rounded-full object-cover" />
                   <div className="min-w-0 flex-1">
                     <p className="flex flex-wrap items-center gap-x-2 text-[0.8125rem]">
                       <span className="font-semibold" style={{ color: "var(--ux-ink)" }}>{p.who}</span>

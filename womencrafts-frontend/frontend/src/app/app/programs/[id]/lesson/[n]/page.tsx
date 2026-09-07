@@ -174,7 +174,7 @@ export default function LessonPage({ params }: { params: Promise<{ id: string; n
             expensive, and nothing should start downloading uninvited. */}
         <div className="relative aspect-video w-full overflow-hidden" style={{ background: "var(--ux-brand-900)" }}>
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src={course.thumb} alt="" className="h-full w-full object-cover"
+          <img loading="lazy" decoding="async" src={course.thumb} alt="" className="h-full w-full object-cover"
                style={{ opacity: playing ? 0.28 : 0.6 }} />
           <div className="absolute inset-0 grid place-items-center">
             {playing ? (

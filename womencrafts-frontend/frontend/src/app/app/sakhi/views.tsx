@@ -157,7 +157,7 @@ export function Welcome({
             style={{ background: "radial-gradient(closest-side, var(--ux-brand-tint-2), transparent 70%)" }} />
       <div className="relative">
         {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img src="/sakhi-still.webp" alt="Sakhi" draggable={false}
+        <img loading="lazy" decoding="async" src="/sakhi-still.webp" alt="Sakhi" draggable={false}
              className="ux-bob mx-auto block h-[150px] w-[150px] object-contain" />
         <h2 className="mt-4 text-[clamp(1.3125rem,2.8vw,1.875rem)] font-extrabold leading-tight tracking-[-0.03em]"
             style={{ color: "var(--ux-ink)" }}>
@@ -224,7 +224,7 @@ export function Voice({
             style={{ background: "radial-gradient(closest-side, var(--ux-brand-tint-2), transparent 70%)" }} />
       <div className="relative">
         {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img src="/sakhi-still.webp" alt="Sakhi" draggable={false}
+        <img loading="lazy" decoding="async" src="/sakhi-still.webp" alt="Sakhi" draggable={false}
              className="ux-bob mx-auto block h-[180px] w-[180px] object-contain" />
 
         <div className="ux-eq mx-auto mt-5 flex h-[52px] items-center justify-center gap-[4px]" aria-hidden>
@@ -361,7 +361,7 @@ export function Thread({
         return (
           <div key={i} className="flex items-start gap-3">
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src="/sakhi-face.webp" alt="" className="h-[34px] w-[34px] shrink-0 rounded-full object-cover" />
+            <img loading="lazy" decoding="async" src="/sakhi-face.webp" alt="" className="h-[34px] w-[34px] shrink-0 rounded-full object-cover" />
             <div className="min-w-0 max-w-[82%] rounded-[16px] rounded-bl-[4px] p-4"
                  style={{ background: "var(--ux-surface)", border: "1px solid var(--ux-line)" }}>
               <Answer text={b.text} />
@@ -382,7 +382,7 @@ export function Thread({
       {streaming && (
         <div className="flex items-start gap-3">
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src="/sakhi-face.webp" alt="" className="h-[34px] w-[34px] shrink-0 rounded-full object-cover" />
+          <img loading="lazy" decoding="async" src="/sakhi-face.webp" alt="" className="h-[34px] w-[34px] shrink-0 rounded-full object-cover" />
           <div className="min-w-0 max-w-[82%] rounded-[16px] rounded-bl-[4px] p-4"
                style={{ background: "var(--ux-surface)", border: "1px solid var(--ux-line)" }}>
             <Answer text={streaming} />
@@ -393,7 +393,7 @@ export function Thread({
       {busy && !streaming && (
         <div className="flex items-start gap-3">
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src="/sakhi-face.webp" alt="" className="h-[34px] w-[34px] shrink-0 rounded-full object-cover" />
+          <img loading="lazy" decoding="async" src="/sakhi-face.webp" alt="" className="h-[34px] w-[34px] shrink-0 rounded-full object-cover" />
           <span className="flex items-center gap-2 rounded-[16px] rounded-bl-[4px] px-4 py-3"
                 style={{ background: "var(--ux-surface)", border: "1px solid var(--ux-line)" }}>
             <Typing />
@@ -409,7 +409,7 @@ export function Thread({
       {pending && (
         <div className="flex items-start gap-3">
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src="/sakhi-face.webp" alt="" className="h-[34px] w-[34px] shrink-0 rounded-full object-cover" />
+          <img loading="lazy" decoding="async" src="/sakhi-face.webp" alt="" className="h-[34px] w-[34px] shrink-0 rounded-full object-cover" />
           <div className="min-w-0 flex-1">
             <DraftCard sentence={pending.sentence} busy={busy}
                        onApprove={() => onAnswer(true)} onReject={() => onAnswer(false)}

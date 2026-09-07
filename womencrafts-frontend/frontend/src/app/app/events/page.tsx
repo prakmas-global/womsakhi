@@ -98,7 +98,7 @@ export default function EventsPage() {
           <div className="ux-clay ux-onscroll-soft relative overflow-hidden p-[20px]"
                style={{ background: "linear-gradient(140deg, var(--ux-tint-pink), var(--ux-tint-orange))" }}>
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src={EVENT_ART.hero} alt=""
+            <img loading="lazy" decoding="async" src={EVENT_ART.hero} alt=""
                  className="ux-float pointer-events-none absolute -bottom-3 -end-4 h-[104px] w-[104px] object-contain" />
             <h2 className="relative w-[60%] text-[0.875rem] font-semibold" style={{ color: "var(--ux-ink)" }}>
               Host something
@@ -156,7 +156,7 @@ export default function EventsPage() {
                   <span className="relative h-[168px] w-[190px] shrink-0 overflow-hidden"
                         style={{ background: `var(${e.tint})` }}>
                     {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img src={e.art} alt="" className="ux-art h-full w-full object-cover" />
+                    <img loading="lazy" decoding="async" src={e.art} alt="" className="ux-art h-full w-full object-cover" />
                     <span className="absolute start-3 top-3 grid h-[52px] w-[46px] place-items-center rounded-[12px]"
                           style={{ background: "var(--ux-surface)", boxShadow: "var(--ux-shadow-card)" }}>
                       <span className="text-[1.125rem] font-bold leading-none" style={{ color: "var(--ux-brand)" }}>{e.day}</span>

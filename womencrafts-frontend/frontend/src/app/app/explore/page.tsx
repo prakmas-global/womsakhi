@@ -49,7 +49,7 @@ function Row({ f, i }: { f: Find; i: number }) {
       {f.art ? (
         <span className="h-[54px] w-[54px] shrink-0 overflow-hidden rounded-[12px]" style={{ background: `var(${f.tint})` }}>
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src={f.art} alt="" className="ux-art h-full w-full object-cover" />
+          <img loading="lazy" decoding="async" src={f.art} alt="" className="ux-art h-full w-full object-cover" />
         </span>
       ) : (
         <IconTile icon={f.icon} tint={f.tint} ink={f.ink} size={54} radius={12} />
@@ -162,7 +162,7 @@ function Discover() {
           <div className="ux-clay ux-onscroll-soft relative overflow-hidden p-[20px]"
                style={{ background: "linear-gradient(140deg, var(--ux-tint-lilac), var(--ux-tint-blue))" }}>
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src={DISCOVER_ART.hero} alt=""
+            <img loading="lazy" decoding="async" src={DISCOVER_ART.hero} alt=""
                  className="ux-float pointer-events-none absolute -bottom-3 -end-4 h-[100px] w-[100px] object-contain" />
             <h3 className="relative w-[60%] text-[0.875rem] font-semibold" style={{ color: "var(--ux-ink)" }}>
               Tell Sakhi what you want

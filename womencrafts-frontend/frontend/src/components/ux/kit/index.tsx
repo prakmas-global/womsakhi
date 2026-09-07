@@ -238,7 +238,7 @@ export function AvatarStack({ srcs, extra, size = 26 }: { srcs: string[]; extra?
     <div className="ux-fan flex shrink-0 items-center">
       {srcs.map((s, i) => (
         // eslint-disable-next-line @next/next/no-img-element
-        <img key={s + i} src={s} alt="" className="rounded-full border-2 object-cover"
+        <img loading="lazy" decoding="async" key={s + i} src={s} alt="" className="rounded-full border-2 object-cover"
              style={{ width: size, height: size, borderColor: "var(--ux-surface)", marginLeft: i ? -8 : 0 }} />
       ))}
       {extra && <span className="ms-1.5 text-[0.6875rem]" style={{ color: "var(--ux-muted)" }}>{extra}</span>}
@@ -485,5 +485,6 @@ export function SourceNote({ source, what = "figures" }: { source: "live" | "moc
 export { certificateHtml, printCertificate, type CertificateFields } from "./download";
 export { Money, formatMoney as formatRupees, formatMoneyOrFree, formatWholeRupees } from "./money";
 export { Sheet } from "./sheet";
+export { Avatar } from "./avatar";
 export { ConfirmButton } from "./confirm";
 export { Rows, rowMemo } from "./rows";

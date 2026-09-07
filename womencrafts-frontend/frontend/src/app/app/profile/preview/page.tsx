@@ -128,7 +128,7 @@ export default function ProfilePreview() {
           <span className="h-[86px] w-[86px] shrink-0 overflow-hidden rounded-full"
                 style={{ background: "var(--ux-brand-tint)" }}>
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src={profile?.avatar || ME.avatar} alt="" className="h-full w-full object-cover" />
+            <img loading="lazy" decoding="async" src={profile?.avatar || ME.avatar} alt="" className="h-full w-full object-cover" />
           </span>
           <div className="min-w-0 flex-1">
             <h1 className="flex items-center gap-2 text-[1.25rem] font-bold" style={{ color: "var(--ux-ink)" }}>
@@ -223,7 +223,7 @@ export default function ProfilePreview() {
               <span className="h-[46px] w-[46px] shrink-0 overflow-hidden rounded-[12px]"
                     style={{ background: "var(--ux-tint-orange)" }}>
                 {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src={SHOP.art} alt="" className="ux-art h-full w-full object-cover" />
+                <img loading="lazy" decoding="async" src={SHOP.art} alt="" className="ux-art h-full w-full object-cover" />
               </span>
               <div className="min-w-0 flex-1">
                 <p className="truncate text-[0.875rem] font-semibold" style={{ color: "var(--ux-ink)" }}>{SHOP.name}</p>

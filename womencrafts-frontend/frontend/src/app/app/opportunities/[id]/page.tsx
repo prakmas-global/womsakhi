@@ -209,7 +209,7 @@ export default function OpportunityDetail({ params }: { params: Promise<{ id: st
           <div className="ux-slide-up mt-4 flex items-center gap-3.5 rounded-[12px] p-3.5"
                style={{ background: "var(--ux-tint-green)" }}>
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src={WORK_ART.applied} alt="" className="h-[62px] w-[62px] shrink-0 object-contain" />
+            <img loading="lazy" decoding="async" src={WORK_ART.applied} alt="" className="h-[62px] w-[62px] shrink-0 object-contain" />
             <div className="min-w-0">
               <p className="text-[0.8125rem] font-semibold" style={{ color: "var(--ux-ink)" }}>
                 It is with {job.org} now.

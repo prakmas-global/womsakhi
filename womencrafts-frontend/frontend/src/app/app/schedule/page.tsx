@@ -55,7 +55,7 @@ export default function Schedule() {
           <div className="relative overflow-hidden rounded-[16px] p-[20px]"
                style={{ background: "linear-gradient(140deg, var(--ux-tint-lilac), var(--ux-tint-pink))" }}>
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src="/ux/art/scene-woman-planning-board.webp" alt=""
+            <img loading="lazy" decoding="async" src="/ux/art/scene-woman-planning-board.webp" alt=""
                  className="ux-float pointer-events-none absolute -bottom-2 -end-3 h-[96px] w-[96px] object-contain" />
             <h3 className="relative text-[0.875rem] font-semibold" style={{ color: "var(--ux-ink)" }}>Plan your week</h3>
             <p className="relative mt-2 w-[62%] text-[0.75rem] leading-relaxed" style={{ color: "var(--ux-muted)" }}>

@@ -133,7 +133,7 @@ export default function LocalPage() {
           <div className="ux-clay ux-onscroll-soft relative overflow-hidden p-[20px]"
                style={{ background: "linear-gradient(140deg, var(--ux-tint-orange), var(--ux-tint-pink))" }}>
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src={LOCAL_ART.hero} alt=""
+            <img loading="lazy" decoding="async" src={LOCAL_ART.hero} alt=""
                  className="ux-float pointer-events-none absolute -bottom-3 -end-4 h-[100px] w-[100px] object-contain" />
             <h3 className="relative w-[60%] text-[0.875rem] font-semibold" style={{ color: "var(--ux-ink)" }}>
               Tell yours
@@ -177,7 +177,7 @@ export default function LocalPage() {
                 <div className="relative h-[160px] overflow-hidden" style={{ background: "var(--ux-tint-lilac)" }}>
                   {s.cover && (
                     /* eslint-disable-next-line @next/next/no-img-element */
-                    <img src={s.cover} alt="" className="ux-art h-full w-full object-cover" />
+                    <img loading="lazy" decoding="async" src={s.cover} alt="" className="ux-art h-full w-full object-cover" />
                   )}
                   {/* The scrim belongs on the text's own container, not on a
                       sibling: as a sibling, white text over a cover that failed
@@ -187,7 +187,7 @@ export default function LocalPage() {
                     {s.author_avatar
                       ? (
                         /* eslint-disable-next-line @next/next/no-img-element */
-                        <img src={s.author_avatar} alt=""
+                        <img loading="lazy" decoding="async" src={s.author_avatar} alt=""
                              className="h-[48px] w-[48px] shrink-0 rounded-full border-2 border-white object-cover" />
                       )
                       : (

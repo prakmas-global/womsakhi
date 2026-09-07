@@ -163,7 +163,7 @@ export default function ServiceEditor({ params }: { params: Promise<{ id: string
             <div className="ux-sq overflow-hidden rounded-[12px] border" style={{ borderColor: "var(--ux-line)" }}>
               <div className="h-[120px] overflow-hidden" style={{ background: "var(--ux-tint-pink)" }}>
                 {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src={base.art} alt="" className="h-full w-full object-cover" />
+                <img loading="lazy" decoding="async" src={base.art} alt="" className="h-full w-full object-cover" />
               </div>
               <div className="p-3.5">
                 <p className="text-[0.875rem] font-semibold" style={{ color: form.name ? "var(--ux-ink)" : "var(--ux-faint)" }}>

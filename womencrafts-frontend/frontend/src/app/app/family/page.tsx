@@ -64,7 +64,7 @@ export default function FamilyPage() {
           <div className="ux-clay relative overflow-hidden p-[20px]"
                style={{ background: "linear-gradient(140deg, var(--ux-tint-violet), var(--ux-tint-pink))" }}>
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src={WELLBEING_ART.family} alt=""
+            <img loading="lazy" decoding="async" src={WELLBEING_ART.family} alt=""
                  className="ux-float pointer-events-none absolute -bottom-3 -end-4 h-[100px] w-[100px] object-contain" />
             <h3 className="relative w-[60%] text-[0.875rem] font-semibold" style={{ color: "var(--ux-ink)" }}>
               Working with a baby
@@ -99,7 +99,7 @@ export default function FamilyPage() {
                 <div className="flex">
                   <span className="h-[150px] w-[170px] shrink-0 overflow-hidden" style={{ background: "var(--ux-tint-pink)" }}>
                     {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img src={c.art} alt="" className="ux-art h-full w-full object-cover" />
+                    <img loading="lazy" decoding="async" src={c.art} alt="" className="ux-art h-full w-full object-cover" />
                   </span>
                   <div className="flex min-w-0 flex-1 flex-col p-[16px]">
                     <div className="flex items-start gap-2">

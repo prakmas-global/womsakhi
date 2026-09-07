@@ -243,7 +243,7 @@ export default function AssessPage() {
           <div className="ux-clay relative overflow-hidden p-[20px]"
                style={{ background: "linear-gradient(140deg, var(--ux-tint-orange), var(--ux-tint-lilac))" }}>
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src={MORE_ART.assess} alt=""
+            <img loading="lazy" decoding="async" src={MORE_ART.assess} alt=""
                  className="ux-float pointer-events-none absolute -bottom-3 -end-4 h-[100px] w-[100px] object-contain" />
             <h3 className="relative w-[60%] text-[0.875rem] font-semibold" style={{ color: "var(--ux-ink)" }}>
               Twenty years is worth proving

@@ -74,11 +74,11 @@ export default function SignUpPage() {
       {/* ── Brand ── */}
       <div className="auth-brand flex items-center gap-3">
         {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img src="/ux/brand/womsakhi-mark.webp" alt="" aria-hidden className="object-contain"
+        <img loading="lazy" decoding="async" src="/ux/brand/womsakhi-mark.webp" alt="" aria-hidden className="object-contain"
           style={{ width: "clamp(2.125rem,5vh,2.5rem)", height: "clamp(2.125rem,5vh,2.5rem)" }} />
         <div>
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src="/ux/brand/womsakhi-wordmark.webp" alt="WomSakhi" className="object-contain"
+          <img loading="lazy" decoding="async" src="/ux/brand/womsakhi-wordmark.webp" alt="WomSakhi" className="object-contain"
             style={{ height: "clamp(1.25rem,3vh,1.5rem)" }} />
           <p className="auth-tagline mt-1 text-[0.6875rem] font-semibold tracking-[0.19em]" style={{ color: "var(--a-muted)" }}>
             EMPOWERING HER JOURNEY

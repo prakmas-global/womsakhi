@@ -230,7 +230,7 @@ export function Avatar({ src, kind, size = 42, online }: { src: string; kind: Pa
   return (
     <span className="relative block shrink-0 rounded-full p-[2px]" style={{ background: RING[kind] }}>
       {/* eslint-disable-next-line @next/next/no-img-element */}
-      <img src={src || "/ux/brand/womsakhi-emblem.webp"} alt=""
+      <img loading="lazy" decoding="async" src={src || "/ux/brand/womsakhi-emblem.webp"} alt=""
            className="block rounded-full object-cover" style={{ width: size, height: size }} />
       {online && (
         <i className="absolute bottom-[2px] right-[1px] block h-[11px] w-[11px] rounded-full"
@@ -496,7 +496,7 @@ export function Thread({
                       background: "linear-gradient(96deg, var(--ux-brand-tint), var(--ux-tint-pink))" }}>
           {ctx.image && (
             // eslint-disable-next-line @next/next/no-img-element
-            <img src={ctx.image} alt="" className="h-[46px] w-[46px] shrink-0 rounded-[12px] object-cover" />
+            <img loading="lazy" decoding="async" src={ctx.image} alt="" className="h-[46px] w-[46px] shrink-0 rounded-[12px] object-cover" />
           )}
           <span className="min-w-0 flex-1">
             <b className="block truncate text-[0.8125rem] font-bold" style={{ color: "var(--ux-ink)" }}>
@@ -643,7 +643,7 @@ export function Bubble({ bubble, first, conv }: { bubble: ConvBubble; first: boo
     <div className={`mt-[3px] flex items-end gap-2.5 ${out ? "flex-row-reverse" : ""}`}>
       <span className="w-[26px] shrink-0" style={{ visibility: first && !out ? "visible" : "hidden" }}>
         {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img src={conv.avatar || "/ux/brand/womsakhi-emblem.webp"} alt=""
+        <img loading="lazy" decoding="async" src={conv.avatar || "/ux/brand/womsakhi-emblem.webp"} alt=""
              className="h-[26px] w-[26px] rounded-full object-cover" />
       </span>
       {bubble.order ? (
@@ -657,7 +657,7 @@ export function Bubble({ bubble, first, conv }: { bubble: ConvBubble; first: boo
                  borderBottomLeftRadius: first ? 5 : 16 }}>
         {bubble.file?.url && (
           // eslint-disable-next-line @next/next/no-img-element
-          <img src={bubble.file.url} alt={bubble.file.name}
+          <img loading="lazy" decoding="async" src={bubble.file.url} alt={bubble.file.name}
                className="mb-2 block max-w-[210px] rounded-[12px]" style={{ border: "1px solid var(--ux-line)" }} />
         )}
         {bubble.text}
@@ -691,7 +691,7 @@ export function OrderCard({ order }: { order: NonNullable<ConvBubble["order"]> }
       <div className="flex gap-3 p-3.5">
         {order.image && (
           // eslint-disable-next-line @next/next/no-img-element
-          <img src={order.image} alt="" className="h-[56px] w-[56px] shrink-0 rounded-[12px] object-cover" />
+          <img loading="lazy" decoding="async" src={order.image} alt="" className="h-[56px] w-[56px] shrink-0 rounded-[12px] object-cover" />
         )}
         <div className="min-w-0">
           <b className="block text-[0.8125rem] font-bold" style={{ color: "var(--ux-ink)" }}>{order.title}</b>
@@ -782,7 +782,7 @@ export function About({ conv, onStar, onDraft }: {
           <div className="grid grid-cols-3 gap-1.5">
             {shots.map((m, i) => (
               // eslint-disable-next-line @next/next/no-img-element
-              <img key={i} src={m.file!.url} alt="" className="aspect-square w-full rounded-[8px] object-cover" />
+              <img loading="lazy" decoding="async" key={i} src={m.file!.url} alt="" className="aspect-square w-full rounded-[8px] object-cover" />
             ))}
           </div>
         </div>

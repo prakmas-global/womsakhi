@@ -71,7 +71,7 @@ export function Hero({ name }: { name?: string }) {
           style={{ background: "radial-gradient(closest-side, rgba(255,255,255,0.30), transparent 72%)" }}
         />
         {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img
+        <img loading="lazy" decoding="async"
           src="/ux/brand/womsakhi-emblem.webp"
           alt=""
           className="ux-float absolute end-[4%] top-1/2 h-[164px] w-auto -translate-y-1/2 object-contain"
@@ -186,7 +186,7 @@ export function ContinueJourney() {
       <div className="ux-hov ux-sq flex gap-4 rounded-[12px] p-3" style={{ background: "var(--ux-surface-2)" }}>
         <span className="h-[100px] w-[104px] shrink-0 overflow-hidden rounded-[12px]">
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src={JOURNEY.art} alt="" className="ux-art h-full w-full object-cover" />
+          <img loading="lazy" decoding="async" src={JOURNEY.art} alt="" className="ux-art h-full w-full object-cover" />
         </span>
         <div className="flex min-w-0 flex-1 flex-col justify-center">
           <h3 className="text-[0.875rem] font-semibold" style={{ color: "var(--ux-ink)" }}>{JOURNEY.title}</h3>
@@ -233,7 +233,7 @@ function CourseRow({ r, i }: { r: CourseRowData; i: number }) {
           style={{ borderColor: "var(--ux-line)", ["--i" as string]: i }}>
       <span className="h-[62px] w-[88px] shrink-0 overflow-hidden rounded-[8px]">
         {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img src={r.art} alt="" className="ux-art h-full w-full object-cover" />
+        <img loading="lazy" decoding="async" src={r.art} alt="" className="ux-art h-full w-full object-cover" />
       </span>
       <div className="min-w-0 flex-1">
         <h3 className="truncate text-[0.8125rem] font-semibold" style={{ color: "var(--ux-ink)" }}>{r.title}</h3>
@@ -354,7 +354,7 @@ export function Circles() {
             <span className="grid h-[44px] w-[44px] shrink-0 place-items-center overflow-hidden rounded-full"
                   style={{ background: v(c.tint) }}>
               {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src={c.art} alt="" className="ux-art h-full w-full object-cover" />
+              <img loading="lazy" decoding="async" src={c.art} alt="" className="ux-art h-full w-full object-cover" />
             </span>
             {/* The faces sit under the name rather than beside it: on one row
                 they left 137px for a 175px name, so every circle was cut off
@@ -402,7 +402,7 @@ export function AskSakhiBar() {
              style={{ background: "linear-gradient(100deg, var(--ux-tint-lilac), var(--ux-tint-pink))", borderRadius: 18 }}>
       <div className="flex items-start gap-4">
         {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img src="/ux/art/mascot-robot-waving.webp" alt="" className="ux-float h-[76px] w-[76px] shrink-0 object-contain" />
+        <img loading="lazy" decoding="async" src="/ux/art/mascot-robot-waving.webp" alt="" className="ux-float h-[76px] w-[76px] shrink-0 object-contain" />
         <div className="w-[178px] shrink-0 pt-1">
           <h2 className="flex items-center gap-2 text-[1rem] font-semibold" style={{ color: "var(--ux-ink)" }}>
             Ask Sakhi <Pill size="sm">New</Pill>
@@ -449,7 +449,7 @@ export function ProfileCard() {
     <Card>
       <div className="flex items-center gap-3">
         {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img src={ME.avatar} alt="" className="h-[52px] w-[52px] rounded-full object-cover"
+        <img loading="lazy" decoding="async" src={ME.avatar} alt="" className="h-[52px] w-[52px] rounded-full object-cover"
              style={{ background: "var(--ux-brand-tint)" }} />
         <div className="min-w-0">
           <h2 className="flex items-center gap-1.5 text-[1rem] font-semibold" style={{ color: "var(--ux-ink)" }}>
@@ -581,7 +581,7 @@ export function Inspiration() {
     <section className="ux-clay relative overflow-hidden p-[20px]"
              style={{ background: "linear-gradient(140deg, var(--ux-tint-lilac), var(--ux-tint-pink))" }}>
       {/* eslint-disable-next-line @next/next/no-img-element */}
-      <img src="/ux/art/scene-woman-planting-sapling.webp" alt=""
+      <img loading="lazy" decoding="async" src="/ux/art/scene-woman-planting-sapling.webp" alt=""
            className="ux-float pointer-events-none absolute -bottom-3 -end-3 h-[104px] w-[104px] object-contain opacity-90" />
       <h2 className="relative flex items-center gap-2 text-[0.875rem] font-semibold" style={{ color: "var(--ux-brand)" }}>
         <Icons.Sparkles className="h-4 w-4" /> Daily Inspiration
@@ -603,7 +603,7 @@ export function MentorPick() {
         <span className="h-[54px] w-[54px] shrink-0 overflow-hidden rounded-full"
               style={{ background: "var(--ux-tint-orange)" }}>
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src={m.art} alt="" className="ux-art h-full w-full object-cover" />
+          <img loading="lazy" decoding="async" src={m.art} alt="" className="ux-art h-full w-full object-cover" />
         </span>
         <div className="min-w-0 flex-1">
           <h3 className="truncate text-[0.875rem] font-semibold" style={{ color: "var(--ux-ink)" }}>{m.name}</h3>

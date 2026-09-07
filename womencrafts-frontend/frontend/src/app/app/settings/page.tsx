@@ -132,7 +132,7 @@ export default function MorePage() {
           <span className="h-[62px] w-[62px] shrink-0 overflow-hidden rounded-full"
                 style={{ background: "var(--ux-brand-tint)" }}>
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src={ME.avatar} alt="" className="h-full w-full object-cover" />
+            <img loading="lazy" decoding="async" src={ME.avatar} alt="" className="h-full w-full object-cover" />
           </span>
           <div className="min-w-0 flex-1">
             <h2 className="flex items-center gap-2 text-[1.125rem] font-semibold" style={{ color: "var(--ux-ink)" }}>

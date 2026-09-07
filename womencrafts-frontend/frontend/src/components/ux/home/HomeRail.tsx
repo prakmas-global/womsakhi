@@ -153,7 +153,7 @@ export function HomeRail() {
       <section className="relative overflow-hidden rounded-[16px] p-4"
                style={{ background: "linear-gradient(140deg, var(--ux-brand-900), var(--ux-fill) 62%, var(--ux-rib-3) 132%)" }}>
         {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img src="/ux/art/icon-wallet.webp" alt="" aria-hidden
+        <img loading="lazy" decoding="async" src="/ux/art/icon-wallet.webp" alt="" aria-hidden
              className="pointer-events-none absolute -bottom-2 -right-2 w-[112px]"
              style={{ maskImage: "radial-gradient(70% 70% at 45% 45%, #000 55%, transparent 88%)",
                       WebkitMaskImage: "radial-gradient(70% 70% at 45% 45%, #000 55%, transparent 88%)" }} />
@@ -206,7 +206,7 @@ export function HomeRail() {
         <div className="flex items-center justify-center">
           {["blazer","blue-saree","elder-saree","hijab","pink-glasses","purple-kurta"].map((n, i) => (
             // eslint-disable-next-line @next/next/no-img-element
-            <img key={n} src={`/ux/art/avatar-woman-${n}.webp`} alt=""
+            <img loading="lazy" decoding="async" key={n} src={`/ux/art/avatar-woman-${n}.webp`} alt=""
                  className="h-[34px] w-[34px] rounded-full object-cover"
                  style={{ border: "2px solid var(--ux-surface)", marginLeft: i ? -9 : 0 }} />
           ))}

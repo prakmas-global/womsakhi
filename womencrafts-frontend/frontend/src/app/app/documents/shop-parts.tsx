@@ -93,7 +93,7 @@ export const Hero = memo(function Hero(
              style={{ background: "linear-gradient(112deg, var(--ux-brand-900) 0%, var(--ux-fill) 44%, var(--ux-rib-3) 108%)",
                       minHeight: 264 }}>
       {/* eslint-disable-next-line @next/next/no-img-element */}
-      <img src="/ux/art/hero-shop-owner.webp" alt="" aria-hidden
+      <img loading="lazy" decoding="async" src="/ux/art/hero-shop-owner.webp" alt="" aria-hidden
            className="ux-float pointer-events-none absolute inset-y-0 right-0 hidden h-full w-[44%] object-contain object-bottom sm:block"
            style={{ maskImage: "linear-gradient(100deg, transparent 2%, #000 34%), radial-gradient(84% 92% at 62% 48%, #000 56%, transparent 92%)",
                     WebkitMaskImage: "linear-gradient(100deg, transparent 2%, #000 34%), radial-gradient(84% 92% at 62% 48%, #000 56%, transparent 92%)",
@@ -322,7 +322,7 @@ export const ListingCard = memo(function ListingCard({
         {l.photo ? (
           <>
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src={l.photo} alt="" className="h-full w-full object-cover" />
+            <img loading="lazy" decoding="async" src={l.photo} alt="" className="h-full w-full object-cover" />
             <button type="button" onClick={() => file.current?.click()}
                     className="ux-press absolute bottom-2.5 start-2.5 inline-flex min-h-[32px] items-center gap-1.5 rounded-[8px] px-2.5 text-[0.6875rem] font-extrabold uppercase tracking-[0.04em]"
                     style={{ background: "color-mix(in srgb, var(--ux-surface) 92%, transparent)",
@@ -465,7 +465,7 @@ export const Storefront = memo(function Storefront(
                  style={{ borderBottom: "1px solid var(--ux-line)" }}>
               {l.photo ? (
                 // eslint-disable-next-line @next/next/no-img-element
-                <img src={l.photo} alt="" className="h-[54px] w-[54px] shrink-0 rounded-[12px] object-cover" />
+                <img loading="lazy" decoding="async" src={l.photo} alt="" className="h-[54px] w-[54px] shrink-0 rounded-[12px] object-cover" />
               ) : (
                 <span className="grid h-[54px] w-[54px] shrink-0 place-items-center rounded-[12px]"
                       style={{ background: "var(--ux-surface-2)", border: "1px dashed var(--ux-line-strong)",

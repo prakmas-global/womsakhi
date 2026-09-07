@@ -112,7 +112,7 @@ export default function FeedbackPage() {
         <Card className="ux-slide-up">
           <div className="flex items-start gap-4">
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src="/ux/art/scene-woman-order-notification.webp" alt=""
+            <img loading="lazy" decoding="async" src="/ux/art/scene-woman-order-notification.webp" alt=""
                  className="h-[86px] w-[86px] shrink-0 object-contain" />
             <div className="min-w-0 flex-1">
               <h2 className="text-[1.125rem] font-semibold" style={{ color: "var(--ux-ink)" }}>Thank you — we have it.</h2>
