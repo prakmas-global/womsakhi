@@ -117,3 +117,79 @@ export const MENTOR_ART = {
  * forgot to fill in.
  */
 export { formatMoneyOrFree as rupees } from "../kit/money";
+
+/* ── what women say afterwards, and what she has already had ─────────────── */
+
+/**
+ * Reviews, in words rather than stars.
+ *
+ * The page showed "4.8 average note" and nothing else. A number every mentor
+ * scores between 4.6 and 5.0 separates nobody, and this product refuses star
+ * ratings everywhere it matters — the market shows "no complaints, ever", the
+ * trust record shows counts — for the same reason: with few ratings, a star
+ * measures how polite people are.
+ *
+ * So a review here is one sentence about **what changed**, attributed to a
+ * woman whose situation is stated. "She made me work out what one blouse
+ * actually costs me" tells another tailor more than 4.8 ever will.
+ *
+ * ── The unflattering one stays ──────────────────────────────────────────────
+ * One below says the mentor was the wrong person for her question. Removing it
+ * would make every mentor look identical, which is how a review section becomes
+ * decoration. A woman choosing who to spend an hour with needs something to
+ * choose between.
+ */
+export interface Review {
+  id: string;
+  by: string;
+  /** Her situation, so a reader can tell whether it is like her own. */
+  who: string;
+  when: string;
+  /** What actually changed. Never "great mentor, very helpful". */
+  said: string;
+  /** Whether she went back — the one signal that is hard to be polite about. */
+  wentBack: boolean;
+}
+
+export const REVIEWS: Review[] = [
+  { id: "r1", by: "Sunita Devi", who: "Tailoring, 2 years in", when: "3 weeks ago",
+    said: "She made me work out what one blouse actually costs me — cloth, thread, the electricity. I was charging ₹280 and losing money on the bridal ones. They are ₹450 now and nobody left.",
+    wentBack: true },
+  { id: "r2", by: "Meera Joshi", who: "Just starting, no machine yet", when: "a month ago",
+    said: "I asked whether to buy a machine or keep renting. She asked how many hours a week I sew, then said keep renting until it is fifteen. It was six.",
+    wentBack: true },
+  { id: "r3", by: "Kavita R.", who: "Pickles and papad", when: "2 months ago",
+    said: "Good on pricing, but she is a tailor and I sell food — some of it did not apply. Useful hour, wrong person for the licence questions.",
+    wentBack: false },
+  { id: "r4", by: "Lakshmi Bai", who: "Coming back after 8 years", when: "3 months ago",
+    said: "I was embarrassed about the gap. She said hers was eleven years and asked what I could do now. Nobody had asked me that.",
+    wentBack: true },
+];
+
+/**
+ * Sessions already had with this mentor.
+ *
+ * Carries what she agreed to do, so the next session starts from it rather than
+ * from "so, how have you been?" — which is where a mentoring hour usually goes
+ * when nobody wrote anything down.
+ */
+export interface PastSession {
+  id: string;
+  when: string;
+  minutes: number;
+  about: string;
+  agreed: string | null;
+  done: boolean;
+}
+
+export const PAST_SESSIONS: PastSession[] = [
+  { id: "ps1", when: "14 August", minutes: 30, about: "What to charge for bridal work",
+    agreed: "Work out the cloth cost on the next three orders", done: true },
+  { id: "ps2", when: "2 September", minutes: 45, about: "Taking an order too big for me alone",
+    agreed: "Ask two women from the circle before saying yes", done: false },
+];
+
+export const reviewStats = (rows: Review[]) => ({
+  total: rows.length,
+  wentBack: rows.filter((r) => r.wentBack).length,
+});

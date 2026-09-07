@@ -7,6 +7,7 @@ import { useAction } from "@/lib/use-action";
 import { useAttemptKey } from "@/lib/idempotency";
 import Link from "next/link";
 import * as Icons from "@/components/ux/icons";
+import { matchFor } from "@/services/job-match";
 
 import {
   Btn, Card, EmptyState, I, IconTile, Pill, RailSkeleton, ScreenSkeleton, SectionHead,
@@ -27,6 +28,9 @@ export default function OpportunityDetail({ params }: { params: Promise<{ id: st
   const { id } = use(params);
   const { data: JOBS, source, refetch } = useJobs();
   const job = JOBS.find((j) => j.id === id);
+  // Which of the asked-for skills she already has — the same computation the
+  // list uses, so the two screens can never disagree.
+  const fit = matchFor(job?.skills ?? []);
   /**
    * Whether she has applied, and whether she has saved it — from the server,
    * with a press still in flight allowed to show through.
@@ -105,15 +109,33 @@ export default function OpportunityDetail({ params }: { params: Promise<{ id: st
           {job.skills.length > 0 && (
             <Card>
               <SectionHead title="What they ask for" sub="Straight from the listing" />
+              {/* Ticked where she has it, outlined where she does not. A flat
+                  list of requirements makes every listing look equally out of
+                  reach; showing which ones she already meets is the difference
+                  between a wall and a short list. */}
               <ul className="space-y-2">
-                {job.skills.map((s, i) => (
-                  <li key={s} className="ux-rise flex items-center gap-2 text-[0.8125rem]"
-                      style={{ ["--i" as string]: i, color: "var(--ux-ink-2)" }}>
-                    <Icons.Check className="h-[15px] w-[15px] shrink-0" style={{ color: "var(--ux-green-ink)" }} strokeWidth={2.6} />
-                    {s}
-                  </li>
-                ))}
+                {job.skills.map((s, i) => {
+                  const has = fit.have.includes(s);
+                  return (
+                    <li key={s} className="ux-rise flex items-center gap-2 text-[0.8125rem]"
+                        style={{ ["--i" as string]: i, color: has ? "var(--ux-ink)" : "var(--ux-muted)" }}>
+                      <Icons.Check className="h-[15px] w-[15px] shrink-0"
+                                   style={{ color: has ? "var(--ux-green-ink)" : "var(--ux-line-strong)" }}
+                                   strokeWidth={2.6} />
+                      {s}
+                      {has && <span className="text-[0.6875rem] font-semibold"
+                                    style={{ color: "var(--ux-green-ink)" }}>you have this</span>}
+                    </li>
+                  );
+                })}
               </ul>
+              {fit.missing.length > 0 && (
+                <p className="mt-3 rounded-[8px] px-3 py-2.5 text-[0.75rem] leading-relaxed"
+                   style={{ background: "var(--ux-surface-2)", color: "var(--ux-ink-2)" }}>
+                  You can still apply without {fit.missing.length === 1 ? "it" : "all of them"}. Most
+                  women here were missing something on the job they got.
+                </p>
+              )}
             </Card>
           )}
 
@@ -126,6 +148,36 @@ export default function OpportunityDetail({ params }: { params: Promise<{ id: st
                         tint="--ux-tint-violet" ink="--ux-violet" />
               <RailStat value={job.posted} label="Posted" icon="Clock"
                         tint="--ux-tint-blue" ink="--ux-blue" />
+            </div>
+          </Card>
+
+          {/* What to have ready. A woman who reaches the form and discovers she
+              needs a document she does not have loses the application and often
+              does not come back. Saying it before she starts is the whole
+              point — and every one of these is already in her vault. */}
+          <Card>
+            <SectionHead title="What to have ready" sub="All of it is already in your vault" icon="FolderLock" />
+            <ul className="space-y-2.5">
+              {[
+                { what: "A photo ID", why: "Aadhaar, voter card or driving licence", have: true },
+                { what: "Your bank details", why: "So they can pay you", have: true },
+                { what: "Proof you earn", why: "Only for the bigger contracts", have: true },
+                { what: "A reference", why: "A woman who has worked with you", have: false },
+              ].map((d) => (
+                <li key={d.what} className="flex items-start gap-2.5">
+                  <Icons.Check className="mt-[2px] h-[15px] w-[15px] shrink-0"
+                               style={{ color: d.have ? "var(--ux-green-ink)" : "var(--ux-line-strong)" }}
+                               strokeWidth={2.6} />
+                  <span className="min-w-0">
+                    <span className="text-[0.8125rem] font-semibold"
+                          style={{ color: d.have ? "var(--ux-ink)" : "var(--ux-muted)" }}>{d.what}</span>
+                    <span className="block text-[0.75rem]" style={{ color: "var(--ux-muted)" }}>{d.why}</span>
+                  </span>
+                </li>
+              ))}
+            </ul>
+            <div className="mt-3.5">
+              <Btn size="sm" variant="outline" href="/app/vault" icon="Lock">Open your vault</Btn>
             </div>
           </Card>
 

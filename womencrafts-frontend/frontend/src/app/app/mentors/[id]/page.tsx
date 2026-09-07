@@ -12,7 +12,7 @@ import {
 } from "@/components/ux/kit";
 import { HomeShell } from "@/components/ux/home/HomeShell";
 import { useMentors } from "@/components/ux/live";
-import { rupees } from "@/components/ux/mentors/data";
+import { rupees , PAST_SESSIONS, REVIEWS, reviewStats } from "@/components/ux/mentors/data";
 
 const SLOTS = [
   { day: "Mon 26 May", times: ["11:00 AM", "5:30 PM"] },
@@ -261,6 +261,69 @@ export default function MentorDetail({ params }: { params: Promise<{ id: string 
             ))}
           </div>
         </Card>
+      </div>
+
+      {/* Sessions already had. A mentoring hour that starts with "so, how have
+          you been?" wastes the first ten minutes; starting from what she agreed
+          to last time does not. */}
+      {PAST_SESSIONS.length > 0 && (
+        <div className="mt-[16px]">
+          <SectionHead title="Your sessions with her" icon="History"
+                       chip={String(PAST_SESSIONS.length)} />
+          <Card pad={0} style={{ overflow: "hidden" }}>
+            {PAST_SESSIONS.map((ps, i) => (
+              <div key={ps.id} className="flex flex-wrap items-start gap-3.5 px-5 py-4"
+                   style={{ borderTop: i === 0 ? "none" : "1px solid var(--ux-line)" }}>
+                <IconTile icon={ps.done ? "CheckCircle2" : "Clock"}
+                          tint={ps.done ? "--ux-tint-green" : "--ux-tint-amber"}
+                          ink={ps.done ? "--ux-green-ink" : "--ux-amber-ink"} size={36} />
+                <div className="min-w-0 flex-1">
+                  <p className="text-[0.875rem] font-bold" style={{ color: "var(--ux-ink)" }}>{ps.about}</p>
+                  <p className="mt-0.5 text-[0.75rem]" style={{ color: "var(--ux-muted)" }}>
+                    {ps.when} · {ps.minutes} minutes
+                  </p>
+                  {ps.agreed && (
+                    <p className="mt-2 flex items-start gap-2 rounded-[8px] px-3 py-2 text-[0.75rem] leading-snug"
+                       style={{ background: "var(--ux-surface-2)", color: "var(--ux-ink-2)" }}>
+                      <Icons.Flag className="mt-[2px] h-[0.75rem] w-[0.75rem] shrink-0"
+                                  style={{ color: `var(${ps.done ? "--ux-green-ink" : "--ux-amber-ink"})` }} />
+                      <span>
+                        <b style={{ color: "var(--ux-ink)" }}>{ps.done ? "You did this:" : "Still to do:"}</b>{" "}
+                        {ps.agreed}
+                      </span>
+                    </p>
+                  )}
+                </div>
+              </div>
+            ))}
+          </Card>
+        </div>
+      )}
+
+      {/* What women said afterwards. Words, not stars — see the note in the
+          data file for why a 4.8 average separates nobody. */}
+      <div className="mt-[16px]">
+        <SectionHead title="What women said after an hour with her"
+                     sub={`${reviewStats(REVIEWS).wentBack} of ${reviewStats(REVIEWS).total} came back for another`}
+                     icon="MessageSquare" />
+        <div className="grid gap-3 lg:grid-cols-2">
+          {REVIEWS.map((r) => (
+            <Card key={r.id} pad={18}>
+              <p className="text-[0.875rem] italic leading-relaxed" style={{ color: "var(--ux-ink)" }}>
+                &ldquo;{r.said}&rdquo;
+              </p>
+              <div className="mt-3 flex flex-wrap items-center gap-2">
+                <span className="text-[0.8125rem] font-bold" style={{ color: "var(--ux-ink-2)" }}>{r.by}</span>
+                <span className="text-[0.75rem]" style={{ color: "var(--ux-muted)" }}>· {r.who} · {r.when}</span>
+              </div>
+              <p className="mt-2 inline-flex items-center gap-1.5 text-[0.75rem] font-semibold"
+                 style={{ color: `var(${r.wentBack ? "--ux-green-ink" : "--ux-muted"})` }}>
+                <Icons.Repeat className="h-[0.75rem] w-[0.75rem]" />
+                {r.wentBack ? "She booked another" : "She did not book again"}
+              </p>
+            </Card>
+          ))}
+        </div>
       </div>
 
       {others.length > 0 && (
