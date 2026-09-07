@@ -1,6 +1,7 @@
 "use client";
 
 import { use, useState } from "react";
+import { COPY } from "@/components/ux/copy";
 import Link from "next/link";
 import * as Icons from "@/components/ux/icons";
 
@@ -32,7 +33,7 @@ export default function BookingDetail({ params }: { params: Promise<{ id: string
       onDone: refetch,
       optimistic: () => setCancelled(true),
       rollback: () => setCancelled(false),
-      fallbackError: "We could not cancel it. Your booking still stands — try again.",
+      fallbackError: COPY.booking.cancelFailed,
     },
   );
   const b = BOOKINGS.find((x) => x.id === id);
@@ -58,7 +59,7 @@ export default function BookingDetail({ params }: { params: Promise<{ id: string
           <EmptyState
             icon="CalendarX"
             title="That booking is not here"
-            body="It may have been cancelled, or the link may be old."
+            body={COPY.goneOrOld}
             action={<Btn href="/app/bookings" variant="primary" iconEnd="ArrowRight">All bookings</Btn>}
           />
         </Card>
@@ -166,8 +167,8 @@ export default function BookingDetail({ params }: { params: Promise<{ id: string
               {b.kind === "Mentor"
                 ? "She has kept this hour free for you. Cancel it?"
                 : b.kind === "Event"
-                  ? "Your stall fee comes back in 5–7 working days. Cancel it?"
-                  : "Your place goes to the next woman on the list. Cancel it?"}
+                  ? COPY.booking.refundNote
+                  : COPY.booking.placeGoesOn}
             </p>
             <span className="flex shrink-0 items-center gap-2">
               <Btn variant="outline" size="sm" onClick={() => setAsking(false)}>Keep it</Btn>
@@ -191,8 +192,8 @@ export default function BookingDetail({ params }: { params: Promise<{ id: string
             )}
             {live && b.kind === "Mentor" && (
               <ActionBtn variant="primary" icon="Video" doneIcon="Copy"
-                         done="Link copied — open it in your browser"
-                         act={() => copy(`https://meet.womsakhi.in/${b.id}`, "Link copied — open it in your browser", "Copy it by hand: meet.womsakhi.in/" + b.id)}>
+                         done={COPY.linkCopied}
+                         act={() => copy(`https://meet.womsakhi.in/${b.id}`, COPY.linkCopied, "Copy it by hand: meet.womsakhi.in/" + b.id)}>
                 Join the call
               </ActionBtn>
             )}
@@ -202,14 +203,14 @@ export default function BookingDetail({ params }: { params: Promise<{ id: string
             {b.state === "Finished" && (
               <NoteBtn label="Leave a note" size="md" icon="Star" stars
                        title={`How was ${b.what}?`} to="the WomSakhi team"
-                       placeholder="What went well, and what would have helped? The team reads every one of these."
+                       placeholder={COPY.booking.feedbackAsk}
                        send={(n) => apiLeaveFeedback({
                          text: n.text, rating: n.rating,
                          type: b.kind === "Mentor" ? "Mentoring Session" : "Program Feedback",
                          program: b.what,
                        })}
                        sent="Thank you — the team has your note"
-                       sentBody="It goes to the people who run WomSakhi. It is not shown publicly."
+                       sentBody={COPY.booking.feedbackPrivate}
                        sentLink={null} />
             )}
           </div>

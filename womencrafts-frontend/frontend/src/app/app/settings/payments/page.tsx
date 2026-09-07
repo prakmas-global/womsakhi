@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { COPY } from "@/components/ux/copy";
 import * as Icons from "@/components/ux/icons";
 
 import { Btn, IconTile, Pill, SourceNote } from "@/components/ux/kit";
@@ -62,7 +63,7 @@ export default function PaymentMethodsPage() {
       // nothing change must be told it did not work.
       setProblem(
         (e as { response?: { data?: { error?: { message?: string } } } })
-          ?.response?.data?.error?.message || "That did not go through. Try again in a moment.",
+          ?.response?.data?.error?.message || COPY.writeFailed,
       );
     } finally {
       setBusy(false);

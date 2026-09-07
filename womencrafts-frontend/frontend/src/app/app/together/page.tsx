@@ -86,7 +86,7 @@ export default function TogetherHub() {
         {/* The other three */}
         <div className="grid gap-3 md:grid-cols-3">
           {[
-            { href: "/app/together/learn", icon: "GraduationCap", tint: "--ux-tint-blue", ink: "--ux-blue-ink",
+            { href: "/app/library", icon: "GraduationCap", tint: "--ux-tint-blue", ink: "--ux-blue-ink",
               title: "Learn it from her", body: "Women teach what they actually do — and you learn it beside a friend, which is the only way it sticks." },
             { href: "/app/circles", icon: "Users", tint: "--ux-tint-pink", ink: "--ux-pink-ink",
               title: "Who is missing", body: "A circle works when the money can go round it. Four women near you would close the loop." },

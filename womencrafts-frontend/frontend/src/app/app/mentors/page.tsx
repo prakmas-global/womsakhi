@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { COPY } from "@/components/ux/copy";
 import Link from "next/link";
 import * as Icons from "@/components/ux/icons";
 
@@ -272,7 +273,7 @@ export default function MentorsPage() {
                 <span className="flex shrink-0 items-center gap-2">
                   {s.state === "Upcoming" && (
                     <ActionBtn variant="primary" size="sm" icon="Video" doneIcon="Copy" done="Link copied"
-                               act={() => copy(`https://meet.womsakhi.in/${s.id}`, "Link copied — open it in your browser", "meet.womsakhi.in/" + s.id)}>
+                               act={() => copy(`https://meet.womsakhi.in/${s.id}`, COPY.linkCopied, "meet.womsakhi.in/" + s.id)}>
                       Join
                     </ActionBtn>
                   )}

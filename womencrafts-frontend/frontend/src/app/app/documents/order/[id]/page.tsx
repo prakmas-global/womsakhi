@@ -1,6 +1,7 @@
 "use client";
 
 import { use, useState } from "react";
+import { COPY } from "@/components/ux/copy";
 
 import { apiAdvanceOrder, apiCancelShopOrder } from "@/lib/shop-api";
 import { messageFrom } from "@/lib/use-action";
@@ -56,7 +57,7 @@ export default function OrderDetail({ params }: { params: Promise<{ id: string }
           <EmptyState
             icon="PackageX"
             title="That order is not here"
-            body="It may have been cancelled, or the link may be old."
+            body={COPY.goneOrOld}
             action={<Btn href="/app/documents" variant="primary" iconEnd="ArrowRight">Your orders</Btn>}
           />
         </Card>

@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { COPY } from "@/components/ux/copy";
 import Link from "next/link";
 import * as Icons from "@/components/ux/icons";
 
@@ -251,7 +252,7 @@ export default function SakhiPage() {
         else if (h === false) back[i] = "down";
       });
       setVotes(back);
-    } catch { setError("That conversation could not be opened."); }
+    } catch { setError(COPY.threadFailed); }
   }
 
   async function remove(id: string) {

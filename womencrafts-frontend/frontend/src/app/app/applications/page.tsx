@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { COPY } from "@/components/ux/copy";
 import * as Icons from "@/components/ux/icons";
 
 import {
@@ -143,8 +144,8 @@ export default function Applications() {
                     <Btn href={`/app/opportunities/${a.jobId}`} variant="outline" size="sm">The listing</Btn>
                     {a.stage === "Interview" && (
                       <ActionBtn variant="primary" size="sm" icon="Video" doneIcon="Copy"
-                                 done="Link copied — open it in your browser"
-                                 act={() => copy(`https://meet.womsakhi.in/${a.id}`, "Link copied — open it in your browser", "Copy it by hand: meet.womsakhi.in/" + a.id)}>
+                                 done={COPY.linkCopied}
+                                 act={() => copy(`https://meet.womsakhi.in/${a.id}`, COPY.linkCopied, "Copy it by hand: meet.womsakhi.in/" + a.id)}>
                         Join the call
                       </ActionBtn>
                     )}

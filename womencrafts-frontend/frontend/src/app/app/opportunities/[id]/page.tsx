@@ -1,6 +1,7 @@
 "use client";
 
 import { use, useState } from "react";
+import { COPY } from "@/components/ux/copy";
 
 import { apiApply, apiToggleSaveOpportunity } from "@/lib/growth-api";
 import { useAction } from "@/lib/use-action";
@@ -319,7 +320,7 @@ export default function OpportunityDetail({ params }: { params: Promise<{ id: st
             {[
               ["No employer on WomSakhi may ask you for money", "IndianRupee"],
               ["Never share an OTP, even with someone who says they are hiring", "KeyRound"],
-              ["Meet in a public place, or on a video call", "Video"],
+              [COPY.meetSafely, "Video"],
             ].map(([t, ic]) => (
               <li key={t} className="flex items-start gap-2.5 text-[0.8125rem] leading-snug" style={{ color: "var(--ux-ink-2)" }}>
                 <I name={ic} className="mt-[1px] h-[15px] w-[15px] shrink-0" style={{ color: "var(--ux-brand)" }} />

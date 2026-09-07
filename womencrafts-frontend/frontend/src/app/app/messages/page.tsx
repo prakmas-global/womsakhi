@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { COPY } from "@/components/ux/copy";
 import * as Icons from "@/components/ux/icons";
 
 import { HomeShell } from "@/components/ux/home/HomeShell";
@@ -89,7 +90,7 @@ export default function MessagesPage() {
     let alive = true;
     apiConversation(openId)
       .then((d) => { if (alive) { setThread(d); setError(""); } })
-      .catch(() => { if (alive) setError("That conversation could not be opened."); });
+      .catch(() => { if (alive) setError(COPY.threadFailed); });
     return () => { alive = false; };
   }, [openId]);
 

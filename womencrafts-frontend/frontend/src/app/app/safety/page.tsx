@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useRef, useState } from "react";
+import { COPY } from "@/components/ux/copy";
 
 import {
   apiFileReport, apiRaiseAlert, apiSafetyCentre, apiStandDown,
@@ -20,7 +21,7 @@ const SCAMS = [
     body: "No employer, mentor or agent on WomSakhi may charge a registration, training or placement fee. Ever.", icon: "IndianRupee" },
   { id: "s2", title: "Never share an OTP, not even with 'support'",
     body: "We will never ask for one. Anyone who does is trying to get into your account or your bank.", icon: "KeyRound" },
-  { id: "s3", title: "Meet in a public place, or on a video call",
+  { id: "s3", title: COPY.meetSafely,
     body: "For a first meeting with a buyer or employer, choose somewhere with other people around.", icon: "MapPin" },
   { id: "s4", title: "A government scheme is always free to apply for",
     body: "If someone offers to 'get it approved' for a fee, that is not how any of them work.", icon: "Landmark" },

@@ -1,6 +1,7 @@
 "use client";
 
 import * as React from "react";
+import { COPY } from "@/components/ux/copy";
 import Link from "next/link";
 import * as Icons from "@/components/ux/icons";
 
@@ -462,7 +463,7 @@ export function ActionBtn({
       setFailed(false);
     } catch {
       setFailed(true);
-      setSaid("That did not go through. Try again in a moment.");
+      setSaid(COPY.writeFailed);
       window.clearTimeout(timer.current);
       timer.current = window.setTimeout(() => { setSaid(null); setFailed(false); }, hold * 2);
       return;

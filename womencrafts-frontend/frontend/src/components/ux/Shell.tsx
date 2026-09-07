@@ -500,7 +500,7 @@ export function Topbar({ user, mode, current }: { user: { name: string; avatar: 
                 // What is left is the personal admin that has no place in a
                 // daily navigation bar.
                 { label: "Your profile", icon: "User", href: "/app/profile" },
-                { label: "Your journey", icon: "Route", href: "/app/progress" },
+                { label: "Your journey", icon: "Route", href: "/app/journey" },
                 { label: "Notifications", icon: "Bell", href: "/app/notifications" },
                 { label: "Saved", icon: "Bookmark", href: "/app/saved" },
                 { label: "Settings", icon: "Settings", href: "/app/settings" },

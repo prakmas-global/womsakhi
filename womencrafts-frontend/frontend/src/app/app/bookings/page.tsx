@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useMemo, useState } from "react";
+import { COPY } from "@/components/ux/copy";
 import * as Icons from "@/components/ux/icons";
 
 import {
@@ -41,7 +42,7 @@ export default function BookingsPage() {
       onDone: refetch,
       optimistic: (id: string) => setCancelled((c) => [...c, id]),
       rollback: (id: string) => setCancelled((c) => c.filter((x) => x !== id)),
-      fallbackError: "We could not cancel it. Your booking still stands — try again.",
+      fallbackError: COPY.booking.cancelFailed,
     },
   );
   const [tab, setTab] = useState("Coming up");
@@ -162,8 +163,8 @@ export default function BookingsPage() {
                       {b.kind === "Mentor"
                         ? "She has kept this hour free. Cancel it?"
                         : b.kind === "Event"
-                          ? "Your stall fee comes back in 5–7 working days. Cancel it?"
-                          : "Your place goes to the next woman on the list. Cancel it?"}
+                          ? COPY.booking.refundNote
+                          : COPY.booking.placeGoesOn}
                     </p>
                     <span className="flex shrink-0 items-center gap-2">
                       <Btn variant="outline" size="sm" onClick={() => setCancelling(null)}>Keep it</Btn>
@@ -206,13 +207,13 @@ export default function BookingsPage() {
                     {b.state === "Finished" && (
                       <NoteBtn label="Leave a note" icon="Star" stars
                                title={`How was ${b.what}?`} to="the WomSakhi team"
-                               placeholder="What went well, and what would have helped? The team reads every one of these."
+                               placeholder={COPY.booking.feedbackAsk}
                                send={(n) => apiLeaveFeedback({
                                  text: n.text, rating: n.rating,
                                  type: "Program Feedback", program: b.what,
                                })}
                                sent="Thank you — the team has your note"
-                               sentBody="It goes to the people who run WomSakhi. It is not shown publicly."
+                               sentBody={COPY.booking.feedbackPrivate}
                                sentLink={null} />
                     )}
                     {gone && <Btn href={b.kind === "Mentor" ? "/app/mentors" : "/app/events"} variant="soft" size="sm" icon="RotateCcw">Book again</Btn>}

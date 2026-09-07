@@ -1,6 +1,7 @@
 "use client";
 
 import { use, useState } from "react";
+import { COPY } from "@/components/ux/copy";
 import Link from "next/link";
 import * as Icons from "@/components/ux/icons";
 
@@ -53,7 +54,7 @@ export default function CircleDetail({ params }: { params: Promise<{ id: string 
       onDone: refetch,
       optimistic: (want) => setPending(want === "join"),
       rollback: () => setPending(null),
-      fallbackError: "That did not go through. Try again in a moment.",
+      fallbackError: COPY.writeFailed,
     },
   );
 

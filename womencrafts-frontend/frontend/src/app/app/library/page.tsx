@@ -86,6 +86,20 @@ export default function SkillExchangePage() {
           </Card>
 
           <Card className="ux-onscroll-soft">
+            {/* Merged in from /app/together/learn, which was a second screen
+                for this same idea. The finding is why pairs are encouraged at
+                all — without it the rule reads as an arbitrary restriction. */}
+            <div className="mb-4 rounded-[16px] p-5"
+                 style={{ background: "var(--ux-brand-tint)", border: "1px solid transparent" }}>
+              <p className="text-[0.875rem] font-bold" style={{ color: "var(--ux-ink)" }}>
+                Bring someone with you
+              </p>
+              <p className="mt-1.5 max-w-[54ch] text-[0.8125rem] leading-relaxed" style={{ color: "var(--ux-ink-2)" }}>
+                Women taught alongside a friend kept what they learned and earned more from it.
+                Women taught alone mostly went back to how they worked before.
+              </p>
+            </div>
+
             <SectionHead title="How an exchange works" icon="Info" />
             <ol className="space-y-3">
               {[

@@ -3,10 +3,11 @@
 import { useCallback, useMemo, useState } from "react";
 
 import { HomeShell } from "@/components/ux/home/HomeShell";
-import { Btn, Card, I, Pill, SectionHead, v } from "@/components/ux/kit";
+import { Btn, Card, I, IconTile, Pill, SectionHead, v } from "@/components/ux/kit";
 import { formatRupees } from "@/components/ux/kit";
 import { NextStepCard } from "@/components/ux/journey/NextStepCard";
 import { readJourneyState } from "@/services/me.repository";
+import { useJourney } from "@/components/ux/journey";
 import { STAGES, journeyPct, nextStep, stageFor } from "@/services/journey";
 
 /**
@@ -37,6 +38,15 @@ export default function JourneyPage() {
   const step = useMemo(() => nextStep(state), [state]);
   const pct = useMemo(() => journeyPct(state), [state]);
   const at = STAGES.findIndex((s) => s.id === stage);
+
+  /**
+   * Her real milestones, merged in from the screen that used to live at
+   * /app/progress. Those are live — reached dates, what changed — while the
+   * stage machine above is derived. Both belong on one screen; two screens both
+   * called "your journey" meant the account menu and the rail pointed at
+   * different answers to the same question.
+   */
+  const { data: live } = useJourney();
 
   const [dismissed, setDismissed] = useState(false);
   const dismiss = useCallback(() => setDismissed(true), []);
@@ -147,6 +157,30 @@ export default function JourneyPage() {
             </ol>
           </Card>
         </div>
+
+        {/* What she has actually reached, with dates. Merged from /app/progress. */}
+        {live?.milestones?.length > 0 && (
+          <div>
+            <SectionHead title="What you have already reached"
+                         sub={`${live.milestones.filter((m) => m.done).length} of ${live.milestones.length}`}
+                         icon="Flag" />
+            <Card pad={0} style={{ overflow: "hidden" }}>
+              {live.milestones.map((m, i) => (
+                <div key={m.id} className="flex items-start gap-3.5 px-5 py-4"
+                     style={{ borderTop: i === 0 ? "none" : `1px solid ${v("--ux-line")}`,
+                              opacity: m.done ? 1 : 0.6 }}>
+                  <IconTile icon={m.done ? "CheckCircle2" : m.icon} tint={m.tint} ink={m.ink} size={38} />
+                  <div className="min-w-0 flex-1">
+                    <p className="text-[0.875rem] font-bold" style={{ color: v("--ux-ink") }}>{m.title}</p>
+                    <p className="mt-0.5 text-[0.75rem] leading-relaxed" style={{ color: v("--ux-muted") }}>
+                      {m.body}{m.when ? ` · ${m.when}` : ""}
+                    </p>
+                  </div>
+                </div>
+              ))}
+            </Card>
+          </div>
+        )}
 
         <Card pad={16} style={{ background: v("--ux-surface-2"), borderColor: "transparent" }}>
           <div className="flex items-start gap-3">

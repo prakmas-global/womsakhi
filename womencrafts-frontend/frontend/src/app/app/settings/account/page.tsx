@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useRef, useState } from "react";
+import { COPY } from "@/components/ux/copy";
 
 import { apiMeProfile, apiUpdateMeProfile, type MeProfile } from "@/lib/member-api";
 import { apiUploadImage, uploadErrorMessage, validateImage } from "@/lib/uploads-api";
@@ -116,7 +117,7 @@ export default function AccountSettings() {
         <div className="flex items-center justify-between gap-4">
           <p className="text-[0.75rem]"
              style={{ color: save.error ? "var(--ux-orange-ink)" : saved ? "var(--ux-green-ink)" : "var(--ux-faint)" }}>
-            {save.error ? save.error : saved ? "Saved." : "Nothing is saved until you press the button."}
+            {save.error ? save.error : saved ? "Saved." : COPY.nothingSavedYet}
           </p>
           <Btn variant="primary" icon={save.busy ? "Loader" : "Check"} disabled={save.busy}
                onClick={() => void save.run()}>

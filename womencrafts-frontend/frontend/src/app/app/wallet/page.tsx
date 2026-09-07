@@ -95,7 +95,7 @@ export default function WalletPage() {
           {GOAL ? (
             <Card className="ux-onscroll-soft">
               <SectionHead title="Your goal" action="Edit"
-                           onAction={() => { window.location.href = "/app/progress/goals"; }} />
+                           onAction={() => { window.location.href = "/app/goals"; }} />
               <p className="text-[0.8125rem] font-semibold" style={{ color: "var(--ux-ink)" }}>{GOAL.label}</p>
               <div className="mt-2.5 flex items-center gap-2.5">
                 <Progress pct={goalPct} track="--ux-track" />
@@ -117,7 +117,7 @@ export default function WalletPage() {
                 tell whether you have reached.
               </p>
               <div className="mt-3">
-                <Btn href="/app/progress/goals" variant="primary" size="sm" full iconEnd="ArrowRight">
+                <Btn href="/app/goals" variant="primary" size="sm" full iconEnd="ArrowRight">
                   Set one now
                 </Btn>
               </div>

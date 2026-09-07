@@ -82,7 +82,7 @@ export const MODES: Mode[] = [
     ],
     // Personal admin. Reached from the account menu and the topbar, not by
     // taking up a slot in the daily navigation.
-    also: ["/app/progress", "/app/notifications", "/app/saved", "/app/profile", "/app/sakhi"],
+    also: ["/app/notifications", "/app/saved", "/app/profile", "/app/sakhi"],
   },
   {
     // Promoted out of Home. Search answers a question she already has; this is
@@ -105,7 +105,7 @@ export const MODES: Mode[] = [
     ],
     also: ["/app/library", "/app/assess", "/app/digital"],
     findable: [
-      { label: "Saved to read later", icon: "BookMarked", href: "/app/library", note: "Guides you kept" },
+      { label: "Teach and learn", icon: "Handshake", href: "/app/library", note: "Swap what you know for what you need" },
       { label: "Prove your skills", icon: "BadgeCheck", href: "/app/assess", note: "A short test, then a certificate" },
       { label: "Using a phone", icon: "Smartphone", href: "/app/digital", note: "From the very beginning" },
     ],
@@ -179,7 +179,7 @@ export const MODES: Mode[] = [
       { label: "Helping each other", icon: "Handshake", href: "/app/together", note: "Teach, learn, and move house" },
       { label: "Pass it on", icon: "Gift", href: "/app/swap", note: "Things other women no longer need" },
     ],
-    also: ["/app/together/assist", "/app/together/learn", "/app/together/move"],
+    also: ["/app/together/assist", "/app/together/move"],
   },
   {
     // NOT in the master prompt's list of six. Kept anyway, and the reason is
@@ -241,30 +241,3 @@ export function itemForPath(mode: Mode, path: string): string | null {
   return best?.href ?? null;
 }
 
-/**
- * The rail `LearningShell` renders.
- *
- * Every entry here used to point into `/ux/*`, a preview route tree that was
- * deleted on 2026-08-26. Six of those destinations had never existed at all —
- * `/ux/continue`, `/ux/recommended`, `/ux/skills`, `/ux/mentor-connect`,
- * `/ux/careers` and `/ux/webinars` all answered 404 from the day this list was
- * written, so half a learner's sidebar was a dead end.
- *
- * Each label below now points at the screen in `/app` that actually does the
- * thing it names. "Continue Learning", "Recommended for You" and "Explore
- * Courses" were three links to what is one screen in the real product, so they
- * are one entry: duplicating a destination under three names teaches people
- * the rail is decorative.
- */
-export const LEARN_NAV: NavItem[] = [
-  { label: "Home", icon: "Home", href: "/app" },
-  { label: "Courses", icon: "BookOpen", href: "/app/programs" },
-  { label: "Prove your skills", icon: "BadgeCheck", href: "/app/assess" },
-  { label: "Mentors", icon: "Users", href: "/app/mentors" },
-  { label: "Career Opportunities", icon: "Briefcase", href: "/app/opportunities" },
-  { label: "Events & Webinars", icon: "CalendarDays", href: "/app/events" },
-  { label: "Community", icon: "UsersRound", href: "/app/circles" },
-  { label: "Saved", icon: "Bookmark", href: "/app/saved" },
-  { label: "Certificates", icon: "Award", href: "/app/certificates" },
-  { label: "Settings", icon: "Settings", href: "/app/settings" },
-];

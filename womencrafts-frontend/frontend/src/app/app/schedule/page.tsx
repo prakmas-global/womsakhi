@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { COPY } from "@/components/ux/copy";
 
 import { useDiary } from "@/components/ux/diary";
 import * as Icons from "@/components/ux/icons";
@@ -106,7 +107,7 @@ export default function Schedule() {
                   <Btn href={e.href} variant="outline" size="sm" iconEnd="ArrowRight">Open</Btn>
                   {e.cta === "Join" ? (
                     <ActionBtn variant="primary" size="sm" icon="Video" doneIcon="Copy" done="Link copied"
-                               act={() => copy(`https://meet.womsakhi.in/${e.id}`, "Link copied — open it in your browser", "meet.womsakhi.in/" + e.id)}>
+                               act={() => copy(`https://meet.womsakhi.in/${e.id}`, COPY.linkCopied, "meet.womsakhi.in/" + e.id)}>
                       Join
                     </ActionBtn>
                   ) : null}
