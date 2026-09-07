@@ -61,7 +61,7 @@ export default function SwapPage() {
         <header className="flex flex-wrap items-end gap-4">
           <div className="min-w-0 flex-1">
             <p className="text-[0.6875rem] font-extrabold uppercase tracking-[0.2em]" style={{ color: v("--ux-brand") }}>
-              Circle swap
+              Pass it on
             </p>
             <h1 className="mt-2 text-[clamp(1.5rem,3.2vw,2.125rem)] font-extrabold leading-[1.1] tracking-[-0.035em]"
                 style={{ color: v("--ux-ink") }}>

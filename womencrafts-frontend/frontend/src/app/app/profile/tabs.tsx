@@ -240,9 +240,9 @@ export function DocumentsTab() {
     <Card>
       <EmptyState
         icon="FolderLock"
-        title="Your papers live in your vault"
+        title="Your papers live in your locker"
         body="Aadhaar, PAN, bank details and registrations are kept there rather than on your profile, so nothing anyone can see is ever one tap from a document."
-        action={<Btn size="sm" href="/app/vault" icon="Lock">Open your vault</Btn>}
+        action={<Btn size="sm" href="/app/vault" icon="Lock">Open your locker</Btn>}
       />
     </Card>
   );

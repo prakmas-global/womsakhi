@@ -87,11 +87,11 @@ export default function DiscoverPage() {
 
         <header>
           <p className="text-[0.6875rem] font-extrabold uppercase tracking-[0.2em]" style={{ color: v("--ux-brand") }}>
-            Discover
+            For you
           </p>
           <h1 className="mt-2 text-[clamp(1.5rem,3.2vw,2.125rem)] font-extrabold leading-[1.1] tracking-[-0.035em]"
               style={{ color: v("--ux-ink") }}>
-            Things worth knowing about
+            Things worth a look
           </h1>
           <p className="mt-1.5 max-w-[58ch] text-[0.875rem] leading-relaxed" style={{ color: v("--ux-muted") }}>
             Not the most popular things — the ones that have something to do with you. Everything

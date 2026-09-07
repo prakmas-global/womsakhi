@@ -333,7 +333,7 @@ export const SHOWABLE: Showable[] = [
   { id: "sh2", label: "Your shop and what you sell", detail: "Prices are public anyway", on: true, icon: "Store" },
   { id: "sh3", label: "Classes and events you attend", detail: "Where you are on a Thursday", on: true, icon: "GraduationCap" },
   { id: "sh4", label: "This month's earnings", detail: "The total only, not where it went", on: false, icon: "Wallet" },
-  { id: "sh5", label: "Your vault and pockets", detail: "Never shown to anyone, by anyone", on: false, locked: true, icon: "Lock" },
+  { id: "sh5", label: "Your locker and pockets", detail: "Never shown to anyone, by anyone", on: false, locked: true, icon: "Lock" },
   { id: "sh6", label: "Your savings pot", detail: "Never shown. Your circle is private", on: false, locked: true, icon: "Coins" },
   { id: "sh7", label: "In case, and your papers", detail: "Never shown", on: false, locked: true, icon: "ShieldCheck" },
 ];

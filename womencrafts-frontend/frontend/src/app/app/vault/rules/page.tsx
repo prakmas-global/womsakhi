@@ -40,7 +40,7 @@ export default function RulesPage() {
         <Link href={"/app/vault"}
                 className="ux-press inline-flex w-fit items-center gap-1.5 text-[0.8125rem] font-semibold"
                 style={{ color: v("--ux-muted") }}>
-          <I name="ArrowLeft" className="h-[15px] w-[15px]" /> Back to your vault
+          <I name="ArrowLeft" className="h-[15px] w-[15px]" /> Back to your locker
         </Link>
 
         <header>

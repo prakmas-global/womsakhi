@@ -156,7 +156,7 @@ export default function OpportunityDetail({ params }: { params: Promise<{ id: st
               does not come back. Saying it before she starts is the whole
               point — and every one of these is already in her vault. */}
           <Card>
-            <SectionHead title="What to have ready" sub="All of it is already in your vault" icon="FolderLock" />
+            <SectionHead title="What to have ready" sub="All of it is already in your locker" icon="FolderLock" />
             <ul className="space-y-2.5">
               {[
                 { what: "A photo ID", why: "Aadhaar, voter card or driving licence", have: true },
@@ -177,7 +177,7 @@ export default function OpportunityDetail({ params }: { params: Promise<{ id: st
               ))}
             </ul>
             <div className="mt-3.5">
-              <Btn size="sm" variant="outline" href="/app/vault" icon="Lock">Open your vault</Btn>
+              <Btn size="sm" variant="outline" href="/app/vault" icon="Lock">Open your locker</Btn>
             </div>
           </Card>
 

@@ -68,14 +68,35 @@ function Icon({ name, className }: { name: string; className?: string }) {
  * "Your business" and "Your applications" are not self-explanatory, and a rail
  * with space to say what something is beats a longer rail that cannot.
  */
-const QUICK_LINKS = [
-  { label: "My Circles",  icon: "UsersRound",     href: "/app/circles",   tint: "--ux-tint-pink",   ink: "--ux-pink-ink" },
-  { label: "Savings Pot", icon: "PiggyBank",      href: "/app/circles",   tint: "--ux-tint-violet", ink: "--ux-violet-ink" },
-  { label: "Care Circle", icon: "HeartHandshake", href: "/app/family",    tint: "--ux-tint-blue",   ink: "--ux-blue-ink" },
-  { label: "My Shop",     icon: "Store",          href: "/app/documents", tint: "--ux-tint-amber",  ink: "--ux-amber-ink" },
-  { label: "Market",      icon: "ShoppingBasket", href: "/app/market", tint: "--ux-tint-green",  ink: "--ux-green-ink" },
-  { label: "Wallet",      icon: "Wallet",         href: "/app/wallet",    tint: "--ux-tint-lilac",  ink: "--ux-violet-ink" },
-] as const;
+/**
+ * The six shortcuts above the section rail.
+ *
+ * **The labels are looked up from the navigation, not typed here.** They used
+ * to be their own list and it drifted twice over: this strip said "My Shop"
+ * while the rail below said "Your shop", and "Buy from women" for the screen
+ * the rail called "The market" — one page showing a woman two names for one
+ * thing. Worse, "Savings Pot" and "My Circles" both pointed at `/app/circles`,
+ * so two of six shortcuts went to the same screen.
+ *
+ * Only the href and the tint are decided here. Everything she reads comes from
+ * `nav.ts`, which means a rename there reaches this strip with nothing to
+ * remember — the same rule the Home grid already follows.
+ */
+const QUICK_HREFS: { href: string; icon: string; tint: string; ink: string }[] = [
+  { href: "/app/circles",       icon: "UsersRound",     tint: "--ux-tint-pink",   ink: "--ux-pink-ink" },
+  { href: "/app/documents",     icon: "Store",          tint: "--ux-tint-amber",  ink: "--ux-amber-ink" },
+  { href: "/app/market",        icon: "ShoppingBasket", tint: "--ux-tint-green",  ink: "--ux-green-ink" },
+  { href: "/app/wallet",        icon: "Wallet",         tint: "--ux-tint-lilac",  ink: "--ux-violet-ink" },
+  { href: "/app/opportunities", icon: "Search",         tint: "--ux-tint-blue",   ink: "--ux-blue-ink" },
+  { href: "/app/sakhi",         icon: "Sparkles",       tint: "--ux-tint-violet", ink: "--ux-violet-ink" },
+];
+
+const QUICK_LINKS = QUICK_HREFS.map((q) => {
+  const item = MODES.flatMap((m) => [...m.items, ...(m.findable ?? [])]).find((i) => i.href === q.href);
+  // Sakhi is reached from the top bar rather than a rail slot, so it has no
+  // nav entry to read a label from.
+  return { ...q, label: item?.label ?? "Ask Sakhi" };
+});
 
 const MODULE_TINT = ["--ux-tint-violet", "--ux-tint-green", "--ux-tint-amber", "--ux-tint-blue", "--ux-tint-pink"] as const;
 const MODULE_INK  = ["--ux-violet-ink", "--ux-green-ink", "--ux-amber-ink", "--ux-blue-ink", "--ux-pink-ink"] as const;

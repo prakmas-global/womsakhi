@@ -13,7 +13,7 @@ import { ScreenError } from "@/components/ux/kit";
 export default function Error({ error, reset }: { error: Error & { digest?: string }; reset: () => void }) {
   return (
     <HomeShell>
-      <ScreenError what="the swap" reset={reset} detail={error.digest} />
+      <ScreenError what="what women are passing on" reset={reset} detail={error.digest} />
     </HomeShell>
   );
 }

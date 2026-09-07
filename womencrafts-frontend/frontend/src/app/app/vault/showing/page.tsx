@@ -43,7 +43,7 @@ export default function ShowingPage() {
         <Link href={"/app/vault"}
                 className="ux-press inline-flex w-fit items-center gap-1.5 text-[0.8125rem] font-semibold"
                 style={{ color: v("--ux-muted") }}>
-          <I name="ArrowLeft" className="h-[15px] w-[15px]" /> Back to your vault
+          <I name="ArrowLeft" className="h-[15px] w-[15px]" /> Back to your locker
         </Link>
 
         <header>
@@ -114,7 +114,7 @@ export default function ShowingPage() {
               <div className="flex items-start gap-3">
                 <I name="ShieldCheck" className="mt-[2px] h-[16px] w-[16px] shrink-0" style={{ color: v("--ux-muted") }} />
                 <p className="text-[0.8125rem] leading-relaxed" style={{ color: v("--ux-ink-2") }}>
-                  Your vault, your pockets, your savings pot and your papers have no switch at all —
+                  Your locker, your pockets, your savings pot and your papers have no switch at all —
                   not one that is turned off, one that does not exist. Nobody can turn them on: not
                   someone holding your phone, not someone who knows your PIN, not us. Everything else
                   is your choice, and you can change it any time.

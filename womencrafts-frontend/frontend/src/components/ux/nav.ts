@@ -88,11 +88,11 @@ export const MODES: Mode[] = [
     // Promoted out of Home. Search answers a question she already has; this is
     // for the much more common case where she has a situation rather than a
     // question, which is why it earns a tab and search stays a header control.
-    id: "discover", label: "Discover", icon: "Compass", href: "/app/discover",
+    id: "discover", label: "For you", icon: "Compass", href: "/app/discover",
     items: [
-      { label: "For you", icon: "Sparkles", href: "/app/discover", note: "Picked because of something you did" },
+      { label: "Chosen for you", icon: "Sparkles", href: "/app/discover", note: "Because of something you did" },
       { label: "Near you", icon: "MapPin", href: "/app/stories", note: "Women and help in your city" },
-      { label: "Have a look around", icon: "Telescope", href: "/app/explore", note: "Everything, by category" },
+      { label: "Everything there is", icon: "Telescope", href: "/app/explore", note: "All of it, grouped by what it is for" },
       { label: "Search", icon: "Search", href: "/app/search", note: "When you know what you want" },
     ],
   },
@@ -105,7 +105,7 @@ export const MODES: Mode[] = [
     ],
     also: ["/app/library", "/app/assess", "/app/digital"],
     findable: [
-      { label: "Your library", icon: "BookMarked", href: "/app/library", note: "Saved reading and guides" },
+      { label: "Saved to read later", icon: "BookMarked", href: "/app/library", note: "Guides you kept" },
       { label: "Prove your skills", icon: "BadgeCheck", href: "/app/assess", note: "A short test, then a certificate" },
       { label: "Using a phone", icon: "Smartphone", href: "/app/digital", note: "From the very beginning" },
     ],
@@ -120,12 +120,12 @@ export const MODES: Mode[] = [
       { label: "Did they pay her?", icon: "BadgeCheck", href: "/app/verified", note: "Before you take the work" },
       { label: "Your applications", icon: "ClipboardList", href: "/app/applications", note: "Where each one stands" },
       { label: "Big orders", icon: "Boxes", href: "/app/contracts", note: "Too big for one woman alone" },
-      { label: "Your record", icon: "FileText", href: "/app/trust", note: "Proof of who you have been" },
+      { label: "Proof you keep your word", icon: "FileText", href: "/app/trust", note: "Nine months, written down" },
     ],
     also: ["/app/bookings", "/app/contracts/together", "/app/intake"],
     findable: [
       { label: "Who signs the contract", icon: "FileSignature", href: "/app/contracts/together", note: "Three ways to bid as a group" },
-      { label: "Your bookings", icon: "CalendarCheck", href: "/app/bookings", note: "Sessions you have booked" },
+      { label: "Times you have booked", icon: "CalendarCheck", href: "/app/bookings", note: "Classes and sessions" },
     ],
   },
   {
@@ -136,9 +136,10 @@ export const MODES: Mode[] = [
       { label: "Your link, and getting paid", icon: "QrCode", href: "/app/collect", note: "Sell to people not on WomSakhi" },
       { label: "Ways to sell", icon: "Sparkles", href: "/app/shop", note: "Pre-orders, regulars, big orders" },
       { label: "The market", icon: "ShoppingBasket", href: "/app/market", note: "Buy from women you know" },
-      { label: "Your books", icon: "BookOpen", href: "/app/books", note: "Who owes you, and proof you earn" },
+      { label: "Who owes you money", icon: "BookOpen", href: "/app/books", note: "And proof of what you earn" },
+      { label: "Your money", icon: "PiggyBank", href: "/app/money", note: "Is there enough for what cannot wait" },
       { label: "Your wallet", icon: "Wallet", href: "/app/wallet", note: "Your balance, and taking it out" },
-      { label: "Your vault", icon: "Lock", href: "/app/vault", note: "Money kept separate, and quiet" },
+      { label: "Your locker", icon: "Lock", href: "/app/vault", note: "Money kept aside, and quiet" },
       // Renamed to what it actually is. This slot pointed at the SUPPORT FUND —
       // WomSakhi's own grant for women who cannot afford a course fee — under a
       // label promising "government schemes and grants", which is a different
@@ -161,7 +162,7 @@ export const MODES: Mode[] = [
       { label: "When something goes wrong", icon: "Scale", href: "/app/shop/disputes", note: "Sorted by a woman you both know" },
       { label: "What should you charge", icon: "Tag", href: "/app/shop/pricing", note: "What women near you ask" },
       { label: "Proof you earn", icon: "Receipt", href: "/app/books/proof", note: "A statement a landlord will take" },
-      { label: "Your rules", icon: "Repeat", href: "/app/vault/rules", note: "Money moved automatically" },
+      { label: "Save without thinking", icon: "Repeat", href: "/app/vault/rules", note: "Money moved for you, every week" },
       { label: "What you can recover", icon: "Undo2", href: "/app/haq/recover", note: "Money you were wrongly removed from" },
       { label: "Your papers", icon: "FileText", href: "/app/haq/papers", note: "Held once, reused everywhere" },
     ],
@@ -175,8 +176,8 @@ export const MODES: Mode[] = [
       { label: "Circles", icon: "UsersRound", href: "/app/circles", note: "Save and grow together" },
       { label: "Messages", icon: "MessageCircle", href: "/app/messages", note: "Buyers, mentors, circles" },
       { label: "Events", icon: "Ticket", href: "/app/events", note: "Melas, workshops and meets" },
-      { label: "Together", icon: "Handshake", href: "/app/together", note: "Help others, learn, and move" },
-      { label: "Circle swap", icon: "Gift", href: "/app/swap", note: "What someone near you no longer needs" },
+      { label: "Helping each other", icon: "Handshake", href: "/app/together", note: "Teach, learn, and move house" },
+      { label: "Pass it on", icon: "Gift", href: "/app/swap", note: "Things other women no longer need" },
     ],
     also: ["/app/together/assist", "/app/together/learn", "/app/together/move"],
   },
@@ -192,7 +193,7 @@ export const MODES: Mode[] = [
       { label: "Money traps", icon: "ShieldCheck", href: "/app/safe-money", note: "The tricks aimed at women like you" },
       { label: "When home is not sure", icon: "MessageCircle", href: "/app/bringing", note: "Something to show them" },
       { label: "The school year", icon: "GraduationCap", href: "/app/school", note: "Fees, forms and dates, per child" },
-      { label: "In case", icon: "ShieldCheck", href: "/app/incase", note: "If you are not there to say it" },
+      { label: "If something happens to me", icon: "ShieldCheck", href: "/app/incase", note: "Written down while you can" },
       { label: "Your rights", icon: "Scale", href: "/app/rights", note: "And a free lawyer" },
       { label: "Health", icon: "HeartPulse", href: "/app/health", note: "What is free, and what is due" },
       { label: "Family & childcare", icon: "Baby", href: "/app/family", note: "Near you, and what it costs" },
@@ -202,7 +203,7 @@ export const MODES: Mode[] = [
     findable: [
       { label: "Reading it out to you", icon: "Volume2", href: "/app/voice", note: "Any screen read aloud, in your language" },
       { label: "Staying strong", icon: "HeartPulse", href: "/app/health/strength", note: "What is free at a government centre" },
-      { label: "The change", icon: "Sun", href: "/app/health/change", note: "Menopause, and working through it" },
+      { label: "Menopause", icon: "Sun", href: "/app/health/change", note: "And working through it" },
     ],
   },
 ];
