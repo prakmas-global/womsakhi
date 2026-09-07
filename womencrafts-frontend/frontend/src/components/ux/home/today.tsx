@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import * as Icons from "lucide-react";
+import * as Icons from "@/components/ux/icons";
 
 import { Btn, Card, IconTile, SectionHead } from "../kit";
 import { useCountUp, usePointer } from "../kit/motion";
@@ -16,12 +16,19 @@ import { useSummary } from "@/components/ux/live";
  * next, and what work is open right now. Everything below this band is
  * browsing; this band is the app doing the deciding for her.
  *
+ * ── One column on a phone ───────────────────────────────────────────────────
+ * The three panels were `1.25fr 1fr 1fr` at every width. At 390px that is
+ * roughly 150px, 120px and 120px — so "Money this month" became two lines of
+ * two words, "Finish Social Media Strategy" was cut off mid-word, and the third
+ * panel was off the screen entirely. They stack now, and take their intended
+ * proportions back at `md`.
+ *
  * The panels are deliberately NOT the same size. A grid of equal cards says
  * everything matters equally, which is the same as saying nothing does.
  */
 export function Today() {
   return (
-    <section className="mt-[17px] grid gap-[15px]" style={{ gridTemplateColumns: "1.25fr 1fr 1fr" }}>
+    <section className="ux-today mt-[16px] grid gap-[16px]">
       <MoneyPanel />
       <NextStepPanel />
       <WorkPanel />
@@ -77,27 +84,27 @@ function MoneyPanel() {
             <circle
               cx={40} cy={40} r={r} fill="none" stroke="var(--ux-green)" strokeWidth="7"
               strokeLinecap="round" strokeDasharray={c} strokeDashoffset={c * (1 - pct / 100)}
-              style={{ transition: "stroke-dashoffset 900ms var(--ux-ease-out)" }}
+              style={{ transition: "stroke-dashoffset var(--ux-t-draw) var(--ux-ease-out)" }}
             />
           </svg>
           <span className="absolute text-center">
-            <span className="block text-[15px] font-bold leading-none tabular-nums" style={{ color: "var(--ux-ink)" }}>
+            <span className="block text-[1rem] font-bold leading-none tabular-nums" style={{ color: "var(--ux-ink)" }}>
               {pct}%
             </span>
-            <span className="mt-[2px] block text-[8.5px] uppercase tracking-[0.08em]" style={{ color: "var(--ux-faint)" }}>
+            <span className="mt-[2px] block text-[0.6875rem] uppercase tracking-[0.08em]" style={{ color: "var(--ux-faint)" }}>
               of goal
             </span>
           </span>
         </span>
 
         <div className="min-w-0 flex-1">
-          <p className="text-[26px] font-bold leading-none tabular-nums" style={{ color: "var(--ux-ink)" }}>
+          <p className="text-[1.5rem] font-bold leading-none tabular-nums" style={{ color: "var(--ux-ink)" }}>
             {money(total)}
           </p>
-          <p className="mt-1.5 text-[11.5px]" style={{ color: "var(--ux-muted)" }}>
+          <p className="mt-1.5 text-[0.75rem]" style={{ color: "var(--ux-muted)" }}>
             of your {money(goal)} goal
           </p>
-          <p className="mt-2 flex items-center gap-1 text-[11.5px] font-medium"
+          <p className="mt-2 flex items-center gap-1 text-[0.75rem] font-medium"
              style={{ color: grew ? "var(--ux-green-ink)" : "var(--ux-orange-ink)" }}>
             <Icons.TrendingUp className="h-3.5 w-3.5" style={{ transform: grew ? "none" : "scaleY(-1)" }} />
             {grew ? "+" : ""}{delta}% on last month
@@ -110,10 +117,10 @@ function MoneyPanel() {
           names a client or a day. Stated when it exists, absent when it does
           not; "₹0 is on its way" invents a worry. */}
       {(m?.pending_minor ?? 0) > 0 && (
-        <div className="ux-sq mt-auto flex items-center gap-2.5 rounded-[11px] p-2.5"
+        <div className="ux-sq mt-auto flex items-center gap-2.5 rounded-[12px] p-2.5"
              style={{ background: "var(--ux-tint-green)" }}>
           <Icons.Clock className="h-[15px] w-[15px] shrink-0" style={{ color: "var(--ux-green-ink)" }} />
-          <span className="min-w-0 flex-1 text-[11.5px]" style={{ color: "var(--ux-ink-2)" }}>
+          <span className="min-w-0 flex-1 text-[0.75rem]" style={{ color: "var(--ux-ink-2)" }}>
             <strong style={{ color: "var(--ux-ink)" }}>{money(Math.round((m?.pending_minor ?? 0) / 100))}</strong> on its way
           </span>
         </div>
@@ -129,19 +136,19 @@ function NextStepPanel() {
   return (
     <div
       ref={point}
-      className="ux-sq ux-spot ux-onscroll ux-grain relative flex flex-col justify-between rounded-[16px] p-[18px]"
+      className="ux-sq ux-spot ux-onscroll ux-grain relative flex flex-col justify-between rounded-[16px] p-[20px]"
       style={{
         background: "linear-gradient(150deg, oklch(0.36 0.14 294), oklch(0.48 0.17 310))",
       }}
     >
       <div className="relative">
-        <p className="flex items-center gap-1.5 text-[10.5px] font-semibold uppercase tracking-[0.14em]"
+        <p className="flex items-center gap-1.5 text-[0.6875rem] font-semibold uppercase tracking-[0.14em]"
            style={{ color: "rgba(255,255,255,0.66)" }}>
           <Icons.Target className="h-[13px] w-[13px]" /> Your next step
         </p>
-        <h2 className="mt-2.5 text-[17px] font-bold leading-snug text-white">{NEXT_STEP.title}</h2>
+        <h2 className="mt-2.5 text-[1.125rem] font-bold leading-snug text-white">{NEXT_STEP.title}</h2>
         {/* The reason, not just the instruction. She can disagree with a reason. */}
-        <p className="mt-2 text-[12px] leading-relaxed" style={{ color: "rgba(255,255,255,0.82)" }}>
+        <p className="mt-2 text-[0.75rem] leading-relaxed" style={{ color: "rgba(255,255,255,0.82)" }}>
           {NEXT_STEP.because}
         </p>
       </div>
@@ -150,7 +157,7 @@ function NextStepPanel() {
         <Btn href={NEXT_STEP.href} variant="soft" size="sm" icon={NEXT_STEP.icon}>
           {NEXT_STEP.cta}
         </Btn>
-        <span className="text-[11.5px]" style={{ color: "rgba(255,255,255,0.72)" }}>
+        <span className="text-[0.75rem]" style={{ color: "rgba(255,255,255,0.72)" }}>
           {NEXT_STEP.mins} min
         </span>
       </div>
@@ -172,22 +179,22 @@ function WorkPanel() {
         <div className="flex items-start gap-3">
           <IconTile icon="Briefcase" tint="--ux-tint-pink" ink="--ux-pink" size={40} radius={11} />
           <div className="min-w-0 flex-1">
-            <h3 className="truncate text-[13.5px] font-semibold" style={{ color: "var(--ux-ink)" }}>{w.title}</h3>
-            <p className="mt-0.5 truncate text-[11.5px]" style={{ color: "var(--ux-muted)" }}>
+            <h3 className="truncate text-[0.875rem] font-semibold" style={{ color: "var(--ux-ink)" }}>{w.title}</h3>
+            <p className="mt-0.5 truncate text-[0.75rem]" style={{ color: "var(--ux-muted)" }}>
               {w.org} <span aria-hidden>•</span> {w.place}
             </p>
           </div>
-          <span className="ux-sq shrink-0 rounded-[8px] px-2 py-[3px] text-[11px] font-bold tabular-nums"
+          <span className="ux-sq shrink-0 rounded-[8px] px-2 py-[3px] text-[0.6875rem] font-bold tabular-nums"
                 style={{ background: "var(--ux-tint-green)", color: "var(--ux-green-ink)" }}>
             {w.match}%
           </span>
         </div>
 
-        <p className="mt-3 text-[15px] font-bold" style={{ color: "var(--ux-ink)" }}>{w.pay}</p>
-        <p className="mt-1 text-[11.5px]" style={{ color: "var(--ux-muted)" }}>a month</p>
+        <p className="mt-3 text-[1rem] font-bold" style={{ color: "var(--ux-ink)" }}>{w.pay}</p>
+        <p className="mt-1 text-[0.75rem]" style={{ color: "var(--ux-muted)" }}>a month</p>
 
         {/* Urgency she can act on, rather than a countdown for its own sake. */}
-        <p className="mt-3 flex items-center gap-1.5 text-[11.5px]" style={{ color: "var(--ux-orange-ink)" }}>
+        <p className="mt-3 flex items-center gap-1.5 text-[0.75rem]" style={{ color: "var(--ux-orange-ink)" }}>
           <Icons.CalendarClock className="h-3.5 w-3.5" /> Closes in {w.closesIn}
         </p>
 
@@ -228,14 +235,14 @@ export function MomentumStrip() {
   const finished = summary?.completed_programs ?? 0;
   const soon = summary?.upcoming_bookings?.length ?? 0;
   return (
-    <section className="mt-[15px] grid gap-[15px]" style={{ gridTemplateColumns: "1fr 2fr" }}>
+    <section className="mt-[16px] grid gap-[16px]" style={{ gridTemplateColumns: "1fr 2fr" }}>
       <Card className="ux-onscroll-soft">
         <div className="flex items-center justify-between">
           <div className="min-w-0">
-            <p className="text-[19px] font-bold leading-none" style={{ color: "var(--ux-ink)" }}>
+            <p className="text-[1.125rem] font-bold leading-none" style={{ color: "var(--ux-ink)" }}>
               {finished > 0 ? `${finished} ${finished === 1 ? "course" : "courses"} finished` : "Your first course"}
             </p>
-            <p className="mt-1.5 text-[11.5px]" style={{ color: "var(--ux-muted)" }}>
+            <p className="mt-1.5 text-[0.75rem]" style={{ color: "var(--ux-muted)" }}>
               {finished > 0
                 ? soon > 0
                   ? `${soon} ${soon === 1 ? "session" : "sessions"} coming up.`
@@ -249,21 +256,21 @@ export function MomentumStrip() {
 
       <Link
         href="/app/sakhi"
-        className="ux-i ux-sq ux-orbit ux-onscroll-soft relative flex items-center gap-4 rounded-[16px] border p-[18px]"
+        className="ux-i ux-sq ux-orbit ux-onscroll-soft relative flex items-center gap-4 rounded-[16px] border p-[20px]"
         style={{ borderColor: "var(--ux-line)", background: "var(--ux-surface)" }}
       >
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img src="/ux/art/mascot-robot-waving.webp" alt=""
              className="ux-float h-[64px] w-[64px] shrink-0 object-contain" />
         <div className="min-w-0 flex-1">
-          <p className="flex items-center gap-2 text-[12.5px] font-semibold" style={{ color: "var(--ux-brand)" }}>
+          <p className="flex items-center gap-2 text-[0.8125rem] font-semibold" style={{ color: "var(--ux-brand)" }}>
             <Icons.Sparkles className="h-[15px] w-[15px]" /> Ask Sakhi
           </p>
-          <p className="mt-1.5 text-[13px] leading-relaxed" style={{ color: "var(--ux-ink-2)" }}>
+          <p className="mt-1.5 text-[0.8125rem] leading-relaxed" style={{ color: "var(--ux-ink-2)" }}>
             Anything about your work, your money or a scheme — in your own words, in your own language.
           </p>
         </div>
-        <span className="ux-sq flex shrink-0 items-center gap-1.5 rounded-[10px] px-3 py-2 text-[12px] font-semibold"
+        <span className="ux-sq flex shrink-0 items-center gap-1.5 rounded-[12px] px-3 py-2 text-[0.75rem] font-semibold"
               style={{ background: "var(--ux-brand-tint)", color: "var(--ux-brand)" }}>
           Ask <Icons.ArrowRight className="ux-arrow h-[14px] w-[14px]" />
         </span>

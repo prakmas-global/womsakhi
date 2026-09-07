@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import * as Icons from "lucide-react";
+import * as Icons from "@/components/ux/icons";
 
 import {
   Btn, Card, EmptyState, Progress, Rows, SectionHead,
@@ -84,7 +84,7 @@ export default function WalletPage() {
     <HomeShell
       active="/app/wallet"
       rail={
-        <div className="space-y-[15px]">
+        <div className="space-y-[16px]">
           <Card className="ux-onscroll-soft">
             <SectionHead title="Where it comes from" sub="Last 30 days" />
             <SourceSplit sources={EARNING_SOURCES} />
@@ -96,22 +96,22 @@ export default function WalletPage() {
             <Card className="ux-onscroll-soft">
               <SectionHead title="Your goal" action="Edit"
                            onAction={() => { window.location.href = "/app/progress/goals"; }} />
-              <p className="text-[13px] font-semibold" style={{ color: "var(--ux-ink)" }}>{GOAL.label}</p>
+              <p className="text-[0.8125rem] font-semibold" style={{ color: "var(--ux-ink)" }}>{GOAL.label}</p>
               <div className="mt-2.5 flex items-center gap-2.5">
                 <Progress pct={goalPct} track="--ux-track" />
-                <span className="shrink-0 text-[11.5px] font-medium tabular-nums"
+                <span className="shrink-0 text-[0.75rem] font-medium tabular-nums"
                       style={{ color: "var(--ux-muted)" }}>
                   {goalPct}%
                 </span>
               </div>
-              <p className="mt-2.5 text-[11.5px] leading-relaxed" style={{ color: "var(--ux-muted)" }}>
+              <p className="mt-2.5 text-[0.75rem] leading-relaxed" style={{ color: "var(--ux-muted)" }}>
                 {rupees(Math.max(0, GOAL.target_minor - GOAL.current_minor))} to go this month.
               </p>
             </Card>
           ) : (
             <Card className="ux-onscroll-soft">
               <SectionHead title="Set a goal" />
-              <p className="text-[12.5px] leading-relaxed" style={{ color: "var(--ux-ink-2)" }}>
+              <p className="text-[0.8125rem] leading-relaxed" style={{ color: "var(--ux-ink-2)" }}>
                 A number and a date. Women who write one down earn more than women who mean to —
                 not because the number is magic, but because it turns &ldquo;more&rdquo; into something you can
                 tell whether you have reached.
@@ -135,15 +135,15 @@ export default function WalletPage() {
             </div>
           </Card>
 
-          <div className="ux-clay ux-onscroll-soft relative overflow-hidden p-[18px]"
+          <div className="ux-clay ux-onscroll-soft relative overflow-hidden p-[20px]"
                style={{ background: "linear-gradient(140deg, var(--ux-tint-green), var(--ux-tint-lilac))" }}>
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img src={MONEY_ART.grow} alt=""
                  className="ux-float pointer-events-none absolute -bottom-3 -end-4 h-[100px] w-[100px] object-contain" />
-            <h3 className="relative w-[60%] text-[14px] font-semibold" style={{ color: "var(--ux-ink)" }}>
+            <h3 className="relative w-[60%] text-[0.875rem] font-semibold" style={{ color: "var(--ux-ink)" }}>
               Put a little aside
             </h3>
-            <p className="relative mt-2 w-[60%] text-[12px] leading-relaxed" style={{ color: "var(--ux-muted)" }}>
+            <p className="relative mt-2 w-[60%] text-[0.75rem] leading-relaxed" style={{ color: "var(--ux-muted)" }}>
               A savings circle turns ₹500 a month into a lump sum when you need one.
             </p>
             <div className="relative mt-3 w-[60%]">
@@ -153,8 +153,8 @@ export default function WalletPage() {
         </div>
       }
     >
-      <h1 className="text-[24px] font-bold" style={{ color: "var(--ux-ink)" }}>Earn</h1>
-      <p className="mb-[18px] mt-1.5 text-[13px]" style={{ color: "var(--ux-muted)" }}>
+      <h1 className="text-[1.5rem] font-bold" style={{ color: "var(--ux-ink)" }}>Your wallet</h1>
+      <p className="mb-[20px] mt-1.5 text-[0.8125rem]" style={{ color: "var(--ux-muted)" }}>
         Everything you have made, and how to move it to your bank.
       </p>
 
@@ -163,21 +163,21 @@ export default function WalletPage() {
       <SourceNote source={source} what="figures" />
 
       {/* ── the answer ──────────────────────────────────────────────────── */}
-      <div className="ux-sq ux-onscroll relative overflow-hidden rounded-[20px] p-[22px]"
+      <div className="ux-sq ux-onscroll relative overflow-hidden rounded-[20px] p-[24px]"
            style={{ background: "linear-gradient(100deg, var(--ux-brand-900) 0%, var(--ux-brand-700) 55%, var(--ux-brand-600) 100%)" }}>
         <span aria-hidden className="pointer-events-none absolute -end-10 -top-16 h-[220px] w-[220px] rounded-full"
               style={{ background: "radial-gradient(circle, rgba(255,255,255,0.16), transparent 68%)" }} />
         <div className="relative flex items-start justify-between gap-6">
           <div>
-            <p className="text-[12.5px]" style={{ color: "rgba(255,255,255,0.82)" }}>Available to withdraw</p>
-            <p className="mt-1.5 text-[38px] font-bold leading-none tabular-nums text-white">
+            <p className="text-[0.8125rem]" style={{ color: "rgba(255,255,255,0.82)" }}>Available to withdraw</p>
+            <p className="mt-1.5 text-[2.25rem] font-bold leading-none tabular-nums text-white">
               ₹{balance.toLocaleString("en-IN")}
             </p>
             {/* The gap between "what I made" and "what I can take out" is the
                 single most common source of confusion in a wallet. Say it here,
                 unprompted, rather than waiting to be asked — but only when
                 there IS a gap. "₹0 more is on its way" invents a worry. */}
-            <p className="mt-3 flex items-center gap-1.5 text-[12.5px]" style={{ color: "rgba(255,255,255,0.9)" }}>
+            <p className="mt-3 flex items-center gap-1.5 text-[0.8125rem]" style={{ color: "rgba(255,255,255,0.9)" }}>
               <Icons.Clock className="h-4 w-4" />
               {money.pendingMinor > 0
                 ? `${rupees(money.pendingMinor)} more is on its way — usually here within 3 days.`
@@ -199,15 +199,15 @@ export default function WalletPage() {
             ["Payouts", `${money.txns.filter((t) => t.kind === "debit").length} so far`],
           ].map(([k, v]) => (
             <div key={k}>
-              <p className="text-[11px]" style={{ color: "rgba(255,255,255,0.72)" }}>{k}</p>
-              <p className="mt-1 text-[15px] font-semibold tabular-nums text-white">{v}</p>
+              <p className="text-[0.6875rem]" style={{ color: "rgba(255,255,255,0.72)" }}>{k}</p>
+              <p className="mt-1 text-[1rem] font-semibold tabular-nums text-white">{v}</p>
             </div>
           ))}
         </div>
       </div>
 
       {/* ── the trend ───────────────────────────────────────────────────── */}
-      <Card className="ux-onscroll mt-[15px]">
+      <Card className="ux-onscroll mt-[16px]">
         <SectionHead
           title="Your last twelve months"
           sub={`Up ${Math.round((MONTHLY_MINOR[11] / MONTHLY_MINOR[0] - 1) * 100)}% since ${MONTH_LABELS[0]}`}
@@ -220,8 +220,8 @@ export default function WalletPage() {
       {/* ── the history ─────────────────────────────────────────────────── */}
       <div className="mb-3 mt-[24px] flex items-end justify-between gap-4">
         <div>
-          <h2 className="text-[16px] font-semibold" style={{ color: "var(--ux-ink)" }}>Every rupee</h2>
-          <p className="mt-1 text-[12.5px]" style={{ color: "var(--ux-muted)" }}>
+          <h2 className="text-[1rem] font-semibold" style={{ color: "var(--ux-ink)" }}>Every rupee</h2>
+          <p className="mt-1 text-[0.8125rem]" style={{ color: "var(--ux-muted)" }}>
             {shown.length} {plural("entry", shown.length)}
           </p>
         </div>
@@ -244,7 +244,7 @@ export default function WalletPage() {
           className="space-y-2.5"
           render={(row, i) =>
             row.kind === "day" ? (
-              <h3 className="mb-2 mt-5 text-[11px] font-semibold uppercase tracking-[0.08em] first:mt-0"
+              <h3 className="mb-2 mt-5 text-[0.6875rem] font-semibold uppercase tracking-[0.08em] first:mt-0"
                   style={{ color: "var(--ux-faint)" }}>
                 {row.day}
               </h3>

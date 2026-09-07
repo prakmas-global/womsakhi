@@ -2,7 +2,7 @@
 
 import { use, useState } from "react";
 import Link from "next/link";
-import * as Icons from "lucide-react";
+import * as Icons from "@/components/ux/icons";
 
 import {
   Btn, Card, EmptyState, IconTile, Pill, plural, Progress, RailSkeleton, ScreenSkeleton,
@@ -112,11 +112,11 @@ export default function SchemeDetail({ params }: { params: Promise<{ id: string 
       skeleton="detail"
       loadFailed="this scheme"
       rail={
-        <div className="space-y-[15px]">
+        <div className="space-y-[16px]">
           <Card>
             <SectionHead title={applied ? "Your application" : "What you get"} />
-            <p className="text-[22px] font-bold" style={{ color: "var(--ux-ink)" }}>{s.amount}</p>
-            <p className="mt-1 text-[12.5px] leading-relaxed" style={{ color: "var(--ux-muted)" }}>{s.gives}</p>
+            <p className="text-[1.25rem] font-bold" style={{ color: "var(--ux-ink)" }}>{s.amount}</p>
+            <p className="mt-1 text-[0.8125rem] leading-relaxed" style={{ color: "var(--ux-muted)" }}>{s.gives}</p>
 
             <div className="my-3.5 h-px" style={{ background: "var(--ux-line)" }} />
 
@@ -139,8 +139,8 @@ export default function SchemeDetail({ params }: { params: Promise<{ id: string 
                         {i < a.length - 1 && <span className="w-px flex-1" style={{ background: "var(--ux-line)" }} />}
                       </span>
                       <span className="pb-1">
-                        <span className="block text-[13px] font-medium" style={{ color: "var(--ux-ink)" }}>{r.t}</span>
-                        <span className="block text-[11.5px]" style={{ color: "var(--ux-muted)" }}>{r.d}</span>
+                        <span className="block text-[0.8125rem] font-medium" style={{ color: "var(--ux-ink)" }}>{r.t}</span>
+                        <span className="block text-[0.75rem]" style={{ color: "var(--ux-muted)" }}>{r.d}</span>
                       </span>
                     </li>
                   ))}
@@ -156,7 +156,7 @@ export default function SchemeDetail({ params }: { params: Promise<{ id: string 
               </>
             ) : (
               <>
-                <div className="space-y-2.5 text-[12.5px]">
+                <div className="space-y-2.5 text-[0.8125rem]">
                   <div className="flex items-start justify-between gap-3">
                     <span style={{ color: "var(--ux-muted)" }}>Closes</span>
                     <span className="text-end font-medium" style={{ color: "var(--ux-ink)" }}>{s.deadline}</span>
@@ -190,7 +190,7 @@ export default function SchemeDetail({ params }: { params: Promise<{ id: string 
               </>
             )}
             {mark.error && (
-              <p className="ux-slide-up mt-2.5 text-[12.5px]" style={{ color: "var(--ux-orange-ink)" }}>
+              <p className="ux-slide-up mt-2.5 text-[0.8125rem]" style={{ color: "var(--ux-orange-ink)" }}>
                 {mark.error}
               </p>
             )}
@@ -200,7 +200,7 @@ export default function SchemeDetail({ params }: { params: Promise<{ id: string 
             <SectionHead title="If you are turned down" icon="LifeBuoy" />
             {/* The most common reason a woman never re-applies is that nobody
                 told her she could. */}
-            <p className="text-[12.5px] leading-relaxed" style={{ color: "var(--ux-ink-2)" }}>
+            <p className="text-[0.8125rem] leading-relaxed" style={{ color: "var(--ux-ink-2)" }}>
               A refusal is not final. Ask for the reason in writing — they must give it. Nine times in ten it
               is a missing paper or a spelling that does not match your Aadhaar, and you can apply again as
               soon as it is fixed. There is no limit on how many times you may apply.
@@ -219,8 +219,8 @@ export default function SchemeDetail({ params }: { params: Promise<{ id: string 
                     <Link href={`/app/support-fund/${o.id}` as never} className="ux-hov flex items-center gap-2.5">
                       <IconTile icon={o.icon} tint={o.tint} ink={o.ink} size={34} radius={9} />
                       <span className="min-w-0 flex-1">
-                        <span className="block truncate text-[12.5px] font-medium" style={{ color: "var(--ux-ink)" }}>{o.name}</span>
-                        <span className="block truncate text-[11px]" style={{ color: "var(--ux-muted)" }}>{o.amount}</span>
+                        <span className="block truncate text-[0.8125rem] font-medium" style={{ color: "var(--ux-ink)" }}>{o.name}</span>
+                        <span className="block truncate text-[0.6875rem]" style={{ color: "var(--ux-muted)" }}>{o.amount}</span>
                       </span>
                     </Link>
                   </li>
@@ -232,9 +232,9 @@ export default function SchemeDetail({ params }: { params: Promise<{ id: string 
       }
     >
       <Link href="/app/support-fund"
-            className="ux-hov -my-1 mb-3.5 inline-flex items-center gap-1.5 py-1 text-[12.5px] font-medium"
+            className="ux-hov -my-1 mb-3.5 inline-flex items-center gap-1.5 py-1 text-[0.8125rem] font-medium"
             style={{ color: "var(--ux-brand)" }}>
-        <Icons.ArrowLeft className="ux-ico h-4 w-4" /> Schemes
+        <Icons.ArrowLeft className="ux-ico h-4 w-4" /> Government schemes
       </Link>
 
       <div className="mb-[20px] flex items-start gap-4">
@@ -248,34 +248,34 @@ export default function SchemeDetail({ params }: { params: Promise<{ id: string 
                 ? <Pill tone="green" size="sm">You qualify</Pill>
                 : <Pill tone="orange" size="sm">Not for you yet</Pill>}
           </div>
-          <h1 className="mt-2 text-[24px] font-bold leading-tight" style={{ color: "var(--ux-ink)" }}>{s.name}</h1>
-          <p className="mt-1 text-[13px]" style={{ color: "var(--ux-muted)" }}>{s.body} · {s.who}</p>
+          <h1 className="mt-2 text-[1.5rem] font-bold leading-tight" style={{ color: "var(--ux-ink)" }}>{s.name}</h1>
+          <p className="mt-1 text-[0.8125rem]" style={{ color: "var(--ux-muted)" }}>{s.body} · {s.who}</p>
         </div>
       </div>
 
-      <Card className="mb-[15px]">
+      <Card className="mb-[16px]">
         <SectionHead title={s.eligible ? "Why you qualify" : "Why this one is not for you"}
                      icon={s.eligible ? "CircleCheck" : "CircleAlert"} />
-        <p className="text-[13.5px] leading-relaxed" style={{ color: "var(--ux-ink-2)" }}>{s.reason}</p>
+        <p className="text-[0.875rem] leading-relaxed" style={{ color: "var(--ux-ink-2)" }}>{s.reason}</p>
       </Card>
 
-      <Card className="mb-[15px]">
+      <Card className="mb-[16px]">
         <SectionHead title="How to apply" sub="Five steps, in order. Nothing here is hidden behind a tap." />
         <ol className="space-y-2.5">
           {STEPS.map((st, i) => {
             const Icon = (Icons as never as Record<string, React.ComponentType<{ className?: string; style?: React.CSSProperties; strokeWidth?: number }>>)[st.icon] ?? Icons.Circle;
             return (
-              <li key={st.t} className="ux-sq rounded-[13px] border p-3.5"
+              <li key={st.t} className="ux-sq rounded-[12px] border p-3.5"
                   style={{ borderColor: "var(--ux-line)", background: "var(--ux-surface)" }}>
                 <div className="flex items-center gap-3">
-                  <span className="ux-sq grid h-[32px] w-[32px] shrink-0 place-items-center rounded-[9px] text-[12.5px] font-bold"
+                  <span className="ux-sq grid h-[32px] w-[32px] shrink-0 place-items-center rounded-[8px] text-[0.8125rem] font-bold"
                         style={{ background: "var(--ux-fill)", color: "#fff" }}>
                     {i + 1}
                   </span>
-                  <span className="flex-1 text-[13.5px] font-semibold" style={{ color: "var(--ux-ink)" }}>{st.t}</span>
+                  <span className="flex-1 text-[0.875rem] font-semibold" style={{ color: "var(--ux-ink)" }}>{st.t}</span>
                   <Icon className="h-[16px] w-[16px] shrink-0" style={{ color: "var(--ux-muted)" }} strokeWidth={1.9} />
                 </div>
-                <p className="mt-2 ps-[44px] text-[12.5px] leading-relaxed" style={{ color: "var(--ux-ink-2)" }}>
+                <p className="mt-2 ps-[44px] text-[0.8125rem] leading-relaxed" style={{ color: "var(--ux-ink-2)" }}>
                   {st.d}
                 </p>
               </li>
@@ -297,8 +297,8 @@ export default function SchemeDetail({ params }: { params: Promise<{ id: string 
                   ? <Icons.Check className="h-[14px] w-[14px]" style={{ color: "var(--ux-green-ink)" }} strokeWidth={2.8} />
                   : <Icons.Plus className="h-[14px] w-[14px]" style={{ color: "var(--ux-orange-ink)" }} strokeWidth={2.8} />}
               </span>
-              <span className="flex-1 text-[13px]" style={{ color: "var(--ux-ink)" }}>{p.name}</span>
-              <span className="text-[11.5px] font-medium"
+              <span className="flex-1 text-[0.8125rem]" style={{ color: "var(--ux-ink)" }}>{p.name}</span>
+              <span className="text-[0.75rem] font-medium"
                     style={{ color: p.have ? "var(--ux-green-ink)" : "var(--ux-orange-ink)" }}>
                 {p.have ? "With us" : "Not added"}
               </span>

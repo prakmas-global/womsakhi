@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import * as Icons from "lucide-react";
+import * as Icons from "@/components/ux/icons";
 
 import { Btn, Card, IconTile, Pill, SectionHead, SourceNote, Tabs } from "@/components/ux/kit";
 import { HomeShell } from "@/components/ux/home/HomeShell";
@@ -43,7 +43,7 @@ export default function CoverPage() {
   return (
     <HomeShell
       rail={
-        <div className="space-y-[15px]">
+        <div className="space-y-[16px]">
           <Card>
             <SectionHead title="What you have now" />
             {have.length ? (
@@ -52,8 +52,8 @@ export default function CoverPage() {
                   <li key={c.id} className="ux-hov flex items-start gap-3">
                     <IconTile icon={c.icon} tint={c.tint} ink={c.ink} size={36} radius={10} />
                     <div className="min-w-0">
-                      <p className="text-[12.5px] font-medium leading-snug" style={{ color: "var(--ux-ink)" }}>{c.kind}</p>
-                      <p className="mt-0.5 text-[11.5px]" style={{ color: "var(--ux-muted)" }}>
+                      <p className="text-[0.8125rem] font-medium leading-snug" style={{ color: "var(--ux-ink)" }}>{c.kind}</p>
+                      <p className="mt-0.5 text-[0.75rem]" style={{ color: "var(--ux-muted)" }}>
                         {c.pays} · renews {c.renews}
                       </p>
                     </div>
@@ -61,13 +61,13 @@ export default function CoverPage() {
                 ))}
               </ul>
             ) : (
-              <p className="text-[12.5px]" style={{ color: "var(--ux-muted)" }}>Nothing yet.</p>
+              <p className="text-[0.8125rem]" style={{ color: "var(--ux-muted)" }}>Nothing yet.</p>
             )}
           </Card>
 
           <Card style={{ borderColor: "var(--ux-orange)" }}>
             <SectionHead title="Nobody should sell you these" icon="ShieldAlert" />
-            <p className="text-[12.5px] leading-relaxed" style={{ color: "var(--ux-ink-2)" }}>
+            <p className="text-[0.8125rem] leading-relaxed" style={{ color: "var(--ux-ink-2)" }}>
               Every scheme here is bought at a bank counter for the price shown. An agent offering to
               &ldquo;arrange&rdquo; one for a fee is taking money for something free.
             </p>
@@ -76,25 +76,25 @@ export default function CoverPage() {
             </div>
           </Card>
 
-          <div className="ux-clay relative overflow-hidden p-[18px]"
+          <div className="ux-clay relative overflow-hidden p-[20px]"
                style={{ background: "linear-gradient(140deg, var(--ux-tint-green), var(--ux-tint-lilac))" }}>
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img src={MORE_ART.cover} alt=""
                  className="ux-float pointer-events-none absolute -bottom-3 -end-4 h-[92px] w-[92px] object-contain" />
-            <h3 className="relative w-[62%] text-[14px] font-semibold" style={{ color: "var(--ux-ink)" }}>
+            <h3 className="relative w-[62%] text-[0.875rem] font-semibold" style={{ color: "var(--ux-ink)" }}>
               ₹20 a year
             </h3>
-            <p className="relative mt-2 w-[62%] text-[12px] leading-relaxed" style={{ color: "var(--ux-muted)" }}>
+            <p className="relative mt-2 w-[62%] text-[0.75rem] leading-relaxed" style={{ color: "var(--ux-muted)" }}>
               That is the whole price of ₹2 lakh of accident cover. Most members do not know it exists.
             </p>
           </div>
         </div>
       }
     >
-      <div className="mb-[18px] flex items-end justify-between gap-4">
+      <div className="mb-[20px] flex items-end justify-between gap-4">
         <div>
-          <h1 className="text-[24px] font-bold" style={{ color: "var(--ux-ink)" }}>Insurance &amp; Pension</h1>
-          <p className="mt-1.5 text-[13px]" style={{ color: "var(--ux-muted)" }}>
+          <h1 className="text-[1.5rem] font-bold" style={{ color: "var(--ux-ink)" }}>Insurance &amp; pension</h1>
+          <p className="mt-1.5 text-[0.8125rem]" style={{ color: "var(--ux-muted)" }}>
             {have.length} of {COVER.length} in place. All of these are government schemes bought at a bank counter.
           </p>
 
@@ -103,14 +103,14 @@ export default function CoverPage() {
         <Tabs items={["What you could have", "What you have"]} active={tab} onChange={setTab} />
       </div>
 
-      <div className="ux-deck ux-stagger space-y-[13px]">
+      <div className="ux-deck ux-stagger space-y-[12px]">
         {shown.map((c, i) => (
           <Card key={c.id} className="ux-i ux-onscroll" style={{ ["--i" as string]: i }}>
             <div className="flex items-start gap-3.5">
               <IconTile icon={c.icon} tint={c.tint} ink={c.ink} size={50} radius={13} />
               <div className="min-w-0 flex-1">
                 <div className="flex items-start gap-2">
-                  <h3 className="min-w-0 flex-1 text-[15px] font-semibold" style={{ color: "var(--ux-ink)" }}>
+                  <h3 className="min-w-0 flex-1 text-[1rem] font-semibold" style={{ color: "var(--ux-ink)" }}>
                     {c.name}
                   </h3>
                   <Pill tone={c.kind === "Pension" ? "brand" : c.kind === "Health" ? "blue" : "green"} size="sm">
@@ -122,24 +122,24 @@ export default function CoverPage() {
                 {/* Pays and costs, on one line, in rupees. This is the decision. */}
                 <div className="mt-3 grid grid-cols-2 gap-2.5">
                   <div className="ux-sq rounded-[12px] p-3" style={{ background: "var(--ux-tint-green)" }}>
-                    <p className="text-[10.5px] uppercase tracking-[0.06em]" style={{ color: "var(--ux-green-ink)" }}>
+                    <p className="text-[0.6875rem] uppercase tracking-[0.06em]" style={{ color: "var(--ux-green-ink)" }}>
                       It pays
                     </p>
-                    <p className="mt-1 text-[13.5px] font-semibold leading-snug" style={{ color: "var(--ux-ink)" }}>
+                    <p className="mt-1 text-[0.875rem] font-semibold leading-snug" style={{ color: "var(--ux-ink)" }}>
                       {c.pays}
                     </p>
                   </div>
                   <div className="ux-sq rounded-[12px] p-3" style={{ background: "var(--ux-surface-2)" }}>
-                    <p className="text-[10.5px] uppercase tracking-[0.06em]" style={{ color: "var(--ux-faint)" }}>
+                    <p className="text-[0.6875rem] uppercase tracking-[0.06em]" style={{ color: "var(--ux-faint)" }}>
                       It costs
                     </p>
-                    <p className="mt-1 text-[13.5px] font-semibold leading-snug" style={{ color: "var(--ux-ink)" }}>
+                    <p className="mt-1 text-[0.875rem] font-semibold leading-snug" style={{ color: "var(--ux-ink)" }}>
                       {c.costs}
                     </p>
                   </div>
                 </div>
 
-                <p className="mt-2.5 flex items-start gap-1.5 text-[12px]" style={{ color: "var(--ux-muted)" }}>
+                <p className="mt-2.5 flex items-start gap-1.5 text-[0.75rem]" style={{ color: "var(--ux-muted)" }}>
                   <Icons.Users className="mt-[1px] h-[13px] w-[13px] shrink-0" />
                   {c.who}
                 </p>
@@ -148,7 +148,7 @@ export default function CoverPage() {
 
             <div className="mt-3.5 flex items-center justify-between gap-4 border-t pt-3.5"
                  style={{ borderColor: "var(--ux-line)" }}>
-              <span className="text-[11.5px]" style={{ color: "var(--ux-faint)" }}>
+              <span className="text-[0.75rem]" style={{ color: "var(--ux-faint)" }}>
                 {c.have ? `Renews ${c.renews} — nothing to do` : "Ask at any bank where you have an account"}
               </span>
               {c.have
@@ -179,8 +179,8 @@ export default function CoverPage() {
                     "Take your Aadhaar and your passbook. Nothing else is needed.",
                     `Sign the auto-debit line so the ${c.costs.toLowerCase()} comes out on its own. Otherwise it lapses and you find out only when you claim.`,
                   ].map((t, n) => (
-                    <li key={n} className="flex items-start gap-2.5 text-[12.5px] leading-relaxed" style={{ color: "var(--ux-ink-2)" }}>
-                      <span className="ux-sq grid h-[20px] w-[20px] shrink-0 place-items-center rounded-[7px] text-[10.5px] font-bold"
+                    <li key={n} className="flex items-start gap-2.5 text-[0.8125rem] leading-relaxed" style={{ color: "var(--ux-ink-2)" }}>
+                      <span className="ux-sq grid h-[20px] w-[20px] shrink-0 place-items-center rounded-[8px] text-[0.6875rem] font-bold"
                             style={{ background: "var(--ux-fill)", color: "#fff" }}>{n + 1}</span>
                       {t}
                     </li>
@@ -199,7 +199,7 @@ export default function CoverPage() {
               </div>
             )}
             {mark.error && mark.busyWith === null && (
-              <p className="ux-slide-up mt-3 text-[12.5px]" style={{ color: "var(--ux-orange-ink)" }}>
+              <p className="ux-slide-up mt-3 text-[0.8125rem]" style={{ color: "var(--ux-orange-ink)" }}>
                 {mark.error}
               </p>
             )}

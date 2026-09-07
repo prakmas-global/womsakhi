@@ -37,10 +37,10 @@ export default function LearningLayout({ children }: { children: React.ReactNode
     return (
       <div className="ux grid min-h-screen place-items-center px-6 text-center">
         <div>
-          <h1 className="text-[18px] font-semibold" style={{ color: "var(--ux-ink)" }}>
+          <h1 className="text-[1.125rem] font-semibold" style={{ color: "var(--ux-ink)" }}>
             This part of WomSakhi is for members.
           </h1>
-          <p className="mt-2 text-[13px]" style={{ color: "var(--ux-muted)" }}>
+          <p className="mt-2 text-[0.8125rem]" style={{ color: "var(--ux-muted)" }}>
             Your account is signed in as staff.
           </p>
         </div>

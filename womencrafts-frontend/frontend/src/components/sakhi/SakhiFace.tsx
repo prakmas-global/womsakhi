@@ -29,7 +29,7 @@ import { useEffect, useRef, useState } from "react";
  * are the difference between a person and a portrait.
  */
 
-/** The mouth box, measured inside sakhi-face.png (484×489). */
+/** The mouth box, measured inside sakhi-face.webp (484×489). */
 const MOUTH = { left: 0.4277, top: 0.6953, right: 0.6591, bottom: 0.8303 };
 const MOUTH_W = MOUTH.right - MOUTH.left;
 const MOUTH_H = MOUTH.bottom - MOUTH.top;
@@ -144,7 +144,7 @@ export default function SakhiFace({
         {/* her face, with the original mouth painted out */}
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
-          src="/sakhi-face.png"
+          src="/sakhi-face.webp"
           alt=""
           draggable={false}
           className={`absolute inset-0 h-full w-full object-contain transition-transform duration-[2600ms] ease-in-out ${
@@ -162,7 +162,7 @@ export default function SakhiFace({
             width: `${MOUTH_W * size}px`,
             height: `${MOUTH_H * size * (489 / 484)}px`,
             transform: "translate(-50%, -50%)",
-            backgroundImage: "url(/sakhi-face.png)",
+            backgroundImage: "url(/sakhi-face.webp)",
             backgroundSize: `${size}px ${size * (489 / 484)}px`,
             backgroundPosition: `-${MOUTH.left * size}px -${MOUTH.top * size * (489 / 484)}px`,
           }}

@@ -21,11 +21,11 @@ export function LearningShell({
       active={active}
       user={{ name: "Sakhi", avatar: "/ux/art/avatar-woman-purple-kurta.webp", unread: 3 }}
       sidebarFooter={
-        <div className="rounded-[14px] border p-4" style={{ borderColor: "var(--ux-line)", background: "var(--ux-brand-tint)" }}>
-          <h3 className="flex items-center gap-2 text-[13px] font-semibold" style={{ color: "var(--ux-brand)" }}>
+        <div className="rounded-[12px] border p-4" style={{ borderColor: "var(--ux-line)", background: "var(--ux-brand-tint)" }}>
+          <h3 className="flex items-center gap-2 text-[0.8125rem] font-semibold" style={{ color: "var(--ux-brand)" }}>
             <span aria-hidden>👑</span> Upgrade Your Learning
           </h3>
-          <p className="mt-1.5 text-[11.5px] leading-snug" style={{ color: "var(--ux-muted)" }}>
+          <p className="mt-1.5 text-[0.75rem] leading-snug" style={{ color: "var(--ux-muted)" }}>
             Unlock premium courses and exclusive benefits.
           </p>
           <div className="mt-3"><Btn variant="primary" size="sm" full iconEnd="ArrowRight">Go Premium</Btn></div>

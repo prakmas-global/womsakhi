@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import * as Icons from "lucide-react";
+import * as Icons from "@/components/ux/icons";
 
 import { Btn, Card, I } from "../kit";
 import { usePointer } from "../kit/motion";
@@ -34,7 +34,7 @@ export function FirstRun({ name }: { name?: string }) {
     <>
       <div
         ref={point}
-        className="ux-sq ux-aurora ux-grain ux-spot relative rounded-[22px]"
+        className="ux-sq ux-aurora ux-grain ux-spot relative rounded-[20px]"
         style={{
           minHeight: 216,
           background: "linear-gradient(104deg, oklch(0.32 0.13 294) 0%, oklch(0.44 0.19 294) 58%, oklch(0.52 0.19 320) 100%)",
@@ -50,13 +50,13 @@ export function FirstRun({ name }: { name?: string }) {
         </div>
 
         <div className="relative flex max-w-[58%] flex-col justify-center px-9 py-8">
-          <p className="text-[12px] font-semibold uppercase tracking-[0.16em]" style={{ color: "rgba(255,255,255,0.62)" }}>
+          <p className="text-[0.75rem] font-semibold uppercase tracking-[0.16em]" style={{ color: "rgba(255,255,255,0.62)" }}>
             Welcome to WomSakhi
           </p>
-          <h1 className="ux-gradient-text mt-2 text-[30px] font-bold leading-[1.12]">
+          <h1 className="ux-gradient-text mt-2 text-[1.75rem] font-bold leading-[1.12]">
             Let us get you your first win, {name ?? ME.first}
           </h1>
-          <p className="mt-2.5 text-[13.5px] leading-relaxed" style={{ color: "rgba(255,255,255,0.86)" }}>
+          <p className="mt-2.5 text-[0.875rem] leading-relaxed" style={{ color: "rgba(255,255,255,0.86)" }}>
             {finished === steps.length
               ? "That is everything. Your dashboard is ready."
               : `Four small things, about ${left} minutes in total. Employers see complete profiles first.`}
@@ -68,14 +68,14 @@ export function FirstRun({ name }: { name?: string }) {
                     style={{ width: `${pct}%`, background: "#fff",
                              transition: "width var(--ux-t-slow) var(--ux-ease-out)" }} />
             </span>
-            <span className="text-[12px] font-semibold tabular-nums" style={{ color: "rgba(255,255,255,0.9)" }}>
+            <span className="text-[0.75rem] font-semibold tabular-nums" style={{ color: "rgba(255,255,255,0.9)" }}>
               {finished} of {steps.length}
             </span>
           </div>
         </div>
       </div>
 
-      <section className="ux-tilt-scene mt-[17px] grid grid-cols-2 gap-[15px]">
+      <section className="ux-tilt-scene mt-[16px] grid grid-cols-2 gap-[16px]">
         {steps.map((s, i) => (
           <Card key={s.id} className={`ux-onscroll ${s.done ? "" : "ux-i ux-edge"}`}
                 style={{ ["--i" as string]: i, opacity: s.done ? 0.72 : 1 }}>
@@ -96,11 +96,11 @@ export function FirstRun({ name }: { name?: string }) {
               </button>
 
               <div className="min-w-0 flex-1">
-                <h3 className="text-[13.5px] font-semibold"
+                <h3 className="text-[0.875rem] font-semibold"
                     style={{ color: "var(--ux-ink)", textDecoration: s.done ? "line-through" : "none" }}>
                   {s.label}
                 </h3>
-                <p className="mt-1 text-[11.5px]" style={{ color: "var(--ux-muted)" }}>
+                <p className="mt-1 text-[0.75rem]" style={{ color: "var(--ux-muted)" }}>
                   About {s.mins} {s.mins === 1 ? "minute" : "minutes"}
                 </p>
               </div>
@@ -116,20 +116,20 @@ export function FirstRun({ name }: { name?: string }) {
       </section>
 
       {/* What she gets for finishing, stated concretely rather than as a promise. */}
-      <Card className="ux-onscroll mt-[15px]">
+      <Card className="ux-onscroll mt-[16px]">
         <div className="flex items-center gap-4">
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img src="/ux/art/scene-women-celebrating.webp" alt=""
                className="h-[84px] w-[84px] shrink-0 object-contain" />
           <div className="min-w-0 flex-1">
-            <h3 className="text-[14px] font-semibold" style={{ color: "var(--ux-ink)" }}>
+            <h3 className="text-[0.875rem] font-semibold" style={{ color: "var(--ux-ink)" }}>
               What happens when you finish
             </h3>
             <ul className="mt-2.5 flex flex-wrap gap-x-5 gap-y-2">
               {[["Employers can find you", "Search"],
                 ["Work matched to your skills", "Target"],
                 ["Free first mentor session", "Users"]].map(([t, ic]) => (
-                <li key={t} className="flex items-center gap-2 text-[12.5px]" style={{ color: "var(--ux-ink-2)" }}>
+                <li key={t} className="flex items-center gap-2 text-[0.8125rem]" style={{ color: "var(--ux-ink-2)" }}>
                   <I name={ic} className="h-[15px] w-[15px] shrink-0" style={{ color: "var(--ux-green-ink)" }} />
                   {t}
                 </li>
@@ -137,7 +137,7 @@ export function FirstRun({ name }: { name?: string }) {
             </ul>
           </div>
           <Link href="/app/sakhi"
-                className="ux-hov ux-sq flex shrink-0 items-center gap-2 rounded-[11px] px-3.5 py-2.5 text-[12.5px] font-semibold"
+                className="ux-hov ux-sq flex shrink-0 items-center gap-2 rounded-[12px] px-3.5 py-2.5 text-[0.8125rem] font-semibold"
                 style={{ background: "var(--ux-brand-tint)", color: "var(--ux-brand)" }}>
             <Icons.Sparkles className="ux-ico h-[15px] w-[15px]" /> Ask Sakhi to help
           </Link>

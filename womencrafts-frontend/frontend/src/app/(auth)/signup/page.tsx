@@ -2,17 +2,23 @@
 
 import { useState, type FormEvent } from "react";
 import Link from "next/link";
-import { Eye, EyeOff, Lock, Mail, Phone, ShieldCheck, UserPlus, UserRound } from "lucide-react";
+import { ArrowRight, Eye, EyeOff, Loader2, Lock, Mail, Phone, ShieldCheck, UserRound } from "lucide-react";
 
 import { useAuth, getAuthError } from "@/context/AuthContext";
 
 /**
- * Sign up.
+ * Joining.
  *
- * Deliberately the same shape as the sign-in screen beside it — same card, same
- * hero, same brand colours. It previously used raw `gray`/`rose` utilities and
- * bare inputs, which made the first screen a new member ever sees the one that
- * looked least like the product.
+ * Ordered by her trust. Name and email are what she expects to be asked. The
+ * password comes with a meter that measures rather than flatters. The photo ID
+ * — the part a woman is entitled to hesitate over — is explained above the
+ * button, before she commits, not sprung on her on the next screen.
+ *
+ * **Her phone number used to be discarded.** The field was here and labelled
+ * optional, and `signUp(fullName, email, password)` dropped it — though
+ * `signUp` takes a phone and `POST /auth/signup` accepts one. She typed it and
+ * it went nowhere. For a woman whose phone is how she is reached, that is not
+ * a small thing to lose in silence.
  */
 export default function SignUpPage() {
   const { signUp } = useAuth();
@@ -35,20 +41,20 @@ export default function SignUpPage() {
       (/[^A-Za-z0-9]/.test(password) ? 20 : 0),
   );
   const strengthLabel =
-    password.length === 0
-      ? ""
-      : strength >= 70
-        ? "Strong"
-        : strength >= 40
-          ? "Getting there"
-          : "Too weak";
+    password.length === 0 ? ""
+      : strength >= 70 ? "Strong"
+      : strength >= 40 ? "Getting there"
+      : "Too weak";
+  const strengthInk =
+    strength >= 70 ? "var(--a-ok)" : strength >= 40 ? "var(--a-warn)" : "var(--a-bad)";
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
     setError("");
     setLoading(true);
     try {
-      await signUp(fullName, email, password);
+      // The phone goes with it. It used to be collected here and dropped.
+      await signUp(fullName, email, password, { phone: phone.trim() || undefined });
     } catch (err) {
       setError(getAuthError(err));
     } finally {
@@ -56,160 +62,155 @@ export default function SignUpPage() {
     }
   };
 
-  const field =
-    "w-full rounded-xl border border-line-strong bg-surface py-2.5 pe-4 ps-10 text-sm text-ink placeholder:text-ink-subtle transition focus:border-brand-400 focus:outline-none focus:ring-4 focus:ring-brand-50 dark:border-white/10 dark:bg-white/5";
+  const field = "auth-field min-h-[46px] w-full rounded-[12px] pe-4 ps-11 text-[0.875rem]";
+  const fieldPad = { paddingBlock: "clamp(0.5625rem,1.5vh,0.875rem)" } as const;
+  const labelCls = "mb-1.5 block text-[0.8125rem] font-medium";
+  const labelStyle = { color: "var(--a-ink-2)" } as const;
+  const iconCls = "pointer-events-none absolute start-4 top-1/2 h-[17px] w-[17px] -translate-y-1/2";
+  const iconStyle = { color: "var(--a-faint)" } as const;
 
   return (
-    <div className="rounded-3xl bg-surface p-6 shadow-[var(--wc-shadow-raised)] ring-1 ring-line dark:bg-transparent dark:ring-white/10 sm:p-6">
-      <div className="mb-5 overflow-hidden rounded-2xl ring-1 ring-line dark:ring-white/10">
+    <div>
+      {/* ── Brand ── */}
+      <div className="auth-brand flex items-center gap-3">
         {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img
-          src="/login-hero.png"
-          alt="Women of the WomSakhi community"
-          className="h-32 w-full object-cover object-top"
-          draggable={false}
-        />
+        <img src="/ux/brand/womsakhi-mark.webp" alt="" aria-hidden className="object-contain"
+          style={{ width: "clamp(2.125rem,5vh,2.5rem)", height: "clamp(2.125rem,5vh,2.5rem)" }} />
+        <div>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src="/ux/brand/womsakhi-wordmark.webp" alt="WomSakhi" className="object-contain"
+            style={{ height: "clamp(1.25rem,3vh,1.5rem)" }} />
+          <p className="auth-tagline mt-1 text-[0.6875rem] font-semibold tracking-[0.19em]" style={{ color: "var(--a-muted)" }}>
+            EMPOWERING HER JOURNEY
+          </p>
+        </div>
       </div>
 
-      <h1 className="text-center font-display text-2xl font-bold text-ink">
-        Join us
+      <h1 className="font-bold leading-tight tracking-tight" style={{ color: "var(--a-ink)", fontSize: "clamp(1.35rem, 3.4vh, 2.1rem)", marginTop: "clamp(0.625rem,2.2vh,1.75rem)" }}>
+        Join <span className="auth-shine">WomSakhi</span>
       </h1>
-      <p className="mt-1 text-center text-sm text-ink-subtle">
-        WomSakhi is women only. Every account is checked by a person.
+      <p className="auth-sub text-[0.8125rem]" style={{ color: "var(--a-muted)", marginTop: "clamp(0.25rem,0.8vh,0.375rem)" }}>
+        Women only, and free — nobody here may ever charge you to find work.
       </p>
 
       {error && (
-        <div className="mt-4 rounded-xl bg-status-danger-bg px-4 py-3 text-sm text-status-danger-ink" role="alert">
+        <p
+          role="alert"
+          className="mt-5 rounded-[12px] px-3.5 py-3 text-[0.8125rem] leading-relaxed"
+          style={{
+            background: "var(--a-tint-rose-2)",
+            border: "1px solid var(--a-edge-rose)",
+            color: "var(--a-danger-ink)",
+          }}
+        >
           {error}
-        </div>
+        </p>
       )}
 
-      <form onSubmit={handleSubmit} className="mt-5 space-y-4">
+      <form onSubmit={handleSubmit} style={{ marginTop: "clamp(0.625rem,2vh,1.5rem)" }} className="space-y-[clamp(0.4375rem,1.2vh,0.875rem)]">
         <div>
-          <label htmlFor="su-name" className="mb-1.5 block text-sm font-medium text-ink-muted">
-            Your name
-          </label>
+          <label htmlFor="su-name" className={labelCls} style={labelStyle}>Your name</label>
           <div className="relative">
-            <UserRound className="pointer-events-none absolute start-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-ink-subtle" />
+            <UserRound className={iconCls} style={iconStyle} aria-hidden />
             <input
-              id="su-name"
-              type="text"
-              required
-              autoComplete="name"
-              value={fullName}
-              onChange={(e) => setFullName(e.target.value)}
-              placeholder="Ananya Sharma"
-              className={field}
+              id="su-name" type="text" required autoComplete="name" autoFocus
+              value={fullName} onChange={(e) => setFullName(e.target.value)}
+              placeholder="The name you want to be called" className={field} style={fieldPad}
             />
           </div>
         </div>
 
         <div>
-          <label htmlFor="su-email" className="mb-1.5 block text-sm font-medium text-ink-muted">
-            Email
-          </label>
+          <label htmlFor="su-email" className={labelCls} style={labelStyle}>Email</label>
           <div className="relative">
-            <Mail className="pointer-events-none absolute start-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-ink-subtle" />
+            <Mail className={iconCls} style={iconStyle} aria-hidden />
             <input
-              id="su-email"
-              type="email"
-              required
-              autoComplete="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              placeholder="you@example.com"
-              className={field}
+              id="su-email" type="email" required autoComplete="email"
+              value={email} onChange={(e) => setEmail(e.target.value)}
+              placeholder="you@example.com" className={field} style={fieldPad}
             />
           </div>
         </div>
 
         <div>
-          <label htmlFor="su-phone" className="mb-1.5 block text-sm font-medium text-ink-muted">
-            Phone <span className="font-normal text-ink-subtle">(optional)</span>
+          <label htmlFor="su-phone" className={labelCls} style={labelStyle}>
+            Phone <span style={{ color: "var(--a-faint)" }}>— optional</span>
           </label>
           <div className="relative">
-            <Phone className="pointer-events-none absolute start-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-ink-subtle" />
+            <Phone className={iconCls} style={iconStyle} aria-hidden />
             <input
-              id="su-phone"
-              type="tel"
-              autoComplete="tel"
-              value={phone}
-              onChange={(e) => setPhone(e.target.value)}
-              placeholder="+91 98765 43210"
-              className={field}
+              id="su-phone" type="tel" autoComplete="tel"
+              value={phone} onChange={(e) => setPhone(e.target.value)}
+              placeholder="+91 98765 43210" className={field} style={fieldPad}
             />
           </div>
+          <p className="mt-1 text-[0.6875rem] leading-snug" style={{ color: "var(--a-faint)" }}>
+            Only to reach you about your own work. Never shown to anyone else.
+          </p>
         </div>
 
         <div>
-          <label htmlFor="su-password" className="mb-1.5 block text-sm font-medium text-ink-muted">
-            Password
-          </label>
+          <label htmlFor="su-password" className={labelCls} style={labelStyle}>Password</label>
           <div className="relative">
-            <Lock className="pointer-events-none absolute start-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-ink-subtle" />
+            <Lock className={iconCls} style={iconStyle} aria-hidden />
             <input
-              id="su-password"
-              type={showPassword ? "text" : "password"}
-              required
-              minLength={8}
-              autoComplete="new-password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              placeholder="At least 8 characters"
-              className={`${field} pe-11`}
+              id="su-password" type={showPassword ? "text" : "password"} required
+              autoComplete="new-password" minLength={8}
+              value={password} onChange={(e) => setPassword(e.target.value)}
+              placeholder="At least 8 characters" className={`${field} pe-12`} style={fieldPad}
             />
             <button
-              type="button"
-              onClick={() => setShowPassword((v) => !v)}
+              type="button" onClick={() => setShowPassword((v) => !v)}
               aria-label={showPassword ? "Hide password" : "Show password"}
-              className="absolute end-3 top-1/2 -translate-y-1/2 text-ink-subtle transition hover:text-ink-muted"
+              className="absolute end-2.5 top-1/2 grid h-10 w-10 -translate-y-1/2 place-items-center rounded-[12px]"
+              style={{ color: "var(--a-muted)" }}
             >
-              {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+              {showPassword ? <EyeOff className="h-[17px] w-[17px]" /> : <Eye className="h-[17px] w-[17px]" />}
             </button>
           </div>
-
-          {password.length > 0 && (
-            <div className="mt-2">
-              <div className="h-1.5 w-full overflow-hidden rounded-full bg-surface-inset dark:bg-white/10">
-                <div
-                  className={`h-full rounded-full transition-all duration-300 ${
-                    strength >= 70 ? "bg-status-ok-solid" : strength >= 40 ? "bg-status-warn-solid" : "bg-status-danger-solid"
-                  }`}
-                  style={{ width: `${strength}%` }}
+          {strengthLabel && (
+            <div className="mt-2 flex items-center gap-2.5">
+              <span className="h-[4px] flex-1 overflow-hidden rounded-full" style={{ background: "var(--a-track)" }}>
+                <span
+                  className="block h-full rounded-full transition-all duration-300"
+                  style={{ width: `${strength}%`, background: strengthInk }}
                 />
-              </div>
-              <p
-                className={`mt-1 text-xs font-medium ${
-                  strength >= 70
-                    ? "text-status-ok-ink"
-                    : strength >= 40
-                      ? "text-status-warn-ink"
-                      : "text-status-danger-ink"
-                }`}
-              >
-                {strengthLabel}
-              </p>
+              </span>
+              <span className="text-[0.6875rem] font-medium" style={{ color: strengthInk }}>{strengthLabel}</span>
             </div>
           )}
         </div>
 
-        <button type="submit" disabled={loading} className="btn btn-primary btn-block">
-          <UserPlus className="h-4 w-4" />
+        {/* Said before she commits, not sprung on her on the next screen. */}
+        <div
+          className="flex items-start gap-2.5 rounded-[12px]"
+          style={{
+            padding: "clamp(0.625rem,1.6vh,0.875rem)",
+            background: "var(--a-tint-violet)", border: "1px solid var(--a-edge-violet)",
+          }}
+        >
+          <ShieldCheck className="mt-[1px] h-[17px] w-[17px] shrink-0" style={{ color: "var(--a-lilac)" }} aria-hidden />
+          <p className="text-[0.6875rem] leading-snug" style={{ color: "var(--a-ink-2)" }}>
+            Next we ask for one photo ID. Only our review team can open it, and it
+            is how this stays a space for women.
+          </p>
+        </div>
+
+        <button
+          type="submit"
+          disabled={loading}
+          className="auth-go flex min-h-[50px] w-full items-center justify-center gap-2 rounded-[12px] text-[0.875rem] font-semibold"
+          style={{ paddingBlock: "clamp(0.6875rem,1.8vh,1rem)" }}
+        >
+          {loading ? <Loader2 className="h-[18px] w-[18px] animate-spin" aria-hidden /> : null}
           {loading ? "Creating your account…" : "Create my account"}
+          {loading ? null : <ArrowRight className="h-[18px] w-[18px]" aria-hidden />}
         </button>
       </form>
 
-      <p className="mt-4 flex items-start gap-2 rounded-xl bg-status-ok-bg/70 px-3.5 py-3 text-xs leading-relaxed text-status-ok-ink">
-        <ShieldCheck className="mt-0.5 h-4 w-4 shrink-0" />
-        After you sign up we&apos;ll ask for one photo ID. It&apos;s stored privately, only our
-        review team can open it, and it&apos;s how we keep this space women only.
-      </p>
-
-      <p className="mt-5 text-center text-sm text-ink-subtle">
+      <p className="text-center text-[0.8125rem]" style={{ color: "var(--a-muted)", marginTop: "clamp(0.625rem,2vh,1.5rem)" }}>
         Already have an account?{" "}
-        <Link href="/signin" className="font-semibold text-brand-ink hover:underline">
-          Sign in
-        </Link>
+        <Link href="/signin" className="auth-link font-semibold">Sign in</Link>
       </p>
     </div>
   );

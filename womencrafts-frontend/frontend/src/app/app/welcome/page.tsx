@@ -2,7 +2,7 @@
 
 import { useCallback, useState } from "react";
 import { useRouter } from "next/navigation";
-import * as Icons from "lucide-react";
+import * as Icons from "@/components/ux/icons";
 
 import { apiGetSession } from "@/lib/api";
 import { apiIntake, apiIntakeNeeds } from "@/lib/member-api";
@@ -184,7 +184,7 @@ export default function WelcomePage() {
       footer={
         <div>
           {problem && (
-            <p role="alert" className="ux-slide-up mb-3 rounded-[11px] p-3 text-[12.5px] leading-relaxed"
+            <p role="alert" className="ux-slide-up mb-3 rounded-[12px] p-3 text-[0.8125rem] leading-relaxed"
                style={{ background: "var(--ux-tint-orange)", color: "var(--ux-orange-ink)" }}>
               {problem}
             </p>
@@ -193,7 +193,7 @@ export default function WelcomePage() {
             <button
               onClick={() => void leave(false)}
               disabled={working}
-              className="ux-press -my-1 py-1 text-[12.5px] font-medium"
+              className="ux-press -my-1 py-1 text-[0.8125rem] font-medium"
               style={{ color: "var(--ux-muted)", opacity: working ? 0.55 : 1 }}
             >
               Skip for now
@@ -216,7 +216,7 @@ export default function WelcomePage() {
     >
       {step === 1 && (
         NEEDS.length ? (
-          <div className="ux-deck grid grid-cols-2 gap-[13px]">
+          <div className="ux-deck grid grid-cols-2 gap-[12px]">
             {NEEDS.map((n, i) => {
               const on = picked.includes(n.key);
               const look = NEED_LOOK[n.key] ?? { icon: "Star", tint: "--ux-tint-lilac", ink: "--ux-brand" };
@@ -225,7 +225,7 @@ export default function WelcomePage() {
                   key={n.key}
                   onClick={() => setPicked((s) => (on ? s.filter((x) => x !== n.key) : [...s, n.key]))}
                   aria-pressed={on}
-                  className="ux-i ux-sq flex items-center gap-3.5 rounded-[14px] border p-4 text-start"
+                  className="ux-i ux-sq flex items-center gap-3.5 rounded-[12px] border p-4 text-start"
                   style={{
                     borderColor: on ? "var(--ux-brand)" : "var(--ux-line)",
                     background: on ? "var(--ux-brand-tint)" : "var(--ux-surface)",
@@ -234,8 +234,8 @@ export default function WelcomePage() {
                 >
                   <IconTile icon={look.icon} tint={look.tint} ink={look.ink} size={44} radius={12} />
                   <span className="min-w-0 flex-1">
-                    <span className="block text-[14px] font-semibold" style={{ color: "var(--ux-ink)" }}>{n.label}</span>
-                    <span className="mt-0.5 block truncate text-[12px]" style={{ color: "var(--ux-muted)" }}>{n.hint}</span>
+                    <span className="block text-[0.875rem] font-semibold" style={{ color: "var(--ux-ink)" }}>{n.label}</span>
+                    <span className="mt-0.5 block truncate text-[0.75rem]" style={{ color: "var(--ux-muted)" }}>{n.hint}</span>
                   </span>
                   {on && <Icons.Check className="ux-pop h-[19px] w-[19px] shrink-0" style={{ color: "var(--ux-brand)" }} strokeWidth={2.8} />}
                 </button>
@@ -243,7 +243,7 @@ export default function WelcomePage() {
             })}
           </div>
         ) : (
-          <p className="text-[13.5px] leading-relaxed" style={{ color: "var(--ux-muted)" }}>
+          <p className="text-[0.875rem] leading-relaxed" style={{ color: "var(--ux-muted)" }}>
             {source === "loading"
               ? "Fetching the list…"
               : "We could not fetch this list just now. Carry on — you can tell us what you need any time from Settings."}
@@ -260,7 +260,7 @@ export default function WelcomePage() {
                 key={t}
                 onClick={() => setTrade(t)}
                 aria-pressed={on}
-                className="ux-press ux-sq rounded-[12px] border px-4 py-3 text-[13.5px] font-medium transition-colors"
+                className="ux-press ux-sq rounded-[12px] border px-4 py-3 text-[0.875rem] font-medium transition-colors"
                 style={{
                   borderColor: on ? "var(--ux-brand)" : "var(--ux-line-strong)",
                   background: on ? "var(--ux-brand-tint)" : "var(--ux-surface)",
@@ -275,7 +275,7 @@ export default function WelcomePage() {
       )}
 
       {step === 3 && (
-        <div className="ux-deck space-y-[13px]">
+        <div className="ux-deck space-y-[12px]">
           {HOURS.map(([label, note, icon], i) => {
             const on = hours === label;
             return (
@@ -283,7 +283,7 @@ export default function WelcomePage() {
                 key={label}
                 onClick={() => setHours(label)}
                 aria-pressed={on}
-                className="ux-i ux-sq flex w-full items-center gap-3.5 rounded-[14px] border p-4 text-start"
+                className="ux-i ux-sq flex w-full items-center gap-3.5 rounded-[12px] border p-4 text-start"
                 style={{
                   borderColor: on ? "var(--ux-brand)" : "var(--ux-line)",
                   background: on ? "var(--ux-brand-tint)" : "var(--ux-surface)",
@@ -292,8 +292,8 @@ export default function WelcomePage() {
               >
                 <IconTile icon={icon} tint="--ux-tint-lilac" ink="--ux-brand" size={44} radius={12} />
                 <span className="min-w-0 flex-1">
-                  <span className="block text-[14px] font-semibold" style={{ color: "var(--ux-ink)" }}>{label}</span>
-                  <span className="mt-0.5 block text-[12px]" style={{ color: "var(--ux-muted)" }}>{note}</span>
+                  <span className="block text-[0.875rem] font-semibold" style={{ color: "var(--ux-ink)" }}>{label}</span>
+                  <span className="mt-0.5 block text-[0.75rem]" style={{ color: "var(--ux-muted)" }}>{note}</span>
                 </span>
                 {on && <Icons.Check className="ux-pop h-[19px] w-[19px] shrink-0" style={{ color: "var(--ux-brand)" }} strokeWidth={2.8} />}
               </button>

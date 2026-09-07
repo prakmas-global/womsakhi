@@ -6,6 +6,7 @@ import { useSearchParams } from "next/navigation";
 import { CircleAlert, CircleCheck, Loader2 } from "lucide-react";
 
 import { LogoWordmark } from "@/components/brand/Logo";
+import { Btn } from "@/components/ux/kit";
 import { apiConfirmEmail, verificationErrorMessage } from "@/lib/verification-api";
 
 /**
@@ -14,86 +15,143 @@ import { apiConfirmEmail, verificationErrorMessage } from "@/lib/verification-ap
  * Deliberately public and standalone: she may open it on a different device, or
  * in a browser where she isn't signed in. It confirms the address and then
  * points her onward.
+ *
+ * This page sits outside the `(auth)` group, so it gets no layout above it but
+ * the root one — which means it has to open its own `.ux` scope. Without that
+ * every `var(--ux-*)` below resolves to nothing and the page renders unstyled.
  */
+
+/** One frame: the card is the same shape in all three states, only its face changes. */
+function Shell({ children }: { children: React.ReactNode }) {
+  return (
+    <div
+      className="ux flex min-h-screen items-center justify-center px-4 py-10"
+      style={{ background: "var(--ux-canvas)" }}
+    >
+      <div
+        className="w-full max-w-[400px] rounded-[20px] p-8 text-center"
+        style={{
+          background: "var(--ux-surface)",
+          border: "1px solid var(--ux-line)",
+          boxShadow: "var(--ux-shadow-pop)",
+        }}
+      >
+        {children}
+      </div>
+    </div>
+  );
+}
+
+/** The round status badge above the heading. */
+function Badge({ tint, ink, children }: { tint: string; ink: string; children: React.ReactNode }) {
+  return (
+    <span
+      className="mx-auto mt-7 flex h-14 w-14 items-center justify-center rounded-full"
+      style={{ background: `var(${tint})`, color: `var(${ink})` }}
+    >
+      {children}
+    </span>
+  );
+}
+
+function Heading({ children }: { children: React.ReactNode }) {
+  return (
+    <h1 className="mt-4 text-[1.25rem] font-bold tracking-tight" style={{ color: "var(--ux-ink)" }}>
+      {children}
+    </h1>
+  );
+}
+
+function Sub({ children }: { children: React.ReactNode }) {
+  return (
+    <p className="mt-1.5 text-[0.8125rem] leading-relaxed" style={{ color: "var(--ux-muted)" }}>
+      {children}
+    </p>
+  );
+}
 
 function Confirm() {
   const params = useSearchParams();
   const token = params.get("token") ?? "";
 
-  const [state, setState] = useState<"working" | "done" | "failed">("working");
-  const [message, setMessage] = useState("");
+  const [result, setResult] = useState<{ ok: boolean; message: string } | null>(null);
 
   useEffect(() => {
-    if (!token) {
-      setState("failed");
-      setMessage("That link is missing its confirmation code.");
-      return;
-    }
+    // A link with no token never reaches the server — that verdict is derived
+    // below rather than set here, so the effect has nothing to do.
+    if (!token) return;
     let cancelled = false;
     apiConfirmEmail(token)
       .then((res) => {
-        if (cancelled) return;
-        setState("done");
-        setMessage(res.message);
+        if (!cancelled) setResult({ ok: true, message: res.message });
       })
       .catch((err) => {
-        if (cancelled) return;
-        setState("failed");
-        setMessage(verificationErrorMessage(err));
+        if (!cancelled) setResult({ ok: false, message: verificationErrorMessage(err) });
       });
     return () => {
       cancelled = true;
     };
   }, [token]);
 
+  const { state, message }: { state: "working" | "done" | "failed"; message: string } = !token
+    ? { state: "failed", message: "That link is missing its confirmation code." }
+    : result
+      ? { state: result.ok ? "done" : "failed", message: result.message }
+      : { state: "working", message: "" };
+
   return (
-    <div className="flex min-h-screen items-center justify-center px-4 py-10">
-      <div className="wc-card w-full max-w-md p-8 text-center">
-        <div className="flex justify-center">
-          <LogoWordmark className="h-8" />
-        </div>
-
-        {state === "working" && (
-          <>
-            <Loader2 className="mx-auto mt-7 h-9 w-9 animate-spin text-brand-500" />
-            <h1 className="font-display text-2xl font-bold tracking-tight text-ink mt-4">
-              Confirming your email…
-            </h1>
-          </>
-        )}
-
-        {state === "done" && (
-          <>
-            <span className="mx-auto mt-7 flex h-14 w-14 items-center justify-center rounded-full bg-status-ok-bg text-status-ok-ink">
-              <CircleCheck className="h-7 w-7" />
-            </span>
-            <h1 className="font-display text-2xl font-bold tracking-tight text-ink mt-4">Email confirmed</h1>
-            <p className="mt-1.5 text-sm text-ink-subtle">{message}</p>
-            <Link href="/app/verify" className="btn btn-primary btn-block mt-6">
-              Continue
-            </Link>
-          </>
-        )}
-
-        {state === "failed" && (
-          <>
-            <span className="mx-auto mt-7 flex h-14 w-14 items-center justify-center rounded-full bg-status-danger-bg text-status-danger-ink">
-              <CircleAlert className="h-7 w-7" />
-            </span>
-            <h1 className="font-display text-2xl font-bold tracking-tight text-ink mt-4">
-              We couldn&apos;t confirm that link
-            </h1>
-            <p className="mt-1.5 text-sm text-ink-subtle">{message}</p>
-            <Link href="/app/verify" className="btn btn-primary btn-block mt-6">
-              Send a new link
-            </Link>
-            <Link href="/signin" className="mt-3 block text-sm font-semibold text-ink-subtle">
-              Back to sign in
-            </Link>
-          </>
-        )}
+    <Shell>
+      <div className="flex justify-center">
+        <LogoWordmark className="h-8" />
       </div>
-    </div>
+
+      {state === "working" && (
+        <>
+          <Badge tint="--ux-tint-violet" ink="--ux-violet">
+            <Loader2 className="h-7 w-7 animate-spin" aria-hidden />
+          </Badge>
+          <Heading>Confirming your email…</Heading>
+          <Sub>This takes a moment.</Sub>
+        </>
+      )}
+
+      {state === "done" && (
+        <>
+          <Badge tint="--ux-tint-green" ink="--ux-green">
+            <CircleCheck className="h-7 w-7" aria-hidden />
+          </Badge>
+          <Heading>Email confirmed</Heading>
+          <Sub>{message}</Sub>
+          <div className="mt-6">
+            <Btn href="/app/verify" full iconEnd="ArrowRight">
+              Continue
+            </Btn>
+          </div>
+        </>
+      )}
+
+      {state === "failed" && (
+        <>
+          <Badge tint="--ux-tint-orange" ink="--ux-orange-ink">
+            <CircleAlert className="h-7 w-7" aria-hidden />
+          </Badge>
+          <Heading>We couldn&apos;t confirm that link</Heading>
+          <Sub>{message}</Sub>
+          <div className="mt-6">
+            <Btn href="/app/verify" full>
+              Send a new link
+            </Btn>
+          </div>
+          <Link
+            href="/signin"
+            className="ux-hov mt-3.5 inline-block text-[0.8125rem] font-semibold"
+            style={{ color: "var(--ux-brand)" }}
+          >
+            Back to sign in
+          </Link>
+        </>
+      )}
+    </Shell>
   );
 }
 
@@ -102,9 +160,15 @@ export default function VerifyEmailPage() {
   return (
     <Suspense
       fallback={
-        <div className="flex min-h-screen items-center justify-center">
-          <Loader2 className="h-8 w-8 animate-spin text-brand-500" />
-        </div>
+        <Shell>
+          <div className="flex justify-center">
+            <LogoWordmark className="h-8" />
+          </div>
+          <Badge tint="--ux-tint-violet" ink="--ux-violet">
+            <Loader2 className="h-7 w-7 animate-spin" aria-hidden />
+          </Badge>
+          <Heading>Confirming your email…</Heading>
+        </Shell>
       }
     >
       <Confirm />

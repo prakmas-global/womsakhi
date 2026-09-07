@@ -43,6 +43,8 @@ export interface SakhiMessage {
 export interface SakhiConversation {
   id: string;
   title: string;
+  /** Pinned by her. Lives on the conversation, so a delete takes the pin too. */
+  pinned?: boolean;
   audience: string;
   locale: string;
   message_count: number;
@@ -205,4 +207,46 @@ export async function apiSakhiMemory(): Promise<SakhiMemoryItem[]> {
 
 export async function apiSakhiForget(id?: string): Promise<void> {
   await apiClient.delete(id ? `/sakhi/memory/${id}` : "/sakhi/memory");
+}
+
+
+/* ── naming, pinning, rating and keeping ─────────────────────────────────
+   All four used to live in `localStorage`, which meant they were per-device
+   and invisible to the member on her next phone. They are hers, so they live
+   with her account. */
+
+export async function apiSakhiRename(id: string, title: string): Promise<SakhiConversation> {
+  const { data } = await apiClient.patch<SakhiConversation>(`/sakhi/conversations/${id}/title`, { title });
+  return data;
+}
+
+export async function apiSakhiPin(id: string, pinned: boolean): Promise<SakhiConversation> {
+  const { data } = await apiClient.patch<SakhiConversation>(`/sakhi/conversations/${id}/pin`, { pinned });
+  return data;
+}
+
+/** `helpful: null` clears a rating — a mis-tap on a phone has to be undoable. */
+export async function apiSakhiRate(messageId: string, helpful: boolean | null): Promise<void> {
+  await apiClient.post(`/sakhi/messages/${messageId}/feedback`, { helpful });
+}
+
+export interface SakhiSaved {
+  id: string;
+  text: string;
+  conversation_id: string;
+  created_at: string | null;
+}
+
+export async function apiSakhiSaved(): Promise<SakhiSaved[]> {
+  const { data } = await apiClient.get<SakhiSaved[]>("/sakhi/saved");
+  return data;
+}
+
+export async function apiSakhiSave(text: string, conversationId = ""): Promise<SakhiSaved> {
+  const { data } = await apiClient.post<SakhiSaved>("/sakhi/saved", { text, conversation_id: conversationId });
+  return data;
+}
+
+export async function apiSakhiUnsave(id: string): Promise<void> {
+  await apiClient.delete(`/sakhi/saved/${id}`);
 }

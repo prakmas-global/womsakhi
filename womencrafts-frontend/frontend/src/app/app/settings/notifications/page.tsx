@@ -5,7 +5,7 @@ import { useCallback, useState } from "react";
 import { apiNotificationPrefs, apiSaveNotificationPrefs, type NotificationPrefs } from "@/lib/member-api";
 import { useResource } from "@/lib/use-resource";
 import { useAction } from "@/lib/use-action";
-import * as Icons from "lucide-react";
+import * as Icons from "@/components/ux/icons";
 
 import { Btn } from "@/components/ux/kit";
 import { Card, SectionHead, SettingsPage, Toggle } from "@/components/ux/settings/Frame";
@@ -72,6 +72,16 @@ export default function NotificationSettings() {
         orders: p.orders,
         circles: p.circles,
         sms: p.sms,
+        // Carried through untouched. This screen does not edit quiet hours —
+        // that is /app/settings/quiet-hours — but it PUTs the whole object,
+        // so leaving them out would silently reset her window to the defaults
+        // every time she changed an unrelated switch here.
+        quiet_hours: server?.quiet_hours ?? true,
+        quiet_start: server?.quiet_start ?? 1290,
+        quiet_end: server?.quiet_end ?? 420,
+        quiet_days: server?.quiet_days ?? [true, true, true, true, true, true, true],
+        quiet_allow_money: server?.quiet_allow_money ?? true,
+        quiet_allow_circle_lead: server?.quiet_allow_circle_lead ?? false,
       };
       await apiSaveNotificationPrefs(body);
     },
@@ -87,7 +97,7 @@ export default function NotificationSettings() {
       sub="What reaches you, and how. You can change any of it later."
       footer={
         <div className="flex items-center justify-between gap-4">
-          <p className="text-[12px]"
+          <p className="text-[0.75rem]"
              style={{ color: save.error ? "var(--ux-orange-ink)" : saved ? "var(--ux-green-ink)" : "var(--ux-faint)" }}>
             {save.error ? save.error : saved ? "Saved." : "Nothing is saved until you press the button."}
           </p>
@@ -139,7 +149,7 @@ export default function NotificationSettings() {
                   whenOn="Money and orders also come by SMS. Useful on a weak connection."
                   whenOff="No text messages except your sign-in code." />
         </div>
-        <p className="mt-3.5 flex items-start gap-2.5 rounded-[11px] p-3 text-[12px] leading-relaxed"
+        <p className="mt-3.5 flex items-start gap-2.5 rounded-[12px] p-3 text-[0.75rem] leading-relaxed"
            style={{ background: "var(--ux-surface-2)", color: "var(--ux-ink-2)" }}>
           <Icons.ShieldCheck className="mt-[1px] h-[14px] w-[14px] shrink-0" style={{ color: "var(--ux-brand)" }} />
           Safety alerts always reach you, whatever is set here. Those cannot be turned off.

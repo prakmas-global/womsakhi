@@ -1,6 +1,6 @@
 "use client";
 
-import * as Icons from "lucide-react";
+import * as Icons from "@/components/ux/icons";
 
 import { useDevicePref } from "@/lib/use-device-pref";
 
@@ -30,7 +30,7 @@ export default function AppearanceSettings() {
     <SettingsPage title="Appearance" sub="Changes straight away — nothing to save.">
       <Card>
         <SectionHead title="Theme" />
-        <div className="ux-deck grid grid-cols-3 gap-[13px]">
+        <div className="ux-deck grid grid-cols-3 gap-[12px]">
           {OPTIONS.map((o, i) => {
             const on = theme === o.id;
             return (
@@ -38,7 +38,7 @@ export default function AppearanceSettings() {
                 key={o.id}
                 onClick={() => setTheme(o.id)}
                 aria-pressed={on}
-                className="ux-i ux-sq overflow-hidden rounded-[14px] border text-start"
+                className="ux-i ux-sq overflow-hidden rounded-[12px] border text-start"
                 style={{
                   borderColor: on ? "var(--ux-brand)" : "var(--ux-line)",
                   borderWidth: on ? 2 : 1,
@@ -62,7 +62,7 @@ export default function AppearanceSettings() {
                     <span key={scope} className={`${scope} block flex-1 p-3`} style={{ background: "var(--ux-surface)" }}>
                       <span className="mb-2 block h-[7px] w-[34px] rounded-full"
                             style={{ background: "var(--ux-ink)", opacity: 0.7 }} />
-                      <span className="block rounded-[7px] p-2"
+                      <span className="block rounded-[8px] p-2"
                             style={{ background: "var(--ux-surface-2)", border: "1px solid var(--ux-line)" }}>
                         <span className="block h-[5px] w-[70%] rounded-full"
                               style={{ background: "var(--ux-ink)", opacity: 0.55 }} />
@@ -74,10 +74,10 @@ export default function AppearanceSettings() {
                 </span>
                 <span className="flex items-center gap-2 px-3.5 py-3">
                   <span className="min-w-0 flex-1">
-                    <span className="block truncate text-[13px] font-semibold" style={{ color: "var(--ux-ink)" }}>
+                    <span className="block truncate text-[0.8125rem] font-semibold" style={{ color: "var(--ux-ink)" }}>
                       {o.label}
                     </span>
-                    <span className="mt-0.5 block truncate text-[11px]" style={{ color: "var(--ux-muted)" }}>
+                    <span className="mt-0.5 block truncate text-[0.6875rem]" style={{ color: "var(--ux-muted)" }}>
                       {o.note}
                     </span>
                   </span>
@@ -105,7 +105,7 @@ export default function AppearanceSettings() {
             whenOff="Cards lift and pages slide as you move around."
           />
         </div>
-        <p className="mt-3.5 flex items-start gap-2.5 rounded-[11px] p-3 text-[12px] leading-relaxed"
+        <p className="mt-3.5 flex items-start gap-2.5 rounded-[12px] p-3 text-[0.75rem] leading-relaxed"
            style={{ background: "var(--ux-surface-2)", color: "var(--ux-ink-2)" }}>
           <Icons.Info className="mt-[1px] h-[14px] w-[14px] shrink-0" style={{ color: "var(--ux-brand)" }} />
           If your phone is already set to reduce motion, WomSakhi follows it without you turning this on.

@@ -6,7 +6,7 @@ import { apiApply, apiToggleSaveOpportunity } from "@/lib/growth-api";
 import { useAction } from "@/lib/use-action";
 import { useAttemptKey } from "@/lib/idempotency";
 import Link from "next/link";
-import * as Icons from "lucide-react";
+import * as Icons from "@/components/ux/icons";
 
 import {
   Btn, Card, EmptyState, I, IconTile, Pill, RailSkeleton, ScreenSkeleton, SectionHead,
@@ -94,7 +94,7 @@ export default function OpportunityDetail({ params }: { params: Promise<{ id: st
     <HomeShell
       active="/app/opportunities"
       rail={
-        <div className="space-y-[15px]">
+        <div className="space-y-[16px]">
           {/* This card used to be "Your fit": a ring, and a verdict — "Strong
               match" / "A stretch" — under the line "based on your skills, your
               location and what you have finished". Nothing computes a match
@@ -107,7 +107,7 @@ export default function OpportunityDetail({ params }: { params: Promise<{ id: st
               <SectionHead title="What they ask for" sub="Straight from the listing" />
               <ul className="space-y-2">
                 {job.skills.map((s, i) => (
-                  <li key={s} className="ux-rise flex items-center gap-2 text-[12.5px]"
+                  <li key={s} className="ux-rise flex items-center gap-2 text-[0.8125rem]"
                       style={{ ["--i" as string]: i, color: "var(--ux-ink-2)" }}>
                     <Icons.Check className="h-[15px] w-[15px] shrink-0" style={{ color: "var(--ux-green-ink)" }} strokeWidth={2.6} />
                     {s}
@@ -134,9 +134,9 @@ export default function OpportunityDetail({ params }: { params: Promise<{ id: st
             <ol className="space-y-3">
               {STAGES.map((s, i) => (
                 <li key={s} className="flex items-start gap-2.5">
-                  <span className="grid h-[20px] w-[20px] shrink-0 place-items-center rounded-full text-[10px] font-bold"
+                  <span className="grid h-[20px] w-[20px] shrink-0 place-items-center rounded-full text-[0.6875rem] font-bold"
                         style={{ background: "var(--ux-brand-tint)", color: "var(--ux-brand)" }}>{i + 1}</span>
-                  <span className="text-[12.5px] leading-snug" style={{ color: "var(--ux-ink-2)" }}>
+                  <span className="text-[0.8125rem] leading-snug" style={{ color: "var(--ux-ink-2)" }}>
                     {["You send this application", "They read your profile", "A call or a video chat", "They make an offer"][i]}
                   </span>
                 </li>
@@ -147,17 +147,17 @@ export default function OpportunityDetail({ params }: { params: Promise<{ id: st
       }
     >
       <Link href="/app/opportunities"
-            className="ux-hov -my-1 mb-3.5 inline-flex items-center gap-1.5 py-1 text-[12.5px] font-medium"
+            className="ux-hov -my-1 mb-3.5 inline-flex items-center gap-1.5 py-1 text-[0.8125rem] font-medium"
             style={{ color: "var(--ux-brand)" }}>
         <Icons.ArrowLeft className="ux-ico h-4 w-4" /> All work
       </Link>
 
-      <Card className="mb-[15px]">
+      <Card className="mb-[16px]">
         <div className="flex items-start gap-4">
           <IconTile icon={job.icon} tint={job.logoTint} ink={job.logoInk} size={62} radius={16} />
           <div className="min-w-0 flex-1">
-            <h1 className="text-[22px] font-bold leading-tight" style={{ color: "var(--ux-ink)" }}>{job.title}</h1>
-            <p className="mt-1.5 flex flex-wrap items-center gap-x-3 gap-y-1 text-[12.5px]" style={{ color: "var(--ux-muted)" }}>
+            <h1 className="text-[1.25rem] font-bold leading-tight" style={{ color: "var(--ux-ink)" }}>{job.title}</h1>
+            <p className="mt-1.5 flex flex-wrap items-center gap-x-3 gap-y-1 text-[0.8125rem]" style={{ color: "var(--ux-muted)" }}>
               <span className="inline-flex items-center gap-1"><Icons.Building2 className="h-4 w-4" /> {job.org}</span>
               <span className="inline-flex items-center gap-1"><Icons.MapPin className="h-4 w-4" /> {job.place}</span>
               <span className="inline-flex items-center gap-1"><Icons.Clock className="h-4 w-4" /> {job.posted}</span>
@@ -173,15 +173,15 @@ export default function OpportunityDetail({ params }: { params: Promise<{ id: st
 
         <div className="mt-4 flex items-end justify-between gap-4 border-t pt-4" style={{ borderColor: "var(--ux-line)" }}>
           <div>
-            <p className="text-[11.5px]" style={{ color: "var(--ux-muted)" }}>They pay</p>
-            <p className="mt-0.5 text-[19px] font-bold" style={{ color: "var(--ux-ink)" }}>{payLabel(job)}</p>
+            <p className="text-[0.75rem]" style={{ color: "var(--ux-muted)" }}>They pay</p>
+            <p className="mt-0.5 text-[1.125rem] font-bold" style={{ color: "var(--ux-ink)" }}>{payLabel(job)}</p>
           </div>
           <div className="flex items-center gap-2.5">
             <Btn variant="outline" icon={saved ? "BookmarkCheck" : "Bookmark"} onClick={() => void bookmark.run()}>
               {saved ? "Saved" : "Save"}
             </Btn>
             {applied ? (
-              <span className="ux-pop ux-sq inline-flex items-center gap-2 rounded-[11px] px-4 py-2.5 text-[12.5px] font-semibold"
+              <span className="ux-pop ux-sq inline-flex items-center gap-2 rounded-[12px] px-4 py-2.5 text-[0.8125rem] font-semibold"
                     style={{ background: "var(--ux-tint-green)", color: "var(--ux-green-ink)" }}>
                 <Icons.CheckCheck className="h-[15px] w-[15px]" /> Application sent
               </span>
@@ -198,7 +198,7 @@ export default function OpportunityDetail({ params }: { params: Promise<{ id: st
             )}
           </div>
           {(apply.error || bookmark.error) && (
-            <p role="alert" className="ux-slide-up mt-3 text-[12.5px] leading-relaxed"
+            <p role="alert" className="ux-slide-up mt-3 text-[0.8125rem] leading-relaxed"
                style={{ color: "var(--ux-orange-ink)" }}>
               {apply.error || bookmark.error}
             </p>
@@ -206,15 +206,15 @@ export default function OpportunityDetail({ params }: { params: Promise<{ id: st
         </div>
 
         {applied && (
-          <div className="ux-slide-up mt-4 flex items-center gap-3.5 rounded-[13px] p-3.5"
+          <div className="ux-slide-up mt-4 flex items-center gap-3.5 rounded-[12px] p-3.5"
                style={{ background: "var(--ux-tint-green)" }}>
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img src={WORK_ART.applied} alt="" className="h-[62px] w-[62px] shrink-0 object-contain" />
             <div className="min-w-0">
-              <p className="text-[13px] font-semibold" style={{ color: "var(--ux-ink)" }}>
+              <p className="text-[0.8125rem] font-semibold" style={{ color: "var(--ux-ink)" }}>
                 It is with {job.org} now.
               </p>
-              <p className="mt-1 text-[12px] leading-snug" style={{ color: "var(--ux-ink-2)" }}>
+              <p className="mt-1 text-[0.75rem] leading-snug" style={{ color: "var(--ux-ink-2)" }}>
                 Most employers reply within three days. You can follow it in Applications.
               </p>
             </div>
@@ -223,10 +223,10 @@ export default function OpportunityDetail({ params }: { params: Promise<{ id: st
         )}
       </Card>
 
-      <div className="grid grid-cols-[minmax(0,1fr)_320px] gap-[15px]">
+      <div className="grid grid-cols-[minmax(0,1fr)_320px] gap-[16px]">
         <Card>
           <SectionHead title="About this work" />
-          <p className="text-[13px] leading-relaxed" style={{ color: "var(--ux-ink-2)" }}>{job.about}</p>
+          <p className="text-[0.8125rem] leading-relaxed" style={{ color: "var(--ux-ink-2)" }}>{job.about}</p>
 
           {/* Both lists are hidden when the listing carries nothing, rather
               than printing a heading over empty space. The API has no
@@ -234,11 +234,11 @@ export default function OpportunityDetail({ params }: { params: Promise<{ id: st
               nothing on every opening in the app. */}
           {job.responsibilities.length > 0 && (
             <>
-              <h3 className="mb-2 mt-5 text-[13px] font-semibold" style={{ color: "var(--ux-ink)" }}>What you would do</h3>
+              <h3 className="mb-2 mt-5 text-[0.8125rem] font-semibold" style={{ color: "var(--ux-ink)" }}>What you would do</h3>
               <ul className="ux-stagger space-y-2">
                 {job.responsibilities.map((r) => (
-                  <li key={r} className="flex items-start gap-2.5 text-[12.5px] leading-snug" style={{ color: "var(--ux-ink-2)" }}>
-                    <span className="mt-[6px] h-[5px] w-[5px] shrink-0 rounded-full" style={{ background: "var(--ux-brand)" }} />
+                  <li key={r} className="flex items-start gap-2.5 text-[0.8125rem] leading-snug" style={{ color: "var(--ux-ink-2)" }}>
+                    <span className="mt-[8px] h-[5px] w-[5px] shrink-0 rounded-full" style={{ background: "var(--ux-brand)" }} />
                     {r}
                   </li>
                 ))}
@@ -248,10 +248,10 @@ export default function OpportunityDetail({ params }: { params: Promise<{ id: st
 
           {job.needs.length > 0 && (
             <>
-              <h3 className="mb-2 mt-5 text-[13px] font-semibold" style={{ color: "var(--ux-ink)" }}>What you need</h3>
+              <h3 className="mb-2 mt-5 text-[0.8125rem] font-semibold" style={{ color: "var(--ux-ink)" }}>What you need</h3>
               <ul className="ux-stagger space-y-2">
                 {job.needs.map((r) => (
-                  <li key={r} className="flex items-start gap-2.5 text-[12.5px] leading-snug" style={{ color: "var(--ux-ink-2)" }}>
+                  <li key={r} className="flex items-start gap-2.5 text-[0.8125rem] leading-snug" style={{ color: "var(--ux-ink-2)" }}>
                     <Icons.Check className="mt-[2px] h-[14px] w-[14px] shrink-0" style={{ color: "var(--ux-green-ink)" }} strokeWidth={2.6} />
                     {r}
                   </li>
@@ -269,7 +269,7 @@ export default function OpportunityDetail({ params }: { params: Promise<{ id: st
               ["Never share an OTP, even with someone who says they are hiring", "KeyRound"],
               ["Meet in a public place, or on a video call", "Video"],
             ].map(([t, ic]) => (
-              <li key={t} className="flex items-start gap-2.5 text-[12.5px] leading-snug" style={{ color: "var(--ux-ink-2)" }}>
+              <li key={t} className="flex items-start gap-2.5 text-[0.8125rem] leading-snug" style={{ color: "var(--ux-ink-2)" }}>
                 <I name={ic} className="mt-[1px] h-[15px] w-[15px] shrink-0" style={{ color: "var(--ux-brand)" }} />
                 {t}
               </li>
@@ -282,9 +282,9 @@ export default function OpportunityDetail({ params }: { params: Promise<{ id: st
       </div>
 
       {similar.length > 0 && (
-        <div className="mt-[15px]">
+        <div className="mt-[16px]">
           <SectionHead title="Similar work" sub={`Other ${job.kind.toLowerCase()} openings you may like`} />
-          <div className="space-y-[13px]">
+          <div className="space-y-[12px]">
             {similar.map((j, i) => (
               <JobRow key={j.id} job={j} i={i} saved={false} onSave={() => {}} />
             ))}

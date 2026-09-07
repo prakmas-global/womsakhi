@@ -73,7 +73,11 @@ const ToastContext = createContext<ToastApi | null>(null);
  * and a half seconds is a promise the interface does not keep — especially for
  * anyone reaching it by keyboard, who has to tab to it first.
  */
-const DEFAULT_MS = 4000;
+/* Six, not the conventional four. This product's readers are frequently
+   reading in a second language on a small screen, and a confirmation that
+   vanishes before it is read is not a confirmation. Hover and focus still
+   hold it open indefinitely. */
+const DEFAULT_MS = 6000;
 const WITH_ACTION_MS = 9000;
 
 const TONE_ICON: Record<ToastTone, React.ElementType> = {
@@ -193,7 +197,7 @@ export default function ToastProvider({ children }: { children: React.ReactNode 
         aria-relevant="additions text"
         aria-atomic="false"
         aria-label="Notifications"
-        className="pointer-events-none fixed right-4 top-4 z-[300] flex w-[min(24rem,calc(100vw-2rem))] flex-col gap-2"
+        className="pointer-events-none fixed right-4 top-4 z-[var(--ux-z-toast)] flex w-[min(24rem,calc(100vw-2rem))] flex-col gap-2"
       >
         {toasts.map((t) => {
           const Icon = TONE_ICON[t.tone];

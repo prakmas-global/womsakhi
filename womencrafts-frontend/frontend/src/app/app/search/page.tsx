@@ -3,14 +3,13 @@
 import { Suspense, useMemo, useState } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
-import * as Icons from "lucide-react";
+import * as Icons from "@/components/ux/icons";
 
 import {
   Btn, Card, Chip, EmptyState, IconTile, SectionHead,
   SourceNote, plural
 } from "@/components/ux/kit";
 import { HomeShell } from "@/components/ux/home/HomeShell";
-import { matchHits } from "@/components/ux/SearchPalette";
 import { SEARCH_KINDS, SEARCH_SUGGESTED, type SearchHit } from "@/components/ux/home/data";
 import { useSearch } from "@/components/ux/growth";
 
@@ -50,7 +49,7 @@ function Results() {
     <HomeShell
       active="/app/explore"
       rail={
-        <div className="space-y-[15px]">
+        <div className="space-y-[16px]">
           <Card>
             <SectionHead title="Refine by kind" />
             <div className="space-y-1">
@@ -58,7 +57,7 @@ function Results() {
                 <button
                   key={k}
                   onClick={() => setKind(k)}
-                  className="flex w-full items-center justify-between rounded-[9px] px-2.5 py-2 text-[13px] transition-colors"
+                  className="flex w-full items-center justify-between rounded-[8px] px-2.5 py-2 text-[0.8125rem] transition-colors"
                   style={{
                     background: kind === k ? "var(--ux-brand-tint)" : "transparent",
                     color: kind === k ? "var(--ux-brand)" : "var(--ux-ink-2)",
@@ -66,21 +65,21 @@ function Results() {
                   }}
                 >
                   {k === "All" ? "Everything" : plural(k)}
-                  <span className="text-[11.5px]" style={{ color: "var(--ux-faint)" }}>{counts[k] ?? 0}</span>
+                  <span className="text-[0.75rem]" style={{ color: "var(--ux-faint)" }}>{counts[k] ?? 0}</span>
                 </button>
               ))}
             </div>
           </Card>
 
-          <div className="relative overflow-hidden rounded-[16px] p-[18px]"
+          <div className="relative overflow-hidden rounded-[16px] p-[20px]"
                style={{ background: "linear-gradient(140deg, var(--ux-tint-lilac), var(--ux-tint-blue))" }}>
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img src="/ux/art/mascot-robot-reading.webp" alt=""
                  className="ux-float pointer-events-none absolute -bottom-3 -end-3 h-[92px] w-[92px] object-contain" />
-            <h3 className="relative w-[62%] text-[14px] font-semibold" style={{ color: "var(--ux-ink)" }}>
+            <h3 className="relative w-[62%] text-[0.875rem] font-semibold" style={{ color: "var(--ux-ink)" }}>
               Can’t find it?
             </h3>
-            <p className="relative mt-2 w-[62%] text-[12px] leading-relaxed" style={{ color: "var(--ux-muted)" }}>
+            <p className="relative mt-2 w-[62%] text-[0.75rem] leading-relaxed" style={{ color: "var(--ux-muted)" }}>
               Ask Sakhi in your own words. She looks in places search doesn’t.
             </p>
             <div className="relative mt-3 w-[62%]">
@@ -90,11 +89,11 @@ function Results() {
         </div>
       }
     >
-      <div className="mb-[18px]">
-        <h1 className="text-[24px] font-bold" style={{ color: "var(--ux-ink)" }}>
+      <div className="mb-[20px]">
+        <h1 className="text-[1.5rem] font-bold" style={{ color: "var(--ux-ink)" }}>
           {q ? <>Results for “{q}”</> : "Search"}
         </h1>
-        <p className="mt-1.5 text-[13px]" style={{ color: "var(--ux-muted)" }}>
+        <p className="mt-1.5 text-[0.8125rem]" style={{ color: "var(--ux-muted)" }}>
           {q
             ? `${all.length} match${all.length === 1 ? "" : "es"} across courses, work, mentors and circles.`
             : "Press ⌘ K anywhere, or pick one of the ideas below."}
@@ -104,7 +103,7 @@ function Results() {
       </div>
 
       {q && all.length > 0 && (
-        <div className="mb-[15px] flex flex-wrap gap-2">
+        <div className="mb-[16px] flex flex-wrap gap-2">
           {SEARCH_KINDS.filter((k) => k === "All" || counts[k]).map((k) => (
             <Chip key={k} selected={kind === k} onClick={() => setKind(k)}>
               {k === "All" ? "Everything" : plural(k)} · {counts[k] ?? 0}
@@ -121,7 +120,7 @@ function Results() {
               <button
                 key={s}
                 onClick={() => router.push(`/app/search?q=${encodeURIComponent(s)}`)}
-                className="ux-press ux-i rounded-full border border-transparent px-3.5 py-2 text-[13px] font-medium"
+                className="ux-press ux-i rounded-full border border-transparent px-3.5 py-2 text-[0.8125rem] font-medium"
                 style={{ background: "var(--ux-brand-tint)", color: "var(--ux-brand)" }}
               >
                 {s}
@@ -175,12 +174,12 @@ function Hit({ h, q, i }: { h: SearchHit; q: string; i: number }) {
             <IconTile icon={h.icon} tint={h.tint} ink={h.ink} size={54} radius={12} />
           )}
           <div className="min-w-0 flex-1">
-            <h3 className="truncate text-[14.5px] font-semibold" style={{ color: "var(--ux-ink)" }}>
+            <h3 className="truncate text-[0.875rem] font-semibold" style={{ color: "var(--ux-ink)" }}>
               <Mark text={h.title} q={q} />
             </h3>
-            <p className="mt-1 truncate text-[12.5px]" style={{ color: "var(--ux-muted)" }}>{h.sub}</p>
+            <p className="mt-1 truncate text-[0.8125rem]" style={{ color: "var(--ux-muted)" }}>{h.sub}</p>
           </div>
-          <span className="shrink-0 rounded-full px-2.5 py-[4px] text-[11px] font-semibold"
+          <span className="shrink-0 rounded-full px-2.5 py-[4px] text-[0.6875rem] font-semibold"
                 style={{ background: `var(${h.tint})`, color: `var(${h.ink}-ink)` }}>
             {h.kind}
           </span>

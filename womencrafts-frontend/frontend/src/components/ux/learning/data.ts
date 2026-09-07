@@ -75,28 +75,6 @@ export const ACHIEVEMENTS = [
   { name: "Rising Star", body: "Reach Level 4", img: "/ux/vector/badge-rising-star.svg" },
 ];
 
-/** Lessons for the course detail and player screens. */
-export const CURRICULUM = [
-  { section: "Getting Started", lessons: [
-    { n: 1, title: "What digital marketing really is", mins: 8, done: true },
-    { n: 2, title: "Who your customer actually is", mins: 11, done: true },
-    { n: 3, title: "Setting a goal you can measure", mins: 9, done: true },
-  ]},
-  { section: "Doing the Work", lessons: [
-    { n: 4, title: "Writing a post people stop for", mins: 14, done: true },
-    { n: 5, title: "Photographing what you sell", mins: 12, done: true },
-    { n: 6, title: "Social media strategy", mins: 15, done: false, current: true },
-    { n: 7, title: "Talking to customers in messages", mins: 10, done: false },
-  ]},
-  { section: "Growing", lessons: [
-    { n: 8, title: "Reading what the numbers tell you", mins: 13, done: false },
-    { n: 9, title: "Spending a small budget well", mins: 12, done: false },
-    { n: 10, title: "Keeping customers coming back", mins: 11, done: false },
-    { n: 11, title: "When to raise your prices", mins: 9, done: false },
-    { n: 12, title: "Putting it all together", mins: 16, done: false },
-  ]},
-];
-
 export const CERTIFICATES = [
   { id: "c1", title: "Beauty & Salon Skills", issued: "12 Mar 2026", code: "WS-BS-2291", tone: "pink" },
   { id: "c2", title: "Home Bakery Business", issued: "04 Feb 2026", code: "WS-HB-1877", tone: "orange" },

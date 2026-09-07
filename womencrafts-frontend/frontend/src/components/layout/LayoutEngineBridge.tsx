@@ -5,6 +5,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { useAuth } from "@/context/AuthContext";
 import { ALL_ENABLED, LayoutEngineProvider, UNHIDEABLE } from "@/layout-engine";
 import type { Layout, LayoutFeatures, PersistHandlers } from "@/layout-engine";
+import { apiMeShell, type MeShell } from "@/lib/shell-api";
 import {
   apiMyFeatures,
   apiMyLayout,
@@ -46,20 +47,59 @@ const NEVER_HIDE = new Set<string>([
   "/dashboard",
 ]);
 
-export default function LayoutEngineBridge({ children }: { children: React.ReactNode }) {
+export default function LayoutEngineBridge({
+  children,
+  initialShell = null,
+}: {
+  children: React.ReactNode;
+  /**
+   * The shell the server already fetched on this request, when there was one.
+   *
+   * Her arrangement of the app is in `layout`, so without this the nav rendered
+   * once in its default order and then re-rendered into her order a round trip
+   * later — a visible jump on every page load, on top of the request.
+   */
+  initialShell?: MeShell | null;
+}) {
   const { user } = useAuth();
-  const [initial, setInitial] = useState<Layout | null>(null);
-  const [features, setFeatures] = useState<LayoutFeatures>(ALL_ENABLED);
+  const [initial, setInitial] = useState<Layout | null>(
+    (initialShell?.layout as Layout | undefined) ?? null,
+  );
+  const [features, setFeatures] = useState<LayoutFeatures>(
+    (initialShell?.features as LayoutFeatures | undefined) ?? ALL_ENABLED,
+  );
 
   useEffect(() => {
     if (!user) {
       setInitial(null);
       return;
     }
+    // The server already answered with the same cookie on the same request.
+    if (initialShell) return;
     let cancelled = false;
     void (async () => {
       try {
-        const [layout, plan] = await Promise.all([apiMyLayout(), apiMyFeatures()]);
+        // One request for members, two for staff.
+        //
+        // `/me/shell` returns the layout AND the features AND three other
+        // things the member shell needs, so for a member these two calls are
+        // pure duplication — and `apiClient.get` coalesces in-flight GETs, so
+        // the copy `ShellProvider` asks for at the same moment is the same
+        // request rather than a second one.
+        //
+        // Staff have no `/me/shell` (it is behind `require_active_member`), so
+        // they keep the two calls. Tried in that order rather than branching on
+        // the role, because the role is a routing hint and the server is the
+        // thing that actually knows.
+        let layout: Layout;
+        let plan: LayoutFeatures;
+        try {
+          const shell = await apiMeShell();
+          layout = shell.layout;
+          plan = shell.features;
+        } catch {
+          [layout, plan] = await Promise.all([apiMyLayout(), apiMyFeatures()]);
+        }
         if (cancelled) return;
         setInitial(layout);
         setFeatures(plan);
@@ -71,6 +111,9 @@ export default function LayoutEngineBridge({ children }: { children: React.React
     return () => {
       cancelled = true;
     };
+    // `initialShell` comes from the server render above and is fixed for the
+    // life of this component.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user]);
 
   const persist = useMemo<PersistHandlers>(() => {

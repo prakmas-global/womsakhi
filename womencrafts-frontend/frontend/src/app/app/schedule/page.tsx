@@ -3,7 +3,7 @@
 import { useState } from "react";
 
 import { useDiary } from "@/components/ux/diary";
-import * as Icons from "lucide-react";
+import * as Icons from "@/components/ux/icons";
 
 import { ActionBtn, Btn, Card, EmptyState, IconTile, SectionHead, SourceNote, Stat, Tabs, copy } from "@/components/ux/kit";
 import { HomeShell } from "@/components/ux/home/HomeShell";
@@ -34,14 +34,14 @@ export default function Schedule() {
     <HomeShell
       active="/app/schedule"
       rail={
-        <div className="space-y-[15px]">
+        <div className="space-y-[16px]">
           <Card>
             <SectionHead title="This week" />
             <div className="flex justify-between">
               {week.map((w, i) => (
                 <div key={w.iso} className="flex flex-col items-center gap-2" style={{ ["--i" as string]: i }}>
-                  <span className="text-[10.5px]" style={{ color: "var(--ux-muted)" }}>{w.letter}</span>
-                  <span className="ux-pop grid h-[30px] w-[30px] place-items-center rounded-full text-[12px] font-semibold"
+                  <span className="text-[0.6875rem]" style={{ color: "var(--ux-muted)" }}>{w.letter}</span>
+                  <span className="ux-pop grid h-[30px] w-[30px] place-items-center rounded-full text-[0.75rem] font-semibold"
                         style={{ background: w.has ? "var(--ux-brand-600)" : "var(--ux-surface-2)",
                                  color: w.has ? "#fff" : "var(--ux-muted)" }}>
                     {w.date}
@@ -52,23 +52,23 @@ export default function Schedule() {
           </Card>
           <Card><Stat value={String(monthCount)} label="Activities this month" icon="CalendarDays" tint="--ux-tint-violet" ink="--ux-violet" /></Card>
           <Card><Stat value={String(attended)} label="Been to so far" icon="CheckCheck" tint="--ux-tint-green" ink="--ux-green" /></Card>
-          <div className="relative overflow-hidden rounded-[16px] p-[18px]"
+          <div className="relative overflow-hidden rounded-[16px] p-[20px]"
                style={{ background: "linear-gradient(140deg, var(--ux-tint-lilac), var(--ux-tint-pink))" }}>
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img src="/ux/art/scene-woman-planning-board.webp" alt=""
                  className="ux-float pointer-events-none absolute -bottom-2 -end-3 h-[96px] w-[96px] object-contain" />
-            <h3 className="relative text-[14px] font-semibold" style={{ color: "var(--ux-ink)" }}>Plan your week</h3>
-            <p className="relative mt-2 w-[62%] text-[12px] leading-relaxed" style={{ color: "var(--ux-muted)" }}>
+            <h3 className="relative text-[0.875rem] font-semibold" style={{ color: "var(--ux-ink)" }}>Plan your week</h3>
+            <p className="relative mt-2 w-[62%] text-[0.75rem] leading-relaxed" style={{ color: "var(--ux-muted)" }}>
               Two hours booked in advance is two hours you actually get.
             </p>
           </div>
         </div>
       }
     >
-      <div className="mb-[18px] flex items-end justify-between gap-4">
+      <div className="mb-[20px] flex items-end justify-between gap-4">
         <div>
-          <h1 className="text-[24px] font-bold" style={{ color: "var(--ux-ink)" }}>Upcoming Activities</h1>
-          <p className="mt-1.5 text-[13px]" style={{ color: "var(--ux-muted)" }}>
+          <h1 className="text-[1.5rem] font-bold" style={{ color: "var(--ux-ink)" }}>Your calendar</h1>
+          <p className="mt-1.5 text-[0.8125rem]" style={{ color: "var(--ux-muted)" }}>
             Sessions, classes and events you have said yes to.
           </p>
           <SourceNote source={source} what="your diary" />
@@ -79,19 +79,19 @@ export default function Schedule() {
       </div>
 
       {shown.length ? (
-        <div className="ux-stagger space-y-[15px]">
+        <div className="ux-stagger space-y-[16px]">
           {shown.map((e, i) => (
             <Card key={e.id} className="ux-i ux-rise" style={{ ["--i" as string]: i }}>
               <div className="flex items-center gap-4">
                 <div className="grid h-[58px] w-[54px] shrink-0 place-items-center rounded-[12px]"
                      style={{ background: "var(--ux-brand-tint)" }}>
-                  <span className="text-[19px] font-bold leading-none" style={{ color: "var(--ux-brand)" }}>{e.d}</span>
-                  <span className="mt-0.5 text-[9.5px] font-semibold" style={{ color: "var(--ux-brand)" }}>{e.m}</span>
+                  <span className="text-[1.125rem] font-bold leading-none" style={{ color: "var(--ux-brand)" }}>{e.d}</span>
+                  <span className="mt-0.5 text-[0.6875rem] font-semibold" style={{ color: "var(--ux-brand)" }}>{e.m}</span>
                 </div>
                 <IconTile icon={e.icon} tint={e.tint} ink={e.ink} size={40} />
                 <div className="min-w-0 flex-1">
-                  <h3 className="truncate text-[14px] font-semibold" style={{ color: "var(--ux-ink)" }}>{e.title}</h3>
-                  <p className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-[11.5px]" style={{ color: "var(--ux-muted)" }}>
+                  <h3 className="truncate text-[0.875rem] font-semibold" style={{ color: "var(--ux-ink)" }}>{e.title}</h3>
+                  <p className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-[0.75rem]" style={{ color: "var(--ux-muted)" }}>
                     <span className="inline-flex items-center gap-1"><Icons.Clock className="h-3.5 w-3.5" /> {e.time}</span>
                     <span className="inline-flex items-center gap-1"><Icons.MapPin className="h-3.5 w-3.5" /> {e.where}</span>
                     <span className="inline-flex items-center gap-1"><Icons.Tag className="h-3.5 w-3.5" /> {e.kind}</span>

@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import * as Icons from "lucide-react";
+import * as Icons from "@/components/ux/icons";
 
 import { apiCancelEvent, apiRegisterForEvent } from "@/lib/growth-api";
 import { useAction } from "@/lib/use-action";
@@ -69,7 +69,7 @@ export default function EventsPage() {
     <HomeShell
       active="/app/events"
       rail={
-        <div className="space-y-[15px]">
+        <div className="space-y-[16px]">
           <Card className="ux-onscroll-soft">
             <SectionHead title="Where you have been" sub="And what it brought in" />
             <ul className="ux-stagger space-y-3">
@@ -79,8 +79,8 @@ export default function EventsPage() {
                             tint={p.kind === "Mela" ? "--ux-tint-pink" : "--ux-tint-violet"}
                             ink={p.kind === "Mela" ? "--ux-pink" : "--ux-violet"} size={36} />
                   <div className="min-w-0 flex-1">
-                    <p className="truncate text-[12.5px] font-medium" style={{ color: "var(--ux-ink)" }}>{p.title}</p>
-                    <p className="mt-0.5 text-[11px]" style={{ color: "var(--ux-muted)" }}>{p.when}</p>
+                    <p className="truncate text-[0.8125rem] font-medium" style={{ color: "var(--ux-ink)" }}>{p.title}</p>
+                    <p className="mt-0.5 text-[0.6875rem]" style={{ color: "var(--ux-muted)" }}>{p.when}</p>
                   </div>
                   {/* What she earned at a past mela is not recorded anywhere —
                       the takings went into her own hand, not through us. The
@@ -89,21 +89,21 @@ export default function EventsPage() {
                 </li>
               ))}
             </ul>
-            <p className="mt-3.5 rounded-[11px] p-3 text-[11.5px] leading-relaxed"
+            <p className="mt-3.5 rounded-[12px] p-3 text-[0.75rem] leading-relaxed"
                style={{ background: "var(--ux-surface-2)", color: "var(--ux-ink-2)" }}>
               One mela last Diwali brought in more than three weeks of orders.
             </p>
           </Card>
 
-          <div className="ux-clay ux-onscroll-soft relative overflow-hidden p-[18px]"
+          <div className="ux-clay ux-onscroll-soft relative overflow-hidden p-[20px]"
                style={{ background: "linear-gradient(140deg, var(--ux-tint-pink), var(--ux-tint-orange))" }}>
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img src={EVENT_ART.hero} alt=""
                  className="ux-float pointer-events-none absolute -bottom-3 -end-4 h-[104px] w-[104px] object-contain" />
-            <h3 className="relative w-[60%] text-[14px] font-semibold" style={{ color: "var(--ux-ink)" }}>
+            <h2 className="relative w-[60%] text-[0.875rem] font-semibold" style={{ color: "var(--ux-ink)" }}>
               Host something
-            </h3>
-            <p className="relative mt-2 w-[60%] text-[12px] leading-relaxed" style={{ color: "var(--ux-muted)" }}>
+            </h2>
+            <p className="relative mt-2 w-[60%] text-[0.75rem] leading-relaxed" style={{ color: "var(--ux-muted)" }}>
               Teach what you know to ten women near you. We handle the room.
             </p>
             <div className="relative mt-3 w-[60%]">
@@ -113,16 +113,16 @@ export default function EventsPage() {
         </div>
       }
     >
-      <div className="mb-[18px] flex items-end justify-between gap-4">
+      <div className="mb-[20px] flex items-end justify-between gap-4">
         <div>
-          <h1 className="text-[24px] font-bold" style={{ color: "var(--ux-ink)" }}>Events</h1>
-          <p className="mt-1.5 text-[13px]" style={{ color: "var(--ux-muted)" }}>
+          <h1 className="text-[1.5rem] font-bold" style={{ color: "var(--ux-ink)" }}>Events</h1>
+          <p className="mt-1.5 text-[0.8125rem]" style={{ color: "var(--ux-muted)" }}>
             {going.length} {plural("event", going.length)} you are going to · {EVENTS.length} coming up
           </p>
 
       <SourceNote source={source} what="events" />
       {place.error && (
-        <p role="alert" className="ux-slide-up mt-2 text-[12.5px] leading-relaxed"
+        <p role="alert" className="ux-slide-up mt-2 text-[0.8125rem] leading-relaxed"
            style={{ color: "var(--ux-orange-ink)" }}>
           {place.error}
         </p>
@@ -131,7 +131,7 @@ export default function EventsPage() {
         <Tabs items={["Coming up", "You are going"]} active={tab} onChange={setTab} />
       </div>
 
-      <div className="mb-[15px] flex flex-wrap gap-2">
+      <div className="mb-[16px] flex flex-wrap gap-2">
         {EVENT_KINDS.map((k) => (
           <Chip key={k} selected={kinds.includes(k)}
                 onClick={() => setKinds(kinds.includes(k) ? kinds.filter((x) => x !== k) : [...kinds, k])}>
@@ -141,7 +141,7 @@ export default function EventsPage() {
       </div>
 
       {shown.length ? (
-        <div className="ux-deck ux-stagger space-y-[13px]">
+        <div className="ux-deck ux-stagger space-y-[12px]">
           {shown.map((e, i) => {
             // `seats: 0` from the API means the organiser has not set a limit,
             // not that every place has gone. `taken >= spots` read 0 >= 0 and
@@ -157,35 +157,35 @@ export default function EventsPage() {
                         style={{ background: `var(${e.tint})` }}>
                     {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img src={e.art} alt="" className="ux-art h-full w-full object-cover" />
-                    <span className="absolute start-3 top-3 grid h-[52px] w-[46px] place-items-center rounded-[11px]"
+                    <span className="absolute start-3 top-3 grid h-[52px] w-[46px] place-items-center rounded-[12px]"
                           style={{ background: "var(--ux-surface)", boxShadow: "var(--ux-shadow-card)" }}>
-                      <span className="text-[18px] font-bold leading-none" style={{ color: "var(--ux-brand)" }}>{e.day}</span>
-                      <span className="text-[9px] font-semibold" style={{ color: "var(--ux-brand)" }}>{e.month}</span>
+                      <span className="text-[1.125rem] font-bold leading-none" style={{ color: "var(--ux-brand)" }}>{e.day}</span>
+                      <span className="text-[0.6875rem] font-semibold" style={{ color: "var(--ux-brand)" }}>{e.month}</span>
                     </span>
                   </span>
 
                   <div className="flex min-w-0 flex-1 flex-col p-[16px]">
                     <div className="flex items-start gap-2">
-                      <h3 className="min-w-0 flex-1 text-[15.5px] font-semibold" style={{ color: "var(--ux-ink)" }}>
+                      <h2 className="min-w-0 flex-1 text-[1rem] font-semibold" style={{ color: "var(--ux-ink)" }}>
                         {e.title}
-                      </h3>
+                      </h2>
                       <Pill tone={e.kind === "Mela" ? "pink" : e.kind === "Webinar" ? "blue" : e.kind === "Workshop" ? "green" : "orange"} size="sm">
                         {e.kind}
                       </Pill>
                       {on && <Pill tone="brand" size="sm">Going</Pill>}
                     </div>
 
-                    <p className="mt-1.5 flex flex-wrap items-center gap-x-3 gap-y-1 text-[11.5px]" style={{ color: "var(--ux-muted)" }}>
+                    <p className="mt-1.5 flex flex-wrap items-center gap-x-3 gap-y-1 text-[0.75rem]" style={{ color: "var(--ux-muted)" }}>
                       <span className="inline-flex items-center gap-1"><Icons.Clock className="h-3.5 w-3.5" /> {e.time}</span>
                       <span className="inline-flex items-center gap-1">
                         <Icons.MapPin className="h-3.5 w-3.5" /> {e.place}
                       </span>
                     </p>
 
-                    <p className="mt-2 text-[12.5px] leading-relaxed" style={{ color: "var(--ux-ink-2)" }}>{e.blurb}</p>
+                    <p className="mt-2 text-[0.8125rem] leading-relaxed" style={{ color: "var(--ux-ink-2)" }}>{e.blurb}</p>
 
                     <div className="mt-3">
-                      <div className="mb-1.5 flex items-center justify-between text-[11px]">
+                      <div className="mb-1.5 flex items-center justify-between text-[0.6875rem]">
                         <span style={{ color: full ? "var(--ux-orange-ink)" : "var(--ux-muted)" }}>
                           {!limited ? "Open to everyone" : full ? "Full" : `${e.spots - e.taken} of ${e.spots} places left`}
                         </span>
@@ -198,7 +198,7 @@ export default function EventsPage() {
                     </div>
 
                     <div className="mt-auto flex items-center justify-between gap-3 pt-3.5">
-                      <span className="text-[11.5px]" style={{ color: "var(--ux-faint)" }}>
+                      <span className="text-[0.75rem]" style={{ color: "var(--ux-faint)" }}>
                         {e.online ? "Joining link sent on the day" : "Bring your own stock"}
                       </span>
                       <span className="flex items-center gap-2">
@@ -210,7 +210,7 @@ export default function EventsPage() {
                             says it is full, in words, where the button was. */}
                         <Btn href={`/app/events/${e.id}`} variant="outline" size="sm">The details</Btn>
                         {full && !on ? (
-                          <span className="text-[11.5px] font-medium" style={{ color: "var(--ux-orange-ink)" }}>
+                          <span className="text-[0.75rem] font-medium" style={{ color: "var(--ux-orange-ink)" }}>
                             Every place has gone
                           </span>
                         ) : (

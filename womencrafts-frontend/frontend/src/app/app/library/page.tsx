@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import * as Icons from "lucide-react";
+import * as Icons from "@/components/ux/icons";
 
 import { apiAskSwap } from "@/lib/shop-api";
 
@@ -56,7 +56,7 @@ export default function SkillExchangePage() {
     <HomeShell
       active="/app/library"
       rail={
-        <div className="space-y-[15px]">
+        <div className="space-y-[16px]">
           <Card className="ux-onscroll-soft">
             <SectionHead title="What you have offered" action="Edit" onAction={() => setTab("Your exchanges")} />
             {mine.length ? mine.map((m) => (
@@ -64,19 +64,19 @@ export default function SkillExchangePage() {
                 <div className="flex items-start gap-3">
                   <IconTile icon={m.icon} tint={m.tint} ink={m.ink} size={38} radius={11} />
                   <div className="min-w-0 flex-1">
-                    <p className="truncate text-[13px] font-semibold" style={{ color: "var(--ux-ink)" }}>{m.skill}</p>
-                    <p className="mt-0.5 text-[11.5px]" style={{ color: "var(--ux-muted)" }}>
+                    <p className="truncate text-[0.8125rem] font-semibold" style={{ color: "var(--ux-ink)" }}>{m.skill}</p>
+                    <p className="mt-0.5 text-[0.75rem]" style={{ color: "var(--ux-muted)" }}>
                       {m.matches} {plural("woman", m.matches)} interested
                     </p>
                   </div>
                 </div>
-                <p className="mt-3 rounded-[11px] p-3 text-[12px] leading-relaxed"
+                <p className="mt-3 rounded-[12px] p-3 text-[0.75rem] leading-relaxed"
                    style={{ background: "var(--ux-surface-2)", color: "var(--ux-ink-2)" }}>
                   In return you asked for: <strong style={{ color: "var(--ux-ink)" }}>{m.wants}</strong>
                 </p>
               </div>
             )) : (
-              <p className="text-[12.5px]" style={{ color: "var(--ux-muted)" }}>
+              <p className="text-[0.8125rem]" style={{ color: "var(--ux-muted)" }}>
                 You have not offered anything yet.
               </p>
             )}
@@ -95,33 +95,33 @@ export default function SkillExchangePage() {
                 "Both of you teach. Both of you learn.",
               ].map((t, i) => (
                 <li key={t} className="flex items-start gap-2.5">
-                  <span className="grid h-[20px] w-[20px] shrink-0 place-items-center rounded-full text-[10px] font-bold"
+                  <span className="grid h-[20px] w-[20px] shrink-0 place-items-center rounded-full text-[0.6875rem] font-bold"
                         style={{ background: "var(--ux-brand-tint)", color: "var(--ux-brand)" }}>{i + 1}</span>
-                  <span className="text-[12.5px] leading-snug" style={{ color: "var(--ux-ink-2)" }}>{t}</span>
+                  <span className="text-[0.8125rem] leading-snug" style={{ color: "var(--ux-ink-2)" }}>{t}</span>
                 </li>
               ))}
             </ol>
           </Card>
 
-          <div className="ux-clay ux-onscroll-soft relative overflow-hidden p-[18px]"
+          <div className="ux-clay ux-onscroll-soft relative overflow-hidden p-[20px]"
                style={{ background: "linear-gradient(140deg, var(--ux-tint-violet), var(--ux-tint-green))" }}>
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img src={EXCHANGE_ART.hero} alt=""
                  className="ux-float pointer-events-none absolute -bottom-3 -end-4 h-[100px] w-[100px] object-contain" />
-            <h3 className="relative w-[60%] text-[14px] font-semibold" style={{ color: "var(--ux-ink)" }}>
+            <h2 className="relative w-[60%] text-[0.875rem] font-semibold" style={{ color: "var(--ux-ink)" }}>
               You know more than you think
-            </h3>
-            <p className="relative mt-2 w-[60%] text-[12px] leading-relaxed" style={{ color: "var(--ux-muted)" }}>
+            </h2>
+            <p className="relative mt-2 w-[60%] text-[0.75rem] leading-relaxed" style={{ color: "var(--ux-muted)" }}>
               Whatever took you a year to learn takes someone else an afternoon with you.
             </p>
           </div>
         </div>
       }
     >
-      <div className="mb-[18px] flex items-end justify-between gap-4">
+      <div className="mb-[20px] flex items-end justify-between gap-4">
         <div>
-          <h1 className="text-[24px] font-bold" style={{ color: "var(--ux-ink)" }}>Skill Exchange</h1>
-          <p className="mt-1.5 text-[13px]" style={{ color: "var(--ux-muted)" }}>
+          <h1 className="text-[1.5rem] font-bold" style={{ color: "var(--ux-ink)" }}>Teach and learn</h1>
+          <p className="mt-1.5 text-[0.8125rem]" style={{ color: "var(--ux-muted)" }}>
             Teach what you know, learn what you need. No money involved.
           </p>
 
@@ -132,7 +132,7 @@ export default function SkillExchangePage() {
 
       {tab === "Browse" && (
         <>
-          <div className="mb-[15px] flex flex-wrap items-center gap-2">
+          <div className="mb-[16px] flex flex-wrap items-center gap-2">
             {(["All", "Offering", "Looking for"] as const).map((s) => (
               <Chip key={s} selected={side === s} onClick={() => setSide(s)}>{s}</Chip>
             ))}
@@ -146,22 +146,22 @@ export default function SkillExchangePage() {
           </div>
 
           {shown.length ? (
-            <div className="ux-deck ux-stagger space-y-[13px]">
+            <div className="ux-deck ux-stagger space-y-[12px]">
               {shown.map((s, i) => (
                 <Card key={s.id} className="ux-i ux-onscroll" style={{ ["--i" as string]: i }}>
                   <div className="flex items-start gap-3.5">
                     <IconTile icon={s.icon} tint={s.tint} ink={s.ink} size={48} radius={13} />
                     <div className="min-w-0 flex-1">
                       <div className="flex items-start gap-2">
-                        <h3 className="min-w-0 flex-1 text-[14.5px] font-semibold" style={{ color: "var(--ux-ink)" }}>
+                        <h2 className="min-w-0 flex-1 text-[0.875rem] font-semibold" style={{ color: "var(--ux-ink)" }}>
                           {s.skill}
-                        </h3>
+                        </h2>
                         {/* Offer and ask are the same shape, told apart by one
                             word — because the same woman is usually both. */}
                         <Pill tone={s.side === "Offering" ? "green" : "blue"} size="sm">{s.side}</Pill>
                       </div>
-                      <p className="mt-1.5 text-[12.5px] leading-relaxed" style={{ color: "var(--ux-ink-2)" }}>{s.detail}</p>
-                      <p className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-[11.5px]"
+                      <p className="mt-1.5 text-[0.8125rem] leading-relaxed" style={{ color: "var(--ux-ink-2)" }}>{s.detail}</p>
+                      <p className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-[0.75rem]"
                          style={{ color: "var(--ux-muted)" }}>
                         <span className="inline-flex items-center gap-1.5">
                           {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -178,7 +178,7 @@ export default function SkillExchangePage() {
                     </div>
                   </div>
 
-                  <p className="mt-3.5 rounded-[12px] p-3 text-[12.5px] leading-relaxed"
+                  <p className="mt-3.5 rounded-[12px] p-3 text-[0.8125rem] leading-relaxed"
                      style={{ background: "var(--ux-surface-2)", color: "var(--ux-ink-2)" }}>
                     <span style={{ color: "var(--ux-muted)" }}>
                       {s.side === "Offering" ? "She would like in return: " : "She can teach in return: "}
@@ -188,13 +188,13 @@ export default function SkillExchangePage() {
 
                   <div className="mt-3.5 flex items-center justify-between gap-4 border-t pt-3.5"
                        style={{ borderColor: "var(--ux-line)" }}>
-                    <span className="text-[11.5px]" style={{ color: "var(--ux-faint)" }}>
+                    <span className="text-[0.75rem]" style={{ color: "var(--ux-faint)" }}>
                       {s.matches} {plural("woman", s.matches)} already interested
                     </span>
                     <span className="flex items-center gap-2">
                       {isAsked(s.id) ? (
                         <>
-                          <span className="ux-pop ux-sq inline-flex items-center gap-1.5 rounded-[11px] px-3.5 py-2 text-[12.5px] font-semibold"
+                          <span className="ux-pop ux-sq inline-flex items-center gap-1.5 rounded-[12px] px-3.5 py-2 text-[0.8125rem] font-semibold"
                                 style={{ background: "var(--ux-tint-green)", color: "var(--ux-green-ink)" }}>
                             <Icons.Check className="h-[15px] w-[15px]" strokeWidth={2.6} /> Asked
                           </span>
@@ -243,7 +243,7 @@ export default function SkillExchangePage() {
       )}
 
       {tab === "Your exchanges" && (
-        <div className="ux-deck ux-stagger space-y-[13px]">
+        <div className="ux-deck ux-stagger space-y-[12px]">
           {MY_SWAPS.map((m, i) => (
             <Card key={m.id} className="ux-i ux-onscroll" style={{ ["--i" as string]: i }}>
               <div className="flex items-center gap-3.5">
@@ -254,12 +254,12 @@ export default function SkillExchangePage() {
                 </span>
                 <div className="min-w-0 flex-1">
                   <div className="flex items-start gap-2">
-                    <h3 className="min-w-0 flex-1 truncate text-[14.5px] font-semibold" style={{ color: "var(--ux-ink)" }}>
+                    <h2 className="min-w-0 flex-1 truncate text-[0.875rem] font-semibold" style={{ color: "var(--ux-ink)" }}>
                       With {m.with}
-                    </h3>
+                    </h2>
                     <Pill tone={m.state === "Agreed" ? "green" : "blue"} size="sm">{m.state}</Pill>
                   </div>
-                  <p className="mt-1.5 text-[12.5px]" style={{ color: "var(--ux-muted)" }}>{m.next}</p>
+                  <p className="mt-1.5 text-[0.8125rem]" style={{ color: "var(--ux-muted)" }}>{m.next}</p>
                 </div>
               </div>
 
@@ -271,8 +271,8 @@ export default function SkillExchangePage() {
                        style={{ background: "var(--ux-surface-2)" }}>
                     <IconTile icon={icon} tint={tint} ink={ink} size={32} radius={9} />
                     <span className="min-w-0">
-                      <span className="block text-[10.5px] uppercase tracking-[0.06em]" style={{ color: "var(--ux-faint)" }}>{k}</span>
-                      <span className="mt-0.5 block truncate text-[12.5px] font-medium" style={{ color: "var(--ux-ink)" }}>{v}</span>
+                      <span className="block text-[0.6875rem] uppercase tracking-[0.06em]" style={{ color: "var(--ux-faint)" }}>{k}</span>
+                      <span className="mt-0.5 block truncate text-[0.8125rem] font-medium" style={{ color: "var(--ux-ink)" }}>{v}</span>
                     </span>
                   </div>
                 ))}

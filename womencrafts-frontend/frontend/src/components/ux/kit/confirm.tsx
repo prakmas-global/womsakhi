@@ -82,12 +82,12 @@ export function ConfirmButton({
   }
 
   return (
-    <div ref={box} className="ux-slide-up ux-sq rounded-[13px] border p-3"
+    <div ref={box} className="ux-slide-up ux-sq rounded-[12px] border p-3"
          style={{ borderColor: "var(--ux-line-strong)", background: "var(--ux-surface)" }}
          role="group" aria-label={question}>
-      <p className="text-[13px] font-semibold" style={{ color: "var(--ux-ink)" }}>{question}</p>
+      <p className="text-[0.8125rem] font-semibold" style={{ color: "var(--ux-ink)" }}>{question}</p>
       {cost && (
-        <p className="mt-1 text-[12px] leading-snug" style={{ color: "var(--ux-muted)" }}>{cost}</p>
+        <p className="mt-1 text-[0.75rem] leading-snug" style={{ color: "var(--ux-muted)" }}>{cost}</p>
       )}
       {/* Same size, same weight. Backing out is not the lesser option. */}
       <div className="mt-2.5 flex gap-2">

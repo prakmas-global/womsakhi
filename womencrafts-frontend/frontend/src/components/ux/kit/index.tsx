@@ -2,7 +2,7 @@
 
 import * as React from "react";
 import Link from "next/link";
-import * as Icons from "lucide-react";
+import * as Icons from "@/components/ux/icons";
 
 import { useGrow, usePointer, useRipple } from "./motion";
 
@@ -55,20 +55,20 @@ export function SectionHead({ title, sub, action, onAction, icon, chip }: {
   return (
     <div className="mb-3.5 flex items-start justify-between gap-3">
       <div className="min-w-0">
-        <h2 className="flex items-center gap-2 text-[15px] font-semibold" style={{ color: "var(--ux-ink)" }}>
+        <h2 className="flex items-center gap-2 text-[1rem] font-semibold" style={{ color: "var(--ux-ink)" }}>
           {icon && <I name={icon} className="h-[17px] w-[17px]" style={{ color: "var(--ux-brand)" }} />}
           {title}
           {chip && (
-            <span className="rounded-full px-2.5 py-[3px] text-[10.5px] font-semibold"
+            <span className="rounded-full px-2.5 py-[3px] text-[0.6875rem] font-semibold"
                   style={{ background: "var(--ux-brand-tint)", color: "var(--ux-brand)" }}>{chip}</span>
           )}
         </h2>
-        {sub && <p className="mt-1 text-[12px]" style={{ color: "var(--ux-muted)" }}>{sub}</p>}
+        {sub && <p className="mt-1 text-[0.75rem]" style={{ color: "var(--ux-muted)" }}>{sub}</p>}
       </div>
       {action && (
         <button onClick={onAction}
                 /* -my-1 py-1 keeps the 24px hit area without moving the text */
-                className="ux-press ux-hov -my-1 flex shrink-0 items-center gap-1 py-1 text-[12.5px] font-medium"
+                className="ux-press ux-hov -my-1 flex shrink-0 items-center gap-1 py-1 text-[0.8125rem] font-medium"
                 style={{ color: "var(--ux-brand)" }}>
           {action} <Icons.ChevronRight className="ux-arrow h-3.5 w-3.5" strokeWidth={2.2} />
         </button>
@@ -107,7 +107,7 @@ export function Progress({ pct, tone = "--ux-brand-600", track = "--ux-brand-tin
 
 export function Rating({ value, count }: { value: string | number; count?: string }) {
   return (
-    <span className="flex items-center gap-1 text-[11.5px]" style={{ color: "var(--ux-muted)" }}>
+    <span className="flex items-center gap-1 text-[0.75rem]" style={{ color: "var(--ux-muted)" }}>
       <Icons.Star className="h-[13px] w-[13px]" fill="var(--ux-amber)" style={{ color: "var(--ux-amber)" }} />
       <span className="font-medium" style={{ color: "var(--ux-ink-2)" }}>{value}</span>
       {count && <span>({count})</span>}
@@ -129,7 +129,7 @@ export function Pill({ children, tone = "brand", size = "md" }: {
     neutral: ["--ux-surface-2", "--ux-muted"],
   }[tone];
   return (
-    <span className={`inline-flex items-center rounded-full font-semibold ${size === "sm" ? "px-2 py-[2px] text-[10px]" : "px-2.5 py-[3px] text-[11px]"}`}
+    <span className={`inline-flex items-center rounded-full font-semibold ${size === "sm" ? "px-2 py-[2px] text-[0.6875rem]" : "px-2.5 py-[3px] text-[0.6875rem]"}`}
           style={{ background: v(map[0]), color: v(map[1]) }}>{children}</span>
   );
 }
@@ -139,7 +139,7 @@ export function Chip({ children, selected, onClick, icon }: {
 }) {
   return (
     <button onClick={onClick} aria-pressed={selected}
-      className="ux-press ux-sq inline-flex items-center gap-2 rounded-[11px] border px-3.5 py-2.5 text-[12.5px] font-medium transition-colors"
+      className="ux-press ux-sq inline-flex items-center gap-2 rounded-[12px] border px-3.5 py-2.5 text-[0.8125rem] font-medium transition-colors"
       style={{
         borderColor: selected ? "var(--ux-brand)" : "var(--ux-line-strong)",
         background: selected ? "var(--ux-brand-tint)" : "var(--ux-surface)",
@@ -173,7 +173,7 @@ export function Btn({ children, variant = "primary", size = "md", icon, iconEnd,
    */
   disabled?: boolean;
 }) {
-  const pad = { sm: "px-3 py-1.5 text-[11.5px]", md: "px-4 py-2.5 text-[12.5px]", lg: "px-6 py-3 text-[14px]" }[size];
+  const pad = { sm: "px-3 py-1.5 text-[0.75rem]", md: "px-4 py-2.5 text-[0.8125rem]", lg: "px-6 py-3 text-[0.875rem]" }[size];
   const look = {
     primary: { background: "linear-gradient(96deg, var(--ux-fill), var(--ux-fill-2))", color: "#fff", border: "1px solid transparent" },
     soft:    { background: "var(--ux-brand-tint)", color: "var(--ux-brand)", border: "1px solid transparent" },
@@ -189,8 +189,8 @@ export function Btn({ children, variant = "primary", size = "md", icon, iconEnd,
   // lifts under the finger but does nothing reads as a broken button, not a
   // waiting one.
   const cls = disabled
-    ? `ux-sq inline-flex items-center justify-center gap-2 rounded-[11px] font-semibold ${pad} ${full ? "w-full" : ""} ${className}`
-    : `ux-press ux-hov ux-sq ux-magnet ux-ripple ${clay} inline-flex items-center justify-center gap-2 rounded-[11px] font-semibold ${pad} ${full ? "w-full" : ""} ${className}`;
+    ? `ux-sq inline-flex items-center justify-center gap-2 rounded-[12px] font-semibold ${pad} ${full ? "w-full" : ""} ${className}`
+    : `ux-press ux-hov ux-sq ux-magnet ux-ripple ${clay} inline-flex items-center justify-center gap-2 rounded-[12px] font-semibold ${pad} ${full ? "w-full" : ""} ${className}`;
   const dim = disabled ? { opacity: 0.55, cursor: "not-allowed" } : null;
   const inner = (
     <>
@@ -241,7 +241,7 @@ export function AvatarStack({ srcs, extra, size = 26 }: { srcs: string[]; extra?
         <img key={s + i} src={s} alt="" className="rounded-full border-2 object-cover"
              style={{ width: size, height: size, borderColor: "var(--ux-surface)", marginLeft: i ? -8 : 0 }} />
       ))}
-      {extra && <span className="ms-1.5 text-[10.5px]" style={{ color: "var(--ux-muted)" }}>{extra}</span>}
+      {extra && <span className="ms-1.5 text-[0.6875rem]" style={{ color: "var(--ux-muted)" }}>{extra}</span>}
     </div>
   );
 }
@@ -253,8 +253,8 @@ export function Stat({ value, label, icon, tint, ink }: {
     <div className="flex items-center gap-3">
       {icon && tint && ink && <IconTile icon={icon} tint={tint} ink={ink} size={38} />}
       <div className="min-w-0">
-        <p className="text-[19px] font-bold leading-none" style={{ color: "var(--ux-ink)" }}>{value}</p>
-        <p className="mt-1 truncate text-[11.5px]" style={{ color: "var(--ux-muted)" }}>{label}</p>
+        <p className="text-[1.125rem] font-bold leading-none" style={{ color: "var(--ux-ink)" }}>{value}</p>
+        <p className="mt-1 truncate text-[0.75rem]" style={{ color: "var(--ux-muted)" }}>{label}</p>
       </div>
     </div>
   );
@@ -269,8 +269,8 @@ export function EmptyState({ title, body, icon = "Inbox", action }: {
             style={{ background: "var(--ux-brand-tint)" }}>
         <I name={icon} className="h-7 w-7" style={{ color: "var(--ux-brand)" }} />
       </span>
-      <h3 className="mt-4 text-[14px] font-semibold" style={{ color: "var(--ux-ink)" }}>{title}</h3>
-      <p className="mt-1.5 max-w-[320px] text-[12.5px] leading-relaxed" style={{ color: "var(--ux-muted)" }}>{body}</p>
+      <h2 className="mt-4 text-[0.875rem] font-semibold" style={{ color: "var(--ux-ink)" }}>{title}</h2>
+      <p className="mt-1.5 max-w-[320px] text-[0.8125rem] leading-relaxed" style={{ color: "var(--ux-muted)" }}>{body}</p>
       {action && <div className="mt-4">{action}</div>}
     </div>
   );
@@ -312,7 +312,7 @@ export function Tabs({ items, active, onChange }: {
     <div ref={wrap} role="tablist" className="ux-sq relative inline-flex gap-1.5 rounded-[12px] p-1"
          style={{ background: "var(--ux-surface-2)" }}>
       {pill && (
-        <span aria-hidden className="ux-sq absolute rounded-[9px]"
+        <span aria-hidden className="ux-sq absolute rounded-[8px]"
               style={{
                 left: pill.x, width: pill.w, top: 4, bottom: 4,
                 background: "var(--ux-surface)", boxShadow: "var(--ux-shadow-card)",
@@ -324,7 +324,7 @@ export function Tabs({ items, active, onChange }: {
         return (
           <button key={t} role="tab" aria-selected={on} data-on={on ? "1" : undefined}
             onClick={() => onChange(t)}
-            className="relative z-[1] rounded-[8px] px-3.5 py-2 text-[12.5px] font-medium transition-colors"
+            className="relative z-[1] rounded-[8px] px-3.5 py-2 text-[0.8125rem] font-medium transition-colors"
             style={{ color: on ? "var(--ux-brand)" : "var(--ux-muted)" }}>
             {t}
           </button>
@@ -342,7 +342,7 @@ export function Rail({ children, id }: { children: React.ReactNode; id: string }
   };
   return (
     <div className="relative">
-      <div id={id} className="ux-scroll-x flex gap-[15px] pb-1">{children}</div>
+      <div id={id} className="ux-scroll-x flex gap-[16px] pb-1">{children}</div>
       {[-1, 1].map((d) => (
         <button key={d} onClick={() => scroll(d)} aria-label={d < 0 ? "Previous" : "Next"}
           className="absolute top-1/2 grid h-8 w-8 -translate-y-1/2 place-items-center rounded-full border"
@@ -471,7 +471,7 @@ export function SourceNote({ source, what = "figures" }: { source: "live" | "moc
   return (
     <p
       role="status"
-      className="ux-sq mb-3.5 flex items-start gap-2.5 rounded-[12px] px-3.5 py-2.5 text-[12px] leading-relaxed"
+      className="ux-sq mb-3.5 flex items-start gap-2.5 rounded-[12px] px-3.5 py-2.5 text-[0.75rem] leading-relaxed"
       style={{ background: "var(--ux-tint-amber)", color: "var(--ux-amber-ink)" }}
     >
       <I name="Info" className="mt-[1px] h-[14px] w-[14px] shrink-0" sw={2} />
@@ -484,5 +484,6 @@ export function SourceNote({ source, what = "figures" }: { source: "live" | "moc
 }
 export { certificateHtml, printCertificate, type CertificateFields } from "./download";
 export { Money, formatMoney as formatRupees, formatMoneyOrFree, formatWholeRupees } from "./money";
+export { Sheet } from "./sheet";
 export { ConfirmButton } from "./confirm";
 export { Rows, rowMemo } from "./rows";

@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import * as Icons from "lucide-react";
+import * as Icons from "@/components/ux/icons";
 
 import {
   ActionBtn, Btn, Card, Chip, EmptyState, IconTile,
@@ -16,6 +16,7 @@ import {
 } from "@/components/ux/learning/data";
 import { useLearning } from "@/components/ux/growth";
 import { useCertificates } from "@/components/ux/live";
+import { AlsoHere } from "@/components/ux/AlsoHere";
 
 // "Paths" is gone. It showed four learning paths from a constant — "Career
 // Growth Path · 8 courses · 32 lessons · 60% complete" — with progress nothing
@@ -67,13 +68,13 @@ export default function LearningPage() {
     <HomeShell
       active="/app/programs"
       rail={
-        <div className="space-y-[15px]">
+        <div className="space-y-[16px]">
           <Card className="ux-onscroll-soft">
             <SectionHead title="Your week" sub={`${STREAK.days}-day streak`} />
             <div className="flex items-center justify-between">
               {STREAK.marks.map((on, i) => (
                 <div key={i} className="flex flex-col items-center gap-1.5">
-                  <span className="ux-pop grid h-[30px] w-[30px] place-items-center rounded-full text-[11px] font-semibold"
+                  <span className="ux-pop grid h-[30px] w-[30px] place-items-center rounded-full text-[0.6875rem] font-semibold"
                         style={{
                           background: on ? "var(--ux-brand-600)" : "var(--ux-surface-2)",
                           color: on ? "#fff" : "var(--ux-faint)",
@@ -81,13 +82,13 @@ export default function LearningPage() {
                         }}>
                     {on ? <Icons.Check className="h-[13px] w-[13px]" strokeWidth={3} /> : "·"}
                   </span>
-                  <span className="text-[9.5px]" style={{ color: "var(--ux-faint)" }}>
+                  <span className="text-[0.6875rem]" style={{ color: "var(--ux-faint)" }}>
                     {["M", "T", "W", "T", "F", "S", "S"][i]}
                   </span>
                 </div>
               ))}
             </div>
-            <p className="mt-3.5 text-[12px] leading-relaxed" style={{ color: "var(--ux-muted)" }}>
+            <p className="mt-3.5 text-[0.75rem] leading-relaxed" style={{ color: "var(--ux-muted)" }}>
               Fifteen minutes today keeps it going. About {hoursLeft} hours left across everything you started.
             </p>
           </Card>
@@ -98,10 +99,10 @@ export default function LearningPage() {
               {SKILLS.slice(0, 5).map((s) => (
                 <li key={s.name} className="ux-hov flex items-center gap-3">
                   <IconTile icon={s.icon} tint={s.tint} ink={s.ink} size={34} radius={10} />
-                  <span className="min-w-0 flex-1 truncate text-[12.5px]" style={{ color: "var(--ux-ink-2)" }}>
+                  <span className="min-w-0 flex-1 truncate text-[0.8125rem]" style={{ color: "var(--ux-ink-2)" }}>
                     {s.name}
                   </span>
-                  <span className="shrink-0 text-[11px]" style={{ color: "var(--ux-faint)" }}>{s.level}</span>
+                  <span className="shrink-0 text-[0.6875rem]" style={{ color: "var(--ux-faint)" }}>{s.level}</span>
                 </li>
               ))}
             </ul>
@@ -112,13 +113,13 @@ export default function LearningPage() {
             <div className="ux-stagger space-y-2.5">
               {ACHIEVEMENTS.slice(0, 3).map((a, i) => (
                 <div key={a.name} className="ux-hov flex items-center gap-3">
-                  <span className="ux-metal ux-sq grid h-[36px] w-[36px] shrink-0 place-items-center rounded-[11px]">
+                  <span className="ux-metal ux-sq grid h-[36px] w-[36px] shrink-0 place-items-center rounded-[12px]">
                     <Icons.Award className="ux-ico h-[17px] w-[17px]" strokeWidth={1.9}
                                  style={{ ["--i" as string]: i }} />
                   </span>
                   <div className="min-w-0">
-                    <p className="truncate text-[12.5px] font-medium" style={{ color: "var(--ux-ink)" }}>{a.name}</p>
-                    <p className="mt-0.5 truncate text-[11px]" style={{ color: "var(--ux-muted)" }}>{a.body}</p>
+                    <p className="truncate text-[0.8125rem] font-medium" style={{ color: "var(--ux-ink)" }}>{a.name}</p>
+                    <p className="mt-0.5 truncate text-[0.6875rem]" style={{ color: "var(--ux-muted)" }}>{a.body}</p>
                   </div>
                 </div>
               ))}
@@ -127,10 +128,10 @@ export default function LearningPage() {
         </div>
       }
     >
-      <div className="mb-[18px] flex items-end justify-between gap-4">
+      <div className="mb-[20px] flex items-end justify-between gap-4">
         <div>
-          <h1 className="text-[24px] font-bold" style={{ color: "var(--ux-ink)" }}>Learning</h1>
-          <p className="mt-1.5 text-[13px]" style={{ color: "var(--ux-muted)" }}>
+          <h1 className="text-[1.5rem] font-bold" style={{ color: "var(--ux-ink)" }}>Courses</h1>
+          <p className="mt-1.5 text-[0.8125rem]" style={{ color: "var(--ux-muted)" }}>
             {CONTINUING.length} {plural("course", CONTINUING.length)} on the go, {avg}% through on average.
           </p>
 
@@ -141,7 +142,7 @@ export default function LearningPage() {
 
       {tab === "Keep going" && (
         CONTINUING.length ? (
-          <div className="ux-deck ux-stagger space-y-[13px]">
+          <div className="ux-deck ux-stagger space-y-[12px]">
             {CONTINUING.map((c) => <ResumeCard key={c.id} c={c} />)}
           </div>
         ) : (
@@ -155,13 +156,13 @@ export default function LearningPage() {
 
       {tab === "Explore" && (
         <>
-          <div className="mb-[15px] flex flex-wrap gap-2">
+          <div className="mb-[16px] flex flex-wrap gap-2">
             {categories.map((c) => (
               <Chip key={c} selected={cat === c} onClick={() => setCat(c)}>{c}</Chip>
             ))}
           </div>
           {picks.length ? (
-            <div className="ux-deck grid grid-cols-3 gap-[15px]">
+            <div className="ux-deck grid grid-cols-3 gap-[16px]">
               {picks.map((c) => <CourseCard key={c.id} c={c} />)}
             </div>
           ) : (
@@ -176,7 +177,7 @@ export default function LearningPage() {
 
       {tab === "Finished" && (
         CERTIFICATES.length ? (
-          <div className="ux-deck grid grid-cols-2 gap-[15px]">
+          <div className="ux-deck grid grid-cols-2 gap-[16px]">
             {CERTIFICATES.map((c, i) => (
               <Card key={c.id} className="ux-i ux-onscroll" style={{ ["--i" as string]: i }}>
                 <div className="flex items-start gap-3.5">
@@ -184,8 +185,8 @@ export default function LearningPage() {
                     <Icons.Award className="ux-ico h-[21px] w-[21px]" strokeWidth={1.9} />
                   </span>
                   <div className="min-w-0 flex-1">
-                    <h3 className="truncate text-[14px] font-semibold" style={{ color: "var(--ux-ink)" }}>{c.title}</h3>
-                    <p className="mt-1 text-[11.5px]" style={{ color: "var(--ux-muted)" }}>
+                    <h2 className="truncate text-[0.875rem] font-semibold" style={{ color: "var(--ux-ink)" }}>{c.title}</h2>
+                    <p className="mt-1 text-[0.75rem]" style={{ color: "var(--ux-muted)" }}>
                       Issued {c.issued} · {c.code}
                     </p>
                   </div>
@@ -213,6 +214,14 @@ export default function LearningPage() {
           </Card>
         )
       )}
+
+      <AlsoHere
+        items={[
+          { href: "/app/assess", label: "Test your skills", note: "Twenty minutes on your phone, and a result an employer can check.", icon: "BadgeCheck" },
+          { href: "/app/library", label: "Teach and learn", note: "Swap a skill with another woman — teach one, learn one.", icon: "RefreshCw" },
+          { href: "/app/digital", label: "Phone basics", note: "Six steps, from the very start. Free, and at your own pace.", icon: "Smartphone" },
+        ]}
+      />
     </HomeShell>
   );
 }

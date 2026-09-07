@@ -9,8 +9,7 @@ import {
   ReactNode,
 } from "react";
 import { useRouter } from "next/navigation";
-import { apiSignIn, apiSignOut, apiSignUp, apiGetSession, AuthPayload } from "@/lib/api";
-import axios from "axios";
+import { apiSignIn, apiSignOut, apiSignUp, apiGetSession, AuthPayload, apiErrorMessage } from "@/lib/api";
 
 type User = AuthPayload["user"];
 
@@ -37,20 +36,46 @@ interface AuthContextValue {
 
 const AuthContext = createContext<AuthContextValue | null>(null);
 
-export function AuthProvider({ children }: { children: ReactNode }) {
+export function AuthProvider({
+  children,
+  initialUser = null,
+  sessionResolved = false,
+}: {
+  children: ReactNode;
+  /** Who the server already established is signed in, if it could. */
+  initialUser?: User | null;
+  /**
+   * Whether `initialUser` is an answer or an absence.
+   *
+   * `null` means two different things — signed out, and the server could not
+   * ask — and only one of them should stop the client asking. See
+   * `serverSession` in `lib/server-api`.
+   */
+  sessionResolved?: boolean;
+}) {
   const router = useRouter();
-  const [user, setUser] = useState<User | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [user, setUser] = useState<User | null>(initialUser);
+
+  // The server answered this before the HTML was sent, so there is nothing to
+  // wait for and no spinner to show. This is the round trip that used to run
+  // before every member screen was allowed to mount — see the member layout.
+  const [loading, setLoading] = useState(!sessionResolved);
 
   // Rehydrate from the session cookie. There is no token in JS to read, so we
   // simply ask the API who we are — if the cookie is missing or expired this
   // 401s and we stay signed out.
+  //
+  // Skipped entirely when the server already answered with the same cookie on
+  // the same request: asking again would get the same answer a round trip
+  // later. It still runs when the server could not reach the API, so an API
+  // blip degrades to the old behaviour rather than to a false sign-out.
   useEffect(() => {
+    if (sessionResolved) return;
     apiGetSession()
       .then((u) => setUser(u))
       .catch(() => setUser(null))
       .finally(() => setLoading(false));
-  }, []);
+  }, [sessionResolved]);
 
   // The API already set the httpOnly session cookie on this response; nothing
   // to store client-side.
@@ -135,8 +160,8 @@ export function useAuth(): AuthContextValue {
 
 /** Extract a user-friendly error message from an axios error */
 export function getAuthError(err: unknown): string {
-  if (axios.isAxiosError(err)) {
-    return err.response?.data?.detail ?? "Something went wrong. Please try again.";
-  }
-  return "An unexpected error occurred.";
+  // Reads this API's real error envelope. It used to look only at
+  // `data.detail`, which this backend never sends — so every sign-in and
+  // sign-up failure showed the fallback instead of the reason.
+  return apiErrorMessage(err, "An unexpected error occurred.");
 }

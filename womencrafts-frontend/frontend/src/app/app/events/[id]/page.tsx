@@ -2,7 +2,7 @@
 
 import { use, useState } from "react";
 import Link from "next/link";
-import * as Icons from "lucide-react";
+import * as Icons from "@/components/ux/icons";
 
 import { apiCancelEvent, apiRegisterForEvent } from "@/lib/growth-api";
 import { useAction } from "@/lib/use-action";
@@ -87,14 +87,14 @@ export default function EventDetail({ params }: { params: Promise<{ id: string }
   return (
     <HomeShell
       rail={
-        <div className="space-y-[15px]">
+        <div className="space-y-[16px]">
           <Card>
             <SectionHead title={going ? "You are going" : full ? "This one is full" : "Take a place"} />
             <div className="flex items-baseline justify-between">
-              <span className="text-[12.5px]" style={{ color: "var(--ux-muted)" }}>
+              <span className="text-[0.8125rem]" style={{ color: "var(--ux-muted)" }}>
                 {!limited ? "Open to everyone" : full ? "All taken" : `${e.spots - e.taken} of ${e.spots} left`}
               </span>
-              <span className="text-[19px] font-bold" style={{ color: "var(--ux-ink)" }}>{rupees(e.fee_minor)}</span>
+              <span className="text-[1.125rem] font-bold" style={{ color: "var(--ux-ink)" }}>{rupees(e.fee_minor)}</span>
             </div>
             {limited && (
               <div className="mt-2.5">
@@ -109,7 +109,7 @@ export default function EventDetail({ params }: { params: Promise<{ id: string }
                   schedules a reminder, so both said "we will" about something
                   nobody had arranged. A full event now says so in words. */}
               {full && !going ? (
-                <p className="text-[12.5px] leading-relaxed" style={{ color: "var(--ux-orange-ink)" }}>
+                <p className="text-[0.8125rem] leading-relaxed" style={{ color: "var(--ux-orange-ink)" }}>
                   Every place has gone. Nothing to book here — the ones below are still open.
                 </p>
               ) : (
@@ -131,14 +131,14 @@ export default function EventDetail({ params }: { params: Promise<{ id: string }
             </div>
 
             {place.error && (
-              <p role="alert" className="ux-slide-up mt-3 text-[12.5px] leading-relaxed"
+              <p role="alert" className="ux-slide-up mt-3 text-[0.8125rem] leading-relaxed"
                  style={{ color: "var(--ux-orange-ink)" }}>
                 {place.error}
               </p>
             )}
 
             {going && (
-              <p className="ux-slide-up mt-3.5 rounded-[11px] p-3 text-[12px] leading-relaxed"
+              <p className="ux-slide-up mt-3.5 rounded-[12px] p-3 text-[0.75rem] leading-relaxed"
                  style={{ background: "var(--ux-tint-green)", color: "var(--ux-ink-2)" }}>
                 {e.online
                   ? "The joining link reaches you by message an hour before."
@@ -160,8 +160,8 @@ export default function EventDetail({ params }: { params: Promise<{ id: string }
                   <div key={k} className="ux-hov flex items-start gap-3">
                     <IconTile icon={ic} tint="--ux-tint-lilac" ink="--ux-brand" size={34} radius={10} />
                     <div className="min-w-0">
-                      <p className="text-[11px] uppercase tracking-[0.06em]" style={{ color: "var(--ux-faint)" }}>{k}</p>
-                      <p className="mt-0.5 text-[12.5px] leading-snug" style={{ color: "var(--ux-ink-2)" }}>{v}</p>
+                      <p className="text-[0.6875rem] uppercase tracking-[0.06em]" style={{ color: "var(--ux-faint)" }}>{k}</p>
+                      <p className="mt-0.5 text-[0.8125rem] leading-snug" style={{ color: "var(--ux-ink-2)" }}>{v}</p>
                     </div>
                   </div>
                 ))}
@@ -175,21 +175,21 @@ export default function EventDetail({ params }: { params: Promise<{ id: string }
       }
     >
       <Link href="/app/events"
-            className="ux-hov -my-1 mb-3.5 inline-flex items-center gap-1.5 py-1 text-[12.5px] font-medium"
+            className="ux-hov -my-1 mb-3.5 inline-flex items-center gap-1.5 py-1 text-[0.8125rem] font-medium"
             style={{ color: "var(--ux-brand)" }}>
         <Icons.ArrowLeft className="ux-ico h-4 w-4" /> All events
       </Link>
 
-      <Card className="mb-[15px] overflow-hidden" pad={0}>
+      <Card className="mb-[16px] overflow-hidden" pad={0}>
         <div className="relative h-[210px] overflow-hidden" style={{ background: `var(${e.tint})` }}>
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img src={e.art} alt="" className="h-full w-full object-cover" />
           <span aria-hidden className="absolute inset-0"
                 style={{ background: "linear-gradient(0deg, rgba(0,0,0,0.5), transparent 58%)" }} />
-          <span className="absolute start-4 top-4 grid h-[62px] w-[56px] place-items-center rounded-[13px]"
+          <span className="absolute start-4 top-4 grid h-[62px] w-[56px] place-items-center rounded-[12px]"
                 style={{ background: "var(--ux-surface)", boxShadow: "var(--ux-shadow-card)" }}>
-            <span className="text-[22px] font-bold leading-none" style={{ color: "var(--ux-brand)" }}>{e.day}</span>
-            <span className="text-[10px] font-semibold" style={{ color: "var(--ux-brand)" }}>{e.month}</span>
+            <span className="text-[1.25rem] font-bold leading-none" style={{ color: "var(--ux-brand)" }}>{e.day}</span>
+            <span className="text-[0.6875rem] font-semibold" style={{ color: "var(--ux-brand)" }}>{e.month}</span>
           </span>
           <span className="absolute end-4 top-4 flex gap-2">
             <Pill tone={e.kind === "Mela" ? "pink" : e.kind === "Webinar" ? "blue" : "green"} size="sm">{e.kind}</Pill>
@@ -198,19 +198,19 @@ export default function EventDetail({ params }: { params: Promise<{ id: string }
         </div>
 
         <div className="p-[20px]">
-          <h1 className="text-[24px] font-bold leading-tight" style={{ color: "var(--ux-ink)" }}>{e.title}</h1>
-          <p className="mt-2.5 flex flex-wrap items-center gap-x-4 gap-y-1.5 text-[13px]" style={{ color: "var(--ux-muted)" }}>
+          <h1 className="text-[1.5rem] font-bold leading-tight" style={{ color: "var(--ux-ink)" }}>{e.title}</h1>
+          <p className="mt-2.5 flex flex-wrap items-center gap-x-4 gap-y-1.5 text-[0.8125rem]" style={{ color: "var(--ux-muted)" }}>
             <span className="inline-flex items-center gap-1.5"><Icons.Calendar className="h-4 w-4" /> {e.when}</span>
             <span className="inline-flex items-center gap-1.5"><Icons.Clock className="h-4 w-4" /> {e.time}</span>
             <span className="inline-flex items-center gap-1.5">
               {e.online ? <Icons.Video className="h-4 w-4" /> : <Icons.MapPin className="h-4 w-4" />} {e.place}
             </span>
           </p>
-          <p className="mt-3.5 text-[14px] leading-relaxed" style={{ color: "var(--ux-ink-2)" }}>{e.blurb}</p>
+          <p className="mt-3.5 text-[0.875rem] leading-relaxed" style={{ color: "var(--ux-ink-2)" }}>{e.blurb}</p>
         </div>
       </Card>
 
-      <div className="grid grid-cols-[minmax(0,1fr)_300px] gap-[15px]">
+      <div className="grid grid-cols-[minmax(0,1fr)_300px] gap-[16px]">
         <Card>
           <SectionHead title="What happens on the day" />
           <ol className="ux-stagger space-y-3.5">
@@ -225,11 +225,11 @@ export default function EventDetail({ params }: { params: Promise<{ id: string }
                  ["A recording afterwards", "Sent to you within two days"]]
             ).map(([t, note], i) => (
               <li key={t} className="flex items-start gap-3">
-                <span className="grid h-[24px] w-[24px] shrink-0 place-items-center rounded-full text-[11px] font-bold"
+                <span className="grid h-[24px] w-[24px] shrink-0 place-items-center rounded-full text-[0.6875rem] font-bold"
                       style={{ background: "var(--ux-brand-tint)", color: "var(--ux-brand)" }}>{i + 1}</span>
                 <div className="min-w-0">
-                  <p className="text-[13.5px] font-semibold" style={{ color: "var(--ux-ink)" }}>{t}</p>
-                  <p className="mt-0.5 text-[12.5px] leading-snug" style={{ color: "var(--ux-muted)" }}>{note}</p>
+                  <p className="text-[0.875rem] font-semibold" style={{ color: "var(--ux-ink)" }}>{t}</p>
+                  <p className="mt-0.5 text-[0.8125rem] leading-snug" style={{ color: "var(--ux-muted)" }}>{note}</p>
                 </div>
               </li>
             ))}
@@ -243,7 +243,7 @@ export default function EventDetail({ params }: { params: Promise<{ id: string }
               ? ["A quiet corner if you can find one", "Paper and a pen", "Your questions written down"]
               : ["Your stock, priced and labelled", "A cloth for the table", "Change for small notes", "Water and food"]
             ).map((t) => (
-              <li key={t} className="flex items-start gap-2.5 text-[12.5px] leading-snug" style={{ color: "var(--ux-ink-2)" }}>
+              <li key={t} className="flex items-start gap-2.5 text-[0.8125rem] leading-snug" style={{ color: "var(--ux-ink-2)" }}>
                 <Icons.Check className="mt-[2px] h-[14px] w-[14px] shrink-0" style={{ color: "var(--ux-green-ink)" }} strokeWidth={2.6} />
                 {t}
               </li>
@@ -253,20 +253,20 @@ export default function EventDetail({ params }: { params: Promise<{ id: string }
       </div>
 
       {similar.length > 0 && (
-        <div className="mt-[15px]">
+        <div className="mt-[16px]">
           <SectionHead title={`Other ${e.kind.toLowerCase()}s coming up`} />
-          <div className="ux-deck grid grid-cols-2 gap-[15px]">
+          <div className="ux-deck grid grid-cols-2 gap-[16px]">
             {similar.map((o, i) => (
               <Card key={o.id} className="ux-i ux-onscroll" style={{ ["--i" as string]: i }}>
                 <div className="flex items-center gap-3">
-                  <span className="grid h-[46px] w-[42px] shrink-0 place-items-center rounded-[11px]"
+                  <span className="grid h-[46px] w-[42px] shrink-0 place-items-center rounded-[12px]"
                         style={{ background: "var(--ux-brand-tint)" }}>
-                    <span className="text-[16px] font-bold leading-none" style={{ color: "var(--ux-brand)" }}>{o.day}</span>
-                    <span className="text-[9px] font-semibold" style={{ color: "var(--ux-brand)" }}>{o.month}</span>
+                    <span className="text-[1rem] font-bold leading-none" style={{ color: "var(--ux-brand)" }}>{o.day}</span>
+                    <span className="text-[0.6875rem] font-semibold" style={{ color: "var(--ux-brand)" }}>{o.month}</span>
                   </span>
                   <div className="min-w-0 flex-1">
-                    <h3 className="truncate text-[13.5px] font-semibold" style={{ color: "var(--ux-ink)" }}>{o.title}</h3>
-                    <p className="mt-0.5 truncate text-[11.5px]" style={{ color: "var(--ux-muted)" }}>{o.time}</p>
+                    <h3 className="truncate text-[0.875rem] font-semibold" style={{ color: "var(--ux-ink)" }}>{o.title}</h3>
+                    <p className="mt-0.5 truncate text-[0.75rem]" style={{ color: "var(--ux-muted)" }}>{o.time}</p>
                   </div>
                   <Btn href={`/app/events/${o.id}`} variant="soft" size="sm" iconEnd="ArrowRight">Open</Btn>
                 </div>

@@ -1,6 +1,6 @@
 "use client";
 
-import * as Icons from "lucide-react";
+import * as Icons from "@/components/ux/icons";
 
 /**
  * The two states every screen has and almost no screen ships with.
@@ -106,7 +106,7 @@ function SkelCard({ children, pad = 18 }: { children: React.ReactNode; pad?: num
 
 function Row() {
   return (
-    <SkelCard pad={14}>
+    <SkelCard pad={16}>
       <div className="flex items-center gap-3.5">
         <Skeleton w={46} h={46} r={12} />
         <div className="min-w-0 flex-1 space-y-2">
@@ -125,7 +125,7 @@ function Row() {
  */
 function ScreenHead() {
   return (
-    <div className="mb-[18px]">
+    <div className="mb-[20px]">
       <div className="flex h-[36px] items-center"><Skeleton w={220} h={22} r={9} /></div>
       <div className="mt-1.5 flex h-[20px] items-center"><Skeleton w={320} h={13} /></div>
     </div>
@@ -139,7 +139,7 @@ function ScreenHead() {
  * bug — it is just a page that jumps slightly less than a spinner would.
  *
  * ── Why the header block reserves 36px and not 26px ────────────────────────
- * The heading it stands in for is `text-[24px] font-bold` on 48 of the 56
+ * The heading it stands in for is `text-[1.5rem] font-bold` on 48 of the 56
  * screens that have one, and a 24px heading occupies a 36px line box, not a
  * 26px one. The bars were drawn at their own height rather than the height of
  * the thing they replace, so every screen in the app dropped ~12px the instant
@@ -167,13 +167,13 @@ export function ScreenSkeleton({ shape = "list" }: {
       <ScreenHead />
 
       {shape === "list" && (
-        <div className="space-y-[13px]">
+        <div className="space-y-[12px]">
           {[0, 1, 2, 3].map((i) => <Row key={i} />)}
         </div>
       )}
 
       {shape === "grid" && (
-        <div className="grid grid-cols-2 gap-[15px]">
+        <div className="grid grid-cols-2 gap-[16px]">
           {[0, 1, 2, 3].map((i) => (
             <SkelCard key={i}>
               <Skeleton h={104} r={12} />
@@ -198,7 +198,7 @@ export function ScreenSkeleton({ shape = "list" }: {
               </div>
             </div>
           </SkelCard>
-          <div className="mt-[15px] space-y-[13px]">
+          <div className="mt-[16px] space-y-[12px]">
             {[0, 1].map((i) => <Row key={i} />)}
           </div>
         </>
@@ -241,7 +241,7 @@ function SettingsSkeleton() {
         <div className="flex h-[36px] items-center"><Skeleton w={190} h={22} r={9} /></div>
         <div className="mt-1.5 flex h-[20px] items-center"><Skeleton w={300} h={13} /></div>
 
-        <div className="mt-[20px] space-y-[15px]">
+        <div className="mt-[20px] space-y-[16px]">
           {[0, 1].map((i) => (
             <SkelCard key={i}>
               <Skeleton w={130} h={15} />
@@ -278,7 +278,7 @@ function SettingsSkeleton() {
  */
 export function RailSkeleton() {
   return (
-    <div className="ux-fade space-y-[15px]" aria-hidden
+    <div className="ux-fade space-y-[16px]" aria-hidden
          style={{ animationDelay: "var(--ux-t-fast)" }}>
       {[0, 1].map((i) => (
         <SkelCard key={i}>
@@ -331,14 +331,14 @@ export function OnboardSkeleton() {
         <div className="ux-sq h-[5px] w-full rounded-full" style={{ background: "var(--ux-track)" }} />
       </div>
 
-      <div className="mx-auto grid w-full max-w-[1080px] gap-[28px] px-8 py-[38px] lg:grid-cols-[minmax(0,1fr)_360px]">
+      <div className="mx-auto grid w-full max-w-[1080px] gap-[32px] px-8 py-[40px] lg:grid-cols-[minmax(0,1fr)_360px]">
         <div className="min-w-0">
           <div className="flex h-[38px] items-center"><Skeleton w="62%" h={28} r={10} /></div>
           <div className="mt-2.5 space-y-2">
             <Skeleton w="82%" h={14} />
             <Skeleton w="54%" h={14} />
           </div>
-          <div className="mt-[26px] space-y-[15px]">
+          <div className="mt-[24px] space-y-[16px]">
             {[0, 1].map((i) => (
               <SkelCard key={i}>
                 <div className="flex items-start gap-3.5">
@@ -354,7 +354,7 @@ export function OnboardSkeleton() {
         </div>
 
         <div className="min-w-0">
-          <SkelCard pad={22}>
+          <SkelCard pad={24}>
             <Skeleton w="66%" h={16} />
             <Skeleton w="88%" h={12} className="mt-2.5" />
             <div className="mt-4 space-y-2.5">
@@ -386,7 +386,7 @@ export function ScreenHandoff({ to = "there" }: { to?: string }) {
               style={{ background: "var(--ux-brand-tint)" }}>
           <Icons.ArrowRight className="h-[20px] w-[20px]" style={{ color: "var(--ux-brand)" }} strokeWidth={2} />
         </span>
-        <p className="mt-3 text-[13.5px]" style={{ color: "var(--ux-ink-2)" }}>Taking you to {to}…</p>
+        <p className="mt-3 text-[0.875rem]" style={{ color: "var(--ux-ink-2)" }}>Taking you to {to}…</p>
       </div>
     </div>
   );
@@ -424,16 +424,16 @@ export function ScreenError({
             <Icons.CloudOff className="h-[28px] w-[28px]" style={{ color: "var(--ux-orange-ink)" }} strokeWidth={1.8} />
           </span>
 
-          <h2 className="mt-4 text-[19px] font-bold" style={{ color: "var(--ux-ink)" }}>
+          <h2 className="mt-4 text-[1.125rem] font-bold" style={{ color: "var(--ux-ink)" }}>
             We could not load {what}
           </h2>
-          <p className="mt-2 max-w-[42ch] text-[13.5px] leading-relaxed" style={{ color: "var(--ux-ink-2)" }}>
+          <p className="mt-2 max-w-[42ch] text-[0.875rem] leading-relaxed" style={{ color: "var(--ux-ink-2)" }}>
             This is usually the connection rather than anything you did. Try again in a moment.
           </p>
 
           {/* The fear behind a failed screen is almost always "have I lost
               something". Answer it before she has to ask. */}
-          <p className="mt-3 flex items-center gap-2 rounded-[11px] px-3.5 py-2.5 text-[12.5px]"
+          <p className="mt-3 flex items-center gap-2 rounded-[12px] px-3.5 py-2.5 text-[0.8125rem]"
              style={{ background: "var(--ux-tint-green)", color: "var(--ux-ink-2)" }}>
             <Icons.ShieldCheck className="h-[15px] w-[15px] shrink-0" style={{ color: "var(--ux-green-ink)" }} />
             Nothing you have done has been lost.
@@ -442,21 +442,21 @@ export function ScreenError({
           <div className="mt-5 flex flex-wrap justify-center gap-2.5">
             <button
               onClick={() => (reset ? reset() : window.location.reload())}
-              className="ux-press ux-hov ux-sq ux-clay inline-flex items-center gap-2 rounded-[11px] px-4 py-2.5 text-[12.5px] font-semibold"
+              className="ux-press ux-hov ux-sq ux-clay inline-flex items-center gap-2 rounded-[12px] px-4 py-2.5 text-[0.8125rem] font-semibold"
               style={{ background: "linear-gradient(96deg, var(--ux-fill), var(--ux-fill-2))", color: "#fff" }}
             >
               <Icons.RotateCcw className="ux-ico h-[15px] w-[15px]" strokeWidth={2.1} /> Try again
             </button>
             <a
               href="/app"
-              className="ux-press ux-hov ux-sq inline-flex items-center gap-2 rounded-[11px] border px-4 py-2.5 text-[12.5px] font-semibold"
+              className="ux-press ux-hov ux-sq inline-flex items-center gap-2 rounded-[12px] border px-4 py-2.5 text-[0.8125rem] font-semibold"
               style={{ borderColor: "var(--ux-line-strong)", color: "var(--ux-ink)" }}
             >
               Go home
             </a>
             <a
               href="/app/help"
-              className="ux-press ux-hov inline-flex items-center gap-2 rounded-[11px] px-4 py-2.5 text-[12.5px] font-semibold"
+              className="ux-press ux-hov inline-flex items-center gap-2 rounded-[12px] px-4 py-2.5 text-[0.8125rem] font-semibold"
               style={{ color: "var(--ux-brand)" }}
             >
               Get help
@@ -464,7 +464,7 @@ export function ScreenError({
           </div>
 
           {detail && (
-            <p className="mt-4 font-mono text-[11px]" style={{ color: "var(--ux-faint)" }}>{detail}</p>
+            <p className="mt-4 font-mono text-[0.6875rem]" style={{ color: "var(--ux-faint)" }}>{detail}</p>
           )}
         </div>
       </div>

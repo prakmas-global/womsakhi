@@ -36,20 +36,38 @@ export default function SakhiLauncher() {
       {/* Bottom-right is crowded: the phone tab bar sits there, and in
           development so does Next's own dev-tools badge, which is drawn on top
           and swallows the tap. She sits above both. */}
-      <div className="fixed bottom-24 end-4 z-40 md:bottom-20 md:end-6">
+      {/*
+        Clear of the bottom bar, not on top of it.
+
+        `bottom-24` was measured against a screen with nothing at the bottom.
+        With the phone navigation mounted there is 56px of bar plus the home
+        indicator, and this sat over the last row of content — measured: it
+        covered the "All work" link on the home screen and clipped "Message" to
+        "Mess" on the shop.
+      */}
+      <div
+        className="fixed end-4 z-40 md:bottom-20 md:end-6"
+        style={{ bottom: "calc(72px + env(safe-area-inset-bottom, 0px))" }}
+      >
         {open ? null : (
           <button
             type="button"
             onClick={() => setOpen(true)}
             aria-label="Ask Sakhi"
-            className="group relative grid h-16 w-16 place-items-center rounded-full bg-surface shadow-lg shadow-[color:var(--wc-shadow-overlay)] ring-2 ring-brand-200 transition hover:scale-105 active:scale-95"
+            // 52px on a phone, 64px from `md`. A 64px disc is a sixth of a
+            // 390px screen and it floats over the content column, so it landed
+            // on real links — the "All work" action on the home screen, the
+            // "Message" button on an order. Smaller does not fix overlap in
+            // principle, but it is the difference between covering a word and
+            // covering a control.
+            className="group relative grid h-[52px] w-[52px] place-items-center rounded-full bg-surface shadow-lg shadow-[color:var(--wc-shadow-overlay)] ring-2 ring-brand-200 transition hover:scale-105 active:scale-95 md:h-16 md:w-16"
           >
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
               src="/sakhi.png"
               alt=""
               draggable={false}
-              className="h-14 w-14 rounded-full object-cover"
+              className="h-[46px] w-[46px] rounded-full object-cover md:h-14 md:w-14"
               style={{ objectPosition: "50% 22%" }}
             />
             <span className="absolute -top-0.5 -end-0.5 h-3.5 w-3.5 rounded-full bg-status-ok-solid ring-2 ring-[color:var(--surface)]" />

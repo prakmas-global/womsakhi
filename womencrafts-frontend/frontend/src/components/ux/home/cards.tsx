@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
-import * as Icons from "lucide-react";
+import * as Icons from "@/components/ux/icons";
 
 import { Btn, Card, I, IconTile, Pill, Progress, Rating, SectionHead, v } from "../kit";
 import { useCountUp, usePointer } from "../kit/motion";
@@ -41,9 +41,13 @@ export function Hero({ name }: { name?: string }) {
   return (
     <div
       ref={point}
-      className="ux-sq ux-aurora ux-grain ux-spot relative rounded-[22px]"
+      className="ux-sq ux-aurora ux-grain ux-spot relative overflow-hidden rounded-[20px]"
       style={{
-        height: 196,
+        // A MINIMUM, not a height. It was `height: 196`, and on a phone the
+        // headline wraps to two lines — so "My journey" and "Find work today",
+        // the two buttons this card exists for, were cut off below its edge.
+        // Nothing on a card should be able to fall out of the card.
+        minHeight: 196,
         background: "linear-gradient(104deg, oklch(0.32 0.13 294) 0%, oklch(0.44 0.19 294) 58%, oklch(0.52 0.19 320) 100%)",
       }}
     >
@@ -57,7 +61,10 @@ export function Hero({ name }: { name?: string }) {
         shaking hands inside a W and an S. It is stylised, so it cannot fall into
         the valley, and it puts the logo somewhere she actually looks.
       */}
-      <div className="pointer-events-none absolute inset-y-0 end-0 w-[46%] overflow-hidden">
+      {/* `sm:` and up. At 390px this reserved 46% of the width for decoration
+          and left the greeting a 200px column to wrap in. The emblem is lovely
+          and it is not what she came for. */}
+      <div className="pointer-events-none absolute inset-y-0 end-0 hidden w-[46%] overflow-hidden sm:block">
         <span
           aria-hidden
           className="absolute end-[6%] top-1/2 h-[220px] w-[220px] -translate-y-1/2 rounded-full"
@@ -73,22 +80,24 @@ export function Hero({ name }: { name?: string }) {
         />
       </div>
 
-      <div className="relative flex h-full max-w-[58%] flex-col justify-center ps-9">
+      <div className="relative flex h-full max-w-full flex-col justify-center px-5 py-6 sm:max-w-[58%] sm:ps-9 sm:pe-0">
         {/* min-height reserves the line so the headline does not jump down a
             few pixels the moment the greeting arrives. */}
-        <p className="text-[12px] font-semibold uppercase tracking-[0.16em]"
+        <p className="text-[0.75rem] font-semibold uppercase tracking-[0.16em]"
            style={{ color: "rgba(255,255,255,0.62)", minHeight: 15 }}>
           {part ? `Good ${part}` : "Welcome back"}
         </p>
-        <h1 className="ux-gradient-text mt-2 text-[30px] font-bold leading-[1.12]">
+        <h1 className="ux-gradient-text mt-2 text-[1.5rem] font-bold leading-[1.12] sm:text-[1.75rem]">
           Namaste, {name ?? ME.first}!
         </h1>
-        <p className="mt-2 text-[13.5px]" style={{ color: "rgba(255,255,255,0.86)" }}>
+        <p className="mt-2 text-[0.875rem]" style={{ color: "rgba(255,255,255,0.86)" }}>
           Every step you take today builds your brighter tomorrow.
         </p>
-        <div className="mt-4 flex items-center gap-2.5">
-          <Btn href="/app/progress" variant="soft" size="sm" iconEnd="ArrowRight">My journey</Btn>
-          <Btn href="/app/opportunities" variant="on-brand" size="sm">Find work today</Btn>
+        {/* `flex-wrap`, and the two doors named plainly. Selling and finding
+            work are the two ways to earn here and they get equal weight. */}
+        <div className="mt-4 flex flex-wrap items-center gap-2.5">
+          <Btn href="/app/opportunities" variant="on-brand" size="sm" iconEnd="ArrowRight">Find work</Btn>
+          <Btn href="/app/documents" variant="soft" size="sm" iconEnd="ArrowRight">Sell your work</Btn>
         </div>
       </div>
     </div>
@@ -99,10 +108,10 @@ function QuickTile({ a, i }: { a: (typeof QUICK_ACTIONS)[number]; i: number }) {
   const point = usePointer<HTMLAnchorElement>();
   return (
     <Link ref={point} href={a.href}
-          className="ux-i ux-clay ux-hov ux-tilt ux-sheen ux-rise flex h-[94px] flex-col justify-between border border-transparent p-[13px]"
+          className="ux-i ux-clay ux-hov ux-tilt ux-sheen ux-rise flex h-[94px] flex-col justify-between border border-transparent p-[12px]"
           style={{ background: v(a.tint), ["--i" as string]: i }}>
       <span className="relative flex items-center justify-between">
-        <span className="ux-sq grid h-[32px] w-[32px] place-items-center rounded-[10px]"
+        <span className="ux-sq grid h-[32px] w-[32px] place-items-center rounded-[12px]"
               style={{ background: "var(--ux-surface)", color: v(a.ink) }}>
           {/* Alternating tilt: six tiles all leaning the same way reads as a
               rendering glitch rather than as a response. */}
@@ -112,10 +121,10 @@ function QuickTile({ a, i }: { a: (typeof QUICK_ACTIONS)[number]; i: number }) {
                             style={{ color: "var(--ux-faint)" }} strokeWidth={2.2} />
       </span>
       <span className="relative block min-w-0">
-        <span className="block truncate text-[12.5px] font-semibold leading-[16px]" style={{ color: "var(--ux-ink)" }}>
+        <span className="block truncate text-[0.8125rem] font-semibold leading-[16px]" style={{ color: "var(--ux-ink)" }}>
           {a.label}
         </span>
-        <span className="block truncate text-[10.5px] leading-[14px]" style={{ color: "var(--ux-muted)" }} title={a.sub}>
+        <span className="block truncate text-[0.6875rem] leading-[14px]" style={{ color: "var(--ux-muted)" }} title={a.sub}>
           {a.sub}
         </span>
       </span>
@@ -123,9 +132,16 @@ function QuickTile({ a, i }: { a: (typeof QUICK_ACTIONS)[number]; i: number }) {
   );
 }
 
+/**
+ * The six shortcuts.
+ *
+ * Two across on a phone, three on a tablet, six on a laptop. It was
+ * `grid-cols-6` at every width — 55px per tile at 390px, narrower than the
+ * word printed inside it.
+ */
 export function QuickActions() {
   return (
-    <div className="ux-deck ux-tilt-scene mt-[17px] grid grid-cols-6 gap-[15px]">
+    <div className="ux-deck ux-tilt-scene mt-[16px] grid grid-cols-2 gap-[12px] sm:grid-cols-3 sm:gap-[16px] lg:grid-cols-6">
       {QUICK_ACTIONS.map((a, i) => <QuickTile key={a.label} a={a} i={i} />)}
     </div>
   );
@@ -147,7 +163,7 @@ export function ContinueJourney() {
     return (
       <Card className="ux-onscroll">
         <SectionHead title="Continue Your Journey" action="View Journey" />
-        <p className="text-[12.5px] leading-relaxed" style={{ color: "var(--ux-muted)" }}>
+        <p className="text-[0.8125rem] leading-relaxed" style={{ color: "var(--ux-muted)" }}>
           You have not started a course yet. The one you join shows up here, with how far through you are.
         </p>
         <div className="mt-3.5">
@@ -167,24 +183,24 @@ export function ContinueJourney() {
   return (
     <Card className="ux-onscroll">
       <SectionHead title="Continue Your Journey" action="View Journey" />
-      <div className="ux-hov ux-sq flex gap-4 rounded-[13px] p-3" style={{ background: "var(--ux-surface-2)" }}>
-        <span className="h-[100px] w-[104px] shrink-0 overflow-hidden rounded-[10px]">
+      <div className="ux-hov ux-sq flex gap-4 rounded-[12px] p-3" style={{ background: "var(--ux-surface-2)" }}>
+        <span className="h-[100px] w-[104px] shrink-0 overflow-hidden rounded-[12px]">
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img src={JOURNEY.art} alt="" className="ux-art h-full w-full object-cover" />
         </span>
         <div className="flex min-w-0 flex-1 flex-col justify-center">
-          <h3 className="text-[14px] font-semibold" style={{ color: "var(--ux-ink)" }}>{JOURNEY.title}</h3>
-          <p className="mt-1 text-[11.5px]" style={{ color: "var(--ux-muted)" }}>
+          <h3 className="text-[0.875rem] font-semibold" style={{ color: "var(--ux-ink)" }}>{JOURNEY.title}</h3>
+          <p className="mt-1 text-[0.75rem]" style={{ color: "var(--ux-muted)" }}>
             {JOURNEY.pct}% of the way through
           </p>
           <div className="mt-2.5 flex items-center gap-2.5">
             <Progress pct={JOURNEY.pct} />
-            <span className="shrink-0 text-[11.5px] font-medium" style={{ color: "var(--ux-muted)" }}>{JOURNEY.pct}%</span>
+            <span className="shrink-0 text-[0.75rem] font-medium" style={{ color: "var(--ux-muted)" }}>{JOURNEY.pct}%</span>
           </div>
           <div className="mt-3 flex items-center justify-between gap-3">
             {/* min-w-0 so the label truncates instead of wrapping and shoving
                 the button out of line with the progress bar above it. */}
-            <span className="min-w-0 truncate text-[11.5px]" style={{ color: "var(--ux-muted)" }}
+            <span className="min-w-0 truncate text-[0.75rem]" style={{ color: "var(--ux-muted)" }}
                   title={JOURNEY.next}>
               {JOURNEY.next}
             </span>
@@ -213,15 +229,15 @@ function CourseRow({ r, i }: { r: CourseRowData; i: number }) {
   const point = usePointer<HTMLAnchorElement>();
   return (
     <Link ref={point} href={`/app/programs/${r.id}`}
-          className="ux-i ux-sq ux-edge flex items-center gap-3 rounded-[13px] border p-2.5"
+          className="ux-i ux-sq ux-edge flex items-center gap-3 rounded-[12px] border p-2.5"
           style={{ borderColor: "var(--ux-line)", ["--i" as string]: i }}>
       <span className="h-[62px] w-[88px] shrink-0 overflow-hidden rounded-[8px]">
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img src={r.art} alt="" className="ux-art h-full w-full object-cover" />
       </span>
       <div className="min-w-0 flex-1">
-        <h3 className="truncate text-[13px] font-semibold" style={{ color: "var(--ux-ink)" }}>{r.title}</h3>
-        <p className="mt-0.5 text-[11.5px]" style={{ color: "var(--ux-muted)" }}>{r.meta}</p>
+        <h3 className="truncate text-[0.8125rem] font-semibold" style={{ color: "var(--ux-ink)" }}>{r.title}</h3>
+        <p className="mt-0.5 text-[0.75rem]" style={{ color: "var(--ux-muted)" }}>{r.meta}</p>
         <p className="mt-1"><Rating value={r.rating} count={r.count} /></p>
       </div>
       <Icons.Bookmark className="ux-ico h-[17px] w-[17px] shrink-0" style={{ color: "var(--ux-faint)" }} strokeWidth={1.8} />
@@ -252,7 +268,7 @@ export function Recommended() {
     <Card className="ux-onscroll">
       <SectionHead title="Courses you could join" action="See All" />
       {RECOMMENDED.length === 0 && (
-        <p className="text-[12.5px] leading-relaxed" style={{ color: "var(--ux-muted)" }}>
+        <p className="text-[0.8125rem] leading-relaxed" style={{ color: "var(--ux-muted)" }}>
           You are in every course on offer. More are added each month.
         </p>
       )}
@@ -278,36 +294,36 @@ export function Opportunities() {
     <Card className="ux-onscroll">
       <SectionHead title="Opportunities for You" action="See All" />
       {shown.length === 0 && (
-        <p className="text-[12.5px] leading-relaxed" style={{ color: "var(--ux-muted)" }}>
+        <p className="text-[0.8125rem] leading-relaxed" style={{ color: "var(--ux-muted)" }}>
           Nothing open right now. New work is posted most weeks.
         </p>
       )}
       <div className="ux-deck ux-stagger space-y-2.5">
         {shown.map((o) => (
           <Link key={o.id} href={`/app/opportunities/${o.id}`}
-                className="ux-i ux-sq flex items-start gap-3 rounded-[13px] border p-3"
+                className="ux-i ux-sq flex items-start gap-3 rounded-[12px] border p-3"
                 style={{ borderColor: "var(--ux-line)" }}>
             <IconTile icon={o.icon} tint={o.logoTint} ink={o.logoInk} size={36} radius={9} />
             <div className="min-w-0 flex-1">
-              <h3 className="truncate text-[13px] font-semibold" style={{ color: "var(--ux-ink)" }}>{o.title}</h3>
-              <p className="mt-0.5 truncate text-[11.5px]" style={{ color: "var(--ux-muted)" }}>
+              <h3 className="truncate text-[0.8125rem] font-semibold" style={{ color: "var(--ux-ink)" }}>{o.title}</h3>
+              <p className="mt-0.5 truncate text-[0.75rem]" style={{ color: "var(--ux-muted)" }}>
                 {o.org} <span aria-hidden>•</span> {o.place}
               </p>
               <div className="mt-2 flex flex-wrap gap-1.5">
                 {o.skills.slice(0, 3).map((t) => (
-                  <span key={t} className="rounded-[6px] border px-2 py-[3px] text-[10.5px]"
+                  <span key={t} className="rounded-[8px] border px-2 py-[3px] text-[0.6875rem]"
                         style={{ borderColor: "var(--ux-line-strong)", color: "var(--ux-muted)" }}>{t}</span>
                 ))}
               </div>
             </div>
             <div className="flex shrink-0 flex-col items-end gap-3">
               <Icons.Bookmark className="h-[16px] w-[16px]" style={{ color: "var(--ux-faint)" }} strokeWidth={1.8} />
-              <span className="text-[10.5px]" style={{ color: "var(--ux-faint)" }}>{o.posted}</span>
+              <span className="text-[0.6875rem]" style={{ color: "var(--ux-faint)" }}>{o.posted}</span>
             </div>
           </Link>
         ))}
       </div>
-      <Link href="/app/opportunities" className="ux-press ux-hov mt-3 flex w-full items-center justify-center gap-1.5 py-1.5 text-[12.5px] font-medium"
+      <Link href="/app/opportunities" className="ux-press ux-hov mt-3 flex w-full items-center justify-center gap-1.5 py-1.5 text-[0.8125rem] font-medium"
             style={{ color: "var(--ux-brand)" }}>
         View All Opportunities <Icons.ArrowRight className="ux-arrow h-3.5 w-3.5" strokeWidth={2} />
       </Link>
@@ -333,7 +349,7 @@ export function Circles() {
       <div className="ux-deck">
       <div className="ux-stagger space-y-2.5">
         {CIRCLES.map((c) => (
-          <div key={c.id} className="ux-i ux-sq flex items-center gap-3 rounded-[13px] border p-3"
+          <div key={c.id} className="ux-i ux-sq flex items-center gap-3 rounded-[12px] border p-3"
                style={{ borderColor: "var(--ux-line)" }}>
             <span className="grid h-[44px] w-[44px] shrink-0 place-items-center overflow-hidden rounded-full"
                   style={{ background: v(c.tint) }}>
@@ -344,13 +360,13 @@ export function Circles() {
                 they left 137px for a 175px name, so every circle was cut off
                 mid-word. Below, they also read as what they are — the members. */}
             <div className="min-w-0 flex-1">
-              <h3 className="truncate text-[13px] font-semibold" style={{ color: "var(--ux-ink)" }} title={c.name}>
+              <h3 className="truncate text-[0.8125rem] font-semibold" style={{ color: "var(--ux-ink)" }} title={c.name}>
                 {c.name}
               </h3>
               {/* The face stack is gone: it drew three photographs from a
                   constant, so every circle in the app appeared to contain the
                   same three women. The count is real and says enough. */}
-              <span className="mt-1.5 block truncate text-[11px]" style={{ color: "var(--ux-muted)" }}>
+              <span className="mt-1.5 block truncate text-[0.6875rem]" style={{ color: "var(--ux-muted)" }}>
                 {c.members} {c.members === 1 ? "member" : "members"}
                 {c.kind === "Savings" && <span aria-hidden> • </span>}
                 {c.kind === "Savings" && "saves together"}
@@ -361,15 +377,15 @@ export function Circles() {
         ))}
       </div>
       <Link href="/app/circles/new"
-            className="ux-i ux-hov ux-sq mt-2.5 flex items-center gap-3 rounded-[13px] border border-dashed p-3"
+            className="ux-i ux-hov ux-sq mt-2.5 flex items-center gap-3 rounded-[12px] border border-dashed p-3"
             style={{ borderColor: "var(--ux-line-strong)" }}>
         <span className="grid h-[44px] w-[44px] shrink-0 place-items-center rounded-full"
               style={{ background: "var(--ux-brand-tint)", color: "var(--ux-brand)" }}>
           <Icons.Plus className="ux-ico-turn h-[19px] w-[19px]" strokeWidth={2} />
         </span>
         <span className="min-w-0 flex-1">
-          <span className="block text-[13px] font-semibold" style={{ color: "var(--ux-ink)" }}>Start your own circle</span>
-          <span className="block text-[11px]" style={{ color: "var(--ux-muted)" }}>
+          <span className="block text-[0.8125rem] font-semibold" style={{ color: "var(--ux-ink)" }}>Start your own circle</span>
+          <span className="block text-[0.6875rem]" style={{ color: "var(--ux-muted)" }}>
             Bring together women near you or in your trade
           </span>
         </span>
@@ -382,23 +398,23 @@ export function Circles() {
 
 export function AskSakhiBar() {
   return (
-    <section className="ux-clay ux-orbit ux-onscroll relative overflow-hidden p-[18px]"
+    <section className="ux-clay ux-orbit ux-onscroll relative overflow-hidden p-[20px]"
              style={{ background: "linear-gradient(100deg, var(--ux-tint-lilac), var(--ux-tint-pink))", borderRadius: 18 }}>
       <div className="flex items-start gap-4">
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img src="/ux/art/mascot-robot-waving.webp" alt="" className="ux-float h-[76px] w-[76px] shrink-0 object-contain" />
         <div className="w-[178px] shrink-0 pt-1">
-          <h2 className="flex items-center gap-2 text-[15px] font-semibold" style={{ color: "var(--ux-ink)" }}>
+          <h2 className="flex items-center gap-2 text-[1rem] font-semibold" style={{ color: "var(--ux-ink)" }}>
             Ask Sakhi <Pill size="sm">New</Pill>
           </h2>
-          <p className="mt-1 text-[11.5px] leading-snug" style={{ color: "var(--ux-muted)" }}>
+          <p className="mt-1 text-[0.75rem] leading-snug" style={{ color: "var(--ux-muted)" }}>
             Your AI companion for guidance, answers &amp; support.
           </p>
         </div>
         <div className="min-w-0 flex-1">
           <div className="flex items-center gap-2.5">
             <input placeholder="Ask anything..."
-                   className="ux-sq h-[44px] min-w-0 flex-1 rounded-[11px] border px-4 text-[13px] outline-none"
+                   className="ux-sq h-[44px] min-w-0 flex-1 rounded-[12px] border px-4 text-[0.8125rem] outline-none"
                    style={{ borderColor: "var(--ux-line-strong)", background: "var(--ux-surface)", color: "var(--ux-ink)" }} />
             <button aria-label="Send" className="ux-press ux-hov ux-clay grid h-[44px] w-[44px] shrink-0 place-items-center rounded-[12px]"
                     style={{ background: "var(--ux-brand-600)" }}>
@@ -407,7 +423,7 @@ export function AskSakhiBar() {
           </div>
           <div className="mt-2.5 flex flex-wrap gap-2">
             {SUGGESTIONS.map((s) => (
-              <button key={s} className="ux-press ux-clay rounded-full px-3.5 py-[7px] text-[11.5px]"
+              <button key={s} className="ux-press ux-clay rounded-full px-3.5 py-[8px] text-[0.75rem]"
                       style={{ background: "var(--ux-surface)", color: "var(--ux-ink-2)" }}>{s}</button>
             ))}
           </div>
@@ -436,19 +452,19 @@ export function ProfileCard() {
         <img src={ME.avatar} alt="" className="h-[52px] w-[52px] rounded-full object-cover"
              style={{ background: "var(--ux-brand-tint)" }} />
         <div className="min-w-0">
-          <h2 className="flex items-center gap-1.5 text-[15px] font-semibold" style={{ color: "var(--ux-ink)" }}>
+          <h2 className="flex items-center gap-1.5 text-[1rem] font-semibold" style={{ color: "var(--ux-ink)" }}>
             {ME.name}
             {ME.verified && <Icons.BadgeCheck className="h-4 w-4" style={{ color: "var(--ux-blue)" }} />}
           </h2>
-          <p className="text-[11.5px]" style={{ color: "var(--ux-muted)" }}>{ME.tagline}</p>
+          <p className="text-[0.75rem]" style={{ color: "var(--ux-muted)" }}>{ME.tagline}</p>
         </div>
       </div>
-      <div className="mt-4 flex items-center justify-between text-[12px]">
+      <div className="mt-4 flex items-center justify-between text-[0.75rem]">
         <span style={{ color: "var(--ux-ink-2)" }}>Profile Strength</span>
         <span className="font-semibold" style={{ color: "var(--ux-ink)" }}>{ME.profilePct}%</span>
       </div>
       <div className="mt-2"><Progress pct={ME.profilePct} track="--ux-track" /></div>
-      <p className="mt-2.5 text-[11.5px] leading-snug" style={{ color: "var(--ux-muted)" }}>
+      <p className="mt-2.5 text-[0.75rem] leading-snug" style={{ color: "var(--ux-muted)" }}>
         Complete your profile to unlock more opportunities.
       </p>
       <div className="mt-3">
@@ -476,15 +492,15 @@ export function Earnings() {
   return (
     <Card>
       <div className="flex items-center justify-between">
-        <h2 className="text-[15px] font-semibold" style={{ color: "var(--ux-ink)" }}>Earnings Snapshot</h2>
-        <button className="ux-press ux-hov -my-1 flex items-center gap-1 py-1 text-[11.5px]" style={{ color: "var(--ux-muted)" }}>
+        <h2 className="text-[1rem] font-semibold" style={{ color: "var(--ux-ink)" }}>Earnings Snapshot</h2>
+        <button className="ux-press ux-hov -my-1 flex items-center gap-1 py-1 text-[0.75rem]" style={{ color: "var(--ux-muted)" }}>
           {EARNINGS.period} <Icons.ChevronDown className="ux-ico h-3.5 w-3.5" />
         </button>
       </div>
-      <p className="mt-3 text-[27px] font-bold leading-none tabular-nums" style={{ color: "var(--ux-ink)" }}>
+      <p className="mt-3 text-[1.75rem] font-bold leading-none tabular-nums" style={{ color: "var(--ux-ink)" }}>
         ₹{total.toLocaleString("en-IN")}
       </p>
-      <p className="mt-1.5 flex items-center gap-1 text-[11.5px]" style={{ color: "var(--ux-green-ink)" }}>
+      <p className="mt-1.5 flex items-center gap-1 text-[0.75rem]" style={{ color: "var(--ux-green-ink)" }}>
         {EARNINGS.delta} <span style={{ color: "var(--ux-muted)" }}>vs last month</span>
         <Icons.TrendingUp className="h-3.5 w-3.5" />
       </p>
@@ -530,26 +546,26 @@ export function Upcoming() {
     <Card className="ux-onscroll-soft">
       <SectionHead title="Upcoming Activities" action="View Calendar" />
       {ACTIVITIES.length === 0 && (
-        <p className="text-[12.5px] leading-relaxed" style={{ color: "var(--ux-muted)" }}>
+        <p className="text-[0.8125rem] leading-relaxed" style={{ color: "var(--ux-muted)" }}>
           Nothing booked yet. Anything you book shows up here.
         </p>
       )}
       <div className="ux-stagger space-y-3">
         {ACTIVITIES.map((a) => (
           <div key={a.id} className="ux-hov flex gap-3">
-            <div className="grid h-[46px] w-[42px] shrink-0 place-items-center rounded-[10px]"
+            <div className="grid h-[46px] w-[42px] shrink-0 place-items-center rounded-[12px]"
                  style={{ background: "var(--ux-brand-tint)" }}>
-              <span className="text-[16px] font-bold leading-none" style={{ color: "var(--ux-brand)" }}>{a.d}</span>
-              <span className="text-[9px] font-semibold" style={{ color: "var(--ux-brand)" }}>{a.m}</span>
+              <span className="text-[1rem] font-bold leading-none" style={{ color: "var(--ux-brand)" }}>{a.d}</span>
+              <span className="text-[0.6875rem] font-semibold" style={{ color: "var(--ux-brand)" }}>{a.m}</span>
             </div>
             {/* The title had the time and a button beside it in a 320px rail and
                 lost half its words. It now owns its line and wraps if it must. */}
             <div className="min-w-0 flex-1">
-              <h3 className="text-[12.5px] font-semibold leading-[16px]" style={{ color: "var(--ux-ink)" }}>
+              <h3 className="text-[0.8125rem] font-semibold leading-[16px]" style={{ color: "var(--ux-ink)" }}>
                 {a.title}
               </h3>
               <div className="mt-1 flex items-center justify-between gap-2">
-                <span className="min-w-0 truncate text-[11px]" style={{ color: "var(--ux-muted)" }}>{a.time}</span>
+                <span className="min-w-0 truncate text-[0.6875rem]" style={{ color: "var(--ux-muted)" }}>{a.time}</span>
                 <Btn variant="soft" size="sm" href={a.href}>{a.cta}</Btn>
               </div>
             </div>
@@ -562,15 +578,15 @@ export function Upcoming() {
 
 export function Inspiration() {
   return (
-    <section className="ux-clay relative overflow-hidden p-[18px]"
+    <section className="ux-clay relative overflow-hidden p-[20px]"
              style={{ background: "linear-gradient(140deg, var(--ux-tint-lilac), var(--ux-tint-pink))" }}>
       {/* eslint-disable-next-line @next/next/no-img-element */}
       <img src="/ux/art/scene-woman-planting-sapling.webp" alt=""
            className="ux-float pointer-events-none absolute -bottom-3 -end-3 h-[104px] w-[104px] object-contain opacity-90" />
-      <h2 className="relative flex items-center gap-2 text-[14.5px] font-semibold" style={{ color: "var(--ux-brand)" }}>
+      <h2 className="relative flex items-center gap-2 text-[0.875rem] font-semibold" style={{ color: "var(--ux-brand)" }}>
         <Icons.Sparkles className="h-4 w-4" /> Daily Inspiration
       </h2>
-      <p className="relative mt-2.5 w-[62%] text-[12.5px] leading-relaxed" style={{ color: "var(--ux-ink-2)" }}>
+      <p className="relative mt-2.5 w-[62%] text-[0.8125rem] leading-relaxed" style={{ color: "var(--ux-ink-2)" }}>
         You are stronger than you think, and capable of more than you imagine.
       </p>
     </section>
@@ -590,8 +606,8 @@ export function MentorPick() {
           <img src={m.art} alt="" className="ux-art h-full w-full object-cover" />
         </span>
         <div className="min-w-0 flex-1">
-          <h3 className="truncate text-[13.5px] font-semibold" style={{ color: "var(--ux-ink)" }}>{m.name}</h3>
-          <p className="mt-0.5 truncate text-[11.5px]" style={{ color: "var(--ux-muted)" }}>{m.role}</p>
+          <h3 className="truncate text-[0.875rem] font-semibold" style={{ color: "var(--ux-ink)" }}>{m.name}</h3>
+          <p className="mt-0.5 truncate text-[0.75rem]" style={{ color: "var(--ux-muted)" }}>{m.role}</p>
           <p className="mt-1"><Rating value={m.rating} count={m.sessions} /></p>
         </div>
       </div>
@@ -614,7 +630,7 @@ export function Skills() {
       <ul className="space-y-3">
         {SKILLS.map((sk) => (
           <li key={sk.name}>
-            <div className="flex items-center justify-between text-[12px]">
+            <div className="flex items-center justify-between text-[0.75rem]">
               <span className="min-w-0 truncate" style={{ color: "var(--ux-ink-2)" }}>{sk.name}</span>
               <span className="shrink-0 font-medium tabular-nums" style={{ color: "var(--ux-muted)" }}>{sk.pct}%</span>
             </div>

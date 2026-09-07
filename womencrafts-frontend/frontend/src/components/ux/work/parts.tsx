@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import * as Icons from "lucide-react";
+import * as Icons from "@/components/ux/icons";
 
 import { Btn, I, IconTile, Pill, Progress, SectionHead, Card } from "../kit";
 import { usePointer } from "../kit/motion";
@@ -31,7 +31,7 @@ export function MatchRing({ pct, size = 44 }: { pct: number; size?: number }) {
           style={{ transition: "stroke-dashoffset var(--ux-t-slow) var(--ux-ease-out)" }}
         />
       </svg>
-      <span className="absolute text-[10.5px] font-bold tabular-nums" style={{ color: `var(${tone})` }}>
+      <span className="absolute text-[0.6875rem] font-bold tabular-nums" style={{ color: `var(${tone})` }}>
         {pct}
       </span>
     </span>
@@ -44,14 +44,14 @@ export function JobRow({
   const point = usePointer<HTMLDivElement>();
   return (
     <div ref={point}
-         className="ux-i ux-sq ux-spot ux-onscroll relative rounded-[14px] border p-[14px]"
+         className="ux-i ux-sq ux-spot ux-onscroll relative rounded-[12px] border p-[16px]"
          style={{ borderColor: "var(--ux-line)", background: "var(--ux-surface)", ["--i" as string]: i }}>
       <div className="flex items-start gap-3.5">
         <IconTile icon={job.icon} tint={job.logoTint} ink={job.logoInk} size={46} radius={12} />
 
         <div className="min-w-0 flex-1">
           <div className="flex items-start gap-2">
-            <h3 className="min-w-0 flex-1 truncate text-[14.5px] font-semibold" style={{ color: "var(--ux-ink)" }}>
+            <h3 className="min-w-0 flex-1 truncate text-[0.875rem] font-semibold" style={{ color: "var(--ux-ink)" }}>
               {/* -my-1 py-1: a bare text link is 17px tall, which is under the
                   24px anything clickable should be. The padding is negative on
                   the outside so nothing moves. */}
@@ -60,32 +60,32 @@ export function JobRow({
               </Link>
             </h3>
             {job.verified && (
-              <span className="inline-flex shrink-0 items-center gap-1 rounded-full px-2 py-[2px] text-[10px] font-semibold"
+              <span className="inline-flex shrink-0 items-center gap-1 rounded-full px-2 py-[2px] text-[0.6875rem] font-semibold"
                     style={{ background: "var(--ux-tint-green)", color: "var(--ux-green-ink)" }}>
                 <Icons.ShieldCheck className="h-3 w-3" /> Verified
               </span>
             )}
             {job.womenLed && (
-              <span className="inline-flex shrink-0 items-center gap-1 rounded-full px-2 py-[2px] text-[10px] font-semibold"
+              <span className="inline-flex shrink-0 items-center gap-1 rounded-full px-2 py-[2px] text-[0.6875rem] font-semibold"
                     style={{ background: "var(--ux-tint-pink)", color: "var(--ux-pink-ink)" }}>
                 Women-led
               </span>
             )}
           </div>
 
-          <p className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-[11.5px]" style={{ color: "var(--ux-muted)" }}>
+          <p className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-[0.75rem]" style={{ color: "var(--ux-muted)" }}>
             <span className="inline-flex items-center gap-1"><Icons.Building2 className="h-3.5 w-3.5" /> {job.org}</span>
             <span className="inline-flex items-center gap-1"><Icons.MapPin className="h-3.5 w-3.5" /> {job.place}</span>
             <span className="inline-flex items-center gap-1"><Icons.Clock className="h-3.5 w-3.5" /> {job.posted}</span>
           </p>
 
-          <p className="mt-2 text-[13px] font-semibold" style={{ color: "var(--ux-ink)" }}>{payLabel(job)}</p>
+          <p className="mt-2 text-[0.8125rem] font-semibold" style={{ color: "var(--ux-ink)" }}>{payLabel(job)}</p>
 
           <div className="mt-2.5 flex flex-wrap items-center gap-1.5">
             <Pill tone="brand" size="sm">{job.kind}</Pill>
             <Pill tone="neutral" size="sm">{job.mode}</Pill>
             {job.skills.map((s) => (
-              <span key={s} className="ux-sq rounded-[7px] border px-2 py-[3px] text-[10.5px]"
+              <span key={s} className="ux-sq rounded-[8px] border px-2 py-[3px] text-[0.6875rem]"
                     style={{ borderColor: "var(--ux-line-strong)", color: "var(--ux-muted)" }}>{s}</span>
             ))}
           </div>
@@ -102,7 +102,7 @@ export function JobRow({
             onClick={() => onSave(job.id)}
             aria-pressed={saved}
             aria-label={saved ? "Saved" : "Save this"}
-            className="ux-press ux-hov ux-sq grid h-[30px] w-[30px] place-items-center rounded-[9px]"
+            className="ux-press ux-hov ux-sq grid h-[30px] w-[30px] place-items-center rounded-[8px]"
             style={{ background: saved ? "var(--ux-brand-tint)" : "transparent" }}
           >
             <Icons.Bookmark
@@ -116,7 +116,7 @@ export function JobRow({
       </div>
 
       <div className="mt-3 flex items-center justify-between gap-3 border-t pt-3" style={{ borderColor: "var(--ux-line)" }}>
-        <span className="text-[11.5px]" style={{ color: "var(--ux-faint)" }}>
+        <span className="text-[0.75rem]" style={{ color: "var(--ux-faint)" }}>
           {job.applicants} {job.applicants === 1 ? "woman has" : "women have"} applied
         </span>
         <span className="flex items-center gap-2">
@@ -174,10 +174,10 @@ export function RailStat({ value, label, icon, tint, ink, sub }: {
     <div className="ux-hov flex items-center gap-3">
       <IconTile icon={icon} tint={tint} ink={ink} size={38} />
       <div className="min-w-0">
-        <p className="text-[17px] font-bold leading-none tabular-nums" style={{ color: "var(--ux-ink)" }}>{value}</p>
-        <p className="mt-1 truncate text-[11.5px]" style={{ color: "var(--ux-muted)" }}>{label}</p>
+        <p className="text-[1.125rem] font-bold leading-none tabular-nums" style={{ color: "var(--ux-ink)" }}>{value}</p>
+        <p className="mt-1 truncate text-[0.75rem]" style={{ color: "var(--ux-muted)" }}>{label}</p>
       </div>
-      {sub && <span className="ms-auto shrink-0 text-[11px]" style={{ color: "var(--ux-faint)" }}>{sub}</span>}
+      {sub && <span className="ms-auto shrink-0 text-[0.6875rem]" style={{ color: "var(--ux-faint)" }}>{sub}</span>}
     </div>
   );
 }

@@ -12,7 +12,7 @@ import { ScreenError } from "@/components/ux/kit";
  */
 export default function Error({ error, reset }: { error: Error & { digest?: string }; reset: () => void }) {
   return (
-    <div className="mx-auto w-full max-w-[1080px] px-8 py-[38px]">
+    <div className="mx-auto w-full max-w-[1080px] px-8 py-[40px]">
       <ScreenError what="this page" reset={reset} detail={error.digest} />
     </div>
   );

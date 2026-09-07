@@ -1,27 +1,47 @@
 /**
  * The product's information architecture.
  *
- * ── Why this is two levels ──────────────────────────────────────────────────
- * It used to be one rail of eighteen items. Eighteen flat destinations is not
- * an architecture, it is a list — nobody holds it in mind, so people stop
- * scanning it and use whatever is in the top five. Worse, several screens
- * (notifications, certificates, messages) were not in it at all and could only
- * be reached by accident.
+ * ── Five places, not seven ──────────────────────────────────────────────────
+ * It was seven sections and THIRTY destinations, all offered as equal choices.
+ * A woman who came here to earn money had to learn a taxonomy before she could
+ * do anything — and the two halves of the only thing she came for were in
+ * different sections: "Work" held the job, "Money" held what the job paid.
  *
- * So: six MODES across the top — the things she switches between during a day —
- * and the rail shows only what is inside the mode she is in. Six is the ceiling
- * for a top bar people read rather than parse, and three to four children is
- * small enough to take in at a glance.
+ * So:
  *
- * The cost is honest: something four levels down is now two clicks rather than
- * one. That is the right trade when the alternative is eighteen equal-weight
- * items, none of which look more important than any other.
+ *   **Home**       what needs her today, and her calendar.
+ *   **Earn**       Work and Money merged. Finding work and getting paid for it
+ *                  are one job to her, and they were two clicks apart.
+ *   **Learn**      courses, mentors, certificates.
+ *   **Community**  circles, messages, events, women near her.
+ *   **Help**       when something is wrong. Rights, health, family, travel —
+ *                  and SAFETY, which was not in the navigation at all. The
+ *                  panic button and trusted contacts were reachable only from
+ *                  the account menu, on an app built because women are not safe
+ *                  by default. It is now the first item of the section.
  *
- * Settings, Help, Safety and Refer are deliberately NOT modes. They are things
- * she visits occasionally, so they live in the account menu, which is where
- * every other product puts them and where people look first.
+ * "Discover" is gone. Its "Everything" screen was a search, and search is in
+ * the top bar on every screen; its Events moved to Community, where an event
+ * belongs, and "Ask for help" to Help.
+ *
+ * Nineteen destinations instead of thirty, and five of them fit a phone's
+ * bottom bar exactly — no "More" needed to reach a whole section.
+ *
+ * ── Nothing was deleted ─────────────────────────────────────────────────────
+ * Every screen still exists and every one is still reachable. What changed is
+ * that eleven of them stopped competing for attention in a rail and are now
+ * reached from the screen they belong to: "Buy together" from Your shop,
+ * "Test your skills" from Courses, "What you paid" from Your wallet. That is
+ * what `also` is for — the route belongs to the section, and highlights it,
+ * without taking a slot.
+ *
+ * ── One name per thing ──────────────────────────────────────────────────────
+ * This list is the ONLY place a destination is named. `/app/programs` was once
+ * called four different things depending on where you looked: "Learn" in the
+ * top bar, "Courses" in the rail, "Learning" on the home tile and "Learning" in
+ * its own heading. `HOME_TILES` in `home/data.ts` reads from here, and every
+ * page heading says what its link says.
  */
-
 export interface NavItem {
   label: string;
   icon: string;
@@ -40,6 +60,15 @@ export interface Mode {
   items: NavItem[];
   /** Routes that belong to this mode but are not rail items of their own. */
   also?: string[];
+  /**
+   * Routes that deserve a name in search but not a slot in the rail.
+   *
+   * `also` carries bare hrefs, which is all the active-state logic needs and
+   * not enough to show someone a search result. These are the child screens
+   * worth finding by typing — "showing someone", "reading it out to you" —
+   * without lengthening a rail that is already long.
+   */
+  findable?: NavItem[];
 }
 
 export const MODES: Mode[] = [
@@ -47,21 +76,24 @@ export const MODES: Mode[] = [
     id: "home", label: "Home", icon: "Home", href: "/app",
     items: [
       { label: "Today", icon: "Sun", href: "/app", note: "What needs you now" },
-      { label: "Your journey", icon: "Route", href: "/app/progress", note: "How far you have come" },
-      { label: "Your diary", icon: "CalendarDays", href: "/app/schedule", note: "Sessions, classes, events" },
-      { label: "Notifications", icon: "Bell", href: "/app/notifications", note: "What you may have missed" },
-      // Every bookmark in the app pointed nowhere until this existed.
-      { label: "Saved", icon: "Bookmark", href: "/app/saved", note: "Things you kept for later" },
-      { label: "Ask Sakhi", icon: "Sparkles", href: "/app/sakhi", note: "Answers in your own words" },
+      { label: "My journey", icon: "Route", href: "/app/journey", note: "From skill to income, step by step" },
+      { label: "My goals", icon: "Target", href: "/app/goals", note: "What you are working towards" },
+      { label: "Your calendar", icon: "CalendarDays", href: "/app/schedule", note: "Sessions, classes and events" },
     ],
-    also: ["/app/profile", "/app/search"],
+    // Personal admin. Reached from the account menu and the topbar, not by
+    // taking up a slot in the daily navigation.
+    also: ["/app/progress", "/app/notifications", "/app/saved", "/app/profile", "/app/sakhi"],
   },
   {
-    id: "discover", label: "Discover", icon: "Compass", href: "/app/explore",
+    // Promoted out of Home. Search answers a question she already has; this is
+    // for the much more common case where she has a situation rather than a
+    // question, which is why it earns a tab and search stays a header control.
+    id: "discover", label: "Discover", icon: "Compass", href: "/app/discover",
     items: [
-      { label: "Explore", icon: "Compass", href: "/app/explore", note: "Everything, in one place" },
-      { label: "Events", icon: "Ticket", href: "/app/events", note: "Melas, workshops and meets" },
-      { label: "What you need", icon: "MessageCircleQuestion", href: "/app/intake", note: "Tell us, get answers" },
+      { label: "For you", icon: "Sparkles", href: "/app/discover", note: "Picked because of something you did" },
+      { label: "Near you", icon: "MapPin", href: "/app/stories", note: "Women and help in your city" },
+      { label: "Have a look around", icon: "Telescope", href: "/app/explore", note: "Everything, by category" },
+      { label: "Search", icon: "Search", href: "/app/search", note: "When you know what you want" },
     ],
   },
   {
@@ -69,49 +101,112 @@ export const MODES: Mode[] = [
     items: [
       { label: "Courses", icon: "BookOpen", href: "/app/programs", note: "Started and suggested" },
       { label: "Mentors", icon: "Users", href: "/app/mentors", note: "Women who have done it" },
-      { label: "Skill exchange", icon: "RefreshCw", href: "/app/library", note: "Teach one, learn one" },
-      { label: "Prove your skills", icon: "BadgeCheck", href: "/app/assess", note: "Twenty minutes, on your phone" },
-      { label: "Using a phone", icon: "Smartphone", href: "/app/digital", note: "Six steps, from the start" },
-      { label: "Certificates", icon: "Award", href: "/app/certificates", note: "Proof you can share" },
+      { label: "Certificates", icon: "Award", href: "/app/certificates", note: "Proof you can show" },
+    ],
+    also: ["/app/library", "/app/assess", "/app/digital"],
+    findable: [
+      { label: "Your library", icon: "BookMarked", href: "/app/library", note: "Saved reading and guides" },
+      { label: "Prove your skills", icon: "BadgeCheck", href: "/app/assess", note: "A short test, then a certificate" },
+      { label: "Using a phone", icon: "Smartphone", href: "/app/digital", note: "From the very beginning" },
     ],
   },
   {
+    // Split out of Earn, which had grown to thirteen items. "Find me work" and
+    // "run my business" are different intents on different days, and a woman
+    // looking for a job should not have to scroll past her savings vault.
     id: "work", label: "Work", icon: "Briefcase", href: "/app/opportunities",
     items: [
       { label: "Find work", icon: "Search", href: "/app/opportunities", note: "Jobs, orders and freelance" },
+      { label: "Did they pay her?", icon: "BadgeCheck", href: "/app/verified", note: "Before you take the work" },
       { label: "Your applications", icon: "ClipboardList", href: "/app/applications", note: "Where each one stands" },
-      { label: "Your business", icon: "Store", href: "/app/documents", note: "Orders, products, paperwork" },
-      { label: "Buying together", icon: "ShoppingBasket", href: "/app/group-buy", note: "Wholesale prices, shared" },
+      { label: "Big orders", icon: "Boxes", href: "/app/contracts", note: "Too big for one woman alone" },
+      { label: "Your record", icon: "FileText", href: "/app/trust", note: "Proof of who you have been" },
+    ],
+    also: ["/app/bookings", "/app/contracts/together", "/app/intake"],
+    findable: [
+      { label: "Who signs the contract", icon: "FileSignature", href: "/app/contracts/together", note: "Three ways to bid as a group" },
+      { label: "Your bookings", icon: "CalendarCheck", href: "/app/bookings", note: "Sessions you have booked" },
     ],
   },
   {
-    id: "money", label: "Money", icon: "Wallet", href: "/app/wallet",
+    // What is left is one intent: money coming in, and where it goes after.
+    id: "earn", label: "Earn", icon: "BadgeIndianRupee", href: "/app/documents",
     items: [
-      { label: "Earn", icon: "BadgeIndianRupee", href: "/app/wallet", note: "Balance and withdrawals" },
-      { label: "Payments", icon: "Receipt", href: "/app/payments", note: "What you have paid for" },
-      { label: "Schemes", icon: "Landmark", href: "/app/support-fund", note: "Money you may be owed" },
-      { label: "Insurance & pension", icon: "ShieldCheck", href: "/app/cover", note: "From ₹20 a year" },
+      { label: "Your shop", icon: "Store", href: "/app/documents", note: "What you sell, and your orders" },
+      { label: "Your link, and getting paid", icon: "QrCode", href: "/app/collect", note: "Sell to people not on WomSakhi" },
+      { label: "Ways to sell", icon: "Sparkles", href: "/app/shop", note: "Pre-orders, regulars, big orders" },
+      { label: "The market", icon: "ShoppingBasket", href: "/app/market", note: "Buy from women you know" },
+      { label: "Your books", icon: "BookOpen", href: "/app/books", note: "Who owes you, and proof you earn" },
+      { label: "Your wallet", icon: "Wallet", href: "/app/wallet", note: "Your balance, and taking it out" },
+      { label: "Your vault", icon: "Lock", href: "/app/vault", note: "Money kept separate, and quiet" },
+      // Renamed to what it actually is. This slot pointed at the SUPPORT FUND —
+      // WomSakhi's own grant for women who cannot afford a course fee — under a
+      // label promising "government schemes and grants", which is a different
+      // pot of money entirely.
+      { label: "What you are owed", icon: "Landmark", href: "/app/haq", note: "Government money in your name" },
     ],
-    also: ["/app/bookings", "/app/checkout"],
+    also: ["/app/group-buy", "/app/payments", "/app/cover", "/app/checkout",
+           "/app/support-fund", "/app/haq/papers", "/app/haq/recover",
+           "/app/vault/rules", "/app/vault/history", "/app/vault/privacy",
+           "/app/shop/pricing", "/app/shop/preorders", "/app/shop/subscriptions",
+           "/app/shop/buyers", "/app/shop/live", "/app/shop/wholesale",
+           "/app/books/proof", "/app/books/season",
+           "/app/shop/voice", "/app/shop/slots", "/app/shop/disputes",
+           "/app/vault/showing", "/app/kitchen"],
+    findable: [
+      { label: "Showing someone your phone", icon: "Smartphone", href: "/app/vault/showing", note: "What they see when you hand it over" },
+      { label: "Selling food from home", icon: "ChefHat", href: "/app/kitchen", note: "The licence is ₹100 a year" },
+      { label: "Say it instead of typing", icon: "Mic", href: "/app/shop/voice", note: "Speak, and it becomes a listing" },
+      { label: "Sell your time", icon: "CalendarDays", href: "/app/shop/slots", note: "Customers pick an hour themselves" },
+      { label: "When something goes wrong", icon: "Scale", href: "/app/shop/disputes", note: "Sorted by a woman you both know" },
+      { label: "What should you charge", icon: "Tag", href: "/app/shop/pricing", note: "What women near you ask" },
+      { label: "Proof you earn", icon: "Receipt", href: "/app/books/proof", note: "A statement a landlord will take" },
+      { label: "Your rules", icon: "Repeat", href: "/app/vault/rules", note: "Money moved automatically" },
+      { label: "What you can recover", icon: "Undo2", href: "/app/haq/recover", note: "Money you were wrongly removed from" },
+      { label: "Your papers", icon: "FileText", href: "/app/haq/papers", note: "Held once, reused everywhere" },
+    ],
   },
   {
-    id: "wellbeing", label: "Wellbeing", icon: "HeartPulse", href: "/app/health",
+    // "Community" was the app's word. "Circle" is hers — it is what the savings
+    // group, the mentor and the woman next door are all already called
+    // everywhere else in the product.
+    id: "circle", label: "Circle", icon: "UsersRound", href: "/app/circles",
     items: [
-      { label: "Health", icon: "HeartPulse", href: "/app/health", note: "What is free, and what is due" },
-      { label: "Your rights", icon: "Scale", href: "/app/rights", note: "And a free lawyer" },
-      { label: "Family & childcare", icon: "Baby", href: "/app/family", note: "Near you, and what it costs" },
-      { label: "Getting about", icon: "Bus", href: "/app/travel", note: "Routes, cost, and after dark" },
-    ],
-  },
-  {
-    id: "community", label: "Community", icon: "UsersRound", href: "/app/circles",
-    items: [
-      { label: "Circles", icon: "UsersRound", href: "/app/circles", note: "Savings and community" },
-      { label: "Sakhi Local", icon: "MapPin", href: "/app/stories", note: "Women near you" },
+      { label: "Circles", icon: "UsersRound", href: "/app/circles", note: "Save and grow together" },
       { label: "Messages", icon: "MessageCircle", href: "/app/messages", note: "Buyers, mentors, circles" },
+      { label: "Events", icon: "Ticket", href: "/app/events", note: "Melas, workshops and meets" },
+      { label: "Together", icon: "Handshake", href: "/app/together", note: "Help others, learn, and move" },
+      { label: "Circle swap", icon: "Gift", href: "/app/swap", note: "What someone near you no longer needs" },
+    ],
+    also: ["/app/together/assist", "/app/together/learn", "/app/together/move"],
+  },
+  {
+    // NOT in the master prompt's list of six. Kept anyway, and the reason is
+    // the prompt's own §65: safety must always be easy to reach. Dropping this
+    // tab to hit a suggested count would bury ten routes a woman needs on her
+    // worst day behind an account menu.
+    id: "help", label: "Help", icon: "LifeBuoy", href: "/app/help",
+    items: [
+      { label: "Get help now", icon: "ShieldAlert", href: "/app/safety", note: "Alert your people, or call" },
+      { label: "What has gone wrong", icon: "LifeBuoy", href: "/app/help", note: "Answers, or a person" },
+      { label: "Money traps", icon: "ShieldCheck", href: "/app/safe-money", note: "The tricks aimed at women like you" },
+      { label: "When home is not sure", icon: "MessageCircle", href: "/app/bringing", note: "Something to show them" },
+      { label: "The school year", icon: "GraduationCap", href: "/app/school", note: "Fees, forms and dates, per child" },
+      { label: "In case", icon: "ShieldCheck", href: "/app/incase", note: "If you are not there to say it" },
+      { label: "Your rights", icon: "Scale", href: "/app/rights", note: "And a free lawyer" },
+      { label: "Health", icon: "HeartPulse", href: "/app/health", note: "What is free, and what is due" },
+      { label: "Family & childcare", icon: "Baby", href: "/app/family", note: "Near you, and what it costs" },
+      { label: "Travel", icon: "Bus", href: "/app/travel", note: "Routes, cost, and after dark" },
+    ],
+    also: ["/app/health/strength", "/app/health/cover", "/app/health/change", "/app/voice"],
+    findable: [
+      { label: "Reading it out to you", icon: "Volume2", href: "/app/voice", note: "Any screen read aloud, in your language" },
+      { label: "Staying strong", icon: "HeartPulse", href: "/app/health/strength", note: "What is free at a government centre" },
+      { label: "The change", icon: "Sun", href: "/app/health/change", note: "Menopause, and working through it" },
     ],
   },
 ];
+
 
 /**
  * Which mode a path belongs to.

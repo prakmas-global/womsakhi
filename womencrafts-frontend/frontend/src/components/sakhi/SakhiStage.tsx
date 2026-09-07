@@ -219,7 +219,7 @@ export default function SakhiStage({
       happens to have a portrait in it; this way someone came over, and the
       transcript is incidental.
     */
-    <div className="pointer-events-none fixed inset-x-0 bottom-0 z-50 flex items-end justify-end gap-2 p-2 pb-[82px]
+    <div className="pointer-events-none fixed inset-x-0 bottom-0 z-50 flex items-end justify-end gap-2 p-2 pb-[80px]
       sm:inset-x-auto sm:end-3 sm:gap-3 sm:p-3 sm:pb-4">
       {showChat && (
         <div className="wc-card pointer-events-auto flex min-w-0 flex-1 flex-col overflow-hidden p-0
@@ -240,7 +240,7 @@ export default function SakhiStage({
               if (t.who === "you") {
                 return (
                   <div key={i} className="flex justify-end">
-                    <p className="max-w-[88%] whitespace-pre-wrap rounded-2xl rounded-br-md bg-brand-600 px-3 py-2 text-[13px] leading-relaxed text-white">
+                    <p className="max-w-[88%] whitespace-pre-wrap rounded-2xl rounded-br-md bg-brand-600 px-3 py-2 text-[0.8125rem] leading-relaxed text-white">
                       {t.text}
                     </p>
                   </div>
@@ -249,7 +249,7 @@ export default function SakhiStage({
               const danger = t.who === "safety";
               return (
                 <div key={i} className="flex flex-col items-start">
-                  <p className={`max-w-[92%] whitespace-pre-wrap rounded-2xl rounded-bl-md px-3 py-2 text-[13px] leading-relaxed ${
+                  <p className={`max-w-[92%] whitespace-pre-wrap rounded-2xl rounded-bl-md px-3 py-2 text-[0.8125rem] leading-relaxed ${
                     danger ? "bg-status-danger-bg text-status-danger-ink" : "bg-surface-inset text-ink"
                   }`}>
                     {t.text}
@@ -271,7 +271,7 @@ export default function SakhiStage({
 
             {listening && heard && (
               <div className="flex justify-end">
-                <p className="max-w-[88%] rounded-2xl rounded-br-md border-2 border-dashed border-brand-200 px-3 py-2 text-[13px] leading-relaxed text-brand-ink">
+                <p className="max-w-[88%] rounded-2xl rounded-br-md border-2 border-dashed border-brand-200 px-3 py-2 text-[0.8125rem] leading-relaxed text-brand-ink">
                   {heard}
                 </p>
               </div>
@@ -328,7 +328,7 @@ export default function SakhiStage({
             opening anything. The full thread is a click away. */}
         {!showChat && latest && (
           <div className="relative mb-1.5 w-[190px] rounded-2xl bg-surface px-3 py-2 shadow-xl ring-1 ring-line sm:w-[250px]">
-            <p className="line-clamp-4 text-[13px] leading-relaxed text-ink">{latest}</p>
+            <p className="line-clamp-4 text-[0.8125rem] leading-relaxed text-ink">{latest}</p>
             <span className="absolute -bottom-1 left-1/2 h-3 w-3 -translate-x-1/2 rotate-45 bg-surface" />
           </div>
         )}

@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from "react";
 import Link from "next/link";
-import * as Icons from "lucide-react";
+import * as Icons from "@/components/ux/icons";
 
 import {
   Btn, Card, ConfirmButton, EmptyState, IconTile, Pill,
@@ -90,24 +90,24 @@ export default function GoalsPage() {
     <HomeShell
       skeleton="detail"
       rail={
-        <div className="space-y-[15px]">
+        <div className="space-y-[16px]">
           <Card>
             <SectionHead title="Closest to done" />
             {closest ? (
               <>
-                <p className="text-[13.5px] font-semibold" style={{ color: "var(--ux-ink)" }}>{closest.label}</p>
+                <p className="text-[0.875rem] font-semibold" style={{ color: "var(--ux-ink)" }}>{closest.label}</p>
                 <div className="mt-2.5 flex items-center gap-2.5">
                   <Progress pct={pctOf(closest)} track="--ux-track" />
-                  <span className="shrink-0 text-[11.5px] font-medium tabular-nums" style={{ color: "var(--ux-muted)" }}>
+                  <span className="shrink-0 text-[0.75rem] font-medium tabular-nums" style={{ color: "var(--ux-muted)" }}>
                     {pctOf(closest)}%
                   </span>
                 </div>
-                <p className="mt-2.5 text-[12px] leading-relaxed" style={{ color: "var(--ux-muted)" }}>
+                <p className="mt-2.5 text-[0.75rem] leading-relaxed" style={{ color: "var(--ux-muted)" }}>
                   {fmt(closest, closest.target - closest.current)} to go, {closest.by}.
                 </p>
               </>
             ) : (
-              <p className="text-[12.5px]" style={{ color: "var(--ux-muted)" }}>Nothing set yet.</p>
+              <p className="text-[0.8125rem]" style={{ color: "var(--ux-muted)" }}>Nothing set yet.</p>
             )}
           </Card>
 
@@ -118,8 +118,8 @@ export default function GoalsPage() {
                 <li key={s.label} className="ux-hov flex items-start gap-3" style={{ ["--i" as string]: i }}>
                   <IconTile icon={s.icon} tint="--ux-tint-lilac" ink="--ux-brand" size={34} radius={10} />
                   <div className="min-w-0 flex-1">
-                    <p className="text-[12.5px] font-medium leading-snug" style={{ color: "var(--ux-ink)" }}>{s.label}</p>
-                    <p className="mt-0.5 text-[11px] leading-snug" style={{ color: "var(--ux-muted)" }}>{s.why}</p>
+                    <p className="text-[0.8125rem] font-medium leading-snug" style={{ color: "var(--ux-ink)" }}>{s.label}</p>
+                    <p className="mt-0.5 text-[0.6875rem] leading-snug" style={{ color: "var(--ux-muted)" }}>{s.why}</p>
                   </div>
                 </li>
               ))}
@@ -129,15 +129,15 @@ export default function GoalsPage() {
       }
     >
       <Link href="/app/progress"
-            className="ux-hov -my-1 mb-3.5 inline-flex items-center gap-1.5 py-1 text-[12.5px] font-medium"
+            className="ux-hov -my-1 mb-3.5 inline-flex items-center gap-1.5 py-1 text-[0.8125rem] font-medium"
             style={{ color: "var(--ux-brand)" }}>
         <Icons.ArrowLeft className="ux-ico h-4 w-4" /> Your journey
       </Link>
 
-      <div className="mb-[18px] flex items-end justify-between gap-4">
+      <div className="mb-[20px] flex items-end justify-between gap-4">
         <div>
-          <h1 className="text-[24px] font-bold" style={{ color: "var(--ux-ink)" }}>Your goals</h1>
-          <p className="mt-1.5 text-[13px]" style={{ color: "var(--ux-muted)" }}>
+          <h1 className="text-[1.5rem] font-bold" style={{ color: "var(--ux-ink)" }}>Your goals</h1>
+          <p className="mt-1.5 text-[0.8125rem]" style={{ color: "var(--ux-muted)" }}>
             {goals.length} you are working towards. Three is usually plenty.
           </p>
 
@@ -147,7 +147,7 @@ export default function GoalsPage() {
       </div>
 
       {adding && (
-        <Card className="ux-slide-up mb-[15px]">
+        <Card className="ux-slide-up mb-[16px]">
           <SectionHead title="A new goal" sub="It needs a number and a date, or it cannot be finished" />
           <div className="space-y-4">
             <Field label="What do you want to happen" hint="“Earn ₹30,000 a month”, not “grow my business”.">
@@ -170,7 +170,7 @@ export default function GoalsPage() {
                 is hers to move, because nothing on the platform knows how many
                 regular clients she has found. */}
             <div>
-              <p className="text-[13px] font-semibold" style={{ color: "var(--ux-ink)" }}>How is it measured?</p>
+              <p className="text-[0.8125rem] font-semibold" style={{ color: "var(--ux-ink)" }}>How is it measured?</p>
               <div className="mt-2 flex flex-wrap gap-2">
                 {([
                   ["money", "Money I earn", "Counts itself from your earnings"],
@@ -179,18 +179,18 @@ export default function GoalsPage() {
                 ] as const).map(([k, label, why]) => (
                   <button key={k} onClick={() => setDraft((d) => ({ ...d, kind: k }))}
                           aria-pressed={draft.kind === k}
-                          className="ux-press ux-sq rounded-[11px] border px-3 py-2 text-start"
+                          className="ux-press ux-sq rounded-[12px] border px-3 py-2 text-start"
                           style={{ borderColor: draft.kind === k ? "var(--ux-brand)" : "var(--ux-line)",
                                    background: draft.kind === k ? "var(--ux-brand-tint)" : "var(--ux-surface)" }}>
-                    <span className="block text-[12.5px] font-medium" style={{ color: "var(--ux-ink)" }}>{label}</span>
-                    <span className="block text-[11px]" style={{ color: "var(--ux-muted)" }}>{why}</span>
+                    <span className="block text-[0.8125rem] font-medium" style={{ color: "var(--ux-ink)" }}>{label}</span>
+                    <span className="block text-[0.6875rem]" style={{ color: "var(--ux-muted)" }}>{why}</span>
                   </button>
                 ))}
               </div>
             </div>
           </div>
           <div className="mt-4 flex items-center justify-between gap-4 border-t pt-4" style={{ borderColor: "var(--ux-line)" }}>
-            <p className="text-[12px]" style={{ color: add.error ? "var(--ux-orange-ink)" : "var(--ux-faint)" }}>
+            <p className="text-[0.75rem]" style={{ color: add.error ? "var(--ux-orange-ink)" : "var(--ux-faint)" }}>
               {add.error ? add.error
                 : !draft.label.trim() ? "It needs something to aim at."
                 : !draft.target.trim() ? "It needs a number."
@@ -210,7 +210,7 @@ export default function GoalsPage() {
       )}
 
       {goals.length ? (
-        <div className="ux-deck ux-stagger space-y-[13px]">
+        <div className="ux-deck ux-stagger space-y-[12px]">
           {goals.map((g, i) => {
             const pct = pctOf(g);
             const step = nextStep(g);
@@ -220,20 +220,20 @@ export default function GoalsPage() {
                   <IconTile icon={g.icon} tint="--ux-tint-lilac" ink="--ux-brand" size={46} radius={12} />
                   <div className="min-w-0 flex-1">
                     <div className="flex items-start gap-2">
-                      <h3 className="min-w-0 flex-1 text-[15px] font-semibold" style={{ color: "var(--ux-ink)" }}>
+                      <h3 className="min-w-0 flex-1 text-[1rem] font-semibold" style={{ color: "var(--ux-ink)" }}>
                         {g.label}
                       </h3>
                       {pct >= 100 && <Pill tone="green" size="sm">Done</Pill>}
                     </div>
-                    <p className="mt-1 text-[12px]" style={{ color: "var(--ux-muted)" }}>{g.by}</p>
+                    <p className="mt-1 text-[0.75rem]" style={{ color: "var(--ux-muted)" }}>{g.by}</p>
 
                     <div className="mt-3 flex items-center gap-3">
                       <Progress pct={pct} track="--ux-track" />
-                      <span className="shrink-0 text-[12px] font-semibold tabular-nums" style={{ color: "var(--ux-ink)" }}>
+                      <span className="shrink-0 text-[0.75rem] font-semibold tabular-nums" style={{ color: "var(--ux-ink)" }}>
                         {pct}%
                       </span>
                     </div>
-                    <p className="mt-1.5 text-[11.5px] tabular-nums" style={{ color: "var(--ux-muted)" }}>
+                    <p className="mt-1.5 text-[0.75rem] tabular-nums" style={{ color: "var(--ux-muted)" }}>
                       {fmt(g, g.current)} of {fmt(g, g.target)}
                       {pct < 100 && ` · ${fmt(g, g.target - g.current)} to go`}
                     </p>
@@ -274,7 +274,7 @@ export default function GoalsPage() {
                 )}
 
                 {(move.error || drop.error) && (move.busyWith === null && drop.busyWith === null) && (
-                  <p className="ux-slide-up mt-2.5 text-[12.5px]" style={{ color: "var(--ux-orange-ink)" }}>
+                  <p className="ux-slide-up mt-2.5 text-[0.8125rem]" style={{ color: "var(--ux-orange-ink)" }}>
                     {move.error || drop.error}
                   </p>
                 )}
@@ -285,7 +285,7 @@ export default function GoalsPage() {
                         className="ux-hov ux-sq mt-3.5 flex items-center gap-3 rounded-[12px] p-3 transition-colors hover:bg-[var(--ux-surface-2)]"
                         style={{ background: "var(--ux-surface-2)" }}>
                     <Icons.ArrowRightCircle className="h-[16px] w-[16px] shrink-0" style={{ color: "var(--ux-brand)" }} />
-                    <span className="min-w-0 flex-1 text-[12.5px]" style={{ color: "var(--ux-ink-2)" }}>{step.text}</span>
+                    <span className="min-w-0 flex-1 text-[0.8125rem]" style={{ color: "var(--ux-ink-2)" }}>{step.text}</span>
                     <Icons.ChevronRight className="ux-arrow h-[16px] w-[16px] shrink-0" style={{ color: "var(--ux-faint)" }} />
                   </Link>
                 )}

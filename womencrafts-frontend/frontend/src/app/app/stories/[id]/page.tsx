@@ -2,7 +2,7 @@
 
 import { use, useCallback, useState } from "react";
 import Link from "next/link";
-import * as Icons from "lucide-react";
+import * as Icons from "@/components/ux/icons";
 
 import {
   ActionBtn, Btn, Card, copy, EmptyState, Pill, RailSkeleton, ScreenSkeleton,
@@ -95,7 +95,7 @@ export default function StoryDetail({ params }: { params: Promise<{ id: string }
   return (
     <HomeShell
       rail={
-        <div className="space-y-[15px]">
+        <div className="space-y-[16px]">
           {/*
             * A "What actually worked" card stood here with three rows in it —
             * what changed her life, how long it took, and what she earns now —
@@ -106,10 +106,10 @@ export default function StoryDetail({ params }: { params: Promise<{ id: string }
           {s.program && (
             <Card>
               <SectionHead title="What she did" sub="The specific thing, not the inspiration" />
-              <p className="text-[13px] font-semibold leading-snug" style={{ color: "var(--ux-ink)" }}>
+              <p className="text-[0.8125rem] font-semibold leading-snug" style={{ color: "var(--ux-ink)" }}>
                 {s.program}
               </p>
-              <p className="mt-1.5 text-[12.5px] leading-relaxed" style={{ color: "var(--ux-ink-2)" }}>
+              <p className="mt-1.5 text-[0.8125rem] leading-relaxed" style={{ color: "var(--ux-ink-2)" }}>
                 She names this in her story. It is open to you too.
               </p>
               <div className="mt-3.5">
@@ -120,7 +120,7 @@ export default function StoryDetail({ params }: { params: Promise<{ id: string }
 
           <Card>
             <SectionHead title="Getting in touch" />
-            <p className="text-[12.5px] leading-relaxed" style={{ color: "var(--ux-ink-2)" }}>
+            <p className="text-[0.8125rem] leading-relaxed" style={{ color: "var(--ux-ink-2)" }}>
               WomSakhi has no direct messages between members yet. Ask the team about
               {" "}{s.author_name.split(" ")[0]} and they will answer you in Messages.
             </p>
@@ -133,12 +133,12 @@ export default function StoryDetail({ params }: { params: Promise<{ id: string }
       }
     >
       <Link href="/app/stories"
-            className="ux-hov -my-1 mb-3.5 inline-flex items-center gap-1.5 py-1 text-[12.5px] font-medium"
+            className="ux-hov -my-1 mb-3.5 inline-flex items-center gap-1.5 py-1 text-[0.8125rem] font-medium"
             style={{ color: "var(--ux-brand)" }}>
-        <Icons.ArrowLeft className="ux-ico h-4 w-4" /> Sakhi Local
+        <Icons.ArrowLeft className="ux-ico h-4 w-4" /> Near you
       </Link>
 
-      <Card className="mb-[15px] overflow-hidden" pad={0}>
+      <Card className="mb-[16px] overflow-hidden" pad={0}>
         <div className="relative h-[240px] overflow-hidden" style={{ background: "var(--ux-tint-lilac)" }}>
           {s.cover && (
             /* eslint-disable-next-line @next/next/no-img-element */
@@ -155,40 +155,40 @@ export default function StoryDetail({ params }: { params: Promise<{ id: string }
                      className="h-[62px] w-[62px] shrink-0 rounded-full border-2 border-white object-cover" />
               )
               : (
-                <span className="grid h-[62px] w-[62px] shrink-0 place-items-center rounded-full border-2 border-white text-[24px] font-semibold"
+                <span className="grid h-[62px] w-[62px] shrink-0 place-items-center rounded-full border-2 border-white text-[1.5rem] font-semibold"
                       style={{ background: "var(--ux-brand-tint)", color: "var(--ux-brand)" }}>
                   {s.author_name.trim().charAt(0).toUpperCase()}
                 </span>
               )}
             <div className="min-w-0 flex-1">
-              <p className="text-[20px] font-bold text-white">{s.author_name}</p>
-              <p className="mt-1 text-[12.5px]" style={{ color: "rgba(255,255,255,0.88)" }}>{s.when}</p>
+              <p className="text-[1.25rem] font-bold text-white">{s.author_name}</p>
+              <p className="mt-1 text-[0.8125rem]" style={{ color: "rgba(255,255,255,0.88)" }}>{s.when}</p>
             </div>
             {s.featured && <Pill tone="green" size="sm">Featured</Pill>}
           </div>
         </div>
 
-        <div className="p-[22px]">
+        <div className="p-[24px]">
           {s.title && (
-            <p className="text-[20px] font-semibold leading-snug" style={{ color: "var(--ux-ink)" }}>
+            <p className="text-[1.25rem] font-semibold leading-snug" style={{ color: "var(--ux-ink)" }}>
               &ldquo;{s.title}&rdquo;
             </p>
           )}
           {/* Her body, and only her body. Two paragraphs beginning "The hardest
               part was not the work" were printed here under every story, in the
               first person, above her own name. */}
-          <div className="mt-4 whitespace-pre-line text-[14px] leading-relaxed" style={{ color: "var(--ux-ink-2)" }}>
+          <div className="mt-4 whitespace-pre-line text-[0.875rem] leading-relaxed" style={{ color: "var(--ux-ink-2)" }}>
             {s.body}
           </div>
 
           {likeProblem && (
-            <p role="alert" className="ux-slide-up mt-3.5 text-[12.5px]" style={{ color: "var(--ux-orange-ink)" }}>
+            <p role="alert" className="ux-slide-up mt-3.5 text-[0.8125rem]" style={{ color: "var(--ux-orange-ink)" }}>
               {likeProblem}
             </p>
           )}
 
           <div className="mt-5 flex items-center justify-between gap-4 border-t pt-4" style={{ borderColor: "var(--ux-line)" }}>
-            <p className="text-[11.5px]" style={{ color: "var(--ux-faint)" }}>{s.when}</p>
+            <p className="text-[0.75rem]" style={{ color: "var(--ux-faint)" }}>{s.when}</p>
             <span className="flex items-center gap-2">
               {/* Was `setLiked((v) => !v)` and nothing else — a counter that
                   went up on her screen alone. */}
@@ -197,7 +197,7 @@ export default function StoryDetail({ params }: { params: Promise<{ id: string }
                 disabled={liking}
                 aria-pressed={liked}
                 aria-label={liked ? "Remove your like" : "Like this story"}
-                className="ux-press ux-hov ux-sq inline-flex items-center gap-1.5 rounded-[11px] px-3.5 py-2.5 text-[12.5px] font-medium"
+                className="ux-press ux-hov ux-sq inline-flex items-center gap-1.5 rounded-[12px] px-3.5 py-2.5 text-[0.8125rem] font-medium"
                 style={{ background: liked ? "var(--ux-tint-pink)" : "var(--ux-surface-2)",
                          color: liked ? "var(--ux-pink-ink)" : "var(--ux-muted)" }}
               >
@@ -220,11 +220,11 @@ export default function StoryDetail({ params }: { params: Promise<{ id: string }
       {others.length > 0 && (
         <div>
           <SectionHead title="More women on WomSakhi" />
-          <div className="ux-deck grid grid-cols-2 gap-[15px]">
+          <div className="ux-deck grid grid-cols-2 gap-[16px]">
             {others.map((o, i) => (
               <Card key={o.id} className="ux-i ux-onscroll" style={{ ["--i" as string]: i }}>
                 <div className="flex items-center gap-3">
-                  <span className="grid h-[48px] w-[48px] shrink-0 place-items-center overflow-hidden rounded-full text-[18px] font-semibold"
+                  <span className="grid h-[48px] w-[48px] shrink-0 place-items-center overflow-hidden rounded-full text-[1.125rem] font-semibold"
                         style={{ background: "var(--ux-brand-tint)", color: "var(--ux-brand)" }}>
                     {o.author_avatar
                       ? (
@@ -234,8 +234,8 @@ export default function StoryDetail({ params }: { params: Promise<{ id: string }
                       : o.author_name.trim().charAt(0).toUpperCase()}
                   </span>
                   <div className="min-w-0 flex-1">
-                    <h3 className="truncate text-[13.5px] font-semibold" style={{ color: "var(--ux-ink)" }}>{o.author_name}</h3>
-                    <p className="mt-0.5 truncate text-[11.5px]" style={{ color: "var(--ux-muted)" }}>{o.when}</p>
+                    <h3 className="truncate text-[0.875rem] font-semibold" style={{ color: "var(--ux-ink)" }}>{o.author_name}</h3>
+                    <p className="mt-0.5 truncate text-[0.75rem]" style={{ color: "var(--ux-muted)" }}>{o.when}</p>
                   </div>
                   <Btn href={`/app/stories/${o.id}`} variant="soft" size="sm" iconEnd="ArrowRight">Read</Btn>
                 </div>

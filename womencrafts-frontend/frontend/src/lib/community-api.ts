@@ -1,4 +1,5 @@
 import { apiClient } from "./api";
+import type { ApiCircleSavings, CirclePost } from "./growth-api";
 
 /**
  * Circles, the conversations inside them, and success stories.
@@ -66,6 +67,31 @@ interface Like {
 }
 
 /* ---- circles ---- */
+
+/**
+ * `GET /community/overview` — everything `/app/circles` shows, in one request.
+ *
+ * Replaces `/community/circles?mine=true` + `/community/circles/{id}/savings`
+ * + `/community/circles/{id}/posts`, which could not be sent together: the
+ * screen had to learn WHICH circle the pot is about before it could ask about
+ * it, so the second pair waited on the first. The dependency is real, and it
+ * belongs on the server, where the step between the two costs a query instead
+ * of a round trip from her phone.
+ *
+ * `circle_id` names the circle `savings` and `posts` describe. It is null for
+ * a member who has not joined one yet — a normal state, not an error.
+ */
+export interface CommunityOverview {
+  circles: Circle[];
+  circle_id: string | null;
+  savings: ApiCircleSavings | null;
+  posts: CirclePost[];
+}
+
+export const apiCommunityOverview = (signal?: AbortSignal) =>
+  apiClient
+    .get<CommunityOverview>("/community/overview", { signal })
+    .then((r) => r.data);
 
 export async function apiCircles(params: { q?: string; mine?: boolean } = {}) {
   const { data } = await apiClient.get<Circle[]>("/community/circles", { params });

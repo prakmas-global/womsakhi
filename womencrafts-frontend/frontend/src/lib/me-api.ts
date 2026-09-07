@@ -13,9 +13,28 @@ import { apiClient } from "./api";
 const get = <T>(url: string, signal?: AbortSignal, params?: Record<string, unknown>) =>
   apiClient.get<T>(url, { signal, params }).then((r) => r.data);
 
+/**
+ * What `/me/notifications` actually returns.
+ *
+ * This declared `desc`, `time` and `group` — none of which the server has ever
+ * sent. TypeScript cannot catch that: the response is cast at the boundary, so
+ * the wrong names compiled cleanly and every row rendered as a bare title with
+ * no body, no timestamp and nowhere to go. The real fields are below.
+ */
 export interface ApiNotification {
-  id: string; type: string; title: string; desc: string;
-  time: string; group: string; unread: boolean;
+  id: string;
+  type: string;
+  /** A lucide name chosen server-side from the type. */
+  icon: string;
+  title: string;
+  body: string;
+  /** Where tapping it should take her. */
+  href: string;
+  unread: boolean;
+  /** Ready to print — "1d ago", "just now". */
+  when: string;
+  /** ISO, for grouping onto a day. */
+  created_at: string;
 }
 
 export interface ApiBooking {
@@ -113,6 +132,47 @@ export interface ApiMentor {
 }
 
 export const apiNotifications = (s?: AbortSignal) => get<ApiNotification[]>("/me/notifications", s);
+
+/** Mark one read. Scoped to her on the server — she can only mark her own. */
+export async function apiReadNotification(id: string): Promise<void> {
+  await apiClient.post(`/me/notifications/${id}/read`);
+}
+
+export async function apiReadAllNotifications(): Promise<void> {
+  await apiClient.post("/me/notifications/read-all");
+}
+
+/** One search across her own things, the catalogue, and what she can do. */
+export interface ApiSearchHit {
+  id: string; kind: string; title: string; sub: string; href: string;
+  /** "mine" | "app" | "do" — which list it belongs in. */
+  group: string;
+  amount: string;
+  tag: string;
+}
+export interface ApiSearchAnswer {
+  label: string; value: string; detail: string; href: string; action: string;
+}
+export interface ApiSearchResults {
+  query: string;
+  hits: ApiSearchHit[];
+  answer: ApiSearchAnswer | null;
+  took_ms: number;
+}
+
+export const apiSearch = (q: string, s?: AbortSignal) =>
+  apiClient.get<ApiSearchResults>("/search", { params: { q }, signal: s }).then((r) => r.data);
+
+/** How she is told: the delivery-channel toggles, and setting one. */
+export interface ApiChannel { id: string; label: string; icon: string; on: boolean }
+
+export const apiChannels = (s?: AbortSignal) =>
+  apiClient.get<{ items: ApiChannel[]; total: number }>("/notifications/channels", { signal: s })
+    .then((r) => r.data.items);
+
+export async function apiSetChannel(label: string, on: boolean): Promise<void> {
+  await apiClient.patch(`/notifications/channels/${encodeURIComponent(label)}`, { on });
+}
 export const apiBookings = (s?: AbortSignal) => get<ApiBooking[]>("/me/bookings", s);
 export const apiCertificates = (s?: AbortSignal) => get<ApiCertificate[]>("/me/certificates", s);
 export const apiDocuments = (s?: AbortSignal) => get<ApiDocument[]>("/me/documents", s);

@@ -99,9 +99,15 @@ export { formatMoney as rupees } from "../kit/money";
 
 import { formatMoney } from "../kit/money";
 
-/** With paise, for a single transaction where the exact figure matters. */
-export const rupeesExact = (minor: number) =>
-  `₹${(minor / 100).toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+/**
+ * With paise, for a single transaction where the exact figure matters.
+ *
+ * The options object here was rebuilt — and a locale formatter constructed
+ * from it — on every call, and a statement prints one per row plus a summary.
+ * `kit/money` holds the two-decimal formatter at module scope; this is the
+ * same string, formatted once.
+ */
+export const rupeesExact = (minor: number) => formatMoney(minor, true);
 
 export const signed = (t: Txn) => `${t.kind === "credit" ? "+" : "−"}${formatMoney(t.amount_minor)}`;
 

@@ -16,14 +16,39 @@
   interpretation — the light values are measured, these are reasoned.
 */
 
+:root {
+  /* ── Stacking scale ───────────────────────────────────────────────────────
+     Before this the app used z-1, 2, 10, 30, 40, 50, 60, 80, 90 and 200 with
+     no stated relationship, so "is this above the header?" could only be
+     answered by trying it. Named layers make the question answerable by
+     reading, and leave gaps for anything that has to sit between two of them.
+
+     Toast sits above modal on purpose: a confirmation of what just happened
+     must not be buried by the dialog that caused it. */
+  --ux-z-base:     0;
+  --ux-z-raised:   10;   /* a card lifted on hover, a sticky table header */
+  --ux-z-sticky:   30;   /* section headers, the top bar */
+  --ux-z-dropdown: 40;   /* menus, popovers, autocomplete */
+  --ux-z-overlay:  50;   /* the dim behind a modal or drawer */
+  --ux-z-modal:    60;   /* dialogs, drawers, bottom sheets */
+  --ux-z-toast:    70;   /* confirmations — above everything, deliberately */
+
+}
+
 .ux {
   /* surfaces — sampled: canvas and card are BOTH #fefefe; a 1px #edeef3
      border is what separates them, not a fill difference */
-  --ux-canvas: #fefefe;
+  /* The ground is tinted, the cards are not.
+     These were #fefefe and #ffffff — one step apart out of 255 — so in light
+     mode a card had nothing to sit on and the whole screen read as one flat
+     sheet. Dark mode never had the problem (#14122a against #1c1936), which
+     is exactly why it looked designed and this did not. The tint leans to the
+     brand's violet rather than to grey, so white cards read warm on it. */
+  --ux-canvas: #f4f2fa;
   --ux-surface: #ffffff;
-  --ux-surface-2: #faf9fd;
-  --ux-line: #edeef3;
-  --ux-line-strong: #e2e3ec;
+  --ux-surface-2: #f8f7fc;
+  --ux-line: #e7e4f1;
+  --ux-line-strong: #d9d5e8;
 
   /* ink */
   --ux-ink: #161734;          /* headings, sidebar labels */
@@ -85,6 +110,54 @@
   --ux-tint-amber:  #fdf6e3;   /* ink clears AA at 4.60:1 */
 
   /* graphics — measured 3.01 to 3.03 on the worst surface each lands on */
+  /* ── The deep canvas, and the emblem's own ribbon ramp ────────────────
+     Home is drawn on a dark aubergine ground with the logo's gradient
+     glowing against it. These live here rather than in the component so
+     the ribbon obeys ADR-013 like every other colour, and so one edit
+     restyles the emblem, the spine and the hero art together. The ramp is
+     the emblem's, sampled in order: indigo, violet, magenta, coral, gold. */
+  --ux-deep:      #140a22;   /* the ground */
+  --ux-deep-2:    #1c0f2e;   /* raised blocks on it */
+  --ux-deep-3:    #271541;   /* hairlines and tracks */
+  --ux-deep-ink:  #ffffff;
+  --ux-deep-ink-2:#cbbce4;   /* 8.9:1 on --ux-deep */
+  --ux-deep-ink-3:#9d8bbd;   /* 5.1:1 on --ux-deep */
+
+  /* The bloom under a Home card on hover. Two, because the tiles carry the
+     accent of whatever they link to and the figures carry the brand. */
+  /* Default off. Each Home tile overrides it inline with its own accent, so
+     the bloom is the colour of wherever the tile goes. */
+  /* Two rows on a laptop, one on a phone. The content column offsets itself
+     by this, so it has to be a variable rather than a number in JS. */
+  --ux-topbar-h: 62px;
+
+  /* The second tick, once a message has been read. Cyan rather than the
+     brand, because on a brand-gradient bubble a brand-coloured tick is
+     invisible — this is the one place a colour outside the ramp earns itself. */
+  /* Where the timeline's spine sits: 74px time column + 14px gap + half of
+     the 40px node. Declared so the media query below has one thing to change. */
+  --ux-tl-line: 107px;
+
+  /* One pixel of light along a card's top edge. */
+  --ux-sheen: rgba(255, 255, 255, 0.7);
+  /* The alert red. Deep enough to carry white text in either theme: the light
+     red used for emphasis measures 2.8:1 against white, on the one control
+     that has to work when she is frightened. */
+  --ux-danger-solid: #b91c1c;
+  --ux-danger-tint: #fee2e2;
+
+  --ux-read-tick: #7fe3ff;
+
+  --ux-glow: transparent;
+  --ux-shadow-glow: 0 16px 38px -18px rgba(139, 92, 246, 0.55);
+  --ux-shadow-glow-2: 0 20px 46px -18px rgba(224, 33, 154, 0.45);
+
+  --ux-rib-1: #4b37e0;
+  --ux-rib-2: #8b2fe0;
+  --ux-rib-3: #f0269b;
+  --ux-rib-4: #ff7a45;
+  --ux-rib-5: #ffc42e;
+
   --ux-violet: #9b79f2;
   --ux-orange: #eb6342;
   --ux-blue:   #1891f2;
@@ -99,13 +172,87 @@
   --ux-green-ink:  #00823a;
   --ux-pink-ink:   #ba4484;
   --ux-amber-ink:  #8f6a00;
+  /* Error text. Sits on a surface, not on the danger fill — `--ux-danger-solid`
+     is the bed white text sits on, and using it for type on white was the bug
+     this replaced. */
+  --ux-danger-ink: #b3261e;
+
+  /* Ink on a filled green surface — a paid tick, a completed pill. */
+  --ux-on-green: #06281f;
+
+  /* The hover wash under `.ux-tile-lit`. Referenced by that rule since it was
+     written and never defined, so the gradient resolved to nothing and the
+     hover state simply did not paint. */
+  --ux-wash: rgba(102, 66, 193, 0.10);
+
+  /* ── Type scale ────────────────────────────────────────────────────────────
+     Eleven steps. Before this the app used **36 distinct sizes** in arbitrary
+     brackets, with half-pixel increments (12.5, 11.5, 13.5, 14.5, 10.5, 9.5)
+     chosen per element — which is not a scale, it is 36 separate decisions, and
+     it is why two cards solving the same problem never quite matched.
+
+     The steps are close together at the dense end because this app is dense
+     there (chips, meta lines, ledger rows) and far apart at the display end
+     because headings should differ decisively or not at all.
+
+     `--ux-fs-*`, not `--ux-t-*`: the latter is already the transition scale. */
+  --ux-fs-caption: 0.6875rem;  /* 11px — timestamps, chip labels, legends */
+  --ux-fs-micro:   0.75rem;    /* 12px — secondary meta under a title */
+  --ux-fs-small:   0.8125rem;  /* 13px — dense body: ledger rows, card notes */
+  --ux-fs-body:    0.875rem;   /* 14px — default reading size */
+  --ux-fs-lead:    1rem;       /* 16px — lead paragraphs, list titles */
+  --ux-fs-h4:      1.125rem;   /* 18px — card titles */
+  --ux-fs-h3:      1.25rem;    /* 20px — section heads */
+  --ux-fs-h2:      1.5rem;     /* 24px — sub-page titles */
+  --ux-fs-h1:      1.75rem;    /* 28px — page titles */
+  --ux-fs-display: 2.25rem;    /* 36px — hero */
+  --ux-fs-hero:    2.75rem;    /* 44px — the one number a screen is about */
+
+  /* Her own text-size preference, applied at the root. 1 is the design size;
+     the "Bigger text" control in Reading and speaking sets 1.15. Everything
+     above is px, so this scales through `font-size` on <html> rather than by
+     rewriting the scale. */
+  --ux-fs-scale: 1;
+
+  /* ── Spacing scale ────────────────────────────────────────────────────────
+     A 4px rhythm. The app was using 29 distinct arbitrary values — 5, 7, 9, 11,
+     13, 15, 17, 18, 19, 22, 25, 26, 30, 38 — which is why two cards side by
+     side never quite lined up even when both "looked about right".
+
+     1px, 2px and 3px stay off the scale on purpose: they are hairlines and
+     optical nudges (a border, a half-pixel baseline correction), not rhythm,
+     and rounding them to 4 would thicken every rule in the app. */
+  --ux-sp-1:  4px;
+  --ux-sp-2:  8px;
+  --ux-sp-3:  12px;
+  --ux-sp-4:  16px;
+  --ux-sp-5:  20px;
+  --ux-sp-6:  24px;
+  --ux-sp-8:  32px;
+  --ux-sp-10: 40px;
+  --ux-sp-12: 48px;
+  --ux-sp-16: 64px;
+  --ux-sp-20: 80px;
 
   --ux-track: #e9eaf4;
 
-  --ux-r-card: 16px;
-  --ux-r-inner: 12px;
+  /* ── Radius scale ──────────────────────────────────────────────────────────
+     Five steps. The app previously used **23 distinct radii** — 3, 5, 6, 7, 8,
+     9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 22, 24, 26, 28, 30, 34 —
+     which is why two cards side by side never looked like siblings. These three
+     named tokens already existed and almost nothing used them. */
+  --ux-r-sm: 8px;      /* chips, small tiles, inputs inside a card */
+  --ux-r-md: 12px;     /* icon tiles, list rows, buttons */
+  --ux-r-lg: 16px;     /* cards */
+  --ux-r-xl: 20px;     /* hero panels, sheets */
+  --ux-r-2xl: 24px;    /* full-bleed feature surfaces */
+
+  --ux-r-card: var(--ux-r-lg);
+  --ux-r-inner: var(--ux-r-md);
   --ux-r-pill: 999px;
-  --ux-shadow-card: 0 1px 2px rgba(22, 23, 52, 0.04);
+  /* Light mode separates with shadow; dark mode separates with value, so it
+     keeps the flatter one below. */
+  --ux-shadow-card: 0 1px 2px rgba(28, 20, 70, 0.05), 0 6px 18px -10px rgba(28, 20, 70, 0.13);
   --ux-shadow-lift: 0 8px 24px -12px rgba(74, 40, 149, 0.28);
   --ux-shadow-raise: 0 20px 40px -18px rgba(74, 40, 149, 0.45),
                      0 6px 14px -8px rgba(74, 40, 149, 0.18);
@@ -116,6 +263,10 @@
 /* Derived, not measured — see the note at the top. */
 .dark .ux,
 .ux.dark {
+  --ux-sheen: rgba(255, 255, 255, 0.055);
+  --ux-danger-solid: #9f1239;
+  --ux-danger-tint: #45161a;
+
   --ux-canvas: #14122a;
   --ux-surface: #1c1936;
   --ux-surface-2: #232043;
@@ -170,6 +321,11 @@
   --ux-green-ink:  #1fa551;
   --ux-pink-ink:   #df66a5;
   --ux-amber-ink:  #b68900;
+  --ux-danger-ink: #ff8a80;
+
+  --ux-on-green: #04231b;
+
+  --ux-wash: rgba(169, 139, 245, 0.14);
 
   --ux-track: #2e2a4f;
   --ux-shadow-card: 0 1px 2px rgba(0, 0, 0, 0.3);
@@ -215,6 +371,11 @@
   --ux-t-fast: 140ms;
   --ux-t: 200ms;
   --ux-t-slow: 320ms;
+  /* One legitimate long case: a ring or bar drawing its own value. Slower than
+     the 500ms the motion spec caps transitions at, deliberately — this is a
+     figure being revealed, not an element moving, and at 320ms it reads as a
+     glitch rather than a measurement. */
+  --ux-t-draw: 900ms;
   --ux-ease: cubic-bezier(.4, 0, .2, 1);
   --ux-ease-out: cubic-bezier(.16, 1, .3, 1);   /* decelerating — things arriving */
   --ux-ease-spring: cubic-bezier(.34, 1.56, .64, 1);
@@ -1073,4 +1234,345 @@
   .ux-onscroll-soft { animation: none; opacity: 1; transform: none; }
   .ux-hov:hover .ux-brand-mark { transform: none; }
   .ux-hov:hover .ux-brand-halo { transform: scale(1.5); }
+}
+
+/* The three "today" panels: one column on a phone, their intended
+   proportions from `md` up. Written here rather than as Tailwind arbitrary
+   values because `grid-template-columns` with fr units and a breakpoint is
+   unreadable inline, and this is the shape of the home screen. */
+.ux-today { grid-template-columns: 1fr; }
+@media (min-width: 768px) {
+  .ux-today { grid-template-columns: 1.25fr 1fr 1fr; }
+}
+
+/* ── Home: the ribbon spine ──────────────────────────────────────────────
+   Long, slow, and never in step. Three different periods (23s / 31s / 19s)
+   so the bands drift past each other instead of pulsing together, which is
+   what stops ambient motion from reading as a loading state. */
+
+@keyframes ux-rib-drift {
+  0%   { transform: translate3d(0, 0, 0) rotate(0deg) scale(1); }
+  50%  { transform: translate3d(-1.6%, 2.2%, 0) rotate(-1.4deg) scale(1.035); }
+  100% { transform: translate3d(0, 0, 0) rotate(0deg) scale(1); }
+}
+
+@keyframes ux-rib-drift-b {
+  0%   { transform: translate3d(0, 0, 0) rotate(0deg) scale(1.02); }
+  50%  { transform: translate3d(2.4%, -1.8%, 0) rotate(1.8deg) scale(1); }
+  100% { transform: translate3d(0, 0, 0) rotate(0deg) scale(1.02); }
+}
+
+@keyframes ux-rib-breathe {
+  0%, 100% { opacity: 0.55; }
+  50%      { opacity: 0.95; }
+}
+
+/* The light that travels down the spine. A short lit dash chasing a long gap. */
+@keyframes ux-spine-travel {
+  from { stroke-dashoffset: 0; }
+  to   { stroke-dashoffset: -2000; }
+}
+
+@keyframes ux-node-pulse {
+  0%   { transform: scale(1);   opacity: 0.55; }
+  70%  { transform: scale(2.6); opacity: 0; }
+  100% { transform: scale(2.6); opacity: 0; }
+}
+
+.ux-rib-a { animation: ux-rib-drift 23s var(--ux-ease, ease-in-out) infinite; transform-origin: 60% 40%; }
+.ux-rib-b { animation: ux-rib-drift-b 31s var(--ux-ease, ease-in-out) infinite; transform-origin: 40% 60%; }
+.ux-rib-breathe { animation: ux-rib-breathe 19s ease-in-out infinite; }
+.ux-spine-travel { animation: ux-spine-travel 9s linear infinite; }
+.ux-node-pulse { animation: ux-node-pulse 2.8s cubic-bezier(0.22, 1, 0.36, 1) infinite; transform-box: fill-box; transform-origin: center; }
+
+/* One switch. Anything ambient stops for a member who asked their system to
+   stop animations — the spine still draws, it just does not idle. */
+@media (prefers-reduced-motion: reduce) {
+  .ux-rib-a, .ux-rib-b, .ux-rib-breathe, .ux-spine-travel, .ux-node-pulse { animation: none !important; }
+}
+
+
+/* ── Home cards: the approved design's hover ─────────────────────────────
+   Deliberately gentler than `.ux-i`, which lifts 6px, scales and borders in
+   brand. The design asks for a small rise, the hairline warming, and a
+   coloured bloom growing under the card — an object being picked up, not a
+   card being selected. `.ux-i` stays as it is for the rest of the app. */
+
+.ux-card {
+  box-shadow: var(--ux-shadow-card);
+  transition: transform var(--ux-t-slow) var(--ux-ease-out),
+              border-color var(--ux-t) var(--ux-ease),
+              box-shadow var(--ux-t-slow) var(--ux-ease-out);
+}
+.ux-card:hover {
+  transform: translateY(-3px);
+  border-color: var(--ux-line-strong);
+  box-shadow: var(--ux-shadow-glow);
+}
+.ux-card:active { transform: translateY(-1px); transition-duration: var(--ux-t-fast); }
+
+.ux-tile { position: relative; overflow: hidden; }
+/* The wash takes its colour from the tile's own accent, handed in as
+   `--ux-glow`, so Market blooms green and My Shop blooms amber. */
+.ux-tile::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  opacity: 0;
+  background: radial-gradient(94% 74% at 50% 0%, var(--ux-glow, transparent), transparent 72%);
+  transition: opacity var(--ux-t) var(--ux-ease);
+}
+/* A shade deeper than a figure card: the tiles are doors, and the design
+   lets them come further forward than the numbers do. */
+.ux-tile:hover { transform: translateY(-4px); }
+.ux-tile:hover::after { opacity: 1; }
+.ux-tile:hover .ux-tile-ic { transform: scale(1.08) rotate(-3deg); }
+.ux-tile-ic { transition: transform var(--ux-t-slow) var(--ux-ease-spring); }
+
+.ux-btn-g { transition: filter var(--ux-t) var(--ux-ease), transform var(--ux-t) var(--ux-ease); }
+.ux-btn-g:hover { filter: brightness(1.09); transform: translateY(-1px); }
+
+/* A row in a panel or the rail: the ground lifts, nothing moves. */
+.ux-row { transition: background-color var(--ux-t) var(--ux-ease); }
+.ux-row:hover { background: var(--ux-surface-2); }
+
+@media (prefers-reduced-motion: reduce) {
+  .ux-card:hover, .ux-tile:hover, .ux-btn-g:hover { transform: none; }
+  .ux-tile:hover .ux-tile-ic { transform: none; }
+}
+
+
+
+/* ── Ask Sakhi ───────────────────────────────────────────────────────────
+   Her portrait breathes, the equaliser moves while she is listening, and a
+   pending draft pulses once so it is not mistaken for something already sent. */
+
+@keyframes ux-bob { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-9px); } }
+@keyframes ux-eq  { 0%, 100% { transform: scaleY(.42); } 50% { transform: scaleY(1); } }
+
+.ux-bob { animation: ux-bob 7s ease-in-out infinite; }
+.ux-eq > i { animation: ux-eq 1.1s ease-in-out infinite; transform-origin: center; }
+
+/* The composer's focus ring, as one rule rather than per-instance. */
+.ux-comp { transition: border-color var(--ux-t) var(--ux-ease), box-shadow var(--ux-t) var(--ux-ease); }
+
+/* A border that warms, and nothing else.
+   This carried a 4px halo as well, which made clicking into the composer the
+   loudest thing on the screen — nowhere else in the app does a text box do
+   that. Note that `:focus-visible` cannot be used to make it click-quiet: by
+   specification a textarea matches `:focus-visible` whenever it is focused,
+   mouse or keyboard, because keyboard input is expected next. So the answer is
+   not to detect the mouse, it is to be quieter. */
+.ux-comp:focus-within {
+  border-color: var(--ux-brand) !important;
+}
+
+/* One indication, on the frame.
+   A composer is a composite field — a text area, an attach button, a send
+   button — inside one box. The global focus rule above was also drawing its
+   own outline around the text area, so clicking gave two concentric violet
+   rings. The frame is the control here, so the frame is what lights up.
+   Buttons inside it keep their own ring, because they are separate stops. */
+.ux-comp :where(input, textarea):focus-visible {
+  outline: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ux-bob, .ux-eq > i { animation: none !important; }
+}
+
+/* Sakhi thinking. Three dots, out of step, so it reads as a pause in a
+   conversation rather than as a progress bar. */
+@keyframes ux-blip {
+  0%, 60%, 100% { opacity: .28; transform: translateY(0); }
+  30%           { opacity: 1;   transform: translateY(-4px); }
+}
+.ux-blip > i { animation: ux-blip 1.3s ease-in-out infinite; }
+.ux-blip > i:nth-child(2) { animation-delay: .18s; }
+.ux-blip > i:nth-child(3) { animation-delay: .36s; }
+@media (prefers-reduced-motion: reduce) { .ux-blip > i { animation: none !important; } }
+
+/* ── Notifications: the day as a line ────────────────────────────────────
+   The spine runs behind the icon nodes, never across them. The node column
+   is exactly node-plus-ring wide, so the centre is arithmetic rather than a
+   guess, and the ring is painted in the page colour to mask the line. */
+
+.ux-tl { position: relative; }
+.ux-tl::before {
+  content: "";
+  position: absolute;
+  left: var(--ux-tl-line);
+  top: 6px;
+  bottom: 6px;
+  width: 2px;
+  background: linear-gradient(var(--ux-line-strong), var(--ux-line) 62%, transparent);
+}
+.ux-tl-row { display: grid; grid-template-columns: 74px 40px minmax(0, 1fr); gap: 14px; }
+.ux-tl-node { border: 3px solid var(--ux-canvas); box-sizing: content-box; }
+
+@media (max-width: 900px) {
+  .ux-tl::before { left: 89px; }
+  .ux-tl-row { grid-template-columns: 56px 40px minmax(0, 1fr); }
+}
+
+/* ── Help: surfaces with a lit top edge ──────────────────────────────────
+   A card that is a flat fill reads as a hole cut in the page. One pixel of
+   light along its top edge is what makes it sit on the page instead. */
+
+.ux-lit {
+  background: linear-gradient(168deg, var(--ux-surface-2), var(--ux-surface) 48%);
+  box-shadow: var(--ux-shadow-card), inset 0 1px 0 var(--ux-sheen);
+}
+
+/* The tile's own colour, breathed in from the corner it is lit from. */
+.ux-tile-lit { position: relative; overflow: hidden; }
+.ux-tile-lit::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.22s;
+  background: radial-gradient(420px 150px at 0% 0%, var(--ux-wash), transparent 70%);
+}
+.ux-tile-lit:hover::after { opacity: 1; }
+
+/* A slow pulse on the one control that has to be found when she is frightened. */
+@keyframes ux-beat {
+  0%, 100% { box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.3), 0 10px 22px -10px var(--ux-danger-solid); }
+  50%      { box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.3), 0 10px 30px -6px var(--ux-danger-solid); }
+}
+.ux-beat { animation: ux-beat 2.6s ease-in-out infinite; }
+
+@media (prefers-reduced-motion: reduce) { .ux-beat { animation: none; } }
+
+/* ── Earn: the four views ────────────────────────────────────────────────
+   One screen, four ways of seeing the same work. The choice is hers and it
+   is remembered, because a woman who reads money as a ledger does not stop
+   doing that on Tuesday. */
+
+.ux-tabs { max-width: 100%; overflow-x: auto; scrollbar-width: none; }
+.ux-tabs::-webkit-scrollbar { display: none; }
+
+/* Ledger tables collapse into stacked rows on a phone, where six columns
+   cannot fit and a sideways scroll on a money screen is a lost payment. */
+.ux-ledger { width: 100%; border-collapse: collapse; }
+.ux-ledger thead th { text-align: start; }
+@media (max-width: 760px) {
+  .ux-ledger, .ux-ledger tbody, .ux-ledger tr, .ux-ledger td { display: block; }
+  .ux-ledger thead { display: none; }
+  .ux-ledger tr { padding: 12px 0; }
+  .ux-ledger td { padding: 3px 0; text-align: start !important; }
+}
+
+/* ── Community: the pot, drawn as a pot ──────────────────────────────────
+   A rotating savings circle IS a circle — eight women, eight turns, the
+   money going once round. Rendering it as a table of names and a bar is
+   the one shape that throws the whole idea away. */
+
+.ux-pot .arc {
+  stroke-dasharray: var(--ux-arc-len);
+  stroke-dashoffset: var(--ux-arc-len);
+  animation: ux-arc 1.5s cubic-bezier(0.16, 0.9, 0.3, 1) 0.35s forwards;
+}
+@keyframes ux-arc { to { stroke-dashoffset: var(--ux-arc-off); } }
+
+.ux-seat { opacity: 0; animation: ux-pop 0.5s cubic-bezier(0.18, 1.2, 0.4, 1) forwards; }
+@keyframes ux-pop { from { opacity: 0; transform: scale(0.4); } to { opacity: 1; transform: none; } }
+
+/* The hand swings round to whose month it is, once, on arrival. */
+.ux-hand { transform-origin: 165px 165px; animation: ux-swing 1.5s cubic-bezier(0.2, 0.9, 0.25, 1) 0.3s both; }
+@keyframes ux-swing {
+  from { transform: rotate(-95deg); opacity: 0; }
+  to   { transform: rotate(var(--ux-hand-deg)); opacity: 1; }
+}
+.ux-halo { animation: ux-halo 2.4s ease-in-out infinite; }
+@keyframes ux-halo { 0%, 100% { r: 26; opacity: 0.85; } 50% { r: 29; opacity: 0.35; } }
+
+/* Things that are genuinely live, and only those, keep moving. */
+.ux-live { animation: ux-ping 2s ease-out infinite; }
+@keyframes ux-ping {
+  0%   { box-shadow: 0 0 0 0 rgba(52, 211, 153, 0.55); }
+  70%  { box-shadow: 0 0 0 7px rgba(52, 211, 153, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(52, 211, 153, 0); }
+}
+.ux-blip-1, .ux-blip-2, .ux-blip-3 { animation: ux-blip 1.3s ease-in-out infinite; }
+.ux-blip-2 { animation-delay: 0.18s; }
+.ux-blip-3 { animation-delay: 0.36s; }
+@keyframes ux-blip {
+  0%, 60%, 100% { opacity: 0.25; transform: translateY(0); }
+  30%           { opacity: 1; transform: translateY(-3px); }
+}
+.ux-sweep { transform-origin: 300px 180px; animation: ux-spin 5s linear infinite; }
+@keyframes ux-spin { to { transform: rotate(360deg); } }
+
+/* One entrance, staggered, from the direction the thing belongs in. */
+.ux-rise  { opacity: 0; animation: ux-rise 0.55s cubic-bezier(0.2, 0.8, 0.3, 1) forwards; }
+.ux-slide { opacity: 0; animation: ux-slide 0.5s cubic-bezier(0.2, 0.8, 0.3, 1) forwards; }
+@keyframes ux-rise  { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: none; } }
+@keyframes ux-slide { from { opacity: 0; transform: translateX(-14px); } to { opacity: 1; transform: none; } }
+
+@media (prefers-reduced-motion: reduce) {
+  .ux-pot .arc { animation: none; stroke-dashoffset: var(--ux-arc-off); }
+  .ux-seat, .ux-rise, .ux-slide { animation: none; opacity: 1; }
+  .ux-hand { animation: none; transform: rotate(var(--ux-hand-deg)); }
+  .ux-halo, .ux-live, .ux-sweep,
+  .ux-blip-1, .ux-blip-2, .ux-blip-3 { animation: none; }
+}
+
+/* ── My Shop: the photo is the job ───────────────────────────────────────
+   A listing without a photo sells a fraction of one with. So an empty photo
+   is not a grey box to be tolerated — it is the loudest thing on the card
+   until she fixes it. */
+
+.ux-drop {
+  border: 2px dashed color-mix(in srgb, var(--ux-brand) 45%, transparent);
+  background: color-mix(in srgb, var(--ux-brand) 7%, transparent);
+  transition: background 0.2s, border-color 0.2s;
+}
+.ux-drop:hover, .ux-drop[data-over="true"] {
+  background: color-mix(in srgb, var(--ux-brand) 14%, transparent);
+  border-color: var(--ux-brand);
+}
+
+/* The illustration breathes, so the hero is not a flat panel. */
+.ux-float { animation: ux-float 7s ease-in-out infinite; }
+@keyframes ux-float { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-7px); } }
+
+/* One line of confirmation, in her words, then gone. */
+.ux-toast {
+  position: fixed; left: 50%; bottom: 26px; z-index: 80;
+  transform: translateX(-50%) translateY(80px);
+  opacity: 0; transition: 0.3s cubic-bezier(0.2, 0.9, 0.3, 1);
+}
+.ux-toast[data-on="true"] { transform: translateX(-50%); opacity: 1; }
+
+@media (prefers-reduced-motion: reduce) {
+  .ux-float { animation: none; }
+  .ux-toast { transition: none; }
+}
+
+/* ── Touch targets ───────────────────────────────────────────────────────────
+   On a finger-driven screen, every control that is its own object gets at
+   least 44px of height. Measured across the app, controls were landing at 32px
+   — above the 24px WCAG AA floor, and still a poor target for a woman using a
+   cracked screen one-handed while holding a child.
+
+   Scoped to `pointer: coarse` so the mouse-driven desktop layout keeps its
+   density, and deliberately NOT applied to inline links inside prose: forcing
+   a 44px box around a word mid-sentence wrecks the line spacing, and WCAG
+   exempts inline links for exactly that reason. */
+@media (pointer: coarse) {
+  .ux button:not(.ux-inline),
+  .ux [role="button"]:not(.ux-inline),
+  .ux a:not(.ux-inline) {
+    min-height: 44px;
+  }
+  /* Restore the exemption for links that sit inside a run of text. */
+  .ux p a,
+  .ux li a,
+  .ux span a {
+    min-height: 0;
+  }
 }

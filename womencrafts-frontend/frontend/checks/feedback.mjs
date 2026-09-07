@@ -24,11 +24,30 @@ const files = [];
   }
 })("src");
 
-/** Blank comments, keeping positions, so prose about code is not read as code. */
-const strip = (src) =>
-  src
-    .replace(/\/\*[\s\S]*?\*\//g, (m) => m.replace(/[^\n]/g, " "))
-    .replace(/(^|[^:])\/\/[^\n]*/g, (m, p) => p + " ".repeat(m.length - p.length));
+/**
+ * Blank comments, keeping positions, so prose about code is not read as code.
+ *
+ * ── A `/*` inside a string is not a comment ─────────────────────────────────
+ * This used to blank from the first `/*` to the next `*\/` with no idea what
+ * was a string. `accept="image/*"` — an ordinary file input — therefore opened
+ * a comment that swallowed the next fourteen lines of real JSX, and the rule
+ * that looks for a recorded error being displayed reported a screen that
+ * displays it perfectly well as "shown to nobody".
+ *
+ * So string literals are blanked FIRST, before comment scanning. Positions and
+ * line breaks are preserved throughout, because every finding reports a line
+ * number and an offset that has drifted is worse than no offset.
+ */
+const strip = (src) => {
+  const blank = (m) => m.replace(/[^\n]/g, " ");
+  return src
+    // Strings first: '...', "..." and `...`, none of them spanning a line
+    // except templates, which may.
+    .replace(/'(?:\\.|[^'\\\n])*'|"(?:\\.|[^"\\\n])*"/g, blank)
+    .replace(/`(?:\\.|[^`\\])*`/g, blank)
+    .replace(/\/\*[\s\S]*?\*\//g, blank)
+    .replace(/(^|[^:])\/\/[^\n]*/g, (m, pre) => pre + " ".repeat(m.length - pre.length));
+};
 
 const problems = [];
 const lineOf = (src, i) => src.slice(0, i).split("\n").length;
@@ -72,9 +91,17 @@ for (const file of files) {
      */
     const near = src.slice(Math.max(0, m.index - 400), m.index + 400);
     if (/toast\.\w+\(/.test(near)) continue;
+    // A live region announces it just as well as a toast, and keeps the
+    // feedback where the action was — which for a copy button is better. The
+    // rule is "nothing happens unannounced", not "always use a toast", so a
+    // `role="status"` or `aria-live` anywhere in the file satisfies it.
+    // Tested against `original`, not `src`: `strip` blanks string literals now,
+    // so `role="status"` is spaces by the time the rules run. A rule that looks
+    // for an attribute VALUE has to read the file as written.
+    if (/role=["']status["']|aria-live=/.test(original)) continue;
     problems.push({
       file, line: lineOf(src, m.index),
-      what: `hand-rolled "${m[1]}" confirmation on a timer, announced nowhere — use toast.success()`,
+      what: `hand-rolled "${m[1]}" confirmation on a timer, announced nowhere — use toast.success() or a role="status"`,
     });
   }
 
@@ -94,8 +121,18 @@ for (const file of files) {
       .map((c) => c[1].trim())
       .filter((a) => a !== '""' && a !== "''" && a !== "null" && a !== "");
     if (!calls.length) continue;
+    // Rendered in any of the shapes this codebase actually uses.
+    //
+    // This used to look for `{name`, `name &&` or `name ?` only — so the very
+    // common `{(photoError || removePhoto.error) && (` read as "rendered
+    // nowhere", because the name sits behind a paren and is joined with `||`.
+    // A check that reports a working screen as broken gets ignored, and then
+    // it stops catching the real ones.
     const shown =
-      new RegExp(`\\{\\s*${name}\\b`).test(src) || new RegExp(`\\b${name}\\s*(&&|\\?)`).test(src);
+      new RegExp(`\\{\\s*\\(?\\s*${name}\\b`).test(src) ||
+      new RegExp(`\\b${name}\\s*(&&|\\|\\||\\?)`).test(src) ||
+      new RegExp(`\\|\\|\\s*${name}\\b`).test(src) ||
+      new RegExp(`\\{${name}\\}`).test(src);
     if (!shown) {
       problems.push({
         file, line: lineOf(src, m.index),

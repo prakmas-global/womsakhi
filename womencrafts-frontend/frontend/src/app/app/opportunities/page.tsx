@@ -1,268 +1,200 @@
 "use client";
 
-import { useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import * as Icons from "@/components/ux/icons";
 
-import { apiToggleSaveOpportunity } from "@/lib/growth-api";
-import { useAction } from "@/lib/use-action";
-import * as Icons from "lucide-react";
-
-import {
-  Btn, Card, Chip, EmptyState, SectionHead,
-  SourceNote, Tabs, plural
-} from "@/components/ux/kit";
 import { HomeShell } from "@/components/ux/home/HomeShell";
-import { JobRow, RailStat } from "@/components/ux/work/parts";
-import {
-  KINDS, MODES, WORK_ART, money, type WorkKind, type WorkMode,
-} from "@/components/ux/work/data";
-import { useApplications, useJobs, workStats } from "@/components/ux/growth";
-
-type Sort = "Best match" | "Newest" | "Highest pay";
+import { useResource } from "@/lib/use-resource";
+import { apiApplications, apiApply, apiOpportunities, apiToggleSaveOpportunity,
+         type Application, type Opportunity } from "@/lib/growth-api";
+import { apiGroupBuys, apiJoinBuy, apiLeaveBuy, type GroupBuy } from "@/lib/entitlements-api";
+import { apiAdvanceOrder, apiListings, apiShopOrders,
+         type Listing, type ShopOrder } from "@/lib/shop-api";
+import { apiWallet } from "@/lib/wallet-api";
+import { Board, Feed, isOpen, Ledger, Magazine, rupees,
+         type Acts, type EarnData } from "./earn-views";
 
 /**
- * Work she can actually apply for.
+ * Earn — one screen, four ways of seeing the same work.
  *
- * The filters narrow one list rather than fetching a new one, so the counts
- * beside each filter and the rows below them come from the same pass and can
- * never disagree. Sorting is separate from filtering for the same reason —
- * changing the order should never change what is in the list.
+ * ── Why four ───────────────────────────────────────────────────────────────
+ * The women using this do not think about money the same way, and one layout
+ * always suits somebody badly. A ledger reader wants columns she can add up; a
+ * phone reader wants a stream; somebody juggling six things wants to see what
+ * is stuck and what has cleared; somebody deciding wants to be shown the one
+ * best thing and told why. All four are built from the same props, so none can
+ * drift into telling a different truth than its neighbour.
+ *
+ * Her choice is remembered — a woman who reads money as a ledger does not stop
+ * doing that on Tuesday.
  */
-export default function Opportunities() {
-  const { data: JOBS, source, refetch } = useJobs();
-  // Counted from her own applications, not from a fixture: "12 applied" beside
-  // a list of three is the sort of small lie that makes her stop trusting the
-  // numbers on the money screens too.
-  const { data: APPLICATIONS } = useApplications();
-  const SKILL_DEMAND = Object.entries(
-    JOBS.flatMap((j) => j.skills).reduce<Record<string, number>>(
-      (a, s) => ({ ...a, [s]: (a[s] ?? 0) + 1 }), {}),
-  ).sort((a, b) => b[1] - a[1]).slice(0, 6)
-    .map(([name, n]) => ({ name, jobs: n }));
-  const [tab, setTab] = useState("All work");
-  const [kinds, setKinds] = useState<WorkKind[]>([]);
-  const [modes, setModes] = useState<WorkMode[]>([]);
-  const [minPay, setMinPay] = useState(0);
-  const [sort, setSort] = useState<Sort>("Best match");
-  /**
-   * Saved listings, as the server has them — with presses still in flight
-   * allowed to show through.
-   *
-   * This was a local `string[]` starting empty, so the Saved tab was empty on
-   * every visit no matter what she had bookmarked, and the bookmark button
-   * only ever changed the icon.
-   */
-  const [pending, setPending] = useState<Record<string, boolean>>({});
-  const isSaved = (j: { id: string; saved?: boolean }) => pending[j.id] ?? j.saved ?? false;
 
-  const WORK_STATS = workStats(APPLICATIONS, JOBS.filter(isSaved).length);
+const VIEWS = [
+  { id: "ledger",   label: "Ledger",   icon: "Table2" },
+  { id: "feed",     label: "Feed",     icon: "Rows3" },
+  { id: "board",    label: "Board",    icon: "Columns3" },
+  { id: "magazine", label: "Magazine", icon: "Image" },
+] as const;
+type ViewId = (typeof VIEWS)[number]["id"];
+const KEY = "womsakhi.earn.view";
 
-  const bookmark = useAction(
-    async (id: string) => { await apiToggleSaveOpportunity(id); },
-    {
-      onDone: refetch,
-      optimistic: (id) => setPending((p) => ({ ...p, [id]: !(p[id] ?? JOBS.find((j) => j.id === id)?.saved ?? false) })),
-      rollback: (id) => setPending((p) => { const n = { ...p }; delete n[id]; return n; }),
-      fallbackError: "Could not save it just now.",
-    },
-  );
+export default function EarnPage() {
+  const [view, setView] = useState<ViewId>("ledger");
+  const [busy, setBusy] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
 
-  const toggle = <T,>(v: T, list: T[], set: (n: T[]) => void) =>
-    set(list.includes(v) ? list.filter((x) => x !== v) : [...list, v]);
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem(KEY) as ViewId | null;
+      if (saved && VIEWS.some((v) => v.id === saved)) setView(saved);
+    } catch { /* private mode — the default view is fine */ }
+  }, []);
 
-  // No `useMemo`. The compiler memoizes this component, and a hand-written
-  // memo it cannot prove — this one reads `pending`, which an optimistic save
-  // rewrites — makes it skip the whole component. The hand-rolled version was
-  // also missing `JOBS` from its deps, so the list showed the mock fallback
-  // for the whole session.
-  const shown = (() => {
-    const out = JOBS.filter((j) => {
-      if (tab === "Saved" && !isSaved(j)) return false;
-      if (tab === "Near me" && j.mode === "Remote") return false;
-      if (tab === "Work from home" && j.mode !== "Remote") return false;
-      if (kinds.length && !kinds.includes(j.kind)) return false;
-      if (modes.length && !modes.includes(j.mode)) return false;
-      if (j.payHigh < minPay) return false;
-      return true;
+  const choose = (v: ViewId) => {
+    setView(v);
+    try { localStorage.setItem(KEY, v); } catch { /* nothing to recover from */ }
+  };
+
+  const { data: opps, refetch: reOpps } =
+    useResource(useCallback((s?: AbortSignal) => apiOpportunities(s), []), [] as Opportunity[]);
+  const { data: apps } =
+    useResource(useCallback((s?: AbortSignal) => apiApplications(s), []), [] as Application[]);
+  const { data: orders, refetch: reOrders } =
+    useResource(useCallback((s?: AbortSignal) => apiShopOrders(s), []), [] as ShopOrder[]);
+  const { data: listings } =
+    useResource(useCallback((s?: AbortSignal) => apiListings(s), []), [] as Listing[]);
+  const { data: pools, refetch: rePools } =
+    useResource(useCallback((s?: AbortSignal) => apiGroupBuys(s), []), [] as GroupBuy[]);
+  const { data: wallet } =
+    useResource(useCallback((s?: AbortSignal) => apiWallet(s), []),
+                { balance_minor: 0, balance_label: "₹0", currency: "INR", transactions: [] });
+
+  const d: EarnData = useMemo(() => {
+    const now = new Date();
+    const txns = wallet.transactions;
+    // "This month" means this month — a running total that quietly includes
+    // August would make her think she is doing better than she is.
+    const thisMonth = txns.filter((t) => {
+      const when = new Date(t.when);
+      return !Number.isNaN(when.getTime())
+        && when.getFullYear() === now.getFullYear() && when.getMonth() === now.getMonth();
     });
-    const by: Record<Sort, (a: typeof out[number], b: typeof out[number]) => number> = {
-      "Best match": (a, b) => b.match - a.match,
-      "Newest": (a, b) => a.postedDays - b.postedDays,
-      "Highest pay": (a, b) => b.payHigh - a.payHigh,
+    const credits = (thisMonth.length ? thisMonth : txns).filter((t) => t.kind === "credit");
+    return {
+      balanceMinor: wallet.balance_minor,
+      earnedMinor: credits.reduce((s, t) => s + t.amount_minor, 0),
+      owedMinor: orders.filter((o) => o.needs_her).reduce((s, o) => s + o.total_minor, 0),
+      // Only what she can still apply for — totalling closed listings would
+      // promise her money that is no longer on the table.
+      openMinor: opps.filter(isOpen).reduce(
+        (s, o) => s + ((o as unknown as { pay_high_minor?: number }).pay_high_minor ?? 0), 0),
+      orders, opps, apps, pools, listings,
+      txns: thisMonth.length ? thisMonth : txns,
     };
-    return [...out].sort(by[sort]);
-  })();
+  }, [wallet, orders, opps, apps, pools, listings]);
 
-  const activeFilters = kinds.length + modes.length + (minPay > 0 ? 1 : 0);
+  /**
+   * Every action is real, and says so when it fails rather than pretending.
+   *
+   * Held stable, because it is half of what the four views are given. Every
+   * action sets `busy` and clears it, so each one costs two renders of this
+   * page — and rebuilding `act` inline made those two renders re-render the
+   * whole ledger, feed, board or magazine underneath. All four refetchers are
+   * themselves stable, so this object only ever changes shape when they do.
+   */
+  const act: Acts = useMemo(() => ({
+    apply: async (id) => {
+      setBusy(id); setError(null);
+      try { await apiApply(id); reOpps(); }
+      catch { setError("That did not send. Try again in a moment."); }
+      finally { setBusy(null); }
+    },
+    save: async (id) => {
+      setBusy(id);
+      try { await apiToggleSaveOpportunity(id); reOpps(); }
+      catch { setError("Could not save that."); }
+      finally { setBusy(null); }
+    },
+    pool: async (id, join) => {
+      setBusy(id); setError(null);
+      try { join ? await apiJoinBuy(id) : await apiLeaveBuy(id); rePools(); }
+      catch { setError("Could not change that group buy."); }
+      finally { setBusy(null); }
+    },
+    advance: async (id) => {
+      setBusy(id); setError(null);
+      try { await apiAdvanceOrder(id); reOrders(); }
+      catch { setError("Could not move that order on."); }
+      finally { setBusy(null); }
+    },
+  }), [reOpps, rePools, reOrders]);
+
+  const waiting = useMemo(
+    () => orders.filter((o) => o.needs_her).length, [orders]);
+
+  // `isOpen` parses a date per listing, so this is a `new Date()` for every
+  // opening on the board — in a sentence that only changes when the openings
+  // do, not when a button goes busy.
+  const live = useMemo(() => opps.filter(isOpen).length, [opps]);
 
   return (
-    <HomeShell
-      active="/app/opportunities"
-      rail={
-        <div className="space-y-[15px]">
-          <Card className="ux-onscroll-soft">
-            <SectionHead title="How you are doing" sub="Across everything you have applied to" />
-            <div className="space-y-3.5">
-              <RailStat value={WORK_STATS.applied} label="Applications sent" icon="Send"
-                        tint="--ux-tint-violet" ink="--ux-violet" />
-              <RailStat value={WORK_STATS.shortlisted} label="Shortlisted" icon="ListChecks"
-                        tint="--ux-tint-blue" ink="--ux-blue" />
-              <RailStat value={WORK_STATS.interviews} label="Interviews" icon="MessageSquare"
-                        tint="--ux-tint-green" ink="--ux-green" />
-            </div>
-            <div className="mt-4 rounded-[11px] p-3" style={{ background: "var(--ux-surface-2)" }}>
-              <p className="text-[12px]" style={{ color: "var(--ux-ink-2)" }}>
-                {/* No "usually within three days": the server records when she
-                    applied, not when anyone replied, so there is no honest
-                    average to put there. */}
-                <strong style={{ color: "var(--ux-ink)" }}>{WORK_STATS.responseRate}%</strong> of your{" "}
-                {WORK_STATS.applied === 1 ? "application has" : `${WORK_STATS.applied} applications have`} had a reply.
-              </p>
-            </div>
-            <div className="mt-3">
-              <Btn href="/app/applications" variant="soft" full iconEnd="ArrowRight">Track applications</Btn>
-            </div>
-          </Card>
-
-          <Card className="ux-onscroll-soft">
-            <SectionHead title="What is being hired for" sub="In and around Jaipur, this month" />
-            <ul className="ux-stagger space-y-2.5">
-              {SKILL_DEMAND.map((s) => (
-                <li key={s.name} className="flex items-center gap-2.5">
-                  {/* How many listings ask for it, not a trend: a trend needs
-                      last month's figures, which nothing is keeping yet. */}
-                  <Icons.Briefcase className="h-[15px] w-[15px] shrink-0"
-                                   style={{ color: "var(--ux-brand)" }} />
-                  <span className="min-w-0 flex-1 truncate text-[12.5px]" style={{ color: "var(--ux-ink-2)" }}>
-                    {s.name}
-                  </span>
-                  <span className="shrink-0 text-[11.5px] tabular-nums" style={{ color: "var(--ux-muted)" }}>
-                    {s.jobs} {plural("role", s.jobs)}
-                  </span>
-                </li>
-              ))}
-            </ul>
-          </Card>
-
-          {/* This card used to say "Set an alert — we will message you the day
-              something matching turns up", above an ActionBtn with no action
-              at all: it announced "Alert set" and nothing anywhere had been
-              set. Nothing in this app watches for new listings on her behalf,
-              so the card now points at the one thing that does keep — the
-              bookmark, which is a real write and survives the session. */}
-          <div className="ux-clay ux-onscroll-soft relative overflow-hidden p-[18px]"
-               style={{ background: "linear-gradient(140deg, var(--ux-tint-lilac), var(--ux-tint-blue))" }}>
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src={WORK_ART.hero} alt=""
-                 className="ux-float pointer-events-none absolute -bottom-3 -end-4 h-[104px] w-[104px] object-contain" />
-            <h3 className="relative w-[60%] text-[14px] font-semibold" style={{ color: "var(--ux-ink)" }}>
-              Keep what you like
-            </h3>
-            <p className="relative mt-2 w-[60%] text-[12px] leading-relaxed" style={{ color: "var(--ux-muted)" }}>
-              Tap the bookmark on any opening and it waits in Saved — on this phone or the next one.
+    <HomeShell active="/app/opportunities">
+      <div className="flex flex-col gap-5">
+        <header className="flex flex-wrap items-end gap-4">
+          <div className="min-w-0 flex-1">
+            <p className="text-[0.6875rem] font-extrabold uppercase tracking-[0.2em]" style={{ color: "var(--ux-brand)" }}>
+              Earn
             </p>
-            <div className="relative mt-3 w-[60%]">
-              <Btn variant="soft" size="sm" icon="Bookmark" onClick={() => setTab("Saved")}>
-                Your saved work
-              </Btn>
-            </div>
+            <h1 className="mt-2 text-[clamp(1.5rem,3.2vw,2.125rem)] font-extrabold leading-[1.1] tracking-[-0.035em]"
+                style={{ color: "var(--ux-ink)" }}>
+              {rupees(d.earnedMinor)} this month
+              {waiting > 0 && (
+                <span style={{ color: "var(--ux-amber-ink)" }}>
+                  {" · "}{rupees(d.owedMinor)} waiting
+                </span>
+              )}
+            </h1>
+            <p className="mt-1.5 text-[0.875rem]" style={{ color: "var(--ux-ink-2)" }}>
+              {rupees(d.balanceMinor)} is yours to take out now.
+              {live > 0 ? ` ${live} ${live === 1 ? "opening is" : "openings are"} still open to you.` : ""}
+            </p>
           </div>
-        </div>
-      }
-    >
-      <div className="mb-[18px] flex items-end justify-between gap-4">
-        <div>
-          <h1 className="text-[24px] font-bold" style={{ color: "var(--ux-ink)" }}>Work &amp; Opportunities</h1>
-          <p className="mt-1.5 text-[13px]" style={{ color: "var(--ux-muted)" }}>
-            {shown.length} {plural("opening", shown.length)} you can apply for today.
-            {activeFilters > 0 && ` ${activeFilters} ${plural("filter", activeFilters)} applied.`}
+
+          {/* Four ways to read the same page. */}
+          <div className="ux-tabs flex gap-1.5 rounded-full p-1"
+               style={{ background: "var(--ux-surface)", border: "1px solid var(--ux-line)" }}>
+            {VIEWS.map((v) => {
+              const on = view === v.id;
+              const I = (Icons as unknown as Record<string, React.ComponentType<{ className?: string }>>)[v.icon]
+                ?? Icons.Circle;
+              return (
+                <button key={v.id} type="button" onClick={() => choose(v.id)} aria-pressed={on}
+                        className="ux-press flex min-h-[38px] shrink-0 items-center gap-2 whitespace-nowrap rounded-full px-4 text-[0.8125rem] font-bold"
+                        style={on
+                          ? { background: "linear-gradient(96deg, var(--ux-rib-2), var(--ux-rib-3))",
+                              color: "var(--ux-on-brand)" }
+                          : { color: "var(--ux-muted)" }}>
+                  <I className="h-[15px] w-[15px]" /> {v.label}
+                </button>
+              );
+            })}
+          </div>
+        </header>
+
+        {error && (
+          <p className="rounded-[12px] px-4 py-3 text-[0.8125rem] font-semibold"
+             style={{ background: "var(--ux-danger-tint)", color: "var(--ux-danger-solid)" }}>
+            {error}
           </p>
+        )}
 
-      <SourceNote source={source} what="listings" />
-      {bookmark.error && (
-        <p role="alert" className="ux-slide-up mt-2 text-[12.5px] leading-relaxed"
-           style={{ color: "var(--ux-orange-ink)" }}>
-          {bookmark.error}
-        </p>
-      )}
+        <div style={{ opacity: busy ? 0.6 : 1, transition: "opacity .15s" }}>
+          {view === "ledger"   && <Ledger d={d} act={act} />}
+          {view === "feed"     && <Feed d={d} act={act} />}
+          {view === "board"    && <Board d={d} act={act} />}
+          {view === "magazine" && <Magazine d={d} act={act} />}
         </div>
-        <Tabs items={["All work", "Near me", "Work from home", "Saved"]} active={tab} onChange={setTab} />
       </div>
-
-      <Card className="mb-[15px] ux-onscroll-soft" pad={14}>
-        <div className="flex flex-wrap items-center gap-2">
-          {KINDS.map((k) => (
-            <Chip key={k} selected={kinds.includes(k)} onClick={() => toggle(k, kinds, setKinds)}>{k}</Chip>
-          ))}
-          <span className="mx-1 h-6 w-px" style={{ background: "var(--ux-line)" }} />
-          {MODES.map((m) => (
-            <Chip key={m} selected={modes.includes(m)} onClick={() => toggle(m, modes, setModes)}>{m}</Chip>
-          ))}
-        </div>
-
-        <div className="mt-3.5 flex flex-wrap items-center gap-4 border-t pt-3.5" style={{ borderColor: "var(--ux-line)" }}>
-          <label className="flex min-w-[280px] flex-1 items-center gap-3">
-            <span className="shrink-0 text-[12px]" style={{ color: "var(--ux-muted)" }}>Pays at least</span>
-            <input
-              type="range" min={0} max={50000} step={1000} value={minPay}
-              onChange={(e) => setMinPay(Number(e.target.value))}
-              className="ux-range min-w-0 flex-1"
-              aria-label="Minimum monthly pay"
-            />
-            <span className="w-[76px] shrink-0 text-end text-[12px] font-semibold tabular-nums"
-                  style={{ color: minPay ? "var(--ux-brand)" : "var(--ux-faint)" }}>
-              {minPay ? money(minPay) : "Any"}
-            </span>
-          </label>
-
-          <div className="flex items-center gap-2">
-            <span className="text-[12px]" style={{ color: "var(--ux-muted)" }}>Sort</span>
-            <select
-              value={sort}
-              onChange={(e) => setSort(e.target.value as Sort)}
-              aria-label="Sort openings"
-              className="ux-sq h-[34px] rounded-[10px] border px-2.5 text-[12.5px]"
-              style={{ borderColor: "var(--ux-line-strong)", background: "var(--ux-surface)", color: "var(--ux-ink)" }}
-            >
-              <option>Best match</option>
-              <option>Newest</option>
-              <option>Highest pay</option>
-            </select>
-          </div>
-
-          {activeFilters > 0 && (
-            <Btn variant="ghost" size="sm" icon="X"
-                 onClick={() => { setKinds([]); setModes([]); setMinPay(0); }}>
-              Clear
-            </Btn>
-          )}
-        </div>
-      </Card>
-
-      {shown.length ? (
-        <div className="ux-deck space-y-[13px]">
-          {shown.map((j, i) => (
-            <JobRow key={j.id} job={j} i={i} saved={isSaved(j)}
-                    onSave={(id) => void bookmark.run(id)} />
-          ))}
-        </div>
-      ) : (
-        <Card>
-          <EmptyState
-            icon="SearchX"
-            title={tab === "Saved" ? "Nothing saved yet" : "Nothing matches those filters"}
-            body={
-              tab === "Saved"
-                ? "Tap the bookmark on any opening and it will wait for you here."
-                : "Loosen one of them — the pay floor is usually the one doing it."
-            }
-            action={
-              tab === "Saved"
-                ? <Btn onClick={() => setTab("All work")} variant="soft">Browse all work</Btn>
-                : <Btn onClick={() => { setKinds([]); setModes([]); setMinPay(0); }} variant="soft">Clear filters</Btn>
-            }
-          />
-        </Card>
-      )}
     </HomeShell>
   );
 }

@@ -2,7 +2,7 @@
 
 import { use, useState } from "react";
 import Link from "next/link";
-import * as Icons from "lucide-react";
+import * as Icons from "@/components/ux/icons";
 
 import {
   Btn, Card, EmptyState, IconTile, Pill, Progress, RailSkeleton, ScreenSkeleton, SectionHead,
@@ -95,18 +95,18 @@ export default function CircleDetail({ params }: { params: Promise<{ id: string 
     <HomeShell
       active="/app/circles"
       rail={
-        <div className="space-y-[15px]">
+        <div className="space-y-[16px]">
           {savings ? (
             <Card>
               <SectionHead title="This month" />
               <div className="flex items-baseline justify-between">
-                <span className="text-[12.5px]" style={{ color: "var(--ux-muted)" }}>Everyone pays</span>
-                <span className="text-[19px] font-bold tabular-nums" style={{ color: "var(--ux-ink)" }}>
+                <span className="text-[0.8125rem]" style={{ color: "var(--ux-muted)" }}>Everyone pays</span>
+                <span className="text-[1.125rem] font-bold tabular-nums" style={{ color: "var(--ux-ink)" }}>
                   {rupees(sv?.monthly_minor ?? 0)}
                 </span>
               </div>
               <div className="mt-3">
-                <div className="mb-1.5 flex items-center justify-between text-[11.5px]">
+                <div className="mb-1.5 flex items-center justify-between text-[0.75rem]">
                   <span style={{ color: "var(--ux-muted)" }}>Collected so far</span>
                   <span className="font-semibold tabular-nums" style={{ color: "var(--ux-ink)" }}>
                     {paid} of {total}
@@ -118,8 +118,8 @@ export default function CircleDetail({ params }: { params: Promise<{ id: string 
                   line named "Sunita Devi" on every savings circle in the app,
                   whoever was actually next. */}
               {sv?.whose_turn && (
-                <div className="mt-4 rounded-[11px] p-3" style={{ background: "var(--ux-tint-green)" }}>
-                  <p className="text-[12px] leading-relaxed" style={{ color: "var(--ux-ink-2)" }}>
+                <div className="mt-4 rounded-[12px] p-3" style={{ background: "var(--ux-tint-green)" }}>
+                  <p className="text-[0.75rem] leading-relaxed" style={{ color: "var(--ux-ink-2)" }}>
                     <strong style={{ color: "var(--ux-ink)" }}>{sv.whose_turn}</strong> takes the pot of{" "}
                     <strong style={{ color: "var(--ux-ink)" }}>{rupees(sv.pot_minor)}</strong> this month.
                   </p>
@@ -132,7 +132,7 @@ export default function CircleDetail({ params }: { params: Promise<{ id: string 
           ) : (
             <Card>
               <SectionHead title="About this circle" />
-              <div className="space-y-3 text-[12.5px]">
+              <div className="space-y-3 text-[0.8125rem]">
                 {[["Members", memberCount(c.members)], ["Where", c.place], ["Activity", c.activity]].map(([k, v]) => (
                   <div key={k} className="flex items-center justify-between gap-3">
                     <span style={{ color: "var(--ux-muted)" }}>{k}</span>
@@ -152,7 +152,7 @@ export default function CircleDetail({ params }: { params: Promise<{ id: string 
                 : ["Be kind — everyone here is learning", "No selling in the main thread",
                    "What is shared here stays here"]
               ).map((r) => (
-                <li key={r} className="flex items-start gap-2.5 text-[12.5px] leading-snug" style={{ color: "var(--ux-ink-2)" }}>
+                <li key={r} className="flex items-start gap-2.5 text-[0.8125rem] leading-snug" style={{ color: "var(--ux-ink-2)" }}>
                   <Icons.Check className="mt-[2px] h-[14px] w-[14px] shrink-0" style={{ color: "var(--ux-green-ink)" }} strokeWidth={2.6} />
                   {r}
                 </li>
@@ -163,24 +163,24 @@ export default function CircleDetail({ params }: { params: Promise<{ id: string 
       }
     >
       <Link href="/app/circles"
-            className="ux-hov -my-1 mb-3.5 inline-flex items-center gap-1.5 py-1 text-[12.5px] font-medium"
+            className="ux-hov -my-1 mb-3.5 inline-flex items-center gap-1.5 py-1 text-[0.8125rem] font-medium"
             style={{ color: "var(--ux-brand)" }}>
         <Icons.ArrowLeft className="ux-ico h-4 w-4" /> All circles
       </Link>
 
-      <Card className="mb-[15px] overflow-hidden" pad={0}>
+      <Card className="mb-[16px] overflow-hidden" pad={0}>
         <div className="relative h-[150px] overflow-hidden" style={{ background: `var(${c.tint})` }}>
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img src={c.art} alt="" className="h-full w-full object-cover" />
           <span aria-hidden className="absolute inset-0"
                 style={{ background: "linear-gradient(0deg, rgba(0,0,0,0.42), transparent 62%)" }} />
         </div>
-        <div className="p-[18px]">
+        <div className="p-[20px]">
           <div className="flex items-start gap-3.5">
             <IconTile icon={c.icon} tint={c.tint} ink={c.ink} size={52} radius={14} />
             <div className="min-w-0 flex-1">
-              <h1 className="text-[21px] font-bold leading-tight" style={{ color: "var(--ux-ink)" }}>{c.name}</h1>
-              <p className="mt-1.5 flex flex-wrap items-center gap-x-3 gap-y-1 text-[12.5px]" style={{ color: "var(--ux-muted)" }}>
+              <h1 className="text-[1.25rem] font-bold leading-tight" style={{ color: "var(--ux-ink)" }}>{c.name}</h1>
+              <p className="mt-1.5 flex flex-wrap items-center gap-x-3 gap-y-1 text-[0.8125rem]" style={{ color: "var(--ux-muted)" }}>
                 <span className="inline-flex items-center gap-1"><Icons.MapPin className="h-4 w-4" /> {c.place}</span>
                 <span className="inline-flex items-center gap-1"><Icons.Users className="h-4 w-4" /> {memberCount(c.members)} members</span>
               </p>
@@ -201,11 +201,11 @@ export default function CircleDetail({ params }: { params: Promise<{ id: string 
                   </Btn>}
             </div>
           </div>
-          <p className="mt-3.5 text-[13px] leading-relaxed" style={{ color: "var(--ux-ink-2)" }}>{c.blurb}</p>
+          <p className="mt-3.5 text-[0.8125rem] leading-relaxed" style={{ color: "var(--ux-ink-2)" }}>{c.blurb}</p>
         </div>
       </Card>
 
-      <div className="mb-[15px]">
+      <div className="mb-[16px]">
         <Tabs items={savings ? ["Overview", "Turn order", "Talk"] : ["Overview", "Talk", "Members"]}
               active={tab} onChange={setTab} />
       </div>
@@ -233,12 +233,12 @@ export default function CircleDetail({ params }: { params: Promise<{ id: string 
                   // eslint-disable-next-line @next/next/no-img-element
                   <img src={m.avatar} alt="" className="h-[36px] w-[36px] shrink-0 rounded-full object-cover" />
                 ) : (
-                  <span className="grid h-[36px] w-[36px] shrink-0 place-items-center rounded-full text-[13px] font-semibold"
+                  <span className="grid h-[36px] w-[36px] shrink-0 place-items-center rounded-full text-[0.8125rem] font-semibold"
                         style={{ background: "var(--ux-tint-violet)", color: "var(--ux-violet)" }}>
                     {m.name.trim().charAt(0).toUpperCase()}
                   </span>
                 )}
-                <span className="min-w-0 flex-1 truncate text-[13px]" style={{ color: "var(--ux-ink)" }}>
+                <span className="min-w-0 flex-1 truncate text-[0.8125rem]" style={{ color: "var(--ux-ink)" }}>
                   {m.name}{m.you && <span style={{ color: "var(--ux-brand)" }}> — you</span>}
                 </span>
               </div>
@@ -248,7 +248,7 @@ export default function CircleDetail({ params }: { params: Promise<{ id: string 
       )}
 
       {(tab === "Talk" || tab === "Overview") && (
-        <div className="space-y-[13px]">
+        <div className="space-y-[12px]">
           {tab === "Overview" && savings && (
             <Card>
               <SectionHead title="Where this circle has got to"
@@ -261,18 +261,18 @@ export default function CircleDetail({ params }: { params: Promise<{ id: string 
                          action={tab === "Talk" ? undefined : "See all"} onAction={() => setTab("Talk")} />
             <div className="ux-deck ux-stagger space-y-2.5">
               {CIRCLE_POSTS.map((p, i) => (
-                <div key={p.id} className="ux-i ux-sq flex items-start gap-3 rounded-[13px] border p-3"
+                <div key={p.id} className="ux-i ux-sq flex items-start gap-3 rounded-[12px] border p-3"
                      style={{ borderColor: "var(--ux-line)", ["--i" as string]: i }}>
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img src={p.avatar} alt="" className="h-[38px] w-[38px] shrink-0 rounded-full object-cover" />
                   <div className="min-w-0 flex-1">
-                    <p className="flex flex-wrap items-center gap-x-2 text-[12.5px]">
+                    <p className="flex flex-wrap items-center gap-x-2 text-[0.8125rem]">
                       <span className="font-semibold" style={{ color: "var(--ux-ink)" }}>{p.who}</span>
                       <span style={{ color: "var(--ux-faint)" }}>{p.when}</span>
                       {p.pinned && <Pill tone="brand" size="sm">Pinned</Pill>}
                     </p>
-                    <p className="mt-1.5 text-[13px] leading-relaxed" style={{ color: "var(--ux-ink-2)" }}>{p.text}</p>
-                    <p className="mt-2 flex items-center gap-1.5 text-[11.5px]" style={{ color: "var(--ux-muted)" }}>
+                    <p className="mt-1.5 text-[0.8125rem] leading-relaxed" style={{ color: "var(--ux-ink-2)" }}>{p.text}</p>
+                    <p className="mt-2 flex items-center gap-1.5 text-[0.75rem]" style={{ color: "var(--ux-muted)" }}>
                       <Icons.MessageCircle className="h-3.5 w-3.5" /> {p.replies} replies
                     </p>
                   </div>

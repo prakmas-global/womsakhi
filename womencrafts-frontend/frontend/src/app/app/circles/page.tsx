@@ -1,148 +1,174 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import * as Icons from "@/components/ux/icons";
 
-import { Btn, Card, Chip, EmptyState, IconTile, SectionHead, SourceNote, Tabs, plural } from "@/components/ux/kit";
 import { HomeShell } from "@/components/ux/home/HomeShell";
-import { CircleCard } from "@/components/ux/circles/parts";
-import {
-  CIRCLE_ART, CIRCLE_KINDS, rupees, type CircleKind,
-} from "@/components/ux/circles/data";
-import { useCircles } from "@/components/ux/live";
+import { useResource } from "@/lib/use-resource";
+import { apiCommunityOverview, apiLikePost,
+         type CommunityOverview } from "@/lib/community-api";
+import { apiContribute } from "@/lib/growth-api";
+import { Near, Pot, Rooms, Wall,
+         type CommunityActs, type CommunityData } from "./community-views";
 
 /**
- * Circle — the groups she is in, and the ones she could join.
+ * Community — one screen, four ways of seeing the same women.
  *
- * Hers come first and are never mixed with suggestions: a savings circle is a
- * financial commitment, and a screen that puts "the circle you pay into" beside
- * "a circle you might like" invites exactly the wrong tap.
+ * "Community" means four different things depending on why she opened it: the
+ * pot she is paying into, the room she wants to talk in, the woman two streets
+ * away with a spare stall, or simply what other women made this week. All four
+ * read the same data, so none can show a different truth than its neighbour,
+ * and her choice is remembered.
  */
-export default function CirclesPage() {
-  const { data: circles, source } = useCircles();
-  const MY_CIRCLES = circles.mine;
-  const DISCOVER_CIRCLES = circles.discover;
-  const [tab, setTab] = useState("My circles");
-  const [kinds, setKinds] = useState<CircleKind[]>([]);
 
-  const pool = tab === "My circles" ? MY_CIRCLES : DISCOVER_CIRCLES;
-  const shown = useMemo(
-    () => (kinds.length ? pool.filter((c) => kinds.includes(c.kind)) : pool),
-    [pool, kinds],
-  );
+const VIEWS = [
+  { id: "pot",   label: "The pot",  icon: "Coins" },
+  { id: "rooms", label: "Rooms",    icon: "MessagesSquare" },
+  { id: "near",  label: "Near you", icon: "MapPin" },
+  { id: "wall",  label: "The wall", icon: "LayoutGrid" },
+] as const;
+type ViewId = (typeof VIEWS)[number]["id"];
+const KEY = "womsakhi.community.view";
 
-  const saving = MY_CIRCLES.filter((c) => c.kind === "Savings");
-  const monthly = saving.reduce((a, c) => a + (c.monthly_minor ?? 0), 0);
-  const potTotal = saving.reduce((a, c) => a + (c.pot_minor ?? 0), 0);
+/**
+ * The shape of "nothing yet", as one module constant.
+ *
+ * `useResource` holds its fallback across renders and deliberately does not
+ * list it as a dependency, so building this inline would hand it a new object
+ * every render — and a memoised child a new `d` to fail to match on.
+ */
+const EMPTY_OVERVIEW: CommunityOverview = {
+  circles: [], circle_id: null, savings: null, posts: [],
+};
+
+export default function CommunityPage() {
+  const [view, setView] = useState<ViewId>("pot");
+  const [km, setKm] = useState(6);
+  const [paying, setPaying] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem(KEY) as ViewId | null;
+      if (saved && VIEWS.some((v) => v.id === saved)) setView(saved);
+    } catch { /* private mode — the default is fine */ }
+  }, []);
+
+  const choose = (v: ViewId) => {
+    setView(v);
+    try { localStorage.setItem(KEY, v); } catch { /* nothing to recover */ }
+  };
+
+  /**
+   * One request, not three.
+   *
+   * This screen used to fetch her circles, wait, work out which of them the
+   * pot is about, and only then ask for that circle's savings and its wall —
+   * two round trips from her phone in a fixed order, because the second pair
+   * genuinely could not be sent until the first had answered. The dependency
+   * is real; resolving it on the server costs a query rather than a journey to
+   * her handset and back, and she is not watching a half-drawn screen while it
+   * happens. See `GET /community/overview`.
+   */
+  const { data: overview, refetch } = useResource(
+    useCallback((s?: AbortSignal) => apiCommunityOverview(s), []),
+    EMPTY_OVERVIEW);
+
+  const { circles, savings, posts } = overview;
+
+  // The server already chose which circle the pot is about; this only finds the
+  // row it named, so the two can never disagree about which one that is.
+  const savingsCircle = useMemo(
+    () => circles.find((c) => c.id === overview.circle_id) ?? null,
+    [circles, overview.circle_id]);
+
+  /**
+   * `d` and `act` are objects the views hold on to.
+   *
+   * Built inline they were a new object on every keystroke of the distance
+   * slider and every press of Pay, so a memoised child could never match on
+   * them. `like` is deliberately its own callback rather than a method rebuilt
+   * with the rest of `act`: a post card only needs that one, and keeping it
+   * stable across the `paying` flip is what lets `PostCard` skip.
+   */
+  const d: CommunityData = useMemo(
+    () => ({ circles, savings, savingsCircle, posts }),
+    [circles, savings, savingsCircle, posts]);
+
+  const pay = useCallback(async () => {
+    if (!savingsCircle || savings?.you_paid) return;
+    setPaying(true); setError(null);
+    try {
+      // One key per press and its retries — a lost reply must not become a
+      // second payment out of her wallet.
+      await apiContribute(savingsCircle.id, `${savingsCircle.id}:${savings?.round ?? 0}`);
+      refetch();
+    } catch {
+      setError("That payment did not go through. Nothing has left your wallet — try again.");
+    } finally { setPaying(false); }
+  }, [savingsCircle, savings, refetch]);
+
+  const like = useCallback(async (postId: string) => {
+    try { await apiLikePost(postId); refetch(); }
+    catch { setError("Could not like that just now."); }
+  }, [refetch]);
+
+  const act: CommunityActs = useMemo(
+    () => ({ paying, pay, like }), [paying, pay, like]);
+
+  const paid = savings ? `${savings.members_paid} of ${savings.members.length} paid` : "";
 
   return (
-    <HomeShell
-      active="/app/circles"
-      rail={
-        <div className="space-y-[15px]">
-          <Card className="ux-onscroll-soft">
-            <SectionHead title="What you have committed" sub="Across your savings circles" />
-            <div className="space-y-3.5">
-              {[
-                ["Every month", rupees(monthly), "CalendarClock", "--ux-tint-violet", "--ux-violet"],
-                ["The pot you will receive", rupees(potTotal), "PiggyBank", "--ux-tint-green", "--ux-green"],
-                ["Circles you are in", `${MY_CIRCLES.length}`, "UsersRound", "--ux-tint-pink", "--ux-pink"],
-              ].map(([label, val, icon, tint, ink]) => (
-                <div key={label} className="ux-hov flex items-center gap-3">
-                  <IconTile icon={icon} tint={tint} ink={ink} size={38} />
-                  <div className="min-w-0">
-                    <p className="text-[17px] font-bold leading-none tabular-nums" style={{ color: "var(--ux-ink)" }}>{val}</p>
-                    <p className="mt-1 truncate text-[11.5px]" style={{ color: "var(--ux-muted)" }}>{label}</p>
-                  </div>
-                </div>
-              ))}
-            </div>
-            <p className="mt-4 rounded-[11px] p-3 text-[11.5px] leading-relaxed"
-               style={{ background: "var(--ux-surface-2)", color: "var(--ux-ink-2)" }}>
-              A savings circle is a promise to the other women in it. Missing a month affects whoever&rsquo;s
-              turn it is, not the app.
+    <HomeShell active="/app/circles">
+      <div className="flex flex-col gap-5">
+        <header className="flex flex-wrap items-end gap-4">
+          <div className="min-w-0 flex-1">
+            <p className="text-[0.6875rem] font-extrabold uppercase tracking-[0.2em]" style={{ color: "var(--ux-brand)" }}>
+              Your circle
             </p>
-          </Card>
-
-          <div className="ux-clay ux-onscroll-soft relative overflow-hidden p-[18px]"
-               style={{ background: "linear-gradient(140deg, var(--ux-tint-pink), var(--ux-tint-lilac))" }}>
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src={CIRCLE_ART.invite} alt=""
-                 className="ux-float pointer-events-none absolute -bottom-3 -end-4 h-[100px] w-[100px] object-contain" />
-            <h3 className="relative w-[60%] text-[14px] font-semibold" style={{ color: "var(--ux-ink)" }}>
-              Start your own
-            </h3>
-            <p className="relative mt-2 w-[60%] text-[12px] leading-relaxed" style={{ color: "var(--ux-muted)" }}>
-              Five women you already trust is enough to begin a savings circle.
-            </p>
-            <div className="relative mt-3 w-[60%]">
-              <Btn href="/app/circles/new" variant="soft" size="sm" icon="Plus">Create a circle</Btn>
-            </div>
+            <h1 className="mt-2 text-[clamp(1.5rem,3.2vw,2.125rem)] font-extrabold leading-[1.1] tracking-[-0.035em]"
+                style={{ color: "var(--ux-ink)" }}>
+              {circles.length} {circles.length === 1 ? "circle" : "circles"}
+              {paid && <span style={{ color: "var(--ux-amber-ink)" }}> · {paid} this round</span>}
+            </h1>
           </div>
 
-          <Card className="ux-onscroll-soft">
-            <SectionHead title="How a savings circle works" icon="Info" />
-            <ol className="space-y-3">
-              {[
-                "Everyone pays the same amount, on the same day, every month.",
-                "One member takes the whole pot that month.",
-                "The order is agreed at the start, and everyone gets a turn.",
-                "It ends when every member has had the pot once.",
-              ].map((t, i) => (
-                <li key={t} className="flex items-start gap-2.5">
-                  <span className="grid h-[20px] w-[20px] shrink-0 place-items-center rounded-full text-[10px] font-bold"
-                        style={{ background: "var(--ux-brand-tint)", color: "var(--ux-brand)" }}>{i + 1}</span>
-                  <span className="text-[12.5px] leading-snug" style={{ color: "var(--ux-ink-2)" }}>{t}</span>
-                </li>
-              ))}
-            </ol>
-          </Card>
-        </div>
-      }
-    >
-      <div className="mb-[18px] flex items-end justify-between gap-4">
-        <div>
-          <h1 className="text-[24px] font-bold" style={{ color: "var(--ux-ink)" }}>Circle</h1>
-          <p className="mt-1.5 text-[13px]" style={{ color: "var(--ux-muted)" }}>
-            {tab === "My circles"
-              ? `${MY_CIRCLES.length} ${plural("circle", MY_CIRCLES.length)} you belong to.`
-              : `${DISCOVER_CIRCLES.length} ${plural("circle", DISCOVER_CIRCLES.length)} near you and online.`}
+          <div className="ux-tabs flex gap-1.5 rounded-full p-1"
+               style={{ background: "var(--ux-surface)", border: "1px solid var(--ux-line)" }}>
+            {VIEWS.map((v) => {
+              const on = view === v.id;
+              const I = (Icons as unknown as Record<string, React.ComponentType<{ className?: string }>>)[v.icon]
+                ?? Icons.Circle;
+              return (
+                <button key={v.id} type="button" onClick={() => choose(v.id)} aria-pressed={on}
+                        className="ux-press flex min-h-[38px] shrink-0 items-center gap-2 whitespace-nowrap rounded-full px-4 text-[0.8125rem] font-bold"
+                        style={on
+                          ? { background: "linear-gradient(96deg, var(--ux-rib-2), var(--ux-rib-3))",
+                              color: "var(--ux-on-brand)" }
+                          : { color: "var(--ux-muted)" }}>
+                  <I className="h-[15px] w-[15px]" /> {v.label}
+                </button>
+              );
+            })}
+          </div>
+        </header>
+
+        {error && (
+          <p className="rounded-[12px] px-4 py-3 text-[0.8125rem] font-semibold"
+             style={{ background: "var(--ux-danger-tint)", color: "var(--ux-danger-solid)" }}>
+            {error}
           </p>
+        )}
 
-      <SourceNote source={source} what="circles" />
+        {/* keyed on the view so each one plays its entrance rather than
+            appearing part-way through somebody else's */}
+        <div key={view}>
+          {view === "pot"   && <Pot d={d} act={act} />}
+          {view === "rooms" && <Rooms d={d} act={act} />}
+          {view === "near"  && <Near d={d} km={km} setKm={setKm} />}
+          {view === "wall"  && <Wall d={d} act={act} />}
         </div>
-        <Tabs items={["My circles", "Discover"]} active={tab} onChange={setTab} />
       </div>
-
-      <div className="mb-[15px] flex flex-wrap gap-2">
-        {CIRCLE_KINDS.map((k) => (
-          <Chip
-            key={k}
-            selected={kinds.includes(k)}
-            onClick={() => setKinds(kinds.includes(k) ? kinds.filter((x) => x !== k) : [...kinds, k])}
-          >
-            {k}
-          </Chip>
-        ))}
-      </div>
-
-      {shown.length ? (
-        <div className="ux-deck grid grid-cols-2 gap-[15px]">
-          {shown.map((c, i) => <CircleCard key={c.id} c={c} i={i} />)}
-        </div>
-      ) : (
-        <Card>
-          <EmptyState
-            icon="UsersRound"
-            title="Nothing of that kind here"
-            body={
-              tab === "My circles"
-                ? "You have not joined a circle of that kind yet."
-                : "Try another kind, or start one of your own."
-            }
-            action={<Btn onClick={() => setKinds([])} variant="soft">Show all kinds</Btn>}
-          />
-        </Card>
-      )}
     </HomeShell>
   );
 }

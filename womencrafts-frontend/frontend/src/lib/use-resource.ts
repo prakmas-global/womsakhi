@@ -2,6 +2,8 @@
 
 import { useCallback, useEffect, useState } from "react";
 
+import { invalidateReads } from "./api";
+
 /**
  * One hook every redesigned screen reads its data through.
  *
@@ -83,6 +85,13 @@ export function useResource<T>(
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [fetcher, nonce]);
 
-  const refetch = useCallback(() => setNonce((n) => n + 1), []);
+  // An explicit refetch means the screen has reason to think the answer has
+  // changed — after a write, or because she pulled to refresh. Serving it a
+  // held copy would make the gesture do nothing, so the cache is dropped first
+  // and this goes to the server.
+  const refetch = useCallback(() => {
+    invalidateReads();
+    setNonce((n) => n + 1);
+  }, []);
   return { ...state, refetch };
 }

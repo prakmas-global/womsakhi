@@ -24,7 +24,7 @@ export default function DashboardError({
         onRetry={reset}
       />
       {error.digest && (
-        <p className="pb-5 text-center font-mono text-[11px] text-ink-subtle">{error.digest}</p>
+        <p className="pb-5 text-center font-mono text-[0.6875rem] text-ink-subtle">{error.digest}</p>
       )}
     </Card>
   );

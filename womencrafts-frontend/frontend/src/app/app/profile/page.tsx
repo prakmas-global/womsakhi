@@ -1,13 +1,14 @@
 "use client";
 
 import { useCallback, useState } from "react";
-import * as Icons from "lucide-react";
+import * as Icons from "@/components/ux/icons";
 
 import { apiMeProfile, type MeProfile } from "@/lib/member-api";
 import { useResource } from "@/lib/use-resource";
 import { useAuth } from "@/context/AuthContext";
 import { Btn, Card, I, Pill, Progress, SectionHead, Stat, Tabs } from "@/components/ux/kit";
 import { HomeShell } from "@/components/ux/home/HomeShell";
+import { ContributionTab, DocumentsTab, ExperienceTab, PortfolioTab, SkillsTab } from "./tabs";
 import { useMe } from "@/components/ux/me";
 import { useCertificates, useCircles, useProgress } from "@/components/ux/live";
 import { useGoals } from "@/components/ux/business";
@@ -74,12 +75,12 @@ export default function Profile() {
     <HomeShell
       active="/app/profile"
       rail={
-        <div className="space-y-[15px]">
+        <div className="space-y-[16px]">
           <Card>
             <SectionHead title="Profile strength" />
-            <p className="text-[30px] font-bold leading-none" style={{ color: "var(--ux-ink)" }}>{pct}%</p>
+            <p className="text-[1.75rem] font-bold leading-none" style={{ color: "var(--ux-ink)" }}>{pct}%</p>
             <div className="mt-3"><Progress pct={pct} /></div>
-            <p className="mt-2.5 text-[12px] leading-relaxed" style={{ color: "var(--ux-muted)" }}>
+            <p className="mt-2.5 text-[0.75rem] leading-relaxed" style={{ color: "var(--ux-muted)" }}>
               {source === "loading"
                 ? "Reading your profile…"
                 : left.length
@@ -101,7 +102,7 @@ export default function Profile() {
               {[["Appear in more searches", "Search"],
                 ["Get matched to better work", "Target"],
                 ["Mentors can see your goals", "Users"]].map(([t, ic]) => (
-                <li key={t} className="flex items-start gap-2.5 text-[12.5px] leading-snug" style={{ color: "var(--ux-ink-2)" }}>
+                <li key={t} className="flex items-start gap-2.5 text-[0.8125rem] leading-snug" style={{ color: "var(--ux-ink-2)" }}>
                   <I name={ic} className="mt-[1px] h-[15px] w-[15px] shrink-0" style={{ color: "var(--ux-brand)" }} /> {t}
                 </li>
               ))}
@@ -110,7 +111,7 @@ export default function Profile() {
         </div>
       }
     >
-      <Card className="mb-[15px]">
+      <Card className="mb-[16px]">
         <div className="flex items-start gap-5">
           <div className="relative shrink-0">
             <span className="ux-hov block h-[92px] w-[92px] overflow-hidden rounded-full"
@@ -127,13 +128,13 @@ export default function Profile() {
             </Btn>
           </div>
           <div className="min-w-0 flex-1">
-            <h1 className="flex items-center gap-2 text-[22px] font-bold" style={{ color: "var(--ux-ink)" }}>
+            <h1 className="flex items-center gap-2 text-[1.25rem] font-bold" style={{ color: "var(--ux-ink)" }}>
               {name}
               {/* The blue tick was painted on every profile. It now means what
                   the server says it means. */}
               {verified && <Icons.BadgeCheck className="h-5 w-5" style={{ color: "var(--ux-blue)" }} />}
             </h1>
-            <p className="mt-1 text-[13px]" style={{ color: profile?.bio ? "var(--ux-muted)" : "var(--ux-faint)" }}>
+            <p className="mt-1 text-[0.8125rem]" style={{ color: profile?.bio ? "var(--ux-muted)" : "var(--ux-faint)" }}>
               {profile?.bio || "You have not written a line about yourself yet."}
             </p>
             <div className="mt-3 flex flex-wrap gap-2">
@@ -151,21 +152,21 @@ export default function Profile() {
         </div>
 
         {/* Every one of these four was a constant: 6, 4, 15 and ₹24,350. */}
-        <div className="mt-5 grid grid-cols-4 gap-[15px] border-t pt-4" style={{ borderColor: "var(--ux-line)" }}>
+        <div className="mt-5 grid grid-cols-4 gap-[16px] border-t pt-4" style={{ borderColor: "var(--ux-line)" }}>
           <Stat value={String(progress?.programs_completed ?? 0)} label="Courses finished"
                 icon="BookOpenCheck" tint="--ux-tint-violet" ink="--ux-violet" />
           {/* The one metal surface in the app. Cold and hard is the right
               feeling for something awarded; everywhere else it fights the
               brand's warmth, so it is deliberately not reused. */}
           <div className="flex items-center gap-3">
-            <span className="ux-metal ux-sq grid h-[38px] w-[38px] shrink-0 place-items-center rounded-[11px]">
+            <span className="ux-metal ux-sq grid h-[38px] w-[38px] shrink-0 place-items-center rounded-[12px]">
               <Icons.Award className="ux-ico h-[17px] w-[17px]" strokeWidth={1.9} />
             </span>
             <div className="min-w-0">
-              <p className="text-[17px] font-bold leading-none" style={{ color: "var(--ux-ink)" }}>
+              <p className="text-[1.125rem] font-bold leading-none" style={{ color: "var(--ux-ink)" }}>
                 {CERTIFICATES.length}
               </p>
-              <p className="mt-1 truncate text-[11.5px]" style={{ color: "var(--ux-muted)" }}>Certificates</p>
+              <p className="mt-1 truncate text-[0.75rem]" style={{ color: "var(--ux-muted)" }}>Certificates</p>
             </div>
           </div>
           <Stat value={String(circles.mine.length)} label="Circles joined" icon="UsersRound" tint="--ux-tint-pink" ink="--ux-pink" />
@@ -173,10 +174,10 @@ export default function Profile() {
         </div>
       </Card>
 
-      <div className="mb-[15px]"><Tabs items={["Overview", "Skills", "Experience", "Documents"]} active={tab} onChange={setTab} /></div>
+      <div className="mb-[16px]"><Tabs items={["Overview", "Skills", "Experience", "What you made", "Helping others", "Documents"]} active={tab} onChange={setTab} /></div>
 
       {tab === "Overview" && (
-        <div className="grid grid-cols-[minmax(0,1fr)_320px] gap-[15px]">
+        <div className="grid grid-cols-[minmax(0,1fr)_320px] gap-[16px]">
           <Card>
             <SectionHead title="Finish your profile"
                          sub={left.length ? `${left.length} still to fill in` : "Nothing left to do"} />
@@ -194,7 +195,7 @@ export default function Profile() {
                                  borderColor: s.done ? "var(--ux-green)" : "var(--ux-line-strong)" }}>
                     {s.done && <Icons.Check className="h-3.5 w-3.5 text-white" strokeWidth={3} />}
                   </span>
-                  <span className="min-w-0 flex-1 text-[13px]"
+                  <span className="min-w-0 flex-1 text-[0.8125rem]"
                         style={{ color: s.done ? "var(--ux-muted)" : "var(--ux-ink)",
                                  textDecoration: s.done ? "line-through" : "none" }}>
                     {s.label}
@@ -213,7 +214,7 @@ export default function Profile() {
                 Rajasthan", "Hindi, English", "Digital marketing" and "March
                 2025" — for everyone. Each is now her own, or says it is
                 missing rather than filling the gap. */}
-            <dl className="space-y-3 text-[12.5px]">
+            <dl className="space-y-3 text-[0.8125rem]">
               {[
                 ["Location", profile?.location || ""],
                 ["App language", profile?.locale === "hi" ? "हिंदी" : profile?.locale === "en" ? "English" : profile?.locale || ""],
@@ -231,7 +232,7 @@ export default function Profile() {
             </dl>
 
             <div className="my-4 h-px" style={{ background: "var(--ux-line)" }} />
-            <h3 className="mb-2.5 text-[13px] font-semibold" style={{ color: "var(--ux-ink)" }}>
+            <h3 className="mb-2.5 text-[0.8125rem] font-semibold" style={{ color: "var(--ux-ink)" }}>
               What you are working towards
             </h3>
             {/* Three goals at 72%, 65% and 50% were written into the screen.
@@ -249,20 +250,20 @@ export default function Profile() {
                             style={{ background: "var(--ux-brand-tint)", color: "var(--ux-brand)" }}>
                         <I name={g.icon || "Target"} className="ux-ico h-[14px] w-[14px]" />
                       </span>
-                      <span className="min-w-0 flex-1 truncate text-[12.5px]" style={{ color: "var(--ux-ink-2)" }}>
+                      <span className="min-w-0 flex-1 truncate text-[0.8125rem]" style={{ color: "var(--ux-ink-2)" }}>
                         {g.label}
                       </span>
-                      <span className="shrink-0 text-[11.5px] font-medium tabular-nums" style={{ color: "var(--ux-muted)" }}>
+                      <span className="shrink-0 text-[0.75rem] font-medium tabular-nums" style={{ color: "var(--ux-muted)" }}>
                         {g.pct}%
                       </span>
                     </div>
-                    <div className="ms-[38px] mt-2"><Progress pct={g.pct} h={5} track="--ux-track" /></div>
+                    <div className="ms-[40px] mt-2"><Progress pct={g.pct} h={5} track="--ux-track" /></div>
                   </li>
                 ))}
               </ul>
             ) : (
               <>
-                <p className="text-[12.5px] leading-relaxed" style={{ color: "var(--ux-muted)" }}>
+                <p className="text-[0.8125rem] leading-relaxed" style={{ color: "var(--ux-muted)" }}>
                   You have not set a goal yet. One number you are aiming at makes the rest of this screen
                   mean something.
                 </p>
@@ -275,19 +276,11 @@ export default function Profile() {
         </div>
       )}
 
-      {tab !== "Overview" && (
-        <Card>
-          <SectionHead title={tab} sub="Coming from your account once this section is wired up." />
-          <div className="flex items-center gap-4 rounded-[12px] p-4" style={{ background: "var(--ux-surface-2)" }}>
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src="/ux/art/scene-woman-writing-notes.webp" alt="" className="h-[84px] w-[84px] object-contain" />
-            <p className="text-[12.5px] leading-relaxed" style={{ color: "var(--ux-muted)" }}>
-              This is where your {tab.toLowerCase()} will live. The screen is built;
-              the data is not connected yet.
-            </p>
-          </div>
-        </Card>
-      )}
+      {tab === "Skills" && <SkillsTab />}
+      {tab === "Experience" && <ExperienceTab />}
+      {tab === "What you made" && <PortfolioTab />}
+      {tab === "Helping others" && <ContributionTab />}
+      {tab === "Documents" && <DocumentsTab />}
     </HomeShell>
   );
 }

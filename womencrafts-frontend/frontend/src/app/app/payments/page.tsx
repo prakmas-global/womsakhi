@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import * as Icons from "lucide-react";
+import * as Icons from "@/components/ux/icons";
 
 import {
   ActionBtn, Btn, Card, EmptyState, IconTile, Pill,
@@ -72,7 +72,7 @@ export default function PaymentsPage() {
     <HomeShell
       active="/app/payments"
       rail={
-        <div className="space-y-[15px]">
+        <div className="space-y-[16px]">
           <Card className="ux-onscroll-soft">
             <SectionHead title="This year" />
             <div className="space-y-3.5">
@@ -86,8 +86,8 @@ export default function PaymentsPage() {
                 <div key={label} className="ux-hov flex items-center gap-3">
                   <IconTile icon={icon} tint={tint} ink={ink} size={38} />
                   <div className="min-w-0">
-                    <p className="text-[17px] font-bold leading-none tabular-nums" style={{ color: "var(--ux-ink)" }}>{val}</p>
-                    <p className="mt-1 truncate text-[11.5px]" style={{ color: "var(--ux-muted)" }}>{label}</p>
+                    <p className="text-[1.125rem] font-bold leading-none tabular-nums" style={{ color: "var(--ux-ink)" }}>{val}</p>
+                    <p className="mt-1 truncate text-[0.75rem]" style={{ color: "var(--ux-muted)" }}>{label}</p>
                   </div>
                 </div>
               ))}
@@ -107,7 +107,7 @@ export default function PaymentsPage() {
 
           <Card className="ux-onscroll-soft">
             <SectionHead title="Something wrong?" icon="ShieldCheck" />
-            <p className="text-[12.5px] leading-relaxed" style={{ color: "var(--ux-ink-2)" }}>
+            <p className="text-[0.8125rem] leading-relaxed" style={{ color: "var(--ux-ink-2)" }}>
               If money left your account but the payment did not go through, it comes back on its own
               within 5–7 working days. If it does not, tell us and we will chase it.
             </p>
@@ -118,10 +118,10 @@ export default function PaymentsPage() {
         </div>
       }
     >
-      <div className="mb-[18px] flex items-end justify-between gap-4">
+      <div className="mb-[20px] flex items-end justify-between gap-4">
         <div>
-          <h1 className="text-[24px] font-bold" style={{ color: "var(--ux-ink)" }}>Money</h1>
-          <p className="mt-1.5 text-[13px]" style={{ color: "var(--ux-muted)" }}>
+          <h1 className="text-[1.5rem] font-bold" style={{ color: "var(--ux-ink)" }}>What you paid</h1>
+          <p className="mt-1.5 text-[0.8125rem]" style={{ color: "var(--ux-muted)" }}>
             {shown.length} {plural("payment", shown.length)}
             {trouble > 0 && ` · ${trouble} needs a look`}
           </p>
@@ -136,7 +136,7 @@ export default function PaymentsPage() {
           items={shown}
           keyOf={(o) => o.id}
           render={(o, i) => <PaymentRow item={o} index={i} retry={retry} me={ME} />}
-          className="ux-deck ux-stagger space-y-[13px]"
+          className="ux-deck ux-stagger space-y-[12px]"
         />
       ) : (
         <Card>
@@ -174,12 +174,12 @@ const PaymentRow = rowMemo(function PaymentRow({
             <IconTile icon={item.icon} tint={item.tint} ink={item.ink} size={46} radius={12} />
             <div className="min-w-0 flex-1">
               <div className="flex items-start gap-2">
-                <h3 className="min-w-0 flex-1 truncate text-[14.5px] font-semibold" style={{ color: "var(--ux-ink)" }}>
+                <h3 className="min-w-0 flex-1 truncate text-[0.875rem] font-semibold" style={{ color: "var(--ux-ink)" }}>
                   {item.title}
                 </h3>
                 <Pill tone={TONE[item.status].pill} size="sm">{TONE[item.status].word}</Pill>
               </div>
-              <p className="mt-1 flex flex-wrap items-center gap-x-3 text-[11.5px]" style={{ color: "var(--ux-muted)" }}>
+              <p className="mt-1 flex flex-wrap items-center gap-x-3 text-[0.75rem]" style={{ color: "var(--ux-muted)" }}>
                 <span>{item.purpose}</span>
                 <span className="inline-flex items-center gap-1"><Icons.CreditCard className="h-3.5 w-3.5" /> {item.method}</span>
                 <span className="inline-flex items-center gap-1"><Icons.Clock className="h-3.5 w-3.5" /> {item.when}</span>
@@ -188,16 +188,16 @@ const PaymentRow = rowMemo(function PaymentRow({
             <div className="shrink-0 text-end">
               {/* Exact paise here: this is the one screen where a receipt has
                   to match her bank statement to the last digit. */}
-              <p className="text-[16px] font-bold tabular-nums" style={{ color: "var(--ux-ink)" }}>
+              <p className="text-[1rem] font-bold tabular-nums" style={{ color: "var(--ux-ink)" }}>
                 {rupeesExact(item.amount_minor)}
               </p>
-              <p className="mt-0.5 text-[10.5px]" style={{ color: "var(--ux-faint)" }}>{item.ref}</p>
+              <p className="mt-0.5 text-[0.6875rem]" style={{ color: "var(--ux-faint)" }}>{item.ref}</p>
             </div>
           </div>
 
           <div className="mt-3.5 flex items-center justify-between gap-4 border-t pt-3.5"
                style={{ borderColor: "var(--ux-line)" }}>
-            <span className="text-[11.5px]" style={{ color: "var(--ux-faint)" }}>
+            <span className="text-[0.75rem]" style={{ color: "var(--ux-faint)" }}>
               {item.status === "failed"
                 ? "No money left your account."
                 : item.status === "refunded"

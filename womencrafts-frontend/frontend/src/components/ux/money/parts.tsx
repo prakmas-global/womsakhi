@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import * as Icons from "lucide-react";
+import * as Icons from "@/components/ux/icons";
 
 import { IconTile, Pill, rowMemo } from "../kit";
 import { rupees, signed, type Txn } from "./data";
@@ -27,21 +27,21 @@ export const TxnRow = rowMemo(function TxnRow({ item: t, i }: { item: Txn; i: nu
   const pending = t.status === "pending";
   return (
     <div
-      className="ux-i ux-sq flex items-center gap-3.5 rounded-[13px] border p-3"
+      className="ux-i ux-sq flex items-center gap-3.5 rounded-[12px] border p-3"
       style={{ borderColor: "var(--ux-line)", background: "var(--ux-surface)", ["--i" as string]: i }}
     >
       <IconTile icon={t.icon} tint={t.tint} ink={t.ink} size={42} radius={11} />
 
       <div className="min-w-0 flex-1">
-        <p className="truncate text-[13.5px] font-semibold" style={{ color: "var(--ux-ink)" }}>{t.label}</p>
-        <p className="mt-0.5 flex flex-wrap items-center gap-x-2 text-[11.5px]" style={{ color: "var(--ux-muted)" }}>
+        <p className="truncate text-[0.875rem] font-semibold" style={{ color: "var(--ux-ink)" }}>{t.label}</p>
+        <p className="mt-0.5 flex flex-wrap items-center gap-x-2 text-[0.75rem]" style={{ color: "var(--ux-muted)" }}>
           {t.source} <span aria-hidden>•</span> {t.when}
         </p>
       </div>
 
       <div className="flex shrink-0 flex-col items-end gap-1">
         <span
-          className="text-[14px] font-bold tabular-nums"
+          className="text-[0.875rem] font-bold tabular-nums"
           style={{
             color: failed ? "var(--ux-faint)" : t.kind === "credit" ? "var(--ux-green-ink)" : "var(--ux-ink)",
             textDecoration: failed ? "line-through" : "none",
@@ -51,7 +51,7 @@ export const TxnRow = rowMemo(function TxnRow({ item: t, i }: { item: Txn; i: nu
         </span>
         {/* The word, not only the sign: "+₹4,200" and "−₹5,000" differ by one
             glyph, and that glyph is the whole meaning. */}
-        <span className="text-[10.5px]" style={{ color: "var(--ux-faint)" }}>
+        <span className="text-[0.6875rem]" style={{ color: "var(--ux-faint)" }}>
           {failed ? "Failed" : pending ? "On its way" : t.kind === "credit" ? "Received" : "Paid out"}
         </span>
       </div>
@@ -90,7 +90,7 @@ export function EarningsBars({
   const plot = height - LABEL;
 
   return (
-    <div className="flex items-end gap-[6px]" style={{ height }}>
+    <div className="flex items-end gap-[8px]" style={{ height }}>
       {values.map((v, i) => {
         const h = Math.max(3, Math.round((v / max) * plot));
         const last = i === values.length - 1;
@@ -98,7 +98,7 @@ export function EarningsBars({
           <div key={labels[i]} className="flex min-w-0 flex-1 flex-col items-center justify-end"
                style={{ height }}>
             <div
-              className="ux-sq w-full rounded-[6px]"
+              className="ux-sq w-full rounded-[8px]"
               style={{
                 height: grown ? h : 0,
                 background: last
@@ -109,7 +109,7 @@ export function EarningsBars({
               title={`${labels[i]}: ${rupees(v)}`}
             />
             <span
-              className="mt-1.5 w-full truncate text-center text-[9.5px]"
+              className="mt-1.5 w-full truncate text-center text-[0.6875rem]"
               style={{ color: last ? "var(--ux-brand)" : "var(--ux-faint)", fontWeight: last ? 700 : 400 }}
             >
               {labels[i]}
@@ -141,13 +141,13 @@ export function SourceSplit({ sources }: { sources: { name: string; minor: numbe
       </div>
       <ul className="ux-stagger mt-3.5 space-y-2.5">
         {sources.map((s) => (
-          <li key={s.name} className="flex items-center gap-2.5 text-[12.5px]">
+          <li key={s.name} className="flex items-center gap-2.5 text-[0.8125rem]">
             <span className="h-[9px] w-[9px] shrink-0 rounded-full" style={{ background: `var(${s.tone})` }} />
             <span className="min-w-0 flex-1 truncate" style={{ color: "var(--ux-ink-2)" }}>{s.name}</span>
             <span className="shrink-0 font-semibold tabular-nums" style={{ color: "var(--ux-ink)" }}>
               {rupees(s.minor)}
             </span>
-            <span className="w-[38px] shrink-0 text-end text-[11px] tabular-nums" style={{ color: "var(--ux-faint)" }}>
+            <span className="w-[38px] shrink-0 text-end text-[0.6875rem] tabular-nums" style={{ color: "var(--ux-faint)" }}>
               {Math.round((s.minor / total) * 100)}%
             </span>
           </li>
@@ -160,15 +160,15 @@ export function SourceSplit({ sources }: { sources: { name: string; minor: numbe
 /** A saved payout destination. */
 export function PayoutMethod({ m }: { m: (typeof import("./data"))["PAYOUT_METHODS"][number] }) {
   return (
-    <div className="ux-i ux-sq flex items-center gap-3 rounded-[13px] border p-3"
+    <div className="ux-i ux-sq flex items-center gap-3 rounded-[12px] border p-3"
          style={{ borderColor: m.primary ? "var(--ux-brand)" : "var(--ux-line)", background: "var(--ux-surface)" }}>
       <IconTile icon={m.icon} tint={m.tint} ink={m.ink} size={40} radius={11} />
       <div className="min-w-0 flex-1">
-        <p className="flex items-center gap-2 truncate text-[13px] font-semibold" style={{ color: "var(--ux-ink)" }}>
+        <p className="flex items-center gap-2 truncate text-[0.8125rem] font-semibold" style={{ color: "var(--ux-ink)" }}>
           {m.label}
           {m.verified && <Icons.BadgeCheck className="h-[15px] w-[15px] shrink-0" style={{ color: "var(--ux-blue)" }} />}
         </p>
-        <p className="mt-0.5 truncate text-[11.5px]" style={{ color: "var(--ux-muted)" }}>{m.detail}</p>
+        <p className="mt-0.5 truncate text-[0.75rem]" style={{ color: "var(--ux-muted)" }}>{m.detail}</p>
       </div>
       {m.primary && <Pill tone="brand" size="sm">Default</Pill>}
     </div>

@@ -2,7 +2,7 @@
 
 import { use, useCallback, useRef, useState } from "react";
 import Link from "next/link";
-import * as Icons from "lucide-react";
+import * as Icons from "@/components/ux/icons";
 
 import { apiAgree, apiAskSwap, apiExchange, apiSayInExchange } from "@/lib/shop-api";
 import { useAction } from "@/lib/use-action";
@@ -135,22 +135,22 @@ export default function ExchangeThread({ params }: { params: Promise<{ id: strin
   return (
     <HomeShell
       rail={
-        <div className="space-y-[15px]">
+        <div className="space-y-[16px]">
           <Card>
             <SectionHead title="Her offer" />
             <div className="flex items-start gap-3">
               <IconTile icon={swap.icon} tint={swap.tint} ink={swap.ink} size={44} radius={12} />
               <div className="min-w-0 flex-1">
-                <p className="text-[13.5px] font-semibold" style={{ color: "var(--ux-ink)" }}>{swap.skill}</p>
-                <p className="mt-1 text-[12px] leading-snug" style={{ color: "var(--ux-muted)" }}>{swap.detail}</p>
+                <p className="text-[0.875rem] font-semibold" style={{ color: "var(--ux-ink)" }}>{swap.skill}</p>
+                <p className="mt-1 text-[0.75rem] leading-snug" style={{ color: "var(--ux-muted)" }}>{swap.detail}</p>
               </div>
             </div>
-            <p className="mt-3.5 rounded-[11px] p-3 text-[12px] leading-relaxed"
+            <p className="mt-3.5 rounded-[12px] p-3 text-[0.75rem] leading-relaxed"
                style={{ background: "var(--ux-surface-2)", color: "var(--ux-ink-2)" }}>
               <span style={{ color: "var(--ux-muted)" }}>She would like in return: </span>
               <strong style={{ color: "var(--ux-ink)" }}>{swap.wants}</strong>
             </p>
-            <p className="mt-3 flex flex-wrap items-center gap-x-3 text-[11.5px]" style={{ color: "var(--ux-muted)" }}>
+            <p className="mt-3 flex flex-wrap items-center gap-x-3 text-[0.75rem]" style={{ color: "var(--ux-muted)" }}>
               <span className="inline-flex items-center gap-1"><Icons.MapPin className="h-3.5 w-3.5" /> {swap.place}</span>
               <span className="inline-flex items-center gap-1">
                 {swap.online ? <Icons.Video className="h-3.5 w-3.5" /> : <Icons.Users className="h-3.5 w-3.5" />}
@@ -167,7 +167,7 @@ export default function ExchangeThread({ params }: { params: Promise<{ id: strin
                 "Agree the number of sessions before the first one.",
                 "If one of you cannot continue, say so — nobody owes anything.",
               ].map((t) => (
-                <li key={t} className="flex items-start gap-2.5 text-[12.5px] leading-snug" style={{ color: "var(--ux-ink-2)" }}>
+                <li key={t} className="flex items-start gap-2.5 text-[0.8125rem] leading-snug" style={{ color: "var(--ux-ink-2)" }}>
                   <Icons.Check className="mt-[2px] h-[14px] w-[14px] shrink-0" style={{ color: "var(--ux-green-ink)" }} strokeWidth={2.6} />
                   {t}
                 </li>
@@ -178,23 +178,23 @@ export default function ExchangeThread({ params }: { params: Promise<{ id: strin
       }
     >
       <Link href="/app/library"
-            className="ux-hov -my-1 mb-3.5 inline-flex items-center gap-1.5 py-1 text-[12.5px] font-medium"
+            className="ux-hov -my-1 mb-3.5 inline-flex items-center gap-1.5 py-1 text-[0.8125rem] font-medium"
             style={{ color: "var(--ux-brand)" }}>
-        <Icons.ArrowLeft className="ux-ico h-4 w-4" /> Skill Exchange
+        <Icons.ArrowLeft className="ux-ico h-4 w-4" /> Teach and learn
       </Link>
 
       {/* Pinned above the messages, always. An exchange that lives only in a
           thread is one two women remember differently in a month. */}
-      <Card className="mb-[15px]">
+      <Card className="mb-[16px]">
         <div className="flex items-start justify-between gap-4">
           <div className="min-w-0">
-            <h2 className="flex items-center gap-2 text-[15px] font-semibold" style={{ color: "var(--ux-ink)" }}>
+            <h2 className="flex items-center gap-2 text-[1rem] font-semibold" style={{ color: "var(--ux-ink)" }}>
               What you have agreed
               <Pill tone={agreed ? "green" : "blue"} size="sm">
                 {agreed ? "Agreed" : threadId ? "Still talking" : "Not started"}
               </Pill>
             </h2>
-            <p className="mt-1 text-[12px]" style={{ color: "var(--ux-muted)" }}>
+            <p className="mt-1 text-[0.75rem]" style={{ color: "var(--ux-muted)" }}>
               {agreed
                 ? "Both of you see this. It is what you settled on."
                 : threadId
@@ -218,14 +218,14 @@ export default function ExchangeThread({ params }: { params: Promise<{ id: strin
             <div key={k} className="ux-sq flex items-center gap-2.5 rounded-[12px] p-3" style={{ background: "var(--ux-surface-2)" }}>
               <IconTile icon={icon} tint={tint} ink={ink} size={34} radius={9} />
               <span className="min-w-0">
-                <span className="block text-[10.5px] uppercase tracking-[0.06em]" style={{ color: "var(--ux-faint)" }}>{k}</span>
-                <span className="mt-0.5 block truncate text-[12.5px] font-medium" style={{ color: "var(--ux-ink)" }}>{v}</span>
+                <span className="block text-[0.6875rem] uppercase tracking-[0.06em]" style={{ color: "var(--ux-faint)" }}>{k}</span>
+                <span className="mt-0.5 block truncate text-[0.8125rem] font-medium" style={{ color: "var(--ux-ink)" }}>{v}</span>
               </span>
             </div>
           ))}
         </div>
 
-        <div className="mt-2.5 flex flex-wrap items-center gap-x-5 gap-y-2 text-[12px]" style={{ color: "var(--ux-muted)" }}>
+        <div className="mt-2.5 flex flex-wrap items-center gap-x-5 gap-y-2 text-[0.75rem]" style={{ color: "var(--ux-muted)" }}>
           {/* How many sessions is hers to decide, not ours to print. This line
               read "Two sessions each" under every exchange in the app. */}
           {agreement ? (
@@ -241,7 +241,7 @@ export default function ExchangeThread({ params }: { params: Promise<{ id: strin
                 value={sessions}
                 onChange={(ev) => setSessions(Number(ev.target.value))}
                 aria-label="How many sessions each"
-                className="ux-sq h-[30px] rounded-[9px] border px-2 text-[12px]"
+                className="ux-sq h-[30px] rounded-[8px] border px-2 text-[0.75rem]"
                 style={{ borderColor: "var(--ux-line-strong)", background: "var(--ux-surface)", color: "var(--ux-ink)" }}
               >
                 {SESSION_CHOICES.map((n) => <option key={n} value={n}>{n}</option>)}
@@ -256,7 +256,7 @@ export default function ExchangeThread({ params }: { params: Promise<{ id: strin
         </div>
 
         {settle.error && (
-          <p role="alert" className="ux-slide-up mt-3 text-[12.5px] leading-relaxed"
+          <p role="alert" className="ux-slide-up mt-3 text-[0.8125rem] leading-relaxed"
              style={{ color: "var(--ux-orange-ink)" }}>
             {settle.error}
           </p>
@@ -265,7 +265,7 @@ export default function ExchangeThread({ params }: { params: Promise<{ id: strin
         {agreed && (
           <div className="ux-slide-up mt-3.5 flex items-center gap-3 rounded-[12px] p-3.5" style={{ background: "var(--ux-tint-green)" }}>
             <Icons.CheckCheck className="h-[18px] w-[18px] shrink-0" style={{ color: "var(--ux-green-ink)" }} />
-            <p className="min-w-0 flex-1 text-[12.5px]" style={{ color: "var(--ux-ink-2)" }}>
+            <p className="min-w-0 flex-1 text-[0.8125rem]" style={{ color: "var(--ux-ink-2)" }}>
               Agreed. Pick a time for the first session between yourselves.
             </p>
             <NoteBtn label="Pick a time" icon="CalendarPlus"
@@ -280,30 +280,30 @@ export default function ExchangeThread({ params }: { params: Promise<{ id: strin
       </Card>
 
       <Card pad={0} className="flex flex-col overflow-hidden" style={{ minHeight: 420 }}>
-        <div className="flex items-center gap-3 border-b px-[18px] py-3.5" style={{ borderColor: "var(--ux-line)" }}>
+        <div className="flex items-center gap-3 border-b px-[20px] py-3.5" style={{ borderColor: "var(--ux-line)" }}>
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img src={swap.avatar} alt="" className="h-[40px] w-[40px] shrink-0 rounded-full object-cover"
                style={{ background: "var(--ux-brand-tint)" }} />
           <div className="min-w-0 flex-1">
-            <p className="truncate text-[14px] font-semibold" style={{ color: "var(--ux-ink)" }}>{swap.who}</p>
+            <p className="truncate text-[0.875rem] font-semibold" style={{ color: "var(--ux-ink)" }}>{swap.who}</p>
             {/* "usually replies same day" used to sit here. Nothing measures
                 how fast anybody replies, and a woman who waits three days on
                 that sentence decides the app lied to her. */}
-            <p className="mt-0.5 truncate text-[11.5px]" style={{ color: "var(--ux-muted)" }}>{swap.place}</p>
+            <p className="mt-0.5 truncate text-[0.75rem]" style={{ color: "var(--ux-muted)" }}>{swap.place}</p>
           </div>
         </div>
 
-        <div className="flex-1 space-y-3 overflow-y-auto p-[18px]">
+        <div className="flex-1 space-y-3 overflow-y-auto p-[20px]">
           {msgs.length ? msgs.map((m, i) => (
             <div key={`${m.at}-${i}`} className={`flex ${m.mine ? "justify-end" : "justify-start"}`}>
-              <div className="ux-sq ux-rise max-w-[76%] rounded-[14px] px-3.5 py-2.5"
+              <div className="ux-sq ux-rise max-w-[76%] rounded-[12px] px-3.5 py-2.5"
                    style={{ background: m.mine ? "var(--ux-fill)" : "var(--ux-surface-2)", color: m.mine ? "#fff" : "var(--ux-ink)" }}>
-                <p className="text-[13px] leading-relaxed">{m.text}</p>
-                <p className="mt-1 text-[10.5px]" style={{ color: m.mine ? "rgba(255,255,255,0.75)" : "var(--ux-faint)" }}>{m.at}</p>
+                <p className="text-[0.8125rem] leading-relaxed">{m.text}</p>
+                <p className="mt-1 text-[0.6875rem]" style={{ color: m.mine ? "rgba(255,255,255,0.75)" : "var(--ux-faint)" }}>{m.at}</p>
               </div>
             </div>
           )) : (
-            <p className="px-1 py-6 text-center text-[12.5px] leading-relaxed" style={{ color: "var(--ux-muted)" }}>
+            <p className="px-1 py-6 text-center text-[0.8125rem] leading-relaxed" style={{ color: "var(--ux-muted)" }}>
               Nothing said yet. Tell {swap.who.split(" ")[0]} what you would like to learn,
               and what you can teach her in return.
             </p>
@@ -311,7 +311,7 @@ export default function ExchangeThread({ params }: { params: Promise<{ id: strin
         </div>
 
         {say.error && (
-          <p role="alert" className="ux-slide-up px-[18px] pb-1 text-[12.5px] leading-relaxed"
+          <p role="alert" className="ux-slide-up px-[20px] pb-1 text-[0.8125rem] leading-relaxed"
              style={{ color: "var(--ux-orange-ink)" }}>
             {say.error}
           </p>
@@ -325,7 +325,7 @@ export default function ExchangeThread({ params }: { params: Promise<{ id: strin
             onKeyDown={(ev) => { if (ev.key === "Enter") { ev.preventDefault(); send(); } }}
             placeholder={msgs.length ? `Reply to ${swap.who.split(" ")[0]}…` : `Write to ${swap.who.split(" ")[0]}…`}
             aria-label="Write a reply"
-            className="ux-sq h-[44px] min-w-0 flex-1 rounded-[11px] border px-4 text-[13px] outline-none"
+            className="ux-sq h-[44px] min-w-0 flex-1 rounded-[12px] border px-4 text-[0.8125rem] outline-none"
             style={{ borderColor: "var(--ux-line-strong)", background: "var(--ux-surface)", color: "var(--ux-ink)" }}
           />
           <button

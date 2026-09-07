@@ -34,7 +34,7 @@ export default function SakhiAvatar({
   size,
   className = "",
   talkingSrc = "/sakhi-talking.webp",
-  stillSrc = "/sakhi-still.png",
+  stillSrc = "/sakhi-still.webp",
   idleSrc,
 }: {
   /** Mouth track — accepted for API compatibility; the clip carries its own. */

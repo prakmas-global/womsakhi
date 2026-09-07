@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useMemo, useState } from "react";
-import * as Icons from "lucide-react";
+import * as Icons from "@/components/ux/icons";
 
 import {
   ActionBtn, Btn, Card, EmptyState, NoteBtn, Pill,
@@ -72,7 +72,7 @@ export default function BookingsPage() {
     <HomeShell
       active="/app/schedule"
       rail={
-        <div className="space-y-[15px]">
+        <div className="space-y-[16px]">
           <Card className="ux-onscroll-soft">
             <SectionHead title="Before you cancel" icon="Info" />
             <ul className="space-y-2.5">
@@ -81,13 +81,13 @@ export default function BookingsPage() {
                 "A workshop place goes to whoever is next on the list.",
                 "A paid stall fee comes back within 5–7 working days.",
               ].map((t) => (
-                <li key={t} className="flex items-start gap-2.5 text-[12.5px] leading-snug" style={{ color: "var(--ux-ink-2)" }}>
+                <li key={t} className="flex items-start gap-2.5 text-[0.8125rem] leading-snug" style={{ color: "var(--ux-ink-2)" }}>
                   <Icons.Dot className="mt-[1px] h-[15px] w-[15px] shrink-0" style={{ color: "var(--ux-brand)" }} />
                   {t}
                 </li>
               ))}
             </ul>
-            <p className="mt-3.5 rounded-[11px] p-3 text-[11.5px] leading-relaxed"
+            <p className="mt-3.5 rounded-[12px] p-3 text-[0.75rem] leading-relaxed"
                style={{ background: "var(--ux-surface-2)", color: "var(--ux-muted)" }}>
               Cancelling is always allowed and never counts against you. Telling someone early is just kinder.
             </p>
@@ -95,10 +95,10 @@ export default function BookingsPage() {
         </div>
       }
     >
-      <div className="mb-[18px] flex items-end justify-between gap-4">
+      <div className="mb-[20px] flex items-end justify-between gap-4">
         <div>
-          <h1 className="text-[24px] font-bold" style={{ color: "var(--ux-ink)" }}>Bookings</h1>
-          <p className="mt-1.5 text-[13px]" style={{ color: "var(--ux-muted)" }}>
+          <h1 className="text-[1.5rem] font-bold" style={{ color: "var(--ux-ink)" }}>Bookings</h1>
+          <p className="mt-1.5 text-[0.8125rem]" style={{ color: "var(--ux-muted)" }}>
             {upcoming} {plural("booking", upcoming)} coming up
           </p>
         </div>
@@ -108,21 +108,21 @@ export default function BookingsPage() {
       <SourceNote source={source} what="bookings" />
 
       {shown.length ? (
-        <div className="ux-deck ux-stagger space-y-[13px]">
+        <div className="ux-deck ux-stagger space-y-[12px]">
           {shown.map((b, i) => {
             const gone = isGone(b);
             const asking = cancelling === b.id;
             return (
               <Card key={b.id} className="ux-i ux-onscroll" style={{ ["--i" as string]: i }}>
                 <div className="flex items-start gap-3.5">
-                  <span className="h-[54px] w-[54px] shrink-0 overflow-hidden rounded-[13px]"
+                  <span className="h-[54px] w-[54px] shrink-0 overflow-hidden rounded-[12px]"
                         style={{ background: "var(--ux-brand-tint)" }}>
                     {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img src={b.art} alt="" className="ux-art h-full w-full object-cover" />
                   </span>
                   <div className="min-w-0 flex-1">
                     <div className="flex items-start gap-2">
-                      <h3 className="min-w-0 flex-1 text-[14.5px] font-semibold"
+                      <h3 className="min-w-0 flex-1 text-[0.875rem] font-semibold"
                           style={{ color: gone ? "var(--ux-muted)" : "var(--ux-ink)" }}>
                         {b.what}
                       </h3>
@@ -130,13 +130,13 @@ export default function BookingsPage() {
                         {gone ? "Cancelled" : b.state}
                       </Pill>
                     </div>
-                    <p className="mt-1.5 flex flex-wrap items-center gap-x-3 gap-y-1 text-[11.5px]"
+                    <p className="mt-1.5 flex flex-wrap items-center gap-x-3 gap-y-1 text-[0.75rem]"
                        style={{ color: "var(--ux-muted)" }}>
                       <span className="inline-flex items-center gap-1"><Icons.Clock className="h-3.5 w-3.5" /> {b.when}</span>
                       <span className="inline-flex items-center gap-1"><Icons.MapPin className="h-3.5 w-3.5" /> {b.where}</span>
                       <span>{b.ref}</span>
                     </p>
-                    <p className="mt-2 text-[12px]" style={{ color: "var(--ux-ink-2)" }}>
+                    <p className="mt-2 text-[0.75rem]" style={{ color: "var(--ux-ink-2)" }}>
                       {b.state === "Waitlisted"
                         ? "You are third on the list. We will tell you the moment a place opens."
                         : b.cost}
@@ -148,7 +148,7 @@ export default function BookingsPage() {
                     who pressed cancel and saw the row unchanged has to be told
                     why, or she will assume it worked. */}
                 {cancel.error && cancelling === b.id && (
-                  <p className="ux-slide-up mt-3 text-[12.5px]" style={{ color: "var(--ux-orange-ink)" }}>
+                  <p className="ux-slide-up mt-3 text-[0.8125rem]" style={{ color: "var(--ux-orange-ink)" }}>
                     {cancel.error}
                   </p>
                 )}
@@ -158,7 +158,7 @@ export default function BookingsPage() {
                 {asking ? (
                   <div className="ux-slide-up mt-3.5 flex items-center justify-between gap-4 rounded-[12px] p-3.5"
                        style={{ background: "var(--ux-tint-orange)" }}>
-                    <p className="text-[12.5px] leading-snug" style={{ color: "var(--ux-ink-2)" }}>
+                    <p className="text-[0.8125rem] leading-snug" style={{ color: "var(--ux-ink-2)" }}>
                       {b.kind === "Mentor"
                         ? "She has kept this hour free. Cancel it?"
                         : b.kind === "Event"

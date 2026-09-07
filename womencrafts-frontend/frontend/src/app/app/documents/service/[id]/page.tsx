@@ -6,7 +6,7 @@ import { apiSaveListing, apiUpdateListing } from "@/lib/shop-api";
 import { messageFrom } from "@/lib/use-action";
 import { settled, useAttemptKey } from "@/lib/idempotency";
 import Link from "next/link";
-import * as Icons from "lucide-react";
+import * as Icons from "@/components/ux/icons";
 
 import { Btn, Card, Chip, EmptyState, IconTile, SectionHead } from "@/components/ux/kit";
 import { Field, TextInput, Toggle } from "@/components/ux/settings/Frame";
@@ -157,27 +157,27 @@ export default function ServiceEditor({ params }: { params: Promise<{ id: string
     <HomeShell
       skeleton="form"
       rail={
-        <div className="space-y-[15px]">
+        <div className="space-y-[16px]">
           <Card>
             <SectionHead title="What a buyer sees" sub="Updates as you type" />
-            <div className="ux-sq overflow-hidden rounded-[14px] border" style={{ borderColor: "var(--ux-line)" }}>
+            <div className="ux-sq overflow-hidden rounded-[12px] border" style={{ borderColor: "var(--ux-line)" }}>
               <div className="h-[120px] overflow-hidden" style={{ background: "var(--ux-tint-pink)" }}>
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img src={base.art} alt="" className="h-full w-full object-cover" />
               </div>
               <div className="p-3.5">
-                <p className="text-[14px] font-semibold" style={{ color: form.name ? "var(--ux-ink)" : "var(--ux-faint)" }}>
+                <p className="text-[0.875rem] font-semibold" style={{ color: form.name ? "var(--ux-ink)" : "var(--ux-faint)" }}>
                   {form.name || "What you do"}
                 </p>
-                <p className="mt-1 text-[17px] font-bold tabular-nums"
+                <p className="mt-1 text-[1.125rem] font-bold tabular-nums"
                    style={{ color: rate_minor ? "var(--ux-ink)" : "var(--ux-faint)" }}>
                   {rate_minor ? `${rupees(rate_minor)} ${form.rateKind}` : "₹— "}
                 </p>
-                <p className="mt-1.5 text-[12px] leading-snug"
+                <p className="mt-1.5 text-[0.75rem] leading-snug"
                    style={{ color: form.about ? "var(--ux-muted)" : "var(--ux-faint)" }}>
                   {form.about || "Say what is included, and what a buyer should have ready."}
                 </p>
-                <p className="mt-2.5 flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px]" style={{ color: "var(--ux-muted)" }}>
+                <p className="mt-2.5 flex flex-wrap items-center gap-x-3 gap-y-1 text-[0.6875rem]" style={{ color: "var(--ux-muted)" }}>
                   <span className="inline-flex items-center gap-1"><Icons.MapPin className="h-3 w-3" /> {form.where}</span>
                   {travels && <span>up to {form.travelKm} km</span>}
                   <span className="inline-flex items-center gap-1"><Icons.Clock className="h-3 w-3" /> about {form.mins} min</span>
@@ -191,14 +191,14 @@ export default function ServiceEditor({ params }: { params: Promise<{ id: string
             {missing.length ? (
               <ul className="space-y-2.5">
                 {missing.map((m) => (
-                  <li key={m} className="flex items-center gap-2.5 text-[12.5px]" style={{ color: "var(--ux-ink-2)" }}>
+                  <li key={m} className="flex items-center gap-2.5 text-[0.8125rem]" style={{ color: "var(--ux-ink-2)" }}>
                     <Icons.Circle className="h-[14px] w-[14px] shrink-0" style={{ color: "var(--ux-faint)" }} />
                     Still needs {m}
                   </li>
                 ))}
               </ul>
             ) : (
-              <p className="flex items-center gap-2 text-[12.5px]" style={{ color: "var(--ux-green-ink)" }}>
+              <p className="flex items-center gap-2 text-[0.8125rem]" style={{ color: "var(--ux-green-ink)" }}>
                 <Icons.CheckCheck className="h-[16px] w-[16px]" /> Ready to publish.
               </p>
             )}
@@ -211,10 +211,10 @@ export default function ServiceEditor({ params }: { params: Promise<{ id: string
             </div>
             {/* "Saved." is now only said when the server said so. */}
             {saved && !problem && (
-              <p className="ux-slide-up mt-2.5 text-center text-[12px]" style={{ color: "var(--ux-green-ink)" }}>Saved.</p>
+              <p className="ux-slide-up mt-2.5 text-center text-[0.75rem]" style={{ color: "var(--ux-green-ink)" }}>Saved.</p>
             )}
             {problem && (
-              <p role="alert" className="ux-slide-up mt-2.5 text-[12.5px] leading-relaxed"
+              <p role="alert" className="ux-slide-up mt-2.5 text-[0.8125rem] leading-relaxed"
                  style={{ color: "var(--ux-orange-ink)" }}>
                 {problem}
               </p>
@@ -230,8 +230,8 @@ export default function ServiceEditor({ params }: { params: Promise<{ id: string
                   <div key={label} className="ux-hov flex items-center gap-3">
                     <IconTile icon={icon} tint={tint} ink={ink} size={38} />
                     <div className="min-w-0">
-                      <p className="text-[17px] font-bold leading-none tabular-nums" style={{ color: "var(--ux-ink)" }}>{v}</p>
-                      <p className="mt-1 truncate text-[11.5px]" style={{ color: "var(--ux-muted)" }}>{label}</p>
+                      <p className="text-[1.125rem] font-bold leading-none tabular-nums" style={{ color: "var(--ux-ink)" }}>{v}</p>
+                      <p className="mt-1 truncate text-[0.75rem]" style={{ color: "var(--ux-muted)" }}>{label}</p>
                     </div>
                   </div>
                 ))}
@@ -242,21 +242,21 @@ export default function ServiceEditor({ params }: { params: Promise<{ id: string
       }
     >
       <Link href="/app/documents"
-            className="ux-hov -my-1 mb-3.5 inline-flex items-center gap-1.5 py-1 text-[12.5px] font-medium"
+            className="ux-hov -my-1 mb-3.5 inline-flex items-center gap-1.5 py-1 text-[0.8125rem] font-medium"
             style={{ color: "var(--ux-brand)" }}>
-        <Icons.ArrowLeft className="ux-ico h-4 w-4" /> Your business
+        <Icons.ArrowLeft className="ux-ico h-4 w-4" /> Your shop
       </Link>
 
-      <h1 className="text-[24px] font-bold" style={{ color: "var(--ux-ink)" }}>
+      <h1 className="text-[1.5rem] font-bold" style={{ color: "var(--ux-ink)" }}>
         {isNew ? "Offer a service" : form.name || "Edit service"}
       </h1>
-      <p className="mb-[20px] mt-1.5 text-[13px]" style={{ color: "var(--ux-muted)" }}>
+      <p className="mb-[20px] mt-1.5 text-[0.8125rem]" style={{ color: "var(--ux-muted)" }}>
         {isNew
           ? "Anything you do with your hands or your time — stitching, mehendi, tuition, cooking, childcare."
           : "Changes reach buyers straight away."}
       </p>
 
-      <Card className="mb-[15px]">
+      <Card className="mb-[16px]">
         <SectionHead title="What you do" />
         <div className="space-y-4">
           <Field label="Name it the way someone would ask for it"
@@ -265,7 +265,7 @@ export default function ServiceEditor({ params }: { params: Promise<{ id: string
           </Field>
 
           <div>
-            <span className="block text-[13px] font-semibold" style={{ color: "var(--ux-ink)" }}>What kind of work</span>
+            <span className="block text-[0.8125rem] font-semibold" style={{ color: "var(--ux-ink)" }}>What kind of work</span>
             <div className="mt-2 flex flex-wrap gap-2">
               {SERVICE_CATEGORIES.map((c) => (
                 <Chip key={c} selected={form.category === c}
@@ -282,21 +282,21 @@ export default function ServiceEditor({ params }: { params: Promise<{ id: string
               onChange={(e) => { setForm((f) => ({ ...f, about: e.target.value })); setSaved(false); }}
               rows={4}
               aria-label="Describe it"
-              className="ux-sq w-full resize-y rounded-[11px] border p-3.5 text-[13.5px] leading-relaxed outline-none"
+              className="ux-sq w-full resize-y rounded-[12px] border p-3.5 text-[0.875rem] leading-relaxed outline-none"
               style={{ borderColor: "var(--ux-line-strong)", background: "var(--ux-surface)", color: "var(--ux-ink)" }}
             />
           </Field>
         </div>
       </Card>
 
-      <Card className="mb-[15px]">
+      <Card className="mb-[16px]">
         <SectionHead title="What you charge" sub="Buyers see this exactly — nothing is added on top" />
         <div className="grid grid-cols-2 gap-4">
           <Field label="Your rate" hint="In rupees.">
             <TextInput value={form.rupees} onChange={set("rupees")} placeholder="450" inputMode="numeric" />
           </Field>
           <div>
-            <span className="block text-[13px] font-semibold" style={{ color: "var(--ux-ink)" }}>Charged</span>
+            <span className="block text-[0.8125rem] font-semibold" style={{ color: "var(--ux-ink)" }}>Charged</span>
             <div className="mt-2 flex flex-wrap gap-2">
               {RATE_KINDS.map((k) => (
                 <Chip key={k} selected={form.rateKind === k}
@@ -322,7 +322,7 @@ export default function ServiceEditor({ params }: { params: Promise<{ id: string
                 key={w}
                 onClick={() => { setForm((f) => ({ ...f, where: w })); setSaved(false); }}
                 aria-pressed={on}
-                className="ux-i ux-sq flex w-full items-center gap-3.5 rounded-[13px] border p-3.5 text-start"
+                className="ux-i ux-sq flex w-full items-center gap-3.5 rounded-[12px] border p-3.5 text-start"
                 style={{
                   borderColor: on ? "var(--ux-brand)" : "var(--ux-line)",
                   background: on ? "var(--ux-brand-tint)" : "var(--ux-surface)",
@@ -332,8 +332,8 @@ export default function ServiceEditor({ params }: { params: Promise<{ id: string
                 <IconTile icon={w === "Online" ? "Video" : w === "At your place" ? "Bike" : "Home"}
                           tint="--ux-tint-lilac" ink="--ux-brand" size={40} radius={11} />
                 <span className="min-w-0 flex-1">
-                  <span className="block text-[13.5px] font-semibold" style={{ color: "var(--ux-ink)" }}>{w}</span>
-                  <span className="mt-0.5 block text-[11.5px]" style={{ color: "var(--ux-muted)" }}>
+                  <span className="block text-[0.875rem] font-semibold" style={{ color: "var(--ux-ink)" }}>{w}</span>
+                  <span className="mt-0.5 block text-[0.75rem]" style={{ color: "var(--ux-muted)" }}>
                     {w === "At her place" ? "She comes to you"
                       : w === "At your place" ? "You travel to her"
                       : w === "Either" ? "Whichever suits, agreed when she books"

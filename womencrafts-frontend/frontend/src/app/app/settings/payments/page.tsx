@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import * as Icons from "lucide-react";
+import * as Icons from "@/components/ux/icons";
 
 import { Btn, IconTile, Pill, SourceNote } from "@/components/ux/kit";
 import { Card, Field, SectionHead, SettingsPage, TextInput } from "@/components/ux/settings/Frame";
@@ -83,7 +83,7 @@ export default function PaymentMethodsPage() {
             {methods.map((m, i) => (
               <div
                 key={m.id}
-                className="ux-i ux-sq rounded-[13px] border p-3.5"
+                className="ux-i ux-sq rounded-[12px] border p-3.5"
                 style={{
                   borderColor: m.primary ? "var(--ux-brand)" : "var(--ux-line)",
                   background: m.primary ? "var(--ux-brand-tint)" : "var(--ux-surface)",
@@ -94,14 +94,14 @@ export default function PaymentMethodsPage() {
                   <IconTile icon={m.icon} tint={m.tint} ink={m.ink} size={42} radius={11} />
                   <div className="min-w-0 flex-1">
                     <div className="flex flex-wrap items-center gap-2">
-                      <p className="truncate text-[13.5px] font-semibold" style={{ color: "var(--ux-ink)" }}>{m.label}</p>
+                      <p className="truncate text-[0.875rem] font-semibold" style={{ color: "var(--ux-ink)" }}>{m.label}</p>
                       {/* Named, not implied by position. */}
                       {m.primary && <Pill tone="brand" size="sm">Primary</Pill>}
                       {m.verified
                         ? <Pill tone="green" size="sm">Checked</Pill>
                         : <Pill tone="orange" size="sm">Not checked yet</Pill>}
                     </div>
-                    <p className="mt-0.5 truncate text-[11.5px]" style={{ color: "var(--ux-muted)" }}>
+                    <p className="mt-0.5 truncate text-[0.75rem]" style={{ color: "var(--ux-muted)" }}>
                       {/* "UPI · UPI ID" says the same thing twice. */}
                       {m.detail.toLowerCase().includes(m.kind.toLowerCase()) ? m.kind : `${m.kind} · ${m.detail}`}
                     </p>
@@ -109,7 +109,7 @@ export default function PaymentMethodsPage() {
                 </div>
                 <div className="mt-3 flex flex-wrap gap-2 border-t pt-3" style={{ borderColor: "var(--ux-line)" }}>
                   {m.primary ? (
-                    <span className="inline-flex items-center gap-1.5 py-1.5 text-[12px] font-medium" style={{ color: "var(--ux-green-ink)" }}>
+                    <span className="inline-flex items-center gap-1.5 py-1.5 text-[0.75rem] font-medium" style={{ color: "var(--ux-green-ink)" }}>
                       <Icons.CheckCircle2 className="h-[14px] w-[14px]" /> Your money comes here
                     </span>
                   ) : (
@@ -123,7 +123,7 @@ export default function PaymentMethodsPage() {
             ))}
           </div>
         ) : (
-          <p className="py-2 text-[13px]" style={{ color: "var(--ux-muted)" }}>
+          <p className="py-2 text-[0.8125rem]" style={{ color: "var(--ux-muted)" }}>
             Nothing added yet. Add a bank account or a UPI ID and your earnings have somewhere to go.
             Until then, Withdraw has nowhere to send them.
           </p>
@@ -135,8 +135,8 @@ export default function PaymentMethodsPage() {
           <div className="ux-slide-up flex items-start gap-3">
             <Icons.CheckCircle2 className="mt-[1px] h-[18px] w-[18px] shrink-0" style={{ color: "var(--ux-green-ink)" }} />
             <div>
-              <p className="text-[13.5px] font-semibold" style={{ color: "var(--ux-ink)" }}>Added</p>
-              <p className="mt-1 text-[12.5px] leading-relaxed" style={{ color: "var(--ux-ink-2)" }}>
+              <p className="text-[0.875rem] font-semibold" style={{ color: "var(--ux-ink)" }}>Added</p>
+              <p className="mt-1 text-[0.8125rem] leading-relaxed" style={{ color: "var(--ux-ink-2)" }}>
                 We will send ₹1 to check it works, and it will show as Checked within a day. You can use it
                 straight away — the ₹1 comes back.
               </p>
@@ -158,12 +158,12 @@ export default function PaymentMethodsPage() {
               <button
                 key={o.k}
                 onClick={() => setDraft(o.k)}
-                className="ux-i ux-sq rounded-[13px] border p-4 text-start"
+                className="ux-i ux-sq rounded-[12px] border p-4 text-start"
                 style={{ borderColor: "var(--ux-line)", background: "var(--ux-surface)", ["--i" as string]: i }}
               >
                 <IconTile icon={o.icon} tint={o.tint} ink={o.ink} size={40} radius={11} />
-                <p className="mt-2.5 text-[13.5px] font-semibold" style={{ color: "var(--ux-ink)" }}>{o.t}</p>
-                <p className="mt-1 text-[12px] leading-snug" style={{ color: "var(--ux-muted)" }}>{o.d}</p>
+                <p className="mt-2.5 text-[0.875rem] font-semibold" style={{ color: "var(--ux-ink)" }}>{o.t}</p>
+                <p className="mt-1 text-[0.75rem] leading-snug" style={{ color: "var(--ux-muted)" }}>{o.d}</p>
               </button>
             ))}
           </div>
@@ -186,7 +186,7 @@ export default function PaymentMethodsPage() {
                 {/* Said here, while she can still fix it — not after she has
                     pressed save and the money has gone somewhere else. */}
                 {form.confirm && form.confirm !== form.account && (
-                  <p className="text-[12.5px]" style={{ color: "var(--ux-orange-ink)" }}>
+                  <p className="text-[0.8125rem]" style={{ color: "var(--ux-orange-ink)" }}>
                     These two do not match yet.
                   </p>
                 )}
@@ -210,7 +210,7 @@ export default function PaymentMethodsPage() {
           </div>
 
           {problem && (
-            <p className="ux-slide-up mt-3 text-[12.5px]" style={{ color: "var(--ux-orange-ink)" }}>
+            <p className="ux-slide-up mt-3 text-[0.8125rem]" style={{ color: "var(--ux-orange-ink)" }}>
               {problem}
             </p>
           )}
@@ -248,7 +248,7 @@ export default function PaymentMethodsPage() {
             "Buyers and employers never see your account number.",
             "We never take money out. Only you can start a withdrawal.",
           ].map((t) => (
-            <li key={t} className="flex items-start gap-2.5 text-[12.5px] leading-relaxed" style={{ color: "var(--ux-ink-2)" }}>
+            <li key={t} className="flex items-start gap-2.5 text-[0.8125rem] leading-relaxed" style={{ color: "var(--ux-ink-2)" }}>
               <Icons.Check className="mt-[2px] h-[14px] w-[14px] shrink-0" style={{ color: "var(--ux-green-ink)" }} strokeWidth={2.6} />
               {t}
             </li>

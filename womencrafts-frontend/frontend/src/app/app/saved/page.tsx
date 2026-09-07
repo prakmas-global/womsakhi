@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from "react";
 import Link from "next/link";
-import * as Icons from "lucide-react";
+import * as Icons from "@/components/ux/icons";
 
 import { Btn, Card, EmptyState, IconTile, Pill, SectionHead, SourceNote, Tabs, plural } from "@/components/ux/kit";
 import { HomeShell } from "@/components/ux/home/HomeShell";
@@ -69,7 +69,7 @@ export default function SavedPage() {
       skeleton="list"
       loadFailed="your saved things"
       rail={
-        <div className="space-y-[15px]">
+        <div className="space-y-[16px]">
           {closing.length > 0 && (
             <Card>
               <SectionHead title="Running out of time" icon="Clock" />
@@ -77,8 +77,8 @@ export default function SavedPage() {
                 {closing.map((i) => (
                   <li key={i.id}>
                     <Link href={i.href as never} className="ux-hov block">
-                      <p className="text-[13px] font-medium leading-snug" style={{ color: "var(--ux-ink)" }}>{i.title}</p>
-                      <p className="mt-0.5 text-[11.5px] font-medium" style={{ color: "var(--ux-orange-ink)" }}>{i.urgent}</p>
+                      <p className="text-[0.8125rem] font-medium leading-snug" style={{ color: "var(--ux-ink)" }}>{i.title}</p>
+                      <p className="mt-0.5 text-[0.75rem] font-medium" style={{ color: "var(--ux-orange-ink)" }}>{i.urgent}</p>
                     </Link>
                   </li>
                 ))}
@@ -88,7 +88,7 @@ export default function SavedPage() {
 
           <Card>
             <SectionHead title="What saving does" icon="Info" />
-            <p className="text-[12.5px] leading-relaxed" style={{ color: "var(--ux-ink-2)" }}>
+            <p className="text-[0.8125rem] leading-relaxed" style={{ color: "var(--ux-ink-2)" }}>
               Saving keeps a thing here, on this phone and any other you sign in on. It does not apply, book
               or reserve anything — you still have to press the button on the day.
             </p>
@@ -96,10 +96,10 @@ export default function SavedPage() {
         </div>
       }
     >
-      <div className="mb-[18px] flex flex-wrap items-end justify-between gap-4">
+      <div className="mb-[20px] flex flex-wrap items-end justify-between gap-4">
         <div>
-          <h1 className="text-[24px] font-bold" style={{ color: "var(--ux-ink)" }}>Saved</h1>
-          <p className="mt-1.5 text-[13px]" style={{ color: "var(--ux-muted)" }}>
+          <h1 className="text-[1.5rem] font-bold" style={{ color: "var(--ux-ink)" }}>Saved</h1>
+          <p className="mt-1.5 text-[0.8125rem]" style={{ color: "var(--ux-muted)" }}>
             {live.length} {plural("thing", live.length)} you kept for later.
           </p>
         </div>
@@ -113,7 +113,7 @@ export default function SavedPage() {
           {shown.map((it, i) => (
             <div
               key={it.id}
-              className="ux-i ux-sq flex items-center gap-3.5 rounded-[14px] border p-3.5"
+              className="ux-i ux-sq flex items-center gap-3.5 rounded-[12px] border p-3.5"
               style={{
                 borderColor: "var(--ux-line)",
                 background: "var(--ux-surface)",
@@ -133,14 +133,14 @@ export default function SavedPage() {
               <Link href={(it.href || "/app/saved") as never}
                     className={`min-w-0 flex-1 ${it.href ? "ux-hov" : "pointer-events-none"}`}>
                 <div className="flex flex-wrap items-center gap-2">
-                  <p className="truncate text-[14px] font-semibold" style={{ color: "var(--ux-ink)" }}>{it.title}</p>
+                  <p className="truncate text-[0.875rem] font-semibold" style={{ color: "var(--ux-ink)" }}>{it.title}</p>
                   <Pill tone="neutral" size="sm">{it.kind}</Pill>
                   {/* Expired is stated, not hidden. Finding out it closed is information. */}
                   {it.gone && <Pill tone="neutral" size="sm">Closed</Pill>}
                 </div>
-                <p className="mt-0.5 truncate text-[12px]" style={{ color: "var(--ux-muted)" }}>{it.sub}</p>
+                <p className="mt-0.5 truncate text-[0.75rem]" style={{ color: "var(--ux-muted)" }}>{it.sub}</p>
                 {it.urgent && !it.gone && (
-                  <p className="mt-1 inline-flex items-center gap-1.5 text-[11.5px] font-medium" style={{ color: "var(--ux-orange-ink)" }}>
+                  <p className="mt-1 inline-flex items-center gap-1.5 text-[0.75rem] font-medium" style={{ color: "var(--ux-orange-ink)" }}>
                     <Icons.Clock className="h-[12px] w-[12px]" /> {it.urgent}
                   </p>
                 )}
@@ -160,7 +160,7 @@ export default function SavedPage() {
                     void apiUnsave(it.refKind, it.refId).catch(refetch);
                   }}
                   aria-label={`Remove ${it.title} from saved`}
-                  className="ux-press ux-sq grid h-[36px] w-[36px] place-items-center rounded-[10px] border"
+                  className="ux-press ux-sq grid h-[36px] w-[36px] place-items-center rounded-[12px] border"
                   style={{ borderColor: "var(--ux-line)" }}
                 >
                   <Icons.BookmarkX className="h-[16px] w-[16px]" style={{ color: "var(--ux-muted)" }} strokeWidth={1.9} />
