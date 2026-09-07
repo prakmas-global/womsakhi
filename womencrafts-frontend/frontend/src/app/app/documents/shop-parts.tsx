@@ -66,11 +66,11 @@ export function Tile({ tone, size = 34, radius = 11, children }: {
 }
 
 export const Sec = ({ children, action }: { children: React.ReactNode; action?: React.ReactNode }) => (
-  <h3 className="mb-3.5 mt-7 flex items-center gap-2.5 text-[0.6875rem] font-extrabold uppercase tracking-[0.16em] first:mt-0"
+  <h2 className="mb-3.5 mt-7 flex items-center gap-2.5 text-[0.6875rem] font-extrabold uppercase tracking-[0.16em] first:mt-0"
       style={{ color: "var(--ux-faint)" }}>
     {children}
     {action && <span className="ms-auto normal-case tracking-normal">{action}</span>}
-  </h3>
+  </h2>
 );
 
 /* ── the hero, in Home's language ───────────────────────────────────────── */
@@ -278,13 +278,15 @@ const LABEL: Record<string, string> = {
 /** Same as `OrderCard`: the listing comes back out, so the parent's four
  *  handlers can be stable and the memo can actually hit. */
 export const ListingCard = memo(function ListingCard({
-  l, onPhoto, onStock, onPause, onShare, busy,
+  l, onPhoto, onStock, onPause, onShare, onDelete, busy,
 }: {
   l: Listing;
   onPhoto: (l: Listing, file: File) => void;
   onStock: (l: Listing, next: number) => void;
   onPause: (l: Listing) => void;
   onShare: (l: Listing) => void;
+  /** Asks for confirmation upstream — a listing carries photographs she took. */
+  onDelete: () => void;
   busy: boolean;
 }) {
   const [over, setOver] = useState(false);
@@ -417,6 +419,16 @@ export const ListingCard = memo(function ListingCard({
                            color: "var(--ux-ink-2)" }}>
             <Icons.Share2 className="h-[13px] w-[13px]" /> Share
           </button>
+          {/* Quiet, and last. Removing a listing is rarely what she wants —
+              pausing usually is — so it does not compete with the actions she
+              reaches for daily. It asks before it does anything. */}
+          <button type="button" onClick={onDelete} disabled={busy}
+                  aria-label={`Remove ${l.title} from your shop`}
+                  className="ux-press inline-flex min-h-[36px] items-center gap-1.5 rounded-[8px] px-3 text-[0.75rem] font-bold"
+                  style={{ border: "1px solid var(--ux-line)", background: "var(--ux-surface)",
+                           color: "var(--ux-faint)", opacity: busy ? 0.5 : 1 }}>
+            <Icons.Trash2 className="h-[13px] w-[13px]" /> Remove
+          </button>
         </div>
       </div>
     </article>
@@ -441,7 +453,7 @@ export const Storefront = memo(function Storefront(
                   style={{ background: "rgba(255,255,255,.2)", boxShadow: "inset 0 0 0 1px rgba(255,255,255,.3)" }}>
               {(summary?.name ?? "S").slice(0, 2).toUpperCase()}
             </span>
-            <h4 className="mt-3 text-[1.125rem] font-extrabold tracking-[-0.02em]">{summary?.name ?? "Your shop"}</h4>
+            <h2 className="mt-3 text-[1.125rem] font-extrabold tracking-[-0.02em]">{summary?.name ?? "Your shop"}</h2>
             <p className="mt-1 text-[0.75rem]" style={{ color: "var(--ux-on-brand-2)" }}>
               {summary?.handle ?? "womsakhi.in"}
             </p>

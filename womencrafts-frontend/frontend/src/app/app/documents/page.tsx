@@ -8,7 +8,7 @@ import { HomeShell } from "@/components/ux/home/HomeShell";
 import { Btn, EmptyState } from "@/components/ux/kit";
 import { useResource } from "@/lib/use-resource";
 import {
-  apiAdvanceOrder, apiListings, apiPauseListing, apiShopOrders, apiShopSummary, apiUpdateListing,
+  apiAdvanceOrder, apiDeleteListing, apiListings, apiPauseListing, apiShopOrders, apiShopSummary, apiUpdateListing,
   type Listing, type ShopOrder, type ShopSummary,
 } from "@/lib/shop-api";
 import { apiUploadImage } from "@/lib/uploads-api";
@@ -27,6 +27,7 @@ import { Hero, ListingCard, OrderCard, Sec, Stats, Storefront } from "./shop-par
 
 export default function ShopPage() {
   const [busy, setBusy] = useState<string | null>(null);
+  const [confirmDelete, setConfirmDelete] = useState<Listing | null>(null);
   const [note, setNote] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
@@ -101,6 +102,27 @@ export default function ShopPage() {
     finally { setBusy(null); }
   }, [reListings, reSummary, say]);
 
+  /**
+   * Remove a listing for good.
+   *
+   * The last missing letter of CRUD here: the shop could pause and edit but
+   * never delete, so a thing she stopped making sat in her shop forever, or
+   * lived permanently paused where she still had to scroll past it.
+   *
+   * Asks first, and says what pausing would do instead — for most of what a
+   * woman wants to take down, pausing is the right answer and deleting loses
+   * the photographs she took.
+   */
+  const onDelete = useCallback(async (l: Listing) => {
+    setBusy(l.id); setError(null);
+    try {
+      await apiDeleteListing(l.id);
+      reListings(); reSummary();
+      say(`"${l.title}" removed from your shop`);
+    } catch { setError("Could not remove that. It is still in your shop."); }
+    finally { setBusy(null); setConfirmDelete(null); }
+  }, [reListings, reSummary, say]);
+
   const onShare = useCallback(async (l: Listing) => {
     const url = `${window.location.origin}/shop/${l.id}`;
     try { await navigator.clipboard.writeText(url); say("Link copied — send it on WhatsApp"); }
@@ -139,6 +161,27 @@ export default function ShopPage() {
               {needs.length > 0 ? "Orders waiting on you" : "Orders"}
             </Sec>
 
+            {confirmDelete && (
+              <div className="mb-4 rounded-[16px] p-5"
+                   style={{ background: "var(--ux-surface)", border: `1px solid var(--ux-danger-solid)` }}>
+                <p className="text-[0.9375rem] font-bold" style={{ color: "var(--ux-ink)" }}>
+                  Remove &ldquo;{confirmDelete.title}&rdquo; from your shop?
+                </p>
+                <p className="mt-1.5 text-[0.8125rem] leading-relaxed" style={{ color: "var(--ux-muted)" }}>
+                  This cannot be undone, and the photographs go with it. If you have only stopped
+                  making it for now, pause it instead — it comes back exactly as it was.
+                </p>
+                <div className="mt-4 flex flex-wrap gap-2">
+                  <Btn size="sm" onClick={() => onDelete(confirmDelete)}>Yes, remove it</Btn>
+                  <Btn size="sm" variant="outline"
+                       onClick={() => { onPause(confirmDelete); setConfirmDelete(null); }}>
+                    Pause it instead
+                  </Btn>
+                  <Btn size="sm" variant="ghost" onClick={() => setConfirmDelete(null)}>Keep it</Btn>
+                </div>
+              </div>
+            )}
+
             {orders.length === 0 ? (
               <div className="rounded-[16px] p-6"
                    style={{ background: "var(--ux-surface)", border: "1px solid var(--ux-line)" }}>
@@ -174,7 +217,8 @@ export default function ShopPage() {
               {listings.map((l) => (
                 <ListingCard key={l.id} l={l} busy={busy === l.id}
                              onPhoto={onPhoto} onStock={onStock}
-                             onPause={onPause} onShare={onShare} />
+                             onPause={onPause} onShare={onShare}
+                             onDelete={() => setConfirmDelete(l)} />
               ))}
               <Link href="/app/documents/product/new"
                     className="ux-press grid min-h-[330px] place-content-center justify-items-center gap-2.5 rounded-[20px] text-center text-[0.8125rem] font-bold leading-relaxed"

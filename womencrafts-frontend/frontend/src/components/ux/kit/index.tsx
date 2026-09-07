@@ -160,11 +160,12 @@ export function Chip({ children, selected, onClick, icon }: {
  * thing the pointer actually hits ends up ~20px tall no matter how much padding
  * the button inside it has.
  */
-export function Btn({ children, variant = "primary", size = "md", icon, iconEnd, onClick, href, className = "", full, type = "button", ariaLabel, disabled }: {
+export function Btn({ children, variant = "primary", size = "md", icon, iconEnd, onClick, href, className = "", full, type = "button", ariaLabel, disabled, loading }: {
   children: React.ReactNode;
   variant?: "primary" | "soft" | "outline" | "ghost" | "on-brand";
   size?: "sm" | "md" | "lg"; icon?: string; iconEnd?: string;
-  onClick?: () => void; href?: string; className?: string; full?: boolean;
+  onClick?: (() => void) | (() => Promise<unknown>);
+  href?: string; className?: string; full?: boolean;
   type?: "button" | "submit"; ariaLabel?: string;
   /**
    * Not pressable — while a write is in flight, or until she has chosen what
@@ -172,15 +173,57 @@ export function Btn({ children, variant = "primary", size = "md", icon, iconEnd,
    * a button that vanishes takes the explanation of what to do next with it.
    */
   disabled?: boolean;
+  /**
+   * Explicitly busy. Rarely needed — an `onClick` that returns a promise is
+   * detected on its own (see `busy` below), so this is for the case where the
+   * work is owned by a parent that already tracks it.
+   */
+  loading?: boolean;
 }) {
+  /**
+   * The double-submit guard, automatic.
+   *
+   * §38 says never allow double submission, and asking every call site to
+   * remember a `busy` flag guarantees some of them will not. So if `onClick`
+   * returns a promise, the button holds itself busy until it settles — which
+   * covers every async handler in the app without one of them being edited.
+   *
+   * A woman on a slow connection taps twice because nothing visibly happened.
+   * That is not a mistake on her part; it is the button failing to answer.
+   */
+  const [busy, setBusy] = React.useState(false);
+  // A REF, not the state, decides whether a click is allowed through.
+  //
+  // State cannot stop this: three taps inside one tick all run against the
+  // handler React rendered while `busy` was still false, so `setBusy(true)`
+  // arrives too late for the second and third. The ref is written
+  // synchronously inside the first click, so the next two see it immediately.
+  const running = React.useRef(false);
+  const held = loading || busy;
+
+  const guarded = onClick
+    ? () => {
+        if (running.current || loading) return;
+        const r = (onClick as () => unknown)();
+        if (r && typeof (r as Promise<unknown>).finally === "function") {
+          running.current = true;
+          setBusy(true);
+          (r as Promise<unknown>).finally(() => { running.current = false; setBusy(false); });
+        }
+      }
+    : undefined;
+
+  // Held counts as disabled everywhere below: same dimming, same removal of
+  // the press animations, same blocked handler.
+  disabled = disabled || held;
   const pad = { sm: "px-3 py-1.5 text-[0.75rem]", md: "px-4 py-2.5 text-[0.8125rem]", lg: "px-6 py-3 text-[0.875rem]" }[size];
   const look = {
-    primary: { background: "linear-gradient(96deg, var(--ux-fill), var(--ux-fill-2))", color: "#fff", border: "1px solid transparent" },
+    primary: { background: "linear-gradient(96deg, var(--ux-fill), var(--ux-fill-2))", color: "var(--ux-on-brand)", border: "1px solid transparent" },
     soft:    { background: "var(--ux-brand-tint)", color: "var(--ux-brand)", border: "1px solid transparent" },
     outline: { background: "var(--ux-surface)", color: "var(--ux-ink)", border: "1px solid var(--ux-line-strong)" },
     ghost:   { background: "transparent", color: "var(--ux-brand)", border: "1px solid transparent" },
     // For use on the hero gradient, where the brand violet would disappear.
-    "on-brand": { background: "rgba(255,255,255,0.14)", color: "#fff", border: "1px solid rgba(255,255,255,0.34)" },
+    "on-brand": { background: "rgba(255,255,255,0.14)", color: "var(--ux-on-brand)", border: "1px solid rgba(255,255,255,0.34)" },
   }[variant];
   // Clay on the two filled variants only: an outline button has no slab to
   // shade, and a ghost button would grow a shadow out of nothing.
@@ -194,9 +237,14 @@ export function Btn({ children, variant = "primary", size = "md", icon, iconEnd,
   const dim = disabled ? { opacity: 0.55, cursor: "not-allowed" } : null;
   const inner = (
     <>
-      {icon && <I name={icon} className="ux-ico h-[15px] w-[15px]" sw={2.1} />}
+      {/* The spinner takes the leading icon's place rather than being added
+          beside it, so the button does not change width mid-press and shift
+          everything next to it. */}
+      {held
+        ? <I name="Loader" className="ux-spin h-[15px] w-[15px]" sw={2.1} />
+        : icon && <I name={icon} className="ux-ico h-[15px] w-[15px]" sw={2.1} />}
       {children}
-      {iconEnd && <I name={iconEnd} className="ux-arrow h-[15px] w-[15px]" sw={2.1} />}
+      {iconEnd && !held && <I name={iconEnd} className="ux-arrow h-[15px] w-[15px]" sw={2.1} />}
     </>
   );
   // Two refs on one node: the pointer hook writes --px/--py for the magnet, the
@@ -220,14 +268,15 @@ export function Btn({ children, variant = "primary", size = "md", icon, iconEnd,
       );
     }
     return (
-      <Link ref={setRef} href={href} onClick={onClick} aria-label={ariaLabel} className={cls} style={look}>
+      <Link ref={setRef} href={href} onClick={guarded} aria-label={ariaLabel} className={cls} style={look}>
         {inner}
       </Link>
     );
   }
   return (
-    <button ref={setRef} type={type} onClick={disabled ? undefined : onClick} disabled={disabled}
-            aria-label={ariaLabel} className={cls} style={{ ...look, ...dim }}>
+    <button ref={setRef} type={type} onClick={guarded} disabled={disabled}
+            aria-label={ariaLabel} aria-busy={held || undefined}
+            className={cls} style={{ ...look, ...dim }}>
       {inner}
     </button>
   );
@@ -486,5 +535,6 @@ export { certificateHtml, printCertificate, type CertificateFields } from "./dow
 export { Money, formatMoney as formatRupees, formatMoneyOrFree, formatWholeRupees } from "./money";
 export { Sheet } from "./sheet";
 export { Avatar } from "./avatar";
+export { Field, TextInput } from "./field";
 export { ConfirmButton } from "./confirm";
 export { Rows, rowMemo } from "./rows";

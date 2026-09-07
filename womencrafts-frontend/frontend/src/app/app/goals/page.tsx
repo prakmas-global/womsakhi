@@ -3,7 +3,7 @@
 import { useCallback, useMemo, useState } from "react";
 
 import { HomeShell } from "@/components/ux/home/HomeShell";
-import { Btn, Card, EmptyState, I, Pill, SectionHead, v } from "@/components/ux/kit";
+import { Btn, Card, EmptyState, Field, I, Pill, SectionHead, TextInput, v } from "@/components/ux/kit";
 import { formatRupees } from "@/components/ux/kit";
 import { GOALS, goalPct, type Goal } from "@/components/ux/discovery/data";
 import { useToast } from "@/design-system";
@@ -231,7 +231,11 @@ function GoalForm({ goal, onCancel, onSave }: {
     if (Object.keys(e).length) return;
 
     setSaving(true);
-    setTimeout(() => {
+    // Returned, not fired and forgotten. `Btn` holds itself busy until a
+    // returned promise settles, which is what stops three taps on a slow phone
+    // from creating three goals — `setSaving(true)` alone cannot, because all
+    // three clicks land before React re-renders.
+    return new Promise<void>((resolve) => setTimeout(() => {
       const n = Number(amount.replace(/[^0-9]/g, ""));
       onSave({
         id: goal?.id ?? `g${Date.now()}`,
@@ -247,7 +251,8 @@ function GoalForm({ goal, onCancel, onSave }: {
         state: goal?.state ?? "on",
       });
       setSaving(false);
-    }, 400);
+      resolve();
+    }, 400));
   }, [title, why, amount, by, goal, onSave]);
 
   return (
@@ -258,32 +263,22 @@ function GoalForm({ goal, onCancel, onSave }: {
 
       <div className="mt-4 flex flex-col gap-4">
         <Field label="What is it" error={errors.title} hint="However you would say it out loud">
-          <input value={title} onChange={(e) => setTitle(e.target.value)}
-                 className="ux-sq w-full rounded-[12px] border px-3.5 py-3 text-[0.9375rem] outline-none"
-                 style={{ borderColor: v(errors.title ? "--ux-danger-solid" : "--ux-line-strong"),
-                          background: v("--ux-surface"), color: v("--ux-ink") }} />
+          {(p) => <TextInput {...p} value={title} onChange={setTitle} invalid={!!errors.title} />}
         </Field>
 
         <Field label="Why it matters" error={errors.why} hint="The reason you will still recognise in four months">
-          <input value={why} onChange={(e) => setWhy(e.target.value)}
-                 className="ux-sq w-full rounded-[12px] border px-3.5 py-3 text-[0.9375rem] outline-none"
-                 style={{ borderColor: v(errors.why ? "--ux-danger-solid" : "--ux-line-strong"),
-                          background: v("--ux-surface"), color: v("--ux-ink") }} />
+          {(p) => <TextInput {...p} value={why} onChange={setWhy} invalid={!!errors.why} />}
         </Field>
 
         <div className="flex flex-wrap gap-4">
           <div className="min-w-[140px] flex-1">
-            <Field label="How much, if it needs money" hint="Leave empty if it does not">
-              <input value={amount} onChange={(e) => setAmount(e.target.value)} inputMode="numeric"
-                     className="ux-sq w-full rounded-[12px] border px-3.5 py-3 text-[0.9375rem] outline-none"
-                     style={{ borderColor: v("--ux-line-strong"), background: v("--ux-surface"), color: v("--ux-ink") }} />
+            <Field label="How much, if it needs money" required={false} hint="Leave empty if it does not">
+              {(p) => <TextInput {...p} value={amount} onChange={setAmount} inputMode="numeric" />}
             </Field>
           </div>
           <div className="min-w-[140px] flex-1">
-            <Field label="By when" hint='"Before Diwali" and "No rush" are fine'>
-              <input value={by} onChange={(e) => setBy(e.target.value)}
-                     className="ux-sq w-full rounded-[12px] border px-3.5 py-3 text-[0.9375rem] outline-none"
-                     style={{ borderColor: v("--ux-line-strong"), background: v("--ux-surface"), color: v("--ux-ink") }} />
+            <Field label="By when" required={false} hint='"Before Diwali" and "No rush" are fine'>
+              {(p) => <TextInput {...p} value={by} onChange={setBy} />}
             </Field>
           </div>
         </div>
@@ -299,22 +294,3 @@ function GoalForm({ goal, onCancel, onSave }: {
   );
 }
 
-/** A real label above the input, and an error that says how to fix it. */
-function Field({ label, hint, error, children }: {
-  label: string; hint?: string; error?: string; children: React.ReactNode;
-}) {
-  return (
-    <label className="block">
-      <span className="mb-1.5 block text-[0.8125rem] font-bold" style={{ color: v("--ux-ink") }}>{label}</span>
-      {children}
-      {error ? (
-        <span className="mt-1.5 flex items-center gap-1.5 text-[0.75rem] font-semibold"
-              style={{ color: v("--ux-danger-ink") }}>
-          <I name="AlertCircle" className="h-[0.8125rem] w-[0.8125rem]" />{error}
-        </span>
-      ) : hint ? (
-        <span className="mt-1.5 block text-[0.75rem]" style={{ color: v("--ux-muted") }}>{hint}</span>
-      ) : null}
-    </label>
-  );
-}
