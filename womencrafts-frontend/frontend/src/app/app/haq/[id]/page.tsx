@@ -1,6 +1,7 @@
 "use client";
 
 import { use, useCallback, useMemo, useState } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 
 import { HomeShell } from "@/components/ux/home/HomeShell";
@@ -79,11 +80,11 @@ export default function HaqDetail({ params }: { params: Promise<{ id: string }> 
     <HomeShell active="/app/haq">
       <div className="flex flex-col gap-5">
 
-        <button type="button" onClick={() => router.push("/app/haq")}
+        <Link href={"/app/haq"}
                 className="ux-press inline-flex w-fit items-center gap-1.5 text-[0.8125rem] font-semibold"
                 style={{ color: v("--ux-muted") }}>
           <I name="ArrowLeft" className="h-[15px] w-[15px]" /> All of your Haq
-        </button>
+        </Link>
 
         {/* Header */}
         <Card pad={0} style={{ overflow: "hidden" }}>

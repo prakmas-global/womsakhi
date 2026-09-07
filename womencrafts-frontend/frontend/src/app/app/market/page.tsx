@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useMemo, useState } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 
 import { HomeShell } from "@/components/ux/home/HomeShell";
@@ -58,8 +59,7 @@ export default function MarketPage() {
     const isSaved = saved.includes(i.id);
     return (
       <Card key={i.id} pad={0} style={{ overflow: "hidden" }}>
-        <button type="button" onClick={() => router.push(`/app/market/${i.id}`)}
-                className="ux-press block w-full text-left">
+        <Link href={`/app/market/${i.id}`} className="ux-press block w-full text-left">
           <div className="flex items-start gap-3.5 p-4">
             <IconTile icon={i.icon} tint={i.tint} ink={i.ink} size={46} radius={13} />
             <div className="min-w-0 flex-1">
@@ -118,9 +118,9 @@ export default function MarketPage() {
               )}
             </div>
           </div>
-        </button>
+        </Link>
         <div className="flex gap-2 border-t px-4 py-3" style={{ borderColor: v("--ux-line") }}>
-          <Btn size="sm" full onClick={() => router.push(`/app/market/${i.id}`)}>
+          <Btn size="sm" full href={`/app/market/${i.id}`}>
             {i.kind === "service" ? "Book her" : i.madeToOrder ? "Ask her to make it" : "Buy"}
           </Btn>
           <Btn size="sm" variant={isSaved ? "soft" : "ghost"} icon={isSaved ? "Heart" : "Heart"}

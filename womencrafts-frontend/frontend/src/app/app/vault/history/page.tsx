@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 
 import { HomeShell } from "@/components/ux/home/HomeShell";
@@ -39,11 +40,11 @@ export default function HistoryPage() {
   return (
     <HomeShell active="/app/vault">
       <div className="flex flex-col gap-5">
-        <button type="button" onClick={() => router.push("/app/vault")}
+        <Link href={"/app/vault"}
                 className="ux-press inline-flex w-fit items-center gap-1.5 text-[0.8125rem] font-semibold"
                 style={{ color: v("--ux-muted") }}>
           <I name="ArrowLeft" className="h-[15px] w-[15px]" /> Back to your vault
-        </button>
+        </Link>
 
         <header className="flex flex-wrap items-end gap-4">
           <div className="min-w-0 flex-1">

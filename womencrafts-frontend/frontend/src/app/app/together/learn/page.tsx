@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useMemo, useState } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 
 import { HomeShell } from "@/components/ux/home/HomeShell";
@@ -50,11 +51,11 @@ export default function LearnPage() {
   return (
     <HomeShell active="/app/together">
       <div className="flex flex-col gap-5">
-        <button type="button" onClick={() => router.push("/app/together")}
+        <Link href={"/app/together"}
                 className="ux-press inline-flex w-fit items-center gap-1.5 text-[0.8125rem] font-semibold"
                 style={{ color: v("--ux-muted") }}>
           <I name="ArrowLeft" className="h-[15px] w-[15px]" /> Back to Together
-        </button>
+        </Link>
 
         <header>
           <p className="text-[0.6875rem] font-extrabold uppercase tracking-[0.2em]" style={{ color: v("--ux-brand") }}>

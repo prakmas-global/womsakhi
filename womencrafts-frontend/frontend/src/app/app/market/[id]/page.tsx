@@ -1,6 +1,7 @@
 "use client";
 
 import { use, useCallback, useMemo, useState } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 
 import { HomeShell } from "@/components/ux/home/HomeShell";
@@ -70,11 +71,11 @@ export default function ItemPage({ params }: { params: Promise<{ id: string }> }
   return (
     <HomeShell active="/app/market">
       <div className="flex flex-col gap-5">
-        <button type="button" onClick={() => router.push("/app/market")}
-                className="ux-press inline-flex w-fit items-center gap-1.5 text-[0.8125rem] font-semibold"
-                style={{ color: v("--ux-muted") }}>
+        <Link href="/app/market"
+              className="ux-press inline-flex w-fit items-center gap-1.5 text-[0.8125rem] font-semibold"
+              style={{ color: v("--ux-muted") }}>
           <I name="ArrowLeft" className="h-[15px] w-[15px]" /> Back to the market
-        </button>
+        </Link>
 
         <Card pad={0} style={{ overflow: "hidden" }}>
           <div className="flex flex-wrap items-start gap-4 p-5" style={{ background: v(item.tint) }}>
@@ -186,7 +187,7 @@ export default function ItemPage({ params }: { params: Promise<{ id: string }> }
             <SectionHead title={`Also from ${seller.name}`} icon="Store" chip={String(alsoHers.length)} />
             <div className="flex flex-col gap-2.5">
               {alsoHers.map((i) => (
-                <button key={i.id} type="button" onClick={() => router.push(`/app/market/${i.id}`)}
+                <Link key={i.id} href={`/app/market/${i.id}`}
                         className="ux-press ux-sq flex items-center gap-3.5 rounded-[12px] border p-3.5 text-left"
                         style={{ borderColor: v("--ux-line"), background: v("--ux-surface") }}>
                   <IconTile icon={i.icon} tint={i.tint} ink={i.ink} size={38} />
@@ -197,7 +198,7 @@ export default function ItemPage({ params }: { params: Promise<{ id: string }> }
                   <p className="shrink-0 text-[1rem] font-extrabold tabular-nums" style={{ color: v("--ux-ink") }}>
                     {formatRupees(i.minor)}
                   </p>
-                </button>
+                </Link>
               ))}
             </div>
           </div>
@@ -209,7 +210,7 @@ export default function ItemPage({ params }: { params: Promise<{ id: string }> }
             {nearby.map((i) => {
               const s = sellerOf(i);
               return (
-                <button key={i.id} type="button" onClick={() => router.push(`/app/market/${i.id}`)}
+                <Link key={i.id} href={`/app/market/${i.id}`}
                         className="ux-press ux-sq flex items-center gap-3.5 rounded-[12px] border p-3.5 text-left"
                         style={{ borderColor: v("--ux-line"), background: v("--ux-surface") }}>
                   <IconTile icon={i.icon} tint={i.tint} ink={i.ink} size={38} />
@@ -222,7 +223,7 @@ export default function ItemPage({ params }: { params: Promise<{ id: string }> }
                   <p className="shrink-0 text-[1rem] font-extrabold tabular-nums" style={{ color: v("--ux-ink") }}>
                     {formatRupees(i.minor)}
                   </p>
-                </button>
+                </Link>
               );
             })}
           </div>
