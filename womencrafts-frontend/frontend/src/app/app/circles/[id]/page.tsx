@@ -4,7 +4,7 @@ import { use, useCallback, useMemo, useState, useSyncExternalStore } from "react
 
 import { HomeShell } from "@/components/ux/home/HomeShell";
 import {
-  Back, Btn, Card, EmptyState, RailSkeleton, ScreenSkeleton, Tabs, v,
+  Back, Btn, Card, EmptyState, RailSkeleton, ScreenSkeleton, v,
 } from "@/components/ux/kit";
 import { useResource } from "@/lib/use-resource";
 import { useMe } from "@/components/ux/me";
@@ -14,10 +14,12 @@ import {
 } from "@/lib/growth-api";
 import { apiCreatePost, apiJoinCircle, apiLeaveCircle, apiLikePost } from "@/lib/community-api";
 import { formatMoney } from "@/components/ux/kit/money";
+import { apiRegisterForEvent } from "@/lib/growth-api";
+import { useEvents } from "@/components/ux/growth";
 import {
-  AboutCircle, CircleActions, CircleBanner, CircleEventsRail, CirclePostCard,
-  Composer, MembersCard, NotBuiltYet, PotCard,
-  type CircleFeedPost,
+  AboutCircle, CircleActions, CircleBanner, CirclePostCard, Composer,
+  EventsRail, MembersCard, NotBuiltYet, PotCard, ResourcesRail, UnderTabs,
+  type CircleFeedPost, type RailEvent,
 } from "./detail-views";
 
 /**
@@ -51,7 +53,7 @@ const readSaved = (): string => {
 let bump: (() => void) | null = null;
 const onSaved = (cb: () => void) => { bump = cb; return () => { bump = null; }; };
 
-const TABS = ["Discussion", "Members", "Events", "Files", "About"] as const;
+const TABS = ["Discussion", "Learning", "Events", "Files", "Members", "About"] as const;
 type Tab = (typeof TABS)[number];
 
 /**
@@ -73,14 +75,19 @@ const KINDS = [
 const tagsOf = (body: string) =>
   (body.match(/#[\p{L}\p{N}_]+/gu) ?? []).map((t) => t.slice(1).toLowerCase());
 
+const SORTS = ["Latest", "Most liked", "Most replies"] as const;
+type Sort = (typeof SORTS)[number];
+
 export default function CircleDetail({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
   const me = useMe();
 
   const [tab, setTab] = useState<Tab>("Discussion");
   const [kind, setKind] = useState<string>(KINDS[0].label);
+  const [sort, setSort] = useState<Sort>("Latest");
+  const [postMenu, setPostMenu] = useState<string | null>(null);
   const [draft, setDraft] = useState("");
-  const [menuOpen, setMenuOpen] = useState(false);
+  const [menu, setMenu] = useState<"joined" | "more" | null>(null);
   const [busy, setBusy] = useState<string | null>(null);
   const [note, setNote] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -97,6 +104,15 @@ export default function CircleDetail({ params }: { params: Promise<{ id: string 
   const { data: savings } = useResource(
     useCallback((s?: AbortSignal) => apiCircleSavings(id, s).catch(() => null), [id]),
     null as ApiCircleSavings | null);
+
+  const events = useEvents();
+  const railEvents: RailEvent[] = useMemo(() => (events.data?.upcoming ?? [])
+    .slice(0, 2)
+    .map((e) => ({
+      id: e.id, title: e.title, day: e.day, month: e.month,
+      when: `${e.when} · ${e.time}`, going: e.going, taken: e.taken,
+      href: `/app/events/${e.id}`,
+    })), [events.data]);
 
   const say = useCallback((msg: string) => {
     setNote(msg);
@@ -119,9 +135,12 @@ export default function CircleDetail({ params }: { params: Promise<{ id: string 
   const shown = useMemo(() => {
     const chosen = KINDS.find((k) => k.label === kind);
     const rows = !chosen?.tag ? feed : feed.filter((p) => tagsOf(p.body).includes(chosen.tag!));
-    // Pinned first, always — it is pinned because somebody needs it read.
-    return [...rows].sort((a, b) => Number(b.pinned) - Number(a.pinned));
-  }, [feed, kind]);
+    const by = sort === "Most liked" ? (a: CircleFeedPost, b: CircleFeedPost) => b.likes - a.likes
+             : sort === "Most replies" ? (a: CircleFeedPost, b: CircleFeedPost) => b.replies - a.replies
+             : () => 0;   // "Latest" is the order the server sent
+    // Pinned first, whatever the sort — it is pinned because somebody needs it read.
+    return [...rows].sort((a, b) => Number(b.pinned) - Number(a.pinned) || by(a, b));
+  }, [feed, kind, sort]);
 
   const counts = useMemo(() => Object.fromEntries(KINDS.map((k) => [
     k.label,
@@ -133,7 +152,7 @@ export default function CircleDetail({ params }: { params: Promise<{ id: string 
   const joined = circle?.joined ?? false;
 
   const membership = useCallback(async (want: "join" | "leave") => {
-    setBusy("membership"); setError(null); setMenuOpen(false);
+    setBusy("membership"); setError(null); setMenu(null);
     try {
       if (want === "join") { await apiJoinCircle(id); say("You are in — say hello."); }
       else { await apiLeaveCircle(id); say("You have left this circle."); }
@@ -169,6 +188,13 @@ export default function CircleDetail({ params }: { params: Promise<{ id: string 
     bump?.();
     say(next.has(p.id) ? "Saved — it is under Saved in Circle" : "Removed from saved");
   }, [saved, say]);
+
+  const register = useCallback(async (e: RailEvent) => {
+    setBusy(e.id); setError(null);
+    try { await apiRegisterForEvent(e.id); events.refetch(); say(`You are going to ${e.title}`); }
+    catch { setError("Could not register for that just now."); }
+    finally { setBusy(null); }
+  }, [events, say]);
 
   const copyLink = useCallback(async (url: string, msg: string) => {
     try { await navigator.clipboard.writeText(url); say(msg); }
@@ -212,15 +238,22 @@ export default function CircleDetail({ params }: { params: Promise<{ id: string 
 
   const rail = (
     <div className="space-y-4">
+      <CircleActions joined={joined} busy={busy === "membership"} menu={menu} onMenu={setMenu}
+                     onInvite={invite} onSoon={say}
+                     onJoin={() => membership("join")} onLeave={() => membership("leave")} />
+
       {savings?.is_savings && (
         <PotCard id={id} monthlyLabel={formatMoney(savings.monthly_minor)}
                  round={savings.round} paid={savings.members_paid}
                  total={savings.members_total} youPaid={savings.you_paid}
                  whoseTurn={savings.whose_turn} />
       )}
-      <AboutCircle c={circle} posts={posts.length} />
-      <MembersCard count={circle.member_count} people={savings?.members ?? []} />
-      <CircleEventsRail />
+      <AboutCircle c={circle} posts={posts.length}
+                   onEdit={() => say("Changing a circle's details is on the way. Its name, topic and description are set when it is created.")} />
+      <MembersCard count={circle.member_count} people={savings?.members ?? []}
+                   onAll={() => setTab("Members")} />
+      <EventsRail rows={railEvents} busy={busy} onGo={register} />
+      <ResourcesRail onSoon={say} />
     </div>
   );
 
@@ -229,15 +262,9 @@ export default function CircleDetail({ params }: { params: Promise<{ id: string 
       <div className="flex flex-col">
         <Back to="/app/circles" label="Circle" />
 
-        <CircleBanner c={circle} posts={posts.length} onInvite={invite} />
+        <CircleBanner c={circle} posts={posts.length} events={railEvents.length} />
 
-        <CircleActions joined={joined} busy={busy === "membership"} menuOpen={menuOpen}
-                       onMenu={setMenuOpen} onInvite={invite}
-                       onJoin={() => membership("join")} onLeave={() => membership("leave")} />
-
-        <div className="mb-4">
-          <Tabs items={TABS as unknown as string[]} active={tab} onChange={(t) => setTab(t as Tab)} />
-        </div>
+        <UnderTabs items={TABS} active={tab} onChange={(t) => setTab(t as Tab)} />
 
         {error && (
           <p role="alert" className="mb-4 rounded-[12px] px-4 py-3 text-xsm font-semibold"
@@ -251,27 +278,41 @@ export default function CircleDetail({ params }: { params: Promise<{ id: string 
             <Composer value={draft} onChange={setDraft} onPost={post} busy={busy === "post"}
                       avatar={me.avatar} name={me.first} joined={joined} onSoon={say} />
 
-            <div className="ux-noscroll mb-4 flex items-center gap-2 overflow-x-auto pb-1">
-              {KINDS.map((k) => {
-                const on = kind === k.label;
-                return (
-                  <button key={k.label} type="button" onClick={() => setKind(k.label)} aria-pressed={on}
-                          className="ux-press ux-sq flex shrink-0 items-center gap-1.5 rounded-full px-3.5 py-2 text-xs font-bold"
-                          style={{ background: v(on ? "--ux-fill" : "--ux-surface"),
-                                   color: v(on ? "--ux-on-brand" : "--ux-ink-2"),
-                                   border: `1px solid ${v(on ? "--ux-fill" : "--ux-line")}` }}>
-                    {k.label}
-                    <span className="text-3xs font-extrabold"
-                          style={{ opacity: 0.7 }}>{counts[k.label] ?? 0}</span>
-                  </button>
-                );
-              })}
+            <div className="mb-4 flex items-start gap-3">
+              <div className="ux-noscroll flex flex-1 items-center gap-2 overflow-x-auto pb-1">
+                {KINDS.map((k) => {
+                  const on = kind === k.label;
+                  const n = counts[k.label] ?? 0;
+                  return (
+                    <button key={k.label} type="button" onClick={() => setKind(k.label)} aria-pressed={on}
+                            className="ux-press ux-sq flex shrink-0 items-center gap-1.5 rounded-full px-3.5 py-2 text-xs font-bold"
+                            style={{ background: v(on ? "--ux-fill" : "--ux-surface-2"),
+                                     color: v(on ? "--ux-on-brand" : "--ux-ink-2"),
+                                     border: `1px solid ${v(on ? "--ux-fill" : "--ux-line")}` }}>
+                      {k.label}
+                      {/* The count only earns its place once there is one to
+                          show — six chips all reading 0 is noise. */}
+                      {n > 0 && k.tag && (
+                        <span className="text-3xs font-extrabold" style={{ opacity: 0.72 }}>{n}</span>
+                      )}
+                    </button>
+                  );
+                })}
+              </div>
+              <select value={sort} aria-label="Sort the discussion"
+                      onChange={(e) => setSort(e.target.value as Sort)}
+                      className="ux-sq min-h-[38px] shrink-0 rounded-[10px] border px-3 text-xs font-semibold outline-none"
+                      style={{ borderColor: v("--ux-line"), background: v("--ux-surface"), color: v("--ux-ink-2") }}>
+                {SORTS.map((o) => <option key={o} value={o}>{o}</option>)}
+              </select>
             </div>
 
             {shown.length > 0 ? (
               shown.map((p) => (
                 <CirclePostCard key={p.id} p={p} saved={saved.has(p.id)} busy={busy === p.id}
-                                onLike={like} onSave={save} onShare={share} />
+                                menu={postMenu === p.id}
+                                onMenu={(open) => setPostMenu(open ? p.id : null)}
+                                onLike={like} onSave={save} onShare={share} onSoon={say} />
               ))
             ) : (
               <NotBuiltYet
@@ -324,6 +365,15 @@ export default function CircleDetail({ params }: { params: Promise<{ id: string 
               action={<Btn size="sm" onClick={() => setTab("Discussion")}>Read the discussion</Btn>}
             />
           )
+        )}
+
+        {tab === "Learning" && (
+          <NotBuiltYet
+            icon="GraduationCap"
+            title="No course belongs to this circle yet"
+            body="A circle will be able to carry its own short course — a set of lessons the women in it work through together. Until then, every course on WomSakhi is open to you."
+            action={<Btn size="sm" href="/app/programs" iconEnd="ArrowRight">See the courses</Btn>}
+          />
         )}
 
         {tab === "Events" && (

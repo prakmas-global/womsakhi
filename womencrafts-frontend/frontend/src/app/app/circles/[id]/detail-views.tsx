@@ -3,7 +3,7 @@
 import Link from "next/link";
 
 import * as Icons from "@/components/ux/icons";
-import { Btn, Card, EmptyState, I, IconTile, v } from "@/components/ux/kit";
+import { Btn, Card, DemoNote, EmptyState, I, IconTile, v } from "@/components/ux/kit";
 import type { ApiCircleDetail, ApiCircleMember } from "@/lib/growth-api";
 import { members as niceCount, readPost, topicOf } from "@/components/ux/circle/data";
 
@@ -11,51 +11,63 @@ import { members as niceCount, readPost, topicOf } from "@/components/ux/circle/
 /*  The banner                                                         */
 /* ------------------------------------------------------------------ */
 
-export function CircleBanner({ c, posts, onInvite }: {
+export function CircleBanner({ c, posts, events }: {
   c: ApiCircleDetail;
   /** How many posts actually came back. The circle's own `post_count` is
    *  stale on the server — it said 5 above a feed of 26 — and a number the
    *  reader can disprove by scrolling is worse than no number. */
   posts: number;
-  onInvite: () => void;
+  events: number;
 }) {
-  const shownPosts = Math.max(posts, c.post_count);
   const t = topicOf(c.topic);
+  const shownPosts = Math.max(posts, c.post_count);
+
+  /** Four short claims a reader can check, in the wireframe's order. */
+  const tags = [
+    t.label,
+    c.is_savings ? "Savings circle" : "Skill building",
+    c.is_private ? "Members only" : "Small business",
+    "Women only",
+  ];
+
   return (
     <section className="relative mb-4 overflow-hidden rounded-[20px]"
              style={{ background: "linear-gradient(102deg, var(--ux-brand-tint) 0%, var(--ux-tint-lilac) 62%, var(--ux-tint-pink) 100%)",
                       border: "1px solid var(--ux-line)" }}>
       <div className="grid items-stretch lg:grid-cols-[minmax(0,1fr)_auto]">
         <div className="flex items-start gap-4 p-6 sm:p-7">
-          {/* The circle's own square, the way it appears everywhere else. */}
-          <span className="grid h-[64px] w-[64px] shrink-0 place-items-center overflow-hidden rounded-[18px]"
+          <span className="grid h-[60px] w-[60px] shrink-0 place-items-center overflow-hidden rounded-[16px]"
                 style={{ background: "linear-gradient(140deg, var(--ux-fill), var(--ux-fill-2))",
                          color: v("--ux-on-brand") }}>
-            <I name={c.is_private ? "Lock" : t.icon} className="h-[27px] w-[27px]" sw={2} />
+            <I name={c.is_private ? "Lock" : t.icon} className="h-[26px] w-[26px]" sw={2} />
           </span>
 
           <div className="min-w-0">
-            <h1 className="text-3xl font-extrabold leading-tight tracking-[-0.02em]" style={{ color: v("--ux-ink") }}>
+            <h1 className="text-2xlm font-extrabold leading-tight tracking-[-0.02em]" style={{ color: v("--ux-ink") }}>
               {c.name}
             </h1>
             {c.desc && (
-              <p className="mt-2 max-w-[460px] text-xsm leading-relaxed" style={{ color: v("--ux-ink-2") }}>
+              <p className="mt-2 max-w-[440px] text-xsm leading-relaxed" style={{ color: v("--ux-ink-2") }}>
                 {c.desc}
               </p>
             )}
 
-            <p className="mt-3 flex flex-wrap gap-1.5">
-              <Tag>{t.label}</Tag>
-              {c.is_savings && <Tag>Savings circle</Tag>}
-              <Tag>{c.is_private ? "Members only" : "Anyone can join"}</Tag>
+            <p className="mt-3.5 flex flex-wrap gap-2">
+              {tags.map((x) => (
+                <span key={x} className="rounded-full px-3 py-1.5 text-2xs font-semibold"
+                      style={{ background: v("--ux-brand-tint"), color: v("--ux-brand") }}>
+                  {x}
+                </span>
+              ))}
             </p>
 
             <p className="mt-4 flex flex-wrap items-center gap-x-5 gap-y-2 text-xs font-semibold"
                style={{ color: v("--ux-ink-2") }}>
               <Meta icon="Users">{niceCount(c.member_count)} {c.member_count === 1 ? "member" : "members"}</Meta>
               <Meta icon="FileText">{shownPosts} {shownPosts === 1 ? "post" : "posts"}</Meta>
+              <Meta icon="CalendarDays">{events} {events === 1 ? "event" : "events"}</Meta>
               <Meta icon={c.is_private ? "Lock" : "Globe"}>
-                {c.is_private ? "Private circle" : "Open to all women"}
+                {c.is_private ? "Private circle" : "Online community"}
               </Meta>
             </p>
           </div>
@@ -69,31 +81,14 @@ export function CircleBanner({ c, posts, onInvite }: {
                  style={{ maskImage: "linear-gradient(100deg, transparent, #000 28%)",
                           WebkitMaskImage: "linear-gradient(100deg, transparent, #000 28%)" }} />
           ) : (
-            // No cover: her own words, set the way the banner's script line is.
-            <p className="flex h-full w-[240px] items-center justify-end pe-7 text-end text-lg font-bold italic leading-[1.3] xl:w-[300px]"
+            <p className="flex h-full w-[210px] items-center justify-end pe-7 text-end text-lg font-bold italic leading-[1.3] xl:w-[270px]"
                style={{ color: v("--ux-brand"), fontFamily: "var(--font-display)" }}>
               Learn.<br />Share.<br />Grow together.
             </p>
           )}
-          {c.cover && (
-            <button type="button" onClick={onInvite}
-                    className="ux-press ux-sq absolute end-5 top-5 rounded-full px-3 py-1.5 text-2xs font-bold"
-                    style={{ background: v("--ux-surface"), color: v("--ux-brand") }}>
-              Share this circle
-            </button>
-          )}
         </div>
       </div>
     </section>
-  );
-}
-
-function Tag({ children }: { children: React.ReactNode }) {
-  return (
-    <span className="rounded-full px-2.5 py-1 text-2xs font-semibold"
-          style={{ background: v("--ux-surface"), color: v("--ux-ink-2") }}>
-      {children}
-    </span>
   );
 }
 
@@ -107,41 +102,112 @@ function Meta({ icon, children }: { icon: string; children: React.ReactNode }) {
 }
 
 /* ------------------------------------------------------------------ */
-/*  Join, invite, and the way out                                      */
+/*  Invite, Joined, and the rest                                       */
 /* ------------------------------------------------------------------ */
 
-export function CircleActions({ joined, busy, onJoin, onLeave, onInvite, menuOpen, onMenu }: {
-  joined: boolean; busy: boolean; menuOpen: boolean;
-  onJoin: () => void; onLeave: () => void; onInvite: () => void; onMenu: (b: boolean) => void;
+export function CircleActions({ joined, busy, onJoin, onLeave, onInvite, onSoon, menu, onMenu }: {
+  joined: boolean; busy: boolean;
+  /** Which menu is open: the Joined one, the "…" one, or neither. */
+  menu: "joined" | "more" | null;
+  onMenu: (m: "joined" | "more" | null) => void;
+  onJoin: () => void; onLeave: () => void; onInvite: () => void;
+  onSoon: (msg: string) => void;
 }) {
   return (
-    <div className="mb-4 flex flex-wrap items-center gap-2.5">
-      <Btn variant="outline" icon="UserPlus" onClick={onInvite}>Invite</Btn>
+    <div className="mb-4 flex items-center gap-2">
+      <span className="flex-1"><Btn full variant="outline" icon="UserPlus" onClick={onInvite}>Invite</Btn></span>
 
       {joined ? (
-        <div className="relative">
-          <Btn icon="Check" iconEnd={menuOpen ? "ChevronUp" : "ChevronDown"}
-               disabled={busy} onClick={() => onMenu(!menuOpen)}>
+        <div className="relative flex-1">
+          <Btn full icon="Check" iconEnd={menu === "joined" ? "ChevronUp" : "ChevronDown"}
+               disabled={busy} onClick={() => onMenu(menu === "joined" ? null : "joined")}>
             Joined
           </Btn>
-          {menuOpen && (
+          {menu === "joined" && (
             /* Leaving is one press behind a menu on purpose: it is easy to do
                by accident from a list, and hard to undo in a private circle. */
-            <div className="absolute end-0 top-[calc(100%+6px)] z-[var(--ux-z-dropdown)] w-[220px] overflow-hidden rounded-[12px]"
-                 style={{ background: v("--ux-surface"), border: "1px solid var(--ux-line)",
-                          boxShadow: "var(--ux-shadow-pop)" }}>
-              <button type="button" onClick={onLeave} disabled={busy}
-                      className="ux-hov ux-sq flex w-full items-center gap-2.5 px-4 py-3 text-start text-xsm font-semibold"
-                      style={{ color: v("--ux-danger-solid") }}>
-                <Icons.LogOut className="h-[15px] w-[15px]" />
-                Leave this circle
-              </button>
-            </div>
+            <Menu>
+              <MenuRow icon="BellOff" onClick={() => onSoon("Muting a circle is on the way. For now it stays quiet unless somebody replies to you.")}>
+                Mute this circle
+              </MenuRow>
+              <MenuRow icon="LogOut" danger onClick={onLeave}>Leave this circle</MenuRow>
+            </Menu>
           )}
         </div>
       ) : (
-        <Btn icon="Plus" disabled={busy} onClick={onJoin}>Join this circle</Btn>
+        <span className="flex-1">
+          <Btn full icon="Plus" disabled={busy} onClick={onJoin}>Join</Btn>
+        </span>
       )}
+
+      <div className="relative">
+        <button type="button" aria-label="More" aria-expanded={menu === "more"}
+                onClick={() => onMenu(menu === "more" ? null : "more")}
+                className="ux-press ux-sq grid h-[42px] w-[42px] place-items-center rounded-[12px]"
+                style={{ border: `1px solid ${v("--ux-line-strong")}`, background: v("--ux-surface"),
+                         color: v("--ux-ink-2") }}>
+          <Icons.MoreHorizontal className="h-[17px] w-[17px]" />
+        </button>
+        {menu === "more" && (
+          <Menu>
+            <MenuRow icon="Share2" onClick={onInvite}>Copy the circle link</MenuRow>
+            <MenuRow icon="Flag" onClick={() => onSoon("Thank you. Reporting a circle is on the way — until then, tell us through Help and a person will read it.")}>
+              Report this circle
+            </MenuRow>
+          </Menu>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function Menu({ children }: { children: React.ReactNode }) {
+  return (
+    <div className="absolute end-0 top-[calc(100%+6px)] z-[var(--ux-z-dropdown)] w-[236px] overflow-hidden rounded-[12px]"
+         style={{ background: v("--ux-surface"), border: "1px solid var(--ux-line)",
+                  boxShadow: "var(--ux-shadow-pop)" }}>
+      {children}
+    </div>
+  );
+}
+
+function MenuRow({ icon, children, onClick, danger }: {
+  icon: string; children: React.ReactNode; onClick: () => void; danger?: boolean;
+}) {
+  return (
+    <button type="button" onClick={onClick}
+            className="ux-hov ux-sq flex w-full items-center gap-2.5 px-4 py-3 text-start text-xsm font-semibold"
+            style={{ color: v(danger ? "--ux-danger-solid" : "--ux-ink-2") }}>
+      <I name={icon} className="h-[15px] w-[15px]" />
+      {children}
+    </button>
+  );
+}
+
+/* ------------------------------------------------------------------ */
+/*  The tab row                                                        */
+/* ------------------------------------------------------------------ */
+
+export function UnderTabs({ items, active, onChange }: {
+  items: readonly string[]; active: string; onChange: (t: string) => void;
+}) {
+  return (
+    <div role="tablist" className="ux-noscroll mb-4 flex gap-1 overflow-x-auto border-b"
+         style={{ borderColor: v("--ux-line") }}>
+      {items.map((t) => {
+        const on = t === active;
+        return (
+          <button key={t} role="tab" type="button" aria-selected={on} onClick={() => onChange(t)}
+                  className="ux-press ux-sq relative shrink-0 px-4 pb-3 pt-2 text-xsm font-bold"
+                  style={{ color: v(on ? "--ux-brand" : "--ux-muted") }}>
+            {t}
+            {on && (
+              <span aria-hidden className="absolute inset-x-3 bottom-[-1px] h-[2.5px] rounded-full"
+                    style={{ background: v("--ux-brand") }} />
+            )}
+          </button>
+        );
+      })}
     </div>
   );
 }
@@ -151,11 +217,11 @@ export function CircleActions({ joined, busy, onJoin, onLeave, onInvite, menuOpe
 /* ------------------------------------------------------------------ */
 
 export const COMPOSER_EXTRAS = [
-  { id: "photo",    icon: "ImagePlus",  label: "Photo",     soon: "Photos in a post are on the way. For now, describe it — women here answer words." },
-  { id: "poll",     icon: "BarChart3",  label: "Poll",      soon: "Polls are on the way. For now, ask the question and count the replies." },
-  { id: "event",    icon: "CalendarDays", label: "Event",   soon: "Events live under Events for now, not inside a circle." },
-  { id: "file",     icon: "Paperclip",  label: "File",      soon: "Attachments are on the way." },
-  { id: "question", icon: "HelpCircle", label: "Ask a question", soon: "" },
+  { id: "photo",    icon: "ImagePlus",    label: "Photo/Video",     soon: "Photos in a post are on the way. For now, describe it — women here answer words." },
+  { id: "poll",     icon: "BarChart3",    label: "Poll",            soon: "Polls are on the way. For now, ask the question and count the replies." },
+  { id: "event",    icon: "CalendarDays", label: "Event",           soon: "A circle cannot hold its own event yet. Melas and workshops are under Events." },
+  { id: "file",     icon: "Paperclip",    label: "File",            soon: "Attachments are on the way. A link in the post works today." },
+  { id: "question", icon: "HelpCircle",   label: "Ask a question",  soon: "" },
 ] as const;
 
 export function Composer({ value, onChange, onPost, busy, avatar, name, onSoon, joined }: {
@@ -221,11 +287,13 @@ export interface CircleFeedPost {
   mine: boolean; pinned: boolean; kind: string | null;
 }
 
-export function CirclePostCard({ p, saved, busy, onLike, onSave, onShare }: {
+export function CirclePostCard({ p, saved, busy, menu, onMenu, onLike, onSave, onShare, onSoon }: {
   p: CircleFeedPost; saved: boolean; busy: boolean;
+  menu: boolean; onMenu: (open: boolean) => void;
   onLike: (p: CircleFeedPost) => void;
   onSave: (p: CircleFeedPost) => void;
   onShare: (p: CircleFeedPost) => void;
+  onSoon: (msg: string) => void;
 }) {
   const { title, rest, tags } = readPost(p.body);
   return (
@@ -240,22 +308,49 @@ export function CirclePostCard({ p, saved, busy, onLike, onSave, onShare }: {
         </span>
 
         <div className="min-w-0 flex-1">
-          <p className="flex flex-wrap items-center gap-x-2 gap-y-1">
-            <b className="text-xsm font-bold" style={{ color: v("--ux-ink") }}>{p.author}</b>
-            <span className="text-2xs" style={{ color: v("--ux-muted") }}>{p.when}</span>
-            {p.pinned && (
-              <span className="inline-flex items-center gap-1 rounded-full px-2 py-[3px] text-3xs font-extrabold"
-                    style={{ background: v("--ux-tint-amber"), color: v("--ux-amber-ink") }}>
-                <Icons.Pin className="h-[10px] w-[10px]" /> Pinned
-              </span>
-            )}
-            {p.kind && (
-              <span className="rounded-full px-2 py-[3px] text-3xs font-extrabold"
-                    style={{ background: v("--ux-brand-tint"), color: v("--ux-brand") }}>
-                {p.kind}
-              </span>
-            )}
-          </p>
+          <div className="flex items-start gap-2">
+            <p className="flex min-w-0 flex-1 flex-wrap items-center gap-x-2 gap-y-1">
+              <b className="text-xsm font-bold" style={{ color: v("--ux-ink") }}>{p.author}</b>
+              <span className="text-2xs" style={{ color: v("--ux-muted") }}>{p.when}</span>
+              {p.pinned && (
+                <span className="inline-flex items-center gap-1 rounded-full px-2 py-[3px] text-3xs font-extrabold"
+                      style={{ background: v("--ux-tint-amber"), color: v("--ux-amber-ink") }}>
+                  <Icons.Pin className="h-[10px] w-[10px]" /> Pinned
+                </span>
+              )}
+              {p.kind && (
+                <span className="rounded-full px-2.5 py-[3px] text-3xs font-extrabold"
+                      style={{ background: v("--ux-brand-tint"), color: v("--ux-brand") }}>
+                  {p.kind}
+                </span>
+              )}
+            </p>
+
+            <div className="relative shrink-0">
+              <button type="button" aria-label="More about this post" aria-expanded={menu}
+                      onClick={() => onMenu(!menu)}
+                      className="ux-press ux-sq grid h-[30px] w-[30px] place-items-center rounded-[8px]"
+                      style={{ color: v("--ux-faint") }}>
+                <Icons.MoreVertical className="h-[16px] w-[16px]" />
+              </button>
+              {menu && (
+                <Menu>
+                  <MenuRow icon="Bookmark" onClick={() => { onSave(p); onMenu(false); }}>
+                    {saved ? "Remove from saved" : "Save this post"}
+                  </MenuRow>
+                  <MenuRow icon="Share2" onClick={() => { onShare(p); onMenu(false); }}>Copy its link</MenuRow>
+                  <MenuRow icon="Flag" danger onClick={() => {
+                    onMenu(false);
+                    onSoon(p.mine
+                      ? "Deleting your own post is on the way."
+                      : "Thank you. Reporting a post is on the way — until then tell us through Help and a person will read it.");
+                  }}>
+                    {p.mine ? "Delete this post" : "Report this post"}
+                  </MenuRow>
+                </Menu>
+              )}
+            </div>
+          </div>
 
           {title && (
             <p className="mt-2 text-smd font-extrabold leading-snug" style={{ color: v("--ux-ink") }}>{title}</p>
@@ -269,7 +364,7 @@ export function CirclePostCard({ p, saved, busy, onLike, onSave, onShare }: {
           {p.image && (
             // eslint-disable-next-line @next/next/no-img-element
             <img src={p.image} alt="" loading="lazy" decoding="async"
-                 className="mt-3 max-h-[300px] w-full rounded-[12px] object-cover"
+                 className="mt-3 max-h-[320px] w-full rounded-[12px] object-cover"
                  style={{ background: v("--ux-media-bed") }} />
           )}
 
@@ -315,17 +410,26 @@ function PostAct({ icon, label, onClick, on, tone = "--ux-muted", disabled }: {
 /*  Rail: what this circle is                                          */
 /* ------------------------------------------------------------------ */
 
-export function AboutCircle({ c, posts }: { c: ApiCircleDetail; posts: number }) {
+export function AboutCircle({ c, posts, onEdit }: {
+  c: ApiCircleDetail; posts: number; onEdit: () => void;
+}) {
   const t = topicOf(c.topic);
   const facts = [
-    { k: "What it is about", val: t.label,                                    icon: "Tag",       tint: "--ux-brand-tint-2", ink: "--ux-brand" },
-    { k: "Who can come in",  val: c.is_private ? "Members only" : "Anyone",   icon: "Lock",      tint: "--ux-tint-violet",  ink: "--ux-violet-ink" },
-    { k: "Members",          val: niceCount(c.member_count),                  icon: "Users",     tint: "--ux-tint-blue",    ink: "--ux-blue-ink" },
-    { k: "Posts",            val: String(Math.max(posts, c.post_count)),      icon: "FileText",  tint: "--ux-tint-green",   ink: "--ux-green-ink" },
+    { k: "What it is about", val: t.label,                                   icon: "Tag",      tint: "--ux-brand-tint-2", ink: "--ux-brand" },
+    { k: "Who can come in",  val: c.is_private ? "Members only" : "Anyone",  icon: "Lock",     tint: "--ux-tint-violet",  ink: "--ux-violet-ink" },
+    { k: "Members",          val: niceCount(c.member_count),                 icon: "Users",    tint: "--ux-tint-blue",    ink: "--ux-blue-ink" },
+    { k: "Posts",            val: String(Math.max(posts, c.post_count)),     icon: "FileText", tint: "--ux-tint-green",   ink: "--ux-green-ink" },
   ];
   return (
     <Card>
-      <h2 className="mb-2.5 text-base font-extrabold" style={{ color: v("--ux-ink") }}>About this circle</h2>
+      <div className="mb-2.5 flex items-center justify-between gap-3">
+        <h2 className="text-base font-extrabold" style={{ color: v("--ux-ink") }}>About this circle</h2>
+        <button type="button" onClick={onEdit}
+                className="ux-sq -me-2 flex min-h-[36px] items-center rounded-[10px] px-2 text-xs font-bold"
+                style={{ color: v("--ux-brand") }}>
+          Edit
+        </button>
+      </div>
       {c.desc && (
         <p className="text-xs leading-relaxed" style={{ color: v("--ux-ink-2") }}>{c.desc}</p>
       )}
@@ -355,51 +459,198 @@ export function AboutCircle({ c, posts }: { c: ApiCircleDetail; posts: number })
 /*  Rail: who is in it                                                 */
 /* ------------------------------------------------------------------ */
 
-export function MembersCard({ count, people }: { count: number; people: ApiCircleMember[] }) {
+export function MembersCard({ count, people, onAll }: {
+  count: number; people: ApiCircleMember[]; onAll: () => void;
+}) {
+  // With no member list the server still sends a count. Six invented faces
+  // would be a claim about who is in the room; six unnamed marks are not.
+  const anon = Math.max(0, Math.min(6, count) - people.length);
   return (
     <Card>
       <div className="mb-3 flex items-center justify-between gap-3">
         <h2 className="text-base font-extrabold" style={{ color: v("--ux-ink") }}>
           Members ({niceCount(count)})
         </h2>
+        <button type="button" onClick={onAll}
+                className="ux-sq -me-2 flex min-h-[36px] items-center gap-0.5 rounded-[10px] px-2 text-xs font-bold"
+                style={{ color: v("--ux-brand") }}>
+          View all <Icons.ArrowRight className="h-[12px] w-[12px]" />
+        </button>
       </div>
 
-      {people.length > 0 ? (
-        <>
-          <div className="flex items-center">
-            {people.slice(0, 6).map((m, i) => (
-              <span key={m.name} title={m.name}
-                    className="grid h-[34px] w-[34px] shrink-0 place-items-center overflow-hidden rounded-full text-2xs font-bold"
-                    style={{ marginInlineStart: i ? -10 : 0, border: `2px solid ${v("--ux-surface")}`,
-                             background: v("--ux-brand-tint-2"), color: v("--ux-brand") }}>
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                {m.avatar ? <img src={m.avatar} alt="" aria-hidden loading="lazy" decoding="async"
-                                 className="h-full w-full object-cover" />
-                          : m.name.slice(0, 1).toUpperCase()}
-              </span>
-            ))}
-            {count > people.length && (
-              <span className="grid h-[34px] w-[34px] shrink-0 place-items-center rounded-full text-2xs font-bold"
-                    style={{ marginInlineStart: -10, border: `2px solid ${v("--ux-surface")}`,
-                             background: v("--ux-surface-2"), color: v("--ux-ink-2") }}>
-                +{niceCount(count - people.length)}
-              </span>
-            )}
-          </div>
-          <p className="mt-2.5 text-2xs" style={{ color: v("--ux-muted") }}>
-            {people.slice(0, 2).map((m) => m.name.split(" ")[0]).join(", ")}
-            {count > 2 ? ` and ${niceCount(count - 2)} more` : ""}
-          </p>
-        </>
-      ) : (
-        /* The server sends a count but no list for a circle that is not a
-           savings circle. Six invented faces would be a lie about who is in
-           the room, so it says the number and stops. */
+      <div className="flex items-center">
+        {people.slice(0, 6).map((m, i) => (
+          <span key={m.name} title={m.name}
+                className="grid h-[36px] w-[36px] shrink-0 place-items-center overflow-hidden rounded-full text-2xs font-bold"
+                style={{ marginInlineStart: i ? -10 : 0, border: `2px solid ${v("--ux-surface")}`,
+                         background: v("--ux-brand-tint-2"), color: v("--ux-brand") }}>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            {m.avatar ? <img src={m.avatar} alt="" aria-hidden loading="lazy" decoding="async"
+                             className="h-full w-full object-cover" />
+                      : m.name.slice(0, 1).toUpperCase()}
+          </span>
+        ))}
+        {Array.from({ length: anon }).map((_, i) => (
+          <span key={`anon-${i}`} aria-hidden
+                className="grid h-[36px] w-[36px] shrink-0 place-items-center rounded-full"
+                style={{ marginInlineStart: people.length || i ? -10 : 0,
+                         border: `2px solid ${v("--ux-surface")}`,
+                         background: v("--ux-surface-2"), color: v("--ux-faint") }}>
+            <Icons.UserRound className="h-[16px] w-[16px]" />
+          </span>
+        ))}
+        {count > people.length + anon && (
+          <span className="grid h-[36px] w-[36px] shrink-0 place-items-center rounded-full text-2xs font-bold"
+                style={{ marginInlineStart: -10, border: `2px solid ${v("--ux-surface")}`,
+                         background: v("--ux-brand-tint"), color: v("--ux-brand") }}>
+            +{niceCount(count - people.length - anon)}
+          </span>
+        )}
+      </div>
+
+      <p className="mt-2.5 text-2xs leading-relaxed" style={{ color: v("--ux-muted") }}>
+        {people.length > 0
+          ? `${people.slice(0, 2).map((m) => m.name.split(" ")[0]).join(", ")}${count > 2 ? ` and ${niceCount(count - 2)} more` : ""}`
+          : "Their names are theirs to share — you will see them as they post."}
+      </p>
+    </Card>
+  );
+}
+
+/* ------------------------------------------------------------------ */
+/*  Rail: what is coming up                                            */
+/* ------------------------------------------------------------------ */
+
+export interface RailEvent {
+  id: string; title: string; day: string; month: string;
+  when: string; going: boolean; taken: number; href: string;
+}
+
+export function EventsRail({ rows, busy, onGo }: {
+  rows: RailEvent[]; busy: string | null; onGo: (e: RailEvent) => void;
+}) {
+  return (
+    <Card>
+      <div className="mb-3 flex items-center justify-between gap-3">
+        <h2 className="text-base font-extrabold" style={{ color: v("--ux-ink") }}>Upcoming events</h2>
+        <Link href="/app/events" className="ux-sq -me-2 flex min-h-[36px] items-center gap-0.5 rounded-[10px] px-2 text-xs font-bold"
+              style={{ color: v("--ux-brand") }}>
+          View all <Icons.ArrowRight className="h-[12px] w-[12px]" />
+        </Link>
+      </div>
+
+      {rows.length === 0 ? (
         <p className="text-xs leading-relaxed" style={{ color: v("--ux-muted") }}>
-          {niceCount(count)} women are in this circle. Their names are theirs to share —
-          you will see them as they post.
+          Nothing on the calendar just now.
         </p>
+      ) : (
+        <div className="space-y-3.5">
+          {rows.map((e) => (
+            <div key={e.id} className="flex items-start gap-3">
+              <span className="grid w-[46px] shrink-0 place-items-center rounded-[11px] py-1.5"
+                    style={{ background: v("--ux-brand-tint") }}>
+                <span className="text-3xs font-extrabold uppercase tracking-[0.08em]" style={{ color: v("--ux-brand") }}>
+                  {e.month}
+                </span>
+                <span className="text-lg font-extrabold leading-none" style={{ color: v("--ux-brand") }}>{e.day}</span>
+              </span>
+              <span className="min-w-0 flex-1">
+                <Link href={e.href} className="ux-sq block text-xsm font-bold leading-snug" style={{ color: v("--ux-ink") }}>
+                  {e.title}
+                </Link>
+                <span className="mt-1 flex items-center gap-1.5 text-2xs" style={{ color: v("--ux-muted") }}>
+                  <Icons.CalendarDays className="h-[12px] w-[12px]" />{e.when}
+                </span>
+                <span className="mt-2 flex items-center gap-2">
+                  {e.taken > 0 && (
+                    <span className="text-2xs font-semibold" style={{ color: v("--ux-faint") }}>
+                      +{e.taken} going
+                    </span>
+                  )}
+                  <Btn size="sm" variant={e.going ? "outline" : "soft"} disabled={busy === e.id}
+                       onClick={() => onGo(e)}>
+                    {e.going ? "You are going" : "Join"}
+                  </Btn>
+                </span>
+              </span>
+            </div>
+          ))}
+        </div>
       )}
+
+      {/* These are WomSakhi's, not this circle's — saying so is the difference
+          between an invitation and a false claim about who is running it. */}
+      <p className="mt-3.5 border-t pt-3 text-2xs leading-relaxed"
+         style={{ borderColor: v("--ux-line"), color: v("--ux-faint") }}>
+        Open to every woman on WomSakhi. A circle cannot hold its own event yet.
+      </p>
+    </Card>
+  );
+}
+
+/* ------------------------------------------------------------------ */
+/*  Rail: things worth keeping                                         */
+/* ------------------------------------------------------------------ */
+
+/** What this card is drawn around. There is no files endpoint yet. */
+export const EXAMPLE_RESOURCES = [
+  { id: "r1", name: "Blouse measurement guide", kind: "PDF", size: "2.4 MB", tint: "--ux-tint-pink",   ink: "--ux-pink-ink" },
+  { id: "r2", name: "Fabric types cheat sheet", kind: "PDF", size: "1.1 MB", tint: "--ux-tint-blue",   ink: "--ux-blue-ink" },
+  { id: "r3", name: "Pricing your work",        kind: "XLS", size: "850 KB", tint: "--ux-tint-green",  ink: "--ux-green-ink" },
+  { id: "r4", name: "Beginner tools list",      kind: "PDF", size: "1.3 MB", tint: "--ux-tint-amber",  ink: "--ux-amber-ink" },
+];
+
+export function ResourcesRail({ onSoon }: { onSoon: (msg: string) => void }) {
+  return (
+    <Card>
+      <div className="mb-3 flex items-center justify-between gap-3">
+        <h2 className="text-base font-extrabold" style={{ color: v("--ux-ink") }}>Popular resources</h2>
+        <button type="button"
+                onClick={() => onSoon("A circle's shared files are on the way. Until then, put a link in a post — everyone in the circle can open it.")}
+                className="ux-sq -me-2 flex min-h-[36px] items-center gap-0.5 rounded-[10px] px-2 text-xs font-bold"
+                style={{ color: v("--ux-brand") }}>
+          View all <Icons.ArrowRight className="h-[12px] w-[12px]" />
+        </button>
+      </div>
+
+      <DemoNote what="These four files" />
+
+      <div className="space-y-1">
+        {EXAMPLE_RESOURCES.map((r) => (
+          <div key={r.id} className="flex items-center gap-2.5 rounded-[10px] px-1 py-2">
+            <span className="grid h-[34px] w-[34px] shrink-0 place-items-center rounded-[9px]"
+                  style={{ background: v(r.tint), color: v(r.ink) }}>
+              <Icons.FileText className="h-[16px] w-[16px]" />
+            </span>
+            <span className="min-w-0 flex-1">
+              <span className="block truncate text-xs font-bold" style={{ color: v("--ux-ink") }}>
+                {r.name} ({r.kind})
+              </span>
+              <span className="mt-0.5 block text-3xs" style={{ color: v("--ux-muted") }}>{r.size}</span>
+            </span>
+            <button type="button" aria-label={`Download ${r.name}`}
+                    onClick={() => onSoon("There is no file behind this one yet — the shelf is built, nothing is on it.")}
+                    className="ux-press ux-sq grid h-[32px] w-[32px] shrink-0 place-items-center rounded-[8px]"
+                    style={{ color: v("--ux-faint") }}>
+              <Icons.Download className="h-[15px] w-[15px]" />
+            </button>
+          </div>
+        ))}
+      </div>
+    </Card>
+  );
+}
+
+/* ------------------------------------------------------------------ */
+/*  A tab with nothing behind it yet                                   */
+/* ------------------------------------------------------------------ */
+
+export function NotBuiltYet({ icon, title, body, action }: {
+  icon: string; title: string; body: string; action?: React.ReactNode;
+}) {
+  return (
+    <Card>
+      <EmptyState icon={icon} title={title} body={body} action={action} />
     </Card>
   );
 }
@@ -432,40 +683,6 @@ export function PotCard({ id, monthlyLabel, round, paid, total, youPaid, whoseTu
           {youPaid ? "You have paid — see the pot" : "Pay this month"}
         </Btn>
       </div>
-    </Card>
-  );
-}
-
-/* ------------------------------------------------------------------ */
-/*  A tab with nothing behind it yet                                   */
-/* ------------------------------------------------------------------ */
-
-export function NotBuiltYet({ icon, title, body, action }: {
-  icon: string; title: string; body: string; action?: React.ReactNode;
-}) {
-  return (
-    <Card>
-      <EmptyState icon={icon} title={title} body={body} action={action} />
-    </Card>
-  );
-}
-
-export function CircleEventsRail() {
-  return (
-    <Card>
-      <div className="mb-3 flex items-center justify-between gap-3">
-        <h2 className="text-base font-extrabold" style={{ color: v("--ux-ink") }}>Events</h2>
-        <Link href="/app/events" className="ux-sq -me-2 flex min-h-[36px] items-center gap-0.5 rounded-[10px] px-2 text-xs font-bold"
-              style={{ color: v("--ux-brand") }}>
-          All events <Icons.ArrowRight className="h-[12px] w-[12px]" />
-        </Link>
-      </div>
-      {/* Events belong to WomSakhi, not to a circle — showing the whole
-          programme here would claim this circle is running it. */}
-      <p className="text-xs leading-relaxed" style={{ color: v("--ux-muted") }}>
-        This circle has no meets of its own yet. Workshops and melas open to everyone are
-        under Events.
-      </p>
     </Card>
   );
 }
