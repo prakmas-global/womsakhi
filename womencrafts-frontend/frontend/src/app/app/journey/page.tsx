@@ -3,191 +3,186 @@
 import { useCallback, useMemo, useState } from "react";
 
 import { HomeShell } from "@/components/ux/home/HomeShell";
-import { Btn, Card, I, IconTile, Pill, SectionHead, v } from "@/components/ux/kit";
-import { formatRupees } from "@/components/ux/kit";
-import { NextStepCard } from "@/components/ux/journey/NextStepCard";
-import { readJourneyState } from "@/services/me.repository";
+import { v } from "@/components/ux/kit";
+import { useMe } from "@/components/ux/me";
 import { useJourney } from "@/components/ux/journey";
-import { STAGES, journeyPct, nextStep, stageFor } from "@/services/journey";
-import { useT } from "@/i18n";
+import { readJourneyState } from "@/services/me.repository";
+import {
+  currentStep, journeySteps, stepState,
+  type JourneyFacts, type JourneyStep,
+} from "@/services/journey";
+import { GOALS, goalPct } from "@/components/ux/discovery/data";
+import {
+  Achievements, GoalsRail, JourneyHero, JourneyStats, Motivation, NeedGuidance,
+  OnYourWay, Recommended, StepCard, Stepper,
+  type Badge, type Rec, type RailGoal,
+} from "./journey-views";
 
 /**
- * My Journey — Skill to Income, drawn as a route she is walking.
+ * My Journey — skill to income, drawn as the seven places she passes through.
  *
- * ── Why a route and not a progress bar ──────────────────────────────────────
- * "65% complete" is a number about a course. This is a claim about her life:
- * a skill becomes income by a path, the path has seven places on it, and she
- * is standing at one of them. Drawn vertically because a journey has a
- * direction and a horizontal bar does not — and because the evidence under
- * each stage needs room to be read.
+ * ── Why seven steps with checklists, not one progress bar ───────────────────
+ * "65% complete" is a number about a course. This is a claim about her life,
+ * so it has to be legible: which step she is standing in, what is left inside
+ * it, and what the next one is called. The checklist is the difference between
+ * a screen that says she is 40% of the way and one that says which two things
+ * are left.
  *
- * ── Evidence, not self-assessment ───────────────────────────────────────────
- * Each completed stage shows what she actually did to clear it — orders
- * finished, money received, circles joined. Nothing here is a survey answer,
- * because a woman asked to rate herself will rate herself low, and this
- * product exists partly to correct that.
+ * ── Evidence, never a survey ────────────────────────────────────────────────
+ * Every tick is observed — a listing that exists, money that arrived, a
+ * profile that is filled in. A woman asked to rate herself rates herself low,
+ * and correcting that bias is half of why this product exists. That is also
+ * why the ticks are not editable: the screen reports, it does not take her
+ * word for it.
  *
  * ── Nothing ahead is locked ─────────────────────────────────────────────────
- * Later stages are dimmed, never gated. A woman who already sells but has
- * never taken a course is not "not ready" for the earning stage — she is
- * already there, and a lock would be the app telling her she is wrong about
- * her own life.
+ * Every step in the strip is pressable, including ones she has not reached. A
+ * woman who already sells but never took a course is not "not ready" to earn —
+ * she is already earning, and a lock would be the app telling her she is wrong
+ * about her own life.
  */
 export default function JourneyPage() {
-  const tr = useT();
-  const state = useMemo(() => readJourneyState(), []);
-  const stage = useMemo(() => stageFor(state), [state]);
-  const step = useMemo(() => nextStep(state), [state]);
-  const pct = useMemo(() => journeyPct(state), [state]);
-  const at = STAGES.findIndex((s) => s.id === stage);
+  const me = useMe();
+  const { data: live } = useJourney();
+  const [picked, setPicked] = useState<string | null>(null);
+  const [note, setNote] = useState<string | null>(null);
+
+  const say = useCallback((msg: string) => {
+    setNote(msg);
+    window.setTimeout(() => setNote((n) => (n === msg ? null : n)), 3400);
+  }, []);
 
   /**
-   * Her real milestones, merged in from the screen that used to live at
-   * /app/progress. Those are live — reached dates, what changed — while the
-   * stage machine above is derived. Both belong on one screen; two screens both
-   * called "your journey" meant the account menu and the rail pointed at
-   * different answers to the same question.
+   * What she has actually done.
+   *
+   * `readJourneyState` is still the fixture for her shop and her learning;
+   * the profile half is live from `useMe`, and the months from `/me/journey`.
+   * Mixing them is deliberate — the live parts should not wait for the mocked
+   * ones to be replaced.
    */
-  const { data: live } = useJourney();
+  const facts: JourneyFacts = useMemo(() => {
+    const base = readJourneyState();
+    return {
+      ...base,
+      monthsActive: live.monthsHere || base.monthsActive,
+      earnedMinor: live.lifetimeMinor || base.earnedMinor,
+      profilePct: me.profilePct,
+      verified: me.verified,
+      hasAvatar: Boolean(me.avatar),
+      hasTagline: Boolean(me.tagline?.trim()),
+    };
+  }, [live.monthsHere, live.lifetimeMinor, me.profilePct, me.verified, me.avatar, me.tagline]);
 
-  const [dismissed, setDismissed] = useState(false);
-  const dismiss = useCallback(() => setDismissed(true), []);
+  const steps = useMemo(() => journeySteps(facts), [facts]);
+  const here = useMemo(() => currentStep(steps), [steps]);
+  const shown: JourneyStep = useMemo(
+    () => steps.find((s) => s.id === picked) ?? here, [steps, picked, here]);
 
-  /** What she actually did, per stage. Empty means nothing to show yet. */
-  const evidence: Record<string, string[]> = {
-    skill: state.skills > 0 ? [`${state.skills} skills named`] : [],
-    learn: state.coursesDone > 0 ? [`${state.coursesDone} of ${state.coursesDone + state.coursesInProgress} courses finished`] : [],
-    practice: state.ordersDone > 0 ? [`${state.ordersDone} orders finished`] : [],
-    build: state.hasPortfolio ? ["Proof of your work is ready"] : [],
-    opportunity: state.productsListed > 0 ? [`${state.productsListed} things listed in your shop`] : [],
-    earn: state.earnedMinor > 0 ? [`${formatRupees(state.earnedMinor)} has reached your bank`] : [],
-    grow: state.circles > 0 ? [`${state.circles} circles`, `${state.monthsActive} months with earnings`] : [],
-  };
+  const tally = useMemo(() => {
+    const by = { done: 0, doing: 0, todo: 0 };
+    for (const s of steps) by[stepState(s)] += 1;
+    return by;
+  }, [steps]);
+
+  /** Said about what she has done, never about who she is. */
+  const cheer = tally.done === 0 ? "The first step is the whole trick"
+              : tally.done >= steps.length ? "You have walked all seven"
+              : tally.done === 1 ? "One down — keep going"
+              : `${tally.done} steps behind you`;
+
+  /* ── The rail ─────────────────────────────────────────────────────────── */
+
+  const goals: RailGoal[] = useMemo(() => GOALS.filter((g) => g.state === "on").slice(0, 3).map((g) => ({
+    id: g.id,
+    title: g.title,
+    pct: goalPct(g),
+    have: g.targetMinor
+      ? `${Math.round((g.haveMinor / g.targetMinor) * 100)}%`
+      : g.haveMinor > 0 ? "Started" : "Not yet",
+    icon: g.icon, tint: g.tint, ink: g.ink,
+  })), []);
+
+  /**
+   * Four badges, each one earned by something on this very screen.
+   *
+   * Not a separate list of achievements that could disagree with the steps —
+   * the same facts, read again, so a woman can always point at the thing that
+   * earned her the badge.
+   */
+  const badges: Badge[] = useMemo(() => [
+    { id: "learner", label: "Early learner", icon: "GraduationCap", earned: facts.coursesDone > 0,
+      tint: "--ux-tint-violet", ink: "--ux-violet-ink" },
+    { id: "member",  label: "Active member", icon: "HeartHandshake", earned: facts.circles > 0,
+      tint: "--ux-tint-pink", ink: "--ux-pink-ink" },
+    { id: "setter",  label: "Goal setter",   icon: "Target", earned: goals.length > 0,
+      tint: "--ux-tint-amber", ink: "--ux-amber-ink" },
+    { id: "next",    label: "Next badge",    icon: "Award", earned: false,
+      tint: "--ux-surface-2", ink: "--ux-faint" },
+  ], [facts.coursesDone, facts.circles, goals.length]);
+
+  /** Reading that belongs to the step she is standing in. */
+  const recs: Rec[] = useMemo(() => {
+    const forStep: Record<string, Rec[]> = {
+      proof: [
+        { id: "r1", title: "How to create a portfolio", kind: "Video", meta: "12 min",
+          icon: "Play", tint: "--ux-tint-violet", ink: "--ux-violet-ink", href: "/app/programs" },
+        { id: "r2", title: "Certificate templates", kind: "Resource", meta: "PDF",
+          icon: "FileText", tint: "--ux-tint-pink", ink: "--ux-pink-ink", href: "/app/certificates" },
+        { id: "r3", title: "Writing a great profile", kind: "Guide", meta: "8 min",
+          icon: "BookOpen", tint: "--ux-tint-blue", ink: "--ux-blue-ink", href: "/app/profile" },
+        { id: "r4", title: "Real stories from women like you", kind: "Article", meta: "5 min",
+          icon: "Sparkles", tint: "--ux-tint-green", ink: "--ux-green-ink", href: "/app/stories" },
+      ],
+    };
+    return forStep[shown.id] ?? [
+      { id: "d1", title: `Courses for ${shown.label.toLowerCase()}`, kind: "Guide", meta: "Browse",
+        icon: "BookOpen", tint: "--ux-tint-violet", ink: "--ux-violet-ink", href: "/app/programs" },
+      { id: "d2", title: "Women who have done this", kind: "Article", meta: "5 min",
+        icon: "Sparkles", tint: "--ux-tint-green", ink: "--ux-green-ink", href: "/app/stories" },
+      { id: "d3", title: "Find a mentor", kind: "Guide", meta: "10 min",
+        icon: "BookOpen", tint: "--ux-tint-pink", ink: "--ux-pink-ink", href: "/app/mentors" },
+      { id: "d4", title: "Ask Sakhi what is next", kind: "Video", meta: "2 min",
+        icon: "Play", tint: "--ux-tint-blue", ink: "--ux-blue-ink", href: "/app/sakhi" },
+    ];
+  }, [shown.id, shown.label]);
+
+  const rail = (
+    <div className="space-y-4">
+      <Motivation
+        text={me.tagline?.trim() || "I want to earn my own money and show my daughter it can be done."}
+        name={me.first}
+        onEdit={() => say("Your motivation is the line on your profile — change it there and it changes here.")}
+      />
+      <GoalsRail rows={goals} />
+      <Achievements rows={badges} />
+      <NeedGuidance />
+      <OnYourWay />
+    </div>
+  );
 
   return (
-    <HomeShell active="/app/journey">
-      <div className="flex flex-col gap-5">
+    <HomeShell active="/app/journey" rail={rail} loadFailed="your journey">
+      <div className="flex flex-col">
+        <JourneyHero />
 
-        <header>
-          <p className="text-2xs font-extrabold uppercase tracking-[0.2em]" style={{ color: v("--ux-brand") }}>{tr("journey.myJourney")}</p>
-          <h1 className="mt-2 text-[clamp(1.5rem,3.2vw,2.125rem)] font-extrabold leading-[1.1] tracking-[-0.035em]"
-              style={{ color: v("--ux-ink") }}>{tr("journey.fromWhatYouCanDoTo")}</h1>
-          <p className="mt-1.5 max-w-[58ch] text-sm leading-relaxed" style={{ color: v("--ux-muted") }}>
-            Seven steps, and you are on step {at + 1}. Nothing below is locked — if you are already
-            further along than this says, go straight there.
-          </p>
-        </header>
+        <JourneyStats total={steps.length} done={tally.done} doing={tally.doing}
+                      todo={tally.todo} cheer={cheer} />
 
-        {!dismissed && <NextStepCard step={step} at={stage} onDismiss={dismiss} />}
+        <Stepper steps={steps} at={shown.id} onPick={setPicked} />
 
-        <Card pad={20}>
-          <div className="flex flex-wrap items-center justify-between gap-3">
-            <div>
-              <p className="text-xs font-semibold uppercase tracking-[0.1em]" style={{ color: v("--ux-muted") }}>{tr("journey.whereYouAre")}</p>
-              <p className="mt-1 text-xl font-extrabold" style={{ color: v("--ux-ink") }}>
-                {STAGES[at].label}
-              </p>
-            </div>
-            <p className="text-2xlm font-extrabold tabular-nums" style={{ color: v("--ux-brand") }}>
-              {pct}%
-            </p>
-          </div>
-          <div className="mt-3 h-[6px] w-full overflow-hidden rounded-full" style={{ background: v("--ux-line") }}>
-            <div className="h-full rounded-full"
-                 style={{ width: `${pct}%`, background: v("--ux-fill"), transition: "width var(--ux-t-slow) var(--ux-ease)" }} />
-          </div>
-        </Card>
+        <StepCard step={shown} total={steps.length}
+                  onCheck={() => say("These tick themselves. Each one turns green when you have actually done it — nothing here takes your word for it.")}
+                  onLater={() => say("Saved. This step is here whenever you come back.")} />
 
-        {/* The route itself */}
-        <div>
-          <SectionHead title={tr("journey.theSevenSteps")} sub={tr("journey.whatEachOneMeansAndWhat")} icon="Route" />
-          <Card pad={0} style={{ overflow: "hidden" }}>
-            <ol className="px-5 py-2 sm:px-7">
-              {STAGES.map((s, i) => {
-                const done = i < at;
-                const here = i === at;
-                const rows = evidence[s.id] ?? [];
-                return (
-                  <li key={s.id} className="relative flex gap-4 py-5">
-                    {i < STAGES.length - 1 && (
-                      <span className="absolute left-[1.0625rem] top-[2.25rem] bottom-0 w-[2px]"
-                            style={{ background: v(done ? "--ux-green-ink" : "--ux-line") }} />
-                    )}
-                    <span className="relative z-[1] grid h-[2.125rem] w-[2.125rem] shrink-0 place-items-center rounded-full border-2"
-                          style={{
-                            background: v(done ? "--ux-green-ink" : here ? "--ux-fill" : "--ux-surface"),
-                            borderColor: v(done ? "--ux-green-ink" : here ? "--ux-fill" : "--ux-line-strong"),
-                            color: v(done || here ? "--ux-on-brand" : "--ux-muted"),
-                          }}>
-                      {done ? <I name="Check" className="h-[1rem] w-[1rem]" sw={3} />
-                            : <span className="text-xsm font-extrabold tabular-nums">{i + 1}</span>}
-                    </span>
+        <Recommended rows={recs} />
 
-                    <div className="min-w-0 flex-1 pt-0.5" style={{ opacity: !done && !here ? 0.55 : 1 }}>
-                      <div className="flex flex-wrap items-center gap-2">
-                        <p className="text-base font-bold" style={{ color: v("--ux-ink") }}>{s.label}</p>
-                        {here && <Pill tone="brand" size="sm">{tr("journey.youAreHere")}</Pill>}
-                      </div>
-                      <p className="mt-0.5 text-xsm" style={{ color: v("--ux-muted") }}>{s.verb}</p>
-
-                      {rows.length > 0 && (
-                        <ul className="mt-2 flex flex-wrap gap-1.5">
-                          {rows.map((r) => (
-                            <li key={r} className="inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-2xs font-semibold"
-                                style={{ background: v("--ux-tint-green"), color: v("--ux-green-ink") }}>
-                              <I name="Check" className="h-[0.6875rem] w-[0.6875rem]" sw={3} />{r}
-                            </li>
-                          ))}
-                        </ul>
-                      )}
-
-                      {here && (
-                        <div className="mt-3">
-                          <Btn size="sm" href={step.href} icon={step.icon}>{step.cta}</Btn>
-                        </div>
-                      )}
-                    </div>
-                  </li>
-                );
-              })}
-            </ol>
-          </Card>
+        <div className="ux-toast rounded-[12px] px-5 py-3.5 text-xsm font-bold"
+             data-on={note ? "true" : "false"} role="status" aria-live="polite"
+             style={{ background: v("--ux-ink"), color: v("--ux-canvas"),
+                      boxShadow: "0 20px 44px -18px rgba(0,0,0,.6)",
+                      pointerEvents: note ? undefined : "none" }}>
+          {note}
         </div>
-
-        {/* What she has actually reached, with dates. Merged from /app/progress. */}
-        {live?.milestones?.length > 0 && (
-          <div>
-            <SectionHead title={tr("journey.whatYouHaveAlreadyReached")}
-                         sub={`${live.milestones.filter((m) => m.done).length} of ${live.milestones.length}`}
-                         icon="Flag" />
-            <Card pad={0} style={{ overflow: "hidden" }}>
-              {live.milestones.map((m, i) => (
-                <div key={m.id} className="flex items-start gap-3.5 px-5 py-4"
-                     style={{ borderTop: i === 0 ? "none" : `1px solid ${v("--ux-line")}`,
-                              opacity: m.done ? 1 : 0.6 }}>
-                  <IconTile icon={m.done ? "CheckCircle2" : m.icon} tint={m.tint} ink={m.ink} size={38} />
-                  <div className="min-w-0 flex-1">
-                    <p className="text-sm font-bold" style={{ color: v("--ux-ink") }}>{m.title}</p>
-                    <p className="mt-0.5 text-xs leading-relaxed" style={{ color: v("--ux-muted") }}>
-                      {m.body}{m.when ? ` · ${m.when}` : ""}
-                    </p>
-                  </div>
-                </div>
-              ))}
-            </Card>
-          </div>
-        )}
-
-        <Card pad={16} style={{ background: v("--ux-surface-2"), borderColor: "transparent" }}>
-          <div className="flex items-start gap-3">
-            <I name="Info" className="mt-[2px] h-[1rem] w-[1rem] shrink-0" style={{ color: v("--ux-muted") }} />
-            <p className="text-xsm leading-relaxed" style={{ color: v("--ux-ink-2") }}>
-              Every green mark above is something you did, not something you told us. Nothing here is
-              locked — if you already sell but never took a course, you are further along than this
-              shows, and you should go straight to the step that helps.
-            </p>
-          </div>
-        </Card>
       </div>
     </HomeShell>
   );

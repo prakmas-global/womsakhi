@@ -150,3 +150,156 @@ export function journeyPct(s: JourneyState): number {
   const i = STAGES.findIndex((x) => x.id === stageFor(s));
   return Math.round(((i + 1) / STAGES.length) * 100);
 }
+
+/* ══════════════════════════════════════════════════════════════════════════
+   The seven steps, as she walks them
+   ══════════════════════════════════════════════════════════════════════════
+
+   `STAGES` above answers "where is she?" in one word, and Home and For You
+   read it that way. This answers a different question — "what is left in the
+   step she is standing in?" — and needs the step broken into the things she
+   would actually tick off.
+
+   Every check below is observed, never asked. A woman who is invited to rate
+   herself rates herself low, and correcting that bias is half of why this
+   product exists. */
+
+/** What the steps can be computed from: her shop, her learning, and her profile. */
+export interface JourneyFacts extends JourneyState {
+  /** From `useMe` — live, unlike most of `JourneyState` today. */
+  profilePct: number;
+  verified: boolean;
+  hasAvatar: boolean;
+  hasTagline: boolean;
+}
+
+export interface StepCheck {
+  label: string;
+  done: boolean;
+  /** Not counted against her — the wireframe's "(optional)" line. */
+  optional?: boolean;
+}
+
+export type StepState = "done" | "doing" | "todo";
+
+export interface JourneyStep {
+  id: string;
+  /** 1-7, because the screen says "Step 2 of 7" out loud. */
+  n: number;
+  label: string;
+  /** One line, second person, about what this step gets her. */
+  blurb: string;
+  icon: string;
+  tint: string;
+  ink: string;
+  cta: string;
+  href: string;
+  checks: StepCheck[];
+}
+
+export function journeySteps(f: JourneyFacts): JourneyStep[] {
+  return [
+    {
+      id: "skills", n: 1, label: "Your skills",
+      blurb: "Name what you can already do. It does not have to be a job title — stitching, cooking and mehendi all count.",
+      icon: "Sparkles", tint: "--ux-tint-violet", ink: "--ux-violet-ink",
+      cta: "Add a skill", href: "/app/skills",
+      checks: [
+        { label: "Name one thing you can do", done: f.skills > 0 },
+        { label: "Add a second skill", done: f.skills > 1, optional: true },
+        { label: "Start a course in it", done: f.coursesDone + f.coursesInProgress > 0 },
+      ],
+    },
+    {
+      id: "proof", n: 2, label: "Your proof",
+      blurb: "Show what you can do. Add your work samples, certificates or photos. This helps people trust your skills and gives you more opportunities.",
+      icon: "FolderOpen", tint: "--ux-tint-pink", ink: "--ux-pink-ink",
+      cta: "Build your proof", href: "/app/profile",
+      checks: [
+        { label: "Upload at least 1 work sample", done: f.hasPortfolio || f.productsListed > 0 },
+        { label: "Add a course certificate", done: f.coursesDone > 0, optional: true },
+        { label: "Write a short description about your work", done: f.hasTagline },
+      ],
+    },
+    {
+      id: "profile", n: 3, label: "Your profile",
+      blurb: "The page a buyer or an employer reads before they decide. A photograph and a verified badge do more than any sentence.",
+      icon: "UserRound", tint: "--ux-tint-blue", ink: "--ux-blue-ink",
+      cta: "Finish your profile", href: "/app/profile",
+      checks: [
+        { label: "Add your photograph", done: f.hasAvatar },
+        { label: "Get verified", done: f.verified },
+        { label: "Complete every part of it", done: f.profilePct >= 100 },
+      ],
+    },
+    {
+      id: "opportunity", n: 4, label: "Your first opportunity",
+      blurb: "Put yourself in front of someone. A shop with something in it, or one job you have asked for.",
+      icon: "Briefcase", tint: "--ux-tint-amber", ink: "--ux-amber-ink",
+      cta: "Find work that fits", href: "/app/opportunities",
+      checks: [
+        { label: "Open your shop", done: f.hasShop },
+        { label: "List something to sell", done: f.productsListed > 0 },
+        { label: "Ask for one job", done: f.applications > 0 },
+      ],
+    },
+    {
+      id: "earning", n: 5, label: "Your first earning",
+      blurb: "Finish the work, then ask for the money. Neither one counts on its own.",
+      icon: "Wallet", tint: "--ux-tint-green", ink: "--ux-green-ink",
+      cta: "Ask to be paid", href: "/app/collect",
+      checks: [
+        { label: "Finish one order", done: f.ordersDone > 0 },
+        { label: "Get the money into your bank", done: f.earnedMinor > 0 },
+      ],
+    },
+    {
+      id: "grow", n: 6, label: "Grow your work",
+      blurb: "Almost every woman here who found more work found it through someone she knew, not through a listing.",
+      icon: "TrendingUp", tint: "--ux-tint-violet", ink: "--ux-violet-ink",
+      cta: "See circles near you", href: "/app/circles",
+      checks: [
+        { label: "Join one circle", done: f.circles > 0 },
+        { label: "Talk to a woman further along", done: f.hasMentor },
+        { label: "Finish a course", done: f.coursesDone > 0 },
+      ],
+    },
+    {
+      id: "future", n: 7, label: "Build your future",
+      blurb: "Earning three months running is the point where this stops being a try and starts being work.",
+      icon: "Rocket", tint: "--ux-tint-lilac", ink: "--ux-brand",
+      cta: "Set a goal", href: "/app/goals",
+      checks: [
+        { label: "Three months on WomSakhi", done: f.monthsActive >= 3 },
+        { label: "Earning, not just once", done: f.earnedMinor > 0 && f.monthsActive >= 3 },
+        { label: "Be in more than one circle", done: f.circles > 1 },
+      ],
+    },
+  ];
+}
+
+/**
+ * Done, doing, or not begun.
+ *
+ * An optional check cannot hold a step back — it can only push it from "not
+ * begun" into "started", which is the honest reading of ticking one.
+ */
+export function stepState(s: JourneyStep): StepState {
+  const needed = s.checks.filter((c) => !c.optional);
+  const doneNeeded = needed.filter((c) => c.done).length;
+  if (needed.length > 0 && doneNeeded === needed.length) return "done";
+  if (s.checks.some((c) => c.done)) return "doing";
+  return "todo";
+}
+
+/** How far through this one step, counting only what it requires. */
+export function stepPct(s: JourneyStep): number {
+  const needed = s.checks.filter((c) => !c.optional);
+  if (needed.length === 0) return 0;
+  return Math.round((needed.filter((c) => c.done).length / needed.length) * 100);
+}
+
+/** The step she is standing in: the first not finished, else the last. */
+export function currentStep(steps: JourneyStep[]): JourneyStep {
+  return steps.find((s) => stepState(s) !== "done") ?? steps[steps.length - 1];
+}
