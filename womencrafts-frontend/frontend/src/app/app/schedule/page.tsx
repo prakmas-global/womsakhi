@@ -148,17 +148,17 @@ export default function Schedule() {
       {/* ── Header ───────────────────────────────────────────────────── */}
       <Back to="/app" label={tr("schedule.backToHome")} className="mb-4" />
 
-      <div className="mb-5 flex flex-wrap items-start justify-between gap-4">
-        <div className="flex items-start gap-3.5">
+      <div className="mb-5 flex flex-wrap items-start justify-between gap-x-4 gap-y-3">
+        <div className="flex min-w-0 items-start gap-3.5">
           <IconTile icon="CalendarDays" tint="--ux-tint-violet" ink="--ux-violet-ink" size={56} radius={15} />
           <div>
-            <h1 className="text-4xl font-extrabold leading-[1.1] tracking-[-0.03em]" style={{ color: v("--ux-ink") }}>{tr("schedule.myCalendar")}</h1>
-            <p className="mt-1 text-xsm" style={{ color: v("--ux-muted") }}>{tr("schedule.everythingYouHavePlannedBookedAnd")}</p>
+            <h1 className="text-4xlm font-extrabold leading-[1.05] tracking-[-0.03em]" style={{ color: v("--ux-ink") }}>{tr("schedule.myCalendar")}</h1>
+            <p className="mt-1.5 text-sm" style={{ color: v("--ux-muted") }}>{tr("schedule.everythingYouHavePlannedBookedAnd")}</p>
             <SourceNote source={source} what={tr("schedule.yourDiary")} />
           </div>
         </div>
 
-        <div className="flex flex-wrap items-center gap-2.5">
+        <div className="flex shrink-0 items-center gap-2.5">
           {/* Calendar / Agenda */}
           <div className="flex rounded-[13px] border p-1"
                style={{ background: v("--ux-surface"), borderColor: v("--ux-line") }}>
@@ -166,7 +166,7 @@ export default function Schedule() {
               const on = view === mode;
               return (
                 <button key={mode} type="button" onClick={() => setView(mode)} aria-pressed={on}
-                        className="ux-press ux-sq flex min-h-[40px] items-center gap-2 rounded-[10px] px-4 text-xsm font-bold capitalize transition-colors"
+                        className="ux-press ux-sq flex min-h-[40px] items-center gap-2 rounded-[10px] px-3.5 text-xsm font-bold capitalize transition-colors"
                         style={{ background: on ? v("--ux-fill") : "transparent",
                                  color: on ? v("--ux-on-brand") : v("--ux-ink-2") }}>
                   <I name={mode === "calendar" ? "CalendarDays" : "List"} className="h-[15px] w-[15px]" />
@@ -180,7 +180,7 @@ export default function Schedule() {
           <div className="relative" ref={addRef}>
             <button type="button" onClick={() => setAddOpen((o) => !o)}
                     aria-expanded={addOpen} aria-haspopup="menu"
-                    className="ux-press ux-sq flex min-h-[48px] items-center gap-2 rounded-[14px] px-5 text-sm font-bold"
+                    className="ux-press ux-sq flex min-h-[48px] items-center gap-2 rounded-[14px] px-4 text-sm font-bold"
                     style={{ background: v("--ux-fill"), color: v("--ux-on-brand") }}>
               <Icons.Plus className="h-[18px] w-[18px]" />{tr("schedule.addActivity")}<Icons.ChevronDown className="h-[14px] w-[14px]" />
             </button>

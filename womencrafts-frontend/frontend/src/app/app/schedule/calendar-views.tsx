@@ -152,7 +152,7 @@ export function MonthGrid({ cells, onPick }: { cells: DayCell[]; onPick: (iso: s
       {/* Day names */}
       <div className="grid grid-cols-7 border-b" style={{ borderColor: v("--ux-line") }}>
         {DOW.map((d) => (
-          <div key={d} className="py-3.5 text-center text-xsm font-semibold" style={{ color: v("--ux-muted") }}>
+          <div key={d} className="py-3.5 text-center text-xs font-semibold" style={{ color: v("--ux-muted") }}>
             {d}
           </div>
         ))}
@@ -184,7 +184,7 @@ export function MonthGrid({ cells, onPick }: { cells: DayCell[]; onPick: (iso: s
                     style={{ border: `1.5px solid ${v("--ux-brand")}` }} />
             )}
             <span
-              className="grid h-[30px] w-[30px] shrink-0 place-items-center rounded-full text-lg font-semibold"
+              className="grid h-[30px] w-[30px] shrink-0 place-items-center rounded-full text-base font-semibold"
               style={{
                 background: c.today ? v("--ux-fill") : "transparent",
                 color: c.today ? v("--ux-on-brand") : c.outside ? v("--ux-faint") : v("--ux-ink"),
@@ -251,7 +251,7 @@ export function TodayPanel({
       <div className="flex items-start justify-between gap-3">
         <div>
           <h2 className="text-xl font-extrabold leading-tight tracking-[-0.01em]" style={{ color: v("--ux-ink") }}>{label}</h2>
-          <p className="mt-1 text-xsm" style={{ color: v("--ux-muted") }}>
+          <p className="mt-1 text-sm" style={{ color: v("--ux-muted") }}>
             {count === 1 ? "1 activity" : `${count} activities`}{isToday ? " today" : ""}
           </p>
         </div>
@@ -290,7 +290,7 @@ export function ComingUp({ entries }: { entries: DiaryEntry[] }) {
   return (
     <Card>
       <div className="mb-2 flex items-center justify-between gap-3">
-        <h2 className="text-xl font-extrabold tracking-[-0.01em]" style={{ color: v("--ux-ink") }}>{tr("calendar.comingUp")}</h2>
+        <h2 className="text-base font-extrabold tracking-[-0.01em]" style={{ color: v("--ux-ink") }}>{tr("calendar.comingUp")}</h2>
         <Link href="/app/bookings" className="ux-sq flex items-center gap-0.5 text-xs font-bold"
               style={{ color: v("--ux-brand") }}>
           {tr("calendar.viewAll")} <Icons.ChevronRight className="h-[13px] w-[13px]" />
