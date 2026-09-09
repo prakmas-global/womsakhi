@@ -177,8 +177,7 @@ function MatchNote({ skills, compact = false }: { skills?: string[]; compact?: b
   if (!fit.because) return null;
   const tone = matchTone(fit.pct);
   return (
-    <p className={`flex items-start gap-1.5 ${compact ? tr("opportunities.mtTextXs")
-              : tr("opportunities.mtRoundedPxPxPyText")} leading-snug`}
+    <p className={`flex items-start gap-1.5 ${compact ? "mt-1.5 text-2xs" : "mt-2 rounded-[8px] px-2.5 py-2 text-xs"} leading-snug`}
        style={compact ? { color: "var(--ux-muted)" }
                       : { background: "var(--ux-surface-2)", color: "var(--ux-ink-2)" }}>
       <Icons.Sparkles className="mt-[2px] h-[0.75rem] w-[0.75rem] shrink-0"

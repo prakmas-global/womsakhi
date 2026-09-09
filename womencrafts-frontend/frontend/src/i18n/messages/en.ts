@@ -1416,8 +1416,6 @@ const screens = {
   "opportunities.thisMonth": "This month",
   "opportunities.takeMoneyOut2": "Take money out",
   "opportunities.openYourOrders": "Open your orders",
-  "opportunities.mtTextXs": "mt-1.5 text-2xs",
-  "opportunities.mtRoundedPxPxPyText": "mt-2 rounded-[8px] px-2.5 py-2 text-xs",
   "opportunities.openingIs": "opening is",
   "opportunities.openingsAre": "openings are",
   "payments.yourPayments": "your payments",
