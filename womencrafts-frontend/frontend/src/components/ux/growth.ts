@@ -61,7 +61,10 @@ function parsePay(pay: string): [number, number] {
   // A daily or per-piece rate is not a monthly one, and multiplying to make it
   // comparable would invent a figure. Left as it stands; the label still shows
   // the original words.
-  return [found[0], found[1] ?? found[0]];
+  // Sorted: a "range" whose low is above its high is not a range, and it was
+  // rendering as "₹55 – ₹20".
+  const a = found[0], b = found[1] ?? found[0];
+  return [Math.min(a, b), Math.max(a, b)];
 }
 
 const KIND: Record<string, WorkKind> = {
@@ -86,6 +89,7 @@ export function toJob(o: Opportunity): Job {
     kind: KIND[o.kind] ?? "Job",
     payLow: low,
     payHigh: high,
+    payText: o.pay,
     posted: o.posted,
     postedDays: 0,
     skills: o.skills ?? [],

@@ -118,6 +118,7 @@ export {
   Info,
   KeyRound,
   Landmark,
+  Laptop,
   Languages,
   LayoutGrid,
   Leaf,
