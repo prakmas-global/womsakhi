@@ -559,6 +559,7 @@ export function DemoNote({ what }: { what: string }) {
 export { certificateHtml, printCertificate, type CertificateFields } from "./download";
 export { Money, formatMoney as formatRupees, formatMoneyOrFree, formatWholeRupees } from "./money";
 export { Sheet } from "./sheet";
+export { useNarrow } from "./media";
 export { Avatar } from "./avatar";
 export { Field, TextInput } from "./field";
 export { Back, NavHistory } from "./back";

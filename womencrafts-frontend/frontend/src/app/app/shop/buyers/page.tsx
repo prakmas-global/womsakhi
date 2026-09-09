@@ -57,7 +57,6 @@ export default function BuyersPage() {
   }, [rows]);
 
   const card = (b: Buyer) => {
-  const tr = useT();
     const k = KIND[b.kind];
     return (
       <Card key={b.id} pad={16}>

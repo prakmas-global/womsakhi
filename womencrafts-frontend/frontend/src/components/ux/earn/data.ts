@@ -124,8 +124,43 @@ export const QUOTE_FIELDS = [
 
 /* ── The buyer's side of a quote ──────────────────────────────────────────── */
 
+/**
+ * The four extras a buyer ticks, in the buyer's words.
+ *
+ * Deliberately not the same list as `QUOTE_FIELDS`: those are things the
+ * SELLER demands, these are things the BUYER volunteers. Merging them would
+ * make a seller who wants a delivery address also demand to know whether the
+ * order is wholesale.
+ */
+export const QUOTE_ASK = [
+  "I have a specific design, colour or size in mind",
+  "I want it customised — a name or a logo on it",
+  "This is a bulk or wholesale order",
+  "I would like a sample before the full order",
+];
+
+/** What the quote drawer hands the confirmation screen. Nothing is stored. */
+export interface QuoteDraft {
+  title: string;
+  photo?: string;
+  seller: string;
+  needs: string;
+  quantity: string;
+  budgetLow: string;
+  budgetHigh: string;
+  by: string;
+  place: string;
+  extras: string[];
+  name: string;
+  email: string;
+  phone: string;
+}
+
+
 export interface QuoteRequest {
   id: string;
+  /** Whose shop it went to. A screen that says "By the seller" is unfinished. */
+  seller: string;
   listingId: string;
   quantity: number;
   budgetLow?: number;
@@ -138,6 +173,7 @@ export interface QuoteRequest {
 
 export const SENT_QUOTE: QuoteRequest = {
   id: "WSQ-2026-00124",
+  seller: "Priya Sharma",
   listingId: "l1",
   quantity: 20,
   budgetLow: 1000,

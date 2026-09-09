@@ -48,7 +48,7 @@ export default function LivePage() {
     setNote(l?.state === "live"
       ? tr("shopLive.finishedEverythingAnyoneClaimedIsN")
               : tr("shopLive.youAreOnYourCircleHas"));
-  }, [rows]);
+  }, [rows, tr]);
 
   return (
     <HomeShell active="/app/shop">

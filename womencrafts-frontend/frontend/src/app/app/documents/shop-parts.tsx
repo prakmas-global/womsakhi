@@ -5,7 +5,7 @@ import Link from "next/link";
 import * as Icons from "@/components/ux/icons";
 
 import type { Listing, ShopOrder, ShopSummary } from "@/lib/shop-api";
-import { apiUploadImage, validateImage } from "@/lib/uploads-api";
+import { validateImage } from "@/lib/uploads-api";
 import { formatMoney } from "@/components/ux/kit/money";
 import { useT } from "@/i18n";
 
@@ -66,125 +66,7 @@ export function Tile({ tone, size = 34, radius = 11, children }: {
   );
 }
 
-export const Sec = ({ children, action }: { children: React.ReactNode; action?: React.ReactNode }) => (
-  <h2 className="mb-3.5 mt-7 flex items-center gap-2.5 text-2xs font-extrabold uppercase tracking-[0.16em] first:mt-0"
-      style={{ color: "var(--ux-faint)" }}>
-    {children}
-    {action && <span className="ms-auto normal-case tracking-normal">{action}</span>}
-  </h2>
-);
 
-/* ── the hero, in Home's language ───────────────────────────────────────── */
-
-/**
- * Memoised, with the rest of this file.
- *
- * The shop toast sets a note and clears it 2.6 seconds later, so every
- * confirmation costs two renders of the whole screen. Its props here are a
- * stable object and a number, so both of those renders now stop at the memo.
- */
-export const Hero = memo(function Hero(
-  { summary, needs }: { summary: ShopSummary | null; needs: number },
-) {
-  const tr = useT();
-  const earned = summary?.month_minor ?? 0;
-  const last = summary?.last_month_minor ?? 0;
-  const delta = last > 0 ? Math.round(((earned - last) / last) * 100) : null;
-  return (
-    <section className="relative isolate mb-4 overflow-hidden rounded-[20px]"
-             style={{ background: "linear-gradient(112deg, var(--ux-brand-900) 0%, var(--ux-fill) 44%, var(--ux-rib-3) 108%)",
-                      minHeight: 264 }}>
-      {/* eslint-disable-next-line @next/next/no-img-element */}
-      <img loading="lazy" decoding="async" src="/ux/art/hero-shop-owner.webp" alt="" aria-hidden
-           className="ux-float pointer-events-none absolute inset-y-0 right-0 hidden h-full w-[44%] object-contain object-bottom sm:block"
-           style={{ maskImage: "linear-gradient(100deg, transparent 2%, #000 34%), radial-gradient(84% 92% at 62% 48%, #000 56%, transparent 92%)",
-                    WebkitMaskImage: "linear-gradient(100deg, transparent 2%, #000 34%), radial-gradient(84% 92% at 62% 48%, #000 56%, transparent 92%)",
-                    maskComposite: "intersect", WebkitMaskComposite: "source-in" }} />
-      <div className="relative flex min-h-[264px] flex-col justify-center p-8 sm:max-w-[58%]">
-        <p className="text-xsm font-semibold" style={{ color: "var(--ux-on-brand-2)" }}>
-          {summary?.name ?? "Your shop"}
-        </p>
-        <h1 className="mt-2.5 text-[clamp(1.5rem,2.7vw,2.1875rem)] font-extrabold leading-[1.12] tracking-[-0.03em]"
-            style={{ color: "var(--ux-on-brand)", textWrap: "balance" }}>{tr("documents.youHaveMade")}<span style={{ color: "var(--ux-rib-5)" }}>{rupees(earned)}</span> this month
-          {needs > 0 && <>, and {needs === 1 ? "one order needs" : `${needs} orders need`} you</>}.
-        </h1>
-        <p className="mt-2.5 text-sm" style={{ color: "var(--ux-on-brand-2)" }}>
-          Sell. Make. Send. Get paid.
-          {delta !== null && delta !== 0 && ` ${delta > 0 ? "Up" : "Down"} ${Math.abs(delta)}% on last month.`}
-        </p>
-        <div className="mt-5 flex flex-wrap gap-3">
-          <Link href="/app/documents/product/new"
-                className="ux-press flex min-h-[44px] items-center gap-2 rounded-[12px] px-5 text-xsm font-bold"
-                style={{ background: "linear-gradient(96deg, var(--ux-rib-2), var(--ux-rib-3))",
-                         color: "var(--ux-on-brand)" }}>
-            <Icons.Plus className="h-4 w-4" />{tr("documents.addSomethingToSell")}</Link>
-          <Link href="/app/wallet"
-                className="ux-press flex min-h-[44px] items-center gap-2.5 rounded-[12px] px-4 text-xsm font-bold"
-                style={{ background: "var(--ux-on-brand-track)", border: "1px solid var(--ux-on-brand-2)",
-                         color: "var(--ux-on-brand)" }}>
-            <span className="grid h-[26px] w-[26px] place-items-center rounded-full"
-                  style={{ background: "var(--ux-on-brand-btn)", color: "var(--ux-on-brand-btn-ink)" }}>
-              <Icons.Wallet className="h-[13px] w-[13px]" />
-            </span>{tr("documents.seeYourMoney")}</Link>
-        </div>
-      </div>
-    </section>
-  );
-});
-
-/* ── the figures ────────────────────────────────────────────────────────── */
-
-export const Stats = memo(function Stats({ summary, needs, live }: {
-  summary: ShopSummary | null; needs: number; live: number;
-}) {
-  const tr = useT();
-  const earned = summary?.month_minor ?? 0;
-  const last = summary?.last_month_minor ?? 0;
-  const delta = last > 0 ? Math.round(((earned - last) / last) * 100) : null;
-  const cards = [
-    { icon: "Coins", tone: "green", label: "Earned", value: rupees(earned),
-      note: "This month", delta },
-    { icon: "Package", tone: "amber", label: "Needs you", value: String(needs),
-      note: needs === 1 ? tr("documents.orderToMove")
-              : tr("documents.ordersToMove"), delta: null },
-    { icon: "Store", tone: "violet", label: "In your shop", value: String(live),
-      note: "Live listings", delta: null },
-    { icon: "Star", tone: "blue", label: "Your rating",
-      value: summary?.rating ? summary.rating.toFixed(1) : "—",
-      note: `From ${summary?.review_count ?? 0} reviews`, delta: null },
-  ];
-  return (
-    <div className="-mx-[20px] mb-6 flex gap-3 overflow-x-auto px-[20px] pb-1 lg:mx-0 lg:grid lg:grid-cols-4 lg:px-0">
-      {cards.map((c, i) => {
-        const [, ink] = TONE[c.tone];
-        return (
-          <div key={c.label} className="ux-rise min-w-[186px] flex-none rounded-[16px] p-4 transition-transform hover:-translate-y-[3px]"
-               style={{ ...card, animationDelay: `${0.05 + i * 0.07}s` }}>
-            <div className="flex items-center gap-2.5">
-              <Tile tone={c.tone}>
-                <Ico name={c.icon} className="h-[17px] w-[17px]" />
-              </Tile>
-              <span className="text-xs font-semibold" style={{ color: "var(--ux-ink-2)" }}>{c.label}</span>
-            </div>
-            <b className="mt-3 block text-2xl font-extrabold tabular-nums tracking-[-0.035em]"
-               style={{ color: `var(${ink})` }}>
-              {c.value}
-              {c.delta !== null && c.delta !== 0 && (
-                <span className="ms-2 text-2xs font-extrabold"
-                      style={{ color: c.delta > 0 ? "var(--ux-green-ink)" : "var(--ux-amber-ink)" }}>
-                  {c.delta > 0 ? "▲" : "▼"} {Math.abs(c.delta)}%
-                </span>
-              )}
-            </b>
-            <em className="mt-0.5 block text-xs not-italic" style={{ color: "var(--ux-faint)" }}>
-              {c.note}
-            </em>
-          </div>
-        );
-      })}
-    </div>
-  );
-});
 
 export function Ico({ name, className }: { name: string; className?: string }) {
   const C = (Icons as unknown as Record<string, React.ComponentType<{ className?: string; strokeWidth?: number }>>)[name]
@@ -213,7 +95,8 @@ export const OrderCard = memo(function OrderCard({ o, onAdvance, busy }: {
   const [, ink] = TONE[tone];
   const cancelled = o.state === "Cancelled";
   return (
-    <article className="ux-rise mb-3 rounded-[16px] p-4" style={card}>
+    <article data-order={o.id} data-state={o.state}
+             className="ux-rise mb-3 rounded-[16px] p-4" style={card}>
       <div className="flex flex-wrap items-center gap-3">
         <Tile tone={tone} size={46} radius={14}>
           <Icons.Package className="h-[21px] w-[21px]" />

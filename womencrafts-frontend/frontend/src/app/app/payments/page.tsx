@@ -218,7 +218,7 @@ const PaymentRow = rowMemo(function PaymentRow({
                            <table><tbody>
                              <tr><td>What</td><td>${escapeHtml(item.title)}</td></tr>
                              <tr><td>Why</td><td>${escapeHtml(item.purpose)}</td></tr>
-                             <tr><td>{tr("payments.paidWith")}</td><td>${escapeHtml(item.method)}</td></tr>
+                             <tr><td>${tr("payments.paidWith")}</td><td>${escapeHtml(item.method)}</td></tr>
                              <tr><td>Status</td><td>${escapeHtml(TONE[item.status].word)}</td></tr>
                              <tr class="total"><td>Amount</td><td class="num">${rupeesExact(item.amount_minor)}</td></tr>
                            </tbody></table>

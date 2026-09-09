@@ -1,6 +1,7 @@
 "use client";
 
-import { useId, useRef } from "react";
+import { useId, useRef, useSyncExternalStore } from "react";
+import { createPortal } from "react-dom";
 
 import * as Icons from "@/components/ux/icons";
 import { useDialogBehaviour } from "@/lib/use-dialog";
@@ -29,6 +30,10 @@ import { useDialogBehaviour } from "@/lib/use-dialog";
  * woman using one hand, which is why it is a real button with a label rather
  * than a `<div>` that looks like one.
  */
+/** "Are we in the browser yet" — `document` does not exist during SSR, and a
+ *  portal needs a real node. A stable subscribe, so React never resubscribes. */
+const NEVER_CHANGES = () => () => {};
+
 export function Sheet({
   open,
   onClose,
@@ -37,6 +42,8 @@ export function Sheet({
   children,
   footer,
   side = "end",
+  icon,
+  width = 420,
 }: {
   open: boolean;
   onClose: () => void;
@@ -47,17 +54,38 @@ export function Sheet({
   footer?: React.ReactNode;
   /** Which edge on a wide screen. Always the bottom on a phone. */
   side?: "start" | "end";
+  /** Names the task in the header, beside the title. Optional on purpose —
+   *  a filter panel does not need one, a form the length of a page does. */
+  icon?: string;
+  /** How wide on a desktop. A long form needs more room than a filter list. */
+  width?: number;
 }) {
   const panelRef = useRef<HTMLDivElement>(null);
   const titleId = useId();
 
+  /**
+   * Rendered into `document.body`, not where it is written.
+   *
+   * `z-index` only ranks siblings inside the same stacking context. Left in
+   * the page tree, this drawer sat inside whatever context its parent made —
+   * and HomeShell's sticky rail, in a later context, painted its tip cards
+   * straight over the open sheet while the dim behind it worked perfectly.
+   * No z-index on the sheet can win that; only leaving the context can.
+   *
+   * It goes to the shell's `.ux` element and NOT to `document.body`: the
+   * colour tokens are declared on `.ux`, not on `:root`, so a sheet portalled
+   * to the body renders with every `var(--ux-surface)` unresolved — no panel,
+   * no dim, just floating text over the page.
+   */
+  const onClient = useSyncExternalStore(NEVER_CHANGES, () => true, () => false);
+
   useDialogBehaviour(open, panelRef, onClose);
 
-  if (!open) return null;
+  if (!open || !onClient) return null;
 
   const edge = side === "start" ? "sm:left-0 sm:right-auto" : "sm:right-0 sm:left-auto";
 
-  return (
+  return createPortal(
     <div className="fixed inset-0 z-[var(--ux-z-modal)]">
       {/* The dim. Lighter than a modal's on purpose — she is meant to keep
           seeing what she is filtering. */}
@@ -76,8 +104,10 @@ export function Sheet({
         aria-labelledby={titleId}
         tabIndex={-1}
         className={`ux-sheet absolute inset-x-0 bottom-0 z-[var(--ux-z-modal)] flex max-h-[88vh] flex-col rounded-t-[20px]
-                    sm:inset-y-0 sm:bottom-auto sm:max-h-none sm:w-[min(420px,100vw)] sm:rounded-none ${edge}`}
-        style={{ background: "var(--ux-surface)", boxShadow: "var(--ux-shadow-pop)" }}
+                    sm:inset-y-0 sm:max-h-none sm:w-[var(--ux-sheet-w)] sm:rounded-none ${edge}`}
+        style={{ background: "var(--ux-surface)", boxShadow: "var(--ux-shadow-pop)",
+                 // Tailwind cannot see a runtime width, so it is set here.
+                 ["--ux-sheet-w" as string]: `min(${width}px, 100vw)` }}
       >
         {/* Grab handle — phone only. A real button, because it is also the
             largest and most forgiving way to close this one-handed. */}
@@ -92,6 +122,16 @@ export function Sheet({
 
         <div className="flex shrink-0 items-start gap-3 border-b px-5 py-4"
              style={{ borderColor: "var(--ux-line)" }}>
+          {icon && (() => {
+            const Ico = (Icons as unknown as Record<string, React.ComponentType<{ className?: string }>>)[icon]
+                        ?? Icons.Circle;
+            return (
+              <span className="grid h-[38px] w-[38px] shrink-0 place-items-center rounded-[11px]"
+                    style={{ background: "var(--ux-brand-tint-2)", color: "var(--ux-brand)" }}>
+                <Ico className="h-[19px] w-[19px]" />
+              </span>
+            );
+          })()}
           <div className="min-w-0 flex-1">
             <h2 id={titleId} className="text-base font-bold tracking-[-0.01em]" style={{ color: "var(--ux-ink)" }}>
               {title}
@@ -121,6 +161,7 @@ export function Sheet({
           </div>
         )}
       </div>
-    </div>
+    </div>,
+    document.querySelector(".ux") ?? document.body,
   );
 }

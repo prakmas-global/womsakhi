@@ -67,10 +67,9 @@ export default function PreOrdersPage() {
       : o?.state === "funded" ? tr("shopPreorders.markedAsBeingMade")
               : tr("shopPreorders.deliveredTheRestOfTheMoney"),
     );
-  }, [rows]);
+  }, [rows, tr]);
 
   const card = (o: PreOrder) => {
-  const tr = useT();
     const s = STATE[o.state];
     const pct = Math.round((o.paidMinor / o.totalMinor) * 100);
     return (

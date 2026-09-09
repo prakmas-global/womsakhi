@@ -4,7 +4,6 @@ import { useMemo, useRef, useState } from "react";
 
 import { apiUploadDocument, validateDocument, ACCEPTED_DOC_TYPES } from "@/lib/uploads-api";
 import { messageFrom } from "@/lib/use-action";
-import Link from "next/link";
 import * as Icons from "@/components/ux/icons";
 
 import {Back, ActionBtn, Btn, Card, EmptyState, IconTile, Pill,
@@ -112,7 +111,6 @@ export default function VaultPage() {
    * scan rather than replacing a lie.
    */
   const coverSheet = (only?: Row) => {
-  const tr = useT();
     const list = only ? [only] : rows;
     const line = (d: Row) => `<tr>
       <td>${escapeHtml(d.name)}</td>
@@ -126,7 +124,7 @@ export default function VaultPage() {
         <thead><tr><th scope="col">Paper</th><th scope="col">Status</th><th scope="col">Checked</th></tr></thead>
         <tbody>${list.map(line).join("")}</tbody>
       </table>
-      ${missing.length && !only ? `<h2>{tr("documentsVault.stillToGiveUs")}</h2><p>${escapeHtml(missing.map((x) => x.name).join(", "))}. Schemes that ask for ${missing.length > 1 ? "them" : "it"} cannot go through until ${missing.length > 1 ? tr("documentsVault.theyAre")
+      ${missing.length && !only ? `<h2>${tr("documentsVault.stillToGiveUs")}</h2><p>${escapeHtml(missing.map((x) => x.name).join(", "))}. Schemes that ask for ${missing.length > 1 ? "them" : "it"} cannot go through until ${missing.length > 1 ? tr("documentsVault.theyAre")
               : tr("documentsVault.itIs")} added.</p>` : ""}
       <p class="foot">
         This is a record of what WomSakhi holds, not a copy of the papers

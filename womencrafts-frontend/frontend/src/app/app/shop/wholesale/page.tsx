@@ -63,7 +63,6 @@ export default function WholesalePage() {
   }, []);
 
   const card = (b: BulkAsk) => {
-  const tr = useT();
     const s = STATE[b.state];
     return (
       <Card key={b.id} pad={16}>

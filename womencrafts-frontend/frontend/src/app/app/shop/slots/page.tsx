@@ -4,7 +4,7 @@ import { useCallback, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 
 import { HomeShell } from "@/components/ux/home/HomeShell";
-import { Back, Btn, Card, I, Pill, SectionHead, Sheet, v } from "@/components/ux/kit";
+import { Back, Btn, Card, I, Pill, SectionHead, Sheet, v, useNarrow } from "@/components/ux/kit";
 import { formatRupees } from "@/components/ux/kit";
 import { SLOTS, type Slot } from "@/components/ux/eight/data";
 import { useT } from "@/i18n";
@@ -34,6 +34,9 @@ export default function SlotsPage() {
   const router = useRouter();
   const [slots, setSlots] = useState<Slot[]>(SLOTS);
   const [picked, setPicked] = useState<string | null>(null);
+  /** The sheet is for a phone. It used to be hidden by a `lg:hidden` wrapper,
+   *  which stopped working the day `Sheet` started rendering through a portal. */
+  const narrow = useNarrow();
   const [note, setNote] = useState<string | null>(null);
 
   const at = useCallback(
@@ -54,7 +57,7 @@ export default function SlotsPage() {
     const s = slots.find((x) => x.id === id);
     setNote(s?.blocked ? tr("shopSlots.openAgainItWillShowTo")
               : tr("shopSlots.closedNobodyIsToldWhy"));
-  }, [slots]);
+  }, [slots, tr]);
 
   const addAll = useCallback(() => {
     setNote("Same times added to next week.");
@@ -71,8 +74,8 @@ export default function SlotsPage() {
             <h1 className="mt-2 text-[clamp(1.5rem,3.2vw,2.125rem)] font-extrabold leading-[1.1] tracking-[-0.035em]"
                 style={{ color: v("--ux-ink") }}>{tr("shopSlots.sellYourTimeNotJustThings")}</h1>
             <p className="mt-1.5 max-w-[54ch] text-sm leading-relaxed" style={{ color: v("--ux-muted") }}>
-              Customers pick a time themselves. You never have to reply to "when are you free?"
-              again — and closing a time takes one tap, with no reason asked.
+              Customers pick a time themselves. You never have to reply to &ldquo;when are you
+              free?&rdquo; again — and closing a time takes one tap, with no reason asked.
             </p>
           </div>
           <Btn variant="outline" icon="CopyPlus" onClick={addAll}>{tr("shopSlots.repeatNextWeek")}</Btn>
@@ -170,8 +173,7 @@ export default function SlotsPage() {
           looking at. A sheet brings the detail to her thumb and leaves the grid
           visible behind it, so she can still see which time she picked.
         */}
-        <div className="lg:hidden">
-        <Sheet open={!!sel} onClose={() => setPicked(null)}
+        <Sheet open={!!sel && narrow} onClose={() => setPicked(null)}
                title={sel ? `${sel.day}, ${sel.time}` : ""}
                description={sel ? sel.service : undefined}
                footer={sel && (
@@ -219,7 +221,6 @@ export default function SlotsPage() {
             </div>
           )}
         </Sheet>
-        </div>
 
         {/* Kept for the wide layout, where a panel beside the grid reads better
             than an overlay over it. */}

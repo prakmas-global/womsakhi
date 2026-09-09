@@ -9,6 +9,8 @@ import { execSync } from "child_process";
 
 const CHECKS = [
   ["tokens",   "node checks/tokens.mjs"],
+  ["type",     "node checks/type-scale.mjs"],
+  ["i18n-keys","node checks/i18n-coverage.mjs"],
   ["ink",      "npx tsx src/theme-engine/__checks__/ink.mjs"],
   ["contrast", "node checks/contrast.mjs"],
   ["rail",     "node checks/rail.mjs"],
@@ -22,6 +24,9 @@ const CHECKS = [
   // Every dashboard screen at 390px, plus the off-canvas drawer.
   ["phone",    "node checks/phone.mjs"],
   ["split",    "node checks/split.mjs"],
+  // Back goes where she came from, and a drawer is on top and reachable.
+  ["back",     "node checks/back-flow.mjs"],
+  ["overlay",  "node checks/overlay-scope.mjs"],
   // Every language, rendered in a real browser.
   ["i18n",     "node checks/i18n.mjs"],
   // Last: it drives a real conversation, so it is the slowest by far and

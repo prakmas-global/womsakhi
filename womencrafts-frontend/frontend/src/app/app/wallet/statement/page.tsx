@@ -93,7 +93,6 @@ export default function StatementPage() {
 
   /** The document a bank actually accepts, printed black on white. */
   const printStatement = () => {
-  const tr = useT();
     const row = (t: (typeof TXNS)[number]) => `<tr>
       <td>${escapeHtml(t.when)}</td>
       <td>${escapeHtml(t.label)}<br><span class="muted">${escapeHtml(t.source)}</span></td>
@@ -105,12 +104,12 @@ export default function StatementPage() {
       ${letterhead("Account statement", `${ME.name} · ${showing}`)}
       <h2>Summary</h2>
       <table><tbody>
-        <tr><td>{tr("walletStatement.moneyInCleared")}</td><td class="num">${rupeesExact(inMinor)}</td></tr>
-        <tr><td>{tr("walletStatement.moneyOutCleared")}</td><td class="num">${rupeesExact(outMinor)}</td></tr>
-        ${pendingMinor > 0 ? `<tr><td class="muted">{tr("walletStatement.notCountedStillOnItsWay")}</td><td class="num muted">${rupeesExact(pendingMinor)}</td></tr>` : ""}
-        <tr class="total"><td>{tr("walletStatement.leftAtMonthEnd")}</td><td class="num">${rupeesExact(inMinor - outMinor)}</td></tr>
+        <tr><td>${tr("walletStatement.moneyInCleared")}</td><td class="num">${rupeesExact(inMinor)}</td></tr>
+        <tr><td>${tr("walletStatement.moneyOutCleared")}</td><td class="num">${rupeesExact(outMinor)}</td></tr>
+        ${pendingMinor > 0 ? `<tr><td class="muted">${tr("walletStatement.notCountedStillOnItsWay")}</td><td class="num muted">${rupeesExact(pendingMinor)}</td></tr>` : ""}
+        <tr class="total"><td>${tr("walletStatement.leftAtMonthEnd")}</td><td class="num">${rupeesExact(inMinor - outMinor)}</td></tr>
       </tbody></table>
-      <h2>{tr("walletStatement.everyEntry")}</h2>
+      <h2>${tr("walletStatement.everyEntry")}</h2>
       <table>
         <thead><tr><th scope="col">Date</th><th scope="col">Detail</th><th scope="col" class="num">In</th><th scope="col" class="num">Out</th><th scope="col">Status</th></tr></thead>
         <tbody>${TXNS.map(row).join("")}</tbody>

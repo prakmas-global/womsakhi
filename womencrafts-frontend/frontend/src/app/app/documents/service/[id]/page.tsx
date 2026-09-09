@@ -5,7 +5,6 @@ import { use, useEffect, useMemo, useRef, useState } from "react";
 import { apiSaveListing, apiUpdateListing } from "@/lib/shop-api";
 import { messageFrom } from "@/lib/use-action";
 import { settled, useAttemptKey } from "@/lib/idempotency";
-import Link from "next/link";
 import * as Icons from "@/components/ux/icons";
 
 import {Back, Btn, Card, Chip, EmptyState, IconTile, SectionHead } from "@/components/ux/kit";

@@ -5,7 +5,6 @@ import { COPY } from "@/components/ux/copy";
 
 import { apiAdvanceOrder, apiCancelShopOrder } from "@/lib/shop-api";
 import { messageFrom } from "@/lib/use-action";
-import Link from "next/link";
 import * as Icons from "@/components/ux/icons";
 
 import {Back, Btn, Card, EmptyState, IconTile, Pill, RailSkeleton, ScreenSkeleton, SectionHead,

@@ -58,7 +58,6 @@ export default function MarketPage() {
   }, []);
 
   const card = (i: Item) => {
-  const tr = useT();
     const s = sellerOf(i);
     const isSaved = saved.includes(i.id);
     return (

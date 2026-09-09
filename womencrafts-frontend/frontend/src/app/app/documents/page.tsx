@@ -5,14 +5,18 @@ import Link from "next/link";
 import * as Icons from "@/components/ux/icons";
 
 import { HomeShell } from "@/components/ux/home/HomeShell";
-import { Btn, EmptyState } from "@/components/ux/kit";
+import { Btn, EmptyState, formatWholeRupees, plural } from "@/components/ux/kit";
 import { useResource } from "@/lib/use-resource";
 import {
   apiAdvanceOrder, apiDeleteListing, apiListings, apiPauseListing, apiShopOrders, apiShopSummary, apiUpdateListing,
   type Listing, type ShopOrder, type ShopSummary,
 } from "@/lib/shop-api";
 import { apiUploadImage } from "@/lib/uploads-api";
-import { Hero, ListingCard, OrderCard, Sec, Stats, Storefront } from "./shop-parts";
+import { ListingCard, OrderCard, Storefront } from "./shop-parts";
+import {
+  Activity, EarnHero, Figure, GrowBanner, Head, Journey, NeedHelp, QuickActions,
+  SellTips, SuccessStory, WaysToEarn, type Happening, type Step,
+} from "./earn-home";
 import { useT } from "@/i18n";
 
 /**
@@ -57,6 +61,79 @@ export default function ShopPage() {
   const rest = useMemo(() => orders.filter((o) => !o.needs_her), [orders]);
   const live = useMemo(
     () => listings.filter((l) => l.status !== "paused").length, [listings]);
+
+  /**
+   * The four figures, every one of them countable by her.
+   *
+   * `/shop/summary` carries this month and last month; it carries no "pending
+   * payments" total, so rather than invent one this adds up the orders that
+   * have not finished — money she is owed and can go and see, order by order.
+   */
+  const figures = useMemo(() => {
+    const month = summary?.month_minor ?? 0;
+    const last = summary?.last_month_minor ?? 0;
+    const change = last > 0 ? Math.round(((month - last) / last) * 100) : 0;
+
+    const open = orders.filter((o) => o.next_state !== null);
+    const owed = open.reduce((n, o) => n + o.total_minor, 0);
+
+    const products = listings.filter((l) => l.kind === "product" && l.status !== "paused").length;
+    const services = live - products;
+
+    return {
+      month: formatWholeRupees(Math.round(month / 100)),
+      // "-100% this month" is arithmetically right and cruel: it is what a
+      // woman who has not sold anything yet this month would be shown as the
+      // first line on the screen. Say the plain fact instead.
+      change: month === 0 ? "Nothing yet this month"
+            : change > 0 ? `+${change}% on last month`
+            : change < 0 ? `${change}% on last month`
+            : "Same as last month",
+      up: change > 0,
+      owed: formatWholeRupees(Math.round(owed / 100)),
+      owedNote: `${open.length} ${plural("order", open.length)}`,
+      orders: String(orders.length),
+      needs: needs.length > 0 ? `${needs.length} waiting on you` : "All up to date",
+      live: String(live),
+      mix: `${products} ${plural("product", products)} \u00b7 ${services} ${plural("service", services)}`,
+    };
+  }, [summary, orders, listings, live, needs.length]);
+
+  /**
+   * Five steps, checked against her real shop.
+   *
+   * Not a percentage of profile fields — a form is not a business. Each of
+   * these changes how much she sells, and each is true or false from data
+   * already on this screen.
+   */
+  const steps: Step[] = useMemo(() => [
+    { label: "Add your first thing to sell",
+      done: listings.length > 0 },
+    { label: "Put a photo on every listing \u2014 they get looked at three times as often",
+      done: listings.length > 0 && listings.every((l) => !!l.photo) },
+    { label: "Offer a service as well as products",
+      done: listings.some((l) => l.kind === "service") },
+    { label: "Take your first order",
+      done: orders.length > 0 },
+    { label: "Win a buyer who comes back",
+      done: (summary?.repeat_buyers_pct ?? 0) > 0 },
+  ], [listings, orders.length, summary]);
+
+  /** The last four things that happened, newest first, all of them real. */
+  const activity: Happening[] = useMemo(() => orders.slice(0, 4).map((o) => {
+    const photo = listings.find((l) => l.id === o.listing_id)?.photo;
+    return {
+      id: o.id,
+      title: o.title,
+      what: o.needs_her && o.next_state ? `Waiting on you \u2014 ${o.next_state}` : o.state,
+      when: o.placed_on,
+      // Green "+ ₹450" beside "Cancelled" is money she never got.
+      amount: /cancel|refund/i.test(o.state) ? undefined : o.total_label,
+      photo: photo || undefined,
+      icon: "Package", tint: "--ux-tint-pink", ink: "--ux-pink-ink",
+      href: `/app/documents/order/${o.id}`,
+    };
+  }), [orders, listings]);
 
   /** PATCH replaces the whole listing, so every field must be sent back. */
   const patch = useCallback((l: Listing, over: Partial<Listing>) => apiUpdateListing(l.id, {
@@ -103,7 +180,7 @@ export default function ShopPage() {
               : tr("documents.backInYourShop"));
     } catch { setError("Could not change that listing."); }
     finally { setBusy(null); }
-  }, [reListings, reSummary, say]);
+  }, [reListings, reSummary, say, tr]);
 
   /**
    * Remove a listing for good.
@@ -142,11 +219,41 @@ export default function ShopPage() {
     finally { setBusy(null); }
   }, [reOrders, reSummary, say]);
 
+  const rail = (
+    <div className="space-y-4">
+      <QuickActions />
+      <div>
+        <Head icon="Eye" title={tr("documents.whatBuyersSee")} />
+        <Storefront summary={summary} listings={listings} />
+      </div>
+      <SellTips />
+      <SuccessStory />
+      <NeedHelp />
+    </div>
+  );
+
   return (
-    <HomeShell active="/app/documents">
+    <HomeShell active="/app/documents" rail={rail} loadFailed="your shop">
       <div className="flex flex-col">
-        <Hero summary={summary} needs={needs.length} />
-        <Stats summary={summary} needs={needs.length} live={live} />
+        <EarnHero />
+
+        <div className="mb-5 grid gap-3.5"
+             style={{ gridTemplateColumns: "repeat(auto-fit, minmax(190px, 1fr))" }}>
+          <Figure label="Earned this month" value={figures.month} note={figures.change}
+                  noteTone={figures.up ? "up" : "plain"} icon="Wallet"
+                  tint="--ux-tint-green" ink="--ux-green-ink" href="/app/wallet" />
+          <Figure label="Waiting to be paid" value={figures.owed} note={figures.owedNote}
+                  icon="Hourglass" tint="--ux-tint-amber" ink="--ux-amber-ink" href="/app/documents#orders" />
+          <Figure label="Total orders" value={figures.orders} note={figures.needs}
+                  icon="ShoppingBag" tint="--ux-tint-violet" ink="--ux-violet-ink" href="/app/documents#orders" />
+          <Figure label="Live listings" value={figures.live} note={figures.mix}
+                  icon="Package" tint="--ux-tint-blue" ink="--ux-blue-ink" href="/app/documents/listings" />
+        </div>
+
+        <Journey steps={steps} />
+        <WaysToEarn />
+
+        {activity.length > 0 && <Activity rows={activity} />}
 
         {error && (
           <p className="mb-4 rounded-[12px] px-4 py-3 text-xsm font-semibold"
@@ -155,14 +262,13 @@ export default function ShopPage() {
           </p>
         )}
 
-        <div className="grid items-start gap-6 xl:grid-cols-[minmax(0,1fr)_336px]">
+        <div id="orders" style={{ scrollMarginTop: "calc(var(--ux-topbar-h) + 16px)" }}>
           <main className="min-w-0">
-            <Sec action={
-              <Link href="/app/documents" className="ux-press flex min-h-[34px] items-center rounded-[12px] px-3 text-xs font-bold"
-                    style={{ color: "var(--ux-brand)" }}>All {orders.length}</Link>
-            }>
-              {needs.length > 0 ? "Orders waiting on you" : "Orders"}
-            </Sec>
+            <Head icon="ClipboardList"
+                  title={needs.length > 0 ? "Orders waiting on you" : "Orders"}
+                  sub={orders.length > 0
+                    ? `${orders.length} ${plural("order", orders.length)} in all`
+                    : undefined} />
 
             {confirmDelete && (
               <div className="mb-4 rounded-[16px] p-5"
@@ -204,12 +310,9 @@ export default function ShopPage() {
               </>
             )}
 
-            <Sec action={
-              <Link href="/app/documents/product/new"
-                    className="ux-press flex min-h-[34px] items-center gap-1.5 rounded-[12px] px-3 text-xs font-bold"
-                    style={{ color: "var(--ux-brand)" }}>
-                <Icons.Plus className="h-[13px] w-[13px]" />{tr("documents.addSomething")}</Link>
-            }>{tr("documents.whatYouSell")}</Sec>
+            <Head icon="Package" title={tr("documents.whatYouSell")}
+                  sub="Stock, pause, photo and share are on the card itself"
+                  more={tr("documents.addSomething")} href="/app/documents/product/new" />
 
             <div className="grid gap-3.5" style={{ gridTemplateColumns: "repeat(auto-fit, minmax(250px, 1fr))" }}>
               {listings.map((l) => (
@@ -227,10 +330,10 @@ export default function ShopPage() {
             </div>
           </main>
 
-          <aside>
-            <Sec>{tr("documents.whatBuyersSee")}</Sec>
-            <Storefront summary={summary} listings={listings} />
-          </aside>
+        </div>
+
+        <div className="mt-6">
+          <GrowBanner />
         </div>
 
         {/* one line of confirmation, in her words */}

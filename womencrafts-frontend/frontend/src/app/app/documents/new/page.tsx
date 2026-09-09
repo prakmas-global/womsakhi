@@ -4,6 +4,8 @@ import { useCallback, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 
 import { HomeShell } from "@/components/ux/home/HomeShell";
+import { apiPauseListing, apiSaveListing } from "@/lib/shop-api";
+import { useMe } from "@/components/ux/me";
 import * as Icons from "@/components/ux/icons";
 import { Back, Btn, Card, I, IconTile, SourceNote, v } from "@/components/ux/kit";
 // The centred dialog is a design-system primitive; the ux kit only carries
@@ -17,6 +19,7 @@ import {
 import {
   Area, Check, Choice, Label, Saying, Select, Steps, Text, Tips, Toggle,
 } from "./wizard-views";
+import { QuoteSheet } from "./quote-sheet";
 
 type Kind = "product" | "service" | "both";
 type PriceMode = "fixed" | "range" | "quote";
@@ -60,14 +63,22 @@ const TIPS: Record<number, { title: string; items: string[] }> = {
  * Every completed step stays clickable and every answer survives. A wizard that
  * forgets when you step backwards teaches you not to check your work.
  *
- * ── Mock, and it says so ────────────────────────────────────────────────────
- * `apiSaveListing` exists and takes a title and a kind, but nothing here yet
- * writes the highlights, the price band, the quote settings or the media — the
- * API has no fields for them. Publishing is wired to the real endpoint for the
- * parts it supports; the rest is held locally and marked.
+ * ── What is saved, and what is not ──────────────────────────────────────────
+ * `POST /shop/listings` takes a kind, a title, a description, a price, a rate,
+ * a stock count and a category — and those are written. It has no field for
+ * the highlights, the price band, the quote settings or the media, so those
+ * are held only in this form and `SourceNote` says so on the steps that
+ * collect them.
+ *
+ * Before this, both buttons on the last step called `router.push` and nothing
+ * else: she filled in four steps and the listing was silently thrown away.
  */
 export default function AddListingPage() {
   const router = useRouter();
+
+  // The preview says "By <her>", not "By the seller" — she is the seller.
+  const me = useMe();
+  const seller = me.first || "you";
 
   const [at, setAt] = useState(1);
   const [done, setDone] = useState(1);
@@ -108,9 +119,42 @@ export default function AddListingPage() {
   const [quoteOn, setQuoteOn] = useState(true);
   const [quoteAsk, setQuoteAsk] = useState<string[]>(QUOTE_FIELDS.filter((f) => f.on).map((f) => f.id));
   const [quoteMsg, setQuoteMsg] = useState("");
+  /** Open the buyer's form, so she can see the wall of questions she is
+   *  putting in front of somebody who was about to buy. */
+  const [askOpen, setAskOpen] = useState(false);
   const [respondIn, setRespondIn] = useState(RESPONSE_TIMES[1]);
 
   const subs = useMemo(() => CATEGORIES.find((c) => c.label === cat)?.subs ?? [], [cat]);
+
+  const [saveError, setSaveError] = useState<string | null>(null);
+
+  /**
+   * Write the listing, then go and look at it.
+   *
+   * A draft is saved and then paused rather than created paused: the create
+   * endpoint takes a `ListingCreate`, which has no `status` — the same gap
+   * that made `apiPauseListing` a separate call in the first place.
+   */
+  const publish = useCallback(async (asDraft: boolean) => {
+    setSaveError(null);
+    const rupees = Number(price.replace(/[^\d]/g, "")) || 0;
+    try {
+      const made = await apiSaveListing({
+        kind: kind === "service" ? "service" : "product",
+        title: title.trim(),
+        desc: [short.trim(), long.trim()].filter(Boolean).join("\n\n"),
+        price_minor: mode === "quote" ? 0 : rupees * 100,
+        rate: mode === "quote" ? "By quote" : priceType,
+        stock: kind === "service" || mode === "quote" || !trackStock
+          ? null : Number(stock.replace(/[^\d]/g, "")) || 0,
+        category: sub || cat,
+      });
+      if (asDraft && made?.id) await apiPauseListing(made.id, true);
+      router.push("/app/documents/listings");
+    } catch {
+      setSaveError("That did not save. Nothing you typed is lost — try again in a moment.");
+    }
+  }, [kind, title, short, long, mode, price, priceType, trackStock, stock, sub, cat, router]);
 
   const toggleIn = useCallback((list: string[], set: (v: string[]) => void, id: string) => {
     set(list.includes(id) ? list.filter((x) => x !== id) : [...list, id]);
@@ -426,7 +470,7 @@ export default function AddListingPage() {
                           Tell her what you need and she will send you a price.
                         </p>
                         <div className="mt-2.5">
-                          <Btn size="sm" full>Ask for a price</Btn>
+                          <Btn size="sm" full onClick={() => setAskOpen(true)}>Ask for a price</Btn>
                         </div>
                       </div>
                       <ul className="mt-3 space-y-1.5">
@@ -693,16 +737,25 @@ export default function AddListingPage() {
             </p>
           </div>
 
-          <SourceNote source="mock" what="publishing" />
+          <SourceNote source="mock"
+                      what="the highlights, the price band and the photos — those are not saved yet" />
+
+          {saveError && (
+            <p role="alert" className="mt-3 rounded-[12px] px-4 py-3 text-xsm font-semibold"
+               style={{ background: v("--ux-danger-tint"), color: v("--ux-danger-solid") }}>
+              {saveError}
+            </p>
+          )}
 
           <div className="mt-5 flex flex-wrap items-center justify-between gap-3 border-t pt-4"
                style={{ borderColor: v("--ux-line") }}>
             <Btn variant="ghost" icon="ArrowLeft" onClick={() => go(3)}>Back</Btn>
             <div className="flex flex-wrap gap-2">
-              <Btn variant="outline" icon="Save" onClick={() => router.push("/app/documents/listings")}>
+              <Btn variant="outline" icon="Save" disabled={!title.trim()}
+                   onClick={() => publish(true)}>
                 Keep as a draft
               </Btn>
-              <Btn icon="Rocket" onClick={() => router.push("/app/documents/listings")}>
+              <Btn icon="Rocket" disabled={!title.trim()} onClick={() => publish(false)}>
                 Put it in my shop
               </Btn>
             </div>
@@ -799,6 +852,16 @@ export default function AddListingPage() {
           </div>
         </div>
       </Modal>
+
+      {/* The buyer's form, opened from her own preview of it. */}
+      <QuoteSheet
+        open={askOpen}
+        onClose={() => setAskOpen(false)}
+        listing={{ title, seller: seller }}
+        ask={quoteAsk}
+        message={quoteMsg}
+        respondIn={respondIn}
+      />
     </HomeShell>
   );
 }
