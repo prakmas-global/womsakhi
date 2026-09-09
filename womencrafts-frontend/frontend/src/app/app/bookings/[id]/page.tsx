@@ -92,15 +92,15 @@ export default function BookingDetail({ params }: { params: Promise<{ id: string
               className="ux-press ux-hov ux-sq flex w-full flex-col items-center rounded-[12px] px-4 py-5"
               style={{ background: "var(--ux-surface-2)" }}
             >
-              <span className="font-mono text-[1.5rem] font-bold tracking-[0.06em]" style={{ color: "var(--ux-ink)" }}>
+              <span className="font-mono text-2xl font-bold tracking-[0.06em]" style={{ color: "var(--ux-ink)" }}>
                 {b.ref}
               </span>
-              <span className="mt-2 flex items-center gap-1.5 text-[0.75rem] font-medium" style={{ color: "var(--ux-brand)" }}>
+              <span className="mt-2 flex items-center gap-1.5 text-xs font-medium" style={{ color: "var(--ux-brand)" }}>
                 <Icons.Copy className="h-[13px] w-[13px]" />
                 <span role="status">{copied ? "Copied" : "Tap to copy"}</span>
               </span>
             </button>
-            <p className="mt-3 text-[0.75rem] leading-relaxed" style={{ color: "var(--ux-muted)" }}>
+            <p className="mt-3 text-xs leading-relaxed" style={{ color: "var(--ux-muted)" }}>
               {b.kind === "Mentor"
                 ? "You will not be asked for this — the call opens from your diary."
                 : "Have this ready at the door. Your name works too."}
@@ -110,7 +110,7 @@ export default function BookingDetail({ params }: { params: Promise<{ id: string
           <Card>
             <SectionHead title="What it cost" />
             <div className="flex items-baseline justify-between">
-              <span className="text-[0.8125rem]" style={{ color: "var(--ux-muted)" }}>{b.cost}</span>
+              <span className="text-xsm" style={{ color: "var(--ux-muted)" }}>{b.cost}</span>
               {b.cost.includes("paid") && <Pill tone="green" size="sm">Paid</Pill>}
             </div>
             {live && (
@@ -124,7 +124,7 @@ export default function BookingDetail({ params }: { params: Promise<{ id: string
       }
     >
       <Link href="/app/bookings"
-            className="ux-hov -my-1 mb-3.5 inline-flex items-center gap-1.5 py-1 text-[0.8125rem] font-medium"
+            className="ux-hov -my-1 mb-3.5 inline-flex items-center gap-1.5 py-1 text-xsm font-medium"
             style={{ color: "var(--ux-brand)" }}>
         <Icons.ArrowLeft className="ux-ico h-4 w-4" /> All bookings
       </Link>
@@ -138,7 +138,7 @@ export default function BookingDetail({ params }: { params: Promise<{ id: string
           </span>
           <div className="min-w-0 flex-1">
             <div className="flex items-start gap-2">
-              <h1 className="min-w-0 flex-1 text-[1.25rem] font-bold leading-tight"
+              <h1 className="min-w-0 flex-1 text-xl font-bold leading-tight"
                   style={{ color: cancelled ? "var(--ux-muted)" : "var(--ux-ink)" }}>
                 {b.what}
               </h1>
@@ -146,12 +146,12 @@ export default function BookingDetail({ params }: { params: Promise<{ id: string
                 {cancelled ? "Cancelled" : b.state}
               </Pill>
             </div>
-            <p className="mt-2.5 flex flex-wrap items-center gap-x-4 gap-y-1.5 text-[0.8125rem]" style={{ color: "var(--ux-muted)" }}>
+            <p className="mt-2.5 flex flex-wrap items-center gap-x-4 gap-y-1.5 text-xsm" style={{ color: "var(--ux-muted)" }}>
               <span className="inline-flex items-center gap-1.5"><Icons.Clock className="h-4 w-4" /> {b.when}</span>
               <span className="inline-flex items-center gap-1.5"><Icons.MapPin className="h-4 w-4" /> {b.where}</span>
             </p>
             {b.state === "Waitlisted" && !cancelled && (
-              <p className="mt-3 rounded-[12px] p-3 text-[0.8125rem] leading-relaxed"
+              <p className="mt-3 rounded-[12px] p-3 text-xsm leading-relaxed"
                  style={{ background: "var(--ux-tint-orange)", color: "var(--ux-ink-2)" }}>
                 You are third on the list. We will message you the moment a place opens — you do not need to
                 check back.
@@ -163,7 +163,7 @@ export default function BookingDetail({ params }: { params: Promise<{ id: string
         {asking ? (
           <div className="ux-slide-up mt-4 flex items-center justify-between gap-4 rounded-[12px] p-3.5"
                style={{ background: "var(--ux-tint-orange)" }}>
-            <p className="text-[0.8125rem] leading-snug" style={{ color: "var(--ux-ink-2)" }}>
+            <p className="text-xsm leading-snug" style={{ color: "var(--ux-ink-2)" }}>
               {b.kind === "Mentor"
                 ? "She has kept this hour free for you. Cancel it?"
                 : b.kind === "Event"
@@ -209,7 +209,7 @@ export default function BookingDetail({ params }: { params: Promise<{ id: string
                          type: b.kind === "Mentor" ? "Mentoring Session" : "Program Feedback",
                          program: b.what,
                        })}
-                       sent="Thank you — the team has your note"
+                       sent={COPY.noteReceived}
                        sentBody={COPY.booking.feedbackPrivate}
                        sentLink={null} />
             )}
@@ -217,7 +217,7 @@ export default function BookingDetail({ params }: { params: Promise<{ id: string
         )}
 
         {cancel.error && (
-          <p className="ux-slide-up mt-3 text-[0.8125rem]" style={{ color: "var(--ux-orange-ink)" }}>
+          <p className="ux-slide-up mt-3 text-xsm" style={{ color: "var(--ux-orange-ink)" }}>
             {cancel.error}
           </p>
         )}
@@ -236,11 +236,11 @@ export default function BookingDetail({ params }: { params: Promise<{ id: string
                  ["A recording or notes afterwards", "Sent within two days"]]
             ).map(([t, note], i) => (
               <li key={t} className="flex items-start gap-3">
-                <span className="grid h-[24px] w-[24px] shrink-0 place-items-center rounded-full text-[0.6875rem] font-bold"
+                <span className="grid h-[24px] w-[24px] shrink-0 place-items-center rounded-full text-2xs font-bold"
                       style={{ background: "var(--ux-brand-tint)", color: "var(--ux-brand)" }}>{i + 1}</span>
                 <div className="min-w-0">
-                  <p className="text-[0.875rem] font-semibold" style={{ color: "var(--ux-ink)" }}>{t}</p>
-                  <p className="mt-0.5 text-[0.8125rem] leading-snug" style={{ color: "var(--ux-muted)" }}>{note}</p>
+                  <p className="text-sm font-semibold" style={{ color: "var(--ux-ink)" }}>{t}</p>
+                  <p className="mt-0.5 text-xsm leading-snug" style={{ color: "var(--ux-muted)" }}>{note}</p>
                 </div>
               </li>
             ))}
@@ -249,7 +249,7 @@ export default function BookingDetail({ params }: { params: Promise<{ id: string
 
         <Card>
           <SectionHead title="If something changes" icon="Info" />
-          <p className="text-[0.8125rem] leading-relaxed" style={{ color: "var(--ux-ink-2)" }}>
+          <p className="text-xsm leading-relaxed" style={{ color: "var(--ux-ink-2)" }}>
             Cancelling is always allowed and never counts against you. Telling someone early is just kinder —
             it lets the place go to a woman who can use it.
           </p>

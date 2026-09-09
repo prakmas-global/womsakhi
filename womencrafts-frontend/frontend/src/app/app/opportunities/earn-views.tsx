@@ -104,11 +104,11 @@ function Tile({ tone, children, size = 40 }: { tone: string; children: React.Rea
 }
 
 const Sec = ({ children, href }: { children: React.ReactNode; href?: string }) => (
-  <h2 className="mb-3.5 mt-7 flex items-center gap-2.5 text-[0.6875rem] font-extrabold uppercase tracking-[0.16em] first:mt-0"
+  <h2 className="mb-3.5 mt-7 flex items-center gap-2.5 text-2xs font-extrabold uppercase tracking-[0.16em] first:mt-0"
       style={{ color: "var(--ux-faint)" }}>
     {children}
     {href && (
-      <Link href={href} className="ux-press ms-auto flex min-h-[34px] items-center rounded-[12px] px-3 text-[0.75rem] font-bold normal-case tracking-normal"
+      <Link href={href} className="ux-press ms-auto flex min-h-[34px] items-center rounded-[12px] px-3 text-xs font-bold normal-case tracking-normal"
             style={{ color: "var(--ux-brand)" }}>See all</Link>
     )}
   </h2>
@@ -118,7 +118,7 @@ const Btn = ({ primary, onClick, children, disabled }: {
   primary?: boolean; onClick?: () => void; children: React.ReactNode; disabled?: boolean;
 }) => (
   <button type="button" onClick={onClick} disabled={disabled}
-          className="ux-press inline-flex min-h-[42px] items-center gap-2 rounded-[12px] px-4 text-[0.8125rem] font-bold disabled:opacity-60"
+          className="ux-press inline-flex min-h-[42px] items-center gap-2 rounded-[12px] px-4 text-xsm font-bold disabled:opacity-60"
           style={primary
             ? { background: "linear-gradient(96deg, var(--ux-rib-2), var(--ux-rib-3))", color: "var(--ux-on-brand)" }
             : { border: "1px solid var(--ux-line-strong)", background: "var(--ux-surface)",
@@ -139,7 +139,7 @@ const LinkBtn = ({ href, primary, children }: {
   href: string; primary?: boolean; children: React.ReactNode;
 }) => (
   <Link href={href}
-        className="ux-press inline-flex min-h-[42px] items-center gap-2 rounded-[12px] px-4 text-[0.8125rem] font-bold"
+        className="ux-press inline-flex min-h-[42px] items-center gap-2 rounded-[12px] px-4 text-xsm font-bold"
         style={primary
           ? { background: "linear-gradient(96deg, var(--ux-rib-2), var(--ux-rib-3))", color: "var(--ux-on-brand)" }
           : { border: "1px solid var(--ux-line-strong)", background: "var(--ux-surface)",
@@ -172,7 +172,7 @@ function MatchNote({ skills, compact = false }: { skills?: string[]; compact?: b
   if (!fit.because) return null;
   const tone = matchTone(fit.pct);
   return (
-    <p className={`flex items-start gap-1.5 ${compact ? "mt-1.5 text-[0.6875rem]" : "mt-2 rounded-[8px] px-2.5 py-2 text-[0.75rem]"} leading-snug`}
+    <p className={`flex items-start gap-1.5 ${compact ? "mt-1.5 text-2xs" : "mt-2 rounded-[8px] px-2.5 py-2 text-xs"} leading-snug`}
        style={compact ? { color: "var(--ux-muted)" }
                       : { background: "var(--ux-surface-2)", color: "var(--ux-ink-2)" }}>
       <Icons.Sparkles className="mt-[2px] h-[0.75rem] w-[0.75rem] shrink-0"
@@ -209,11 +209,11 @@ export const Ledger = memo(function Ledger({ d, act }: { d: EarnData; act: Acts 
         ] as const).map(([lab, val, note, ink]) => (
           <div key={lab} className="p-[20px]"
                style={{ background: "var(--ux-surface)", borderInlineEnd: "1px solid var(--ux-line)" }}>
-            <span className="text-[0.6875rem] font-extrabold uppercase tracking-[0.14em]"
+            <span className="text-2xs font-extrabold uppercase tracking-[0.14em]"
                   style={{ color: "var(--ux-faint)" }}>{lab}</span>
-            <b className="mt-2 block text-[1.75rem] font-extrabold tabular-nums tracking-[-0.035em]"
+            <b className="mt-2 block text-2xlm font-extrabold tabular-nums tracking-[-0.035em]"
                style={{ color: `var(${ink})` }}>{val}</b>
-            <em className="mt-0.5 block text-[0.75rem] not-italic" style={{ color: "var(--ux-faint)" }}>{note}</em>
+            <em className="mt-0.5 block text-xs not-italic" style={{ color: "var(--ux-faint)" }}>{note}</em>
           </div>
         ))}
       </div>
@@ -221,11 +221,11 @@ export const Ledger = memo(function Ledger({ d, act }: { d: EarnData; act: Acts 
       {d.orders.some((o) => o.needs_her) && (
         <>
           <Sec href="/app/documents">Waiting on you</Sec>
-          <table className="ux-ledger text-[0.8125rem]">
+          <table className="ux-ledger text-xsm">
             <thead>
               <tr style={{ borderBottom: "1px solid var(--ux-line)" }}>
                 {["What", "Who", "Amount", "Do"].map((h, i) => (
-                  <th key={h} className="pb-2.5 text-[0.6875rem] font-extrabold uppercase tracking-[0.12em]"
+                  <th key={h} className="pb-2.5 text-2xs font-extrabold uppercase tracking-[0.12em]"
                       style={{ color: "var(--ux-faint)", padding: "0 12px 10px",
                                textAlign: i > 1 ? "end" : "start" }}>{h}</th>
                 ))}
@@ -236,12 +236,12 @@ export const Ledger = memo(function Ledger({ d, act }: { d: EarnData; act: Acts 
                 <tr key={o.id} style={{ borderBottom: "1px solid var(--ux-line)" }}>
                   <td className="p-3 font-bold" style={{ color: "var(--ux-ink)" }}>
                     {o.title}
-                    <div className="mt-0.5 text-[0.75rem] font-normal" style={{ color: "var(--ux-faint)" }}>
+                    <div className="mt-0.5 text-xs font-normal" style={{ color: "var(--ux-faint)" }}>
                       Order · {o.state}
                     </div>
                   </td>
                   <td className="p-3" style={{ color: "var(--ux-ink-2)" }}>{o.buyer_name}</td>
-                  <td className="p-3 text-end text-[1rem] font-extrabold tabular-nums"
+                  <td className="p-3 text-end text-base font-extrabold tabular-nums"
                       style={{ color: "var(--ux-amber-ink)" }}>{o.total_label}</td>
                   <td className="p-3 text-end">
                     <Btn primary onClick={() => act.advance(o.id)}>{o.next_state ?? "Open"}</Btn>
@@ -254,11 +254,11 @@ export const Ledger = memo(function Ledger({ d, act }: { d: EarnData; act: Acts 
       )}
 
       <Sec href="/app/opportunities">Work open to you</Sec>
-      <table className="ux-ledger text-[0.8125rem]">
+      <table className="ux-ledger text-xsm">
         <thead>
           <tr style={{ borderBottom: "1px solid var(--ux-line)" }}>
             {["Role", "Pays", "A day", "Closes", "Do"].map((h, i) => (
-              <th key={h} className="pb-2.5 text-[0.6875rem] font-extrabold uppercase tracking-[0.12em]"
+              <th key={h} className="pb-2.5 text-2xs font-extrabold uppercase tracking-[0.12em]"
                   style={{ color: "var(--ux-faint)", padding: "0 12px 10px",
                            textAlign: i > 1 ? "end" : "start" }}>{h}</th>
             ))}
@@ -269,15 +269,15 @@ export const Ledger = memo(function Ledger({ d, act }: { d: EarnData; act: Acts 
             <tr key={o.id} style={{ borderBottom: "1px solid var(--ux-line)" }}>
               <td className="p-3 font-bold" style={{ color: "var(--ux-ink)" }}>
                 {o.title}
-                <div className="mt-0.5 text-[0.75rem] font-normal" style={{ color: "var(--ux-faint)" }}>
+                <div className="mt-0.5 text-xs font-normal" style={{ color: "var(--ux-faint)" }}>
                   {o.org} · {o.kind} · {o.location}
                 </div>
                 <MatchNote skills={o.skills} compact />
               </td>
               <td className="p-3 tabular-nums" style={{ color: "var(--ux-ink-2)" }}>{o.pay}</td>
-              <td className="p-3 text-end text-[1rem] font-extrabold tabular-nums"
+              <td className="p-3 text-end text-base font-extrabold tabular-nums"
                   style={{ color: "var(--ux-green-ink)" }}>{dayRate(o) ?? "—"}</td>
-              <td className="p-3 text-end text-[0.75rem]"
+              <td className="p-3 text-end text-xs"
                   style={{ color: "var(--ux-amber-ink)" }}>{o.deadline_label}</td>
               <td className="p-3 text-end">
                 <Btn primary={!o.applied && isOpen(o)} disabled={o.applied || !isOpen(o)}
@@ -293,11 +293,11 @@ export const Ledger = memo(function Ledger({ d, act }: { d: EarnData; act: Acts 
       {d.pools.length > 0 && (
         <>
           <Sec href="/app/group-buy">Buying together</Sec>
-          <table className="ux-ledger text-[0.8125rem]">
+          <table className="ux-ledger text-xsm">
             <thead>
               <tr style={{ borderBottom: "1px solid var(--ux-line)" }}>
                 {["Material", "Alone", "Together", "You save", "Do"].map((h, i) => (
-                  <th key={h} className="pb-2.5 text-[0.6875rem] font-extrabold uppercase tracking-[0.12em]"
+                  <th key={h} className="pb-2.5 text-2xs font-extrabold uppercase tracking-[0.12em]"
                       style={{ color: "var(--ux-faint)", padding: "0 12px 10px",
                                textAlign: i > 2 ? "end" : "start" }}>{h}</th>
                 ))}
@@ -308,13 +308,13 @@ export const Ledger = memo(function Ledger({ d, act }: { d: EarnData; act: Acts 
                 <tr key={g.id} style={{ borderBottom: "1px solid var(--ux-line)" }}>
                   <td className="p-3 font-bold" style={{ color: "var(--ux-ink)" }}>
                     {g.item}
-                    <div className="mt-0.5 text-[0.75rem] font-normal" style={{ color: "var(--ux-faint)" }}>
+                    <div className="mt-0.5 text-xs font-normal" style={{ color: "var(--ux-faint)" }}>
                       {g.unit} · {g.still_needed} more women needed
                     </div>
                   </td>
                   <td className="p-3 tabular-nums" style={{ color: "var(--ux-ink-2)" }}>{rupees(g.alone_minor)}</td>
                   <td className="p-3 tabular-nums" style={{ color: "var(--ux-ink-2)" }}>{rupees(g.together_minor)}</td>
-                  <td className="p-3 text-end text-[1rem] font-extrabold tabular-nums"
+                  <td className="p-3 text-end text-base font-extrabold tabular-nums"
                       style={{ color: "var(--ux-green-ink)" }}>{rupees(g.saving_minor)}</td>
                   <td className="p-3 text-end">
                     <Btn primary={!g.joined_by_me} onClick={() => act.pool(g.id, !g.joined_by_me)}>
@@ -342,16 +342,16 @@ export const Feed = memo(function Feed({ d, act }: { d: EarnData; act: Acts }) {
           <div className="mb-3 flex items-center gap-3">
             <Tile tone="amber">{o.buyer_name.charAt(0)}</Tile>
             <div className="min-w-0">
-              <b className="block text-[0.875rem] font-bold" style={{ color: "var(--ux-ink)" }}>
+              <b className="block text-sm font-bold" style={{ color: "var(--ux-ink)" }}>
                 {o.buyer_name} ordered from you
               </b>
-              <span className="text-[0.75rem]" style={{ color: "var(--ux-faint)" }}>{o.title}</span>
+              <span className="text-xs" style={{ color: "var(--ux-faint)" }}>{o.title}</span>
             </div>
-            <time className="ms-auto shrink-0 text-[0.6875rem]" style={{ color: "var(--ux-faint)" }}>{o.placed_on}</time>
+            <time className="ms-auto shrink-0 text-2xs" style={{ color: "var(--ux-faint)" }}>{o.placed_on}</time>
           </div>
-          <p className="my-2 text-[1.5rem] font-extrabold tabular-nums tracking-[-0.03em]"
+          <p className="my-2 text-2xl font-extrabold tabular-nums tracking-[-0.03em]"
              style={{ color: "var(--ux-amber-ink)" }}>{o.total_label}</p>
-          <p className="m-0 text-[0.875rem]" style={{ color: "var(--ux-ink-2)" }}>
+          <p className="m-0 text-sm" style={{ color: "var(--ux-ink-2)" }}>
             {o.quantity} · {o.state}. Accepting moves it into your orders.
           </p>
           <div className="mt-3.5 flex flex-wrap gap-2">
@@ -366,23 +366,23 @@ export const Feed = memo(function Feed({ d, act }: { d: EarnData; act: Acts }) {
           <div className="mb-3 flex items-center gap-3">
             <Tile tone="violet"><Icons.Sparkles className="h-[19px] w-[19px]" /></Tile>
             <div className="min-w-0">
-              <b className="block text-[0.875rem] font-bold" style={{ color: "var(--ux-ink)" }}>Work that fits you</b>
-              <span className="text-[0.75rem]" style={{ color: "var(--ux-faint)" }}>{top.org} · {top.kind}</span>
+              <b className="block text-sm font-bold" style={{ color: "var(--ux-ink)" }}>Work that fits you</b>
+              <span className="text-xs" style={{ color: "var(--ux-faint)" }}>{top.org} · {top.kind}</span>
             </div>
-            <time className="ms-auto shrink-0 text-[0.6875rem]" style={{ color: "var(--ux-faint)" }}>{top.deadline_label}</time>
+            <time className="ms-auto shrink-0 text-2xs" style={{ color: "var(--ux-faint)" }}>{top.deadline_label}</time>
           </div>
-          <p className="m-0 text-[1rem] font-bold" style={{ color: "var(--ux-ink)" }}>{top.title}</p>
+          <p className="m-0 text-base font-bold" style={{ color: "var(--ux-ink)" }}>{top.title}</p>
           <MatchNote skills={top.skills} />
-          <p className="my-2 text-[1.5rem] font-extrabold tabular-nums tracking-[-0.03em]"
+          <p className="my-2 text-2xl font-extrabold tabular-nums tracking-[-0.03em]"
              style={{ color: "var(--ux-green-ink)" }}>
             {top.pay}
             {dayRate(top) && (
-              <span className="ms-2 text-[0.8125rem] font-semibold" style={{ color: "var(--ux-faint)" }}>
+              <span className="ms-2 text-xsm font-semibold" style={{ color: "var(--ux-faint)" }}>
                 · {dayRate(top)}
               </span>
             )}
           </p>
-          <p className="m-0 text-[0.875rem]" style={{ color: "var(--ux-ink-2)" }}>{top.desc}</p>
+          <p className="m-0 text-sm" style={{ color: "var(--ux-ink-2)" }}>{top.desc}</p>
           <div className="mt-3.5 flex flex-wrap gap-2">
             <Btn primary={!top.applied && isOpen(top)} disabled={top.applied || !isOpen(top)}
                  onClick={() => act.apply(top.id)}>
@@ -399,17 +399,17 @@ export const Feed = memo(function Feed({ d, act }: { d: EarnData; act: Acts }) {
           <div className="mb-3 flex items-center gap-3">
             <Tile tone="green"><Icons.ShoppingCart className="h-[19px] w-[19px]" /></Tile>
             <div className="min-w-0">
-              <b className="block text-[0.875rem] font-bold" style={{ color: "var(--ux-ink)" }}>
+              <b className="block text-sm font-bold" style={{ color: "var(--ux-ink)" }}>
                 {g.joined} women are buying {g.item.toLowerCase()} together
               </b>
-              <span className="text-[0.75rem]" style={{ color: "var(--ux-faint)" }}>
+              <span className="text-xs" style={{ color: "var(--ux-faint)" }}>
                 {g.still_needed} more and the order goes in
               </span>
             </div>
           </div>
-          <p className="my-2 text-[1.5rem] font-extrabold tabular-nums tracking-[-0.03em]"
+          <p className="my-2 text-2xl font-extrabold tabular-nums tracking-[-0.03em]"
              style={{ color: "var(--ux-green-ink)" }}>{rupees(g.saving_minor)} less</p>
-          <p className="m-0 text-[0.875rem]" style={{ color: "var(--ux-ink-2)" }}>
+          <p className="m-0 text-sm" style={{ color: "var(--ux-ink-2)" }}>
             {g.unit}. {rupees(g.alone_minor)} alone, {rupees(g.together_minor)} together.
           </p>
           <div className="mt-3.5">
@@ -425,14 +425,14 @@ export const Feed = memo(function Feed({ d, act }: { d: EarnData; act: Acts }) {
           <div className="mb-3 flex items-center gap-3">
             <Tile tone="green"><Icons.Wallet className="h-[19px] w-[19px]" /></Tile>
             <div className="min-w-0">
-              <b className="block text-[0.875rem] font-bold" style={{ color: "var(--ux-ink)" }}>
+              <b className="block text-sm font-bold" style={{ color: "var(--ux-ink)" }}>
                 {t.amount_label} landed in your wallet
               </b>
-              <span className="text-[0.75rem]" style={{ color: "var(--ux-faint)" }}>{t.label}</span>
+              <span className="text-xs" style={{ color: "var(--ux-faint)" }}>{t.label}</span>
             </div>
-            <time className="ms-auto shrink-0 text-[0.6875rem]" style={{ color: "var(--ux-faint)" }}>{t.when}</time>
+            <time className="ms-auto shrink-0 text-2xs" style={{ color: "var(--ux-faint)" }}>{t.when}</time>
           </div>
-          <p className="m-0 text-[0.875rem]" style={{ color: "var(--ux-ink-2)" }}>
+          <p className="m-0 text-sm" style={{ color: "var(--ux-ink-2)" }}>
             Your balance is {rupees(d.balanceMinor)}, all of it ready to take out.
           </p>
           <div className="mt-3.5"><LinkBtn href="/app/wallet" primary>Take money out</LinkBtn></div>
@@ -454,8 +454,8 @@ export const Board = memo(function Board({ d, act }: { d: EarnData; act: Acts })
              style={{ background: "var(--ux-surface-2)", border: "1px solid var(--ux-line)" }}>
       <div className="mb-3.5 flex items-center gap-2.5">
         <span className="h-[9px] w-[9px] rounded-full" style={{ background: `var(${tone})` }} />
-        <b className="text-[0.8125rem] font-extrabold" style={{ color: "var(--ux-ink)" }}>{title}</b>
-        <span className="ms-auto rounded-full px-2.5 py-0.5 text-[0.6875rem] font-extrabold"
+        <b className="text-xsm font-extrabold" style={{ color: "var(--ux-ink)" }}>{title}</b>
+        <span className="ms-auto rounded-full px-2.5 py-0.5 text-2xs font-extrabold"
               style={{ background: "var(--ux-surface)", border: "1px solid var(--ux-line)",
                        color: "var(--ux-ink-2)" }}>{n}</span>
       </div>
@@ -467,10 +467,10 @@ export const Board = memo(function Board({ d, act }: { d: EarnData; act: Acts })
     <article key={key} className="mb-2.5 rounded-[16px] p-3.5"
              style={{ background: "var(--ux-surface)", border: "1px solid var(--ux-line)",
                       boxShadow: "var(--ux-shadow-card)" }}>
-      <b className="block text-[0.8125rem] font-bold leading-snug" style={{ color: "var(--ux-ink)" }}>{title}</b>
-      <p className="mt-1 text-[0.75rem]" style={{ color: "var(--ux-faint)" }}>{meta}</p>
+      <b className="block text-xsm font-bold leading-snug" style={{ color: "var(--ux-ink)" }}>{title}</b>
+      <p className="mt-1 text-xs" style={{ color: "var(--ux-faint)" }}>{meta}</p>
       {amt && (
-        <p className="mt-2 text-[1.125rem] font-extrabold tabular-nums" style={{ color: `var(${ink ?? "--ux-ink"})` }}>
+        <p className="mt-2 text-lg font-extrabold tabular-nums" style={{ color: `var(${ink ?? "--ux-ink"})` }}>
           {amt}
         </p>
       )}
@@ -482,7 +482,7 @@ export const Board = memo(function Board({ d, act }: { d: EarnData; act: Acts })
     <div className="grid items-start gap-4 lg:grid-cols-3">
       {lane("--ux-amber", "Needs you", needs.length,
         needs.length === 0
-          ? <p className="text-[0.8125rem]" style={{ color: "var(--ux-faint)" }}>Nothing is waiting on you.</p>
+          ? <p className="text-xsm" style={{ color: "var(--ux-faint)" }}>Nothing is waiting on you.</p>
           : needs.map((o) => tk(o.id, o.title, `${o.buyer_name} · ${o.state}`, o.total_label, "--ux-amber-ink",
               <div className="mt-2.5"><Btn primary onClick={() => act.advance(o.id)}>{o.next_state ?? "Open"}</Btn></div>)))}
 
@@ -499,8 +499,8 @@ export const Board = memo(function Board({ d, act }: { d: EarnData; act: Acts })
           {paid.length > 3 && (
             <article className="rounded-[16px] p-3.5 text-center"
                      style={{ border: "1px dashed var(--ux-line-strong)", color: "var(--ux-faint)" }}>
-              <b className="text-[0.8125rem] font-semibold">{paid.length - 3} more this month</b>
-              <p className="mt-1 text-[0.75rem]">
+              <b className="text-xsm font-semibold">{paid.length - 3} more this month</b>
+              <p className="mt-1 text-xs">
                 {rupees(paid.slice(3).reduce((s, t) => s + t.amount_minor, 0))} altogether
               </p>
             </article>
@@ -524,32 +524,32 @@ export const Magazine = memo(function Magazine({ d, act }: { d: EarnData; act: A
           <span aria-hidden className="absolute inset-0"
                 style={{ background: "linear-gradient(0deg, rgba(10,4,26,.92) 8%, rgba(10,4,26,.5) 48%, rgba(10,4,26,.18))" }} />
           <div className="relative max-w-[620px] p-8">
-            <span className="inline-flex items-center gap-2 rounded-full px-3.5 py-1.5 text-[0.6875rem] font-extrabold uppercase tracking-[0.06em]"
+            <span className="inline-flex items-center gap-2 rounded-full px-3.5 py-1.5 text-2xs font-extrabold uppercase tracking-[0.06em]"
                   style={{ background: "linear-gradient(96deg, var(--ux-rib-2), var(--ux-rib-3))", color: "var(--ux-on-brand)" }}>
               <Icons.Sparkles className="h-[13px] w-[13px]" /> Best work for you this week
             </span>
             <h2 className="mt-3.5 text-[clamp(1.5625rem,3.6vw,2.375rem)] font-extrabold leading-[1.12] tracking-[-0.035em]"
-                style={{ color: "#fff" }}>{top.title}</h2>
+                style={{ color: "var(--ux-on-brand)" }}>{top.title}</h2>
             <div className="mt-3.5 flex flex-wrap items-baseline gap-3">
-              <b className="text-[2.25rem] font-extrabold tabular-nums tracking-[-0.04em]"
+              <b className="text-4xl font-extrabold tabular-nums tracking-[-0.04em]"
                  style={{ color: "var(--ux-rib-5)" }}>{top.pay}</b>
               {dayRate(top) && (
-                <span className="text-[0.8125rem]" style={{ color: "rgba(255,255,255,0.86)" }}>· {dayRate(top)}</span>
+                <span className="text-xsm" style={{ color: "rgba(255,255,255,0.86)" }}>· {dayRate(top)}</span>
               )}
             </div>
-            <p className="mt-2.5 text-[0.875rem] leading-relaxed" style={{ color: "rgba(255,255,255,0.9)" }}>
+            <p className="mt-2.5 text-sm leading-relaxed" style={{ color: "rgba(255,255,255,0.9)" }}>
               {top.desc}
             </p>
             <div className="mt-5 flex flex-wrap gap-2.5">
               <button type="button" disabled={top.applied || !isOpen(top)} onClick={() => act.apply(top.id)}
-                      className="ux-press inline-flex min-h-[46px] items-center gap-2 rounded-[12px] px-5 text-[0.8125rem] font-bold disabled:opacity-70"
-                      style={{ background: "#fff", color: "var(--ux-brand-900)" }}>
+                      className="ux-press inline-flex min-h-[46px] items-center gap-2 rounded-[12px] px-5 text-xsm font-bold disabled:opacity-70"
+                      style={{ background: "var(--ux-on-brand)", color: "var(--ux-brand-900)" }}>
                 {top.applied ? "Applied" : isOpen(top) ? "Apply" : "Closed"}
                 <Icons.ArrowRight className="h-4 w-4" />
               </button>
               <Link href={`/app/opportunities/${top.id}`}
-                    className="ux-press inline-flex min-h-[46px] items-center gap-2 rounded-[12px] px-5 text-[0.8125rem] font-bold"
-                    style={{ background: "rgba(255,255,255,0.16)", color: "#fff",
+                    className="ux-press inline-flex min-h-[46px] items-center gap-2 rounded-[12px] px-5 text-xsm font-bold"
+                    style={{ background: "rgba(255,255,255,0.16)", color: "var(--ux-on-brand)",
                              boxShadow: "inset 0 0 0 1px rgba(255,255,255,0.34)" }}>
                 See the whole thing
               </Link>
@@ -561,14 +561,14 @@ export const Magazine = memo(function Magazine({ d, act }: { d: EarnData; act: A
       <Sec>This month</Sec>
       <div className="grid gap-4" style={{ gridTemplateColumns: "repeat(auto-fit, minmax(250px, 1fr))" }}>
         <article className="rounded-[20px] p-4" style={card}>
-          <b className="block text-[0.875rem] font-bold" style={{ color: "var(--ux-ink)" }}>
+          <b className="block text-sm font-bold" style={{ color: "var(--ux-ink)" }}>
             {rupees(d.earnedMinor)} earned
           </b>
-          <p className="mt-1 text-[0.75rem]" style={{ color: "var(--ux-faint)" }}>
+          <p className="mt-1 text-xs" style={{ color: "var(--ux-faint)" }}>
             From {d.txns.filter((t) => t.kind === "credit").length} payments.
             {rupees(d.balanceMinor)} is ready to take out now.
           </p>
-          <p className="mt-2.5 text-[1.25rem] font-extrabold tabular-nums" style={{ color: "var(--ux-green-ink)" }}>
+          <p className="mt-2.5 text-xl font-extrabold tabular-nums" style={{ color: "var(--ux-green-ink)" }}>
             {rupees(d.balanceMinor)}
           </p>
           <div className="mt-3"><LinkBtn href="/app/wallet" primary>Take money out</LinkBtn></div>
@@ -576,13 +576,13 @@ export const Magazine = memo(function Magazine({ d, act }: { d: EarnData; act: A
 
         {needs.length > 0 && (
           <article className="rounded-[20px] p-4" style={card}>
-            <b className="block text-[0.875rem] font-bold" style={{ color: "var(--ux-ink)" }}>
+            <b className="block text-sm font-bold" style={{ color: "var(--ux-ink)" }}>
               {needs.length === 1 ? "One order is waiting" : `${needs.length} orders are waiting`}
             </b>
-            <p className="mt-1 text-[0.75rem]" style={{ color: "var(--ux-faint)" }}>
+            <p className="mt-1 text-xs" style={{ color: "var(--ux-faint)" }}>
               {needs.map((o) => o.buyer_name.split(" ")[0]).join(" and ")}, both this week.
             </p>
-            <p className="mt-2.5 text-[1.25rem] font-extrabold tabular-nums" style={{ color: "var(--ux-amber-ink)" }}>
+            <p className="mt-2.5 text-xl font-extrabold tabular-nums" style={{ color: "var(--ux-amber-ink)" }}>
               {rupees(d.owedMinor)}
             </p>
             <div className="mt-3"><LinkBtn href="/app/documents">Open your orders</LinkBtn></div>
@@ -591,13 +591,13 @@ export const Magazine = memo(function Magazine({ d, act }: { d: EarnData; act: A
 
         {d.pools.slice(0, 1).map((g) => (
           <article key={g.id} className="rounded-[20px] p-4" style={card}>
-            <b className="block text-[0.875rem] font-bold" style={{ color: "var(--ux-ink)" }}>
+            <b className="block text-sm font-bold" style={{ color: "var(--ux-ink)" }}>
               {g.joined} women buying {g.item.toLowerCase()}
             </b>
-            <p className="mt-1 text-[0.75rem]" style={{ color: "var(--ux-faint)" }}>
+            <p className="mt-1 text-xs" style={{ color: "var(--ux-faint)" }}>
               {g.saving_label}. {g.still_needed} more and the order goes in.
             </p>
-            <p className="mt-2.5 text-[1.25rem] font-extrabold tabular-nums" style={{ color: "var(--ux-green-ink)" }}>
+            <p className="mt-2.5 text-xl font-extrabold tabular-nums" style={{ color: "var(--ux-green-ink)" }}>
               {rupees(g.saving_minor)} saved
             </p>
             <div className="mt-3">

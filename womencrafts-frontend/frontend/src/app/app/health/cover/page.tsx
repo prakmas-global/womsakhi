@@ -57,14 +57,14 @@ export default function CoverPage() {
 
         <header className="flex flex-wrap items-end gap-4">
           <div className="min-w-0 flex-1">
-            <p className="text-[0.6875rem] font-extrabold uppercase tracking-[0.2em]" style={{ color: v("--ux-brand") }}>
+            <p className="text-2xs font-extrabold uppercase tracking-[0.2em]" style={{ color: v("--ux-brand") }}>
               Cover
             </p>
             <h1 className="mt-2 text-[clamp(1.5rem,3.2vw,2.125rem)] font-extrabold leading-[1.1] tracking-[-0.035em]"
                 style={{ color: v("--ux-ink") }}>
               A day off should not cost you the week
             </h1>
-            <p className="mt-1.5 max-w-[56ch] text-[0.875rem] leading-relaxed" style={{ color: v("--ux-muted") }}>
+            <p className="mt-1.5 max-w-[56ch] text-sm leading-relaxed" style={{ color: v("--ux-muted") }}>
               There is no sick leave when you work for yourself — and a closed stall loses the
               customer, not just the day. So someone in your circle opens it instead.
             </p>
@@ -76,10 +76,10 @@ export default function CoverPage() {
           <div className="flex items-start gap-3.5">
             <IconTile icon="Lock" tint="--ux-surface" ink="--ux-pink-ink" size={44} radius={13} />
             <div className="min-w-0">
-              <p className="text-[0.875rem] font-bold" style={{ color: v("--ux-ink") }}>
+              <p className="text-sm font-bold" style={{ color: v("--ux-ink") }}>
                 You never have to say why
               </p>
-              <p className="mt-1.5 max-w-[54ch] text-[0.8125rem] leading-relaxed" style={{ color: v("--ux-ink-2") }}>
+              <p className="mt-1.5 max-w-[54ch] text-xsm leading-relaxed" style={{ color: v("--ux-ink-2") }}>
                 Not to us and not to her. Illness, a child, a hospital visit, a bad day — the app
                 asks for a date and nothing else, and nowhere does it store a reason.
               </p>
@@ -100,7 +100,7 @@ export default function CoverPage() {
 
         {note && (
           <Card pad={16} style={{ background: v("--ux-tint-green"), borderColor: "transparent" }}>
-            <p className="flex items-center gap-2 text-[0.8125rem] font-semibold" style={{ color: v("--ux-green-ink") }}>
+            <p className="flex items-center gap-2 text-xsm font-semibold" style={{ color: v("--ux-green-ink") }}>
               <I name="CheckCircle2" className="h-[16px] w-[16px]" />{note}
             </p>
           </Card>
@@ -115,13 +115,13 @@ export default function CoverPage() {
                         onClick={() => accept(open.find((d) => d.state === "asked")?.id ?? "cv2", c.name)}
                         className="ux-press ux-sq flex items-center gap-3.5 rounded-[12px] border p-3.5 text-left"
                         style={{ borderColor: v("--ux-line"), background: v("--ux-surface") }}>
-                  <span className="grid h-[38px] w-[38px] shrink-0 place-items-center rounded-full text-[0.875rem] font-bold"
+                  <span className="grid h-[38px] w-[38px] shrink-0 place-items-center rounded-full text-sm font-bold"
                         style={{ background: v("--ux-brand-tint-2"), color: v("--ux-brand") }}>
                     {c.name.charAt(0)}
                   </span>
                   <div className="min-w-0 flex-1">
-                    <p className="text-[0.875rem] font-bold" style={{ color: v("--ux-ink") }}>{c.name}</p>
-                    <p className="text-[0.75rem]" style={{ color: v("--ux-muted") }}>
+                    <p className="text-sm font-bold" style={{ color: v("--ux-ink") }}>{c.name}</p>
+                    <p className="text-xs" style={{ color: v("--ux-muted") }}>
                       {c.can} · has covered for you {c.coveredCount}×
                     </p>
                   </div>
@@ -148,11 +148,11 @@ export default function CoverPage() {
                       <IconTile icon={d.state === "covered" ? "Check" : "Clock"} tint={s.tint} ink={s.ink} size={38} />
                       <div className="min-w-0 flex-1">
                         <div className="flex flex-wrap items-center gap-2">
-                          <p className="text-[0.875rem] font-bold" style={{ color: v("--ux-ink") }}>{d.when}</p>
-                          <span className="rounded-full px-2 py-[2px] text-[0.6875rem] font-bold uppercase tracking-[0.06em]"
+                          <p className="text-sm font-bold" style={{ color: v("--ux-ink") }}>{d.when}</p>
+                          <span className="rounded-full px-2 py-[2px] text-2xs font-bold uppercase tracking-[0.06em]"
                                 style={{ background: v(s.tint), color: v(s.ink) }}>{s.label}</span>
                         </div>
-                        <p className="mt-0.5 text-[0.8125rem]" style={{ color: v("--ux-muted") }}>
+                        <p className="mt-0.5 text-xsm" style={{ color: v("--ux-muted") }}>
                           {d.what}{d.who && ` · ${d.who} is doing it`}
                         </p>
                       </div>
@@ -173,7 +173,7 @@ export default function CoverPage() {
                 {past.map((d) => (
                   <li key={d.id} className="flex items-center gap-3 px-4 py-3">
                     <I name="Check" className="h-[15px] w-[15px] shrink-0" style={{ color: v("--ux-green-ink") }} sw={2.6} />
-                    <p className="flex-1 text-[0.8125rem]" style={{ color: v("--ux-ink-2") }}>
+                    <p className="flex-1 text-xsm" style={{ color: v("--ux-ink-2") }}>
                       {d.when} · {d.what}{d.who && ` · ${d.who}`}
                     </p>
                   </li>

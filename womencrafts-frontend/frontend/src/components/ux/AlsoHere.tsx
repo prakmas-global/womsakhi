@@ -33,7 +33,7 @@ export function AlsoHere({
   return (
     <section className="mt-[24px]">
       <div className="mb-3 flex items-center gap-3">
-        <h2 className="text-[0.8125rem] font-semibold uppercase tracking-[0.1em]" style={{ color: "var(--ux-faint)" }}>
+        <h2 className="text-xsm font-semibold uppercase tracking-[0.1em]" style={{ color: "var(--ux-faint)" }}>
           {title}
         </h2>
         <span className="h-px flex-1" style={{ background: "var(--ux-line)" }} />
@@ -56,10 +56,10 @@ export function AlsoHere({
                 <I className="h-[18px] w-[18px]" strokeWidth={1.9} />
               </span>
               <span className="min-w-0">
-                <span className="block text-[0.875rem] font-semibold" style={{ color: "var(--ux-ink)" }}>
+                <span className="block text-sm font-semibold" style={{ color: "var(--ux-ink)" }}>
                   {label}
                 </span>
-                <span className="mt-0.5 block text-[0.75rem] leading-snug" style={{ color: "var(--ux-muted)" }}>
+                <span className="mt-0.5 block text-xs leading-snug" style={{ color: "var(--ux-muted)" }}>
                   {note}
                 </span>
               </span>

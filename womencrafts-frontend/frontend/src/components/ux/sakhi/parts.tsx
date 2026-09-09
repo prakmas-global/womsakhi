@@ -45,7 +45,7 @@ export function Picker({
     <div ref={wrap} className="relative">
       <button type="button" title={title} aria-haspopup="menu" aria-expanded={open}
               onClick={() => setOpen((v) => !v)}
-              className="ux-hov flex h-[34px] items-center gap-1.5 rounded-[12px] px-2.5 text-[0.75rem] transition-colors hover:bg-[var(--ux-surface-2)]"
+              className="ux-hov flex h-[34px] items-center gap-1.5 rounded-[12px] px-2.5 text-xs transition-colors hover:bg-[var(--ux-surface-2)]"
               style={{ color: "var(--ux-muted)" }}>
         <Ico name={icon} className="h-[14px] w-[14px]" />
         <b className="font-semibold" style={{ color: "var(--ux-ink-2)" }}>{label}</b>
@@ -63,8 +63,8 @@ export function Picker({
                     style={{ background: it.value === value ? "var(--ux-brand-tint)" : "transparent",
                              color: it.value === value ? "var(--ux-brand)" : "var(--ux-ink)" }}>
               <span className="min-w-0 flex-1">
-                <span className="block truncate text-[0.8125rem] font-medium">{it.label}</span>
-                {it.note && <span className="block truncate text-[0.6875rem]" style={{ color: "var(--ux-muted)" }}>{it.note}</span>}
+                <span className="block truncate text-xsm font-medium">{it.label}</span>
+                {it.note && <span className="block truncate text-2xs" style={{ color: "var(--ux-muted)" }}>{it.note}</span>}
               </span>
               {it.value === value && <Icons.Check className="h-[14px] w-[14px] shrink-0" />}
             </button>
@@ -128,7 +128,7 @@ export function Composer({
 
       {file && (
         <div className="flex flex-wrap items-center gap-2 px-4 pt-3">
-          <span className="flex min-w-0 items-center gap-2 rounded-[12px] px-2.5 py-1.5 text-[0.75rem]"
+          <span className="flex min-w-0 items-center gap-2 rounded-[12px] px-2.5 py-1.5 text-xs"
                 style={{ background: "var(--ux-surface-2)", border: "1px solid var(--ux-line-strong)" }}>
             <Icons.Paperclip className="h-[13px] w-[13px] shrink-0" style={{ color: "var(--ux-faint)" }} />
             <span className="truncate font-semibold" style={{ color: "var(--ux-ink)" }}>{file.name}</span>
@@ -138,7 +138,7 @@ export function Composer({
               <Icons.X className="h-[12px] w-[12px]" />
             </button>
           </span>
-          <span className="text-[0.6875rem]" style={{ color: "var(--ux-amber-ink)" }}>
+          <span className="text-2xs" style={{ color: "var(--ux-amber-ink)" }}>
             She will see the name, not what is inside it — reading files is coming.
           </span>
         </div>
@@ -157,7 +157,7 @@ export function Composer({
           }}
           placeholder={placeholder}
           aria-label="Ask Sakhi"
-          className="w-full resize-none bg-transparent text-[0.875rem] leading-relaxed outline-none"
+          className="w-full resize-none bg-transparent text-sm leading-relaxed outline-none"
           style={{ color: "var(--ux-ink)", maxHeight: 150 }}
         />
       </div>
@@ -220,7 +220,7 @@ export function Actions({
 }) {
   const [copied, setCopied] = useState(false);
 
-  const btn = "ux-row flex items-center gap-1.5 rounded-[8px] px-2 py-1.5 text-[0.75rem] font-semibold";
+  const btn = "ux-row flex items-center gap-1.5 rounded-[8px] px-2 py-1.5 text-xs font-semibold";
   return (
     <div className="mt-3 flex flex-wrap gap-0.5 border-t pt-2.5" style={{ borderColor: "var(--ux-line)" }}>
       <button type="button" className={btn} style={{ color: copied ? "var(--ux-green-ink)" : "var(--ux-muted)" }}
@@ -270,12 +270,12 @@ export function DraftCard({
 }) {
   return (
     <div className="mt-3 overflow-hidden rounded-[12px]" style={{ border: "1px solid var(--ux-line-strong)" }}>
-      <p className="flex items-center gap-2 px-3.5 py-2.5 text-[0.6875rem] font-bold uppercase tracking-[0.12em]"
+      <p className="flex items-center gap-2 px-3.5 py-2.5 text-2xs font-bold uppercase tracking-[0.12em]"
          style={{ background: "var(--ux-tint-amber)", color: "var(--ux-amber-ink)" }}>
         <Icons.PenLine className="h-[13px] w-[13px]" />
         Draft — not sent
       </p>
-      <p className="px-3.5 pt-3.5 text-[0.8125rem] leading-relaxed" style={{ color: "var(--ux-ink-2)" }}>
+      <p className="px-3.5 pt-3.5 text-xsm leading-relaxed" style={{ color: "var(--ux-ink-2)" }}>
         {sentence}
       </p>
       {/*
@@ -285,17 +285,17 @@ export function DraftCard({
       */}
       <div className="flex flex-wrap gap-2 p-3.5">
         <button type="button" onClick={onApprove} disabled={busy}
-                className="ux-press flex min-h-[40px] items-center justify-center gap-2 rounded-[12px] px-4 text-[0.8125rem] font-bold disabled:opacity-50"
+                className="ux-press flex min-h-[40px] items-center justify-center gap-2 rounded-[12px] px-4 text-xsm font-bold disabled:opacity-50"
                 style={{ background: "linear-gradient(96deg, var(--ux-rib-2), var(--ux-rib-3))", color: "var(--ux-on-brand)" }}>
           <Icons.Check className="h-4 w-4" /> Send it
         </button>
         <button type="button" onClick={onChange} disabled={busy}
-                className="ux-press flex min-h-[40px] items-center justify-center gap-2 rounded-[12px] px-4 text-[0.8125rem] font-bold disabled:opacity-50"
+                className="ux-press flex min-h-[40px] items-center justify-center gap-2 rounded-[12px] px-4 text-xsm font-bold disabled:opacity-50"
                 style={{ background: "var(--ux-surface-2)", border: "1px solid var(--ux-line-strong)", color: "var(--ux-ink)" }}>
           <Icons.PenLine className="h-4 w-4" /> Change something
         </button>
         <button type="button" onClick={onReject} disabled={busy}
-                className="ux-press flex min-h-[40px] items-center justify-center gap-2 rounded-[12px] px-4 text-[0.8125rem] font-bold disabled:opacity-50"
+                className="ux-press flex min-h-[40px] items-center justify-center gap-2 rounded-[12px] px-4 text-xsm font-bold disabled:opacity-50"
                 style={{ background: "var(--ux-surface-2)", border: "1px solid var(--ux-line-strong)", color: "var(--ux-ink)" }}>
           <Icons.X className="h-4 w-4" /> Discard
         </button>
@@ -337,7 +337,7 @@ export function Cites({ tools }: { tools: string[] }) {
         const l = look(name);
         return (
           <span key={name}
-                className="flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[0.6875rem] font-semibold"
+                className="flex items-center gap-1.5 rounded-full px-2.5 py-1 text-2xs font-semibold"
                 style={{ background: "var(--ux-surface-2)", border: "1px solid var(--ux-line-strong)",
                          color: "var(--ux-muted)" }}>
             <Ico name={l.icon} className="h-[12px] w-[12px]" />
@@ -363,7 +363,7 @@ export function StopPill({ onStop }: { onStop: () => void }) {
   return (
     <div className="flex justify-center">
       <button type="button" onClick={onStop}
-              className="ux-press flex min-h-[38px] items-center gap-2 rounded-full px-4 text-[0.75rem] font-bold"
+              className="ux-press flex min-h-[38px] items-center gap-2 rounded-full px-4 text-xs font-bold"
               style={{ background: "var(--ux-surface)", border: "1px solid var(--ux-line-strong)",
                        color: "var(--ux-ink-2)" }}>
         <Icons.Square className="h-[12px] w-[12px]" fill="currentColor" />
@@ -412,7 +412,7 @@ export function ModeSwitch({
             disabled={!it.on}
             aria-pressed={active}
             onClick={() => onPick(it.v)}
-            className="ux-press flex shrink-0 items-center gap-2 rounded-full px-4 py-2 text-[0.75rem] font-bold transition-colors disabled:cursor-not-allowed disabled:opacity-40"
+            className="ux-press flex shrink-0 items-center gap-2 rounded-full px-4 py-2 text-xs font-bold transition-colors disabled:cursor-not-allowed disabled:opacity-40"
             style={active
               ? { background: "linear-gradient(96deg, var(--ux-rib-2), var(--ux-rib-3))", color: "var(--ux-on-brand)" }
               : { color: "var(--ux-muted)" }}
@@ -484,7 +484,7 @@ function parse(raw: string): Block[] {
 export function Answer({ text }: { text: string }) {
   const blocks = parse(text);
   return (
-    <div className="flex flex-col gap-2.5 text-[0.875rem] leading-relaxed" style={{ color: "var(--ux-ink-2)" }}>
+    <div className="flex flex-col gap-2.5 text-sm leading-relaxed" style={{ color: "var(--ux-ink-2)" }}>
       {blocks.map((b, i) =>
         b.kind === "list" ? (
           <ul key={i} className="flex flex-col gap-1.5">

@@ -71,7 +71,7 @@ export default function SignInPage() {
     }
   };
 
-  const field = "auth-field min-h-[46px] w-full rounded-[12px] pe-4 ps-11 text-[0.875rem]";
+  const field = "auth-field min-h-[46px] w-full rounded-[12px] pe-4 ps-11 text-sm";
   const fieldPad = { paddingBlock: "clamp(0.5625rem,1.5vh,0.875rem)" } as const;
 
   return (
@@ -85,7 +85,7 @@ export default function SignInPage() {
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img src="/ux/brand/womsakhi-wordmark.webp" alt="WomSakhi" className="object-contain"
             style={{ height: "clamp(1.25rem,3vh,1.5rem)" }} />
-          <p className="auth-tagline mt-1 text-[0.6875rem] font-semibold tracking-[0.19em]" style={{ color: "var(--a-muted)" }}>
+          <p className="auth-tagline mt-1 text-2xs font-semibold tracking-[0.19em]" style={{ color: "var(--a-muted)" }}>
             EMPOWERING HER JOURNEY
           </p>
         </div>
@@ -94,14 +94,14 @@ export default function SignInPage() {
       <h1 className="font-bold leading-tight tracking-tight" style={{ color: "var(--a-ink)", fontSize: "clamp(1.35rem, 3.4vh, 2.1rem)", marginTop: "clamp(0.875rem,3.4vh,2rem)" }}>
         Welcome <span className="auth-shine">back</span>
       </h1>
-      <p className="auth-sub text-[0.8125rem]" style={{ color: "var(--a-muted)", marginTop: "clamp(0.25rem,0.8vh,0.375rem)" }}>
+      <p className="auth-sub text-xsm" style={{ color: "var(--a-muted)", marginTop: "clamp(0.25rem,0.8vh,0.375rem)" }}>
         Sign in to pick up where you left off.
       </p>
 
       {error && (
         <p
           role="alert"
-          className="mt-5 rounded-[12px] px-3.5 py-3 text-[0.8125rem] leading-relaxed"
+          className="mt-5 rounded-[12px] px-3.5 py-3 text-xsm leading-relaxed"
           style={{
             background: "var(--a-tint-rose-2)",
             border: "1px solid var(--a-edge-rose)",
@@ -114,7 +114,7 @@ export default function SignInPage() {
 
       <form onSubmit={handleSubmit} style={{ marginTop: "clamp(0.875rem,2.8vh,1.75rem)" }} className="space-y-[clamp(0.625rem,1.8vh,1rem)]">
         <div>
-          <label htmlFor="si-email" className="mb-1.5 block text-[0.8125rem] font-medium" style={{ color: "var(--a-ink-2)" }}>
+          <label htmlFor="si-email" className="mb-1.5 block text-xsm font-medium" style={{ color: "var(--a-ink-2)" }}>
             Email
           </label>
           <div className="relative">
@@ -128,7 +128,7 @@ export default function SignInPage() {
         </div>
 
         <div>
-          <label htmlFor="si-password" className="mb-1.5 block text-[0.8125rem] font-medium" style={{ color: "var(--a-ink-2)" }}>
+          <label htmlFor="si-password" className="mb-1.5 block text-xsm font-medium" style={{ color: "var(--a-ink-2)" }}>
             Password
           </label>
           <div className="relative">
@@ -161,9 +161,9 @@ export default function SignInPage() {
               className="h-[18px] w-[18px] rounded-[8px]"
               style={{ accentColor: "var(--a-magenta)" }}
             />
-            <span className="text-[0.8125rem]" style={{ color: "var(--a-ink-2)" }}>Keep me signed in</span>
+            <span className="text-xsm" style={{ color: "var(--a-ink-2)" }}>Keep me signed in</span>
           </label>
-          <Link href="/forgot-password" className="auth-link -my-2 flex min-h-[44px] items-center text-[0.8125rem] font-medium">
+          <Link href="/forgot-password" className="auth-link -my-2 flex min-h-[44px] items-center text-xsm font-medium">
             Forgot password?
           </Link>
         </div>
@@ -171,7 +171,7 @@ export default function SignInPage() {
         <button
           type="submit"
           disabled={loading}
-          className="auth-go flex min-h-[50px] w-full items-center justify-center gap-2 rounded-[12px] text-[0.875rem] font-semibold"
+          className="auth-go flex min-h-[50px] w-full items-center justify-center gap-2 rounded-[12px] text-sm font-semibold"
           style={{ paddingBlock: "clamp(0.6875rem,1.8vh,1rem)" }}
         >
           {loading ? <Loader2 className="h-[18px] w-[18px] animate-spin" aria-hidden /> : null}
@@ -192,7 +192,7 @@ export default function SignInPage() {
         <>
           <div className="flex items-center gap-3" style={{ marginTop: "clamp(0.5625rem,1.7vh,1.25rem)" }}>
             <span className="h-px flex-1" style={{ background: "var(--a-edge)" }} aria-hidden />
-            <span className="text-[0.6875rem] font-medium tracking-wide" style={{ color: "var(--a-faint)" }}>OR</span>
+            <span className="text-2xs font-medium tracking-wide" style={{ color: "var(--a-faint)" }}>OR</span>
             <span className="h-px flex-1" style={{ background: "var(--a-edge)" }} aria-hidden />
           </div>
 
@@ -200,7 +200,7 @@ export default function SignInPage() {
             {providers.includes("google") && (
               <a
                 href={`${API_BASE}/auth/google/start`}
-                className="flex min-h-[44px] items-center justify-center gap-2 rounded-[12px] text-[0.75rem] font-semibold"
+                className="flex min-h-[44px] items-center justify-center gap-2 rounded-[12px] text-xs font-semibold"
                 style={{ background: "var(--a-well-2)", border: "1px solid var(--a-edge)", color: "var(--a-ink)" }}
               >
                 <GoogleMark />
@@ -210,7 +210,7 @@ export default function SignInPage() {
             {providers.includes("apple") && (
               <a
                 href={`${API_BASE}/auth/apple/start`}
-                className="flex min-h-[44px] items-center justify-center gap-2 rounded-[12px] text-[0.75rem] font-semibold"
+                className="flex min-h-[44px] items-center justify-center gap-2 rounded-[12px] text-xs font-semibold"
                 style={{ background: "var(--a-well-2)", border: "1px solid var(--a-edge)", color: "var(--a-ink)" }}
               >
                 <AppleMark />
@@ -221,7 +221,7 @@ export default function SignInPage() {
         </>
       )}
 
-      <p className="text-center text-[0.8125rem]" style={{ color: "var(--a-muted)", marginTop: "clamp(0.625rem,1.9vh,1.5rem)" }}>
+      <p className="text-center text-xsm" style={{ color: "var(--a-muted)", marginTop: "clamp(0.625rem,1.9vh,1.5rem)" }}>
         New to WomSakhi?{" "}
         <Link href="/signup" className="auth-link inline-flex items-center gap-1 font-semibold">
           Create your account

@@ -96,22 +96,22 @@ export default function WalletPage() {
             <Card className="ux-onscroll-soft">
               <SectionHead title="Your goal" action="Edit"
                            onAction={() => { window.location.href = "/app/goals"; }} />
-              <p className="text-[0.8125rem] font-semibold" style={{ color: "var(--ux-ink)" }}>{GOAL.label}</p>
+              <p className="text-xsm font-semibold" style={{ color: "var(--ux-ink)" }}>{GOAL.label}</p>
               <div className="mt-2.5 flex items-center gap-2.5">
                 <Progress pct={goalPct} track="--ux-track" />
-                <span className="shrink-0 text-[0.75rem] font-medium tabular-nums"
+                <span className="shrink-0 text-xs font-medium tabular-nums"
                       style={{ color: "var(--ux-muted)" }}>
                   {goalPct}%
                 </span>
               </div>
-              <p className="mt-2.5 text-[0.75rem] leading-relaxed" style={{ color: "var(--ux-muted)" }}>
+              <p className="mt-2.5 text-xs leading-relaxed" style={{ color: "var(--ux-muted)" }}>
                 {rupees(Math.max(0, GOAL.target_minor - GOAL.current_minor))} to go this month.
               </p>
             </Card>
           ) : (
             <Card className="ux-onscroll-soft">
               <SectionHead title="Set a goal" />
-              <p className="text-[0.8125rem] leading-relaxed" style={{ color: "var(--ux-ink-2)" }}>
+              <p className="text-xsm leading-relaxed" style={{ color: "var(--ux-ink-2)" }}>
                 A number and a date. Women who write one down earn more than women who mean to —
                 not because the number is magic, but because it turns &ldquo;more&rdquo; into something you can
                 tell whether you have reached.
@@ -140,10 +140,10 @@ export default function WalletPage() {
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img loading="lazy" decoding="async" src={MONEY_ART.grow} alt=""
                  className="ux-float pointer-events-none absolute -bottom-3 -end-4 h-[100px] w-[100px] object-contain" />
-            <h3 className="relative w-[60%] text-[0.875rem] font-semibold" style={{ color: "var(--ux-ink)" }}>
+            <h3 className="relative w-[60%] text-sm font-semibold" style={{ color: "var(--ux-ink)" }}>
               Put a little aside
             </h3>
-            <p className="relative mt-2 w-[60%] text-[0.75rem] leading-relaxed" style={{ color: "var(--ux-muted)" }}>
+            <p className="relative mt-2 w-[60%] text-xs leading-relaxed" style={{ color: "var(--ux-muted)" }}>
               A savings circle turns ₹500 a month into a lump sum when you need one.
             </p>
             <div className="relative mt-3 w-[60%]">
@@ -153,8 +153,8 @@ export default function WalletPage() {
         </div>
       }
     >
-      <h1 className="text-[1.5rem] font-bold" style={{ color: "var(--ux-ink)" }}>Your wallet</h1>
-      <p className="mb-[20px] mt-1.5 text-[0.8125rem]" style={{ color: "var(--ux-muted)" }}>
+      <h1 className="text-2xl font-bold" style={{ color: "var(--ux-ink)" }}>Your wallet</h1>
+      <p className="mb-[20px] mt-1.5 text-xsm" style={{ color: "var(--ux-muted)" }}>
         Everything you have made, and how to move it to your bank.
       </p>
 
@@ -169,15 +169,15 @@ export default function WalletPage() {
               style={{ background: "radial-gradient(circle, rgba(255,255,255,0.16), transparent 68%)" }} />
         <div className="relative flex items-start justify-between gap-6">
           <div>
-            <p className="text-[0.8125rem]" style={{ color: "rgba(255,255,255,0.82)" }}>Available to withdraw</p>
-            <p className="mt-1.5 text-[2.25rem] font-bold leading-none tabular-nums text-white">
+            <p className="text-xsm" style={{ color: "rgba(255,255,255,0.82)" }}>Available to withdraw</p>
+            <p className="mt-1.5 text-4xl font-bold leading-none tabular-nums text-white">
               ₹{balance.toLocaleString("en-IN")}
             </p>
             {/* The gap between "what I made" and "what I can take out" is the
                 single most common source of confusion in a wallet. Say it here,
                 unprompted, rather than waiting to be asked — but only when
                 there IS a gap. "₹0 more is on its way" invents a worry. */}
-            <p className="mt-3 flex items-center gap-1.5 text-[0.8125rem]" style={{ color: "rgba(255,255,255,0.9)" }}>
+            <p className="mt-3 flex items-center gap-1.5 text-xsm" style={{ color: "rgba(255,255,255,0.9)" }}>
               <Icons.Clock className="h-4 w-4" />
               {money.pendingMinor > 0
                 ? `${rupees(money.pendingMinor)} more is on its way — usually here within 3 days.`
@@ -199,8 +199,8 @@ export default function WalletPage() {
             ["Payouts", `${money.txns.filter((t) => t.kind === "debit").length} so far`],
           ].map(([k, v]) => (
             <div key={k}>
-              <p className="text-[0.6875rem]" style={{ color: "rgba(255,255,255,0.72)" }}>{k}</p>
-              <p className="mt-1 text-[1rem] font-semibold tabular-nums text-white">{v}</p>
+              <p className="text-2xs" style={{ color: "rgba(255,255,255,0.72)" }}>{k}</p>
+              <p className="mt-1 text-base font-semibold tabular-nums text-white">{v}</p>
             </div>
           ))}
         </div>
@@ -220,8 +220,8 @@ export default function WalletPage() {
       {/* ── the history ─────────────────────────────────────────────────── */}
       <div className="mb-3 mt-[24px] flex items-end justify-between gap-4">
         <div>
-          <h2 className="text-[1rem] font-semibold" style={{ color: "var(--ux-ink)" }}>Every rupee</h2>
-          <p className="mt-1 text-[0.8125rem]" style={{ color: "var(--ux-muted)" }}>
+          <h2 className="text-base font-semibold" style={{ color: "var(--ux-ink)" }}>Every rupee</h2>
+          <p className="mt-1 text-xsm" style={{ color: "var(--ux-muted)" }}>
             {shown.length} {plural("entry", shown.length)}
           </p>
         </div>
@@ -244,7 +244,7 @@ export default function WalletPage() {
           className="space-y-2.5"
           render={(row, i) =>
             row.kind === "day" ? (
-              <h3 className="mb-2 mt-5 text-[0.6875rem] font-semibold uppercase tracking-[0.08em] first:mt-0"
+              <h3 className="mb-2 mt-5 text-2xs font-semibold uppercase tracking-[0.08em] first:mt-0"
                   style={{ color: "var(--ux-faint)" }}>
                 {row.day}
               </h3>

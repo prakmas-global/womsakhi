@@ -99,13 +99,13 @@ export default function AssessPage() {
     return (
       <HomeShell>
         <button onClick={leave}
-                className="ux-hov -my-1 mb-3.5 inline-flex items-center gap-1.5 py-1 text-[0.8125rem] font-medium"
+                className="ux-hov -my-1 mb-3.5 inline-flex items-center gap-1.5 py-1 text-xsm font-medium"
                 style={{ color: "var(--ux-brand)" }}>
           <Icons.ArrowLeft className="ux-ico h-4 w-4" /> All tests
         </button>
 
-        <h1 className="text-[1.5rem] font-bold" style={{ color: "var(--ux-ink)" }}>{paper.title}</h1>
-        <p className="mb-[20px] mt-1.5 text-[0.8125rem]" style={{ color: "var(--ux-muted)" }}>
+        <h1 className="text-2xl font-bold" style={{ color: "var(--ux-ink)" }}>{paper.title}</h1>
+        <p className="mb-[20px] mt-1.5 text-xsm" style={{ color: "var(--ux-muted)" }}>
           {paper.skill} · {paper.question_count} questions · pass mark {paper.pass_mark}%
         </p>
 
@@ -118,10 +118,10 @@ export default function AssessPage() {
                   ? <Icons.BadgeCheck className="h-[32px] w-[32px]" style={{ color: "var(--ux-green-ink)" }} strokeWidth={2} />
                   : <Icons.RotateCcw className="h-[30px] w-[30px]" style={{ color: "var(--ux-amber-ink)" }} strokeWidth={2} />}
               </span>
-              <h2 className="mt-4 text-[1.5rem] font-bold tabular-nums" style={{ color: "var(--ux-ink)" }}>
+              <h2 className="mt-4 text-2xl font-bold tabular-nums" style={{ color: "var(--ux-ink)" }}>
                 {result.score}%
               </h2>
-              <p className="mt-2 max-w-[40ch] text-[0.875rem] leading-relaxed" style={{ color: "var(--ux-ink-2)" }}>
+              <p className="mt-2 max-w-[40ch] text-sm leading-relaxed" style={{ color: "var(--ux-ink-2)" }}>
                 {result.passed
                   ? `Passed. It is on your profile as a ${paper.skill} badge, and employers hiring through WomSakhi can filter by it.`
                   : `The pass mark is ${paper.pass_mark}%. Nothing is lost — only your best result ever counts, so try again whenever you like.`}
@@ -140,14 +140,14 @@ export default function AssessPage() {
         ) : (
           <Card className="mx-auto max-w-[640px]">
             <div className="mb-4">
-              <div className="mb-2 flex items-center justify-between text-[0.75rem]">
+              <div className="mb-2 flex items-center justify-between text-xs">
                 <span style={{ color: "var(--ux-muted)" }}>Question {at + 1} of {paper.questions.length}</span>
                 <span className="tabular-nums" style={{ color: "var(--ux-faint)" }}>{answered} answered</span>
               </div>
               <Progress pct={((at + 1) / paper.questions.length) * 100} track="--ux-track" />
             </div>
 
-            <h2 className="text-[1rem] font-semibold leading-snug" style={{ color: "var(--ux-ink)" }}>
+            <h2 className="text-base font-semibold leading-snug" style={{ color: "var(--ux-ink)" }}>
               {q.ask}
             </h2>
 
@@ -171,7 +171,7 @@ export default function AssessPage() {
                                      background: on ? "var(--ux-brand)" : "transparent" }}>
                         {on && <Icons.Check className="h-3 w-3 text-white" strokeWidth={3} />}
                       </span>
-                      <span className="min-w-0 flex-1 text-[0.875rem] leading-snug"
+                      <span className="min-w-0 flex-1 text-sm leading-snug"
                             style={{ color: on ? "var(--ux-brand)" : "var(--ux-ink)" }}>
                         {opt}
                       </span>
@@ -182,7 +182,7 @@ export default function AssessPage() {
             </ul>
 
             {problem && (
-              <p role="alert" className="ux-slide-up mt-3.5 rounded-[12px] p-3 text-[0.8125rem] leading-relaxed"
+              <p role="alert" className="ux-slide-up mt-3.5 rounded-[12px] p-3 text-xsm leading-relaxed"
                  style={{ background: "var(--ux-tint-orange)", color: "var(--ux-orange-ink)" }}>
                 {problem}
               </p>
@@ -206,7 +206,7 @@ export default function AssessPage() {
                 </Btn>
               )}
             </div>
-            <p className="mt-2.5 text-[0.75rem] leading-relaxed" style={{ color: "var(--ux-faint)" }}>
+            <p className="mt-2.5 text-xs leading-relaxed" style={{ color: "var(--ux-faint)" }}>
               Nothing is marked until you press the last button. You can leave and start again — only your
               best result ever counts.
             </p>
@@ -232,9 +232,9 @@ export default function AssessPage() {
                 "Employers hiring through WomSakhi filter by these.",
               ].map((t, i) => (
                 <li key={t} className="flex items-start gap-2.5">
-                  <span className="grid h-[20px] w-[20px] shrink-0 place-items-center rounded-full text-[0.6875rem] font-bold"
+                  <span className="grid h-[20px] w-[20px] shrink-0 place-items-center rounded-full text-2xs font-bold"
                         style={{ background: "var(--ux-brand-tint)", color: "var(--ux-brand)" }}>{i + 1}</span>
-                  <span className="text-[0.8125rem] leading-snug" style={{ color: "var(--ux-ink-2)" }}>{t}</span>
+                  <span className="text-xsm leading-snug" style={{ color: "var(--ux-ink-2)" }}>{t}</span>
                 </li>
               ))}
             </ol>
@@ -245,18 +245,18 @@ export default function AssessPage() {
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img loading="lazy" decoding="async" src={MORE_ART.assess} alt=""
                  className="ux-float pointer-events-none absolute -bottom-3 -end-4 h-[100px] w-[100px] object-contain" />
-            <h3 className="relative w-[60%] text-[0.875rem] font-semibold" style={{ color: "var(--ux-ink)" }}>
+            <h3 className="relative w-[60%] text-sm font-semibold" style={{ color: "var(--ux-ink)" }}>
               Twenty years is worth proving
             </h3>
-            <p className="relative mt-2 w-[60%] text-[0.75rem] leading-relaxed" style={{ color: "var(--ux-muted)" }}>
+            <p className="relative mt-2 w-[60%] text-xs leading-relaxed" style={{ color: "var(--ux-muted)" }}>
               Most members learned their trade at home and have nothing on paper. This is the paper.
             </p>
           </div>
         </div>
       }
     >
-      <h1 className="text-[1.5rem] font-bold" style={{ color: "var(--ux-ink)" }}>Test your skills</h1>
-      <p className="mb-[20px] mt-1.5 text-[0.8125rem]" style={{ color: "var(--ux-muted)" }}>
+      <h1 className="text-2xl font-bold" style={{ color: "var(--ux-ink)" }}>Test your skills</h1>
+      <p className="mb-[20px] mt-1.5 text-xsm" style={{ color: "var(--ux-muted)" }}>
         {done.length} of {ASSESSMENTS.length} taken · {badges} badge{badges === 1 ? "" : "s"} on your profile.
         Only your best result ever counts.
       </p>
@@ -265,7 +265,7 @@ export default function AssessPage() {
 
       {/* A test that would not open says so here, where she pressed. */}
       {problem && (
-        <p role="alert" className="ux-slide-up mb-[16px] rounded-[12px] p-3.5 text-[0.8125rem] leading-relaxed"
+        <p role="alert" className="ux-slide-up mb-[16px] rounded-[12px] p-3.5 text-xsm leading-relaxed"
            style={{ background: "var(--ux-tint-orange)", color: "var(--ux-orange-ink)" }}>
           {problem}
         </p>
@@ -278,7 +278,7 @@ export default function AssessPage() {
               <IconTile icon={a.icon} tint={a.tint} ink={a.ink} size={48} radius={13} />
               <div className="min-w-0 flex-1">
                 <div className="flex items-start gap-2">
-                  <h3 className="min-w-0 flex-1 text-[1rem] font-semibold" style={{ color: "var(--ux-ink)" }}>
+                  <h3 className="min-w-0 flex-1 text-base font-semibold" style={{ color: "var(--ux-ink)" }}>
                     {a.skill}
                   </h3>
                   {a.badge && <Pill tone="green" size="sm">On your profile</Pill>}
@@ -290,19 +290,19 @@ export default function AssessPage() {
                     <div className="mt-2.5 flex items-center gap-3">
                       <Progress pct={a.pct} track="--ux-track"
                                 tone={a.pct >= 70 ? "--ux-green" : "--ux-amber"} />
-                      <span className="shrink-0 text-[0.8125rem] font-bold tabular-nums" style={{ color: "var(--ux-ink)" }}>
+                      <span className="shrink-0 text-xsm font-bold tabular-nums" style={{ color: "var(--ux-ink)" }}>
                         {a.pct}%
                       </span>
                     </div>
-                    <p className="mt-1.5 text-[0.75rem]" style={{ color: "var(--ux-muted)" }}>
+                    <p className="mt-1.5 text-xs" style={{ color: "var(--ux-muted)" }}>
                       Taken {a.taken} · {a.level}
                     </p>
                   </>
                 ) : (
-                  <p className="mt-1.5 text-[0.8125rem]" style={{ color: "var(--ux-ink-2)" }}>{a.note}</p>
+                  <p className="mt-1.5 text-xsm" style={{ color: "var(--ux-ink-2)" }}>{a.note}</p>
                 )}
 
-                <p className="mt-2 flex flex-wrap items-center gap-x-3 text-[0.75rem]" style={{ color: "var(--ux-faint)" }}>
+                <p className="mt-2 flex flex-wrap items-center gap-x-3 text-xs" style={{ color: "var(--ux-faint)" }}>
                   <span className="inline-flex items-center gap-1"><Icons.Clock className="h-3.5 w-3.5" /> {a.mins} min</span>
                   <span>{a.questions} questions</span>
                 </p>
@@ -312,7 +312,7 @@ export default function AssessPage() {
             <div className="mt-3.5 flex items-center justify-between gap-4 border-t pt-3.5"
                  style={{ borderColor: "var(--ux-line)" }}>
               {/* Said before she starts, not buried in terms. */}
-              <span className="text-[0.75rem]" style={{ color: "var(--ux-faint)" }}>
+              <span className="text-xs" style={{ color: "var(--ux-faint)" }}>
                 {a.taken ? "A second try can only improve your score." : "You can stop and come back."}
               </span>
               <Btn variant={a.taken ? "outline" : "primary"} size="sm"

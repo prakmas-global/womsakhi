@@ -15,6 +15,7 @@ import {
 import { HomeShell } from "@/components/ux/home/HomeShell";
 import { useMe } from "@/components/ux/me";
 import { useDocuments, type UxDocument } from "@/components/ux/live";
+import { COPY } from "@/components/ux/copy";
 
 type Row = UxDocument;
 
@@ -147,17 +148,17 @@ export default function VaultPage() {
               </div>
             )}
             {!needed ? (
-              <p className="text-[0.8125rem] leading-relaxed" style={{ color: "var(--ux-ink-2)" }}>
+              <p className="text-xsm leading-relaxed" style={{ color: "var(--ux-ink-2)" }}>
                 You have not given us any papers yet. Aadhaar and a bank passbook are what almost every
                 scheme asks for first.
               </p>
             ) : missing.length ? (
-              <p className="text-[0.8125rem] leading-relaxed" style={{ color: "var(--ux-ink-2)" }}>
+              <p className="text-xsm leading-relaxed" style={{ color: "var(--ux-ink-2)" }}>
                 {missing.map((m) => m.name).join(" and ")} {missing.length > 1 ? "are" : "is"} still missing. Schemes that ask for {missing.length > 1 ? "them" : "it"} cannot go through until
                 {missing.length > 1 ? " they are" : " it is"} added.
               </p>
             ) : (
-              <p className="text-[0.8125rem] leading-relaxed" style={{ color: "var(--ux-ink-2)" }}>
+              <p className="text-xsm leading-relaxed" style={{ color: "var(--ux-ink-2)" }}>
                 Everything a scheme or a bank normally asks for is here and checked.
               </p>
             )}
@@ -167,7 +168,7 @@ export default function VaultPage() {
                 {busy === "upload" ? "Sending…" : "Add a paper"}
               </Btn>
               <ActionBtn variant="outline" full icon="Printer" doneIcon="Printer"
-                         done="Choose “Save as PDF”" act={() => coverSheet()}>
+                         done={COPY.saveAsPdf} act={() => coverSheet()}>
                 Print the list
               </ActionBtn>
             </div>
@@ -193,12 +194,12 @@ export default function VaultPage() {
             />
 
             {problem && (
-              <p role="alert" className="ux-slide-up mt-3 text-[0.8125rem] leading-relaxed"
+              <p role="alert" className="ux-slide-up mt-3 text-xsm leading-relaxed"
                  style={{ color: "var(--ux-orange-ink)" }}>
                 {problem}
               </p>
             )}
-            <p className="mt-2.5 text-[0.75rem] leading-relaxed" style={{ color: "var(--ux-faint)" }}>
+            <p className="mt-2.5 text-xs leading-relaxed" style={{ color: "var(--ux-faint)" }}>
               The printed list says what we hold and when each was checked. It is not a copy of the papers
               themselves — an office wanting the originals still needs the originals.
             </p>
@@ -219,8 +220,8 @@ export default function VaultPage() {
                     ? <Icons.Check className="mt-[2px] h-[14px] w-[14px] shrink-0" style={{ color: "var(--ux-green-ink)" }} strokeWidth={2.6} />
                     : <Icons.X className="mt-[2px] h-[14px] w-[14px] shrink-0" style={{ color: "var(--ux-faint)" }} strokeWidth={2.6} />}
                   <span>
-                    <span className="block text-[0.8125rem] font-medium" style={{ color: "var(--ux-ink)" }}>{who as string}</span>
-                    <span className="block text-[0.75rem] leading-snug" style={{ color: "var(--ux-muted)" }}>{what as string}</span>
+                    <span className="block text-xsm font-medium" style={{ color: "var(--ux-ink)" }}>{who as string}</span>
+                    <span className="block text-xs leading-snug" style={{ color: "var(--ux-muted)" }}>{what as string}</span>
                   </span>
                 </li>
               ))}
@@ -230,15 +231,15 @@ export default function VaultPage() {
       }
     >
       <Link href="/app/documents"
-            className="ux-hov -my-1 mb-3.5 inline-flex items-center gap-1.5 py-1 text-[0.8125rem] font-medium"
+            className="ux-hov -my-1 mb-3.5 inline-flex items-center gap-1.5 py-1 text-xsm font-medium"
             style={{ color: "var(--ux-brand)" }}>
         <Icons.ArrowLeft className="ux-ico h-4 w-4" /> Your shop
       </Link>
 
       <div className="mb-[20px] flex flex-wrap items-end justify-between gap-4">
         <div>
-          <h1 className="text-[1.5rem] font-bold" style={{ color: "var(--ux-ink)" }}>Your papers</h1>
-          <p className="mt-1.5 text-[0.8125rem]" style={{ color: "var(--ux-muted)" }}>
+          <h1 className="text-2xl font-bold" style={{ color: "var(--ux-ink)" }}>Your papers</h1>
+          <p className="mt-1.5 text-xsm" style={{ color: "var(--ux-muted)" }}>
             Open, download or replace anything you have given us.
           </p>
 
@@ -259,12 +260,12 @@ export default function VaultPage() {
                   <IconTile icon={d.icon} tint={d.tint} ink={d.ink} size={46} radius={12} />
                   <div className="min-w-0 flex-1">
                     <div className="flex flex-wrap items-center gap-2">
-                      <p className="truncate text-[0.875rem] font-semibold" style={{ color: "var(--ux-ink)" }}>{d.name}</p>
+                      <p className="truncate text-sm font-semibold" style={{ color: "var(--ux-ink)" }}>{d.name}</p>
                       {d.status === "verified" && <Pill tone="green" size="sm">Checked</Pill>}
                       {d.status === "missing" && <Pill tone="orange" size="sm">Not added</Pill>}
                       {d.status === "optional" && <Pill tone="neutral" size="sm">Optional</Pill>}
                     </div>
-                    <p className="mt-0.5 truncate text-[0.75rem]" style={{ color: "var(--ux-muted)" }}>
+                    <p className="mt-0.5 truncate text-xs" style={{ color: "var(--ux-muted)" }}>
                       {d.when}{d.size ? ` · ${d.size}` : ""}
                     </p>
                   </div>
@@ -287,7 +288,7 @@ export default function VaultPage() {
                           {open ? "Hide" : "View"}
                         </Btn>
                         <ActionBtn variant="ghost" size="sm" icon="Printer" doneIcon="Printer"
-                                   done="Choose “Save as PDF”" act={() => coverSheet(d)}>
+                                   done={COPY.saveAsPdf} act={() => coverSheet(d)}>
                           Print its record
                         </ActionBtn>
                       </>
@@ -302,8 +303,8 @@ export default function VaultPage() {
                          style={{ borderColor: "var(--ux-line)", background: "var(--ux-surface-2)" }}>
                       <div className="text-center">
                         <Icons.FileText className="mx-auto h-[34px] w-[34px]" style={{ color: "var(--ux-faint)" }} strokeWidth={1.5} />
-                        <p className="mt-2 text-[0.8125rem] font-medium" style={{ color: "var(--ux-ink-2)" }}>{d.name}</p>
-                        <p className="mt-0.5 text-[0.75rem]" style={{ color: "var(--ux-faint)" }}>
+                        <p className="mt-2 text-xsm font-medium" style={{ color: "var(--ux-ink-2)" }}>{d.name}</p>
+                        <p className="mt-0.5 text-xs" style={{ color: "var(--ux-faint)" }}>
                           {d.size ?? "Held with us"}
                         </p>
                       </div>

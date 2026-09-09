@@ -55,7 +55,7 @@ export default function LanguageSettings() {
       sub="Changes everything on screen, and the language Sakhi speaks and writes in."
       footer={
         <div className="flex items-center justify-between gap-4">
-          <p className="text-[0.75rem]"
+          <p className="text-xs"
              style={{ color: apply.error ? "var(--ux-orange-ink)" : saved ? "var(--ux-green-ink)" : "var(--ux-faint)" }}>
             {apply.error ? apply.error
               : saved ? "Saved. The app is now in your chosen language."
@@ -89,10 +89,10 @@ export default function LanguageSettings() {
               >
                 <span className="min-w-0 flex-1">
                   {/* Her language in her own script — the whole point. */}
-                  <span className="block truncate text-[1rem] font-semibold" style={{ color: "var(--ux-ink)" }}>
+                  <span className="block truncate text-base font-semibold" style={{ color: "var(--ux-ink)" }}>
                     {l.nativeName}
                   </span>
-                  <span className="mt-0.5 block truncate text-[0.75rem]" style={{ color: "var(--ux-muted)" }}>
+                  <span className="mt-0.5 block truncate text-xs" style={{ color: "var(--ux-muted)" }}>
                     {l.name}{l.dir === "rtl" ? " · right to left" : ""}
                   </span>
                 </span>
@@ -112,13 +112,13 @@ export default function LanguageSettings() {
             "The language Sakhi listens in, replies in, and speaks aloud.",
             "Emails and text messages we send you.",
           ].map((t) => (
-            <li key={t} className="flex items-start gap-2.5 text-[0.8125rem] leading-snug" style={{ color: "var(--ux-ink-2)" }}>
+            <li key={t} className="flex items-start gap-2.5 text-xsm leading-snug" style={{ color: "var(--ux-ink-2)" }}>
               <Icons.Check className="mt-[2px] h-[14px] w-[14px] shrink-0" style={{ color: "var(--ux-green-ink)" }} strokeWidth={2.6} />
               {t}
             </li>
           ))}
         </ul>
-        <p className="mt-3.5 text-[0.75rem] leading-relaxed" style={{ color: "var(--ux-muted)" }}>
+        <p className="mt-3.5 text-xs leading-relaxed" style={{ color: "var(--ux-muted)" }}>
           Course videos and what other women have written stay in the language they were made in.
         </p>
       </Card>

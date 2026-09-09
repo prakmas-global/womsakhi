@@ -81,7 +81,7 @@ export default function HaqDetail({ params }: { params: Promise<{ id: string }> 
       <div className="flex flex-col gap-5">
 
         <Link href={"/app/haq"}
-                className="ux-press inline-flex w-fit items-center gap-1.5 text-[0.8125rem] font-semibold"
+                className="ux-press inline-flex w-fit items-center gap-1.5 text-xsm font-semibold"
                 style={{ color: v("--ux-muted") }}>
           <I name="ArrowLeft" className="h-[15px] w-[15px]" /> All of your Haq
         </Link>
@@ -94,19 +94,19 @@ export default function HaqDetail({ params }: { params: Promise<{ id: string }> 
               <div className="flex flex-wrap items-center gap-2">
                 <h1 className="text-[clamp(1.25rem,2.6vw,1.625rem)] font-extrabold leading-tight tracking-[-0.03em]"
                     style={{ color: v("--ux-ink") }}>{h.name}</h1>
-                <span className="rounded-full px-2.5 py-[3px] text-[0.6875rem] font-bold uppercase tracking-[0.07em]"
+                <span className="rounded-full px-2.5 py-[3px] text-2xs font-bold uppercase tracking-[0.07em]"
                       style={{ background: v("--ux-surface"), color: v(tone.ink) }}>
                   {STATUS_LABEL[h.status]}
                 </span>
               </div>
-              <p className="mt-1 text-[0.8125rem] font-semibold" style={{ color: v("--ux-ink-2") }}>{h.body}</p>
-              <p className="mt-2 text-[0.875rem] leading-relaxed" style={{ color: v("--ux-ink-2") }}>{h.gives}</p>
+              <p className="mt-1 text-xsm font-semibold" style={{ color: v("--ux-ink-2") }}>{h.body}</p>
+              <p className="mt-2 text-sm leading-relaxed" style={{ color: v("--ux-ink-2") }}>{h.gives}</p>
             </div>
             {h.amountMinor > 0 && (
               <div className="shrink-0 text-right">
-                <p className="text-[1.5rem] font-extrabold leading-none tabular-nums"
+                <p className="text-2xl font-extrabold leading-none tabular-nums"
                    style={{ color: v("--ux-ink") }}>{formatRupees(h.amountMinor)}</p>
-                <p className="mt-1 text-[0.6875rem]" style={{ color: v("--ux-ink-2") }}>{h.cadence}</p>
+                <p className="mt-1 text-2xs" style={{ color: v("--ux-ink-2") }}>{h.cadence}</p>
               </div>
             )}
           </div>
@@ -120,15 +120,15 @@ export default function HaqDetail({ params }: { params: Promise<{ id: string }> 
           <Card style={{ borderColor: v(h.status === "stopped" ? "--ux-danger-solid" : "--ux-amber") }}>
             <div className="flex flex-wrap items-start justify-between gap-3">
               <div className="min-w-0 flex-1">
-                <p className="text-[0.6875rem] font-extrabold uppercase tracking-[0.14em]"
+                <p className="text-2xs font-extrabold uppercase tracking-[0.14em]"
                    style={{ color: v(tone.ink) }}>
                   {h.status === "stopped" ? "Why it stopped" : "What has to happen"}
                 </p>
-                <p className="mt-1.5 text-[1rem] font-bold" style={{ color: v("--ux-ink") }}>
+                <p className="mt-1.5 text-base font-bold" style={{ color: v("--ux-ink") }}>
                   {h.action ?? "Get it started again"}
                 </p>
                 {h.stoppedBecause && (
-                  <p className="mt-1.5 max-w-[54ch] text-[0.8125rem] leading-relaxed"
+                  <p className="mt-1.5 max-w-[54ch] text-xsm leading-relaxed"
                      style={{ color: v("--ux-ink-2") }}>{h.stoppedBecause}</p>
                 )}
               </div>
@@ -156,10 +156,10 @@ export default function HaqDetail({ params }: { params: Promise<{ id: string }> 
             <div className="flex items-start gap-3">
               <I name="Info" className="mt-[2px] h-[16px] w-[16px] shrink-0" style={{ color: v("--ux-muted") }} />
               <div>
-                <p className="text-[0.8125rem] font-bold" style={{ color: v("--ux-ink") }}>
+                <p className="text-xsm font-bold" style={{ color: v("--ux-ink") }}>
                   Not being decided right now
                 </p>
-                <p className="mt-1 text-[0.8125rem] leading-relaxed" style={{ color: v("--ux-ink-2") }}>
+                <p className="mt-1 text-xsm leading-relaxed" style={{ color: v("--ux-ink-2") }}>
                   {h.openNote}
                 </p>
               </div>
@@ -188,8 +188,8 @@ export default function HaqDetail({ params }: { params: Promise<{ id: string }> 
                   <I name={p.state === "held" ? "Check" : "X"} className="h-[15px] w-[15px]" sw={3} />
                 </span>
                 <div className="min-w-0 flex-1">
-                  <p className="text-[0.8125rem] font-semibold" style={{ color: v("--ux-ink") }}>{p.name}</p>
-                  <p className="text-[0.75rem]" style={{ color: v("--ux-muted") }}>
+                  <p className="text-xsm font-semibold" style={{ color: v("--ux-ink") }}>{p.name}</p>
+                  <p className="text-xs" style={{ color: v("--ux-muted") }}>
                     {p.state === "held" ? p.note : `Get it from: ${p.from}`}
                   </p>
                 </div>
@@ -210,7 +210,7 @@ export default function HaqDetail({ params }: { params: Promise<{ id: string }> 
               icon="Users"
             />
             <Card pad={16} style={{ background: v("--ux-brand-tint"), borderColor: "transparent" }}>
-              <p className="text-[0.8125rem] leading-relaxed" style={{ color: v("--ux-ink-2") }}>
+              <p className="text-xsm leading-relaxed" style={{ color: v("--ux-ink-2") }}>
                 Filling the form together helps. <b>Going with someone helps almost twice as much</b> —
                 and it helps most for women who find it hardest to travel alone.
               </p>
@@ -231,7 +231,7 @@ export default function HaqDetail({ params }: { params: Promise<{ id: string }> 
 
         {note && (
           <Card pad={16} style={{ background: v("--ux-tint-green"), borderColor: "transparent" }}>
-            <p className="flex items-center gap-2 text-[0.8125rem] font-semibold" style={{ color: v("--ux-green-ink") }}>
+            <p className="flex items-center gap-2 text-xsm font-semibold" style={{ color: v("--ux-green-ink") }}>
               <I name="CheckCircle2" className="h-[16px] w-[16px]" />{note}
             </p>
           </Card>

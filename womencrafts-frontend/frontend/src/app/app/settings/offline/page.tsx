@@ -40,13 +40,13 @@ export default function OfflineSettings() {
       <Card>
         <div className="flex items-center justify-between gap-4">
           <div className="min-w-0">
-            <p className="text-[0.8125rem] font-semibold" style={{ color: "var(--ux-ink)" }}>On your phone now</p>
-            <p className="mt-1 text-[0.75rem]" style={{ color: "var(--ux-muted)" }}>
+            <p className="text-xsm font-semibold" style={{ color: "var(--ux-ink)" }}>On your phone now</p>
+            <p className="mt-1 text-xs" style={{ color: "var(--ux-muted)" }}>
               {items.filter((i) => i.on).length} of {items.length} kept offline
             </p>
           </div>
-          <p className="shrink-0 text-[1.5rem] font-bold tabular-nums" style={{ color: "var(--ux-ink)" }}>
-            {total.toFixed(1)} <span className="text-[0.875rem] font-semibold">MB</span>
+          <p className="shrink-0 text-2xl font-bold tabular-nums" style={{ color: "var(--ux-ink)" }}>
+            {total.toFixed(1)} <span className="text-sm font-semibold">MB</span>
           </p>
         </div>
         <div className="mt-4 border-t pt-2" style={{ borderColor: "var(--ux-line)" }}>
@@ -65,13 +65,13 @@ export default function OfflineSettings() {
           {items.map((i) => (
             <li key={i.id} className="flex items-center gap-3 py-2.5">
               <div className="min-w-0 flex-1">
-                <p className="flex flex-wrap items-center gap-2 text-[0.8125rem] font-medium" style={{ color: "var(--ux-ink)" }}>
+                <p className="flex flex-wrap items-center gap-2 text-xsm font-medium" style={{ color: "var(--ux-ink)" }}>
                   {i.label}
                   {/* Kept whatever she chooses — she needs these when there is
                       no signal, which is when she cannot download them. */}
                   {i.always && <Pill tone="green" size="sm">Always kept</Pill>}
                 </p>
-                <p className="mt-0.5 text-[0.75rem]" style={{ color: "var(--ux-muted)" }}>
+                <p className="mt-0.5 text-xs" style={{ color: "var(--ux-muted)" }}>
                   {i.size}{i.always ? " · needed when you have no signal" : ""}
                 </p>
               </div>
@@ -106,13 +106,13 @@ export default function OfflineSettings() {
             "Any course you have downloaded.",
             "Every helpline number on the Safety screen.",
           ].map((t) => (
-            <li key={t} className="flex items-start gap-2.5 text-[0.8125rem] leading-snug" style={{ color: "var(--ux-ink-2)" }}>
+            <li key={t} className="flex items-start gap-2.5 text-xsm leading-snug" style={{ color: "var(--ux-ink-2)" }}>
               <Icons.Check className="mt-[2px] h-[14px] w-[14px] shrink-0" style={{ color: "var(--ux-green-ink)" }} strokeWidth={2.6} />
               {t}
             </li>
           ))}
         </ul>
-        <p className="mt-3.5 flex items-start gap-2.5 rounded-[12px] p-3 text-[0.75rem] leading-relaxed"
+        <p className="mt-3.5 flex items-start gap-2.5 rounded-[12px] p-3 text-xs leading-relaxed"
            style={{ background: "var(--ux-surface-2)", color: "var(--ux-ink-2)" }}>
           <Icons.RefreshCw className="mt-[1px] h-[14px] w-[14px] shrink-0" style={{ color: "var(--ux-brand)" }} />
           Anything you change offline is sent the moment you have signal again. You do not need to do anything.

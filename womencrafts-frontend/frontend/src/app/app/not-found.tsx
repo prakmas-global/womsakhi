@@ -25,10 +25,10 @@ export default function NotFound() {
                  style={{ color: "var(--ux-brand)" }} sw={1.8} />
             </span>
 
-            <h1 className="mt-4 text-[1.125rem] font-bold" style={{ color: "var(--ux-ink)" }}>
+            <h1 className="mt-4 text-lg font-bold" style={{ color: "var(--ux-ink)" }}>
               This page has moved
             </h1>
-            <p className="mt-1.5 max-w-[38ch] text-[0.875rem] leading-relaxed"
+            <p className="mt-1.5 max-w-[38ch] text-sm leading-relaxed"
                style={{ color: "var(--ux-muted)" }}>
               The link you followed points somewhere that is no longer here. Nothing is wrong
               with your account, and nothing has been lost.
@@ -39,7 +39,7 @@ export default function NotFound() {
               <Btn href="/app/search" variant="outline" icon="Search">Search the app</Btn>
             </div>
 
-            <p className="mt-4 text-[0.75rem]" style={{ color: "var(--ux-muted)" }}>
+            <p className="mt-4 text-xs" style={{ color: "var(--ux-muted)" }}>
               Still stuck? <Link href="/app/help" className="underline"
                                  style={{ color: "var(--ux-brand)" }}>Get help</Link>
             </p>

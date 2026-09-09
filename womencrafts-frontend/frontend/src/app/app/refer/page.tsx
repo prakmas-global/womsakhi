@@ -56,9 +56,9 @@ export default function ReferPage() {
                 "There is no limit, and no reward for you if she never starts.",
               ].map((t, i) => (
                 <li key={t} className="flex items-start gap-2.5">
-                  <span className="grid h-[20px] w-[20px] shrink-0 place-items-center rounded-full text-[0.6875rem] font-bold"
+                  <span className="grid h-[20px] w-[20px] shrink-0 place-items-center rounded-full text-2xs font-bold"
                         style={{ background: "var(--ux-brand-tint)", color: "var(--ux-brand)" }}>{i + 1}</span>
-                  <span className="text-[0.8125rem] leading-snug" style={{ color: "var(--ux-ink-2)" }}>{t}</span>
+                  <span className="text-xsm leading-snug" style={{ color: "var(--ux-ink-2)" }}>{t}</span>
                 </li>
               ))}
             </ol>
@@ -66,7 +66,7 @@ export default function ReferPage() {
 
           <Card className="ux-onscroll-soft">
             <SectionHead title="Please do not" icon="ShieldAlert" />
-            <p className="text-[0.8125rem] leading-relaxed" style={{ color: "var(--ux-ink-2)" }}>
+            <p className="text-xsm leading-relaxed" style={{ color: "var(--ux-ink-2)" }}>
               Share it with women who would actually use WomSakhi. Posting it to strangers gets accounts
               closed — hers and yours — and helps nobody.
             </p>
@@ -74,8 +74,8 @@ export default function ReferPage() {
         </div>
       }
     >
-      <h1 className="text-[1.5rem] font-bold" style={{ color: "var(--ux-ink)" }}>Refer a friend</h1>
-      <p className="mb-[20px] mt-1.5 text-[0.8125rem]" style={{ color: "var(--ux-muted)" }}>
+      <h1 className="text-2xl font-bold" style={{ color: "var(--ux-ink)" }}>Refer a friend</h1>
+      <p className="mb-[20px] mt-1.5 text-xsm" style={{ color: "var(--ux-muted)" }}>
         You have brought {REFERRALS.length} {plural("woman", REFERRALS.length)} in so far.
       </p>
 
@@ -90,10 +90,10 @@ export default function ReferPage() {
              className="ux-float pointer-events-none absolute -bottom-2 end-6 h-[124px] w-auto object-contain" />
         <div className="relative max-w-[62%]">
           {/* The condition travels with the number, always. */}
-          <p className="text-[0.8125rem]" style={{ color: "rgba(255,255,255,0.86)" }}>
+          <p className="text-xsm" style={{ color: "rgba(255,255,255,0.86)" }}>
             {rupees(REFER.reward_minor)} for each woman you bring — {REFER.condition}.
           </p>
-          <p className="mt-2 text-[1.75rem] font-bold leading-none text-white">{REFER.code}</p>
+          <p className="mt-2 text-2xlm font-bold leading-none text-white">{REFER.code}</p>
 
           {/* Announced, not just shown. The label swap on the button is silent
               to a screen reader — she presses Copy and hears nothing at all. */}
@@ -114,7 +114,7 @@ export default function ReferPage() {
             </Btn>
           </div>
 
-          <p className="mt-3 truncate text-[0.75rem]" style={{ color: "rgba(255,255,255,0.7)" }}>{REFER.link}</p>
+          <p className="mt-3 truncate text-xs" style={{ color: "rgba(255,255,255,0.7)" }}>{REFER.link}</p>
         </div>
       </div>
 
@@ -127,8 +127,8 @@ export default function ReferPage() {
             <div className="flex items-center gap-3.5">
               <IconTile icon={icon} tint={tint} ink={ink} size={44} radius={12} />
               <div className="min-w-0">
-                <p className="text-[1.25rem] font-bold leading-none tabular-nums" style={{ color: "var(--ux-ink)" }}>{v}</p>
-                <p className="mt-1.5 text-[0.75rem]" style={{ color: "var(--ux-muted)" }}>{label}</p>
+                <p className="text-xl font-bold leading-none tabular-nums" style={{ color: "var(--ux-ink)" }}>{v}</p>
+                <p className="mt-1.5 text-xs" style={{ color: "var(--ux-muted)" }}>{label}</p>
               </div>
             </div>
           </Card>
@@ -149,25 +149,25 @@ export default function ReferPage() {
                   </span>
                   <div className="min-w-0 flex-1">
                     <div className="flex items-start gap-2">
-                      <h3 className="min-w-0 flex-1 truncate text-[0.875rem] font-semibold" style={{ color: "var(--ux-ink)" }}>
+                      <h3 className="min-w-0 flex-1 truncate text-sm font-semibold" style={{ color: "var(--ux-ink)" }}>
                         {r.name}
                       </h3>
                       <Pill tone={r.state === "Earning" ? "green" : "neutral"} size="sm">{r.state}</Pill>
                     </div>
-                    <p className="mt-1 text-[0.75rem]" style={{ color: "var(--ux-muted)" }}>Joined {r.joined}</p>
-                    <p className="mt-1.5 text-[0.8125rem]" style={{ color: "var(--ux-ink-2)" }}>{r.note}</p>
+                    <p className="mt-1 text-xs" style={{ color: "var(--ux-muted)" }}>Joined {r.joined}</p>
+                    <p className="mt-1.5 text-xsm" style={{ color: "var(--ux-ink-2)" }}>{r.note}</p>
                   </div>
                   <div className="shrink-0 text-end">
                     {r.reward_minor > 0 ? (
                       <>
-                        <p className="text-[1rem] font-bold tabular-nums" style={{ color: "var(--ux-green-ink)" }}>
+                        <p className="text-base font-bold tabular-nums" style={{ color: "var(--ux-green-ink)" }}>
                           +{rupees(r.reward_minor)}
                         </p>
-                        <p className="mt-0.5 text-[0.6875rem]" style={{ color: "var(--ux-faint)" }}>paid to you</p>
+                        <p className="mt-0.5 text-2xs" style={{ color: "var(--ux-faint)" }}>paid to you</p>
                       </>
                     ) : (
                       /* Never imply a reward that has not been earned. */
-                      <p className="text-[0.75rem] leading-snug" style={{ color: "var(--ux-faint)" }}>
+                      <p className="text-xs leading-snug" style={{ color: "var(--ux-faint)" }}>
                         Nothing yet —<br />she has not finished a course
                       </p>
                     )}

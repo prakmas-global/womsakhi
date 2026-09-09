@@ -95,8 +95,8 @@ export default function NewCircle() {
             <span className="grid h-[68px] w-[68px] place-items-center rounded-full" style={{ background: "var(--ux-tint-green)" }}>
               <Icons.CheckCheck className="h-[32px] w-[32px]" style={{ color: "var(--ux-green-ink)" }} strokeWidth={2} />
             </span>
-            <h1 className="mt-4 text-[1.25rem] font-bold" style={{ color: "var(--ux-ink)" }}>{created.name} exists</h1>
-            <p className="mt-2 max-w-[42ch] text-[0.875rem] leading-relaxed" style={{ color: "var(--ux-ink-2)" }}>
+            <h1 className="mt-4 text-xl font-bold" style={{ color: "var(--ux-ink)" }}>{created.name} exists</h1>
+            <p className="mt-2 max-w-[42ch] text-sm leading-relaxed" style={{ color: "var(--ux-ink-2)" }}>
               You are the first member. Nothing starts — and nobody owes anything — until at least three women
               have joined and agreed the order.
             </p>
@@ -122,7 +122,7 @@ export default function NewCircle() {
             {/* The maths, before she can invite anybody. */}
             <Card>
               <SectionHead title="What this means" sub="Recalculates as you type" />
-              <div className="space-y-3 text-[0.8125rem]">
+              <div className="space-y-3 text-xsm">
                 {[
                   ["Each woman pays", `${rupees(monthly_minor)} a month`],
                   ["The pot each month", rupees(pot_minor)],
@@ -136,7 +136,7 @@ export default function NewCircle() {
                   </div>
                 ))}
               </div>
-              <p className="mt-3.5 rounded-[12px] p-3 text-[0.75rem] leading-relaxed"
+              <p className="mt-3.5 rounded-[12px] p-3 text-xs leading-relaxed"
                  style={{ background: "var(--ux-surface-2)", color: "var(--ux-ink-2)" }}>
                 Nobody gains or loses money overall — a circle turns small monthly amounts into one lump sum
                 when your turn comes. What it costs is <strong style={{ color: "var(--ux-ink)" }}>{rupees(monthly_minor)}
@@ -152,7 +152,7 @@ export default function NewCircle() {
                   "Agree the order together, in the open, at the start.",
                   "Decide now what happens if somebody cannot pay one month.",
                 ].map((t) => (
-                  <li key={t} className="flex items-start gap-2.5 text-[0.8125rem] leading-snug" style={{ color: "var(--ux-ink-2)" }}>
+                  <li key={t} className="flex items-start gap-2.5 text-xsm leading-snug" style={{ color: "var(--ux-ink-2)" }}>
                     <Icons.Dot className="mt-[1px] h-[15px] w-[15px] shrink-0" style={{ color: "var(--ux-orange-ink)" }} />
                     {t}
                   </li>
@@ -164,16 +164,16 @@ export default function NewCircle() {
       }
     >
       <Link href="/app/circles"
-            className="ux-hov -my-1 mb-3.5 inline-flex items-center gap-1.5 py-1 text-[0.8125rem] font-medium"
+            className="ux-hov -my-1 mb-3.5 inline-flex items-center gap-1.5 py-1 text-xsm font-medium"
             style={{ color: "var(--ux-brand)" }}>
         <Icons.ArrowLeft className="ux-ico h-4 w-4" /> All circles
       </Link>
 
-      <p className="text-[0.8125rem]" style={{ color: "var(--ux-faint)" }}>Step {step} of 2</p>
-      <h1 className="mt-1 text-[1.5rem] font-bold" style={{ color: "var(--ux-ink)" }}>
+      <p className="text-xsm" style={{ color: "var(--ux-faint)" }}>Step {step} of 2</p>
+      <h1 className="mt-1 text-2xl font-bold" style={{ color: "var(--ux-ink)" }}>
         {step === 1 ? "What kind of circle?" : `Set up ${form.name || "your circle"}`}
       </h1>
-      <p className="mb-[20px] mt-1.5 text-[0.8125rem]" style={{ color: "var(--ux-muted)" }}>
+      <p className="mb-[20px] mt-1.5 text-xsm" style={{ color: "var(--ux-muted)" }}>
         {step === 1
           ? "Three kinds, and they work differently. Only one of them involves money."
           : "Nothing is committed until women join and agree."}
@@ -198,10 +198,10 @@ export default function NewCircle() {
                 <IconTile icon={k.icon} tint={k.tint} ink={k.ink} size={48} radius={13} />
                 <span className="min-w-0 flex-1">
                   <span className="flex items-center gap-2">
-                    <span className="text-[1rem] font-semibold" style={{ color: "var(--ux-ink)" }}>{k.label}</span>
+                    <span className="text-base font-semibold" style={{ color: "var(--ux-ink)" }}>{k.label}</span>
                     {k.id === "Savings" && <Pill tone="green" size="sm">Involves money</Pill>}
                   </span>
-                  <span className="mt-1 block text-[0.8125rem] leading-snug" style={{ color: "var(--ux-muted)" }}>
+                  <span className="mt-1 block text-xsm leading-snug" style={{ color: "var(--ux-muted)" }}>
                     {k.note}
                   </span>
                 </span>
@@ -239,7 +239,7 @@ export default function NewCircle() {
                 onChange={(e) => setForm((f) => ({ ...f, about: e.target.value }))}
                 rows={3}
                 aria-label="Say what it is for"
-                className="ux-sq w-full resize-y rounded-[12px] border p-3.5 text-[0.875rem] leading-relaxed outline-none"
+                className="ux-sq w-full resize-y rounded-[12px] border p-3.5 text-sm leading-relaxed outline-none"
                 style={{ borderColor: "var(--ux-line-strong)", background: "var(--ux-surface)", color: "var(--ux-ink)" }}
               />
             </Field>
@@ -248,14 +248,14 @@ export default function NewCircle() {
       )}
 
       {problem && (
-        <p role="alert" className="ux-slide-up mt-[20px] text-[0.8125rem] leading-relaxed"
+        <p role="alert" className="ux-slide-up mt-[20px] text-xsm leading-relaxed"
            style={{ color: "var(--ux-orange-ink)" }}>
           {problem}
         </p>
       )}
 
       <div className="mt-[20px] flex items-center justify-between gap-4">
-        <p className="text-[0.75rem]" style={{ color: "var(--ux-faint)" }}>
+        <p className="text-xs" style={{ color: "var(--ux-faint)" }}>
           {step === 1 && !kind ? "Pick a kind to continue."
             : step === 2 && !ready ? "It needs a name" + (savings ? ", at least 3 women and an amount." : ".")
             : "Nothing is committed yet."}

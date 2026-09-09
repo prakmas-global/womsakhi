@@ -10,8 +10,6 @@ export default function Error({ error, reset }: { error: Error & { digest?: stri
       what="the notifications"
       reset={reset}
       digest={error.digest}
-      home="/dashboard"
-      homeLabel="Back to dashboard"
     />
   );
 }

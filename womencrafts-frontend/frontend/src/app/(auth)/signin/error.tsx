@@ -10,8 +10,6 @@ export default function Error({ error, reset }: { error: Error & { digest?: stri
       what="the sign-in page"
       reset={reset}
       digest={error.digest}
-      home="/signin"
-      homeLabel="Back to sign in"
     />
   );
 }

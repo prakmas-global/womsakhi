@@ -51,14 +51,14 @@ export default function ContractsPage() {
       <div className="flex flex-col gap-5">
 
         <header>
-          <p className="text-[0.6875rem] font-extrabold uppercase tracking-[0.2em]" style={{ color: v("--ux-brand") }}>
+          <p className="text-2xs font-extrabold uppercase tracking-[0.2em]" style={{ color: v("--ux-brand") }}>
             Big orders
           </p>
           <h1 className="mt-2 text-[clamp(1.5rem,3.2vw,2.125rem)] font-extrabold leading-[1.1] tracking-[-0.035em]"
               style={{ color: v("--ux-ink") }}>
             Orders too big for one woman
           </h1>
-          <p className="mt-1.5 max-w-[58ch] text-[0.875rem] leading-relaxed" style={{ color: v("--ux-muted") }}>
+          <p className="mt-1.5 max-w-[58ch] text-sm leading-relaxed" style={{ color: v("--ux-muted") }}>
             Companies want hundreds of pieces. Fourteen of you can make that. The catch is never the
             making — it is that they pay months later, and you buy the cloth today. Every order below
             shows you exactly how long the wait is before you agree to anything.
@@ -67,7 +67,7 @@ export default function ContractsPage() {
 
         {note && (
           <Card pad={16} style={{ background: v("--ux-tint-green"), borderColor: "transparent" }}>
-            <p className="flex items-center gap-2 text-[0.8125rem] font-semibold" style={{ color: v("--ux-green-ink") }}>
+            <p className="flex items-center gap-2 text-xsm font-semibold" style={{ color: v("--ux-green-ink") }}>
               <I name="CheckCircle2" className="h-[16px] w-[16px]" />{note}
             </p>
           </Card>
@@ -92,12 +92,12 @@ export default function ContractsPage() {
                 <div className="flex flex-wrap items-center gap-4">
                   <IconTile icon="Trophy" tint="--ux-tint-green" ink="--ux-green-ink" size={42} />
                   <div className="min-w-0 flex-1">
-                    <p className="text-[1rem] font-bold" style={{ color: v("--ux-ink") }}>{c.what}</p>
-                    <p className="mt-0.5 text-[0.8125rem]" style={{ color: v("--ux-muted") }}>
+                    <p className="text-base font-bold" style={{ color: v("--ux-ink") }}>{c.what}</p>
+                    <p className="mt-0.5 text-xsm" style={{ color: v("--ux-muted") }}>
                       {c.buyer} · they pay in {c.paysInDays} days · yours alone
                     </p>
                   </div>
-                  <p className="shrink-0 text-[1.125rem] font-extrabold tabular-nums" style={{ color: v("--ux-ink") }}>
+                  <p className="shrink-0 text-lg font-extrabold tabular-nums" style={{ color: v("--ux-ink") }}>
                     {formatRupees(c.valueMinor)}
                   </p>
                 </div>
@@ -119,13 +119,13 @@ export default function ContractsPage() {
                 <I name={r.done ? "CheckCircle2" : "Circle"} className="h-[19px] w-[19px] shrink-0"
                    style={{ color: v(r.done ? "--ux-green-ink" : "--ux-line-strong") }} sw={2.2} />
                 <div className="min-w-0 flex-1">
-                  <p className="text-[0.875rem] font-bold" style={{ color: v(r.done ? "--ux-muted" : "--ux-ink") }}>
+                  <p className="text-sm font-bold" style={{ color: v(r.done ? "--ux-muted" : "--ux-ink") }}>
                     {r.what}
                   </p>
-                  <p className="mt-0.5 text-[0.75rem]" style={{ color: v("--ux-muted") }}>{r.why}</p>
+                  <p className="mt-0.5 text-xs" style={{ color: v("--ux-muted") }}>{r.why}</p>
                 </div>
                 {r.costMinor && (
-                  <span className="shrink-0 text-[0.8125rem] font-bold tabular-nums" style={{ color: v("--ux-ink-2") }}>
+                  <span className="shrink-0 text-xsm font-bold tabular-nums" style={{ color: v("--ux-ink-2") }}>
                     {formatRupees(r.costMinor)}/yr
                   </span>
                 )}
@@ -137,7 +137,7 @@ export default function ContractsPage() {
         <Card pad={16} style={{ background: v("--ux-surface-2"), borderColor: "transparent" }}>
           <div className="flex items-start gap-3">
             <I name="Info" className="mt-[2px] h-[16px] w-[16px] shrink-0" style={{ color: v("--ux-muted") }} />
-            <p className="text-[0.8125rem] leading-relaxed" style={{ color: v("--ux-ink-2") }}>
+            <p className="text-xsm leading-relaxed" style={{ color: v("--ux-ink-2") }}>
               We do not lend you the cloth money and we do not buy your invoice — both of those turn
               a good month into a debt. What we do is show the wait honestly before you commit, split
               the order across enough women that no one of you is carrying it, and record who paid on
@@ -172,17 +172,17 @@ function ContractCard({ c, gaps, joined, terms, setTerms, onJoin }: {
       <div className="flex flex-wrap items-start gap-4 px-5 pt-5">
         <div className="min-w-0 flex-1">
           <div className="flex flex-wrap items-center gap-2">
-            <p className="text-[1.125rem] font-extrabold leading-tight tracking-[-0.02em]" style={{ color: v("--ux-ink") }}>
+            <p className="text-lg font-extrabold leading-tight tracking-[-0.02em]" style={{ color: v("--ux-ink") }}>
               {c.what}
             </p>
             {c.state === "bidding" && <Pill tone="brand" size="sm">Bidding now</Pill>}
           </div>
-          <p className="mt-1 text-[0.8125rem]" style={{ color: v("--ux-muted") }}>
+          <p className="mt-1 text-xsm" style={{ color: v("--ux-muted") }}>
             {c.buyer}
             {c.needsCircle ? ` · needs ${c.circleSize} women together` : " · one woman can do this"}
           </p>
         </div>
-        <p className="shrink-0 text-[1.25rem] font-extrabold leading-none tabular-nums" style={{ color: v("--ux-ink") }}>
+        <p className="shrink-0 text-xl font-extrabold leading-none tabular-nums" style={{ color: v("--ux-ink") }}>
           {formatRupees(c.valueMinor)}
         </p>
       </div>
@@ -207,20 +207,20 @@ function ContractCard({ c, gaps, joined, terms, setTerms, onJoin }: {
 
         <div className="mt-3 flex items-start justify-between gap-2">
           <div className="text-left">
-            <p className="text-[0.75rem] font-bold" style={{ color: v("--ux-brand") }}>You buy cloth</p>
-            <p className="text-[0.6875rem] tabular-nums" style={{ color: v("--ux-muted") }}>−{formatRupees(materials)}</p>
+            <p className="text-xs font-bold" style={{ color: v("--ux-brand") }}>You buy cloth</p>
+            <p className="text-2xs tabular-nums" style={{ color: v("--ux-muted") }}>−{formatRupees(materials)}</p>
           </div>
           <div className="text-center">
-            <p className="text-[0.75rem] font-bold" style={{ color: v("--ux-ink-2") }}>You deliver</p>
-            <p className="text-[0.6875rem]" style={{ color: v("--ux-muted") }}>Work done</p>
+            <p className="text-xs font-bold" style={{ color: v("--ux-ink-2") }}>You deliver</p>
+            <p className="text-2xs" style={{ color: v("--ux-muted") }}>Work done</p>
           </div>
           <div className="text-right">
-            <p className="text-[0.75rem] font-bold" style={{ color: v("--ux-green-ink") }}>They pay</p>
-            <p className="text-[0.6875rem] tabular-nums" style={{ color: v("--ux-muted") }}>{formatRupees(c.valueMinor)}</p>
+            <p className="text-xs font-bold" style={{ color: v("--ux-green-ink") }}>They pay</p>
+            <p className="text-2xs tabular-nums" style={{ color: v("--ux-muted") }}>{formatRupees(c.valueMinor)}</p>
           </div>
         </div>
 
-        <p className="mt-3.5 flex items-start gap-2 rounded-[12px] px-3.5 py-3 text-[0.8125rem] font-semibold leading-relaxed"
+        <p className="mt-3.5 flex items-start gap-2 rounded-[12px] px-3.5 py-3 text-xsm font-semibold leading-relaxed"
            style={{ background: v(heavy ? "--ux-danger-tint" : "--ux-tint-amber"),
                     color: v(heavy ? "--ux-ink" : "--ux-amber-ink") }}>
           <I name="Clock" className="mt-[1px] h-[15px] w-[15px] shrink-0" />
@@ -231,7 +231,7 @@ function ContractCard({ c, gaps, joined, terms, setTerms, onJoin }: {
         </p>
 
         {c.missing.length > 0 && (
-          <p className="mt-2 flex items-start gap-2 text-[0.75rem] leading-relaxed" style={{ color: v("--ux-muted") }}>
+          <p className="mt-2 flex items-start gap-2 text-xs leading-relaxed" style={{ color: v("--ux-muted") }}>
             <I name="AlertTriangle" className="mt-[2px] h-[13px] w-[13px] shrink-0" />
             <span>They will ask for: {c.missing.join(", ").toLowerCase()}</span>
           </p>
@@ -243,14 +243,14 @@ function ContractCard({ c, gaps, joined, terms, setTerms, onJoin }: {
         <div className="flex flex-wrap items-center gap-3 px-5 pt-4">
           <div className="flex -space-x-2">
             {Array.from({ length: Math.min(7, c.circleSize) }).map((_, i) => (
-              <span key={i} className="grid h-[26px] w-[26px] place-items-center rounded-full border-2 text-[0.6875rem] font-bold"
+              <span key={i} className="grid h-[26px] w-[26px] place-items-center rounded-full border-2 text-2xs font-bold"
                     style={{ background: v("--ux-brand-tint-2"), color: v("--ux-brand"),
                              borderColor: v("--ux-surface") }}>
                 {"PSKMRLA"[i]}
               </span>
             ))}
           </div>
-          <p className="text-[0.75rem]" style={{ color: v("--ux-muted") }}>
+          <p className="text-xs" style={{ color: v("--ux-muted") }}>
             {c.circleSize} women bidding together · {Math.ceil(qty / c.circleSize)} pieces each
           </p>
         </div>
@@ -269,14 +269,14 @@ function ContractCard({ c, gaps, joined, terms, setTerms, onJoin }: {
               "If they reject a piece, it comes back to whoever made it.",
               "Either side can walk away before work starts. After that, nobody can.",
             ].map((t) => (
-              <li key={t} className="flex items-start gap-2 text-[0.8125rem] leading-relaxed"
+              <li key={t} className="flex items-start gap-2 text-xsm leading-relaxed"
                   style={{ color: v("--ux-ink-2") }}>
                 <I name="Dot" className="mt-[2px] h-[0.875rem] w-[0.875rem] shrink-0" style={{ color: v("--ux-muted") }} />
                 {t}
               </li>
             ))}
           </ul>
-          <p className="mt-3 text-[0.75rem]" style={{ color: v("--ux-muted") }}>
+          <p className="mt-3 text-xs" style={{ color: v("--ux-muted") }}>
             WomSakhi is not a party to this. Read it with someone you trust before you agree.
           </p>
         </div>

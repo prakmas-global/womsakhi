@@ -63,7 +63,11 @@ export default function SakhiAvatar({
       <div
         className="absolute inset-0 -z-10 rounded-full transition-opacity duration-700"
         style={{
-          background: "radial-gradient(circle at 50% 58%, #D21F7C4D, #7440A600 68%)",
+          // Brand magenta at 30%, fading out. Written as a colour-mix on the
+          // token rather than #D21F7C4D so it follows the palette — the second
+          // stop was a purple at zero alpha, which is just `transparent`.
+          background:
+            "radial-gradient(circle at 50% 58%, color-mix(in srgb, var(--color-brand) 30%, transparent), transparent 68%)",
           filter: "blur(26px)",
           opacity: playing ? 0.9 : 0.4,
           transform: "scale(1.15)",

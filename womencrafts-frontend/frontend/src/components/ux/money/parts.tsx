@@ -33,15 +33,15 @@ export const TxnRow = rowMemo(function TxnRow({ item: t, i }: { item: Txn; i: nu
       <IconTile icon={t.icon} tint={t.tint} ink={t.ink} size={42} radius={11} />
 
       <div className="min-w-0 flex-1">
-        <p className="truncate text-[0.875rem] font-semibold" style={{ color: "var(--ux-ink)" }}>{t.label}</p>
-        <p className="mt-0.5 flex flex-wrap items-center gap-x-2 text-[0.75rem]" style={{ color: "var(--ux-muted)" }}>
+        <p className="truncate text-sm font-semibold" style={{ color: "var(--ux-ink)" }}>{t.label}</p>
+        <p className="mt-0.5 flex flex-wrap items-center gap-x-2 text-xs" style={{ color: "var(--ux-muted)" }}>
           {t.source} <span aria-hidden>•</span> {t.when}
         </p>
       </div>
 
       <div className="flex shrink-0 flex-col items-end gap-1">
         <span
-          className="text-[0.875rem] font-bold tabular-nums"
+          className="text-sm font-bold tabular-nums"
           style={{
             color: failed ? "var(--ux-faint)" : t.kind === "credit" ? "var(--ux-green-ink)" : "var(--ux-ink)",
             textDecoration: failed ? "line-through" : "none",
@@ -51,7 +51,7 @@ export const TxnRow = rowMemo(function TxnRow({ item: t, i }: { item: Txn; i: nu
         </span>
         {/* The word, not only the sign: "+₹4,200" and "−₹5,000" differ by one
             glyph, and that glyph is the whole meaning. */}
-        <span className="text-[0.6875rem]" style={{ color: "var(--ux-faint)" }}>
+        <span className="text-2xs" style={{ color: "var(--ux-faint)" }}>
           {failed ? "Failed" : pending ? "On its way" : t.kind === "credit" ? "Received" : "Paid out"}
         </span>
       </div>
@@ -109,7 +109,7 @@ export function EarningsBars({
               title={`${labels[i]}: ${rupees(v)}`}
             />
             <span
-              className="mt-1.5 w-full truncate text-center text-[0.6875rem]"
+              className="mt-1.5 w-full truncate text-center text-2xs"
               style={{ color: last ? "var(--ux-brand)" : "var(--ux-faint)", fontWeight: last ? 700 : 400 }}
             >
               {labels[i]}
@@ -141,13 +141,13 @@ export function SourceSplit({ sources }: { sources: { name: string; minor: numbe
       </div>
       <ul className="ux-stagger mt-3.5 space-y-2.5">
         {sources.map((s) => (
-          <li key={s.name} className="flex items-center gap-2.5 text-[0.8125rem]">
+          <li key={s.name} className="flex items-center gap-2.5 text-xsm">
             <span className="h-[9px] w-[9px] shrink-0 rounded-full" style={{ background: `var(${s.tone})` }} />
             <span className="min-w-0 flex-1 truncate" style={{ color: "var(--ux-ink-2)" }}>{s.name}</span>
             <span className="shrink-0 font-semibold tabular-nums" style={{ color: "var(--ux-ink)" }}>
               {rupees(s.minor)}
             </span>
-            <span className="w-[38px] shrink-0 text-end text-[0.6875rem] tabular-nums" style={{ color: "var(--ux-faint)" }}>
+            <span className="w-[38px] shrink-0 text-end text-2xs tabular-nums" style={{ color: "var(--ux-faint)" }}>
               {Math.round((s.minor / total) * 100)}%
             </span>
           </li>
@@ -164,11 +164,11 @@ export function PayoutMethod({ m }: { m: (typeof import("./data"))["PAYOUT_METHO
          style={{ borderColor: m.primary ? "var(--ux-brand)" : "var(--ux-line)", background: "var(--ux-surface)" }}>
       <IconTile icon={m.icon} tint={m.tint} ink={m.ink} size={40} radius={11} />
       <div className="min-w-0 flex-1">
-        <p className="flex items-center gap-2 truncate text-[0.8125rem] font-semibold" style={{ color: "var(--ux-ink)" }}>
+        <p className="flex items-center gap-2 truncate text-xsm font-semibold" style={{ color: "var(--ux-ink)" }}>
           {m.label}
           {m.verified && <Icons.BadgeCheck className="h-[15px] w-[15px] shrink-0" style={{ color: "var(--ux-blue)" }} />}
         </p>
-        <p className="mt-0.5 truncate text-[0.75rem]" style={{ color: "var(--ux-muted)" }}>{m.detail}</p>
+        <p className="mt-0.5 truncate text-xs" style={{ color: "var(--ux-muted)" }}>{m.detail}</p>
       </div>
       {m.primary && <Pill tone="brand" size="sm">Default</Pill>}
     </div>

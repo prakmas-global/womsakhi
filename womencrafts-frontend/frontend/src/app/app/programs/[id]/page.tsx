@@ -123,13 +123,13 @@ export default function CourseDetail({ params }: { params: Promise<{ id: string 
             {started ? (
               <>
                 <div className="flex items-baseline justify-between">
-                  <span className="text-[0.8125rem]" style={{ color: "var(--ux-muted)" }}>
+                  <span className="text-xsm" style={{ color: "var(--ux-muted)" }}>
                     {done} of {flat.length} lessons
                   </span>
-                  <span className="text-[1.125rem] font-bold tabular-nums" style={{ color: "var(--ux-ink)" }}>{pct}%</span>
+                  <span className="text-lg font-bold tabular-nums" style={{ color: "var(--ux-ink)" }}>{pct}%</span>
                 </div>
                 <div className="mt-2.5"><Progress pct={pct} track="--ux-track" /></div>
-                <p className="mt-2.5 text-[0.75rem] leading-relaxed" style={{ color: "var(--ux-muted)" }}>
+                <p className="mt-2.5 text-xs leading-relaxed" style={{ color: "var(--ux-muted)" }}>
                   {course.hours ? `${course.hours} in total. ` : ""}Fifteen minutes a day finishes
                   this inside a fortnight.
                 </p>
@@ -142,7 +142,7 @@ export default function CourseDetail({ params }: { params: Promise<{ id: string 
                   ["A certificate you can share", "Award"],
                   ["Yours to rewatch, always", "Infinity"],
                 ].map(([t, ic]) => (
-                  <li key={t} className="flex items-center gap-2.5 text-[0.8125rem]" style={{ color: "var(--ux-ink-2)" }}>
+                  <li key={t} className="flex items-center gap-2.5 text-xsm" style={{ color: "var(--ux-ink-2)" }}>
                     <IconTile icon={ic} tint="--ux-tint-lilac" ink="--ux-brand" size={30} radius={9} />
                     {t}
                   </li>
@@ -177,8 +177,8 @@ export default function CourseDetail({ params }: { params: Promise<{ id: string 
                   <img loading="lazy" decoding="async" src="/ux/art/avatar-woman-blazer.webp" alt="" className="ux-art h-full w-full object-cover" />
                 </span>
                 <div className="min-w-0 flex-1">
-                  <p className="truncate text-[0.875rem] font-semibold" style={{ color: "var(--ux-ink)" }}>{course.author}</p>
-                  <p className="mt-0.5 truncate text-[0.75rem]" style={{ color: "var(--ux-muted)" }}>
+                  <p className="truncate text-sm font-semibold" style={{ color: "var(--ux-ink)" }}>{course.author}</p>
+                  <p className="mt-0.5 truncate text-xs" style={{ color: "var(--ux-muted)" }}>
                     Teaches on WomSakhi since 2025
                   </p>
                 </div>
@@ -192,7 +192,7 @@ export default function CourseDetail({ params }: { params: Promise<{ id: string 
       }
     >
       <Link href="/app/programs"
-            className="ux-hov -my-1 mb-3.5 inline-flex items-center gap-1.5 py-1 text-[0.8125rem] font-medium"
+            className="ux-hov -my-1 mb-3.5 inline-flex items-center gap-1.5 py-1 text-xsm font-medium"
             style={{ color: "var(--ux-brand)" }}>
         <Icons.ArrowLeft className="ux-ico h-4 w-4" /> All courses
       </Link>
@@ -206,8 +206,8 @@ export default function CourseDetail({ params }: { params: Promise<{ id: string 
           {course.tag && <span className="absolute start-4 top-4"><Pill tone="brand" size="sm">{course.tag}</Pill></span>}
         </div>
         <div className="p-[20px]">
-          <h1 className="text-[1.5rem] font-bold leading-tight" style={{ color: "var(--ux-ink)" }}>{course.title}</h1>
-          <p className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1.5 text-[0.8125rem]" style={{ color: "var(--ux-muted)" }}>
+          <h1 className="text-2xl font-bold leading-tight" style={{ color: "var(--ux-ink)" }}>{course.title}</h1>
+          <p className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1.5 text-xsm" style={{ color: "var(--ux-muted)" }}>
             <span className="inline-flex items-center gap-1.5"><Icons.PlayCircle className="h-4 w-4" /> {flat.length} lessons</span>
             <span className="inline-flex items-center gap-1.5"><Icons.Clock className="h-4 w-4" /> {course.hours || "—"}</span>
             <span className="inline-flex items-center gap-1.5"><Icons.BarChart3 className="h-4 w-4" /> {course.level}</span>
@@ -217,7 +217,7 @@ export default function CourseDetail({ params }: { params: Promise<{ id: string 
           {started && next && (
             <div className="mt-4 flex items-center gap-3 rounded-[12px] p-3.5" style={{ background: "var(--ux-brand-tint)" }}>
               <Icons.PlayCircle className="h-[20px] w-[20px] shrink-0" style={{ color: "var(--ux-brand)" }} />
-              <p className="min-w-0 flex-1 text-[0.8125rem]" style={{ color: "var(--ux-ink-2)" }}>
+              <p className="min-w-0 flex-1 text-xsm" style={{ color: "var(--ux-ink-2)" }}>
                 You stopped at lesson {next?.n} — <strong style={{ color: "var(--ux-ink)" }}>{next?.title}</strong>
               </p>
               <Btn href={`/app/programs/${course.id}/lesson/${next?.n}`} variant="primary" size="sm" iconEnd="ArrowRight">
@@ -239,7 +239,7 @@ export default function CourseDetail({ params }: { params: Promise<{ id: string 
             "Spend a small budget without wasting it",
             "Know when you can raise your prices",
           ].map((t) => (
-            <li key={t} className="flex items-start gap-2.5 text-[0.8125rem] leading-snug" style={{ color: "var(--ux-ink-2)" }}>
+            <li key={t} className="flex items-start gap-2.5 text-xsm leading-snug" style={{ color: "var(--ux-ink-2)" }}>
               <Icons.Check className="mt-[2px] h-[14px] w-[14px] shrink-0" style={{ color: "var(--ux-green-ink)" }} strokeWidth={2.6} />
               {t}
             </li>
@@ -272,15 +272,15 @@ export default function CourseDetail({ params }: { params: Promise<{ id: string 
                           style={{ background: l.done ? "var(--ux-green-ink)" : current ? "var(--ux-brand-600)" : "var(--ux-track)" }}>
                       {l.done
                         ? <Icons.Check className="h-[12px] w-[12px] text-white" strokeWidth={3} />
-                        : <Icons.Play className="h-[11px] w-[11px]" style={{ color: current ? "#fff" : "var(--ux-muted)" }} fill="currentColor" />}
+                        : <Icons.Play className="h-[11px] w-[11px]" style={{ color: current ? "var(--ux-on-brand)" : "var(--ux-muted)" }} fill="currentColor" />}
                     </span>
                     <span className="min-w-0 flex-1">
-                      <span className="block truncate text-[0.8125rem]"
+                      <span className="block truncate text-xsm"
                             style={{ color: current ? "var(--ux-brand)" : "var(--ux-ink-2)", fontWeight: current ? 600 : 400 }}>
                         <span style={{ color: "var(--ux-faint)" }}>{i + 1}.</span> {l.title}
                       </span>
                       {l.detail && (
-                        <span className="mt-0.5 block truncate text-[0.75rem]" style={{ color: "var(--ux-muted)" }}>
+                        <span className="mt-0.5 block truncate text-xs" style={{ color: "var(--ux-muted)" }}>
                           {l.detail}
                         </span>
                       )}
@@ -289,7 +289,7 @@ export default function CourseDetail({ params }: { params: Promise<{ id: string 
                     {/* Only when the lesson says how long — an empty duration
                         rendering as a bare "min" is the kind of thing that ships. */}
                     {l.duration && (
-                      <span className="shrink-0 text-[0.6875rem]" style={{ color: "var(--ux-faint)" }}>{l.duration}</span>
+                      <span className="shrink-0 text-2xs" style={{ color: "var(--ux-faint)" }}>{l.duration}</span>
                     )}
                   </Link>
                 </li>
@@ -312,8 +312,8 @@ export default function CourseDetail({ params }: { params: Promise<{ id: string 
                     <img loading="lazy" decoding="async" src={c.thumb} alt="" className="ux-art h-full w-full object-cover" />
                   </span>
                   <div className="min-w-0 flex-1">
-                    <h3 className="truncate text-[0.875rem] font-semibold" style={{ color: "var(--ux-ink)" }}>{c.title}</h3>
-                    <p className="mt-0.5 text-[0.75rem]" style={{ color: "var(--ux-muted)" }}>
+                    <h3 className="truncate text-sm font-semibold" style={{ color: "var(--ux-ink)" }}>{c.title}</h3>
+                    <p className="mt-0.5 text-xs" style={{ color: "var(--ux-muted)" }}>
                       {c.lessons} lessons · {c.level}
                     </p>
                   </div>

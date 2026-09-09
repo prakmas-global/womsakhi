@@ -50,14 +50,14 @@ export default function DisputesPage() {
         <Back to="/app/shop" label="Back to your shops" />
 
         <header>
-          <p className="text-[0.6875rem] font-extrabold uppercase tracking-[0.2em]" style={{ color: v("--ux-brand") }}>
+          <p className="text-2xs font-extrabold uppercase tracking-[0.2em]" style={{ color: v("--ux-brand") }}>
             When it goes wrong
           </p>
           <h1 className="mt-2 text-[clamp(1.5rem,3.2vw,2.125rem)] font-extrabold leading-[1.1] tracking-[-0.035em]"
               style={{ color: v("--ux-ink") }}>
             Sorted by someone you both know
           </h1>
-          <p className="mt-1.5 max-w-[58ch] text-[0.875rem] leading-relaxed" style={{ color: v("--ux-muted") }}>
+          <p className="mt-1.5 max-w-[58ch] text-sm leading-relaxed" style={{ color: v("--ux-muted") }}>
             No complaint form, no company deciding who is right. If the two of you cannot agree, a
             woman you both trust hears it out. Your shop is never marked down for this.
           </p>
@@ -65,7 +65,7 @@ export default function DisputesPage() {
 
         {note && (
           <Card pad={16} style={{ background: v("--ux-tint-green"), borderColor: "transparent" }}>
-            <p className="flex items-center gap-2 text-[0.8125rem] font-semibold" style={{ color: v("--ux-green-ink") }}>
+            <p className="flex items-center gap-2 text-xsm font-semibold" style={{ color: v("--ux-green-ink") }}>
               <I name="CheckCircle2" className="h-[16px] w-[16px]" />{note}
             </p>
           </Card>
@@ -78,18 +78,18 @@ export default function DisputesPage() {
               <Card key={d.id} pad={0} style={{ overflow: "hidden" }}>
                 <div className="flex flex-wrap items-start justify-between gap-3 px-5 pt-5">
                   <div className="min-w-0">
-                    <p className="text-[1rem] font-bold leading-snug" style={{ color: v("--ux-ink") }}>
+                    <p className="text-base font-bold leading-snug" style={{ color: v("--ux-ink") }}>
                       {d.about}
                     </p>
-                    <p className="mt-1 text-[0.75rem]" style={{ color: v("--ux-muted") }}>
+                    <p className="mt-1 text-xs" style={{ color: v("--ux-muted") }}>
                       {d.raisedBy === "her" ? `${d.with} raised this` : "You raised this"} · {d.when}
                     </p>
                   </div>
                   <div className="shrink-0 text-right">
-                    <p className="text-[1.125rem] font-extrabold leading-none tabular-nums" style={{ color: v("--ux-ink") }}>
+                    <p className="text-lg font-extrabold leading-none tabular-nums" style={{ color: v("--ux-ink") }}>
                       {formatRupees(d.minor)}
                     </p>
-                    <p className="mt-1 text-[0.6875rem]" style={{ color: v("--ux-muted") }}>is what it is about</p>
+                    <p className="mt-1 text-2xs" style={{ color: v("--ux-muted") }}>is what it is about</p>
                   </div>
                 </div>
 
@@ -105,17 +105,17 @@ export default function DisputesPage() {
                                 style={{ background: v("--ux-tint-violet"), color: v("--ux-violet") }}>
                             <I name="Scale" className="h-[21px] w-[21px]" />
                           </span>
-                          <p className="mt-1.5 text-center text-[0.75rem] font-bold" style={{ color: v("--ux-ink") }}>
+                          <p className="mt-1.5 text-center text-xs font-bold" style={{ color: v("--ux-ink") }}>
                             {d.helper}
                           </p>
-                          <p className="text-center text-[0.6875rem]" style={{ color: v("--ux-muted") }}>
+                          <p className="text-center text-2xs" style={{ color: v("--ux-muted") }}>
                             listening to you both
                           </p>
                         </>
                       ) : (
                         <>
                           <div className="h-[2px] w-full" style={{ background: v("--ux-line-strong") }} />
-                          <p className="mt-2 text-center text-[0.75rem] font-semibold" style={{ color: v("--ux-muted") }}>
+                          <p className="mt-2 text-center text-xs font-semibold" style={{ color: v("--ux-muted") }}>
                             just the two of you
                           </p>
                         </>
@@ -160,8 +160,8 @@ export default function DisputesPage() {
                     <I name="Check" className="h-[16px] w-[16px]" sw={2.6} />
                   </span>
                   <div className="min-w-0 flex-1">
-                    <p className="text-[0.875rem] font-bold" style={{ color: v("--ux-ink") }}>{d.about}</p>
-                    <p className="mt-0.5 text-[0.75rem]" style={{ color: v("--ux-muted") }}>
+                    <p className="text-sm font-bold" style={{ color: v("--ux-ink") }}>{d.about}</p>
+                    <p className="mt-0.5 text-xs" style={{ color: v("--ux-muted") }}>
                       {d.with} · {d.outcome}
                     </p>
                   </div>
@@ -175,7 +175,7 @@ export default function DisputesPage() {
         <Card pad={16} style={{ background: v("--ux-surface-2"), borderColor: "transparent" }}>
           <div className="flex items-start gap-3">
             <I name="ShieldCheck" className="mt-[2px] h-[16px] w-[16px] shrink-0" style={{ color: v("--ux-muted") }} />
-            <p className="text-[0.8125rem] leading-relaxed" style={{ color: v("--ux-ink-2") }}>
+            <p className="text-xsm leading-relaxed" style={{ color: v("--ux-ink-2") }}>
               Having a dispute does not lower your shop, hide your listings, or show anywhere a buyer
               can see. If it counted against you, women would stop raising them — and the woman who
               stops raising them is the one being cheated. The helper is never paid and never takes a
@@ -194,12 +194,12 @@ function Side({ name, sub, tint, ink, letter }: {
   return (
     <div className="flex min-w-[112px] flex-1 flex-col items-center rounded-[12px] px-3 py-4"
          style={{ background: v(tint) }}>
-      <span className="grid h-[40px] w-[40px] place-items-center rounded-full text-[1rem] font-bold"
+      <span className="grid h-[40px] w-[40px] place-items-center rounded-full text-base font-bold"
             style={{ background: v("--ux-surface"), color: v(ink) }}>
         {letter}
       </span>
-      <p className="mt-2 text-center text-[0.8125rem] font-bold" style={{ color: v("--ux-ink") }}>{name}</p>
-      <p className="text-center text-[0.6875rem]" style={{ color: v("--ux-ink-2") }}>{sub}</p>
+      <p className="mt-2 text-center text-xsm font-bold" style={{ color: v("--ux-ink") }}>{name}</p>
+      <p className="text-center text-2xs" style={{ color: v("--ux-ink-2") }}>{sub}</p>
     </div>
   );
 }

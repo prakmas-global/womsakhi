@@ -102,11 +102,11 @@ export default function SecuritySettings() {
         */}
       <Card>
         <SectionHead title="Where you are signed in" />
-        <p className="text-[0.8125rem] leading-relaxed" style={{ color: "var(--ux-ink-2)" }}>
+        <p className="text-xsm leading-relaxed" style={{ color: "var(--ux-ink-2)" }}>
           We do not yet keep a list of the devices you have signed in on, so we cannot show you one.
           We would rather tell you that than show you a list we made up.
         </p>
-        <p className="mt-2.5 text-[0.8125rem] leading-relaxed" style={{ color: "var(--ux-ink-2)" }}>
+        <p className="mt-2.5 text-xsm leading-relaxed" style={{ color: "var(--ux-ink-2)" }}>
           If you think somebody else has been in your account, end every session now. You will be
           signed out here too — that is what &ldquo;everywhere&rdquo; means, and it is the honest
           answer when the device somebody else is holding might be this one.
@@ -123,7 +123,7 @@ export default function SecuritySettings() {
           </Btn>
         </div>
         {endEverywhere.error && (
-          <p role="alert" className="mt-2.5 text-[0.75rem]" style={{ color: "var(--ux-orange-ink)" }}>
+          <p role="alert" className="mt-2.5 text-xs" style={{ color: "var(--ux-orange-ink)" }}>
             {endEverywhere.error}
           </p>
         )}
@@ -149,7 +149,7 @@ export default function SecuritySettings() {
                               transition: "width var(--ux-t) var(--ux-ease-out)" }} />
               </div>
               {/* The word and the reason, not just a coloured bar. */}
-              <p className="mt-1.5 text-[0.75rem]">
+              <p className="mt-1.5 text-xs">
                 <span className="font-semibold" style={{ color: `var(${strength.tone}-ink)` }}>{strength.word}.</span>{" "}
                 <span style={{ color: "var(--ux-muted)" }}>{strength.why}</span>
               </p>
@@ -161,14 +161,14 @@ export default function SecuritySettings() {
                        onChange={(e) => setPw((p) => ({ ...p, again: e.target.value }))} />
           </Field>
           {mismatch && (
-            <p className="flex items-center gap-1.5 text-[0.75rem]" style={{ color: "var(--ux-orange-ink)" }}>
+            <p className="flex items-center gap-1.5 text-xs" style={{ color: "var(--ux-orange-ink)" }}>
               <Icons.AlertCircle className="h-[14px] w-[14px]" /> These two do not match.
             </p>
           )}
 
           {/* -my-1 py-1: the row was 18px tall, under the 24px anything
               clickable needs. The negative margin keeps the spacing. */}
-          <label className="ux-hov -my-1 flex w-fit cursor-pointer items-center gap-2.5 py-1 text-[0.8125rem]"
+          <label className="ux-hov -my-1 flex w-fit cursor-pointer items-center gap-2.5 py-1 text-xsm"
                  style={{ color: "var(--ux-ink-2)" }}>
             <input type="checkbox" checked={show} onChange={(e) => setShow(e.target.checked)}
                    className="h-[18px] w-[18px] cursor-pointer" />
@@ -177,7 +177,7 @@ export default function SecuritySettings() {
         </div>
 
         <div className="mt-4 flex items-center justify-between gap-4 border-t pt-4" style={{ borderColor: "var(--ux-line)" }}>
-          <p className="text-[0.75rem]"
+          <p className="text-xs"
              style={{ color: change.error ? "var(--ux-orange-ink)"
                             : changed ? "var(--ux-green-ink)" : "var(--ux-faint)" }}>
             {change.error ? change.error
@@ -194,14 +194,14 @@ export default function SecuritySettings() {
 
       <Card style={{ borderColor: "var(--ux-orange)" }}>
         <SectionHead title="Close your account" icon="AlertTriangle" />
-        <p className="text-[0.8125rem] leading-relaxed" style={{ color: "var(--ux-ink-2)" }}>
+        <p className="text-xsm leading-relaxed" style={{ color: "var(--ux-ink-2)" }}>
           Your certificates, your shop and your order history go with it, and we cannot bring them back.
           Money still in your wallet is paid out first — that takes up to seven working days.
         </p>
 
         {deleting ? (
           <div className="ux-slide-up mt-4 rounded-[12px] p-3.5" style={{ background: "var(--ux-tint-orange)" }}>
-            <p className="text-[0.8125rem]" style={{ color: "var(--ux-ink-2)" }}>
+            <p className="text-xsm" style={{ color: "var(--ux-ink-2)" }}>
               Type <strong style={{ color: "var(--ux-ink)" }}>CLOSE</strong> to confirm you mean it.
             </p>
             <div className="mt-2.5 flex items-center gap-2.5">
@@ -215,10 +215,10 @@ export default function SecuritySettings() {
           </div>
         ) : closed ? (
           <div className="ux-slide-up mt-4 rounded-[12px] p-4" style={{ background: "var(--ux-surface-2)" }}>
-            <p className="text-[0.875rem] font-semibold" style={{ color: "var(--ux-ink)" }}>
+            <p className="text-sm font-semibold" style={{ color: "var(--ux-ink)" }}>
               Your account closes in 30 days
             </p>
-            <p className="mt-1.5 text-[0.8125rem] leading-relaxed" style={{ color: "var(--ux-ink-2)" }}>
+            <p className="mt-1.5 text-xsm leading-relaxed" style={{ color: "var(--ux-ink-2)" }}>
               Nothing is deleted yet. Sign in any time in the next 30 days and it stops. Money still owed to
               you is paid out first — we will not close an account holding your earnings.
             </p>

@@ -57,7 +57,7 @@ function Results() {
                 <button
                   key={k}
                   onClick={() => setKind(k)}
-                  className="flex w-full items-center justify-between rounded-[8px] px-2.5 py-2 text-[0.8125rem] transition-colors"
+                  className="flex w-full items-center justify-between rounded-[8px] px-2.5 py-2 text-xsm transition-colors"
                   style={{
                     background: kind === k ? "var(--ux-brand-tint)" : "transparent",
                     color: kind === k ? "var(--ux-brand)" : "var(--ux-ink-2)",
@@ -65,7 +65,7 @@ function Results() {
                   }}
                 >
                   {k === "All" ? "Everything" : plural(k)}
-                  <span className="text-[0.75rem]" style={{ color: "var(--ux-faint)" }}>{counts[k] ?? 0}</span>
+                  <span className="text-xs" style={{ color: "var(--ux-faint)" }}>{counts[k] ?? 0}</span>
                 </button>
               ))}
             </div>
@@ -76,10 +76,10 @@ function Results() {
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img loading="lazy" decoding="async" src="/ux/art/mascot-robot-reading.webp" alt=""
                  className="ux-float pointer-events-none absolute -bottom-3 -end-3 h-[92px] w-[92px] object-contain" />
-            <h3 className="relative w-[62%] text-[0.875rem] font-semibold" style={{ color: "var(--ux-ink)" }}>
+            <h3 className="relative w-[62%] text-sm font-semibold" style={{ color: "var(--ux-ink)" }}>
               Can’t find it?
             </h3>
-            <p className="relative mt-2 w-[62%] text-[0.75rem] leading-relaxed" style={{ color: "var(--ux-muted)" }}>
+            <p className="relative mt-2 w-[62%] text-xs leading-relaxed" style={{ color: "var(--ux-muted)" }}>
               Ask Sakhi in your own words. She looks in places search doesn’t.
             </p>
             <div className="relative mt-3 w-[62%]">
@@ -90,10 +90,10 @@ function Results() {
       }
     >
       <div className="mb-[20px]">
-        <h1 className="text-[1.5rem] font-bold" style={{ color: "var(--ux-ink)" }}>
+        <h1 className="text-2xl font-bold" style={{ color: "var(--ux-ink)" }}>
           {q ? <>Results for “{q}”</> : "Search"}
         </h1>
-        <p className="mt-1.5 text-[0.8125rem]" style={{ color: "var(--ux-muted)" }}>
+        <p className="mt-1.5 text-xsm" style={{ color: "var(--ux-muted)" }}>
           {q
             ? `${all.length} match${all.length === 1 ? "" : "es"} across courses, work, mentors and circles.`
             : "Press ⌘ K anywhere, or pick one of the ideas below."}
@@ -120,7 +120,7 @@ function Results() {
               <button
                 key={s}
                 onClick={() => router.push(`/app/search?q=${encodeURIComponent(s)}`)}
-                className="ux-press ux-i rounded-full border border-transparent px-3.5 py-2 text-[0.8125rem] font-medium"
+                className="ux-press ux-i rounded-full border border-transparent px-3.5 py-2 text-xsm font-medium"
                 style={{ background: "var(--ux-brand-tint)", color: "var(--ux-brand)" }}
               >
                 {s}
@@ -174,12 +174,12 @@ function Hit({ h, q, i }: { h: SearchHit; q: string; i: number }) {
             <IconTile icon={h.icon} tint={h.tint} ink={h.ink} size={54} radius={12} />
           )}
           <div className="min-w-0 flex-1">
-            <h3 className="truncate text-[0.875rem] font-semibold" style={{ color: "var(--ux-ink)" }}>
+            <h3 className="truncate text-sm font-semibold" style={{ color: "var(--ux-ink)" }}>
               <Mark text={h.title} q={q} />
             </h3>
-            <p className="mt-1 truncate text-[0.8125rem]" style={{ color: "var(--ux-muted)" }}>{h.sub}</p>
+            <p className="mt-1 truncate text-xsm" style={{ color: "var(--ux-muted)" }}>{h.sub}</p>
           </div>
-          <span className="shrink-0 rounded-full px-2.5 py-[4px] text-[0.6875rem] font-semibold"
+          <span className="shrink-0 rounded-full px-2.5 py-[4px] text-2xs font-semibold"
                 style={{ background: `var(${h.tint})`, color: `var(${h.ink}-ink)` }}>
             {h.kind}
           </span>

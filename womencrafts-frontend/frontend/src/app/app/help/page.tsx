@@ -136,13 +136,13 @@ export default function HelpPage() {
         <Alert />
 
         <header className="mb-1">
-          <p className="text-[0.6875rem] font-extrabold uppercase tracking-[0.2em]"
+          <p className="text-2xs font-extrabold uppercase tracking-[0.2em]"
              style={{ color: "var(--ux-brand)" }}>Help</p>
           <h1 className="mt-2 text-[clamp(1.625rem,3.6vw,2.5rem)] font-extrabold leading-[1.06] tracking-[-0.04em]"
               style={{ color: "var(--ux-ink)" }}>
             What has gone wrong?
           </h1>
-          <p className="mt-2.5 max-w-[56ch] text-[0.875rem] leading-relaxed" style={{ color: "var(--ux-ink-2)" }}>
+          <p className="mt-2.5 max-w-[56ch] text-sm leading-relaxed" style={{ color: "var(--ux-ink-2)" }}>
             Ask in your own words, in any language — or pick what it is about. If you would rather
             talk to a person, that is on this page too.
           </p>
@@ -166,8 +166,8 @@ export default function HelpPage() {
                 <Duo name={t.icon} className="h-[21px] w-[21px]" />
               </span>
               <span className="min-w-0">
-                <b className="block text-[0.875rem] font-bold" style={{ color: "var(--ux-ink)" }}>{t.title}</b>
-                <span className="mt-0.5 block text-[0.75rem] leading-snug" style={{ color: "var(--ux-muted)" }}>
+                <b className="block text-sm font-bold" style={{ color: "var(--ux-ink)" }}>{t.title}</b>
+                <span className="mt-0.5 block text-xs leading-snug" style={{ color: "var(--ux-muted)" }}>
                   {t.sub}
                 </span>
               </span>
@@ -186,7 +186,7 @@ export default function HelpPage() {
 
         <div className="ux-lit mb-7 overflow-hidden rounded-[20px]" style={{ border: "1px solid var(--ux-line)" }}>
           {rows.length === 0 ? (
-            <div className="px-[20px] py-8 text-center text-[0.8125rem]" style={{ color: "var(--ux-muted)" }}>
+            <div className="px-[20px] py-8 text-center text-xsm" style={{ color: "var(--ux-muted)" }}>
               No answer here for that yet — a person can help.<br />
               Use <b style={{ color: "var(--ux-ink)" }}>Message her</b> below and it goes straight to the team.
             </div>
@@ -196,7 +196,7 @@ export default function HelpPage() {
               <div key={x.id} style={i ? { borderTop: "1px solid var(--ux-line)" } : undefined}>
                 <button type="button" aria-expanded={on}
                         onClick={() => setOpen(on ? null : x.id)}
-                        className="ux-press flex w-full items-center gap-3 px-[20px] py-[16px] text-start text-[0.875rem] font-semibold tracking-[-0.01em]"
+                        className="ux-press flex w-full items-center gap-3 px-[20px] py-[16px] text-start text-sm font-semibold tracking-[-0.01em]"
                         style={{ color: "var(--ux-ink)" }}>
                   <Mark text={x.q} q={q} />
                   <Icons.ChevronRight className="ms-auto h-4 w-4 shrink-0 transition-transform"
@@ -204,22 +204,22 @@ export default function HelpPage() {
                                                transform: on ? "rotate(90deg)" : undefined }} />
                 </button>
                 {on && (
-                  <div className="pb-4 pe-[19px] ps-[50px] text-[0.8125rem] leading-[1.65]"
+                  <div className="pb-4 pe-[19px] ps-[50px] text-xsm leading-[1.65]"
                        style={{ color: "var(--ux-ink-2)" }}>
                     {x.a}
-                    <div className="mt-3 flex flex-wrap items-center gap-2 text-[0.75rem]"
+                    <div className="mt-3 flex flex-wrap items-center gap-2 text-xs"
                          style={{ color: "var(--ux-muted)" }}>
                       {helped.has(x.id) ? "Good. Glad that sorted it." : (
                         <>
                           Did this help?
                           <button type="button" onClick={() => setHelped((s) => new Set(s).add(x.id))}
-                                  className="ux-press min-h-[34px] rounded-[8px] px-3 text-[0.75rem] font-bold"
+                                  className="ux-press min-h-[34px] rounded-[8px] px-3 text-xs font-bold"
                                   style={{ border: "1px solid var(--ux-line-strong)", color: "var(--ux-ink-2)" }}>
                             Yes
                           </button>
                           <button type="button"
                                   onClick={() => personRef.current?.scrollIntoView({ behavior: "smooth", block: "center" })}
-                                  className="ux-press min-h-[34px] rounded-[8px] px-3 text-[0.75rem] font-bold"
+                                  className="ux-press min-h-[34px] rounded-[8px] px-3 text-xs font-bold"
                                   style={{ border: "1px solid var(--ux-line-strong)", color: "var(--ux-ink-2)" }}>
                             No, talk to a person
                           </button>
@@ -249,7 +249,7 @@ export default function HelpPage() {
 
 function Head({ children }: { children: React.ReactNode }) {
   return (
-    <h2 className="mb-3 text-[0.6875rem] font-extrabold uppercase tracking-[0.16em]" style={{ color: "var(--ux-faint)" }}>
+    <h2 className="mb-3 text-2xs font-extrabold uppercase tracking-[0.16em]" style={{ color: "var(--ux-faint)" }}>
       {children}
     </h2>
   );
@@ -320,14 +320,14 @@ function Alert() {
                       boxShadow: "0 18px 44px -26px var(--ux-danger-solid), var(--ux-shadow-card), inset 0 1px 0 var(--ux-sheen)" }}>
       <span className="ux-beat grid h-[52px] w-[52px] shrink-0 place-items-center rounded-[16px]"
             style={{ background: "linear-gradient(150deg, var(--ux-danger-solid), color-mix(in srgb, var(--ux-danger-solid) 64%, #000))",
-                     color: "#fff" }}>
+                     color: "var(--ux-on-brand)" }}>
         <Icons.TriangleAlert className="h-[22px] w-[22px]" strokeWidth={2} />
       </span>
       <div className="min-w-0 flex-1">
-        <p className="text-[1rem] font-extrabold tracking-[-0.01em]" style={{ color: "var(--ux-ink)" }}>
+        <p className="text-base font-extrabold tracking-[-0.01em]" style={{ color: "var(--ux-ink)" }}>
           {sent ? (failed ? "Could not send — call 181" : "Sent. Your people know.") : "Something is happening right now"}
         </p>
-        <p className="mt-0.5 text-[0.8125rem]" style={{ color: "var(--ux-ink-2)" }}>
+        <p className="mt-0.5 text-xsm" style={{ color: "var(--ux-ink-2)" }}>
           {sent
             ? (failed
                 ? "The alert did not reach us. The helplines below work without credit."
@@ -339,11 +339,11 @@ function Alert() {
               onPointerDown={(e) => { e.preventDefault(); start(); }}
               onPointerUp={stop} onPointerLeave={stop} onPointerCancel={stop}
               aria-label="Press and hold for one and a half seconds to send an alert"
-              className="relative flex min-h-[50px] shrink-0 items-center gap-2 overflow-hidden rounded-[12px] px-6 text-[0.875rem] font-extrabold tracking-[-0.005em] transition-transform active:scale-[0.985]"
+              className="relative flex min-h-[50px] shrink-0 items-center gap-2 overflow-hidden rounded-[12px] px-6 text-sm font-extrabold tracking-[-0.005em] transition-transform active:scale-[0.985]"
               style={{ background: sent && !failed
                          ? "var(--ux-green-ink)"
                          : "linear-gradient(150deg, var(--ux-danger-solid), color-mix(in srgb, var(--ux-danger-solid) 72%, #000))",
-                       color: "#fff",
+                       color: "var(--ux-on-brand)",
                        boxShadow: "inset 0 1px 0 rgba(255,255,255,0.28), 0 12px 26px -12px var(--ux-danger-solid)" }}>
         {/* The bar is the promise: nothing leaves until it is full. */}
         <i className="absolute inset-y-0 start-0 block"
@@ -398,7 +398,7 @@ function Ask({
         <input ref={inputRef} value={value} onChange={(e) => onChange(e.target.value)}
                placeholder="My money has not come · मेरा पैसा नहीं आया"
                aria-label="Ask what has gone wrong"
-               className="min-w-0 flex-1 border-0 bg-transparent py-3 text-[1rem] outline-none"
+               className="min-w-0 flex-1 border-0 bg-transparent py-3 text-base outline-none"
                style={{ color: "var(--ux-ink)" }} />
         {speech && (
           <button type="button" onClick={listen} aria-label="Ask by speaking"
@@ -411,7 +411,7 @@ function Ask({
           </button>
         )}
       </div>
-      <p className="mb-6 ms-0.5 text-[0.75rem]" style={{ color: "var(--ux-faint)" }}>
+      <p className="mb-6 ms-0.5 text-xs" style={{ color: "var(--ux-faint)" }}>
         {speech
           ? "You can speak instead of typing. Hindi, Telugu, Tamil, Bangla and English all work."
           : "Type in any language — Hindi, Telugu, Tamil, Bangla and English all work."}
@@ -445,16 +445,16 @@ function Person({ innerRef }: { innerRef: React.RefObject<HTMLDivElement | null>
       <span aria-hidden className="pointer-events-none absolute -end-14 -top-14 h-[220px] w-[220px] rounded-full"
             style={{ background: "radial-gradient(circle, color-mix(in srgb, var(--ux-brand) 16%, transparent), transparent 70%)" }} />
       <div className="relative min-w-0 flex-1">
-        <h2 className="text-[1rem] font-extrabold" style={{ color: "var(--ux-ink)" }}>
+        <h2 className="text-base font-extrabold" style={{ color: "var(--ux-ink)" }}>
           {sent ? "She has your message." : "Still stuck? Talk to a person."}
         </h2>
-        <p className="mt-1 text-[0.8125rem]" style={{ color: "var(--ux-ink-2)" }}>
+        <p className="mt-1 text-xsm" style={{ color: "var(--ux-ink-2)" }}>
           {sent
             ? "Someone from the team will reply in Messages. You do not have to wait here."
             : "Someone answers in about 4 minutes, 9 AM to 9 PM. She speaks Hindi and Telugu."}
         </p>
         {failed && (
-          <p className="mt-1 text-[0.8125rem] font-semibold" style={{ color: "var(--ux-danger-solid)" }}>
+          <p className="mt-1 text-xsm font-semibold" style={{ color: "var(--ux-danger-solid)" }}>
             That did not send. Try again, or call 181 — it is free.
           </p>
         )}
@@ -462,14 +462,14 @@ function Person({ innerRef }: { innerRef: React.RefObject<HTMLDivElement | null>
       <div className="relative flex flex-wrap gap-2">
         {sent ? (
           <Link href="/app/messages"
-                className="ux-press flex min-h-[48px] items-center gap-2 rounded-[12px] px-5 text-[0.8125rem] font-bold"
+                className="ux-press flex min-h-[48px] items-center gap-2 rounded-[12px] px-5 text-xsm font-bold"
                 style={{ background: "linear-gradient(96deg, var(--ux-rib-2), var(--ux-rib-3))",
                          color: "var(--ux-on-brand)" }}>
             Open Messages <Icons.ArrowRight className="h-4 w-4" />
           </Link>
         ) : (
           <button type="button" onClick={message} disabled={busy}
-                  className="ux-press flex min-h-[48px] items-center gap-2 rounded-[12px] px-5 text-[0.8125rem] font-bold disabled:opacity-60"
+                  className="ux-press flex min-h-[48px] items-center gap-2 rounded-[12px] px-5 text-xsm font-bold disabled:opacity-60"
                   style={{ background: "linear-gradient(96deg, var(--ux-rib-2), var(--ux-rib-3))",
                            color: "var(--ux-on-brand)",
                            boxShadow: "inset 0 1px 0 rgba(255,255,255,0.3)" }}>
@@ -477,7 +477,7 @@ function Person({ innerRef }: { innerRef: React.RefObject<HTMLDivElement | null>
           </button>
         )}
         <a href="tel:181"
-           className="ux-press flex min-h-[48px] items-center gap-2 rounded-[12px] px-5 text-[0.8125rem] font-bold"
+           className="ux-press flex min-h-[48px] items-center gap-2 rounded-[12px] px-5 text-xsm font-bold"
            style={{ border: "1px solid var(--ux-line-strong)", background: "var(--ux-surface)",
                     color: "var(--ux-ink-2)", boxShadow: "inset 0 1px 0 var(--ux-sheen)" }}>
           <Icons.Phone className="h-4 w-4" /> Call
@@ -494,32 +494,32 @@ function Numbers({ lines }: { lines: Helpline[] }) {
   const shown = lines.slice(0, 4);
   return (
     <section className="ux-lit rounded-[20px] p-[20px]" style={{ border: "1px solid var(--ux-line)" }}>
-      <h2 className="flex items-center gap-2 text-[0.875rem] font-extrabold" style={{ color: "var(--ux-ink)" }}>
+      <h2 className="flex items-center gap-2 text-sm font-extrabold" style={{ color: "var(--ux-ink)" }}>
         <Icons.Phone className="h-[17px] w-[17px]" style={{ color: "var(--ux-brand)" }} />
         Numbers that always work
       </h2>
-      <p className="mb-3 mt-1 flex flex-wrap items-center gap-2 text-[0.8125rem]" style={{ color: "var(--ux-muted)" }}>
+      <p className="mb-3 mt-1 flex flex-wrap items-center gap-2 text-xsm" style={{ color: "var(--ux-muted)" }}>
         Free from any phone.
-        <span className="rounded-full px-2.5 py-1 text-[0.6875rem] font-extrabold uppercase tracking-[0.04em]"
+        <span className="rounded-full px-2.5 py-1 text-2xs font-extrabold uppercase tracking-[0.04em]"
               style={{ background: "var(--ux-tint-green)", color: "var(--ux-green-ink)" }}>
           No credit needed
         </span>
       </p>
       {shown.length === 0 ? (
-        <p className="text-[0.8125rem]" style={{ color: "var(--ux-muted)" }}>
+        <p className="text-xsm" style={{ color: "var(--ux-muted)" }}>
           Could not load these. <a href="tel:181" style={{ color: "var(--ux-brand)" }}>Call 181</a> — it always works.
         </p>
       ) : shown.map((h) => (
         <div key={h.number}
              className="mb-2 flex items-center gap-3 rounded-[12px] p-[12px] transition-transform last:mb-0 hover:translate-x-0.5"
              style={{ border: "1px solid var(--ux-line)", background: "var(--ux-surface)" }}>
-          <b className="min-w-[78px] text-[1.25rem] font-extrabold tabular-nums tracking-[-0.03em]"
+          <b className="min-w-[78px] text-xl font-extrabold tabular-nums tracking-[-0.03em]"
              style={{ color: "var(--ux-ink)" }}>{h.number}</b>
-          <span className="min-w-0 flex-1 text-[0.75rem] leading-snug" style={{ color: "var(--ux-muted)" }}>
+          <span className="min-w-0 flex-1 text-xs leading-snug" style={{ color: "var(--ux-muted)" }}>
             {h.name}
           </span>
           <a href={`tel:${h.number}`}
-             className="ux-press flex min-h-[38px] shrink-0 items-center rounded-[12px] px-[16px] text-[0.75rem] font-extrabold"
+             className="ux-press flex min-h-[38px] shrink-0 items-center rounded-[12px] px-[16px] text-xs font-extrabold"
              style={{ background: "linear-gradient(150deg, var(--ux-tint-green), color-mix(in srgb, var(--ux-tint-green) 60%, var(--ux-surface)))",
                       color: "var(--ux-green-ink)", boxShadow: "inset 0 1px 0 var(--ux-sheen)" }}>
             Call
@@ -534,15 +534,15 @@ function LeaveFast({ onLeave }: { onLeave: () => void }) {
   return (
     <section className="rounded-[20px] p-[20px]"
              style={{ background: "var(--ux-surface-2)", border: "1px dashed var(--ux-line-strong)" }}>
-      <h2 className="flex items-center gap-2 text-[0.875rem] font-extrabold" style={{ color: "var(--ux-ink)" }}>
+      <h2 className="flex items-center gap-2 text-sm font-extrabold" style={{ color: "var(--ux-ink)" }}>
         <Icons.LogOut className="h-[17px] w-[17px]" style={{ color: "var(--ux-faint)" }} />
         Leave this page fast
       </h2>
-      <p className="mt-1 text-[0.8125rem] leading-relaxed" style={{ color: "var(--ux-muted)" }}>
+      <p className="mt-1 text-xsm leading-relaxed" style={{ color: "var(--ux-muted)" }}>
         If someone walks in, this turns into a weather page straight away. Press Escape to come back.
       </p>
       <button type="button" onClick={onLeave}
-              className="ux-press mt-3 min-h-[44px] w-full rounded-[12px] text-[0.8125rem] font-bold transition-colors"
+              className="ux-press mt-3 min-h-[44px] w-full rounded-[12px] text-xsm font-bold transition-colors"
               style={{ border: "1px solid var(--ux-line-strong)", color: "var(--ux-ink-2)" }}>
         Show the weather instead
       </button>
@@ -558,12 +558,12 @@ function Never() {
   ];
   return (
     <section className="ux-lit rounded-[20px] p-[20px]" style={{ border: "1px solid var(--ux-line)" }}>
-      <h2 className="mb-3 flex items-center gap-2 text-[0.875rem] font-extrabold" style={{ color: "var(--ux-ink)" }}>
+      <h2 className="mb-3 flex items-center gap-2 text-sm font-extrabold" style={{ color: "var(--ux-ink)" }}>
         <Icons.ShieldCheck className="h-[17px] w-[17px]" style={{ color: "var(--ux-brand)" }} />
         What we never do
       </h2>
       {lines.map((l) => (
-        <p key={l} className="mb-2.5 flex gap-2.5 text-[0.8125rem] leading-relaxed" style={{ color: "var(--ux-ink-2)" }}>
+        <p key={l} className="mb-2.5 flex gap-2.5 text-xsm leading-relaxed" style={{ color: "var(--ux-ink-2)" }}>
           <Icons.Check className="mt-0.5 h-[15px] w-[15px] shrink-0" strokeWidth={2.6}
                        style={{ color: "var(--ux-green-ink)" }} />
           {l}
@@ -583,10 +583,10 @@ function Veil({ onBack }: { onBack: () => void }) {
   return (
     <div className="fixed inset-0 z-[100] overflow-auto p-10"
          style={{ background: "#ffffff", color: "#222" }}>
-      <h2 className="m-0 text-[1.25rem] font-semibold">Weather — Hyderabad</h2>
-      <p className="mt-3 text-[1rem]">32°C, partly cloudy. Light rain expected after 6 PM.</p>
-      <p className="mt-1 text-[1rem]">Tomorrow 29°C · Wednesday 31°C · Thursday 30°C</p>
-      <button type="button" onClick={onBack} className="mt-6 text-[0.75rem] underline" style={{ color: "#888" }}>
+      <h2 className="m-0 text-xl font-semibold">Weather — Hyderabad</h2>
+      <p className="mt-3 text-base">32°C, partly cloudy. Light rain expected after 6 PM.</p>
+      <p className="mt-1 text-base">Tomorrow 29°C · Wednesday 31°C · Thursday 30°C</p>
+      <button type="button" onClick={onBack} className="mt-6 text-xs underline" style={{ color: "#888" }}>
         Press Escape to go back.
       </button>
     </div>

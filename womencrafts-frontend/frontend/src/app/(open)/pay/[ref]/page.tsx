@@ -56,13 +56,13 @@ export default function PayPage({ params }: { params: Promise<{ ref: string }> }
                   style={{ background: v("--ux-green-ink"), color: v("--ux-on-brand") }}>
               <I name="Check" className="h-[36px] w-[36px]" sw={2.6} />
             </span>
-            <p className="mt-5 text-[1.5rem] font-extrabold tracking-[-0.03em]" style={{ color: v("--ux-ink") }}>
+            <p className="mt-5 text-2xl font-extrabold tracking-[-0.03em]" style={{ color: v("--ux-ink") }}>
               Paid
             </p>
-            <p className="mt-1.5 text-[0.875rem]" style={{ color: v("--ux-ink-2") }}>
+            <p className="mt-1.5 text-sm" style={{ color: v("--ux-ink-2") }}>
               {formatRupees(req.minor)} to {SHOP.name}
             </p>
-            <p className="mt-4 max-w-[34ch] text-[0.8125rem] leading-relaxed" style={{ color: v("--ux-muted") }}>
+            <p className="mt-4 max-w-[34ch] text-xsm leading-relaxed" style={{ color: v("--ux-muted") }}>
               It went straight to her bank account. She has been told. Keep this page or the message
               she sends you as your receipt.
             </p>
@@ -81,23 +81,23 @@ export default function PayPage({ params }: { params: Promise<{ ref: string }> }
       {/* Who, before how much. */}
       <Card pad={20}>
         <div className="flex items-center gap-3.5">
-          <span className="grid h-[46px] w-[46px] shrink-0 place-items-center rounded-full text-[1.125rem] font-bold"
+          <span className="grid h-[46px] w-[46px] shrink-0 place-items-center rounded-full text-lg font-bold"
                 style={{ background: v("--ux-fill"), color: v("--ux-on-brand") }}>
             {SHOP.name.charAt(0)}
           </span>
           <div className="min-w-0">
-            <p className="text-[1rem] font-bold" style={{ color: v("--ux-ink") }}>{SHOP.name}</p>
-            <p className="text-[0.75rem]" style={{ color: v("--ux-muted") }}>{SHOP.trade} · {SHOP.place}</p>
+            <p className="text-base font-bold" style={{ color: v("--ux-ink") }}>{SHOP.name}</p>
+            <p className="text-xs" style={{ color: v("--ux-muted") }}>{SHOP.trade} · {SHOP.place}</p>
           </div>
         </div>
 
         <div className="mt-5 border-t pt-5 text-center" style={{ borderColor: v("--ux-line") }}>
-          <p className="text-[0.8125rem]" style={{ color: v("--ux-muted") }}>{req.what}</p>
+          <p className="text-xsm" style={{ color: v("--ux-muted") }}>{req.what}</p>
           <p className="mt-1.5 text-[clamp(2.375rem,10vw,3.25rem)] font-extrabold leading-none tracking-[-0.04em] tabular-nums"
              style={{ color: v("--ux-ink") }}>
             {formatRupees(req.minor)}
           </p>
-          <p className="mt-2.5 text-[0.75rem]" style={{ color: v("--ux-faint") }}>
+          <p className="mt-2.5 text-xs" style={{ color: v("--ux-faint") }}>
             Reference {req.ref} · asked {req.when.toLowerCase()}
           </p>
         </div>
@@ -123,7 +123,7 @@ export default function PayPage({ params }: { params: Promise<{ ref: string }> }
           ].map((x) => (
             <li key={x.icon} className="flex items-start gap-2.5">
               <I name={x.icon} className="mt-[2px] h-[14px] w-[14px] shrink-0" style={{ color: v("--ux-muted") }} />
-              <span className="text-[0.75rem] leading-relaxed" style={{ color: v("--ux-ink-2") }}>{x.t}</span>
+              <span className="text-xs leading-relaxed" style={{ color: v("--ux-ink-2") }}>{x.t}</span>
             </li>
           ))}
         </ul>

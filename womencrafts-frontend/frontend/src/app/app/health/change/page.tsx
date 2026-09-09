@@ -38,14 +38,14 @@ export default function ChangePage() {
         <Back to="/app/health" label="Back to health" />
 
         <header>
-          <p className="text-[0.6875rem] font-extrabold uppercase tracking-[0.2em]" style={{ color: v("--ux-brand") }}>
+          <p className="text-2xs font-extrabold uppercase tracking-[0.2em]" style={{ color: v("--ux-brand") }}>
             Menopause
           </p>
           <h1 className="mt-2 text-[clamp(1.5rem,3.2vw,2.125rem)] font-extrabold leading-[1.1] tracking-[-0.035em]"
               style={{ color: v("--ux-ink") }}>
             Nobody told you it starts this early
           </h1>
-          <p className="mt-1.5 max-w-[58ch] text-[0.875rem] leading-relaxed" style={{ color: v("--ux-muted") }}>
+          <p className="mt-1.5 max-w-[58ch] text-sm leading-relaxed" style={{ color: v("--ux-muted") }}>
             In India it usually begins around 46 — about six years earlier than in the West.
             So most of what you will read online is written for a woman six years older than you.
           </p>
@@ -62,7 +62,7 @@ export default function ChangePage() {
           </div>
           <div className="mt-4 flex items-start gap-2.5 border-t pt-3.5" style={{ borderColor: v("--ux-line") }}>
             <I name="Info" className="mt-[2px] h-[15px] w-[15px] shrink-0" style={{ color: v("--ux-muted") }} />
-            <p className="text-[0.8125rem] leading-relaxed" style={{ color: v("--ux-ink-2") }}>
+            <p className="text-xsm leading-relaxed" style={{ color: v("--ux-ink-2") }}>
               Four in ten women doing physical work said this had reduced what they could manage in
               a day. That is not weakness and it is not age — it is a thing with a name and,
               often, something that helps.
@@ -72,7 +72,7 @@ export default function ChangePage() {
 
         {note && (
           <Card pad={16} style={{ background: v("--ux-tint-green"), borderColor: "transparent" }}>
-            <p className="flex items-center gap-2 text-[0.8125rem] font-semibold" style={{ color: v("--ux-green-ink") }}>
+            <p className="flex items-center gap-2 text-xsm font-semibold" style={{ color: v("--ux-green-ink") }}>
               <I name="CheckCircle2" className="h-[16px] w-[16px]" />{note}
             </p>
           </Card>
@@ -90,12 +90,12 @@ export default function ChangePage() {
                           aria-expanded={isOpen}
                           className="ux-press flex w-full items-center gap-3.5 p-4 text-left">
                     <IconTile icon={t.icon} tint="--ux-tint-violet" ink="--ux-violet" size={38} />
-                    <p className="min-w-0 flex-1 text-[0.875rem] font-bold" style={{ color: v("--ux-ink") }}>{t.q}</p>
+                    <p className="min-w-0 flex-1 text-sm font-bold" style={{ color: v("--ux-ink") }}>{t.q}</p>
                     <I name={isOpen ? "ChevronUp" : "ChevronDown"} className="h-[17px] w-[17px] shrink-0"
                        style={{ color: v("--ux-muted") }} />
                   </button>
                   {isOpen && (
-                    <p className="px-4 pb-4 text-[0.8125rem] leading-relaxed" style={{ color: v("--ux-ink-2") }}>
+                    <p className="px-4 pb-4 text-xsm leading-relaxed" style={{ color: v("--ux-ink-2") }}>
                       {t.a}
                     </p>
                   )}
@@ -109,10 +109,10 @@ export default function ChangePage() {
           <div className="flex flex-wrap items-start gap-4">
             <IconTile icon="Users" tint="--ux-surface" ink="--ux-violet" size={46} radius={13} />
             <div className="min-w-0 flex-1">
-              <p className="text-[1rem] font-bold" style={{ color: v("--ux-ink") }}>
+              <p className="text-base font-bold" style={{ color: v("--ux-ink") }}>
                 Other women, going through it now
               </p>
-              <p className="mt-1.5 max-w-[52ch] text-[0.8125rem] leading-relaxed" style={{ color: v("--ux-ink-2") }}>
+              <p className="mt-1.5 max-w-[52ch] text-xsm leading-relaxed" style={{ color: v("--ux-ink-2") }}>
                 A quiet room in your circle. Nobody outside it sees who is in there, and nothing you
                 say is kept anywhere after you leave.
               </p>
@@ -126,8 +126,8 @@ export default function ChangePage() {
         <div className="grid gap-3 sm:grid-cols-2">
           <Card pad={16}>
             <IconTile icon="Stethoscope" tint="--ux-tint-green" ink="--ux-green-ink" size={40} />
-            <p className="mt-3 text-[0.875rem] font-bold" style={{ color: v("--ux-ink") }}>Talking to a doctor</p>
-            <p className="mt-1.5 text-[0.8125rem] leading-relaxed" style={{ color: v("--ux-muted") }}>
+            <p className="mt-3 text-sm font-bold" style={{ color: v("--ux-ink") }}>Talking to a doctor</p>
+            <p className="mt-1.5 text-xsm leading-relaxed" style={{ color: v("--ux-muted") }}>
               Most women are told "it is your age" and sent home. Go with the three things that
               bother you most, written down — it changes the conversation completely.
             </p>
@@ -138,8 +138,8 @@ export default function ChangePage() {
           </Card>
           <Card pad={16}>
             <IconTile icon="Briefcase" tint="--ux-tint-blue" ink="--ux-blue-ink" size={40} />
-            <p className="mt-3 text-[0.875rem] font-bold" style={{ color: v("--ux-ink") }}>Working through it</p>
-            <p className="mt-1.5 text-[0.8125rem] leading-relaxed" style={{ color: v("--ux-muted") }}>
+            <p className="mt-3 text-sm font-bold" style={{ color: v("--ux-ink") }}>Working through it</p>
+            <p className="mt-1.5 text-xsm leading-relaxed" style={{ color: v("--ux-muted") }}>
               Broken sleep and aching joints cost the most days. Cover for a bad day is already
               built — use it without explaining yourself to anyone.
             </p>

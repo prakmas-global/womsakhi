@@ -146,7 +146,7 @@ export default function ShopPage() {
         <Stats summary={summary} needs={needs.length} live={live} />
 
         {error && (
-          <p className="mb-4 rounded-[12px] px-4 py-3 text-[0.8125rem] font-semibold"
+          <p className="mb-4 rounded-[12px] px-4 py-3 text-xsm font-semibold"
              style={{ background: "var(--ux-danger-tint)", color: "var(--ux-danger-solid)" }}>
             {error}
           </p>
@@ -155,7 +155,7 @@ export default function ShopPage() {
         <div className="grid items-start gap-6 xl:grid-cols-[minmax(0,1fr)_336px]">
           <main className="min-w-0">
             <Sec action={
-              <Link href="/app/documents" className="ux-press flex min-h-[34px] items-center rounded-[12px] px-3 text-[0.75rem] font-bold"
+              <Link href="/app/documents" className="ux-press flex min-h-[34px] items-center rounded-[12px] px-3 text-xs font-bold"
                     style={{ color: "var(--ux-brand)" }}>All {orders.length}</Link>
             }>
               {needs.length > 0 ? "Orders waiting on you" : "Orders"}
@@ -164,10 +164,10 @@ export default function ShopPage() {
             {confirmDelete && (
               <div className="mb-4 rounded-[16px] p-5"
                    style={{ background: "var(--ux-surface)", border: `1px solid var(--ux-danger-solid)` }}>
-                <p className="text-[0.9375rem] font-bold" style={{ color: "var(--ux-ink)" }}>
+                <p className="text-smd font-bold" style={{ color: "var(--ux-ink)" }}>
                   Remove &ldquo;{confirmDelete.title}&rdquo; from your shop?
                 </p>
-                <p className="mt-1.5 text-[0.8125rem] leading-relaxed" style={{ color: "var(--ux-muted)" }}>
+                <p className="mt-1.5 text-xsm leading-relaxed" style={{ color: "var(--ux-muted)" }}>
                   This cannot be undone, and the photographs go with it. If you have only stopped
                   making it for now, pause it instead — it comes back exactly as it was.
                 </p>
@@ -205,7 +205,7 @@ export default function ShopPage() {
 
             <Sec action={
               <Link href="/app/documents/product/new"
-                    className="ux-press flex min-h-[34px] items-center gap-1.5 rounded-[12px] px-3 text-[0.75rem] font-bold"
+                    className="ux-press flex min-h-[34px] items-center gap-1.5 rounded-[12px] px-3 text-xs font-bold"
                     style={{ color: "var(--ux-brand)" }}>
                 <Icons.Plus className="h-[13px] w-[13px]" /> Add something
               </Link>
@@ -221,7 +221,7 @@ export default function ShopPage() {
                              onDelete={() => setConfirmDelete(l)} />
               ))}
               <Link href="/app/documents/product/new"
-                    className="ux-press grid min-h-[330px] place-content-center justify-items-center gap-2.5 rounded-[20px] text-center text-[0.8125rem] font-bold leading-relaxed"
+                    className="ux-press grid min-h-[330px] place-content-center justify-items-center gap-2.5 rounded-[20px] text-center text-xsm font-bold leading-relaxed"
                     style={{ border: "1px dashed var(--ux-line-strong)", color: "var(--ux-brand)" }}>
                 <Icons.Plus className="h-[30px] w-[30px]" />
                 <span>Add a product<br />or a service</span>
@@ -236,7 +236,7 @@ export default function ShopPage() {
         </div>
 
         {/* one line of confirmation, in her words */}
-        <div className="ux-toast rounded-[12px] px-5 py-3.5 text-[0.8125rem] font-bold"
+        <div className="ux-toast rounded-[12px] px-5 py-3.5 text-xsm font-bold"
              data-on={note ? "true" : "false"} role="status" aria-live="polite"
              style={{ background: "var(--ux-ink)", color: "var(--ux-canvas)",
                       boxShadow: "0 20px 44px -18px rgba(0,0,0,.6)",

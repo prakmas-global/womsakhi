@@ -139,7 +139,7 @@ function ScreenHead() {
  * bug — it is just a page that jumps slightly less than a spinner would.
  *
  * ── Why the header block reserves 36px and not 26px ────────────────────────
- * The heading it stands in for is `text-[1.5rem] font-bold` on 48 of the 56
+ * The heading it stands in for is `text-2xl font-bold` on 48 of the 56
  * screens that have one, and a 24px heading occupies a 36px line box, not a
  * 26px one. The bars were drawn at their own height rather than the height of
  * the thing they replace, so every screen in the app dropped ~12px the instant
@@ -386,7 +386,7 @@ export function ScreenHandoff({ to = "there" }: { to?: string }) {
               style={{ background: "var(--ux-brand-tint)" }}>
           <Icons.ArrowRight className="h-[20px] w-[20px]" style={{ color: "var(--ux-brand)" }} strokeWidth={2} />
         </span>
-        <p className="mt-3 text-[0.875rem]" style={{ color: "var(--ux-ink-2)" }}>Taking you to {to}…</p>
+        <p className="mt-3 text-sm" style={{ color: "var(--ux-ink-2)" }}>Taking you to {to}…</p>
       </div>
     </div>
   );
@@ -424,16 +424,16 @@ export function ScreenError({
             <Icons.CloudOff className="h-[28px] w-[28px]" style={{ color: "var(--ux-orange-ink)" }} strokeWidth={1.8} />
           </span>
 
-          <h2 className="mt-4 text-[1.125rem] font-bold" style={{ color: "var(--ux-ink)" }}>
+          <h2 className="mt-4 text-lg font-bold" style={{ color: "var(--ux-ink)" }}>
             We could not load {what}
           </h2>
-          <p className="mt-2 max-w-[42ch] text-[0.875rem] leading-relaxed" style={{ color: "var(--ux-ink-2)" }}>
+          <p className="mt-2 max-w-[42ch] text-sm leading-relaxed" style={{ color: "var(--ux-ink-2)" }}>
             This is usually the connection rather than anything you did. Try again in a moment.
           </p>
 
           {/* The fear behind a failed screen is almost always "have I lost
               something". Answer it before she has to ask. */}
-          <p className="mt-3 flex items-center gap-2 rounded-[12px] px-3.5 py-2.5 text-[0.8125rem]"
+          <p className="mt-3 flex items-center gap-2 rounded-[12px] px-3.5 py-2.5 text-xsm"
              style={{ background: "var(--ux-tint-green)", color: "var(--ux-ink-2)" }}>
             <Icons.ShieldCheck className="h-[15px] w-[15px] shrink-0" style={{ color: "var(--ux-green-ink)" }} />
             Nothing you have done has been lost.
@@ -442,21 +442,21 @@ export function ScreenError({
           <div className="mt-5 flex flex-wrap justify-center gap-2.5">
             <button
               onClick={() => (reset ? reset() : window.location.reload())}
-              className="ux-press ux-hov ux-sq ux-clay inline-flex items-center gap-2 rounded-[12px] px-4 py-2.5 text-[0.8125rem] font-semibold"
-              style={{ background: "linear-gradient(96deg, var(--ux-fill), var(--ux-fill-2))", color: "#fff" }}
+              className="ux-press ux-hov ux-sq ux-clay inline-flex items-center gap-2 rounded-[12px] px-4 py-2.5 text-xsm font-semibold"
+              style={{ background: "linear-gradient(96deg, var(--ux-fill), var(--ux-fill-2))", color: "var(--ux-on-brand)" }}
             >
               <Icons.RotateCcw className="ux-ico h-[15px] w-[15px]" strokeWidth={2.1} /> Try again
             </button>
             <a
               href="/app"
-              className="ux-press ux-hov ux-sq inline-flex items-center gap-2 rounded-[12px] border px-4 py-2.5 text-[0.8125rem] font-semibold"
+              className="ux-press ux-hov ux-sq inline-flex items-center gap-2 rounded-[12px] border px-4 py-2.5 text-xsm font-semibold"
               style={{ borderColor: "var(--ux-line-strong)", color: "var(--ux-ink)" }}
             >
               Go home
             </a>
             <a
               href="/app/help"
-              className="ux-press ux-hov inline-flex items-center gap-2 rounded-[12px] px-4 py-2.5 text-[0.8125rem] font-semibold"
+              className="ux-press ux-hov inline-flex items-center gap-2 rounded-[12px] px-4 py-2.5 text-xsm font-semibold"
               style={{ color: "var(--ux-brand)" }}
             >
               Get help
@@ -464,7 +464,7 @@ export function ScreenError({
           </div>
 
           {detail && (
-            <p className="mt-4 font-mono text-[0.6875rem]" style={{ color: "var(--ux-faint)" }}>{detail}</p>
+            <p className="mt-4 font-mono text-2xs" style={{ color: "var(--ux-faint)" }}>{detail}</p>
           )}
         </div>
       </div>

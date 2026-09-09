@@ -64,14 +64,14 @@ export default function SlotsPage() {
 
         <header className="flex flex-wrap items-end gap-4">
           <div className="min-w-0 flex-1">
-            <p className="text-[0.6875rem] font-extrabold uppercase tracking-[0.2em]" style={{ color: v("--ux-brand") }}>
+            <p className="text-2xs font-extrabold uppercase tracking-[0.2em]" style={{ color: v("--ux-brand") }}>
               Your week
             </p>
             <h1 className="mt-2 text-[clamp(1.5rem,3.2vw,2.125rem)] font-extrabold leading-[1.1] tracking-[-0.035em]"
                 style={{ color: v("--ux-ink") }}>
               Sell your time, not just things
             </h1>
-            <p className="mt-1.5 max-w-[54ch] text-[0.875rem] leading-relaxed" style={{ color: v("--ux-muted") }}>
+            <p className="mt-1.5 max-w-[54ch] text-sm leading-relaxed" style={{ color: v("--ux-muted") }}>
               Customers pick a time themselves. You never have to reply to "when are you free?"
               again — and closing a time takes one tap, with no reason asked.
             </p>
@@ -81,7 +81,7 @@ export default function SlotsPage() {
 
         {note && (
           <Card pad={16} style={{ background: v("--ux-tint-green"), borderColor: "transparent" }}>
-            <p className="flex items-center gap-2 text-[0.8125rem] font-semibold" style={{ color: v("--ux-green-ink") }}>
+            <p className="flex items-center gap-2 text-xsm font-semibold" style={{ color: v("--ux-green-ink") }}>
               <I name="CheckCircle2" className="h-[16px] w-[16px]" />{note}
             </p>
           </Card>
@@ -95,7 +95,7 @@ export default function SlotsPage() {
               <div className="grid gap-2" style={{ gridTemplateColumns: `62px repeat(${DAYS.length}, 1fr)` }}>
                 <span />
                 {DAYS.map((d) => (
-                  <p key={d} className="pb-1 text-center text-[0.75rem] font-extrabold uppercase tracking-[0.1em]"
+                  <p key={d} className="pb-1 text-center text-xs font-extrabold uppercase tracking-[0.1em]"
                      style={{ color: v("--ux-ink-2") }}>
                     {d}
                   </p>
@@ -105,7 +105,7 @@ export default function SlotsPage() {
               {TIMES.map((t) => (
                 <div key={t} className="mt-2 grid items-stretch gap-2"
                      style={{ gridTemplateColumns: `62px repeat(${DAYS.length}, 1fr)` }}>
-                  <p className="pt-3 text-right text-[0.75rem] font-bold tabular-nums" style={{ color: v("--ux-muted") }}>
+                  <p className="pt-3 text-right text-xs font-bold tabular-nums" style={{ color: v("--ux-muted") }}>
                     {t}
                   </p>
                   {DAYS.map((d) => {
@@ -131,11 +131,11 @@ export default function SlotsPage() {
                                 border: `1px solid ${v(picked === s.id ? "--ux-ink" : "transparent")}`,
                                 opacity: shut ? 0.75 : 1,
                               }}>
-                        <p className="text-[0.75rem] font-bold leading-tight"
+                        <p className="text-xs font-bold leading-tight"
                            style={{ color: v(shut ? "--ux-muted" : taken ? "--ux-on-brand" : "--ux-green-ink") }}>
                           {shut ? "Closed" : s.service}
                         </p>
-                        <p className="text-[0.6875rem] font-semibold"
+                        <p className="text-2xs font-semibold"
                            style={{ color: v(shut ? "--ux-muted" : taken ? "--ux-on-brand" : "--ux-ink-2"),
                                     opacity: taken ? 0.85 : 1 }}>
                           {shut ? "No reason given" : taken ? s.bookedBy : `${s.minutes} min · free`}
@@ -155,7 +155,7 @@ export default function SlotsPage() {
               { c: "--ux-tint-green", t: "Free — customers can take it" },
               { c: "--ux-surface-2", t: "You closed it" },
             ].map((l) => (
-              <span key={l.t} className="inline-flex items-center gap-2 text-[0.75rem]" style={{ color: v("--ux-muted") }}>
+              <span key={l.t} className="inline-flex items-center gap-2 text-xs" style={{ color: v("--ux-muted") }}>
                 <span className="h-[11px] w-[11px] rounded-[8px]" style={{ background: v(l.c) }} />{l.t}
               </span>
             ))}
@@ -208,13 +208,13 @@ export default function SlotsPage() {
                 {sel.blocked && <Pill tone="neutral" size="sm">Closed</Pill>}
                 {!sel.bookedBy && !sel.blocked && <Pill tone="green" size="sm">Free</Pill>}
               </div>
-              <p className="text-[0.875rem] leading-relaxed" style={{ color: v("--ux-ink-2") }}>
+              <p className="text-sm leading-relaxed" style={{ color: v("--ux-ink-2") }}>
                 {sel.minutes} minutes
                 {sel.minor > 0 ? ` · ${formatRupees(sel.minor)}` : " · you set no price for this"}
                 {sel.bookedBy ? ` · ${sel.bookedBy} is coming` : ""}
               </p>
               {!sel.bookedBy && !sel.blocked && (
-                <p className="rounded-[12px] px-3.5 py-3 text-[0.8125rem] leading-relaxed"
+                <p className="rounded-[12px] px-3.5 py-3 text-xsm leading-relaxed"
                    style={{ background: v("--ux-surface-2"), color: v("--ux-ink-2") }}>
                   Anyone with your shop link can take this time. Closing it never asks you why, and
                   the customer is not told.
@@ -232,20 +232,20 @@ export default function SlotsPage() {
             <div className="flex flex-wrap items-start gap-4">
               <div className="shrink-0 rounded-[12px] px-3.5 py-2.5 text-center"
                    style={{ background: v("--ux-brand-tint") }}>
-                <p className="text-[1.125rem] font-extrabold leading-none tabular-nums" style={{ color: v("--ux-brand") }}>
+                <p className="text-lg font-extrabold leading-none tabular-nums" style={{ color: v("--ux-brand") }}>
                   {sel.time}
                 </p>
-                <p className="mt-1 text-[0.6875rem] font-bold uppercase tracking-[0.08em]" style={{ color: v("--ux-brand") }}>
+                <p className="mt-1 text-2xs font-bold uppercase tracking-[0.08em]" style={{ color: v("--ux-brand") }}>
                   {sel.day}
                 </p>
               </div>
               <div className="min-w-0 flex-1">
                 <div className="flex flex-wrap items-center gap-2">
-                  <p className="text-[1rem] font-bold" style={{ color: v("--ux-ink") }}>{sel.service}</p>
+                  <p className="text-base font-bold" style={{ color: v("--ux-ink") }}>{sel.service}</p>
                   {sel.bookedBy && <Pill tone="brand" size="sm">Booked</Pill>}
                   {sel.blocked && <Pill tone="neutral" size="sm">Closed</Pill>}
                 </div>
-                <p className="mt-1 text-[0.8125rem]" style={{ color: v("--ux-muted") }}>
+                <p className="mt-1 text-xsm" style={{ color: v("--ux-muted") }}>
                   {sel.minutes} minutes
                   {sel.minor > 0 ? ` · ${formatRupees(sel.minor)}` : " · you set no price for this"}
                   {sel.bookedBy ? ` · ${sel.bookedBy} is coming` : ""}
@@ -287,10 +287,10 @@ export default function SlotsPage() {
                     <I name={x.i} className="h-[19px] w-[19px]" />
                   </span>
                   <div className="min-w-0">
-                    <p className="text-[1.25rem] font-extrabold leading-none tabular-nums" style={{ color: v("--ux-ink") }}>
+                    <p className="text-xl font-extrabold leading-none tabular-nums" style={{ color: v("--ux-ink") }}>
                       {x.n}
                     </p>
-                    <p className="mt-1 text-[0.75rem]" style={{ color: v("--ux-muted") }}>{x.l}</p>
+                    <p className="mt-1 text-xs" style={{ color: v("--ux-muted") }}>{x.l}</p>
                   </div>
                 </div>
               </Card>
@@ -301,7 +301,7 @@ export default function SlotsPage() {
         <Card pad={16} style={{ background: v("--ux-surface-2"), borderColor: "transparent" }}>
           <div className="flex items-start gap-3">
             <I name="Info" className="mt-[2px] h-[16px] w-[16px] shrink-0" style={{ color: v("--ux-muted") }} />
-            <p className="text-[0.8125rem] leading-relaxed" style={{ color: v("--ux-ink-2") }}>
+            <p className="text-xsm leading-relaxed" style={{ color: v("--ux-ink-2") }}>
               Closing a time never asks you why, and the customer is never told. Nobody can book a
               time you have closed, and closing one does not count against your shop.
             </p>

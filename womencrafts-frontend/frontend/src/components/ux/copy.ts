@@ -61,4 +61,27 @@ export const COPY = {
 
   /** A send that did not leave — distinct from a write that half-happened. */
   sendFailed: "That did not go through. Nothing has been sent — try again in a moment.",
+
+  /**
+   * What to tap in the browser's print sheet to keep a copy.
+   *
+   * Five screens hand her a printable document — a certificate, a statement, a
+   * receipt — and every one of them has to explain the same non-obvious step,
+   * because "Print" is not where a person looks for "save this file".
+   */
+  saveAsPdf: "Choose \u201CSave as PDF\u201D",
+
+  /** An empty list, where nothing has gone wrong and nothing is expected yet. */
+  nothingHereYet: "Nothing here yet",
+
+  /** After she sends feedback to the people who run WomSakhi. */
+  noteReceived: "Thank you \u2014 the team has your note",
+
+  /**
+   * The last-resort failure line, when even the API could not say what broke.
+   *
+   * `lib/api.ts` and `lib/member-api.ts` already fall back to this; the three
+   * dashboard forms that set it by hand were the drift risk.
+   */
+  genericFailure: "Something went wrong. Please try again.",
 } as const;

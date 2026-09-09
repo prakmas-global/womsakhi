@@ -63,8 +63,8 @@ export default function VoiceSettings() {
                     }}
                   >
                     {/* Her language in her own script — not transliterated. */}
-                    <span className="block text-[1rem] font-semibold" style={{ color: "var(--ux-ink)" }}>{l.name}</span>
-                    <span className="mt-0.5 block text-[0.6875rem]" style={{ color: "var(--ux-muted)" }}>
+                    <span className="block text-base font-semibold" style={{ color: "var(--ux-ink)" }}>{l.name}</span>
+                    <span className="mt-0.5 block text-2xs" style={{ color: "var(--ux-muted)" }}>
                       {l.ready ? l.en : "Coming soon"}
                     </span>
                   </button>
@@ -80,8 +80,8 @@ export default function VoiceSettings() {
                 <li key={v.id} className="ux-hov flex items-start gap-3" style={{ ["--i" as string]: i }}>
                   <IconTile icon={v.icon} tint="--ux-tint-lilac" ink="--ux-brand" size={36} radius={10} />
                   <div className="min-w-0">
-                    <p className="text-[0.8125rem] font-medium" style={{ color: "var(--ux-ink)" }}>{v.say}</p>
-                    <p className="mt-0.5 text-[0.75rem]" style={{ color: "var(--ux-muted)" }}>{v.does}</p>
+                    <p className="text-xsm font-medium" style={{ color: "var(--ux-ink)" }}>{v.say}</p>
+                    <p className="mt-0.5 text-xs" style={{ color: "var(--ux-muted)" }}>{v.does}</p>
                   </div>
                 </li>
               ))}
@@ -104,7 +104,7 @@ export default function VoiceSettings() {
                 whenOff="She writes her answer. Nothing is spoken."
               />
             </div>
-            <p className="mt-3.5 flex items-start gap-2.5 rounded-[12px] p-3 text-[0.75rem] leading-relaxed"
+            <p className="mt-3.5 flex items-start gap-2.5 rounded-[12px] p-3 text-xs leading-relaxed"
                style={{ background: "var(--ux-surface-2)", color: "var(--ux-ink-2)" }}>
               <Icons.Lock className="mt-[1px] h-[14px] w-[14px] shrink-0" style={{ color: "var(--ux-brand)" }} />
               What you say is turned into text and then deleted. No recording of your voice is kept.

@@ -119,7 +119,7 @@ export default function SafetyPage() {
           <Card className="ux-onscroll-soft">
             <SectionHead title="Who gets told" sub="They see your location only while an alert is on" />
             {CONTACTS.length === 0 && (
-              <p className="text-[0.8125rem] leading-relaxed" style={{ color: "var(--ux-orange-ink)" }}>
+              <p className="text-xsm leading-relaxed" style={{ color: "var(--ux-orange-ink)" }}>
                 You have not named anyone yet, so an alert would reach nobody. Add someone you trust
                 before you need to.
               </p>
@@ -129,13 +129,13 @@ export default function SafetyPage() {
                 <li key={c.id} className="ux-hov flex items-center gap-3">
                   {/* The server keeps no photograph of a trusted contact, and
                       one is not needed to know who she picked. */}
-                  <span className="grid h-[38px] w-[38px] shrink-0 place-items-center rounded-full text-[0.875rem] font-semibold"
+                  <span className="grid h-[38px] w-[38px] shrink-0 place-items-center rounded-full text-sm font-semibold"
                         style={{ background: "var(--ux-brand-tint)", color: "var(--ux-brand)" }}>
                     {c.name.trim().charAt(0).toUpperCase()}
                   </span>
                   <div className="min-w-0 flex-1">
-                    <p className="truncate text-[0.8125rem] font-medium" style={{ color: "var(--ux-ink)" }}>{c.name}</p>
-                    <p className="mt-0.5 truncate text-[0.6875rem]" style={{ color: "var(--ux-muted)" }}>
+                    <p className="truncate text-xsm font-medium" style={{ color: "var(--ux-ink)" }}>{c.name}</p>
+                    <p className="mt-0.5 truncate text-2xs" style={{ color: "var(--ux-muted)" }}>
                       {c.relation} · {c.phone}
                     </p>
                   </div>
@@ -155,7 +155,7 @@ export default function SafetyPage() {
                 "We never show your phone number to a buyer or employer.",
                 "We never share your location unless you start an alert.",
               ].map((t) => (
-                <li key={t} className="flex items-start gap-2.5 text-[0.8125rem] leading-snug" style={{ color: "var(--ux-ink-2)" }}>
+                <li key={t} className="flex items-start gap-2.5 text-xsm leading-snug" style={{ color: "var(--ux-ink-2)" }}>
                   <Icons.Check className="mt-[2px] h-[14px] w-[14px] shrink-0" style={{ color: "var(--ux-green-ink)" }} strokeWidth={2.6} />
                   {t}
                 </li>
@@ -167,8 +167,8 @@ export default function SafetyPage() {
     >
       <div className="mb-[20px] flex items-end justify-between gap-4">
         <div>
-          <h1 className="text-[1.5rem] font-bold" style={{ color: "var(--ux-ink)" }}>Get help now</h1>
-          <p className="mt-1.5 text-[0.8125rem]" style={{ color: "var(--ux-muted)" }}>
+          <h1 className="text-2xl font-bold" style={{ color: "var(--ux-ink)" }}>Get help now</h1>
+          <p className="mt-1.5 text-xsm" style={{ color: "var(--ux-muted)" }}>
             Help you can reach in one step, and the tricks worth knowing about.
           </p>
         </div>
@@ -185,7 +185,7 @@ export default function SafetyPage() {
                    style={{ background: "var(--ux-tint-green)" }}>
                 <Icons.CheckCheck className="h-[22px] w-[22px] shrink-0" style={{ color: "var(--ux-green-ink)" }} />
                 <div className="min-w-0 flex-1">
-                  <p className="text-[0.875rem] font-semibold" style={{ color: "var(--ux-ink)" }}>
+                  <p className="text-sm font-semibold" style={{ color: "var(--ux-ink)" }}>
                     {/*
                       * Said exactly, because this is the sentence a woman acts
                       * on. It used to read "Sunita and Meera have been told
@@ -199,7 +199,7 @@ export default function SafetyPage() {
                       ? `Our team has it, with ${namesOf(CONTACTS)} named on it.`
                       : "Our team has it. You have named nobody to be reached, so add someone — or call 112 now."}
                   </p>
-                  <p className="mt-1 text-[0.75rem]" style={{ color: "var(--ux-ink-2)" }}>
+                  <p className="mt-1 text-xs" style={{ color: "var(--ux-ink-2)" }}>
                     If you are in danger right now, call 112 as well — do not wait for us.
                   </p>
                 </div>
@@ -214,7 +214,7 @@ export default function SafetyPage() {
                   quiet. It sits above the button, says what did not happen,
                   and names the numbers to ring instead. */}
               {raise.error && (
-                <p role="alert" className="ux-slide-up mb-3 rounded-[12px] p-3 text-[0.8125rem] font-semibold leading-relaxed"
+                <p role="alert" className="ux-slide-up mb-3 rounded-[12px] p-3 text-xsm font-semibold leading-relaxed"
                    style={{ background: "var(--ux-tint-orange)", color: "var(--ux-orange-ink)" }}>
                   {raise.error}
                 </p>
@@ -239,12 +239,12 @@ export default function SafetyPage() {
                     <Icons.Siren className="h-[22px] w-[22px] text-white" strokeWidth={2} />
                   </span>
                   <span className="min-w-0 flex-1">
-                    <span className="block text-[1rem] font-semibold" style={{ color: "var(--ux-ink)" }}>
+                    <span className="block text-base font-semibold" style={{ color: "var(--ux-ink)" }}>
                       {raise.busy ? "Sending the alert…"
                         : holding > 0 ? "Keep holding…"
                         : "Press and hold to send an alert"}
                     </span>
-                    <span className="mt-1 block text-[0.75rem]" style={{ color: "var(--ux-ink-2)" }}>
+                    <span className="mt-1 block text-xs" style={{ color: "var(--ux-ink-2)" }}>
                       {holding > 0
                         ? `${Math.max(0, Math.ceil((100 - holding) / 100 * 1.5))} seconds`
                         : "Hold for one and a half seconds. Let go and nothing happens."}
@@ -267,11 +267,11 @@ export default function SafetyPage() {
                           ink={h.urgent ? "--ux-orange" : "--ux-pink"} size={44} radius={12} />
                 {/* The number is text on the page, not hidden behind the tap —
                     she may be reading it out or writing it down. */}
-                <p className="mt-3 text-[1.75rem] font-bold leading-none tabular-nums" style={{ color: "var(--ux-ink)" }}>
+                <p className="mt-3 text-2xlm font-bold leading-none tabular-nums" style={{ color: "var(--ux-ink)" }}>
                   {h.number}
                 </p>
-                <p className="mt-2 text-[0.8125rem] font-medium" style={{ color: "var(--ux-ink-2)" }}>{h.name}</p>
-                <p className="mt-1 text-[0.75rem] leading-snug" style={{ color: "var(--ux-muted)" }}>{h.desc}</p>
+                <p className="mt-2 text-xsm font-medium" style={{ color: "var(--ux-ink-2)" }}>{h.name}</p>
+                <p className="mt-1 text-xs leading-snug" style={{ color: "var(--ux-muted)" }}>{h.desc}</p>
                 <div className="mt-3.5">
                   <Btn href={`tel:${h.number}`} variant="soft" size="sm" full icon="Phone">Call {h.number}</Btn>
                 </div>
@@ -288,8 +288,8 @@ export default function SafetyPage() {
               <div className="flex items-start gap-3.5">
                 <IconTile icon={s.icon} tint="--ux-tint-orange" ink="--ux-orange" size={44} radius={12} />
                 <div className="min-w-0 flex-1">
-                  <h3 className="text-[0.875rem] font-semibold leading-snug" style={{ color: "var(--ux-ink)" }}>{s.title}</h3>
-                  <p className="mt-1.5 text-[0.8125rem] leading-relaxed" style={{ color: "var(--ux-ink-2)" }}>{s.body}</p>
+                  <h3 className="text-sm font-semibold leading-snug" style={{ color: "var(--ux-ink)" }}>{s.title}</h3>
+                  <p className="mt-1.5 text-xsm leading-relaxed" style={{ color: "var(--ux-ink-2)" }}>{s.body}</p>
                 </div>
               </div>
             </Card>
@@ -297,10 +297,10 @@ export default function SafetyPage() {
           <Card className="ux-onscroll">
             <div className="flex items-center justify-between gap-4">
               <div className="min-w-0">
-                <h3 className="text-[0.875rem] font-semibold" style={{ color: "var(--ux-ink)" }}>
+                <h3 className="text-sm font-semibold" style={{ color: "var(--ux-ink)" }}>
                   Has any of this happened to you?
                 </h3>
-                <p className="mt-1 text-[0.8125rem]" style={{ color: "var(--ux-muted)" }}>
+                <p className="mt-1 text-xsm" style={{ color: "var(--ux-muted)" }}>
                   Tell us. We remove the account and warn everyone else.
                 </p>
               </div>
@@ -336,12 +336,12 @@ export default function SafetyPage() {
                       style={{ borderColor: "var(--ux-line)" }}>
                     <Icons.Flag className="mt-[2px] h-[15px] w-[15px] shrink-0" style={{ color: "var(--ux-orange-ink)" }} />
                     <div className="min-w-0 flex-1">
-                      <p className="text-[0.8125rem] font-semibold" style={{ color: "var(--ux-ink)" }}>{r.category}</p>
-                      <p className="mt-0.5 text-[0.75rem] leading-snug" style={{ color: "var(--ux-muted)" }}>
+                      <p className="text-xsm font-semibold" style={{ color: "var(--ux-ink)" }}>{r.category}</p>
+                      <p className="mt-0.5 text-xs leading-snug" style={{ color: "var(--ux-muted)" }}>
                         Filed {r.filed_on}
                       </p>
                     </div>
-                    <span className="shrink-0 rounded-[8px] px-2 py-1 text-[0.6875rem] font-semibold"
+                    <span className="shrink-0 rounded-[8px] px-2 py-1 text-2xs font-semibold"
                           style={{
                             background: r.status === "closed" ? "var(--ux-surface-2)" : "var(--ux-tint-amber)",
                             color: r.status === "closed" ? "var(--ux-muted)" : "var(--ux-amber-ink)",

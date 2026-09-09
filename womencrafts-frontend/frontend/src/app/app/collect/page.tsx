@@ -65,14 +65,14 @@ export default function CollectPage() {
       <div className="flex flex-col gap-5">
 
         <header>
-          <p className="text-[0.6875rem] font-extrabold uppercase tracking-[0.2em]" style={{ color: v("--ux-brand") }}>
+          <p className="text-2xs font-extrabold uppercase tracking-[0.2em]" style={{ color: v("--ux-brand") }}>
             Your link
           </p>
           <h1 className="mt-2 text-[clamp(1.5rem,3.2vw,2.125rem)] font-extrabold leading-[1.1] tracking-[-0.035em]"
               style={{ color: v("--ux-ink") }}>
             Sell to people who are not on WomSakhi
           </h1>
-          <p className="mt-1.5 max-w-[58ch] text-[0.875rem] leading-relaxed" style={{ color: v("--ux-muted") }}>
+          <p className="mt-1.5 max-w-[58ch] text-sm leading-relaxed" style={{ color: v("--ux-muted") }}>
             Your customers are already on WhatsApp. They are not going to install an app to buy a
             blouse. Send them this link instead — it opens on any phone, needs no account, and the
             money comes to your bank, not to us.
@@ -83,11 +83,11 @@ export default function CollectPage() {
         <Card pad={0} style={{ overflow: "hidden" }}>
           <div className="px-5 py-6 sm:px-7"
                style={{ background: `linear-gradient(140deg, ${v("--ux-brand-tint")}, ${v("--ux-surface")})` }}>
-            <p className="text-[0.6875rem] font-extrabold uppercase tracking-[0.14em]" style={{ color: v("--ux-brand") }}>
+            <p className="text-2xs font-extrabold uppercase tracking-[0.14em]" style={{ color: v("--ux-brand") }}>
               Your shop, on the open web
             </p>
             <div className="mt-3 flex flex-wrap items-center gap-3">
-              <p className="min-w-0 flex-1 break-all rounded-[12px] px-3.5 py-3 text-[1rem] font-bold"
+              <p className="min-w-0 flex-1 break-all rounded-[12px] px-3.5 py-3 text-base font-bold"
                  style={{ background: v("--ux-surface"), color: v("--ux-ink"), border: `1px solid ${v("--ux-line")}` }}>
                 {link}
               </p>
@@ -118,10 +118,10 @@ export default function CollectPage() {
                   <I name={x.i} className="h-[20px] w-[20px]" />
                 </span>
                 <div className="min-w-0">
-                  <p className="text-[1.25rem] font-extrabold leading-none tabular-nums" style={{ color: v("--ux-ink") }}>
+                  <p className="text-xl font-extrabold leading-none tabular-nums" style={{ color: v("--ux-ink") }}>
                     {x.n}
                   </p>
-                  <p className="mt-1 text-[0.75rem]" style={{ color: v("--ux-muted") }}>{x.l}</p>
+                  <p className="mt-1 text-xs" style={{ color: v("--ux-muted") }}>{x.l}</p>
                 </div>
               </div>
             </Card>
@@ -135,21 +135,21 @@ export default function CollectPage() {
           <Card pad={16}>
             <div className="flex flex-wrap items-end gap-3">
               <label className="min-w-[110px] flex-1">
-                <span className="mb-1.5 block text-[0.75rem] font-semibold" style={{ color: v("--ux-muted") }}>
+                <span className="mb-1.5 block text-xs font-semibold" style={{ color: v("--ux-muted") }}>
                   How much
                 </span>
                 <input value={amount} onChange={(e) => setAmount(e.target.value)}
                        inputMode="numeric" placeholder="400"
-                       className="ux-sq w-full rounded-[12px] border px-3.5 py-3 text-[1rem] font-bold outline-none"
+                       className="ux-sq w-full rounded-[12px] border px-3.5 py-3 text-base font-bold outline-none"
                        style={{ borderColor: v("--ux-line-strong"), background: v("--ux-surface"), color: v("--ux-ink") }} />
               </label>
               <label className="min-w-[160px] flex-[2]">
-                <span className="mb-1.5 block text-[0.75rem] font-semibold" style={{ color: v("--ux-muted") }}>
+                <span className="mb-1.5 block text-xs font-semibold" style={{ color: v("--ux-muted") }}>
                   What for
                 </span>
                 <input value={what} onChange={(e) => setWhat(e.target.value)}
                        placeholder="Blouse stitching"
-                       className="ux-sq w-full rounded-[12px] border px-3.5 py-3 text-[0.875rem] outline-none"
+                       className="ux-sq w-full rounded-[12px] border px-3.5 py-3 text-sm outline-none"
                        style={{ borderColor: v("--ux-line-strong"), background: v("--ux-surface"), color: v("--ux-ink") }} />
               </label>
               <Btn icon="Plus" onClick={ask} disabled={!amount.trim()}>Make the link</Btn>
@@ -168,13 +168,13 @@ export default function CollectPage() {
                       style={{ background: v(r.state === "paid" ? "--ux-green-ink"
                                              : r.state === "seen" ? "--ux-amber-ink" : "--ux-line-strong") }} />
                 <div className="min-w-0 flex-1">
-                  <p className="text-[0.875rem] font-bold" style={{ color: v("--ux-ink") }}>{r.what}</p>
-                  <p className="mt-0.5 text-[0.75rem]" style={{ color: v("--ux-muted") }}>
+                  <p className="text-sm font-bold" style={{ color: v("--ux-ink") }}>{r.what}</p>
+                  <p className="mt-0.5 text-xs" style={{ color: v("--ux-muted") }}>
                     {r.who} · {r.when} · {r.ref}
                     {r.paidOn ? ` · paid ${r.paidOn.toLowerCase()}` : ""}
                   </p>
                 </div>
-                <p className="shrink-0 text-[1rem] font-extrabold tabular-nums" style={{ color: v("--ux-ink") }}>
+                <p className="shrink-0 text-base font-extrabold tabular-nums" style={{ color: v("--ux-ink") }}>
                   {formatRupees(r.minor)}
                 </p>
                 {r.state === "paid"
@@ -194,7 +194,7 @@ export default function CollectPage() {
         <Card pad={16} style={{ background: v("--ux-surface-2"), borderColor: "transparent" }}>
           <div className="flex items-start gap-3">
             <I name="Landmark" className="mt-[2px] h-[16px] w-[16px] shrink-0" style={{ color: v("--ux-muted") }} />
-            <p className="text-[0.8125rem] leading-relaxed" style={{ color: v("--ux-ink-2") }}>
+            <p className="text-xsm leading-relaxed" style={{ color: v("--ux-ink-2") }}>
               Money paid on your link goes to your own bank account. WomSakhi never holds it, cannot
               stop it, and takes nothing from it. That is also the answer if anyone at home asks what
               the app does with your money: nothing — it never touches it.

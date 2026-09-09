@@ -93,11 +93,11 @@ export function Sheet({
         <div className="flex shrink-0 items-start gap-3 border-b px-5 py-4"
              style={{ borderColor: "var(--ux-line)" }}>
           <div className="min-w-0 flex-1">
-            <h2 id={titleId} className="text-[1rem] font-bold tracking-[-0.01em]" style={{ color: "var(--ux-ink)" }}>
+            <h2 id={titleId} className="text-base font-bold tracking-[-0.01em]" style={{ color: "var(--ux-ink)" }}>
               {title}
             </h2>
             {description && (
-              <p className="mt-0.5 text-[0.8125rem]" style={{ color: "var(--ux-muted)" }}>{description}</p>
+              <p className="mt-0.5 text-xsm" style={{ color: "var(--ux-muted)" }}>{description}</p>
             )}
           </div>
           <button

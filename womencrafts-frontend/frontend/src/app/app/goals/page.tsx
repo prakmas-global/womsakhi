@@ -68,14 +68,14 @@ export default function GoalsPage() {
 
         <header className="flex flex-wrap items-end gap-4">
           <div className="min-w-0 flex-1">
-            <p className="text-[0.6875rem] font-extrabold uppercase tracking-[0.2em]" style={{ color: v("--ux-brand") }}>
+            <p className="text-2xs font-extrabold uppercase tracking-[0.2em]" style={{ color: v("--ux-brand") }}>
               My goals
             </p>
             <h1 className="mt-2 text-[clamp(1.5rem,3.2vw,2.125rem)] font-extrabold leading-[1.1] tracking-[-0.035em]"
                 style={{ color: v("--ux-ink") }}>
               What you are working towards
             </h1>
-            <p className="mt-1.5 max-w-[56ch] text-[0.875rem] leading-relaxed" style={{ color: v("--ux-muted") }}>
+            <p className="mt-1.5 max-w-[56ch] text-sm leading-relaxed" style={{ color: v("--ux-muted") }}>
               In your words, on your timing. Nothing here goes red, nothing is ever late, and you can
               put any of it down without explaining.
             </p>
@@ -138,10 +138,10 @@ export default function GoalsPage() {
         {/* Confirmation — a goal can be months of saving, so it asks once. */}
         {confirmDelete && (
           <Card pad={20} style={{ borderColor: v("--ux-danger-solid") }}>
-            <p className="text-[0.9375rem] font-bold" style={{ color: v("--ux-ink") }}>
+            <p className="text-smd font-bold" style={{ color: v("--ux-ink") }}>
               Remove &ldquo;{goals.find((g) => g.id === confirmDelete)?.title}&rdquo;?
             </p>
-            <p className="mt-1.5 text-[0.8125rem] leading-relaxed" style={{ color: v("--ux-muted") }}>
+            <p className="mt-1.5 text-xsm leading-relaxed" style={{ color: v("--ux-muted") }}>
               The goal goes. Any money you actually saved stays exactly where it is — this only
               removes the note about what it was for.
             </p>
@@ -173,20 +173,20 @@ function GoalRow({ g, onEdit, onPause, onResume, onDone, onDelete }: {
         </span>
         <div className="min-w-0 flex-1">
           <div className="flex flex-wrap items-center gap-2">
-            <p className="text-[1rem] font-bold" style={{ color: v("--ux-ink") }}>{g.title}</p>
+            <p className="text-base font-bold" style={{ color: v("--ux-ink") }}>{g.title}</p>
             {g.state === "done" && <Pill tone="green" size="sm">Done</Pill>}
             {g.state === "paused" && <Pill tone="neutral" size="sm">Put aside</Pill>}
           </div>
-          <p className="mt-0.5 text-[0.8125rem] italic" style={{ color: v("--ux-muted") }}>{g.why}</p>
+          <p className="mt-0.5 text-xsm italic" style={{ color: v("--ux-muted") }}>{g.why}</p>
 
           {g.targetMinor !== null && (
             <>
               <div className="mt-3 flex items-end justify-between gap-3">
-                <p className="text-[0.875rem] font-bold tabular-nums" style={{ color: v("--ux-ink") }}>
+                <p className="text-sm font-bold tabular-nums" style={{ color: v("--ux-ink") }}>
                   {formatRupees(g.haveMinor)}
                   <span className="font-normal" style={{ color: v("--ux-muted") }}> of {formatRupees(g.targetMinor)}</span>
                 </p>
-                <p className="text-[0.75rem] font-semibold" style={{ color: v("--ux-muted") }}>{g.by}</p>
+                <p className="text-xs font-semibold" style={{ color: v("--ux-muted") }}>{g.by}</p>
               </div>
               <div className="mt-2 h-[6px] w-full overflow-hidden rounded-full" style={{ background: v("--ux-line") }}>
                 <div className="h-full rounded-full"
@@ -195,7 +195,7 @@ function GoalRow({ g, onEdit, onPause, onResume, onDone, onDelete }: {
             </>
           )}
           {g.targetMinor === null && (
-            <p className="mt-2 text-[0.75rem] font-semibold" style={{ color: v("--ux-muted") }}>{g.by}</p>
+            <p className="mt-2 text-xs font-semibold" style={{ color: v("--ux-muted") }}>{g.by}</p>
           )}
         </div>
       </div>
@@ -257,7 +257,7 @@ function GoalForm({ goal, onCancel, onSave }: {
 
   return (
     <Card pad={20} style={{ borderColor: v("--ux-brand") }}>
-      <p className="text-[1rem] font-bold" style={{ color: v("--ux-ink") }}>
+      <p className="text-base font-bold" style={{ color: v("--ux-ink") }}>
         {goal ? "Edit this goal" : "What are you working towards?"}
       </p>
 

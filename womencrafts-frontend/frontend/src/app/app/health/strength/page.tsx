@@ -58,14 +58,14 @@ export default function StrengthPage() {
         <Back to="/app/health" label="Back to health" />
 
         <header>
-          <p className="text-[0.6875rem] font-extrabold uppercase tracking-[0.2em]" style={{ color: v("--ux-brand") }}>
+          <p className="text-2xs font-extrabold uppercase tracking-[0.2em]" style={{ color: v("--ux-brand") }}>
             Strength
           </p>
           <h1 className="mt-2 text-[clamp(1.5rem,3.2vw,2.125rem)] font-extrabold leading-[1.1] tracking-[-0.035em]"
               style={{ color: v("--ux-ink") }}>
             Tired is not just tired
           </h1>
-          <p className="mt-1.5 max-w-[58ch] text-[0.875rem] leading-relaxed" style={{ color: v("--ux-muted") }}>
+          <p className="mt-1.5 max-w-[58ch] text-sm leading-relaxed" style={{ color: v("--ux-muted") }}>
             When you are paid for what you finish, feeling weak is money. Women doing piece work
             with low iron finished about <b>9% less in a shift</b> and earned about <b>4% less</b> —
             without ever taking a day off.
@@ -77,12 +77,12 @@ export default function StrengthPage() {
           <div className="flex flex-wrap items-start gap-4 p-5" style={{ background: v("--ux-brand-tint") }}>
             <IconTile icon="Droplet" tint="--ux-surface" ink="--ux-brand" size={48} radius={14} />
             <div className="min-w-0 flex-1">
-              <p className="text-[1rem] font-bold" style={{ color: v("--ux-ink") }}>{test.what}</p>
-              <p className="mt-1.5 max-w-[52ch] text-[0.8125rem] leading-relaxed" style={{ color: v("--ux-ink-2") }}>
+              <p className="text-base font-bold" style={{ color: v("--ux-ink") }}>{test.what}</p>
+              <p className="mt-1.5 max-w-[52ch] text-xsm leading-relaxed" style={{ color: v("--ux-ink-2") }}>
                 {test.why}. It costs <b>nothing</b>, takes <b>ten minutes</b>, and a woman does it.
                 Most women skip it because nobody ever told them those three things.
               </p>
-              <div className="mt-2.5 flex flex-wrap gap-x-4 gap-y-1 text-[0.75rem]" style={{ color: v("--ux-ink-2") }}>
+              <div className="mt-2.5 flex flex-wrap gap-x-4 gap-y-1 text-xs" style={{ color: v("--ux-ink-2") }}>
                 <span className="inline-flex items-center gap-1.5">
                   <I name="MapPin" className="h-[13px] w-[13px]" />{test.where}
                 </span>
@@ -101,7 +101,7 @@ export default function StrengthPage() {
 
         {note && (
           <Card pad={16} style={{ background: v("--ux-tint-green"), borderColor: "transparent" }}>
-            <p className="flex items-center gap-2 text-[0.8125rem] font-semibold" style={{ color: v("--ux-green-ink") }}>
+            <p className="flex items-center gap-2 text-xsm font-semibold" style={{ color: v("--ux-green-ink") }}>
               <I name="CheckCircle2" className="h-[16px] w-[16px]" />{note}
             </p>
           </Card>
@@ -130,14 +130,14 @@ export default function StrengthPage() {
                           }}>
                       {on && <I name="Check" className="h-[13px] w-[13px]" sw={3} />}
                     </span>
-                    <span className="text-[0.8125rem]" style={{ color: v("--ux-ink") }}>{s}</span>
+                    <span className="text-xsm" style={{ color: v("--ux-ink") }}>{s}</span>
                   </button>
                 );
               })}
             </div>
             {many && (
               <div className="mt-3.5 rounded-[12px] px-3.5 py-3" style={{ background: v("--ux-tint-amber") }}>
-                <p className="text-[0.8125rem] leading-relaxed" style={{ color: v("--ux-ink-2") }}>
+                <p className="text-xsm leading-relaxed" style={{ color: v("--ux-ink-2") }}>
                   That is worth ten minutes on a Tuesday. It might be iron, it might be something
                   else — the point is that a free test tells you, and guessing does not.
                 </p>
@@ -159,14 +159,14 @@ export default function StrengthPage() {
                          height: w.took >= w.of ? "100%" : "18%",
                          background: v(w.took >= w.of ? "--ux-green-ink" : "--ux-surface-2"),
                        }} />
-                  <span className="text-[0.6875rem] leading-tight" style={{ color: v("--ux-muted") }}>
+                  <span className="text-2xs leading-tight" style={{ color: v("--ux-muted") }}>
                     {w.week.replace(" weeks ago", "w").replace("Last week", "now")}
                   </span>
                 </div>
               ))}
             </div>
             <div className="mt-4 flex flex-wrap items-center gap-2 border-t pt-3.5" style={{ borderColor: v("--ux-line") }}>
-              <p className="flex-1 text-[0.8125rem]" style={{ color: v("--ux-ink-2") }}>
+              <p className="flex-1 text-xsm" style={{ color: v("--ux-ink-2") }}>
                 A weekly tablet is easier to keep up than a daily one, and works nearly as well.
               </p>
               <Btn size="sm" onClick={took}>I took it</Btn>
@@ -186,11 +186,11 @@ export default function StrengthPage() {
                   <IconTile icon={c.icon} tint="--ux-tint-green" ink="--ux-green-ink" size={40} />
                   <div className="min-w-0 flex-1">
                     <div className="flex flex-wrap items-center gap-2">
-                      <p className="text-[0.875rem] font-bold" style={{ color: v("--ux-ink") }}>{c.what}</p>
+                      <p className="text-sm font-bold" style={{ color: v("--ux-ink") }}>{c.what}</p>
                       {c.womanThere && <Pill tone="pink" size="sm">A woman does it</Pill>}
                     </div>
-                    <p className="mt-1 text-[0.75rem] leading-relaxed" style={{ color: v("--ux-muted") }}>{c.why}</p>
-                    <p className="mt-1.5 text-[0.75rem]" style={{ color: v("--ux-ink-2") }}>
+                    <p className="mt-1 text-xs leading-relaxed" style={{ color: v("--ux-muted") }}>{c.why}</p>
+                    <p className="mt-1.5 text-xs" style={{ color: v("--ux-ink-2") }}>
                       <b>{c.costs}</b> · {c.takes} · {c.where}
                     </p>
                   </div>
@@ -203,7 +203,7 @@ export default function StrengthPage() {
         <Card pad={16} style={{ background: v("--ux-surface-2"), borderColor: "transparent" }}>
           <div className="flex items-start gap-3">
             <I name="Lock" className="mt-[2px] h-[16px] w-[16px] shrink-0" style={{ color: v("--ux-muted") }} />
-            <p className="text-[0.8125rem] leading-relaxed" style={{ color: v("--ux-ink-2") }}>
+            <p className="text-xsm leading-relaxed" style={{ color: v("--ux-ink-2") }}>
               We keep whether you took a tablet and whether you had a test. Not your cycle, not your
               symptoms, not how you feel. Nothing here is ever shown to your circle or sent anywhere.
             </p>

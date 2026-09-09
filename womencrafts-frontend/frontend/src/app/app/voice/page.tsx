@@ -53,14 +53,14 @@ export default function VoiceSettingsPage() {
 
         <header className="flex flex-wrap items-end gap-4">
           <div className="min-w-0 flex-1">
-            <p className="text-[0.6875rem] font-extrabold uppercase tracking-[0.2em]" style={{ color: v("--ux-brand") }}>
+            <p className="text-2xs font-extrabold uppercase tracking-[0.2em]" style={{ color: v("--ux-brand") }}>
               Reading and speaking
             </p>
             <h1 className="mt-2 text-[clamp(1.5rem,3.2vw,2.125rem)] font-extrabold leading-[1.1] tracking-[-0.035em]"
                 style={{ color: v("--ux-ink") }}>
               You do not have to read this
             </h1>
-            <p className="mt-1.5 max-w-[56ch] text-[0.875rem] leading-relaxed" style={{ color: v("--ux-muted") }}>
+            <p className="mt-1.5 max-w-[56ch] text-sm leading-relaxed" style={{ color: v("--ux-muted") }}>
               Every screen can be read out to you, in your own language. Anywhere you would type,
               you can speak instead. Try it on this page first — press the button.
             </p>
@@ -83,8 +83,8 @@ export default function VoiceSettingsPage() {
                           color: v(lang === l.code ? "--ux-on-brand" : "--ux-ink"),
                           opacity: l.ready ? 1 : 0.45,
                         }}>
-                  <p className="text-[1rem] font-bold leading-none">{l.label}</p>
-                  <p className="mt-1 text-[0.6875rem]" style={{ opacity: 0.75 }}>
+                  <p className="text-base font-bold leading-none">{l.label}</p>
+                  <p className="mt-1 text-2xs" style={{ opacity: 0.75 }}>
                     {l.ready ? l.english : "coming"}
                   </p>
                 </button>
@@ -136,10 +136,10 @@ export default function VoiceSettingsPage() {
                 </span>
                 <div className="min-w-0 flex-1">
                   <div className="flex flex-wrap items-center gap-2">
-                    <p className="text-[0.875rem] font-bold" style={{ color: v("--ux-ink") }}>{p.label}</p>
+                    <p className="text-sm font-bold" style={{ color: v("--ux-ink") }}>{p.label}</p>
                     {p.id === "vp5" && <Pill tone="orange" size="sm">Careful</Pill>}
                   </div>
-                  <p className="mt-0.5 text-[0.75rem]" style={{ color: v("--ux-muted") }}>{p.detail}</p>
+                  <p className="mt-0.5 text-xs" style={{ color: v("--ux-muted") }}>{p.detail}</p>
                 </div>
                 <button type="button" role="switch" aria-checked={p.on} aria-label={p.label}
                         onClick={() => toggle(p.id)}
@@ -157,7 +157,7 @@ export default function VoiceSettingsPage() {
 
         {readsMoney && (
           <Card pad={16} style={{ background: v("--ux-tint-amber"), borderColor: "transparent" }}>
-            <p className="flex items-start gap-2 text-[0.8125rem] leading-relaxed" style={{ color: v("--ux-ink-2") }}>
+            <p className="flex items-start gap-2 text-xsm leading-relaxed" style={{ color: v("--ux-ink-2") }}>
               <I name="AlertTriangle" className="mt-[2px] h-[15px] w-[15px] shrink-0"
                  style={{ color: v("--ux-amber-ink") }} />
               Your phone will now say rupee amounts out loud. If anyone else is in the room, they
@@ -182,8 +182,8 @@ export default function VoiceSettingsPage() {
                     <I name={x.icon} className="h-[18px] w-[18px]" />
                   </span>
                   <div className="min-w-0 flex-1">
-                    <p className="text-[0.875rem] font-bold" style={{ color: v("--ux-ink") }}>{x.label}</p>
-                    <p className="text-[0.75rem]" style={{ color: v("--ux-muted") }}>{x.note}</p>
+                    <p className="text-sm font-bold" style={{ color: v("--ux-ink") }}>{x.label}</p>
+                    <p className="text-xs" style={{ color: v("--ux-muted") }}>{x.note}</p>
                   </div>
                   <I name="ChevronRight" className="h-[16px] w-[16px] shrink-0" style={{ color: v("--ux-faint") }} />
                 </a>
@@ -195,7 +195,7 @@ export default function VoiceSettingsPage() {
         <Card pad={16} style={{ background: v("--ux-surface-2"), borderColor: "transparent" }}>
           <div className="flex items-start gap-3">
             <I name="Info" className="mt-[2px] h-[16px] w-[16px] shrink-0" style={{ color: v("--ux-muted") }} />
-            <p className="text-[0.8125rem] leading-relaxed" style={{ color: v("--ux-ink-2") }}>
+            <p className="text-xsm leading-relaxed" style={{ color: v("--ux-ink-2") }}>
               Nothing ever reads out on its own — you press the button each time. The voice comes
               from your own phone, so nothing you look at is sent anywhere to be read.
             </p>

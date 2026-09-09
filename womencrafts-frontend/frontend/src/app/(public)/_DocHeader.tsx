@@ -7,19 +7,19 @@ export function DocHeader({ title, updated, lede }: { title: string; updated: st
     <>
       <Link
         href="/signin"
-        className="ux-hov mb-6 inline-flex items-center gap-1.5 text-[0.8125rem] font-medium"
+        className="ux-hov mb-6 inline-flex items-center gap-1.5 text-xsm font-medium"
         style={{ color: "var(--ux-brand)" }}
       >
         <ArrowLeft className="h-4 w-4" aria-hidden />
         Back to sign in
       </Link>
-      <h1 className="text-[1.75rem] font-bold leading-tight tracking-tight" style={{ color: "var(--ux-ink)" }}>
+      <h1 className="text-2xlm font-bold leading-tight tracking-tight" style={{ color: "var(--ux-ink)" }}>
         {title}
       </h1>
-      <p className="mt-2 text-[0.8125rem]" style={{ color: "var(--ux-faint)" }}>
+      <p className="mt-2 text-xsm" style={{ color: "var(--ux-faint)" }}>
         Last updated {updated}
       </p>
-      <p className="mt-5 text-[1rem] leading-relaxed" style={{ color: "var(--ux-ink-2)" }}>
+      <p className="mt-5 text-base leading-relaxed" style={{ color: "var(--ux-ink-2)" }}>
         {lede}
       </p>
       <hr className="mt-7" style={{ borderColor: "var(--ux-line)" }} />
@@ -42,10 +42,10 @@ export function ReviewNotice() {
       className="mt-10 rounded-[12px] p-4"
       style={{ background: "var(--ux-tint-orange)", border: "1px solid var(--ux-orange)" }}
     >
-      <p className="text-[0.8125rem] font-semibold" style={{ color: "var(--ux-orange-ink)" }}>
+      <p className="text-xsm font-semibold" style={{ color: "var(--ux-orange-ink)" }}>
         Draft — not yet reviewed by a lawyer
       </p>
-      <p className="mt-1.5 text-[0.75rem] leading-relaxed" style={{ color: "var(--ux-orange-ink)" }}>
+      <p className="mt-1.5 text-xs leading-relaxed" style={{ color: "var(--ux-orange-ink)" }}>
         Every statement here describes what the WomSakhi software actually does today,
         checked against the source. It has not been reviewed by a legal professional
         and should be before WomSakhi takes real money or opens to the public.

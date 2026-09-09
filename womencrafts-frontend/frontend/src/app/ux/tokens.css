@@ -186,28 +186,21 @@
   --ux-wash: rgba(102, 66, 193, 0.10);
 
   /* ── Type scale ────────────────────────────────────────────────────────────
-     Eleven steps. Before this the app used **36 distinct sizes** in arbitrary
-     brackets, with half-pixel increments (12.5, 11.5, 13.5, 14.5, 10.5, 9.5)
-     chosen per element — which is not a scale, it is 36 separate decisions, and
-     it is why two cards solving the same problem never quite matched.
+     Lives in `design-system/tokens.css`, not here.
 
-     The steps are close together at the dense end because this app is dense
-     there (chips, meta lines, ledger rows) and far apart at the display end
-     because headings should differ decisively or not at all.
+     There were briefly two scales: `--text-*` in the design system's `@theme`
+     (which Tailwind turns into real utilities — `text-xsm`, `text-2xs`) and an
+     `--ux-fs-*` set here. The second was never referenced once, by any CSS or
+     any component, while 2,203 call sites wrote the same numbers out as
+     arbitrary values — so the scale was being held by copy-paste and the
+     tokens meant to enforce it were dead.
 
-     `--ux-fs-*`, not `--ux-t-*`: the latter is already the transition scale. */
-  --ux-fs-caption: 0.6875rem;  /* 11px — timestamps, chip labels, legends */
-  --ux-fs-micro:   0.75rem;    /* 12px — secondary meta under a title */
-  --ux-fs-small:   0.8125rem;  /* 13px — dense body: ledger rows, card notes */
-  --ux-fs-body:    0.875rem;   /* 14px — default reading size */
-  --ux-fs-lead:    1rem;       /* 16px — lead paragraphs, list titles */
-  --ux-fs-h4:      1.125rem;   /* 18px — card titles */
-  --ux-fs-h3:      1.25rem;    /* 20px — section heads */
-  --ux-fs-h2:      1.5rem;     /* 24px — sub-page titles */
-  --ux-fs-h1:      1.75rem;    /* 28px — page titles */
-  --ux-fs-display: 2.25rem;    /* 36px — hero */
-  --ux-fs-hero:    2.75rem;    /* 44px — the one number a screen is about */
+     The sizes are now the named utilities, which also fixes the reason the
+     duplicate could not simply be pointed at: this file is imported per-layout
+     and the staff dashboard never loads it, so a `var(--ux-fs-*)` there would
+     have resolved to nothing. `@theme` is global.
 
+     `--ux-fs-scale` below stays — it is the text-size multiplier, not a step. */
   /* Her own text-size preference, applied at the root. 1 is the design size;
      the "Bigger text" control in Reading and speaking sets 1.15. Everything
      above is px, so this scales through `font-size` on <html> rather than by

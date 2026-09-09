@@ -47,14 +47,14 @@ export default function PapersPage() {
         <Back to="/app/haq" label="Back to Haq" />
 
         <header>
-          <p className="text-[0.6875rem] font-extrabold uppercase tracking-[0.2em]" style={{ color: v("--ux-brand") }}>
+          <p className="text-2xs font-extrabold uppercase tracking-[0.2em]" style={{ color: v("--ux-brand") }}>
             Your papers
           </p>
           <h1 className="mt-2 text-[clamp(1.5rem,3.2vw,2.125rem)] font-extrabold leading-[1.1] tracking-[-0.035em]"
               style={{ color: v("--ux-ink") }}>
             Sorted once, used everywhere
           </h1>
-          <p className="mt-1.5 max-w-[54ch] text-[0.875rem] leading-relaxed" style={{ color: v("--ux-muted") }}>
+          <p className="mt-1.5 max-w-[54ch] text-sm leading-relaxed" style={{ color: v("--ux-muted") }}>
             The same eight papers unlock nearly everything. Fix one and it counts for every
             benefit that was waiting on it.
           </p>
@@ -64,14 +64,14 @@ export default function PapersPage() {
           <div className="flex flex-wrap items-center justify-between gap-3">
             <Stat value={`${held} of ${rows.length}`} label="Papers in order"
                   icon="FolderCheck" tint="--ux-tint-green" ink="--ux-green-ink" />
-            <p className="text-[0.8125rem] font-bold tabular-nums" style={{ color: v("--ux-brand") }}>{pct}%</p>
+            <p className="text-xsm font-bold tabular-nums" style={{ color: v("--ux-brand") }}>{pct}%</p>
           </div>
           <div className="mt-3"><Progress pct={pct} /></div>
         </Card>
 
         {note && (
           <Card pad={16} style={{ background: v("--ux-tint-green"), borderColor: "transparent" }}>
-            <p className="flex items-center gap-2 text-[0.8125rem] font-semibold" style={{ color: v("--ux-green-ink") }}>
+            <p className="flex items-center gap-2 text-xsm font-semibold" style={{ color: v("--ux-green-ink") }}>
               <I name="CheckCircle2" className="h-[16px] w-[16px]" />{note}
             </p>
           </Card>
@@ -101,7 +101,7 @@ export default function PapersPage() {
         <Card pad={16} style={{ background: v("--ux-surface-2"), borderColor: "transparent" }}>
           <div className="flex items-start gap-3">
             <I name="ShieldCheck" className="mt-[2px] h-[16px] w-[16px] shrink-0" style={{ color: v("--ux-muted") }} />
-            <p className="text-[0.8125rem] leading-relaxed" style={{ color: v("--ux-ink-2") }}>
+            <p className="text-xsm leading-relaxed" style={{ color: v("--ux-ink-2") }}>
               Your papers stay on your account and are never shown to anyone in your circle —
               only whether a benefit is ready to apply for. Nothing here is sent to a lender.
             </p>

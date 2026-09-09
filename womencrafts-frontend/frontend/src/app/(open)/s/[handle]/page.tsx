@@ -76,22 +76,22 @@ export default function OpenShopPage({ params }: { params: Promise<{ handle: str
         <div className="px-5 pb-5 pt-6"
              style={{ background: `linear-gradient(150deg, ${v("--ux-brand-tint")}, ${v("--ux-surface")})` }}>
           <div className="flex items-start gap-4">
-            <span className="grid h-[58px] w-[58px] shrink-0 place-items-center rounded-full text-[1.5rem] font-bold"
+            <span className="grid h-[58px] w-[58px] shrink-0 place-items-center rounded-full text-2xl font-bold"
                   style={{ background: v("--ux-fill"), color: v("--ux-on-brand") }}>
               {shop.name.charAt(0)}
             </span>
             <div className="min-w-0 flex-1">
-              <h1 className="text-[1.5rem] font-extrabold leading-tight tracking-[-0.03em]" style={{ color: v("--ux-ink") }}>
+              <h1 className="text-2xl font-extrabold leading-tight tracking-[-0.03em]" style={{ color: v("--ux-ink") }}>
                 {shop.name}
               </h1>
-              <p className="mt-0.5 text-[0.8125rem]" style={{ color: v("--ux-ink-2") }}>{shop.trade}</p>
-              <p className="mt-0.5 text-[0.75rem]" style={{ color: v("--ux-muted") }}>
+              <p className="mt-0.5 text-xsm" style={{ color: v("--ux-ink-2") }}>{shop.trade}</p>
+              <p className="mt-0.5 text-xs" style={{ color: v("--ux-muted") }}>
                 {shop.place} · since {shop.since}
               </p>
             </div>
           </div>
 
-          <p className="mt-4 text-[0.875rem] leading-relaxed" style={{ color: v("--ux-ink-2") }}>
+          <p className="mt-4 text-sm leading-relaxed" style={{ color: v("--ux-ink-2") }}>
             {shop.about}
           </p>
 
@@ -104,7 +104,7 @@ export default function OpenShopPage({ params }: { params: Promise<{ handle: str
                 text: shop.complaints === 0 ? "No complaints, ever" : `${shop.complaints} complaint`,
                 tone: shop.complaints === 0 ? "--ux-green-ink" : "--ux-muted" },
             ].map((x) => (
-              <span key={x.text} className="inline-flex items-center gap-1.5 text-[0.75rem] font-semibold"
+              <span key={x.text} className="inline-flex items-center gap-1.5 text-xs font-semibold"
                     style={{ color: v(x.tone) }}>
                 <I name={x.icon} className="h-[13px] w-[13px]" sw={2.4} />{x.text}
               </span>
@@ -120,7 +120,7 @@ export default function OpenShopPage({ params }: { params: Promise<{ handle: str
 
       {/* What she sells */}
       <div>
-        <p className="mb-2 px-1 text-[0.6875rem] font-extrabold uppercase tracking-[0.16em]" style={{ color: v("--ux-muted") }}>
+        <p className="mb-2 px-1 text-2xs font-extrabold uppercase tracking-[0.16em]" style={{ color: v("--ux-muted") }}>
           What she makes
         </p>
         <div className="flex flex-col gap-2.5">
@@ -131,7 +131,7 @@ export default function OpenShopPage({ params }: { params: Promise<{ handle: str
       {/* Her free hours — the slots module, made bookable by someone with no account */}
       {free.length > 0 && (
         <div>
-          <p className="mb-2 px-1 text-[0.6875rem] font-extrabold uppercase tracking-[0.16em]" style={{ color: v("--ux-muted") }}>
+          <p className="mb-2 px-1 text-2xs font-extrabold uppercase tracking-[0.16em]" style={{ color: v("--ux-muted") }}>
             When she is free
           </p>
           <Card pad={16}>
@@ -143,8 +143,8 @@ export default function OpenShopPage({ params }: { params: Promise<{ handle: str
                           background: v(slot === s.id ? "--ux-fill" : "--ux-surface-2"),
                           color: v(slot === s.id ? "--ux-on-brand" : "--ux-ink"),
                         }}>
-                  <p className="text-[0.8125rem] font-bold">{s.day}, {s.time}</p>
-                  <p className="text-[0.6875rem]" style={{ opacity: 0.8 }}>{s.service} · {s.minutes} min</p>
+                  <p className="text-xsm font-bold">{s.day}, {s.time}</p>
+                  <p className="text-2xs" style={{ opacity: 0.8 }}>{s.service} · {s.minutes} min</p>
                 </button>
               ))}
             </div>
@@ -157,13 +157,13 @@ export default function OpenShopPage({ params }: { params: Promise<{ handle: str
         <Card pad={16} style={{ borderColor: v("--ux-brand") }}>
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div className="min-w-0">
-              <p className="text-[0.8125rem] font-bold" style={{ color: v("--ux-ink") }}>
+              <p className="text-xsm font-bold" style={{ color: v("--ux-ink") }}>
                 {cart.length > 0 && `${cart.length} ${cart.length === 1 ? "thing" : "things"}`}
                 {cart.length > 0 && slot && " · "}
                 {slot && "a time booked"}
               </p>
               {total > 0 && (
-                <p className="text-[1.125rem] font-extrabold tabular-nums" style={{ color: v("--ux-ink") }}>
+                <p className="text-lg font-extrabold tabular-nums" style={{ color: v("--ux-ink") }}>
                   {formatRupees(total)}
                 </p>
               )}
@@ -172,7 +172,7 @@ export default function OpenShopPage({ params }: { params: Promise<{ handle: str
               {total > 0 ? "Pay her" : "Book it"}
             </Btn>
           </div>
-          <p className="mt-3 text-[0.75rem] leading-relaxed" style={{ color: v("--ux-muted") }}>
+          <p className="mt-3 text-xs leading-relaxed" style={{ color: v("--ux-muted") }}>
             The money goes to her own bank account. WomSakhi does not hold it and takes nothing from it.
           </p>
         </Card>
@@ -183,10 +183,10 @@ export default function OpenShopPage({ params }: { params: Promise<{ handle: str
           <div className="flex items-start gap-3">
             <I name="CheckCircle2" className="mt-[1px] h-[18px] w-[18px] shrink-0" style={{ color: v("--ux-green-ink") }} />
             <div>
-              <p className="text-[0.875rem] font-bold" style={{ color: v("--ux-green-ink") }}>
+              <p className="text-sm font-bold" style={{ color: v("--ux-green-ink") }}>
                 {shop.name.split(" ")[0]} has your order
               </p>
-              <p className="mt-1 text-[0.8125rem] leading-relaxed" style={{ color: v("--ux-ink-2") }}>
+              <p className="mt-1 text-xsm leading-relaxed" style={{ color: v("--ux-ink-2") }}>
                 She will message you on this number. You do not need an account, and nothing here
                 signed you up for anything.
               </p>
@@ -205,17 +205,17 @@ function Row({ i, on, onToggle }: { i: PublicItem; on: boolean; onToggle: () => 
         <IconTile icon={i.icon} tint={i.tint} ink={i.ink} size={44} radius={12} />
         <div className="min-w-0 flex-1">
           <div className="flex flex-wrap items-center gap-2">
-            <p className="text-[0.875rem] font-bold leading-snug" style={{ color: v("--ux-ink") }}>{i.title}</p>
+            <p className="text-sm font-bold leading-snug" style={{ color: v("--ux-ink") }}>{i.title}</p>
             {i.madeToOrder && <Pill tone="green" size="sm">Made for you</Pill>}
             {i.stock !== null && i.stock <= 5 && <Pill tone="orange" size="sm">{i.stock} left</Pill>}
           </div>
-          <p className="mt-1 text-[0.75rem] leading-relaxed" style={{ color: v("--ux-muted") }}>{i.detail}</p>
+          <p className="mt-1 text-xs leading-relaxed" style={{ color: v("--ux-muted") }}>{i.detail}</p>
         </div>
         <div className="shrink-0 text-right">
-          <p className="text-[1rem] font-extrabold leading-none tabular-nums" style={{ color: v("--ux-ink") }}>
+          <p className="text-base font-extrabold leading-none tabular-nums" style={{ color: v("--ux-ink") }}>
             {formatRupees(i.minor)}
           </p>
-          {i.unit && <p className="mt-1 text-[0.6875rem]" style={{ color: v("--ux-muted") }}>{i.unit}</p>}
+          {i.unit && <p className="mt-1 text-2xs" style={{ color: v("--ux-muted") }}>{i.unit}</p>}
           <span className="mt-2 inline-flex h-[24px] w-[24px] items-center justify-center rounded-full"
                 style={{ background: v(on ? "--ux-fill" : "--ux-surface-2"), color: v(on ? "--ux-on-brand" : "--ux-muted") }}>
             <I name={on ? "Check" : "Plus"} className="h-[13px] w-[13px]" sw={2.6} />

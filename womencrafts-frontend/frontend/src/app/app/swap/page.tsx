@@ -60,14 +60,14 @@ export default function SwapPage() {
 
         <header className="flex flex-wrap items-end gap-4">
           <div className="min-w-0 flex-1">
-            <p className="text-[0.6875rem] font-extrabold uppercase tracking-[0.2em]" style={{ color: v("--ux-brand") }}>
+            <p className="text-2xs font-extrabold uppercase tracking-[0.2em]" style={{ color: v("--ux-brand") }}>
               Pass it on
             </p>
             <h1 className="mt-2 text-[clamp(1.5rem,3.2vw,2.125rem)] font-extrabold leading-[1.1] tracking-[-0.035em]"
                 style={{ color: v("--ux-ink") }}>
               What someone near you no longer needs
             </h1>
-            <p className="mt-1.5 max-w-[56ch] text-[0.875rem] leading-relaxed" style={{ color: v("--ux-muted") }}>
+            <p className="mt-1.5 max-w-[56ch] text-sm leading-relaxed" style={{ color: v("--ux-muted") }}>
               Uniforms outgrown, baby things finished with, a lehenga worn once. Collected in
               person from a woman you know. No prices, no posting, no fee.
             </p>
@@ -90,7 +90,7 @@ export default function SwapPage() {
 
         {note && (
           <Card pad={16} style={{ background: v("--ux-tint-green"), borderColor: "transparent" }}>
-            <p className="flex items-center gap-2 text-[0.8125rem] font-semibold" style={{ color: v("--ux-green-ink") }}>
+            <p className="flex items-center gap-2 text-xsm font-semibold" style={{ color: v("--ux-green-ink") }}>
               <I name="CheckCircle2" className="h-[16px] w-[16px]" />{note}
             </p>
           </Card>
@@ -119,14 +119,14 @@ export default function SwapPage() {
                       <IconTile icon={s.icon} tint={s.tint} ink={s.ink} size={44} radius={13} />
                       <div className="min-w-0 flex-1">
                         <div className="flex flex-wrap items-center gap-2">
-                          <p className="text-[0.875rem] font-bold" style={{ color: v("--ux-ink") }}>{s.what}</p>
-                          <span className="rounded-full px-2 py-[2px] text-[0.6875rem] font-bold"
+                          <p className="text-sm font-bold" style={{ color: v("--ux-ink") }}>{s.what}</p>
+                          <span className="rounded-full px-2 py-[2px] text-2xs font-bold"
                                 style={{ background: v(c.tint), color: v(c.ink) }}>{s.condition}</span>
                         </div>
-                        <p className="mt-0.5 text-[0.75rem]" style={{ color: v("--ux-muted") }}>
+                        <p className="mt-0.5 text-xs" style={{ color: v("--ux-muted") }}>
                           {s.from} · {s.km} km{s.size ? ` · ${s.size}` : ""}
                         </p>
-                        <p className="mt-2 text-[0.8125rem] leading-relaxed" style={{ color: v("--ux-ink-2") }}>
+                        <p className="mt-2 text-xsm leading-relaxed" style={{ color: v("--ux-ink-2") }}>
                           {s.wants}
                         </p>
                       </div>
@@ -149,7 +149,7 @@ export default function SwapPage() {
                 {taken.map((s) => (
                   <li key={s.id} className="flex items-center gap-3 px-4 py-3">
                     <I name="Check" className="h-[15px] w-[15px] shrink-0" style={{ color: v("--ux-green-ink") }} sw={2.6} />
-                    <p className="flex-1 text-[0.8125rem]" style={{ color: v("--ux-ink-2") }}>{s.what} · from {s.from}</p>
+                    <p className="flex-1 text-xsm" style={{ color: v("--ux-ink-2") }}>{s.what} · from {s.from}</p>
                   </li>
                 ))}
               </ul>
@@ -160,7 +160,7 @@ export default function SwapPage() {
         <Card pad={16} style={{ background: v("--ux-surface-2"), borderColor: "transparent" }}>
           <div className="flex items-start gap-3">
             <I name="Info" className="mt-[2px] h-[16px] w-[16px] shrink-0" style={{ color: v("--ux-muted") }} />
-            <p className="text-[0.8125rem] leading-relaxed" style={{ color: v("--ux-ink-2") }}>
+            <p className="text-xsm leading-relaxed" style={{ color: v("--ux-ink-2") }}>
               Nothing here has a price and nothing is posted. This is the swap women already do at
               the school gate — it just means you know what is going spare before you buy new.
             </p>

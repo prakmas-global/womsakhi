@@ -77,8 +77,8 @@ export default function SavedPage() {
                 {closing.map((i) => (
                   <li key={i.id}>
                     <Link href={i.href as never} className="ux-hov block">
-                      <p className="text-[0.8125rem] font-medium leading-snug" style={{ color: "var(--ux-ink)" }}>{i.title}</p>
-                      <p className="mt-0.5 text-[0.75rem] font-medium" style={{ color: "var(--ux-orange-ink)" }}>{i.urgent}</p>
+                      <p className="text-xsm font-medium leading-snug" style={{ color: "var(--ux-ink)" }}>{i.title}</p>
+                      <p className="mt-0.5 text-xs font-medium" style={{ color: "var(--ux-orange-ink)" }}>{i.urgent}</p>
                     </Link>
                   </li>
                 ))}
@@ -88,7 +88,7 @@ export default function SavedPage() {
 
           <Card>
             <SectionHead title="What saving does" icon="Info" />
-            <p className="text-[0.8125rem] leading-relaxed" style={{ color: "var(--ux-ink-2)" }}>
+            <p className="text-xsm leading-relaxed" style={{ color: "var(--ux-ink-2)" }}>
               Saving keeps a thing here, on this phone and any other you sign in on. It does not apply, book
               or reserve anything — you still have to press the button on the day.
             </p>
@@ -98,8 +98,8 @@ export default function SavedPage() {
     >
       <div className="mb-[20px] flex flex-wrap items-end justify-between gap-4">
         <div>
-          <h1 className="text-[1.5rem] font-bold" style={{ color: "var(--ux-ink)" }}>Saved</h1>
-          <p className="mt-1.5 text-[0.8125rem]" style={{ color: "var(--ux-muted)" }}>
+          <h1 className="text-2xl font-bold" style={{ color: "var(--ux-ink)" }}>Saved</h1>
+          <p className="mt-1.5 text-xsm" style={{ color: "var(--ux-muted)" }}>
             {live.length} {plural("thing", live.length)} you kept for later.
           </p>
         </div>
@@ -133,14 +133,14 @@ export default function SavedPage() {
               <Link href={(it.href || "/app/saved") as never}
                     className={`min-w-0 flex-1 ${it.href ? "ux-hov" : "pointer-events-none"}`}>
                 <div className="flex flex-wrap items-center gap-2">
-                  <p className="truncate text-[0.875rem] font-semibold" style={{ color: "var(--ux-ink)" }}>{it.title}</p>
+                  <p className="truncate text-sm font-semibold" style={{ color: "var(--ux-ink)" }}>{it.title}</p>
                   <Pill tone="neutral" size="sm">{it.kind}</Pill>
                   {/* Expired is stated, not hidden. Finding out it closed is information. */}
                   {it.gone && <Pill tone="neutral" size="sm">Closed</Pill>}
                 </div>
-                <p className="mt-0.5 truncate text-[0.75rem]" style={{ color: "var(--ux-muted)" }}>{it.sub}</p>
+                <p className="mt-0.5 truncate text-xs" style={{ color: "var(--ux-muted)" }}>{it.sub}</p>
                 {it.urgent && !it.gone && (
-                  <p className="mt-1 inline-flex items-center gap-1.5 text-[0.75rem] font-medium" style={{ color: "var(--ux-orange-ink)" }}>
+                  <p className="mt-1 inline-flex items-center gap-1.5 text-xs font-medium" style={{ color: "var(--ux-orange-ink)" }}>
                     <Icons.Clock className="h-[12px] w-[12px]" /> {it.urgent}
                   </p>
                 )}

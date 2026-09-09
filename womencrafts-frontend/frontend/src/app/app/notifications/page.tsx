@@ -203,7 +203,7 @@ export default function NotificationsPage() {
       <div className="flex flex-col gap-6">
         <header className="flex flex-wrap items-end gap-5">
           <div className="min-w-0 flex-1">
-            <p className="text-[0.6875rem] font-bold uppercase tracking-[0.2em]" style={{ color: "var(--ux-brand)" }}>
+            <p className="text-2xs font-bold uppercase tracking-[0.2em]" style={{ color: "var(--ux-brand)" }}>
               {new Intl.DateTimeFormat("en-GB", { weekday: "long", day: "numeric", month: "long" }).format(new Date())}
             </p>
             <h1 className="mt-2 max-w-[20ch] text-[clamp(1.5rem,3.2vw,2.25rem)] font-extrabold leading-[1.1] tracking-[-0.035em]"
@@ -229,7 +229,7 @@ export default function NotificationsPage() {
               return (
                 <button key={c.id} type="button" onClick={() => setCategory(c.id)}
                         aria-pressed={on}
-                        className="ux-press ux-sq inline-flex items-center gap-2 rounded-[12px] border px-3.5 py-2.5 text-[0.8125rem] font-semibold"
+                        className="ux-press ux-sq inline-flex items-center gap-2 rounded-[12px] border px-3.5 py-2.5 text-xsm font-semibold"
                         style={{
                           borderColor: on ? "var(--ux-fill)" : "var(--ux-line-strong)",
                           background: on ? "var(--ux-fill)" : "var(--ux-surface)",
@@ -238,7 +238,7 @@ export default function NotificationsPage() {
                   <Ico name={c.icon} className="h-[0.9375rem] w-[0.9375rem]" />
                   {c.label}
                   {n > 0 && (
-                    <span className="rounded-full px-1.5 text-[0.6875rem] font-bold"
+                    <span className="rounded-full px-1.5 text-2xs font-bold"
                           style={{ background: on ? "rgba(255,255,255,0.22)" : "var(--ux-brand-tint)",
                                    color: on ? "var(--ux-on-brand)" : "var(--ux-brand)" }}>
                       {n}
@@ -255,7 +255,7 @@ export default function NotificationsPage() {
                  style={{ background: "var(--ux-surface)", border: "1px solid var(--ux-line)" }}>
               {([["day", "Your day", "List"], ["one", "One at a time", "Target"]] as const).map(([m, label, icon]) => (
                 <button key={m} type="button" onClick={() => { setMode(m); setAt(0); }} aria-pressed={mode === m}
-                        className="ux-press flex items-center gap-2 rounded-full px-4 py-2.5 text-[0.8125rem] font-bold"
+                        className="ux-press flex items-center gap-2 rounded-full px-4 py-2.5 text-xsm font-bold"
                         style={mode === m
                           ? { background: "linear-gradient(96deg, var(--ux-rib-2), var(--ux-rib-3))", color: "var(--ux-on-brand)" }
                           : { color: "var(--ux-muted)" }}>
@@ -264,7 +264,7 @@ export default function NotificationsPage() {
               ))}
             </div>
             <button type="button" onClick={markAll} disabled={unread.length === 0}
-                    className="ux-press flex min-h-[44px] items-center gap-2 rounded-full px-4 text-[0.8125rem] font-bold disabled:opacity-40"
+                    className="ux-press flex min-h-[44px] items-center gap-2 rounded-full px-4 text-xsm font-bold disabled:opacity-40"
                     style={{ background: "var(--ux-surface)", border: "1px solid var(--ux-line)", color: "var(--ux-ink-2)" }}>
               <Icons.CheckCheck className="h-4 w-4" /> Mark all read
             </button>
@@ -302,8 +302,8 @@ function Timeline({
                style={{ background: "var(--ux-surface)", border: "1px solid var(--ux-line)" }}>
         <div>
           <Icons.BellOff className="mx-auto h-[32px] w-[32px]" style={{ color: "var(--ux-faint)" }} />
-          <p className="mt-3 text-[0.875rem] font-semibold" style={{ color: "var(--ux-ink)" }}>Nothing yet</p>
-          <p className="mt-1 text-[0.8125rem]" style={{ color: "var(--ux-muted)" }}>
+          <p className="mt-3 text-sm font-semibold" style={{ color: "var(--ux-ink)" }}>Nothing yet</p>
+          <p className="mt-1 text-xsm" style={{ color: "var(--ux-muted)" }}>
             Payments, replies and class reminders land here first.
           </p>
         </div>
@@ -318,14 +318,14 @@ function Timeline({
           {di === 0 ? (
             /* Where she is in the day — only ever on the newest group. */
             <div className="ux-tl-row items-center py-1">
-              <span className="pe-0 text-end text-[0.75rem] font-semibold" style={{ color: "var(--ux-muted)" }}>
+              <span className="pe-0 text-end text-xs font-semibold" style={{ color: "var(--ux-muted)" }}>
                 {clockOf(new Date().toISOString())}
               </span>
               <span className="flex items-center" style={{ paddingInlineStart: 14.5 }}>
                 <i className="block h-[11px] w-[11px] rounded-full"
                    style={{ background: "var(--ux-rib-3)", boxShadow: "0 0 0 4px var(--ux-tint-pink)" }} />
               </span>
-              <span className="flex items-center gap-2.5 text-[0.6875rem] font-bold uppercase tracking-[0.2em]"
+              <span className="flex items-center gap-2.5 text-2xs font-bold uppercase tracking-[0.2em]"
                     style={{ color: "var(--ux-pink-ink)" }}>
                 Now
                 <span className="h-px flex-1"
@@ -335,7 +335,7 @@ function Timeline({
           ) : (
             <div className="ux-tl-row my-5 items-center">
               <span />
-              <span className="col-span-2 flex items-center gap-3 text-[0.6875rem] font-bold uppercase tracking-[0.18em]"
+              <span className="col-span-2 flex items-center gap-3 text-2xs font-bold uppercase tracking-[0.18em]"
                     style={{ color: "var(--ux-faint)" }}>
                 {day}
                 <span className="h-px flex-1" style={{ background: "var(--ux-line)" }} />
@@ -370,7 +370,7 @@ function Event({
 
   return (
     <div className="ux-tl-row items-start py-2.5">
-      <span className="pt-[8px] text-end text-[0.75rem] font-semibold" style={{ color: "var(--ux-faint)" }}>
+      <span className="pt-[8px] text-end text-xs font-semibold" style={{ color: "var(--ux-faint)" }}>
         {clockOf(n.createdAt) || n.when}
       </span>
       <span className="ux-tl-node grid h-[34px] w-[34px] place-items-center rounded-[12px]"
@@ -384,10 +384,10 @@ function Event({
                  boxShadow: "var(--ux-shadow-card)", padding: 16 }
              : { background: "transparent", border: "1px solid transparent", padding: "6px 0" }}>
         <div className="flex items-center gap-3">
-          <h2 className="min-w-0 flex-1 text-[0.875rem] font-bold" style={{ color: "var(--ux-ink)" }}>
+          <h2 className="min-w-0 flex-1 text-sm font-bold" style={{ color: "var(--ux-ink)" }}>
             {n.title}
             {folded > 0 && (
-              <span className="ms-2 rounded-full px-2 py-[3px] text-[0.6875rem] font-bold align-middle"
+              <span className="ms-2 rounded-full px-2 py-[3px] text-2xs font-bold align-middle"
                     style={{ background: `var(${l.tint})`, color: `var(${l.ink})` }}>
                 {folded + 1}&#215;
               </span>
@@ -398,14 +398,14 @@ function Event({
           )}
         </div>
         {n.body && (
-          <p className="mt-1 text-[0.8125rem] leading-relaxed" style={{ color: "var(--ux-muted)" }}>{n.body}</p>
+          <p className="mt-1 text-xsm leading-relaxed" style={{ color: "var(--ux-muted)" }}>{n.body}</p>
         )}
 
         {/* The folded ones, on request — each keeps its own time. */}
         {folded > 0 && (
           <>
             <button type="button" onClick={() => setOpen((o) => !o)}
-                    className="ux-press mt-2 flex items-center gap-1.5 text-[0.75rem] font-bold"
+                    className="ux-press mt-2 flex items-center gap-1.5 text-xs font-bold"
                     style={{ color: "var(--ux-brand)" }}>
               {open ? "Hide" : `Show the other ${folded}`}
               <Icons.ChevronDown className={`h-[13px] w-[13px] transition-transform ${open ? "rotate-180" : ""}`} />
@@ -414,7 +414,7 @@ function Event({
               <div className="mt-2 flex flex-col gap-1.5 ps-3"
                    style={{ borderInlineStart: "2px solid var(--ux-line)" }}>
                 {rest.map((r) => (
-                  <div key={r.id} className="flex items-center gap-2 text-[0.75rem]" style={{ color: "var(--ux-muted)" }}>
+                  <div key={r.id} className="flex items-center gap-2 text-xs" style={{ color: "var(--ux-muted)" }}>
                     {isUnread(r) && (
                       <span className="h-[5px] w-[5px] shrink-0 rounded-full" style={{ background: "var(--ux-rib-3)" }} />
                     )}
@@ -433,7 +433,7 @@ function Event({
         <div className="mt-3 flex flex-wrap gap-2">
           {n.href && (
             <Link href={n.href} onClick={readAll}
-                  className="ux-press flex min-h-[36px] items-center gap-2 rounded-[12px] px-3.5 text-[0.75rem] font-bold"
+                  className="ux-press flex min-h-[36px] items-center gap-2 rounded-[12px] px-3.5 text-xs font-bold"
                   style={loud
                     ? { background: "linear-gradient(96deg, var(--ux-rib-2), var(--ux-rib-3))", color: "var(--ux-on-brand)" }
                     : { background: "var(--ux-surface)", border: "1px solid var(--ux-line-strong)", color: "var(--ux-ink-2)" }}>
@@ -443,7 +443,7 @@ function Event({
           )}
           {unreadInBundle > 0 && (
             <button type="button" onClick={readAll}
-                    className="ux-press flex min-h-[36px] items-center gap-2 rounded-[12px] px-3.5 text-[0.75rem] font-bold"
+                    className="ux-press flex min-h-[36px] items-center gap-2 rounded-[12px] px-3.5 text-xs font-bold"
                     style={{ background: "var(--ux-surface)", border: "1px solid var(--ux-line-strong)", color: "var(--ux-muted)" }}>
               <Icons.Check className="h-[13px] w-[13px]" />
               {folded > 0 ? `Mark all ${unreadInBundle} read` : "Mark read"}
@@ -470,14 +470,14 @@ function Focus({
       <section className="mx-auto w-full max-w-[620px] rounded-[24px] p-12 text-center"
                style={{ background: "var(--ux-surface)", border: "1px solid var(--ux-line-strong)" }}>
         <Icons.CheckCheck className="mx-auto h-[40px] w-[40px]" style={{ color: "var(--ux-green-ink)" }} />
-        <h2 className="mt-4 text-[1.5rem] font-extrabold tracking-[-0.02em]" style={{ color: "var(--ux-ink)" }}>
+        <h2 className="mt-4 text-2xl font-extrabold tracking-[-0.02em]" style={{ color: "var(--ux-ink)" }}>
           That is everything.
         </h2>
-        <p className="mt-2 text-[0.875rem]" style={{ color: "var(--ux-muted)" }}>
+        <p className="mt-2 text-sm" style={{ color: "var(--ux-muted)" }}>
           Nothing else needs you. The rest is on your day view.
         </p>
         <button type="button" onClick={onDone}
-                className="ux-press ux-btn-g mx-auto mt-6 flex min-h-[44px] items-center gap-2 rounded-[12px] px-5 text-[0.8125rem] font-bold"
+                className="ux-press ux-btn-g mx-auto mt-6 flex min-h-[44px] items-center gap-2 rounded-[12px] px-5 text-xsm font-bold"
                 style={{ background: "linear-gradient(96deg, var(--ux-rib-2), var(--ux-rib-3))", color: "var(--ux-on-brand)" }}>
           Back to your day <Icons.ArrowRight className="h-4 w-4" />
         </button>
@@ -505,28 +505,28 @@ function Focus({
               style={{ background: `var(${l.tint})`, color: `var(${l.ink})` }}>
           <Ico name={n.icon} className="h-[26px] w-[26px]" />
         </span>
-        <h2 className="mt-5 text-[1.25rem] font-extrabold leading-[1.25] tracking-[-0.025em]" style={{ color: "var(--ux-ink)" }}>
+        <h2 className="mt-5 text-xl font-extrabold leading-[1.25] tracking-[-0.025em]" style={{ color: "var(--ux-ink)" }}>
           {n.title}
         </h2>
-        {n.body && <p className="mt-3 text-[0.875rem]" style={{ color: "var(--ux-muted)" }}>{n.body}</p>}
+        {n.body && <p className="mt-3 text-sm" style={{ color: "var(--ux-muted)" }}>{n.body}</p>}
         <div className="mt-7 flex flex-wrap justify-center gap-2.5">
           {n.href && (
             <Link href={n.href} onClick={() => onRead(n.id)}
-                  className="ux-press flex min-h-[46px] items-center gap-2 rounded-[12px] px-6 text-[0.8125rem] font-bold"
+                  className="ux-press flex min-h-[46px] items-center gap-2 rounded-[12px] px-6 text-xsm font-bold"
                   style={{ background: "linear-gradient(96deg, var(--ux-rib-2), var(--ux-rib-3))", color: "var(--ux-on-brand)" }}>
               {l.label} <Icons.ArrowRight className="h-4 w-4" />
             </Link>
           )}
           {/* Skipping is a choice, not a failure — so it is offered plainly. */}
           <button type="button" onClick={next}
-                  className="ux-press flex min-h-[46px] items-center gap-2 rounded-[12px] px-5 text-[0.8125rem] font-bold"
+                  className="ux-press flex min-h-[46px] items-center gap-2 rounded-[12px] px-5 text-xsm font-bold"
                   style={{ background: "var(--ux-surface-2)", border: "1px solid var(--ux-line-strong)", color: "var(--ux-ink)" }}>
             <Icons.Check className="h-4 w-4" /> Done with this
           </button>
         </div>
       </div>
 
-      <div className="mt-5 flex items-center justify-between text-[0.75rem]" style={{ color: "var(--ux-muted)" }}>
+      <div className="mt-5 flex items-center justify-between text-xs" style={{ color: "var(--ux-muted)" }}>
         <button type="button" onClick={() => setAt(Math.max(0, at - 1))} disabled={at === 0}
                 className="ux-press flex items-center gap-1.5 font-bold disabled:opacity-40">
           <Icons.ChevronLeft className="h-4 w-4" /> Back
@@ -581,20 +581,20 @@ function Channels({ card, style }: { card: string; style: React.CSSProperties })
 
   return (
     <section className={card} style={style}>
-      <h2 className="mb-3 flex items-center gap-2 text-[0.875rem] font-bold" style={{ color: "var(--ux-ink)" }}>
+      <h2 className="mb-3 flex items-center gap-2 text-sm font-bold" style={{ color: "var(--ux-ink)" }}>
         <Icons.Sparkles className="h-[15px] w-[15px]" style={{ color: "var(--ux-brand)" }} /> How you are told
-        <Link href="/app/settings/notifications" className="ms-auto text-[0.75rem] font-semibold"
+        <Link href="/app/settings/notifications" className="ms-auto text-xs font-semibold"
               style={{ color: "var(--ux-brand)" }}>Settings</Link>
       </h2>
       {items === null ? (
-        <p className="text-[0.8125rem]" style={{ color: "var(--ux-muted)" }}>Loading…</p>
+        <p className="text-xsm" style={{ color: "var(--ux-muted)" }}>Loading…</p>
       ) : items.length === 0 ? (
-        <p className="text-[0.8125rem]" style={{ color: "var(--ux-muted)" }}>Could not load your channels.</p>
+        <p className="text-xsm" style={{ color: "var(--ux-muted)" }}>Could not load your channels.</p>
       ) : (
         items.map((c) => (
           <button key={c.id} type="button" onClick={() => flip(c)} disabled={busy === c.label}
                   aria-pressed={c.on}
-                  className="ux-press flex min-h-[38px] w-full items-center gap-2.5 text-[0.8125rem] disabled:opacity-50"
+                  className="ux-press flex min-h-[38px] w-full items-center gap-2.5 text-xsm disabled:opacity-50"
                   style={{ color: "var(--ux-muted)" }}>
             <Ico name={c.icon} className="h-[14px] w-[14px]" />
             {c.label}
@@ -634,26 +634,26 @@ function QuietCard() {
   return (
     <section className="overflow-hidden rounded-[20px] p-4"
              style={{ background: "linear-gradient(150deg, var(--ux-brand-900), var(--ux-fill))" }}>
-      <h2 className="mb-2 flex items-center gap-2 text-[0.875rem] font-bold" style={{ color: "var(--ux-on-brand)" }}>
+      <h2 className="mb-2 flex items-center gap-2 text-sm font-bold" style={{ color: "var(--ux-on-brand)" }}>
         <Icons.Moon className="h-[15px] w-[15px]" style={{ color: "var(--ux-rib-5)" }} /> Quiet hours
       </h2>
       {p && p.quiet_hours ? (
         <>
-          <b className="block text-[1.125rem] font-extrabold tabular-nums" style={{ color: "var(--ux-on-brand)" }}>
+          <b className="block text-lg font-extrabold tabular-nums" style={{ color: "var(--ux-on-brand)" }}>
             {fmt(p.quiet_start)} — {fmt(p.quiet_end)}
           </b>
-          <p className="mt-1 text-[0.75rem] leading-relaxed" style={{ color: "var(--ux-on-brand-2)" }}>
+          <p className="mt-1 text-xs leading-relaxed" style={{ color: "var(--ux-on-brand-2)" }}>
             {days === 7 ? "Every night" : days === 0 ? "No nights picked" : `${days} nights a week`}.
             Anything urgent still waits here for the morning.
           </p>
         </>
       ) : (
-        <p className="text-[0.75rem] leading-relaxed" style={{ color: "var(--ux-on-brand-2)" }}>
+        <p className="text-xs leading-relaxed" style={{ color: "var(--ux-on-brand-2)" }}>
           {p ? "Off — everything reaches you at any hour." : "Nothing buzzes while you sleep."}
         </p>
       )}
       <Link href="/app/settings/quiet-hours"
-            className="ux-press mt-3 flex min-h-[38px] items-center justify-center gap-2 rounded-[12px] text-[0.75rem] font-bold"
+            className="ux-press mt-3 flex min-h-[38px] items-center justify-center gap-2 rounded-[12px] text-xs font-bold"
             style={{ background: "var(--ux-on-brand-btn)", color: "var(--ux-on-brand-btn-ink)" }}>
         {p && p.quiet_hours ? "Change your quiet hours" : "Set your quiet hours"}
         <Icons.ArrowRight className="h-[14px] w-[14px]" />
@@ -671,17 +671,17 @@ function Rail({ counts, unread }: { counts: Record<string, number>; unread: numb
   return (
     <div className="flex flex-col gap-4">
       <section className={card} style={style}>
-        <h2 className="mb-3 flex items-center gap-2 text-[0.875rem] font-bold" style={{ color: "var(--ux-ink)" }}>
+        <h2 className="mb-3 flex items-center gap-2 text-sm font-bold" style={{ color: "var(--ux-ink)" }}>
           <Icons.Bell className="h-[15px] w-[15px]" style={{ color: "var(--ux-brand)" }} />
           Unread
-          <b className="ms-auto text-[1rem] font-extrabold tabular-nums">{unread}</b>
+          <b className="ms-auto text-base font-extrabold tabular-nums">{unread}</b>
         </h2>
         {rows.length === 0 ? (
-          <p className="text-[0.8125rem]" style={{ color: "var(--ux-muted)" }}>Nothing unread.</p>
+          <p className="text-xsm" style={{ color: "var(--ux-muted)" }}>Nothing unread.</p>
         ) : (
           <div className="flex flex-col gap-2">
             {rows.map(([kind, n]) => (
-              <div key={kind} className="flex items-center gap-2.5 text-[0.8125rem]" style={{ color: "var(--ux-muted)" }}>
+              <div key={kind} className="flex items-center gap-2.5 text-xsm" style={{ color: "var(--ux-muted)" }}>
                 <span className="h-[8px] w-[8px] shrink-0 rounded-full" style={{ background: `var(${DOT[kind] ?? "--ux-violet"})` }} />
                 {NAME[kind] ?? kind}
                 <b className="ms-auto font-bold" style={{ color: "var(--ux-ink)" }}>{n}</b>

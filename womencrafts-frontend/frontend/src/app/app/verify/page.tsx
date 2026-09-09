@@ -114,7 +114,7 @@ export default function VerifyPage() {
         }}
       />
       {problem && (
-        <p role="alert" className="ux-slide-up mt-3 text-[0.8125rem] leading-relaxed"
+        <p role="alert" className="ux-slide-up mt-3 text-xsm leading-relaxed"
            style={{ color: "var(--ux-orange-ink)" }}>
           {problem}
         </p>
@@ -156,10 +156,10 @@ export default function VerifyPage() {
           <div className="flex items-start gap-4">
             <IconTile icon="Mail" tint="--ux-tint-violet" ink="--ux-violet" size={52} radius={14} />
             <div className="min-w-0 flex-1">
-              <h2 className="text-[1rem] font-semibold" style={{ color: "var(--ux-ink)" }}>
+              <h2 className="text-base font-semibold" style={{ color: "var(--ux-ink)" }}>
                 Check your inbox
               </h2>
-              <p className="mt-1.5 text-[0.8125rem] leading-relaxed" style={{ color: "var(--ux-ink-2)" }}>
+              <p className="mt-1.5 text-xsm leading-relaxed" style={{ color: "var(--ux-ink-2)" }}>
                 The link is good for 24 hours. If it is not there, look in spam — it arrives from
                 hello@womsakhi.in.
               </p>
@@ -184,10 +184,10 @@ export default function VerifyPage() {
               <div className="flex items-start gap-3.5">
                 <Icons.AlertTriangle className="mt-[2px] h-[20px] w-[20px] shrink-0" style={{ color: "var(--ux-orange-ink)" }} />
                 <div className="min-w-0">
-                  <p className="text-[0.875rem] font-semibold" style={{ color: "var(--ux-ink)" }}>
+                  <p className="text-sm font-semibold" style={{ color: "var(--ux-ink)" }}>
                     The photo was too blurred to read
                   </p>
-                  <p className="mt-1 text-[0.8125rem] leading-relaxed" style={{ color: "var(--ux-ink-2)" }}>
+                  <p className="mt-1 text-xsm leading-relaxed" style={{ color: "var(--ux-ink-2)" }}>
                     Take it in daylight, flat on a table, with all four corners in the frame. Nothing else
                     about your account has changed.
                   </p>
@@ -206,11 +206,11 @@ export default function VerifyPage() {
                               tint={done ? "--ux-tint-green" : d.tint}
                               ink={done ? "--ux-green" : d.ink} size={46} radius={12} />
                     <div className="min-w-0 flex-1">
-                      <p className="flex items-center gap-2 text-[0.875rem] font-semibold" style={{ color: "var(--ux-ink)" }}>
+                      <p className="flex items-center gap-2 text-sm font-semibold" style={{ color: "var(--ux-ink)" }}>
                         {d.label}
                         {done && <Pill tone="green" size="sm">Added</Pill>}
                       </p>
-                      <p className="mt-0.5 text-[0.75rem]" style={{ color: "var(--ux-muted)" }}>{d.note}</p>
+                      <p className="mt-0.5 text-xs" style={{ color: "var(--ux-muted)" }}>{d.note}</p>
                     </div>
                     <Btn variant={done ? "outline" : "primary"} size="sm"
                          icon={done ? "RotateCcw" : "Upload"}
@@ -225,7 +225,7 @@ export default function VerifyPage() {
           </div>
 
           <div className="mt-[24px] flex items-center justify-between gap-4">
-            <p className="text-[0.75rem]" style={{ color: "var(--ux-faint)" }}>
+            <p className="text-xs" style={{ color: "var(--ux-faint)" }}>
               {allUploaded ? "That is everything we need." : `${Math.max(0, DOCS.length - sent.length)} still to add.`}
             </p>
             <Btn variant="primary" iconEnd="ArrowRight"
@@ -245,11 +245,11 @@ export default function VerifyPage() {
             <img loading="lazy" decoding="async" src="/ux/art/scene-woman-reading-document.webp" alt=""
                  className="h-[92px] w-[92px] shrink-0 object-contain" />
             <div className="min-w-0 flex-1">
-              <h2 className="text-[1rem] font-semibold" style={{ color: "var(--ux-ink)" }}>
+              <h2 className="text-base font-semibold" style={{ color: "var(--ux-ink)" }}>
                 Usually done within a day
               </h2>
               {/* Never a bare "pending". Say who, and roughly how long. */}
-              <p className="mt-2 text-[0.8125rem] leading-relaxed" style={{ color: "var(--ux-ink-2)" }}>
+              <p className="mt-2 text-xsm leading-relaxed" style={{ color: "var(--ux-ink-2)" }}>
                 Two people review new accounts, Monday to Saturday. You will get an email the moment it is
                 done — you do not need to keep this open.
               </p>

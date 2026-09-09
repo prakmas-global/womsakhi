@@ -56,16 +56,16 @@ function Row({ f, i }: { f: Find; i: number }) {
       )}
       <div className="min-w-0 flex-1">
         <div className="flex items-start gap-2">
-          <h3 className="min-w-0 flex-1 truncate text-[0.875rem] font-semibold" style={{ color: "var(--ux-ink)" }}>
+          <h3 className="min-w-0 flex-1 truncate text-sm font-semibold" style={{ color: "var(--ux-ink)" }}>
             {f.title}
           </h3>
           {f.isNew && <Pill tone="brand" size="sm">New</Pill>}
           {f.near && <Pill tone="green" size="sm">Near you</Pill>}
         </div>
-        <p className="mt-0.5 truncate text-[0.75rem]" style={{ color: "var(--ux-muted)" }}>{f.sub}</p>
-        <p className="mt-1 truncate text-[0.75rem] font-medium" style={{ color: "var(--ux-ink-2)" }}>{f.meta}</p>
+        <p className="mt-0.5 truncate text-xs" style={{ color: "var(--ux-muted)" }}>{f.sub}</p>
+        <p className="mt-1 truncate text-xs font-medium" style={{ color: "var(--ux-ink-2)" }}>{f.meta}</p>
       </div>
-      <span className="shrink-0 rounded-full px-2.5 py-[4px] text-[0.6875rem] font-semibold"
+      <span className="shrink-0 rounded-full px-2.5 py-[4px] text-2xs font-semibold"
             style={{ background: `var(${f.tint})`, color: `var(${f.ink}-ink)` }}>
         {f.kind}
       </span>
@@ -144,12 +144,12 @@ function Discover() {
                       style={{ background: kinds.includes(k) ? "var(--ux-brand-tint)" : "transparent" }}
                     >
                       <IconTile icon={look.icon} tint={look.tint} ink={look.ink} size={34} radius={10} />
-                      <span className="min-w-0 flex-1 truncate text-[0.8125rem]"
+                      <span className="min-w-0 flex-1 truncate text-xsm"
                             style={{ color: kinds.includes(k) ? "var(--ux-brand)" : "var(--ux-ink-2)",
                                      fontWeight: kinds.includes(k) ? 600 : 400 }}>
                         {plural(k, 2)}
                       </span>
-                      <span className="shrink-0 text-[0.75rem]" style={{ color: "var(--ux-faint)" }}>
+                      <span className="shrink-0 text-xs" style={{ color: "var(--ux-faint)" }}>
                         {counts.get(k) ?? 0}
                       </span>
                     </button>
@@ -164,10 +164,10 @@ function Discover() {
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img loading="lazy" decoding="async" src={DISCOVER_ART.hero} alt=""
                  className="ux-float pointer-events-none absolute -bottom-3 -end-4 h-[100px] w-[100px] object-contain" />
-            <h3 className="relative w-[60%] text-[0.875rem] font-semibold" style={{ color: "var(--ux-ink)" }}>
+            <h3 className="relative w-[60%] text-sm font-semibold" style={{ color: "var(--ux-ink)" }}>
               Tell Sakhi what you want
             </h3>
-            <p className="relative mt-2 w-[60%] text-[0.75rem] leading-relaxed" style={{ color: "var(--ux-muted)" }}>
+            <p className="relative mt-2 w-[60%] text-xs leading-relaxed" style={{ color: "var(--ux-muted)" }}>
               Say it in your own words and she will find it across all of this.
             </p>
             <div className="relative mt-3 w-[60%]">
@@ -177,8 +177,8 @@ function Discover() {
         </div>
       }
     >
-      <h1 className="text-[1.5rem] font-bold" style={{ color: "var(--ux-ink)" }}>Everything</h1>
-      <p className="mt-1.5 text-[0.8125rem]" style={{ color: "var(--ux-muted)" }}>
+      <h1 className="text-2xl font-bold" style={{ color: "var(--ux-ink)" }}>Everything</h1>
+      <p className="mt-1.5 text-xsm" style={{ color: "var(--ux-muted)" }}>
         Courses, work, mentors, circles, events and schemes — {FINDS.length} things in one place.
       </p>
 
@@ -201,7 +201,7 @@ function Discover() {
       {filtering ? (
         shown.length ? (
           <>
-            <p className="mb-3 text-[0.8125rem]" style={{ color: "var(--ux-muted)" }}>
+            <p className="mb-3 text-xsm" style={{ color: "var(--ux-muted)" }}>
               {shown.length} {plural("result", shown.length)}
             </p>
             <div className="ux-deck ux-stagger space-y-[12px]">

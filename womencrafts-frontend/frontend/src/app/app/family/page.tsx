@@ -39,7 +39,7 @@ export default function FamilyPage() {
         <div className="space-y-[16px]">
           <Card>
             <SectionHead title="What you are entitled to" icon="Baby" />
-            <p className="text-[0.8125rem] leading-relaxed" style={{ color: "var(--ux-ink-2)" }}>
+            <p className="text-xsm leading-relaxed" style={{ color: "var(--ux-ink-2)" }}>
               Every ward in India has an Anganwadi centre. Childcare, a hot meal and immunisation for
               under-sixes, free, whatever you earn. Most women do not know theirs exists.
             </p>
@@ -50,7 +50,7 @@ export default function FamilyPage() {
 
           <Card>
             <SectionHead title="Sharing it between you" />
-            <p className="text-[0.8125rem] leading-relaxed" style={{ color: "var(--ux-ink-2)" }}>
+            <p className="text-xsm leading-relaxed" style={{ color: "var(--ux-ink-2)" }}>
               Three members, three days each. Cheaper than any creche, safer than none, and the children
               already know each other.
             </p>
@@ -66,10 +66,10 @@ export default function FamilyPage() {
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img loading="lazy" decoding="async" src={WELLBEING_ART.family} alt=""
                  className="ux-float pointer-events-none absolute -bottom-3 -end-4 h-[100px] w-[100px] object-contain" />
-            <h3 className="relative w-[60%] text-[0.875rem] font-semibold" style={{ color: "var(--ux-ink)" }}>
+            <h3 className="relative w-[60%] text-sm font-semibold" style={{ color: "var(--ux-ink)" }}>
               Working with a baby
             </h3>
-            <p className="relative mt-2 w-[60%] text-[0.75rem] leading-relaxed" style={{ color: "var(--ux-muted)" }}>
+            <p className="relative mt-2 w-[60%] text-xs leading-relaxed" style={{ color: "var(--ux-muted)" }}>
               What members actually do — from women who have done it, not from a manual.
             </p>
           </div>
@@ -78,11 +78,11 @@ export default function FamilyPage() {
     >
       <div className="mb-[20px] flex items-end justify-between gap-4">
         <div>
-          <h1 className="text-[1.5rem] font-bold" style={{ color: "var(--ux-ink)" }}>Family &amp; childcare</h1>
+          <h1 className="text-2xl font-bold" style={{ color: "var(--ux-ink)" }}>Family &amp; childcare</h1>
           {/* Counted both ways round. "and {CRECHES.length - 1} paid" assumed
               exactly one free option, and "near you" is a distance nobody has
               measured — the API carries no location for these. */}
-          <p className="mt-1.5 text-[0.8125rem]" style={{ color: "var(--ux-muted)" }}>
+          <p className="mt-1.5 text-xsm" style={{ color: "var(--ux-muted)" }}>
             {free} free, {CRECHES.length - free} paid. Free ones are open to you whatever you earn.
           </p>
 
@@ -103,7 +103,7 @@ export default function FamilyPage() {
                   </span>
                   <div className="flex min-w-0 flex-1 flex-col p-[16px]">
                     <div className="flex items-start gap-2">
-                      <h3 className="min-w-0 flex-1 text-[1rem] font-semibold" style={{ color: "var(--ux-ink)" }}>
+                      <h3 className="min-w-0 flex-1 text-base font-semibold" style={{ color: "var(--ux-ink)" }}>
                         {c.name}
                       </h3>
                       {/* Free first, then how far. Those are the two questions. */}
@@ -112,7 +112,7 @@ export default function FamilyPage() {
                         {c.kind}
                       </Pill>
                     </div>
-                    <p className="mt-1.5 flex flex-wrap items-center gap-x-3 gap-y-1 text-[0.75rem]"
+                    <p className="mt-1.5 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs"
                        style={{ color: "var(--ux-muted)" }}>
                       {/* Omitted rather than shown empty — the mapping leaves
                           distance blank because nothing has measured it, and a
@@ -125,11 +125,11 @@ export default function FamilyPage() {
                       )}
                       <span className="inline-flex items-center gap-1"><Icons.Baby className="h-3.5 w-3.5" /> {c.ages}</span>
                     </p>
-                    <p className="mt-2.5 text-[1rem] font-bold" style={{ color: c.fee === "Free" ? "var(--ux-green-ink)" : "var(--ux-ink)" }}>
+                    <p className="mt-2.5 text-base font-bold" style={{ color: c.fee === "Free" ? "var(--ux-green-ink)" : "var(--ux-ink)" }}>
                       {c.fee}
                     </p>
                     {c.meals && (
-                      <p className="mt-1.5 flex items-center gap-1.5 text-[0.75rem]" style={{ color: "var(--ux-ink-2)" }}>
+                      <p className="mt-1.5 flex items-center gap-1.5 text-xs" style={{ color: "var(--ux-ink-2)" }}>
                         <Icons.UtensilsCrossed className="h-[14px] w-[14px]" style={{ color: "var(--ux-brand)" }} />
                         A hot meal is included
                       </p>
@@ -140,7 +140,7 @@ export default function FamilyPage() {
                         that sentence — what to carry — is true and now simply
                         said, next to the directions that actually work. */}
                     <div className="mt-auto flex items-center justify-between gap-3 pt-3">
-                      <p className="min-w-0 text-[0.75rem] leading-snug" style={{ color: "var(--ux-faint)" }}>
+                      <p className="min-w-0 text-xs leading-snug" style={{ color: "var(--ux-faint)" }}>
                         Take your child&rsquo;s Aadhaar and immunisation card.
                       </p>
                       <Btn href={mapsHref(c.name)} variant="primary" size="sm" icon="Navigation">Directions</Btn>
@@ -169,8 +169,8 @@ export default function FamilyPage() {
                 <IconTile icon="Sparkles" tint={FAMILY_TINTS[i % FAMILY_TINTS.length][0]}
                           ink={FAMILY_TINTS[i % FAMILY_TINTS.length][1]} size={44} radius={12} />
                 <div className="min-w-0 flex-1">
-                  <h3 className="text-[0.875rem] font-semibold leading-snug" style={{ color: "var(--ux-ink)" }}>{f.label}</h3>
-                  <p className="mt-1.5 text-[0.8125rem] leading-relaxed" style={{ color: "var(--ux-muted)" }}>{f.note}</p>
+                  <h3 className="text-sm font-semibold leading-snug" style={{ color: "var(--ux-ink)" }}>{f.label}</h3>
+                  <p className="mt-1.5 text-xsm leading-relaxed" style={{ color: "var(--ux-muted)" }}>{f.note}</p>
                 </div>
               </div>
             </Card>

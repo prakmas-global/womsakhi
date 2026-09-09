@@ -53,7 +53,7 @@ export function Field({
 
   return (
     <div className="block" style={disabled ? { opacity: 0.6 } : undefined}>
-      <label htmlFor={id} className="mb-1.5 flex items-center gap-1.5 text-[0.8125rem] font-bold"
+      <label htmlFor={id} className="mb-1.5 flex items-center gap-1.5 text-xsm font-bold"
              style={{ color: "var(--ux-ink)" }}>
         {label}
         {/* Marked optional rather than required: on a form where most fields
@@ -75,19 +75,19 @@ export function Field({
 
       {error ? (
         <p id={noteId} role="alert"
-           className="mt-1.5 flex items-start gap-1.5 text-[0.75rem] font-semibold"
+           className="mt-1.5 flex items-start gap-1.5 text-xs font-semibold"
            style={{ color: "var(--ux-danger-ink)" }}>
           <Icons.AlertCircle className="mt-[2px] h-[0.8125rem] w-[0.8125rem] shrink-0" />
           {error}
         </p>
       ) : success ? (
-        <p id={noteId} className="mt-1.5 flex items-start gap-1.5 text-[0.75rem] font-semibold"
+        <p id={noteId} className="mt-1.5 flex items-start gap-1.5 text-xs font-semibold"
            style={{ color: "var(--ux-green-ink)" }}>
           <Icons.Check className="mt-[2px] h-[0.8125rem] w-[0.8125rem] shrink-0" strokeWidth={3} />
           {success}
         </p>
       ) : hint ? (
-        <p id={noteId} className="mt-1.5 text-[0.75rem]" style={{ color: "var(--ux-muted)" }}>
+        <p id={noteId} className="mt-1.5 text-xs" style={{ color: "var(--ux-muted)" }}>
           {hint}
         </p>
       ) : null}
@@ -114,7 +114,7 @@ export function TextInput({
       onChange={(e) => onChange(e.target.value)}
       placeholder={placeholder}
       inputMode={inputMode}
-      className="ux-sq w-full rounded-[12px] border px-3.5 py-3 text-[0.9375rem] outline-none"
+      className="ux-sq w-full rounded-[12px] border px-3.5 py-3 text-smd outline-none"
       style={{
         borderColor: invalid ? "var(--ux-danger-solid)" : "var(--ux-line-strong)",
         background: "var(--ux-surface)",

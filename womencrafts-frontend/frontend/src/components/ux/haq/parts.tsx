@@ -29,10 +29,10 @@ export function AtRisk({ monthlyMinor, count, soonestDays }: {
         <div className="flex items-center gap-3.5">
           <IconTile icon="ShieldCheck" tint="--ux-surface" ink="--ux-green-ink" size={44} />
           <div className="min-w-0">
-            <p className="text-[1rem] font-bold" style={{ color: v("--ux-green-ink") }}>
+            <p className="text-base font-bold" style={{ color: v("--ux-green-ink") }}>
               Nothing is about to stop
             </p>
-            <p className="mt-0.5 text-[0.8125rem]" style={{ color: v("--ux-ink-2") }}>
+            <p className="mt-0.5 text-xsm" style={{ color: v("--ux-ink-2") }}>
               Every paper is in date. We will tell you before that changes.
             </p>
           </div>
@@ -47,18 +47,18 @@ export function AtRisk({ monthlyMinor, count, soonestDays }: {
         <div className="flex items-start gap-3.5">
           <IconTile icon="AlertTriangle" tint="--ux-surface" ink="--ux-amber-ink" size={44} />
           <div className="min-w-0 flex-1">
-            <p className="text-[0.6875rem] font-extrabold uppercase tracking-[0.14em]"
+            <p className="text-2xs font-extrabold uppercase tracking-[0.14em]"
                style={{ color: v("--ux-amber-ink") }}>
               You are about to lose
             </p>
-            <p className="mt-1.5 text-[1.75rem] font-extrabold leading-none tracking-[-0.02em]"
+            <p className="mt-1.5 text-2xlm font-extrabold leading-none tracking-[-0.02em]"
                style={{ color: v("--ux-ink") }}>
               {formatRupees(monthlyMinor)}
-              <span className="ml-1.5 text-[0.875rem] font-semibold" style={{ color: v("--ux-ink-2") }}>
+              <span className="ml-1.5 text-sm font-semibold" style={{ color: v("--ux-ink-2") }}>
                 a month
               </span>
             </p>
-            <p className="mt-2 max-w-[46ch] text-[0.8125rem] leading-relaxed" style={{ color: v("--ux-ink-2") }}>
+            <p className="mt-2 max-w-[46ch] text-xsm leading-relaxed" style={{ color: v("--ux-ink-2") }}>
               {count === 1 ? "One payment" : `${count} payments`} will stop unless something is done.
               The soonest is in <b>{soonestDays} days</b>. None of this is because you stopped
               qualifying — it is paperwork, and paperwork can be finished.
@@ -86,7 +86,7 @@ export function Countdown({ days }: { days: number }) {
   const label =
     days < 0 ? `${Math.abs(days)}d overdue` : days === 0 ? "Today" : `${days}d left`;
   return (
-    <span className="inline-flex shrink-0 items-center gap-1.5 rounded-full px-2.5 py-1 text-[0.6875rem] font-bold tabular-nums"
+    <span className="inline-flex shrink-0 items-center gap-1.5 rounded-full px-2.5 py-1 text-2xs font-bold tabular-nums"
           style={{ background: v(tone.t), color: v(tone.i) }}>
       <I name={days < 0 ? "AlarmClock" : "Clock"} className="h-[13px] w-[13px]" />
       {label}
@@ -108,17 +108,17 @@ export function HaqRow({ h, onOpen }: { h: Haq; onOpen: (id: string) => void }) 
       <IconTile icon={h.icon} tint={h.tint} ink={h.ink} size={42} />
       <div className="min-w-0 flex-1">
         <div className="flex flex-wrap items-center gap-2">
-          <p className="truncate text-[0.875rem] font-bold" style={{ color: v("--ux-ink") }}>{h.name}</p>
-          <span className="rounded-full px-2 py-[2px] text-[0.6875rem] font-bold uppercase tracking-[0.07em]"
+          <p className="truncate text-sm font-bold" style={{ color: v("--ux-ink") }}>{h.name}</p>
+          <span className="rounded-full px-2 py-[2px] text-2xs font-bold uppercase tracking-[0.07em]"
                 style={{ background: v(tone.tint), color: v(tone.ink) }}>
             {STATUS_LABEL[h.status]}
           </span>
         </div>
-        <p className="mt-1 truncate text-[0.75rem]" style={{ color: v("--ux-muted") }}>{h.body}</p>
+        <p className="mt-1 truncate text-xs" style={{ color: v("--ux-muted") }}>{h.body}</p>
 
         {h.action && (
           <div className="mt-2.5 flex flex-wrap items-center gap-2">
-            <span className="inline-flex items-center gap-1.5 text-[0.8125rem] font-semibold"
+            <span className="inline-flex items-center gap-1.5 text-xsm font-semibold"
                   style={{ color: v("--ux-ink-2") }}>
               <I name="ArrowRight" className="h-[13px] w-[13px]" style={{ color: v("--ux-brand") }} />
               {h.action}
@@ -128,14 +128,14 @@ export function HaqRow({ h, onOpen }: { h: Haq; onOpen: (id: string) => void }) 
         )}
 
         {h.stoppedBecause && (
-          <p className="mt-2 rounded-[8px] px-2.5 py-2 text-[0.75rem] leading-relaxed"
+          <p className="mt-2 rounded-[8px] px-2.5 py-2 text-xs leading-relaxed"
              style={{ background: v("--ux-danger-tint"), color: v("--ux-ink-2") }}>
             {h.stoppedBecause}
           </p>
         )}
 
         {!h.openNow && h.openNote && (
-          <p className="mt-2 flex items-start gap-1.5 text-[0.75rem] leading-relaxed"
+          <p className="mt-2 flex items-start gap-1.5 text-xs leading-relaxed"
              style={{ color: v("--ux-muted") }}>
             <I name="Info" className="mt-[2px] h-[13px] w-[13px] shrink-0" />
             {h.openNote}
@@ -144,11 +144,11 @@ export function HaqRow({ h, onOpen }: { h: Haq; onOpen: (id: string) => void }) 
       </div>
       <div className="shrink-0 text-right">
         {h.amountMinor > 0 && (
-          <p className="text-[1rem] font-extrabold tabular-nums" style={{ color: v("--ux-ink") }}>
+          <p className="text-base font-extrabold tabular-nums" style={{ color: v("--ux-ink") }}>
             {formatRupees(h.amountMinor)}
           </p>
         )}
-        <p className="mt-0.5 text-[0.6875rem]" style={{ color: v("--ux-muted") }}>{h.cadence}</p>
+        <p className="mt-0.5 text-2xs" style={{ color: v("--ux-muted") }}>{h.cadence}</p>
       </div>
     </button>
   );
@@ -171,12 +171,12 @@ export function PaperRow({ p, onFix }: { p: Paper; onFix: (id: string) => void }
       </span>
       <div className="min-w-0 flex-1">
         <div className="flex flex-wrap items-center gap-2">
-          <p className="text-[0.875rem] font-bold" style={{ color: v("--ux-ink") }}>{p.name}</p>
-          <span className="rounded-full px-2 py-[2px] text-[0.6875rem] font-bold"
+          <p className="text-sm font-bold" style={{ color: v("--ux-ink") }}>{p.name}</p>
+          <span className="rounded-full px-2 py-[2px] text-2xs font-bold"
                 style={{ background: v(tone.t), color: v(tone.i) }}>{tone.label}</span>
         </div>
-        <p className="mt-0.5 text-[0.75rem]" style={{ color: v("--ux-muted") }}>{p.note}</p>
-        <p className="mt-1.5 inline-flex items-center gap-1.5 text-[0.75rem] font-semibold"
+        <p className="mt-0.5 text-xs" style={{ color: v("--ux-muted") }}>{p.note}</p>
+        <p className="mt-1.5 inline-flex items-center gap-1.5 text-xs font-semibold"
            style={{ color: v("--ux-brand") }}>
           <I name="Unlock" className="h-[12px] w-[12px]" />
           Unlocks {p.unlocks} {p.unlocks === 1 ? "benefit" : "benefits"}
@@ -215,14 +215,14 @@ export function CompanionCard({ c, chosen, onChoose }: {
         background: chosen ? v("--ux-brand-tint") : v("--ux-surface"),
       }}
     >
-      <span className="grid h-[42px] w-[42px] shrink-0 place-items-center rounded-full text-[1rem] font-bold"
+      <span className="grid h-[42px] w-[42px] shrink-0 place-items-center rounded-full text-base font-bold"
             style={{ background: v("--ux-brand-tint-2"), color: v("--ux-brand") }}>
         {c.name.charAt(0)}
       </span>
       <div className="min-w-0 flex-1">
-        <p className="text-[0.875rem] font-bold" style={{ color: v("--ux-ink") }}>{c.name}</p>
-        <p className="mt-1 text-[0.8125rem] leading-relaxed" style={{ color: v("--ux-ink-2") }}>{c.did}</p>
-        <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-[0.75rem]"
+        <p className="text-sm font-bold" style={{ color: v("--ux-ink") }}>{c.name}</p>
+        <p className="mt-1 text-xsm leading-relaxed" style={{ color: v("--ux-ink-2") }}>{c.did}</p>
+        <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs"
              style={{ color: v("--ux-muted") }}>
           <span className="inline-flex items-center gap-1.5">
             <I name="MapPin" className="h-[12px] w-[12px]" />{c.knows}
@@ -257,17 +257,17 @@ export function LateRow({ l, onFile }: { l: Late; onFile: (id: string) => void }
          style={{ borderColor: v("--ux-line"), background: v("--ux-surface") }}>
       <IconTile icon="AlarmClock" tint="--ux-tint-orange" ink="--ux-orange-ink" size={38} />
       <div className="min-w-0 flex-1">
-        <p className="truncate text-[0.875rem] font-bold" style={{ color: v("--ux-ink") }}>{l.what}</p>
-        <p className="mt-0.5 text-[0.75rem]" style={{ color: v("--ux-muted") }}>
+        <p className="truncate text-sm font-bold" style={{ color: v("--ux-ink") }}>{l.what}</p>
+        <p className="mt-0.5 text-xs" style={{ color: v("--ux-muted") }}>
           Due {l.dueOn}{l.paidOn ? ` · paid ${l.paidOn}` : " · still not paid"} ·{" "}
           <b style={{ color: v("--ux-orange-ink") }}>{l.daysLate} days late</b>
         </p>
       </div>
       <div className="shrink-0 text-right">
-        <p className="text-[0.875rem] font-extrabold tabular-nums" style={{ color: v("--ux-ink") }}>
+        <p className="text-sm font-extrabold tabular-nums" style={{ color: v("--ux-ink") }}>
           {formatRupees(l.owedMinor)}
         </p>
-        <p className="text-[0.6875rem]" style={{ color: v("--ux-muted") }}>owed to you</p>
+        <p className="text-2xs" style={{ color: v("--ux-muted") }}>owed to you</p>
       </div>
       {l.filed ? (
         <Pill tone="green" size="sm">Filed</Pill>
@@ -287,7 +287,7 @@ export function ClaimSteps({ step }: { step: number }) {
       <Progress pct={(step / (steps.length - 1)) * 100} />
       <ol className="mt-3 flex flex-wrap gap-x-4 gap-y-1.5">
         {steps.map((s, i) => (
-          <li key={s} className="inline-flex items-center gap-1.5 text-[0.75rem] font-medium"
+          <li key={s} className="inline-flex items-center gap-1.5 text-xs font-medium"
               style={{ color: i <= step ? v("--ux-brand") : v("--ux-muted") }}>
             <I name={i < step ? "CheckCircle2" : i === step ? "CircleDot" : "Circle"}
                className="h-[13px] w-[13px]" />

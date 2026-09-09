@@ -49,6 +49,7 @@ import {
 } from "@/lib/integrations-api";
 import { memberError } from "@/lib/member-api";
 import { ResizableColumns } from "@/layout-engine";
+import { COPY } from "@/components/ux/copy";
 
 const TABS = ["All Integrations", "Active", "Inactive", "Available"];
 
@@ -310,7 +311,7 @@ export default function IntegrationsPage() {
         setRequestForm({ service: "", category: "Payments", details: "" });
       }, 1200);
     } catch {
-      setRequestError("Something went wrong. Please try again.");
+      setRequestError(COPY.genericFailure);
     }
   }
 
@@ -326,7 +327,7 @@ export default function IntegrationsPage() {
       setWebhookSecret(w.signing_secret);
       toast.success("Webhook saved");
     } catch {
-      setWebhookError("Something went wrong. Please try again.");
+      setWebhookError(COPY.genericFailure);
     }
   }
 

@@ -27,7 +27,7 @@ export function OnboardFrame({
     <div className="min-h-screen" style={{ background: "var(--ux-canvas)" }}>
       <header className="flex items-center justify-between px-8 pb-2 pt-6">
         <Brand size="sm" href={null} />
-        <p className="text-[0.8125rem]" style={{ color: "var(--ux-muted)" }}>
+        <p className="text-xsm" style={{ color: "var(--ux-muted)" }}>
           Step {step} of {total}
         </p>
       </header>
@@ -49,9 +49,9 @@ export function OnboardFrame({
 
       <main id="content" className="mx-auto grid w-full max-w-[1080px] gap-[32px] px-8 py-[40px] lg:grid-cols-[minmax(0,1fr)_360px]">
         <div className="min-w-0">
-          <h1 className="text-[1.75rem] font-bold leading-tight" style={{ color: "var(--ux-ink)" }}>{title}</h1>
+          <h1 className="text-2xlm font-bold leading-tight" style={{ color: "var(--ux-ink)" }}>{title}</h1>
           {sub && (
-            <p className="mt-2.5 max-w-[54ch] text-[0.875rem] leading-relaxed" style={{ color: "var(--ux-muted)" }}>
+            <p className="mt-2.5 max-w-[54ch] text-sm leading-relaxed" style={{ color: "var(--ux-muted)" }}>
               {sub}
             </p>
           )}
@@ -74,15 +74,15 @@ export function OnboardAside({
          style={{ background: "linear-gradient(150deg, var(--ux-tint-lilac), var(--ux-tint-pink))" }}>
       {/* eslint-disable-next-line @next/next/no-img-element */}
       <img loading="lazy" decoding="async" src={art} alt="" className="ux-float pointer-events-none absolute -bottom-4 -end-5 h-[128px] w-[128px] object-contain" />
-      <h2 className="relative w-[68%] text-[1rem] font-semibold" style={{ color: "var(--ux-ink)" }}>{title}</h2>
-      <p className="relative mt-2.5 w-[68%] text-[0.8125rem] leading-relaxed" style={{ color: "var(--ux-ink-2)" }}>{body}</p>
+      <h2 className="relative w-[68%] text-base font-semibold" style={{ color: "var(--ux-ink)" }}>{title}</h2>
+      <p className="relative mt-2.5 w-[68%] text-xsm leading-relaxed" style={{ color: "var(--ux-ink-2)" }}>{body}</p>
       {/* The art is anchored bottom-end, and this list is what reaches the
           bottom of the card — so it needs the same 68% column the heading
           and body use. Without it the last lines ran under the image and
           lost their final words ("later in Settin…", "or buyer…"). */}
       <ul className="relative mt-4 w-[68%] space-y-2.5">
         {points.map((p) => (
-          <li key={p} className="flex items-start gap-2.5 text-[0.8125rem] leading-snug" style={{ color: "var(--ux-ink-2)" }}>
+          <li key={p} className="flex items-start gap-2.5 text-xsm leading-snug" style={{ color: "var(--ux-ink-2)" }}>
             <Icons.Check className="mt-[2px] h-[14px] w-[14px] shrink-0" style={{ color: "var(--ux-green-ink)" }} strokeWidth={2.6} />
             {p}
           </li>

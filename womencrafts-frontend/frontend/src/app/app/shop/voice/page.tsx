@@ -78,14 +78,14 @@ export default function VoicePage() {
         <Card pad={0} style={{ overflow: "hidden" }}>
           <div className="flex flex-col items-center px-6 py-10 text-center"
                style={{ background: `linear-gradient(160deg, ${v("--ux-brand-tint")}, ${v("--ux-surface")})` }}>
-            <p className="text-[0.6875rem] font-extrabold uppercase tracking-[0.2em]" style={{ color: v("--ux-brand") }}>
+            <p className="text-2xs font-extrabold uppercase tracking-[0.2em]" style={{ color: v("--ux-brand") }}>
               Add something to sell
             </p>
             <h1 className="mt-2.5 max-w-[16ch] text-[clamp(1.625rem,4vw,2.375rem)] font-extrabold leading-[1.08] tracking-[-0.035em]"
                 style={{ color: v("--ux-ink") }}>
               {phase === "listening" ? "Go on, I am listening" : "Just say what you sell"}
             </h1>
-            <p className="mt-2.5 max-w-[34ch] text-[0.875rem] leading-relaxed" style={{ color: v("--ux-muted") }}>
+            <p className="mt-2.5 max-w-[34ch] text-sm leading-relaxed" style={{ color: v("--ux-muted") }}>
               In your own words, in your own language. Say the thing and the price — that is enough.
             </p>
 
@@ -115,14 +115,14 @@ export default function VoicePage() {
             >
               <I name={phase === "listening" ? "Square" : "Mic"} className="h-[42px] w-[42px]" sw={1.7} />
             </button>
-            <p className="mt-3.5 text-[0.8125rem] font-semibold" style={{ color: v("--ux-ink-2") }}>
+            <p className="mt-3.5 text-xsm font-semibold" style={{ color: v("--ux-ink-2") }}>
               {phase === "listening" ? "Listening…" : "Press and speak"}
             </p>
 
             <div className="mt-6 flex flex-wrap justify-center gap-1.5">
               {VOICE_LANGS.map((l) => (
                 <button key={l} type="button" onClick={() => setLang(l)}
-                        className="ux-press rounded-full px-3 py-1.5 text-[0.75rem] font-semibold"
+                        className="ux-press rounded-full px-3 py-1.5 text-xs font-semibold"
                         style={{
                           background: v(lang === l ? "--ux-fill" : "--ux-surface"),
                           color: v(lang === l ? "--ux-on-brand" : "--ux-ink-2"),
@@ -139,14 +139,14 @@ export default function VoicePage() {
           <>
             {/* Her own words, quoted back. This is the trust move. */}
             <Card pad={20}>
-              <p className="text-[0.6875rem] font-extrabold uppercase tracking-[0.14em]" style={{ color: v("--ux-muted") }}>
+              <p className="text-2xs font-extrabold uppercase tracking-[0.14em]" style={{ color: v("--ux-muted") }}>
                 What I heard you say
               </p>
-              <p className="mt-2.5 border-l-2 pl-4 text-[1.125rem] font-semibold italic leading-relaxed"
+              <p className="mt-2.5 border-l-2 pl-4 text-lg font-semibold italic leading-relaxed"
                  style={{ borderColor: v("--ux-brand"), color: v("--ux-ink") }}>
                 &ldquo;{draft.heardText}&rdquo;
               </p>
-              <p className="mt-2.5 text-[0.75rem]" style={{ color: v("--ux-muted") }}>
+              <p className="mt-2.5 text-xs" style={{ color: v("--ux-muted") }}>
                 {draft.lang} · not right? <button type="button" onClick={listen}
                   className="font-bold underline" style={{ color: v("--ux-brand") }}>say it again</button>
               </p>
@@ -154,10 +154,10 @@ export default function VoicePage() {
 
             {/* The listing, written as a sentence. Every number is tappable. */}
             <Card pad={20}>
-              <p className="text-[0.6875rem] font-extrabold uppercase tracking-[0.14em]" style={{ color: v("--ux-brand") }}>
+              <p className="text-2xs font-extrabold uppercase tracking-[0.14em]" style={{ color: v("--ux-brand") }}>
                 So your listing says
               </p>
-              <p className="mt-3 text-[1.125rem] leading-[1.7]" style={{ color: v("--ux-ink") }}>
+              <p className="mt-3 text-lg leading-[1.7]" style={{ color: v("--ux-ink") }}>
                 You sell{" "}
                 <Editable value={draft.title} unsure={draft.unsure.includes("title")}
                           open={editing === "title"} onOpen={() => setEditing("title")}
@@ -178,7 +178,7 @@ export default function VoicePage() {
               </p>
 
               {draft.unsure.length > 0 && (
-                <p className="mt-4 flex items-start gap-2 rounded-[12px] px-3.5 py-3 text-[0.8125rem] leading-relaxed"
+                <p className="mt-4 flex items-start gap-2 rounded-[12px] px-3.5 py-3 text-xsm leading-relaxed"
                    style={{ background: v("--ux-tint-amber"), color: v("--ux-ink-2") }}>
                   <I name="AlertTriangle" className="mt-[2px] h-[15px] w-[15px] shrink-0"
                      style={{ color: v("--ux-amber-ink") }} />
@@ -199,7 +199,7 @@ export default function VoicePage() {
 
             {published && (
               <Card pad={16} style={{ background: v("--ux-tint-green"), borderColor: "transparent" }}>
-                <p className="flex items-center gap-2 text-[0.8125rem] font-semibold" style={{ color: v("--ux-green-ink") }}>
+                <p className="flex items-center gap-2 text-xsm font-semibold" style={{ color: v("--ux-green-ink") }}>
                   <I name="CheckCircle2" className="h-[16px] w-[16px]" />
                   Added. Nothing was published until you said it was right.
                 </p>
@@ -211,7 +211,7 @@ export default function VoicePage() {
         <Card pad={16} style={{ background: v("--ux-surface-2"), borderColor: "transparent" }}>
           <div className="flex items-start gap-3">
             <I name="Info" className="mt-[2px] h-[16px] w-[16px] shrink-0" style={{ color: v("--ux-muted") }} />
-            <p className="text-[0.8125rem] leading-relaxed" style={{ color: v("--ux-ink-2") }}>
+            <p className="text-xsm leading-relaxed" style={{ color: v("--ux-ink-2") }}>
               Nothing goes into your shop until you have read it back and said yes. If a word came
               out wrong, tap it — you are correcting a sentence, not filling a form.
             </p>
@@ -237,7 +237,7 @@ function Editable({ value, unsure, open, onOpen, onSave }: {
         onKeyDown={(e) => { if (e.key === "Enter") onSave(t); }}
         onBlur={() => onSave(t)}
         aria-label="Correct this"
-        className="ux-sq rounded-[8px] border-2 px-2 py-0.5 text-[1.125rem] font-bold outline-none"
+        className="ux-sq rounded-[8px] border-2 px-2 py-0.5 text-lg font-bold outline-none"
         style={{ borderColor: v("--ux-brand"), background: v("--ux-surface"),
                  color: v("--ux-ink"), width: `${Math.max(6, t.length + 2)}ch` }}
       />

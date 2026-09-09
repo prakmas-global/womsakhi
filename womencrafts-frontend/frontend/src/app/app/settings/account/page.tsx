@@ -115,7 +115,7 @@ export default function AccountSettings() {
       sub="Only what is marked public is ever shown to anyone else."
       footer={
         <div className="flex items-center justify-between gap-4">
-          <p className="text-[0.75rem]"
+          <p className="text-xs"
              style={{ color: save.error ? "var(--ux-orange-ink)" : saved ? "var(--ux-green-ink)" : "var(--ux-faint)" }}>
             {save.error ? save.error : saved ? "Saved." : COPY.nothingSavedYet}
           </p>
@@ -136,8 +136,8 @@ export default function AccountSettings() {
             <img loading="lazy" decoding="async" src={profile?.avatar || ME.avatar} alt="" className="h-full w-full object-cover" />
           </span>
           <div className="min-w-0 flex-1">
-            <p className="text-[0.875rem] font-semibold" style={{ color: "var(--ux-ink)" }}>Your photo</p>
-            <p className="mt-1 text-[0.75rem] leading-snug" style={{ color: "var(--ux-muted)" }}>
+            <p className="text-sm font-semibold" style={{ color: "var(--ux-ink)" }}>Your photo</p>
+            <p className="mt-1 text-xs leading-snug" style={{ color: "var(--ux-muted)" }}>
               Shown on your profile, your shop and beside anything you post. A clear face photo gets more
               replies than a logo.
             </p>
@@ -157,7 +157,7 @@ export default function AccountSettings() {
               )}
             </div>
             {(photoError || removePhoto.error) && (
-              <p role="alert" className="ux-slide-up mt-2 text-[0.75rem] leading-snug"
+              <p role="alert" className="ux-slide-up mt-2 text-xs leading-snug"
                  style={{ color: "var(--ux-orange-ink)" }}>
                 {photoError || removePhoto.error}
               </p>
@@ -191,7 +191,7 @@ export default function AccountSettings() {
             <TextInput value={form.born} onChange={set("born")} placeholder="DD MMM YYYY" />
           </Field>
         </div>
-        <p className="mt-4 flex items-start gap-2.5 rounded-[12px] p-3 text-[0.75rem] leading-relaxed"
+        <p className="mt-4 flex items-start gap-2.5 rounded-[12px] p-3 text-xs leading-relaxed"
            style={{ background: "var(--ux-surface-2)", color: "var(--ux-ink-2)" }}>
           <Icons.Lock className="mt-[1px] h-[14px] w-[14px] shrink-0" style={{ color: "var(--ux-brand)" }} />
           Your exact address is never stored. Buyers see a city, never a street.
@@ -202,14 +202,14 @@ export default function AccountSettings() {
         <SectionHead title="Sign-in email" />
         <div className="flex items-center justify-between gap-4">
           <div className="min-w-0">
-            <p className="flex items-center gap-2 truncate text-[0.875rem] font-medium" style={{ color: "var(--ux-ink)" }}>
+            <p className="flex items-center gap-2 truncate text-sm font-medium" style={{ color: "var(--ux-ink)" }}>
               {profile?.email ?? user?.email ?? ""}
               {/* The green "Confirmed" was painted whatever the server said. */}
               {profile?.verification_status === "active"
                 ? <Pill tone="green" size="sm">Confirmed</Pill>
                 : <Pill tone="orange" size="sm">Not confirmed yet</Pill>}
             </p>
-            <p className="mt-1 text-[0.75rem]" style={{ color: "var(--ux-muted)" }}>
+            <p className="mt-1 text-xs" style={{ color: "var(--ux-muted)" }}>
               You cannot change this yourself — ask us and we will do it.
             </p>
           </div>

@@ -63,8 +63,8 @@ export function HomeShell({
       user={{ name: first, avatar: me.avatar, unread: me.unread }}
       sidebarFooter={bare ? undefined : (
         <div className="rounded-[12px] p-4" style={{ background: "var(--ux-brand-900)" }}>
-          <p className="text-[0.875rem] font-semibold text-white">Complete Your Profile</p>
-          <p className="mt-1 text-[0.75rem]" style={{ color: "var(--ux-on-brand-2)" }}>{me.profilePct}% completed</p>
+          <p className="text-sm font-semibold text-white">Complete Your Profile</p>
+          <p className="mt-1 text-xs" style={{ color: "var(--ux-on-brand-2)" }}>{me.profilePct}% completed</p>
           <div className="mt-2.5 h-[5px] w-full overflow-hidden rounded-full" style={{ background: "var(--ux-on-brand-track)" }}>
             <div className="h-full rounded-full"
                  style={{ width: `${me.profilePct}%`, background: "var(--ux-on-brand-fill)",

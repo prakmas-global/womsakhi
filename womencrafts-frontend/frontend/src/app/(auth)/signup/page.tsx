@@ -62,9 +62,9 @@ export default function SignUpPage() {
     }
   };
 
-  const field = "auth-field min-h-[46px] w-full rounded-[12px] pe-4 ps-11 text-[0.875rem]";
+  const field = "auth-field min-h-[46px] w-full rounded-[12px] pe-4 ps-11 text-sm";
   const fieldPad = { paddingBlock: "clamp(0.5625rem,1.5vh,0.875rem)" } as const;
-  const labelCls = "mb-1.5 block text-[0.8125rem] font-medium";
+  const labelCls = "mb-1.5 block text-xsm font-medium";
   const labelStyle = { color: "var(--a-ink-2)" } as const;
   const iconCls = "pointer-events-none absolute start-4 top-1/2 h-[17px] w-[17px] -translate-y-1/2";
   const iconStyle = { color: "var(--a-faint)" } as const;
@@ -80,7 +80,7 @@ export default function SignUpPage() {
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img loading="lazy" decoding="async" src="/ux/brand/womsakhi-wordmark.webp" alt="WomSakhi" className="object-contain"
             style={{ height: "clamp(1.25rem,3vh,1.5rem)" }} />
-          <p className="auth-tagline mt-1 text-[0.6875rem] font-semibold tracking-[0.19em]" style={{ color: "var(--a-muted)" }}>
+          <p className="auth-tagline mt-1 text-2xs font-semibold tracking-[0.19em]" style={{ color: "var(--a-muted)" }}>
             EMPOWERING HER JOURNEY
           </p>
         </div>
@@ -89,14 +89,14 @@ export default function SignUpPage() {
       <h1 className="font-bold leading-tight tracking-tight" style={{ color: "var(--a-ink)", fontSize: "clamp(1.35rem, 3.4vh, 2.1rem)", marginTop: "clamp(0.625rem,2.2vh,1.75rem)" }}>
         Join <span className="auth-shine">WomSakhi</span>
       </h1>
-      <p className="auth-sub text-[0.8125rem]" style={{ color: "var(--a-muted)", marginTop: "clamp(0.25rem,0.8vh,0.375rem)" }}>
+      <p className="auth-sub text-xsm" style={{ color: "var(--a-muted)", marginTop: "clamp(0.25rem,0.8vh,0.375rem)" }}>
         Women only, and free — nobody here may ever charge you to find work.
       </p>
 
       {error && (
         <p
           role="alert"
-          className="mt-5 rounded-[12px] px-3.5 py-3 text-[0.8125rem] leading-relaxed"
+          className="mt-5 rounded-[12px] px-3.5 py-3 text-xsm leading-relaxed"
           style={{
             background: "var(--a-tint-rose-2)",
             border: "1px solid var(--a-edge-rose)",
@@ -144,7 +144,7 @@ export default function SignUpPage() {
               placeholder="+91 98765 43210" className={field} style={fieldPad}
             />
           </div>
-          <p className="mt-1 text-[0.6875rem] leading-snug" style={{ color: "var(--a-faint)" }}>
+          <p className="mt-1 text-2xs leading-snug" style={{ color: "var(--a-faint)" }}>
             Only to reach you about your own work. Never shown to anyone else.
           </p>
         </div>
@@ -176,7 +176,7 @@ export default function SignUpPage() {
                   style={{ width: `${strength}%`, background: strengthInk }}
                 />
               </span>
-              <span className="text-[0.6875rem] font-medium" style={{ color: strengthInk }}>{strengthLabel}</span>
+              <span className="text-2xs font-medium" style={{ color: strengthInk }}>{strengthLabel}</span>
             </div>
           )}
         </div>
@@ -190,7 +190,7 @@ export default function SignUpPage() {
           }}
         >
           <ShieldCheck className="mt-[1px] h-[17px] w-[17px] shrink-0" style={{ color: "var(--a-lilac)" }} aria-hidden />
-          <p className="text-[0.6875rem] leading-snug" style={{ color: "var(--a-ink-2)" }}>
+          <p className="text-2xs leading-snug" style={{ color: "var(--a-ink-2)" }}>
             Next we ask for one photo ID. Only our review team can open it, and it
             is how this stays a space for women.
           </p>
@@ -199,7 +199,7 @@ export default function SignUpPage() {
         <button
           type="submit"
           disabled={loading}
-          className="auth-go flex min-h-[50px] w-full items-center justify-center gap-2 rounded-[12px] text-[0.875rem] font-semibold"
+          className="auth-go flex min-h-[50px] w-full items-center justify-center gap-2 rounded-[12px] text-sm font-semibold"
           style={{ paddingBlock: "clamp(0.6875rem,1.8vh,1rem)" }}
         >
           {loading ? <Loader2 className="h-[18px] w-[18px] animate-spin" aria-hidden /> : null}
@@ -208,7 +208,7 @@ export default function SignUpPage() {
         </button>
       </form>
 
-      <p className="text-center text-[0.8125rem]" style={{ color: "var(--a-muted)", marginTop: "clamp(0.625rem,2vh,1.5rem)" }}>
+      <p className="text-center text-xsm" style={{ color: "var(--a-muted)", marginTop: "clamp(0.625rem,2vh,1.5rem)" }}>
         Already have an account?{" "}
         <Link href="/signin" className="auth-link font-semibold">Sign in</Link>
       </p>

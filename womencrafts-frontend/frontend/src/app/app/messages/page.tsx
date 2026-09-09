@@ -189,7 +189,7 @@ export default function MessagesPage() {
         </div>
 
         {error && (
-          <p className="flex items-center gap-2 text-[0.8125rem]" style={{ color: "var(--ux-pink-ink)" }}>
+          <p className="flex items-center gap-2 text-xsm" style={{ color: "var(--ux-pink-ink)" }}>
             <Icons.TriangleAlert className="h-4 w-4" /> {error}
           </p>
         )}

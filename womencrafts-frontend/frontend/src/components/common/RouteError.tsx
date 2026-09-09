@@ -1,5 +1,6 @@
 "use client";
 
+import { usePathname } from "next/navigation";
 import { AlertTriangle, RefreshCw } from "lucide-react";
 
 /**
@@ -13,21 +14,32 @@ import { AlertTriangle, RefreshCw } from "lucide-react";
  *
  * `what` names the thing that failed in the reader's words — "the billing
  * settings", "your reports" — because "an error occurred" tells nobody which
- * part of the screen to stop trusting.
+ * part of the screen to stop trusting. It is the only thing each route has to
+ * say: where "back" goes is decided here from the URL, so the same two strings
+ * are not written out across 58 files and then drift apart.
  */
 export default function RouteError({
   what = "this page",
   reset,
   digest,
-  home = "/dashboard",
-  homeLabel = "Back to dashboard",
+  home,
+  homeLabel,
 }: {
   what?: string;
   reset?: () => void;
   digest?: string;
+  /** Overrides the destination derived from the URL. Rarely needed. */
   home?: string;
   homeLabel?: string;
 }) {
+  const pathname = usePathname() ?? "";
+  const area =
+    pathname.startsWith("/dashboard") ? { href: "/dashboard", label: "Back to dashboard" }
+    : /^\/(signin|signup|forgot-password|reset-password)/.test(pathname)
+                                      ? { href: "/signin",   label: "Back to sign in" }
+    :                                   { href: "/",         label: "Back to the home page" };
+  const backHref  = home ?? area.href;
+  const backLabel = homeLabel ?? area.label;
   return (
     <div role="alert" className="flex min-h-[60vh] flex-col items-center justify-center px-6 text-center">
       <span className="flex h-16 w-16 items-center justify-center rounded-2xl bg-status-warn-bg text-status-warn-ink">
@@ -49,11 +61,11 @@ export default function RouteError({
             Try again
           </button>
         )}
-        <a href={home} className="btn btn-secondary">{homeLabel}</a>
+        <a href={backHref} className="btn btn-secondary">{backLabel}</a>
       </div>
 
       {digest && (
-        <p className="mt-5 text-[0.6875rem] text-ink-faint">Reference: {digest}</p>
+        <p className="mt-5 text-2xs text-ink-faint">Reference: {digest}</p>
       )}
     </div>
   );

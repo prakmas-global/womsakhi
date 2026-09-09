@@ -69,7 +69,7 @@ export function ReadAloud({ targetId, label = "Read this to me", lang = "hi-IN",
       type="button" onClick={toggle}
       aria-label={speaking ? "Stop reading" : label}
       aria-pressed={speaking}
-      className="ux-press ux-sq inline-flex items-center gap-2 rounded-full px-3.5 py-2 text-[0.8125rem] font-semibold"
+      className="ux-press ux-sq inline-flex items-center gap-2 rounded-full px-3.5 py-2 text-xsm font-semibold"
       style={{
         background: v(speaking ? "--ux-fill" : "--ux-brand-tint"),
         color: v(speaking ? "--ux-on-brand" : "--ux-brand"),

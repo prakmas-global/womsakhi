@@ -51,7 +51,7 @@ function SceneThemeToggle() {
         type="button" aria-label="Dark theme" aria-pressed={isDark}
         onClick={() => setTheme("dark")} className={seg}
         style={isDark
-          ? { background: "var(--a-violet-2)", color: "#fff" }
+          ? { background: "var(--a-violet-2)", color: "var(--ux-on-brand)" }
           : { color: "var(--a-faint)" }}
       >
         <Moon className="h-4 w-4" />
@@ -138,7 +138,7 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
               </div>
               {children}
               <div
-                className="auth-note flex flex-wrap items-center justify-center gap-x-3 gap-y-1.5 text-center text-[0.75rem]"
+                className="auth-note flex flex-wrap items-center justify-center gap-x-3 gap-y-1.5 text-center text-xs"
                 style={{ color: "var(--a-faint)", marginTop: "clamp(0.875rem,2.4vh,1.75rem)" }}
               >
                 {/* Hidden on a narrow screen. Of the two lines here this is

@@ -45,7 +45,7 @@ export default function MoneyPage() {
       <div className="flex flex-col gap-5" id="money-page">
 
         <header>
-          <p className="text-[0.6875rem] font-extrabold uppercase tracking-[0.2em]" style={{ color: v("--ux-brand") }}>
+          <p className="text-2xs font-extrabold uppercase tracking-[0.2em]" style={{ color: v("--ux-brand") }}>
             Your money
           </p>
           {/* The answer, in words, before any number. */}
@@ -55,12 +55,12 @@ export default function MoneyPage() {
               ? "You have enough for the things that cannot wait"
               : "Two things cannot wait, and you are short"}
           </h1>
-          <p className="mt-1.5 max-w-[56ch] text-[0.875rem] leading-relaxed" style={{ color: v("--ux-muted") }}>
+          <p className="mt-1.5 max-w-[56ch] text-sm leading-relaxed" style={{ color: v("--ux-muted") }}>
             {t.coversMust
               ? "Everything below is only the working out. Nothing here is a score, and nothing goes red."
               : "The two below cost you most if they are missed. Everything else can move."}
           </p>
-          <div className="mt-3"><ReadAloud targetId="money-page" label="Read this to me" /></div>
+          <div className="mt-3"><ReadAloud targetId="money-page" /></div>
         </header>
 
         {/* The three numbers that matter, and nothing else. */}
@@ -77,10 +77,10 @@ export default function MoneyPage() {
               <div className="flex items-center gap-3.5">
                 <IconTile icon={x.i} tint={x.tint} ink={x.ink} size={42} />
                 <div className="min-w-0">
-                  <p className="text-[1.25rem] font-extrabold leading-none tabular-nums" style={{ color: v("--ux-ink") }}>
+                  <p className="text-xl font-extrabold leading-none tabular-nums" style={{ color: v("--ux-ink") }}>
                     {x.n}
                   </p>
-                  <p className="mt-1 text-[0.75rem]" style={{ color: v("--ux-muted") }}>{x.l}</p>
+                  <p className="mt-1 text-xs" style={{ color: v("--ux-muted") }}>{x.l}</p>
                 </div>
               </div>
             </Card>
@@ -90,12 +90,12 @@ export default function MoneyPage() {
         {/* What is left, said plainly rather than as a balance. */}
         <Card pad={18} style={{ background: v(t.spare >= 0 ? "--ux-tint-green" : "--ux-tint-amber"),
                                 borderColor: "transparent" }}>
-          <p className="text-[0.9375rem] font-bold" style={{ color: v("--ux-ink") }}>
+          <p className="text-smd font-bold" style={{ color: v("--ux-ink") }}>
             {t.spare >= 0
               ? `${formatRupees(t.spare)} is yours to do what you like with`
               : `You are ${formatRupees(Math.abs(t.spare))} short of everything you have promised`}
           </p>
-          <p className="mt-1 max-w-[54ch] text-[0.8125rem] leading-relaxed" style={{ color: v("--ux-ink-2") }}>
+          <p className="mt-1 max-w-[54ch] text-xsm leading-relaxed" style={{ color: v("--ux-ink-2") }}>
             {t.spare >= 0
               ? "After everything below is paid. Spend it, save it, or put it in the pot — nobody here will tell you which."
               : "The things that cannot wait are still covered. What is short is the rest, and most of that can move."}
@@ -114,21 +114,21 @@ export default function MoneyPage() {
                 <IconTile icon={c.icon} tint={c.tint} ink={c.ink} size={40} />
                 <div className="min-w-0 flex-1">
                   <div className="flex flex-wrap items-center gap-2">
-                    <p className="text-[0.9375rem] font-bold" style={{ color: v("--ux-ink") }}>{c.what}</p>
+                    <p className="text-smd font-bold" style={{ color: v("--ux-ink") }}>{c.what}</p>
                     <Pill tone={c.weight === "cannot-wait" ? "orange" : "neutral"} size="sm">
                       {WEIGHT_LABEL[c.weight]}
                     </Pill>
                   </div>
-                  <p className="mt-0.5 text-[0.75rem]" style={{ color: v("--ux-muted") }}>{c.when}</p>
+                  <p className="mt-0.5 text-xs" style={{ color: v("--ux-muted") }}>{c.when}</p>
                   {/* The consequence, which is the reason it is ordered here. */}
                   {c.ifMissed && (
-                    <p className="mt-1.5 text-[0.75rem] leading-snug"
+                    <p className="mt-1.5 text-xs leading-snug"
                        style={{ color: v(c.weight === "cannot-wait" ? "--ux-amber-ink" : "--ux-muted") }}>
                       If you miss it: {c.ifMissed}
                     </p>
                   )}
                 </div>
-                <p className="shrink-0 text-[1rem] font-extrabold tabular-nums" style={{ color: v("--ux-ink") }}>
+                <p className="shrink-0 text-base font-extrabold tabular-nums" style={{ color: v("--ux-ink") }}>
                   {formatRupees(c.minor)}
                 </p>
               </div>
@@ -147,11 +147,11 @@ export default function MoneyPage() {
                 <I name={inc.certain ? "CheckCircle2" : "HelpCircle"} className="h-[1.0625rem] w-[1.0625rem] shrink-0"
                    style={{ color: v(inc.certain ? "--ux-green-ink" : "--ux-muted") }} />
                 <div className="min-w-0 flex-1">
-                  <p className="text-[0.875rem] font-semibold"
+                  <p className="text-sm font-semibold"
                      style={{ color: v(inc.certain ? "--ux-ink" : "--ux-muted") }}>{inc.from}</p>
-                  <p className="text-[0.75rem]" style={{ color: v("--ux-muted") }}>{inc.when}</p>
+                  <p className="text-xs" style={{ color: v("--ux-muted") }}>{inc.when}</p>
                 </div>
-                <p className="shrink-0 text-[0.9375rem] font-bold tabular-nums"
+                <p className="shrink-0 text-smd font-bold tabular-nums"
                    style={{ color: v(inc.certain ? "--ux-ink" : "--ux-faint") }}>
                   {formatRupees(inc.minor)}
                 </p>
@@ -159,7 +159,7 @@ export default function MoneyPage() {
             ))}
           </Card>
           {t.maybe > 0 && (
-            <p className="mt-2.5 flex items-start gap-2 rounded-[12px] px-3.5 py-3 text-[0.8125rem] leading-relaxed"
+            <p className="mt-2.5 flex items-start gap-2 rounded-[12px] px-3.5 py-3 text-xsm leading-relaxed"
                style={{ background: v("--ux-tint-amber"), color: v("--ux-ink-2") }}>
               <I name="AlertTriangle" className="mt-[2px] h-[0.9375rem] w-[0.9375rem] shrink-0"
                  style={{ color: v("--ux-amber-ink") }} />
@@ -180,7 +180,7 @@ export default function MoneyPage() {
         <Card pad={16} style={{ background: v("--ux-surface-2"), borderColor: "transparent" }}>
           <div className="flex items-start gap-3">
             <I name="Info" className="mt-[2px] h-[1rem] w-[1rem] shrink-0" style={{ color: v("--ux-muted") }} />
-            <p className="text-[0.8125rem] leading-relaxed" style={{ color: v("--ux-ink-2") }}>
+            <p className="text-xsm leading-relaxed" style={{ color: v("--ux-ink-2") }}>
               Nothing here is a score and nothing goes red. If you had to spend it, you had to spend
               it — this screen is only here so the things that cost you most if they are missed are
               the ones you see first.

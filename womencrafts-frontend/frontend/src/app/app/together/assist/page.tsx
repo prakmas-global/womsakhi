@@ -51,14 +51,14 @@ export default function AssistPage() {
         <Back to="/app/together" label="Back to Together" />
 
         <header>
-          <p className="text-[0.6875rem] font-extrabold uppercase tracking-[0.2em]" style={{ color: v("--ux-brand") }}>
+          <p className="text-2xs font-extrabold uppercase tracking-[0.2em]" style={{ color: v("--ux-brand") }}>
             You run this for them
           </p>
           <h1 className="mt-2 text-[clamp(1.5rem,3.2vw,2.125rem)] font-extrabold leading-[1.1] tracking-[-0.035em]"
               style={{ color: v("--ux-ink") }}>
             {women.length} women, through you
           </h1>
-          <p className="mt-1.5 max-w-[56ch] text-[0.875rem] leading-relaxed" style={{ color: v("--ux-muted") }}>
+          <p className="mt-1.5 max-w-[56ch] text-sm leading-relaxed" style={{ color: v("--ux-muted") }}>
             {shared} of them do not own the phone they use. You are how they are here — and this
             is work, so it is paid.
           </p>
@@ -77,7 +77,7 @@ export default function AssistPage() {
 
         {note && (
           <Card pad={16} style={{ background: v("--ux-tint-green"), borderColor: "transparent" }}>
-            <p className="flex items-center gap-2 text-[0.8125rem] font-semibold" style={{ color: v("--ux-green-ink") }}>
+            <p className="flex items-center gap-2 text-xsm font-semibold" style={{ color: v("--ux-green-ink") }}>
               <I name="CheckCircle2" className="h-[16px] w-[16px]" />{note}
             </p>
           </Card>
@@ -97,10 +97,10 @@ export default function AssistPage() {
                               tint={t.urgent ? "--ux-tint-amber" : "--ux-surface-2"}
                               ink={t.urgent ? "--ux-amber-ink" : "--ux-muted"} size={38} />
                     <div className="min-w-0 flex-1">
-                      <p className="text-[0.875rem] font-bold" style={{ color: v("--ux-ink") }}>{t.who}</p>
-                      <p className="mt-0.5 text-[0.8125rem]" style={{ color: v("--ux-muted") }}>{t.what}</p>
+                      <p className="text-sm font-bold" style={{ color: v("--ux-ink") }}>{t.who}</p>
+                      <p className="mt-0.5 text-xsm" style={{ color: v("--ux-muted") }}>{t.what}</p>
                     </div>
-                    <p className="shrink-0 text-[0.8125rem] font-bold tabular-nums" style={{ color: v("--ux-green-ink") }}>
+                    <p className="shrink-0 text-xsm font-bold tabular-nums" style={{ color: v("--ux-green-ink") }}>
                       +{formatRupees(t.paysMinor)}
                     </p>
                     <Btn size="sm" onClick={() => doTask(t.id)}>Do it</Btn>
@@ -118,26 +118,26 @@ export default function AssistPage() {
             {women.map((w) => (
               <Card key={w.id} pad={16}>
                 <div className="flex items-start gap-3.5">
-                  <span className="grid h-[42px] w-[42px] shrink-0 place-items-center rounded-full text-[1rem] font-bold"
+                  <span className="grid h-[42px] w-[42px] shrink-0 place-items-center rounded-full text-base font-bold"
                         style={{ background: v("--ux-brand-tint-2"), color: v("--ux-brand") }}>
                     {w.name.charAt(0)}
                   </span>
                   <div className="min-w-0 flex-1">
                     <div className="flex flex-wrap items-center gap-2">
-                      <p className="text-[0.875rem] font-bold" style={{ color: v("--ux-ink") }}>{w.name}</p>
+                      <p className="text-sm font-bold" style={{ color: v("--ux-ink") }}>{w.name}</p>
                       {!w.ownsPhone && <Pill tone="orange" size="sm">Shares a phone</Pill>}
                     </div>
-                    <p className="mt-0.5 text-[0.75rem]" style={{ color: v("--ux-muted") }}>
+                    <p className="mt-0.5 text-xs" style={{ color: v("--ux-muted") }}>
                       Since {w.since} · {w.because.toLowerCase()}
                     </p>
                   </div>
                 </div>
 
                 <div className="mt-3 rounded-[12px] px-3 py-2.5" style={{ background: v("--ux-surface-2") }}>
-                  <p className="text-[0.75rem] font-semibold" style={{ color: v("--ux-ink-2") }}>
+                  <p className="text-xs font-semibold" style={{ color: v("--ux-ink-2") }}>
                     Last: {w.lastDid}
                   </p>
-                  <p className="mt-1 text-[0.6875rem]" style={{ color: v("--ux-muted") }}>
+                  <p className="mt-1 text-2xs" style={{ color: v("--ux-muted") }}>
                     {w.doneCount} things done · she agreed on {w.consentOn}
                   </p>
                 </div>
@@ -160,7 +160,7 @@ export default function AssistPage() {
         <Card pad={16} style={{ background: v("--ux-surface-2"), borderColor: "transparent" }}>
           <div className="flex items-start gap-3">
             <I name="ShieldCheck" className="mt-[2px] h-[16px] w-[16px] shrink-0" style={{ color: v("--ux-muted") }} />
-            <p className="text-[0.8125rem] leading-relaxed" style={{ color: v("--ux-ink-2") }}>
+            <p className="text-xsm leading-relaxed" style={{ color: v("--ux-ink-2") }}>
               You never see their vault, their pot balance or their private pockets — only the task
               in front of you. Everything you do is written down where they can read it.
             </p>

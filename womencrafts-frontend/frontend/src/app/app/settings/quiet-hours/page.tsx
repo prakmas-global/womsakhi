@@ -73,7 +73,7 @@ export default function QuietHoursPage() {
   if (!p) {
     return (
       <HomeShell active="/app/settings">
-        <p className="mx-auto max-w-[1140px] text-[0.8125rem]" style={{ color: "var(--ux-muted)" }}>Loading your settings…</p>
+        <p className="mx-auto max-w-[1140px] text-xsm" style={{ color: "var(--ux-muted)" }}>Loading your settings…</p>
       </HomeShell>
     );
   }
@@ -98,7 +98,7 @@ export default function QuietHoursPage() {
           {/* Settings › Quiet hours, as the design has it — SettingsPage was
               printing a second "Quiet hours" heading above the real one and
               capping the page at 720px, which collapsed the two columns. */}
-          <p className="mb-3 flex items-center gap-1.5 text-[0.75rem] font-semibold"
+          <p className="mb-3 flex items-center gap-1.5 text-xs font-semibold"
              style={{ color: "var(--ux-faint)" }}>
             <Link href="/app/settings" className="hover:underline" style={{ color: "var(--ux-faint)" }}>Settings</Link>
             <Icons.ChevronRight className="h-[13px] w-[13px]" />
@@ -108,7 +108,7 @@ export default function QuietHoursPage() {
               style={{ color: "var(--ux-ink)", textWrap: "balance" }}>
             Your phone sleeps when you do.
           </h1>
-          <p className="mt-2.5 max-w-[58ch] text-[0.875rem] leading-relaxed" style={{ color: "var(--ux-ink-2)" }}>
+          <p className="mt-2.5 max-w-[58ch] text-sm leading-relaxed" style={{ color: "var(--ux-ink-2)" }}>
             Pick the hours you do not want to be disturbed. Everything that arrives while you sleep
             waits for you in Notifications — nothing is lost, it just waits until morning.
           </p>
@@ -119,10 +119,10 @@ export default function QuietHoursPage() {
              style={{ background: "var(--ux-surface)", border: "1px solid var(--ux-line)",
                       boxShadow: "var(--ux-shadow-card)" }}>
           <div className="min-w-0 flex-1">
-            <h2 className="text-[1rem] font-bold" style={{ color: "var(--ux-ink)" }}>
+            <h2 className="text-base font-bold" style={{ color: "var(--ux-ink)" }}>
               Quiet hours are {p.quiet_hours ? "on" : "off"}
             </h2>
-            <p className="mt-0.5 text-[0.8125rem]" style={{ color: "var(--ux-muted)" }}>
+            <p className="mt-0.5 text-xsm" style={{ color: "var(--ux-muted)" }}>
               {p.quiet_hours
                 ? `${dayCount === 7 ? "Every day" : dayCount === 0 ? "No nights picked" : DAYS.filter((_, i) => p.quiet_days[i]).join(", ")}, ${fmt(p.quiet_start)} to ${fmt(p.quiet_end)}`
                 : "Off — nothing is held back"}
@@ -145,22 +145,22 @@ export default function QuietHoursPage() {
 
         <div className="flex flex-wrap items-center gap-2.5">
           <button type="button" onClick={save} disabled={saving}
-                  className="ux-press flex min-h-[46px] items-center gap-2 rounded-[12px] px-6 text-[0.875rem] font-bold disabled:opacity-60"
+                  className="ux-press flex min-h-[46px] items-center gap-2 rounded-[12px] px-6 text-sm font-bold disabled:opacity-60"
                   style={{ background: "linear-gradient(96deg, var(--ux-rib-2), var(--ux-rib-3))",
                            color: "var(--ux-on-brand)" }}>
             {saving ? "Saving…" : "Save quiet hours"}
           </button>
           <button type="button" onClick={() => set({ quiet_start: 1290, quiet_end: 420 })}
-                  className="ux-press flex min-h-[46px] items-center rounded-[12px] px-5 text-[0.875rem] font-bold"
+                  className="ux-press flex min-h-[46px] items-center rounded-[12px] px-5 text-sm font-bold"
                   style={{ border: "1px solid var(--ux-line-strong)", color: "var(--ux-ink-2)" }}>
             Reset to 9:30 PM – 7:00 AM
           </button>
           {saved && (
-            <span className="flex items-center gap-1.5 text-[0.8125rem] font-bold" style={{ color: "var(--ux-green-ink)" }}>
+            <span className="flex items-center gap-1.5 text-xsm font-bold" style={{ color: "var(--ux-green-ink)" }}>
               <Icons.Check className="h-4 w-4" /> Saved.
             </span>
           )}
-          {error && <span className="text-[0.8125rem] font-semibold" style={{ color: "var(--ux-danger-ink)" }}>{error}</span>}
+          {error && <span className="text-xsm font-semibold" style={{ color: "var(--ux-danger-ink)" }}>{error}</span>}
         </div>
       </div>
     </HomeShell>
@@ -216,8 +216,8 @@ function Dial({
     <section className="ux-sq rounded-[20px] p-5"
              style={{ background: "var(--ux-surface)", border: "1px solid var(--ux-line)",
                       boxShadow: "var(--ux-shadow-card)" }}>
-      <h3 className="text-[0.875rem] font-bold" style={{ color: "var(--ux-ink)" }}>When you sleep</h3>
-      <p className="mt-1 text-[0.8125rem] leading-relaxed" style={{ color: "var(--ux-muted)" }}>
+      <h3 className="text-sm font-bold" style={{ color: "var(--ux-ink)" }}>When you sleep</h3>
+      <p className="mt-1 text-xsm leading-relaxed" style={{ color: "var(--ux-muted)" }}>
         Drag either handle, or use the arrow keys. The marks on the ring are reminders you already
         have — you can see which ones the quiet window would catch.
       </p>
@@ -284,20 +284,20 @@ function Dial({
         </svg>
 
         <div className="pointer-events-none absolute inset-0 grid place-content-center text-center">
-          <span className="text-[0.6875rem] font-extrabold uppercase tracking-[0.14em]" style={{ color: "var(--ux-faint)" }}>Sleep</span>
-          <p className="my-0.5 text-[1.75rem] font-extrabold leading-[1.12] tracking-[-0.03em] tabular-nums"
+          <span className="text-2xs font-extrabold uppercase tracking-[0.14em]" style={{ color: "var(--ux-faint)" }}>Sleep</span>
+          <p className="my-0.5 text-2xlm font-extrabold leading-[1.12] tracking-[-0.03em] tabular-nums"
              style={{ color: "var(--ux-ink)" }}>{fmt(p.quiet_start)}</p>
-          <span className="text-[0.6875rem] font-extrabold uppercase tracking-[0.14em]" style={{ color: "var(--ux-faint)" }}>Wake</span>
-          <p className="my-0.5 text-[1.75rem] font-extrabold leading-[1.12] tracking-[-0.03em] tabular-nums"
+          <span className="text-2xs font-extrabold uppercase tracking-[0.14em]" style={{ color: "var(--ux-faint)" }}>Wake</span>
+          <p className="my-0.5 text-2xlm font-extrabold leading-[1.12] tracking-[-0.03em] tabular-nums"
              style={{ color: "var(--ux-ink)" }}>{fmt(p.quiet_end)}</p>
-          <p className="mt-2 text-[0.8125rem] font-semibold" style={{ color: "var(--ux-ink-2)" }}>
+          <p className="mt-2 text-xsm font-semibold" style={{ color: "var(--ux-ink-2)" }}>
             that is <b className="tabular-nums" style={{ color: "var(--ux-ink)" }}>
               {mins ? `${hrs} hr ${mins} min` : `${hrs} hr`}</b> of quiet
           </p>
         </div>
       </div>
 
-      <p className="mt-4 rounded-[12px] p-4 text-[0.875rem] leading-relaxed"
+      <p className="mt-4 rounded-[12px] p-4 text-sm leading-relaxed"
          style={{ background: "var(--ux-surface-2)", border: "1px solid var(--ux-line)", color: "var(--ux-ink-2)" }}>
         {p.quiet_hours ? (
           <>
@@ -369,35 +369,35 @@ function Waited({
     <section className="ux-sq rounded-[20px] p-5"
              style={{ background: "var(--ux-surface)", border: "1px solid var(--ux-line)",
                       boxShadow: "var(--ux-shadow-card)" }}>
-      <h3 className="text-[0.875rem] font-bold" style={{ color: "var(--ux-ink)" }}>What this window would hold</h3>
-      <p className="mt-1 text-[0.8125rem] leading-relaxed" style={{ color: "var(--ux-muted)" }}>
+      <h3 className="text-sm font-bold" style={{ color: "var(--ux-ink)" }}>What this window would hold</h3>
+      <p className="mt-1 text-xsm leading-relaxed" style={{ color: "var(--ux-muted)" }}>
         {on ? <>Your recent notifications that arrived between {from} and {to}.</>
             : <>Quiet hours are off, so nothing is being held.</>}
       </p>
 
       {!on ? null : held.length === 0 ? (
-        <p className="mt-3 text-[0.8125rem]" style={{ color: "var(--ux-muted)" }}>
+        <p className="mt-3 text-xsm" style={{ color: "var(--ux-muted)" }}>
           Nothing recent falls inside this window.
         </p>
       ) : (
         <div className="mt-3">
           {held.slice(0, 5).map((x, i) => (
-            <div key={i} className="flex items-center gap-2.5 py-2 text-[0.8125rem]"
+            <div key={i} className="flex items-center gap-2.5 py-2 text-xsm"
                  style={{ borderTop: i === 0 ? "none" : "1px solid var(--ux-line)" }}>
               <span className="h-[8px] w-[8px] shrink-0 rounded-full"
                     style={{ background: `var(${tone[x.kind] ?? "--ux-violet"})` }} />
               <span className="min-w-0 flex-1 truncate" style={{ color: "var(--ux-ink-2)" }}>{x.title}</span>
-              <span className="shrink-0 tabular-nums text-[0.75rem]" style={{ color: "var(--ux-faint)" }}>
+              <span className="shrink-0 tabular-nums text-xs" style={{ color: "var(--ux-faint)" }}>
                 {clock(x.m)}
               </span>
             </div>
           ))}
           {held.length > 5 && (
-            <p className="mt-2 text-[0.75rem]" style={{ color: "var(--ux-faint)" }}>
+            <p className="mt-2 text-xs" style={{ color: "var(--ux-faint)" }}>
               and {held.length - 5} more
             </p>
           )}
-          <p className="mt-3 text-[0.75rem] leading-relaxed" style={{ color: "var(--ux-muted)" }}>
+          <p className="mt-3 text-xs leading-relaxed" style={{ color: "var(--ux-muted)" }}>
             {allowMoney
               ? "Money arriving would still come through — you have it switched on above."
               : "Money arriving would be held too. You can let it through above."}
@@ -418,14 +418,14 @@ function Nights({ days, onChange }: { days: boolean[]; onChange: (d: boolean[]) 
     <section className="ux-sq rounded-[20px] p-5"
              style={{ background: "var(--ux-surface)", border: "1px solid var(--ux-line)",
                       boxShadow: "var(--ux-shadow-card)" }}>
-      <h3 className="text-[0.875rem] font-bold" style={{ color: "var(--ux-ink)" }}>Which nights</h3>
-      <p className="mt-1 text-[0.8125rem] leading-relaxed" style={{ color: "var(--ux-muted)" }}>
+      <h3 className="text-sm font-bold" style={{ color: "var(--ux-ink)" }}>Which nights</h3>
+      <p className="mt-1 text-xsm leading-relaxed" style={{ color: "var(--ux-muted)" }}>
         Sunday is often the one night worth keeping loud — market orders land early Monday.
       </p>
       <div className="mt-3 flex gap-1.5">
         {([["all", "Every day"], ["week", "Weeknights"], ["end", "Weekends"]] as const).map(([k, l]) => (
           <button key={k} type="button" onClick={() => preset(k)}
-                  className="ux-press min-h-[36px] rounded-full px-3 text-[0.75rem] font-bold"
+                  className="ux-press min-h-[36px] rounded-full px-3 text-xs font-bold"
                   style={{ border: "1px solid var(--ux-line)", color: "var(--ux-muted)" }}>{l}</button>
         ))}
       </div>
@@ -433,7 +433,7 @@ function Nights({ days, onChange }: { days: boolean[]; onChange: (d: boolean[]) 
         {DAYS.map((d, i) => (
           <button key={d} type="button" role="switch" aria-checked={days[i]}
                   onClick={() => onChange(days.map((v, j) => (j === i ? !v : v)))}
-                  className="ux-press min-h-[42px] min-w-[46px] rounded-[12px] px-3 text-[0.8125rem] font-bold"
+                  className="ux-press min-h-[42px] min-w-[46px] rounded-[12px] px-3 text-xsm font-bold"
                   style={days[i]
                     ? { background: "linear-gradient(96deg, var(--ux-rib-2), var(--ux-rib-3))",
                         border: "1px solid transparent", color: "var(--ux-on-brand)" }
@@ -455,8 +455,8 @@ function Breakthrough({
     <section className="ux-sq rounded-[20px] p-5"
              style={{ background: "var(--ux-surface)", border: "1px solid var(--ux-line)",
                       boxShadow: "var(--ux-shadow-card)" }}>
-      <h3 className="text-[0.875rem] font-bold" style={{ color: "var(--ux-ink)" }}>What still reaches you</h3>
-      <p className="mt-1 text-[0.8125rem] leading-relaxed" style={{ color: "var(--ux-muted)" }}>
+      <h3 className="text-sm font-bold" style={{ color: "var(--ux-ink)" }}>What still reaches you</h3>
+      <p className="mt-1 text-xsm leading-relaxed" style={{ color: "var(--ux-muted)" }}>
         Quiet does not mean unreachable. These come through however late it is.
       </p>
 
@@ -465,7 +465,7 @@ function Breakthrough({
       <Row icon="ShieldCheck" tint="--ux-tint-green" ink="--ux-green-ink"
            title="Your safety alert"
            body="If you press the safety button, or someone responds to one, it rings through — silent or not.">
-        <span className="flex items-center gap-1.5 text-[0.6875rem] font-extrabold uppercase tracking-[0.06em]"
+        <span className="flex items-center gap-1.5 text-2xs font-extrabold uppercase tracking-[0.06em]"
               style={{ color: "var(--ux-green-ink)" }}>
           <Icons.Lock className="h-[11px] w-[11px]" /> Always on
         </span>
@@ -502,8 +502,8 @@ function Row({
         <I className="h-[17px] w-[17px]" />
       </span>
       <div className="min-w-0 flex-1">
-        <h4 className="text-[0.8125rem] font-bold" style={{ color: "var(--ux-ink)" }}>{title}</h4>
-        <p className="mt-0.5 text-[0.75rem] leading-relaxed" style={{ color: "var(--ux-muted)" }}>{body}</p>
+        <h4 className="text-xsm font-bold" style={{ color: "var(--ux-ink)" }}>{title}</h4>
+        <p className="mt-0.5 text-xs leading-relaxed" style={{ color: "var(--ux-muted)" }}>{body}</p>
       </div>
       <div className="mt-1 shrink-0">{children}</div>
     </div>

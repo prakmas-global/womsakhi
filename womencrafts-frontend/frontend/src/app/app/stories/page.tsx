@@ -98,10 +98,10 @@ export default function LocalPage() {
                      style={{ borderColor: "var(--ux-line)", ["--i" as string]: i }}>
                     <IconTile icon={g.icon} tint={g.tint} ink={g.ink} size={36} radius={10} />
                     <span className="min-w-0 flex-1">
-                      <span className="block truncate text-[0.8125rem] font-semibold" style={{ color: "var(--ux-ink)" }}>
+                      <span className="block truncate text-xsm font-semibold" style={{ color: "var(--ux-ink)" }}>
                         {g.name}
                       </span>
-                      <span className="mt-0.5 block truncate text-[0.6875rem]" style={{ color: "var(--ux-muted)" }}>
+                      <span className="mt-0.5 block truncate text-2xs" style={{ color: "var(--ux-muted)" }}>
                         {g.members} {plural("member", g.members)} · {g.place}
                       </span>
                     </span>
@@ -119,10 +119,10 @@ export default function LocalPage() {
                   <a href={`tel:${h.num}`} className="ux-hov flex items-start gap-3">
                     <IconTile icon="Phone" tint="--ux-tint-pink" ink="--ux-pink" size={36} radius={10} />
                     <div className="min-w-0">
-                      <p className="text-[0.8125rem] font-medium leading-snug" style={{ color: "var(--ux-ink)" }}>
+                      <p className="text-xsm font-medium leading-snug" style={{ color: "var(--ux-ink)" }}>
                         {h.num} · {h.label}
                       </p>
-                      <p className="mt-0.5 text-[0.75rem]" style={{ color: "var(--ux-muted)" }}>{h.note}</p>
+                      <p className="mt-0.5 text-xs" style={{ color: "var(--ux-muted)" }}>{h.note}</p>
                     </div>
                   </a>
                 </li>
@@ -135,10 +135,10 @@ export default function LocalPage() {
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img loading="lazy" decoding="async" src={LOCAL_ART.hero} alt=""
                  className="ux-float pointer-events-none absolute -bottom-3 -end-4 h-[100px] w-[100px] object-contain" />
-            <h3 className="relative w-[60%] text-[0.875rem] font-semibold" style={{ color: "var(--ux-ink)" }}>
+            <h3 className="relative w-[60%] text-sm font-semibold" style={{ color: "var(--ux-ink)" }}>
               Tell yours
             </h3>
-            <p className="relative mt-2 w-[60%] text-[0.75rem] leading-relaxed" style={{ color: "var(--ux-muted)" }}>
+            <p className="relative mt-2 w-[60%] text-xs leading-relaxed" style={{ color: "var(--ux-muted)" }}>
               Someone two streets away is where you were a year ago.
             </p>
             <div className="relative mt-3 w-[60%]">
@@ -150,8 +150,8 @@ export default function LocalPage() {
     >
       <div className="mb-[20px] flex items-end justify-between gap-4">
         <div>
-          <h1 className="text-[1.5rem] font-bold" style={{ color: "var(--ux-ink)" }}>Near you</h1>
-          <p className="mt-1.5 flex items-center gap-1.5 text-[0.8125rem]" style={{ color: "var(--ux-muted)" }}>
+          <h1 className="text-2xl font-bold" style={{ color: "var(--ux-ink)" }}>Near you</h1>
+          <p className="mt-1.5 flex items-center gap-1.5 text-xsm" style={{ color: "var(--ux-muted)" }}>
             <Icons.MapPin className="h-4 w-4" />
             {city ? `${city} · ` : ""}{STORIES.length} {plural("story", STORIES.length)} from women on WomSakhi
           </p>
@@ -162,7 +162,7 @@ export default function LocalPage() {
       <SourceNote source={source} what="stories" />
 
       {likeProblem && (
-        <p role="alert" className="ux-slide-up mb-[16px] rounded-[12px] p-3.5 text-[0.8125rem] leading-relaxed"
+        <p role="alert" className="ux-slide-up mb-[16px] rounded-[12px] p-3.5 text-xsm leading-relaxed"
            style={{ background: "var(--ux-tint-orange)", color: "var(--ux-orange-ink)" }}>
           {likeProblem}
         </p>
@@ -191,19 +191,19 @@ export default function LocalPage() {
                              className="h-[48px] w-[48px] shrink-0 rounded-full border-2 border-white object-cover" />
                       )
                       : (
-                        <span className="grid h-[48px] w-[48px] shrink-0 place-items-center rounded-full border-2 border-white text-[1.125rem] font-semibold"
+                        <span className="grid h-[48px] w-[48px] shrink-0 place-items-center rounded-full border-2 border-white text-lg font-semibold"
                               style={{ background: "var(--ux-brand-tint)", color: "var(--ux-brand)" }}>
                           {s.author_name.trim().charAt(0).toUpperCase()}
                         </span>
                       )}
                     <div className="min-w-0 flex-1">
-                      <p className="truncate text-[1rem] font-semibold text-white">{s.author_name}</p>
+                      <p className="truncate text-base font-semibold text-white">{s.author_name}</p>
                       {/* Her trade, her distance and what she earns were
                           Sunita Devi's fixture values, printed under every
                           woman's name. The API carries none of the three, so
                           nothing stands where they were — the date she wrote
                           it is real and is below. */}
-                      <p className="mt-0.5 truncate text-[0.75rem]" style={{ color: "rgba(255,255,255,0.86)" }}>
+                      <p className="mt-0.5 truncate text-xs" style={{ color: "rgba(255,255,255,0.86)" }}>
                         {s.when}
                       </p>
                     </div>
@@ -212,15 +212,15 @@ export default function LocalPage() {
 
                 <div className="p-[20px]">
                   {s.title && (
-                    <p className="text-[1rem] font-semibold leading-snug" style={{ color: "var(--ux-ink)" }}>
+                    <p className="text-base font-semibold leading-snug" style={{ color: "var(--ux-ink)" }}>
                       &ldquo;{s.title}&rdquo;
                     </p>
                   )}
-                  <p className="mt-2.5 line-clamp-4 text-[0.8125rem] leading-relaxed" style={{ color: "var(--ux-ink-2)" }}>{s.body}</p>
+                  <p className="mt-2.5 line-clamp-4 text-xsm leading-relaxed" style={{ color: "var(--ux-ink-2)" }}>{s.body}</p>
 
                   <div className="mt-4 flex items-center justify-between gap-4 border-t pt-3.5"
                        style={{ borderColor: "var(--ux-line)" }}>
-                    <span className="flex items-center gap-1.5 text-[0.75rem]" style={{ color: "var(--ux-faint)" }}>
+                    <span className="flex items-center gap-1.5 text-xs" style={{ color: "var(--ux-faint)" }}>
                       <Icons.Clock className="h-[14px] w-[14px]" /> {s.when}
                     </span>
                     <span className="flex items-center gap-2">
@@ -229,7 +229,7 @@ export default function LocalPage() {
                         disabled={liking === s.id}
                         aria-pressed={on}
                         aria-label={on ? `Unlike ${s.author_name}'s story` : `Like ${s.author_name}'s story`}
-                        className="ux-press ux-hov ux-sq inline-flex items-center gap-1.5 rounded-[12px] px-3 py-2 text-[0.8125rem] font-medium"
+                        className="ux-press ux-hov ux-sq inline-flex items-center gap-1.5 rounded-[12px] px-3 py-2 text-xsm font-medium"
                         style={{ background: on ? "var(--ux-tint-pink)" : "var(--ux-surface-2)",
                                  color: on ? "var(--ux-pink-ink)" : "var(--ux-muted)" }}
                       >
@@ -271,15 +271,15 @@ export default function LocalPage() {
                   <IconTile icon={g.icon} tint={g.tint} ink={g.ink} size={48} radius={13} />
                   <div className="min-w-0 flex-1">
                     <div className="flex items-start gap-2">
-                      <h3 className="min-w-0 flex-1 truncate text-[0.875rem] font-semibold" style={{ color: "var(--ux-ink)" }}>
+                      <h3 className="min-w-0 flex-1 truncate text-sm font-semibold" style={{ color: "var(--ux-ink)" }}>
                         {g.name}
                       </h3>
                       {g.joined && <Pill tone="brand" size="sm">You are in this</Pill>}
                     </div>
-                    <p className="mt-1 text-[0.75rem]" style={{ color: "var(--ux-muted)" }}>
+                    <p className="mt-1 text-xs" style={{ color: "var(--ux-muted)" }}>
                       {g.members} {plural("member", g.members)} · {g.place} · {g.activity}
                     </p>
-                    {g.blurb && <p className="mt-2 text-[0.8125rem]" style={{ color: "var(--ux-ink-2)" }}>{g.blurb}</p>}
+                    {g.blurb && <p className="mt-2 text-xsm" style={{ color: "var(--ux-ink-2)" }}>{g.blurb}</p>}
                   </div>
                 </div>
                 <div className="mt-3.5 flex justify-end border-t pt-3.5" style={{ borderColor: "var(--ux-line)" }}>

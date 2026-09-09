@@ -52,7 +52,7 @@ function Bar({ p }: { p: PriceCheck }) {
              style={{ color: v(low ? "--ux-amber-ink" : "--ux-green-ink") }} sw={2.8} />
         </div>
       </div>
-      <div className="flex items-center justify-between text-[0.6875rem] tabular-nums" style={{ color: v("--ux-muted") }}>
+      <div className="flex items-center justify-between text-2xs tabular-nums" style={{ color: v("--ux-muted") }}>
         <span>{formatRupees(p.lowMinor)}</span>
         <span style={{ color: v("--ux-brand") }}>most ask {formatRupees(p.typicalMinor)}</span>
         <span>{formatRupees(p.highMinor)}</span>
@@ -84,14 +84,14 @@ export default function PricingPage() {
         <Back to="/app/shop" label="Back to your shops" />
 
         <header>
-          <p className="text-[0.6875rem] font-extrabold uppercase tracking-[0.2em]" style={{ color: v("--ux-brand") }}>
+          <p className="text-2xs font-extrabold uppercase tracking-[0.2em]" style={{ color: v("--ux-brand") }}>
             Your prices
           </p>
           <h1 className="mt-2 text-[clamp(1.5rem,3.2vw,2.125rem)] font-extrabold leading-[1.1] tracking-[-0.035em]"
               style={{ color: v("--ux-ink") }}>
             What others ask for the same work
           </h1>
-          <p className="mt-1.5 max-w-[56ch] text-[0.875rem] leading-relaxed" style={{ color: v("--ux-muted") }}>
+          <p className="mt-1.5 max-w-[56ch] text-sm leading-relaxed" style={{ color: v("--ux-muted") }}>
             Not what you should charge — what women near you already do. Nobody tells each other,
             which is exactly why everyone charges too little.
           </p>
@@ -102,11 +102,11 @@ export default function PricingPage() {
             <div className="flex flex-wrap items-center gap-4">
               <IconTile icon="TrendingUp" tint="--ux-tint-amber" ink="--ux-amber-ink" size={46} radius={13} />
               <div className="min-w-0 flex-1">
-                <p className="text-[1rem] font-bold" style={{ color: v("--ux-ink") }}>
+                <p className="text-base font-bold" style={{ color: v("--ux-ink") }}>
                   You are asking less than most on {under.length}{" "}
                   {under.length === 1 ? "thing" : "things"}
                 </p>
-                <p className="mt-1 text-[0.8125rem] leading-relaxed" style={{ color: v("--ux-ink-2") }}>
+                <p className="mt-1 text-xsm leading-relaxed" style={{ color: v("--ux-ink-2") }}>
                   About <b>{formatRupees(missing)}</b> less per item than the women around you.
                   Same cloth, same hours, same skill.
                 </p>
@@ -117,7 +117,7 @@ export default function PricingPage() {
 
         {note && (
           <Card pad={16} style={{ background: v("--ux-tint-green"), borderColor: "transparent" }}>
-            <p className="flex items-center gap-2 text-[0.8125rem] font-semibold" style={{ color: v("--ux-green-ink") }}>
+            <p className="flex items-center gap-2 text-xsm font-semibold" style={{ color: v("--ux-green-ink") }}>
               <I name="CheckCircle2" className="h-[16px] w-[16px]" />{note}
             </p>
           </Card>
@@ -133,19 +133,19 @@ export default function PricingPage() {
                 <Card key={p.id} pad={16}>
                   <div className="flex flex-wrap items-start justify-between gap-3">
                     <div className="min-w-0">
-                      <p className="text-[0.875rem] font-bold" style={{ color: v("--ux-ink") }}>{p.item}</p>
-                      <p className="mt-0.5 text-[0.75rem]" style={{ color: v("--ux-muted") }}>
+                      <p className="text-sm font-bold" style={{ color: v("--ux-ink") }}>{p.item}</p>
+                      <p className="mt-0.5 text-xs" style={{ color: v("--ux-muted") }}>
                         {thin
                           ? `Only ${p.from} women near you sell this — treat the range as a hint, not a rule`
                           : `From ${p.from} women near you`}
                       </p>
                     </div>
                     <div className="text-right">
-                      <p className="text-[1.25rem] font-extrabold leading-none tabular-nums"
+                      <p className="text-xl font-extrabold leading-none tabular-nums"
                          style={{ color: v(low ? "--ux-amber-ink" : "--ux-ink") }}>
                         {formatRupees(p.yoursMinor)}
                       </p>
-                      <p className="mt-0.5 text-[0.6875rem]" style={{ color: v("--ux-muted") }}>you ask</p>
+                      <p className="mt-0.5 text-2xs" style={{ color: v("--ux-muted") }}>you ask</p>
                     </div>
                   </div>
 
@@ -154,7 +154,7 @@ export default function PricingPage() {
                   {low && (
                     <div className="mt-3.5 flex flex-wrap items-center gap-2 border-t pt-3.5"
                          style={{ borderColor: v("--ux-line") }}>
-                      <p className="flex-1 text-[0.8125rem]" style={{ color: v("--ux-ink-2") }}>
+                      <p className="flex-1 text-xsm" style={{ color: v("--ux-ink-2") }}>
                         Most ask <b>{formatRupees(p.typicalMinor)}</b>.
                       </p>
                       <Btn size="sm" onClick={() => raise(p.id)}>Ask that too</Btn>
@@ -176,13 +176,13 @@ export default function PricingPage() {
             {CROSSOVERS.map((c) => (
               <Card key={c.id} pad={16}>
                 <IconTile icon={c.icon} tint="--ux-tint-violet" ink="--ux-violet" size={40} />
-                <p className="mt-3 text-[0.875rem] font-bold" style={{ color: v("--ux-ink") }}>{c.trade}</p>
-                <p className="mt-1.5 text-[0.8125rem] leading-relaxed" style={{ color: v("--ux-muted") }}>{c.why}</p>
-                <p className="mt-3 text-[1.125rem] font-extrabold tabular-nums" style={{ color: v("--ux-violet") }}>
+                <p className="mt-3 text-sm font-bold" style={{ color: v("--ux-ink") }}>{c.trade}</p>
+                <p className="mt-1.5 text-xsm leading-relaxed" style={{ color: v("--ux-muted") }}>{c.why}</p>
+                <p className="mt-3 text-lg font-extrabold tabular-nums" style={{ color: v("--ux-violet") }}>
                   {formatRupees(c.typicalMonthMinor)}
-                  <span className="ml-1 text-[0.75rem] font-semibold" style={{ color: v("--ux-muted") }}>a month</span>
+                  <span className="ml-1 text-xs font-semibold" style={{ color: v("--ux-muted") }}>a month</span>
                 </p>
-                <p className="mt-1 text-[0.75rem]" style={{ color: v("--ux-muted") }}>
+                <p className="mt-1 text-xs" style={{ color: v("--ux-muted") }}>
                   {c.women} {c.women === 1 ? "woman" : "women"} you know already do this
                 </p>
                 <Btn size="sm" variant="outline" full className="mt-3"

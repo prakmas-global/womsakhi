@@ -142,7 +142,7 @@ export default function EarnPage() {
       <div className="flex flex-col gap-5">
         <header className="flex flex-wrap items-end gap-4">
           <div className="min-w-0 flex-1">
-            <p className="text-[0.6875rem] font-extrabold uppercase tracking-[0.2em]" style={{ color: "var(--ux-brand)" }}>
+            <p className="text-2xs font-extrabold uppercase tracking-[0.2em]" style={{ color: "var(--ux-brand)" }}>
               Earn
             </p>
             <h1 className="mt-2 text-[clamp(1.5rem,3.2vw,2.125rem)] font-extrabold leading-[1.1] tracking-[-0.035em]"
@@ -154,7 +154,7 @@ export default function EarnPage() {
                 </span>
               )}
             </h1>
-            <p className="mt-1.5 text-[0.875rem]" style={{ color: "var(--ux-ink-2)" }}>
+            <p className="mt-1.5 text-sm" style={{ color: "var(--ux-ink-2)" }}>
               {rupees(d.balanceMinor)} is yours to take out now.
               {live > 0 ? ` ${live} ${live === 1 ? "opening is" : "openings are"} still open to you.` : ""}
             </p>
@@ -169,7 +169,7 @@ export default function EarnPage() {
                 ?? Icons.Circle;
               return (
                 <button key={v.id} type="button" onClick={() => choose(v.id)} aria-pressed={on}
-                        className="ux-press flex min-h-[38px] shrink-0 items-center gap-2 whitespace-nowrap rounded-full px-4 text-[0.8125rem] font-bold"
+                        className="ux-press flex min-h-[38px] shrink-0 items-center gap-2 whitespace-nowrap rounded-full px-4 text-xsm font-bold"
                         style={on
                           ? { background: "linear-gradient(96deg, var(--ux-rib-2), var(--ux-rib-3))",
                               color: "var(--ux-on-brand)" }
@@ -182,7 +182,7 @@ export default function EarnPage() {
         </header>
 
         {error && (
-          <p className="rounded-[12px] px-4 py-3 text-[0.8125rem] font-semibold"
+          <p className="rounded-[12px] px-4 py-3 text-xsm font-semibold"
              style={{ background: "var(--ux-danger-tint)", color: "var(--ux-danger-solid)" }}>
             {error}
           </p>

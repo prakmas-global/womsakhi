@@ -61,8 +61,8 @@ export default function MentorsPage() {
                     <img loading="lazy" decoding="async" src={s.photo} alt="" className="h-[38px] w-[38px] shrink-0 rounded-full object-cover"
                          style={{ background: "var(--ux-brand-tint)" }} />
                     <div className="min-w-0 flex-1">
-                      <p className="truncate text-[0.8125rem] font-medium" style={{ color: "var(--ux-ink)" }}>{s.mentor}</p>
-                      <p className="mt-0.5 truncate text-[0.6875rem]" style={{ color: "var(--ux-muted)" }}>{s.when}</p>
+                      <p className="truncate text-xsm font-medium" style={{ color: "var(--ux-ink)" }}>{s.mentor}</p>
+                      <p className="mt-0.5 truncate text-2xs" style={{ color: "var(--ux-muted)" }}>{s.when}</p>
                     </div>
                     <Pill tone={s.state === "Upcoming" ? "brand" : s.state === "Requested" ? "blue" : "neutral"} size="sm">
                       {s.state}
@@ -71,7 +71,7 @@ export default function MentorsPage() {
                 ))}
               </div>
             ) : (
-              <p className="text-[0.8125rem]" style={{ color: "var(--ux-muted)" }}>Nothing booked yet.</p>
+              <p className="text-xsm" style={{ color: "var(--ux-muted)" }}>Nothing booked yet.</p>
             )}
           </Card>
 
@@ -85,9 +85,9 @@ export default function MentorsPage() {
                 "You both write two lines about what to do next.",
               ].map((t, i) => (
                 <li key={t} className="flex items-start gap-2.5">
-                  <span className="grid h-[20px] w-[20px] shrink-0 place-items-center rounded-full text-[0.6875rem] font-bold"
+                  <span className="grid h-[20px] w-[20px] shrink-0 place-items-center rounded-full text-2xs font-bold"
                         style={{ background: "var(--ux-brand-tint)", color: "var(--ux-brand)" }}>{i + 1}</span>
-                  <span className="text-[0.8125rem] leading-snug" style={{ color: "var(--ux-ink-2)" }}>{t}</span>
+                  <span className="text-xsm leading-snug" style={{ color: "var(--ux-ink-2)" }}>{t}</span>
                 </li>
               ))}
             </ol>
@@ -98,10 +98,10 @@ export default function MentorsPage() {
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img loading="lazy" decoding="async" src={MENTOR_ART.hero} alt=""
                  className="ux-float pointer-events-none absolute -bottom-3 -end-4 h-[104px] w-[104px] object-contain" />
-            <h2 className="relative w-[60%] text-[0.875rem] font-semibold" style={{ color: "var(--ux-ink)" }}>
+            <h2 className="relative w-[60%] text-sm font-semibold" style={{ color: "var(--ux-ink)" }}>
               Become a mentor
             </h2>
-            <p className="relative mt-2 w-[60%] text-[0.75rem] leading-relaxed" style={{ color: "var(--ux-muted)" }}>
+            <p className="relative mt-2 w-[60%] text-xs leading-relaxed" style={{ color: "var(--ux-muted)" }}>
               You know more than you think. One session a month changes someone&rsquo;s year.
             </p>
             <div className="relative mt-3 w-[60%]">
@@ -113,8 +113,8 @@ export default function MentorsPage() {
     >
       <div className="mb-[20px] flex items-end justify-between gap-4">
         <div>
-          <h1 className="text-[1.5rem] font-bold" style={{ color: "var(--ux-ink)" }}>Mentors</h1>
-          <p className="mt-1.5 text-[0.8125rem]" style={{ color: "var(--ux-muted)" }}>
+          <h1 className="text-2xl font-bold" style={{ color: "var(--ux-ink)" }}>Mentors</h1>
+          <p className="mt-1.5 text-xsm" style={{ color: "var(--ux-muted)" }}>
             {tab === "Find a mentor"
               ? `${shown.length} ${plural("woman", shown.length)} ready to help${active ? ` · ${active} ${plural("filter", active)} on` : ""}`
               : `${upcoming.length} ${plural("session", upcoming.length)} coming up`}
@@ -128,7 +128,7 @@ export default function MentorsPage() {
       {tab === "Find a mentor" && (
         <>
           <Card className="mb-[16px] ux-onscroll-soft" pad={16}>
-            <p className="mb-2 text-[0.6875rem] font-semibold uppercase tracking-[0.07em]" style={{ color: "var(--ux-faint)" }}>
+            <p className="mb-2 text-2xs font-semibold uppercase tracking-[0.07em]" style={{ color: "var(--ux-faint)" }}>
               What you need help with
             </p>
             <div className="flex flex-wrap gap-2">
@@ -137,7 +137,7 @@ export default function MentorsPage() {
               ))}
             </div>
 
-            <p className="mb-2 mt-4 text-[0.6875rem] font-semibold uppercase tracking-[0.07em]" style={{ color: "var(--ux-faint)" }}>
+            <p className="mb-2 mt-4 text-2xs font-semibold uppercase tracking-[0.07em]" style={{ color: "var(--ux-faint)" }}>
               A language you are comfortable in
             </p>
             <div className="flex flex-wrap gap-2">
@@ -170,7 +170,7 @@ export default function MentorsPage() {
 
                     <div className="min-w-0 flex-1">
                       <div className="flex items-start gap-2">
-                        <h2 className="min-w-0 flex-1 text-[1rem] font-semibold" style={{ color: "var(--ux-ink)" }}>
+                        <h2 className="min-w-0 flex-1 text-base font-semibold" style={{ color: "var(--ux-ink)" }}>
                           <Link href={`/app/mentors/${m.id}`} className="-my-1 inline-block py-1 hover:underline">
                             {m.name}
                           </Link>
@@ -178,9 +178,9 @@ export default function MentorsPage() {
                         {m.free_first && <Pill tone="green" size="sm">First session free</Pill>}
                         {m.requested && <Pill tone="blue" size="sm">You asked</Pill>}
                       </div>
-                      <p className="mt-0.5 text-[0.8125rem]" style={{ color: "var(--ux-ink-2)" }}>{m.headline}</p>
+                      <p className="mt-0.5 text-xsm" style={{ color: "var(--ux-ink-2)" }}>{m.headline}</p>
 
-                      <p className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-[0.75rem]"
+                      <p className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs"
                          style={{ color: "var(--ux-muted)" }}>
                         <span className="inline-flex items-center gap-1"><Icons.MapPin className="h-3.5 w-3.5" /> {m.location}</span>
                         <span className="inline-flex items-center gap-1"><Icons.Briefcase className="h-3.5 w-3.5" /> {m.experience_years} years</span>
@@ -191,7 +191,7 @@ export default function MentorsPage() {
 
                       <div className="mt-2.5 flex flex-wrap gap-1.5">
                         {m.expertise.map((e) => (
-                          <span key={e} className="ux-sq rounded-[8px] border px-2 py-[3px] text-[0.6875rem]"
+                          <span key={e} className="ux-sq rounded-[8px] border px-2 py-[3px] text-2xs"
                                 style={{ borderColor: "var(--ux-line-strong)", color: "var(--ux-muted)" }}>{e}</span>
                         ))}
                       </div>
@@ -200,7 +200,7 @@ export default function MentorsPage() {
 
                   <div className="mt-3.5 flex items-center justify-between gap-4 border-t pt-3.5"
                        style={{ borderColor: "var(--ux-line)" }}>
-                    <span className="flex items-center gap-1.5 text-[0.75rem]" style={{ color: "var(--ux-faint)" }}>
+                    <span className="flex items-center gap-1.5 text-xs" style={{ color: "var(--ux-faint)" }}>
                       <Icons.Clock className="h-[14px] w-[14px]" /> {m.availability}
                       <span aria-hidden>·</span>
                       {m.free_first ? "Free first session" : `${rupees(m.fee_minor)} a session`}
@@ -257,14 +257,14 @@ export default function MentorsPage() {
                 </span>
                 <div className="min-w-0 flex-1">
                   <div className="flex items-start gap-2">
-                    <h2 className="min-w-0 flex-1 truncate text-[0.875rem] font-semibold" style={{ color: "var(--ux-ink)" }}>
+                    <h2 className="min-w-0 flex-1 truncate text-sm font-semibold" style={{ color: "var(--ux-ink)" }}>
                       {s.topic}
                     </h2>
                     <Pill tone={s.state === "Upcoming" ? "brand" : s.state === "Requested" ? "blue" : "neutral"} size="sm">
                       {s.state}
                     </Pill>
                   </div>
-                  <p className="mt-1 flex flex-wrap items-center gap-x-3 text-[0.75rem]" style={{ color: "var(--ux-muted)" }}>
+                  <p className="mt-1 flex flex-wrap items-center gap-x-3 text-xs" style={{ color: "var(--ux-muted)" }}>
                     <span className="inline-flex items-center gap-1"><Icons.User className="h-3.5 w-3.5" /> {s.mentor}</span>
                     <span className="inline-flex items-center gap-1"><Icons.Clock className="h-3.5 w-3.5" /> {s.when}</span>
                     <span className="inline-flex items-center gap-1"><Icons.Video className="h-3.5 w-3.5" /> {s.mode}</span>
@@ -299,7 +299,7 @@ export default function MentorsPage() {
                                text: n.text, rating: n.rating,
                                type: "Mentoring Session", program: s.mentor,
                              })}
-                             sent="Thank you — the team has your note"
+                             sent={COPY.noteReceived}
                              sentBody="It goes to the people who run WomSakhi. It is not shown on her profile or anywhere public."
                              sentLink={null} />
                   )}

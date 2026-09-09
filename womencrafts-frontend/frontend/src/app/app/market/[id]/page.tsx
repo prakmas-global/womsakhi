@@ -82,21 +82,21 @@ export default function ItemPage({ params }: { params: Promise<{ id: string }> }
                     style={{ color: v("--ux-ink") }}>{item.title}</h1>
                 {item.madeToOrder && <Pill tone="green" size="sm">Made for you</Pill>}
               </div>
-              <p className="mt-1.5 text-[0.875rem] leading-relaxed" style={{ color: v("--ux-ink-2") }}>{item.detail}</p>
+              <p className="mt-1.5 text-sm leading-relaxed" style={{ color: v("--ux-ink-2") }}>{item.detail}</p>
             </div>
             <div className="shrink-0 text-right">
-              <p className="text-[1.5rem] font-extrabold leading-none tabular-nums" style={{ color: v("--ux-ink") }}>
+              <p className="text-2xl font-extrabold leading-none tabular-nums" style={{ color: v("--ux-ink") }}>
                 {formatRupees(item.minor)}
               </p>
               {item.stock !== null && (
-                <p className="mt-1 text-[0.75rem]" style={{ color: v("--ux-ink-2") }}>{item.stock} left</p>
+                <p className="mt-1 text-xs" style={{ color: v("--ux-ink-2") }}>{item.stock} left</p>
               )}
             </div>
           </div>
 
           {item.madeToOrder && (
             <div className="px-5 py-4" style={{ background: v("--ux-surface-2") }}>
-              <p className="text-[0.8125rem] leading-relaxed" style={{ color: v("--ux-ink-2") }}>
+              <p className="text-xsm leading-relaxed" style={{ color: v("--ux-ink-2") }}>
                 She makes this after you order. To start she needs{" "}
                 <b style={{ color: v("--ux-ink") }}>{formatRupees(materials)}</b> for the cloth and
                 thread — the rest when you collect. That is how she can take the order at all without
@@ -120,7 +120,7 @@ export default function ItemPage({ params }: { params: Promise<{ id: string }> }
 
         {note && (
           <Card pad={16} style={{ background: v("--ux-tint-green"), borderColor: "transparent" }}>
-            <p className="flex items-center gap-2 text-[0.8125rem] font-semibold" style={{ color: v("--ux-green-ink") }}>
+            <p className="flex items-center gap-2 text-xsm font-semibold" style={{ color: v("--ux-green-ink") }}>
               <I name="CheckCircle2" className="h-[16px] w-[16px]" />{note}
             </p>
           </Card>
@@ -131,14 +131,14 @@ export default function ItemPage({ params }: { params: Promise<{ id: string }> }
           <SectionHead title="Who makes it" icon="User" />
           <Card pad={20}>
             <div className="flex flex-wrap items-start gap-4">
-              <span className="grid h-[54px] w-[54px] shrink-0 place-items-center rounded-full text-[1.25rem] font-bold"
+              <span className="grid h-[54px] w-[54px] shrink-0 place-items-center rounded-full text-xl font-bold"
                     style={{ background: v("--ux-brand-tint-2"), color: v("--ux-brand") }}>
                 {seller.name.charAt(0)}
               </span>
               <div className="min-w-0 flex-1">
                 <div className="flex flex-wrap items-center gap-2">
-                  <p className="text-[1rem] font-bold" style={{ color: v("--ux-ink") }}>{seller.name}</p>
-                  <span className="rounded-full px-2.5 py-[3px] text-[0.6875rem] font-bold"
+                  <p className="text-base font-bold" style={{ color: v("--ux-ink") }}>{seller.name}</p>
+                  <span className="rounded-full px-2.5 py-[3px] text-2xs font-bold"
                         style={{
                           background: v(seller.tie === "circle" ? "--ux-tint-pink" : "--ux-surface-2"),
                           color: v(seller.tie === "circle" ? "--ux-pink-ink" : "--ux-muted"),
@@ -146,7 +146,7 @@ export default function ItemPage({ params }: { params: Promise<{ id: string }> }
                     {TIE_LABEL[seller.tie]}
                   </span>
                 </div>
-                <p className="mt-1 text-[0.8125rem]" style={{ color: v("--ux-muted") }}>
+                <p className="mt-1 text-xsm" style={{ color: v("--ux-muted") }}>
                   {seller.trade} · {seller.km} km away
                 </p>
 
@@ -161,13 +161,13 @@ export default function ItemPage({ params }: { params: Promise<{ id: string }> }
                     <div key={x.label} className="flex items-center gap-2 rounded-[12px] px-3 py-2.5"
                          style={{ background: v("--ux-surface-2") }}>
                       <I name={x.icon} className="h-[14px] w-[14px] shrink-0" style={{ color: v(x.tone) }} sw={2.4} />
-                      <span className="text-[0.75rem] font-semibold" style={{ color: v("--ux-ink-2") }}>{x.label}</span>
+                      <span className="text-xs font-semibold" style={{ color: v("--ux-ink-2") }}>{x.label}</span>
                     </div>
                   ))}
                 </div>
 
                 {item.boughtByCircle > 0 && (
-                  <p className="mt-3 flex items-center gap-2 rounded-[12px] px-3 py-2.5 text-[0.8125rem] font-semibold"
+                  <p className="mt-3 flex items-center gap-2 rounded-[12px] px-3 py-2.5 text-xsm font-semibold"
                      style={{ background: v("--ux-brand-tint"), color: v("--ux-brand") }}>
                     <I name="Users" className="h-[14px] w-[14px]" />
                     {item.boughtByCircle} women you know have bought this
@@ -188,10 +188,10 @@ export default function ItemPage({ params }: { params: Promise<{ id: string }> }
                         style={{ borderColor: v("--ux-line"), background: v("--ux-surface") }}>
                   <IconTile icon={i.icon} tint={i.tint} ink={i.ink} size={38} />
                   <div className="min-w-0 flex-1">
-                    <p className="text-[0.875rem] font-bold" style={{ color: v("--ux-ink") }}>{i.title}</p>
-                    <p className="text-[0.75rem]" style={{ color: v("--ux-muted") }}>{i.detail}</p>
+                    <p className="text-sm font-bold" style={{ color: v("--ux-ink") }}>{i.title}</p>
+                    <p className="text-xs" style={{ color: v("--ux-muted") }}>{i.detail}</p>
                   </div>
-                  <p className="shrink-0 text-[1rem] font-extrabold tabular-nums" style={{ color: v("--ux-ink") }}>
+                  <p className="shrink-0 text-base font-extrabold tabular-nums" style={{ color: v("--ux-ink") }}>
                     {formatRupees(i.minor)}
                   </p>
                 </Link>
@@ -211,12 +211,12 @@ export default function ItemPage({ params }: { params: Promise<{ id: string }> }
                         style={{ borderColor: v("--ux-line"), background: v("--ux-surface") }}>
                   <IconTile icon={i.icon} tint={i.tint} ink={i.ink} size={38} />
                   <div className="min-w-0 flex-1">
-                    <p className="text-[0.875rem] font-bold" style={{ color: v("--ux-ink") }}>{i.title}</p>
-                    <p className="text-[0.75rem]" style={{ color: v("--ux-muted") }}>
+                    <p className="text-sm font-bold" style={{ color: v("--ux-ink") }}>{i.title}</p>
+                    <p className="text-xs" style={{ color: v("--ux-muted") }}>
                       {s.name} · {TIE_LABEL[s.tie].toLowerCase()} · {s.km} km
                     </p>
                   </div>
-                  <p className="shrink-0 text-[1rem] font-extrabold tabular-nums" style={{ color: v("--ux-ink") }}>
+                  <p className="shrink-0 text-base font-extrabold tabular-nums" style={{ color: v("--ux-ink") }}>
                     {formatRupees(i.minor)}
                   </p>
                 </Link>

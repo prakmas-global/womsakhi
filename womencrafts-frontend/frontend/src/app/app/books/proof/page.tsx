@@ -66,14 +66,14 @@ export default function ProofPage() {
         <Back to="/app/books" label="Back to your books" />
 
         <header>
-          <p className="text-[0.6875rem] font-extrabold uppercase tracking-[0.2em]" style={{ color: v("--ux-brand") }}>
+          <p className="text-2xs font-extrabold uppercase tracking-[0.2em]" style={{ color: v("--ux-brand") }}>
             Proof of income
           </p>
           <h1 className="mt-2 text-[clamp(1.5rem,3.2vw,2.125rem)] font-extrabold leading-[1.1] tracking-[-0.035em]"
               style={{ color: v("--ux-ink") }}>
             Written proof that you earn
           </h1>
-          <p className="mt-1.5 max-w-[56ch] text-[0.875rem] leading-relaxed" style={{ color: v("--ux-muted") }}>
+          <p className="mt-1.5 max-w-[56ch] text-sm leading-relaxed" style={{ color: v("--ux-muted") }}>
             No payslip, no filings, money from thirty different people — and still nothing to show a
             landlord. This is that piece of paper, with your name on it.
           </p>
@@ -98,7 +98,7 @@ export default function ProofPage() {
                 const isBest = m.month === best.month;
                 return (
                   <div key={m.month} className="flex flex-1 flex-col items-center justify-end gap-1.5">
-                    <span className="text-[0.6875rem] font-bold tabular-nums" style={{ color: v("--ux-muted") }}>
+                    <span className="text-2xs font-bold tabular-nums" style={{ color: v("--ux-muted") }}>
                       {Math.round(m.minor / 100000)}k
                     </span>
                     <div className="w-full rounded-t-[6px]"
@@ -106,12 +106,12 @@ export default function ProofPage() {
                            height: `${h}%`,
                            background: v(isBest ? "--ux-green-ink" : isLean ? "--ux-tint-amber" : "--ux-brand-tint-2"),
                          }} />
-                    <span className="text-[0.6875rem]" style={{ color: v("--ux-muted") }}>{m.month.slice(0, 3)}</span>
+                    <span className="text-2xs" style={{ color: v("--ux-muted") }}>{m.month.slice(0, 3)}</span>
                   </div>
                 );
               })}
             </div>
-            <p className="mt-3 text-[0.8125rem] leading-relaxed" style={{ color: v("--ux-ink-2") }}>
+            <p className="mt-3 text-xsm leading-relaxed" style={{ color: v("--ux-ink-2") }}>
               Your best month was <b>{best.month}</b> at {formatRupees(best.minor)}; your leanest
               was <b>{lean.month}</b> at {formatRupees(lean.minor)}. <b>You earned in every one of
               them.</b> That is the sentence that convinces a landlord — not a tidy average that
@@ -135,8 +135,8 @@ export default function ProofPage() {
                       }}>
                 <IconTile icon={u.icon} tint="--ux-surface-2" ink="--ux-brand" size={38} />
                 <div className="min-w-0 flex-1">
-                  <p className="text-[0.875rem] font-bold" style={{ color: v("--ux-ink") }}>{u.label}</p>
-                  <p className="mt-1 text-[0.75rem] leading-relaxed" style={{ color: v("--ux-muted") }}>{u.note}</p>
+                  <p className="text-sm font-bold" style={{ color: v("--ux-ink") }}>{u.label}</p>
+                  <p className="mt-1 text-xs leading-relaxed" style={{ color: v("--ux-muted") }}>{u.note}</p>
                 </div>
                 {use === u.id && (
                   <span className="grid h-[20px] w-[20px] shrink-0 place-items-center rounded-full"
@@ -152,15 +152,15 @@ export default function ProofPage() {
         {/* The statement */}
         <Card pad={0} style={{ overflow: "hidden" }}>
           <div className="px-5 py-4" style={{ background: v("--ux-surface-2") }}>
-            <p className="text-[0.6875rem] font-extrabold uppercase tracking-[0.14em]" style={{ color: v("--ux-muted") }}>
+            <p className="text-2xs font-extrabold uppercase tracking-[0.14em]" style={{ color: v("--ux-muted") }}>
               What it will say
             </p>
           </div>
           <div className="px-5 py-5">
-            <p className="text-[1rem] font-bold" style={{ color: v("--ux-ink") }}>
+            <p className="text-base font-bold" style={{ color: v("--ux-ink") }}>
               Priya Sharma — statement of earnings
             </p>
-            <p className="mt-1 text-[0.75rem]" style={{ color: v("--ux-muted") }}>
+            <p className="mt-1 text-xs" style={{ color: v("--ux-muted") }}>
               April to September · prepared for {chosen?.label.toLowerCase()}
             </p>
             <ul className="mt-4 flex flex-col gap-2.5">
@@ -170,7 +170,7 @@ export default function ProofPage() {
                 `Paid by up to ${people} different customers in a single month.`,
                 `Earned in every one of the six months — the lowest was ${formatRupees(lean.minor)}.`,
               ].map((line) => (
-                <li key={line} className="flex items-start gap-2.5 text-[0.8125rem] leading-relaxed"
+                <li key={line} className="flex items-start gap-2.5 text-xsm leading-relaxed"
                     style={{ color: v("--ux-ink-2") }}>
                   <I name="Check" className="mt-[3px] h-[14px] w-[14px] shrink-0"
                      style={{ color: v("--ux-green-ink") }} sw={2.8} />
@@ -181,7 +181,7 @@ export default function ProofPage() {
             <div className="mt-4 flex items-start gap-2.5 rounded-[12px] px-3 py-2.5"
                  style={{ background: v("--ux-brand-tint") }}>
               <I name="ShieldCheck" className="mt-[2px] h-[15px] w-[15px] shrink-0" style={{ color: v("--ux-brand") }} />
-              <p className="text-[0.75rem] leading-relaxed" style={{ color: v("--ux-ink-2") }}>
+              <p className="text-xs leading-relaxed" style={{ color: v("--ux-ink-2") }}>
                 Carries a link the reader can check, so they do not have to take your word for it —
                 and shows nothing beyond what is written above.
               </p>
@@ -200,7 +200,7 @@ export default function ProofPage() {
 
         {made && (
           <Card pad={16} style={{ background: v("--ux-tint-green"), borderColor: "transparent" }}>
-            <p className="flex items-center gap-2 text-[0.8125rem] font-semibold" style={{ color: v("--ux-green-ink") }}>
+            <p className="flex items-center gap-2 text-xsm font-semibold" style={{ color: v("--ux-green-ink") }}>
               <I name="CheckCircle2" className="h-[16px] w-[16px]" />
               Ready. It is yours — nothing was sent anywhere.
             </p>

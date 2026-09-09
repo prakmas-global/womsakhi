@@ -69,10 +69,10 @@ export default function HealthPage() {
                 <li key={h.id}>
                   {/* Tappable AND readable: the number is still plain text she
                       can read out loud to somebody, and one tap on a phone. */}
-                  <a href={`tel:${h.num}`} className="ux-hov block text-[1.25rem] font-bold leading-none tabular-nums"
+                  <a href={`tel:${h.num}`} className="ux-hov block text-xl font-bold leading-none tabular-nums"
                      style={{ color: "var(--ux-ink)" }}>{h.num}</a>
-                  <p className="mt-1 text-[0.8125rem] font-medium" style={{ color: "var(--ux-ink-2)" }}>{h.label}</p>
-                  <p className="mt-0.5 text-[0.75rem]" style={{ color: "var(--ux-muted)" }}>{h.note}</p>
+                  <p className="mt-1 text-xsm font-medium" style={{ color: "var(--ux-ink-2)" }}>{h.label}</p>
+                  <p className="mt-0.5 text-xs" style={{ color: "var(--ux-muted)" }}>{h.note}</p>
                 </li>
               ))}
             </ul>
@@ -80,7 +80,7 @@ export default function HealthPage() {
 
           <Card>
             <SectionHead title="What this is not" icon="Info" />
-            <p className="text-[0.8125rem] leading-relaxed" style={{ color: "var(--ux-ink-2)" }}>
+            <p className="text-xsm leading-relaxed" style={{ color: "var(--ux-ink-2)" }}>
               Nothing here is medical advice, and nobody at WomSakhi is a doctor. This is a list of what is
               free, where it is, and when it is worth going.
             </p>
@@ -91,10 +91,10 @@ export default function HealthPage() {
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img loading="lazy" decoding="async" src={WELLBEING_ART.health} alt=""
                  className="ux-float pointer-events-none absolute -bottom-3 -end-4 h-[100px] w-[100px] object-contain" />
-            <h3 className="relative w-[60%] text-[0.875rem] font-semibold" style={{ color: "var(--ux-ink)" }}>
+            <h3 className="relative w-[60%] text-sm font-semibold" style={{ color: "var(--ux-ink)" }}>
               Ten minutes a day
             </h3>
-            <p className="relative mt-2 w-[60%] text-[0.75rem] leading-relaxed" style={{ color: "var(--ux-muted)" }}>
+            <p className="relative mt-2 w-[60%] text-xs leading-relaxed" style={{ color: "var(--ux-muted)" }}>
               Sitting bent over close work for hours is what most members ask about. Small changes help.
             </p>
           </div>
@@ -103,8 +103,8 @@ export default function HealthPage() {
     >
       <div className="mb-[20px] flex items-end justify-between gap-4">
         <div>
-          <h1 className="text-[1.5rem] font-bold" style={{ color: "var(--ux-ink)" }}>Health</h1>
-          <p className="mt-1.5 text-[0.8125rem]" style={{ color: "var(--ux-muted)" }}>
+          <h1 className="text-2xl font-bold" style={{ color: "var(--ux-ink)" }}>Health</h1>
+          <p className="mt-1.5 text-xsm" style={{ color: "var(--ux-muted)" }}>
             {due.length
               ? `${due.length} ${plural("check", due.length)} overdue — all of them free.`
               : "Nothing is overdue. Well done."}
@@ -127,18 +127,18 @@ export default function HealthPage() {
                     <IconTile icon={c.icon} tint={c.tint} ink={c.ink} size={46} radius={12} />
                     <div className="min-w-0 flex-1">
                       <div className="flex items-start gap-2">
-                        <h3 className="min-w-0 flex-1 text-[0.875rem] font-semibold" style={{ color: "var(--ux-ink)" }}>
+                        <h3 className="min-w-0 flex-1 text-sm font-semibold" style={{ color: "var(--ux-ink)" }}>
                           {c.label}
                         </h3>
                         {/* Free is the headline, because cost is the barrier. */}
                         {c.free && <Pill tone="green" size="sm">Free</Pill>}
                         {overdue && <Pill tone="orange" size="sm">Overdue</Pill>}
                       </div>
-                      <p className="mt-1 flex flex-wrap items-center gap-x-3 text-[0.75rem]" style={{ color: "var(--ux-muted)" }}>
+                      <p className="mt-1 flex flex-wrap items-center gap-x-3 text-xs" style={{ color: "var(--ux-muted)" }}>
                         <span>{c.every}</span>
                         <span>Last: {isDone ? "just now" : c.last}</span>
                       </p>
-                      <p className="mt-2 flex items-center gap-1.5 text-[0.8125rem]" style={{ color: "var(--ux-ink-2)" }}>
+                      <p className="mt-2 flex items-center gap-1.5 text-xsm" style={{ color: "var(--ux-ink-2)" }}>
                         <Icons.MapPin className="h-[14px] w-[14px] shrink-0" style={{ color: "var(--ux-brand)" }} />
                         {c.where}
                       </p>
@@ -146,7 +146,7 @@ export default function HealthPage() {
                   </div>
                   <div className="mt-3.5 flex items-center justify-between gap-4 border-t pt-3.5"
                        style={{ borderColor: "var(--ux-line)" }}>
-                    <span className="text-[0.75rem]" style={{ color: "var(--ux-faint)" }}>
+                    <span className="text-xs" style={{ color: "var(--ux-faint)" }}>
                       {c.free ? "Costs nothing, takes about ten minutes." : c.where}
                     </span>
                     <Btn variant={isDone ? "outline" : "primary"} size="sm"
@@ -178,12 +178,12 @@ export default function HealthPage() {
                 <IconTile icon={t.icon ?? "BookOpen"} tint={TOPIC_TINTS[i % TOPIC_TINTS.length][0]}
                           ink={TOPIC_TINTS[i % TOPIC_TINTS.length][1]} size={44} radius={12} />
                 <div className="min-w-0 flex-1">
-                  <h3 className="text-[0.875rem] font-semibold leading-snug" style={{ color: "var(--ux-ink)" }}>{t.label}</h3>
-                  <p className="mt-1.5 text-[0.8125rem] leading-relaxed" style={{ color: "var(--ux-muted)" }}>{t.note}</p>
+                  <h3 className="text-sm font-semibold leading-snug" style={{ color: "var(--ux-ink)" }}>{t.label}</h3>
+                  <p className="mt-1.5 text-xsm leading-relaxed" style={{ color: "var(--ux-muted)" }}>{t.note}</p>
                   {/* Only when the entry actually says. "undefined min read"
                       is the kind of thing that ships. */}
                   {t.mins ? (
-                    <p className="mt-2 text-[0.75rem]" style={{ color: "var(--ux-faint)" }}>{t.mins} min read</p>
+                    <p className="mt-2 text-xs" style={{ color: "var(--ux-faint)" }}>{t.mins} min read</p>
                   ) : null}
                 </div>
               </div>

@@ -98,7 +98,7 @@ export default function NotificationSettings() {
       sub="What reaches you, and how. You can change any of it later."
       footer={
         <div className="flex items-center justify-between gap-4">
-          <p className="text-[0.75rem]"
+          <p className="text-xs"
              style={{ color: save.error ? "var(--ux-orange-ink)" : saved ? "var(--ux-green-ink)" : "var(--ux-faint)" }}>
             {save.error ? save.error : saved ? "Saved." : COPY.nothingSavedYet}
           </p>
@@ -150,7 +150,7 @@ export default function NotificationSettings() {
                   whenOn="Money and orders also come by SMS. Useful on a weak connection."
                   whenOff="No text messages except your sign-in code." />
         </div>
-        <p className="mt-3.5 flex items-start gap-2.5 rounded-[12px] p-3 text-[0.75rem] leading-relaxed"
+        <p className="mt-3.5 flex items-start gap-2.5 rounded-[12px] p-3 text-xs leading-relaxed"
            style={{ background: "var(--ux-surface-2)", color: "var(--ux-ink-2)" }}>
           <Icons.ShieldCheck className="mt-[1px] h-[14px] w-[14px] shrink-0" style={{ color: "var(--ux-brand)" }} />
           Safety alerts always reach you, whatever is set here. Those cannot be turned off.

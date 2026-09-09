@@ -13,6 +13,7 @@ import { HomeShell } from "@/components/ux/home/HomeShell";
 import { useMe } from "@/components/ux/me";
 import { rupeesExact } from "@/components/ux/money/data";
 import { useMoney } from "@/components/ux/money/live";
+import { COPY } from "@/components/ux/copy";
 
 /**
  * The last three months, from today.
@@ -125,7 +126,7 @@ export default function StatementPage() {
         <div className="space-y-[16px]">
           <Card>
             <SectionHead title={showing} sub="What a bank or a scheme will ask for" />
-            <div className="space-y-3 text-[0.8125rem]">
+            <div className="space-y-3 text-xsm">
               {[["Money in", rupeesExact(inMinor), "--ux-green-ink"],
                 ["Money out", rupeesExact(outMinor), "--ux-ink"],
                 ["Left at month end", rupeesExact(inMinor - outMinor), "--ux-ink"]].map(([k, v, c]) => (
@@ -149,7 +150,7 @@ export default function StatementPage() {
                   a client-side PDF library produces is as readable, and this
                   needs no library and no backend. */}
               <ActionBtn variant="primary" full icon="Download" doneIcon="Printer"
-                         done="Choose “Save as PDF”" act={printStatement}>
+                         done={COPY.saveAsPdf} act={printStatement}>
                 Download as PDF
               </ActionBtn>
               {/* What an accountant or a loan officer asks for second. */}
@@ -174,7 +175,7 @@ export default function StatementPage() {
                 it in an inbox for a loan officer waited for a message that was
                 never coming. The two buttons above are what this screen can
                 actually do, so it says so. */}
-            <p className="mt-2.5 text-[0.75rem] leading-relaxed" style={{ color: "var(--ux-faint)" }}>
+            <p className="mt-2.5 text-xs leading-relaxed" style={{ color: "var(--ux-faint)" }}>
               The PDF carries your name and a reference a bank can check with us. We cannot email it
               yet — download it here and attach it yourself.
             </p>
@@ -188,7 +189,7 @@ export default function StatementPage() {
                 "A scheme, as proof you actually earn.",
                 "A landlord, for a shop or a stall.",
               ].map((t) => (
-                <li key={t} className="flex items-start gap-2.5 text-[0.8125rem] leading-snug" style={{ color: "var(--ux-ink-2)" }}>
+                <li key={t} className="flex items-start gap-2.5 text-xsm leading-snug" style={{ color: "var(--ux-ink-2)" }}>
                   <Icons.Check className="mt-[2px] h-[14px] w-[14px] shrink-0" style={{ color: "var(--ux-green-ink)" }} strokeWidth={2.6} />
                   {t}
                 </li>
@@ -199,15 +200,15 @@ export default function StatementPage() {
       }
     >
       <Link href="/app/wallet"
-            className="ux-hov -my-1 mb-3.5 inline-flex items-center gap-1.5 py-1 text-[0.8125rem] font-medium"
+            className="ux-hov -my-1 mb-3.5 inline-flex items-center gap-1.5 py-1 text-xsm font-medium"
             style={{ color: "var(--ux-brand)" }}>
         <Icons.ArrowLeft className="ux-ico h-4 w-4" /> Your wallet
       </Link>
 
       <div className="mb-[20px] flex items-end justify-between gap-4">
         <div>
-          <h1 className="text-[1.5rem] font-bold" style={{ color: "var(--ux-ink)" }}>Statement</h1>
-          <p className="mt-1.5 text-[0.8125rem]" style={{ color: "var(--ux-muted)" }}>
+          <h1 className="text-2xl font-bold" style={{ color: "var(--ux-ink)" }}>Statement</h1>
+          <p className="mt-1.5 text-xsm" style={{ color: "var(--ux-muted)" }}>
             Every rupee in and out, in a form a bank will accept.
           </p>
         </div>
@@ -225,8 +226,8 @@ export default function StatementPage() {
                      style={{ borderTop: i ? "1px solid var(--ux-line)" : "none" }}>
                   <IconTile icon={t.icon} tint={t.tint} ink={t.ink} size={40} radius={11} />
                   <div className="min-w-0 flex-1">
-                    <p className="truncate text-[0.875rem] font-medium" style={{ color: "var(--ux-ink)" }}>{t.label}</p>
-                    <p className="mt-0.5 truncate text-[0.75rem]" style={{ color: "var(--ux-muted)" }}>
+                    <p className="truncate text-sm font-medium" style={{ color: "var(--ux-ink)" }}>{t.label}</p>
+                    <p className="mt-0.5 truncate text-xs" style={{ color: "var(--ux-muted)" }}>
                       {t.source} · {t.when}
                     </p>
                   </div>
@@ -234,7 +235,7 @@ export default function StatementPage() {
                   {t.status === "pending" && <Pill tone="orange" size="sm">On its way</Pill>}
                   {/* Exact paise, once: it has to match her bank statement, and a
                       rounded figure beside it only invites doubt. */}
-                  <span className="w-[104px] shrink-0 text-end text-[0.875rem] font-semibold tabular-nums"
+                  <span className="w-[104px] shrink-0 text-end text-sm font-semibold tabular-nums"
                         style={{ color: t.status === "failed" ? "var(--ux-faint)"
                                   : t.kind === "credit" ? "var(--ux-green-ink)" : "var(--ux-ink)",
                                  textDecoration: t.status === "failed" ? "line-through" : "none" }}>
@@ -242,12 +243,12 @@ export default function StatementPage() {
                   </span>
                   {/* No receipt for money that never moved. */}
                   {t.status === "failed" ? (
-                    <span className="w-[92px] shrink-0 text-end text-[0.75rem]" style={{ color: "var(--ux-faint)" }}>
+                    <span className="w-[92px] shrink-0 text-end text-xs" style={{ color: "var(--ux-faint)" }}>
                       No receipt
                     </span>
                   ) : (
                     <ActionBtn variant="ghost" size="sm" icon="Download" doneIcon="Printer"
-                               done="Choose “Save as PDF”"
+                               done={COPY.saveAsPdf}
                                act={() => printDocument(`Receipt — ${t.label}`, `
                                  ${letterhead("Receipt", `${ME.name} · ${escapeHtml(t.when)}`)}
                                  <table><tbody>

@@ -41,14 +41,14 @@ export default function PrivacyPage() {
         <Back to="/app/vault" label="Back to your locker" />
 
         <header>
-          <p className="text-[0.6875rem] font-extrabold uppercase tracking-[0.2em]" style={{ color: v("--ux-brand") }}>
+          <p className="text-2xs font-extrabold uppercase tracking-[0.2em]" style={{ color: v("--ux-brand") }}>
             Who can see
           </p>
           <h1 className="mt-2 text-[clamp(1.5rem,3.2vw,2.125rem)] font-extrabold leading-[1.1] tracking-[-0.035em]"
               style={{ color: v("--ux-ink") }}>
             You decide what shows
           </h1>
-          <p className="mt-1.5 max-w-[54ch] text-[0.875rem] leading-relaxed" style={{ color: v("--ux-muted") }}>
+          <p className="mt-1.5 max-w-[54ch] text-sm leading-relaxed" style={{ color: v("--ux-muted") }}>
             Phones get shared. That is normal, and it should not cost you your privacy.
             All of this is on already — turn any of it off if you would rather.
           </p>
@@ -56,7 +56,7 @@ export default function PrivacyPage() {
 
         {note && (
           <Card pad={16} style={{ background: v("--ux-tint-green"), borderColor: "transparent" }}>
-            <p className="flex items-center gap-2 text-[0.8125rem] font-semibold" style={{ color: v("--ux-green-ink") }}>
+            <p className="flex items-center gap-2 text-xsm font-semibold" style={{ color: v("--ux-green-ink") }}>
               <I name="CheckCircle2" className="h-[16px] w-[16px]" />{note}
             </p>
           </Card>
@@ -72,8 +72,8 @@ export default function PrivacyPage() {
                             tint={g.on ? "--ux-tint-violet" : "--ux-surface-2"}
                             ink={g.on ? "--ux-violet" : "--ux-muted"} size={40} />
                   <div className="min-w-0 flex-1">
-                    <p className="text-[0.875rem] font-bold" style={{ color: v("--ux-ink") }}>{g.label}</p>
-                    <p className="mt-1 text-[0.8125rem] leading-relaxed" style={{ color: v("--ux-muted") }}>{g.note}</p>
+                    <p className="text-sm font-bold" style={{ color: v("--ux-ink") }}>{g.label}</p>
+                    <p className="mt-1 text-xsm leading-relaxed" style={{ color: v("--ux-muted") }}>{g.note}</p>
                   </div>
                   <button
                     type="button" role="switch" aria-checked={g.on}
@@ -95,10 +95,10 @@ export default function PrivacyPage() {
           <div className="flex items-start gap-3.5">
             <IconTile icon="Users" tint="--ux-surface" ink="--ux-pink-ink" size={42} />
             <div className="min-w-0">
-              <p className="text-[0.875rem] font-bold" style={{ color: v("--ux-ink") }}>
+              <p className="text-sm font-bold" style={{ color: v("--ux-ink") }}>
                 What your circle can see
               </p>
-              <p className="mt-1.5 text-[0.8125rem] leading-relaxed" style={{ color: v("--ux-ink-2") }}>
+              <p className="mt-1.5 text-xsm leading-relaxed" style={{ color: v("--ux-ink-2") }}>
                 Only whether you have paid into the pot this round. Never your balance, never your
                 pockets, never what you earned. Your circle vouches for you — it does not audit you.
               </p>

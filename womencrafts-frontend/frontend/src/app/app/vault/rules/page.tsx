@@ -39,14 +39,14 @@ export default function RulesPage() {
         <Back to="/app/vault" label="Back to your locker" />
 
         <header>
-          <p className="text-[0.6875rem] font-extrabold uppercase tracking-[0.2em]" style={{ color: v("--ux-brand") }}>
+          <p className="text-2xs font-extrabold uppercase tracking-[0.2em]" style={{ color: v("--ux-brand") }}>
             Saving rules
           </p>
           <h1 className="mt-2 text-[clamp(1.5rem,3.2vw,2.125rem)] font-extrabold leading-[1.1] tracking-[-0.035em]"
               style={{ color: v("--ux-ink") }}>
             Save without deciding to
           </h1>
-          <p className="mt-1.5 max-w-[54ch] text-[0.875rem] leading-relaxed" style={{ color: v("--ux-muted") }}>
+          <p className="mt-1.5 max-w-[54ch] text-sm leading-relaxed" style={{ color: v("--ux-muted") }}>
             A small share of each payment, kept back the moment it arrives. Nothing is taken on
             a day you earned nothing.
           </p>
@@ -63,7 +63,7 @@ export default function RulesPage() {
 
         {note && (
           <Card pad={16} style={{ background: v("--ux-tint-green"), borderColor: "transparent" }}>
-            <p className="flex items-center gap-2 text-[0.8125rem] font-semibold" style={{ color: v("--ux-green-ink") }}>
+            <p className="flex items-center gap-2 text-xsm font-semibold" style={{ color: v("--ux-green-ink") }}>
               <I name="CheckCircle2" className="h-[16px] w-[16px]" />{note}
             </p>
           </Card>
@@ -79,10 +79,10 @@ export default function RulesPage() {
                             tint={r.on ? "--ux-tint-green" : "--ux-surface-2"}
                             ink={r.on ? "--ux-green-ink" : "--ux-muted"} size={40} />
                   <div className="min-w-0 flex-1">
-                    <p className="text-[0.875rem] font-bold leading-snug" style={{ color: v("--ux-ink") }}>
+                    <p className="text-sm font-bold leading-snug" style={{ color: v("--ux-ink") }}>
                       {r.when}, keep <span style={{ color: v("--ux-brand") }}>{r.keep}</span>
                     </p>
-                    <p className="mt-1 text-[0.8125rem]" style={{ color: v("--ux-muted") }}>
+                    <p className="mt-1 text-xsm" style={{ color: v("--ux-muted") }}>
                       Into &ldquo;{r.into}&rdquo;
                       {r.savedMinor > 0 && ` · ${formatRupees(r.savedMinor)} so far`}
                     </p>
@@ -109,7 +109,7 @@ export default function RulesPage() {
         <Card pad={16} style={{ background: v("--ux-surface-2"), borderColor: "transparent" }}>
           <div className="flex items-start gap-3">
             <I name="Info" className="mt-[2px] h-[16px] w-[16px] shrink-0" style={{ color: v("--ux-muted") }} />
-            <p className="text-[0.8125rem] leading-relaxed" style={{ color: v("--ux-ink-2") }}>
+            <p className="text-xsm leading-relaxed" style={{ color: v("--ux-ink-2") }}>
               A rule never takes money you have not earned, and never leaves you short. If a
               payment is small, it keeps a smaller share — or nothing at all.
             </p>

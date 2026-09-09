@@ -184,7 +184,7 @@ export default function WelcomePage() {
       footer={
         <div>
           {problem && (
-            <p role="alert" className="ux-slide-up mb-3 rounded-[12px] p-3 text-[0.8125rem] leading-relaxed"
+            <p role="alert" className="ux-slide-up mb-3 rounded-[12px] p-3 text-xsm leading-relaxed"
                style={{ background: "var(--ux-tint-orange)", color: "var(--ux-orange-ink)" }}>
               {problem}
             </p>
@@ -193,7 +193,7 @@ export default function WelcomePage() {
             <button
               onClick={() => void leave(false)}
               disabled={working}
-              className="ux-press -my-1 py-1 text-[0.8125rem] font-medium"
+              className="ux-press -my-1 py-1 text-xsm font-medium"
               style={{ color: "var(--ux-muted)", opacity: working ? 0.55 : 1 }}
             >
               Skip for now
@@ -234,8 +234,8 @@ export default function WelcomePage() {
                 >
                   <IconTile icon={look.icon} tint={look.tint} ink={look.ink} size={44} radius={12} />
                   <span className="min-w-0 flex-1">
-                    <span className="block text-[0.875rem] font-semibold" style={{ color: "var(--ux-ink)" }}>{n.label}</span>
-                    <span className="mt-0.5 block truncate text-[0.75rem]" style={{ color: "var(--ux-muted)" }}>{n.hint}</span>
+                    <span className="block text-sm font-semibold" style={{ color: "var(--ux-ink)" }}>{n.label}</span>
+                    <span className="mt-0.5 block truncate text-xs" style={{ color: "var(--ux-muted)" }}>{n.hint}</span>
                   </span>
                   {on && <Icons.Check className="ux-pop h-[19px] w-[19px] shrink-0" style={{ color: "var(--ux-brand)" }} strokeWidth={2.8} />}
                 </button>
@@ -243,7 +243,7 @@ export default function WelcomePage() {
             })}
           </div>
         ) : (
-          <p className="text-[0.875rem] leading-relaxed" style={{ color: "var(--ux-muted)" }}>
+          <p className="text-sm leading-relaxed" style={{ color: "var(--ux-muted)" }}>
             {source === "loading"
               ? "Fetching the list…"
               : "We could not fetch this list just now. Carry on — you can tell us what you need any time from Settings."}
@@ -260,7 +260,7 @@ export default function WelcomePage() {
                 key={t}
                 onClick={() => setTrade(t)}
                 aria-pressed={on}
-                className="ux-press ux-sq rounded-[12px] border px-4 py-3 text-[0.875rem] font-medium transition-colors"
+                className="ux-press ux-sq rounded-[12px] border px-4 py-3 text-sm font-medium transition-colors"
                 style={{
                   borderColor: on ? "var(--ux-brand)" : "var(--ux-line-strong)",
                   background: on ? "var(--ux-brand-tint)" : "var(--ux-surface)",
@@ -292,8 +292,8 @@ export default function WelcomePage() {
               >
                 <IconTile icon={icon} tint="--ux-tint-lilac" ink="--ux-brand" size={44} radius={12} />
                 <span className="min-w-0 flex-1">
-                  <span className="block text-[0.875rem] font-semibold" style={{ color: "var(--ux-ink)" }}>{label}</span>
-                  <span className="mt-0.5 block text-[0.75rem]" style={{ color: "var(--ux-muted)" }}>{note}</span>
+                  <span className="block text-sm font-semibold" style={{ color: "var(--ux-ink)" }}>{label}</span>
+                  <span className="mt-0.5 block text-xs" style={{ color: "var(--ux-muted)" }}>{note}</span>
                 </span>
                 {on && <Icons.Check className="ux-pop h-[19px] w-[19px] shrink-0" style={{ color: "var(--ux-brand)" }} strokeWidth={2.8} />}
               </button>

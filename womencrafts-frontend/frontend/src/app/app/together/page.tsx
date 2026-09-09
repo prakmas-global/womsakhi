@@ -33,14 +33,14 @@ export default function TogetherHub() {
       <div className="flex flex-col gap-5">
 
         <header>
-          <p className="text-[0.6875rem] font-extrabold uppercase tracking-[0.2em]" style={{ color: v("--ux-brand") }}>
+          <p className="text-2xs font-extrabold uppercase tracking-[0.2em]" style={{ color: v("--ux-brand") }}>
             Together
           </p>
           <h1 className="mt-2 text-[clamp(1.5rem,3.2vw,2.125rem)] font-extrabold leading-[1.1] tracking-[-0.035em]"
               style={{ color: v("--ux-ink") }}>
             Things only a circle can do
           </h1>
-          <p className="mt-1.5 max-w-[56ch] text-[0.875rem] leading-relaxed" style={{ color: v("--ux-muted") }}>
+          <p className="mt-1.5 max-w-[56ch] text-sm leading-relaxed" style={{ color: v("--ux-muted") }}>
             Not a group chat. The four things that genuinely work better with women you already
             trust than alone.
           </p>
@@ -48,7 +48,7 @@ export default function TogetherHub() {
 
         {note && (
           <Card pad={16} style={{ background: v("--ux-tint-green"), borderColor: "transparent" }}>
-            <p className="flex items-center gap-2 text-[0.8125rem] font-semibold" style={{ color: v("--ux-green-ink") }}>
+            <p className="flex items-center gap-2 text-xsm font-semibold" style={{ color: v("--ux-green-ink") }}>
               <I name="CheckCircle2" className="h-[16px] w-[16px]" />{note}
             </p>
           </Card>
@@ -71,10 +71,10 @@ export default function TogetherHub() {
             <IconTile icon="UserPlus" tint="--ux-surface" ink="--ux-brand" size={48} radius={14} />
             <div className="min-w-0 flex-1">
               <div className="flex flex-wrap items-center gap-2">
-                <p className="text-[1rem] font-bold" style={{ color: v("--ux-ink") }}>You run this for {HELPED.length} women</p>
+                <p className="text-base font-bold" style={{ color: v("--ux-ink") }}>You run this for {HELPED.length} women</p>
                 {urgent > 0 && <Pill tone="orange" size="sm">{urgent} needs you today</Pill>}
               </div>
-              <p className="mt-1.5 max-w-[52ch] text-[0.8125rem] leading-relaxed" style={{ color: v("--ux-ink-2") }}>
+              <p className="mt-1.5 max-w-[52ch] text-xsm leading-relaxed" style={{ color: v("--ux-ink-2") }}>
                 <b>{shared} of them do not own the phone they use.</b> Without you they would not be
                 here at all — and you are paid for every thing you do on their behalf.
               </p>
@@ -97,8 +97,8 @@ export default function TogetherHub() {
                     className="ux-press ux-sq flex flex-col items-start gap-3 rounded-[var(--ux-r-card)] border p-5 text-left"
                     style={{ borderColor: v("--ux-line"), background: v("--ux-surface") }}>
               <IconTile icon={t.icon} tint={t.tint} ink={t.ink} size={44} radius={13} />
-              <p className="text-[1rem] font-bold" style={{ color: v("--ux-ink") }}>{t.title}</p>
-              <p className="text-[0.8125rem] leading-relaxed" style={{ color: v("--ux-muted") }}>{t.body}</p>
+              <p className="text-base font-bold" style={{ color: v("--ux-ink") }}>{t.title}</p>
+              <p className="text-xsm leading-relaxed" style={{ color: v("--ux-muted") }}>{t.body}</p>
             </button>
           ))}
         </div>
@@ -108,7 +108,7 @@ export default function TogetherHub() {
           <SectionHead title="Who is missing from your circle"
                        sub="Not the nearest women — the ones whose trade completes yours" icon="Users" />
           <Card pad={16} style={{ background: v("--ux-surface-2"), borderColor: "transparent" }}>
-            <p className="text-[0.8125rem] leading-relaxed" style={{ color: v("--ux-ink-2") }}>
+            <p className="text-xsm leading-relaxed" style={{ color: v("--ux-ink-2") }}>
               Money only goes round a circle if the trades fit together. A circle of six tailors
               is six women waiting for the same customer.
             </p>
@@ -119,11 +119,11 @@ export default function TogetherHub() {
                 <div className="flex items-start gap-3.5">
                   <IconTile icon={s.icon} tint="--ux-tint-green" ink="--ux-green-ink" size={40} />
                   <div className="min-w-0 flex-1">
-                    <p className="text-[0.875rem] font-bold" style={{ color: v("--ux-ink") }}>{s.name}</p>
-                    <p className="mt-0.5 text-[0.75rem]" style={{ color: v("--ux-muted") }}>
+                    <p className="text-sm font-bold" style={{ color: v("--ux-ink") }}>{s.name}</p>
+                    <p className="mt-0.5 text-xs" style={{ color: v("--ux-muted") }}>
                       {s.trade} · {s.km} km away
                     </p>
-                    <p className="mt-2 text-[0.8125rem] leading-relaxed" style={{ color: v("--ux-ink-2") }}>{s.closes}</p>
+                    <p className="mt-2 text-xsm leading-relaxed" style={{ color: v("--ux-ink-2") }}>{s.closes}</p>
                   </div>
                 </div>
                 <Btn size="sm" variant="outline" full className="mt-3"

@@ -42,14 +42,14 @@ export default function MovePage() {
         <Back to="/app/together" label="Back to Together" />
 
         <header>
-          <p className="text-[0.6875rem] font-extrabold uppercase tracking-[0.2em]" style={{ color: v("--ux-brand") }}>
+          <p className="text-2xs font-extrabold uppercase tracking-[0.2em]" style={{ color: v("--ux-brand") }}>
             If you move
           </p>
           <h1 className="mt-2 text-[clamp(1.5rem,3.2vw,2.125rem)] font-extrabold leading-[1.1] tracking-[-0.035em]"
               style={{ color: v("--ux-ink") }}>
             What you built comes with you
           </h1>
-          <p className="mt-1.5 max-w-[56ch] text-[0.875rem] leading-relaxed" style={{ color: v("--ux-muted") }}>
+          <p className="mt-1.5 max-w-[56ch] text-sm leading-relaxed" style={{ color: v("--ux-muted") }}>
             Most women move at least once, and usually lose their customers, their circle and
             everyone who would vouch for them on the same day. It does not have to work like that.
           </p>
@@ -69,8 +69,8 @@ export default function MovePage() {
                       }}>
                 <IconTile icon={r.icon} tint="--ux-surface-2" ink="--ux-brand" size={40} />
                 <div className="min-w-0 flex-1">
-                  <p className="text-[0.875rem] font-bold" style={{ color: v("--ux-ink") }}>{r.label}</p>
-                  <p className="mt-1 text-[0.75rem] leading-relaxed" style={{ color: v("--ux-muted") }}>{r.note}</p>
+                  <p className="text-sm font-bold" style={{ color: v("--ux-ink") }}>{r.label}</p>
+                  <p className="mt-1 text-xs leading-relaxed" style={{ color: v("--ux-muted") }}>{r.note}</p>
                 </div>
                 {reason === r.id && (
                   <span className="grid h-[20px] w-[20px] shrink-0 place-items-center rounded-full"
@@ -87,7 +87,7 @@ export default function MovePage() {
           <Card pad={16} style={{ background: v("--ux-tint-violet"), borderColor: "transparent" }}>
             <div className="flex items-start gap-3">
               <I name="Shield" className="mt-[2px] h-[16px] w-[16px] shrink-0" style={{ color: v("--ux-violet") }} />
-              <p className="text-[0.8125rem] leading-relaxed" style={{ color: v("--ux-ink-2") }}>
+              <p className="text-xsm leading-relaxed" style={{ color: v("--ux-ink-2") }}>
                 We will not ask you anything more. Nothing you carry will say where you have gone,
                 nobody in your old circle is told, and your new circle sees only that you were
                 vouched for.
@@ -98,7 +98,7 @@ export default function MovePage() {
 
         {note && (
           <Card pad={16} style={{ background: v("--ux-tint-green"), borderColor: "transparent" }}>
-            <p className="flex items-center gap-2 text-[0.8125rem] font-semibold" style={{ color: v("--ux-green-ink") }}>
+            <p className="flex items-center gap-2 text-xsm font-semibold" style={{ color: v("--ux-green-ink") }}>
               <I name="CheckCircle2" className="h-[16px] w-[16px]" />{note}
             </p>
           </Card>
@@ -116,10 +116,10 @@ export default function MovePage() {
                             ink={c.automatic ? "--ux-green-ink" : "--ux-amber-ink"} size={38} />
                   <div className="min-w-0 flex-1">
                     <div className="flex flex-wrap items-center gap-2">
-                      <p className="text-[0.875rem] font-bold" style={{ color: v("--ux-ink") }}>{c.label}</p>
+                      <p className="text-sm font-bold" style={{ color: v("--ux-ink") }}>{c.label}</p>
                       {!c.automatic && <Pill tone="orange" size="sm">You ask for this one</Pill>}
                     </div>
-                    <p className="mt-0.5 text-[0.75rem]" style={{ color: v("--ux-muted") }}>{c.detail}</p>
+                    <p className="mt-0.5 text-xs" style={{ color: v("--ux-muted") }}>{c.detail}</p>
                   </div>
                   {c.automatic && (
                     <I name="Check" className="h-[16px] w-[16px] shrink-0" style={{ color: v("--ux-green-ink") }} sw={2.8} />
@@ -134,10 +134,10 @@ export default function MovePage() {
           <div className="flex flex-wrap items-start gap-4">
             <IconTile icon="Handshake" tint="--ux-surface" ink="--ux-pink-ink" size={46} radius={13} />
             <div className="min-w-0 flex-1">
-              <p className="text-[1rem] font-bold" style={{ color: v("--ux-ink") }}>
+              <p className="text-base font-bold" style={{ color: v("--ux-ink") }}>
                 An introduction at the other end
               </p>
-              <p className="mt-1.5 max-w-[52ch] text-[0.8125rem] leading-relaxed" style={{ color: v("--ux-ink-2") }}>
+              <p className="mt-1.5 max-w-[52ch] text-xsm leading-relaxed" style={{ color: v("--ux-ink-2") }}>
                 The hardest part is not the paperwork. It is being nobody in a new place. Your
                 circle can vouch for you to a circle where you are going — that is worth more than
                 any document here.
@@ -159,9 +159,9 @@ export default function MovePage() {
                 "Three circles near your new address have been asked whether they have room.",
                 "Your pot record travels, so you do not start at the back of the queue.",
               ].map((s, i) => (
-                <li key={s} className="flex items-start gap-2.5 text-[0.8125rem] leading-relaxed"
+                <li key={s} className="flex items-start gap-2.5 text-xsm leading-relaxed"
                     style={{ color: v("--ux-ink-2") }}>
-                  <span className="grid h-[20px] w-[20px] shrink-0 place-items-center rounded-full text-[0.6875rem] font-bold"
+                  <span className="grid h-[20px] w-[20px] shrink-0 place-items-center rounded-full text-2xs font-bold"
                         style={{ background: v("--ux-brand-tint"), color: v("--ux-brand") }}>{i + 1}</span>
                   {s}
                 </li>

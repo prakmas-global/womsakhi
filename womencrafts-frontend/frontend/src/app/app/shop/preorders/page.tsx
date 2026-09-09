@@ -76,24 +76,24 @@ export default function PreOrdersPage() {
           <IconTile icon={s.icon} tint={s.tint} ink={s.ink} size={42} radius={12} />
           <div className="min-w-0 flex-1">
             <div className="flex flex-wrap items-center gap-2">
-              <p className="text-[0.875rem] font-bold" style={{ color: v("--ux-ink") }}>{o.what}</p>
-              <span className="rounded-full px-2 py-[2px] text-[0.6875rem] font-bold uppercase tracking-[0.06em]"
+              <p className="text-sm font-bold" style={{ color: v("--ux-ink") }}>{o.what}</p>
+              <span className="rounded-full px-2 py-[2px] text-2xs font-bold uppercase tracking-[0.06em]"
                     style={{ background: v(s.tint), color: v(s.ink) }}>{s.label}</span>
             </div>
-            <p className="mt-0.5 text-[0.8125rem]" style={{ color: v("--ux-muted") }}>
+            <p className="mt-0.5 text-xsm" style={{ color: v("--ux-muted") }}>
               For {o.buyer} · due {o.dueBy}
             </p>
           </div>
           <div className="shrink-0 text-right">
-            <p className="text-[1.125rem] font-extrabold leading-none tabular-nums" style={{ color: v("--ux-ink") }}>
+            <p className="text-lg font-extrabold leading-none tabular-nums" style={{ color: v("--ux-ink") }}>
               {formatRupees(o.totalMinor)}
             </p>
-            <p className="mt-0.5 text-[0.6875rem]" style={{ color: v("--ux-muted") }}>whole order</p>
+            <p className="mt-0.5 text-2xs" style={{ color: v("--ux-muted") }}>whole order</p>
           </div>
         </div>
 
         <div className="mt-3.5">
-          <div className="mb-1.5 flex items-center justify-between text-[0.75rem]" style={{ color: v("--ux-muted") }}>
+          <div className="mb-1.5 flex items-center justify-between text-xs" style={{ color: v("--ux-muted") }}>
             <span>
               <b style={{ color: v("--ux-green-ink") }}>{formatRupees(o.paidMinor)}</b> paid
               {o.paidMinor < o.totalMinor && ` · ${formatRupees(o.totalMinor - o.paidMinor)} on delivery`}
@@ -105,7 +105,7 @@ export default function PreOrdersPage() {
 
         {o.state === "asking" && (
           <div className="mt-3.5 rounded-[12px] px-3 py-2.5" style={{ background: v("--ux-tint-amber") }}>
-            <p className="text-[0.8125rem] leading-relaxed" style={{ color: v("--ux-ink-2") }}>
+            <p className="text-xsm leading-relaxed" style={{ color: v("--ux-ink-2") }}>
               Ask for <b>{formatRupees(o.materialsMinor)}</b> now — just the cloth and thread.
               The rest when she collects.
             </p>
@@ -132,14 +132,14 @@ export default function PreOrdersPage() {
         <Back to="/app/shop" label="Back to your shops" />
 
         <header>
-          <p className="text-[0.6875rem] font-extrabold uppercase tracking-[0.2em]" style={{ color: v("--ux-brand") }}>
+          <p className="text-2xs font-extrabold uppercase tracking-[0.2em]" style={{ color: v("--ux-brand") }}>
             Before you buy cloth
           </p>
           <h1 className="mt-2 text-[clamp(1.5rem,3.2vw,2.125rem)] font-extrabold leading-[1.1] tracking-[-0.035em]"
               style={{ color: v("--ux-ink") }}>
             Let the order pay for itself
           </h1>
-          <p className="mt-1.5 max-w-[56ch] text-[0.875rem] leading-relaxed" style={{ color: v("--ux-muted") }}>
+          <p className="mt-1.5 max-w-[56ch] text-sm leading-relaxed" style={{ color: v("--ux-muted") }}>
             Ask for the cost of the materials up front — nothing more. You never spend your own
             money to start someone else&rsquo;s order, and you never borrow to do it.
           </p>
@@ -158,7 +158,7 @@ export default function PreOrdersPage() {
 
         {note && (
           <Card pad={16} style={{ background: v("--ux-tint-green"), borderColor: "transparent" }}>
-            <p className="flex items-center gap-2 text-[0.8125rem] font-semibold" style={{ color: v("--ux-green-ink") }}>
+            <p className="flex items-center gap-2 text-xsm font-semibold" style={{ color: v("--ux-green-ink") }}>
               <I name="CheckCircle2" className="h-[16px] w-[16px]" />{note}
             </p>
           </Card>

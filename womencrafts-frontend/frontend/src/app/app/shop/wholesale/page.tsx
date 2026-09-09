@@ -68,20 +68,20 @@ export default function WholesalePage() {
           <IconTile icon="Boxes" tint={s.tint} ink={s.ink} size={44} radius={13} />
           <div className="min-w-0 flex-1">
             <div className="flex flex-wrap items-center gap-2">
-              <p className="text-[1rem] font-bold" style={{ color: v("--ux-ink") }}>{b.what}</p>
-              <span className="rounded-full px-2 py-[2px] text-[0.6875rem] font-bold uppercase tracking-[0.06em]"
+              <p className="text-base font-bold" style={{ color: v("--ux-ink") }}>{b.what}</p>
+              <span className="rounded-full px-2 py-[2px] text-2xs font-bold uppercase tracking-[0.06em]"
                     style={{ background: v(s.tint), color: v(s.ink) }}>{s.label}</span>
               {b.needsCircle && <Pill tone="pink" size="sm">Needs your circle</Pill>}
             </div>
-            <p className="mt-0.5 text-[0.8125rem]" style={{ color: v("--ux-muted") }}>
+            <p className="mt-0.5 text-xsm" style={{ color: v("--ux-muted") }}>
               {b.from} · {b.qty} pieces · wanted {b.byWhen}
             </p>
           </div>
           <div className="shrink-0 text-right">
-            <p className="text-[1.125rem] font-extrabold leading-none tabular-nums" style={{ color: v("--ux-ink") }}>
+            <p className="text-lg font-extrabold leading-none tabular-nums" style={{ color: v("--ux-ink") }}>
               {formatRupees(value(b))}
             </p>
-            <p className="mt-0.5 text-[0.6875rem]" style={{ color: v("--ux-muted") }}>
+            <p className="mt-0.5 text-2xs" style={{ color: v("--ux-muted") }}>
               {formatRupees(b.perMinor)} each
             </p>
           </div>
@@ -90,20 +90,20 @@ export default function WholesalePage() {
         {/* Terms at the same weight as the money. */}
         <div className="mt-3.5 grid gap-2 sm:grid-cols-2">
           <div className="rounded-[12px] px-3 py-2.5" style={{ background: v("--ux-tint-amber") }}>
-            <p className="text-[0.6875rem] font-bold uppercase tracking-[0.08em]" style={{ color: v("--ux-amber-ink") }}>
+            <p className="text-2xs font-bold uppercase tracking-[0.08em]" style={{ color: v("--ux-amber-ink") }}>
               When they pay
             </p>
-            <p className="mt-1 text-[0.8125rem] leading-relaxed" style={{ color: v("--ux-ink-2") }}>
+            <p className="mt-1 text-xsm leading-relaxed" style={{ color: v("--ux-ink-2") }}>
               Sixty days after delivery. Ask for a third up front — you should not be lending
               them the cloth money.
             </p>
           </div>
           {b.needsCircle && (
             <div className="rounded-[12px] px-3 py-2.5" style={{ background: v("--ux-tint-pink") }}>
-              <p className="text-[0.6875rem] font-bold uppercase tracking-[0.08em]" style={{ color: v("--ux-pink-ink") }}>
+              <p className="text-2xs font-bold uppercase tracking-[0.08em]" style={{ color: v("--ux-pink-ink") }}>
                 Too big for one machine
               </p>
-              <p className="mt-1 text-[0.8125rem] leading-relaxed" style={{ color: v("--ux-ink-2") }}>
+              <p className="mt-1 text-xsm leading-relaxed" style={{ color: v("--ux-ink-2") }}>
                 Quote it with your circle. Ten women, one price, one delivery — the buyer sees
                 one supplier.
               </p>
@@ -129,14 +129,14 @@ export default function WholesalePage() {
         <Back to="/app/shop" label="Back to your shops" />
 
         <header>
-          <p className="text-[0.6875rem] font-extrabold uppercase tracking-[0.2em]" style={{ color: v("--ux-brand") }}>
+          <p className="text-2xs font-extrabold uppercase tracking-[0.2em]" style={{ color: v("--ux-brand") }}>
             Big orders
           </p>
           <h1 className="mt-2 text-[clamp(1.5rem,3.2vw,2.125rem)] font-extrabold leading-[1.1] tracking-[-0.035em]"
               style={{ color: v("--ux-ink") }}>
             Twenty pieces to one buyer
           </h1>
-          <p className="mt-1.5 max-w-[56ch] text-[0.875rem] leading-relaxed" style={{ color: v("--ux-muted") }}>
+          <p className="mt-1.5 max-w-[56ch] text-sm leading-relaxed" style={{ color: v("--ux-muted") }}>
             One conversation, one delivery, one payment. Too big for one machine is not a reason
             to say no — it is a reason to quote it with your circle.
           </p>
@@ -153,7 +153,7 @@ export default function WholesalePage() {
 
         {note && (
           <Card pad={16} style={{ background: v("--ux-tint-green"), borderColor: "transparent" }}>
-            <p className="flex items-center gap-2 text-[0.8125rem] font-semibold" style={{ color: v("--ux-green-ink") }}>
+            <p className="flex items-center gap-2 text-xsm font-semibold" style={{ color: v("--ux-green-ink") }}>
               <I name="CheckCircle2" className="h-[16px] w-[16px]" />{note}
             </p>
           </Card>

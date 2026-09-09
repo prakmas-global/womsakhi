@@ -56,18 +56,18 @@ export default function TrustPage() {
       <div className="flex flex-col gap-5" id="trust-page">
 
         <header>
-          <p className="text-[0.6875rem] font-extrabold uppercase tracking-[0.2em]" style={{ color: v("--ux-brand") }}>
+          <p className="text-2xs font-extrabold uppercase tracking-[0.2em]" style={{ color: v("--ux-brand") }}>
             Proof you keep your word
           </p>
           <h1 className="mt-2 text-[clamp(1.5rem,3.2vw,2.125rem)] font-extrabold leading-[1.1] tracking-[-0.035em]"
               style={{ color: v("--ux-ink") }}>
             Proof of who you have been
           </h1>
-          <p className="mt-1.5 max-w-[58ch] text-[0.875rem] leading-relaxed" style={{ color: v("--ux-muted") }}>
+          <p className="mt-1.5 max-w-[58ch] text-sm leading-relaxed" style={{ color: v("--ux-muted") }}>
             Nine months of keeping your word, written down. It belongs to you — we never send it
             to anyone, and nothing bad can ever be written on it.
           </p>
-          <div className="mt-3"><ReadAloud targetId="trust-page" label="Read this to me" /></div>
+          <div className="mt-3"><ReadAloud targetId="trust-page" /></div>
         </header>
 
         {/* The document itself. Letterhead, seal, ruled entries. */}
@@ -80,22 +80,22 @@ export default function TrustPage() {
             <div className="flex flex-wrap items-start justify-between gap-4 border-b pb-5"
                  style={{ borderColor: v("--ux-line-strong") }}>
               <div>
-                <p className="text-[0.6875rem] font-extrabold uppercase tracking-[0.22em]" style={{ color: v("--ux-brand") }}>
+                <p className="text-2xs font-extrabold uppercase tracking-[0.22em]" style={{ color: v("--ux-brand") }}>
                   Record of standing
                 </p>
-                <p className="mt-2 font-serif text-[1.5rem] font-bold leading-none tracking-[-0.02em]"
+                <p className="mt-2 font-serif text-2xl font-bold leading-none tracking-[-0.02em]"
                    style={{ color: v("--ux-ink") }}>
                   Priya Sharma
                 </p>
-                <p className="mt-1.5 text-[0.75rem]" style={{ color: v("--ux-muted") }}>
+                <p className="mt-1.5 text-xs" style={{ color: v("--ux-muted") }}>
                   Tailoring and mehendi · Jaipur
                 </p>
               </div>
               <div className="grid h-[62px] w-[62px] shrink-0 place-items-center rounded-full border-2"
                    style={{ borderColor: v("--ux-brand"), color: v("--ux-brand") }}>
                 <div className="text-center">
-                  <p className="text-[1.125rem] font-extrabold leading-none tabular-nums">{months}</p>
-                  <p className="text-[0.6875rem] font-bold uppercase tracking-[0.1em]">months</p>
+                  <p className="text-lg font-extrabold leading-none tabular-nums">{months}</p>
+                  <p className="text-2xs font-bold uppercase tracking-[0.1em]">months</p>
                 </div>
               </div>
             </div>
@@ -107,12 +107,12 @@ export default function TrustPage() {
                     style={{ borderColor: v("--ux-line") }}>
                   <IconTile icon={p.icon} tint={p.tint} ink={p.ink} size={38} />
                   <div className="min-w-0 flex-1">
-                    <p className="text-[0.875rem] font-bold" style={{ color: v("--ux-ink") }}>{p.label}</p>
-                    <p className="mt-0.5 text-[0.75rem]" style={{ color: v("--ux-muted") }}>
+                    <p className="text-sm font-bold" style={{ color: v("--ux-ink") }}>{p.label}</p>
+                    <p className="mt-0.5 text-xs" style={{ color: v("--ux-muted") }}>
                       {p.detail} · since {p.since}
                     </p>
                   </div>
-                  <p className="shrink-0 font-serif text-[1.5rem] font-bold tabular-nums" style={{ color: v("--ux-ink") }}>
+                  <p className="shrink-0 font-serif text-2xl font-bold tabular-nums" style={{ color: v("--ux-ink") }}>
                     {p.count}
                   </p>
                 </li>
@@ -120,18 +120,18 @@ export default function TrustPage() {
             </ul>
 
             <div className="mt-5 flex flex-wrap items-end justify-between gap-4">
-              <p className="max-w-[40ch] text-[0.75rem] leading-relaxed" style={{ color: v("--ux-muted") }}>
+              <p className="max-w-[40ch] text-xs leading-relaxed" style={{ color: v("--ux-muted") }}>
                 Every entry above is something that went right. Nothing that went wrong is recorded
                 here, and nothing ever will be.
               </p>
               <div className="text-right">
-                <p className="text-[0.6875rem] font-bold uppercase tracking-[0.14em]" style={{ color: v("--ux-muted") }}>
+                <p className="text-2xs font-bold uppercase tracking-[0.14em]" style={{ color: v("--ux-muted") }}>
                   Kept by
                 </p>
-                <p className="mt-1 font-serif text-[1rem] font-bold" style={{ color: v("--ux-ink") }}>
+                <p className="mt-1 font-serif text-base font-bold" style={{ color: v("--ux-ink") }}>
                   Priya Sharma
                 </p>
-                <p className="text-[0.6875rem]" style={{ color: v("--ux-muted") }}>Not by WomSakhi</p>
+                <p className="text-2xs" style={{ color: v("--ux-muted") }}>Not by WomSakhi</p>
               </div>
             </div>
           </div>
@@ -145,7 +145,7 @@ export default function TrustPage() {
 
         {made && (
           <Card pad={16} style={{ background: v("--ux-tint-green"), borderColor: "transparent" }}>
-            <p className="flex items-center gap-2 text-[0.8125rem] font-semibold" style={{ color: v("--ux-green-ink") }}>
+            <p className="flex items-center gap-2 text-xsm font-semibold" style={{ color: v("--ux-green-ink") }}>
               <I name="CheckCircle2" className="h-[16px] w-[16px]" />
               Yours to send. Nothing left this phone on its own.
             </p>
@@ -165,12 +165,12 @@ export default function TrustPage() {
                             ink={u.accepted ? "--ux-green-ink" : "--ux-muted"} size={40} />
                   <div className="min-w-0 flex-1">
                     <div className="flex flex-wrap items-center gap-2">
-                      <p className="text-[0.875rem] font-bold" style={{ color: v("--ux-ink") }}>{u.label}</p>
+                      <p className="text-sm font-bold" style={{ color: v("--ux-ink") }}>{u.label}</p>
                       {u.accepted
                         ? <Pill tone="green" size="sm">Works</Pill>
                         : <Pill tone="neutral" size="sm">Not yet</Pill>}
                     </div>
-                    <p className="mt-1 text-[0.8125rem] leading-relaxed" style={{ color: v("--ux-muted") }}>{u.note}</p>
+                    <p className="mt-1 text-xsm leading-relaxed" style={{ color: v("--ux-muted") }}>{u.note}</p>
                   </div>
                 </div>
               </Card>
@@ -181,7 +181,7 @@ export default function TrustPage() {
         <Card pad={16} style={{ background: v("--ux-surface-2"), borderColor: "transparent" }}>
           <div className="flex items-start gap-3">
             <I name="ShieldCheck" className="mt-[2px] h-[16px] w-[16px] shrink-0" style={{ color: v("--ux-muted") }} />
-            <p className="text-[0.8125rem] leading-relaxed" style={{ color: v("--ux-ink-2") }}>
+            <p className="text-xsm leading-relaxed" style={{ color: v("--ux-ink-2") }}>
               We do not send this to banks, and there is no button that would. Nothing here can ever
               count against you — a missed month simply is not written down. If you stop using
               WomSakhi, you keep the copy.

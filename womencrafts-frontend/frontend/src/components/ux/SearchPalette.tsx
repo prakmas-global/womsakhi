@@ -363,7 +363,7 @@ export function SearchPalette({ open, onClose }: { open: boolean; onClose: () =>
         <div className="flex items-center gap-3 px-[20px] py-4" style={{ borderBottom: "1px solid var(--ux-line)" }}>
           <Icons.Search className="h-[19px] w-[19px] shrink-0" style={{ color: "var(--ux-faint)" }} strokeWidth={2.2} />
           {prefix && (
-            <span className="shrink-0 rounded-lg px-2.5 py-1 text-[0.75rem] font-extrabold"
+            <span className="shrink-0 rounded-lg px-2.5 py-1 text-xs font-extrabold"
                   style={{ background: "var(--ux-tint-violet)", color: "var(--ux-violet-ink)" }}>
               {SCOPES.find((s) => s.id === prefix)?.label}
             </span>
@@ -371,7 +371,7 @@ export function SearchPalette({ open, onClose }: { open: boolean; onClose: () =>
           <input ref={inputRef} value={raw} onChange={(e) => setRaw(e.target.value)}
                  role="combobox" aria-expanded aria-controls="search-results" autoComplete="off" spellCheck={false}
                  placeholder="Search anything, or type ₹ @ # >"
-                 className="min-w-0 flex-1 border-0 bg-transparent text-[1rem] font-medium tracking-[-0.01em] outline-none"
+                 className="min-w-0 flex-1 border-0 bg-transparent text-base font-medium tracking-[-0.01em] outline-none"
                  style={{ color: "var(--ux-ink)" }} />
           {busy && <Icons.Loader2 className="h-4 w-4 shrink-0 animate-spin" style={{ color: "var(--ux-faint)" }} />}
           {speech && (
@@ -386,7 +386,7 @@ export function SearchPalette({ open, onClose }: { open: boolean; onClose: () =>
             </button>
           )}
           <button type="button" onClick={onClose}
-                  className="ux-press shrink-0 rounded-md px-[8px] py-1 text-[0.6875rem] font-bold"
+                  className="ux-press shrink-0 rounded-md px-[8px] py-1 text-2xs font-bold"
                   style={{ border: "1px solid var(--ux-line-strong)", color: "var(--ux-faint)" }}>ESC</button>
         </div>
 
@@ -398,12 +398,12 @@ export function SearchPalette({ open, onClose }: { open: boolean; onClose: () =>
             return (
               <button key={s.id} type="button"
                       onClick={() => { if (prefix) setRaw(q); setScope(s.id); setCursor(0); inputRef.current?.focus(); }}
-                      className="ux-press flex min-h-[34px] shrink-0 items-center gap-1.5 whitespace-nowrap rounded-full px-3 text-[0.75rem] font-semibold"
+                      className="ux-press flex min-h-[34px] shrink-0 items-center gap-1.5 whitespace-nowrap rounded-full px-3 text-xs font-semibold"
                       style={on
                         ? { background: "linear-gradient(96deg, var(--ux-rib-2), var(--ux-rib-3))",
                             border: "1px solid transparent", color: "var(--ux-on-brand)" }
                         : { border: "1px solid var(--ux-line)", color: "var(--ux-ink-2)" }}>
-                {s.key && <kbd className="text-[0.6875rem] font-extrabold opacity-75">{s.key}</kbd>}
+                {s.key && <kbd className="text-2xs font-extrabold opacity-75">{s.key}</kbd>}
                 {s.label}
               </button>
             );
@@ -422,10 +422,10 @@ export function SearchPalette({ open, onClose }: { open: boolean; onClose: () =>
 
               {grouped.map(([g, rows]) => (
                 <div key={g}>
-                  <div className="flex items-center gap-2.5 px-[20px] pb-1.5 pt-3 text-[0.6875rem] font-extrabold uppercase tracking-[0.15em]"
+                  <div className="flex items-center gap-2.5 px-[20px] pb-1.5 pt-3 text-2xs font-extrabold uppercase tracking-[0.15em]"
                        style={{ color: "var(--ux-faint)" }}>
                     {GROUP_NAME[g]}
-                    <span className="ms-auto text-[0.6875rem] font-bold normal-case tracking-normal">{rows.length}</span>
+                    <span className="ms-auto text-2xs font-bold normal-case tracking-normal">{rows.length}</span>
                   </div>
                   {rows.map((h) => {
                     const i = flat.indexOf(h);
@@ -445,7 +445,7 @@ export function SearchPalette({ open, onClose }: { open: boolean; onClose: () =>
                             detail is context for the title, not a second fact,
                             and stacking them made every row two lines tall and
                             halved how much fits without scrolling. */}
-                        <span className="min-w-0 flex-1 truncate text-[0.875rem] font-semibold"
+                        <span className="min-w-0 flex-1 truncate text-sm font-semibold"
                               style={{ color: "var(--ux-ink)" }}>
                           <Mark text={h.title} q={q} />
                           {h.sub && (
@@ -453,16 +453,16 @@ export function SearchPalette({ open, onClose }: { open: boolean; onClose: () =>
                           )}
                         </span>
                         {h.amount && (
-                          <b className="shrink-0 text-[0.8125rem] font-extrabold tabular-nums"
+                          <b className="shrink-0 text-xsm font-extrabold tabular-nums"
                              style={{ color: `var(${amountInk(h)})` }}>
                             {h.amount}
                           </b>
                         )}
                         {h.tag && (
-                          <span className="shrink-0 rounded-full px-2.5 py-1 text-[0.6875rem] font-extrabold uppercase tracking-[0.04em]"
+                          <span className="shrink-0 rounded-full px-2.5 py-1 text-2xs font-extrabold uppercase tracking-[0.04em]"
                                 style={{ background: `var(${l.tint})`, color: `var(${l.ink})` }}>{h.tag}</span>
                         )}
-                        <span className="shrink-0 text-[0.6875rem] font-bold"
+                        <span className="shrink-0 text-2xs font-bold"
                               style={{ color: "var(--ux-faint)", opacity: on ? 1 : 0 }}>
                           {h.group === "do" ? "Run ↵" : "Open ↵"}
                         </span>
@@ -474,10 +474,10 @@ export function SearchPalette({ open, onClose }: { open: boolean; onClose: () =>
 
               {!busy && !answer && flat.length === 0 && (
                 <div className="px-[20px] py-9 text-center">
-                  <p className="text-[0.875rem] font-bold" style={{ color: "var(--ux-ink)" }}>
+                  <p className="text-sm font-bold" style={{ color: "var(--ux-ink)" }}>
                     Nothing matches “{q}”.
                   </p>
-                  <p className="mt-1.5 text-[0.8125rem]" style={{ color: "var(--ux-faint)" }}>
+                  <p className="mt-1.5 text-xsm" style={{ color: "var(--ux-faint)" }}>
                     Try a name, an amount, or press <Kbd>&gt;</Kbd> to do something instead.
                   </p>
                 </div>
@@ -487,7 +487,7 @@ export function SearchPalette({ open, onClose }: { open: boolean; onClose: () =>
         </div>
 
         {/* the keys, always visible */}
-        <div className="flex items-center gap-3.5 px-[20px] py-2.5 text-[0.6875rem]"
+        <div className="flex items-center gap-3.5 px-[20px] py-2.5 text-2xs"
              style={{ borderTop: "1px solid var(--ux-line)", background: "var(--ux-surface-2)", color: "var(--ux-faint)" }}>
           <span className="flex items-center gap-1.5"><Kbd>↑</Kbd><Kbd>↓</Kbd> move</span>
           <span className="flex items-center gap-1.5"><Kbd>↵</Kbd> open</span>
@@ -508,7 +508,7 @@ export function SearchPalette({ open, onClose }: { open: boolean; onClose: () =>
 
 function Kbd({ children }: { children: React.ReactNode }) {
   return (
-    <kbd className="rounded-[8px] px-[4px] py-[2px] text-[0.6875rem] font-bold"
+    <kbd className="rounded-[8px] px-[4px] py-[2px] text-2xs font-bold"
          style={{ border: "1px solid var(--ux-line-strong)", borderBottomWidth: 2,
                   background: "var(--ux-surface)", color: "var(--ux-ink-2)" }}>
       {children}
@@ -522,17 +522,17 @@ function Answer({ a, onGo }: { a: ApiSearchAnswer; onGo: () => void }) {
     <div className="mx-[20px] mb-1 mt-2.5 rounded-[16px] p-4"
          style={{ background: "linear-gradient(140deg, var(--ux-tint-violet), var(--ux-surface-2))",
                   border: "1px solid var(--ux-line-strong)" }}>
-      <span className="flex items-center gap-1.5 text-[0.6875rem] font-extrabold uppercase tracking-[0.14em]"
+      <span className="flex items-center gap-1.5 text-2xs font-extrabold uppercase tracking-[0.14em]"
             style={{ color: "var(--ux-violet-ink)" }}>
         <Icons.Wallet className="h-[13px] w-[13px]" /> {a.label}
       </span>
-      <p className="my-1 text-[1.75rem] font-extrabold tracking-[-0.03em] tabular-nums" style={{ color: "var(--ux-ink)" }}>
+      <p className="my-1 text-2xlm font-extrabold tracking-[-0.03em] tabular-nums" style={{ color: "var(--ux-ink)" }}>
         {a.value}
       </p>
-      <p className="m-0 text-[0.8125rem] leading-relaxed" style={{ color: "var(--ux-ink-2)" }}>{a.detail}</p>
+      <p className="m-0 text-xsm leading-relaxed" style={{ color: "var(--ux-ink-2)" }}>{a.detail}</p>
       {a.action && (
         <button type="button" onClick={onGo}
-                className="ux-press mt-3 rounded-[8px] px-3 py-2 text-[0.75rem] font-bold"
+                className="ux-press mt-3 rounded-[8px] px-3 py-2 text-xs font-bold"
                 style={{ background: "linear-gradient(96deg, var(--ux-rib-2), var(--ux-rib-3))",
                          color: "var(--ux-on-brand)" }}>
           {a.action}
@@ -569,10 +569,10 @@ function Resting({
     <>
       {waiting.length > 0 && (
         <>
-          <div className="flex items-center gap-2.5 px-[20px] pb-1.5 pt-3 text-[0.6875rem] font-extrabold uppercase tracking-[0.15em]"
+          <div className="flex items-center gap-2.5 px-[20px] pb-1.5 pt-3 text-2xs font-extrabold uppercase tracking-[0.15em]"
                style={{ color: "var(--ux-faint)" }}>
             Waiting on you
-            <span className="ms-auto text-[0.6875rem] font-bold normal-case tracking-normal">{waiting.length}</span>
+            <span className="ms-auto text-2xs font-bold normal-case tracking-normal">{waiting.length}</span>
           </div>
           {waiting.map((n, i) => {
             const l = look(n.kind === "safety" ? "do" : n.kind);
@@ -588,14 +588,14 @@ function Resting({
                   <Ico name={l.icon} className="h-[17px] w-[17px]" />
                 </span>
                 <span className="min-w-0 flex-1">
-                  <span className="block truncate text-[0.875rem] font-semibold" style={{ color: "var(--ux-ink)" }}>
+                  <span className="block truncate text-sm font-semibold" style={{ color: "var(--ux-ink)" }}>
                     {n.title}
                     {n.body && (
                       <span className="ms-2 font-normal" style={{ color: "var(--ux-faint)" }}>{n.body}</span>
                     )}
                   </span>
                 </span>
-                <span className="shrink-0 text-[0.6875rem] font-bold"
+                <span className="shrink-0 text-2xs font-bold"
                       style={{ color: "var(--ux-faint)", opacity: on ? 1 : 0 }}>Open ↵</span>
               </button>
             );
@@ -603,12 +603,12 @@ function Resting({
         </>
       )}
 
-      <div className="px-[20px] pb-1.5 pt-4 text-[0.6875rem] font-extrabold uppercase tracking-[0.15em]"
+      <div className="px-[20px] pb-1.5 pt-4 text-2xs font-extrabold uppercase tracking-[0.15em]"
            style={{ color: "var(--ux-faint)" }}>You searched before</div>
       <div className="flex flex-wrap gap-1.5 px-[20px] pb-3.5">
         {(recent.length ? recent : SUGGESTED).map((r) => (
           <button key={r} type="button" onClick={() => onPick(r)}
-                  className="ux-press min-h-[34px] rounded-full px-3.5 text-[0.75rem] font-semibold"
+                  className="ux-press min-h-[34px] rounded-full px-3.5 text-xs font-semibold"
                   style={{ border: "1px solid var(--ux-line-strong)", color: "var(--ux-ink-2)" }}>{r}</button>
         ))}
       </div>

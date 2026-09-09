@@ -165,10 +165,10 @@ export function NoteBtn({
                       style={{ background: "var(--ux-tint-green)" }}>
                   <Icons.Check className="h-[26px] w-[26px]" style={{ color: "var(--ux-green-ink)" }} strokeWidth={2.4} />
                 </span>
-                <p className="mt-3.5 text-[1rem] font-bold" style={{ color: "var(--ux-ink)" }}>
+                <p className="mt-3.5 text-base font-bold" style={{ color: "var(--ux-ink)" }}>
                   {sent ?? `Sent to ${to}`}
                 </p>
-                <p className="mx-auto mt-1.5 max-w-[36ch] text-[0.8125rem] leading-relaxed" style={{ color: "var(--ux-muted)" }}>
+                <p className="mx-auto mt-1.5 max-w-[36ch] text-xsm leading-relaxed" style={{ color: "var(--ux-muted)" }}>
                   {sentBody ?? "You will see the reply in Messages. Nothing else about you is shared."}
                 </p>
                 <div className="mt-4 flex justify-center gap-2.5">
@@ -180,8 +180,8 @@ export function NoteBtn({
               <>
                 <div className="mb-3.5 flex items-start justify-between gap-4">
                   <div>
-                    <h2 className="text-[1rem] font-bold" style={{ color: "var(--ux-ink)" }}>{title}</h2>
-                    <p className="mt-1 text-[0.8125rem]" style={{ color: "var(--ux-muted)" }}>Goes to {to}.</p>
+                    <h2 className="text-base font-bold" style={{ color: "var(--ux-ink)" }}>{title}</h2>
+                    <p className="mt-1 text-xsm" style={{ color: "var(--ux-muted)" }}>Goes to {to}.</p>
                   </div>
                   <button onClick={() => setOpen(false)} aria-label="Close"
                           className="ux-press ux-sq grid h-[34px] w-[34px] shrink-0 place-items-center rounded-[12px] border"
@@ -192,13 +192,13 @@ export function NoteBtn({
 
                 {choices && (
                   <div className="mb-3.5">
-                    <p className="mb-2 text-[0.8125rem] font-semibold" style={{ color: "var(--ux-ink)" }}>{choiceLabel}</p>
+                    <p className="mb-2 text-xsm font-semibold" style={{ color: "var(--ux-ink)" }}>{choiceLabel}</p>
                     <div className="flex flex-wrap gap-2">
                       {choices.map((c) => {
                         const on = choice === c;
                         return (
                           <button key={c} onClick={() => setChoice(c)} aria-pressed={on}
-                                  className="ux-press ux-sq rounded-[12px] border px-3 py-2 text-[0.75rem] font-medium"
+                                  className="ux-press ux-sq rounded-[12px] border px-3 py-2 text-xs font-medium"
                                   style={{
                                     borderColor: on ? "var(--ux-brand)" : "var(--ux-line-strong)",
                                     background: on ? "var(--ux-brand-tint)" : "var(--ux-surface)",
@@ -214,7 +214,7 @@ export function NoteBtn({
 
                 {stars && (
                   <div className="mb-3.5">
-                    <p className="mb-2 text-[0.8125rem] font-semibold" style={{ color: "var(--ux-ink)" }}>How did it go?</p>
+                    <p className="mb-2 text-xsm font-semibold" style={{ color: "var(--ux-ink)" }}>How did it go?</p>
                     <div className="flex gap-1.5">
                       {[1, 2, 3, 4, 5].map((n) => (
                         <button key={n} onClick={() => setRating(n)} aria-label={`${n} out of 5`}
@@ -236,14 +236,14 @@ export function NoteBtn({
                   placeholder={placeholder}
                   rows={4}
                   aria-label={title}
-                  className="ux-sq w-full rounded-[12px] border p-3.5 text-[0.875rem] leading-relaxed outline-none"
+                  className="ux-sq w-full rounded-[12px] border p-3.5 text-sm leading-relaxed outline-none"
                   style={{ borderColor: "var(--ux-line-strong)", background: "var(--ux-surface)", color: "var(--ux-ink)" }}
                 />
 
                 {/* The refusal belongs here, above the button she pressed, with
                     her words still in the box behind it. */}
                 {problem && (
-                  <p role="alert" className="ux-slide-up mt-3 rounded-[12px] p-3 text-[0.8125rem] leading-relaxed"
+                  <p role="alert" className="ux-slide-up mt-3 rounded-[12px] p-3 text-xsm leading-relaxed"
                      style={{ background: "var(--ux-tint-orange)", color: "var(--ux-orange-ink)" }}>
                     {problem}
                   </p>
@@ -251,7 +251,7 @@ export function NoteBtn({
 
                 <div className="mt-3.5 flex items-center justify-between gap-3">
                   {/* Say what happens to it before she presses send, not after. */}
-                  <p className="text-[0.75rem] leading-snug" style={{ color: send ? "var(--ux-faint)" : "var(--ux-orange-ink)" }}>
+                  <p className="text-xs leading-snug" style={{ color: send ? "var(--ux-faint)" : "var(--ux-orange-ink)" }}>
                     {send
                       ? `Only ${to} sees this.`
                       : `This box is not connected yet — nothing written here would reach ${to}.`}

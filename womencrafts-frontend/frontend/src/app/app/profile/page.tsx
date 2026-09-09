@@ -78,9 +78,9 @@ export default function Profile() {
         <div className="space-y-[16px]">
           <Card>
             <SectionHead title="Profile strength" />
-            <p className="text-[1.75rem] font-bold leading-none" style={{ color: "var(--ux-ink)" }}>{pct}%</p>
+            <p className="text-2xlm font-bold leading-none" style={{ color: "var(--ux-ink)" }}>{pct}%</p>
             <div className="mt-3"><Progress pct={pct} /></div>
-            <p className="mt-2.5 text-[0.75rem] leading-relaxed" style={{ color: "var(--ux-muted)" }}>
+            <p className="mt-2.5 text-xs leading-relaxed" style={{ color: "var(--ux-muted)" }}>
               {source === "loading"
                 ? "Reading your profile…"
                 : left.length
@@ -102,7 +102,7 @@ export default function Profile() {
               {[["Appear in more searches", "Search"],
                 ["Get matched to better work", "Target"],
                 ["Mentors can see your goals", "Users"]].map(([t, ic]) => (
-                <li key={t} className="flex items-start gap-2.5 text-[0.8125rem] leading-snug" style={{ color: "var(--ux-ink-2)" }}>
+                <li key={t} className="flex items-start gap-2.5 text-xsm leading-snug" style={{ color: "var(--ux-ink-2)" }}>
                   <I name={ic} className="mt-[1px] h-[15px] w-[15px] shrink-0" style={{ color: "var(--ux-brand)" }} /> {t}
                 </li>
               ))}
@@ -128,13 +128,13 @@ export default function Profile() {
             </Btn>
           </div>
           <div className="min-w-0 flex-1">
-            <h1 className="flex items-center gap-2 text-[1.25rem] font-bold" style={{ color: "var(--ux-ink)" }}>
+            <h1 className="flex items-center gap-2 text-xl font-bold" style={{ color: "var(--ux-ink)" }}>
               {name}
               {/* The blue tick was painted on every profile. It now means what
                   the server says it means. */}
               {verified && <Icons.BadgeCheck className="h-5 w-5" style={{ color: "var(--ux-blue)" }} />}
             </h1>
-            <p className="mt-1 text-[0.8125rem]" style={{ color: profile?.bio ? "var(--ux-muted)" : "var(--ux-faint)" }}>
+            <p className="mt-1 text-xsm" style={{ color: profile?.bio ? "var(--ux-muted)" : "var(--ux-faint)" }}>
               {profile?.bio || "You have not written a line about yourself yet."}
             </p>
             <div className="mt-3 flex flex-wrap gap-2">
@@ -163,10 +163,10 @@ export default function Profile() {
               <Icons.Award className="ux-ico h-[17px] w-[17px]" strokeWidth={1.9} />
             </span>
             <div className="min-w-0">
-              <p className="text-[1.125rem] font-bold leading-none" style={{ color: "var(--ux-ink)" }}>
+              <p className="text-lg font-bold leading-none" style={{ color: "var(--ux-ink)" }}>
                 {CERTIFICATES.length}
               </p>
-              <p className="mt-1 truncate text-[0.75rem]" style={{ color: "var(--ux-muted)" }}>Certificates</p>
+              <p className="mt-1 truncate text-xs" style={{ color: "var(--ux-muted)" }}>Certificates</p>
             </div>
           </div>
           <Stat value={String(circles.mine.length)} label="Circles joined" icon="UsersRound" tint="--ux-tint-pink" ink="--ux-pink" />
@@ -195,7 +195,7 @@ export default function Profile() {
                                  borderColor: s.done ? "var(--ux-green)" : "var(--ux-line-strong)" }}>
                     {s.done && <Icons.Check className="h-3.5 w-3.5 text-white" strokeWidth={3} />}
                   </span>
-                  <span className="min-w-0 flex-1 text-[0.8125rem]"
+                  <span className="min-w-0 flex-1 text-xsm"
                         style={{ color: s.done ? "var(--ux-muted)" : "var(--ux-ink)",
                                  textDecoration: s.done ? "line-through" : "none" }}>
                     {s.label}
@@ -214,7 +214,7 @@ export default function Profile() {
                 Rajasthan", "Hindi, English", "Digital marketing" and "March
                 2025" — for everyone. Each is now her own, or says it is
                 missing rather than filling the gap. */}
-            <dl className="space-y-3 text-[0.8125rem]">
+            <dl className="space-y-3 text-xsm">
               {[
                 ["Location", profile?.location || ""],
                 ["App language", profile?.locale === "hi" ? "हिंदी" : profile?.locale === "en" ? "English" : profile?.locale || ""],
@@ -232,7 +232,7 @@ export default function Profile() {
             </dl>
 
             <div className="my-4 h-px" style={{ background: "var(--ux-line)" }} />
-            <h3 className="mb-2.5 text-[0.8125rem] font-semibold" style={{ color: "var(--ux-ink)" }}>
+            <h3 className="mb-2.5 text-xsm font-semibold" style={{ color: "var(--ux-ink)" }}>
               What you are working towards
             </h3>
             {/* Three goals at 72%, 65% and 50% were written into the screen.
@@ -250,10 +250,10 @@ export default function Profile() {
                             style={{ background: "var(--ux-brand-tint)", color: "var(--ux-brand)" }}>
                         <I name={g.icon || "Target"} className="ux-ico h-[14px] w-[14px]" />
                       </span>
-                      <span className="min-w-0 flex-1 truncate text-[0.8125rem]" style={{ color: "var(--ux-ink-2)" }}>
+                      <span className="min-w-0 flex-1 truncate text-xsm" style={{ color: "var(--ux-ink-2)" }}>
                         {g.label}
                       </span>
-                      <span className="shrink-0 text-[0.75rem] font-medium tabular-nums" style={{ color: "var(--ux-muted)" }}>
+                      <span className="shrink-0 text-xs font-medium tabular-nums" style={{ color: "var(--ux-muted)" }}>
                         {g.pct}%
                       </span>
                     </div>
@@ -263,7 +263,7 @@ export default function Profile() {
               </ul>
             ) : (
               <>
-                <p className="text-[0.8125rem] leading-relaxed" style={{ color: "var(--ux-muted)" }}>
+                <p className="text-xsm leading-relaxed" style={{ color: "var(--ux-muted)" }}>
                   You have not set a goal yet. One number you are aiming at makes the rest of this screen
                   mean something.
                 </p>

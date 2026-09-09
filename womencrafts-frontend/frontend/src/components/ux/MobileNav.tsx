@@ -88,7 +88,7 @@ export function MobileNav() {
               style={{ color: on ? "var(--ux-brand)" : "var(--ux-muted)" }}
             >
               <Icon name={m.icon} className="h-[21px] w-[21px]" />
-              <span className="max-w-full truncate text-[0.6875rem] font-semibold">{nav.label(m)}</span>
+              <span className="max-w-full truncate text-2xs font-semibold">{nav.label(m)}</span>
             </Link>
           );
         })}
@@ -129,7 +129,7 @@ export function ModeChips() {
             key={i.href}
             href={i.href}
             aria-current={on ? "page" : undefined}
-            className="ux-sq flex min-h-[40px] shrink-0 items-center gap-1.5 rounded-full px-3.5 text-[0.8125rem] font-semibold"
+            className="ux-sq flex min-h-[40px] shrink-0 items-center gap-1.5 rounded-full px-3.5 text-xsm font-semibold"
             style={{
               background: on ? "var(--ux-fill)" : "var(--ux-surface-2)",
               color: on ? "var(--ux-on-brand)" : "var(--ux-ink-2)",
@@ -174,7 +174,7 @@ export function SafetyPin() {
       }}
     >
       <Icon name="ShieldAlert" className="h-[16px] w-[16px]" />
-      <span className="text-[0.6875rem] font-bold">Help</span>
+      <span className="text-2xs font-bold">Help</span>
     </Link>
   );
 }

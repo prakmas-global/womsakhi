@@ -17,6 +17,7 @@ import {
 import { useLearning } from "@/components/ux/growth";
 import { useCertificates } from "@/components/ux/live";
 import { AlsoHere } from "@/components/ux/AlsoHere";
+import { COPY } from "@/components/ux/copy";
 
 // "Paths" is gone. It showed four learning paths from a constant — "Career
 // Growth Path · 8 courses · 32 lessons · 60% complete" — with progress nothing
@@ -74,21 +75,21 @@ export default function LearningPage() {
             <div className="flex items-center justify-between">
               {STREAK.marks.map((on, i) => (
                 <div key={i} className="flex flex-col items-center gap-1.5">
-                  <span className="ux-pop grid h-[30px] w-[30px] place-items-center rounded-full text-[0.6875rem] font-semibold"
+                  <span className="ux-pop grid h-[30px] w-[30px] place-items-center rounded-full text-2xs font-semibold"
                         style={{
                           background: on ? "var(--ux-brand-600)" : "var(--ux-surface-2)",
-                          color: on ? "#fff" : "var(--ux-faint)",
+                          color: on ? "var(--ux-on-brand)" : "var(--ux-faint)",
                           ["--i" as string]: i,
                         }}>
                     {on ? <Icons.Check className="h-[13px] w-[13px]" strokeWidth={3} /> : "·"}
                   </span>
-                  <span className="text-[0.6875rem]" style={{ color: "var(--ux-faint)" }}>
+                  <span className="text-2xs" style={{ color: "var(--ux-faint)" }}>
                     {["M", "T", "W", "T", "F", "S", "S"][i]}
                   </span>
                 </div>
               ))}
             </div>
-            <p className="mt-3.5 text-[0.75rem] leading-relaxed" style={{ color: "var(--ux-muted)" }}>
+            <p className="mt-3.5 text-xs leading-relaxed" style={{ color: "var(--ux-muted)" }}>
               Fifteen minutes today keeps it going. About {hoursLeft} hours left across everything you started.
             </p>
           </Card>
@@ -99,10 +100,10 @@ export default function LearningPage() {
               {SKILLS.slice(0, 5).map((s) => (
                 <li key={s.name} className="ux-hov flex items-center gap-3">
                   <IconTile icon={s.icon} tint={s.tint} ink={s.ink} size={34} radius={10} />
-                  <span className="min-w-0 flex-1 truncate text-[0.8125rem]" style={{ color: "var(--ux-ink-2)" }}>
+                  <span className="min-w-0 flex-1 truncate text-xsm" style={{ color: "var(--ux-ink-2)" }}>
                     {s.name}
                   </span>
-                  <span className="shrink-0 text-[0.6875rem]" style={{ color: "var(--ux-faint)" }}>{s.level}</span>
+                  <span className="shrink-0 text-2xs" style={{ color: "var(--ux-faint)" }}>{s.level}</span>
                 </li>
               ))}
             </ul>
@@ -118,8 +119,8 @@ export default function LearningPage() {
                                  style={{ ["--i" as string]: i }} />
                   </span>
                   <div className="min-w-0">
-                    <p className="truncate text-[0.8125rem] font-medium" style={{ color: "var(--ux-ink)" }}>{a.name}</p>
-                    <p className="mt-0.5 truncate text-[0.6875rem]" style={{ color: "var(--ux-muted)" }}>{a.body}</p>
+                    <p className="truncate text-xsm font-medium" style={{ color: "var(--ux-ink)" }}>{a.name}</p>
+                    <p className="mt-0.5 truncate text-2xs" style={{ color: "var(--ux-muted)" }}>{a.body}</p>
                   </div>
                 </div>
               ))}
@@ -130,8 +131,8 @@ export default function LearningPage() {
     >
       <div className="mb-[20px] flex items-end justify-between gap-4">
         <div>
-          <h1 className="text-[1.5rem] font-bold" style={{ color: "var(--ux-ink)" }}>Courses</h1>
-          <p className="mt-1.5 text-[0.8125rem]" style={{ color: "var(--ux-muted)" }}>
+          <h1 className="text-2xl font-bold" style={{ color: "var(--ux-ink)" }}>Courses</h1>
+          <p className="mt-1.5 text-xsm" style={{ color: "var(--ux-muted)" }}>
             {CONTINUING.length} {plural("course", CONTINUING.length)} on the go, {avg}% through on average.
           </p>
 
@@ -185,15 +186,15 @@ export default function LearningPage() {
                     <Icons.Award className="ux-ico h-[21px] w-[21px]" strokeWidth={1.9} />
                   </span>
                   <div className="min-w-0 flex-1">
-                    <h2 className="truncate text-[0.875rem] font-semibold" style={{ color: "var(--ux-ink)" }}>{c.title}</h2>
-                    <p className="mt-1 text-[0.75rem]" style={{ color: "var(--ux-muted)" }}>
+                    <h2 className="truncate text-sm font-semibold" style={{ color: "var(--ux-ink)" }}>{c.title}</h2>
+                    <p className="mt-1 text-xs" style={{ color: "var(--ux-muted)" }}>
                       Issued {c.issued} · {c.code}
                     </p>
                   </div>
                 </div>
                 <div className="mt-3.5 flex gap-2 border-t pt-3.5" style={{ borderColor: "var(--ux-line)" }}>
                   <ActionBtn variant="outline" size="sm" icon="Download" doneIcon="Printer"
-                             done="Choose “Save as PDF”" act={() => printCertificate({
+                             done={COPY.saveAsPdf} act={() => printCertificate({
                                name: ME.name, programme: c.title, issued: c.issued, code: c.code,
                              })}>
                     Download

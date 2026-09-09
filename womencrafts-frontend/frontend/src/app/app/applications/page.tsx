@@ -60,12 +60,12 @@ export default function Applications() {
               <RailStat value={WORK_STATS.interviews} label="Interviews" icon="MessageSquare" tint="--ux-tint-green" ink="--ux-green" />
             </div>
             <div className="mt-4">
-              <div className="mb-1.5 flex items-center justify-between text-[0.75rem]">
+              <div className="mb-1.5 flex items-center justify-between text-xs">
                 <span style={{ color: "var(--ux-muted)" }}>Reply rate</span>
                 <span className="font-semibold tabular-nums" style={{ color: "var(--ux-ink)" }}>{WORK_STATS.responseRate}%</span>
               </div>
               <Progress pct={WORK_STATS.responseRate} track="--ux-track" />
-              <p className="mt-2 text-[0.75rem] leading-snug" style={{ color: "var(--ux-muted)" }}>
+              <p className="mt-2 text-xs leading-snug" style={{ color: "var(--ux-muted)" }}>
                 {WORK_STATS.responseRate
                   ? `${WORK_STATS.responseRate}% of yours have had a reply so far.`
                   : "None have had a reply yet. That is normal in the first week."}
@@ -78,10 +78,10 @@ export default function Applications() {
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img loading="lazy" decoding="async" src={WORK_ART.interview} alt=""
                  className="ux-float pointer-events-none absolute -bottom-3 -end-4 h-[100px] w-[100px] object-contain" />
-            <h3 className="relative w-[60%] text-[0.875rem] font-semibold" style={{ color: "var(--ux-ink)" }}>
+            <h3 className="relative w-[60%] text-sm font-semibold" style={{ color: "var(--ux-ink)" }}>
               Interview on Monday
             </h3>
-            <p className="relative mt-2 w-[60%] text-[0.75rem] leading-relaxed" style={{ color: "var(--ux-muted)" }}>
+            <p className="relative mt-2 w-[60%] text-xs leading-relaxed" style={{ color: "var(--ux-muted)" }}>
               Ten minutes of practice makes a real difference. Sakhi can run through it with you.
             </p>
             <div className="relative mt-3 w-[60%]">
@@ -93,8 +93,8 @@ export default function Applications() {
     >
       <div className="mb-[20px] flex items-end justify-between gap-4">
         <div>
-          <h1 className="text-[1.5rem] font-bold" style={{ color: "var(--ux-ink)" }}>Your applications</h1>
-          <p className="mt-1.5 text-[0.8125rem]" style={{ color: "var(--ux-muted)" }}>
+          <h1 className="text-2xl font-bold" style={{ color: "var(--ux-ink)" }}>Your applications</h1>
+          <p className="mt-1.5 text-xsm" style={{ color: "var(--ux-muted)" }}>
             {counts.Active === 1
               ? "One application is still moving."
               : `${counts.Active} applications are still moving.`}
@@ -119,7 +119,7 @@ export default function Applications() {
                             ink={closed ? "--ux-muted" : a.ink} size={46} radius={12} />
                   <div className="min-w-0 flex-1">
                     <div className="flex items-start gap-2">
-                      <h3 className="min-w-0 flex-1 truncate text-[0.875rem] font-semibold"
+                      <h3 className="min-w-0 flex-1 truncate text-sm font-semibold"
                           style={{ color: closed ? "var(--ux-muted)" : "var(--ux-ink)" }}>
                         {a.title}
                       </h3>
@@ -127,11 +127,11 @@ export default function Applications() {
                         {a.stage}
                       </Pill>
                     </div>
-                    <p className="mt-1 flex flex-wrap items-center gap-x-3 text-[0.75rem]" style={{ color: "var(--ux-muted)" }}>
+                    <p className="mt-1 flex flex-wrap items-center gap-x-3 text-xs" style={{ color: "var(--ux-muted)" }}>
                       <span className="inline-flex items-center gap-1"><Icons.Building2 className="h-3.5 w-3.5" /> {a.org}</span>
                       <span className="inline-flex items-center gap-1"><Icons.Clock className="h-3.5 w-3.5" /> Applied {a.at}</span>
                     </p>
-                    <p className="mt-2 text-[0.8125rem]" style={{ color: closed ? "var(--ux-faint)" : "var(--ux-ink-2)" }}>
+                    <p className="mt-2 text-xsm" style={{ color: closed ? "var(--ux-faint)" : "var(--ux-ink-2)" }}>
                       {a.when}
                     </p>
                   </div>

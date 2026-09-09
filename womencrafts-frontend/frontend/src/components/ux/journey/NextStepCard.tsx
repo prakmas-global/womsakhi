@@ -43,7 +43,7 @@ export function NextStepCard({ step, at, onDismiss, compact = false }: {
              style={{ background: v("--ux-fill") }}>
       <div className={compact ? "p-5" : "px-6 py-7 sm:px-8"}>
         <div className="flex items-start justify-between gap-4">
-          <p className="text-[0.6875rem] font-extrabold uppercase tracking-[0.18em]"
+          <p className="text-2xs font-extrabold uppercase tracking-[0.18em]"
              style={{ color: v("--ux-on-brand"), opacity: 0.72 }}>
             Your next step
           </p>
@@ -58,12 +58,12 @@ export function NextStepCard({ step, at, onDismiss, compact = false }: {
 
         <h2 id="next-step-title"
             className={`mt-2.5 max-w-[20ch] font-extrabold leading-[1.12] tracking-[-0.03em] ${
-              compact ? "text-[1.25rem]" : "text-[clamp(1.375rem,3vw,1.875rem)]"}`}
+              compact ? "text-xl" : "text-[clamp(1.375rem,3vw,1.875rem)]"}`}
             style={{ color: v("--ux-on-brand") }}>
           {step.title}
         </h2>
 
-        <p className="mt-2.5 max-w-[46ch] text-[0.875rem] leading-relaxed"
+        <p className="mt-2.5 max-w-[46ch] text-sm leading-relaxed"
            style={{ color: v("--ux-on-brand"), opacity: 0.88 }}>
           {step.because}
         </p>
@@ -71,7 +71,7 @@ export function NextStepCard({ step, at, onDismiss, compact = false }: {
         {/* She is further along than this step. Say so, rather than letting the
             journey track and this card quietly disagree. */}
         {isBehind && stage && (
-          <p className="mt-3 inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-[0.6875rem] font-semibold"
+          <p className="mt-3 inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-2xs font-semibold"
              style={{ background: "rgba(255,255,255,0.16)", color: v("--ux-on-brand") }}>
             <I name="CornerUpLeft" className="h-[0.75rem] w-[0.75rem]" />
             You are past this — it is one thing from &ldquo;{stage.label}&rdquo; still worth doing
@@ -80,13 +80,13 @@ export function NextStepCard({ step, at, onDismiss, compact = false }: {
 
         <div className="mt-5 flex flex-wrap items-center gap-3">
           <Link href={step.href}
-                className="ux-press ux-sq inline-flex items-center gap-2 rounded-[12px] px-4 py-3 text-[0.875rem] font-bold"
+                className="ux-press ux-sq inline-flex items-center gap-2 rounded-[12px] px-4 py-3 text-sm font-bold"
                 style={{ background: v("--ux-on-brand-btn"), color: v("--ux-on-brand-btn-ink") }}>
             <I name={step.icon} className="h-[1rem] w-[1rem]" />
             {step.cta}
           </Link>
           {step.mins !== undefined && (
-            <span className="inline-flex items-center gap-1.5 text-[0.75rem] font-semibold"
+            <span className="inline-flex items-center gap-1.5 text-xs font-semibold"
                   style={{ color: v("--ux-on-brand"), opacity: 0.8 }}>
               <I name="Clock" className="h-[0.8125rem] w-[0.8125rem]" />
               about {step.mins} min
@@ -117,12 +117,12 @@ export function JourneyTrack({ current, compact = false }: { current: StageId; c
           <li key={s.id} className="min-w-[76px] flex-1">
             <div className="h-[5px] rounded-full"
                  style={{ background: v(done ? "--ux-green-ink" : here ? "--ux-fill" : "--ux-line") }} />
-            <p className="mt-2 text-[0.6875rem] font-bold leading-tight"
+            <p className="mt-2 text-2xs font-bold leading-tight"
                style={{ color: v(here ? "--ux-ink" : done ? "--ux-green-ink" : "--ux-faint") }}>
               {s.label}
             </p>
             {here && !compact && (
-              <p className="mt-0.5 text-[0.6875rem] leading-tight" style={{ color: v("--ux-muted") }}>
+              <p className="mt-0.5 text-2xs leading-tight" style={{ color: v("--ux-muted") }}>
                 {s.verb}
               </p>
             )}

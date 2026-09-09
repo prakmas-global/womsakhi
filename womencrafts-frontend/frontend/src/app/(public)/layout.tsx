@@ -40,7 +40,7 @@ export default function PublicLayout({ children }: { children: React.ReactNode }
             ].map(([label, href]) => (
               <Link
                 key={href} href={href}
-                className="ux-sq rounded-[8px] px-2.5 py-2 text-[0.8125rem] font-medium"
+                className="ux-sq rounded-[8px] px-2.5 py-2 text-xsm font-medium"
                 style={{ color: "var(--ux-muted)" }}
               >
                 {label}
@@ -53,7 +53,7 @@ export default function PublicLayout({ children }: { children: React.ReactNode }
       <main className="mx-auto max-w-[720px] px-5 py-10 sm:py-14">{children}</main>
 
       <footer style={{ borderTop: "1px solid var(--ux-line)" }}>
-        <div className="mx-auto flex max-w-[880px] flex-wrap items-center justify-between gap-3 px-5 py-6 text-[0.75rem]"
+        <div className="mx-auto flex max-w-[880px] flex-wrap items-center justify-between gap-3 px-5 py-6 text-xs"
              style={{ color: "var(--ux-faint)" }}>
           <p>© {new Date().getFullYear()} WomSakhi. Women only, and free to join.</p>
           <Link href="/signin" className="font-semibold" style={{ color: "var(--ux-brand)" }}>

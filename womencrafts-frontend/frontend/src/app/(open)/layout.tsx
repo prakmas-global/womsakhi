@@ -19,7 +19,7 @@ export default function OpenLayout({ children }: { children: React.ReactNode }) 
     <div className="ux min-h-screen" style={{ background: "var(--ux-canvas)" }}>
       <main className="mx-auto max-w-[560px] px-4 py-6 sm:py-9">{children}</main>
       <footer className="mx-auto max-w-[560px] px-4 pb-10">
-        <p className="text-center text-[0.75rem] leading-relaxed" style={{ color: "var(--ux-faint)" }}>
+        <p className="text-center text-xs leading-relaxed" style={{ color: "var(--ux-faint)" }}>
           This page belongs to the woman named on it. WomSakhi does not hold the money and does not
           take a cut of what you pay her.
         </p>

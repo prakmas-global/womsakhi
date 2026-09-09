@@ -86,14 +86,14 @@ export default function DiscoverPage() {
       <div className="flex flex-col gap-5">
 
         <header>
-          <p className="text-[0.6875rem] font-extrabold uppercase tracking-[0.2em]" style={{ color: v("--ux-brand") }}>
+          <p className="text-2xs font-extrabold uppercase tracking-[0.2em]" style={{ color: v("--ux-brand") }}>
             For you
           </p>
           <h1 className="mt-2 text-[clamp(1.5rem,3.2vw,2.125rem)] font-extrabold leading-[1.1] tracking-[-0.035em]"
               style={{ color: v("--ux-ink") }}>
             Things worth a look
           </h1>
-          <p className="mt-1.5 max-w-[58ch] text-[0.875rem] leading-relaxed" style={{ color: v("--ux-muted") }}>
+          <p className="mt-1.5 max-w-[58ch] text-sm leading-relaxed" style={{ color: v("--ux-muted") }}>
             Not the most popular things — the ones that have something to do with you. Everything
             below says why it is here.
           </p>
@@ -113,19 +113,19 @@ export default function DiscoverPage() {
                   style={{ background: v(stage ? stage.tint : "--ux-surface-2") }}>
             <I name={stage ? stage.icon : "UserRoundCog"} className="h-[1rem] w-[1rem]"
                style={{ color: v(stage ? stage.ink : "--ux-muted") }} />
-            <span className="text-[0.8125rem] font-semibold" style={{ color: v("--ux-ink") }}>
+            <span className="text-xsm font-semibold" style={{ color: v("--ux-ink") }}>
               {stage ? stage.label : "Tell us what kind of year you are having"}
             </span>
-            <span className="text-[0.75rem]" style={{ color: v("--ux-muted") }}>
+            <span className="text-xs" style={{ color: v("--ux-muted") }}>
               {stage ? "change" : "so this page is about you"}
             </span>
           </button>
         ) : (
           <Card pad={20}>
-            <p className="text-[1rem] font-bold" style={{ color: v("--ux-ink") }}>
+            <p className="text-base font-bold" style={{ color: v("--ux-ink") }}>
               What is closest to where you are?
             </p>
-            <p className="mt-1 max-w-[54ch] text-[0.8125rem] leading-relaxed" style={{ color: v("--ux-muted") }}>
+            <p className="mt-1 max-w-[54ch] text-xsm leading-relaxed" style={{ color: v("--ux-muted") }}>
               This only changes what gets shown first. Nothing is hidden from you, and you can
               change it whenever it stops being true.
             </p>
@@ -140,9 +140,9 @@ export default function DiscoverPage() {
                         }}>
                   <span className="flex items-center gap-2">
                     <I name={s.icon} className="h-[1rem] w-[1rem]" style={{ color: v(s.ink) }} />
-                    <span className="text-[0.875rem] font-bold" style={{ color: v("--ux-ink") }}>{s.label}</span>
+                    <span className="text-sm font-bold" style={{ color: v("--ux-ink") }}>{s.label}</span>
                   </span>
-                  <span className="mt-1 block text-[0.75rem] leading-snug" style={{ color: v("--ux-muted") }}>
+                  <span className="mt-1 block text-xs leading-snug" style={{ color: v("--ux-muted") }}>
                     {s.detail}
                   </span>
                 </button>
@@ -213,7 +213,7 @@ export default function DiscoverPage() {
         <Card pad={16} style={{ background: v("--ux-surface-2"), borderColor: "transparent" }}>
           <div className="flex items-start gap-3">
             <I name="Info" className="mt-[2px] h-[1rem] w-[1rem] shrink-0" style={{ color: v("--ux-muted") }} />
-            <p className="text-[0.8125rem] leading-relaxed" style={{ color: v("--ux-ink-2") }}>
+            <p className="text-xsm leading-relaxed" style={{ color: v("--ux-ink-2") }}>
               Nobody pays to appear here, and this page has a bottom — it does not scroll forever.
               If something is shown to you, the reason is written on it.
             </p>
@@ -233,16 +233,16 @@ function Row({ i, saved, onSave, onOpen }: {
       <button type="button" onClick={onOpen} className="ux-press flex w-full items-start gap-3.5 p-4 text-left">
         <IconTile icon={i.icon} tint={i.tint} ink={i.ink} size={44} radius={12} />
         <div className="min-w-0 flex-1">
-          <p className="text-[0.875rem] font-bold leading-snug" style={{ color: v("--ux-ink") }}>{i.title}</p>
-          <p className="mt-0.5 text-[0.75rem] leading-relaxed" style={{ color: v("--ux-muted") }}>{i.detail}</p>
+          <p className="text-sm font-bold leading-snug" style={{ color: v("--ux-ink") }}>{i.title}</p>
+          <p className="mt-0.5 text-xs leading-relaxed" style={{ color: v("--ux-muted") }}>{i.detail}</p>
 
           {/* The reason. This is the part that makes it not an advertisement. */}
-          <p className="mt-2 flex items-start gap-1.5 rounded-[8px] px-2.5 py-2 text-[0.75rem] leading-snug"
+          <p className="mt-2 flex items-start gap-1.5 rounded-[8px] px-2.5 py-2 text-xs leading-snug"
              style={{ background: v("--ux-brand-tint"), color: v("--ux-brand") }}>
             <I name="Sparkles" className="mt-[2px] h-[0.6875rem] w-[0.6875rem] shrink-0" />
             {i.because}
           </p>
-          <p className="mt-2 text-[0.6875rem] font-semibold" style={{ color: v("--ux-faint") }}>{i.meta}</p>
+          <p className="mt-2 text-2xs font-semibold" style={{ color: v("--ux-faint") }}>{i.meta}</p>
         </div>
       </button>
       <div className="flex gap-2 border-t px-4 py-3" style={{ borderColor: v("--ux-line") }}>

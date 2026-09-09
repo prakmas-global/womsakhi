@@ -76,7 +76,7 @@ export default function HaqPage() {
 
         <header className="flex flex-wrap items-end gap-4">
           <div className="min-w-0 flex-1">
-            <p className="text-[0.6875rem] font-extrabold uppercase tracking-[0.2em]"
+            <p className="text-2xs font-extrabold uppercase tracking-[0.2em]"
                style={{ color: v("--ux-brand") }}>
               Haq
             </p>
@@ -84,7 +84,7 @@ export default function HaqPage() {
                 style={{ color: v("--ux-ink") }}>
               What you are owed
             </h1>
-            <p className="mt-1.5 max-w-[54ch] text-[0.875rem] leading-relaxed"
+            <p className="mt-1.5 max-w-[54ch] text-sm leading-relaxed"
                style={{ color: v("--ux-muted") }}>
               Money the government has already said is yours — and the paperwork that decides
               whether it keeps arriving.
@@ -108,7 +108,7 @@ export default function HaqPage() {
           {owed > 0 && (
             <div className="mt-4 flex flex-wrap items-center gap-2 border-t pt-3.5"
                  style={{ borderColor: v("--ux-line") }}>
-              <p className="flex-1 text-[0.8125rem]" style={{ color: v("--ux-ink-2") }}>
+              <p className="flex-1 text-xsm" style={{ color: v("--ux-ink-2") }}>
                 Late payments carry compensation by law. Almost nobody claims it.
               </p>
               <Btn size="sm" variant="soft" href="/app/haq/recover">Claim what is late</Btn>
@@ -129,7 +129,7 @@ export default function HaqPage() {
               <Chip key={f.id} icon={f.icon} selected={filter === f.id} onClick={() => setFilter(f.id)}>
                 {f.label}
                 {f.id === "risk" && risk.length + halted.length > 0 && (
-                  <span className="ml-1 rounded-full px-1.5 text-[0.6875rem] font-bold"
+                  <span className="ml-1 rounded-full px-1.5 text-2xs font-bold"
                         style={{ background: v("--ux-danger-tint"), color: v("--ux-danger-solid") }}>
                     {risk.length + halted.length}
                   </span>
@@ -160,7 +160,7 @@ export default function HaqPage() {
           <div className="flex items-start gap-3">
             <I name="Info" className="mt-[2px] h-[16px] w-[16px] shrink-0"
                style={{ color: v("--ux-muted") }} />
-            <p className="text-[0.8125rem] leading-relaxed" style={{ color: v("--ux-ink-2") }}>
+            <p className="text-xsm leading-relaxed" style={{ color: v("--ux-ink-2") }}>
               Reminders on their own do not get money moving — going <b>with</b> someone does.
               When a benefit needs an office visit, we will offer to find a woman in your circle
               who has already been to that counter.

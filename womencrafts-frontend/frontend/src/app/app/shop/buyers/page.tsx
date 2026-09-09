@@ -62,20 +62,20 @@ export default function BuyersPage() {
           <IconTile icon={k.icon} tint={k.tint} ink={k.ink} size={42} radius={12} />
           <div className="min-w-0 flex-1">
             <div className="flex flex-wrap items-center gap-2">
-              <p className="text-[0.875rem] font-bold" style={{ color: v("--ux-ink") }}>{b.name}</p>
+              <p className="text-sm font-bold" style={{ color: v("--ux-ink") }}>{b.name}</p>
               {b.committed && <Pill tone="green" size="sm">Standing order</Pill>}
               {b.repeat && !b.committed && <Pill tone="blue" size="sm">Comes back</Pill>}
             </div>
-            <p className="mt-0.5 text-[0.75rem]" style={{ color: v("--ux-muted") }}>
+            <p className="mt-0.5 text-xs" style={{ color: v("--ux-muted") }}>
               {k.label} · last bought {b.lastOn}
             </p>
-            <p className="mt-1.5 text-[0.8125rem] leading-relaxed" style={{ color: v("--ux-ink-2") }}>{b.note}</p>
+            <p className="mt-1.5 text-xsm leading-relaxed" style={{ color: v("--ux-ink-2") }}>{b.note}</p>
           </div>
           <div className="shrink-0 text-right">
-            <p className="text-[1.125rem] font-extrabold leading-none tabular-nums" style={{ color: v("--ux-ink") }}>
+            <p className="text-lg font-extrabold leading-none tabular-nums" style={{ color: v("--ux-ink") }}>
               {formatRupees(b.spentMinor)}
             </p>
-            <p className="mt-0.5 text-[0.6875rem]" style={{ color: v("--ux-muted") }}>
+            <p className="mt-0.5 text-2xs" style={{ color: v("--ux-muted") }}>
               over {b.bought} {b.bought === 1 ? "order" : "orders"}
             </p>
           </div>
@@ -83,12 +83,12 @@ export default function BuyersPage() {
 
         {/* The quiet signals — what she did NOT do. */}
         <div className="mt-3.5 flex flex-wrap gap-x-4 gap-y-1.5 border-t pt-3" style={{ borderColor: v("--ux-line") }}>
-          <span className="inline-flex items-center gap-1.5 text-[0.75rem] font-semibold"
+          <span className="inline-flex items-center gap-1.5 text-xs font-semibold"
                 style={{ color: v(b.repeat ? "--ux-green-ink" : "--ux-muted") }}>
             <I name={b.repeat ? "Check" : "Minus"} className="h-[13px] w-[13px]" sw={2.6} />
             {b.repeat ? "Came back" : "Bought once"}
           </span>
-          <span className="inline-flex items-center gap-1.5 text-[0.75rem] font-semibold"
+          <span className="inline-flex items-center gap-1.5 text-xs font-semibold"
                 style={{ color: v(b.complaints === 0 ? "--ux-green-ink" : "--ux-danger-solid") }}>
             <I name={b.complaints === 0 ? "Check" : "X"} className="h-[13px] w-[13px]" sw={2.6} />
             {b.complaints === 0 ? "Never complained" : `${b.complaints} complaints`}
@@ -110,14 +110,14 @@ export default function BuyersPage() {
         <Back to="/app/shop" label="Back to your shops" />
 
         <header>
-          <p className="text-[0.6875rem] font-extrabold uppercase tracking-[0.2em]" style={{ color: v("--ux-brand") }}>
+          <p className="text-2xs font-extrabold uppercase tracking-[0.2em]" style={{ color: v("--ux-brand") }}>
             Your buyers
           </p>
           <h1 className="mt-2 text-[clamp(1.5rem,3.2vw,2.125rem)] font-extrabold leading-[1.1] tracking-[-0.035em]"
               style={{ color: v("--ux-ink") }}>
             One steady buyer beats a hundred lookers
           </h1>
-          <p className="mt-1.5 max-w-[56ch] text-[0.875rem] leading-relaxed" style={{ color: v("--ux-muted") }}>
+          <p className="mt-1.5 max-w-[56ch] text-sm leading-relaxed" style={{ color: v("--ux-muted") }}>
             Being seen by strangers changes very little. Someone who has agreed to keep buying
             changes what you can plan for.
           </p>
@@ -134,7 +134,7 @@ export default function BuyersPage() {
           </div>
           {askable.length > 0 && (
             <div className="mt-4 border-t pt-3.5" style={{ borderColor: v("--ux-line") }}>
-              <p className="text-[0.8125rem]" style={{ color: v("--ux-ink-2") }}>
+              <p className="text-xsm" style={{ color: v("--ux-ink-2") }}>
                 <b>{askable.length}</b> {askable.length === 1 ? "buyer already comes back" : "buyers already come back"} and
                 {askable.length === 1 ? " has" : " have"} never complained. None of them has been asked for a standing order.
               </p>
@@ -144,7 +144,7 @@ export default function BuyersPage() {
 
         {note && (
           <Card pad={16} style={{ background: v("--ux-tint-green"), borderColor: "transparent" }}>
-            <p className="flex items-center gap-2 text-[0.8125rem] font-semibold" style={{ color: v("--ux-green-ink") }}>
+            <p className="flex items-center gap-2 text-xsm font-semibold" style={{ color: v("--ux-green-ink") }}>
               <I name="CheckCircle2" className="h-[16px] w-[16px]" />{note}
             </p>
           </Card>
@@ -168,7 +168,7 @@ export default function BuyersPage() {
         <Card pad={16} style={{ background: v("--ux-surface-2"), borderColor: "transparent" }}>
           <div className="flex items-start gap-3">
             <I name="Info" className="mt-[2px] h-[16px] w-[16px] shrink-0" style={{ color: v("--ux-muted") }} />
-            <p className="text-[0.8125rem] leading-relaxed" style={{ color: v("--ux-ink-2") }}>
+            <p className="text-xsm leading-relaxed" style={{ color: v("--ux-ink-2") }}>
               There are no stars here on purpose. Most sellers have too few ratings for stars to mean
               anything, and the ones that exist are almost all five. Coming back, and not complaining,
               are harder to fake and available from the very first order.

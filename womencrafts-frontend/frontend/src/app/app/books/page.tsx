@@ -66,14 +66,14 @@ export default function BooksPage() {
 
         <header className="flex flex-wrap items-end gap-4">
           <div className="min-w-0 flex-1">
-            <p className="text-[0.6875rem] font-extrabold uppercase tracking-[0.2em]" style={{ color: v("--ux-brand") }}>
+            <p className="text-2xs font-extrabold uppercase tracking-[0.2em]" style={{ color: v("--ux-brand") }}>
               Your books
             </p>
             <h1 className="mt-2 text-[clamp(1.5rem,3.2vw,2.125rem)] font-extrabold leading-[1.1] tracking-[-0.035em]"
                 style={{ color: v("--ux-ink") }}>
               Who owes you what
             </h1>
-            <p className="mt-1.5 max-w-[56ch] text-[0.875rem] leading-relaxed" style={{ color: v("--ux-muted") }}>
+            <p className="mt-1.5 max-w-[56ch] text-sm leading-relaxed" style={{ color: v("--ux-muted") }}>
               Keep selling wherever you already sell. This just remembers it — including the{" "}
               <b>{off}%</b> that never touches this app.
             </p>
@@ -92,7 +92,7 @@ export default function BooksPage() {
           </div>
           {late.length > 0 && (
             <div className="mt-4 flex flex-wrap items-center gap-2 border-t pt-3.5" style={{ borderColor: v("--ux-line") }}>
-              <p className="flex-1 text-[0.8125rem]" style={{ color: v("--ux-ink-2") }}>
+              <p className="flex-1 text-xsm" style={{ color: v("--ux-ink-2") }}>
                 <b>{late.length}</b> {late.length === 1 ? "person is" : "people are"} late.
                 Most people who are late simply forgot.
               </p>
@@ -103,7 +103,7 @@ export default function BooksPage() {
 
         {note && (
           <Card pad={16} style={{ background: v("--ux-tint-green"), borderColor: "transparent" }}>
-            <p className="flex items-center gap-2 text-[0.8125rem] font-semibold" style={{ color: v("--ux-green-ink") }}>
+            <p className="flex items-center gap-2 text-xsm font-semibold" style={{ color: v("--ux-green-ink") }}>
               <I name="CheckCircle2" className="h-[16px] w-[16px]" />{note}
             </p>
           </Card>
@@ -135,16 +135,16 @@ export default function BooksPage() {
                       <IconTile icon={s.icon} tint={s.tint} ink={s.ink} size={38} />
                       <div className="min-w-0 flex-1">
                         <div className="flex flex-wrap items-center gap-2">
-                          <p className="text-[0.875rem] font-bold" style={{ color: v("--ux-ink") }}>{e.who}</p>
-                          <span className="rounded-full px-2 py-[2px] text-[0.6875rem] font-bold uppercase tracking-[0.06em]"
+                          <p className="text-sm font-bold" style={{ color: v("--ux-ink") }}>{e.who}</p>
+                          <span className="rounded-full px-2 py-[2px] text-2xs font-bold uppercase tracking-[0.06em]"
                                 style={{ background: v(s.tint), color: v(s.ink) }}>{s.label}</span>
                           {e.lateDays && e.lateDays > 7 && <Pill tone="orange" size="sm">{e.lateDays} days</Pill>}
                         </div>
-                        <p className="mt-0.5 text-[0.8125rem]" style={{ color: v("--ux-muted") }}>
+                        <p className="mt-0.5 text-xsm" style={{ color: v("--ux-muted") }}>
                           {e.what} · {e.on} · {VIA_LABEL[e.via]}
                         </p>
                       </div>
-                      <p className="shrink-0 text-[1rem] font-extrabold tabular-nums" style={{ color: v("--ux-ink") }}>
+                      <p className="shrink-0 text-base font-extrabold tabular-nums" style={{ color: v("--ux-ink") }}>
                         {formatRupees(e.minor)}
                       </p>
                       {e.state === "owed" && (
@@ -167,7 +167,7 @@ export default function BooksPage() {
         <Card pad={16} style={{ background: v("--ux-surface-2"), borderColor: "transparent" }}>
           <div className="flex items-start gap-3">
             <I name="Info" className="mt-[2px] h-[16px] w-[16px] shrink-0" style={{ color: v("--ux-muted") }} />
-            <p className="text-[0.8125rem] leading-relaxed" style={{ color: v("--ux-ink-2") }}>
+            <p className="text-xsm leading-relaxed" style={{ color: v("--ux-ink-2") }}>
               Sales made on WhatsApp or in person count exactly the same here. Your books are yours —
               they are not a reason to sell through us.
             </p>

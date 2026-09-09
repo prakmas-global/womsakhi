@@ -46,14 +46,14 @@ export default function VerifiedPage() {
       <div className="flex flex-col gap-5">
 
         <header>
-          <p className="text-[0.6875rem] font-extrabold uppercase tracking-[0.2em]" style={{ color: v("--ux-brand") }}>
+          <p className="text-2xs font-extrabold uppercase tracking-[0.2em]" style={{ color: v("--ux-brand") }}>
             Before you take the work
           </p>
           <h1 className="mt-2 text-[clamp(1.5rem,3.2vw,2.125rem)] font-extrabold leading-[1.1] tracking-[-0.035em]"
               style={{ color: v("--ux-ink") }}>
             Did they actually pay her?
           </h1>
-          <p className="mt-1.5 max-w-[58ch] text-[0.875rem] leading-relaxed" style={{ color: v("--ux-muted") }}>
+          <p className="mt-1.5 max-w-[58ch] text-sm leading-relaxed" style={{ color: v("--ux-muted") }}>
             Every line below was written by a woman who did the work — not by the company, and not
             by us. There are plenty of places to find work. There is nowhere to find out whether
             the money came.
@@ -72,14 +72,14 @@ export default function VerifiedPage() {
                   <I name="AlertTriangle" className="h-[24px] w-[24px]" sw={2.2} />
                 </span>
                 <div className="min-w-0 flex-1">
-                  <p className="text-[0.6875rem] font-extrabold uppercase tracking-[0.16em]" style={{ color: v("--ux-ink") }}>
+                  <p className="text-2xs font-extrabold uppercase tracking-[0.16em]" style={{ color: v("--ux-ink") }}>
                     Women are warning each other about this one
                   </p>
                   <p className="mt-1.5 text-[clamp(1.1875rem,2.4vw,1.5rem)] font-extrabold leading-tight tracking-[-0.025em]"
                      style={{ color: v("--ux-ink") }}>
                     {e.name}
                   </p>
-                  <p className="mt-2 max-w-[52ch] text-[0.875rem] font-semibold leading-relaxed" style={{ color: v("--ux-ink") }}>
+                  <p className="mt-2 max-w-[52ch] text-sm font-semibold leading-relaxed" style={{ color: v("--ux-ink") }}>
                     {e.flag}
                   </p>
 
@@ -92,11 +92,11 @@ export default function VerifiedPage() {
                            style={{ color: v(i < e.neverPaid ? "--ux-danger-solid" : "--ux-line-strong") }} />
                       ))}
                     </div>
-                    <p className="text-[0.8125rem] font-bold" style={{ color: v("--ux-ink") }}>
+                    <p className="text-xsm font-bold" style={{ color: v("--ux-ink") }}>
                       {e.neverPaid} of {e.workedBy} were never paid at all
                     </p>
                   </div>
-                  <p className="mt-1.5 text-[0.75rem]" style={{ color: v("--ux-ink-2") }}>
+                  <p className="mt-1.5 text-xs" style={{ color: v("--ux-ink-2") }}>
                     {e.paidLate} more were paid late · last report {e.lastReport}
                   </p>
 
@@ -115,7 +115,7 @@ export default function VerifiedPage() {
 
         {note && (
           <Card pad={16} style={{ background: v("--ux-tint-green"), borderColor: "transparent" }}>
-            <p className="flex items-center gap-2 text-[0.8125rem] font-semibold" style={{ color: v("--ux-green-ink") }}>
+            <p className="flex items-center gap-2 text-xsm font-semibold" style={{ color: v("--ux-green-ink") }}>
               <I name="CheckCircle2" className="h-[16px] w-[16px]" />{note}
             </p>
           </Card>
@@ -135,14 +135,14 @@ export default function VerifiedPage() {
                   <span className="h-[34px] w-[3px] shrink-0 rounded-full"
                         style={{ background: v(w.state === "paid" ? "--ux-green-ink" : w.state === "disputed" ? "--ux-danger-solid" : "--ux-amber-ink") }} />
                   <div className="min-w-0 flex-1">
-                    <p className="text-[0.875rem] font-bold" style={{ color: v("--ux-ink") }}>{w.what}</p>
-                    <p className="mt-0.5 text-[0.75rem]" style={{ color: v("--ux-muted") }}>
+                    <p className="text-sm font-bold" style={{ color: v("--ux-ink") }}>{w.what}</p>
+                    <p className="mt-0.5 text-xs" style={{ color: v("--ux-muted") }}>
                       {w.employer} · {w.dueOn}
                       {w.daysLate ? ` · ${w.daysLate} days late` : ""}
                     </p>
                   </div>
                   <div className="shrink-0 text-right">
-                    <p className="text-[1rem] font-extrabold tabular-nums" style={{ color: v("--ux-ink") }}>
+                    <p className="text-base font-extrabold tabular-nums" style={{ color: v("--ux-ink") }}>
                       {formatRupees(w.dueMinor)}
                     </p>
                     <Pill tone={tone as "green" | "orange"} size="sm">
@@ -174,7 +174,7 @@ export default function VerifiedPage() {
         <Card pad={16} style={{ background: v("--ux-surface-2"), borderColor: "transparent" }}>
           <div className="flex items-start gap-3">
             <I name="Info" className="mt-[2px] h-[16px] w-[16px] shrink-0" style={{ color: v("--ux-muted") }} />
-            <p className="text-[0.8125rem] leading-relaxed" style={{ color: v("--ux-ink-2") }}>
+            <p className="text-xsm leading-relaxed" style={{ color: v("--ux-ink-2") }}>
               Nobody can pay to look good here. A company cannot remove a report, and we do not sell
               a badge. When you say you were not paid, your name is never shown to them — only the
               count changes.
@@ -198,10 +198,10 @@ function Row({ e }: { e: Employer }) {
                   ink={bad ? "--ux-danger-solid" : "--ux-ink-2"} size={40} />
         <div className="min-w-0 flex-1">
           <div className="flex flex-wrap items-center gap-2">
-            <p className="text-[0.875rem] font-bold" style={{ color: v("--ux-ink") }}>{e.name}</p>
+            <p className="text-sm font-bold" style={{ color: v("--ux-ink") }}>{e.name}</p>
             {!bad && e.paidLate === 0 && <Pill tone="green" size="sm">Always paid on time</Pill>}
           </div>
-          <p className="mt-0.5 text-[0.75rem]" style={{ color: v("--ux-muted") }}>
+          <p className="mt-0.5 text-xs" style={{ color: v("--ux-muted") }}>
             {e.kind} · {e.workedBy} women have worked for them · last report {e.lastReport}
           </p>
 
@@ -212,17 +212,17 @@ function Row({ e }: { e: Employer }) {
             <span style={{ width: `${(e.paidLate / e.workedBy) * 100}%`, background: v("--ux-amber-ink") }} />
             <span style={{ width: `${(e.neverPaid / e.workedBy) * 100}%`, background: v("--ux-danger-solid") }} />
           </div>
-          <p className="mt-1.5 text-[0.75rem]" style={{ color: v("--ux-muted") }}>
+          <p className="mt-1.5 text-xs" style={{ color: v("--ux-muted") }}>
             {e.paidOnTime} on time · {e.paidLate} late
             {e.neverPaid > 0 ? ` · ${e.neverPaid} never paid` : ""}
           </p>
         </div>
         <div className="shrink-0 text-right">
-          <p className="text-[1.25rem] font-extrabold leading-none tabular-nums"
+          <p className="text-xl font-extrabold leading-none tabular-nums"
              style={{ color: v(bad ? "--ux-danger-solid" : "--ux-green-ink") }}>
             {pct}%
           </p>
-          <p className="mt-1 text-[0.6875rem] font-semibold" style={{ color: v("--ux-muted") }}>paid on time</p>
+          <p className="mt-1 text-2xs font-semibold" style={{ color: v("--ux-muted") }}>paid on time</p>
         </div>
       </div>
     </Card>

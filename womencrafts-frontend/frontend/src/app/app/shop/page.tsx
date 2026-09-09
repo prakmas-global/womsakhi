@@ -79,14 +79,14 @@ export default function ShopHub() {
 
         <header className="flex flex-wrap items-end gap-4">
           <div className="min-w-0 flex-1">
-            <p className="text-[0.6875rem] font-extrabold uppercase tracking-[0.2em]" style={{ color: v("--ux-brand") }}>
+            <p className="text-2xs font-extrabold uppercase tracking-[0.2em]" style={{ color: v("--ux-brand") }}>
               Your shops
             </p>
             <h1 className="mt-2 text-[clamp(1.5rem,3.2vw,2.125rem)] font-extrabold leading-[1.1] tracking-[-0.035em]"
                 style={{ color: v("--ux-ink") }}>
               {formatRupees(month)} this month
             </h1>
-            <p className="mt-1.5 max-w-[54ch] text-[0.875rem] leading-relaxed" style={{ color: v("--ux-muted") }}>
+            <p className="mt-1.5 max-w-[54ch] text-sm leading-relaxed" style={{ color: v("--ux-muted") }}>
               Across {streams.filter((s) => s.live).length} open{" "}
               {streams.filter((s) => s.live).length === 1 ? "shop" : "shops"} — one set of books for all of them.
             </p>
@@ -96,7 +96,7 @@ export default function ShopHub() {
 
         {note && (
           <Card pad={16} style={{ background: v("--ux-tint-green"), borderColor: "transparent" }}>
-            <p className="flex items-center gap-2 text-[0.8125rem] font-semibold" style={{ color: v("--ux-green-ink") }}>
+            <p className="flex items-center gap-2 text-xsm font-semibold" style={{ color: v("--ux-green-ink") }}>
               <I name="CheckCircle2" className="h-[16px] w-[16px]" />{note}
             </p>
           </Card>
@@ -114,7 +114,7 @@ export default function ShopHub() {
           </div>
           <div className="mt-4 flex items-start gap-2.5 border-t pt-3.5" style={{ borderColor: v("--ux-line") }}>
             <I name="Info" className="mt-[2px] h-[15px] w-[15px] shrink-0" style={{ color: v("--ux-muted") }} />
-            <p className="text-[0.8125rem] leading-relaxed" style={{ color: v("--ux-ink-2") }}>
+            <p className="text-xsm leading-relaxed" style={{ color: v("--ux-ink-2") }}>
               This is money in your hands <b>before</b> you spend on cloth. It is the difference
               between taking an order and being able to afford to.
             </p>
@@ -132,27 +132,27 @@ export default function ShopHub() {
                   <IconTile icon={s.icon} tint={s.tint} ink={s.ink} size={44} radius={13} />
                   <div className="min-w-0 flex-1">
                     <div className="flex flex-wrap items-center gap-2">
-                      <p className="truncate text-[0.875rem] font-bold" style={{ color: v("--ux-ink") }}>{s.name}</p>
+                      <p className="truncate text-sm font-bold" style={{ color: v("--ux-ink") }}>{s.name}</p>
                       {s.live
                         ? <Pill tone="green" size="sm">Open</Pill>
                         : <Pill tone="neutral" size="sm">Closed</Pill>}
                     </div>
-                    <p className="mt-0.5 text-[0.75rem] leading-snug" style={{ color: v("--ux-muted") }}>{s.trade}</p>
+                    <p className="mt-0.5 text-xs leading-snug" style={{ color: v("--ux-muted") }}>{s.trade}</p>
                   </div>
                 </div>
 
                 {s.live ? (
                   <div className="mt-3.5 flex items-end justify-between">
                     <div>
-                      <p className="text-[1.25rem] font-extrabold leading-none tabular-nums"
+                      <p className="text-xl font-extrabold leading-none tabular-nums"
                          style={{ color: v("--ux-ink") }}>{formatRupees(s.monthMinor)}</p>
-                      <p className="mt-1 text-[0.75rem]" style={{ color: v("--ux-muted") }}>
+                      <p className="mt-1 text-xs" style={{ color: v("--ux-muted") }}>
                         {s.orders} orders this month
                       </p>
                     </div>
                   </div>
                 ) : (
-                  <p className="mt-3.5 rounded-[8px] px-3 py-2.5 text-[0.75rem] leading-relaxed"
+                  <p className="mt-3.5 rounded-[8px] px-3 py-2.5 text-xs leading-relaxed"
                      style={{ background: v("--ux-surface-2"), color: v("--ux-ink-2") }}>
                     Closed {s.pausedUntil ? `until ${s.pausedUntil}` : "for now"}. Your customers see
                     &ldquo;back soon&rdquo;, and nothing about your shop is downgraded for it.
@@ -179,8 +179,8 @@ export default function ShopHub() {
                     style={{ background: v("--ux-brand-tint"), color: v("--ux-brand") }}>
                 <I name="Plus" className="h-[21px] w-[21px]" sw={2.4} />
               </span>
-              <p className="text-[0.875rem] font-bold" style={{ color: v("--ux-ink") }}>Another trade</p>
-              <p className="max-w-[24ch] text-[0.75rem] leading-relaxed" style={{ color: v("--ux-muted") }}>
+              <p className="text-sm font-bold" style={{ color: v("--ux-ink") }}>Another trade</p>
+              <p className="max-w-[24ch] text-xs leading-relaxed" style={{ color: v("--ux-muted") }}>
                 Cooking, mehendi, tuition — whatever else you do for money
               </p>
             </button>
@@ -206,13 +206,13 @@ export default function ShopHub() {
                   <IconTile icon={t.icon} tint={t.tint} ink={t.ink} size={42} radius={12} />
                   <div className="min-w-0 flex-1">
                     <div className="flex flex-wrap items-center gap-2">
-                      <p className="text-[0.875rem] font-bold leading-snug" style={{ color: v("--ux-ink") }}>{t.label}</p>
+                      <p className="text-sm font-bold leading-snug" style={{ color: v("--ux-ink") }}>{t.label}</p>
                       {badge && (
-                        <span className="rounded-full px-2 py-[2px] text-[0.6875rem] font-bold"
+                        <span className="rounded-full px-2 py-[2px] text-2xs font-bold"
                               style={{ background: v("--ux-brand-tint"), color: v("--ux-brand") }}>{badge}</span>
                       )}
                     </div>
-                    <p className="mt-1 text-[0.75rem] leading-relaxed" style={{ color: v("--ux-muted") }}>{t.note}</p>
+                    <p className="mt-1 text-xs leading-relaxed" style={{ color: v("--ux-muted") }}>{t.note}</p>
                   </div>
                   <I name="ChevronRight" className="mt-1 h-[16px] w-[16px] shrink-0" style={{ color: v("--ux-faint") }} />
                 </button>

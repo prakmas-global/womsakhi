@@ -75,10 +75,10 @@ export default function AboutPage() {
             >
               <Icon className="h-[18px] w-[18px]" strokeWidth={2} aria-hidden />
             </span>
-            <p className="mt-3 text-[0.875rem] font-semibold" style={{ color: "var(--ux-ink)" }}>
+            <p className="mt-3 text-sm font-semibold" style={{ color: "var(--ux-ink)" }}>
               {title}
             </p>
-            <p className="mt-1.5 text-[0.75rem] leading-relaxed" style={{ color: "var(--ux-muted)" }}>
+            <p className="mt-1.5 text-xs leading-relaxed" style={{ color: "var(--ux-muted)" }}>
               {body}
             </p>
           </div>

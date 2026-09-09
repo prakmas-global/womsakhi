@@ -82,13 +82,13 @@ export default function BookingsPage() {
                 "A workshop place goes to whoever is next on the list.",
                 "A paid stall fee comes back within 5–7 working days.",
               ].map((t) => (
-                <li key={t} className="flex items-start gap-2.5 text-[0.8125rem] leading-snug" style={{ color: "var(--ux-ink-2)" }}>
+                <li key={t} className="flex items-start gap-2.5 text-xsm leading-snug" style={{ color: "var(--ux-ink-2)" }}>
                   <Icons.Dot className="mt-[1px] h-[15px] w-[15px] shrink-0" style={{ color: "var(--ux-brand)" }} />
                   {t}
                 </li>
               ))}
             </ul>
-            <p className="mt-3.5 rounded-[12px] p-3 text-[0.75rem] leading-relaxed"
+            <p className="mt-3.5 rounded-[12px] p-3 text-xs leading-relaxed"
                style={{ background: "var(--ux-surface-2)", color: "var(--ux-muted)" }}>
               Cancelling is always allowed and never counts against you. Telling someone early is just kinder.
             </p>
@@ -98,8 +98,8 @@ export default function BookingsPage() {
     >
       <div className="mb-[20px] flex items-end justify-between gap-4">
         <div>
-          <h1 className="text-[1.5rem] font-bold" style={{ color: "var(--ux-ink)" }}>Bookings</h1>
-          <p className="mt-1.5 text-[0.8125rem]" style={{ color: "var(--ux-muted)" }}>
+          <h1 className="text-2xl font-bold" style={{ color: "var(--ux-ink)" }}>Bookings</h1>
+          <p className="mt-1.5 text-xsm" style={{ color: "var(--ux-muted)" }}>
             {upcoming} {plural("booking", upcoming)} coming up
           </p>
         </div>
@@ -123,7 +123,7 @@ export default function BookingsPage() {
                   </span>
                   <div className="min-w-0 flex-1">
                     <div className="flex items-start gap-2">
-                      <h3 className="min-w-0 flex-1 text-[0.875rem] font-semibold"
+                      <h3 className="min-w-0 flex-1 text-sm font-semibold"
                           style={{ color: gone ? "var(--ux-muted)" : "var(--ux-ink)" }}>
                         {b.what}
                       </h3>
@@ -131,13 +131,13 @@ export default function BookingsPage() {
                         {gone ? "Cancelled" : b.state}
                       </Pill>
                     </div>
-                    <p className="mt-1.5 flex flex-wrap items-center gap-x-3 gap-y-1 text-[0.75rem]"
+                    <p className="mt-1.5 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs"
                        style={{ color: "var(--ux-muted)" }}>
                       <span className="inline-flex items-center gap-1"><Icons.Clock className="h-3.5 w-3.5" /> {b.when}</span>
                       <span className="inline-flex items-center gap-1"><Icons.MapPin className="h-3.5 w-3.5" /> {b.where}</span>
                       <span>{b.ref}</span>
                     </p>
-                    <p className="mt-2 text-[0.75rem]" style={{ color: "var(--ux-ink-2)" }}>
+                    <p className="mt-2 text-xs" style={{ color: "var(--ux-ink-2)" }}>
                       {b.state === "Waitlisted"
                         ? "You are third on the list. We will tell you the moment a place opens."
                         : b.cost}
@@ -149,7 +149,7 @@ export default function BookingsPage() {
                     who pressed cancel and saw the row unchanged has to be told
                     why, or she will assume it worked. */}
                 {cancel.error && cancelling === b.id && (
-                  <p className="ux-slide-up mt-3 text-[0.8125rem]" style={{ color: "var(--ux-orange-ink)" }}>
+                  <p className="ux-slide-up mt-3 text-xsm" style={{ color: "var(--ux-orange-ink)" }}>
                     {cancel.error}
                   </p>
                 )}
@@ -159,7 +159,7 @@ export default function BookingsPage() {
                 {asking ? (
                   <div className="ux-slide-up mt-3.5 flex items-center justify-between gap-4 rounded-[12px] p-3.5"
                        style={{ background: "var(--ux-tint-orange)" }}>
-                    <p className="text-[0.8125rem] leading-snug" style={{ color: "var(--ux-ink-2)" }}>
+                    <p className="text-xsm leading-snug" style={{ color: "var(--ux-ink-2)" }}>
                       {b.kind === "Mentor"
                         ? "She has kept this hour free. Cancel it?"
                         : b.kind === "Event"
@@ -212,7 +212,7 @@ export default function BookingsPage() {
                                  text: n.text, rating: n.rating,
                                  type: "Program Feedback", program: b.what,
                                })}
-                               sent="Thank you — the team has your note"
+                               sent={COPY.noteReceived}
                                sentBody={COPY.booking.feedbackPrivate}
                                sentLink={null} />
                     )}

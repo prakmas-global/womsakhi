@@ -86,7 +86,7 @@ export default function MorePage() {
                     key={t}
                     onClick={() => setTheme(t)}
                     aria-pressed={on}
-                    className="ux-press ux-hov ux-sq flex flex-1 items-center justify-center gap-1.5 rounded-[8px] py-2.5 text-[0.75rem] font-medium transition-colors"
+                    className="ux-press ux-hov ux-sq flex flex-1 items-center justify-center gap-1.5 rounded-[8px] py-2.5 text-xs font-medium transition-colors"
                     style={{
                       background: on ? "var(--ux-surface)" : "transparent",
                       color: on ? "var(--ux-brand)" : "var(--ux-muted)",
@@ -106,7 +106,7 @@ export default function MorePage() {
 
           <Card className="ux-onscroll-soft">
             <SectionHead title="About" />
-            <div className="space-y-3 text-[0.8125rem]">
+            <div className="space-y-3 text-xsm">
               {[["Version", "1.0.0"], ["Member since", "March 2025"], ["Your ID", "WS-4471"]].map(([k, v]) => (
                 <div key={k} className="flex items-center justify-between gap-3">
                   <span style={{ color: "var(--ux-muted)" }}>{k}</span>
@@ -122,8 +122,8 @@ export default function MorePage() {
         </div>
       }
     >
-      <h1 className="text-[1.5rem] font-bold" style={{ color: "var(--ux-ink)" }}>More</h1>
-      <p className="mb-[20px] mt-1.5 text-[0.8125rem]" style={{ color: "var(--ux-muted)" }}>
+      <h1 className="text-2xl font-bold" style={{ color: "var(--ux-ink)" }}>More</h1>
+      <p className="mb-[20px] mt-1.5 text-xsm" style={{ color: "var(--ux-muted)" }}>
         Your account, how the app behaves, and where to get help.
       </p>
 
@@ -135,11 +135,11 @@ export default function MorePage() {
             <img loading="lazy" decoding="async" src={ME.avatar} alt="" className="h-full w-full object-cover" />
           </span>
           <div className="min-w-0 flex-1">
-            <h2 className="flex items-center gap-2 text-[1.125rem] font-semibold" style={{ color: "var(--ux-ink)" }}>
+            <h2 className="flex items-center gap-2 text-lg font-semibold" style={{ color: "var(--ux-ink)" }}>
               {name}
               <Icons.BadgeCheck className="h-[17px] w-[17px]" style={{ color: "var(--ux-blue)" }} />
             </h2>
-            <p className="mt-0.5 truncate text-[0.8125rem]" style={{ color: "var(--ux-muted)" }}>
+            <p className="mt-0.5 truncate text-xsm" style={{ color: "var(--ux-muted)" }}>
               {user?.email ?? "priya.sharma@example.com"}
             </p>
             <div className="mt-2"><Pill tone="green" size="sm">Verified member</Pill></div>
@@ -162,10 +162,10 @@ export default function MorePage() {
                 >
                   <IconTile icon={it.icon} tint={it.tint} ink={it.ink} size={42} radius={11} />
                   <span className="min-w-0 flex-1">
-                    <span className="block truncate text-[0.875rem] font-semibold" style={{ color: "var(--ux-ink)" }}>
+                    <span className="block truncate text-sm font-semibold" style={{ color: "var(--ux-ink)" }}>
                       {it.label}
                     </span>
-                    <span className="mt-0.5 block truncate text-[0.75rem]" style={{ color: "var(--ux-muted)" }}>
+                    <span className="mt-0.5 block truncate text-xs" style={{ color: "var(--ux-muted)" }}>
                       {it.note}
                     </span>
                   </span>
@@ -180,8 +180,8 @@ export default function MorePage() {
       <Card className="ux-onscroll mt-[24px]">
         <div className="flex items-center justify-between gap-4">
           <div className="min-w-0">
-            <h3 className="text-[0.875rem] font-semibold" style={{ color: "var(--ux-ink)" }}>Sign out</h3>
-            <p className="mt-1 text-[0.8125rem]" style={{ color: "var(--ux-muted)" }}>
+            <h3 className="text-sm font-semibold" style={{ color: "var(--ux-ink)" }}>Sign out</h3>
+            <p className="mt-1 text-xsm" style={{ color: "var(--ux-muted)" }}>
               You will need your password to come back in.
             </p>
           </div>

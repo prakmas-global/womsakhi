@@ -49,14 +49,14 @@ export default function RecoverPage() {
         <Back to="/app/haq" label="Back to Haq" />
 
         <header>
-          <p className="text-[0.6875rem] font-extrabold uppercase tracking-[0.2em]" style={{ color: v("--ux-brand") }}>
+          <p className="text-2xs font-extrabold uppercase tracking-[0.2em]" style={{ color: v("--ux-brand") }}>
             Late money
           </p>
           <h1 className="mt-2 text-[clamp(1.5rem,3.2vw,2.125rem)] font-extrabold leading-[1.1] tracking-[-0.035em]"
               style={{ color: v("--ux-ink") }}>
             They owe you for the wait
           </h1>
-          <p className="mt-1.5 max-w-[56ch] text-[0.875rem] leading-relaxed" style={{ color: v("--ux-muted") }}>
+          <p className="mt-1.5 max-w-[56ch] text-sm leading-relaxed" style={{ color: v("--ux-muted") }}>
             When a public payment arrives late, compensation is due by law. Almost nobody asks
             for it, because almost nobody is told. Here is yours, already worked out.
           </p>
@@ -72,7 +72,7 @@ export default function RecoverPage() {
           {open.length > 1 && (
             <div className="mt-4 flex flex-wrap items-center gap-2 border-t pt-3.5"
                  style={{ borderColor: v("--ux-line") }}>
-              <p className="flex-1 text-[0.8125rem]" style={{ color: v("--ux-ink-2") }}>
+              <p className="flex-1 text-xsm" style={{ color: v("--ux-ink-2") }}>
                 They can all go in one letter.
               </p>
               <Btn size="sm" icon="FileText" onClick={fileAll}>Prepare all {open.length}</Btn>
@@ -82,7 +82,7 @@ export default function RecoverPage() {
 
         {note && (
           <Card pad={16} style={{ background: v("--ux-tint-green"), borderColor: "transparent" }}>
-            <p className="flex items-center gap-2 text-[0.8125rem] font-semibold" style={{ color: v("--ux-green-ink") }}>
+            <p className="flex items-center gap-2 text-xsm font-semibold" style={{ color: v("--ux-green-ink") }}>
               <I name="CheckCircle2" className="h-[16px] w-[16px]" />{note}
             </p>
           </Card>

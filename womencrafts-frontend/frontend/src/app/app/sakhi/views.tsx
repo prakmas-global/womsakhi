@@ -99,14 +99,14 @@ export function ConvBar({
   title: string; mode: string; locale: string; pinned: boolean;
   onRename: () => void; onPin: () => void; onShare: () => void;
 }) {
-  const chip = "flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[0.6875rem] font-semibold";
+  const chip = "flex items-center gap-1.5 rounded-full px-2.5 py-1 text-2xs font-semibold";
   const chipStyle = { background: "var(--ux-surface-2)", border: "1px solid var(--ux-line)",
                       color: "var(--ux-muted)" } as const;
   const tool = "ux-press grid h-[32px] w-[32px] place-items-center rounded-[8px]";
 
   return (
     <div className="flex flex-wrap items-center gap-2.5 border-b pb-3" style={{ borderColor: "var(--ux-line)" }}>
-      <b className="truncate text-[0.875rem] font-bold" style={{ color: "var(--ux-ink)" }}>{title}</b>
+      <b className="truncate text-sm font-bold" style={{ color: "var(--ux-ink)" }}>{title}</b>
       <span className={chip} style={chipStyle}><Icons.Zap className="h-[12px] w-[12px]" />{mode}</span>
       <span className={chip} style={chipStyle}><Icons.Globe className="h-[12px] w-[12px]" />{locale}</span>
       <span className="ms-auto flex gap-0.5">
@@ -132,7 +132,7 @@ export function ConvBar({
 
 export function Disclosure({ text }: { text: string }) {
   return (
-    <p className="mt-2.5 flex items-center justify-center gap-2 text-center text-[0.75rem]"
+    <p className="mt-2.5 flex items-center justify-center gap-2 text-center text-xs"
        style={{ color: "var(--ux-muted)" }}>
       <Icons.Sparkles className="h-[13px] w-[13px] shrink-0" />
       {text || "Sakhi can be wrong — check anything important before you act on it."}
@@ -167,7 +167,7 @@ export function Welcome({
             What do you need today?
           </span>
         </h2>
-        <p className="mt-2 text-[0.875rem]" style={{ color: "var(--ux-muted)" }}>
+        <p className="mt-2 text-sm" style={{ color: "var(--ux-muted)" }}>
           Work, money, a course, or something you do not understand — ask{canVoice ? " or speak" : ""}.
         </p>
 
@@ -177,7 +177,7 @@ export function Welcome({
           <div className="mt-5">{switcher}</div>
         )}
 
-        <p className="mb-3 mt-8 text-start text-[0.6875rem] font-bold uppercase tracking-[0.18em]"
+        <p className="mb-3 mt-8 text-start text-2xs font-bold uppercase tracking-[0.18em]"
            style={{ color: "var(--ux-faint)" }}>
           Try asking
         </p>
@@ -192,8 +192,8 @@ export function Welcome({
                 <Ico name={s.icon} className="h-[18px] w-[18px]" />
               </span>
               <span className="min-w-0 flex-1">
-                <span className="block text-[0.8125rem] font-bold" style={{ color: "var(--ux-ink)" }}>{s.title}</span>
-                <span className="mt-0.5 block text-[0.75rem]" style={{ color: "var(--ux-muted)" }}>{s.note}</span>
+                <span className="block text-xsm font-bold" style={{ color: "var(--ux-ink)" }}>{s.title}</span>
+                <span className="mt-0.5 block text-xs" style={{ color: "var(--ux-muted)" }}>{s.note}</span>
               </span>
               <Icons.ArrowRight className="h-[15px] w-[15px] shrink-0 transition-transform group-hover:translate-x-0.5"
                                 style={{ color: "var(--ux-faint)" }} />
@@ -238,12 +238,12 @@ export function Voice({
         {/* Hideable, because a live transcript of your own voice is a comfort
             to some and a distraction to others. */}
         {showWords && (
-          <p className="mx-auto mt-5 max-w-[520px] text-[1.125rem] font-semibold leading-relaxed"
+          <p className="mx-auto mt-5 max-w-[520px] text-lg font-semibold leading-relaxed"
              style={{ color: "var(--ux-ink)" }}>
             {heard ? `“${heard}”` : "I am listening…"}
           </p>
         )}
-        <p className="mt-2 text-[0.8125rem]" style={{ color: "var(--ux-muted)" }}>
+        <p className="mt-2 text-xsm" style={{ color: "var(--ux-muted)" }}>
           {listening ? `Speak in ${here} — stop when you are done` : "Tap the microphone to speak again"}
         </p>
 
@@ -254,13 +254,13 @@ export function Voice({
                   items={localeItems} value={locale} onPick={setLocale} />
           <button type="button" onClick={onToggleWords}
                   aria-pressed={showWords}
-                  className="ux-press flex min-h-[44px] items-center gap-2 rounded-full px-5 text-[0.8125rem] font-bold"
+                  className="ux-press flex min-h-[44px] items-center gap-2 rounded-full px-5 text-xsm font-bold"
                   style={{ background: "var(--ux-surface-2)", border: "1px solid var(--ux-line-strong)", color: "var(--ux-ink)" }}>
             <Ico name={showWords ? "EyeOff" : "Eye"} className="h-4 w-4" />
             {showWords ? "Hide the words" : "Show the words"}
           </button>
           <button type="button" onClick={onToggle}
-                  className="ux-press flex min-h-[44px] items-center gap-2 rounded-full px-5 text-[0.8125rem] font-bold"
+                  className="ux-press flex min-h-[44px] items-center gap-2 rounded-full px-5 text-xsm font-bold"
                   style={listening
                     ? { background: "var(--ux-tint-pink)", color: "var(--ux-pink-ink)", border: "1px solid var(--ux-pink)" }
                     : { background: "linear-gradient(96deg, var(--ux-rib-2), var(--ux-rib-3))", color: "var(--ux-on-brand)" }}>
@@ -268,7 +268,7 @@ export function Voice({
             {listening ? "Stop listening" : "Speak"}
           </button>
           <button type="button" onClick={onEnd}
-                  className="ux-press flex min-h-[44px] items-center gap-2 rounded-full px-5 text-[0.8125rem] font-bold"
+                  className="ux-press flex min-h-[44px] items-center gap-2 rounded-full px-5 text-xsm font-bold"
                   style={{ background: "var(--ux-surface-2)", border: "1px solid var(--ux-line-strong)", color: "var(--ux-ink)" }}>
             <Icons.X className="h-4 w-4" /> End voice
           </button>
@@ -300,11 +300,11 @@ export function Thread({
         if (b.kind === "user") {
           return (
             <div key={i} className="flex justify-end">
-              <div className="max-w-[76%] rounded-[16px] rounded-br-[4px] px-4 py-3 text-[0.875rem] leading-relaxed"
+              <div className="max-w-[76%] rounded-[16px] rounded-br-[4px] px-4 py-3 text-sm leading-relaxed"
                    style={{ background: "linear-gradient(96deg, var(--ux-rib-2), var(--ux-rib-3))",
                             color: "var(--ux-on-brand)" }}>
                 {b.file && (
-                  <span className="mb-2 flex items-center gap-2 rounded-[12px] px-2.5 py-1.5 text-[0.75rem]"
+                  <span className="mb-2 flex items-center gap-2 rounded-[12px] px-2.5 py-1.5 text-xs"
                         style={{ background: "var(--ux-on-brand-track)" }}>
                     <Icons.Paperclip className="h-[13px] w-[13px] shrink-0" />
                     <span className="truncate">{b.file}</span>
@@ -322,11 +322,11 @@ export function Thread({
           return (
             <section key={i} className="rounded-[16px] p-4"
                      style={{ background: "var(--ux-tint-pink)", border: "1px solid var(--ux-pink)" }}>
-              <p className="flex items-center gap-2 text-[0.75rem] font-bold uppercase tracking-[0.12em]"
+              <p className="flex items-center gap-2 text-xs font-bold uppercase tracking-[0.12em]"
                  style={{ color: "var(--ux-pink-ink)" }}>
                 <Icons.LifeBuoy className="h-[15px] w-[15px]" /> Help, right now
               </p>
-              <p className="mt-2 text-[0.875rem] leading-relaxed" style={{ color: "var(--ux-ink)" }}>{b.text}</p>
+              <p className="mt-2 text-sm leading-relaxed" style={{ color: "var(--ux-ink)" }}>{b.text}</p>
               <ul className="mt-3 space-y-2">
                 {b.helplines.map((h) => (
                   <li key={h.number}>
@@ -335,10 +335,10 @@ export function Thread({
                        style={{ background: "var(--ux-surface)", border: "1px solid var(--ux-pink)" }}>
                       <Icons.Phone className="h-4 w-4 shrink-0" style={{ color: "var(--ux-pink-ink)" }} />
                       <span className="min-w-0 flex-1">
-                        <span className="block truncate text-[0.8125rem] font-bold" style={{ color: "var(--ux-ink)" }}>{h.name}</span>
-                        <span className="block truncate text-[0.75rem]" style={{ color: "var(--ux-muted)" }}>{h.desc}</span>
+                        <span className="block truncate text-xsm font-bold" style={{ color: "var(--ux-ink)" }}>{h.name}</span>
+                        <span className="block truncate text-xs" style={{ color: "var(--ux-muted)" }}>{h.desc}</span>
                       </span>
-                      <span className="shrink-0 text-[0.8125rem] font-bold" style={{ color: "var(--ux-pink-ink)" }}>{h.number}</span>
+                      <span className="shrink-0 text-xsm font-bold" style={{ color: "var(--ux-pink-ink)" }}>{h.number}</span>
                     </a>
                   </li>
                 ))}
@@ -349,7 +349,7 @@ export function Thread({
 
         if (b.kind === "action") {
           return (
-            <p key={i} className="flex items-center gap-2 self-start rounded-full px-3.5 py-2 text-[0.75rem] font-semibold"
+            <p key={i} className="flex items-center gap-2 self-start rounded-full px-3.5 py-2 text-xs font-semibold"
                style={{ background: b.ok ? "var(--ux-tint-green)" : "var(--ux-tint-pink)",
                         color: b.ok ? "var(--ux-green-ink)" : "var(--ux-pink-ink)" }}>
               <Ico name={b.ok ? "CircleCheck" : "CircleX"} className="h-[14px] w-[14px]" />
@@ -398,7 +398,7 @@ export function Thread({
                 style={{ background: "var(--ux-surface)", border: "1px solid var(--ux-line)" }}>
             <Typing />
             {toolRunning && (
-              <span className="text-[0.75rem]" style={{ color: "var(--ux-muted)" }}>looking it up…</span>
+              <span className="text-xs" style={{ color: "var(--ux-muted)" }}>looking it up…</span>
             )}
           </span>
         </div>
@@ -423,7 +423,7 @@ export function Thread({
         <div className="ms-[48px] flex flex-wrap gap-2">
           {FOLLOW_UPS.map((q) => (
             <button key={q} type="button" onClick={() => onFollowUp(q)}
-                    className="ux-press flex min-h-[38px] items-center gap-2 rounded-full px-4 text-[0.8125rem] font-semibold"
+                    className="ux-press flex min-h-[38px] items-center gap-2 rounded-full px-4 text-xsm font-semibold"
                     style={{ background: "var(--ux-surface)", border: "1px solid var(--ux-line-strong)",
                              color: "var(--ux-ink-2)" }}>
               <Icons.Sparkles className="h-[13px] w-[13px]" style={{ color: "var(--ux-brand)" }} />
@@ -453,13 +453,13 @@ export function SakhiRail({
   return (
     <div className="sticky top-4 flex flex-col gap-4">
       <section className={card} style={cardStyle}>
-        <h3 className="mb-3 flex items-center gap-2 text-[0.875rem] font-bold" style={{ color: "var(--ux-ink)" }}>
+        <h3 className="mb-3 flex items-center gap-2 text-sm font-bold" style={{ color: "var(--ux-ink)" }}>
           <Icons.Sparkles className="h-[15px] w-[15px]" style={{ color: "var(--ux-brand)" }} />
           What she can do
         </h3>
         <ul className="space-y-2.5">
           {CAN.map((c) => (
-            <li key={c.text} className="flex gap-2.5 text-[0.8125rem] leading-snug" style={{ color: "var(--ux-muted)" }}>
+            <li key={c.text} className="flex gap-2.5 text-xsm leading-snug" style={{ color: "var(--ux-muted)" }}>
               <Ico name={c.icon} className="mt-[2px] h-[15px] w-[15px] shrink-0" />
               {c.text}
             </li>
@@ -468,19 +468,19 @@ export function SakhiRail({
       </section>
 
       <section className={card} style={cardStyle}>
-        <h3 className="mb-3 flex items-center gap-2 text-[0.875rem] font-bold" style={{ color: "var(--ux-ink)" }}>
+        <h3 className="mb-3 flex items-center gap-2 text-sm font-bold" style={{ color: "var(--ux-ink)" }}>
           <Icons.ShieldCheck className="h-[15px] w-[15px]" style={{ color: "var(--ux-pink-ink)" }} />
           What she will not do
         </h3>
         <ul className="space-y-2.5">
           {WONT.map((w) => (
-            <li key={w} className="flex gap-2.5 text-[0.8125rem] leading-snug" style={{ color: "var(--ux-muted)" }}>
+            <li key={w} className="flex gap-2.5 text-xsm leading-snug" style={{ color: "var(--ux-muted)" }}>
               <Icons.ShieldCheck className="mt-[2px] h-[15px] w-[15px] shrink-0" style={{ color: "var(--ux-pink-ink)", opacity: 0.7 }} />
               {w}
             </li>
           ))}
         </ul>
-        <p className="mt-3 text-[0.75rem] leading-relaxed" style={{ color: "var(--ux-faint)" }}>
+        <p className="mt-3 text-xs leading-relaxed" style={{ color: "var(--ux-faint)" }}>
           She drafts and suggests. Anything that moves money or speaks as you needs your yes first —
           in a sentence you can read, with the same-sized button for no.
         </p>
@@ -496,11 +496,11 @@ export function SakhiRail({
         now a fixed object with its own scrollbar.
       */}
       <section className={card} style={cardStyle}>
-        <h3 className="mb-3 flex items-center gap-2 text-[0.875rem] font-bold" style={{ color: "var(--ux-ink)" }}>
+        <h3 className="mb-3 flex items-center gap-2 text-sm font-bold" style={{ color: "var(--ux-ink)" }}>
           <Icons.Clock className="h-[15px] w-[15px]" style={{ color: "var(--ux-brand)" }} />
           Your conversations
           {total > 0 && (
-            <span className="ms-auto rounded-full px-2 py-0.5 text-[0.6875rem] font-bold tabular-nums"
+            <span className="ms-auto rounded-full px-2 py-0.5 text-2xs font-bold tabular-nums"
                   style={{ background: "var(--ux-surface-2)", color: "var(--ux-muted)" }}>
               {total}
             </span>
@@ -511,11 +511,11 @@ export function SakhiRail({
           <Icons.Search className="h-[14px] w-[14px] shrink-0" style={{ color: "var(--ux-faint)" }} />
           <input value={search} onChange={(e) => setSearch(e.target.value)}
                  placeholder="Search your chats" aria-label="Search your conversations"
-                 className="w-full bg-transparent text-[0.8125rem] outline-none" style={{ color: "var(--ux-ink)" }} />
+                 className="w-full bg-transparent text-xsm outline-none" style={{ color: "var(--ux-ink)" }} />
         </label>
 
         {grouped.length === 0 ? (
-          <p className="py-3 text-[0.8125rem]" style={{ color: "var(--ux-muted)" }}>
+          <p className="py-3 text-xsm" style={{ color: "var(--ux-muted)" }}>
             {search ? "Nothing matches that." : "Your conversations will be listed here."}
           </p>
         ) : (
@@ -527,20 +527,20 @@ export function SakhiRail({
                         WebkitMaskImage: "linear-gradient(to bottom, #000 calc(100% - 22px), transparent)" }}>
             {grouped.map((g) => (
               <div key={g.label}>
-                <p className="px-1 pb-1 pt-2.5 text-[0.6875rem] font-bold uppercase tracking-[0.15em]"
+                <p className="px-1 pb-1 pt-2.5 text-2xs font-bold uppercase tracking-[0.15em]"
                    style={{ color: "var(--ux-faint)" }}>
                   {g.label}
                 </p>
                 {g.rows.map((c) => (
                   <div key={c.id} className="group flex items-center gap-1">
                     <button type="button" onClick={() => openConversation(c.id)}
-                            className="ux-row flex min-w-0 flex-1 items-baseline gap-2 rounded-[8px] px-2 py-2 text-start text-[0.8125rem]"
+                            className="ux-row flex min-w-0 flex-1 items-baseline gap-2 rounded-[8px] px-2 py-2 text-start text-xsm"
                             style={{ background: c.id === current ? "var(--ux-brand-tint)" : "transparent",
                                      color: c.id === current ? "var(--ux-brand)" : "var(--ux-ink-2)" }}>
                       <span className="min-w-0 flex-1 truncate">{c.title || "Untitled"}</span>
                       {/* Four chats can share a title. The time is what tells
                           them apart. */}
-                      <span className="shrink-0 text-[0.6875rem] tabular-nums" style={{ color: "var(--ux-faint)" }}>
+                      <span className="shrink-0 text-2xs tabular-nums" style={{ color: "var(--ux-faint)" }}>
                         {shortWhen(c.updated_at)}
                       </span>
                     </button>

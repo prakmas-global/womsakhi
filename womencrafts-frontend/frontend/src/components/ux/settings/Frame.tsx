@@ -21,16 +21,16 @@ export function SettingsPage({
     <HomeShell active="/app/settings">
       <Link
         href="/app/settings"
-        className="ux-hov -my-1 mb-3.5 inline-flex items-center gap-1.5 py-1 text-[0.8125rem] font-medium"
+        className="ux-hov -my-1 mb-3.5 inline-flex items-center gap-1.5 py-1 text-xsm font-medium"
         style={{ color: "var(--ux-brand)" }}
       >
         <Icons.ArrowLeft className="ux-ico h-4 w-4" /> More
       </Link>
 
       <div className="max-w-[720px]">
-        <h1 className="text-[1.5rem] font-bold" style={{ color: "var(--ux-ink)" }}>{title}</h1>
+        <h1 className="text-2xl font-bold" style={{ color: "var(--ux-ink)" }}>{title}</h1>
         {sub && (
-          <p className="mt-1.5 text-[0.8125rem] leading-relaxed" style={{ color: "var(--ux-muted)" }}>{sub}</p>
+          <p className="mt-1.5 text-xsm leading-relaxed" style={{ color: "var(--ux-muted)" }}>{sub}</p>
         )}
         <div className="mt-[20px] space-y-[16px]">{children}</div>
         {footer && <div className="mt-[20px]">{footer}</div>}
@@ -45,8 +45,8 @@ export function Field({
 }: { label: string; hint?: string; children: React.ReactNode }) {
   return (
     <label className="block">
-      <span className="block text-[0.8125rem] font-semibold" style={{ color: "var(--ux-ink)" }}>{label}</span>
-      {hint && <span className="mt-1 block text-[0.75rem]" style={{ color: "var(--ux-muted)" }}>{hint}</span>}
+      <span className="block text-xsm font-semibold" style={{ color: "var(--ux-ink)" }}>{label}</span>
+      {hint && <span className="mt-1 block text-xs" style={{ color: "var(--ux-muted)" }}>{hint}</span>}
       <span className="mt-2 block">{children}</span>
     </label>
   );
@@ -67,7 +67,7 @@ export function TextInput(props: React.InputHTMLAttributes<HTMLInputElement>) {
     <input
       aria-label={named ? undefined : (props.placeholder || "Text field")}
       {...props}
-      className="ux-sq h-[44px] w-full rounded-[12px] border px-3.5 text-[0.875rem] outline-none"
+      className="ux-sq h-[44px] w-full rounded-[12px] border px-3.5 text-sm outline-none"
       style={{ borderColor: "var(--ux-line-strong)", background: "var(--ux-surface)", color: "var(--ux-ink)" }}
     />
   );
@@ -86,8 +86,8 @@ export function Toggle({
   return (
     <div className="flex items-start justify-between gap-4 py-3">
       <div className="min-w-0 flex-1">
-        <p className="text-[0.875rem] font-medium" style={{ color: "var(--ux-ink)" }}>{label}</p>
-        <p className="mt-1 text-[0.75rem] leading-snug" style={{ color: "var(--ux-muted)" }}>
+        <p className="text-sm font-medium" style={{ color: "var(--ux-ink)" }}>{label}</p>
+        <p className="mt-1 text-xs leading-snug" style={{ color: "var(--ux-muted)" }}>
           {on ? whenOn : whenOff}
         </p>
       </div>

@@ -73,14 +73,14 @@ export default function InCasePage() {
       <div className="flex flex-col gap-5">
 
         <header>
-          <p className="text-[0.6875rem] font-extrabold uppercase tracking-[0.2em]" style={{ color: v("--ux-brand") }}>
+          <p className="text-2xs font-extrabold uppercase tracking-[0.2em]" style={{ color: v("--ux-brand") }}>
             If something happens
           </p>
           <h1 className="mt-2 text-[clamp(1.5rem,3.2vw,2.125rem)] font-extrabold leading-[1.1] tracking-[-0.035em]"
               style={{ color: v("--ux-ink") }}>
             If you are not there to say it
           </h1>
-          <p className="mt-1.5 max-w-[58ch] text-[0.875rem] leading-relaxed" style={{ color: v("--ux-muted") }}>
+          <p className="mt-1.5 max-w-[58ch] text-sm leading-relaxed" style={{ color: v("--ux-muted") }}>
             A week in hospital, a move, or worse. Six plain questions, answered once, so nobody has
             to guess and nothing you built simply stops.
           </p>
@@ -90,10 +90,10 @@ export default function InCasePage() {
           <div className="flex flex-wrap items-center gap-4">
             <IconTile icon="ShieldCheck" tint="--ux-surface" ink="--ux-violet" size={46} radius={13} />
             <div className="min-w-0 flex-1">
-              <p className="text-[0.875rem] font-bold" style={{ color: v("--ux-ink") }}>
+              <p className="text-sm font-bold" style={{ color: v("--ux-ink") }}>
                 {done} of {wishes.length} answered
               </p>
-              <p className="mt-1 text-[0.8125rem] leading-relaxed" style={{ color: v("--ux-ink-2") }}>
+              <p className="mt-1 text-xsm leading-relaxed" style={{ color: v("--ux-ink-2") }}>
                 Nobody sees any of this while you are here. Not your circle, not your family,
                 not us.
               </p>
@@ -107,7 +107,7 @@ export default function InCasePage() {
           <div className="mt-3.5 flex items-start gap-2.5 border-t pt-3.5"
                style={{ borderColor: v("--ux-line") }}>
             <I name="EyeOff" className="mt-[2px] h-[15px] w-[15px] shrink-0" style={{ color: v("--ux-muted") }} />
-            <p className="text-[0.8125rem] leading-relaxed" style={{ color: v("--ux-ink-2") }}>
+            <p className="text-xsm leading-relaxed" style={{ color: v("--ux-ink-2") }}>
               Your answers stay covered until you tap to see them, and they cover themselves again
               when you leave this screen. If someone is beside you, they see nothing.
             </p>
@@ -116,7 +116,7 @@ export default function InCasePage() {
 
         {note && (
           <Card pad={16} style={{ background: v("--ux-tint-green"), borderColor: "transparent" }}>
-            <p className="flex items-center gap-2 text-[0.8125rem] font-semibold" style={{ color: v("--ux-green-ink") }}>
+            <p className="flex items-center gap-2 text-xsm font-semibold" style={{ color: v("--ux-green-ink") }}>
               <I name="CheckCircle2" className="h-[16px] w-[16px]" />{note}
             </p>
           </Card>
@@ -134,13 +134,13 @@ export default function InCasePage() {
                             ink={w.answer ? "--ux-green-ink" : "--ux-muted"} size={40} />
                   <div className="min-w-0 flex-1">
                     <div className="flex flex-wrap items-center gap-2">
-                      <p className="text-[0.875rem] font-bold" style={{ color: v("--ux-ink") }}>{w.question}</p>
+                      <p className="text-sm font-bold" style={{ color: v("--ux-ink") }}>{w.question}</p>
                       {w.answer && <Pill tone="green" size="sm">Written</Pill>}
                     </div>
-                    <p className="mt-1 text-[0.75rem] leading-relaxed" style={{ color: v("--ux-muted") }}>{w.why}</p>
+                    <p className="mt-1 text-xs leading-relaxed" style={{ color: v("--ux-muted") }}>{w.why}</p>
 
                     {w.answer && editing !== w.id && (
-                      <p className="mt-2.5 rounded-[12px] px-3 py-2.5 text-[0.8125rem] font-semibold"
+                      <p className="mt-2.5 rounded-[12px] px-3 py-2.5 text-xsm font-semibold"
                          style={{ background: v("--ux-surface-2"),
                                   color: v(covered ? "--ux-muted" : "--ux-ink") }}>
                         {covered ? "••••••••••" : w.answer}
@@ -156,7 +156,7 @@ export default function InCasePage() {
                           onKeyDown={(e) => { if (e.key === "Enter") save(w.id); }}
                           placeholder="In your own words"
                           aria-label={w.question}
-                          className="ux-sq min-w-0 flex-1 rounded-[12px] border px-3 py-2.5 text-[0.8125rem] outline-none"
+                          className="ux-sq min-w-0 flex-1 rounded-[12px] border px-3 py-2.5 text-xsm outline-none"
                           style={{ borderColor: v("--ux-brand"), background: v("--ux-surface"), color: v("--ux-ink") }}
                         />
                         <Btn size="sm" onClick={() => save(w.id)}>Save</Btn>
@@ -179,7 +179,7 @@ export default function InCasePage() {
         <Card pad={16} style={{ background: v("--ux-surface-2"), borderColor: "transparent" }}>
           <div className="flex items-start gap-3">
             <I name="Lock" className="mt-[2px] h-[16px] w-[16px] shrink-0" style={{ color: v("--ux-muted") }} />
-            <p className="text-[0.8125rem] leading-relaxed" style={{ color: v("--ux-ink-2") }}>
+            <p className="text-xsm leading-relaxed" style={{ color: v("--ux-ink-2") }}>
               This is not a will and it does not decide who owns anything — it just means the people
               who love you are not searching an almirah at the worst moment of their lives.
               If you want a will, that is a different and worthwhile thing, and we can point you to

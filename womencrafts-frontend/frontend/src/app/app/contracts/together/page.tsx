@@ -49,14 +49,14 @@ export default function TogetherPage() {
         <Back to="/app/contracts" label="Back to big orders" />
 
         <header>
-          <p className="text-[0.6875rem] font-extrabold uppercase tracking-[0.2em]" style={{ color: v("--ux-brand") }}>
+          <p className="text-2xs font-extrabold uppercase tracking-[0.2em]" style={{ color: v("--ux-brand") }}>
             Bidding together
           </p>
           <h1 className="mt-2 text-[clamp(1.5rem,3.2vw,2.125rem)] font-extrabold leading-[1.1] tracking-[-0.035em]"
               style={{ color: v("--ux-ink") }}>
             Who actually signs it?
           </h1>
-          <p className="mt-1.5 max-w-[58ch] text-[0.875rem] leading-relaxed" style={{ color: v("--ux-muted") }}>
+          <p className="mt-1.5 max-w-[58ch] text-sm leading-relaxed" style={{ color: v("--ux-muted") }}>
             Fourteen of you can make three hundred covers. But a company will not sign a contract
             with fourteen people, and will not send fourteen payments. Somebody, or something, has
             to be the name on the paper. There are three ways to do it and none of them is free.
@@ -76,10 +76,10 @@ export default function TogetherPage() {
               <I name="FileSignature" className="h-[20px] w-[20px]" />
             </span>
             <div className="min-w-0 flex-1">
-              <p className="text-[1rem] font-bold" style={{ color: v("--ux-ink") }}>
+              <p className="text-base font-bold" style={{ color: v("--ux-ink") }}>
                 You have chosen: {chosen.name.toLowerCase()}
               </p>
-              <p className="mt-1 text-[0.8125rem] leading-relaxed" style={{ color: v("--ux-ink-2") }}>
+              <p className="mt-1 text-xsm leading-relaxed" style={{ color: v("--ux-ink-2") }}>
                 {chosen.id === "v1" && "Each of you sends your own bill. Nothing to set up — but expect most companies to say no, because one order across fourteen invoices is work their accounts department will not do."}
                 {chosen.id === "v2" && "One woman's name is on the contract. She receives the whole payment and pays the rest of you. She also carries the tax, the risk and the buyer's complaint — so it should be someone who agreed to that with her eyes open, and the others should not treat it as a favour that costs her nothing."}
                 {chosen.id === "v3" && "The group itself becomes the counterparty. It costs about ₹15,000 and takes around eight weeks, and it never goes away — there are filings every year. In return no single woman is personally liable, and government supply contracts reserved for such groups become possible."}
@@ -115,10 +115,10 @@ export default function TogetherPage() {
                   <I name={s.done ? "CheckCircle2" : "Circle"} className="h-[19px] w-[19px] shrink-0"
                      style={{ color: v(s.done ? "--ux-green-ink" : "--ux-line-strong") }} sw={2.2} />
                   <div className="min-w-0 flex-1">
-                    <p className="text-[0.875rem] font-bold" style={{ color: v(s.done ? "--ux-muted" : "--ux-ink") }}>
+                    <p className="text-sm font-bold" style={{ color: v(s.done ? "--ux-muted" : "--ux-ink") }}>
                       {s.what}
                     </p>
-                    <p className="mt-0.5 text-[0.75rem]" style={{ color: v("--ux-muted") }}>{s.detail}</p>
+                    <p className="mt-0.5 text-xs" style={{ color: v("--ux-muted") }}>{s.detail}</p>
                   </div>
                 </button>
               ))}
@@ -129,7 +129,7 @@ export default function TogetherPage() {
         <Card pad={16} style={{ background: v("--ux-tint-amber"), borderColor: "transparent" }}>
           <div className="flex items-start gap-3">
             <I name="AlertTriangle" className="mt-[2px] h-[16px] w-[16px] shrink-0" style={{ color: v("--ux-amber-ink") }} />
-            <p className="text-[0.8125rem] leading-relaxed" style={{ color: v("--ux-ink-2") }}>
+            <p className="text-xsm leading-relaxed" style={{ color: v("--ux-ink-2") }}>
               <b style={{ color: v("--ux-ink") }}>Agree how the money splits before the order, in writing.</b>{" "}
               Not after it is delivered, and not on the strength of a conversation. This is the thing
               that ends friendships between women who were right to trust each other, and it costs
@@ -141,7 +141,7 @@ export default function TogetherPage() {
         <Card pad={16} style={{ background: v("--ux-surface-2"), borderColor: "transparent" }}>
           <div className="flex items-start gap-3">
             <I name="Scale" className="mt-[2px] h-[16px] w-[16px] shrink-0" style={{ color: v("--ux-muted") }} />
-            <p className="text-[0.8125rem] leading-relaxed" style={{ color: v("--ux-ink-2") }}>
+            <p className="text-xsm leading-relaxed" style={{ color: v("--ux-ink-2") }}>
               This is not legal advice and WomSakhi is not a party to anything you sign. Registering
               a company is done by a lawyer or a company secretary — we can point you to one your
               circle has used, and that is all.
@@ -163,21 +163,21 @@ function Option({ x, on, onPick }: { x: Vehicle; on: boolean; onPick: () => void
               borderWidth: on ? 2 : 1,
             }}>
       <div className="flex items-start justify-between gap-2">
-        <p className="text-[1rem] font-extrabold leading-tight" style={{ color: v("--ux-ink") }}>{x.name}</p>
+        <p className="text-base font-extrabold leading-tight" style={{ color: v("--ux-ink") }}>{x.name}</p>
         <span className="grid h-[20px] w-[20px] shrink-0 place-items-center rounded-full"
               style={{ background: v(on ? "--ux-fill" : "--ux-surface-2"),
                        color: v(on ? "--ux-on-brand" : "--ux-line-strong") }}>
           <I name="Check" className="h-[11px] w-[11px]" sw={3} />
         </span>
       </div>
-      <p className="mt-1 text-[0.75rem] leading-relaxed" style={{ color: v("--ux-muted") }}>{x.what}</p>
+      <p className="mt-1 text-xs leading-relaxed" style={{ color: v("--ux-muted") }}>{x.what}</p>
 
       <div className="mt-3 flex flex-wrap gap-1.5">
-        <span className="rounded-full px-2 py-[2px] text-[0.6875rem] font-bold"
+        <span className="rounded-full px-2 py-[2px] text-2xs font-bold"
               style={{ background: v("--ux-surface-2"), color: v("--ux-ink-2") }}>
           {x.costMinor === 0 ? "Free" : formatRupees(x.costMinor)}
         </span>
-        <span className="rounded-full px-2 py-[2px] text-[0.6875rem] font-bold"
+        <span className="rounded-full px-2 py-[2px] text-2xs font-bold"
               style={{ background: v("--ux-surface-2"), color: v("--ux-ink-2") }}>
           {x.weeks === 0 ? "Today" : `${x.weeks} wk`}
         </span>
@@ -185,13 +185,13 @@ function Option({ x, on, onPick }: { x: Vehicle; on: boolean; onPick: () => void
 
       <ul className="mt-3 flex flex-col gap-1.5">
         {x.good.map((g) => (
-          <li key={g} className="flex items-start gap-1.5 text-[0.75rem] leading-snug" style={{ color: v("--ux-ink-2") }}>
+          <li key={g} className="flex items-start gap-1.5 text-xs leading-snug" style={{ color: v("--ux-ink-2") }}>
             <I name="Check" className="mt-[2px] h-[12px] w-[12px] shrink-0" style={{ color: v("--ux-green-ink") }} sw={2.8} />
             {g}
           </li>
         ))}
         {x.bad.map((b) => (
-          <li key={b} className="flex items-start gap-1.5 text-[0.75rem] leading-snug" style={{ color: v("--ux-muted") }}>
+          <li key={b} className="flex items-start gap-1.5 text-xs leading-snug" style={{ color: v("--ux-muted") }}>
             <I name="Minus" className="mt-[2px] h-[12px] w-[12px] shrink-0" style={{ color: v("--ux-danger-solid") }} sw={2.8} />
             {b}
           </li>

@@ -81,8 +81,8 @@ export default function FeedbackPage() {
                     <Icons.Check className="h-[12px] w-[12px] text-white" strokeWidth={3.2} />
                   </span>
                   <div className="min-w-0">
-                    <p className="text-[0.8125rem] font-medium leading-snug" style={{ color: "var(--ux-ink)" }}>{s.what}</p>
-                    <p className="mt-1 text-[0.6875rem]" style={{ color: "var(--ux-muted)" }}>{s.who} · {s.when}</p>
+                    <p className="text-xsm font-medium leading-snug" style={{ color: "var(--ux-ink)" }}>{s.what}</p>
+                    <p className="mt-1 text-2xs" style={{ color: "var(--ux-muted)" }}>{s.who} · {s.when}</p>
                   </div>
                 </li>
               ))}
@@ -91,7 +91,7 @@ export default function FeedbackPage() {
 
           <Card className="ux-onscroll-soft">
             <SectionHead title="If it is urgent" icon="LifeBuoy" />
-            <p className="text-[0.8125rem] leading-relaxed" style={{ color: "var(--ux-ink-2)" }}>
+            <p className="text-xsm leading-relaxed" style={{ color: "var(--ux-ink-2)" }}>
               This goes to the team who build the app, and they read it within a few days. If money is
               stuck or someone is behaving badly, use Help or Safety instead — those reach someone today.
             </p>
@@ -103,8 +103,8 @@ export default function FeedbackPage() {
         </div>
       }
     >
-      <h1 className="text-[1.5rem] font-bold" style={{ color: "var(--ux-ink)" }}>Tell us what you think</h1>
-      <p className="mb-[20px] mt-1.5 text-[0.8125rem]" style={{ color: "var(--ux-muted)" }}>
+      <h1 className="text-2xl font-bold" style={{ color: "var(--ux-ink)" }}>Tell us what you think</h1>
+      <p className="mb-[20px] mt-1.5 text-xsm" style={{ color: "var(--ux-muted)" }}>
         We read every message ourselves. No form numbers, no ticket queue.
       </p>
 
@@ -115,8 +115,8 @@ export default function FeedbackPage() {
             <img loading="lazy" decoding="async" src="/ux/art/scene-woman-order-notification.webp" alt=""
                  className="h-[86px] w-[86px] shrink-0 object-contain" />
             <div className="min-w-0 flex-1">
-              <h2 className="text-[1.125rem] font-semibold" style={{ color: "var(--ux-ink)" }}>Thank you — we have it.</h2>
-              <p className="mt-2 text-[0.8125rem] leading-relaxed" style={{ color: "var(--ux-ink-2)" }}>
+              <h2 className="text-lg font-semibold" style={{ color: "var(--ux-ink)" }}>Thank you — we have it.</h2>
+              <p className="mt-2 text-xsm leading-relaxed" style={{ color: "var(--ux-ink-2)" }}>
                 Someone on the team will read this within a few days. If it turns into a change, you will
                 see it in the list of what women asked for.
               </p>
@@ -131,7 +131,7 @@ export default function FeedbackPage() {
         </Card>
       ) : (
         <>
-          <p className="mb-3 text-[0.6875rem] font-semibold uppercase tracking-[0.07em]" style={{ color: "var(--ux-faint)" }}>
+          <p className="mb-3 text-2xs font-semibold uppercase tracking-[0.07em]" style={{ color: "var(--ux-faint)" }}>
             What kind of thing is it?
           </p>
           <div className="ux-deck mb-[20px] grid grid-cols-2 gap-[12px]">
@@ -151,10 +151,10 @@ export default function FeedbackPage() {
                 >
                   <IconTile icon={k.icon} tint={k.tint} ink={k.ink} size={42} radius={11} />
                   <span className="min-w-0 flex-1">
-                    <span className="block truncate text-[0.875rem] font-semibold" style={{ color: "var(--ux-ink)" }}>
+                    <span className="block truncate text-sm font-semibold" style={{ color: "var(--ux-ink)" }}>
                       {k.label}
                     </span>
-                    <span className="mt-0.5 block truncate text-[0.75rem]" style={{ color: "var(--ux-muted)" }}>
+                    <span className="mt-0.5 block truncate text-xs" style={{ color: "var(--ux-muted)" }}>
                       {k.note}
                     </span>
                   </span>
@@ -166,7 +166,7 @@ export default function FeedbackPage() {
 
           <Card>
             <label className="block">
-              <span className="mb-2 block text-[0.8125rem] font-semibold" style={{ color: "var(--ux-ink)" }}>
+              <span className="mb-2 block text-xsm font-semibold" style={{ color: "var(--ux-ink)" }}>
                 Tell us in your own words
               </span>
               <textarea
@@ -175,7 +175,7 @@ export default function FeedbackPage() {
                 rows={6}
                 placeholder="Whatever it is — long or short, Hindi or English."
                 aria-label="Your message"
-                className="ux-sq w-full resize-y rounded-[12px] border p-3.5 text-[0.875rem] leading-relaxed outline-none"
+                className="ux-sq w-full resize-y rounded-[12px] border p-3.5 text-sm leading-relaxed outline-none"
                 style={{ borderColor: "var(--ux-line-strong)", background: "var(--ux-surface)", color: "var(--ux-ink)" }}
               />
             </label>
@@ -183,7 +183,7 @@ export default function FeedbackPage() {
             <div className="mt-3 flex items-center justify-between gap-4">
               {/* Say what is still needed, rather than a disabled button that
                   gives no reason for being disabled. */}
-              <p className="text-[0.75rem]" style={{ color: "var(--ux-faint)" }}>
+              <p className="text-xs" style={{ color: "var(--ux-faint)" }}>
                 {!kind
                   ? "Pick what kind of thing it is above."
                   : text.trim().length < 10
@@ -201,7 +201,7 @@ export default function FeedbackPage() {
               </Btn>
             </div>
             {problem && (
-              <p role="alert" className="ux-slide-up mt-3 text-[0.8125rem] leading-relaxed"
+              <p role="alert" className="ux-slide-up mt-3 text-xsm leading-relaxed"
                  style={{ color: "var(--ux-orange-ink)" }}>
                 {problem}
               </p>

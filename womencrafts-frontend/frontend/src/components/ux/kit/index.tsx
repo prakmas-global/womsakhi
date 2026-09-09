@@ -56,20 +56,20 @@ export function SectionHead({ title, sub, action, onAction, icon, chip }: {
   return (
     <div className="mb-3.5 flex items-start justify-between gap-3">
       <div className="min-w-0">
-        <h2 className="flex items-center gap-2 text-[1rem] font-semibold" style={{ color: "var(--ux-ink)" }}>
+        <h2 className="flex items-center gap-2 text-base font-semibold" style={{ color: "var(--ux-ink)" }}>
           {icon && <I name={icon} className="h-[17px] w-[17px]" style={{ color: "var(--ux-brand)" }} />}
           {title}
           {chip && (
-            <span className="rounded-full px-2.5 py-[3px] text-[0.6875rem] font-semibold"
+            <span className="rounded-full px-2.5 py-[3px] text-2xs font-semibold"
                   style={{ background: "var(--ux-brand-tint)", color: "var(--ux-brand)" }}>{chip}</span>
           )}
         </h2>
-        {sub && <p className="mt-1 text-[0.75rem]" style={{ color: "var(--ux-muted)" }}>{sub}</p>}
+        {sub && <p className="mt-1 text-xs" style={{ color: "var(--ux-muted)" }}>{sub}</p>}
       </div>
       {action && (
         <button onClick={onAction}
                 /* -my-1 py-1 keeps the 24px hit area without moving the text */
-                className="ux-press ux-hov -my-1 flex shrink-0 items-center gap-1 py-1 text-[0.8125rem] font-medium"
+                className="ux-press ux-hov -my-1 flex shrink-0 items-center gap-1 py-1 text-xsm font-medium"
                 style={{ color: "var(--ux-brand)" }}>
           {action} <Icons.ChevronRight className="ux-arrow h-3.5 w-3.5" strokeWidth={2.2} />
         </button>
@@ -108,7 +108,7 @@ export function Progress({ pct, tone = "--ux-brand-600", track = "--ux-brand-tin
 
 export function Rating({ value, count }: { value: string | number; count?: string }) {
   return (
-    <span className="flex items-center gap-1 text-[0.75rem]" style={{ color: "var(--ux-muted)" }}>
+    <span className="flex items-center gap-1 text-xs" style={{ color: "var(--ux-muted)" }}>
       <Icons.Star className="h-[13px] w-[13px]" fill="var(--ux-amber)" style={{ color: "var(--ux-amber)" }} />
       <span className="font-medium" style={{ color: "var(--ux-ink-2)" }}>{value}</span>
       {count && <span>({count})</span>}
@@ -130,7 +130,7 @@ export function Pill({ children, tone = "brand", size = "md" }: {
     neutral: ["--ux-surface-2", "--ux-muted"],
   }[tone];
   return (
-    <span className={`inline-flex items-center rounded-full font-semibold ${size === "sm" ? "px-2 py-[2px] text-[0.6875rem]" : "px-2.5 py-[3px] text-[0.6875rem]"}`}
+    <span className={`inline-flex items-center rounded-full font-semibold ${size === "sm" ? "px-2 py-[2px] text-2xs" : "px-2.5 py-[3px] text-2xs"}`}
           style={{ background: v(map[0]), color: v(map[1]) }}>{children}</span>
   );
 }
@@ -140,7 +140,7 @@ export function Chip({ children, selected, onClick, icon }: {
 }) {
   return (
     <button onClick={onClick} aria-pressed={selected}
-      className="ux-press ux-sq inline-flex items-center gap-2 rounded-[12px] border px-3.5 py-2.5 text-[0.8125rem] font-medium transition-colors"
+      className="ux-press ux-sq inline-flex items-center gap-2 rounded-[12px] border px-3.5 py-2.5 text-xsm font-medium transition-colors"
       style={{
         borderColor: selected ? "var(--ux-brand)" : "var(--ux-line-strong)",
         background: selected ? "var(--ux-brand-tint)" : "var(--ux-surface)",
@@ -217,7 +217,7 @@ export function Btn({ children, variant = "primary", size = "md", icon, iconEnd,
   // Held counts as disabled everywhere below: same dimming, same removal of
   // the press animations, same blocked handler.
   disabled = disabled || held;
-  const pad = { sm: "px-3 py-1.5 text-[0.75rem]", md: "px-4 py-2.5 text-[0.8125rem]", lg: "px-6 py-3 text-[0.875rem]" }[size];
+  const pad = { sm: "px-3 py-1.5 text-xs", md: "px-4 py-2.5 text-xsm", lg: "px-6 py-3 text-sm" }[size];
   const look = {
     primary: { background: "linear-gradient(96deg, var(--ux-fill), var(--ux-fill-2))", color: "var(--ux-on-brand)", border: "1px solid transparent" },
     soft:    { background: "var(--ux-brand-tint)", color: "var(--ux-brand)", border: "1px solid transparent" },
@@ -291,7 +291,7 @@ export function AvatarStack({ srcs, extra, size = 26 }: { srcs: string[]; extra?
         <img loading="lazy" decoding="async" key={s + i} src={s} alt="" className="rounded-full border-2 object-cover"
              style={{ width: size, height: size, borderColor: "var(--ux-surface)", marginLeft: i ? -8 : 0 }} />
       ))}
-      {extra && <span className="ms-1.5 text-[0.6875rem]" style={{ color: "var(--ux-muted)" }}>{extra}</span>}
+      {extra && <span className="ms-1.5 text-2xs" style={{ color: "var(--ux-muted)" }}>{extra}</span>}
     </div>
   );
 }
@@ -303,8 +303,8 @@ export function Stat({ value, label, icon, tint, ink }: {
     <div className="flex items-center gap-3">
       {icon && tint && ink && <IconTile icon={icon} tint={tint} ink={ink} size={38} />}
       <div className="min-w-0">
-        <p className="text-[1.125rem] font-bold leading-none" style={{ color: "var(--ux-ink)" }}>{value}</p>
-        <p className="mt-1 truncate text-[0.75rem]" style={{ color: "var(--ux-muted)" }}>{label}</p>
+        <p className="text-lg font-bold leading-none" style={{ color: "var(--ux-ink)" }}>{value}</p>
+        <p className="mt-1 truncate text-xs" style={{ color: "var(--ux-muted)" }}>{label}</p>
       </div>
     </div>
   );
@@ -319,8 +319,8 @@ export function EmptyState({ title, body, icon = "Inbox", action }: {
             style={{ background: "var(--ux-brand-tint)" }}>
         <I name={icon} className="h-7 w-7" style={{ color: "var(--ux-brand)" }} />
       </span>
-      <h2 className="mt-4 text-[0.875rem] font-semibold" style={{ color: "var(--ux-ink)" }}>{title}</h2>
-      <p className="mt-1.5 max-w-[320px] text-[0.8125rem] leading-relaxed" style={{ color: "var(--ux-muted)" }}>{body}</p>
+      <h2 className="mt-4 text-sm font-semibold" style={{ color: "var(--ux-ink)" }}>{title}</h2>
+      <p className="mt-1.5 max-w-[320px] text-xsm leading-relaxed" style={{ color: "var(--ux-muted)" }}>{body}</p>
       {action && <div className="mt-4">{action}</div>}
     </div>
   );
@@ -374,7 +374,7 @@ export function Tabs({ items, active, onChange }: {
         return (
           <button key={t} role="tab" aria-selected={on} data-on={on ? "1" : undefined}
             onClick={() => onChange(t)}
-            className="relative z-[1] rounded-[8px] px-3.5 py-2 text-[0.8125rem] font-medium transition-colors"
+            className="relative z-[1] rounded-[8px] px-3.5 py-2 text-xsm font-medium transition-colors"
             style={{ color: on ? "var(--ux-brand)" : "var(--ux-muted)" }}>
             {t}
           </button>
@@ -521,7 +521,7 @@ export function SourceNote({ source, what = "figures" }: { source: "live" | "moc
   return (
     <p
       role="status"
-      className="ux-sq mb-3.5 flex items-start gap-2.5 rounded-[12px] px-3.5 py-2.5 text-[0.75rem] leading-relaxed"
+      className="ux-sq mb-3.5 flex items-start gap-2.5 rounded-[12px] px-3.5 py-2.5 text-xs leading-relaxed"
       style={{ background: "var(--ux-tint-amber)", color: "var(--ux-amber-ink)" }}
     >
       <I name="Info" className="mt-[1px] h-[14px] w-[14px] shrink-0" sw={2} />

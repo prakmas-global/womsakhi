@@ -71,9 +71,9 @@ export function clock(time: string): string {
 function PanelHead({ title, action, href }: { title: string; action: string; href: string }) {
   return (
     <div className="mb-3 flex items-center justify-between gap-3">
-      <h2 className="text-[0.875rem] font-bold tracking-tight" style={{ color: "var(--ux-ink)" }}>{title}</h2>
+      <h2 className="text-sm font-bold tracking-tight" style={{ color: "var(--ux-ink)" }}>{title}</h2>
       <Link href={href}
-            className="ux-hov -my-2 flex min-h-[40px] shrink-0 items-center gap-1 py-2 text-[0.75rem] font-semibold"
+            className="ux-hov -my-2 flex min-h-[40px] shrink-0 items-center gap-1 py-2 text-xs font-semibold"
             style={{ color: "var(--ux-brand)" }}>
         {action}
         <Icons.ChevronRight className="h-[14px] w-[14px]" />
@@ -112,7 +112,7 @@ function Hero({ first }: { first: string }) {
                     maskComposite: "intersect", WebkitMaskComposite: "source-in" }} />
 
       <div className="relative flex min-h-[264px] flex-col justify-center p-6 sm:max-w-[58%] sm:p-8">
-        <p className="text-[0.8125rem] font-semibold" style={{ color: "var(--ux-on-brand-2)" }}>
+        <p className="text-xsm font-semibold" style={{ color: "var(--ux-on-brand-2)" }}>
           {greeting}, {first || "friend"}
         </p>
         <h1 className="mt-2.5 text-[clamp(1.5rem,2.7vw,2.1875rem)] font-extrabold leading-[1.12] tracking-[-0.03em]"
@@ -120,18 +120,18 @@ function Hero({ first }: { first: string }) {
           Let’s make today a step towards your{" "}
           <span style={{ color: "var(--ux-rib-5)" }}>better tomorrow.</span>
         </h1>
-        <p className="mt-2.5 text-[0.875rem]" style={{ color: "var(--ux-on-brand-2)" }}>
+        <p className="mt-2.5 text-sm" style={{ color: "var(--ux-on-brand-2)" }}>
           Connect. Learn. Earn. Grow. Together.
         </p>
         <div className="mt-5 flex flex-wrap gap-3">
           <Link href="/app/opportunities"
-                className="ux-press ux-btn-g flex min-h-[44px] items-center gap-2 rounded-[12px] px-5 text-[0.8125rem] font-bold"
+                className="ux-press ux-btn-g flex min-h-[44px] items-center gap-2 rounded-[12px] px-5 text-xsm font-bold"
                 style={{ background: "linear-gradient(96deg, var(--ux-rib-2), var(--ux-rib-3))", color: "var(--ux-on-brand)" }}>
             Explore Opportunities
             <Icons.ArrowRight className="h-4 w-4" />
           </Link>
           <Link href="/app/stories"
-                className="ux-press flex min-h-[44px] items-center gap-2.5 rounded-[12px] px-4 text-[0.8125rem] font-bold"
+                className="ux-press flex min-h-[44px] items-center gap-2.5 rounded-[12px] px-4 text-xsm font-bold"
                 style={{ background: "var(--ux-on-brand-track)", border: "1px solid var(--ux-on-brand-2)",
                          color: "var(--ux-on-brand)" }}>
             <span className="grid h-[26px] w-[26px] place-items-center rounded-full"
@@ -194,18 +194,18 @@ function Stats() {
             </span>
             {/* Wraps rather than truncates. A label clipped to "Total Bala…"
                 is worse than one that takes a second line. */}
-            <span className="text-[0.75rem] font-semibold leading-tight" style={{ color: "var(--ux-ink-2)" }}>
+            <span className="text-xs font-semibold leading-tight" style={{ color: "var(--ux-ink-2)" }}>
               {c.label}
             </span>
           </span>
-          <span className="mt-3 block text-[1.25rem] font-bold leading-none tracking-[-0.03em] tabular-nums"
+          <span className="mt-3 block text-xl font-bold leading-none tracking-[-0.03em] tabular-nums"
                 style={{ color: "var(--ux-ink)" }}>
             {c.value}
           </span>
           <span className="mt-2 flex items-center justify-between gap-2">
-            <span className="text-[0.6875rem]" style={{ color: "var(--ux-muted)" }}>{c.note}</span>
+            <span className="text-2xs" style={{ color: "var(--ux-muted)" }}>{c.note}</span>
             {c.delta !== null && (
-              <span className="flex items-center gap-1 text-[0.6875rem] font-bold" style={{ color: "var(--ux-green-ink)" }}>
+              <span className="flex items-center gap-1 text-2xs font-bold" style={{ color: "var(--ux-green-ink)" }}>
                 <Ico name={c.delta >= 0 ? "TrendingUp" : "TrendingDown"} className="h-[11px] w-[11px]" />
                 {c.delta >= 0 ? "+" : ""}{c.delta}%
               </span>
@@ -232,16 +232,16 @@ function QuickAccess() {
   return (
     <section>
       <div className="mb-3 flex items-center justify-between gap-3">
-        <h2 className="text-[1rem] font-bold tracking-tight" style={{ color: "var(--ux-ink)" }}>Quick Access</h2>
+        <h2 className="text-base font-bold tracking-tight" style={{ color: "var(--ux-ink)" }}>Quick Access</h2>
         <div className="flex items-center gap-2">
           <Link href="/app/explore"
-                className="ux-hov -my-2 flex min-h-[40px] items-center gap-1.5 py-2 text-[0.75rem] font-semibold"
+                className="ux-hov -my-2 flex min-h-[40px] items-center gap-1.5 py-2 text-xs font-semibold"
                 style={{ color: "var(--ux-brand)" }}>
             View all 30+ modules
             <Icons.ChevronRight className="h-[14px] w-[14px]" />
           </Link>
           <Link href="/app/settings/appearance"
-                className="ux-hov -my-2 flex min-h-[40px] items-center gap-1.5 rounded-[12px] px-3 py-2 text-[0.75rem] font-semibold"
+                className="ux-hov -my-2 flex min-h-[40px] items-center gap-1.5 rounded-[12px] px-3 py-2 text-xs font-semibold"
                 style={{ background: "var(--ux-surface-2)", border: "1px solid var(--ux-line)", color: "var(--ux-muted)" }}>
             <Icons.LayoutGrid className="h-[14px] w-[14px]" />
             Customize
@@ -260,8 +260,8 @@ function QuickAccess() {
                   style={{ background: `var(${t.tint})`, color: `var(${t.ink})` }}>
               <Ico name={t.icon} className="h-[21px] w-[21px]" />
             </span>
-            <span className="mt-auto block pt-3 text-[0.875rem] font-bold" style={{ color: "var(--ux-ink)" }}>{t.label}</span>
-            <span className="mt-0.5 block text-[0.6875rem] leading-snug" style={{ color: "var(--ux-muted)" }}>{t.sub}</span>
+            <span className="mt-auto block pt-3 text-sm font-bold" style={{ color: "var(--ux-ink)" }}>{t.label}</span>
+            <span className="mt-0.5 block text-2xs leading-snug" style={{ color: "var(--ux-muted)" }}>{t.sub}</span>
           </Link>
         ))}
       </div>
@@ -321,7 +321,7 @@ function Activities() {
     <Panel>
       <PanelHead title="Today's Activities" action="View All" href="/app/notifications" />
       {rows.length === 0 ? (
-        <p className="py-5 text-[0.8125rem]" style={{ color: "var(--ux-muted)" }}>
+        <p className="py-5 text-xsm" style={{ color: "var(--ux-muted)" }}>
           Nothing yet today. Orders, circle news and messages land here.
         </p>
       ) : (
@@ -334,13 +334,13 @@ function Activities() {
                   <Ico name={r.icon} className="h-[16px] w-[16px]" />
                 </span>
                 <span className="min-w-0 flex-1">
-                  <span className="block text-[0.8125rem] font-semibold leading-snug" style={{ color: "var(--ux-ink)" }}>
+                  <span className="block text-xsm font-semibold leading-snug" style={{ color: "var(--ux-ink)" }}>
                     {r.title}
                   </span>
                   {/* Body and time on one meta line under the title. Ranged
                       across the row they left the title ~140px and it broke
                       over two lines on every entry. */}
-                  <span className="mt-1 block truncate text-[0.6875rem]" style={{ color: "var(--ux-muted)" }}>
+                  <span className="mt-1 block truncate text-2xs" style={{ color: "var(--ux-muted)" }}>
                     {[r.body, r.when].filter(Boolean).join(" · ")}
                   </span>
                 </span>
@@ -363,12 +363,12 @@ function Pot() {
     return (
       <Panel>
         <PanelHead title="Your Savings Pot" action="All Circles" href="/app/circles" />
-        <p className="text-[0.8125rem] leading-relaxed" style={{ color: "var(--ux-muted)" }}>
+        <p className="text-xsm leading-relaxed" style={{ color: "var(--ux-muted)" }}>
           A pot is a group of women who each put in the same amount every month, and
           take turns receiving it. Join one, or start one with women you trust.
         </p>
         <Link href="/app/circles"
-              className="ux-press mt-auto flex min-h-[42px] items-center justify-center gap-2 rounded-[12px] pt-0 text-[0.8125rem] font-bold"
+              className="ux-press mt-auto flex min-h-[42px] items-center justify-center gap-2 rounded-[12px] pt-0 text-xsm font-bold"
               style={{ background: "linear-gradient(96deg, var(--ux-fill), var(--ux-fill-2))", color: "var(--ux-on-brand)" }}>
           Find a circle
           <Icons.ArrowRight className="h-4 w-4" />
@@ -393,13 +393,13 @@ function Pot() {
             Sti…". It reads as one more fact about the pot, so it goes on the
             meta line with the others and the name keeps the row. */}
         <span className="min-w-0 flex-1">
-          <span className="block text-[0.8125rem] font-bold leading-snug" style={{ color: "var(--ux-ink)" }}>
+          <span className="block text-xsm font-bold leading-snug" style={{ color: "var(--ux-ink)" }}>
             {pot.name}
           </span>
-          <span className="mt-1 flex flex-wrap items-center gap-x-1.5 gap-y-1 text-[0.6875rem]"
+          <span className="mt-1 flex flex-wrap items-center gap-x-1.5 gap-y-1 text-2xs"
                 style={{ color: "var(--ux-muted)" }}>
             {formatMoney(pot.monthly_minor ?? 0)} a month · {pot.members} women
-            <span className="rounded-full px-2 py-[2px] text-[0.6875rem] font-bold uppercase tracking-wider"
+            <span className="rounded-full px-2 py-[2px] text-2xs font-bold uppercase tracking-wider"
                   style={{ background: "var(--ux-tint-green)", color: "var(--ux-green-ink)" }}>
               Round {pot.currentMonth || 0}
             </span>
@@ -409,12 +409,12 @@ function Pot() {
 
       <div className="mt-4">
         <div className="flex items-baseline justify-between gap-3">
-          <span className="text-[0.75rem]" style={{ color: "var(--ux-muted)" }}>You have put in</span>
-          <span className="text-[0.75rem] font-bold" style={{ color: "var(--ux-green-ink)" }}>{pct}%</span>
+          <span className="text-xs" style={{ color: "var(--ux-muted)" }}>You have put in</span>
+          <span className="text-xs font-bold" style={{ color: "var(--ux-green-ink)" }}>{pct}%</span>
         </div>
-        <p className="mt-1.5 text-[1.125rem] font-bold tabular-nums" style={{ color: "var(--ux-ink)" }}>
+        <p className="mt-1.5 text-lg font-bold tabular-nums" style={{ color: "var(--ux-ink)" }}>
           {formatMoney(put)}{" "}
-          <span className="text-[0.8125rem] font-semibold" style={{ color: "var(--ux-muted)" }}>/ {formatMoney(full)}</span>
+          <span className="text-xsm font-semibold" style={{ color: "var(--ux-muted)" }}>/ {formatMoney(full)}</span>
         </p>
         <div className="mt-2.5 h-[9px] w-full overflow-hidden rounded-full" style={{ background: "var(--ux-track)" }}>
           <div className="h-full rounded-full"
@@ -432,13 +432,13 @@ function Pot() {
                style={{ border: "2px solid var(--ux-surface)", marginLeft: i ? -8 : 0 }} />
         ))}
         {pot.members > 6 && (
-          <span className="grid h-[26px] w-[26px] place-items-center rounded-full text-[0.6875rem] font-bold"
+          <span className="grid h-[26px] w-[26px] place-items-center rounded-full text-2xs font-bold"
                 style={{ background: "var(--ux-surface-2)", border: "2px solid var(--ux-surface)",
                          color: "var(--ux-muted)", marginLeft: -8 }}>
             +{pot.members - 6}
           </span>
         )}
-        <span className="ms-2.5 text-[0.6875rem] font-semibold" style={{ color: "var(--ux-muted)" }}>
+        <span className="ms-2.5 text-2xs font-semibold" style={{ color: "var(--ux-muted)" }}>
           {pot.members} women in this pot
         </span>
       </div>
@@ -447,7 +447,7 @@ function Pot() {
           is, and who has paid this round, are the two things a real chit needs
           and this app does not store yet — so they are not claimed. */}
       <Link href={`/app/circles/${pot.id}`}
-            className="ux-press ux-btn-g mt-4 flex min-h-[42px] items-center justify-center gap-2 rounded-[12px] text-[0.8125rem] font-bold"
+            className="ux-press ux-btn-g mt-4 flex min-h-[42px] items-center justify-center gap-2 rounded-[12px] text-xsm font-bold"
             style={{ background: "linear-gradient(96deg, var(--ux-rib-2), var(--ux-rib-3))", color: "var(--ux-on-brand)" }}>
         Open this circle
         <Icons.ArrowRight className="h-4 w-4" />
@@ -466,7 +466,7 @@ function Feed() {
     <Panel>
       <PanelHead title="Community Feed" action="View All" href="/app/stories" />
       {!lead ? (
-        <p className="py-5 text-[0.8125rem]" style={{ color: "var(--ux-muted)" }}>
+        <p className="py-5 text-xsm" style={{ color: "var(--ux-muted)" }}>
           Stories from women in your circles will appear here.
         </p>
       ) : (
@@ -479,26 +479,26 @@ function Feed() {
                 // eslint-disable-next-line @next/next/no-img-element
                 <img loading="lazy" decoding="async" src={lead.avatar} alt="" className="h-[36px] w-[36px] shrink-0 rounded-full object-cover" />
               ) : (
-                <span className="grid h-[36px] w-[36px] shrink-0 place-items-center rounded-full text-[0.8125rem] font-bold"
+                <span className="grid h-[36px] w-[36px] shrink-0 place-items-center rounded-full text-xsm font-bold"
                       style={{ background: "var(--ux-brand-tint)", color: "var(--ux-brand)" }} aria-hidden>
                   {(lead.name || "?").trim().charAt(0).toUpperCase()}
                 </span>
               )}
               <span className="min-w-0 flex-1">
-                <span className="block truncate text-[0.8125rem] font-bold" style={{ color: "var(--ux-ink)" }}>{lead.name}</span>
-                <span className="block truncate text-[0.6875rem]" style={{ color: "var(--ux-muted)" }}>
+                <span className="block truncate text-xsm font-bold" style={{ color: "var(--ux-ink)" }}>{lead.name}</span>
+                <span className="block truncate text-2xs" style={{ color: "var(--ux-muted)" }}>
                   {lead.since || lead.program || "In your circles"}
                 </span>
               </span>
             </div>
-            <p className="mt-3 text-[0.8125rem] leading-relaxed" style={{ color: "var(--ux-ink-2)" }}>
+            <p className="mt-3 text-xsm leading-relaxed" style={{ color: "var(--ux-ink-2)" }}>
               {(lead.quote || lead.body || "").slice(0, 170)}
             </p>
             {lead.cover && (
               // eslint-disable-next-line @next/next/no-img-element
               <img loading="lazy" decoding="async" src={lead.cover} alt="" className="mt-3 h-[120px] w-full rounded-[12px] object-cover" />
             )}
-            <div className="mt-3 flex gap-4 text-[0.75rem] font-semibold" style={{ color: "var(--ux-muted)" }}>
+            <div className="mt-3 flex gap-4 text-xs font-semibold" style={{ color: "var(--ux-muted)" }}>
               <span className="flex items-center gap-1.5"><Icons.Heart className="h-[14px] w-[14px]" />{lead.likes ?? 0}</span>
               <span className="flex items-center gap-1.5"><Icons.MessageCircle className="h-[14px] w-[14px]" />Comment</span>
               <span className="flex items-center gap-1.5"><Icons.Share2 className="h-[14px] w-[14px]" />Share</span>
@@ -517,16 +517,16 @@ function Feed() {
                       // eslint-disable-next-line @next/next/no-img-element
                       <img loading="lazy" decoding="async" src={s.avatar} alt="" className="h-[26px] w-[26px] shrink-0 rounded-full object-cover" />
                     ) : (
-                      <span className="grid h-[26px] w-[26px] shrink-0 place-items-center rounded-full text-[0.6875rem] font-bold"
+                      <span className="grid h-[26px] w-[26px] shrink-0 place-items-center rounded-full text-2xs font-bold"
                             style={{ background: "var(--ux-brand-tint)", color: "var(--ux-brand)" }} aria-hidden>
                         {(s.name || "?").trim().charAt(0).toUpperCase()}
                       </span>
                     )}
                     <span className="min-w-0 flex-1">
-                      <span className="block truncate text-[0.75rem] font-semibold" style={{ color: "var(--ux-ink)" }}>
+                      <span className="block truncate text-xs font-semibold" style={{ color: "var(--ux-ink)" }}>
                         {s.name}
                       </span>
-                      <span className="block truncate text-[0.6875rem]" style={{ color: "var(--ux-muted)" }}>
+                      <span className="block truncate text-2xs" style={{ color: "var(--ux-muted)" }}>
                         {(s.quote || s.body || "").slice(0, 44)}
                       </span>
                     </span>
@@ -554,15 +554,15 @@ function Strip() {
              style={{ maskImage: "radial-gradient(72% 76% at 50% 50%, #000 58%, transparent 92%)",
                       WebkitMaskImage: "radial-gradient(72% 76% at 50% 50%, #000 58%, transparent 92%)" }} />
         <div className="min-w-0 flex-1">
-          <h2 className="text-[1.25rem] font-extrabold tracking-[-0.02em]" style={{ color: "var(--ux-on-brand)" }}>
+          <h2 className="text-xl font-extrabold tracking-[-0.02em]" style={{ color: "var(--ux-on-brand)" }}>
             Explore. Connect. Grow.
           </h2>
-          <p className="mt-1.5 max-w-[46ch] text-[0.8125rem]" style={{ color: "var(--ux-on-brand-2)" }}>
+          <p className="mt-1.5 max-w-[46ch] text-xsm" style={{ color: "var(--ux-on-brand-2)" }}>
             Access every module built to support you at each step of your journey.
           </p>
         </div>
         <Link href="/app/explore"
-              className="ux-press ux-btn-g flex min-h-[46px] shrink-0 items-center gap-2 rounded-[12px] px-5 text-[0.8125rem] font-bold"
+              className="ux-press ux-btn-g flex min-h-[46px] shrink-0 items-center gap-2 rounded-[12px] px-5 text-xsm font-bold"
               style={{ background: "linear-gradient(96deg, var(--ux-rib-2), var(--ux-rib-3))", color: "var(--ux-on-brand)" }}>
           Explore All Modules
           <Icons.ArrowRight className="h-4 w-4" />

@@ -45,14 +45,14 @@ export default function SafeMoneyPage() {
       <div className="flex flex-col gap-5" id="safe-money-page">
 
         <header>
-          <p className="text-[0.6875rem] font-extrabold uppercase tracking-[0.2em]" style={{ color: v("--ux-brand") }}>
+          <p className="text-2xs font-extrabold uppercase tracking-[0.2em]" style={{ color: v("--ux-brand") }}>
             Money traps
           </p>
           <h1 className="mt-2 text-[clamp(1.5rem,3.2vw,2.125rem)] font-extrabold leading-[1.1] tracking-[-0.035em]"
               style={{ color: v("--ux-ink") }}>
             The tricks aimed at women working from home
           </h1>
-          <p className="mt-1.5 max-w-[58ch] text-[0.875rem] leading-relaxed" style={{ color: v("--ux-muted") }}>
+          <p className="mt-1.5 max-w-[58ch] text-sm leading-relaxed" style={{ color: v("--ux-muted") }}>
             These are not general internet scams. Each one below is written for a woman who sews,
             cooks or does mehendi at home, and each is the exact message you will be sent.
           </p>
@@ -62,7 +62,7 @@ export default function SafeMoneyPage() {
         {/* The one rule, given the whole width it deserves. */}
         <div className="rounded-[var(--ux-r-card)] px-6 py-7 sm:px-9"
              style={{ background: v("--ux-fill") }}>
-          <p className="text-[0.6875rem] font-extrabold uppercase tracking-[0.18em]"
+          <p className="text-2xs font-extrabold uppercase tracking-[0.18em]"
              style={{ color: v("--ux-on-brand"), opacity: 0.75 }}>
             If you remember one thing
           </p>
@@ -70,7 +70,7 @@ export default function SafeMoneyPage() {
              style={{ color: v("--ux-on-brand") }}>
             A PIN is only ever for sending money.
           </p>
-          <p className="mt-3 max-w-[52ch] text-[0.875rem] leading-relaxed"
+          <p className="mt-3 max-w-[52ch] text-sm leading-relaxed"
              style={{ color: v("--ux-on-brand"), opacity: 0.9 }}>
             Money coming to you needs nothing from you — no PIN, no approval, no code. If a screen
             asks for your PIN, you are paying someone, whatever they told you. That one sentence
@@ -97,7 +97,7 @@ export default function SafeMoneyPage() {
                  style={{ background: v(risks >= 2 ? "--ux-danger-tint" : "--ux-tint-green") }}>
               <I name={risks >= 2 ? "AlertTriangle" : "ShieldCheck"} className="h-[19px] w-[19px] shrink-0"
                  style={{ color: v(risks >= 2 ? "--ux-danger-solid" : "--ux-green-ink") }} />
-              <p className="min-w-0 flex-1 text-[0.875rem] font-bold" style={{ color: v("--ux-ink") }}>
+              <p className="min-w-0 flex-1 text-sm font-bold" style={{ color: v("--ux-ink") }}>
                 {risks >= 2
                   ? `${risks} things here look wrong. Ask for the material cost before you make anything.`
                   : "Nothing here looks wrong."}
@@ -108,10 +108,10 @@ export default function SafeMoneyPage() {
                    style={{ borderTop: `1px solid ${v("--ux-line")}` }}>
                 <I name={c.ok ? "Check" : "AlertCircle"} className="h-[16px] w-[16px] shrink-0"
                    style={{ color: v(c.ok ? "--ux-green-ink" : "--ux-danger-solid") }} sw={2.4} />
-                <p className="min-w-0 flex-1 text-[0.8125rem] font-semibold" style={{ color: v("--ux-ink") }}>
+                <p className="min-w-0 flex-1 text-xsm font-semibold" style={{ color: v("--ux-ink") }}>
                   {c.what}
                 </p>
-                <p className="shrink-0 text-[0.75rem]" style={{ color: v("--ux-muted") }}>{c.note}</p>
+                <p className="shrink-0 text-xs" style={{ color: v("--ux-muted") }}>{c.note}</p>
               </div>
             ))}
             <div className="flex flex-wrap gap-2 border-t px-5 py-4" style={{ borderColor: v("--ux-line") }}>
@@ -126,7 +126,7 @@ export default function SafeMoneyPage() {
 
         {reported && (
           <Card pad={16} style={{ background: v("--ux-tint-green"), borderColor: "transparent" }}>
-            <p className="flex items-center gap-2 text-[0.8125rem] font-semibold" style={{ color: v("--ux-green-ink") }}>
+            <p className="flex items-center gap-2 text-xsm font-semibold" style={{ color: v("--ux-green-ink") }}>
               <I name="CheckCircle2" className="h-[16px] w-[16px]" />
               Recorded. The next woman this buyer contacts will see it, and your name is not shown.
             </p>
@@ -136,7 +136,7 @@ export default function SafeMoneyPage() {
         <Card pad={16} style={{ background: v("--ux-surface-2"), borderColor: "transparent" }}>
           <div className="flex items-start gap-3">
             <I name="Users" className="mt-[2px] h-[16px] w-[16px] shrink-0" style={{ color: v("--ux-muted") }} />
-            <p className="text-[0.8125rem] leading-relaxed" style={{ color: v("--ux-ink-2") }}>
+            <p className="text-xsm leading-relaxed" style={{ color: v("--ux-ink-2") }}>
               If something feels wrong, ask your circle before you act — not after. Nobody there will
               think less of you for asking, and every woman who has been cheated says the same thing
               afterwards: she knew, and she was in a hurry.
@@ -159,13 +159,13 @@ function Trap({ s, open, onFlip }: { s: ScamPattern; open: boolean; onFlip: () =
             <I name={s.icon} className="h-[18px] w-[18px]" />
           </span>
           <div className="min-w-0 flex-1">
-            <p className="text-[1rem] font-semibold italic leading-relaxed" style={{ color: v("--ux-ink") }}>
+            <p className="text-base font-semibold italic leading-relaxed" style={{ color: v("--ux-ink") }}>
               {s.theyWillSay}
             </p>
             <div className="mt-2 flex flex-wrap items-center gap-2">
               <Pill tone="orange" size="sm">{s.name}</Pill>
               {!open && (
-                <span className="text-[0.75rem] font-semibold" style={{ color: v("--ux-brand") }}>
+                <span className="text-xs font-semibold" style={{ color: v("--ux-brand") }}>
                   What is really happening?
                 </span>
               )}
@@ -178,10 +178,10 @@ function Trap({ s, open, onFlip }: { s: ScamPattern; open: boolean; onFlip: () =
 
       {open && (
         <div className="border-t px-5 py-4" style={{ borderColor: v("--ux-line") }}>
-          <p className="text-[0.8125rem] leading-relaxed" style={{ color: v("--ux-ink-2") }}>
+          <p className="text-xsm leading-relaxed" style={{ color: v("--ux-ink-2") }}>
             {s.whatIsHappening}
           </p>
-          <p className="mt-3 flex items-start gap-2.5 rounded-[12px] px-3.5 py-3 text-[0.8125rem] font-semibold leading-relaxed"
+          <p className="mt-3 flex items-start gap-2.5 rounded-[12px] px-3.5 py-3 text-xsm font-semibold leading-relaxed"
              style={{ background: v("--ux-tint-green"), color: v("--ux-ink") }}>
             <I name="ShieldCheck" className="mt-[2px] h-[15px] w-[15px] shrink-0" style={{ color: v("--ux-green-ink") }} />
             {s.whatToDo}

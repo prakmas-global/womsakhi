@@ -57,7 +57,7 @@ export function Back({ to, label, className = "" }: {
   }, []);
 
   const cls =
-    `ux-press ux-sq inline-flex w-fit items-center gap-1.5 text-[0.8125rem] font-semibold ${className}`;
+    `ux-press ux-sq inline-flex w-fit items-center gap-1.5 text-xsm font-semibold ${className}`;
   const style = { color: "var(--ux-muted)" };
 
   if (hasHistory) {

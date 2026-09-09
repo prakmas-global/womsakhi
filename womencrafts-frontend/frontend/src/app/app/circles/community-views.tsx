@@ -80,11 +80,11 @@ const card = {
 } as const;
 
 export const Sec = ({ children, href }: { children: React.ReactNode; href?: string }) => (
-  <h3 className="mb-3.5 mt-7 flex items-center gap-2.5 text-[0.6875rem] font-extrabold uppercase tracking-[0.16em] first:mt-0"
+  <h3 className="mb-3.5 mt-7 flex items-center gap-2.5 text-2xs font-extrabold uppercase tracking-[0.16em] first:mt-0"
       style={{ color: "var(--ux-faint)" }}>
     {children}
     {href && (
-      <Link href={href} className="ux-press ms-auto flex min-h-[34px] items-center rounded-[12px] px-3 text-[0.75rem] font-bold normal-case tracking-normal"
+      <Link href={href} className="ux-press ms-auto flex min-h-[34px] items-center rounded-[12px] px-3 text-xs font-bold normal-case tracking-normal"
             style={{ color: "var(--ux-brand)" }}>See all</Link>
     )}
   </h3>
@@ -102,10 +102,10 @@ export function Pot({ d, act }: { d: CommunityData; act: CommunityActs }) {
     return (
       <section className="rounded-[24px] p-10 text-center" style={card}>
         <Icons.Coins className="mx-auto h-9 w-9" style={{ color: "var(--ux-faint)" }} />
-        <p className="mt-3 text-[1rem] font-bold" style={{ color: "var(--ux-ink)" }}>
+        <p className="mt-3 text-base font-bold" style={{ color: "var(--ux-ink)" }}>
           You are not in a savings circle yet
         </p>
-        <p className="mt-1.5 text-[0.8125rem]" style={{ color: "var(--ux-muted)" }}>
+        <p className="mt-1.5 text-xsm" style={{ color: "var(--ux-muted)" }}>
           A pot is a few women paying the same amount each month, and one of them taking the whole
           pot each time. Your turn comes once.
         </p>
@@ -165,7 +165,7 @@ export function Pot({ d, act }: { d: CommunityData; act: CommunityActs }) {
                           fill={m.paid ? "var(--ux-green-ink)" : isTurn ? "rgba(253,230,138,.22)" : "rgba(255,255,255,.12)"}
                           stroke={m.paid ? "var(--ux-green-ink)" : isTurn ? "var(--ux-rib-5)" : "rgba(255,255,255,.34)"} />
                   <text x={x} y={y} textAnchor="middle" dominantBaseline="central"
-                        style={{ fontSize: 11, fontWeight: 700, fill: "#fff" }}>{initials(m.name)}</text>
+                        style={{ fontSize: 11, fontWeight: 700, fill: "var(--ux-on-brand)" }}>{initials(m.name)}</text>
                   {m.paid && (
                     <>
                       <circle cx={x + 15} cy={y - 15} r={7} fill="var(--ux-green-ink)" />
@@ -182,38 +182,38 @@ export function Pot({ d, act }: { d: CommunityData; act: CommunityActs }) {
             })}
           </svg>
           <div className="pointer-events-none absolute inset-0 grid place-content-center text-center">
-            <span className="text-[0.6875rem] font-extrabold uppercase tracking-[0.19em]"
+            <span className="text-2xs font-extrabold uppercase tracking-[0.19em]"
                   style={{ color: "rgba(255,255,255,.72)" }}>Round {s.round} pot</span>
-            <p className="my-1 text-[2.75rem] font-extrabold tabular-nums tracking-[-0.04em]">{rupees(s.pot_minor)}</p>
-            <span className="text-[0.8125rem]" style={{ color: "rgba(255,255,255,.88)" }}>
+            <p className="my-1 text-4xlm font-extrabold tabular-nums tracking-[-0.04em]">{rupees(s.pot_minor)}</p>
+            <span className="text-xsm" style={{ color: "rgba(255,255,255,.88)" }}>
               {s.whose_turn} receives it
             </span>
           </div>
         </div>
 
         <div className="relative min-w-[270px] flex-1">
-          <span className="inline-flex items-center gap-2 rounded-full px-3.5 py-1.5 text-[0.6875rem] font-extrabold uppercase tracking-[0.06em]"
+          <span className="inline-flex items-center gap-2 rounded-full px-3.5 py-1.5 text-2xs font-extrabold uppercase tracking-[0.06em]"
                 style={{ background: "rgba(255,255,255,.16)", boxShadow: "inset 0 0 0 1px rgba(255,255,255,.3)" }}>
             <Icons.Coins className="h-[13px] w-[13px]" /> {d.savingsCircle?.name ?? "Your savings circle"}
           </span>
           <h2 className="mt-3.5 text-[clamp(1.5625rem,3.4vw,2.25rem)] font-extrabold leading-[1.14] tracking-[-0.035em]">
             {s.members_paid} of {n} have paid this round.
           </h2>
-          <p className="mt-3 max-w-[44ch] text-[0.875rem] leading-relaxed" style={{ color: "rgba(255,255,255,.88)" }}>
+          <p className="mt-3 max-w-[44ch] text-sm leading-relaxed" style={{ color: "rgba(255,255,255,.88)" }}>
             {rupees(s.monthly_minor)} each, once a month, and the whole pot goes to one woman.
             {s.you_paid ? " Yours is in." : " Yours is not in yet."}
           </p>
           <div className="mt-5 flex flex-wrap gap-2.5">
             <button type="button" onClick={act.pay} disabled={s.you_paid || act.paying}
-                    className="ux-press inline-flex min-h-[48px] items-center gap-2 rounded-[12px] px-5 text-[0.875rem] font-bold disabled:opacity-70"
-                    style={{ background: s.you_paid ? "var(--ux-green-ink)" : "#fff",
+                    className="ux-press inline-flex min-h-[48px] items-center gap-2 rounded-[12px] px-5 text-sm font-bold disabled:opacity-70"
+                    style={{ background: s.you_paid ? "var(--ux-green-ink)" : "var(--ux-on-brand)",
                              color: s.you_paid ? "var(--ux-on-green)" : "var(--ux-brand-900)" }}>
               {s.you_paid ? <><Icons.Check className="h-4 w-4" /> Paid</>
                           : <><Icons.Coins className="h-4 w-4" /> {act.paying ? "Paying…" : `Pay your ${rupees(s.monthly_minor)}`}</>}
             </button>
             <Link href={`/app/circles/${s.circle_id}`}
-                  className="ux-press inline-flex min-h-[48px] items-center gap-2 rounded-[12px] px-5 text-[0.875rem] font-bold"
-                  style={{ background: "rgba(255,255,255,.15)", color: "#fff",
+                  className="ux-press inline-flex min-h-[48px] items-center gap-2 rounded-[12px] px-5 text-sm font-bold"
+                  style={{ background: "rgba(255,255,255,.15)", color: "var(--ux-on-brand)",
                            boxShadow: "inset 0 0 0 1px rgba(255,255,255,.32)" }}>
               See everyone&rsquo;s turn <Icons.ArrowRight className="h-4 w-4" />
             </Link>
@@ -248,13 +248,13 @@ const CircleGrid = memo(function CircleGrid({ circles }: { circles: Circle[] }) 
                 <Icons.UsersRound className="h-[19px] w-[19px]" />
               </Tile>
               <div className="min-w-0">
-                <b className="block text-[0.875rem] font-bold leading-snug" style={{ color: "var(--ux-ink)" }}>
+                <b className="block text-sm font-bold leading-snug" style={{ color: "var(--ux-ink)" }}>
                   {c.name}
                 </b>
-                <p className="mt-0.5 text-[0.75rem]" style={{ color: "var(--ux-faint)" }}>{c.topic}</p>
+                <p className="mt-0.5 text-xs" style={{ color: "var(--ux-faint)" }}>{c.topic}</p>
               </div>
             </div>
-            <p className="mt-3 text-[0.75rem]" style={{ color: "var(--ux-faint)" }}>
+            <p className="mt-3 text-xs" style={{ color: "var(--ux-faint)" }}>
               {c.member_count} women · {c.post_count} posts
             </p>
           </Link>
@@ -280,17 +280,17 @@ const PostCard = memo(function PostCard(
     <article className="ux-rise mb-3 rounded-[20px] p-4" style={{ ...card, animationDelay: `${0.05 + i * 0.07}s` }}>
       <div className="mb-2.5 flex items-center gap-3">
         <Tile tone={tone} size={38} radius={12}>
-          <span className="text-[0.8125rem]">{initials(p.author_name)}</span>
+          <span className="text-xsm">{initials(p.author_name)}</span>
         </Tile>
         <div className="min-w-0">
-          <b className="block text-[0.8125rem] font-bold" style={{ color: "var(--ux-ink)" }}>{p.author_name}</b>
+          <b className="block text-xsm font-bold" style={{ color: "var(--ux-ink)" }}>{p.author_name}</b>
         </div>
-        <time className="ms-auto shrink-0 text-[0.6875rem]" style={{ color: "var(--ux-faint)" }}>{p.when}</time>
+        <time className="ms-auto shrink-0 text-2xs" style={{ color: "var(--ux-faint)" }}>{p.when}</time>
       </div>
-      <p className="m-0 text-[0.875rem] leading-relaxed" style={{ color: "var(--ux-ink-2)" }}>{p.body}</p>
+      <p className="m-0 text-sm leading-relaxed" style={{ color: "var(--ux-ink-2)" }}>{p.body}</p>
       <div className="mt-3 flex gap-2">
         <button type="button" onClick={() => onLike(p.id)}
-                className="ux-press inline-flex min-h-[38px] items-center gap-2 rounded-[12px] px-3.5 text-[0.75rem] font-bold"
+                className="ux-press inline-flex min-h-[38px] items-center gap-2 rounded-[12px] px-3.5 text-xs font-bold"
                 style={p.liked_by_me
                   ? { background: "var(--ux-tint-pink)", color: "var(--ux-pink-ink)", border: "1px solid transparent" }
                   : { border: "1px solid var(--ux-line)", color: "var(--ux-ink-2)" }}>
@@ -316,12 +316,12 @@ export function Rooms({ d, act }: { d: CommunityData; act: CommunityActs }) {
   return (
     <>
       <div className="ux-rise mb-4.5 flex flex-wrap items-center gap-3.5 rounded-[20px] px-[20px] py-[16px]" style={card}>
-        <span className="text-[0.6875rem] font-extrabold uppercase tracking-[0.15em]" style={{ color: "var(--ux-faint)" }}>
+        <span className="text-2xs font-extrabold uppercase tracking-[0.15em]" style={{ color: "var(--ux-faint)" }}>
           Here now
         </span>
         <div className="flex">
           {d.posts.slice(0, 5).map((p, i) => (
-            <span key={p.id} className="relative -ms-2 grid h-[34px] w-[34px] place-items-center rounded-[12px] text-[0.6875rem] font-extrabold first:ms-0"
+            <span key={p.id} className="relative -ms-2 grid h-[34px] w-[34px] place-items-center rounded-[12px] text-2xs font-extrabold first:ms-0"
                   style={{ color: `var(${INKS[toneOf(p.id)]})`,
                            background: `var(${TINTS[toneOf(p.id)]})`,
                            border: "2.5px solid var(--ux-surface)" }}>
@@ -331,7 +331,7 @@ export function Rooms({ d, act }: { d: CommunityData; act: CommunityActs }) {
             </span>
           ))}
         </div>
-        <span className="text-[0.8125rem]" style={{ color: "var(--ux-faint)" }}>
+        <span className="text-xsm" style={{ color: "var(--ux-faint)" }}>
           {d.posts[0]?.author_name.split(" ")[0]} and others are reading right now
         </span>
       </div>
@@ -350,10 +350,10 @@ export function Rooms({ d, act }: { d: CommunityData; act: CommunityActs }) {
                   <Icons.UsersRound className="h-[21px] w-[21px]" />
                 </Tile>
                 <div className="min-w-0">
-                  <h4 className="m-0 text-[1rem] font-bold tracking-[-0.015em]" style={{ color: "var(--ux-ink)" }}>
+                  <h4 className="m-0 text-base font-bold tracking-[-0.015em]" style={{ color: "var(--ux-ink)" }}>
                     {c.name}
                   </h4>
-                  <p className="mt-0.5 flex items-center gap-1.5 text-[0.75rem]" style={{ color: "var(--ux-faint)" }}>
+                  <p className="mt-0.5 flex items-center gap-1.5 text-xs" style={{ color: "var(--ux-faint)" }}>
                     {live && <i className="ux-live h-[7px] w-[7px] shrink-0 rounded-full"
                                 style={{ background: "var(--ux-green-ink)" }} />}
                     {c.member_count} women{live ? " · some here now" : ""}
@@ -361,7 +361,7 @@ export function Rooms({ d, act }: { d: CommunityData; act: CommunityActs }) {
                 </div>
               </div>
               {said && (
-                <p className="mt-3 rounded-[12px] p-[11px_13px] text-[0.8125rem] leading-relaxed"
+                <p className="mt-3 rounded-[12px] p-[11px_13px] text-xsm leading-relaxed"
                    style={{ background: "var(--ux-surface-2)", border: "1px solid var(--ux-line)",
                             color: "var(--ux-ink-2)" }}>
                   <b style={{ color: "var(--ux-ink)" }}>{said.author_name}:</b> {said.body.slice(0, 96)}
@@ -378,13 +378,13 @@ export function Rooms({ d, act }: { d: CommunityData; act: CommunityActs }) {
               )}
               <div className="mt-3 flex items-center gap-2.5">
                 {c.post_count > 0 && (
-                  <span className="rounded-full px-2.5 py-1 text-[0.6875rem] font-extrabold"
+                  <span className="rounded-full px-2.5 py-1 text-2xs font-extrabold"
                         style={{ background: "linear-gradient(96deg, var(--ux-rib-2), var(--ux-rib-3))",
                                  color: "var(--ux-on-brand)" }}>
                     {c.post_count} posts
                   </span>
                 )}
-                <span className="ms-auto inline-flex min-h-[38px] items-center gap-1.5 rounded-[12px] px-[16px] text-[0.75rem] font-bold transition-all group-hover:gap-2.5"
+                <span className="ms-auto inline-flex min-h-[38px] items-center gap-1.5 rounded-[12px] px-[16px] text-xs font-bold transition-all group-hover:gap-2.5"
                       style={{ border: "1px solid var(--ux-line-strong)", background: "var(--ux-surface)",
                                color: "var(--ux-ink-2)" }}>
                   Go in <Icons.ArrowRight className="h-[14px] w-[14px]" />
@@ -427,7 +427,7 @@ export function Near({
           style={{ color: "var(--ux-ink)" }}>
         {within.length} {within.length === 1 ? "woman" : "women"} within {km} km
       </h2>
-      <p className="mb-4 mt-1.5 text-[0.875rem]" style={{ color: "var(--ux-ink-2)" }}>
+      <p className="mb-4 mt-1.5 text-sm" style={{ color: "var(--ux-ink-2)" }}>
         All of them make something. Drag the range to see who is close enough to share a stall or
         split a courier.
       </p>
@@ -465,36 +465,36 @@ export function Near({
                 <circle cx={x} cy={y} r={18} fill={`var(${toneOf(p.id)})`}
                         stroke="var(--ux-surface)" strokeWidth={2.5} />
                 <text x={x} y={y} textAnchor="middle" dominantBaseline="central"
-                      style={{ fontSize: 10.5, fontWeight: 700, fill: "#fff" }}>{initials(p.name)}</text>
+                      style={{ fontSize: 10.5, fontWeight: 700, fill: "var(--ux-on-brand)" }}>{initials(p.name)}</text>
               </g>
             );
           })}
         </svg>
         <div className="pointer-events-none absolute start-[18px] top-4">
-          <b className="block text-[1rem] font-extrabold" style={{ color: "var(--ux-ink)" }}>Your city</b>
-          <span className="text-[0.75rem]" style={{ color: "var(--ux-faint)" }}>you are in the middle</span>
+          <b className="block text-base font-extrabold" style={{ color: "var(--ux-ink)" }}>Your city</b>
+          <span className="text-xs" style={{ color: "var(--ux-faint)" }}>you are in the middle</span>
         </div>
         <div className="absolute inset-x-[18px] bottom-4 flex items-center gap-3 rounded-[12px] px-3.5 py-[12px]"
              style={{ background: "var(--ux-surface)", border: "1px solid var(--ux-line-strong)",
                       boxShadow: "0 8px 22px -14px rgba(23,16,52,.5)" }}>
-          <span className="shrink-0 text-[0.75rem] font-bold" style={{ color: "var(--ux-ink)" }}>How far</span>
+          <span className="shrink-0 text-xs font-bold" style={{ color: "var(--ux-ink)" }}>How far</span>
           <input type="range" min={1} max={6} step={0.5} value={km} aria-label="Distance in kilometres"
                  onChange={(e) => setKm(Number(e.target.value))}
                  className="h-[34px] flex-1 cursor-pointer" style={{ accentColor: "var(--ux-brand)" }} />
-          <b className="min-w-[56px] shrink-0 text-end text-[0.8125rem] font-extrabold" style={{ color: "var(--ux-brand)" }}>
+          <b className="min-w-[56px] shrink-0 text-end text-xsm font-extrabold" style={{ color: "var(--ux-brand)" }}>
             {km} km
           </b>
         </div>
       </div>
 
-      <p className="mb-5 text-[0.75rem]" style={{ color: "var(--ux-faint)" }}>
+      <p className="mb-5 text-xs" style={{ color: "var(--ux-faint)" }}>
         Distances are a stand-in — WomSakhi does not hold anyone&rsquo;s location yet, so nobody is
         placed by where she really is.
       </p>
 
       <Sec>Who is near</Sec>
       {within.length === 0 ? (
-        <p className="rounded-[16px] p-6 text-center text-[0.8125rem]"
+        <p className="rounded-[16px] p-6 text-center text-xsm"
            style={{ ...card, color: "var(--ux-muted)" }}>
           Nobody within {km} km. Drag the range wider.
         </p>
@@ -502,18 +502,18 @@ export function Near({
         <article key={p.id} className="ux-slide mb-2.5 flex items-center gap-3.5 rounded-[16px] p-3.5 transition-transform hover:translate-x-1"
                  style={{ ...card, animationDelay: `${0.1 + p.i * 0.06}s` }}>
           <Tile tone={toneOf(p.id)} size={40} radius={13}>
-            <span className="text-[0.8125rem]">{initials(p.name)}</span>
+            <span className="text-xsm">{initials(p.name)}</span>
           </Tile>
           <div className="min-w-0 flex-1">
-            <b className="block text-[0.875rem] font-bold" style={{ color: "var(--ux-ink)" }}>{p.name}</b>
-            <p className="mt-0.5 truncate text-[0.75rem]" style={{ color: "var(--ux-faint)" }}>{p.what}…</p>
+            <b className="block text-sm font-bold" style={{ color: "var(--ux-ink)" }}>{p.name}</b>
+            <p className="mt-0.5 truncate text-xs" style={{ color: "var(--ux-faint)" }}>{p.what}…</p>
           </div>
           <div className="shrink-0 text-end">
-            <b className="block text-[1rem] font-extrabold tabular-nums" style={{ color: "var(--ux-ink)" }}>{p.km}</b>
-            <span className="text-[0.6875rem]" style={{ color: "var(--ux-faint)" }}>km</span>
+            <b className="block text-base font-extrabold tabular-nums" style={{ color: "var(--ux-ink)" }}>{p.km}</b>
+            <span className="text-2xs" style={{ color: "var(--ux-faint)" }}>km</span>
           </div>
           <Link href="/app/messages"
-                className="ux-press inline-flex min-h-[36px] shrink-0 items-center gap-1.5 rounded-[12px] px-3.5 text-[0.75rem] font-bold"
+                className="ux-press inline-flex min-h-[36px] shrink-0 items-center gap-1.5 rounded-[12px] px-3.5 text-xs font-bold"
                 style={{ border: "1px solid var(--ux-line-strong)", background: "var(--ux-surface)",
                          color: "var(--ux-ink-2)" }}>
             <Icons.MessageCircle className="h-[14px] w-[14px]" /> Message
@@ -539,7 +539,7 @@ const ART: [string, string][] = [
 export function Wall({ d, act }: { d: CommunityData; act: CommunityActs }) {
   if (d.posts.length === 0) {
     return (
-      <p className="rounded-[20px] p-10 text-center text-[0.8125rem]" style={{ ...card, color: "var(--ux-muted)" }}>
+      <p className="rounded-[20px] p-10 text-center text-xsm" style={{ ...card, color: "var(--ux-muted)" }}>
         Nothing has been posted in your circles yet.
       </p>
     );
@@ -550,7 +550,7 @@ export function Wall({ d, act }: { d: CommunityData; act: CommunityActs }) {
           style={{ color: "var(--ux-ink)" }}>
         Made this week
       </h2>
-      <p className="mb-5 mt-1.5 text-[0.875rem]" style={{ color: "var(--ux-ink-2)" }}>
+      <p className="mb-5 mt-1.5 text-sm" style={{ color: "var(--ux-ink-2)" }}>
         {d.posts.length} pieces, by women in your circles. Hover any of them to ask how.
       </p>
       <div style={{ columns: "3 250px", columnGap: 14 }}>
@@ -564,23 +564,23 @@ export function Wall({ d, act }: { d: CommunityData; act: CommunityActs }) {
                    style={{ height: h, background: `linear-gradient(150deg, ${c1}, ${c2})` }}>
                 <span aria-hidden className="absolute inset-0 opacity-0 transition-opacity group-hover:opacity-100"
                       style={{ background: "linear-gradient(0deg, rgba(0,0,0,.5), transparent 55%)" }} />
-                <span className="absolute inset-0 grid place-content-center text-[2.75rem] font-extrabold transition-transform duration-500 group-hover:scale-110"
+                <span className="absolute inset-0 grid place-content-center text-4xlm font-extrabold transition-transform duration-500 group-hover:scale-110"
                       style={{ color: "rgba(255,255,255,.34)" }}>
                   {initials(p.author_name)}
                 </span>
-                <span className="absolute inset-x-3 bottom-3 translate-y-2 rounded-[12px] p-2.5 text-center text-[0.75rem] font-bold opacity-0 transition-all group-hover:translate-y-0 group-hover:opacity-100"
+                <span className="absolute inset-x-3 bottom-3 translate-y-2 rounded-[12px] p-2.5 text-center text-xs font-bold opacity-0 transition-all group-hover:translate-y-0 group-hover:opacity-100"
                       style={{ background: "rgba(255,255,255,.94)", color: "var(--ux-brand-900)" }}>
                   Ask {p.author_name.split(" ")[0]} how
                 </span>
               </div>
               <div className="p-3.5">
-                <p className="m-0 text-[0.8125rem] leading-relaxed" style={{ color: "var(--ux-ink-2)" }}>
+                <p className="m-0 text-xsm leading-relaxed" style={{ color: "var(--ux-ink-2)" }}>
                   {p.body.slice(0, 130)}{p.body.length > 130 ? "…" : ""}
                 </p>
-                <div className="mt-3 flex items-center gap-2.5 text-[0.75rem]" style={{ color: "var(--ux-faint)" }}>
+                <div className="mt-3 flex items-center gap-2.5 text-xs" style={{ color: "var(--ux-faint)" }}>
                   <span>{p.author_name}</span>
                   <button type="button" onClick={() => act.like(p.id)}
-                          className="ux-press ms-auto inline-flex min-h-[34px] items-center gap-1.5 rounded-[8px] px-2.5 text-[0.75rem] font-bold"
+                          className="ux-press ms-auto inline-flex min-h-[34px] items-center gap-1.5 rounded-[8px] px-2.5 text-xs font-bold"
                           style={p.liked_by_me
                             ? { background: "var(--ux-tint-pink)", color: "var(--ux-pink-ink)", border: "1px solid transparent" }
                             : { border: "1px solid var(--ux-line)", color: "var(--ux-ink-2)" }}>

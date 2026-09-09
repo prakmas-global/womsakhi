@@ -52,14 +52,14 @@ export default function SeasonPage() {
         <Back to="/app/books" label="Back to your books" />
 
         <header>
-          <p className="text-[0.6875rem] font-extrabold uppercase tracking-[0.2em]" style={{ color: v("--ux-brand") }}>
+          <p className="text-2xs font-extrabold uppercase tracking-[0.2em]" style={{ color: v("--ux-brand") }}>
             Your year
           </p>
           <h1 className="mt-2 text-[clamp(1.5rem,3.2vw,2.125rem)] font-extrabold leading-[1.1] tracking-[-0.035em]"
               style={{ color: v("--ux-ink") }}>
             The busy months and the thin ones
           </h1>
-          <p className="mt-1.5 max-w-[56ch] text-[0.875rem] leading-relaxed" style={{ color: v("--ux-muted") }}>
+          <p className="mt-1.5 max-w-[56ch] text-sm leading-relaxed" style={{ color: v("--ux-muted") }}>
             Your work is not the same every month and never has been. What matters is knowing
             far enough ahead — cloth is bought in the quiet month before the rush.
           </p>
@@ -74,7 +74,7 @@ export default function SeasonPage() {
           </div>
           <div className="mt-4 flex items-start gap-2.5 border-t pt-3.5" style={{ borderColor: v("--ux-line") }}>
             <I name="Info" className="mt-[2px] h-[15px] w-[15px] shrink-0" style={{ color: v("--ux-muted") }} />
-            <p className="text-[0.8125rem] leading-relaxed" style={{ color: v("--ux-ink-2") }}>
+            <p className="text-xsm leading-relaxed" style={{ color: v("--ux-ink-2") }}>
               The thin months are not a failure. They are the part of the year to plan around —
               and the reason not to promise a large pot instalment in July.
             </p>
@@ -83,7 +83,7 @@ export default function SeasonPage() {
 
         {note && (
           <Card pad={16} style={{ background: v("--ux-tint-green"), borderColor: "transparent" }}>
-            <p className="flex items-center gap-2 text-[0.8125rem] font-semibold" style={{ color: v("--ux-green-ink") }}>
+            <p className="flex items-center gap-2 text-xsm font-semibold" style={{ color: v("--ux-green-ink") }}>
               <I name="CheckCircle2" className="h-[16px] w-[16px]" />{note}
             </p>
           </Card>
@@ -103,15 +103,15 @@ export default function SeasonPage() {
                     <IconTile icon={s.icon} tint={sh.tint} ink={sh.ink} size={44} radius={13} />
                     <div className="min-w-0 flex-1">
                       <div className="flex flex-wrap items-center gap-2">
-                        <p className="text-[1rem] font-bold" style={{ color: v("--ux-ink") }}>{s.name}</p>
-                        <span className="rounded-full px-2 py-[2px] text-[0.6875rem] font-bold uppercase tracking-[0.06em]"
+                        <p className="text-base font-bold" style={{ color: v("--ux-ink") }}>{s.name}</p>
+                        <span className="rounded-full px-2 py-[2px] text-2xs font-bold uppercase tracking-[0.06em]"
                               style={{ background: v(sh.tint), color: v(sh.ink) }}>{sh.label}</span>
                         {done && <Pill tone="green" size="sm">Ready</Pill>}
                       </div>
-                      <p className="mt-0.5 text-[0.8125rem]" style={{ color: v("--ux-muted") }}>
+                      <p className="mt-0.5 text-xsm" style={{ color: v("--ux-muted") }}>
                         {s.when} · about {formatRupees(s.expectMinor)}
                       </p>
-                      <p className="mt-2.5 flex items-start gap-2 text-[0.8125rem] leading-relaxed"
+                      <p className="mt-2.5 flex items-start gap-2 text-xsm leading-relaxed"
                          style={{ color: v("--ux-ink-2") }}>
                         <I name="ArrowRight" className="mt-[3px] h-[14px] w-[14px] shrink-0"
                            style={{ color: v("--ux-brand") }} />
@@ -119,9 +119,9 @@ export default function SeasonPage() {
                       </p>
                     </div>
                     <div className="shrink-0 text-right">
-                      <p className="text-[1.25rem] font-extrabold leading-none tabular-nums"
+                      <p className="text-xl font-extrabold leading-none tabular-nums"
                          style={{ color: v("--ux-ink") }}>{s.weeksAhead}</p>
-                      <p className="mt-0.5 text-[0.6875rem]" style={{ color: v("--ux-muted") }}>weeks to go</p>
+                      <p className="mt-0.5 text-2xs" style={{ color: v("--ux-muted") }}>weeks to go</p>
                     </div>
                   </div>
                   <div className="mt-3.5">

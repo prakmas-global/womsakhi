@@ -10,6 +10,7 @@ import { formatRupees } from "@/components/ux/kit";
 import {
   ITEMS, POT_PAYOUT, SELLERS, TIE_LABEL, sellerOf, sortedItems, type Item,
 } from "@/components/ux/market/data";
+import { COPY } from "@/components/ux/copy";
 
 /**
  * The market — where what she makes actually gets bought.
@@ -64,57 +65,57 @@ export default function MarketPage() {
             <IconTile icon={i.icon} tint={i.tint} ink={i.ink} size={46} radius={13} />
             <div className="min-w-0 flex-1">
               <div className="flex flex-wrap items-center gap-2">
-                <p className="text-[0.875rem] font-bold leading-snug" style={{ color: v("--ux-ink") }}>{i.title}</p>
+                <p className="text-sm font-bold leading-snug" style={{ color: v("--ux-ink") }}>{i.title}</p>
                 {i.madeToOrder && <Pill tone="green" size="sm">Made for you</Pill>}
                 {!s.open && <Pill tone="neutral" size="sm">Closed just now</Pill>}
               </div>
-              <p className="mt-1 text-[0.75rem] leading-relaxed" style={{ color: v("--ux-muted") }}>{i.detail}</p>
+              <p className="mt-1 text-xs leading-relaxed" style={{ color: v("--ux-muted") }}>{i.detail}</p>
 
               <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1">
-                <span className="inline-flex items-center gap-1.5 text-[0.75rem] font-semibold"
+                <span className="inline-flex items-center gap-1.5 text-xs font-semibold"
                       style={{ color: v("--ux-ink-2") }}>
-                  <span className="grid h-[20px] w-[20px] place-items-center rounded-full text-[0.6875rem] font-bold"
+                  <span className="grid h-[20px] w-[20px] place-items-center rounded-full text-2xs font-bold"
                         style={{ background: v("--ux-brand-tint-2"), color: v("--ux-brand") }}>
                     {s.name.charAt(0)}
                   </span>
                   {s.name}
                 </span>
-                <span className="rounded-full px-2 py-[2px] text-[0.6875rem] font-bold"
+                <span className="rounded-full px-2 py-[2px] text-2xs font-bold"
                       style={{
                         background: v(s.tie === "circle" ? "--ux-tint-pink" : "--ux-surface-2"),
                         color: v(s.tie === "circle" ? "--ux-pink-ink" : "--ux-muted"),
                       }}>
                   {TIE_LABEL[s.tie]}
                 </span>
-                <span className="text-[0.75rem]" style={{ color: v("--ux-muted") }}>{s.km} km</span>
+                <span className="text-xs" style={{ color: v("--ux-muted") }}>{s.km} km</span>
               </div>
 
               {/* The quiet signals, in place of stars */}
               <div className="mt-2 flex flex-wrap gap-x-3.5 gap-y-1">
                 {i.boughtByCircle > 0 && (
-                  <span className="inline-flex items-center gap-1.5 text-[0.75rem] font-semibold"
+                  <span className="inline-flex items-center gap-1.5 text-xs font-semibold"
                         style={{ color: v("--ux-brand") }}>
                     <I name="Users" className="h-[12px] w-[12px]" />
                     {i.boughtByCircle} women you know bought this
                   </span>
                 )}
-                <span className="inline-flex items-center gap-1.5 text-[0.75rem]"
+                <span className="inline-flex items-center gap-1.5 text-xs"
                       style={{ color: v(s.complaints === 0 ? "--ux-green-ink" : "--ux-muted") }}>
                   <I name={s.complaints === 0 ? "Check" : "Minus"} className="h-[12px] w-[12px]" sw={2.6} />
                   {s.complaints === 0 ? "No complaints, ever" : `${s.complaints} complaint`}
                 </span>
-                <span className="inline-flex items-center gap-1.5 text-[0.75rem]" style={{ color: v("--ux-muted") }}>
+                <span className="inline-flex items-center gap-1.5 text-xs" style={{ color: v("--ux-muted") }}>
                   <I name="Repeat" className="h-[12px] w-[12px]" />
                   {s.repeatBuyers} come back
                 </span>
               </div>
             </div>
             <div className="shrink-0 text-right">
-              <p className="text-[1.125rem] font-extrabold leading-none tabular-nums" style={{ color: v("--ux-ink") }}>
+              <p className="text-lg font-extrabold leading-none tabular-nums" style={{ color: v("--ux-ink") }}>
                 {formatRupees(i.minor)}
               </p>
               {i.stock !== null && (
-                <p className="mt-1 text-[0.6875rem]" style={{ color: v("--ux-muted") }}>{i.stock} left</p>
+                <p className="mt-1 text-2xs" style={{ color: v("--ux-muted") }}>{i.stock} left</p>
               )}
             </div>
           </div>
@@ -138,14 +139,14 @@ export default function MarketPage() {
 
         <header className="flex flex-wrap items-end gap-4">
           <div className="min-w-0 flex-1">
-            <p className="text-[0.6875rem] font-extrabold uppercase tracking-[0.2em]" style={{ color: v("--ux-brand") }}>
+            <p className="text-2xs font-extrabold uppercase tracking-[0.2em]" style={{ color: v("--ux-brand") }}>
               The market
             </p>
             <h1 className="mt-2 text-[clamp(1.5rem,3.2vw,2.125rem)] font-extrabold leading-[1.1] tracking-[-0.035em]"
                 style={{ color: v("--ux-ink") }}>
               Buy from women you know
             </h1>
-            <p className="mt-1.5 max-w-[56ch] text-[0.875rem] leading-relaxed" style={{ color: v("--ux-muted") }}>
+            <p className="mt-1.5 max-w-[56ch] text-sm leading-relaxed" style={{ color: v("--ux-muted") }}>
               Your circle first, then women you have bought from, then women near you. Everything
               here is made or sold by someone whose name you can say.
             </p>
@@ -159,10 +160,10 @@ export default function MarketPage() {
             <div className="flex flex-wrap items-start gap-4">
               <IconTile icon="Coins" tint="--ux-brand-tint" ink="--ux-brand" size={46} radius={13} />
               <div className="min-w-0 flex-1">
-                <p className="text-[1rem] font-bold" style={{ color: v("--ux-ink") }}>
+                <p className="text-base font-bold" style={{ color: v("--ux-ink") }}>
                   Your pot pays out {POT_PAYOUT.whenText}
                 </p>
-                <p className="mt-1 max-w-[54ch] text-[0.8125rem] leading-relaxed" style={{ color: v("--ux-ink-2") }}>
+                <p className="mt-1 max-w-[54ch] text-xsm leading-relaxed" style={{ color: v("--ux-ink-2") }}>
                   {formatRupees(POT_PAYOUT.minor)} is yours to do whatever you like with. If some
                   of it is going to be spent anyway, spending it here keeps it among women you know.
                   <b> Nobody will ask you to.</b>
@@ -175,7 +176,7 @@ export default function MarketPage() {
 
         {note && (
           <Card pad={16} style={{ background: v("--ux-tint-green"), borderColor: "transparent" }}>
-            <p className="flex items-center gap-2 text-[0.8125rem] font-semibold" style={{ color: v("--ux-green-ink") }}>
+            <p className="flex items-center gap-2 text-xsm font-semibold" style={{ color: v("--ux-green-ink") }}>
               <I name="CheckCircle2" className="h-[16px] w-[16px]" />{note}
             </p>
           </Card>
@@ -204,7 +205,7 @@ export default function MarketPage() {
           </div>
 
           {shown.length === 0 ? (
-            <Card><EmptyState icon="ShoppingBasket" title="Nothing here yet"
+            <Card><EmptyState icon="ShoppingBasket" title={COPY.nothingHereYet}
                               body="Try another filter — or invite a woman whose trade is missing from your circle."
                               action={<Btn size="sm" variant="outline" onClick={() => setFilter("all")}>Show everything</Btn>} /></Card>
           ) : (
@@ -215,7 +216,7 @@ export default function MarketPage() {
         <Card pad={16} style={{ background: v("--ux-surface-2"), borderColor: "transparent" }}>
           <div className="flex items-start gap-3">
             <I name="Info" className="mt-[2px] h-[16px] w-[16px] shrink-0" style={{ color: v("--ux-muted") }} />
-            <p className="text-[0.8125rem] leading-relaxed" style={{ color: v("--ux-ink-2") }}>
+            <p className="text-xsm leading-relaxed" style={{ color: v("--ux-ink-2") }}>
               There are no stars here. Most women selling have sold to too few people for a rating to
               mean anything, and almost every rating anyone has is five. What is shown instead is
               whether buyers came back and whether anyone complained — much harder to fake, and there

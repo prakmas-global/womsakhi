@@ -312,7 +312,7 @@ export function RevealCard({ compact = false }: { compact?: boolean }) {
           <button
             type="button"
             onClick={toggle}
-            className="inline-flex min-h-[38px] items-center gap-2 rounded-full px-3.5 text-[0.75rem] font-semibold"
+            className="inline-flex min-h-[38px] items-center gap-2 rounded-full px-3.5 text-xs font-semibold"
             style={{
               marginTop: "clamp(0.4375rem,1.2vh,0.75rem)",
               background: "var(--a-well-2)", border: "1px solid var(--a-edge)", color: "var(--a-ink-2)",
@@ -434,7 +434,7 @@ export default function AuthShowcase() {
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img loading="lazy" decoding="async" src="/ux/brand/womsakhi-wordmark.webp" alt="WomSakhi"
                    className="object-contain" style={{ height: "clamp(1.3125rem,3.1vh,1.6875rem)" }} />
-              <p className="mt-1 text-[0.6875rem] font-semibold tracking-[0.19em]" style={{ color: "var(--a-muted)" }}>
+              <p className="mt-1 text-2xs font-semibold tracking-[0.19em]" style={{ color: "var(--a-muted)" }}>
                 EMPOWERING HER JOURNEY
               </p>
             </div>

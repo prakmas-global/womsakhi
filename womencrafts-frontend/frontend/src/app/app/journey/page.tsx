@@ -67,14 +67,14 @@ export default function JourneyPage() {
       <div className="flex flex-col gap-5">
 
         <header>
-          <p className="text-[0.6875rem] font-extrabold uppercase tracking-[0.2em]" style={{ color: v("--ux-brand") }}>
+          <p className="text-2xs font-extrabold uppercase tracking-[0.2em]" style={{ color: v("--ux-brand") }}>
             My journey
           </p>
           <h1 className="mt-2 text-[clamp(1.5rem,3.2vw,2.125rem)] font-extrabold leading-[1.1] tracking-[-0.035em]"
               style={{ color: v("--ux-ink") }}>
             From what you can do, to what you earn
           </h1>
-          <p className="mt-1.5 max-w-[58ch] text-[0.875rem] leading-relaxed" style={{ color: v("--ux-muted") }}>
+          <p className="mt-1.5 max-w-[58ch] text-sm leading-relaxed" style={{ color: v("--ux-muted") }}>
             Seven steps, and you are on step {at + 1}. Nothing below is locked — if you are already
             further along than this says, go straight there.
           </p>
@@ -85,14 +85,14 @@ export default function JourneyPage() {
         <Card pad={20}>
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div>
-              <p className="text-[0.75rem] font-semibold uppercase tracking-[0.1em]" style={{ color: v("--ux-muted") }}>
+              <p className="text-xs font-semibold uppercase tracking-[0.1em]" style={{ color: v("--ux-muted") }}>
                 Where you are
               </p>
-              <p className="mt-1 text-[1.25rem] font-extrabold" style={{ color: v("--ux-ink") }}>
+              <p className="mt-1 text-xl font-extrabold" style={{ color: v("--ux-ink") }}>
                 {STAGES[at].label}
               </p>
             </div>
-            <p className="text-[1.75rem] font-extrabold tabular-nums" style={{ color: v("--ux-brand") }}>
+            <p className="text-2xlm font-extrabold tabular-nums" style={{ color: v("--ux-brand") }}>
               {pct}%
             </p>
           </div>
@@ -124,20 +124,20 @@ export default function JourneyPage() {
                             color: v(done || here ? "--ux-on-brand" : "--ux-muted"),
                           }}>
                       {done ? <I name="Check" className="h-[1rem] w-[1rem]" sw={3} />
-                            : <span className="text-[0.8125rem] font-extrabold tabular-nums">{i + 1}</span>}
+                            : <span className="text-xsm font-extrabold tabular-nums">{i + 1}</span>}
                     </span>
 
                     <div className="min-w-0 flex-1 pt-0.5" style={{ opacity: !done && !here ? 0.55 : 1 }}>
                       <div className="flex flex-wrap items-center gap-2">
-                        <p className="text-[1rem] font-bold" style={{ color: v("--ux-ink") }}>{s.label}</p>
+                        <p className="text-base font-bold" style={{ color: v("--ux-ink") }}>{s.label}</p>
                         {here && <Pill tone="brand" size="sm">You are here</Pill>}
                       </div>
-                      <p className="mt-0.5 text-[0.8125rem]" style={{ color: v("--ux-muted") }}>{s.verb}</p>
+                      <p className="mt-0.5 text-xsm" style={{ color: v("--ux-muted") }}>{s.verb}</p>
 
                       {rows.length > 0 && (
                         <ul className="mt-2 flex flex-wrap gap-1.5">
                           {rows.map((r) => (
-                            <li key={r} className="inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[0.6875rem] font-semibold"
+                            <li key={r} className="inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-2xs font-semibold"
                                 style={{ background: v("--ux-tint-green"), color: v("--ux-green-ink") }}>
                               <I name="Check" className="h-[0.6875rem] w-[0.6875rem]" sw={3} />{r}
                             </li>
@@ -171,8 +171,8 @@ export default function JourneyPage() {
                               opacity: m.done ? 1 : 0.6 }}>
                   <IconTile icon={m.done ? "CheckCircle2" : m.icon} tint={m.tint} ink={m.ink} size={38} />
                   <div className="min-w-0 flex-1">
-                    <p className="text-[0.875rem] font-bold" style={{ color: v("--ux-ink") }}>{m.title}</p>
-                    <p className="mt-0.5 text-[0.75rem] leading-relaxed" style={{ color: v("--ux-muted") }}>
+                    <p className="text-sm font-bold" style={{ color: v("--ux-ink") }}>{m.title}</p>
+                    <p className="mt-0.5 text-xs leading-relaxed" style={{ color: v("--ux-muted") }}>
                       {m.body}{m.when ? ` · ${m.when}` : ""}
                     </p>
                   </div>
@@ -185,7 +185,7 @@ export default function JourneyPage() {
         <Card pad={16} style={{ background: v("--ux-surface-2"), borderColor: "transparent" }}>
           <div className="flex items-start gap-3">
             <I name="Info" className="mt-[2px] h-[1rem] w-[1rem] shrink-0" style={{ color: v("--ux-muted") }} />
-            <p className="text-[0.8125rem] leading-relaxed" style={{ color: v("--ux-ink-2") }}>
+            <p className="text-xsm leading-relaxed" style={{ color: v("--ux-ink-2") }}>
               Every green mark above is something you did, not something you told us. Nothing here is
               locked — if you already sell but never took a course, you are further along than this
               shows, and you should go straight to the step that helps.

@@ -49,6 +49,16 @@
   --text-xsm: 0.8125rem;
   --text-smd: 0.9375rem;
 
+  /* Two steps ABOVE Tailwind's, added for the member app's headings. Both were
+     written as arbitrary values in 14 places; they are real steps in the
+     design, not strays, so they get names rather than being rounded to a
+     neighbour and quietly changing how a page looks:
+
+       text-2xlm  28px   page titles (between 2xl 24px and 3xl 30px)
+       text-4xlm  44px   hero figures (between 4xl 36px and 5xl 48px)              */
+  --text-2xlm: 1.75rem;
+  --text-4xlm: 2.75rem;
+
   /* ---- Brand — magenta / cerise (primary actions, section titles) ---- */
   --color-brand-50: #fdeef6;
   --color-brand-100: #fbd7e8;

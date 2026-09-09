@@ -64,11 +64,11 @@ export default function ContactPage() {
         className="not-prose my-6 rounded-[16px] p-5"
         style={{ background: "var(--ux-tint-orange)", border: "1px solid var(--ux-orange)" }}
       >
-        <p className="flex items-center gap-2 text-[0.875rem] font-bold" style={{ color: "var(--ux-orange-ink)" }}>
+        <p className="flex items-center gap-2 text-sm font-bold" style={{ color: "var(--ux-orange-ink)" }}>
           <AlertTriangle className="h-[18px] w-[18px]" aria-hidden />
           If you are in danger right now
         </p>
-        <p className="mt-2 text-[0.8125rem] leading-relaxed" style={{ color: "var(--ux-orange-ink)" }}>
+        <p className="mt-2 text-xsm leading-relaxed" style={{ color: "var(--ux-orange-ink)" }}>
           Do not wait for an email from us. Call one of these — they answer 24 hours a day,
           and they are free from any phone.
         </p>
@@ -84,10 +84,10 @@ export default function ContactPage() {
               className="ux-sq flex-1 rounded-[12px] px-4 py-3 text-center"
               style={{ background: "var(--ux-surface)", border: "1px solid var(--ux-orange)", minWidth: 148 }}
             >
-              <span className="block text-[1.25rem] font-bold leading-none" style={{ color: "var(--ux-orange-ink)" }}>
+              <span className="block text-xl font-bold leading-none" style={{ color: "var(--ux-orange-ink)" }}>
                 {number}
               </span>
-              <span className="mt-1.5 block text-[0.6875rem] leading-snug" style={{ color: "var(--ux-muted)" }}>
+              <span className="mt-1.5 block text-2xs leading-snug" style={{ color: "var(--ux-muted)" }}>
                 {what}
               </span>
             </a>
@@ -117,10 +117,10 @@ export default function ContactPage() {
                 <Icon className="h-[18px] w-[18px]" strokeWidth={2} aria-hidden />
               </span>
               <div className="min-w-0">
-                <p className="text-[0.875rem] font-semibold" style={{ color: "var(--ux-ink)" }}>
+                <p className="text-sm font-semibold" style={{ color: "var(--ux-ink)" }}>
                   {title}
                 </p>
-                <p className="mt-1 text-[0.75rem] leading-relaxed" style={{ color: "var(--ux-muted)" }}>
+                <p className="mt-1 text-xs leading-relaxed" style={{ color: "var(--ux-muted)" }}>
                   {body}
                 </p>
                 {/* A flex row, not two inline-blocks: the margin between them
@@ -129,13 +129,13 @@ export default function ContactPage() {
                 <div className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1">
                   <a
                     href={`mailto:${address}?subject=${encodeURIComponent(title)}`}
-                    className="text-[0.8125rem] font-semibold"
+                    className="text-xsm font-semibold"
                     style={{ color: "var(--ux-brand)" }}
                   >
                     {address}
                   </a>
                   {cta && (
-                    <Link href={cta.href} className="text-[0.8125rem] font-medium" style={{ color: "var(--ux-muted)" }}>
+                    <Link href={cta.href} className="text-xsm font-medium" style={{ color: "var(--ux-muted)" }}>
                       {cta.label}
                     </Link>
                   )}

@@ -42,14 +42,14 @@ export default function ShowingPage() {
         <Back to="/app/vault" label="Back to your locker" />
 
         <header>
-          <p className="text-[0.6875rem] font-extrabold uppercase tracking-[0.2em]" style={{ color: v("--ux-brand") }}>
+          <p className="text-2xs font-extrabold uppercase tracking-[0.2em]" style={{ color: v("--ux-brand") }}>
             Showing someone
           </p>
           <h1 className="mt-2 text-[clamp(1.5rem,3.2vw,2.125rem)] font-extrabold leading-[1.1] tracking-[-0.035em]"
               style={{ color: v("--ux-ink") }}>
             &ldquo;Here, look&rdquo;
           </h1>
-          <p className="mt-1.5 max-w-[58ch] text-[0.875rem] leading-relaxed" style={{ color: v("--ux-muted") }}>
+          <p className="mt-1.5 max-w-[58ch] text-sm leading-relaxed" style={{ color: v("--ux-muted") }}>
             Sometimes someone at home wants to see what you are doing on your phone. This is a screen
             you can hand over. You choose what is on it, and what is on it is true — you are not
             hiding, you are showing.
@@ -76,10 +76,10 @@ export default function ShowingPage() {
                     </span>
                     <div className="min-w-0 flex-1">
                       <div className="flex flex-wrap items-center gap-2">
-                        <p className="text-[0.875rem] font-bold" style={{ color: v("--ux-ink") }}>{r.label}</p>
+                        <p className="text-sm font-bold" style={{ color: v("--ux-ink") }}>{r.label}</p>
                         {r.locked && <Pill tone="neutral" size="sm">Never</Pill>}
                       </div>
-                      <p className="mt-0.5 text-[0.75rem]" style={{ color: v("--ux-muted") }}>{r.detail}</p>
+                      <p className="mt-0.5 text-xs" style={{ color: v("--ux-muted") }}>{r.detail}</p>
                     </div>
 
                     {r.locked ? (
@@ -108,7 +108,7 @@ export default function ShowingPage() {
             <Card pad={16} style={{ background: v("--ux-surface-2"), borderColor: "transparent" }}>
               <div className="flex items-start gap-3">
                 <I name="ShieldCheck" className="mt-[2px] h-[16px] w-[16px] shrink-0" style={{ color: v("--ux-muted") }} />
-                <p className="text-[0.8125rem] leading-relaxed" style={{ color: v("--ux-ink-2") }}>
+                <p className="text-xsm leading-relaxed" style={{ color: v("--ux-ink-2") }}>
                   Your locker, your pockets, your savings pot and your papers have no switch at all —
                   not one that is turned off, one that does not exist. Nobody can turn them on: not
                   someone holding your phone, not someone who knows your PIN, not us. Everything else
@@ -120,7 +120,7 @@ export default function ShowingPage() {
 
           {/* Right: the actual phone, sticky so it stays visible while she flips switches */}
           <div className="lg:sticky lg:top-4 lg:self-start">
-            <p className="mb-2.5 text-center text-[0.6875rem] font-extrabold uppercase tracking-[0.14em]"
+            <p className="mb-2.5 text-center text-2xs font-extrabold uppercase tracking-[0.14em]"
                style={{ color: v("--ux-muted") }}>
               What they will see
             </p>
@@ -133,12 +133,12 @@ export default function ShowingPage() {
                      style={{ background: v("--ux-ink"), opacity: 0.3 }} />
 
                 <div className="px-4 pb-5 pt-8">
-                  <p className="text-[1rem] font-extrabold" style={{ color: v("--ux-ink") }}>Priya Sharma</p>
-                  <p className="mt-0.5 text-[0.6875rem]" style={{ color: v("--ux-muted") }}>Tailoring and mehendi</p>
+                  <p className="text-base font-extrabold" style={{ color: v("--ux-ink") }}>Priya Sharma</p>
+                  <p className="mt-0.5 text-2xs" style={{ color: v("--ux-muted") }}>Tailoring and mehendi</p>
 
                   <div className="mt-4 flex flex-col gap-2">
                     {on.length === 0 && (
-                      <p className="rounded-[12px] px-3 py-6 text-center text-[0.75rem]"
+                      <p className="rounded-[12px] px-3 py-6 text-center text-xs"
                          style={{ background: v("--ux-surface-2"), color: v("--ux-muted") }}>
                         Nothing at all. They will see an empty screen.
                       </p>
@@ -149,10 +149,10 @@ export default function ShowingPage() {
                            style={{ background: v("--ux-surface-2") }}>
                         <I name={r.icon} className="h-[14px] w-[14px] shrink-0" style={{ color: v("--ux-brand") }} />
                         <div className="min-w-0">
-                          <p className="text-[0.75rem] font-bold leading-tight" style={{ color: v("--ux-ink") }}>
+                          <p className="text-xs font-bold leading-tight" style={{ color: v("--ux-ink") }}>
                             {PREVIEW[r.id]?.head ?? r.label}
                           </p>
-                          <p className="text-[0.6875rem] leading-tight" style={{ color: v("--ux-muted") }}>
+                          <p className="text-2xs leading-tight" style={{ color: v("--ux-muted") }}>
                             {PREVIEW[r.id]?.sub ?? r.detail}
                           </p>
                         </div>
@@ -160,7 +160,7 @@ export default function ShowingPage() {
                     ))}
 
                     {/* What is NOT there is the point, so it is said out loud */}
-                    <p className="mt-1 flex items-center justify-center gap-1.5 text-center text-[0.6875rem]"
+                    <p className="mt-1 flex items-center justify-center gap-1.5 text-center text-2xs"
                        style={{ color: v("--ux-muted") }}>
                       <I name="Lock" className="h-[10px] w-[10px]" />
                       No money, no savings, no papers
@@ -175,7 +175,7 @@ export default function ShowingPage() {
                 {handed ? "Showing — tap your PIN to come back" : "Show this now"}
               </Btn>
               {handed && (
-                <p className="text-center text-[0.75rem]" style={{ color: v("--ux-muted") }}>
+                <p className="text-center text-xs" style={{ color: v("--ux-muted") }}>
                   Your phone stays on this screen until you type your PIN. Nothing else opens.
                 </p>
               )}

@@ -154,15 +154,15 @@ export function ModeRail({
             <div className="-mt-[24px] w-fit rounded-full" style={{ border: "3px solid var(--ux-surface)" }}>
               <Avatar src={me.avatar} name={me.first || "You"} size={52} />
             </div>
-            <p className="mt-2 truncate text-[0.875rem] font-bold" style={{ color: "var(--ux-ink)" }}>{me.first}</p>
-            <p className="mt-0.5 text-[0.6875rem]" style={{ color: "var(--ux-muted)" }}>Member</p>
+            <p className="mt-2 truncate text-sm font-bold" style={{ color: "var(--ux-ink)" }}>{me.first}</p>
+            <p className="mt-0.5 text-2xs" style={{ color: "var(--ux-muted)" }}>Member</p>
 
             <TransitionLink href="/app/profile"
                             className="ux-row mt-3 block rounded-[12px] p-2"
                             style={{ background: "var(--ux-surface-2)" }}>
               <span className="flex items-baseline justify-between">
-                <span className="text-[0.6875rem] font-semibold" style={{ color: "var(--ux-muted)" }}>Profile</span>
-                <span className="text-[0.75rem] font-bold" style={{ color: "var(--ux-brand)" }}>{me.profilePct}%</span>
+                <span className="text-2xs font-semibold" style={{ color: "var(--ux-muted)" }}>Profile</span>
+                <span className="text-xs font-bold" style={{ color: "var(--ux-brand)" }}>{me.profilePct}%</span>
               </span>
               <span className="mt-1.5 block h-[5px] w-full overflow-hidden rounded-full" style={{ background: "var(--ux-track)" }}>
                 <span className="block h-full rounded-full"
@@ -175,7 +175,7 @@ export function ModeRail({
         </div>
       </div>
 
-      <p className="px-5 pb-2 pt-2 text-[0.6875rem] font-bold uppercase tracking-[0.16em]"
+      <p className="px-5 pb-2 pt-2 text-2xs font-bold uppercase tracking-[0.16em]"
          style={{ color: "var(--ux-faint)" }}>
         Quick Access
       </p>
@@ -184,7 +184,7 @@ export function ModeRail({
           <TransitionLink
             key={q.label}
             href={q.href}
-            className="ux-row ux-sq mb-0.5 flex items-center gap-3 rounded-[12px] px-2.5 py-2 text-[0.875rem] font-medium"
+            className="ux-row ux-sq mb-0.5 flex items-center gap-3 rounded-[12px] px-2.5 py-2 text-sm font-medium"
             style={{ color: "var(--ux-ink)" }}
           >
             <span className="grid h-[26px] w-[26px] shrink-0 place-items-center rounded-[8px]"
@@ -200,7 +200,7 @@ export function ModeRail({
           the half of navigation a single row of tabs cannot hold. */}
       {mode && (
         <>
-          <p className="px-5 pb-2 pt-5 text-[0.6875rem] font-bold uppercase tracking-[0.16em]"
+          <p className="px-5 pb-2 pt-5 text-2xs font-bold uppercase tracking-[0.16em]"
              style={{ color: "var(--ux-faint)" }}>
             In {nav.label(mode)}
           </p>
@@ -218,18 +218,18 @@ export function ModeRail({
                 >
                   <Icon name={it.icon} className="ux-ico mt-[1px] h-[16px] w-[16px] shrink-0" />
                   <span className="min-w-0 flex-1">
-                    <span className="block truncate text-[0.8125rem]" style={{ fontWeight: on ? 600 : 500 }}>
+                    <span className="block truncate text-xsm" style={{ fontWeight: on ? 600 : 500 }}>
                       {nav.label(it)}
                     </span>
                     {it.note && (
-                      <span className="mt-0.5 block truncate text-[0.6875rem]"
+                      <span className="mt-0.5 block truncate text-2xs"
                             style={{ color: on ? "var(--ux-brand)" : "var(--ux-muted)", opacity: on ? 0.8 : 1 }}>
                         {nav.note(it)}
                       </span>
                     )}
                   </span>
                   {it.badge && (
-                    <span className="shrink-0 rounded-full px-2 py-[2px] text-[0.6875rem] font-semibold"
+                    <span className="shrink-0 rounded-full px-2 py-[2px] text-2xs font-semibold"
                           style={{ background: "var(--ux-brand-tint-2)", color: "var(--ux-brand)" }}>
                       {it.badge}
                     </span>
@@ -244,10 +244,10 @@ export function ModeRail({
       <div className="mt-auto px-3 pb-4">
         <div className="overflow-hidden rounded-[12px] p-3.5"
              style={{ background: "linear-gradient(150deg, var(--ux-brand-900), var(--ux-fill))" }}>
-          <p className="text-[0.8125rem] font-extrabold leading-snug" style={{ color: "var(--ux-on-brand)" }}>
+          <p className="text-xsm font-extrabold leading-snug" style={{ color: "var(--ux-on-brand)" }}>
             You are stronger than you think.
           </p>
-          <p className="mt-1.5 text-[0.6875rem]" style={{ color: "var(--ux-on-brand-2)" }}>
+          <p className="mt-1.5 text-2xs" style={{ color: "var(--ux-on-brand-2)" }}>
             Keep growing, keep glowing.
           </p>
         </div>
@@ -268,7 +268,7 @@ function TopIconBtn({
       <Icon name={icon} className="ux-ico h-[19px] w-[19px]" />
       {!!badge && (
         <span
-          className="ux-ping absolute top-[3px] end-[3px] grid h-[17px] min-w-[17px] place-items-center rounded-full px-1 text-[0.6875rem] font-semibold text-white"
+          className="ux-ping absolute top-[3px] end-[3px] grid h-[17px] min-w-[17px] place-items-center rounded-full px-1 text-2xs font-semibold text-white"
           style={{ background: "var(--ux-brand-600)" }}
         >
           <span className="relative">{badge > 9 ? "9+" : badge}</span>
@@ -355,7 +355,7 @@ function ModeTab({ mode, on }: { mode: Mode; on: boolean }) {
       style={{ color: on ? "var(--ux-ink)" : "var(--ux-muted)" }}
     >
       <Icon name={mode.icon} className="ux-ico h-[20px] w-[20px]" />
-      <span className="text-[0.75rem]" style={{ fontWeight: on ? 600 : 500 }}>{nav.label(mode)}</span>
+      <span className="text-xs" style={{ fontWeight: on ? 600 : 500 }}>{nav.label(mode)}</span>
       <span aria-hidden className="absolute inset-x-0 bottom-0 h-[3px] rounded-t-full"
             style={{ background: on ? "var(--ux-ink)" : "transparent",
                      transition: "background var(--ux-t) var(--ux-ease)" }} />
@@ -434,11 +434,11 @@ export function Topbar({ user, mode, current }: { user: { name: string; avatar: 
           style={{ borderColor: "var(--ux-line-strong)", background: "var(--ux-surface-2)" }}
         >
           <Icons.Search className="ux-ico h-4 w-4 shrink-0" style={{ color: "var(--ux-faint)" }} strokeWidth={2} />
-          <span className="min-w-0 flex-1 truncate text-[0.8125rem]" style={{ color: "var(--ux-muted)" }}>
+          <span className="min-w-0 flex-1 truncate text-xsm" style={{ color: "var(--ux-muted)" }}>
             Search…
           </span>
           <kbd
-            className="shrink-0 rounded-md border px-1.5 py-0.5 text-[0.6875rem] font-medium"
+            className="shrink-0 rounded-md border px-1.5 py-0.5 text-2xs font-medium"
             style={{ borderColor: "var(--ux-line-strong)", color: "var(--ux-muted)" }}
           >
             ⌘ K
@@ -481,7 +481,7 @@ export function Topbar({ user, mode, current }: { user: { name: string; avatar: 
             {/* Cut to "Hi, Priy…" at 390px. The avatar identifies the menu
                 perfectly well; the greeting is a nicety with room only on a
                 laptop. */}
-            <span className="hidden text-[0.875rem] font-medium lg:inline" style={{ color: "var(--ux-ink)" }}>
+            <span className="hidden text-sm font-medium lg:inline" style={{ color: "var(--ux-ink)" }}>
               Hi, {user.name}
             </span>
             <Icons.ChevronDown
@@ -515,7 +515,7 @@ export function Topbar({ user, mode, current }: { user: { name: string; avatar: 
                   href={it.href}
                   role="menuitem"
                   onClick={() => setMenu(false)}
-                  className="ux-hov flex items-center gap-3 rounded-[8px] px-2.5 py-2 text-[0.8125rem] transition-colors hover:bg-[var(--ux-surface-2)]"
+                  className="ux-hov flex items-center gap-3 rounded-[8px] px-2.5 py-2 text-xsm transition-colors hover:bg-[var(--ux-surface-2)]"
                   style={{ color: "var(--ux-ink)" }}
                 >
                   <Icon name={it.icon} className="ux-ico h-[16px] w-[16px]" />
@@ -525,7 +525,7 @@ export function Topbar({ user, mode, current }: { user: { name: string; avatar: 
 
               <div className="my-1.5 h-px" style={{ background: "var(--ux-line)" }} />
 
-              <p className="px-2.5 pb-1.5 text-[0.6875rem] font-semibold uppercase tracking-[0.07em]"
+              <p className="px-2.5 pb-1.5 text-2xs font-semibold uppercase tracking-[0.07em]"
                  style={{ color: "var(--ux-faint)" }}>
                 Appearance
               </p>
@@ -542,7 +542,7 @@ export function Topbar({ user, mode, current }: { user: { name: string; avatar: 
                       type="button"
                       onClick={() => setTheme(t)}
                       aria-pressed={on}
-                      className="ux-hov ux-press flex flex-1 items-center justify-center gap-1.5 rounded-[8px] py-[8px] text-[0.75rem] font-medium transition-colors"
+                      className="ux-hov ux-press flex flex-1 items-center justify-center gap-1.5 rounded-[8px] py-[8px] text-xs font-medium transition-colors"
                       style={{
                         background: on ? "var(--ux-surface)" : "transparent",
                         color: on ? "var(--ux-brand)" : "var(--ux-muted)",
@@ -561,7 +561,7 @@ export function Topbar({ user, mode, current }: { user: { name: string; avatar: 
                 type="button"
                 role="menuitem"
                 onClick={() => { setMenu(false); void signOut(); }}
-                className="ux-hov flex w-full items-center gap-3 rounded-[8px] px-2.5 py-2 text-start text-[0.8125rem] transition-colors hover:bg-[var(--ux-surface-2)]"
+                className="ux-hov flex w-full items-center gap-3 rounded-[8px] px-2.5 py-2 text-start text-xsm transition-colors hover:bg-[var(--ux-surface-2)]"
                 style={{ color: "var(--ux-pink-ink)" }}
               >
                 <Icon name="LogOut" className="ux-ico h-[16px] w-[16px]" />

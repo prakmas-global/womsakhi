@@ -411,20 +411,20 @@ export default function SakhiPage() {
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img loading="lazy" decoding="async" src="/sakhi-face.webp" alt="" className="h-[42px] w-[42px] rounded-full object-cover" />
           <div className="min-w-0 flex-1">
-            <h1 className="text-[1.25rem] font-bold tracking-tight" style={{ color: "var(--ux-ink)" }}>Ask Sakhi</h1>
-            <p className="text-[0.8125rem]" style={{ color: "var(--ux-muted)" }}>
+            <h1 className="text-xl font-bold tracking-tight" style={{ color: "var(--ux-ink)" }}>Ask Sakhi</h1>
+            <p className="text-xsm" style={{ color: "var(--ux-muted)" }}>
               Tell her what you need, in your own words.
             </p>
           </div>
           <div className="flex gap-2">
             <Link href="/app/saved"
-                  className="ux-press flex min-h-[40px] items-center gap-2 rounded-[12px] px-3.5 text-[0.8125rem] font-bold"
+                  className="ux-press flex min-h-[40px] items-center gap-2 rounded-[12px] px-3.5 text-xsm font-bold"
                   style={{ background: "var(--ux-surface)", border: "1px solid var(--ux-line-strong)", color: "var(--ux-ink)" }}>
               <Icons.BookmarkCheck className="h-4 w-4" />
               Saved {saved.length > 0 && `(${saved.length})`}
             </Link>
             <button type="button" onClick={startNew}
-                    className="ux-press flex min-h-[40px] items-center gap-2 rounded-[12px] px-3.5 text-[0.8125rem] font-bold"
+                    className="ux-press flex min-h-[40px] items-center gap-2 rounded-[12px] px-3.5 text-xsm font-bold"
                     style={{ background: "var(--ux-surface)", border: "1px solid var(--ux-line-strong)", color: "var(--ux-ink)" }}>
               <Icons.Plus className="h-4 w-4" /> New conversation
             </button>
@@ -432,7 +432,7 @@ export default function SakhiPage() {
         </header>
 
         {!available && (
-          <p className="rounded-[12px] p-3.5 text-[0.8125rem]"
+          <p className="rounded-[12px] p-3.5 text-xsm"
              style={{ background: "var(--ux-tint-amber)", color: "var(--ux-amber-ink)" }}>
             Sakhi is resting right now. Everything else in the app still works.
           </p>
@@ -503,7 +503,7 @@ export default function SakhiPage() {
         )}
 
         {error && (
-          <p className="flex items-center gap-2 text-[0.8125rem]" style={{ color: "var(--ux-pink-ink)" }}>
+          <p className="flex items-center gap-2 text-xsm" style={{ color: "var(--ux-pink-ink)" }}>
             <Icons.TriangleAlert className="h-4 w-4" /> {error}
           </p>
         )}

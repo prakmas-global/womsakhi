@@ -7,6 +7,7 @@ import { HomeShell } from "@/components/ux/home/HomeShell";
 import { Back, Btn, Card, Chip, EmptyState, I, SectionHead, Stat, v } from "@/components/ux/kit";
 import { formatRupees } from "@/components/ux/kit";
 import { MOVES, POCKETS } from "@/components/ux/vault/data";
+import { COPY } from "@/components/ux/copy";
 
 /**
  * Every movement, and where it went.
@@ -43,7 +44,7 @@ export default function HistoryPage() {
 
         <header className="flex flex-wrap items-end gap-4">
           <div className="min-w-0 flex-1">
-            <p className="text-[0.6875rem] font-extrabold uppercase tracking-[0.2em]" style={{ color: v("--ux-brand") }}>
+            <p className="text-2xs font-extrabold uppercase tracking-[0.2em]" style={{ color: v("--ux-brand") }}>
               Every movement
             </p>
             <h1 className="mt-2 text-[clamp(1.5rem,3.2vw,2.125rem)] font-extrabold leading-[1.1] tracking-[-0.035em]"
@@ -78,7 +79,7 @@ export default function HistoryPage() {
 
         {days.length === 0 ? (
           <Card>
-            <EmptyState icon="History" title="Nothing here yet"
+            <EmptyState icon="History" title={COPY.nothingHereYet}
                         body="No money has moved in or out of this pocket."
                         action={<Btn size="sm" variant="outline" onClick={() => setPocket("all")}>Show every pocket</Btn>} />
           </Card>
@@ -98,18 +99,18 @@ export default function HistoryPage() {
                         <I name={m.minor > 0 ? "ArrowDownLeft" : "ArrowUpRight"} className="h-[16px] w-[16px]" sw={2.4} />
                       </span>
                       <div className="min-w-0 flex-1">
-                        <p className="truncate text-[0.875rem] font-semibold" style={{ color: v("--ux-ink") }}>
+                        <p className="truncate text-sm font-semibold" style={{ color: v("--ux-ink") }}>
                           {m.what}
                           {m.automatic && (
-                            <span className="ml-2 rounded-full px-1.5 py-[1px] text-[0.6875rem] font-bold uppercase tracking-[0.06em]"
+                            <span className="ml-2 rounded-full px-1.5 py-[1px] text-2xs font-bold uppercase tracking-[0.06em]"
                                   style={{ background: v("--ux-brand-tint"), color: v("--ux-brand") }}>
                               a rule did this
                             </span>
                           )}
                         </p>
-                        <p className="text-[0.75rem]" style={{ color: v("--ux-muted") }}>{m.pocket}</p>
+                        <p className="text-xs" style={{ color: v("--ux-muted") }}>{m.pocket}</p>
                       </div>
-                      <p className="shrink-0 text-[0.875rem] font-bold tabular-nums"
+                      <p className="shrink-0 text-sm font-bold tabular-nums"
                          style={{ color: v(m.minor > 0 ? "--ux-green-ink" : "--ux-ink-2") }}>
                         {m.minor > 0 ? "+" : "−"}{money(Math.abs(m.minor))}
                       </p>

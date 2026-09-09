@@ -131,8 +131,8 @@ export function Header({ summary, className, rows, onPick }: {
   return (
     <header className={`flex-wrap items-end gap-4 ${className ?? "flex"}`}>
       <div className="min-w-0 flex-1">
-        <h1 className="text-[1.5rem] font-bold tracking-[-0.03em]" style={{ color: "var(--ux-ink)" }}>Messages</h1>
-        <p className="mt-0.5 text-[0.8125rem]" style={{ color: "var(--ux-muted)" }}>
+        <h1 className="text-2xl font-bold tracking-[-0.03em]" style={{ color: "var(--ux-ink)" }}>Messages</h1>
+        <p className="mt-0.5 text-xsm" style={{ color: "var(--ux-muted)" }}>
           Buyers, mentors and your circles — all in one place.
         </p>
       </div>
@@ -146,10 +146,10 @@ export function Header({ summary, className, rows, onPick }: {
               <Ico name={s.icon} className="h-[16px] w-[16px]" />
             </span>
             <span>
-              <b className="block text-[1rem] font-bold leading-none tracking-[-0.02em]" style={{ color: "var(--ux-ink)" }}>
+              <b className="block text-base font-bold leading-none tracking-[-0.02em]" style={{ color: "var(--ux-ink)" }}>
                 {s.value}
               </b>
-              <i className="mt-1 block text-[0.6875rem] not-italic" style={{ color: "var(--ux-muted)" }}>{s.note}</i>
+              <i className="mt-1 block text-2xs not-italic" style={{ color: "var(--ux-muted)" }}>{s.note}</i>
             </span>
           </div>
         ))}
@@ -184,7 +184,7 @@ export function NewMessage({ rows, onPick }: { rows: ConvRow[]; onPick: (id: str
     <div ref={wrap} className="relative">
       <button type="button" onClick={() => setOpen((v) => !v)}
               aria-haspopup="menu" aria-expanded={open}
-              className="ux-press ux-btn-g flex min-h-[46px] items-center gap-2 rounded-[12px] px-4 text-[0.8125rem] font-bold"
+              className="ux-press ux-btn-g flex min-h-[46px] items-center gap-2 rounded-[12px] px-4 text-xsm font-bold"
               style={{ background: "linear-gradient(96deg, var(--ux-rib-2), var(--ux-rib-3))",
                        color: "var(--ux-on-brand)", boxShadow: "var(--ux-shadow-glow-2)" }}>
         <Icons.Plus className="h-4 w-4" /> New message
@@ -194,7 +194,7 @@ export function NewMessage({ rows, onPick }: { rows: ConvRow[]; onPick: (id: str
              className="ux-pop absolute end-0 top-[calc(100%+8px)] z-50 max-h-[340px] w-[290px] overflow-y-auto rounded-[12px] p-1.5"
              style={{ background: "var(--ux-surface)", border: "1px solid var(--ux-line-strong)",
                       boxShadow: "var(--ux-shadow-pop)" }}>
-          <p className="px-2.5 pb-1 pt-2 text-[0.6875rem] font-bold uppercase tracking-[0.16em]"
+          <p className="px-2.5 pb-1 pt-2 text-2xs font-bold uppercase tracking-[0.16em]"
              style={{ color: "var(--ux-faint)" }}>
             Write to
           </p>
@@ -204,12 +204,12 @@ export function NewMessage({ rows, onPick }: { rows: ConvRow[]; onPick: (id: str
                     className="ux-row flex w-full items-center gap-2.5 rounded-[12px] px-2 py-2 text-start">
               <Avatar src={r.avatar} kind={r.kind} size={28} />
               <span className="min-w-0 flex-1">
-                <span className="block truncate text-[0.8125rem] font-semibold" style={{ color: "var(--ux-ink)" }}>{r.name}</span>
-                <span className="block truncate text-[0.6875rem]" style={{ color: "var(--ux-muted)" }}>{TAG[r.kind].label}</span>
+                <span className="block truncate text-xsm font-semibold" style={{ color: "var(--ux-ink)" }}>{r.name}</span>
+                <span className="block truncate text-2xs" style={{ color: "var(--ux-muted)" }}>{TAG[r.kind].label}</span>
               </span>
             </button>
           ))}
-          <p className="border-t px-2.5 pb-1.5 pt-2.5 text-[0.6875rem] leading-snug"
+          <p className="border-t px-2.5 pb-1.5 pt-2.5 text-2xs leading-snug"
              style={{ borderColor: "var(--ux-line)", color: "var(--ux-muted)" }}>
             New conversations start when a buyer writes about an order, or when you
             join a circle.
@@ -260,7 +260,7 @@ export function Inbox({
           <Icons.Search className="h-[15px] w-[15px] shrink-0" style={{ color: "var(--ux-faint)" }} />
           <input value={search} onChange={(e) => setSearch(e.target.value)}
                  placeholder="Search people and messages" aria-label="Search your messages"
-                 className="w-full bg-transparent text-[0.8125rem] outline-none" style={{ color: "var(--ux-ink)" }} />
+                 className="w-full bg-transparent text-xsm outline-none" style={{ color: "var(--ux-ink)" }} />
         </label>
         <div className="mt-3 flex flex-wrap gap-1.5">
           {FILTERS.map((f) => {
@@ -268,13 +268,13 @@ export function Inbox({
             const n = f.value === "all" ? total : counts[f.value] ?? 0;
             return (
               <button key={f.value} type="button" onClick={() => setFilter(f.value)} aria-pressed={on}
-                      className="ux-press flex items-center gap-1.5 rounded-full px-3 py-1.5 text-[0.75rem] font-bold"
+                      className="ux-press flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-bold"
                       style={on
                         ? { background: "linear-gradient(96deg, var(--ux-rib-2), var(--ux-rib-3))", color: "var(--ux-on-brand)" }
                         : { background: "transparent", border: "1px solid var(--ux-line)", color: "var(--ux-muted)" }}>
                 {f.label}
                 {n > 0 && (
-                  <b className="rounded-full px-1.5 text-[0.6875rem]"
+                  <b className="rounded-full px-1.5 text-2xs"
                      style={on ? { background: "var(--ux-on-brand-track)" } : { background: "var(--ux-surface-2)" }}>
                     {n}
                   </b>
@@ -288,7 +288,7 @@ export function Inbox({
       <div className="min-h-0 flex-1 overflow-y-auto" style={{ scrollbarWidth: "thin" }}>
         {waiting.length > 0 && (
           <>
-            <p className="flex items-center gap-2 px-4 pb-1.5 pt-3.5 text-[0.6875rem] font-bold uppercase tracking-[0.16em]"
+            <p className="flex items-center gap-2 px-4 pb-1.5 pt-3.5 text-2xs font-bold uppercase tracking-[0.16em]"
                style={{ color: "var(--ux-amber-ink)" }}>
               <Icons.Clock className="h-[13px] w-[13px]" /> Waiting for your reply
             </p>
@@ -297,7 +297,7 @@ export function Inbox({
         )}
         {rest.length > 0 && (
           <>
-            <p className="flex items-center gap-2 px-4 pb-1.5 pt-3.5 text-[0.6875rem] font-bold uppercase tracking-[0.16em]"
+            <p className="flex items-center gap-2 px-4 pb-1.5 pt-3.5 text-2xs font-bold uppercase tracking-[0.16em]"
                style={{ color: "var(--ux-faint)" }}>
               <Icons.List className="h-[13px] w-[13px] " /> Everything else
             </p>
@@ -305,7 +305,7 @@ export function Inbox({
           </>
         )}
         {waiting.length + rest.length === 0 && (
-          <p className="p-5 text-[0.8125rem]" style={{ color: "var(--ux-muted)" }}>
+          <p className="p-5 text-xsm" style={{ color: "var(--ux-muted)" }}>
             {search ? "Nothing matches that." : "When a buyer or a mentor writes to you, it appears here."}
           </p>
         )}
@@ -326,24 +326,24 @@ export function Row({ row, on, onOpen }: { row: ConvRow; on: boolean; onOpen: (i
       <Avatar src={row.avatar} kind={row.kind} online={row.online} />
       <span className="min-w-0 flex-1">
         <span className="flex items-baseline gap-2">
-          <b className="min-w-0 flex-1 truncate text-[0.875rem] font-bold" style={{ color: "var(--ux-ink)" }}>{row.name}</b>
-          <time className="shrink-0 text-[0.6875rem]" style={{ color: "var(--ux-faint)" }}>{shortWhen(row.last_at)}</time>
+          <b className="min-w-0 flex-1 truncate text-sm font-bold" style={{ color: "var(--ux-ink)" }}>{row.name}</b>
+          <time className="shrink-0 text-2xs" style={{ color: "var(--ux-faint)" }}>{shortWhen(row.last_at)}</time>
         </span>
-        <span className="mt-0.5 block truncate text-[0.75rem]" style={{ color: "var(--ux-muted)" }}>
+        <span className="mt-0.5 block truncate text-xs" style={{ color: "var(--ux-muted)" }}>
           {row.preview || "No messages yet"}
         </span>
         <span className="mt-1.5 flex items-center gap-1.5">
-          <span className="rounded-full px-2 py-[3px] text-[0.6875rem] font-bold uppercase tracking-[0.08em]"
+          <span className="rounded-full px-2 py-[3px] text-2xs font-bold uppercase tracking-[0.08em]"
                 style={{ background: `var(${tag.tint})`, color: `var(${tag.ink})` }}>
             {row.kind === "circle" && row.subtitle ? `Circle · ${row.subtitle.replace(/\D+/g, "")}` : tag.label}
           </span>
           {row.waiting_since && (
-            <span className="flex items-center gap-1 text-[0.6875rem] font-bold" style={{ color: "var(--ux-amber-ink)" }}>
+            <span className="flex items-center gap-1 text-2xs font-bold" style={{ color: "var(--ux-amber-ink)" }}>
               <Icons.Clock className="h-[11px] w-[11px]" /> waiting {waited(row.waiting_since)}
             </span>
           )}
           {row.unread > 0 && (
-            <span className="ms-auto grid h-[19px] min-w-[19px] place-items-center rounded-full px-1.5 text-[0.6875rem] font-bold"
+            <span className="ms-auto grid h-[19px] min-w-[19px] place-items-center rounded-full px-1.5 text-2xs font-bold"
                   style={{ background: "linear-gradient(96deg, var(--ux-rib-2), var(--ux-rib-3))", color: "var(--ux-on-brand)" }}>
               {row.unread}
             </span>
@@ -365,8 +365,8 @@ export function EmptyThread({ className }: { className?: string }) {
                       boxShadow: "var(--ux-shadow-card)" }}>
       <div>
         <Icons.MessagesSquare className="mx-auto h-[34px] w-[34px]" style={{ color: "var(--ux-faint)" }} />
-        <p className="mt-3 text-[0.875rem] font-semibold" style={{ color: "var(--ux-ink)" }}>Choose a conversation</p>
-        <p className="mt-1 text-[0.8125rem]" style={{ color: "var(--ux-muted)" }}>
+        <p className="mt-3 text-sm font-semibold" style={{ color: "var(--ux-ink)" }}>Choose a conversation</p>
+        <p className="mt-1 text-xsm" style={{ color: "var(--ux-muted)" }}>
           Your buyers, mentors and circles are on the left.
         </p>
       </div>
@@ -435,8 +435,8 @@ export function Thread({
         </button>
         <Avatar src={conv.avatar} kind={conv.kind} size={40} online={conv.online} />
         <div className="min-w-0 flex-1">
-          <b className="block truncate text-[1rem] font-bold" style={{ color: "var(--ux-ink)" }}>{conv.name}</b>
-          <span className="mt-0.5 flex items-center gap-1.5 text-[0.75rem]"
+          <b className="block truncate text-base font-bold" style={{ color: "var(--ux-ink)" }}>{conv.name}</b>
+          <span className="mt-0.5 flex items-center gap-1.5 text-xs"
                 style={{ color: conv.online ? "var(--ux-green-ink)" : "var(--ux-muted)" }}>
             {conv.online && <i className="block h-[7px] w-[7px] rounded-full" style={{ background: "var(--ux-green)" }} />}
             {conv.subtitle || (conv.online ? "Online now" : "")}
@@ -469,18 +469,18 @@ export function Thread({
               ].map((a) => (
                 <button key={a.label} type="button" role="menuitem"
                         onClick={() => { setMenu(false); a.run(); }}
-                        className="ux-row flex w-full items-center gap-2.5 rounded-[12px] px-2.5 py-2.5 text-start text-[0.8125rem]"
+                        className="ux-row flex w-full items-center gap-2.5 rounded-[12px] px-2.5 py-2.5 text-start text-xsm"
                         style={{ color: "var(--ux-ink)" }}>
                   <Ico name={a.icon} className="h-[15px] w-[15px]" /> {a.label}
                 </button>
               ))}
               <Link href="/app/safety" role="menuitem" onClick={() => setMenu(false)}
-                    className="ux-row flex w-full items-center gap-2.5 rounded-[12px] px-2.5 py-2.5 text-start text-[0.8125rem]"
+                    className="ux-row flex w-full items-center gap-2.5 rounded-[12px] px-2.5 py-2.5 text-start text-xsm"
                     style={{ color: "var(--ux-ink)" }}>
                 <Icons.Flag className="h-[15px] w-[15px]" style={{ color: "var(--ux-pink-ink)" }} /> Report this person
               </Link>
               <button type="button" role="menuitem" onClick={() => { setMenu(false); onDelete(); }}
-                      className="ux-row flex w-full items-center gap-2.5 rounded-[12px] px-2.5 py-2.5 text-start text-[0.8125rem]"
+                      className="ux-row flex w-full items-center gap-2.5 rounded-[12px] px-2.5 py-2.5 text-start text-xsm"
                       style={{ color: "var(--ux-pink-ink)" }}>
                 <Icons.Trash2 className="h-[15px] w-[15px]" /> Delete conversation
               </button>
@@ -499,19 +499,19 @@ export function Thread({
             <img loading="lazy" decoding="async" src={ctx.image} alt="" className="h-[46px] w-[46px] shrink-0 rounded-[12px] object-cover" />
           )}
           <span className="min-w-0 flex-1">
-            <b className="block truncate text-[0.8125rem] font-bold" style={{ color: "var(--ux-ink)" }}>
+            <b className="block truncate text-xsm font-bold" style={{ color: "var(--ux-ink)" }}>
               Order #{ctx.ref} · {ctx.title}
             </b>
-            <i className="mt-0.5 block truncate text-[0.6875rem] not-italic" style={{ color: "var(--ux-ink-2)" }}>{ctx.sub}</i>
+            <i className="mt-0.5 block truncate text-2xs not-italic" style={{ color: "var(--ux-ink-2)" }}>{ctx.sub}</i>
           </span>
           {ctx.status && (
-            <span className="shrink-0 rounded-full px-2.5 py-1 text-[0.6875rem] font-bold uppercase tracking-[0.08em]"
+            <span className="shrink-0 rounded-full px-2.5 py-1 text-2xs font-bold uppercase tracking-[0.08em]"
                   style={{ background: "var(--ux-tint-green)", color: "var(--ux-green-ink)" }}>
               {ctx.status}
             </span>
           )}
           <Link href="/app/documents"
-                className="ux-press flex shrink-0 items-center gap-1.5 rounded-[12px] px-3 py-2 text-[0.75rem] font-bold"
+                className="ux-press flex shrink-0 items-center gap-1.5 rounded-[12px] px-3 py-2 text-xs font-bold"
                 style={{ background: "var(--ux-surface)", border: "1px solid var(--ux-line-strong)", color: "var(--ux-ink-2)" }}>
             Open order <Icons.ChevronRight className="h-[13px] w-[13px]" />
           </Link>
@@ -541,7 +541,7 @@ export function Thread({
               {newDay && (
                 <div className="my-3 flex items-center gap-3">
                   <span className="h-px flex-1" style={{ background: "var(--ux-line)" }} />
-                  <span className="text-[0.6875rem] font-bold uppercase tracking-[0.15em]" style={{ color: "var(--ux-faint)" }}>
+                  <span className="text-2xs font-bold uppercase tracking-[0.15em]" style={{ color: "var(--ux-faint)" }}>
                     {dayLabel(m.at)}
                   </span>
                   <span className="h-px flex-1" style={{ background: "var(--ux-line)" }} />
@@ -561,7 +561,7 @@ export function Thread({
       <div className="flex shrink-0 flex-wrap gap-2 px-4 pt-3">
         {QUICK.map((q) => (
           <button key={q} type="button" onClick={() => setDraft(q)}
-                  className="ux-press shrink-0 rounded-full px-3.5 py-2 text-[0.75rem] font-semibold"
+                  className="ux-press shrink-0 rounded-full px-3.5 py-2 text-xs font-semibold"
                   style={{ background: "var(--ux-surface)", border: "1px solid var(--ux-line-strong)",
                            color: "var(--ux-ink-2)" }}>
             {q}
@@ -578,7 +578,7 @@ export function Thread({
            style={{ background: "var(--ux-surface-2)", border: "1px solid var(--ux-line-strong)" }}>
         {file && (
           <div className="flex flex-wrap items-center gap-2 px-4 pt-3">
-            <span className="flex min-w-0 items-center gap-2 rounded-[12px] px-2.5 py-1.5 text-[0.75rem]"
+            <span className="flex min-w-0 items-center gap-2 rounded-[12px] px-2.5 py-1.5 text-xs"
                   style={{ background: "var(--ux-surface)", border: "1px solid var(--ux-line-strong)" }}>
               <Icons.Paperclip className="h-[13px] w-[13px] shrink-0" style={{ color: "var(--ux-faint)" }} />
               <span className="truncate font-semibold" style={{ color: "var(--ux-ink)" }}>{file.name}</span>
@@ -589,7 +589,7 @@ export function Thread({
               </button>
             </span>
             {/* Honest: the picker works, the upload endpoint does not exist yet. */}
-            <span className="text-[0.6875rem]" style={{ color: "var(--ux-amber-ink)" }}>
+            <span className="text-2xs" style={{ color: "var(--ux-amber-ink)" }}>
               Sending files is coming — the name will go with your message.
             </span>
           </div>
@@ -598,7 +598,7 @@ export function Thread({
           ref={area} rows={1} value={draft} onChange={(e) => setDraft(e.target.value)}
           onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); onSend(); } }}
           placeholder={`Write to ${conv.name.split(" ")[0]}…`} aria-label="Write a message"
-          className="w-full resize-none bg-transparent px-4 pb-1.5 pt-3 text-[0.875rem] leading-relaxed outline-none"
+          className="w-full resize-none bg-transparent px-4 pb-1.5 pt-3 text-sm leading-relaxed outline-none"
           style={{ color: "var(--ux-ink)", maxHeight: 120 }}
         />
         <div className="flex items-center justify-between border-t px-2 py-2" style={{ borderColor: "var(--ux-line)" }}>
@@ -629,7 +629,7 @@ export function Thread({
 
       {/* Off-platform payment requests are how women get cheated on marketplaces.
           The warning belongs where money gets discussed, not in a help page. */}
-      <p className="flex shrink-0 items-center gap-2 px-4 pb-4 pt-3 text-[0.6875rem]" style={{ color: "var(--ux-muted)" }}>
+      <p className="flex shrink-0 items-center gap-2 px-4 pb-4 pt-3 text-2xs" style={{ color: "var(--ux-muted)" }}>
         <Icons.ShieldCheck className="h-[13px] w-[13px] shrink-0" style={{ color: "var(--ux-green-ink)" }} />
         Keep payments inside WomSakhi. Nobody here will ever ask for your PIN or OTP.
       </p>
@@ -649,7 +649,7 @@ export function Bubble({ bubble, first, conv }: { bubble: ConvBubble; first: boo
       {bubble.order ? (
         <OrderCard order={bubble.order} />
       ) : (
-      <div className="max-w-[70%] rounded-[16px] p-[11px_14px] text-[0.875rem] leading-relaxed"
+      <div className="max-w-[70%] rounded-[16px] p-[11px_14px] text-sm leading-relaxed"
            style={out
              ? { background: "linear-gradient(96deg, var(--ux-rib-2), var(--ux-rib-3))", color: "var(--ux-on-brand)",
                  borderBottomRightRadius: first ? 5 : 16, boxShadow: "var(--ux-shadow-glow-2)" }
@@ -661,7 +661,7 @@ export function Bubble({ bubble, first, conv }: { bubble: ConvBubble; first: boo
                className="mb-2 block max-w-[210px] rounded-[12px]" style={{ border: "1px solid var(--ux-line)" }} />
         )}
         {bubble.text}
-        <span className={`mt-1.5 flex items-center gap-1.5 text-[0.6875rem] ${out ? "justify-end" : ""}`}
+        <span className={`mt-1.5 flex items-center gap-1.5 text-2xs ${out ? "justify-end" : ""}`}
               style={{ color: out ? "var(--ux-on-brand-2)" : "var(--ux-faint)" }}>
           {clock(bubble.at)}
           {out && <Icons.CheckCheck className="h-[13px] w-[13px]" style={{ color: bubble.read ? "var(--ux-read-tick)" : "inherit" }} />}
@@ -684,7 +684,7 @@ export function OrderCard({ order }: { order: NonNullable<ConvBubble["order"]> }
     <div className="max-w-[320px] overflow-hidden rounded-[16px]"
          style={{ border: "1px solid var(--ux-line-strong)", background: "var(--ux-surface)",
                   boxShadow: "var(--ux-shadow-card)" }}>
-      <p className="flex items-center gap-2 px-3.5 py-2.5 text-[0.6875rem] font-bold uppercase tracking-[0.11em]"
+      <p className="flex items-center gap-2 px-3.5 py-2.5 text-2xs font-bold uppercase tracking-[0.11em]"
          style={{ background: "var(--ux-tint-amber)", color: "var(--ux-amber-ink)" }}>
         <Icons.Package className="h-[13px] w-[13px]" /> {order.state}
       </p>
@@ -694,23 +694,23 @@ export function OrderCard({ order }: { order: NonNullable<ConvBubble["order"]> }
           <img loading="lazy" decoding="async" src={order.image} alt="" className="h-[56px] w-[56px] shrink-0 rounded-[12px] object-cover" />
         )}
         <div className="min-w-0">
-          <b className="block text-[0.8125rem] font-bold" style={{ color: "var(--ux-ink)" }}>{order.title}</b>
-          <i className="mt-0.5 block text-[0.75rem] not-italic" style={{ color: "var(--ux-muted)" }}>{order.sub}</i>
-          <b className="mt-1.5 block text-[1.125rem] font-bold tracking-[-0.02em]" style={{ color: "var(--ux-ink)" }}>
+          <b className="block text-xsm font-bold" style={{ color: "var(--ux-ink)" }}>{order.title}</b>
+          <i className="mt-0.5 block text-xs not-italic" style={{ color: "var(--ux-muted)" }}>{order.sub}</i>
+          <b className="mt-1.5 block text-lg font-bold tracking-[-0.02em]" style={{ color: "var(--ux-ink)" }}>
             {formatMoney(order.amount_minor)}
           </b>
         </div>
       </div>
       <div className="flex gap-2 px-3.5 pb-3.5">
         <button type="button"
-                className="ux-press flex flex-1 items-center justify-center gap-1.5 rounded-[12px] py-2.5 text-[0.75rem] font-bold"
+                className="ux-press flex flex-1 items-center justify-center gap-1.5 rounded-[12px] py-2.5 text-xs font-bold"
                 style={order.paid
                   ? { background: "linear-gradient(96deg, var(--ux-rib-2), var(--ux-rib-3))", color: "var(--ux-on-brand)" }
                   : { background: "var(--ux-surface-2)", border: "1px solid var(--ux-line-strong)", color: "var(--ux-ink-2)" }}>
           <Icons.Wallet className="h-[13px] w-[13px]" /> {order.paid ? "Paid" : "Not paid"}
         </button>
         <button type="button"
-                className="ux-press flex-1 rounded-[12px] py-2.5 text-[0.75rem] font-bold"
+                className="ux-press flex-1 rounded-[12px] py-2.5 text-xs font-bold"
                 style={{ background: "var(--ux-surface-2)", border: "1px solid var(--ux-line-strong)", color: "var(--ux-ink-2)" }}>
           Change
         </button>
@@ -734,42 +734,42 @@ export function About({ conv, onStar, onDraft }: {
                     boxShadow: "var(--ux-shadow-card)" }}>
       <div className="p-4 text-center">
         <span className="mx-auto inline-block"><Avatar src={conv.avatar} kind={conv.kind} size={64} /></span>
-        <h2 className="mt-2.5 text-[1rem] font-bold" style={{ color: "var(--ux-ink)" }}>{conv.name}</h2>
-        <p className="mt-0.5 text-[0.75rem]" style={{ color: "var(--ux-muted)" }}>
+        <h2 className="mt-2.5 text-base font-bold" style={{ color: "var(--ux-ink)" }}>{conv.name}</h2>
+        <p className="mt-0.5 text-xs" style={{ color: "var(--ux-muted)" }}>
           {[p.role, p.since].filter(Boolean).join(" · ")}
         </p>
         <div className="mt-3.5 grid grid-cols-2 gap-2">
           <div className="rounded-[12px] p-2.5" style={{ background: "var(--ux-surface-2)", border: "1px solid var(--ux-line)" }}>
-            <b className="block text-[1rem] font-bold tracking-[-0.02em]" style={{ color: "var(--ux-ink)" }}>{p.orders ?? 0}</b>
-            <i className="mt-0.5 block text-[0.6875rem] not-italic" style={{ color: "var(--ux-muted)" }}>orders</i>
+            <b className="block text-base font-bold tracking-[-0.02em]" style={{ color: "var(--ux-ink)" }}>{p.orders ?? 0}</b>
+            <i className="mt-0.5 block text-2xs not-italic" style={{ color: "var(--ux-muted)" }}>orders</i>
           </div>
           <div className="rounded-[12px] p-2.5" style={{ background: "var(--ux-surface-2)", border: "1px solid var(--ux-line)" }}>
-            <b className="block text-[1rem] font-bold tracking-[-0.02em]" style={{ color: "var(--ux-ink)" }}>
+            <b className="block text-base font-bold tracking-[-0.02em]" style={{ color: "var(--ux-ink)" }}>
               {formatMoney(p.spent_minor ?? 0)}
             </b>
-            <i className="mt-0.5 block text-[0.6875rem] not-italic" style={{ color: "var(--ux-muted)" }}>spent with you</i>
+            <i className="mt-0.5 block text-2xs not-italic" style={{ color: "var(--ux-muted)" }}>spent with you</i>
           </div>
         </div>
       </div>
 
       <div className="border-t p-3.5" style={{ borderColor: "var(--ux-line)" }}>
-        <h3 className="mb-2 text-[0.6875rem] font-bold uppercase tracking-[0.16em]" style={{ color: "var(--ux-faint)" }}>Do next</h3>
+        <h3 className="mb-2 text-2xs font-bold uppercase tracking-[0.16em]" style={{ color: "var(--ux-faint)" }}>Do next</h3>
         {/* Each of these does the thing it names. "Send her an order" opens the
             shop, the other two write the message and star the thread — nothing
             here is a label over an empty handler. */}
         <Link href="/app/documents"
-              className="ux-row flex w-full items-center gap-2.5 rounded-[12px] px-2.5 py-2.5 text-start text-[0.8125rem] font-semibold"
+              className="ux-row flex w-full items-center gap-2.5 rounded-[12px] px-2.5 py-2.5 text-start text-xsm font-semibold"
               style={{ color: "var(--ux-ink-2)" }}>
           <Icons.Package className="h-[15px] w-[15px]" /> Send her an order
         </Link>
         <button type="button"
                 onClick={() => onDraft(`Namaste ${first}, here is what I make and what it costs:\n\n· Cotton kurta — ₹280\n· Silk dupatta — ₹640\n· Blouse stitching — ₹180\n\nTell me what you would like and by when.`)}
-                className="ux-row flex w-full items-center gap-2.5 rounded-[12px] px-2.5 py-2.5 text-start text-[0.8125rem] font-semibold"
+                className="ux-row flex w-full items-center gap-2.5 rounded-[12px] px-2.5 py-2.5 text-start text-xsm font-semibold"
                 style={{ color: "var(--ux-ink-2)" }}>
           <Icons.Tag className="h-[15px] w-[15px]" /> Share your price list
         </button>
         <button type="button" onClick={onStar} aria-pressed={conv.starred}
-                className="ux-row flex w-full items-center gap-2.5 rounded-[12px] px-2.5 py-2.5 text-start text-[0.8125rem] font-semibold"
+                className="ux-row flex w-full items-center gap-2.5 rounded-[12px] px-2.5 py-2.5 text-start text-xsm font-semibold"
                 style={{ color: conv.starred ? "var(--ux-amber-ink)" : "var(--ux-ink-2)" }}>
           <Icons.Star className="h-[15px] w-[15px]" fill={conv.starred ? "currentColor" : "none"} />
           {conv.starred ? "A good buyer" : "Mark as a good buyer"}
@@ -778,7 +778,7 @@ export function About({ conv, onStar, onDraft }: {
 
       {shots.length > 0 && (
         <div className="border-t p-3.5" style={{ borderColor: "var(--ux-line)" }}>
-          <h3 className="mb-2 text-[0.6875rem] font-bold uppercase tracking-[0.16em]" style={{ color: "var(--ux-faint)" }}>Shared here</h3>
+          <h3 className="mb-2 text-2xs font-bold uppercase tracking-[0.16em]" style={{ color: "var(--ux-faint)" }}>Shared here</h3>
           <div className="grid grid-cols-3 gap-1.5">
             {shots.map((m, i) => (
               // eslint-disable-next-line @next/next/no-img-element
@@ -789,11 +789,11 @@ export function About({ conv, onStar, onDraft }: {
       )}
 
       <div className="border-t p-3.5" style={{ borderColor: "var(--ux-line)" }}>
-        <h3 className="mb-2 text-[0.6875rem] font-bold uppercase tracking-[0.16em]" style={{ color: "var(--ux-faint)" }}>
+        <h3 className="mb-2 text-2xs font-bold uppercase tracking-[0.16em]" style={{ color: "var(--ux-faint)" }}>
           If something feels wrong
         </h3>
         <Link href="/app/safety"
-              className="ux-row flex w-full items-center gap-2.5 rounded-[12px] px-2.5 py-2.5 text-start text-[0.8125rem] font-semibold"
+              className="ux-row flex w-full items-center gap-2.5 rounded-[12px] px-2.5 py-2.5 text-start text-xsm font-semibold"
               style={{ color: "var(--ux-ink-2)" }}>
           <Icons.Flag className="h-[15px] w-[15px]" style={{ color: "var(--ux-pink-ink)" }} />
           Report this person

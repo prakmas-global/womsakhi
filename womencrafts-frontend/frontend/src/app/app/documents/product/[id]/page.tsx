@@ -157,18 +157,18 @@ export default function ProductEditor({ params }: { params: Promise<{ id: string
                 <img loading="lazy" decoding="async" src={base.art} alt="" className="h-full w-full object-cover" />
               </div>
               <div className="p-3.5">
-                <p className="text-[0.875rem] font-semibold" style={{ color: form.name ? "var(--ux-ink)" : "var(--ux-faint)" }}>
+                <p className="text-sm font-semibold" style={{ color: form.name ? "var(--ux-ink)" : "var(--ux-faint)" }}>
                   {form.name || "Your product name"}
                 </p>
-                <p className="mt-1 text-[1.125rem] font-bold tabular-nums"
+                <p className="mt-1 text-lg font-bold tabular-nums"
                    style={{ color: price_minor ? "var(--ux-ink)" : "var(--ux-faint)" }}>
                   {price_minor ? rupees(price_minor) : "₹—"}
                 </p>
-                <p className="mt-1.5 text-[0.75rem] leading-snug"
+                <p className="mt-1.5 text-xs leading-snug"
                    style={{ color: form.about ? "var(--ux-muted)" : "var(--ux-faint)" }}>
                   {form.about || "Buyers read this before they decide. Say what it is made of and how it is made."}
                 </p>
-                <p className="mt-2.5 text-[0.75rem]" style={{ color: "var(--ux-muted)" }}>
+                <p className="mt-2.5 text-xs" style={{ color: "var(--ux-muted)" }}>
                   {Number(form.stock) > 0 ? `${form.stock} ready now` : "Made to order"} · ready in {form.made}
                 </p>
               </div>
@@ -180,14 +180,14 @@ export default function ProductEditor({ params }: { params: Promise<{ id: string
             {missing.length ? (
               <ul className="space-y-2.5">
                 {missing.map((m) => (
-                  <li key={m} className="flex items-center gap-2.5 text-[0.8125rem]" style={{ color: "var(--ux-ink-2)" }}>
+                  <li key={m} className="flex items-center gap-2.5 text-xsm" style={{ color: "var(--ux-ink-2)" }}>
                     <Icons.Circle className="h-[14px] w-[14px] shrink-0" style={{ color: "var(--ux-faint)" }} />
                     Still needs {m}
                   </li>
                 ))}
               </ul>
             ) : (
-              <p className="flex items-center gap-2 text-[0.8125rem]" style={{ color: "var(--ux-green-ink)" }}>
+              <p className="flex items-center gap-2 text-xsm" style={{ color: "var(--ux-green-ink)" }}>
                 <Icons.CheckCheck className="h-[16px] w-[16px]" /> Ready to publish.
               </p>
             )}
@@ -200,12 +200,12 @@ export default function ProductEditor({ params }: { params: Promise<{ id: string
               </Btn>
             </div>
             {saved && !problem && (
-              <p className="ux-slide-up mt-2.5 text-center text-[0.75rem]" style={{ color: "var(--ux-green-ink)" }}>
+              <p className="ux-slide-up mt-2.5 text-center text-xs" style={{ color: "var(--ux-green-ink)" }}>
                 Saved.
               </p>
             )}
             {problem && (
-              <p role="alert" className="ux-slide-up mt-2.5 text-[0.8125rem] leading-relaxed"
+              <p role="alert" className="ux-slide-up mt-2.5 text-xsm leading-relaxed"
                  style={{ color: "var(--ux-orange-ink)" }}>
                 {problem}
               </p>
@@ -222,8 +222,8 @@ export default function ProductEditor({ params }: { params: Promise<{ id: string
                   <div key={label} className="ux-hov flex items-center gap-3">
                     <IconTile icon={icon} tint={tint} ink={ink} size={38} />
                     <div className="min-w-0">
-                      <p className="text-[1.125rem] font-bold leading-none tabular-nums" style={{ color: "var(--ux-ink)" }}>{v}</p>
-                      <p className="mt-1 truncate text-[0.75rem]" style={{ color: "var(--ux-muted)" }}>{label}</p>
+                      <p className="text-lg font-bold leading-none tabular-nums" style={{ color: "var(--ux-ink)" }}>{v}</p>
+                      <p className="mt-1 truncate text-xs" style={{ color: "var(--ux-muted)" }}>{label}</p>
                     </div>
                   </div>
                 ))}
@@ -234,15 +234,15 @@ export default function ProductEditor({ params }: { params: Promise<{ id: string
       }
     >
       <Link href="/app/documents"
-            className="ux-hov -my-1 mb-3.5 inline-flex items-center gap-1.5 py-1 text-[0.8125rem] font-medium"
+            className="ux-hov -my-1 mb-3.5 inline-flex items-center gap-1.5 py-1 text-xsm font-medium"
             style={{ color: "var(--ux-brand)" }}>
         <Icons.ArrowLeft className="ux-ico h-4 w-4" /> Your shop
       </Link>
 
-      <h1 className="text-[1.5rem] font-bold" style={{ color: "var(--ux-ink)" }}>
+      <h1 className="text-2xl font-bold" style={{ color: "var(--ux-ink)" }}>
         {isNew ? "Add something you sell" : form.name || "Edit product"}
       </h1>
-      <p className="mb-[20px] mt-1.5 text-[0.8125rem]" style={{ color: "var(--ux-muted)" }}>
+      <p className="mb-[20px] mt-1.5 text-xsm" style={{ color: "var(--ux-muted)" }}>
         {isNew ? "Four things and it is listed. You can change any of it later."
                : "Changes reach buyers straight away."}
       </p>
@@ -265,13 +265,13 @@ export default function ProductEditor({ params }: { params: Promise<{ id: string
               ) : (
                 <span className="flex flex-col items-center gap-1.5">
                   <Icons.Plus className="ux-ico h-[20px] w-[20px]" style={{ color: "var(--ux-faint)" }} />
-                  <span className="text-[0.6875rem]" style={{ color: "var(--ux-faint)" }}>Add</span>
+                  <span className="text-2xs" style={{ color: "var(--ux-faint)" }}>Add</span>
                 </span>
               )}
             </button>
           ))}
         </div>
-        <p className="mt-3 flex items-start gap-2.5 rounded-[12px] p-3 text-[0.75rem] leading-relaxed"
+        <p className="mt-3 flex items-start gap-2.5 rounded-[12px] p-3 text-xs leading-relaxed"
            style={{ background: "var(--ux-surface-2)", color: "var(--ux-ink-2)" }}>
           <Icons.Camera className="mt-[1px] h-[14px] w-[14px] shrink-0" style={{ color: "var(--ux-brand)" }} />
           Daylight, a plain wall, and the thing filling most of the frame. Products with three photos sell
@@ -301,7 +301,7 @@ export default function ProductEditor({ params }: { params: Promise<{ id: string
               onChange={(e) => { setForm((f) => ({ ...f, about: e.target.value })); setSaved(false); }}
               rows={4}
               aria-label="Describe it"
-              className="ux-sq w-full resize-y rounded-[12px] border p-3.5 text-[0.875rem] leading-relaxed outline-none"
+              className="ux-sq w-full resize-y rounded-[12px] border p-3.5 text-sm leading-relaxed outline-none"
               style={{ borderColor: "var(--ux-line-strong)", background: "var(--ux-surface)", color: "var(--ux-ink)" }}
             />
           </Field>

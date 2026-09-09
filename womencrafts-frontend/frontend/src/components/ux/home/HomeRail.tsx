@@ -34,9 +34,9 @@ function Card({ children, className, style }: {
 function Head({ title, action, href }: { title: string; action: string; href: string }) {
   return (
     <div className="mb-3 flex items-center justify-between gap-3">
-      <h3 className="text-[0.875rem] font-bold tracking-tight" style={{ color: "var(--ux-ink)" }}>{title}</h3>
+      <h3 className="text-sm font-bold tracking-tight" style={{ color: "var(--ux-ink)" }}>{title}</h3>
       <Link href={href}
-            className="ux-hov -my-2 flex min-h-[40px] shrink-0 items-center gap-1 py-2 text-[0.75rem] font-semibold"
+            className="ux-hov -my-2 flex min-h-[40px] shrink-0 items-center gap-1 py-2 text-xs font-semibold"
             style={{ color: "var(--ux-brand)" }}>
         {action}
         <Icons.ChevronRight className="h-[14px] w-[14px]" />
@@ -53,7 +53,7 @@ function Ring({ pct, size = 74 }: { pct: number; size?: number }) {
     <div className="grid shrink-0 place-items-center rounded-full"
          style={{ width: size, height: size,
                   background: `conic-gradient(var(--ux-rib-3) ${pct}%, var(--ux-track) 0)` }}>
-      <div className="grid place-items-center rounded-full text-[1rem] font-bold"
+      <div className="grid place-items-center rounded-full text-base font-bold"
            style={{ width: inner, height: inner, background: "var(--ux-surface)", color: "var(--ux-ink)" }}>
         {pct}%
       </div>
@@ -85,22 +85,22 @@ export function HomeRail() {
           <div className="flex items-center gap-3.5">
             <div className="grid h-[58px] w-[58px] shrink-0 place-items-center rounded-full"
                  style={{ background: `conic-gradient(var(--ux-rib-3) ${me.profilePct}%, var(--ux-track) 0)` }}>
-              <div className="grid h-[45px] w-[45px] place-items-center rounded-full text-[0.8125rem] font-bold"
+              <div className="grid h-[45px] w-[45px] place-items-center rounded-full text-xsm font-bold"
                    style={{ background: "var(--ux-surface)", color: "var(--ux-ink)" }}>
                 {me.profilePct}%
               </div>
             </div>
             <div className="min-w-0">
-              <p className="text-[0.8125rem] font-bold leading-tight" style={{ color: "var(--ux-ink)" }}>
+              <p className="text-xsm font-bold leading-tight" style={{ color: "var(--ux-ink)" }}>
                 Complete your profile
               </p>
-              <p className="mt-1 text-[0.6875rem] leading-snug" style={{ color: "var(--ux-muted)" }}>
+              <p className="mt-1 text-2xs leading-snug" style={{ color: "var(--ux-muted)" }}>
                 Almost there — unlock the support fund.
               </p>
             </div>
           </div>
           <Link href="/app/profile"
-                className="ux-press ux-btn-g mt-3 flex min-h-[40px] items-center justify-center gap-2 rounded-[12px] text-[0.8125rem] font-bold"
+                className="ux-press ux-btn-g mt-3 flex min-h-[40px] items-center justify-center gap-2 rounded-[12px] text-xsm font-bold"
                 style={{ background: "linear-gradient(96deg, var(--ux-rib-2), var(--ux-rib-3))", color: "var(--ux-on-brand)" }}>
             Continue now
             <Icons.ArrowRight className="h-4 w-4" />
@@ -111,7 +111,7 @@ export function HomeRail() {
       <Card>
         <Head title="Upcoming Events" action="View Calendar" href="/app/schedule" />
         {events.length === 0 ? (
-          <p className="py-3 text-[0.8125rem]" style={{ color: "var(--ux-muted)" }}>
+          <p className="py-3 text-xsm" style={{ color: "var(--ux-muted)" }}>
             Nothing booked yet. Sessions and classes you join appear here.
           </p>
         ) : (
@@ -125,20 +125,20 @@ export function HomeRail() {
                         className="ux-row flex items-start gap-3 rounded-[12px] p-2">
                     <span className="grid w-[44px] shrink-0 place-items-center rounded-[12px] py-1.5 leading-none"
                           style={{ background: "var(--ux-tint-pink)", color: "var(--ux-pink-ink)" }}>
-                      <span className="text-[0.6875rem] font-bold tracking-[0.08em]">
+                      <span className="text-2xs font-bold tracking-[0.08em]">
                         {ok ? MONTHS[d.getMonth()] : "—"}
                       </span>
-                      <span className="mt-0.5 text-[1rem] font-bold">{ok ? d.getDate() : "·"}</span>
+                      <span className="mt-0.5 text-base font-bold">{ok ? d.getDate() : "·"}</span>
                     </span>
                     <span className="min-w-0 flex-1">
-                      <span className="block text-[0.8125rem] font-bold leading-tight" style={{ color: "var(--ux-ink)" }}>
+                      <span className="block text-xsm font-bold leading-tight" style={{ color: "var(--ux-ink)" }}>
                         {b.service_name || "Session"}
                       </span>
-                      <span className="mt-0.5 block text-[0.6875rem]" style={{ color: "var(--ux-muted)" }}>
+                      <span className="mt-0.5 block text-2xs" style={{ color: "var(--ux-muted)" }}>
                         {b.with_whom || (b.mode ? b.mode[0].toUpperCase() + b.mode.slice(1) : "With your circle")}
                       </span>
                     </span>
-                    <time className="shrink-0 pt-0.5 text-[0.6875rem]" style={{ color: "var(--ux-muted)" }}>
+                    <time className="shrink-0 pt-0.5 text-2xs" style={{ color: "var(--ux-muted)" }}>
                       {b.time ? clock(b.time) : ""}
                     </time>
                   </Link>
@@ -159,20 +159,20 @@ export function HomeRail() {
                       WebkitMaskImage: "radial-gradient(70% 70% at 45% 45%, #000 55%, transparent 88%)" }} />
         <div className="relative">
           <div className="flex items-center justify-between gap-3">
-            <h3 className="text-[0.875rem] font-bold" style={{ color: "var(--ux-on-brand)" }}>Your Balance</h3>
+            <h3 className="text-sm font-bold" style={{ color: "var(--ux-on-brand)" }}>Your Balance</h3>
             <Link href="/app/wallet"
-                  className="ux-hov flex items-center gap-1 text-[0.75rem] font-semibold"
+                  className="ux-hov flex items-center gap-1 text-xs font-semibold"
                   style={{ color: "var(--ux-on-brand-2)" }}>
               View Wallet <Icons.ChevronRight className="h-[13px] w-[13px]" />
             </Link>
           </div>
-          <p className="mt-2 text-[1.75rem] font-bold leading-none tracking-[-0.03em] tabular-nums"
+          <p className="mt-2 text-2xlm font-bold leading-none tracking-[-0.03em] tabular-nums"
              style={{ color: "var(--ux-on-brand)" }}>
             {formatMoney(money?.balance_minor ?? 0)}
           </p>
-          <p className="mt-1 text-[0.75rem]" style={{ color: "var(--ux-on-brand-2)" }}>Available Balance</p>
+          <p className="mt-1 text-xs" style={{ color: "var(--ux-on-brand-2)" }}>Available Balance</p>
           <Link href="/app/wallet/withdraw"
-                className="ux-press ux-btn-g mt-3.5 inline-flex min-h-[40px] items-center gap-2 rounded-[12px] px-4 text-[0.8125rem] font-bold"
+                className="ux-press ux-btn-g mt-3.5 inline-flex min-h-[40px] items-center gap-2 rounded-[12px] px-4 text-xsm font-bold"
                 style={{ background: "var(--ux-on-brand-btn)", color: "var(--ux-on-brand-btn-ink)" }}>
             Take money out
             <Icons.ArrowRight className="h-4 w-4" />
@@ -182,8 +182,8 @@ export function HomeRail() {
 
       <Card>
         <div className="mb-3 flex items-center justify-between gap-3">
-          <h3 className="text-[0.875rem] font-bold tracking-tight" style={{ color: "var(--ux-ink)" }}>Your Progress</h3>
-          <span className="rounded-[8px] px-2.5 py-1 text-[0.6875rem] font-semibold"
+          <h3 className="text-sm font-bold tracking-tight" style={{ color: "var(--ux-ink)" }}>Your Progress</h3>
+          <span className="rounded-[8px] px-2.5 py-1 text-2xs font-semibold"
                 style={{ background: "var(--ux-surface-2)", border: "1px solid var(--ux-line)", color: "var(--ux-muted)" }}>
             This Month
           </span>
@@ -191,10 +191,10 @@ export function HomeRail() {
         <div className="flex items-center gap-3.5">
           <Ring pct={pct} />
           <div className="min-w-0">
-            <p className="text-[0.875rem] font-bold" style={{ color: "var(--ux-ink)" }}>
+            <p className="text-sm font-bold" style={{ color: "var(--ux-ink)" }}>
               {done} of {total} courses done
             </p>
-            <p className="mt-1 text-[0.75rem]" style={{ color: "var(--ux-muted)" }}>
+            <p className="mt-1 text-xs" style={{ color: "var(--ux-muted)" }}>
               {done === 0 ? "Start one and it shows up here." : "Keep going — you are moving."}
             </p>
           </div>
@@ -211,18 +211,18 @@ export function HomeRail() {
                  style={{ border: "2px solid var(--ux-surface)", marginLeft: i ? -9 : 0 }} />
           ))}
           {pot && pot.members > 6 && (
-            <span className="grid h-[34px] w-[34px] place-items-center rounded-full text-[0.6875rem] font-bold"
+            <span className="grid h-[34px] w-[34px] place-items-center rounded-full text-2xs font-bold"
                   style={{ background: "var(--ux-surface-2)", border: "2px solid var(--ux-surface)",
                            color: "var(--ux-muted)", marginLeft: -9 }}>
               +{pot.members - 6}
             </span>
           )}
         </div>
-        <p className="mt-3 text-center text-[0.75rem]" style={{ color: "var(--ux-muted)" }}>
+        <p className="mt-3 text-center text-xs" style={{ color: "var(--ux-muted)" }}>
           {pot ? `${pot.members} women in ${pot.name}` : "Join a circle to see the women in it"}
         </p>
         <Link href="/app/circles"
-              className="ux-press mt-3 flex min-h-[42px] w-full items-center justify-center gap-2 rounded-[12px] text-[0.8125rem] font-bold"
+              className="ux-press mt-3 flex min-h-[42px] w-full items-center justify-center gap-2 rounded-[12px] text-xsm font-bold"
               style={{ background: "var(--ux-surface-2)", border: "1px solid var(--ux-line)", color: "var(--ux-ink)" }}>
           <Icons.UserRoundPlus className="h-4 w-4" />
           Invite Members

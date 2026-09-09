@@ -53,14 +53,14 @@ export default function KitchenPage() {
           <div className="flex flex-wrap items-center gap-7 px-6 py-8 sm:px-9"
                style={{ background: `linear-gradient(120deg, ${v("--ux-tint-amber")}, ${v("--ux-surface")})` }}>
             <div className="min-w-0 flex-1">
-              <p className="text-[0.6875rem] font-extrabold uppercase tracking-[0.2em]" style={{ color: v("--ux-amber-ink") }}>
+              <p className="text-2xs font-extrabold uppercase tracking-[0.2em]" style={{ color: v("--ux-amber-ink") }}>
                 Selling food from home
               </p>
               <h1 className="mt-2 max-w-[18ch] text-[clamp(1.5rem,3.4vw,2.25rem)] font-extrabold leading-[1.08] tracking-[-0.035em]"
                   style={{ color: v("--ux-ink") }}>
                 The licence costs one hundred rupees
               </h1>
-              <p className="mt-2.5 max-w-[52ch] text-[0.875rem] leading-relaxed" style={{ color: v("--ux-ink-2") }}>
+              <p className="mt-2.5 max-w-[52ch] text-sm leading-relaxed" style={{ color: v("--ux-ink-2") }}>
                 A year. That is the entire fee. Your own kitchen is allowed — you write down the
                 address yourself, and no landlord has to sign anything. Most women who could be
                 selling food think this costs thousands.
@@ -71,14 +71,14 @@ export default function KitchenPage() {
                  style={{ color: v("--ux-amber-ink") }}>
                 ₹100
               </p>
-              <p className="mt-1.5 text-[0.75rem] font-bold uppercase tracking-[0.12em]" style={{ color: v("--ux-ink-2") }}>
+              <p className="mt-1.5 text-xs font-bold uppercase tracking-[0.12em]" style={{ color: v("--ux-ink-2") }}>
                 for one year
               </p>
             </div>
           </div>
         </Card>
 
-        <div><ReadAloud targetId="kitchen-page" label="Read this to me" /></div>
+        <div><ReadAloud targetId="kitchen-page" /></div>
 
         {/* The road. Not a checklist — a route with her position on it. */}
         <div>
@@ -122,18 +122,18 @@ export default function KitchenPage() {
                             }}>
                       {s.done
                         ? <I name="Check" className="h-[17px] w-[17px]" sw={3} />
-                        : <span className="text-[0.8125rem] font-extrabold tabular-nums">{i + 1}</span>}
+                        : <span className="text-xsm font-extrabold tabular-nums">{i + 1}</span>}
                     </button>
 
                     <div className="min-w-0 flex-1 pt-1">
                       <div className="flex flex-wrap items-center gap-2">
-                        <p className="text-[1rem] font-bold" style={{ color: v(s.done ? "--ux-muted" : "--ux-ink") }}>
+                        <p className="text-base font-bold" style={{ color: v(s.done ? "--ux-muted" : "--ux-ink") }}>
                           {s.what}
                         </p>
                         {isNext && <Pill tone="brand" size="sm">You are here</Pill>}
                         {s.needs && <Pill tone="neutral" size="sm">Needs {s.needs}</Pill>}
                       </div>
-                      <p className="mt-1 max-w-[54ch] text-[0.8125rem] leading-relaxed" style={{ color: v("--ux-muted") }}>
+                      <p className="mt-1 max-w-[54ch] text-xsm leading-relaxed" style={{ color: v("--ux-muted") }}>
                         {s.detail}
                       </p>
                     </div>
@@ -154,7 +154,7 @@ export default function KitchenPage() {
 
         {applied && (
           <Card pad={16} style={{ background: v("--ux-tint-green"), borderColor: "transparent" }}>
-            <p className="flex items-center gap-2 text-[0.8125rem] font-semibold" style={{ color: v("--ux-green-ink") }}>
+            <p className="flex items-center gap-2 text-xsm font-semibold" style={{ color: v("--ux-green-ink") }}>
               <I name="CheckCircle2" className="h-[16px] w-[16px]" />
               Started. The number usually comes in 7 to 30 days — we will tell you when it does.
             </p>
@@ -172,10 +172,10 @@ export default function KitchenPage() {
                 <div className="grid h-[80px] w-[80px] place-items-center rounded-full"
                      style={{ background: v("--ux-surface") }}>
                   <div className="text-center">
-                    <p className="text-[1.5rem] font-extrabold leading-none tabular-nums" style={{ color: v("--ux-ink") }}>
+                    <p className="text-2xl font-extrabold leading-none tabular-nums" style={{ color: v("--ux-ink") }}>
                       {score}%
                     </p>
-                    <p className="text-[0.6875rem] font-bold uppercase tracking-[0.1em]" style={{ color: v("--ux-muted") }}>
+                    <p className="text-2xs font-bold uppercase tracking-[0.1em]" style={{ color: v("--ux-muted") }}>
                       ready
                     </p>
                   </div>
@@ -190,7 +190,7 @@ export default function KitchenPage() {
                             style={{ background: v(h.done ? "--ux-tint-green" : "--ux-surface-2") }}>
                       <I name={h.done ? "CheckCircle2" : "Circle"} className="h-[15px] w-[15px] shrink-0"
                          style={{ color: v(h.done ? "--ux-green-ink" : "--ux-muted") }} sw={2.2} />
-                      <span className="text-[0.8125rem] font-semibold" style={{ color: v("--ux-ink-2") }}>{h.what}</span>
+                      <span className="text-xsm font-semibold" style={{ color: v("--ux-ink-2") }}>{h.what}</span>
                     </button>
                   </li>
                 ))}
@@ -202,7 +202,7 @@ export default function KitchenPage() {
         <Card pad={16} style={{ background: v("--ux-surface-2"), borderColor: "transparent" }}>
           <div className="flex items-start gap-3">
             <I name="Info" className="mt-[2px] h-[16px] w-[16px] shrink-0" style={{ color: v("--ux-muted") }} />
-            <p className="text-[0.8125rem] leading-relaxed" style={{ color: v("--ux-ink-2") }}>
+            <p className="text-xsm leading-relaxed" style={{ color: v("--ux-ink-2") }}>
               We do not deliver your food and we never will — a van between you and your customer is
               how home kitchens stop being home kitchens, and it is where every company that tried
               this lost its money. Sell to the people who already know your cooking, and to their

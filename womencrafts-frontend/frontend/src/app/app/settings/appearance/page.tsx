@@ -74,10 +74,10 @@ export default function AppearanceSettings() {
                 </span>
                 <span className="flex items-center gap-2 px-3.5 py-3">
                   <span className="min-w-0 flex-1">
-                    <span className="block truncate text-[0.8125rem] font-semibold" style={{ color: "var(--ux-ink)" }}>
+                    <span className="block truncate text-xsm font-semibold" style={{ color: "var(--ux-ink)" }}>
                       {o.label}
                     </span>
-                    <span className="mt-0.5 block truncate text-[0.6875rem]" style={{ color: "var(--ux-muted)" }}>
+                    <span className="mt-0.5 block truncate text-2xs" style={{ color: "var(--ux-muted)" }}>
                       {o.note}
                     </span>
                   </span>
@@ -105,7 +105,7 @@ export default function AppearanceSettings() {
             whenOff="Cards lift and pages slide as you move around."
           />
         </div>
-        <p className="mt-3.5 flex items-start gap-2.5 rounded-[12px] p-3 text-[0.75rem] leading-relaxed"
+        <p className="mt-3.5 flex items-start gap-2.5 rounded-[12px] p-3 text-xs leading-relaxed"
            style={{ background: "var(--ux-surface-2)", color: "var(--ux-ink-2)" }}>
           <Icons.Info className="mt-[1px] h-[14px] w-[14px] shrink-0" style={{ color: "var(--ux-brand)" }} />
           If your phone is already set to reduce motion, WomSakhi follows it without you turning this on.

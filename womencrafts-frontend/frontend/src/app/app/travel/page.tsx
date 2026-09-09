@@ -37,7 +37,7 @@ export default function TravelPage() {
             <SectionHead title="Before you set out" icon="ShieldCheck" />
             <ul className="ux-stagger space-y-2.5">
               {TRAVEL_RULES.map((t, i) => (
-                <li key={t.id} className="flex items-start gap-2.5 text-[0.8125rem] leading-snug"
+                <li key={t.id} className="flex items-start gap-2.5 text-xsm leading-snug"
                     style={{ ["--i" as string]: i, color: "var(--ux-ink-2)" }}>
                   <Icons.Check className="mt-[2px] h-[14px] w-[14px] shrink-0" style={{ color: "var(--ux-green-ink)" }} strokeWidth={2.6} />
                   <span>
@@ -54,10 +54,10 @@ export default function TravelPage() {
             <ul className="space-y-3">
               {TRAVEL_HELP.map((h) => (
                 <li key={h.id}>
-                  <a href={`tel:${h.num}`} className="ux-hov block text-[1.25rem] font-bold leading-none tabular-nums"
+                  <a href={`tel:${h.num}`} className="ux-hov block text-xl font-bold leading-none tabular-nums"
                      style={{ color: "var(--ux-ink)" }}>{h.num}</a>
-                  <p className="mt-1 text-[0.8125rem] font-medium" style={{ color: "var(--ux-ink-2)" }}>{h.label}</p>
-                  <p className="mt-0.5 text-[0.75rem]" style={{ color: "var(--ux-muted)" }}>{h.note}</p>
+                  <p className="mt-1 text-xsm font-medium" style={{ color: "var(--ux-ink-2)" }}>{h.label}</p>
+                  <p className="mt-0.5 text-xs" style={{ color: "var(--ux-muted)" }}>{h.note}</p>
                 </li>
               ))}
             </ul>
@@ -71,10 +71,10 @@ export default function TravelPage() {
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img loading="lazy" decoding="async" src={WELLBEING_ART.travel} alt=""
                  className="ux-float pointer-events-none absolute -bottom-3 -end-4 h-[100px] w-[100px] object-contain" />
-            <h3 className="relative w-[60%] text-[0.875rem] font-semibold" style={{ color: "var(--ux-ink)" }}>
+            <h3 className="relative w-[60%] text-sm font-semibold" style={{ color: "var(--ux-ink)" }}>
               Share your journey
             </h3>
-            <p className="relative mt-2 w-[60%] text-[0.75rem] leading-relaxed" style={{ color: "var(--ux-muted)" }}>
+            <p className="relative mt-2 w-[60%] text-xs leading-relaxed" style={{ color: "var(--ux-muted)" }}>
               Your trusted contacts see where you are until you say you have arrived.
             </p>
           </div>
@@ -83,8 +83,8 @@ export default function TravelPage() {
     >
       <div className="mb-[20px] flex items-end justify-between gap-4">
         <div>
-          <h1 className="text-[1.5rem] font-bold" style={{ color: "var(--ux-ink)" }}>Travel and safety</h1>
-          <p className="mt-1.5 text-[0.8125rem]" style={{ color: "var(--ux-muted)" }}>
+          <h1 className="text-2xl font-bold" style={{ color: "var(--ux-ink)" }}>Travel and safety</h1>
+          <p className="mt-1.5 text-xsm" style={{ color: "var(--ux-muted)" }}>
             {risky.length
               ? `${risky.length} of your routes is not safe to return on after dark.`
               : unchecked.length === ROUTES.length
@@ -110,7 +110,7 @@ export default function TravelPage() {
                             ink={r.safeAfterDark ? "--ux-green" : "--ux-orange"} size={46} radius={12} />
                   <div className="min-w-0 flex-1">
                     <div className="flex items-start gap-2">
-                      <h3 className="min-w-0 flex-1 text-[0.875rem] font-semibold" style={{ color: "var(--ux-ink)" }}>
+                      <h3 className="min-w-0 flex-1 text-sm font-semibold" style={{ color: "var(--ux-ink)" }}>
                         {r.name}
                       </h3>
                       {/* The part nobody publishes, said plainly — including
@@ -122,14 +122,14 @@ export default function TravelPage() {
                          : r.safeAfterDark ? "Fine after dark" : "Not after dark"}
                       </Pill>
                     </div>
-                    <p className="mt-1.5 text-[0.8125rem]" style={{ color: "var(--ux-ink-2)" }}>{r.how}</p>
-                    <p className="mt-1.5 flex flex-wrap items-center gap-x-3 text-[0.75rem]" style={{ color: "var(--ux-muted)" }}>
+                    <p className="mt-1.5 text-xsm" style={{ color: "var(--ux-ink-2)" }}>{r.how}</p>
+                    <p className="mt-1.5 flex flex-wrap items-center gap-x-3 text-xs" style={{ color: "var(--ux-muted)" }}>
                       {r.mins !== null && (
                         <span className="inline-flex items-center gap-1"><Icons.Clock className="h-3.5 w-3.5" /> {r.mins} min</span>
                       )}
                       <span className="inline-flex items-center gap-1"><Icons.IndianRupee className="h-3.5 w-3.5" /> {r.cost}</span>
                     </p>
-                    <p className="mt-2 flex items-start gap-1.5 text-[0.75rem]"
+                    <p className="mt-2 flex items-start gap-1.5 text-xs"
                        style={{ color: r.safeAfterDark === false ? "var(--ux-orange-ink)" : "var(--ux-muted)" }}>
                       <Icons.Info className="mt-[1px] h-[13px] w-[13px] shrink-0" />
                       {r.note}
@@ -177,12 +177,12 @@ export default function TravelPage() {
           <ol className="ux-stagger space-y-3.5">
             {TRAVEL_RULES.map((t, i) => (
               <li key={t.id} className="flex items-start gap-3">
-                <span className="grid h-[26px] w-[26px] shrink-0 place-items-center rounded-full text-[0.75rem] font-bold"
+                <span className="grid h-[26px] w-[26px] shrink-0 place-items-center rounded-full text-xs font-bold"
                       style={{ background: "var(--ux-brand-tint)", color: "var(--ux-brand)" }}>{i + 1}</span>
                 <div className="min-w-0">
-                  <p className="text-[0.875rem] leading-relaxed" style={{ color: "var(--ux-ink-2)" }}>{t.label}</p>
+                  <p className="text-sm leading-relaxed" style={{ color: "var(--ux-ink-2)" }}>{t.label}</p>
                   {t.note && (
-                    <p className="mt-0.5 text-[0.8125rem] leading-snug" style={{ color: "var(--ux-muted)" }}>{t.note}</p>
+                    <p className="mt-0.5 text-xsm leading-snug" style={{ color: "var(--ux-muted)" }}>{t.note}</p>
                   )}
                 </div>
               </li>
@@ -190,7 +190,7 @@ export default function TravelPage() {
           </ol>
           <div className="mt-5 flex items-center gap-3 rounded-[12px] p-3.5" style={{ background: "var(--ux-surface-2)" }}>
             <Icons.Siren className="h-[18px] w-[18px] shrink-0" style={{ color: "var(--ux-orange-ink)" }} />
-            <p className="min-w-0 flex-1 text-[0.8125rem]" style={{ color: "var(--ux-ink-2)" }}>
+            <p className="min-w-0 flex-1 text-xsm" style={{ color: "var(--ux-ink-2)" }}>
               The safety alert works anywhere, including mid-journey. Press and hold and your contacts get
               where you are.
             </p>

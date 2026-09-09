@@ -10,8 +10,6 @@ export default function Error({ error, reset }: { error: Error & { digest?: stri
       what="the design system"
       reset={reset}
       digest={error.digest}
-      home="/"
-      homeLabel="Back to the home page"
     />
   );
 }

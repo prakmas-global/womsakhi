@@ -23,14 +23,14 @@ export function CourseCard({ c, w }: { c: Course; w?: number }) {
         {c.tag && <span className="absolute start-2.5 top-2.5"><Pill tone={TAG_TONE[c.tag]} size="sm">{c.tag}</Pill></span>}
       </div>
       <div className="p-3">
-        <h2 className="line-clamp-2 text-[0.8125rem] font-semibold leading-snug" style={{ color: "var(--ux-ink)" }}>{c.title}</h2>
-        <p className="mt-1 text-[0.75rem]" style={{ color: "var(--ux-muted)" }}>
+        <h2 className="line-clamp-2 text-xsm font-semibold leading-snug" style={{ color: "var(--ux-ink)" }}>{c.title}</h2>
+        <p className="mt-1 text-xs" style={{ color: "var(--ux-muted)" }}>
           {c.lessons} Lessons <span aria-hidden>•</span> {c.level}
         </p>
         {typeof c.pct === "number" ? (
           <div className="mt-2.5">
             <Progress pct={c.pct} />
-            <p className="mt-1.5 text-end text-[0.6875rem] font-medium" style={{ color: "var(--ux-brand)" }}>{c.pct}% Complete</p>
+            <p className="mt-1.5 text-end text-2xs font-medium" style={{ color: "var(--ux-brand)" }}>{c.pct}% Complete</p>
           </div>
         ) : (
           <div className="mt-2 flex items-center justify-between">
@@ -70,21 +70,21 @@ export function ResumeCard({ c }: { c: Course }) {
         </span>
       </div>
       <div className="flex min-w-0 flex-1 flex-col justify-center pe-5">
-        <h2 className="text-[1rem] font-semibold" style={{ color: "var(--ux-ink)" }}>{c.title}</h2>
-        <p className="mt-1 text-[0.75rem]" style={{ color: "var(--ux-muted)" }}>
+        <h2 className="text-base font-semibold" style={{ color: "var(--ux-ink)" }}>{c.title}</h2>
+        <p className="mt-1 text-xs" style={{ color: "var(--ux-muted)" }}>
           Course <span aria-hidden>•</span> {c.lessons} Lessons
         </p>
         <div className="mt-3.5 flex items-center gap-3">
           <Progress pct={c.pct ?? 0} />
-          <span className="shrink-0 text-[0.75rem] font-medium" style={{ color: "var(--ux-brand)" }}>{c.pct}% Complete</span>
+          <span className="shrink-0 text-xs font-medium" style={{ color: "var(--ux-brand)" }}>{c.pct}% Complete</span>
         </div>
         <div className="mt-4">
           {/* A span, not a nested link: the card around it is already the
               anchor, and an <a> inside an <a> is invalid and unpredictable to
               a keyboard and a screen reader. It still looks and reads as the
               button it always was. */}
-          <span className="ux-press inline-flex items-center gap-2 rounded-[12px] px-4 py-2.5 text-[0.8125rem] font-semibold"
-                style={{ background: "linear-gradient(96deg, var(--ux-fill), var(--ux-fill-2))", color: "#fff" }}>
+          <span className="ux-press inline-flex items-center gap-2 rounded-[12px] px-4 py-2.5 text-xsm font-semibold"
+                style={{ background: "linear-gradient(96deg, var(--ux-fill), var(--ux-fill-2))", color: "var(--ux-on-brand)" }}>
             <Icons.Play className="h-4 w-4" fill="currentColor" aria-hidden />
             {(c.pct ?? 0) > 0 ? "Resume Learning" : "Start learning"}
           </span>
@@ -107,8 +107,8 @@ export function SkillCard({ s }: { s: (typeof SKILLS)[number] }) {
     <div className="ux-card flex w-[176px] shrink-0 items-start gap-2.5" style={{ padding: 13 }}>
       <IconTile icon={s.icon} tint={s.tint} ink={s.ink} size={34} radius={9} />
       <div className="min-w-0">
-        <h2 className="text-[0.8125rem] font-semibold leading-tight" style={{ color: "var(--ux-ink)" }}>{s.name}</h2>
-        <p className="mt-1 text-[0.6875rem]" style={{ color: "var(--ux-muted)" }}>{s.level}</p>
+        <h2 className="text-xsm font-semibold leading-tight" style={{ color: "var(--ux-ink)" }}>{s.name}</h2>
+        <p className="mt-1 text-2xs" style={{ color: "var(--ux-muted)" }}>{s.level}</p>
       </div>
     </div>
   );
@@ -124,17 +124,17 @@ export function LearnerCard() {
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img loading="lazy" decoding="async" src="/ux/art/avatar-woman-purple-kurta.webp" alt="" className="h-[52px] w-[52px] rounded-full object-cover" />
         <div className="min-w-0 flex-1">
-          <h2 className="flex items-center gap-1.5 text-[1rem] font-semibold" style={{ color: "var(--ux-ink)" }}>
+          <h2 className="flex items-center gap-1.5 text-base font-semibold" style={{ color: "var(--ux-ink)" }}>
             {LEARNER.name}
             <Icons.BadgeCheck className="h-4 w-4" style={{ color: "var(--ux-brand)" }} />
           </h2>
-          <p className="text-[0.75rem]" style={{ color: "var(--ux-muted)" }}>
+          <p className="text-xs" style={{ color: "var(--ux-muted)" }}>
             Level {LEARNER.level} <span aria-hidden>•</span> {LEARNER.title}
           </p>
         </div>
       </div>
       <div className="mt-3"><Progress pct={pct} /></div>
-      <p className="mt-1.5 text-end text-[0.6875rem]" style={{ color: "var(--ux-muted)" }}>
+      <p className="mt-1.5 text-end text-2xs" style={{ color: "var(--ux-muted)" }}>
         {LEARNER.xp.toLocaleString()} / {LEARNER.xpMax.toLocaleString()} XP
       </p>
     </Card>
@@ -146,20 +146,20 @@ export function StreakCard() {
   return (
     <Card>
       <div className="flex items-center justify-between">
-        <h2 className="flex items-center gap-2 text-[0.875rem] font-semibold" style={{ color: "var(--ux-ink)" }}>
+        <h2 className="flex items-center gap-2 text-sm font-semibold" style={{ color: "var(--ux-ink)" }}>
           <Icons.Flame className="h-[16px] w-[16px]" style={{ color: "var(--ux-orange-ink)" }} aria-hidden /> Learning Streak
         </h2>
         <Btn variant="outline" size="sm">View Calendar</Btn>
       </div>
       <div className="mt-3.5 flex items-center gap-4">
         <div className="shrink-0 text-center">
-          <p className="text-[1.5rem] font-bold leading-none" style={{ color: "var(--ux-ink)" }}>{STREAK.days}</p>
-          <p className="mt-0.5 text-[0.6875rem]" style={{ color: "var(--ux-muted)" }}>Days</p>
+          <p className="text-2xl font-bold leading-none" style={{ color: "var(--ux-ink)" }}>{STREAK.days}</p>
+          <p className="mt-0.5 text-2xs" style={{ color: "var(--ux-muted)" }}>Days</p>
         </div>
         <div className="flex flex-1 justify-between">
           {STREAK.marks.map((on, i) => (
             <div key={i} className="flex flex-col items-center gap-1.5">
-              <span className="text-[0.6875rem]" style={{ color: "var(--ux-muted)" }}>{days[i]}</span>
+              <span className="text-2xs" style={{ color: "var(--ux-muted)" }}>{days[i]}</span>
               <span className="ux-pop grid h-[26px] w-[26px] place-items-center rounded-full border"
                     style={{ ["--i" as string]: i,
                              background: on ? "var(--ux-brand-600)" : "transparent",
@@ -183,8 +183,8 @@ export function AchievementsCard() {
           <div key={a.name} className="text-center">
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img loading="lazy" decoding="async" src={a.img} alt="" className="mx-auto h-[58px] w-[58px]" />
-            <p className="mt-1.5 text-[0.6875rem] font-semibold leading-tight" style={{ color: "var(--ux-ink)" }}>{a.name}</p>
-            <p className="mt-0.5 text-[0.6875rem] leading-tight" style={{ color: "var(--ux-muted)" }}>{a.body}</p>
+            <p className="mt-1.5 text-2xs font-semibold leading-tight" style={{ color: "var(--ux-ink)" }}>{a.name}</p>
+            <p className="mt-0.5 text-2xs leading-tight" style={{ color: "var(--ux-muted)" }}>{a.body}</p>
           </div>
         ))}
       </div>
@@ -197,10 +197,10 @@ export function ReminderCard() {
     <Card>
       <div className="flex items-start gap-3">
         <div className="min-w-0 flex-1">
-          <h2 className="flex items-center gap-2 text-[0.875rem] font-semibold" style={{ color: "var(--ux-ink)" }}>
+          <h2 className="flex items-center gap-2 text-sm font-semibold" style={{ color: "var(--ux-ink)" }}>
             <Icons.Bell className="h-[16px] w-[16px]" style={{ color: "var(--ux-brand)" }} /> Study Reminder
           </h2>
-          <p className="mt-2 text-[0.75rem] leading-relaxed" style={{ color: "var(--ux-muted)" }}>
+          <p className="mt-2 text-xs leading-relaxed" style={{ color: "var(--ux-muted)" }}>
             Keep the momentum going. You have a study goal for today.
           </p>
           <div className="mt-3"><Btn variant="soft" size="sm">Start Learning Now</Btn></div>
@@ -215,8 +215,8 @@ export function AskSakhiCard() {
   return (
     <div className="relative overflow-hidden rounded-[16px] p-[20px]"
          style={{ background: "linear-gradient(150deg, var(--ux-tint-lilac), var(--ux-tint-pink))" }}>
-      <h2 className="text-[1rem] font-semibold" style={{ color: "var(--ux-ink)" }}>Hi, I&apos;m Sakhi!</h2>
-      <p className="mt-2 w-[76%] text-[0.75rem] leading-relaxed" style={{ color: "var(--ux-ink-2)" }}>
+      <h2 className="text-base font-semibold" style={{ color: "var(--ux-ink)" }}>Hi, I&apos;m Sakhi!</h2>
+      <p className="mt-2 w-[76%] text-xs leading-relaxed" style={{ color: "var(--ux-ink-2)" }}>
         I&apos;m here to guide you to the best learning opportunities.
       </p>
       {/* eslint-disable-next-line @next/next/no-img-element */}

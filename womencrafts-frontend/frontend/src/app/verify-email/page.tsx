@@ -56,7 +56,7 @@ function Badge({ tint, ink, children }: { tint: string; ink: string; children: R
 
 function Heading({ children }: { children: React.ReactNode }) {
   return (
-    <h1 className="mt-4 text-[1.25rem] font-bold tracking-tight" style={{ color: "var(--ux-ink)" }}>
+    <h1 className="mt-4 text-xl font-bold tracking-tight" style={{ color: "var(--ux-ink)" }}>
       {children}
     </h1>
   );
@@ -64,7 +64,7 @@ function Heading({ children }: { children: React.ReactNode }) {
 
 function Sub({ children }: { children: React.ReactNode }) {
   return (
-    <p className="mt-1.5 text-[0.8125rem] leading-relaxed" style={{ color: "var(--ux-muted)" }}>
+    <p className="mt-1.5 text-xsm leading-relaxed" style={{ color: "var(--ux-muted)" }}>
       {children}
     </p>
   );
@@ -144,7 +144,7 @@ function Confirm() {
           </div>
           <Link
             href="/signin"
-            className="ux-hov mt-3.5 inline-block text-[0.8125rem] font-semibold"
+            className="ux-hov mt-3.5 inline-block text-xsm font-semibold"
             style={{ color: "var(--ux-brand)" }}
           >
             Back to sign in

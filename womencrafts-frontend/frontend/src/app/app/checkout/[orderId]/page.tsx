@@ -105,7 +105,7 @@ export default function CheckoutPage({ params }: { params: Promise<{ orderId: st
         <div className="space-y-[16px]">
           <Card>
             <SectionHead title="What you are paying" />
-            <div className="space-y-2.5 text-[0.8125rem]">
+            <div className="space-y-2.5 text-xsm">
               <div className="flex items-center justify-between gap-3">
                 <span style={{ color: "var(--ux-muted)" }}>{order.purpose === "program" ? "Course" : "Booking"}</span>
                 <span className="font-medium tabular-nums" style={{ color: "var(--ux-ink)" }}>
@@ -125,12 +125,12 @@ export default function CheckoutPage({ params }: { params: Promise<{ orderId: st
             </div>
             <div className="my-3.5 h-px" style={{ background: "var(--ux-line)" }} />
             <div className="flex items-baseline justify-between gap-3">
-              <span className="text-[0.875rem] font-semibold" style={{ color: "var(--ux-ink)" }}>Total</span>
-              <span className="text-[1.25rem] font-bold tabular-nums" style={{ color: "var(--ux-ink)" }}>
+              <span className="text-sm font-semibold" style={{ color: "var(--ux-ink)" }}>Total</span>
+              <span className="text-xl font-bold tabular-nums" style={{ color: "var(--ux-ink)" }}>
                 {order.amount_label || formatMoney(order.amount_minor)}
               </span>
             </div>
-            <p className="mt-2.5 text-[0.75rem] leading-relaxed" style={{ color: "var(--ux-muted)" }}>
+            <p className="mt-2.5 text-xs leading-relaxed" style={{ color: "var(--ux-muted)" }}>
               This is the exact amount that will leave your account. Nothing is added afterwards.
             </p>
 
@@ -145,20 +145,20 @@ export default function CheckoutPage({ params }: { params: Promise<{ orderId: st
             </div>
 
             {problem && (
-              <p role="alert" className="ux-slide-up mt-2.5 text-[0.8125rem] leading-relaxed"
+              <p role="alert" className="ux-slide-up mt-2.5 text-xsm leading-relaxed"
                  style={{ color: "var(--ux-orange-ink)" }}>
                 {problem}
               </p>
             )}
 
-            <p className="mt-2.5 flex items-center justify-center gap-1.5 text-[0.6875rem]" style={{ color: "var(--ux-faint)" }}>
+            <p className="mt-2.5 flex items-center justify-center gap-1.5 text-2xs" style={{ color: "var(--ux-faint)" }}>
               <Icons.Lock className="h-[12px] w-[12px]" /> Your card details never reach WomSakhi
             </p>
           </Card>
 
           <Card>
             <SectionHead title="If it goes wrong" icon="ShieldCheck" />
-            <p className="text-[0.8125rem] leading-relaxed" style={{ color: "var(--ux-ink-2)" }}>
+            <p className="text-xsm leading-relaxed" style={{ color: "var(--ux-ink-2)" }}>
               If money leaves your account but the payment fails, it comes back on its own within 5–7 working
               days. If it does not, tell us and we will chase it.
             </p>
@@ -167,13 +167,13 @@ export default function CheckoutPage({ params }: { params: Promise<{ orderId: st
       }
     >
       <Link href={backTo}
-            className="ux-hov -my-1 mb-3.5 inline-flex items-center gap-1.5 py-1 text-[0.8125rem] font-medium"
+            className="ux-hov -my-1 mb-3.5 inline-flex items-center gap-1.5 py-1 text-xsm font-medium"
             style={{ color: "var(--ux-brand)" }}>
         <Icons.ArrowLeft className="ux-ico h-4 w-4" /> Back
       </Link>
 
-      <h1 className="text-[1.5rem] font-bold" style={{ color: "var(--ux-ink)" }}>Checkout</h1>
-      <p className="mb-[20px] mt-1.5 text-[0.8125rem]" style={{ color: "var(--ux-muted)" }}>
+      <h1 className="text-2xl font-bold" style={{ color: "var(--ux-ink)" }}>Checkout</h1>
+      <p className="mb-[20px] mt-1.5 text-xsm" style={{ color: "var(--ux-muted)" }}>
         One step. Nothing is taken until you press the button.
       </p>
 
@@ -184,16 +184,16 @@ export default function CheckoutPage({ params }: { params: Promise<{ orderId: st
                     tint="--ux-tint-violet" ink="--ux-violet" size={64} radius={13} />
           <div className="min-w-0 flex-1">
             <div className="flex items-start gap-2">
-              <h2 className="min-w-0 flex-1 text-[1rem] font-semibold" style={{ color: "var(--ux-ink)" }}>
+              <h2 className="min-w-0 flex-1 text-base font-semibold" style={{ color: "var(--ux-ink)" }}>
                 {order.title}
               </h2>
               <Pill tone="brand" size="sm">{order.purpose === "program" ? "Course" : "Booking"}</Pill>
             </div>
-            <p className="mt-1 text-[0.8125rem]" style={{ color: "var(--ux-muted)" }}>
+            <p className="mt-1 text-xsm" style={{ color: "var(--ux-muted)" }}>
               Started {order.created}
             </p>
           </div>
-          <p className="shrink-0 text-[1.125rem] font-bold tabular-nums" style={{ color: "var(--ux-ink)" }}>
+          <p className="shrink-0 text-lg font-bold tabular-nums" style={{ color: "var(--ux-ink)" }}>
             {formatMoney(order.amount_minor)}
           </p>
         </div>
@@ -219,11 +219,11 @@ export default function CheckoutPage({ params }: { params: Promise<{ orderId: st
               >
                 <IconTile icon={look.icon} tint={look.tint} ink={look.ink} size={42} radius={11} />
                 <span className="min-w-0 flex-1">
-                  <span className="block truncate text-[0.875rem] font-semibold" style={{ color: "var(--ux-ink)" }}>
+                  <span className="block truncate text-sm font-semibold" style={{ color: "var(--ux-ink)" }}>
                     {m.label}
                   </span>
                   {look.detail && (
-                    <span className="mt-0.5 block truncate text-[0.75rem]" style={{ color: "var(--ux-muted)" }}>
+                    <span className="mt-0.5 block truncate text-xs" style={{ color: "var(--ux-muted)" }}>
                       {look.detail}
                     </span>
                   )}
@@ -248,12 +248,12 @@ function Paid({ order }: { order: Order }) {
                 style={{ background: "var(--ux-tint-green)" }}>
             <Icons.CheckCheck className="h-[32px] w-[32px]" style={{ color: "var(--ux-green-ink)" }} strokeWidth={2} />
           </span>
-          <h1 className="mt-4 text-[1.25rem] font-bold" style={{ color: "var(--ux-ink)" }}>Paid</h1>
-          <p className="mt-2 max-w-[38ch] text-[0.875rem] leading-relaxed" style={{ color: "var(--ux-ink-2)" }}>
+          <h1 className="mt-4 text-xl font-bold" style={{ color: "var(--ux-ink)" }}>Paid</h1>
+          <p className="mt-2 max-w-[38ch] text-sm leading-relaxed" style={{ color: "var(--ux-ink-2)" }}>
             {order.amount_label || formatMoney(order.amount_minor)} for {order.title}. The receipt is in Money,
             and you can start straight away.
           </p>
-          <p className="mt-3 font-mono text-[0.75rem]" style={{ color: "var(--ux-faint)" }}>{order.id}</p>
+          <p className="mt-3 font-mono text-xs" style={{ color: "var(--ux-faint)" }}>{order.id}</p>
           <div className="mt-5 flex flex-wrap justify-center gap-2.5">
             <Btn href={course ? "/app/programs" : "/app/bookings"} variant="primary" iconEnd="ArrowRight">
               {course ? "Start the course" : "See your booking"}
@@ -283,10 +283,10 @@ function Missing({ error, onRetry }: { error: Error | null; onRetry: () => void 
       <Card className="mx-auto max-w-[520px]">
         <div className="flex flex-col items-center py-4 text-center">
           <IconTile icon="SearchX" tint="--ux-tint-amber" ink="--ux-amber" size={54} radius={14} />
-          <h1 className="mt-3.5 text-[1.125rem] font-bold" style={{ color: "var(--ux-ink)" }}>
+          <h1 className="mt-3.5 text-lg font-bold" style={{ color: "var(--ux-ink)" }}>
             We could not find that payment
           </h1>
-          <p className="mt-2 max-w-[40ch] text-[0.8125rem] leading-relaxed" style={{ color: "var(--ux-ink-2)" }}>
+          <p className="mt-2 max-w-[40ch] text-xsm leading-relaxed" style={{ color: "var(--ux-ink-2)" }}>
             {messageFrom(error, "It may have been finished already, or the link may be old. Nothing has been charged.")}
           </p>
           <div className="mt-5 flex flex-wrap justify-center gap-2.5">
