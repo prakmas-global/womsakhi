@@ -532,6 +532,30 @@ export function SourceNote({ source, what = "figures" }: { source: "live" | "moc
     </p>
   );
 }
+/**
+ * "This screen is built, the endpoint is not yet."
+ *
+ * Distinct from `SourceNote`, which means something else entirely: that a live
+ * fetch FAILED and she is looking at a fallback. Saying that on a screen whose
+ * API was never written would be a lie in the other direction — it would send
+ * her to pull down and try again forever.
+ */
+export function DemoNote({ what }: { what: string }) {
+  return (
+    <p
+      role="status"
+      className="ux-sq mb-3.5 flex items-start gap-2.5 rounded-[12px] px-3.5 py-2.5 text-xs leading-relaxed"
+      style={{ background: "var(--ux-surface-2)", color: "var(--ux-ink-2)" }}
+    >
+      <I name="Info" className="mt-[1px] h-[14px] w-[14px] shrink-0" sw={2} />
+      <span>
+        {what} are shown as examples while this part is being built. Nothing here is your real
+        data, and nothing you do on this screen is saved yet.
+      </span>
+    </p>
+  );
+}
+
 export { certificateHtml, printCertificate, type CertificateFields } from "./download";
 export { Money, formatMoney as formatRupees, formatMoneyOrFree, formatWholeRupees } from "./money";
 export { Sheet } from "./sheet";
