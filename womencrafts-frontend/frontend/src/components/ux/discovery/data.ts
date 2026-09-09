@@ -32,34 +32,62 @@ export interface DiscoverItem {
   icon: string;
   tint: string;
   ink: string;
+  /**
+   * A photograph, where the row is about a person or a trade.
+   *
+   * A face is the whole mechanism here: the evidence for this user base is that
+   * seeing *a named woman like her doing one specific thing* moves people, and
+   * an icon in a tinted square is not that. Icons stay as the fallback for rows
+   * that are about a thing rather than a person.
+   */
+  photo?: string;
+  /** A two-word reason the row is worth her time — "Higher income". */
+  badge?: string;
+  /** How far, said on its own line so it can be scanned down a column. */
+  away?: string;
 }
 
 /** Women a step or two ahead, in her trade — the exposure effect, not a leaderboard. */
 export const NEARBY_WOMEN: DiscoverItem[] = [
-  { id: "w1", kind: "woman", title: "Sunita Devi", detail: "Tailoring · 11 years · 2 km away",
+  { id: "w1", kind: "woman", title: "Sunita Devi", detail: "Tailoring · 11 years", away: "2 km away",
     because: "She does what you do, in your area, and has taken bulk orders",
     meta: "Has helped 9 women", href: "/app/mentors", icon: "UserRoundCheck",
+    photo: "/ux/art/avatar-woman-elder-saree.webp",
     tint: "--ux-tint-pink", ink: "--ux-pink-ink" },
-  { id: "w2", kind: "woman", title: "Radha Menon", detail: "Tuition · 5 years · 4 km away",
+  { id: "w2", kind: "woman", title: "Radha Menon", detail: "Tuition · 5 years", away: "4 km away",
     because: "She started after a career break, like you are considering",
     meta: "Teaches 14 children", href: "/app/mentors", icon: "GraduationCap",
+    photo: "/ux/art/avatar-woman-blue-saree.webp",
     tint: "--ux-tint-blue", ink: "--ux-blue-ink" },
-  { id: "w3", kind: "woman", title: "Lakshmi Bai", detail: "Pickles and papad · 7 years",
+  { id: "w3", kind: "woman", title: "Lakshmi Bai", detail: "Pickles and papad · 7 years", away: "6 km away",
     because: "She sells food from home with the ₹100 licence you were reading about",
     meta: "42 regular customers", href: "/app/kitchen", icon: "ChefHat",
+    photo: "/ux/art/avatar-woman-purple-kurta.webp",
     tint: "--ux-tint-amber", ink: "--ux-amber-ink" },
+  { id: "w4", kind: "woman", title: "Ayesha Khan", detail: "Beautician · 6 years", away: "3 km away",
+    because: "She moved from a small town and now has a steady client base",
+    meta: "60 regulars", href: "/app/mentors", icon: "Sparkles",
+    photo: "/ux/art/avatar-woman-hijab.webp",
+    tint: "--ux-tint-violet", ink: "--ux-violet-ink" },
 ];
 
 /** Trades women near her moved INTO and earned more. Exposure, not advice. */
 export const CROSSINGS: DiscoverItem[] = [
-  { id: "c1", kind: "skill", title: "Bridal mehendi", detail: "Women who added this earn about 2× more",
+  { id: "c1", kind: "skill", title: "Bridal mehendi services", detail: "Women who added this earn about 2× more",
     because: "You already do simple mehendi — this is the same skill, priced differently",
     meta: "3 women in your circle do it", href: "/app/programs", icon: "Sparkles",
+    photo: "/ux/art/course-handmade-market-stall.webp", badge: "Higher income",
     tint: "--ux-tint-violet", ink: "--ux-violet" },
-  { id: "c2", kind: "skill", title: "School uniforms", detail: "Steady work every June and December",
+  { id: "c2", kind: "skill", title: "School uniforms", detail: "Regular orders every June and December",
     because: "You stitch blouses. Uniforms are the same machine, bigger orders",
     meta: "One school near you orders 120 sets", href: "/app/contracts", icon: "Shirt",
+    photo: "/ux/art/course-presenting-to-group.webp", badge: "Steady demand",
     tint: "--ux-tint-blue", ink: "--ux-blue-ink" },
+  { id: "c3", kind: "course", title: "Pricing your work", detail: "4 lessons · 40 minutes",
+    because: "You charge ₹280 for blouses. Women near you charge up to ₹600",
+    meta: "You can charge up to ₹600", href: "/app/shop/pricing", icon: "Tag",
+    photo: "/ux/art/course-reviewing-tablet-charts.webp", badge: "Work from home",
+    tint: "--ux-tint-amber", ink: "--ux-amber-ink" },
 ];
 
 export const FOR_YOU: DiscoverItem[] = [

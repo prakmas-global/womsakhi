@@ -4,26 +4,38 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 
 import { HomeShell } from "@/components/ux/home/HomeShell";
-import { Btn, Card, Chip, EmptyState, I, IconTile, SectionHead, v } from "@/components/ux/kit";
-import { NextStepCard } from "@/components/ux/journey/NextStepCard";
+import * as Icons from "@/components/ux/icons";
+import { Btn, Card, EmptyState, I, v } from "@/components/ux/kit";
 import { readJourneyState } from "@/services/me.repository";
 import { nextStep } from "@/services/journey";
 import {
   LIFE_STAGES, readLifeStage, stageBy, weightFor, writeLifeStage, type LifeStageId,
 } from "@/services/life-stage";
-import {
-  CROSSINGS, FOR_YOU, NEARBY_WOMEN, type DiscoverItem,
-} from "@/components/ux/discovery/data";
+import { CROSSINGS, FOR_YOU, NEARBY_WOMEN } from "@/components/ux/discovery/data";
 import { useT } from "@/i18n";
 
+import { CrossingCard, Head, PickCard, WomanCard } from "./for-you-views";
+
+/** The lenses across the top. `all` is not a filter — it is the absence of one. */
+const LENSES = [
+  { id: "all",   label: "Everything",     icon: "Sparkles" },
+  { id: "women", label: "Women like you", icon: "Users" },
+  { id: "work",  label: "Work",           icon: "Briefcase" },
+  { id: "learn", label: "Learn",          icon: "BookOpen" },
+  { id: "earn",  label: "Earn",           icon: "IndianRupee" },
+  { id: "near",  label: "Near you",       icon: "MapPin" },
+] as const;
+
+type Lens = (typeof LENSES)[number]["id"];
+
 /**
- * Discover — for when she does not know what to ask.
+ * For you — for when she does not know what to ask.
  *
  * ── Why this is not the search page ─────────────────────────────────────────
  * Search serves a question she already has. On a platform this wide, most women
- * most of the time do not have one — they have a situation. Discover is the
- * surface for that, and it is why it earns a place in the primary navigation
- * while search stays a control in the header.
+ * most of the time do not have one — they have a situation. This is the surface
+ * for that, and it is why it earns a place in the primary navigation while
+ * search stays a control in the header.
  *
  * ── Why it is not a feed ────────────────────────────────────────────────────
  * An endless scroll of other women's wins is a comparison machine. What the
@@ -36,9 +48,6 @@ import { useT } from "@/i18n";
  * advertisement, and a woman with limited digital experience has no way to tell
  * them apart. If a reason cannot be written, the row does not ship.
  */
-
-type Lens = "all" | "women" | "work" | "learn";
-
 export default function DiscoverPage() {
   const tr = useT();
   const router = useRouter();
@@ -58,74 +67,87 @@ export default function DiscoverPage() {
   useEffect(() => setLife(readLifeStage()), []);
 
   const pickLife = useCallback((id: LifeStageId | null) => {
-    setLife(id); writeLifeStage(id); setAsking(false);
+    writeLifeStage(id); setLife(id); setAsking(false);
   }, []);
 
-  const stage = useMemo(() => stageBy(life), [life]);
-
+  const stage = useMemo(() => (life ? stageBy(life) : null), [life]);
   const save = useCallback((id: string) => {
-    setSaved((r) => (r.includes(id) ? r.filter((x) => x !== id) : [...r, id]));
+    setSaved((s) => (s.includes(id) ? s.filter((x) => x !== id) : [...s, id]));
   }, []);
 
+  /** Weighted, never filtered — a woman on a break can still see a big contract. */
   const forYou = useMemo(() => {
-    let rows = FOR_YOU;
-    if (lens === "work") rows = rows.filter((i) => i.kind === "opportunity");
-    else if (lens === "learn") rows = rows.filter((i) => i.kind === "course");
-    else if (lens === "women") return [];
-
-    // Weighted, never filtered. A woman on a break who wants to look at big
-    // contracts must still be able to — the ordering puts the likely thing
-    // first, it does not decide what she is allowed to want.
-    if (!life) return rows;
-    return [...rows].sort((a, b) => weightFor(life, b.kind) - weightFor(life, a.kind));
+    const pool = FOR_YOU.filter((i) =>
+      lens === "all" ? true
+      : lens === "work" || lens === "earn" ? i.kind === "opportunity"
+      : lens === "learn" ? i.kind === "course"
+      : lens === "near" ? i.kind === "circle" || i.kind === "event"
+      : i.kind === "circle");
+    return [...pool].sort((a, b) => weightFor(life, b.kind) - weightFor(life, a.kind));
   }, [lens, life]);
 
-  const showWomen = lens === "all" || lens === "women";
-  const showCross = lens === "all" || lens === "learn" || lens === "work";
+  const showWomen = lens === "all" || lens === "women" || lens === "near";
+  const showCross = lens === "all" || lens === "work" || lens === "learn" || lens === "earn";
 
   return (
     <HomeShell active="/app/discover">
-      <div className="flex flex-col gap-5">
+      <div className="flex flex-col gap-6">
 
-        <header>
-          <p className="text-2xs font-extrabold uppercase tracking-[0.2em]" style={{ color: v("--ux-brand") }}>{tr("discover.forYou")}</p>
-          <h1 className="mt-2 text-[clamp(1.5rem,3.2vw,2.125rem)] font-extrabold leading-[1.1] tracking-[-0.035em]"
-              style={{ color: v("--ux-ink") }}>{tr("discover.thingsWorthALook")}</h1>
-          <p className="mt-1.5 max-w-[58ch] text-sm leading-relaxed" style={{ color: v("--ux-muted") }}>
-            Not the most popular things — the ones that have something to do with you. Everything
-            below says why it is here.
-          </p>
-        </header>
+        {/* ── Header: who this is for, and a way to sharpen it ──────────── */}
+        <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_360px_260px]">
+          <header className="min-w-0">
+            <p className="text-2xs font-extrabold uppercase tracking-[0.2em]" style={{ color: v("--ux-brand") }}>{tr("discover.forYou")}</p>
+            <h1 className="mt-2 text-3xl font-extrabold leading-[1.15] tracking-[-0.02em]"
+                style={{ color: v("--ux-ink") }}>{tr("discover.thingsWorthALook")}</h1>
+            <p className="mt-1.5 max-w-[52ch] text-sm leading-relaxed" style={{ color: v("--ux-muted") }}>{tr("discover.notTheMostPopularThingsThe")}</p>
+          </header>
 
-        {/*
-          What kind of year she is having.
+          {/* The promise of the page, said once. */}
+          <div className="relative hidden overflow-hidden rounded-[16px] p-5 xl:block"
+               style={{ background: "linear-gradient(120deg, var(--ux-tint-lilac), var(--ux-tint-pink))" }}>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src="/ux/art/scene-woman-planning-board.webp" alt="" loading="lazy" decoding="async"
+                 className="pointer-events-none absolute -bottom-3 -end-3 h-[132px] w-[132px] object-contain" />
+            <p className="text-base font-semibold" style={{ color: v("--ux-ink-2") }}>{tr("discover.smallSteps")}</p>
+            <p className="text-lg font-extrabold" style={{ color: v("--ux-brand") }}>{tr("discover.bigPossibilities")}</p>
+            <p className="mt-2 w-[60%] text-xs leading-relaxed" style={{ color: v("--ux-muted") }}>{tr("discover.opportunitiesPeopleAndResourcesCho")}</p>
+          </div>
 
-          Shown as a quiet line she can change, not a survey she must complete
-          before the page works — and "none of these" is a real answer, because
-          seven categories cannot hold every woman's situation and a forced
-          choice produces a wrong one rather than no one.
-        */}
-        {!asking ? (
-          <button type="button" onClick={() => setAsking(true)}
-                  className="ux-press ux-sq flex w-fit items-center gap-2 rounded-[12px] px-3.5 py-2.5 text-left"
-                  style={{ background: v(stage ? stage.tint : "--ux-surface-2") }}>
-            <I name={stage ? stage.icon : "UserRoundCog"} className="h-[1rem] w-[1rem]"
-               style={{ color: v(stage ? stage.ink : "--ux-muted") }} />
-            <span className="text-xsm font-semibold" style={{ color: v("--ux-ink") }}>
-              {stage ? stage.label : "Tell us what kind of year you are having"}
-            </span>
-            <span className="text-xs" style={{ color: v("--ux-muted") }}>
-              {stage ? "change" : "so this page is about you"}
-            </span>
-          </button>
-        ) : (
+          {/* Her year, as a control she can change — never a survey she must
+              finish before the page works. */}
+          <Card pad={16}>
+            <div className="flex items-start justify-between gap-2">
+              <div className="min-w-0">
+                <p className="text-xsm font-bold" style={{ color: v("--ux-ink") }}>
+                  {stage ? stage.label : "Tell us about this year"}
+                </p>
+                <p className="mt-1 text-xs leading-snug" style={{ color: v("--ux-muted") }}>
+                  {stage ? stage.shapes : "Get suggestions that fit your situation"}
+                </p>
+              </div>
+              <span className="grid h-[34px] w-[34px] shrink-0 place-items-center rounded-[10px]"
+                    style={{ background: v(stage ? stage.tint : "--ux-brand-tint-2") }}>
+                <I name={stage ? stage.icon : "Target"} className="h-[16px] w-[16px]"
+                   style={{ color: v(stage ? stage.ink : "--ux-brand") }} />
+              </span>
+            </div>
+            <div className="mt-3">
+              <Btn size="sm" full onClick={() => setAsking((a) => !a)}>
+                {stage ? tr("discover.changeIt")
+              : tr("discover.updateNow")}
+              </Btn>
+            </div>
+          </Card>
+        </div>
+
+        {asking && (
           <Card pad={20}>
             <p className="text-base font-bold" style={{ color: v("--ux-ink") }}>{tr("discover.whatIsClosestToWhereYou")}</p>
             <p className="mt-1 max-w-[54ch] text-xsm leading-relaxed" style={{ color: v("--ux-muted") }}>
               This only changes what gets shown first. Nothing is hidden from you, and you can
               change it whenever it stops being true.
             </p>
-            <div className="mt-4 grid gap-2 sm:grid-cols-2">
+            <div className="mt-4 grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
               {LIFE_STAGES.map((s) => (
                 <button key={s.id} type="button" onClick={() => pickLife(s.id)}
                         aria-pressed={life === s.id}
@@ -151,45 +173,93 @@ export default function DiscoverPage() {
           </Card>
         )}
 
-        <div className="flex flex-wrap gap-2">
-          <Chip icon="LayoutGrid" selected={lens === "all"} onClick={() => setLens("all")}>Everything</Chip>
-          <Chip icon="Users" selected={lens === "women"} onClick={() => setLens("women")}>{tr("discover.womenLikeYou")}</Chip>
-          <Chip icon="Briefcase" selected={lens === "work"} onClick={() => setLens("work")}>Work</Chip>
-          <Chip icon="BookOpen" selected={lens === "learn"} onClick={() => setLens("learn")}>Learn</Chip>
+        {/* ── Lenses ────────────────────────────────────────────────────── */}
+        <div className="ux-noscroll flex items-center gap-2 overflow-x-auto">
+          {LENSES.map((l) => {
+            const on = lens === l.id;
+            return (
+              <button key={l.id} type="button" onClick={() => setLens(l.id)} aria-pressed={on}
+                      className="ux-press ux-sq flex min-h-[42px] shrink-0 items-center gap-2 rounded-[12px] border px-4 text-xsm font-semibold"
+                      style={{
+                        borderColor: v(on ? "--ux-brand" : "--ux-line"),
+                        background: v(on ? "--ux-brand-tint" : "--ux-surface"),
+                        color: v(on ? "--ux-brand" : "--ux-ink-2"),
+                      }}>
+                <I name={l.icon} className="h-[15px] w-[15px]" />
+                {l.label}
+              </button>
+            );
+          })}
         </div>
 
-        {lens === "all" && <NextStepCard step={step} compact />}
+        {/* ── The one thing that would move her forward ─────────────────── */}
+        {lens === "all" && (
+          <div className="relative overflow-hidden rounded-[18px] p-6 sm:p-7"
+               style={{ background: "linear-gradient(115deg, var(--ux-fill), var(--ux-fill-2))" }}>
+            {/* Decorative, and deliberately so: the wireframe puts a picture of
+                the outcome here. Inventing three named sub-steps to fill the
+                space would be writing product that does not exist. */}
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src="/ux/art/scene-woman-reading-document.webp" alt="" loading="lazy" decoding="async"
+                 aria-hidden
+                 className="pointer-events-none absolute -bottom-4 end-6 hidden h-[190px] w-[190px] object-contain lg:block" />
+            <div className="relative max-w-[52ch]">
+              <p className="text-2xs font-extrabold uppercase tracking-[0.2em]"
+                 style={{ color: v("--ux-on-brand-2") }}>{tr("discover.yourNextStep")}</p>
+              <h2 className="mt-2 text-2xl font-extrabold leading-[1.15] tracking-[-0.02em]"
+                  style={{ color: v("--ux-on-brand") }}>
+                {step.title}
+              </h2>
+              <p className="mt-2 text-sm leading-relaxed" style={{ color: v("--ux-on-brand-2") }}>
+                {step.because}
+              </p>
+              <div className="mt-5 flex flex-wrap items-center gap-3">
+                <Btn href={step.href} variant="on-brand" icon={step.icon} iconEnd="ArrowRight">
+                  {step.cta}
+                </Btn>
+                {step.mins !== undefined && (
+                  <span className="flex items-center gap-1.5 text-xsm font-semibold"
+                        style={{ color: v("--ux-on-brand-2") }}>
+                    <Icons.Clock className="h-[15px] w-[15px]" />
+                    About {step.mins} min
+                  </span>
+                )}
+              </div>
+            </div>
+          </div>
+        )}
 
+        {/* ── Women near her ───────────────────────────────────────────── */}
         {showWomen && (
-          <div>
-            <SectionHead title={tr("discover.womenNearYouAStepAhead")}
-                         sub={tr("discover.sameTradeSameAreaYouCan")} icon="UserRoundCheck" />
-            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+          <section>
+            <Head icon="UserRoundCheck" title={tr("discover.womenNearYouAStepAhead")}
+                  sub={tr("discover.sameTradeSameAreaYouCan")} href="/app/mentors" />
+            <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
               {NEARBY_WOMEN.map((i) => (
-                <Row key={i.id} i={i} saved={saved.includes(i.id)}
-                     onSave={() => save(i.id)} onOpen={() => router.push(i.href)} />
+                <WomanCard key={i.id} i={i} onMessage={() => router.push("/app/messages")} />
               ))}
             </div>
-          </div>
+          </section>
         )}
 
+        {/* ── Trades next to the one she has ───────────────────────────── */}
         {showCross && (
-          <div>
-            <SectionHead title={tr("discover.whatYouAlreadyKnowUsedDifferently")}
-                         sub={tr("discover.sameSkillBetterPaidWomenNear")} icon="TrendingUp" />
-            <div className="grid gap-3 sm:grid-cols-2">
+          <section>
+            <Head icon="TrendingUp" title={tr("discover.whatYouAlreadyKnowUsedDifferently")}
+                  sub={tr("discover.sameSkillBetterPaidWomenNear")} href="/app/programs" />
+            <div className="grid gap-3 lg:grid-cols-3">
               {CROSSINGS.map((i) => (
-                <Row key={i.id} i={i} saved={saved.includes(i.id)}
-                     onSave={() => save(i.id)} onOpen={() => router.push(i.href)} />
+                <CrossingCard key={i.id} i={i} saved={saved.includes(i.id)} onSave={() => save(i.id)} />
               ))}
             </div>
-          </div>
+          </section>
         )}
 
-        <div>
-          <SectionHead title={tr("discover.pickedBecauseOfSomethingYouDid")}
-                       sub={stage ? stage.shapes : "Not because it is popular"}
-                       icon="Sparkles" chip={String(forYou.length)} />
+        {/* ── Picked from something she actually did ───────────────────── */}
+        <section>
+          <Head icon="Zap" title={tr("discover.pickedBecauseOfSomethingYouDid")}
+                sub={stage ? stage.shapes : "Not because it is popular"}
+                href="/app/explore" count={forYou.length} />
           {forYou.length === 0 ? (
             <Card>
               <EmptyState icon="Compass" title={tr("discover.nothingUnderThisFilterYet")}
@@ -197,14 +267,13 @@ export default function DiscoverPage() {
                           action={<Btn size="sm" variant="outline" onClick={() => setLens("all")}>{tr("discover.showEverything")}</Btn>} />
             </Card>
           ) : (
-            <div className="grid gap-3 sm:grid-cols-2">
+            <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
               {forYou.map((i) => (
-                <Row key={i.id} i={i} saved={saved.includes(i.id)}
-                     onSave={() => save(i.id)} onOpen={() => router.push(i.href)} />
+                <PickCard key={i.id} i={i} saved={saved.includes(i.id)} onSave={() => save(i.id)} />
               ))}
             </div>
           )}
-        </div>
+        </section>
 
         <Card pad={16} style={{ background: v("--ux-surface-2"), borderColor: "transparent" }}>
           <div className="flex items-start gap-3">
@@ -217,40 +286,5 @@ export default function DiscoverPage() {
         </Card>
       </div>
     </HomeShell>
-  );
-}
-
-/** One recommendation, with its reason. */
-function Row({ i, saved, onSave, onOpen }: {
-  i: DiscoverItem; saved: boolean; onSave: () => void; onOpen: () => void;
-}) {
-  const tr = useT();
-  return (
-    <Card pad={0} style={{ overflow: "hidden" }}>
-      <button type="button" onClick={onOpen} className="ux-press flex w-full items-start gap-3.5 p-4 text-left">
-        <IconTile icon={i.icon} tint={i.tint} ink={i.ink} size={44} radius={12} />
-        <div className="min-w-0 flex-1">
-          <p className="text-sm font-bold leading-snug" style={{ color: v("--ux-ink") }}>{i.title}</p>
-          <p className="mt-0.5 text-xs leading-relaxed" style={{ color: v("--ux-muted") }}>{i.detail}</p>
-
-          {/* The reason. This is the part that makes it not an advertisement. */}
-          <p className="mt-2 flex items-start gap-1.5 rounded-[8px] px-2.5 py-2 text-xs leading-snug"
-             style={{ background: v("--ux-brand-tint"), color: v("--ux-brand") }}>
-            <I name="Sparkles" className="mt-[2px] h-[0.6875rem] w-[0.6875rem] shrink-0" />
-            {i.because}
-          </p>
-          <p className="mt-2 text-2xs font-semibold" style={{ color: v("--ux-faint") }}>{i.meta}</p>
-        </div>
-      </button>
-      <div className="flex gap-2 border-t px-4 py-3" style={{ borderColor: v("--ux-line") }}>
-        <Btn size="sm" full onClick={onOpen}>
-          {i.kind === "woman" ? "See her" : i.kind === "circle" ? tr("discover.seeTheCircle")
-              : tr("discover.haveALook")}
-        </Btn>
-        <Btn size="sm" variant={saved ? "soft" : "ghost"} icon="Bookmark" onClick={onSave}>
-          {saved ? "Saved" : "Save"}
-        </Btn>
-      </div>
-    </Card>
   );
 }

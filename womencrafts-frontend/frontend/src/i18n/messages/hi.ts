@@ -2174,6 +2174,16 @@ const hi: Catalog = {
   "calendar.comingUp": "आगे आने वाला",
   "calendar.viewAll": "सब देखें",
   "calendar.nothingBookedAheadYet": "आगे के लिए अभी कुछ बुक नहीं है।",
+  "discover.notTheMostPopularThingsThe": "सबसे मशहूर चीज़ें नहीं — वो जो आपके सफ़र, हुनर और लक्ष्यों से मेल खाती हैं।",
+  "discover.smallSteps": "छोटे कदम।",
+  "discover.bigPossibilities": "बड़े रास्ते।",
+  "discover.opportunitiesPeopleAndResourcesCho": "आपके लिए चुने गए मौके, लोग और साधन।",
+  "discover.yourNextStep": "आपका अगला कदम",
+  "discover.changeIt": "इसे बदलें",
+  "discover.updateNow": "अभी बदलें",
+  "foryou.viewAll": "सब देखें",
+  "foryou.seeDetails": "ब्यौरा देखें",
+  "foryou.haveALook": "देख लीजिए",
 };
 
 export default hi;

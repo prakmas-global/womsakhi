@@ -132,6 +132,7 @@ export {
   LogOut,
   MailOpen,
   MapPin,
+  MoreHorizontal,
   Megaphone,
   MessageCircle,
   MessageCircleQuestion,

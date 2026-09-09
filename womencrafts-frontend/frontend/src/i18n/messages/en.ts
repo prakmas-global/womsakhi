@@ -2219,6 +2219,16 @@ const screens = {
   "calendar.comingUp": "Coming up",
   "calendar.viewAll": "View all",
   "calendar.nothingBookedAheadYet": "Nothing booked ahead yet.",
+  "discover.notTheMostPopularThingsThe": "Not the most popular things — the ones that match your journey, skills and goals.",
+  "discover.smallSteps": "Small steps.",
+  "discover.bigPossibilities": "Big possibilities.",
+  "discover.opportunitiesPeopleAndResourcesCho": "Opportunities, people and resources chosen for you.",
+  "discover.yourNextStep": "Your next step",
+  "discover.changeIt": "Change it",
+  "discover.updateNow": "Update now",
+  "foryou.viewAll": "View all",
+  "foryou.seeDetails": "See details",
+  "foryou.haveALook": "Have a look",
 } as const;
 
 const en = { ...core, ...chrome, ...screens } as const;
