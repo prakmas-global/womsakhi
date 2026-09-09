@@ -5,6 +5,7 @@ import { usePathname } from "next/navigation";
 import * as Icons from "@/components/ux/icons";
 
 import { MODES, modeForPath } from "./nav";
+import { useNavLabel } from "./use-nav-label";
 
 /**
  * Navigation on a phone.
@@ -51,6 +52,7 @@ function Icon({ name, className }: { name: string; className?: string }) {
 export function MobileNav() {
   const pathname = usePathname();
   const mode = modeForPath(pathname);
+  const nav = useNavLabel();
 
   // Close on navigation. Without this the sheet stays over the screen she just
   // asked for, and the only way out is the button she has stopped looking at.
@@ -86,7 +88,7 @@ export function MobileNav() {
               style={{ color: on ? "var(--ux-brand)" : "var(--ux-muted)" }}
             >
               <Icon name={m.icon} className="h-[21px] w-[21px]" />
-              <span className="max-w-full truncate text-[0.6875rem] font-semibold">{m.label}</span>
+              <span className="max-w-full truncate text-[0.6875rem] font-semibold">{nav.label(m)}</span>
             </Link>
           );
         })}
@@ -108,6 +110,8 @@ export function MobileNav() {
 export function ModeChips() {
   const pathname = usePathname();
   const mode = modeForPath(pathname);
+  // Above the early return on purpose — hooks cannot sit behind a condition.
+  const nav = useNavLabel();
   if (!mode || mode.items.length < 2) return null;
 
   return (
@@ -116,7 +120,7 @@ export function ModeChips() {
       // The scrollbar is hidden but the scroll is real; `overscroll-contain`
       // stops a sideways flick from also dragging the page.
       style={{ scrollbarWidth: "none", overscrollBehaviorX: "contain" }}
-      aria-label={`Inside ${mode.label}`}
+      aria-label={`Inside ${nav.label(mode)}`}
     >
       {mode.items.map((i) => {
         const on = pathname === i.href;
@@ -133,7 +137,7 @@ export function ModeChips() {
             }}
           >
             <Icon name={i.icon} className="h-[14px] w-[14px]" />
-            {i.label}
+            {nav.label(i)}
           </Link>
         );
       })}

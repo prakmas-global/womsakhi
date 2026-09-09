@@ -4,6 +4,8 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
+    "dev:fresh": "rm -rf .next && next dev -p 3100",
+    "clean": "rm -rf .next",
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
@@ -20,7 +22,8 @@
     "check:a11y": "node checks/a11y.mjs",
     "check:keyboard": "node checks/keyboard.mjs",
     "check:feedback": "node checks/feedback.mjs",
-    "check:toast": "node checks/toast.mjs"
+    "check:toast": "node checks/toast.mjs",
+    "check:i18n:coverage": "node checks/i18n-coverage.mjs"
   },
   "dependencies": {
     "@dnd-kit/core": "^6.3.1",

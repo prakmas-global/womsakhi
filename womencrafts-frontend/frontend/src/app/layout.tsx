@@ -20,6 +20,9 @@ import { ThemeProvider } from "@/context/ThemeContext";
 import QueryProvider from "@/lib/query/QueryProvider";
 import { RouteProgress } from "@/design-system";
 import { I18nProvider } from "@/i18n";
+// Straight from the data module, not the "@/i18n" barrel: that barrel is a
+// client component, so anything re-exported through it cannot be called here.
+import { isRtl, LOCALE_COOKIE } from "@/i18n/locales";
 import { cookies } from "next/headers";
 import { serverBoot } from "@/lib/server-api";
 import ThemeStyle from "@/theme-engine/ThemeStyle";
@@ -158,6 +161,16 @@ export default async function RootLayout({
   const textSize = (jar.get(TEXT_SIZE_COOKIE)?.value ?? "normal") as TextSize;
   const rootSize = rootPx(textSize);
 
+  // Her language, read here for the same reason as the two above. Without it
+  // the first paint is always English and then swaps once the provider has
+  // mounted — which on a slow phone is long enough to read.
+  const locale = jar.get(LOCALE_COOKIE)?.value;
+  // `lang` and `dir` belong on the server render, not on a mount effect: they
+  // drive screen-reader pronunciation, hyphenation and every start/end style
+  // rule, all of which are decided before an effect gets to run.
+  const lang = locale ?? "en";
+  const dir = isRtl(locale) ? "rtl" : "ltr";
+
   // Who is signed in, and — for a member — her whole shell, answered here
   // rather than by round trips from the browser after the page has mounted.
   // Every screen in both apps used to render a spinner until `/auth/session`
@@ -168,7 +181,8 @@ export default async function RootLayout({
 
   return (
     <html
-      lang="en"
+      lang={lang}
+      dir={dir}
       suppressHydrationWarning
       className={`${poppins.variable} ${inter.variable} ${fraunces.variable} ${SCRIPT_FONTS} h-full${isDark ? " dark" : ""}`}
       data-text-size={textSize}
@@ -186,7 +200,7 @@ export default async function RootLayout({
         <ThemeProvider>
           <RouteProgress />
           <QueryProvider>
-            <I18nProvider>
+            <I18nProvider initialLocale={locale}>
               <AuthProvider initialUser={session.user} sessionResolved={session.resolved}>
               <ThemeEngineBridge>
                 <LayoutEngineBridge initialShell={shell}>

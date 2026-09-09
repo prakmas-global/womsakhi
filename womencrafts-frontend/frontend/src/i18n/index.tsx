@@ -28,7 +28,7 @@ import fr from "./messages/fr";
 import pt from "./messages/pt";
 import id from "./messages/id";
 import sw from "./messages/sw";
-import { DEFAULT_LOCALE, localeSpec, type LocaleSpec } from "./locales";
+import { DEFAULT_LOCALE, localeSpec, type LocaleSpec, LOCALE_COOKIE } from "./locales";
 
 /**
  * Translation, without touching the URL.
@@ -44,7 +44,7 @@ const CATALOGS: Record<string, Catalog> = {
   en, hi, ur, mr,
   ta, bn, te, gu, kn, ml, pa, or, ar, es, fr, pt, id, sw,
 };
-export const LOCALE_COOKIE = "womsakhi_locale";
+
 
 type Vars = Record<string, string | number>;
 
@@ -137,5 +137,5 @@ export function useT() {
   return useI18n().t;
 }
 
-export { LOCALES, localeSpec, isRtl, DEFAULT_LOCALE } from "./locales";
+export { LOCALES, localeSpec, isRtl, DEFAULT_LOCALE, LOCALE_COOKIE } from "./locales";
 export type { MessageKey };

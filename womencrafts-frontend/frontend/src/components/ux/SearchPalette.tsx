@@ -8,6 +8,7 @@ import * as Icons from "@/components/ux/icons";
 import { apiSearch, type ApiSearchAnswer, type ApiSearchHit } from "@/lib/me-api";
 import { searchPages } from "./nav-search";
 import { useTheme } from "@/context/ThemeContext";
+import { useT } from "@/i18n";
 import { useNotifications } from "@/components/ux/live";
 
 /**
@@ -132,6 +133,7 @@ const SUGGESTED = ["mudra loan", "cotton kurta", "silai course", "Meera Joshi", 
 export function SearchPalette({ open, onClose }: { open: boolean; onClose: () => void }) {
   const router = useRouter();
   const { isDark } = useTheme();
+  const t = useT();
   const [raw, setRaw] = useState("");
   const [scope, setScope] = useState<string>("all");
   const [hits, setHits] = useState<ApiSearchHit[]>([]);
@@ -223,7 +225,10 @@ export function SearchPalette({ open, onClose }: { open: boolean; onClose: () =>
    * same screen, its version wins — it knows how many are in there.
    */
   const merged = useMemo(() => {
-    const pages = searchPages(q);
+    const pages = searchPages(q, 6, (k) => t(k as Parameters<typeof t>[0])).map((p) =>
+      // Show the screen by the name she reads it under in the rail.
+      p.k ? { ...p, title: t(p.k as Parameters<typeof t>[0]) } : p,
+    );
     if (!pages.length) return hits;
     const taken = new Set(hits.map((h) => h.href));
     const fresh = pages.filter((p) => !taken.has(p.href));
@@ -242,7 +247,7 @@ export function SearchPalette({ open, onClose }: { open: boolean; onClose: () =>
     const exact = fresh.filter((p) => strong(p.title));
     const rest = fresh.filter((p) => !strong(p.title));
     return [...exact, ...hits, ...rest];
-  }, [hits, q]);
+  }, [hits, q, t]);
 
   const shown = useMemo(() => merged.filter((h) => inScope(h, activeScope)), [merged, activeScope]);
   const grouped = useMemo(() => {

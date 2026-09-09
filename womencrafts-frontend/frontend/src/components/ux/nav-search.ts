@@ -30,6 +30,10 @@ import type { ApiSearchHit } from "@/lib/me-api";
  */
 export interface PageHit extends ApiSearchHit {
   icon: string;
+  /** Message key for the title; `${k}.note` for the hint. See nav.ts. */
+  k?: string;
+  /** The mode's own message key, for the section shown beside a hit. */
+  modeK?: string;
 }
 
 const PAGES: PageHit[] = (() => {
@@ -52,6 +56,8 @@ const PAGES: PageHit[] = (() => {
         amount: "",
         tag: mode.label,
         icon: item.icon,
+        k: item.k,
+        modeK: mode.k,
       });
     }
   }
@@ -61,13 +67,24 @@ const PAGES: PageHit[] = (() => {
 /** How many screens are searchable. Exported so a check can assert it. */
 export const PAGE_COUNT = PAGES.length;
 
-export function searchPages(q: string, limit = 6): PageHit[] {
+/**
+ * @param translate Optional lookup for a message key. When the reader is not
+ *   on English, her language is searched *as well as* the English — she may
+ *   know a screen by either name, and dropping the English would break a habit
+ *   she already has.
+ */
+export function searchPages(
+  q: string,
+  limit = 6,
+  translate?: (key: string) => string,
+): PageHit[] {
   const words = q.toLowerCase().split(/\s+/).filter(Boolean);
   if (!words.length) return [];
 
   const scored: Array<{ hit: PageHit; score: number }> = [];
   for (const hit of PAGES) {
-    const title = hit.title.toLowerCase();
+    const local = hit.k && translate ? translate(hit.k).toLowerCase() : "";
+    const title = `${hit.title.toLowerCase()}${local && local !== hit.title.toLowerCase() ? ` ${local}` : ""}`;
     const hay = `${title} ${hit.sub.toLowerCase()} ${hit.href.toLowerCase()}`;
     // Every word has to appear somewhere, so "who signs" does not match a page
     // that merely contains "who".

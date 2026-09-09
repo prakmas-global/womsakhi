@@ -6,7 +6,7 @@
  *
  * `{name}` style placeholders are filled by the `t()` helper.
  */
-const en = {
+const core = {
   // shared
   "common.save": "Save changes",
   "common.cancel": "Cancel",
@@ -385,7 +385,156 @@ const en = {
 
 } as const;
 
-export type MessageKey = keyof typeof en;
-export type Catalog = Record<MessageKey, string>;
+/**
+ * Navigation chrome — every label and hint in the rail, the phone tab bar and
+ * the search index.
+ *
+ * Held apart from `core` for one reason: `Catalog` requires every core key in
+ * every language, which is the right rule for a set that has been through
+ * native review. These strings have not. Making them optional means a
+ * catalogue can carry the ones a speaker has actually checked and fall back to
+ * English for the rest — an English word she can ask someone about beats a
+ * machine-made word in her own script that reads as nonsense.
+ *
+ * `npm run check:i18n` reports coverage per language so the gap stays visible
+ * rather than quietly permanent.
+ */
+const chrome = {
+  "ch.mode.home": "Home",
+  "ch.today.label": "Today",
+  "ch.today.note": "What needs you now",
+  "ch.journey.label": "My journey",
+  "ch.journey.note": "From skill to income, step by step",
+  "ch.goals.label": "My goals",
+  "ch.goals.note": "What you are working towards",
+  "ch.schedule.label": "Your calendar",
+  "ch.schedule.note": "Sessions, classes and events",
+  "ch.mode.discover": "For you",
+  "ch.discover.label": "Chosen for you",
+  "ch.discover.note": "Because of something you did",
+  "ch.stories.label": "Near you",
+  "ch.stories.note": "Women and help in your city",
+  "ch.explore.label": "Everything there is",
+  "ch.explore.note": "All of it, grouped by what it is for",
+  "ch.search.label": "Search",
+  "ch.search.note": "When you know what you want",
+  "ch.mode.learn": "Learn",
+  "ch.programs.label": "Courses",
+  "ch.programs.note": "Started and suggested",
+  "ch.mentors.label": "Mentors",
+  "ch.mentors.note": "Women who have done it",
+  "ch.certificates.label": "Certificates",
+  "ch.certificates.note": "Proof you can show",
+  "ch.library.label": "Teach and learn",
+  "ch.library.note": "Swap what you know for what you need",
+  "ch.assess.label": "Prove your skills",
+  "ch.assess.note": "A short test, then a certificate",
+  "ch.digital.label": "Using a phone",
+  "ch.digital.note": "From the very beginning",
+  "ch.mode.work": "Work",
+  "ch.opportunities.label": "Find work",
+  "ch.opportunities.note": "Jobs, orders and freelance",
+  "ch.verified.label": "Did they pay her?",
+  "ch.verified.note": "Before you take the work",
+  "ch.applications.label": "Your applications",
+  "ch.applications.note": "Where each one stands",
+  "ch.contracts.label": "Big orders",
+  "ch.contracts.note": "Too big for one woman alone",
+  "ch.trust.label": "Proof you keep your word",
+  "ch.trust.note": "Nine months, written down",
+  "ch.contracts.together.label": "Who signs the contract",
+  "ch.contracts.together.note": "Three ways to bid as a group",
+  "ch.bookings.label": "Times you have booked",
+  "ch.bookings.note": "Classes and sessions",
+  "ch.mode.earn": "Earn",
+  "ch.documents.label": "Your shop",
+  "ch.documents.note": "What you sell, and your orders",
+  "ch.collect.label": "Your link, and getting paid",
+  "ch.collect.note": "Sell to people not on WomSakhi",
+  "ch.shop.label": "Ways to sell",
+  "ch.shop.note": "Pre-orders, regulars, big orders",
+  "ch.market.label": "The market",
+  "ch.market.note": "Buy from women you know",
+  "ch.books.label": "Who owes you money",
+  "ch.books.note": "And proof of what you earn",
+  "ch.money.label": "Your money",
+  "ch.money.note": "Is there enough for what cannot wait",
+  "ch.wallet.label": "Your wallet",
+  "ch.wallet.note": "Your balance, and taking it out",
+  "ch.vault.label": "Your locker",
+  "ch.vault.note": "Money kept aside, and quiet",
+  "ch.haq.label": "What you are owed",
+  "ch.haq.note": "Government money in your name",
+  "ch.vault.showing.label": "Showing someone your phone",
+  "ch.vault.showing.note": "What they see when you hand it over",
+  "ch.kitchen.label": "Selling food from home",
+  "ch.kitchen.note": "The licence is ₹100 a year",
+  "ch.shop.voice.label": "Say it instead of typing",
+  "ch.shop.voice.note": "Speak, and it becomes a listing",
+  "ch.shop.slots.label": "Sell your time",
+  "ch.shop.slots.note": "Customers pick an hour themselves",
+  "ch.shop.disputes.label": "When something goes wrong",
+  "ch.shop.disputes.note": "Sorted by a woman you both know",
+  "ch.shop.pricing.label": "What should you charge",
+  "ch.shop.pricing.note": "What women near you ask",
+  "ch.books.proof.label": "Proof you earn",
+  "ch.books.proof.note": "A statement a landlord will take",
+  "ch.vault.rules.label": "Save without thinking",
+  "ch.vault.rules.note": "Money moved for you, every week",
+  "ch.haq.recover.label": "What you can recover",
+  "ch.haq.recover.note": "Money you were wrongly removed from",
+  "ch.haq.papers.label": "Your papers",
+  "ch.haq.papers.note": "Held once, reused everywhere",
+  "ch.mode.circle": "Circle",
+  "ch.circles.label": "Circles",
+  "ch.circles.note": "Save and grow together",
+  "ch.messages.label": "Messages",
+  "ch.messages.note": "Buyers, mentors, circles",
+  "ch.events.label": "Events",
+  "ch.events.note": "Melas, workshops and meets",
+  "ch.together.label": "Helping each other",
+  "ch.together.note": "Teach, learn, and move house",
+  "ch.swap.label": "Pass it on",
+  "ch.swap.note": "Things other women no longer need",
+  "ch.mode.help": "Help",
+  "ch.safety.label": "Get help now",
+  "ch.safety.note": "Alert your people, or call",
+  "ch.help.label": "What has gone wrong",
+  "ch.help.note": "Answers, or a person",
+  "ch.safemoney.label": "Money traps",
+  "ch.safemoney.note": "The tricks aimed at women like you",
+  "ch.bringing.label": "When home is not sure",
+  "ch.bringing.note": "Something to show them",
+  "ch.school.label": "The school year",
+  "ch.school.note": "Fees, forms and dates, per child",
+  "ch.incase.label": "If something happens to me",
+  "ch.incase.note": "Written down while you can",
+  "ch.rights.label": "Your rights",
+  "ch.rights.note": "And a free lawyer",
+  "ch.health.label": "Health",
+  "ch.health.note": "What is free, and what is due",
+  "ch.family.label": "Family & childcare",
+  "ch.family.note": "Near you, and what it costs",
+  "ch.travel.label": "Travel",
+  "ch.travel.note": "Routes, cost, and after dark",
+  "ch.voice.label": "Reading it out to you",
+  "ch.voice.note": "Any screen read aloud, in your language",
+  "ch.health.strength.label": "Staying strong",
+  "ch.health.strength.note": "What is free at a government centre",
+  "ch.health.change.label": "Menopause",
+  "ch.health.change.note": "And working through it",
+} as const;
+
+const en = { ...core, ...chrome } as const;
+
+export type CoreKey = keyof typeof core;
+export type ChromeKey = keyof typeof chrome;
+export type MessageKey = CoreKey | ChromeKey;
+
+/**
+ * Core keys are compile-enforced in every language; chrome keys are optional
+ * and fall back to English. See the note on `chrome` above.
+ */
+export type Catalog = Record<CoreKey, string> & Partial<Record<ChromeKey, string>>;
 
 export default en;

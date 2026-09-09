@@ -12,6 +12,7 @@ import { TransitionLink } from "./TransitionLink";
 import { useAuth } from "@/context/AuthContext";
 import { useTheme } from "@/context/ThemeContext";
 import { useMe } from "./me";
+import { useNavLabel } from "./use-nav-label";
 import { MODES, itemForPath, modeForPath, type Mode } from "./nav";
 import { Avatar } from "./kit";
 import { useSearchHotkey } from "./useSearchHotkey";
@@ -136,6 +137,7 @@ export function ModeRail({
   footer?: React.ReactNode;
 }) {
   const me = useMe();
+  const nav = useNavLabel();
 
   return (
     <aside
@@ -200,7 +202,7 @@ export function ModeRail({
         <>
           <p className="px-5 pb-2 pt-5 text-[0.6875rem] font-bold uppercase tracking-[0.16em]"
              style={{ color: "var(--ux-faint)" }}>
-            In {mode.label}
+            In {nav.label(mode)}
           </p>
           <nav className="px-3 pb-3">
             {mode.items.map((it) => {
@@ -217,12 +219,12 @@ export function ModeRail({
                   <Icon name={it.icon} className="ux-ico mt-[1px] h-[16px] w-[16px] shrink-0" />
                   <span className="min-w-0 flex-1">
                     <span className="block truncate text-[0.8125rem]" style={{ fontWeight: on ? 600 : 500 }}>
-                      {it.label}
+                      {nav.label(it)}
                     </span>
                     {it.note && (
                       <span className="mt-0.5 block truncate text-[0.6875rem]"
                             style={{ color: on ? "var(--ux-brand)" : "var(--ux-muted)", opacity: on ? 0.8 : 1 }}>
-                        {it.note}
+                        {nav.note(it)}
                       </span>
                     )}
                   </span>
@@ -344,6 +346,7 @@ function ThemeToggle() {
  * navigation stops being learnable.
  */
 function ModeTab({ mode, on }: { mode: Mode; on: boolean }) {
+  const nav = useNavLabel();
   return (
     <TransitionLink
       href={mode.href}
@@ -352,7 +355,7 @@ function ModeTab({ mode, on }: { mode: Mode; on: boolean }) {
       style={{ color: on ? "var(--ux-ink)" : "var(--ux-muted)" }}
     >
       <Icon name={mode.icon} className="ux-ico h-[20px] w-[20px]" />
-      <span className="text-[0.75rem]" style={{ fontWeight: on ? 600 : 500 }}>{mode.label}</span>
+      <span className="text-[0.75rem]" style={{ fontWeight: on ? 600 : 500 }}>{nav.label(mode)}</span>
       <span aria-hidden className="absolute inset-x-0 bottom-0 h-[3px] rounded-t-full"
             style={{ background: on ? "var(--ux-ink)" : "transparent",
                      transition: "background var(--ux-t) var(--ux-ease)" }} />

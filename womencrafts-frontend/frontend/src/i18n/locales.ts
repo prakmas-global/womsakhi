@@ -93,3 +93,13 @@ export function detectLocale(accept: readonly string[] = []): string {
   }
   return DEFAULT_LOCALE;
 }
+
+/**
+ * Where her language choice is stored.
+ *
+ * Defined here rather than in `index.tsx` because that file is a client
+ * component: a constant re-exported through it reaches a server component as a
+ * client reference, not as this string, and `cookies().get()` then silently
+ * finds nothing.
+ */
+export const LOCALE_COOKIE = "womsakhi_locale";

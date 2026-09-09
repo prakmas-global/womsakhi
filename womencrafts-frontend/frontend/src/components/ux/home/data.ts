@@ -180,16 +180,16 @@ export type SearchHit = {
 
 /** Hand-written content — courses, jobs, mentors, circles, schemes. */
 const CONTENT_HITS: SearchHit[] = [
-  { id: "s1", title: "Digital Marketing Mastery", sub: "12 lessons · 4.8 ★ · Beginner friendly", kind: "Course",
+  { id: "s1", title: "Digital Marketing Mastery", sub: "12 lessons · 4.8 out of 5 · Beginner friendly", kind: "Course",
     icon: "BookOpen", tint: "--ux-tint-violet", ink: "--ux-violet", href: "/app/programs",
     img: "/ux/art/course-working-laptop-smiling.webp" },
-  { id: "s2", title: "Communication Skills for Women", sub: "8 lessons · 4.9 ★ · Hindi & English", kind: "Course",
+  { id: "s2", title: "Communication Skills for Women", sub: "8 lessons · 4.9 out of 5 · Hindi & English", kind: "Course",
     icon: "BookOpen", tint: "--ux-tint-violet", ink: "--ux-violet", href: "/app/programs",
     img: "/ux/art/course-confident-microphone.webp" },
-  { id: "s3", title: "Financial Literacy Essentials", sub: "10 lessons · 4.7 ★ · Free", kind: "Course",
+  { id: "s3", title: "Financial Literacy Essentials", sub: "10 lessons · 4.7 out of 5 · Free", kind: "Course",
     icon: "BookOpen", tint: "--ux-tint-violet", ink: "--ux-violet", href: "/app/programs",
     img: "/ux/art/course-counting-coins-calculator.webp" },
-  { id: "s4", title: "Sell your handmade work online", sub: "9 lessons · 4.8 ★ · With templates", kind: "Course",
+  { id: "s4", title: "Sell your handmade work online", sub: "9 lessons · 4.8 out of 5 · With templates", kind: "Course",
     icon: "BookOpen", tint: "--ux-tint-violet", ink: "--ux-violet", href: "/app/programs",
     img: "/ux/art/course-photographing-handmade-product.webp" },
 

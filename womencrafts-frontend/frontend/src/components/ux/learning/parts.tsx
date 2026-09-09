@@ -147,7 +147,7 @@ export function StreakCard() {
     <Card>
       <div className="flex items-center justify-between">
         <h2 className="flex items-center gap-2 text-[0.875rem] font-semibold" style={{ color: "var(--ux-ink)" }}>
-          <span aria-hidden>🔥</span> Learning Streak
+          <Icons.Flame className="h-[16px] w-[16px]" style={{ color: "var(--ux-orange-ink)" }} aria-hidden /> Learning Streak
         </h2>
         <Btn variant="outline" size="sm">View Calendar</Btn>
       </div>
@@ -215,7 +215,7 @@ export function AskSakhiCard() {
   return (
     <div className="relative overflow-hidden rounded-[16px] p-[20px]"
          style={{ background: "linear-gradient(150deg, var(--ux-tint-lilac), var(--ux-tint-pink))" }}>
-      <h2 className="text-[1rem] font-semibold" style={{ color: "var(--ux-ink)" }}>Hi, I&apos;m Sakhi! <span aria-hidden>👋</span></h2>
+      <h2 className="text-[1rem] font-semibold" style={{ color: "var(--ux-ink)" }}>Hi, I&apos;m Sakhi!</h2>
       <p className="mt-2 w-[76%] text-[0.75rem] leading-relaxed" style={{ color: "var(--ux-ink-2)" }}>
         I&apos;m here to guide you to the best learning opportunities.
       </p>
