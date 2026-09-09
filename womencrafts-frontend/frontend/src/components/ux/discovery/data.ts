@@ -119,14 +119,38 @@ export const FOR_YOU: DiscoverItem[] = [
  * never turns red. It shows what moved and what would move it next — and it
  * can be put down without ceremony.
  */
+export type GoalKind = "Financial" | "Learning" | "Career" | "Personal";
+
+/**
+ * On track, needs attention, done — or not begun.
+ *
+ * "Needs attention" is amber and never red, and it is never the word
+ * "overdue". It means the date has arrived or nothing has moved, which are
+ * facts; it does not mean she has failed at anything.
+ */
+export type GoalStatus = "on-track" | "needs-attention" | "completed" | "not-started";
+
 export interface Goal {
   id: string;
   title: string;
   why: string;
+  kind: GoalKind;
   /** Paise where the goal is monetary, otherwise null. */
   targetMinor: number | null;
   haveMinor: number;
+  /**
+   * Counted goals — lessons, steps, visits. Null where the goal is money.
+   * `unit` is plural and lowercase, because it is read as "24 of 30 lessons".
+   */
+  count: number | null;
+  countTarget: number | null;
+  unit: string | null;
+  /** In her words: "Before Diwali". */
   by: string;
+  /** The date the card prints, and what "needs attention" is measured against. */
+  targetOn: string;
+  /** A picture of the thing itself, which is what makes a goal feel real. */
+  art: string;
   /** The one action that most advances it. */
   nextHref: string;
   nextLabel: string;
@@ -137,19 +161,72 @@ export interface Goal {
 }
 
 export const GOALS: Goal[] = [
-  { id: "g1", title: "Buy my own machine", why: "So I stop paying rent on someone else's",
-    targetMinor: 1800000, haveMinor: 1250000, by: "Before Diwali",
+  { id: "g1", title: "Buy my own machine", why: "So I stop paying rent on someone else's and work on my own terms.",
+    kind: "Financial", targetMinor: 1800000, haveMinor: 1250000,
+    count: null, countTarget: null, unit: null,
+    by: "Before Diwali", targetOn: "31 Dec 2026", art: "/ux/art/course-sewing-machine.webp",
     nextHref: "/app/circles", nextLabel: "See your pot", icon: "Wrench",
-    tint: "--ux-tint-violet", ink: "--ux-violet", state: "on" },
-  { id: "g2", title: "Earn ₹8,000 in a month", why: "That covers the school fees without asking anyone",
-    targetMinor: 800000, haveMinor: 615000, by: "This month",
-    nextHref: "/app/collect", nextLabel: "Ask to be paid", icon: "Wallet",
+    tint: "--ux-tint-violet", ink: "--ux-violet-ink", state: "on" },
+
+  { id: "g2", title: "Finish the tailoring course", why: "To get better at what I already do, and have the certificate to show it.",
+    kind: "Learning", targetMinor: null, haveMinor: 0,
+    count: 24, countTarget: 30, unit: "lessons",
+    by: "This term", targetOn: "30 Sep 2026", art: "/ux/art/course-sewing-machine.webp",
+    nextHref: "/app/programs", nextLabel: "Continue learning", icon: "GraduationCap",
+    tint: "--ux-tint-blue", ink: "--ux-blue-ink", state: "on" },
+
+  { id: "g3", title: "Take the family to my mother's", why: "We have not all been together at her house in three years.",
+    kind: "Personal", targetMinor: 5000000, haveMinor: 1000000,
+    count: null, countTarget: null, unit: null,
+    by: "Next summer", targetOn: "31 Mar 2027", art: "/ux/art/scene-women-celebrating.webp",
+    nextHref: "/app/wallet", nextLabel: "Put some aside", icon: "Heart",
+    tint: "--ux-tint-pink", ink: "--ux-pink-ink", state: "on" },
+
+  { id: "g4", title: "Sell to shops, not just neighbours", why: "Turn what I make into a business that does not depend on who walks past.",
+    kind: "Career", targetMinor: null, haveMinor: 0,
+    count: 0, countTarget: 5, unit: "steps",
+    by: "No rush", targetOn: "31 Dec 2026", art: "/ux/art/scene-woman-planting-sapling.webp",
+    nextHref: "/app/shop/wholesale", nextLabel: "See how it works", icon: "Store",
     tint: "--ux-tint-green", ink: "--ux-green-ink", state: "on" },
-  { id: "g3", title: "Learn to price my work", why: "I know I charge too little",
-    targetMinor: null, haveMinor: 0, by: "No rush",
-    nextHref: "/app/shop/pricing", nextLabel: "See what others charge", icon: "Tag",
-    tint: "--ux-tint-amber", ink: "--ux-amber-ink", state: "on" },
+
+  { id: "g5", title: "Earn ₹8,000 in a month", why: "That covers the school fees without asking anyone.",
+    kind: "Financial", targetMinor: 800000, haveMinor: 800000,
+    count: null, countTarget: null, unit: null,
+    by: "Done in August", targetOn: "31 Aug 2026", art: "/ux/art/course-counting-coins-calculator.webp",
+    nextHref: "/app/wallet", nextLabel: "See what came in", icon: "Wallet",
+    tint: "--ux-tint-amber", ink: "--ux-amber-ink", state: "done" },
 ];
 
+export const GOAL_KINDS: GoalKind[] = ["Financial", "Learning", "Career", "Personal"];
+
 export const goalPct = (g: Goal) =>
-  g.targetMinor ? Math.min(100, Math.round((g.haveMinor / g.targetMinor) * 100)) : 0;
+  g.targetMinor ? Math.min(100, Math.round((g.haveMinor / g.targetMinor) * 100))
+  : g.countTarget ? Math.min(100, Math.round(((g.count ?? 0) / g.countTarget) * 100))
+  : 0;
+
+/**
+ * Where it stands, from what is actually on it.
+ *
+ * The legend in the rail counts these, so the ring and the list cannot
+ * disagree about how many are on track — they are the same function read
+ * twice.
+ */
+export function goalStatus(g: Goal, today = new Date()): GoalStatus {
+  if (g.state === "done" || goalPct(g) >= 100) return "completed";
+  // Put down on purpose. The only status she chooses rather than earns, and
+  // the only one that is never a nudge.
+  if (g.state === "paused") return "not-started";
+  const due = Date.parse(g.targetOn);
+  // Nothing has moved, or the date has arrived. Both are facts about the goal;
+  // neither is a claim about her, which is why this is amber and never red.
+  if (goalPct(g) === 0) return "needs-attention";
+  if (!Number.isNaN(due) && due < today.getTime()) return "needs-attention";
+  return "on-track";
+}
+
+/** "₹12,500 of ₹18,000", or "24 of 30 lessons". */
+export function goalProgressLine(g: Goal, money: (minor: number) => string) {
+  if (g.targetMinor) return { have: money(g.haveMinor), of: `of ${money(g.targetMinor)}` };
+  if (g.countTarget) return { have: String(g.count ?? 0), of: `of ${g.countTarget} ${g.unit ?? ""}`.trim() };
+  return { have: "", of: "" };
+}
