@@ -7,8 +7,7 @@ import * as Icons from "@/components/ux/icons";
 import { apiCancelEvent, apiRegisterForEvent } from "@/lib/growth-api";
 import { useAction } from "@/lib/use-action";
 
-import {
-  Btn, Card, EmptyState, IconTile, mapsHref, Pill, Progress, RailSkeleton,
+import {Back, Btn, Card, EmptyState, IconTile, mapsHref, Pill, Progress, RailSkeleton,
   ScreenSkeleton, SectionHead,
 } from "@/components/ux/kit";
 import { HomeShell } from "@/components/ux/home/HomeShell";
@@ -173,10 +172,7 @@ export default function EventDetail({ params }: { params: Promise<{ id: string }
         </div>
       }
     >
-      <Link href="/app/events"
-            className="ux-hov -my-1 mb-3.5 inline-flex items-center gap-1.5 py-1 text-xsm font-medium"
-            style={{ color: "var(--ux-brand)" }}>
-        <Icons.ArrowLeft className="ux-ico h-4 w-4" />{tr("events.allEvents2")}</Link>
+      <Back to="/app/events" label={tr("events.allEvents2")} className="mb-4" />
 
       <Card className="mb-[16px] overflow-hidden" pad={0}>
         <div className="relative h-[210px] overflow-hidden" style={{ background: `var(${e.tint})` }}>

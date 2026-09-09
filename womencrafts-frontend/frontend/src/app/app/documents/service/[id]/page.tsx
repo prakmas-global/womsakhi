@@ -8,7 +8,7 @@ import { settled, useAttemptKey } from "@/lib/idempotency";
 import Link from "next/link";
 import * as Icons from "@/components/ux/icons";
 
-import { Btn, Card, Chip, EmptyState, IconTile, SectionHead } from "@/components/ux/kit";
+import {Back, Btn, Card, Chip, EmptyState, IconTile, SectionHead } from "@/components/ux/kit";
 import { Field, TextInput, Toggle } from "@/components/ux/settings/Frame";
 import { HomeShell } from "@/components/ux/home/HomeShell";
 import { useBusiness } from "@/components/ux/business";
@@ -243,10 +243,7 @@ export default function ServiceEditor({ params }: { params: Promise<{ id: string
         </div>
       }
     >
-      <Link href="/app/documents"
-            className="ux-hov -my-1 mb-3.5 inline-flex items-center gap-1.5 py-1 text-xsm font-medium"
-            style={{ color: "var(--ux-brand)" }}>
-        <Icons.ArrowLeft className="ux-ico h-4 w-4" />{tr("documentsService.yourShop")}</Link>
+      <Back to="/app/documents" label={tr("documentsService.yourShop")} className="mb-4" />
 
       <h1 className="text-2xl font-bold" style={{ color: "var(--ux-ink)" }}>
         {isNew ? "Offer a service" : form.name || "Edit service"}

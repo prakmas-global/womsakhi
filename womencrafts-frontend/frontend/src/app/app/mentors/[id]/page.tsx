@@ -7,8 +7,7 @@ import { useAction } from "@/lib/use-action";
 import Link from "next/link";
 import * as Icons from "@/components/ux/icons";
 
-import {
-  Btn, Card, EmptyState, IconTile, Pill, RailSkeleton, Rating, ScreenSkeleton, SectionHead,
+import {Back, Btn, Card, EmptyState, IconTile, Pill, RailSkeleton, Rating, ScreenSkeleton, SectionHead,
 } from "@/components/ux/kit";
 import { HomeShell } from "@/components/ux/home/HomeShell";
 import { useMentors } from "@/components/ux/live";
@@ -194,10 +193,7 @@ export default function MentorDetail({ params }: { params: Promise<{ id: string 
         </div>
       }
     >
-      <Link href="/app/mentors"
-            className="ux-hov -my-1 mb-3.5 inline-flex items-center gap-1.5 py-1 text-xsm font-medium"
-            style={{ color: "var(--ux-brand)" }}>
-        <Icons.ArrowLeft className="ux-ico h-4 w-4" />{tr("mentors.allMentors2")}</Link>
+      <Back to="/app/mentors" label={tr("mentors.allMentors2")} className="mb-4" />
 
       <Card className="mb-[16px]">
         <div className="flex items-start gap-4">

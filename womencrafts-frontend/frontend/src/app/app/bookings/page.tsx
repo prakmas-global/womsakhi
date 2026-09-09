@@ -181,6 +181,13 @@ export default function BookingsPage() {
                 ) : (
                   <div className="mt-3.5 flex items-center justify-end gap-2 border-t pt-3.5"
                        style={{ borderColor: "var(--ux-line)" }}>
+                    {/* The detail page existed and nothing linked to it: the only
+                        ways in were the calendar and typing the URL. It holds
+                        the reference code she shows at the door, so it is the
+                        first action, not a hidden one. */}
+                    <Btn href={`/app/bookings/${b.id}`} variant="ghost" size="sm" iconEnd="ArrowRight">
+                      Open
+                    </Btn>
                     {!gone && b.state !== "Finished" && (
                       <>
                         {/* "Add to calendar" said "It is in your diary" and

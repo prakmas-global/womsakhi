@@ -7,8 +7,7 @@ import { messageFrom } from "@/lib/use-action";
 import Link from "next/link";
 import * as Icons from "@/components/ux/icons";
 
-import {
-  ActionBtn, Btn, Card, EmptyState, IconTile, Pill,
+import {Back, ActionBtn, Btn, Card, EmptyState, IconTile, Pill,
   Progress, SectionHead, SourceNote, Tabs, escapeHtml, letterhead,
   printDocument
 } from "@/components/ux/kit";
@@ -232,10 +231,7 @@ export default function VaultPage() {
         </div>
       }
     >
-      <Link href="/app/documents"
-            className="ux-hov -my-1 mb-3.5 inline-flex items-center gap-1.5 py-1 text-xsm font-medium"
-            style={{ color: "var(--ux-brand)" }}>
-        <Icons.ArrowLeft className="ux-ico h-4 w-4" />{tr("documentsVault.yourShop")}</Link>
+      <Back to="/app/documents" label={tr("documentsVault.yourShop")} className="mb-4" />
 
       <div className="mb-[20px] flex flex-wrap items-end justify-between gap-4">
         <div>

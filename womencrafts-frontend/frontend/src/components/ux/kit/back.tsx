@@ -1,78 +1,77 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 
 import * as Icons from "@/components/ux/icons";
+import { pageFor } from "@/components/ux/nav-search";
+import { previous, record } from "@/lib/nav-history";
+import { useT } from "@/i18n";
+import type { MessageKey } from "@/i18n";
 
 /**
- * Back — to where she actually came from.
+ * Records every route change, so `Back` has a trail to read.
  *
- * ── The bug this fixes ──────────────────────────────────────────────────────
- * Every back control in the app was a hard link to a fixed parent: the market
- * item said "Back to the market" and went to `/app/market` no matter how she
- * arrived. Reach that item from her journey, from search, from a message
- * someone sent her — press back, and the app moves her sideways into a screen
- * she has never seen. Fifty-two controls did this and none consulted history.
+ * Mounted once in the member shell rather than per page: a page that forgot to
+ * record itself would be a hole in the trail, and back would then skip over it
+ * to the screen before.
+ */
+export function NavHistory() {
+  const pathname = usePathname();
+  useEffect(() => { if (pathname) record(pathname); }, [pathname]);
+  return null;
+}
+
+/**
+ * Back — to where she actually came from, named.
  *
- * §87 asks for back navigation that preserves context. That means history when
- * there is history, and the parent route only when there is not.
+ * ── The bug this fixes, twice ───────────────────────────────────────────────
+ * Every back control was a hard link to a fixed parent: the booking detail said
+ * "All bookings" and went there however she arrived. Reach it from her calendar
+ * and back moves her sideways into a list she never asked for.
  *
- * ── Why both, and not just `router.back()` ──────────────────────────────────
- * `router.back()` alone is worse than what it replaces. On a deep link — a link
- * in WhatsApp, a bookmark, a refresh — there is no in-app history, so back
- * either does nothing at all or throws her out of the app into whatever she was
- * looking at before. A woman who opened a link someone sent her would land back
- * in the chat, which is not "back" in any sense she meant.
+ * The first fix read `document.referrer` and used history when it matched our
+ * origin. That was wrong in a way only a browser could show: a Next `<Link>` is
+ * a pushState, not a new document, so the referrer never updates. Driven for
+ * real, Calendar → a booking leaves `document.referrer` as `""` while
+ * `history.length` is 3 — so the check reported "no in-app history" on every
+ * client-side navigation and every control fell through to its parent anyway.
  *
- * So: history if this page was reached from inside the app, the declared parent
- * otherwise. `window.history.length` cannot tell the difference — it counts the
- * whole tab — so the component checks whether the referrer is this origin,
- * which is true exactly when the previous page was ours.
+ * It now reads a trail this component records itself. See `lib/nav-history`.
  *
- * ── Why the label changes ───────────────────────────────────────────────────
- * When there is history it says "Back", because we cannot know what she will
- * land on and naming the wrong screen is worse than naming none. When there is
- * not, it names the parent — "Back to the market" — because then it is a
- * promise the component can keep.
+ * ── Why it names the destination ────────────────────────────────────────────
+ * A bare "Back" asks her to remember where she was. Naming it — "Back to your
+ * calendar" — means she can tell before she taps whether it is where she wants
+ * to go, which matters most on the screens she reached by accident.
  */
 export function Back({ to, label, className = "" }: {
-  /** Where to go when there is no in-app history to return to. */
+  /** Where to go when there is no in-app trail — a deep link, a fresh tab. */
   to: string;
   /** What that parent is called, for the fallback label. */
   label: string;
   className?: string;
 }) {
-  const router = useRouter();
-  // Starts false so the server and the first client render agree; the referrer
-  // is only knowable in the browser.
-  const [hasHistory, setHasHistory] = useState(false);
+  const t = useT();
+  const pathname = usePathname() ?? "";
+  // Starts null so the server and first client render agree; sessionStorage is
+  // only readable in the browser.
+  const [prev, setPrev] = useState<string | null>(null);
 
-  useEffect(() => {
-    try {
-      const ref = document.referrer;
-      setHasHistory(!!ref && new URL(ref).origin === window.location.origin);
-    } catch { setHasHistory(false); }
-  }, []);
+  useEffect(() => { setPrev(previous(pathname)); }, [pathname]);
 
-  const cls =
-    `ux-press ux-sq inline-flex w-fit items-center gap-1.5 text-xsm font-semibold ${className}`;
-  const style = { color: "var(--ux-muted)" };
+  const href = prev ?? to;
+  const page = prev ? pageFor(prev) : null;
+  const name = page ? (page.k ? t(`${page.k}.label` as MessageKey) : page.title) : label;
 
-  if (hasHistory) {
-    return (
-      <button type="button" onClick={() => router.back()} className={cls} style={style}>
-        <Icons.ArrowLeft className="h-[15px] w-[15px]" /> Back
-      </button>
-    );
-  }
-
-  // No history: a real link, so it can be middle-clicked and read by a screen
-  // reader as the navigation it is.
   return (
-    <Link href={to} className={cls} style={style}>
-      <Icons.ArrowLeft className="h-[15px] w-[15px]" /> {label}
+    <Link
+      href={href}
+      className={`ux-press ux-sq inline-flex w-fit items-center gap-1.5 text-xsm font-semibold ${className}`}
+      style={{ color: "var(--ux-muted)" }}
+    >
+      <Icons.ArrowLeft className="h-[15px] w-[15px]" />
+      {prev ? `Back to ${name.charAt(0).toLowerCase()}${name.slice(1)}` : label}
     </Link>
   );
 }

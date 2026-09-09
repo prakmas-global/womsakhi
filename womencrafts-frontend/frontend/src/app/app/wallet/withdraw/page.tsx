@@ -4,7 +4,7 @@ import { useMemo, useState } from "react";
 import Link from "next/link";
 import * as Icons from "@/components/ux/icons";
 
-import { Btn, Card, IconTile, SectionHead, SourceNote } from "@/components/ux/kit";
+import {Back, Btn, Card, IconTile, SectionHead, SourceNote } from "@/components/ux/kit";
 import { Field, TextInput } from "@/components/ux/settings/Frame";
 import { HomeShell } from "@/components/ux/home/HomeShell";
 import { usePayoutMethods } from "@/components/ux/business";
@@ -175,10 +175,7 @@ export default function WithdrawPage() {
         </div>
       }
     >
-      <Link href="/app/wallet"
-            className="ux-hov -my-1 mb-3.5 inline-flex items-center gap-1.5 py-1 text-xsm font-medium"
-            style={{ color: "var(--ux-brand)" }}>
-        <Icons.ArrowLeft className="ux-ico h-4 w-4" />{tr("walletWithdraw.yourWallet")}</Link>
+      <Back to="/app/wallet" label={tr("walletWithdraw.yourWallet")} className="mb-4" />
 
       <h1 className="text-2xl font-bold" style={{ color: "var(--ux-ink)" }}>Withdraw</h1>
       <p className="mb-[20px] mt-1.5 text-xsm" style={{ color: "var(--ux-muted)" }}>{tr("walletWithdraw.nothingMovesUntilYouPressThe")}</p>

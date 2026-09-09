@@ -7,7 +7,7 @@ import { useCallback } from "react";
 
 import { apiMeProfile, type MeProfile } from "@/lib/member-api";
 import { useResource } from "@/lib/use-resource";
-import { Btn, Card, IconTile, Pill, Rating, SectionHead } from "@/components/ux/kit";
+import {Back, Btn, Card, IconTile, Pill, Rating, SectionHead } from "@/components/ux/kit";
 import { HomeShell } from "@/components/ux/home/HomeShell";
 import { useCertificates, useCircles, useProgress } from "@/components/ux/live";
 import { useBusiness } from "@/components/ux/business";
@@ -106,10 +106,7 @@ export default function ProfilePreview() {
         </div>
       }
     >
-      <Link href="/app/profile"
-            className="ux-hov -my-1 mb-3.5 inline-flex items-center gap-1.5 py-1 text-xsm font-medium"
-            style={{ color: "var(--ux-brand)" }}>
-        <Icons.ArrowLeft className="ux-ico h-4 w-4" />{tr("profilePreview.yourProfile")}</Link>
+      <Back to="/app/profile" label={tr("profilePreview.yourProfile")} className="mb-4" />
 
       {/* The banner IS the feature — without it this is just a second profile. */}
       <div className="ux-sq mb-[16px] flex items-center gap-3.5 rounded-[12px] p-4"

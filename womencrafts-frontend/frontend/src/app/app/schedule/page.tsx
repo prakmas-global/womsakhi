@@ -5,7 +5,7 @@ import Link from "next/link";
 
 import { useDiary } from "@/components/ux/diary";
 import * as Icons from "@/components/ux/icons";
-import { Btn, Card, EmptyState, I, IconTile, SourceNote, v } from "@/components/ux/kit";
+import {Back, Btn, Card, EmptyState, I, IconTile, SourceNote, v } from "@/components/ux/kit";
 import { HomeShell } from "@/components/ux/home/HomeShell";
 import { useT } from "@/i18n";
 
@@ -146,9 +146,7 @@ export default function Schedule() {
       }
     >
       {/* ── Header ───────────────────────────────────────────────────── */}
-      <Link href="/app" className="ux-sq mb-4 inline-flex items-center gap-1.5 text-xsm font-semibold"
-            style={{ color: v("--ux-muted") }}>
-        <Icons.ChevronLeft className="h-[15px] w-[15px]" />{tr("schedule.backToHome")}</Link>
+      <Back to="/app" label={tr("schedule.backToHome")} className="mb-4" />
 
       <div className="mb-5 flex flex-wrap items-start justify-between gap-4">
         <div className="flex items-start gap-3.5">

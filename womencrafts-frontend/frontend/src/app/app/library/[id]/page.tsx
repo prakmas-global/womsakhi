@@ -8,8 +8,7 @@ import { apiAgree, apiAskSwap, apiExchange, apiSayInExchange } from "@/lib/shop-
 import { useAction } from "@/lib/use-action";
 import { useResource } from "@/lib/use-resource";
 
-import {
-  Btn, Card, EmptyState, IconTile, NoteBtn, Pill, RailSkeleton, ScreenSkeleton, SectionHead,
+import {Back, Btn, Card, EmptyState, IconTile, NoteBtn, Pill, RailSkeleton, ScreenSkeleton, SectionHead,
 } from "@/components/ux/kit";
 import { HomeShell } from "@/components/ux/home/HomeShell";
 import { useMyExchanges, useSwaps } from "@/components/ux/business";
@@ -180,10 +179,7 @@ export default function ExchangeThread({ params }: { params: Promise<{ id: strin
         </div>
       }
     >
-      <Link href="/app/library"
-            className="ux-hov -my-1 mb-3.5 inline-flex items-center gap-1.5 py-1 text-xsm font-medium"
-            style={{ color: "var(--ux-brand)" }}>
-        <Icons.ArrowLeft className="ux-ico h-4 w-4" />{tr("library.teachAndLearn")}</Link>
+      <Back to="/app/library" label={tr("library.teachAndLearn")} className="mb-4" />
 
       {/* Pinned above the messages, always. An exchange that lives only in a
           thread is one two women remember differently in a month. */}

@@ -4,8 +4,7 @@ import { useMemo, useState } from "react";
 import Link from "next/link";
 import * as Icons from "@/components/ux/icons";
 
-import {
-  ActionBtn, Card, EmptyState, IconTile, Pill,
+import {Back, ActionBtn, Card, EmptyState, IconTile, Pill,
   SectionHead, SourceNote, Tabs, downloadCsv, escapeHtml, letterhead,
   printDocument
 } from "@/components/ux/kit";
@@ -198,10 +197,7 @@ export default function StatementPage() {
         </div>
       }
     >
-      <Link href="/app/wallet"
-            className="ux-hov -my-1 mb-3.5 inline-flex items-center gap-1.5 py-1 text-xsm font-medium"
-            style={{ color: "var(--ux-brand)" }}>
-        <Icons.ArrowLeft className="ux-ico h-4 w-4" />{tr("walletStatement.yourWallet")}</Link>
+      <Back to="/app/wallet" label={tr("walletStatement.yourWallet")} className="mb-4" />
 
       <div className="mb-[20px] flex items-end justify-between gap-4">
         <div>

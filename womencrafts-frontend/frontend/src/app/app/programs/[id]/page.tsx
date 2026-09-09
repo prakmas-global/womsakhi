@@ -9,8 +9,7 @@ import { useAction } from "@/lib/use-action";
 import Link from "next/link";
 import * as Icons from "@/components/ux/icons";
 
-import {
-  ActionBtn, Btn, Card, copy, EmptyState, IconTile, Pill, Progress, RailSkeleton, Rating,
+import {Back, ActionBtn, Btn, Card, copy, EmptyState, IconTile, Pill, Progress, RailSkeleton, Rating,
   ScreenSkeleton, SectionHead,
 } from "@/components/ux/kit";
 import { HomeShell } from "@/components/ux/home/HomeShell";
@@ -192,10 +191,7 @@ export default function CourseDetail({ params }: { params: Promise<{ id: string 
         </div>
       }
     >
-      <Link href="/app/programs"
-            className="ux-hov -my-1 mb-3.5 inline-flex items-center gap-1.5 py-1 text-xsm font-medium"
-            style={{ color: "var(--ux-brand)" }}>
-        <Icons.ArrowLeft className="ux-ico h-4 w-4" />{tr("programs.allCourses2")}</Link>
+      <Back to="/app/programs" label={tr("programs.allCourses2")} className="mb-4" />
 
       <Card className="mb-[16px] overflow-hidden" pad={0}>
         <div className="relative h-[180px] overflow-hidden" style={{ background: "var(--ux-tint-violet)" }}>

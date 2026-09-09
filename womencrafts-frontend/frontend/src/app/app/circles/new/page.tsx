@@ -8,7 +8,7 @@ import { settled, useAttemptKey } from "@/lib/idempotency";
 import Link from "next/link";
 import * as Icons from "@/components/ux/icons";
 
-import { ActionBtn, Btn, Card, IconTile, Pill, SectionHead, copy } from "@/components/ux/kit";
+import {Back, ActionBtn, Btn, Card, IconTile, Pill, SectionHead, copy } from "@/components/ux/kit";
 import { Field, TextInput } from "@/components/ux/settings/Frame";
 import { HomeShell } from "@/components/ux/home/HomeShell";
 import { rupees } from "@/components/ux/circles/data";
@@ -163,10 +163,7 @@ export default function NewCircle() {
         ) : undefined
       }
     >
-      <Link href="/app/circles"
-            className="ux-hov -my-1 mb-3.5 inline-flex items-center gap-1.5 py-1 text-xsm font-medium"
-            style={{ color: "var(--ux-brand)" }}>
-        <Icons.ArrowLeft className="ux-ico h-4 w-4" />{tr("circlesNew.allCircles")}</Link>
+      <Back to="/app/circles" label={tr("circlesNew.allCircles")} className="mb-4" />
 
       <p className="text-xsm" style={{ color: "var(--ux-faint)" }}>Step {step} of 2</p>
       <h1 className="mt-1 text-2xl font-bold" style={{ color: "var(--ux-ink)" }}>

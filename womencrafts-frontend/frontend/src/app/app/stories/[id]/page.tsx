@@ -4,8 +4,7 @@ import { use, useCallback, useState } from "react";
 import Link from "next/link";
 import * as Icons from "@/components/ux/icons";
 
-import {
-  ActionBtn, Btn, Card, copy, EmptyState, Pill, RailSkeleton, ScreenSkeleton,
+import {Back, ActionBtn, Btn, Card, copy, EmptyState, Pill, RailSkeleton, ScreenSkeleton,
   SectionHead,
 } from "@/components/ux/kit";
 import { HomeShell } from "@/components/ux/home/HomeShell";
@@ -132,10 +131,7 @@ export default function StoryDetail({ params }: { params: Promise<{ id: string }
         </div>
       }
     >
-      <Link href="/app/stories"
-            className="ux-hov -my-1 mb-3.5 inline-flex items-center gap-1.5 py-1 text-xsm font-medium"
-            style={{ color: "var(--ux-brand)" }}>
-        <Icons.ArrowLeft className="ux-ico h-4 w-4" />{tr("stories.nearYou")}</Link>
+      <Back to="/app/stories" label={tr("stories.nearYou")} className="mb-4" />
 
       <Card className="mb-[16px] overflow-hidden" pad={0}>
         <div className="relative h-[240px] overflow-hidden" style={{ background: "var(--ux-tint-lilac)" }}>

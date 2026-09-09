@@ -6,6 +6,7 @@ import { usePathname, useRouter } from "next/navigation";
 import SakhiLauncher from "@/components/sakhi/SakhiLauncher";
 import { ShellProvider } from "@/components/ux/ShellProvider";
 import type { MeShell } from "@/lib/shell-api";
+import { NavHistory } from "@/components/ux/kit";
 import SkipToContent from "@/components/layout/SkipToContent";
 import { useAuth } from "@/context/AuthContext";
 import { useI18n } from "@/i18n";
@@ -96,6 +97,8 @@ export default function MemberShell({
   return (
     <ShellProvider initial={initialShell}>
       <div className="ux min-h-screen">
+        {/* Records each route change so `Back` can name where she came from. */}
+        <NavHistory />
         <SkipToContent />
         {children}
         <SakhiLauncher />

@@ -4,8 +4,7 @@ import { use, useState } from "react";
 import Link from "next/link";
 import * as Icons from "@/components/ux/icons";
 
-import {
-  Btn, Card, EmptyState, IconTile, Pill, plural, Progress, RailSkeleton, ScreenSkeleton,
+import {Back, Btn, Card, EmptyState, IconTile, Pill, plural, Progress, RailSkeleton, ScreenSkeleton,
   SectionHead,
 } from "@/components/ux/kit";
 import { HomeShell } from "@/components/ux/home/HomeShell";
@@ -232,10 +231,7 @@ export default function SchemeDetail({ params }: { params: Promise<{ id: string 
         </div>
       }
     >
-      <Link href="/app/support-fund"
-            className="ux-hov -my-1 mb-3.5 inline-flex items-center gap-1.5 py-1 text-xsm font-medium"
-            style={{ color: "var(--ux-brand)" }}>
-        <Icons.ArrowLeft className="ux-ico h-4 w-4" />{tr("supportfund.governmentSchemes")}</Link>
+      <Back to="/app/support-fund" label={tr("supportfund.governmentSchemes")} className="mb-4" />
 
       <div className="mb-[20px] flex items-start gap-4">
         <IconTile icon={s.icon} tint={s.tint} ink={s.ink} size={56} radius={15} />

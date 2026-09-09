@@ -5,8 +5,7 @@ import { COPY } from "@/components/ux/copy";
 import Link from "next/link";
 import * as Icons from "@/components/ux/icons";
 
-import {
-  Btn, Card, EmptyState, IconTile, Pill, Progress, RailSkeleton, ScreenSkeleton, SectionHead,
+import {Back, Btn, Card, EmptyState, IconTile, Pill, Progress, RailSkeleton, ScreenSkeleton, SectionHead,
   Tabs,
 } from "@/components/ux/kit";
 import { HomeShell } from "@/components/ux/home/HomeShell";
@@ -165,10 +164,7 @@ export default function CircleDetail({ params }: { params: Promise<{ id: string 
         </div>
       }
     >
-      <Link href="/app/circles"
-            className="ux-hov -my-1 mb-3.5 inline-flex items-center gap-1.5 py-1 text-xsm font-medium"
-            style={{ color: "var(--ux-brand)" }}>
-        <Icons.ArrowLeft className="ux-ico h-4 w-4" />{tr("circles.allCircles2")}</Link>
+      <Back to="/app/circles" label={tr("circles.allCircles2")} className="mb-4" />
 
       <Card className="mb-[16px] overflow-hidden" pad={0}>
         <div className="relative h-[150px] overflow-hidden" style={{ background: `var(${c.tint})` }}>

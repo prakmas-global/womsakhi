@@ -5,8 +5,7 @@ import { COPY } from "@/components/ux/copy";
 import Link from "next/link";
 import * as Icons from "@/components/ux/icons";
 
-import {
-  ActionBtn, Btn, Card, copy, EmptyState, NoteBtn, Pill, RailSkeleton, ScreenSkeleton,
+import {Back, ActionBtn, Btn, Card, copy, EmptyState, NoteBtn, Pill, RailSkeleton, ScreenSkeleton,
   SectionHead,
 } from "@/components/ux/kit";
 import { HomeShell } from "@/components/ux/home/HomeShell";
@@ -125,10 +124,7 @@ export default function BookingDetail({ params }: { params: Promise<{ id: string
         </div>
       }
     >
-      <Link href="/app/bookings"
-            className="ux-hov -my-1 mb-3.5 inline-flex items-center gap-1.5 py-1 text-xsm font-medium"
-            style={{ color: "var(--ux-brand)" }}>
-        <Icons.ArrowLeft className="ux-ico h-4 w-4" />{tr("bookings.allBookings2")}</Link>
+      <Back to="/app/bookings" label={tr("bookings.allBookings2")} className="mb-4" />
 
       <Card className="mb-[16px]">
         <div className="flex items-start gap-4">

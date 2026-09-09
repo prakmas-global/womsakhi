@@ -68,6 +68,24 @@ const PAGES: PageHit[] = (() => {
 export const PAGE_COUNT = PAGES.length;
 
 /**
+ * What a path is called, for a back control that wants to name its destination.
+ *
+ * Falls back along the path — `/app/bookings/abc123` is not a nav item, but
+ * `/app/bookings` is, and "Back to Times you have booked" is what she needs to
+ * read. Returns the message key too, so the caller can translate it.
+ */
+export function pageFor(href: string): { title: string; k?: string } | null {
+  let path = href.split("?")[0].replace(/\/+$/, "") || "/app";
+  for (;;) {
+    const hit = PAGES.find((p) => p.href === path);
+    if (hit) return { title: hit.title, k: hit.k };
+    const cut = path.lastIndexOf("/");
+    if (cut <= 4) return null;                 // do not climb above /app
+    path = path.slice(0, cut);
+  }
+}
+
+/**
  * @param translate Optional lookup for a message key. When the reader is not
  *   on English, her language is searched *as well as* the English — she may
  *   know a screen by either name, and dropping the English would break a habit

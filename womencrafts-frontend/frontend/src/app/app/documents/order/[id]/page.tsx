@@ -8,8 +8,7 @@ import { messageFrom } from "@/lib/use-action";
 import Link from "next/link";
 import * as Icons from "@/components/ux/icons";
 
-import {
-  Btn, Card, EmptyState, IconTile, Pill, RailSkeleton, ScreenSkeleton, SectionHead,
+import {Back, Btn, Card, EmptyState, IconTile, Pill, RailSkeleton, ScreenSkeleton, SectionHead,
 } from "@/components/ux/kit";
 import { HomeShell } from "@/components/ux/home/HomeShell";
 import { useBusiness } from "@/components/ux/business";
@@ -172,10 +171,7 @@ export default function OrderDetail({ params }: { params: Promise<{ id: string }
         </div>
       }
     >
-      <Link href="/app/documents"
-            className="ux-hov -my-1 mb-3.5 inline-flex items-center gap-1.5 py-1 text-xsm font-medium"
-            style={{ color: "var(--ux-brand)" }}>
-        <Icons.ArrowLeft className="ux-ico h-4 w-4" />{tr("documentsOrder.yourOrders2")}</Link>
+      <Back to="/app/documents" label={tr("documentsOrder.yourOrders2")} className="mb-4" />
 
       <Card className="mb-[16px]">
         <div className="flex items-start gap-4">

@@ -10,8 +10,7 @@ import Link from "next/link";
 import * as Icons from "@/components/ux/icons";
 import { matchFor } from "@/services/job-match";
 
-import {
-  Btn, Card, EmptyState, I, IconTile, Pill, RailSkeleton, ScreenSkeleton, SectionHead,
+import {Back, Btn, Card, EmptyState, I, IconTile, Pill, RailSkeleton, ScreenSkeleton, SectionHead,
 } from "@/components/ux/kit";
 import { HomeShell } from "@/components/ux/home/HomeShell";
 import { useJobs } from "@/components/ux/growth";
@@ -201,10 +200,7 @@ export default function OpportunityDetail({ params }: { params: Promise<{ id: st
         </div>
       }
     >
-      <Link href="/app/opportunities"
-            className="ux-hov -my-1 mb-3.5 inline-flex items-center gap-1.5 py-1 text-xsm font-medium"
-            style={{ color: "var(--ux-brand)" }}>
-        <Icons.ArrowLeft className="ux-ico h-4 w-4" />{tr("opportunities.allWork")}</Link>
+      <Back to="/app/opportunities" label={tr("opportunities.allWork")} className="mb-4" />
 
       <Card className="mb-[16px]">
         <div className="flex items-start gap-4">
