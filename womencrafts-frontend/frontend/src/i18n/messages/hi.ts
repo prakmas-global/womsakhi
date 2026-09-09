@@ -2161,6 +2161,19 @@ const hi: Catalog = {
   "welcome.thereIsNoWrongAnswerIt": "कोई जवाब गलत नहीं है। इससे हमारे सुझाव बदलते हैं, यह नहीं कि आप क्या कर सकती हैं।",
   "welcome.fetchingTheList": "सूची लाई जा रही है…",
   "welcome.weCouldNotFetchThisList": "यह सूची अभी नहीं ला सके। आगे बढ़िए — आपको क्या चाहिए, यह आप कभी भी सेटिंग से बता सकती हैं।",
+  "schedule.createYourPlan": "अपनी योजना बनाएँ",
+  "schedule.backToHome": "होम पर वापस",
+  "schedule.myCalendar": "मेरा कैलेंडर",
+  "schedule.everythingYouHavePlannedBookedAnd": "आपने जो कुछ तय किया, बुक किया और सहेजा — सब एक जगह।",
+  "schedule.addActivity": "गतिविधि जोड़ें",
+  "schedule.previousMonth": "पिछला महीना",
+  "schedule.nextMonth": "अगला महीना",
+  "schedule.nothingBookedYet": "अभी कुछ बुक नहीं है",
+  "calendar.nothingOnThisDayAFree": "इस दिन कुछ नहीं। खाली दिन का मतलब सूना दिन नहीं होता।",
+  "calendar.viewFullDay": "पूरा दिन देखें",
+  "calendar.comingUp": "आगे आने वाला",
+  "calendar.viewAll": "सब देखें",
+  "calendar.nothingBookedAheadYet": "आगे के लिए अभी कुछ बुक नहीं है।",
 };
 
 export default hi;

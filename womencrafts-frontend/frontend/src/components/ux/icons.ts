@@ -49,6 +49,7 @@ export {
   CalendarCheck,
   CalendarClock,
   CalendarDays,
+  CalendarX,
   CalendarPlus,
   Camera,
   Carrot,

@@ -2206,6 +2206,19 @@ const screens = {
   "welcome.thereIsNoWrongAnswerIt": "There is no wrong answer. It changes what we suggest, not what you can do.",
   "welcome.fetchingTheList": "Fetching the list…",
   "welcome.weCouldNotFetchThisList": "We could not fetch this list just now. Carry on — you can tell us what you need any time from Settings.",
+  "schedule.createYourPlan": "Create your plan",
+  "schedule.backToHome": "Back to Home",
+  "schedule.myCalendar": "My calendar",
+  "schedule.everythingYouHavePlannedBookedAnd": "Everything you have planned, booked, and saved in one place.",
+  "schedule.addActivity": "Add activity",
+  "schedule.previousMonth": "Previous month",
+  "schedule.nextMonth": "Next month",
+  "schedule.nothingBookedYet": "Nothing booked yet",
+  "calendar.nothingOnThisDayAFree": "Nothing on this day. A free day is not an empty one.",
+  "calendar.viewFullDay": "View full day",
+  "calendar.comingUp": "Coming up",
+  "calendar.viewAll": "View all",
+  "calendar.nothingBookedAheadYet": "Nothing booked ahead yet.",
 } as const;
 
 const en = { ...core, ...chrome, ...screens } as const;
