@@ -226,7 +226,12 @@ export default function CirclePage() {
 
   const rail = (
     <div className="space-y-4">
-      <Btn full icon="Plus" onClick={start}>Start a discussion</Btn>
+      <div className="space-y-2.5">
+        <Btn full icon="Plus" onClick={start}>Start a discussion</Btn>
+        <Btn full variant="soft" icon="UsersRound" href="/app/circles/create">
+          Create a circle
+        </Btn>
+      </div>
 
       {/* Her live financial commitment, kept in reach. */}
       {savingsCircle && overview.savings && (
@@ -312,8 +317,9 @@ export default function CirclePage() {
         <div className="mt-5">
           <Link href="/app/circles/create"
                 className="ux-press ux-sq flex items-center justify-center gap-2 rounded-[16px] px-5 py-4 text-xsm font-bold"
-                style={{ border: "1px dashed var(--ux-line-strong)", color: v("--ux-brand") }}>
-            <I name="Plus" className="h-[16px] w-[16px]" />
+                style={{ background: v("--ux-brand-tint"), border: `1px solid ${v("--ux-brand")}`,
+                         color: v("--ux-brand") }}>
+            <I name="UsersRound" className="h-[16px] w-[16px]" />
             Start a circle of your own
           </Link>
         </div>
