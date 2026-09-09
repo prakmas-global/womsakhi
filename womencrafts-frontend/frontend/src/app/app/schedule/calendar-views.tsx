@@ -92,6 +92,29 @@ export function buildMonth(year: number, month: number, entries: DiaryEntry[], t
 const DOW = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 
 /**
+ * "09:00 · 60 min" → "9:00 AM".
+ *
+ * The diary stores 24-hour with the length appended. In a month cell there is
+ * room for one of those, and the one she needs is when it starts; the length
+ * belongs in the day panel where there is space to say it.
+ */
+export function clockTime(raw: string): string {
+  const [head] = raw.split("·").map((x) => x.trim());
+  const m = /^(\d{1,2}):(\d{2})/.exec(head);
+  if (!m) return head;
+  const h = Number(m[1]);
+  const suffix = h < 12 ? "AM" : "PM";
+  const h12 = h % 12 === 0 ? 12 : h % 12;
+  return `${h12}:${m[2]} ${suffix}`;
+}
+
+/** What is left after the time — "60 min", for the day panel's second line. */
+export function lengthOf(raw: string): string {
+  const [, ...rest] = raw.split("·").map((x) => x.trim());
+  return rest.join(" · ");
+}
+
+/**
  * One entry inside a day cell.
  *
  * The title is allowed two lines rather than truncated to one: "Advanced
@@ -101,20 +124,20 @@ const DOW = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 function EventPill({ entry }: { entry: DiaryEntry }) {
   const cat = catFor(categoryOf(entry));
   return (
-    <Link href={entry.href} className="ux-sq block rounded-[6px] px-1.5 py-1"
+    <Link href={entry.href} className="ux-sq block rounded-[7px] px-2 py-1.5"
           style={{ background: v(cat.tint) }}>
       <span className="flex items-start gap-1">
-        <I name={cat.icon} className="mt-[2px] h-[10px] w-[10px] shrink-0" style={{ color: v(cat.ink) }} />
+        <I name={cat.icon} className="mt-[2px] h-[11px] w-[11px] shrink-0" style={{ color: v(cat.ink) }} />
         <span className="min-w-0 flex-1">
-          <span className="block text-3xs font-semibold leading-[1.25]"
+          <span className="block text-2xs font-semibold leading-[1.25]"
                 style={{ color: v(cat.ink), display: "-webkit-box", WebkitLineClamp: 2,
                          WebkitBoxOrient: "vertical", overflow: "hidden" }}>
             {entry.title}
           </span>
           {entry.time && (
-            <span className="mt-[1px] block truncate text-3xs leading-tight"
+            <span className="mt-[2px] block truncate text-2xs leading-tight"
                   style={{ color: v(cat.ink), opacity: 0.72 }}>
-              {entry.time}
+              {clockTime(entry.time)}
             </span>
           )}
         </span>
@@ -129,7 +152,7 @@ export function MonthGrid({ cells, onPick }: { cells: DayCell[]; onPick: (iso: s
       {/* Day names */}
       <div className="grid grid-cols-7 border-b" style={{ borderColor: v("--ux-line") }}>
         {DOW.map((d) => (
-          <div key={d} className="py-3 text-center text-xsm font-semibold" style={{ color: v("--ux-muted") }}>
+          <div key={d} className="py-3.5 text-center text-xsm font-semibold" style={{ color: v("--ux-muted") }}>
             {d}
           </div>
         ))}
@@ -145,7 +168,7 @@ export function MonthGrid({ cells, onPick }: { cells: DayCell[]; onPick: (iso: s
             // A day is only a heading for what it holds, so it is not a
             // heading element — it is the control that opens that day.
             aria-label={`${c.date}, ${c.entries.length} activities`}
-            className="ux-sq relative flex min-h-[100px] flex-col gap-[3px] border-b border-e p-2 text-start"
+            className="ux-sq relative flex min-h-[128px] flex-col gap-[4px] border-b border-e p-2 text-start"
             style={{
               borderColor: v("--ux-line"),
               // The last column and last row sit on the wrapper's own edge.
@@ -161,7 +184,7 @@ export function MonthGrid({ cells, onPick }: { cells: DayCell[]; onPick: (iso: s
                     style={{ border: `1.5px solid ${v("--ux-brand")}` }} />
             )}
             <span
-              className="grid h-[24px] w-[24px] shrink-0 place-items-center rounded-full text-xsm font-semibold"
+              className="grid h-[26px] w-[26px] shrink-0 place-items-center rounded-full text-xsm font-medium"
               style={{
                 background: c.today ? v("--ux-fill") : "transparent",
                 color: c.today ? v("--ux-on-brand") : c.outside ? v("--ux-faint") : v("--ux-ink-2"),
@@ -169,10 +192,10 @@ export function MonthGrid({ cells, onPick }: { cells: DayCell[]; onPick: (iso: s
             >
               {c.date}
             </span>
-            {c.entries.slice(0, 2).map((e) => <EventPill key={e.id} entry={e} />)}
-            {c.entries.length > 2 && (
+            {c.entries.slice(0, 3).map((e) => <EventPill key={e.id} entry={e} />)}
+            {c.entries.length > 3 && (
               <span className="ps-1 text-3xs font-semibold" style={{ color: v("--ux-muted") }}>
-                +{c.entries.length - 2} more
+                +{c.entries.length - 3} more
               </span>
             )}
           </button>
@@ -195,19 +218,18 @@ export function MonthGrid({ cells, onPick }: { cells: DayCell[]; onPick: (iso: s
  */
 function DayRow({ entry }: { entry: DiaryEntry }) {
   const cat = catFor(categoryOf(entry));
-  const [at, ...rest] = entry.time.split("·").map((s) => s.trim());
+  const at = clockTime(entry.time);
+  const len = lengthOf(entry.time);
   return (
     <Link href={entry.href} className="ux-hov ux-sq -mx-2 flex items-center gap-3 rounded-[10px] px-2 py-2.5">
       <span className="w-[58px] shrink-0">
-        <span className="block text-xsm font-bold leading-tight" style={{ color: v("--ux-ink") }}>{at || "—"}</span>
-        {rest.length > 0 && (
-          <span className="mt-0.5 block text-2xs" style={{ color: v("--ux-faint") }}>{rest.join(" · ")}</span>
-        )}
+        <span className="block text-sm font-bold leading-tight" style={{ color: v("--ux-ink") }}>{at || "—"}</span>
+        {len && <span className="mt-0.5 block text-2xs" style={{ color: v("--ux-faint") }}>{len}</span>}
       </span>
-      <IconTile icon={cat.icon} tint={cat.tint} ink={cat.ink} size={34} radius={10} />
+      <IconTile icon={cat.icon} tint={cat.tint} ink={cat.ink} size={40} radius={12} />
       <span className="min-w-0 flex-1">
-        <span className="block truncate text-xsm font-bold" style={{ color: v("--ux-ink") }}>{entry.title}</span>
-        <span className="mt-0.5 flex items-center gap-1 text-2xs" style={{ color: v("--ux-muted") }}>
+        <span className="block truncate text-sm font-bold" style={{ color: v("--ux-ink") }}>{entry.title}</span>
+        <span className="mt-1 flex items-center gap-1.5 text-xs" style={{ color: v("--ux-muted") }}>
           <I name={entry.where === "Online" ? "Video" : "MapPin"} className="h-[11px] w-[11px] shrink-0" />
           <span className="truncate">{entry.where}</span>
         </span>
@@ -228,15 +250,15 @@ export function TodayPanel({
     <Card>
       <div className="flex items-start justify-between gap-3">
         <div>
-          <h2 className="text-lg font-extrabold leading-tight" style={{ color: v("--ux-ink") }}>{label}</h2>
+          <h2 className="text-xl font-extrabold leading-tight tracking-[-0.01em]" style={{ color: v("--ux-ink") }}>{label}</h2>
           <p className="mt-1 text-xsm" style={{ color: v("--ux-muted") }}>
             {count === 1 ? "1 activity" : `${count} activities`}{isToday ? " today" : ""}
           </p>
         </div>
         {/* Always present, not only when she has wandered off: a control that
             appears and disappears is one she has to hunt for. */}
-        <button type="button" onClick={onToday} disabled={isToday}
-                className="ux-press ux-sq shrink-0 rounded-[9px] px-3 py-1.5 text-xs font-bold disabled:opacity-45"
+        <button type="button" onClick={onToday}
+                className="ux-press ux-sq shrink-0 rounded-[10px] px-3.5 py-2 text-xs font-bold"
                 style={{ background: v("--ux-brand-tint"), color: v("--ux-brand") }}>
           Today
         </button>
@@ -268,7 +290,7 @@ export function ComingUp({ entries }: { entries: DiaryEntry[] }) {
   return (
     <Card>
       <div className="mb-2 flex items-center justify-between gap-3">
-        <h2 className="text-lg font-extrabold" style={{ color: v("--ux-ink") }}>{tr("calendar.comingUp")}</h2>
+        <h2 className="text-xl font-extrabold tracking-[-0.01em]" style={{ color: v("--ux-ink") }}>{tr("calendar.comingUp")}</h2>
         <Link href="/app/bookings" className="ux-sq flex items-center gap-0.5 text-xs font-bold"
               style={{ color: v("--ux-brand") }}>
           {tr("calendar.viewAll")} <Icons.ChevronRight className="h-[13px] w-[13px]" />
@@ -288,10 +310,10 @@ export function ComingUp({ entries }: { entries: DiaryEntry[] }) {
                   </span>
                   <span className="mt-0.5 block text-2xs" style={{ color: v("--ux-faint") }}>{e.day}</span>
                 </span>
-                <IconTile icon={cat.icon} tint={cat.tint} ink={cat.ink} size={30} radius={9} />
+                <IconTile icon={cat.icon} tint={cat.tint} ink={cat.ink} size={34} radius={10} />
                 <span className="min-w-0 flex-1">
                   <span className="block truncate text-xsm font-bold" style={{ color: v("--ux-ink") }}>{e.title}</span>
-                  <span className="mt-0.5 block truncate text-2xs" style={{ color: v("--ux-muted") }}>{e.time}</span>
+                  <span className="mt-0.5 block truncate text-xs" style={{ color: v("--ux-muted") }}>{clockTime(e.time)}</span>
                 </span>
               </Link>
             );

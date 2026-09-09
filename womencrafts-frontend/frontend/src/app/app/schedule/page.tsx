@@ -150,9 +150,9 @@ export default function Schedule() {
 
       <div className="mb-5 flex flex-wrap items-start justify-between gap-4">
         <div className="flex items-start gap-3.5">
-          <IconTile icon="CalendarDays" tint="--ux-tint-violet" ink="--ux-violet-ink" size={46} radius={13} />
+          <IconTile icon="CalendarDays" tint="--ux-tint-violet" ink="--ux-violet-ink" size={56} radius={15} />
           <div>
-            <h1 className="text-2xlm font-extrabold leading-tight tracking-[-0.02em]" style={{ color: v("--ux-ink") }}>{tr("schedule.myCalendar")}</h1>
+            <h1 className="text-4xl font-extrabold leading-[1.1] tracking-[-0.03em]" style={{ color: v("--ux-ink") }}>{tr("schedule.myCalendar")}</h1>
             <p className="mt-1 text-xsm" style={{ color: v("--ux-muted") }}>{tr("schedule.everythingYouHavePlannedBookedAnd")}</p>
             <SourceNote source={source} what={tr("schedule.yourDiary")} />
           </div>
@@ -160,12 +160,13 @@ export default function Schedule() {
 
         <div className="flex flex-wrap items-center gap-2.5">
           {/* Calendar / Agenda */}
-          <div className="flex rounded-[12px] p-1" style={{ background: v("--ux-surface-2") }}>
+          <div className="flex rounded-[13px] border p-1"
+               style={{ background: v("--ux-surface"), borderColor: v("--ux-line") }}>
             {(["calendar", "agenda"] as const).map((mode) => {
               const on = view === mode;
               return (
                 <button key={mode} type="button" onClick={() => setView(mode)} aria-pressed={on}
-                        className="ux-press ux-sq flex min-h-[36px] items-center gap-1.5 rounded-[9px] px-3.5 text-xsm font-bold capitalize transition-colors"
+                        className="ux-press ux-sq flex min-h-[40px] items-center gap-2 rounded-[10px] px-4 text-xsm font-bold capitalize transition-colors"
                         style={{ background: on ? v("--ux-fill") : "transparent",
                                  color: on ? v("--ux-on-brand") : v("--ux-ink-2") }}>
                   <I name={mode === "calendar" ? "CalendarDays" : "List"} className="h-[15px] w-[15px]" />
@@ -179,9 +180,9 @@ export default function Schedule() {
           <div className="relative" ref={addRef}>
             <button type="button" onClick={() => setAddOpen((o) => !o)}
                     aria-expanded={addOpen} aria-haspopup="menu"
-                    className="ux-press ux-sq flex min-h-[40px] items-center gap-2 rounded-[12px] px-4 text-xsm font-bold"
+                    className="ux-press ux-sq flex min-h-[48px] items-center gap-2 rounded-[14px] px-5 text-sm font-bold"
                     style={{ background: v("--ux-fill"), color: v("--ux-on-brand") }}>
-              <Icons.Plus className="h-[16px] w-[16px]" />{tr("schedule.addActivity")}<Icons.ChevronDown className="h-[14px] w-[14px]" />
+              <Icons.Plus className="h-[18px] w-[18px]" />{tr("schedule.addActivity")}<Icons.ChevronDown className="h-[14px] w-[14px]" />
             </button>
             {addOpen && (
               <div role="menu"
@@ -211,24 +212,24 @@ export default function Schedule() {
       <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
         <div className="flex items-center gap-2">
           <button type="button" onClick={() => step(-1)} aria-label={tr("schedule.previousMonth")}
-                  className="ux-press ux-sq grid h-[36px] w-[36px] place-items-center rounded-[10px]"
-                  style={{ background: v("--ux-surface-2"), color: v("--ux-ink-2") }}>
-            <Icons.ChevronLeft className="h-[16px] w-[16px]" />
+                  className="ux-press ux-sq grid h-[38px] w-[38px] place-items-center rounded-[11px] border"
+                  style={{ borderColor: v("--ux-line"), color: v("--ux-ink-2") }}>
+            <Icons.ChevronLeft className="h-[17px] w-[17px]" />
           </button>
           <button type="button" onClick={() => step(1)} aria-label={tr("schedule.nextMonth")}
-                  className="ux-press ux-sq grid h-[36px] w-[36px] place-items-center rounded-[10px]"
-                  style={{ background: v("--ux-surface-2"), color: v("--ux-ink-2") }}>
-            <Icons.ChevronRight className="h-[16px] w-[16px]" />
+                  className="ux-press ux-sq grid h-[38px] w-[38px] place-items-center rounded-[11px] border"
+                  style={{ borderColor: v("--ux-line"), color: v("--ux-ink-2") }}>
+            <Icons.ChevronRight className="h-[17px] w-[17px]" />
           </button>
           <button type="button" onClick={goToday}
-                  className="ux-sq ms-1 flex items-center gap-1.5 text-base font-bold"
+                  className="ux-sq ms-2 flex items-center gap-1.5 text-lg font-bold"
                   style={{ color: v("--ux-ink") }}>
             {MONTHS[cursor.getMonth()]} {cursor.getFullYear()}
             <Icons.ChevronDown className="h-[16px] w-[16px]" style={{ color: v("--ux-muted") }} />
           </button>
           <button type="button" onClick={goToday}
-                  className="ux-press ux-sq ms-2 min-h-[36px] rounded-[10px] px-4 text-xsm font-bold"
-                  style={{ background: v("--ux-surface-2"), color: v("--ux-ink-2") }}>
+                  className="ux-press ux-sq ms-2 min-h-[38px] rounded-[11px] border px-5 text-xsm font-bold"
+                  style={{ borderColor: v("--ux-line"), color: v("--ux-ink-2") }}>
             Today
           </button>
         </div>
@@ -239,11 +240,11 @@ export default function Schedule() {
             const on = !off.includes(c.id);
             return (
               <button key={c.id} type="button" onClick={() => toggle(c.id)} aria-pressed={on}
-                      className="ux-press ux-sq flex min-h-[32px] items-center gap-1.5 rounded-full ps-1 pe-3 text-xs font-medium transition-opacity"
+                      className="ux-press ux-sq flex min-h-[30px] items-center gap-1.5 rounded-full ps-1 pe-2.5 text-xs font-medium transition-opacity"
                       style={{ background: v("--ux-surface-2"), color: v("--ux-ink-2"), opacity: on ? 1 : 0.4 }}>
-                <span className="grid h-[24px] w-[24px] place-items-center rounded-full"
+                <span className="grid h-[22px] w-[22px] place-items-center rounded-full"
                       style={{ background: v(c.tint), color: v(c.ink) }}>
-                  <I name={c.icon} className="h-[13px] w-[13px]" />
+                  <I name={c.icon} className="h-[12px] w-[12px]" />
                 </span>
                 {c.label}
               </button>
