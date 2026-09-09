@@ -15,6 +15,7 @@ import { memberCount, rupees } from "@/components/ux/circles/data";
 import { useCircle, useCircleSavings } from "@/components/ux/growth";
 import { apiJoinCircle, apiLeaveCircle } from "@/lib/growth-api";
 import { useAction } from "@/lib/use-action";
+import { useT } from "@/i18n";
 
 /**
  * One circle.
@@ -25,6 +26,7 @@ import { useAction } from "@/lib/use-action";
  * are one screen with a different label is how both end up mediocre.
  */
 export default function CircleDetail({ params }: { params: Promise<{ id: string }> }) {
+  const tr = useT();
   const { id } = use(params);
   const { data: detail, source, refetch } = useCircle(id);
   const { data: sv } = useCircleSavings(id);
@@ -74,9 +76,9 @@ export default function CircleDetail({ params }: { params: Promise<{ id: string 
         <Card>
           <EmptyState
             icon="SearchX"
-            title="That circle is not here"
+            title={tr("circles.thatCircleIsNotHere")}
             body="It may have closed, or the link may be old."
-            action={<Btn href="/app/circles" variant="primary" iconEnd="ArrowRight">All circles</Btn>}
+            action={<Btn href="/app/circles" variant="primary" iconEnd="ArrowRight">{tr("circles.allCircles")}</Btn>}
           />
         </Card>
       </HomeShell>
@@ -99,16 +101,16 @@ export default function CircleDetail({ params }: { params: Promise<{ id: string 
         <div className="space-y-[16px]">
           {savings ? (
             <Card>
-              <SectionHead title="This month" />
+              <SectionHead title={tr("circles.thisMonth")} />
               <div className="flex items-baseline justify-between">
-                <span className="text-xsm" style={{ color: "var(--ux-muted)" }}>Everyone pays</span>
+                <span className="text-xsm" style={{ color: "var(--ux-muted)" }}>{tr("circles.everyonePays")}</span>
                 <span className="text-lg font-bold tabular-nums" style={{ color: "var(--ux-ink)" }}>
                   {rupees(sv?.monthly_minor ?? 0)}
                 </span>
               </div>
               <div className="mt-3">
                 <div className="mb-1.5 flex items-center justify-between text-xs">
-                  <span style={{ color: "var(--ux-muted)" }}>Collected so far</span>
+                  <span style={{ color: "var(--ux-muted)" }}>{tr("circles.collectedSoFar")}</span>
                   <span className="font-semibold tabular-nums" style={{ color: "var(--ux-ink)" }}>
                     {paid} of {total}
                   </span>
@@ -127,12 +129,12 @@ export default function CircleDetail({ params }: { params: Promise<{ id: string 
                 </div>
               )}
               <div className="mt-3">
-                <Btn href={`/app/circles/${c.id}/pay`} variant="primary" full icon="IndianRupee">Pay this month</Btn>
+                <Btn href={`/app/circles/${c.id}/pay`} variant="primary" full icon="IndianRupee">{tr("circles.payThisMonth")}</Btn>
               </div>
             </Card>
           ) : (
             <Card>
-              <SectionHead title="About this circle" />
+              <SectionHead title={tr("circles.aboutThisCircle")} />
               <div className="space-y-3 text-xsm">
                 {[["Members", memberCount(c.members)], ["Where", c.place], ["Activity", c.activity]].map(([k, v]) => (
                   <div key={k} className="flex items-center justify-between gap-3">
@@ -145,7 +147,7 @@ export default function CircleDetail({ params }: { params: Promise<{ id: string 
           )}
 
           <Card>
-            <SectionHead title="Circle rules" icon="ShieldCheck" />
+            <SectionHead title={tr("circles.circleRules")} icon="ShieldCheck" />
             <ul className="space-y-2.5">
               {(savings
                 ? ["Pay by the 1st of every month", "The order was agreed by everyone at the start",
@@ -166,8 +168,7 @@ export default function CircleDetail({ params }: { params: Promise<{ id: string 
       <Link href="/app/circles"
             className="ux-hov -my-1 mb-3.5 inline-flex items-center gap-1.5 py-1 text-xsm font-medium"
             style={{ color: "var(--ux-brand)" }}>
-        <Icons.ArrowLeft className="ux-ico h-4 w-4" /> All circles
-      </Link>
+        <Icons.ArrowLeft className="ux-ico h-4 w-4" />{tr("circles.allCircles2")}</Link>
 
       <Card className="mb-[16px] overflow-hidden" pad={0}>
         <div className="relative h-[150px] overflow-hidden" style={{ background: `var(${c.tint})` }}>
@@ -187,7 +188,7 @@ export default function CircleDetail({ params }: { params: Promise<{ id: string 
               </p>
               <div className="mt-2.5 flex flex-wrap gap-2">
                 <Pill tone={savings ? "green" : c.kind === "Trade" ? "orange" : "pink"}>{c.kind} circle</Pill>
-                {joined && <Pill tone="brand">You are in</Pill>}
+                {joined && <Pill tone="brand">{tr("circles.youAreIn")}</Pill>}
               </div>
             </div>
             <div className="shrink-0">
@@ -213,7 +214,7 @@ export default function CircleDetail({ params }: { params: Promise<{ id: string 
 
       {tab === "Turn order" && savings && (
         <Card>
-          <SectionHead title="Whose turn, and when"
+          <SectionHead title={tr("circles.whoseTurnAndWhen")}
                        sub={myTurn
                          ? `Month ${sv?.round ?? 1} of ${total} — yours is month ${myTurn}`
                          : `Month ${sv?.round ?? 1} of ${total}`} />
@@ -223,7 +224,7 @@ export default function CircleDetail({ params }: { params: Promise<{ id: string 
 
       {tab === "Members" && (
         <Card>
-          <SectionHead title="Who is here" sub={`${memberCount(c.members)} members`} />
+          <SectionHead title={tr("circles.whoIsHere")} sub={`${memberCount(c.members)} members`} />
           {/* The women in this circle, from the database. This grid used to
               show the same eleven invented names in every circle in the app. */}
           <div className="ux-deck grid grid-cols-2 gap-2.5">
@@ -252,7 +253,7 @@ export default function CircleDetail({ params }: { params: Promise<{ id: string 
         <div className="space-y-[12px]">
           {tab === "Overview" && savings && (
             <Card>
-              <SectionHead title="Where this circle has got to"
+              <SectionHead title={tr("circles.whereThisCircleHasGotTo")}
                            sub={`Month ${sv?.round ?? 1} of ${total}`} action="See turn order" onAction={() => setTab("Members")} />
               <TurnOrder members={(sv?.members ?? []).slice(0, 4)} currentMonth={sv?.round ?? 1} />
             </Card>

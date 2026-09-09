@@ -8,6 +8,7 @@ import { Btn, IconTile, Pill, SourceNote } from "@/components/ux/kit";
 import { Card, Field, SectionHead, SettingsPage, TextInput } from "@/components/ux/settings/Frame";
 import { usePayoutMethods } from "@/components/ux/business";
 import { apiAddBankAccount, apiAddUpi, apiMakePrimary, apiRemoveAccount } from "@/lib/shop-api";
+import { useT } from "@/i18n";
 
 type Draft = "bank" | "upi" | null;
 
@@ -26,6 +27,7 @@ const BLANK = { account: "", confirm: "", ifsc: "", holder: "", upi: "" };
  * to tidy up her own account.
  */
 export default function PaymentMethodsPage() {
+  const tr = useT();
   /**
    * The server is the source of truth here, deliberately.
    *
@@ -72,13 +74,13 @@ export default function PaymentMethodsPage() {
 
   return (
     <SettingsPage
-      title="How you get paid"
-      sub="Your earnings go to the method marked Primary. Everything here is between you and your bank — buyers never see it."
+      title={tr("settingsPayments.howYouGetPaid")}
+      sub={tr("settingsPayments.yourEarningsGoToTheMethod")}
     >
       <SourceNote source={source} what="accounts" />
 
       <Card>
-        <SectionHead title="Your methods" sub={`${methods.length} added`} />
+        <SectionHead title={tr("settingsPayments.yourMethods")} sub={`${methods.length} added`} />
         {methods.length ? (
           <div className="ux-deck space-y-2.5">
             {methods.map((m, i) => (
@@ -100,7 +102,7 @@ export default function PaymentMethodsPage() {
                       {m.primary && <Pill tone="brand" size="sm">Primary</Pill>}
                       {m.verified
                         ? <Pill tone="green" size="sm">Checked</Pill>
-                        : <Pill tone="orange" size="sm">Not checked yet</Pill>}
+                        : <Pill tone="orange" size="sm">{tr("settingsPayments.notCheckedYet")}</Pill>}
                     </div>
                     <p className="mt-0.5 truncate text-xs" style={{ color: "var(--ux-muted)" }}>
                       {/* "UPI · UPI ID" says the same thing twice. */}
@@ -111,12 +113,9 @@ export default function PaymentMethodsPage() {
                 <div className="mt-3 flex flex-wrap gap-2 border-t pt-3" style={{ borderColor: "var(--ux-line)" }}>
                   {m.primary ? (
                     <span className="inline-flex items-center gap-1.5 py-1.5 text-xs font-medium" style={{ color: "var(--ux-green-ink)" }}>
-                      <Icons.CheckCircle2 className="h-[14px] w-[14px]" /> Your money comes here
-                    </span>
+                      <Icons.CheckCircle2 className="h-[14px] w-[14px]" />{tr("settingsPayments.yourMoneyComesHere")}</span>
                   ) : (
-                    <Btn variant="outline" size="sm" icon="Star" onClick={() => void run(() => apiMakePrimary(m.id))}>
-                      Send my money here
-                    </Btn>
+                    <Btn variant="outline" size="sm" icon="Star" onClick={() => void run(() => apiMakePrimary(m.id))}>{tr("settingsPayments.sendMyMoneyHere")}</Btn>
                   )}
                   <Btn variant="ghost" size="sm" icon="Trash2" onClick={() => void run(() => apiRemoveAccount(m.id))}>Remove</Btn>
                 </div>
@@ -148,7 +147,7 @@ export default function PaymentMethodsPage() {
 
       {draft === null ? (
         <Card>
-          <SectionHead title="Add a way to get paid" />
+          <SectionHead title={tr("settingsPayments.addAWayToGetPaid")} />
           <div className="grid gap-2.5 sm:grid-cols-2">
             {[
               { k: "bank" as const, icon: "Landmark", tint: "--ux-tint-blue", ink: "--ux-blue",
@@ -171,39 +170,38 @@ export default function PaymentMethodsPage() {
         </Card>
       ) : (
         <Card>
-          <SectionHead title={draft === "bank" ? "Add a bank account" : "Add a UPI ID"} />
+          <SectionHead title={draft === "bank" ? tr("settingsPayments.addABankAccount")
+              : tr("settingsPayments.addAUpiId")} />
           <div className="space-y-3.5">
             {draft === "bank" ? (
               <>
-                <Field label="Account number">
-                  <TextInput inputMode="numeric" placeholder="20 digits" value={form.account}
+                <Field label={tr("settingsPayments.accountNumber")}>
+                  <TextInput inputMode="numeric" placeholder={tr("settingsPayments.digits")} value={form.account}
                              onChange={(e) => set("account", e.target.value.replace(/\D/g, ""))} />
                 </Field>
-                <Field label="Type it again"
-                       hint="One wrong digit sends your money to a stranger. This is why we ask twice.">
+                <Field label={tr("settingsPayments.typeItAgain")}
+                       hint={tr("settingsPayments.oneWrongDigitSendsYourMoney")}>
                   <TextInput inputMode="numeric" value={form.confirm}
                              onChange={(e) => set("confirm", e.target.value.replace(/\D/g, ""))} />
                 </Field>
                 {/* Said here, while she can still fix it — not after she has
                     pressed save and the money has gone somewhere else. */}
                 {form.confirm && form.confirm !== form.account && (
-                  <p className="text-xsm" style={{ color: "var(--ux-orange-ink)" }}>
-                    These two do not match yet.
-                  </p>
+                  <p className="text-xsm" style={{ color: "var(--ux-orange-ink)" }}>{tr("settingsPayments.theseTwoDoNotMatchYet")}</p>
                 )}
-                <Field label="IFSC code" hint="On the first page of your passbook, and on your cheque book.">
+                <Field label={tr("settingsPayments.ifscCode")} hint={tr("settingsPayments.onTheFirstPageOfYour")}>
                   <TextInput placeholder="HDFC0001234" value={form.ifsc}
                              onChange={(e) => set("ifsc", e.target.value.toUpperCase().slice(0, 11))} />
                 </Field>
-                <Field label="Name on the account"
-                       hint="Must match your bank exactly, or the transfer bounces.">
-                  <TextInput placeholder="Priya Sharma" value={form.holder}
+                <Field label={tr("settingsPayments.nameOnTheAccount")}
+                       hint={tr("settingsPayments.mustMatchYourBankExactlyOr")}>
+                  <TextInput placeholder={tr("settingsPayments.priyaSharma")} value={form.holder}
                              onChange={(e) => set("holder", e.target.value)} />
                 </Field>
               </>
             ) : (
               <Field label="UPI ID"
-                     hint="Looks like yourname@bank. Find it in PhonePe, GPay or Paytm under your profile.">
+                     hint={tr("settingsPayments.looksLikeYournameBankFindIt")}>
                 <TextInput placeholder="priya@okhdfcbank" value={form.upi}
                            onChange={(e) => set("upi", e.target.value.trim())} />
               </Field>
@@ -236,13 +234,13 @@ export default function PaymentMethodsPage() {
                  })}>
               {busy ? "Saving…" : "Save it"}
             </Btn>
-            <Btn variant="ghost" onClick={() => { setDraft(null); setProblem(""); }}>Not now</Btn>
+            <Btn variant="ghost" onClick={() => { setDraft(null); setProblem(""); }}>{tr("settingsPayments.notNow")}</Btn>
           </div>
         </Card>
       )}
 
       <Card>
-        <SectionHead title="What we never do" icon="ShieldCheck" />
+        <SectionHead title={tr("settingsPayments.whatWeNeverDo")} icon="ShieldCheck" />
         <ul className="space-y-2.5">
           {[
             "We never ask for your PIN, your password or an OTP. Nobody from WomSakhi will.",

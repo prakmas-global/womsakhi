@@ -6,7 +6,7 @@ import { apiUpdateMeProfile } from "@/lib/member-api";
 import { useAction } from "@/lib/use-action";
 import * as Icons from "@/components/ux/icons";
 
-import { useI18n } from "@/i18n";
+import { useI18n, useT } from "@/i18n";
 import { LOCALES } from "@/i18n/locales";
 import { Btn, Pill } from "@/components/ux/kit";
 import { Card, SectionHead, SettingsPage } from "@/components/ux/settings/Frame";
@@ -23,6 +23,7 @@ import { Card, SectionHead, SettingsPage } from "@/components/ux/settings/Frame"
  * concerned.
  */
 export default function LanguageSettings() {
+  const tr = useT();
   const { locale, setLocale } = useI18n();
   const [picked, setPicked] = useState(locale);
   const [saved, setSaved] = useState(false);
@@ -52,25 +53,24 @@ export default function LanguageSettings() {
   return (
     <SettingsPage
       title="Language"
-      sub="Changes everything on screen, and the language Sakhi speaks and writes in."
+      sub={tr("settingsLanguage.changesEverythingOnScreenAndThe")}
       footer={
         <div className="flex items-center justify-between gap-4">
           <p className="text-xs"
              style={{ color: apply.error ? "var(--ux-orange-ink)" : saved ? "var(--ux-green-ink)" : "var(--ux-faint)" }}>
             {apply.error ? apply.error
               : saved ? "Saved. The app is now in your chosen language."
-              : picked !== locale ? "Not saved yet." : "This is your current language."}
+              : picked !== locale ? tr("settingsLanguage.notSavedYet")
+              : tr("settingsLanguage.thisIsYourCurrentLanguage")}
           </p>
           <Btn variant="primary" icon={apply.busy ? "Loader" : "Check"}
                disabled={apply.busy || (picked === locale && saved)}
-               onClick={() => void apply.run()}>
-            Use this language
-          </Btn>
+               onClick={() => void apply.run()}>{tr("settingsLanguage.useThisLanguage")}</Btn>
         </div>
       }
     >
       <Card>
-        <SectionHead title="Choose a language" sub={`${LOCALES.length} available`} />
+        <SectionHead title={tr("settingsLanguage.chooseALanguage")} sub={`${LOCALES.length} available`} />
         <div className="ux-deck grid grid-cols-2 gap-2.5">
           {LOCALES.map((l, i) => {
             const on = picked === l.code;
@@ -96,7 +96,7 @@ export default function LanguageSettings() {
                     {l.name}{l.dir === "rtl" ? " · right to left" : ""}
                   </span>
                 </span>
-                {!l.reviewed && <Pill tone="orange" size="sm">In progress</Pill>}
+                {!l.reviewed && <Pill tone="orange" size="sm">{tr("settingsLanguage.inProgress")}</Pill>}
                 {on && <Icons.Check className="ux-pop h-[18px] w-[18px] shrink-0" style={{ color: "var(--ux-brand)" }} strokeWidth={2.8} />}
               </button>
             );
@@ -105,7 +105,7 @@ export default function LanguageSettings() {
       </Card>
 
       <Card>
-        <SectionHead title="What this changes" icon="Info" />
+        <SectionHead title={tr("settingsLanguage.whatThisChanges")} icon="Info" />
         <ul className="space-y-2.5">
           {[
             "Every word on every screen.",
@@ -118,9 +118,7 @@ export default function LanguageSettings() {
             </li>
           ))}
         </ul>
-        <p className="mt-3.5 text-xs leading-relaxed" style={{ color: "var(--ux-muted)" }}>
-          Course videos and what other women have written stay in the language they were made in.
-        </p>
+        <p className="mt-3.5 text-xs leading-relaxed" style={{ color: "var(--ux-muted)" }}>{tr("settingsLanguage.courseVideosAndWhatOtherWomen")}</p>
       </Card>
     </SettingsPage>
   );

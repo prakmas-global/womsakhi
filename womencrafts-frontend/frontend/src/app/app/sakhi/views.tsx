@@ -19,7 +19,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import * as Icons from "@/components/ux/icons";
 
-import { useI18n, LOCALES } from "@/i18n";
+import { useI18n, LOCALES, useT } from "@/i18n";
 import { useAuth } from "@/context/AuthContext";
 import { HomeShell } from "@/components/ux/home/HomeShell";
 import { CAN, FOLLOW_UPS, MODE_PREFIX, STARTERS, WONT } from "@/components/ux/sakhi/prompts";
@@ -99,6 +99,7 @@ export function ConvBar({
   title: string; mode: string; locale: string; pinned: boolean;
   onRename: () => void; onPin: () => void; onShare: () => void;
 }) {
+  const tr = useT();
   const chip = "flex items-center gap-1.5 rounded-full px-2.5 py-1 text-2xs font-semibold";
   const chipStyle = { background: "var(--ux-surface-2)", border: "1px solid var(--ux-line)",
                       color: "var(--ux-muted)" } as const;
@@ -110,12 +111,13 @@ export function ConvBar({
       <span className={chip} style={chipStyle}><Icons.Zap className="h-[12px] w-[12px]" />{mode}</span>
       <span className={chip} style={chipStyle}><Icons.Globe className="h-[12px] w-[12px]" />{locale}</span>
       <span className="ms-auto flex gap-0.5">
-        <button type="button" onClick={onRename} title="Rename" aria-label="Rename this conversation"
+        <button type="button" onClick={onRename} title="Rename" aria-label={tr("sakhi.renameThisConversation")}
                 className={tool} style={{ color: "var(--ux-faint)" }}>
           <Icons.PenLine className="h-[15px] w-[15px]" />
         </button>
         <button type="button" onClick={onPin} title={pinned ? "Unpin" : "Pin"}
-                aria-label={pinned ? "Unpin this conversation" : "Pin this conversation"} aria-pressed={pinned}
+                aria-label={pinned ? tr("sakhi.unpinThisConversation")
+              : tr("sakhi.pinThisConversation")} aria-pressed={pinned}
                 className={tool} style={{ color: pinned ? "var(--ux-brand)" : "var(--ux-faint)" }}>
           <Icons.Pin className="h-[15px] w-[15px]" />
         </button>
@@ -148,6 +150,7 @@ export function Welcome({
   first: string; onPick: (q: string) => void; canVoice: boolean;
   children: React.ReactNode; switcher: React.ReactNode;
 }) {
+  const tr = useT();
   const greeting = useGreeting();
   return (
     <section className="relative overflow-hidden rounded-[20px] p-6 text-center sm:p-8"
@@ -163,9 +166,7 @@ export function Welcome({
             style={{ color: "var(--ux-ink)" }}>
           {greeting}, {first || "friend"}.<br />
           <span style={{ background: "linear-gradient(96deg, var(--ux-rib-2), var(--ux-rib-3))",
-                         WebkitBackgroundClip: "text", backgroundClip: "text", color: "transparent" }}>
-            What do you need today?
-          </span>
+                         WebkitBackgroundClip: "text", backgroundClip: "text", color: "transparent" }}>{tr("sakhi.whatDoYouNeedToday")}</span>
         </h2>
         <p className="mt-2 text-sm" style={{ color: "var(--ux-muted)" }}>
           Work, money, a course, or something you do not understand — ask{canVoice ? " or speak" : ""}.
@@ -178,9 +179,7 @@ export function Welcome({
         )}
 
         <p className="mb-3 mt-8 text-start text-2xs font-bold uppercase tracking-[0.18em]"
-           style={{ color: "var(--ux-faint)" }}>
-          Try asking
-        </p>
+           style={{ color: "var(--ux-faint)" }}>{tr("sakhi.tryAsking")}</p>
         <div className="grid grid-cols-1 gap-2.5 text-start sm:grid-cols-2">
           {STARTERS.map((s) => (
             <button key={s.title} type="button" onClick={() => onPick(s.ask)}
@@ -215,6 +214,7 @@ export function Voice({
   localeItems: { value: string; label: string; note?: string }[];
   showWords: boolean; onToggleWords: () => void; switcher: React.ReactNode;
 }) {
+  const tr = useT();
   const here = localeItems.find((l) => l.value === locale)?.label ?? "English";
   return (
     <section className="relative overflow-hidden rounded-[20px] p-8 text-center"
@@ -257,7 +257,8 @@ export function Voice({
                   className="ux-press flex min-h-[44px] items-center gap-2 rounded-full px-5 text-xsm font-bold"
                   style={{ background: "var(--ux-surface-2)", border: "1px solid var(--ux-line-strong)", color: "var(--ux-ink)" }}>
             <Ico name={showWords ? "EyeOff" : "Eye"} className="h-4 w-4" />
-            {showWords ? "Hide the words" : "Show the words"}
+            {showWords ? tr("sakhi.hideTheWords")
+              : tr("sakhi.showTheWords")}
           </button>
           <button type="button" onClick={onToggle}
                   className="ux-press flex min-h-[44px] items-center gap-2 rounded-full px-5 text-xsm font-bold"
@@ -270,8 +271,7 @@ export function Voice({
           <button type="button" onClick={onEnd}
                   className="ux-press flex min-h-[44px] items-center gap-2 rounded-full px-5 text-xsm font-bold"
                   style={{ background: "var(--ux-surface-2)", border: "1px solid var(--ux-line-strong)", color: "var(--ux-ink)" }}>
-            <Icons.X className="h-4 w-4" /> End voice
-          </button>
+            <Icons.X className="h-4 w-4" />{tr("sakhi.endVoice")}</button>
         </div>
       </div>
     </section>
@@ -292,6 +292,7 @@ export function Thread({
   votes: Record<number, "up" | "down">; setVote: (i: number, v: "up" | "down", id?: string) => void;
   onRetry: () => void; onFollowUp: (q: string) => void;
 }) {
+  const tr = useT();
   const lastAssistant = bubbles.map((b) => b.kind).lastIndexOf("assistant");
 
   return (
@@ -324,8 +325,7 @@ export function Thread({
                      style={{ background: "var(--ux-tint-pink)", border: "1px solid var(--ux-pink)" }}>
               <p className="flex items-center gap-2 text-xs font-bold uppercase tracking-[0.12em]"
                  style={{ color: "var(--ux-pink-ink)" }}>
-                <Icons.LifeBuoy className="h-[15px] w-[15px]" /> Help, right now
-              </p>
+                <Icons.LifeBuoy className="h-[15px] w-[15px]" />{tr("sakhi.helpRightNow")}</p>
               <p className="mt-2 text-sm leading-relaxed" style={{ color: "var(--ux-ink)" }}>{b.text}</p>
               <ul className="mt-3 space-y-2">
                 {b.helplines.map((h) => (
@@ -446,6 +446,7 @@ export function SakhiRail({
   openConversation: (id: string) => void; remove: (id: string) => void;
   togglePin: (id: string) => void; current: string | null;
 }) {
+  const tr = useT();
   const card = "ux-sq rounded-[16px] p-4";
   const cardStyle = { background: "var(--ux-surface)", border: "1px solid var(--ux-line)",
                       boxShadow: "var(--ux-shadow-card)" } as const;
@@ -454,9 +455,7 @@ export function SakhiRail({
     <div className="sticky top-4 flex flex-col gap-4">
       <section className={card} style={cardStyle}>
         <h3 className="mb-3 flex items-center gap-2 text-sm font-bold" style={{ color: "var(--ux-ink)" }}>
-          <Icons.Sparkles className="h-[15px] w-[15px]" style={{ color: "var(--ux-brand)" }} />
-          What she can do
-        </h3>
+          <Icons.Sparkles className="h-[15px] w-[15px]" style={{ color: "var(--ux-brand)" }} />{tr("sakhi.whatSheCanDo")}</h3>
         <ul className="space-y-2.5">
           {CAN.map((c) => (
             <li key={c.text} className="flex gap-2.5 text-xsm leading-snug" style={{ color: "var(--ux-muted)" }}>
@@ -469,9 +468,7 @@ export function SakhiRail({
 
       <section className={card} style={cardStyle}>
         <h3 className="mb-3 flex items-center gap-2 text-sm font-bold" style={{ color: "var(--ux-ink)" }}>
-          <Icons.ShieldCheck className="h-[15px] w-[15px]" style={{ color: "var(--ux-pink-ink)" }} />
-          What she will not do
-        </h3>
+          <Icons.ShieldCheck className="h-[15px] w-[15px]" style={{ color: "var(--ux-pink-ink)" }} />{tr("sakhi.whatSheWillNotDo")}</h3>
         <ul className="space-y-2.5">
           {WONT.map((w) => (
             <li key={w} className="flex gap-2.5 text-xsm leading-snug" style={{ color: "var(--ux-muted)" }}>
@@ -510,13 +507,14 @@ export function SakhiRail({
                style={{ background: "var(--ux-surface-2)", border: "1px solid var(--ux-line)" }}>
           <Icons.Search className="h-[14px] w-[14px] shrink-0" style={{ color: "var(--ux-faint)" }} />
           <input value={search} onChange={(e) => setSearch(e.target.value)}
-                 placeholder="Search your chats" aria-label="Search your conversations"
+                 placeholder={tr("sakhi.searchYourChats")} aria-label={tr("sakhi.searchYourConversations")}
                  className="w-full bg-transparent text-xsm outline-none" style={{ color: "var(--ux-ink)" }} />
         </label>
 
         {grouped.length === 0 ? (
           <p className="py-3 text-xsm" style={{ color: "var(--ux-muted)" }}>
-            {search ? "Nothing matches that." : "Your conversations will be listed here."}
+            {search ? tr("sakhi.nothingMatchesThat")
+              : tr("sakhi.yourConversationsWillBeListedHere")}
           </p>
         ) : (
           <div className="-me-1 max-h-[340px] space-y-1 overflow-y-auto pe-1"

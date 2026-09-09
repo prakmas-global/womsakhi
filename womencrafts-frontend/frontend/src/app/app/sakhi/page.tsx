@@ -5,7 +5,7 @@ import { COPY } from "@/components/ux/copy";
 import Link from "next/link";
 import * as Icons from "@/components/ux/icons";
 
-import { useI18n, LOCALES } from "@/i18n";
+import { useI18n, LOCALES, useT } from "@/i18n";
 import { useAuth } from "@/context/AuthContext";
 import { HomeShell } from "@/components/ux/home/HomeShell";
 import { CAN, FOLLOW_UPS, MODE_PREFIX, STARTERS, WONT } from "@/components/ux/sakhi/prompts";
@@ -64,6 +64,7 @@ import {
 
 
 export default function SakhiPage() {
+  const tr = useT();
   const { locale, setLocale } = useI18n();
   const { user } = useAuth();
   const first = (user?.full_name || "").trim().split(" ")[0];
@@ -411,10 +412,8 @@ export default function SakhiPage() {
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img loading="lazy" decoding="async" src="/sakhi-face.webp" alt="" className="h-[42px] w-[42px] rounded-full object-cover" />
           <div className="min-w-0 flex-1">
-            <h1 className="text-xl font-bold tracking-tight" style={{ color: "var(--ux-ink)" }}>Ask Sakhi</h1>
-            <p className="text-xsm" style={{ color: "var(--ux-muted)" }}>
-              Tell her what you need, in your own words.
-            </p>
+            <h1 className="text-xl font-bold tracking-tight" style={{ color: "var(--ux-ink)" }}>{tr("sakhi.askSakhi")}</h1>
+            <p className="text-xsm" style={{ color: "var(--ux-muted)" }}>{tr("sakhi.tellHerWhatYouNeedIn")}</p>
           </div>
           <div className="flex gap-2">
             <Link href="/app/saved"
@@ -426,16 +425,13 @@ export default function SakhiPage() {
             <button type="button" onClick={startNew}
                     className="ux-press flex min-h-[40px] items-center gap-2 rounded-[12px] px-3.5 text-xsm font-bold"
                     style={{ background: "var(--ux-surface)", border: "1px solid var(--ux-line-strong)", color: "var(--ux-ink)" }}>
-              <Icons.Plus className="h-4 w-4" /> New conversation
-            </button>
+              <Icons.Plus className="h-4 w-4" />{tr("sakhi.newConversation")}</button>
           </div>
         </header>
 
         {!available && (
           <p className="rounded-[12px] p-3.5 text-xsm"
-             style={{ background: "var(--ux-tint-amber)", color: "var(--ux-amber-ink)" }}>
-            Sakhi is resting right now. Everything else in the app still works.
-          </p>
+             style={{ background: "var(--ux-tint-amber)", color: "var(--ux-amber-ink)" }}>{tr("sakhi.sakhiIsRestingRightNowEverything")}</p>
         )}
 
         {voiceMode ? (
@@ -452,7 +448,7 @@ export default function SakhiPage() {
               value={draft} onChange={setDraft} onSend={() => ask(draft)}
               onMic={() => listen(false)} listening={listening} busy={busy}
               mode={mode} setMode={setMode} locale={locale} setLocale={setLocale} locales={localeItems}
-              placeholder="Ask anything, or say what you need help with" canVoice={canVoice}
+              placeholder={tr("sakhi.askAnythingOrSayWhatYou")} canVoice={canVoice}
               file={file} onFile={setFile} onClearFile={() => setFile(null)}
             />
             <Disclosure text={disclosure} />
@@ -462,7 +458,8 @@ export default function SakhiPage() {
             <div className="pb-1">{switcher}</div>
             <ConvBar
               title={history.find((c) => c.id === conversationId)?.title || "New conversation"}
-              mode={mode === "steps" ? "Step by step" : "Quick answer"}
+              mode={mode === "steps" ? tr("sakhi.stepByStep")
+              : tr("sakhi.quickAnswer")}
               locale={localeItems.find((l) => l.value === locale)?.label ?? "English"}
               pinned={!!history.find((c) => c.id === conversationId)?.pinned}
               onRename={rename} onPin={() => conversationId && togglePin(conversationId)} onShare={share}
@@ -494,7 +491,7 @@ export default function SakhiPage() {
                 value={draft} onChange={setDraft} onSend={() => ask(draft)}
                 onMic={() => listen(false)} listening={listening} busy={busy}
                 mode={mode} setMode={setMode} locale={locale} setLocale={setLocale} locales={localeItems}
-                placeholder="Ask a follow-up" canVoice={canVoice}
+                placeholder={tr("sakhi.askAFollowUp")} canVoice={canVoice}
                 file={file} onFile={setFile} onClearFile={() => setFile(null)}
               />
               <Disclosure text={disclosure} />

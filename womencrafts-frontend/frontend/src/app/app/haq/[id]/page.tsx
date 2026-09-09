@@ -11,6 +11,7 @@ import {
   HAQ, PAPERS, STATUS_LABEL, STATUS_TONE, type Paper,
 } from "@/components/ux/haq/data";
 import { ClaimSteps, CompanionCard, Countdown, useCompanionsFor } from "@/components/ux/haq/parts";
+import { useT } from "@/i18n";
 
 /**
  * One benefit, and the exact next thing to do about it.
@@ -30,6 +31,7 @@ const OFFICE_FOR = (needs: string[]) =>
   : "CSC on the main road";
 
 export default function HaqDetail({ params }: { params: Promise<{ id: string }> }) {
+  const tr = useT();
   const { id } = use(params);
   const router = useRouter();
 
@@ -59,9 +61,9 @@ export default function HaqDetail({ params }: { params: Promise<{ id: string }> 
         <Card>
           <EmptyState
             icon="SearchX"
-            title="That is not one of yours"
+            title={tr("haq.thatIsNotOneOfYours")}
             body="This benefit is not in your list. It may have been renamed, or the link may be old."
-            action={<Btn size="sm" href="/app/haq">Back to Haq</Btn>}
+            action={<Btn size="sm" href="/app/haq">{tr("haq.backToHaq")}</Btn>}
           />
         </Card>
       </HomeShell>
@@ -83,8 +85,7 @@ export default function HaqDetail({ params }: { params: Promise<{ id: string }> 
         <Link href={"/app/haq"}
                 className="ux-press inline-flex w-fit items-center gap-1.5 text-xsm font-semibold"
                 style={{ color: v("--ux-muted") }}>
-          <I name="ArrowLeft" className="h-[15px] w-[15px]" /> All of your Haq
-        </Link>
+          <I name="ArrowLeft" className="h-[15px] w-[15px]" />{tr("haq.allOfYourHaq")}</Link>
 
         {/* Header */}
         <Card pad={0} style={{ overflow: "hidden" }}>
@@ -122,7 +123,8 @@ export default function HaqDetail({ params }: { params: Promise<{ id: string }> 
               <div className="min-w-0 flex-1">
                 <p className="text-2xs font-extrabold uppercase tracking-[0.14em]"
                    style={{ color: v(tone.ink) }}>
-                  {h.status === "stopped" ? "Why it stopped" : "What has to happen"}
+                  {h.status === "stopped" ? tr("haq.whyItStopped")
+              : tr("haq.whatHasToHappen")}
                 </p>
                 <p className="mt-1.5 text-base font-bold" style={{ color: v("--ux-ink") }}>
                   {h.action ?? "Get it started again"}
@@ -137,16 +139,10 @@ export default function HaqDetail({ params }: { params: Promise<{ id: string }> 
 
             <div className="mt-4 flex flex-wrap gap-2">
               {h.online
-                ? <Btn icon="Smartphone" onClick={() => setNote("Opening the government page. Your papers are ready to attach.")}>
-                    Do it on the phone
-                  </Btn>
-                : <Btn icon="MapPin" onClick={() => setNote(`This one has to be done at the ${office.toLowerCase()}.`)}>
-                    Where to go
-                  </Btn>}
+                ? <Btn icon="Smartphone" onClick={() => setNote("Opening the government page. Your papers are ready to attach.")}>{tr("haq.doItOnThePhone")}</Btn>
+                : <Btn icon="MapPin" onClick={() => setNote(`This one has to be done at the ${office.toLowerCase()}.`)}>{tr("haq.whereToGo")}</Btn>}
               <Btn variant="outline" icon="Bell"
-                   onClick={() => setNote("We will remind you three days before, and again the day before.")}>
-                Remind me
-              </Btn>
+                   onClick={() => setNote("We will remind you three days before, and again the day before.")}>{tr("haq.remindMe")}</Btn>
             </div>
           </Card>
         )}
@@ -156,9 +152,7 @@ export default function HaqDetail({ params }: { params: Promise<{ id: string }> 
             <div className="flex items-start gap-3">
               <I name="Info" className="mt-[2px] h-[16px] w-[16px] shrink-0" style={{ color: v("--ux-muted") }} />
               <div>
-                <p className="text-xsm font-bold" style={{ color: v("--ux-ink") }}>
-                  Not being decided right now
-                </p>
+                <p className="text-xsm font-bold" style={{ color: v("--ux-ink") }}>{tr("haq.notBeingDecidedRightNow")}</p>
                 <p className="mt-1 text-xsm leading-relaxed" style={{ color: v("--ux-ink-2") }}>
                   {h.openNote}
                 </p>
@@ -170,7 +164,7 @@ export default function HaqDetail({ params }: { params: Promise<{ id: string }> 
         {/* Papers */}
         <div>
           <SectionHead
-            title="What it needs"
+            title={tr("haq.whatItNeeds")}
             sub={blocking.length ? `${blocking.length} still to sort out` : "Everything is in place"}
             icon="FileText"
             action="All your papers"
@@ -194,7 +188,7 @@ export default function HaqDetail({ params }: { params: Promise<{ id: string }> 
                   </p>
                 </div>
                 {p.state !== "held" && (
-                  <Btn size="sm" variant="outline" href="/app/haq/papers">Sort it</Btn>
+                  <Btn size="sm" variant="outline" href="/app/haq/papers">{tr("haq.sortIt")}</Btn>
                 )}
               </div>
             ))}
@@ -205,13 +199,12 @@ export default function HaqDetail({ params }: { params: Promise<{ id: string }> 
         {!h.online && (
           <div>
             <SectionHead
-              title="Do not go alone"
+              title={tr("haq.doNotGoAlone")}
               sub={`Women in your circle who have been to the ${office.toLowerCase()}`}
               icon="Users"
             />
             <Card pad={16} style={{ background: v("--ux-brand-tint"), borderColor: "transparent" }}>
-              <p className="text-xsm leading-relaxed" style={{ color: v("--ux-ink-2") }}>
-                Filling the form together helps. <b>Going with someone helps almost twice as much</b> —
+              <p className="text-xsm leading-relaxed" style={{ color: v("--ux-ink-2") }}>{tr("haq.fillingTheFormTogetherHelps")}<b>{tr("haq.goingWithSomeoneHelpsAlmostTwice")}</b> —
                 and it helps most for women who find it hardest to travel alone.
               </p>
             </Card>
@@ -224,7 +217,7 @@ export default function HaqDetail({ params }: { params: Promise<{ id: string }> 
               <Btn icon="Send" disabled={!companion || asked} onClick={ask}>
                 {asked ? "Asked" : "Ask her to come with me"}
               </Btn>
-              {asked && <Pill tone="green">She has been asked</Pill>}
+              {asked && <Pill tone="green">{tr("haq.sheHasBeenAsked")}</Pill>}
             </div>
           </div>
         )}

@@ -13,6 +13,7 @@ import { apiAdvanceOrder, apiListings, apiShopOrders,
 import { apiWallet } from "@/lib/wallet-api";
 import { Board, Feed, isOpen, Ledger, Magazine, rupees,
          type Acts, type EarnData } from "./earn-views";
+import { useT } from "@/i18n";
 
 /**
  * Earn — one screen, four ways of seeing the same work.
@@ -39,6 +40,7 @@ type ViewId = (typeof VIEWS)[number]["id"];
 const KEY = "womsakhi.earn.view";
 
 export default function EarnPage() {
+  const tr = useT();
   const [view, setView] = useState<ViewId>("ledger");
   const [busy, setBusy] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -156,7 +158,8 @@ export default function EarnPage() {
             </h1>
             <p className="mt-1.5 text-sm" style={{ color: "var(--ux-ink-2)" }}>
               {rupees(d.balanceMinor)} is yours to take out now.
-              {live > 0 ? ` ${live} ${live === 1 ? "opening is" : "openings are"} still open to you.` : ""}
+              {live > 0 ? ` ${live} ${live === 1 ? tr("opportunities.openingIs")
+              : tr("opportunities.openingsAre")} still open to you.` : ""}
             </p>
           </div>
 

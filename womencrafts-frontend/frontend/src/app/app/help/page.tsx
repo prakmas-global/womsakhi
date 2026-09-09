@@ -8,6 +8,7 @@ import { HomeShell } from "@/components/ux/home/HomeShell";
 import { useResource } from "@/lib/use-resource";
 import { apiHelplines, apiRaiseAlert, type Helpline } from "@/lib/safety-api";
 import { apiSendMessage } from "@/lib/member-api";
+import { useT } from "@/i18n";
 
 /**
  * Help.
@@ -102,6 +103,7 @@ function Duo({ name, className }: { name: string; className?: string }) {
 }
 
 export default function HelpPage() {
+  const tr = useT();
   const { data: helplines } = useResource(
     useCallback(() => apiHelplines(), []), [] as Helpline[]);
 
@@ -139,9 +141,7 @@ export default function HelpPage() {
           <p className="text-2xs font-extrabold uppercase tracking-[0.2em]"
              style={{ color: "var(--ux-brand)" }}>Help</p>
           <h1 className="mt-2 text-[clamp(1.625rem,3.6vw,2.5rem)] font-extrabold leading-[1.06] tracking-[-0.04em]"
-              style={{ color: "var(--ux-ink)" }}>
-            What has gone wrong?
-          </h1>
+              style={{ color: "var(--ux-ink)" }}>{tr("help.whatHasGoneWrong")}</h1>
           <p className="mt-2.5 max-w-[56ch] text-sm leading-relaxed" style={{ color: "var(--ux-ink-2)" }}>
             Ask in your own words, in any language — or pick what it is about. If you would rather
             talk to a person, that is on this page too.
@@ -152,7 +152,7 @@ export default function HelpPage() {
 
         <div className="grid items-start gap-[24px] xl:grid-cols-[minmax(0,1fr)_320px]">
           <main className="min-w-0">
-        <Head>What is it about</Head>
+        <Head>{tr("help.whatIsItAbout")}</Head>
         <div className="mb-7 grid gap-3" style={{ gridTemplateColumns: "repeat(auto-fit, minmax(232px, 1fr))" }}>
           {TOPICS.map((t) => (
             <Link key={t.id} href={t.href}
@@ -186,9 +186,8 @@ export default function HelpPage() {
 
         <div className="ux-lit mb-7 overflow-hidden rounded-[20px]" style={{ border: "1px solid var(--ux-line)" }}>
           {rows.length === 0 ? (
-            <div className="px-[20px] py-8 text-center text-xsm" style={{ color: "var(--ux-muted)" }}>
-              No answer here for that yet — a person can help.<br />
-              Use <b style={{ color: "var(--ux-ink)" }}>Message her</b> below and it goes straight to the team.
+            <div className="px-[20px] py-8 text-center text-xsm" style={{ color: "var(--ux-muted)" }}>{tr("help.noAnswerHereForThatYet")}<br />
+              Use <b style={{ color: "var(--ux-ink)" }}>{tr("help.messageHer")}</b> below and it goes straight to the team.
             </div>
           ) : rows.map((x, i) => {
             const on = open === x.id;
@@ -210,9 +209,7 @@ export default function HelpPage() {
                     <div className="mt-3 flex flex-wrap items-center gap-2 text-xs"
                          style={{ color: "var(--ux-muted)" }}>
                       {helped.has(x.id) ? "Good. Glad that sorted it." : (
-                        <>
-                          Did this help?
-                          <button type="button" onClick={() => setHelped((s) => new Set(s).add(x.id))}
+                        <>{tr("help.didThisHelp")}<button type="button" onClick={() => setHelped((s) => new Set(s).add(x.id))}
                                   className="ux-press min-h-[34px] rounded-[8px] px-3 text-xs font-bold"
                                   style={{ border: "1px solid var(--ux-line-strong)", color: "var(--ux-ink-2)" }}>
                             Yes
@@ -220,9 +217,7 @@ export default function HelpPage() {
                           <button type="button"
                                   onClick={() => personRef.current?.scrollIntoView({ behavior: "smooth", block: "center" })}
                                   className="ux-press min-h-[34px] rounded-[8px] px-3 text-xs font-bold"
-                                  style={{ border: "1px solid var(--ux-line-strong)", color: "var(--ux-ink-2)" }}>
-                            No, talk to a person
-                          </button>
+                                  style={{ border: "1px solid var(--ux-line-strong)", color: "var(--ux-ink-2)" }}>{tr("help.noTalkToAPerson")}</button>
                         </>
                       )}
                     </div>
@@ -274,6 +269,7 @@ function Mark({ text, q }: { text: string; q: string }) {
 /* ── the alert ──────────────────────────────────────────────────────────── */
 
 function Alert() {
+  const tr = useT();
   const [held, setHeld] = useState(0);
   const [sent, setSent] = useState(false);
   const [failed, setFailed] = useState(false);
@@ -325,20 +321,21 @@ function Alert() {
       </span>
       <div className="min-w-0 flex-1">
         <p className="text-base font-extrabold tracking-[-0.01em]" style={{ color: "var(--ux-ink)" }}>
-          {sent ? (failed ? "Could not send — call 181" : "Sent. Your people know.") : "Something is happening right now"}
+          {sent ? (failed ? tr("help.couldNotSendCall")
+              : tr("help.sentYourPeopleKnow")) : "Something is happening right now"}
         </p>
         <p className="mt-0.5 text-xsm" style={{ color: "var(--ux-ink-2)" }}>
           {sent
             ? (failed
-                ? "The alert did not reach us. The helplines below work without credit."
-                : "They can see where you are while this alert is open.")
+                ? tr("help.theAlertDidNotReachUs")
+              : tr("help.theyCanSeeWhereYouAre"))
             : "Your people are told where you are. Nothing is sent until you finish holding."}
         </p>
       </div>
       <button type="button" disabled={sent}
               onPointerDown={(e) => { e.preventDefault(); start(); }}
               onPointerUp={stop} onPointerLeave={stop} onPointerCancel={stop}
-              aria-label="Press and hold for one and a half seconds to send an alert"
+              aria-label={tr("help.pressAndHoldForOneAnd")}
               className="relative flex min-h-[50px] shrink-0 items-center gap-2 overflow-hidden rounded-[12px] px-6 text-sm font-extrabold tracking-[-0.005em] transition-transform active:scale-[0.985]"
               style={{ background: sent && !failed
                          ? "var(--ux-green-ink)"
@@ -349,7 +346,8 @@ function Alert() {
         <i className="absolute inset-y-0 start-0 block"
            style={{ width: `${held * 100}%`, background: "rgba(255,255,255,0.28)" }} />
         <span className="relative">
-          {sent ? (failed ? "Try 181" : "Sent") : held > 0 ? "Keep holding…" : "Hold to send an alert"}
+          {sent ? (failed ? "Try 181" : "Sent") : held > 0 ? tr("help.keepHolding")
+              : tr("help.holdToSendAnAlert")}
         </span>
       </button>
     </section>
@@ -361,6 +359,7 @@ function Alert() {
 function Ask({
   value, onChange, inputRef,
 }: { value: string; onChange: (v: string) => void; inputRef: React.RefObject<HTMLInputElement | null> }) {
+  const tr = useT();
   const [hearing, setHearing] = useState(false);
   const [speech, setSpeech] = useState(false);
 
@@ -396,12 +395,12 @@ function Ask({
            style={{ border: "1px solid var(--ux-line-strong)" }}>
         <Icons.Search className="h-[19px] w-[19px] shrink-0" strokeWidth={2.2} style={{ color: "var(--ux-faint)" }} />
         <input ref={inputRef} value={value} onChange={(e) => onChange(e.target.value)}
-               placeholder="My money has not come · मेरा पैसा नहीं आया"
-               aria-label="Ask what has gone wrong"
+               placeholder={tr("help.myMoneyHasNotCome")}
+               aria-label={tr("help.askWhatHasGoneWrong")}
                className="min-w-0 flex-1 border-0 bg-transparent py-3 text-base outline-none"
                style={{ color: "var(--ux-ink)" }} />
         {speech && (
-          <button type="button" onClick={listen} aria-label="Ask by speaking"
+          <button type="button" onClick={listen} aria-label={tr("help.askBySpeaking")}
                   className="ux-press grid h-[46px] w-[46px] shrink-0 place-items-center rounded-[12px] transition-transform hover:-translate-y-px"
                   style={hearing
                     ? { background: "linear-gradient(96deg, var(--ux-rib-2), var(--ux-rib-3))", color: "var(--ux-on-brand)" }
@@ -413,8 +412,8 @@ function Ask({
       </div>
       <p className="mb-6 ms-0.5 text-xs" style={{ color: "var(--ux-faint)" }}>
         {speech
-          ? "You can speak instead of typing. Hindi, Telugu, Tamil, Bangla and English all work."
-          : "Type in any language — Hindi, Telugu, Tamil, Bangla and English all work."}
+          ? tr("help.youCanSpeakInsteadOfTyping")
+              : tr("help.typeInAnyLanguageHindiTelugu")}
       </p>
     </>
   );
@@ -423,6 +422,7 @@ function Ask({
 /* ── a person ───────────────────────────────────────────────────────────── */
 
 function Person({ innerRef }: { innerRef: React.RefObject<HTMLDivElement | null> }) {
+  const tr = useT();
   const [sent, setSent] = useState(false);
   const [busy, setBusy] = useState(false);
   const [failed, setFailed] = useState(false);
@@ -446,17 +446,16 @@ function Person({ innerRef }: { innerRef: React.RefObject<HTMLDivElement | null>
             style={{ background: "radial-gradient(circle, color-mix(in srgb, var(--ux-brand) 16%, transparent), transparent 70%)" }} />
       <div className="relative min-w-0 flex-1">
         <h2 className="text-base font-extrabold" style={{ color: "var(--ux-ink)" }}>
-          {sent ? "She has your message." : "Still stuck? Talk to a person."}
+          {sent ? tr("help.sheHasYourMessage")
+              : tr("help.stillStuckTalkToAPerson")}
         </h2>
         <p className="mt-1 text-xsm" style={{ color: "var(--ux-ink-2)" }}>
           {sent
-            ? "Someone from the team will reply in Messages. You do not have to wait here."
-            : "Someone answers in about 4 minutes, 9 AM to 9 PM. She speaks Hindi and Telugu."}
+            ? tr("help.someoneFromTheTeamWillReply")
+              : tr("help.someoneAnswersInAboutMinutesAm")}
         </p>
         {failed && (
-          <p className="mt-1 text-xsm font-semibold" style={{ color: "var(--ux-danger-solid)" }}>
-            That did not send. Try again, or call 181 — it is free.
-          </p>
+          <p className="mt-1 text-xsm font-semibold" style={{ color: "var(--ux-danger-solid)" }}>{tr("help.thatDidNotSendTryAgain")}</p>
         )}
       </div>
       <div className="relative flex flex-wrap gap-2">
@@ -464,8 +463,7 @@ function Person({ innerRef }: { innerRef: React.RefObject<HTMLDivElement | null>
           <Link href="/app/messages"
                 className="ux-press flex min-h-[48px] items-center gap-2 rounded-[12px] px-5 text-xsm font-bold"
                 style={{ background: "linear-gradient(96deg, var(--ux-rib-2), var(--ux-rib-3))",
-                         color: "var(--ux-on-brand)" }}>
-            Open Messages <Icons.ArrowRight className="h-4 w-4" />
+                         color: "var(--ux-on-brand)" }}>{tr("help.openMessages")}<Icons.ArrowRight className="h-4 w-4" />
           </Link>
         ) : (
           <button type="button" onClick={message} disabled={busy}
@@ -490,24 +488,18 @@ function Person({ innerRef }: { innerRef: React.RefObject<HTMLDivElement | null>
 /* ── the rail cards ─────────────────────────────────────────────────────── */
 
 function Numbers({ lines }: { lines: Helpline[] }) {
+  const tr = useT();
   // Four is what fits without scrolling; the rest live on the safety screen.
   const shown = lines.slice(0, 4);
   return (
     <section className="ux-lit rounded-[20px] p-[20px]" style={{ border: "1px solid var(--ux-line)" }}>
       <h2 className="flex items-center gap-2 text-sm font-extrabold" style={{ color: "var(--ux-ink)" }}>
-        <Icons.Phone className="h-[17px] w-[17px]" style={{ color: "var(--ux-brand)" }} />
-        Numbers that always work
-      </h2>
-      <p className="mb-3 mt-1 flex flex-wrap items-center gap-2 text-xsm" style={{ color: "var(--ux-muted)" }}>
-        Free from any phone.
-        <span className="rounded-full px-2.5 py-1 text-2xs font-extrabold uppercase tracking-[0.04em]"
-              style={{ background: "var(--ux-tint-green)", color: "var(--ux-green-ink)" }}>
-          No credit needed
-        </span>
+        <Icons.Phone className="h-[17px] w-[17px]" style={{ color: "var(--ux-brand)" }} />{tr("help.numbersThatAlwaysWork")}</h2>
+      <p className="mb-3 mt-1 flex flex-wrap items-center gap-2 text-xsm" style={{ color: "var(--ux-muted)" }}>{tr("help.freeFromAnyPhone")}<span className="rounded-full px-2.5 py-1 text-2xs font-extrabold uppercase tracking-[0.04em]"
+              style={{ background: "var(--ux-tint-green)", color: "var(--ux-green-ink)" }}>{tr("help.noCreditNeeded")}</span>
       </p>
       {shown.length === 0 ? (
-        <p className="text-xsm" style={{ color: "var(--ux-muted)" }}>
-          Could not load these. <a href="tel:181" style={{ color: "var(--ux-brand)" }}>Call 181</a> — it always works.
+        <p className="text-xsm" style={{ color: "var(--ux-muted)" }}>{tr("help.couldNotLoadThese")}<a href="tel:181" style={{ color: "var(--ux-brand)" }}>{tr("help.call")}</a> — it always works.
         </p>
       ) : shown.map((h) => (
         <div key={h.number}
@@ -531,26 +523,22 @@ function Numbers({ lines }: { lines: Helpline[] }) {
 }
 
 function LeaveFast({ onLeave }: { onLeave: () => void }) {
+  const tr = useT();
   return (
     <section className="rounded-[20px] p-[20px]"
              style={{ background: "var(--ux-surface-2)", border: "1px dashed var(--ux-line-strong)" }}>
       <h2 className="flex items-center gap-2 text-sm font-extrabold" style={{ color: "var(--ux-ink)" }}>
-        <Icons.LogOut className="h-[17px] w-[17px]" style={{ color: "var(--ux-faint)" }} />
-        Leave this page fast
-      </h2>
-      <p className="mt-1 text-xsm leading-relaxed" style={{ color: "var(--ux-muted)" }}>
-        If someone walks in, this turns into a weather page straight away. Press Escape to come back.
-      </p>
+        <Icons.LogOut className="h-[17px] w-[17px]" style={{ color: "var(--ux-faint)" }} />{tr("help.leaveThisPageFast")}</h2>
+      <p className="mt-1 text-xsm leading-relaxed" style={{ color: "var(--ux-muted)" }}>{tr("help.ifSomeoneWalksInThisTurns")}</p>
       <button type="button" onClick={onLeave}
               className="ux-press mt-3 min-h-[44px] w-full rounded-[12px] text-xsm font-bold transition-colors"
-              style={{ border: "1px solid var(--ux-line-strong)", color: "var(--ux-ink-2)" }}>
-        Show the weather instead
-      </button>
+              style={{ border: "1px solid var(--ux-line-strong)", color: "var(--ux-ink-2)" }}>{tr("help.showTheWeatherInstead")}</button>
     </section>
   );
 }
 
 function Never() {
+  const tr = useT();
   const lines = [
     "We never ask for an OTP or your password.",
     "We never show your number to a buyer or an employer.",
@@ -559,9 +547,7 @@ function Never() {
   return (
     <section className="ux-lit rounded-[20px] p-[20px]" style={{ border: "1px solid var(--ux-line)" }}>
       <h2 className="mb-3 flex items-center gap-2 text-sm font-extrabold" style={{ color: "var(--ux-ink)" }}>
-        <Icons.ShieldCheck className="h-[17px] w-[17px]" style={{ color: "var(--ux-brand)" }} />
-        What we never do
-      </h2>
+        <Icons.ShieldCheck className="h-[17px] w-[17px]" style={{ color: "var(--ux-brand)" }} />{tr("help.whatWeNeverDo")}</h2>
       {lines.map((l) => (
         <p key={l} className="mb-2.5 flex gap-2.5 text-xsm leading-relaxed" style={{ color: "var(--ux-ink-2)" }}>
           <Icons.Check className="mt-0.5 h-[15px] w-[15px] shrink-0" strokeWidth={2.6}
@@ -580,15 +566,14 @@ function Never() {
  * different app, not like this one wearing a hat.
  */
 function Veil({ onBack }: { onBack: () => void }) {
+  const tr = useT();
   return (
     <div className="fixed inset-0 z-[100] overflow-auto p-10"
          style={{ background: "#ffffff", color: "#222" }}>
-      <h2 className="m-0 text-xl font-semibold">Weather — Hyderabad</h2>
+      <h2 className="m-0 text-xl font-semibold">{tr("help.weatherHyderabad")}</h2>
       <p className="mt-3 text-base">32°C, partly cloudy. Light rain expected after 6 PM.</p>
-      <p className="mt-1 text-base">Tomorrow 29°C · Wednesday 31°C · Thursday 30°C</p>
-      <button type="button" onClick={onBack} className="mt-6 text-xs underline" style={{ color: "#888" }}>
-        Press Escape to go back.
-      </button>
+      <p className="mt-1 text-base">{tr("help.tomorrowCWednesdayCThursdayC")}</p>
+      <button type="button" onClick={onBack} className="mt-6 text-xs underline" style={{ color: "#888" }}>{tr("help.pressEscapeToGoBack")}</button>
     </div>
   );
 }

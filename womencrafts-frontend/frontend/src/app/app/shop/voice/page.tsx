@@ -7,6 +7,7 @@ import { HomeShell } from "@/components/ux/home/HomeShell";
 import { Back, Btn, Card, I, v } from "@/components/ux/kit";
 import { formatRupees } from "@/components/ux/kit";
 import { VOICE_LANGS, VOICE_SAMPLES } from "@/components/ux/eight/data";
+import { useT } from "@/i18n";
 
 /**
  * Say it, don't type it.
@@ -32,6 +33,7 @@ import { VOICE_LANGS, VOICE_SAMPLES } from "@/components/ux/eight/data";
 type Phase = "idle" | "listening" | "heard";
 
 export default function VoicePage() {
+  const tr = useT();
   const router = useRouter();
   const [phase, setPhase] = useState<Phase>("idle");
   const [lang, setLang] = useState("Hindi");
@@ -72,22 +74,19 @@ export default function VoicePage() {
   return (
     <HomeShell active="/app/shop">
       <div className="flex flex-col gap-5">
-        <Back to="/app/shop" label="Back to your shops" />
+        <Back to="/app/shop" label={tr("shopVoice.backToYourShops")} />
 
         {/* The whole screen is the button, until she has spoken. */}
         <Card pad={0} style={{ overflow: "hidden" }}>
           <div className="flex flex-col items-center px-6 py-10 text-center"
                style={{ background: `linear-gradient(160deg, ${v("--ux-brand-tint")}, ${v("--ux-surface")})` }}>
-            <p className="text-2xs font-extrabold uppercase tracking-[0.2em]" style={{ color: v("--ux-brand") }}>
-              Add something to sell
-            </p>
+            <p className="text-2xs font-extrabold uppercase tracking-[0.2em]" style={{ color: v("--ux-brand") }}>{tr("shopVoice.addSomethingToSell")}</p>
             <h1 className="mt-2.5 max-w-[16ch] text-[clamp(1.625rem,4vw,2.375rem)] font-extrabold leading-[1.08] tracking-[-0.035em]"
                 style={{ color: v("--ux-ink") }}>
-              {phase === "listening" ? "Go on, I am listening" : "Just say what you sell"}
+              {phase === "listening" ? tr("shopVoice.goOnIAmListening")
+              : tr("shopVoice.justSayWhatYouSell")}
             </h1>
-            <p className="mt-2.5 max-w-[34ch] text-sm leading-relaxed" style={{ color: v("--ux-muted") }}>
-              In your own words, in your own language. Say the thing and the price — that is enough.
-            </p>
+            <p className="mt-2.5 max-w-[34ch] text-sm leading-relaxed" style={{ color: v("--ux-muted") }}>{tr("shopVoice.inYourOwnWordsInYour")}</p>
 
             {/* Waveform */}
             <div className="mt-7 flex h-[70px] items-center justify-center gap-[4px]">
@@ -139,9 +138,7 @@ export default function VoicePage() {
           <>
             {/* Her own words, quoted back. This is the trust move. */}
             <Card pad={20}>
-              <p className="text-2xs font-extrabold uppercase tracking-[0.14em]" style={{ color: v("--ux-muted") }}>
-                What I heard you say
-              </p>
+              <p className="text-2xs font-extrabold uppercase tracking-[0.14em]" style={{ color: v("--ux-muted") }}>{tr("shopVoice.whatIHeardYouSay")}</p>
               <p className="mt-2.5 border-l-2 pl-4 text-lg font-semibold italic leading-relaxed"
                  style={{ borderColor: v("--ux-brand"), color: v("--ux-ink") }}>
                 &ldquo;{draft.heardText}&rdquo;
@@ -154,9 +151,7 @@ export default function VoicePage() {
 
             {/* The listing, written as a sentence. Every number is tappable. */}
             <Card pad={20}>
-              <p className="text-2xs font-extrabold uppercase tracking-[0.14em]" style={{ color: v("--ux-brand") }}>
-                So your listing says
-              </p>
+              <p className="text-2xs font-extrabold uppercase tracking-[0.14em]" style={{ color: v("--ux-brand") }}>{tr("shopVoice.soYourListingSays")}</p>
               <p className="mt-3 text-lg leading-[1.7]" style={{ color: v("--ux-ink") }}>
                 You sell{" "}
                 <Editable value={draft.title} unsure={draft.unsure.includes("title")}
@@ -189,20 +184,20 @@ export default function VoicePage() {
 
               <div className="mt-5 flex flex-wrap gap-2">
                 <Btn icon="Check" disabled={published} onClick={() => setPublished(true)}>
-                  {published ? "It is in your shop" : "Yes, that is right"}
+                  {published ? tr("shopVoice.itIsInYourShop")
+              : tr("shopVoice.yesThatIsRight")}
                 </Btn>
-                <Btn variant="outline" icon="Mic" onClick={listen}>Say it differently</Btn>
+                <Btn variant="outline" icon="Mic" onClick={listen}>{tr("shopVoice.sayItDifferently")}</Btn>
                 <Btn variant="ghost" icon="Camera"
-                     onClick={() => setPhoto(true)}>{photo ? "Photo added" : "Add a photo"}</Btn>
+                     onClick={() => setPhoto(true)}>{photo ? tr("shopVoice.photoAdded")
+              : tr("shopVoice.addAPhoto")}</Btn>
               </div>
             </Card>
 
             {published && (
               <Card pad={16} style={{ background: v("--ux-tint-green"), borderColor: "transparent" }}>
                 <p className="flex items-center gap-2 text-xsm font-semibold" style={{ color: v("--ux-green-ink") }}>
-                  <I name="CheckCircle2" className="h-[16px] w-[16px]" />
-                  Added. Nothing was published until you said it was right.
-                </p>
+                  <I name="CheckCircle2" className="h-[16px] w-[16px]" />{tr("shopVoice.addedNothingWasPublishedUntilYou")}</p>
               </Card>
             )}
           </>
@@ -226,6 +221,7 @@ export default function VoicePage() {
 function Editable({ value, unsure, open, onOpen, onSave }: {
   value: string; unsure: boolean; open: boolean; onOpen: () => void; onSave: (t: string) => void;
 }) {
+  const tr = useT();
   const [t, setT] = useState(value);
   useEffect(() => setT(value), [value, open]);
 
@@ -236,7 +232,7 @@ function Editable({ value, unsure, open, onOpen, onSave }: {
         onChange={(e) => setT(e.target.value)}
         onKeyDown={(e) => { if (e.key === "Enter") onSave(t); }}
         onBlur={() => onSave(t)}
-        aria-label="Correct this"
+        aria-label={tr("shopVoice.correctThis")}
         className="ux-sq rounded-[8px] border-2 px-2 py-0.5 text-lg font-bold outline-none"
         style={{ borderColor: v("--ux-brand"), background: v("--ux-surface"),
                  color: v("--ux-ink"), width: `${Math.max(6, t.length + 2)}ch` }}

@@ -13,6 +13,7 @@ import { useSchemes } from "@/components/ux/entitlements";
 import { useAction } from "@/lib/use-action";
 import { apiMarkReference } from "@/lib/entitlements-api";
 import { useDocuments } from "@/components/ux/live";
+import { useT } from "@/i18n";
 
 
 /**
@@ -29,6 +30,7 @@ import { useDocuments } from "@/components/ux/live";
  * reason a woman never re-applies is that nobody told her she could.
  */
 export default function SchemeDetail({ params }: { params: Promise<{ id: string }> }) {
+  const tr = useT();
   const { id } = use(params);
   const { data: SCHEMES, source, refetch } = useSchemes();
   const { data: DOCUMENTS } = useDocuments();
@@ -70,9 +72,9 @@ export default function SchemeDetail({ params }: { params: Promise<{ id: string 
         <Card>
           <EmptyState
             icon="FileQuestion"
-            title="That scheme is not listed"
+            title={tr("supportfund.thatSchemeIsNotListed")}
             body="It may have closed, or the link may be old."
-            action={<Btn href="/app/support-fund" variant="primary" iconEnd="ArrowRight">All schemes</Btn>}
+            action={<Btn href="/app/support-fund" variant="primary" iconEnd="ArrowRight">{tr("supportfund.allSchemes")}</Btn>}
           />
         </Card>
       </HomeShell>
@@ -114,7 +116,8 @@ export default function SchemeDetail({ params }: { params: Promise<{ id: string 
       rail={
         <div className="space-y-[16px]">
           <Card>
-            <SectionHead title={applied ? "Your application" : "What you get"} />
+            <SectionHead title={applied ? tr("supportfund.yourApplication")
+              : tr("supportfund.whatYouGet")} />
             <p className="text-xl font-bold" style={{ color: "var(--ux-ink)" }}>{s.amount}</p>
             <p className="mt-1 text-xsm leading-relaxed" style={{ color: "var(--ux-muted)" }}>{s.gives}</p>
 
@@ -146,12 +149,10 @@ export default function SchemeDetail({ params }: { params: Promise<{ id: string 
                   ))}
                 </ol>
                 <div className="mt-4 space-y-2.5">
-                  <Btn variant="outline" full icon="Phone" href="/app/help">Ask about it</Btn>
+                  <Btn variant="outline" full icon="Phone" href="/app/help">{tr("supportfund.askAboutIt")}</Btn>
                   <Btn variant="ghost" full icon="X"
                        className={mark.busy ? "pointer-events-none opacity-60" : ""}
-                       onClick={() => void mark.run(id, "saved")}>
-                    Withdraw the application
-                  </Btn>
+                       onClick={() => void mark.run(id, "saved")}>{tr("supportfund.withdrawTheApplication")}</Btn>
                 </div>
               </>
             ) : (
@@ -162,7 +163,7 @@ export default function SchemeDetail({ params }: { params: Promise<{ id: string 
                     <span className="text-end font-medium" style={{ color: "var(--ux-ink)" }}>{s.deadline}</span>
                   </div>
                   <div className="flex items-start justify-between gap-3">
-                    <span style={{ color: "var(--ux-muted)" }}>Papers ready</span>
+                    <span style={{ color: "var(--ux-muted)" }}>{tr("supportfund.papersReady")}</span>
                     <span className="text-end font-medium" style={{ color: missing.length ? "var(--ux-orange-ink)" : "var(--ux-green-ink)" }}>
                       {papers.length - missing.length} of {papers.length}
                     </span>
@@ -179,7 +180,7 @@ export default function SchemeDetail({ params }: { params: Promise<{ id: string 
                       {mark.busy ? "Saving…" : "Start the application"}
                     </Btn>
                   ) : (
-                    <Btn variant="outline" full icon="Info" href="/app/support-fund">Find one you qualify for</Btn>
+                    <Btn variant="outline" full icon="Info" href="/app/support-fund">{tr("supportfund.findOneYouQualifyFor")}</Btn>
                   )}
                   {missing.length > 0 && (
                     <Btn variant="outline" full icon="Upload" href="/app/documents">
@@ -197,7 +198,7 @@ export default function SchemeDetail({ params }: { params: Promise<{ id: string 
           </Card>
 
           <Card>
-            <SectionHead title="If you are turned down" icon="LifeBuoy" />
+            <SectionHead title={tr("supportfund.ifYouAreTurnedDown")} icon="LifeBuoy" />
             {/* The most common reason a woman never re-applies is that nobody
                 told her she could. */}
             <p className="text-xsm leading-relaxed" style={{ color: "var(--ux-ink-2)" }}>
@@ -206,7 +207,7 @@ export default function SchemeDetail({ params }: { params: Promise<{ id: string 
               soon as it is fixed. There is no limit on how many times you may apply.
             </p>
             <div className="mt-3">
-              <Btn variant="soft" size="sm" full icon="MessageCircle" href="/app/help">Get help with a refusal</Btn>
+              <Btn variant="soft" size="sm" full icon="MessageCircle" href="/app/help">{tr("supportfund.getHelpWithARefusal")}</Btn>
             </div>
           </Card>
 
@@ -234,8 +235,7 @@ export default function SchemeDetail({ params }: { params: Promise<{ id: string 
       <Link href="/app/support-fund"
             className="ux-hov -my-1 mb-3.5 inline-flex items-center gap-1.5 py-1 text-xsm font-medium"
             style={{ color: "var(--ux-brand)" }}>
-        <Icons.ArrowLeft className="ux-ico h-4 w-4" /> Government schemes
-      </Link>
+        <Icons.ArrowLeft className="ux-ico h-4 w-4" />{tr("supportfund.governmentSchemes")}</Link>
 
       <div className="mb-[20px] flex items-start gap-4">
         <IconTile icon={s.icon} tint={s.tint} ink={s.ink} size={56} radius={15} />
@@ -245,8 +245,8 @@ export default function SchemeDetail({ params }: { params: Promise<{ id: string 
             {applied
               ? <Pill tone="blue" size="sm">Applied</Pill>
               : s.eligible
-                ? <Pill tone="green" size="sm">You qualify</Pill>
-                : <Pill tone="orange" size="sm">Not for you yet</Pill>}
+                ? <Pill tone="green" size="sm">{tr("supportfund.youQualify")}</Pill>
+                : <Pill tone="orange" size="sm">{tr("supportfund.notForYouYet")}</Pill>}
           </div>
           <h1 className="mt-2 text-2xl font-bold leading-tight" style={{ color: "var(--ux-ink)" }}>{s.name}</h1>
           <p className="mt-1 text-xsm" style={{ color: "var(--ux-muted)" }}>{s.body} · {s.who}</p>
@@ -254,13 +254,14 @@ export default function SchemeDetail({ params }: { params: Promise<{ id: string 
       </div>
 
       <Card className="mb-[16px]">
-        <SectionHead title={s.eligible ? "Why you qualify" : "Why this one is not for you"}
+        <SectionHead title={s.eligible ? tr("supportfund.whyYouQualify")
+              : tr("supportfund.whyThisOneIsNotFor")}
                      icon={s.eligible ? "CircleCheck" : "CircleAlert"} />
         <p className="text-sm leading-relaxed" style={{ color: "var(--ux-ink-2)" }}>{s.reason}</p>
       </Card>
 
       <Card className="mb-[16px]">
-        <SectionHead title="How to apply" sub="Five steps, in order. Nothing here is hidden behind a tap." />
+        <SectionHead title={tr("supportfund.howToApply")} sub={tr("supportfund.fiveStepsInOrderNothingHere")} />
         <ol className="space-y-2.5">
           {STEPS.map((st, i) => {
             const Icon = (Icons as never as Record<string, React.ComponentType<{ className?: string; style?: React.CSSProperties; strokeWidth?: number }>>)[st.icon] ?? Icons.Circle;
@@ -285,7 +286,7 @@ export default function SchemeDetail({ params }: { params: Promise<{ id: string 
       </Card>
 
       <Card>
-        <SectionHead title="Papers you need"
+        <SectionHead title={tr("supportfund.papersYouNeed")}
                      sub={missing.length ? `${missing.length} still to add` : "You have all of them"}
                      action="Documents" onAction={() => { window.location.href = "/app/documents"; }} />
         <ul className="space-y-2.5">
@@ -300,7 +301,8 @@ export default function SchemeDetail({ params }: { params: Promise<{ id: string 
               <span className="flex-1 text-xsm" style={{ color: "var(--ux-ink)" }}>{p.name}</span>
               <span className="text-xs font-medium"
                     style={{ color: p.have ? "var(--ux-green-ink)" : "var(--ux-orange-ink)" }}>
-                {p.have ? "With us" : "Not added"}
+                {p.have ? tr("supportfund.withUs")
+              : tr("supportfund.notAdded")}
               </span>
             </li>
           ))}

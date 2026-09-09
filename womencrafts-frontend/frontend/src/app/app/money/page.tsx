@@ -8,6 +8,7 @@ import { ReadAloud } from "@/components/ux/reach/ReadAloud";
 import {
   COMMITMENTS, INCOMING, IN_HAND, WEIGHT_LABEL, budgetTotals,
 } from "@/components/ux/money/budget";
+import { useT } from "@/i18n";
 
 /**
  * Is there enough for the things that cannot wait?
@@ -34,6 +35,7 @@ import {
  * being counted as money — which is the mistake that actually costs her.
  */
 export default function MoneyPage() {
+  const tr = useT();
   const t = useMemo(() => budgetTotals(), []);
   const ordered = useMemo(() => {
     const rank = { "cannot-wait": 0, "should-pay": 1, "can-move": 2 } as const;
@@ -45,20 +47,18 @@ export default function MoneyPage() {
       <div className="flex flex-col gap-5" id="money-page">
 
         <header>
-          <p className="text-2xs font-extrabold uppercase tracking-[0.2em]" style={{ color: v("--ux-brand") }}>
-            Your money
-          </p>
+          <p className="text-2xs font-extrabold uppercase tracking-[0.2em]" style={{ color: v("--ux-brand") }}>{tr("money.yourMoney")}</p>
           {/* The answer, in words, before any number. */}
           <h1 className="mt-2 max-w-[20ch] text-[clamp(1.5rem,3.2vw,2.125rem)] font-extrabold leading-[1.1] tracking-[-0.035em]"
               style={{ color: v("--ux-ink") }}>
             {t.coversMust
-              ? "You have enough for the things that cannot wait"
-              : "Two things cannot wait, and you are short"}
+              ? tr("money.youHaveEnoughForTheThings")
+              : tr("money.twoThingsCannotWaitAndYou")}
           </h1>
           <p className="mt-1.5 max-w-[56ch] text-sm leading-relaxed" style={{ color: v("--ux-muted") }}>
             {t.coversMust
-              ? "Everything below is only the working out. Nothing here is a score, and nothing goes red."
-              : "The two below cost you most if they are missed. Everything else can move."}
+              ? tr("money.everythingBelowIsOnlyTheWorking")
+              : tr("money.theTwoBelowCostYouMost")}
           </p>
           <div className="mt-3"><ReadAloud targetId="money-page" /></div>
         </header>
@@ -97,15 +97,15 @@ export default function MoneyPage() {
           </p>
           <p className="mt-1 max-w-[54ch] text-xsm leading-relaxed" style={{ color: v("--ux-ink-2") }}>
             {t.spare >= 0
-              ? "After everything below is paid. Spend it, save it, or put it in the pot — nobody here will tell you which."
-              : "The things that cannot wait are still covered. What is short is the rest, and most of that can move."}
+              ? tr("money.afterEverythingBelowIsPaidSpend")
+              : tr("money.theThingsThatCannotWaitAre")}
           </p>
         </Card>
 
         {/* Commitments, by consequence. */}
         <div>
-          <SectionHead title="What you have promised"
-                       sub="Hardest to miss first — not biggest first" icon="ListChecks" />
+          <SectionHead title={tr("money.whatYouHavePromised")}
+                       sub={tr("money.hardestToMissFirstNotBiggest")} icon="ListChecks" />
           <Card pad={0} style={{ overflow: "hidden" }}>
             {ordered.map((c, i) => (
               <div key={c.id} className="flex flex-wrap items-start gap-3.5 px-5 py-4"
@@ -138,8 +138,8 @@ export default function MoneyPage() {
 
         {/* Incoming — agreed and not agreed, kept apart on purpose. */}
         <div>
-          <SectionHead title="What is coming to you"
-                       sub="Only the agreed money is counted above" icon="ArrowDownLeft" />
+          <SectionHead title={tr("money.whatIsComingToYou")}
+                       sub={tr("money.onlyTheAgreedMoneyIsCounted")} icon="ArrowDownLeft" />
           <Card pad={0} style={{ overflow: "hidden" }}>
             {INCOMING.map((inc, i) => (
               <div key={inc.id} className="flex flex-wrap items-center gap-3.5 px-5 py-4"
@@ -172,9 +172,9 @@ export default function MoneyPage() {
         </div>
 
         <div className="flex flex-wrap gap-2">
-          <Btn href="/app/collect" icon="QrCode">Ask someone to pay you</Btn>
-          <Btn variant="outline" href="/app/vault" icon="Lock">Put some aside</Btn>
-          <Btn variant="ghost" href="/app/books" icon="BookOpen">Who owes you</Btn>
+          <Btn href="/app/collect" icon="QrCode">{tr("money.askSomeoneToPayYou")}</Btn>
+          <Btn variant="outline" href="/app/vault" icon="Lock">{tr("money.putSomeAside")}</Btn>
+          <Btn variant="ghost" href="/app/books" icon="BookOpen">{tr("money.whoOwesYou")}</Btn>
         </div>
 
         <Card pad={16} style={{ background: v("--ux-surface-2"), borderColor: "transparent" }}>

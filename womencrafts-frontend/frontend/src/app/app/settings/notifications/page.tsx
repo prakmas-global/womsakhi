@@ -10,6 +10,7 @@ import * as Icons from "@/components/ux/icons";
 
 import { Btn } from "@/components/ux/kit";
 import { Card, SectionHead, SettingsPage, Toggle } from "@/components/ux/settings/Frame";
+import { useT } from "@/i18n";
 
 /**
  * Notifications.
@@ -22,6 +23,7 @@ import { Card, SectionHead, SettingsPage, Toggle } from "@/components/ux/setting
  * actually deciding.
  */
 export default function NotificationSettings() {
+  const tr = useT();
   /**
    * Her switches, as the server has them.
    *
@@ -95,7 +97,7 @@ export default function NotificationSettings() {
   return (
     <SettingsPage
       title="Notifications"
-      sub="What reaches you, and how. You can change any of it later."
+      sub={tr("settingsNotifications.whatReachesYouAndHowYou")}
       footer={
         <div className="flex items-center justify-between gap-4">
           <p className="text-xs"
@@ -110,8 +112,8 @@ export default function NotificationSettings() {
       }
     >
       <Card>
-        <SectionHead title="Worth interrupting your day"
-                     sub="We suggest leaving these on — money and people waiting on you" />
+        <SectionHead title={tr("settingsNotifications.worthInterruptingYourDay")}
+                     sub={tr("settingsNotifications.weSuggestLeavingTheseOnMoney")} />
         <div className="divide-y" style={{ borderColor: "var(--ux-line)" }}>
           <Toggle on={p.money} onChange={set("money")} label="Money"
                   whenOn="You are told when a payment arrives, or a withdrawal lands."
@@ -122,39 +124,37 @@ export default function NotificationSettings() {
           <Toggle on={p.messages} onChange={set("messages")} label="Messages"
                   whenOn="Buyers, mentors and employers reach you when they write."
                   whenOff="You will not know somebody has written until you look." />
-          <Toggle on={p.bookings} onChange={set("bookings")} label="Session and event reminders"
+          <Toggle on={p.bookings} onChange={set("bookings")} label={tr("settingsNotifications.sessionAndEventReminders")}
                   whenOn="A reminder an hour before anything you booked."
                   whenOff="No reminder — you will need to remember yourself." />
         </div>
       </Card>
 
       <Card>
-        <SectionHead title="Nice to know" sub="Nothing here is urgent" />
+        <SectionHead title={tr("settingsNotifications.niceToKnow")} sub={tr("settingsNotifications.nothingHereIsUrgent")} />
         <div className="divide-y" style={{ borderColor: "var(--ux-line)" }}>
-          <Toggle on={p.circles} onChange={set("circles")} label="Your circles"
+          <Toggle on={p.circles} onChange={set("circles")} label={tr("settingsNotifications.yourCircles")}
                   whenOn="When a circle you are in posts something."
                   whenOff="You will see it next time you open the circle." />
-          <Toggle on={p.programs} onChange={set("programs")} label="New courses and events"
+          <Toggle on={p.programs} onChange={set("programs")} label={tr("settingsNotifications.newCoursesAndEvents")}
                   whenOn="A message when something new matches what you do."
                   whenOff="You will find them in Discover whenever you look." />
         </div>
       </Card>
 
       <Card>
-        <SectionHead title="How they reach you" />
+        <SectionHead title={tr("settingsNotifications.howTheyReachYou")} />
         <div className="divide-y" style={{ borderColor: "var(--ux-line)" }}>
           <Toggle on={p.email} onChange={set("email")} label="Email"
                   whenOn="A daily summary of anything you missed."
                   whenOff="Nothing by email except password changes." />
-          <Toggle on={p.sms} onChange={set("sms")} label="Text message"
+          <Toggle on={p.sms} onChange={set("sms")} label={tr("settingsNotifications.textMessage")}
                   whenOn="Money and orders also come by SMS. Useful on a weak connection."
                   whenOff="No text messages except your sign-in code." />
         </div>
         <p className="mt-3.5 flex items-start gap-2.5 rounded-[12px] p-3 text-xs leading-relaxed"
            style={{ background: "var(--ux-surface-2)", color: "var(--ux-ink-2)" }}>
-          <Icons.ShieldCheck className="mt-[1px] h-[14px] w-[14px] shrink-0" style={{ color: "var(--ux-brand)" }} />
-          Safety alerts always reach you, whatever is set here. Those cannot be turned off.
-        </p>
+          <Icons.ShieldCheck className="mt-[1px] h-[14px] w-[14px] shrink-0" style={{ color: "var(--ux-brand)" }} />{tr("settingsNotifications.safetyAlertsAlwaysReachYouWhatever")}</p>
       </Card>
     </SettingsPage>
   );

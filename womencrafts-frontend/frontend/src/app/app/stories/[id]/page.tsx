@@ -11,6 +11,7 @@ import {
 import { HomeShell } from "@/components/ux/home/HomeShell";
 import { apiLikeStory, apiStories, apiStory, type Story } from "@/lib/community-api";
 import { useResource } from "@/lib/use-resource";
+import { useT } from "@/i18n";
 
 
 /**
@@ -31,6 +32,7 @@ import { useResource } from "@/lib/use-resource";
  * what that returns.
  */
 export default function StoryDetail({ params }: { params: Promise<{ id: string }> }) {
+  const tr = useT();
   const { id } = use(params);
   const { data: s, source } = useResource(
     useCallback(() => apiStory(id), [id]),
@@ -79,9 +81,9 @@ export default function StoryDetail({ params }: { params: Promise<{ id: string }
         <Card>
           <EmptyState
             icon="SearchX"
-            title="That story is not here"
+            title={tr("stories.thatStoryIsNotHere")}
             body="She may have taken it down. The others are still up."
-            action={<Btn href="/app/stories" variant="primary" iconEnd="ArrowRight">All stories</Btn>}
+            action={<Btn href="/app/stories" variant="primary" iconEnd="ArrowRight">{tr("stories.allStories")}</Btn>}
           />
         </Card>
       </HomeShell>
@@ -105,28 +107,26 @@ export default function StoryDetail({ params }: { params: Promise<{ id: string }
             */}
           {s.program && (
             <Card>
-              <SectionHead title="What she did" sub="The specific thing, not the inspiration" />
+              <SectionHead title={tr("stories.whatSheDid")} sub={tr("stories.theSpecificThingNotTheInspiration")} />
               <p className="text-xsm font-semibold leading-snug" style={{ color: "var(--ux-ink)" }}>
                 {s.program}
               </p>
-              <p className="mt-1.5 text-xsm leading-relaxed" style={{ color: "var(--ux-ink-2)" }}>
-                She names this in her story. It is open to you too.
-              </p>
+              <p className="mt-1.5 text-xsm leading-relaxed" style={{ color: "var(--ux-ink-2)" }}>{tr("stories.sheNamesThisInHerStory")}</p>
               <div className="mt-3.5">
-                <Btn href="/app/learn" variant="primary" full iconEnd="ArrowRight">Find it</Btn>
+                <Btn href="/app/learn" variant="primary" full iconEnd="ArrowRight">{tr("stories.findIt")}</Btn>
               </div>
             </Card>
           )}
 
           <Card>
-            <SectionHead title="Getting in touch" />
+            <SectionHead title={tr("stories.gettingInTouch")} />
             <p className="text-xsm leading-relaxed" style={{ color: "var(--ux-ink-2)" }}>
               WomSakhi has no direct messages between members yet. Ask the team about
               {" "}{s.author_name.split(" ")[0]} and they will answer you in Messages.
             </p>
             <div className="mt-3.5 flex gap-2">
-              <Btn href="/app/messages" variant="soft" size="sm" icon="MessageCircle">Ask the team</Btn>
-              <Btn href="/app/circles" variant="outline" size="sm">Find a circle</Btn>
+              <Btn href="/app/messages" variant="soft" size="sm" icon="MessageCircle">{tr("stories.askTheTeam")}</Btn>
+              <Btn href="/app/circles" variant="outline" size="sm">{tr("stories.findACircle")}</Btn>
             </div>
           </Card>
         </div>
@@ -135,8 +135,7 @@ export default function StoryDetail({ params }: { params: Promise<{ id: string }
       <Link href="/app/stories"
             className="ux-hov -my-1 mb-3.5 inline-flex items-center gap-1.5 py-1 text-xsm font-medium"
             style={{ color: "var(--ux-brand)" }}>
-        <Icons.ArrowLeft className="ux-ico h-4 w-4" /> Near you
-      </Link>
+        <Icons.ArrowLeft className="ux-ico h-4 w-4" />{tr("stories.nearYou")}</Link>
 
       <Card className="mb-[16px] overflow-hidden" pad={0}>
         <div className="relative h-[240px] overflow-hidden" style={{ background: "var(--ux-tint-lilac)" }}>
@@ -196,7 +195,8 @@ export default function StoryDetail({ params }: { params: Promise<{ id: string }
                 onClick={() => void toggleLike()}
                 disabled={liking}
                 aria-pressed={liked}
-                aria-label={liked ? "Remove your like" : "Like this story"}
+                aria-label={liked ? tr("stories.removeYourLike")
+              : tr("stories.likeThisStory")}
                 className="ux-press ux-hov ux-sq inline-flex items-center gap-1.5 rounded-[12px] px-3.5 py-2.5 text-xsm font-medium"
                 style={{ background: liked ? "var(--ux-tint-pink)" : "var(--ux-surface-2)",
                          color: liked ? "var(--ux-pink-ink)" : "var(--ux-muted)" }}
@@ -208,7 +208,7 @@ export default function StoryDetail({ params }: { params: Promise<{ id: string }
                              fill={liked ? "currentColor" : "none"} strokeWidth={1.9} />
                 {likeCount}
               </button>
-              <ActionBtn variant="outline" size="sm" icon="Share2" doneIcon="Copy" done="Link copied"
+              <ActionBtn variant="outline" size="sm" icon="Share2" doneIcon="Copy" done={tr("stories.linkCopied")}
                         act={() => copy(`https://womsakhi.in/story/${s.id}`, "Link copied — send it to anyone", "Copy it by hand from the address bar")}>
                 Share
               </ActionBtn>
@@ -219,7 +219,7 @@ export default function StoryDetail({ params }: { params: Promise<{ id: string }
 
       {others.length > 0 && (
         <div>
-          <SectionHead title="More women on WomSakhi" />
+          <SectionHead title={tr("stories.moreWomenOnWomsakhi")} />
           <div className="ux-deck grid grid-cols-2 gap-[16px]">
             {others.map((o, i) => (
               <Card key={o.id} className="ux-i ux-onscroll" style={{ ["--i" as string]: i }}>

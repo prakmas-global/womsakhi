@@ -7,6 +7,7 @@ import { HomeShell } from "@/components/ux/home/HomeShell";
 import { Back, Btn, Card, I, Pill, SectionHead, v } from "@/components/ux/kit";
 import { formatRupees } from "@/components/ux/kit";
 import { DISPUTES, type Dispute } from "@/components/ux/eight/data";
+import { useT } from "@/i18n";
 
 /**
  * When something goes wrong between two women.
@@ -25,6 +26,7 @@ import { DISPUTES, type Dispute } from "@/components/ux/eight/data";
  * because a promise the user cannot see is not a promise.
  */
 export default function DisputesPage() {
+  const tr = useT();
   const router = useRouter();
   const [rows, setRows] = useState<Dispute[]>(DISPUTES);
   const [note, setNote] = useState<string | null>(null);
@@ -47,16 +49,12 @@ export default function DisputesPage() {
   return (
     <HomeShell active="/app/shop">
       <div className="flex flex-col gap-5">
-        <Back to="/app/shop" label="Back to your shops" />
+        <Back to="/app/shop" label={tr("shopDisputes.backToYourShops")} />
 
         <header>
-          <p className="text-2xs font-extrabold uppercase tracking-[0.2em]" style={{ color: v("--ux-brand") }}>
-            When it goes wrong
-          </p>
+          <p className="text-2xs font-extrabold uppercase tracking-[0.2em]" style={{ color: v("--ux-brand") }}>{tr("shopDisputes.whenItGoesWrong")}</p>
           <h1 className="mt-2 text-[clamp(1.5rem,3.2vw,2.125rem)] font-extrabold leading-[1.1] tracking-[-0.035em]"
-              style={{ color: v("--ux-ink") }}>
-            Sorted by someone you both know
-          </h1>
+              style={{ color: v("--ux-ink") }}>{tr("shopDisputes.sortedBySomeoneYouBothKnow")}</h1>
           <p className="mt-1.5 max-w-[58ch] text-sm leading-relaxed" style={{ color: v("--ux-muted") }}>
             No complaint form, no company deciding who is right. If the two of you cannot agree, a
             woman you both trust hears it out. Your shop is never marked down for this.
@@ -72,7 +70,7 @@ export default function DisputesPage() {
         )}
 
         <div>
-          <SectionHead title="Being sorted out now" icon="Handshake" chip={String(live.length)} />
+          <SectionHead title={tr("shopDisputes.beingSortedOutNow")} icon="Handshake" chip={String(live.length)} />
           <div className="flex flex-col gap-4">
             {live.map((d) => (
               <Card key={d.id} pad={0} style={{ overflow: "hidden" }}>
@@ -96,7 +94,7 @@ export default function DisputesPage() {
                 {/* Two sides, with the helper standing between them. */}
                 <div className="px-5 pt-6">
                   <div className="flex items-stretch gap-2">
-                    <Side name="You" sub="Your side" tint="--ux-brand-tint" ink="--ux-brand" letter="P" />
+                    <Side name="You" sub={tr("shopDisputes.yourSide")} tint="--ux-brand-tint" ink="--ux-brand" letter="P" />
 
                     <div className="flex min-w-[92px] flex-1 flex-col items-center justify-center">
                       {d.state === "helper" && d.helper ? (
@@ -122,7 +120,7 @@ export default function DisputesPage() {
                       )}
                     </div>
 
-                    <Side name={d.with} sub="Her side" tint="--ux-tint-pink" ink="--ux-pink-ink"
+                    <Side name={d.with} sub={tr("shopDisputes.herSide")} tint="--ux-tint-pink" ink="--ux-pink-ink"
                           letter={d.with.charAt(0)} />
                   </div>
                 </div>
@@ -132,16 +130,12 @@ export default function DisputesPage() {
                     Talk to {d.with.split(" ")[0]}
                   </Btn>
                   {d.state === "talking" ? (
-                    <Btn size="sm" variant="outline" icon="Users" onClick={() => askHelper(d.id)}>
-                      Ask someone you both trust
-                    </Btn>
+                    <Btn size="sm" variant="outline" icon="Users" onClick={() => askHelper(d.id)}>{tr("shopDisputes.askSomeoneYouBothTrust")}</Btn>
                   ) : (
-                    <Btn size="sm" variant="outline" icon="Check" onClick={() => settle(d.id)}>
-                      We have sorted it
-                    </Btn>
+                    <Btn size="sm" variant="outline" icon="Check" onClick={() => settle(d.id)}>{tr("shopDisputes.weHaveSortedIt")}</Btn>
                   )}
                   <Btn size="sm" variant="ghost" icon="Camera"
-                     onClick={() => setNote("Photo added. Both of you and the helper can see it.")}>Add a photo of the work</Btn>
+                     onClick={() => setNote("Photo added. Both of you and the helper can see it.")}>{tr("shopDisputes.addAPhotoOfTheWork")}</Btn>
                 </div>
               </Card>
             ))}
@@ -150,7 +144,7 @@ export default function DisputesPage() {
 
         {done.length > 0 && (
           <div>
-            <SectionHead title="Already sorted" sub="Kept only so you can look it up" icon="CheckCheck" />
+            <SectionHead title={tr("shopDisputes.alreadySorted")} sub={tr("shopDisputes.keptOnlySoYouCanLook")} icon="CheckCheck" />
             <Card pad={0} style={{ overflow: "hidden" }}>
               {done.map((d, i) => (
                 <div key={d.id} className="flex flex-wrap items-center gap-3.5 px-5 py-4"

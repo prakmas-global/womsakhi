@@ -5,6 +5,7 @@ import { useCallback, useMemo, useState } from "react";
 import { HomeShell } from "@/components/ux/home/HomeShell";
 import { Btn, Card, Chip, EmptyState, I, IconTile, Pill, SectionHead, Stat, v } from "@/components/ux/kit";
 import { SWAPS, type SwapItem } from "@/components/ux/life/data";
+import { useT } from "@/i18n";
 
 /**
  * Circle swap — the second-hand economy women already run.
@@ -35,6 +36,7 @@ const CONDITION: Record<SwapItem["condition"], { tint: string; ink: string }> = 
 type Filter = "all" | "free" | "children";
 
 export default function SwapPage() {
+  const tr = useT();
   const [rows, setRows] = useState<SwapItem[]>(SWAPS);
   const [filter, setFilter] = useState<Filter>("all");
   const [note, setNote] = useState<string | null>(null);
@@ -60,30 +62,24 @@ export default function SwapPage() {
 
         <header className="flex flex-wrap items-end gap-4">
           <div className="min-w-0 flex-1">
-            <p className="text-2xs font-extrabold uppercase tracking-[0.2em]" style={{ color: v("--ux-brand") }}>
-              Pass it on
-            </p>
+            <p className="text-2xs font-extrabold uppercase tracking-[0.2em]" style={{ color: v("--ux-brand") }}>{tr("swap.passItOn")}</p>
             <h1 className="mt-2 text-[clamp(1.5rem,3.2vw,2.125rem)] font-extrabold leading-[1.1] tracking-[-0.035em]"
-                style={{ color: v("--ux-ink") }}>
-              What someone near you no longer needs
-            </h1>
+                style={{ color: v("--ux-ink") }}>{tr("swap.whatSomeoneNearYouNoLonger")}</h1>
             <p className="mt-1.5 max-w-[56ch] text-sm leading-relaxed" style={{ color: v("--ux-muted") }}>
               Uniforms outgrown, baby things finished with, a lehenga worn once. Collected in
               person from a woman you know. No prices, no posting, no fee.
             </p>
           </div>
-          <Btn icon="Plus" onClick={() => setNote("Photograph it where it is. No studio, no measurements, no listing fee.")}>
-            Offer something
-          </Btn>
+          <Btn icon="Plus" onClick={() => setNote("Photograph it where it is. No studio, no measurements, no listing fee.")}>{tr("swap.offerSomething")}</Btn>
         </header>
 
         <Card>
           <div className="grid gap-4 sm:grid-cols-3">
-            <Stat value={String(open.length)} label="Going spare near you" icon="Gift"
+            <Stat value={String(open.length)} label={tr("swap.goingSpareNearYou")} icon="Gift"
                   tint="--ux-tint-pink" ink="--ux-pink-ink" />
             <Stat value={String(open.filter((s) => s.wants.toLowerCase().startsWith("free")).length)}
-                  label="Free, no swap wanted" icon="Heart" tint="--ux-tint-green" ink="--ux-green-ink" />
-            <Stat value={String(taken.length)} label="Found a new home" icon="Check"
+                  label={tr("swap.freeNoSwapWanted")} icon="Heart" tint="--ux-tint-green" ink="--ux-green-ink" />
+            <Stat value={String(taken.length)} label={tr("swap.foundANewHome")} icon="Check"
                   tint="--ux-surface-2" ink="--ux-muted" />
           </div>
         </Card>
@@ -97,18 +93,18 @@ export default function SwapPage() {
         )}
 
         <div>
-          <SectionHead title="Going spare" sub="All within walking distance" icon="Gift"
+          <SectionHead title={tr("swap.goingSpare")} sub={tr("swap.allWithinWalkingDistance")} icon="Gift"
                        chip={String(shown.length)} />
           <div className="mb-3.5 flex flex-wrap gap-2">
             <Chip icon="LayoutGrid" selected={filter === "all"} onClick={() => setFilter("all")}>Everything</Chip>
             <Chip icon="Heart" selected={filter === "free"} onClick={() => setFilter("free")}>Free</Chip>
-            <Chip icon="Baby" selected={filter === "children"} onClick={() => setFilter("children")}>For children</Chip>
+            <Chip icon="Baby" selected={filter === "children"} onClick={() => setFilter("children")}>{tr("swap.forChildren")}</Chip>
           </div>
 
           {shown.length === 0 ? (
-            <Card><EmptyState icon="Gift" title="Nothing here just now"
+            <Card><EmptyState icon="Gift" title={tr("swap.nothingHereJustNow")}
                               body="Try another filter, or offer something yourself — someone always needs a uniform in June."
-                              action={<Btn size="sm" variant="outline" onClick={() => setFilter("all")}>Show everything</Btn>} /></Card>
+                              action={<Btn size="sm" variant="outline" onClick={() => setFilter("all")}>{tr("swap.showEverything")}</Btn>} /></Card>
           ) : (
             <div className="grid gap-3 sm:grid-cols-2">
               {shown.map((s) => {
@@ -131,9 +127,7 @@ export default function SwapPage() {
                         </p>
                       </div>
                     </div>
-                    <Btn size="sm" full className="mt-3" onClick={() => claim(s.id)}>
-                      Ask her for it
-                    </Btn>
+                    <Btn size="sm" full className="mt-3" onClick={() => claim(s.id)}>{tr("swap.askHerForIt")}</Btn>
                   </Card>
                 );
               })}
@@ -143,7 +137,7 @@ export default function SwapPage() {
 
         {taken.length > 0 && (
           <div>
-            <SectionHead title="Already gone" icon="Check" chip={String(taken.length)} />
+            <SectionHead title={tr("swap.alreadyGone")} icon="Check" chip={String(taken.length)} />
             <Card pad={0}>
               <ul className="divide-y" style={{ borderColor: v("--ux-line") }}>
                 {taken.map((s) => (

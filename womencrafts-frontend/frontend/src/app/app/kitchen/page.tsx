@@ -6,6 +6,7 @@ import { HomeShell } from "@/components/ux/home/HomeShell";
 import { ReadAloud } from "@/components/ux/reach/ReadAloud";
 import { Btn, Card, I, Pill, SectionHead, v } from "@/components/ux/kit";
 import { HYGIENE, LICENCE_STEPS, hygieneScore, licenceDone } from "@/components/ux/eight/data";
+import { useT } from "@/i18n";
 
 /**
  * From your kitchen to a customer, legally.
@@ -29,6 +30,7 @@ import { HYGIENE, LICENCE_STEPS, hygieneScore, licenceDone } from "@/components/
  * you", and there is no fleet.
  */
 export default function KitchenPage() {
+  const tr = useT();
   const [steps, setSteps] = useState(LICENCE_STEPS);
   const [hyg, setHyg] = useState(HYGIENE);
   const [applied, setApplied] = useState(false);
@@ -53,13 +55,9 @@ export default function KitchenPage() {
           <div className="flex flex-wrap items-center gap-7 px-6 py-8 sm:px-9"
                style={{ background: `linear-gradient(120deg, ${v("--ux-tint-amber")}, ${v("--ux-surface")})` }}>
             <div className="min-w-0 flex-1">
-              <p className="text-2xs font-extrabold uppercase tracking-[0.2em]" style={{ color: v("--ux-amber-ink") }}>
-                Selling food from home
-              </p>
+              <p className="text-2xs font-extrabold uppercase tracking-[0.2em]" style={{ color: v("--ux-amber-ink") }}>{tr("kitchen.sellingFoodFromHome")}</p>
               <h1 className="mt-2 max-w-[18ch] text-[clamp(1.5rem,3.4vw,2.25rem)] font-extrabold leading-[1.08] tracking-[-0.035em]"
-                  style={{ color: v("--ux-ink") }}>
-                The licence costs one hundred rupees
-              </h1>
+                  style={{ color: v("--ux-ink") }}>{tr("kitchen.theLicenceCostsOneHundredRupees")}</h1>
               <p className="mt-2.5 max-w-[52ch] text-sm leading-relaxed" style={{ color: v("--ux-ink-2") }}>
                 A year. That is the entire fee. Your own kitchen is allowed — you write down the
                 address yourself, and no landlord has to sign anything. Most women who could be
@@ -82,7 +80,7 @@ export default function KitchenPage() {
 
         {/* The road. Not a checklist — a route with her position on it. */}
         <div>
-          <SectionHead title="How far you have got"
+          <SectionHead title={tr("kitchen.howFarYouHaveGot")}
                        sub={`${done} of ${steps.length} done · usually 7 to 30 days from start to number`}
                        icon="Route" />
 
@@ -130,7 +128,7 @@ export default function KitchenPage() {
                         <p className="text-base font-bold" style={{ color: v(s.done ? "--ux-muted" : "--ux-ink") }}>
                           {s.what}
                         </p>
-                        {isNext && <Pill tone="brand" size="sm">You are here</Pill>}
+                        {isNext && <Pill tone="brand" size="sm">{tr("kitchen.youAreHere")}</Pill>}
                         {s.needs && <Pill tone="neutral" size="sm">Needs {s.needs}</Pill>}
                       </div>
                       <p className="mt-1 max-w-[54ch] text-xsm leading-relaxed" style={{ color: v("--ux-muted") }}>
@@ -145,9 +143,10 @@ export default function KitchenPage() {
             <div className="flex flex-wrap items-center gap-2 border-t px-5 py-4 sm:px-7"
                  style={{ borderColor: v("--ux-line") }}>
               <Btn icon="ExternalLink" disabled={applied} onClick={() => setApplied(true)}>
-                {applied ? "Started — we saved your answers" : "Start the ₹100 application"}
+                {applied ? tr("kitchen.startedWeSavedYourAnswers")
+              : tr("kitchen.startTheApplication")}
               </Btn>
-              <Btn variant="ghost" icon="MessageCircle" href="/app/mentors">Ask a woman who has done it</Btn>
+              <Btn variant="ghost" icon="MessageCircle" href="/app/mentors">{tr("kitchen.askAWomanWhoHasDone")}</Btn>
             </div>
           </Card>
         </div>
@@ -155,16 +154,14 @@ export default function KitchenPage() {
         {applied && (
           <Card pad={16} style={{ background: v("--ux-tint-green"), borderColor: "transparent" }}>
             <p className="flex items-center gap-2 text-xsm font-semibold" style={{ color: v("--ux-green-ink") }}>
-              <I name="CheckCircle2" className="h-[16px] w-[16px]" />
-              Started. The number usually comes in 7 to 30 days — we will tell you when it does.
-            </p>
+              <I name="CheckCircle2" className="h-[16px] w-[16px]" />{tr("kitchen.startedTheNumberUsuallyComesIn")}</p>
           </Card>
         )}
 
         {/* Hygiene, as a dial rather than a form */}
         <div>
-          <SectionHead title="Keeping the food safe"
-                       sub="Not a rule from us — this is what an inspector looks for" icon="ShieldCheck" />
+          <SectionHead title={tr("kitchen.keepingTheFoodSafe")}
+                       sub={tr("kitchen.notARuleFromUsThis")} icon="ShieldCheck" />
           <Card pad={20}>
             <div className="flex flex-wrap items-center gap-6">
               <div className="relative grid h-[104px] w-[104px] shrink-0 place-items-center rounded-full"

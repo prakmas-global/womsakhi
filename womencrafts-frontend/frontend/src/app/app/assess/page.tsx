@@ -12,6 +12,7 @@ import { MORE_ART } from "@/components/ux/more/data";
 import { useAssessmentList } from "@/components/ux/entitlements";
 import { apiAssessment, apiSubmitAttempt, type Assessment } from "@/lib/entitlements-api";
 import { messageFrom } from "@/lib/use-action";
+import { useT } from "@/i18n";
 
 /**
  * Skill Assessment — proof of what she can already do.
@@ -31,6 +32,7 @@ import { messageFrom } from "@/lib/use-action";
  * marked.
  */
 export default function AssessPage() {
+  const tr = useT();
   const { data: ASSESSMENTS, source, refetch } = useAssessmentList();
 
   /** The test she is in, once the questions have arrived. */
@@ -101,8 +103,7 @@ export default function AssessPage() {
         <button onClick={leave}
                 className="ux-hov -my-1 mb-3.5 inline-flex items-center gap-1.5 py-1 text-xsm font-medium"
                 style={{ color: "var(--ux-brand)" }}>
-          <Icons.ArrowLeft className="ux-ico h-4 w-4" /> All tests
-        </button>
+          <Icons.ArrowLeft className="ux-ico h-4 w-4" />{tr("assess.allTests")}</button>
 
         <h1 className="text-2xl font-bold" style={{ color: "var(--ux-ink)" }}>{paper.title}</h1>
         <p className="mb-[20px] mt-1.5 text-xsm" style={{ color: "var(--ux-muted)" }}>
@@ -127,12 +128,10 @@ export default function AssessPage() {
                   : `The pass mark is ${paper.pass_mark}%. Nothing is lost — only your best result ever counts, so try again whenever you like.`}
               </p>
               <div className="mt-5 flex flex-wrap justify-center gap-2.5">
-                <Btn onClick={leave} variant="primary" iconEnd="ArrowRight">Back to the tests</Btn>
+                <Btn onClick={leave} variant="primary" iconEnd="ArrowRight">{tr("assess.backToTheTests")}</Btn>
                 {!result.passed && (
                   <Btn variant="outline" icon="RotateCcw"
-                       onClick={() => { setResult(null); setAnswers(new Array(paper.questions.length).fill(-1)); setAt(0); }}>
-                    Take it again
-                  </Btn>
+                       onClick={() => { setResult(null); setAnswers(new Array(paper.questions.length).fill(-1)); setAt(0); }}>{tr("assess.takeItAgain")}</Btn>
                 )}
               </div>
             </div>
@@ -223,7 +222,7 @@ export default function AssessPage() {
       rail={
         <div className="space-y-[16px]">
           <Card>
-            <SectionHead title="How this works" icon="Info" />
+            <SectionHead title={tr("assess.howThisWorks")} icon="Info" />
             <ol className="space-y-3">
               {[
                 "Twenty minutes, on your phone, whenever suits.",
@@ -245,17 +244,13 @@ export default function AssessPage() {
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img loading="lazy" decoding="async" src={MORE_ART.assess} alt=""
                  className="ux-float pointer-events-none absolute -bottom-3 -end-4 h-[100px] w-[100px] object-contain" />
-            <h3 className="relative w-[60%] text-sm font-semibold" style={{ color: "var(--ux-ink)" }}>
-              Twenty years is worth proving
-            </h3>
-            <p className="relative mt-2 w-[60%] text-xs leading-relaxed" style={{ color: "var(--ux-muted)" }}>
-              Most members learned their trade at home and have nothing on paper. This is the paper.
-            </p>
+            <h3 className="relative w-[60%] text-sm font-semibold" style={{ color: "var(--ux-ink)" }}>{tr("assess.twentyYearsIsWorthProving")}</h3>
+            <p className="relative mt-2 w-[60%] text-xs leading-relaxed" style={{ color: "var(--ux-muted)" }}>{tr("assess.mostMembersLearnedTheirTradeAt")}</p>
           </div>
         </div>
       }
     >
-      <h1 className="text-2xl font-bold" style={{ color: "var(--ux-ink)" }}>Test your skills</h1>
+      <h1 className="text-2xl font-bold" style={{ color: "var(--ux-ink)" }}>{tr("assess.testYourSkills")}</h1>
       <p className="mb-[20px] mt-1.5 text-xsm" style={{ color: "var(--ux-muted)" }}>
         {done.length} of {ASSESSMENTS.length} taken · {badges} badge{badges === 1 ? "" : "s"} on your profile.
         Only your best result ever counts.
@@ -281,7 +276,7 @@ export default function AssessPage() {
                   <h3 className="min-w-0 flex-1 text-base font-semibold" style={{ color: "var(--ux-ink)" }}>
                     {a.skill}
                   </h3>
-                  {a.badge && <Pill tone="green" size="sm">On your profile</Pill>}
+                  {a.badge && <Pill tone="green" size="sm">{tr("assess.onYourProfile")}</Pill>}
                   {a.level && !a.badge && <Pill tone="neutral" size="sm">{a.level}</Pill>}
                 </div>
 
@@ -313,14 +308,16 @@ export default function AssessPage() {
                  style={{ borderColor: "var(--ux-line)" }}>
               {/* Said before she starts, not buried in terms. */}
               <span className="text-xs" style={{ color: "var(--ux-faint)" }}>
-                {a.taken ? "A second try can only improve your score." : "You can stop and come back."}
+                {a.taken ? tr("assess.aSecondTryCanOnlyImprove")
+              : tr("assess.youCanStopAndComeBack")}
               </span>
               <Btn variant={a.taken ? "outline" : "primary"} size="sm"
                    icon={opening === a.id ? "Loader" : undefined}
                    iconEnd={opening === a.id ? undefined : "ArrowRight"}
                    disabled={!!opening}
                    onClick={() => void start(a.id)}>
-                {opening === a.id ? "Opening…" : a.taken ? "Try again" : "Take the test"}
+                {opening === a.id ? "Opening…" : a.taken ? tr("assess.tryAgain")
+              : tr("assess.takeTheTest")}
               </Btn>
             </div>
           </Card>

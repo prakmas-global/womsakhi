@@ -12,6 +12,7 @@ import { HomeShell } from "@/components/ux/home/HomeShell";
 import { useBookings } from "@/components/ux/live";
 import { useAction } from "@/lib/use-action";
 import { apiCancelBooking, apiLeaveFeedback } from "@/lib/member-api";
+import { useT } from "@/i18n";
 
 
 /**
@@ -22,6 +23,7 @@ import { apiCancelBooking, apiLeaveFeedback } from "@/lib/member-api";
  * says what it is waiting for rather than pretending to be confirmed.
  */
 export default function BookingsPage() {
+  const tr = useT();
   const { data: BOOKINGS, source, refetch } = useBookings();
 
   /**
@@ -75,7 +77,7 @@ export default function BookingsPage() {
       rail={
         <div className="space-y-[16px]">
           <Card className="ux-onscroll-soft">
-            <SectionHead title="Before you cancel" icon="Info" />
+            <SectionHead title={tr("bookings.beforeYouCancel")} icon="Info" />
             <ul className="space-y-2.5">
               {[
                 "A mentor has kept that hour free for you.",
@@ -89,9 +91,7 @@ export default function BookingsPage() {
               ))}
             </ul>
             <p className="mt-3.5 rounded-[12px] p-3 text-xs leading-relaxed"
-               style={{ background: "var(--ux-surface-2)", color: "var(--ux-muted)" }}>
-              Cancelling is always allowed and never counts against you. Telling someone early is just kinder.
-            </p>
+               style={{ background: "var(--ux-surface-2)", color: "var(--ux-muted)" }}>{tr("bookings.cancellingIsAlwaysAllowedAndNever")}</p>
           </Card>
         </div>
       }
@@ -167,7 +167,7 @@ export default function BookingsPage() {
                           : COPY.booking.placeGoesOn}
                     </p>
                     <span className="flex shrink-0 items-center gap-2">
-                      <Btn variant="outline" size="sm" onClick={() => setCancelling(null)}>Keep it</Btn>
+                      <Btn variant="outline" size="sm" onClick={() => setCancelling(null)}>{tr("bookings.keepIt")}</Btn>
                       <Btn variant="primary" size="sm"
                            className={cancel.busyWith === b.id ? "pointer-events-none opacity-60" : ""}
                            onClick={async () => {
@@ -189,13 +189,13 @@ export default function BookingsPage() {
                             diary is built from her bookings, so the booking
                             itself is already the entry; the link goes there
                             rather than promising a second one. */}
-                        <Btn href="/app/schedule" variant="outline" size="sm" icon="CalendarDays">In your diary</Btn>
+                        <Btn href="/app/schedule" variant="outline" size="sm" icon="CalendarDays">{tr("bookings.inYourDiary")}</Btn>
                         <Btn variant="ghost" size="sm" onClick={() => setCancelling(b.id)}>Cancel</Btn>
                       </>
                     )}
                     {b.state === "Confirmed" && b.kind === "Mentor" && (
                       <ActionBtn variant="primary" size="sm" icon="Video" doneIcon="Copy"
-                                 done="Link copied"
+                                 done={tr("bookings.linkCopied")}
                                  act={() => copy(`https://meet.womsakhi.in/${b.id}`, "Link copied", "meet.womsakhi.in/" + b.id)}>
                         Join
                       </ActionBtn>
@@ -205,7 +205,7 @@ export default function BookingsPage() {
                         of the team who run the sessions, and nowhere else —
                         which is what it now says. */}
                     {b.state === "Finished" && (
-                      <NoteBtn label="Leave a note" icon="Star" stars
+                      <NoteBtn label={tr("bookings.leaveANote")} icon="Star" stars
                                title={`How was ${b.what}?`} to="the WomSakhi team"
                                placeholder={COPY.booking.feedbackAsk}
                                send={(n) => apiLeaveFeedback({
@@ -216,7 +216,7 @@ export default function BookingsPage() {
                                sentBody={COPY.booking.feedbackPrivate}
                                sentLink={null} />
                     )}
-                    {gone && <Btn href={b.kind === "Mentor" ? "/app/mentors" : "/app/events"} variant="soft" size="sm" icon="RotateCcw">Book again</Btn>}
+                    {gone && <Btn href={b.kind === "Mentor" ? "/app/mentors" : "/app/events"} variant="soft" size="sm" icon="RotateCcw">{tr("bookings.bookAgain")}</Btn>}
                   </div>
                 )}
               </Card>
@@ -227,9 +227,10 @@ export default function BookingsPage() {
         <Card>
           <EmptyState
             icon="CalendarX"
-            title={tab === "Past" ? "Nothing has finished yet" : "Nothing booked"}
+            title={tab === "Past" ? tr("bookings.nothingHasFinishedYet")
+              : tr("bookings.nothingBooked")}
             body="Mentor sessions, workshops and melas you say yes to appear here."
-            action={<Btn href="/app/events" variant="primary" iconEnd="ArrowRight">Find something</Btn>}
+            action={<Btn href="/app/events" variant="primary" iconEnd="ArrowRight">{tr("bookings.findSomething")}</Btn>}
           />
         </Card>
       )}

@@ -10,6 +10,7 @@ import type { GroupBuy } from "@/lib/entitlements-api";
 import type { Listing, ShopOrder } from "@/lib/shop-api";
 import type { WalletTxn } from "@/lib/wallet-api";
 import { formatMoney } from "@/components/ux/kit/money";
+import { useT } from "@/i18n";
 
 /**
  * Earn, four ways.
@@ -103,16 +104,19 @@ function Tile({ tone, children, size = 40 }: { tone: string; children: React.Rea
   );
 }
 
-const Sec = ({ children, href }: { children: React.ReactNode; href?: string }) => (
+const Sec = ({ children, href }: { children: React.ReactNode; href?: string }) => {
+  const tr = useT();
+  return (
   <h2 className="mb-3.5 mt-7 flex items-center gap-2.5 text-2xs font-extrabold uppercase tracking-[0.16em] first:mt-0"
       style={{ color: "var(--ux-faint)" }}>
     {children}
     {href && (
       <Link href={href} className="ux-press ms-auto flex min-h-[34px] items-center rounded-[12px] px-3 text-xs font-bold normal-case tracking-normal"
-            style={{ color: "var(--ux-brand)" }}>See all</Link>
+            style={{ color: "var(--ux-brand)" }}>{tr("opportunities.seeAll")}</Link>
     )}
   </h2>
-);
+  );
+};
 
 const Btn = ({ primary, onClick, children, disabled }: {
   primary?: boolean; onClick?: () => void; children: React.ReactNode; disabled?: boolean;
@@ -168,11 +172,13 @@ const card = {
  * qualified talks herself out of applying.
  */
 function MatchNote({ skills, compact = false }: { skills?: string[]; compact?: boolean }) {
+  const tr = useT();
   const fit = matchFor(skills ?? []);
   if (!fit.because) return null;
   const tone = matchTone(fit.pct);
   return (
-    <p className={`flex items-start gap-1.5 ${compact ? "mt-1.5 text-2xs" : "mt-2 rounded-[8px] px-2.5 py-2 text-xs"} leading-snug`}
+    <p className={`flex items-start gap-1.5 ${compact ? tr("opportunities.mtTextXs")
+              : tr("opportunities.mtRoundedPxPxPyText")} leading-snug`}
        style={compact ? { color: "var(--ux-muted)" }
                       : { background: "var(--ux-surface-2)", color: "var(--ux-ink-2)" }}>
       <Icons.Sparkles className="mt-[2px] h-[0.75rem] w-[0.75rem] shrink-0"
@@ -196,6 +202,7 @@ function MatchNote({ skills, compact = false }: { skills?: string[]; compact?: b
  * nothing.
  */
 export const Ledger = memo(function Ledger({ d, act }: { d: EarnData; act: Acts }) {
+  const tr = useT();
   return (
     <>
       <div className="mb-6 grid overflow-hidden rounded-[20px]"
@@ -220,7 +227,7 @@ export const Ledger = memo(function Ledger({ d, act }: { d: EarnData; act: Acts 
 
       {d.orders.some((o) => o.needs_her) && (
         <>
-          <Sec href="/app/documents">Waiting on you</Sec>
+          <Sec href="/app/documents">{tr("opportunities.waitingOnYou")}</Sec>
           <table className="ux-ledger text-xsm">
             <thead>
               <tr style={{ borderBottom: "1px solid var(--ux-line)" }}>
@@ -253,7 +260,7 @@ export const Ledger = memo(function Ledger({ d, act }: { d: EarnData; act: Acts 
         </>
       )}
 
-      <Sec href="/app/opportunities">Work open to you</Sec>
+      <Sec href="/app/opportunities">{tr("opportunities.workOpenToYou")}</Sec>
       <table className="ux-ledger text-xsm">
         <thead>
           <tr style={{ borderBottom: "1px solid var(--ux-line)" }}>
@@ -292,7 +299,7 @@ export const Ledger = memo(function Ledger({ d, act }: { d: EarnData; act: Acts 
 
       {d.pools.length > 0 && (
         <>
-          <Sec href="/app/group-buy">Buying together</Sec>
+          <Sec href="/app/group-buy">{tr("opportunities.buyingTogether")}</Sec>
           <table className="ux-ledger text-xsm">
             <thead>
               <tr style={{ borderBottom: "1px solid var(--ux-line)" }}>
@@ -334,6 +341,7 @@ export const Ledger = memo(function Ledger({ d, act }: { d: EarnData; act: Acts 
 /* ══ B · FEED ═════════════════════════════════════════════════════════════ */
 
 export const Feed = memo(function Feed({ d, act }: { d: EarnData; act: Acts }) {
+  const tr = useT();
   const top = d.opps[0];
   return (
     <div className="mx-auto w-full max-w-[640px]">
@@ -366,7 +374,7 @@ export const Feed = memo(function Feed({ d, act }: { d: EarnData; act: Acts }) {
           <div className="mb-3 flex items-center gap-3">
             <Tile tone="violet"><Icons.Sparkles className="h-[19px] w-[19px]" /></Tile>
             <div className="min-w-0">
-              <b className="block text-sm font-bold" style={{ color: "var(--ux-ink)" }}>Work that fits you</b>
+              <b className="block text-sm font-bold" style={{ color: "var(--ux-ink)" }}>{tr("opportunities.workThatFitsYou")}</b>
               <span className="text-xs" style={{ color: "var(--ux-faint)" }}>{top.org} · {top.kind}</span>
             </div>
             <time className="ms-auto shrink-0 text-2xs" style={{ color: "var(--ux-faint)" }}>{top.deadline_label}</time>
@@ -435,7 +443,7 @@ export const Feed = memo(function Feed({ d, act }: { d: EarnData; act: Acts }) {
           <p className="m-0 text-sm" style={{ color: "var(--ux-ink-2)" }}>
             Your balance is {rupees(d.balanceMinor)}, all of it ready to take out.
           </p>
-          <div className="mt-3.5"><LinkBtn href="/app/wallet" primary>Take money out</LinkBtn></div>
+          <div className="mt-3.5"><LinkBtn href="/app/wallet" primary>{tr("opportunities.takeMoneyOut")}</LinkBtn></div>
         </article>
       ))}
     </div>
@@ -445,6 +453,7 @@ export const Feed = memo(function Feed({ d, act }: { d: EarnData; act: Acts }) {
 /* ══ C · BOARD ════════════════════════════════════════════════════════════ */
 
 export const Board = memo(function Board({ d, act }: { d: EarnData; act: Acts }) {
+  const tr = useT();
   const needs = d.orders.filter((o) => o.needs_her);
   const moving = d.apps.filter((a) => a.status !== "closed");
   const paid = d.txns.filter((t) => t.kind === "credit");
@@ -482,7 +491,7 @@ export const Board = memo(function Board({ d, act }: { d: EarnData; act: Acts })
     <div className="grid items-start gap-4 lg:grid-cols-3">
       {lane("--ux-amber", "Needs you", needs.length,
         needs.length === 0
-          ? <p className="text-xsm" style={{ color: "var(--ux-faint)" }}>Nothing is waiting on you.</p>
+          ? <p className="text-xsm" style={{ color: "var(--ux-faint)" }}>{tr("opportunities.nothingIsWaitingOnYou")}</p>
           : needs.map((o) => tk(o.id, o.title, `${o.buyer_name} · ${o.state}`, o.total_label, "--ux-amber-ink",
               <div className="mt-2.5"><Btn primary onClick={() => act.advance(o.id)}>{o.next_state ?? "Open"}</Btn></div>)))}
 
@@ -513,6 +522,7 @@ export const Board = memo(function Board({ d, act }: { d: EarnData; act: Acts })
 /* ══ D · MAGAZINE ═════════════════════════════════════════════════════════ */
 
 export const Magazine = memo(function Magazine({ d, act }: { d: EarnData; act: Acts }) {
+  const tr = useT();
   const top = d.opps[0];
   const needs = d.orders.filter((o) => o.needs_her);
   return (
@@ -526,8 +536,7 @@ export const Magazine = memo(function Magazine({ d, act }: { d: EarnData; act: A
           <div className="relative max-w-[620px] p-8">
             <span className="inline-flex items-center gap-2 rounded-full px-3.5 py-1.5 text-2xs font-extrabold uppercase tracking-[0.06em]"
                   style={{ background: "linear-gradient(96deg, var(--ux-rib-2), var(--ux-rib-3))", color: "var(--ux-on-brand)" }}>
-              <Icons.Sparkles className="h-[13px] w-[13px]" /> Best work for you this week
-            </span>
+              <Icons.Sparkles className="h-[13px] w-[13px]" />{tr("opportunities.bestWorkForYouThisWeek")}</span>
             <h2 className="mt-3.5 text-[clamp(1.5625rem,3.6vw,2.375rem)] font-extrabold leading-[1.12] tracking-[-0.035em]"
                 style={{ color: "var(--ux-on-brand)" }}>{top.title}</h2>
             <div className="mt-3.5 flex flex-wrap items-baseline gap-3">
@@ -550,15 +559,13 @@ export const Magazine = memo(function Magazine({ d, act }: { d: EarnData; act: A
               <Link href={`/app/opportunities/${top.id}`}
                     className="ux-press inline-flex min-h-[46px] items-center gap-2 rounded-[12px] px-5 text-xsm font-bold"
                     style={{ background: "rgba(255,255,255,0.16)", color: "var(--ux-on-brand)",
-                             boxShadow: "inset 0 0 0 1px rgba(255,255,255,0.34)" }}>
-                See the whole thing
-              </Link>
+                             boxShadow: "inset 0 0 0 1px rgba(255,255,255,0.34)" }}>{tr("opportunities.seeTheWholeThing")}</Link>
             </div>
           </div>
         </section>
       )}
 
-      <Sec>This month</Sec>
+      <Sec>{tr("opportunities.thisMonth")}</Sec>
       <div className="grid gap-4" style={{ gridTemplateColumns: "repeat(auto-fit, minmax(250px, 1fr))" }}>
         <article className="rounded-[20px] p-4" style={card}>
           <b className="block text-sm font-bold" style={{ color: "var(--ux-ink)" }}>
@@ -571,7 +578,7 @@ export const Magazine = memo(function Magazine({ d, act }: { d: EarnData; act: A
           <p className="mt-2.5 text-xl font-extrabold tabular-nums" style={{ color: "var(--ux-green-ink)" }}>
             {rupees(d.balanceMinor)}
           </p>
-          <div className="mt-3"><LinkBtn href="/app/wallet" primary>Take money out</LinkBtn></div>
+          <div className="mt-3"><LinkBtn href="/app/wallet" primary>{tr("opportunities.takeMoneyOut2")}</LinkBtn></div>
         </article>
 
         {needs.length > 0 && (
@@ -585,7 +592,7 @@ export const Magazine = memo(function Magazine({ d, act }: { d: EarnData; act: A
             <p className="mt-2.5 text-xl font-extrabold tabular-nums" style={{ color: "var(--ux-amber-ink)" }}>
               {rupees(d.owedMinor)}
             </p>
-            <div className="mt-3"><LinkBtn href="/app/documents">Open your orders</LinkBtn></div>
+            <div className="mt-3"><LinkBtn href="/app/documents">{tr("opportunities.openYourOrders")}</LinkBtn></div>
           </article>
         )}
 

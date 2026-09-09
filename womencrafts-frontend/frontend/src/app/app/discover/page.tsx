@@ -14,6 +14,7 @@ import {
 import {
   CROSSINGS, FOR_YOU, NEARBY_WOMEN, type DiscoverItem,
 } from "@/components/ux/discovery/data";
+import { useT } from "@/i18n";
 
 /**
  * Discover — for when she does not know what to ask.
@@ -39,6 +40,7 @@ import {
 type Lens = "all" | "women" | "work" | "learn";
 
 export default function DiscoverPage() {
+  const tr = useT();
   const router = useRouter();
   const [lens, setLens] = useState<Lens>("all");
   const [saved, setSaved] = useState<string[]>([]);
@@ -86,13 +88,9 @@ export default function DiscoverPage() {
       <div className="flex flex-col gap-5">
 
         <header>
-          <p className="text-2xs font-extrabold uppercase tracking-[0.2em]" style={{ color: v("--ux-brand") }}>
-            For you
-          </p>
+          <p className="text-2xs font-extrabold uppercase tracking-[0.2em]" style={{ color: v("--ux-brand") }}>{tr("discover.forYou")}</p>
           <h1 className="mt-2 text-[clamp(1.5rem,3.2vw,2.125rem)] font-extrabold leading-[1.1] tracking-[-0.035em]"
-              style={{ color: v("--ux-ink") }}>
-            Things worth a look
-          </h1>
+              style={{ color: v("--ux-ink") }}>{tr("discover.thingsWorthALook")}</h1>
           <p className="mt-1.5 max-w-[58ch] text-sm leading-relaxed" style={{ color: v("--ux-muted") }}>
             Not the most popular things — the ones that have something to do with you. Everything
             below says why it is here.
@@ -122,9 +120,7 @@ export default function DiscoverPage() {
           </button>
         ) : (
           <Card pad={20}>
-            <p className="text-base font-bold" style={{ color: v("--ux-ink") }}>
-              What is closest to where you are?
-            </p>
+            <p className="text-base font-bold" style={{ color: v("--ux-ink") }}>{tr("discover.whatIsClosestToWhereYou")}</p>
             <p className="mt-1 max-w-[54ch] text-xsm leading-relaxed" style={{ color: v("--ux-muted") }}>
               This only changes what gets shown first. Nothing is hidden from you, and you can
               change it whenever it stops being true.
@@ -149,15 +145,15 @@ export default function DiscoverPage() {
               ))}
             </div>
             <div className="mt-4 flex flex-wrap gap-2">
-              <Btn size="sm" variant="ghost" onClick={() => pickLife(null)}>None of these</Btn>
-              <Btn size="sm" variant="ghost" onClick={() => setAsking(false)}>Not now</Btn>
+              <Btn size="sm" variant="ghost" onClick={() => pickLife(null)}>{tr("discover.noneOfThese")}</Btn>
+              <Btn size="sm" variant="ghost" onClick={() => setAsking(false)}>{tr("discover.notNow")}</Btn>
             </div>
           </Card>
         )}
 
         <div className="flex flex-wrap gap-2">
           <Chip icon="LayoutGrid" selected={lens === "all"} onClick={() => setLens("all")}>Everything</Chip>
-          <Chip icon="Users" selected={lens === "women"} onClick={() => setLens("women")}>Women like you</Chip>
+          <Chip icon="Users" selected={lens === "women"} onClick={() => setLens("women")}>{tr("discover.womenLikeYou")}</Chip>
           <Chip icon="Briefcase" selected={lens === "work"} onClick={() => setLens("work")}>Work</Chip>
           <Chip icon="BookOpen" selected={lens === "learn"} onClick={() => setLens("learn")}>Learn</Chip>
         </div>
@@ -166,8 +162,8 @@ export default function DiscoverPage() {
 
         {showWomen && (
           <div>
-            <SectionHead title="Women near you, a step ahead"
-                         sub="Same trade, same area — you can message any of them" icon="UserRoundCheck" />
+            <SectionHead title={tr("discover.womenNearYouAStepAhead")}
+                         sub={tr("discover.sameTradeSameAreaYouCan")} icon="UserRoundCheck" />
             <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
               {NEARBY_WOMEN.map((i) => (
                 <Row key={i.id} i={i} saved={saved.includes(i.id)}
@@ -179,8 +175,8 @@ export default function DiscoverPage() {
 
         {showCross && (
           <div>
-            <SectionHead title="What you already know, used differently"
-                         sub="Same skill, better paid — women near you made these moves" icon="TrendingUp" />
+            <SectionHead title={tr("discover.whatYouAlreadyKnowUsedDifferently")}
+                         sub={tr("discover.sameSkillBetterPaidWomenNear")} icon="TrendingUp" />
             <div className="grid gap-3 sm:grid-cols-2">
               {CROSSINGS.map((i) => (
                 <Row key={i.id} i={i} saved={saved.includes(i.id)}
@@ -191,14 +187,14 @@ export default function DiscoverPage() {
         )}
 
         <div>
-          <SectionHead title="Picked because of something you did"
+          <SectionHead title={tr("discover.pickedBecauseOfSomethingYouDid")}
                        sub={stage ? stage.shapes : "Not because it is popular"}
                        icon="Sparkles" chip={String(forYou.length)} />
           {forYou.length === 0 ? (
             <Card>
-              <EmptyState icon="Compass" title="Nothing under this filter yet"
+              <EmptyState icon="Compass" title={tr("discover.nothingUnderThisFilterYet")}
                           body="Try another filter — or look at the women near you, which is where most work here actually comes from."
-                          action={<Btn size="sm" variant="outline" onClick={() => setLens("all")}>Show everything</Btn>} />
+                          action={<Btn size="sm" variant="outline" onClick={() => setLens("all")}>{tr("discover.showEverything")}</Btn>} />
             </Card>
           ) : (
             <div className="grid gap-3 sm:grid-cols-2">
@@ -228,6 +224,7 @@ export default function DiscoverPage() {
 function Row({ i, saved, onSave, onOpen }: {
   i: DiscoverItem; saved: boolean; onSave: () => void; onOpen: () => void;
 }) {
+  const tr = useT();
   return (
     <Card pad={0} style={{ overflow: "hidden" }}>
       <button type="button" onClick={onOpen} className="ux-press flex w-full items-start gap-3.5 p-4 text-left">
@@ -247,7 +244,8 @@ function Row({ i, saved, onSave, onOpen }: {
       </button>
       <div className="flex gap-2 border-t px-4 py-3" style={{ borderColor: v("--ux-line") }}>
         <Btn size="sm" full onClick={onOpen}>
-          {i.kind === "woman" ? "See her" : i.kind === "circle" ? "See the circle" : "Have a look"}
+          {i.kind === "woman" ? "See her" : i.kind === "circle" ? tr("discover.seeTheCircle")
+              : tr("discover.haveALook")}
         </Btn>
         <Btn size="sm" variant={saved ? "soft" : "ghost"} icon="Bookmark" onClick={onSave}>
           {saved ? "Saved" : "Save"}

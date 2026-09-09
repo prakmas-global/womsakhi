@@ -7,6 +7,7 @@ import { HomeShell } from "@/components/ux/home/HomeShell";
 import { Back, Btn, Card, I, Pill, SectionHead, v } from "@/components/ux/kit";
 import { formatRupees } from "@/components/ux/kit";
 import { GROUP_STEPS, VEHICLES, type Vehicle } from "@/components/ux/reach/data";
+import { useT } from "@/i18n";
 
 /**
  * Something that can sign — the counterparty consortium bidding assumed.
@@ -32,6 +33,7 @@ import { GROUP_STEPS, VEHICLES, type Vehicle } from "@/components/ux/reach/data"
  * before the order, in writing. That is not a legal point.
  */
 export default function TogetherPage() {
+  const tr = useT();
   const router = useRouter();
   const [pick, setPick] = useState<string>("v2");
   const [steps, setSteps] = useState(GROUP_STEPS);
@@ -46,16 +48,12 @@ export default function TogetherPage() {
   return (
     <HomeShell active="/app/contracts">
       <div className="flex flex-col gap-5">
-        <Back to="/app/contracts" label="Back to big orders" />
+        <Back to="/app/contracts" label={tr("contractsTogether.backToBigOrders")} />
 
         <header>
-          <p className="text-2xs font-extrabold uppercase tracking-[0.2em]" style={{ color: v("--ux-brand") }}>
-            Bidding together
-          </p>
+          <p className="text-2xs font-extrabold uppercase tracking-[0.2em]" style={{ color: v("--ux-brand") }}>{tr("contractsTogether.biddingTogether")}</p>
           <h1 className="mt-2 text-[clamp(1.5rem,3.2vw,2.125rem)] font-extrabold leading-[1.1] tracking-[-0.035em]"
-              style={{ color: v("--ux-ink") }}>
-            Who actually signs it?
-          </h1>
+              style={{ color: v("--ux-ink") }}>{tr("contractsTogether.whoActuallySignsIt")}</h1>
           <p className="mt-1.5 max-w-[58ch] text-sm leading-relaxed" style={{ color: v("--ux-muted") }}>
             Fourteen of you can make three hundred covers. But a company will not sign a contract
             with fourteen people, and will not send fourteen payments. Somebody, or something, has
@@ -86,10 +84,12 @@ export default function TogetherPage() {
               </p>
               <div className="mt-3 flex flex-wrap gap-2">
                 <Pill tone={chosen.canSign ? "green" : "neutral"} size="sm">
-                  {chosen.canSign ? "Can sign a contract" : "Cannot sign as a group"}
+                  {chosen.canSign ? tr("contractsTogether.canSignAContract")
+              : tr("contractsTogether.cannotSignAsAGroup")}
                 </Pill>
                 <Pill tone={chosen.canHoldMoney ? "green" : "neutral"} size="sm">
-                  {chosen.canHoldMoney ? "Can receive one payment" : "No single payment"}
+                  {chosen.canHoldMoney ? tr("contractsTogether.canReceiveOnePayment")
+              : tr("contractsTogether.noSinglePayment")}
                 </Pill>
                 <Pill tone="neutral" size="sm">
                   {chosen.costMinor === 0 ? "No cost" : formatRupees(chosen.costMinor)}
@@ -105,7 +105,7 @@ export default function TogetherPage() {
         {/* The steps, only when they apply */}
         {pick === "v3" && (
           <div>
-            <SectionHead title="What registering actually involves"
+            <SectionHead title={tr("contractsTogether.whatRegisteringActuallyInvolves")}
                          sub={`${doneCount} of ${steps.length} done`} icon="ListChecks" />
             <Card pad={0} style={{ overflow: "hidden" }}>
               {steps.map((s, i) => (
@@ -130,7 +130,7 @@ export default function TogetherPage() {
           <div className="flex items-start gap-3">
             <I name="AlertTriangle" className="mt-[2px] h-[16px] w-[16px] shrink-0" style={{ color: v("--ux-amber-ink") }} />
             <p className="text-xsm leading-relaxed" style={{ color: v("--ux-ink-2") }}>
-              <b style={{ color: v("--ux-ink") }}>Agree how the money splits before the order, in writing.</b>{" "}
+              <b style={{ color: v("--ux-ink") }}>{tr("contractsTogether.agreeHowTheMoneySplitsBefore")}</b>{" "}
               Not after it is delivered, and not on the strength of a conversation. This is the thing
               that ends friendships between women who were right to trust each other, and it costs
               nothing to prevent.

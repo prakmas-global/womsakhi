@@ -15,6 +15,7 @@ import {
   EVENT_ART, EVENT_KINDS, rupees, type Ev, type EventKind,
 } from "@/components/ux/events/data";
 import { useEvents } from "@/components/ux/growth";
+import { useT } from "@/i18n";
 
 /**
  * Events — melas, workshops, webinars and meets.
@@ -24,6 +25,7 @@ import { useEvents } from "@/components/ux/growth";
  * same principle: the cost of a decision belongs next to the decision.
  */
 export default function EventsPage() {
+  const tr = useT();
   // Split in the fetcher, not here: reading the clock during render makes the
   // same props produce different output.
   const { data: events, source, refetch } = useEvents();
@@ -71,7 +73,7 @@ export default function EventsPage() {
       rail={
         <div className="space-y-[16px]">
           <Card className="ux-onscroll-soft">
-            <SectionHead title="Where you have been" sub="And what it brought in" />
+            <SectionHead title={tr("events.whereYouHaveBeen")} sub={tr("events.andWhatItBroughtIn")} />
             <ul className="ux-stagger space-y-3">
               {PAST_EVENTS.map((p) => (
                 <li key={p.id} className="ux-hov flex items-center gap-3">
@@ -90,9 +92,7 @@ export default function EventsPage() {
               ))}
             </ul>
             <p className="mt-3.5 rounded-[12px] p-3 text-xs leading-relaxed"
-               style={{ background: "var(--ux-surface-2)", color: "var(--ux-ink-2)" }}>
-              One mela last Diwali brought in more than three weeks of orders.
-            </p>
+               style={{ background: "var(--ux-surface-2)", color: "var(--ux-ink-2)" }}>{tr("events.oneMelaLastDiwaliBroughtIn")}</p>
           </Card>
 
           <div className="ux-clay ux-onscroll-soft relative overflow-hidden p-[20px]"
@@ -100,14 +100,10 @@ export default function EventsPage() {
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img loading="lazy" decoding="async" src={EVENT_ART.hero} alt=""
                  className="ux-float pointer-events-none absolute -bottom-3 -end-4 h-[104px] w-[104px] object-contain" />
-            <h2 className="relative w-[60%] text-sm font-semibold" style={{ color: "var(--ux-ink)" }}>
-              Host something
-            </h2>
-            <p className="relative mt-2 w-[60%] text-xs leading-relaxed" style={{ color: "var(--ux-muted)" }}>
-              Teach what you know to ten women near you. We handle the room.
-            </p>
+            <h2 className="relative w-[60%] text-sm font-semibold" style={{ color: "var(--ux-ink)" }}>{tr("events.hostSomething")}</h2>
+            <p className="relative mt-2 w-[60%] text-xs leading-relaxed" style={{ color: "var(--ux-muted)" }}>{tr("events.teachWhatYouKnowToTen")}</p>
             <div className="relative mt-3 w-[60%]">
-              <Btn href="/app/feedback" variant="soft" size="sm" iconEnd="ArrowRight">Propose an event</Btn>
+              <Btn href="/app/feedback" variant="soft" size="sm" iconEnd="ArrowRight">{tr("events.proposeAnEvent")}</Btn>
             </div>
           </div>
         </div>
@@ -199,7 +195,8 @@ export default function EventsPage() {
 
                     <div className="mt-auto flex items-center justify-between gap-3 pt-3.5">
                       <span className="text-xs" style={{ color: "var(--ux-faint)" }}>
-                        {e.online ? "Joining link sent on the day" : "Bring your own stock"}
+                        {e.online ? tr("events.joiningLinkSentOnTheDay")
+              : tr("events.bringYourOwnStock")}
                       </span>
                       <span className="flex items-center gap-2">
                         {/* "Remind me" and "Tell me if a place opens" used to
@@ -208,11 +205,9 @@ export default function EventsPage() {
                             a waiting list, so both said "we will" about
                             something nobody had arranged. A full event now
                             says it is full, in words, where the button was. */}
-                        <Btn href={`/app/events/${e.id}`} variant="outline" size="sm">The details</Btn>
+                        <Btn href={`/app/events/${e.id}`} variant="outline" size="sm">{tr("events.theDetails")}</Btn>
                         {full && !on ? (
-                          <span className="text-xs font-medium" style={{ color: "var(--ux-orange-ink)" }}>
-                            Every place has gone
-                          </span>
+                          <span className="text-xs font-medium" style={{ color: "var(--ux-orange-ink)" }}>{tr("events.everyPlaceHasGone")}</span>
                         ) : (
                           <Btn variant={on ? "outline" : "primary"} size="sm"
                                icon={busy ? "Loader" : on ? "Check" : undefined}
@@ -234,9 +229,10 @@ export default function EventsPage() {
         <Card>
           <EmptyState
             icon="CalendarX"
-            title={tab === "You are going" ? "Nothing booked yet" : "Nothing of that kind coming up"}
+            title={tab === "You are going" ? tr("events.nothingBookedYet")
+              : tr("events.nothingOfThatKindComingUp")}
             body="Melas, workshops and meets are added every month."
-            action={<Btn onClick={() => { setTab("Coming up"); setKinds([]); }} variant="soft">See everything</Btn>}
+            action={<Btn onClick={() => { setTab("Coming up"); setKinds([]); }} variant="soft">{tr("events.seeEverything")}</Btn>}
           />
         </Card>
       )}

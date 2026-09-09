@@ -12,6 +12,7 @@ import {
   type Haq,
 } from "@/components/ux/haq/data";
 import { AtRisk, HaqRow } from "@/components/ux/haq/parts";
+import { useT } from "@/i18n";
 
 /**
  * Haq — everything she is owed, led by what she is about to lose.
@@ -38,6 +39,7 @@ const FILTERS: { id: Filter; label: string; icon: string }[] = [
 ];
 
 export default function HaqPage() {
+  const tr = useT();
   const router = useRouter();
   const [filter, setFilter] = useState<Filter>("all");
 
@@ -81,16 +83,14 @@ export default function HaqPage() {
               Haq
             </p>
             <h1 className="mt-2 text-[clamp(1.5rem,3.2vw,2.125rem)] font-extrabold leading-[1.1] tracking-[-0.035em]"
-                style={{ color: v("--ux-ink") }}>
-              What you are owed
-            </h1>
+                style={{ color: v("--ux-ink") }}>{tr("haq.whatYouAreOwed")}</h1>
             <p className="mt-1.5 max-w-[54ch] text-sm leading-relaxed"
                style={{ color: v("--ux-muted") }}>
               Money the government has already said is yours — and the paperwork that decides
               whether it keeps arriving.
             </p>
           </div>
-          <Btn variant="outline" icon="FileText" href="/app/haq/papers">Your papers</Btn>
+          <Btn variant="outline" icon="FileText" href="/app/haq/papers">{tr("haq.yourPapers")}</Btn>
         </header>
 
         <AtRisk monthlyMinor={monthly} count={risk.length} soonestDays={soonest} />
@@ -98,28 +98,26 @@ export default function HaqPage() {
         {/* The three numbers that matter, and nothing else. */}
         <Card>
           <div className="grid gap-4 sm:grid-cols-3">
-            <Stat value={formatRupees(arriving)} label="Arriving each month"
+            <Stat value={formatRupees(arriving)} label={tr("haq.arrivingEachMonth")}
                   icon="Wallet" tint="--ux-tint-green" ink="--ux-green-ink" />
-            <Stat value={formatRupees(owed)} label="Owed to you, late"
+            <Stat value={formatRupees(owed)} label={tr("haq.owedToYouLate")}
                   icon="AlarmClock" tint="--ux-tint-orange" ink="--ux-orange-ink" />
-            <Stat value={String(missing)} label="Papers to sort out"
+            <Stat value={String(missing)} label={tr("haq.papersToSortOut")}
                   icon="FileWarning" tint="--ux-tint-amber" ink="--ux-amber-ink" />
           </div>
           {owed > 0 && (
             <div className="mt-4 flex flex-wrap items-center gap-2 border-t pt-3.5"
                  style={{ borderColor: v("--ux-line") }}>
-              <p className="flex-1 text-xsm" style={{ color: v("--ux-ink-2") }}>
-                Late payments carry compensation by law. Almost nobody claims it.
-              </p>
-              <Btn size="sm" variant="soft" href="/app/haq/recover">Claim what is late</Btn>
+              <p className="flex-1 text-xsm" style={{ color: v("--ux-ink-2") }}>{tr("haq.latePaymentsCarryCompensationByLaw")}</p>
+              <Btn size="sm" variant="soft" href="/app/haq/recover">{tr("haq.claimWhatIsLate")}</Btn>
             </div>
           )}
         </Card>
 
         <div id="deadlines" className="scroll-mt-24">
           <SectionHead
-            title="Everything in your name"
-            sub="Ordered by what needs you soonest"
+            title={tr("haq.everythingInYourName")}
+            sub={tr("haq.orderedByWhatNeedsYouSoonest")}
             icon="ListChecks"
             chip={`${HAQ.length}`}
           />
@@ -142,9 +140,9 @@ export default function HaqPage() {
             <Card>
               <EmptyState
                 icon="SearchX"
-                title="Nothing here right now"
+                title={tr("haq.nothingHereRightNow")}
                 body="Try another filter. Everything you receive, and everything you qualify for, is in this list."
-                action={<Btn size="sm" variant="outline" onClick={() => setFilter("all")}>Show everything</Btn>}
+                action={<Btn size="sm" variant="outline" onClick={() => setFilter("all")}>{tr("haq.showEverything")}</Btn>}
               />
             </Card>
           ) : (
@@ -160,8 +158,7 @@ export default function HaqPage() {
           <div className="flex items-start gap-3">
             <I name="Info" className="mt-[2px] h-[16px] w-[16px] shrink-0"
                style={{ color: v("--ux-muted") }} />
-            <p className="text-xsm leading-relaxed" style={{ color: v("--ux-ink-2") }}>
-              Reminders on their own do not get money moving — going <b>with</b> someone does.
+            <p className="text-xsm leading-relaxed" style={{ color: v("--ux-ink-2") }}>{tr("haq.remindersOnTheirOwnDoNot")}<b>with</b> someone does.
               When a benefit needs an office visit, we will offer to find a woman in your circle
               who has already been to that counter.
             </p>

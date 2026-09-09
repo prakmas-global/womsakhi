@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { HomeShell } from "@/components/ux/home/HomeShell";
 import { Back, Btn, Card, I, IconTile, SectionHead, v } from "@/components/ux/kit";
 import { GUARDS, type Guard } from "@/components/ux/vault/data";
+import { useT } from "@/i18n";
 
 /**
  * Who can see your money.
@@ -22,6 +23,7 @@ import { GUARDS, type Guard } from "@/components/ux/vault/data";
  * repeat out loud to the person holding the phone.
  */
 export default function PrivacyPage() {
+  const tr = useT();
   const router = useRouter();
   const [guards, setGuards] = useState<Guard[]>(GUARDS);
   const [note, setNote] = useState<string | null>(null);
@@ -38,16 +40,12 @@ export default function PrivacyPage() {
   return (
     <HomeShell active="/app/vault">
       <div className="flex flex-col gap-5">
-        <Back to="/app/vault" label="Back to your locker" />
+        <Back to="/app/vault" label={tr("vaultPrivacy.backToYourLocker")} />
 
         <header>
-          <p className="text-2xs font-extrabold uppercase tracking-[0.2em]" style={{ color: v("--ux-brand") }}>
-            Who can see
-          </p>
+          <p className="text-2xs font-extrabold uppercase tracking-[0.2em]" style={{ color: v("--ux-brand") }}>{tr("vaultPrivacy.whoCanSee")}</p>
           <h1 className="mt-2 text-[clamp(1.5rem,3.2vw,2.125rem)] font-extrabold leading-[1.1] tracking-[-0.035em]"
-              style={{ color: v("--ux-ink") }}>
-            You decide what shows
-          </h1>
+              style={{ color: v("--ux-ink") }}>{tr("vaultPrivacy.youDecideWhatShows")}</h1>
           <p className="mt-1.5 max-w-[54ch] text-sm leading-relaxed" style={{ color: v("--ux-muted") }}>
             Phones get shared. That is normal, and it should not cost you your privacy.
             All of this is on already — turn any of it off if you would rather.
@@ -63,7 +61,7 @@ export default function PrivacyPage() {
         )}
 
         <div>
-          <SectionHead title="On this phone" icon="ShieldCheck" />
+          <SectionHead title={tr("vaultPrivacy.onThisPhone")} icon="ShieldCheck" />
           <div className="flex flex-col gap-2.5">
             {guards.map((g) => (
               <Card key={g.id} pad={16}>
@@ -77,7 +75,8 @@ export default function PrivacyPage() {
                   </div>
                   <button
                     type="button" role="switch" aria-checked={g.on}
-                    aria-label={`${g.on ? "Turn off" : "Turn on"}: ${g.label}`}
+                    aria-label={`${g.on ? tr("vaultPrivacy.turnOff")
+              : tr("vaultPrivacy.turnOn")}: ${g.label}`}
                     onClick={() => toggle(g.id)}
                     className="ux-press relative h-[28px] w-[50px] shrink-0 rounded-full transition-colors"
                     style={{ background: v(g.on ? "--ux-brand" : "--ux-line-strong") }}>
@@ -95,14 +94,12 @@ export default function PrivacyPage() {
           <div className="flex items-start gap-3.5">
             <IconTile icon="Users" tint="--ux-surface" ink="--ux-pink-ink" size={42} />
             <div className="min-w-0">
-              <p className="text-sm font-bold" style={{ color: v("--ux-ink") }}>
-                What your circle can see
-              </p>
+              <p className="text-sm font-bold" style={{ color: v("--ux-ink") }}>{tr("vaultPrivacy.whatYourCircleCanSee")}</p>
               <p className="mt-1.5 text-xsm leading-relaxed" style={{ color: v("--ux-ink-2") }}>
                 Only whether you have paid into the pot this round. Never your balance, never your
                 pockets, never what you earned. Your circle vouches for you — it does not audit you.
               </p>
-              <Btn size="sm" variant="outline" className="mt-3" href="/app/circles">See your circle</Btn>
+              <Btn size="sm" variant="outline" className="mt-3" href="/app/circles">{tr("vaultPrivacy.seeYourCircle")}</Btn>
             </div>
           </div>
         </Card>

@@ -14,6 +14,7 @@ import {
 import { HomeShell } from "@/components/ux/home/HomeShell";
 import { useEvents } from "@/components/ux/growth";
 import { rupees } from "@/components/ux/events/data";
+import { useT } from "@/i18n";
 
 /**
  * One event.
@@ -23,6 +24,7 @@ import { rupees } from "@/components/ux/events/data";
  * do I bring" is on the page, because that is what actually stops a woman going.
  */
 export default function EventDetail({ params }: { params: Promise<{ id: string }> }) {
+  const tr = useT();
   const { id } = use(params);
   const { data: events, source, refetch } = useEvents();
   const EVENTS = [...events.upcoming, ...events.past];
@@ -69,9 +71,9 @@ export default function EventDetail({ params }: { params: Promise<{ id: string }
         <Card>
           <EmptyState
             icon="CalendarX"
-            title="That event is not listed"
+            title={tr("events.thatEventIsNotListed")}
             body="It may have finished, or the link may be old."
-            action={<Btn href="/app/events" variant="primary" iconEnd="ArrowRight">All events</Btn>}
+            action={<Btn href="/app/events" variant="primary" iconEnd="ArrowRight">{tr("events.allEvents")}</Btn>}
           />
         </Card>
       </HomeShell>
@@ -89,7 +91,8 @@ export default function EventDetail({ params }: { params: Promise<{ id: string }
       rail={
         <div className="space-y-[16px]">
           <Card>
-            <SectionHead title={going ? "You are going" : full ? "This one is full" : "Take a place"} />
+            <SectionHead title={going ? "You are going" : full ? tr("events.thisOneIsFull")
+              : tr("events.takeAPlace")} />
             <div className="flex items-baseline justify-between">
               <span className="text-xsm" style={{ color: "var(--ux-muted)" }}>
                 {!limited ? "Open to everyone" : full ? "All taken" : `${e.spots - e.taken} of ${e.spots} left`}
@@ -109,9 +112,7 @@ export default function EventDetail({ params }: { params: Promise<{ id: string }
                   schedules a reminder, so both said "we will" about something
                   nobody had arranged. A full event now says so in words. */}
               {full && !going ? (
-                <p className="text-xsm leading-relaxed" style={{ color: "var(--ux-orange-ink)" }}>
-                  Every place has gone. Nothing to book here — the ones below are still open.
-                </p>
+                <p className="text-xsm leading-relaxed" style={{ color: "var(--ux-orange-ink)" }}>{tr("events.everyPlaceHasGoneNothingTo")}</p>
               ) : (
                 <Btn variant={going ? "outline" : "primary"} full
                      icon={place.busy ? "Loader" : going ? "Check" : undefined}
@@ -124,9 +125,7 @@ export default function EventDetail({ params }: { params: Promise<{ id: string }
                 </Btn>
               )}
               {going && !place.busy && (
-                <Btn variant="ghost" full size="sm" onClick={() => void place.run("not going")}>
-                  Give up my place
-                </Btn>
+                <Btn variant="ghost" full size="sm" onClick={() => void place.run("not going")}>{tr("events.giveUpMyPlace")}</Btn>
               )}
             </div>
 
@@ -141,15 +140,15 @@ export default function EventDetail({ params }: { params: Promise<{ id: string }
               <p className="ux-slide-up mt-3.5 rounded-[12px] p-3 text-xs leading-relaxed"
                  style={{ background: "var(--ux-tint-green)", color: "var(--ux-ink-2)" }}>
                 {e.online
-                  ? "The joining link reaches you by message an hour before."
-                  : "Bring your own stock and something to sit on. Tables are provided."}
+                  ? tr("events.theJoiningLinkReachesYouBy")
+              : tr("events.bringYourOwnStockAndSomething")}
               </p>
             )}
           </Card>
 
           {!e.online && (
             <Card>
-              <SectionHead title="Getting there" icon="MapPin" />
+              <SectionHead title={tr("events.gettingThere")} icon="MapPin" />
               {/* "Nearest bus: Route 12 and 34, Sector 12 stop" and "Parking:
                   free, behind the hall" used to be printed here — the same two
                   lines under every venue in the country. The API carries a
@@ -167,7 +166,7 @@ export default function EventDetail({ params }: { params: Promise<{ id: string }
                 ))}
               </div>
               <div className="mt-3.5">
-                <Btn href={mapsHref(e.place)} variant="soft" size="sm" full icon="Navigation">Open in maps</Btn>
+                <Btn href={mapsHref(e.place)} variant="soft" size="sm" full icon="Navigation">{tr("events.openInMaps")}</Btn>
               </div>
             </Card>
           )}
@@ -177,8 +176,7 @@ export default function EventDetail({ params }: { params: Promise<{ id: string }
       <Link href="/app/events"
             className="ux-hov -my-1 mb-3.5 inline-flex items-center gap-1.5 py-1 text-xsm font-medium"
             style={{ color: "var(--ux-brand)" }}>
-        <Icons.ArrowLeft className="ux-ico h-4 w-4" /> All events
-      </Link>
+        <Icons.ArrowLeft className="ux-ico h-4 w-4" />{tr("events.allEvents2")}</Link>
 
       <Card className="mb-[16px] overflow-hidden" pad={0}>
         <div className="relative h-[210px] overflow-hidden" style={{ background: `var(${e.tint})` }}>
@@ -212,7 +210,7 @@ export default function EventDetail({ params }: { params: Promise<{ id: string }
 
       <div className="grid grid-cols-[minmax(0,1fr)_300px] gap-[16px]">
         <Card>
-          <SectionHead title="What happens on the day" />
+          <SectionHead title={tr("events.whatHappensOnTheDay")} />
           <ol className="ux-stagger space-y-3.5">
             {(e.kind === "Mela"
               ? [["Arrive by 9:30", "Find your table — they are numbered and yours is in the message"],
@@ -237,7 +235,7 @@ export default function EventDetail({ params }: { params: Promise<{ id: string }
         </Card>
 
         <Card>
-          <SectionHead title="What to bring" icon="Backpack" />
+          <SectionHead title={tr("events.whatToBring")} icon="Backpack" />
           <ul className="space-y-2.5">
             {(e.online
               ? ["A quiet corner if you can find one", "Paper and a pen", "Your questions written down"]

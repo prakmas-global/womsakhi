@@ -8,6 +8,7 @@ import { apiNotificationPrefs, apiSaveNotificationPrefs, type NotificationPrefs 
 import { useResource } from "@/lib/use-resource";
 import { useNotifications } from "@/components/ux/live";
 import { HomeShell } from "@/components/ux/home/HomeShell";
+import { useT } from "@/i18n";
 
 /**
  * Quiet hours.
@@ -43,6 +44,7 @@ const fmt = (m: number) => {
 };
 
 export default function QuietHoursPage() {
+  const tr = useT();
   const { data: server, refetch } = useResource(
     useCallback(() => apiNotificationPrefs(), []),
     null as NotificationPrefs | null,
@@ -73,7 +75,7 @@ export default function QuietHoursPage() {
   if (!p) {
     return (
       <HomeShell active="/app/settings">
-        <p className="mx-auto max-w-[1140px] text-xsm" style={{ color: "var(--ux-muted)" }}>Loading your settings…</p>
+        <p className="mx-auto max-w-[1140px] text-xsm" style={{ color: "var(--ux-muted)" }}>{tr("settingsQuiethours.loadingYourSettings")}</p>
       </HomeShell>
     );
   }
@@ -102,12 +104,10 @@ export default function QuietHoursPage() {
              style={{ color: "var(--ux-faint)" }}>
             <Link href="/app/settings" className="hover:underline" style={{ color: "var(--ux-faint)" }}>Settings</Link>
             <Icons.ChevronRight className="h-[13px] w-[13px]" />
-            <span style={{ color: "var(--ux-ink-2)" }}>Quiet hours</span>
+            <span style={{ color: "var(--ux-ink-2)" }}>{tr("settingsQuiethours.quietHours")}</span>
           </p>
           <h1 className="text-[clamp(1.375rem,3vw,1.875rem)] font-extrabold leading-[1.12] tracking-[-0.03em]"
-              style={{ color: "var(--ux-ink)", textWrap: "balance" }}>
-            Your phone sleeps when you do.
-          </h1>
+              style={{ color: "var(--ux-ink)", textWrap: "balance" }}>{tr("settingsQuiethours.yourPhoneSleepsWhenYouDo")}</h1>
           <p className="mt-2.5 max-w-[58ch] text-sm leading-relaxed" style={{ color: "var(--ux-ink-2)" }}>
             Pick the hours you do not want to be disturbed. Everything that arrives while you sleep
             waits for you in Notifications — nothing is lost, it just waits until morning.
@@ -128,7 +128,7 @@ export default function QuietHoursPage() {
                 : "Off — nothing is held back"}
             </p>
           </div>
-          <Switch on={p.quiet_hours} label="Quiet hours"
+          <Switch on={p.quiet_hours} label={tr("settingsQuiethours.quietHours2")}
                   onChange={(v) => set({ quiet_hours: v })} />
         </div>
 
@@ -152,9 +152,7 @@ export default function QuietHoursPage() {
           </button>
           <button type="button" onClick={() => set({ quiet_start: 1290, quiet_end: 420 })}
                   className="ux-press flex min-h-[46px] items-center rounded-[12px] px-5 text-sm font-bold"
-                  style={{ border: "1px solid var(--ux-line-strong)", color: "var(--ux-ink-2)" }}>
-            Reset to 9:30 PM – 7:00 AM
-          </button>
+                  style={{ border: "1px solid var(--ux-line-strong)", color: "var(--ux-ink-2)" }}>{tr("settingsQuiethours.resetToPmAm")}</button>
           {saved && (
             <span className="flex items-center gap-1.5 text-xsm font-bold" style={{ color: "var(--ux-green-ink)" }}>
               <Icons.Check className="h-4 w-4" /> Saved.
@@ -178,6 +176,7 @@ function Dial({
   inside: (m: number) => boolean;
   span: number; caught: number;
 }) {
+  const tr = useT();
   const svg = useRef<SVGSVGElement>(null);
   const drag = useRef<"start" | "end" | null>(null);
 
@@ -216,14 +215,14 @@ function Dial({
     <section className="ux-sq rounded-[20px] p-5"
              style={{ background: "var(--ux-surface)", border: "1px solid var(--ux-line)",
                       boxShadow: "var(--ux-shadow-card)" }}>
-      <h3 className="text-sm font-bold" style={{ color: "var(--ux-ink)" }}>When you sleep</h3>
+      <h3 className="text-sm font-bold" style={{ color: "var(--ux-ink)" }}>{tr("settingsQuiethours.whenYouSleep")}</h3>
       <p className="mt-1 text-xsm leading-relaxed" style={{ color: "var(--ux-muted)" }}>
         Drag either handle, or use the arrow keys. The marks on the ring are reminders you already
         have — you can see which ones the quiet window would catch.
       </p>
 
       <div className="relative mt-3 grid place-items-center">
-        <svg ref={svg} viewBox="0 0 340 340" role="group" aria-label="Quiet hours dial"
+        <svg ref={svg} viewBox="0 0 340 340" role="group" aria-label={tr("settingsQuiethours.quietHoursDial")}
              className="h-auto w-[min(400px,78vw)] touch-none" style={{ overflow: "visible" }}>
           <defs>
             <linearGradient id="qh-arc" x1="0" y1="0" x2="1" y2="1">
@@ -270,11 +269,11 @@ function Dial({
             );
           })}
 
-          <Handle x={sx} y={sy} tone="var(--ux-brand)" label="Sleep time" value={p.quiet_start}
+          <Handle x={sx} y={sy} tone="var(--ux-brand)" label={tr("settingsQuiethours.sleepTime")} value={p.quiet_start}
                   onDown={() => (drag.current = "start")} onKey={(by) => nudge("start", by)}>
             <path d="M4 -5a6.5 6.5 0 1 1-8.2 8.2A7 7 0 0 0 4 -5Z" fill="var(--ux-brand)" />
           </Handle>
-          <Handle x={ex} y={ey} tone="var(--ux-amber-ink)" label="Wake time" value={p.quiet_end}
+          <Handle x={ex} y={ey} tone="var(--ux-amber-ink)" label={tr("settingsQuiethours.wakeTime")} value={p.quiet_end}
                   onDown={() => (drag.current = "end")} onKey={(by) => nudge("end", by)}>
             <g stroke="var(--ux-amber-ink)" strokeWidth={1.9} strokeLinecap="round" fill="none">
               <circle r={3.6} />
@@ -355,6 +354,7 @@ function Waited({
   inside: (m: number) => boolean; on: boolean;
   from: string; to: string; allowMoney: boolean;
 }) {
+  const tr = useT();
   const held = marks.filter((x) => inside(x.m));
   const tone: Record<string, string> = {
     safety: "--ux-pink", booking: "--ux-amber", event: "--ux-amber",
@@ -369,16 +369,14 @@ function Waited({
     <section className="ux-sq rounded-[20px] p-5"
              style={{ background: "var(--ux-surface)", border: "1px solid var(--ux-line)",
                       boxShadow: "var(--ux-shadow-card)" }}>
-      <h3 className="text-sm font-bold" style={{ color: "var(--ux-ink)" }}>What this window would hold</h3>
+      <h3 className="text-sm font-bold" style={{ color: "var(--ux-ink)" }}>{tr("settingsQuiethours.whatThisWindowWouldHold")}</h3>
       <p className="mt-1 text-xsm leading-relaxed" style={{ color: "var(--ux-muted)" }}>
         {on ? <>Your recent notifications that arrived between {from} and {to}.</>
-            : <>Quiet hours are off, so nothing is being held.</>}
+            : <>{tr("settingsQuiethours.quietHoursAreOffSoNothing")}</>}
       </p>
 
       {!on ? null : held.length === 0 ? (
-        <p className="mt-3 text-xsm" style={{ color: "var(--ux-muted)" }}>
-          Nothing recent falls inside this window.
-        </p>
+        <p className="mt-3 text-xsm" style={{ color: "var(--ux-muted)" }}>{tr("settingsQuiethours.nothingRecentFallsInsideThisWindow")}</p>
       ) : (
         <div className="mt-3">
           {held.slice(0, 5).map((x, i) => (
@@ -399,8 +397,8 @@ function Waited({
           )}
           <p className="mt-3 text-xs leading-relaxed" style={{ color: "var(--ux-muted)" }}>
             {allowMoney
-              ? "Money arriving would still come through — you have it switched on above."
-              : "Money arriving would be held too. You can let it through above."}
+              ? tr("settingsQuiethours.moneyArrivingWouldStillComeThrough")
+              : tr("settingsQuiethours.moneyArrivingWouldBeHeldToo")}
           </p>
         </div>
       )}
@@ -411,6 +409,7 @@ function Waited({
 /* ── nights ─────────────────────────────────────────────────────────────── */
 
 function Nights({ days, onChange }: { days: boolean[]; onChange: (d: boolean[]) => void }) {
+  const tr = useT();
   const preset = (which: "all" | "week" | "end") =>
     onChange(DAYS.map((_, i) => (which === "all" ? true : which === "week" ? i < 5 : i >= 5)));
 
@@ -418,10 +417,8 @@ function Nights({ days, onChange }: { days: boolean[]; onChange: (d: boolean[]) 
     <section className="ux-sq rounded-[20px] p-5"
              style={{ background: "var(--ux-surface)", border: "1px solid var(--ux-line)",
                       boxShadow: "var(--ux-shadow-card)" }}>
-      <h3 className="text-sm font-bold" style={{ color: "var(--ux-ink)" }}>Which nights</h3>
-      <p className="mt-1 text-xsm leading-relaxed" style={{ color: "var(--ux-muted)" }}>
-        Sunday is often the one night worth keeping loud — market orders land early Monday.
-      </p>
+      <h3 className="text-sm font-bold" style={{ color: "var(--ux-ink)" }}>{tr("settingsQuiethours.whichNights")}</h3>
+      <p className="mt-1 text-xsm leading-relaxed" style={{ color: "var(--ux-muted)" }}>{tr("settingsQuiethours.sundayIsOftenTheOneNight")}</p>
       <div className="mt-3 flex gap-1.5">
         {([["all", "Every day"], ["week", "Weeknights"], ["end", "Weekends"]] as const).map(([k, l]) => (
           <button key={k} type="button" onClick={() => preset(k)}
@@ -451,37 +448,35 @@ function Nights({ days, onChange }: { days: boolean[]; onChange: (d: boolean[]) 
 function Breakthrough({
   p, set,
 }: { p: NotificationPrefs; set: (patch: Partial<NotificationPrefs>) => void }) {
+  const tr = useT();
   return (
     <section className="ux-sq rounded-[20px] p-5"
              style={{ background: "var(--ux-surface)", border: "1px solid var(--ux-line)",
                       boxShadow: "var(--ux-shadow-card)" }}>
-      <h3 className="text-sm font-bold" style={{ color: "var(--ux-ink)" }}>What still reaches you</h3>
-      <p className="mt-1 text-xsm leading-relaxed" style={{ color: "var(--ux-muted)" }}>
-        Quiet does not mean unreachable. These come through however late it is.
-      </p>
+      <h3 className="text-sm font-bold" style={{ color: "var(--ux-ink)" }}>{tr("settingsQuiethours.whatStillReachesYou")}</h3>
+      <p className="mt-1 text-xsm leading-relaxed" style={{ color: "var(--ux-muted)" }}>{tr("settingsQuiethours.quietDoesNotMeanUnreachableThese")}</p>
 
       {/* Not a toggle. A safety alert she could switch off at night is not a
           safety alert, so it is stated rather than offered. */}
       <Row icon="ShieldCheck" tint="--ux-tint-green" ink="--ux-green-ink"
-           title="Your safety alert"
+           title={tr("settingsQuiethours.yourSafetyAlert")}
            body="If you press the safety button, or someone responds to one, it rings through — silent or not.">
         <span className="flex items-center gap-1.5 text-2xs font-extrabold uppercase tracking-[0.06em]"
               style={{ color: "var(--ux-green-ink)" }}>
-          <Icons.Lock className="h-[11px] w-[11px]" /> Always on
-        </span>
+          <Icons.Lock className="h-[11px] w-[11px]" />{tr("settingsQuiethours.alwaysOn")}</span>
       </Row>
 
       <Row icon="Wallet" tint="--ux-tint-green" ink="--ux-green-ink"
-           title="Money arriving"
+           title={tr("settingsQuiethours.moneyArriving")}
            body="A payment landing in your wallet. Your own income is not an interruption.">
-        <Switch on={p.quiet_allow_money} label="Money arriving"
+        <Switch on={p.quiet_allow_money} label={tr("settingsQuiethours.moneyArriving2")}
                 onChange={(v) => set({ quiet_allow_money: v })} small />
       </Row>
 
       <Row icon="UsersRound" tint="--ux-tint-violet" ink="--ux-violet-ink"
-           title="Your circle leader"
+           title={tr("settingsQuiethours.yourCircleLeader")}
            body="Only the woman who runs your savings circle, and only about a payment due.">
-        <Switch on={p.quiet_allow_circle_lead} label="Circle leader"
+        <Switch on={p.quiet_allow_circle_lead} label={tr("settingsQuiethours.circleLeader")}
                 onChange={(v) => set({ quiet_allow_circle_lead: v })} small />
       </Row>
     </section>

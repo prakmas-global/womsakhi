@@ -13,6 +13,7 @@ import { HomeShell } from "@/components/ux/home/HomeShell";
 import { DISCOVER_ART, KINDS, type Find, type Kind } from "@/components/ux/discover/data";
 import { CITY } from "@/components/ux/local/data";
 import { useDiscover } from "@/components/ux/growth";
+import { useT } from "@/i18n";
 
 /**
  * Discover — a lens over the whole app, not a copy of it.
@@ -40,6 +41,7 @@ const KIND_LOOK: Record<Kind, { icon: string; tint: string; ink: string }> = {
 };
 
 function Row({ f, i }: { f: Find; i: number }) {
+  const tr = useT();
   return (
     <Link
       href={f.href}
@@ -60,7 +62,7 @@ function Row({ f, i }: { f: Find; i: number }) {
             {f.title}
           </h3>
           {f.isNew && <Pill tone="brand" size="sm">New</Pill>}
-          {f.near && <Pill tone="green" size="sm">Near you</Pill>}
+          {f.near && <Pill tone="green" size="sm">{tr("explore.nearYou")}</Pill>}
         </div>
         <p className="mt-0.5 truncate text-xs" style={{ color: "var(--ux-muted)" }}>{f.sub}</p>
         <p className="mt-1 truncate text-xs font-medium" style={{ color: "var(--ux-ink-2)" }}>{f.meta}</p>
@@ -75,6 +77,7 @@ function Row({ f, i }: { f: Find; i: number }) {
 }
 
 function Discover() {
+  const tr = useT();
   const params = useSearchParams();
   const [kinds, setKinds] = useState<Kind[]>(() => {
     const k = params.get("kind");
@@ -122,7 +125,7 @@ function Discover() {
       rail={
         <div className="space-y-[16px]">
           <Card className="ux-onscroll-soft">
-            <SectionHead title="What is here" sub="Everything WomSakhi can point you at" />
+            <SectionHead title={tr("explore.whatIsHere")} sub={tr("explore.everythingWomsakhiCanPointYouAt")} />
             <ul className="ux-stagger space-y-2.5">
               {KINDS.map((k) => {
                 // An icon per kind, written down rather than fished out of the
@@ -164,14 +167,10 @@ function Discover() {
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img loading="lazy" decoding="async" src={DISCOVER_ART.hero} alt=""
                  className="ux-float pointer-events-none absolute -bottom-3 -end-4 h-[100px] w-[100px] object-contain" />
-            <h3 className="relative w-[60%] text-sm font-semibold" style={{ color: "var(--ux-ink)" }}>
-              Tell Sakhi what you want
-            </h3>
-            <p className="relative mt-2 w-[60%] text-xs leading-relaxed" style={{ color: "var(--ux-muted)" }}>
-              Say it in your own words and she will find it across all of this.
-            </p>
+            <h3 className="relative w-[60%] text-sm font-semibold" style={{ color: "var(--ux-ink)" }}>{tr("explore.tellSakhiWhatYouWant")}</h3>
+            <p className="relative mt-2 w-[60%] text-xs leading-relaxed" style={{ color: "var(--ux-muted)" }}>{tr("explore.sayItInYourOwnWords")}</p>
             <div className="relative mt-3 w-[60%]">
-              <Btn href="/app/sakhi" variant="soft" size="sm" iconEnd="ArrowRight">Ask Sakhi</Btn>
+              <Btn href="/app/sakhi" variant="soft" size="sm" iconEnd="ArrowRight">{tr("explore.askSakhi")}</Btn>
             </div>
           </div>
         </div>
@@ -192,7 +191,7 @@ function Discover() {
           </Chip>
         ))}
         <span className="mx-1 h-6 w-px" style={{ background: "var(--ux-line)" }} />
-        <Chip selected={nearOnly} onClick={() => setNearOnly(!nearOnly)} icon="MapPin">Near me</Chip>
+        <Chip selected={nearOnly} onClick={() => setNearOnly(!nearOnly)} icon="MapPin">{tr("explore.nearMe")}</Chip>
         {filtering && (
           <Btn variant="ghost" size="sm" icon="X" onClick={() => { setKinds([]); setNearOnly(false); }}>Clear</Btn>
         )}
@@ -212,9 +211,9 @@ function Discover() {
           <Card>
             <EmptyState
               icon="SearchX"
-              title="Nothing matches that"
+              title={tr("explore.nothingMatchesThat")}
               body="Try one fewer filter, or ask Sakhi in your own words."
-              action={<Btn onClick={() => { setKinds([]); setNearOnly(false); }} variant="soft">Show everything</Btn>}
+              action={<Btn onClick={() => { setKinds([]); setNearOnly(false); }} variant="soft">{tr("explore.showEverything")}</Btn>}
             />
           </Card>
         )

@@ -5,6 +5,7 @@ import {
   CONTRIBUTION, LEARNING, PORTFOLIO, SKILLS, WORK,
 } from "@/components/ux/profile/data";
 import { COPY } from "@/components/ux/copy";
+import { useT } from "@/i18n";
 
 /**
  * The profile tabs that used to be one "coming soon" card.
@@ -27,10 +28,11 @@ import { COPY } from "@/components/ux/copy";
  * buyers came back" is checkable and cannot be talked up.
  */
 export function SkillsTab() {
+  const tr = useT();
   return (
     <div className="flex flex-col gap-4">
       <div>
-        <SectionHead title="What you can do" sub="With what you did with it — not a rating you gave yourself"
+        <SectionHead title={tr("profile.whatYouCanDo")} sub={tr("profile.withWhatYouDidWithIt")}
                      icon="Sparkles" action="Add a skill" />
         <div className="grid gap-3 sm:grid-cols-2">
           {SKILLS.map((s) => (
@@ -78,10 +80,11 @@ export function SkillsTab() {
  * otherwise teaches her that the truth is a problem.
  */
 export function ExperienceTab() {
+  const tr = useT();
   return (
     <div className="flex flex-col gap-4">
       <div>
-        <SectionHead title="What you have done" sub="Including the time you were not working" icon="Briefcase"
+        <SectionHead title={tr("profile.whatYouHaveDone")} sub={tr("profile.includingTheTimeYouWereNot")} icon="Briefcase"
                      action="Add" />
         <Card pad={0} style={{ overflow: "hidden" }}>
           <ol className="px-5 py-2">
@@ -113,7 +116,7 @@ export function ExperienceTab() {
       </div>
 
       <div>
-        <SectionHead title="What you learned" sub="A certificate is not the only thing that counts"
+        <SectionHead title={tr("profile.whatYouLearned")} sub={tr("profile.aCertificateIsNotTheOnly")}
                      icon="GraduationCap" action="Add" />
         <Card pad={0} style={{ overflow: "hidden" }}>
           {LEARNING.map((l, i) => (
@@ -128,7 +131,7 @@ export function ExperienceTab() {
                 <p className="text-sm font-bold" style={{ color: v("--ux-ink") }}>{l.what}</p>
                 <p className="text-xs" style={{ color: v("--ux-muted") }}>{l.where} · {l.when}</p>
               </div>
-              {l.certificate && <Btn size="sm" variant="ghost" icon="Download" href="/app/certificates">Get it</Btn>}
+              {l.certificate && <Btn size="sm" variant="ghost" icon="Download" href="/app/certificates">{tr("profile.getIt")}</Btn>}
             </div>
           ))}
         </Card>
@@ -141,16 +144,17 @@ export function ExperienceTab() {
 
 /** Work she can point at. The thing a buyer asks for before an order. */
 export function PortfolioTab() {
+  const tr = useT();
   return (
     <div className="flex flex-col gap-4">
       <div>
-        <SectionHead title="Work you can show someone"
-                     sub="The thing a buyer asks for before a first order" icon="Camera" action="Add a photo" />
+        <SectionHead title={tr("profile.workYouCanShowSomeone")}
+                     sub={tr("profile.theThingABuyerAsksFor")} icon="Camera" action="Add a photo" />
         {PORTFOLIO.length === 0 ? (
           <Card>
             <EmptyState icon="Camera" title={COPY.nothingHereYet}
                         body="Photograph the next thing you finish. One clear photo of real work does more than any description."
-                        action={<Btn size="sm" icon="Camera">Add your first</Btn>} />
+                        action={<Btn size="sm" icon="Camera">{tr("profile.addYourFirst")}</Btn>} />
           </Card>
         ) : (
           <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
@@ -184,15 +188,14 @@ export function PortfolioTab() {
  * turn helping into a way of climbing, which is the opposite of the point.
  */
 export function ContributionTab() {
+  const tr = useT();
   const total = CONTRIBUTION.reduce((n, c) => n + c.value, 0);
   return (
     <div className="flex flex-col gap-4">
       <Card pad={0} style={{ overflow: "hidden" }}>
         <div className="px-6 py-7"
              style={{ background: `linear-gradient(140deg, ${v("--ux-tint-pink")}, ${v("--ux-surface")})` }}>
-          <p className="text-2xs font-extrabold uppercase tracking-[0.18em]" style={{ color: v("--ux-pink-ink") }}>
-            Women helping women
-          </p>
+          <p className="text-2xs font-extrabold uppercase tracking-[0.18em]" style={{ color: v("--ux-pink-ink") }}>{tr("profile.womenHelpingWomen")}</p>
           <p className="mt-2 text-[clamp(1.5rem,3vw,2.25rem)] font-extrabold leading-tight tracking-[-0.03em]"
              style={{ color: v("--ux-ink") }}>
             {total} women are further along because of you
@@ -223,10 +226,8 @@ export function ContributionTab() {
 
       <Card pad={16}>
         <div className="flex flex-wrap items-center justify-between gap-3">
-          <p className="text-sm leading-relaxed" style={{ color: v("--ux-ink-2") }}>
-            There is always another woman a step behind you.
-          </p>
-          <Btn size="sm" href="/app/together" icon="Handshake">Help someone</Btn>
+          <p className="text-sm leading-relaxed" style={{ color: v("--ux-ink-2") }}>{tr("profile.thereIsAlwaysAnotherWomanA")}</p>
+          <Btn size="sm" href="/app/together" icon="Handshake">{tr("profile.helpSomeone")}</Btn>
         </div>
       </Card>
     </div>
@@ -237,13 +238,14 @@ export function ContributionTab() {
 
 /** Points at the vault rather than copying it — one place, not two. */
 export function DocumentsTab() {
+  const tr = useT();
   return (
     <Card>
       <EmptyState
         icon="FolderLock"
-        title="Your papers live in your locker"
+        title={tr("profile.yourPapersLiveInYourLocker")}
         body="Aadhaar, PAN, bank details and registrations are kept there rather than on your profile, so nothing anyone can see is ever one tap from a document."
-        action={<Btn size="sm" href="/app/vault" icon="Lock">Open your locker</Btn>}
+        action={<Btn size="sm" href="/app/vault" icon="Lock">{tr("profile.openYourLocker")}</Btn>}
       />
     </Card>
   );

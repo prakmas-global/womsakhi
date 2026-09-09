@@ -9,6 +9,7 @@ import { useCover } from "@/components/ux/entitlements";
 import { useAction } from "@/lib/use-action";
 import { apiMarkReference } from "@/lib/entitlements-api";
 import { MORE_ART } from "@/components/ux/more/data";
+import { useT } from "@/i18n";
 
 /**
  * Insurance & Pension.
@@ -19,6 +20,7 @@ import { MORE_ART } from "@/components/ux/more/data";
  * cover is a decision anyone can make in five seconds once it is put that way.
  */
 export default function CoverPage() {
+  const tr = useT();
   const { data: COVER, source, refetch } = useCover();
 
   /**
@@ -45,7 +47,7 @@ export default function CoverPage() {
       rail={
         <div className="space-y-[16px]">
           <Card>
-            <SectionHead title="What you have now" />
+            <SectionHead title={tr("cover.whatYouHaveNow")} />
             {have.length ? (
               <ul className="ux-stagger space-y-3">
                 {have.map((c) => (
@@ -61,18 +63,18 @@ export default function CoverPage() {
                 ))}
               </ul>
             ) : (
-              <p className="text-xsm" style={{ color: "var(--ux-muted)" }}>Nothing yet.</p>
+              <p className="text-xsm" style={{ color: "var(--ux-muted)" }}>{tr("cover.nothingYet")}</p>
             )}
           </Card>
 
           <Card style={{ borderColor: "var(--ux-orange)" }}>
-            <SectionHead title="Nobody should sell you these" icon="ShieldAlert" />
+            <SectionHead title={tr("cover.nobodyShouldSellYouThese")} icon="ShieldAlert" />
             <p className="text-xsm leading-relaxed" style={{ color: "var(--ux-ink-2)" }}>
               Every scheme here is bought at a bank counter for the price shown. An agent offering to
               &ldquo;arrange&rdquo; one for a fee is taking money for something free.
             </p>
             <div className="mt-3.5">
-              <Btn href="/app/safety" variant="outline" size="sm" full icon="Flag">Report an agent</Btn>
+              <Btn href="/app/safety" variant="outline" size="sm" full icon="Flag">{tr("cover.reportAnAgent")}</Btn>
             </div>
           </Card>
 
@@ -84,16 +86,14 @@ export default function CoverPage() {
             <h3 className="relative w-[62%] text-sm font-semibold" style={{ color: "var(--ux-ink)" }}>
               ₹20 a year
             </h3>
-            <p className="relative mt-2 w-[62%] text-xs leading-relaxed" style={{ color: "var(--ux-muted)" }}>
-              That is the whole price of ₹2 lakh of accident cover. Most members do not know it exists.
-            </p>
+            <p className="relative mt-2 w-[62%] text-xs leading-relaxed" style={{ color: "var(--ux-muted)" }}>{tr("cover.thatIsTheWholePriceOf")}</p>
           </div>
         </div>
       }
     >
       <div className="mb-[20px] flex items-end justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold" style={{ color: "var(--ux-ink)" }}>Insurance &amp; pension</h1>
+          <h1 className="text-2xl font-bold" style={{ color: "var(--ux-ink)" }}>{tr("cover.insuranceAmpPension")}</h1>
           <p className="mt-1.5 text-xsm" style={{ color: "var(--ux-muted)" }}>
             {have.length} of {COVER.length} in place. All of these are government schemes bought at a bank counter.
           </p>
@@ -116,23 +116,19 @@ export default function CoverPage() {
                   <Pill tone={c.kind === "Pension" ? "brand" : c.kind === "Health" ? "blue" : "green"} size="sm">
                     {c.kind}
                   </Pill>
-                  {c.have && <Pill tone="green" size="sm">You have this</Pill>}
+                  {c.have && <Pill tone="green" size="sm">{tr("cover.youHaveThis")}</Pill>}
                 </div>
 
                 {/* Pays and costs, on one line, in rupees. This is the decision. */}
                 <div className="mt-3 grid grid-cols-2 gap-2.5">
                   <div className="ux-sq rounded-[12px] p-3" style={{ background: "var(--ux-tint-green)" }}>
-                    <p className="text-2xs uppercase tracking-[0.06em]" style={{ color: "var(--ux-green-ink)" }}>
-                      It pays
-                    </p>
+                    <p className="text-2xs uppercase tracking-[0.06em]" style={{ color: "var(--ux-green-ink)" }}>{tr("cover.itPays")}</p>
                     <p className="mt-1 text-sm font-semibold leading-snug" style={{ color: "var(--ux-ink)" }}>
                       {c.pays}
                     </p>
                   </div>
                   <div className="ux-sq rounded-[12px] p-3" style={{ background: "var(--ux-surface-2)" }}>
-                    <p className="text-2xs uppercase tracking-[0.06em]" style={{ color: "var(--ux-faint)" }}>
-                      It costs
-                    </p>
+                    <p className="text-2xs uppercase tracking-[0.06em]" style={{ color: "var(--ux-faint)" }}>{tr("cover.itCosts")}</p>
                     <p className="mt-1 text-sm font-semibold leading-snug" style={{ color: "var(--ux-ink)" }}>
                       {c.costs}
                     </p>
@@ -154,12 +150,10 @@ export default function CoverPage() {
               {c.have
                 ? (
                     <span className="flex items-center gap-2">
-                      <Btn href="/app/documents/vault" variant="outline" size="sm" icon="FileText">Your policy</Btn>
+                      <Btn href="/app/documents/vault" variant="outline" size="sm" icon="FileText">{tr("cover.yourPolicy")}</Btn>
                       <Btn variant="ghost" size="sm"
                            className={mark.busyWith === c.id ? "pointer-events-none opacity-60" : ""}
-                           onClick={() => void mark.run(c.id, "saved")}>
-                        Not any more
-                      </Btn>
+                           onClick={() => void mark.run(c.id, "saved")}>{tr("cover.notAnyMore")}</Btn>
                     </span>
                   )
                 : <Btn variant="primary" size="sm" iconEnd={how === c.id ? "ChevronUp" : "ChevronDown"}
@@ -193,8 +187,8 @@ export default function CoverPage() {
                        onClick={() => void mark.run(c.id, "active")}>
                     {mark.busyWith === c.id ? "Saving…" : "I already have this"}
                   </Btn>
-                  <Btn href="/app/documents/vault" variant="outline" size="sm" icon="FolderOpen">Check my papers</Btn>
-                  <Btn href="/app/help" variant="ghost" size="sm" icon="MessageCircle">Ask about this</Btn>
+                  <Btn href="/app/documents/vault" variant="outline" size="sm" icon="FolderOpen">{tr("cover.checkMyPapers")}</Btn>
+                  <Btn href="/app/help" variant="ghost" size="sm" icon="MessageCircle">{tr("cover.askAboutThis")}</Btn>
                 </div>
               </div>
             )}

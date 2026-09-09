@@ -19,6 +19,7 @@ import { PayoutMethod } from "@/components/ux/money/parts";
 import { rupeesExact } from "@/components/ux/money/data";
 import { formatMoneyOrNothing } from "@/components/ux/kit/money";
 import { COPY } from "@/components/ux/copy";
+import { useT } from "@/i18n";
 
 type Status = "paid" | "refunded" | "failed" | "created";
 
@@ -38,6 +39,7 @@ const TONE: Record<Status, { pill: "green" | "blue" | "orange" | "neutral"; word
  * different questions, and a single combined ledger makes both harder to read.
  */
 export default function PaymentsPage() {
+  const tr = useT();
   const { data: ORDERS, source } = useOrders();
   const { data: PAYOUT_METHODS } = usePayoutMethods();
 
@@ -75,7 +77,7 @@ export default function PaymentsPage() {
       rail={
         <div className="space-y-[16px]">
           <Card className="ux-onscroll-soft">
-            <SectionHead title="This year" />
+            <SectionHead title={tr("payments.thisYear")} />
             <div className="space-y-3.5">
               {[
                 ["Paid out", formatMoneyOrNothing(spent, "Nothing yet"), "ArrowUpRight", "--ux-tint-violet", "--ux-violet"],
@@ -96,24 +98,24 @@ export default function PaymentsPage() {
           </Card>
 
           <Card className="ux-onscroll-soft">
-            <SectionHead title="How you pay" action="Manage"
+            <SectionHead title={tr("payments.howYouPay")} action="Manage"
                          onAction={() => { window.location.href = "/app/settings/payments"; }} />
             <div className="space-y-2.5">
               {PAYOUT_METHODS.map((m) => <PayoutMethod key={m.id} m={m} />)}
             </div>
             <div className="mt-3">
-              <Btn href="/app/settings/payments" variant="outline" size="sm" full icon="Plus">Add a payment method</Btn>
+              <Btn href="/app/settings/payments" variant="outline" size="sm" full icon="Plus">{tr("payments.addAPaymentMethod")}</Btn>
             </div>
           </Card>
 
           <Card className="ux-onscroll-soft">
-            <SectionHead title="Something wrong?" icon="ShieldCheck" />
+            <SectionHead title={tr("payments.somethingWrong")} icon="ShieldCheck" />
             <p className="text-xsm leading-relaxed" style={{ color: "var(--ux-ink-2)" }}>
               If money left your account but the payment did not go through, it comes back on its own
               within 5–7 working days. If it does not, tell us and we will chase it.
             </p>
             <div className="mt-3.5">
-              <Btn href="/app/help" variant="soft" size="sm" full iconEnd="ArrowRight">Raise a problem</Btn>
+              <Btn href="/app/help" variant="soft" size="sm" full iconEnd="ArrowRight">{tr("payments.raiseAProblem")}</Btn>
             </div>
           </Card>
         </div>
@@ -121,7 +123,7 @@ export default function PaymentsPage() {
     >
       <div className="mb-[20px] flex items-end justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold" style={{ color: "var(--ux-ink)" }}>What you paid</h1>
+          <h1 className="text-2xl font-bold" style={{ color: "var(--ux-ink)" }}>{tr("payments.whatYouPaid")}</h1>
           <p className="mt-1.5 text-xsm" style={{ color: "var(--ux-muted)" }}>
             {shown.length} {plural("payment", shown.length)}
             {trouble > 0 && ` · ${trouble} needs a look`}
@@ -145,7 +147,7 @@ export default function PaymentsPage() {
             icon="Receipt"
             title={tab === "Problems" ? "Nothing has gone wrong" : `No ${tab.toLowerCase()} yet`}
             body="Courses, sessions and circle contributions you pay for appear here with a receipt."
-            action={<Btn onClick={() => setTab("All")} variant="soft">Show everything</Btn>}
+            action={<Btn onClick={() => setTab("All")} variant="soft">{tr("payments.showEverything")}</Btn>}
           />
         </Card>
       )}
@@ -169,6 +171,7 @@ const PaymentRow = rowMemo(function PaymentRow({
   retry: Action<[string, string, string]>;
   me: { name: string };
 }) {
+  const tr = useT();
   return (
     <Card className="ux-i ux-onscroll" style={{ ["--i" as string]: index }}>
           <div className="flex items-start gap-3.5">
@@ -202,8 +205,8 @@ const PaymentRow = rowMemo(function PaymentRow({
               {item.status === "failed"
                 ? "No money left your account."
                 : item.status === "refunded"
-                  ? "Returned to the way you paid."
-                  : "Receipt available"}
+                  ? tr("payments.returnedToTheWayYouPaid")
+              : tr("payments.receiptAvailable")}
             </span>
             <span className="flex items-center gap-2">
               {/* A real receipt. Refunds and failures say so on the page
@@ -215,7 +218,7 @@ const PaymentRow = rowMemo(function PaymentRow({
                            <table><tbody>
                              <tr><td>What</td><td>${escapeHtml(item.title)}</td></tr>
                              <tr><td>Why</td><td>${escapeHtml(item.purpose)}</td></tr>
-                             <tr><td>Paid with</td><td>${escapeHtml(item.method)}</td></tr>
+                             <tr><td>{tr("payments.paidWith")}</td><td>${escapeHtml(item.method)}</td></tr>
                              <tr><td>Status</td><td>${escapeHtml(TONE[item.status].word)}</td></tr>
                              <tr class="total"><td>Amount</td><td class="num">${rupeesExact(item.amount_minor)}</td></tr>
                            </tbody></table>

@@ -17,6 +17,7 @@ import {
 } from "@/components/ux/mentors/data";
 import { useMentors } from "@/components/ux/live";
 import { useMentorSessions } from "@/components/ux/growth";
+import { useT } from "@/i18n";
 
 /**
  * Mentors — women who have done it, and will sit with you.
@@ -26,6 +27,7 @@ import { useMentorSessions } from "@/components/ux/growth";
  * wastes both their time.
  */
 export default function MentorsPage() {
+  const tr = useT();
   const { data: MENTORS, source, refetch } = useMentors();
   const { data: MY_SESSIONS } = useMentorSessions();
   const [tab, setTab] = useState("Find a mentor");
@@ -52,7 +54,7 @@ export default function MentorsPage() {
       rail={
         <div className="space-y-[16px]">
           <Card className="ux-onscroll-soft">
-            <SectionHead title="Your sessions" action="See all" onAction={() => setTab("My sessions")} />
+            <SectionHead title={tr("mentors.yourSessions")} action="See all" onAction={() => setTab("My sessions")} />
             {MY_SESSIONS.length ? (
               <div className="ux-stagger space-y-2.5">
                 {MY_SESSIONS.map((s) => (
@@ -71,12 +73,12 @@ export default function MentorsPage() {
                 ))}
               </div>
             ) : (
-              <p className="text-xsm" style={{ color: "var(--ux-muted)" }}>Nothing booked yet.</p>
+              <p className="text-xsm" style={{ color: "var(--ux-muted)" }}>{tr("mentors.nothingBookedYet")}</p>
             )}
           </Card>
 
           <Card className="ux-onscroll-soft">
-            <SectionHead title="How a session works" icon="Info" />
+            <SectionHead title={tr("mentors.howASessionWorks")} icon="Info" />
             <ol className="space-y-3">
               {[
                 "Ask for a session and say what you want help with.",
@@ -98,14 +100,10 @@ export default function MentorsPage() {
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img loading="lazy" decoding="async" src={MENTOR_ART.hero} alt=""
                  className="ux-float pointer-events-none absolute -bottom-3 -end-4 h-[104px] w-[104px] object-contain" />
-            <h2 className="relative w-[60%] text-sm font-semibold" style={{ color: "var(--ux-ink)" }}>
-              Become a mentor
-            </h2>
-            <p className="relative mt-2 w-[60%] text-xs leading-relaxed" style={{ color: "var(--ux-muted)" }}>
-              You know more than you think. One session a month changes someone&rsquo;s year.
-            </p>
+            <h2 className="relative w-[60%] text-sm font-semibold" style={{ color: "var(--ux-ink)" }}>{tr("mentors.becomeAMentor")}</h2>
+            <p className="relative mt-2 w-[60%] text-xs leading-relaxed" style={{ color: "var(--ux-muted)" }}>{tr("mentors.youKnowMoreThanYouThink")}</p>
             <div className="relative mt-3 w-[60%]">
-              <Btn href="/app/documents/service/new" variant="soft" size="sm" iconEnd="ArrowRight">Offer to help</Btn>
+              <Btn href="/app/documents/service/new" variant="soft" size="sm" iconEnd="ArrowRight">{tr("mentors.offerToHelp")}</Btn>
             </div>
           </div>
         </div>
@@ -128,18 +126,14 @@ export default function MentorsPage() {
       {tab === "Find a mentor" && (
         <>
           <Card className="mb-[16px] ux-onscroll-soft" pad={16}>
-            <p className="mb-2 text-2xs font-semibold uppercase tracking-[0.07em]" style={{ color: "var(--ux-faint)" }}>
-              What you need help with
-            </p>
+            <p className="mb-2 text-2xs font-semibold uppercase tracking-[0.07em]" style={{ color: "var(--ux-faint)" }}>{tr("mentors.whatYouNeedHelpWith")}</p>
             <div className="flex flex-wrap gap-2">
               {EXPERTISE.map((e) => (
                 <Chip key={e} selected={skills.includes(e)} onClick={() => toggle(e, skills, setSkills)}>{e}</Chip>
               ))}
             </div>
 
-            <p className="mb-2 mt-4 text-2xs font-semibold uppercase tracking-[0.07em]" style={{ color: "var(--ux-faint)" }}>
-              A language you are comfortable in
-            </p>
+            <p className="mb-2 mt-4 text-2xs font-semibold uppercase tracking-[0.07em]" style={{ color: "var(--ux-faint)" }}>{tr("mentors.aLanguageYouAreComfortableIn")}</p>
             <div className="flex flex-wrap gap-2">
               {LANGUAGES.map((l) => (
                 <Chip key={l} selected={langs.includes(l)} onClick={() => toggle(l, langs, setLangs)}>{l}</Chip>
@@ -147,7 +141,7 @@ export default function MentorsPage() {
             </div>
 
             <div className="mt-4 flex items-center justify-between gap-3 border-t pt-3.5" style={{ borderColor: "var(--ux-line)" }}>
-              <Chip selected={freeOnly} onClick={() => setFreeOnly(!freeOnly)} icon="Gift">First session free</Chip>
+              <Chip selected={freeOnly} onClick={() => setFreeOnly(!freeOnly)} icon="Gift">{tr("mentors.firstSessionFree")}</Chip>
               {active > 0 && (
                 <Btn variant="ghost" size="sm" icon="X"
                      onClick={() => { setSkills([]); setLangs([]); setFreeOnly(false); }}>
@@ -175,8 +169,8 @@ export default function MentorsPage() {
                             {m.name}
                           </Link>
                         </h2>
-                        {m.free_first && <Pill tone="green" size="sm">First session free</Pill>}
-                        {m.requested && <Pill tone="blue" size="sm">You asked</Pill>}
+                        {m.free_first && <Pill tone="green" size="sm">{tr("mentors.firstSessionFree2")}</Pill>}
+                        {m.requested && <Pill tone="blue" size="sm">{tr("mentors.youAsked")}</Pill>}
                       </div>
                       <p className="mt-0.5 text-xsm" style={{ color: "var(--ux-ink-2)" }}>{m.headline}</p>
 
@@ -206,7 +200,7 @@ export default function MentorsPage() {
                       {m.free_first ? "Free first session" : `${rupees(m.fee_minor)} a session`}
                     </span>
                     <span className="flex items-center gap-2">
-                      <Btn href={`/app/mentors/${m.id}`} variant="outline" size="sm">Read more</Btn>
+                      <Btn href={`/app/mentors/${m.id}`} variant="outline" size="sm">{tr("mentors.readMore")}</Btn>
                       {/* Not offered twice. The server refuses a second open
                           request with a 409, and the pill above already says
                           she has asked — leaving the button there only led
@@ -219,9 +213,9 @@ export default function MentorsPage() {
                           a mentor decide whether she is the right person to
                           say yes. Same call the mentor's own page makes. */}
                       {!m.requested && (
-                      <NoteBtn label="Ask for a session" variant="primary"
+                      <NoteBtn label={tr("mentors.askForASession")} variant="primary"
                                title={`Ask ${m.name} for a session`} to={m.name}
-                               placeholder="Say what you want help with, and roughly when you are free. She replies within a day or two."
+                               placeholder={tr("mentors.sayWhatYouWantHelpWith")}
                                send={async (n) => { await apiRequestMentor(m.id, n.text); refetch(); }}
                                sent={`Your request is with ${m.name}`}
                                sentBody="She usually replies within a day or two. It is under My sessions until she does."
@@ -236,9 +230,9 @@ export default function MentorsPage() {
             <Card>
               <EmptyState
                 icon="SearchX"
-                title="No mentor matches all of that"
+                title={tr("mentors.noMentorMatchesAllOfThat")}
                 body="Loosen one filter — language is usually the one worth keeping."
-                action={<Btn onClick={() => { setSkills([]); setFreeOnly(false); }} variant="soft">Keep language only</Btn>}
+                action={<Btn onClick={() => { setSkills([]); setFreeOnly(false); }} variant="soft">{tr("mentors.keepLanguageOnly")}</Btn>}
               />
             </Card>
           )}
@@ -272,7 +266,7 @@ export default function MentorsPage() {
                 </div>
                 <span className="flex shrink-0 items-center gap-2">
                   {s.state === "Upcoming" && (
-                    <ActionBtn variant="primary" size="sm" icon="Video" doneIcon="Copy" done="Link copied"
+                    <ActionBtn variant="primary" size="sm" icon="Video" doneIcon="Copy" done={tr("mentors.linkCopied")}
                                act={() => copy(`https://meet.womsakhi.in/${s.id}`, COPY.linkCopied, "meet.womsakhi.in/" + s.id)}>
                       Join
                     </ActionBtn>
@@ -283,18 +277,16 @@ export default function MentorsPage() {
                       where she can actually ask, which is her thread with the
                       team. */}
                   {s.state === "Requested" && (
-                    <Btn href="/app/messages" variant="outline" size="sm" icon="MessageCircle">
-                      Ask us to cancel
-                    </Btn>
+                    <Btn href="/app/messages" variant="outline" size="sm" icon="MessageCircle">{tr("mentors.askUsToCancel")}</Btn>
                   )}
                   {/* `to` and the placeholder both used to say this reached
                       the mentor and was published for other women. It does
                       neither: /me/feedback lands in the team's feedback
                       module. The box now names who actually reads it. */}
                   {s.state === "Done" && (
-                    <NoteBtn label="Leave a note" icon="Star" stars
+                    <NoteBtn label={tr("mentors.leaveANote")} icon="Star" stars
                              title={`How was your session with ${s.mentor}?`} to="the WomSakhi team"
-                             placeholder="What helped, and what you still need. Nobody but the team reads this."
+                             placeholder={tr("mentors.whatHelpedAndWhatYouStill")}
                              send={(n) => apiLeaveFeedback({
                                text: n.text, rating: n.rating,
                                type: "Mentoring Session", program: s.mentor,

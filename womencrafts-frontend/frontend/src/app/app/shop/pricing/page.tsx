@@ -7,6 +7,7 @@ import { HomeShell } from "@/components/ux/home/HomeShell";
 import { Back, Btn, Card, I, IconTile, Pill, SectionHead, Stat, v } from "@/components/ux/kit";
 import { formatRupees } from "@/components/ux/kit";
 import { CROSSOVERS, PRICES, type PriceCheck } from "@/components/ux/shopplus/data";
+import { useT } from "@/i18n";
 
 /**
  * What should you charge.
@@ -62,6 +63,7 @@ function Bar({ p }: { p: PriceCheck }) {
 }
 
 export default function PricingPage() {
+  const tr = useT();
   const router = useRouter();
   const [rows, setRows] = useState<PriceCheck[]>(PRICES);
   const [note, setNote] = useState<string | null>(null);
@@ -81,16 +83,12 @@ export default function PricingPage() {
   return (
     <HomeShell active="/app/shop">
       <div className="flex flex-col gap-5">
-        <Back to="/app/shop" label="Back to your shops" />
+        <Back to="/app/shop" label={tr("shopPricing.backToYourShops")} />
 
         <header>
-          <p className="text-2xs font-extrabold uppercase tracking-[0.2em]" style={{ color: v("--ux-brand") }}>
-            Your prices
-          </p>
+          <p className="text-2xs font-extrabold uppercase tracking-[0.2em]" style={{ color: v("--ux-brand") }}>{tr("shopPricing.yourPrices")}</p>
           <h1 className="mt-2 text-[clamp(1.5rem,3.2vw,2.125rem)] font-extrabold leading-[1.1] tracking-[-0.035em]"
-              style={{ color: v("--ux-ink") }}>
-            What others ask for the same work
-          </h1>
+              style={{ color: v("--ux-ink") }}>{tr("shopPricing.whatOthersAskForTheSame")}</h1>
           <p className="mt-1.5 max-w-[56ch] text-sm leading-relaxed" style={{ color: v("--ux-muted") }}>
             Not what you should charge — what women near you already do. Nobody tells each other,
             which is exactly why everyone charges too little.
@@ -124,7 +122,7 @@ export default function PricingPage() {
         )}
 
         <div>
-          <SectionHead title="What you sell" icon="Tag" chip={String(rows.length)} />
+          <SectionHead title={tr("shopPricing.whatYouSell")} icon="Tag" chip={String(rows.length)} />
           <div className="flex flex-col gap-3">
             {rows.map((p) => {
               const low = p.yoursMinor < p.typicalMinor;
@@ -154,10 +152,9 @@ export default function PricingPage() {
                   {low && (
                     <div className="mt-3.5 flex flex-wrap items-center gap-2 border-t pt-3.5"
                          style={{ borderColor: v("--ux-line") }}>
-                      <p className="flex-1 text-xsm" style={{ color: v("--ux-ink-2") }}>
-                        Most ask <b>{formatRupees(p.typicalMinor)}</b>.
+                      <p className="flex-1 text-xsm" style={{ color: v("--ux-ink-2") }}>{tr("shopPricing.mostAsk")}<b>{formatRupees(p.typicalMinor)}</b>.
                       </p>
-                      <Btn size="sm" onClick={() => raise(p.id)}>Ask that too</Btn>
+                      <Btn size="sm" onClick={() => raise(p.id)}>{tr("shopPricing.askThatToo")}</Btn>
                     </div>
                   )}
                 </Card>
@@ -170,8 +167,8 @@ export default function PricingPage() {
             much as men, and that what moves them is seeing someone like them
             do it, not training. */}
         <div>
-          <SectionHead title="Where the bigger money is"
-                       sub="Same skill, same machine — women near you who moved across" icon="Crown" />
+          <SectionHead title={tr("shopPricing.whereTheBiggerMoneyIs")}
+                       sub={tr("shopPricing.sameSkillSameMachineWomenNear")} icon="Crown" />
           <div className="grid gap-3 md:grid-cols-3">
             {CROSSOVERS.map((c) => (
               <Card key={c.id} pad={16}>
@@ -186,9 +183,7 @@ export default function PricingPage() {
                   {c.women} {c.women === 1 ? "woman" : "women"} you know already do this
                 </p>
                 <Btn size="sm" variant="outline" full className="mt-3"
-                     onClick={() => setNote(`We will introduce you to a woman doing ${c.trade.toLowerCase()}.`)}>
-                  Talk to one of them
-                </Btn>
+                     onClick={() => setNote(`We will introduce you to a woman doing ${c.trade.toLowerCase()}.`)}>{tr("shopPricing.talkToOneOfThem")}</Btn>
               </Card>
             ))}
           </div>

@@ -13,6 +13,7 @@ import {
 } from "@/lib/shop-api";
 import { apiUploadImage } from "@/lib/uploads-api";
 import { Hero, ListingCard, OrderCard, Sec, Stats, Storefront } from "./shop-parts";
+import { useT } from "@/i18n";
 
 /**
  * My Shop.
@@ -26,6 +27,7 @@ import { Hero, ListingCard, OrderCard, Sec, Stats, Storefront } from "./shop-par
  */
 
 export default function ShopPage() {
+  const tr = useT();
   const [busy, setBusy] = useState<string | null>(null);
   const [confirmDelete, setConfirmDelete] = useState<Listing | null>(null);
   const [note, setNote] = useState<string | null>(null);
@@ -97,7 +99,8 @@ export default function ShopPage() {
     try {
       await apiPauseListing(l.id, paused);
       reListings(); reSummary();
-      say(paused ? "Paused — buyers cannot see it now" : "Back in your shop");
+      say(paused ? tr("documents.pausedBuyersCannotSeeItNow")
+              : tr("documents.backInYourShop"));
     } catch { setError("Could not change that listing."); }
     finally { setBusy(null); }
   }, [reListings, reSummary, say]);
@@ -172,12 +175,10 @@ export default function ShopPage() {
                   making it for now, pause it instead — it comes back exactly as it was.
                 </p>
                 <div className="mt-4 flex flex-wrap gap-2">
-                  <Btn size="sm" onClick={() => onDelete(confirmDelete)}>Yes, remove it</Btn>
+                  <Btn size="sm" onClick={() => onDelete(confirmDelete)}>{tr("documents.yesRemoveIt")}</Btn>
                   <Btn size="sm" variant="outline"
-                       onClick={() => { onPause(confirmDelete); setConfirmDelete(null); }}>
-                    Pause it instead
-                  </Btn>
-                  <Btn size="sm" variant="ghost" onClick={() => setConfirmDelete(null)}>Keep it</Btn>
+                       onClick={() => { onPause(confirmDelete); setConfirmDelete(null); }}>{tr("documents.pauseItInstead")}</Btn>
+                  <Btn size="sm" variant="ghost" onClick={() => setConfirmDelete(null)}>{tr("documents.keepIt")}</Btn>
                 </div>
               </div>
             )}
@@ -187,9 +188,9 @@ export default function ShopPage() {
                    style={{ background: "var(--ux-surface)", border: "1px solid var(--ux-line)" }}>
                 <EmptyState
                   icon="Package"
-                  title="No orders yet"
+                  title={tr("documents.noOrdersYet")}
                   body="They land here the moment somebody buys. Most first orders come from someone who already knows you — send them your shop link."
-                  action={<Btn size="sm" href="/app/collect" icon="QrCode">Get your shop link</Btn>}
+                  action={<Btn size="sm" href="/app/collect" icon="QrCode">{tr("documents.getYourShopLink")}</Btn>}
                 />
               </div>
             ) : (
@@ -207,11 +208,8 @@ export default function ShopPage() {
               <Link href="/app/documents/product/new"
                     className="ux-press flex min-h-[34px] items-center gap-1.5 rounded-[12px] px-3 text-xs font-bold"
                     style={{ color: "var(--ux-brand)" }}>
-                <Icons.Plus className="h-[13px] w-[13px]" /> Add something
-              </Link>
-            }>
-              What you sell
-            </Sec>
+                <Icons.Plus className="h-[13px] w-[13px]" />{tr("documents.addSomething")}</Link>
+            }>{tr("documents.whatYouSell")}</Sec>
 
             <div className="grid gap-3.5" style={{ gridTemplateColumns: "repeat(auto-fit, minmax(250px, 1fr))" }}>
               {listings.map((l) => (
@@ -224,13 +222,13 @@ export default function ShopPage() {
                     className="ux-press grid min-h-[330px] place-content-center justify-items-center gap-2.5 rounded-[20px] text-center text-xsm font-bold leading-relaxed"
                     style={{ border: "1px dashed var(--ux-line-strong)", color: "var(--ux-brand)" }}>
                 <Icons.Plus className="h-[30px] w-[30px]" />
-                <span>Add a product<br />or a service</span>
+                <span>{tr("documents.addAProduct")}<br />or a service</span>
               </Link>
             </div>
           </main>
 
           <aside>
-            <Sec>What buyers see</Sec>
+            <Sec>{tr("documents.whatBuyersSee")}</Sec>
             <Storefront summary={summary} listings={listings} />
           </aside>
         </div>

@@ -12,6 +12,7 @@ import {
 import { HomeShell } from "@/components/ux/home/HomeShell";
 import { SEARCH_KINDS, SEARCH_SUGGESTED, type SearchHit } from "@/components/ux/home/data";
 import { useSearch } from "@/components/ux/growth";
+import { useT } from "@/i18n";
 
 /**
  * Search results.
@@ -30,6 +31,7 @@ export default function SearchPage() {
 }
 
 function Results() {
+  const tr = useT();
   const params = useSearchParams();
   const router = useRouter();
   const q = params.get("q") ?? "";
@@ -51,7 +53,7 @@ function Results() {
       rail={
         <div className="space-y-[16px]">
           <Card>
-            <SectionHead title="Refine by kind" />
+            <SectionHead title={tr("search.refineByKind")} />
             <div className="space-y-1">
               {SEARCH_KINDS.filter((k) => k === "All" || counts[k]).map((k) => (
                 <button
@@ -76,14 +78,10 @@ function Results() {
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img loading="lazy" decoding="async" src="/ux/art/mascot-robot-reading.webp" alt=""
                  className="ux-float pointer-events-none absolute -bottom-3 -end-3 h-[92px] w-[92px] object-contain" />
-            <h3 className="relative w-[62%] text-sm font-semibold" style={{ color: "var(--ux-ink)" }}>
-              Can’t find it?
-            </h3>
-            <p className="relative mt-2 w-[62%] text-xs leading-relaxed" style={{ color: "var(--ux-muted)" }}>
-              Ask Sakhi in your own words. She looks in places search doesn’t.
-            </p>
+            <h3 className="relative w-[62%] text-sm font-semibold" style={{ color: "var(--ux-ink)" }}>{tr("search.canTFindIt")}</h3>
+            <p className="relative mt-2 w-[62%] text-xs leading-relaxed" style={{ color: "var(--ux-muted)" }}>{tr("search.askSakhiInYourOwnWords")}</p>
             <div className="relative mt-3 w-[62%]">
-              <Btn href="/app/sakhi" variant="soft" size="sm" iconEnd="ArrowRight">Ask Sakhi</Btn>
+              <Btn href="/app/sakhi" variant="soft" size="sm" iconEnd="ArrowRight">{tr("search.askSakhi")}</Btn>
             </div>
           </div>
         </div>
@@ -114,7 +112,7 @@ function Results() {
 
       {!q && (
         <Card>
-          <SectionHead title="Popular searches" sub="What other members are looking for right now" />
+          <SectionHead title={tr("search.popularSearches")} sub={tr("search.whatOtherMembersAreLookingFor")} />
           <div className="flex flex-wrap gap-2">
             {SEARCH_SUGGESTED.map((s) => (
               <button
@@ -137,13 +135,13 @@ function Results() {
             title={all.length ? `No ${plural(kind).toLowerCase()} matched` : `Nothing matched “${q}”`}
             body={
               all.length
-                ? "Try another kind — the other filters still have results."
-                : "Check the spelling, try a shorter word, or ask Sakhi to look for you."
+                ? tr("search.tryAnotherKindTheOtherFilters")
+              : tr("search.checkTheSpellingTryAShorter")
             }
             action={
               all.length
-                ? <Btn variant="soft" onClick={() => setKind("All")}>Show everything</Btn>
-                : <Btn href="/app/sakhi" variant="primary" iconEnd="ArrowRight">Ask Sakhi</Btn>
+                ? <Btn variant="soft" onClick={() => setKind("All")}>{tr("search.showEverything")}</Btn>
+                : <Btn href="/app/sakhi" variant="primary" iconEnd="ArrowRight">{tr("search.askSakhi2")}</Btn>
             }
           />
         </Card>

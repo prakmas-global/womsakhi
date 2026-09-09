@@ -12,6 +12,7 @@ import { useLearning } from "@/components/ux/growth";
 import { useProgramDetail } from "@/components/ux/growth";
 import { apiSetProgress } from "@/lib/growth-api";
 import { useAction } from "@/lib/use-action";
+import { useT } from "@/i18n";
 
 
 /**
@@ -26,6 +27,7 @@ import { useAction } from "@/lib/use-action";
  * the next are the same intention.
  */
 export default function LessonPage({ params }: { params: Promise<{ id: string; n: string }> }) {
+  const tr = useT();
   const { id, n } = use(params);
   const { data: learning, source } = useLearning();
   const ALL = [...learning.continuing, ...learning.picks];
@@ -94,9 +96,9 @@ export default function LessonPage({ params }: { params: Promise<{ id: string; n
         <Card>
           <EmptyState
             icon="SearchX"
-            title="That lesson is not here"
+            title={tr("programsLesson.thatLessonIsNotHere")}
             body="The course may have changed since this link was made."
-            action={<Btn href="/app/programs" variant="primary" iconEnd="ArrowRight">All courses</Btn>}
+            action={<Btn href="/app/programs" variant="primary" iconEnd="ArrowRight">{tr("programsLesson.allCourses")}</Btn>}
           />
         </Card>
       </HomeShell>
@@ -111,7 +113,7 @@ export default function LessonPage({ params }: { params: Promise<{ id: string; n
       rail={
         <div className="space-y-[16px]">
           <Card>
-            <SectionHead title="This course" sub={`${completed} of ${flat.length} lessons`} />
+            <SectionHead title={tr("programsLesson.thisCourse")} sub={`${completed} of ${flat.length} lessons`} />
             <Progress pct={pct} track="--ux-track" />
             <div className="mt-3.5 max-h-[380px] space-y-1 overflow-y-auto">
               {/* The course's own lessons, flat. The server keeps no sections,
@@ -149,13 +151,13 @@ export default function LessonPage({ params }: { params: Promise<{ id: string; n
           </Card>
 
           <Card>
-            <SectionHead title="Your notes" sub="Only you can see these" />
+            <SectionHead title={tr("programsLesson.yourNotes")} sub={tr("programsLesson.onlyYouCanSeeThese")} />
             <textarea
               value={notes}
               onChange={(e) => setNotes(e.target.value)}
               rows={5}
-              placeholder="Write down anything you want to come back to."
-              aria-label="Your notes for this lesson"
+              placeholder={tr("programsLesson.writeDownAnythingYouWantTo")}
+              aria-label={tr("programsLesson.yourNotesForThisLesson")}
               className="ux-sq w-full resize-y rounded-[12px] border p-3 text-xsm leading-relaxed outline-none"
               style={{ borderColor: "var(--ux-line-strong)", background: "var(--ux-surface)", color: "var(--ux-ink)" }}
             />
@@ -180,7 +182,7 @@ export default function LessonPage({ params }: { params: Promise<{ id: string; n
             {playing ? (
               <div className="text-center">
                 <Icons.Loader className="mx-auto h-[30px] w-[30px] animate-spin text-white" strokeWidth={1.8} />
-                <p className="mt-3 text-xsm" style={{ color: "rgba(255,255,255,0.86)" }}>Loading the video…</p>
+                <p className="mt-3 text-xsm" style={{ color: "rgba(255,255,255,0.86)" }}>{tr("programsLesson.loadingTheVideo")}</p>
               </div>
             ) : (
               <button
@@ -233,8 +235,8 @@ export default function LessonPage({ params }: { params: Promise<{ id: string; n
 
       <Card>
         <SectionHead
-          title="What she says, in words"
-          sub="Read it instead of watching — no data, and it works in a noisy room"
+          title={tr("programsLesson.whatSheSaysInWords")}
+          sub={tr("programsLesson.readItInsteadOfWatchingNo")}
           action="Keep offline"
           onAction={() => { window.location.href = "/app/settings/offline"; }}
         />
@@ -266,7 +268,7 @@ export default function LessonPage({ params }: { params: Promise<{ id: string; n
         <div className="mt-5 flex items-center gap-3 rounded-[12px] p-3.5" style={{ background: "var(--ux-surface-2)" }}>
           <Icons.PenLine className="h-[18px] w-[18px] shrink-0" style={{ color: "var(--ux-brand)" }} />
           <p className="min-w-0 flex-1 text-xsm" style={{ color: "var(--ux-ink-2)" }}>
-            <strong style={{ color: "var(--ux-ink)" }}>Try this before the next lesson:</strong> write the one
+            <strong style={{ color: "var(--ux-ink)" }}>{tr("programsLesson.tryThisBeforeTheNextLesson")}</strong> write the one
             sentence from 1:24 and keep it where you can see it.
           </p>
         </div>

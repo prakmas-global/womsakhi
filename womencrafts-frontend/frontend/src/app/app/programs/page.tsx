@@ -18,6 +18,7 @@ import { useLearning } from "@/components/ux/growth";
 import { useCertificates } from "@/components/ux/live";
 import { AlsoHere } from "@/components/ux/AlsoHere";
 import { COPY } from "@/components/ux/copy";
+import { useT } from "@/i18n";
 
 // "Paths" is gone. It showed four learning paths from a constant — "Career
 // Growth Path · 8 courses · 32 lessons · 60% complete" — with progress nothing
@@ -34,6 +35,7 @@ const TABS = ["Keep going", "Explore", "Finished"] as const;
  * quietly suggests otherwise.
  */
 export default function LearningPage() {
+  const tr = useT();
   const { data: learning, source } = useLearning();
   const CONTINUING = learning.continuing;
   const TOP_PICKS = learning.picks;
@@ -71,7 +73,7 @@ export default function LearningPage() {
       rail={
         <div className="space-y-[16px]">
           <Card className="ux-onscroll-soft">
-            <SectionHead title="Your week" sub={`${STREAK.days}-day streak`} />
+            <SectionHead title={tr("programs.yourWeek")} sub={`${STREAK.days}-day streak`} />
             <div className="flex items-center justify-between">
               {STREAK.marks.map((on, i) => (
                 <div key={i} className="flex flex-col items-center gap-1.5">
@@ -95,7 +97,7 @@ export default function LearningPage() {
           </Card>
 
           <Card className="ux-onscroll-soft">
-            <SectionHead title="Skills you are building" />
+            <SectionHead title={tr("programs.skillsYouAreBuilding")} />
             <ul className="ux-stagger space-y-2.5">
               {SKILLS.slice(0, 5).map((s) => (
                 <li key={s.name} className="ux-hov flex items-center gap-3">
@@ -110,7 +112,7 @@ export default function LearningPage() {
           </Card>
 
           <Card className="ux-onscroll-soft">
-            <SectionHead title="What you have earned" action="See all" onAction={() => setTab("Finished")} />
+            <SectionHead title={tr("programs.whatYouHaveEarned")} action="See all" onAction={() => setTab("Finished")} />
             <div className="ux-stagger space-y-2.5">
               {ACHIEVEMENTS.slice(0, 3).map((a, i) => (
                 <div key={a.name} className="ux-hov flex items-center gap-3">
@@ -148,9 +150,9 @@ export default function LearningPage() {
           </div>
         ) : (
           <Card>
-            <EmptyState icon="BookOpen" title="Nothing started yet"
+            <EmptyState icon="BookOpen" title={tr("programs.nothingStartedYet")}
                         body="Pick something from Explore and it will wait for you here."
-                        action={<Btn onClick={() => setTab("Explore")} variant="primary">Explore courses</Btn>} />
+                        action={<Btn onClick={() => setTab("Explore")} variant="primary">{tr("programs.exploreCourses")}</Btn>} />
           </Card>
         )
       )}
@@ -170,7 +172,7 @@ export default function LearningPage() {
             <Card>
               <EmptyState icon="SearchX" title={`Nothing in ${cat} yet`}
                           body="More is added every month. Try another subject in the meantime."
-                          action={<Btn onClick={() => setCat("All")} variant="soft">Show everything</Btn>} />
+                          action={<Btn onClick={() => setCat("All")} variant="soft">{tr("programs.showEverything")}</Btn>} />
             </Card>
           )}
         </>
@@ -199,7 +201,7 @@ export default function LearningPage() {
                              })}>
                     Download
                   </ActionBtn>
-                  <ActionBtn variant="soft" size="sm" icon="Share2" doneIcon="Copy" done="Link copied"
+                  <ActionBtn variant="soft" size="sm" icon="Share2" doneIcon="Copy" done={tr("programs.linkCopied")}
                              act={() => copy(`https://womsakhi.in/verify/${c.code}`, "Link copied — anyone can check it", "Copy the code instead")}>
                     Share
                   </ActionBtn>
@@ -209,9 +211,9 @@ export default function LearningPage() {
           </div>
         ) : (
           <Card>
-            <EmptyState icon="Award" title="No certificates yet"
+            <EmptyState icon="Award" title={tr("programs.noCertificatesYet")}
                         body="Finish a course and the certificate lands here, ready to share."
-                        action={<Btn onClick={() => setTab("Keep going")} variant="primary">Keep going</Btn>} />
+                        action={<Btn onClick={() => setTab("Keep going")} variant="primary">{tr("programs.keepGoing")}</Btn>} />
           </Card>
         )
       )}

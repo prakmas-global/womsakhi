@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { HomeShell } from "@/components/ux/home/HomeShell";
 import { Back, Btn, Card, I, Pill, SectionHead, v } from "@/components/ux/kit";
 import { SHOWABLE, shownCount } from "@/components/ux/eight/data";
+import { useT } from "@/i18n";
 
 /**
  * What someone else sees when you hand them your phone.
@@ -25,6 +26,7 @@ import { SHOWABLE, shownCount } from "@/components/ux/eight/data";
  * absence is more reassuring than its "off" position would be.
  */
 export default function ShowingPage() {
+  const tr = useT();
   const router = useRouter();
   const [rows, setRows] = useState(SHOWABLE);
   const [handed, setHanded] = useState(false);
@@ -39,12 +41,10 @@ export default function ShowingPage() {
   return (
     <HomeShell active="/app/vault">
       <div className="flex flex-col gap-5">
-        <Back to="/app/vault" label="Back to your locker" />
+        <Back to="/app/vault" label={tr("vaultShowing.backToYourLocker")} />
 
         <header>
-          <p className="text-2xs font-extrabold uppercase tracking-[0.2em]" style={{ color: v("--ux-brand") }}>
-            Showing someone
-          </p>
+          <p className="text-2xs font-extrabold uppercase tracking-[0.2em]" style={{ color: v("--ux-brand") }}>{tr("vaultShowing.showingSomeone")}</p>
           <h1 className="mt-2 text-[clamp(1.5rem,3.2vw,2.125rem)] font-extrabold leading-[1.1] tracking-[-0.035em]"
               style={{ color: v("--ux-ink") }}>
             &ldquo;Here, look&rdquo;
@@ -61,7 +61,7 @@ export default function ShowingPage() {
           {/* Left: the switches */}
           <div className="flex flex-col gap-4">
             <div>
-              <SectionHead title="What they can see"
+              <SectionHead title={tr("vaultShowing.whatTheyCanSee")}
                            sub={`${count} of ${rows.length} things are on`} icon="Eye" />
               <Card pad={0} style={{ overflow: "hidden" }}>
                 {rows.map((r, i) => (
@@ -85,7 +85,7 @@ export default function ShowingPage() {
                     {r.locked ? (
                       <span className="grid h-[26px] w-[26px] shrink-0 place-items-center rounded-full"
                             style={{ background: v("--ux-surface-2"), color: v("--ux-muted") }}
-                            title="This can never be shown">
+                            title={tr("vaultShowing.thisCanNeverBeShown")}>
                         <I name="Lock" className="h-[13px] w-[13px]" />
                       </span>
                     ) : (
@@ -121,9 +121,7 @@ export default function ShowingPage() {
           {/* Right: the actual phone, sticky so it stays visible while she flips switches */}
           <div className="lg:sticky lg:top-4 lg:self-start">
             <p className="mb-2.5 text-center text-2xs font-extrabold uppercase tracking-[0.14em]"
-               style={{ color: v("--ux-muted") }}>
-              What they will see
-            </p>
+               style={{ color: v("--ux-muted") }}>{tr("vaultShowing.whatTheyWillSee")}</p>
 
             <div className="mx-auto w-[280px] rounded-[24px] p-[8px]"
                  style={{ background: v("--ux-ink"), boxShadow: v("--ux-shadow-pop") }}>
@@ -133,15 +131,13 @@ export default function ShowingPage() {
                      style={{ background: v("--ux-ink"), opacity: 0.3 }} />
 
                 <div className="px-4 pb-5 pt-8">
-                  <p className="text-base font-extrabold" style={{ color: v("--ux-ink") }}>Priya Sharma</p>
-                  <p className="mt-0.5 text-2xs" style={{ color: v("--ux-muted") }}>Tailoring and mehendi</p>
+                  <p className="text-base font-extrabold" style={{ color: v("--ux-ink") }}>{tr("vaultShowing.priyaSharma")}</p>
+                  <p className="mt-0.5 text-2xs" style={{ color: v("--ux-muted") }}>{tr("vaultShowing.tailoringAndMehendi")}</p>
 
                   <div className="mt-4 flex flex-col gap-2">
                     {on.length === 0 && (
                       <p className="rounded-[12px] px-3 py-6 text-center text-xs"
-                         style={{ background: v("--ux-surface-2"), color: v("--ux-muted") }}>
-                        Nothing at all. They will see an empty screen.
-                      </p>
+                         style={{ background: v("--ux-surface-2"), color: v("--ux-muted") }}>{tr("vaultShowing.nothingAtAllTheyWillSee")}</p>
                     )}
 
                     {on.map((r) => (
@@ -162,9 +158,7 @@ export default function ShowingPage() {
                     {/* What is NOT there is the point, so it is said out loud */}
                     <p className="mt-1 flex items-center justify-center gap-1.5 text-center text-2xs"
                        style={{ color: v("--ux-muted") }}>
-                      <I name="Lock" className="h-[10px] w-[10px]" />
-                      No money, no savings, no papers
-                    </p>
+                      <I name="Lock" className="h-[10px] w-[10px]" />{tr("vaultShowing.noMoneyNoSavingsNoPapers")}</p>
                   </div>
                 </div>
               </div>
@@ -172,12 +166,11 @@ export default function ShowingPage() {
 
             <div className="mt-3.5 flex flex-col gap-2">
               <Btn full icon="Smartphone" onClick={() => setHanded(true)}>
-                {handed ? "Showing — tap your PIN to come back" : "Show this now"}
+                {handed ? tr("vaultShowing.showingTapYourPinToCome")
+              : tr("vaultShowing.showThisNow")}
               </Btn>
               {handed && (
-                <p className="text-center text-xs" style={{ color: v("--ux-muted") }}>
-                  Your phone stays on this screen until you type your PIN. Nothing else opens.
-                </p>
+                <p className="text-center text-xs" style={{ color: v("--ux-muted") }}>{tr("vaultShowing.yourPhoneStaysOnThisScreen")}</p>
               )}
             </div>
           </div>

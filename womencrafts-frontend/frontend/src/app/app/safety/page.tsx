@@ -14,6 +14,7 @@ import * as Icons from "@/components/ux/icons";
 import { Btn, Card, IconTile, NoteBtn, SectionHead, Tabs } from "@/components/ux/kit";
 import { HomeShell } from "@/components/ux/home/HomeShell";
 import { AlsoHere } from "@/components/ux/AlsoHere";
+import { useT } from "@/i18n";
 
 
 const SCAMS = [
@@ -36,6 +37,7 @@ const SCAMS = [
  * sitting under a thumb in a pocket must not fire by accident.
  */
 export default function SafetyPage() {
+  const tr = useT();
   const [tab, setTab] = useState("Get help now");
   const [holding, setHolding] = useState(0);
   // A ref, not `useState(...)[0]`: this holds a frame handle that is written
@@ -117,7 +119,7 @@ export default function SafetyPage() {
       rail={
         <div className="space-y-[16px]">
           <Card className="ux-onscroll-soft">
-            <SectionHead title="Who gets told" sub="They see your location only while an alert is on" />
+            <SectionHead title={tr("safety.whoGetsTold")} sub={tr("safety.theySeeYourLocationOnlyWhile")} />
             {CONTACTS.length === 0 && (
               <p className="text-xsm leading-relaxed" style={{ color: "var(--ux-orange-ink)" }}>
                 You have not named anyone yet, so an alert would reach nobody. Add someone you trust
@@ -143,12 +145,12 @@ export default function SafetyPage() {
               ))}
             </ul>
             <div className="mt-3.5">
-              <Btn href="/app/settings/account" variant="outline" size="sm" full icon="UserPlus">Add someone</Btn>
+              <Btn href="/app/settings/account" variant="outline" size="sm" full icon="UserPlus">{tr("safety.addSomeone")}</Btn>
             </div>
           </Card>
 
           <Card className="ux-onscroll-soft">
-            <SectionHead title="What we never do" icon="Lock" />
+            <SectionHead title={tr("safety.whatWeNeverDo")} icon="Lock" />
             <ul className="space-y-2.5">
               {[
                 "We never ask for an OTP or your password.",
@@ -167,10 +169,8 @@ export default function SafetyPage() {
     >
       <div className="mb-[20px] flex items-end justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold" style={{ color: "var(--ux-ink)" }}>Get help now</h1>
-          <p className="mt-1.5 text-xsm" style={{ color: "var(--ux-muted)" }}>
-            Help you can reach in one step, and the tricks worth knowing about.
-          </p>
+          <h1 className="text-2xl font-bold" style={{ color: "var(--ux-ink)" }}>{tr("safety.getHelpNow")}</h1>
+          <p className="mt-1.5 text-xsm" style={{ color: "var(--ux-muted)" }}>{tr("safety.helpYouCanReachInOne")}</p>
         </div>
         <Tabs items={["Get help now", "Know the tricks"]} active={tab} onChange={setTab} />
       </div>
@@ -178,8 +178,8 @@ export default function SafetyPage() {
       {tab === "Get help now" && (
         <>
           <Card className="ux-onscroll mb-[16px]">
-            <SectionHead title="Tell your people something is wrong"
-                         sub="Our team is alerted and these people are named on it. Nothing is sent until you finish holding." />
+            <SectionHead title={tr("safety.tellYourPeopleSomethingIsWrong")}
+                         sub={tr("safety.ourTeamIsAlertedAndThese")} />
             {sent ? (
               <div className="ux-slide-up flex items-center gap-3.5 rounded-[12px] p-4"
                    style={{ background: "var(--ux-tint-green)" }}>
@@ -199,13 +199,12 @@ export default function SafetyPage() {
                       ? `Our team has it, with ${namesOf(CONTACTS)} named on it.`
                       : "Our team has it. You have named nobody to be reached, so add someone — or call 112 now."}
                   </p>
-                  <p className="mt-1 text-xs" style={{ color: "var(--ux-ink-2)" }}>
-                    If you are in danger right now, call 112 as well — do not wait for us.
-                  </p>
+                  <p className="mt-1 text-xs" style={{ color: "var(--ux-ink-2)" }}>{tr("safety.ifYouAreInDangerRight")}</p>
                 </div>
                 <Btn variant="outline" size="sm" disabled={standDown.busy}
                      onClick={() => void standDown.run()}>
-                  {standDown.busy ? "Standing down…" : "Stand down"}
+                  {standDown.busy ? tr("safety.standingDown")
+              : tr("safety.standDown")}
                 </Btn>
               </div>
             ) : (
@@ -241,8 +240,8 @@ export default function SafetyPage() {
                   <span className="min-w-0 flex-1">
                     <span className="block text-base font-semibold" style={{ color: "var(--ux-ink)" }}>
                       {raise.busy ? "Sending the alert…"
-                        : holding > 0 ? "Keep holding…"
-                        : "Press and hold to send an alert"}
+                        : holding > 0 ? tr("safety.keepHolding")
+              : tr("safety.pressAndHoldToSendAn")}
                     </span>
                     <span className="mt-1 block text-xs" style={{ color: "var(--ux-ink-2)" }}>
                       {holding > 0
@@ -256,7 +255,7 @@ export default function SafetyPage() {
             )}
           </Card>
 
-          <SectionHead title="Numbers that always work" sub="Free from any phone, even without credit" />
+          <SectionHead title={tr("safety.numbersThatAlwaysWork")} sub={tr("safety.freeFromAnyPhoneEvenWithout")} />
           <div className="ux-deck grid grid-cols-3 gap-[16px]">
             {HELPLINES.map((h, i) => (
               <Card key={h.number} className="ux-i ux-onscroll" style={{ ["--i" as string]: i }}>
@@ -297,12 +296,8 @@ export default function SafetyPage() {
           <Card className="ux-onscroll">
             <div className="flex items-center justify-between gap-4">
               <div className="min-w-0">
-                <h3 className="text-sm font-semibold" style={{ color: "var(--ux-ink)" }}>
-                  Has any of this happened to you?
-                </h3>
-                <p className="mt-1 text-xsm" style={{ color: "var(--ux-muted)" }}>
-                  Tell us. We remove the account and warn everyone else.
-                </p>
+                <h3 className="text-sm font-semibold" style={{ color: "var(--ux-ink)" }}>{tr("safety.hasAnyOfThisHappenedTo")}</h3>
+                <p className="mt-1 text-xsm" style={{ color: "var(--ux-muted)" }}>{tr("safety.tellUsWeRemoveTheAccount")}</p>
               </div>
               {/* This said "Reported. We are looking at it now." and filed
                   nothing. `apiFileReport` — POST /safety/reports — has existed
@@ -310,16 +305,16 @@ export default function SafetyPage() {
                   The category is asked for because the server requires one,
                   and because "harassment" and "a fake account" are not the
                   same queue. */}
-              <NoteBtn label="Report someone" variant="primary" size="md" icon="Flag"
-                       title="Report someone" to="the WomSakhi safety team"
+              <NoteBtn label={tr("safety.reportSomeone")} variant="primary" size="md" icon="Flag"
+                       title={tr("safety.reportSomeone2")} to="the WomSakhi safety team"
                        choices={REPORT_CATEGORIES} choiceDefault="Something else"
                        choiceLabel="What kind of thing is this?"
-                       placeholder="Who was it, what happened, and when? Anything you have — a name, a number, a screenshot description — helps."
+                       placeholder={tr("safety.whoWasItWhatHappenedAnd")}
                        send={async (n) => {
                          await apiFileReport({ category: n.choice, details: n.text });
                          refetch();
                        }}
-                       sent="Filed. The safety team has it."
+                       sent={tr("safety.filedTheSafetyTeamHasIt")}
                        sentBody="It is listed below with what has happened to it. If you are in danger right now, call 112."
                        sentLink={null} />
             </div>
@@ -328,7 +323,7 @@ export default function SafetyPage() {
           {/* Filed reports, from the server — not a claim that one was filed. */}
           {REPORTS.length > 0 && (
             <Card className="ux-onscroll">
-              <SectionHead title="What you have reported"
+              <SectionHead title={tr("safety.whatYouHaveReported")}
                            sub={`${REPORTS.length} ${REPORTS.length === 1 ? "report" : "reports"}, and where each one has got to`} />
               <ul className="space-y-2.5">
                 {REPORTS.map((r) => (

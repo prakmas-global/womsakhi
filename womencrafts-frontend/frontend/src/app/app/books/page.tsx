@@ -9,6 +9,7 @@ import { formatRupees } from "@/components/ux/kit";
 import {
   ENTRIES, VIA_LABEL, offPlatform, owedTotal, paidTotal, promisedTotal, type Entry,
 } from "@/components/ux/books/data";
+import { useT } from "@/i18n";
 
 /**
  * Your books.
@@ -33,6 +34,7 @@ const STATE: Record<Entry["state"], { label: string; tint: string; ink: string; 
 type Filter = "all" | "owed" | "promised" | "paid";
 
 export default function BooksPage() {
+  const tr = useT();
   const router = useRouter();
   const [rows, setRows] = useState<Entry[]>(ENTRIES);
   const [filter, setFilter] = useState<Filter>("all");
@@ -66,37 +68,34 @@ export default function BooksPage() {
 
         <header className="flex flex-wrap items-end gap-4">
           <div className="min-w-0 flex-1">
-            <p className="text-2xs font-extrabold uppercase tracking-[0.2em]" style={{ color: v("--ux-brand") }}>
-              Your books
-            </p>
+            <p className="text-2xs font-extrabold uppercase tracking-[0.2em]" style={{ color: v("--ux-brand") }}>{tr("books.yourBooks")}</p>
             <h1 className="mt-2 text-[clamp(1.5rem,3.2vw,2.125rem)] font-extrabold leading-[1.1] tracking-[-0.035em]"
-                style={{ color: v("--ux-ink") }}>
-              Who owes you what
-            </h1>
+                style={{ color: v("--ux-ink") }}>{tr("books.whoOwesYouWhat")}</h1>
             <p className="mt-1.5 max-w-[56ch] text-sm leading-relaxed" style={{ color: v("--ux-muted") }}>
               Keep selling wherever you already sell. This just remembers it — including the{" "}
               <b>{off}%</b> that never touches this app.
             </p>
           </div>
-          <Btn variant="outline" icon="FileText" href="/app/books/proof">Proof of income</Btn>
+          <Btn variant="outline" icon="FileText" href="/app/books/proof">{tr("books.proofOfIncome")}</Btn>
         </header>
 
         <Card>
           <div className="grid gap-4 sm:grid-cols-3">
-            <Stat value={formatRupees(paid)} label="Came in" icon="Check"
+            <Stat value={formatRupees(paid)} label={tr("books.cameIn")} icon="Check"
                   tint="--ux-tint-green" ink="--ux-green-ink" />
-            <Stat value={formatRupees(owed)} label="Owed to you" icon="Clock"
+            <Stat value={formatRupees(owed)} label={tr("books.owedToYou")} icon="Clock"
                   tint="--ux-tint-amber" ink="--ux-amber-ink" />
-            <Stat value={formatRupees(promised)} label="You have promised" icon="CalendarDays"
+            <Stat value={formatRupees(promised)} label={tr("books.youHavePromised")} icon="CalendarDays"
                   tint="--ux-tint-blue" ink="--ux-blue-ink" />
           </div>
           {late.length > 0 && (
             <div className="mt-4 flex flex-wrap items-center gap-2 border-t pt-3.5" style={{ borderColor: v("--ux-line") }}>
               <p className="flex-1 text-xsm" style={{ color: v("--ux-ink-2") }}>
-                <b>{late.length}</b> {late.length === 1 ? "person is" : "people are"} late.
+                <b>{late.length}</b> {late.length === 1 ? tr("books.personIs")
+              : tr("books.peopleAre")} late.
                 Most people who are late simply forgot.
               </p>
-              <Btn size="sm" variant="soft" onClick={() => setFilter("owed")}>See who</Btn>
+              <Btn size="sm" variant="soft" onClick={() => setFilter("owed")}>{tr("books.seeWho")}</Btn>
             </div>
           )}
         </Card>
@@ -110,21 +109,21 @@ export default function BooksPage() {
         )}
 
         <div>
-          <SectionHead title="Everything" sub="However and wherever the sale happened"
+          <SectionHead title="Everything" sub={tr("books.howeverAndWhereverTheSaleHappened")}
                        icon="BookOpen" chip={String(rows.length)} />
           <div className="mb-3.5 flex flex-wrap gap-2">
             <Chip icon="LayoutGrid" selected={filter === "all"} onClick={() => setFilter("all")}>Everything</Chip>
             <Chip icon="Clock" selected={filter === "owed"} onClick={() => setFilter("owed")}>
               Owes you{late.length > 0 && ` (${late.length})`}
             </Chip>
-            <Chip icon="CalendarDays" selected={filter === "promised"} onClick={() => setFilter("promised")}>You promised</Chip>
+            <Chip icon="CalendarDays" selected={filter === "promised"} onClick={() => setFilter("promised")}>{tr("books.youPromised")}</Chip>
             <Chip icon="Check" selected={filter === "paid"} onClick={() => setFilter("paid")}>Paid</Chip>
           </div>
 
           {shown.length === 0 ? (
-            <Card><EmptyState icon="BookOpen" title="Nothing here"
+            <Card><EmptyState icon="BookOpen" title={tr("books.nothingHere")}
                               body="Try another filter."
-                              action={<Btn size="sm" variant="outline" onClick={() => setFilter("all")}>Show everything</Btn>} /></Card>
+                              action={<Btn size="sm" variant="outline" onClick={() => setFilter("all")}>{tr("books.showEverything")}</Btn>} /></Card>
           ) : (
             <div className="flex flex-col gap-2.5">
               {shown.map((e) => {
@@ -154,7 +153,7 @@ export default function BooksPage() {
                         </div>
                       )}
                       {e.state === "promised" && (
-                        <Btn size="sm" variant="outline" onClick={() => markPaid(e.id)}>Done and paid</Btn>
+                        <Btn size="sm" variant="outline" onClick={() => markPaid(e.id)}>{tr("books.doneAndPaid")}</Btn>
                       )}
                     </div>
                   </Card>

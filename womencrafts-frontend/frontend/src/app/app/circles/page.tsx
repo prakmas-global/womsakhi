@@ -10,6 +10,7 @@ import { apiCommunityOverview, apiLikePost,
 import { apiContribute } from "@/lib/growth-api";
 import { Near, Pot, Rooms, Wall,
          type CommunityActs, type CommunityData } from "./community-views";
+import { useT } from "@/i18n";
 
 /**
  * Community — one screen, four ways of seeing the same women.
@@ -42,6 +43,7 @@ const EMPTY_OVERVIEW: CommunityOverview = {
 };
 
 export default function CommunityPage() {
+  const tr = useT();
   const [view, setView] = useState<ViewId>("pot");
   const [km, setKm] = useState(6);
   const [paying, setPaying] = useState(false);
@@ -123,9 +125,7 @@ export default function CommunityPage() {
       <div className="flex flex-col gap-5">
         <header className="flex flex-wrap items-end gap-4">
           <div className="min-w-0 flex-1">
-            <p className="text-2xs font-extrabold uppercase tracking-[0.2em]" style={{ color: "var(--ux-brand)" }}>
-              Your circle
-            </p>
+            <p className="text-2xs font-extrabold uppercase tracking-[0.2em]" style={{ color: "var(--ux-brand)" }}>{tr("circles.yourCircle")}</p>
             <h1 className="mt-2 text-[clamp(1.5rem,3.2vw,2.125rem)] font-extrabold leading-[1.1] tracking-[-0.035em]"
                 style={{ color: "var(--ux-ink)" }}>
               {circles.length} {circles.length === 1 ? "circle" : "circles"}

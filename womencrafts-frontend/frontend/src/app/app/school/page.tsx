@@ -9,6 +9,7 @@ import { formatRupees } from "@/components/ux/kit";
 import {
   CHILDREN, SCHOOL_KIND, SCHOOL_TASKS, schoolDue, schoolSoon, type SchoolTask,
 } from "@/components/ux/life/data";
+import { useT } from "@/i18n";
 
 /**
  * The school year — hers to run, and nobody has ever helped her run it.
@@ -28,6 +29,7 @@ import {
  * already a circle, so it seeds itself.
  */
 export default function SchoolPage() {
+  const tr = useT();
   const router = useRouter();
   const [tasks, setTasks] = useState<SchoolTask[]>(SCHOOL_TASKS);
   const [child, setChild] = useState<string>("all");
@@ -56,13 +58,9 @@ export default function SchoolPage() {
       <div className="flex flex-col gap-5">
 
         <header>
-          <p className="text-2xs font-extrabold uppercase tracking-[0.2em]" style={{ color: v("--ux-brand") }}>
-            The school year
-          </p>
+          <p className="text-2xs font-extrabold uppercase tracking-[0.2em]" style={{ color: v("--ux-brand") }}>{tr("school.theSchoolYear")}</p>
           <h1 className="mt-2 text-[clamp(1.5rem,3.2vw,2.125rem)] font-extrabold leading-[1.1] tracking-[-0.035em]"
-              style={{ color: v("--ux-ink") }}>
-            Every date, in one place
-          </h1>
+              style={{ color: v("--ux-ink") }}>{tr("school.everyDateInOnePlace")}</h1>
           <p className="mt-1.5 max-w-[56ch] text-sm leading-relaxed" style={{ color: v("--ux-muted") }}>
             Fees, exams, forms, uniforms, the scholarship that has to be renewed or it stops.
             You have been holding all of it. You should not have to.
@@ -71,9 +69,9 @@ export default function SchoolPage() {
 
         <Card>
           <div className="grid gap-4 sm:grid-cols-3">
-            <Stat value={formatRupees(due)} label="To pay this term" icon="Wallet"
+            <Stat value={formatRupees(due)} label={tr("school.toPayThisTerm")} icon="Wallet"
                   tint="--ux-tint-amber" ink="--ux-amber-ink" />
-            <Stat value={String(soon)} label="In the next week" icon="AlarmClock"
+            <Stat value={String(soon)} label={tr("school.inTheNextWeek")} icon="AlarmClock"
                   tint="--ux-danger-tint" ink="--ux-danger-solid" />
             <Stat value={String(CHILDREN.length)} label="Children" icon="Baby"
                   tint="--ux-tint-pink" ink="--ux-pink-ink" />
@@ -90,7 +88,7 @@ export default function SchoolPage() {
 
         {/* Fee pots — the school year is what a savings pot is actually for */}
         <div>
-          <SectionHead title="Saving for the fees" sub="A pot for each child, filled a little at a time"
+          <SectionHead title={tr("school.savingForTheFees")} sub={tr("school.aPotForEachChildFilled")}
                        icon="PiggyBank" />
           <div className="grid gap-3 sm:grid-cols-2">
             {CHILDREN.map((c) => {
@@ -118,9 +116,7 @@ export default function SchoolPage() {
                       </div>
                       <Progress pct={pct} />
                       <Btn size="sm" variant="outline" full className="mt-3"
-                           onClick={() => setNote(`₹500 added to ${c.name}'s fee pot.`)}>
-                        Put ₹500 in
-                      </Btn>
+                           onClick={() => setNote(`₹500 added to ${c.name}'s fee pot.`)}>{tr("school.putIn")}</Btn>
                     </>
                   ) : (
                     <div className="mt-3.5 rounded-[12px] px-3 py-2.5" style={{ background: v("--ux-tint-green") }}>
@@ -137,17 +133,17 @@ export default function SchoolPage() {
 
         {/* What is coming */}
         <div>
-          <SectionHead title="What is coming" sub="Soonest first" icon="CalendarDays"
+          <SectionHead title={tr("school.whatIsComing")} sub={tr("school.soonestFirst")} icon="CalendarDays"
                        chip={String(shown.length)} />
           <div className="mb-3.5 flex flex-wrap gap-2">
-            <Chip icon="LayoutGrid" selected={child === "all"} onClick={() => setChild("all")}>Both children</Chip>
+            <Chip icon="LayoutGrid" selected={child === "all"} onClick={() => setChild("all")}>{tr("school.bothChildren")}</Chip>
             {CHILDREN.map((c) => (
               <Chip key={c.id} icon="Baby" selected={child === c.id} onClick={() => setChild(c.id)}>{c.name}</Chip>
             ))}
           </div>
 
           {shown.length === 0 ? (
-            <Card><EmptyState icon="CheckCircle2" title="Nothing due"
+            <Card><EmptyState icon="CheckCircle2" title={tr("school.nothingDue")}
                               body="Everything for this child is done. We will tell you when the next date is close." /></Card>
           ) : (
             <div className="flex flex-col gap-2.5">
@@ -173,7 +169,7 @@ export default function SchoolPage() {
                       )}
                       <div className="flex shrink-0 gap-2">
                         {t.kind === "buy" && (
-                          <Btn size="sm" variant="outline" href="/app/swap">Check the swap</Btn>
+                          <Btn size="sm" variant="outline" href="/app/swap">{tr("school.checkTheSwap")}</Btn>
                         )}
                         <Btn size="sm" onClick={() => finish(t.id)}>Done</Btn>
                       </div>
@@ -187,7 +183,7 @@ export default function SchoolPage() {
 
         {done.length > 0 && (
           <div>
-            <SectionHead title="Already done" icon="Check" chip={String(done.length)} />
+            <SectionHead title={tr("school.alreadyDone")} icon="Check" chip={String(done.length)} />
             <Card pad={0}>
               <ul className="divide-y" style={{ borderColor: v("--ux-line") }}>
                 {done.map((t) => (

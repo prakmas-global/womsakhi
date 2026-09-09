@@ -16,6 +16,7 @@ import { useAuth } from "@/context/AuthContext";
 import { Btn, Pill } from "@/components/ux/kit";
 import { Card, Field, SectionHead, SettingsPage, TextInput } from "@/components/ux/settings/Frame";
 import { useMe } from "@/components/ux/me";
+import { useT } from "@/i18n";
 
 /**
  * Your details.
@@ -26,6 +27,7 @@ import { useMe } from "@/components/ux/me";
  * difference between filling it in and abandoning it.
  */
 export default function AccountSettings() {
+  const tr = useT();
   const ME = useMe();
   const { user } = useAuth();
   /**
@@ -111,8 +113,8 @@ export default function AccountSettings() {
 
   return (
     <SettingsPage
-      title="Your details"
-      sub="Only what is marked public is ever shown to anyone else."
+      title={tr("settingsAccount.yourDetails")}
+      sub={tr("settingsAccount.onlyWhatIsMarkedPublicIs")}
       footer={
         <div className="flex items-center justify-between gap-4">
           <p className="text-xs"
@@ -136,7 +138,7 @@ export default function AccountSettings() {
             <img loading="lazy" decoding="async" src={profile?.avatar || ME.avatar} alt="" className="h-full w-full object-cover" />
           </span>
           <div className="min-w-0 flex-1">
-            <p className="text-sm font-semibold" style={{ color: "var(--ux-ink)" }}>Your photo</p>
+            <p className="text-sm font-semibold" style={{ color: "var(--ux-ink)" }}>{tr("settingsAccount.yourPhoto")}</p>
             <p className="mt-1 text-xs leading-snug" style={{ color: "var(--ux-muted)" }}>
               Shown on your profile, your shop and beside anything you post. A clear face photo gets more
               replies than a logo.
@@ -167,39 +169,37 @@ export default function AccountSettings() {
       </Card>
 
       <Card>
-        <SectionHead title="Shown to everyone" chip="Public" />
+        <SectionHead title={tr("settingsAccount.shownToEveryone")} chip="Public" />
         <div className="space-y-4">
-          <Field label="Your name" hint="On your profile, your shop and every message you send.">
+          <Field label={tr("settingsAccount.yourName")} hint={tr("settingsAccount.onYourProfileYourShopAnd")}>
             <TextInput value={form.name} onChange={set("name")} />
           </Field>
-          <Field label="A line about you" hint="The first thing an employer or buyer reads.">
+          <Field label={tr("settingsAccount.aLineAboutYou")} hint={tr("settingsAccount.theFirstThingAnEmployerOr")}>
             <TextInput value={form.about} onChange={set("about")} />
           </Field>
         </div>
       </Card>
 
       <Card>
-        <SectionHead title="Only you and WomSakhi" chip="Private" />
+        <SectionHead title={tr("settingsAccount.onlyYouAndWomsakhi")} chip="Private" />
         <div className="space-y-4">
-          <Field label="Phone number" hint="Never shown to buyers or employers. We use it for alerts only.">
+          <Field label={tr("settingsAccount.phoneNumber")} hint={tr("settingsAccount.neverShownToBuyersOrEmployers")}>
             <TextInput value={form.phone} onChange={set("phone")} placeholder="+91 00000 00000" />
           </Field>
-          <Field label="Where you live" hint="Only the city is used, to find work and events near you.">
-            <TextInput value={form.place} onChange={set("place")} placeholder="City, State" />
+          <Field label={tr("settingsAccount.whereYouLive")} hint={tr("settingsAccount.onlyTheCityIsUsedTo")}>
+            <TextInput value={form.place} onChange={set("place")} placeholder={tr("settingsAccount.cityState")} />
           </Field>
-          <Field label="Date of birth" hint="Some schemes have an age limit. Never shown anywhere.">
+          <Field label={tr("settingsAccount.dateOfBirth")} hint={tr("settingsAccount.someSchemesHaveAnAgeLimit")}>
             <TextInput value={form.born} onChange={set("born")} placeholder="DD MMM YYYY" />
           </Field>
         </div>
         <p className="mt-4 flex items-start gap-2.5 rounded-[12px] p-3 text-xs leading-relaxed"
            style={{ background: "var(--ux-surface-2)", color: "var(--ux-ink-2)" }}>
-          <Icons.Lock className="mt-[1px] h-[14px] w-[14px] shrink-0" style={{ color: "var(--ux-brand)" }} />
-          Your exact address is never stored. Buyers see a city, never a street.
-        </p>
+          <Icons.Lock className="mt-[1px] h-[14px] w-[14px] shrink-0" style={{ color: "var(--ux-brand)" }} />{tr("settingsAccount.yourExactAddressIsNeverStored")}</p>
       </Card>
 
       <Card>
-        <SectionHead title="Sign-in email" />
+        <SectionHead title={tr("settingsAccount.signInEmail")} />
         <div className="flex items-center justify-between gap-4">
           <div className="min-w-0">
             <p className="flex items-center gap-2 truncate text-sm font-medium" style={{ color: "var(--ux-ink)" }}>
@@ -207,16 +207,14 @@ export default function AccountSettings() {
               {/* The green "Confirmed" was painted whatever the server said. */}
               {profile?.verification_status === "active"
                 ? <Pill tone="green" size="sm">Confirmed</Pill>
-                : <Pill tone="orange" size="sm">Not confirmed yet</Pill>}
+                : <Pill tone="orange" size="sm">{tr("settingsAccount.notConfirmedYet")}</Pill>}
             </p>
-            <p className="mt-1 text-xs" style={{ color: "var(--ux-muted)" }}>
-              You cannot change this yourself — ask us and we will do it.
-            </p>
+            <p className="mt-1 text-xs" style={{ color: "var(--ux-muted)" }}>{tr("settingsAccount.youCannotChangeThisYourselfAsk")}</p>
           </div>
           {/* "Check both inboxes" was a lie about two emails nobody sent:
               nothing in this API changes a sign-in address — /users/me takes
               only a name and a locale. So it says who can do it instead. */}
-          <Btn href="/app/help" variant="outline" size="sm" iconEnd="ArrowRight">Ask us to change it</Btn>
+          <Btn href="/app/help" variant="outline" size="sm" iconEnd="ArrowRight">{tr("settingsAccount.askUsToChangeIt")}</Btn>
         </div>
       </Card>
     </SettingsPage>

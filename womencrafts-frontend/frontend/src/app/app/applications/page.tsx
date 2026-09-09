@@ -12,6 +12,7 @@ import { HomeShell } from "@/components/ux/home/HomeShell";
 import { RailStat, StageTrack } from "@/components/ux/work/parts";
 import { STAGES, WORK_ART } from "@/components/ux/work/data";
 import { useApplications, workStats } from "@/components/ux/growth";
+import { useT } from "@/i18n";
 
 const TABS = ["Active", "Interviews", "Closed", "All"] as const;
 
@@ -23,6 +24,7 @@ const TABS = ["Active", "Interviews", "Closed", "All"] as const;
  * ended say so plainly rather than sitting at "Applied" forever.
  */
 export default function Applications() {
+  const tr = useT();
   const { data: APPLICATIONS, source } = useApplications();
   const WORK_STATS = workStats(APPLICATIONS);
   const [tab, setTab] = useState<string>("Active");
@@ -53,7 +55,7 @@ export default function Applications() {
       rail={
         <div className="space-y-[16px]">
           <Card className="ux-onscroll-soft">
-            <SectionHead title="Your record" sub="Since you joined" />
+            <SectionHead title={tr("applications.yourRecord")} sub={tr("applications.sinceYouJoined")} />
             <div className="space-y-3.5">
               <RailStat value={WORK_STATS.applied} label="Sent" icon="Send" tint="--ux-tint-violet" ink="--ux-violet" />
               <RailStat value={WORK_STATS.shortlisted} label="Shortlisted" icon="ListChecks" tint="--ux-tint-blue" ink="--ux-blue" />
@@ -61,7 +63,7 @@ export default function Applications() {
             </div>
             <div className="mt-4">
               <div className="mb-1.5 flex items-center justify-between text-xs">
-                <span style={{ color: "var(--ux-muted)" }}>Reply rate</span>
+                <span style={{ color: "var(--ux-muted)" }}>{tr("applications.replyRate")}</span>
                 <span className="font-semibold tabular-nums" style={{ color: "var(--ux-ink)" }}>{WORK_STATS.responseRate}%</span>
               </div>
               <Progress pct={WORK_STATS.responseRate} track="--ux-track" />
@@ -78,12 +80,8 @@ export default function Applications() {
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img loading="lazy" decoding="async" src={WORK_ART.interview} alt=""
                  className="ux-float pointer-events-none absolute -bottom-3 -end-4 h-[100px] w-[100px] object-contain" />
-            <h3 className="relative w-[60%] text-sm font-semibold" style={{ color: "var(--ux-ink)" }}>
-              Interview on Monday
-            </h3>
-            <p className="relative mt-2 w-[60%] text-xs leading-relaxed" style={{ color: "var(--ux-muted)" }}>
-              Ten minutes of practice makes a real difference. Sakhi can run through it with you.
-            </p>
+            <h3 className="relative w-[60%] text-sm font-semibold" style={{ color: "var(--ux-ink)" }}>{tr("applications.interviewOnMonday")}</h3>
+            <p className="relative mt-2 w-[60%] text-xs leading-relaxed" style={{ color: "var(--ux-muted)" }}>{tr("applications.tenMinutesOfPracticeMakesA")}</p>
             <div className="relative mt-3 w-[60%]">
               <Btn href="/app/sakhi" variant="soft" size="sm" iconEnd="ArrowRight">Practise</Btn>
             </div>
@@ -93,7 +91,7 @@ export default function Applications() {
     >
       <div className="mb-[20px] flex items-end justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold" style={{ color: "var(--ux-ink)" }}>Your applications</h1>
+          <h1 className="text-2xl font-bold" style={{ color: "var(--ux-ink)" }}>{tr("applications.yourApplications")}</h1>
           <p className="mt-1.5 text-xsm" style={{ color: "var(--ux-muted)" }}>
             {counts.Active === 1
               ? "One application is still moving."
@@ -141,15 +139,13 @@ export default function Applications() {
                      style={{ borderColor: "var(--ux-line)" }}>
                   <StageTrack step={a.step} stages={STAGES} />
                   <span className="flex items-center gap-2">
-                    <Btn href={`/app/opportunities/${a.jobId}`} variant="outline" size="sm">The listing</Btn>
+                    <Btn href={`/app/opportunities/${a.jobId}`} variant="outline" size="sm">{tr("applications.theListing")}</Btn>
                     {a.stage === "Interview" && (
                       <ActionBtn variant="primary" size="sm" icon="Video" doneIcon="Copy"
                                  done={COPY.linkCopied}
-                                 act={() => copy(`https://meet.womsakhi.in/${a.id}`, COPY.linkCopied, "Copy it by hand: meet.womsakhi.in/" + a.id)}>
-                        Join the call
-                      </ActionBtn>
+                                 act={() => copy(`https://meet.womsakhi.in/${a.id}`, COPY.linkCopied, "Copy it by hand: meet.womsakhi.in/" + a.id)}>{tr("applications.joinTheCall")}</ActionBtn>
                     )}
-                    {closed && <Btn href="/app/opportunities" variant="soft" size="sm">Find similar</Btn>}
+                    {closed && <Btn href="/app/opportunities" variant="soft" size="sm">{tr("applications.findSimilar")}</Btn>}
                   </span>
                 </div>
               </Card>
@@ -162,7 +158,7 @@ export default function Applications() {
             icon="Inbox"
             title={tab === "Closed" ? "Nothing has closed" : `No ${tab.toLowerCase()} applications`}
             body="Everything you apply for shows up here, with what is happening next."
-            action={<Btn href="/app/opportunities" variant="primary" iconEnd="ArrowRight">Find work</Btn>}
+            action={<Btn href="/app/opportunities" variant="primary" iconEnd="ArrowRight">{tr("applications.findWork")}</Btn>}
           />
         </Card>
       )}

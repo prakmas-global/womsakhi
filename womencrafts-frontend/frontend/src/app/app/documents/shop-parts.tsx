@@ -7,6 +7,7 @@ import * as Icons from "@/components/ux/icons";
 import type { Listing, ShopOrder, ShopSummary } from "@/lib/shop-api";
 import { apiUploadImage, validateImage } from "@/lib/uploads-api";
 import { formatMoney } from "@/components/ux/kit/money";
+import { useT } from "@/i18n";
 
 /**
  * My Shop — the parts.
@@ -85,6 +86,7 @@ export const Sec = ({ children, action }: { children: React.ReactNode; action?: 
 export const Hero = memo(function Hero(
   { summary, needs }: { summary: ShopSummary | null; needs: number },
 ) {
+  const tr = useT();
   const earned = summary?.month_minor ?? 0;
   const last = summary?.last_month_minor ?? 0;
   const delta = last > 0 ? Math.round(((earned - last) / last) * 100) : null;
@@ -103,8 +105,7 @@ export const Hero = memo(function Hero(
           {summary?.name ?? "Your shop"}
         </p>
         <h1 className="mt-2.5 text-[clamp(1.5rem,2.7vw,2.1875rem)] font-extrabold leading-[1.12] tracking-[-0.03em]"
-            style={{ color: "var(--ux-on-brand)", textWrap: "balance" }}>
-          You have made <span style={{ color: "var(--ux-rib-5)" }}>{rupees(earned)}</span> this month
+            style={{ color: "var(--ux-on-brand)", textWrap: "balance" }}>{tr("documents.youHaveMade")}<span style={{ color: "var(--ux-rib-5)" }}>{rupees(earned)}</span> this month
           {needs > 0 && <>, and {needs === 1 ? "one order needs" : `${needs} orders need`} you</>}.
         </h1>
         <p className="mt-2.5 text-sm" style={{ color: "var(--ux-on-brand-2)" }}>
@@ -116,8 +117,7 @@ export const Hero = memo(function Hero(
                 className="ux-press flex min-h-[44px] items-center gap-2 rounded-[12px] px-5 text-xsm font-bold"
                 style={{ background: "linear-gradient(96deg, var(--ux-rib-2), var(--ux-rib-3))",
                          color: "var(--ux-on-brand)" }}>
-            <Icons.Plus className="h-4 w-4" /> Add something to sell
-          </Link>
+            <Icons.Plus className="h-4 w-4" />{tr("documents.addSomethingToSell")}</Link>
           <Link href="/app/wallet"
                 className="ux-press flex min-h-[44px] items-center gap-2.5 rounded-[12px] px-4 text-xsm font-bold"
                 style={{ background: "var(--ux-on-brand-track)", border: "1px solid var(--ux-on-brand-2)",
@@ -125,9 +125,7 @@ export const Hero = memo(function Hero(
             <span className="grid h-[26px] w-[26px] place-items-center rounded-full"
                   style={{ background: "var(--ux-on-brand-btn)", color: "var(--ux-on-brand-btn-ink)" }}>
               <Icons.Wallet className="h-[13px] w-[13px]" />
-            </span>
-            See your money
-          </Link>
+            </span>{tr("documents.seeYourMoney")}</Link>
         </div>
       </div>
     </section>
@@ -139,6 +137,7 @@ export const Hero = memo(function Hero(
 export const Stats = memo(function Stats({ summary, needs, live }: {
   summary: ShopSummary | null; needs: number; live: number;
 }) {
+  const tr = useT();
   const earned = summary?.month_minor ?? 0;
   const last = summary?.last_month_minor ?? 0;
   const delta = last > 0 ? Math.round(((earned - last) / last) * 100) : null;
@@ -146,7 +145,8 @@ export const Stats = memo(function Stats({ summary, needs, live }: {
     { icon: "Coins", tone: "green", label: "Earned", value: rupees(earned),
       note: "This month", delta },
     { icon: "Package", tone: "amber", label: "Needs you", value: String(needs),
-      note: needs === 1 ? "Order to move" : "Orders to move", delta: null },
+      note: needs === 1 ? tr("documents.orderToMove")
+              : tr("documents.ordersToMove"), delta: null },
     { icon: "Store", tone: "violet", label: "In your shop", value: String(live),
       note: "Live listings", delta: null },
     { icon: "Star", tone: "blue", label: "Your rating",
@@ -207,6 +207,7 @@ const STEPS = ["New", "Making", "Ready", "Sent", "Done"] as const;
 export const OrderCard = memo(function OrderCard({ o, onAdvance, busy }: {
   o: ShopOrder; onAdvance: (o: ShopOrder) => void; busy: boolean;
 }) {
+  const tr = useT();
   const at = STEPS.indexOf(o.state as (typeof STEPS)[number]);
   const tone = toneOf(o.id);
   const [, ink] = TONE[tone];
@@ -261,9 +262,7 @@ export const OrderCard = memo(function OrderCard({ o, onAdvance, busy }: {
         </>
       )}
       {cancelled && (
-        <p className="mt-2.5 text-xs font-semibold" style={{ color: "var(--ux-faint)" }}>
-          Cancelled — nothing more to do.
-        </p>
+        <p className="mt-2.5 text-xs font-semibold" style={{ color: "var(--ux-faint)" }}>{tr("documents.cancelledNothingMoreToDo")}</p>
       )}
     </article>
   );
@@ -290,6 +289,7 @@ export const ListingCard = memo(function ListingCard({
   onDelete: () => void;
   busy: boolean;
 }) {
+  const tr = useT();
   const [over, setOver] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const file = useRef<HTMLInputElement>(null);
@@ -344,9 +344,7 @@ export const ListingCard = memo(function ListingCard({
             {busy ? <Icons.Loader2 className="h-[26px] w-[26px] animate-spin" />
                   : <Icons.Camera className="h-[26px] w-[26px]" />}
             <b className="text-xsm font-extrabold">{busy ? "Adding…" : "Add a photo"}</b>
-            <span className="text-2xs leading-snug" style={{ color: "var(--ux-faint)" }}>
-              Take one, or choose from your phone
-            </span>
+            <span className="text-2xs leading-snug" style={{ color: "var(--ux-faint)" }}>{tr("documents.takeOneOrChooseFromYour")}</span>
           </button>
         )}
         <input ref={file} type="file" accept="image/*" className="hidden"
@@ -373,16 +371,14 @@ export const ListingCard = memo(function ListingCard({
         {!l.photo && !error && (
           <p className="mt-2.5 flex items-start gap-2 rounded-[12px] p-2.5 text-2xs leading-relaxed"
              style={{ background: "var(--ux-tint-blue)", color: "var(--ux-ink-2)" }}>
-            <Icons.Info className="mt-px h-[13px] w-[13px] shrink-0" style={{ color: "var(--ux-blue-ink)" }} />
-            A photo is the difference between being looked at and being scrolled past.
-          </p>
+            <Icons.Info className="mt-px h-[13px] w-[13px] shrink-0" style={{ color: "var(--ux-blue-ink)" }} />{tr("documents.aPhotoIsTheDifferenceBetween")}</p>
         )}
 
         {isProduct && l.stock !== null && (
           <div className="mt-3 flex w-fit items-center overflow-hidden rounded-[12px]"
                style={{ border: "1px solid var(--ux-line-strong)" }}>
             <button type="button" onClick={() => onStock(l, Math.max(0, (l.stock ?? 0) - 1))}
-                    aria-label="One fewer in stock"
+                    aria-label={tr("documents.oneFewerInStock")}
                     className="ux-press grid h-9 w-9 place-items-center text-base font-extrabold"
                     style={{ color: "var(--ux-ink-2)" }}>−</button>
             <span className="min-w-[58px] text-center text-xsm font-extrabold tabular-nums"
@@ -390,11 +386,12 @@ export const ListingCard = memo(function ListingCard({
               {l.stock}
               <small className="block text-2xs font-bold uppercase tracking-[0.04em]"
                      style={{ color: "var(--ux-faint)" }}>
-                {l.stock === 0 ? "sold out" : "in stock"}
+                {l.stock === 0 ? tr("documents.soldOut")
+              : tr("documents.inStock")}
               </small>
             </span>
             <button type="button" onClick={() => onStock(l, (l.stock ?? 0) + 1)}
-                    aria-label="One more in stock"
+                    aria-label={tr("documents.oneMoreInStock")}
                     className="ux-press grid h-9 w-9 place-items-center text-base font-extrabold"
                     style={{ color: "var(--ux-ink-2)" }}>+</button>
           </div>
@@ -411,7 +408,7 @@ export const ListingCard = memo(function ListingCard({
                   className="ux-press inline-flex min-h-[36px] items-center gap-1.5 rounded-[8px] px-3 text-xs font-bold disabled:opacity-60"
                   style={{ border: "1px solid var(--ux-line)", background: "var(--ux-surface)",
                            color: "var(--ux-ink-2)" }}>
-            {paused ? <><Icons.Play className="h-[13px] w-[13px]" /> Put back</>
+            {paused ? <><Icons.Play className="h-[13px] w-[13px]" />{tr("documents.putBack")}</>
                     : <><Icons.Pause className="h-[13px] w-[13px]" /> Pause</>}
           </button>
           <button type="button" onClick={() => onShare(l)}
@@ -441,6 +438,7 @@ export const ListingCard = memo(function ListingCard({
 export const Storefront = memo(function Storefront(
   { summary, listings }: { summary: ShopSummary | null; listings: Listing[] },
 ) {
+  const tr = useT();
   const live = useMemo(() => listings.filter((l) => l.status !== "paused"), [listings]);
   return (
     <>
@@ -470,9 +468,7 @@ export const Storefront = memo(function Storefront(
             </div>
           </div>
           {live.length === 0 ? (
-            <p className="p-5 text-center text-xs" style={{ color: "var(--ux-muted)" }}>
-              Nothing is live. Buyers see an empty shop.
-            </p>
+            <p className="p-5 text-center text-xs" style={{ color: "var(--ux-muted)" }}>{tr("documents.nothingIsLiveBuyersSeeAn")}</p>
           ) : live.map((l) => (
             <div key={l.id} className="flex gap-3 p-3.5"
                  style={{ borderBottom: "1px solid var(--ux-line)" }}>

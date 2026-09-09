@@ -12,6 +12,7 @@ import { apiWithdraw, type WithdrawResult } from "@/lib/shop-api";
 import { settled, useAttemptKey } from "@/lib/idempotency";
 import { rupees, rupeesExact } from "@/components/ux/money/data";
 import { useMoney } from "@/components/ux/money/live";
+import { useT } from "@/i18n";
 
 /**
  * Moving money to her bank.
@@ -27,6 +28,7 @@ import { useMoney } from "@/components/ux/money/live";
  *    around — not "processing".
  */
 export default function WithdrawPage() {
+  const tr = useT();
   const { data: PAYOUT_METHODS } = usePayoutMethods();
   const { data: money, source } = useMoney();
   const [typed, setTyped] = useState("");
@@ -107,8 +109,8 @@ export default function WithdrawPage() {
               {result?.arrives ?? "It reaches most banks by tomorrow, and always within three working days."}
             </p>
             <div className="mt-5 flex flex-wrap justify-center gap-2.5">
-              <Btn href="/app/wallet" variant="primary" iconEnd="ArrowRight">Back to Earn</Btn>
-              <Btn href="/app/wallet/statement" variant="outline" icon="Receipt">See the statement</Btn>
+              <Btn href="/app/wallet" variant="primary" iconEnd="ArrowRight">{tr("walletWithdraw.backToEarn")}</Btn>
+              <Btn href="/app/wallet/statement" variant="outline" icon="Receipt">{tr("walletWithdraw.seeTheStatement")}</Btn>
             </div>
           </div>
         </Card>
@@ -122,7 +124,7 @@ export default function WithdrawPage() {
       rail={
         <div className="space-y-[16px]">
           <Card>
-            <SectionHead title="What you are taking out" />
+            <SectionHead title={tr("walletWithdraw.whatYouAreTakingOut")} />
             <div className="space-y-2.5 text-xsm">
               <div className="flex items-center justify-between gap-3">
                 <span style={{ color: "var(--ux-muted)" }}>Amount</span>
@@ -132,13 +134,13 @@ export default function WithdrawPage() {
               </div>
               {/* Stated as None, never omitted. */}
               <div className="flex items-center justify-between gap-3">
-                <span style={{ color: "var(--ux-muted)" }}>Transfer fee</span>
+                <span style={{ color: "var(--ux-muted)" }}>{tr("walletWithdraw.transferFee")}</span>
                 <span className="font-medium" style={{ color: "var(--ux-green-ink)" }}>None</span>
               </div>
             </div>
             <div className="my-3.5 h-px" style={{ background: "var(--ux-line)" }} />
             <div className="flex items-baseline justify-between gap-3">
-              <span className="text-sm font-semibold" style={{ color: "var(--ux-ink)" }}>Reaches your bank</span>
+              <span className="text-sm font-semibold" style={{ color: "var(--ux-ink)" }}>{tr("walletWithdraw.reachesYourBank")}</span>
               <span className="text-xl font-bold tabular-nums" style={{ color: "var(--ux-ink)" }}>
                 {minor ? rupeesExact(minor) : "—"}
               </span>
@@ -160,13 +162,11 @@ export default function WithdrawPage() {
                 {problem}
               </p>
             )}
-            <p className="mt-2.5 text-xs leading-relaxed" style={{ color: "var(--ux-faint)" }}>
-              Most banks have it by tomorrow. Always within three working days.
-            </p>
+            <p className="mt-2.5 text-xs leading-relaxed" style={{ color: "var(--ux-faint)" }}>{tr("walletWithdraw.mostBanksHaveItByTomorrow")}</p>
           </Card>
 
           <Card>
-            <SectionHead title="If it does not arrive" icon="Info" />
+            <SectionHead title={tr("walletWithdraw.ifItDoesNotArrive")} icon="Info" />
             <p className="text-xsm leading-relaxed" style={{ color: "var(--ux-ink-2)" }}>
               Tell us after three working days and we will trace it. The money is never lost — it is either
               with your bank or still with us, and both are traceable.
@@ -178,19 +178,16 @@ export default function WithdrawPage() {
       <Link href="/app/wallet"
             className="ux-hov -my-1 mb-3.5 inline-flex items-center gap-1.5 py-1 text-xsm font-medium"
             style={{ color: "var(--ux-brand)" }}>
-        <Icons.ArrowLeft className="ux-ico h-4 w-4" /> Your wallet
-      </Link>
+        <Icons.ArrowLeft className="ux-ico h-4 w-4" />{tr("walletWithdraw.yourWallet")}</Link>
 
       <h1 className="text-2xl font-bold" style={{ color: "var(--ux-ink)" }}>Withdraw</h1>
-      <p className="mb-[20px] mt-1.5 text-xsm" style={{ color: "var(--ux-muted)" }}>
-        Nothing moves until you press the button.
-      </p>
+      <p className="mb-[20px] mt-1.5 text-xsm" style={{ color: "var(--ux-muted)" }}>{tr("walletWithdraw.nothingMovesUntilYouPressThe")}</p>
 
       <SourceNote source={source} what="figures" />
 
       <Card className="mb-[16px]">
-        <SectionHead title="How much" />
-        <Field label="Amount in rupees" hint={`You can take out up to ${rupees(money.balanceMinor)} right now.`}>
+        <SectionHead title={tr("walletWithdraw.howMuch")} />
+        <Field label={tr("walletWithdraw.amountInRupees")} hint={`You can take out up to ${rupees(money.balanceMinor)} right now.`}>
           <TextInput value={amount} onChange={(e) => { setTouched(true); setTyped(e.target.value); }} inputMode="numeric" />
         </Field>
 
@@ -215,36 +212,30 @@ export default function WithdrawPage() {
         )}
         {tooLittle && (
           <p className="ux-slide-up mt-3 flex items-start gap-2 text-xsm" style={{ color: "var(--ux-orange-ink)" }}>
-            <Icons.AlertCircle className="mt-[1px] h-[14px] w-[14px] shrink-0" />
-            The smallest withdrawal is ₹100.
-          </p>
+            <Icons.AlertCircle className="mt-[1px] h-[14px] w-[14px] shrink-0" />{tr("walletWithdraw.theSmallestWithdrawalIs")}</p>
         )}
 
         {/* Available and pending are separate lines, always. A withdrawal that
             bounces costs her a day and her confidence in the wallet. */}
         <div className="mt-4 grid grid-cols-2 gap-2.5 border-t pt-4" style={{ borderColor: "var(--ux-line)" }}>
           <div className="ux-sq rounded-[12px] p-3" style={{ background: "var(--ux-tint-green)" }}>
-            <p className="text-2xs uppercase tracking-[0.06em]" style={{ color: "var(--ux-green-ink)" }}>Available now</p>
+            <p className="text-2xs uppercase tracking-[0.06em]" style={{ color: "var(--ux-green-ink)" }}>{tr("walletWithdraw.availableNow")}</p>
             <p className="mt-1 text-lg font-bold tabular-nums" style={{ color: "var(--ux-ink)" }}>{rupees(money.balanceMinor)}</p>
           </div>
           <div className="ux-sq rounded-[12px] p-3" style={{ background: "var(--ux-surface-2)" }}>
-            <p className="text-2xs uppercase tracking-[0.06em]" style={{ color: "var(--ux-faint)" }}>Still on its way</p>
+            <p className="text-2xs uppercase tracking-[0.06em]" style={{ color: "var(--ux-faint)" }}>{tr("walletWithdraw.stillOnItsWay")}</p>
             <p className="mt-1 text-lg font-bold tabular-nums" style={{ color: "var(--ux-muted)" }}>{rupees(money.pendingMinor)}</p>
           </div>
         </div>
       </Card>
 
       <Card>
-        <SectionHead title="Where it goes" action="Manage" onAction={() => { window.location.href = "/app/settings/payments"; }} />
+        <SectionHead title={tr("walletWithdraw.whereItGoes")} action="Manage" onAction={() => { window.location.href = "/app/settings/payments"; }} />
         {!PAYOUT_METHODS.length && (
           <div className="ux-sq rounded-[12px] border p-4" style={{ borderColor: "var(--ux-line)" }}>
-            <p className="text-xsm leading-relaxed" style={{ color: "var(--ux-ink-2)" }}>
-              You have not added a bank account or a UPI id yet, so there is nowhere to send this.
-            </p>
+            <p className="text-xsm leading-relaxed" style={{ color: "var(--ux-ink-2)" }}>{tr("walletWithdraw.youHaveNotAddedABank")}</p>
             <div className="mt-3">
-              <Btn href="/app/settings/payments" variant="primary" size="sm" iconEnd="ArrowRight">
-                Add a way to get paid
-              </Btn>
+              <Btn href="/app/settings/payments" variant="primary" size="sm" iconEnd="ArrowRight">{tr("walletWithdraw.addAWayToGetPaid")}</Btn>
             </div>
           </div>
         )}

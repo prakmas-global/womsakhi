@@ -7,6 +7,7 @@ import { HomeShell } from "@/components/ux/home/HomeShell";
 import { Back, Btn, Card, EmptyState, I, IconTile, Pill, Progress, SectionHead, Stat, v } from "@/components/ux/kit";
 import { formatRupees } from "@/components/ux/kit";
 import { PREORDERS, fundedUpfront, type PreOrder } from "@/components/ux/shopplus/data";
+import { useT } from "@/i18n";
 
 /**
  * Money before you buy cloth.
@@ -33,6 +34,7 @@ const STATE: Record<PreOrder["state"], { label: string; tint: string; ink: strin
 };
 
 export default function PreOrdersPage() {
+  const tr = useT();
   const router = useRouter();
   const [rows, setRows] = useState<PreOrder[]>(PREORDERS);
   const [note, setNote] = useState<string | null>(null);
@@ -62,12 +64,13 @@ export default function PreOrdersPage() {
     const o = rows.find((x) => x.id === id);
     setNote(
       o?.state === "asking" ? `${o?.buyer} paid the cloth money. You can buy materials today.`
-      : o?.state === "funded" ? "Marked as being made."
-      : "Delivered. The rest of the money is in your wallet.",
+      : o?.state === "funded" ? tr("shopPreorders.markedAsBeingMade")
+              : tr("shopPreorders.deliveredTheRestOfTheMoney"),
     );
   }, [rows]);
 
   const card = (o: PreOrder) => {
+  const tr = useT();
     const s = STATE[o.state];
     const pct = Math.round((o.paidMinor / o.totalMinor) * 100);
     return (
@@ -105,8 +108,7 @@ export default function PreOrdersPage() {
 
         {o.state === "asking" && (
           <div className="mt-3.5 rounded-[12px] px-3 py-2.5" style={{ background: v("--ux-tint-amber") }}>
-            <p className="text-xsm leading-relaxed" style={{ color: v("--ux-ink-2") }}>
-              Ask for <b>{formatRupees(o.materialsMinor)}</b> now — just the cloth and thread.
+            <p className="text-xsm leading-relaxed" style={{ color: v("--ux-ink-2") }}>{tr("shopPreorders.askFor")}<b>{formatRupees(o.materialsMinor)}</b> now — just the cloth and thread.
               The rest when she collects.
             </p>
           </div>
@@ -115,7 +117,7 @@ export default function PreOrdersPage() {
         {o.state !== "done" && (
           <div className="mt-3.5 flex gap-2">
             {o.state === "asking" && (
-              <Btn size="sm" variant="outline" full onClick={() => ask(o.id)}>Ask again</Btn>
+              <Btn size="sm" variant="outline" full onClick={() => ask(o.id)}>{tr("shopPreorders.askAgain")}</Btn>
             )}
             <Btn size="sm" full onClick={() => advance(o.id)}>
               {o.state === "asking" ? "She paid" : o.state === "funded" ? "Started making" : "Delivered"}
@@ -129,16 +131,12 @@ export default function PreOrdersPage() {
   return (
     <HomeShell active="/app/shop">
       <div className="flex flex-col gap-5">
-        <Back to="/app/shop" label="Back to your shops" />
+        <Back to="/app/shop" label={tr("shopPreorders.backToYourShops")} />
 
         <header>
-          <p className="text-2xs font-extrabold uppercase tracking-[0.2em]" style={{ color: v("--ux-brand") }}>
-            Before you buy cloth
-          </p>
+          <p className="text-2xs font-extrabold uppercase tracking-[0.2em]" style={{ color: v("--ux-brand") }}>{tr("shopPreorders.beforeYouBuyCloth")}</p>
           <h1 className="mt-2 text-[clamp(1.5rem,3.2vw,2.125rem)] font-extrabold leading-[1.1] tracking-[-0.035em]"
-              style={{ color: v("--ux-ink") }}>
-            Let the order pay for itself
-          </h1>
+              style={{ color: v("--ux-ink") }}>{tr("shopPreorders.letTheOrderPayForItself")}</h1>
           <p className="mt-1.5 max-w-[56ch] text-sm leading-relaxed" style={{ color: v("--ux-muted") }}>
             Ask for the cost of the materials up front — nothing more. You never spend your own
             money to start someone else&rsquo;s order, and you never borrow to do it.
@@ -147,11 +145,11 @@ export default function PreOrdersPage() {
 
         <Card>
           <div className="grid gap-4 sm:grid-cols-3">
-            <Stat value={formatRupees(upfront)} label="Paid to you up front"
+            <Stat value={formatRupees(upfront)} label={tr("shopPreorders.paidToYouUpFront")}
                   icon="HandCoins" tint="--ux-tint-green" ink="--ux-green-ink" />
-            <Stat value={formatRupees(owed)} label="Coming on delivery"
+            <Stat value={formatRupees(owed)} label={tr("shopPreorders.comingOnDelivery")}
                   icon="Truck" tint="--ux-tint-blue" ink="--ux-blue-ink" />
-            <Stat value={String(waiting.length)} label="Still waiting to start"
+            <Stat value={String(waiting.length)} label={tr("shopPreorders.stillWaitingToStart")}
                   icon="Clock" tint="--ux-tint-amber" ink="--ux-amber-ink" />
           </div>
         </Card>
@@ -166,16 +164,16 @@ export default function PreOrdersPage() {
 
         {waiting.length > 0 && (
           <div>
-            <SectionHead title="Waiting on cloth money" icon="Clock" chip={String(waiting.length)} />
+            <SectionHead title={tr("shopPreorders.waitingOnClothMoney")} icon="Clock" chip={String(waiting.length)} />
             <div className="flex flex-col gap-3">{waiting.map(card)}</div>
           </div>
         )}
 
         <div>
-          <SectionHead title="In hand" sub="Materials paid for — safe to start" icon="Scissors"
+          <SectionHead title={tr("shopPreorders.inHand")} sub={tr("shopPreorders.materialsPaidForSafeToStart")} icon="Scissors"
                        chip={String(live.length)} />
           {live.length === 0 ? (
-            <Card><EmptyState icon="Scissors" title="Nothing on the machine"
+            <Card><EmptyState icon="Scissors" title={tr("shopPreorders.nothingOnTheMachine")}
                               body="When a buyer pays the cloth money, the order appears here." /></Card>
           ) : (
             <div className="flex flex-col gap-3">{live.map(card)}</div>

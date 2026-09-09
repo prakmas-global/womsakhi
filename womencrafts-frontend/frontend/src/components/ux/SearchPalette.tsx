@@ -227,7 +227,7 @@ export function SearchPalette({ open, onClose }: { open: boolean; onClose: () =>
   const merged = useMemo(() => {
     const pages = searchPages(q, 6, (k) => t(k as Parameters<typeof t>[0])).map((p) =>
       // Show the screen by the name she reads it under in the rail.
-      p.k ? { ...p, title: t(p.k as Parameters<typeof t>[0]) } : p,
+      p.k ? { ...p, title: t(`${p.k}.label` as Parameters<typeof t>[0]) } : p,
     );
     if (!pages.length) return hits;
     const taken = new Set(hits.map((h) => h.href));

@@ -12,6 +12,7 @@ import * as Icons from "@/components/ux/icons";
 
 import { Btn, Card, IconTile, Pill } from "@/components/ux/kit";
 import { OnboardAside, OnboardFrame } from "@/components/ux/onboard/Frame";
+import { useT } from "@/i18n";
 
 type Stage = "email" | "documents" | "review" | "rejected";
 
@@ -32,6 +33,7 @@ const DOCS = [
  * what is happening, who is doing it, and roughly how long.
  */
 export default function VerifyPage() {
+  const tr = useT();
   /**
    * Where she actually is, from the server.
    *
@@ -106,7 +108,7 @@ export default function VerifyPage() {
         className="hidden"
         // Visually hidden, but still in the accessibility tree — without a name
         // a screen reader announces only "file upload, button".
-        aria-label="Choose a photo of your ID to upload"
+        aria-label={tr("verify.chooseAPhotoOfYourId")}
         onChange={(e) => {
           const file = e.target.files?.[0];
           e.target.value = "";
@@ -129,8 +131,8 @@ export default function VerifyPage() {
       title={
         stage === "email" ? "Confirm your email"
         : stage === "documents" ? "Show us it is you"
-        : stage === "review" ? "A person is looking at this now"
-        : "We could not confirm that"
+        : stage === "review" ? tr("verify.aPersonIsLookingAtThis")
+              : tr("verify.weCouldNotConfirmThat")
       }
       sub={
         stage === "email" ? "We sent a link to priya.sharma@example.com. Open it and come back here."
@@ -141,7 +143,7 @@ export default function VerifyPage() {
       aside={
         <OnboardAside
           art="/ux/art/icon-padlock.webp"
-          title="What happens to your ID"
+          title={tr("verify.whatHappensToYourId")}
           body="It is seen by the two people who review accounts, and by nobody else — not employers, not buyers, not other members."
           points={[
             "Stored encrypted, never shown on your profile",
@@ -156,20 +158,17 @@ export default function VerifyPage() {
           <div className="flex items-start gap-4">
             <IconTile icon="Mail" tint="--ux-tint-violet" ink="--ux-violet" size={52} radius={14} />
             <div className="min-w-0 flex-1">
-              <h2 className="text-base font-semibold" style={{ color: "var(--ux-ink)" }}>
-                Check your inbox
-              </h2>
+              <h2 className="text-base font-semibold" style={{ color: "var(--ux-ink)" }}>{tr("verify.checkYourInbox")}</h2>
               <p className="mt-1.5 text-xsm leading-relaxed" style={{ color: "var(--ux-ink-2)" }}>
                 The link is good for 24 hours. If it is not there, look in spam — it arrives from
                 hello@womsakhi.in.
               </p>
               <div className="mt-4 flex flex-wrap items-center gap-2.5">
-                <Btn variant="primary" iconEnd="ArrowRight" onClick={() => setAdvanced("documents")}>
-                  I have confirmed it
-                </Btn>
+                <Btn variant="primary" iconEnd="ArrowRight" onClick={() => setAdvanced("documents")}>{tr("verify.iHaveConfirmedIt")}</Btn>
                 <Btn variant="outline" icon={resent ? "Check" : "RotateCcw"} disabled={resend.busy}
                      onClick={() => void resend.run()}>
-                  {resend.busy ? "Sending…" : resent ? "Sent again" : "Send it again"}
+                  {resend.busy ? "Sending…" : resent ? tr("verify.sentAgain")
+              : tr("verify.sendItAgain")}
                 </Btn>
               </div>
             </div>
@@ -184,9 +183,7 @@ export default function VerifyPage() {
               <div className="flex items-start gap-3.5">
                 <Icons.AlertTriangle className="mt-[2px] h-[20px] w-[20px] shrink-0" style={{ color: "var(--ux-orange-ink)" }} />
                 <div className="min-w-0">
-                  <p className="text-sm font-semibold" style={{ color: "var(--ux-ink)" }}>
-                    The photo was too blurred to read
-                  </p>
+                  <p className="text-sm font-semibold" style={{ color: "var(--ux-ink)" }}>{tr("verify.thePhotoWasTooBlurredTo")}</p>
                   <p className="mt-1 text-xsm leading-relaxed" style={{ color: "var(--ux-ink-2)" }}>
                     Take it in daylight, flat on a table, with all four corners in the frame. Nothing else
                     about your account has changed.
@@ -230,9 +227,7 @@ export default function VerifyPage() {
             </p>
             <Btn variant="primary" iconEnd="ArrowRight"
                  className={allUploaded ? "" : "pointer-events-none opacity-50"}
-                 onClick={() => allUploaded && setAdvanced("review")}>
-              Send for review
-            </Btn>
+                 onClick={() => allUploaded && setAdvanced("review")}>{tr("verify.sendForReview")}</Btn>
           </div>
           {filePicker}
         </>
@@ -245,19 +240,15 @@ export default function VerifyPage() {
             <img loading="lazy" decoding="async" src="/ux/art/scene-woman-reading-document.webp" alt=""
                  className="h-[92px] w-[92px] shrink-0 object-contain" />
             <div className="min-w-0 flex-1">
-              <h2 className="text-base font-semibold" style={{ color: "var(--ux-ink)" }}>
-                Usually done within a day
-              </h2>
+              <h2 className="text-base font-semibold" style={{ color: "var(--ux-ink)" }}>{tr("verify.usuallyDoneWithinADay")}</h2>
               {/* Never a bare "pending". Say who, and roughly how long. */}
               <p className="mt-2 text-xsm leading-relaxed" style={{ color: "var(--ux-ink-2)" }}>
                 Two people review new accounts, Monday to Saturday. You will get an email the moment it is
                 done — you do not need to keep this open.
               </p>
               <div className="mt-4 flex flex-wrap gap-2.5">
-                <Btn href="/signin" variant="outline" icon="LogOut">Sign out for now</Btn>
-                <Btn variant="ghost" onClick={() => setAdvanced("rejected")}>
-                  See what happens if something is wrong
-                </Btn>
+                <Btn href="/signin" variant="outline" icon="LogOut">{tr("verify.signOutForNow")}</Btn>
+                <Btn variant="ghost" onClick={() => setAdvanced("rejected")}>{tr("verify.seeWhatHappensIfSomethingIs")}</Btn>
               </div>
             </div>
           </div>

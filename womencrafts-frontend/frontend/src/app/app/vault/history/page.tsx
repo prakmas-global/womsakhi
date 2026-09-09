@@ -8,6 +8,7 @@ import { Back, Btn, Card, Chip, EmptyState, I, SectionHead, Stat, v } from "@/co
 import { formatRupees } from "@/components/ux/kit";
 import { MOVES, POCKETS } from "@/components/ux/vault/data";
 import { COPY } from "@/components/ux/copy";
+import { useT } from "@/i18n";
 
 /**
  * Every movement, and where it went.
@@ -18,6 +19,7 @@ import { COPY } from "@/components/ux/copy";
  * screen to spot, or the rules stop feeling trustworthy.
  */
 export default function HistoryPage() {
+  const tr = useT();
   const router = useRouter();
   const [pocket, setPocket] = useState<string>("all");
   const [shown, setShown] = useState(true);
@@ -40,36 +42,31 @@ export default function HistoryPage() {
   return (
     <HomeShell active="/app/vault">
       <div className="flex flex-col gap-5">
-        <Back to="/app/vault" label="Back to your locker" />
+        <Back to="/app/vault" label={tr("vaultHistory.backToYourLocker")} />
 
         <header className="flex flex-wrap items-end gap-4">
           <div className="min-w-0 flex-1">
-            <p className="text-2xs font-extrabold uppercase tracking-[0.2em]" style={{ color: v("--ux-brand") }}>
-              Every movement
-            </p>
+            <p className="text-2xs font-extrabold uppercase tracking-[0.2em]" style={{ color: v("--ux-brand") }}>{tr("vaultHistory.everyMovement")}</p>
             <h1 className="mt-2 text-[clamp(1.5rem,3.2vw,2.125rem)] font-extrabold leading-[1.1] tracking-[-0.035em]"
-                style={{ color: v("--ux-ink") }}>
-              What came in, what went out
-            </h1>
+                style={{ color: v("--ux-ink") }}>{tr("vaultHistory.whatCameInWhatWentOut")}</h1>
           </div>
           <Btn variant="outline" icon={shown ? "EyeOff" : "Eye"} onClick={() => setShown((s) => !s)}>
-            {shown ? "Hide amounts" : "Show amounts"}
+            {shown ? tr("vaultHistory.hideAmounts")
+              : tr("vaultHistory.showAmounts")}
           </Btn>
         </header>
 
         <Card>
           <div className="grid gap-4 sm:grid-cols-2">
-            <Stat value={money(inMinor)} label="Came in" icon="ArrowDownLeft"
+            <Stat value={money(inMinor)} label={tr("vaultHistory.cameIn")} icon="ArrowDownLeft"
                   tint="--ux-tint-green" ink="--ux-green-ink" />
-            <Stat value={money(outMinor)} label="Went out" icon="ArrowUpRight"
+            <Stat value={money(outMinor)} label={tr("vaultHistory.wentOut")} icon="ArrowUpRight"
                   tint="--ux-surface-2" ink="--ux-muted" />
           </div>
         </Card>
 
         <div className="flex flex-wrap gap-2">
-          <Chip selected={pocket === "all"} onClick={() => setPocket("all")} icon="LayoutGrid">
-            Every pocket
-          </Chip>
+          <Chip selected={pocket === "all"} onClick={() => setPocket("all")} icon="LayoutGrid">{tr("vaultHistory.everyPocket")}</Chip>
           {POCKETS.map((p) => (
             <Chip key={p.id} selected={pocket === p.name} onClick={() => setPocket(p.name)} icon={p.icon}>
               {p.name}
@@ -81,7 +78,7 @@ export default function HistoryPage() {
           <Card>
             <EmptyState icon="History" title={COPY.nothingHereYet}
                         body="No money has moved in or out of this pocket."
-                        action={<Btn size="sm" variant="outline" onClick={() => setPocket("all")}>Show every pocket</Btn>} />
+                        action={<Btn size="sm" variant="outline" onClick={() => setPocket("all")}>{tr("vaultHistory.showEveryPocket")}</Btn>} />
           </Card>
         ) : (
           days.map(([day, list]) => (

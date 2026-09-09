@@ -83,7 +83,8 @@ export function searchPages(
 
   const scored: Array<{ hit: PageHit; score: number }> = [];
   for (const hit of PAGES) {
-    const local = hit.k && translate ? translate(hit.k).toLowerCase() : "";
+    // `k` is a base; the title lives at `${k}.label`.
+    const local = hit.k && translate ? translate(`${hit.k}.label`).toLowerCase() : "";
     const title = `${hit.title.toLowerCase()}${local && local !== hit.title.toLowerCase() ? ` ${local}` : ""}`;
     const hay = `${title} ${hit.sub.toLowerCase()} ${hit.href.toLowerCase()}`;
     // Every word has to appear somewhere, so "who signs" does not match a page

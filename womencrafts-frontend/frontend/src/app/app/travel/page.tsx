@@ -7,6 +7,7 @@ import { ActionBtn, Btn, Card, EmptyState, IconTile, Pill, SectionHead, SourceNo
 import { HomeShell } from "@/components/ux/home/HomeShell";
 import { useGuidance, useHelplines, useRoutes } from "@/components/ux/entitlements";
 import { WELLBEING_ART } from "@/components/ux/wellbeing/data";
+import { useT } from "@/i18n";
 
 /**
  * Transport & Safe Travel.
@@ -17,6 +18,7 @@ import { WELLBEING_ART } from "@/components/ux/wellbeing/data";
  * it is safe to come back on after dark.
  */
 export default function TravelPage() {
+  const tr = useT();
   const { data: ROUTES, source } = useRoutes();
   // Numbers and rules from the server, so both can be corrected — or a
   // state-specific line added — without shipping code.
@@ -34,7 +36,7 @@ export default function TravelPage() {
       rail={
         <div className="space-y-[16px]">
           <Card>
-            <SectionHead title="Before you set out" icon="ShieldCheck" />
+            <SectionHead title={tr("travel.beforeYouSetOut")} icon="ShieldCheck" />
             <ul className="ux-stagger space-y-2.5">
               {TRAVEL_RULES.map((t, i) => (
                 <li key={t.id} className="flex items-start gap-2.5 text-xsm leading-snug"
@@ -50,7 +52,7 @@ export default function TravelPage() {
           </Card>
 
           <Card>
-            <SectionHead title="If something happens" />
+            <SectionHead title={tr("travel.ifSomethingHappens")} />
             <ul className="space-y-3">
               {TRAVEL_HELP.map((h) => (
                 <li key={h.id}>
@@ -62,7 +64,7 @@ export default function TravelPage() {
               ))}
             </ul>
             <div className="mt-3.5">
-              <Btn href="/app/safety" variant="soft" size="sm" full iconEnd="ArrowRight">Safety centre</Btn>
+              <Btn href="/app/safety" variant="soft" size="sm" full iconEnd="ArrowRight">{tr("travel.safetyCentre")}</Btn>
             </div>
           </Card>
 
@@ -71,27 +73,23 @@ export default function TravelPage() {
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img loading="lazy" decoding="async" src={WELLBEING_ART.travel} alt=""
                  className="ux-float pointer-events-none absolute -bottom-3 -end-4 h-[100px] w-[100px] object-contain" />
-            <h3 className="relative w-[60%] text-sm font-semibold" style={{ color: "var(--ux-ink)" }}>
-              Share your journey
-            </h3>
-            <p className="relative mt-2 w-[60%] text-xs leading-relaxed" style={{ color: "var(--ux-muted)" }}>
-              Your trusted contacts see where you are until you say you have arrived.
-            </p>
+            <h3 className="relative w-[60%] text-sm font-semibold" style={{ color: "var(--ux-ink)" }}>{tr("travel.shareYourJourney")}</h3>
+            <p className="relative mt-2 w-[60%] text-xs leading-relaxed" style={{ color: "var(--ux-muted)" }}>{tr("travel.yourTrustedContactsSeeWhereYou")}</p>
           </div>
         </div>
       }
     >
       <div className="mb-[20px] flex items-end justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold" style={{ color: "var(--ux-ink)" }}>Travel and safety</h1>
+          <h1 className="text-2xl font-bold" style={{ color: "var(--ux-ink)" }}>{tr("travel.travelAndSafety")}</h1>
           <p className="mt-1.5 text-xsm" style={{ color: "var(--ux-muted)" }}>
             {risky.length
               ? `${risky.length} of your routes is not safe to return on after dark.`
               : unchecked.length === ROUTES.length
                 // Silence would read as "all clear", which is the one thing it
                 // must not read as.
-                ? "Nobody has checked these after dark yet. Ask someone who knows the route."
-                : "All your usual routes are fine after dark."}
+                ? tr("travel.nobodyHasCheckedTheseAfterDark")
+              : tr("travel.allYourUsualRoutesAreFine")}
           </p>
 
       <SourceNote source={source} what="routes" />
@@ -119,7 +117,8 @@ export default function TravelPage() {
                       <Pill tone={r.safeAfterDark === null ? "neutral"
                                   : r.safeAfterDark ? "green" : "orange"} size="sm">
                         {r.safeAfterDark === null ? "Nobody has checked after dark"
-                         : r.safeAfterDark ? "Fine after dark" : "Not after dark"}
+                         : r.safeAfterDark ? tr("travel.fineAfterDark")
+              : tr("travel.notAfterDark")}
                       </Pill>
                     </div>
                     <p className="mt-1.5 text-xsm" style={{ color: "var(--ux-ink-2)" }}>{r.how}</p>
@@ -152,17 +151,15 @@ export default function TravelPage() {
                     * people things — and the text below names nobody.
                     */}
                   <ActionBtn variant="primary" size="sm" icon="Share2" doneIcon="Check"
-                             done="Sent to whoever you chose"
-                             act={() => tellSomeone(r.name, r.how)}>
-                    Tell someone your route
-                  </ActionBtn>
+                             done={tr("travel.sentToWhoeverYouChose")}
+                             act={() => tellSomeone(r.name, r.how)}>{tr("travel.tellSomeoneYourRoute")}</ActionBtn>
                 </div>
               </Card>
             ))}
           </div>
         ) : (
           <Card>
-            <EmptyState icon="Bus" title="No routes saved"
+            <EmptyState icon="Bus" title={tr("travel.noRoutesSaved")}
                         body="Save the journeys you make often and we will tell you what they cost and when to come back." />
           </Card>
         )
@@ -173,7 +170,7 @@ export default function TravelPage() {
           {/* Counted from what the server sent, not asserted. "Four things"
               was hardcoded beside a list that is now editable, so the heading
               would have started lying the moment somebody added a fifth. */}
-          <SectionHead title={`${TRAVEL_RULES.length} things, every journey`} sub="None of them cost anything" />
+          <SectionHead title={`${TRAVEL_RULES.length} things, every journey`} sub={tr("travel.noneOfThemCostAnything")} />
           <ol className="ux-stagger space-y-3.5">
             {TRAVEL_RULES.map((t, i) => (
               <li key={t.id} className="flex items-start gap-3">

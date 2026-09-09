@@ -13,6 +13,7 @@ import {
 import { HomeShell } from "@/components/ux/home/HomeShell";
 import { useGuidance, useHealthChecks, useHelplines } from "@/components/ux/entitlements";
 import { WELLBEING_ART } from "@/components/ux/wellbeing/data";
+import { useT } from "@/i18n";
 
 /**
  * Health & Wellbeing.
@@ -30,6 +31,7 @@ const TOPIC_TINTS = [
 ] as const;
 
 export default function HealthPage() {
+  const tr = useT();
   const { data: HEALTH_CHECKS, source, refetch } = useHealthChecks();
   // From the server, so a helpline that changes is an edit and not a deploy.
   const { data: HEALTH_HELP } = useHelplines("health");
@@ -63,7 +65,7 @@ export default function HealthPage() {
       rail={
         <div className="space-y-[16px]">
           <Card>
-            <SectionHead title="Free, right now" icon="Phone" />
+            <SectionHead title={tr("health.freeRightNow")} icon="Phone" />
             <ul className="space-y-3">
               {HEALTH_HELP.map((h) => (
                 <li key={h.id}>
@@ -79,7 +81,7 @@ export default function HealthPage() {
           </Card>
 
           <Card>
-            <SectionHead title="What this is not" icon="Info" />
+            <SectionHead title={tr("health.whatThisIsNot")} icon="Info" />
             <p className="text-xsm leading-relaxed" style={{ color: "var(--ux-ink-2)" }}>
               Nothing here is medical advice, and nobody at WomSakhi is a doctor. This is a list of what is
               free, where it is, and when it is worth going.
@@ -91,12 +93,8 @@ export default function HealthPage() {
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img loading="lazy" decoding="async" src={WELLBEING_ART.health} alt=""
                  className="ux-float pointer-events-none absolute -bottom-3 -end-4 h-[100px] w-[100px] object-contain" />
-            <h3 className="relative w-[60%] text-sm font-semibold" style={{ color: "var(--ux-ink)" }}>
-              Ten minutes a day
-            </h3>
-            <p className="relative mt-2 w-[60%] text-xs leading-relaxed" style={{ color: "var(--ux-muted)" }}>
-              Sitting bent over close work for hours is what most members ask about. Small changes help.
-            </p>
+            <h3 className="relative w-[60%] text-sm font-semibold" style={{ color: "var(--ux-ink)" }}>{tr("health.tenMinutesADay")}</h3>
+            <p className="relative mt-2 w-[60%] text-xs leading-relaxed" style={{ color: "var(--ux-muted)" }}>{tr("health.sittingBentOverCloseWorkFor")}</p>
           </div>
         </div>
       }
@@ -152,7 +150,8 @@ export default function HealthPage() {
                     <Btn variant={isDone ? "outline" : "primary"} size="sm"
                          icon={isDone ? "Check" : undefined}
                          onClick={() => void mark.run(c.id, isDone ? "saved" : "done")}>
-                      {isDone ? "Marked done" : "Mark as done"}
+                      {isDone ? tr("health.markedDone")
+              : tr("health.markAsDone")}
                     </Btn>
                   </div>
                 </Card>
@@ -161,7 +160,7 @@ export default function HealthPage() {
           </div>
         ) : (
           <Card>
-            <EmptyState icon="HeartPulse" title="Nothing tracked yet"
+            <EmptyState icon="HeartPulse" title={tr("health.nothingTrackedYet")}
                         body="Add the checks that matter for you and we will remind you." />
           </Card>
         )

@@ -11,6 +11,7 @@ import { HomeShell } from "@/components/ux/home/HomeShell";
 import { useSchemes } from "@/components/ux/entitlements";
 import { SCHEME_ART, SCHEME_CATEGORIES } from "@/components/ux/schemes/data";
 import { AlsoHere } from "@/components/ux/AlsoHere";
+import { useT } from "@/i18n";
 
 /**
  * Schemes & Benefits — public money she may already be entitled to.
@@ -21,6 +22,7 @@ import { AlsoHere } from "@/components/ux/AlsoHere";
  * printing the rules and leaving her to work it out.
  */
 export default function SchemesPage() {
+  const tr = useT();
   const { data: SCHEMES, source } = useSchemes();
   // "You may qualify" was a third tab here and it filtered nothing: `eligible`
   // is `true` for every scheme by design — see `toScheme` in entitlements.ts,
@@ -47,7 +49,7 @@ export default function SchemesPage() {
       rail={
         <div className="space-y-[16px]">
           <Card className="ux-onscroll-soft">
-            <SectionHead title="What you will be asked for" sub="Have these ready and most applications take minutes" />
+            <SectionHead title={tr("supportfund.whatYouWillBeAskedFor")} sub={tr("supportfund.haveTheseReadyAndMostApplications")} />
             <ul className="ux-stagger space-y-2.5">
               {[
                 ["Aadhaar", true], ["PAN card", true], ["Bank passbook", true],
@@ -65,18 +67,18 @@ export default function SchemesPage() {
               ))}
             </ul>
             <div className="mt-3.5">
-              <Btn href="/app/documents" variant="soft" size="sm" full iconEnd="ArrowRight">Add what is missing</Btn>
+              <Btn href="/app/documents" variant="soft" size="sm" full iconEnd="ArrowRight">{tr("supportfund.addWhatIsMissing")}</Btn>
             </div>
           </Card>
 
           <Card className="ux-onscroll-soft">
-            <SectionHead title="Nobody should charge you" icon="ShieldAlert" />
+            <SectionHead title={tr("supportfund.nobodyShouldChargeYou")} icon="ShieldAlert" />
             <p className="text-xsm leading-relaxed" style={{ color: "var(--ux-ink-2)" }}>
               Every scheme here is free to apply for. If an agent asks for a fee to “get it approved”,
               that is not how any of these work. Tell us and we will look into it.
             </p>
             <div className="mt-3.5">
-              <Btn href="/app/safety" variant="outline" size="sm" full icon="Flag">Report an agent</Btn>
+              <Btn href="/app/safety" variant="outline" size="sm" full icon="Flag">{tr("supportfund.reportAnAgent")}</Btn>
             </div>
           </Card>
 
@@ -85,14 +87,10 @@ export default function SchemesPage() {
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img loading="lazy" decoding="async" src={SCHEME_ART.hero} alt=""
                  className="ux-float pointer-events-none absolute -bottom-3 -end-4 h-[100px] w-[100px] object-contain" />
-            <h3 className="relative w-[60%] text-sm font-semibold" style={{ color: "var(--ux-ink)" }}>
-              Not sure which?
-            </h3>
-            <p className="relative mt-2 w-[60%] text-xs leading-relaxed" style={{ color: "var(--ux-muted)" }}>
-              Tell Sakhi what you need the money for and she will narrow it down.
-            </p>
+            <h3 className="relative w-[60%] text-sm font-semibold" style={{ color: "var(--ux-ink)" }}>{tr("supportfund.notSureWhich")}</h3>
+            <p className="relative mt-2 w-[60%] text-xs leading-relaxed" style={{ color: "var(--ux-muted)" }}>{tr("supportfund.tellSakhiWhatYouNeedThe")}</p>
             <div className="relative mt-3 w-[60%]">
-              <Btn href="/app/sakhi" variant="soft" size="sm" iconEnd="ArrowRight">Ask Sakhi</Btn>
+              <Btn href="/app/sakhi" variant="soft" size="sm" iconEnd="ArrowRight">{tr("supportfund.askSakhi")}</Btn>
             </div>
           </div>
         </div>
@@ -100,7 +98,7 @@ export default function SchemesPage() {
     >
       <div className="mb-[20px] flex items-end justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold" style={{ color: "var(--ux-ink)" }}>Money you are owed</h1>
+          <h1 className="text-2xl font-bold" style={{ color: "var(--ux-ink)" }}>{tr("supportfund.moneyYouAreOwed")}</h1>
           <p className="mt-1.5 text-xsm" style={{ color: "var(--ux-muted)" }}>
             {eligible} of {SCHEMES.length} look like they apply to you. All of them are free to apply for.
           </p>
@@ -150,7 +148,8 @@ export default function SchemesPage() {
                               style={{ color: s.eligible ? "var(--ux-green-ink)" : "var(--ux-muted)" }} />
                   <p className="text-xsm leading-relaxed" style={{ color: "var(--ux-ink-2)" }}>
                     <strong style={{ color: s.eligible ? "var(--ux-green-ink)" : "var(--ux-muted)" }}>
-                      {s.eligible ? "Looks like you qualify. " : "Probably not for you. "}
+                      {s.eligible ? tr("supportfund.looksLikeYouQualify")
+              : tr("supportfund.probablyNotForYou")}
                     </strong>
                     {s.reason}
                   </p>
@@ -158,13 +157,9 @@ export default function SchemesPage() {
 
                 {expanded && (
                   <div className="ux-slide-up mt-3.5 border-t pt-3.5" style={{ borderColor: "var(--ux-line)" }}>
-                    <p className="text-2xs font-semibold uppercase tracking-[0.07em]" style={{ color: "var(--ux-faint)" }}>
-                      Who it is for
-                    </p>
+                    <p className="text-2xs font-semibold uppercase tracking-[0.07em]" style={{ color: "var(--ux-faint)" }}>{tr("supportfund.whoItIsFor")}</p>
                     <p className="mt-1.5 text-xsm leading-relaxed" style={{ color: "var(--ux-ink-2)" }}>{s.who}</p>
-                    <p className="mt-3.5 text-2xs font-semibold uppercase tracking-[0.07em]" style={{ color: "var(--ux-faint)" }}>
-                      What you will need
-                    </p>
+                    <p className="mt-3.5 text-2xs font-semibold uppercase tracking-[0.07em]" style={{ color: "var(--ux-faint)" }}>{tr("supportfund.whatYouWillNeed")}</p>
                     <ul className="mt-1.5 flex flex-wrap gap-1.5">
                       {s.needs.map((n) => (
                         <li key={n} className="ux-sq rounded-[8px] border px-2 py-[3px] text-2xs"
@@ -186,8 +181,8 @@ export default function SchemesPage() {
                       {expanded ? "Less" : "The details"}
                     </Btn>
                     {s.applied
-                      ? <Btn href={`/app/support-fund/${s.id}`} variant="soft" size="sm" icon="Clock">Track it</Btn>
-                      : <Btn href={`/app/support-fund/${s.id}`} variant="primary" size="sm" iconEnd="ArrowRight">How to apply</Btn>}
+                      ? <Btn href={`/app/support-fund/${s.id}`} variant="soft" size="sm" icon="Clock">{tr("supportfund.trackIt")}</Btn>
+                      : <Btn href={`/app/support-fund/${s.id}`} variant="primary" size="sm" iconEnd="ArrowRight">{tr("supportfund.howToApply")}</Btn>}
                   </span>
                 </div>
               </Card>
@@ -198,9 +193,10 @@ export default function SchemesPage() {
         <Card>
           <EmptyState
             icon="Landmark"
-            title={tab === "Applied" ? "You have not applied for anything yet" : "Nothing of that kind"}
+            title={tab === "Applied" ? tr("supportfund.youHaveNotAppliedForAnything")
+              : tr("supportfund.nothingOfThatKind")}
             body="New schemes are added as governments announce them."
-            action={<Btn onClick={() => { setTab("All schemes"); setCats([]); }} variant="soft">See all schemes</Btn>}
+            action={<Btn onClick={() => { setTab("All schemes"); setCats([]); }} variant="soft">{tr("supportfund.seeAllSchemes")}</Btn>}
           />
         </Card>
       )}

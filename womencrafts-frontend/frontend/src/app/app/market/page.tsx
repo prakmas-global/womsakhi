@@ -11,6 +11,7 @@ import {
   ITEMS, POT_PAYOUT, SELLERS, TIE_LABEL, sellerOf, sortedItems, type Item,
 } from "@/components/ux/market/data";
 import { COPY } from "@/components/ux/copy";
+import { useT } from "@/i18n";
 
 /**
  * The market — where what she makes actually gets bought.
@@ -34,6 +35,7 @@ import { COPY } from "@/components/ux/copy";
 type Filter = "all" | "circle" | "food" | "made" | "service";
 
 export default function MarketPage() {
+  const tr = useT();
   const router = useRouter();
   const [filter, setFilter] = useState<Filter>("all");
   const [saved, setSaved] = useState<string[]>([]);
@@ -56,6 +58,7 @@ export default function MarketPage() {
   }, []);
 
   const card = (i: Item) => {
+  const tr = useT();
     const s = sellerOf(i);
     const isSaved = saved.includes(i.id);
     return (
@@ -66,8 +69,8 @@ export default function MarketPage() {
             <div className="min-w-0 flex-1">
               <div className="flex flex-wrap items-center gap-2">
                 <p className="text-sm font-bold leading-snug" style={{ color: v("--ux-ink") }}>{i.title}</p>
-                {i.madeToOrder && <Pill tone="green" size="sm">Made for you</Pill>}
-                {!s.open && <Pill tone="neutral" size="sm">Closed just now</Pill>}
+                {i.madeToOrder && <Pill tone="green" size="sm">{tr("market.madeForYou")}</Pill>}
+                {!s.open && <Pill tone="neutral" size="sm">{tr("market.closedJustNow")}</Pill>}
               </div>
               <p className="mt-1 text-xs leading-relaxed" style={{ color: v("--ux-muted") }}>{i.detail}</p>
 
@@ -139,19 +142,15 @@ export default function MarketPage() {
 
         <header className="flex flex-wrap items-end gap-4">
           <div className="min-w-0 flex-1">
-            <p className="text-2xs font-extrabold uppercase tracking-[0.2em]" style={{ color: v("--ux-brand") }}>
-              The market
-            </p>
+            <p className="text-2xs font-extrabold uppercase tracking-[0.2em]" style={{ color: v("--ux-brand") }}>{tr("market.theMarket")}</p>
             <h1 className="mt-2 text-[clamp(1.5rem,3.2vw,2.125rem)] font-extrabold leading-[1.1] tracking-[-0.035em]"
-                style={{ color: v("--ux-ink") }}>
-              Buy from women you know
-            </h1>
+                style={{ color: v("--ux-ink") }}>{tr("market.buyFromWomenYouKnow")}</h1>
             <p className="mt-1.5 max-w-[56ch] text-sm leading-relaxed" style={{ color: v("--ux-muted") }}>
               Your circle first, then women you have bought from, then women near you. Everything
               here is made or sold by someone whose name you can say.
             </p>
           </div>
-          <Btn variant="outline" icon="Store" href="/app/shop">Your own shop</Btn>
+          <Btn variant="outline" icon="Store" href="/app/shop">{tr("market.yourOwnShop")}</Btn>
         </header>
 
         {/* Pot payout — surfaced, never pushed */}
@@ -166,10 +165,10 @@ export default function MarketPage() {
                 <p className="mt-1 max-w-[54ch] text-xsm leading-relaxed" style={{ color: v("--ux-ink-2") }}>
                   {formatRupees(POT_PAYOUT.minor)} is yours to do whatever you like with. If some
                   of it is going to be spent anyway, spending it here keeps it among women you know.
-                  <b> Nobody will ask you to.</b>
+                  <b>{tr("market.nobodyWillAskYouTo")}</b>
                 </p>
               </div>
-              <Btn variant="outline" href="/app/circles">See the pot</Btn>
+              <Btn variant="outline" href="/app/circles">{tr("market.seeThePot")}</Btn>
             </div>
           </Card>
         )}
@@ -184,30 +183,30 @@ export default function MarketPage() {
 
         <Card>
           <div className="grid gap-4 sm:grid-cols-3">
-            <Stat value={String(circleCount)} label="Things your circle sells" icon="Users"
+            <Stat value={String(circleCount)} label={tr("market.thingsYourCircleSells")} icon="Users"
                   tint="--ux-tint-pink" ink="--ux-pink-ink" />
-            <Stat value={String(openSellers)} label="Women open right now" icon="Store"
+            <Stat value={String(openSellers)} label={tr("market.womenOpenRightNow")} icon="Store"
                   tint="--ux-tint-green" ink="--ux-green-ink" />
-            <Stat value={String(saved.length)} label="You have saved" icon="Heart"
+            <Stat value={String(saved.length)} label={tr("market.youHaveSaved")} icon="Heart"
                   tint="--ux-tint-violet" ink="--ux-violet" />
           </div>
         </Card>
 
         <div>
-          <SectionHead title="For you" sub="Closest to you first — not whoever paid to be at the top"
+          <SectionHead title={tr("market.forYou")} sub={tr("market.closestToYouFirstNotWhoever")}
                        icon="ShoppingBasket" chip={String(shown.length)} />
           <div className="mb-3.5 flex flex-wrap gap-2">
             <Chip icon="LayoutGrid" selected={filter === "all"} onClick={() => setFilter("all")}>Everything</Chip>
-            <Chip icon="Users" selected={filter === "circle"} onClick={() => setFilter("circle")}>My circle</Chip>
+            <Chip icon="Users" selected={filter === "circle"} onClick={() => setFilter("circle")}>{tr("market.myCircle")}</Chip>
             <Chip icon="UtensilsCrossed" selected={filter === "food"} onClick={() => setFilter("food")}>Food</Chip>
-            <Chip icon="Scissors" selected={filter === "service"} onClick={() => setFilter("service")}>Someone to do it</Chip>
-            <Chip icon="Sparkles" selected={filter === "made"} onClick={() => setFilter("made")}>Made for you</Chip>
+            <Chip icon="Scissors" selected={filter === "service"} onClick={() => setFilter("service")}>{tr("market.someoneToDoIt")}</Chip>
+            <Chip icon="Sparkles" selected={filter === "made"} onClick={() => setFilter("made")}>{tr("market.madeForYou2")}</Chip>
           </div>
 
           {shown.length === 0 ? (
             <Card><EmptyState icon="ShoppingBasket" title={COPY.nothingHereYet}
                               body="Try another filter — or invite a woman whose trade is missing from your circle."
-                              action={<Btn size="sm" variant="outline" onClick={() => setFilter("all")}>Show everything</Btn>} /></Card>
+                              action={<Btn size="sm" variant="outline" onClick={() => setFilter("all")}>{tr("market.showEverything")}</Btn>} /></Card>
           ) : (
             <div className="flex flex-col gap-3">{shown.map(card)}</div>
           )}

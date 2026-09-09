@@ -10,6 +10,7 @@ import { Btn, Card, Pill, Progress, SectionHead, SourceNote } from "@/components
 import { HomeShell } from "@/components/ux/home/HomeShell";
 import { MORE_ART } from "@/components/ux/more/data";
 import { useDigitalStepList } from "@/components/ux/entitlements";
+import { useT } from "@/i18n";
 
 /**
  * Digital Literacy.
@@ -20,6 +21,7 @@ import { useDigitalStepList } from "@/components/ux/entitlements";
  * members actually ask about.
  */
 export default function DigitalPage() {
+  const tr = useT();
   const { data: DIGITAL_STEPS, source, refetch } = useDigitalStepList();
   /**
    * Which steps she has finished — from the server.
@@ -53,7 +55,7 @@ export default function DigitalPage() {
       rail={
         <div className="space-y-[16px]">
           <Card>
-            <SectionHead title="Where you are" sub={`${finished} of ${DIGITAL_STEPS.length} done`} />
+            <SectionHead title={tr("digital.whereYouAre")} sub={`${finished} of ${DIGITAL_STEPS.length} done`} />
             <div className="flex items-center gap-3">
               <Progress pct={pct} track="--ux-track" />
               <span className="shrink-0 text-sm font-bold tabular-nums" style={{ color: "var(--ux-ink)" }}>{pct}%</span>
@@ -70,7 +72,7 @@ export default function DigitalPage() {
           </Card>
 
           <Card>
-            <SectionHead title="Why the order matters" icon="Info" />
+            <SectionHead title={tr("digital.whyTheOrderMatters")} icon="Info" />
             <p className="text-xsm leading-relaxed" style={{ color: "var(--ux-ink-2)" }}>
               These build on each other. There is no use learning to spot a scam message before you are
               comfortable finding a setting on your phone.
@@ -82,20 +84,14 @@ export default function DigitalPage() {
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img loading="lazy" decoding="async" src={MORE_ART.digital} alt=""
                  className="ux-float pointer-events-none absolute -bottom-3 -end-4 h-[100px] w-[100px] object-contain" />
-            <h3 className="relative w-[60%] text-sm font-semibold" style={{ color: "var(--ux-ink)" }}>
-              Nobody is born knowing this
-            </h3>
-            <p className="relative mt-2 w-[60%] text-xs leading-relaxed" style={{ color: "var(--ux-muted)" }}>
-              Every step assumes you have never done it before, and nothing here is embarrassing to ask.
-            </p>
+            <h3 className="relative w-[60%] text-sm font-semibold" style={{ color: "var(--ux-ink)" }}>{tr("digital.nobodyIsBornKnowingThis")}</h3>
+            <p className="relative mt-2 w-[60%] text-xs leading-relaxed" style={{ color: "var(--ux-muted)" }}>{tr("digital.everyStepAssumesYouHaveNever")}</p>
           </div>
         </div>
       }
     >
-      <h1 className="text-2xl font-bold" style={{ color: "var(--ux-ink)" }}>Phone basics</h1>
-      <p className="mb-[20px] mt-1.5 text-xsm" style={{ color: "var(--ux-muted)" }}>
-        Six steps, in order. Each one assumes you have never done it before.
-      </p>
+      <h1 className="text-2xl font-bold" style={{ color: "var(--ux-ink)" }}>{tr("digital.phoneBasics")}</h1>
+      <p className="mb-[20px] mt-1.5 text-xsm" style={{ color: "var(--ux-muted)" }}>{tr("digital.sixStepsInOrderEachOne")}</p>
 
       <SourceNote source={source} what="steps" />
 

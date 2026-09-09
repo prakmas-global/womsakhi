@@ -13,6 +13,7 @@ import {
 import { HomeShell } from "@/components/ux/home/HomeShell";
 import { useMentors } from "@/components/ux/live";
 import { rupees , PAST_SESSIONS, REVIEWS, reviewStats } from "@/components/ux/mentors/data";
+import { useT } from "@/i18n";
 
 const SLOTS = [
   { day: "Mon 26 May", times: ["11:00 AM", "5:30 PM"] },
@@ -29,6 +30,7 @@ const SLOTS = [
  * person's evening.
  */
 export default function MentorDetail({ params }: { params: Promise<{ id: string }> }) {
+  const tr = useT();
   const { id } = use(params);
   const { data: MENTORS, source, refetch } = useMentors();
   const m = MENTORS.find((x) => x.id === id);
@@ -71,9 +73,9 @@ export default function MentorDetail({ params }: { params: Promise<{ id: string 
         <Card>
           <EmptyState
             icon="SearchX"
-            title="That mentor is not listed"
+            title={tr("mentors.thatMentorIsNotListed")}
             body="She may have paused her sessions. The others are still here."
-            action={<Btn href="/app/mentors" variant="primary" iconEnd="ArrowRight">All mentors</Btn>}
+            action={<Btn href="/app/mentors" variant="primary" iconEnd="ArrowRight">{tr("mentors.allMentors")}</Btn>}
           />
         </Card>
       </HomeShell>
@@ -88,7 +90,7 @@ export default function MentorDetail({ params }: { params: Promise<{ id: string 
       rail={
         <div className="space-y-[16px]">
           <Card>
-            <SectionHead title="Ask for a session" />
+            <SectionHead title={tr("mentors.askForASession")} />
             {asked ? (
               <div className="ux-slide-up rounded-[12px] p-3.5" style={{ background: "var(--ux-tint-green)" }}>
                 <p className="flex items-center gap-2 text-xsm font-semibold" style={{ color: "var(--ux-ink)" }}>
@@ -99,14 +101,12 @@ export default function MentorDetail({ params }: { params: Promise<{ id: string 
                   {slot ? `You asked for ${slot}. ` : ""}She usually replies within a day.
                 </p>
                 <div className="mt-3">
-                  <Btn href="/app/mentors" variant="soft" size="sm" iconEnd="ArrowRight">See your sessions</Btn>
+                  <Btn href="/app/mentors" variant="soft" size="sm" iconEnd="ArrowRight">{tr("mentors.seeYourSessions")}</Btn>
                 </div>
               </div>
             ) : (
               <>
-                <p className="mb-3 text-xs" style={{ color: "var(--ux-muted)" }}>
-                  Pick a time that suits you. She will confirm or suggest another.
-                </p>
+                <p className="mb-3 text-xs" style={{ color: "var(--ux-muted)" }}>{tr("mentors.pickATimeThatSuitsYou")}</p>
                 <div className="space-y-3">
                   {SLOTS.map((d) => (
                     <div key={d.day}>
@@ -137,14 +137,12 @@ export default function MentorDetail({ params }: { params: Promise<{ id: string 
                   ))}
                 </div>
                 <div className="mt-4">
-                  <label className="mb-1.5 block text-xs font-medium" style={{ color: "var(--ux-ink-2)" }}>
-                    What do you want help with?
-                  </label>
+                  <label className="mb-1.5 block text-xs font-medium" style={{ color: "var(--ux-ink-2)" }}>{tr("mentors.whatDoYouWantHelpWith")}</label>
                   <textarea
                     value={goal}
                     onChange={(e) => setGoal(e.target.value)}
                     rows={3}
-                    placeholder="I want to price my tailoring work so I stop losing money on big orders."
+                    placeholder={tr("mentors.iWantToPriceMyTailoring")}
                     className="ux-sq w-full rounded-[12px] border p-3 text-xsm leading-relaxed"
                     style={{ borderColor: "var(--ux-line-strong)", background: "var(--ux-surface)", color: "var(--ux-ink)" }}
                   />
@@ -158,13 +156,12 @@ export default function MentorDetail({ params }: { params: Promise<{ id: string 
                     disabled={ask.busy || goal.trim().length < 10}
                     onClick={() => void ask.run()}
                   >
-                    {ask.busy ? "Sending…" : slot ? "Ask for this time" : "Ask her to suggest a time"}
+                    {ask.busy ? "Sending…" : slot ? tr("mentors.askForThisTime")
+              : tr("mentors.askHerToSuggestATime")}
                   </Btn>
                 </div>
                 {goal.trim().length < 10 && !ask.error && (
-                  <p className="mt-2 text-xs" style={{ color: "var(--ux-faint)" }}>
-                    A line about what you need is enough — it is what she reads first.
-                  </p>
+                  <p className="mt-2 text-xs" style={{ color: "var(--ux-faint)" }}>{tr("mentors.aLineAboutWhatYouNeed")}</p>
                 )}
                 {ask.error && (
                   <p role="alert" className="ux-slide-up mt-2 text-xsm leading-relaxed"
@@ -180,7 +177,7 @@ export default function MentorDetail({ params }: { params: Promise<{ id: string 
           </Card>
 
           <Card>
-            <SectionHead title="Staying safe" icon="ShieldCheck" />
+            <SectionHead title={tr("mentors.stayingSafe")} icon="ShieldCheck" />
             <ul className="space-y-2.5">
               {[
                 "Sessions happen inside WomSakhi — no personal numbers needed.",
@@ -200,8 +197,7 @@ export default function MentorDetail({ params }: { params: Promise<{ id: string 
       <Link href="/app/mentors"
             className="ux-hov -my-1 mb-3.5 inline-flex items-center gap-1.5 py-1 text-xsm font-medium"
             style={{ color: "var(--ux-brand)" }}>
-        <Icons.ArrowLeft className="ux-ico h-4 w-4" /> All mentors
-      </Link>
+        <Icons.ArrowLeft className="ux-ico h-4 w-4" />{tr("mentors.allMentors2")}</Link>
 
       <Card className="mb-[16px]">
         <div className="flex items-start gap-4">
@@ -220,7 +216,7 @@ export default function MentorDetail({ params }: { params: Promise<{ id: string 
             </p>
             <div className="mt-2.5 flex flex-wrap items-center gap-2">
               <Rating value={m.rating} count={`${m.rating_count} notes`} />
-              {m.free_first && <Pill tone="green" size="sm">First session free</Pill>}
+              {m.free_first && <Pill tone="green" size="sm">{tr("mentors.firstSessionFree")}</Pill>}
             </div>
           </div>
         </div>
@@ -231,7 +227,7 @@ export default function MentorDetail({ params }: { params: Promise<{ id: string 
 
       <div className="grid grid-cols-[minmax(0,1fr)_300px] gap-[16px]">
         <Card>
-          <SectionHead title="What she can help with" />
+          <SectionHead title={tr("mentors.whatSheCanHelpWith")} />
           <ul className="ux-stagger space-y-2.5">
             {m.expertise.map((e, i) => (
               <li key={e} className="ux-hov flex items-center gap-3">
@@ -244,7 +240,7 @@ export default function MentorDetail({ params }: { params: Promise<{ id: string 
         </Card>
 
         <Card>
-          <SectionHead title="Her record" />
+          <SectionHead title={tr("mentors.herRecord")} />
           <div className="space-y-3.5">
             {[
               [`${m.sessions_done}`, "Sessions given", "MessageSquare", "--ux-tint-violet", "--ux-violet"],
@@ -268,7 +264,7 @@ export default function MentorDetail({ params }: { params: Promise<{ id: string 
           to last time does not. */}
       {PAST_SESSIONS.length > 0 && (
         <div className="mt-[16px]">
-          <SectionHead title="Your sessions with her" icon="History"
+          <SectionHead title={tr("mentors.yourSessionsWithHer")} icon="History"
                        chip={String(PAST_SESSIONS.length)} />
           <Card pad={0} style={{ overflow: "hidden" }}>
             {PAST_SESSIONS.map((ps, i) => (
@@ -288,7 +284,8 @@ export default function MentorDetail({ params }: { params: Promise<{ id: string 
                       <Icons.Flag className="mt-[2px] h-[0.75rem] w-[0.75rem] shrink-0"
                                   style={{ color: `var(${ps.done ? "--ux-green-ink" : "--ux-amber-ink"})` }} />
                       <span>
-                        <b style={{ color: "var(--ux-ink)" }}>{ps.done ? "You did this:" : "Still to do:"}</b>{" "}
+                        <b style={{ color: "var(--ux-ink)" }}>{ps.done ? tr("mentors.youDidThis")
+              : tr("mentors.stillToDo")}</b>{" "}
                         {ps.agreed}
                       </span>
                     </p>
@@ -303,7 +300,7 @@ export default function MentorDetail({ params }: { params: Promise<{ id: string 
       {/* What women said afterwards. Words, not stars — see the note in the
           data file for why a 4.8 average separates nobody. */}
       <div className="mt-[16px]">
-        <SectionHead title="What women said after an hour with her"
+        <SectionHead title={tr("mentors.whatWomenSaidAfterAnHour")}
                      sub={`${reviewStats(REVIEWS).wentBack} of ${reviewStats(REVIEWS).total} came back for another`}
                      icon="MessageSquare" />
         <div className="grid gap-3 lg:grid-cols-2">
@@ -319,7 +316,8 @@ export default function MentorDetail({ params }: { params: Promise<{ id: string 
               <p className="mt-2 inline-flex items-center gap-1.5 text-xs font-semibold"
                  style={{ color: `var(${r.wentBack ? "--ux-green-ink" : "--ux-muted"})` }}>
                 <Icons.Repeat className="h-[0.75rem] w-[0.75rem]" />
-                {r.wentBack ? "She booked another" : "She did not book again"}
+                {r.wentBack ? tr("mentors.sheBookedAnother")
+              : tr("mentors.sheDidNotBookAgain")}
               </p>
             </Card>
           ))}
@@ -328,7 +326,7 @@ export default function MentorDetail({ params }: { params: Promise<{ id: string 
 
       {others.length > 0 && (
         <div className="mt-[16px]">
-          <SectionHead title="Others who help with the same things" />
+          <SectionHead title={tr("mentors.othersWhoHelpWithTheSame")} />
           <div className="ux-deck grid grid-cols-2 gap-[16px]">
             {others.map((o, i) => (
               <Card key={o.id} className="ux-i ux-onscroll" style={{ ["--i" as string]: i }}>

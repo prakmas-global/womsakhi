@@ -8,6 +8,7 @@ import { Btn, Card, EmptyState, IconTile, Pill, SectionHead, SourceNote, Tabs, p
 import { HomeShell } from "@/components/ux/home/HomeShell";
 import { useSavedItems } from "@/components/ux/entitlements";
 import { apiUnsave, type SavedKind } from "@/lib/entitlements-api";
+import { useT } from "@/i18n";
 
 type Item = {
   id: string; kind: string; title: string; sub: string; href: string;
@@ -37,6 +38,7 @@ function tintFor(seed: string) {
 }
 
 export default function SavedPage() {
+  const tr = useT();
   const { data: rows, source, refetch } = useSavedItems();
   const [tab, setTab] = useState("Everything");
   const [removed, setRemoved] = useState<string[]>([]);
@@ -72,7 +74,7 @@ export default function SavedPage() {
         <div className="space-y-[16px]">
           {closing.length > 0 && (
             <Card>
-              <SectionHead title="Running out of time" icon="Clock" />
+              <SectionHead title={tr("saved.runningOutOfTime")} icon="Clock" />
               <ul className="space-y-3">
                 {closing.map((i) => (
                   <li key={i.id}>
@@ -87,7 +89,7 @@ export default function SavedPage() {
           )}
 
           <Card>
-            <SectionHead title="What saving does" icon="Info" />
+            <SectionHead title={tr("saved.whatSavingDoes")} icon="Info" />
             <p className="text-xsm leading-relaxed" style={{ color: "var(--ux-ink-2)" }}>
               Saving keeps a thing here, on this phone and any other you sign in on. It does not apply, book
               or reserve anything — you still have to press the button on the day.
@@ -175,7 +177,7 @@ export default function SavedPage() {
             icon="Bookmark"
             title={tab === "Everything" ? "Nothing saved yet" : `Nothing saved under ${tab}`}
             body="Press the bookmark on any job, course, mela or scheme and it waits for you here."
-            action={<Btn href="/app/explore" variant="primary" iconEnd="ArrowRight">Have a look around</Btn>}
+            action={<Btn href="/app/explore" variant="primary" iconEnd="ArrowRight">{tr("saved.haveALookAround")}</Btn>}
           />
         </Card>
       )}

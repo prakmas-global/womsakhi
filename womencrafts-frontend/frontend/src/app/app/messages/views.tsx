@@ -32,6 +32,7 @@ import {
   type InboxSummary,
   type PartyKind,
 } from "@/lib/me-messages-api";
+import { useT } from "@/i18n";
 
 /**
  * Messages.
@@ -116,6 +117,7 @@ export function Header({ summary, className, rows, onPick }: {
   summary: InboxSummary | null; className?: string;
   rows: ConvRow[]; onPick: (id: string) => void;
 }) {
+  const tr = useT();
   const stats = [
     { icon: "Clock", tint: "--ux-tint-amber", ink: "--ux-amber-ink",
       value: String(summary?.waiting ?? 0), note: "waiting on you" },
@@ -132,9 +134,7 @@ export function Header({ summary, className, rows, onPick }: {
     <header className={`flex-wrap items-end gap-4 ${className ?? "flex"}`}>
       <div className="min-w-0 flex-1">
         <h1 className="text-2xl font-bold tracking-[-0.03em]" style={{ color: "var(--ux-ink)" }}>Messages</h1>
-        <p className="mt-0.5 text-xsm" style={{ color: "var(--ux-muted)" }}>
-          Buyers, mentors and your circles — all in one place.
-        </p>
+        <p className="mt-0.5 text-xsm" style={{ color: "var(--ux-muted)" }}>{tr("messages.buyersMentorsAndYourCirclesAll")}</p>
       </div>
       <div className="flex flex-wrap items-center gap-2.5">
         {stats.map((s) => (
@@ -168,6 +168,7 @@ export function Header({ summary, className, rows, onPick }: {
  * she already talks to, and says plainly where a new one comes from.
  */
 export function NewMessage({ rows, onPick }: { rows: ConvRow[]; onPick: (id: string) => void }) {
+  const tr = useT();
   const [open, setOpen] = useState(false);
   const wrap = useRef<HTMLDivElement>(null);
 
@@ -187,17 +188,14 @@ export function NewMessage({ rows, onPick }: { rows: ConvRow[]; onPick: (id: str
               className="ux-press ux-btn-g flex min-h-[46px] items-center gap-2 rounded-[12px] px-4 text-xsm font-bold"
               style={{ background: "linear-gradient(96deg, var(--ux-rib-2), var(--ux-rib-3))",
                        color: "var(--ux-on-brand)", boxShadow: "var(--ux-shadow-glow-2)" }}>
-        <Icons.Plus className="h-4 w-4" /> New message
-      </button>
+        <Icons.Plus className="h-4 w-4" />{tr("messages.newMessage")}</button>
       {open && (
         <div role="menu"
              className="ux-pop absolute end-0 top-[calc(100%+8px)] z-50 max-h-[340px] w-[290px] overflow-y-auto rounded-[12px] p-1.5"
              style={{ background: "var(--ux-surface)", border: "1px solid var(--ux-line-strong)",
                       boxShadow: "var(--ux-shadow-pop)" }}>
           <p className="px-2.5 pb-1 pt-2 text-2xs font-bold uppercase tracking-[0.16em]"
-             style={{ color: "var(--ux-faint)" }}>
-            Write to
-          </p>
+             style={{ color: "var(--ux-faint)" }}>{tr("messages.writeTo")}</p>
           {rows.map((r) => (
             <button key={r.id} type="button" role="menuitem"
                     onClick={() => { setOpen(false); onPick(r.id); }}
@@ -250,6 +248,7 @@ export function Inbox({
   search: string; setSearch: (v: string) => void;
   openId: string | null; onOpen: (id: string) => void; total: number; className?: string;
 }) {
+  const tr = useT();
   return (
     <section className={`ux-sq min-h-0 flex-col overflow-hidden rounded-[20px] ${className ?? "flex"}`}
              style={{ background: "var(--ux-surface)", border: "1px solid var(--ux-line)",
@@ -259,7 +258,7 @@ export function Inbox({
                style={{ background: "var(--ux-surface-2)", border: "1px solid var(--ux-line)" }}>
           <Icons.Search className="h-[15px] w-[15px] shrink-0" style={{ color: "var(--ux-faint)" }} />
           <input value={search} onChange={(e) => setSearch(e.target.value)}
-                 placeholder="Search people and messages" aria-label="Search your messages"
+                 placeholder={tr("messages.searchPeopleAndMessages")} aria-label={tr("messages.searchYourMessages")}
                  className="w-full bg-transparent text-xsm outline-none" style={{ color: "var(--ux-ink)" }} />
         </label>
         <div className="mt-3 flex flex-wrap gap-1.5">
@@ -290,8 +289,7 @@ export function Inbox({
           <>
             <p className="flex items-center gap-2 px-4 pb-1.5 pt-3.5 text-2xs font-bold uppercase tracking-[0.16em]"
                style={{ color: "var(--ux-amber-ink)" }}>
-              <Icons.Clock className="h-[13px] w-[13px]" /> Waiting for your reply
-            </p>
+              <Icons.Clock className="h-[13px] w-[13px]" />{tr("messages.waitingForYourReply")}</p>
             {waiting.map((r) => <Row key={r.id} row={r} on={r.id === openId} onOpen={onOpen} />)}
           </>
         )}
@@ -299,14 +297,14 @@ export function Inbox({
           <>
             <p className="flex items-center gap-2 px-4 pb-1.5 pt-3.5 text-2xs font-bold uppercase tracking-[0.16em]"
                style={{ color: "var(--ux-faint)" }}>
-              <Icons.List className="h-[13px] w-[13px] " /> Everything else
-            </p>
+              <Icons.List className="h-[13px] w-[13px] " />{tr("messages.everythingElse")}</p>
             {rest.map((r) => <Row key={r.id} row={r} on={r.id === openId} onOpen={onOpen} />)}
           </>
         )}
         {waiting.length + rest.length === 0 && (
           <p className="p-5 text-xsm" style={{ color: "var(--ux-muted)" }}>
-            {search ? "Nothing matches that." : "When a buyer or a mentor writes to you, it appears here."}
+            {search ? tr("messages.nothingMatchesThat")
+              : tr("messages.whenABuyerOrAMentor")}
           </p>
         )}
       </div>
@@ -359,16 +357,15 @@ export function Row({ row, on, onOpen }: { row: ConvRow; on: boolean; onOpen: (i
 export const QUICK = ["Yes, ready by Friday", "Stitching it today", "Can you send your address?", "Shall I send a photo?"];
 
 export function EmptyThread({ className }: { className?: string }) {
+  const tr = useT();
   return (
     <section className={`ux-sq min-h-0 place-items-center rounded-[20px] p-10 text-center ${className ?? "grid"}`}
              style={{ background: "var(--ux-surface)", border: "1px solid var(--ux-line)",
                       boxShadow: "var(--ux-shadow-card)" }}>
       <div>
         <Icons.MessagesSquare className="mx-auto h-[34px] w-[34px]" style={{ color: "var(--ux-faint)" }} />
-        <p className="mt-3 text-sm font-semibold" style={{ color: "var(--ux-ink)" }}>Choose a conversation</p>
-        <p className="mt-1 text-xsm" style={{ color: "var(--ux-muted)" }}>
-          Your buyers, mentors and circles are on the left.
-        </p>
+        <p className="mt-3 text-sm font-semibold" style={{ color: "var(--ux-ink)" }}>{tr("messages.chooseAConversation")}</p>
+        <p className="mt-1 text-xsm" style={{ color: "var(--ux-muted)" }}>{tr("messages.yourBuyersMentorsAndCirclesAre")}</p>
       </div>
     </section>
   );
@@ -381,6 +378,7 @@ export function Thread({
   className?: string; onBack: () => void;
   onStar: () => void; onUnread: () => void; onDelete: () => void;
 }) {
+  const tr = useT();
   const box = useRef<HTMLDivElement>(null);
   const area = useRef<HTMLTextAreaElement>(null);
   const pick = useRef<HTMLInputElement>(null);
@@ -428,7 +426,7 @@ export function Thread({
              style={{ background: "var(--ux-surface)", border: "1px solid var(--ux-line)",
                       boxShadow: "var(--ux-shadow-card)" }}>
       <div className="flex shrink-0 items-center gap-3 border-b p-3.5" style={{ borderColor: "var(--ux-line)" }}>
-        <button type="button" onClick={onBack} aria-label="Back to your messages"
+        <button type="button" onClick={onBack} aria-label={tr("messages.backToYourMessages")}
                 className="ux-row -ms-1 grid h-[36px] w-[36px] shrink-0 place-items-center rounded-[12px] lg:hidden"
                 style={{ color: "var(--ux-ink-2)" }}>
           <Icons.ArrowLeft className="h-[18px] w-[18px]" />
@@ -446,7 +444,8 @@ export function Thread({
             a WomSakhi account and no number is stored. It is gone rather than
             decorative. */}
         <button type="button" onClick={onStar}
-                title={conv.starred ? "Remove star" : "Star this conversation"}
+                title={conv.starred ? tr("messages.removeStar")
+              : tr("messages.starThisConversation")}
                 aria-pressed={conv.starred}
                 className="ux-row grid h-[36px] w-[36px] place-items-center rounded-[12px]"
                 style={{ color: conv.starred ? "var(--ux-amber-ink)" : "var(--ux-faint)" }}>
@@ -465,7 +464,8 @@ export function Thread({
                           boxShadow: "var(--ux-shadow-pop)" }}>
               {[
                 { icon: "MailOpen", label: "Mark as unread", run: onUnread },
-                { icon: conv.starred ? "StarOff" : "Star", label: conv.starred ? "Remove star" : "Star this conversation", run: onStar },
+                { icon: conv.starred ? "StarOff" : "Star", label: conv.starred ? tr("messages.removeStar2")
+              : tr("messages.starThisConversation2"), run: onStar },
               ].map((a) => (
                 <button key={a.label} type="button" role="menuitem"
                         onClick={() => { setMenu(false); a.run(); }}
@@ -477,13 +477,11 @@ export function Thread({
               <Link href="/app/safety" role="menuitem" onClick={() => setMenu(false)}
                     className="ux-row flex w-full items-center gap-2.5 rounded-[12px] px-2.5 py-2.5 text-start text-xsm"
                     style={{ color: "var(--ux-ink)" }}>
-                <Icons.Flag className="h-[15px] w-[15px]" style={{ color: "var(--ux-pink-ink)" }} /> Report this person
-              </Link>
+                <Icons.Flag className="h-[15px] w-[15px]" style={{ color: "var(--ux-pink-ink)" }} />{tr("messages.reportThisPerson")}</Link>
               <button type="button" role="menuitem" onClick={() => { setMenu(false); onDelete(); }}
                       className="ux-row flex w-full items-center gap-2.5 rounded-[12px] px-2.5 py-2.5 text-start text-xsm"
                       style={{ color: "var(--ux-pink-ink)" }}>
-                <Icons.Trash2 className="h-[15px] w-[15px]" /> Delete conversation
-              </button>
+                <Icons.Trash2 className="h-[15px] w-[15px]" />{tr("messages.deleteConversation")}</button>
             </div>
           )}
         </div>
@@ -512,8 +510,7 @@ export function Thread({
           )}
           <Link href="/app/documents"
                 className="ux-press flex shrink-0 items-center gap-1.5 rounded-[12px] px-3 py-2 text-xs font-bold"
-                style={{ background: "var(--ux-surface)", border: "1px solid var(--ux-line-strong)", color: "var(--ux-ink-2)" }}>
-            Open order <Icons.ChevronRight className="h-[13px] w-[13px]" />
+                style={{ background: "var(--ux-surface)", border: "1px solid var(--ux-line-strong)", color: "var(--ux-ink-2)" }}>{tr("messages.openOrder")}<Icons.ChevronRight className="h-[13px] w-[13px]" />
           </Link>
         </div>
       )}
@@ -582,38 +579,36 @@ export function Thread({
                   style={{ background: "var(--ux-surface)", border: "1px solid var(--ux-line-strong)" }}>
               <Icons.Paperclip className="h-[13px] w-[13px] shrink-0" style={{ color: "var(--ux-faint)" }} />
               <span className="truncate font-semibold" style={{ color: "var(--ux-ink)" }}>{file.name}</span>
-              <button type="button" onClick={() => setFile(null)} aria-label="Remove attachment"
+              <button type="button" onClick={() => setFile(null)} aria-label={tr("messages.removeAttachment")}
                       className="ux-press grid h-[18px] w-[18px] shrink-0 place-items-center rounded-full"
                       style={{ color: "var(--ux-faint)" }}>
                 <Icons.X className="h-[12px] w-[12px]" />
               </button>
             </span>
             {/* Honest: the picker works, the upload endpoint does not exist yet. */}
-            <span className="text-2xs" style={{ color: "var(--ux-amber-ink)" }}>
-              Sending files is coming — the name will go with your message.
-            </span>
+            <span className="text-2xs" style={{ color: "var(--ux-amber-ink)" }}>{tr("messages.sendingFilesIsComingTheName")}</span>
           </div>
         )}
         <textarea
           ref={area} rows={1} value={draft} onChange={(e) => setDraft(e.target.value)}
           onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); onSend(); } }}
-          placeholder={`Write to ${conv.name.split(" ")[0]}…`} aria-label="Write a message"
+          placeholder={`Write to ${conv.name.split(" ")[0]}…`} aria-label={tr("messages.writeAMessage")}
           className="w-full resize-none bg-transparent px-4 pb-1.5 pt-3 text-sm leading-relaxed outline-none"
           style={{ color: "var(--ux-ink)", maxHeight: 120 }}
         />
         <div className="flex items-center justify-between border-t px-2 py-2" style={{ borderColor: "var(--ux-line)" }}>
           <div className="flex gap-0.5">
-            <button type="button" title="Attach a file" onClick={() => pick.current?.click()}
+            <button type="button" title={tr("messages.attachAFile")} onClick={() => pick.current?.click()}
                     className="ux-row grid h-[36px] w-[36px] place-items-center rounded-[12px]"
                     style={{ color: "var(--ux-faint)" }}>
               <Icons.Paperclip className="h-[17px] w-[17px]" />
             </button>
-            <button type="button" title="Send a photo" onClick={() => shoot.current?.click()}
+            <button type="button" title={tr("messages.sendAPhoto")} onClick={() => shoot.current?.click()}
                     className="ux-row grid h-[36px] w-[36px] place-items-center rounded-[12px]"
                     style={{ color: "var(--ux-faint)" }}>
               <Icons.Camera className="h-[17px] w-[17px]" />
             </button>
-            <Link href="/app/documents" title="Send an order"
+            <Link href="/app/documents" title={tr("messages.sendAnOrder")}
                   className="ux-row grid h-[36px] w-[36px] place-items-center rounded-[12px]"
                   style={{ color: "var(--ux-faint)" }}>
               <Icons.Package className="h-[17px] w-[17px]" />
@@ -630,9 +625,7 @@ export function Thread({
       {/* Off-platform payment requests are how women get cheated on marketplaces.
           The warning belongs where money gets discussed, not in a help page. */}
       <p className="flex shrink-0 items-center gap-2 px-4 pb-4 pt-3 text-2xs" style={{ color: "var(--ux-muted)" }}>
-        <Icons.ShieldCheck className="h-[13px] w-[13px] shrink-0" style={{ color: "var(--ux-green-ink)" }} />
-        Keep payments inside WomSakhi. Nobody here will ever ask for your PIN or OTP.
-      </p>
+        <Icons.ShieldCheck className="h-[13px] w-[13px] shrink-0" style={{ color: "var(--ux-green-ink)" }} />{tr("messages.keepPaymentsInsideWomsakhiNobodyHe")}</p>
     </section>
   );
 }
@@ -724,6 +717,7 @@ export function OrderCard({ order }: { order: NonNullable<ConvBubble["order"]> }
 export function About({ conv, onStar, onDraft }: {
   conv: ConvDetail; onStar: () => void; onDraft: (v: string) => void;
 }) {
+  const tr = useT();
   const p = conv.party;
   const first = conv.name.split(" ")[0];
   const shots = conv.messages.filter((m) => m.file?.url).slice(-3);
@@ -753,32 +747,31 @@ export function About({ conv, onStar, onDraft }: {
       </div>
 
       <div className="border-t p-3.5" style={{ borderColor: "var(--ux-line)" }}>
-        <h3 className="mb-2 text-2xs font-bold uppercase tracking-[0.16em]" style={{ color: "var(--ux-faint)" }}>Do next</h3>
+        <h3 className="mb-2 text-2xs font-bold uppercase tracking-[0.16em]" style={{ color: "var(--ux-faint)" }}>{tr("messages.doNext")}</h3>
         {/* Each of these does the thing it names. "Send her an order" opens the
             shop, the other two write the message and star the thread — nothing
             here is a label over an empty handler. */}
         <Link href="/app/documents"
               className="ux-row flex w-full items-center gap-2.5 rounded-[12px] px-2.5 py-2.5 text-start text-xsm font-semibold"
               style={{ color: "var(--ux-ink-2)" }}>
-          <Icons.Package className="h-[15px] w-[15px]" /> Send her an order
-        </Link>
+          <Icons.Package className="h-[15px] w-[15px]" />{tr("messages.sendHerAnOrder")}</Link>
         <button type="button"
                 onClick={() => onDraft(`Namaste ${first}, here is what I make and what it costs:\n\n· Cotton kurta — ₹280\n· Silk dupatta — ₹640\n· Blouse stitching — ₹180\n\nTell me what you would like and by when.`)}
                 className="ux-row flex w-full items-center gap-2.5 rounded-[12px] px-2.5 py-2.5 text-start text-xsm font-semibold"
                 style={{ color: "var(--ux-ink-2)" }}>
-          <Icons.Tag className="h-[15px] w-[15px]" /> Share your price list
-        </button>
+          <Icons.Tag className="h-[15px] w-[15px]" />{tr("messages.shareYourPriceList")}</button>
         <button type="button" onClick={onStar} aria-pressed={conv.starred}
                 className="ux-row flex w-full items-center gap-2.5 rounded-[12px] px-2.5 py-2.5 text-start text-xsm font-semibold"
                 style={{ color: conv.starred ? "var(--ux-amber-ink)" : "var(--ux-ink-2)" }}>
           <Icons.Star className="h-[15px] w-[15px]" fill={conv.starred ? "currentColor" : "none"} />
-          {conv.starred ? "A good buyer" : "Mark as a good buyer"}
+          {conv.starred ? tr("messages.aGoodBuyer")
+              : tr("messages.markAsAGoodBuyer")}
         </button>
       </div>
 
       {shots.length > 0 && (
         <div className="border-t p-3.5" style={{ borderColor: "var(--ux-line)" }}>
-          <h3 className="mb-2 text-2xs font-bold uppercase tracking-[0.16em]" style={{ color: "var(--ux-faint)" }}>Shared here</h3>
+          <h3 className="mb-2 text-2xs font-bold uppercase tracking-[0.16em]" style={{ color: "var(--ux-faint)" }}>{tr("messages.sharedHere")}</h3>
           <div className="grid grid-cols-3 gap-1.5">
             {shots.map((m, i) => (
               // eslint-disable-next-line @next/next/no-img-element
@@ -789,15 +782,11 @@ export function About({ conv, onStar, onDraft }: {
       )}
 
       <div className="border-t p-3.5" style={{ borderColor: "var(--ux-line)" }}>
-        <h3 className="mb-2 text-2xs font-bold uppercase tracking-[0.16em]" style={{ color: "var(--ux-faint)" }}>
-          If something feels wrong
-        </h3>
+        <h3 className="mb-2 text-2xs font-bold uppercase tracking-[0.16em]" style={{ color: "var(--ux-faint)" }}>{tr("messages.ifSomethingFeelsWrong")}</h3>
         <Link href="/app/safety"
               className="ux-row flex w-full items-center gap-2.5 rounded-[12px] px-2.5 py-2.5 text-start text-xsm font-semibold"
               style={{ color: "var(--ux-ink-2)" }}>
-          <Icons.Flag className="h-[15px] w-[15px]" style={{ color: "var(--ux-pink-ink)" }} />
-          Report this person
-        </Link>
+          <Icons.Flag className="h-[15px] w-[15px]" style={{ color: "var(--ux-pink-ink)" }} />{tr("messages.reportThisPerson2")}</Link>
       </div>
     </aside>
   );

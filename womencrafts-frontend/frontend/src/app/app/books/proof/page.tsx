@@ -7,6 +7,7 @@ import { HomeShell } from "@/components/ux/home/HomeShell";
 import { Back, Btn, Card, I, IconTile, Pill, SectionHead, Stat, v } from "@/components/ux/kit";
 import { formatRupees } from "@/components/ux/kit";
 import { MONTHS, PROOF_USES, bestMonth, leanMonth, yearMinor } from "@/components/ux/books/data";
+import { useT } from "@/i18n";
 
 /**
  * Proof of income — the document she cannot get anywhere else.
@@ -30,6 +31,7 @@ import { MONTHS, PROOF_USES, bestMonth, leanMonth, yearMinor } from "@/component
  * genuinely persuasive claim.
  */
 export default function ProofPage() {
+  const tr = useT();
   /**
    * Hands the statement to the phone's own share sheet, or copies it.
    * Nothing is uploaded — the statement is hers, and a landlord receiving it
@@ -63,16 +65,12 @@ export default function ProofPage() {
   return (
     <HomeShell active="/app/books">
       <div className="flex flex-col gap-5">
-        <Back to="/app/books" label="Back to your books" />
+        <Back to="/app/books" label={tr("booksProof.backToYourBooks")} />
 
         <header>
-          <p className="text-2xs font-extrabold uppercase tracking-[0.2em]" style={{ color: v("--ux-brand") }}>
-            Proof of income
-          </p>
+          <p className="text-2xs font-extrabold uppercase tracking-[0.2em]" style={{ color: v("--ux-brand") }}>{tr("booksProof.proofOfIncome")}</p>
           <h1 className="mt-2 text-[clamp(1.5rem,3.2vw,2.125rem)] font-extrabold leading-[1.1] tracking-[-0.035em]"
-              style={{ color: v("--ux-ink") }}>
-            Written proof that you earn
-          </h1>
+              style={{ color: v("--ux-ink") }}>{tr("booksProof.writtenProofThatYouEarn")}</h1>
           <p className="mt-1.5 max-w-[56ch] text-sm leading-relaxed" style={{ color: v("--ux-muted") }}>
             No payslip, no filings, money from thirty different people — and still nothing to show a
             landlord. This is that piece of paper, with your name on it.
@@ -82,11 +80,11 @@ export default function ProofPage() {
         {/* The six months, honestly */}
         <Card>
           <div className="grid gap-4 sm:grid-cols-3">
-            <Stat value={formatRupees(year)} label="Over six months"
+            <Stat value={formatRupees(year)} label={tr("booksProof.overSixMonths")}
                   icon="Wallet" tint="--ux-tint-green" ink="--ux-green-ink" />
-            <Stat value={formatRupees(avg)} label="A month, on average"
+            <Stat value={formatRupees(avg)} label={tr("booksProof.aMonthOnAverage")}
                   icon="TrendingUp" tint="--ux-tint-violet" ink="--ux-violet" />
-            <Stat value={String(people)} label="People paid you" icon="Users"
+            <Stat value={String(people)} label={tr("booksProof.peoplePaidYou")} icon="Users"
                   tint="--ux-tint-blue" ink="--ux-blue-ink" />
           </div>
 
@@ -111,8 +109,7 @@ export default function ProofPage() {
                 );
               })}
             </div>
-            <p className="mt-3 text-xsm leading-relaxed" style={{ color: v("--ux-ink-2") }}>
-              Your best month was <b>{best.month}</b> at {formatRupees(best.minor)}; your leanest
+            <p className="mt-3 text-xsm leading-relaxed" style={{ color: v("--ux-ink-2") }}>{tr("booksProof.yourBestMonthWas")}<b>{best.month}</b> at {formatRupees(best.minor)}; your leanest
               was <b>{lean.month}</b> at {formatRupees(lean.minor)}. <b>You earned in every one of
               them.</b> That is the sentence that convinces a landlord — not a tidy average that
               anyone can see through.
@@ -122,8 +119,8 @@ export default function ProofPage() {
 
         {/* What it is for changes what goes in it */}
         <div>
-          <SectionHead title="What do you need it for?"
-                       sub="The statement is written differently depending on who reads it" icon="FileText" />
+          <SectionHead title={tr("booksProof.whatDoYouNeedItFor")}
+                       sub={tr("booksProof.theStatementIsWrittenDifferentlyDe")} icon="FileText" />
           <div className="grid gap-3 sm:grid-cols-2">
             {PROOF_USES.map((u) => (
               <button key={u.id} type="button" onClick={() => { setUse(u.id); setMade(false); }}
@@ -152,14 +149,10 @@ export default function ProofPage() {
         {/* The statement */}
         <Card pad={0} style={{ overflow: "hidden" }}>
           <div className="px-5 py-4" style={{ background: v("--ux-surface-2") }}>
-            <p className="text-2xs font-extrabold uppercase tracking-[0.14em]" style={{ color: v("--ux-muted") }}>
-              What it will say
-            </p>
+            <p className="text-2xs font-extrabold uppercase tracking-[0.14em]" style={{ color: v("--ux-muted") }}>{tr("booksProof.whatItWillSay")}</p>
           </div>
           <div className="px-5 py-5">
-            <p className="text-base font-bold" style={{ color: v("--ux-ink") }}>
-              Priya Sharma — statement of earnings
-            </p>
+            <p className="text-base font-bold" style={{ color: v("--ux-ink") }}>{tr("booksProof.priyaSharmaStatementOfEarnings")}</p>
             <p className="mt-1 text-xs" style={{ color: v("--ux-muted") }}>
               April to September · prepared for {chosen?.label.toLowerCase()}
             </p>
@@ -191,7 +184,7 @@ export default function ProofPage() {
             <Btn icon="FileText" onClick={make}>{made ? "Made" : "Make the statement"}</Btn>
             {made && (
               <>
-                <Btn variant="outline" icon="Share2" onClick={shareStatement}>Send it</Btn>
+                <Btn variant="outline" icon="Share2" onClick={shareStatement}>{tr("booksProof.sendIt")}</Btn>
                 <Btn variant="ghost" icon="Printer" onClick={() => window.print()}>Print</Btn>
               </>
             )}
@@ -201,9 +194,7 @@ export default function ProofPage() {
         {made && (
           <Card pad={16} style={{ background: v("--ux-tint-green"), borderColor: "transparent" }}>
             <p className="flex items-center gap-2 text-xsm font-semibold" style={{ color: v("--ux-green-ink") }}>
-              <I name="CheckCircle2" className="h-[16px] w-[16px]" />
-              Ready. It is yours — nothing was sent anywhere.
-            </p>
+              <I name="CheckCircle2" className="h-[16px] w-[16px]" />{tr("booksProof.readyItIsYoursNothingWas")}</p>
           </Card>
         )}
       </div>

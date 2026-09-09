@@ -7,6 +7,7 @@ import * as Icons from "@/components/ux/icons";
 import type { Circle } from "@/lib/community-api";
 import type { ApiCircleSavings, CirclePost } from "@/lib/growth-api";
 import { formatMoney } from "@/components/ux/kit/money";
+import { useT } from "@/i18n";
 
 /**
  * Community, four ways.
@@ -79,20 +80,24 @@ const card = {
   boxShadow: "var(--ux-shadow-card), inset 0 1px 0 var(--ux-sheen)",
 } as const;
 
-export const Sec = ({ children, href }: { children: React.ReactNode; href?: string }) => (
+export const Sec = ({ children, href }: { children: React.ReactNode; href?: string }) => {
+  const tr = useT();
+  return (
   <h3 className="mb-3.5 mt-7 flex items-center gap-2.5 text-2xs font-extrabold uppercase tracking-[0.16em] first:mt-0"
       style={{ color: "var(--ux-faint)" }}>
     {children}
     {href && (
       <Link href={href} className="ux-press ms-auto flex min-h-[34px] items-center rounded-[12px] px-3 text-xs font-bold normal-case tracking-normal"
-            style={{ color: "var(--ux-brand)" }}>See all</Link>
+            style={{ color: "var(--ux-brand)" }}>{tr("circles.seeAll")}</Link>
     )}
   </h3>
-);
+  );
+};
 
 /* ══ A · THE POT ══════════════════════════════════════════════════════════ */
 
 export function Pot({ d, act }: { d: CommunityData; act: CommunityActs }) {
+  const tr = useT();
   // A fresh `slice()` every render is a fresh array, which `CircleGrid`'s memo
   // would never match. Same four circles, same reference.
   const top4 = useMemo(() => d.circles.slice(0, 4), [d.circles]);
@@ -102,9 +107,7 @@ export function Pot({ d, act }: { d: CommunityData; act: CommunityActs }) {
     return (
       <section className="rounded-[24px] p-10 text-center" style={card}>
         <Icons.Coins className="mx-auto h-9 w-9" style={{ color: "var(--ux-faint)" }} />
-        <p className="mt-3 text-base font-bold" style={{ color: "var(--ux-ink)" }}>
-          You are not in a savings circle yet
-        </p>
+        <p className="mt-3 text-base font-bold" style={{ color: "var(--ux-ink)" }}>{tr("circles.youAreNotInASavings")}</p>
         <p className="mt-1.5 text-xsm" style={{ color: "var(--ux-muted)" }}>
           A pot is a few women paying the same amount each month, and one of them taking the whole
           pot each time. Your turn comes once.
@@ -201,7 +204,8 @@ export function Pot({ d, act }: { d: CommunityData; act: CommunityActs }) {
           </h2>
           <p className="mt-3 max-w-[44ch] text-sm leading-relaxed" style={{ color: "rgba(255,255,255,.88)" }}>
             {rupees(s.monthly_minor)} each, once a month, and the whole pot goes to one woman.
-            {s.you_paid ? " Yours is in." : " Yours is not in yet."}
+            {s.you_paid ? tr("circles.yoursIsIn")
+              : tr("circles.yoursIsNotInYet")}
           </p>
           <div className="mt-5 flex flex-wrap gap-2.5">
             <button type="button" onClick={act.pay} disabled={s.you_paid || act.paying}
@@ -214,19 +218,18 @@ export function Pot({ d, act }: { d: CommunityData; act: CommunityActs }) {
             <Link href={`/app/circles/${s.circle_id}`}
                   className="ux-press inline-flex min-h-[48px] items-center gap-2 rounded-[12px] px-5 text-sm font-bold"
                   style={{ background: "rgba(255,255,255,.15)", color: "var(--ux-on-brand)",
-                           boxShadow: "inset 0 0 0 1px rgba(255,255,255,.32)" }}>
-              See everyone&rsquo;s turn <Icons.ArrowRight className="h-4 w-4" />
+                           boxShadow: "inset 0 0 0 1px rgba(255,255,255,.32)" }}>{tr("circles.seeEveryoneRsquoSTurn")}<Icons.ArrowRight className="h-4 w-4" />
             </Link>
           </div>
         </div>
       </section>
 
-      <Sec href="/app/circles">Your circles</Sec>
+      <Sec href="/app/circles">{tr("circles.yourCircles")}</Sec>
       <CircleGrid circles={top4} />
 
       {d.posts.length > 0 && (
         <>
-          <Sec href="/app/circles">What women are saying</Sec>
+          <Sec href="/app/circles">{tr("circles.whatWomenAreSaying")}</Sec>
           {wall.map((p, i) => <PostCard key={p.id} p={p} i={i} onLike={act.like} />)}
         </>
       )}
@@ -305,6 +308,7 @@ const PostCard = memo(function PostCard(
 /* ══ B · ROOMS ════════════════════════════════════════════════════════════ */
 
 export function Rooms({ d, act }: { d: CommunityData; act: CommunityActs }) {
+  const tr = useT();
   // The rooms worth showing are the ones with something in them. Copy, sort
   // and slice on every render is three passes for an answer that only changes
   // when the circles do.
@@ -316,9 +320,7 @@ export function Rooms({ d, act }: { d: CommunityData; act: CommunityActs }) {
   return (
     <>
       <div className="ux-rise mb-4.5 flex flex-wrap items-center gap-3.5 rounded-[20px] px-[20px] py-[16px]" style={card}>
-        <span className="text-2xs font-extrabold uppercase tracking-[0.15em]" style={{ color: "var(--ux-faint)" }}>
-          Here now
-        </span>
+        <span className="text-2xs font-extrabold uppercase tracking-[0.15em]" style={{ color: "var(--ux-faint)" }}>{tr("circles.hereNow")}</span>
         <div className="flex">
           {d.posts.slice(0, 5).map((p, i) => (
             <span key={p.id} className="relative -ms-2 grid h-[34px] w-[34px] place-items-center rounded-[12px] text-2xs font-extrabold first:ms-0"
@@ -386,8 +388,7 @@ export function Rooms({ d, act }: { d: CommunityData; act: CommunityActs }) {
                 )}
                 <span className="ms-auto inline-flex min-h-[38px] items-center gap-1.5 rounded-[12px] px-[16px] text-xs font-bold transition-all group-hover:gap-2.5"
                       style={{ border: "1px solid var(--ux-line-strong)", background: "var(--ux-surface)",
-                               color: "var(--ux-ink-2)" }}>
-                  Go in <Icons.ArrowRight className="h-[14px] w-[14px]" />
+                               color: "var(--ux-ink-2)" }}>{tr("circles.goIn")}<Icons.ArrowRight className="h-[14px] w-[14px]" />
                 </span>
               </div>
             </Link>
@@ -403,6 +404,7 @@ export function Rooms({ d, act }: { d: CommunityData; act: CommunityActs }) {
 export function Near({
   d, km, setKm,
 }: { d: CommunityData; km: number; setKm: (n: number) => void }) {
+  const tr = useT();
   /**
    * Distance is not on the server yet.
    *
@@ -471,14 +473,14 @@ export function Near({
           })}
         </svg>
         <div className="pointer-events-none absolute start-[18px] top-4">
-          <b className="block text-base font-extrabold" style={{ color: "var(--ux-ink)" }}>Your city</b>
+          <b className="block text-base font-extrabold" style={{ color: "var(--ux-ink)" }}>{tr("circles.yourCity")}</b>
           <span className="text-xs" style={{ color: "var(--ux-faint)" }}>you are in the middle</span>
         </div>
         <div className="absolute inset-x-[18px] bottom-4 flex items-center gap-3 rounded-[12px] px-3.5 py-[12px]"
              style={{ background: "var(--ux-surface)", border: "1px solid var(--ux-line-strong)",
                       boxShadow: "0 8px 22px -14px rgba(23,16,52,.5)" }}>
-          <span className="shrink-0 text-xs font-bold" style={{ color: "var(--ux-ink)" }}>How far</span>
-          <input type="range" min={1} max={6} step={0.5} value={km} aria-label="Distance in kilometres"
+          <span className="shrink-0 text-xs font-bold" style={{ color: "var(--ux-ink)" }}>{tr("circles.howFar")}</span>
+          <input type="range" min={1} max={6} step={0.5} value={km} aria-label={tr("circles.distanceInKilometres")}
                  onChange={(e) => setKm(Number(e.target.value))}
                  className="h-[34px] flex-1 cursor-pointer" style={{ accentColor: "var(--ux-brand)" }} />
           <b className="min-w-[56px] shrink-0 text-end text-xsm font-extrabold" style={{ color: "var(--ux-brand)" }}>
@@ -492,7 +494,7 @@ export function Near({
         placed by where she really is.
       </p>
 
-      <Sec>Who is near</Sec>
+      <Sec>{tr("circles.whoIsNear")}</Sec>
       {within.length === 0 ? (
         <p className="rounded-[16px] p-6 text-center text-xsm"
            style={{ ...card, color: "var(--ux-muted)" }}>
@@ -537,19 +539,16 @@ const ART: [string, string][] = [
 ];
 
 export function Wall({ d, act }: { d: CommunityData; act: CommunityActs }) {
+  const tr = useT();
   if (d.posts.length === 0) {
     return (
-      <p className="rounded-[20px] p-10 text-center text-xsm" style={{ ...card, color: "var(--ux-muted)" }}>
-        Nothing has been posted in your circles yet.
-      </p>
+      <p className="rounded-[20px] p-10 text-center text-xsm" style={{ ...card, color: "var(--ux-muted)" }}>{tr("circles.nothingHasBeenPostedInYour")}</p>
     );
   }
   return (
     <>
       <h2 className="text-[clamp(1.5rem,3.2vw,2.125rem)] font-extrabold leading-[1.1] tracking-[-0.035em]"
-          style={{ color: "var(--ux-ink)" }}>
-        Made this week
-      </h2>
+          style={{ color: "var(--ux-ink)" }}>{tr("circles.madeThisWeek")}</h2>
       <p className="mb-5 mt-1.5 text-sm" style={{ color: "var(--ux-ink-2)" }}>
         {d.posts.length} pieces, by women in your circles. Hover any of them to ask how.
       </p>

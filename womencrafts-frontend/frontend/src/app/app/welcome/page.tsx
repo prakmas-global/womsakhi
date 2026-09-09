@@ -13,6 +13,7 @@ import { useResource } from "@/lib/use-resource";
 import { useAuth } from "@/context/AuthContext";
 import { Btn, IconTile } from "@/components/ux/kit";
 import { OnboardAside, OnboardFrame } from "@/components/ux/onboard/Frame";
+import { useT } from "@/i18n";
 
 /**
  * A picture for each thing she can ask for.
@@ -64,6 +65,7 @@ const HOURS = [
  * the server, then re-reads the account so the layout lets her through.
  */
 export default function WelcomePage() {
+  const tr = useT();
   const router = useRouter();
   const { user, updateUser } = useAuth();
   const first = (user?.full_name || "").trim().split(" ")[0] || "Sakhi";
@@ -161,18 +163,18 @@ export default function WelcomePage() {
       total={3}
       title={
         step === 1 ? `Namaste, ${first}.`
-        : step === 2 ? "What do you do, or want to do?"
-        : "How much time do you have?"
+        : step === 2 ? tr("welcome.whatDoYouDoOrWant")
+              : tr("welcome.howMuchTimeDoYouHave")
       }
       sub={
         step === 1 ? "Three questions, about a minute. They decide what you see, so it is worth answering honestly."
-        : step === 2 ? "It decides which work and which courses reach you first."
-        : "There is no wrong answer. It changes what we suggest, not what you can do."
+        : step === 2 ? tr("welcome.itDecidesWhichWorkAndWhich")
+              : tr("welcome.thereIsNoWrongAnswerIt")
       }
       aside={
         <OnboardAside
           art="/ux/art/scene-women-celebrating.webp"
-          title="Why we ask"
+          title={tr("welcome.whyWeAsk")}
           body="Every answer changes what lands on your home screen. Nothing here is shown to anyone else."
           points={[
             "You can change all of it later in Settings",
@@ -195,9 +197,7 @@ export default function WelcomePage() {
               disabled={working}
               className="ux-press -my-1 py-1 text-xsm font-medium"
               style={{ color: "var(--ux-muted)", opacity: working ? 0.55 : 1 }}
-            >
-              Skip for now
-            </button>
+            >{tr("welcome.skipForNow")}</button>
             <div className="flex items-center gap-2.5">
               {step > 1 && (
                 <Btn variant="outline" icon="ArrowLeft" disabled={working} onClick={() => setStep(step - 1)}>Back</Btn>
@@ -245,8 +245,8 @@ export default function WelcomePage() {
         ) : (
           <p className="text-sm leading-relaxed" style={{ color: "var(--ux-muted)" }}>
             {source === "loading"
-              ? "Fetching the list…"
-              : "We could not fetch this list just now. Carry on — you can tell us what you need any time from Settings."}
+              ? tr("welcome.fetchingTheList")
+              : tr("welcome.weCouldNotFetchThisList")}
           </p>
         )
       )}

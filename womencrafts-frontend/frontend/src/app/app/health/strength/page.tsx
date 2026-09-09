@@ -8,6 +8,7 @@ import { Back, Btn, Card, I, IconTile, Pill, Progress, SectionHead, Stat, v } fr
 import {
   CHECKS, IRON_WEEKS, TIRED_SIGNS, dueNow, freeCount, ironStreak, type Check,
 } from "@/components/ux/wellness/data";
+import { useT } from "@/i18n";
 
 /**
  * Tiredness, treated as a money problem.
@@ -34,6 +35,7 @@ import {
  * Stored: "I took the tablet." A boolean. Nothing else.
  */
 export default function StrengthPage() {
+  const tr = useT();
   const router = useRouter();
   const [weeks, setWeeks] = useState(IRON_WEEKS);
   const [signs, setSigns] = useState<string[]>([]);
@@ -55,16 +57,14 @@ export default function StrengthPage() {
   return (
     <HomeShell active="/app/health">
       <div className="flex flex-col gap-5">
-        <Back to="/app/health" label="Back to health" />
+        <Back to="/app/health" label={tr("healthStrength.backToHealth")} />
 
         <header>
           <p className="text-2xs font-extrabold uppercase tracking-[0.2em]" style={{ color: v("--ux-brand") }}>
             Strength
           </p>
           <h1 className="mt-2 text-[clamp(1.5rem,3.2vw,2.125rem)] font-extrabold leading-[1.1] tracking-[-0.035em]"
-              style={{ color: v("--ux-ink") }}>
-            Tired is not just tired
-          </h1>
+              style={{ color: v("--ux-ink") }}>{tr("healthStrength.tiredIsNotJustTired")}</h1>
           <p className="mt-1.5 max-w-[58ch] text-sm leading-relaxed" style={{ color: v("--ux-muted") }}>
             When you are paid for what you finish, feeling weak is money. Women doing piece work
             with low iron finished about <b>9% less in a shift</b> and earned about <b>4% less</b> —
@@ -94,7 +94,8 @@ export default function StrengthPage() {
               </div>
             </div>
             <Btn disabled={booked} onClick={() => { setBooked(true); setNote("We will remind you on Monday evening, and again on the morning."); }}>
-              {booked ? "Reminder set" : "Remind me Tuesday"}
+              {booked ? tr("healthStrength.reminderSet")
+              : tr("healthStrength.remindMeTuesday")}
             </Btn>
           </div>
         </Card>
@@ -109,8 +110,8 @@ export default function StrengthPage() {
 
         {/* Signs — a prompt, explicitly not a diagnosis */}
         <div>
-          <SectionHead title="Does any of this sound like you?"
-                       sub="This is not a diagnosis — only a reason to take the free test" icon="ListChecks" />
+          <SectionHead title={tr("healthStrength.doesAnyOfThisSoundLike")}
+                       sub={tr("healthStrength.thisIsNotADiagnosisOnly")} icon="ListChecks" />
           <Card pad={16}>
             <div className="flex flex-col gap-2">
               {TIRED_SIGNS.map((s) => {
@@ -148,7 +149,7 @@ export default function StrengthPage() {
 
         {/* Iron — weekly, which beats a monthly ritual */}
         <div>
-          <SectionHead title="The weekly tablet" sub="Free from the anganwadi. One a week, not one a day."
+          <SectionHead title={tr("healthStrength.theWeeklyTablet")} sub={tr("healthStrength.freeFromTheAnganwadiOneA")}
                        icon="Pill" chip={streak > 0 ? `${streak} weeks running` : undefined} />
           <Card pad={16}>
             <div className="flex items-end gap-2" style={{ height: 76 }}>
@@ -166,17 +167,15 @@ export default function StrengthPage() {
               ))}
             </div>
             <div className="mt-4 flex flex-wrap items-center gap-2 border-t pt-3.5" style={{ borderColor: v("--ux-line") }}>
-              <p className="flex-1 text-xsm" style={{ color: v("--ux-ink-2") }}>
-                A weekly tablet is easier to keep up than a daily one, and works nearly as well.
-              </p>
-              <Btn size="sm" onClick={took}>I took it</Btn>
+              <p className="flex-1 text-xsm" style={{ color: v("--ux-ink-2") }}>{tr("healthStrength.aWeeklyTabletIsEasierTo")}</p>
+              <Btn size="sm" onClick={took}>{tr("healthStrength.iTookIt")}</Btn>
             </div>
           </Card>
         </div>
 
         {/* Other free checks */}
         <div>
-          <SectionHead title="Other things that cost nothing"
+          <SectionHead title={tr("healthStrength.otherThingsThatCostNothing")}
                        sub={`${freeCount(CHECKS)} free · ${dueNow(CHECKS)} due soon`} icon="Stethoscope"
                        action="All of health" onAction={() => router.push("/app/health")} />
           <div className="grid gap-3 sm:grid-cols-2">
@@ -187,7 +186,7 @@ export default function StrengthPage() {
                   <div className="min-w-0 flex-1">
                     <div className="flex flex-wrap items-center gap-2">
                       <p className="text-sm font-bold" style={{ color: v("--ux-ink") }}>{c.what}</p>
-                      {c.womanThere && <Pill tone="pink" size="sm">A woman does it</Pill>}
+                      {c.womanThere && <Pill tone="pink" size="sm">{tr("healthStrength.aWomanDoesIt")}</Pill>}
                     </div>
                     <p className="mt-1 text-xs leading-relaxed" style={{ color: v("--ux-muted") }}>{c.why}</p>
                     <p className="mt-1.5 text-xs" style={{ color: v("--ux-ink-2") }}>

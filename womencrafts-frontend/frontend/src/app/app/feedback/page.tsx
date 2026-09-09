@@ -8,6 +8,7 @@ import * as Icons from "@/components/ux/icons";
 
 import { Btn, Card, IconTile, SectionHead } from "@/components/ux/kit";
 import { HomeShell } from "@/components/ux/home/HomeShell";
+import { useT } from "@/i18n";
 
 const KINDS = [
   { id: "idea", label: "An idea", note: "Something you wish this app did",
@@ -34,6 +35,7 @@ const SHIPPED = [
  * suggestion box nailed shut, and most people work that out after one try.
  */
 export default function FeedbackPage() {
+  const tr = useT();
   const [kind, setKind] = useState<string | null>(null);
   const [text, setText] = useState("");
   const [stage, setStage] = useState<"idle" | "sending" | "sent">("idle");
@@ -72,7 +74,7 @@ export default function FeedbackPage() {
       rail={
         <div className="space-y-[16px]">
           <Card className="ux-onscroll-soft">
-            <SectionHead title="What changed because women asked" sub="The last three" />
+            <SectionHead title={tr("feedback.whatChangedBecauseWomenAsked")} sub={tr("feedback.theLastThree")} />
             <ul className="ux-stagger space-y-3.5">
               {SHIPPED.map((s) => (
                 <li key={s.id} className="ux-hov flex items-start gap-3">
@@ -90,7 +92,7 @@ export default function FeedbackPage() {
           </Card>
 
           <Card className="ux-onscroll-soft">
-            <SectionHead title="If it is urgent" icon="LifeBuoy" />
+            <SectionHead title={tr("feedback.ifItIsUrgent")} icon="LifeBuoy" />
             <p className="text-xsm leading-relaxed" style={{ color: "var(--ux-ink-2)" }}>
               This goes to the team who build the app, and they read it within a few days. If money is
               stuck or someone is behaving badly, use Help or Safety instead — those reach someone today.
@@ -103,10 +105,8 @@ export default function FeedbackPage() {
         </div>
       }
     >
-      <h1 className="text-2xl font-bold" style={{ color: "var(--ux-ink)" }}>Tell us what you think</h1>
-      <p className="mb-[20px] mt-1.5 text-xsm" style={{ color: "var(--ux-muted)" }}>
-        We read every message ourselves. No form numbers, no ticket queue.
-      </p>
+      <h1 className="text-2xl font-bold" style={{ color: "var(--ux-ink)" }}>{tr("feedback.tellUsWhatYouThink")}</h1>
+      <p className="mb-[20px] mt-1.5 text-xsm" style={{ color: "var(--ux-muted)" }}>{tr("feedback.weReadEveryMessageOurselvesNo")}</p>
 
       {stage === "sent" ? (
         <Card className="ux-slide-up">
@@ -115,25 +115,21 @@ export default function FeedbackPage() {
             <img loading="lazy" decoding="async" src="/ux/art/scene-woman-order-notification.webp" alt=""
                  className="h-[86px] w-[86px] shrink-0 object-contain" />
             <div className="min-w-0 flex-1">
-              <h2 className="text-lg font-semibold" style={{ color: "var(--ux-ink)" }}>Thank you — we have it.</h2>
+              <h2 className="text-lg font-semibold" style={{ color: "var(--ux-ink)" }}>{tr("feedback.thankYouWeHaveIt")}</h2>
               <p className="mt-2 text-xsm leading-relaxed" style={{ color: "var(--ux-ink-2)" }}>
                 Someone on the team will read this within a few days. If it turns into a change, you will
                 see it in the list of what women asked for.
               </p>
               <div className="mt-4 flex gap-2.5">
-                <Btn href="/app" variant="primary" iconEnd="ArrowRight">Back to home</Btn>
-                <Btn variant="outline" onClick={() => { setStage("idle"); setText(""); setKind(null); }}>
-                  Say something else
-                </Btn>
+                <Btn href="/app" variant="primary" iconEnd="ArrowRight">{tr("feedback.backToHome")}</Btn>
+                <Btn variant="outline" onClick={() => { setStage("idle"); setText(""); setKind(null); }}>{tr("feedback.saySomethingElse")}</Btn>
               </div>
             </div>
           </div>
         </Card>
       ) : (
         <>
-          <p className="mb-3 text-2xs font-semibold uppercase tracking-[0.07em]" style={{ color: "var(--ux-faint)" }}>
-            What kind of thing is it?
-          </p>
+          <p className="mb-3 text-2xs font-semibold uppercase tracking-[0.07em]" style={{ color: "var(--ux-faint)" }}>{tr("feedback.whatKindOfThingIsIt")}</p>
           <div className="ux-deck mb-[20px] grid grid-cols-2 gap-[12px]">
             {KINDS.map((k, i) => {
               const on = kind === k.id;
@@ -166,15 +162,13 @@ export default function FeedbackPage() {
 
           <Card>
             <label className="block">
-              <span className="mb-2 block text-xsm font-semibold" style={{ color: "var(--ux-ink)" }}>
-                Tell us in your own words
-              </span>
+              <span className="mb-2 block text-xsm font-semibold" style={{ color: "var(--ux-ink)" }}>{tr("feedback.tellUsInYourOwnWords")}</span>
               <textarea
                 value={text}
                 onChange={(e) => setText(e.target.value)}
                 rows={6}
-                placeholder="Whatever it is — long or short, Hindi or English."
-                aria-label="Your message"
+                placeholder={tr("feedback.whateverItIsLongOrShort")}
+                aria-label={tr("feedback.yourMessage")}
                 className="ux-sq w-full resize-y rounded-[12px] border p-3.5 text-sm leading-relaxed outline-none"
                 style={{ borderColor: "var(--ux-line-strong)", background: "var(--ux-surface)", color: "var(--ux-ink)" }}
               />
@@ -187,8 +181,8 @@ export default function FeedbackPage() {
                 {!kind
                   ? "Pick what kind of thing it is above."
                   : text.trim().length < 10
-                    ? "A sentence or two is enough."
-                    : "Sent straight to the people who build this."}
+                    ? tr("feedback.aSentenceOrTwoIsEnough")
+              : tr("feedback.sentStraightToThePeopleWho")}
               </p>
               <Btn
                 variant="primary"

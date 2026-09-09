@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { HomeShell } from "@/components/ux/home/HomeShell";
 import { Back, Btn, Card, I, IconTile, Pill, SectionHead, v } from "@/components/ux/kit";
 import { CARRIES, MOVE_REASONS } from "@/components/ux/together/data";
+import { useT } from "@/i18n";
 
 /**
  * If you move.
@@ -26,6 +27,7 @@ import { CARRIES, MOVE_REASONS } from "@/components/ux/together/data";
  * herself to a form — and nothing in what she carries names where she has gone.
  */
 export default function MovePage() {
+  const tr = useT();
   const router = useRouter();
   const [reason, setReason] = useState<string | null>(null);
   const [prepared, setPrepared] = useState(false);
@@ -39,16 +41,12 @@ export default function MovePage() {
   return (
     <HomeShell active="/app/together">
       <div className="flex flex-col gap-5">
-        <Back to="/app/together" label="Back to Together" />
+        <Back to="/app/together" label={tr("togetherMove.backToTogether")} />
 
         <header>
-          <p className="text-2xs font-extrabold uppercase tracking-[0.2em]" style={{ color: v("--ux-brand") }}>
-            If you move
-          </p>
+          <p className="text-2xs font-extrabold uppercase tracking-[0.2em]" style={{ color: v("--ux-brand") }}>{tr("togetherMove.ifYouMove")}</p>
           <h1 className="mt-2 text-[clamp(1.5rem,3.2vw,2.125rem)] font-extrabold leading-[1.1] tracking-[-0.035em]"
-              style={{ color: v("--ux-ink") }}>
-            What you built comes with you
-          </h1>
+              style={{ color: v("--ux-ink") }}>{tr("togetherMove.whatYouBuiltComesWithYou")}</h1>
           <p className="mt-1.5 max-w-[56ch] text-sm leading-relaxed" style={{ color: v("--ux-muted") }}>
             Most women move at least once, and usually lose their customers, their circle and
             everyone who would vouch for them on the same day. It does not have to work like that.
@@ -56,7 +54,7 @@ export default function MovePage() {
         </header>
 
         <div>
-          <SectionHead title="What is taking you" sub="It changes what we prepare — and nothing else"
+          <SectionHead title={tr("togetherMove.whatIsTakingYou")} sub={tr("togetherMove.itChangesWhatWePrepareAnd")}
                        icon="MapPin" />
           <div className="grid gap-3 sm:grid-cols-2">
             {MOVE_REASONS.map((r) => (
@@ -105,7 +103,7 @@ export default function MovePage() {
         )}
 
         <div>
-          <SectionHead title="What travels with you" sub="Yours, and portable — not ours to hold back"
+          <SectionHead title={tr("togetherMove.whatTravelsWithYou")} sub={tr("togetherMove.yoursAndPortableNotOursTo")}
                        icon="Briefcase" chip={String(CARRIES.length)} />
           <div className="flex flex-col gap-2.5">
             {CARRIES.map((c) => (
@@ -117,7 +115,7 @@ export default function MovePage() {
                   <div className="min-w-0 flex-1">
                     <div className="flex flex-wrap items-center gap-2">
                       <p className="text-sm font-bold" style={{ color: v("--ux-ink") }}>{c.label}</p>
-                      {!c.automatic && <Pill tone="orange" size="sm">You ask for this one</Pill>}
+                      {!c.automatic && <Pill tone="orange" size="sm">{tr("togetherMove.youAskForThisOne")}</Pill>}
                     </div>
                     <p className="mt-0.5 text-xs" style={{ color: v("--ux-muted") }}>{c.detail}</p>
                   </div>
@@ -134,9 +132,7 @@ export default function MovePage() {
           <div className="flex flex-wrap items-start gap-4">
             <IconTile icon="Handshake" tint="--ux-surface" ink="--ux-pink-ink" size={46} radius={13} />
             <div className="min-w-0 flex-1">
-              <p className="text-base font-bold" style={{ color: v("--ux-ink") }}>
-                An introduction at the other end
-              </p>
+              <p className="text-base font-bold" style={{ color: v("--ux-ink") }}>{tr("togetherMove.anIntroductionAtTheOtherEnd")}</p>
               <p className="mt-1.5 max-w-[52ch] text-xsm leading-relaxed" style={{ color: v("--ux-ink-2") }}>
                 The hardest part is not the paperwork. It is being nobody in a new place. Your
                 circle can vouch for you to a circle where you are going — that is worth more than
@@ -151,7 +147,7 @@ export default function MovePage() {
 
         {prepared && (
           <Card pad={16}>
-            <SectionHead title="When you arrive" icon="MapPin" />
+            <SectionHead title={tr("togetherMove.whenYouArrive")} icon="MapPin" />
             <ol className="flex flex-col gap-2.5">
               {[
                 "Your statement of earnings works anywhere — show it to a landlord on day one.",

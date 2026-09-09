@@ -8,6 +8,7 @@ import {
 import { HomeShell } from "@/components/ux/home/HomeShell";
 import { useReferrals } from "@/components/ux/live";
 import { ACCOUNT_ART, rupees } from "@/components/ux/account/data";
+import { useT } from "@/i18n";
 
 /**
  * Refer — bringing another woman in.
@@ -18,6 +19,7 @@ import { ACCOUNT_ART, rupees } from "@/components/ux/account/data";
  * arrives, and she has spent her own credibility.
  */
 export default function ReferPage() {
+  const tr = useT();
   const { data: ref, source } = useReferrals();
   const REFER = ref.refer;
   const REFERRALS = ref.people;
@@ -47,7 +49,7 @@ export default function ReferPage() {
       rail={
         <div className="space-y-[16px]">
           <Card className="ux-onscroll-soft">
-            <SectionHead title="How it works" icon="Info" />
+            <SectionHead title={tr("refer.howItWorks")} icon="Info" />
             <ol className="space-y-3">
               {[
                 "Share your code with a woman you know.",
@@ -65,7 +67,7 @@ export default function ReferPage() {
           </Card>
 
           <Card className="ux-onscroll-soft">
-            <SectionHead title="Please do not" icon="ShieldAlert" />
+            <SectionHead title={tr("refer.pleaseDoNot")} icon="ShieldAlert" />
             <p className="text-xsm leading-relaxed" style={{ color: "var(--ux-ink-2)" }}>
               Share it with women who would actually use WomSakhi. Posting it to strangers gets accounts
               closed — hers and yours — and helps nobody.
@@ -74,7 +76,7 @@ export default function ReferPage() {
         </div>
       }
     >
-      <h1 className="text-2xl font-bold" style={{ color: "var(--ux-ink)" }}>Refer a friend</h1>
+      <h1 className="text-2xl font-bold" style={{ color: "var(--ux-ink)" }}>{tr("refer.referAFriend")}</h1>
       <p className="mb-[20px] mt-1.5 text-xsm" style={{ color: "var(--ux-muted)" }}>
         You have brought {REFERRALS.length} {plural("woman", REFERRALS.length)} in so far.
       </p>
@@ -109,9 +111,7 @@ export default function ReferPage() {
               {copied === "link" ? "Copied" : "Copy link"}
             </Btn>
             <Btn href={`https://wa.me/?text=${encodeURIComponent(`Join me on WomSakhi — use my code ${REFER.code}. https://${REFER.link}`)}`}
-                 variant="on-brand" size="sm" icon="MessageCircle">
-              Send on WhatsApp
-            </Btn>
+                 variant="on-brand" size="sm" icon="MessageCircle">{tr("refer.sendOnWhatsapp")}</Btn>
           </div>
 
           <p className="mt-3 truncate text-xs" style={{ color: "rgba(255,255,255,0.7)" }}>{REFER.link}</p>
@@ -136,7 +136,7 @@ export default function ReferPage() {
       </div>
 
       <div className="mt-[24px]">
-        <SectionHead title="Women you brought in" sub="And where each of them has got to" />
+        <SectionHead title={tr("refer.womenYouBroughtIn")} sub={tr("refer.andWhereEachOfThemHas")} />
         {REFERRALS.length ? (
           <div className="ux-deck ux-stagger space-y-[12px]">
             {REFERRALS.map((r, i) => (
@@ -167,8 +167,7 @@ export default function ReferPage() {
                       </>
                     ) : (
                       /* Never imply a reward that has not been earned. */
-                      <p className="text-xs leading-snug" style={{ color: "var(--ux-faint)" }}>
-                        Nothing yet —<br />she has not finished a course
+                      <p className="text-xs leading-snug" style={{ color: "var(--ux-faint)" }}>{tr("refer.nothingYet")}<br />she has not finished a course
                       </p>
                     )}
                   </div>
@@ -178,7 +177,7 @@ export default function ReferPage() {
           </div>
         ) : (
           <Card>
-            <EmptyState icon="Users" title="Nobody yet"
+            <EmptyState icon="Users" title={tr("refer.nobodyYet")}
                         body="Share your code with one woman who would use this." />
           </Card>
         )}

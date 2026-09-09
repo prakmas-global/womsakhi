@@ -8,6 +8,7 @@ import { useTheme } from "@/context/ThemeContext";
 import { Btn, Card, IconTile, Pill, SectionHead } from "@/components/ux/kit";
 import { HomeShell } from "@/components/ux/home/HomeShell";
 import { useMe } from "@/components/ux/me";
+import { useT } from "@/i18n";
 
 /**
  * More — the hub behind the last item in the nav.
@@ -66,6 +67,7 @@ const GROUPS = [
 ];
 
 export default function MorePage() {
+  const tr = useT();
   const ME = useMe();
   const { user, signOut } = useAuth();
   const { theme, setTheme } = useTheme();
@@ -77,7 +79,7 @@ export default function MorePage() {
       rail={
         <div className="space-y-[16px]">
           <Card className="ux-onscroll-soft">
-            <SectionHead title="Appearance" sub="Changes straight away" />
+            <SectionHead title="Appearance" sub={tr("settings.changesStraightAway")} />
             <div className="ux-sq flex gap-1 rounded-[12px] p-1" style={{ background: "var(--ux-surface-2)" }}>
               {([["light", "Sun", "Light"], ["dark", "Moon", "Dark"], ["system", "Monitor", "Auto"]] as const).map(([t, ic, label]) => {
                 const on = theme === t;
@@ -123,9 +125,7 @@ export default function MorePage() {
       }
     >
       <h1 className="text-2xl font-bold" style={{ color: "var(--ux-ink)" }}>More</h1>
-      <p className="mb-[20px] mt-1.5 text-xsm" style={{ color: "var(--ux-muted)" }}>
-        Your account, how the app behaves, and where to get help.
-      </p>
+      <p className="mb-[20px] mt-1.5 text-xsm" style={{ color: "var(--ux-muted)" }}>{tr("settings.yourAccountHowTheAppBehaves")}</p>
 
       <Card className="ux-onscroll mb-[24px]">
         <div className="flex items-center gap-4">
@@ -142,7 +142,7 @@ export default function MorePage() {
             <p className="mt-0.5 truncate text-xsm" style={{ color: "var(--ux-muted)" }}>
               {user?.email ?? "priya.sharma@example.com"}
             </p>
-            <div className="mt-2"><Pill tone="green" size="sm">Verified member</Pill></div>
+            <div className="mt-2"><Pill tone="green" size="sm">{tr("settings.verifiedMember")}</Pill></div>
           </div>
           <Btn href="/app/settings/account" variant="outline" size="sm" icon="Pencil">Edit</Btn>
         </div>
@@ -180,12 +180,10 @@ export default function MorePage() {
       <Card className="ux-onscroll mt-[24px]">
         <div className="flex items-center justify-between gap-4">
           <div className="min-w-0">
-            <h3 className="text-sm font-semibold" style={{ color: "var(--ux-ink)" }}>Sign out</h3>
-            <p className="mt-1 text-xsm" style={{ color: "var(--ux-muted)" }}>
-              You will need your password to come back in.
-            </p>
+            <h3 className="text-sm font-semibold" style={{ color: "var(--ux-ink)" }}>{tr("settings.signOut")}</h3>
+            <p className="mt-1 text-xsm" style={{ color: "var(--ux-muted)" }}>{tr("settings.youWillNeedYourPasswordTo")}</p>
           </div>
-          <Btn variant="outline" icon="LogOut" onClick={() => void signOut()}>Sign out</Btn>
+          <Btn variant="outline" icon="LogOut" onClick={() => void signOut()}>{tr("settings.signOut2")}</Btn>
         </div>
       </Card>
     </HomeShell>

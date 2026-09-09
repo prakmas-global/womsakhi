@@ -7,6 +7,7 @@ import { HomeShell } from "@/components/ux/home/HomeShell";
 import { Back, Btn, Card, I, IconTile, Pill, Progress, SectionHead, Stat, v } from "@/components/ux/kit";
 import { formatRupees } from "@/components/ux/kit";
 import { SEASONS, type Season } from "@/components/ux/books/data";
+import { useT } from "@/i18n";
 
 /**
  * Your year, as it actually is.
@@ -30,6 +31,7 @@ const SHAPE: Record<Season["shape"], { label: string; tint: string; ink: string 
 };
 
 export default function SeasonPage() {
+  const tr = useT();
   const router = useRouter();
   const [ready, setReady] = useState<string[]>([]);
   const [note, setNote] = useState<string | null>(null);
@@ -49,16 +51,12 @@ export default function SeasonPage() {
   return (
     <HomeShell active="/app/books">
       <div className="flex flex-col gap-5">
-        <Back to="/app/books" label="Back to your books" />
+        <Back to="/app/books" label={tr("booksSeason.backToYourBooks")} />
 
         <header>
-          <p className="text-2xs font-extrabold uppercase tracking-[0.2em]" style={{ color: v("--ux-brand") }}>
-            Your year
-          </p>
+          <p className="text-2xs font-extrabold uppercase tracking-[0.2em]" style={{ color: v("--ux-brand") }}>{tr("booksSeason.yourYear")}</p>
           <h1 className="mt-2 text-[clamp(1.5rem,3.2vw,2.125rem)] font-extrabold leading-[1.1] tracking-[-0.035em]"
-              style={{ color: v("--ux-ink") }}>
-            The busy months and the thin ones
-          </h1>
+              style={{ color: v("--ux-ink") }}>{tr("booksSeason.theBusyMonthsAndTheThin")}</h1>
           <p className="mt-1.5 max-w-[56ch] text-sm leading-relaxed" style={{ color: v("--ux-muted") }}>
             Your work is not the same every month and never has been. What matters is knowing
             far enough ahead — cloth is bought in the quiet month before the rush.
@@ -67,9 +65,9 @@ export default function SeasonPage() {
 
         <Card>
           <div className="grid gap-4 sm:grid-cols-2">
-            <Stat value={formatRupees(good)} label="Expected in the busy months"
+            <Stat value={formatRupees(good)} label={tr("booksSeason.expectedInTheBusyMonths")}
                   icon="TrendingUp" tint="--ux-tint-green" ink="--ux-green-ink" />
-            <Stat value={formatRupees(thin)} label="Expected in the thin ones"
+            <Stat value={formatRupees(thin)} label={tr("booksSeason.expectedInTheThinOnes")}
                   icon="TrendingDown" tint="--ux-tint-amber" ink="--ux-amber-ink" />
           </div>
           <div className="mt-4 flex items-start gap-2.5 border-t pt-3.5" style={{ borderColor: v("--ux-line") }}>
@@ -90,7 +88,7 @@ export default function SeasonPage() {
         )}
 
         <div>
-          <SectionHead title="What is coming" sub="Soonest first — with how long you have"
+          <SectionHead title={tr("booksSeason.whatIsComing")} sub={tr("booksSeason.soonestFirstWithHowLongYou")}
                        icon="CalendarDays" chip={String(soon.length)} />
           <div className="flex flex-col gap-3">
             {soon.map((s) => {
@@ -129,7 +127,8 @@ export default function SeasonPage() {
                   </div>
                   <Btn size="sm" variant={done ? "ghost" : "outline"} full className="mt-3"
                        onClick={() => mark(s.id)}>
-                    {done ? "Not ready after all" : "I have done this"}
+                    {done ? tr("booksSeason.notReadyAfterAll")
+              : tr("booksSeason.iHaveDoneThis")}
                   </Btn>
                 </Card>
               );

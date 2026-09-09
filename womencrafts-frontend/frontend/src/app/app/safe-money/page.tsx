@@ -6,6 +6,7 @@ import { HomeShell } from "@/components/ux/home/HomeShell";
 import { ReadAloud } from "@/components/ux/reach/ReadAloud";
 import { Btn, Card, I, Pill, SectionHead, v } from "@/components/ux/kit";
 import { BUYER_CHECKS, SCAMS, riskCount, type ScamPattern } from "@/components/ux/reach/data";
+import { useT } from "@/i18n";
 
 /**
  * Money traps — the lesson turned into a guardrail.
@@ -33,6 +34,7 @@ import { BUYER_CHECKS, SCAMS, riskCount, type ScamPattern } from "@/components/u
  * order, the expiring-KYC link.
  */
 export default function SafeMoneyPage() {
+  const tr = useT();
   const [open, setOpen] = useState<string | null>(null);
   const [checks] = useState(BUYER_CHECKS);
   const risks = useMemo(() => riskCount(checks), [checks]);
@@ -45,31 +47,23 @@ export default function SafeMoneyPage() {
       <div className="flex flex-col gap-5" id="safe-money-page">
 
         <header>
-          <p className="text-2xs font-extrabold uppercase tracking-[0.2em]" style={{ color: v("--ux-brand") }}>
-            Money traps
-          </p>
+          <p className="text-2xs font-extrabold uppercase tracking-[0.2em]" style={{ color: v("--ux-brand") }}>{tr("safemoney.moneyTraps")}</p>
           <h1 className="mt-2 text-[clamp(1.5rem,3.2vw,2.125rem)] font-extrabold leading-[1.1] tracking-[-0.035em]"
-              style={{ color: v("--ux-ink") }}>
-            The tricks aimed at women working from home
-          </h1>
+              style={{ color: v("--ux-ink") }}>{tr("safemoney.theTricksAimedAtWomenWorking")}</h1>
           <p className="mt-1.5 max-w-[58ch] text-sm leading-relaxed" style={{ color: v("--ux-muted") }}>
             These are not general internet scams. Each one below is written for a woman who sews,
             cooks or does mehendi at home, and each is the exact message you will be sent.
           </p>
-          <div className="mt-3"><ReadAloud targetId="safe-money-page" label="Read these to me" /></div>
+          <div className="mt-3"><ReadAloud targetId="safe-money-page" label={tr("safemoney.readTheseToMe")} /></div>
         </header>
 
         {/* The one rule, given the whole width it deserves. */}
         <div className="rounded-[var(--ux-r-card)] px-6 py-7 sm:px-9"
              style={{ background: v("--ux-fill") }}>
           <p className="text-2xs font-extrabold uppercase tracking-[0.18em]"
-             style={{ color: v("--ux-on-brand"), opacity: 0.75 }}>
-            If you remember one thing
-          </p>
+             style={{ color: v("--ux-on-brand"), opacity: 0.75 }}>{tr("safemoney.ifYouRememberOneThing")}</p>
           <p className="mt-2.5 max-w-[22ch] text-[clamp(1.5rem,4vw,2.25rem)] font-extrabold leading-[1.1] tracking-[-0.03em]"
-             style={{ color: v("--ux-on-brand") }}>
-            A PIN is only ever for sending money.
-          </p>
+             style={{ color: v("--ux-on-brand") }}>{tr("safemoney.aPinIsOnlyEverFor")}</p>
           <p className="mt-3 max-w-[52ch] text-sm leading-relaxed"
              style={{ color: v("--ux-on-brand"), opacity: 0.9 }}>
             Money coming to you needs nothing from you — no PIN, no approval, no code. If a screen
@@ -80,8 +74,8 @@ export default function SafeMoneyPage() {
 
         {/* Their words first. */}
         <div>
-          <SectionHead title="What they will say to you"
-                       sub="Tap one to see what is really happening" icon="MessageSquareWarning"
+          <SectionHead title={tr("safemoney.whatTheyWillSayToYou")}
+                       sub={tr("safemoney.tapOneToSeeWhatIs")} icon="MessageSquareWarning"
                        chip={String(SCAMS.length)} />
           <div className="flex flex-col gap-3">
             {SCAMS.map((s) => <Trap key={s.id} s={s} open={open === s.id} onFlip={() => flip(s.id)} />)}
@@ -90,8 +84,8 @@ export default function SafeMoneyPage() {
 
         {/* Point-of-risk check on a live buyer */}
         <div>
-          <SectionHead title="Before you send anything to a buyer"
-                       sub="Kavita R. — 50 pieces, wants them couriered today" icon="UserSearch" />
+          <SectionHead title={tr("safemoney.beforeYouSendAnythingToA")}
+                       sub={tr("safemoney.kavitaRPiecesWantsThemCouriered")} icon="UserSearch" />
           <Card pad={0} style={{ overflow: "hidden" }}>
             <div className="flex flex-wrap items-center gap-3 px-5 py-4"
                  style={{ background: v(risks >= 2 ? "--ux-danger-tint" : "--ux-tint-green") }}>
@@ -115,7 +109,7 @@ export default function SafeMoneyPage() {
               </div>
             ))}
             <div className="flex flex-wrap gap-2 border-t px-5 py-4" style={{ borderColor: v("--ux-line") }}>
-              <Btn size="sm" icon="HandCoins" href="/app/collect">Ask for the cloth money first</Btn>
+              <Btn size="sm" icon="HandCoins" href="/app/collect">{tr("safemoney.askForTheClothMoneyFirst")}</Btn>
               <Btn size="sm" variant="outline" icon="Flag" disabled={reported}
                    onClick={() => setReported(true)}>
                 {reported ? "Reported" : "Report this buyer"}
@@ -127,9 +121,7 @@ export default function SafeMoneyPage() {
         {reported && (
           <Card pad={16} style={{ background: v("--ux-tint-green"), borderColor: "transparent" }}>
             <p className="flex items-center gap-2 text-xsm font-semibold" style={{ color: v("--ux-green-ink") }}>
-              <I name="CheckCircle2" className="h-[16px] w-[16px]" />
-              Recorded. The next woman this buyer contacts will see it, and your name is not shown.
-            </p>
+              <I name="CheckCircle2" className="h-[16px] w-[16px]" />{tr("safemoney.recordedTheNextWomanThisBuyer")}</p>
           </Card>
         )}
 
@@ -150,6 +142,7 @@ export default function SafeMoneyPage() {
 
 /** Their sentence, then the truth underneath it. */
 function Trap({ s, open, onFlip }: { s: ScamPattern; open: boolean; onFlip: () => void }) {
+  const tr = useT();
   return (
     <Card pad={0} style={{ overflow: "hidden", borderColor: open ? v("--ux-danger-solid") : undefined }}>
       <button type="button" onClick={onFlip} aria-expanded={open} className="ux-press w-full p-5 text-left">
@@ -165,9 +158,7 @@ function Trap({ s, open, onFlip }: { s: ScamPattern; open: boolean; onFlip: () =
             <div className="mt-2 flex flex-wrap items-center gap-2">
               <Pill tone="orange" size="sm">{s.name}</Pill>
               {!open && (
-                <span className="text-xs font-semibold" style={{ color: v("--ux-brand") }}>
-                  What is really happening?
-                </span>
+                <span className="text-xs font-semibold" style={{ color: v("--ux-brand") }}>{tr("safemoney.whatIsReallyHappening")}</span>
               )}
             </div>
           </div>

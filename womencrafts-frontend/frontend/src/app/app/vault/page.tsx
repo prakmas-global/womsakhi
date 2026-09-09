@@ -9,6 +9,7 @@ import {
   MOVES, POCKETS, RULES, emergency, savedByRules, total,
   type Pocket,
 } from "@/components/ux/vault/data";
+import { useT } from "@/i18n";
 
 /**
  * Her vault.
@@ -23,6 +24,7 @@ import {
 const DOTS = "••••••";
 
 export default function VaultPage() {
+  const tr = useT();
   const [pockets, setPockets] = useState<Pocket[]>(POCKETS);
   const [shown, setShown] = useState(false);
   const [busy, setBusy] = useState<string | null>(null);
@@ -53,20 +55,14 @@ export default function VaultPage() {
 
         <header className="flex flex-wrap items-end gap-4">
           <div className="min-w-0 flex-1">
-            <p className="text-2xs font-extrabold uppercase tracking-[0.2em]" style={{ color: v("--ux-brand") }}>
-              Your locker
-            </p>
+            <p className="text-2xs font-extrabold uppercase tracking-[0.2em]" style={{ color: v("--ux-brand") }}>{tr("vault.yourLocker")}</p>
             <h1 className="mt-2 text-[clamp(1.5rem,3.2vw,2.125rem)] font-extrabold leading-[1.1] tracking-[-0.035em]"
-                style={{ color: v("--ux-ink") }}>
-              Money that is yours
-            </h1>
-            <p className="mt-1.5 max-w-[52ch] text-sm leading-relaxed" style={{ color: v("--ux-muted") }}>
-              Kept separate, kept quiet, and reachable the moment you need it.
-            </p>
+                style={{ color: v("--ux-ink") }}>{tr("vault.moneyThatIsYours")}</h1>
+            <p className="mt-1.5 max-w-[52ch] text-sm leading-relaxed" style={{ color: v("--ux-muted") }}>{tr("vault.keptSeparateKeptQuietAndReachable")}</p>
           </div>
           <div className="flex flex-wrap gap-2">
-            <Btn variant="outline" icon="Smartphone" href="/app/vault/showing">Showing someone</Btn>
-            <Btn variant="ghost" icon="ShieldCheck" href="/app/vault/privacy">Who can see</Btn>
+            <Btn variant="outline" icon="Smartphone" href="/app/vault/showing">{tr("vault.showingSomeone")}</Btn>
+            <Btn variant="ghost" icon="ShieldCheck" href="/app/vault/privacy">{tr("vault.whoCanSee")}</Btn>
           </div>
         </header>
 
@@ -77,9 +73,7 @@ export default function VaultPage() {
             <div className="flex items-start justify-between gap-4">
               <div className="min-w-0">
                 <p className="text-xs font-bold uppercase tracking-[0.16em]"
-                   style={{ color: v("--ux-on-brand-2") }}>
-                  Yours, altogether
-                </p>
+                   style={{ color: v("--ux-on-brand-2") }}>{tr("vault.yoursAltogether")}</p>
                 <p className="mt-2 text-[clamp(1.875rem,5vw,2.75rem)] font-extrabold leading-none tabular-nums tracking-[-0.03em]"
                    style={{ color: v("--ux-on-brand") }}>
                   {shown ? formatRupees(all) : DOTS}
@@ -93,7 +87,8 @@ export default function VaultPage() {
                 type="button"
                 onClick={() => setShown((s) => !s)}
                 aria-pressed={shown}
-                aria-label={shown ? "Hide the amount" : "Show the amount"}
+                aria-label={shown ? tr("vault.hideTheAmount")
+              : tr("vault.showTheAmount")}
                 className="ux-press ux-sq grid h-[44px] w-[44px] shrink-0 place-items-center rounded-full"
                 style={{ background: v("--ux-on-brand-fill"), color: v("--ux-on-brand") }}
               >
@@ -106,20 +101,14 @@ export default function VaultPage() {
             <div className="flex items-center gap-2.5 px-6 py-3"
                  style={{ background: v("--ux-surface-2") }}>
               <I name="EyeOff" className="h-[15px] w-[15px] shrink-0" style={{ color: v("--ux-muted") }} />
-              <p className="text-xsm" style={{ color: v("--ux-ink-2") }}>
-                Hidden on purpose. Tap the eye to see it — it hides again when you leave.
-              </p>
+              <p className="text-xsm" style={{ color: v("--ux-ink-2") }}>{tr("vault.hiddenOnPurposeTapTheEye")}</p>
             </div>
           )}
 
           <div className="flex flex-wrap gap-2 px-6 py-4">
-            <Btn icon="ArrowDownToLine" onClick={() => setNote("Add money to which pocket? Choose one below.")}>
-              Put money in
-            </Btn>
+            <Btn icon="ArrowDownToLine" onClick={() => setNote("Add money to which pocket? Choose one below.")}>{tr("vault.putMoneyIn")}</Btn>
             <Btn variant="outline" icon="Zap"
-                 onClick={() => setNote(`${sos ? formatRupees(sos.minor) : "Nothing"} is ready right now, with no waiting.`)}>
-              I need money now
-            </Btn>
+                 onClick={() => setNote(`${sos ? formatRupees(sos.minor) : "Nothing"} is ready right now, with no waiting.`)}>{tr("vault.iNeedMoneyNow")}</Btn>
             <Btn variant="ghost" icon="Repeat" href="/app/vault/rules">
               Saving rules ({activeRules})
             </Btn>
@@ -143,7 +132,7 @@ export default function VaultPage() {
               <div className="min-w-0 flex-1">
                 <div className="flex flex-wrap items-center gap-2">
                   <p className="text-base font-bold" style={{ color: v("--ux-ink") }}>{sos.name}</p>
-                  <Pill tone="green" size="sm">No waiting</Pill>
+                  <Pill tone="green" size="sm">{tr("vault.noWaiting")}</Pill>
                 </div>
                 <p className="mt-1 text-xsm leading-relaxed" style={{ color: v("--ux-muted") }}>
                   A savings pot only pays on your turn. This does not wait for a turn, a vote,
@@ -164,13 +153,9 @@ export default function VaultPage() {
               </div>
               <div className="flex shrink-0 gap-2">
                 <Btn size="sm" variant="outline" disabled={busy === sos.id}
-                     onClick={() => move(sos.id, 50000, "₹500 added to your emergency money.")}>
-                  Add ₹500
-                </Btn>
+                     onClick={() => move(sos.id, 50000, "₹500 added to your emergency money.")}>{tr("vault.add")}</Btn>
                 <Btn size="sm" disabled={busy === sos.id || sos.minor === 0}
-                     onClick={() => move(sos.id, -50000, "₹500 taken out. It is in your wallet now.")}>
-                  Take ₹500
-                </Btn>
+                     onClick={() => move(sos.id, -50000, "₹500 taken out. It is in your wallet now.")}>{tr("vault.take")}</Btn>
               </div>
             </div>
           </Card>
@@ -179,8 +164,8 @@ export default function VaultPage() {
         {/* Pockets */}
         <div>
           <SectionHead
-            title="Your pockets"
-            sub="Money split by what it is for, so one thing cannot eat another"
+            title={tr("vault.yourPockets")}
+            sub={tr("vault.moneySplitByWhatItIs")}
             icon="Wallet"
             action="See every movement"
             onAction={() => { window.location.href = "/app/vault/history"; }}
@@ -207,13 +192,9 @@ export default function VaultPage() {
                 )}
                 <div className="mt-3.5 flex gap-2">
                   <Btn size="sm" variant="outline" full disabled={busy === p.id}
-                       onClick={() => move(p.id, 10000, `₹100 added to ${p.name.toLowerCase()}.`)}>
-                    Add ₹100
-                  </Btn>
+                       onClick={() => move(p.id, 10000, `₹100 added to ${p.name.toLowerCase()}.`)}>{tr("vault.add2")}</Btn>
                   <Btn size="sm" variant="ghost" full disabled={busy === p.id || p.minor === 0}
-                       onClick={() => move(p.id, -10000, `₹100 taken from ${p.name.toLowerCase()}.`)}>
-                    Take ₹100
-                  </Btn>
+                       onClick={() => move(p.id, -10000, `₹100 taken from ${p.name.toLowerCase()}.`)}>{tr("vault.take2")}</Btn>
                 </div>
               </Card>
             ))}

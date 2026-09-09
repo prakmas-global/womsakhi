@@ -15,6 +15,7 @@ import { useBusiness } from "@/components/ux/business";
 import {
   RATE_KINDS, SERVICE_CATEGORIES, rupees, type RateKind,
 } from "@/components/ux/shop/data";
+import { useT } from "@/i18n";
 
 const BLANK = {
   id: "new", name: "", category: "Tailoring", rate_minor: 0, rateKind: "per visit" as RateKind,
@@ -38,6 +39,7 @@ const WHERES = ["At her place", "At your place", "Either", "Online"] as const;
  * woman running a household cannot spare.
  */
 export default function ServiceEditor({ params }: { params: Promise<{ id: string }> }) {
+  const tr = useT();
   const { id } = use(params);
   const { data: biz, refetch } = useBusiness();
   const SERVICES = biz.services;
@@ -144,9 +146,9 @@ export default function ServiceEditor({ params }: { params: Promise<{ id: string
         <Card>
           <EmptyState
             icon="SearchX"
-            title="That service is not here"
+            title={tr("documentsService.thatServiceIsNotHere")}
             body="It may have been removed from your shop."
-            action={<Btn href="/app/documents" variant="primary" iconEnd="ArrowRight">Your business</Btn>}
+            action={<Btn href="/app/documents" variant="primary" iconEnd="ArrowRight">{tr("documentsService.yourBusiness")}</Btn>}
           />
         </Card>
       </HomeShell>
@@ -159,7 +161,7 @@ export default function ServiceEditor({ params }: { params: Promise<{ id: string
       rail={
         <div className="space-y-[16px]">
           <Card>
-            <SectionHead title="What a buyer sees" sub="Updates as you type" />
+            <SectionHead title={tr("documentsService.whatABuyerSees")} sub={tr("documentsService.updatesAsYouType")} />
             <div className="ux-sq overflow-hidden rounded-[12px] border" style={{ borderColor: "var(--ux-line)" }}>
               <div className="h-[120px] overflow-hidden" style={{ background: "var(--ux-tint-pink)" }}>
                 {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -187,7 +189,7 @@ export default function ServiceEditor({ params }: { params: Promise<{ id: string
           </Card>
 
           <Card>
-            <SectionHead title="Before it goes live" />
+            <SectionHead title={tr("documentsService.beforeItGoesLive")} />
             {missing.length ? (
               <ul className="space-y-2.5">
                 {missing.map((m) => (
@@ -199,14 +201,14 @@ export default function ServiceEditor({ params }: { params: Promise<{ id: string
               </ul>
             ) : (
               <p className="flex items-center gap-2 text-xsm" style={{ color: "var(--ux-green-ink)" }}>
-                <Icons.CheckCheck className="h-[16px] w-[16px]" /> Ready to publish.
-              </p>
+                <Icons.CheckCheck className="h-[16px] w-[16px]" />{tr("documentsService.readyToPublish")}</p>
             )}
             <div className="mt-4">
               <Btn variant="primary" full icon={busy ? "Loader" : "Check"}
                    disabled={busy || missing.length > 0}
                    onClick={() => void save()}>
-                {isNew ? "List this service" : "Save changes"}
+                {isNew ? tr("documentsService.listThisService")
+              : tr("documentsService.saveChanges")}
               </Btn>
             </div>
             {/* "Saved." is now only said when the server said so. */}
@@ -223,7 +225,7 @@ export default function ServiceEditor({ params }: { params: Promise<{ id: string
 
           {!isNew && existing && (
             <Card>
-              <SectionHead title="How it is doing" />
+              <SectionHead title={tr("documentsService.howItIsDoing")} />
               <div className="space-y-3.5">
                 {[[`${existing.booked}`, "Times booked", "CalendarCheck", "--ux-tint-violet", "--ux-violet"],
                   [existing.rating, "Average rating", "Star", "--ux-tint-orange", "--ux-amber"]].map(([v, label, icon, tint, ink]) => (
@@ -244,28 +246,27 @@ export default function ServiceEditor({ params }: { params: Promise<{ id: string
       <Link href="/app/documents"
             className="ux-hov -my-1 mb-3.5 inline-flex items-center gap-1.5 py-1 text-xsm font-medium"
             style={{ color: "var(--ux-brand)" }}>
-        <Icons.ArrowLeft className="ux-ico h-4 w-4" /> Your shop
-      </Link>
+        <Icons.ArrowLeft className="ux-ico h-4 w-4" />{tr("documentsService.yourShop")}</Link>
 
       <h1 className="text-2xl font-bold" style={{ color: "var(--ux-ink)" }}>
         {isNew ? "Offer a service" : form.name || "Edit service"}
       </h1>
       <p className="mb-[20px] mt-1.5 text-xsm" style={{ color: "var(--ux-muted)" }}>
         {isNew
-          ? "Anything you do with your hands or your time — stitching, mehendi, tuition, cooking, childcare."
-          : "Changes reach buyers straight away."}
+          ? tr("documentsService.anythingYouDoWithYourHands")
+              : tr("documentsService.changesReachBuyersStraightAway")}
       </p>
 
       <Card className="mb-[16px]">
-        <SectionHead title="What you do" />
+        <SectionHead title={tr("documentsService.whatYouDo")} />
         <div className="space-y-4">
-          <Field label="Name it the way someone would ask for it"
-                 hint="“Blouse stitched to measure”, not “Tailoring services”.">
-            <TextInput value={form.name} onChange={set("name")} placeholder="Blouse stitched to measure" />
+          <Field label={tr("documentsService.nameItTheWaySomeoneWould")}
+                 hint={tr("documentsService.blouseStitchedToMeasureNotTailorin")}>
+            <TextInput value={form.name} onChange={set("name")} placeholder={tr("documentsService.blouseStitchedToMeasure")} />
           </Field>
 
           <div>
-            <span className="block text-xsm font-semibold" style={{ color: "var(--ux-ink)" }}>What kind of work</span>
+            <span className="block text-xsm font-semibold" style={{ color: "var(--ux-ink)" }}>{tr("documentsService.whatKindOfWork")}</span>
             <div className="mt-2 flex flex-wrap gap-2">
               {SERVICE_CATEGORIES.map((c) => (
                 <Chip key={c} selected={form.category === c}
@@ -276,12 +277,12 @@ export default function ServiceEditor({ params }: { params: Promise<{ id: string
             </div>
           </div>
 
-          <Field label="Describe it" hint="What is included, and what a buyer should have ready before you arrive.">
+          <Field label={tr("documentsService.describeIt")} hint={tr("documentsService.whatIsIncludedAndWhatA")}>
             <textarea
               value={form.about}
               onChange={(e) => { setForm((f) => ({ ...f, about: e.target.value })); setSaved(false); }}
               rows={4}
-              aria-label="Describe it"
+              aria-label={tr("documentsService.describeIt2")}
               className="ux-sq w-full resize-y rounded-[12px] border p-3.5 text-sm leading-relaxed outline-none"
               style={{ borderColor: "var(--ux-line-strong)", background: "var(--ux-surface)", color: "var(--ux-ink)" }}
             />
@@ -290,9 +291,9 @@ export default function ServiceEditor({ params }: { params: Promise<{ id: string
       </Card>
 
       <Card className="mb-[16px]">
-        <SectionHead title="What you charge" sub="Buyers see this exactly — nothing is added on top" />
+        <SectionHead title={tr("documentsService.whatYouCharge")} sub={tr("documentsService.buyersSeeThisExactlyNothingIs")} />
         <div className="grid grid-cols-2 gap-4">
-          <Field label="Your rate" hint="In rupees.">
+          <Field label={tr("documentsService.yourRate")} hint={tr("documentsService.inRupees")}>
             <TextInput value={form.rupees} onChange={set("rupees")} placeholder="450" inputMode="numeric" />
           </Field>
           <div>
@@ -307,13 +308,13 @@ export default function ServiceEditor({ params }: { params: Promise<{ id: string
             </div>
           </div>
         </div>
-        <Field label="How long it usually takes" hint="In minutes. Buyers plan their day around this.">
+        <Field label={tr("documentsService.howLongItUsuallyTakes")} hint={tr("documentsService.inMinutesBuyersPlanTheirDay")}>
           <TextInput value={form.mins} onChange={set("mins")} placeholder="60" inputMode="numeric" />
         </Field>
       </Card>
 
       <Card>
-        <SectionHead title="Where it happens" />
+        <SectionHead title={tr("documentsService.whereItHappens")} />
         <div className="ux-deck space-y-2.5">
           {WHERES.map((w, i) => {
             const on = form.where === w;
@@ -336,8 +337,8 @@ export default function ServiceEditor({ params }: { params: Promise<{ id: string
                   <span className="mt-0.5 block text-xs" style={{ color: "var(--ux-muted)" }}>
                     {w === "At her place" ? "She comes to you"
                       : w === "At your place" ? "You travel to her"
-                      : w === "Either" ? "Whichever suits, agreed when she books"
-                      : "By video call"}
+                      : w === "Either" ? tr("documentsService.whicheverSuitsAgreedWhenSheBooks")
+              : tr("documentsService.byVideoCall")}
                   </span>
                 </span>
                 {on && <Icons.CheckCircle2 className="ux-pop h-[19px] w-[19px] shrink-0" style={{ color: "var(--ux-brand)" }} />}
@@ -350,7 +351,7 @@ export default function ServiceEditor({ params }: { params: Promise<{ id: string
             visit wastes an afternoon a woman running a household cannot spare. */}
         {travels && (
           <div className="ux-slide-up mt-4">
-            <Field label="How far will you travel" hint="In kilometres from where you live. Buyers further away will not see this.">
+            <Field label={tr("documentsService.howFarWillYouTravel")} hint={tr("documentsService.inKilometresFromWhereYouLive")}>
               <TextInput value={form.travelKm} onChange={set("travelKm")} placeholder="5" inputMode="numeric" />
             </Field>
           </div>
@@ -360,7 +361,7 @@ export default function ServiceEditor({ params }: { params: Promise<{ id: string
           <Toggle
             on={form.live}
             onChange={(v) => { setForm((f) => ({ ...f, live: v })); setSaved(false); }}
-            label="Show this to buyers"
+            label={tr("documentsService.showThisToBuyers")}
             whenOn="Women near you can find and book it."
             whenOff="Only you can see it. Turn it back on any time."
           />

@@ -6,6 +6,7 @@ import { Btn, Card, IconTile, SectionHead, SourceNote, Tabs } from "@/components
 import { HomeShell } from "@/components/ux/home/HomeShell";
 import { useGuidance, useHelplines, useRights } from "@/components/ux/entitlements";
 import { WELLBEING_ART } from "@/components/ux/wellbeing/data";
+import { useT } from "@/i18n";
 
 /**
  * Legal Aid & Rights.
@@ -18,6 +19,7 @@ import { WELLBEING_ART } from "@/components/ux/wellbeing/data";
  * every woman in India regardless of income. It is stated three times.
  */
 export default function RightsPage() {
+  const tr = useT();
   const { data: RIGHTS, source } = useRights();
   // Numbers and steps from the server, not from a constant. The list here used
   // to name "District Legal Services, Jaipur" and its phone number — shown to
@@ -35,7 +37,7 @@ export default function RightsPage() {
       rail={
         <div className="space-y-[16px]">
           <Card>
-            <SectionHead title="A lawyer costs you nothing" icon="Gavel" />
+            <SectionHead title={tr("rights.aLawyerCostsYouNothing")} icon="Gavel" />
             <p className="text-xsm leading-relaxed" style={{ color: "var(--ux-ink-2)" }}>
               Every woman in India is entitled to a free lawyer, whatever she earns. Not reduced — free.
               Most women never use it because nobody tells them.
@@ -57,7 +59,7 @@ export default function RightsPage() {
           </Card>
 
           <Card>
-            <SectionHead title="Other numbers" />
+            <SectionHead title={tr("rights.otherNumbers")} />
             <ul className="space-y-3">
               {HELPLINES.filter((h) => h.id !== lead?.id).map((h) => (
                 <li key={h.id}>
@@ -77,22 +79,16 @@ export default function RightsPage() {
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img loading="lazy" decoding="async" src={WELLBEING_ART.legal} alt=""
                  className="ux-float pointer-events-none absolute -bottom-3 -end-4 h-[100px] w-[100px] object-contain" />
-            <h3 className="relative w-[60%] text-sm font-semibold" style={{ color: "var(--ux-ink)" }}>
-              Not legal advice
-            </h3>
-            <p className="relative mt-2 w-[60%] text-xs leading-relaxed" style={{ color: "var(--ux-muted)" }}>
-              This is what the law says. A lawyer tells you what it means for you — and that is free.
-            </p>
+            <h3 className="relative w-[60%] text-sm font-semibold" style={{ color: "var(--ux-ink)" }}>{tr("rights.notLegalAdvice")}</h3>
+            <p className="relative mt-2 w-[60%] text-xs leading-relaxed" style={{ color: "var(--ux-muted)" }}>{tr("rights.thisIsWhatTheLawSays")}</p>
           </div>
         </div>
       }
     >
       <div className="mb-[20px] flex items-end justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold" style={{ color: "var(--ux-ink)" }}>Your rights</h1>
-          <p className="mt-1.5 text-xsm" style={{ color: "var(--ux-muted)" }}>
-            What the law already says is yours — and how to get a free lawyer.
-          </p>
+          <h1 className="text-2xl font-bold" style={{ color: "var(--ux-ink)" }}>{tr("rights.yourRights")}</h1>
+          <p className="mt-1.5 text-xsm" style={{ color: "var(--ux-muted)" }}>{tr("rights.whatTheLawAlreadySaysIs")}</p>
 
       <SourceNote source={source} what="rights" />
         </div>
@@ -134,7 +130,7 @@ export default function RightsPage() {
       {tab === "If something is wrong" && (
         <>
           <Card className="mb-[16px]">
-            <SectionHead title={`${STEPS.length} steps, in order`} sub="You do not need a lawyer to start" />
+            <SectionHead title={`${STEPS.length} steps, in order`} sub={tr("rights.youDoNotNeedALawyer")} />
             <ol className="ux-stagger space-y-3.5">
               {STEPS.map((s, i) => (
                 <li key={s.id} className="flex items-start gap-3">
@@ -152,14 +148,10 @@ export default function RightsPage() {
           <Card>
             <div className="flex items-center justify-between gap-4">
               <div className="min-w-0">
-                <h3 className="text-base font-semibold" style={{ color: "var(--ux-ink)" }}>
-                  Call 15100 — it is free, whatever you earn
-                </h3>
-                <p className="mt-1.5 text-xsm leading-relaxed" style={{ color: "var(--ux-muted)" }}>
-                  They assign you a lawyer. You pay nothing at any stage. You do not need documents to call.
-                </p>
+                <h3 className="text-base font-semibold" style={{ color: "var(--ux-ink)" }}>{tr("rights.callItIsFreeWhateverYou")}</h3>
+                <p className="mt-1.5 text-xsm leading-relaxed" style={{ color: "var(--ux-muted)" }}>{tr("rights.theyAssignYouALawyerYou")}</p>
               </div>
-              <Btn href="tel:15100" variant="primary" icon="Phone">Call 15100</Btn>
+              <Btn href="tel:15100" variant="primary" icon="Phone">{tr("rights.call")}</Btn>
             </div>
           </Card>
         </>

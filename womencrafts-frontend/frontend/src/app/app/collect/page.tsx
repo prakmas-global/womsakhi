@@ -6,6 +6,7 @@ import { HomeShell } from "@/components/ux/home/HomeShell";
 import { Btn, Card, I, Pill, SectionHead, v } from "@/components/ux/kit";
 import { formatRupees } from "@/components/ux/kit";
 import { REQUESTS, SHOP, paidTotal, unpaidTotal, type Request } from "@/components/ux/reach/data";
+import { useT } from "@/i18n";
 
 /**
  * Your link, and getting paid.
@@ -28,6 +29,7 @@ import { REQUESTS, SHOP, paidTotal, unpaidTotal, type Request } from "@/componen
  * household distrusts. Stated on the screen, not buried in terms.
  */
 export default function CollectPage() {
+  const tr = useT();
   const [rows, setRows] = useState<Request[]>(REQUESTS);
   const [copied, setCopied] = useState<string | null>(null);
   const [amount, setAmount] = useState("");
@@ -65,13 +67,9 @@ export default function CollectPage() {
       <div className="flex flex-col gap-5">
 
         <header>
-          <p className="text-2xs font-extrabold uppercase tracking-[0.2em]" style={{ color: v("--ux-brand") }}>
-            Your link
-          </p>
+          <p className="text-2xs font-extrabold uppercase tracking-[0.2em]" style={{ color: v("--ux-brand") }}>{tr("collect.yourLink")}</p>
           <h1 className="mt-2 text-[clamp(1.5rem,3.2vw,2.125rem)] font-extrabold leading-[1.1] tracking-[-0.035em]"
-              style={{ color: v("--ux-ink") }}>
-            Sell to people who are not on WomSakhi
-          </h1>
+              style={{ color: v("--ux-ink") }}>{tr("collect.sellToPeopleWhoAreNot")}</h1>
           <p className="mt-1.5 max-w-[58ch] text-sm leading-relaxed" style={{ color: v("--ux-muted") }}>
             Your customers are already on WhatsApp. They are not going to install an app to buy a
             blouse. Send them this link instead — it opens on any phone, needs no account, and the
@@ -83,9 +81,7 @@ export default function CollectPage() {
         <Card pad={0} style={{ overflow: "hidden" }}>
           <div className="px-5 py-6 sm:px-7"
                style={{ background: `linear-gradient(140deg, ${v("--ux-brand-tint")}, ${v("--ux-surface")})` }}>
-            <p className="text-2xs font-extrabold uppercase tracking-[0.14em]" style={{ color: v("--ux-brand") }}>
-              Your shop, on the open web
-            </p>
+            <p className="text-2xs font-extrabold uppercase tracking-[0.14em]" style={{ color: v("--ux-brand") }}>{tr("collect.yourShopOnTheOpenWeb")}</p>
             <div className="mt-3 flex flex-wrap items-center gap-3">
               <p className="min-w-0 flex-1 break-all rounded-[12px] px-3.5 py-3 text-base font-bold"
                  style={{ background: v("--ux-surface"), color: v("--ux-ink"), border: `1px solid ${v("--ux-line")}` }}>
@@ -96,11 +92,9 @@ export default function CollectPage() {
               </Btn>
             </div>
             <div className="mt-3 flex flex-wrap gap-2">
-              <Btn variant="outline" size="sm" icon="MessageCircle" onClick={sendOnWhatsApp}>Send on WhatsApp</Btn>
-              <Btn variant="ghost" size="sm" icon="QrCode" onClick={() => window.print()}>Print a QR for your door</Btn>
-              <Btn variant="ghost" size="sm" icon="ExternalLink" href={`/s/${SHOP.handle}`}>
-                See what they see
-              </Btn>
+              <Btn variant="outline" size="sm" icon="MessageCircle" onClick={sendOnWhatsApp}>{tr("collect.sendOnWhatsapp")}</Btn>
+              <Btn variant="ghost" size="sm" icon="QrCode" onClick={() => window.print()}>{tr("collect.printAQrForYourDoor")}</Btn>
+              <Btn variant="ghost" size="sm" icon="ExternalLink" href={`/s/${SHOP.handle}`}>{tr("collect.seeWhatTheySee")}</Btn>
             </div>
           </div>
         </Card>
@@ -130,36 +124,32 @@ export default function CollectPage() {
 
         {/* Ask for money — the direction that did not exist */}
         <div>
-          <SectionHead title="Ask someone for money"
-                       sub="Makes a link you can send. They do not need an account" icon="HandCoins" />
+          <SectionHead title={tr("collect.askSomeoneForMoney")}
+                       sub={tr("collect.makesALinkYouCanSend")} icon="HandCoins" />
           <Card pad={16}>
             <div className="flex flex-wrap items-end gap-3">
               <label className="min-w-[110px] flex-1">
-                <span className="mb-1.5 block text-xs font-semibold" style={{ color: v("--ux-muted") }}>
-                  How much
-                </span>
+                <span className="mb-1.5 block text-xs font-semibold" style={{ color: v("--ux-muted") }}>{tr("collect.howMuch")}</span>
                 <input value={amount} onChange={(e) => setAmount(e.target.value)}
                        inputMode="numeric" placeholder="400"
                        className="ux-sq w-full rounded-[12px] border px-3.5 py-3 text-base font-bold outline-none"
                        style={{ borderColor: v("--ux-line-strong"), background: v("--ux-surface"), color: v("--ux-ink") }} />
               </label>
               <label className="min-w-[160px] flex-[2]">
-                <span className="mb-1.5 block text-xs font-semibold" style={{ color: v("--ux-muted") }}>
-                  What for
-                </span>
+                <span className="mb-1.5 block text-xs font-semibold" style={{ color: v("--ux-muted") }}>{tr("collect.whatFor")}</span>
                 <input value={what} onChange={(e) => setWhat(e.target.value)}
-                       placeholder="Blouse stitching"
+                       placeholder={tr("collect.blouseStitching")}
                        className="ux-sq w-full rounded-[12px] border px-3.5 py-3 text-sm outline-none"
                        style={{ borderColor: v("--ux-line-strong"), background: v("--ux-surface"), color: v("--ux-ink") }} />
               </label>
-              <Btn icon="Plus" onClick={ask} disabled={!amount.trim()}>Make the link</Btn>
+              <Btn icon="Plus" onClick={ask} disabled={!amount.trim()}>{tr("collect.makeTheLink")}</Btn>
             </div>
           </Card>
         </div>
 
         {/* What she has asked for */}
         <div>
-          <SectionHead title="What you have asked for" icon="Receipt" chip={String(rows.length)} />
+          <SectionHead title={tr("collect.whatYouHaveAskedFor")} icon="Receipt" chip={String(rows.length)} />
           <Card pad={0} style={{ overflow: "hidden" }}>
             {rows.map((r, i) => (
               <div key={r.id} className="flex flex-wrap items-center gap-3.5 px-5 py-4"
@@ -178,9 +168,9 @@ export default function CollectPage() {
                   {formatRupees(r.minor)}
                 </p>
                 {r.state === "paid"
-                  ? <Pill tone="green" size="sm">In your bank</Pill>
+                  ? <Pill tone="green" size="sm">{tr("collect.inYourBank")}</Pill>
                   : r.state === "seen"
-                    ? <Pill tone="orange" size="sm">She has seen it</Pill>
+                    ? <Pill tone="orange" size="sm">{tr("collect.sheHasSeenIt")}</Pill>
                     : <Btn size="sm" variant="outline"
                            icon={copied === r.id ? "Check" : "Copy"}
                            onClick={() => copy(`https://womsakhi.com/pay/${r.ref}`, r.id)}>

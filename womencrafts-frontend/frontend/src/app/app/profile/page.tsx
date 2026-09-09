@@ -14,6 +14,7 @@ import { useCertificates, useCircles, useProgress } from "@/components/ux/live";
 import { useGoals } from "@/components/ux/business";
 import { useMoney } from "@/components/ux/money/live";
 import { formatMoney } from "@/components/ux/kit/money";
+import { useT } from "@/i18n";
 
 /**
  * The five things this profile is actually made of.
@@ -38,6 +39,7 @@ function stepsFor(p: MeProfile | null) {
 
 /** Her profile — and the honest list of what is still missing from it. */
 export default function Profile() {
+  const tr = useT();
   const ME = useMe();
   const { user } = useAuth();
   const [tab, setTab] = useState("Overview");
@@ -77,7 +79,7 @@ export default function Profile() {
       rail={
         <div className="space-y-[16px]">
           <Card>
-            <SectionHead title="Profile strength" />
+            <SectionHead title={tr("profile.profileStrength")} />
             <p className="text-2xlm font-bold leading-none" style={{ color: "var(--ux-ink)" }}>{pct}%</p>
             <div className="mt-3"><Progress pct={pct} /></div>
             <p className="mt-2.5 text-xs leading-relaxed" style={{ color: "var(--ux-muted)" }}>
@@ -97,7 +99,7 @@ export default function Profile() {
             */}
 
           <Card>
-            <SectionHead title="Why it matters" />
+            <SectionHead title={tr("profile.whyItMatters")} />
             <ul className="space-y-2.5">
               {[["Appear in more searches", "Search"],
                 ["Get matched to better work", "Target"],
@@ -122,9 +124,9 @@ export default function Profile() {
             {/* Was a <button> with no handler at all. It goes where the photo
                 is actually changed. */}
             <Btn href="/app/settings/account" variant="soft" size="sm" icon="Camera"
-                 ariaLabel="Change photo"
+                 ariaLabel={tr("profile.changePhoto2")}
                  className="absolute -bottom-1 -end-1 !rounded-full !px-2 !py-2">
-              <span className="sr-only">Change photo</span>
+              <span className="sr-only">{tr("profile.changePhoto")}</span>
             </Btn>
           </div>
           <div className="min-w-0 flex-1">
@@ -141,19 +143,19 @@ export default function Profile() {
               {/* Three interests — "Digital Marketing", "Financial Freedom",
                   "Career Growth" — were shown as hers on every profile. The
                   server keeps one segment, and only that is shown. */}
-              {verified && <Pill tone="green">Verified member</Pill>}
+              {verified && <Pill tone="green">{tr("profile.verifiedMember")}</Pill>}
               {profile?.segment && <Pill tone="brand">{profile.segment}</Pill>}
             </div>
           </div>
           <div className="flex shrink-0 gap-2">
-            <Btn href="/app/profile/preview" variant="outline" size="sm" icon="Eye">See it as others do</Btn>
-            <Btn href="/app/settings/account" variant="primary" size="sm" icon="Pencil">Edit profile</Btn>
+            <Btn href="/app/profile/preview" variant="outline" size="sm" icon="Eye">{tr("profile.seeItAsOthersDo")}</Btn>
+            <Btn href="/app/settings/account" variant="primary" size="sm" icon="Pencil">{tr("profile.editProfile")}</Btn>
           </div>
         </div>
 
         {/* Every one of these four was a constant: 6, 4, 15 and ₹24,350. */}
         <div className="mt-5 grid grid-cols-4 gap-[16px] border-t pt-4" style={{ borderColor: "var(--ux-line)" }}>
-          <Stat value={String(progress?.programs_completed ?? 0)} label="Courses finished"
+          <Stat value={String(progress?.programs_completed ?? 0)} label={tr("profile.coursesFinished")}
                 icon="BookOpenCheck" tint="--ux-tint-violet" ink="--ux-violet" />
           {/* The one metal surface in the app. Cold and hard is the right
               feeling for something awarded; everywhere else it fights the
@@ -169,8 +171,8 @@ export default function Profile() {
               <p className="mt-1 truncate text-xs" style={{ color: "var(--ux-muted)" }}>Certificates</p>
             </div>
           </div>
-          <Stat value={String(circles.mine.length)} label="Circles joined" icon="UsersRound" tint="--ux-tint-pink" ink="--ux-pink" />
-          <Stat value={formatMoney(earnedMinor)} label="Earned this month" icon="BadgeIndianRupee" tint="--ux-tint-orange" ink="--ux-orange" />
+          <Stat value={String(circles.mine.length)} label={tr("profile.circlesJoined")} icon="UsersRound" tint="--ux-tint-pink" ink="--ux-pink" />
+          <Stat value={formatMoney(earnedMinor)} label={tr("profile.earnedThisMonth")} icon="BadgeIndianRupee" tint="--ux-tint-orange" ink="--ux-orange" />
         </div>
       </Card>
 
@@ -179,7 +181,7 @@ export default function Profile() {
       {tab === "Overview" && (
         <div className="grid grid-cols-[minmax(0,1fr)_320px] gap-[16px]">
           <Card>
-            <SectionHead title="Finish your profile"
+            <SectionHead title={tr("profile.finishYourProfile")}
                          sub={left.length ? `${left.length} still to fill in` : "Nothing left to do"} />
             <ul className="space-y-2.5">
               {steps.map((s, i) => (
@@ -208,7 +210,7 @@ export default function Profile() {
           </Card>
 
           <Card>
-            <SectionHead title="About you" action="Edit"
+            <SectionHead title={tr("profile.aboutYou")} action="Edit"
                          onAction={() => { window.location.href = "/app/settings/account"; }} />
             {/* Location, languages, trade and joining date were "Jaipur,
                 Rajasthan", "Hindi, English", "Digital marketing" and "March
@@ -232,9 +234,7 @@ export default function Profile() {
             </dl>
 
             <div className="my-4 h-px" style={{ background: "var(--ux-line)" }} />
-            <h3 className="mb-2.5 text-xsm font-semibold" style={{ color: "var(--ux-ink)" }}>
-              What you are working towards
-            </h3>
+            <h3 className="mb-2.5 text-xsm font-semibold" style={{ color: "var(--ux-ink)" }}>{tr("profile.whatYouAreWorkingTowards")}</h3>
             {/* Three goals at 72%, 65% and 50% were written into the screen.
                 `/me/goals` holds hers, and says so when there are none. */}
             {GOALS.length ? (
@@ -268,7 +268,7 @@ export default function Profile() {
                   mean something.
                 </p>
                 <div className="mt-3">
-                  <Btn href="/app/wallet" variant="soft" size="sm" iconEnd="ArrowRight">Set a goal</Btn>
+                  <Btn href="/app/wallet" variant="soft" size="sm" iconEnd="ArrowRight">{tr("profile.setAGoal")}</Btn>
                 </div>
               </>
             )}

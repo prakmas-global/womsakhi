@@ -7,6 +7,7 @@ import { HomeShell } from "@/components/ux/home/HomeShell";
 import { Back, Btn, Card, EmptyState, I, IconTile, Pill, SectionHead, Stat, v } from "@/components/ux/kit";
 import { formatRupees } from "@/components/ux/kit";
 import { BULK, type BulkAsk } from "@/components/ux/shopplus/data";
+import { useT } from "@/i18n";
 
 /**
  * Big orders — and the circle that makes them possible.
@@ -37,6 +38,7 @@ const STATE: Record<BulkAsk["state"], { label: string; tint: string; ink: string
 };
 
 export default function WholesalePage() {
+  const tr = useT();
   const router = useRouter();
   const [rows, setRows] = useState<BulkAsk[]>(BULK);
   const [note, setNote] = useState<string | null>(null);
@@ -61,6 +63,7 @@ export default function WholesalePage() {
   }, []);
 
   const card = (b: BulkAsk) => {
+  const tr = useT();
     const s = STATE[b.state];
     return (
       <Card key={b.id} pad={16}>
@@ -71,7 +74,7 @@ export default function WholesalePage() {
               <p className="text-base font-bold" style={{ color: v("--ux-ink") }}>{b.what}</p>
               <span className="rounded-full px-2 py-[2px] text-2xs font-bold uppercase tracking-[0.06em]"
                     style={{ background: v(s.tint), color: v(s.ink) }}>{s.label}</span>
-              {b.needsCircle && <Pill tone="pink" size="sm">Needs your circle</Pill>}
+              {b.needsCircle && <Pill tone="pink" size="sm">{tr("shopWholesale.needsYourCircle")}</Pill>}
             </div>
             <p className="mt-0.5 text-xsm" style={{ color: v("--ux-muted") }}>
               {b.from} · {b.qty} pieces · wanted {b.byWhen}
@@ -90,9 +93,7 @@ export default function WholesalePage() {
         {/* Terms at the same weight as the money. */}
         <div className="mt-3.5 grid gap-2 sm:grid-cols-2">
           <div className="rounded-[12px] px-3 py-2.5" style={{ background: v("--ux-tint-amber") }}>
-            <p className="text-2xs font-bold uppercase tracking-[0.08em]" style={{ color: v("--ux-amber-ink") }}>
-              When they pay
-            </p>
+            <p className="text-2xs font-bold uppercase tracking-[0.08em]" style={{ color: v("--ux-amber-ink") }}>{tr("shopWholesale.whenTheyPay")}</p>
             <p className="mt-1 text-xsm leading-relaxed" style={{ color: v("--ux-ink-2") }}>
               Sixty days after delivery. Ask for a third up front — you should not be lending
               them the cloth money.
@@ -100,9 +101,7 @@ export default function WholesalePage() {
           </div>
           {b.needsCircle && (
             <div className="rounded-[12px] px-3 py-2.5" style={{ background: v("--ux-tint-pink") }}>
-              <p className="text-2xs font-bold uppercase tracking-[0.08em]" style={{ color: v("--ux-pink-ink") }}>
-                Too big for one machine
-              </p>
+              <p className="text-2xs font-bold uppercase tracking-[0.08em]" style={{ color: v("--ux-pink-ink") }}>{tr("shopWholesale.tooBigForOneMachine")}</p>
               <p className="mt-1 text-xsm leading-relaxed" style={{ color: v("--ux-ink-2") }}>
                 Quote it with your circle. Ten women, one price, one delivery — the buyer sees
                 one supplier.
@@ -114,9 +113,10 @@ export default function WholesalePage() {
         {(b.state === "new" || b.state === "quoted") && (
           <div className="mt-3.5 flex gap-2">
             {b.state === "new" && <Btn size="sm" full onClick={() => quote(b.id)}>
-              {b.needsCircle ? "Quote it with my circle" : "Send my price"}
+              {b.needsCircle ? tr("shopWholesale.quoteItWithMyCircle")
+              : tr("shopWholesale.sendMyPrice")}
             </Btn>}
-            <Btn size="sm" variant="ghost" full onClick={() => decline(b.id)}>Not this one</Btn>
+            <Btn size="sm" variant="ghost" full onClick={() => decline(b.id)}>{tr("shopWholesale.notThisOne")}</Btn>
           </div>
         )}
       </Card>
@@ -126,16 +126,12 @@ export default function WholesalePage() {
   return (
     <HomeShell active="/app/shop">
       <div className="flex flex-col gap-5">
-        <Back to="/app/shop" label="Back to your shops" />
+        <Back to="/app/shop" label={tr("shopWholesale.backToYourShops")} />
 
         <header>
-          <p className="text-2xs font-extrabold uppercase tracking-[0.2em]" style={{ color: v("--ux-brand") }}>
-            Big orders
-          </p>
+          <p className="text-2xs font-extrabold uppercase tracking-[0.2em]" style={{ color: v("--ux-brand") }}>{tr("shopWholesale.bigOrders")}</p>
           <h1 className="mt-2 text-[clamp(1.5rem,3.2vw,2.125rem)] font-extrabold leading-[1.1] tracking-[-0.035em]"
-              style={{ color: v("--ux-ink") }}>
-            Twenty pieces to one buyer
-          </h1>
+              style={{ color: v("--ux-ink") }}>{tr("shopWholesale.twentyPiecesToOneBuyer")}</h1>
           <p className="mt-1.5 max-w-[56ch] text-sm leading-relaxed" style={{ color: v("--ux-muted") }}>
             One conversation, one delivery, one payment. Too big for one machine is not a reason
             to say no — it is a reason to quote it with your circle.
@@ -144,9 +140,9 @@ export default function WholesalePage() {
 
         <Card>
           <div className="grid gap-4 sm:grid-cols-2">
-            <Stat value={formatRupees(openValue)} label="On the table now"
+            <Stat value={formatRupees(openValue)} label={tr("shopWholesale.onTheTableNow")}
                   icon="Boxes" tint="--ux-tint-amber" ink="--ux-amber-ink" />
-            <Stat value={formatRupees(wonValue)} label="Already won"
+            <Stat value={formatRupees(wonValue)} label={tr("shopWholesale.alreadyWon")}
                   icon="CheckCircle2" tint="--ux-tint-green" ink="--ux-green-ink" />
           </div>
         </Card>
@@ -160,9 +156,9 @@ export default function WholesalePage() {
         )}
 
         <div>
-          <SectionHead title="Waiting on you" icon="Boxes" chip={String(open.length)} />
+          <SectionHead title={tr("shopWholesale.waitingOnYou")} icon="Boxes" chip={String(open.length)} />
           {open.length === 0 ? (
-            <Card><EmptyState icon="Boxes" title="No big orders right now"
+            <Card><EmptyState icon="Boxes" title={tr("shopWholesale.noBigOrdersRightNow")}
                               body="Shops and hostels order in seasons. We will tell you when one asks." /></Card>
           ) : (
             <div className="flex flex-col gap-3">{open.map(card)}</div>

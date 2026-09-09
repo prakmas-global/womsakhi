@@ -7,6 +7,7 @@ import { HomeShell } from "@/components/ux/home/HomeShell";
 import { Back, Btn, Card, EmptyState, I, IconTile, Pill, SectionHead, Stat, v } from "@/components/ux/kit";
 import { formatRupees } from "@/components/ux/kit";
 import { ASSIST_QUEUE, HELPED, assistEarned, noPhone, type AssistTask, type Helped } from "@/components/ux/together/data";
+import { useT } from "@/i18n";
 
 /**
  * You run this for them — the growth engine, made a real role.
@@ -30,6 +31,7 @@ import { ASSIST_QUEUE, HELPED, assistEarned, noPhone, type AssistTask, type Help
  * that pays a million ASHA workers below minimum wage.
  */
 export default function AssistPage() {
+  const tr = useT();
   const router = useRouter();
   const [queue, setQueue] = useState<AssistTask[]>(ASSIST_QUEUE);
   const [women] = useState<Helped[]>(HELPED);
@@ -48,12 +50,10 @@ export default function AssistPage() {
   return (
     <HomeShell active="/app/together">
       <div className="flex flex-col gap-5">
-        <Back to="/app/together" label="Back to Together" />
+        <Back to="/app/together" label={tr("togetherAssist.backToTogether")} />
 
         <header>
-          <p className="text-2xs font-extrabold uppercase tracking-[0.2em]" style={{ color: v("--ux-brand") }}>
-            You run this for them
-          </p>
+          <p className="text-2xs font-extrabold uppercase tracking-[0.2em]" style={{ color: v("--ux-brand") }}>{tr("togetherAssist.youRunThisForThem")}</p>
           <h1 className="mt-2 text-[clamp(1.5rem,3.2vw,2.125rem)] font-extrabold leading-[1.1] tracking-[-0.035em]"
               style={{ color: v("--ux-ink") }}>
             {women.length} women, through you
@@ -66,11 +66,11 @@ export default function AssistPage() {
 
         <Card>
           <div className="grid gap-4 sm:grid-cols-3">
-            <Stat value={formatRupees(earned)} label="You have earned doing this"
+            <Stat value={formatRupees(earned)} label={tr("togetherAssist.youHaveEarnedDoingThis")}
                   icon="Wallet" tint="--ux-tint-green" ink="--ux-green-ink" />
-            <Stat value={formatRupees(pending)} label="Waiting to be done"
+            <Stat value={formatRupees(pending)} label={tr("togetherAssist.waitingToBeDone")}
                   icon="Clock" tint="--ux-tint-amber" ink="--ux-amber-ink" />
-            <Stat value={String(women.reduce((n, w) => n + w.doneCount, 0))} label="Things done for them"
+            <Stat value={String(women.reduce((n, w) => n + w.doneCount, 0))} label={tr("togetherAssist.thingsDoneForThem")}
                   icon="ListChecks" tint="--ux-tint-blue" ink="--ux-blue-ink" />
           </div>
         </Card>
@@ -84,9 +84,9 @@ export default function AssistPage() {
         )}
 
         <div>
-          <SectionHead title="Waiting on you" icon="ListChecks" chip={String(queue.length)} />
+          <SectionHead title={tr("togetherAssist.waitingOnYou")} icon="ListChecks" chip={String(queue.length)} />
           {queue.length === 0 ? (
-            <Card><EmptyState icon="CheckCircle2" title="Nothing waiting"
+            <Card><EmptyState icon="CheckCircle2" title={tr("togetherAssist.nothingWaiting")}
                               body="Everything is done. We will tell you when one of them needs something." /></Card>
           ) : (
             <div className="flex flex-col gap-2.5">
@@ -103,7 +103,7 @@ export default function AssistPage() {
                     <p className="shrink-0 text-xsm font-bold tabular-nums" style={{ color: v("--ux-green-ink") }}>
                       +{formatRupees(t.paysMinor)}
                     </p>
-                    <Btn size="sm" onClick={() => doTask(t.id)}>Do it</Btn>
+                    <Btn size="sm" onClick={() => doTask(t.id)}>{tr("togetherAssist.doIt")}</Btn>
                   </div>
                 </Card>
               ))}
@@ -112,7 +112,7 @@ export default function AssistPage() {
         </div>
 
         <div>
-          <SectionHead title="The women you help" sub="Each one agreed, and can stop any time"
+          <SectionHead title={tr("togetherAssist.theWomenYouHelp")} sub={tr("togetherAssist.eachOneAgreedAndCanStop")}
                        icon="Users" chip={String(women.length)} />
           <div className="grid gap-3 sm:grid-cols-2">
             {women.map((w) => (
@@ -125,7 +125,7 @@ export default function AssistPage() {
                   <div className="min-w-0 flex-1">
                     <div className="flex flex-wrap items-center gap-2">
                       <p className="text-sm font-bold" style={{ color: v("--ux-ink") }}>{w.name}</p>
-                      {!w.ownsPhone && <Pill tone="orange" size="sm">Shares a phone</Pill>}
+                      {!w.ownsPhone && <Pill tone="orange" size="sm">{tr("togetherAssist.sharesAPhone")}</Pill>}
                     </div>
                     <p className="mt-0.5 text-xs" style={{ color: v("--ux-muted") }}>
                       Since {w.since} · {w.because.toLowerCase()}
@@ -144,13 +144,9 @@ export default function AssistPage() {
 
                 <div className="mt-3 flex gap-2">
                   <Btn size="sm" variant="outline" full
-                       onClick={() => setNote(`${w.name} can see every single thing done in her name, on one screen.`)}>
-                    What she can see
-                  </Btn>
+                       onClick={() => setNote(`${w.name} can see every single thing done in her name, on one screen.`)}>{tr("togetherAssist.whatSheCanSee")}</Btn>
                   <Btn size="sm" variant="ghost" full
-                       onClick={() => setNote(`${w.name} would be asked first, and it stops the moment she says so.`)}>
-                    Stop helping
-                  </Btn>
+                       onClick={() => setNote(`${w.name} would be asked first, and it stops the moment she says so.`)}>{tr("togetherAssist.stopHelping")}</Btn>
                 </div>
               </Card>
             ))}

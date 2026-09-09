@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { HomeShell } from "@/components/ux/home/HomeShell";
 import { Back, Btn, Card, I, IconTile, SectionHead, Stat, v } from "@/components/ux/kit";
 import { CHANGE_TOPICS } from "@/components/ux/wellness/data";
+import { useT } from "@/i18n";
 
 /**
  * The change — the segment nobody in India serves.
@@ -28,6 +29,7 @@ import { CHANGE_TOPICS } from "@/components/ux/wellness/data";
  * online is calibrated to a woman six years older than her.
  */
 export default function ChangePage() {
+  const tr = useT();
   const router = useRouter();
   const [open, setOpen] = useState<string | null>("cg1");
   const [note, setNote] = useState<string | null>(null);
@@ -35,16 +37,14 @@ export default function ChangePage() {
   return (
     <HomeShell active="/app/health">
       <div className="flex flex-col gap-5">
-        <Back to="/app/health" label="Back to health" />
+        <Back to="/app/health" label={tr("healthChange.backToHealth")} />
 
         <header>
           <p className="text-2xs font-extrabold uppercase tracking-[0.2em]" style={{ color: v("--ux-brand") }}>
             Menopause
           </p>
           <h1 className="mt-2 text-[clamp(1.5rem,3.2vw,2.125rem)] font-extrabold leading-[1.1] tracking-[-0.035em]"
-              style={{ color: v("--ux-ink") }}>
-            Nobody told you it starts this early
-          </h1>
+              style={{ color: v("--ux-ink") }}>{tr("healthChange.nobodyToldYouItStartsThis")}</h1>
           <p className="mt-1.5 max-w-[58ch] text-sm leading-relaxed" style={{ color: v("--ux-muted") }}>
             In India it usually begins around 46 — about six years earlier than in the West.
             So most of what you will read online is written for a woman six years older than you.
@@ -53,11 +53,11 @@ export default function ChangePage() {
 
         <Card>
           <div className="grid gap-4 sm:grid-cols-3">
-            <Stat value="46" label="The usual age here" icon="CalendarDays"
+            <Stat value="46" label={tr("healthChange.theUsualAgeHere")} icon="CalendarDays"
                   tint="--ux-tint-violet" ink="--ux-violet" />
-            <Stat value="3 in 4" label="Have real symptoms" icon="Users"
+            <Stat value="3 in 4" label={tr("healthChange.haveRealSymptoms")} icon="Users"
                   tint="--ux-tint-pink" ink="--ux-pink-ink" />
-            <Stat value="Fewer than 1%" label="Take anything for it" icon="Pill"
+            <Stat value="Fewer than 1%" label={tr("healthChange.takeAnythingForIt")} icon="Pill"
                   tint="--ux-tint-amber" ink="--ux-amber-ink" />
           </div>
           <div className="mt-4 flex items-start gap-2.5 border-t pt-3.5" style={{ borderColor: v("--ux-line") }}>
@@ -79,8 +79,8 @@ export default function ChangePage() {
         )}
 
         <div>
-          <SectionHead title="The questions women actually ask"
-                       sub="Answers, not a diary" icon="MessageCircle" />
+          <SectionHead title={tr("healthChange.theQuestionsWomenActuallyAsk")}
+                       sub={tr("healthChange.answersNotADiary")} icon="MessageCircle" />
           <div className="flex flex-col gap-2.5">
             {CHANGE_TOPICS.map((t) => {
               const isOpen = open === t.id;
@@ -109,43 +109,35 @@ export default function ChangePage() {
           <div className="flex flex-wrap items-start gap-4">
             <IconTile icon="Users" tint="--ux-surface" ink="--ux-violet" size={46} radius={13} />
             <div className="min-w-0 flex-1">
-              <p className="text-base font-bold" style={{ color: v("--ux-ink") }}>
-                Other women, going through it now
-              </p>
+              <p className="text-base font-bold" style={{ color: v("--ux-ink") }}>{tr("healthChange.otherWomenGoingThroughItNow")}</p>
               <p className="mt-1.5 max-w-[52ch] text-xsm leading-relaxed" style={{ color: v("--ux-ink-2") }}>
                 A quiet room in your circle. Nobody outside it sees who is in there, and nothing you
                 say is kept anywhere after you leave.
               </p>
             </div>
-            <Btn onClick={() => setNote("You are in. Nine women, all around your age, and nothing said there leaves.")}>
-              Join the room
-            </Btn>
+            <Btn onClick={() => setNote("You are in. Nine women, all around your age, and nothing said there leaves.")}>{tr("healthChange.joinTheRoom")}</Btn>
           </div>
         </Card>
 
         <div className="grid gap-3 sm:grid-cols-2">
           <Card pad={16}>
             <IconTile icon="Stethoscope" tint="--ux-tint-green" ink="--ux-green-ink" size={40} />
-            <p className="mt-3 text-sm font-bold" style={{ color: v("--ux-ink") }}>Talking to a doctor</p>
+            <p className="mt-3 text-sm font-bold" style={{ color: v("--ux-ink") }}>{tr("healthChange.talkingToADoctor")}</p>
             <p className="mt-1.5 text-xsm leading-relaxed" style={{ color: v("--ux-muted") }}>
               Most women are told "it is your age" and sent home. Go with the three things that
               bother you most, written down — it changes the conversation completely.
             </p>
             <Btn size="sm" variant="outline" full className="mt-3"
-                 onClick={() => setNote("A short list you can hand over. Bring it with you.")}>
-              Write my three things
-            </Btn>
+                 onClick={() => setNote("A short list you can hand over. Bring it with you.")}>{tr("healthChange.writeMyThreeThings")}</Btn>
           </Card>
           <Card pad={16}>
             <IconTile icon="Briefcase" tint="--ux-tint-blue" ink="--ux-blue-ink" size={40} />
-            <p className="mt-3 text-sm font-bold" style={{ color: v("--ux-ink") }}>Working through it</p>
+            <p className="mt-3 text-sm font-bold" style={{ color: v("--ux-ink") }}>{tr("healthChange.workingThroughIt")}</p>
             <p className="mt-1.5 text-xsm leading-relaxed" style={{ color: v("--ux-muted") }}>
               Broken sleep and aching joints cost the most days. Cover for a bad day is already
               built — use it without explaining yourself to anyone.
             </p>
-            <Btn size="sm" variant="outline" full className="mt-3" href="/app/health/cover">
-              Arrange cover
-            </Btn>
+            <Btn size="sm" variant="outline" full className="mt-3" href="/app/health/cover">{tr("healthChange.arrangeCover")}</Btn>
           </Card>
         </div>
       </div>

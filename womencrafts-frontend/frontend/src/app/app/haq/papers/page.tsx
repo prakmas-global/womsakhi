@@ -7,6 +7,7 @@ import { HomeShell } from "@/components/ux/home/HomeShell";
 import { Back, Btn, Card, I, Progress, SectionHead, Stat, v } from "@/components/ux/kit";
 import { PAPERS, type Paper } from "@/components/ux/haq/data";
 import { PaperRow } from "@/components/ux/haq/parts";
+import { useT } from "@/i18n";
 
 /**
  * Her papers — the actual binding constraint.
@@ -22,6 +23,7 @@ import { PaperRow } from "@/components/ux/haq/parts";
  * can spend is the one that fixes the document three benefits are waiting on.
  */
 export default function PapersPage() {
+  const tr = useT();
   const router = useRouter();
   const [rows, setRows] = useState<Paper[]>(PAPERS);
   const [note, setNote] = useState<string | null>(null);
@@ -37,23 +39,20 @@ export default function PapersPage() {
   const fix = useCallback((id: string) => {
     const p = rows.find((x) => x.id === id);
     setRows((r) => r.map((x) => (x.id === id ? { ...x, state: "held", note: "Just added" } : x)));
-    setNote(`${p?.name} added. ${p?.unlocks} ${p?.unlocks === 1 ? "benefit is" : "benefits are"} no longer blocked.`);
+    setNote(`${p?.name} added. ${p?.unlocks} ${p?.unlocks === 1 ? tr("haqPapers.benefitIs")
+              : tr("haqPapers.benefitsAre")} no longer blocked.`);
   }, [rows]);
 
   return (
     <HomeShell active="/app/haq">
       <div className="flex flex-col gap-5">
 
-        <Back to="/app/haq" label="Back to Haq" />
+        <Back to="/app/haq" label={tr("haqPapers.backToHaq")} />
 
         <header>
-          <p className="text-2xs font-extrabold uppercase tracking-[0.2em]" style={{ color: v("--ux-brand") }}>
-            Your papers
-          </p>
+          <p className="text-2xs font-extrabold uppercase tracking-[0.2em]" style={{ color: v("--ux-brand") }}>{tr("haqPapers.yourPapers")}</p>
           <h1 className="mt-2 text-[clamp(1.5rem,3.2vw,2.125rem)] font-extrabold leading-[1.1] tracking-[-0.035em]"
-              style={{ color: v("--ux-ink") }}>
-            Sorted once, used everywhere
-          </h1>
+              style={{ color: v("--ux-ink") }}>{tr("haqPapers.sortedOnceUsedEverywhere")}</h1>
           <p className="mt-1.5 max-w-[54ch] text-sm leading-relaxed" style={{ color: v("--ux-muted") }}>
             The same eight papers unlock nearly everything. Fix one and it counts for every
             benefit that was waiting on it.
@@ -62,7 +61,7 @@ export default function PapersPage() {
 
         <Card>
           <div className="flex flex-wrap items-center justify-between gap-3">
-            <Stat value={`${held} of ${rows.length}`} label="Papers in order"
+            <Stat value={`${held} of ${rows.length}`} label={tr("haqPapers.papersInOrder")}
                   icon="FolderCheck" tint="--ux-tint-green" ink="--ux-green-ink" />
             <p className="text-xsm font-bold tabular-nums" style={{ color: v("--ux-brand") }}>{pct}%</p>
           </div>
@@ -80,8 +79,8 @@ export default function PapersPage() {
         {blocking.length > 0 && (
           <div>
             <SectionHead
-              title="These are holding things up"
-              sub="The one at the top unlocks the most"
+              title={tr("haqPapers.theseAreHoldingThingsUp")}
+              sub={tr("haqPapers.theOneAtTheTopUnlocks")}
               icon="FileWarning"
               chip={String(blocking.length)}
             />
@@ -92,7 +91,7 @@ export default function PapersPage() {
         )}
 
         <div>
-          <SectionHead title="Safe with you" sub="Nobody else can see these" icon="Lock" chip={String(done.length)} />
+          <SectionHead title={tr("haqPapers.safeWithYou")} sub={tr("haqPapers.nobodyElseCanSeeThese")} icon="Lock" chip={String(done.length)} />
           <div className="flex flex-col gap-2.5">
             {done.map((p) => <PaperRow key={p.id} p={p} onFix={fix} />)}
           </div>

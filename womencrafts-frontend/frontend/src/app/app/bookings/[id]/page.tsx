@@ -13,6 +13,7 @@ import { HomeShell } from "@/components/ux/home/HomeShell";
 import { useBookings } from "@/components/ux/live";
 import { useAction } from "@/lib/use-action";
 import { apiCancelBooking, apiLeaveFeedback } from "@/lib/member-api";
+import { useT } from "@/i18n";
 
 /**
  * One booking.
@@ -23,6 +24,7 @@ import { apiCancelBooking, apiLeaveFeedback } from "@/lib/member-api";
  * closing.
  */
 export default function BookingDetail({ params }: { params: Promise<{ id: string }> }) {
+  const tr = useT();
   const { id } = use(params);
   const { data: BOOKINGS, source, refetch } = useBookings();
 
@@ -58,9 +60,9 @@ export default function BookingDetail({ params }: { params: Promise<{ id: string
         <Card>
           <EmptyState
             icon="CalendarX"
-            title="That booking is not here"
+            title={tr("bookings.thatBookingIsNotHere")}
             body={COPY.goneOrOld}
-            action={<Btn href="/app/bookings" variant="primary" iconEnd="ArrowRight">All bookings</Btn>}
+            action={<Btn href="/app/bookings" variant="primary" iconEnd="ArrowRight">{tr("bookings.allBookings")}</Btn>}
           />
         </Card>
       </HomeShell>
@@ -77,7 +79,7 @@ export default function BookingDetail({ params }: { params: Promise<{ id: string
       rail={
         <div className="space-y-[16px]">
           <Card>
-            <SectionHead title="Show this on the day" />
+            <SectionHead title={tr("bookings.showThisOnTheDay")} />
             {/* Large and copyable — this is what she is asked for at a door. */}
             <button
               // It said "Copied" and copied nothing — `setCopied(true)` on a
@@ -102,13 +104,13 @@ export default function BookingDetail({ params }: { params: Promise<{ id: string
             </button>
             <p className="mt-3 text-xs leading-relaxed" style={{ color: "var(--ux-muted)" }}>
               {b.kind === "Mentor"
-                ? "You will not be asked for this — the call opens from your diary."
-                : "Have this ready at the door. Your name works too."}
+                ? tr("bookings.youWillNotBeAskedFor")
+              : tr("bookings.haveThisReadyAtTheDoor")}
             </p>
           </Card>
 
           <Card>
-            <SectionHead title="What it cost" />
+            <SectionHead title={tr("bookings.whatItCost")} />
             <div className="flex items-baseline justify-between">
               <span className="text-xsm" style={{ color: "var(--ux-muted)" }}>{b.cost}</span>
               {b.cost.includes("paid") && <Pill tone="green" size="sm">Paid</Pill>}
@@ -126,8 +128,7 @@ export default function BookingDetail({ params }: { params: Promise<{ id: string
       <Link href="/app/bookings"
             className="ux-hov -my-1 mb-3.5 inline-flex items-center gap-1.5 py-1 text-xsm font-medium"
             style={{ color: "var(--ux-brand)" }}>
-        <Icons.ArrowLeft className="ux-ico h-4 w-4" /> All bookings
-      </Link>
+        <Icons.ArrowLeft className="ux-ico h-4 w-4" />{tr("bookings.allBookings2")}</Link>
 
       <Card className="mb-[16px]">
         <div className="flex items-start gap-4">
@@ -171,7 +172,7 @@ export default function BookingDetail({ params }: { params: Promise<{ id: string
                   : COPY.booking.placeGoesOn}
             </p>
             <span className="flex shrink-0 items-center gap-2">
-              <Btn variant="outline" size="sm" onClick={() => setAsking(false)}>Keep it</Btn>
+              <Btn variant="outline" size="sm" onClick={() => setAsking(false)}>{tr("bookings.keepIt")}</Btn>
               <Btn variant="primary" size="sm"
                    className={cancel.busy ? "pointer-events-none opacity-60" : ""}
                    onClick={async () => { if (await cancel.run(id)) setAsking(false); }}>
@@ -186,27 +187,26 @@ export default function BookingDetail({ params }: { params: Promise<{ id: string
                 {/* Said "It is in your diary" and wrote nothing: there is no
                     reminder or calendar endpoint here. Her diary is built from
                     her bookings, so this one is already in it. */}
-                <Btn href="/app/schedule" variant="outline" icon="CalendarDays">In your diary</Btn>
-                <Btn variant="ghost" onClick={() => setAsking(true)}>Cancel booking</Btn>
+                <Btn href="/app/schedule" variant="outline" icon="CalendarDays">{tr("bookings.inYourDiary")}</Btn>
+                <Btn variant="ghost" onClick={() => setAsking(true)}>{tr("bookings.cancelBooking")}</Btn>
               </>
             )}
             {live && b.kind === "Mentor" && (
               <ActionBtn variant="primary" icon="Video" doneIcon="Copy"
                          done={COPY.linkCopied}
-                         act={() => copy(`https://meet.womsakhi.in/${b.id}`, COPY.linkCopied, "Copy it by hand: meet.womsakhi.in/" + b.id)}>
-                Join the call
-              </ActionBtn>
+                         act={() => copy(`https://meet.womsakhi.in/${b.id}`, COPY.linkCopied, "Copy it by hand: meet.womsakhi.in/" + b.id)}>{tr("bookings.joinTheCall")}</ActionBtn>
             )}
-            {cancelled && <Btn href={b.kind === "Mentor" ? "/app/mentors" : "/app/events"} variant="soft" icon="RotateCcw">Book again</Btn>}
+            {cancelled && <Btn href={b.kind === "Mentor" ? "/app/mentors" : "/app/events"} variant="soft" icon="RotateCcw">{tr("bookings.bookAgain")}</Btn>}
             {/* Went nowhere, and named a recipient who would never have seen
                 it either way. /me/feedback reaches the team. */}
             {b.state === "Finished" && (
-              <NoteBtn label="Leave a note" size="md" icon="Star" stars
+              <NoteBtn label={tr("bookings.leaveANote")} size="md" icon="Star" stars
                        title={`How was ${b.what}?`} to="the WomSakhi team"
                        placeholder={COPY.booking.feedbackAsk}
                        send={(n) => apiLeaveFeedback({
                          text: n.text, rating: n.rating,
-                         type: b.kind === "Mentor" ? "Mentoring Session" : "Program Feedback",
+                         type: b.kind === "Mentor" ? tr("bookings.mentoringSession")
+              : tr("bookings.programFeedback"),
                          program: b.what,
                        })}
                        sent={COPY.noteReceived}
@@ -225,7 +225,7 @@ export default function BookingDetail({ params }: { params: Promise<{ id: string
 
       <div className="grid grid-cols-[minmax(0,1fr)_300px] gap-[16px]">
         <Card>
-          <SectionHead title="What to expect" />
+          <SectionHead title={tr("bookings.whatToExpect")} />
           <ol className="ux-stagger space-y-3.5">
             {(b.kind === "Mentor"
               ? [["A reminder an hour before", "By message, with the joining link"],
@@ -248,13 +248,13 @@ export default function BookingDetail({ params }: { params: Promise<{ id: string
         </Card>
 
         <Card>
-          <SectionHead title="If something changes" icon="Info" />
+          <SectionHead title={tr("bookings.ifSomethingChanges")} icon="Info" />
           <p className="text-xsm leading-relaxed" style={{ color: "var(--ux-ink-2)" }}>
             Cancelling is always allowed and never counts against you. Telling someone early is just kinder —
             it lets the place go to a woman who can use it.
           </p>
           <div className="mt-3.5">
-            <Btn href="/app/help" variant="outline" size="sm" full iconEnd="ArrowRight">Get help</Btn>
+            <Btn href="/app/help" variant="outline" size="sm" full iconEnd="ArrowRight">{tr("bookings.getHelp")}</Btn>
           </div>
         </Card>
       </div>

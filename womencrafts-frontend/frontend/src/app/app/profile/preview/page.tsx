@@ -12,6 +12,7 @@ import { HomeShell } from "@/components/ux/home/HomeShell";
 import { useCertificates, useCircles, useProgress } from "@/components/ux/live";
 import { useBusiness } from "@/components/ux/business";
 import { useMe } from "@/components/ux/me";
+import { useT } from "@/i18n";
 
 
 /**
@@ -44,6 +45,7 @@ function missingFrom(p: MeProfile | null) {
  * had counted.
  */
 export default function ProfilePreview() {
+  const tr = useT();
   const ME = useMe();
   const { data: profile } = useResource(
     useCallback(() => apiMeProfile(), []),
@@ -64,7 +66,7 @@ export default function ProfilePreview() {
       rail={
         <div className="space-y-[16px]">
           <Card>
-            <SectionHead title="What is never shown" icon="Lock" />
+            <SectionHead title={tr("profilePreview.whatIsNeverShown")} icon="Lock" />
             {/* Stated, not omitted. An absence proves nothing. */}
             <ul className="space-y-2.5">
               {[
@@ -81,14 +83,12 @@ export default function ProfilePreview() {
               ))}
             </ul>
             <p className="mt-3.5 rounded-[12px] p-3 text-xs leading-relaxed"
-               style={{ background: "var(--ux-surface-2)", color: "var(--ux-ink-2)" }}>
-              An employer can message you through WomSakhi without ever seeing how to reach you directly.
-            </p>
+               style={{ background: "var(--ux-surface-2)", color: "var(--ux-ink-2)" }}>{tr("profilePreview.anEmployerCanMessageYouThrough")}</p>
           </Card>
 
           {missing.length > 0 && (
             <Card>
-              <SectionHead title="What would make this stronger" sub={`${missing.length} left`} />
+              <SectionHead title={tr("profilePreview.whatWouldMakeThisStronger")} sub={`${missing.length} left`} />
               <ul className="ux-stagger space-y-2.5">
                 {missing.map((s, i) => (
                   <li key={s.id} className="ux-hov flex items-center gap-2.5 text-xsm"
@@ -99,7 +99,7 @@ export default function ProfilePreview() {
                 ))}
               </ul>
               <div className="mt-3.5">
-                <Btn href="/app/profile" variant="primary" size="sm" full iconEnd="ArrowRight">Fill these in</Btn>
+                <Btn href="/app/profile" variant="primary" size="sm" full iconEnd="ArrowRight">{tr("profilePreview.fillTheseIn")}</Btn>
               </div>
             </Card>
           )}
@@ -109,15 +109,14 @@ export default function ProfilePreview() {
       <Link href="/app/profile"
             className="ux-hov -my-1 mb-3.5 inline-flex items-center gap-1.5 py-1 text-xsm font-medium"
             style={{ color: "var(--ux-brand)" }}>
-        <Icons.ArrowLeft className="ux-ico h-4 w-4" /> Your profile
-      </Link>
+        <Icons.ArrowLeft className="ux-ico h-4 w-4" />{tr("profilePreview.yourProfile")}</Link>
 
       {/* The banner IS the feature — without it this is just a second profile. */}
       <div className="ux-sq mb-[16px] flex items-center gap-3.5 rounded-[12px] p-4"
            style={{ background: "var(--ux-tint-blue)" }}>
         <Icons.Eye className="h-[20px] w-[20px] shrink-0" style={{ color: "var(--ux-blue-ink)" }} />
         <p className="min-w-0 flex-1 text-xsm leading-snug" style={{ color: "var(--ux-ink-2)" }}>
-          <strong style={{ color: "var(--ux-ink)" }}>This is exactly what an employer or buyer sees.</strong>{" "}
+          <strong style={{ color: "var(--ux-ink)" }}>{tr("profilePreview.thisIsExactlyWhatAnEmployer")}</strong>{" "}
           Nothing below is private, and nothing private is below.
         </p>
         <Btn href="/app/profile" variant="outline" size="sm" icon="Pencil">Edit</Btn>
@@ -153,7 +152,7 @@ export default function ProfilePreview() {
               )}
             </p>
             <div className="mt-2.5 flex flex-wrap gap-2">
-              {verified && <Pill tone="green" size="sm">Verified member</Pill>}
+              {verified && <Pill tone="green" size="sm">{tr("profilePreview.verifiedMember")}</Pill>}
               {profile?.segment && <Pill tone="brand" size="sm">{profile.segment}</Pill>}
             </div>
           </div>
@@ -173,7 +172,7 @@ export default function ProfilePreview() {
       <div className="grid grid-cols-[minmax(0,1fr)_320px] gap-[16px]">
         <div className="space-y-[16px]">
           <Card>
-            <SectionHead title="What she has done" />
+            <SectionHead title={tr("profilePreview.whatSheHasDone")} />
             <div className="grid grid-cols-2 gap-4">
               {/* Three of these four were constants — 6, 87 and 15 — on the
                   screen whose whole promise is that nothing on it is invented. */}
@@ -195,7 +194,7 @@ export default function ProfilePreview() {
           </Card>
 
           <Card>
-            <SectionHead title="Certificates" sub="Anyone can check these codes" />
+            <SectionHead title="Certificates" sub={tr("profilePreview.anyoneCanCheckTheseCodes")} />
             <ul className="ux-deck ux-stagger space-y-2.5">
               {CERTIFICATES.map((c, i) => (
                 <li key={c.id} className="ux-i ux-sq flex items-center gap-3.5 rounded-[12px] border p-3"
@@ -218,7 +217,7 @@ export default function ProfilePreview() {
 
         <div className="space-y-[16px]">
           <Card>
-            <SectionHead title="Her shop" />
+            <SectionHead title={tr("profilePreview.herShop")} />
             <div className="ux-hov flex items-center gap-3">
               <span className="h-[46px] w-[46px] shrink-0 overflow-hidden rounded-[12px]"
                     style={{ background: "var(--ux-tint-orange)" }}>
@@ -231,17 +230,15 @@ export default function ProfilePreview() {
               </div>
             </div>
             <div className="mt-3.5">
-              <Btn href="/app/documents" variant="soft" size="sm" full iconEnd="ArrowRight">Visit the shop</Btn>
+              <Btn href="/app/documents" variant="soft" size="sm" full iconEnd="ArrowRight">{tr("profilePreview.visitTheShop")}</Btn>
             </div>
           </Card>
 
           <Card>
-            <SectionHead title="Get in touch" />
-            <p className="text-xsm leading-relaxed" style={{ color: "var(--ux-ink-2)" }}>
-              Messages reach her inside WomSakhi. She decides whether to share anything more.
-            </p>
+            <SectionHead title={tr("profilePreview.getInTouch")} />
+            <p className="text-xsm leading-relaxed" style={{ color: "var(--ux-ink-2)" }}>{tr("profilePreview.messagesReachHerInsideWomsakhiShe")}</p>
             <div className="mt-3.5">
-              <Btn href="/app/messages" variant="primary" size="sm" full icon="MessageCircle">Message her</Btn>
+              <Btn href="/app/messages" variant="primary" size="sm" full icon="MessageCircle">{tr("profilePreview.messageHer")}</Btn>
             </div>
           </Card>
         </div>

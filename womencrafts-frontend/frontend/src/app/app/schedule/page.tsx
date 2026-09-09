@@ -8,11 +8,13 @@ import * as Icons from "@/components/ux/icons";
 
 import { ActionBtn, Btn, Card, EmptyState, IconTile, SectionHead, SourceNote, Stat, Tabs, copy } from "@/components/ux/kit";
 import { HomeShell } from "@/components/ux/home/HomeShell";
+import { useT } from "@/i18n";
 
 /** Upcoming Activities — what she has committed to. */
 
 
 export default function Schedule() {
+  const tr = useT();
   const [tab, setTab] = useState("Upcoming");
   /** Her diary — bookings, events she registered for, accepted mentor sessions. */
   const { data: diary, source } = useDiary();
@@ -37,7 +39,7 @@ export default function Schedule() {
       rail={
         <div className="space-y-[16px]">
           <Card>
-            <SectionHead title="This week" />
+            <SectionHead title={tr("schedule.thisWeek")} />
             <div className="flex justify-between">
               {week.map((w, i) => (
                 <div key={w.iso} className="flex flex-col items-center gap-2" style={{ ["--i" as string]: i }}>
@@ -51,28 +53,24 @@ export default function Schedule() {
               ))}
             </div>
           </Card>
-          <Card><Stat value={String(monthCount)} label="Activities this month" icon="CalendarDays" tint="--ux-tint-violet" ink="--ux-violet" /></Card>
-          <Card><Stat value={String(attended)} label="Been to so far" icon="CheckCheck" tint="--ux-tint-green" ink="--ux-green" /></Card>
+          <Card><Stat value={String(monthCount)} label={tr("schedule.activitiesThisMonth")} icon="CalendarDays" tint="--ux-tint-violet" ink="--ux-violet" /></Card>
+          <Card><Stat value={String(attended)} label={tr("schedule.beenToSoFar")} icon="CheckCheck" tint="--ux-tint-green" ink="--ux-green" /></Card>
           <div className="relative overflow-hidden rounded-[16px] p-[20px]"
                style={{ background: "linear-gradient(140deg, var(--ux-tint-lilac), var(--ux-tint-pink))" }}>
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img loading="lazy" decoding="async" src="/ux/art/scene-woman-planning-board.webp" alt=""
                  className="ux-float pointer-events-none absolute -bottom-2 -end-3 h-[96px] w-[96px] object-contain" />
-            <h3 className="relative text-sm font-semibold" style={{ color: "var(--ux-ink)" }}>Plan your week</h3>
-            <p className="relative mt-2 w-[62%] text-xs leading-relaxed" style={{ color: "var(--ux-muted)" }}>
-              Two hours booked in advance is two hours you actually get.
-            </p>
+            <h3 className="relative text-sm font-semibold" style={{ color: "var(--ux-ink)" }}>{tr("schedule.planYourWeek")}</h3>
+            <p className="relative mt-2 w-[62%] text-xs leading-relaxed" style={{ color: "var(--ux-muted)" }}>{tr("schedule.twoHoursBookedInAdvanceIs")}</p>
           </div>
         </div>
       }
     >
       <div className="mb-[20px] flex items-end justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold" style={{ color: "var(--ux-ink)" }}>Your calendar</h1>
-          <p className="mt-1.5 text-xsm" style={{ color: "var(--ux-muted)" }}>
-            Sessions, classes and events you have said yes to.
-          </p>
-          <SourceNote source={source} what="your diary" />
+          <h1 className="text-2xl font-bold" style={{ color: "var(--ux-ink)" }}>{tr("schedule.yourCalendar")}</h1>
+          <p className="mt-1.5 text-xsm" style={{ color: "var(--ux-muted)" }}>{tr("schedule.sessionsClassesAndEventsYouHave")}</p>
+          <SourceNote source={source} what={tr("schedule.yourDiary")} />
         </div>
         {/* "Cancelled" is gone: a cancelled booking is not in her diary, and
             the tab was permanently empty because nothing ever filled it. */}
@@ -106,7 +104,7 @@ export default function Schedule() {
                       thing it is about. */}
                   <Btn href={e.href} variant="outline" size="sm" iconEnd="ArrowRight">Open</Btn>
                   {e.cta === "Join" ? (
-                    <ActionBtn variant="primary" size="sm" icon="Video" doneIcon="Copy" done="Link copied"
+                    <ActionBtn variant="primary" size="sm" icon="Video" doneIcon="Copy" done={tr("schedule.linkCopied")}
                                act={() => copy(`https://meet.womsakhi.in/${e.id}`, COPY.linkCopied, "meet.womsakhi.in/" + e.id)}>
                       Join
                     </ActionBtn>
@@ -120,7 +118,7 @@ export default function Schedule() {
         <Card>
           <EmptyState icon="CalendarX" title={`Nothing ${tab.toLowerCase()}`}
             body="Sessions and events you join will be listed here, with the time and where to go."
-            action={<Btn href="/app/events" variant="soft" iconEnd="ArrowRight">Browse events</Btn>} />
+            action={<Btn href="/app/events" variant="soft" iconEnd="ArrowRight">{tr("schedule.browseEvents")}</Btn>} />
         </Card>
       )}
     </HomeShell>

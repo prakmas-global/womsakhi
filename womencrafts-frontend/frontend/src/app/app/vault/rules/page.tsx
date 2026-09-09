@@ -7,6 +7,7 @@ import { HomeShell } from "@/components/ux/home/HomeShell";
 import { Back, Btn, Card, I, IconTile, SectionHead, Stat, v } from "@/components/ux/kit";
 import { formatRupees } from "@/components/ux/kit";
 import { RULES, savedByRules, type Rule } from "@/components/ux/vault/data";
+import { useT } from "@/i18n";
 
 /**
  * Saving by default, not by decision.
@@ -17,6 +18,7 @@ import { RULES, savedByRules, type Rule } from "@/components/ux/vault/data";
  * it. "Keep ₹20 from every order" survives both.
  */
 export default function RulesPage() {
+  const tr = useT();
   const router = useRouter();
   const [rules, setRules] = useState<Rule[]>(RULES);
   const [note, setNote] = useState<string | null>(null);
@@ -36,16 +38,12 @@ export default function RulesPage() {
   return (
     <HomeShell active="/app/vault">
       <div className="flex flex-col gap-5">
-        <Back to="/app/vault" label="Back to your locker" />
+        <Back to="/app/vault" label={tr("vaultRules.backToYourLocker")} />
 
         <header>
-          <p className="text-2xs font-extrabold uppercase tracking-[0.2em]" style={{ color: v("--ux-brand") }}>
-            Saving rules
-          </p>
+          <p className="text-2xs font-extrabold uppercase tracking-[0.2em]" style={{ color: v("--ux-brand") }}>{tr("vaultRules.savingRules")}</p>
           <h1 className="mt-2 text-[clamp(1.5rem,3.2vw,2.125rem)] font-extrabold leading-[1.1] tracking-[-0.035em]"
-              style={{ color: v("--ux-ink") }}>
-            Save without deciding to
-          </h1>
+              style={{ color: v("--ux-ink") }}>{tr("vaultRules.saveWithoutDecidingTo")}</h1>
           <p className="mt-1.5 max-w-[54ch] text-sm leading-relaxed" style={{ color: v("--ux-muted") }}>
             A small share of each payment, kept back the moment it arrives. Nothing is taken on
             a day you earned nothing.
@@ -54,9 +52,9 @@ export default function RulesPage() {
 
         <Card>
           <div className="grid gap-4 sm:grid-cols-2">
-            <Stat value={formatRupees(saved)} label="Saved this way so far"
+            <Stat value={formatRupees(saved)} label={tr("vaultRules.savedThisWaySoFar")}
                   icon="Sparkles" tint="--ux-tint-violet" ink="--ux-violet" />
-            <Stat value={`${on} of ${rules.length}`} label="Rules running"
+            <Stat value={`${on} of ${rules.length}`} label={tr("vaultRules.rulesRunning")}
                   icon="Repeat" tint="--ux-tint-green" ink="--ux-green-ink" />
           </div>
         </Card>
@@ -70,7 +68,7 @@ export default function RulesPage() {
         )}
 
         <div>
-          <SectionHead title="Your rules" icon="Repeat" chip={String(rules.length)} />
+          <SectionHead title={tr("vaultRules.yourRules")} icon="Repeat" chip={String(rules.length)} />
           <div className="flex flex-col gap-2.5">
             {rules.map((r) => (
               <Card key={r.id} pad={16}>
@@ -91,7 +89,8 @@ export default function RulesPage() {
                     type="button"
                     role="switch"
                     aria-checked={r.on}
-                    aria-label={`${r.on ? "Turn off" : "Turn on"}: ${r.when}`}
+                    aria-label={`${r.on ? tr("vaultRules.turnOff")
+              : tr("vaultRules.turnOn")}: ${r.when}`}
                     onClick={() => toggle(r.id)}
                     className="ux-press relative h-[28px] w-[50px] shrink-0 rounded-full transition-colors"
                     style={{ background: v(r.on ? "--ux-brand" : "--ux-line-strong") }}

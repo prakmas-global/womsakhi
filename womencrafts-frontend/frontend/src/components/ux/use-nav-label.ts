@@ -17,9 +17,13 @@ import type { Mode, NavItem } from "./nav";
 export function useNavLabel() {
   const t = useT();
 
+  // `k` is always a BASE — the label lives at `${k}.label` and the hint at
+  // `${k}.note`. Modes used to carry a complete key instead, so this looked up
+  // "ch.today" (which does not exist), and `t()` fell through to returning the
+  // key itself: every rail item rendered the string "ch.today" on screen.
   const label = useCallback(
     (n: Pick<NavItem | Mode, "label"> & { k?: string }) =>
-      n.k ? t(n.k as MessageKey) : n.label,
+      n.k ? t(`${n.k}.label` as MessageKey) : n.label,
     [t],
   );
 

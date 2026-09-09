@@ -10,6 +10,7 @@ import {
   BULK, BUYERS, LIVES, PREORDERS, PRICES, STREAMS, SUBS,
   fundedUpfront, monthTotal, prepaidHeld, type Stream,
 } from "@/components/ux/shopplus/data";
+import { useT } from "@/i18n";
 
 /**
  * Your shops — plural, because she is.
@@ -48,6 +49,7 @@ const TOOLS = [
 ];
 
 export default function ShopHub() {
+  const tr = useT();
   const router = useRouter();
   const [streams, setStreams] = useState<Stream[]>(STREAMS);
   const [note, setNote] = useState<string | null>(null);
@@ -79,9 +81,7 @@ export default function ShopHub() {
 
         <header className="flex flex-wrap items-end gap-4">
           <div className="min-w-0 flex-1">
-            <p className="text-2xs font-extrabold uppercase tracking-[0.2em]" style={{ color: v("--ux-brand") }}>
-              Your shops
-            </p>
+            <p className="text-2xs font-extrabold uppercase tracking-[0.2em]" style={{ color: v("--ux-brand") }}>{tr("shop.yourShops")}</p>
             <h1 className="mt-2 text-[clamp(1.5rem,3.2vw,2.125rem)] font-extrabold leading-[1.1] tracking-[-0.035em]"
                 style={{ color: v("--ux-ink") }}>
               {formatRupees(month)} this month
@@ -91,7 +91,7 @@ export default function ShopHub() {
               {streams.filter((s) => s.live).length === 1 ? "shop" : "shops"} — one set of books for all of them.
             </p>
           </div>
-          <Btn variant="outline" icon="Store" href="/app/documents">What you sell</Btn>
+          <Btn variant="outline" icon="Store" href="/app/documents">{tr("shop.whatYouSell")}</Btn>
         </header>
 
         {note && (
@@ -105,17 +105,16 @@ export default function ShopHub() {
         {/* Working capital — the number nobody shows her */}
         <Card>
           <div className="grid gap-4 sm:grid-cols-3">
-            <Stat value={formatRupees(upfront)} label="Paid to you before you started"
+            <Stat value={formatRupees(upfront)} label={tr("shop.paidToYouBeforeYouStarted")}
                   icon="HandCoins" tint="--ux-tint-green" ink="--ux-green-ink" />
-            <Stat value={formatRupees(held)} label="Already paid for next month"
+            <Stat value={formatRupees(held)} label={tr("shop.alreadyPaidForNextMonth")}
                   icon="Repeat" tint="--ux-tint-violet" ink="--ux-violet" />
-            <Stat value={String(committed)} label="Buyers with a standing order"
+            <Stat value={String(committed)} label={tr("shop.buyersWithAStandingOrder")}
                   icon="Handshake" tint="--ux-tint-blue" ink="--ux-blue-ink" />
           </div>
           <div className="mt-4 flex items-start gap-2.5 border-t pt-3.5" style={{ borderColor: v("--ux-line") }}>
             <I name="Info" className="mt-[2px] h-[15px] w-[15px] shrink-0" style={{ color: v("--ux-muted") }} />
-            <p className="text-xsm leading-relaxed" style={{ color: v("--ux-ink-2") }}>
-              This is money in your hands <b>before</b> you spend on cloth. It is the difference
+            <p className="text-xsm leading-relaxed" style={{ color: v("--ux-ink-2") }}>{tr("shop.thisIsMoneyInYourHands")}<b>before</b> you spend on cloth. It is the difference
               between taking an order and being able to afford to.
             </p>
           </div>
@@ -123,7 +122,7 @@ export default function ShopHub() {
 
         {/* Streams */}
         <div>
-          <SectionHead title="Your trades" sub="Open one, close one — closing costs you nothing"
+          <SectionHead title={tr("shop.yourTrades")} sub={tr("shop.openOneCloseOneClosingCosts")}
                        icon="LayoutGrid" chip={String(streams.length)} />
           <div className="grid gap-3 lg:grid-cols-3">
             {streams.map((s) => (
@@ -161,9 +160,10 @@ export default function ShopHub() {
 
                 <div className="mt-3.5 flex gap-2">
                   <Btn size="sm" variant={s.live ? "ghost" : "primary"} full onClick={() => toggle(s.id)}>
-                    {s.live ? "Close for now" : "Open again"}
+                    {s.live ? tr("shop.closeForNow")
+              : tr("shop.openAgain")}
                   </Btn>
-                  <Btn size="sm" variant="outline" full href="/app/documents">Open shop</Btn>
+                  <Btn size="sm" variant="outline" full href="/app/documents">{tr("shop.openShop")}</Btn>
                 </div>
               </Card>
             ))}
@@ -179,18 +179,16 @@ export default function ShopHub() {
                     style={{ background: v("--ux-brand-tint"), color: v("--ux-brand") }}>
                 <I name="Plus" className="h-[21px] w-[21px]" sw={2.4} />
               </span>
-              <p className="text-sm font-bold" style={{ color: v("--ux-ink") }}>Another trade</p>
-              <p className="max-w-[24ch] text-xs leading-relaxed" style={{ color: v("--ux-muted") }}>
-                Cooking, mehendi, tuition — whatever else you do for money
-              </p>
+              <p className="text-sm font-bold" style={{ color: v("--ux-ink") }}>{tr("shop.anotherTrade")}</p>
+              <p className="max-w-[24ch] text-xs leading-relaxed" style={{ color: v("--ux-muted") }}>{tr("shop.cookingMehendiTuitionWhateverElseY")}</p>
             </button>
           </div>
         </div>
 
         {/* Tools */}
         <div>
-          <SectionHead title="Ways to sell more without spending more"
-                       sub="Ordered by what actually holds a small shop back" icon="Sparkles" />
+          <SectionHead title={tr("shop.waysToSellMoreWithoutSpending")}
+                       sub={tr("shop.orderedByWhatActuallyHoldsA")} icon="Sparkles" />
           <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-3">
             {TOOLS.map((t) => {
               const badge =

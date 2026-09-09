@@ -7,6 +7,7 @@ import { Btn, Card, EmptyState, Field, I, Pill, SectionHead, TextInput, v } from
 import { formatRupees } from "@/components/ux/kit";
 import { GOALS, goalPct, type Goal } from "@/components/ux/discovery/data";
 import { useToast } from "@/design-system";
+import { useT } from "@/i18n";
 
 /**
  * My Goals — hers, in her words.
@@ -32,6 +33,7 @@ import { useToast } from "@/design-system";
  * saving and a mis-tap should not erase it.
  */
 export default function GoalsPage() {
+  const tr = useT();
   const [goals, setGoals] = useState<Goal[]>(GOALS);
   const [editing, setEditing] = useState<Goal | null>(null);
   const [creating, setCreating] = useState(false);
@@ -68,19 +70,15 @@ export default function GoalsPage() {
 
         <header className="flex flex-wrap items-end gap-4">
           <div className="min-w-0 flex-1">
-            <p className="text-2xs font-extrabold uppercase tracking-[0.2em]" style={{ color: v("--ux-brand") }}>
-              My goals
-            </p>
+            <p className="text-2xs font-extrabold uppercase tracking-[0.2em]" style={{ color: v("--ux-brand") }}>{tr("goals.myGoals")}</p>
             <h1 className="mt-2 text-[clamp(1.5rem,3.2vw,2.125rem)] font-extrabold leading-[1.1] tracking-[-0.035em]"
-                style={{ color: v("--ux-ink") }}>
-              What you are working towards
-            </h1>
+                style={{ color: v("--ux-ink") }}>{tr("goals.whatYouAreWorkingTowards")}</h1>
             <p className="mt-1.5 max-w-[56ch] text-sm leading-relaxed" style={{ color: v("--ux-muted") }}>
               In your words, on your timing. Nothing here goes red, nothing is ever late, and you can
               put any of it down without explaining.
             </p>
           </div>
-          <Btn icon="Plus" onClick={() => { setCreating(true); setEditing(null); }}>Add a goal</Btn>
+          <Btn icon="Plus" onClick={() => { setCreating(true); setEditing(null); }}>{tr("goals.addAGoal")}</Btn>
         </header>
 
         {(creating || editing) && (
@@ -89,15 +87,15 @@ export default function GoalsPage() {
 
         {goals.length === 0 && !creating ? (
           <Card>
-            <EmptyState icon="Target" title="No goals yet"
+            <EmptyState icon="Target" title={tr("goals.noGoalsYet")}
                         body="A goal is just the thing you are saving or working towards, written down — a machine, a month's fees, a skill. Writing it down is what makes the app able to help."
-                        action={<Btn size="sm" onClick={() => setCreating(true)}>Add your first goal</Btn>} />
+                        action={<Btn size="sm" onClick={() => setCreating(true)}>{tr("goals.addYourFirstGoal")}</Btn>} />
           </Card>
         ) : (
           <>
             {live.length > 0 && (
               <div>
-                <SectionHead title="Working on" icon="Target" chip={String(live.length)} />
+                <SectionHead title={tr("goals.workingOn")} icon="Target" chip={String(live.length)} />
                 <div className="flex flex-col gap-3">
                   {live.map((g) => (
                     <GoalRow key={g.id} g={g}
@@ -112,7 +110,7 @@ export default function GoalsPage() {
 
             {paused.length > 0 && (
               <div>
-                <SectionHead title="Put aside for now" sub="Not failed — just not now" icon="PauseCircle" />
+                <SectionHead title={tr("goals.putAsideForNow")} sub={tr("goals.notFailedJustNotNow")} icon="PauseCircle" />
                 <div className="flex flex-col gap-3">
                   {paused.map((g) => (
                     <GoalRow key={g.id} g={g}
@@ -146,8 +144,8 @@ export default function GoalsPage() {
               removes the note about what it was for.
             </p>
             <div className="mt-4 flex flex-wrap gap-2">
-              <Btn size="sm" onClick={() => remove(confirmDelete)}>Yes, remove it</Btn>
-              <Btn size="sm" variant="ghost" onClick={() => setConfirmDelete(null)}>Keep it</Btn>
+              <Btn size="sm" onClick={() => remove(confirmDelete)}>{tr("goals.yesRemoveIt")}</Btn>
+              <Btn size="sm" variant="ghost" onClick={() => setConfirmDelete(null)}>{tr("goals.keepIt")}</Btn>
             </div>
           </Card>
         )}
@@ -163,6 +161,7 @@ function GoalRow({ g, onEdit, onPause, onResume, onDone, onDelete }: {
   g: Goal; onEdit?: () => void; onPause?: () => void; onResume?: () => void;
   onDone?: () => void; onDelete: () => void;
 }) {
+  const tr = useT();
   const pct = goalPct(g);
   return (
     <Card pad={0} style={{ overflow: "hidden", opacity: g.state === "paused" ? 0.72 : 1 }}>
@@ -175,7 +174,7 @@ function GoalRow({ g, onEdit, onPause, onResume, onDone, onDelete }: {
           <div className="flex flex-wrap items-center gap-2">
             <p className="text-base font-bold" style={{ color: v("--ux-ink") }}>{g.title}</p>
             {g.state === "done" && <Pill tone="green" size="sm">Done</Pill>}
-            {g.state === "paused" && <Pill tone="neutral" size="sm">Put aside</Pill>}
+            {g.state === "paused" && <Pill tone="neutral" size="sm">{tr("goals.putAside")}</Pill>}
           </div>
           <p className="mt-0.5 text-xsm italic" style={{ color: v("--ux-muted") }}>{g.why}</p>
 
@@ -204,8 +203,8 @@ function GoalRow({ g, onEdit, onPause, onResume, onDone, onDelete }: {
         {g.state !== "done" && <Btn size="sm" href={g.nextHref} icon="ArrowRight">{g.nextLabel}</Btn>}
         {onEdit && <Btn size="sm" variant="ghost" icon="Pencil" onClick={onEdit}>Edit</Btn>}
         {onDone && <Btn size="sm" variant="ghost" icon="Check" onClick={onDone}>Done</Btn>}
-        {onPause && <Btn size="sm" variant="ghost" icon="PauseCircle" onClick={onPause}>Put aside</Btn>}
-        {onResume && <Btn size="sm" variant="outline" icon="PlayCircle" onClick={onResume}>Pick it back up</Btn>}
+        {onPause && <Btn size="sm" variant="ghost" icon="PauseCircle" onClick={onPause}>{tr("goals.putAside2")}</Btn>}
+        {onResume && <Btn size="sm" variant="outline" icon="PlayCircle" onClick={onResume}>{tr("goals.pickItBackUp")}</Btn>}
         <Btn size="sm" variant="ghost" icon="Trash2" onClick={onDelete} ariaLabel={`Remove ${g.title}`}>Remove</Btn>
       </div>
     </Card>
@@ -216,6 +215,7 @@ function GoalRow({ g, onEdit, onPause, onResume, onDone, onDelete }: {
 function GoalForm({ goal, onCancel, onSave }: {
   goal: Goal | null; onCancel: () => void; onSave: (g: Goal) => void;
 }) {
+  const tr = useT();
   const [title, setTitle] = useState(goal?.title ?? "");
   const [why, setWhy] = useState(goal?.why ?? "");
   const [amount, setAmount] = useState(goal?.targetMinor ? String(goal.targetMinor / 100) : "");
@@ -258,26 +258,27 @@ function GoalForm({ goal, onCancel, onSave }: {
   return (
     <Card pad={20} style={{ borderColor: v("--ux-brand") }}>
       <p className="text-base font-bold" style={{ color: v("--ux-ink") }}>
-        {goal ? "Edit this goal" : "What are you working towards?"}
+        {goal ? tr("goals.editThisGoal")
+              : tr("goals.whatAreYouWorkingTowards")}
       </p>
 
       <div className="mt-4 flex flex-col gap-4">
-        <Field label="What is it" error={errors.title} hint="However you would say it out loud">
+        <Field label={tr("goals.whatIsIt")} error={errors.title} hint={tr("goals.howeverYouWouldSayItOut")}>
           {(p) => <TextInput {...p} value={title} onChange={setTitle} invalid={!!errors.title} />}
         </Field>
 
-        <Field label="Why it matters" error={errors.why} hint="The reason you will still recognise in four months">
+        <Field label={tr("goals.whyItMatters")} error={errors.why} hint={tr("goals.theReasonYouWillStillRecognise")}>
           {(p) => <TextInput {...p} value={why} onChange={setWhy} invalid={!!errors.why} />}
         </Field>
 
         <div className="flex flex-wrap gap-4">
           <div className="min-w-[140px] flex-1">
-            <Field label="How much, if it needs money" required={false} hint="Leave empty if it does not">
+            <Field label={tr("goals.howMuchIfItNeedsMoney")} required={false} hint={tr("goals.leaveEmptyIfItDoesNot")}>
               {(p) => <TextInput {...p} value={amount} onChange={setAmount} inputMode="numeric" />}
             </Field>
           </div>
           <div className="min-w-[140px] flex-1">
-            <Field label="By when" required={false} hint='"Before Diwali" and "No rush" are fine'>
+            <Field label={tr("goals.byWhen")} required={false} hint='"Before Diwali" and "No rush" are fine'>
               {(p) => <TextInput {...p} value={by} onChange={setBy} />}
             </Field>
           </div>
@@ -286,7 +287,8 @@ function GoalForm({ goal, onCancel, onSave }: {
 
       <div className="mt-5 flex flex-wrap gap-2">
         <Btn onClick={submit} disabled={saving} icon={saving ? "Loader" : "Check"}>
-          {saving ? "Saving…" : goal ? "Save changes" : "Add this goal"}
+          {saving ? "Saving…" : goal ? tr("goals.saveChanges")
+              : tr("goals.addThisGoal")}
         </Btn>
         <Btn variant="ghost" onClick={onCancel} disabled={saving}>Cancel</Btn>
       </div>

@@ -15,6 +15,7 @@ import {
 } from "@/components/ux/kit";
 import { HomeShell } from "@/components/ux/home/HomeShell";
 import { useLearning } from "@/components/ux/growth";
+import { useT } from "@/i18n";
 
 
 /**
@@ -25,6 +26,7 @@ import { useLearning } from "@/components/ux/growth";
  * between other work should not have to find her place first.
  */
 export default function CourseDetail({ params }: { params: Promise<{ id: string }> }) {
+  const tr = useT();
   const { id } = use(params);
   const { data: learning, source } = useLearning();
   const CONTINUING = learning.continuing;
@@ -103,9 +105,9 @@ export default function CourseDetail({ params }: { params: Promise<{ id: string 
         <Card>
           <EmptyState
             icon="SearchX"
-            title="That course is not here"
+            title={tr("programs.thatCourseIsNotHere")}
             body="It may have been retired, or the link may be old."
-            action={<Btn href="/app/programs" variant="primary" iconEnd="ArrowRight">All courses</Btn>}
+            action={<Btn href="/app/programs" variant="primary" iconEnd="ArrowRight">{tr("programs.allCourses")}</Btn>}
           />
         </Card>
       </HomeShell>
@@ -119,7 +121,8 @@ export default function CourseDetail({ params }: { params: Promise<{ id: string 
       rail={
         <div className="space-y-[16px]">
           <Card>
-            <SectionHead title={started ? "Where you are" : "What you get"} />
+            <SectionHead title={started ? tr("programs.whereYouAre")
+              : tr("programs.whatYouGet")} />
             {started ? (
               <>
                 <div className="flex items-baseline justify-between">
@@ -160,7 +163,7 @@ export default function CourseDetail({ params }: { params: Promise<{ id: string 
                    onClick={() => void bookmark.run()}>
                 {saved ? "Saved" : "Save"}
               </Btn>
-              <ActionBtn variant="outline" size="sm" icon="Share2" doneIcon="Copy" done="Link copied"
+              <ActionBtn variant="outline" size="sm" icon="Share2" doneIcon="Copy" done={tr("programs.linkCopied")}
                          act={() => copy(`https://womsakhi.in/course/${course.id}`, "Link copied — send it to a friend", "Copy it by hand from the address bar")}>
                 Share
               </ActionBtn>
@@ -169,7 +172,7 @@ export default function CourseDetail({ params }: { params: Promise<{ id: string 
 
           {course.author && (
             <Card>
-              <SectionHead title="Who teaches it" />
+              <SectionHead title={tr("programs.whoTeachesIt")} />
               <div className="ux-hov flex items-center gap-3">
                 <span className="h-[46px] w-[46px] shrink-0 overflow-hidden rounded-full"
                       style={{ background: "var(--ux-tint-orange)" }}>
@@ -178,13 +181,11 @@ export default function CourseDetail({ params }: { params: Promise<{ id: string 
                 </span>
                 <div className="min-w-0 flex-1">
                   <p className="truncate text-sm font-semibold" style={{ color: "var(--ux-ink)" }}>{course.author}</p>
-                  <p className="mt-0.5 truncate text-xs" style={{ color: "var(--ux-muted)" }}>
-                    Teaches on WomSakhi since 2025
-                  </p>
+                  <p className="mt-0.5 truncate text-xs" style={{ color: "var(--ux-muted)" }}>{tr("programs.teachesOnWomsakhiSince")}</p>
                 </div>
               </div>
               <div className="mt-3">
-                <Btn href="/app/mentors" variant="soft" size="sm" full iconEnd="ArrowRight">Ask her a question</Btn>
+                <Btn href="/app/mentors" variant="soft" size="sm" full iconEnd="ArrowRight">{tr("programs.askHerAQuestion")}</Btn>
               </div>
             </Card>
           )}
@@ -194,8 +195,7 @@ export default function CourseDetail({ params }: { params: Promise<{ id: string 
       <Link href="/app/programs"
             className="ux-hov -my-1 mb-3.5 inline-flex items-center gap-1.5 py-1 text-xsm font-medium"
             style={{ color: "var(--ux-brand)" }}>
-        <Icons.ArrowLeft className="ux-ico h-4 w-4" /> All courses
-      </Link>
+        <Icons.ArrowLeft className="ux-ico h-4 w-4" />{tr("programs.allCourses2")}</Link>
 
       <Card className="mb-[16px] overflow-hidden" pad={0}>
         <div className="relative h-[180px] overflow-hidden" style={{ background: "var(--ux-tint-violet)" }}>
@@ -229,7 +229,7 @@ export default function CourseDetail({ params }: { params: Promise<{ id: string 
       </Card>
 
       <Card className="mb-[16px]">
-        <SectionHead title="What you will be able to do" />
+        <SectionHead title={tr("programs.whatYouWillBeAbleTo")} />
         <ul className="ux-stagger grid grid-cols-2 gap-x-6 gap-y-2.5">
           {[
             "Write posts people stop to read",
@@ -257,7 +257,7 @@ export default function CourseDetail({ params }: { params: Promise<{ id: string 
           syllabus, with an accordion, for every course in the catalogue. */}
       {hasCurriculum && (
         <Card>
-          <SectionHead title="What is in it" sub={`${flat.length} lessons · ${done} done`} />
+          <SectionHead title={tr("programs.whatIsInIt")} sub={`${flat.length} lessons · ${done} done`} />
           <ul className="ux-sq overflow-hidden rounded-[12px] border" style={{ borderColor: "var(--ux-line)" }}>
             {flat.map((l, i) => {
               const current = i === nextIndex;
@@ -285,7 +285,7 @@ export default function CourseDetail({ params }: { params: Promise<{ id: string 
                         </span>
                       )}
                     </span>
-                    {current && <Pill tone="brand" size="sm">You are here</Pill>}
+                    {current && <Pill tone="brand" size="sm">{tr("programs.youAreHere")}</Pill>}
                     {/* Only when the lesson says how long — an empty duration
                         rendering as a bare "min" is the kind of thing that ships. */}
                     {l.duration && (
@@ -301,7 +301,7 @@ export default function CourseDetail({ params }: { params: Promise<{ id: string 
 
       {similar.length > 0 && (
         <div className="mt-[16px]">
-          <SectionHead title="Women who took this also took" />
+          <SectionHead title={tr("programs.womenWhoTookThisAlsoTook")} />
           <div className="ux-deck grid grid-cols-2 gap-[16px]">
             {similar.map((c, i) => (
               <Card key={c.id} className="ux-i ux-onscroll" style={{ ["--i" as string]: i }}>

@@ -2,6 +2,7 @@
 
 import { HomeShell } from "@/components/ux/home/HomeShell";
 import { ScreenError } from "@/components/ux/kit";
+import { useT } from "@/i18n";
 
 /**
  * The error boundary for this route.
@@ -11,9 +12,10 @@ import { ScreenError } from "@/components/ux/kit";
  * failure with nowhere to go.
  */
 export default function Error({ error, reset }: { error: Error & { digest?: string }; reset: () => void }) {
+  const tr = useT();
   return (
     <HomeShell>
-      <ScreenError what="your week" reset={reset} detail={error.digest} />
+      <ScreenError what={tr("shopSlots.yourWeek")} reset={reset} detail={error.digest} />
     </HomeShell>
   );
 }

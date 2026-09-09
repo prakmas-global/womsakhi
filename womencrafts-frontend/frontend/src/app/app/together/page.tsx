@@ -9,6 +9,7 @@ import { formatRupees } from "@/components/ux/kit";
 import {
   ASSIST_QUEUE, HELPED, LESSONS, SEEDS, assistEarned, noPhone,
 } from "@/components/ux/together/data";
+import { useT } from "@/i18n";
 
 /**
  * Together — the circle doing the things a circle is uniquely able to do.
@@ -20,6 +21,7 @@ import {
  * carrying her record because migration is how women lose everything at once.
  */
 export default function TogetherHub() {
+  const tr = useT();
   const router = useRouter();
   const [note, setNote] = useState<string | null>(null);
 
@@ -37,9 +39,7 @@ export default function TogetherHub() {
             Together
           </p>
           <h1 className="mt-2 text-[clamp(1.5rem,3.2vw,2.125rem)] font-extrabold leading-[1.1] tracking-[-0.035em]"
-              style={{ color: v("--ux-ink") }}>
-            Things only a circle can do
-          </h1>
+              style={{ color: v("--ux-ink") }}>{tr("together.thingsOnlyACircleCanDo")}</h1>
           <p className="mt-1.5 max-w-[56ch] text-sm leading-relaxed" style={{ color: v("--ux-muted") }}>
             Not a group chat. The four things that genuinely work better with women you already
             trust than alone.
@@ -56,11 +56,11 @@ export default function TogetherHub() {
 
         <Card>
           <div className="grid gap-4 sm:grid-cols-3">
-            <Stat value={String(HELPED.length)} label="Women you run this for"
+            <Stat value={String(HELPED.length)} label={tr("together.womenYouRunThisFor")}
                   icon="UserPlus" tint="--ux-tint-violet" ink="--ux-violet" />
-            <Stat value={formatRupees(earned)} label="You earned helping them"
+            <Stat value={formatRupees(earned)} label={tr("together.youEarnedHelpingThem")}
                   icon="Wallet" tint="--ux-tint-green" ink="--ux-green-ink" />
-            <Stat value={String(learners)} label="Women learning from your circle"
+            <Stat value={String(learners)} label={tr("together.womenLearningFromYourCircle")}
                   icon="GraduationCap" tint="--ux-tint-blue" ink="--ux-blue-ink" />
           </div>
         </Card>
@@ -105,8 +105,8 @@ export default function TogetherHub() {
 
         {/* Seeding — who would close the cycle */}
         <div>
-          <SectionHead title="Who is missing from your circle"
-                       sub="Not the nearest women — the ones whose trade completes yours" icon="Users" />
+          <SectionHead title={tr("together.whoIsMissingFromYourCircle")}
+                       sub={tr("together.notTheNearestWomenTheOnes")} icon="Users" />
           <Card pad={16} style={{ background: v("--ux-surface-2"), borderColor: "transparent" }}>
             <p className="text-xsm leading-relaxed" style={{ color: v("--ux-ink-2") }}>
               Money only goes round a circle if the trades fit together. A circle of six tailors
@@ -127,9 +127,7 @@ export default function TogetherHub() {
                   </div>
                 </div>
                 <Btn size="sm" variant="outline" full className="mt-3"
-                     onClick={() => setNote(`Invited ${s.name}. She sees who invited her, and nothing else about you.`)}>
-                  Ask her to join
-                </Btn>
+                     onClick={() => setNote(`Invited ${s.name}. She sees who invited her, and nothing else about you.`)}>{tr("together.askHerToJoin")}</Btn>
               </Card>
             ))}
           </div>

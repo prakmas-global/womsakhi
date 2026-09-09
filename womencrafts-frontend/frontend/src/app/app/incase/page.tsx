@@ -5,6 +5,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { HomeShell } from "@/components/ux/home/HomeShell";
 import { Btn, Card, I, IconTile, Pill, Progress, SectionHead, v } from "@/components/ux/kit";
 import { WISHES, wishesDone, type Wish } from "@/components/ux/life/data";
+import { useT } from "@/i18n";
 
 /**
  * If something happens to me.
@@ -43,6 +44,7 @@ import { WISHES, wishesDone, type Wish } from "@/components/ux/life/data";
  * moment and this screen must not read like a first step towards it.
  */
 export default function InCasePage() {
+  const tr = useT();
   const [wishes, setWishes] = useState<Wish[]>(WISHES);
   const [editing, setEditing] = useState<string | null>(null);
   const [draft, setDraft] = useState("");
@@ -73,13 +75,9 @@ export default function InCasePage() {
       <div className="flex flex-col gap-5">
 
         <header>
-          <p className="text-2xs font-extrabold uppercase tracking-[0.2em]" style={{ color: v("--ux-brand") }}>
-            If something happens
-          </p>
+          <p className="text-2xs font-extrabold uppercase tracking-[0.2em]" style={{ color: v("--ux-brand") }}>{tr("incase.ifSomethingHappens")}</p>
           <h1 className="mt-2 text-[clamp(1.5rem,3.2vw,2.125rem)] font-extrabold leading-[1.1] tracking-[-0.035em]"
-              style={{ color: v("--ux-ink") }}>
-            If you are not there to say it
-          </h1>
+              style={{ color: v("--ux-ink") }}>{tr("incase.ifYouAreNotThereTo")}</h1>
           <p className="mt-1.5 max-w-[58ch] text-sm leading-relaxed" style={{ color: v("--ux-muted") }}>
             A week in hospital, a move, or worse. Six plain questions, answered once, so nobody has
             to guess and nothing you built simply stops.
@@ -123,7 +121,7 @@ export default function InCasePage() {
         )}
 
         <div>
-          <SectionHead title="The six questions" sub="Answer what you want. Skip what you do not."
+          <SectionHead title={tr("incase.theSixQuestions")} sub={tr("incase.answerWhatYouWantSkipWhat")}
                        icon="ListChecks" chip={`${done}/${wishes.length}`} />
           <div className="flex flex-col gap-2.5">
             {wishes.map((w) => (
@@ -154,7 +152,7 @@ export default function InCasePage() {
                           value={draft}
                           onChange={(e) => setDraft(e.target.value)}
                           onKeyDown={(e) => { if (e.key === "Enter") save(w.id); }}
-                          placeholder="In your own words"
+                          placeholder={tr("incase.inYourOwnWords")}
                           aria-label={w.question}
                           className="ux-sq min-w-0 flex-1 rounded-[12px] border px-3 py-2.5 text-xsm outline-none"
                           style={{ borderColor: v("--ux-brand"), background: v("--ux-surface"), color: v("--ux-ink") }}

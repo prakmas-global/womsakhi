@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { HomeShell } from "@/components/ux/home/HomeShell";
 import { Back, Btn, Card, EmptyState, I, IconTile, Pill, SectionHead, Stat, v } from "@/components/ux/kit";
 import { COVER, COVERERS, type CoverDay } from "@/components/ux/wellness/data";
+import { useT } from "@/i18n";
 
 /**
  * Cover when you cannot work.
@@ -34,6 +35,7 @@ const STATE: Record<CoverDay["state"], { label: string; tint: string; ink: strin
 };
 
 export default function CoverPage() {
+  const tr = useT();
   const router = useRouter();
   const [days, setDays] = useState<CoverDay[]>(COVER);
   const [asking, setAsking] = useState(false);
@@ -53,7 +55,7 @@ export default function CoverPage() {
   return (
     <HomeShell active="/app/health">
       <div className="flex flex-col gap-5">
-        <Back to="/app/health" label="Back to health" />
+        <Back to="/app/health" label={tr("healthCover.backToHealth")} />
 
         <header className="flex flex-wrap items-end gap-4">
           <div className="min-w-0 flex-1">
@@ -61,24 +63,20 @@ export default function CoverPage() {
               Cover
             </p>
             <h1 className="mt-2 text-[clamp(1.5rem,3.2vw,2.125rem)] font-extrabold leading-[1.1] tracking-[-0.035em]"
-                style={{ color: v("--ux-ink") }}>
-              A day off should not cost you the week
-            </h1>
+                style={{ color: v("--ux-ink") }}>{tr("healthCover.aDayOffShouldNotCost")}</h1>
             <p className="mt-1.5 max-w-[56ch] text-sm leading-relaxed" style={{ color: v("--ux-muted") }}>
               There is no sick leave when you work for yourself — and a closed stall loses the
               customer, not just the day. So someone in your circle opens it instead.
             </p>
           </div>
-          <Btn icon="Plus" onClick={() => setAsking(true)}>I need a day</Btn>
+          <Btn icon="Plus" onClick={() => setAsking(true)}>{tr("healthCover.iNeedADay")}</Btn>
         </header>
 
         <Card pad={20} style={{ background: v("--ux-tint-pink"), borderColor: "transparent" }}>
           <div className="flex items-start gap-3.5">
             <IconTile icon="Lock" tint="--ux-surface" ink="--ux-pink-ink" size={44} radius={13} />
             <div className="min-w-0">
-              <p className="text-sm font-bold" style={{ color: v("--ux-ink") }}>
-                You never have to say why
-              </p>
+              <p className="text-sm font-bold" style={{ color: v("--ux-ink") }}>{tr("healthCover.youNeverHaveToSayWhy")}</p>
               <p className="mt-1.5 max-w-[54ch] text-xsm leading-relaxed" style={{ color: v("--ux-ink-2") }}>
                 Not to us and not to her. Illness, a child, a hospital visit, a bad day — the app
                 asks for a date and nothing else, and nowhere does it store a reason.
@@ -89,11 +87,11 @@ export default function CoverPage() {
 
         <Card>
           <div className="grid gap-4 sm:grid-cols-3">
-            <Stat value={String(timesCovered)} label="Times you were covered" icon="Handshake"
+            <Stat value={String(timesCovered)} label={tr("healthCover.timesYouWereCovered")} icon="Handshake"
                   tint="--ux-tint-green" ink="--ux-green-ink" />
-            <Stat value={`${owed} hours`} label="You owe back in care" icon="Clock"
+            <Stat value={`${owed} hours`} label={tr("healthCover.youOweBackInCare")} icon="Clock"
                   tint="--ux-tint-amber" ink="--ux-amber-ink" />
-            <Stat value={String(COVERERS.length)} label="Women who can step in" icon="Users"
+            <Stat value={String(COVERERS.length)} label={tr("healthCover.womenWhoCanStepIn")} icon="Users"
                   tint="--ux-tint-blue" ink="--ux-blue-ink" />
           </div>
         </Card>
@@ -108,7 +106,7 @@ export default function CoverPage() {
 
         {asking && (
           <Card pad={16} style={{ borderColor: v("--ux-brand") }}>
-            <SectionHead title="Who can take Friday?" sub="They see the work, never the reason" icon="Users" />
+            <SectionHead title={tr("healthCover.whoCanTakeFriday")} sub={tr("healthCover.theySeeTheWorkNeverThe")} icon="Users" />
             <div className="flex flex-col gap-2.5">
               {COVERERS.map((c) => (
                 <button key={c.id} type="button"
@@ -129,14 +127,14 @@ export default function CoverPage() {
                 </button>
               ))}
             </div>
-            <Btn size="sm" variant="ghost" full className="mt-2.5" onClick={() => setAsking(false)}>Not now</Btn>
+            <Btn size="sm" variant="ghost" full className="mt-2.5" onClick={() => setAsking(false)}>{tr("healthCover.notNow")}</Btn>
           </Card>
         )}
 
         <div>
-          <SectionHead title="Coming up" icon="CalendarDays" chip={String(open.length)} />
+          <SectionHead title={tr("healthCover.comingUp")} icon="CalendarDays" chip={String(open.length)} />
           {open.length === 0 ? (
-            <Card><EmptyState icon="CalendarDays" title="Nothing needing cover"
+            <Card><EmptyState icon="CalendarDays" title={tr("healthCover.nothingNeedingCover")}
                               body="When you need a day, ask here. Someone almost always can." /></Card>
           ) : (
             <div className="flex flex-col gap-2.5">
@@ -156,7 +154,7 @@ export default function CoverPage() {
                           {d.what}{d.who && ` · ${d.who} is doing it`}
                         </p>
                       </div>
-                      {d.state === "asked" && <Btn size="sm" onClick={() => setAsking(true)}>Find someone</Btn>}
+                      {d.state === "asked" && <Btn size="sm" onClick={() => setAsking(true)}>{tr("healthCover.findSomeone")}</Btn>}
                     </div>
                   </Card>
                 );

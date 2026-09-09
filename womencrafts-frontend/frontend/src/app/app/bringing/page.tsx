@@ -6,6 +6,7 @@ import { HomeShell } from "@/components/ux/home/HomeShell";
 import { ReadAloud } from "@/components/ux/reach/ReadAloud";
 import { Btn, Card, I, Pill, SectionHead, v } from "@/components/ux/kit";
 import { OBJECTIONS, SPEAKERS, type Objection } from "@/components/ux/reach/data";
+import { useT } from "@/i18n";
 
 /**
  * Bringing them along — deliberately the narrowest module in the app.
@@ -37,6 +38,7 @@ import { OBJECTIONS, SPEAKERS, type Objection } from "@/components/ux/reach/data
  * something to show.
  */
 export default function BringingPage() {
+  const tr = useT();
   const [open, setOpen] = useState<string | null>("ob2");
   const [asked, setAsked] = useState<string | null>(null);
 
@@ -51,13 +53,9 @@ export default function BringingPage() {
       <div className="flex flex-col gap-5" id="bringing-page">
 
         <header>
-          <p className="text-2xs font-extrabold uppercase tracking-[0.2em]" style={{ color: v("--ux-brand") }}>
-            At home
-          </p>
+          <p className="text-2xs font-extrabold uppercase tracking-[0.2em]" style={{ color: v("--ux-brand") }}>{tr("bringing.atHome")}</p>
           <h1 className="mt-2 text-[clamp(1.5rem,3.2vw,2.125rem)] font-extrabold leading-[1.1] tracking-[-0.035em]"
-              style={{ color: v("--ux-ink") }}>
-            When someone at home is not sure about this
-          </h1>
+              style={{ color: v("--ux-ink") }}>{tr("bringing.whenSomeoneAtHomeIsNot")}</h1>
           <p className="mt-1.5 max-w-[58ch] text-sm leading-relaxed" style={{ color: v("--ux-muted") }}>
             For about half the women doing this, the hardest part was never the work — it was
             somebody at home. This page does not tell you what to say to them. It gives you
@@ -68,7 +66,7 @@ export default function BringingPage() {
 
         {/* Their words, then something to show. */}
         <div>
-          <SectionHead title="What did they say?" sub="Pick the one you actually heard" icon="MessageCircle" />
+          <SectionHead title={tr("bringing.whatDidTheySay")} sub={tr("bringing.pickTheOneYouActuallyHeard")} icon="MessageCircle" />
           <div className="flex flex-wrap gap-2">
             {OBJECTIONS.map((o) => (
               <button key={o.id} type="button" onClick={() => setOpen(open === o.id ? null : o.id)}
@@ -89,8 +87,8 @@ export default function BringingPage() {
 
         {/* The arm with the strongest evidence behind it. */}
         <div>
-          <SectionHead title="Or ask a woman to come and speak to them"
-                       sub="Someone from here who has done this for years" icon="UserRoundCheck" />
+          <SectionHead title={tr("bringing.orAskAWomanToCome")}
+                       sub={tr("bringing.someoneFromHereWhoHasDone")} icon="UserRoundCheck" />
           <div className="flex flex-col gap-2.5">
             {SPEAKERS.map((s) => (
               <Card key={s.id} pad={16}>
@@ -108,9 +106,7 @@ export default function BringingPage() {
                       {s.trade} · {s.note}
                     </p>
                   </div>
-                  <Btn size="sm" variant="outline" icon="MessageCircle" onClick={() => ask(s.name)}>
-                    Ask her
-                  </Btn>
+                  <Btn size="sm" variant="outline" icon="MessageCircle" onClick={() => ask(s.name)}>{tr("bringing.askHer")}</Btn>
                 </div>
               </Card>
             ))}
@@ -144,9 +140,7 @@ export default function BringingPage() {
             <I name="ShieldAlert" className="mt-[2px] h-[16px] w-[16px] shrink-0" style={{ color: v("--ux-danger-solid") }} />
             <p className="text-xsm leading-relaxed" style={{ color: v("--ux-ink") }}>
               If someone at home frightens you rather than doubts you, this is the wrong page.{" "}
-              <a href="/app/safety" className="font-bold underline" style={{ color: v("--ux-ink") }}>
-                Go here instead
-              </a>
+              <a href="/app/safety" className="font-bold underline" style={{ color: v("--ux-ink") }}>{tr("bringing.goHereInstead")}</a>
               . Persuading is for people who will listen.
             </p>
           </div>
@@ -157,6 +151,7 @@ export default function BringingPage() {
 }
 
 function Answer({ o }: { o: Objection }) {
+  const tr = useT();
   return (
     <Card pad={0} style={{ overflow: "hidden", borderColor: v("--ux-brand") }}>
       <div className="px-5 pt-5">
@@ -174,9 +169,7 @@ function Answer({ o }: { o: Objection }) {
               <I name={o.icon} className="h-[14px] w-[14px]" />
               {o.proof}
             </span>
-            <Btn size="sm" variant="outline" icon="Smartphone" href="/app/vault/showing">
-              Show it to them
-            </Btn>
+            <Btn size="sm" variant="outline" icon="Smartphone" href="/app/vault/showing">{tr("bringing.showItToThem")}</Btn>
           </div>
         )}
       </div>

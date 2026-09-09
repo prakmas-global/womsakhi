@@ -17,6 +17,7 @@ import { HomeShell } from "@/components/ux/home/HomeShell";
 import { useJobs } from "@/components/ux/growth";
 import { JobRow, RailStat } from "@/components/ux/work/parts";
 import { STAGES, WORK_ART, money, payLabel } from "@/components/ux/work/data";
+import { useT } from "@/i18n";
 
 /**
  * One opening, in full.
@@ -26,6 +27,7 @@ import { STAGES, WORK_ART, money, payLabel } from "@/components/ux/work/data";
  * never be able to send the same application twice by tapping again.
  */
 export default function OpportunityDetail({ params }: { params: Promise<{ id: string }> }) {
+  const tr = useT();
   const { id } = use(params);
   const { data: JOBS, source, refetch } = useJobs();
   const job = JOBS.find((j) => j.id === id);
@@ -84,9 +86,9 @@ export default function OpportunityDetail({ params }: { params: Promise<{ id: st
         <Card>
           <EmptyState
             icon="SearchX"
-            title="That opening is no longer listed"
+            title={tr("opportunities.thatOpeningIsNoLongerListed")}
             body="It may have been filled, or the link may be old. The rest are still here."
-            action={<Btn href="/app/opportunities" variant="primary" iconEnd="ArrowRight">Back to work</Btn>}
+            action={<Btn href="/app/opportunities" variant="primary" iconEnd="ArrowRight">{tr("opportunities.backToWork")}</Btn>}
           />
         </Card>
       </HomeShell>
@@ -109,7 +111,7 @@ export default function OpportunityDetail({ params }: { params: Promise<{ id: st
               and is what she needs to decide. */}
           {job.skills.length > 0 && (
             <Card>
-              <SectionHead title="What they ask for" sub="Straight from the listing" />
+              <SectionHead title={tr("opportunities.whatTheyAskFor")} sub={tr("opportunities.straightFromTheListing")} />
               {/* Ticked where she has it, outlined where she does not. A flat
                   list of requirements makes every listing look equally out of
                   reach; showing which ones she already meets is the difference
@@ -141,11 +143,11 @@ export default function OpportunityDetail({ params }: { params: Promise<{ id: st
           )}
 
           <Card>
-            <SectionHead title="At a glance" />
+            <SectionHead title={tr("opportunities.atAGlance")} />
             <div className="space-y-3.5">
-              <RailStat value={money(job.payLow)} label="Lowest they pay" icon="BadgeIndianRupee"
+              <RailStat value={money(job.payLow)} label={tr("opportunities.lowestTheyPay")} icon="BadgeIndianRupee"
                         tint="--ux-tint-green" ink="--ux-green" />
-              <RailStat value={job.applicants} label="Women applied so far" icon="Users"
+              <RailStat value={job.applicants} label={tr("opportunities.womenAppliedSoFar")} icon="Users"
                         tint="--ux-tint-violet" ink="--ux-violet" />
               <RailStat value={job.posted} label="Posted" icon="Clock"
                         tint="--ux-tint-blue" ink="--ux-blue" />
@@ -157,7 +159,7 @@ export default function OpportunityDetail({ params }: { params: Promise<{ id: st
               does not come back. Saying it before she starts is the whole
               point — and every one of these is already in her vault. */}
           <Card>
-            <SectionHead title="What to have ready" sub="All of it is already in your locker" icon="FolderLock" />
+            <SectionHead title={tr("opportunities.whatToHaveReady")} sub={tr("opportunities.allOfItIsAlreadyIn")} icon="FolderLock" />
             <ul className="space-y-2.5">
               {[
                 { what: "A photo ID", why: "Aadhaar, voter card or driving licence", have: true },
@@ -178,12 +180,12 @@ export default function OpportunityDetail({ params }: { params: Promise<{ id: st
               ))}
             </ul>
             <div className="mt-3.5">
-              <Btn size="sm" variant="outline" href="/app/vault" icon="Lock">Open your locker</Btn>
+              <Btn size="sm" variant="outline" href="/app/vault" icon="Lock">{tr("opportunities.openYourLocker")}</Btn>
             </div>
           </Card>
 
           <Card>
-            <SectionHead title="What happens next" />
+            <SectionHead title={tr("opportunities.whatHappensNext")} />
             <ol className="space-y-3">
               {STAGES.map((s, i) => (
                 <li key={s} className="flex items-start gap-2.5">
@@ -202,8 +204,7 @@ export default function OpportunityDetail({ params }: { params: Promise<{ id: st
       <Link href="/app/opportunities"
             className="ux-hov -my-1 mb-3.5 inline-flex items-center gap-1.5 py-1 text-xsm font-medium"
             style={{ color: "var(--ux-brand)" }}>
-        <Icons.ArrowLeft className="ux-ico h-4 w-4" /> All work
-      </Link>
+        <Icons.ArrowLeft className="ux-ico h-4 w-4" />{tr("opportunities.allWork")}</Link>
 
       <Card className="mb-[16px]">
         <div className="flex items-start gap-4">
@@ -218,7 +219,7 @@ export default function OpportunityDetail({ params }: { params: Promise<{ id: st
             <div className="mt-3 flex flex-wrap gap-2">
               <Pill tone="brand">{job.kind}</Pill>
               <Pill tone="neutral">{job.mode}</Pill>
-              {job.verified && <Pill tone="green">Verified employer</Pill>}
+              {job.verified && <Pill tone="green">{tr("opportunities.verifiedEmployer")}</Pill>}
               {job.womenLed && <Pill tone="pink">Women-led</Pill>}
             </div>
           </div>
@@ -226,7 +227,7 @@ export default function OpportunityDetail({ params }: { params: Promise<{ id: st
 
         <div className="mt-4 flex items-end justify-between gap-4 border-t pt-4" style={{ borderColor: "var(--ux-line)" }}>
           <div>
-            <p className="text-xs" style={{ color: "var(--ux-muted)" }}>They pay</p>
+            <p className="text-xs" style={{ color: "var(--ux-muted)" }}>{tr("opportunities.theyPay")}</p>
             <p className="mt-0.5 text-lg font-bold" style={{ color: "var(--ux-ink)" }}>{payLabel(job)}</p>
           </div>
           <div className="flex items-center gap-2.5">
@@ -236,8 +237,7 @@ export default function OpportunityDetail({ params }: { params: Promise<{ id: st
             {applied ? (
               <span className="ux-pop ux-sq inline-flex items-center gap-2 rounded-[12px] px-4 py-2.5 text-xsm font-semibold"
                     style={{ background: "var(--ux-tint-green)", color: "var(--ux-green-ink)" }}>
-                <Icons.CheckCheck className="h-[15px] w-[15px]" /> Application sent
-              </span>
+                <Icons.CheckCheck className="h-[15px] w-[15px]" />{tr("opportunities.applicationSent")}</span>
             ) : (
               <Btn
                 variant="primary"
@@ -267,18 +267,16 @@ export default function OpportunityDetail({ params }: { params: Promise<{ id: st
               <p className="text-xsm font-semibold" style={{ color: "var(--ux-ink)" }}>
                 It is with {job.org} now.
               </p>
-              <p className="mt-1 text-xs leading-snug" style={{ color: "var(--ux-ink-2)" }}>
-                Most employers reply within three days. You can follow it in Applications.
-              </p>
+              <p className="mt-1 text-xs leading-snug" style={{ color: "var(--ux-ink-2)" }}>{tr("opportunities.mostEmployersReplyWithinThreeDays")}</p>
             </div>
-            <Btn href="/app/applications" variant="soft" size="sm" iconEnd="ArrowRight">Track it</Btn>
+            <Btn href="/app/applications" variant="soft" size="sm" iconEnd="ArrowRight">{tr("opportunities.trackIt")}</Btn>
           </div>
         )}
       </Card>
 
       <div className="grid grid-cols-[minmax(0,1fr)_320px] gap-[16px]">
         <Card>
-          <SectionHead title="About this work" />
+          <SectionHead title={tr("opportunities.aboutThisWork")} />
           <p className="text-xsm leading-relaxed" style={{ color: "var(--ux-ink-2)" }}>{job.about}</p>
 
           {/* Both lists are hidden when the listing carries nothing, rather
@@ -287,7 +285,7 @@ export default function OpportunityDetail({ params }: { params: Promise<{ id: st
               nothing on every opening in the app. */}
           {job.responsibilities.length > 0 && (
             <>
-              <h3 className="mb-2 mt-5 text-xsm font-semibold" style={{ color: "var(--ux-ink)" }}>What you would do</h3>
+              <h3 className="mb-2 mt-5 text-xsm font-semibold" style={{ color: "var(--ux-ink)" }}>{tr("opportunities.whatYouWouldDo")}</h3>
               <ul className="ux-stagger space-y-2">
                 {job.responsibilities.map((r) => (
                   <li key={r} className="flex items-start gap-2.5 text-xsm leading-snug" style={{ color: "var(--ux-ink-2)" }}>
@@ -301,7 +299,7 @@ export default function OpportunityDetail({ params }: { params: Promise<{ id: st
 
           {job.needs.length > 0 && (
             <>
-              <h3 className="mb-2 mt-5 text-xsm font-semibold" style={{ color: "var(--ux-ink)" }}>What you need</h3>
+              <h3 className="mb-2 mt-5 text-xsm font-semibold" style={{ color: "var(--ux-ink)" }}>{tr("opportunities.whatYouNeed")}</h3>
               <ul className="ux-stagger space-y-2">
                 {job.needs.map((r) => (
                   <li key={r} className="flex items-start gap-2.5 text-xsm leading-snug" style={{ color: "var(--ux-ink-2)" }}>
@@ -315,7 +313,7 @@ export default function OpportunityDetail({ params }: { params: Promise<{ id: st
         </Card>
 
         <Card>
-          <SectionHead title="Staying safe" icon="ShieldCheck" />
+          <SectionHead title={tr("opportunities.stayingSafe")} icon="ShieldCheck" />
           <ul className="space-y-3">
             {[
               ["No employer on WomSakhi may ask you for money", "IndianRupee"],
@@ -329,14 +327,14 @@ export default function OpportunityDetail({ params }: { params: Promise<{ id: st
             ))}
           </ul>
           <div className="mt-4">
-            <Btn href="/app/safety" variant="outline" size="sm" full icon="Flag">Report this listing</Btn>
+            <Btn href="/app/safety" variant="outline" size="sm" full icon="Flag">{tr("opportunities.reportThisListing")}</Btn>
           </div>
         </Card>
       </div>
 
       {similar.length > 0 && (
         <div className="mt-[16px]">
-          <SectionHead title="Similar work" sub={`Other ${job.kind.toLowerCase()} openings you may like`} />
+          <SectionHead title={tr("opportunities.similarWork")} sub={`Other ${job.kind.toLowerCase()} openings you may like`} />
           <div className="space-y-[12px]">
             {similar.map((j, i) => (
               <JobRow key={j.id} job={j} i={i} saved={false} onSave={() => {}} />

@@ -6,6 +6,7 @@ import { HomeShell } from "@/components/ux/home/HomeShell";
 import { Btn, Card, I, IconTile, Pill, SectionHead, v } from "@/components/ux/kit";
 import { formatRupees } from "@/components/ux/kit";
 import { CONTRACTS, READINESS, type Contract } from "@/components/ux/eight/data";
+import { useT } from "@/i18n";
 
 /**
  * Big orders, and the wait for the money.
@@ -26,6 +27,7 @@ import { CONTRACTS, READINESS, type Contract } from "@/components/ux/eight/data"
  * draws it, and puts the number of weeks she is out of pocket in words.
  */
 export default function ContractsPage() {
+  const tr = useT();
   const [ready, setReady] = useState(READINESS);
   const [bid, setBid] = useState<string[]>([]);
   const [note, setNote] = useState<string | null>(null);
@@ -51,13 +53,9 @@ export default function ContractsPage() {
       <div className="flex flex-col gap-5">
 
         <header>
-          <p className="text-2xs font-extrabold uppercase tracking-[0.2em]" style={{ color: v("--ux-brand") }}>
-            Big orders
-          </p>
+          <p className="text-2xs font-extrabold uppercase tracking-[0.2em]" style={{ color: v("--ux-brand") }}>{tr("contracts.bigOrders")}</p>
           <h1 className="mt-2 text-[clamp(1.5rem,3.2vw,2.125rem)] font-extrabold leading-[1.1] tracking-[-0.035em]"
-              style={{ color: v("--ux-ink") }}>
-            Orders too big for one woman
-          </h1>
+              style={{ color: v("--ux-ink") }}>{tr("contracts.ordersTooBigForOneWoman")}</h1>
           <p className="mt-1.5 max-w-[58ch] text-sm leading-relaxed" style={{ color: v("--ux-muted") }}>
             Companies want hundreds of pieces. Fourteen of you can make that. The catch is never the
             making — it is that they pay months later, and you buy the cloth today. Every order below
@@ -74,7 +72,7 @@ export default function ContractsPage() {
         )}
 
         <div>
-          <SectionHead title="Open right now" sub="The wait is drawn to scale — look at it before you bid"
+          <SectionHead title={tr("contracts.openRightNow")} sub={tr("contracts.theWaitIsDrawnToScale")}
                        icon="Briefcase" chip={String(open.length)} />
           <div className="flex flex-col gap-4">
             {open.map((c) => (
@@ -86,7 +84,7 @@ export default function ContractsPage() {
 
         {won.length > 0 && (
           <div>
-            <SectionHead title="Yours already" icon="Trophy" />
+            <SectionHead title={tr("contracts.yoursAlready")} icon="Trophy" />
             {won.map((c) => (
               <Card key={c.id} pad={16} style={{ borderColor: v("--ux-green-ink") }}>
                 <div className="flex flex-wrap items-center gap-4">
@@ -108,7 +106,7 @@ export default function ContractsPage() {
 
         {/* Readiness — the things that actually lose bids */}
         <div>
-          <SectionHead title="What buyers ask for"
+          <SectionHead title={tr("contracts.whatBuyersAskFor")}
                        sub={gaps.length === 0 ? "You have everything" : `${gaps.length} still missing`}
                        icon="ClipboardCheck" />
           <Card pad={0} style={{ overflow: "hidden" }}>
@@ -161,6 +159,7 @@ function ContractCard({ c, gaps, joined, terms, setTerms, onJoin }: {
   c: Contract; gaps: number; joined: boolean;
   terms: string | null; setTerms: (v: string | null) => void; onJoin: () => void;
 }) {
+  const tr = useT();
   const materials = Math.round(c.valueMinor * 0.3);
   const qty = Number(c.what.match(/^\d+/)?.[0] ?? 0);
   const weeks = Math.round(c.paysInDays / 7);
@@ -175,7 +174,7 @@ function ContractCard({ c, gaps, joined, terms, setTerms, onJoin }: {
             <p className="text-lg font-extrabold leading-tight tracking-[-0.02em]" style={{ color: v("--ux-ink") }}>
               {c.what}
             </p>
-            {c.state === "bidding" && <Pill tone="brand" size="sm">Bidding now</Pill>}
+            {c.state === "bidding" && <Pill tone="brand" size="sm">{tr("contracts.biddingNow")}</Pill>}
           </div>
           <p className="mt-1 text-xsm" style={{ color: v("--ux-muted") }}>
             {c.buyer}
@@ -207,15 +206,15 @@ function ContractCard({ c, gaps, joined, terms, setTerms, onJoin }: {
 
         <div className="mt-3 flex items-start justify-between gap-2">
           <div className="text-left">
-            <p className="text-xs font-bold" style={{ color: v("--ux-brand") }}>You buy cloth</p>
+            <p className="text-xs font-bold" style={{ color: v("--ux-brand") }}>{tr("contracts.youBuyCloth")}</p>
             <p className="text-2xs tabular-nums" style={{ color: v("--ux-muted") }}>−{formatRupees(materials)}</p>
           </div>
           <div className="text-center">
-            <p className="text-xs font-bold" style={{ color: v("--ux-ink-2") }}>You deliver</p>
-            <p className="text-2xs" style={{ color: v("--ux-muted") }}>Work done</p>
+            <p className="text-xs font-bold" style={{ color: v("--ux-ink-2") }}>{tr("contracts.youDeliver")}</p>
+            <p className="text-2xs" style={{ color: v("--ux-muted") }}>{tr("contracts.workDone")}</p>
           </div>
           <div className="text-right">
-            <p className="text-xs font-bold" style={{ color: v("--ux-green-ink") }}>They pay</p>
+            <p className="text-xs font-bold" style={{ color: v("--ux-green-ink") }}>{tr("contracts.theyPay")}</p>
             <p className="text-2xs tabular-nums" style={{ color: v("--ux-muted") }}>{formatRupees(c.valueMinor)}</p>
           </div>
         </div>
@@ -276,21 +275,21 @@ function ContractCard({ c, gaps, joined, terms, setTerms, onJoin }: {
               </li>
             ))}
           </ul>
-          <p className="mt-3 text-xs" style={{ color: v("--ux-muted") }}>
-            WomSakhi is not a party to this. Read it with someone you trust before you agree.
-          </p>
+          <p className="mt-3 text-xs" style={{ color: v("--ux-muted") }}>{tr("contracts.womsakhiIsNotAPartyTo")}</p>
         </div>
       )}
 
       <div className="mt-4 flex flex-wrap gap-2 border-t px-5 py-4" style={{ borderColor: v("--ux-line") }}>
         <Btn disabled={joined} onClick={onJoin} icon={joined ? "Check" : undefined}>
-          {joined ? "You are in" : c.needsCircle ? "Join the group bid" : "Bid for this"}
+          {joined ? "You are in" : c.needsCircle ? tr("contracts.joinTheGroupBid")
+              : tr("contracts.bidForThis")}
         </Btn>
         <Btn variant="ghost" icon="FileText" onClick={() => setTerms(terms === c.id ? null : c.id)}>
-          {terms === c.id ? "Hide the terms" : "Read the full terms"}
+          {terms === c.id ? tr("contracts.hideTheTerms")
+              : tr("contracts.readTheFullTerms")}
         </Btn>
         {c.needsCircle && (
-          <Btn variant="ghost" icon="FileSignature" href="/app/contracts/together">Who signs it?</Btn>
+          <Btn variant="ghost" icon="FileSignature" href="/app/contracts/together">{tr("contracts.whoSignsIt")}</Btn>
         )}
         {gaps > 0 && <Pill tone="orange" size="sm">{gaps} things still missing</Pill>}
       </div>

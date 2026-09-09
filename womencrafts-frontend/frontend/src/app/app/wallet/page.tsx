@@ -14,6 +14,7 @@ import { MONEY_ART, TXN_FILTERS, rupees } from "@/components/ux/money/data";
 import { formatMoneyOrNothing } from "@/components/ux/kit/money";
 import { useWalletInsights } from "@/components/ux/business";
 import { useMoneyOverview } from "@/components/ux/money/live";
+import { useT } from "@/i18n";
 
 /**
  * Earn — what she has, what is coming, and how to get it out.
@@ -24,6 +25,7 @@ import { useMoneyOverview } from "@/components/ux/money/live";
  * withdraw. History last: it matters, but not before the answer does.
  */
 export default function WalletPage() {
+  const tr = useT();
   const [filter, setFilter] = useState<string>("All");
   // The ledger, from the server where there is one and from the mock where
   // there is not. `source` is what the footer reads to say which.
@@ -86,7 +88,7 @@ export default function WalletPage() {
       rail={
         <div className="space-y-[16px]">
           <Card className="ux-onscroll-soft">
-            <SectionHead title="Where it comes from" sub="Last 30 days" />
+            <SectionHead title={tr("wallet.whereItComesFrom")} sub={tr("wallet.lastDays")} />
             <SourceSplit sources={EARNING_SOURCES} />
           </Card>
 
@@ -94,7 +96,7 @@ export default function WalletPage() {
               honest; showing progress towards a number she never chose is not. */}
           {GOAL ? (
             <Card className="ux-onscroll-soft">
-              <SectionHead title="Your goal" action="Edit"
+              <SectionHead title={tr("wallet.yourGoal")} action="Edit"
                            onAction={() => { window.location.href = "/app/goals"; }} />
               <p className="text-xsm font-semibold" style={{ color: "var(--ux-ink)" }}>{GOAL.label}</p>
               <div className="mt-2.5 flex items-center gap-2.5">
@@ -110,28 +112,26 @@ export default function WalletPage() {
             </Card>
           ) : (
             <Card className="ux-onscroll-soft">
-              <SectionHead title="Set a goal" />
+              <SectionHead title={tr("wallet.setAGoal")} />
               <p className="text-xsm leading-relaxed" style={{ color: "var(--ux-ink-2)" }}>
                 A number and a date. Women who write one down earn more than women who mean to —
                 not because the number is magic, but because it turns &ldquo;more&rdquo; into something you can
                 tell whether you have reached.
               </p>
               <div className="mt-3">
-                <Btn href="/app/goals" variant="primary" size="sm" full iconEnd="ArrowRight">
-                  Set one now
-                </Btn>
+                <Btn href="/app/goals" variant="primary" size="sm" full iconEnd="ArrowRight">{tr("wallet.setOneNow")}</Btn>
               </div>
             </Card>
           )}
 
           <Card className="ux-onscroll-soft">
-            <SectionHead title="Where it goes" action="Manage"
+            <SectionHead title={tr("wallet.whereItGoes")} action="Manage"
                          onAction={() => { window.location.href = "/app/settings/payments"; }} />
             <div className="space-y-2.5">
               {PAYOUT_METHODS.map((m) => <PayoutMethod key={m.id} m={m} />)}
             </div>
             <div className="mt-3">
-              <Btn href="/app/settings/payments" variant="outline" size="sm" full icon="Plus">Add a way to get paid</Btn>
+              <Btn href="/app/settings/payments" variant="outline" size="sm" full icon="Plus">{tr("wallet.addAWayToGetPaid")}</Btn>
             </div>
           </Card>
 
@@ -140,23 +140,17 @@ export default function WalletPage() {
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img loading="lazy" decoding="async" src={MONEY_ART.grow} alt=""
                  className="ux-float pointer-events-none absolute -bottom-3 -end-4 h-[100px] w-[100px] object-contain" />
-            <h3 className="relative w-[60%] text-sm font-semibold" style={{ color: "var(--ux-ink)" }}>
-              Put a little aside
-            </h3>
-            <p className="relative mt-2 w-[60%] text-xs leading-relaxed" style={{ color: "var(--ux-muted)" }}>
-              A savings circle turns ₹500 a month into a lump sum when you need one.
-            </p>
+            <h3 className="relative w-[60%] text-sm font-semibold" style={{ color: "var(--ux-ink)" }}>{tr("wallet.putALittleAside")}</h3>
+            <p className="relative mt-2 w-[60%] text-xs leading-relaxed" style={{ color: "var(--ux-muted)" }}>{tr("wallet.aSavingsCircleTurnsAMonth")}</p>
             <div className="relative mt-3 w-[60%]">
-              <Btn href="/app/circles" variant="soft" size="sm" iconEnd="ArrowRight">See circles</Btn>
+              <Btn href="/app/circles" variant="soft" size="sm" iconEnd="ArrowRight">{tr("wallet.seeCircles")}</Btn>
             </div>
           </div>
         </div>
       }
     >
-      <h1 className="text-2xl font-bold" style={{ color: "var(--ux-ink)" }}>Your wallet</h1>
-      <p className="mb-[20px] mt-1.5 text-xsm" style={{ color: "var(--ux-muted)" }}>
-        Everything you have made, and how to move it to your bank.
-      </p>
+      <h1 className="text-2xl font-bold" style={{ color: "var(--ux-ink)" }}>{tr("wallet.yourWallet")}</h1>
+      <p className="mb-[20px] mt-1.5 text-xsm" style={{ color: "var(--ux-muted)" }}>{tr("wallet.everythingYouHaveMadeAndHow")}</p>
 
       {/* On a money screen an unlabelled fallback is not graceful degradation,
           it is a lie about her balance. */}
@@ -169,7 +163,7 @@ export default function WalletPage() {
               style={{ background: "radial-gradient(circle, rgba(255,255,255,0.16), transparent 68%)" }} />
         <div className="relative flex items-start justify-between gap-6">
           <div>
-            <p className="text-xsm" style={{ color: "rgba(255,255,255,0.82)" }}>Available to withdraw</p>
+            <p className="text-xsm" style={{ color: "rgba(255,255,255,0.82)" }}>{tr("wallet.availableToWithdraw")}</p>
             <p className="mt-1.5 text-4xl font-bold leading-none tabular-nums text-white">
               ₹{balance.toLocaleString("en-IN")}
             </p>
@@ -209,7 +203,7 @@ export default function WalletPage() {
       {/* ── the trend ───────────────────────────────────────────────────── */}
       <Card className="ux-onscroll mt-[16px]">
         <SectionHead
-          title="Your last twelve months"
+          title={tr("wallet.yourLastTwelveMonths")}
           sub={`Up ${Math.round((MONTHLY_MINOR[11] / MONTHLY_MINOR[0] - 1) * 100)}% since ${MONTH_LABELS[0]}`}
           action="Statement"
           onAction={() => { window.location.href = "/app/wallet/statement"; }}
@@ -220,7 +214,7 @@ export default function WalletPage() {
       {/* ── the history ─────────────────────────────────────────────────── */}
       <div className="mb-3 mt-[24px] flex items-end justify-between gap-4">
         <div>
-          <h2 className="text-base font-semibold" style={{ color: "var(--ux-ink)" }}>Every rupee</h2>
+          <h2 className="text-base font-semibold" style={{ color: "var(--ux-ink)" }}>{tr("wallet.everyRupee")}</h2>
           <p className="mt-1 text-xsm" style={{ color: "var(--ux-muted)" }}>
             {shown.length} {plural("entry", shown.length)}
           </p>
@@ -259,7 +253,7 @@ export default function WalletPage() {
             icon="Receipt"
             title={`No ${filter.toLowerCase()} yet`}
             body="Every payment in or out of your wallet shows up here."
-            action={<Btn onClick={() => setFilter("All")} variant="soft">Show everything</Btn>}
+            action={<Btn onClick={() => setFilter("All")} variant="soft">{tr("wallet.showEverything")}</Btn>}
           />
         </Card>
       )}

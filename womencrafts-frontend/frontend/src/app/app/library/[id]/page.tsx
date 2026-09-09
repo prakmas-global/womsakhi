@@ -13,6 +13,7 @@ import {
 } from "@/components/ux/kit";
 import { HomeShell } from "@/components/ux/home/HomeShell";
 import { useMyExchanges, useSwaps } from "@/components/ux/business";
+import { useT } from "@/i18n";
 
 /** How many sessions each — her choice, within what the server accepts (1–52). */
 const SESSION_CHOICES = [1, 2, 3, 4, 6, 8];
@@ -33,6 +34,7 @@ const SESSION_CHOICES = [1, 2, 3, 4, 6, 8];
  * `/exchange/threads/{id}`, and the buttons write to it.
  */
 export default function ExchangeThread({ params }: { params: Promise<{ id: string }> }) {
+  const tr = useT();
   const { id } = use(params);
   const { data: SWAPS, source } = useSwaps();
   const { data: MY_SWAPS, refetch: refetchMine } = useMyExchanges();
@@ -117,9 +119,9 @@ export default function ExchangeThread({ params }: { params: Promise<{ id: strin
         <Card>
           <EmptyState
             icon="SearchX"
-            title="That exchange is not here"
+            title={tr("library.thatExchangeIsNotHere")}
             body="She may have taken the offer down."
-            action={<Btn href="/app/library" variant="primary" iconEnd="ArrowRight">Skill Exchange</Btn>}
+            action={<Btn href="/app/library" variant="primary" iconEnd="ArrowRight">{tr("library.skillExchange")}</Btn>}
           />
         </Card>
       </HomeShell>
@@ -137,7 +139,7 @@ export default function ExchangeThread({ params }: { params: Promise<{ id: strin
       rail={
         <div className="space-y-[16px]">
           <Card>
-            <SectionHead title="Her offer" />
+            <SectionHead title={tr("library.herOffer")} />
             <div className="flex items-start gap-3">
               <IconTile icon={swap.icon} tint={swap.tint} ink={swap.ink} size={44} radius={12} />
               <div className="min-w-0 flex-1">
@@ -147,20 +149,21 @@ export default function ExchangeThread({ params }: { params: Promise<{ id: strin
             </div>
             <p className="mt-3.5 rounded-[12px] p-3 text-xs leading-relaxed"
                style={{ background: "var(--ux-surface-2)", color: "var(--ux-ink-2)" }}>
-              <span style={{ color: "var(--ux-muted)" }}>She would like in return: </span>
+              <span style={{ color: "var(--ux-muted)" }}>{tr("library.sheWouldLikeInReturn")}</span>
               <strong style={{ color: "var(--ux-ink)" }}>{swap.wants}</strong>
             </p>
             <p className="mt-3 flex flex-wrap items-center gap-x-3 text-xs" style={{ color: "var(--ux-muted)" }}>
               <span className="inline-flex items-center gap-1"><Icons.MapPin className="h-3.5 w-3.5" /> {swap.place}</span>
               <span className="inline-flex items-center gap-1">
                 {swap.online ? <Icons.Video className="h-3.5 w-3.5" /> : <Icons.Users className="h-3.5 w-3.5" />}
-                {swap.online ? "Can do it online" : "In person"}
+                {swap.online ? tr("library.canDoItOnline")
+              : tr("library.inPerson")}
               </span>
             </p>
           </Card>
 
           <Card>
-            <SectionHead title="Keeping it fair" icon="Info" />
+            <SectionHead title={tr("library.keepingItFair")} icon="Info" />
             <ul className="space-y-2.5">
               {[
                 "No money changes hands, in either direction.",
@@ -180,18 +183,16 @@ export default function ExchangeThread({ params }: { params: Promise<{ id: strin
       <Link href="/app/library"
             className="ux-hov -my-1 mb-3.5 inline-flex items-center gap-1.5 py-1 text-xsm font-medium"
             style={{ color: "var(--ux-brand)" }}>
-        <Icons.ArrowLeft className="ux-ico h-4 w-4" /> Teach and learn
-      </Link>
+        <Icons.ArrowLeft className="ux-ico h-4 w-4" />{tr("library.teachAndLearn")}</Link>
 
       {/* Pinned above the messages, always. An exchange that lives only in a
           thread is one two women remember differently in a month. */}
       <Card className="mb-[16px]">
         <div className="flex items-start justify-between gap-4">
           <div className="min-w-0">
-            <h2 className="flex items-center gap-2 text-base font-semibold" style={{ color: "var(--ux-ink)" }}>
-              What you have agreed
-              <Pill tone={agreed ? "green" : "blue"} size="sm">
-                {agreed ? "Agreed" : threadId ? "Still talking" : "Not started"}
+            <h2 className="flex items-center gap-2 text-base font-semibold" style={{ color: "var(--ux-ink)" }}>{tr("library.whatYouHaveAgreed")}<Pill tone={agreed ? "green" : "blue"} size="sm">
+                {agreed ? "Agreed" : threadId ? tr("library.stillTalking")
+              : tr("library.notStarted")}
               </Pill>
             </h2>
             <p className="mt-1 text-xs" style={{ color: "var(--ux-muted)" }}>
@@ -236,11 +237,11 @@ export default function ExchangeThread({ params }: { params: Promise<{ id: strin
           ) : threadId ? (
             <label className="inline-flex items-center gap-2">
               <Icons.Repeat className="h-[14px] w-[14px]" />
-              <span>Sessions each</span>
+              <span>{tr("library.sessionsEach")}</span>
               <select
                 value={sessions}
                 onChange={(ev) => setSessions(Number(ev.target.value))}
-                aria-label="How many sessions each"
+                aria-label={tr("library.howManySessionsEach")}
                 className="ux-sq h-[30px] rounded-[8px] border px-2 text-xs"
                 style={{ borderColor: "var(--ux-line-strong)", background: "var(--ux-surface)", color: "var(--ux-ink)" }}
               >
@@ -248,10 +249,11 @@ export default function ExchangeThread({ params }: { params: Promise<{ id: strin
               </select>
             </label>
           ) : null}
-          <span className="inline-flex items-center gap-1.5"><Icons.IndianRupee className="h-[14px] w-[14px]" /> No money either way</span>
+          <span className="inline-flex items-center gap-1.5"><Icons.IndianRupee className="h-[14px] w-[14px]" />{tr("library.noMoneyEitherWay")}</span>
           <span className="inline-flex items-center gap-1.5">
             {swap.online ? <Icons.Video className="h-[14px] w-[14px]" /> : <Icons.MapPin className="h-[14px] w-[14px]" />}
-            {swap.online ? "Video call" : "In person"}
+            {swap.online ? tr("library.videoCall")
+              : tr("library.inPerson2")}
           </span>
         </div>
 
@@ -265,13 +267,11 @@ export default function ExchangeThread({ params }: { params: Promise<{ id: strin
         {agreed && (
           <div className="ux-slide-up mt-3.5 flex items-center gap-3 rounded-[12px] p-3.5" style={{ background: "var(--ux-tint-green)" }}>
             <Icons.CheckCheck className="h-[18px] w-[18px] shrink-0" style={{ color: "var(--ux-green-ink)" }} />
-            <p className="min-w-0 flex-1 text-xsm" style={{ color: "var(--ux-ink-2)" }}>
-              Agreed. Pick a time for the first session between yourselves.
-            </p>
-            <NoteBtn label="Pick a time" icon="CalendarPlus"
-                     title="Suggest a time" to={swap.who}
-                     placeholder="Which day and hour suits you? Say two or three so she can pick."
-                     sent="Sent — she will confirm one"
+            <p className="min-w-0 flex-1 text-xsm" style={{ color: "var(--ux-ink-2)" }}>{tr("library.agreedPickATimeForThe")}</p>
+            <NoteBtn label={tr("library.pickATime")} icon="CalendarPlus"
+                     title={tr("library.suggestATime")} to={swap.who}
+                     placeholder={tr("library.whichDayAndHourSuitsYou")}
+                     sent={tr("library.sentSheWillConfirmOne")}
                      sentBody="It is in the conversation below. No money changes hands, in either direction."
                      sentLink={null}
                      send={async ({ text }) => { await apiSayInExchange(threadId, text); refetchConvo(); }} />
@@ -324,7 +324,7 @@ export default function ExchangeThread({ params }: { params: Promise<{ id: strin
             onChange={(ev) => setDraft(ev.target.value)}
             onKeyDown={(ev) => { if (ev.key === "Enter") { ev.preventDefault(); send(); } }}
             placeholder={msgs.length ? `Reply to ${swap.who.split(" ")[0]}…` : `Write to ${swap.who.split(" ")[0]}…`}
-            aria-label="Write a reply"
+            aria-label={tr("library.writeAReply")}
             className="ux-sq h-[44px] min-w-0 flex-1 rounded-[12px] border px-4 text-xsm outline-none"
             style={{ borderColor: "var(--ux-line-strong)", background: "var(--ux-surface)", color: "var(--ux-ink)" }}
           />

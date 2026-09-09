@@ -7,6 +7,7 @@ import { HomeShell } from "@/components/ux/home/HomeShell";
 import { Back, Btn, Card, I, Pill, SectionHead, Sheet, v } from "@/components/ux/kit";
 import { formatRupees } from "@/components/ux/kit";
 import { SLOTS, type Slot } from "@/components/ux/eight/data";
+import { useT } from "@/i18n";
 
 /**
  * Her week, as a grid.
@@ -29,6 +30,7 @@ const DAYS = ["Today", "Tomorrow", "Saturday"];
 const TIMES = ["10:00", "11:00", "15:00", "16:00"];
 
 export default function SlotsPage() {
+  const tr = useT();
   const router = useRouter();
   const [slots, setSlots] = useState<Slot[]>(SLOTS);
   const [picked, setPicked] = useState<string | null>(null);
@@ -50,7 +52,8 @@ export default function SlotsPage() {
   const block = useCallback((id: string) => {
     setSlots((r) => r.map((s) => (s.id === id ? { ...s, blocked: !s.blocked } : s)));
     const s = slots.find((x) => x.id === id);
-    setNote(s?.blocked ? "Open again. It will show to customers." : "Closed. Nobody is told why.");
+    setNote(s?.blocked ? tr("shopSlots.openAgainItWillShowTo")
+              : tr("shopSlots.closedNobodyIsToldWhy"));
   }, [slots]);
 
   const addAll = useCallback(() => {
@@ -60,23 +63,19 @@ export default function SlotsPage() {
   return (
     <HomeShell active="/app/shop">
       <div className="flex flex-col gap-5">
-        <Back to="/app/shop" label="Back to your shops" />
+        <Back to="/app/shop" label={tr("shopSlots.backToYourShops")} />
 
         <header className="flex flex-wrap items-end gap-4">
           <div className="min-w-0 flex-1">
-            <p className="text-2xs font-extrabold uppercase tracking-[0.2em]" style={{ color: v("--ux-brand") }}>
-              Your week
-            </p>
+            <p className="text-2xs font-extrabold uppercase tracking-[0.2em]" style={{ color: v("--ux-brand") }}>{tr("shopSlots.yourWeek")}</p>
             <h1 className="mt-2 text-[clamp(1.5rem,3.2vw,2.125rem)] font-extrabold leading-[1.1] tracking-[-0.035em]"
-                style={{ color: v("--ux-ink") }}>
-              Sell your time, not just things
-            </h1>
+                style={{ color: v("--ux-ink") }}>{tr("shopSlots.sellYourTimeNotJustThings")}</h1>
             <p className="mt-1.5 max-w-[54ch] text-sm leading-relaxed" style={{ color: v("--ux-muted") }}>
               Customers pick a time themselves. You never have to reply to "when are you free?"
               again — and closing a time takes one tap, with no reason asked.
             </p>
           </div>
-          <Btn variant="outline" icon="CopyPlus" onClick={addAll}>Repeat next week</Btn>
+          <Btn variant="outline" icon="CopyPlus" onClick={addAll}>{tr("shopSlots.repeatNextWeek")}</Btn>
         </header>
 
         {note && (
@@ -183,20 +182,17 @@ export default function SlotsPage() {
                          Message {sel.bookedBy.split(" ")[0]}
                        </Btn>
                        <Btn size="sm" variant="outline" icon="CalendarClock"
-                            onClick={() => { setNote(`Asked ${sel.bookedBy} if another time suits. She decides.`); setPicked(null); }}>
-                         Ask to move it
-                       </Btn>
+                            onClick={() => { setNote(`Asked ${sel.bookedBy} if another time suits. She decides.`); setPicked(null); }}>{tr("shopSlots.askToMoveIt")}</Btn>
                      </>
                    ) : (
                      <>
                        <Btn size="sm" variant={sel.blocked ? "primary" : "outline"}
                             icon={sel.blocked ? "Unlock" : "Lock"}
                             onClick={() => { block(sel.id); setPicked(null); }}>
-                         {sel.blocked ? "Open it again" : "Close this time"}
+                         {sel.blocked ? tr("shopSlots.openItAgain")
+              : tr("shopSlots.closeThisTime")}
                        </Btn>
-                       <Btn size="sm" variant="ghost" icon="IndianRupee" href="/app/shop/pricing">
-                         Change the price
-                       </Btn>
+                       <Btn size="sm" variant="ghost" icon="IndianRupee" href="/app/shop/pricing">{tr("shopSlots.changeThePrice")}</Btn>
                      </>
                    )}
                  </div>
@@ -255,15 +251,16 @@ export default function SlotsPage() {
                     <>
                       <Btn size="sm" icon="MessageCircle" href="/app/messages">Message {sel.bookedBy.split(" ")[0]}</Btn>
                       <Btn size="sm" variant="outline" icon="CalendarClock"
-                           onClick={() => setNote(`Asked ${sel.bookedBy} if another time suits. She decides.`)}>Ask to move it</Btn>
+                           onClick={() => setNote(`Asked ${sel.bookedBy} if another time suits. She decides.`)}>{tr("shopSlots.askToMoveIt2")}</Btn>
                     </>
                   ) : (
                     <>
                       <Btn size="sm" variant={sel.blocked ? "primary" : "outline"} icon={sel.blocked ? "Unlock" : "Lock"}
                            onClick={() => block(sel.id)}>
-                        {sel.blocked ? "Open it again" : "Close this time"}
+                        {sel.blocked ? tr("shopSlots.openItAgain2")
+              : tr("shopSlots.closeThisTime2")}
                       </Btn>
-                      <Btn size="sm" variant="ghost" icon="IndianRupee" href="/app/shop/pricing">Change the price</Btn>
+                      <Btn size="sm" variant="ghost" icon="IndianRupee" href="/app/shop/pricing">{tr("shopSlots.changeThePrice2")}</Btn>
                     </>
                   )}
                 </div>
@@ -273,7 +270,7 @@ export default function SlotsPage() {
         )}
 
         <div>
-          <SectionHead title="This week" icon="CalendarDays" />
+          <SectionHead title={tr("shopSlots.thisWeek")} icon="CalendarDays" />
           <div className="grid gap-3 sm:grid-cols-3">
             {[
               { n: String(booked), l: "times booked", i: "CalendarCheck", tint: "--ux-tint-violet", ink: "--ux-violet" },

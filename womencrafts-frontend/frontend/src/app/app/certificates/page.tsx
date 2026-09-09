@@ -14,6 +14,7 @@ import { useCertificates } from "@/components/ux/live";
 
 import { ACCOUNT_ART } from "@/components/ux/account/data";
 import { COPY } from "@/components/ux/copy";
+import { useT } from "@/i18n";
 
 /**
  * Certificates — proof, in a form she can hand to someone else.
@@ -23,6 +24,7 @@ import { COPY } from "@/components/ux/copy";
  * a screen inside an app she alone can open is not proof of anything.
  */
 export default function CertificatesPage() {
+  const tr = useT();
   const ME = useMe();
   const { data: CERTIFICATES, source } = useCertificates();
   const { data: learning } = useLearning();
@@ -45,7 +47,7 @@ export default function CertificatesPage() {
       rail={
         <div className="space-y-[16px]">
           <Card className="ux-onscroll-soft">
-            <SectionHead title="Still going" sub="Finish these and they join the list" />
+            <SectionHead title={tr("certificates.stillGoing")} sub={tr("certificates.finishTheseAndTheyJoinThe")} />
             <ul className="ux-stagger space-y-3.5">
               {IN_PROGRESS.map((c) => (
                 <li key={c.id}>
@@ -59,12 +61,12 @@ export default function CertificatesPage() {
               ))}
             </ul>
             <div className="mt-3.5">
-              <Btn href="/app/programs" variant="soft" size="sm" full iconEnd="ArrowRight">Keep going</Btn>
+              <Btn href="/app/programs" variant="soft" size="sm" full iconEnd="ArrowRight">{tr("certificates.keepGoing")}</Btn>
             </div>
           </Card>
 
           <Card className="ux-onscroll-soft">
-            <SectionHead title="Where these count" icon="BadgeCheck" />
+            <SectionHead title={tr("certificates.whereTheseCount")} icon="BadgeCheck" />
             <ul className="space-y-2.5">
               {[
                 "Employers hiring through WomSakhi see them on your profile.",
@@ -102,7 +104,7 @@ export default function CertificatesPage() {
                   awarded, and nowhere else earns it. */}
               <div className="ux-metal flex items-center gap-3 px-[20px] py-3.5">
                 <Icons.Award className="ux-ico h-[22px] w-[22px] shrink-0" strokeWidth={1.9} />
-                <span className="text-xs font-semibold uppercase tracking-[0.1em]">Certificate of completion</span>
+                <span className="text-xs font-semibold uppercase tracking-[0.1em]">{tr("certificates.certificateOfCompletion")}</span>
               </div>
               <div className="p-[20px]">
                 <h2 className="text-base font-semibold leading-snug" style={{ color: "var(--ux-ink)" }}>{c.title}</h2>
@@ -150,10 +152,8 @@ export default function CertificatesPage() {
                              })}>
                     Download
                   </ActionBtn>
-                  <ActionBtn variant="outline" size="sm" icon="Share2" doneIcon="Copy" done="Link copied"
-                             act={() => copy(`https://womsakhi.in/verify/${c.code}`, "Link copied — anyone can check it", "Copy the code instead")}>
-                    Share link
-                  </ActionBtn>
+                  <ActionBtn variant="outline" size="sm" icon="Share2" doneIcon="Copy" done={tr("certificates.linkCopied")}
+                             act={() => copy(`https://womsakhi.in/verify/${c.code}`, "Link copied — anyone can check it", "Copy the code instead")}>{tr("certificates.shareLink")}</ActionBtn>
                 </div>
               </div>
             </Card>

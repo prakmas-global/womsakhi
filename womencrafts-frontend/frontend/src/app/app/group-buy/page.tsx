@@ -12,6 +12,7 @@ import {
 import { HomeShell } from "@/components/ux/home/HomeShell";
 import { useGroupBuys } from "@/components/ux/entitlements";
 import { MORE_ART, rupees } from "@/components/ux/more/data";
+import { useT } from "@/i18n";
 
 /**
  * Group Buying.
@@ -22,6 +23,7 @@ import { MORE_ART, rupees } from "@/components/ux/more/data";
  * "great value" — and the number of women still needed.
  */
 export default function GroupBuyPage() {
+  const tr = useT();
   const { data: GROUP_BUYS, source, refetch } = useGroupBuys();
   /**
    * The buys she is in — from the server, which carries `joined_by_me`.
@@ -62,7 +64,7 @@ export default function GroupBuyPage() {
       rail={
         <div className="space-y-[16px]">
           <Card>
-            <SectionHead title="How it works" icon="Info" />
+            <SectionHead title={tr("groupbuy.howItWorks")} icon="Info" />
             <ol className="space-y-3">
               {[
                 "Enough women say they want the same thing.",
@@ -84,20 +86,16 @@ export default function GroupBuyPage() {
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img loading="lazy" decoding="async" src={MORE_ART.group} alt=""
                  className="ux-float pointer-events-none absolute -bottom-3 -end-4 h-[100px] w-[100px] object-contain" />
-            <h3 className="relative w-[60%] text-sm font-semibold" style={{ color: "var(--ux-ink)" }}>
-              Start one yourself
-            </h3>
-            <p className="relative mt-2 w-[60%] text-xs leading-relaxed" style={{ color: "var(--ux-muted)" }}>
-              If you buy something regularly, others near you probably buy it too.
-            </p>
+            <h3 className="relative w-[60%] text-sm font-semibold" style={{ color: "var(--ux-ink)" }}>{tr("groupbuy.startOneYourself")}</h3>
+            <p className="relative mt-2 w-[60%] text-xs leading-relaxed" style={{ color: "var(--ux-muted)" }}>{tr("groupbuy.ifYouBuySomethingRegularlyOthers")}</p>
             <div className="relative mt-3 w-[60%]">
-              <Btn href="/app/circles/new" variant="soft" size="sm" icon="Plus">Propose a buy</Btn>
+              <Btn href="/app/circles/new" variant="soft" size="sm" icon="Plus">{tr("groupbuy.proposeABuy")}</Btn>
             </div>
           </div>
         </div>
       }
     >
-      <h1 className="text-2xl font-bold" style={{ color: "var(--ux-ink)" }}>Buy together</h1>
+      <h1 className="text-2xl font-bold" style={{ color: "var(--ux-ink)" }}>{tr("groupbuy.buyTogether")}</h1>
       <p className="mb-[20px] mt-1.5 text-xsm" style={{ color: "var(--ux-muted)" }}>
         {open.length} open now. You pay nothing unless enough women join and the order goes ahead.
       </p>
@@ -134,7 +132,7 @@ export default function GroupBuyPage() {
                       <h3 className="min-w-0 flex-1 text-base font-semibold" style={{ color: "var(--ux-ink)" }}>
                         {g.what}
                       </h3>
-                      {full && <Pill tone="green" size="sm">Going ahead</Pill>}
+                      {full && <Pill tone="green" size="sm">{tr("groupbuy.goingAhead")}</Pill>}
                     </div>
                     <p className="mt-1 text-xs" style={{ color: "var(--ux-muted)" }}>Organised by {g.by}</p>
 
@@ -166,14 +164,15 @@ export default function GroupBuyPage() {
                     <div className="mt-auto flex items-center justify-between gap-3 pt-3.5">
                       <span className="text-xs" style={{ color: "var(--ux-faint)" }}>{g.closes}</span>
                       {full && !on ? (
-                        <ActionBtn variant="outline" size="sm" icon="Bell" done="We will tell you when it reopens">Tell me next time</ActionBtn>
+                        <ActionBtn variant="outline" size="sm" icon="Bell" done={tr("groupbuy.weWillTellYouWhenIt")}>{tr("groupbuy.tellMeNextTime")}</ActionBtn>
                       ) : (
                         <Btn variant={on ? "outline" : "primary"} size="sm"
                              icon={busy ? "Loader" : on ? "Check" : undefined}
                              iconEnd={busy || on ? undefined : "ArrowRight"}
                              disabled={busy}
                              onClick={() => void membership.run(g.id, on ? "leave" : "join")}>
-                          {busy ? "Sending…" : on ? "You are in" : "Join this buy"}
+                          {busy ? "Sending…" : on ? tr("groupbuy.youAreIn")
+              : tr("groupbuy.joinThisBuy")}
                         </Btn>
                       )}
                     </div>
@@ -185,9 +184,9 @@ export default function GroupBuyPage() {
         </div>
       ) : (
         <Card>
-          <EmptyState icon="ShoppingBasket" title="Nothing open right now"
+          <EmptyState icon="ShoppingBasket" title={tr("groupbuy.nothingOpenRightNow")}
                       body="Propose something you buy often and see who else needs it."
-                      action={<Btn href="/app/circles/new" variant="primary" icon="Plus">Propose a buy</Btn>} />
+                      action={<Btn href="/app/circles/new" variant="primary" icon="Plus">{tr("groupbuy.proposeABuy2")}</Btn>} />
         </Card>
       )}
     </HomeShell>

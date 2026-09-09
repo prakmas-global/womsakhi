@@ -8,6 +8,7 @@ import { useDevicePref } from "@/lib/use-device-pref";
 import { IconTile } from "@/components/ux/kit";
 import { Card, SectionHead, SettingsPage, Toggle } from "@/components/ux/settings/Frame";
 import { VOICE_CAN, VOICE_LANGS } from "@/components/ux/more/data";
+import { useT } from "@/i18n";
 
 /**
  * Voice Mode.
@@ -21,6 +22,7 @@ import { VOICE_CAN, VOICE_LANGS } from "@/components/ux/more/data";
  * is not the listening — it is knowing what you are allowed to ask for.
  */
 export default function VoiceSettings() {
+  const tr = useT();
   const [on, setOn] = useDevicePref("voice.on", true);
   const [wake, setWake] = useDevicePref("voice.wake", true);
   const [readOut, setReadOut] = useDevicePref("voice.readOut", true);
@@ -29,12 +31,12 @@ export default function VoiceSettings() {
   return (
     <SettingsPage
       title="Voice"
-      sub="Talk to Sakhi instead of typing. Useful when your hands are busy, or when reading is slow."
+      sub={tr("settingsVoice.talkToSakhiInsteadOfTyping")}
     >
       <Card>
         <Toggle
           on={on} onChange={setOn}
-          label="Use voice"
+          label={tr("settingsVoice.useVoice")}
           whenOn="The microphone button appears wherever Sakhi does."
           whenOff="Sakhi is typing only. Nothing listens."
         />
@@ -43,8 +45,8 @@ export default function VoiceSettings() {
       {on && (
         <>
           <Card>
-            <SectionHead title="What language she listens in"
-                         sub="The same one she replies and speaks in" />
+            <SectionHead title={tr("settingsVoice.whatLanguageSheListensIn")}
+                         sub={tr("settingsVoice.theSameOneSheRepliesAnd")} />
             <div className="ux-deck grid grid-cols-3 gap-2.5">
               {VOICE_LANGS.map((l, i) => {
                 const sel = lang === l.code;
@@ -74,7 +76,7 @@ export default function VoiceSettings() {
           </Card>
 
           <Card>
-            <SectionHead title="Things you can say" sub="Out loud, in your own words — these are examples, not commands" />
+            <SectionHead title={tr("settingsVoice.thingsYouCanSay")} sub={tr("settingsVoice.outLoudInYourOwnWords")} />
             <ul className="ux-stagger space-y-3">
               {VOICE_CAN.map((v, i) => (
                 <li key={v.id} className="ux-hov flex items-start gap-3" style={{ ["--i" as string]: i }}>
@@ -89,26 +91,24 @@ export default function VoiceSettings() {
           </Card>
 
           <Card>
-            <SectionHead title="How it behaves" />
+            <SectionHead title={tr("settingsVoice.howItBehaves")} />
             <div className="divide-y" style={{ borderColor: "var(--ux-line)" }}>
               <Toggle
                 on={wake} onChange={setWake}
-                label="Listen only when you press"
+                label={tr("settingsVoice.listenOnlyWhenYouPress")}
                 whenOn="Nothing is recorded until you hold the microphone button."
                 whenOff="Sakhi listens for her name. Some members find this uncomfortable."
               />
               <Toggle
                 on={readOut} onChange={setReadOut}
-                label="Read replies out loud"
+                label={tr("settingsVoice.readRepliesOutLoud")}
                 whenOn="She speaks her answer as well as showing it."
                 whenOff="She writes her answer. Nothing is spoken."
               />
             </div>
             <p className="mt-3.5 flex items-start gap-2.5 rounded-[12px] p-3 text-xs leading-relaxed"
                style={{ background: "var(--ux-surface-2)", color: "var(--ux-ink-2)" }}>
-              <Icons.Lock className="mt-[1px] h-[14px] w-[14px] shrink-0" style={{ color: "var(--ux-brand)" }} />
-              What you say is turned into text and then deleted. No recording of your voice is kept.
-            </p>
+              <Icons.Lock className="mt-[1px] h-[14px] w-[14px] shrink-0" style={{ color: "var(--ux-brand)" }} />{tr("settingsVoice.whatYouSayIsTurnedInto")}</p>
           </Card>
         </>
       )}

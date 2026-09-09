@@ -7,6 +7,7 @@ import { Btn, Card, I, Pill, SectionHead, v } from "@/components/ux/kit";
 import { ReadAloud } from "@/components/ux/reach/ReadAloud";
 import { VOICE_LANGUAGES, VOICE_PREFS } from "@/components/ux/reach/data";
 import { TEXT_SIZES, applyTextSize, readTextSize, type TextSize } from "@/components/ux/reach/text-size";
+import { useT } from "@/i18n";
 
 /**
  * Reading and speaking — the accessibility layer the app was missing.
@@ -29,6 +30,7 @@ import { TEXT_SIZES, applyTextSize, readTextSize, type TextSize } from "@/compon
  * them explicitly.
  */
 export default function VoiceSettingsPage() {
+  const tr = useT();
   const [prefs, setPrefs] = useState(VOICE_PREFS.filter((p) => p.id !== "vp4"));
   const [size, setSize] = useState<TextSize>("normal");
 
@@ -53,13 +55,9 @@ export default function VoiceSettingsPage() {
 
         <header className="flex flex-wrap items-end gap-4">
           <div className="min-w-0 flex-1">
-            <p className="text-2xs font-extrabold uppercase tracking-[0.2em]" style={{ color: v("--ux-brand") }}>
-              Reading and speaking
-            </p>
+            <p className="text-2xs font-extrabold uppercase tracking-[0.2em]" style={{ color: v("--ux-brand") }}>{tr("voice.readingAndSpeaking")}</p>
             <h1 className="mt-2 text-[clamp(1.5rem,3.2vw,2.125rem)] font-extrabold leading-[1.1] tracking-[-0.035em]"
-                style={{ color: v("--ux-ink") }}>
-              You do not have to read this
-            </h1>
+                style={{ color: v("--ux-ink") }}>{tr("voice.youDoNotHaveToRead")}</h1>
             <p className="mt-1.5 max-w-[56ch] text-sm leading-relaxed" style={{ color: v("--ux-muted") }}>
               Every screen can be read out to you, in your own language. Anywhere you would type,
               you can speak instead. Try it on this page first — press the button.
@@ -70,8 +68,8 @@ export default function VoiceSettingsPage() {
 
         {/* Language first — it decides what the voice sounds like */}
         <div>
-          <SectionHead title="Which language should it speak"
-                       sub="The voice comes from your phone, so it works without internet" icon="Languages" />
+          <SectionHead title={tr("voice.whichLanguageShouldItSpeak")}
+                       sub={tr("voice.theVoiceComesFromYourPhone")} icon="Languages" />
           <Card pad={16}>
             <div className="flex flex-wrap gap-2">
               {VOICE_LANGUAGES.map((l) => (
@@ -95,8 +93,8 @@ export default function VoiceSettingsPage() {
 
         {/* Text size — a real control. This was a dead switch before. */}
         <div>
-          <SectionHead title="How big should the words be"
-                       sub="Changes everything, everywhere, straight away" icon="Type" />
+          <SectionHead title={tr("voice.howBigShouldTheWordsBe")}
+                       sub={tr("voice.changesEverythingEverywhereStraigh")} icon="Type" />
           <Card pad={16}>
             <div className="flex flex-wrap gap-2.5">
               {(Object.keys(TEXT_SIZES) as TextSize[]).map((k) => (
@@ -114,9 +112,7 @@ export default function VoiceSettingsPage() {
                      style={{ fontSize: `${14 * TEXT_SIZES[k]}px` }}>
                     {k === "normal" ? "Normal" : k === "large" ? "Bigger" : "Biggest"}
                   </p>
-                  <p className="mt-1 leading-snug" style={{ fontSize: `${11 * TEXT_SIZES[k]}px`, opacity: 0.8 }}>
-                    Blouse stitching, ₹400
-                  </p>
+                  <p className="mt-1 leading-snug" style={{ fontSize: `${11 * TEXT_SIZES[k]}px`, opacity: 0.8 }}>{tr("voice.blouseStitching")}</p>
                 </button>
               ))}
             </div>
@@ -124,7 +120,7 @@ export default function VoiceSettingsPage() {
         </div>
 
         <div>
-          <SectionHead title="What it should do" sub={`${on} of ${prefs.length} turned on`} icon="Settings2" />
+          <SectionHead title={tr("voice.whatItShouldDo")} sub={`${on} of ${prefs.length} turned on`} icon="Settings2" />
           <Card pad={0} style={{ overflow: "hidden" }}>
             {prefs.map((p, i) => (
               <div key={p.id} className="flex items-center gap-3.5 px-5 py-4"
@@ -167,7 +163,7 @@ export default function VoiceSettingsPage() {
         )}
 
         <div>
-          <SectionHead title="Where you can already speak instead of typing" icon="Mic" />
+          <SectionHead title={tr("voice.whereYouCanAlreadySpeakInstead")} icon="Mic" />
           <div className="grid gap-3 sm:grid-cols-2">
             {[
               { icon: "Store", label: "Adding something to sell", href: "/app/shop/voice", note: "Say it and it becomes a listing" },

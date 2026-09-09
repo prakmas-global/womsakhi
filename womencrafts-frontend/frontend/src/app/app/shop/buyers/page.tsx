@@ -7,6 +7,7 @@ import { HomeShell } from "@/components/ux/home/HomeShell";
 import { Back, Btn, Card, I, IconTile, Pill, SectionHead, Stat, v } from "@/components/ux/kit";
 import { formatRupees } from "@/components/ux/kit";
 import { BUYERS, quietScore, type Buyer } from "@/components/ux/shopplus/data";
+import { useT } from "@/i18n";
 
 /**
  * Who comes back.
@@ -37,6 +38,7 @@ const KIND: Record<Buyer["kind"], { label: string; icon: string; tint: string; i
 };
 
 export default function BuyersPage() {
+  const tr = useT();
   const router = useRouter();
   const [rows, setRows] = useState<Buyer[]>(BUYERS);
   const [note, setNote] = useState<string | null>(null);
@@ -55,6 +57,7 @@ export default function BuyersPage() {
   }, [rows]);
 
   const card = (b: Buyer) => {
+  const tr = useT();
     const k = KIND[b.kind];
     return (
       <Card key={b.id} pad={16}>
@@ -63,8 +66,8 @@ export default function BuyersPage() {
           <div className="min-w-0 flex-1">
             <div className="flex flex-wrap items-center gap-2">
               <p className="text-sm font-bold" style={{ color: v("--ux-ink") }}>{b.name}</p>
-              {b.committed && <Pill tone="green" size="sm">Standing order</Pill>}
-              {b.repeat && !b.committed && <Pill tone="blue" size="sm">Comes back</Pill>}
+              {b.committed && <Pill tone="green" size="sm">{tr("shopBuyers.standingOrder")}</Pill>}
+              {b.repeat && !b.committed && <Pill tone="blue" size="sm">{tr("shopBuyers.comesBack")}</Pill>}
             </div>
             <p className="mt-0.5 text-xs" style={{ color: v("--ux-muted") }}>
               {k.label} · last bought {b.lastOn}
@@ -86,7 +89,8 @@ export default function BuyersPage() {
           <span className="inline-flex items-center gap-1.5 text-xs font-semibold"
                 style={{ color: v(b.repeat ? "--ux-green-ink" : "--ux-muted") }}>
             <I name={b.repeat ? "Check" : "Minus"} className="h-[13px] w-[13px]" sw={2.6} />
-            {b.repeat ? "Came back" : "Bought once"}
+            {b.repeat ? tr("shopBuyers.cameBack")
+              : tr("shopBuyers.boughtOnce2")}
           </span>
           <span className="inline-flex items-center gap-1.5 text-xs font-semibold"
                 style={{ color: v(b.complaints === 0 ? "--ux-green-ink" : "--ux-danger-solid") }}>
@@ -96,9 +100,7 @@ export default function BuyersPage() {
         </div>
 
         {b.repeat && !b.committed && (
-          <Btn size="sm" full className="mt-3.5" onClick={() => commit(b.id)}>
-            Ask her for a standing order
-          </Btn>
+          <Btn size="sm" full className="mt-3.5" onClick={() => commit(b.id)}>{tr("shopBuyers.askHerForAStandingOrder")}</Btn>
         )}
       </Card>
     );
@@ -107,16 +109,12 @@ export default function BuyersPage() {
   return (
     <HomeShell active="/app/shop">
       <div className="flex flex-col gap-5">
-        <Back to="/app/shop" label="Back to your shops" />
+        <Back to="/app/shop" label={tr("shopBuyers.backToYourShops")} />
 
         <header>
-          <p className="text-2xs font-extrabold uppercase tracking-[0.2em]" style={{ color: v("--ux-brand") }}>
-            Your buyers
-          </p>
+          <p className="text-2xs font-extrabold uppercase tracking-[0.2em]" style={{ color: v("--ux-brand") }}>{tr("shopBuyers.yourBuyers")}</p>
           <h1 className="mt-2 text-[clamp(1.5rem,3.2vw,2.125rem)] font-extrabold leading-[1.1] tracking-[-0.035em]"
-              style={{ color: v("--ux-ink") }}>
-            One steady buyer beats a hundred lookers
-          </h1>
+              style={{ color: v("--ux-ink") }}>{tr("shopBuyers.oneSteadyBuyerBeatsAHundred")}</h1>
           <p className="mt-1.5 max-w-[56ch] text-sm leading-relaxed" style={{ color: v("--ux-muted") }}>
             Being seen by strangers changes very little. Someone who has agreed to keep buying
             changes what you can plan for.
@@ -125,17 +123,18 @@ export default function BuyersPage() {
 
         <Card>
           <div className="grid gap-4 sm:grid-cols-3">
-            <Stat value={String(committed)} label="Have committed to keep buying"
+            <Stat value={String(committed)} label={tr("shopBuyers.haveCommittedToKeepBuying")}
                   icon="Handshake" tint="--ux-tint-green" ink="--ux-green-ink" />
-            <Stat value={String(steady.length)} label="Come back without being asked"
+            <Stat value={String(steady.length)} label={tr("shopBuyers.comeBackWithoutBeingAsked")}
                   icon="Repeat" tint="--ux-tint-blue" ink="--ux-blue-ink" />
-            <Stat value={formatRupees(spent)} label="They have spent with you"
+            <Stat value={formatRupees(spent)} label={tr("shopBuyers.theyHaveSpentWithYou")}
                   icon="Wallet" tint="--ux-tint-violet" ink="--ux-violet" />
           </div>
           {askable.length > 0 && (
             <div className="mt-4 border-t pt-3.5" style={{ borderColor: v("--ux-line") }}>
               <p className="text-xsm" style={{ color: v("--ux-ink-2") }}>
-                <b>{askable.length}</b> {askable.length === 1 ? "buyer already comes back" : "buyers already come back"} and
+                <b>{askable.length}</b> {askable.length === 1 ? tr("shopBuyers.buyerAlreadyComesBack")
+              : tr("shopBuyers.buyersAlreadyComeBack")} and
                 {askable.length === 1 ? " has" : " have"} never complained. None of them has been asked for a standing order.
               </p>
             </div>
@@ -151,15 +150,15 @@ export default function BuyersPage() {
         )}
 
         <div>
-          <SectionHead title="They keep coming back"
-                       sub="Ranked by repeat buying and quiet — not by stars" icon="Handshake"
+          <SectionHead title={tr("shopBuyers.theyKeepComingBack")}
+                       sub={tr("shopBuyers.rankedByRepeatBuyingAndQuiet")} icon="Handshake"
                        chip={String(steady.length)} />
           <div className="flex flex-col gap-3">{steady.map(card)}</div>
         </div>
 
         {once.length > 0 && (
           <div>
-            <SectionHead title="Bought once" sub="Worth one message before the season" icon="User"
+            <SectionHead title={tr("shopBuyers.boughtOnce")} sub={tr("shopBuyers.worthOneMessageBeforeTheSeason")} icon="User"
                          chip={String(once.length)} />
             <div className="flex flex-col gap-3">{once.map(card)}</div>
           </div>

@@ -12,6 +12,7 @@ import { HomeShell } from "@/components/ux/home/HomeShell";
 import { useCircles } from "@/components/ux/live";
 import { useHelplines } from "@/components/ux/entitlements";
 import { LOCAL_ART } from "@/components/ux/local/data";
+import { useT } from "@/i18n";
 
 /**
  * Sakhi Local — her city, not the country.
@@ -22,6 +23,7 @@ import { LOCAL_ART } from "@/components/ux/local/data";
  * country is just the home page again.
  */
 export default function LocalPage() {
+  const tr = useT();
   /**
    * The stories, from `/community/stories` rather than through `useStories`.
    *
@@ -112,7 +114,7 @@ export default function LocalPage() {
           </Card>
 
           <Card className="ux-onscroll-soft">
-            <SectionHead title="Help you can ring" sub="Free, and they answer" />
+            <SectionHead title={tr("stories.helpYouCanRing")} sub={tr("stories.freeAndTheyAnswer")} />
             <ul className="ux-stagger space-y-3">
               {LOCAL_HELP.map((h) => (
                 <li key={h.id}>
@@ -135,14 +137,10 @@ export default function LocalPage() {
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img loading="lazy" decoding="async" src={LOCAL_ART.hero} alt=""
                  className="ux-float pointer-events-none absolute -bottom-3 -end-4 h-[100px] w-[100px] object-contain" />
-            <h3 className="relative w-[60%] text-sm font-semibold" style={{ color: "var(--ux-ink)" }}>
-              Tell yours
-            </h3>
-            <p className="relative mt-2 w-[60%] text-xs leading-relaxed" style={{ color: "var(--ux-muted)" }}>
-              Someone two streets away is where you were a year ago.
-            </p>
+            <h3 className="relative w-[60%] text-sm font-semibold" style={{ color: "var(--ux-ink)" }}>{tr("stories.tellYours")}</h3>
+            <p className="relative mt-2 w-[60%] text-xs leading-relaxed" style={{ color: "var(--ux-muted)" }}>{tr("stories.someoneTwoStreetsAwayIsWhere")}</p>
             <div className="relative mt-3 w-[60%]">
-              <Btn href="/app/feedback" variant="soft" size="sm" iconEnd="ArrowRight">Share your story</Btn>
+              <Btn href="/app/feedback" variant="soft" size="sm" iconEnd="ArrowRight">{tr("stories.shareYourStory")}</Btn>
             </div>
           </div>
         </div>
@@ -150,7 +148,7 @@ export default function LocalPage() {
     >
       <div className="mb-[20px] flex items-end justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold" style={{ color: "var(--ux-ink)" }}>Near you</h1>
+          <h1 className="text-2xl font-bold" style={{ color: "var(--ux-ink)" }}>{tr("stories.nearYou")}</h1>
           <p className="mt-1.5 flex items-center gap-1.5 text-xsm" style={{ color: "var(--ux-muted)" }}>
             <Icons.MapPin className="h-4 w-4" />
             {city ? `${city} · ` : ""}{STORIES.length} {plural("story", STORIES.length)} from women on WomSakhi
@@ -247,11 +245,11 @@ export default function LocalPage() {
                           is where these words land. So the button now names
                           who really reads it and puts her name in the message
                           rather than pretending to deliver it. */}
-                      <NoteBtn label="Ask about her" variant="outline" icon="MessageCircle"
+                      <NoteBtn label={tr("stories.askAboutHer")} variant="outline" icon="MessageCircle"
                                title={`Ask the WomSakhi team about ${s.author_name}`} to="the WomSakhi team"
-                               placeholder="WomSakhi has no direct messages between members yet, so this goes to the team — say what you would like to ask her and they will answer you."
+                               placeholder={tr("stories.womsakhiHasNoDirectMessagesBetween")}
                                send={(n) => apiSendMessage(`About ${s.author_name}'s story: ${n.text}`)}
-                               sent="Your message is with the WomSakhi team"
+                               sent={tr("stories.yourMessageIsWithTheWomsakhi")}
                                sentBody={`They read every one and reply in Messages. ${s.author_name} is not told you wrote.`} />
                     </span>
                   </div>
@@ -274,7 +272,7 @@ export default function LocalPage() {
                       <h3 className="min-w-0 flex-1 truncate text-sm font-semibold" style={{ color: "var(--ux-ink)" }}>
                         {g.name}
                       </h3>
-                      {g.joined && <Pill tone="brand" size="sm">You are in this</Pill>}
+                      {g.joined && <Pill tone="brand" size="sm">{tr("stories.youAreInThis")}</Pill>}
                     </div>
                     <p className="mt-1 text-xs" style={{ color: "var(--ux-muted)" }}>
                       {g.members} {plural("member", g.members)} · {g.place} · {g.activity}
@@ -290,9 +288,9 @@ export default function LocalPage() {
           </div>
         ) : (
           <Card>
-            <EmptyState icon="UsersRound" title="No groups yet"
+            <EmptyState icon="UsersRound" title={tr("stories.noGroupsYet")}
                         body="Circles are where women near you organise — savings, shared orders, and getting somebody to answer at 9pm."
-                        action={<Btn href="/app/circles" variant="primary" iconEnd="ArrowRight">See circles</Btn>} />
+                        action={<Btn href="/app/circles" variant="primary" iconEnd="ArrowRight">{tr("stories.seeCircles")}</Btn>} />
           </Card>
         )
       )}

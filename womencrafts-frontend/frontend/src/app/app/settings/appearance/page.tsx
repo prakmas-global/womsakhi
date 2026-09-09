@@ -6,6 +6,7 @@ import { useDevicePref } from "@/lib/use-device-pref";
 
 import { useTheme } from "@/context/ThemeContext";
 import { Card, SectionHead, SettingsPage, Toggle } from "@/components/ux/settings/Frame";
+import { useT } from "@/i18n";
 
 /**
  * Appearance.
@@ -15,6 +16,7 @@ import { Card, SectionHead, SettingsPage, Toggle } from "@/components/ux/setting
  * ever will, and it changes the moment she picks one.
  */
 export default function AppearanceSettings() {
+  const tr = useT();
   const { theme, setTheme } = useTheme();
   const [bigText, setBigText] = useDevicePref("appearance.bigText", false);
   const [lessMotion, setLessMotion] = useDevicePref("appearance.lessMotion", false);
@@ -27,7 +29,7 @@ export default function AppearanceSettings() {
   ];
 
   return (
-    <SettingsPage title="Appearance" sub="Changes straight away — nothing to save.">
+    <SettingsPage title="Appearance" sub={tr("settingsAppearance.changesStraightAwayNothingToSave")}>
       <Card>
         <SectionHead title="Theme" />
         <div className="ux-deck grid grid-cols-3 gap-[12px]">
@@ -90,26 +92,24 @@ export default function AppearanceSettings() {
       </Card>
 
       <Card>
-        <SectionHead title="Making it easier to use" />
+        <SectionHead title={tr("settingsAppearance.makingItEasierToUse")} />
         <div className="divide-y" style={{ borderColor: "var(--ux-line)" }}>
           <Toggle
             on={bigText} onChange={setBigText}
-            label="Bigger text"
+            label={tr("settingsAppearance.biggerText")}
             whenOn="Everything is a size larger. Some cards will be taller."
             whenOff="Text is at the normal size."
           />
           <Toggle
             on={lessMotion} onChange={setLessMotion}
-            label="Less movement"
+            label={tr("settingsAppearance.lessMovement")}
             whenOn="Cards and pages appear instead of sliding. Nothing else changes."
             whenOff="Cards lift and pages slide as you move around."
           />
         </div>
         <p className="mt-3.5 flex items-start gap-2.5 rounded-[12px] p-3 text-xs leading-relaxed"
            style={{ background: "var(--ux-surface-2)", color: "var(--ux-ink-2)" }}>
-          <Icons.Info className="mt-[1px] h-[14px] w-[14px] shrink-0" style={{ color: "var(--ux-brand)" }} />
-          If your phone is already set to reduce motion, WomSakhi follows it without you turning this on.
-        </p>
+          <Icons.Info className="mt-[1px] h-[14px] w-[14px] shrink-0" style={{ color: "var(--ux-brand)" }} />{tr("settingsAppearance.ifYourPhoneIsAlreadySet")}</p>
       </Card>
     </SettingsPage>
   );

@@ -8,6 +8,7 @@ import { HomeShell } from "@/components/ux/home/HomeShell";
 import { Back, Btn, Card, EmptyState, I, IconTile, Pill, SectionHead, v } from "@/components/ux/kit";
 import { formatRupees } from "@/components/ux/kit";
 import { ITEMS, TIE_LABEL, sellerOf, sortedItems } from "@/components/ux/market/data";
+import { useT } from "@/i18n";
 
 /**
  * One thing, and the woman who makes it.
@@ -28,6 +29,7 @@ import { ITEMS, TIE_LABEL, sellerOf, sortedItems } from "@/components/ux/market/
  * "Deposit" sounds like a favour being asked; it is not one.
  */
 export default function ItemPage({ params }: { params: Promise<{ id: string }> }) {
+  const tr = useT();
   const { id } = use(params);
   const router = useRouter();
 
@@ -58,9 +60,9 @@ export default function ItemPage({ params }: { params: Promise<{ id: string }> }
     return (
       <HomeShell active="/app/market">
         <Card>
-          <EmptyState icon="SearchX" title="That is not for sale any more"
+          <EmptyState icon="SearchX" title={tr("market.thatIsNotForSaleAny")}
                       body="She may have closed her shop, or the link may be old."
-                      action={<Btn size="sm" href="/app/market">Back to the market</Btn>} />
+                      action={<Btn size="sm" href="/app/market">{tr("market.backToTheMarket")}</Btn>} />
         </Card>
       </HomeShell>
     );
@@ -71,7 +73,7 @@ export default function ItemPage({ params }: { params: Promise<{ id: string }> }
   return (
     <HomeShell active="/app/market">
       <div className="flex flex-col gap-5">
-        <Back to="/app/market" label="Back to the market" />
+        <Back to="/app/market" label={tr("market.backToTheMarket2")} />
 
         <Card pad={0} style={{ overflow: "hidden" }}>
           <div className="flex flex-wrap items-start gap-4 p-5" style={{ background: v(item.tint) }}>
@@ -80,7 +82,7 @@ export default function ItemPage({ params }: { params: Promise<{ id: string }> }
               <div className="flex flex-wrap items-center gap-2">
                 <h1 className="text-[clamp(1.25rem,2.6vw,1.625rem)] font-extrabold leading-tight tracking-[-0.03em]"
                     style={{ color: v("--ux-ink") }}>{item.title}</h1>
-                {item.madeToOrder && <Pill tone="green" size="sm">Made for you</Pill>}
+                {item.madeToOrder && <Pill tone="green" size="sm">{tr("market.madeForYou")}</Pill>}
               </div>
               <p className="mt-1.5 text-sm leading-relaxed" style={{ color: v("--ux-ink-2") }}>{item.detail}</p>
             </div>
@@ -112,9 +114,7 @@ export default function ItemPage({ params }: { params: Promise<{ id: string }> }
                 : item.madeToOrder ? `Order — pay ${formatRupees(materials)} now` : "Buy it"}
             </Btn>
             <Btn variant="outline" icon="MessageCircle"
-                 onClick={() => setNote(`Message sent to ${seller.name}. She usually replies the same day.`)}>
-              Ask her something
-            </Btn>
+                 onClick={() => setNote(`Message sent to ${seller.name}. She usually replies the same day.`)}>{tr("market.askHerSomething")}</Btn>
           </div>
         </Card>
 
@@ -128,7 +128,7 @@ export default function ItemPage({ params }: { params: Promise<{ id: string }> }
 
         {/* The seller — the actual product */}
         <div>
-          <SectionHead title="Who makes it" icon="User" />
+          <SectionHead title={tr("market.whoMakesIt")} icon="User" />
           <Card pad={20}>
             <div className="flex flex-wrap items-start gap-4">
               <span className="grid h-[54px] w-[54px] shrink-0 place-items-center rounded-full text-xl font-bold"
@@ -201,7 +201,7 @@ export default function ItemPage({ params }: { params: Promise<{ id: string }> }
         )}
 
         <div>
-          <SectionHead title="Other women near you" icon="Users" />
+          <SectionHead title={tr("market.otherWomenNearYou")} icon="Users" />
           <div className="flex flex-col gap-2.5">
             {nearby.map((i) => {
               const s = sellerOf(i);

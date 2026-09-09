@@ -9,6 +9,7 @@ import { NextStepCard } from "@/components/ux/journey/NextStepCard";
 import { readJourneyState } from "@/services/me.repository";
 import { useJourney } from "@/components/ux/journey";
 import { STAGES, journeyPct, nextStep, stageFor } from "@/services/journey";
+import { useT } from "@/i18n";
 
 /**
  * My Journey — Skill to Income, drawn as a route she is walking.
@@ -33,6 +34,7 @@ import { STAGES, journeyPct, nextStep, stageFor } from "@/services/journey";
  * her own life.
  */
 export default function JourneyPage() {
+  const tr = useT();
   const state = useMemo(() => readJourneyState(), []);
   const stage = useMemo(() => stageFor(state), [state]);
   const step = useMemo(() => nextStep(state), [state]);
@@ -67,13 +69,9 @@ export default function JourneyPage() {
       <div className="flex flex-col gap-5">
 
         <header>
-          <p className="text-2xs font-extrabold uppercase tracking-[0.2em]" style={{ color: v("--ux-brand") }}>
-            My journey
-          </p>
+          <p className="text-2xs font-extrabold uppercase tracking-[0.2em]" style={{ color: v("--ux-brand") }}>{tr("journey.myJourney")}</p>
           <h1 className="mt-2 text-[clamp(1.5rem,3.2vw,2.125rem)] font-extrabold leading-[1.1] tracking-[-0.035em]"
-              style={{ color: v("--ux-ink") }}>
-            From what you can do, to what you earn
-          </h1>
+              style={{ color: v("--ux-ink") }}>{tr("journey.fromWhatYouCanDoTo")}</h1>
           <p className="mt-1.5 max-w-[58ch] text-sm leading-relaxed" style={{ color: v("--ux-muted") }}>
             Seven steps, and you are on step {at + 1}. Nothing below is locked — if you are already
             further along than this says, go straight there.
@@ -85,9 +83,7 @@ export default function JourneyPage() {
         <Card pad={20}>
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div>
-              <p className="text-xs font-semibold uppercase tracking-[0.1em]" style={{ color: v("--ux-muted") }}>
-                Where you are
-              </p>
+              <p className="text-xs font-semibold uppercase tracking-[0.1em]" style={{ color: v("--ux-muted") }}>{tr("journey.whereYouAre")}</p>
               <p className="mt-1 text-xl font-extrabold" style={{ color: v("--ux-ink") }}>
                 {STAGES[at].label}
               </p>
@@ -104,7 +100,7 @@ export default function JourneyPage() {
 
         {/* The route itself */}
         <div>
-          <SectionHead title="The seven steps" sub="What each one means, and what you have already done" icon="Route" />
+          <SectionHead title={tr("journey.theSevenSteps")} sub={tr("journey.whatEachOneMeansAndWhat")} icon="Route" />
           <Card pad={0} style={{ overflow: "hidden" }}>
             <ol className="px-5 py-2 sm:px-7">
               {STAGES.map((s, i) => {
@@ -130,7 +126,7 @@ export default function JourneyPage() {
                     <div className="min-w-0 flex-1 pt-0.5" style={{ opacity: !done && !here ? 0.55 : 1 }}>
                       <div className="flex flex-wrap items-center gap-2">
                         <p className="text-base font-bold" style={{ color: v("--ux-ink") }}>{s.label}</p>
-                        {here && <Pill tone="brand" size="sm">You are here</Pill>}
+                        {here && <Pill tone="brand" size="sm">{tr("journey.youAreHere")}</Pill>}
                       </div>
                       <p className="mt-0.5 text-xsm" style={{ color: v("--ux-muted") }}>{s.verb}</p>
 
@@ -161,7 +157,7 @@ export default function JourneyPage() {
         {/* What she has actually reached, with dates. Merged from /app/progress. */}
         {live?.milestones?.length > 0 && (
           <div>
-            <SectionHead title="What you have already reached"
+            <SectionHead title={tr("journey.whatYouHaveAlreadyReached")}
                          sub={`${live.milestones.filter((m) => m.done).length} of ${live.milestones.length}`}
                          icon="Flag" />
             <Card pad={0} style={{ overflow: "hidden" }}>

@@ -12,6 +12,7 @@ import {
 import { HomeShell } from "@/components/ux/home/HomeShell";
 import { EXCHANGE_ART, SKILL_TAGS } from "@/components/ux/exchange/data";
 import { useMyExchanges, useSwaps } from "@/components/ux/business";
+import { useT } from "@/i18n";
 
 /**
  * Skill Exchange — teaching each other, with no money involved.
@@ -21,6 +22,7 @@ import { useMyExchanges, useSwaps } from "@/components/ux/business";
  * quietly tell her she is only one of the two.
  */
 export default function SkillExchangePage() {
+  const tr = useT();
   const { data: SWAPS, source } = useSwaps();
   const { data: MY_SWAPS, refetch: refetchMine } = useMyExchanges();
   const [tab, setTab] = useState("Browse");
@@ -58,7 +60,7 @@ export default function SkillExchangePage() {
       rail={
         <div className="space-y-[16px]">
           <Card className="ux-onscroll-soft">
-            <SectionHead title="What you have offered" action="Edit" onAction={() => setTab("Your exchanges")} />
+            <SectionHead title={tr("library.whatYouHaveOffered")} action="Edit" onAction={() => setTab("Your exchanges")} />
             {mine.length ? mine.map((m) => (
               <div key={m.id}>
                 <div className="flex items-start gap-3">
@@ -71,17 +73,14 @@ export default function SkillExchangePage() {
                   </div>
                 </div>
                 <p className="mt-3 rounded-[12px] p-3 text-xs leading-relaxed"
-                   style={{ background: "var(--ux-surface-2)", color: "var(--ux-ink-2)" }}>
-                  In return you asked for: <strong style={{ color: "var(--ux-ink)" }}>{m.wants}</strong>
+                   style={{ background: "var(--ux-surface-2)", color: "var(--ux-ink-2)" }}>{tr("library.inReturnYouAskedFor")}<strong style={{ color: "var(--ux-ink)" }}>{m.wants}</strong>
                 </p>
               </div>
             )) : (
-              <p className="text-xsm" style={{ color: "var(--ux-muted)" }}>
-                You have not offered anything yet.
-              </p>
+              <p className="text-xsm" style={{ color: "var(--ux-muted)" }}>{tr("library.youHaveNotOfferedAnythingYet")}</p>
             )}
             <div className="mt-3.5">
-              <Btn href="/app/documents/service/new" variant="soft" size="sm" full icon="Plus">Offer another skill</Btn>
+              <Btn href="/app/documents/service/new" variant="soft" size="sm" full icon="Plus">{tr("library.offerAnotherSkill")}</Btn>
             </div>
           </Card>
 
@@ -91,16 +90,14 @@ export default function SkillExchangePage() {
                 all — without it the rule reads as an arbitrary restriction. */}
             <div className="mb-4 rounded-[16px] p-5"
                  style={{ background: "var(--ux-brand-tint)", border: "1px solid transparent" }}>
-              <p className="text-sm font-bold" style={{ color: "var(--ux-ink)" }}>
-                Bring someone with you
-              </p>
+              <p className="text-sm font-bold" style={{ color: "var(--ux-ink)" }}>{tr("library.bringSomeoneWithYou")}</p>
               <p className="mt-1.5 max-w-[54ch] text-xsm leading-relaxed" style={{ color: "var(--ux-ink-2)" }}>
                 Women taught alongside a friend kept what they learned and earned more from it.
                 Women taught alone mostly went back to how they worked before.
               </p>
             </div>
 
-            <SectionHead title="How an exchange works" icon="Info" />
+            <SectionHead title={tr("library.howAnExchangeWorks")} icon="Info" />
             <ol className="space-y-3">
               {[
                 "You offer something you know, and say what you want in return.",
@@ -122,22 +119,16 @@ export default function SkillExchangePage() {
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img loading="lazy" decoding="async" src={EXCHANGE_ART.hero} alt=""
                  className="ux-float pointer-events-none absolute -bottom-3 -end-4 h-[100px] w-[100px] object-contain" />
-            <h2 className="relative w-[60%] text-sm font-semibold" style={{ color: "var(--ux-ink)" }}>
-              You know more than you think
-            </h2>
-            <p className="relative mt-2 w-[60%] text-xs leading-relaxed" style={{ color: "var(--ux-muted)" }}>
-              Whatever took you a year to learn takes someone else an afternoon with you.
-            </p>
+            <h2 className="relative w-[60%] text-sm font-semibold" style={{ color: "var(--ux-ink)" }}>{tr("library.youKnowMoreThanYouThink")}</h2>
+            <p className="relative mt-2 w-[60%] text-xs leading-relaxed" style={{ color: "var(--ux-muted)" }}>{tr("library.whateverTookYouAYearTo")}</p>
           </div>
         </div>
       }
     >
       <div className="mb-[20px] flex items-end justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold" style={{ color: "var(--ux-ink)" }}>Teach and learn</h1>
-          <p className="mt-1.5 text-xsm" style={{ color: "var(--ux-muted)" }}>
-            Teach what you know, learn what you need. No money involved.
-          </p>
+          <h1 className="text-2xl font-bold" style={{ color: "var(--ux-ink)" }}>{tr("library.teachAndLearn")}</h1>
+          <p className="mt-1.5 text-xsm" style={{ color: "var(--ux-muted)" }}>{tr("library.teachWhatYouKnowLearnWhat")}</p>
 
       <SourceNote source={source} what="swaps" />
         </div>
@@ -185,7 +176,8 @@ export default function SkillExchangePage() {
                         <span className="inline-flex items-center gap-1"><Icons.MapPin className="h-3.5 w-3.5" /> {s.place}</span>
                         <span className="inline-flex items-center gap-1">
                           {s.online ? <Icons.Video className="h-3.5 w-3.5" /> : <Icons.Users className="h-3.5 w-3.5" />}
-                          {s.online ? "Can do it online" : "In person"}
+                          {s.online ? tr("library.canDoItOnline")
+              : tr("library.inPerson")}
                         </span>
                         <span>{s.level}</span>
                       </p>
@@ -195,7 +187,8 @@ export default function SkillExchangePage() {
                   <p className="mt-3.5 rounded-[12px] p-3 text-xsm leading-relaxed"
                      style={{ background: "var(--ux-surface-2)", color: "var(--ux-ink-2)" }}>
                     <span style={{ color: "var(--ux-muted)" }}>
-                      {s.side === "Offering" ? "She would like in return: " : "She can teach in return: "}
+                      {s.side === "Offering" ? tr("library.sheWouldLikeInReturn")
+              : tr("library.sheCanTeachInReturn")}
                     </span>
                     <strong style={{ color: "var(--ux-ink)" }}>{s.wants}</strong>
                   </p>
@@ -212,9 +205,7 @@ export default function SkillExchangePage() {
                                 style={{ background: "var(--ux-tint-green)", color: "var(--ux-green-ink)" }}>
                             <Icons.Check className="h-[15px] w-[15px]" strokeWidth={2.6} /> Asked
                           </span>
-                          <Btn href={`/app/library/${s.id}`} variant="primary" size="sm" iconEnd="ArrowRight">
-                            Open the exchange
-                          </Btn>
+                          <Btn href={`/app/library/${s.id}`} variant="primary" size="sm" iconEnd="ArrowRight">{tr("library.openTheExchange")}</Btn>
                         </>
                       ) : (
                         /* Her own words, not a canned line sent in her name.
@@ -222,13 +213,13 @@ export default function SkillExchangePage() {
                            message she did not write is the wrong thing to put
                            in front of a stranger she wants to learn from. */
                         <NoteBtn
-                          label="Propose a swap"
+                          label={tr("library.proposeASwap")}
                           variant="primary"
                           icon="ArrowRight"
                           title={`Ask ${s.who.split(" ")[0]} about this`}
                           to={s.who}
                           placeholder={`Say what you would like to learn from her, and what you can teach in return — she asked for ${s.wants}.`}
-                          sent="Sent — she has it now"
+                          sent={tr("library.sentSheHasItNow")}
                           sentBody="You will both see the reply in the exchange. No money changes hands, in either direction."
                           sentLink={{ href: `/app/library/${s.id}`, label: "Open the exchange" }}
                           send={async ({ text }) => {
@@ -247,9 +238,9 @@ export default function SkillExchangePage() {
             <Card>
               <EmptyState
                 icon="RefreshCw"
-                title="Nothing matches that"
+                title={tr("library.nothingMatchesThat")}
                 body="Try fewer tags, or offer something and let people come to you."
-                action={<Btn onClick={() => { setTags([]); setSide("All"); }} variant="soft">Show everything</Btn>}
+                action={<Btn onClick={() => { setTags([]); setSide("All"); }} variant="soft">{tr("library.showEverything")}</Btn>}
               />
             </Card>
           )}
@@ -295,7 +286,8 @@ export default function SkillExchangePage() {
               <div className="mt-3.5 flex items-center justify-end gap-2 border-t pt-3.5" style={{ borderColor: "var(--ux-line)" }}>
                 <Btn href={`/app/library/${m.swapId}`} variant="outline" size="sm" icon="MessageCircle">Message</Btn>
                 <Btn href={`/app/library/${m.swapId}`} variant="primary" size="sm" icon="CalendarCheck">
-                  {m.state === "Agreed" ? "See the plan" : "Pick a time"}
+                  {m.state === "Agreed" ? tr("library.seeThePlan")
+              : tr("library.pickATime")}
                 </Btn>
               </div>
             </Card>

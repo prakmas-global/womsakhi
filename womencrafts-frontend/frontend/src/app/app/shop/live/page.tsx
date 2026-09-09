@@ -7,6 +7,7 @@ import { HomeShell } from "@/components/ux/home/HomeShell";
 import { Back, Btn, Card, EmptyState, I, IconTile, Pill, SectionHead, Stat, v } from "@/components/ux/kit";
 import { formatRupees } from "@/components/ux/kit";
 import { LIVES, type LiveSale } from "@/components/ux/shopplus/data";
+import { useT } from "@/i18n";
 
 /**
  * Show and sell — half an hour, to her own circle.
@@ -30,6 +31,7 @@ const STATE: Record<LiveSale["state"], { label: string; tint: string; ink: strin
 };
 
 export default function LivePage() {
+  const tr = useT();
   const router = useRouter();
   const [rows, setRows] = useState<LiveSale[]>(LIVES);
   const [note, setNote] = useState<string | null>(null);
@@ -44,41 +46,35 @@ export default function LivePage() {
     setRows((r) => r.map((l) => (l.id === id ? { ...l, state: l.state === "live" ? "ended" : "live" } : l)));
     const l = rows.find((x) => x.id === id);
     setNote(l?.state === "live"
-      ? "Finished. Everything anyone claimed is now an order in your shop."
-      : "You are on. Your circle has been told — hold things up and say the price out loud.");
+      ? tr("shopLive.finishedEverythingAnyoneClaimedIsN")
+              : tr("shopLive.youAreOnYourCircleHas"));
   }, [rows]);
 
   return (
     <HomeShell active="/app/shop">
       <div className="flex flex-col gap-5">
-        <Back to="/app/shop" label="Back to your shops" />
+        <Back to="/app/shop" label={tr("shopLive.backToYourShops")} />
 
         <header className="flex flex-wrap items-end gap-4">
           <div className="min-w-0 flex-1">
-            <p className="text-2xs font-extrabold uppercase tracking-[0.2em]" style={{ color: v("--ux-brand") }}>
-              Show and sell
-            </p>
+            <p className="text-2xs font-extrabold uppercase tracking-[0.2em]" style={{ color: v("--ux-brand") }}>{tr("shopLive.showAndSell")}</p>
             <h1 className="mt-2 text-[clamp(1.5rem,3.2vw,2.125rem)] font-extrabold leading-[1.1] tracking-[-0.035em]"
-                style={{ color: v("--ux-ink") }}>
-              Half an hour, your own people
-            </h1>
+                style={{ color: v("--ux-ink") }}>{tr("shopLive.halfAnHourYourOwnPeople")}</h1>
             <p className="mt-1.5 max-w-[56ch] text-sm leading-relaxed" style={{ color: v("--ux-muted") }}>
               Hold things up, say the price, take the orders. No photographs, no stock, no delivery —
               and the women watching already know you.
             </p>
           </div>
-          <Btn icon="Plus" onClick={() => setNote("Pick a day and a time. Your circle gets one message — never more.")}>
-            Plan one
-          </Btn>
+          <Btn icon="Plus" onClick={() => setNote("Pick a day and a time. Your circle gets one message — never more.")}>{tr("shopLive.planOne")}</Btn>
         </header>
 
         <Card>
           <div className="grid gap-4 sm:grid-cols-3">
-            <Stat value={formatRupees(earned)} label="Taken from selling live"
+            <Stat value={formatRupees(earned)} label={tr("shopLive.takenFromSellingLive")}
                   icon="Wallet" tint="--ux-tint-green" ink="--ux-green-ink" />
-            <Stat value={String(sold)} label="Things sold" icon="Package"
+            <Stat value={String(sold)} label={tr("shopLive.thingsSold")} icon="Package"
                   tint="--ux-tint-pink" ink="--ux-pink-ink" />
-            <Stat value={String(watched)} label="Women watched" icon="Eye"
+            <Stat value={String(watched)} label={tr("shopLive.womenWatched")} icon="Eye"
                   tint="--ux-tint-blue" ink="--ux-blue-ink" />
           </div>
         </Card>
@@ -92,9 +88,9 @@ export default function LivePage() {
         )}
 
         <div>
-          <SectionHead title="Coming up" icon="CalendarDays" chip={String(upcoming.length)} />
+          <SectionHead title={tr("shopLive.comingUp")} icon="CalendarDays" chip={String(upcoming.length)} />
           {upcoming.length === 0 ? (
-            <Card><EmptyState icon="Radio" title="Nothing planned"
+            <Card><EmptyState icon="Radio" title={tr("shopLive.nothingPlanned")}
                               body="Pick a Saturday evening. The women in your circle are on their phones then anyway." /></Card>
           ) : (
             <div className="flex flex-col gap-3">
