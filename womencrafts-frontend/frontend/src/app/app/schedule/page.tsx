@@ -150,9 +150,9 @@ export default function Schedule() {
 
       <div className="mb-5 flex flex-wrap items-start justify-between gap-x-4 gap-y-3">
         <div className="flex min-w-0 items-start gap-3.5">
-          <IconTile icon="CalendarDays" tint="--ux-tint-violet" ink="--ux-violet-ink" size={56} radius={15} />
+          <IconTile icon="CalendarDays" tint="--ux-brand-tint-2" ink="--ux-brand" size={56} radius={28} />
           <div>
-            <h1 className="text-4xlm font-extrabold leading-[1.05] tracking-[-0.03em]" style={{ color: v("--ux-ink") }}>{tr("schedule.myCalendar")}</h1>
+            <h1 className="text-3xl font-extrabold leading-[1.15] tracking-[-0.02em]" style={{ color: v("--ux-ink") }}>{tr("schedule.myCalendar")}</h1>
             <p className="mt-1.5 text-sm" style={{ color: v("--ux-muted") }}>{tr("schedule.everythingYouHavePlannedBookedAnd")}</p>
             <SourceNote source={source} what={tr("schedule.yourDiary")} />
           </div>

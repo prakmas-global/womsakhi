@@ -250,7 +250,7 @@ export function TodayPanel({
     <Card>
       <div className="flex items-start justify-between gap-3">
         <div>
-          <h2 className="text-xl font-extrabold leading-tight tracking-[-0.01em]" style={{ color: v("--ux-ink") }}>{label}</h2>
+          <h2 className="text-lg font-extrabold leading-tight tracking-[-0.01em]" style={{ color: v("--ux-ink") }}>{label}</h2>
           <p className="mt-1 text-sm" style={{ color: v("--ux-muted") }}>
             {count === 1 ? "1 activity" : `${count} activities`}{isToday ? " today" : ""}
           </p>
@@ -290,7 +290,7 @@ export function ComingUp({ entries }: { entries: DiaryEntry[] }) {
   return (
     <Card>
       <div className="mb-2 flex items-center justify-between gap-3">
-        <h2 className="text-base font-extrabold tracking-[-0.01em]" style={{ color: v("--ux-ink") }}>{tr("calendar.comingUp")}</h2>
+        <h2 className="text-lg font-extrabold tracking-[-0.01em]" style={{ color: v("--ux-ink") }}>{tr("calendar.comingUp")}</h2>
         <Link href="/app/bookings" className="ux-sq flex items-center gap-0.5 text-xs font-bold"
               style={{ color: v("--ux-brand") }}>
           {tr("calendar.viewAll")} <Icons.ChevronRight className="h-[13px] w-[13px]" />
