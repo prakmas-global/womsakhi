@@ -1569,3 +1569,8 @@
     min-height: 0;
   }
 }
+
+/* A strip that scrolls sideways without showing a bar — used by toolbars whose
+   controls must stay on one line. The scroll is real; only the bar is hidden. */
+.ux-noscroll { scrollbar-width: none; -ms-overflow-style: none; overscroll-behavior-x: contain; }
+.ux-noscroll::-webkit-scrollbar { display: none; }

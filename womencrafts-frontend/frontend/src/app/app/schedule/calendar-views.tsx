@@ -124,19 +124,19 @@ export function lengthOf(raw: string): string {
 function EventPill({ entry }: { entry: DiaryEntry }) {
   const cat = catFor(categoryOf(entry));
   return (
-    <Link href={entry.href} className="ux-sq block rounded-[7px] px-2 py-1.5"
+    <Link href={entry.href} className="ux-sq block rounded-[8px] px-1.5 py-1.5"
           style={{ background: v(cat.tint) }}>
       <span className="flex items-start gap-1">
-        <I name={cat.icon} className="mt-[2px] h-[11px] w-[11px] shrink-0" style={{ color: v(cat.ink) }} />
+        <I name={cat.icon} className="mt-[1px] h-[13px] w-[13px] shrink-0" style={{ color: v(cat.ink) }} />
         <span className="min-w-0 flex-1">
-          <span className="block text-2xs font-semibold leading-[1.25]"
+          <span className="block text-2xs font-semibold leading-[1.3]"
                 style={{ color: v(cat.ink), display: "-webkit-box", WebkitLineClamp: 2,
                          WebkitBoxOrient: "vertical", overflow: "hidden" }}>
             {entry.title}
           </span>
           {entry.time && (
-            <span className="mt-[2px] block truncate text-2xs leading-tight"
-                  style={{ color: v(cat.ink), opacity: 0.72 }}>
+            <span className="mt-[3px] block truncate text-2xs leading-tight"
+                  style={{ color: v("--ux-muted") }}>
               {clockTime(entry.time)}
             </span>
           )}
@@ -168,7 +168,7 @@ export function MonthGrid({ cells, onPick }: { cells: DayCell[]; onPick: (iso: s
             // A day is only a heading for what it holds, so it is not a
             // heading element — it is the control that opens that day.
             aria-label={`${c.date}, ${c.entries.length} activities`}
-            className="ux-sq relative flex min-h-[128px] flex-col gap-[4px] border-b border-e p-2 text-start"
+            className="ux-sq relative flex min-h-[132px] flex-col gap-[5px] border-b border-e p-2 text-start"
             style={{
               borderColor: v("--ux-line"),
               // The last column and last row sit on the wrapper's own edge.
@@ -180,14 +180,14 @@ export function MonthGrid({ cells, onPick }: { cells: DayCell[]; onPick: (iso: s
             {/* Today is ringed as well as tinted: on a pale tint alone the
                 current day is easy to miss at a glance. */}
             {c.today && (
-              <span aria-hidden className="pointer-events-none absolute inset-0 rounded-[2px]"
+              <span aria-hidden className="pointer-events-none absolute inset-0 rounded-[6px]"
                     style={{ border: `1.5px solid ${v("--ux-brand")}` }} />
             )}
             <span
-              className="grid h-[26px] w-[26px] shrink-0 place-items-center rounded-full text-xsm font-medium"
+              className="grid h-[30px] w-[30px] shrink-0 place-items-center rounded-full text-lg font-semibold"
               style={{
                 background: c.today ? v("--ux-fill") : "transparent",
-                color: c.today ? v("--ux-on-brand") : c.outside ? v("--ux-faint") : v("--ux-ink-2"),
+                color: c.today ? v("--ux-on-brand") : c.outside ? v("--ux-faint") : v("--ux-ink"),
               }}
             >
               {c.date}

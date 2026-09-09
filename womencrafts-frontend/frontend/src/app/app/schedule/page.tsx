@@ -209,42 +209,42 @@ export default function Schedule() {
 
       {/* ── The calendar panel: its own controls, then the month ─────── */}
       <Card pad={20}>
-      <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
-        <div className="flex items-center gap-2">
+      <div className="mb-4 flex items-center justify-between gap-x-2">
+        <div className="flex shrink-0 items-center gap-2">
           <button type="button" onClick={() => step(-1)} aria-label={tr("schedule.previousMonth")}
-                  className="ux-press ux-sq grid h-[38px] w-[38px] place-items-center rounded-[11px] border"
+                  className="ux-press ux-sq grid h-[34px] w-[34px] place-items-center rounded-[10px] border"
                   style={{ borderColor: v("--ux-line"), color: v("--ux-ink-2") }}>
             <Icons.ChevronLeft className="h-[17px] w-[17px]" />
           </button>
           <button type="button" onClick={() => step(1)} aria-label={tr("schedule.nextMonth")}
-                  className="ux-press ux-sq grid h-[38px] w-[38px] place-items-center rounded-[11px] border"
+                  className="ux-press ux-sq grid h-[34px] w-[34px] place-items-center rounded-[10px] border"
                   style={{ borderColor: v("--ux-line"), color: v("--ux-ink-2") }}>
             <Icons.ChevronRight className="h-[17px] w-[17px]" />
           </button>
           <button type="button" onClick={goToday}
-                  className="ux-sq ms-2 flex items-center gap-1.5 text-lg font-bold"
+                  className="ux-sq ms-1 flex items-center gap-1 text-base font-bold"
                   style={{ color: v("--ux-ink") }}>
             {MONTHS[cursor.getMonth()]} {cursor.getFullYear()}
             <Icons.ChevronDown className="h-[16px] w-[16px]" style={{ color: v("--ux-muted") }} />
           </button>
           <button type="button" onClick={goToday}
-                  className="ux-press ux-sq ms-2 min-h-[38px] rounded-[11px] border px-5 text-xsm font-bold"
+                  className="ux-press ux-sq ms-1 min-h-[34px] rounded-[10px] border px-3.5 text-xsm font-bold"
                   style={{ borderColor: v("--ux-line"), color: v("--ux-ink-2") }}>
             Today
           </button>
         </div>
 
         {/* Category filters. Pressed = shown, so the default reads as "all on". */}
-        <div className="flex flex-wrap items-center gap-1.5">
+        <div className="ux-noscroll flex min-w-0 items-center gap-[3px] overflow-x-auto">
           {CATEGORIES.map((c) => {
             const on = !off.includes(c.id);
             return (
               <button key={c.id} type="button" onClick={() => toggle(c.id)} aria-pressed={on}
-                      className="ux-press ux-sq flex min-h-[30px] items-center gap-1.5 rounded-full ps-1 pe-2.5 text-xs font-medium transition-opacity"
-                      style={{ background: v("--ux-surface-2"), color: v("--ux-ink-2"), opacity: on ? 1 : 0.4 }}>
-                <span className="grid h-[22px] w-[22px] place-items-center rounded-full"
-                      style={{ background: v(c.tint), color: v(c.ink) }}>
-                  <I name={c.icon} className="h-[12px] w-[12px]" />
+                      className="ux-press ux-sq flex min-h-[30px] shrink-0 items-center gap-[3px] rounded-full ps-[3px] pe-2 text-xs font-semibold transition-opacity"
+                      style={{ background: v(c.tint), color: v(c.ink), opacity: on ? 1 : 0.4 }}>
+                <span className="grid h-[20px] w-[20px] place-items-center rounded-[6px]"
+                      style={{ background: v("--ux-surface"), color: v(c.ink) }}>
+                  <I name={c.icon} className="h-[11px] w-[11px]" />
                 </span>
                 {c.label}
               </button>
