@@ -10,6 +10,7 @@ import { execSync } from "child_process";
 const CHECKS = [
   ["tokens",   "node checks/tokens.mjs"],
   ["type",     "node checks/type-scale.mjs"],
+  ["icons",    "node checks/icons.mjs"],
   ["i18n-keys","node checks/i18n-coverage.mjs"],
   ["ink",      "npx tsx src/theme-engine/__checks__/ink.mjs"],
   ["contrast", "node checks/contrast.mjs"],

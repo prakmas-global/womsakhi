@@ -2,7 +2,6 @@
 
 import { use, useState } from "react";
 import { COPY } from "@/components/ux/copy";
-import Link from "next/link";
 import * as Icons from "@/components/ux/icons";
 
 import {Back, Btn, Card, EmptyState, IconTile, Pill, Progress, RailSkeleton, ScreenSkeleton, SectionHead,

@@ -7,7 +7,7 @@ import * as Icons from "@/components/ux/icons";
 import { Btn, I, IconTile, Rating, Sheet, v } from "@/components/ux/kit";
 import { QUOTE_ASK, type QuoteDraft } from "@/components/ux/earn/data";
 
-import { Area, Check, Label, Text } from "./wizard-views";
+import { Area, Check, Label, Text } from "@/components/ux/kit/form";
 
 /**
  * The other side of "let buyers ask for a price".

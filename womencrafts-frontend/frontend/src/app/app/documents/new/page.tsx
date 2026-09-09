@@ -16,9 +16,18 @@ import {
   QUOTE_FIELDS, RESPONSE_TIMES,
 } from "@/components/ux/earn/data";
 
+import { Saying, Tips } from "./wizard-views";
 import {
-  Area, Check, Choice, Label, Saying, Select, Steps, Text, Tips, Toggle,
-} from "./wizard-views";
+  Area, Check, Choice, Label, Select, Steps, Text, Toggle,
+} from "@/components/ux/kit/form";
+
+/** What the four steps of adding a listing are called. */
+const STEPS = [
+  { id: 1, label: "What it is" },
+  { id: 2, label: "Price and delivery" },
+  { id: 3, label: "Photos" },
+  { id: 4, label: "Check and publish" },
+] as const;
 import { QuoteSheet } from "./quote-sheet";
 
 type Kind = "product" | "service" | "both";
@@ -251,7 +260,7 @@ export default function AddListingPage() {
         </Btn>
       </div>
 
-      <Steps at={at} done={done} onGo={go} />
+      <Steps steps={STEPS} at={at} done={done} onGo={go} />
 
       {/* ── 1 · What it is ───────────────────────────────────────────────── */}
       {at === 1 && (

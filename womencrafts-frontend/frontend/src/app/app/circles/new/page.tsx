@@ -5,7 +5,6 @@ import { useMemo, useState } from "react";
 import { apiCreateCircle, type ApiCircleDetail } from "@/lib/growth-api";
 import { messageFrom } from "@/lib/use-action";
 import { settled, useAttemptKey } from "@/lib/idempotency";
-import Link from "next/link";
 import * as Icons from "@/components/ux/icons";
 
 import {Back, ActionBtn, Btn, Card, IconTile, Pill, SectionHead, copy } from "@/components/ux/kit";
