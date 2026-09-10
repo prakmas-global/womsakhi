@@ -1,3 +1,4 @@
+import { apiBase } from "./api-base";
 /**
  * The two things the sign-in page may ask the server before there is a session.
  *
@@ -7,7 +8,7 @@
  * fails because a statistic did not load would be an absurd trade.
  */
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8020/api/v1";
+const API_URL = apiBase();
 
 /** Real counts. Every one is a `count_documents`, not a stored figure. */
 export interface PublicStats {

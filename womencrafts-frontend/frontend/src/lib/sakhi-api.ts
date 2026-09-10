@@ -1,4 +1,5 @@
 import { apiClient } from "./api";
+import { apiBase } from "./api-base";
 
 /**
  * Sakhi's data layer.
@@ -14,7 +15,7 @@ import { apiClient } from "./api";
  * which looks like a bug in the assistant rather than a missing option.
  */
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8020/api/v1";
+const API_URL = apiBase();
 
 export type SakhiEvent =
   | { type: "text"; text: string }

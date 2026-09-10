@@ -38,6 +38,11 @@ COPY . .
 # own origin instead — a 404 storm that looks like a routing fault.
 ARG NEXT_PUBLIC_API_URL
 ENV NEXT_PUBLIC_API_URL=$NEXT_PUBLIC_API_URL
+# Where the rewrite sends /api/v1/*. Needed at BUILD time because rewrites()
+# is baked into the routes manifest, and again at RUNTIME because server
+# components call the backend directly rather than through the rewrite.
+ARG INTERNAL_API_URL
+ENV INTERNAL_API_URL=$INTERNAL_API_URL
 ENV NEXT_TELEMETRY_DISABLED=1
 RUN npm run build
 
@@ -59,6 +64,8 @@ COPY --from=builder /app/.next/static ./.next/static
 USER nextjs
 # Cloud Run injects PORT and it is not negotiable — bind to it rather than to
 # a number of our own choosing, or the service never passes its health check.
+ARG INTERNAL_API_URL
+ENV INTERNAL_API_URL=$INTERNAL_API_URL
 ENV PORT=8080
 ENV HOSTNAME=0.0.0.0
 EXPOSE 8080

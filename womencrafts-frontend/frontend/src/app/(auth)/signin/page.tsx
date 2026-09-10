@@ -6,12 +6,13 @@ import { ArrowRight, Eye, EyeOff, Loader2, Lock, Mail } from "lucide-react";
 
 import { useAuth, getAuthError } from "@/context/AuthContext";
 import { fetchAuthProviders } from "@/lib/public-api";
+import { apiBase } from "@/lib/api-base";
 
 /**
  * Google and Apple marks. lucide dropped third-party brand icons, and these
  * two need their real colours anyway.
  */
-const API_BASE = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8020/api/v1";
+const API_BASE = apiBase();
 
 const GoogleMark = () => (
   <svg viewBox="0 0 24 24" className="h-[18px] w-[18px]" aria-hidden>

@@ -1,8 +1,9 @@
 import axios from "axios";
 
 import { recordFailure } from "./request-errors";
+import { apiBase } from "./api-base";
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8010/api/v1";
+const API_URL = apiBase();
 
 /**
  * The session lives in an httpOnly cookie set by the API, so there is no token

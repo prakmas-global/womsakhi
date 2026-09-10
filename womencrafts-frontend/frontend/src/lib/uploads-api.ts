@@ -1,8 +1,9 @@
 import axios from "axios";
 
 import { type ApiDocument } from "./me-api";
+import { apiBase } from "./api-base";
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8010/api/v1";
+const API_URL = apiBase();
 
 /**
  * Uploads need their own axios instance: the shared apiClient forces

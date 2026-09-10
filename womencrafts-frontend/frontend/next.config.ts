@@ -24,6 +24,25 @@ const nextConfig: NextConfig = {
   output: "standalone",
 
   /**
+   * Put the API on this app's own origin.
+   *
+   * The browser calls `/api/v1/…` and Next forwards it to the backend, so the
+   * session cookie the API sets belongs to THIS host — which is the only way
+   * both the browser and this server can read it. See `src/lib/api-base.ts`
+   * for the full reasoning; the short version is that a cookie set by a
+   * different host is invisible here, and every signed-in page bounces to
+   * /signin while the API reports a perfectly successful login.
+   *
+   * `rewrites()` is evaluated at BUILD time and baked into the routes
+   * manifest, so `INTERNAL_API_URL` has to be present during `next build`,
+   * not merely at runtime. It is a Docker build arg for exactly that reason.
+   */
+  async rewrites() {
+    const api = process.env.INTERNAL_API_URL ?? "http://localhost:8020/api/v1";
+    return [{ source: "/api/v1/:path*", destination: `${api}/:path*` }];
+  },
+
+  /**
    * Drop `X-Powered-By: Next.js` from every response.
    *
    * Verified present before the change (`curl -I` on /signin returned it) and

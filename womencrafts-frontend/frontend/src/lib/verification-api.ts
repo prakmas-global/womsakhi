@@ -1,8 +1,9 @@
 import axios from "axios";
 
 import { apiClient, apiErrorMessage } from "./api";
+import { apiBase } from "./api-base";
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8010/api/v1";
+const API_URL = apiBase();
 
 /** Multipart needs its own instance — the shared client forces a JSON content type. */
 const uploadClient = axios.create({ baseURL: API_URL, withCredentials: true });

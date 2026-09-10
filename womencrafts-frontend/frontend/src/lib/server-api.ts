@@ -5,6 +5,7 @@ import { cookies } from "next/headers";
 
 import type { AuthPayload } from "./api";
 import type { MeShell } from "./shell-api";
+import { apiBase } from "./api-base";
 
 /**
  * The same API, asked on the server, before the HTML is sent.
@@ -39,7 +40,7 @@ import type { MeShell } from "./shell-api";
  * the API, which re-checks every request regardless of what was rendered.
  */
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8020/api/v1";
+const API_URL = apiBase();
 
 /** How long to wait before giving up and letting the client try. */
 const TIMEOUT_MS = 2500;
