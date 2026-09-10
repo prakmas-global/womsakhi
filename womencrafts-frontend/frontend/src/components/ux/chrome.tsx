@@ -31,6 +31,16 @@ export interface PageChrome {
   rail?: React.ReactNode;
   wide?: boolean;
   bare?: boolean;
+  /**
+   * This screen is sized to the window and must not scroll.
+   *
+   * The scroller keeps 96px clear at the bottom so the floating assistant
+   * never sits on the last card of a long page. On a screen that is meant to
+   * end exactly at the bottom of the window, that clearance is 96px of
+   * viewport it can never reach — which is a scrollbar on a page whose whole
+   * point is not having one.
+   */
+  fit?: boolean;
   name?: string;
 }
 
@@ -78,8 +88,8 @@ export function useChrome(): PageChrome {
 export function usePageChrome(c: PageChrome) {
   const { set } = useContext(ChromeContext);
   const pathname = usePathname() ?? "";
-  const { rail, wide, bare, name } = c;
+  const { rail, wide, bare, fit, name } = c;
   useLayoutEffect(() => {
-    set(pathname, { rail, wide, bare, name });
-  }, [set, pathname, rail, wide, bare, name]);
+    set(pathname, { rail, wide, bare, fit, name });
+  }, [set, pathname, rail, wide, bare, fit, name]);
 }

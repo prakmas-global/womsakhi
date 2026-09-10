@@ -1,9 +1,9 @@
 "use client";
 
-import { Hub } from "@/components/ux/nav/Hub";
+import { LearnBoard } from "@/components/ux/learning/LearnBoard";
 
-/** The learn section's map — see `components/ux/nav/Hub.tsx` for why it is a
- *  page rather than a menu. */
-export default function LearnHub() {
-  return <Hub id="learn" />;
+/** The Learn section's landing screen — built from `learnmain.png`. It stands
+ *  in for the generic `Hub` here and carries the same six destinations. */
+export default function LearnPage() {
+  return <LearnBoard />;
 }

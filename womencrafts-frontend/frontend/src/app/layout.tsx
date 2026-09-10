@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import {
+  Caveat,
   Fraunces,
   Poppins,
   Inter,
@@ -63,6 +64,27 @@ const fraunces = Fraunces({
   axes: ["SOFT", "WONK", "opsz"],
   variable: "--font-display",
   display: "swap",
+});
+
+/**
+ * The hand-written voice — annotations only.
+ *
+ * The Learn board carries two pieces of handwriting from the supplied art:
+ * "Small Steps Big Changes" and the WomSakhi quote, both baked into
+ * `hero-learn-banner.webp`. The third, "You can do this" over the How-it-works
+ * strip, is live text — it sits beside content that changes and had to stay
+ * selectable and translatable rather than becoming a picture of a sentence.
+ *
+ * `preload: false` because exactly one line on one screen uses it. It is
+ * fetched when that screen renders and never sits in the critical path of the
+ * other hundred and twenty-eight routes.
+ */
+const caveat = Caveat({
+  subsets: ["latin"],
+  weight: ["600", "700"],
+  variable: "--font-script",
+  display: "swap",
+  preload: false,
 });
 
 const inter = Inter({
@@ -185,7 +207,7 @@ export default async function RootLayout({
       lang={lang}
       dir={dir}
       suppressHydrationWarning
-      className={`${poppins.variable} ${inter.variable} ${fraunces.variable} ${SCRIPT_FONTS} h-full${isDark ? " dark" : ""}`}
+      className={`${poppins.variable} ${inter.variable} ${fraunces.variable} ${caveat.variable} ${SCRIPT_FONTS} h-full${isDark ? " dark" : ""}`}
       data-text-size={textSize}
       style={{ fontSize: `${rootSize}px`, ["--ux-fs-scale" as string]: String(rootSize / 16) }}
     >

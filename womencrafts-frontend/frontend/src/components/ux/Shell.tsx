@@ -692,6 +692,7 @@ export function Shell({
   children,
   rail,
   wide,
+  fit,
 }: {
   /** Accepted and ignored — kept so callers need not all change at once. */
   nav?: unknown;
@@ -711,6 +712,22 @@ export function Shell({
    * away in its menu.
    */
   wide?: boolean;
+  /**
+   * The screen is sized to the window and must not scroll.
+   *
+   * Only the bottom clearance changes, and only from `xl` up. The 96px below
+   * exists so the floating assistant never covers the last card of a
+   * scrolling page; on a screen built to end at the bottom of the window it
+   * is 96px that can only be reached by scrolling a page that is not supposed
+   * to scroll.
+   *
+   * Below `xl` it stays. A phone cannot hold a board designed for 1536px and
+   * should not try — asked to, it squeezed the middle of the Learn board to
+   * nothing and showed a hero sitting directly on top of a footer, with all
+   * six destinations clipped out of existence. A screen that does not fit
+   * scrolls, which is what scrolling is for.
+   */
+  fit?: boolean;
 }) {
   const pathname = usePathname();
 
@@ -755,8 +772,16 @@ export function Shell({
               96px of viewport it could never reach — the panels stopped short
               of the bottom of the window.
             */}
+            {/* `h-full` under `fit`: without a definite height here, a board
+                that asks for `h-full` resolves against an auto-height row and
+                gets auto — it fits only by coincidence, at whatever window
+                size it happened to be drawn for. The scroller itself keeps
+                `overflow-y-auto` as the floor: on a window too short for any
+                density the page scrolls rather than clipping. */}
             <div className={`flex min-w-0 gap-[24px] px-[20px] ${
-                   wide ? "pb-[20px]" : "pb-[calc(96px+env(safe-area-inset-bottom,0px))] lg:pb-24"}`}
+                   wide ? "pb-[20px]"
+                   : fit ? "pb-[calc(96px+env(safe-area-inset-bottom,0px))] xl:h-full xl:pb-[18px]"
+                   : "pb-[calc(96px+env(safe-area-inset-bottom,0px))] lg:pb-24"}`}
                  style={{ paddingTop: `calc(${TOPBAR_H_VAR} + 18px)` }}>
               {/* `.ux-swap` fades whatever the router puts inside — see the
                   rule in `ux/tokens.css` for why it is the child that carries

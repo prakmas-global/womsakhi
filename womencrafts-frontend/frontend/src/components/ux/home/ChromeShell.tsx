@@ -15,7 +15,7 @@ import { useChrome } from "../chrome";
  */
 export function ChromeShell({ children }: { children: React.ReactNode }) {
   const me = useMe();
-  const { rail, wide, bare, name } = useChrome();
+  const { rail, wide, bare, fit, name } = useChrome();
 
   return (
     <Shell
@@ -36,6 +36,7 @@ export function ChromeShell({ children }: { children: React.ReactNode }) {
       )}
       rail={rail}
       wide={wide}
+      fit={fit}
     >
       {children}
     </Shell>
