@@ -1,0 +1,71 @@
+# Every pull request needs someone else to have looked at it.
+#
+# ── What this can and cannot do ─────────────────────────────────────────────
+# GitHub enforces "you may not merge without an approval" through branch
+# protection or rulesets, and BOTH are refused on a private repository in a
+# free organisation — the API answers 403 "Upgrade to GitHub Pro". So this
+# workflow is the next best thing: it turns an unreviewed PR red and says why.
+#
+# It is a signal, not a lock. Anyone with write access can still press Merge
+# past a red check. To make it actually block, the org needs GitHub Team, after
+# which this same job can be marked a required status check and the rule
+# becomes real. Until then it depends on the team respecting the red.
+name: Review gate
+
+on:
+  pull_request:
+    branches: [main, development]
+    types: [opened, reopened, synchronize, ready_for_review]
+  pull_request_review:
+    types: [submitted, dismissed]
+
+jobs:
+  approved:
+    name: Reviewed by someone else
+    runs-on: ubuntu-latest
+    permissions:
+      pull-requests: read
+    steps:
+      - name: Check for an approving review
+        env:
+          GH_TOKEN: ${{ github.token }}
+          # The owner account, which merges its own work without waiting for
+          # an approval it would have to ask itself for. Add logins here, one
+          # per line, if that should be true of anyone else.
+          OWNERS: |
+            prakmasglobal
+          PR: ${{ github.event.pull_request.number }}
+          AUTHOR: ${{ github.event.pull_request.user.login }}
+          BASE: ${{ github.event.pull_request.base.ref }}
+          REPO: ${{ github.repository }}
+        run: |
+          set -euo pipefail
+
+          if echo "$OWNERS" | grep -qx "$AUTHOR"; then
+            echo "::notice::$AUTHOR is an owner — merging into $BASE without a second approval."
+            exit 0
+          fi
+
+          # The LATEST review per person, so a stale "changes requested" that
+          # was later approved does not block, and an approval that was later
+          # withdrawn does not pass.
+          reviews=$(gh api "repos/$REPO/pulls/$PR/reviews" --paginate \
+            --jq 'group_by(.user.login) | map(max_by(.submitted_at)) | .[] | "\(.user.login) \(.state)"')
+
+          echo "Latest review per person:"
+          echo "${reviews:-  (none yet)}" | sed 's/^/  /'
+
+          # An author approving their own PR does not count as review.
+          approvals=$(echo "$reviews" | awk -v a="$AUTHOR" '$2=="APPROVED" && $1!=a' | wc -l | tr -d ' ')
+          changes=$(echo "$reviews" | awk '$2=="CHANGES_REQUESTED"' | wc -l | tr -d ' ')
+
+          if [ "$changes" -gt 0 ]; then
+            echo "::error::Someone has requested changes. Resolve them and ask for a re-review."
+            exit 1
+          fi
+          if [ "$approvals" -lt 1 ]; then
+            echo "::error::This PR into $BASE needs an approving review from someone other than $AUTHOR."
+            echo "Reviewers with access: Mahathisomisetty, praveen1796, TejaswiniChalla-07, Thiru0121"
+            exit 1
+          fi
+          echo "::notice::$approvals approval(s) — good to merge into $BASE."
