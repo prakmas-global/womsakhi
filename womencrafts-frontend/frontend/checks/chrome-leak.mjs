@@ -28,7 +28,7 @@ await p.setViewport({ width: 1440, height: 1000, deviceScaleFactor: 1 });
 await p.setCookie({ name: "access_token", value: tok, domain: "localhost", path: "/" });
 
 const rail = () => p.evaluate(() => {
-  const el = document.querySelector('[style*="ux-rail"]');
+  const el = document.querySelector("[data-rail]");
   const t = el ? el.innerText.trim() : "";
   return { has: t.length > 0, head: t.split("\n")[0]?.slice(0, 32) ?? "" };
 });

@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
+import { flushSync } from "react-dom";
 import dynamic from "next/dynamic";
 import { usePathname } from "next/navigation";
 import Link from "next/link";
@@ -120,6 +121,22 @@ export function ModeRail({ path, footer }: { path: string; footer?: React.ReactN
   const list = useRef<HTMLElement | null>(null);
 
   /**
+   * Which section is open — held here, not read from the URL.
+   *
+   * It used to be `s.id === trailFor(path)[0]?.id`, so a section could not
+   * begin closing until the route had committed. That is the wrong moment:
+   * by then the new page's own render is landing in the same frame, and the
+   * two panels swapped in one step with no motion at all — measured, 309px to
+   * 0px between consecutive samples.
+   *
+   * Set on the click instead. The panel she just left starts folding away in
+   * the same interaction as the press, while the navigation gets on with
+   * itself underneath, and the two are no longer in each other's way.
+   */
+  const [open, setOpen] = useState<string | undefined>(here);
+  useEffect(() => { setOpen(here); }, [here]);
+
+  /**
    * Keep the row she is on where she can see it.
    *
    * The rail opens one section and shuts the rest, so every cross-section
@@ -159,10 +176,12 @@ export function ModeRail({ path, footer }: { path: string; footer?: React.ReactN
   return (
     <aside
       className="hidden h-full shrink-0 flex-col overflow-hidden border-e lg:flex"
-      // The one name `tokens.css` asks for that nothing ever set. The header,
-      // the content column and the right rail all carried theirs; the left
-      // rail did not, so `::view-transition-group(ux-shell-nav)` never matched
-      // and the rail was swept into the default animation along with the page.
+      // No `view-transition-name`, deliberately. It had one, and that is
+      // precisely what stopped the accordion from ever animating: a named
+      // element is captured as a still image for the length of the
+      // transition, so the one moment the panel had to fold away was the one
+      // moment the rail was a photograph. The shell stays put by actually
+      // staying mounted, which `checks/nav-persist.mjs` measures.
       //
       // `overflow-hidden`, not `auto`: the rail is a frame now, and the list
       // inside it is what scrolls. When the whole column scrolled, opening a
@@ -175,8 +194,7 @@ export function ModeRail({ path, footer }: { path: string; footer?: React.ReactN
       // extra `calc(topbar + 12px)` was a second clearance for a bar that was
       // no longer overlapping, and it left 56px of empty rail above her photo
       // while the first card in the page began at 80px. They start level now.
-      style={{ viewTransitionName: "ux-shell-nav",
-               width: 253, borderColor: "var(--ux-line)", background: "var(--ux-surface)",
+      style={{ width: 253, borderColor: "var(--ux-line)", background: "var(--ux-surface)",
                paddingTop: 18 }}
     >
       {/* Her, and how far through setting herself up she is. */}
@@ -212,33 +230,40 @@ export function ModeRail({ path, footer }: { path: string; footer?: React.ReactN
       */}
       <nav ref={list} className="ux-rail-scroll min-h-0 flex-1 px-3 pb-3" aria-label="Sections">
         {SECTIONS.map((s) => {
-          const open = s.id === here;
+          const isOpen = s.id === open;
           const kids = (s.children ?? []).filter((c) => !c.unlisted);
           // The section row is "current" only when she is on the hub itself;
           // deeper in, the child carries the highlight and the section stays
           // merely open. Two things claiming to be the current page is how a
           // reader stops trusting the highlight.
-          const onHub = open && trail.length === 1;
+          const onHub = s.id === here && trail.length === 1;
           return (
             <div key={s.id} className="mb-0.5">
               <TransitionLink
                 href={s.href}
+                // `flushSync`, because a plain `setOpen` here gets batched
+                // into the navigation's own transition and does not paint
+                // until the new route is ready to commit — measured, 120ms of
+                // a section sitting there open after she had already clicked
+                // somewhere else. The fold has to start on the press or it
+                // reads as the app not having heard her.
+                onClick={() => flushSync(() => setOpen(s.id))}
                 aria-current={onHub ? "page" : undefined}
-                aria-expanded={kids.length ? open : undefined}
+                aria-expanded={kids.length ? isOpen : undefined}
                 className="ux-row ux-sq relative flex items-center gap-3 rounded-[12px] py-2 pe-2 ps-2.5"
                 style={{ background: onHub ? "var(--ux-brand-tint)" : "transparent",
-                         color: open ? "var(--ux-brand)" : "var(--ux-ink)" }}
+                         color: isOpen ? "var(--ux-brand)" : "var(--ux-ink)" }}
               >
                 {/* The bar that says "you are in here" — the one signal that
                     survives at a glance, and the thing 95% of sites get
                     wrong according to Baymard's 2025 benchmark. */}
                 <span aria-hidden
                       className="absolute inset-y-1.5 start-0 w-[3px] rounded-full"
-                      style={{ background: open ? "var(--ux-brand)" : "transparent",
+                      style={{ background: isOpen ? "var(--ux-brand)" : "transparent",
                                transition: "background var(--ux-t) var(--ux-ease)" }} />
                 <Icon name={s.icon} className="ux-ico h-[16px] w-[16px] shrink-0" />
                 <span className="min-w-0 flex-1 truncate text-xsm"
-                      style={{ fontWeight: open ? 700 : 500 }}>
+                      style={{ fontWeight: isOpen ? 700 : 500 }}>
                   {nav.label(s)}
                 </span>
                 {kids.length > 0 && (
@@ -246,14 +271,14 @@ export function ModeRail({ path, footer }: { path: string; footer?: React.ReactN
                         className="ux-ico h-[14px] w-[14px] shrink-0"
                         // Turned rather than swapped, so the eye follows one
                         // shape instead of noticing two.
-                        style={{ opacity: open ? 1 : 0.45,
-                                 transform: open ? "rotate(0deg)" : "rotate(-90deg)",
+                        style={{ opacity: isOpen ? 1 : 0.45,
+                                 transform: isOpen ? "rotate(0deg)" : "rotate(-90deg)",
                                  transition: "transform var(--ux-t-slow) var(--ux-ease-out), opacity var(--ux-t) var(--ux-ease)" }} />
                 )}
               </TransitionLink>
 
               {kids.length > 0 && (
-                <div className="ux-reveal" data-open={open ? "true" : "false"}>
+                <div className="ux-reveal" data-open={isOpen ? "true" : "false"}>
                   <div>
                     <div className="ux-branch mb-1 ms-[18px] mt-0.5">
                       {kids.map((c) => {
@@ -262,7 +287,7 @@ export function ModeRail({ path, footer }: { path: string; footer?: React.ReactN
                           <TransitionLink
                             key={c.id}
                             href={c.href}
-                            tabIndex={open ? undefined : -1}
+                            tabIndex={isOpen ? undefined : -1}
                             aria-current={on ? "page" : undefined}
                             data-on={on ? "true" : "false"}
                             className="ux-twig ux-row ux-sq relative mb-0.5 flex items-center gap-2.5 rounded-[10px] px-2.5 py-1.5"
@@ -409,7 +434,7 @@ export function Topbar({ user }: { user: { name: string; avatar: string; unread?
        would have taken its own band with nothing behind it. */
     <header
       className="ux-glass relative z-[60] flex shrink-0 flex-col"
-      style={{ height: TOPBAR_H_VAR, borderRadius: 0, borderWidth: "0 0 1px 0", viewTransitionName: "ux-shell-top" }}
+      style={{ height: TOPBAR_H_VAR, borderRadius: 0, borderWidth: "0 0 1px 0" }}
     >
       <div className="flex flex-1 items-center gap-3 ps-[18px] pe-[18px]">
       {/* Brand first, then the six modes. The rail no longer carries the
@@ -679,14 +704,22 @@ export function Shell({
             <div className={`flex min-w-0 gap-[24px] px-[20px] ${
                    wide ? "pb-[20px]" : "pb-[calc(96px+env(safe-area-inset-bottom,0px))] lg:pb-24"}`}
                  style={{ paddingTop: `calc(${TOPBAR_H_VAR} + 18px)` }}>
-              <main id="content" className="min-w-0 flex-1" style={{ viewTransitionName: "ux-main" }}>
+              {/* `.ux-swap` fades whatever the router puts inside — see the
+                  rule in `ux/tokens.css` for why it is the child that carries
+                  the animation and not this element. Emphatically NOT
+                  `key={pathname}`: `pathname` changes before `children` does,
+                  so keying on it rebuilt this subtree around the page she was
+                  leaving and the destination then never rendered at all —
+                  clicking Your shop → Your wallet left "Turn your skills into
+                  income" under the wallet's URL, indefinitely. */}
+              <main id="content" className="ux-swap min-w-0 flex-1">
                 {/* The rail carrying these is `hidden lg:flex`, so on a phone
                     every sub-page — Your journey, Your calendar, Saved — was
                     reachable only by whatever happened to link to it. */}
                 {children}
               </main>
               {rail && (
-                <div className="hidden w-[320px] shrink-0 pb-24 xl:block" style={{ viewTransitionName: "ux-rail" }}>
+                <div data-rail className="ux-swap hidden w-[320px] shrink-0 pb-24 xl:block">
                   {rail}
                 </div>
               )}

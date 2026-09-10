@@ -49,7 +49,15 @@ const to = await p.evaluate(() => {
 });
 await p.waitForFunction((want) => location.pathname === want, { timeout: 30000 }, "/app/wallet")
   .catch(() => {});
-await new Promise(x => setTimeout(x, 1500));
+// Wait for the DESTINATION, not for a stopwatch. With the view transition
+// gone, React keeps the previous screen on display until the new route is
+// ready — which is the correct behaviour and is what a fixed sleep kept
+// mistaking for the new screen. It read the first `h1` in the document and
+// found the one belonging to the page she had just left.
+await p.waitForFunction(
+  () => /wallet/i.test(document.querySelector("#content h1")?.innerText ?? ""),
+  { timeout: 30000 },
+).catch(() => {});
 
 const after = await p.evaluate(() => ({
   path: location.pathname,
@@ -57,7 +65,7 @@ const after = await p.evaluate(() => ({
   top: document.querySelector("header")?.getAttribute("data-brand") ?? null,
   scroller: document.querySelector("#ux-scroll")?.getAttribute("data-brand") ?? null,
   scroll: document.querySelector("aside")?.scrollTop ?? -1,
-  h1: document.querySelector("h1")?.innerText.slice(0, 30) ?? "-",
+  h1: document.querySelector("#content h1")?.innerText.slice(0, 30) ?? "-",
 }));
 
 let bad = 0;
@@ -67,7 +75,7 @@ say(after.top === "top-1", "the topbar element survived");
 say(after.rail === "rail-1", "the rail element survived");
 say(after.scroller === "scroller-1", "the scroll container survived");
 say(after.scroll === before.scroll, `the rail kept her scroll position (${before.scroll} -> ${after.scroll})`);
-say(after.h1 !== "-", `the middle DID change (h1: ${after.h1})`);
+say(/wallet/i.test(after.h1), `the middle shows the destination (h1: ${after.h1})`);
 
 console.log(bad ? `\n FAIL  ${bad} of 6` : "\n PASS  only the middle re-rendered");
 await b.close();

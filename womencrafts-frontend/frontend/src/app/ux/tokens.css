@@ -1096,20 +1096,30 @@
    elements across a navigation and leaves them alone. Only the content column
    and the rail cross over, which is what makes moving between screens read as
    changing what you are looking at rather than reloading where you are. */
-::view-transition-group(ux-shell-nav),
-::view-transition-group(ux-shell-top) { animation-duration: 0s; }
+/* The middle, arriving.
 
-::view-transition-old(ux-main),
-::view-transition-new(ux-main),
-::view-transition-old(ux-rail),
-::view-transition-new(ux-rail) {
-  animation-duration: 260ms;
-  animation-timing-function: cubic-bezier(.16, 1, .3, 1);
-}
-@keyframes ux-vt-out { to { opacity: 0; transform: translateY(-8px); } }
-@keyframes ux-vt-in { from { opacity: 0; transform: translateY(12px); } }
-::view-transition-old(ux-main), ::view-transition-old(ux-rail) { animation-name: ux-vt-out; }
-::view-transition-new(ux-main), ::view-transition-new(ux-rail) { animation-name: ux-vt-in; }
+   This replaced a `document.startViewTransition()` that wrapped every
+   navigation. That approach snapshots the whole document and render-blocks it
+   until the new screen is ready — which meant the sidebar could not animate
+   anything during a navigation, because it was a still image at the time, and
+   a `requestAnimationFrame` poll inside the update callback deadlocked
+   outright (rAF does not fire while the document is blocked): 4,263ms of
+   frozen screen per click, measured.
+
+   A keyframe on live content instead. It blocks nothing, captures nothing,
+   and leaves every other part of the shell free to move on its own. */
+/* The CHILD carries the animation, not the container.
+
+   A CSS animation plays when an element is inserted, and on a navigation the
+   router removes the old screen's element and inserts the new one — so this
+   fires once, on the arriving screen, with nothing to trigger it and nothing
+   to reset. The obvious alternative, `key={pathname}` on the container, is
+   wrong twice over: `pathname` changes before `children` does, so it rebuilds
+   the subtree around the page being left, and the destination then never
+   renders. */
+.ux-swap > * { animation: ux-swap-in 240ms var(--ux-ease-out) both; }
+@keyframes ux-swap-in { from { opacity: 0; } to { opacity: 1; } }
+@media (prefers-reduced-motion: reduce) { .ux-swap > * { animation: none; } }
 
 /* The brand lockup. A logo must not tilt — `ux-ico` rotates, which is right for
    an icon answering a hover and wrong for a mark that has one correct
@@ -1596,13 +1606,37 @@
 
    The row must clip, or the links inside are still tabbable while closed —
    a keyboard would walk into a section that is not on screen. */
+/* A section folding open, and folding shut.
+
+   Two curves, not one. Opening wants the expressive one — most of the movement
+   up front so the panel feels like it was already there — but the same curve
+   on the way out is a snap: measured, a 309px panel lost 237px of its height
+   in the first frame and then spent 200ms creeping through the last 17. A
+   close reads as a close when it is even, so it gets a symmetric ease and a
+   little less time.
+
+   The links fade as well as being clipped. Height alone slices them off
+   mid-row against the section below; fading them out ahead of the fold is
+   what makes it look like the panel is closing rather than being cut. */
 .ux-reveal {
   display: grid;
   grid-template-rows: 0fr;
+  transition: grid-template-rows 260ms cubic-bezier(0.4, 0, 0.2, 1);
+}
+.ux-reveal[data-open="true"] {
+  grid-template-rows: 1fr;
   transition: grid-template-rows var(--ux-t-slow) var(--ux-ease-out);
 }
-.ux-reveal[data-open="true"] { grid-template-rows: 1fr; }
-.ux-reveal > * { overflow: hidden; min-height: 0; }
+.ux-reveal > * {
+  overflow: hidden;
+  min-height: 0;
+  opacity: 0;
+  transition: opacity 140ms linear;
+}
+.ux-reveal[data-open="true"] > * {
+  opacity: 1;
+  transition: opacity 200ms 70ms linear;
+}
 
 /* The rail's list, which is the only part of the sidebar that scrolls.
 

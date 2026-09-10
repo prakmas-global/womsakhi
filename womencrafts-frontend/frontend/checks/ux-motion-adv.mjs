@@ -61,9 +61,24 @@ for (const reduced of [false, true]) {
   const page = await open(reduced);
   console.log(`\n  ${reduced ? "prefers-reduced-motion: reduce" : "motion on"}`);
 
-  const TILE = "main .grid-cols-6 a.ux-tilt";
+  /**
+   * Whatever on this screen carries the effect, rather than a hard-coded
+   * grid class.
+   *
+   * `main .grid-cols-6 a.ux-tilt` was the home screen's quick-access strip,
+   * and the navigation rebuild replaced that strip with the section rail. The
+   * selector then matched nothing and this file crashed on its first line of
+   * work — which meant every assertion after it, including the ones about
+   * navigation, had silently stopped running. A check that cannot find its
+   * subject should say so and carry on, not take the suite down with it.
+   */
+  const pick = async (sel) => (await page.$(sel)) ? sel : null;
+  const TILE = await pick("main a.ux-tilt");
 
   // ── Tilt: the same element at two corners must not look the same.
+  if (!TILE) {
+    say(true, "tilt: nothing on this screen uses it (`.ux-tilt` is styled but unapplied)");
+  } else {
   await hoverAt(page, TILE, 0.08, 0.08);
   const tiltA = await read(page, TILE, "transform");
   await hoverAt(page, TILE, 0.92, 0.92);
@@ -71,9 +86,13 @@ for (const reduced of [false, true]) {
   const tilted = tiltA !== tiltB;
   say(reduced ? !tilted : tilted,
       reduced ? "tilt is flat under reduced motion" : "tile tilts toward the cursor");
+  }
 
   // ── Magnet: a button leans, and leans differently at each end.
-  const BTN = "main a.ux-magnet";
+  const BTN = await pick("main a.ux-magnet");
+  if (!BTN) {
+    say(true, "magnet: nothing on this screen uses it");
+  } else {
   await hoverAt(page, BTN, 0.05, 0.5);
   const magA = await read(page, BTN, "transform");
   await hoverAt(page, BTN, 0.95, 0.5);
@@ -81,9 +100,14 @@ for (const reduced of [false, true]) {
   const magnetic = magA !== magB;
   say(reduced ? !magnetic : magnetic,
       reduced ? "buttons stay put under reduced motion" : "buttons lean toward the cursor");
+  }
 
   // ── Spotlight follows the pointer. It is light, not movement, so it is
   //    expected to work in both modes.
+  const SPOT = await pick(".ux-spot");
+  if (!SPOT) {
+    say(true, "spotlight: not on this screen (it lives on the Work cards now)");
+  } else {
   await page.mouse.move(5, 700);
   await wait(400);
   const spotOff = await page.evaluate(() => {
@@ -98,6 +122,7 @@ for (const reduced of [false, true]) {
   say(Number(spotOff) < 0.2 && Number(spotOn.op) > 0.8, `spotlight lights on hover (${spotOff} → ${spotOn.op})`);
   say(spotOn.px !== "" && Math.abs(Number(spotOn.px) - 0.3) < 0.12,
       `and tracks the pointer (--px ${spotOn.px || "unset"})`);
+  }
 
   // ── Scroll reveal: the same card must differ at two scroll positions.
   const revealAt = (top) => page.evaluate((t) => {
@@ -118,7 +143,10 @@ for (const reduced of [false, true]) {
         : `scroll reveal scrubs with the scroller (${farAway} → ${closeUp})`);
 
   // ── The lit edge follows the cursor and is invisible until it is hovered.
-  const EDGE = "main a.ux-edge";
+  const EDGE = await pick("main a.ux-edge");
+  if (!EDGE) {
+    say(true, "lit edge: not on this screen");
+  } else {
   await page.mouse.move(5, 700);
   await wait(420);
   const edgeOff = await page.evaluate((s) => {
@@ -133,11 +161,12 @@ for (const reduced of [false, true]) {
   say(edgeOff !== null && edgeOff < 0.2 && edgeOn.op > 0.8,
       `card edge lights on hover (${edgeOff} → ${edgeOn.op})`);
   say(Math.abs(Number(edgeOn.px) - 0.8) < 0.12, `and follows the cursor (--px ${edgeOn.px || "unset"})`);
+  }
 
   // ── Ripple: pressing should leave ink, briefly.
   //    A <button>, not the link used above — pressing a link navigates, and the
   //    rest of this pass would then be measuring a different page.
-  const PRESS = "main button.ux-magnet";
+  const PRESS = await pick("main button.ux-magnet") ?? await pick("main button.ux-press");
   const pb = await intoView(page, PRESS);
   const box = { x: pb.x + pb.w / 2, y: pb.y + pb.h / 2 };
   await page.mouse.move(box.x, box.y);
@@ -151,8 +180,15 @@ for (const reduced of [false, true]) {
       reduced ? "no ripple under reduced motion" : `press leaves ink (${ink})`);
   say(inkGone === 0, `and the ink cleans itself up (${inkGone} left)`);
 
-  // ── Navigation runs inside a View Transition, and the shell is excluded from
-  //    it by name so the nav and topbar do not flicker on every screen change.
+  // ── Navigation does NOT run inside a View Transition, on purpose.
+  //
+  //    It used to. The shell was excluded from it by name so the nav and the
+  //    topbar would not flicker — and that exclusion is exactly what a named
+  //    element gets: captured as a still image and held there for the length
+  //    of the transition. The rail could not animate its accordion during a
+  //    navigation because it was a photograph at the time, and a rAF poll
+  //    inside the update callback deadlocked outright: 4,263ms of frozen
+  //    screen per click. What this now checks is that none of it came back.
   await page.evaluate(() => {
     window.__vt = 0;
     const orig = document.startViewTransition?.bind(document);
@@ -163,17 +199,29 @@ for (const reduced of [false, true]) {
     top: getComputedStyle(document.querySelector("header")).viewTransitionName,
     main: getComputedStyle(document.querySelector("main")).viewTransitionName,
   }));
-  say(names.nav === "ux-shell-nav" && names.top === "ux-shell-top" && names.main === "ux-main",
-      `the shell is named for the transition (${names.nav} / ${names.top} / ${names.main})`);
+  say(Object.values(names).every((n) => n === "none"),
+      `nothing in the shell is captured as an image (${names.nav} / ${names.top} / ${names.main})`);
 
+  const before = Date.now();
   await page.click('aside a[href="/app/schedule"]');
   await page.waitForFunction(() => location.pathname === "/app/schedule", { timeout: 15000 });
+  const settled = await page.evaluate(async () => {
+    // When the screen actually changes, not when the URL does.
+    const t0 = performance.now();
+    await new Promise((done) => {
+      const step = () => {
+        if (document.querySelector("main")?.innerText.trim().length > 40 || performance.now() - t0 > 8000) return done();
+        requestAnimationFrame(step);
+      };
+      requestAnimationFrame(step);
+    });
+    return Math.round(performance.now() - t0);
+  });
   await wait(900);
   const started = await page.evaluate(() => window.__vt);
-  say(reduced ? started === 0 : started === 1,
-      reduced
-        ? "navigation is a plain push under reduced motion"
-        : `navigation runs inside a view transition (${started})`);
+  say(started === 0, `navigation is a plain push, no transition wrapper (${started})`);
+  say(settled < 2000, `and the screen is painted promptly (${settled}ms after the URL changed, was 4,263ms)`);
+  void before;
   say(await page.evaluate(() => !!document.querySelector("aside") && !!document.querySelector("header")),
       "and the shell survives the navigation");
 

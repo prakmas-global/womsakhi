@@ -17,6 +17,7 @@ const CHECKS = [
   ["contrast", "node checks/contrast.mjs"],
   ["rail",     "node checks/rail.mjs"],
   ["steady",   "node checks/rail-steady.mjs"],
+  ["fold",     "node checks/rail-fold.mjs"],
   ["persist",  "node checks/nav-persist.mjs"],
   ["chrome",   "node checks/chrome-leak.mjs"],
   ["a11y",     "node checks/a11y.mjs"],
