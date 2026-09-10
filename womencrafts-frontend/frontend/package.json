@@ -19,6 +19,7 @@
     "check:rail-fold": "node checks/rail-fold.mjs",
     "check:learn-board": "node checks/learn-board.mjs",
     "check:work-board": "node checks/work-board.mjs",
+    "check:home-banner": "node checks/home-banner.mjs",
     "check:ink": "tsx src/theme-engine/__checks__/ink.mjs",
     "check:states": "node checks/states.mjs",
     "check:api": "node checks/api.mjs",

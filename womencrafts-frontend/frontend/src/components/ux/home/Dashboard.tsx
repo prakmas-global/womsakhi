@@ -94,44 +94,71 @@ function Panel({ children }: { children: React.ReactNode }) {
 
 /* ── the hero ──────────────────────────────────────────────────────────── */
 
+/**
+ * The front door.
+ *
+ * `bannermain.png` is not a background — it is a finished piece with the
+ * wordmark, the quote, six women, the globe and the Charminar all composed
+ * into it. Laying a greeting and two buttons over that would cover the part
+ * of it that does the work, so the hero is one card in two halves: the banner
+ * whole and uncropped on top, and her own greeting and the two things she can
+ * do from here underneath, on the brand gradient the banner ends in.
+ *
+ * The headline it replaces said "Let's make today a step towards your better
+ * tomorrow"; the banner says "Independent Women Build Brighter Tomorrows" in
+ * type nobody could set here. Saying both would be saying it twice.
+ */
 function Hero({ first }: { first: string }) {
   const greeting = useGreeting();
 
   return (
-    <section className="relative isolate overflow-hidden rounded-[20px]"
-             style={{ background: "linear-gradient(112deg, var(--ux-brand-900) 0%, var(--ux-fill) 44%, var(--ux-rib-3) 108%)",
-                      minHeight: 264 }}>
-      {/* eslint-disable-next-line @next/next/no-img-element */}
-      <img loading="lazy" decoding="async" src="/ux/art/hero-shop-owner.webp" alt="" aria-hidden
-           /* `contain` and full height, not `cover` at 112%. Taller than its
-              box and pinned to the bottom, the top 12% of the picture — her
-              head — was being cut off by the hero's `overflow-hidden`. */
-           className="ux-float pointer-events-none absolute inset-y-0 right-0 hidden h-full w-[44%] object-contain object-bottom sm:block"
-           style={{ maskImage: "linear-gradient(100deg, transparent 2%, #000 34%), radial-gradient(84% 92% at 62% 48%, #000 56%, transparent 92%)",
-                    WebkitMaskImage: "linear-gradient(100deg, transparent 2%, #000 34%), radial-gradient(84% 92% at 62% 48%, #000 56%, transparent 92%)",
-                    maskComposite: "intersect", WebkitMaskComposite: "source-in" }} />
+    <section className="ux-sq relative isolate overflow-hidden rounded-[20px]"
+             style={{ border: "1px solid var(--ux-line)" }}>
+      {/*
+        `object-cover` at 2.8:1 against the art's own 2.5:1, which trims about
+        a tenth of its height — the empty ceiling above the women and the haze
+        below the skyline — and nothing that carries meaning. It was 3.05,
+        which took a fifth, and the fifth included the top of "A Brighter
+        Tomorrow" in the left-hand corner. The margins here are small: that
+        lettering starts at 7.5% of the height, the tallest head at 8%, the
+        wordmark at 13%.
 
-      <div className="relative flex min-h-[264px] flex-col justify-center p-6 sm:max-w-[58%] sm:p-8">
-        <p className="text-xsm font-semibold" style={{ color: "var(--ux-on-brand-2)" }}>
-          {greeting}, {first || "friend"}
-        </p>
-        <h1 className="mt-2.5 text-[clamp(1.5rem,2.7vw,2.1875rem)] font-extrabold leading-[1.12] tracking-[-0.03em]"
-            style={{ color: "var(--ux-on-brand)", textWrap: "balance" }}>
-          Let’s make today a step towards your{" "}
-          <span style={{ color: "var(--ux-rib-5)" }}>better tomorrow.</span>
-        </h1>
-        <p className="mt-2.5 text-sm" style={{ color: "var(--ux-on-brand-2)" }}>
-          Connect. Learn. Earn. Grow. Together.
-        </p>
-        <div className="mt-5 flex flex-wrap gap-3">
+        `fetchPriority="high"` and no lazy loading: this is the first thing on
+        the first screen she sees, and a banner that arrives late is a page
+        that jumps.
+      */}
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img src="/ux/art/home-banner.webp"
+           alt="Six women working together at a laptop, under the WomSakhi wordmark and the words “Independent Women Build Brighter Tomorrows”."
+           decoding="async" fetchPriority="high" width={1900} height={760}
+           className="block w-full object-cover object-center"
+           style={{ aspectRatio: "2.8 / 1" }} />
+
+      {/* Her half. The gradient picks up the violet the banner's wordmark ends
+          on, so the two halves read as one card rather than a picture with a
+          bar stuck under it. */}
+      <div className="flex flex-wrap items-center justify-between gap-x-6 gap-y-4 p-5 sm:px-7"
+           style={{ background: "linear-gradient(102deg, var(--ux-brand-900) 0%, var(--ux-fill) 62%, var(--ux-rib-2) 118%)" }}>
+        <div className="min-w-0">
+          <p className="text-xsm font-semibold" style={{ color: "var(--ux-on-brand-2)" }}>
+            {greeting}, {first || "friend"}
+          </p>
+          <p className="mt-1 text-lg font-extrabold leading-tight tracking-[-0.02em]"
+             style={{ color: "var(--ux-on-brand)" }}>
+            Connect. Learn. Earn. Grow.{" "}
+            <span style={{ color: "var(--ux-rib-5)" }}>Together.</span>
+          </p>
+        </div>
+
+        <div className="flex flex-wrap gap-3">
           <Link href="/app/opportunities"
-                className="ux-press ux-btn-g flex min-h-[44px] items-center gap-2 rounded-[12px] px-5 text-xsm font-bold"
+                className="ux-press ux-btn-g flex min-h-[44px] items-center gap-2 rounded-full px-5 text-xsm font-bold"
                 style={{ background: "linear-gradient(96deg, var(--ux-rib-2), var(--ux-rib-3))", color: "var(--ux-on-brand)" }}>
             Explore Opportunities
             <Icons.ArrowRight className="h-4 w-4" />
           </Link>
           <Link href="/app/stories"
-                className="ux-press flex min-h-[44px] items-center gap-2.5 rounded-[12px] px-4 text-xsm font-bold"
+                className="ux-press flex min-h-[44px] items-center gap-2.5 rounded-full px-4 text-xsm font-bold"
                 style={{ background: "var(--ux-on-brand-track)", border: "1px solid var(--ux-on-brand-2)",
                          color: "var(--ux-on-brand)" }}>
             <span className="grid h-[26px] w-[26px] place-items-center rounded-full"
