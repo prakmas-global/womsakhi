@@ -108,12 +108,6 @@
   --ux-tint-pink:   #fff2f7;
   --ux-tint-lilac:  #f6f4ff;
   --ux-tint-amber:  #fdf6e3;   /* ink clears AA at 4.60:1 */
-  /* The Work board's "Big orders". The board draws it a warm orange;
-     `--ux-amber-ink` (#8f6a00) is an olive-brown that reads as neither amber
-     nor orange. This is that orange, darkened until it clears AA on the amber
-     wash it sits on — the board's own value measures about 3.2:1, which is a
-     colour a woman with low vision cannot read. */
-  --ux-work-orange: #b3631a;
 
   /* graphics — measured 3.01 to 3.03 on the worst surface each lands on */
   /* ── The deep canvas, and the emblem's own ribbon ramp ────────────────
@@ -383,7 +377,6 @@
   --ux-tint-pink:   #35232b;
   --ux-tint-lilac:  #2a2637;
   --ux-tint-amber:  #2e2615;   /* ink clears AA at 4.68:1; #332a18 was 4.42 */
-  --ux-work-orange: #e0913f;
 
   /* Dark mode needs only one strength. Solving for 4.5:1 here lands around
      L 0.72, which is luminous enough to work as a shape as well as a word —
@@ -1939,6 +1932,80 @@
   .ux :where(a, button):focus-visible { outline: 3px solid Highlight; outline-offset: 2px; }
 }
 .ux-clay, .ux-well { border: 1px solid transparent; }
+
+/* Set from the markup, defaulted here.
+
+   `--ux-arc-len`, `--ux-arc-off` and `--ux-hand-deg` are written by the
+   components that animate a savings-pot arc and a clock hand, so they never
+   appeared with a `:` anywhere and `checks/tokens.mjs` counted them as seven
+   undefined tokens. Declaring a default is not just check appeasement: before
+   the component mounts and writes its value, `stroke-dasharray: var(--ux-arc-len)`
+   resolved to nothing and the arc drew as a complete ring for a frame. */
+.ux {
+  --ux-arc-len: 0;
+  --ux-arc-off: 0;
+  --ux-hand-deg: 0deg;
+  /* Written by `kit/sheet.tsx` from its `width` prop; defaulted so the panel
+     has a sane width for the frame before that style lands. */
+  --ux-sheet-w: min(420px, 100vw);
+  /* The scrim under text laid over a photograph. Near-black with the brand's
+     own hue in it, so it darkens the picture without greying it. */
+  --ux-scrim-photo: 10 4 26;
+  /* The disguise screen. It has to look like an ordinary weather page and
+     nothing like WomSakhi, so it is white-on-grey in BOTH themes — a woman who
+     hits that button has someone looking over her shoulder, and a lilac page
+     that suddenly turns white is the one thing that would give her away.
+     Tokens rather than literals only so the intent is written down. */
+  --ux-veil-bg: #ffffff;
+  --ux-veil-ink: #222222;
+  --ux-veil-hint: #888888;
+}
+.dark .ux, .ux.dark {
+  --ux-veil-bg: #ffffff;
+  --ux-veil-ink: #222222;
+  --ux-veil-hint: #888888;
+}
+
+/* ── The photographic bands ───────────────────────────────────────────────
+   The Learn and Work boards each open on a band that is a photograph on a
+   pale pink wall. There is no dark counterpart to swap to and no honest way to
+   tint one, so those bands are deliberately fixed-light in both themes — and
+   every colour on them is chosen against the picture, not against the theme.
+
+   They live here as tokens anyway. Not because they flip (they do not), but
+   because two boards were each carrying their own copy of the same three
+   inks, and a colour written twice is a colour that drifts. `checks/tokens.mjs`
+   forbids literal hex in components for exactly this reason.
+
+   Anything here is measured against the band's own gradient, not the canvas.
+   `--ux-band-ink` is 13.5:1 on it; `--ux-band-ink-2` is 7.9:1. */
+.ux {
+  --ux-band-ink: #161734;
+  --ux-band-ink-2: #413f63;
+  --ux-band-brand: #6c3fd0;
+  --ux-band-edge: #ecdff0;
+  --ux-band-learn: linear-gradient(102deg, #fdfbff 0%, #fbf5fb 38%, #f9eef8 58%, #f8e9f5 100%);
+  --ux-band-work: linear-gradient(102deg, #fdfbff 0%, #fbf5fc 34%, #f9eef8 54%, #f8e9f4 100%);
+  /* The foot strip turns lilac where Sakhi stands, so her art's own pale
+     ground has nothing of the wrong pink to show against. */
+  --ux-band-foot: linear-gradient(96deg, #fdfaff 0%, #fdf3f8 40%, #fbedf5 66%, #f8f4fe 100%);
+  --ux-band-foot-edge: #eee0ee;
+  --ux-band-pill: rgba(255, 255, 255, 0.92);
+  --ux-band-pill-edge: #efe6f5;
+  --ux-band-chip-knock: #faf3fb;
+  --ux-band-lamp: #e59a10;
+  /* "your terms", violet into magenta across the two words. */
+  --ux-band-italic: linear-gradient(96deg, #6d3fe0 0%, #a02fd0 55%, #d0269b 100%);
+  /* The insight ring: teal where the arc starts, blue where it ends, and it
+     stops there — the brand violet made the last third read as a third colour. */
+  --ux-ring-a: #2fc3ae;
+  --ux-ring-b: #3b93d4;
+  --ux-ring-c: #4a68cf;
+  /* Big orders. Warm orange rather than `--ux-amber-ink`'s olive-brown,
+     darkened until it clears AA on the amber wash it sits on. */
+  --ux-work-orange: #b3631a;
+}
+.dark .ux, .ux.dark { --ux-work-orange: #e0913f; }
 
 /* A text link that is still 24px to a finger.
 

@@ -569,11 +569,11 @@ function Veil({ onBack }: { onBack: () => void }) {
   const tr = useT();
   return (
     <div className="fixed inset-0 z-[100] overflow-auto p-10"
-         style={{ background: "#ffffff", color: "#222" }}>
+         style={{ background: "var(--ux-veil-bg)", color: "var(--ux-veil-ink)" }}>
       <h2 className="m-0 text-xl font-semibold">{tr("help.weatherHyderabad")}</h2>
       <p className="mt-3 text-base">32°C, partly cloudy. Light rain expected after 6 PM.</p>
       <p className="mt-1 text-base">{tr("help.tomorrowCWednesdayCThursdayC")}</p>
-      <button type="button" onClick={onBack} className="mt-6 text-xs underline" style={{ color: "#888" }}>{tr("help.pressEscapeToGoBack")}</button>
+      <button type="button" onClick={onBack} className="mt-6 text-xs underline" style={{ color: "var(--ux-veil-hint)" }}>{tr("help.pressEscapeToGoBack")}</button>
     </div>
   );
 }

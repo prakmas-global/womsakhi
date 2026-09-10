@@ -149,15 +149,15 @@ export function LearnBoard() {
  * — every colour below is chosen against this gradient, not against
  * `--ux-canvas`, which in dark mode is behind it rather than under it.
  */
-const HERO_INK = "#161734";
-const HERO_INK_2 = "#413f63";
-const HERO_BRAND = "#6c3fd0";
+const HERO_INK = v("--ux-band-ink");
+const HERO_INK_2 = v("--ux-band-ink-2");
+const HERO_BRAND = v("--ux-band-brand");
 
 function Hero() {
   return (
     <section className="ux-sq relative isolate overflow-hidden rounded-[18px]"
-             style={{ border: "1px solid #ecdff0",
-                      background: "linear-gradient(102deg, #fdfbff 0%, #fcf5fb 38%, #faeef8 58%, #f8e9f5 100%)" }}>
+             style={{ border: `1px solid ${v("--ux-band-edge")}`,
+                      background: v("--ux-band-learn") }}>
       {/* eslint-disable-next-line @next/next/no-img-element */}
       <img
         src="/ux/art/hero-learn-banner.webp"

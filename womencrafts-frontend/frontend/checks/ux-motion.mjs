@@ -12,17 +12,24 @@ import { launch, pageAs, seededMemberToken } from "./_shared.mjs";
 const APP = process.env.UX_URL || "http://localhost:3100";
 
 /** Each case: what to hover, what should move, and what kind of movement. */
+/**
+ * Each case: what to hover, what should move, and what kind of movement.
+ *
+ * Five cases were removed rather than repaired, because what they tested is
+ * genuinely gone: "quick-action tile press", "tile icon leans" and "tile
+ * chevron travels" all hovered `main .grid-cols-6 a.ux-clay`, the Home
+ * quick-access strip that the navigation rebuild deleted; "course row lifts"
+ * and "course art zooms" wanted `a.ux-i[href="/app/programs"]:has(img)` and
+ * `.ux-art`, neither of which now exists on any route — I checked
+ * /app, /app/programs, /app/saved and /app/documents and got zero for all of
+ * them. A check that hovers nothing and reports "nothing matched the hover
+ * selector" is not guarding anything; these now hover what the app has.
+ */
 const CASES = [
-  // Scoped to the six-column grid: the hero's own clay button sits earlier in
-  // `main`, and a bare `a.ux-clay` picked that up instead of a tile.
-  { name: "quick-action tile press",  hover: "main .grid-cols-6 a.ux-clay",                     moves: "self",                      kind: "shadow" },
-  { name: "tile icon leans",          hover: "main .grid-cols-6 a.ux-clay",                     moves: ".ux-ico, .ux-ico-alt",      kind: "rotate" },
-  { name: "tile chevron travels",     hover: "main .grid-cols-6 a.ux-clay",                     moves: ".ux-arrow",                 kind: "translate" },
-  { name: "course row lifts",         hover: 'main a.ux-i[href="/app/programs"]:has(img)', moves: "self",              kind: "translate" },
-  { name: "course art zooms",         hover: 'main a.ux-i[href="/app/programs"]:has(img)', moves: ".ux-art",           kind: "scale" },
-  { name: "See All arrow travels",    hover: "main button.ux-hov",                 moves: ".ux-arrow",                 kind: "translate" },
-  { name: "sidebar icon leans",       hover: "aside a.ux-nav",                     moves: ".ux-ico",                   kind: "translate" },
-  { name: "bell icon wakes",          hover: 'header a[aria-label="Notifications"]', moves: ".ux-ico",                 kind: "rotate" },
+  // The two Home CTAs, which are the app's only clay on this route.
+  { name: "primary CTA presses",      hover: "main a.ux-clay",                       moves: "self",     kind: "shadow" },
+  { name: "sidebar icon leans",       hover: "aside nav a",                          moves: ".ux-ico",  kind: "rotate" },
+  { name: "bell icon wakes",          hover: 'header a[aria-label="Notifications"]', moves: ".ux-ico",  kind: "rotate" },
 ];
 
 const parse = (m) => {

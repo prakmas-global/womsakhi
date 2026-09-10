@@ -198,15 +198,15 @@ export function WorkBoard() {
  * swap to. Every colour below is chosen against this gradient rather than
  * against `--ux-canvas`, which in dark mode is behind the band, not under it.
  */
-const HERO_INK = "#161734";
-const HERO_INK_2 = "#413f63";
-const HERO_BRAND = "#6c3fd0";
+const HERO_INK = v("--ux-band-ink");
+const HERO_INK_2 = v("--ux-band-ink-2");
+const HERO_BRAND = v("--ux-band-brand");
 
 function Hero() {
   return (
     <section className="ux-sq relative isolate shrink-0 overflow-hidden rounded-[18px]"
-             style={{ border: "1px solid #ecdff0",
-                      background: "linear-gradient(102deg, #fdfbff 0%, #fbf5fc 34%, #f9eef8 54%, #f8e9f4 100%)" }}>
+             style={{ border: `1px solid ${v("--ux-band-edge")}`,
+                      background: v("--ux-band-work") }}>
       {/* eslint-disable-next-line @next/next/no-img-element */}
       <img src="/ux/art/hero-work-banner.webp" alt="" aria-hidden decoding="async" fetchPriority="high"
            width={1720} height={646}
@@ -243,7 +243,7 @@ function Hero() {
                        /* Violet into magenta across the two words, as drawn.
                           `color: transparent` under a clipped background is
                           the only way to gradient live text. */
-                       background: "linear-gradient(96deg, #6d3fe0 0%, #a02fd0 55%, #d0269b 100%)",
+                       background: v("--ux-band-italic"),
                        WebkitBackgroundClip: "text", backgroundClip: "text",
                        color: "transparent" }}>
             your terms
@@ -267,13 +267,13 @@ function Hero() {
               <li key={label}
                   className={`flex items-center gap-2 rounded-full py-1.5 pe-3.5 ${onArt ? "ps-2.5" : "ps-0"}`}
                   style={onArt
-                    ? { background: "rgba(255,255,255,0.92)", border: "1px solid #efe6f5",
+                    ? { background: v("--ux-band-pill"), border: `1px solid ${v("--ux-band-pill-edge")}`,
                         backdropFilter: "blur(4px)", WebkitBackdropFilter: "blur(4px)" }
                     : undefined}>
                 {/* Solid on the three that stand on the gradient, outline in
                     the white pill — which is how the board draws them. */}
                 <SolidIcon name={icon} size={16} ink={HERO_BRAND} solid={!onArt}
-                           knockout={onArt ? "transparent" : "#faf3fb"} />
+                           knockout={onArt ? "transparent" : v("--ux-band-chip-knock")} />
                 <span className="font-semibold" style={{ color: HERO_INK, fontSize: "inherit" }}>{label}</span>
               </li>
             );
@@ -530,9 +530,9 @@ function Ring({ pct }: { pct: number }) {
               the violet made the last third read as a third colour rather
               than the end of the second.
             */}
-            <stop offset="0%" stopColor="#4a68cf" />
-            <stop offset="54%" stopColor="#3b93d4" />
-            <stop offset="100%" stopColor="#2fc3ae" />
+            <stop offset="0%" stopColor={v("--ux-ring-c")} />
+            <stop offset="54%" stopColor={v("--ux-ring-b")} />
+            <stop offset="100%" stopColor={v("--ux-ring-a")} />
           </linearGradient>
         </defs>
         <circle cx="35" cy="35" r={r} fill="none" strokeWidth="8.5" stroke={v("--ux-brand-tint-2")} />
@@ -561,14 +561,14 @@ function HelpStrip() {
        leaf field still has to be clipped to the rounded corners, so it gets a
        clipping layer of its own underneath. */
     <section className="ux-sq relative isolate shrink-0 rounded-[18px]"
-             style={{ border: "1px solid #eee0ee",
+             style={{ border: `1px solid ${v("--ux-band-foot-edge")}`,
                       /* Pink through the middle and back to lilac at the end.
                          It ran pink all the way, and Sakhi's art has a pale
                          lilac ground of its own — so however softly her edges
                          were masked, a rectangle of the wrong pink showed
                          around her. The board's strip turns lilac exactly
                          where she stands, which is why it does not. */
-                      background: "linear-gradient(96deg, #fdfaff 0%, #fdf3f8 40%, #fbedf5 66%, #f8f4fe 100%)" }}>
+                      background: v("--ux-band-foot") }}>
       <span aria-hidden className="pointer-events-none absolute inset-0 overflow-hidden rounded-[18px]">
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img src="/ux/art/leaves-pink.webp" alt="" aria-hidden loading="lazy" decoding="async"
@@ -594,7 +594,7 @@ function HelpStrip() {
               rays; filled it collapses into an amber blob and stops reading as
               a lamp at all — the one glyph on this board where solid is the
               wrong answer. */}
-          <SolidIcon name="Lightbulb" size={26} ink="#e59a10" knockout="transparent" solid={false} />
+          <SolidIcon name="Lightbulb" size={26} ink={v("--ux-band-lamp")} knockout="transparent" solid={false} />
           <div className="min-w-0">
             {/* The board reads "towds". Shipping a typo because a wireframe
                 had one is not fidelity, so it says "towards". */}

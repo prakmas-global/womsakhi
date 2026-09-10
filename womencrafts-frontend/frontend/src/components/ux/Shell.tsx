@@ -169,7 +169,10 @@ const RailSection = memo(function RailSection({
         }}
         aria-current={onHub ? "page" : undefined}
         aria-expanded={kids.length ? isOpen : undefined}
-        className="ux-row ux-sq relative flex items-center gap-3 rounded-[12px] py-2 pe-2 ps-2.5"
+        /* `ux-hov` so the section's icon leans into the hover the way the
+           topbar's bell does — the app has one gesture for "this responds to
+           you" and the rail was the only surface not speaking it. */
+        className="ux-row ux-hov ux-sq relative flex items-center gap-3 rounded-[12px] py-2 pe-2 ps-2.5"
         style={{ background: onHub ? "var(--ux-brand-tint)" : "transparent",
                  color: isOpen ? "var(--ux-brand)" : "var(--ux-ink)" }}
       >
