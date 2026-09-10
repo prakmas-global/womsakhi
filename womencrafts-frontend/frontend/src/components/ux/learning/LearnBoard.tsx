@@ -112,10 +112,10 @@ export function LearnBoard() {
         shrink at all — without it a flex child refuses to go below its
         content and the scrollbar comes back.
       */}
-      <div className="ux-fitboard flex flex-col xl:h-full xl:min-h-0" style={{ gap: "var(--fb-gap)" }}>
+      <div className="ux-fitboard flex flex-col xl:min-h-full" style={{ gap: "var(--fb-gap)" }}>
         <Hero />
 
-        <div className="flex flex-col xl:min-h-0 xl:flex-1 xl:flex-row xl:items-stretch"
+        <div className="flex flex-col xl:flex-1 xl:flex-row xl:items-stretch"
              style={{ gap: "var(--fb-gap)" }}>
           {/* An explicit `auto-fit`, not a `wide:` variant. `--breakpoint-wide`
               is declared in `design-system/tokens.css`, which is not the
@@ -124,7 +124,7 @@ export function LearnBoard() {
               the board has two, and the reason it did not fit the window.
               Column count from the space available is also the right rule
               here: the journey card beside it is a fixed 276px. */}
-          <div className="grid min-w-0 flex-1 xl:min-h-0"
+          <div className="grid min-w-0 flex-1"
                style={{ gap: "var(--fb-gap)",
                         gridTemplateColumns: "repeat(auto-fit, minmax(250px, 1fr))" }}>
             {PLACES.map((p) => <PlaceCard key={p.id} p={p} />)}

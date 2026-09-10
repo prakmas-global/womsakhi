@@ -782,6 +782,15 @@ export function Shell({
                    wide ? "pb-[20px]"
                    : fit ? "pb-[calc(96px+env(safe-area-inset-bottom,0px))] xl:h-full xl:pb-[18px]"
                    : "pb-[calc(96px+env(safe-area-inset-bottom,0px))] lg:pb-24"}`}
+                 /* 18px on every screen, `fit` included.
+                    It was 12 on a fit board, to buy back six pixels for a
+                    design that had to end at the bottom of the window — and
+                    `checks/rail-steady.mjs` caught what that cost: the rail's
+                    photo starts at 18px, so those six pixels put the first
+                    card in the page above the first thing in the rail on
+                    exactly the screens where both are visible at once. Two
+                    columns out of step is more visible than six pixels are
+                    worth; the boards find them in their own padding. */
                  style={{ paddingTop: `calc(${TOPBAR_H_VAR} + 18px)` }}>
               {/* `.ux-swap` fades whatever the router puts inside — see the
                   rule in `ux/tokens.css` for why it is the child that carries

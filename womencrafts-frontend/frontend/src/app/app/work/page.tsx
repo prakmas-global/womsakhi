@@ -1,9 +1,9 @@
 "use client";
 
-import { Hub } from "@/components/ux/nav/Hub";
+import { WorkBoard } from "@/components/ux/work/WorkBoard";
 
-/** The work section's map — see `components/ux/nav/Hub.tsx` for why it is a
- *  page rather than a menu. */
-export default function WorkHub() {
-  return <Hub id="work" />;
+/** The Work section's landing screen — built from `wm.png`. It stands in for
+ *  the generic `Hub` here and carries the same five destinations. */
+export default function WorkPage() {
+  return <WorkBoard />;
 }
