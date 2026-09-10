@@ -7,6 +7,8 @@ import SakhiLauncher from "@/components/sakhi/SakhiLauncher";
 import { ShellProvider } from "@/components/ux/ShellProvider";
 import type { MeShell } from "@/lib/shell-api";
 import { NavHistory } from "@/components/ux/kit";
+import { ChromeProvider } from "@/components/ux/chrome";
+import { ChromeShell } from "@/components/ux/home/ChromeShell";
 import SkipToContent from "@/components/layout/SkipToContent";
 import { useAuth } from "@/context/AuthContext";
 import { useI18n } from "@/i18n";
@@ -100,7 +102,16 @@ export default function MemberShell({
         {/* Records each route change so `Back` can name where she came from. */}
         <NavHistory />
         <SkipToContent />
-        {children}
+        {/*
+          The chrome is mounted HERE, in the layout, and not by the 108 screens
+          that used to each render their own. A layout survives a navigation; a
+          page does not. Rendering it per page meant every rail click destroyed
+          and rebuilt the topbar, the rail and the mobile bar — the whole screen
+          appeared to reload, and the sidebar lost her scroll position.
+        */}
+        <ChromeProvider>
+          <ChromeShell>{children}</ChromeShell>
+        </ChromeProvider>
         <SakhiLauncher />
       </div>
     </ShellProvider>

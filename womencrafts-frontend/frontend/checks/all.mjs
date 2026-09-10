@@ -16,6 +16,7 @@ const CHECKS = [
   ["ink",      "npx tsx src/theme-engine/__checks__/ink.mjs"],
   ["contrast", "node checks/contrast.mjs"],
   ["rail",     "node checks/rail.mjs"],
+  ["persist",  "node checks/nav-persist.mjs"],
   ["a11y",     "node checks/a11y.mjs"],
   ["keyboard", "node checks/keyboard.mjs"],
   ["feedback", "node checks/feedback.mjs"],

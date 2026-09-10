@@ -121,7 +121,12 @@ export function ModeRail({ path, footer }: { path: string; footer?: React.ReactN
   return (
     <aside
       className="hidden h-full shrink-0 flex-col overflow-y-auto border-e lg:flex"
-      style={{ width: 253, borderColor: "var(--ux-line)", background: "var(--ux-surface)",
+      // The one name `tokens.css` asks for that nothing ever set. The header,
+      // the content column and the right rail all carried theirs; the left
+      // rail did not, so `::view-transition-group(ux-shell-nav)` never matched
+      // and the rail was swept into the default animation along with the page.
+      style={{ viewTransitionName: "ux-shell-nav",
+               width: 253, borderColor: "var(--ux-line)", background: "var(--ux-surface)",
                paddingTop: `calc(${TOPBAR_H_VAR} + 12px)` }}
     >
       {/* Her, and how far through setting herself up she is. */}

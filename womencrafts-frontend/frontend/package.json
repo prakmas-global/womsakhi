@@ -29,7 +29,8 @@
     "check:overlay": "node checks/overlay-scope.mjs",
     "check:icons": "node checks/icons.mjs",
     "check:nav": "node checks/nav.mjs",
-    "check:phone-nav": "node checks/phone-nav.mjs"
+    "check:phone-nav": "node checks/phone-nav.mjs",
+    "check:nav-persist": "node checks/nav-persist.mjs"
   },
   "dependencies": {
     "@dnd-kit/core": "^6.3.1",
