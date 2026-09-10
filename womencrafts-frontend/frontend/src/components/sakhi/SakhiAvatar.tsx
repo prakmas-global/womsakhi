@@ -33,8 +33,22 @@ export default function SakhiAvatar({
   playing,
   size,
   className = "",
-  talkingSrc = "/sakhi-talking-160.png",
-  stillSrc = "/sakhi-still.webp",
+  /*
+    520px, not 160.
+
+    `sakhi-talking-160.png` was 160x160 and the stage paints her at 252x252 —
+    the browser was upscaling the file 1.6x BEFORE the 2x display doubled it
+    again, an effective 0.63. She went visibly soft the moment she started
+    talking and snapped back when she stopped, because the still frame was
+    360px and the talking one was not. The 160px encode was correct for the
+    46px launcher it was made for and was never re-checked against the stage.
+
+    Both frames are 520px now, from sources that were already on disk and
+    referenced by nothing — `sakhi-talking.webp` at 1.7MB and `sakhi-still.png`
+    at 354kB, re-encoded to a weight that can ship.
+  */
+  talkingSrc = "/sakhi-talking-520.webp",
+  stillSrc = "/sakhi-still-520.webp",
   idleSrc,
 }: {
   /** Mouth track — accepted for API compatibility; the clip carries its own. */

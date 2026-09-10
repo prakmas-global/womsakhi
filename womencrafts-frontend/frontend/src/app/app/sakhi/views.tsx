@@ -160,7 +160,7 @@ export function Welcome({
             style={{ background: "radial-gradient(closest-side, var(--ux-brand-tint-2), transparent 70%)" }} />
       <div className="relative">
         {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img loading="lazy" decoding="async" src="/sakhi-still.webp" alt="Sakhi" draggable={false}
+        <img loading="lazy" decoding="async" src="/sakhi-still-520.webp" alt="Sakhi" draggable={false}
              className="ux-bob mx-auto block h-[150px] w-[150px] object-contain" />
         <h2 className="mt-4 text-[clamp(1.3125rem,2.8vw,1.875rem)] font-extrabold leading-tight tracking-[-0.03em]"
             style={{ color: "var(--ux-ink)" }}>
@@ -224,7 +224,7 @@ export function Voice({
             style={{ background: "radial-gradient(closest-side, var(--ux-brand-tint-2), transparent 70%)" }} />
       <div className="relative">
         {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img loading="lazy" decoding="async" src="/sakhi-still.webp" alt="Sakhi" draggable={false}
+        <img loading="lazy" decoding="async" src="/sakhi-still-520.webp" alt="Sakhi" draggable={false}
              className="ux-bob mx-auto block h-[180px] w-[180px] object-contain" />
 
         <div className="ux-eq mx-auto mt-5 flex h-[52px] items-center justify-center gap-[4px]" aria-hidden>
