@@ -16,7 +16,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query, Request, status
 
 from app.core.deps import get_current_user
 from app.core.rbac import current_user_modules, require_staff
-from app.core.security import hash_password, verify_password
+from app.core.security import hash_password, verify_password, hash_password_async, verify_password_async
 from app.db.mongodb import get_database
 from app.models.staff import (
     ActivityLogModel,
@@ -237,14 +237,14 @@ async def change_password(
     new = (body or {}).get("new_password") or ""
     if len(new) < 8:
         raise HTTPException(status.HTTP_400_BAD_REQUEST, "Use at least 8 characters")
-    if not verify_password(current, me.get("hashed_password", "")):
+    if not await verify_password_async(current, me.get("hashed_password", "")):
         raise HTTPException(status.HTTP_400_BAD_REQUEST, "Your current password is not right")
-    if verify_password(new, me.get("hashed_password", "")):
+    if await verify_password_async(new, me.get("hashed_password", "")):
         raise HTTPException(status.HTTP_400_BAD_REQUEST, "That's the same as your current password")
 
     await _users().update_one(
         {"_id": me["_id"]},
-        {"$set": {"hashed_password": hash_password(new), "updated_at": datetime.now(timezone.utc)}},
+        {"$set": {"hashed_password": await hash_password_async(new), "updated_at": datetime.now(timezone.utc)}},
     )
     await log_activity(me, "Changed own password", "Settings", request=request)
     return {"message": "Password changed"}
