@@ -152,13 +152,17 @@ function Hero({ first }: { first: string }) {
 
         <div className="flex flex-wrap gap-3">
           <Link href="/app/opportunities"
-                className="ux-press ux-btn-g flex min-h-[44px] items-center gap-2 rounded-full px-5 text-xsm font-bold"
+                /* `ux-clay`: this is the app's primary call to action and it
+                   should feel like a physical key. Clay is the raised
+                   treatment — a lit top lip, volume underneath, and a press
+                   that goes down in 60ms and springs back in 220. */
+                className="ux-press ux-clay ux-btn-g flex min-h-[44px] items-center gap-2 rounded-full px-5 text-xsm font-bold"
                 style={{ background: "linear-gradient(96deg, var(--ux-rib-2), var(--ux-rib-3))", color: "var(--ux-on-brand)" }}>
             Explore Opportunities
             <Icons.ArrowRight className="h-4 w-4" />
           </Link>
           <Link href="/app/stories"
-                className="ux-press flex min-h-[44px] items-center gap-2.5 rounded-full px-4 text-xsm font-bold"
+                className="ux-press ux-clay flex min-h-[44px] items-center gap-2.5 rounded-full px-4 text-xsm font-bold"
                 style={{ background: "var(--ux-on-brand-track)", border: "1px solid var(--ux-on-brand-2)",
                          color: "var(--ux-on-brand)" }}>
             <span className="grid h-[26px] w-[26px] place-items-center rounded-full"

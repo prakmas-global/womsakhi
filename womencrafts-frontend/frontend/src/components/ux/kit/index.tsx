@@ -79,12 +79,30 @@ export function SectionHead({ title, sub, action, onAction, icon, chip }: {
 }
 
 /** A line icon inside a soft tinted square — the board's most repeated shape. */
+/**
+ * A line icon inside a soft tinted square.
+ *
+ * The square is pressed INTO the surface behind it rather than sitting on top
+ * of it: an inset pair, scaled to the tile (offset ≈ size/15, blur ≈ size/5,
+ * which at 40px is 3px and 8px — a card's 12/30 pasted onto something this
+ * small is a grey halo, not a dent). A raised tile inside a raised card gives
+ * two light sources arguing; a dent gives one.
+ */
 export function IconTile({ icon, tint, ink, size = 40, radius = 11 }: {
   icon: string; tint: string; ink: string; size?: number; radius?: number;
 }) {
+  /*
+    Scaled to itself: offset ≈ size/16, blur ≈ size/8, so a 40px tile gets
+    2px and 5px. The card token's 6/14 pasted onto something this small is a
+    grey halo rather than a lift — that mistake is the single most common way
+    this style is got wrong, and it is why generator output cannot be
+    copied from a 300px demo onto a 40px control.
+  */
   return (
     <span className="ux-sq grid shrink-0 place-items-center"
-          style={{ width: size, height: size, borderRadius: radius, background: v(tint), color: v(ink) }}>
+          style={{ width: size, height: size, borderRadius: radius,
+                   background: v(tint), color: v(ink),
+                   boxShadow: `inset 0 1px 0 var(--ux-edge-hi), inset 0 0 0 1px var(--ux-hairline), 0 ${Math.max(1, Math.round(size / 20))}px ${Math.max(2, Math.round(size / 8))}px -1px var(--ux-sh-1)` }}>
       <I name={icon} className="ux-ico" style={{ width: size * 0.45, height: size * 0.45 }} />
     </span>
   );
@@ -97,7 +115,12 @@ export function Progress({ pct, tone = "--ux-brand-600", track = "--ux-brand-tin
   // makes progress feel like progress. Held at the value under reduced motion.
   const w = useGrow(Math.max(0, Math.min(100, pct)));
   return (
-    <div className="w-full overflow-hidden rounded-full" style={{ height: h, background: v(track) }}
+    /* The track is a channel, not a stripe. A progress bar is one of the few
+       shapes where a true inset earns its keep — the fill reads as something
+       moving along a groove rather than a coloured rectangle painted on top. */
+    <div className="w-full overflow-hidden rounded-full"
+         style={{ height: h, background: v(track),
+                  boxShadow: `inset 0 1px 2px rgb(var(--ux-shadow-ink) / 0.14)` }}
          role="progressbar" aria-valuenow={Math.round(pct)} aria-valuemin={0} aria-valuemax={100}>
       <div className="h-full rounded-full"
            style={{ width: `${w}%`, background: v(tone),
@@ -141,10 +164,24 @@ export function Chip({ children, selected, onClick, icon }: {
   return (
     <button onClick={onClick} aria-pressed={selected}
       className="ux-press ux-sq inline-flex items-center gap-2 rounded-[12px] border px-3.5 py-2.5 text-xsm font-medium transition-colors"
+      /*
+        Chosen means pressed in.
+
+        This is the one place in the app where the metaphor genuinely earns
+        its keep: an unselected chip sits proud of the surface with a hard 1px
+        top highlight, a selected one is pushed into it. At 34px the shadow is
+        deliberately tiny — offset ≈ size/16 — because a card's blur on a chip
+        is fuzz, not depth. The colour and the tick still do the work for
+        anyone who cannot see the shading; the shading is the pleasure, not
+        the information.
+      */
       style={{
         borderColor: selected ? "var(--ux-brand)" : "var(--ux-line-strong)",
         background: selected ? "var(--ux-brand-tint)" : "var(--ux-surface)",
         color: selected ? "var(--ux-brand)" : "var(--ux-ink)",
+        boxShadow: selected
+          ? "inset 0 1px 3px rgb(var(--ux-shadow-ink) / 0.16)"
+          : "inset 0 1px 0 var(--ux-edge-hi), 0 1px 2px var(--ux-sh-1)",
       }}>
       {icon && <I name={icon} className="h-[15px] w-[15px]" />}
       {children}

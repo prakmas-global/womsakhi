@@ -256,11 +256,80 @@
   --ux-r-pill: 999px;
   /* Light mode separates with shadow; dark mode separates with value, so it
      keeps the flatter one below. */
-  --ux-shadow-card: 0 1px 2px rgba(28, 20, 70, 0.05), 0 6px 18px -10px rgba(28, 20, 70, 0.13);
-  --ux-shadow-lift: 0 8px 24px -12px rgba(74, 40, 149, 0.28);
-  --ux-shadow-raise: 0 20px 40px -18px rgba(74, 40, 149, 0.45),
-                     0 6px 14px -8px rgba(74, 40, 149, 0.18);
-  --ux-shadow-pop: 0 24px 64px -20px rgba(22, 23, 52, 0.35);
+  /* ── Depth ────────────────────────────────────────────────────────────
+     Two recipes, not one recipe inverted — because this palette's two themes
+     fail in opposite directions, and both were measured before anything was
+     written:
+
+       · Light. `--ux-canvas` is #f4f2fa, which sits at OKLCH L 96.5%. There
+         are THREE AND A HALF lightness points between it and white, so the
+         white half of a classic neumorphic pair is invisible on it (1.03:1).
+         Light mode is therefore SHADOW-led.
+       · Dark. `--ux-surface` is #1c1938. Pure black composited at 55% over it
+         reaches 1.15:1 — the dark half of the pair is dead. Dark mode is
+         therefore HIGHLIGHT-led, and the outer shadow only separates the card
+         from the canvas.
+
+     And the ink is not black. A shadow on a lilac page is lilac light being
+     blocked, so it is the brand hue taken down to L 20% — #2a1c52. Measured
+     over the canvas at 14%: this reads 1.31:1 and keeps the room lilac, where
+     black at the same alpha reads 1.19:1 and drains the hue out of it. Stripe
+     does the same thing with rgba(50,50,93) rather than black. */
+  --ux-shadow-ink: 42 28 82;
+  --ux-sh-1: rgb(var(--ux-shadow-ink) / 0.05);
+  --ux-sh-2: rgb(var(--ux-shadow-ink) / 0.10);
+  --ux-sh-3: rgb(var(--ux-shadow-ink) / 0.16);
+  /* The hairline that does the work the shadow legally cannot. WCAG 1.4.11
+     wants 3:1 on a component's boundary and a blurred shadow reaches about
+     1.4:1 — you would have to push it to a hard drop shadow to pass. So the
+     boundary is a real border and the shadow is only ever atmosphere. */
+  --ux-hairline: rgb(var(--ux-shadow-ink) / 0.07);
+  --ux-edge-hi: rgba(255, 255, 255, 0.9);
+
+  /* ── The depths ───────────────────────────────────────────────────────
+     Geometry scales with what it sits under: offset ≈ size/16, blur ≈ size/8.
+     A card's 6/14 pasted onto a 40px button is seven times too large, which is
+     the single most common way this style is got wrong. */
+  --ux-shadow-card:
+    inset 0 1px 0 var(--ux-edge-hi),
+    inset 0 0 0 1px var(--ux-hairline),
+    0 1px 2px var(--ux-sh-1),
+    0 6px 14px -4px var(--ux-sh-2);
+  --ux-shadow-sm:
+    inset 0 1px 0 var(--ux-edge-hi),
+    inset 0 0 0 1px var(--ux-hairline),
+    0 1px 2px var(--ux-sh-1),
+    0 3px 6px -1px var(--ux-sh-1);
+  --ux-shadow-lift:
+    inset 0 1px 0 var(--ux-edge-hi),
+    0 2px 4px -1px var(--ux-sh-1),
+    0 12px 24px -8px var(--ux-sh-2);
+  --ux-shadow-raise:
+    inset 0 1px 0 var(--ux-edge-hi),
+    0 3px 6px -2px var(--ux-sh-2),
+    0 20px 40px -14px var(--ux-sh-3),
+    0 8px 18px -10px rgba(74, 40, 149, 0.22);
+  --ux-shadow-pop:
+    inset 0 1px 0 var(--ux-edge-hi),
+    0 4px 10px -4px var(--ux-sh-2),
+    0 24px 64px -20px rgba(22, 23, 52, 0.35);
+
+  /* ── The well ─────────────────────────────────────────────────────────
+     The one place TRUE neumorphism lives. The illusion needs the element and
+     what surrounds it to be the same colour — the moment they differ it stops
+     being an extrusion and becomes a floating card — and it needs lightness
+     headroom on BOTH sides, which #ffffff on #f4f2fa has on neither.
+
+     So wells get their own surface, deep enough to be carved into: a search
+     field, a segmented track, a toggle, a progress channel, the recess a photo
+     sits in. Everything else in the app is soft elevation, which is the half
+     of this style that survives an accessibility audit and direct sunlight. */
+  --ux-well: #eae8f3;
+  --ux-well-lo: #c5c1d6;
+  --ux-well-hi: #f9f8fd;
+  --ux-shadow-in:
+    inset 2px 2px 5px var(--ux-well-lo),
+    inset -3px -3px 7px var(--ux-well-hi);
   --ux-scrim: rgba(22, 23, 52, 0.55);
 }
 
@@ -333,11 +402,52 @@
   --ux-wash: rgba(169, 139, 245, 0.14);
 
   --ux-track: #2e2a4f;
-  --ux-shadow-card: 0 1px 2px rgba(0, 0, 0, 0.3);
-  --ux-shadow-lift: 0 8px 24px -12px rgba(0, 0, 0, 0.5);
-  --ux-shadow-raise: 0 20px 40px -18px rgba(0, 0, 0, 0.72),
-                     0 6px 14px -8px rgba(0, 0, 0, 0.5);
-  --ux-shadow-pop: 0 24px 64px -20px rgba(0, 0, 0, 0.7);
+  /* Dark is the mirror image, not the inverse.
+     Black at 55% over #1c1938 measures 1.15:1 — there is no shadow to be had
+     down here, so the top highlight and the hairline carry the whole edge and
+     the outer shadow exists only to lift the card off #14122a. The highlight
+     is white at 7%, not 85%: at light mode's value it is a glowing plastic rim
+     rather than a lit edge, and that one number is what makes most dark
+     neumorphism look cheap. */
+  --ux-shadow-ink: 0 0 0;
+  --ux-sh-1: rgb(0 0 0 / 0.4);
+  --ux-sh-2: rgb(0 0 0 / 0.45);
+  --ux-sh-3: rgb(0 0 0 / 0.55);
+  --ux-hairline: rgba(255, 255, 255, 0.07);
+  --ux-edge-hi: rgba(255, 255, 255, 0.07);
+  --ux-shadow-card:
+    inset 0 1px 0 var(--ux-edge-hi),
+    inset 0 0 0 1px var(--ux-hairline),
+    0 1px 2px var(--ux-sh-1),
+    0 8px 20px -6px var(--ux-sh-2);
+  --ux-shadow-sm:
+    inset 0 1px 0 var(--ux-edge-hi),
+    inset 0 0 0 1px var(--ux-hairline),
+    0 1px 2px var(--ux-sh-1),
+    0 3px 7px -2px var(--ux-sh-1);
+  --ux-shadow-lift:
+    inset 0 1px 0 var(--ux-edge-hi),
+    0 2px 5px -1px var(--ux-sh-1),
+    0 14px 28px -8px var(--ux-sh-2);
+  --ux-shadow-raise:
+    inset 0 1px 0 var(--ux-edge-hi),
+    0 3px 7px -2px var(--ux-sh-2),
+    0 22px 44px -14px var(--ux-sh-3),
+    0 8px 20px -10px rgba(0, 0, 0, 0.5);
+  --ux-shadow-pop:
+    inset 0 1px 0 var(--ux-edge-hi),
+    0 4px 12px -4px var(--ux-sh-2),
+    0 24px 64px -20px rgba(0, 0, 0, 0.7);
+  --ux-well: #16142e;
+  --ux-well-lo: #0d0a24;
+  --ux-well-hi: #2a2749;
+  --ux-shadow-in:
+    inset 2px 2px 6px var(--ux-well-lo),
+    inset -2px -2px 6px var(--ux-well-hi);
+  /* These two had no dark value at all, so a hovered card down here wore a
+     violet bloom mixed for a white page. */
+  --ux-shadow-glow: 0 16px 38px -18px rgba(139, 92, 246, 0.42);
+  --ux-shadow-glow-2: 0 20px 46px -18px rgba(224, 33, 154, 0.34);
   --ux-scrim: rgba(6, 5, 18, 0.72);
 }
 
@@ -480,59 +590,118 @@
   .ux .ux-sq { corner-shape: squircle; }
 }
 
+/**
+ * Clay — the raised, inflated variant. Buttons and quick-action tiles.
+ *
+ * Rebuilt on tokens; it was six hand-written rgba stacks that knew nothing
+ * about the theme. Two insets are load-bearing and `checks/ux-surfaces.mjs`
+ * asserts they survive in BOTH modes: the top one is the lit lip, the bottom
+ * one is the volume underneath it. Without the pair it is a rounded rectangle
+ * with a drop shadow.
+ */
+/* No `border-radius` here. It used to set 18px, which meant every pill-shaped
+   button wearing clay had to fight it back with an inline value — see the
+   note at `work/WorkBoard.tsx`. Clay is a lighting treatment; the shape is the
+   element's own business. */
 .ux-clay {
-  border-radius: 18px;
   box-shadow:
-    inset 0 7px 9px -7px rgba(255, 255, 255, 0.9),
-    inset 0 -8px 12px -8px rgba(63, 34, 122, 0.22),
-    0 10px 20px -14px rgba(74, 40, 149, 0.4);
-  transition: box-shadow var(--ux-t) var(--ux-ease-out),
-              transform var(--ux-t) var(--ux-ease-out);
+    inset 0 1px 0 var(--ux-edge-hi),
+    inset 0 -8px 12px -8px rgba(63, 34, 122, 0.2),
+    0 1px 2px var(--ux-sh-1),
+    0 8px 18px -10px var(--ux-sh-2);
+  /* `transform` only. Transitioning box-shadow repaints the blurred region
+     every frame; Airbnb measured two seconds of paint per interaction from
+     exactly this, on hardware not unlike the phones this app runs on. */
+  transition: transform var(--ux-t) var(--ux-ease-out);
 }
 .ux-clay:hover {
   box-shadow:
-    inset 0 7px 9px -7px rgba(255, 255, 255, 0.95),
-    inset 0 -10px 14px -8px rgba(63, 34, 122, 0.26),
-    0 18px 30px -16px rgba(74, 40, 149, 0.5);
+    inset 0 1px 0 var(--ux-edge-hi),
+    inset 0 -10px 14px -8px rgba(63, 34, 122, 0.24),
+    0 2px 4px var(--ux-sh-1),
+    0 14px 28px -12px var(--ux-sh-2);
 }
-/* Pressing a clay surface should push it in, not lift it — the inner shading
-   swaps ends, which is what a thumb on soft plastic actually looks like. */
+/* Down fast, back slow. A real button snaps and springs; symmetrical timing
+   feels like software. 60ms down, 220ms up with a little overshoot. */
 .ux-clay:active {
-  transform: translateY(1px) scale(0.994);
+  transform: translateY(1px) scale(0.988);
+  transition-duration: 60ms;
   box-shadow:
-    inset 0 8px 12px -7px rgba(63, 34, 122, 0.26),
-    inset 0 -6px 8px -7px rgba(255, 255, 255, 0.6),
-    0 4px 10px -8px rgba(74, 40, 149, 0.4);
+    inset 0 2px 5px -1px rgba(63, 34, 122, 0.26),
+    inset 0 -1px 0 var(--ux-edge-hi),
+    0 1px 2px var(--ux-sh-1);
+}
+.dark .ux-clay, .ux.dark .ux-clay {
+  box-shadow:
+    inset 0 1px 0 var(--ux-edge-hi),
+    inset 0 -8px 12px -8px rgba(0, 0, 0, 0.45),
+    0 1px 2px var(--ux-sh-1),
+    0 8px 20px -10px var(--ux-sh-2);
+}
+.dark .ux-clay:hover, .ux.dark .ux-clay:hover {
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.1),
+    inset 0 -10px 14px -8px rgba(0, 0, 0, 0.5),
+    0 2px 5px var(--ux-sh-1),
+    0 14px 30px -12px var(--ux-sh-2);
+}
+.dark .ux-clay:active, .ux.dark .ux-clay:active {
+  box-shadow:
+    inset 0 2px 6px -1px rgba(0, 0, 0, 0.55),
+    inset 0 -1px 0 rgba(255, 255, 255, 0.06),
+    0 1px 2px var(--ux-sh-1);
 }
 
-/* The inner highlight is a white sheen. On a dark surface white at 90% is a
-   glare, so it drops to a hint and the shade below it deepens instead. */
-.dark .ux-clay,
-.ux.dark .ux-clay {
-  box-shadow:
-    inset 0 7px 9px -7px rgba(255, 255, 255, 0.14),
-    inset 0 -8px 12px -8px rgba(0, 0, 0, 0.5),
-    0 10px 20px -14px rgba(0, 0, 0, 0.6);
-}
-.dark .ux-clay:hover,
-.ux.dark .ux-clay:hover {
-  box-shadow:
-    inset 0 7px 9px -7px rgba(255, 255, 255, 0.2),
-    inset 0 -10px 14px -8px rgba(0, 0, 0, 0.55),
-    0 18px 30px -16px rgba(0, 0, 0, 0.7);
-}
-.dark .ux-clay:active,
-.ux.dark .ux-clay:active {
-  box-shadow:
-    inset 0 8px 12px -7px rgba(0, 0, 0, 0.55),
-    inset 0 -6px 8px -7px rgba(255, 255, 255, 0.1),
-    0 4px 10px -8px rgba(0, 0, 0, 0.6);
+/**
+ * A well — carved in, not raised.
+ *
+ * The one place true neumorphism belongs: a search field, a segmented track,
+ * a toggle, a progress channel. It needs its own surface because the illusion
+ * requires the element and its surround to be the same colour, and it needs
+ * lightness headroom on both sides, which #ffffff on #f4f2fa has on neither.
+ *
+ * The pair is deliberately asymmetric — the highlight is pushed further and
+ * blurred more than the shade. Symmetrical, a well reads as a grey ring.
+ */
+.ux-well {
+  background: var(--ux-well);
+  box-shadow: var(--ux-shadow-in);
 }
 
-/* Glass is for ONE thing: the topbar band, which is a thin strip and always has
-   the same content sliding under it. It is deliberately not used on menus or
-   the search palette — at 66% over a busy page the words behind showed through
-   the words in front, which is the opposite of what a menu is for. */
+/**
+ * A photograph, set into the page.
+ *
+ * Two things that go wrong when a photo meets this style, and both are handled
+ * here. First, `inset` box-shadow does not paint over an `<img>` — the image is
+ * content and content paints on top of the box's shadow — so the recess is a
+ * pseudo-element over it. Second, a symmetric inset ring around a photograph
+ * reads as a grey halo; a real recess is DIRECTIONAL. Two thirds of this is
+ * the shade under the top lip, and the 1px white line along the bottom is what
+ * makes it read as a dent rather than a vignette.
+ *
+ * The hairline is the part that matters most: 1px of ink at 10% terminates any
+ * photograph against any surface, whatever the photographer's white balance.
+ */
+.ux-frame { position: relative; isolation: isolate; }
+.ux-frame > img { display: block; border-radius: inherit; }
+.ux-frame::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  pointer-events: none;
+  box-shadow:
+    inset 0 2px 4px rgb(var(--ux-shadow-ink) / 0.2),
+    inset 0 -1px 0 rgba(255, 255, 255, 0.18),
+    inset 0 0 0 1px rgb(var(--ux-shadow-ink) / 0.1);
+}
+.dark .ux-frame::after, .ux.dark .ux-frame::after {
+  box-shadow:
+    inset 0 2px 5px rgba(0, 0, 0, 0.45),
+    inset 0 -1px 0 rgba(255, 255, 255, 0.06),
+    inset 0 0 0 1px rgba(255, 255, 255, 0.09);
+}
+
 .ux-glass {
   background: color-mix(in srgb, var(--ux-surface) 74%, transparent);
   border: 1px solid color-mix(in srgb, var(--ux-line-strong) 60%, transparent);
@@ -591,6 +760,7 @@
 
 /* Brushed metal, for things she earned. The stripes are a repeating gradient
    at a shallow angle; the sheen is a second, wider one across it. */
+
 .ux-metal {
   background:
     linear-gradient(103deg, rgba(255, 255, 255, 0.55) 0%, transparent 32%, rgba(255, 255, 255, 0.3) 55%, transparent 78%),
@@ -1727,6 +1897,40 @@
                  --fb-chip: 10.5px; --fb-h1: 1.7rem; --fb-tile: 34px; --fb-circle: 34px;
                  --fb-body: 11px; --fb-title: 15px; --fb-ring: 42px; --fb-stat: 22px; --fb-foot: 56px; }
 }
+
+/* ── When the soft treatment has to stand down ────────────────────────────
+   Two settings where every bit of this style is either useless or actively in
+   the way, and the honest answer in both is to abandon the aesthetic rather
+   than intensify it.
+
+   `prefers-contrast: more`: a woman who has asked for more contrast is telling
+   you the soft edges are not working for her. Cranking the shadow to compensate
+   would produce something uglier AND less legible — the boundary becomes a
+   real 2px border and the shadows go.
+
+   `forced-colors`: the browser sets `box-shadow: none` outright, so 100% of the
+   treatment disappears whether we plan for it or not. If the boundary had been
+   a shadow, the component would simply vanish. Every surface here carries a
+   real border for that reason, and the transparent one below is the cheap
+   insurance: a transparent border resolves to a visible system colour in forced
+   colours, and costs nothing the rest of the time. */
+@media (prefers-contrast: more) {
+  .ux .ux-card, .ux .ux-clay, .ux .ux-well, .ux .ux-sheet {
+    box-shadow: none;
+    border: 2px solid var(--ux-ink-2);
+  }
+  .ux .ux-frame::after { box-shadow: inset 0 0 0 2px var(--ux-ink-2); }
+}
+
+@media (forced-colors: active) {
+  .ux .ux-card, .ux .ux-clay, .ux .ux-well, .ux .ux-sheet, .ux .ux-glass {
+    border: 1px solid ButtonBorder;
+    background: Canvas;
+  }
+  .ux .ux-frame::after { box-shadow: inset 0 0 0 1px ButtonBorder; }
+  .ux :where(a, button):focus-visible { outline: 3px solid Highlight; outline-offset: 2px; }
+}
+.ux-clay, .ux-well { border: 1px solid transparent; }
 
 /* A text link that is still 24px to a finger.
 
