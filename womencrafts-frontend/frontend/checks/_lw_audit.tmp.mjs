@@ -18,12 +18,15 @@ const ROUTES = [
   ["program",       `/app/programs/${PROG}`],
   ["lesson",        `/app/programs/${PROG}/lesson/1`],
   ["mentors",       "/app/mentors"],
+  ["mentor",        "/app/mentors/m1"],
   ["certificates",  "/app/certificates"],
   ["assess",        "/app/assess"],
   ["digital",       "/app/digital"],
   ["library",       "/app/library"],
+  ["swap",          "/app/library/6a8a9fd2d73850c53579b2e1"],
   ["work",          "/app/work"],
   ["opportunities", "/app/opportunities"],
+  ["opening",       "/app/opportunities/w1"],
   ["applications",  "/app/applications"],
   ["verified",      "/app/verified"],
   ["contracts",     "/app/contracts"],
@@ -113,6 +116,7 @@ for (const [name, route] of ROUTES) {
     if (m.small?.length) bad.push(`SMALL ${m.small.length}`);
     if (m.tiny?.length) bad.push(`TINY ${m.tiny.length}`);
     if (m.over?.length) bad.push(`OVERLAP ${m.over.length}`);
+    if (m.error) bad.push(`ERROR`);
     console.log(`${bad.length ? "FAIL" : "ok  "} ${name.padEnd(14)} ${label.padEnd(5)} ${bad.join(" ") || "clean"} ${JSON.stringify({ s: m.small, t: m.tiny, o: m.over, e: m.error })}`);
     await p.close();
   }

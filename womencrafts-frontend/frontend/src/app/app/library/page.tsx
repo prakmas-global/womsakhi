@@ -6,11 +6,10 @@ import * as Icons from "@/components/ux/icons";
 import { apiAskSwap } from "@/lib/shop-api";
 
 import {
-  Btn, Card, Chip, EmptyState, IconTile, NoteBtn, Pill,
-  SectionHead, SourceNote, plural
+  Btn, Card, Chip, EmptyState, IconTile, NoteBtn, SectionHead, SourceNote, plural
 } from "@/components/ux/kit";
 import { HomeShell } from "@/components/ux/home/HomeShell";
-import { ChipRow, ScreenHead, Segments } from "@/components/ux/learning/native";
+import { ChipRow, ScreenHead, Segments, Tag } from "@/components/ux/learning/native";
 import { EXCHANGE_ART, SKILL_TAGS } from "@/components/ux/exchange/data";
 import { useMyExchanges, useSwaps } from "@/components/ux/business";
 import { useT } from "@/i18n";
@@ -162,7 +161,7 @@ export default function SkillExchangePage() {
                         </h2>
                         {/* Offer and ask are the same shape, told apart by one
                             word — because the same woman is usually both. */}
-                        <Pill tone={s.side === "Offering" ? "green" : "blue"} size="sm">{s.side}</Pill>
+                        <Tag tone={s.side === "Offering" ? "green" : "blue"} size="sm">{s.side}</Tag>
                       </div>
                       <p className="mt-1.5 text-xsm leading-relaxed" style={{ color: "var(--ux-ink-2)" }}>{s.detail}</p>
                       <p className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs"
@@ -261,7 +260,7 @@ export default function SkillExchangePage() {
                     <h2 className="min-w-0 flex-1 truncate text-sm font-semibold" style={{ color: "var(--ux-ink)" }}>
                       With {m.with}
                     </h2>
-                    <Pill tone={m.state === "Agreed" ? "green" : "blue"} size="sm">{m.state}</Pill>
+                    <Tag tone={m.state === "Agreed" ? "green" : "blue"} size="sm">{m.state}</Tag>
                   </div>
                   <p className="mt-1.5 text-xsm" style={{ color: "var(--ux-muted)" }}>{m.next}</p>
                 </div>

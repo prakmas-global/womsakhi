@@ -5,11 +5,10 @@ import { COPY } from "@/components/ux/copy";
 import * as Icons from "@/components/ux/icons";
 
 import {
-  ActionBtn, Btn, Card, EmptyState, IconTile, Pill,
-  Progress, SectionHead, SourceNote, copy
+  ActionBtn, Btn, Card, EmptyState, IconTile, Progress, SectionHead, SourceNote, copy
 } from "@/components/ux/kit";
 import { HomeShell } from "@/components/ux/home/HomeShell";
-import { ScreenHead, Segments } from "@/components/ux/work/native";
+import { ScreenHead, Segments, Tag } from "@/components/ux/work/native";
 import { RailStat, StageTrack } from "@/components/ux/work/parts";
 import { STAGES, WORK_ART } from "@/components/ux/work/data";
 import { useApplications, workStats } from "@/components/ux/growth";
@@ -120,9 +119,9 @@ export default function Applications() {
                           style={{ color: closed ? "var(--ux-muted)" : "var(--ux-ink)" }}>
                         {a.title}
                       </h3>
-                      <Pill tone={closed ? "neutral" : a.stage === "Interview" ? "brand" : "blue"} size="sm">
+                      <Tag tone={closed ? "neutral" : a.stage === "Interview" ? "brand" : "blue"} size="sm">
                         {a.stage}
-                      </Pill>
+                      </Tag>
                     </div>
                     <p className="mt-1 flex flex-wrap items-center gap-x-3 text-xs" style={{ color: "var(--ux-muted)" }}>
                       <span className="inline-flex items-center gap-1"><Icons.Building2 className="h-3.5 w-3.5" /> {a.org}</span>

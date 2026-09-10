@@ -1,9 +1,10 @@
+import { Tag } from "@/components/ux/learning/native";
 "use client";
 
 import Link from "next/link";
 import * as Icons from "@/components/ux/icons";
 
-import { AvatarStack, Btn, Card, IconTile, Pill, Progress, Rating, SectionHead, v } from "../kit";
+import { AvatarStack, Btn, Card, IconTile, Progress, Rating, SectionHead, v } from "../kit";
 import { ACHIEVEMENTS, type Course, LEARNER, SKILLS, STREAK } from "./data";
 
 const TAG_TONE = { Bestseller: "pink", New: "brand", Popular: "orange", Trending: "green" } as const;
@@ -38,7 +39,7 @@ export function CourseCard({ c, w }: { c: Course; w?: number }) {
             whatever the photograph happens to be. */}
         {c.tag && (
           <span className="absolute start-2.5 top-2.5 hidden lg:block">
-            <Pill tone={TAG_TONE[c.tag]} size="sm">{c.tag}</Pill>
+            <Tag tone={TAG_TONE[c.tag]} size="sm">{c.tag}</Tag>
           </span>
         )}
       </div>
@@ -48,7 +49,7 @@ export function CourseCard({ c, w }: { c: Course; w?: number }) {
         <p className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-[13px] lg:text-xs"
            style={{ color: "var(--ux-muted)" }}>
           <span>{c.lessons} Lessons <span aria-hidden>•</span> {c.level}</span>
-          {c.tag && <span className="lg:hidden"><Pill tone={TAG_TONE[c.tag]} size="sm">{c.tag}</Pill></span>}
+          {c.tag && <span className="lg:hidden"><Tag tone={TAG_TONE[c.tag]} size="sm">{c.tag}</Tag></span>}
         </p>
         {typeof c.pct === "number" ? (
           <div className="mt-2.5">

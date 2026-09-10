@@ -151,3 +151,43 @@ export function ActionRow({ children, className = "" }: { children: ReactNode; c
     </div>
   );
 }
+
+/**
+ * `Pill`, at a size a phone can read.
+ *
+ * The kit's `Pill` is `text-2xs` — 11px — at every width. On a 1440 monitor
+ * that is a quiet badge beside 13px body text; on a 390px phone held at arm's
+ * length in daylight it is the smallest thing on the screen, and it is
+ * carrying the one word that says what state something is in: "Offering",
+ * "You asked", "Applied", the skill a certificate is for. The audit found
+ * eight of them under the 12px floor on `/app/certificates` alone.
+ *
+ * Same shape, same tones, same tokens — 13px on a phone, and `lg:text-2xs`
+ * hands the badge straight back to the desktop design. `Pill` itself is in
+ * `kit/`, which this pass does not own; if the kit ever takes a phone tier of
+ * its own this can go.
+ */
+const TAG_TONES = {
+  brand:   ["--ux-brand-tint", "--ux-brand"],
+  green:   ["--ux-tint-green", "--ux-green-ink"],
+  orange:  ["--ux-tint-orange", "--ux-orange-ink"],
+  pink:    ["--ux-tint-pink", "--ux-pink-ink"],
+  blue:    ["--ux-tint-blue", "--ux-blue-ink"],
+  neutral: ["--ux-surface-2", "--ux-muted"],
+} as const;
+
+export function Tag({ children, tone = "brand", size = "md" }: {
+  children: ReactNode;
+  tone?: keyof typeof TAG_TONES;
+  size?: "sm" | "md";
+}) {
+  const [bg, ink] = TAG_TONES[tone];
+  return (
+    <span
+      className={`inline-flex items-center rounded-full text-[13px] font-semibold lg:text-2xs ${
+        size === "sm" ? "px-2 py-[2px]" : "px-2.5 py-[3px]"}`}
+      style={{ background: `var(${bg})`, color: `var(${ink})` }}>
+      {children}
+    </span>
+  );
+}

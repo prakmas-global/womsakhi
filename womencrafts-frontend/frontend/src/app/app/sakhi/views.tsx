@@ -24,6 +24,8 @@ import { useAuth } from "@/context/AuthContext";
 import { HomeShell } from "@/components/ux/home/HomeShell";
 import { CAN, FOLLOW_UPS, MODE_PREFIX, STARTERS, WONT } from "@/components/ux/sakhi/prompts";
 import { Actions, Answer, Cites, Composer, DraftCard, Ico, ModeSwitch, Picker, StopPill, Typing } from "@/components/ux/sakhi/parts";
+import { bubbleRadius, Says } from "@/components/ux/sakhi/chat";
+import { ListGroup, ListRow } from "@/components/ux/mobile/ListRow";
 import {
   apiSakhiConversation,
   apiSakhiConversations,
@@ -103,13 +105,15 @@ export function ConvBar({
   const chip = "flex items-center gap-1.5 rounded-full px-2.5 py-1 text-2xs font-semibold";
   const chipStyle = { background: "var(--ux-surface-2)", border: "1px solid var(--ux-line)",
                       color: "var(--ux-muted)" } as const;
-  const tool = "ux-press grid h-[32px] w-[32px] place-items-center rounded-[8px]";
+  const tool = "ux-press grid h-[44px] w-[44px] place-items-center rounded-full lg:h-[32px] lg:w-[32px] lg:rounded-[8px]";
 
   return (
-    <div className="flex flex-wrap items-center gap-2.5 border-b pb-3" style={{ borderColor: "var(--ux-line)" }}>
-      <b className="truncate text-sm font-bold" style={{ color: "var(--ux-ink)" }}>{title}</b>
-      <span className={chip} style={chipStyle}><Icons.Zap className="h-[12px] w-[12px]" />{mode}</span>
-      <span className={chip} style={chipStyle}><Icons.Globe className="h-[12px] w-[12px]" />{locale}</span>
+    <div className="flex flex-wrap items-center gap-2.5 border-b pb-1 lg:pb-3" style={{ borderColor: "var(--ux-line)" }}>
+      <b className="min-w-0 flex-1 truncate text-[15px] font-bold lg:flex-none lg:text-sm" style={{ color: "var(--ux-ink)" }}>{title}</b>
+      {/* Mode and language are two taps away in the composer on a phone, and
+          they are printed on it. Repeating them here spent a whole row. */}
+      <span className={`hidden lg:flex ${chip}`} style={chipStyle}><Icons.Zap className="h-[12px] w-[12px]" />{mode}</span>
+      <span className={`hidden lg:flex ${chip}`} style={chipStyle}><Icons.Globe className="h-[12px] w-[12px]" />{locale}</span>
       <span className="ms-auto flex gap-0.5">
         <button type="button" onClick={onRename} title="Rename" aria-label={tr("sakhi.renameThisConversation")}
                 className={tool} style={{ color: "var(--ux-faint)" }}>
@@ -153,34 +157,61 @@ export function Welcome({
   const tr = useT();
   const greeting = useGreeting();
   return (
-    <section className="relative overflow-hidden rounded-[20px] p-6 text-center sm:p-8"
-             style={{ background: "var(--ux-surface)", border: "1px solid var(--ux-line)",
-                      boxShadow: "var(--ux-shadow-card)" }}>
+    /*
+      A phone gets the screen, not a card floating on it. Below `lg` the border,
+      the shadow and the rounded corners come off and the greeting runs edge to
+      edge — measured before this change, the card's own chrome plus a 150px
+      portrait plus a 30px heading left room for exactly nothing else above the
+      fold, and the composer she came here to use was below it.
+    */
+    <section className="relative overflow-hidden p-0 lg:rounded-[20px] lg:border lg:border-[var(--ux-line)]
+                        lg:bg-[var(--ux-surface)] lg:p-6 lg:shadow-[var(--ux-shadow-card)] lg:text-center">
       <span aria-hidden className="pointer-events-none absolute left-1/2 top-[-90px] h-[400px] w-[400px] -translate-x-1/2 rounded-full"
             style={{ background: "radial-gradient(closest-side, var(--ux-brand-tint-2), transparent 70%)" }} />
       <div className="relative">
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img loading="lazy" decoding="async" src="/sakhi-still-520.webp" alt="Sakhi" draggable={false}
-             className="ux-bob mx-auto block h-[150px] w-[150px] object-contain" />
-        <h2 className="mt-4 text-[clamp(1.3125rem,2.8vw,1.875rem)] font-extrabold leading-tight tracking-[-0.03em]"
+             className="ux-bob mx-auto block h-[96px] w-[96px] object-contain lg:h-[150px] lg:w-[150px]" />
+        <h2 className="mt-3 text-center text-[22px] font-extrabold leading-tight tracking-[-0.03em]
+                       lg:mt-4 lg:text-[clamp(1.3125rem,2.8vw,1.875rem)]"
             style={{ color: "var(--ux-ink)" }}>
           {greeting}, {first || "friend"}.<br />
           <span style={{ background: "linear-gradient(96deg, var(--ux-rib-2), var(--ux-rib-3))",
                          WebkitBackgroundClip: "text", backgroundClip: "text", color: "transparent" }}>{tr("sakhi.whatDoYouNeedToday")}</span>
         </h2>
-        <p className="mt-2 text-sm" style={{ color: "var(--ux-muted)" }}>
+        <p className="mt-2 text-center text-[15px] leading-snug lg:text-sm" style={{ color: "var(--ux-muted)" }}>
           Work, money, a course, or something you do not understand — ask{canVoice ? " or speak" : ""}.
         </p>
 
-        <div className="mx-auto mt-6 max-w-[700px] text-start">{children}</div>
+        {/* The composer lives in the dock on a phone — see `page.tsx`. Here it
+            is the desktop card's own field, where it has always been. */}
+        <div className="mx-auto mt-6 hidden max-w-[700px] text-start lg:block">{children}</div>
 
         {canVoice && (
-          <div className="mt-5">{switcher}</div>
+          <div className="mt-5 flex justify-center">{switcher}</div>
         )}
 
-        <p className="mb-3 mt-8 text-start text-2xs font-bold uppercase tracking-[0.18em]"
-           style={{ color: "var(--ux-faint)" }}>{tr("sakhi.tryAsking")}</p>
-        <div className="grid grid-cols-1 gap-2.5 text-start sm:grid-cols-2">
+        {/*
+          The suggestions were six bordered tiles in a grid. On a phone the grid
+          collapses to one column and they become six floating cards with a
+          gutter between each — which is a web list. A grouped list is the phone
+          shape for exactly this: one card, hairlines inside it, the icon tile
+          doing the identifying.
+        */}
+        <h3 className="ux-group-label mb-2 mt-7 px-1 text-start text-[12px] font-semibold uppercase tracking-[0.07em] lg:mb-3 lg:mt-8 lg:tracking-[0.18em]"
+            style={{ color: "var(--ux-muted)" }}>{tr("sakhi.tryAsking")}</h3>
+        <div className="lg:hidden">
+          <ListGroup>
+            {STARTERS.map((s) => (
+              /* `--ux-tint-green` → `green`: `ListRow` names its tints, the
+                 starters carry the token. One slice keeps both honest. */
+              <ListRow key={s.title} title={s.title} subtitle={s.note} icon={s.icon}
+                       tint={s.tint.replace("--ux-tint-", "") as "violet" | "blue" | "green" | "pink" | "amber" | "orange"}
+                       chevron onClick={() => onPick(s.ask)} />
+            ))}
+          </ListGroup>
+        </div>
+        <div className="hidden grid-cols-1 gap-2.5 text-start sm:grid-cols-2 lg:grid">
           {STARTERS.map((s) => (
             <button key={s.title} type="button" onClick={() => onPick(s.ask)}
                     className="ux-card ux-tile group flex items-center gap-3 rounded-[16px] p-3.5 text-start"

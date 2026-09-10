@@ -3,7 +3,8 @@
 import { useCallback, useMemo, useState } from "react";
 
 import { HomeShell } from "@/components/ux/home/HomeShell";
-import { Btn, Card, I, IconTile, Pill, SectionHead, v } from "@/components/ux/kit";
+import { Tag } from "@/components/ux/work/native";
+import { Btn, Card, I, IconTile, SectionHead, v } from "@/components/ux/kit";
 import { formatRupees } from "@/components/ux/kit";
 import { CONTRACTS, READINESS, type Contract } from "@/components/ux/eight/data";
 import { useT } from "@/i18n";
@@ -53,10 +54,10 @@ export default function ContractsPage() {
       <div className="flex flex-col gap-5">
 
         <header>
-          <p className="text-2xs font-extrabold uppercase tracking-[0.2em]" style={{ color: v("--ux-brand") }}>{tr("contracts.bigOrders")}</p>
-          <h1 className="mt-2 text-[clamp(1.5rem,3.2vw,2.125rem)] font-extrabold leading-[1.1] tracking-[-0.035em]"
+          <p className="text-[13px] font-extrabold uppercase tracking-[0.2em] lg:text-2xs" style={{ color: v("--ux-brand") }}>{tr("contracts.bigOrders")}</p>
+          <h1 className="ux-screen-title mt-2 text-[clamp(1.5rem,3.2vw,2.125rem)] font-extrabold leading-[1.1] tracking-[-0.035em]"
               style={{ color: v("--ux-ink") }}>{tr("contracts.ordersTooBigForOneWoman")}</h1>
-          <p className="mt-1.5 max-w-[58ch] text-sm leading-relaxed" style={{ color: v("--ux-muted") }}>
+          <p className="mt-1.5 max-w-[58ch] text-[15px] leading-snug lg:text-sm lg:leading-relaxed" style={{ color: v("--ux-muted") }}>
             Companies want hundreds of pieces. Fourteen of you can make that. The catch is never the
             making — it is that they pay months later, and you buy the cloth today. Every order below
             shows you exactly how long the wait is before you agree to anything.
@@ -174,7 +175,7 @@ function ContractCard({ c, gaps, joined, terms, setTerms, onJoin }: {
             <p className="text-lg font-extrabold leading-tight tracking-[-0.02em]" style={{ color: v("--ux-ink") }}>
               {c.what}
             </p>
-            {c.state === "bidding" && <Pill tone="brand" size="sm">{tr("contracts.biddingNow")}</Pill>}
+            {c.state === "bidding" && <Tag tone="brand" size="sm">{tr("contracts.biddingNow")}</Tag>}
           </div>
           <p className="mt-1 text-xsm" style={{ color: v("--ux-muted") }}>
             {c.buyer}
@@ -279,19 +280,20 @@ function ContractCard({ c, gaps, joined, terms, setTerms, onJoin }: {
         </div>
       )}
 
-      <div className="mt-4 flex flex-wrap gap-2 border-t px-5 py-4" style={{ borderColor: v("--ux-line") }}>
-        <Btn disabled={joined} onClick={onJoin} icon={joined ? "Check" : undefined}>
+      {/* Stacked and full width on a phone, the wrapped row it was on desktop. */}
+      <div className="mt-4 flex flex-col gap-2 border-t px-5 py-4 lg:flex-row lg:flex-wrap" style={{ borderColor: v("--ux-line") }}>
+        <Btn className="ux-action-primary" disabled={joined} onClick={onJoin} icon={joined ? "Check" : undefined}>
           {joined ? "You are in" : c.needsCircle ? tr("contracts.joinTheGroupBid")
               : tr("contracts.bidForThis")}
         </Btn>
-        <Btn variant="ghost" icon="FileText" onClick={() => setTerms(terms === c.id ? null : c.id)}>
+        <Btn className="ux-action-primary" variant="ghost" icon="FileText" onClick={() => setTerms(terms === c.id ? null : c.id)}>
           {terms === c.id ? tr("contracts.hideTheTerms")
               : tr("contracts.readTheFullTerms")}
         </Btn>
         {c.needsCircle && (
-          <Btn variant="ghost" icon="FileSignature" href="/app/contracts/together">{tr("contracts.whoSignsIt")}</Btn>
+          <Btn className="ux-action-primary" variant="ghost" icon="FileSignature" href="/app/contracts/together">{tr("contracts.whoSignsIt")}</Btn>
         )}
-        {gaps > 0 && <Pill tone="orange" size="sm">{gaps} things still missing</Pill>}
+        {gaps > 0 && <Tag tone="orange" size="sm">{gaps} things still missing</Tag>}
       </div>
     </Card>
   );

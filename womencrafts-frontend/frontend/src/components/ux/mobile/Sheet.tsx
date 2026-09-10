@@ -264,7 +264,29 @@ export function Sheet({
     }
   }, [open, opensAt, paint]);
 
-  useDialogBehaviour(open, panelRef, onClose);
+  /**
+   * `onClose`, pinned to one identity for the lifetime of the sheet.
+   *
+   * `useDialogBehaviour` lists the callback among its dependencies, and its
+   * cleanup returns focus to whatever opened the dialog. Every caller writes
+   * `onClose={() => setOpen(false)}`, which is a NEW function on every parent
+   * render — so any state change while the sheet is open tears that effect
+   * down and builds it again: focus is yanked back out to the trigger and then
+   * thrown to the top of the sheet. Pressing + on a stepper inside the sheet
+   * is enough to do it, and the symptom (focus jumping while you use a
+   * control) looks like a browser bug rather than a dependency array.
+   *
+   * The ref is updated in an effect, not during render, so the sheet stays
+   * pure: the stable wrapper only ever runs from an event or a key press, long
+   * after the ref has caught up.
+   */
+  const latestClose = useRef(onClose);
+  useEffect(() => {
+    latestClose.current = onClose;
+  }, [onClose]);
+  const stableClose = useCallback(() => latestClose.current(), []);
+
+  useDialogBehaviour(open, panelRef, stableClose);
 
   const onDown = (e: ReactPointerEvent<HTMLDivElement>) => {
     const el = panelRef.current;

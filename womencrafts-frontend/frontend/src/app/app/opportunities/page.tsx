@@ -3,6 +3,7 @@
 import { useCallback, useMemo, useState } from "react";
 
 import { HomeShell } from "@/components/ux/home/HomeShell";
+import { ChipRow } from "@/components/ux/work/native";
 import * as Icons from "@/components/ux/icons";
 import { Btn, Card, EmptyState, I, SourceNote, v } from "@/components/ux/kit";
 import { useApplications, useJobs } from "@/components/ux/growth";
@@ -152,7 +153,7 @@ export default function FindWorkPage() {
       <div className="flex flex-col gap-5">
 
         {/* ── Hero: the promise, and the search ─────────────────────────── */}
-        <div className="relative overflow-hidden rounded-[18px] p-6 sm:p-7"
+        <div className="relative overflow-hidden rounded-[18px] p-5 sm:p-6 lg:p-7"
              style={{ background: "linear-gradient(120deg, var(--ux-tint-lilac), var(--ux-tint-pink))" }}>
           {/* eslint-disable-next-line @next/next/no-img-element */}
           {/*
@@ -176,14 +177,19 @@ export default function FindWorkPage() {
                  className="h-full w-full object-cover" />
           </span>
 
-          <div className="relative max-w-[62%]">
-            <p className="text-2xs font-extrabold uppercase tracking-[0.2em]" style={{ color: v("--ux-brand") }}>
+          {/* `max-w-[62%]` is room made for the framed photograph beside it —
+              and that photograph is `hidden lg:block`. On a phone the 62% was
+              reserving space for nothing, and it is what broke the headline
+              into "Find / work that / fits": three lines in 217px of a 390px
+              screen. Full width below `lg`, the reserved column above it. */}
+          <div className="relative max-w-none lg:max-w-[62%]">
+            <p className="text-[13px] font-extrabold uppercase tracking-[0.2em] lg:text-2xs" style={{ color: v("--ux-brand") }}>
               Work
             </p>
-            <h1 className="mt-2 text-3xl font-extrabold leading-[1.15] tracking-[-0.02em]"
+            <h1 className="ux-screen-title mt-2 text-3xl font-extrabold leading-[1.15] tracking-[-0.02em]"
                 style={{ color: v("--ux-ink") }}>{tr("findwork.findWorkThatFits")}<span style={{ color: v("--ux-brand") }}>your life</span>
             </h1>
-            <p className="mt-1.5 max-w-[52ch] text-sm leading-relaxed" style={{ color: v("--ux-muted") }}>{tr("findwork.jobsOrdersFreelanceAndInternshipsF")}</p>
+            <p className="mt-1.5 max-w-[52ch] text-[15px] leading-snug lg:text-sm lg:leading-relaxed" style={{ color: v("--ux-muted") }}>{tr("findwork.jobsOrdersFreelanceAndInternshipsF")}</p>
 
             <div className="mt-4 flex flex-wrap items-center gap-2">
               <div className="flex min-w-[280px] flex-1 items-center gap-2 rounded-[12px] border px-3.5"
@@ -200,8 +206,13 @@ export default function FindWorkPage() {
               </div>
             </div>
 
-            {/* Filters that narrow a real field, not decorative dropdowns. */}
-            <div className="mt-3 flex flex-wrap items-center gap-2">
+            {/* Filters that narrow a real field, not decorative dropdowns.
+
+                Six of them wrapped into five rows at 390 — 260px of filter
+                between the search box and the first opening. `pad={20}` bleeds
+                the row to the screen edge, which is the signal that says it
+                can be pushed; above 1023 it wraps as it always did. */}
+            <ChipRow className="mt-3 items-center" pad={20}>
               {MODES.map((m) => {
                 const on = mode === m;
                 return (
@@ -228,7 +239,7 @@ export default function FindWorkPage() {
                   </button>
                 );
               })}
-            </div>
+            </ChipRow>
           </div>
         </div>
 
@@ -260,7 +271,7 @@ export default function FindWorkPage() {
         </div>
 
         <div className="flex flex-wrap items-center justify-between gap-3">
-          <p className="text-xsm font-semibold" style={{ color: v("--ux-ink-2") }}>
+          <p className="text-[15px] font-semibold lg:text-xsm" style={{ color: v("--ux-ink-2") }}>
             {shown.length} {shown.length === 1 ? "opening" : "openings"} open to you
           </p>
           {clear && (
@@ -292,11 +303,11 @@ export default function FindWorkPage() {
         <div className="relative flex flex-wrap items-center gap-4 overflow-hidden rounded-[16px] p-5"
              style={{ background: v("--ux-brand-tint") }}>
           <I name="Sparkles" className="h-[22px] w-[22px] shrink-0" style={{ color: v("--ux-brand") }} />
-          <div className="min-w-[240px] flex-1">
-            <p className="text-sm font-bold" style={{ color: v("--ux-ink") }}>{tr("findwork.notSureWhatKindOfWork")}</p>
-            <p className="mt-1 text-xsm leading-relaxed" style={{ color: v("--ux-muted") }}>{tr("findwork.tellSakhiWhatYouCanDo")}</p>
+          <div className="min-w-0 flex-1 lg:min-w-[240px]">
+            <p className="text-[15px] font-bold lg:text-sm" style={{ color: v("--ux-ink") }}>{tr("findwork.notSureWhatKindOfWork")}</p>
+            <p className="mt-1 text-[15px] leading-snug lg:text-xsm lg:leading-relaxed" style={{ color: v("--ux-muted") }}>{tr("findwork.tellSakhiWhatYouCanDo")}</p>
           </div>
-          <Btn href="/app/sakhi" icon="Sparkles" iconEnd="ArrowRight">{tr("findwork.askSakhi")}</Btn>
+          <Btn className="ux-action-primary" href="/app/sakhi" icon="Sparkles" iconEnd="ArrowRight">{tr("findwork.askSakhi")}</Btn>
         </div>
       </div>
     </HomeShell>

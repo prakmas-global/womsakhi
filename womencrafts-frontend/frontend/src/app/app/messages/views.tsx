@@ -144,13 +144,28 @@ export function Header({ summary, className, rows, onPick }: {
         : summary.reply_minutes < 60 ? `${summary.reply_minutes}m` : `${Math.round(summary.reply_minutes / 60)}h`,
       note: "your reply time" },
   ];
+  /*
+    On a phone the three stat cards were 250px — most of the conversation list —
+    spent on numbers she did not come here for. They become one quiet line under
+    the title, which is where a phone puts a summary. Nothing is lost: every one
+    of the three is still a full card from `lg` up.
+  */
+  const line = [
+    `${summary?.waiting ?? 0} waiting on you`,
+    `${formatMoney(summary?.open_order_minor ?? 0)} in open orders`,
+    summary?.reply_minutes == null ? null
+      : summary.reply_minutes < 60 ? `${summary.reply_minutes}m reply time`
+      : `${Math.round(summary.reply_minutes / 60)}h reply time`,
+  ].filter(Boolean).join(" · ");
+
   return (
     <header className={`flex-wrap items-end gap-4 ${className ?? "flex"}`}>
       <div className="min-w-0 flex-1">
-        <h1 className="text-2xl font-bold tracking-[-0.03em]" style={{ color: "var(--ux-ink)" }}>Messages</h1>
-        <p className="mt-0.5 text-xsm" style={{ color: "var(--ux-muted)" }}>{tr("messages.buyersMentorsAndYourCirclesAll")}</p>
+        <h1 className="ux-screen-title text-2xl font-bold tracking-[-0.03em]" style={{ color: "var(--ux-ink)" }}>Messages</h1>
+        <p className="mt-1 hidden text-xsm lg:block" style={{ color: "var(--ux-muted)" }}>{tr("messages.buyersMentorsAndYourCirclesAll")}</p>
+        <p className="mt-1.5 text-[13px] lg:hidden" style={{ color: "var(--ux-muted)" }}>{line}</p>
       </div>
-      <div className="flex flex-wrap items-center gap-2.5">
+      <div className="hidden flex-wrap items-center gap-2.5 lg:flex">
         {stats.map((s) => (
           <div key={s.note} className="ux-sq flex items-center gap-2.5 rounded-[12px] px-3.5 py-2.5"
                style={{ background: "var(--ux-surface)", border: "1px solid var(--ux-line)",
@@ -181,7 +196,11 @@ export function Header({ summary, className, rows, onPick }: {
  * to her about an order or joins a circle with her. So this jumps to a person
  * she already talks to, and says plainly where a new one comes from.
  */
-export function NewMessage({ rows, onPick }: { rows: ConvRow[]; onPick: (id: string) => void }) {
+export function NewMessage({ rows, onPick, full = false }: {
+  rows: ConvRow[]; onPick: (id: string) => void;
+  /** Docked at the bottom of a phone screen: full width, and it opens upward. */
+  full?: boolean;
+}) {
   const tr = useT();
   const [open, setOpen] = useState(false);
   const wrap = useRef<HTMLDivElement>(null);
@@ -196,16 +215,19 @@ export function NewMessage({ rows, onPick }: { rows: ConvRow[]; onPick: (id: str
   }, [open]);
 
   return (
-    <div ref={wrap} className="relative">
+    <div ref={wrap} className={full ? "relative" : "relative"}>
       <button type="button" onClick={() => setOpen((v) => !v)}
               aria-haspopup="menu" aria-expanded={open}
-              className="ux-press ux-btn-g flex min-h-[46px] items-center gap-2 rounded-[12px] px-4 text-xsm font-bold"
+              className={`ux-press ux-btn-g flex items-center justify-center gap-2 text-xsm font-bold ${
+                full ? "ux-action-primary min-h-[50px] w-full rounded-[14px] text-[16px]"
+                     : "min-h-[46px] rounded-[12px] px-4"}`}
               style={{ background: "linear-gradient(96deg, var(--ux-rib-2), var(--ux-rib-3))",
                        color: "var(--ux-on-brand)", boxShadow: "var(--ux-shadow-glow-2)" }}>
-        <Icons.Plus className="h-4 w-4" />{tr("messages.newMessage")}</button>
+        <Icons.Plus className="h-[18px] w-[18px]" />{tr("messages.newMessage")}</button>
       {open && (
         <div role="menu"
-             className="ux-pop absolute end-0 top-[calc(100%+8px)] z-50 max-h-[340px] w-[290px] overflow-y-auto rounded-[12px] p-1.5"
+             className={`ux-pop absolute z-50 max-h-[340px] overflow-y-auto rounded-[14px] p-1.5 ${
+               full ? "inset-x-0 bottom-[calc(100%+8px)]" : "end-0 top-[calc(100%+8px)] w-[290px]"}`}
              style={{ background: "var(--ux-surface)", border: "1px solid var(--ux-line-strong)",
                       boxShadow: "var(--ux-shadow-pop)" }}>
           <p className="px-2.5 pb-1 pt-2 text-2xs font-bold uppercase tracking-[0.16em]"
@@ -213,8 +235,8 @@ export function NewMessage({ rows, onPick }: { rows: ConvRow[]; onPick: (id: str
           {rows.map((r) => (
             <button key={r.id} type="button" role="menuitem"
                     onClick={() => { setOpen(false); onPick(r.id); }}
-                    className="ux-row flex w-full items-center gap-2.5 rounded-[12px] px-2 py-2 text-start">
-              <Avatar src={r.avatar} kind={r.kind} size={28} />
+                    className="ux-row flex min-h-[48px] w-full items-center gap-2.5 rounded-[12px] px-2 py-2 text-start">
+              <Avatar src={r.avatar} kind={r.kind} size={30} />
               <span className="min-w-0 flex-1">
                 <span className="block truncate text-xsm font-semibold" style={{ color: "var(--ux-ink)" }}>{r.name}</span>
                 <span className="block truncate text-2xs" style={{ color: "var(--ux-muted)" }}>{TAG[r.kind].label}</span>
@@ -255,74 +277,172 @@ export function Avatar({ src, kind, size = 42, online }: { src: string; kind: Pa
 /* ── inbox ──────────────────────────────────────────────────────────────── */
 
 export function Inbox({
-  waiting, rest, counts, filter, setFilter, search, setSearch, openId, onOpen, total, className,
+  waiting, rest, counts, filter, setFilter, search, setSearch, openId, onOpen, total,
+  rows, onPick, onThread,
 }: {
   waiting: ConvRow[]; rest: ConvRow[]; counts: Partial<Record<PartyKind, number>>;
   filter: PartyKind | "all"; setFilter: (v: PartyKind | "all") => void;
   search: string; setSearch: (v: string) => void;
-  openId: string | null; onOpen: (id: string) => void; total: number; className?: string;
+  openId: string | null; onOpen: (id: string) => void; total: number;
+  rows: ConvRow[]; onPick: (id: string) => void;
+  /** She is reading a conversation, so on a phone the list is behind it. */
+  onThread: boolean;
 }) {
   const tr = useT();
-  return (
-    <section className={`ux-sq min-h-0 flex-col overflow-hidden rounded-[20px] ${className ?? "flex"}`}
-             style={{ background: "var(--ux-surface)", border: "1px solid var(--ux-line)",
-                      boxShadow: "var(--ux-shadow-card)" }}>
-      <div className="shrink-0 border-b p-3.5" style={{ borderColor: "var(--ux-line)" }}>
-        <label className="ux-comp flex h-[40px] items-center gap-2.5 rounded-[12px] px-3"
-               style={{ background: "var(--ux-surface-2)", border: "1px solid var(--ux-line)" }}>
-          <Icons.Search className="h-[15px] w-[15px] shrink-0" style={{ color: "var(--ux-faint)" }} />
-          <input value={search} onChange={(e) => setSearch(e.target.value)}
-                 placeholder={tr("messages.searchPeopleAndMessages")} aria-label={tr("messages.searchYourMessages")}
-                 className="w-full bg-transparent text-xsm outline-none" style={{ color: "var(--ux-ink)" }} />
-        </label>
-        <div className="mt-3 flex flex-wrap gap-1.5">
-          {FILTERS.map((f) => {
-            const on = filter === f.value;
-            const n = f.value === "all" ? total : counts[f.value] ?? 0;
-            return (
-              <button key={f.value} type="button" onClick={() => setFilter(f.value)} aria-pressed={on}
-                      className="ux-press flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-bold"
-                      style={on
-                        ? { background: "linear-gradient(96deg, var(--ux-rib-2), var(--ux-rib-3))", color: "var(--ux-on-brand)" }
-                        : { background: "transparent", border: "1px solid var(--ux-line)", color: "var(--ux-muted)" }}>
-                {f.label}
-                {n > 0 && (
-                  <b className="rounded-full px-1.5 text-2xs"
-                     style={on ? { background: "var(--ux-on-brand-track)" } : { background: "var(--ux-surface-2)" }}>
-                    {n}
-                  </b>
-                )}
-              </button>
-            );
-          })}
-        </div>
-      </div>
+  const empty = waiting.length + rest.length === 0;
+  const nothing = search ? tr("messages.nothingMatchesThat") : tr("messages.whenABuyerOrAMentor");
 
-      <div className="min-h-0 flex-1 overflow-y-auto" style={{ scrollbarWidth: "thin" }}>
-        {waiting.length > 0 && (
-          <>
-            <p className="flex items-center gap-2 px-4 pb-1.5 pt-3.5 text-2xs font-bold uppercase tracking-[0.16em]"
-               style={{ color: "var(--ux-amber-ink)" }}>
-              <Icons.Clock className="h-[13px] w-[13px]" />{tr("messages.waitingForYourReply")}</p>
-            {waiting.map((r) => <Row key={r.id} row={r} on={r.id === openId} onOpen={onOpen} />)}
-          </>
-        )}
-        {rest.length > 0 && (
-          <>
-            <p className="flex items-center gap-2 px-4 pb-1.5 pt-3.5 text-2xs font-bold uppercase tracking-[0.16em]"
-               style={{ color: "var(--ux-faint)" }}>
-              <Icons.List className="h-[13px] w-[13px] " />{tr("messages.everythingElse")}</p>
-            {rest.map((r) => <Row key={r.id} row={r} on={r.id === openId} onOpen={onOpen} />)}
-          </>
-        )}
-        {waiting.length + rest.length === 0 && (
-          <p className="p-5 text-xsm" style={{ color: "var(--ux-muted)" }}>
-            {search ? tr("messages.nothingMatchesThat")
-              : tr("messages.whenABuyerOrAMentor")}
-          </p>
-        )}
-      </div>
-    </section>
+  return (
+    <>
+      {/* ── the phone ───────────────────────────────────────────────────────
+          No card. A grouped list running to both edges of the screen, a
+          segmented control instead of five wrapped pills, and the compose
+          action docked where a thumb reaches rather than floating at the top
+          beside a heading. */}
+      <section className={`min-h-0 flex-col lg:hidden ${onThread ? "hidden" : "flex"}`}>
+        <label className="ux-comp mb-3 flex h-[44px] items-center gap-2.5 rounded-[12px] px-3"
+               style={{ background: "var(--ux-surface-2)", border: "1px solid var(--ux-line)" }}>
+          <Icons.Search className="h-[17px] w-[17px] shrink-0" style={{ color: "var(--ux-faint)" }} />
+          {/*
+            `type="search"` gives the phone a keyboard with a magnifier on the
+            return key and a clear button in the field; 16px stops iOS zooming
+            the whole app in on focus and never zooming back out.
+          */}
+          <input type="search" value={search} onChange={(e) => setSearch(e.target.value)}
+                 placeholder={tr("messages.searchPeopleAndMessages")} aria-label={tr("messages.searchYourMessages")}
+                 inputMode="search" enterKeyHint="search" autoComplete="off"
+                 className="w-full bg-transparent text-[16px] outline-none" style={{ color: "var(--ux-ink)" }} />
+        </label>
+
+        <SegmentedControl
+          label="Filter conversations"
+          options={FILTERS.map((f) => ({ value: f.value, label: f.label }))}
+          value={filter}
+          onChange={setFilter}
+        />
+
+        <div className="ux-scroll-y -mx-[20px] mt-4 min-h-0 flex-1 space-y-5 overflow-y-auto px-[20px] pb-[76px]">
+          {waiting.length > 0 && (
+            <ListGroup title={tr("messages.waitingForYourReply")}>
+              {waiting.map((r) => <PhoneRow key={r.id} row={r} onOpen={onOpen} />)}
+            </ListGroup>
+          )}
+          {rest.length > 0 && (
+            <ListGroup title={waiting.length > 0 ? tr("messages.everythingElse") : undefined}>
+              {rest.map((r) => <PhoneRow key={r.id} row={r} onOpen={onOpen} />)}
+            </ListGroup>
+          )}
+          {empty && (
+            <p className="px-1 py-6 text-[15px] leading-relaxed" style={{ color: "var(--ux-muted)" }}>{nothing}</p>
+          )}
+        </div>
+
+        {/* The screen's one action, full width, above the bar — where a right
+            thumb actually goes. `ux-dock-bottom` is `mobile.css`'s own hook for
+            stacking on top of the tab bar rather than underneath it. */}
+        <div className="ux-dock-bottom fixed inset-x-0 z-[46] px-[20px] pb-2 pt-2"
+             style={{ background: "linear-gradient(transparent, var(--ux-canvas) 34%)" }}>
+          <NewMessage rows={rows} onPick={onPick} full />
+        </div>
+      </section>
+
+      {/* ── the desktop inbox column, unchanged ─────────────────────────── */}
+      <section className="ux-sq hidden min-h-0 flex-col overflow-hidden rounded-[20px] lg:flex"
+               style={{ background: "var(--ux-surface)", border: "1px solid var(--ux-line)",
+                        boxShadow: "var(--ux-shadow-card)" }}>
+        <div className="shrink-0 border-b p-3.5" style={{ borderColor: "var(--ux-line)" }}>
+          <label className="ux-comp flex h-[40px] items-center gap-2.5 rounded-[12px] px-3"
+                 style={{ background: "var(--ux-surface-2)", border: "1px solid var(--ux-line)" }}>
+            <Icons.Search className="h-[15px] w-[15px] shrink-0" style={{ color: "var(--ux-faint)" }} />
+            <input value={search} onChange={(e) => setSearch(e.target.value)}
+                   placeholder={tr("messages.searchPeopleAndMessages")} aria-label={tr("messages.searchYourMessages")}
+                   className="w-full bg-transparent text-xsm outline-none" style={{ color: "var(--ux-ink)" }} />
+          </label>
+          <div className="mt-3 flex flex-wrap gap-1.5">
+            {FILTERS.map((f) => {
+              const on = filter === f.value;
+              const n = f.value === "all" ? total : counts[f.value] ?? 0;
+              return (
+                <button key={f.value} type="button" onClick={() => setFilter(f.value)} aria-pressed={on}
+                        className="ux-press flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-bold"
+                        style={on
+                          ? { background: "linear-gradient(96deg, var(--ux-rib-2), var(--ux-rib-3))", color: "var(--ux-on-brand)" }
+                          : { background: "transparent", border: "1px solid var(--ux-line)", color: "var(--ux-muted)" }}>
+                  {f.label}
+                  {n > 0 && (
+                    <b className="rounded-full px-1.5 text-2xs"
+                       style={on ? { background: "var(--ux-on-brand-track)" } : { background: "var(--ux-surface-2)" }}>
+                      {n}
+                    </b>
+                  )}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+
+        <div className="min-h-0 flex-1 overflow-y-auto" style={{ scrollbarWidth: "thin" }}>
+          {waiting.length > 0 && (
+            <>
+              <p className="flex items-center gap-2 px-4 pb-1.5 pt-3.5 text-2xs font-bold uppercase tracking-[0.16em]"
+                 style={{ color: "var(--ux-amber-ink)" }}>
+                <Icons.Clock className="h-[13px] w-[13px]" />{tr("messages.waitingForYourReply")}</p>
+              {waiting.map((r) => <Row key={r.id} row={r} on={r.id === openId} onOpen={onOpen} />)}
+            </>
+          )}
+          {rest.length > 0 && (
+            <>
+              <p className="flex items-center gap-2 px-4 pb-1.5 pt-3.5 text-2xs font-bold uppercase tracking-[0.16em]"
+                 style={{ color: "var(--ux-faint)" }}>
+                <Icons.List className="h-[13px] w-[13px] " />{tr("messages.everythingElse")}</p>
+              {rest.map((r) => <Row key={r.id} row={r} on={r.id === openId} onOpen={onOpen} />)}
+            </>
+          )}
+          {empty && (
+            <p className="p-5 text-xsm" style={{ color: "var(--ux-muted)" }}>{nothing}</p>
+          )}
+        </div>
+      </section>
+    </>
+  );
+}
+
+/**
+ * One conversation, phone-shaped.
+ *
+ * `ListRow` from the mobile kit does the shape — the 60px-inset hairline, the
+ * 52px floor, the fill-on-press that a full-bleed row wants instead of the
+ * shrink a pill wants. What the row carries is the argument:
+ *
+ *  · the kind (buyer / mentor / circle / team) is already on the avatar's ring,
+ *    so the "BUYER" chip that took a third line on a 390px screen is gone;
+ *  · a conversation waiting on her replaces the preview with how long it has
+ *    been waiting, in amber — that is the one thing she needs from this screen;
+ *  · the time sits where every phone inbox puts it, and the unread count is a
+ *    filled pill on the trailing edge.
+ */
+function PhoneRow({ row, onOpen }: { row: ConvRow; onOpen: (id: string) => void }) {
+  return (
+    <ListRow
+      avatar={<Avatar src={row.avatar} kind={row.kind} size={40} online={row.online} />}
+      title={row.name}
+      subtitle={
+        row.waiting_since
+          ? <span style={{ color: "var(--ux-amber-ink)", fontWeight: 600 }}>Waiting {waited(row.waiting_since)}</span>
+          : (row.preview || "No messages yet")
+      }
+      value={shortWhen(row.last_at)}
+      trailing={row.unread > 0
+        ? (
+          <span className="grid h-[20px] min-w-[20px] shrink-0 place-items-center rounded-full px-1.5 text-[12px] font-bold"
+                style={{ background: "linear-gradient(96deg, var(--ux-rib-2), var(--ux-rib-3))", color: "var(--ux-on-brand)" }}>
+            {row.unread}
+          </span>
+        )
+        : undefined}
+      chevron={false}
+      onClick={() => onOpen(row.id)}
+    />
   );
 }
 
@@ -393,13 +513,22 @@ export function Thread({
   onStar: () => void; onUnread: () => void; onDelete: () => void;
 }) {
   const tr = useT();
-  const box = useRef<HTMLDivElement>(null);
-  const area = useRef<HTMLTextAreaElement>(null);
   const pick = useRef<HTMLInputElement>(null);
   const shoot = useRef<HTMLInputElement>(null);
   const [file, setFile] = useState<File | null>(null);
   const [menu, setMenu] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
+
+  /**
+   * The thread opens at the newest message and stays there — unless she has
+   * scrolled up, in which case nothing moves and a button offers the way back.
+   *
+   * The old version pinned to the bottom on every render and on every image
+   * load, unconditionally. Scroll up to check a price while a message lands and
+   * it threw her back to the end mid-sentence. `useChatScroll` keeps the pin and
+   * drops the theft; the signal below is what tells it the content changed.
+   */
+  const scroll = useChatScroll(`${conv.id}:${conv.messages.length}`);
 
   useEffect(() => {
     if (!menu) return;
@@ -410,45 +539,35 @@ export function Thread({
     return () => { document.removeEventListener("mousedown", off); document.removeEventListener("keydown", esc); };
   }, [menu]);
 
-  // A conversation opens where it left off — at the newest message. Opening at
-  // the top is the commonest way a thread screen gets this wrong.
-  //
-  // Scrolled once, a photo further up finishes decoding, the content grows, and
-  // the newest message slides back under the fold — so it also re-scrolls as
-  // each image lands.
-  useEffect(() => {
-    const el = box.current;
-    if (!el) return;
-    const pin = () => { el.scrollTop = el.scrollHeight; };
-    pin();
-    const imgs = Array.from(el.querySelectorAll("img"));
-    imgs.forEach((i) => i.addEventListener("load", pin));
-    return () => imgs.forEach((i) => i.removeEventListener("load", pin));
-  }, [conv.id, conv.messages.length]);
-
-  useEffect(() => {
-    const el = area.current;
-    if (!el) return;
-    el.style.height = "auto";
-    el.style.height = `${Math.min(el.scrollHeight, 120)}px`;
-  }, [draft]);
-
   const ctx = conv.context;
+  const typed = draft.trim().length > 0;
 
   return (
-    <section className={`ux-sq min-h-0 flex-col overflow-hidden rounded-[20px] ${className ?? "flex"}`}
-             style={{ background: "var(--ux-surface)", border: "1px solid var(--ux-line)",
-                      boxShadow: "var(--ux-shadow-card)" }}>
-      <div className="flex shrink-0 items-center gap-3 border-b p-3.5" style={{ borderColor: "var(--ux-line)" }}>
+    /*
+      `ChatFrame` is a plain wrapper above `lg` and a fixed, keyboard-aware
+      panel below it. The desktop card's chrome is carried on `lg:` classes
+      here rather than in a `style` object, because an inline style cannot be
+      turned off by the phone rules that flatten the panel to the screen edges.
+    */
+    <ChatFrame
+      label={`Conversation with ${conv.name}`}
+      className={`ux-sq min-h-0 overflow-hidden bg-[var(--ux-surface)]
+                  lg:rounded-[20px] lg:border lg:border-[var(--ux-line)] lg:shadow-[var(--ux-shadow-card)]
+                  ${className ?? "flex"}`}
+    >
+      {/* One header for both. On a phone it is the screen's title bar — back,
+          who, and the two things you do to a conversation. */}
+      <div className="flex shrink-0 items-center gap-1.5 border-b px-1.5 py-1.5 lg:gap-3 lg:p-3.5"
+           style={{ borderColor: "var(--ux-line)" }}>
         <button type="button" onClick={onBack} aria-label={tr("messages.backToYourMessages")}
-                className="ux-row -ms-1 grid h-[36px] w-[36px] shrink-0 place-items-center rounded-[12px] lg:hidden"
-                style={{ color: "var(--ux-ink-2)" }}>
-          <Icons.ArrowLeft className="h-[18px] w-[18px]" />
+                className="grid h-[44px] w-[44px] shrink-0 place-items-center rounded-full lg:hidden"
+                style={{ color: "var(--ux-ink)", transform: "none" }}>
+          <Icons.ChevronLeft className="h-[24px] w-[24px] rtl:rotate-180" />
         </button>
-        <Avatar src={conv.avatar} kind={conv.kind} size={40} online={conv.online} />
-        <div className="min-w-0 flex-1">
-          <b className="block truncate text-base font-bold" style={{ color: "var(--ux-ink)" }}>{conv.name}</b>
-          <span className="mt-0.5 flex items-center gap-1.5 text-xs"
+        <Avatar src={conv.avatar} kind={conv.kind} size={38} online={conv.online} />
+        <div className="min-w-0 flex-1 ps-1">
+          <b className="block truncate text-[17px] font-bold leading-tight lg:text-base" style={{ color: "var(--ux-ink)" }}>{conv.name}</b>
+          <span className="mt-0.5 flex items-center gap-1.5 text-[13px] leading-tight lg:text-xs"
                 style={{ color: conv.online ? "var(--ux-green-ink)" : "var(--ux-muted)" }}>
             {conv.online && <i className="block h-[7px] w-[7px] rounded-full" style={{ background: "var(--ux-green)" }} />}
             {conv.subtitle || (conv.online ? "Online now" : "")}
@@ -461,19 +580,19 @@ export function Thread({
                 title={conv.starred ? tr("messages.removeStar")
               : tr("messages.starThisConversation")}
                 aria-pressed={conv.starred}
-                className="ux-row grid h-[36px] w-[36px] place-items-center rounded-[12px]"
-                style={{ color: conv.starred ? "var(--ux-amber-ink)" : "var(--ux-faint)" }}>
-          <Icons.Star className="h-[17px] w-[17px]" fill={conv.starred ? "currentColor" : "none"} />
+                className="grid h-[44px] w-[44px] place-items-center rounded-full lg:h-[36px] lg:w-[36px] lg:rounded-[12px]"
+                style={{ color: conv.starred ? "var(--ux-amber-ink)" : "var(--ux-faint)", transform: "none" }}>
+          <Icons.Star className="h-[19px] w-[19px]" fill={conv.starred ? "currentColor" : "none"} />
         </button>
         <div ref={menuRef} className="relative">
           <button type="button" onClick={() => setMenu((v) => !v)} title="More"
                   aria-haspopup="menu" aria-expanded={menu}
-                  className="ux-row grid h-[36px] w-[36px] place-items-center rounded-[12px]"
-                  style={{ color: "var(--ux-faint)" }}>
-            <Icons.MoreVertical className="h-[17px] w-[17px]" />
+                  className="grid h-[44px] w-[44px] place-items-center rounded-full lg:h-[36px] lg:w-[36px] lg:rounded-[12px]"
+                  style={{ color: "var(--ux-faint)", transform: "none" }}>
+            <Icons.MoreVertical className="h-[19px] w-[19px]" />
           </button>
           {menu && (
-            <div role="menu" className="ux-pop absolute end-0 top-[calc(100%+6px)] z-50 w-[230px] rounded-[12px] p-1.5"
+            <div role="menu" className="ux-pop absolute end-0 top-[calc(100%+6px)] z-50 w-[240px] rounded-[14px] p-1.5"
                  style={{ background: "var(--ux-surface)", border: "1px solid var(--ux-line-strong)",
                           boxShadow: "var(--ux-shadow-pop)" }}>
               {[
@@ -483,199 +602,213 @@ export function Thread({
               ].map((a) => (
                 <button key={a.label} type="button" role="menuitem"
                         onClick={() => { setMenu(false); a.run(); }}
-                        className="ux-row flex w-full items-center gap-2.5 rounded-[12px] px-2.5 py-2.5 text-start text-xsm"
+                        className="ux-row flex w-full items-center gap-2.5 rounded-[12px] px-2.5 py-2.5 text-start text-[15px] lg:text-xsm"
                         style={{ color: "var(--ux-ink)" }}>
-                  <Ico name={a.icon} className="h-[15px] w-[15px]" /> {a.label}
+                  <Ico name={a.icon} className="h-[16px] w-[16px]" /> {a.label}
                 </button>
               ))}
               <Link href="/app/safety" role="menuitem" onClick={() => setMenu(false)}
-                    className="ux-row flex w-full items-center gap-2.5 rounded-[12px] px-2.5 py-2.5 text-start text-xsm"
+                    className="ux-row flex min-h-[44px] w-full items-center gap-2.5 rounded-[12px] px-2.5 py-2.5 text-start text-[15px] lg:text-xsm"
                     style={{ color: "var(--ux-ink)" }}>
-                <Icons.Flag className="h-[15px] w-[15px]" style={{ color: "var(--ux-pink-ink)" }} />{tr("messages.reportThisPerson")}</Link>
+                <Icons.Flag className="h-[16px] w-[16px]" style={{ color: "var(--ux-pink-ink)" }} />{tr("messages.reportThisPerson")}</Link>
               <button type="button" role="menuitem" onClick={() => { setMenu(false); onDelete(); }}
-                      className="ux-row flex w-full items-center gap-2.5 rounded-[12px] px-2.5 py-2.5 text-start text-xsm"
+                      className="ux-row flex w-full items-center gap-2.5 rounded-[12px] px-2.5 py-2.5 text-start text-[15px] lg:text-xsm"
                       style={{ color: "var(--ux-pink-ink)" }}>
-                <Icons.Trash2 className="h-[15px] w-[15px]" />{tr("messages.deleteConversation")}</button>
+                <Icons.Trash2 className="h-[16px] w-[16px]" />{tr("messages.deleteConversation")}</button>
             </div>
           )}
         </div>
       </div>
 
-      {/* What this conversation is actually about. */}
+      {/* What this conversation is actually about. One line on a phone: it is a
+          reminder, and a reminder that costs three rows of thread is not one. */}
       {ctx && (
-        <div className="flex shrink-0 flex-wrap items-center gap-3 border-b p-3.5"
+        <div className="flex shrink-0 items-center gap-2.5 border-b px-3 py-2 lg:flex-wrap lg:gap-3 lg:p-3.5"
              style={{ borderColor: "var(--ux-line)",
                       background: "linear-gradient(96deg, var(--ux-brand-tint), var(--ux-tint-pink))" }}>
           {ctx.image && (
             // eslint-disable-next-line @next/next/no-img-element
-            <img loading="lazy" decoding="async" src={ctx.image} alt="" className="h-[46px] w-[46px] shrink-0 rounded-[12px] object-cover" />
+            <img loading="lazy" decoding="async" src={ctx.image} alt="" className="h-[34px] w-[34px] shrink-0 rounded-[10px] object-cover lg:h-[46px] lg:w-[46px] lg:rounded-[12px]" />
           )}
           <span className="min-w-0 flex-1">
-            <b className="block truncate text-xsm font-bold" style={{ color: "var(--ux-ink)" }}>
+            <b className="block truncate text-[13px] font-bold lg:text-xsm" style={{ color: "var(--ux-ink)" }}>
               Order #{ctx.ref} · {ctx.title}
             </b>
-            <i className="mt-0.5 block truncate text-2xs not-italic" style={{ color: "var(--ux-ink-2)" }}>{ctx.sub}</i>
+            <i className="mt-0.5 hidden truncate text-2xs not-italic lg:block" style={{ color: "var(--ux-ink-2)" }}>{ctx.sub}</i>
           </span>
           {ctx.status && (
-            <span className="shrink-0 rounded-full px-2.5 py-1 text-2xs font-bold uppercase tracking-[0.08em]"
+            <span className="hidden shrink-0 rounded-full px-2.5 py-1 text-2xs font-bold uppercase tracking-[0.08em] lg:inline"
                   style={{ background: "var(--ux-tint-green)", color: "var(--ux-green-ink)" }}>
               {ctx.status}
             </span>
           )}
-          <Link href="/app/documents"
-                className="ux-press flex shrink-0 items-center gap-1.5 rounded-[12px] px-3 py-2 text-xs font-bold"
-                style={{ background: "var(--ux-surface)", border: "1px solid var(--ux-line-strong)", color: "var(--ux-ink-2)" }}>{tr("messages.openOrder")}<Icons.ChevronRight className="h-[13px] w-[13px]" />
+          <Link href="/app/documents" aria-label={tr("messages.openOrder")}
+                className="ux-press flex min-h-[36px] shrink-0 items-center gap-1.5 rounded-full px-3 text-[13px] font-bold lg:min-h-[44px] lg:rounded-[12px] lg:px-3 lg:text-xs"
+                style={{ background: "var(--ux-surface)", border: "1px solid var(--ux-line-strong)", color: "var(--ux-ink-2)" }}>
+            <span className="hidden lg:inline">{tr("messages.openOrder")}</span>
+            <span className="lg:hidden">Order</span>
+            <Icons.ChevronRight className="h-[13px] w-[13px] rtl:rotate-180" />
           </Link>
         </div>
       )}
 
-      {/* A short fade under the strip and above the composer. Content passing
-          behind either edge now dissolves instead of being guillotined, which
-          is what made the thread look like it was hiding under the header. */}
-      <div aria-hidden className="pointer-events-none relative z-10 -mb-4 h-4"
-           style={{ background: "linear-gradient(var(--ux-surface), transparent)" }} />
-
-      {/* Grows and shrinks with the window instead of being pinned at 406px,
-          which left a void under a one-message conversation and a cramped
-          box on a tall screen. */}
-      {/* `pb-3` so the newest message ends clear of the quick replies rather
-          than tucked under them — scrolled to the bottom, the last timestamp
-          was touching the first chip. */}
-      <div ref={box} className="flex min-h-0 flex-1 flex-col gap-0.5 overflow-y-auto p-4 pb-3"
-           style={{ scrollbarWidth: "thin" }}>
-        {conv.messages.map((m, i) => {
-          const prev = conv.messages[i - 1];
-          const newDay = !prev || dayLabel(prev.at) !== dayLabel(m.at);
-          const first = newDay || prev?.dir !== m.dir;
-          return (
-            <div key={i}>
-              {newDay && (
-                <div className="my-3 flex items-center gap-3">
-                  <span className="h-px flex-1" style={{ background: "var(--ux-line)" }} />
-                  <span className="text-2xs font-bold uppercase tracking-[0.15em]" style={{ color: "var(--ux-faint)" }}>
-                    {dayLabel(m.at)}
-                  </span>
-                  <span className="h-px flex-1" style={{ background: "var(--ux-line)" }} />
-                </div>
-              )}
-              <Bubble bubble={m} first={first} conv={conv} />
-            </div>
-          );
-        })}
-      </div>
-
-      <div aria-hidden className="pointer-events-none relative z-10 -mt-4 h-4"
-           style={{ background: "linear-gradient(transparent, var(--ux-surface))" }} />
-
-      {/* Wraps. Scrolling sideways cut them mid-word — "ady by Friday" — and a
-          suggestion you have to swipe to read is not a suggestion. */}
-      <div className="flex shrink-0 flex-wrap gap-2 px-4 pt-3">
-        {QUICK.map((q) => (
-          <button key={q} type="button" onClick={() => setDraft(q)}
-                  className="ux-press shrink-0 rounded-full px-3.5 py-2 text-xs font-semibold"
-                  style={{ background: "var(--ux-surface)", border: "1px solid var(--ux-line-strong)",
-                           color: "var(--ux-ink-2)" }}>
-            {q}
-          </button>
-        ))}
-      </div>
+      {/*
+        The thread. `<ol>` inside a `role="log"`, one `<li>` per message, each
+        one naming its speaker for a screen reader — a column of bare sentences
+        with the speaker carried only by which margin they hug is unusable
+        without sight, and that is most of what "a chat a screen reader cannot
+        follow" means.
+      */}
+      <ChatLog scroll={scroll} label={`Messages with ${conv.name}`} className="px-3 py-2 lg:p-4">
+        <ol className="flex flex-col">
+          {conv.messages.map((m, i) => {
+            const prev = conv.messages[i - 1];
+            const newDay = !prev || dayLabel(prev.at) !== dayLabel(m.at);
+            const first = newDay || prev?.dir !== m.dir;
+            return (
+              <Bubble key={i} bubble={m} first={first} conv={conv}
+                      day={newDay ? dayLabel(m.at) : null} />
+            );
+          })}
+        </ol>
+      </ChatLog>
 
       <input ref={pick} type="file" className="hidden" accept="image/*,.pdf"
              onChange={(e) => setFile(e.target.files?.[0] ?? null)} />
       <input ref={shoot} type="file" className="hidden" accept="image/*" capture="environment"
              onChange={(e) => setFile(e.target.files?.[0] ?? null)} />
 
-      <div className="ux-comp mx-4 mt-3 shrink-0 rounded-[16px]"
-           style={{ background: "var(--ux-surface-2)", border: "1px solid var(--ux-line-strong)" }}>
+      <ChatDock className="lg:px-4 lg:pb-4">
+        <JumpToLatest scroll={scroll} label="Latest" />
+
+        {/*
+          Suggestions scroll sideways rather than wrapping into a wall, and they
+          go away the moment she starts typing — she has stopped choosing and
+          started writing, and two rows of chips between her and the thread is
+          two rows she did not ask for.
+        */}
+        {!typed && (
+          <div className="ux-chat-tip ux-chiprow flex gap-2 px-1 pb-2 pt-2 lg:flex-wrap lg:px-4 lg:pt-3">
+            {QUICK.map((q) => (
+              <button key={q} type="button" onClick={() => setDraft(q)}
+                      className="ux-press ux-tap-exempt shrink-0 rounded-full px-3.5 py-2 text-[13px] font-semibold"
+                      style={{ background: "var(--ux-surface-2)", border: "1px solid var(--ux-line-strong)",
+                               color: "var(--ux-ink-2)" }}>
+                {q}
+              </button>
+            ))}
+          </div>
+        )}
+
         {file && (
-          <div className="flex flex-wrap items-center gap-2 px-4 pt-3">
-            <span className="flex min-w-0 items-center gap-2 rounded-[12px] px-2.5 py-1.5 text-xs"
-                  style={{ background: "var(--ux-surface)", border: "1px solid var(--ux-line-strong)" }}>
+          <div className="flex flex-wrap items-center gap-2 px-1 pb-2 lg:px-4">
+            <span className="flex min-w-0 items-center gap-2 rounded-full px-2.5 py-1.5 text-[12px]"
+                  style={{ background: "var(--ux-surface-2)", border: "1px solid var(--ux-line-strong)" }}>
               <Icons.Paperclip className="h-[13px] w-[13px] shrink-0" style={{ color: "var(--ux-faint)" }} />
               <span className="truncate font-semibold" style={{ color: "var(--ux-ink)" }}>{file.name}</span>
               <button type="button" onClick={() => setFile(null)} aria-label={tr("messages.removeAttachment")}
-                      className="ux-press grid h-[18px] w-[18px] shrink-0 place-items-center rounded-full"
+                      className="ux-press ux-tap-exempt grid h-[20px] w-[20px] shrink-0 place-items-center rounded-full"
                       style={{ color: "var(--ux-faint)" }}>
                 <Icons.X className="h-[12px] w-[12px]" />
               </button>
             </span>
             {/* Honest: the picker works, the upload endpoint does not exist yet. */}
-            <span className="text-2xs" style={{ color: "var(--ux-amber-ink)" }}>{tr("messages.sendingFilesIsComingTheName")}</span>
+            <span className="text-[12px]" style={{ color: "var(--ux-amber-ink)" }}>{tr("messages.sendingFilesIsComingTheName")}</span>
           </div>
         )}
-        <textarea
-          ref={area} rows={1} value={draft} onChange={(e) => setDraft(e.target.value)}
-          onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); onSend(); } }}
-          placeholder={`Write to ${conv.name.split(" ")[0]}…`} aria-label={tr("messages.writeAMessage")}
-          className="w-full resize-none bg-transparent px-4 pb-1.5 pt-3 text-sm leading-relaxed outline-none"
-          style={{ color: "var(--ux-ink)", maxHeight: 120 }}
-        />
-        <div className="flex items-center justify-between border-t px-2 py-2" style={{ borderColor: "var(--ux-line)" }}>
-          <div className="flex gap-0.5">
-            <button type="button" title={tr("messages.attachAFile")} onClick={() => pick.current?.click()}
-                    className="ux-row grid h-[36px] w-[36px] place-items-center rounded-[12px]"
-                    style={{ color: "var(--ux-faint)" }}>
-              <Icons.Paperclip className="h-[17px] w-[17px]" />
-            </button>
-            <button type="button" title={tr("messages.sendAPhoto")} onClick={() => shoot.current?.click()}
-                    className="ux-row grid h-[36px] w-[36px] place-items-center rounded-[12px]"
-                    style={{ color: "var(--ux-faint)" }}>
-              <Icons.Camera className="h-[17px] w-[17px]" />
-            </button>
-            <Link href="/app/documents" title={tr("messages.sendAnOrder")}
-                  className="ux-row grid h-[36px] w-[36px] place-items-center rounded-[12px]"
-                  style={{ color: "var(--ux-faint)" }}>
-              <Icons.Package className="h-[17px] w-[17px]" />
-            </Link>
-          </div>
-          <button type="button" onClick={onSend} disabled={!draft.trim() || sending} aria-label="Send"
-                  className="ux-press grid h-[38px] w-[38px] place-items-center rounded-[12px] disabled:opacity-40"
-                  style={{ background: "linear-gradient(96deg, var(--ux-rib-2), var(--ux-rib-3))", color: "var(--ux-on-brand)" }}>
-            <Icons.Send className="h-[17px] w-[17px]" />
-          </button>
-        </div>
-      </div>
 
-      {/* Off-platform payment requests are how women get cheated on marketplaces.
-          The warning belongs where money gets discussed, not in a help page. */}
-      <p className="flex shrink-0 items-center gap-2 px-4 pb-4 pt-3 text-2xs" style={{ color: "var(--ux-muted)" }}>
-        <Icons.ShieldCheck className="h-[13px] w-[13px] shrink-0" style={{ color: "var(--ux-green-ink)" }} />{tr("messages.keepPaymentsInsideWomsakhiNobodyHe")}</p>
-    </section>
+        {/*
+          One row: attach, the field, send. A phone composer is a row, not a
+          box with a toolbar underneath it — the toolbar version cost 44px of
+          keyboard-side screen and put the send button two thumb-widths from
+          where every other messaging app has taught her it is.
+        */}
+        <div className="flex items-end gap-1.5 pb-2 lg:gap-2 lg:pb-0">
+          <button type="button" aria-label={tr("messages.attachAFile")} onClick={() => pick.current?.click()}
+                  className="grid h-[44px] w-[44px] shrink-0 place-items-center rounded-full lg:h-[38px] lg:w-[38px]"
+                  style={{ color: "var(--ux-muted)", transform: "none" }}>
+            <Icons.Paperclip className="h-[20px] w-[20px]" />
+          </button>
+          <button type="button" aria-label={tr("messages.sendAPhoto")} onClick={() => shoot.current?.click()}
+                  className="grid h-[44px] w-[44px] shrink-0 place-items-center rounded-full lg:h-[38px] lg:w-[38px]"
+                  style={{ color: "var(--ux-muted)", transform: "none" }}>
+            <Icons.Camera className="h-[20px] w-[20px]" />
+          </button>
+          <div className="ux-comp min-w-0 flex-1 rounded-[22px] px-3.5 py-2.5"
+               style={{ background: "var(--ux-surface-2)", border: "1px solid var(--ux-line-strong)" }}>
+            <ChatInput
+              value={draft} onChange={setDraft} onSend={onSend}
+              placeholder={`Write to ${conv.name.split(" ")[0]}…`}
+              label={tr("messages.writeAMessage")}
+            />
+          </div>
+          <SendButton onClick={onSend} disabled={!draft.trim() || sending} busy={sending} label="Send" />
+        </div>
+
+        {/* Off-platform payment requests are how women get cheated on marketplaces.
+            The warning belongs where money gets discussed, not in a help page. */}
+        <p className="ux-chat-tip flex shrink-0 items-center gap-2 pb-2 text-[12px] leading-snug lg:px-4 lg:pt-3"
+           style={{ color: "var(--ux-muted)" }}>
+          <Icons.ShieldCheck className="h-[13px] w-[13px] shrink-0" style={{ color: "var(--ux-green-ink)" }} />{tr("messages.keepPaymentsInsideWomsakhiNobodyHe")}</p>
+      </ChatDock>
+    </ChatFrame>
   );
 }
 
-export function Bubble({ bubble, first, conv }: { bubble: ConvBubble; first: boolean; conv: ConvDetail }) {
+/**
+ * One message.
+ *
+ * Sender and receiver are told apart by four things at once, and only the last
+ * of them is colour: which side of the screen the bubble hugs, which corner
+ * carries the tail, whether there is a face beside it, and the fill. Colour
+ * alone fails roughly one man in twelve and fails everyone in sunlight on a
+ * cheap screen — which is most of when this app gets read.
+ */
+export function Bubble({ bubble, first, conv, day }: {
+  bubble: ConvBubble; first: boolean; conv: ConvDetail; day?: string | null;
+}) {
   const out = bubble.dir === "out";
   return (
-    <div className={`mt-[3px] flex items-end gap-2.5 ${out ? "flex-row-reverse" : ""}`}>
-      <span className="w-[26px] shrink-0" style={{ visibility: first && !out ? "visible" : "hidden" }}>
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img loading="lazy" decoding="async" src={conv.avatar || "/ux/brand/womsakhi-emblem.webp"} alt=""
-             className="h-[26px] w-[26px] rounded-full object-cover" />
-      </span>
-      {bubble.order ? (
-        <OrderCard order={bubble.order} />
-      ) : (
-      <div className="max-w-[70%] rounded-[16px] p-[11px_14px] text-sm leading-relaxed"
-           style={out
-             ? { background: "linear-gradient(96deg, var(--ux-rib-2), var(--ux-rib-3))", color: "var(--ux-on-brand)",
-                 borderBottomRightRadius: first ? 5 : 16, boxShadow: "var(--ux-shadow-glow-2)" }
-             : { background: "var(--ux-surface-2)", border: "1px solid var(--ux-line)", color: "var(--ux-ink-2)",
-                 borderBottomLeftRadius: first ? 5 : 16 }}>
-        {bubble.file?.url && (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img loading="lazy" decoding="async" src={bubble.file.url} alt={bubble.file.name}
-               className="mb-2 block max-w-[210px] rounded-[12px]" style={{ border: "1px solid var(--ux-line)" }} />
-        )}
-        {bubble.text}
-        <span className={`mt-1.5 flex items-center gap-1.5 text-2xs ${out ? "justify-end" : ""}`}
-              style={{ color: out ? "var(--ux-on-brand-2)" : "var(--ux-faint)" }}>
-          {clock(bubble.at)}
-          {out && <Icons.CheckCheck className="h-[13px] w-[13px]" style={{ color: bubble.read ? "var(--ux-read-tick)" : "inherit" }} />}
-        </span>
-      </div>
+    <>
+      {day && (
+        <li className="my-3 flex justify-center">
+          <span className="rounded-full px-3 py-1 text-[12px] font-semibold"
+                style={{ background: "var(--ux-surface-2)", color: "var(--ux-muted)" }}>
+            {day}
+          </span>
+        </li>
       )}
-    </div>
+      <li className={`flex items-end gap-2 ${first ? "mt-2" : "mt-[3px]"} ${out ? "flex-row-reverse" : ""}`}>
+        <span className="w-[26px] shrink-0" style={{ visibility: first && !out ? "visible" : "hidden" }}>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img loading="lazy" decoding="async" src={conv.avatar || "/ux/brand/womsakhi-emblem.webp"} alt=""
+               className="h-[26px] w-[26px] rounded-full object-cover" />
+        </span>
+        {bubble.order ? (
+          <OrderCard order={bubble.order} />
+        ) : (
+        <div className="max-w-[78%] px-3.5 py-2.5 text-[15px] leading-[1.45] lg:max-w-[70%] lg:text-sm"
+             style={out
+               ? { background: "linear-gradient(96deg, var(--ux-rib-2), var(--ux-rib-3))", color: "var(--ux-on-brand)",
+                   borderRadius: bubbleRadius("out", first), boxShadow: "var(--ux-shadow-glow-2)" }
+               : { background: "var(--ux-surface-2)", border: "1px solid var(--ux-line)", color: "var(--ux-ink-2)",
+                   borderRadius: bubbleRadius("in", first) }}>
+          <Says who={out ? "You" : conv.name} />
+          {bubble.file?.url && (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img loading="lazy" decoding="async" src={bubble.file.url} alt={bubble.file.name}
+                 className="mb-2 block max-w-[210px] rounded-[12px]" style={{ border: "1px solid var(--ux-line)" }} />
+          )}
+          {bubble.text}
+          <span className={`mt-1 flex items-center gap-1.5 ${out ? "justify-end" : ""}`}>
+            <Stamp tone={out ? "on-brand" : "muted"}>{clock(bubble.at)}</Stamp>
+            {out && <Icons.CheckCheck className="h-[13px] w-[13px]"
+                                      style={{ color: bubble.read ? "var(--ux-read-tick)" : "var(--ux-on-brand-2)" }} />}
+          </span>
+        </div>
+        )}
+      </li>
+    </>
   );
 }
 

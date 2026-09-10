@@ -6,12 +6,13 @@ import Link from "next/link";
 import * as Icons from "@/components/ux/icons";
 
 import {
-  ActionBtn, Btn, Card, Chip, EmptyState, NoteBtn, Pill, Rating, SectionHead, SourceNote, Tabs,
+  ActionBtn, Btn, Card, Chip, EmptyState, NoteBtn, Rating, SectionHead, SourceNote,
   copy, plural
 } from "@/components/ux/kit";
 import { apiRequestMentor } from "@/lib/growth-api";
 import { apiLeaveFeedback } from "@/lib/member-api";
 import { HomeShell } from "@/components/ux/home/HomeShell";
+import { ActionRow, ChipRow, ScreenHead, Segments, Tag } from "@/components/ux/learning/native";
 import {
   EXPERTISE, LANGUAGES, MENTOR_ART, rupees,
 } from "@/components/ux/mentors/data";
@@ -66,9 +67,9 @@ export default function MentorsPage() {
                       <p className="truncate text-xsm font-medium" style={{ color: "var(--ux-ink)" }}>{s.mentor}</p>
                       <p className="mt-0.5 truncate text-2xs" style={{ color: "var(--ux-muted)" }}>{s.when}</p>
                     </div>
-                    <Pill tone={s.state === "Upcoming" ? "brand" : s.state === "Requested" ? "blue" : "neutral"} size="sm">
+                    <Tag tone={s.state === "Upcoming" ? "brand" : s.state === "Requested" ? "blue" : "neutral"} size="sm">
                       {s.state}
-                    </Pill>
+                    </Tag>
                   </div>
                 ))}
               </div>
@@ -109,35 +110,40 @@ export default function MentorsPage() {
         </div>
       }
     >
-      <div className="mb-[20px] flex items-end justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-bold" style={{ color: "var(--ux-ink)" }}>Mentors</h1>
-          <p className="mt-1.5 text-xsm" style={{ color: "var(--ux-muted)" }}>
-            {tab === "Find a mentor"
-              ? `${shown.length} ${plural("woman", shown.length)} ready to help${active ? ` · ${active} ${plural("filter", active)} on` : ""}`
-              : `${upcoming.length} ${plural("session", upcoming.length)} coming up`}
-          </p>
-
-      <SourceNote source={source} what="mentors" />
-        </div>
-        <Tabs items={["Find a mentor", "My sessions"]} active={tab} onChange={setTab} />
-      </div>
+      <ScreenHead
+        title="Mentors"
+        sub={tab === "Find a mentor"
+          ? `${shown.length} ${plural("woman", shown.length)} ready to help${active ? ` · ${active} ${plural("filter", active)} on` : ""}`
+          : `${upcoming.length} ${plural("session", upcoming.length)} coming up`}
+        note={<SourceNote source={source} what="mentors" />}
+      >
+        <Segments items={["Find a mentor", "My sessions"]} active={tab} onChange={setTab} label="Mentors view" />
+      </ScreenHead>
 
       {tab === "Find a mentor" && (
         <>
+          {/*
+            Fifteen chips. Wrapped, they were 700px of filter above the first
+            mentor — measured on the before shot at 390x844, where the whole
+            screen was the filter and not one woman was visible. Each set now
+            runs on one line the thumb pushes along; `pad={16}` matches the
+            card's own padding, so the row bleeds exactly to its edge rather
+            than past it. Above 1023 `.ux-chiprow` does not exist and both sets
+            wrap as before.
+          */}
           <Card className="mb-[16px] ux-onscroll-soft" pad={16}>
-            <p className="mb-2 text-2xs font-semibold uppercase tracking-[0.07em]" style={{ color: "var(--ux-faint)" }}>{tr("mentors.whatYouNeedHelpWith")}</p>
-            <div className="flex flex-wrap gap-2">
+            <ChipRow label={tr("mentors.whatYouNeedHelpWith")} pad={16}>
               {EXPERTISE.map((e) => (
                 <Chip key={e} selected={skills.includes(e)} onClick={() => toggle(e, skills, setSkills)}>{e}</Chip>
               ))}
-            </div>
+            </ChipRow>
 
-            <p className="mb-2 mt-4 text-2xs font-semibold uppercase tracking-[0.07em]" style={{ color: "var(--ux-faint)" }}>{tr("mentors.aLanguageYouAreComfortableIn")}</p>
-            <div className="flex flex-wrap gap-2">
-              {LANGUAGES.map((l) => (
-                <Chip key={l} selected={langs.includes(l)} onClick={() => toggle(l, langs, setLangs)}>{l}</Chip>
-              ))}
+            <div className="mt-4">
+              <ChipRow label={tr("mentors.aLanguageYouAreComfortableIn")} pad={16}>
+                {LANGUAGES.map((l) => (
+                  <Chip key={l} selected={langs.includes(l)} onClick={() => toggle(l, langs, setLangs)}>{l}</Chip>
+                ))}
+              </ChipRow>
             </div>
 
             <div className="mt-4 flex items-center justify-between gap-3 border-t pt-3.5" style={{ borderColor: "var(--ux-line)" }}>
@@ -169,8 +175,8 @@ export default function MentorsPage() {
                             {m.name}
                           </Link>
                         </h2>
-                        {m.free_first && <Pill tone="green" size="sm">{tr("mentors.firstSessionFree2")}</Pill>}
-                        {m.requested && <Pill tone="blue" size="sm">{tr("mentors.youAsked")}</Pill>}
+                        {m.free_first && <Tag tone="green" size="sm">{tr("mentors.firstSessionFree2")}</Tag>}
+                        {m.requested && <Tag tone="blue" size="sm">{tr("mentors.youAsked")}</Tag>}
                       </div>
                       <p className="mt-0.5 text-xsm" style={{ color: "var(--ux-ink-2)" }}>{m.headline}</p>
 
@@ -185,21 +191,24 @@ export default function MentorsPage() {
 
                       <div className="mt-2.5 flex flex-wrap gap-1.5">
                         {m.expertise.map((e) => (
-                          <span key={e} className="ux-sq rounded-[8px] border px-2 py-[3px] text-2xs"
+                          <span key={e} className="ux-sq rounded-[8px] border px-2 py-[3px] text-[13px] lg:text-2xs"
                                 style={{ borderColor: "var(--ux-line-strong)", color: "var(--ux-muted)" }}>{e}</span>
                         ))}
                       </div>
                     </div>
                   </div>
 
-                  <div className="mt-3.5 flex items-center justify-between gap-4 border-t pt-3.5"
+                  <div className="mt-3.5 flex flex-col gap-3 border-t pt-3.5 lg:flex-row lg:items-center lg:justify-between lg:gap-4"
                        style={{ borderColor: "var(--ux-line)" }}>
-                    <span className="flex items-center gap-1.5 text-xs" style={{ color: "var(--ux-faint)" }}>
+                    <span className="flex flex-wrap items-center gap-x-1.5 gap-y-1 text-[13px] lg:text-xs" style={{ color: "var(--ux-faint)" }}>
                       <Icons.Clock className="h-[14px] w-[14px]" /> {m.availability}
                       <span aria-hidden>·</span>
                       {m.free_first ? "Free first session" : `${rupees(m.fee_minor)} a session`}
                     </span>
-                    <span className="flex items-center gap-2">
+                    {/* Full width and stacked on a phone: two 96px pills
+                        floated to the right edge is where a right-handed
+                        thumb cannot comfortably go. */}
+                    <ActionRow className="[&>*]:w-full lg:[&>*]:w-auto">
                       <Btn href={`/app/mentors/${m.id}`} variant="outline" size="sm">{tr("mentors.readMore")}</Btn>
                       {/* Not offered twice. The server refuses a second open
                           request with a 409, and the pill above already says
@@ -221,7 +230,7 @@ export default function MentorsPage() {
                                sentBody="She usually replies within a day or two. It is under My sessions until she does."
                                sentLink={{ href: "/app/mentors", label: "See your sessions" }} />
                       )}
-                    </span>
+                    </ActionRow>
                   </div>
                 </Card>
               ))}
@@ -254,9 +263,9 @@ export default function MentorsPage() {
                     <h2 className="min-w-0 flex-1 truncate text-sm font-semibold" style={{ color: "var(--ux-ink)" }}>
                       {s.topic}
                     </h2>
-                    <Pill tone={s.state === "Upcoming" ? "brand" : s.state === "Requested" ? "blue" : "neutral"} size="sm">
+                    <Tag tone={s.state === "Upcoming" ? "brand" : s.state === "Requested" ? "blue" : "neutral"} size="sm">
                       {s.state}
-                    </Pill>
+                    </Tag>
                   </div>
                   <p className="mt-1 flex flex-wrap items-center gap-x-3 text-xs" style={{ color: "var(--ux-muted)" }}>
                     <span className="inline-flex items-center gap-1"><Icons.User className="h-3.5 w-3.5" /> {s.mentor}</span>

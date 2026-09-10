@@ -630,3 +630,58 @@
     white-space: nowrap;
   }
 }
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   The type scale, on a phone.
+
+   This is the largest single reason the app reads as a website. The scale has
+   four small steps — `text-3xs` 10px, `text-2xs` 11px, `text-xsm` 13px,
+   `text-smd` 15px — and they are used 1,460 times between them. `text-xsm`
+   alone appears 806 times, and it is 13px: it is the app's workhorse body
+   size.
+
+   13px is a desktop body size. It is correct at 60cm on a colour-managed
+   monitor, and it is small at arm's length on a bus. iOS sets Body at 17 and
+   Footnote at 13; Material sets Body Large at 16. An app whose most common
+   text is 13px is not "dense", it is a web page.
+
+   Measured on the sweep before this block existed: 23–43 pieces of text under
+   12px on every member screen at 390x844.
+
+   Raising the SCALE rather than editing 1,460 call sites means every screen
+   moves at once, and the relationships between the steps are preserved — this
+   is a translation of the scale onto a phone, not a set of exceptions.
+
+   The steps stay distinct (11 / 12.5 / 15 / 16), so nothing that relied on two
+   sizes being different collapses into one.
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+@media (max-width: 1023px) {
+  .ux {
+    /* Caption. The smallest thing on the screen; a timestamp, a badge count. */
+    --text-3xs: 0.6875rem;  /* 10px  -> 11px */
+    /* Secondary. Metadata under a title. */
+    --text-2xs: 0.78125rem; /* 11px  -> 12.5px */
+    /* THE body size. 806 uses. This is the one that matters. */
+    --text-xsm: 0.9375rem;  /* 13px  -> 15px */
+    /* Emphasised body. */
+    --text-smd: 1rem;       /* 15px  -> 16px */
+  }
+}
+
+/* ── Tap targets that the scale change does not fix ──────────────────────── */
+
+@media (max-width: 1023px) {
+  /*
+    The Earn board's pills were 36px. That is over the 24px WCAG 2.5.5 floor
+    and well under Apple's 44 and Material's 48, and the sweep counted 29 of
+    them on one screen — a row of near-misses is a row of mis-taps.
+
+    Height only. Making them wider would push the row further off-screen for
+    no gain; a 44px-tall pill is already comfortably hittable.
+  */
+  .ux [data-earn-chip],
+  .ux [data-earn-chips] > * {
+    min-height: 44px;
+  }
+}

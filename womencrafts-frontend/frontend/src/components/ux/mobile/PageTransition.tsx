@@ -64,6 +64,24 @@ const CSS = `
   .ux .ux-swap > * {
     animation: ux-page-in 280ms cubic-bezier(0.32, 0.72, 0, 1) both;
   }
+
+  /*
+    A screen that starts 26px to the right is 26px wider than the scroller for
+    as long as it takes to arrive, and a scroller with somewhere to go
+    horizontally can be dragged there. Measured mid-slide: scrollWidth 416
+    against a 390px viewport, and `scrollLeft = 999` really did land on 26.
+
+    `clip` and not `hidden`: `hidden` would make this a horizontal scroll
+    container as well, which changes what `scrollLeft`, scroll anchoring and
+    `scrollIntoView` do to a scroller the whole shell measures itself against.
+    `clip` only stops the paint. It is also a no-op for the content itself —
+    on every screen measured (/app, /learn, /earn, /work, /circle,
+    /opportunities, /wallet) `#ux-scroll.scrollWidth` already equals its
+    clientWidth, because the carousels that do scroll sideways each have their
+    own container inside this one, and clipping an ancestor does not touch
+    them.
+  */
+  .ux #ux-scroll { overflow-x: clip; }
 }
 
 @media (prefers-reduced-motion: reduce) {

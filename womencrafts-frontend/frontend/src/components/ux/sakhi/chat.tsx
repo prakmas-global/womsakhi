@@ -292,7 +292,7 @@ const CSS = `
     With ~300px of keys up, the dock has to hold the composer and nothing else
     that can wait. The safety line and the suggestion chips are worth their
     space while she is reading and are worth less than two lines of thread
-    while she is typing, so `data-ux-kb` — set by `useKeyboardInset` — takes
+    while she is typing, so data-ux-kb — set by useKeyboardInset — takes
     them away and gives them back when the keyboard closes.
   */
   html[data-ux-kb] .ux .ux-chat-tip { display: none; }

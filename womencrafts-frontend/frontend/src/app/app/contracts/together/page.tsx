@@ -4,7 +4,8 @@ import { useCallback, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 
 import { HomeShell } from "@/components/ux/home/HomeShell";
-import { Back, Btn, Card, I, Pill, SectionHead, v } from "@/components/ux/kit";
+import { Tag } from "@/components/ux/work/native";
+import { Back, Btn, Card, I, SectionHead, v } from "@/components/ux/kit";
 import { formatRupees } from "@/components/ux/kit";
 import { GROUP_STEPS, VEHICLES, type Vehicle } from "@/components/ux/reach/data";
 import { useT } from "@/i18n";
@@ -51,10 +52,10 @@ export default function TogetherPage() {
         <Back to="/app/contracts" label={tr("contractsTogether.backToBigOrders")} />
 
         <header>
-          <p className="text-2xs font-extrabold uppercase tracking-[0.2em]" style={{ color: v("--ux-brand") }}>{tr("contractsTogether.biddingTogether")}</p>
-          <h1 className="mt-2 text-[clamp(1.5rem,3.2vw,2.125rem)] font-extrabold leading-[1.1] tracking-[-0.035em]"
+          <p className="text-[13px] font-extrabold uppercase tracking-[0.2em] lg:text-2xs" style={{ color: v("--ux-brand") }}>{tr("contractsTogether.biddingTogether")}</p>
+          <h1 className="ux-screen-title mt-2 text-[clamp(1.5rem,3.2vw,2.125rem)] font-extrabold leading-[1.1] tracking-[-0.035em]"
               style={{ color: v("--ux-ink") }}>{tr("contractsTogether.whoActuallySignsIt")}</h1>
-          <p className="mt-1.5 max-w-[58ch] text-sm leading-relaxed" style={{ color: v("--ux-muted") }}>
+          <p className="mt-1.5 max-w-[58ch] text-[15px] leading-snug lg:text-sm lg:leading-relaxed" style={{ color: v("--ux-muted") }}>
             Fourteen of you can make three hundred covers. But a company will not sign a contract
             with fourteen people, and will not send fourteen payments. Somebody, or something, has
             to be the name on the paper. There are three ways to do it and none of them is free.
@@ -83,20 +84,20 @@ export default function TogetherPage() {
                 {chosen.id === "v3" && "The group itself becomes the counterparty. It costs about ₹15,000 and takes around eight weeks, and it never goes away — there are filings every year. In return no single woman is personally liable, and government supply contracts reserved for such groups become possible."}
               </p>
               <div className="mt-3 flex flex-wrap gap-2">
-                <Pill tone={chosen.canSign ? "green" : "neutral"} size="sm">
+                <Tag tone={chosen.canSign ? "green" : "neutral"} size="sm">
                   {chosen.canSign ? tr("contractsTogether.canSignAContract")
               : tr("contractsTogether.cannotSignAsAGroup")}
-                </Pill>
-                <Pill tone={chosen.canHoldMoney ? "green" : "neutral"} size="sm">
+                </Tag>
+                <Tag tone={chosen.canHoldMoney ? "green" : "neutral"} size="sm">
                   {chosen.canHoldMoney ? tr("contractsTogether.canReceiveOnePayment")
               : tr("contractsTogether.noSinglePayment")}
-                </Pill>
-                <Pill tone="neutral" size="sm">
+                </Tag>
+                <Tag tone="neutral" size="sm">
                   {chosen.costMinor === 0 ? "No cost" : formatRupees(chosen.costMinor)}
-                </Pill>
-                <Pill tone="neutral" size="sm">
+                </Tag>
+                <Tag tone="neutral" size="sm">
                   {chosen.weeks === 0 ? "Ready now" : `About ${chosen.weeks} weeks`}
-                </Pill>
+                </Tag>
               </div>
             </div>
           </div>

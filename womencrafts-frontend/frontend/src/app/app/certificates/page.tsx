@@ -4,11 +4,11 @@ import { useState } from "react";
 import * as Icons from "@/components/ux/icons";
 
 import {
-  ActionBtn, Btn, Card, Pill, Progress, SectionHead,
+  ActionBtn, Btn, Card, Progress, SectionHead,
   SourceNote, copy, printCertificate
 } from "@/components/ux/kit";
 import { HomeShell } from "@/components/ux/home/HomeShell";
-import { ScreenHead, Segments } from "@/components/ux/learning/native";
+import { ScreenHead, Segments, Tag } from "@/components/ux/learning/native";
 import { useLearning } from "@/components/ux/growth";
 import { useMe } from "@/components/ux/me";
 import { useCertificates } from "@/components/ux/live";
@@ -111,7 +111,7 @@ export default function CertificatesPage() {
                   <span className="inline-flex items-center gap-1"><Icons.Clock className="h-3.5 w-3.5" /> {c.hours} hours</span>
                 </p>
                 <div className="mt-2.5 flex flex-wrap items-center gap-2">
-                  <Pill tone="brand" size="sm">{c.skill}</Pill>
+                  <Tag tone="brand" size="sm">{c.skill}</Tag>
                   {c.verified && (
                     <span className="inline-flex items-center gap-1 text-2xs font-medium" style={{ color: "var(--ux-green-ink)" }}>
                       <Icons.BadgeCheck className="h-[14px] w-[14px]" /> Verifiable
