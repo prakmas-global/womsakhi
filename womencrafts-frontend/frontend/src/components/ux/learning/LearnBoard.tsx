@@ -35,38 +35,49 @@ type Place = {
   href: string;
   /** Mentors is the one pink card in the board, as drawn. */
   pink?: boolean;
+  /**
+   * The picture in the card's bottom-right corner.
+   *
+   * These are what the board fills its cards with, and what the version
+   * without them left hollow: title, two lines, then a gap, then a button
+   * pinned to the floor. Supplied per card, 296-372px wide, and drawn at ~150
+   * — they have no headroom above that, so they are never scaled up.
+   */
+  art: string;
+  /** How wide the art's own frame is, so each keeps its native proportions. */
+  artW: number;
 };
 
 const PLACES: Place[] = [
   {
     id: "programs", icon: "BookOpen", title: "Courses", sub: "Started and suggested",
     body: "Explore curated courses designed for real-life skills, from basics to advanced levels. Learn at your own pace with simple lessons, videos and practice activities.",
-    cta: "Browse courses", tag: "Learn new skills", href: "/app/programs",
+    cta: "Browse courses", tag: "Learn new skills", href: "/app/programs", art: "learn-books", artW: 296,
   },
   {
     id: "mentors", icon: "Users", title: "Mentors", sub: "Women who have done it",
     body: "Connect with inspiring women mentors across different fields. Get guidance, ask questions and learn from their real experiences.",
-    cta: "Find mentors", tag: "Get guidance", href: "/app/mentors", pink: true,
+    cta: "Find mentors", tag: "Get guidance", href: "/app/mentors", art: "learn-mentors", artW: 332, pink: true,
   },
   {
     id: "certificates", icon: "Award", title: "Certificates", sub: "Proof you can show",
     body: "Earn certificates by completing courses and skill tests. Showcase them on your profile and use them for jobs, freelance work or personal growth.",
-    cta: "View certificates", tag: "Show your progress", href: "/app/certificates",
+    cta: "View certificates", tag: "Show your progress", href: "/app/certificates", art: "learn-certificate", artW: 322,
   },
   {
     id: "library", icon: "Handshake", title: "Teach and learn", sub: "Swap what you know",
     body: "Share your knowledge, skills or experiences with other women. You can also learn directly from community members.",
-    cta: "Start teaching", tag: "Teach & learn together", href: "/app/library",
+    cta: "Start teaching", tag: "Teach & learn together", href: "/app/library", art: "learn-teaching", artW: 338,
   },
   {
     id: "assess", icon: "BadgeCheck", title: "Prove your skills", sub: "A short test, then a certificate",
     body: "Take skill tests to validate what you know. Get certified and build trust for opportunities, work or collaborations.",
-    cta: "Take a test", tag: "Build your credibility", href: "/app/assess",
+    cta: "Take a test", tag: "Build your credibility", href: "/app/assess", art: "learn-skilltest", artW: 337,
   },
   {
     id: "digital", icon: "Smartphone", title: "Using a phone", sub: "From the very beginning",
     body: "New to smartphones? Learn step-by-step with easy guides on using a phone, apps, internet, safety and more — in simple language.",
-    cta: "Start learning", tag: "Digital confidence", href: "/app/digital",
+    cta: "Start learning", tag: "Digital confidence", href: "/app/digital", art: "learn-phone", artW: 372,
   },
 ];
 
@@ -158,6 +169,18 @@ function Hero() {
     <section className="ux-sq relative isolate overflow-hidden rounded-[18px]"
              style={{ border: `1px solid ${v("--ux-band-edge")}`,
                       background: v("--ux-band-learn") }}>
+      {/*
+        The supplied banner arrives with the headline, the paragraph and all
+        four chips baked into it as pixels. None of that ships: this app is
+        translated into eighteen languages and read aloud for women who cannot
+        read, and a sentence baked into a picture cannot be translated,
+        selected or spoken. So the art is cut in two, at the point where the
+        baked copy ends and the picture begins.
+
+        The handwriting is the exception, and stays a picture in both pieces —
+        "Small Steps Big Changes" and the quote inside the card are lettering
+        no font reproduces. Same rule the Work board follows.
+      */}
       {/* eslint-disable-next-line @next/next/no-img-element */}
       <img
         src="/ux/art/hero-learn-banner.webp"
@@ -165,14 +188,23 @@ function Hero() {
         aria-hidden
         decoding="async"
         fetchPriority="high"
-        width={1720}
-        height={587}
-        /* The picture's own left edge is the same pale pink as the band, so the
-           mask has only to dissolve the last of it — a harder fade would eat
-           the "Small Steps Big Changes" lettering, which sits close to it. */
-        className="pointer-events-none absolute inset-y-0 end-0 hidden h-full w-[57%] object-cover object-center lg:block"
-        style={{ maskImage: "linear-gradient(to right, transparent 0%, #000 14%)",
-                 WebkitMaskImage: "linear-gradient(to right, transparent 0%, #000 14%)" }}
+        width={1450}
+        height={535}
+        className="pointer-events-none absolute inset-y-0 end-0 hidden h-full w-[44%] object-cover object-left lg:block"
+        style={{ maskImage: "linear-gradient(to right, transparent 0%, #000 13%)",
+                 WebkitMaskImage: "linear-gradient(to right, transparent 0%, #000 13%)" }}
+      />
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img
+        src="/ux/art/hero-learn-script.webp"
+        alt=""
+        aria-hidden
+        decoding="async"
+        width={400}
+        height={559}
+        className="pointer-events-none absolute end-[45%] top-[12%] hidden h-[68%] w-auto object-contain xl:block"
+        style={{ maskImage: "linear-gradient(to right, #000 66%, transparent 92%)",
+                 WebkitMaskImage: "linear-gradient(to right, #000 66%, transparent 92%)" }}
       />
 
       <div className="relative p-5 sm:p-6 lg:ps-8"
@@ -273,18 +305,32 @@ function PlaceCard({ p }: { p: Place }) {
         {p.body}
       </p>
 
-      {/* One line, as drawn. At three columns on a 1440 laptop the column is
-          273px and the pair wrapped, which cost a row of height on a board
-          that has none to give. The button keeps its full label; the tag
-          beside it is the part that gives way. */}
-      <div className="mt-auto flex shrink-0 items-center gap-1.5"
-           style={{ padding: "var(--fb-pad)", paddingTop: "calc(var(--fb-pad) - 3px)" }}>
-        <Btn href={p.href} variant="soft" size="sm" iconEnd="ArrowRight"
-             className="shrink-0 whitespace-nowrap">{p.cta}</Btn>
-        <span className="ux-tag-optional whitespace-nowrap rounded-full px-2.5 py-1.5 text-2xs font-semibold"
-              style={{ background: v("--ux-surface-2"), color: v("--ux-muted") }}>
-          {p.tag}
-        </span>
+      {/*
+        The button and the picture share the floor of the card.
+
+        This used to be the button and a small text tag, with the picture
+        nowhere — which is why every card had a hollow gap between its two
+        lines of description and a button pinned to the bottom. The artwork
+        fills that space and does it with something worth looking at.
+
+        It bleeds off the bottom-right corner on purpose. Each file carries a
+        pale ground and its own rounded corners baked into the pixels, so laid
+        flat inside the card it would draw a second, misaligned card; pushed
+        past the edge, the card's own `overflow-hidden` cuts those corners off
+        and what remains reads as part of the card.
+      */}
+      <div className="relative mt-auto flex shrink-0 items-end">
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img src={`/ux/art/${p.art}.webp`} alt="" aria-hidden loading="lazy" decoding="async"
+             width={p.artW} height={202}
+             className="pointer-events-none absolute bottom-0 end-[-10px] w-[128px] max-w-[52%] object-contain object-right-bottom wide:w-[150px]"
+             style={{ maskImage: "linear-gradient(to right, transparent, #000 22%), linear-gradient(to bottom, transparent, #000 26%)",
+                      WebkitMaskImage: "linear-gradient(to right, transparent, #000 22%), linear-gradient(to bottom, transparent, #000 26%)",
+                      maskComposite: "intersect", WebkitMaskComposite: "source-in" }} />
+        <div className="relative" style={{ padding: "var(--fb-pad)", paddingTop: "calc(var(--fb-pad) - 3px)" }}>
+          <Btn href={p.href} variant="soft" size="sm" iconEnd="ArrowRight"
+               className="shrink-0 whitespace-nowrap">{p.cta}</Btn>
+        </div>
       </div>
     </Card>
   );
