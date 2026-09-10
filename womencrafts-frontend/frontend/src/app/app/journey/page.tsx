@@ -96,9 +96,7 @@ export default function JourneyPage() {
     id: g.id,
     title: g.title,
     pct: goalPct(g),
-    have: g.targetMinor
-      ? `${Math.round((g.haveMinor / g.targetMinor) * 100)}%`
-      : g.haveMinor > 0 ? "Started" : "Not yet",
+    have: goalPct(g) > 0 ? `${goalPct(g)}%` : "Not yet",
     icon: g.icon, tint: g.tint, ink: g.ink,
   })), []);
 
