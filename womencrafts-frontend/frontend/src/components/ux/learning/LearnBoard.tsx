@@ -2,6 +2,7 @@
 
 import { HomeShell } from "@/components/ux/home/HomeShell";
 import { TransitionLink } from "@/components/ux/TransitionLink";
+import { ListGroup, ListRow, type RowTint } from "@/components/ux/mobile/ListRow";
 import { Btn, Card, I, IconTile, v } from "@/components/ux/kit";
 
 /**
@@ -35,6 +36,8 @@ type Place = {
   href: string;
   /** Mentors is the one pink card in the board, as drawn. */
   pink?: boolean;
+  /** Which tinted tile this row wears in the phone list. */
+  row: RowTint;
   /**
    * The picture in the card's bottom-right corner.
    *
@@ -50,32 +53,32 @@ type Place = {
 
 const PLACES: Place[] = [
   {
-    id: "programs", icon: "BookOpen", title: "Courses", sub: "Started and suggested",
+    id: "programs", row: "violet", icon: "BookOpen", title: "Courses", sub: "Started and suggested",
     body: "Explore curated courses designed for real-life skills, from basics to advanced levels. Learn at your own pace with simple lessons, videos and practice activities.",
     cta: "Browse courses", tag: "Learn new skills", href: "/app/programs", art: "learn-books", artW: 296,
   },
   {
-    id: "mentors", icon: "Users", title: "Mentors", sub: "Women who have done it",
+    id: "mentors", row: "pink", icon: "Users", title: "Mentors", sub: "Women who have done it",
     body: "Connect with inspiring women mentors across different fields. Get guidance, ask questions and learn from their real experiences.",
     cta: "Find mentors", tag: "Get guidance", href: "/app/mentors", art: "learn-mentors", artW: 332, pink: true,
   },
   {
-    id: "certificates", icon: "Award", title: "Certificates", sub: "Proof you can show",
+    id: "certificates", row: "amber", icon: "Award", title: "Certificates", sub: "Proof you can show",
     body: "Earn certificates by completing courses and skill tests. Showcase them on your profile and use them for jobs, freelance work or personal growth.",
     cta: "View certificates", tag: "Show your progress", href: "/app/certificates", art: "learn-certificate", artW: 322,
   },
   {
-    id: "library", icon: "Handshake", title: "Teach and learn", sub: "Swap what you know",
+    id: "library", row: "green", icon: "Handshake", title: "Teach and learn", sub: "Swap what you know",
     body: "Share your knowledge, skills or experiences with other women. You can also learn directly from community members.",
     cta: "Start teaching", tag: "Teach & learn together", href: "/app/library", art: "learn-teaching", artW: 338,
   },
   {
-    id: "assess", icon: "BadgeCheck", title: "Prove your skills", sub: "A short test, then a certificate",
+    id: "assess", row: "blue", icon: "BadgeCheck", title: "Prove your skills", sub: "A short test, then a certificate",
     body: "Take skill tests to validate what you know. Get certified and build trust for opportunities, work or collaborations.",
     cta: "Take a test", tag: "Build your credibility", href: "/app/assess", art: "learn-skilltest", artW: 337,
   },
   {
-    id: "digital", icon: "Smartphone", title: "Using a phone", sub: "From the very beginning",
+    id: "digital", row: "orange", icon: "Smartphone", title: "Using a phone", sub: "From the very beginning",
     body: "New to smartphones? Learn step-by-step with easy guides on using a phone, apps, internet, safety and more — in simple language.",
     cta: "Start learning", tag: "Digital confidence", href: "/app/digital", art: "learn-phone", artW: 306,
   },
@@ -123,7 +126,9 @@ export function LearnBoard() {
         shrink at all — without it a flex child refuses to go below its
         content and the scrollbar comes back.
       */}
-      <div className="ux-fitboard flex flex-col xl:min-h-full" style={{ gap: "var(--fb-gap)" }}>
+      <Phone />
+
+      <div className="ux-fitboard hidden flex-col lg:flex xl:min-h-full" style={{ gap: "var(--fb-gap)" }}>
         <Hero />
 
         <div className="flex flex-col xl:flex-1 xl:flex-row xl:items-stretch"
@@ -468,6 +473,144 @@ function YouCanDoThis() {
       </span>
       <I name="Heart" className="h-[15px] w-[15px]" sw={0}
          style={{ color: v("--ux-pink"), fill: v("--ux-pink") }} />
+    </div>
+  );
+}
+
+/* ── the same board, as a phone app ───────────────────────────────────────── */
+
+/**
+ * Learn on a phone.
+ *
+ * The desktop board above is six cards in a grid, each with a heading, a
+ * chevron, a four-line paragraph, a soft button and a picture in its corner.
+ * Narrowed to 390 that becomes six full-screen slabs stacked one under the
+ * other: measured on the before shot, the first row of the list ("Mentors")
+ * started 1,180px down the page, so the answer to "what is in Learn?" was two
+ * and a half screens of scrolling away. It is a dashboard, and a dashboard is
+ * the one shape a phone has no room for.
+ *
+ * This is the native answer to the same question: the picture, one big title,
+ * then the six places as a grouped list — icon, title, subtitle, chevron,
+ * hairline inset past the icon. Every destination the board carries is here,
+ * in the same order, and the whole list is above the fold.
+ *
+ * The paragraphs do not come with it. A four-line description of "Courses" is
+ * a thing you read on a website while deciding whether to click; on a phone
+ * the subtitle carries it and the screen behind the row carries the rest.
+ *
+ * Both trees are in the DOM and one is `display: none`, so nothing is
+ * duplicated to a screen reader and the desktop rendering is untouched. The
+ * board's own artwork is `loading="lazy"`, so a hidden card fetches nothing.
+ */
+function Phone() {
+  const pct = Math.round(((DONE + 1) / JOURNEY.length) * 100);
+
+  return (
+    <div className="lg:hidden">
+      {/*
+        The banner, at a height a phone can spend.
+
+        `--fb-banner` is 150px in the phone tier of `mobile.css`; the picture's
+        subject — her face and the quote card — sits in the middle band of it,
+        so `object-position` holds that rather than the ceiling.
+      */}
+      <section className="ux-sq relative overflow-hidden rounded-[16px]"
+               style={{ border: `1px solid ${v("--ux-band-edge")}` }}>
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img src="/ux/art/lm-banner-v2.webp"
+             alt="A woman smiling at her laptop, beside the words “Small steps, big changes”."
+             decoding="async" fetchPriority="high" width={1900} height={648}
+             className="block h-[132px] w-full object-cover"
+             style={{ objectPosition: "34% 44%" }} />
+      </section>
+
+      <h1 className="ux-screen-title mt-4" style={{ color: v("--ux-ink") }}>Learn</h1>
+      <p className="mt-1.5 text-[15px] leading-snug" style={{ color: v("--ux-muted") }}>
+        Learn. Grow. Achieve — at your own pace, in your own time.
+      </p>
+
+      {/*
+        The four promises on one line the thumb pushes along.
+
+        Wrapped, they were four rows of icon-and-label — 130px of screen spent
+        on reassurance before a single destination. `.ux-chiprow` bleeds the
+        row to both edges, which is what tells a thumb there is more of it.
+      */}
+      <div className="ux-chiprow mt-3.5 flex flex-wrap gap-2"
+           style={{ ["--ux-pad" as string]: "20px" }}>
+        {PROMISES.map(([icon, label]) => (
+          <span key={label}
+                className="ux-sq inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-[13px] font-medium"
+                style={{ borderColor: v("--ux-line"), background: v("--ux-surface"), color: v("--ux-ink-2") }}>
+            <I name={icon} className="h-[15px] w-[15px] shrink-0" sw={1.9} style={{ color: v("--ux-brand") }} />
+            {label}
+          </span>
+        ))}
+      </div>
+
+      <div className="mt-5 space-y-5">
+        <ListGroup title="Where to go">
+          {PLACES.map((p) => (
+            <ListRow key={p.id} href={p.href} icon={p.icon} tint={p.row}
+                     title={p.title} subtitle={p.sub} />
+          ))}
+        </ListGroup>
+
+        <section>
+          <h3 className="ux-group-label">Your learning journey</h3>
+          <div className="rounded-[var(--ux-r-lg)] border p-4"
+               style={{ background: v("--ux-surface"), borderColor: v("--ux-line") }}>
+            <div className="flex items-center gap-3.5">
+              <Donut pct={pct} />
+              <div className="min-w-0">
+                <p className="text-[15px] font-bold leading-tight" style={{ color: v("--ux-ink") }}>
+                  {DONE + 1} of {JOURNEY.length} steps complete
+                </p>
+                <p className="mt-1 text-[13px]" style={{ color: v("--ux-muted") }}>
+                  You&rsquo;re on your way!
+                </p>
+              </div>
+            </div>
+
+            <ol className="mt-4 flex flex-col gap-2.5">
+              {JOURNEY.map((step, i) => {
+                const done = i < DONE;
+                const now = i === DONE;
+                return (
+                  <li key={step} className="flex items-center gap-3">
+                    <span aria-hidden
+                          className="grid h-[26px] w-[26px] shrink-0 place-items-center rounded-full text-[12px] font-bold"
+                          style={done ? { background: v("--ux-green"), color: "#fff" }
+                               : now ? { background: v("--ux-brand"), color: "#fff" }
+                               : { background: v("--ux-surface-2"), color: v("--ux-muted"),
+                                   border: `1px solid ${v("--ux-line")}` }}>
+                      {done ? <I name="Check" className="h-[14px] w-[14px]" sw={3} /> : i + 1}
+                    </span>
+                    <span className="min-w-0 text-[15px] leading-snug"
+                          style={{ color: done || now ? v("--ux-ink") : v("--ux-ink-2"),
+                                   fontWeight: now ? 700 : 500 }}>
+                      {step}
+                    </span>
+                    <span className="sr-only">
+                      {done ? " — done" : now ? " — you are here" : " — not started"}
+                    </span>
+                  </li>
+                );
+              })}
+            </ol>
+          </div>
+        </section>
+
+        {/* The sequence, as four rows rather than four cards in a strip. */}
+        <ListGroup title="How it works"
+                   footnote="Each step brings you closer to new opportunities and a stronger, more confident you.">
+          {HOW.map((s, i) => (
+            <ListRow key={s.title} icon={s.icon} tint={s.pink ? "pink" : "violet"}
+                     title={`${i + 1}. ${s.title}`} subtitle={s.body} chevron={false} />
+          ))}
+        </ListGroup>
+      </div>
     </div>
   );
 }

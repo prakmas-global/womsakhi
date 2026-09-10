@@ -587,3 +587,46 @@
     .ux .ux-large-title { animation: none; }
   }
 }
+
+/* A horizontal shelf: one line, thumb-scrolled, bleeding off the right edge so
+   it is visibly continuable. Snap is `proximity`, not `mandatory` — mandatory
+   fights a fast flick and makes the shelf feel sticky. */
+.ux .ux-hscroll {
+  overflow-x: auto;
+  scrollbar-width: none;
+  overscroll-behavior-x: contain;
+  -webkit-overflow-scrolling: touch;
+  scroll-snap-type: x proximity;
+  scroll-padding-inline-start: 16px;
+  padding-bottom: 2px;
+}
+.ux .ux-hscroll::-webkit-scrollbar { display: none; }
+.ux .ux-hscroll > * { scroll-snap-align: start; }
+
+/* ── One floating control, not two ───────────────────────────────────────── */
+
+@media (max-width: 1023px) {
+  /*
+    The safety shortcut and the assistant are both pinned above the tab bar, so
+    a 390px screen carries two floating buttons and a nav bar — three layers of
+    chrome over the content. Native apps allow themselves one.
+
+    Safety is not negotiable on this app, so it stays; what goes is its label.
+    Icon-only it is a 44px circle instead of a 150px pill, which stops it
+    lying across a card, and the `aria-label` still reads "Get help now" so
+    nothing is lost to anyone using a screen reader.
+  */
+  .ux a[aria-label="Get help now"] {
+    width: 44px;
+    padding-inline: 0;
+    justify-content: center;
+  }
+  .ux a[aria-label="Get help now"] > span:last-child {
+    /* Visually gone, still announced. */
+    position: absolute;
+    width: 1px; height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
+}
