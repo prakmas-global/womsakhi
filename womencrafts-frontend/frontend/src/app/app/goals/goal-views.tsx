@@ -24,7 +24,7 @@ export function GoalsHero({ chips, active, onPick }: {
           <p className="text-2xs font-extrabold uppercase tracking-[0.16em]" style={{ color: v("--ux-muted") }}>
             My goals
           </p>
-          <h1 className="mt-2.5 text-4xl font-extrabold leading-[1.06] tracking-[-0.035em] min-[1440px]:text-4xlm"
+          <h1 className="mt-2.5 text-4xl font-extrabold leading-[1.06] tracking-[-0.035em] wide:text-4xlm"
               style={{ color: v("--ux-ink") }}>
             Big dreams. Real progress.
           </h1>
@@ -33,14 +33,14 @@ export function GoalsHero({ chips, active, onPick }: {
           </p>
         </div>
 
-        <div className="relative hidden w-[200px] shrink-0 items-end xl:flex min-[1440px]:w-[400px]">
+        <div className="relative hidden w-[200px] shrink-0 items-end xl:flex wide:w-[400px]">
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img src="/ux/art/scene-woman-planning-board.webp" alt="" aria-hidden loading="lazy" decoding="async"
                className="max-h-[240px] w-[200px] self-end object-contain object-bottom"
                style={{ maskImage: "linear-gradient(100deg, transparent, #000 30%)",
                         WebkitMaskImage: "linear-gradient(100deg, transparent, #000 30%)" }} />
 
-          <div className="hidden w-[186px] flex-col items-end gap-4 self-center pe-6 min-[1440px]:flex">
+          <div className="hidden w-[186px] flex-col items-end gap-4 self-center pe-6 wide:flex">
             <p className="text-end text-smd font-bold italic leading-tight"
                style={{ color: v("--ux-pink-ink"), fontFamily: "var(--font-display)" }}>
               A brighter you<br />is possible <Icons.Heart className="inline h-[13px] w-[13px]" />

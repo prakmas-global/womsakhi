@@ -43,7 +43,7 @@ export function JourneyHero() {
           </figure>
         </div>
 
-        <div className="relative hidden w-[200px] shrink-0 items-end xl:flex min-[1440px]:w-[400px]">
+        <div className="relative hidden w-[200px] shrink-0 items-end xl:flex wide:w-[400px]">
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img src="/ux/art/scene-woman-walking-with-bag.webp" alt="" aria-hidden loading="lazy" decoding="async"
                className="max-h-[300px] w-[186px] self-end object-contain object-bottom"
@@ -51,7 +51,7 @@ export function JourneyHero() {
                         WebkitMaskImage: "linear-gradient(100deg, transparent, #000 32%)" }} />
 
           {/* The five signposts of the path, staggered the way they are on it. */}
-          <ul className="hidden w-[186px] flex-col gap-1.5 self-center pe-6 min-[1440px]:flex">
+          <ul className="hidden w-[186px] flex-col gap-1.5 self-center pe-6 wide:flex">
             {SIGNS.map((s, i) => (
               <li key={s} className="rounded-[9px] px-3 py-1.5 text-end text-2xs font-bold"
                   style={{ background: v("--ux-surface"), color: v("--ux-ink-2"),
@@ -62,7 +62,7 @@ export function JourneyHero() {
             ))}
           </ul>
 
-          <p className="pointer-events-none absolute end-6 top-5 hidden text-end text-smd font-bold italic leading-tight min-[1440px]:block"
+          <p className="pointer-events-none absolute end-6 top-5 hidden text-end text-smd font-bold italic leading-tight wide:block"
              style={{ color: v("--ux-pink-ink"), fontFamily: "var(--font-display)" }}>
             A brighter you <Icons.Heart className="inline h-[13px] w-[13px]" />
           </p>

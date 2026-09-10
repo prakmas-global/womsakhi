@@ -150,7 +150,7 @@ export default function MessagesPage() {
   }, [shown, openId, rows.length]);
 
   return (
-    <HomeShell active="/app/messages" bare wide>
+    <HomeShell active="/app/messages" bare>
       {/*
         An inbox is an app, not a page.
 
@@ -173,7 +173,7 @@ export default function MessagesPage() {
         <Header summary={summary} className={onThread ? "hidden lg:flex" : "flex"}
                 rows={rows} onPick={(id) => { setOpenId(id); setOnThread(true); }} />
 
-        <div className="grid min-h-0 flex-1 grid-cols-1 gap-4 lg:grid-cols-[322px_minmax(0,1fr)] xl:grid-cols-[322px_minmax(0,1fr)_272px]">
+        <div className="ux-inbox-grid grid min-h-0 flex-1 gap-4">
           <Inbox
             waiting={waitingRows} rest={restRows} counts={summary?.counts ?? {}}
             filter={filter} setFilter={setFilter} search={search} setSearch={setSearch}
@@ -185,7 +185,11 @@ export default function MessagesPage() {
                       className={onThread ? "flex" : "hidden lg:flex"} onBack={() => setOnThread(false)}
                       onStar={toggleStar} onUnread={markUnread} onDelete={removeConversation} />
             : <EmptyThread className={onThread ? "grid" : "hidden lg:grid"} />}
-          {thread && <About conv={thread} onStar={toggleStar} onDraft={setDraft} />}
+          {thread && (
+            <div className="hidden wide:block">
+              <About conv={thread} onStar={toggleStar} onDraft={setDraft} />
+            </div>
+          )}
         </div>
 
         {error && (

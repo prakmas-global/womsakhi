@@ -44,6 +44,22 @@
        text-xsm   13px    dense body copy in cards
        text-smd   15px    lead-in copy just under `text-base`
      ───────────────────────────────────────────────────────────────────────── */
+  /* One breakpoint of our own, between Tailwind's xl (1280) and 2xl (1536).
+     Three of the member screens have a third column that only earns its place
+     around there: below it the conversation, the heading or the chips get
+     squeezed, above it there is room for all of them.
+
+     Safe for a base-vs-variant pair (`hidden wide:flex`, `w-[200px]
+     wide:w-[400px]`), because a bare utility always sorts before a variant.
+
+     NOT safe for variant-vs-variant. Measured in the built stylesheet:
+     `.wide\:grid-cols-…` lands at byte 167418 and `.lg\:grid-cols-…` at
+     178676, so `lg:` wins at every width where both match — the inbox's third
+     panel never appeared, silently. Where one breakpoint has to beat another,
+     write the media queries out by hand, in order, the way `.ux-inbox-grid`
+     below does. */
+  --breakpoint-wide: 1400px;
+
   --text-3xs: 0.625rem;
   --text-2xs: 0.6875rem;
   --text-xsm: 0.8125rem;

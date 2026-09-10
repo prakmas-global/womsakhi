@@ -1574,3 +1574,17 @@
    controls must stay on one line. The scroll is real; only the bar is hidden. */
 .ux-noscroll { scrollbar-width: none; -ms-overflow-style: none; overscroll-behavior-x: contain; }
 .ux-noscroll::-webkit-scrollbar { display: none; }
+
+/* ── The inbox's three panels ──────────────────────────────────────────────
+   Written as explicit media queries rather than Tailwind variants because
+   `lg:` and a wider breakpoint cannot be relied on to sort in that order —
+   see the note in design-system/tokens.css. The third panel earns its place
+   at 1400: below that it leaves the conversation itself narrower than the
+   list of conversations beside it. */
+.ux-inbox-grid { grid-template-columns: minmax(0, 1fr); }
+@media (min-width: 1024px) {
+  .ux-inbox-grid { grid-template-columns: 322px minmax(0, 1fr); }
+}
+@media (min-width: 1400px) {
+  .ux-inbox-grid { grid-template-columns: 322px minmax(0, 1fr) 272px; }
+}
