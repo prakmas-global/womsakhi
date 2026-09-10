@@ -31,7 +31,10 @@ export function Brand({
    * letter into the edge — these numbers add up to 207 and leave a margin.
    */
   const s = {
-    sm: { mark: 30, word: 92, tag: 8, gap: 7 },
+    /* Sized against the 70px topbar, not the 62px one it used to be: 34px of
+       mark and 108px of wordmark fill the bar without crowding it, and the
+       wordmark's gradient needs the width to stay legible at a glance. */
+    sm: { mark: 34, word: 108, tag: 8, gap: 8 },
     md: { mark: 44, word: 128, tag: 8.5, gap: 8 },
     lg: { mark: 72, word: 212, tag: 11.5, gap: 13 },
   }[size];
@@ -40,7 +43,11 @@ export function Brand({
     <span className="ux-hov flex flex-col" style={{ gap: 3 }}>
       <span className="flex items-center" style={{ gap: s.gap }}>
         <span className="relative grid shrink-0 place-items-center"
-              style={{ width: s.mark * 1.6, height: s.mark }}>
+              /* 1.795, which is the mark's own 420x234. It was 1.6, cut for the
+                 previous emblem — at the wrong ratio `object-contain` letterboxes
+                 the artwork inside its box and the two women render smaller than
+                 the space allows, which is what made it look thin in the bar. */
+              style={{ width: s.mark * 1.795, height: s.mark }}>
           {/* The halo. Sized off the mark so every size keeps the same ratio. */}
           <span
             aria-hidden
@@ -53,8 +60,11 @@ export function Brand({
           />
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
-            src="/ux/brand/womsakhi-emblem.webp"
+            src="/ux/brand/mark.webp"
             alt=""
+            width={420}
+            height={234}
+            decoding="async"
             className="ux-brand-mark relative h-full w-full object-contain"
             draggable={false}
           />
@@ -62,8 +72,11 @@ export function Brand({
 
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
-          src="/ux/brand/womsakhi-wordmark.webp"
+          src="/ux/brand/wordmark.webp"
           alt="WomSakhi"
+          width={900}
+          height={300}
+          decoding="async"
           style={{ width: s.word }}
           className="h-auto shrink-0"
           draggable={false}

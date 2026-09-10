@@ -1,18 +1,20 @@
 "use client";
 
 import { useCallback, useState } from "react";
-import * as Icons from "lucide-react";
+import * as Icons from "@/components/ux/icons";
 
 import { apiMeProfile, type MeProfile } from "@/lib/member-api";
 import { useResource } from "@/lib/use-resource";
 import { useAuth } from "@/context/AuthContext";
 import { Btn, Card, I, Pill, Progress, SectionHead, Stat, Tabs } from "@/components/ux/kit";
 import { HomeShell } from "@/components/ux/home/HomeShell";
+import { ContributionTab, DocumentsTab, ExperienceTab, PortfolioTab, SkillsTab } from "./tabs";
 import { useMe } from "@/components/ux/me";
 import { useCertificates, useCircles, useProgress } from "@/components/ux/live";
 import { useGoals } from "@/components/ux/business";
 import { useMoney } from "@/components/ux/money/live";
 import { formatMoney } from "@/components/ux/kit/money";
+import { useT } from "@/i18n";
 
 /**
  * The five things this profile is actually made of.
@@ -37,6 +39,7 @@ function stepsFor(p: MeProfile | null) {
 
 /** Her profile — and the honest list of what is still missing from it. */
 export default function Profile() {
+  const tr = useT();
   const ME = useMe();
   const { user } = useAuth();
   const [tab, setTab] = useState("Overview");
@@ -74,12 +77,12 @@ export default function Profile() {
     <HomeShell
       active="/app/profile"
       rail={
-        <div className="space-y-[15px]">
+        <div className="space-y-[16px]">
           <Card>
-            <SectionHead title="Profile strength" />
-            <p className="text-[30px] font-bold leading-none" style={{ color: "var(--ux-ink)" }}>{pct}%</p>
+            <SectionHead title={tr("profile.profileStrength")} />
+            <p className="text-2xlm font-bold leading-none" style={{ color: "var(--ux-ink)" }}>{pct}%</p>
             <div className="mt-3"><Progress pct={pct} /></div>
-            <p className="mt-2.5 text-[12px] leading-relaxed" style={{ color: "var(--ux-muted)" }}>
+            <p className="mt-2.5 text-xs leading-relaxed" style={{ color: "var(--ux-muted)" }}>
               {source === "loading"
                 ? "Reading your profile…"
                 : left.length
@@ -96,12 +99,12 @@ export default function Profile() {
             */}
 
           <Card>
-            <SectionHead title="Why it matters" />
+            <SectionHead title={tr("profile.whyItMatters")} />
             <ul className="space-y-2.5">
               {[["Appear in more searches", "Search"],
                 ["Get matched to better work", "Target"],
                 ["Mentors can see your goals", "Users"]].map(([t, ic]) => (
-                <li key={t} className="flex items-start gap-2.5 text-[12.5px] leading-snug" style={{ color: "var(--ux-ink-2)" }}>
+                <li key={t} className="flex items-start gap-2.5 text-xsm leading-snug" style={{ color: "var(--ux-ink-2)" }}>
                   <I name={ic} className="mt-[1px] h-[15px] w-[15px] shrink-0" style={{ color: "var(--ux-brand)" }} /> {t}
                 </li>
               ))}
@@ -110,75 +113,75 @@ export default function Profile() {
         </div>
       }
     >
-      <Card className="mb-[15px]">
+      <Card className="mb-[16px]">
         <div className="flex items-start gap-5">
           <div className="relative shrink-0">
             <span className="ux-hov block h-[92px] w-[92px] overflow-hidden rounded-full"
                   style={{ background: "var(--ux-brand-tint)" }}>
               {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src={avatar} alt="" className="ux-art h-full w-full object-cover" />
+              <img loading="lazy" decoding="async" src={avatar} alt="" className="ux-art h-full w-full object-cover" />
             </span>
             {/* Was a <button> with no handler at all. It goes where the photo
                 is actually changed. */}
             <Btn href="/app/settings/account" variant="soft" size="sm" icon="Camera"
-                 ariaLabel="Change photo"
+                 ariaLabel={tr("profile.changePhoto2")}
                  className="absolute -bottom-1 -end-1 !rounded-full !px-2 !py-2">
-              <span className="sr-only">Change photo</span>
+              <span className="sr-only">{tr("profile.changePhoto")}</span>
             </Btn>
           </div>
           <div className="min-w-0 flex-1">
-            <h1 className="flex items-center gap-2 text-[22px] font-bold" style={{ color: "var(--ux-ink)" }}>
+            <h1 className="flex items-center gap-2 text-xl font-bold" style={{ color: "var(--ux-ink)" }}>
               {name}
               {/* The blue tick was painted on every profile. It now means what
                   the server says it means. */}
               {verified && <Icons.BadgeCheck className="h-5 w-5" style={{ color: "var(--ux-blue)" }} />}
             </h1>
-            <p className="mt-1 text-[13px]" style={{ color: profile?.bio ? "var(--ux-muted)" : "var(--ux-faint)" }}>
+            <p className="mt-1 text-xsm" style={{ color: profile?.bio ? "var(--ux-muted)" : "var(--ux-faint)" }}>
               {profile?.bio || "You have not written a line about yourself yet."}
             </p>
             <div className="mt-3 flex flex-wrap gap-2">
               {/* Three interests — "Digital Marketing", "Financial Freedom",
                   "Career Growth" — were shown as hers on every profile. The
                   server keeps one segment, and only that is shown. */}
-              {verified && <Pill tone="green">Verified member</Pill>}
+              {verified && <Pill tone="green">{tr("profile.verifiedMember")}</Pill>}
               {profile?.segment && <Pill tone="brand">{profile.segment}</Pill>}
             </div>
           </div>
           <div className="flex shrink-0 gap-2">
-            <Btn href="/app/profile/preview" variant="outline" size="sm" icon="Eye">See it as others do</Btn>
-            <Btn href="/app/settings/account" variant="primary" size="sm" icon="Pencil">Edit profile</Btn>
+            <Btn href="/app/profile/preview" variant="outline" size="sm" icon="Eye">{tr("profile.seeItAsOthersDo")}</Btn>
+            <Btn href="/app/settings/account" variant="primary" size="sm" icon="Pencil">{tr("profile.editProfile")}</Btn>
           </div>
         </div>
 
         {/* Every one of these four was a constant: 6, 4, 15 and ₹24,350. */}
-        <div className="mt-5 grid grid-cols-4 gap-[15px] border-t pt-4" style={{ borderColor: "var(--ux-line)" }}>
-          <Stat value={String(progress?.programs_completed ?? 0)} label="Courses finished"
+        <div className="mt-5 grid grid-cols-4 gap-[16px] border-t pt-4" style={{ borderColor: "var(--ux-line)" }}>
+          <Stat value={String(progress?.programs_completed ?? 0)} label={tr("profile.coursesFinished")}
                 icon="BookOpenCheck" tint="--ux-tint-violet" ink="--ux-violet" />
           {/* The one metal surface in the app. Cold and hard is the right
               feeling for something awarded; everywhere else it fights the
               brand's warmth, so it is deliberately not reused. */}
           <div className="flex items-center gap-3">
-            <span className="ux-metal ux-sq grid h-[38px] w-[38px] shrink-0 place-items-center rounded-[11px]">
+            <span className="ux-metal ux-sq grid h-[38px] w-[38px] shrink-0 place-items-center rounded-[12px]">
               <Icons.Award className="ux-ico h-[17px] w-[17px]" strokeWidth={1.9} />
             </span>
             <div className="min-w-0">
-              <p className="text-[17px] font-bold leading-none" style={{ color: "var(--ux-ink)" }}>
+              <p className="text-lg font-bold leading-none" style={{ color: "var(--ux-ink)" }}>
                 {CERTIFICATES.length}
               </p>
-              <p className="mt-1 truncate text-[11.5px]" style={{ color: "var(--ux-muted)" }}>Certificates</p>
+              <p className="mt-1 truncate text-xs" style={{ color: "var(--ux-muted)" }}>Certificates</p>
             </div>
           </div>
-          <Stat value={String(circles.mine.length)} label="Circles joined" icon="UsersRound" tint="--ux-tint-pink" ink="--ux-pink" />
-          <Stat value={formatMoney(earnedMinor)} label="Earned this month" icon="BadgeIndianRupee" tint="--ux-tint-orange" ink="--ux-orange" />
+          <Stat value={String(circles.mine.length)} label={tr("profile.circlesJoined")} icon="UsersRound" tint="--ux-tint-pink" ink="--ux-pink" />
+          <Stat value={formatMoney(earnedMinor)} label={tr("profile.earnedThisMonth")} icon="BadgeIndianRupee" tint="--ux-tint-orange" ink="--ux-orange" />
         </div>
       </Card>
 
-      <div className="mb-[15px]"><Tabs items={["Overview", "Skills", "Experience", "Documents"]} active={tab} onChange={setTab} /></div>
+      <div className="mb-[16px]"><Tabs items={["Overview", "Skills", "Experience", "What you made", "Helping others", "Documents"]} active={tab} onChange={setTab} /></div>
 
       {tab === "Overview" && (
-        <div className="grid grid-cols-[minmax(0,1fr)_320px] gap-[15px]">
+        <div className="grid grid-cols-[minmax(0,1fr)_320px] gap-[16px]">
           <Card>
-            <SectionHead title="Finish your profile"
+            <SectionHead title={tr("profile.finishYourProfile")}
                          sub={left.length ? `${left.length} still to fill in` : "Nothing left to do"} />
             <ul className="space-y-2.5">
               {steps.map((s, i) => (
@@ -194,7 +197,7 @@ export default function Profile() {
                                  borderColor: s.done ? "var(--ux-green)" : "var(--ux-line-strong)" }}>
                     {s.done && <Icons.Check className="h-3.5 w-3.5 text-white" strokeWidth={3} />}
                   </span>
-                  <span className="min-w-0 flex-1 text-[13px]"
+                  <span className="min-w-0 flex-1 text-xsm"
                         style={{ color: s.done ? "var(--ux-muted)" : "var(--ux-ink)",
                                  textDecoration: s.done ? "line-through" : "none" }}>
                     {s.label}
@@ -207,13 +210,13 @@ export default function Profile() {
           </Card>
 
           <Card>
-            <SectionHead title="About you" action="Edit"
+            <SectionHead title={tr("profile.aboutYou")} action="Edit"
                          onAction={() => { window.location.href = "/app/settings/account"; }} />
             {/* Location, languages, trade and joining date were "Jaipur,
                 Rajasthan", "Hindi, English", "Digital marketing" and "March
                 2025" — for everyone. Each is now her own, or says it is
                 missing rather than filling the gap. */}
-            <dl className="space-y-3 text-[12.5px]">
+            <dl className="space-y-3 text-xsm">
               {[
                 ["Location", profile?.location || ""],
                 ["App language", profile?.locale === "hi" ? "हिंदी" : profile?.locale === "en" ? "English" : profile?.locale || ""],
@@ -231,9 +234,7 @@ export default function Profile() {
             </dl>
 
             <div className="my-4 h-px" style={{ background: "var(--ux-line)" }} />
-            <h3 className="mb-2.5 text-[13px] font-semibold" style={{ color: "var(--ux-ink)" }}>
-              What you are working towards
-            </h3>
+            <h3 className="mb-2.5 text-xsm font-semibold" style={{ color: "var(--ux-ink)" }}>{tr("profile.whatYouAreWorkingTowards")}</h3>
             {/* Three goals at 72%, 65% and 50% were written into the screen.
                 `/me/goals` holds hers, and says so when there are none. */}
             {GOALS.length ? (
@@ -249,25 +250,25 @@ export default function Profile() {
                             style={{ background: "var(--ux-brand-tint)", color: "var(--ux-brand)" }}>
                         <I name={g.icon || "Target"} className="ux-ico h-[14px] w-[14px]" />
                       </span>
-                      <span className="min-w-0 flex-1 truncate text-[12.5px]" style={{ color: "var(--ux-ink-2)" }}>
+                      <span className="min-w-0 flex-1 truncate text-xsm" style={{ color: "var(--ux-ink-2)" }}>
                         {g.label}
                       </span>
-                      <span className="shrink-0 text-[11.5px] font-medium tabular-nums" style={{ color: "var(--ux-muted)" }}>
+                      <span className="shrink-0 text-xs font-medium tabular-nums" style={{ color: "var(--ux-muted)" }}>
                         {g.pct}%
                       </span>
                     </div>
-                    <div className="ms-[38px] mt-2"><Progress pct={g.pct} h={5} track="--ux-track" /></div>
+                    <div className="ms-[40px] mt-2"><Progress pct={g.pct} h={5} track="--ux-track" /></div>
                   </li>
                 ))}
               </ul>
             ) : (
               <>
-                <p className="text-[12.5px] leading-relaxed" style={{ color: "var(--ux-muted)" }}>
+                <p className="text-xsm leading-relaxed" style={{ color: "var(--ux-muted)" }}>
                   You have not set a goal yet. One number you are aiming at makes the rest of this screen
                   mean something.
                 </p>
                 <div className="mt-3">
-                  <Btn href="/app/wallet" variant="soft" size="sm" iconEnd="ArrowRight">Set a goal</Btn>
+                  <Btn href="/app/wallet" variant="soft" size="sm" iconEnd="ArrowRight">{tr("profile.setAGoal")}</Btn>
                 </div>
               </>
             )}
@@ -275,19 +276,11 @@ export default function Profile() {
         </div>
       )}
 
-      {tab !== "Overview" && (
-        <Card>
-          <SectionHead title={tab} sub="Coming from your account once this section is wired up." />
-          <div className="flex items-center gap-4 rounded-[12px] p-4" style={{ background: "var(--ux-surface-2)" }}>
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src="/ux/art/scene-woman-writing-notes.webp" alt="" className="h-[84px] w-[84px] object-contain" />
-            <p className="text-[12.5px] leading-relaxed" style={{ color: "var(--ux-muted)" }}>
-              This is where your {tab.toLowerCase()} will live. The screen is built;
-              the data is not connected yet.
-            </p>
-          </div>
-        </Card>
-      )}
+      {tab === "Skills" && <SkillsTab />}
+      {tab === "Experience" && <ExperienceTab />}
+      {tab === "What you made" && <PortfolioTab />}
+      {tab === "Helping others" && <ContributionTab />}
+      {tab === "Documents" && <DocumentsTab />}
     </HomeShell>
   );
 }

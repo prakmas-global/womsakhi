@@ -178,3 +178,25 @@ class StoryCreate(BaseModel):
         if len(v) > 8000:
             raise ValueError("That's very long — keep it under 8000 characters")
         return v
+
+
+class CommunityOverview(BaseModel):
+    """
+    Everything `/app/circles` shows, in one request.
+
+    The screen used to need three, in a fixed order: her circles, and only once
+    those landed could it know WHICH circle the pot and the wall are about, so
+    the other two waited on the first. That ordering is real — but it is the
+    server's to resolve, where the step between them costs one query rather
+    than a round trip from her phone.
+
+    `circle_id` is the circle the other two fields describe, so the screen does
+    not have to repeat the server's choice of which circle that is. It is null
+    — with `savings` null and `posts` empty — when she has not joined one yet,
+    which is a normal state for a new member and not an error.
+    """
+
+    circles: list[CircleResponse]
+    circle_id: str | None = None
+    savings: CircleSavingsResponse | None = None
+    posts: list[PostResponse] = []

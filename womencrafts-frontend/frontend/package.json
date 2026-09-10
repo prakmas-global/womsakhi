@@ -4,6 +4,8 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
+    "dev:fresh": "rm -rf .next && next dev -p 3100",
+    "clean": "rm -rf .next",
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
@@ -13,6 +15,11 @@
     "check:contrast:full": "node checks/contrast.mjs --full",
     "check:screens": "node checks/screens.mjs",
     "check:rail": "node checks/rail.mjs",
+    "check:rail-steady": "node checks/rail-steady.mjs",
+    "check:rail-fold": "node checks/rail-fold.mjs",
+    "check:learn-board": "node checks/learn-board.mjs",
+    "check:work-board": "node checks/work-board.mjs",
+    "check:home-banner": "node checks/home-banner.mjs",
     "check:ink": "tsx src/theme-engine/__checks__/ink.mjs",
     "check:states": "node checks/states.mjs",
     "check:api": "node checks/api.mjs",
@@ -20,7 +27,16 @@
     "check:a11y": "node checks/a11y.mjs",
     "check:keyboard": "node checks/keyboard.mjs",
     "check:feedback": "node checks/feedback.mjs",
-    "check:toast": "node checks/toast.mjs"
+    "check:toast": "node checks/toast.mjs",
+    "check:waiting": "node checks/waiting.mjs",
+    "check:i18n:coverage": "node checks/i18n-coverage.mjs",
+    "check:type-scale": "node checks/type-scale.mjs",
+    "check:back-flow": "node checks/back-flow.mjs",
+    "check:overlay": "node checks/overlay-scope.mjs",
+    "check:icons": "node checks/icons.mjs",
+    "check:nav": "node checks/nav.mjs",
+    "check:phone-nav": "node checks/phone-nav.mjs",
+    "check:nav-persist": "node checks/nav-persist.mjs"
   },
   "dependencies": {
     "@dnd-kit/core": "^6.3.1",
@@ -48,6 +64,8 @@
     "@types/react-dom": "^19",
     "eslint": "^9",
     "eslint-config-next": "16.2.7",
+    "playwright": "^1.62.1",
+    "pngjs": "^7.0.0",
     "puppeteer-core": "^25.3.0",
     "tailwindcss": "^4",
     "typescript": "^5"

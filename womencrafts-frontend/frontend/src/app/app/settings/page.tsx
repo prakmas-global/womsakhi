@@ -1,13 +1,14 @@
 "use client";
 
 import Link from "next/link";
-import * as Icons from "lucide-react";
+import * as Icons from "@/components/ux/icons";
 
 import { useAuth } from "@/context/AuthContext";
 import { useTheme } from "@/context/ThemeContext";
 import { Btn, Card, IconTile, Pill, SectionHead } from "@/components/ux/kit";
 import { HomeShell } from "@/components/ux/home/HomeShell";
 import { useMe } from "@/components/ux/me";
+import { useT } from "@/i18n";
 
 /**
  * More — the hub behind the last item in the nav.
@@ -40,7 +41,9 @@ const GROUPS = [
         icon: "Palette", tint: "--ux-tint-violet", ink: "--ux-violet" },
       { href: "/app/settings/notifications", label: "Notifications", note: "What reaches you, and how",
         icon: "Bell", tint: "--ux-tint-pink", ink: "--ux-pink" },
-      { href: "/app/settings/voice", label: "Voice", note: "Talk to Sakhi instead of typing",
+      { href: "/app/voice", label: "Reading it out to you", note: "Any screen read aloud, in your language",
+        icon: "Volume2", tint: "--ux-tint-violet", ink: "--ux-violet" },
+      { href: "/app/settings/voice", label: "Talking to Sakhi", note: "Speak to the assistant instead of typing",
         icon: "Mic", tint: "--ux-tint-orange", ink: "--ux-orange" },
       { href: "/app/settings/offline", label: "Working without signal", note: "What stays on your phone",
         icon: "WifiOff", tint: "--ux-tint-green", ink: "--ux-green" },
@@ -64,6 +67,7 @@ const GROUPS = [
 ];
 
 export default function MorePage() {
+  const tr = useT();
   const ME = useMe();
   const { user, signOut } = useAuth();
   const { theme, setTheme } = useTheme();
@@ -73,9 +77,9 @@ export default function MorePage() {
     <HomeShell
       active="/app/settings"
       rail={
-        <div className="space-y-[15px]">
+        <div className="space-y-[16px]">
           <Card className="ux-onscroll-soft">
-            <SectionHead title="Appearance" sub="Changes straight away" />
+            <SectionHead title="Appearance" sub={tr("settings.changesStraightAway")} />
             <div className="ux-sq flex gap-1 rounded-[12px] p-1" style={{ background: "var(--ux-surface-2)" }}>
               {([["light", "Sun", "Light"], ["dark", "Moon", "Dark"], ["system", "Monitor", "Auto"]] as const).map(([t, ic, label]) => {
                 const on = theme === t;
@@ -84,7 +88,7 @@ export default function MorePage() {
                     key={t}
                     onClick={() => setTheme(t)}
                     aria-pressed={on}
-                    className="ux-press ux-hov ux-sq flex flex-1 items-center justify-center gap-1.5 rounded-[9px] py-2.5 text-[12px] font-medium transition-colors"
+                    className="ux-press ux-hov ux-sq flex flex-1 items-center justify-center gap-1.5 rounded-[8px] py-2.5 text-xs font-medium transition-colors"
                     style={{
                       background: on ? "var(--ux-surface)" : "transparent",
                       color: on ? "var(--ux-brand)" : "var(--ux-muted)",
@@ -104,7 +108,7 @@ export default function MorePage() {
 
           <Card className="ux-onscroll-soft">
             <SectionHead title="About" />
-            <div className="space-y-3 text-[12.5px]">
+            <div className="space-y-3 text-xsm">
               {[["Version", "1.0.0"], ["Member since", "March 2025"], ["Your ID", "WS-4471"]].map(([k, v]) => (
                 <div key={k} className="flex items-center justify-between gap-3">
                   <span style={{ color: "var(--ux-muted)" }}>{k}</span>
@@ -113,34 +117,32 @@ export default function MorePage() {
               ))}
             </div>
             <div className="mt-4 flex flex-wrap gap-2 border-t pt-3.5" style={{ borderColor: "var(--ux-line)" }}>
-              <Btn href="/app/help?topic=terms" variant="ghost" size="sm">Terms</Btn>
-              <Btn href="/app/help?topic=privacy" variant="ghost" size="sm">Privacy</Btn>
+              <Btn href="/terms" variant="ghost" size="sm">Terms</Btn>
+              <Btn href="/privacy" variant="ghost" size="sm">Privacy</Btn>
             </div>
           </Card>
         </div>
       }
     >
-      <h1 className="text-[24px] font-bold" style={{ color: "var(--ux-ink)" }}>More</h1>
-      <p className="mb-[18px] mt-1.5 text-[13px]" style={{ color: "var(--ux-muted)" }}>
-        Your account, how the app behaves, and where to get help.
-      </p>
+      <h1 className="text-2xl font-bold" style={{ color: "var(--ux-ink)" }}>More</h1>
+      <p className="mb-[20px] mt-1.5 text-xsm" style={{ color: "var(--ux-muted)" }}>{tr("settings.yourAccountHowTheAppBehaves")}</p>
 
       <Card className="ux-onscroll mb-[24px]">
         <div className="flex items-center gap-4">
           <span className="h-[62px] w-[62px] shrink-0 overflow-hidden rounded-full"
                 style={{ background: "var(--ux-brand-tint)" }}>
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src={ME.avatar} alt="" className="h-full w-full object-cover" />
+            <img loading="lazy" decoding="async" src={ME.avatar} alt="" className="h-full w-full object-cover" />
           </span>
           <div className="min-w-0 flex-1">
-            <h2 className="flex items-center gap-2 text-[17px] font-semibold" style={{ color: "var(--ux-ink)" }}>
+            <h2 className="flex items-center gap-2 text-lg font-semibold" style={{ color: "var(--ux-ink)" }}>
               {name}
               <Icons.BadgeCheck className="h-[17px] w-[17px]" style={{ color: "var(--ux-blue)" }} />
             </h2>
-            <p className="mt-0.5 truncate text-[12.5px]" style={{ color: "var(--ux-muted)" }}>
+            <p className="mt-0.5 truncate text-xsm" style={{ color: "var(--ux-muted)" }}>
               {user?.email ?? "priya.sharma@example.com"}
             </p>
-            <div className="mt-2"><Pill tone="green" size="sm">Verified member</Pill></div>
+            <div className="mt-2"><Pill tone="green" size="sm">{tr("settings.verifiedMember")}</Pill></div>
           </div>
           <Btn href="/app/settings/account" variant="outline" size="sm" icon="Pencil">Edit</Btn>
         </div>
@@ -150,20 +152,20 @@ export default function MorePage() {
         {GROUPS.map((g) => (
           <section key={g.title}>
             <SectionHead title={g.title} />
-            <div className="ux-deck grid grid-cols-2 gap-[13px]">
+            <div className="ux-deck grid grid-cols-2 gap-[12px]">
               {g.items.map((it, i) => (
                 <Link
                   key={it.href}
                   href={it.href}
-                  className="ux-i ux-sq ux-onscroll flex items-center gap-3.5 rounded-[14px] border p-3.5"
+                  className="ux-i ux-sq ux-onscroll flex items-center gap-3.5 rounded-[12px] border p-3.5"
                   style={{ borderColor: "var(--ux-line)", background: "var(--ux-surface)", ["--i" as string]: i }}
                 >
                   <IconTile icon={it.icon} tint={it.tint} ink={it.ink} size={42} radius={11} />
                   <span className="min-w-0 flex-1">
-                    <span className="block truncate text-[13.5px] font-semibold" style={{ color: "var(--ux-ink)" }}>
+                    <span className="block truncate text-sm font-semibold" style={{ color: "var(--ux-ink)" }}>
                       {it.label}
                     </span>
-                    <span className="mt-0.5 block truncate text-[11.5px]" style={{ color: "var(--ux-muted)" }}>
+                    <span className="mt-0.5 block truncate text-xs" style={{ color: "var(--ux-muted)" }}>
                       {it.note}
                     </span>
                   </span>
@@ -178,12 +180,14 @@ export default function MorePage() {
       <Card className="ux-onscroll mt-[24px]">
         <div className="flex items-center justify-between gap-4">
           <div className="min-w-0">
-            <h3 className="text-[14px] font-semibold" style={{ color: "var(--ux-ink)" }}>Sign out</h3>
-            <p className="mt-1 text-[12.5px]" style={{ color: "var(--ux-muted)" }}>
-              You will need your password to come back in.
-            </p>
+            <h3 className="text-sm font-semibold" style={{ color: "var(--ux-ink)" }}>{tr("settings.signOut")}</h3>
+            <p className="mt-1 text-xsm" style={{ color: "var(--ux-muted)" }}>{tr("settings.youWillNeedYourPasswordTo")}</p>
           </div>
-          <Btn variant="outline" icon="LogOut" onClick={() => void signOut()}>Sign out</Btn>
+          {/* `signOut()`, not `void signOut()`. `Btn` watches for a returned
+              promise and holds itself busy until it settles — the `void` threw
+              that promise away, so the one button in the app with the longest
+              wait behind it was the one button that did not answer a press. */}
+          <Btn variant="outline" icon="LogOut" onClick={() => signOut()}>{tr("settings.signOut2")}</Btn>
         </div>
       </Card>
     </HomeShell>

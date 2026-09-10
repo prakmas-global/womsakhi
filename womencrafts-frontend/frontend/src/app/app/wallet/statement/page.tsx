@@ -2,10 +2,9 @@
 
 import { useMemo, useState } from "react";
 import Link from "next/link";
-import * as Icons from "lucide-react";
+import * as Icons from "@/components/ux/icons";
 
-import {
-  ActionBtn, Card, EmptyState, IconTile, Pill,
+import {Back, ActionBtn, Card, EmptyState, IconTile, Pill,
   SectionHead, SourceNote, Tabs, downloadCsv, escapeHtml, letterhead,
   printDocument
 } from "@/components/ux/kit";
@@ -13,6 +12,8 @@ import { HomeShell } from "@/components/ux/home/HomeShell";
 import { useMe } from "@/components/ux/me";
 import { rupeesExact } from "@/components/ux/money/data";
 import { useMoney } from "@/components/ux/money/live";
+import { COPY } from "@/components/ux/copy";
+import { useT } from "@/i18n";
 
 /**
  * The last three months, from today.
@@ -50,6 +51,7 @@ function monthsFrom(txns: { when: string }[], howMany = 6): string[] {
  * out, and the closing balance.
  */
 export default function StatementPage() {
+  const tr = useT();
   const ME = useMe();
   const { data: money, source } = useMoney();
   const MONTHS = useMemo(() => monthsFrom(money.txns), [money.txns]);
@@ -102,14 +104,14 @@ export default function StatementPage() {
       ${letterhead("Account statement", `${ME.name} · ${showing}`)}
       <h2>Summary</h2>
       <table><tbody>
-        <tr><td>Money in (cleared)</td><td class="num">${rupeesExact(inMinor)}</td></tr>
-        <tr><td>Money out (cleared)</td><td class="num">${rupeesExact(outMinor)}</td></tr>
-        ${pendingMinor > 0 ? `<tr><td class="muted">Not counted — still on its way</td><td class="num muted">${rupeesExact(pendingMinor)}</td></tr>` : ""}
-        <tr class="total"><td>Left at month end</td><td class="num">${rupeesExact(inMinor - outMinor)}</td></tr>
+        <tr><td>${tr("walletStatement.moneyInCleared")}</td><td class="num">${rupeesExact(inMinor)}</td></tr>
+        <tr><td>${tr("walletStatement.moneyOutCleared")}</td><td class="num">${rupeesExact(outMinor)}</td></tr>
+        ${pendingMinor > 0 ? `<tr><td class="muted">${tr("walletStatement.notCountedStillOnItsWay")}</td><td class="num muted">${rupeesExact(pendingMinor)}</td></tr>` : ""}
+        <tr class="total"><td>${tr("walletStatement.leftAtMonthEnd")}</td><td class="num">${rupeesExact(inMinor - outMinor)}</td></tr>
       </tbody></table>
-      <h2>Every entry</h2>
+      <h2>${tr("walletStatement.everyEntry")}</h2>
       <table>
-        <thead><tr><th>Date</th><th>Detail</th><th class="num">In</th><th class="num">Out</th><th>Status</th></tr></thead>
+        <thead><tr><th scope="col">Date</th><th scope="col">Detail</th><th scope="col" class="num">In</th><th scope="col" class="num">Out</th><th scope="col">Status</th></tr></thead>
         <tbody>${TXNS.map(row).join("")}</tbody>
       </table>
       <p class="foot">
@@ -122,10 +124,10 @@ export default function StatementPage() {
   return (
     <HomeShell
       rail={
-        <div className="space-y-[15px]">
+        <div className="space-y-[16px]">
           <Card>
-            <SectionHead title={showing} sub="What a bank or a scheme will ask for" />
-            <div className="space-y-3 text-[13px]">
+            <SectionHead title={showing} sub={tr("walletStatement.whatABankOrAScheme")} />
+            <div className="space-y-3 text-xsm">
               {[["Money in", rupeesExact(inMinor), "--ux-green-ink"],
                 ["Money out", rupeesExact(outMinor), "--ux-ink"],
                 ["Left at month end", rupeesExact(inMinor - outMinor), "--ux-ink"]].map(([k, v, c]) => (
@@ -136,7 +138,7 @@ export default function StatementPage() {
               ))}
               {pendingMinor > 0 && (
                 <div className="flex items-start justify-between gap-3 border-t pt-3" style={{ borderColor: "var(--ux-line)" }}>
-                  <span style={{ color: "var(--ux-faint)" }}>Not counted — still on its way</span>
+                  <span style={{ color: "var(--ux-faint)" }}>{tr("walletStatement.notCountedStillOnItsWay2")}</span>
                   <span className="shrink-0 font-medium tabular-nums" style={{ color: "var(--ux-muted)" }}>
                     {rupeesExact(pendingMinor)}
                   </span>
@@ -149,11 +151,9 @@ export default function StatementPage() {
                   a client-side PDF library produces is as readable, and this
                   needs no library and no backend. */}
               <ActionBtn variant="primary" full icon="Download" doneIcon="Printer"
-                         done="Choose “Save as PDF”" act={printStatement}>
-                Download as PDF
-              </ActionBtn>
+                         done={COPY.saveAsPdf} act={printStatement}>{tr("walletStatement.downloadAsPdf")}</ActionBtn>
               {/* What an accountant or a loan officer asks for second. */}
-              <ActionBtn variant="outline" full icon="Table" doneIcon="Check" done="Saved to your downloads"
+              <ActionBtn variant="outline" full icon="Table" doneIcon="Check" done={tr("walletStatement.savedToYourDownloads")}
                          act={() => downloadCsv(`womsakhi-statement-${showing.replace(/\s+/g, "-").toLowerCase()}.csv`, [
                            ["Date", "Detail", "Source", "In", "Out", "Status"],
                            ...TXNS.map((t) => [
@@ -165,30 +165,28 @@ export default function StatementPage() {
                            [], ["Money in (cleared)", "", "", (inMinor / 100).toFixed(2), "", ""],
                            ["Money out (cleared)", "", "", "", (outMinor / 100).toFixed(2), ""],
                            ["Left at month end", "", "", ((inMinor - outMinor) / 100).toFixed(2), "", ""],
-                         ])}>
-                Download as a spreadsheet
-              </ActionBtn>
+                         ])}>{tr("walletStatement.downloadAsASpreadsheet")}</ActionBtn>
             </div>
             {/* "Email it to me" said "Sent to your email" and sent no email:
                 there is no send-a-statement endpoint, and a woman who needed
                 it in an inbox for a loan officer waited for a message that was
                 never coming. The two buttons above are what this screen can
                 actually do, so it says so. */}
-            <p className="mt-2.5 text-[11.5px] leading-relaxed" style={{ color: "var(--ux-faint)" }}>
+            <p className="mt-2.5 text-xs leading-relaxed" style={{ color: "var(--ux-faint)" }}>
               The PDF carries your name and a reference a bank can check with us. We cannot email it
               yet — download it here and attach it yourself.
             </p>
           </Card>
 
           <Card>
-            <SectionHead title="Who asks for this" icon="Info" />
+            <SectionHead title={tr("walletStatement.whoAsksForThis")} icon="Info" />
             <ul className="space-y-2.5">
               {[
                 "A bank, before a Mudra or business loan.",
                 "A scheme, as proof you actually earn.",
                 "A landlord, for a shop or a stall.",
               ].map((t) => (
-                <li key={t} className="flex items-start gap-2.5 text-[12.5px] leading-snug" style={{ color: "var(--ux-ink-2)" }}>
+                <li key={t} className="flex items-start gap-2.5 text-xsm leading-snug" style={{ color: "var(--ux-ink-2)" }}>
                   <Icons.Check className="mt-[2px] h-[14px] w-[14px] shrink-0" style={{ color: "var(--ux-green-ink)" }} strokeWidth={2.6} />
                   {t}
                 </li>
@@ -198,18 +196,12 @@ export default function StatementPage() {
         </div>
       }
     >
-      <Link href="/app/wallet"
-            className="ux-hov -my-1 mb-3.5 inline-flex items-center gap-1.5 py-1 text-[12.5px] font-medium"
-            style={{ color: "var(--ux-brand)" }}>
-        <Icons.ArrowLeft className="ux-ico h-4 w-4" /> Earn
-      </Link>
+      <Back to="/app/wallet" label={tr("walletStatement.yourWallet")} className="mb-4" />
 
-      <div className="mb-[18px] flex items-end justify-between gap-4">
+      <div className="mb-[20px] flex items-end justify-between gap-4">
         <div>
-          <h1 className="text-[24px] font-bold" style={{ color: "var(--ux-ink)" }}>Statement</h1>
-          <p className="mt-1.5 text-[13px]" style={{ color: "var(--ux-muted)" }}>
-            Every rupee in and out, in a form a bank will accept.
-          </p>
+          <h1 className="text-2xl font-bold" style={{ color: "var(--ux-ink)" }}>Statement</h1>
+          <p className="mt-1.5 text-xsm" style={{ color: "var(--ux-muted)" }}>{tr("walletStatement.everyRupeeInAndOutIn")}</p>
         </div>
         <Tabs items={MONTHS} active={showing} onChange={setMonth} />
       </div>
@@ -221,20 +213,20 @@ export default function StatementPage() {
           <ul>
             {TXNS.map((t, i) => (
               <li key={t.id}>
-                <div className="ux-hov flex items-center gap-3.5 px-[18px] py-3.5"
+                <div className="ux-hov flex items-center gap-3.5 px-[20px] py-3.5"
                      style={{ borderTop: i ? "1px solid var(--ux-line)" : "none" }}>
                   <IconTile icon={t.icon} tint={t.tint} ink={t.ink} size={40} radius={11} />
                   <div className="min-w-0 flex-1">
-                    <p className="truncate text-[13.5px] font-medium" style={{ color: "var(--ux-ink)" }}>{t.label}</p>
-                    <p className="mt-0.5 truncate text-[11.5px]" style={{ color: "var(--ux-muted)" }}>
+                    <p className="truncate text-sm font-medium" style={{ color: "var(--ux-ink)" }}>{t.label}</p>
+                    <p className="mt-0.5 truncate text-xs" style={{ color: "var(--ux-muted)" }}>
                       {t.source} · {t.when}
                     </p>
                   </div>
                   {t.status === "failed" && <Pill tone="neutral" size="sm">Failed</Pill>}
-                  {t.status === "pending" && <Pill tone="orange" size="sm">On its way</Pill>}
+                  {t.status === "pending" && <Pill tone="orange" size="sm">{tr("walletStatement.onItsWay")}</Pill>}
                   {/* Exact paise, once: it has to match her bank statement, and a
                       rounded figure beside it only invites doubt. */}
-                  <span className="w-[104px] shrink-0 text-end text-[13.5px] font-semibold tabular-nums"
+                  <span className="w-[104px] shrink-0 text-end text-sm font-semibold tabular-nums"
                         style={{ color: t.status === "failed" ? "var(--ux-faint)"
                                   : t.kind === "credit" ? "var(--ux-green-ink)" : "var(--ux-ink)",
                                  textDecoration: t.status === "failed" ? "line-through" : "none" }}>
@@ -242,18 +234,17 @@ export default function StatementPage() {
                   </span>
                   {/* No receipt for money that never moved. */}
                   {t.status === "failed" ? (
-                    <span className="w-[92px] shrink-0 text-end text-[11.5px]" style={{ color: "var(--ux-faint)" }}>
-                      No receipt
-                    </span>
+                    <span className="w-[92px] shrink-0 text-end text-xs" style={{ color: "var(--ux-faint)" }}>{tr("walletStatement.noReceipt")}</span>
                   ) : (
                     <ActionBtn variant="ghost" size="sm" icon="Download" doneIcon="Printer"
-                               done="Choose “Save as PDF”"
+                               done={COPY.saveAsPdf}
                                act={() => printDocument(`Receipt — ${t.label}`, `
                                  ${letterhead("Receipt", `${ME.name} · ${escapeHtml(t.when)}`)}
                                  <table><tbody>
                                    <tr><td>What</td><td>${escapeHtml(t.label)}</td></tr>
                                    <tr><td>From</td><td>${escapeHtml(t.source)}</td></tr>
-                                   <tr><td>Direction</td><td>${t.kind === "credit" ? "Paid to you" : "Paid by you"}</td></tr>
+                                   <tr><td>Direction</td><td>${t.kind === "credit" ? tr("walletStatement.paidToYou")
+              : tr("walletStatement.paidByYou")}</td></tr>
                                    <tr class="total"><td>Amount</td><td class="num">${rupeesExact(t.amount_minor)}</td></tr>
                                  </tbody></table>
                                  <p class="foot">Reference ${ref}-${escapeHtml(t.id.toUpperCase())} · issued ${issued}.

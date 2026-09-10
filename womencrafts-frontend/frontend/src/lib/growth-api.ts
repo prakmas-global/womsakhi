@@ -273,6 +273,14 @@ export interface CirclePost {
   id: string; author_name: string; author_avatar: string;
   body: string; likes: number; liked_by_me: boolean;
   reply_count: number; when: string; mine: boolean;
+  /** Which circle it was posted in — the only route to its topic, and so to
+   *  the category a reader sees on the card. Sent by `/community/overview`. */
+  circle_id: string;
+  /** One photograph, or "". The server has sent this all along; the type did
+   *  not say so, so every circle screen dropped it. */
+  image: string;
+  /** Held at the top of its circle, because somebody needs it read. */
+  pinned: boolean;
 }
 
 export const apiCircle = (id: string, s?: AbortSignal) =>

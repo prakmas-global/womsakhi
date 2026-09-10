@@ -1,13 +1,14 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import * as Icons from "lucide-react";
+import * as Icons from "@/components/ux/icons";
 
 import { useDevicePref } from "@/lib/use-device-pref";
 
 import { Pill } from "@/components/ux/kit";
 import { Card, SectionHead, SettingsPage, Toggle } from "@/components/ux/settings/Frame";
 import { OFFLINE_ITEMS } from "@/components/ux/more/data";
+import { useT } from "@/i18n";
 
 /**
  * Offline Mode.
@@ -21,6 +22,7 @@ import { OFFLINE_ITEMS } from "@/components/ux/more/data";
  * which is exactly when she cannot download them.
  */
 export default function OfflineSettings() {
+  const tr = useT();
   const [items, setItems] = useState(OFFLINE_ITEMS);
   const [wifiOnly, setWifiOnly] = useDevicePref("offline.wifiOnly", true);
 
@@ -34,25 +36,25 @@ export default function OfflineSettings() {
 
   return (
     <SettingsPage
-      title="Working without signal"
-      sub="What stays on your phone when there is no connection, and what it costs in data."
+      title={tr("settingsOffline.workingWithoutSignal")}
+      sub={tr("settingsOffline.whatStaysOnYourPhoneWhen")}
     >
       <Card>
         <div className="flex items-center justify-between gap-4">
           <div className="min-w-0">
-            <p className="text-[13px] font-semibold" style={{ color: "var(--ux-ink)" }}>On your phone now</p>
-            <p className="mt-1 text-[12px]" style={{ color: "var(--ux-muted)" }}>
+            <p className="text-xsm font-semibold" style={{ color: "var(--ux-ink)" }}>{tr("settingsOffline.onYourPhoneNow")}</p>
+            <p className="mt-1 text-xs" style={{ color: "var(--ux-muted)" }}>
               {items.filter((i) => i.on).length} of {items.length} kept offline
             </p>
           </div>
-          <p className="shrink-0 text-[26px] font-bold tabular-nums" style={{ color: "var(--ux-ink)" }}>
-            {total.toFixed(1)} <span className="text-[14px] font-semibold">MB</span>
+          <p className="shrink-0 text-2xl font-bold tabular-nums" style={{ color: "var(--ux-ink)" }}>
+            {total.toFixed(1)} <span className="text-sm font-semibold">MB</span>
           </p>
         </div>
         <div className="mt-4 border-t pt-2" style={{ borderColor: "var(--ux-line)" }}>
           <Toggle
             on={wifiOnly} onChange={setWifiOnly}
-            label="Only download on wi-fi"
+            label={tr("settingsOffline.onlyDownloadOnWiFi")}
             whenOn="Nothing large is downloaded on mobile data. Recommended."
             whenOff="Courses download on mobile data too. This can be expensive."
           />
@@ -60,18 +62,18 @@ export default function OfflineSettings() {
       </Card>
 
       <Card>
-        <SectionHead title="What to keep" sub="Sizes are what it costs you in data" />
+        <SectionHead title={tr("settingsOffline.whatToKeep")} sub={tr("settingsOffline.sizesAreWhatItCostsYou")} />
         <ul className="space-y-1">
           {items.map((i) => (
             <li key={i.id} className="flex items-center gap-3 py-2.5">
               <div className="min-w-0 flex-1">
-                <p className="flex flex-wrap items-center gap-2 text-[13px] font-medium" style={{ color: "var(--ux-ink)" }}>
+                <p className="flex flex-wrap items-center gap-2 text-xsm font-medium" style={{ color: "var(--ux-ink)" }}>
                   {i.label}
                   {/* Kept whatever she chooses — she needs these when there is
                       no signal, which is when she cannot download them. */}
-                  {i.always && <Pill tone="green" size="sm">Always kept</Pill>}
+                  {i.always && <Pill tone="green" size="sm">{tr("settingsOffline.alwaysKept")}</Pill>}
                 </p>
-                <p className="mt-0.5 text-[11.5px]" style={{ color: "var(--ux-muted)" }}>
+                <p className="mt-0.5 text-xs" style={{ color: "var(--ux-muted)" }}>
                   {i.size}{i.always ? " · needed when you have no signal" : ""}
                 </p>
               </div>
@@ -98,7 +100,7 @@ export default function OfflineSettings() {
       </Card>
 
       <Card>
-        <SectionHead title="What still works with no signal" icon="WifiOff" />
+        <SectionHead title={tr("settingsOffline.whatStillWorksWithNoSignal")} icon="WifiOff" />
         <ul className="space-y-2.5">
           {[
             "Seeing your balance and your last payments.",
@@ -106,17 +108,15 @@ export default function OfflineSettings() {
             "Any course you have downloaded.",
             "Every helpline number on the Safety screen.",
           ].map((t) => (
-            <li key={t} className="flex items-start gap-2.5 text-[12.5px] leading-snug" style={{ color: "var(--ux-ink-2)" }}>
+            <li key={t} className="flex items-start gap-2.5 text-xsm leading-snug" style={{ color: "var(--ux-ink-2)" }}>
               <Icons.Check className="mt-[2px] h-[14px] w-[14px] shrink-0" style={{ color: "var(--ux-green-ink)" }} strokeWidth={2.6} />
               {t}
             </li>
           ))}
         </ul>
-        <p className="mt-3.5 flex items-start gap-2.5 rounded-[11px] p-3 text-[12px] leading-relaxed"
+        <p className="mt-3.5 flex items-start gap-2.5 rounded-[12px] p-3 text-xs leading-relaxed"
            style={{ background: "var(--ux-surface-2)", color: "var(--ux-ink-2)" }}>
-          <Icons.RefreshCw className="mt-[1px] h-[14px] w-[14px] shrink-0" style={{ color: "var(--ux-brand)" }} />
-          Anything you change offline is sent the moment you have signal again. You do not need to do anything.
-        </p>
+          <Icons.RefreshCw className="mt-[1px] h-[14px] w-[14px] shrink-0" style={{ color: "var(--ux-brand)" }} />{tr("settingsOffline.anythingYouChangeOfflineIsSent")}</p>
       </Card>
     </SettingsPage>
   );

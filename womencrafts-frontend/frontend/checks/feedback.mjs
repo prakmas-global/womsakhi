@@ -24,11 +24,108 @@ const files = [];
   }
 })("src");
 
-/** Blank comments, keeping positions, so prose about code is not read as code. */
-const strip = (src) =>
-  src
-    .replace(/\/\*[\s\S]*?\*\//g, (m) => m.replace(/[^\n]/g, " "))
-    .replace(/(^|[^:])\/\/[^\n]*/g, (m, p) => p + " ".repeat(m.length - p.length));
+/**
+ * Blank comments and string literals, keeping positions, so prose about code is
+ * not read as code.
+ *
+ * ── Why this is a scanner and not four `.replace()` calls ───────────────────
+ * It used to be four passes: strings, then templates, then block comments,
+ * then line comments. Each pass is correct on its own and wrong in company,
+ * because every one of them can see a delimiter that belongs to another.
+ *
+ * The first version blanked from `/*` to the next `*\/` with no idea what was
+ * a string, so `accept="image/*"` — an ordinary file input — opened a comment
+ * that swallowed fourteen lines of real JSX. Blanking strings first fixed
+ * that and broke something subtler. On this line, which is ordinary CSV
+ * escaping:
+ *
+ *     .map((c) => `"${String(c ?? "").replace(/"/g, \'""\')}"`)
+ *
+ * the string pass blanks `"${String(c ?? "` — a perfectly good quoted string,
+ * as far as a regex can tell — and leaves the backticks it was nested inside.
+ * The template pass then pairs THAT line\'s surviving backtick with one 130
+ * lines further down and blanks everything between. `settings/activity` was
+ * reported as recording an error and showing it to nobody; the JSX that shows
+ * it, `error={error}`, had been erased by the check, not by the author.
+ *
+ * A single left-to-right pass cannot make that mistake: whatever opens first
+ * wins, exactly as the JavaScript parser sees it. Regex literals are tracked
+ * too, because `/"/g` is otherwise an unterminated string.
+ *
+ * Positions and line breaks are preserved throughout, because every finding
+ * reports a line number and an offset that has drifted is worse than no
+ * offset.
+ */
+const strip = (src) => {
+  const out = src.split("");
+  const wipe = (i) => { if (out[i] !== "\n") out[i] = " "; };
+
+  // The last meaningful character, which is what decides whether a `/` opens a
+  // regex literal or divides two numbers.
+  let prev = "";
+  let i = 0;
+  const n = src.length;
+
+  while (i < n) {
+    const c = src[i];
+    const d = src[i + 1];
+
+    // ── comments ──────────────────────────────────────────────────────────
+    if (c === "/" && d === "/") {
+      while (i < n && src[i] !== "\n") wipe(i++);
+      continue;
+    }
+    if (c === "/" && d === "*") {
+      wipe(i++); wipe(i++);
+      while (i < n && !(src[i] === "*" && src[i + 1] === "/")) wipe(i++);
+      if (i < n) { wipe(i++); wipe(i++); }
+      continue;
+    }
+
+    // ── regex literal ─────────────────────────────────────────────────────
+    // Only where a value is expected. After an identifier, a number or a
+    // closing bracket a `/` is division, and consuming to the next `/` would
+    // eat real code.
+    if (c === "/" && (prev === "" || "(,=:[!&|?{};+-*%~^<>".includes(prev))) {
+      let j = i + 1, inClass = false, ok = false;
+      while (j < n && src[j] !== "\n") {
+        const k = src[j];
+        if (k === "\\") { j += 2; continue; }
+        if (k === "[") inClass = true;
+        else if (k === "]") inClass = false;
+        else if (k === "/" && !inClass) { ok = true; break; }
+        j++;
+      }
+      if (ok) {
+        while (i <= j) wipe(i++);
+        while (i < n && /[a-z]/.test(src[i])) wipe(i++);   // flags
+        prev = "/";
+        continue;
+      }
+    }
+
+    // ── quotes ────────────────────────────────────────────────────────────
+    if (c === "'" || c === '"' || c === "`") {
+      const quote = c;
+      wipe(i++);
+      while (i < n) {
+        if (src[i] === "\\") { wipe(i); wipe(i + 1); i += 2; continue; }
+        if (src[i] === quote) { wipe(i++); break; }
+        // A single- or double-quoted string cannot cross a line. If one
+        // appears to, it was an apostrophe in prose — stop rather than run on.
+        if (quote !== "`" && src[i] === "\n") break;
+        wipe(i++);
+      }
+      prev = quote;
+      continue;
+    }
+
+    if (!/\s/.test(c)) prev = c;
+    i++;
+  }
+
+  return out.join("");
+};
 
 const problems = [];
 const lineOf = (src, i) => src.slice(0, i).split("\n").length;
@@ -72,9 +169,17 @@ for (const file of files) {
      */
     const near = src.slice(Math.max(0, m.index - 400), m.index + 400);
     if (/toast\.\w+\(/.test(near)) continue;
+    // A live region announces it just as well as a toast, and keeps the
+    // feedback where the action was — which for a copy button is better. The
+    // rule is "nothing happens unannounced", not "always use a toast", so a
+    // `role="status"` or `aria-live` anywhere in the file satisfies it.
+    // Tested against `original`, not `src`: `strip` blanks string literals now,
+    // so `role="status"` is spaces by the time the rules run. A rule that looks
+    // for an attribute VALUE has to read the file as written.
+    if (/role=["']status["']|aria-live=/.test(original)) continue;
     problems.push({
       file, line: lineOf(src, m.index),
-      what: `hand-rolled "${m[1]}" confirmation on a timer, announced nowhere — use toast.success()`,
+      what: `hand-rolled "${m[1]}" confirmation on a timer, announced nowhere — use toast.success() or a role="status"`,
     });
   }
 
@@ -94,8 +199,18 @@ for (const file of files) {
       .map((c) => c[1].trim())
       .filter((a) => a !== '""' && a !== "''" && a !== "null" && a !== "");
     if (!calls.length) continue;
+    // Rendered in any of the shapes this codebase actually uses.
+    //
+    // This used to look for `{name`, `name &&` or `name ?` only — so the very
+    // common `{(photoError || removePhoto.error) && (` read as "rendered
+    // nowhere", because the name sits behind a paren and is joined with `||`.
+    // A check that reports a working screen as broken gets ignored, and then
+    // it stops catching the real ones.
     const shown =
-      new RegExp(`\\{\\s*${name}\\b`).test(src) || new RegExp(`\\b${name}\\s*(&&|\\?)`).test(src);
+      new RegExp(`\\{\\s*\\(?\\s*${name}\\b`).test(src) ||
+      new RegExp(`\\b${name}\\s*(&&|\\|\\||\\?)`).test(src) ||
+      new RegExp(`\\|\\|\\s*${name}\\b`).test(src) ||
+      new RegExp(`\\{${name}\\}`).test(src);
     if (!shown) {
       problems.push({
         file, line: lineOf(src, m.index),

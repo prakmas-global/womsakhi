@@ -179,3 +179,82 @@ def read_file(path: Path) -> bytes:
 def status() -> dict:
     """For a health or settings screen: is this on, without revealing anything."""
     return {"encryption_at_rest": available(), "algorithm": "AES-256-GCM", "envelope": MAGIC.decode()}
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Command line
+#
+# `python -m app.core.docvault <command>`. Referenced from this module's own
+# docstring and from `config.unsafe_for_production()`, and until now it did not
+# exist — the instructions for turning encryption on pointed at a command that
+# was not there.
+# ─────────────────────────────────────────────────────────────────────────────
+
+def _iter_documents() -> list[Path]:
+    """Every stored document, encrypted or not."""
+    root = Path(settings.PRIVATE_MEDIA_DIR)
+    if not root.exists():
+        return []
+    return sorted(p for p in root.rglob("*") if p.is_file() and not p.name.endswith(".enc-tmp"))
+
+
+def _cli(argv: list[str]) -> int:
+    command = (argv[0] if argv else "help").lower()
+
+    if command == "generate":
+        # Printed, because there is no other way to hand someone a new key —
+        # but it goes to stdout only, is never logged, and is not written to
+        # any file by this command. The operator decides where it lives.
+        print(generate_key())
+        return 0
+
+    if command == "status":
+        files = _iter_documents()
+        encrypted = sum(1 for p in files if is_encrypted(p.read_bytes()[:8]))
+        print(f"  key configured : {'yes' if available() else 'NO'}")
+        print(f"  algorithm      : AES-256-GCM ({MAGIC.decode()} envelope)")
+        print(f"  documents      : {len(files)}")
+        print(f"  encrypted      : {encrypted}")
+        print(f"  plaintext      : {len(files) - encrypted}")
+        if files and not available():
+            print("\n  Every document above is readable by anyone who gets the bytes.")
+        return 0
+
+    if command == "backfill":
+        if not available():
+            print(f"  {_ENV_VAR} is not set, so there is nothing to encrypt with.")
+            print("  Generate one:  python -m app.core.docvault generate")
+            return 1
+        files = _iter_documents()
+        done = skipped = failed = 0
+        for path in files:
+            try:
+                if encrypt_file(path):
+                    done += 1
+                else:
+                    skipped += 1
+            except Exception as exc:  # noqa: BLE001
+                # Never abort the run: one unreadable file must not leave the
+                # remaining hundred in plaintext.
+                failed += 1
+                print(f"  !! {path.name}: {exc}")
+        print(f"  encrypted {done}, already encrypted {skipped}, failed {failed}")
+        if failed:
+            print("  Re-run after looking at the failures above; this is safe to repeat.")
+        return 1 if failed else 0
+
+    print(__doc__.strip().splitlines()[0])
+    print()
+    print("  python -m app.core.docvault generate   a fresh key for .env")
+    print("  python -m app.core.docvault status     what is encrypted right now")
+    print("  python -m app.core.docvault backfill   encrypt everything not yet encrypted")
+    print()
+    print("  Back the key up before running backfill. Losing it means every")
+    print("  identity document on the platform is permanently unreadable.")
+    return 0
+
+
+if __name__ == "__main__":  # pragma: no cover
+    import sys
+
+    raise SystemExit(_cli(sys.argv[1:]))

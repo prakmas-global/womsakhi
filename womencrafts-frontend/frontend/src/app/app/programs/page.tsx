@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import * as Icons from "lucide-react";
+import * as Icons from "@/components/ux/icons";
 
 import {
   ActionBtn, Btn, Card, Chip, EmptyState, IconTile,
@@ -16,6 +16,9 @@ import {
 } from "@/components/ux/learning/data";
 import { useLearning } from "@/components/ux/growth";
 import { useCertificates } from "@/components/ux/live";
+import { AlsoHere } from "@/components/ux/AlsoHere";
+import { COPY } from "@/components/ux/copy";
+import { useT } from "@/i18n";
 
 // "Paths" is gone. It showed four learning paths from a constant — "Career
 // Growth Path · 8 courses · 32 lessons · 60% complete" — with progress nothing
@@ -32,6 +35,7 @@ const TABS = ["Keep going", "Explore", "Finished"] as const;
  * quietly suggests otherwise.
  */
 export default function LearningPage() {
+  const tr = useT();
   const { data: learning, source } = useLearning();
   const CONTINUING = learning.continuing;
   const TOP_PICKS = learning.picks;
@@ -67,58 +71,58 @@ export default function LearningPage() {
     <HomeShell
       active="/app/programs"
       rail={
-        <div className="space-y-[15px]">
+        <div className="space-y-[16px]">
           <Card className="ux-onscroll-soft">
-            <SectionHead title="Your week" sub={`${STREAK.days}-day streak`} />
+            <SectionHead title={tr("programs.yourWeek")} sub={`${STREAK.days}-day streak`} />
             <div className="flex items-center justify-between">
               {STREAK.marks.map((on, i) => (
                 <div key={i} className="flex flex-col items-center gap-1.5">
-                  <span className="ux-pop grid h-[30px] w-[30px] place-items-center rounded-full text-[11px] font-semibold"
+                  <span className="ux-pop grid h-[30px] w-[30px] place-items-center rounded-full text-2xs font-semibold"
                         style={{
                           background: on ? "var(--ux-brand-600)" : "var(--ux-surface-2)",
-                          color: on ? "#fff" : "var(--ux-faint)",
+                          color: on ? "var(--ux-on-brand)" : "var(--ux-faint)",
                           ["--i" as string]: i,
                         }}>
                     {on ? <Icons.Check className="h-[13px] w-[13px]" strokeWidth={3} /> : "·"}
                   </span>
-                  <span className="text-[9.5px]" style={{ color: "var(--ux-faint)" }}>
+                  <span className="text-2xs" style={{ color: "var(--ux-faint)" }}>
                     {["M", "T", "W", "T", "F", "S", "S"][i]}
                   </span>
                 </div>
               ))}
             </div>
-            <p className="mt-3.5 text-[12px] leading-relaxed" style={{ color: "var(--ux-muted)" }}>
+            <p className="mt-3.5 text-xs leading-relaxed" style={{ color: "var(--ux-muted)" }}>
               Fifteen minutes today keeps it going. About {hoursLeft} hours left across everything you started.
             </p>
           </Card>
 
           <Card className="ux-onscroll-soft">
-            <SectionHead title="Skills you are building" />
+            <SectionHead title={tr("programs.skillsYouAreBuilding")} />
             <ul className="ux-stagger space-y-2.5">
               {SKILLS.slice(0, 5).map((s) => (
                 <li key={s.name} className="ux-hov flex items-center gap-3">
                   <IconTile icon={s.icon} tint={s.tint} ink={s.ink} size={34} radius={10} />
-                  <span className="min-w-0 flex-1 truncate text-[12.5px]" style={{ color: "var(--ux-ink-2)" }}>
+                  <span className="min-w-0 flex-1 truncate text-xsm" style={{ color: "var(--ux-ink-2)" }}>
                     {s.name}
                   </span>
-                  <span className="shrink-0 text-[11px]" style={{ color: "var(--ux-faint)" }}>{s.level}</span>
+                  <span className="shrink-0 text-2xs" style={{ color: "var(--ux-faint)" }}>{s.level}</span>
                 </li>
               ))}
             </ul>
           </Card>
 
           <Card className="ux-onscroll-soft">
-            <SectionHead title="What you have earned" action="See all" onAction={() => setTab("Finished")} />
+            <SectionHead title={tr("programs.whatYouHaveEarned")} action="See all" onAction={() => setTab("Finished")} />
             <div className="ux-stagger space-y-2.5">
               {ACHIEVEMENTS.slice(0, 3).map((a, i) => (
                 <div key={a.name} className="ux-hov flex items-center gap-3">
-                  <span className="ux-metal ux-sq grid h-[36px] w-[36px] shrink-0 place-items-center rounded-[11px]">
+                  <span className="ux-metal ux-sq grid h-[36px] w-[36px] shrink-0 place-items-center rounded-[12px]">
                     <Icons.Award className="ux-ico h-[17px] w-[17px]" strokeWidth={1.9}
                                  style={{ ["--i" as string]: i }} />
                   </span>
                   <div className="min-w-0">
-                    <p className="truncate text-[12.5px] font-medium" style={{ color: "var(--ux-ink)" }}>{a.name}</p>
-                    <p className="mt-0.5 truncate text-[11px]" style={{ color: "var(--ux-muted)" }}>{a.body}</p>
+                    <p className="truncate text-xsm font-medium" style={{ color: "var(--ux-ink)" }}>{a.name}</p>
+                    <p className="mt-0.5 truncate text-2xs" style={{ color: "var(--ux-muted)" }}>{a.body}</p>
                   </div>
                 </div>
               ))}
@@ -127,10 +131,10 @@ export default function LearningPage() {
         </div>
       }
     >
-      <div className="mb-[18px] flex items-end justify-between gap-4">
+      <div className="mb-[20px] flex items-end justify-between gap-4">
         <div>
-          <h1 className="text-[24px] font-bold" style={{ color: "var(--ux-ink)" }}>Learning</h1>
-          <p className="mt-1.5 text-[13px]" style={{ color: "var(--ux-muted)" }}>
+          <h1 className="text-2xl font-bold" style={{ color: "var(--ux-ink)" }}>Courses</h1>
+          <p className="mt-1.5 text-xsm" style={{ color: "var(--ux-muted)" }}>
             {CONTINUING.length} {plural("course", CONTINUING.length)} on the go, {avg}% through on average.
           </p>
 
@@ -141,34 +145,34 @@ export default function LearningPage() {
 
       {tab === "Keep going" && (
         CONTINUING.length ? (
-          <div className="ux-deck ux-stagger space-y-[13px]">
+          <div className="ux-deck ux-stagger space-y-[12px]">
             {CONTINUING.map((c) => <ResumeCard key={c.id} c={c} />)}
           </div>
         ) : (
           <Card>
-            <EmptyState icon="BookOpen" title="Nothing started yet"
+            <EmptyState icon="BookOpen" title={tr("programs.nothingStartedYet")}
                         body="Pick something from Explore and it will wait for you here."
-                        action={<Btn onClick={() => setTab("Explore")} variant="primary">Explore courses</Btn>} />
+                        action={<Btn onClick={() => setTab("Explore")} variant="primary">{tr("programs.exploreCourses")}</Btn>} />
           </Card>
         )
       )}
 
       {tab === "Explore" && (
         <>
-          <div className="mb-[15px] flex flex-wrap gap-2">
+          <div className="mb-[16px] flex flex-wrap gap-2">
             {categories.map((c) => (
               <Chip key={c} selected={cat === c} onClick={() => setCat(c)}>{c}</Chip>
             ))}
           </div>
           {picks.length ? (
-            <div className="ux-deck grid grid-cols-3 gap-[15px]">
+            <div className="ux-deck grid grid-cols-3 gap-[16px]">
               {picks.map((c) => <CourseCard key={c.id} c={c} />)}
             </div>
           ) : (
             <Card>
               <EmptyState icon="SearchX" title={`Nothing in ${cat} yet`}
                           body="More is added every month. Try another subject in the meantime."
-                          action={<Btn onClick={() => setCat("All")} variant="soft">Show everything</Btn>} />
+                          action={<Btn onClick={() => setCat("All")} variant="soft">{tr("programs.showEverything")}</Btn>} />
             </Card>
           )}
         </>
@@ -176,7 +180,7 @@ export default function LearningPage() {
 
       {tab === "Finished" && (
         CERTIFICATES.length ? (
-          <div className="ux-deck grid grid-cols-2 gap-[15px]">
+          <div className="ux-deck grid grid-cols-2 gap-[16px]">
             {CERTIFICATES.map((c, i) => (
               <Card key={c.id} className="ux-i ux-onscroll" style={{ ["--i" as string]: i }}>
                 <div className="flex items-start gap-3.5">
@@ -184,20 +188,20 @@ export default function LearningPage() {
                     <Icons.Award className="ux-ico h-[21px] w-[21px]" strokeWidth={1.9} />
                   </span>
                   <div className="min-w-0 flex-1">
-                    <h3 className="truncate text-[14px] font-semibold" style={{ color: "var(--ux-ink)" }}>{c.title}</h3>
-                    <p className="mt-1 text-[11.5px]" style={{ color: "var(--ux-muted)" }}>
+                    <h2 className="truncate text-sm font-semibold" style={{ color: "var(--ux-ink)" }}>{c.title}</h2>
+                    <p className="mt-1 text-xs" style={{ color: "var(--ux-muted)" }}>
                       Issued {c.issued} · {c.code}
                     </p>
                   </div>
                 </div>
                 <div className="mt-3.5 flex gap-2 border-t pt-3.5" style={{ borderColor: "var(--ux-line)" }}>
                   <ActionBtn variant="outline" size="sm" icon="Download" doneIcon="Printer"
-                             done="Choose “Save as PDF”" act={() => printCertificate({
+                             done={COPY.saveAsPdf} act={() => printCertificate({
                                name: ME.name, programme: c.title, issued: c.issued, code: c.code,
                              })}>
                     Download
                   </ActionBtn>
-                  <ActionBtn variant="soft" size="sm" icon="Share2" doneIcon="Copy" done="Link copied"
+                  <ActionBtn variant="soft" size="sm" icon="Share2" doneIcon="Copy" done={tr("programs.linkCopied")}
                              act={() => copy(`https://womsakhi.in/verify/${c.code}`, "Link copied — anyone can check it", "Copy the code instead")}>
                     Share
                   </ActionBtn>
@@ -207,12 +211,20 @@ export default function LearningPage() {
           </div>
         ) : (
           <Card>
-            <EmptyState icon="Award" title="No certificates yet"
+            <EmptyState icon="Award" title={tr("programs.noCertificatesYet")}
                         body="Finish a course and the certificate lands here, ready to share."
-                        action={<Btn onClick={() => setTab("Keep going")} variant="primary">Keep going</Btn>} />
+                        action={<Btn onClick={() => setTab("Keep going")} variant="primary">{tr("programs.keepGoing")}</Btn>} />
           </Card>
         )
       )}
+
+      <AlsoHere
+        items={[
+          { href: "/app/assess", label: "Test your skills", note: "Twenty minutes on your phone, and a result an employer can check.", icon: "BadgeCheck" },
+          { href: "/app/library", label: "Teach and learn", note: "Swap a skill with another woman — teach one, learn one.", icon: "RefreshCw" },
+          { href: "/app/digital", label: "Phone basics", note: "Six steps, from the very start. Free, and at your own pace.", icon: "Smartphone" },
+        ]}
+      />
     </HomeShell>
   );
 }

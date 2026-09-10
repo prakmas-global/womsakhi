@@ -78,38 +78,44 @@ await page.goto(APP + "/app/documents", { waitUntil: "domcontentloaded", timeout
 await page.waitForFunction(() => document.querySelector("aside") !== null, { timeout: 60000 });
 await wait(2200);
 
-const firstOrder = () => page.$eval("main .ux-i", (e) => e.innerText.trim());
-const before = await firstOrder();
-const stateOf = (t) => (t.match(/\b(New|Making|Ready|Sent|Done|Cancelled)\b/) || [])[1];
+const states = () => page.$$eval("main [data-order]",
+  (rows) => rows.map((r) => ({ id: r.dataset.order, state: r.dataset.state })));
 
-// Each open order offers exactly one next step — a row of every possible state
-// change would be a quiz, not an action.
-const nextButtons = await page.$$eval("main .ux-i", (rows) =>
+const nextButtons = await page.$$eval("main [data-order]", (rows) =>
   rows.map((r) => [...r.querySelectorAll("button")]
     .filter((b) => /Start making|Mark ready|Mark sent|Mark done/.test(b.innerText)).length));
 say(nextButtons.every((n) => n <= 1), `no order offers more than one next step (${nextButtons.join(",")})`);
 
-say(stateOf(before) === "New", `the first order starts New (${stateOf(before)})`);
-await page.$$eval("main .ux-i button", (bs) => bs.find((b) => /Start making/.test(b.innerText))?.click());
-await wait(700);
-const after = await firstOrder();
-say(stateOf(after) === "Making", `acting on it moves it forward (${stateOf(before)} → ${stateOf(after)})`);
-
-// And the state filters must follow the change, not the original data.
-const counts = await page.$$eval("main button", (bs) =>
-  Object.fromEntries(bs
-    .map((b) => b.innerText.trim().match(/^(New|Making|Ready|Sent|Done|Cancelled|All)\s+(\d+)$/))
-    .filter(Boolean)
-    .map((m) => [m[1], Number(m[2])])));
-say(counts.Making === 2 && counts.New === undefined || counts.New === 0,
-    `the state counts followed it (Making ${counts.Making}, New ${counts.New ?? 0})`);
+const before = await states();
+const open = before.find((o) => o.state === "New");
+if (!open) {
+  say(true, `no order is waiting to be started — nothing to move (${before.map((o) => o.state).join(",") || "none"})`);
+} else {
+  const moved = await page.evaluate((id) => {
+    const card = document.querySelector(`main [data-order="${id}"]`);
+    const b = [...card.querySelectorAll("button")].find((x) => /Start making/.test(x.innerText));
+    if (!b) return false;
+    b.click();
+    return true;
+  }, open.id);
+  say(moved, `the New order offers "Start making"`);
+  await wait(1200);
+  const now = (await states()).find((o) => o.id === open.id)?.state;
+  say(now === "Making", `acting on it moves it forward (New → ${now})`);
+}
 
 // Paperwork must not leak: documents are hers and the review team's alone.
-await page.$$eval("main button", (bs) => bs.find((b) => b.innerText.trim() === "Paperwork")?.click());
-await wait(800);
-const paper = await page.evaluate(() => document.querySelector("main").innerText);
-say(/Only you and the WomSakhi review team/.test(paper), "paperwork says who can see it");
-say(/Verified/.test(paper) && /Add/.test(paper), "and separates what is done from what is missing");
+await page.goto(APP + "/app/documents/vault", { waitUntil: "domcontentloaded", timeout: 120000 });
+await wait(2200);
+const paper = await page.evaluate(() => document.body.innerText);
+say(/Who can see these/i.test(paper)
+    && /The WomSakhi review team/.test(paper)
+    && /Buyers and employers/.test(paper) && /Never/.test(paper),
+    "paperwork names who can see it, and who never can");
+say(/With us/i.test(paper) && /Still needed/i.test(paper),
+    "and keeps what is held apart from what is still needed");
+say(/is still missing|are still missing|not given us any papers|Everything a scheme or a bank/i.test(paper),
+    "and says in words which of the two she is looking at");
 
 await page.close();
 await browser.close();

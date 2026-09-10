@@ -2,7 +2,7 @@
 
 import { useCallback, useState } from "react";
 import Link from "next/link";
-import * as Icons from "lucide-react";
+import * as Icons from "@/components/ux/icons";
 
 import { Btn, Card, EmptyState, IconTile, NoteBtn, Pill, SectionHead, SourceNote, Tabs, plural } from "@/components/ux/kit";
 import { apiMeProfile, apiSendMessage, type MeProfile } from "@/lib/member-api";
@@ -10,7 +10,9 @@ import { apiLikeStory, apiStories, type Story } from "@/lib/community-api";
 import { useResource } from "@/lib/use-resource";
 import { HomeShell } from "@/components/ux/home/HomeShell";
 import { useCircles } from "@/components/ux/live";
-import { LOCAL_ART, LOCAL_HELP } from "@/components/ux/local/data";
+import { useHelplines } from "@/components/ux/entitlements";
+import { LOCAL_ART } from "@/components/ux/local/data";
+import { useT } from "@/i18n";
 
 /**
  * Sakhi Local — her city, not the country.
@@ -21,6 +23,7 @@ import { LOCAL_ART, LOCAL_HELP } from "@/components/ux/local/data";
  * country is just the home page again.
  */
 export default function LocalPage() {
+  const tr = useT();
   /**
    * The stories, from `/community/stories` rather than through `useStories`.
    *
@@ -49,6 +52,11 @@ export default function LocalPage() {
     null as MeProfile | null,
   );
   const city = profile?.location || "";
+  // Numbers she can actually ring, from the server. What was here claimed
+  // "Real places, real people" over two that do not exist — a WomSakhi centre
+  // in Jaipur, and a bank branch 2.1 km away with an invented distance. A woman
+  // takes a bus on the strength of a card like that.
+  const { data: LOCAL_HELP } = useHelplines("general");
   const [tab, setTab] = useState("Women near you");
   /**
    * Likes, from the server.
@@ -80,7 +88,7 @@ export default function LocalPage() {
     <HomeShell
       active="/app/stories"
       rail={
-        <div className="space-y-[15px]">
+        <div className="space-y-[16px]">
           <Card className="ux-onscroll-soft">
             <SectionHead title={city ? `Groups in ${city}` : "Groups"} action="See all"
                          onAction={() => { window.location.href = "/app/circles"; }} />
@@ -92,10 +100,10 @@ export default function LocalPage() {
                      style={{ borderColor: "var(--ux-line)", ["--i" as string]: i }}>
                     <IconTile icon={g.icon} tint={g.tint} ink={g.ink} size={36} radius={10} />
                     <span className="min-w-0 flex-1">
-                      <span className="block truncate text-[12.5px] font-semibold" style={{ color: "var(--ux-ink)" }}>
+                      <span className="block truncate text-xsm font-semibold" style={{ color: "var(--ux-ink)" }}>
                         {g.name}
                       </span>
-                      <span className="mt-0.5 block truncate text-[11px]" style={{ color: "var(--ux-muted)" }}>
+                      <span className="mt-0.5 block truncate text-2xs" style={{ color: "var(--ux-muted)" }}>
                         {g.members} {plural("member", g.members)} · {g.place}
                       </span>
                     </span>
@@ -106,42 +114,42 @@ export default function LocalPage() {
           </Card>
 
           <Card className="ux-onscroll-soft">
-            <SectionHead title="Help you can walk into" sub="Real places, real people" />
+            <SectionHead title={tr("stories.helpYouCanRing")} sub={tr("stories.freeAndTheyAnswer")} />
             <ul className="ux-stagger space-y-3">
               {LOCAL_HELP.map((h) => (
-                <li key={h.id} className="ux-hov flex items-start gap-3">
-                  <IconTile icon={h.icon} tint={h.tint} ink={h.ink} size={36} radius={10} />
-                  <div className="min-w-0">
-                    <p className="text-[12.5px] font-medium leading-snug" style={{ color: "var(--ux-ink)" }}>{h.label}</p>
-                    <p className="mt-0.5 text-[11.5px]" style={{ color: "var(--ux-muted)" }}>{h.detail}</p>
-                  </div>
+                <li key={h.id}>
+                  <a href={`tel:${h.num}`} className="ux-hov flex items-start gap-3">
+                    <IconTile icon="Phone" tint="--ux-tint-pink" ink="--ux-pink" size={36} radius={10} />
+                    <div className="min-w-0">
+                      <p className="text-xsm font-medium leading-snug" style={{ color: "var(--ux-ink)" }}>
+                        {h.num} · {h.label}
+                      </p>
+                      <p className="mt-0.5 text-xs" style={{ color: "var(--ux-muted)" }}>{h.note}</p>
+                    </div>
+                  </a>
                 </li>
               ))}
             </ul>
           </Card>
 
-          <div className="ux-clay ux-onscroll-soft relative overflow-hidden p-[18px]"
+          <div className="ux-clay ux-onscroll-soft relative overflow-hidden p-[20px]"
                style={{ background: "linear-gradient(140deg, var(--ux-tint-orange), var(--ux-tint-pink))" }}>
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src={LOCAL_ART.hero} alt=""
+            <img loading="lazy" decoding="async" src={LOCAL_ART.hero} alt=""
                  className="ux-float pointer-events-none absolute -bottom-3 -end-4 h-[100px] w-[100px] object-contain" />
-            <h3 className="relative w-[60%] text-[14px] font-semibold" style={{ color: "var(--ux-ink)" }}>
-              Tell yours
-            </h3>
-            <p className="relative mt-2 w-[60%] text-[12px] leading-relaxed" style={{ color: "var(--ux-muted)" }}>
-              Someone two streets away is where you were a year ago.
-            </p>
+            <h3 className="relative w-[60%] text-sm font-semibold" style={{ color: "var(--ux-ink)" }}>{tr("stories.tellYours")}</h3>
+            <p className="relative mt-2 w-[60%] text-xs leading-relaxed" style={{ color: "var(--ux-muted)" }}>{tr("stories.someoneTwoStreetsAwayIsWhere")}</p>
             <div className="relative mt-3 w-[60%]">
-              <Btn href="/app/feedback" variant="soft" size="sm" iconEnd="ArrowRight">Share your story</Btn>
+              <Btn href="/app/feedback" variant="soft" size="sm" iconEnd="ArrowRight">{tr("stories.shareYourStory")}</Btn>
             </div>
           </div>
         </div>
       }
     >
-      <div className="mb-[18px] flex items-end justify-between gap-4">
+      <div className="mb-[20px] flex items-end justify-between gap-4">
         <div>
-          <h1 className="text-[24px] font-bold" style={{ color: "var(--ux-ink)" }}>Sakhi Local</h1>
-          <p className="mt-1.5 flex items-center gap-1.5 text-[13px]" style={{ color: "var(--ux-muted)" }}>
+          <h1 className="text-2xl font-bold" style={{ color: "var(--ux-ink)" }}>{tr("stories.nearYou")}</h1>
+          <p className="mt-1.5 flex items-center gap-1.5 text-xsm" style={{ color: "var(--ux-muted)" }}>
             <Icons.MapPin className="h-4 w-4" />
             {city ? `${city} · ` : ""}{STORIES.length} {plural("story", STORIES.length)} from women on WomSakhi
           </p>
@@ -152,14 +160,14 @@ export default function LocalPage() {
       <SourceNote source={source} what="stories" />
 
       {likeProblem && (
-        <p role="alert" className="ux-slide-up mb-[15px] rounded-[12px] p-3.5 text-[12.5px] leading-relaxed"
+        <p role="alert" className="ux-slide-up mb-[16px] rounded-[12px] p-3.5 text-xsm leading-relaxed"
            style={{ background: "var(--ux-tint-orange)", color: "var(--ux-orange-ink)" }}>
           {likeProblem}
         </p>
       )}
 
       {tab === "Women near you" && (
-        <div className="ux-deck ux-stagger space-y-[15px]">
+        <div className="ux-deck ux-stagger space-y-[16px]">
           {STORIES.map((s, i) => {
             const on = likes[s.id]?.mine ?? s.liked_by_me;
             return (
@@ -167,7 +175,7 @@ export default function LocalPage() {
                 <div className="relative h-[160px] overflow-hidden" style={{ background: "var(--ux-tint-lilac)" }}>
                   {s.cover && (
                     /* eslint-disable-next-line @next/next/no-img-element */
-                    <img src={s.cover} alt="" className="ux-art h-full w-full object-cover" />
+                    <img loading="lazy" decoding="async" src={s.cover} alt="" className="ux-art h-full w-full object-cover" />
                   )}
                   {/* The scrim belongs on the text's own container, not on a
                       sibling: as a sibling, white text over a cover that failed
@@ -177,40 +185,40 @@ export default function LocalPage() {
                     {s.author_avatar
                       ? (
                         /* eslint-disable-next-line @next/next/no-img-element */
-                        <img src={s.author_avatar} alt=""
+                        <img loading="lazy" decoding="async" src={s.author_avatar} alt=""
                              className="h-[48px] w-[48px] shrink-0 rounded-full border-2 border-white object-cover" />
                       )
                       : (
-                        <span className="grid h-[48px] w-[48px] shrink-0 place-items-center rounded-full border-2 border-white text-[19px] font-semibold"
+                        <span className="grid h-[48px] w-[48px] shrink-0 place-items-center rounded-full border-2 border-white text-lg font-semibold"
                               style={{ background: "var(--ux-brand-tint)", color: "var(--ux-brand)" }}>
                           {s.author_name.trim().charAt(0).toUpperCase()}
                         </span>
                       )}
                     <div className="min-w-0 flex-1">
-                      <p className="truncate text-[15px] font-semibold text-white">{s.author_name}</p>
+                      <p className="truncate text-base font-semibold text-white">{s.author_name}</p>
                       {/* Her trade, her distance and what she earns were
                           Sunita Devi's fixture values, printed under every
                           woman's name. The API carries none of the three, so
                           nothing stands where they were — the date she wrote
                           it is real and is below. */}
-                      <p className="mt-0.5 truncate text-[11.5px]" style={{ color: "rgba(255,255,255,0.86)" }}>
+                      <p className="mt-0.5 truncate text-xs" style={{ color: "rgba(255,255,255,0.86)" }}>
                         {s.when}
                       </p>
                     </div>
                   </div>
                 </div>
 
-                <div className="p-[18px]">
+                <div className="p-[20px]">
                   {s.title && (
-                    <p className="text-[16px] font-semibold leading-snug" style={{ color: "var(--ux-ink)" }}>
+                    <p className="text-base font-semibold leading-snug" style={{ color: "var(--ux-ink)" }}>
                       &ldquo;{s.title}&rdquo;
                     </p>
                   )}
-                  <p className="mt-2.5 line-clamp-4 text-[13px] leading-relaxed" style={{ color: "var(--ux-ink-2)" }}>{s.body}</p>
+                  <p className="mt-2.5 line-clamp-4 text-xsm leading-relaxed" style={{ color: "var(--ux-ink-2)" }}>{s.body}</p>
 
                   <div className="mt-4 flex items-center justify-between gap-4 border-t pt-3.5"
                        style={{ borderColor: "var(--ux-line)" }}>
-                    <span className="flex items-center gap-1.5 text-[11.5px]" style={{ color: "var(--ux-faint)" }}>
+                    <span className="flex items-center gap-1.5 text-xs" style={{ color: "var(--ux-faint)" }}>
                       <Icons.Clock className="h-[14px] w-[14px]" /> {s.when}
                     </span>
                     <span className="flex items-center gap-2">
@@ -219,7 +227,7 @@ export default function LocalPage() {
                         disabled={liking === s.id}
                         aria-pressed={on}
                         aria-label={on ? `Unlike ${s.author_name}'s story` : `Like ${s.author_name}'s story`}
-                        className="ux-press ux-hov ux-sq inline-flex items-center gap-1.5 rounded-[11px] px-3 py-2 text-[12.5px] font-medium"
+                        className="ux-press ux-hov ux-sq inline-flex items-center gap-1.5 rounded-[12px] px-3 py-2 text-xsm font-medium"
                         style={{ background: on ? "var(--ux-tint-pink)" : "var(--ux-surface-2)",
                                  color: on ? "var(--ux-pink-ink)" : "var(--ux-muted)" }}
                       >
@@ -237,11 +245,11 @@ export default function LocalPage() {
                           is where these words land. So the button now names
                           who really reads it and puts her name in the message
                           rather than pretending to deliver it. */}
-                      <NoteBtn label="Ask about her" variant="outline" icon="MessageCircle"
+                      <NoteBtn label={tr("stories.askAboutHer")} variant="outline" icon="MessageCircle"
                                title={`Ask the WomSakhi team about ${s.author_name}`} to="the WomSakhi team"
-                               placeholder="WomSakhi has no direct messages between members yet, so this goes to the team — say what you would like to ask her and they will answer you."
+                               placeholder={tr("stories.womsakhiHasNoDirectMessagesBetween")}
                                send={(n) => apiSendMessage(`About ${s.author_name}'s story: ${n.text}`)}
-                               sent="Your message is with the WomSakhi team"
+                               sent={tr("stories.yourMessageIsWithTheWomsakhi")}
                                sentBody={`They read every one and reply in Messages. ${s.author_name} is not told you wrote.`} />
                     </span>
                   </div>
@@ -254,22 +262,22 @@ export default function LocalPage() {
 
       {tab === "Groups" && (
         GROUPS.length ? (
-          <div className="ux-deck grid grid-cols-2 gap-[15px]">
+          <div className="ux-deck grid grid-cols-2 gap-[16px]">
             {GROUPS.map((g, i) => (
               <Card key={g.id} className="ux-i ux-onscroll" style={{ ["--i" as string]: i }}>
                 <div className="flex items-start gap-3.5">
                   <IconTile icon={g.icon} tint={g.tint} ink={g.ink} size={48} radius={13} />
                   <div className="min-w-0 flex-1">
                     <div className="flex items-start gap-2">
-                      <h3 className="min-w-0 flex-1 truncate text-[14.5px] font-semibold" style={{ color: "var(--ux-ink)" }}>
+                      <h3 className="min-w-0 flex-1 truncate text-sm font-semibold" style={{ color: "var(--ux-ink)" }}>
                         {g.name}
                       </h3>
-                      {g.joined && <Pill tone="brand" size="sm">You are in this</Pill>}
+                      {g.joined && <Pill tone="brand" size="sm">{tr("stories.youAreInThis")}</Pill>}
                     </div>
-                    <p className="mt-1 text-[11.5px]" style={{ color: "var(--ux-muted)" }}>
+                    <p className="mt-1 text-xs" style={{ color: "var(--ux-muted)" }}>
                       {g.members} {plural("member", g.members)} · {g.place} · {g.activity}
                     </p>
-                    {g.blurb && <p className="mt-2 text-[12.5px]" style={{ color: "var(--ux-ink-2)" }}>{g.blurb}</p>}
+                    {g.blurb && <p className="mt-2 text-xsm" style={{ color: "var(--ux-ink-2)" }}>{g.blurb}</p>}
                   </div>
                 </div>
                 <div className="mt-3.5 flex justify-end border-t pt-3.5" style={{ borderColor: "var(--ux-line)" }}>
@@ -280,9 +288,9 @@ export default function LocalPage() {
           </div>
         ) : (
           <Card>
-            <EmptyState icon="UsersRound" title="No groups yet"
+            <EmptyState icon="UsersRound" title={tr("stories.noGroupsYet")}
                         body="Circles are where women near you organise — savings, shared orders, and getting somebody to answer at 9pm."
-                        action={<Btn href="/app/circles" variant="primary" iconEnd="ArrowRight">See circles</Btn>} />
+                        action={<Btn href="/app/circles" variant="primary" iconEnd="ArrowRight">{tr("stories.seeCircles")}</Btn>} />
           </Card>
         )
       )}

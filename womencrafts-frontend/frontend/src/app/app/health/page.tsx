@@ -4,15 +4,16 @@ import { useState } from "react";
 
 import { apiMarkReference } from "@/lib/entitlements-api";
 import { useAction } from "@/lib/use-action";
-import * as Icons from "lucide-react";
+import * as Icons from "@/components/ux/icons";
 
 import {
   Btn, Card, EmptyState, IconTile, Pill, SectionHead,
   SourceNote, Tabs, plural
 } from "@/components/ux/kit";
 import { HomeShell } from "@/components/ux/home/HomeShell";
-import { useHealthChecks } from "@/components/ux/entitlements";
-import { HEALTH_HELP, HEALTH_TOPICS, WELLBEING_ART } from "@/components/ux/wellbeing/data";
+import { useGuidance, useHealthChecks, useHelplines } from "@/components/ux/entitlements";
+import { WELLBEING_ART } from "@/components/ux/wellbeing/data";
+import { useT } from "@/i18n";
 
 /**
  * Health & Wellbeing.
@@ -22,8 +23,19 @@ import { HEALTH_HELP, HEALTH_TOPICS, WELLBEING_ART } from "@/components/ux/wellb
  * skip a haemoglobin test is almost never that they do not believe in it — it
  * is that nobody told them it costs nothing and takes ten minutes.
  */
+const TOPIC_TINTS = [
+  ["--ux-tint-pink", "--ux-pink"],
+  ["--ux-tint-orange", "--ux-orange"],
+  ["--ux-tint-violet", "--ux-violet"],
+  ["--ux-tint-blue", "--ux-blue"],
+] as const;
+
 export default function HealthPage() {
+  const tr = useT();
   const { data: HEALTH_CHECKS, source, refetch } = useHealthChecks();
+  // From the server, so a helpline that changes is an edit and not a deploy.
+  const { data: HEALTH_HELP } = useHelplines("health");
+  const { data: HEALTH_TOPICS } = useGuidance("health");
   const [tab, setTab] = useState("Your checks");
   /**
    * Which check-ups she has had — from the server, which records the mark and
@@ -51,48 +63,46 @@ export default function HealthPage() {
   return (
     <HomeShell
       rail={
-        <div className="space-y-[15px]">
+        <div className="space-y-[16px]">
           <Card>
-            <SectionHead title="Free, right now" icon="Phone" />
-            {/* Numbers as text, not behind a tap — she may be reading them out. */}
+            <SectionHead title={tr("health.freeRightNow")} icon="Phone" />
             <ul className="space-y-3">
               {HEALTH_HELP.map((h) => (
                 <li key={h.id}>
-                  <p className="text-[20px] font-bold leading-none tabular-nums" style={{ color: "var(--ux-ink)" }}>{h.num}</p>
-                  <p className="mt-1 text-[12.5px] font-medium" style={{ color: "var(--ux-ink-2)" }}>{h.label}</p>
-                  <p className="mt-0.5 text-[11.5px]" style={{ color: "var(--ux-muted)" }}>{h.note}</p>
+                  {/* Tappable AND readable: the number is still plain text she
+                      can read out loud to somebody, and one tap on a phone. */}
+                  <a href={`tel:${h.num}`} className="ux-hov block text-xl font-bold leading-none tabular-nums"
+                     style={{ color: "var(--ux-ink)" }}>{h.num}</a>
+                  <p className="mt-1 text-xsm font-medium" style={{ color: "var(--ux-ink-2)" }}>{h.label}</p>
+                  <p className="mt-0.5 text-xs" style={{ color: "var(--ux-muted)" }}>{h.note}</p>
                 </li>
               ))}
             </ul>
           </Card>
 
           <Card>
-            <SectionHead title="What this is not" icon="Info" />
-            <p className="text-[12.5px] leading-relaxed" style={{ color: "var(--ux-ink-2)" }}>
+            <SectionHead title={tr("health.whatThisIsNot")} icon="Info" />
+            <p className="text-xsm leading-relaxed" style={{ color: "var(--ux-ink-2)" }}>
               Nothing here is medical advice, and nobody at WomSakhi is a doctor. This is a list of what is
               free, where it is, and when it is worth going.
             </p>
           </Card>
 
-          <div className="ux-clay relative overflow-hidden p-[18px]"
+          <div className="ux-clay relative overflow-hidden p-[20px]"
                style={{ background: "linear-gradient(140deg, var(--ux-tint-pink), var(--ux-tint-lilac))" }}>
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src={WELLBEING_ART.health} alt=""
+            <img loading="lazy" decoding="async" src={WELLBEING_ART.health} alt=""
                  className="ux-float pointer-events-none absolute -bottom-3 -end-4 h-[100px] w-[100px] object-contain" />
-            <h3 className="relative w-[60%] text-[14px] font-semibold" style={{ color: "var(--ux-ink)" }}>
-              Ten minutes a day
-            </h3>
-            <p className="relative mt-2 w-[60%] text-[12px] leading-relaxed" style={{ color: "var(--ux-muted)" }}>
-              Sitting bent over close work for hours is what most members ask about. Small changes help.
-            </p>
+            <h3 className="relative w-[60%] text-sm font-semibold" style={{ color: "var(--ux-ink)" }}>{tr("health.tenMinutesADay")}</h3>
+            <p className="relative mt-2 w-[60%] text-xs leading-relaxed" style={{ color: "var(--ux-muted)" }}>{tr("health.sittingBentOverCloseWorkFor")}</p>
           </div>
         </div>
       }
     >
-      <div className="mb-[18px] flex items-end justify-between gap-4">
+      <div className="mb-[20px] flex items-end justify-between gap-4">
         <div>
-          <h1 className="text-[24px] font-bold" style={{ color: "var(--ux-ink)" }}>Health &amp; Wellbeing</h1>
-          <p className="mt-1.5 text-[13px]" style={{ color: "var(--ux-muted)" }}>
+          <h1 className="text-2xl font-bold" style={{ color: "var(--ux-ink)" }}>Health</h1>
+          <p className="mt-1.5 text-xsm" style={{ color: "var(--ux-muted)" }}>
             {due.length
               ? `${due.length} ${plural("check", due.length)} overdue — all of them free.`
               : "Nothing is overdue. Well done."}
@@ -105,7 +115,7 @@ export default function HealthPage() {
 
       {tab === "Your checks" && (
         HEALTH_CHECKS.length ? (
-          <div className="ux-deck ux-stagger space-y-[13px]">
+          <div className="ux-deck ux-stagger space-y-[12px]">
             {HEALTH_CHECKS.map((c, i) => {
               const isDone = done.includes(c.id);
               const overdue = c.due && !isDone;
@@ -115,18 +125,18 @@ export default function HealthPage() {
                     <IconTile icon={c.icon} tint={c.tint} ink={c.ink} size={46} radius={12} />
                     <div className="min-w-0 flex-1">
                       <div className="flex items-start gap-2">
-                        <h3 className="min-w-0 flex-1 text-[14.5px] font-semibold" style={{ color: "var(--ux-ink)" }}>
+                        <h3 className="min-w-0 flex-1 text-sm font-semibold" style={{ color: "var(--ux-ink)" }}>
                           {c.label}
                         </h3>
                         {/* Free is the headline, because cost is the barrier. */}
                         {c.free && <Pill tone="green" size="sm">Free</Pill>}
                         {overdue && <Pill tone="orange" size="sm">Overdue</Pill>}
                       </div>
-                      <p className="mt-1 flex flex-wrap items-center gap-x-3 text-[11.5px]" style={{ color: "var(--ux-muted)" }}>
+                      <p className="mt-1 flex flex-wrap items-center gap-x-3 text-xs" style={{ color: "var(--ux-muted)" }}>
                         <span>{c.every}</span>
                         <span>Last: {isDone ? "just now" : c.last}</span>
                       </p>
-                      <p className="mt-2 flex items-center gap-1.5 text-[12.5px]" style={{ color: "var(--ux-ink-2)" }}>
+                      <p className="mt-2 flex items-center gap-1.5 text-xsm" style={{ color: "var(--ux-ink-2)" }}>
                         <Icons.MapPin className="h-[14px] w-[14px] shrink-0" style={{ color: "var(--ux-brand)" }} />
                         {c.where}
                       </p>
@@ -134,13 +144,14 @@ export default function HealthPage() {
                   </div>
                   <div className="mt-3.5 flex items-center justify-between gap-4 border-t pt-3.5"
                        style={{ borderColor: "var(--ux-line)" }}>
-                    <span className="text-[11.5px]" style={{ color: "var(--ux-faint)" }}>
+                    <span className="text-xs" style={{ color: "var(--ux-faint)" }}>
                       {c.free ? "Costs nothing, takes about ten minutes." : c.where}
                     </span>
                     <Btn variant={isDone ? "outline" : "primary"} size="sm"
                          icon={isDone ? "Check" : undefined}
                          onClick={() => void mark.run(c.id, isDone ? "saved" : "done")}>
-                      {isDone ? "Marked done" : "Mark as done"}
+                      {isDone ? tr("health.markedDone")
+              : tr("health.markAsDone")}
                     </Btn>
                   </div>
                 </Card>
@@ -149,22 +160,30 @@ export default function HealthPage() {
           </div>
         ) : (
           <Card>
-            <EmptyState icon="HeartPulse" title="Nothing tracked yet"
+            <EmptyState icon="HeartPulse" title={tr("health.nothingTrackedYet")}
                         body="Add the checks that matter for you and we will remind you." />
           </Card>
         )
       )}
 
       {tab === "Worth knowing" && (
-        <div className="ux-deck grid grid-cols-2 gap-[15px]">
+        <div className="ux-deck grid grid-cols-2 gap-[16px]">
           {HEALTH_TOPICS.map((t, i) => (
             <Card key={t.id} className="ux-i ux-onscroll" style={{ ["--i" as string]: i }}>
               <div className="flex items-start gap-3.5">
-                <IconTile icon={t.icon} tint={t.tint} ink={t.ink} size={44} radius={12} />
+                {/* Tint rotates by position: colour is presentation, and an
+                    editor adding a fifth card should not have to pick a CSS
+                    variable for it. */}
+                <IconTile icon={t.icon ?? "BookOpen"} tint={TOPIC_TINTS[i % TOPIC_TINTS.length][0]}
+                          ink={TOPIC_TINTS[i % TOPIC_TINTS.length][1]} size={44} radius={12} />
                 <div className="min-w-0 flex-1">
-                  <h3 className="text-[14px] font-semibold leading-snug" style={{ color: "var(--ux-ink)" }}>{t.title}</h3>
-                  <p className="mt-1.5 text-[12.5px] leading-relaxed" style={{ color: "var(--ux-muted)" }}>{t.body}</p>
-                  <p className="mt-2 text-[11.5px]" style={{ color: "var(--ux-faint)" }}>{t.mins} min read</p>
+                  <h3 className="text-sm font-semibold leading-snug" style={{ color: "var(--ux-ink)" }}>{t.label}</h3>
+                  <p className="mt-1.5 text-xsm leading-relaxed" style={{ color: "var(--ux-muted)" }}>{t.note}</p>
+                  {/* Only when the entry actually says. "undefined min read"
+                      is the kind of thing that ships. */}
+                  {t.mins ? (
+                    <p className="mt-2 text-xs" style={{ color: "var(--ux-faint)" }}>{t.mins} min read</p>
+                  ) : null}
                 </div>
               </div>
             </Card>

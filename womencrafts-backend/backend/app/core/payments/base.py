@@ -54,6 +54,21 @@ METHOD_LABELS = {
 }
 
 
+class PaymentProviderError(RuntimeError):
+    """
+    The gateway said no, or could not be reached.
+
+    Distinct from a *failed payment*: a declined card is a ProviderPayment with
+    status "failed" and is a normal outcome. This is the gateway itself being
+    unreachable, misconfigured or refusing the request — which must never be
+    reported to a woman as "your payment failed", because it is not hers.
+    """
+
+
+class PaymentConfigError(PaymentProviderError):
+    """Keys missing. Deployment's problem, not the payer's."""
+
+
 @dataclass
 class ProviderOrder:
     """What the client needs to start paying."""

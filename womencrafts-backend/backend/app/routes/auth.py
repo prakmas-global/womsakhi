@@ -16,8 +16,24 @@ from app.core.config import settings
 from app.models.member import MemberModel
 from app.models.user import UserModel
 from app.models.verification import VerificationStatus
-from app.schemas.auth import SignUpRequest, SignInRequest, AuthResponse, UserResponse
-from app.core.security import decode_access_token, hash_password, verify_password, create_access_token
+from app.schemas.auth import (
+    AuthResponse,
+    ForgotPasswordRequest,
+    ResetPasswordRequest,
+    SignInRequest,
+    SignUpRequest,
+    UserResponse,
+)
+from app.core.security import (
+    TOKEN_VERSION_CLAIM,
+    create_access_token,
+    decode_access_token,
+    hash_password,
+    token_version_of,
+    verify_password,
+    hash_password_async,
+    verify_password_async,
+)
 from app.core.session import COOKIE_NAME, clear_session_cookie, set_session_cookie
 from app.routes.verification import send_verification_email
 
@@ -49,9 +65,27 @@ def _token_for(doc: dict) -> str:
     `role` is embedded so the frontend proxy can send an account to the right
     app without a round-trip. It is a routing hint only — every endpoint still
     checks the role server-side, so a tampered token buys nothing.
+
+    **`tv` is what makes "sign out everywhere" mean anything.** It carries the
+    account's token version at the moment the session began, and
+    `core/deps.py` refuses any token whose version is behind the account's. The
+    machinery has been in place on both sides for a while and was inert purely
+    because nothing minted this claim — so bumping `token_version` did nothing
+    at all, on a platform where a woman may urgently need to end a session
+    somebody else is holding.
+
+    Old tokens carry no `tv` and keep working until they expire, because the
+    check only fires on a token that HAS the claim. That is the safe direction:
+    the alternative rejects every pre-existing session immediately, including
+    the one belonging to whoever is deploying.
     """
     return create_access_token(
-        {"sub": str(doc["_id"]), "email": doc["email"], "role": role_name(doc)}
+        {
+            "sub": str(doc["_id"]),
+            "email": doc["email"],
+            "role": role_name(doc),
+            TOKEN_VERSION_CLAIM: token_version_of(doc),
+        }
     )
 
 
@@ -67,7 +101,7 @@ async def _next_member_code(db) -> str:
 
 @router.post("/signup", response_model=AuthResponse, status_code=status.HTTP_201_CREATED)
 async def signup(payload: SignUpRequest, response: Response, request: Request):
-    ratelimit.check(request, "signup", payload.email, ratelimit.SIGN_UP, ratelimit.SIGN_UP_IP)
+    await ratelimit.check(request, "signup", payload.email, ratelimit.SIGN_UP, ratelimit.SIGN_UP_IP)
 
     """
     Public sign-up — always creates a MEMBER account, never staff.
@@ -101,7 +135,7 @@ async def signup(payload: SignUpRequest, response: Response, request: Request):
     doc = UserModel.create_document(
         full_name=payload.full_name,
         email=email,
-        hashed_password=hash_password(payload.password),
+        hashed_password=await hash_password_async(payload.password),
         role=MEMBER_ROLE,
         member_id=str(member_result.inserted_id),
         locale=payload.locale or "en",
@@ -127,7 +161,7 @@ async def signup(payload: SignUpRequest, response: Response, request: Request):
 async def signin(payload: SignInRequest, response: Response, request: Request):
     # Before touching the database: an attacker guessing passwords should cost
     # us a dictionary lookup, not a round trip to Atlas for every guess.
-    ratelimit.check(request, "signin", payload.email, ratelimit.SIGN_IN, ratelimit.SIGN_IN_IP)
+    await ratelimit.check(request, "signin", payload.email, ratelimit.SIGN_IN, ratelimit.SIGN_IN_IP)
 
     db = get_database()
     collection = db[UserModel.collection_name]
@@ -154,7 +188,7 @@ async def signin(payload: SignInRequest, response: Response, request: Request):
                 detail=f"Too many failed attempts. Try again in {minutes} minute(s).",
             )
 
-    if not verify_password(payload.password, user["hashed_password"]):
+    if not await verify_password_async(payload.password, user["hashed_password"]):
         failed = int(user.get("failed_logins") or 0) + 1
         updates: dict = {"failed_logins": failed}
         if failed >= settings.MAX_FAILED_LOGINS:
@@ -173,7 +207,7 @@ async def signin(payload: SignInRequest, response: Response, request: Request):
     # budget. Otherwise a woman who mistypes four times and then gets it right
     # is two tries from being locked out for a minute, punished for eventually
     # succeeding.
-    ratelimit.forget("signin", payload.email)
+    await ratelimit.forget("signin", payload.email)
     await collection.update_one(
         {"_id": user["_id"]},
         {"$set": {"failed_logins": 0, "locked_until": None, "last_login_at": now}},
@@ -219,3 +253,136 @@ async def signout(response: Response):
     """
     clear_session_cookie(response)
     return {"message": "Signed out"}
+
+
+@router.post("/signout-everywhere", summary="End every session on every device")
+async def signout_everywhere(response: Response, me: dict = Depends(get_current_user)):
+    """
+    End every session this account has, on every device, now.
+
+    **Why this needs to exist here and not just in settings.** Signing out on
+    one phone has never touched the others, so a woman whose account was opened
+    on somebody else's device — a shared phone, a husband's tablet, a cybercafé
+    — had no way to close it. She could change her password, and the other
+    session carried on regardless for the rest of its life.
+
+    Bumping `token_version` invalidates every token minted before this moment,
+    because each one carries the version it was issued under and
+    `core/deps.py` rejects anything behind. Her CURRENT session goes too: that
+    is deliberate, and the honest reading of "everywhere" — a control that
+    quietly spares the device you are holding is one you cannot trust when the
+    device you are holding is the problem.
+    """
+    db = get_database()
+    await db[UserModel.collection_name].update_one(
+        {"_id": ObjectId(str(me["_id"]))},
+        {"$inc": {"token_version": 1}, "$set": {"updated_at": datetime.now(timezone.utc)}},
+    )
+    clear_session_cookie(response)
+    return {"message": "Every session has been ended. Sign in again to carry on."}
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Getting back in
+#
+# Until now the ONLY way to reset a password was for a staff member to trigger
+# one (`members.py::start_password_reset`), and the link it emailed pointed at
+# a `/reset-password` page that did not exist. A woman who forgot her password
+# could not get back into her own account by any route at all — she had to find
+# a human, and then the link she was sent led to a 404.
+#
+# Both halves are below. They reuse the same single-use `email_tokens` record
+# the staff flow issues, so a staff-issued link and a self-service one are the
+# same object and land on the same page.
+# ─────────────────────────────────────────────────────────────────────────────
+
+#: Said for every address, found or not. Telling a stranger which emails have
+#: accounts is an account-enumeration oracle, and on a women-only platform that
+#: is not an abstract concern: it answers "is she a member here?" for anyone
+#: who wants to know.
+_RESET_SENT = (
+    "If that address has an account, a link to set a new password is on its "
+    "way. It expires in 24 hours."
+)
+
+
+@router.post("/forgot-password", summary="Ask for a password reset link")
+async def forgot_password(payload: ForgotPasswordRequest, request: Request):
+    """Issue a single-use reset link and email it to her."""
+    from app.core.email import reset_email, send
+    from app.models.verification import EmailTokenModel
+
+    await ratelimit.check(
+        request, "forgot", payload.email,
+        ratelimit.PASSWORD_RESET, ratelimit.PASSWORD_RESET_IP,
+    )
+
+    db = get_database()
+    user = await db[UserModel.collection_name].find_one({"email": payload.email.lower()})
+
+    # Deliberately the same answer, and the same amount of work, either way.
+    if user:
+        # Retire any earlier unused link so only the newest one opens.
+        await db[EmailTokenModel.collection_name].delete_many(
+            {
+                "user_id": str(user["_id"]),
+                "purpose": EmailTokenModel.PURPOSE_RESET,
+                "used_at": None,
+            }
+        )
+        token_doc = EmailTokenModel.create_document(
+            str(user["_id"]), EmailTokenModel.PURPOSE_RESET, hours=24
+        )
+        await db[EmailTokenModel.collection_name].insert_one(token_doc)
+        url = f"{settings.APP_BASE_URL}/reset-password?token={token_doc['token']}"
+        await send(reset_email(user.get("full_name", ""), url), user["email"])
+
+    return {"message": _RESET_SENT}
+
+
+@router.post("/reset-password", summary="Set a new password from a reset link")
+async def reset_password(payload: ResetPasswordRequest, request: Request):
+    """Spend the token and set the new password."""
+    from app.models.verification import EmailTokenModel
+
+    # Keyed on the token, so guessing tokens is rate limited as well as
+    # unguessable — `secrets.token_urlsafe(32)` is 256 bits.
+    await ratelimit.check(
+        request, "reset", payload.token,
+        ratelimit.PASSWORD_RESET, ratelimit.PASSWORD_RESET_IP,
+    )
+
+    db = get_database()
+    record = await db[EmailTokenModel.collection_name].find_one(
+        {"token": payload.token, "purpose": EmailTokenModel.PURPOSE_RESET}
+    )
+    if not EmailTokenModel.is_valid(record):
+        raise HTTPException(
+            status.HTTP_400_BAD_REQUEST,
+            "That link has expired or has already been used. Ask for a new one.",
+        )
+
+    user = await db[UserModel.collection_name].find_one({"_id": ObjectId(record["user_id"])})
+    if not user:
+        raise HTTPException(status.HTTP_400_BAD_REQUEST, "That account no longer exists.")
+
+    now = datetime.now(timezone.utc)
+    await db[UserModel.collection_name].update_one(
+        {"_id": user["_id"]},
+        {
+            "$set": {"password": await hash_password_async(payload.password), "updated_at": now},
+            # Bumped here so that the day `_token_for` starts reading it, a
+            # reset ends every other session by itself. Inert until then — see
+            # `core/security.py`.
+            "$inc": {"token_version": 1},
+        },
+    )
+    # Single use: spent whether or not anything else goes wrong after this.
+    await db[EmailTokenModel.collection_name].update_one(
+        {"_id": record["_id"]}, {"$set": {"used_at": now}}
+    )
+    # She has proved control of the mailbox, so let her straight in rather than
+    # making her retype what she just chose.
+    await ratelimit.forget("signin", user["email"])
+
+    return {"message": "Your password has been changed. You can sign in with it now."}

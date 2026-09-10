@@ -26,6 +26,8 @@ carrying it until she has said yes.
 
 from __future__ import annotations
 
+import asyncio
+
 from dataclasses import dataclass
 from typing import Awaitable, Callable, Optional
 
@@ -242,7 +244,9 @@ async def _search_library(me: dict, args: dict) -> dict:
         query["type"] = args["type"]
     docs = [d async for d in db[ContentItemModel.collection_name].find(query)]
 
-    found = rag.search(q, docs) if q else None
+    # Off the loop: this is the same PyTorch pass, and here it runs in the
+    # middle of an SSE stream, so it stalls the reply she is watching arrive.
+    found = await asyncio.to_thread(rag.search, q, docs) if q else None
     if found:
         return {
             "passages": found,

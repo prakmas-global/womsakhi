@@ -53,6 +53,7 @@ import {
 import { MODULE_CATALOG } from "@/lib/modules";
 import RolePermissionPanel from "@/components/admin/RolePermissionPanel";
 import { ResizableColumns } from "@/layout-engine";
+import { COPY } from "@/components/ux/copy";
 
 type Role = {
   _id: string;
@@ -300,7 +301,7 @@ export default function RolesPermissionsPage() {
         setSelectedId(created.id);
       }
     } catch {
-      setFormError("Something went wrong. Please try again.");
+      setFormError(COPY.genericFailure);
       return;
     }
     setCreateOpen(false);

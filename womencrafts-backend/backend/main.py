@@ -2,13 +2,15 @@ import threading
 from contextlib import asynccontextmanager
 from pathlib import Path
 
-from fastapi import Depends, FastAPI
+from fastapi import Depends, FastAPI, Request, status
+from fastapi.responses import JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.middleware.gzip import GZipMiddleware
 from fastapi.staticfiles import StaticFiles
 
 from app.core import errors
 from app.core.config import settings
+from app.core.payments import PaymentConfigError, PaymentProviderError
 from app.core.errors import RequestIdMiddleware
 from app.core.headers import SecurityHeadersMiddleware
 from app.core.observability import TimingMiddleware
@@ -16,6 +18,7 @@ from app.core.rbac import module_guard
 from app.core.seed_all import seed_all
 from app.db.indexes import ensure_indexes
 from app.db.mongodb import connect_db, close_db
+from app.routes.public import router as public_router
 from app.routes.auth import router as auth_router
 from app.routes.users import router as users_router
 from app.routes.members import router as members_router
@@ -39,6 +42,7 @@ from app.routes.settings_platform import router as settings_platform_router
 from app.routes.uploads import MEDIA_ROOT, router as uploads_router
 from app.routes.verification import router as verification_router
 from app.routes.me import router as me_router
+from app.routes.me_messages import router as me_messages_router
 from app.routes.catalog import router as catalog_router
 from app.routes.payments import router as payments_router
 from app.routes.community import router as community_router
@@ -75,6 +79,44 @@ tags_metadata = [
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
+    # ── Refuse to be a live service with development settings ────────────────
+    #
+    # Every one of these was a real hole: a session cookie over plain HTTP, a
+    # webhook secret anyone could read off GitHub, identity documents in the
+    # clear, an email path that silently wrote to disk. None of them announce
+    # themselves at runtime — the app works perfectly with all six wrong, which
+    # is exactly why they survived this long.
+    #
+    # In production this stops the process. In development it prints and
+    # continues, because a local machine is meant to run on sandbox payments
+    # and file email.
+    problems = settings.unsafe_for_production()
+    if problems:
+        if settings.is_production:
+            listing = "\n".join(f"  {i}. {p}" for i, p in enumerate(problems, 1))
+            raise RuntimeError(
+                "Refusing to start in production with unsafe settings.\n\n"
+                f"{listing}\n\n"
+                "Fix these in the environment, or set ENVIRONMENT=development if "
+                "this is not a live service."
+            )
+        print(f"ℹ️  {len(problems)} setting(s) are fine locally but must be fixed before launch:")
+        for i, p in enumerate(problems, 1):
+            print(f"     {i}. {p.split('.')[0]}.")
+
+    # Say out loud whether shared state is on. A rate limiter that silently
+    # counts per process is the kind of thing nobody notices until it matters.
+    from app.core import shared_state
+
+    if shared_state.configured():
+        if await shared_state.available():
+            print(f"✅ Shared state: Redis reachable — the rate limit is global across {settings.WORKERS} worker(s)")
+        else:
+            print("⚠️  REDIS_URL is set but Redis is NOT reachable. Falling back to per-process "
+                  "counters: the login lockout will be enforced separately by each worker.")
+    elif settings.WORKERS > 1:
+        print(f"⚠️  {settings.WORKERS} workers with no REDIS_URL — the login lockout is per process.")
+
     try:
         await connect_db()
         await ensure_indexes()
@@ -135,11 +177,38 @@ app = FastAPI(
 # GZip at 500 bytes. The catalogue is 12KB of JSON that compresses to about a
 # tenth; on a 2G connection that is two seconds against two hundred
 # milliseconds, and this API's users are on 2G.
+# ── When the payment gateway is the thing that broke ─────────────────────────
+#
+# No route wrapped these, so a missing key or an unreachable gateway reached a
+# member as a bare 500. That matters more than it looks: a woman who sees
+# "something went wrong" while paying does not know whether her money left, and
+# the honest answer — that nothing was taken and it is our problem, not hers —
+# is the difference between her trying again and her never trusting the wallet.
+@app.exception_handler(PaymentProviderError)
+async def _payment_provider_failed(request: Request, exc: PaymentProviderError):
+    config_problem = isinstance(exc, PaymentConfigError)
+    if config_problem:
+        # The real reason goes to the log, never to her — it names our keys.
+        print(f"⚠️  Payment provider is misconfigured: {exc}")
+    return JSONResponse(
+        status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+        content={
+            "detail": (
+                "Payments are unavailable right now. Nothing has been taken from "
+                "you — please try again shortly."
+                if config_problem
+                else f"The payment service could not complete that. Nothing has been "
+                     f"taken from you. ({exc})"
+            )
+        },
+    )
+
+
 app.add_middleware(GZipMiddleware, minimum_size=500)
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:3100", "http://localhost:3000"],
+    allow_origins=settings.allowed_origins,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -169,8 +238,12 @@ def _mod(key: str):
     return [Depends(module_guard(key))]
 
 
+app.include_router(public_router, prefix="/api/v1")   # no session required
 app.include_router(auth_router, prefix="/api/v1")
 app.include_router(users_router, prefix="/api/v1")  # /users/me — own profile
+# A member's own threads. Unguarded by module RBAC on purpose: these are
+# hers, and every query inside is scoped to her session.
+app.include_router(me_messages_router, prefix="/api/v1")
 app.include_router(members_router, prefix="/api/v1", dependencies=_mod("users"))
 app.include_router(roles_router, prefix="/api/v1", dependencies=_mod("users"))
 app.include_router(segments_router, prefix="/api/v1", dependencies=_mod("users"))

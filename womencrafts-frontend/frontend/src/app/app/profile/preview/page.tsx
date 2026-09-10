@@ -1,17 +1,18 @@
 "use client";
 
 import Link from "next/link";
-import * as Icons from "lucide-react";
+import * as Icons from "@/components/ux/icons";
 
 import { useCallback } from "react";
 
 import { apiMeProfile, type MeProfile } from "@/lib/member-api";
 import { useResource } from "@/lib/use-resource";
-import { Btn, Card, IconTile, Pill, Rating, SectionHead } from "@/components/ux/kit";
+import {Back, Btn, Card, IconTile, Pill, Rating, SectionHead } from "@/components/ux/kit";
 import { HomeShell } from "@/components/ux/home/HomeShell";
 import { useCertificates, useCircles, useProgress } from "@/components/ux/live";
 import { useBusiness } from "@/components/ux/business";
 import { useMe } from "@/components/ux/me";
+import { useT } from "@/i18n";
 
 
 /**
@@ -44,6 +45,7 @@ function missingFrom(p: MeProfile | null) {
  * had counted.
  */
 export default function ProfilePreview() {
+  const tr = useT();
   const ME = useMe();
   const { data: profile } = useResource(
     useCallback(() => apiMeProfile(), []),
@@ -62,9 +64,9 @@ export default function ProfilePreview() {
   return (
     <HomeShell
       rail={
-        <div className="space-y-[15px]">
+        <div className="space-y-[16px]">
           <Card>
-            <SectionHead title="What is never shown" icon="Lock" />
+            <SectionHead title={tr("profilePreview.whatIsNeverShown")} icon="Lock" />
             {/* Stated, not omitted. An absence proves nothing. */}
             <ul className="space-y-2.5">
               {[
@@ -74,24 +76,22 @@ export default function ProfilePreview() {
                 "Your documents",
                 "What you earn",
               ].map((t) => (
-                <li key={t} className="flex items-center gap-2.5 text-[12.5px]" style={{ color: "var(--ux-ink-2)" }}>
+                <li key={t} className="flex items-center gap-2.5 text-xsm" style={{ color: "var(--ux-ink-2)" }}>
                   <Icons.EyeOff className="h-[14px] w-[14px] shrink-0" style={{ color: "var(--ux-brand)" }} />
                   {t}
                 </li>
               ))}
             </ul>
-            <p className="mt-3.5 rounded-[11px] p-3 text-[12px] leading-relaxed"
-               style={{ background: "var(--ux-surface-2)", color: "var(--ux-ink-2)" }}>
-              An employer can message you through WomSakhi without ever seeing how to reach you directly.
-            </p>
+            <p className="mt-3.5 rounded-[12px] p-3 text-xs leading-relaxed"
+               style={{ background: "var(--ux-surface-2)", color: "var(--ux-ink-2)" }}>{tr("profilePreview.anEmployerCanMessageYouThrough")}</p>
           </Card>
 
           {missing.length > 0 && (
             <Card>
-              <SectionHead title="What would make this stronger" sub={`${missing.length} left`} />
+              <SectionHead title={tr("profilePreview.whatWouldMakeThisStronger")} sub={`${missing.length} left`} />
               <ul className="ux-stagger space-y-2.5">
                 {missing.map((s, i) => (
-                  <li key={s.id} className="ux-hov flex items-center gap-2.5 text-[12.5px]"
+                  <li key={s.id} className="ux-hov flex items-center gap-2.5 text-xsm"
                       style={{ ["--i" as string]: i, color: "var(--ux-ink-2)" }}>
                     <Icons.Circle className="h-[14px] w-[14px] shrink-0" style={{ color: "var(--ux-faint)" }} />
                     <span className="min-w-0 flex-1 truncate">{s.label}</span>
@@ -99,50 +99,46 @@ export default function ProfilePreview() {
                 ))}
               </ul>
               <div className="mt-3.5">
-                <Btn href="/app/profile" variant="primary" size="sm" full iconEnd="ArrowRight">Fill these in</Btn>
+                <Btn href="/app/profile" variant="primary" size="sm" full iconEnd="ArrowRight">{tr("profilePreview.fillTheseIn")}</Btn>
               </div>
             </Card>
           )}
         </div>
       }
     >
-      <Link href="/app/profile"
-            className="ux-hov -my-1 mb-3.5 inline-flex items-center gap-1.5 py-1 text-[12.5px] font-medium"
-            style={{ color: "var(--ux-brand)" }}>
-        <Icons.ArrowLeft className="ux-ico h-4 w-4" /> Your profile
-      </Link>
+      <Back to="/app/profile" label={tr("profilePreview.yourProfile")} className="mb-4" />
 
       {/* The banner IS the feature — without it this is just a second profile. */}
-      <div className="ux-sq mb-[15px] flex items-center gap-3.5 rounded-[14px] p-4"
+      <div className="ux-sq mb-[16px] flex items-center gap-3.5 rounded-[12px] p-4"
            style={{ background: "var(--ux-tint-blue)" }}>
         <Icons.Eye className="h-[20px] w-[20px] shrink-0" style={{ color: "var(--ux-blue-ink)" }} />
-        <p className="min-w-0 flex-1 text-[13px] leading-snug" style={{ color: "var(--ux-ink-2)" }}>
-          <strong style={{ color: "var(--ux-ink)" }}>This is exactly what an employer or buyer sees.</strong>{" "}
+        <p className="min-w-0 flex-1 text-xsm leading-snug" style={{ color: "var(--ux-ink-2)" }}>
+          <strong style={{ color: "var(--ux-ink)" }}>{tr("profilePreview.thisIsExactlyWhatAnEmployer")}</strong>{" "}
           Nothing below is private, and nothing private is below.
         </p>
         <Btn href="/app/profile" variant="outline" size="sm" icon="Pencil">Edit</Btn>
       </div>
 
-      <Card className="mb-[15px]">
+      <Card className="mb-[16px]">
         <div className="flex items-start gap-4">
           <span className="h-[86px] w-[86px] shrink-0 overflow-hidden rounded-full"
                 style={{ background: "var(--ux-brand-tint)" }}>
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src={profile?.avatar || ME.avatar} alt="" className="h-full w-full object-cover" />
+            <img loading="lazy" decoding="async" src={profile?.avatar || ME.avatar} alt="" className="h-full w-full object-cover" />
           </span>
           <div className="min-w-0 flex-1">
-            <h1 className="flex items-center gap-2 text-[22px] font-bold" style={{ color: "var(--ux-ink)" }}>
+            <h1 className="flex items-center gap-2 text-xl font-bold" style={{ color: "var(--ux-ink)" }}>
               {name}
               {verified && <Icons.BadgeCheck className="h-[19px] w-[19px]" style={{ color: "var(--ux-blue)" }} />}
             </h1>
             {/* "I sew, and I am learning to sell online." was printed as every
                 woman's own line, on the screen that swears it shows her only
                 what is really there. */}
-            <p className="mt-1 text-[13.5px]"
+            <p className="mt-1 text-sm"
                style={{ color: profile?.bio ? "var(--ux-ink-2)" : "var(--ux-faint)" }}>
               {profile?.bio || "No line about yourself yet — an employer sees this space empty."}
             </p>
-            <p className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1 text-[12.5px]" style={{ color: "var(--ux-muted)" }}>
+            <p className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1 text-xsm" style={{ color: "var(--ux-muted)" }}>
               {profile?.location && (
                 <span className="inline-flex items-center gap-1.5"><Icons.MapPin className="h-4 w-4" /> {profile.location}</span>
               )}
@@ -153,14 +149,14 @@ export default function ProfilePreview() {
               )}
             </p>
             <div className="mt-2.5 flex flex-wrap gap-2">
-              {verified && <Pill tone="green" size="sm">Verified member</Pill>}
+              {verified && <Pill tone="green" size="sm">{tr("profilePreview.verifiedMember")}</Pill>}
               {profile?.segment && <Pill tone="brand" size="sm">{profile.segment}</Pill>}
             </div>
           </div>
         </div>
 
         {/* What a stranger cannot see, said out loud. */}
-        <div className="mt-4 flex flex-wrap items-center gap-x-5 gap-y-2 border-t pt-4 text-[12px]"
+        <div className="mt-4 flex flex-wrap items-center gap-x-5 gap-y-2 border-t pt-4 text-xs"
              style={{ borderColor: "var(--ux-line)" }}>
           {["Phone number", "Address", "Date of birth"].map((t) => (
             <span key={t} className="inline-flex items-center gap-1.5" style={{ color: "var(--ux-faint)" }}>
@@ -170,10 +166,10 @@ export default function ProfilePreview() {
         </div>
       </Card>
 
-      <div className="grid grid-cols-[minmax(0,1fr)_320px] gap-[15px]">
-        <div className="space-y-[15px]">
+      <div className="grid grid-cols-[minmax(0,1fr)_320px] gap-[16px]">
+        <div className="space-y-[16px]">
           <Card>
-            <SectionHead title="What she has done" />
+            <SectionHead title={tr("profilePreview.whatSheHasDone")} />
             <div className="grid grid-cols-2 gap-4">
               {/* Three of these four were constants — 6, 87 and 15 — on the
                   screen whose whole promise is that nothing on it is invented. */}
@@ -186,8 +182,8 @@ export default function ProfilePreview() {
                 <div key={label} className="ux-hov flex items-center gap-3">
                   <IconTile icon={icon} tint={tint} ink={ink} size={40} radius={11} />
                   <div className="min-w-0">
-                    <p className="text-[19px] font-bold leading-none tabular-nums" style={{ color: "var(--ux-ink)" }}>{v}</p>
-                    <p className="mt-1 truncate text-[11.5px]" style={{ color: "var(--ux-muted)" }}>{label}</p>
+                    <p className="text-lg font-bold leading-none tabular-nums" style={{ color: "var(--ux-ink)" }}>{v}</p>
+                    <p className="mt-1 truncate text-xs" style={{ color: "var(--ux-muted)" }}>{label}</p>
                   </div>
                 </div>
               ))}
@@ -195,17 +191,17 @@ export default function ProfilePreview() {
           </Card>
 
           <Card>
-            <SectionHead title="Certificates" sub="Anyone can check these codes" />
+            <SectionHead title="Certificates" sub={tr("profilePreview.anyoneCanCheckTheseCodes")} />
             <ul className="ux-deck ux-stagger space-y-2.5">
               {CERTIFICATES.map((c, i) => (
-                <li key={c.id} className="ux-i ux-sq flex items-center gap-3.5 rounded-[13px] border p-3"
+                <li key={c.id} className="ux-i ux-sq flex items-center gap-3.5 rounded-[12px] border p-3"
                     style={{ borderColor: "var(--ux-line)", ["--i" as string]: i }}>
-                  <span className="ux-metal ux-sq grid h-[40px] w-[40px] shrink-0 place-items-center rounded-[11px]">
+                  <span className="ux-metal ux-sq grid h-[40px] w-[40px] shrink-0 place-items-center rounded-[12px]">
                     <Icons.Award className="ux-ico h-[18px] w-[18px]" strokeWidth={1.9} />
                   </span>
                   <div className="min-w-0 flex-1">
-                    <p className="truncate text-[13px] font-semibold" style={{ color: "var(--ux-ink)" }}>{c.title}</p>
-                    <p className="mt-0.5 truncate text-[11.5px]" style={{ color: "var(--ux-muted)" }}>
+                    <p className="truncate text-xsm font-semibold" style={{ color: "var(--ux-ink)" }}>{c.title}</p>
+                    <p className="mt-0.5 truncate text-xs" style={{ color: "var(--ux-muted)" }}>
                       {c.issued} · {c.code}
                     </p>
                   </div>
@@ -216,32 +212,30 @@ export default function ProfilePreview() {
           </Card>
         </div>
 
-        <div className="space-y-[15px]">
+        <div className="space-y-[16px]">
           <Card>
-            <SectionHead title="Her shop" />
+            <SectionHead title={tr("profilePreview.herShop")} />
             <div className="ux-hov flex items-center gap-3">
               <span className="h-[46px] w-[46px] shrink-0 overflow-hidden rounded-[12px]"
                     style={{ background: "var(--ux-tint-orange)" }}>
                 {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src={SHOP.art} alt="" className="ux-art h-full w-full object-cover" />
+                <img loading="lazy" decoding="async" src={SHOP.art} alt="" className="ux-art h-full w-full object-cover" />
               </span>
               <div className="min-w-0 flex-1">
-                <p className="truncate text-[13.5px] font-semibold" style={{ color: "var(--ux-ink)" }}>{SHOP.name}</p>
+                <p className="truncate text-sm font-semibold" style={{ color: "var(--ux-ink)" }}>{SHOP.name}</p>
                 <p className="mt-0.5"><Rating value={SHOP.rating} count={`${SHOP.reviews} reviews`} /></p>
               </div>
             </div>
             <div className="mt-3.5">
-              <Btn href="/app/documents" variant="soft" size="sm" full iconEnd="ArrowRight">Visit the shop</Btn>
+              <Btn href="/app/documents" variant="soft" size="sm" full iconEnd="ArrowRight">{tr("profilePreview.visitTheShop")}</Btn>
             </div>
           </Card>
 
           <Card>
-            <SectionHead title="Get in touch" />
-            <p className="text-[12.5px] leading-relaxed" style={{ color: "var(--ux-ink-2)" }}>
-              Messages reach her inside WomSakhi. She decides whether to share anything more.
-            </p>
+            <SectionHead title={tr("profilePreview.getInTouch")} />
+            <p className="text-xsm leading-relaxed" style={{ color: "var(--ux-ink-2)" }}>{tr("profilePreview.messagesReachHerInsideWomsakhiShe")}</p>
             <div className="mt-3.5">
-              <Btn href="/app/messages" variant="primary" size="sm" full icon="MessageCircle">Message her</Btn>
+              <Btn href="/app/messages" variant="primary" size="sm" full icon="MessageCircle">{tr("profilePreview.messageHer")}</Btn>
             </div>
           </Card>
         </div>

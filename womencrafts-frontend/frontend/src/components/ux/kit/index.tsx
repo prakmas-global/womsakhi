@@ -1,8 +1,9 @@
 "use client";
 
 import * as React from "react";
+import { COPY } from "@/components/ux/copy";
 import Link from "next/link";
-import * as Icons from "lucide-react";
+import * as Icons from "@/components/ux/icons";
 
 import { useGrow, usePointer, useRipple } from "./motion";
 
@@ -55,20 +56,20 @@ export function SectionHead({ title, sub, action, onAction, icon, chip }: {
   return (
     <div className="mb-3.5 flex items-start justify-between gap-3">
       <div className="min-w-0">
-        <h2 className="flex items-center gap-2 text-[15px] font-semibold" style={{ color: "var(--ux-ink)" }}>
+        <h2 className="flex items-center gap-2 text-base font-semibold" style={{ color: "var(--ux-ink)" }}>
           {icon && <I name={icon} className="h-[17px] w-[17px]" style={{ color: "var(--ux-brand)" }} />}
           {title}
           {chip && (
-            <span className="rounded-full px-2.5 py-[3px] text-[10.5px] font-semibold"
+            <span className="rounded-full px-2.5 py-[3px] text-2xs font-semibold"
                   style={{ background: "var(--ux-brand-tint)", color: "var(--ux-brand)" }}>{chip}</span>
           )}
         </h2>
-        {sub && <p className="mt-1 text-[12px]" style={{ color: "var(--ux-muted)" }}>{sub}</p>}
+        {sub && <p className="mt-1 text-xs" style={{ color: "var(--ux-muted)" }}>{sub}</p>}
       </div>
       {action && (
         <button onClick={onAction}
                 /* -my-1 py-1 keeps the 24px hit area without moving the text */
-                className="ux-press ux-hov -my-1 flex shrink-0 items-center gap-1 py-1 text-[12.5px] font-medium"
+                className="ux-press ux-hov -my-1 flex shrink-0 items-center gap-1 py-1 text-xsm font-medium"
                 style={{ color: "var(--ux-brand)" }}>
           {action} <Icons.ChevronRight className="ux-arrow h-3.5 w-3.5" strokeWidth={2.2} />
         </button>
@@ -78,12 +79,30 @@ export function SectionHead({ title, sub, action, onAction, icon, chip }: {
 }
 
 /** A line icon inside a soft tinted square — the board's most repeated shape. */
+/**
+ * A line icon inside a soft tinted square.
+ *
+ * The square is pressed INTO the surface behind it rather than sitting on top
+ * of it: an inset pair, scaled to the tile (offset ≈ size/15, blur ≈ size/5,
+ * which at 40px is 3px and 8px — a card's 12/30 pasted onto something this
+ * small is a grey halo, not a dent). A raised tile inside a raised card gives
+ * two light sources arguing; a dent gives one.
+ */
 export function IconTile({ icon, tint, ink, size = 40, radius = 11 }: {
   icon: string; tint: string; ink: string; size?: number; radius?: number;
 }) {
+  /*
+    Scaled to itself: offset ≈ size/16, blur ≈ size/8, so a 40px tile gets
+    2px and 5px. The card token's 6/14 pasted onto something this small is a
+    grey halo rather than a lift — that mistake is the single most common way
+    this style is got wrong, and it is why generator output cannot be
+    copied from a 300px demo onto a 40px control.
+  */
   return (
     <span className="ux-sq grid shrink-0 place-items-center"
-          style={{ width: size, height: size, borderRadius: radius, background: v(tint), color: v(ink) }}>
+          style={{ width: size, height: size, borderRadius: radius,
+                   background: v(tint), color: v(ink),
+                   boxShadow: `inset 0 1px 0 var(--ux-edge-hi), inset 0 0 0 1px var(--ux-hairline), 0 ${Math.max(1, Math.round(size / 20))}px ${Math.max(2, Math.round(size / 8))}px -1px var(--ux-sh-1)` }}>
       <I name={icon} className="ux-ico" style={{ width: size * 0.45, height: size * 0.45 }} />
     </span>
   );
@@ -96,7 +115,12 @@ export function Progress({ pct, tone = "--ux-brand-600", track = "--ux-brand-tin
   // makes progress feel like progress. Held at the value under reduced motion.
   const w = useGrow(Math.max(0, Math.min(100, pct)));
   return (
-    <div className="w-full overflow-hidden rounded-full" style={{ height: h, background: v(track) }}
+    /* The track is a channel, not a stripe. A progress bar is one of the few
+       shapes where a true inset earns its keep — the fill reads as something
+       moving along a groove rather than a coloured rectangle painted on top. */
+    <div className="w-full overflow-hidden rounded-full"
+         style={{ height: h, background: v(track),
+                  boxShadow: `inset 0 1px 2px rgb(var(--ux-shadow-ink) / 0.14)` }}
          role="progressbar" aria-valuenow={Math.round(pct)} aria-valuemin={0} aria-valuemax={100}>
       <div className="h-full rounded-full"
            style={{ width: `${w}%`, background: v(tone),
@@ -107,7 +131,7 @@ export function Progress({ pct, tone = "--ux-brand-600", track = "--ux-brand-tin
 
 export function Rating({ value, count }: { value: string | number; count?: string }) {
   return (
-    <span className="flex items-center gap-1 text-[11.5px]" style={{ color: "var(--ux-muted)" }}>
+    <span className="flex items-center gap-1 text-xs" style={{ color: "var(--ux-muted)" }}>
       <Icons.Star className="h-[13px] w-[13px]" fill="var(--ux-amber)" style={{ color: "var(--ux-amber)" }} />
       <span className="font-medium" style={{ color: "var(--ux-ink-2)" }}>{value}</span>
       {count && <span>({count})</span>}
@@ -129,7 +153,7 @@ export function Pill({ children, tone = "brand", size = "md" }: {
     neutral: ["--ux-surface-2", "--ux-muted"],
   }[tone];
   return (
-    <span className={`inline-flex items-center rounded-full font-semibold ${size === "sm" ? "px-2 py-[2px] text-[10px]" : "px-2.5 py-[3px] text-[11px]"}`}
+    <span className={`inline-flex items-center rounded-full font-semibold ${size === "sm" ? "px-2 py-[2px] text-2xs" : "px-2.5 py-[3px] text-2xs"}`}
           style={{ background: v(map[0]), color: v(map[1]) }}>{children}</span>
   );
 }
@@ -139,11 +163,25 @@ export function Chip({ children, selected, onClick, icon }: {
 }) {
   return (
     <button onClick={onClick} aria-pressed={selected}
-      className="ux-press ux-sq inline-flex items-center gap-2 rounded-[11px] border px-3.5 py-2.5 text-[12.5px] font-medium transition-colors"
+      className="ux-press ux-sq inline-flex items-center gap-2 rounded-[12px] border px-3.5 py-2.5 text-xsm font-medium transition-colors"
+      /*
+        Chosen means pressed in.
+
+        This is the one place in the app where the metaphor genuinely earns
+        its keep: an unselected chip sits proud of the surface with a hard 1px
+        top highlight, a selected one is pushed into it. At 34px the shadow is
+        deliberately tiny — offset ≈ size/16 — because a card's blur on a chip
+        is fuzz, not depth. The colour and the tick still do the work for
+        anyone who cannot see the shading; the shading is the pleasure, not
+        the information.
+      */
       style={{
         borderColor: selected ? "var(--ux-brand)" : "var(--ux-line-strong)",
         background: selected ? "var(--ux-brand-tint)" : "var(--ux-surface)",
         color: selected ? "var(--ux-brand)" : "var(--ux-ink)",
+        boxShadow: selected
+          ? "inset 0 1px 3px rgb(var(--ux-shadow-ink) / 0.16)"
+          : "inset 0 1px 0 var(--ux-edge-hi), 0 1px 2px var(--ux-sh-1)",
       }}>
       {icon && <I name={icon} className="h-[15px] w-[15px]" />}
       {children}
@@ -160,11 +198,12 @@ export function Chip({ children, selected, onClick, icon }: {
  * thing the pointer actually hits ends up ~20px tall no matter how much padding
  * the button inside it has.
  */
-export function Btn({ children, variant = "primary", size = "md", icon, iconEnd, onClick, href, className = "", full, type = "button", ariaLabel, disabled }: {
+export function Btn({ children, variant = "primary", size = "md", icon, iconEnd, onClick, href, className = "", full, type = "button", ariaLabel, disabled, loading }: {
   children: React.ReactNode;
   variant?: "primary" | "soft" | "outline" | "ghost" | "on-brand";
   size?: "sm" | "md" | "lg"; icon?: string; iconEnd?: string;
-  onClick?: () => void; href?: string; className?: string; full?: boolean;
+  onClick?: (() => void) | (() => Promise<unknown>);
+  href?: string; className?: string; full?: boolean;
   type?: "button" | "submit"; ariaLabel?: string;
   /**
    * Not pressable — while a write is in flight, or until she has chosen what
@@ -172,15 +211,57 @@ export function Btn({ children, variant = "primary", size = "md", icon, iconEnd,
    * a button that vanishes takes the explanation of what to do next with it.
    */
   disabled?: boolean;
+  /**
+   * Explicitly busy. Rarely needed — an `onClick` that returns a promise is
+   * detected on its own (see `busy` below), so this is for the case where the
+   * work is owned by a parent that already tracks it.
+   */
+  loading?: boolean;
 }) {
-  const pad = { sm: "px-3 py-1.5 text-[11.5px]", md: "px-4 py-2.5 text-[12.5px]", lg: "px-6 py-3 text-[14px]" }[size];
+  /**
+   * The double-submit guard, automatic.
+   *
+   * §38 says never allow double submission, and asking every call site to
+   * remember a `busy` flag guarantees some of them will not. So if `onClick`
+   * returns a promise, the button holds itself busy until it settles — which
+   * covers every async handler in the app without one of them being edited.
+   *
+   * A woman on a slow connection taps twice because nothing visibly happened.
+   * That is not a mistake on her part; it is the button failing to answer.
+   */
+  const [busy, setBusy] = React.useState(false);
+  // A REF, not the state, decides whether a click is allowed through.
+  //
+  // State cannot stop this: three taps inside one tick all run against the
+  // handler React rendered while `busy` was still false, so `setBusy(true)`
+  // arrives too late for the second and third. The ref is written
+  // synchronously inside the first click, so the next two see it immediately.
+  const running = React.useRef(false);
+  const held = loading || busy;
+
+  const guarded = onClick
+    ? () => {
+        if (running.current || loading) return;
+        const r = (onClick as () => unknown)();
+        if (r && typeof (r as Promise<unknown>).finally === "function") {
+          running.current = true;
+          setBusy(true);
+          (r as Promise<unknown>).finally(() => { running.current = false; setBusy(false); });
+        }
+      }
+    : undefined;
+
+  // Held counts as disabled everywhere below: same dimming, same removal of
+  // the press animations, same blocked handler.
+  disabled = disabled || held;
+  const pad = { sm: "px-3 py-1.5 text-xs", md: "px-4 py-2.5 text-xsm", lg: "px-6 py-3 text-sm" }[size];
   const look = {
-    primary: { background: "linear-gradient(96deg, var(--ux-fill), var(--ux-fill-2))", color: "#fff", border: "1px solid transparent" },
+    primary: { background: "linear-gradient(96deg, var(--ux-fill), var(--ux-fill-2))", color: "var(--ux-on-brand)", border: "1px solid transparent" },
     soft:    { background: "var(--ux-brand-tint)", color: "var(--ux-brand)", border: "1px solid transparent" },
     outline: { background: "var(--ux-surface)", color: "var(--ux-ink)", border: "1px solid var(--ux-line-strong)" },
     ghost:   { background: "transparent", color: "var(--ux-brand)", border: "1px solid transparent" },
     // For use on the hero gradient, where the brand violet would disappear.
-    "on-brand": { background: "rgba(255,255,255,0.14)", color: "#fff", border: "1px solid rgba(255,255,255,0.34)" },
+    "on-brand": { background: "rgba(255,255,255,0.14)", color: "var(--ux-on-brand)", border: "1px solid rgba(255,255,255,0.34)" },
   }[variant];
   // Clay on the two filled variants only: an outline button has no slab to
   // shade, and a ghost button would grow a shadow out of nothing.
@@ -189,14 +270,19 @@ export function Btn({ children, variant = "primary", size = "md", icon, iconEnd,
   // lifts under the finger but does nothing reads as a broken button, not a
   // waiting one.
   const cls = disabled
-    ? `ux-sq inline-flex items-center justify-center gap-2 rounded-[11px] font-semibold ${pad} ${full ? "w-full" : ""} ${className}`
-    : `ux-press ux-hov ux-sq ux-magnet ux-ripple ${clay} inline-flex items-center justify-center gap-2 rounded-[11px] font-semibold ${pad} ${full ? "w-full" : ""} ${className}`;
+    ? `ux-sq inline-flex items-center justify-center gap-2 rounded-[12px] font-semibold ${pad} ${full ? "w-full" : ""} ${className}`
+    : `ux-press ux-hov ux-sq ux-magnet ux-ripple ${clay} inline-flex items-center justify-center gap-2 rounded-[12px] font-semibold ${pad} ${full ? "w-full" : ""} ${className}`;
   const dim = disabled ? { opacity: 0.55, cursor: "not-allowed" } : null;
   const inner = (
     <>
-      {icon && <I name={icon} className="ux-ico h-[15px] w-[15px]" sw={2.1} />}
+      {/* The spinner takes the leading icon's place rather than being added
+          beside it, so the button does not change width mid-press and shift
+          everything next to it. */}
+      {held
+        ? <I name="Loader" className="ux-spin h-[15px] w-[15px]" sw={2.1} />
+        : icon && <I name={icon} className="ux-ico h-[15px] w-[15px]" sw={2.1} />}
       {children}
-      {iconEnd && <I name={iconEnd} className="ux-arrow h-[15px] w-[15px]" sw={2.1} />}
+      {iconEnd && !held && <I name={iconEnd} className="ux-arrow h-[15px] w-[15px]" sw={2.1} />}
     </>
   );
   // Two refs on one node: the pointer hook writes --px/--py for the magnet, the
@@ -220,14 +306,15 @@ export function Btn({ children, variant = "primary", size = "md", icon, iconEnd,
       );
     }
     return (
-      <Link ref={setRef} href={href} onClick={onClick} aria-label={ariaLabel} className={cls} style={look}>
+      <Link ref={setRef} href={href} onClick={guarded} aria-label={ariaLabel} className={cls} style={look}>
         {inner}
       </Link>
     );
   }
   return (
-    <button ref={setRef} type={type} onClick={disabled ? undefined : onClick} disabled={disabled}
-            aria-label={ariaLabel} className={cls} style={{ ...look, ...dim }}>
+    <button ref={setRef} type={type} onClick={guarded} disabled={disabled}
+            aria-label={ariaLabel} aria-busy={held || undefined}
+            className={cls} style={{ ...look, ...dim }}>
       {inner}
     </button>
   );
@@ -238,10 +325,10 @@ export function AvatarStack({ srcs, extra, size = 26 }: { srcs: string[]; extra?
     <div className="ux-fan flex shrink-0 items-center">
       {srcs.map((s, i) => (
         // eslint-disable-next-line @next/next/no-img-element
-        <img key={s + i} src={s} alt="" className="rounded-full border-2 object-cover"
+        <img loading="lazy" decoding="async" key={s + i} src={s} alt="" className="rounded-full border-2 object-cover"
              style={{ width: size, height: size, borderColor: "var(--ux-surface)", marginLeft: i ? -8 : 0 }} />
       ))}
-      {extra && <span className="ms-1.5 text-[10.5px]" style={{ color: "var(--ux-muted)" }}>{extra}</span>}
+      {extra && <span className="ms-1.5 text-2xs" style={{ color: "var(--ux-muted)" }}>{extra}</span>}
     </div>
   );
 }
@@ -253,8 +340,8 @@ export function Stat({ value, label, icon, tint, ink }: {
     <div className="flex items-center gap-3">
       {icon && tint && ink && <IconTile icon={icon} tint={tint} ink={ink} size={38} />}
       <div className="min-w-0">
-        <p className="text-[19px] font-bold leading-none" style={{ color: "var(--ux-ink)" }}>{value}</p>
-        <p className="mt-1 truncate text-[11.5px]" style={{ color: "var(--ux-muted)" }}>{label}</p>
+        <p className="text-lg font-bold leading-none" style={{ color: "var(--ux-ink)" }}>{value}</p>
+        <p className="mt-1 truncate text-xs" style={{ color: "var(--ux-muted)" }}>{label}</p>
       </div>
     </div>
   );
@@ -269,8 +356,8 @@ export function EmptyState({ title, body, icon = "Inbox", action }: {
             style={{ background: "var(--ux-brand-tint)" }}>
         <I name={icon} className="h-7 w-7" style={{ color: "var(--ux-brand)" }} />
       </span>
-      <h3 className="mt-4 text-[14px] font-semibold" style={{ color: "var(--ux-ink)" }}>{title}</h3>
-      <p className="mt-1.5 max-w-[320px] text-[12.5px] leading-relaxed" style={{ color: "var(--ux-muted)" }}>{body}</p>
+      <h2 className="mt-4 text-sm font-semibold" style={{ color: "var(--ux-ink)" }}>{title}</h2>
+      <p className="mt-1.5 max-w-[320px] text-xsm leading-relaxed" style={{ color: "var(--ux-muted)" }}>{body}</p>
       {action && <div className="mt-4">{action}</div>}
     </div>
   );
@@ -312,7 +399,7 @@ export function Tabs({ items, active, onChange }: {
     <div ref={wrap} role="tablist" className="ux-sq relative inline-flex gap-1.5 rounded-[12px] p-1"
          style={{ background: "var(--ux-surface-2)" }}>
       {pill && (
-        <span aria-hidden className="ux-sq absolute rounded-[9px]"
+        <span aria-hidden className="ux-sq absolute rounded-[8px]"
               style={{
                 left: pill.x, width: pill.w, top: 4, bottom: 4,
                 background: "var(--ux-surface)", boxShadow: "var(--ux-shadow-card)",
@@ -324,7 +411,7 @@ export function Tabs({ items, active, onChange }: {
         return (
           <button key={t} role="tab" aria-selected={on} data-on={on ? "1" : undefined}
             onClick={() => onChange(t)}
-            className="relative z-[1] rounded-[8px] px-3.5 py-2 text-[12.5px] font-medium transition-colors"
+            className="relative z-[1] rounded-[8px] px-3.5 py-2 text-xsm font-medium transition-colors"
             style={{ color: on ? "var(--ux-brand)" : "var(--ux-muted)" }}>
             {t}
           </button>
@@ -342,7 +429,7 @@ export function Rail({ children, id }: { children: React.ReactNode; id: string }
   };
   return (
     <div className="relative">
-      <div id={id} className="ux-scroll-x flex gap-[15px] pb-1">{children}</div>
+      <div id={id} className="ux-scroll-x flex gap-[16px] pb-1">{children}</div>
       {[-1, 1].map((d) => (
         <button key={d} onClick={() => scroll(d)} aria-label={d < 0 ? "Previous" : "Next"}
           className="absolute top-1/2 grid h-8 w-8 -translate-y-1/2 place-items-center rounded-full border"
@@ -413,7 +500,7 @@ export function ActionBtn({
       setFailed(false);
     } catch {
       setFailed(true);
-      setSaid("That did not go through. Try again in a moment.");
+      setSaid(COPY.writeFailed);
       window.clearTimeout(timer.current);
       timer.current = window.setTimeout(() => { setSaid(null); setFailed(false); }, hold * 2);
       return;
@@ -471,7 +558,7 @@ export function SourceNote({ source, what = "figures" }: { source: "live" | "moc
   return (
     <p
       role="status"
-      className="ux-sq mb-3.5 flex items-start gap-2.5 rounded-[12px] px-3.5 py-2.5 text-[12px] leading-relaxed"
+      className="ux-sq mb-3.5 flex items-start gap-2.5 rounded-[12px] px-3.5 py-2.5 text-xs leading-relaxed"
       style={{ background: "var(--ux-tint-amber)", color: "var(--ux-amber-ink)" }}
     >
       <I name="Info" className="mt-[1px] h-[14px] w-[14px] shrink-0" sw={2} />
@@ -482,7 +569,36 @@ export function SourceNote({ source, what = "figures" }: { source: "live" | "moc
     </p>
   );
 }
+/**
+ * "This screen is built, the endpoint is not yet."
+ *
+ * Distinct from `SourceNote`, which means something else entirely: that a live
+ * fetch FAILED and she is looking at a fallback. Saying that on a screen whose
+ * API was never written would be a lie in the other direction — it would send
+ * her to pull down and try again forever.
+ */
+export function DemoNote({ what }: { what: string }) {
+  return (
+    <p
+      role="status"
+      className="ux-sq mb-3.5 flex items-start gap-2.5 rounded-[12px] px-3.5 py-2.5 text-xs leading-relaxed"
+      style={{ background: "var(--ux-surface-2)", color: "var(--ux-ink-2)" }}
+    >
+      <I name="Info" className="mt-[1px] h-[14px] w-[14px] shrink-0" sw={2} />
+      <span>
+        {what} are shown as examples while this part is being built. Nothing here is your real
+        data, and nothing you do on this screen is saved yet.
+      </span>
+    </p>
+  );
+}
+
 export { certificateHtml, printCertificate, type CertificateFields } from "./download";
 export { Money, formatMoney as formatRupees, formatMoneyOrFree, formatWholeRupees } from "./money";
+export { Sheet } from "./sheet";
+export { useNarrow } from "./media";
+export { Avatar } from "./avatar";
+export { Field, TextInput } from "./field";
+export { Back, NavHistory } from "./back";
 export { ConfirmButton } from "./confirm";
 export { Rows, rowMemo } from "./rows";

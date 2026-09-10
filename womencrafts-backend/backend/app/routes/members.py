@@ -168,10 +168,62 @@ async def set_member_status(member_id: str, payload: MemberStatusUpdate, _: dict
 
 @router.delete("/{member_id}", summary="Delete a member", dependencies=[Depends(require_permission("users.delete"))])
 async def delete_member(member_id: str, _: dict = Depends(get_current_user)):
-    result = await _members().delete_one({"_id": to_object_id(member_id)})
-    if result.deleted_count == 0:
+    """
+    Delete a member, and everything that only existed because of her.
+
+    **This used to delete one row.** `members.delete_one` removed the directory
+    profile and left everything else exactly where it was:
+
+      · her `users` row survived, so the login still worked — an account that
+        could sign in, with no profile behind it, which is a broken state no
+        screen is written for;
+      · her documents, notifications, messages, saved items and reset tokens
+        all stayed, pointing at a member who no longer existed. Mongo has no
+        foreign keys and nothing cascades, so nothing said a word.
+
+    What is deleted and what survives is declared in `app/core/integrity.py`
+    rather than here, so a new collection is one line in one table instead of a
+    rule somebody has to remember to add to this function. Her financial
+    records SURVIVE with the pointer cleared — a wallet transaction is a record
+    of money that actually moved, and deleting it to tidy a reference would be
+    falsifying a ledger.
+
+    Her identity documents are deleted from disk as well as from the database.
+    Leaving an encrypted photograph of somebody's Aadhaar card on a server
+    after she has been removed is not a filing error.
+    """
+    from pathlib import Path
+
+    from app.core import integrity
+    from app.core.config import settings
+
+    db = get_database()
+    member = await db[MemberModel.collection_name].find_one({"_id": to_object_id(member_id)})
+    if not member:
         raise HTTPException(status.HTTP_404_NOT_FOUND, "Member not found")
-    return {"message": "Member deleted"}
+
+    # The login behind the profile, if there is one. Matched on email because
+    # that is the only link the two collections share in both directions.
+    user = await db[UserModel.collection_name].find_one({"email": member.get("email", "")})
+
+    removed: dict[str, int] = {}
+    if user:
+        uid = str(user["_id"])
+        # Her ID documents, off the disk as well as out of the database.
+        folder = Path(settings.PRIVATE_MEDIA_DIR) / uid
+        if folder.exists():
+            for f in folder.glob("*"):
+                f.unlink(missing_ok=True)
+            folder.rmdir()
+        removed.update(await integrity.cascade_delete("users", user["_id"]))
+        await db[UserModel.collection_name].delete_one({"_id": user["_id"]})
+        removed["users deleted"] = 1
+
+    removed.update(await integrity.cascade_delete("members", member["_id"]))
+    await db[MemberModel.collection_name].delete_one({"_id": member["_id"]})
+
+    detail = ", ".join(f"{n} {what}" for what, n in sorted(removed.items())) or "nothing else"
+    return {"message": f"Member deleted. Also removed: {detail}."}
 
 
 @router.post(

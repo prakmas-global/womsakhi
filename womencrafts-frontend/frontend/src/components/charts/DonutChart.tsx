@@ -1,10 +1,16 @@
 "use client";
 
 import { memo } from "react";
-import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from "recharts";
+import dynamic from "next/dynamic";
 
 import { useContainerSize } from "@/layout-engine";
-import { useChartTheme } from "./useChartTheme";
+import { ChartSkeleton } from "./lazy";
+
+/** The recharts half, fetched on first render. See `./lazy.tsx`. */
+const DonutRing = dynamic(() => import("./canvas").then((m) => m.DonutRing), {
+  ssr: false,
+  loading: ChartSkeleton,
+});
 
 export type DonutDatum = { name: string; value: number; color: string };
 
@@ -47,7 +53,6 @@ function DonutChart({
   legend?: boolean;
 }) {
   const { ref, width, height, bucket, measuring } = useContainerSize();
-  const ct = useChartTheme();
   const total = data.reduce((s, d) => s + d.value, 0) || 1;
 
   // A caller that passes an explicit size is asking for exactly that size.
@@ -151,51 +156,13 @@ function DonutChart({
   // zero draws nothing at all — which is a blank card, not a small chart.
   const ring = (
     <div className="relative shrink-0" style={{ width: box, height: box }}>
-      <ResponsiveContainer width="100%" height="100%">
-        <PieChart margin={{ top: 0, right: 0, bottom: 0, left: 0 }}>
-          <Pie
-            data={data}
-            dataKey="value"
-            nameKey="name"
-            cx="50%"
-            cy="50%"
-            innerRadius={Math.max(0, inner - 2)}
-            outerRadius={Math.max(1, outer - 2)}
-            paddingAngle={2}
-            startAngle={90}
-            endAngle={-270}
-            stroke="none"
-            isAnimationActive={false}
-          >
-            {data.map((d) => (
-              <Cell key={d.name} fill={d.color} />
-            ))}
-          </Pie>
-          {showTooltip && (
-            <Tooltip
-              allowEscapeViewBox={{ x: true, y: true }}
-              wrapperStyle={{ zIndex: 60, outline: "none" }}
-              formatter={(value, name) => {
-                const v = typeof value === "number" ? value : Number(value);
-                return [
-                  `${v.toLocaleString()} (${((v / total) * 100).toFixed(1)}%)`,
-                  name as string,
-                ];
-              }}
-              contentStyle={{
-                borderRadius: 10,
-                ...ct.tooltip,
-                boxShadow: "var(--wc-shadow-overlay)",
-                fontSize: 12,
-                padding: "6px 10px",
-                whiteSpace: "nowrap",
-              }}
-              itemStyle={ct.itemStyle}
-              labelStyle={ct.labelStyle}
-            />
-          )}
-        </PieChart>
-      </ResponsiveContainer>
+      <DonutRing
+        data={data}
+        total={total}
+        inner={inner}
+        outer={outer}
+        showTooltip={showTooltip}
+      />
       <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center">
         <span
           className="font-display font-bold leading-none text-ink"

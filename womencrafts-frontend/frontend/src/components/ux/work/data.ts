@@ -25,6 +25,13 @@ export type Job = {
   kind: WorkKind;
   payLow: number;      // rupees per month, so everything is comparable
   payHigh: number;
+  /**
+   * The pay exactly as the listing words it — "₹55 per tiffin", "₹9,000 a
+   * month". Preferred over the parsed range whenever it exists, because the
+   * parse cannot tell a monthly salary from a per-piece rate and the label
+   * would then attach "/ month" to a number that is nothing of the kind.
+   */
+  payText?: string;
   posted: string;
   postedDays: number;
   skills: string[];
@@ -154,5 +161,13 @@ export const KINDS: WorkKind[] = ["Job", "Freelance", "Order", "Internship"];
 export { formatWholeRupees as money } from "../kit/money";
 
 import { formatWholeRupees } from "../kit/money";
-export const payLabel = (j: Job) =>
-  `${formatWholeRupees(j.payLow)} – ${formatWholeRupees(j.payHigh)} / month`;
+export const payLabel = (j: Job) => {
+  // The listing's own words win. A real one read "₹55 per tiffin, 20 a day",
+  // which the parser turned into the range 55–20 and the label then printed as
+  // "₹55 – ₹20 / month" — backwards, and monthly when it is per piece.
+  if (j.payText?.trim()) return j.payText.trim();
+  const low = Math.min(j.payLow, j.payHigh), high = Math.max(j.payLow, j.payHigh);
+  if (!high) return "Pay not stated";
+  if (low === high) return `${formatWholeRupees(high)} / month`;
+  return `${formatWholeRupees(low)} – ${formatWholeRupees(high)} / month`;
+};

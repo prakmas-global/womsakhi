@@ -17,6 +17,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query, Request, status
 from pymongo.errors import DuplicateKeyError
 
 from app.core import mongosafe
+from app.core import cache
 from app.core import idempotency
 from app.core.rbac import require_active_member
 from app.core.serializers import to_object_id
@@ -35,6 +36,7 @@ from app.schemas.community import (
     CircleCreate,
     CircleResponse,
     CircleSavingsResponse,
+    CommunityOverview,
     ContributionResponse,
     LikeResponse,
     PostCreate,
@@ -115,8 +117,18 @@ async def list_circles(
     one" per row, which is both the privacy filter and the `joined` flag the
     screen renders, so `mine=true` stops being a waterfall as well.
     """
-    user_id = str(me["_id"])
+    docs = await _visible_circles(str(me["_id"]), q, mine)
+    return [CircleModel.to_response(d, bool(d.get("_joined"))) for d in docs]
 
+
+async def _visible_circles(user_id: str, q: str = "", mine: bool = False) -> list[dict]:
+    """
+    The circle list, as one query — shared by `list_circles` and the overview.
+
+    Split out rather than copied: the `$match` on `_joined` below IS the privacy
+    filter described above, and a second copy of it somewhere else is a second
+    place for a private circle to leak.
+    """
     query: dict = {"status": "active"}
     if q.strip():
         query.update(mongosafe.any_of(q, ["name", "topic"]))
@@ -127,7 +139,7 @@ async def list_circles(
         else {"$or": [{"is_private": {"$ne": True}}, {"_joined": True}]}
     )
 
-    docs = await _circles().aggregate([
+    return await _circles().aggregate([
         {"$match": query},
         {"$lookup": {
             "from": CircleMemberModel.collection_name,
@@ -149,7 +161,53 @@ async def list_circles(
         {"$limit": 100},
     ]).to_list(100)
 
-    return [CircleModel.to_response(d, bool(d.get("_joined"))) for d in docs]
+
+@router.get("/overview", response_model=CommunityOverview, summary="Everything the circles screen needs")
+async def overview(me: dict = Depends(require_active_member)):
+    """
+    `/app/circles` in one request instead of three.
+
+    The screen asked for her circles, waited, worked out which of them is the
+    savings circle, and only then asked for that circle's pot and its wall —
+    two round trips from her phone in a fixed order, because the second pair
+    genuinely cannot be sent until the first has answered.
+
+    That dependency is real; what was wrong was where it was being resolved.
+    Here the step between the two costs a query, not a journey to her handset
+    and back, and she is not looking at a half-drawn screen while it happens.
+
+    **Nothing here is newly permitted.** The circles come from the same
+    `_visible_circles` the list endpoint uses, so a private circle she is not
+    in is no more visible through this door than the other one; and the pot is
+    only ever built for a circle drawn from that filtered list, which is the
+    membership check `circle_savings` performs on its own path.
+    """
+    uid = str(me["_id"])
+    docs = await _visible_circles(uid, mine=True)
+    circles = [CircleModel.to_response(d, True) for d in docs]
+
+    # The savings circle is the one the pot is about; there is usually one. A
+    # member who has joined nothing yet gets an empty screen, not an error.
+    chosen = next((d for d in docs if d.get("is_savings")), docs[0] if docs else None)
+    if not chosen:
+        return CommunityOverview(circles=circles)
+
+    circle_id = str(chosen["_id"])
+    members, posts = await asyncio.gather(
+        _circle_members().find({"circle_id": circle_id}).sort("turn", 1).to_list(200),
+        _posts()
+        .find({"circle_id": circle_id, "hidden": {"$ne": True}})
+        .sort([("pinned", -1), ("created_at", -1)])
+        .to_list(50),
+    )
+    state = await _savings_state(chosen, uid, members)
+
+    return CommunityOverview(
+        circles=circles,
+        circle_id=circle_id,
+        savings=CircleSavingsResponse(**state),
+        posts=[PostModel.to_response(d, uid) for d in posts],
+    )
 
 
 @router.post(
@@ -209,13 +267,21 @@ async def _create_circle(body: CircleCreate, me: dict):
 
 @router.get("/circles/{circle_id}", response_model=CircleResponse, summary="One circle")
 async def get_circle(circle_id: str, me: dict = Depends(require_active_member)):
-    circle = await _get_circle_or_404(circle_id)
     user_id = str(me["_id"])
-    # Same reasoning as the list: a private circle is readable from the inside
-    # only. Public circles pass straight through — `_require_membership`
-    # returns immediately for them and costs no query.
-    await _require_membership(circle, user_id)
-    joined = await _circle_members().find_one({"user_id": user_id, "circle_id": circle_id})
+    # The circle and her membership are independent lookups — the second is
+    # keyed on the path parameter and her id, both known up front — so they go
+    # together rather than one after the other. The single membership row then
+    # answers both questions below: a private circle is readable from the
+    # inside only, and the response carries whether she has joined. It used to
+    # be fetched twice for a private circle.
+    circle, joined = await asyncio.gather(
+        _circles().find_one({"_id": to_object_id(circle_id)}),
+        _circle_members().find_one({"user_id": user_id, "circle_id": circle_id}),
+    )
+    if not circle:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "That circle doesn't exist")
+    if circle.get("is_private") and not joined:
+        raise HTTPException(status.HTTP_403_FORBIDDEN, "This circle is for its members")
     return CircleModel.to_response(circle, bool(joined))
 
 
@@ -273,29 +339,35 @@ def _contributions():
     return get_database()[CircleContributionModel.collection_name]
 
 
-async def _savings_state(circle: dict, uid: str) -> dict:
+async def _savings_state(circle: dict, uid: str, members: list[dict] | None = None) -> dict:
     """
     Everything the pay screen shows, in one pass.
 
-    The three reads are independent, so they go together — sequenced, this
-    costs three round trips to Atlas before she sees what she owes.
+    The reads are independent, so they go together — sequenced, this costs a
+    round trip to Atlas each before she sees what she owes.
+
+    `members` may be passed in by a caller that already had to fetch the roster
+    for another reason; the circle roster is keyed on the circle id alone, so
+    it can be read in the same wave as the circle itself.
     """
     circle_id = str(circle["_id"])
     round_no = CircleModel.round_of(circle)
     monthly = int(circle.get("monthly_minor", 0))
 
-    members, paid_rows = await asyncio.gather(
-        _circle_members().find({"circle_id": circle_id}).sort("turn", 1).to_list(200),
-        _contributions().find({"circle_id": circle_id, "round": round_no}).to_list(200),
-    )
+    if members is None:
+        members = await _circle_members().find({"circle_id": circle_id}).sort("turn", 1).to_list(200)
 
     # One query for every name, not one query per member. Eleven women in a
     # circle is eleven round trips the naive way, and this screen is opened
-    # every month by every one of them.
+    # every month by every one of them. The contributions ride along: they need
+    # only the circle id and the round, both known before either query runs.
     ids = [ObjectId(m["user_id"]) for m in members if ObjectId.is_valid(m.get("user_id", ""))]
-    users = await get_database()["users"].find(
-        {"_id": {"$in": ids}}, {"full_name": 1, "name": 1, "avatar": 1}
-    ).to_list(200)
+    users, paid_rows = await asyncio.gather(
+        get_database()["users"].find(
+            {"_id": {"$in": ids}}, {"full_name": 1, "name": 1, "avatar": 1}
+        ).to_list(200),
+        _contributions().find({"circle_id": circle_id, "round": round_no}).to_list(200),
+    )
     named = {str(u["_id"]): u for u in users}
 
     who_paid = {r["user_id"] for r in paid_rows}
@@ -347,10 +419,21 @@ async def circle_savings(circle_id: str, me: dict = Depends(require_active_membe
     the one who could not pay. `list_posts` and `create_post` two screens down
     already got this right; this is the same call they make.
     """
-    circle = await _get_circle_or_404(circle_id)
     user_id = str(me["_id"])
-    await _require_membership(circle, user_id)
-    return CircleSavingsResponse(**await _savings_state(circle, user_id))
+
+    # The circle, her membership row and the roster are all keyed on ids known
+    # before any of them runs, so they go in one wave rather than three.
+    circle, joined, members = await asyncio.gather(
+        _circles().find_one({"_id": to_object_id(circle_id), "status": "active"}),
+        _circle_members().find_one({"user_id": user_id, "circle_id": circle_id}),
+        _circle_members().find({"circle_id": circle_id}).sort("turn", 1).to_list(200),
+    )
+    if not circle:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "That circle doesn't exist")
+    if circle.get("is_private") and not joined:
+        raise HTTPException(status.HTTP_403_FORBIDDEN, "Join this circle to see what's inside")
+
+    return CircleSavingsResponse(**await _savings_state(circle, user_id, members))
 
 
 @router.post(
@@ -471,16 +554,23 @@ async def list_posts(
     limit: int = Query(50, ge=1, le=100),
     me: dict = Depends(require_active_member),
 ):
-    circle = await _get_circle_or_404(circle_id)
     user_id = str(me["_id"])
-    await _require_membership(circle, user_id)
-
-    docs = (
-        await _posts()
+    # The posts are keyed on the circle id from the path, so they do not have
+    # to wait for the circle to come back. Authorisation still happens before
+    # anything is returned — the rows are simply already in hand by then.
+    circle, joined, docs = await asyncio.gather(
+        _circles().find_one({"_id": to_object_id(circle_id)}),
+        _circle_members().find_one({"user_id": user_id, "circle_id": circle_id}),
+        _posts()
         .find({"circle_id": circle_id, "hidden": {"$ne": True}})
         .sort([("pinned", -1), ("created_at", -1)])
-        .to_list(limit)
+        .to_list(limit),
     )
+    if not circle:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "That circle doesn't exist")
+    if circle.get("is_private") and not joined:
+        raise HTTPException(status.HTTP_403_FORBIDDEN, "This circle is for its members")
+
     return [PostModel.to_response(d, user_id) for d in docs]
 
 
@@ -557,18 +647,28 @@ async def toggle_like(post_id: str, me: dict = Depends(require_active_member)):
 @router.get("/posts/{post_id}/replies", response_model=list[ReplyResponse], summary="Replies to a post")
 async def list_replies(post_id: str, me: dict = Depends(require_active_member)):
     user_id = str(me["_id"])
-    post = await _posts().find_one({"_id": to_object_id(post_id), "hidden": {"$ne": True}})
+
+    # Four sequential round trips to Atlas — post, circle, membership, replies —
+    # for a screen she opens by tapping a post she is already looking at. Only
+    # two of them actually depend on anything: the replies are keyed on the
+    # post id in the path, and the membership row on that id plus hers. So the
+    # post and its replies come together, then the circle and her membership.
+    post, docs = await asyncio.gather(
+        _posts().find_one({"_id": to_object_id(post_id), "hidden": {"$ne": True}}),
+        _replies().find({"post_id": post_id, "hidden": {"$ne": True}}).sort("created_at", 1).to_list(200),
+    )
     if not post:
         raise HTTPException(status.HTTP_404_NOT_FOUND, "That post no longer exists")
-    circle = await _get_circle_or_404(post["circle_id"])
-    await _require_membership(circle, user_id)
 
-    docs = (
-        await _replies()
-        .find({"post_id": post_id, "hidden": {"$ne": True}})
-        .sort("created_at", 1)
-        .to_list(200)
+    circle, joined = await asyncio.gather(
+        _circles().find_one({"_id": to_object_id(post["circle_id"]), "status": "active"}),
+        _circle_members().find_one({"user_id": user_id, "circle_id": post["circle_id"]}),
     )
+    if not circle:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "That circle doesn't exist")
+    if circle.get("is_private") and not joined:
+        raise HTTPException(status.HTTP_403_FORBIDDEN, "Join this circle to see what's inside")
+
     return [PostReplyModel.to_response(d, user_id) for d in docs]
 
 
@@ -627,18 +727,25 @@ async def list_stories(
     me: dict = Depends(require_active_member),
 ):
     user_id = str(me["_id"])
-    if mine:
-        # Her own drafts and pending submissions are visible only to her.
-        query = {"user_id": user_id}
-    else:
-        query = {"status": StoryModel.STATUS_PUBLISHED}
+    sort = [("featured", -1), ("published_at", -1), ("created_at", -1)]
 
-    docs = (
-        await _stories()
-        .find(query)
-        .sort([("featured", -1), ("published_at", -1), ("created_at", -1)])
-        .to_list(100)
-    )
+    if mine:
+        # Her own drafts and pending submissions are visible only to her, so
+        # this branch is never cached — see the rule at the top of `cache`.
+        docs = await _stories().find({"user_id": user_id}).sort(sort).to_list(100)
+    else:
+        # The published wall is byte-identical for every member and changes
+        # when a moderator publishes something, which is not often. Fetching it
+        # per request cost a round trip to Atlas on every visit to Community.
+        # `to_response` still runs per member, so `liked_by_me` stays hers.
+        docs = await cache.cached(
+            "community:stories",
+            cache.SHARED_TTL,
+            lambda: _stories()
+            .find({"status": StoryModel.STATUS_PUBLISHED})
+            .sort(sort)
+            .to_list(100),
+        )
     return [StoryModel.to_response(d, user_id) for d in docs]
 
 
@@ -691,6 +798,7 @@ async def like_story(story_id: str, me: dict = Depends(require_active_member)):
         {"_id": oid}, {op: {"likes": user_id}}, return_document=True
     )
     likes = updated.get("likes", []) or []
+    cache.forget("community:stories")
     return {"likes": len(likes), "liked_by_me": user_id in likes}
 
 

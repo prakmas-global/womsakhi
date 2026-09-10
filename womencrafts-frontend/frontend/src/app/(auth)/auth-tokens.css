@@ -1,0 +1,241 @@
+/* ─────────────────────────────────────────────────────────────────────────────
+   The sign-in scene.
+
+   These screens are the one part of WomSakhi that is deliberately NOT themed by
+   `--ux-*`. Everything behind the sign-in button follows the member's chosen
+   light or dark theme; this is the front door, and it is one fixed composition
+   — a deep violet night with a magenta glow — so the first thing a woman sees
+   is the same picture every time, on every device, before there is an account
+   to have a preference on.
+
+   Scoped to `.auth-scene` so none of it can leak into the app.
+   ──────────────────────────────────────────────────────────────────────────── */
+
+.auth-scene {
+  /* ── LIGHT: the same room, in daylight ─────────────────────────────────────
+     Same identity — magenta on the left, violet on the right — over a pale
+     lavender ground instead of a violet night. The accents deepen, because a
+     colour that glows on black is unreadable on white. */
+  --a-night: #faf7ff;
+  --a-night-2: #f4ecfd;
+  --a-plum: #f7e9f5;
+  --a-orchid: #efe2fb;
+
+  --a-magenta: #c9207a;
+  --a-rose: #e0348f;
+  --a-violet: #6d28d9;
+  --a-violet-2: #5b21b6;
+  --a-lilac: #7c3aed;
+
+  --a-glass: rgba(255, 255, 255, 0.62);
+  --a-glass-2: rgba(255, 255, 255, 0.80);
+  --a-glass-3: rgba(109, 40, 217, 0.10);
+  --a-edge: rgba(90, 50, 140, 0.16);
+  --a-edge-soft: rgba(90, 50, 140, 0.10);
+
+  --a-ink: #1c1030;
+  --a-ink-2: #3f2c60;
+  --a-muted: #63527f;
+  --a-faint: #8b7ba3;
+
+  --a-well: rgba(90, 50, 140, 0.05);
+  --a-well-2: rgba(255, 255, 255, 0.75);
+  --a-well-3: rgba(255, 255, 255, 0.92);
+  --a-ring: #ffffff;
+  --a-stage: #0d0618;
+  /* The stage is dark in BOTH themes — the film is dark — so its scrim is
+     defined once here and inherited rather than re-stated in the dark block. */
+  --a-scrim: rgba(10, 5, 20, 0.26);
+  --a-track: rgba(90, 50, 140, 0.14);
+
+  --a-tint-rose: rgba(201, 32, 122, 0.10);
+  --a-tint-rose-2: rgba(201, 32, 122, 0.08);
+  --a-edge-rose: rgba(201, 32, 122, 0.26);
+  --a-glow-rose: rgba(232, 57, 155, 0.16);
+  --a-tint-violet: rgba(109, 40, 217, 0.08);
+  --a-tint-violet-2: rgba(109, 40, 217, 0.14);
+  --a-edge-violet: rgba(109, 40, 217, 0.22);
+  --a-corner-light: radial-gradient(circle, rgba(232, 57, 155, 0.16), transparent 68%);
+  --a-sky-1: rgba(232, 57, 155, 0.13);
+  --a-sky-2: rgba(139, 92, 246, 0.14);
+  --a-sky-3: rgba(232, 57, 155, 0.09);
+  --a-focus: rgba(201, 32, 122, 0.18);
+  --a-go-glow: 0 12px 30px -14px rgba(160, 40, 150, 0.45);
+  --a-go-glow-hover: 0 16px 38px -14px rgba(160, 40, 150, 0.60);
+  --a-shadow-stage: 0 26px 60px -28px rgba(90, 40, 130, 0.45);
+
+  --a-danger-ink: #9d1750;
+  --a-ok: #067a55;
+  --a-warn: #8a5a00;
+  --a-bad: #b0325c;
+
+  --a-fill: linear-gradient(96deg, var(--a-magenta), var(--a-violet-2));
+  --a-fill-hover: linear-gradient(96deg, var(--a-rose), var(--a-violet));
+
+  color: var(--a-ink);
+  background: var(--a-night);
+}
+
+/* ── DARK: the violet night the design was drawn in ────────────────────────── */
+.dark .auth-scene,
+.auth-scene.dark {
+  --a-night: #140a26;
+  --a-night-2: #1d0e38;
+  --a-plum: #2b1152;
+  --a-orchid: #4a1a72;
+
+  --a-magenta: #e8399b;
+  --a-rose: #ff5fae;
+  --a-violet: #8b5cf6;
+  --a-violet-2: #7c3aed;
+  --a-lilac: #c084fc;
+
+  --a-glass: rgba(255, 255, 255, 0.045);
+  --a-glass-2: rgba(255, 255, 255, 0.07);
+  --a-glass-3: rgba(255, 255, 255, 0.16);
+  --a-edge: rgba(255, 255, 255, 0.10);
+  --a-edge-soft: rgba(255, 255, 255, 0.065);
+
+  --a-ink: #ffffff;
+  --a-ink-2: #ddd2f0;
+  --a-muted: #b3a3d0;
+  --a-faint: #8d7fae;
+
+  --a-well: rgba(10, 5, 20, 0.30);
+  --a-well-2: rgba(10, 5, 20, 0.42);
+  --a-well-3: rgba(10, 5, 20, 0.55);
+  --a-ring: rgba(30, 15, 55, 0.9);
+  --a-stage: #0d0618;
+  --a-track: rgba(255, 255, 255, 0.12);
+
+  --a-tint-rose: rgba(232, 57, 155, 0.16);
+  --a-tint-rose-2: rgba(232, 57, 155, 0.14);
+  --a-edge-rose: rgba(232, 57, 155, 0.32);
+  --a-glow-rose: rgba(232, 57, 155, 0.34);
+  --a-tint-violet: rgba(139, 92, 246, 0.13);
+  --a-tint-violet-2: rgba(139, 92, 246, 0.20);
+  --a-edge-violet: rgba(139, 92, 246, 0.26);
+  --a-corner-light: radial-gradient(circle, rgba(232, 57, 155, 0.34), transparent 68%);
+  --a-sky-1: rgba(232, 57, 155, 0.30);
+  --a-sky-2: rgba(139, 92, 246, 0.30);
+  --a-sky-3: rgba(232, 57, 155, 0.20);
+  --a-focus: rgba(232, 57, 155, 0.22);
+  --a-go-glow: 0 14px 34px -12px rgba(232, 57, 155, 0.62);
+  --a-go-glow-hover: 0 18px 42px -12px rgba(232, 57, 155, 0.75);
+  --a-shadow-stage: 0 26px 60px -24px rgba(232, 57, 155, 0.55);
+
+  --a-danger-ink: #ffc9e2;
+  --a-ok: #6ee7b7;
+  --a-warn: #fcd34d;
+  --a-bad: #fda4af;
+}
+
+/* The full-bleed field the panels float on. Three light sources, layered over
+   a base wash, so the corners fall away and the middle glows. */
+.auth-sky {
+  background:
+    radial-gradient(58% 48% at 78% 8%, var(--a-sky-1), transparent 62%),
+    radial-gradient(46% 42% at 6% 88%, var(--a-sky-2), transparent 64%),
+    radial-gradient(70% 60% at 50% 108%, var(--a-sky-3), transparent 60%),
+    linear-gradient(158deg, var(--a-night) 0%, var(--a-night-2) 38%, var(--a-plum) 74%, var(--a-orchid) 100%);
+}
+
+/* A panel: frosted, faintly lit from the top-left. */
+.auth-panel {
+  background: linear-gradient(158deg, var(--a-glass-2), var(--a-glass));
+  border: 1px solid var(--a-edge);
+  backdrop-filter: blur(22px) saturate(1.15);
+  -webkit-backdrop-filter: blur(22px) saturate(1.15);
+}
+
+/* A card inside a panel — one step brighter so it reads as raised, not cut in. */
+.auth-card {
+  background: var(--a-glass);
+  border: 1px solid var(--a-edge-soft);
+  transition: background 220ms ease, border-color 220ms ease, transform 220ms ease;
+}
+.auth-card:hover {
+  background: var(--a-glass-2);
+  border-color: var(--a-edge);
+}
+
+/* Inputs. Dark wells, and the focus ring is the brand pink rather than the
+   browser's blue — on this background blue is the only wrong colour there is. */
+.auth-field {
+  background: var(--a-well-2);
+  border: 1px solid var(--a-edge);
+  color: var(--a-ink);
+  transition: border-color 180ms ease, box-shadow 180ms ease, background 180ms ease;
+}
+.auth-field::placeholder { color: var(--a-faint); }
+.auth-field:focus {
+  outline: none;
+  border-color: var(--a-rose);
+  background: var(--a-well-3);
+  box-shadow: 0 0 0 3px var(--a-focus);
+}
+
+/* The primary action. */
+.auth-go {
+  background: var(--a-fill);
+  color: #fff;
+  box-shadow: var(--a-go-glow);
+  transition: background 200ms ease, box-shadow 200ms ease, transform 140ms ease;
+}
+.auth-go:hover:not(:disabled) {
+  background: var(--a-fill-hover);
+  box-shadow: var(--a-go-glow-hover);
+}
+.auth-go:active:not(:disabled) { transform: translateY(1px); }
+.auth-go:disabled { opacity: 0.62; box-shadow: none; }
+
+/* "earn and grow" — the two words that carry the promise. */
+.auth-shine {
+  background: linear-gradient(94deg, var(--a-rose), var(--a-lilac));
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+/* A quiet link that lifts on hover without moving anything around it. */
+.auth-link { color: var(--a-lilac); transition: color 160ms ease; }
+.auth-link:hover { color: var(--a-rose); }
+
+/* Keyboard focus has to be visible on every surface here. */
+.auth-scene :focus-visible {
+  outline: 2px solid var(--a-rose);
+  outline-offset: 3px;
+  border-radius: 8px;
+}
+
+/* The petals drifting at the edges. Decorative, and the first thing to go when
+   a woman has asked her phone to stop animating things. */
+.auth-drift { animation: auth-drift 14s ease-in-out infinite; }
+@keyframes auth-drift {
+  0%, 100% { transform: translate3d(0, 0, 0) rotate(0deg); }
+  50%      { transform: translate3d(0, -14px, 0) rotate(4deg); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .auth-drift { animation: none; }
+  .auth-card, .auth-go, .auth-field { transition: none; }
+}
+
+/* ── Short screens ───────────────────────────────────────────────────────────
+   Nothing on these screens should have to be scrolled to. On a tall phone
+   everything fits; on a 667px one (an SE, or any phone in landscape) a
+   four-field form plus a video strip plus a tagline does not, so the pieces
+   that carry the least give way first — the strip, then the tagline, then the
+   one-line subtitle. The form itself is never touched. */
+@media (max-height: 730px) {
+  .auth-strip { display: none; }
+  .auth-tagline { display: none; }
+}
+@media (max-height: 680px) {
+  .auth-sub { display: none; }
+  /* The mark and wordmark repeat what the headline right under them already
+     says. On the shortest screens that is the cheapest thing to lose — cheaper
+     than the phone-privacy line or the photo-ID notice, which are the two
+     things a woman most needs to have read before she commits. */
+  .auth-brand { display: none; }
+  .auth-note { margin-top: 8px !important; }
+}

@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import * as Icons from "lucide-react";
+import * as Icons from "@/components/ux/icons";
 
 import {
   ActionBtn, Btn, Card, Pill, Progress, SectionHead,
@@ -13,6 +13,8 @@ import { useMe } from "@/components/ux/me";
 import { useCertificates } from "@/components/ux/live";
 
 import { ACCOUNT_ART } from "@/components/ux/account/data";
+import { COPY } from "@/components/ux/copy";
+import { useT } from "@/i18n";
 
 /**
  * Certificates — proof, in a form she can hand to someone else.
@@ -22,6 +24,7 @@ import { ACCOUNT_ART } from "@/components/ux/account/data";
  * a screen inside an app she alone can open is not proof of anything.
  */
 export default function CertificatesPage() {
+  const tr = useT();
   const ME = useMe();
   const { data: CERTIFICATES, source } = useCertificates();
   const { data: learning } = useLearning();
@@ -42,35 +45,35 @@ export default function CertificatesPage() {
     <HomeShell
       active="/app/certificates"
       rail={
-        <div className="space-y-[15px]">
+        <div className="space-y-[16px]">
           <Card className="ux-onscroll-soft">
-            <SectionHead title="Still going" sub="Finish these and they join the list" />
+            <SectionHead title={tr("certificates.stillGoing")} sub={tr("certificates.finishTheseAndTheyJoinThe")} />
             <ul className="ux-stagger space-y-3.5">
               {IN_PROGRESS.map((c) => (
                 <li key={c.id}>
-                  <div className="flex items-center justify-between gap-3 text-[12.5px]">
+                  <div className="flex items-center justify-between gap-3 text-xsm">
                     <span className="min-w-0 truncate" style={{ color: "var(--ux-ink-2)" }}>{c.title}</span>
                     <span className="shrink-0 font-medium tabular-nums" style={{ color: "var(--ux-muted)" }}>{c.pct}%</span>
                   </div>
                   <div className="mt-1.5"><Progress pct={c.pct} track="--ux-track" h={5} /></div>
-                  <p className="mt-1 text-[11px]" style={{ color: "var(--ux-faint)" }}>{c.left}</p>
+                  <p className="mt-1 text-2xs" style={{ color: "var(--ux-faint)" }}>{c.left}</p>
                 </li>
               ))}
             </ul>
             <div className="mt-3.5">
-              <Btn href="/app/programs" variant="soft" size="sm" full iconEnd="ArrowRight">Keep going</Btn>
+              <Btn href="/app/programs" variant="soft" size="sm" full iconEnd="ArrowRight">{tr("certificates.keepGoing")}</Btn>
             </div>
           </Card>
 
           <Card className="ux-onscroll-soft">
-            <SectionHead title="Where these count" icon="BadgeCheck" />
+            <SectionHead title={tr("certificates.whereTheseCount")} icon="BadgeCheck" />
             <ul className="space-y-2.5">
               {[
                 "Employers hiring through WomSakhi see them on your profile.",
                 "Anyone can check a code at womsakhi.in/verify.",
                 "Some schemes accept them as proof of training.",
               ].map((t) => (
-                <li key={t} className="flex items-start gap-2.5 text-[12.5px] leading-snug" style={{ color: "var(--ux-ink-2)" }}>
+                <li key={t} className="flex items-start gap-2.5 text-xsm leading-snug" style={{ color: "var(--ux-ink-2)" }}>
                   <Icons.Check className="mt-[2px] h-[14px] w-[14px] shrink-0" style={{ color: "var(--ux-green-ink)" }} strokeWidth={2.6} />
                   {t}
                 </li>
@@ -80,10 +83,10 @@ export default function CertificatesPage() {
         </div>
       }
     >
-      <div className="mb-[18px] flex items-end justify-between gap-4">
+      <div className="mb-[20px] flex items-end justify-between gap-4">
         <div>
-          <h1 className="text-[24px] font-bold" style={{ color: "var(--ux-ink)" }}>Certificates</h1>
-          <p className="mt-1.5 text-[13px]" style={{ color: "var(--ux-muted)" }}>
+          <h1 className="text-2xl font-bold" style={{ color: "var(--ux-ink)" }}>Certificates</h1>
+          <p className="mt-1.5 text-xsm" style={{ color: "var(--ux-muted)" }}>
             {CERTIFICATES.length} earned · {CERTIFICATES.reduce((a, c) => a + c.hours, 0)} hours of learning behind them
           </p>
         </div>
@@ -93,26 +96,26 @@ export default function CertificatesPage() {
       <SourceNote source={source} what="certificates" />
 
       {tab === "Earned" ? (
-        <div className="ux-deck grid grid-cols-2 gap-[15px]">
+        <div className="ux-deck grid grid-cols-2 gap-[16px]">
           {CERTIFICATES.map((c, i) => (
             <Card key={c.id} className="ux-i ux-onscroll overflow-hidden" style={{ ["--i" as string]: i }} pad={0}>
               {/* The metal band is the one place in the app that treatment is
                   used — cold and hard is the right feeling for something
                   awarded, and nowhere else earns it. */}
-              <div className="ux-metal flex items-center gap-3 px-[18px] py-3.5">
+              <div className="ux-metal flex items-center gap-3 px-[20px] py-3.5">
                 <Icons.Award className="ux-ico h-[22px] w-[22px] shrink-0" strokeWidth={1.9} />
-                <span className="text-[12px] font-semibold uppercase tracking-[0.1em]">Certificate of completion</span>
+                <span className="text-xs font-semibold uppercase tracking-[0.1em]">{tr("certificates.certificateOfCompletion")}</span>
               </div>
-              <div className="p-[18px]">
-                <h3 className="text-[15.5px] font-semibold leading-snug" style={{ color: "var(--ux-ink)" }}>{c.title}</h3>
-                <p className="mt-1.5 flex flex-wrap items-center gap-x-3 text-[11.5px]" style={{ color: "var(--ux-muted)" }}>
+              <div className="p-[20px]">
+                <h2 className="text-base font-semibold leading-snug" style={{ color: "var(--ux-ink)" }}>{c.title}</h2>
+                <p className="mt-1.5 flex flex-wrap items-center gap-x-3 text-xs" style={{ color: "var(--ux-muted)" }}>
                   <span className="inline-flex items-center gap-1"><Icons.Calendar className="h-3.5 w-3.5" /> {c.issued}</span>
                   <span className="inline-flex items-center gap-1"><Icons.Clock className="h-3.5 w-3.5" /> {c.hours} hours</span>
                 </p>
                 <div className="mt-2.5 flex flex-wrap items-center gap-2">
                   <Pill tone="brand" size="sm">{c.skill}</Pill>
                   {c.verified && (
-                    <span className="inline-flex items-center gap-1 text-[11px] font-medium" style={{ color: "var(--ux-green-ink)" }}>
+                    <span className="inline-flex items-center gap-1 text-2xs font-medium" style={{ color: "var(--ux-green-ink)" }}>
                       <Icons.BadgeCheck className="h-[14px] w-[14px]" /> Verifiable
                     </span>
                   )}
@@ -120,56 +123,61 @@ export default function CertificatesPage() {
 
                 {/* The code is the whole point: it is what someone else checks. */}
                 <button
-                  onClick={() => { setCopied(c.id); window.setTimeout(() => setCopied(null), 1600); }}
-                  className="ux-press ux-hov ux-sq mt-3.5 flex w-full items-center gap-2 rounded-[11px] px-3 py-2.5 text-start"
+                  // Same defect as the booking code: it announced a copy it
+                  // never made. This is the number an employer checks.
+                  onClick={async () => {
+                    const said = await copy(c.code);
+                    if (said !== "Copied") return;
+                    setCopied(c.id);
+                    window.setTimeout(() => setCopied(null), 1600);
+                  }}
+                  className="ux-press ux-hov ux-sq mt-3.5 flex w-full items-center gap-2 rounded-[12px] px-3 py-2.5 text-start"
                   style={{ background: "var(--ux-surface-2)" }}
                 >
                   <Icons.Hash className="h-[14px] w-[14px] shrink-0" style={{ color: "var(--ux-faint)" }} />
-                  <span className="min-w-0 flex-1 truncate font-mono text-[12px]" style={{ color: "var(--ux-ink-2)" }}>
+                  <span className="min-w-0 flex-1 truncate font-mono text-xs" style={{ color: "var(--ux-ink-2)" }}>
                     {c.code}
                   </span>
-                  <span className="shrink-0 text-[11px] font-medium" style={{ color: "var(--ux-brand)" }}>
+                  <span role="status" className="shrink-0 text-2xs font-medium" style={{ color: "var(--ux-brand)" }}>
                     {copied === c.id ? "Copied" : "Copy"}
                   </span>
                 </button>
 
                 <div className="mt-3.5 flex gap-2 border-t pt-3.5" style={{ borderColor: "var(--ux-line)" }}>
                   <ActionBtn variant="primary" size="sm" icon="Download" doneIcon="Printer"
-                             done="Choose “Save as PDF”" act={() => printCertificate({
+                             done={COPY.saveAsPdf} act={() => printCertificate({
                                name: ME.name, programme: c.title, issued: c.issued,
                                code: c.code, hours: c.hours, grade: c.grade,
                                revoked: !c.verified,
                              })}>
                     Download
                   </ActionBtn>
-                  <ActionBtn variant="outline" size="sm" icon="Share2" doneIcon="Copy" done="Link copied"
-                             act={() => copy(`https://womsakhi.in/verify/${c.code}`, "Link copied — anyone can check it", "Copy the code instead")}>
-                    Share link
-                  </ActionBtn>
+                  <ActionBtn variant="outline" size="sm" icon="Share2" doneIcon="Copy" done={tr("certificates.linkCopied")}
+                             act={() => copy(`https://womsakhi.in/verify/${c.code}`, "Link copied — anyone can check it", "Copy the code instead")}>{tr("certificates.shareLink")}</ActionBtn>
                 </div>
               </div>
             </Card>
           ))}
         </div>
       ) : (
-        <div className="ux-deck ux-stagger space-y-[13px]">
+        <div className="ux-deck ux-stagger space-y-[12px]">
           {IN_PROGRESS.map((c, i) => (
             <Card key={c.id} className="ux-i ux-onscroll" style={{ ["--i" as string]: i }}>
               <div className="flex items-center gap-4">
-                <span className="h-[54px] w-[54px] shrink-0 overflow-hidden rounded-[13px]"
+                <span className="h-[54px] w-[54px] shrink-0 overflow-hidden rounded-[12px]"
                       style={{ background: "var(--ux-tint-violet)" }}>
                   {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img src={ACCOUNT_ART.certificate} alt="" className="ux-art h-full w-full object-cover" />
+                  <img loading="lazy" decoding="async" src={ACCOUNT_ART.certificate} alt="" className="ux-art h-full w-full object-cover" />
                 </span>
                 <div className="min-w-0 flex-1">
-                  <h3 className="truncate text-[14.5px] font-semibold" style={{ color: "var(--ux-ink)" }}>{c.title}</h3>
+                  <h2 className="truncate text-sm font-semibold" style={{ color: "var(--ux-ink)" }}>{c.title}</h2>
                   <div className="mt-2 flex items-center gap-2.5">
                     <Progress pct={c.pct} />
-                    <span className="shrink-0 text-[11.5px] font-medium tabular-nums" style={{ color: "var(--ux-muted)" }}>
+                    <span className="shrink-0 text-xs font-medium tabular-nums" style={{ color: "var(--ux-muted)" }}>
                       {c.pct}%
                     </span>
                   </div>
-                  <p className="mt-1.5 text-[11.5px]" style={{ color: "var(--ux-faint)" }}>{c.left}</p>
+                  <p className="mt-1.5 text-xs" style={{ color: "var(--ux-faint)" }}>{c.left}</p>
                 </div>
                 <Btn href="/app/programs" variant="primary" size="sm" iconEnd="ArrowRight">Continue</Btn>
               </div>

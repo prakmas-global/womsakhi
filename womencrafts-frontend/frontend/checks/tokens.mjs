@@ -47,6 +47,11 @@ const ILLUSTRATION = new Set([
   // theme — a dark-mode statement wastes a cartridge and is refused at a
   // counter for being unreadable.
   "src/components/ux/kit/download.ts",
+  // The crash screen. It renders when the React tree is gone, OUTSIDE the `.ux`
+  // wrapper that every colour token is declared on — so `var(--ux-ink)` there
+  // resolves to nothing and the apology renders invisible on invisible. Literal
+  // hex is the only thing that can work on this one file.
+  "src/app/global-error.tsx",
 ]);
 
 /**

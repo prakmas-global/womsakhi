@@ -1,7 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import * as Icons from "lucide-react";
+import { COPY } from "@/components/ux/copy";
+import * as Icons from "@/components/ux/icons";
 
 import {
   ActionBtn, Btn, Card, EmptyState, IconTile, Pill,
@@ -11,6 +12,7 @@ import { HomeShell } from "@/components/ux/home/HomeShell";
 import { RailStat, StageTrack } from "@/components/ux/work/parts";
 import { STAGES, WORK_ART } from "@/components/ux/work/data";
 import { useApplications, workStats } from "@/components/ux/growth";
+import { useT } from "@/i18n";
 
 const TABS = ["Active", "Interviews", "Closed", "All"] as const;
 
@@ -22,6 +24,7 @@ const TABS = ["Active", "Interviews", "Closed", "All"] as const;
  * ended say so plainly rather than sitting at "Applied" forever.
  */
 export default function Applications() {
+  const tr = useT();
   const { data: APPLICATIONS, source } = useApplications();
   const WORK_STATS = workStats(APPLICATIONS);
   const [tab, setTab] = useState<string>("Active");
@@ -50,21 +53,21 @@ export default function Applications() {
     <HomeShell
       active="/app/applications"
       rail={
-        <div className="space-y-[15px]">
+        <div className="space-y-[16px]">
           <Card className="ux-onscroll-soft">
-            <SectionHead title="Your record" sub="Since you joined" />
+            <SectionHead title={tr("applications.yourRecord")} sub={tr("applications.sinceYouJoined")} />
             <div className="space-y-3.5">
               <RailStat value={WORK_STATS.applied} label="Sent" icon="Send" tint="--ux-tint-violet" ink="--ux-violet" />
               <RailStat value={WORK_STATS.shortlisted} label="Shortlisted" icon="ListChecks" tint="--ux-tint-blue" ink="--ux-blue" />
               <RailStat value={WORK_STATS.interviews} label="Interviews" icon="MessageSquare" tint="--ux-tint-green" ink="--ux-green" />
             </div>
             <div className="mt-4">
-              <div className="mb-1.5 flex items-center justify-between text-[11.5px]">
-                <span style={{ color: "var(--ux-muted)" }}>Reply rate</span>
+              <div className="mb-1.5 flex items-center justify-between text-xs">
+                <span style={{ color: "var(--ux-muted)" }}>{tr("applications.replyRate")}</span>
                 <span className="font-semibold tabular-nums" style={{ color: "var(--ux-ink)" }}>{WORK_STATS.responseRate}%</span>
               </div>
               <Progress pct={WORK_STATS.responseRate} track="--ux-track" />
-              <p className="mt-2 text-[11.5px] leading-snug" style={{ color: "var(--ux-muted)" }}>
+              <p className="mt-2 text-xs leading-snug" style={{ color: "var(--ux-muted)" }}>
                 {WORK_STATS.responseRate
                   ? `${WORK_STATS.responseRate}% of yours have had a reply so far.`
                   : "None have had a reply yet. That is normal in the first week."}
@@ -72,17 +75,13 @@ export default function Applications() {
             </div>
           </Card>
 
-          <div className="ux-clay ux-onscroll-soft relative overflow-hidden p-[18px]"
+          <div className="ux-clay ux-onscroll-soft relative overflow-hidden p-[20px]"
                style={{ background: "linear-gradient(140deg, var(--ux-tint-green), var(--ux-tint-lilac))" }}>
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src={WORK_ART.interview} alt=""
+            <img loading="lazy" decoding="async" src={WORK_ART.interview} alt=""
                  className="ux-float pointer-events-none absolute -bottom-3 -end-4 h-[100px] w-[100px] object-contain" />
-            <h3 className="relative w-[60%] text-[14px] font-semibold" style={{ color: "var(--ux-ink)" }}>
-              Interview on Monday
-            </h3>
-            <p className="relative mt-2 w-[60%] text-[12px] leading-relaxed" style={{ color: "var(--ux-muted)" }}>
-              Ten minutes of practice makes a real difference. Sakhi can run through it with you.
-            </p>
+            <h3 className="relative w-[60%] text-sm font-semibold" style={{ color: "var(--ux-ink)" }}>{tr("applications.interviewOnMonday")}</h3>
+            <p className="relative mt-2 w-[60%] text-xs leading-relaxed" style={{ color: "var(--ux-muted)" }}>{tr("applications.tenMinutesOfPracticeMakesA")}</p>
             <div className="relative mt-3 w-[60%]">
               <Btn href="/app/sakhi" variant="soft" size="sm" iconEnd="ArrowRight">Practise</Btn>
             </div>
@@ -90,10 +89,10 @@ export default function Applications() {
         </div>
       }
     >
-      <div className="mb-[18px] flex items-end justify-between gap-4">
+      <div className="mb-[20px] flex items-end justify-between gap-4">
         <div>
-          <h1 className="text-[24px] font-bold" style={{ color: "var(--ux-ink)" }}>My Applications</h1>
-          <p className="mt-1.5 text-[13px]" style={{ color: "var(--ux-muted)" }}>
+          <h1 className="text-2xl font-bold" style={{ color: "var(--ux-ink)" }}>{tr("applications.yourApplications")}</h1>
+          <p className="mt-1.5 text-xsm" style={{ color: "var(--ux-muted)" }}>
             {counts.Active === 1
               ? "One application is still moving."
               : `${counts.Active} applications are still moving.`}
@@ -107,7 +106,7 @@ export default function Applications() {
       </div>
 
       {shown.length ? (
-        <div className="ux-deck space-y-[13px]">
+        <div className="ux-deck space-y-[12px]">
           {shown.map((a, i) => {
             const closed = a.step === 0;
             return (
@@ -118,7 +117,7 @@ export default function Applications() {
                             ink={closed ? "--ux-muted" : a.ink} size={46} radius={12} />
                   <div className="min-w-0 flex-1">
                     <div className="flex items-start gap-2">
-                      <h3 className="min-w-0 flex-1 truncate text-[14.5px] font-semibold"
+                      <h3 className="min-w-0 flex-1 truncate text-sm font-semibold"
                           style={{ color: closed ? "var(--ux-muted)" : "var(--ux-ink)" }}>
                         {a.title}
                       </h3>
@@ -126,11 +125,11 @@ export default function Applications() {
                         {a.stage}
                       </Pill>
                     </div>
-                    <p className="mt-1 flex flex-wrap items-center gap-x-3 text-[11.5px]" style={{ color: "var(--ux-muted)" }}>
+                    <p className="mt-1 flex flex-wrap items-center gap-x-3 text-xs" style={{ color: "var(--ux-muted)" }}>
                       <span className="inline-flex items-center gap-1"><Icons.Building2 className="h-3.5 w-3.5" /> {a.org}</span>
                       <span className="inline-flex items-center gap-1"><Icons.Clock className="h-3.5 w-3.5" /> Applied {a.at}</span>
                     </p>
-                    <p className="mt-2 text-[12.5px]" style={{ color: closed ? "var(--ux-faint)" : "var(--ux-ink-2)" }}>
+                    <p className="mt-2 text-xsm" style={{ color: closed ? "var(--ux-faint)" : "var(--ux-ink-2)" }}>
                       {a.when}
                     </p>
                   </div>
@@ -140,15 +139,13 @@ export default function Applications() {
                      style={{ borderColor: "var(--ux-line)" }}>
                   <StageTrack step={a.step} stages={STAGES} />
                   <span className="flex items-center gap-2">
-                    <Btn href={`/app/opportunities/${a.jobId}`} variant="outline" size="sm">The listing</Btn>
+                    <Btn href={`/app/opportunities/${a.jobId}`} variant="outline" size="sm">{tr("applications.theListing")}</Btn>
                     {a.stage === "Interview" && (
                       <ActionBtn variant="primary" size="sm" icon="Video" doneIcon="Copy"
-                                 done="Link copied — open it in your browser"
-                                 act={() => copy(`https://meet.womsakhi.in/${a.id}`, "Link copied — open it in your browser", "Copy it by hand: meet.womsakhi.in/" + a.id)}>
-                        Join the call
-                      </ActionBtn>
+                                 done={COPY.linkCopied}
+                                 act={() => copy(`https://meet.womsakhi.in/${a.id}`, COPY.linkCopied, "Copy it by hand: meet.womsakhi.in/" + a.id)}>{tr("applications.joinTheCall")}</ActionBtn>
                     )}
-                    {closed && <Btn href="/app/opportunities" variant="soft" size="sm">Find similar</Btn>}
+                    {closed && <Btn href="/app/opportunities" variant="soft" size="sm">{tr("applications.findSimilar")}</Btn>}
                   </span>
                 </div>
               </Card>
@@ -161,7 +158,7 @@ export default function Applications() {
             icon="Inbox"
             title={tab === "Closed" ? "Nothing has closed" : `No ${tab.toLowerCase()} applications`}
             body="Everything you apply for shows up here, with what is happening next."
-            action={<Btn href="/app/opportunities" variant="primary" iconEnd="ArrowRight">Find work</Btn>}
+            action={<Btn href="/app/opportunities" variant="primary" iconEnd="ArrowRight">{tr("applications.findWork")}</Btn>}
           />
         </Card>
       )}

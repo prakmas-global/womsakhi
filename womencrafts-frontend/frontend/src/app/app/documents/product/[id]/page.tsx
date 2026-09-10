@@ -4,16 +4,15 @@ import { use, useEffect, useMemo, useRef, useState } from "react";
 
 import { apiSaveListing, apiUpdateListing } from "@/lib/shop-api";
 import { messageFrom } from "@/lib/use-action";
-import Link from "next/link";
-import * as Icons from "lucide-react";
+import * as Icons from "@/components/ux/icons";
 
-import {
-  Btn, Card, EmptyState, IconTile, RailSkeleton, ScreenSkeleton, SectionHead,
+import {Back, Btn, Card, EmptyState, IconTile, RailSkeleton, ScreenSkeleton, SectionHead,
 } from "@/components/ux/kit";
 import { Field, TextInput, Toggle } from "@/components/ux/settings/Frame";
 import { HomeShell } from "@/components/ux/home/HomeShell";
 import { useBusiness } from "@/components/ux/business";
 import { rupees } from "@/components/ux/shop/data";
+import { useT } from "@/i18n";
 
 const BLANK = { id: "new", name: "", price_minor: 0, stock: 0, sold: 0,
   art: "/ux/art/course-photographing-handmade-product.webp", live: false };
@@ -31,6 +30,7 @@ const BLANK = { id: "new", name: "", price_minor: 0, stock: 0, sold: 0,
  * three-word description.
  */
 export default function ProductEditor({ params }: { params: Promise<{ id: string }> }) {
+  const tr = useT();
   const { id } = use(params);
   const { data: biz, source, refetch } = useBusiness();
   const PRODUCTS = biz.products;
@@ -135,9 +135,9 @@ export default function ProductEditor({ params }: { params: Promise<{ id: string
         <Card>
           <EmptyState
             icon="SearchX"
-            title="That product is not here"
+            title={tr("documentsProduct.thatProductIsNotHere")}
             body="It may have been removed from your shop."
-            action={<Btn href="/app/documents" variant="primary" iconEnd="ArrowRight">Your business</Btn>}
+            action={<Btn href="/app/documents" variant="primary" iconEnd="ArrowRight">{tr("documentsProduct.yourBusiness")}</Btn>}
           />
         </Card>
       </HomeShell>
@@ -147,28 +147,28 @@ export default function ProductEditor({ params }: { params: Promise<{ id: string
   return (
     <HomeShell
       rail={
-        <div className="space-y-[15px]">
+        <div className="space-y-[16px]">
           {/* The buyer's view, live, while she types. */}
           <Card>
-            <SectionHead title="What a buyer sees" sub="Updates as you type" />
-            <div className="ux-sq overflow-hidden rounded-[14px] border" style={{ borderColor: "var(--ux-line)" }}>
+            <SectionHead title={tr("documentsProduct.whatABuyerSees")} sub={tr("documentsProduct.updatesAsYouType")} />
+            <div className="ux-sq overflow-hidden rounded-[12px] border" style={{ borderColor: "var(--ux-line)" }}>
               <div className="h-[132px] overflow-hidden" style={{ background: "var(--ux-tint-orange)" }}>
                 {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src={base.art} alt="" className="h-full w-full object-cover" />
+                <img loading="lazy" decoding="async" src={base.art} alt="" className="h-full w-full object-cover" />
               </div>
               <div className="p-3.5">
-                <p className="text-[14px] font-semibold" style={{ color: form.name ? "var(--ux-ink)" : "var(--ux-faint)" }}>
+                <p className="text-sm font-semibold" style={{ color: form.name ? "var(--ux-ink)" : "var(--ux-faint)" }}>
                   {form.name || "Your product name"}
                 </p>
-                <p className="mt-1 text-[17px] font-bold tabular-nums"
+                <p className="mt-1 text-lg font-bold tabular-nums"
                    style={{ color: price_minor ? "var(--ux-ink)" : "var(--ux-faint)" }}>
                   {price_minor ? rupees(price_minor) : "₹—"}
                 </p>
-                <p className="mt-1.5 text-[12px] leading-snug"
+                <p className="mt-1.5 text-xs leading-snug"
                    style={{ color: form.about ? "var(--ux-muted)" : "var(--ux-faint)" }}>
                   {form.about || "Buyers read this before they decide. Say what it is made of and how it is made."}
                 </p>
-                <p className="mt-2.5 text-[11.5px]" style={{ color: "var(--ux-muted)" }}>
+                <p className="mt-2.5 text-xs" style={{ color: "var(--ux-muted)" }}>
                   {Number(form.stock) > 0 ? `${form.stock} ready now` : "Made to order"} · ready in {form.made}
                 </p>
               </div>
@@ -176,36 +176,36 @@ export default function ProductEditor({ params }: { params: Promise<{ id: string
           </Card>
 
           <Card>
-            <SectionHead title="Before it goes live" />
+            <SectionHead title={tr("documentsProduct.beforeItGoesLive")} />
             {missing.length ? (
               <ul className="space-y-2.5">
                 {missing.map((m) => (
-                  <li key={m} className="flex items-center gap-2.5 text-[12.5px]" style={{ color: "var(--ux-ink-2)" }}>
+                  <li key={m} className="flex items-center gap-2.5 text-xsm" style={{ color: "var(--ux-ink-2)" }}>
                     <Icons.Circle className="h-[14px] w-[14px] shrink-0" style={{ color: "var(--ux-faint)" }} />
                     Still needs {m}
                   </li>
                 ))}
               </ul>
             ) : (
-              <p className="flex items-center gap-2 text-[12.5px]" style={{ color: "var(--ux-green-ink)" }}>
-                <Icons.CheckCheck className="h-[16px] w-[16px]" /> Ready to publish.
-              </p>
+              <p className="flex items-center gap-2 text-xsm" style={{ color: "var(--ux-green-ink)" }}>
+                <Icons.CheckCheck className="h-[16px] w-[16px]" />{tr("documentsProduct.readyToPublish")}</p>
             )}
             {/* Say what is missing rather than greying a button with no reason. */}
             <div className="mt-4">
               <Btn variant="primary" full icon={busy ? "Loader" : "Check"}
                    disabled={busy || missing.length > 0}
                    onClick={() => void save()}>
-                {isNew ? "Add to my shop" : "Save changes"}
+                {isNew ? tr("documentsProduct.addToMyShop")
+              : tr("documentsProduct.saveChanges")}
               </Btn>
             </div>
             {saved && !problem && (
-              <p className="ux-slide-up mt-2.5 text-center text-[12px]" style={{ color: "var(--ux-green-ink)" }}>
+              <p className="ux-slide-up mt-2.5 text-center text-xs" style={{ color: "var(--ux-green-ink)" }}>
                 Saved.
               </p>
             )}
             {problem && (
-              <p role="alert" className="ux-slide-up mt-2.5 text-[12.5px] leading-relaxed"
+              <p role="alert" className="ux-slide-up mt-2.5 text-xsm leading-relaxed"
                  style={{ color: "var(--ux-orange-ink)" }}>
                 {problem}
               </p>
@@ -214,7 +214,7 @@ export default function ProductEditor({ params }: { params: Promise<{ id: string
 
           {!isNew && (
             <Card>
-              <SectionHead title="How it is doing" />
+              <SectionHead title={tr("documentsProduct.howItIsDoing")} />
               <div className="space-y-3.5">
                 {[[`${base.sold}`, "Sold so far", "Package", "--ux-tint-green", "--ux-green"],
                   [rupees(base.sold * base.price_minor), "Brought in", "BadgeIndianRupee", "--ux-tint-violet", "--ux-violet"]]
@@ -222,8 +222,8 @@ export default function ProductEditor({ params }: { params: Promise<{ id: string
                   <div key={label} className="ux-hov flex items-center gap-3">
                     <IconTile icon={icon} tint={tint} ink={ink} size={38} />
                     <div className="min-w-0">
-                      <p className="text-[17px] font-bold leading-none tabular-nums" style={{ color: "var(--ux-ink)" }}>{v}</p>
-                      <p className="mt-1 truncate text-[11.5px]" style={{ color: "var(--ux-muted)" }}>{label}</p>
+                      <p className="text-lg font-bold leading-none tabular-nums" style={{ color: "var(--ux-ink)" }}>{v}</p>
+                      <p className="mt-1 truncate text-xs" style={{ color: "var(--ux-muted)" }}>{label}</p>
                     </div>
                   </div>
                 ))}
@@ -233,45 +233,41 @@ export default function ProductEditor({ params }: { params: Promise<{ id: string
         </div>
       }
     >
-      <Link href="/app/documents"
-            className="ux-hov -my-1 mb-3.5 inline-flex items-center gap-1.5 py-1 text-[12.5px] font-medium"
-            style={{ color: "var(--ux-brand)" }}>
-        <Icons.ArrowLeft className="ux-ico h-4 w-4" /> Your business
-      </Link>
+      <Back to="/app/documents" label={tr("documentsProduct.yourShop")} className="mb-4" />
 
-      <h1 className="text-[24px] font-bold" style={{ color: "var(--ux-ink)" }}>
+      <h1 className="text-2xl font-bold" style={{ color: "var(--ux-ink)" }}>
         {isNew ? "Add something you sell" : form.name || "Edit product"}
       </h1>
-      <p className="mb-[20px] mt-1.5 text-[13px]" style={{ color: "var(--ux-muted)" }}>
-        {isNew ? "Four things and it is listed. You can change any of it later."
-               : "Changes reach buyers straight away."}
+      <p className="mb-[20px] mt-1.5 text-xsm" style={{ color: "var(--ux-muted)" }}>
+        {isNew ? tr("documentsProduct.fourThingsAndItIsListed")
+              : tr("documentsProduct.changesReachBuyersStraightAway")}
       </p>
 
-      <Card className="mb-[15px]">
-        <SectionHead title="Photos" sub="The first one is what buyers see in the list" />
+      <Card className="mb-[16px]">
+        <SectionHead title="Photos" sub={tr("documentsProduct.theFirstOneIsWhatBuyers")} />
         <div className="ux-deck grid grid-cols-4 gap-2.5">
           {[0, 1, 2, 3].map((i) => (
             <button
               key={i}
-              className="ux-i ux-sq grid aspect-square place-items-center overflow-hidden rounded-[13px] border"
+              className="ux-i ux-sq grid aspect-square place-items-center overflow-hidden rounded-[12px] border"
               style={{ borderColor: i === 0 ? "var(--ux-brand)" : "var(--ux-line)",
                        borderStyle: i === 0 ? "solid" : "dashed", ["--i" as string]: i }}
             >
               {i === 0 ? (
                 <>
                   {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img src={base.art} alt="" className="ux-art h-full w-full object-cover" />
+                  <img loading="lazy" decoding="async" src={base.art} alt="" className="ux-art h-full w-full object-cover" />
                 </>
               ) : (
                 <span className="flex flex-col items-center gap-1.5">
                   <Icons.Plus className="ux-ico h-[20px] w-[20px]" style={{ color: "var(--ux-faint)" }} />
-                  <span className="text-[10.5px]" style={{ color: "var(--ux-faint)" }}>Add</span>
+                  <span className="text-2xs" style={{ color: "var(--ux-faint)" }}>Add</span>
                 </span>
               )}
             </button>
           ))}
         </div>
-        <p className="mt-3 flex items-start gap-2.5 rounded-[11px] p-3 text-[12px] leading-relaxed"
+        <p className="mt-3 flex items-start gap-2.5 rounded-[12px] p-3 text-xs leading-relaxed"
            style={{ background: "var(--ux-surface-2)", color: "var(--ux-ink-2)" }}>
           <Icons.Camera className="mt-[1px] h-[14px] w-[14px] shrink-0" style={{ color: "var(--ux-brand)" }} />
           Daylight, a plain wall, and the thing filling most of the frame. Products with three photos sell
@@ -279,45 +275,45 @@ export default function ProductEditor({ params }: { params: Promise<{ id: string
         </p>
       </Card>
 
-      <Card className="mb-[15px]">
-        <SectionHead title="The details" />
+      <Card className="mb-[16px]">
+        <SectionHead title={tr("documentsProduct.theDetails")} />
         <div className="space-y-4">
-          <Field label="What is it called" hint="What a buyer would search for — “Cotton kurta”, not “Item 4”.">
-            <TextInput value={form.name} onChange={set("name")} placeholder="Cotton kurta" />
+          <Field label={tr("documentsProduct.whatIsItCalled")} hint={tr("documentsProduct.whatABuyerWouldSearchFor")}>
+            <TextInput value={form.name} onChange={set("name")} placeholder={tr("documentsProduct.cottonKurta")} />
           </Field>
 
           <div className="grid grid-cols-2 gap-4">
-            <Field label="Price" hint="In rupees. Buyers see this exactly.">
+            <Field label="Price" hint={tr("documentsProduct.inRupeesBuyersSeeThisExactly")}>
               <TextInput value={form.rupees} onChange={set("rupees")} placeholder="1200" inputMode="numeric" />
             </Field>
-            <Field label="How many are ready" hint="Leave 0 if you make each one to order.">
+            <Field label={tr("documentsProduct.howManyAreReady")} hint={tr("documentsProduct.leaveIfYouMakeEachOne")}>
               <TextInput value={form.stock} onChange={set("stock")} placeholder="0" inputMode="numeric" />
             </Field>
           </div>
 
-          <Field label="Describe it" hint="What it is made of, how it is made, and anything a buyer should know.">
+          <Field label={tr("documentsProduct.describeIt")} hint={tr("documentsProduct.whatItIsMadeOfHow")}>
             <textarea
               value={form.about}
               onChange={(e) => { setForm((f) => ({ ...f, about: e.target.value })); setSaved(false); }}
               rows={4}
-              aria-label="Describe it"
-              className="ux-sq w-full resize-y rounded-[11px] border p-3.5 text-[13.5px] leading-relaxed outline-none"
+              aria-label={tr("documentsProduct.describeIt2")}
+              className="ux-sq w-full resize-y rounded-[12px] border p-3.5 text-sm leading-relaxed outline-none"
               style={{ borderColor: "var(--ux-line-strong)", background: "var(--ux-surface)", color: "var(--ux-ink)" }}
             />
           </Field>
 
-          <Field label="How long to make one" hint="Be honest — a late order costs more than a slow one.">
-            <TextInput value={form.made} onChange={set("made")} placeholder="3 days" />
+          <Field label={tr("documentsProduct.howLongToMakeOne")} hint={tr("documentsProduct.beHonestALateOrderCosts")}>
+            <TextInput value={form.made} onChange={set("made")} placeholder={tr("documentsProduct.days")} />
           </Field>
         </div>
       </Card>
 
       <Card>
-        <SectionHead title="In your shop" />
+        <SectionHead title={tr("documentsProduct.inYourShop")} />
         <Toggle
           on={form.live}
           onChange={(v) => { setForm((f) => ({ ...f, live: v })); setSaved(false); }}
-          label="Show this to buyers"
+          label={tr("documentsProduct.showThisToBuyers")}
           whenOn="Anyone visiting your shop can see and order it."
           whenOff="Only you can see it. Nothing is lost — turn it back on any time."
         />

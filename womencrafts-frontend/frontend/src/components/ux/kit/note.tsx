@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
-import * as Icons from "lucide-react";
+import * as Icons from "@/components/ux/icons";
 
 import { Btn } from "./index";
 import { messageFrom } from "@/lib/use-action";
@@ -165,10 +165,10 @@ export function NoteBtn({
                       style={{ background: "var(--ux-tint-green)" }}>
                   <Icons.Check className="h-[26px] w-[26px]" style={{ color: "var(--ux-green-ink)" }} strokeWidth={2.4} />
                 </span>
-                <p className="mt-3.5 text-[16px] font-bold" style={{ color: "var(--ux-ink)" }}>
+                <p className="mt-3.5 text-base font-bold" style={{ color: "var(--ux-ink)" }}>
                   {sent ?? `Sent to ${to}`}
                 </p>
-                <p className="mx-auto mt-1.5 max-w-[36ch] text-[12.5px] leading-relaxed" style={{ color: "var(--ux-muted)" }}>
+                <p className="mx-auto mt-1.5 max-w-[36ch] text-xsm leading-relaxed" style={{ color: "var(--ux-muted)" }}>
                   {sentBody ?? "You will see the reply in Messages. Nothing else about you is shared."}
                 </p>
                 <div className="mt-4 flex justify-center gap-2.5">
@@ -180,11 +180,11 @@ export function NoteBtn({
               <>
                 <div className="mb-3.5 flex items-start justify-between gap-4">
                   <div>
-                    <h2 className="text-[16.5px] font-bold" style={{ color: "var(--ux-ink)" }}>{title}</h2>
-                    <p className="mt-1 text-[12.5px]" style={{ color: "var(--ux-muted)" }}>Goes to {to}.</p>
+                    <h2 className="text-base font-bold" style={{ color: "var(--ux-ink)" }}>{title}</h2>
+                    <p className="mt-1 text-xsm" style={{ color: "var(--ux-muted)" }}>Goes to {to}.</p>
                   </div>
                   <button onClick={() => setOpen(false)} aria-label="Close"
-                          className="ux-press ux-sq grid h-[34px] w-[34px] shrink-0 place-items-center rounded-[10px] border"
+                          className="ux-press ux-sq grid h-[34px] w-[34px] shrink-0 place-items-center rounded-[12px] border"
                           style={{ borderColor: "var(--ux-line)" }}>
                     <Icons.X className="h-[16px] w-[16px]" style={{ color: "var(--ux-muted)" }} strokeWidth={2} />
                   </button>
@@ -192,13 +192,13 @@ export function NoteBtn({
 
                 {choices && (
                   <div className="mb-3.5">
-                    <p className="mb-2 text-[12.5px] font-semibold" style={{ color: "var(--ux-ink)" }}>{choiceLabel}</p>
+                    <p className="mb-2 text-xsm font-semibold" style={{ color: "var(--ux-ink)" }}>{choiceLabel}</p>
                     <div className="flex flex-wrap gap-2">
                       {choices.map((c) => {
                         const on = choice === c;
                         return (
                           <button key={c} onClick={() => setChoice(c)} aria-pressed={on}
-                                  className="ux-press ux-sq rounded-[10px] border px-3 py-2 text-[12px] font-medium"
+                                  className="ux-press ux-sq rounded-[12px] border px-3 py-2 text-xs font-medium"
                                   style={{
                                     borderColor: on ? "var(--ux-brand)" : "var(--ux-line-strong)",
                                     background: on ? "var(--ux-brand-tint)" : "var(--ux-surface)",
@@ -214,11 +214,11 @@ export function NoteBtn({
 
                 {stars && (
                   <div className="mb-3.5">
-                    <p className="mb-2 text-[12.5px] font-semibold" style={{ color: "var(--ux-ink)" }}>How did it go?</p>
+                    <p className="mb-2 text-xsm font-semibold" style={{ color: "var(--ux-ink)" }}>How did it go?</p>
                     <div className="flex gap-1.5">
                       {[1, 2, 3, 4, 5].map((n) => (
                         <button key={n} onClick={() => setRating(n)} aria-label={`${n} out of 5`}
-                                className="ux-press grid h-[38px] w-[38px] place-items-center rounded-[10px]"
+                                className="ux-press grid h-[38px] w-[38px] place-items-center rounded-[12px]"
                                 style={{ background: n <= rating ? "var(--ux-tint-amber)" : "var(--ux-surface-2)" }}>
                           <Icons.Star className="h-[19px] w-[19px]"
                                       style={{ color: n <= rating ? "var(--ux-amber-ink)" : "var(--ux-faint)" }}
@@ -236,14 +236,14 @@ export function NoteBtn({
                   placeholder={placeholder}
                   rows={4}
                   aria-label={title}
-                  className="ux-sq w-full rounded-[13px] border p-3.5 text-[13.5px] leading-relaxed outline-none"
+                  className="ux-sq w-full rounded-[12px] border p-3.5 text-sm leading-relaxed outline-none"
                   style={{ borderColor: "var(--ux-line-strong)", background: "var(--ux-surface)", color: "var(--ux-ink)" }}
                 />
 
                 {/* The refusal belongs here, above the button she pressed, with
                     her words still in the box behind it. */}
                 {problem && (
-                  <p role="alert" className="ux-slide-up mt-3 rounded-[11px] p-3 text-[12.5px] leading-relaxed"
+                  <p role="alert" className="ux-slide-up mt-3 rounded-[12px] p-3 text-xsm leading-relaxed"
                      style={{ background: "var(--ux-tint-orange)", color: "var(--ux-orange-ink)" }}>
                     {problem}
                   </p>
@@ -251,7 +251,7 @@ export function NoteBtn({
 
                 <div className="mt-3.5 flex items-center justify-between gap-3">
                   {/* Say what happens to it before she presses send, not after. */}
-                  <p className="text-[11.5px] leading-snug" style={{ color: send ? "var(--ux-faint)" : "var(--ux-orange-ink)" }}>
+                  <p className="text-xs leading-snug" style={{ color: send ? "var(--ux-faint)" : "var(--ux-orange-ink)" }}>
                     {send
                       ? `Only ${to} sees this.`
                       : `This box is not connected yet — nothing written here would reach ${to}.`}

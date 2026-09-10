@@ -1,6 +1,7 @@
 "use client";
 
 import { ScreenError } from "@/components/ux/kit";
+import { useT } from "@/i18n";
 
 /**
  * The error boundary for this route.
@@ -11,9 +12,10 @@ import { ScreenError } from "@/components/ux/kit";
  * back here. So this one is bare, like the screen it is replacing.
  */
 export default function Error({ error, reset }: { error: Error & { digest?: string }; reset: () => void }) {
+  const tr = useT();
   return (
-    <div className="mx-auto w-full max-w-[1080px] px-8 py-[38px]">
-      <ScreenError what="this page" reset={reset} detail={error.digest} />
+    <div className="mx-auto w-full max-w-[1080px] px-8 py-[40px]">
+      <ScreenError what={tr("welcome.thisPage")} reset={reset} detail={error.digest} />
     </div>
   );
 }

@@ -38,9 +38,20 @@ class ReferenceModel:
     TOPIC_RIGHTS = "rights"        # what the law gives her
     TOPIC_FAMILY = "family"        # creches, Anganwadi, childcare
     TOPIC_TRAVEL = "travel"        # routes, safety, what a fare should be
+    #: Numbers she can ring. Kept HERE rather than in the frontend because a
+    #: helpline that changes — and they do — must be correctable without a
+    #: deploy, and because a district number belongs to a district: `city`
+    #: already scopes an entry, so a Jaipur legal-aid line can sit beside the
+    #: national one without being shown to a woman in Guwahati.
+    TOPIC_HELPLINE = "helpline"
+    #: Editorial guidance — the steps to take, what to do first. Not facts about
+    #: the world, but still content somebody must be able to correct or
+    #: translate without shipping code.
+    TOPIC_GUIDANCE = "guidance"
     TOPICS = (
         TOPIC_SCHEME, TOPIC_COVER, TOPIC_HEALTH,
         TOPIC_RIGHTS, TOPIC_FAMILY, TOPIC_TRAVEL,
+        TOPIC_HELPLINE, TOPIC_GUIDANCE,
     )
 
     STATUS_PUBLISHED = "published"

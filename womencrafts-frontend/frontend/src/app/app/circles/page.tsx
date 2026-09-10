@@ -1,148 +1,337 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useCallback, useMemo, useState, useSyncExternalStore } from "react";
+import { useRouter } from "next/navigation";
+import Link from "next/link";
 
-import { Btn, Card, Chip, EmptyState, IconTile, SectionHead, SourceNote, Tabs, plural } from "@/components/ux/kit";
+import * as Icons from "@/components/ux/icons";
 import { HomeShell } from "@/components/ux/home/HomeShell";
-import { CircleCard } from "@/components/ux/circles/parts";
+import { Btn, Card, EmptyState, I, Tabs, v } from "@/components/ux/kit";
+import { useResource } from "@/lib/use-resource";
 import {
-  CIRCLE_ART, CIRCLE_KINDS, rupees, type CircleKind,
-} from "@/components/ux/circles/data";
-import { useCircles } from "@/components/ux/live";
+  apiCircles, apiCommunityOverview, apiJoinCircle, apiLikePost,
+  type Circle, type CommunityOverview,
+} from "@/lib/community-api";
+import { apiRegisterForEvent } from "@/lib/growth-api";
+import { useEvents } from "@/components/ux/growth";
+import { ALL_TOPICS, topicOf, type Topic } from "@/components/ux/circle/data";
+import {
+  CircleHero, CircleQuote, MyCircle, PopularGroups, PostCard, TopicChips,
+  Trending, UpcomingEvents,
+  type FeedPost, type RailEvent, type Trend,
+} from "./circle-views";
 
 /**
- * Circle — the groups she is in, and the ones she could join.
+ * Circle — where women talk to each other.
  *
- * Hers come first and are never mixed with suggestions: a savings circle is a
- * financial commitment, and a screen that puts "the circle you pay into" beside
- * "a circle you might like" invites exactly the wrong tap.
+ * ── Everything on this screen is somebody's real words ──────────────────────
+ * The feed, the trending three, the topic counts, the popular circles and her
+ * own three numbers all come from `/community/overview` and
+ * `/community/circles`. A post's heading and its hashtags are read out of the
+ * body its author typed (see `readPost`) rather than invented, and a post's
+ * category is its circle's topic — so nothing here says a woman wrote
+ * something she did not.
+ *
+ * ── The one thing the server does not keep ──────────────────────────────────
+ * There is no saved-posts endpoint. Saving therefore works, but in her own
+ * browser: it survives a reload on that phone and does not follow her to
+ * another one. That is a real feature with a stated limit rather than a
+ * button that pretends.
+ *
+ * ── Why the savings pot is still here ───────────────────────────────────────
+ * This screen used to be four views, one of which was the pot she pays into
+ * every month. The discussion design replaces the other three; dropping the
+ * pot with them would take a woman's live financial commitment off the only
+ * screen that led to it. It sits at the top of the rail instead.
  */
-export default function CirclesPage() {
-  const { data: circles, source } = useCircles();
-  const MY_CIRCLES = circles.mine;
-  const DISCOVER_CIRCLES = circles.discover;
-  const [tab, setTab] = useState("My circles");
-  const [kinds, setKinds] = useState<CircleKind[]>([]);
 
-  const pool = tab === "My circles" ? MY_CIRCLES : DISCOVER_CIRCLES;
-  const shown = useMemo(
-    () => (kinds.length ? pool.filter((c) => kinds.includes(c.kind)) : pool),
-    [pool, kinds],
-  );
+const EMPTY: CommunityOverview = { circles: [], circle_id: null, savings: null, posts: [] };
+const TABS = ["Latest", "Following", "My posts", "Saved"] as const;
+type Tab = (typeof TABS)[number];
 
-  const saving = MY_CIRCLES.filter((c) => c.kind === "Savings");
-  const monthly = saving.reduce((a, c) => a + (c.monthly_minor ?? 0), 0);
-  const potTotal = saving.reduce((a, c) => a + (c.pot_minor ?? 0), 0);
+/* ── Saved posts, in her own browser ──────────────────────────────────────── */
 
-  return (
-    <HomeShell
-      active="/app/circles"
-      rail={
-        <div className="space-y-[15px]">
-          <Card className="ux-onscroll-soft">
-            <SectionHead title="What you have committed" sub="Across your savings circles" />
-            <div className="space-y-3.5">
-              {[
-                ["Every month", rupees(monthly), "CalendarClock", "--ux-tint-violet", "--ux-violet"],
-                ["The pot you will receive", rupees(potTotal), "PiggyBank", "--ux-tint-green", "--ux-green"],
-                ["Circles you are in", `${MY_CIRCLES.length}`, "UsersRound", "--ux-tint-pink", "--ux-pink"],
-              ].map(([label, val, icon, tint, ink]) => (
-                <div key={label} className="ux-hov flex items-center gap-3">
-                  <IconTile icon={icon} tint={tint} ink={ink} size={38} />
-                  <div className="min-w-0">
-                    <p className="text-[17px] font-bold leading-none tabular-nums" style={{ color: "var(--ux-ink)" }}>{val}</p>
-                    <p className="mt-1 truncate text-[11.5px]" style={{ color: "var(--ux-muted)" }}>{label}</p>
-                  </div>
-                </div>
-              ))}
-            </div>
-            <p className="mt-4 rounded-[11px] p-3 text-[11.5px] leading-relaxed"
-               style={{ background: "var(--ux-surface-2)", color: "var(--ux-ink-2)" }}>
-              A savings circle is a promise to the other women in it. Missing a month affects whoever&rsquo;s
-              turn it is, not the app.
-            </p>
-          </Card>
+const SAVED_KEY = "womsakhi.circle.saved";
+const readSaved = (): string => {
+  try { return localStorage.getItem(SAVED_KEY) ?? ""; } catch { return ""; }
+};
+/** Re-read on every write, so every card re-renders when one of them changes. */
+let bump: (() => void) | null = null;
+const onSaved = (cb: () => void) => { bump = cb; return () => { bump = null; }; };
 
-          <div className="ux-clay ux-onscroll-soft relative overflow-hidden p-[18px]"
-               style={{ background: "linear-gradient(140deg, var(--ux-tint-pink), var(--ux-tint-lilac))" }}>
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src={CIRCLE_ART.invite} alt=""
-                 className="ux-float pointer-events-none absolute -bottom-3 -end-4 h-[100px] w-[100px] object-contain" />
-            <h3 className="relative w-[60%] text-[14px] font-semibold" style={{ color: "var(--ux-ink)" }}>
-              Start your own
-            </h3>
-            <p className="relative mt-2 w-[60%] text-[12px] leading-relaxed" style={{ color: "var(--ux-muted)" }}>
-              Five women you already trust is enough to begin a savings circle.
-            </p>
-            <div className="relative mt-3 w-[60%]">
-              <Btn href="/app/circles/new" variant="soft" size="sm" icon="Plus">Create a circle</Btn>
+export default function CirclePage() {
+  const router = useRouter();
+  const [ask, setAsk] = useState("");
+  const [topic, setTopic] = useState(ALL_TOPICS);
+  const [tab, setTab] = useState<Tab>("Latest");
+  const [busy, setBusy] = useState<string | null>(null);
+  const [note, setNote] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
+
+  const savedRaw = useSyncExternalStore(onSaved, readSaved, () => "");
+  const saved = useMemo(() => new Set(savedRaw.split(",").filter(Boolean)), [savedRaw]);
+
+  const { data: overview, refetch } = useResource(
+    useCallback((s?: AbortSignal) => apiCommunityOverview(s), []), EMPTY);
+  const { data: allCircles, refetch: reCircles } = useResource(
+    useCallback(() => apiCircles({}), []), [] as Circle[]);
+  const events = useEvents();
+
+  /** id → circle, so a post can name the room it was said in. */
+  const byId = useMemo(
+    () => new Map(allCircles.concat(overview.circles).map((c) => [c.id, c])),
+    [allCircles, overview.circles]);
+
+  const say = useCallback((msg: string) => {
+    setNote(msg);
+    window.setTimeout(() => setNote((n) => (n === msg ? null : n)), 2600);
+  }, []);
+
+  /* ── The feed ─────────────────────────────────────────────────────────── */
+
+  const feed: FeedPost[] = useMemo(() => overview.posts.map((p) => {
+    const c = byId.get(p.circle_id);
+    return {
+      id: p.id,
+      author: p.author_name,
+      avatar: p.author_avatar,
+      when: p.when,
+      body: p.body,
+      topic: topicOf(c?.topic),
+      likes: p.likes,
+      liked: p.liked_by_me,
+      replies: p.reply_count,
+      mine: p.mine,
+      href: c ? `/app/circles/${c.id}` : "/app/circles",
+    };
+  }), [overview.posts, byId]);
+
+  const shown = useMemo(() => {
+    const byTopic = topic === ALL_TOPICS ? feed : feed.filter((p) => p.topic.label === topic);
+    if (tab === "Following") return byTopic.filter((p) => byId.get(overview.posts.find((q) => q.id === p.id)?.circle_id ?? "")?.joined);
+    if (tab === "My posts") return byTopic.filter((p) => p.mine);
+    if (tab === "Saved") return byTopic.filter((p) => saved.has(p.id));
+    return byTopic;
+  }, [feed, topic, tab, saved, byId, overview.posts]);
+
+  /** The three most talked about — likes and replies together, because a post
+   *  with forty replies and two likes is the busier conversation. */
+  const trending: Trend[] = useMemo(() => {
+    const seen = new Set<string>();
+    return [...feed]
+    .sort((a, b) => (b.likes + b.replies * 2) - (a.likes + a.replies * 2))
+    .filter((p) => {
+      // One row per distinct question. Three cards saying the same sentence
+      // is not a trend, it is a bug the reader has to work out for herself.
+      const k = p.body.trim().toLowerCase().slice(0, 60);
+      if (seen.has(k)) return false;
+      seen.add(k);
+      return true;
+    })
+    .slice(0, 3)
+    .map((p) => ({
+      id: p.id,
+      title: p.body.split(/\n/)[0].replace(/#[\p{L}\p{N}_]+/gu, "").trim().slice(0, 88) || p.body.slice(0, 88),
+      topic: p.topic,
+      replies: p.replies,
+      likes: p.likes,
+      faces: [p.avatar, "", ""],
+      href: p.href,
+    }));
+  }, [feed]);
+
+  /* ── The rail ─────────────────────────────────────────────────────────── */
+
+  const { chipTopics, counts } = useMemo(() => {
+    const n: Record<string, number> = { [ALL_TOPICS]: allCircles.length };
+    const seen = new Map<string, Topic>();
+    for (const c of allCircles) {
+      const t = topicOf(c.topic);
+      n[t.label] = (n[t.label] ?? 0) + 1;
+      if (!seen.has(t.label)) seen.set(t.label, t);
+    }
+    // Busiest first, and the seven named categories ahead of a one-off word
+    // somebody typed once. A chip for a topic with nothing under it is a
+    // dead end she has to back out of.
+    const chips = [...seen.values()].sort((a, b) =>
+      (b.id.startsWith("other:") ? 0 : 1) - (a.id.startsWith("other:") ? 0 : 1) ||
+      (n[b.label] ?? 0) - (n[a.label] ?? 0));
+    return { chipTopics: chips, counts: n };
+  }, [allCircles]);
+
+  const popular = useMemo(() => [...allCircles]
+    .sort((a, b) => Number(a.joined) - Number(b.joined) || b.member_count - a.member_count)
+    .slice(0, 5), [allCircles]);
+
+  const railEvents: RailEvent[] = useMemo(() => (events.data?.upcoming ?? [])
+    .slice(0, 2)
+    .map((e) => ({
+      id: e.id, title: e.title, day: e.day, month: e.month,
+      when: `${e.when} · ${e.time}`, going: e.going, taken: e.taken,
+      href: `/app/events/${e.id}`,
+    })), [events.data]);
+
+  const mine = useMemo(() => feed.filter((p) => p.mine), [feed]);
+  const likesReceived = useMemo(() => mine.reduce((n, p) => n + p.likes, 0), [mine]);
+
+  /* ── What she can do ──────────────────────────────────────────────────── */
+
+  const like = useCallback(async (p: FeedPost) => {
+    setBusy(p.id); setError(null);
+    try { await apiLikePost(p.id); refetch(); }
+    catch { setError("Could not like that just now."); }
+    finally { setBusy(null); }
+  }, [refetch]);
+
+  const save = useCallback((p: FeedPost) => {
+    const next = new Set(saved);
+    if (next.has(p.id)) next.delete(p.id); else next.add(p.id);
+    try { localStorage.setItem(SAVED_KEY, [...next].join(",")); } catch { /* private window */ }
+    bump?.();
+    say(next.has(p.id) ? "Saved — find it under Saved" : "Removed from saved");
+  }, [saved, say]);
+
+  const share = useCallback(async (p: FeedPost) => {
+    const url = `${window.location.origin}${p.href}`;
+    try { await navigator.clipboard.writeText(url); say("Link copied — send it on WhatsApp"); }
+    catch { say(url); }
+  }, [say]);
+
+  const join = useCallback(async (c: Circle) => {
+    if (c.joined) { router.push(`/app/circles/${c.id}`); return; }
+    setBusy(c.id); setError(null);
+    try { await apiJoinCircle(c.id); reCircles(); refetch(); say(`You are in ${c.name}`); }
+    catch { setError("Could not join that circle just now."); }
+    finally { setBusy(null); }
+  }, [router, reCircles, refetch, say]);
+
+  const register = useCallback(async (e: RailEvent) => {
+    if (e.going) { router.push(e.href); return; }
+    setBusy(e.id); setError(null);
+    try { await apiRegisterForEvent(e.id); events.refetch(); say(`You are going to ${e.title}`); }
+    catch { setError("Could not register for that just now."); }
+    finally { setBusy(null); }
+  }, [router, events, say]);
+
+  /** The ask box and the rail button land in the same place. */
+  const start = useCallback(() => {
+    const q = ask.trim();
+    const first = overview.circles.find((c) => c.joined) ?? overview.circles[0] ?? popular[0];
+    router.push(first
+      ? `/app/circles/${first.id}${q ? `?ask=${encodeURIComponent(q)}` : ""}`
+      : "/app/circles/create");
+  }, [ask, overview.circles, popular, router]);
+
+  const savingsCircle = overview.circles.find((c) => c.id === overview.circle_id) ?? null;
+
+  const rail = (
+    <div className="space-y-4">
+      <div className="space-y-2.5">
+        <Btn full icon="Plus" onClick={start}>Start a discussion</Btn>
+        <Btn full variant="soft" icon="UsersRound" href="/app/circles/create">
+          Create a circle
+        </Btn>
+      </div>
+
+      {/* Her live financial commitment, kept in reach. */}
+      {savingsCircle && overview.savings && (
+        <Card>
+          <div className="flex items-start gap-3">
+            <span className="grid h-[38px] w-[38px] shrink-0 place-items-center rounded-[11px]"
+                  style={{ background: v("--ux-tint-amber"), color: v("--ux-amber-ink") }}>
+              <Icons.Coins className="h-[18px] w-[18px]" />
+            </span>
+            <div className="min-w-0 flex-1">
+              <p className="text-xsm font-bold" style={{ color: v("--ux-ink") }}>Your savings pot</p>
+              <p className="mt-0.5 text-2xs" style={{ color: v("--ux-muted") }}>
+                {savingsCircle.name} · {overview.savings.members_paid} of {overview.savings.members.length} paid
+              </p>
             </div>
           </div>
-
-          <Card className="ux-onscroll-soft">
-            <SectionHead title="How a savings circle works" icon="Info" />
-            <ol className="space-y-3">
-              {[
-                "Everyone pays the same amount, on the same day, every month.",
-                "One member takes the whole pot that month.",
-                "The order is agreed at the start, and everyone gets a turn.",
-                "It ends when every member has had the pot once.",
-              ].map((t, i) => (
-                <li key={t} className="flex items-start gap-2.5">
-                  <span className="grid h-[20px] w-[20px] shrink-0 place-items-center rounded-full text-[10px] font-bold"
-                        style={{ background: "var(--ux-brand-tint)", color: "var(--ux-brand)" }}>{i + 1}</span>
-                  <span className="text-[12.5px] leading-snug" style={{ color: "var(--ux-ink-2)" }}>{t}</span>
-                </li>
-              ))}
-            </ol>
-          </Card>
-        </div>
-      }
-    >
-      <div className="mb-[18px] flex items-end justify-between gap-4">
-        <div>
-          <h1 className="text-[24px] font-bold" style={{ color: "var(--ux-ink)" }}>Circle</h1>
-          <p className="mt-1.5 text-[13px]" style={{ color: "var(--ux-muted)" }}>
-            {tab === "My circles"
-              ? `${MY_CIRCLES.length} ${plural("circle", MY_CIRCLES.length)} you belong to.`
-              : `${DISCOVER_CIRCLES.length} ${plural("circle", DISCOVER_CIRCLES.length)} near you and online.`}
-          </p>
-
-      <SourceNote source={source} what="circles" />
-        </div>
-        <Tabs items={["My circles", "Discover"]} active={tab} onChange={setTab} />
-      </div>
-
-      <div className="mb-[15px] flex flex-wrap gap-2">
-        {CIRCLE_KINDS.map((k) => (
-          <Chip
-            key={k}
-            selected={kinds.includes(k)}
-            onClick={() => setKinds(kinds.includes(k) ? kinds.filter((x) => x !== k) : [...kinds, k])}
-          >
-            {k}
-          </Chip>
-        ))}
-      </div>
-
-      {shown.length ? (
-        <div className="ux-deck grid grid-cols-2 gap-[15px]">
-          {shown.map((c, i) => <CircleCard key={c.id} c={c} i={i} />)}
-        </div>
-      ) : (
-        <Card>
-          <EmptyState
-            icon="UsersRound"
-            title="Nothing of that kind here"
-            body={
-              tab === "My circles"
-                ? "You have not joined a circle of that kind yet."
-                : "Try another kind, or start one of your own."
-            }
-            action={<Btn onClick={() => setKinds([])} variant="soft">Show all kinds</Btn>}
-          />
+          <div className="mt-3">
+            <Btn size="sm" full variant={overview.savings.you_paid ? "outline" : "primary"}
+                 href={`/app/circles/${savingsCircle.id}${overview.savings.you_paid ? "" : "/pay"}`}>
+              {overview.savings.you_paid ? "See the pot" : "Pay this month"}
+            </Btn>
+          </div>
         </Card>
       )}
+
+      <MyCircle posts={mine.length} likes={likesReceived} saved={saved.size} />
+      <PopularGroups rows={popular} busy={busy} onJoin={join} />
+      {railEvents.length > 0 && <UpcomingEvents rows={railEvents} busy={busy} onGo={register} />}
+      <CircleQuote />
+    </div>
+  );
+
+  return (
+    <HomeShell active="/app/circles" rail={rail} loadFailed="the circle">
+      <div className="flex flex-col">
+        <CircleHero ask={ask} onAsk={setAsk} onStart={start} />
+
+        <TopicChips active={topic} onPick={setTopic} topics={chipTopics} counts={counts} />
+
+        {error && (
+          <p role="alert" className="mb-4 rounded-[12px] px-4 py-3 text-xsm font-semibold"
+             style={{ background: v("--ux-danger-tint"), color: v("--ux-danger-solid") }}>
+            {error}
+          </p>
+        )}
+
+        {trending.length > 0 && <Trending rows={trending} />}
+
+        <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+          <Tabs items={TABS as unknown as string[]} active={tab}
+                onChange={(t) => setTab(t as Tab)} />
+          {topic !== ALL_TOPICS && (
+            <button type="button" onClick={() => setTopic(ALL_TOPICS)}
+                    className="ux-press ux-sq flex min-h-[36px] items-center gap-1.5 rounded-[10px] px-3 text-xs font-bold"
+                    style={{ background: v("--ux-brand-tint"), color: v("--ux-brand") }}>
+              {topic}
+              <Icons.X className="h-[13px] w-[13px]" />
+            </button>
+          )}
+        </div>
+
+        {shown.length > 0 ? (
+          shown.map((p) => (
+            <PostCard key={p.id} p={p} saved={saved.has(p.id)} busy={busy === p.id}
+                      onLike={like} onSave={save} onShare={share} />
+          ))
+        ) : (
+          <Card>
+            <EmptyState
+              icon={tab === "Saved" ? "Bookmark" : "MessagesSquare"}
+              title={tab === "Saved" ? "Nothing saved yet"
+                   : tab === "My posts" ? "You have not written anything yet"
+                   : tab === "Following" ? "Join a circle and its posts land here"
+                   : "No discussions here yet"}
+              body={tab === "Saved"
+                ? "The bookmark on any post keeps it here. Saved posts stay on this phone."
+                : "Ask the first question. Somebody who has been where you are will answer it."}
+              action={<Btn size="sm" icon="Plus" onClick={start}>Start a discussion</Btn>}
+            />
+          </Card>
+        )}
+
+        <div className="mt-5">
+          <Link href="/app/circles/create"
+                className="ux-press ux-sq flex items-center justify-center gap-2 rounded-[16px] px-5 py-4 text-xsm font-bold"
+                style={{ background: v("--ux-brand-tint"), border: `1px solid ${v("--ux-brand")}`,
+                         color: v("--ux-brand") }}>
+            <I name="UsersRound" className="h-[16px] w-[16px]" />
+            Start a circle of your own
+          </Link>
+        </div>
+
+        <div className="ux-toast rounded-[12px] px-5 py-3.5 text-xsm font-bold"
+             data-on={note ? "true" : "false"} role="status" aria-live="polite"
+             style={{ background: v("--ux-ink"), color: v("--ux-canvas"),
+                      boxShadow: "0 20px 44px -18px rgba(0,0,0,.6)",
+                      pointerEvents: note ? undefined : "none" }}>
+          {note}
+        </div>
+      </div>
     </HomeShell>
   );
 }

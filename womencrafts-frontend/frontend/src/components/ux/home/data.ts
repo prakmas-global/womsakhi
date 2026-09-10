@@ -1,3 +1,4 @@
+import { allNodes } from "../nav-tree";
 /**
  * The Home module's content — mock for now.
  *
@@ -37,14 +38,39 @@ export const ME = {
   unread: 8,
 };
 
-export const QUICK_ACTIONS = [
-  { label: "Learning", sub: "Upgrade your skills", icon: "BookOpen", tint: "--ux-tint-violet", ink: "--ux-violet", href: "/app/programs" },
-  { label: "Mentors", sub: "Guidance & support", icon: "Users", tint: "--ux-tint-orange", ink: "--ux-orange", href: "/app/mentors" },
-  { label: "Work", sub: "Find opportunities", icon: "Briefcase", tint: "--ux-tint-blue", ink: "--ux-blue", href: "/app/opportunities" },
-  { label: "Earn", sub: "Build your income", icon: "Wallet", tint: "--ux-tint-green", ink: "--ux-green", href: "/app/wallet" },
-  { label: "Circles", sub: "Connect & grow", icon: "UsersRound", tint: "--ux-tint-pink", ink: "--ux-pink", href: "/app/circles" },
-  { label: "Ask Sakhi", sub: "AI guidance", icon: "Sparkles", tint: "--ux-tint-lilac", ink: "--ux-violet", href: "/app/sakhi" },
-] as const;
+/**
+ * The shortcut grid on the front page.
+ *
+ * **The labels are looked up from the navigation, not typed here.** They used
+ * to be their own list, and it drifted: this grid said "Learning", the rail
+ * said "Courses", the top bar said "Learn" and the page itself said
+ * "Learning" — four names for `/app/programs` on one screen. It said "Earn"
+ * for `/app/wallet`, so a woman looking for work followed it to her bank
+ * balance.
+ *
+ * Only the tint is decided here. Everything a person reads comes from `nav.ts`,
+ * which means a rename there reaches this grid with nothing to remember.
+ */
+const TINTS: Record<string, { icon: string; tint: string; ink: string }> = {
+  "/app/programs":      { icon: "BookOpen",   tint: "--ux-tint-violet", ink: "--ux-violet" },
+  "/app/mentors":       { icon: "Users",      tint: "--ux-tint-orange", ink: "--ux-orange" },
+  "/app/opportunities": { icon: "Briefcase",  tint: "--ux-tint-blue",   ink: "--ux-blue" },
+  "/app/wallet":        { icon: "Wallet",     tint: "--ux-tint-green",  ink: "--ux-green" },
+  "/app/circles":       { icon: "UsersRound", tint: "--ux-tint-pink",   ink: "--ux-pink" },
+  "/app/sakhi":         { icon: "Sparkles",   tint: "--ux-tint-lilac",  ink: "--ux-violet" },
+};
+
+export const QUICK_ACTIONS = Object.entries(TINTS).map(([href, look]) => {
+  const item = allNodes().find((i) => i.href === href);
+  return {
+    href,
+    label: item?.label ?? href,
+    // The rail's own one-liner, so the tile and the rail say the same thing
+    // about the same destination.
+    sub: item?.note ?? "",
+    ...look,
+  };
+});
 
 export const JOURNEY = {
   title: "Digital Marketing Mastery",
@@ -152,17 +178,18 @@ export type SearchHit = {
   img?: string;
 };
 
-export const SEARCH_INDEX: SearchHit[] = [
-  { id: "s1", title: "Digital Marketing Mastery", sub: "12 lessons · 4.8 ★ · Beginner friendly", kind: "Course",
+/** Hand-written content — courses, jobs, mentors, circles, schemes. */
+const CONTENT_HITS: SearchHit[] = [
+  { id: "s1", title: "Digital Marketing Mastery", sub: "12 lessons · 4.8 out of 5 · Beginner friendly", kind: "Course",
     icon: "BookOpen", tint: "--ux-tint-violet", ink: "--ux-violet", href: "/app/programs",
     img: "/ux/art/course-working-laptop-smiling.webp" },
-  { id: "s2", title: "Communication Skills for Women", sub: "8 lessons · 4.9 ★ · Hindi & English", kind: "Course",
+  { id: "s2", title: "Communication Skills for Women", sub: "8 lessons · 4.9 out of 5 · Hindi & English", kind: "Course",
     icon: "BookOpen", tint: "--ux-tint-violet", ink: "--ux-violet", href: "/app/programs",
     img: "/ux/art/course-confident-microphone.webp" },
-  { id: "s3", title: "Financial Literacy Essentials", sub: "10 lessons · 4.7 ★ · Free", kind: "Course",
+  { id: "s3", title: "Financial Literacy Essentials", sub: "10 lessons · 4.7 out of 5 · Free", kind: "Course",
     icon: "BookOpen", tint: "--ux-tint-violet", ink: "--ux-violet", href: "/app/programs",
     img: "/ux/art/course-counting-coins-calculator.webp" },
-  { id: "s4", title: "Sell your handmade work online", sub: "9 lessons · 4.8 ★ · With templates", kind: "Course",
+  { id: "s4", title: "Sell your handmade work online", sub: "9 lessons · 4.8 out of 5 · With templates", kind: "Course",
     icon: "BookOpen", tint: "--ux-tint-violet", ink: "--ux-violet", href: "/app/programs",
     img: "/ux/art/course-photographing-handmade-product.webp" },
 
@@ -195,13 +222,17 @@ export const SEARCH_INDEX: SearchHit[] = [
   { id: "s15", title: "Mahila Samman Savings Certificate", sub: "Government scheme · 7.5% interest", kind: "Scheme",
     icon: "Landmark", tint: "--ux-tint-green", ink: "--ux-green", href: "/app/support-fund" },
 
-  { id: "s16", title: "My wallet and earnings", sub: "Withdraw, statements, payment methods", kind: "Page",
-    icon: "Wallet", tint: "--ux-tint-lilac", ink: "--ux-brand", href: "/app/wallet" },
-  { id: "s17", title: "My certificates", sub: "Download and share what you have earned", kind: "Page",
-    icon: "Award", tint: "--ux-tint-lilac", ink: "--ux-brand", href: "/app/certificates" },
-  { id: "s18", title: "Upcoming activities", sub: "Your sessions, classes and events", kind: "Page",
-    icon: "CalendarDays", tint: "--ux-tint-lilac", ink: "--ux-brand", href: "/app/schedule" },
 ];
+
+/**
+ * The hand-written content hits.
+ *
+ * Page results are NOT here: they are derived from the navigation in
+ * `nav-search.ts`, which is what the palette actually reads. Keeping a second
+ * page index in this file would be the same duplication that let forty routes
+ * go missing from search in the first place.
+ */
+export const SEARCH_INDEX: SearchHit[] = CONTENT_HITS;
 
 /** Shown before she types anything — the four things people look for most. */
 export const SEARCH_SUGGESTED = [

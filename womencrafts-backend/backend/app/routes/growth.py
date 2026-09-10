@@ -122,12 +122,16 @@ async def list_events(
 
 @router.get("/events/{event_id}", response_model=EventResponse, summary="One event")
 async def get_event(event_id: str, me: dict = Depends(require_active_member)):
-    doc = await _events().find_one({"_id": to_object_id(event_id), "status": "published"})
+    # The event and her registration are keyed on the path parameter and her
+    # id; neither needs the other, so neither waits for the other.
+    doc, reg = await asyncio.gather(
+        _events().find_one({"_id": to_object_id(event_id), "status": "published"}),
+        _registrations().find_one(
+            {"user_id": str(me["_id"]), "event_id": event_id, "status": "registered"}
+        ),
+    )
     if not doc:
         raise HTTPException(status.HTTP_404_NOT_FOUND, "That event doesn't exist")
-    reg = await _registrations().find_one(
-        {"user_id": str(me["_id"]), "event_id": event_id, "status": "registered"}
-    )
     return EventModel.to_response(doc, bool(reg))
 
 
@@ -241,12 +245,15 @@ async def list_mentors(
 
 @router.get("/mentors/{mentor_id}", response_model=MentorResponse, summary="One mentor")
 async def get_mentor(mentor_id: str, me: dict = Depends(require_active_member)):
-    doc = await _mentors().find_one({"_id": to_object_id(mentor_id), "status": "active"})
+    doc, req = await asyncio.gather(
+        _mentors().find_one({"_id": to_object_id(mentor_id), "status": "active"}),
+        _requests().find_one(
+            {"user_id": str(me["_id"]), "mentor_id": mentor_id,
+             "status": {"$in": ["pending", "accepted"]}}
+        ),
+    )
     if not doc:
         raise HTTPException(status.HTTP_404_NOT_FOUND, "That mentor isn't available")
-    req = await _requests().find_one(
-        {"user_id": str(me["_id"]), "mentor_id": mentor_id, "status": {"$in": ["pending", "accepted"]}}
-    )
     return MentorModel.to_response(doc, bool(req))
 
 
@@ -393,16 +400,18 @@ async def list_opportunities(
 
 @router.get("/opportunities/{opp_id}", response_model=OpportunityResponse, summary="One opportunity")
 async def get_opportunity(opp_id: str, me: dict = Depends(require_active_member)):
-    doc = await _opportunities().find_one({"_id": to_object_id(opp_id)})
+    doc, applied = await asyncio.gather(
+        _opportunities().find_one({"_id": to_object_id(opp_id)}),
+        _applications().find_one(
+            {
+                "user_id": str(me["_id"]),
+                "opportunity_id": opp_id,
+                "status": {"$ne": ApplicationModel.STATUS_WITHDRAWN},
+            }
+        ),
+    )
     if not doc:
         raise HTTPException(status.HTTP_404_NOT_FOUND, "That opportunity doesn't exist")
-    applied = await _applications().find_one(
-        {
-            "user_id": str(me["_id"]),
-            "opportunity_id": opp_id,
-            "status": {"$ne": ApplicationModel.STATUS_WITHDRAWN},
-        }
-    )
     saved_ids = set(me.get("saved_opportunities", []) or [])
     return OpportunityModel.to_response(doc, bool(applied), opp_id in saved_ids)
 

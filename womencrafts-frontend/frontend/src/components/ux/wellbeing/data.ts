@@ -26,25 +26,6 @@ export const HEALTH_CHECKS = [
     free: false, where: "₹200 at most opticians", icon: "Eye", tint: "--ux-tint-blue", ink: "--ux-blue" },
 ];
 
-export const HEALTH_TOPICS = [
-  { id: "t1", title: "Working while you are pregnant", body: "What you are entitled to, and what is safe to keep doing.",
-    mins: 6, icon: "Baby", tint: "--ux-tint-pink", ink: "--ux-pink" },
-  { id: "t2", title: "Back and eye strain from close work", body: "Tailoring, embroidery and screen work — what actually helps.",
-    mins: 5, icon: "Activity", tint: "--ux-tint-orange", ink: "--ux-orange" },
-  { id: "t3", title: "Periods, pain and working through it", body: "When pain is normal and when it is worth seeing someone.",
-    mins: 7, icon: "CalendarHeart", tint: "--ux-tint-violet", ink: "--ux-violet" },
-  { id: "t4", title: "Feeling low, and what helps", body: "It is common, it is not weakness, and it is treatable.",
-    mins: 8, icon: "Brain", tint: "--ux-tint-blue", ink: "--ux-blue" },
-];
-
-export const HEALTH_HELP = [
-  { id: "hh1", label: "Women's health helpline", num: "1097", note: "Free, 24 hours, every language" },
-  { id: "hh2", label: "Mental health helpline (Tele-MANAS)", num: "14416", note: "Free, 24 hours, confidential" },
-  { id: "hh3", label: "Ambulance", num: "108", note: "Free" },
-];
-
-/* ── Legal Aid & Rights ───────────────────────────────────────────────── */
-
 export const RIGHTS = [
   { id: "r1", title: "Your wages are yours", body: "Nobody — husband, father, employer — may take your earnings or hold your bank card.",
     law: "Under the law your account is yours alone.", icon: "BadgeIndianRupee", tint: "--ux-tint-green", ink: "--ux-green" },
@@ -60,21 +41,6 @@ export const RIGHTS = [
     law: "Legal Services Authorities Act, 1987.", icon: "Gavel", tint: "--ux-tint-green", ink: "--ux-green" },
 ];
 
-export const LEGAL_HELP = [
-  { id: "l1", label: "National Legal Services Authority", num: "15100", note: "Free lawyer, any woman, any income" },
-  { id: "l2", label: "Women's helpline", num: "181", note: "Free, 24 hours, every state" },
-  { id: "l3", label: "District Legal Services, Jaipur", num: "0141-2227481", note: "Mon–Sat, walk in" },
-];
-
-export const LEGAL_STEPS = [
-  { id: "s1", label: "Write down what happened", note: "Dates, names, amounts. Do it while you remember." },
-  { id: "s2", label: "Keep anything in writing", note: "Messages, receipts, a photograph of a document." },
-  { id: "s3", label: "Call 15100 — it is free", note: "They assign a lawyer. You pay nothing, whatever you earn." },
-  { id: "s4", label: "Take someone with you", note: "Anyone. You do not have to go alone." },
-];
-
-/* ── Family & Childcare ───────────────────────────────────────────────── */
-
 export const CRECHES = [
   { id: "c1", name: "Anganwadi Centre, Sector 12", kind: "Government", ages: "6 months – 6 years",
     hours: "9 AM – 4 PM", fee: "Free", distance: "0.8 km", meals: true,
@@ -86,23 +52,6 @@ export const CRECHES = [
     hours: "10 AM – 5 PM", fee: "₹600 a month", distance: "1.4 km", meals: false,
     art: A("scene-two-women-support") },
 ];
-
-export const FAMILY_HELP = [
-  { id: "f1", title: "Anganwadi — what you are entitled to",
-    body: "Free childcare, a hot meal, and immunisation for under-sixes. Every ward has one.",
-    icon: "Baby", tint: "--ux-tint-pink", ink: "--ux-pink" },
-  { id: "f2", title: "Working with a baby at home",
-    body: "What other members actually do, from women who have done it.",
-    icon: "Heart", tint: "--ux-tint-violet", ink: "--ux-violet" },
-  { id: "f3", title: "Girls' school scholarships",
-    body: "State and central schemes that pay fees, books and a monthly amount.",
-    icon: "GraduationCap", tint: "--ux-tint-blue", ink: "--ux-blue" },
-  { id: "f4", title: "Sharing childcare with other members",
-    body: "Three women, three days each. Cheaper than any creche and safer than none.",
-    icon: "UsersRound", tint: "--ux-tint-green", ink: "--ux-green" },
-];
-
-/* ── Transport & Safe Travel ──────────────────────────────────────────── */
 
 /**
  * A route she takes, and whether it is safe to come back on after dark.
@@ -129,19 +78,6 @@ export const ROUTES: Route[] = [
     mins: 55, cost: "₹40", safeAfterDark: false, note: "Last safe bus back is 6:30 PM" },
   { id: "t3", name: "Home → SBI Sector 9 (for Mudra)", how: "Walk, 18 minutes",
     mins: 18, cost: "Free", safeAfterDark: true, note: "Main road the whole way" },
-];
-
-export const TRAVEL_RULES = [
-  "Tell one person where you are going and when you expect to be back.",
-  "Sit near the driver or near other women on a bus.",
-  "Note the vehicle number before you get in, and send it to someone.",
-  "If something feels wrong, get out at the next stop. You owe nobody an explanation.",
-];
-
-export const TRAVEL_HELP = [
-  { id: "tr1", label: "Police", num: "112", note: "Emergency, all services" },
-  { id: "tr2", label: "Women's helpline", num: "181", note: "Free, 24 hours" },
-  { id: "tr3", label: "Railway helpline", num: "139", note: "For trains and stations" },
 ];
 
 export const WELLBEING_ART = {

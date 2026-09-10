@@ -42,6 +42,24 @@ export const apiRights = (s?: AbortSignal) => get<Reference[]>("/wellbeing/right
 export const apiFamily = (s?: AbortSignal) => get<Reference[]>("/wellbeing/family", s);
 export const apiTravel = (s?: AbortSignal) => get<Reference[]>("/wellbeing/travel", s);
 
+/**
+ * Numbers she can ring, and the steps to take.
+ *
+ * Both take a `context` — "legal", "health", "family", "travel", "money" — so
+ * the rights screen gets the legal ones and the health screen the health ones.
+ * The server always includes the "general" entries (112, 181) in every context,
+ * because a woman in trouble should not have to be on the right screen to find
+ * the emergency number.
+ *
+ * These lived in a TypeScript constant until 2026-08-30, which meant a helpline
+ * that changed could only be corrected by a deploy — and that one of them was a
+ * Jaipur district number shown to every member in the country.
+ */
+export const apiHelplines = (context: string, s?: AbortSignal) =>
+  get<Reference[]>("/wellbeing/helplines", s, { context });
+export const apiGuidance = (context: string, s?: AbortSignal) =>
+  get<Reference[]>("/wellbeing/guidance", s, { context });
+
 export async function apiMarkReference(id: string, state: MyState["state"], note = "") {
   const { data } = await apiClient.post<Reference>(`/reference/${id}/mark`, { state, note });
   return data;

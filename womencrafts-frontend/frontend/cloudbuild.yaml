@@ -1,0 +1,28 @@
+# Build the web image.
+#
+# A dedicated config rather than `gcloud builds submit --tag`, because the
+# image needs a build ARG: NEXT_PUBLIC_API_URL is inlined into the client
+# bundle at compile time, so it has to be present during `next build` and
+# cannot be supplied later as a Cloud Run env var.
+steps:
+  - name: gcr.io/cloud-builders/docker
+    args:
+      - build
+      - --build-arg=NEXT_PUBLIC_API_URL=${_API_URL}
+      - --build-arg=INTERNAL_API_URL=${_INTERNAL_API_URL}
+      - --tag=${_IMAGE}
+      - .
+  - name: gcr.io/cloud-builders/docker
+    args: [push, "${_IMAGE}"]
+images: ["${_IMAGE}"]
+substitutions:
+  # Relative: the browser calls this app, which forwards to the backend.
+  _API_URL: /api/v1
+  _INTERNAL_API_URL: https://womsakhi-api-574825618745.asia-south1.run.app/api/v1
+  _IMAGE: asia-south1-docker.pkg.dev/womsakhi/womsakhi/web:v1
+options:
+  # No machineType. The free trial's quota refuses E2_HIGHCPU_8 in
+  # asia-south1 with a FAILED_PRECONDITION, and the default builder compiles
+  # this in about the same wall-clock once npm ci is layer-cached.
+  logging: CLOUD_LOGGING_ONLY
+timeout: 1800s

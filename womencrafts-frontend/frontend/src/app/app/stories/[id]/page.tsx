@@ -2,15 +2,15 @@
 
 import { use, useCallback, useState } from "react";
 import Link from "next/link";
-import * as Icons from "lucide-react";
+import * as Icons from "@/components/ux/icons";
 
-import {
-  ActionBtn, Btn, Card, copy, EmptyState, Pill, RailSkeleton, ScreenSkeleton,
+import {Back, ActionBtn, Btn, Card, copy, EmptyState, Pill, RailSkeleton, ScreenSkeleton,
   SectionHead,
 } from "@/components/ux/kit";
 import { HomeShell } from "@/components/ux/home/HomeShell";
 import { apiLikeStory, apiStories, apiStory, type Story } from "@/lib/community-api";
 import { useResource } from "@/lib/use-resource";
+import { useT } from "@/i18n";
 
 
 /**
@@ -31,6 +31,7 @@ import { useResource } from "@/lib/use-resource";
  * what that returns.
  */
 export default function StoryDetail({ params }: { params: Promise<{ id: string }> }) {
+  const tr = useT();
   const { id } = use(params);
   const { data: s, source } = useResource(
     useCallback(() => apiStory(id), [id]),
@@ -79,9 +80,9 @@ export default function StoryDetail({ params }: { params: Promise<{ id: string }
         <Card>
           <EmptyState
             icon="SearchX"
-            title="That story is not here"
+            title={tr("stories.thatStoryIsNotHere")}
             body="She may have taken it down. The others are still up."
-            action={<Btn href="/app/stories" variant="primary" iconEnd="ArrowRight">All stories</Btn>}
+            action={<Btn href="/app/stories" variant="primary" iconEnd="ArrowRight">{tr("stories.allStories")}</Btn>}
           />
         </Card>
       </HomeShell>
@@ -95,7 +96,7 @@ export default function StoryDetail({ params }: { params: Promise<{ id: string }
   return (
     <HomeShell
       rail={
-        <div className="space-y-[15px]">
+        <div className="space-y-[16px]">
           {/*
             * A "What actually worked" card stood here with three rows in it —
             * what changed her life, how long it took, and what she earns now —
@@ -105,44 +106,38 @@ export default function StoryDetail({ params }: { params: Promise<{ id: string }
             */}
           {s.program && (
             <Card>
-              <SectionHead title="What she did" sub="The specific thing, not the inspiration" />
-              <p className="text-[13px] font-semibold leading-snug" style={{ color: "var(--ux-ink)" }}>
+              <SectionHead title={tr("stories.whatSheDid")} sub={tr("stories.theSpecificThingNotTheInspiration")} />
+              <p className="text-xsm font-semibold leading-snug" style={{ color: "var(--ux-ink)" }}>
                 {s.program}
               </p>
-              <p className="mt-1.5 text-[12.5px] leading-relaxed" style={{ color: "var(--ux-ink-2)" }}>
-                She names this in her story. It is open to you too.
-              </p>
+              <p className="mt-1.5 text-xsm leading-relaxed" style={{ color: "var(--ux-ink-2)" }}>{tr("stories.sheNamesThisInHerStory")}</p>
               <div className="mt-3.5">
-                <Btn href="/app/learn" variant="primary" full iconEnd="ArrowRight">Find it</Btn>
+                <Btn href="/app/programs" variant="primary" full iconEnd="ArrowRight">{tr("stories.findIt")}</Btn>
               </div>
             </Card>
           )}
 
           <Card>
-            <SectionHead title="Getting in touch" />
-            <p className="text-[12.5px] leading-relaxed" style={{ color: "var(--ux-ink-2)" }}>
+            <SectionHead title={tr("stories.gettingInTouch")} />
+            <p className="text-xsm leading-relaxed" style={{ color: "var(--ux-ink-2)" }}>
               WomSakhi has no direct messages between members yet. Ask the team about
               {" "}{s.author_name.split(" ")[0]} and they will answer you in Messages.
             </p>
             <div className="mt-3.5 flex gap-2">
-              <Btn href="/app/messages" variant="soft" size="sm" icon="MessageCircle">Ask the team</Btn>
-              <Btn href="/app/circles" variant="outline" size="sm">Find a circle</Btn>
+              <Btn href="/app/messages" variant="soft" size="sm" icon="MessageCircle">{tr("stories.askTheTeam")}</Btn>
+              <Btn href="/app/circles" variant="outline" size="sm">{tr("stories.findACircle")}</Btn>
             </div>
           </Card>
         </div>
       }
     >
-      <Link href="/app/stories"
-            className="ux-hov -my-1 mb-3.5 inline-flex items-center gap-1.5 py-1 text-[12.5px] font-medium"
-            style={{ color: "var(--ux-brand)" }}>
-        <Icons.ArrowLeft className="ux-ico h-4 w-4" /> Sakhi Local
-      </Link>
+      <Back to="/app/stories" label={tr("stories.nearYou")} className="mb-4" />
 
-      <Card className="mb-[15px] overflow-hidden" pad={0}>
+      <Card className="mb-[16px] overflow-hidden" pad={0}>
         <div className="relative h-[240px] overflow-hidden" style={{ background: "var(--ux-tint-lilac)" }}>
           {s.cover && (
             /* eslint-disable-next-line @next/next/no-img-element */
-            <img src={s.cover} alt="" className="h-full w-full object-cover" />
+            <img loading="lazy" decoding="async" src={s.cover} alt="" className="h-full w-full object-cover" />
           )}
           {/* The scrim is on the text's own container, so white stays readable
               even if the cover fails to load — or, as here, if there is none. */}
@@ -151,44 +146,44 @@ export default function StoryDetail({ params }: { params: Promise<{ id: string }
             {s.author_avatar
               ? (
                 /* eslint-disable-next-line @next/next/no-img-element */
-                <img src={s.author_avatar} alt=""
+                <img loading="lazy" decoding="async" src={s.author_avatar} alt=""
                      className="h-[62px] w-[62px] shrink-0 rounded-full border-2 border-white object-cover" />
               )
               : (
-                <span className="grid h-[62px] w-[62px] shrink-0 place-items-center rounded-full border-2 border-white text-[24px] font-semibold"
+                <span className="grid h-[62px] w-[62px] shrink-0 place-items-center rounded-full border-2 border-white text-2xl font-semibold"
                       style={{ background: "var(--ux-brand-tint)", color: "var(--ux-brand)" }}>
                   {s.author_name.trim().charAt(0).toUpperCase()}
                 </span>
               )}
             <div className="min-w-0 flex-1">
-              <p className="text-[20px] font-bold text-white">{s.author_name}</p>
-              <p className="mt-1 text-[12.5px]" style={{ color: "rgba(255,255,255,0.88)" }}>{s.when}</p>
+              <p className="text-xl font-bold text-white">{s.author_name}</p>
+              <p className="mt-1 text-xsm" style={{ color: "rgba(255,255,255,0.88)" }}>{s.when}</p>
             </div>
             {s.featured && <Pill tone="green" size="sm">Featured</Pill>}
           </div>
         </div>
 
-        <div className="p-[22px]">
+        <div className="p-[24px]">
           {s.title && (
-            <p className="text-[20px] font-semibold leading-snug" style={{ color: "var(--ux-ink)" }}>
+            <p className="text-xl font-semibold leading-snug" style={{ color: "var(--ux-ink)" }}>
               &ldquo;{s.title}&rdquo;
             </p>
           )}
           {/* Her body, and only her body. Two paragraphs beginning "The hardest
               part was not the work" were printed here under every story, in the
               first person, above her own name. */}
-          <div className="mt-4 whitespace-pre-line text-[14px] leading-relaxed" style={{ color: "var(--ux-ink-2)" }}>
+          <div className="mt-4 whitespace-pre-line text-sm leading-relaxed" style={{ color: "var(--ux-ink-2)" }}>
             {s.body}
           </div>
 
           {likeProblem && (
-            <p role="alert" className="ux-slide-up mt-3.5 text-[12.5px]" style={{ color: "var(--ux-orange-ink)" }}>
+            <p role="alert" className="ux-slide-up mt-3.5 text-xsm" style={{ color: "var(--ux-orange-ink)" }}>
               {likeProblem}
             </p>
           )}
 
           <div className="mt-5 flex items-center justify-between gap-4 border-t pt-4" style={{ borderColor: "var(--ux-line)" }}>
-            <p className="text-[11.5px]" style={{ color: "var(--ux-faint)" }}>{s.when}</p>
+            <p className="text-xs" style={{ color: "var(--ux-faint)" }}>{s.when}</p>
             <span className="flex items-center gap-2">
               {/* Was `setLiked((v) => !v)` and nothing else — a counter that
                   went up on her screen alone. */}
@@ -196,8 +191,9 @@ export default function StoryDetail({ params }: { params: Promise<{ id: string }
                 onClick={() => void toggleLike()}
                 disabled={liking}
                 aria-pressed={liked}
-                aria-label={liked ? "Remove your like" : "Like this story"}
-                className="ux-press ux-hov ux-sq inline-flex items-center gap-1.5 rounded-[11px] px-3.5 py-2.5 text-[12.5px] font-medium"
+                aria-label={liked ? tr("stories.removeYourLike")
+              : tr("stories.likeThisStory")}
+                className="ux-press ux-hov ux-sq inline-flex items-center gap-1.5 rounded-[12px] px-3.5 py-2.5 text-xsm font-medium"
                 style={{ background: liked ? "var(--ux-tint-pink)" : "var(--ux-surface-2)",
                          color: liked ? "var(--ux-pink-ink)" : "var(--ux-muted)" }}
               >
@@ -208,7 +204,7 @@ export default function StoryDetail({ params }: { params: Promise<{ id: string }
                              fill={liked ? "currentColor" : "none"} strokeWidth={1.9} />
                 {likeCount}
               </button>
-              <ActionBtn variant="outline" size="sm" icon="Share2" doneIcon="Copy" done="Link copied"
+              <ActionBtn variant="outline" size="sm" icon="Share2" doneIcon="Copy" done={tr("stories.linkCopied")}
                         act={() => copy(`https://womsakhi.in/story/${s.id}`, "Link copied — send it to anyone", "Copy it by hand from the address bar")}>
                 Share
               </ActionBtn>
@@ -219,23 +215,23 @@ export default function StoryDetail({ params }: { params: Promise<{ id: string }
 
       {others.length > 0 && (
         <div>
-          <SectionHead title="More women on WomSakhi" />
-          <div className="ux-deck grid grid-cols-2 gap-[15px]">
+          <SectionHead title={tr("stories.moreWomenOnWomsakhi")} />
+          <div className="ux-deck grid grid-cols-2 gap-[16px]">
             {others.map((o, i) => (
               <Card key={o.id} className="ux-i ux-onscroll" style={{ ["--i" as string]: i }}>
                 <div className="flex items-center gap-3">
-                  <span className="grid h-[48px] w-[48px] shrink-0 place-items-center overflow-hidden rounded-full text-[18px] font-semibold"
+                  <span className="grid h-[48px] w-[48px] shrink-0 place-items-center overflow-hidden rounded-full text-lg font-semibold"
                         style={{ background: "var(--ux-brand-tint)", color: "var(--ux-brand)" }}>
                     {o.author_avatar
                       ? (
                         /* eslint-disable-next-line @next/next/no-img-element */
-                        <img src={o.author_avatar} alt="" className="ux-art h-full w-full object-cover" />
+                        <img loading="lazy" decoding="async" src={o.author_avatar} alt="" className="ux-art h-full w-full object-cover" />
                       )
                       : o.author_name.trim().charAt(0).toUpperCase()}
                   </span>
                   <div className="min-w-0 flex-1">
-                    <h3 className="truncate text-[13.5px] font-semibold" style={{ color: "var(--ux-ink)" }}>{o.author_name}</h3>
-                    <p className="mt-0.5 truncate text-[11.5px]" style={{ color: "var(--ux-muted)" }}>{o.when}</p>
+                    <h3 className="truncate text-sm font-semibold" style={{ color: "var(--ux-ink)" }}>{o.author_name}</h3>
+                    <p className="mt-0.5 truncate text-xs" style={{ color: "var(--ux-muted)" }}>{o.when}</p>
                   </div>
                   <Btn href={`/app/stories/${o.id}`} variant="soft" size="sm" iconEnd="ArrowRight">Read</Btn>
                 </div>

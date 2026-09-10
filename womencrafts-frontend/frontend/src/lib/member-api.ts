@@ -431,6 +431,16 @@ export interface NotificationPrefs {
   /** Text messages. They reach her without data, which is both the point and
    *  the reason not to assume consent. */
   sms: boolean;
+
+  /** Quiet hours. Times are minutes past midnight, because the window wraps
+   *  midnight far more often than not and "21:30" > "07:00" as text is wrong. */
+  quiet_hours: boolean;
+  quiet_start: number;
+  quiet_end: number;
+  /** Monday first, always seven entries. */
+  quiet_days: boolean[];
+  quiet_allow_money: boolean;
+  quiet_allow_circle_lead: boolean;
 }
 
 export async function apiNotificationPrefs() {
@@ -448,6 +458,19 @@ export async function apiChangePassword(current_password: string, new_password: 
     current_password,
     new_password,
   });
+  return data;
+}
+
+/**
+ * End every session on every device, now.
+ *
+ * Bumps the account's token version server-side, which invalidates every token
+ * minted before this moment — including the one making this call. So the caller
+ * must send her to sign in again rather than leaving her on a screen whose next
+ * request will 401.
+ */
+export async function apiSignOutEverywhere() {
+  const { data } = await apiClient.post<{ message: string }>("/auth/signout-everywhere");
   return data;
 }
 

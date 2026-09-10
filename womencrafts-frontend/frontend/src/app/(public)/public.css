@@ -1,0 +1,49 @@
+/* Long-form reading.
+   These are the only screens in WomSakhi built to be READ rather than used, so
+   the measure is narrow, the line height is loose, and headings get real space
+   above them. A privacy policy nobody can get through is the same as not
+   having one. */
+
+.doc h2 {
+  font-size: 17px;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  color: var(--ux-ink);
+  margin-top: 34px;
+  margin-bottom: 10px;
+  scroll-margin-top: 76px;
+}
+.doc h3 {
+  font-size: 14px;
+  font-weight: 650;
+  color: var(--ux-ink);
+  margin-top: 22px;
+  margin-bottom: 6px;
+}
+.doc p,
+.doc li {
+  font-size: 14px;
+  line-height: 1.75;
+  color: var(--ux-ink-2);
+}
+.doc p { margin-bottom: 13px; }
+.doc ul { margin: 0 0 13px; padding-inline-start: 20px; list-style: disc; }
+.doc li { margin-bottom: 7px; }
+.doc li::marker { color: var(--ux-faint); }
+.doc strong { color: var(--ux-ink); font-weight: 650; }
+.doc a { color: var(--ux-brand); font-weight: 550; }
+.doc a:hover { text-decoration: underline; }
+
+/* A table for "what we collect and why" — the one place a list stops working. */
+.doc table { width: 100%; border-collapse: collapse; margin: 4px 0 16px; }
+.doc th,
+.doc td {
+  text-align: start;
+  vertical-align: top;
+  font-size: 13px;
+  line-height: 1.6;
+  padding: 9px 12px 9px 0;
+  border-bottom: 1px solid var(--ux-line);
+}
+.doc th { color: var(--ux-ink); font-weight: 650; }
+.doc td { color: var(--ux-ink-2); }

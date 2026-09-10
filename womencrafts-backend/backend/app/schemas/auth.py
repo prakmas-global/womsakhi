@@ -30,6 +30,36 @@ class SignInRequest(BaseModel):
     password: str
 
 
+class ForgotPasswordRequest(BaseModel):
+    """Just the address. The answer is the same whether or not it exists."""
+
+    email: EmailStr
+
+
+class ResetPasswordRequest(BaseModel):
+    """The token out of the emailed link, and what she wants instead."""
+
+    token: str
+    password: str
+
+    @field_validator("token")
+    @classmethod
+    def token_must_be_present(cls, v: str) -> str:
+        v = v.strip()
+        if not v:
+            raise ValueError("That link is missing its reset code")
+        return v
+
+    @field_validator("password")
+    @classmethod
+    def password_min_length(cls, v: str) -> str:
+        # Same floor as signing up. A reset is not the place to let a weaker
+        # password in through the side door.
+        if len(v) < 8:
+            raise ValueError("Password must be at least 8 characters")
+        return v
+
+
 class TokenResponse(BaseModel):
     access_token: str
     token_type: str = "bearer"

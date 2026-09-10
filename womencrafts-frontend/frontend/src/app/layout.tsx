@@ -1,5 +1,7 @@
 import type { Metadata } from "next";
 import {
+  Caveat,
+  Fraunces,
   Poppins,
   Inter,
   Noto_Sans_Devanagari,
@@ -17,21 +19,72 @@ import "./globals.css";
 import { AuthProvider } from "@/context/AuthContext";
 import { ThemeProvider } from "@/context/ThemeContext";
 import QueryProvider from "@/lib/query/QueryProvider";
-import { RouteProgress } from "@/design-system";
+import RouteProgress from "@/design-system/primitives/RouteProgress";
 import { I18nProvider } from "@/i18n";
+// Straight from the data module, not the "@/i18n" barrel: that barrel is a
+// client component, so anything re-exported through it cannot be called here.
+import { isRtl, LOCALE_COOKIE } from "@/i18n/locales";
 import { cookies } from "next/headers";
+import { serverBoot } from "@/lib/server-api";
 import ThemeStyle from "@/theme-engine/ThemeStyle";
+import { TEXT_SIZE_COOKIE, rootPx, type TextSize } from "@/components/ux/reach/text-size";
 import ThemeEngineBridge from "@/components/theme/ThemeEngineBridge";
 import LayoutStyle from "@/layout-engine/LayoutStyle";
 import LayoutEngineBridge from "@/components/layout/LayoutEngineBridge";
 import ConnectionBanner from "@/components/layout/ConnectionBanner";
-import { ToastProvider, ConfirmProvider } from "@/design-system";
+import ToastProvider from "@/design-system/feedback/ToastProvider";
+import ConfirmProvider from "@/design-system/feedback/ConfirmProvider";
 
 const poppins = Poppins({
   subsets: ["latin"],
   weight: ["400", "500", "600", "700", "800"],
   variable: "--font-poppins",
   display: "swap",
+});
+
+/**
+ * The display face — headlines and figures only.
+ *
+ * Poppins is a fine interface sans and a poor magazine voice: at 56px a
+ * geometric sans reads as an app header, not a cover line. Fraunces is a
+ * variable serif with a `SOFT`/`WONK` axis, which is what gives the Home
+ * masthead and the money figure their editorial weight without importing a
+ * second static family per weight.
+ *
+ * Latin only, and deliberately: every non-Latin script already has a Noto
+ * face below, and those keep their own headline rendering rather than being
+ * forced through a serif that has no glyphs for them.
+ */
+const fraunces = Fraunces({
+  subsets: ["latin"],
+  // No `weight` list on purpose: Fraunces is a variable font, and next/font
+  // rejects `axes` alongside pinned static weights. Omitting weight ships the
+  // whole variable range, which is what lets one file cover 400 body italics
+  // and the 900 cover line without a second download.
+  axes: ["SOFT", "WONK", "opsz"],
+  variable: "--font-display",
+  display: "swap",
+});
+
+/**
+ * The hand-written voice — annotations only.
+ *
+ * The Learn board carries two pieces of handwriting from the supplied art:
+ * "Small Steps Big Changes" and the WomSakhi quote, both baked into
+ * `hero-learn-banner.webp`. The third, "You can do this" over the How-it-works
+ * strip, is live text — it sits beside content that changes and had to stay
+ * selectable and translatable rather than becoming a picture of a sentence.
+ *
+ * `preload: false` because exactly one line on one screen uses it. It is
+ * fetched when that screen renders and never sits in the critical path of the
+ * other hundred and twenty-eight routes.
+ */
+const caveat = Caveat({
+  subsets: ["latin"],
+  weight: ["600", "700"],
+  variable: "--font-script",
+  display: "swap",
+  preload: false,
 });
 
 const inter = Inter({
@@ -121,14 +174,42 @@ export default async function RootLayout({
   // on <html> in the first byte of HTML. That replaces the inline no-flash
   // script — which React re-rendered on every client navigation and warned
   // about — with nothing at all.
-  const mode = (await cookies()).get("theme")?.value;
+  const jar = await cookies();
+  const mode = jar.get("theme")?.value;
   const isDark = mode === "dark";
+
+  // Her text-size preference, read here for the same reason as the theme: the
+  // rem scale answers to the root font-size, so setting it server-side means
+  // the page never resizes after it has been read.
+  const textSize = (jar.get(TEXT_SIZE_COOKIE)?.value ?? "normal") as TextSize;
+  const rootSize = rootPx(textSize);
+
+  // Her language, read here for the same reason as the two above. Without it
+  // the first paint is always English and then swaps once the provider has
+  // mounted — which on a slow phone is long enough to read.
+  const locale = jar.get(LOCALE_COOKIE)?.value;
+  // `lang` and `dir` belong on the server render, not on a mount effect: they
+  // drive screen-reader pronunciation, hyphenation and every start/end style
+  // rule, all of which are decided before an effect gets to run.
+  const lang = locale ?? "en";
+  const dir = isRtl(locale) ? "rtl" : "ltr";
+
+  // Who is signed in, and — for a member — her whole shell, answered here
+  // rather than by round trips from the browser after the page has mounted.
+  // Every screen in both apps used to render a spinner until `/auth/session`
+  // came back, and the member app then fired `/me/shell` behind it. Both
+  // arrive with the HTML now. Falls back to the client fetches if the API did
+  // not answer.
+  const { session, shell } = await serverBoot();
 
   return (
     <html
-      lang="en"
+      lang={lang}
+      dir={dir}
       suppressHydrationWarning
-      className={`${poppins.variable} ${inter.variable} ${SCRIPT_FONTS} h-full${isDark ? " dark" : ""}`}
+      className={`${poppins.variable} ${inter.variable} ${fraunces.variable} ${caveat.variable} ${SCRIPT_FONTS} h-full${isDark ? " dark" : ""}`}
+      data-text-size={textSize}
+      style={{ fontSize: `${rootSize}px`, ["--ux-fs-scale" as string]: String(rootSize / 16) }}
     >
       <body className="min-h-full font-sans antialiased text-ink">
         {/* Rendered inside <body>, not in an explicit <head>.
@@ -140,18 +221,32 @@ export default async function RootLayout({
         <ThemeStyle />
         <LayoutStyle />
         <ThemeProvider>
-          <RouteProgress />
           <QueryProvider>
-            <I18nProvider>
-              <AuthProvider>
+            <I18nProvider initialLocale={locale}>
+              {/* Inside I18nProvider, not above it. The bar grew a label that
+                  says "Opening…" in words after a second and a half, and a
+                  label the app cannot translate is a label half this audience
+                  cannot read. */}
+              <RouteProgress />
+              {/* Both feedback channels live at the root for the same reason as
+                  ConnectionBanner: a screen should not have to opt in to being
+                  able to tell the user what happened. ConfirmProvider is inside
+                  ToastProvider so a dialog can raise a toast on the way out —
+                  "Deleted · Undo".
+
+                  ToastProvider sits ABOVE AuthProvider, not below it as it did
+                  at first. Signing out is an operation like any other and has
+                  to be able to confirm itself — "You are signed out" is raised
+                  by `signOut` and read on the sign-in screen it lands on. With
+                  the old nesting `useToast()` inside AuthContext threw, so the
+                  one operation that takes the whole app away was the one
+                  operation that could not say it had finished. Nothing else
+                  depends on the order: the toast list needs neither the
+                  session nor the shell. */}
+              <ToastProvider>
+              <AuthProvider initialUser={session.user} sessionResolved={session.resolved}>
               <ThemeEngineBridge>
-                <LayoutEngineBridge>
-                  {/* Both feedback channels live at the root for the same
-                      reason as ConnectionBanner: a screen should not have to
-                      opt in to being able to tell the user what happened.
-                      ConfirmProvider is inside ToastProvider so a dialog can
-                      raise a toast on the way out — "Deleted · Undo". */}
-                  <ToastProvider>
+                <LayoutEngineBridge initialShell={shell}>
                     <ConfirmProvider>
                       {children}
                       {/* A failed request must never be mistaken for empty
@@ -159,10 +254,10 @@ export default async function RootLayout({
                           every screen written from here on. */}
                       <ConnectionBanner />
                     </ConfirmProvider>
-                  </ToastProvider>
                 </LayoutEngineBridge>
               </ThemeEngineBridge>
             </AuthProvider>
+              </ToastProvider>
             </I18nProvider>
           </QueryProvider>
         </ThemeProvider>

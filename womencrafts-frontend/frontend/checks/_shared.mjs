@@ -36,7 +36,10 @@ export const API = (
  * rather than :8000/:8002, because unrelated Docker containers on this machine
  * reclaim those the moment Docker Desktop starts.
  */
-export const APP = process.env.APP_URL || `http://localhost:${process.env.PORT || 3000}`;
+// 3100, never 3000: port 3000 on this machine belongs to an unrelated
+// project. A check that defaults there does not just fail — it drives a
+// real browser against someone else's running app.
+export const APP = process.env.APP_URL || `http://localhost:${process.env.PORT || 3100}`;
 
 export async function staffToken() {
   const r = await fetch(`${API}/auth/signin`, {

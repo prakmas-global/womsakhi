@@ -4,6 +4,7 @@ import { useCallback } from "react";
 
 import { useAuth } from "@/context/AuthContext";
 import { useResource } from "@/lib/use-resource";
+import { useShell } from "./ShellProvider";
 import { apiUnreadCounts } from "@/lib/member-api";
 import { apiProgress } from "@/lib/me-api";
 
@@ -37,8 +38,28 @@ export function useMe(): Me {
   // Live where the session has it, the fixture where it does not — never a
   // blank, because a greeting with a hole in it is worse than a generic one.
   const name = (user?.full_name || "").trim();
+  // One request for the whole shell when it is available — see ShellProvider.
+  // These two calls are what it replaces; they stay as the fallback for a
+  // member `/me/shell` will not serve (she is still in verification), because
+  // a batching win is not worth a blank greeting for the women waiting.
+  const shell = useShell();
+
   const { data: extra } = useResource(
     useCallback(async (s: AbortSignal) => {
+      // Still on its way — return the defaults rather than firing the two
+      // requests the batch is about to make unnecessary. Without this the
+      // fallback raced the batch and both went out.
+      if (shell.status === "loading") {
+        return { unread: ME.unread, profilePct: ME.profilePct };
+      }
+      if (shell.status === "ready" && shell.data) {
+        const u = shell.data.unread;
+        return {
+          unread: u ? u.notifications + u.messages : ME.unread,
+          profilePct:
+            Math.min(100, Math.round(shell.data.progress?.completion_rate ?? 0)) || ME.profilePct,
+        };
+      }
       const [unread, progress] = await Promise.all([
         apiUnreadCounts().catch(() => null),
         apiProgress(s).catch(() => null),
@@ -58,7 +79,7 @@ export function useMe(): Me {
         profilePct: progress ? Math.min(100, Math.round(progress.completion_rate ?? 0)) || ME.profilePct
                              : ME.profilePct,
       };
-    }, []),
+    }, [shell.status, shell.data]),
     { unread: ME.unread, profilePct: ME.profilePct },
   );
 

@@ -1,8 +1,9 @@
 import axios from "axios";
 
-import { apiClient } from "./api";
+import { apiClient, apiErrorMessage } from "./api";
+import { apiBase } from "./api-base";
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8010/api/v1";
+const API_URL = apiBase();
 
 /** Multipart needs its own instance — the shared client forces a JSON content type. */
 const uploadClient = axios.create({ baseURL: API_URL, withCredentials: true });
@@ -103,6 +104,27 @@ export async function apiConfirmEmail(token: string): Promise<{ message: string 
   return data;
 }
 
+/**
+ * Ask for a reset link.
+ *
+ * Public, and answers identically whether or not the address has an account —
+ * telling a stranger which emails are members is an enumeration oracle, and on
+ * a women-only platform that answers "is she here?" for anyone who asks.
+ */
+export async function apiForgotPassword(email: string): Promise<{ message: string }> {
+  const { data } = await axios.post(`${API_URL}/auth/forgot-password`, { email });
+  return data;
+}
+
+/** Spend the token from the emailed link and set the new password. */
+export async function apiResetPassword(
+  token: string,
+  password: string,
+): Promise<{ message: string }> {
+  const { data } = await axios.post(`${API_URL}/auth/reset-password`, { token, password });
+  return data;
+}
+
 export async function apiUploadDocument(
   file: File,
   docType: string,
@@ -189,9 +211,8 @@ export async function apiReplyToThread(userId: string, body: string): Promise<Su
 }
 
 export function verificationErrorMessage(err: unknown): string {
-  if (axios.isAxiosError(err)) {
-    const detail = err.response?.data?.detail;
-    if (typeof detail === "string") return detail;
-  }
-  return "Something went wrong. Please try again.";
+  // Same fix as `getAuthError`: this API wraps errors as
+  // `{ error: { message } }`, not `{ detail }`, so the old reader always
+  // missed and every expired reset link said "Something went wrong."
+  return apiErrorMessage(err);
 }

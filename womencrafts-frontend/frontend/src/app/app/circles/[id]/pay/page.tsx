@@ -2,7 +2,7 @@
 
 import { use, useState } from "react";
 import Link from "next/link";
-import * as Icons from "lucide-react";
+import * as Icons from "@/components/ux/icons";
 
 import {
   Btn, Card, EmptyState, IconTile, Pill, Progress, RailSkeleton, ScreenSkeleton, SectionHead,
@@ -14,6 +14,7 @@ import { useMoney } from "@/components/ux/money/live";
 import { messageFrom } from "@/lib/use-action";
 import { settled, useAttemptKey } from "@/lib/idempotency";
 import { apiContribute, type ApiContribution } from "@/lib/growth-api";
+import { useT } from "@/i18n";
 
 /**
  * Paying into a savings circle.
@@ -31,6 +32,7 @@ import { apiContribute, type ApiContribution } from "@/lib/growth-api";
  * money out of her real balance.
  */
 export default function PayCircle({ params }: { params: Promise<{ id: string }> }) {
+  const tr = useT();
   const { id } = use(params);
   const { data: detail, source } = useCircle(id);
   const { data: savings, refetch } = useCircleSavings(id);
@@ -59,9 +61,9 @@ export default function PayCircle({ params }: { params: Promise<{ id: string }> 
         <Card>
           <EmptyState
             icon="PiggyBank"
-            title="Nothing to pay here"
+            title={tr("circlesPay.nothingToPayHere")}
             body="Only savings circles collect money. This one does not."
-            action={<Btn href="/app/circles" variant="primary" iconEnd="ArrowRight">Your circles</Btn>}
+            action={<Btn href="/app/circles" variant="primary" iconEnd="ArrowRight">{tr("circlesPay.yourCircles")}</Btn>}
           />
         </Card>
       </HomeShell>
@@ -104,16 +106,16 @@ export default function PayCircle({ params }: { params: Promise<{ id: string }> 
             <span className="grid h-[68px] w-[68px] place-items-center rounded-full" style={{ background: "var(--ux-tint-green)" }}>
               <Icons.CheckCheck className="h-[32px] w-[32px]" style={{ color: "var(--ux-green-ink)" }} strokeWidth={2} />
             </span>
-            <h1 className="mt-4 text-[22px] font-bold" style={{ color: "var(--ux-ink)" }}>
+            <h1 className="mt-4 text-xl font-bold" style={{ color: "var(--ux-ink)" }}>
               {formatMoney(share)} paid in
             </h1>
-            <p className="mt-2 max-w-[40ch] text-[13.5px] leading-relaxed" style={{ color: "var(--ux-ink-2)" }}>
+            <p className="mt-2 max-w-[40ch] text-sm leading-relaxed" style={{ color: "var(--ux-ink-2)" }}>
               {paidCount} of {total} have paid this month.
               {turn ? ` ${turn} takes the pot once everyone has.` : ""}
             </p>
             <div className="mt-5 flex flex-wrap justify-center gap-2.5">
-              <Btn href={`/app/circles/${c.id}`} variant="primary" iconEnd="ArrowRight">Back to the circle</Btn>
-              <Btn href="/app/wallet" variant="outline" icon="Receipt">See it in Money</Btn>
+              <Btn href={`/app/circles/${c.id}`} variant="primary" iconEnd="ArrowRight">{tr("circlesPay.backToTheCircle")}</Btn>
+              <Btn href="/app/wallet" variant="outline" icon="Receipt">{tr("circlesPay.seeItInMoney")}</Btn>
             </div>
           </div>
         </Card>
@@ -125,18 +127,18 @@ export default function PayCircle({ params }: { params: Promise<{ id: string }> 
     <HomeShell
       skeleton="detail"
       rail={
-        <div className="space-y-[15px]">
+        <div className="space-y-[16px]">
           <Card>
-            <SectionHead title="This month" />
+            <SectionHead title={tr("circlesPay.thisMonth")} />
             <div className="flex items-baseline justify-between">
-              <span className="text-[12.5px]" style={{ color: "var(--ux-muted)" }}>You pay</span>
-              <span className="text-[26px] font-bold tabular-nums" style={{ color: "var(--ux-ink)" }}>
+              <span className="text-xsm" style={{ color: "var(--ux-muted)" }}>{tr("circlesPay.youPay")}</span>
+              <span className="text-2xl font-bold tabular-nums" style={{ color: "var(--ux-ink)" }}>
                 {formatMoney(share)}
               </span>
             </div>
             <div className="mt-3.5">
-              <div className="mb-1.5 flex items-center justify-between text-[11.5px]">
-                <span style={{ color: "var(--ux-muted)" }}>Collected so far</span>
+              <div className="mb-1.5 flex items-center justify-between text-xs">
+                <span style={{ color: "var(--ux-muted)" }}>{tr("circlesPay.collectedSoFar")}</span>
                 <span className="font-semibold tabular-nums" style={{ color: "var(--ux-ink)" }}>
                   {savings.members_paid} of {savings.members_total}
                 </span>
@@ -150,10 +152,10 @@ export default function PayCircle({ params }: { params: Promise<{ id: string }> 
             {/* Where the money comes from, said before the button rather than
                 discovered after it. This screen used to list her bank accounts
                 — the ones money arrives into — as ways to pay out of. */}
-            <div className="mt-4 flex items-center justify-between gap-3 rounded-[11px] p-3"
+            <div className="mt-4 flex items-center justify-between gap-3 rounded-[12px] p-3"
                  style={{ background: "var(--ux-surface-2)" }}>
-              <span className="text-[12px]" style={{ color: "var(--ux-ink-2)" }}>From your WomSakhi balance</span>
-              <span className="text-[13px] font-semibold tabular-nums"
+              <span className="text-xs" style={{ color: "var(--ux-ink-2)" }}>{tr("circlesPay.fromYourWomsakhiBalance")}</span>
+              <span className="text-xsm font-semibold tabular-nums"
                     style={{ color: enough ? "var(--ux-ink)" : "var(--ux-orange-ink)" }}>
                 {formatMoney(money.balanceMinor)}
               </span>
@@ -170,58 +172,56 @@ export default function PayCircle({ params }: { params: Promise<{ id: string }> 
             </div>
 
             {!enough && !problem && (
-              <p className="mt-2.5 text-[12px] leading-relaxed" style={{ color: "var(--ux-orange-ink)" }}>
+              <p className="mt-2.5 text-xs leading-relaxed" style={{ color: "var(--ux-orange-ink)" }}>
                 You have {formatMoney(money.balanceMinor)}, and this month&rsquo;s share is {formatMoney(share)}.
                 Tell the circle before the date — they can wait.
               </p>
             )}
             {problem && (
-              <p role="alert" className="ux-slide-up mt-2.5 text-[12.5px] leading-relaxed"
+              <p role="alert" className="ux-slide-up mt-2.5 text-xsm leading-relaxed"
                  style={{ color: "var(--ux-orange-ink)" }}>
                 {problem}
               </p>
             )}
 
-            <p className="mt-2.5 text-[11.5px] leading-relaxed" style={{ color: "var(--ux-muted)" }}>
-              Nothing is taken until you press this. WomSakhi takes no fee — every rupee goes into the pot.
-            </p>
+            <p className="mt-2.5 text-xs leading-relaxed" style={{ color: "var(--ux-muted)" }}>{tr("circlesPay.nothingIsTakenUntilYouPress")}</p>
           </Card>
 
           <Card>
-            <SectionHead title="If this month is hard" icon="Info" />
-            <p className="text-[12.5px] leading-relaxed" style={{ color: "var(--ux-ink-2)" }}>
+            <SectionHead title={tr("circlesPay.ifThisMonthIsHard")} icon="Info" />
+            <p className="text-xsm leading-relaxed" style={{ color: "var(--ux-ink-2)" }}>
               Tell the circle before the date rather than after. They can move your turn, or wait a week.
               A circle survives a hard month; it does not survive silence.
             </p>
             <div className="mt-3.5">
-              <Btn href="/app/messages" variant="outline" size="sm" full icon="MessageCircle">Tell the circle</Btn>
+              <Btn href="/app/messages" variant="outline" size="sm" full icon="MessageCircle">{tr("circlesPay.tellTheCircle")}</Btn>
             </div>
           </Card>
         </div>
       }
     >
       <Link href={`/app/circles/${c.id}`}
-            className="ux-hov -my-1 mb-3.5 inline-flex items-center gap-1.5 py-1 text-[12.5px] font-medium"
+            className="ux-hov -my-1 mb-3.5 inline-flex items-center gap-1.5 py-1 text-xsm font-medium"
             style={{ color: "var(--ux-brand)" }}>
         <Icons.ArrowLeft className="ux-ico h-4 w-4" /> {c.name}
       </Link>
 
-      <h1 className="text-[24px] font-bold" style={{ color: "var(--ux-ink)" }}>Pay this month</h1>
-      <p className="mb-[20px] mt-1.5 text-[13px]" style={{ color: "var(--ux-muted)" }}>
+      <h1 className="text-2xl font-bold" style={{ color: "var(--ux-ink)" }}>{tr("circlesPay.payThisMonth")}</h1>
+      <p className="mb-[20px] mt-1.5 text-xsm" style={{ color: "var(--ux-muted)" }}>
         Month {savings.round} · {c.name}
       </p>
 
       {/* The women waiting, named and shown, above the button. A transfer to an
           account number is easy to postpone; the women you know are not. */}
       {savings.whose_turn && (
-        <Card className="mb-[15px]">
+        <Card className="mb-[16px]">
           <div className="flex items-center gap-4">
             <IconTile icon="PiggyBank" tint="--ux-tint-green" ink="--ux-green" size={60} radius={30} />
             <div className="min-w-0 flex-1">
-              <p className="text-[16px] font-semibold" style={{ color: "var(--ux-ink)" }}>
+              <p className="text-base font-semibold" style={{ color: "var(--ux-ink)" }}>
                 {savings.whose_turn} takes the pot this month
               </p>
-              <p className="mt-1 text-[13px] leading-relaxed" style={{ color: "var(--ux-ink-2)" }}>
+              <p className="mt-1 text-xsm leading-relaxed" style={{ color: "var(--ux-ink-2)" }}>
                 {formatMoney(savings.pot_minor)} — once every one of you has paid in.
               </p>
             </div>
@@ -230,26 +230,26 @@ export default function PayCircle({ params }: { params: Promise<{ id: string }> 
         </Card>
       )}
 
-      <Card className="mb-[15px]">
-        <SectionHead title="Who has paid"
+      <Card className="mb-[16px]">
+        <SectionHead title={tr("circlesPay.whoHasPaid")}
                      sub={`${savings.members_paid} of ${savings.members_total} so far this month`} />
         <ul className="ux-stagger grid grid-cols-2 gap-2.5">
           {savings.members.map((m, i) => (
-            <li key={`${m.name}-${i}`} className="ux-hov flex items-center gap-2.5 rounded-[11px] px-2.5 py-2"
+            <li key={`${m.name}-${i}`} className="ux-hov flex items-center gap-2.5 rounded-[12px] px-2.5 py-2"
                 style={{ background: m.you ? "var(--ux-brand-tint)" : "transparent", ["--i" as string]: i }}>
               <IconTile icon="User" tint="--ux-tint-violet" ink="--ux-violet" size={30} radius={15} />
-              <span className="min-w-0 flex-1 truncate text-[12.5px]"
+              <span className="min-w-0 flex-1 truncate text-xsm"
                     style={{ color: "var(--ux-ink)", fontWeight: m.you ? 600 : 400 }}>
                 {m.name}{m.you && <span style={{ color: "var(--ux-brand)" }}> — you</span>}
               </span>
               {m.paid
                 ? <Icons.CheckCircle2 className="h-[16px] w-[16px] shrink-0" style={{ color: "var(--ux-green-ink)" }} />
-                : <span className="shrink-0 text-[10.5px]" style={{ color: "var(--ux-faint)" }}>waiting</span>}
+                : <span className="shrink-0 text-2xs" style={{ color: "var(--ux-faint)" }}>waiting</span>}
             </li>
           ))}
         </ul>
         {waiting.length > 0 && (
-          <p className="mt-3.5 rounded-[11px] p-3 text-[12px] leading-relaxed"
+          <p className="mt-3.5 rounded-[12px] p-3 text-xs leading-relaxed"
              style={{ background: "var(--ux-surface-2)", color: "var(--ux-ink-2)" }}>
             {waiting.slice(0, 3).map((w) => w.name.split(" ")[0]).join(", ")}
             {waiting.length > 3 ? ` and ${waiting.length - 3} more` : ""} {waiting.length === 1 ? "has" : "have"} not

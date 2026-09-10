@@ -69,12 +69,26 @@ class MemberNotificationModel:
     TYPE_PROGRAM = "program"
     TYPE_ACCOUNT = "account"
     TYPE_MESSAGE = "message"
+    TYPE_SAFETY = "safety"
+    TYPE_MENTORSHIP = "mentorship"
+    TYPE_EVENT = "event"
+    TYPE_MONEY = "money"
+    TYPE_CIRCLE = "circle"
 
+    # Every type the seeds and the app actually produce. Three of them —
+    # safety, mentorship, event — were being written but not mapped, so they
+    # all arrived at the screen as a generic bell and a member could not tell
+    # a safety alert from a class reminder at a glance.
     ICONS = {
         TYPE_BOOKING: "CalendarCheck",
         TYPE_PROGRAM: "GraduationCap",
         TYPE_ACCOUNT: "ShieldCheck",
         TYPE_MESSAGE: "MessageCircle",
+        TYPE_SAFETY: "LifeBuoy",
+        TYPE_MENTORSHIP: "UserRoundCheck",
+        TYPE_EVENT: "CalendarDays",
+        TYPE_MONEY: "Wallet",
+        TYPE_CIRCLE: "UsersRound",
     }
 
     @staticmethod

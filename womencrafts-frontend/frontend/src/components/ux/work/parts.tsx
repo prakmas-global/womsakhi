@@ -1,7 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import * as Icons from "lucide-react";
+import * as Icons from "@/components/ux/icons";
+import { matchFor, matchTone } from "@/services/job-match";
 
 import { Btn, I, IconTile, Pill, Progress, SectionHead, Card } from "../kit";
 import { usePointer } from "../kit/motion";
@@ -31,7 +32,7 @@ export function MatchRing({ pct, size = 44 }: { pct: number; size?: number }) {
           style={{ transition: "stroke-dashoffset var(--ux-t-slow) var(--ux-ease-out)" }}
         />
       </svg>
-      <span className="absolute text-[10.5px] font-bold tabular-nums" style={{ color: `var(${tone})` }}>
+      <span className="absolute text-2xs font-bold tabular-nums" style={{ color: `var(${tone})` }}>
         {pct}
       </span>
     </span>
@@ -42,16 +43,19 @@ export function JobRow({
   job, i, saved, onSave,
 }: { job: Job; i: number; saved: boolean; onSave: (id: string) => void }) {
   const point = usePointer<HTMLDivElement>();
+  // Computed from her skills against the ones the listing asks for, rather than
+  // read from a `match` field that live listings never populate.
+  const fit = matchFor(job.skills);
   return (
     <div ref={point}
-         className="ux-i ux-sq ux-spot ux-onscroll relative rounded-[14px] border p-[14px]"
+         className="ux-i ux-sq ux-spot ux-onscroll relative rounded-[12px] border p-[16px]"
          style={{ borderColor: "var(--ux-line)", background: "var(--ux-surface)", ["--i" as string]: i }}>
       <div className="flex items-start gap-3.5">
         <IconTile icon={job.icon} tint={job.logoTint} ink={job.logoInk} size={46} radius={12} />
 
         <div className="min-w-0 flex-1">
           <div className="flex items-start gap-2">
-            <h3 className="min-w-0 flex-1 truncate text-[14.5px] font-semibold" style={{ color: "var(--ux-ink)" }}>
+            <h3 className="min-w-0 flex-1 truncate text-sm font-semibold" style={{ color: "var(--ux-ink)" }}>
               {/* -my-1 py-1: a bare text link is 17px tall, which is under the
                   24px anything clickable should be. The padding is negative on
                   the outside so nothing moves. */}
@@ -60,32 +64,32 @@ export function JobRow({
               </Link>
             </h3>
             {job.verified && (
-              <span className="inline-flex shrink-0 items-center gap-1 rounded-full px-2 py-[2px] text-[10px] font-semibold"
+              <span className="inline-flex shrink-0 items-center gap-1 rounded-full px-2 py-[2px] text-2xs font-semibold"
                     style={{ background: "var(--ux-tint-green)", color: "var(--ux-green-ink)" }}>
                 <Icons.ShieldCheck className="h-3 w-3" /> Verified
               </span>
             )}
             {job.womenLed && (
-              <span className="inline-flex shrink-0 items-center gap-1 rounded-full px-2 py-[2px] text-[10px] font-semibold"
+              <span className="inline-flex shrink-0 items-center gap-1 rounded-full px-2 py-[2px] text-2xs font-semibold"
                     style={{ background: "var(--ux-tint-pink)", color: "var(--ux-pink-ink)" }}>
                 Women-led
               </span>
             )}
           </div>
 
-          <p className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-[11.5px]" style={{ color: "var(--ux-muted)" }}>
+          <p className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs" style={{ color: "var(--ux-muted)" }}>
             <span className="inline-flex items-center gap-1"><Icons.Building2 className="h-3.5 w-3.5" /> {job.org}</span>
             <span className="inline-flex items-center gap-1"><Icons.MapPin className="h-3.5 w-3.5" /> {job.place}</span>
             <span className="inline-flex items-center gap-1"><Icons.Clock className="h-3.5 w-3.5" /> {job.posted}</span>
           </p>
 
-          <p className="mt-2 text-[13px] font-semibold" style={{ color: "var(--ux-ink)" }}>{payLabel(job)}</p>
+          <p className="mt-2 text-xsm font-semibold" style={{ color: "var(--ux-ink)" }}>{payLabel(job)}</p>
 
           <div className="mt-2.5 flex flex-wrap items-center gap-1.5">
             <Pill tone="brand" size="sm">{job.kind}</Pill>
             <Pill tone="neutral" size="sm">{job.mode}</Pill>
             {job.skills.map((s) => (
-              <span key={s} className="ux-sq rounded-[7px] border px-2 py-[3px] text-[10.5px]"
+              <span key={s} className="ux-sq rounded-[8px] border px-2 py-[3px] text-2xs"
                     style={{ borderColor: "var(--ux-line-strong)", color: "var(--ux-muted)" }}>{s}</span>
             ))}
           </div>
@@ -97,12 +101,12 @@ export function JobRow({
               her profile — so this rendered a "0" ring on every row, in a dial
               that looks measured. A score of zero is not a low match; it is no
               match having been calculated. */}
-          {job.match > 0 && <MatchRing pct={job.match} />}
+          {fit.pct !== null && <MatchRing pct={fit.pct} />}
           <button
             onClick={() => onSave(job.id)}
             aria-pressed={saved}
             aria-label={saved ? "Saved" : "Save this"}
-            className="ux-press ux-hov ux-sq grid h-[30px] w-[30px] place-items-center rounded-[9px]"
+            className="ux-press ux-hov ux-sq grid h-[30px] w-[30px] place-items-center rounded-[8px]"
             style={{ background: saved ? "var(--ux-brand-tint)" : "transparent" }}
           >
             <Icons.Bookmark
@@ -115,8 +119,22 @@ export function JobRow({
         </div>
       </div>
 
+      {/* Why it fits. A percentage on its own tells her nothing she can act on;
+          "you have 4 of the 5, the one you are missing is Analytics" tells her
+          whether to apply anyway and what to learn if she does not. */}
+      {fit.because && (
+        <p className="mt-3 flex items-start gap-2 rounded-[8px] px-3 py-2.5 text-xs leading-snug"
+           style={{ background: "var(--ux-surface-2)", color: "var(--ux-ink-2)" }}>
+          <Icons.Sparkles className="mt-[2px] h-[0.8125rem] w-[0.8125rem] shrink-0"
+                          style={{ color: `var(${matchTone(fit.pct).ink})` }} />
+          <span>
+            <b style={{ color: "var(--ux-ink)" }}>{matchTone(fit.pct).label}.</b> {fit.because}
+          </span>
+        </p>
+      )}
+
       <div className="mt-3 flex items-center justify-between gap-3 border-t pt-3" style={{ borderColor: "var(--ux-line)" }}>
-        <span className="text-[11.5px]" style={{ color: "var(--ux-faint)" }}>
+        <span className="text-xs" style={{ color: "var(--ux-faint)" }}>
           {job.applicants} {job.applicants === 1 ? "woman has" : "women have"} applied
         </span>
         <span className="flex items-center gap-2">
@@ -174,10 +192,10 @@ export function RailStat({ value, label, icon, tint, ink, sub }: {
     <div className="ux-hov flex items-center gap-3">
       <IconTile icon={icon} tint={tint} ink={ink} size={38} />
       <div className="min-w-0">
-        <p className="text-[17px] font-bold leading-none tabular-nums" style={{ color: "var(--ux-ink)" }}>{value}</p>
-        <p className="mt-1 truncate text-[11.5px]" style={{ color: "var(--ux-muted)" }}>{label}</p>
+        <p className="text-lg font-bold leading-none tabular-nums" style={{ color: "var(--ux-ink)" }}>{value}</p>
+        <p className="mt-1 truncate text-xs" style={{ color: "var(--ux-muted)" }}>{label}</p>
       </div>
-      {sub && <span className="ms-auto shrink-0 text-[11px]" style={{ color: "var(--ux-faint)" }}>{sub}</span>}
+      {sub && <span className="ms-auto shrink-0 text-2xs" style={{ color: "var(--ux-faint)" }}>{sub}</span>}
     </div>
   );
 }

@@ -21,6 +21,7 @@ edge case none of them have hit. If this is ever revisited, it has to be a
 migration that re-hashes on next successful sign-in, not a flag day.
 """
 
+import asyncio
 from datetime import datetime, timedelta, timezone
 from typing import Optional
 
@@ -128,3 +129,18 @@ def token_version_in(payload: dict) -> int:
         return int(payload.get(TOKEN_VERSION_CLAIM) or 0)
     except (TypeError, ValueError):
         return 0
+
+
+# ── The same two, off the event loop ────────────────────────────────────────
+#
+# bcrypt is deliberately slow — that is its whole job — and it is CPU work, so
+# awaiting it inline freezes the single worker for 250-400ms. Every other
+# woman's request waits behind one woman signing in. The sync versions above
+# stay for any caller that is not in an async context.
+
+async def hash_password_async(password: str) -> str:
+    return await asyncio.to_thread(hash_password, password)
+
+
+async def verify_password_async(plain_password: str, hashed_password: str) -> bool:
+    return await asyncio.to_thread(verify_password, plain_password, hashed_password)

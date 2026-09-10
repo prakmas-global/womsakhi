@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import * as Icons from "lucide-react";
+import * as Icons from "@/components/ux/icons";
 
 import { apiAskSwap } from "@/lib/shop-api";
 
@@ -12,6 +12,7 @@ import {
 import { HomeShell } from "@/components/ux/home/HomeShell";
 import { EXCHANGE_ART, SKILL_TAGS } from "@/components/ux/exchange/data";
 import { useMyExchanges, useSwaps } from "@/components/ux/business";
+import { useT } from "@/i18n";
 
 /**
  * Skill Exchange — teaching each other, with no money involved.
@@ -21,6 +22,7 @@ import { useMyExchanges, useSwaps } from "@/components/ux/business";
  * quietly tell her she is only one of the two.
  */
 export default function SkillExchangePage() {
+  const tr = useT();
   const { data: SWAPS, source } = useSwaps();
   const { data: MY_SWAPS, refetch: refetchMine } = useMyExchanges();
   const [tab, setTab] = useState("Browse");
@@ -56,37 +58,46 @@ export default function SkillExchangePage() {
     <HomeShell
       active="/app/library"
       rail={
-        <div className="space-y-[15px]">
+        <div className="space-y-[16px]">
           <Card className="ux-onscroll-soft">
-            <SectionHead title="What you have offered" action="Edit" onAction={() => setTab("Your exchanges")} />
+            <SectionHead title={tr("library.whatYouHaveOffered")} action="Edit" onAction={() => setTab("Your exchanges")} />
             {mine.length ? mine.map((m) => (
               <div key={m.id}>
                 <div className="flex items-start gap-3">
                   <IconTile icon={m.icon} tint={m.tint} ink={m.ink} size={38} radius={11} />
                   <div className="min-w-0 flex-1">
-                    <p className="truncate text-[13px] font-semibold" style={{ color: "var(--ux-ink)" }}>{m.skill}</p>
-                    <p className="mt-0.5 text-[11.5px]" style={{ color: "var(--ux-muted)" }}>
+                    <p className="truncate text-xsm font-semibold" style={{ color: "var(--ux-ink)" }}>{m.skill}</p>
+                    <p className="mt-0.5 text-xs" style={{ color: "var(--ux-muted)" }}>
                       {m.matches} {plural("woman", m.matches)} interested
                     </p>
                   </div>
                 </div>
-                <p className="mt-3 rounded-[11px] p-3 text-[12px] leading-relaxed"
-                   style={{ background: "var(--ux-surface-2)", color: "var(--ux-ink-2)" }}>
-                  In return you asked for: <strong style={{ color: "var(--ux-ink)" }}>{m.wants}</strong>
+                <p className="mt-3 rounded-[12px] p-3 text-xs leading-relaxed"
+                   style={{ background: "var(--ux-surface-2)", color: "var(--ux-ink-2)" }}>{tr("library.inReturnYouAskedFor")}<strong style={{ color: "var(--ux-ink)" }}>{m.wants}</strong>
                 </p>
               </div>
             )) : (
-              <p className="text-[12.5px]" style={{ color: "var(--ux-muted)" }}>
-                You have not offered anything yet.
-              </p>
+              <p className="text-xsm" style={{ color: "var(--ux-muted)" }}>{tr("library.youHaveNotOfferedAnythingYet")}</p>
             )}
             <div className="mt-3.5">
-              <Btn href="/app/documents/service/new" variant="soft" size="sm" full icon="Plus">Offer another skill</Btn>
+              <Btn href="/app/documents/service/new" variant="soft" size="sm" full icon="Plus">{tr("library.offerAnotherSkill")}</Btn>
             </div>
           </Card>
 
           <Card className="ux-onscroll-soft">
-            <SectionHead title="How an exchange works" icon="Info" />
+            {/* Merged in from /app/together/learn, which was a second screen
+                for this same idea. The finding is why pairs are encouraged at
+                all — without it the rule reads as an arbitrary restriction. */}
+            <div className="mb-4 rounded-[16px] p-5"
+                 style={{ background: "var(--ux-brand-tint)", border: "1px solid transparent" }}>
+              <p className="text-sm font-bold" style={{ color: "var(--ux-ink)" }}>{tr("library.bringSomeoneWithYou")}</p>
+              <p className="mt-1.5 max-w-[54ch] text-xsm leading-relaxed" style={{ color: "var(--ux-ink-2)" }}>
+                Women taught alongside a friend kept what they learned and earned more from it.
+                Women taught alone mostly went back to how they worked before.
+              </p>
+            </div>
+
+            <SectionHead title={tr("library.howAnExchangeWorks")} icon="Info" />
             <ol className="space-y-3">
               {[
                 "You offer something you know, and say what you want in return.",
@@ -95,35 +106,29 @@ export default function SkillExchangePage() {
                 "Both of you teach. Both of you learn.",
               ].map((t, i) => (
                 <li key={t} className="flex items-start gap-2.5">
-                  <span className="grid h-[20px] w-[20px] shrink-0 place-items-center rounded-full text-[10px] font-bold"
+                  <span className="grid h-[20px] w-[20px] shrink-0 place-items-center rounded-full text-2xs font-bold"
                         style={{ background: "var(--ux-brand-tint)", color: "var(--ux-brand)" }}>{i + 1}</span>
-                  <span className="text-[12.5px] leading-snug" style={{ color: "var(--ux-ink-2)" }}>{t}</span>
+                  <span className="text-xsm leading-snug" style={{ color: "var(--ux-ink-2)" }}>{t}</span>
                 </li>
               ))}
             </ol>
           </Card>
 
-          <div className="ux-clay ux-onscroll-soft relative overflow-hidden p-[18px]"
+          <div className="ux-clay ux-onscroll-soft relative overflow-hidden p-[20px]"
                style={{ background: "linear-gradient(140deg, var(--ux-tint-violet), var(--ux-tint-green))" }}>
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src={EXCHANGE_ART.hero} alt=""
+            <img loading="lazy" decoding="async" src={EXCHANGE_ART.hero} alt=""
                  className="ux-float pointer-events-none absolute -bottom-3 -end-4 h-[100px] w-[100px] object-contain" />
-            <h3 className="relative w-[60%] text-[14px] font-semibold" style={{ color: "var(--ux-ink)" }}>
-              You know more than you think
-            </h3>
-            <p className="relative mt-2 w-[60%] text-[12px] leading-relaxed" style={{ color: "var(--ux-muted)" }}>
-              Whatever took you a year to learn takes someone else an afternoon with you.
-            </p>
+            <h2 className="relative w-[60%] text-sm font-semibold" style={{ color: "var(--ux-ink)" }}>{tr("library.youKnowMoreThanYouThink")}</h2>
+            <p className="relative mt-2 w-[60%] text-xs leading-relaxed" style={{ color: "var(--ux-muted)" }}>{tr("library.whateverTookYouAYearTo")}</p>
           </div>
         </div>
       }
     >
-      <div className="mb-[18px] flex items-end justify-between gap-4">
+      <div className="mb-[20px] flex items-end justify-between gap-4">
         <div>
-          <h1 className="text-[24px] font-bold" style={{ color: "var(--ux-ink)" }}>Skill Exchange</h1>
-          <p className="mt-1.5 text-[13px]" style={{ color: "var(--ux-muted)" }}>
-            Teach what you know, learn what you need. No money involved.
-          </p>
+          <h1 className="text-2xl font-bold" style={{ color: "var(--ux-ink)" }}>{tr("library.teachAndLearn")}</h1>
+          <p className="mt-1.5 text-xsm" style={{ color: "var(--ux-muted)" }}>{tr("library.teachWhatYouKnowLearnWhat")}</p>
 
       <SourceNote source={source} what="swaps" />
         </div>
@@ -132,7 +137,7 @@ export default function SkillExchangePage() {
 
       {tab === "Browse" && (
         <>
-          <div className="mb-[15px] flex flex-wrap items-center gap-2">
+          <div className="mb-[16px] flex flex-wrap items-center gap-2">
             {(["All", "Offering", "Looking for"] as const).map((s) => (
               <Chip key={s} selected={side === s} onClick={() => setSide(s)}>{s}</Chip>
             ))}
@@ -146,61 +151,61 @@ export default function SkillExchangePage() {
           </div>
 
           {shown.length ? (
-            <div className="ux-deck ux-stagger space-y-[13px]">
+            <div className="ux-deck ux-stagger space-y-[12px]">
               {shown.map((s, i) => (
                 <Card key={s.id} className="ux-i ux-onscroll" style={{ ["--i" as string]: i }}>
                   <div className="flex items-start gap-3.5">
                     <IconTile icon={s.icon} tint={s.tint} ink={s.ink} size={48} radius={13} />
                     <div className="min-w-0 flex-1">
                       <div className="flex items-start gap-2">
-                        <h3 className="min-w-0 flex-1 text-[14.5px] font-semibold" style={{ color: "var(--ux-ink)" }}>
+                        <h2 className="min-w-0 flex-1 text-sm font-semibold" style={{ color: "var(--ux-ink)" }}>
                           {s.skill}
-                        </h3>
+                        </h2>
                         {/* Offer and ask are the same shape, told apart by one
                             word — because the same woman is usually both. */}
                         <Pill tone={s.side === "Offering" ? "green" : "blue"} size="sm">{s.side}</Pill>
                       </div>
-                      <p className="mt-1.5 text-[12.5px] leading-relaxed" style={{ color: "var(--ux-ink-2)" }}>{s.detail}</p>
-                      <p className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-[11.5px]"
+                      <p className="mt-1.5 text-xsm leading-relaxed" style={{ color: "var(--ux-ink-2)" }}>{s.detail}</p>
+                      <p className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs"
                          style={{ color: "var(--ux-muted)" }}>
                         <span className="inline-flex items-center gap-1.5">
                           {/* eslint-disable-next-line @next/next/no-img-element */}
-                          <img src={s.avatar} alt="" className="h-[20px] w-[20px] rounded-full object-cover" />
+                          <img loading="lazy" decoding="async" src={s.avatar} alt="" className="h-[20px] w-[20px] rounded-full object-cover" />
                           {s.who}
                         </span>
                         <span className="inline-flex items-center gap-1"><Icons.MapPin className="h-3.5 w-3.5" /> {s.place}</span>
                         <span className="inline-flex items-center gap-1">
                           {s.online ? <Icons.Video className="h-3.5 w-3.5" /> : <Icons.Users className="h-3.5 w-3.5" />}
-                          {s.online ? "Can do it online" : "In person"}
+                          {s.online ? tr("library.canDoItOnline")
+              : tr("library.inPerson")}
                         </span>
                         <span>{s.level}</span>
                       </p>
                     </div>
                   </div>
 
-                  <p className="mt-3.5 rounded-[12px] p-3 text-[12.5px] leading-relaxed"
+                  <p className="mt-3.5 rounded-[12px] p-3 text-xsm leading-relaxed"
                      style={{ background: "var(--ux-surface-2)", color: "var(--ux-ink-2)" }}>
                     <span style={{ color: "var(--ux-muted)" }}>
-                      {s.side === "Offering" ? "She would like in return: " : "She can teach in return: "}
+                      {s.side === "Offering" ? tr("library.sheWouldLikeInReturn")
+              : tr("library.sheCanTeachInReturn")}
                     </span>
                     <strong style={{ color: "var(--ux-ink)" }}>{s.wants}</strong>
                   </p>
 
                   <div className="mt-3.5 flex items-center justify-between gap-4 border-t pt-3.5"
                        style={{ borderColor: "var(--ux-line)" }}>
-                    <span className="text-[11.5px]" style={{ color: "var(--ux-faint)" }}>
+                    <span className="text-xs" style={{ color: "var(--ux-faint)" }}>
                       {s.matches} {plural("woman", s.matches)} already interested
                     </span>
                     <span className="flex items-center gap-2">
                       {isAsked(s.id) ? (
                         <>
-                          <span className="ux-pop ux-sq inline-flex items-center gap-1.5 rounded-[11px] px-3.5 py-2 text-[12.5px] font-semibold"
+                          <span className="ux-pop ux-sq inline-flex items-center gap-1.5 rounded-[12px] px-3.5 py-2 text-xsm font-semibold"
                                 style={{ background: "var(--ux-tint-green)", color: "var(--ux-green-ink)" }}>
                             <Icons.Check className="h-[15px] w-[15px]" strokeWidth={2.6} /> Asked
                           </span>
-                          <Btn href={`/app/library/${s.id}`} variant="primary" size="sm" iconEnd="ArrowRight">
-                            Open the exchange
-                          </Btn>
+                          <Btn href={`/app/library/${s.id}`} variant="primary" size="sm" iconEnd="ArrowRight">{tr("library.openTheExchange")}</Btn>
                         </>
                       ) : (
                         /* Her own words, not a canned line sent in her name.
@@ -208,13 +213,13 @@ export default function SkillExchangePage() {
                            message she did not write is the wrong thing to put
                            in front of a stranger she wants to learn from. */
                         <NoteBtn
-                          label="Propose a swap"
+                          label={tr("library.proposeASwap")}
                           variant="primary"
                           icon="ArrowRight"
                           title={`Ask ${s.who.split(" ")[0]} about this`}
                           to={s.who}
                           placeholder={`Say what you would like to learn from her, and what you can teach in return — she asked for ${s.wants}.`}
-                          sent="Sent — she has it now"
+                          sent={tr("library.sentSheHasItNow")}
                           sentBody="You will both see the reply in the exchange. No money changes hands, in either direction."
                           sentLink={{ href: `/app/library/${s.id}`, label: "Open the exchange" }}
                           send={async ({ text }) => {
@@ -233,9 +238,9 @@ export default function SkillExchangePage() {
             <Card>
               <EmptyState
                 icon="RefreshCw"
-                title="Nothing matches that"
+                title={tr("library.nothingMatchesThat")}
                 body="Try fewer tags, or offer something and let people come to you."
-                action={<Btn onClick={() => { setTags([]); setSide("All"); }} variant="soft">Show everything</Btn>}
+                action={<Btn onClick={() => { setTags([]); setSide("All"); }} variant="soft">{tr("library.showEverything")}</Btn>}
               />
             </Card>
           )}
@@ -243,23 +248,23 @@ export default function SkillExchangePage() {
       )}
 
       {tab === "Your exchanges" && (
-        <div className="ux-deck ux-stagger space-y-[13px]">
+        <div className="ux-deck ux-stagger space-y-[12px]">
           {MY_SWAPS.map((m, i) => (
             <Card key={m.id} className="ux-i ux-onscroll" style={{ ["--i" as string]: i }}>
               <div className="flex items-center gap-3.5">
                 <span className="h-[48px] w-[48px] shrink-0 overflow-hidden rounded-full"
                       style={{ background: "var(--ux-brand-tint)" }}>
                   {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img src={m.avatar} alt="" className="ux-art h-full w-full object-cover" />
+                  <img loading="lazy" decoding="async" src={m.avatar} alt="" className="ux-art h-full w-full object-cover" />
                 </span>
                 <div className="min-w-0 flex-1">
                   <div className="flex items-start gap-2">
-                    <h3 className="min-w-0 flex-1 truncate text-[14.5px] font-semibold" style={{ color: "var(--ux-ink)" }}>
+                    <h2 className="min-w-0 flex-1 truncate text-sm font-semibold" style={{ color: "var(--ux-ink)" }}>
                       With {m.with}
-                    </h3>
+                    </h2>
                     <Pill tone={m.state === "Agreed" ? "green" : "blue"} size="sm">{m.state}</Pill>
                   </div>
-                  <p className="mt-1.5 text-[12.5px]" style={{ color: "var(--ux-muted)" }}>{m.next}</p>
+                  <p className="mt-1.5 text-xsm" style={{ color: "var(--ux-muted)" }}>{m.next}</p>
                 </div>
               </div>
 
@@ -271,8 +276,8 @@ export default function SkillExchangePage() {
                        style={{ background: "var(--ux-surface-2)" }}>
                     <IconTile icon={icon} tint={tint} ink={ink} size={32} radius={9} />
                     <span className="min-w-0">
-                      <span className="block text-[10.5px] uppercase tracking-[0.06em]" style={{ color: "var(--ux-faint)" }}>{k}</span>
-                      <span className="mt-0.5 block truncate text-[12.5px] font-medium" style={{ color: "var(--ux-ink)" }}>{v}</span>
+                      <span className="block text-2xs uppercase tracking-[0.06em]" style={{ color: "var(--ux-faint)" }}>{k}</span>
+                      <span className="mt-0.5 block truncate text-xsm font-medium" style={{ color: "var(--ux-ink)" }}>{v}</span>
                     </span>
                   </div>
                 ))}
@@ -281,7 +286,8 @@ export default function SkillExchangePage() {
               <div className="mt-3.5 flex items-center justify-end gap-2 border-t pt-3.5" style={{ borderColor: "var(--ux-line)" }}>
                 <Btn href={`/app/library/${m.swapId}`} variant="outline" size="sm" icon="MessageCircle">Message</Btn>
                 <Btn href={`/app/library/${m.swapId}`} variant="primary" size="sm" icon="CalendarCheck">
-                  {m.state === "Agreed" ? "See the plan" : "Pick a time"}
+                  {m.state === "Agreed" ? tr("library.seeThePlan")
+              : tr("library.pickATime")}
                 </Btn>
               </div>
             </Card>

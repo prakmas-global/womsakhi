@@ -2,7 +2,7 @@
 
 import { use, useCallback, useState } from "react";
 import Link from "next/link";
-import * as Icons from "lucide-react";
+import * as Icons from "@/components/ux/icons";
 
 import { Btn, Card, IconTile, Pill, SectionHead, Skeleton } from "@/components/ux/kit";
 import { HomeShell } from "@/components/ux/home/HomeShell";
@@ -11,6 +11,7 @@ import { useResource } from "@/lib/use-resource";
 import { messageFrom } from "@/lib/use-action";
 import { settled, useAttemptKey } from "@/lib/idempotency";
 import { apiConfirmPayment, apiOrder, apiPaymentMethods, type Order, type PaymentConfig } from "@/lib/member-api";
+import { useT } from "@/i18n";
 
 /** How each method looks. Anything the server adds later still renders. */
 const LOOK: Record<string, { icon: string; tint: string; ink: string; detail: string }> = {
@@ -40,6 +41,7 @@ const NOTHING: Loaded = { order: null, config: null };
  * 1.1 seconds before announcing "Paid" without ever calling the server.
  */
 export default function CheckoutPage({ params }: { params: Promise<{ orderId: string }> }) {
+  const tr = useT();
   const { orderId } = use(params);
 
   // Two independent reads, so they go together. Sequenced, this screen would
@@ -102,10 +104,10 @@ export default function CheckoutPage({ params }: { params: Promise<{ orderId: st
   return (
     <HomeShell
       rail={
-        <div className="space-y-[15px]">
+        <div className="space-y-[16px]">
           <Card>
-            <SectionHead title="What you are paying" />
-            <div className="space-y-2.5 text-[13px]">
+            <SectionHead title={tr("checkout.whatYouArePaying")} />
+            <div className="space-y-2.5 text-xsm">
               <div className="flex items-center justify-between gap-3">
                 <span style={{ color: "var(--ux-muted)" }}>{order.purpose === "program" ? "Course" : "Booking"}</span>
                 <span className="font-medium tabular-nums" style={{ color: "var(--ux-ink)" }}>
@@ -115,7 +117,7 @@ export default function CheckoutPage({ params }: { params: Promise<{ orderId: st
               {/* Stated as zero rather than left out — an absent line reads as a
                   fee waiting to appear. */}
               <div className="flex items-center justify-between gap-3">
-                <span style={{ color: "var(--ux-muted)" }}>WomSakhi fee</span>
+                <span style={{ color: "var(--ux-muted)" }}>{tr("checkout.womsakhiFee")}</span>
                 <span className="font-medium" style={{ color: "var(--ux-green-ink)" }}>None</span>
               </div>
               <div className="flex items-center justify-between gap-3">
@@ -125,14 +127,12 @@ export default function CheckoutPage({ params }: { params: Promise<{ orderId: st
             </div>
             <div className="my-3.5 h-px" style={{ background: "var(--ux-line)" }} />
             <div className="flex items-baseline justify-between gap-3">
-              <span className="text-[13.5px] font-semibold" style={{ color: "var(--ux-ink)" }}>Total</span>
-              <span className="text-[22px] font-bold tabular-nums" style={{ color: "var(--ux-ink)" }}>
+              <span className="text-sm font-semibold" style={{ color: "var(--ux-ink)" }}>Total</span>
+              <span className="text-xl font-bold tabular-nums" style={{ color: "var(--ux-ink)" }}>
                 {order.amount_label || formatMoney(order.amount_minor)}
               </span>
             </div>
-            <p className="mt-2.5 text-[11.5px] leading-relaxed" style={{ color: "var(--ux-muted)" }}>
-              This is the exact amount that will leave your account. Nothing is added afterwards.
-            </p>
+            <p className="mt-2.5 text-xs leading-relaxed" style={{ color: "var(--ux-muted)" }}>{tr("checkout.thisIsTheExactAmountThat")}</p>
 
             <div className="mt-4">
               {sending ? (
@@ -145,20 +145,19 @@ export default function CheckoutPage({ params }: { params: Promise<{ orderId: st
             </div>
 
             {problem && (
-              <p role="alert" className="ux-slide-up mt-2.5 text-[12.5px] leading-relaxed"
+              <p role="alert" className="ux-slide-up mt-2.5 text-xsm leading-relaxed"
                  style={{ color: "var(--ux-orange-ink)" }}>
                 {problem}
               </p>
             )}
 
-            <p className="mt-2.5 flex items-center justify-center gap-1.5 text-[11px]" style={{ color: "var(--ux-faint)" }}>
-              <Icons.Lock className="h-[12px] w-[12px]" /> Your card details never reach WomSakhi
-            </p>
+            <p className="mt-2.5 flex items-center justify-center gap-1.5 text-2xs" style={{ color: "var(--ux-faint)" }}>
+              <Icons.Lock className="h-[12px] w-[12px]" />{tr("checkout.yourCardDetailsNeverReachWomsakhi")}</p>
           </Card>
 
           <Card>
-            <SectionHead title="If it goes wrong" icon="ShieldCheck" />
-            <p className="text-[12.5px] leading-relaxed" style={{ color: "var(--ux-ink-2)" }}>
+            <SectionHead title={tr("checkout.ifItGoesWrong")} icon="ShieldCheck" />
+            <p className="text-xsm leading-relaxed" style={{ color: "var(--ux-ink-2)" }}>
               If money leaves your account but the payment fails, it comes back on its own within 5–7 working
               days. If it does not, tell us and we will chase it.
             </p>
@@ -167,40 +166,38 @@ export default function CheckoutPage({ params }: { params: Promise<{ orderId: st
       }
     >
       <Link href={backTo}
-            className="ux-hov -my-1 mb-3.5 inline-flex items-center gap-1.5 py-1 text-[12.5px] font-medium"
+            className="ux-hov -my-1 mb-3.5 inline-flex items-center gap-1.5 py-1 text-xsm font-medium"
             style={{ color: "var(--ux-brand)" }}>
         <Icons.ArrowLeft className="ux-ico h-4 w-4" /> Back
       </Link>
 
-      <h1 className="text-[24px] font-bold" style={{ color: "var(--ux-ink)" }}>Checkout</h1>
-      <p className="mb-[18px] mt-1.5 text-[13px]" style={{ color: "var(--ux-muted)" }}>
-        One step. Nothing is taken until you press the button.
-      </p>
+      <h1 className="text-2xl font-bold" style={{ color: "var(--ux-ink)" }}>Checkout</h1>
+      <p className="mb-[20px] mt-1.5 text-xsm" style={{ color: "var(--ux-muted)" }}>{tr("checkout.oneStepNothingIsTakenUntil")}</p>
 
-      <Card className="mb-[15px]">
-        <SectionHead title="What you are getting" />
+      <Card className="mb-[16px]">
+        <SectionHead title={tr("checkout.whatYouAreGetting")} />
         <div className="flex items-center gap-4">
           <IconTile icon={order.purpose === "program" ? "GraduationCap" : "CalendarCheck"}
                     tint="--ux-tint-violet" ink="--ux-violet" size={64} radius={13} />
           <div className="min-w-0 flex-1">
             <div className="flex items-start gap-2">
-              <h2 className="min-w-0 flex-1 text-[16px] font-semibold" style={{ color: "var(--ux-ink)" }}>
+              <h2 className="min-w-0 flex-1 text-base font-semibold" style={{ color: "var(--ux-ink)" }}>
                 {order.title}
               </h2>
               <Pill tone="brand" size="sm">{order.purpose === "program" ? "Course" : "Booking"}</Pill>
             </div>
-            <p className="mt-1 text-[12.5px]" style={{ color: "var(--ux-muted)" }}>
+            <p className="mt-1 text-xsm" style={{ color: "var(--ux-muted)" }}>
               Started {order.created}
             </p>
           </div>
-          <p className="shrink-0 text-[18px] font-bold tabular-nums" style={{ color: "var(--ux-ink)" }}>
+          <p className="shrink-0 text-lg font-bold tabular-nums" style={{ color: "var(--ux-ink)" }}>
             {formatMoney(order.amount_minor)}
           </p>
         </div>
       </Card>
 
       <Card>
-        <SectionHead title="How you want to pay" />
+        <SectionHead title={tr("checkout.howYouWantToPay")} />
         <div className="ux-deck space-y-2.5">
           {methods.map((m, i) => {
             const look = LOOK[m.key] ?? PLAIN;
@@ -210,7 +207,7 @@ export default function CheckoutPage({ params }: { params: Promise<{ orderId: st
                 key={m.key}
                 onClick={() => setMethod(m.key)}
                 aria-pressed={on}
-                className="ux-i ux-sq flex w-full items-center gap-3.5 rounded-[13px] border p-3.5 text-start"
+                className="ux-i ux-sq flex w-full items-center gap-3.5 rounded-[12px] border p-3.5 text-start"
                 style={{
                   borderColor: on ? "var(--ux-brand)" : "var(--ux-line)",
                   background: on ? "var(--ux-brand-tint)" : "var(--ux-surface)",
@@ -219,11 +216,11 @@ export default function CheckoutPage({ params }: { params: Promise<{ orderId: st
               >
                 <IconTile icon={look.icon} tint={look.tint} ink={look.ink} size={42} radius={11} />
                 <span className="min-w-0 flex-1">
-                  <span className="block truncate text-[13.5px] font-semibold" style={{ color: "var(--ux-ink)" }}>
+                  <span className="block truncate text-sm font-semibold" style={{ color: "var(--ux-ink)" }}>
                     {m.label}
                   </span>
                   {look.detail && (
-                    <span className="mt-0.5 block truncate text-[11.5px]" style={{ color: "var(--ux-muted)" }}>
+                    <span className="mt-0.5 block truncate text-xs" style={{ color: "var(--ux-muted)" }}>
                       {look.detail}
                     </span>
                   )}
@@ -239,6 +236,7 @@ export default function CheckoutPage({ params }: { params: Promise<{ orderId: st
 }
 
 function Paid({ order }: { order: Order }) {
+  const tr = useT();
   const course = order.purpose === "program";
   return (
     <HomeShell>
@@ -248,15 +246,16 @@ function Paid({ order }: { order: Order }) {
                 style={{ background: "var(--ux-tint-green)" }}>
             <Icons.CheckCheck className="h-[32px] w-[32px]" style={{ color: "var(--ux-green-ink)" }} strokeWidth={2} />
           </span>
-          <h1 className="mt-4 text-[22px] font-bold" style={{ color: "var(--ux-ink)" }}>Paid</h1>
-          <p className="mt-2 max-w-[38ch] text-[13.5px] leading-relaxed" style={{ color: "var(--ux-ink-2)" }}>
+          <h1 className="mt-4 text-xl font-bold" style={{ color: "var(--ux-ink)" }}>Paid</h1>
+          <p className="mt-2 max-w-[38ch] text-sm leading-relaxed" style={{ color: "var(--ux-ink-2)" }}>
             {order.amount_label || formatMoney(order.amount_minor)} for {order.title}. The receipt is in Money,
             and you can start straight away.
           </p>
-          <p className="mt-3 font-mono text-[12px]" style={{ color: "var(--ux-faint)" }}>{order.id}</p>
+          <p className="mt-3 font-mono text-xs" style={{ color: "var(--ux-faint)" }}>{order.id}</p>
           <div className="mt-5 flex flex-wrap justify-center gap-2.5">
             <Btn href={course ? "/app/programs" : "/app/bookings"} variant="primary" iconEnd="ArrowRight">
-              {course ? "Start the course" : "See your booking"}
+              {course ? tr("checkout.startTheCourse")
+              : tr("checkout.seeYourBooking")}
             </Btn>
             <Btn href="/app/payments" variant="outline" icon="Receipt">Receipt</Btn>
           </div>
@@ -268,30 +267,30 @@ function Paid({ order }: { order: Order }) {
 
 /** The price is the last thing to settle, so its space is held from the start. */
 function LoadingCheckout() {
+  const tr = useT();
   return (
-    <HomeShell rail={<Card><SectionHead title="What you are paying" /><Skeleton h={190} r={12} /></Card>}>
+    <HomeShell rail={<Card><SectionHead title={tr("checkout.whatYouArePaying2")} /><Skeleton h={190} r={12} /></Card>}>
       <Skeleton w={160} h={26} />
-      <Card className="mb-[15px] mt-[18px]"><Skeleton h={72} r={12} /></Card>
-      <Card><SectionHead title="How you want to pay" /><Skeleton h={210} r={12} /></Card>
+      <Card className="mb-[16px] mt-[20px]"><Skeleton h={72} r={12} /></Card>
+      <Card><SectionHead title={tr("checkout.howYouWantToPay2")} /><Skeleton h={210} r={12} /></Card>
     </HomeShell>
   );
 }
 
 function Missing({ error, onRetry }: { error: Error | null; onRetry: () => void }) {
+  const tr = useT();
   return (
     <HomeShell>
       <Card className="mx-auto max-w-[520px]">
         <div className="flex flex-col items-center py-4 text-center">
           <IconTile icon="SearchX" tint="--ux-tint-amber" ink="--ux-amber" size={54} radius={14} />
-          <h1 className="mt-3.5 text-[19px] font-bold" style={{ color: "var(--ux-ink)" }}>
-            We could not find that payment
-          </h1>
-          <p className="mt-2 max-w-[40ch] text-[13px] leading-relaxed" style={{ color: "var(--ux-ink-2)" }}>
+          <h1 className="mt-3.5 text-lg font-bold" style={{ color: "var(--ux-ink)" }}>{tr("checkout.weCouldNotFindThatPayment")}</h1>
+          <p className="mt-2 max-w-[40ch] text-xsm leading-relaxed" style={{ color: "var(--ux-ink-2)" }}>
             {messageFrom(error, "It may have been finished already, or the link may be old. Nothing has been charged.")}
           </p>
           <div className="mt-5 flex flex-wrap justify-center gap-2.5">
-            <Btn onClick={onRetry} variant="primary" icon="RotateCw">Try again</Btn>
-            <Btn href="/app/payments" variant="outline" icon="Receipt">Your payments</Btn>
+            <Btn onClick={onRetry} variant="primary" icon="RotateCw">{tr("checkout.tryAgain")}</Btn>
+            <Btn href="/app/payments" variant="outline" icon="Receipt">{tr("checkout.yourPayments")}</Btn>
           </div>
         </div>
       </Card>

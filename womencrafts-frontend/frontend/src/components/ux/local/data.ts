@@ -57,14 +57,5 @@ export const LOCAL_GROUPS = [
     tint: "--ux-tint-pink", ink: "--ux-amber", note: "Busy before Diwali" },
 ];
 
-export const LOCAL_HELP = [
-  { id: "h1", label: "WomSakhi Centre, Jaipur", detail: "Mon–Sat, 10 AM – 5 PM · Walk in", icon: "Building2",
-    tint: "--ux-tint-lilac", ink: "--ux-brand" },
-  { id: "h2", label: "Nearest bank branch for Mudra", detail: "SBI, Sector 9 · 2.1 km", icon: "Landmark",
-    tint: "--ux-tint-green", ink: "--ux-green" },
-  { id: "h3", label: "Women's helpline", detail: "181 · Free, 24 hours", icon: "Phone",
-    tint: "--ux-tint-pink", ink: "--ux-pink" },
-];
-
 export const LOCAL_ART = { empty: A("empty-magnifying-glass-blank-page"), hero: A("scene-women-group-circle") };
 export const CITY = "Jaipur";

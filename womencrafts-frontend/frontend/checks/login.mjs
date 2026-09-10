@@ -37,7 +37,8 @@ async function inspect(pref, { returning = false } = {}) {
   }
 
   const onLoad = await page.evaluate(() => {
-    const v = document.querySelector('video[src*="womsakhi-reveal"]');
+    const v = [...document.querySelectorAll('video[src*="womsakhi-reveal"]')]
+      .find((e) => e.getBoundingClientRect().height > 0);
     if (!v) return { present: false };
     const r = v.getBoundingClientRect();
     return {
@@ -48,19 +49,31 @@ async function inspect(pref, { returning = false } = {}) {
     };
   });
 
-  // and reach it the way a person would — a real click on the tile
+  // and reach it the way a person would — a real click on the tile.
+  //
+  // Found structurally, as "the control wrapping the video", rather than by a
+  // fixed aria-label. This used to match one exact phrase, so rewording the
+  // label — which is copy, not behaviour — reported the control as missing.
+  // What this check is actually for is that a control EXISTS, that it is
+  // reachable, and that it has some accessible name at all.
   const at = await page.evaluate(() => {
-    const el = document.querySelector('[aria-label*="the WomSakhi animation"]');
+    const v = [...document.querySelectorAll('video[src*="womsakhi-reveal"]')]
+      .find((e) => e.getBoundingClientRect().height > 0);
+    const el = v?.closest("button") ?? v?.parentElement?.querySelector("button");
     if (!el) return null;
     const r = el.getBoundingClientRect();
-    return { x: Math.round(r.left + r.width / 2), y: Math.round(r.top + r.height / 2) };
+    return {
+      x: Math.round(r.left + r.width / 2), y: Math.round(r.top + r.height / 2),
+      name: el.getAttribute("aria-label") || el.textContent.trim(),
+    };
   });
   let afterClick = null;
   if (at) {
     await page.mouse.click(at.x, at.y);
     await new Promise((r) => setTimeout(r, 1600));
     afterClick = await page.evaluate(() => {
-      const v = document.querySelector('video[src*="womsakhi-reveal"]');
+      const v = [...document.querySelectorAll('video[src*="womsakhi-reveal"]')]
+        .find((e) => e.getBoundingClientRect().height > 0);
       return v ? { played: +v.currentTime.toFixed(2), paused: v.paused } : null;
     });
   }

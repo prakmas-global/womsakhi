@@ -2,7 +2,7 @@
 
 import { use, useState } from "react";
 import Link from "next/link";
-import * as Icons from "lucide-react";
+import * as Icons from "@/components/ux/icons";
 
 import {
   Btn, Card, EmptyState, Progress, RailSkeleton, ScreenSkeleton, SectionHead,
@@ -12,6 +12,7 @@ import { useLearning } from "@/components/ux/growth";
 import { useProgramDetail } from "@/components/ux/growth";
 import { apiSetProgress } from "@/lib/growth-api";
 import { useAction } from "@/lib/use-action";
+import { useT } from "@/i18n";
 
 
 /**
@@ -26,6 +27,7 @@ import { useAction } from "@/lib/use-action";
  * the next are the same intention.
  */
 export default function LessonPage({ params }: { params: Promise<{ id: string; n: string }> }) {
+  const tr = useT();
   const { id, n } = use(params);
   const { data: learning, source } = useLearning();
   const ALL = [...learning.continuing, ...learning.picks];
@@ -94,9 +96,9 @@ export default function LessonPage({ params }: { params: Promise<{ id: string; n
         <Card>
           <EmptyState
             icon="SearchX"
-            title="That lesson is not here"
+            title={tr("programsLesson.thatLessonIsNotHere")}
             body="The course may have changed since this link was made."
-            action={<Btn href="/app/programs" variant="primary" iconEnd="ArrowRight">All courses</Btn>}
+            action={<Btn href="/app/programs" variant="primary" iconEnd="ArrowRight">{tr("programsLesson.allCourses")}</Btn>}
           />
         </Card>
       </HomeShell>
@@ -109,9 +111,9 @@ export default function LessonPage({ params }: { params: Promise<{ id: string; n
   return (
     <HomeShell
       rail={
-        <div className="space-y-[15px]">
+        <div className="space-y-[16px]">
           <Card>
-            <SectionHead title="This course" sub={`${completed} of ${flat.length} lessons`} />
+            <SectionHead title={tr("programsLesson.thisCourse")} sub={`${completed} of ${flat.length} lessons`} />
             <Progress pct={pct} track="--ux-track" />
             <div className="mt-3.5 max-h-[380px] space-y-1 overflow-y-auto">
               {/* The course's own lessons, flat. The server keeps no sections,
@@ -124,21 +126,21 @@ export default function LessonPage({ params }: { params: Promise<{ id: string; n
                       <Link
                         key={l.n}
                         href={`/app/programs/${course.id}/lesson/${l.n}`}
-                        className="ux-hov flex items-center gap-2.5 rounded-[9px] px-2 py-2 transition-colors hover:bg-[var(--ux-surface-2)]"
+                        className="ux-hov flex items-center gap-2.5 rounded-[8px] px-2 py-2 transition-colors hover:bg-[var(--ux-surface-2)]"
                         style={{ background: here ? "var(--ux-brand-tint)" : "transparent" }}
                       >
                         <span className="grid h-[20px] w-[20px] shrink-0 place-items-center rounded-full"
                               style={{ background: l.done || (here && done) ? "var(--ux-green-ink)" : here ? "var(--ux-brand-600)" : "var(--ux-track)" }}>
                           {l.done || (here && done)
                             ? <Icons.Check className="h-[11px] w-[11px] text-white" strokeWidth={3} />
-                            : <span className="text-[9px] font-bold" style={{ color: here ? "#fff" : "var(--ux-muted)" }}>{l.n}</span>}
+                            : <span className="text-2xs font-bold" style={{ color: here ? "var(--ux-on-brand)" : "var(--ux-muted)" }}>{l.n}</span>}
                         </span>
-                        <span className="min-w-0 flex-1 truncate text-[12px]"
+                        <span className="min-w-0 flex-1 truncate text-xs"
                               style={{ color: here ? "var(--ux-brand)" : "var(--ux-ink-2)", fontWeight: here ? 600 : 400 }}>
                           {l.title}
                         </span>
                         {l.mins && (
-                          <span className="shrink-0 text-[10.5px]" style={{ color: "var(--ux-faint)" }}>{l.mins}</span>
+                          <span className="shrink-0 text-2xs" style={{ color: "var(--ux-faint)" }}>{l.mins}</span>
                         )}
                       </Link>
                     );
@@ -149,14 +151,14 @@ export default function LessonPage({ params }: { params: Promise<{ id: string; n
           </Card>
 
           <Card>
-            <SectionHead title="Your notes" sub="Only you can see these" />
+            <SectionHead title={tr("programsLesson.yourNotes")} sub={tr("programsLesson.onlyYouCanSeeThese")} />
             <textarea
               value={notes}
               onChange={(e) => setNotes(e.target.value)}
               rows={5}
-              placeholder="Write down anything you want to come back to."
-              aria-label="Your notes for this lesson"
-              className="ux-sq w-full resize-y rounded-[12px] border p-3 text-[12.5px] leading-relaxed outline-none"
+              placeholder={tr("programsLesson.writeDownAnythingYouWantTo")}
+              aria-label={tr("programsLesson.yourNotesForThisLesson")}
+              className="ux-sq w-full resize-y rounded-[12px] border p-3 text-xsm leading-relaxed outline-none"
               style={{ borderColor: "var(--ux-line-strong)", background: "var(--ux-surface)", color: "var(--ux-ink)" }}
             />
           </Card>
@@ -164,23 +166,23 @@ export default function LessonPage({ params }: { params: Promise<{ id: string; n
       }
     >
       <Link href={`/app/programs/${course.id}`}
-            className="ux-hov -my-1 mb-3.5 inline-flex items-center gap-1.5 py-1 text-[12.5px] font-medium"
+            className="ux-hov -my-1 mb-3.5 inline-flex items-center gap-1.5 py-1 text-xsm font-medium"
             style={{ color: "var(--ux-brand)" }}>
         <Icons.ArrowLeft className="ux-ico h-4 w-4" /> {course.title}
       </Link>
 
-      <Card className="mb-[15px] overflow-hidden" pad={0}>
+      <Card className="mb-[16px] overflow-hidden" pad={0}>
         {/* The player. A poster and one button until she asks for it — data is
             expensive, and nothing should start downloading uninvited. */}
         <div className="relative aspect-video w-full overflow-hidden" style={{ background: "var(--ux-brand-900)" }}>
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src={course.thumb} alt="" className="h-full w-full object-cover"
+          <img loading="lazy" decoding="async" src={course.thumb} alt="" className="h-full w-full object-cover"
                style={{ opacity: playing ? 0.28 : 0.6 }} />
           <div className="absolute inset-0 grid place-items-center">
             {playing ? (
               <div className="text-center">
                 <Icons.Loader className="mx-auto h-[30px] w-[30px] animate-spin text-white" strokeWidth={1.8} />
-                <p className="mt-3 text-[13px]" style={{ color: "rgba(255,255,255,0.86)" }}>Loading the video…</p>
+                <p className="mt-3 text-xsm" style={{ color: "rgba(255,255,255,0.86)" }}>{tr("programsLesson.loadingTheVideo")}</p>
               </div>
             ) : (
               <button
@@ -193,17 +195,17 @@ export default function LessonPage({ params }: { params: Promise<{ id: string; n
               </button>
             )}
           </div>
-          <span className="absolute bottom-3 end-3 rounded-full px-2.5 py-1 text-[11px] font-medium text-white"
+          <span className="absolute bottom-3 end-3 rounded-full px-2.5 py-1 text-2xs font-medium text-white"
                 style={{ background: "rgba(0,0,0,0.55)" }}>
             {lesson.mins} min
           </span>
         </div>
 
         <div className="p-[20px]">
-          <p className="text-[11.5px] font-semibold uppercase tracking-[0.08em]" style={{ color: "var(--ux-faint)" }}>
+          <p className="text-xs font-semibold uppercase tracking-[0.08em]" style={{ color: "var(--ux-faint)" }}>
             Lesson {lesson.n} of {flat.length}
           </p>
-          <h1 className="mt-1.5 text-[22px] font-bold leading-tight" style={{ color: "var(--ux-ink)" }}>
+          <h1 className="mt-1.5 text-xl font-bold leading-tight" style={{ color: "var(--ux-ink)" }}>
             {lesson.title}
           </h1>
 
@@ -233,40 +235,40 @@ export default function LessonPage({ params }: { params: Promise<{ id: string; n
 
       <Card>
         <SectionHead
-          title="What she says, in words"
-          sub="Read it instead of watching — no data, and it works in a noisy room"
+          title={tr("programsLesson.whatSheSaysInWords")}
+          sub={tr("programsLesson.readItInsteadOfWatchingNo")}
           action="Keep offline"
           onAction={() => { window.location.href = "/app/settings/offline"; }}
         />
         {/* Always open, never behind a toggle. Reading is free; video is not. */}
-        <div className="space-y-3.5 text-[13.5px] leading-relaxed" style={{ color: "var(--ux-ink-2)" }}>
+        <div className="space-y-3.5 text-sm leading-relaxed" style={{ color: "var(--ux-ink-2)" }}>
           <p>
-            <span className="me-2 font-mono text-[11px]" style={{ color: "var(--ux-faint)" }}>0:00</span>
+            <span className="me-2 font-mono text-2xs" style={{ color: "var(--ux-faint)" }}>0:00</span>
             Most women I meet think a strategy is a big word for something complicated. It is not. A strategy is
             deciding, before you post anything, who you are talking to and what you want them to do.
           </p>
           <p>
-            <span className="me-2 font-mono text-[11px]" style={{ color: "var(--ux-faint)" }}>1:24</span>
+            <span className="me-2 font-mono text-2xs" style={{ color: "var(--ux-faint)" }}>1:24</span>
             Take three minutes now and write down one sentence: who buys from you, and why they chose you over
             the shop down the road. If you cannot answer the second part, that is the first thing to fix — not
             your posting schedule.
           </p>
           <p>
-            <span className="me-2 font-mono text-[11px]" style={{ color: "var(--ux-faint)" }}>4:10</span>
+            <span className="me-2 font-mono text-2xs" style={{ color: "var(--ux-faint)" }}>4:10</span>
             Post twice a week, not twice a day. Twice a week for six months beats twice a day for two weeks,
             every single time, and it is the schedule you can actually keep alongside your work.
           </p>
           <p>
-            <span className="me-2 font-mono text-[11px]" style={{ color: "var(--ux-faint)" }}>8:52</span>
+            <span className="me-2 font-mono text-2xs" style={{ color: "var(--ux-faint)" }}>8:52</span>
             When somebody messages you, reply the same day even if the answer is &ldquo;let me check and come back to
             you&rdquo;. A reply that is slow is forgivable. Silence is not.
           </p>
         </div>
 
-        <div className="mt-5 flex items-center gap-3 rounded-[13px] p-3.5" style={{ background: "var(--ux-surface-2)" }}>
+        <div className="mt-5 flex items-center gap-3 rounded-[12px] p-3.5" style={{ background: "var(--ux-surface-2)" }}>
           <Icons.PenLine className="h-[18px] w-[18px] shrink-0" style={{ color: "var(--ux-brand)" }} />
-          <p className="min-w-0 flex-1 text-[12.5px]" style={{ color: "var(--ux-ink-2)" }}>
-            <strong style={{ color: "var(--ux-ink)" }}>Try this before the next lesson:</strong> write the one
+          <p className="min-w-0 flex-1 text-xsm" style={{ color: "var(--ux-ink-2)" }}>
+            <strong style={{ color: "var(--ux-ink)" }}>{tr("programsLesson.tryThisBeforeTheNextLesson")}</strong> write the one
             sentence from 1:24 and keep it where you can see it.
           </p>
         </div>

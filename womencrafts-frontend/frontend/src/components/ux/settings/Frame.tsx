@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import * as Icons from "lucide-react";
+import * as Icons from "@/components/ux/icons";
 
 import { Card, SectionHead } from "../kit";
 import { HomeShell } from "../home/HomeShell";
@@ -21,18 +21,18 @@ export function SettingsPage({
     <HomeShell active="/app/settings">
       <Link
         href="/app/settings"
-        className="ux-hov -my-1 mb-3.5 inline-flex items-center gap-1.5 py-1 text-[12.5px] font-medium"
+        className="ux-hov -my-1 mb-3.5 inline-flex items-center gap-1.5 py-1 text-xsm font-medium"
         style={{ color: "var(--ux-brand)" }}
       >
         <Icons.ArrowLeft className="ux-ico h-4 w-4" /> More
       </Link>
 
       <div className="max-w-[720px]">
-        <h1 className="text-[24px] font-bold" style={{ color: "var(--ux-ink)" }}>{title}</h1>
+        <h1 className="text-2xl font-bold" style={{ color: "var(--ux-ink)" }}>{title}</h1>
         {sub && (
-          <p className="mt-1.5 text-[13px] leading-relaxed" style={{ color: "var(--ux-muted)" }}>{sub}</p>
+          <p className="mt-1.5 text-xsm leading-relaxed" style={{ color: "var(--ux-muted)" }}>{sub}</p>
         )}
-        <div className="mt-[20px] space-y-[15px]">{children}</div>
+        <div className="mt-[20px] space-y-[16px]">{children}</div>
         {footer && <div className="mt-[20px]">{footer}</div>}
       </div>
     </HomeShell>
@@ -45,18 +45,29 @@ export function Field({
 }: { label: string; hint?: string; children: React.ReactNode }) {
   return (
     <label className="block">
-      <span className="block text-[13px] font-semibold" style={{ color: "var(--ux-ink)" }}>{label}</span>
-      {hint && <span className="mt-1 block text-[11.5px]" style={{ color: "var(--ux-muted)" }}>{hint}</span>}
+      <span className="block text-xsm font-semibold" style={{ color: "var(--ux-ink)" }}>{label}</span>
+      {hint && <span className="mt-1 block text-xs" style={{ color: "var(--ux-muted)" }}>{hint}</span>}
       <span className="mt-2 block">{children}</span>
     </label>
   );
 }
 
+/**
+ * A settings text field.
+ *
+ * Every caller passes `id` and pairs it with a `<Field label>`, so the label is
+ * real — but nothing made that a requirement, and a caller that forgot would
+ * ship a box a screen reader announces as nothing at all. `aria-label` is
+ * derived from the placeholder when no other name is given, so the failure mode
+ * is a slightly worse name rather than no name.
+ */
 export function TextInput(props: React.InputHTMLAttributes<HTMLInputElement>) {
+  const named = props.id || props["aria-label"] || props["aria-labelledby"];
   return (
     <input
+      aria-label={named ? undefined : (props.placeholder || "Text field")}
       {...props}
-      className="ux-sq h-[44px] w-full rounded-[11px] border px-3.5 text-[13.5px] outline-none"
+      className="ux-sq h-[44px] w-full rounded-[12px] border px-3.5 text-sm outline-none"
       style={{ borderColor: "var(--ux-line-strong)", background: "var(--ux-surface)", color: "var(--ux-ink)" }}
     />
   );
@@ -75,8 +86,8 @@ export function Toggle({
   return (
     <div className="flex items-start justify-between gap-4 py-3">
       <div className="min-w-0 flex-1">
-        <p className="text-[13.5px] font-medium" style={{ color: "var(--ux-ink)" }}>{label}</p>
-        <p className="mt-1 text-[12px] leading-snug" style={{ color: "var(--ux-muted)" }}>
+        <p className="text-sm font-medium" style={{ color: "var(--ux-ink)" }}>{label}</p>
+        <p className="mt-1 text-xs leading-snug" style={{ color: "var(--ux-muted)" }}>
           {on ? whenOn : whenOff}
         </p>
       </div>

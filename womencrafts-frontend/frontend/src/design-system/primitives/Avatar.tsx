@@ -63,7 +63,7 @@ function Avatar({
   if (!failed) {
     // eslint-disable-next-line @next/next/no-img-element
     return (
-      <img
+      <img loading="lazy" decoding="async"
         src={photo}
         alt={name}
         onError={() => setFailed(true)}

@@ -108,7 +108,11 @@ for (const [name, route] of ROUTES) {
                  `sidebar ${m.sidebar} · topbar ${m.topbar} · ${m.chars} chars · ` +
                  `overflow ${m.overflow} · contrast ${bad.length} · hits ${small.length}`);
       if (m.sidebar !== 253) fail.push(`${name}: sidebar is ${m.sidebar}px, the measured design is 253`);
-      if (m.topbar !== 75) fail.push(`${name}: topbar is ${m.topbar}px, the measured design is 75`);
+      // 70, and it is measured, not remembered: the header's bottom border
+      // sits at y=69 in `wm.png` (1536 wide) and y=71 in `learnmain.png`
+      // (1586 wide) — 4.48% of the width in both. This asserted 75 and the
+      // app rendered 62; nobody had measured either.
+      if (Math.abs(m.topbar - 70) > 1) fail.push(`${name}: topbar is ${m.topbar}px, the boards measure 70`);
     } else {
       lines.push(`       ${"".padEnd(14)} dark: ${m.chars} chars · overflow ${m.overflow} · ` +
                  `contrast ${bad.length} · hits ${small.length}`);

@@ -51,7 +51,9 @@ export function useListening(locale: string, onFinal: (text: string) => void) {
     try {
       ref.current?.stop();
     } catch {
-      /* already stopped */
+      /* Nothing to tell her. `stop()` throws only when recognition was already
+         stopped, which is the state she asked for — reporting it would be
+         announcing a failure to reach an outcome that has been reached. */
     }
     setListening(false);
   }, []);
@@ -107,7 +109,9 @@ export function useListening(locale: string, onFinal: (text: string) => void) {
     try {
       ref.current?.abort();
     } catch {
-      /* nothing to abort */
+      /* Unmount cleanup, and there is nobody left to tell: this component is
+         being removed from the page as this line runs. Aborting a recognition
+         that has already ended is the only way it throws. */
     }
   }, []);
 

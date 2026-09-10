@@ -1,7 +1,8 @@
 "use client";
 
 import { useCallback, useMemo, useState } from "react";
-import * as Icons from "lucide-react";
+import { COPY } from "@/components/ux/copy";
+import * as Icons from "@/components/ux/icons";
 
 import {
   ActionBtn, Btn, Card, EmptyState, NoteBtn, Pill,
@@ -11,6 +12,7 @@ import { HomeShell } from "@/components/ux/home/HomeShell";
 import { useBookings } from "@/components/ux/live";
 import { useAction } from "@/lib/use-action";
 import { apiCancelBooking, apiLeaveFeedback } from "@/lib/member-api";
+import { useT } from "@/i18n";
 
 
 /**
@@ -21,6 +23,7 @@ import { apiCancelBooking, apiLeaveFeedback } from "@/lib/member-api";
  * says what it is waiting for rather than pretending to be confirmed.
  */
 export default function BookingsPage() {
+  const tr = useT();
   const { data: BOOKINGS, source, refetch } = useBookings();
 
   /**
@@ -41,7 +44,7 @@ export default function BookingsPage() {
       onDone: refetch,
       optimistic: (id: string) => setCancelled((c) => [...c, id]),
       rollback: (id: string) => setCancelled((c) => c.filter((x) => x !== id)),
-      fallbackError: "We could not cancel it. Your booking still stands — try again.",
+      fallbackError: COPY.booking.cancelFailed,
     },
   );
   const [tab, setTab] = useState("Coming up");
@@ -72,33 +75,31 @@ export default function BookingsPage() {
     <HomeShell
       active="/app/schedule"
       rail={
-        <div className="space-y-[15px]">
+        <div className="space-y-[16px]">
           <Card className="ux-onscroll-soft">
-            <SectionHead title="Before you cancel" icon="Info" />
+            <SectionHead title={tr("bookings.beforeYouCancel")} icon="Info" />
             <ul className="space-y-2.5">
               {[
                 "A mentor has kept that hour free for you.",
                 "A workshop place goes to whoever is next on the list.",
                 "A paid stall fee comes back within 5–7 working days.",
               ].map((t) => (
-                <li key={t} className="flex items-start gap-2.5 text-[12.5px] leading-snug" style={{ color: "var(--ux-ink-2)" }}>
+                <li key={t} className="flex items-start gap-2.5 text-xsm leading-snug" style={{ color: "var(--ux-ink-2)" }}>
                   <Icons.Dot className="mt-[1px] h-[15px] w-[15px] shrink-0" style={{ color: "var(--ux-brand)" }} />
                   {t}
                 </li>
               ))}
             </ul>
-            <p className="mt-3.5 rounded-[11px] p-3 text-[11.5px] leading-relaxed"
-               style={{ background: "var(--ux-surface-2)", color: "var(--ux-muted)" }}>
-              Cancelling is always allowed and never counts against you. Telling someone early is just kinder.
-            </p>
+            <p className="mt-3.5 rounded-[12px] p-3 text-xs leading-relaxed"
+               style={{ background: "var(--ux-surface-2)", color: "var(--ux-muted)" }}>{tr("bookings.cancellingIsAlwaysAllowedAndNever")}</p>
           </Card>
         </div>
       }
     >
-      <div className="mb-[18px] flex items-end justify-between gap-4">
+      <div className="mb-[20px] flex items-end justify-between gap-4">
         <div>
-          <h1 className="text-[24px] font-bold" style={{ color: "var(--ux-ink)" }}>Bookings</h1>
-          <p className="mt-1.5 text-[13px]" style={{ color: "var(--ux-muted)" }}>
+          <h1 className="text-2xl font-bold" style={{ color: "var(--ux-ink)" }}>Bookings</h1>
+          <p className="mt-1.5 text-xsm" style={{ color: "var(--ux-muted)" }}>
             {upcoming} {plural("booking", upcoming)} coming up
           </p>
         </div>
@@ -108,21 +109,21 @@ export default function BookingsPage() {
       <SourceNote source={source} what="bookings" />
 
       {shown.length ? (
-        <div className="ux-deck ux-stagger space-y-[13px]">
+        <div className="ux-deck ux-stagger space-y-[12px]">
           {shown.map((b, i) => {
             const gone = isGone(b);
             const asking = cancelling === b.id;
             return (
               <Card key={b.id} className="ux-i ux-onscroll" style={{ ["--i" as string]: i }}>
                 <div className="flex items-start gap-3.5">
-                  <span className="h-[54px] w-[54px] shrink-0 overflow-hidden rounded-[13px]"
+                  <span className="h-[54px] w-[54px] shrink-0 overflow-hidden rounded-[12px]"
                         style={{ background: "var(--ux-brand-tint)" }}>
                     {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img src={b.art} alt="" className="ux-art h-full w-full object-cover" />
+                    <img loading="lazy" decoding="async" src={b.art} alt="" className="ux-art h-full w-full object-cover" />
                   </span>
                   <div className="min-w-0 flex-1">
                     <div className="flex items-start gap-2">
-                      <h3 className="min-w-0 flex-1 text-[14.5px] font-semibold"
+                      <h3 className="min-w-0 flex-1 text-sm font-semibold"
                           style={{ color: gone ? "var(--ux-muted)" : "var(--ux-ink)" }}>
                         {b.what}
                       </h3>
@@ -130,13 +131,13 @@ export default function BookingsPage() {
                         {gone ? "Cancelled" : b.state}
                       </Pill>
                     </div>
-                    <p className="mt-1.5 flex flex-wrap items-center gap-x-3 gap-y-1 text-[11.5px]"
+                    <p className="mt-1.5 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs"
                        style={{ color: "var(--ux-muted)" }}>
                       <span className="inline-flex items-center gap-1"><Icons.Clock className="h-3.5 w-3.5" /> {b.when}</span>
                       <span className="inline-flex items-center gap-1"><Icons.MapPin className="h-3.5 w-3.5" /> {b.where}</span>
                       <span>{b.ref}</span>
                     </p>
-                    <p className="mt-2 text-[12px]" style={{ color: "var(--ux-ink-2)" }}>
+                    <p className="mt-2 text-xs" style={{ color: "var(--ux-ink-2)" }}>
                       {b.state === "Waitlisted"
                         ? "You are third on the list. We will tell you the moment a place opens."
                         : b.cost}
@@ -148,7 +149,7 @@ export default function BookingsPage() {
                     who pressed cancel and saw the row unchanged has to be told
                     why, or she will assume it worked. */}
                 {cancel.error && cancelling === b.id && (
-                  <p className="ux-slide-up mt-3 text-[12.5px]" style={{ color: "var(--ux-orange-ink)" }}>
+                  <p className="ux-slide-up mt-3 text-xsm" style={{ color: "var(--ux-orange-ink)" }}>
                     {cancel.error}
                   </p>
                 )}
@@ -158,15 +159,15 @@ export default function BookingsPage() {
                 {asking ? (
                   <div className="ux-slide-up mt-3.5 flex items-center justify-between gap-4 rounded-[12px] p-3.5"
                        style={{ background: "var(--ux-tint-orange)" }}>
-                    <p className="text-[12.5px] leading-snug" style={{ color: "var(--ux-ink-2)" }}>
+                    <p className="text-xsm leading-snug" style={{ color: "var(--ux-ink-2)" }}>
                       {b.kind === "Mentor"
                         ? "She has kept this hour free. Cancel it?"
                         : b.kind === "Event"
-                          ? "Your stall fee comes back in 5–7 working days. Cancel it?"
-                          : "Your place goes to the next woman on the list. Cancel it?"}
+                          ? COPY.booking.refundNote
+                          : COPY.booking.placeGoesOn}
                     </p>
                     <span className="flex shrink-0 items-center gap-2">
-                      <Btn variant="outline" size="sm" onClick={() => setCancelling(null)}>Keep it</Btn>
+                      <Btn variant="outline" size="sm" onClick={() => setCancelling(null)}>{tr("bookings.keepIt")}</Btn>
                       <Btn variant="primary" size="sm"
                            className={cancel.busyWith === b.id ? "pointer-events-none opacity-60" : ""}
                            onClick={async () => {
@@ -180,6 +181,13 @@ export default function BookingsPage() {
                 ) : (
                   <div className="mt-3.5 flex items-center justify-end gap-2 border-t pt-3.5"
                        style={{ borderColor: "var(--ux-line)" }}>
+                    {/* The detail page existed and nothing linked to it: the only
+                        ways in were the calendar and typing the URL. It holds
+                        the reference code she shows at the door, so it is the
+                        first action, not a hidden one. */}
+                    <Btn href={`/app/bookings/${b.id}`} variant="ghost" size="sm" iconEnd="ArrowRight">
+                      Open
+                    </Btn>
                     {!gone && b.state !== "Finished" && (
                       <>
                         {/* "Add to calendar" said "It is in your diary" and
@@ -188,13 +196,13 @@ export default function BookingsPage() {
                             diary is built from her bookings, so the booking
                             itself is already the entry; the link goes there
                             rather than promising a second one. */}
-                        <Btn href="/app/schedule" variant="outline" size="sm" icon="CalendarDays">In your diary</Btn>
+                        <Btn href="/app/schedule" variant="outline" size="sm" icon="CalendarDays">{tr("bookings.inYourDiary")}</Btn>
                         <Btn variant="ghost" size="sm" onClick={() => setCancelling(b.id)}>Cancel</Btn>
                       </>
                     )}
                     {b.state === "Confirmed" && b.kind === "Mentor" && (
                       <ActionBtn variant="primary" size="sm" icon="Video" doneIcon="Copy"
-                                 done="Link copied"
+                                 done={tr("bookings.linkCopied")}
                                  act={() => copy(`https://meet.womsakhi.in/${b.id}`, "Link copied", "meet.womsakhi.in/" + b.id)}>
                         Join
                       </ActionBtn>
@@ -204,18 +212,18 @@ export default function BookingsPage() {
                         of the team who run the sessions, and nowhere else —
                         which is what it now says. */}
                     {b.state === "Finished" && (
-                      <NoteBtn label="Leave a note" icon="Star" stars
+                      <NoteBtn label={tr("bookings.leaveANote")} icon="Star" stars
                                title={`How was ${b.what}?`} to="the WomSakhi team"
-                               placeholder="What went well, and what would have helped? The team reads every one of these."
+                               placeholder={COPY.booking.feedbackAsk}
                                send={(n) => apiLeaveFeedback({
                                  text: n.text, rating: n.rating,
                                  type: "Program Feedback", program: b.what,
                                })}
-                               sent="Thank you — the team has your note"
-                               sentBody="It goes to the people who run WomSakhi. It is not shown publicly."
+                               sent={COPY.noteReceived}
+                               sentBody={COPY.booking.feedbackPrivate}
                                sentLink={null} />
                     )}
-                    {gone && <Btn href={b.kind === "Mentor" ? "/app/mentors" : "/app/events"} variant="soft" size="sm" icon="RotateCcw">Book again</Btn>}
+                    {gone && <Btn href={b.kind === "Mentor" ? "/app/mentors" : "/app/events"} variant="soft" size="sm" icon="RotateCcw">{tr("bookings.bookAgain")}</Btn>}
                   </div>
                 )}
               </Card>
@@ -226,9 +234,10 @@ export default function BookingsPage() {
         <Card>
           <EmptyState
             icon="CalendarX"
-            title={tab === "Past" ? "Nothing has finished yet" : "Nothing booked"}
+            title={tab === "Past" ? tr("bookings.nothingHasFinishedYet")
+              : tr("bookings.nothingBooked")}
             body="Mentor sessions, workshops and melas you say yes to appear here."
-            action={<Btn href="/app/events" variant="primary" iconEnd="ArrowRight">Find something</Btn>}
+            action={<Btn href="/app/events" variant="primary" iconEnd="ArrowRight">{tr("bookings.findSomething")}</Btn>}
           />
         </Card>
       )}

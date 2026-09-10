@@ -1,211 +1,696 @@
 "use client";
 
-import { useState } from "react";
-import * as Icons from "lucide-react";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import Link from "next/link";
+import * as Icons from "@/components/ux/icons";
 
-import { apiMarkAllRead, apiMarkRead } from "@/lib/member-api";
-import { useAction } from "@/lib/use-action";
-
-import { Btn, Card, EmptyState, I, IconTile, Progress, SectionHead, SourceNote, Tabs, plural } from "@/components/ux/kit";
 import { HomeShell } from "@/components/ux/home/HomeShell";
-import { useNotifications } from "@/components/ux/live";
+import { useNotifications, type UxNotification } from "@/components/ux/live";
+import {
+  apiChannels, apiReadAllNotifications, apiReadNotification, apiSetChannel,
+  type ApiChannel,
+} from "@/lib/me-api";
+import { apiNotificationPrefs, type NotificationPrefs } from "@/lib/member-api";
+import { useT } from "@/i18n";
 
-const TABS = ["All", "Unread", "Learning", "Work", "Money"] as const;
-const KIND_TAB: Record<string, string> = {
-  course: "Learning", work: "Work", money: "Money", mentor: "Learning",
-  circle: "All", event: "All",
+/**
+ * Notifications — the day as a line.
+ *
+ * ── Why a timeline and not a list ───────────────────────────────────────────
+ * A list says "here are fifty things". A line says "here is your day, and this
+ * is where you are in it": the same rows, in the order they actually reached
+ * her, with a marker for now. What needs her is a card; what does not is a
+ * line she can skim past. Weight tracks urgency instead of being uniform.
+ *
+ * ── One at a time ──────────────────────────────────────────────────────────
+ * The second mode hands her only the unread ones, one full card at a time,
+ * ending on an all-clear. Scrolling past a payment is easy; being handed it
+ * alone on a card is not.
+ *
+ * ── A bug worth remembering ────────────────────────────────────────────────
+ * This screen showed nothing but titles for a long time, and it looked like
+ * missing data. It was not: `ApiNotification` declared `desc`, `time` and
+ * `group`, and the server has always sent `body`, `href`, `when` and
+ * `created_at`. The response is cast at the boundary, so the wrong names
+ * compiled cleanly and the fields were simply never read.
+ */
+
+const LOOK: Record<string, { tint: string; ink: string; label: string }> = {
+  booking:    { tint: "--ux-tint-amber",  ink: "--ux-amber-ink",  label: "Open the booking" },
+  event:      { tint: "--ux-tint-amber",  ink: "--ux-amber-ink",  label: "See the event" },
+  program:    { tint: "--ux-tint-blue",   ink: "--ux-blue-ink",   label: "Continue" },
+  mentorship: { tint: "--ux-tint-violet", ink: "--ux-violet-ink", label: "Open" },
+  message:    { tint: "--ux-tint-blue",   ink: "--ux-blue-ink",   label: "Reply" },
+  money:      { tint: "--ux-tint-green",  ink: "--ux-green-ink",  label: "Open your wallet" },
+  circle:     { tint: "--ux-tint-pink",   ink: "--ux-pink-ink",   label: "Open the circle" },
+  safety:     { tint: "--ux-tint-pink",   ink: "--ux-pink-ink",   label: "See what happened" },
+  account:    { tint: "--ux-tint-violet", ink: "--ux-violet-ink", label: "Open" },
 };
+const look = (kind: string) => LOOK[kind] ?? LOOK.account;
 
-/** Notifications — what she may have missed. */
-export default function Notifications() {
-  const { data: NOTIFICATIONS, source, refetch } = useNotifications();
-  const [tab, setTab] = useState<string>("All");
+/**
+ * The kinds, grouped into the handful of things she would actually ask for.
+ *
+ * The server sends nine `kind` values and a woman does not think in nine
+ * categories — she thinks "did I get paid" and "is anything happening with my
+ * circle". Filtering by raw kind would offer her `mentorship` and `program` as
+ * separate choices, which is the data model leaking into the screen (§97).
+ *
+ * Safety is deliberately its own filter even though it is rarely non-empty:
+ * on the day it is not empty, it is the only thing she wants to see.
+ */
+const CATEGORIES: { id: string; label: string; icon: string; kinds: string[] }[] = [
+  { id: "all",    label: "Everything", icon: "LayoutGrid",   kinds: [] },
+  { id: "money",  label: "Money",      icon: "Wallet",       kinds: ["money"] },
+  { id: "work",   label: "Work",       icon: "Briefcase",    kinds: ["booking", "work", "opportunity"] },
+  { id: "learn",  label: "Learning",   icon: "BookOpen",     kinds: ["program", "course", "mentorship"] },
+  { id: "circle", label: "Your circle",icon: "UsersRound",   kinds: ["circle", "message", "event"] },
+  { id: "safety", label: "Safety",     icon: "ShieldAlert",  kinds: ["safety"] },
+];
+
+/** Types that expect something of her, rather than just telling her. */
+const ACTIONABLE = new Set(["booking", "event", "message", "mentorship", "safety"]);
+
+/** One row on the line: a notification, plus any identical ones folded under it. */
+type Bundle = { head: UxNotification; rest: UxNotification[] };
+
+function Ico({ name, className }: { name: string; className?: string }) {
+  const C = (Icons as unknown as Record<string, React.ComponentType<{ className?: string; strokeWidth?: number }>>)[name]
+    ?? Icons.Bell;
+  return <C className={className} strokeWidth={1.9} />;
+}
+
+function dayOf(iso?: string): string {
+  if (!iso) return "Earlier";
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return "Earlier";
+  const mid = (x: Date) => new Date(x.getFullYear(), x.getMonth(), x.getDate()).getTime();
+  const days = Math.round((mid(new Date()) - mid(d)) / 86_400_000);
+  if (days <= 0) return "Today";
+  if (days === 1) return "Yesterday";
+  if (days < 7) return new Intl.DateTimeFormat("en-GB", { weekday: "long" }).format(d);
+  return new Intl.DateTimeFormat("en-GB", { day: "numeric", month: "long" }).format(d);
+}
+
+function clockOf(iso?: string): string {
+  if (!iso) return "";
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return "";
+  const h = d.getHours();
+  return `${h % 12 === 0 ? 12 : h % 12}:${String(d.getMinutes()).padStart(2, "0")} ${h < 12 ? "AM" : "PM"}`;
+}
+
+export default function NotificationsPage() {
+  const tr = useT();
+  const { data: allRows, refetch } = useNotifications();
+  const [mode, setMode] = useState<"day" | "one">("day");
+  const [read, setRead] = useState<Set<string>>(new Set());
+  const [at, setAt] = useState(0);
+
+  const isUnread = useCallback(
+    (n: UxNotification) => n.unread && !read.has(n.id), [read]);
+
+  const markOne = useCallback(async (id: string) => {
+    setRead((p) => new Set(p).add(id));
+    try { await apiReadNotification(id); } catch { /* the list refetches anyway */ }
+  }, []);
+
+  const markAll = useCallback(async () => {
+    // Everything, not just the filtered view: a badge that survives
+    // "mark all read" because of a filter she forgot she set is a bug
+    // she has no way to diagnose.
+    setRead(new Set(allRows.map((n) => n.id)));
+    try { await apiReadAllNotifications(); } finally { refetch(); }
+  }, [allRows, refetch]);
+
+  const [category, setCategory] = useState("all");
 
   /**
-   * Which ones she has read — the server's answer, with presses still in
-   * flight allowed to show through.
-   *
-   * Both of these were local. Opening a notification pushed its id into a
-   * `read` array and marking all read filled that array with every id, and
-   * neither sent anything: fifty unread before, fifty unread after, and the
-   * badge in the topbar still said fifty on her next visit.
+   * Filtered before anything else is computed, so the day grouping, the
+   * actionable queue and the counts all describe what she is actually looking
+   * at. Filtering only the final list would leave "3 need you" above a screen
+   * showing none of them.
    */
-  const [pending, setPending] = useState<Record<string, boolean>>({});
-  const isUnread = (n: (typeof NOTIFICATIONS)[number]) => (pending[n.id] ?? n.unread);
+  const rows = useMemo(() => {
+    const cat = CATEGORIES.find((c) => c.id === category);
+    if (!cat || !cat.kinds.length) return allRows;
+    return allRows.filter((n) => cat.kinds.includes(n.kind));
+  }, [allRows, category]);
 
-  const markOne = useAction(
-    async (id: string) => { await apiMarkRead(id); },
-    {
-      onDone: refetch,
-      optimistic: (id) => setPending((p) => ({ ...p, [id]: false })),
-      rollback: (id) => setPending((p) => { const n = { ...p }; delete n[id]; return n; }),
-      fallbackError: "Could not mark that read just now. It is still waiting for you.",
-    },
+  const unread = rows.filter(isUnread);
+  const queue = unread.filter((n) => ACTIONABLE.has(n.kind)).slice(0, 8);
+
+  /**
+   * Only the newest few are drawn loud.
+   *
+   * "Weight tracks urgency" stops meaning anything when sixteen rows are all
+   * unread and all actionable — everything shouts, which is the same as
+   * nothing shouting. The three most recent that want an answer get the card;
+   * the rest stay lines, and are still one tap from the same actions.
+   */
+  const loudIds = useMemo(
+    () => new Set(unread.filter((n) => ACTIONABLE.has(n.kind)).slice(0, 3).map((n) => n.id)),
+    [unread],
   );
 
-  const markAll = useAction(
-    async () => { await apiMarkAllRead(); },
-    {
-      onDone: refetch,
-      optimistic: () => setPending(Object.fromEntries(NOTIFICATIONS.map((n) => [n.id, false]))),
-      rollback: () => setPending({}),
-      fallbackError: "Could not mark them read just now. Nothing has changed — try again in a moment.",
-    },
-  );
-  const shown = NOTIFICATIONS.filter((n) =>
-    tab === "All" ? true : tab === "Unread" ? isUnread(n) : KIND_TAB[n.kind] === tab);
-  const unreadCount = NOTIFICATIONS.filter(isUnread).length;
+  /**
+   * Grouped by day, newest first, and repeats folded together.
+   *
+   * Twenty-four identical "We've got your alert" rows is what the server
+   * actually holds, and printing all of them is honest but useless — the
+   * screen becomes one sentence repeated until nothing else can be seen.
+   * Consecutive rows sharing a title collapse into one, carrying a count and
+   * the times of the rest, which is the same treatment the circle joins get.
+   */
+  const days = useMemo(() => {
+    const map = new Map<string, Bundle[]>();
+    for (const n of rows) {
+      const key = dayOf(n.createdAt);
+      if (!map.has(key)) map.set(key, []);
+      const list = map.get(key)!;
+      // Folded across the whole day, not just runs. The repeats are
+      // interleaved with other kinds — alert, booking, alert — so matching
+      // only neighbours left ten copies of the same sentence standing.
+      const seen = list.find((x) => x.head.title === n.title && x.head.kind === n.kind);
+      if (seen) seen.rest.push(n);
+      else list.push({ head: n, rest: [] });
+    }
+    return [...map.entries()];
+  }, [rows]);
 
-  // Counts for the rail come from the same pass as the list, so a filter can
-  // never disagree with the number printed beside it.
-  const byTab = TABS.reduce<Record<string, number>>((m, t) => {
-    m[t] = NOTIFICATIONS.filter((n) =>
-      t === "All" ? true : t === "Unread" ? isUnread(n) : KIND_TAB[n.kind] === t).length;
-    return m;
-  }, {});
+  const counts = useMemo(() => {
+    const c: Record<string, number> = {};
+    for (const n of unread) c[n.kind] = (c[n.kind] ?? 0) + 1;
+    return c;
+  }, [unread]);
+
+  /**
+   * Unread per category, computed from the UNFILTERED rows.
+   *
+   * Deriving these from the filtered set would make every chip except the
+   * selected one read zero, which is worse than no number at all — she would
+   * conclude nothing is happening anywhere else.
+   */
+  const catCounts = useMemo(() => {
+    const c: Record<string, number> = { all: allRows.filter(isUnread).length };
+    for (const cat of CATEGORIES) {
+      if (!cat.kinds.length) continue;
+      c[cat.id] = allRows.filter((n) => isUnread(n) && cat.kinds.includes(n.kind)).length;
+    }
+    return c;
+  }, [allRows, read]);
 
   return (
-    <HomeShell
-      active="/app/notifications"
-      rail={
-        <div className="space-y-[15px]">
-          <Card>
-            <SectionHead title="At a glance" />
-            <p className="text-[30px] font-bold leading-none" style={{ color: "var(--ux-ink)" }}>
-              {unreadCount}
+    <HomeShell active="/app/notifications" bare>
+      <div className="flex flex-col gap-6">
+        <header className="flex flex-wrap items-end gap-5">
+          <div className="min-w-0 flex-1">
+            <p className="text-2xs font-bold uppercase tracking-[0.2em]" style={{ color: "var(--ux-brand)" }}>
+              {new Intl.DateTimeFormat("en-GB", { weekday: "long", day: "numeric", month: "long" }).format(new Date())}
             </p>
-            <p className="mt-1.5 text-[12px]" style={{ color: "var(--ux-muted)" }}>
-              unread of {NOTIFICATIONS.length} in the last week
-            </p>
-            <div className="mt-3">
-              <Progress pct={NOTIFICATIONS.length ? (unreadCount / NOTIFICATIONS.length) * 100 : 0}
-                        tone="--ux-brand-600" track="--ux-track" />
-            </div>
-            <ul className="mt-4 space-y-1">
-              {TABS.filter((t) => t !== "All" && t !== "Unread").map((t) => (
-                <li key={t}>
-                  <button onClick={() => setTab(t)}
-                          className="ux-hov flex w-full items-center justify-between rounded-[9px] px-2.5 py-2 text-[13px] transition-colors"
-                          style={{ background: tab === t ? "var(--ux-brand-tint)" : "transparent",
-                                   color: tab === t ? "var(--ux-brand)" : "var(--ux-ink-2)",
-                                   fontWeight: tab === t ? 600 : 400 }}>
-                    {t}
-                    <span className="text-[11.5px]" style={{ color: "var(--ux-faint)" }}>{byTab[t]}</span>
-                  </button>
-                </li>
-              ))}
-            </ul>
-          </Card>
-
-          <Card>
-            <SectionHead title="How you are notified" action="Settings"
-                         onAction={() => { window.location.href = "/app/settings/notifications"; }} />
-            <ul className="space-y-2.5">
-              {[["Bell", "In the app", "Always on"],
-                ["Mail", "Email", "Daily summary"],
-                ["MessageSquare", "SMS", "Payments only"]].map(([ic, label, val]) => (
-                <li key={label} className="flex items-center gap-2.5 text-[12.5px]">
-                  <I name={ic} className="h-[15px] w-[15px] shrink-0" style={{ color: "var(--ux-brand)" }} />
-                  <span className="flex-1" style={{ color: "var(--ux-ink-2)" }}>{label}</span>
-                  <span style={{ color: "var(--ux-muted)" }}>{val}</span>
-                </li>
-              ))}
-            </ul>
-          </Card>
-
-          <div className="relative overflow-hidden rounded-[16px] p-[18px]"
-               style={{ background: "linear-gradient(140deg, var(--ux-tint-lilac), var(--ux-tint-green))" }}>
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src="/ux/art/scene-woman-order-notification.webp" alt=""
-                 className="ux-float pointer-events-none absolute -bottom-3 -end-3 h-[96px] w-[96px] object-contain" />
-            <h3 className="relative w-[62%] text-[14px] font-semibold" style={{ color: "var(--ux-ink)" }}>
-              Nothing slips past
-            </h3>
-            <p className="relative mt-2 w-[62%] text-[12px] leading-relaxed" style={{ color: "var(--ux-muted)" }}>
-              Payments, replies and class reminders all land here first.
-            </p>
+            <h1 className="mt-2 max-w-[20ch] text-[clamp(1.5rem,3.2vw,2.25rem)] font-extrabold leading-[1.1] tracking-[-0.035em]"
+                style={{ color: "var(--ux-ink)" }}>
+              {queue.length > 0 ? (
+                <>
+                  {queue.length === 1 ? "One thing needs" : `${queue.length} things need`} you
+                  {unread.length > queue.length && (
+                    <>, and <span style={{ color: "var(--ux-amber-ink)" }}>{unread.length - queue.length} to read</span></>
+                  )}.
+                </>
+              ) : unread.length > 0 ? <>{unread.length} to read, nothing urgent.</> : <>{tr("notifications.youAreAllCaughtUp")}</>}
+            </h1>
           </div>
+
+        {/* Categories. Only shown when there is more than one thing to choose
+            between — a single chip row that never changes anything is noise. */}
+        {CATEGORIES.filter((c) => c.id === "all" || catCounts[c.id] > 0).length > 2 && (
+          <div className="flex flex-wrap gap-2" role="group" aria-label={tr("notifications.filterNotifications")}>
+            {CATEGORIES.filter((c) => c.id === "all" || catCounts[c.id] > 0).map((c) => {
+              const on = category === c.id;
+              const n = catCounts[c.id] ?? 0;
+              return (
+                <button key={c.id} type="button" onClick={() => setCategory(c.id)}
+                        aria-pressed={on}
+                        className="ux-press ux-sq inline-flex items-center gap-2 rounded-[12px] border px-3.5 py-2.5 text-xsm font-semibold"
+                        style={{
+                          borderColor: on ? "var(--ux-fill)" : "var(--ux-line-strong)",
+                          background: on ? "var(--ux-fill)" : "var(--ux-surface)",
+                          color: on ? "var(--ux-on-brand)" : "var(--ux-ink)",
+                        }}>
+                  <Ico name={c.icon} className="h-[0.9375rem] w-[0.9375rem]" />
+                  {c.label}
+                  {n > 0 && (
+                    <span className="rounded-full px-1.5 text-2xs font-bold"
+                          style={{ background: on ? "rgba(255,255,255,0.22)" : "var(--ux-brand-tint)",
+                                   color: on ? "var(--ux-on-brand)" : "var(--ux-brand)" }}>
+                      {n}
+                    </span>
+                  )}
+                </button>
+              );
+            })}
+          </div>
+        )}
+
+          <div className="flex items-center gap-2.5">
+            <div className="flex gap-1 rounded-full p-1"
+                 style={{ background: "var(--ux-surface)", border: "1px solid var(--ux-line)" }}>
+              {([["day", "Your day", "List"], ["one", "One at a time", "Target"]] as const).map(([m, label, icon]) => (
+                <button key={m} type="button" onClick={() => { setMode(m); setAt(0); }} aria-pressed={mode === m}
+                        className="ux-press flex items-center gap-2 rounded-full px-4 py-2.5 text-xsm font-bold"
+                        style={mode === m
+                          ? { background: "linear-gradient(96deg, var(--ux-rib-2), var(--ux-rib-3))", color: "var(--ux-on-brand)" }
+                          : { color: "var(--ux-muted)" }}>
+                  <Ico name={icon} className="h-[14px] w-[14px]" /> {label}
+                </button>
+              ))}
+            </div>
+            <button type="button" onClick={markAll} disabled={unread.length === 0}
+                    className="ux-press flex min-h-[44px] items-center gap-2 rounded-full px-4 text-xsm font-bold disabled:opacity-40"
+                    style={{ background: "var(--ux-surface)", border: "1px solid var(--ux-line)", color: "var(--ux-ink-2)" }}>
+              <Icons.CheckCheck className="h-4 w-4" />{tr("notifications.markAllRead")}</button>
+          </div>
+        </header>
+
+        <div className={`grid grid-cols-1 gap-7 ${mode === "day" ? "xl:grid-cols-[minmax(0,1fr)_274px]" : ""}`}>
+          {mode === "day" ? (
+            <>
+              <Timeline days={days} isUnread={isUnread} onRead={markOne} loudIds={loudIds} />
+              <Rail counts={counts} unread={unread.length} />
+            </>
+          ) : (
+            <Focus queue={queue} at={at} setAt={setAt} onRead={markOne} onDone={() => setMode("day")} />
+          )}
         </div>
-      }
-    >
-      <div className="mb-[18px] flex items-end justify-between gap-4">
+      </div>
+    </HomeShell>
+  );
+}
+
+/* ── the day ────────────────────────────────────────────────────────────── */
+
+function Timeline({
+  days, isUnread, onRead, loudIds,
+}: {
+  days: [string, Bundle[]][];
+  isUnread: (n: UxNotification) => boolean;
+  onRead: (id: string) => void;
+  loudIds: Set<string>;
+}) {
+  const tr = useT();
+  if (days.length === 0) {
+    return (
+      <section className="ux-sq grid place-items-center rounded-[20px] p-12 text-center"
+               style={{ background: "var(--ux-surface)", border: "1px solid var(--ux-line)" }}>
         <div>
-          <h1 className="text-[24px] font-bold" style={{ color: "var(--ux-ink)" }}>Notifications</h1>
-          <p className="mt-1.5 text-[13px]" style={{ color: "var(--ux-muted)" }}>
-            {unreadCount
-              ? `${unreadCount} ${plural("notification", unreadCount)} you have not read`
-              : "You are all caught up."}
-          </p>
+          <Icons.BellOff className="mx-auto h-[32px] w-[32px]" style={{ color: "var(--ux-faint)" }} />
+          <p className="mt-3 text-sm font-semibold" style={{ color: "var(--ux-ink)" }}>{tr("notifications.nothingYet")}</p>
+          <p className="mt-1 text-xsm" style={{ color: "var(--ux-muted)" }}>{tr("notifications.paymentsRepliesAndClassRemindersLa")}</p>
         </div>
-        <div className="flex items-center gap-2.5">
-          <Tabs items={[...TABS]} active={tab} onChange={setTab} />
-          <Btn variant="outline" size="sm"
-               icon={markAll.busy ? "Loader" : "CheckCheck"}
-               disabled={markAll.busy || unreadCount === 0}
-               onClick={() => void markAll.run()}>
-            {markAll.busy ? "Marking…" : "Mark all read"}
-          </Btn>
+      </section>
+    );
+  }
+
+  return (
+    <div className="ux-tl">
+      {days.map(([day, items], di) => (
+        <div key={day}>
+          {di === 0 ? (
+            /* Where she is in the day — only ever on the newest group. */
+            <div className="ux-tl-row items-center py-1">
+              <span className="pe-0 text-end text-xs font-semibold" style={{ color: "var(--ux-muted)" }}>
+                {clockOf(new Date().toISOString())}
+              </span>
+              <span className="flex items-center" style={{ paddingInlineStart: 14.5 }}>
+                <i className="block h-[11px] w-[11px] rounded-full"
+                   style={{ background: "var(--ux-rib-3)", boxShadow: "0 0 0 4px var(--ux-tint-pink)" }} />
+              </span>
+              <span className="flex items-center gap-2.5 text-2xs font-bold uppercase tracking-[0.2em]"
+                    style={{ color: "var(--ux-pink-ink)" }}>
+                Now
+                <span className="h-px flex-1"
+                      style={{ background: "linear-gradient(90deg, var(--ux-pink), transparent)" }} />
+              </span>
+            </div>
+          ) : (
+            <div className="ux-tl-row my-5 items-center">
+              <span />
+              <span className="col-span-2 flex items-center gap-3 text-2xs font-bold uppercase tracking-[0.18em]"
+                    style={{ color: "var(--ux-faint)" }}>
+                {day}
+                <span className="h-px flex-1" style={{ background: "var(--ux-line)" }} />
+              </span>
+            </div>
+          )}
+
+          {items.map((bundle) => (
+            <Event key={bundle.head.id} bundle={bundle} unread={isUnread(bundle.head)}
+                   onRead={onRead} loud={loudIds.has(bundle.head.id)} isUnread={isUnread} />
+          ))}
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function Event({
+  bundle, unread, onRead, loud, isUnread,
+}: {
+  bundle: Bundle; unread: boolean; loud: boolean;
+  onRead: (id: string) => void; isUnread: (n: UxNotification) => boolean;
+}) {
+  const { head: n, rest } = bundle;
+  const [open, setOpen] = useState(false);
+  const l = look(n.kind);
+  const folded = rest.length;
+  const unreadInBundle = (unread ? 1 : 0) + rest.filter(isUnread).length;
+
+  /** Marking the row read marks everything folded under it. */
+  const readAll = () => { onRead(n.id); for (const r of rest) onRead(r.id); };
+
+  return (
+    <div className="ux-tl-row items-start py-2.5">
+      <span className="pt-[8px] text-end text-xs font-semibold" style={{ color: "var(--ux-faint)" }}>
+        {clockOf(n.createdAt) || n.when}
+      </span>
+      <span className="ux-tl-node grid h-[34px] w-[34px] place-items-center rounded-[12px]"
+            style={{ background: `var(${l.tint})`, color: `var(${l.ink})` }}>
+        <Ico name={n.icon} className="h-[17px] w-[17px]" />
+      </span>
+
+      <div className="rounded-[16px] transition-colors"
+           style={loud
+             ? { background: "var(--ux-surface)", border: "1px solid var(--ux-line-strong)",
+                 boxShadow: "var(--ux-shadow-card)", padding: 16 }
+             : { background: "transparent", border: "1px solid transparent", padding: "6px 0" }}>
+        <div className="flex items-center gap-3">
+          <h2 className="min-w-0 flex-1 text-sm font-bold" style={{ color: "var(--ux-ink)" }}>
+            {n.title}
+            {folded > 0 && (
+              <span className="ms-2 rounded-full px-2 py-[3px] text-2xs font-bold align-middle"
+                    style={{ background: `var(${l.tint})`, color: `var(${l.ink})` }}>
+                {folded + 1}&#215;
+              </span>
+            )}
+          </h2>
+          {unreadInBundle > 0 && (
+            <span className="h-[7px] w-[7px] shrink-0 rounded-full" style={{ background: "var(--ux-rib-3)" }} />
+          )}
+        </div>
+        {n.body && (
+          <p className="mt-1 text-xsm leading-relaxed" style={{ color: "var(--ux-muted)" }}>{n.body}</p>
+        )}
+
+        {/* The folded ones, on request — each keeps its own time. */}
+        {folded > 0 && (
+          <>
+            <button type="button" onClick={() => setOpen((o) => !o)}
+                    className="ux-press mt-1.5 flex min-h-[24px] items-center gap-1.5 py-1 text-xs font-bold"
+                    style={{ color: "var(--ux-brand)" }}>
+              {open ? "Hide" : `Show the other ${folded}`}
+              <Icons.ChevronDown className={`h-[13px] w-[13px] transition-transform ${open ? "rotate-180" : ""}`} />
+            </button>
+            {open && (
+              <div className="mt-2 flex flex-col gap-1.5 ps-3"
+                   style={{ borderInlineStart: "2px solid var(--ux-line)" }}>
+                {rest.map((r) => (
+                  <div key={r.id} className="flex items-center gap-2 text-xs" style={{ color: "var(--ux-muted)" }}>
+                    {isUnread(r) && (
+                      <span className="h-[5px] w-[5px] shrink-0 rounded-full" style={{ background: "var(--ux-rib-3)" }} />
+                    )}
+                    <span>{clockOf(r.createdAt) || r.when}</span>
+                    {r.href && (
+                      <Link href={r.href} onClick={() => onRead(r.id)} className="ms-auto font-semibold"
+                            style={{ color: "var(--ux-brand)" }}>Open</Link>
+                    )}
+                  </div>
+                ))}
+              </div>
+            )}
+          </>
+        )}
+
+        <div className="mt-3 flex flex-wrap gap-2">
+          {n.href && (
+            <Link href={n.href} onClick={readAll}
+                  className="ux-press flex min-h-[36px] items-center gap-2 rounded-[12px] px-3.5 text-xs font-bold"
+                  style={loud
+                    ? { background: "linear-gradient(96deg, var(--ux-rib-2), var(--ux-rib-3))", color: "var(--ux-on-brand)" }
+                    : { background: "var(--ux-surface)", border: "1px solid var(--ux-line-strong)", color: "var(--ux-ink-2)" }}>
+              {l.label}
+              <Icons.ArrowRight className="h-[13px] w-[13px]" />
+            </Link>
+          )}
+          {unreadInBundle > 0 && (
+            <button type="button" onClick={readAll}
+                    className="ux-press flex min-h-[36px] items-center gap-2 rounded-[12px] px-3.5 text-xs font-bold"
+                    style={{ background: "var(--ux-surface)", border: "1px solid var(--ux-line-strong)", color: "var(--ux-muted)" }}>
+              <Icons.Check className="h-[13px] w-[13px]" />
+              {folded > 0 ? `Mark all ${unreadInBundle} read` : "Mark read"}
+            </button>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ── one at a time ──────────────────────────────────────────────────────── */
+
+function Focus({
+  queue, at, setAt, onRead, onDone,
+}: {
+  queue: UxNotification[]; at: number; setAt: (n: number) => void;
+  onRead: (id: string) => void; onDone: () => void;
+}) {
+  const tr = useT();
+  const n = queue[at];
+
+  if (queue.length === 0 || !n) {
+    return (
+      <section className="mx-auto w-full max-w-[620px] rounded-[24px] p-12 text-center"
+               style={{ background: "var(--ux-surface)", border: "1px solid var(--ux-line-strong)" }}>
+        <Icons.CheckCheck className="mx-auto h-[40px] w-[40px]" style={{ color: "var(--ux-green-ink)" }} />
+        <h2 className="mt-4 text-2xl font-extrabold tracking-[-0.02em]" style={{ color: "var(--ux-ink)" }}>{tr("notifications.thatIsEverything")}</h2>
+        <p className="mt-2 text-sm" style={{ color: "var(--ux-muted)" }}>{tr("notifications.nothingElseNeedsYouTheRest")}</p>
+        <button type="button" onClick={onDone}
+                className="ux-press ux-btn-g mx-auto mt-6 flex min-h-[44px] items-center gap-2 rounded-[12px] px-5 text-xsm font-bold"
+                style={{ background: "linear-gradient(96deg, var(--ux-rib-2), var(--ux-rib-3))", color: "var(--ux-on-brand)" }}>{tr("notifications.backToYourDay")}<Icons.ArrowRight className="h-4 w-4" />
+        </button>
+      </section>
+    );
+  }
+
+  const l = look(n.kind);
+  const next = () => { onRead(n.id); setAt(at + 1); };
+
+  return (
+    <section className="mx-auto w-full max-w-[620px]">
+      <div className="mb-6 flex gap-1.5">
+        {queue.map((q, i) => (
+          <i key={q.id} className="h-[4px] flex-1 rounded-full"
+             style={{ background: i < at
+               ? "linear-gradient(90deg, var(--ux-rib-2), var(--ux-rib-3))" : "var(--ux-track)" }} />
+        ))}
+      </div>
+
+      <div className="rounded-[24px] p-8 text-center"
+           style={{ background: "var(--ux-surface)", border: "1px solid var(--ux-line-strong)",
+                    boxShadow: "var(--ux-shadow-card)" }}>
+        <span className="mx-auto grid h-[56px] w-[56px] place-items-center rounded-[20px]"
+              style={{ background: `var(${l.tint})`, color: `var(${l.ink})` }}>
+          <Ico name={n.icon} className="h-[26px] w-[26px]" />
+        </span>
+        <h2 className="mt-5 text-xl font-extrabold leading-[1.25] tracking-[-0.025em]" style={{ color: "var(--ux-ink)" }}>
+          {n.title}
+        </h2>
+        {n.body && <p className="mt-3 text-sm" style={{ color: "var(--ux-muted)" }}>{n.body}</p>}
+        <div className="mt-7 flex flex-wrap justify-center gap-2.5">
+          {n.href && (
+            <Link href={n.href} onClick={() => onRead(n.id)}
+                  className="ux-press flex min-h-[46px] items-center gap-2 rounded-[12px] px-6 text-xsm font-bold"
+                  style={{ background: "linear-gradient(96deg, var(--ux-rib-2), var(--ux-rib-3))", color: "var(--ux-on-brand)" }}>
+              {l.label} <Icons.ArrowRight className="h-4 w-4" />
+            </Link>
+          )}
+          {/* Skipping is a choice, not a failure — so it is offered plainly. */}
+          <button type="button" onClick={next}
+                  className="ux-press flex min-h-[46px] items-center gap-2 rounded-[12px] px-5 text-xsm font-bold"
+                  style={{ background: "var(--ux-surface-2)", border: "1px solid var(--ux-line-strong)", color: "var(--ux-ink)" }}>
+            <Icons.Check className="h-4 w-4" />{tr("notifications.doneWithThis")}</button>
         </div>
       </div>
 
-      <SourceNote source={source} what="notifications" />
+      <div className="mt-5 flex items-center justify-between text-xs" style={{ color: "var(--ux-muted)" }}>
+        <button type="button" onClick={() => setAt(Math.max(0, at - 1))} disabled={at === 0}
+                className="ux-press flex items-center gap-1.5 font-bold disabled:opacity-40">
+          <Icons.ChevronLeft className="h-4 w-4" /> Back
+        </button>
+        <span>{at + 1} of {queue.length}</span>
+        <button type="button" onClick={() => setAt(at + 1)} className="ux-press flex items-center gap-1.5 font-bold">{tr("notifications.skipForNow")}<Icons.ChevronRight className="h-4 w-4" />
+        </button>
+      </div>
+    </section>
+  );
+}
 
-      {/* A refusal belongs where she pressed, in words she can act on. */}
-      {(markAll.error || markOne.error) && (
-        <p role="alert" className="ux-slide-up mb-3 rounded-[11px] p-3 text-[12.5px] leading-relaxed"
-           style={{ background: "var(--ux-tint-orange)", color: "var(--ux-orange-ink)" }}>
-          {markAll.error || markOne.error}
+/* ── the rail ───────────────────────────────────────────────────────────── */
+
+const DOT: Record<string, string> = {
+  safety: "--ux-pink", booking: "--ux-amber", mentorship: "--ux-violet",
+  event: "--ux-amber", program: "--ux-blue", message: "--ux-blue",
+  money: "--ux-green", circle: "--ux-pink", account: "--ux-violet",
+};
+const NAME: Record<string, string> = {
+  safety: "Safety", booking: "Bookings", mentorship: "Mentors", event: "Events",
+  program: "Learning", message: "Messages", money: "Money", circle: "Circles", account: "Account",
+};
+
+/**
+ * How she is told — the real delivery toggles.
+ *
+ * These read "Always / Daily / Payments" as fixed text for a while, which was
+ * decorative: the server has had `/notifications/channels` all along, with a
+ * real on/off per channel and a PATCH to set it. Text that looks like a
+ * setting but cannot be changed is worse than no panel at all.
+ */
+function Channels({ card, style }: { card: string; style: React.CSSProperties }) {
+  const tr = useT();
+  const [items, setItems] = useState<ApiChannel[] | null>(null);
+  const [busy, setBusy] = useState<string | null>(null);
+
+  useEffect(() => {
+    const ac = new AbortController();
+    apiChannels(ac.signal).then(setItems).catch(() => setItems([]));
+    return () => ac.abort();
+  }, []);
+
+  const flip = async (c: ApiChannel) => {
+    setBusy(c.label);
+    // Shown immediately, put back if the server disagrees.
+    setItems((p) => p?.map((x) => (x.label === c.label ? { ...x, on: !x.on } : x)) ?? p);
+    try { await apiSetChannel(c.label, !c.on); }
+    catch { setItems((p) => p?.map((x) => (x.label === c.label ? { ...x, on: c.on } : x)) ?? p); }
+    finally { setBusy(null); }
+  };
+
+  return (
+    <section className={card} style={style}>
+      <h2 className="mb-3 flex items-center gap-2 text-sm font-bold" style={{ color: "var(--ux-ink)" }}>
+        <Icons.Sparkles className="h-[15px] w-[15px]" style={{ color: "var(--ux-brand)" }} />{tr("notifications.howYouAreTold")}<Link href="/app/settings/notifications" className="ux-tap ms-auto text-xs font-semibold"
+              style={{ color: "var(--ux-brand)" }}>Settings</Link>
+      </h2>
+      {items === null ? (
+        <p className="text-xsm" style={{ color: "var(--ux-muted)" }}>Loading…</p>
+      ) : items.length === 0 ? (
+        <p className="text-xsm" style={{ color: "var(--ux-muted)" }}>{tr("notifications.couldNotLoadYourChannels")}</p>
+      ) : (
+        items.map((c) => (
+          <button key={c.id} type="button" onClick={() => flip(c)} disabled={busy === c.label}
+                  aria-pressed={c.on}
+                  className="ux-press flex min-h-[38px] w-full items-center gap-2.5 text-xsm disabled:opacity-50"
+                  style={{ color: "var(--ux-muted)" }}>
+            <Ico name={c.icon} className="h-[14px] w-[14px]" />
+            {c.label}
+            <span className="ms-auto grid h-[20px] w-[34px] shrink-0 items-center rounded-full px-[2px] transition-colors"
+                  style={{ background: c.on ? "var(--ux-brand)" : "var(--ux-track)",
+                           justifyItems: c.on ? "end" : "start" }}>
+              <i className="block h-[16px] w-[16px] rounded-full" style={{ background: "var(--ux-surface)" }} />
+            </span>
+          </button>
+        ))
+      )}
+    </section>
+  );
+}
+
+/**
+ * Quiet hours, as she actually set them.
+ *
+ * This printed "9:30 PM — 7:00 AM" as fixed text, which was not her window —
+ * there were no quiet-hours fields on the server at all, and the button under
+ * it went to the notification preferences page, which had nowhere to put one.
+ */
+function QuietCard() {
+  const tr = useT();
+  const [p, setP] = useState<NotificationPrefs | null>(null);
+  useEffect(() => {
+    let live = true;
+    apiNotificationPrefs().then((v) => live && setP(v)).catch(() => {});
+    return () => { live = false; };
+  }, []);
+
+  const fmt = (m: number) => {
+    const h = Math.floor(m / 60) % 24, mm = m % 60;
+    return `${h % 12 === 0 ? 12 : h % 12}:${String(mm).padStart(2, "0")} ${h < 12 ? "AM" : "PM"}`;
+  };
+  const days = p?.quiet_days.filter(Boolean).length ?? 7;
+
+  return (
+    <section className="overflow-hidden rounded-[20px] p-4"
+             style={{ background: "linear-gradient(150deg, var(--ux-brand-900), var(--ux-fill))" }}>
+      <h2 className="mb-2 flex items-center gap-2 text-sm font-bold" style={{ color: "var(--ux-on-brand)" }}>
+        <Icons.Moon className="h-[15px] w-[15px]" style={{ color: "var(--ux-rib-5)" }} />{tr("notifications.quietHours")}</h2>
+      {p && p.quiet_hours ? (
+        <>
+          <b className="block text-lg font-extrabold tabular-nums" style={{ color: "var(--ux-on-brand)" }}>
+            {fmt(p.quiet_start)} — {fmt(p.quiet_end)}
+          </b>
+          <p className="mt-1 text-xs leading-relaxed" style={{ color: "var(--ux-on-brand-2)" }}>
+            {days === 7 ? "Every night" : days === 0 ? "No nights picked" : `${days} nights a week`}.
+            Anything urgent still waits here for the morning.
+          </p>
+        </>
+      ) : (
+        <p className="text-xs leading-relaxed" style={{ color: "var(--ux-on-brand-2)" }}>
+          {p ? tr("notifications.offEverythingReachesYouAtAny")
+              : tr("notifications.nothingBuzzesWhileYouSleep")}
         </p>
       )}
+      <Link href="/app/settings/quiet-hours"
+            className="ux-press mt-3 flex min-h-[38px] items-center justify-center gap-2 rounded-[12px] text-xs font-bold"
+            style={{ background: "var(--ux-on-brand-btn)", color: "var(--ux-on-brand-btn-ink)" }}>
+        {p && p.quiet_hours ? tr("notifications.changeYourQuietHours")
+              : tr("notifications.setYourQuietHours")}
+        <Icons.ArrowRight className="h-[14px] w-[14px]" />
+      </Link>
+    </section>
+  );
+}
 
-      <Card pad={0}>
-        {shown.length ? (
-          <ul>
-            {shown.map((n, i) => {
-              const unread = isUnread(n);
-              return (
-                <li key={n.id} className="ux-rise" style={{ ["--i" as string]: i }}>
-                  <button
-                    onClick={() => { if (unread) void markOne.run(n.id); }}
-                    className="ux-hov flex w-full items-start gap-3.5 px-[18px] py-4 text-start transition-colors hover:bg-[var(--ux-surface-2)]"
-                    style={{
-                      background: unread ? "var(--ux-brand-tint)" : "transparent",
-                      borderTop: i ? "1px solid var(--ux-line)" : "none",
-                    }}
-                  >
-                    <IconTile icon={n.icon} tint={n.tint} ink={n.ink} size={40} />
-                    <span className="min-w-0 flex-1">
-                      <span className="flex items-center gap-2">
-                        <span className="truncate text-[13.5px] font-semibold" style={{ color: "var(--ux-ink)" }}>
-                          {n.title}
-                        </span>
-                        {unread && (
-                          <span className="ux-ping relative h-[7px] w-[7px] shrink-0 rounded-full"
-                                style={{ background: "var(--ux-brand-600)" }} aria-label="unread" />
-                        )}
-                      </span>
-                      <span className="mt-1 block text-[12.5px] leading-relaxed" style={{ color: "var(--ux-muted)" }}>
-                        {n.body}
-                      </span>
-                      <span className="mt-1.5 block text-[11px]" style={{ color: "var(--ux-faint)" }}>{n.when}</span>
-                    </span>
-                    <Icons.ChevronRight className="ux-arrow mt-1 h-4 w-4 shrink-0" style={{ color: "var(--ux-faint)" }} />
-                  </button>
-                </li>
-              );
-            })}
-          </ul>
+function Rail({ counts, unread }: { counts: Record<string, number>; unread: number }) {
+  const tr = useT();
+  const rows = Object.entries(counts).sort((a, b) => b[1] - a[1]);
+  const card = "ux-sq rounded-[20px] p-4";
+  const style = { background: "var(--ux-surface)", border: "1px solid var(--ux-line)",
+                  boxShadow: "var(--ux-shadow-card)" } as const;
+
+  return (
+    <div className="flex flex-col gap-4">
+      <section className={card} style={style}>
+        <h2 className="mb-3 flex items-center gap-2 text-sm font-bold" style={{ color: "var(--ux-ink)" }}>
+          <Icons.Bell className="h-[15px] w-[15px]" style={{ color: "var(--ux-brand)" }} />
+          Unread
+          <b className="ms-auto text-base font-extrabold tabular-nums">{unread}</b>
+        </h2>
+        {rows.length === 0 ? (
+          <p className="text-xsm" style={{ color: "var(--ux-muted)" }}>{tr("notifications.nothingUnread")}</p>
         ) : (
-          <div className="p-4">
-            <EmptyState
-              icon="BellOff"
-              title={tab === "Unread" ? "Nothing unread" : `No ${tab.toLowerCase()} notifications`}
-              body="When something happens that needs you, it will appear here."
-              action={<Btn variant="soft" onClick={() => setTab("All")}>Show all</Btn>}
-            />
+          <div className="flex flex-col gap-2">
+            {rows.map(([kind, n]) => (
+              <div key={kind} className="flex items-center gap-2.5 text-xsm" style={{ color: "var(--ux-muted)" }}>
+                <span className="h-[8px] w-[8px] shrink-0 rounded-full" style={{ background: `var(${DOT[kind] ?? "--ux-violet"})` }} />
+                {NAME[kind] ?? kind}
+                <b className="ms-auto font-bold" style={{ color: "var(--ux-ink)" }}>{n}</b>
+              </div>
+            ))}
           </div>
         )}
-      </Card>
-    </HomeShell>
+      </section>
+
+      <QuietCard />
+
+      <Channels card={card} style={style} />
+    </div>
   );
 }

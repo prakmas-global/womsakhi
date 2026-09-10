@@ -3,7 +3,7 @@ from datetime import datetime, timezone
 from fastapi import APIRouter, Depends, HTTPException, status
 
 from app.core.deps import get_current_user
-from app.core.security import hash_password, verify_password
+from app.core.security import hash_password, verify_password, hash_password_async, verify_password_async
 from app.db.mongodb import get_database
 from app.models.user import UserModel
 from app.schemas.auth import ChangePasswordRequest, UpdateProfileRequest, UserResponse
@@ -43,7 +43,7 @@ async def change_password(
     payload: ChangePasswordRequest,
     current_user: dict = Depends(get_current_user),
 ):
-    if not verify_password(payload.current_password, current_user["hashed_password"]):
+    if not await verify_password_async(payload.current_password, current_user["hashed_password"]):
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Current password is incorrect",
@@ -59,7 +59,7 @@ async def change_password(
     await db[UserModel.collection_name].update_one(
         {"_id": current_user["_id"]},
         {"$set": {
-            "hashed_password": hash_password(payload.new_password),
+            "hashed_password": await hash_password_async(payload.new_password),
             "updated_at": datetime.now(timezone.utc),
         }},
     )

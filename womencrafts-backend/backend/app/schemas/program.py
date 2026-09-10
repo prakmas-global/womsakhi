@@ -13,6 +13,17 @@ Mode = Literal["Online", "Offline", "Hybrid"]
 ProgramStatus = Literal["Active", "Upcoming", "Completed", "Draft", "Archived"]
 
 
+class CurriculumLesson(BaseModel):
+    n: int
+    title: str
+    mins: int = 0
+
+
+class CurriculumSection(BaseModel):
+    section: str
+    lessons: list[CurriculumLesson] = []
+
+
 class ProgramResponse(BaseModel):
     id: str
     name: str
@@ -29,6 +40,18 @@ class ProgramResponse(BaseModel):
     status: str
     note: str
     bar: str
+    #: What is actually in this course.
+    #:
+    #: Empty for every seeded programme today, and the detail screen shows the
+    #: section only when it is not — because what was there before was ONE
+    #: hardcoded digital-marketing syllabus rendered for every programme in the
+    #: catalogue, complete with lessons already ticked off. A woman opening a
+    #: tailoring course was shown somebody else's curriculum and told she had
+    #: finished half of it.
+    #:
+    #: Progress is deliberately NOT here. What she has completed belongs to her
+    #: enrolment, not to the shared course record.
+    curriculum: list[CurriculumSection] = []
 
 
 class ProgramListResponse(BaseModel):

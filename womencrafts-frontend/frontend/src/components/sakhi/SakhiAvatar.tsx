@@ -33,8 +33,22 @@ export default function SakhiAvatar({
   playing,
   size,
   className = "",
-  talkingSrc = "/sakhi-talking.webp",
-  stillSrc = "/sakhi-still.png",
+  /*
+    520px, not 160.
+
+    `sakhi-talking-160.png` was 160x160 and the stage paints her at 252x252 —
+    the browser was upscaling the file 1.6x BEFORE the 2x display doubled it
+    again, an effective 0.63. She went visibly soft the moment she started
+    talking and snapped back when she stopped, because the still frame was
+    360px and the talking one was not. The 160px encode was correct for the
+    46px launcher it was made for and was never re-checked against the stage.
+
+    Both frames are 520px now, from sources that were already on disk and
+    referenced by nothing — `sakhi-talking.webp` at 1.7MB and `sakhi-still.png`
+    at 354kB, re-encoded to a weight that can ship.
+  */
+  talkingSrc = "/sakhi-talking-520.webp",
+  stillSrc = "/sakhi-still-520.webp",
   idleSrc,
 }: {
   /** Mouth track — accepted for API compatibility; the clip carries its own. */
@@ -63,7 +77,11 @@ export default function SakhiAvatar({
       <div
         className="absolute inset-0 -z-10 rounded-full transition-opacity duration-700"
         style={{
-          background: "radial-gradient(circle at 50% 58%, #D21F7C4D, #7440A600 68%)",
+          // Brand magenta at 30%, fading out. Written as a colour-mix on the
+          // token rather than #D21F7C4D so it follows the palette — the second
+          // stop was a purple at zero alpha, which is just `transparent`.
+          background:
+            "radial-gradient(circle at 50% 58%, color-mix(in srgb, var(--color-brand) 30%, transparent), transparent 68%)",
           filter: "blur(26px)",
           opacity: playing ? 0.9 : 0.4,
           transform: "scale(1.15)",

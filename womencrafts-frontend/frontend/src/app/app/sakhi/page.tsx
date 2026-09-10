@@ -1,17 +1,32 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
-import * as Icons from "lucide-react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { COPY } from "@/components/ux/copy";
+import Link from "next/link";
+import * as Icons from "@/components/ux/icons";
 
-import { useT } from "@/i18n";
-import { Btn, Card, Chip, I, SectionHead } from "@/components/ux/kit";
+import { useI18n, LOCALES, useT } from "@/i18n";
+import { useAuth } from "@/context/AuthContext";
 import { HomeShell } from "@/components/ux/home/HomeShell";
+import { CAN, FOLLOW_UPS, MODE_PREFIX, STARTERS, WONT } from "@/components/ux/sakhi/prompts";
+import { ConvBar, Disclosure, SakhiRail, Thread, Voice, Welcome, type Bubble } from "./views";
+import { Actions, Answer, Cites, Composer, DraftCard, Ico, ModeSwitch, Picker, StopPill, Typing } from "@/components/ux/sakhi/parts";
+import { Sheet } from "@/components/ux/kit/sheet";
+import { Btn } from "@/components/ux/kit";
+import { useToast } from "@/design-system/feedback/ToastProvider";
 import {
   apiSakhiConversation,
   apiSakhiConversations,
   apiSakhiDelete,
+  apiSakhiPin,
+  apiSakhiRate,
+  apiSakhiRename,
+  apiSakhiSave,
+  apiSakhiSaved,
   apiSakhiStatus,
+  apiSakhiUnsave,
   sakhiChat,
+  type SakhiSaved,
   sakhiConfirm,
   type Helpline,
   type SakhiConversation,
@@ -19,31 +34,43 @@ import {
 } from "@/lib/sakhi-api";
 
 /**
- * Sakhi, on her phone.
+ * Ask Sakhi.
  *
- * Three things on this screen are deliberate and worth not undoing.
+ * ── Three things here are deliberate and worth not undoing ──────────────────
  *
- * **The confirmation is a card, not a dialog.** A dialog on a phone covers the
- * conversation it is asking about, so she has to remember what she asked while
- * deciding whether to allow it. The card sits in the thread with the sentence
- * the server built from the database, and both buttons are the same size —
- * "no" is not a smaller, greyer afterthought.
+ * **The confirmation is a card in the thread, not a dialog.** A dialog on a
+ * phone covers the conversation it is asking about, so she has to remember what
+ * she asked while deciding whether to allow it. The card sits inline with the
+ * sentence the *server* built from the database, and both buttons are the same
+ * size — "no" is not a smaller, greyer afterthought.
  *
- * **The safety reply looks nothing like Sakhi.** When the gate fires, the
- * answer renders as a bordered panel with tappable phone numbers, not as a chat
+ * **A safety reply looks nothing like Sakhi.** When the gate fires the answer
+ * renders as a bordered panel with tappable phone numbers, never as a chat
  * bubble. She should be able to tell at a glance that this is not the assistant
  * talking.
  *
- * **The disclosure is always visible**, not behind an info icon.
+ * **The disclosure is always visible**, under the composer where she is
+ * typing — not behind an info icon that gets read once and never again.
+ *
+ * ── What is wired, and what is not ──────────────────────────────────────────
+ * Streaming, conversations, history, delete, the pending-action confirm and
+ * stop all go to the real API. Mode is a real instruction prepended to the
+ * message. Language really switches the app's locale. Voice really uses the
+ * browser's recogniser where it exists, and hides itself where it does not.
+ *
+ * Naming, pinning, thumbs and saved answers all go to the server too. They
+ * lived in `localStorage` first, which made them per-device — a member who
+ * pinned a conversation on a borrowed phone found it unpinned on her own. They
+ * are hers, so they live with her account.
  */
 
-type Bubble =
-  | { kind: "user" | "assistant"; text: string }
-  | { kind: "action"; text: string; ok: boolean }
-  | { kind: "safety"; text: string; helplines: Helpline[] };
+
 
 export default function SakhiPage() {
-  const t = useT();
+  const tr = useT();
+  const { locale, setLocale } = useI18n();
+  const { user } = useAuth();
+  const first = (user?.full_name || "").trim().split(" ")[0];
 
   const [bubbles, setBubbles] = useState<Bubble[]>([]);
   const [draft, setDraft] = useState("");
@@ -54,101 +81,131 @@ export default function SakhiPage() {
   const [conversationId, setConversationId] = useState<string | null>(null);
   const [history, setHistory] = useState<SakhiConversation[]>([]);
   const [available, setAvailable] = useState(true);
+  const [disclosure, setDisclosure] = useState("");
+  const toast = useToast();
+  const [renaming, setRenaming] = useState(false);
+  const [renameTo, setRenameTo] = useState("");
   const [error, setError] = useState("");
 
-  const endRef = useRef<HTMLDivElement>(null);
+  const [mode, setMode] = useState("quick");
+  const [listening, setListening] = useState(false);
+  const [voiceMode, setVoiceMode] = useState(false);
+  const [heard, setHeard] = useState("");
+  const [search, setSearch] = useState("");
+  const [saved, setSaved] = useState<SakhiSaved[]>([]);
+  const [votes, setVotes] = useState<Record<number, "up" | "down">>({});
+  const [file, setFile] = useState<File | null>(null);
+  const [showWords, setShowWords] = useState(true);
+
   const abortRef = useRef<AbortController | null>(null);
+  const recogRef = useRef<{ stop: () => void } | null>(null);
+  const endRef = useRef<HTMLDivElement>(null);
+  const lastAsk = useRef("");
+  const convRef = useRef<string | null>(null);
+
+  const loadSaved = useCallback(async () => {
+    try { setSaved(await apiSakhiSaved()); } catch { /* the list refreshes next turn */ }
+  }, []);
+  useEffect(() => { void loadSaved(); }, [loadSaved]);
 
   useEffect(() => {
-    void (async () => {
-      try {
-        const status = await apiSakhiStatus();
-        setAvailable(status.enabled);
-      } catch {
-        setAvailable(false);
-      }
-    })();
+    apiSakhiStatus()
+      .then((s) => { setAvailable(s.enabled && !s.budget.exhausted); setDisclosure(s.disclosure || ""); })
+      .catch(() => setAvailable(false));
   }, []);
 
   const loadHistory = useCallback(async () => {
-    try {
-      setHistory(await apiSakhiConversations());
-    } catch {
-      /* the list is a convenience; a failure here must not block the chat */
-    }
+    try { setHistory(await apiSakhiConversations()); } catch { /* the list refreshes next turn */ }
   }, []);
-
-  useEffect(() => {
-    void loadHistory();
-  }, [loadHistory]);
+  useEffect(() => { void loadHistory(); }, [loadHistory]);
 
   useEffect(() => {
     endRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [bubbles.length, streaming, pending]);
 
   /** One place that turns a stream of events into what she sees. */
-  const consume = useCallback(
-    (event: SakhiEvent, buffer: { text: string }) => {
-      switch (event.type) {
-        case "text":
-          buffer.text += event.text;
-          setStreaming(buffer.text);
-          break;
-        case "tool":
-          setToolRunning(true);
-          break;
-        case "safety":
-          setBubbles((prev) => [
-            ...prev,
-            { kind: "safety", text: event.text, helplines: event.helplines },
-          ]);
-          break;
-        case "confirm":
-          setConversationId(event.conversation_id);
-          setPending({ id: event.action_id, sentence: event.sentence });
-          break;
-        case "action":
-          setBubbles((prev) => [...prev, { kind: "action", text: event.text, ok: event.ok }]);
-          break;
-        case "error":
-          setError(event.message);
-          break;
-        case "done": {
-          if (event.conversation_id) setConversationId(event.conversation_id);
-          // Read the buffer into a local BEFORE clearing it. A state updater is
-          // a closure React runs at render time, so `{ text: buffer.text }`
-          // written inside it would read the buffer *after* the reset below —
-          // which showed the answer while it streamed and then blanked the
-          // bubble the moment the stream closed.
-          const finished = buffer.text;
-          buffer.text = "";
-          if (finished.trim()) {
-            setBubbles((prev) => [...prev, { kind: "assistant", text: finished }]);
-          }
-          setStreaming("");
-          setToolRunning(false);
-          break;
-        }
+  const consume = useCallback((event: SakhiEvent, buffer: { text: string; tools: string[] }) => {
+    switch (event.type) {
+      case "text": buffer.text += event.text; setStreaming(buffer.text); break;
+      case "tool":
+        setToolRunning(true);
+        // Collected on the buffer, never in state. React invokes an updater
+        // more than once in development, so calling `setBubbles` from inside
+        // `setTools` appended the finished answer twice — the duplicate reply
+        // that showed up in testing.
+        if (!buffer.tools.includes(event.name)) buffer.tools.push(event.name);
+        break;
+      case "safety":
+        setBubbles((p) => [...p, { kind: "safety", text: event.text, helplines: event.helplines }]);
+        break;
+      case "confirm":
+        setConversationId(event.conversation_id);
+        setPending({ id: event.action_id, sentence: event.sentence });
+        break;
+      case "action":
+        setBubbles((p) => [...p, { kind: "action", text: event.text, ok: event.ok }]);
+        break;
+      case "error": setError(event.message); break;
+      case "done": {
+        if (event.conversation_id) { setConversationId(event.conversation_id); convRef.current = event.conversation_id; }
+        // Read the buffer into a local BEFORE clearing it. A state updater is a
+        // closure React runs at render time, so `{ text: buffer.text }` written
+        // inside it would read the buffer *after* the reset below — which showed
+        // the answer while it streamed then blanked it as the stream closed.
+        const finished = buffer.text;
+        buffer.text = "";
+        const ran = buffer.tools.slice();
+        buffer.tools.length = 0;
+        if (finished.trim()) setBubbles((p) => [...p, { kind: "assistant", text: finished, tools: ran }]);
+        setStreaming("");
+        setToolRunning(false);
+        break;
       }
-    },
-    [],
-  );
+    }
+  }, []);
 
-  async function ask(text: string) {
+  /**
+   * Give the streamed bubbles their real message ids.
+   *
+   * A streamed answer has no id until the server has written it, and thumbs
+   * have to name a message. Rather than inventing a client id and reconciling
+   * later, the transcript is re-read once the stream closes and its assistant
+   * ids are laid onto the assistant bubbles in order — they are the same
+   * messages in the same sequence.
+   */
+  const adoptIds = useCallback(async () => {
+    const id = convRef.current ?? conversationId;
+    if (!id) return;
+    try {
+      const detail = await apiSakhiConversation(id);
+      const ids = detail.messages.filter((m) => m.kind === "assistant").map((m) => m.id);
+      setBubbles((prev) => {
+        let n = 0;
+        return prev.map((b) => (b.kind === "assistant" ? { ...b, id: ids[n++] ?? b.id } : b));
+      });
+    } catch { /* ratings stay unavailable for this turn, nothing else breaks */ }
+  }, [conversationId]);
+
+  const ask = useCallback(async (text: string) => {
     const message = text.trim();
     if (!message || busy) return;
+    lastAsk.current = message;
 
-    setBubbles((prev) => [...prev, { kind: "user", text: message }]);
+    const attached = file?.name;
+    setBubbles((p) => [...p, { kind: "user", text: message, file: attached }]);
     setDraft("");
+    setFile(null);
     setError("");
     setBusy(true);
 
-    const buffer = { text: "" };
+    const buffer = { text: "", tools: [] as string[] };
     const controller = new AbortController();
     abortRef.current = controller;
 
     try {
-      await sakhiChat(message, conversationId, (e) => consume(e, buffer), controller.signal);
+      await sakhiChat(
+        MODE_PREFIX[mode] + message + (attached ? `\n(I have attached a file named "${attached}".)` : ""),
+        conversationId, (e) => consume(e, buffer), controller.signal);
     } catch (err) {
       // An abort is her pressing stop, not a failure.
       if (!controller.signal.aborted) setError(String(err));
@@ -158,64 +215,51 @@ export default function SakhiPage() {
       setToolRunning(false);
       abortRef.current = null;
       void loadHistory();
+      void adoptIds();
     }
-  }
+  }, [busy, conversationId, consume, file, loadHistory, mode, adoptIds]);
 
   async function answer(approve: boolean) {
     if (!pending || !conversationId) return;
     const action = pending;
     setPending(null);
     setBusy(true);
-
-    const buffer = { text: "" };
+    const buffer = { text: "", tools: [] as string[] };
     const controller = new AbortController();
     abortRef.current = controller;
-
     try {
-      await sakhiConfirm(
-        conversationId,
-        action.id,
-        approve,
-        (e) => consume(e, buffer),
-        controller.signal,
-      );
+      await sakhiConfirm(conversationId, action.id, approve, (e) => consume(e, buffer), controller.signal);
     } catch (err) {
       if (!controller.signal.aborted) setError(String(err));
-    } finally {
-      setBusy(false);
-      abortRef.current = null;
-    }
+    } finally { setBusy(false); abortRef.current = null; }
   }
 
-  function stop() {
-    abortRef.current?.abort();
-  }
+  function stop() { abortRef.current?.abort(); }
 
   async function openConversation(id: string) {
     try {
       const detail = await apiSakhiConversation(id);
       setConversationId(detail.id);
-      setBubbles(
-        detail.messages.map((m) =>
-          m.kind === "safety"
-            ? {
-                kind: "safety" as const,
-                text: m.text,
-                helplines: (m.meta?.helplines as Helpline[]) ?? [],
-              }
-            : m.kind === "action"
-              ? { kind: "action" as const, text: m.text, ok: m.meta?.ok !== false }
-              : { kind: m.kind as "user" | "assistant", text: m.text },
-        ),
-      );
-      setPending(
-        detail.pending_action
-          ? { id: detail.pending_action.id, sentence: detail.pending_action.sentence }
-          : null,
-      );
-    } catch {
-      setError(t("common.retry"));
-    }
+      setVoiceMode(false);
+      setBubbles(detail.messages.map((m) =>
+        m.kind === "safety"
+          ? { kind: "safety" as const, text: m.text, helplines: (m.meta?.helplines as Helpline[]) ?? [] }
+          : m.kind === "action"
+            ? { kind: "action" as const, text: m.text, ok: m.meta?.ok !== false }
+            : m.kind === "assistant"
+              ? { kind: "assistant" as const, text: m.text, id: m.id }
+              : { kind: "user" as const, text: m.text }));
+      setPending(detail.pending_action
+        ? { id: detail.pending_action.id, sentence: detail.pending_action.sentence } : null);
+      // Thumbs she gave before, read back so the button shows what she chose.
+      const back: Record<number, "up" | "down"> = {};
+      detail.messages.forEach((m, i) => {
+        const h = (m.meta as { helpful?: boolean | null } | undefined)?.helpful;
+        if (h === true) back[i] = "up";
+        else if (h === false) back[i] = "down";
+      });
+      setVotes(back);
+    } catch { setError(COPY.threadFailed); }
   }
 
   async function remove(id: string) {
@@ -223,293 +267,311 @@ export default function SakhiPage() {
       await apiSakhiDelete(id);
       if (id === conversationId) startNew();
       void loadHistory();
-    } catch {
-      /* ignored — the list refreshes on the next turn anyway */
-    }
+    } catch { /* ignored — the list refreshes on the next turn anyway */ }
   }
 
   function startNew() {
-    setConversationId(null);
-    setBubbles([]);
-    setPending(null);
-    setStreaming("");
-    setError("");
+    setConversationId(null); setBubbles([]); setPending(null);
+    setStreaming(""); setError(""); setVoiceMode(false); setVotes({});
   }
 
-  const suggestions = [t("sakhi.suggest1"), t("sakhi.suggest2"), t("sakhi.suggest3")];
+  async function togglePin(id: string) {
+    const now = history.find((c) => c.id === id)?.pinned ?? false;
+    // Optimistic, then reconciled by `loadHistory` — a pin that waits on a
+    // round trip feels broken on a slow connection.
+    setHistory((p) => p.map((c) => (c.id === id ? { ...c, pinned: !now } : c)));
+    try { await apiSakhiPin(id, !now); } finally { void loadHistory(); }
+  }
+
+  async function rate(messageId: string | undefined, helpful: boolean | null) {
+    if (!messageId) return;
+    try { await apiSakhiRate(messageId, helpful); } catch { setError("That could not be recorded."); }
+  }
+
+  /**
+   * Naming a conversation, in the app rather than in the browser.
+   *
+   * This was `window.prompt()`. Three things were wrong with that and only one
+   * of them is cosmetic: it blocks the main thread, it appears in the browser's
+   * language rather than the one she chose, and on most Android browsers it
+   * renders as a system dialog with the URL bar's origin at the top — which
+   * looks, to a woman new to a smartphone, like a different program asking her
+   * for something.
+   */
+  function rename() {
+    if (!conversationId) return;
+    setRenameTo(history.find((c) => c.id === conversationId)?.title ?? "");
+    setRenaming(true);
+  }
+
+  async function saveRename() {
+    const title = renameTo.trim();
+    if (!conversationId || !title) return;
+    setRenaming(false);
+    try {
+      await apiSakhiRename(conversationId, title);
+      toast.success("Conversation renamed");
+    } catch { setError("That could not be renamed."); }
+    void loadHistory();
+  }
+
+  async function share() {
+    const url = `${window.location.origin}/app/sakhi`;
+    try {
+      if (navigator.share) await navigator.share({ title: "Ask Sakhi", url });
+      else await navigator.clipboard?.writeText(url);
+    } catch { /* she cancelled the sheet, or there is no clipboard */ }
+  }
+
+  async function toggleSave(text: string) {
+    const existing = saved.find((row) => row.text === text);
+    try {
+      if (existing) await apiSakhiUnsave(existing.id);
+      else await apiSakhiSave(text, conversationId ?? "");
+    } catch { setError("That could not be saved just now."); }
+    void loadSaved();
+  }
+
+  /* ── voice ─────────────────────────────────────────────────────────────
+     The browser's own recogniser. `canVoice` is false where it does not
+     exist, and the microphone is then not drawn at all — a button that
+     cannot work is worse than no button. */
+  const canVoice = useMemo(() => {
+    if (typeof window === "undefined") return false;
+    return Boolean((window as unknown as Record<string, unknown>).SpeechRecognition
+      || (window as unknown as Record<string, unknown>).webkitSpeechRecognition);
+  }, []);
+
+  const listen = useCallback((intoVoiceMode: boolean) => {
+    if (listening) { recogRef.current?.stop(); setListening(false); return; }
+    const W = window as unknown as Record<string, new () => never>;
+    const Ctor = (W.SpeechRecognition || W.webkitSpeechRecognition) as unknown as
+      (new () => {
+        lang: string; interimResults: boolean; continuous: boolean;
+        onresult: (e: { results: ArrayLike<ArrayLike<{ transcript: string }>> }) => void;
+        onend: () => void; onerror: () => void; start: () => void; stop: () => void;
+      }) | undefined;
+    if (!Ctor) return;
+
+    const r = new Ctor();
+    r.lang = locale === "en" ? "en-IN" : locale;
+    r.interimResults = true;
+    r.continuous = false;
+    r.onresult = (e) => {
+      let said = "";
+      for (let i = 0; i < e.results.length; i++) said += e.results[i][0].transcript;
+      if (intoVoiceMode) setHeard(said); else setDraft(said);
+    };
+    r.onend = () => {
+      setListening(false);
+      recogRef.current = null;
+      if (intoVoiceMode) {
+        // Read from the setter rather than a stale closure over `heard`.
+        setHeard((said) => { if (said.trim()) void ask(said); return said; });
+      }
+    };
+    r.onerror = () => { setListening(false); recogRef.current = null; };
+    recogRef.current = r;
+    setListening(true);
+    r.start();
+  }, [ask, listening, locale]);
+
+  useEffect(() => () => recogRef.current?.stop(), []);
+
+  const localeItems = LOCALES.map((l) => ({
+    value: l.code, label: l.nativeName, note: l.nativeName === l.name ? undefined : l.name,
+  }));
+
+  /* ── history, grouped the way she thinks about it ─────────────────────── */
+  const grouped = useMemo(() => {
+    const q = search.trim().toLowerCase();
+    const rows = history.filter((c) => !q || c.title.toLowerCase().includes(q));
+    const day = 86_400_000;
+    const midnight = new Date(); midnight.setHours(0, 0, 0, 0);
+    const buckets: { label: string; rows: SakhiConversation[] }[] = [
+      { label: "Pinned", rows: [] }, { label: "Today", rows: [] },
+      { label: "Yesterday", rows: [] }, { label: "Earlier", rows: [] },
+    ];
+    for (const c of rows) {
+      if (c.pinned) { buckets[0].rows.push(c); continue; }
+      const at = c.updated_at ? new Date(c.updated_at).getTime() : 0;
+      if (at >= midnight.getTime()) buckets[1].rows.push(c);
+      else if (at >= midnight.getTime() - day) buckets[2].rows.push(c);
+      else buckets[3].rows.push(c);
+    }
+    return buckets.filter((b) => b.rows.length > 0);
+  }, [history, search]);
+
+  const empty = bubbles.length === 0 && !streaming && !pending;
+  const view: "welcome" | "talk" | "voice" = voiceMode ? "voice" : empty ? "welcome" : "talk";
+
+  /** Each segment goes somewhere real — see `ModeSwitch`. */
+  function goTo(v: "welcome" | "talk" | "voice") {
+    if (v === "welcome") { startNew(); return; }
+    if (v === "voice") { setVoiceMode(true); listen(true); return; }
+    setVoiceMode(false);
+    // Starting cold, "In conversation" reopens the most recent thread rather
+    // than showing an empty one.
+    if (bubbles.length === 0 && history[0]) void openConversation(history[0].id);
+  }
+
+  const switcher = (
+    <ModeSwitch value={view} onPick={goTo}
+                canTalk={bubbles.length > 0 || history.length > 0}
+                canVoice={canVoice} />
+  );
 
   return (
-    <HomeShell
-      skeleton="detail"
-      loadFailed="Sakhi"
-      bare
-      rail={
-        <div className="space-y-[15px]">
-          <Card>
-            <SectionHead title="What she can do" icon="Sparkles" />
-            <ul className="space-y-2.5">
-              {[
-                ["Search", "Find a course, a scheme or work in your own words"],
-                ["Wallet", "Tell you what you have earned and what is still coming"],
-                ["CalendarDays", "Remind you what is booked this week"],
-                ["FileText", "Explain a form before you sign it"],
-              ].map(([icon, what]) => (
-                <li key={what} className="flex items-start gap-2.5">
-                  <I name={icon} className="mt-[2px] h-[15px] w-[15px] shrink-0" style={{ color: "var(--ux-brand)" }} />
-                  <span className="text-[12.5px] leading-snug" style={{ color: "var(--ux-ink-2)" }}>{what}</span>
-                </li>
-              ))}
-            </ul>
-          </Card>
-
-          <Card>
-            <SectionHead title="What she will not do" icon="Lock" />
-            {/* The limits, before she finds them by being disappointed. */}
-            <p className="text-[12.5px] leading-relaxed" style={{ color: "var(--ux-ink-2)" }}>
-              She never moves money, never applies for anything and never sends a message as you — not
-              without asking you first, in a sentence you can read, with the same-sized button for no.
-            </p>
-          </Card>
-
-          {history.length > 0 && (
-            <Card>
-              <SectionHead title={t("sakhi.history")} />
-              <ul className="ux-deck space-y-2">
-                {history.slice(0, 8).map((c, i) => (
-                  <li key={c.id} className="flex items-center gap-2">
-                    <button
-                      type="button"
-                      onClick={() => void openConversation(c.id)}
-                      className="ux-i ux-sq min-w-0 flex-1 truncate rounded-[11px] border px-3 py-2 text-start text-[12.5px]"
-                      style={{ borderColor: "var(--ux-line)", color: "var(--ux-ink-2)", ["--i" as string]: i }}
-                    >
-                      {c.title}
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => void remove(c.id)}
-                      aria-label={t("sakhi.deleteChat")}
-                      className="ux-press ux-sq grid h-[34px] w-[34px] shrink-0 place-items-center rounded-[10px] border"
-                      style={{ borderColor: "var(--ux-line)" }}
-                    >
-                      <Icons.Trash2 className="h-[14px] w-[14px]" style={{ color: "var(--ux-muted)" }} strokeWidth={1.9} />
-                    </button>
-                  </li>
-                ))}
-              </ul>
-            </Card>
-          )}
-        </div>
-      }
-    >
-      <div className="flex items-start justify-between gap-4">
-        <div className="flex items-start gap-3.5">
-          <span className="ux-sq grid h-[52px] w-[52px] shrink-0 place-items-center rounded-[14px]"
-                style={{ background: "var(--ux-brand-tint)" }}>
-            <Icons.Sparkles className="h-[24px] w-[24px]" style={{ color: "var(--ux-brand)" }} strokeWidth={1.9} />
-          </span>
-          <div className="min-w-0">
-            <h1 className="text-[24px] font-bold" style={{ color: "var(--ux-ink)" }}>{t("sakhi.title")}</h1>
-            <p className="mt-1 text-[13px]" style={{ color: "var(--ux-muted)" }}>{t("sakhi.subtitle")}</p>
+    <HomeShell active="/app/sakhi" bare rail={
+      <SakhiRail
+        grouped={grouped} search={search} setSearch={setSearch}
+        openConversation={openConversation} remove={remove}
+        togglePin={togglePin} current={conversationId} total={history.length}
+      />
+    }>
+      <div className="flex flex-col gap-4">
+        <header className="flex flex-wrap items-center gap-3">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img loading="lazy" decoding="async" src="/sakhi-face.webp" alt="" className="h-[42px] w-[42px] rounded-full object-cover" />
+          <div className="min-w-0 flex-1">
+            <h1 className="text-xl font-bold tracking-tight" style={{ color: "var(--ux-ink)" }}>{tr("sakhi.askSakhi")}</h1>
+            <p className="text-xsm" style={{ color: "var(--ux-muted)" }}>{tr("sakhi.tellHerWhatYouNeedIn")}</p>
           </div>
-        </div>
-        <Btn variant="outline" size="sm" icon="Plus" onClick={startNew}>{t("sakhi.newChat")}</Btn>
-      </div>
-
-      {/* Always on screen, never behind an icon. */}
-      <p className="ux-sq mt-4 rounded-[12px] px-3.5 py-2.5 text-[12px] leading-relaxed"
-         style={{ background: "var(--ux-tint-amber)", color: "var(--ux-amber-ink)" }}>
-        {t("sakhi.disclosure")}
-      </p>
-
-      {!available && (
-        <Card className="mt-3">
-          <p className="text-[13px]" style={{ color: "var(--ux-ink-2)" }}>{t("sakhi.unavailable")}</p>
-        </Card>
-      )}
-
-      <div className="mt-[18px] flex-1 space-y-3" aria-live="polite">
-        {bubbles.length === 0 && !streaming && (
-          <Card>
-            <p className="text-[13.5px] leading-relaxed" style={{ color: "var(--ux-ink-2)" }}>{t("sakhi.empty")}</p>
-            <ul className="mt-3.5 flex flex-wrap gap-2">
-              {suggestions.map((s) => (
-                <li key={s}>
-                  <Chip onClick={() => void ask(s)} icon="MessageCircle">{s}</Chip>
-                </li>
-              ))}
-            </ul>
-          </Card>
-        )}
-
-        {bubbles.map((bubble, i) => (
-          <BubbleView key={i} bubble={bubble} callLabel={(n) => t("sakhi.callNow", { number: n })}
-                      safetyTitle={t("sakhi.safetyTitle")} />
-        ))}
-
-        {toolRunning && !streaming && (
-          <p className="flex items-center gap-2 px-1 text-[12.5px]" style={{ color: "var(--ux-muted)" }}>
-            <Icons.Search className="h-[14px] w-[14px] animate-pulse" />
-            {t("sakhi.working")}
-          </p>
-        )}
-
-        {streaming && <BubbleView bubble={{ kind: "assistant", text: streaming }}
-                                  callLabel={(n) => n} safetyTitle="" />}
-
-        {busy && !streaming && !toolRunning && (
-          <p className="flex items-center gap-2 px-1 text-[12.5px]" style={{ color: "var(--ux-muted)" }}>
-            <Icons.Loader2 className="h-[14px] w-[14px] animate-spin" />
-            {t("sakhi.thinking")}
-          </p>
-        )}
-
-        {pending && (
-          <div data-sakhi="confirm" className="ux-slide-up">
-            <Card style={{ borderColor: "var(--ux-brand)", borderWidth: 2 }}>
-              <p className="text-[11px] font-semibold uppercase tracking-[0.07em]" style={{ color: "var(--ux-muted)" }}>
-                {t("sakhi.confirmTitle")}
-              </p>
-              <p className="mt-2 text-[15px] font-semibold leading-snug" style={{ color: "var(--ux-ink)" }}>
-                {pending.sentence}
-              </p>
-              {/* Same size, same weight. Declining is not the lesser option. */}
-              <div className="mt-3.5 grid grid-cols-2 gap-2.5">
-                <Btn variant="primary" full onClick={() => void answer(true)}>{t("sakhi.confirmYes")}</Btn>
-                <Btn variant="outline" full onClick={() => void answer(false)}>{t("sakhi.confirmNo")}</Btn>
-              </div>
-            </Card>
+          <div className="flex gap-2">
+            <Link href="/app/saved"
+                  className="ux-press flex min-h-[40px] items-center gap-2 rounded-[12px] px-3.5 text-xsm font-bold"
+                  style={{ background: "var(--ux-surface)", border: "1px solid var(--ux-line-strong)", color: "var(--ux-ink)" }}>
+              <Icons.BookmarkCheck className="h-4 w-4" />
+              Saved {saved.length > 0 && `(${saved.length})`}
+            </Link>
+            <button type="button" onClick={startNew}
+                    className="ux-press flex min-h-[40px] items-center gap-2 rounded-[12px] px-3.5 text-xsm font-bold"
+                    style={{ background: "var(--ux-surface)", border: "1px solid var(--ux-line-strong)", color: "var(--ux-ink)" }}>
+              <Icons.Plus className="h-4 w-4" />{tr("sakhi.newConversation")}</button>
           </div>
+        </header>
+
+        {!available && (
+          <p className="rounded-[12px] p-3.5 text-xsm"
+             style={{ background: "var(--ux-tint-amber)", color: "var(--ux-amber-ink)" }}>{tr("sakhi.sakhiIsRestingRightNowEverything")}</p>
+        )}
+
+        {voiceMode ? (
+          <Voice
+            heard={heard} listening={listening}
+            onToggle={() => listen(true)} onEnd={() => { recogRef.current?.stop(); setVoiceMode(false); setHeard(""); }}
+            locale={locale} setLocale={setLocale} localeItems={localeItems}
+            showWords={showWords} onToggleWords={() => setShowWords((v) => !v)}
+            switcher={switcher}
+          />
+        ) : empty ? (
+          <Welcome first={first} onPick={ask} canVoice={canVoice} switcher={switcher}>
+            <Composer
+              value={draft} onChange={setDraft} onSend={() => ask(draft)}
+              onMic={() => listen(false)} listening={listening} busy={busy}
+              mode={mode} setMode={setMode} locale={locale} setLocale={setLocale} locales={localeItems}
+              placeholder={tr("sakhi.askAnythingOrSayWhatYou")} canVoice={canVoice}
+              file={file} onFile={setFile} onClearFile={() => setFile(null)}
+            />
+            <Disclosure text={disclosure} />
+          </Welcome>
+        ) : (
+          <>
+            <div className="pb-1">{switcher}</div>
+            <ConvBar
+              title={history.find((c) => c.id === conversationId)?.title || "New conversation"}
+              mode={mode === "steps" ? tr("sakhi.stepByStep")
+              : tr("sakhi.quickAnswer")}
+              locale={localeItems.find((l) => l.value === locale)?.label ?? "English"}
+              pinned={!!history.find((c) => c.id === conversationId)?.pinned}
+              onRename={rename} onPin={() => conversationId && togglePin(conversationId)} onShare={share}
+            />
+            <Thread
+              bubbles={bubbles} streaming={streaming} toolRunning={toolRunning}
+              onStop={stop} onChangeDraft={(t) => setDraft(t)}
+              pending={pending} onAnswer={answer} busy={busy}
+              saved={saved} toggleSave={toggleSave}
+              votes={votes}
+              setVote={(i, v, id) => {
+                // Tapping the same thumb again clears it, both here and on the server.
+                const next = votes[i] === v ? null : v;
+                setVotes((p) => ({ ...p, [i]: next as "up" | "down" }));
+                void rate(id, next === null ? null : next === "up");
+              }}
+              onRetry={() => lastAsk.current && ask(lastAsk.current)}
+              onFollowUp={ask}
+            />
+            {/* Not sticky. The app scrolls an inner container, and a
+                `sticky bottom-0` child of it pinned the composer to the
+                scrollport while `scrollIntoView` sent the thread above the
+                fold — the messages were in the DOM and off screen. In normal
+                flow the composer follows the last message, which is where a
+                thread wants it anyway. */}
+            <div ref={endRef} />
+            <div>
+              <Composer
+                value={draft} onChange={setDraft} onSend={() => ask(draft)}
+                onMic={() => listen(false)} listening={listening} busy={busy}
+                mode={mode} setMode={setMode} locale={locale} setLocale={setLocale} locales={localeItems}
+                placeholder={tr("sakhi.askAFollowUp")} canVoice={canVoice}
+                file={file} onFile={setFile} onClearFile={() => setFile(null)}
+              />
+              <Disclosure text={disclosure} />
+            </div>
+          </>
         )}
 
         {error && (
-          <p className="ux-sq rounded-[12px] px-3.5 py-2.5 text-[13px]"
-             style={{ background: "var(--ux-tint-orange)", color: "var(--ux-orange-ink)" }}>
-            {error}
+          <p className="flex items-center gap-2 text-xsm" style={{ color: "var(--ux-pink-ink)" }}>
+            <Icons.TriangleAlert className="h-4 w-4" /> {error}
           </p>
         )}
 
-        <div ref={endRef} />
+        <Sheet
+          open={renaming}
+          onClose={() => setRenaming(false)}
+          title="Name this conversation"
+          description="So you can find it again in your list."
+          icon="Pencil"
+          footer={
+            <div className="flex gap-2.5">
+              <Btn variant="outline" full onClick={() => setRenaming(false)}>Cancel</Btn>
+              <Btn full disabled={!renameTo.trim()} onClick={saveRename}>Save the name</Btn>
+            </div>
+          }
+        >
+          <label className="block text-xsm font-semibold" htmlFor="sakhi-rename"
+                 style={{ color: "var(--ux-ink)" }}>
+            Name
+          </label>
+          <input
+            id="sakhi-rename"
+            value={renameTo}
+            onChange={(e) => setRenameTo(e.target.value)}
+            onKeyDown={(e) => { if (e.key === "Enter" && renameTo.trim()) void saveRename(); }}
+            maxLength={80}
+            autoComplete="off"
+            className="mt-2 w-full rounded-[12px] px-3.5 py-3 text-sm"
+            style={{
+              background: "var(--ux-surface-2)",
+              color: "var(--ux-ink)",
+              border: "1px solid var(--ux-line-strong)",
+            }}
+          />
+        </Sheet>
       </div>
-
-      {/* The composer. Sticky so it stays reachable with one thumb. */}
-      <form
-        onSubmit={(e) => {
-          e.preventDefault();
-          void ask(draft);
-        }}
-        data-sakhi={busy ? "composer-busy" : "composer-idle"}
-        className="ux-sheet ux-sq sticky bottom-4 mt-4 flex items-end gap-2 rounded-[16px] p-2"
-      >
-        <textarea
-          value={draft}
-          onChange={(e) => setDraft(e.target.value)}
-          onKeyDown={(e) => {
-            // Enter sends; Shift+Enter makes a new line. On a phone the button
-            // is the real control, so this only helps a keyboard user.
-            if (e.key === "Enter" && !e.shiftKey) {
-              e.preventDefault();
-              void ask(draft);
-            }
-          }}
-          rows={1}
-          disabled={!available || !!pending}
-          placeholder={t("sakhi.placeholder")}
-          className="ux-sq max-h-32 min-h-[44px] flex-1 resize-y rounded-[12px] border px-3.5 py-2.5 text-[13.5px] outline-none disabled:opacity-60"
-          style={{ borderColor: "var(--ux-line-strong)", background: "var(--ux-surface)", color: "var(--ux-ink)" }}
-        />
-        {busy ? (
-          <Btn variant="outline" onClick={stop} ariaLabel={t("sakhi.stop")} className="h-[44px] w-[44px] !p-0">
-            <Icons.Square className="h-[15px] w-[15px]" />
-          </Btn>
-        ) : (
-          <Btn
-            variant="primary"
-            type="submit"
-            ariaLabel={t("sakhi.send")}
-            className={`h-[44px] w-[44px] !p-0 ${!draft.trim() || !available || !!pending ? "pointer-events-none opacity-50" : ""}`}
-          >
-            <Icons.Send className="h-[15px] w-[15px] rtl:rotate-180" />
-          </Btn>
-        )}
-      </form>
     </HomeShell>
   );
 }
 
-function BubbleView({
-  bubble,
-  callLabel,
-  safetyTitle,
-}: {
-  bubble: Bubble;
-  callLabel: (n: string) => string;
-  safetyTitle: string;
-}) {
-  if (bubble.kind === "user") {
-    return (
-      <div className="flex justify-end" data-sakhi="user">
-        {/* --ux-fill, not the brand accent: white on the accent is 3.89:1 in
-            dark mode, and this bubble is nothing but white text. */}
-        <p className="ux-sq max-w-[85%] whitespace-pre-wrap rounded-[16px] rounded-br-[6px] px-4 py-2.5 text-[13.5px] leading-relaxed"
-           style={{ background: "var(--ux-fill)", color: "#fff" }}>
-          {bubble.text}
-        </p>
-      </div>
-    );
-  }
+/* ── the conversation bar ───────────────────────────────────────────────── */
 
-  if (bubble.kind === "safety") {
-    // Deliberately unlike a chat bubble — this is the app speaking, not Sakhi.
-    return (
-      <div data-sakhi="safety" className="ux-slide-up">
-        <Card style={{ borderColor: "var(--ux-orange)", borderWidth: 2 }}>
-          <p className="flex items-center gap-2 text-[13.5px] font-semibold" style={{ color: "var(--ux-orange-ink)" }}>
-            <Icons.ShieldAlert className="h-[16px] w-[16px]" />
-            {safetyTitle}
-          </p>
-          <p className="mt-2.5 whitespace-pre-wrap text-[13.5px] leading-relaxed" style={{ color: "var(--ux-ink)" }}>
-            {bubble.text}
-          </p>
-          <ul className="mt-3.5 space-y-2">
-            {bubble.helplines.map((h) => (
-              <li key={h.number}>
-                {/* A real tel: link. On a phone this dials. */}
-                <a href={`tel:${h.number}`}
-                   className="ux-press ux-sq flex w-full items-center gap-2.5 rounded-[12px] px-3.5 py-3 text-[13.5px] font-semibold"
-                   style={{ background: "var(--ux-fill)", color: "#fff" }}>
-                  <Icons.Phone className="h-[16px] w-[16px]" />
-                  {callLabel(h.number)} · {h.name}
-                </a>
-              </li>
-            ))}
-          </ul>
-        </Card>
-      </div>
-    );
-  }
-
-  if (bubble.kind === "action") {
-    return (
-      <p
-        data-sakhi="action"
-        className="ux-sq ux-slide-up rounded-[12px] px-3.5 py-2.5 text-[13px]"
-        style={{
-          background: bubble.ok ? "var(--ux-tint-green)" : "var(--ux-tint-orange)",
-          color: bubble.ok ? "var(--ux-green-ink)" : "var(--ux-orange-ink)",
-        }}
-      >
-        {bubble.text}
-      </p>
-    );
-  }
-
-  return (
-    <div className="flex justify-start" data-sakhi="assistant">
-      <p className="ux-sq max-w-[85%] whitespace-pre-wrap rounded-[16px] rounded-bl-[6px] border px-4 py-2.5 text-[13.5px] leading-relaxed"
-         style={{ background: "var(--ux-surface)", borderColor: "var(--ux-line)", color: "var(--ux-ink)" }}>
-        {bubble.text}
-      </p>
-    </div>
-  );
-}
+/**
+ * What this thread is, and how it is being answered.
+ *
+ * The two chips repeat the composer's mode and language on purpose: down there
+ * they are controls she is about to use, up here they are a statement about
+ * every answer already on the screen. Scrolled halfway through a long thread,
+ * the composer is off screen and the question "why is this in English?" has
+ * nowhere to be answered.
+ */

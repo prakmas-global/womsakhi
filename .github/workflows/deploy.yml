@@ -1,0 +1,117 @@
+# Production deploy.
+#
+# Fires when main moves — which, with branch protection on, only happens when a
+# pull request is merged. That is the whole contract: main is what is live, and
+# the only way into main is a reviewed PR whose checks passed.
+name: Deploy to production
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:        # and by hand, for a rollback
+
+concurrency:
+  # Never two deploys at once. Not cancel-in-progress: killing a half-finished
+  # Cloud Run rollout leaves the service on a revision nobody chose.
+  group: deploy-production
+  cancel-in-progress: false
+
+env:
+  PROJECT_ID: womsakhi
+  REGION: asia-south1
+  REGISTRY: asia-south1-docker.pkg.dev/womsakhi/womsakhi
+  # The /api/v1 suffix is part of the value, not decoration. Every client
+  # module joins paths onto it directly (`${API_URL}/public/stats`), so a
+  # bare host produces a 404 on every single call while the API itself is
+  # perfectly healthy — which is exactly how this was found.
+  API_URL: https://api.womsakhi.com/api/v1
+  API_HOST: https://api.womsakhi.com
+  WEB_URL: https://app.womsakhi.com
+
+permissions:
+  contents: read
+  id-token: write           # required to mint the OIDC token for GCP
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      # Keyless. No JSON service-account key exists to leak, and access is
+      # scoped by the provider's attribute condition to this repo only.
+      - id: auth
+        uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: projects/574825618745/locations/global/workloadIdentityPools/github/providers/github-provider
+          service_account: womsakhi-deploy@womsakhi.iam.gserviceaccount.com
+
+      - uses: google-github-actions/setup-gcloud@v2
+
+      - name: Tag images with the commit
+        run: echo "TAG=${GITHUB_SHA::7}" >> "$GITHUB_ENV"
+
+      # ── API ──────────────────────────────────────────────────────────────
+      - name: Build API
+        working-directory: womencrafts-backend/backend
+        run: |
+          gcloud builds submit \
+            --tag "$REGISTRY/api:$TAG" \
+            --project "$PROJECT_ID" --region "$REGION"
+
+      - name: Deploy API
+        run: |
+          gcloud run deploy womsakhi-api \
+            --image "$REGISTRY/api:$TAG" \
+            --region "$REGION" --project "$PROJECT_ID" \
+            --service-account womsakhi-run@womsakhi.iam.gserviceaccount.com \
+            --allow-unauthenticated \
+            --port 8080 --cpu 1 --memory 1Gi --min-instances 0 --max-instances 10 \
+            --set-secrets MONGODB_URI=mongodb-uri:latest,JWT_SECRET_KEY=jwt-secret-key:latest,DOCUMENT_ENCRYPTION_KEY=document-encryption-key:latest,ANTHROPIC_API_KEY=anthropic-api-key:latest,AZURE_SPEECH_KEY=azure-speech-key:latest,LANGFUSE_PUBLIC_KEY=langfuse-public-key:latest,LANGFUSE_SECRET_KEY=langfuse-secret-key:latest \
+            --set-env-vars "DB_NAME=womencrafts,JWT_ALGORITHM=HS256,ACCESS_TOKEN_EXPIRE_MINUTES=30,AZURE_SPEECH_REGION=centralindia,LANGFUSE_HOST=https://cloud.langfuse.com,LANGFUSE_ENV=production,ALLOWED_ORIGINS=$WEB_URL,APP_BASE_URL=$WEB_URL,MEDIA_BASE_URL=$API_HOST,COOKIE_SECURE=true,COOKIE_SAMESITE=lax,MEDIA_DIR=/mnt/media/media,PRIVATE_MEDIA_DIR=/mnt/media/private_media" \
+            --add-volume name=media,type=cloud-storage,bucket=womsakhi-media \
+            --add-volume-mount volume=media,mount-path=/mnt/media
+
+      # ── Web ──────────────────────────────────────────────────────────────
+      # The browser never calls the API cross-origin: every request goes to
+      # this app's own /api/v1 and is forwarded server-side. ALLOWED_ORIGINS
+      # above is therefore belt-and-braces for direct API use, not something
+      # the app depends on.
+      # Built after the API and pointed at it. The API URL is compiled INTO
+      # this image, so web and api are not independently deployable — a web
+      # image always belongs to the API URL it was built against.
+      - name: Build web
+        working-directory: womencrafts-frontend/frontend
+        run: |
+          gcloud builds submit --config cloudbuild.yaml \
+            --substitutions "_API_URL=$API_URL,_IMAGE=$REGISTRY/web:$TAG" \
+            --project "$PROJECT_ID" --region "$REGION"
+
+      - name: Deploy web
+        run: |
+          gcloud run deploy womsakhi-web \
+            --image "$REGISTRY/web:$TAG" \
+            --region "$REGION" --project "$PROJECT_ID" \
+            --service-account womsakhi-run@womsakhi.iam.gserviceaccount.com \
+            --allow-unauthenticated \
+            --port 8080 --cpu 1 --memory 512Mi --min-instances 0 --max-instances 10
+
+      # ── and prove it actually came up ────────────────────────────────────
+      # A deploy that reports success while the service 500s is worse than a
+      # deploy that fails, because nobody goes looking. Cloud Run has already
+      # shifted traffic by this point, so this is the signal to roll back.
+      - name: Smoke test
+        run: |
+          set -e
+          api=$(gcloud run services describe womsakhi-api --region "$REGION" --project "$PROJECT_ID" --format='value(status.url)')
+          web=$(gcloud run services describe womsakhi-web --region "$REGION" --project "$PROJECT_ID" --format='value(status.url)')
+          echo "api=$api"; echo "web=$web"
+          for i in $(seq 1 10); do
+            a=$(curl -s -o /dev/null -w '%{http_code}' --max-time 30 "$api/health" || true)
+            w=$(curl -s -o /dev/null -w '%{http_code}' --max-time 30 "$web/" || true)
+            echo "  attempt $i: api=$a web=$w"
+            [ "$a" = "200" ] && [ "$w" = "200" ] && exit 0
+            sleep 10
+          done
+          echo "::error::Deployed revision is not serving 200 — roll back with the previous tag"
+          exit 1

@@ -4,28 +4,38 @@ import { useEffect, useState } from "react";
 import { usePathname } from "next/navigation";
 
 
-import { Shell } from "../Shell";
-import { Btn, ScreenError, ScreenSkeleton, whatFailedFor } from "../kit";
-import { useMe } from "../me";
+import { ScreenError, ScreenSkeleton, whatFailedFor } from "../kit";
+import { usePageChrome } from "../chrome";
 
-/** The frame every Home screen sits in — the product-wide nav from board #1. */
+/**
+ * What a screen asks of the chrome — not the chrome itself.
+ *
+ * This used to render the topbar, the rail and the mobile bar, on all 108
+ * screens. In the App Router a page is destroyed on every navigation, so every
+ * rail click rebuilt the whole frame: the screen appeared to reload when only
+ * the middle had changed, and the sidebar lost her scroll position each time.
+ *
+ * The signature is unchanged so no screen had to be edited. What changed is
+ * where the frame lives — one Shell in the layout, which survives — and this
+ * now only registers the parts that differ per page. See `ux/chrome.tsx`.
+ */
 export function HomeShell({
-  children, rail, name, bare, skeleton = "list", loadFailed,
+  children, rail, name, bare, wide, fit, skeleton = "list", loadFailed,
 }: {
   /** Optional and ignored — Shell derives the mode and section from the URL. */
   active?: string; children: React.ReactNode; rail?: React.ReactNode; name?: string;
   /** Drops the "complete your profile" footer — used where the page IS that. */
   bare?: boolean;
+  /** Hands the whole width to a screen that is already made of columns. */
+  wide?: boolean;
+  /** This screen is sized to the window; drop the scroller's bottom clearance. */
+  fit?: boolean;
   /** Which skeleton shape best matches this screen while it loads. */
   skeleton?: "list" | "grid" | "detail" | "form";
   /** What could not be loaded, in her words: "your orders", "this course". */
   loadFailed?: string;
 }) {
-  // Read the account here rather than in each screen: passing it only from
-  // Home meant the topbar greeted her by her real name there and by a fixture
-  // name everywhere else.
-  const me = useMe();
-  const first = name ?? me.first;
+  usePageChrome({ rail, wide, bare, fit, name });
 
   /**
    * `?state=loading` and `?state=error` render those states on any screen.
@@ -56,26 +66,5 @@ export function HomeShell({
     : forced === "error" ? <ScreenError what={loadFailed ?? whatFailedFor(pathname)} />
     : children;
 
-  return (
-    <Shell
-      user={{ name: first, avatar: me.avatar, unread: me.unread }}
-      sidebarFooter={bare ? undefined : (
-        <div className="rounded-[14px] p-4" style={{ background: "var(--ux-brand-900)" }}>
-          <h3 className="text-[13.5px] font-semibold text-white">Complete Your Profile</h3>
-          <p className="mt-1 text-[11.5px]" style={{ color: "var(--ux-on-brand-2)" }}>{me.profilePct}% completed</p>
-          <div className="mt-2.5 h-[5px] w-full overflow-hidden rounded-full" style={{ background: "var(--ux-on-brand-track)" }}>
-            <div className="h-full rounded-full"
-                 style={{ width: `${me.profilePct}%`, background: "var(--ux-on-brand-fill)",
-                          transition: "width var(--ux-t-slow) var(--ux-ease-out)" }} />
-          </div>
-          <div className="mt-3">
-            <Btn href="/app/profile" variant="primary" size="sm" full iconEnd="ArrowRight">Complete Now</Btn>
-          </div>
-        </div>
-      )}
-      rail={rail}
-    >
-      {body}
-    </Shell>
-  );
+  return <>{body}</>;
 }

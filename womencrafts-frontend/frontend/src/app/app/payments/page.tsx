@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import * as Icons from "lucide-react";
+import * as Icons from "@/components/ux/icons";
 
 import {
   ActionBtn, Btn, Card, EmptyState, IconTile, Pill,
@@ -18,6 +18,8 @@ import { useMe } from "@/components/ux/me";
 import { PayoutMethod } from "@/components/ux/money/parts";
 import { rupeesExact } from "@/components/ux/money/data";
 import { formatMoneyOrNothing } from "@/components/ux/kit/money";
+import { COPY } from "@/components/ux/copy";
+import { useT } from "@/i18n";
 
 type Status = "paid" | "refunded" | "failed" | "created";
 
@@ -37,6 +39,7 @@ const TONE: Record<Status, { pill: "green" | "blue" | "orange" | "neutral"; word
  * different questions, and a single combined ledger makes both harder to read.
  */
 export default function PaymentsPage() {
+  const tr = useT();
   const { data: ORDERS, source } = useOrders();
   const { data: PAYOUT_METHODS } = usePayoutMethods();
 
@@ -72,9 +75,9 @@ export default function PaymentsPage() {
     <HomeShell
       active="/app/payments"
       rail={
-        <div className="space-y-[15px]">
+        <div className="space-y-[16px]">
           <Card className="ux-onscroll-soft">
-            <SectionHead title="This year" />
+            <SectionHead title={tr("payments.thisYear")} />
             <div className="space-y-3.5">
               {[
                 ["Paid out", formatMoneyOrNothing(spent, "Nothing yet"), "ArrowUpRight", "--ux-tint-violet", "--ux-violet"],
@@ -86,8 +89,8 @@ export default function PaymentsPage() {
                 <div key={label} className="ux-hov flex items-center gap-3">
                   <IconTile icon={icon} tint={tint} ink={ink} size={38} />
                   <div className="min-w-0">
-                    <p className="text-[17px] font-bold leading-none tabular-nums" style={{ color: "var(--ux-ink)" }}>{val}</p>
-                    <p className="mt-1 truncate text-[11.5px]" style={{ color: "var(--ux-muted)" }}>{label}</p>
+                    <p className="text-lg font-bold leading-none tabular-nums" style={{ color: "var(--ux-ink)" }}>{val}</p>
+                    <p className="mt-1 truncate text-xs" style={{ color: "var(--ux-muted)" }}>{label}</p>
                   </div>
                 </div>
               ))}
@@ -95,33 +98,33 @@ export default function PaymentsPage() {
           </Card>
 
           <Card className="ux-onscroll-soft">
-            <SectionHead title="How you pay" action="Manage"
+            <SectionHead title={tr("payments.howYouPay")} action="Manage"
                          onAction={() => { window.location.href = "/app/settings/payments"; }} />
             <div className="space-y-2.5">
               {PAYOUT_METHODS.map((m) => <PayoutMethod key={m.id} m={m} />)}
             </div>
             <div className="mt-3">
-              <Btn href="/app/settings/payments" variant="outline" size="sm" full icon="Plus">Add a payment method</Btn>
+              <Btn href="/app/settings/payments" variant="outline" size="sm" full icon="Plus">{tr("payments.addAPaymentMethod")}</Btn>
             </div>
           </Card>
 
           <Card className="ux-onscroll-soft">
-            <SectionHead title="Something wrong?" icon="ShieldCheck" />
-            <p className="text-[12.5px] leading-relaxed" style={{ color: "var(--ux-ink-2)" }}>
+            <SectionHead title={tr("payments.somethingWrong")} icon="ShieldCheck" />
+            <p className="text-xsm leading-relaxed" style={{ color: "var(--ux-ink-2)" }}>
               If money left your account but the payment did not go through, it comes back on its own
               within 5–7 working days. If it does not, tell us and we will chase it.
             </p>
             <div className="mt-3.5">
-              <Btn href="/app/help" variant="soft" size="sm" full iconEnd="ArrowRight">Raise a problem</Btn>
+              <Btn href="/app/help" variant="soft" size="sm" full iconEnd="ArrowRight">{tr("payments.raiseAProblem")}</Btn>
             </div>
           </Card>
         </div>
       }
     >
-      <div className="mb-[18px] flex items-end justify-between gap-4">
+      <div className="mb-[20px] flex items-end justify-between gap-4">
         <div>
-          <h1 className="text-[24px] font-bold" style={{ color: "var(--ux-ink)" }}>Money</h1>
-          <p className="mt-1.5 text-[13px]" style={{ color: "var(--ux-muted)" }}>
+          <h1 className="text-2xl font-bold" style={{ color: "var(--ux-ink)" }}>{tr("payments.whatYouPaid")}</h1>
+          <p className="mt-1.5 text-xsm" style={{ color: "var(--ux-muted)" }}>
             {shown.length} {plural("payment", shown.length)}
             {trouble > 0 && ` · ${trouble} needs a look`}
           </p>
@@ -136,7 +139,7 @@ export default function PaymentsPage() {
           items={shown}
           keyOf={(o) => o.id}
           render={(o, i) => <PaymentRow item={o} index={i} retry={retry} me={ME} />}
-          className="ux-deck ux-stagger space-y-[13px]"
+          className="ux-deck ux-stagger space-y-[12px]"
         />
       ) : (
         <Card>
@@ -144,7 +147,7 @@ export default function PaymentsPage() {
             icon="Receipt"
             title={tab === "Problems" ? "Nothing has gone wrong" : `No ${tab.toLowerCase()} yet`}
             body="Courses, sessions and circle contributions you pay for appear here with a receipt."
-            action={<Btn onClick={() => setTab("All")} variant="soft">Show everything</Btn>}
+            action={<Btn onClick={() => setTab("All")} variant="soft">{tr("payments.showEverything")}</Btn>}
           />
         </Card>
       )}
@@ -168,18 +171,19 @@ const PaymentRow = rowMemo(function PaymentRow({
   retry: Action<[string, string, string]>;
   me: { name: string };
 }) {
+  const tr = useT();
   return (
     <Card className="ux-i ux-onscroll" style={{ ["--i" as string]: index }}>
           <div className="flex items-start gap-3.5">
             <IconTile icon={item.icon} tint={item.tint} ink={item.ink} size={46} radius={12} />
             <div className="min-w-0 flex-1">
               <div className="flex items-start gap-2">
-                <h3 className="min-w-0 flex-1 truncate text-[14.5px] font-semibold" style={{ color: "var(--ux-ink)" }}>
+                <h3 className="min-w-0 flex-1 truncate text-sm font-semibold" style={{ color: "var(--ux-ink)" }}>
                   {item.title}
                 </h3>
                 <Pill tone={TONE[item.status].pill} size="sm">{TONE[item.status].word}</Pill>
               </div>
-              <p className="mt-1 flex flex-wrap items-center gap-x-3 text-[11.5px]" style={{ color: "var(--ux-muted)" }}>
+              <p className="mt-1 flex flex-wrap items-center gap-x-3 text-xs" style={{ color: "var(--ux-muted)" }}>
                 <span>{item.purpose}</span>
                 <span className="inline-flex items-center gap-1"><Icons.CreditCard className="h-3.5 w-3.5" /> {item.method}</span>
                 <span className="inline-flex items-center gap-1"><Icons.Clock className="h-3.5 w-3.5" /> {item.when}</span>
@@ -188,33 +192,33 @@ const PaymentRow = rowMemo(function PaymentRow({
             <div className="shrink-0 text-end">
               {/* Exact paise here: this is the one screen where a receipt has
                   to match her bank statement to the last digit. */}
-              <p className="text-[16px] font-bold tabular-nums" style={{ color: "var(--ux-ink)" }}>
+              <p className="text-base font-bold tabular-nums" style={{ color: "var(--ux-ink)" }}>
                 {rupeesExact(item.amount_minor)}
               </p>
-              <p className="mt-0.5 text-[10.5px]" style={{ color: "var(--ux-faint)" }}>{item.ref}</p>
+              <p className="mt-0.5 text-2xs" style={{ color: "var(--ux-faint)" }}>{item.ref}</p>
             </div>
           </div>
 
           <div className="mt-3.5 flex items-center justify-between gap-4 border-t pt-3.5"
                style={{ borderColor: "var(--ux-line)" }}>
-            <span className="text-[11.5px]" style={{ color: "var(--ux-faint)" }}>
+            <span className="text-xs" style={{ color: "var(--ux-faint)" }}>
               {item.status === "failed"
                 ? "No money left your account."
                 : item.status === "refunded"
-                  ? "Returned to the way you paid."
-                  : "Receipt available"}
+                  ? tr("payments.returnedToTheWayYouPaid")
+              : tr("payments.receiptAvailable")}
             </span>
             <span className="flex items-center gap-2">
               {/* A real receipt. Refunds and failures say so on the page
                   rather than printing a document that claims she paid. */}
               <ActionBtn variant="outline" size="sm" icon="Download" doneIcon="Printer"
-                         done="Choose “Save as PDF”"
+                         done={COPY.saveAsPdf}
                          act={() => printDocument(`Receipt — ${item.title}`, `
                            ${letterhead("Receipt", `${me.name} · ${escapeHtml(item.when)}`)}
                            <table><tbody>
                              <tr><td>What</td><td>${escapeHtml(item.title)}</td></tr>
                              <tr><td>Why</td><td>${escapeHtml(item.purpose)}</td></tr>
-                             <tr><td>Paid with</td><td>${escapeHtml(item.method)}</td></tr>
+                             <tr><td>${tr("payments.paidWith")}</td><td>${escapeHtml(item.method)}</td></tr>
                              <tr><td>Status</td><td>${escapeHtml(TONE[item.status].word)}</td></tr>
                              <tr class="total"><td>Amount</td><td class="num">${rupeesExact(item.amount_minor)}</td></tr>
                            </tbody></table>

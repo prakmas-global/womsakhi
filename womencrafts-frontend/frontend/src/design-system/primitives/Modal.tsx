@@ -1,9 +1,10 @@
 "use client";
 
-import { useEffect, useId, useRef } from "react";
+import { useId, useRef } from "react";
 import { X } from "lucide-react";
 
 import type { Tone } from "./Badge";
+import { useDialogBehaviour } from "@/lib/use-dialog";
 
 /** Gradient header chip per tone. Covers the full design-system Tone set so a
  *  caller can pass any tone its data carries without narrowing it first. */
@@ -58,71 +59,16 @@ export default function Modal({
   const panelRef = useRef<HTMLDivElement>(null);
   const titleId = useId();
 
-  useEffect(() => {
-    if (!open) return;
-
-    /**
-     * `aria-modal="true"` tells a screen reader to ignore the page behind the
-     * dialog. It does NOT stop the Tab key: focus walks straight out of the
-     * dialog and into the page underneath, which is still there and still
-     * clickable-by-keyboard. The user ends up operating a form they cannot see,
-     * behind a dimmed overlay, with no idea where they are.
-     *
-     * So the Tab key is wrapped by hand: past the last control it returns to
-     * the first, and Shift+Tab from the first goes to the last.
-     */
-    const focusable = () =>
-      [
-        ...(panelRef.current?.querySelectorAll<HTMLElement>(
-          'a[href],button:not([disabled]),input:not([disabled]),select:not([disabled]),textarea:not([disabled]),[tabindex]:not([tabindex="-1"])'
-        ) ?? []),
-      ].filter((el) => el.offsetParent !== null || el === document.activeElement);
-
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") return onClose();
-      if (e.key !== "Tab") return;
-      const list = focusable();
-      if (!list.length) return;
-      const first = list[0];
-      const last = list[list.length - 1];
-      const active = document.activeElement as HTMLElement | null;
-      if (e.shiftKey && (active === first || !panelRef.current?.contains(active))) {
-        e.preventDefault();
-        last.focus();
-      } else if (!e.shiftKey && active === last) {
-        e.preventDefault();
-        first.focus();
-      }
-    };
-
-    document.addEventListener("keydown", onKey);
-    const prev = document.body.style.overflow;
-    document.body.style.overflow = "hidden";
-
-    // Remember where focus came from, so closing puts it back on the control
-    // that opened this. Without it, focus falls to <body> and the next Tab
-    // starts again from the top of the page — losing the reader's place
-    // entirely, every time a dialog is dismissed.
-    const returnTo = document.activeElement as HTMLElement | null;
-    const raf = requestAnimationFrame(() => {
-      const list = focusable();
-      (list[0] ?? panelRef.current)?.focus();
-    });
-
-    return () => {
-      cancelAnimationFrame(raf);
-      document.removeEventListener("keydown", onKey);
-      document.body.style.overflow = prev;
-      returnTo?.focus?.();
-    };
-  }, [open, onClose]);
+  // Focus trap, scroll lock and focus return — shared with Sheet, because the
+  // copied version is the one that drifts.
+  useDialogBehaviour(open, panelRef, onClose);
 
   if (!open) return null;
 
   const sizeCls = size === "sm" ? "max-w-sm" : size === "lg" ? "max-w-2xl" : "max-w-lg";
 
   return (
-    <div className="fixed inset-0 z-[150] flex items-center justify-center p-4">
+    <div className="fixed inset-0 z-[var(--ux-z-modal)] flex items-center justify-center p-4">
       <div
         className="absolute inset-0 bg-ink/40 backdrop-blur-md dark:bg-black/70"
         onClick={onClose}

@@ -5,7 +5,7 @@ import { useCallback } from "react";
 import { useResource, type Resource } from "@/lib/use-resource";
 import {
   apiAssessments, apiCover, apiDigitalSteps, apiFamily, apiGroupBuys,
-  apiHealth, apiRights, apiSaved, apiSchemes, apiTravel,
+  apiGuidance, apiHealth, apiHelplines, apiRights, apiSaved, apiSchemes, apiTravel,
   type Assessment, type DigitalStep, type GroupBuy, type Reference, type SavedItem,
 } from "@/lib/entitlements-api";
 
@@ -132,6 +132,74 @@ export const useHealthChecks = (): Resource<UxHealthCheck[]> =>
   useResource(
     useCallback(async (s: AbortSignal) => (await apiHealth(s)).map(toHealthCheck), []),
     HEALTH_CHECKS,
+  );
+
+
+/* ── Numbers she can ring, and what to do ──────────────────────────────── */
+
+/**
+ * A helpline, as the screens want it.
+ *
+ * These were four hardcoded lists in `wellbeing/data.ts` — one of which named
+ * "District Legal Services, Jaipur" and its phone number, shown to every member
+ * in India. They now come from the server, so a number that changes is an edit
+ * rather than a deploy, and a district number can be scoped to its district.
+ */
+export type UxHelpline = { id: string; label: string; num: string; note: string };
+
+const toHelpline = (r: Reference): UxHelpline => ({
+  id: r.id,
+  label: r.title,
+  num: str(r.payload.number, ""),
+  // "Free, 24 hours" reads better than either half alone, and both are facts
+  // the entry carries rather than assumptions the screen makes.
+  note: [r.cost_label, str(r.payload.hours, "")].filter(Boolean).join(", "),
+});
+
+/**
+ * Helplines for one screen.
+ *
+ * **The fallback is `[]`, deliberately.** Everywhere else in this file an empty
+ * server answer falls back to the mock so a screen is never bare. A phone
+ * number is the one thing that must never be invented: a wrong number in an
+ * emergency is worse than no number, because she rings it instead of the right
+ * one. If the server has nothing, the panel shows nothing.
+ */
+export const useHelplines = (context: string): Resource<UxHelpline[]> =>
+  useResource(
+    useCallback(async (s: AbortSignal) => (await apiHelplines(context, s)).map(toHelpline), [context]),
+    [],
+  );
+
+/**
+ * One piece of editorial guidance — a step to take, or a thing worth knowing.
+ *
+ * `icon` and `mins` are optional because they only apply to some contexts: the
+ * legal and travel steps are numbered and need neither, while the health and
+ * family cards are illustrated and one of them says how long it takes to read.
+ * Carrying them here rather than in each screen keeps the payload keys in one
+ * place, where a typo shows up once.
+ */
+export type UxGuidance = {
+  id: string;
+  label: string;
+  note: string;
+  icon?: string;
+  mins?: number;
+};
+
+const toGuidance = (r: Reference): UxGuidance => ({
+  id: r.id,
+  label: r.title,
+  note: r.body,
+  icon: typeof r.payload.icon === "string" ? r.payload.icon : undefined,
+  mins: typeof r.payload.mins === "number" ? r.payload.mins : undefined,
+});
+
+export const useGuidance = (context: string): Resource<UxGuidance[]> =>
+  useResource(
+    useCallback(async (s: AbortSignal) => (await apiGuidance(context, s)).map(toGuidance), [context]),
+    [],
   );
 
 export type UxRight = (typeof RIGHTS)[number];

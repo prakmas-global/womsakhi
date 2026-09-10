@@ -265,7 +265,7 @@ export default function VerificationQueuePage() {
           </object>
         ) : (
           // eslint-disable-next-line @next/next/no-img-element
-          <img
+          <img loading="lazy" decoding="async"
             src={viewing?.url}
             alt={viewing?.doc.doc_type_label ?? "Identity document"}
             className="max-h-[60vh] w-full rounded-xl object-contain"

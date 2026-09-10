@@ -49,6 +49,9 @@ class ConversationModel:
             # purpose: a queue of pending changes is a queue of things she has
             # to hold in her head.
             "pending_action": None,
+            # Pinned by her, not by us. Kept on the conversation rather than in
+            # a separate list so a delete takes the pin with it.
+            "pinned": False,
             "message_count": 0,
             "cost_usd": 0.0,
             "created_at": _now(),
@@ -63,6 +66,7 @@ class ConversationModel:
             "audience": doc.get("audience", ConversationModel.AUDIENCE_MEMBER),
             "locale": doc.get("locale", "en"),
             "message_count": int(doc.get("message_count") or 0),
+            "pinned": bool(doc.get("pinned") or False),
             "pending_action": doc.get("pending_action"),
             "created_at": doc.get("created_at"),
             "updated_at": doc.get("updated_at"),
@@ -114,5 +118,34 @@ class SakhiMessageModel:
             "kind": doc.get("kind", SakhiMessageModel.KIND_ASSISTANT),
             "text": doc.get("text", ""),
             "meta": doc.get("meta") or {},
+            "created_at": doc.get("created_at"),
+        }
+
+
+class SakhiSavedModel:
+    """An answer she chose to keep.
+
+    The text is copied, not referenced. A saved answer that pointed at a message
+    id would vanish the moment she deleted the conversation it came from — and
+    deleting a chat is not the same as un-saving what she learned in it.
+    """
+
+    collection_name = "sakhi_saved"
+
+    @staticmethod
+    def create_document(*, user_id: str, text: str, conversation_id: str = "") -> dict:
+        return {
+            "user_id": user_id,
+            "text": text,
+            "conversation_id": conversation_id,
+            "created_at": _now(),
+        }
+
+    @staticmethod
+    def to_response(doc: dict) -> dict:
+        return {
+            "id": str(doc["_id"]),
+            "text": doc.get("text", ""),
+            "conversation_id": doc.get("conversation_id", ""),
             "created_at": doc.get("created_at"),
         }

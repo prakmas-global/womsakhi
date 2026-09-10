@@ -68,6 +68,19 @@ export const apiListings = (s?: AbortSignal) => get<Listing[]>("/shop/listings",
 export const apiShopOrders = (s?: AbortSignal) => get<ShopOrder[]>("/shop/orders", s);
 export const apiShopReviews = (s?: AbortSignal) => get<ShopReview[]>("/shop/reviews", s);
 
+/**
+ * Take a listing out of the shop without deleting it.
+ *
+ * `status` existed on the model from the start and nothing could set it —
+ * `PATCH` takes a `ListingCreate`, which has no `status`. So a woman whose
+ * stock ran out could only delete the listing and lose its reviews with it.
+ */
+export async function apiPauseListing(id: string, paused = true) {
+  const { data } = await apiClient.post<Listing>(
+    `/shop/listings/${id}/pause`, null, { params: { paused } });
+  return data;
+}
+
 export async function apiAdvanceOrder(id: string) {
   const { data } = await apiClient.post<ShopOrder>(`/shop/orders/${id}/advance`);
   return data;

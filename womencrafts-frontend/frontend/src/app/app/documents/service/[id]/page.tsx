@@ -5,16 +5,16 @@ import { use, useEffect, useMemo, useRef, useState } from "react";
 import { apiSaveListing, apiUpdateListing } from "@/lib/shop-api";
 import { messageFrom } from "@/lib/use-action";
 import { settled, useAttemptKey } from "@/lib/idempotency";
-import Link from "next/link";
-import * as Icons from "lucide-react";
+import * as Icons from "@/components/ux/icons";
 
-import { Btn, Card, Chip, EmptyState, IconTile, SectionHead } from "@/components/ux/kit";
+import {Back, Btn, Card, Chip, EmptyState, IconTile, SectionHead } from "@/components/ux/kit";
 import { Field, TextInput, Toggle } from "@/components/ux/settings/Frame";
 import { HomeShell } from "@/components/ux/home/HomeShell";
 import { useBusiness } from "@/components/ux/business";
 import {
   RATE_KINDS, SERVICE_CATEGORIES, rupees, type RateKind,
 } from "@/components/ux/shop/data";
+import { useT } from "@/i18n";
 
 const BLANK = {
   id: "new", name: "", category: "Tailoring", rate_minor: 0, rateKind: "per visit" as RateKind,
@@ -38,6 +38,7 @@ const WHERES = ["At her place", "At your place", "Either", "Online"] as const;
  * woman running a household cannot spare.
  */
 export default function ServiceEditor({ params }: { params: Promise<{ id: string }> }) {
+  const tr = useT();
   const { id } = use(params);
   const { data: biz, refetch } = useBusiness();
   const SERVICES = biz.services;
@@ -144,9 +145,9 @@ export default function ServiceEditor({ params }: { params: Promise<{ id: string
         <Card>
           <EmptyState
             icon="SearchX"
-            title="That service is not here"
+            title={tr("documentsService.thatServiceIsNotHere")}
             body="It may have been removed from your shop."
-            action={<Btn href="/app/documents" variant="primary" iconEnd="ArrowRight">Your business</Btn>}
+            action={<Btn href="/app/documents" variant="primary" iconEnd="ArrowRight">{tr("documentsService.yourBusiness")}</Btn>}
           />
         </Card>
       </HomeShell>
@@ -157,27 +158,27 @@ export default function ServiceEditor({ params }: { params: Promise<{ id: string
     <HomeShell
       skeleton="form"
       rail={
-        <div className="space-y-[15px]">
+        <div className="space-y-[16px]">
           <Card>
-            <SectionHead title="What a buyer sees" sub="Updates as you type" />
-            <div className="ux-sq overflow-hidden rounded-[14px] border" style={{ borderColor: "var(--ux-line)" }}>
+            <SectionHead title={tr("documentsService.whatABuyerSees")} sub={tr("documentsService.updatesAsYouType")} />
+            <div className="ux-sq overflow-hidden rounded-[12px] border" style={{ borderColor: "var(--ux-line)" }}>
               <div className="h-[120px] overflow-hidden" style={{ background: "var(--ux-tint-pink)" }}>
                 {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src={base.art} alt="" className="h-full w-full object-cover" />
+                <img loading="lazy" decoding="async" src={base.art} alt="" className="h-full w-full object-cover" />
               </div>
               <div className="p-3.5">
-                <p className="text-[14px] font-semibold" style={{ color: form.name ? "var(--ux-ink)" : "var(--ux-faint)" }}>
+                <p className="text-sm font-semibold" style={{ color: form.name ? "var(--ux-ink)" : "var(--ux-faint)" }}>
                   {form.name || "What you do"}
                 </p>
-                <p className="mt-1 text-[17px] font-bold tabular-nums"
+                <p className="mt-1 text-lg font-bold tabular-nums"
                    style={{ color: rate_minor ? "var(--ux-ink)" : "var(--ux-faint)" }}>
                   {rate_minor ? `${rupees(rate_minor)} ${form.rateKind}` : "₹— "}
                 </p>
-                <p className="mt-1.5 text-[12px] leading-snug"
+                <p className="mt-1.5 text-xs leading-snug"
                    style={{ color: form.about ? "var(--ux-muted)" : "var(--ux-faint)" }}>
                   {form.about || "Say what is included, and what a buyer should have ready."}
                 </p>
-                <p className="mt-2.5 flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px]" style={{ color: "var(--ux-muted)" }}>
+                <p className="mt-2.5 flex flex-wrap items-center gap-x-3 gap-y-1 text-2xs" style={{ color: "var(--ux-muted)" }}>
                   <span className="inline-flex items-center gap-1"><Icons.MapPin className="h-3 w-3" /> {form.where}</span>
                   {travels && <span>up to {form.travelKm} km</span>}
                   <span className="inline-flex items-center gap-1"><Icons.Clock className="h-3 w-3" /> about {form.mins} min</span>
@@ -187,34 +188,34 @@ export default function ServiceEditor({ params }: { params: Promise<{ id: string
           </Card>
 
           <Card>
-            <SectionHead title="Before it goes live" />
+            <SectionHead title={tr("documentsService.beforeItGoesLive")} />
             {missing.length ? (
               <ul className="space-y-2.5">
                 {missing.map((m) => (
-                  <li key={m} className="flex items-center gap-2.5 text-[12.5px]" style={{ color: "var(--ux-ink-2)" }}>
+                  <li key={m} className="flex items-center gap-2.5 text-xsm" style={{ color: "var(--ux-ink-2)" }}>
                     <Icons.Circle className="h-[14px] w-[14px] shrink-0" style={{ color: "var(--ux-faint)" }} />
                     Still needs {m}
                   </li>
                 ))}
               </ul>
             ) : (
-              <p className="flex items-center gap-2 text-[12.5px]" style={{ color: "var(--ux-green-ink)" }}>
-                <Icons.CheckCheck className="h-[16px] w-[16px]" /> Ready to publish.
-              </p>
+              <p className="flex items-center gap-2 text-xsm" style={{ color: "var(--ux-green-ink)" }}>
+                <Icons.CheckCheck className="h-[16px] w-[16px]" />{tr("documentsService.readyToPublish")}</p>
             )}
             <div className="mt-4">
               <Btn variant="primary" full icon={busy ? "Loader" : "Check"}
                    disabled={busy || missing.length > 0}
                    onClick={() => void save()}>
-                {isNew ? "List this service" : "Save changes"}
+                {isNew ? tr("documentsService.listThisService")
+              : tr("documentsService.saveChanges")}
               </Btn>
             </div>
             {/* "Saved." is now only said when the server said so. */}
             {saved && !problem && (
-              <p className="ux-slide-up mt-2.5 text-center text-[12px]" style={{ color: "var(--ux-green-ink)" }}>Saved.</p>
+              <p className="ux-slide-up mt-2.5 text-center text-xs" style={{ color: "var(--ux-green-ink)" }}>Saved.</p>
             )}
             {problem && (
-              <p role="alert" className="ux-slide-up mt-2.5 text-[12.5px] leading-relaxed"
+              <p role="alert" className="ux-slide-up mt-2.5 text-xsm leading-relaxed"
                  style={{ color: "var(--ux-orange-ink)" }}>
                 {problem}
               </p>
@@ -223,15 +224,15 @@ export default function ServiceEditor({ params }: { params: Promise<{ id: string
 
           {!isNew && existing && (
             <Card>
-              <SectionHead title="How it is doing" />
+              <SectionHead title={tr("documentsService.howItIsDoing")} />
               <div className="space-y-3.5">
                 {[[`${existing.booked}`, "Times booked", "CalendarCheck", "--ux-tint-violet", "--ux-violet"],
                   [existing.rating, "Average rating", "Star", "--ux-tint-orange", "--ux-amber"]].map(([v, label, icon, tint, ink]) => (
                   <div key={label} className="ux-hov flex items-center gap-3">
                     <IconTile icon={icon} tint={tint} ink={ink} size={38} />
                     <div className="min-w-0">
-                      <p className="text-[17px] font-bold leading-none tabular-nums" style={{ color: "var(--ux-ink)" }}>{v}</p>
-                      <p className="mt-1 truncate text-[11.5px]" style={{ color: "var(--ux-muted)" }}>{label}</p>
+                      <p className="text-lg font-bold leading-none tabular-nums" style={{ color: "var(--ux-ink)" }}>{v}</p>
+                      <p className="mt-1 truncate text-xs" style={{ color: "var(--ux-muted)" }}>{label}</p>
                     </div>
                   </div>
                 ))}
@@ -241,31 +242,27 @@ export default function ServiceEditor({ params }: { params: Promise<{ id: string
         </div>
       }
     >
-      <Link href="/app/documents"
-            className="ux-hov -my-1 mb-3.5 inline-flex items-center gap-1.5 py-1 text-[12.5px] font-medium"
-            style={{ color: "var(--ux-brand)" }}>
-        <Icons.ArrowLeft className="ux-ico h-4 w-4" /> Your business
-      </Link>
+      <Back to="/app/documents" label={tr("documentsService.yourShop")} className="mb-4" />
 
-      <h1 className="text-[24px] font-bold" style={{ color: "var(--ux-ink)" }}>
+      <h1 className="text-2xl font-bold" style={{ color: "var(--ux-ink)" }}>
         {isNew ? "Offer a service" : form.name || "Edit service"}
       </h1>
-      <p className="mb-[20px] mt-1.5 text-[13px]" style={{ color: "var(--ux-muted)" }}>
+      <p className="mb-[20px] mt-1.5 text-xsm" style={{ color: "var(--ux-muted)" }}>
         {isNew
-          ? "Anything you do with your hands or your time — stitching, mehendi, tuition, cooking, childcare."
-          : "Changes reach buyers straight away."}
+          ? tr("documentsService.anythingYouDoWithYourHands")
+              : tr("documentsService.changesReachBuyersStraightAway")}
       </p>
 
-      <Card className="mb-[15px]">
-        <SectionHead title="What you do" />
+      <Card className="mb-[16px]">
+        <SectionHead title={tr("documentsService.whatYouDo")} />
         <div className="space-y-4">
-          <Field label="Name it the way someone would ask for it"
-                 hint="“Blouse stitched to measure”, not “Tailoring services”.">
-            <TextInput value={form.name} onChange={set("name")} placeholder="Blouse stitched to measure" />
+          <Field label={tr("documentsService.nameItTheWaySomeoneWould")}
+                 hint={tr("documentsService.blouseStitchedToMeasureNotTailorin")}>
+            <TextInput value={form.name} onChange={set("name")} placeholder={tr("documentsService.blouseStitchedToMeasure")} />
           </Field>
 
           <div>
-            <span className="block text-[13px] font-semibold" style={{ color: "var(--ux-ink)" }}>What kind of work</span>
+            <span className="block text-xsm font-semibold" style={{ color: "var(--ux-ink)" }}>{tr("documentsService.whatKindOfWork")}</span>
             <div className="mt-2 flex flex-wrap gap-2">
               {SERVICE_CATEGORIES.map((c) => (
                 <Chip key={c} selected={form.category === c}
@@ -276,27 +273,27 @@ export default function ServiceEditor({ params }: { params: Promise<{ id: string
             </div>
           </div>
 
-          <Field label="Describe it" hint="What is included, and what a buyer should have ready before you arrive.">
+          <Field label={tr("documentsService.describeIt")} hint={tr("documentsService.whatIsIncludedAndWhatA")}>
             <textarea
               value={form.about}
               onChange={(e) => { setForm((f) => ({ ...f, about: e.target.value })); setSaved(false); }}
               rows={4}
-              aria-label="Describe it"
-              className="ux-sq w-full resize-y rounded-[11px] border p-3.5 text-[13.5px] leading-relaxed outline-none"
+              aria-label={tr("documentsService.describeIt2")}
+              className="ux-sq w-full resize-y rounded-[12px] border p-3.5 text-sm leading-relaxed outline-none"
               style={{ borderColor: "var(--ux-line-strong)", background: "var(--ux-surface)", color: "var(--ux-ink)" }}
             />
           </Field>
         </div>
       </Card>
 
-      <Card className="mb-[15px]">
-        <SectionHead title="What you charge" sub="Buyers see this exactly — nothing is added on top" />
+      <Card className="mb-[16px]">
+        <SectionHead title={tr("documentsService.whatYouCharge")} sub={tr("documentsService.buyersSeeThisExactlyNothingIs")} />
         <div className="grid grid-cols-2 gap-4">
-          <Field label="Your rate" hint="In rupees.">
+          <Field label={tr("documentsService.yourRate")} hint={tr("documentsService.inRupees")}>
             <TextInput value={form.rupees} onChange={set("rupees")} placeholder="450" inputMode="numeric" />
           </Field>
           <div>
-            <span className="block text-[13px] font-semibold" style={{ color: "var(--ux-ink)" }}>Charged</span>
+            <span className="block text-xsm font-semibold" style={{ color: "var(--ux-ink)" }}>Charged</span>
             <div className="mt-2 flex flex-wrap gap-2">
               {RATE_KINDS.map((k) => (
                 <Chip key={k} selected={form.rateKind === k}
@@ -307,13 +304,13 @@ export default function ServiceEditor({ params }: { params: Promise<{ id: string
             </div>
           </div>
         </div>
-        <Field label="How long it usually takes" hint="In minutes. Buyers plan their day around this.">
+        <Field label={tr("documentsService.howLongItUsuallyTakes")} hint={tr("documentsService.inMinutesBuyersPlanTheirDay")}>
           <TextInput value={form.mins} onChange={set("mins")} placeholder="60" inputMode="numeric" />
         </Field>
       </Card>
 
       <Card>
-        <SectionHead title="Where it happens" />
+        <SectionHead title={tr("documentsService.whereItHappens")} />
         <div className="ux-deck space-y-2.5">
           {WHERES.map((w, i) => {
             const on = form.where === w;
@@ -322,7 +319,7 @@ export default function ServiceEditor({ params }: { params: Promise<{ id: string
                 key={w}
                 onClick={() => { setForm((f) => ({ ...f, where: w })); setSaved(false); }}
                 aria-pressed={on}
-                className="ux-i ux-sq flex w-full items-center gap-3.5 rounded-[13px] border p-3.5 text-start"
+                className="ux-i ux-sq flex w-full items-center gap-3.5 rounded-[12px] border p-3.5 text-start"
                 style={{
                   borderColor: on ? "var(--ux-brand)" : "var(--ux-line)",
                   background: on ? "var(--ux-brand-tint)" : "var(--ux-surface)",
@@ -332,12 +329,12 @@ export default function ServiceEditor({ params }: { params: Promise<{ id: string
                 <IconTile icon={w === "Online" ? "Video" : w === "At your place" ? "Bike" : "Home"}
                           tint="--ux-tint-lilac" ink="--ux-brand" size={40} radius={11} />
                 <span className="min-w-0 flex-1">
-                  <span className="block text-[13.5px] font-semibold" style={{ color: "var(--ux-ink)" }}>{w}</span>
-                  <span className="mt-0.5 block text-[11.5px]" style={{ color: "var(--ux-muted)" }}>
+                  <span className="block text-sm font-semibold" style={{ color: "var(--ux-ink)" }}>{w}</span>
+                  <span className="mt-0.5 block text-xs" style={{ color: "var(--ux-muted)" }}>
                     {w === "At her place" ? "She comes to you"
                       : w === "At your place" ? "You travel to her"
-                      : w === "Either" ? "Whichever suits, agreed when she books"
-                      : "By video call"}
+                      : w === "Either" ? tr("documentsService.whicheverSuitsAgreedWhenSheBooks")
+              : tr("documentsService.byVideoCall")}
                   </span>
                 </span>
                 {on && <Icons.CheckCircle2 className="ux-pop h-[19px] w-[19px] shrink-0" style={{ color: "var(--ux-brand)" }} />}
@@ -350,7 +347,7 @@ export default function ServiceEditor({ params }: { params: Promise<{ id: string
             visit wastes an afternoon a woman running a household cannot spare. */}
         {travels && (
           <div className="ux-slide-up mt-4">
-            <Field label="How far will you travel" hint="In kilometres from where you live. Buyers further away will not see this.">
+            <Field label={tr("documentsService.howFarWillYouTravel")} hint={tr("documentsService.inKilometresFromWhereYouLive")}>
               <TextInput value={form.travelKm} onChange={set("travelKm")} placeholder="5" inputMode="numeric" />
             </Field>
           </div>
@@ -360,7 +357,7 @@ export default function ServiceEditor({ params }: { params: Promise<{ id: string
           <Toggle
             on={form.live}
             onChange={(v) => { setForm((f) => ({ ...f, live: v })); setSaved(false); }}
-            label="Show this to buyers"
+            label={tr("documentsService.showThisToBuyers")}
             whenOn="Women near you can find and book it."
             whenOff="Only you can see it. Turn it back on any time."
           />

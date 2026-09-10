@@ -1,0 +1,70 @@
+# Every pull request into main or development is checked before a human looks
+# at it. Nothing here deploys — this job's only power is to say no.
+name: PR checks
+
+on:
+  pull_request:
+    branches: [main, development]
+
+concurrency:
+  # A second push to the same PR cancels the first. Without this, a branch
+  # pushed three times in a minute runs three full builds and the slowest one
+  # reports last, which is how a red build gets reported as green.
+  group: pr-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  web:
+    name: Web — typecheck, lint, build
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: womencrafts-frontend/frontend
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: npm
+          cache-dependency-path: womencrafts-frontend/frontend/package-lock.json
+      - run: npm ci
+      - name: Typecheck
+        run: npx tsc --noEmit -p tsconfig.json
+      - name: Lint (no new problems)
+        # A ratchet, not a wall — see checks/lint-ratchet.mjs. The repo carries
+        # 288 pre-existing problems; this fails only if a branch adds more.
+        run: node checks/lint-ratchet.mjs
+      - name: Production build
+        run: npm run build
+        env:
+          NEXT_PUBLIC_API_URL: https://api.womsakhi.com/api/v1
+          NEXT_TELEMETRY_DISABLED: '1'
+
+  api:
+    name: API — imports and starts
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: womencrafts-backend/backend
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: pip
+          cache-dependency-path: womencrafts-backend/backend/requirements.txt
+      - run: pip install -r requirements.txt
+      - name: The app imports and its routes resolve
+        # Importing is a real check here: the settings object is validated by
+        # pydantic at import time, so a required setting added without a
+        # default fails HERE rather than at 3am on a Cloud Run cold start.
+        run: |
+          python -c "
+          import os
+          os.environ.setdefault('MONGODB_URI', 'mongodb://localhost:27017')
+          os.environ.setdefault('JWT_SECRET_KEY', 'ci-only-not-a-real-key')
+          from main import app
+          routes = [r.path for r in app.routes]
+          assert len(routes) > 50, f'only {len(routes)} routes resolved'
+          print(f'ok — {len(routes)} routes')
+          "

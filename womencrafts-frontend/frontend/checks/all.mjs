@@ -9,19 +9,38 @@ import { execSync } from "child_process";
 
 const CHECKS = [
   ["tokens",   "node checks/tokens.mjs"],
+  ["type",     "node checks/type-scale.mjs"],
+  ["icons",    "node checks/icons.mjs"],
+  ["nav",      "node checks/nav.mjs"],
+  ["i18n-keys","node checks/i18n-coverage.mjs"],
   ["ink",      "npx tsx src/theme-engine/__checks__/ink.mjs"],
   ["contrast", "node checks/contrast.mjs"],
   ["rail",     "node checks/rail.mjs"],
+  ["steady",   "node checks/rail-steady.mjs"],
+  ["fold",     "node checks/rail-fold.mjs"],
+  ["learn",    "node checks/learn-board.mjs"],
+  ["work",     "node checks/work-board.mjs"],
+  ["earn",     "node checks/earn-board.mjs"],
+  ["banner",   "node checks/home-banner.mjs"],
+  ["persist",  "node checks/nav-persist.mjs"],
+  ["chrome",   "node checks/chrome-leak.mjs"],
   ["a11y",     "node checks/a11y.mjs"],
   ["keyboard", "node checks/keyboard.mjs"],
   ["feedback", "node checks/feedback.mjs"],
   ["toast",    "node checks/toast.mjs"],
+  // What she sees BEFORE the toast — the gap between pressing something and
+  // it being done. Sits beside feedback/toast because it is the same subject.
+  ["waiting",  "node checks/waiting.mjs"],
   ["states",   "node checks/states.mjs"],
   ["api",      "node checks/api.mjs"],
   ["screens",  "node checks/screens.mjs"],
   // Every dashboard screen at 390px, plus the off-canvas drawer.
   ["phone",    "node checks/phone.mjs"],
   ["split",    "node checks/split.mjs"],
+  // Back goes where she came from, and a drawer is on top and reachable.
+  ["back",     "node checks/back-flow.mjs"],
+  ["overlay",  "node checks/overlay-scope.mjs"],
+  ["phone-nav","node checks/phone-nav.mjs"],
   // Every language, rendered in a real browser.
   ["i18n",     "node checks/i18n.mjs"],
   // Last: it drives a real conversation, so it is the slowest by far and

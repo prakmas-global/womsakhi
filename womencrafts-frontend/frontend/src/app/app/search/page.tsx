@@ -3,16 +3,16 @@
 import { Suspense, useMemo, useState } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
-import * as Icons from "lucide-react";
+import * as Icons from "@/components/ux/icons";
 
 import {
   Btn, Card, Chip, EmptyState, IconTile, SectionHead,
   SourceNote, plural
 } from "@/components/ux/kit";
 import { HomeShell } from "@/components/ux/home/HomeShell";
-import { matchHits } from "@/components/ux/SearchPalette";
 import { SEARCH_KINDS, SEARCH_SUGGESTED, type SearchHit } from "@/components/ux/home/data";
 import { useSearch } from "@/components/ux/growth";
+import { useT } from "@/i18n";
 
 /**
  * Search results.
@@ -31,6 +31,7 @@ export default function SearchPage() {
 }
 
 function Results() {
+  const tr = useT();
   const params = useSearchParams();
   const router = useRouter();
   const q = params.get("q") ?? "";
@@ -50,15 +51,15 @@ function Results() {
     <HomeShell
       active="/app/explore"
       rail={
-        <div className="space-y-[15px]">
+        <div className="space-y-[16px]">
           <Card>
-            <SectionHead title="Refine by kind" />
+            <SectionHead title={tr("search.refineByKind")} />
             <div className="space-y-1">
               {SEARCH_KINDS.filter((k) => k === "All" || counts[k]).map((k) => (
                 <button
                   key={k}
                   onClick={() => setKind(k)}
-                  className="flex w-full items-center justify-between rounded-[9px] px-2.5 py-2 text-[13px] transition-colors"
+                  className="flex w-full items-center justify-between rounded-[8px] px-2.5 py-2 text-xsm transition-colors"
                   style={{
                     background: kind === k ? "var(--ux-brand-tint)" : "transparent",
                     color: kind === k ? "var(--ux-brand)" : "var(--ux-ink-2)",
@@ -66,35 +67,31 @@ function Results() {
                   }}
                 >
                   {k === "All" ? "Everything" : plural(k)}
-                  <span className="text-[11.5px]" style={{ color: "var(--ux-faint)" }}>{counts[k] ?? 0}</span>
+                  <span className="text-xs" style={{ color: "var(--ux-faint)" }}>{counts[k] ?? 0}</span>
                 </button>
               ))}
             </div>
           </Card>
 
-          <div className="relative overflow-hidden rounded-[16px] p-[18px]"
+          <div className="relative overflow-hidden rounded-[16px] p-[20px]"
                style={{ background: "linear-gradient(140deg, var(--ux-tint-lilac), var(--ux-tint-blue))" }}>
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src="/ux/art/mascot-robot-reading.webp" alt=""
+            <img loading="lazy" decoding="async" src="/ux/art/mascot-robot-reading.webp" alt=""
                  className="ux-float pointer-events-none absolute -bottom-3 -end-3 h-[92px] w-[92px] object-contain" />
-            <h3 className="relative w-[62%] text-[14px] font-semibold" style={{ color: "var(--ux-ink)" }}>
-              Can’t find it?
-            </h3>
-            <p className="relative mt-2 w-[62%] text-[12px] leading-relaxed" style={{ color: "var(--ux-muted)" }}>
-              Ask Sakhi in your own words. She looks in places search doesn’t.
-            </p>
+            <h3 className="relative w-[62%] text-sm font-semibold" style={{ color: "var(--ux-ink)" }}>{tr("search.canTFindIt")}</h3>
+            <p className="relative mt-2 w-[62%] text-xs leading-relaxed" style={{ color: "var(--ux-muted)" }}>{tr("search.askSakhiInYourOwnWords")}</p>
             <div className="relative mt-3 w-[62%]">
-              <Btn href="/app/sakhi" variant="soft" size="sm" iconEnd="ArrowRight">Ask Sakhi</Btn>
+              <Btn href="/app/sakhi" variant="soft" size="sm" iconEnd="ArrowRight">{tr("search.askSakhi")}</Btn>
             </div>
           </div>
         </div>
       }
     >
-      <div className="mb-[18px]">
-        <h1 className="text-[24px] font-bold" style={{ color: "var(--ux-ink)" }}>
+      <div className="mb-[20px]">
+        <h1 className="text-2xl font-bold" style={{ color: "var(--ux-ink)" }}>
           {q ? <>Results for “{q}”</> : "Search"}
         </h1>
-        <p className="mt-1.5 text-[13px]" style={{ color: "var(--ux-muted)" }}>
+        <p className="mt-1.5 text-xsm" style={{ color: "var(--ux-muted)" }}>
           {q
             ? `${all.length} match${all.length === 1 ? "" : "es"} across courses, work, mentors and circles.`
             : "Press ⌘ K anywhere, or pick one of the ideas below."}
@@ -104,7 +101,7 @@ function Results() {
       </div>
 
       {q && all.length > 0 && (
-        <div className="mb-[15px] flex flex-wrap gap-2">
+        <div className="mb-[16px] flex flex-wrap gap-2">
           {SEARCH_KINDS.filter((k) => k === "All" || counts[k]).map((k) => (
             <Chip key={k} selected={kind === k} onClick={() => setKind(k)}>
               {k === "All" ? "Everything" : plural(k)} · {counts[k] ?? 0}
@@ -115,13 +112,13 @@ function Results() {
 
       {!q && (
         <Card>
-          <SectionHead title="Popular searches" sub="What other members are looking for right now" />
+          <SectionHead title={tr("search.popularSearches")} sub={tr("search.whatOtherMembersAreLookingFor")} />
           <div className="flex flex-wrap gap-2">
             {SEARCH_SUGGESTED.map((s) => (
               <button
                 key={s}
                 onClick={() => router.push(`/app/search?q=${encodeURIComponent(s)}`)}
-                className="ux-press ux-i rounded-full border border-transparent px-3.5 py-2 text-[13px] font-medium"
+                className="ux-press ux-i rounded-full border border-transparent px-3.5 py-2 text-xsm font-medium"
                 style={{ background: "var(--ux-brand-tint)", color: "var(--ux-brand)" }}
               >
                 {s}
@@ -138,13 +135,13 @@ function Results() {
             title={all.length ? `No ${plural(kind).toLowerCase()} matched` : `Nothing matched “${q}”`}
             body={
               all.length
-                ? "Try another kind — the other filters still have results."
-                : "Check the spelling, try a shorter word, or ask Sakhi to look for you."
+                ? tr("search.tryAnotherKindTheOtherFilters")
+              : tr("search.checkTheSpellingTryAShorter")
             }
             action={
               all.length
-                ? <Btn variant="soft" onClick={() => setKind("All")}>Show everything</Btn>
-                : <Btn href="/app/sakhi" variant="primary" iconEnd="ArrowRight">Ask Sakhi</Btn>
+                ? <Btn variant="soft" onClick={() => setKind("All")}>{tr("search.showEverything")}</Btn>
+                : <Btn href="/app/sakhi" variant="primary" iconEnd="ArrowRight">{tr("search.askSakhi2")}</Btn>
             }
           />
         </Card>
@@ -169,18 +166,18 @@ function Hit({ h, q, i }: { h: SearchHit; q: string; i: number }) {
             <span className="h-[54px] w-[54px] shrink-0 overflow-hidden rounded-[12px]"
                   style={{ background: `var(${h.tint})` }}>
               {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src={h.img} alt="" className="ux-art h-full w-full object-cover" />
+              <img loading="lazy" decoding="async" src={h.img} alt="" className="ux-art h-full w-full object-cover" />
             </span>
           ) : (
             <IconTile icon={h.icon} tint={h.tint} ink={h.ink} size={54} radius={12} />
           )}
           <div className="min-w-0 flex-1">
-            <h3 className="truncate text-[14.5px] font-semibold" style={{ color: "var(--ux-ink)" }}>
+            <h3 className="truncate text-sm font-semibold" style={{ color: "var(--ux-ink)" }}>
               <Mark text={h.title} q={q} />
             </h3>
-            <p className="mt-1 truncate text-[12.5px]" style={{ color: "var(--ux-muted)" }}>{h.sub}</p>
+            <p className="mt-1 truncate text-xsm" style={{ color: "var(--ux-muted)" }}>{h.sub}</p>
           </div>
-          <span className="shrink-0 rounded-full px-2.5 py-[4px] text-[11px] font-semibold"
+          <span className="shrink-0 rounded-full px-2.5 py-[4px] text-2xs font-semibold"
                 style={{ background: `var(${h.tint})`, color: `var(${h.ink}-ink)` }}>
             {h.kind}
           </span>

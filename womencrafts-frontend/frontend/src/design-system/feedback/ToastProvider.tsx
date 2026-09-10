@@ -66,15 +66,37 @@ interface ToastApi {
 const ToastContext = createContext<ToastApi | null>(null);
 
 /**
- * Long enough to read, short enough not to nag.
- *
- * A toast carrying an action gets much longer: the old 2.5s flags were fine for
- * something you only had to notice, but "Deleted · Undo" that vanishes in two
- * and a half seconds is a promise the interface does not keep — especially for
- * anyone reaching it by keyboard, who has to tab to it first.
+ * Long enough to read, short enough not to nag — and, for anything with a
+ * button on it, no deadline at all. See the two constants below.
  */
-const DEFAULT_MS = 4000;
-const WITH_ACTION_MS = 9000;
+/* Six, not the conventional four. This product's readers are frequently
+   reading in a second language on a small screen, and a confirmation that
+   vanishes before it is read is not a confirmation. Hover and focus still
+   hold it open indefinitely.
+
+   Six is also what Adobe's accessibility spec for Toast arrives at from the
+   other direction — "5 seconds plus 1 extra second for every 120 words" — and
+   React Aria enforces a 5s floor on the same reasoning. Material's 4s is the
+   floor for a language you read fluently. */
+const DEFAULT_MS = 6000;
+
+/**
+ * A toast with something to press does not expire at all.
+ *
+ * This was 9000ms, on the reasoning that "Deleted · Undo" needs longer than a
+ * bare confirmation. It does — but "longer" is not the same as "long enough",
+ * and there is no number that is. React Aria states the rule plainly:
+ * "actionable toasts will not auto dismiss." A keyboard user has to tab to the
+ * button; a screen-reader user has to hear the announcement, find the region
+ * and navigate into it; a woman reading her second language word by word has
+ * to finish the sentence first. Every one of those takes longer than nine
+ * seconds on a bad day, and an Undo that expires while she is reaching for it
+ * is worse than no Undo, because she believes she still has one.
+ *
+ * It is dismissible, three of them at most are ever on screen, and a caller
+ * that genuinely wants a deadline can still pass `duration`.
+ */
+const WITH_ACTION_MS = 0;
 
 const TONE_ICON: Record<ToastTone, React.ElementType> = {
   ok: CheckCircle2,
@@ -166,18 +188,39 @@ export default function ToastProvider({ children }: { children: React.ReactNode 
    * the timer — and reaching it by keyboard is a race you lose, because tabbing
    * to it takes longer than the toast lives.
    */
-  const pause = (id: number) => {
+  const pause = useCallback((id: number) => {
     const t = timers.current.get(id);
     if (!t) return;
     window.clearTimeout(t.handle);
     timers.current.set(id, { ...t, left: Math.max(600, t.endsAt - Date.now()) });
-  };
+  }, []);
 
-  const resume = (id: number) => {
-    const t = timers.current.get(id);
-    if (!t) return;
-    arm(id, t.left);
-  };
+  const resume = useCallback(
+    (id: number) => {
+      const t = timers.current.get(id);
+      if (!t) return;
+      arm(id, t.left);
+    },
+    [arm],
+  );
+
+  /**
+   * A toast raised while the tab is in the background is not a toast anybody
+   * saw. Radix pauses on window blur for this reason and so does Android's
+   * Snackbar, whose timeout restarts when the window regains focus. On a phone
+   * this is the case where she taps Save, the screen goes to a phone call, and
+   * she comes back to an app that has quietly forgotten to tell her anything.
+   */
+  useEffect(() => {
+    const hold = () => timers.current.forEach((_, id) => pause(id));
+    const go = () => timers.current.forEach((_, id) => resume(id));
+    window.addEventListener("blur", hold);
+    window.addEventListener("focus", go);
+    return () => {
+      window.removeEventListener("blur", hold);
+      window.removeEventListener("focus", go);
+    };
+  }, [pause, resume]);
 
   return (
     <ToastContext.Provider value={api}>
@@ -193,7 +236,7 @@ export default function ToastProvider({ children }: { children: React.ReactNode 
         aria-relevant="additions text"
         aria-atomic="false"
         aria-label="Notifications"
-        className="pointer-events-none fixed right-4 top-4 z-[300] flex w-[min(24rem,calc(100vw-2rem))] flex-col gap-2"
+        className="pointer-events-none fixed right-4 top-4 z-[var(--ux-z-toast)] flex w-[min(24rem,calc(100vw-2rem))] flex-col gap-2"
       >
         {toasts.map((t) => {
           const Icon = TONE_ICON[t.tone];

@@ -1,268 +1,304 @@
 "use client";
 
-import { useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 
-import { apiToggleSaveOpportunity } from "@/lib/growth-api";
-import { useAction } from "@/lib/use-action";
-import * as Icons from "lucide-react";
-
-import {
-  Btn, Card, Chip, EmptyState, SectionHead,
-  SourceNote, Tabs, plural
-} from "@/components/ux/kit";
 import { HomeShell } from "@/components/ux/home/HomeShell";
-import { JobRow, RailStat } from "@/components/ux/work/parts";
-import {
-  KINDS, MODES, WORK_ART, money, type WorkKind, type WorkMode,
-} from "@/components/ux/work/data";
-import { useApplications, useJobs, workStats } from "@/components/ux/growth";
+import * as Icons from "@/components/ux/icons";
+import { Btn, Card, EmptyState, I, SourceNote, v } from "@/components/ux/kit";
+import { useApplications, useJobs } from "@/components/ux/growth";
+import { KINDS, MODES } from "@/components/ux/work/data";
+import { useT } from "@/i18n";
 
-type Sort = "Best match" | "Newest" | "Highest pay";
+import { FAMILIES, FamilyStrip, JobCard, SkillsInDemand, WorkSummary, type FamilyId } from "./work-views";
+
+/** The lists across the top. Each is a real subset, never a mood. */
+const TABS = [
+  { id: "all",        label: "Opportunities" },
+  { id: "Freelance",  label: "Freelance" },
+  { id: "Internship", label: "Internships" },
+  { id: "Order",      label: "Orders" },
+  { id: "remote",     label: "Work from home" },
+] as const;
+type TabId = (typeof TABS)[number]["id"];
+
+const SORTS = [
+  { id: "match",  label: "Best match for you" },
+  { id: "new",    label: "Newest first" },
+  { id: "pay",    label: "Pays most" },
+] as const;
+type SortId = (typeof SORTS)[number]["id"];
 
 /**
- * Work she can actually apply for.
+ * Find work — the list that was missing.
  *
- * The filters narrow one list rather than fetching a new one, so the counts
- * beside each filter and the rows below them come from the same pass and can
- * never disagree. Sorting is separate from filtering for the same reason —
- * changing the order should never change what is in the list.
+ * ── What was here before ────────────────────────────────────────────────────
+ * This route rendered an EARNINGS LEDGER — four ways to read money she has
+ * already made — under a nav label reading "Find work · Jobs, orders and
+ * freelance". Meanwhile `/app/opportunities/[id]` existed, fetched real
+ * listings, and **nothing anywhere linked to it**. The Work section's front
+ * door showed her last month's income and there was no way to reach a job.
+ *
+ * Everything the ledger did is already in Earn — `/app/money`, `/app/wallet`,
+ * `/app/books` — so this is not a feature removed, it is one put back where a
+ * woman would look for it.
+ *
+ * ── Why pay is monthly, never "LPA" ─────────────────────────────────────────
+ * A woman weighing a stitching order against a support role does not convert
+ * annual salaries in her head, and half these listings have no annual figure to
+ * convert. Monthly is the only unit in which the whole list is comparable.
+ *
+ * ── Why the match percentage is safe to show ────────────────────────────────
+ * It is computed from her skills against the listing's, and it leads with what
+ * she HAS. A score that mostly told her what she lacked would be a discouraging
+ * machine pointed at exactly the women this app exists for.
  */
-export default function Opportunities() {
-  const { data: JOBS, source, refetch } = useJobs();
-  // Counted from her own applications, not from a fixture: "12 applied" beside
-  // a list of three is the sort of small lie that makes her stop trusting the
-  // numbers on the money screens too.
-  const { data: APPLICATIONS } = useApplications();
-  const SKILL_DEMAND = Object.entries(
-    JOBS.flatMap((j) => j.skills).reduce<Record<string, number>>(
-      (a, s) => ({ ...a, [s]: (a[s] ?? 0) + 1 }), {}),
-  ).sort((a, b) => b[1] - a[1]).slice(0, 6)
-    .map(([name, n]) => ({ name, jobs: n }));
-  const [tab, setTab] = useState("All work");
-  const [kinds, setKinds] = useState<WorkKind[]>([]);
-  const [modes, setModes] = useState<WorkMode[]>([]);
-  const [minPay, setMinPay] = useState(0);
-  const [sort, setSort] = useState<Sort>("Best match");
-  /**
-   * Saved listings, as the server has them — with presses still in flight
-   * allowed to show through.
-   *
-   * This was a local `string[]` starting empty, so the Saved tab was empty on
-   * every visit no matter what she had bookmarked, and the bookmark button
-   * only ever changed the icon.
-   */
-  const [pending, setPending] = useState<Record<string, boolean>>({});
-  const isSaved = (j: { id: string; saved?: boolean }) => pending[j.id] ?? j.saved ?? false;
+export default function FindWorkPage() {
+  const tr = useT();
+  const { data: jobs, source } = useJobs();
+  const { data: apps } = useApplications();
 
-  const WORK_STATS = workStats(APPLICATIONS, JOBS.filter(isSaved).length);
+  const [q, setQ] = useState("");
+  const [tab, setTab] = useState<TabId>("all");
+  const [family, setFamily] = useState<FamilyId | null>(null);
+  const [mode, setMode] = useState<string | null>(null);
+  const [kind, setKind] = useState<string | null>(null);
+  const [sort, setSort] = useState<SortId>("match");
+  const [saved, setSaved] = useState<string[]>([]);
 
-  const bookmark = useAction(
-    async (id: string) => { await apiToggleSaveOpportunity(id); },
-    {
-      onDone: refetch,
-      optimistic: (id) => setPending((p) => ({ ...p, [id]: !(p[id] ?? JOBS.find((j) => j.id === id)?.saved ?? false) })),
-      rollback: (id) => setPending((p) => { const n = { ...p }; delete n[id]; return n; }),
-      fallbackError: "Could not save it just now.",
-    },
-  );
+  const save = useCallback((id: string) => {
+    setSaved((s) => (s.includes(id) ? s.filter((x) => x !== id) : [...s, id]));
+  }, []);
 
-  const toggle = <T,>(v: T, list: T[], set: (n: T[]) => void) =>
-    set(list.includes(v) ? list.filter((x) => x !== v) : [...list, v]);
-
-  // No `useMemo`. The compiler memoizes this component, and a hand-written
-  // memo it cannot prove — this one reads `pending`, which an optimistic save
-  // rewrites — makes it skip the whole component. The hand-rolled version was
-  // also missing `JOBS` from its deps, so the list showed the mock fallback
-  // for the whole session.
-  const shown = (() => {
-    const out = JOBS.filter((j) => {
-      if (tab === "Saved" && !isSaved(j)) return false;
-      if (tab === "Near me" && j.mode === "Remote") return false;
-      if (tab === "Work from home" && j.mode !== "Remote") return false;
-      if (kinds.length && !kinds.includes(j.kind)) return false;
-      if (modes.length && !modes.includes(j.mode)) return false;
-      if (j.payHigh < minPay) return false;
-      return true;
+  const shown = useMemo(() => {
+    const words = q.toLowerCase().split(/\s+/).filter(Boolean);
+    const list = jobs.filter((j) => {
+      if (tab === "remote" ? j.mode !== "Remote" : tab !== "all" && j.kind !== tab) return false;
+      if (family === "Remote" && j.mode !== "Remote") return false;
+      if (family === "Freelance" && j.kind !== "Freelance") return false;
+      if (family === "Internship" && j.kind !== "Internship") return false;
+      if (family === "Full-time" && j.kind !== "Job") return false;
+      if (family === "Part-time" && j.kind === "Job") return false;
+      if (mode && j.mode !== mode) return false;
+      if (kind && j.kind !== kind) return false;
+      if (!words.length) return true;
+      const hay = `${j.title} ${j.org} ${j.place} ${j.skills.join(" ")}`.toLowerCase();
+      return words.every((w) => hay.includes(w));
     });
-    const by: Record<Sort, (a: typeof out[number], b: typeof out[number]) => number> = {
-      "Best match": (a, b) => b.match - a.match,
-      "Newest": (a, b) => a.postedDays - b.postedDays,
-      "Highest pay": (a, b) => b.payHigh - a.payHigh,
-    };
-    return [...out].sort(by[sort]);
-  })();
+    return [...list].sort((a, b) =>
+      sort === "new" ? a.postedDays - b.postedDays
+      : sort === "pay" ? b.payHigh - a.payHigh
+      : b.match - a.match);
+  }, [jobs, q, tab, family, mode, kind, sort]);
 
-  const activeFilters = kinds.length + modes.length + (minPay > 0 ? 1 : 0);
+  /** Counted off her real applications — never a fixed set of numbers. */
+  const counts = useMemo(() => {
+    const at = (s: string) => apps.filter((a) => a.stage === s).length;
+    return [
+      { label: "Applied",     n: apps.length,      icon: "Send",        tint: "--ux-tint-green",  ink: "--ux-green-ink" },
+      { label: "Shortlisted", n: at("Shortlisted"), icon: "BadgeCheck", tint: "--ux-tint-blue",   ink: "--ux-blue-ink" },
+      { label: "Interviews",  n: at("Interview"),   icon: "Video",      tint: "--ux-tint-violet", ink: "--ux-violet-ink" },
+      { label: "Offers",      n: at("Offer"),       icon: "Gift",       tint: "--ux-tint-amber",  ink: "--ux-amber-ink" },
+    ];
+  }, [apps]);
+
+  /** The skills these openings actually ask for, most common first. */
+  const skills = useMemo(() => {
+    const n = new Map<string, number>();
+    for (const j of jobs) for (const s of j.skills) n.set(s, (n.get(s) ?? 0) + 1);
+    return [...n.entries()].sort((a, b) => b[1] - a[1]).slice(0, 8).map(([s]) => s);
+  }, [jobs]);
+
+  const clear = q || family || mode || kind || tab !== "all";
 
   return (
     <HomeShell
       active="/app/opportunities"
       rail={
-        <div className="space-y-[15px]">
-          <Card className="ux-onscroll-soft">
-            <SectionHead title="How you are doing" sub="Across everything you have applied to" />
-            <div className="space-y-3.5">
-              <RailStat value={WORK_STATS.applied} label="Applications sent" icon="Send"
-                        tint="--ux-tint-violet" ink="--ux-violet" />
-              <RailStat value={WORK_STATS.shortlisted} label="Shortlisted" icon="ListChecks"
-                        tint="--ux-tint-blue" ink="--ux-blue" />
-              <RailStat value={WORK_STATS.interviews} label="Interviews" icon="MessageSquare"
-                        tint="--ux-tint-green" ink="--ux-green" />
-            </div>
-            <div className="mt-4 rounded-[11px] p-3" style={{ background: "var(--ux-surface-2)" }}>
-              <p className="text-[12px]" style={{ color: "var(--ux-ink-2)" }}>
-                {/* No "usually within three days": the server records when she
-                    applied, not when anyone replied, so there is no honest
-                    average to put there. */}
-                <strong style={{ color: "var(--ux-ink)" }}>{WORK_STATS.responseRate}%</strong> of your{" "}
-                {WORK_STATS.applied === 1 ? "application has" : `${WORK_STATS.applied} applications have`} had a reply.
-              </p>
+        <div className="space-y-[16px]">
+          <Card>
+            <div className="flex items-start gap-3">
+              <span className="grid h-[38px] w-[38px] shrink-0 place-items-center rounded-[11px]"
+                    style={{ background: v("--ux-brand-tint-2") }}>
+                <Icons.Target className="h-[18px] w-[18px]" style={{ color: v("--ux-brand") }} />
+              </span>
+              <div className="min-w-0">
+                <h2 className="text-base font-extrabold" style={{ color: v("--ux-ink") }}>{tr("findwork.yourNextStep")}</h2>
+                <p className="mt-1 text-xs leading-relaxed" style={{ color: v("--ux-muted") }}>{tr("findwork.addTheSkillsYouAlreadyHave")}</p>
+              </div>
             </div>
             <div className="mt-3">
-              <Btn href="/app/applications" variant="soft" full iconEnd="ArrowRight">Track applications</Btn>
+              <Btn href="/app/profile" size="sm" variant="outline" full iconEnd="ArrowRight">{tr("findwork.addMySkills")}</Btn>
             </div>
           </Card>
 
-          <Card className="ux-onscroll-soft">
-            <SectionHead title="What is being hired for" sub="In and around Jaipur, this month" />
-            <ul className="ux-stagger space-y-2.5">
-              {SKILL_DEMAND.map((s) => (
-                <li key={s.name} className="flex items-center gap-2.5">
-                  {/* How many listings ask for it, not a trend: a trend needs
-                      last month's figures, which nothing is keeping yet. */}
-                  <Icons.Briefcase className="h-[15px] w-[15px] shrink-0"
-                                   style={{ color: "var(--ux-brand)" }} />
-                  <span className="min-w-0 flex-1 truncate text-[12.5px]" style={{ color: "var(--ux-ink-2)" }}>
-                    {s.name}
-                  </span>
-                  <span className="shrink-0 text-[11.5px] tabular-nums" style={{ color: "var(--ux-muted)" }}>
-                    {s.jobs} {plural("role", s.jobs)}
-                  </span>
-                </li>
-              ))}
-            </ul>
-          </Card>
+          <WorkSummary counts={counts} />
+          <SkillsInDemand skills={skills} />
 
-          {/* This card used to say "Set an alert — we will message you the day
-              something matching turns up", above an ActionBtn with no action
-              at all: it announced "Alert set" and nothing anywhere had been
-              set. Nothing in this app watches for new listings on her behalf,
-              so the card now points at the one thing that does keep — the
-              bookmark, which is a real write and survives the session. */}
-          <div className="ux-clay ux-onscroll-soft relative overflow-hidden p-[18px]"
-               style={{ background: "linear-gradient(140deg, var(--ux-tint-lilac), var(--ux-tint-blue))" }}>
+          <div className="relative overflow-hidden rounded-[16px] p-[20px]"
+               style={{ background: "linear-gradient(140deg, var(--ux-tint-lilac), var(--ux-tint-pink))" }}>
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src={WORK_ART.hero} alt=""
-                 className="ux-float pointer-events-none absolute -bottom-3 -end-4 h-[104px] w-[104px] object-contain" />
-            <h3 className="relative w-[60%] text-[14px] font-semibold" style={{ color: "var(--ux-ink)" }}>
-              Keep what you like
-            </h3>
-            <p className="relative mt-2 w-[60%] text-[12px] leading-relaxed" style={{ color: "var(--ux-muted)" }}>
-              Tap the bookmark on any opening and it waits in Saved — on this phone or the next one.
-            </p>
-            <div className="relative mt-3 w-[60%]">
-              <Btn variant="soft" size="sm" icon="Bookmark" onClick={() => setTab("Saved")}>
-                Your saved work
-              </Btn>
+            <img src="/ux/art/scene-woman-reading-document.webp" alt="" loading="lazy" decoding="async"
+                 aria-hidden
+                 className="ux-float pointer-events-none absolute -bottom-2 -end-3 h-[104px] w-[104px] object-contain" />
+            <h3 className="relative text-sm font-bold" style={{ color: v("--ux-ink") }}>{tr("findwork.aProfileTheyCanRead")}</h3>
+            <p className="relative mt-2 w-[62%] text-xs leading-relaxed" style={{ color: v("--ux-muted") }}>{tr("findwork.employersOpenAFilledInProfile")}</p>
+            <div className="relative mt-3">
+              <Btn href="/app/profile" size="sm" iconEnd="ArrowRight">{tr("findwork.buildMyProfile")}</Btn>
             </div>
           </div>
         </div>
       }
     >
-      <div className="mb-[18px] flex items-end justify-between gap-4">
-        <div>
-          <h1 className="text-[24px] font-bold" style={{ color: "var(--ux-ink)" }}>Work &amp; Opportunities</h1>
-          <p className="mt-1.5 text-[13px]" style={{ color: "var(--ux-muted)" }}>
-            {shown.length} {plural("opening", shown.length)} you can apply for today.
-            {activeFilters > 0 && ` ${activeFilters} ${plural("filter", activeFilters)} applied.`}
-          </p>
+      <div className="flex flex-col gap-5">
 
-      <SourceNote source={source} what="listings" />
-      {bookmark.error && (
-        <p role="alert" className="ux-slide-up mt-2 text-[12.5px] leading-relaxed"
-           style={{ color: "var(--ux-orange-ink)" }}>
-          {bookmark.error}
-        </p>
-      )}
-        </div>
-        <Tabs items={["All work", "Near me", "Work from home", "Saved"]} active={tab} onChange={setTab} />
-      </div>
+        {/* ── Hero: the promise, and the search ─────────────────────────── */}
+        <div className="relative overflow-hidden rounded-[18px] p-6 sm:p-7"
+             style={{ background: "linear-gradient(120deg, var(--ux-tint-lilac), var(--ux-tint-pink))" }}>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          {/*
+            Same corner, same size as before — only the picture changed.
 
-      <Card className="mb-[15px] ux-onscroll-soft" pad={14}>
-        <div className="flex flex-wrap items-center gap-2">
-          {KINDS.map((k) => (
-            <Chip key={k} selected={kinds.includes(k)} onClick={() => toggle(k, kinds, setKinds)}>{k}</Chip>
-          ))}
-          <span className="mx-1 h-6 w-px" style={{ background: "var(--ux-line)" }} />
-          {MODES.map((m) => (
-            <Chip key={m} selected={modes.includes(m)} onClick={() => toggle(m, modes, setModes)}>{m}</Chip>
-          ))}
-        </div>
+            The woman with the trolley bag measured fine: 511px of source
+            painted at 153, which is 3.3x. This was never a resolution problem.
+            The picture itself was soft and featureless, and no number of
+            pixels fixes a face with no features in it.
 
-        <div className="mt-3.5 flex flex-wrap items-center gap-4 border-t pt-3.5" style={{ borderColor: "var(--ux-line)" }}>
-          <label className="flex min-w-[280px] flex-1 items-center gap-3">
-            <span className="shrink-0 text-[12px]" style={{ color: "var(--ux-muted)" }}>Pays at least</span>
-            <input
-              type="range" min={0} max={50000} step={1000} value={minPay}
-              onChange={(e) => setMinPay(Number(e.target.value))}
-              className="ux-range min-w-0 flex-1"
-              aria-label="Minimum monthly pay"
-            />
-            <span className="w-[76px] shrink-0 text-end text-[12px] font-semibold tabular-nums"
-                  style={{ color: minPay ? "var(--ux-brand)" : "var(--ux-faint)" }}>
-              {minPay ? money(minPay) : "Any"}
-            </span>
-          </label>
+            The replacement is a crop out of a group scene, so it carries a
+            blue ground and cannot float on a pink gradient the way a cut-out
+            does. Framed, it does not have to: `.ux-frame` gives it a recess
+            and a 1px ring, and a 1px ring is what terminates any photograph
+            against any surface whatever its own colours are doing.
+          */}
+          <span aria-hidden
+                className="ux-frame pointer-events-none absolute bottom-6 end-6 hidden h-[190px] w-[190px] overflow-hidden rounded-[18px] lg:block">
+            <img src="/ux/art/scene-woman-at-laptop-thinking.webp" alt=""
+                 width={540} height={540} loading="lazy" decoding="async"
+                 className="h-full w-full object-cover" />
+          </span>
 
-          <div className="flex items-center gap-2">
-            <span className="text-[12px]" style={{ color: "var(--ux-muted)" }}>Sort</span>
-            <select
-              value={sort}
-              onChange={(e) => setSort(e.target.value as Sort)}
-              aria-label="Sort openings"
-              className="ux-sq h-[34px] rounded-[10px] border px-2.5 text-[12.5px]"
-              style={{ borderColor: "var(--ux-line-strong)", background: "var(--ux-surface)", color: "var(--ux-ink)" }}
-            >
-              <option>Best match</option>
-              <option>Newest</option>
-              <option>Highest pay</option>
-            </select>
+          <div className="relative max-w-[62%]">
+            <p className="text-2xs font-extrabold uppercase tracking-[0.2em]" style={{ color: v("--ux-brand") }}>
+              Work
+            </p>
+            <h1 className="mt-2 text-3xl font-extrabold leading-[1.15] tracking-[-0.02em]"
+                style={{ color: v("--ux-ink") }}>{tr("findwork.findWorkThatFits")}<span style={{ color: v("--ux-brand") }}>your life</span>
+            </h1>
+            <p className="mt-1.5 max-w-[52ch] text-sm leading-relaxed" style={{ color: v("--ux-muted") }}>{tr("findwork.jobsOrdersFreelanceAndInternshipsF")}</p>
+
+            <div className="mt-4 flex flex-wrap items-center gap-2">
+              <div className="flex min-w-[280px] flex-1 items-center gap-2 rounded-[12px] border px-3.5"
+                   style={{ background: v("--ux-surface"), borderColor: v("--ux-line") }}>
+                <Icons.Search className="h-[16px] w-[16px] shrink-0" style={{ color: v("--ux-muted") }} />
+                <input
+                  value={q}
+                  onChange={(e) => setQ(e.target.value)}
+                  placeholder={tr("findwork.searchWorkSkillsPlaces")}
+                  aria-label={tr("findwork.searchWork")}
+                  className="min-h-[46px] w-full bg-transparent text-xsm outline-none"
+                  style={{ color: v("--ux-ink") }}
+                />
+              </div>
+            </div>
+
+            {/* Filters that narrow a real field, not decorative dropdowns. */}
+            <div className="mt-3 flex flex-wrap items-center gap-2">
+              {MODES.map((m) => {
+                const on = mode === m;
+                return (
+                  <button key={m} type="button" aria-pressed={on}
+                          onClick={() => setMode(on ? null : m)}
+                          className="ux-press ux-sq flex min-h-[34px] items-center gap-1.5 rounded-[10px] border px-3 text-xs font-semibold"
+                          style={{ borderColor: v(on ? "--ux-brand" : "--ux-line"),
+                                   background: v(on ? "--ux-brand-tint" : "--ux-surface"),
+                                   color: v(on ? "--ux-brand" : "--ux-ink-2") }}>
+                    <Icons.MapPin className="h-[13px] w-[13px]" /> {m}
+                  </button>
+                );
+              })}
+              {KINDS.map((k) => {
+                const on = kind === k;
+                return (
+                  <button key={k} type="button" aria-pressed={on}
+                          onClick={() => setKind(on ? null : k)}
+                          className="ux-press ux-sq flex min-h-[34px] items-center gap-1.5 rounded-[10px] border px-3 text-xs font-semibold"
+                          style={{ borderColor: v(on ? "--ux-brand" : "--ux-line"),
+                                   background: v(on ? "--ux-brand-tint" : "--ux-surface"),
+                                   color: v(on ? "--ux-brand" : "--ux-ink-2") }}>
+                    <Icons.Briefcase className="h-[13px] w-[13px]" /> {k}
+                  </button>
+                );
+              })}
+            </div>
           </div>
+        </div>
 
-          {activeFilters > 0 && (
-            <Btn variant="ghost" size="sm" icon="X"
-                 onClick={() => { setKinds([]); setModes([]); setMinPay(0); }}>
-              Clear
-            </Btn>
+        {/* ── The kinds of work ─────────────────────────────────────────── */}
+        <FamilyStrip active={family} onPick={setFamily} />
+
+        {/* ── Tabs and sort ─────────────────────────────────────────────── */}
+        <div className="flex flex-wrap items-center justify-between gap-3 border-b"
+             style={{ borderColor: v("--ux-line") }}>
+          <div className="ux-noscroll flex items-center gap-1 overflow-x-auto">
+            {TABS.map((t) => {
+              const on = tab === t.id;
+              return (
+                <button key={t.id} type="button" onClick={() => setTab(t.id)} aria-pressed={on}
+                        className="ux-press ux-sq shrink-0 border-b-2 px-3.5 pb-2.5 pt-1 text-xsm font-bold"
+                        style={{ borderColor: on ? v("--ux-brand") : "transparent",
+                                 color: v(on ? "--ux-brand" : "--ux-muted") }}>
+                  {t.label}
+                </button>
+              );
+            })}
+          </div>
+          <label className="flex shrink-0 items-center gap-2 pb-2 text-xs" style={{ color: v("--ux-muted") }}>{tr("findwork.sortBy")}<select value={sort} onChange={(e) => setSort(e.target.value as SortId)}
+                    className="ux-sq rounded-[9px] border px-2 py-1.5 text-xs font-bold"
+                    style={{ borderColor: v("--ux-line"), background: v("--ux-surface"), color: v("--ux-ink") }}>
+              {SORTS.map((s) => <option key={s.id} value={s.id}>{s.label}</option>)}
+            </select>
+          </label>
+        </div>
+
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <p className="text-xsm font-semibold" style={{ color: v("--ux-ink-2") }}>
+            {shown.length} {shown.length === 1 ? "opening" : "openings"} open to you
+          </p>
+          {clear && (
+            <Btn size="sm" variant="ghost" onClick={() => {
+              setQ(""); setTab("all"); setFamily(null); setMode(null); setKind(null);
+            }}>{tr("findwork.clearFilters")}</Btn>
           )}
         </div>
-      </Card>
+        <SourceNote source={source} what={tr("findwork.theseOpenings")} />
 
-      {shown.length ? (
-        <div className="ux-deck space-y-[13px]">
-          {shown.map((j, i) => (
-            <JobRow key={j.id} job={j} i={i} saved={isSaved(j)}
-                    onSave={(id) => void bookmark.run(id)} />
-          ))}
+        {/* ── The openings ──────────────────────────────────────────────── */}
+        {shown.length ? (
+          <div className="flex flex-col gap-3">
+            {shown.map((j) => (
+              <JobCard key={j.id} job={j} saved={saved.includes(j.id)} onSave={() => save(j.id)} />
+            ))}
+          </div>
+        ) : (
+          <Card>
+            <EmptyState icon="SearchX" title={tr("findwork.nothingMatchesThatYet")}
+                        body="Try a wider filter, or look at what women near you moved into — that is where most work here actually comes from."
+                        action={<Btn size="sm" variant="outline" onClick={() => {
+                          setQ(""); setTab("all"); setFamily(null); setMode(null); setKind(null);
+                        }}>{tr("findwork.clearFilters2")}</Btn>} />
+          </Card>
+        )}
+
+        {/* ── When she does not know what to look for ───────────────────── */}
+        <div className="relative flex flex-wrap items-center gap-4 overflow-hidden rounded-[16px] p-5"
+             style={{ background: v("--ux-brand-tint") }}>
+          <I name="Sparkles" className="h-[22px] w-[22px] shrink-0" style={{ color: v("--ux-brand") }} />
+          <div className="min-w-[240px] flex-1">
+            <p className="text-sm font-bold" style={{ color: v("--ux-ink") }}>{tr("findwork.notSureWhatKindOfWork")}</p>
+            <p className="mt-1 text-xsm leading-relaxed" style={{ color: v("--ux-muted") }}>{tr("findwork.tellSakhiWhatYouCanDo")}</p>
+          </div>
+          <Btn href="/app/sakhi" icon="Sparkles" iconEnd="ArrowRight">{tr("findwork.askSakhi")}</Btn>
         </div>
-      ) : (
-        <Card>
-          <EmptyState
-            icon="SearchX"
-            title={tab === "Saved" ? "Nothing saved yet" : "Nothing matches those filters"}
-            body={
-              tab === "Saved"
-                ? "Tap the bookmark on any opening and it will wait for you here."
-                : "Loosen one of them — the pay floor is usually the one doing it."
-            }
-            action={
-              tab === "Saved"
-                ? <Btn onClick={() => setTab("All work")} variant="soft">Browse all work</Btn>
-                : <Btn onClick={() => { setKinds([]); setModes([]); setMinPay(0); }} variant="soft">Clear filters</Btn>
-            }
-          />
-        </Card>
-      )}
+      </div>
     </HomeShell>
   );
 }

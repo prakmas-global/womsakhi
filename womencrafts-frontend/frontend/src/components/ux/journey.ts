@@ -3,6 +3,7 @@
 import { useCallback } from "react";
 
 import { apiProgress, apiReferrals, apiCircles } from "@/lib/me-api";
+import { apiMeJourney } from "@/lib/shell-api";
 import { apiShopSummary, apiWalletInsights } from "@/lib/shop-api";
 import { useResource, type Resource } from "@/lib/use-resource";
 
@@ -63,13 +64,27 @@ const EMPTY: Journey = {
 export function useJourney(): Resource<Journey> {
   return useResource<Journey>(
     useCallback(async (signal: AbortSignal) => {
-      const [progress, insights, shop, referrals, circles] = await Promise.all([
-        apiProgress(signal),
-        apiWalletInsights(signal),
-        apiShopSummary(signal),
-        apiReferrals(signal),
-        apiCircles(signal),
-      ]);
+      // One request for the five this screen used to make.
+      //
+      // `/me/journey` returns exactly these five sections, each produced by the
+      // same helper its own endpoint uses, so they cannot drift from the
+      // screens that read them separately. It was built and nothing called it.
+      //
+      // The five calls stay as the fallback: `/me/journey` is behind
+      // `require_active_member`, and a woman still in verification should get
+      // her progress screen rather than an empty one.
+      let progress, insights, shop, referrals, circles;
+      try {
+        ({ progress, insights, shop, referrals, circles } = await apiMeJourney(signal));
+      } catch {
+        [progress, insights, shop, referrals, circles] = await Promise.all([
+          apiProgress(signal),
+          apiWalletInsights(signal),
+          apiShopSummary(signal),
+          apiReferrals(signal),
+          apiCircles(signal),
+        ]);
+      }
 
       const earned = insights.monthly_minor.map((m) => Math.round(m / 100));
       const lifetimeMinor = insights.monthly_minor.reduce((a, b) => a + b, 0);

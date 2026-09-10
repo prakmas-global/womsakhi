@@ -4,7 +4,7 @@ import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 
 import { useAuth } from "@/context/AuthContext";
-import { Spinner } from "@/design-system";
+import { WaitPage } from "@/components/ux/WaitScreen";
 import "../ux/tokens.css";
 
 /**
@@ -27,20 +27,18 @@ export default function LearningLayout({ children }: { children: React.ReactNode
   }, [loading, user, router]);
 
   if (loading || !user) {
-    return (
-      <div className="ux grid min-h-screen place-items-center">
-        <Spinner />
-      </div>
-    );
+    // Was a bare `<Spinner />` on an empty page — see WaitPage for why that is
+    // not feedback to somebody who does not already trust that the app works.
+    return <WaitPage title="Opening your learning…" line="Please wait. We are checking you are signed in." />;
   }
   if (!isMember) {
     return (
       <div className="ux grid min-h-screen place-items-center px-6 text-center">
         <div>
-          <h1 className="text-[18px] font-semibold" style={{ color: "var(--ux-ink)" }}>
+          <h1 className="text-lg font-semibold" style={{ color: "var(--ux-ink)" }}>
             This part of WomSakhi is for members.
           </h1>
-          <p className="mt-2 text-[13px]" style={{ color: "var(--ux-muted)" }}>
+          <p className="mt-2 text-xsm" style={{ color: "var(--ux-muted)" }}>
             Your account is signed in as staff.
           </p>
         </div>

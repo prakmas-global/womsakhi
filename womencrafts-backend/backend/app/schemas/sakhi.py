@@ -37,9 +37,36 @@ class Conversation(BaseModel):
     audience: str
     locale: str = "en"
     message_count: int = 0
+    pinned: bool = False
     pending_action: Optional[dict] = None
     created_at: Optional[datetime] = None
     updated_at: Optional[datetime] = None
+
+
+class RenameRequest(BaseModel):
+    title: str = Field(..., min_length=1, max_length=120)
+
+
+class PinRequest(BaseModel):
+    pinned: bool
+
+
+class FeedbackRequest(BaseModel):
+    """Thumbs on one answer. `None` clears it, which is how a mis-tap is undone."""
+
+    helpful: bool | None = None
+
+
+class SaveRequest(BaseModel):
+    text: str = Field(..., min_length=1, max_length=8000)
+    conversation_id: str = ""
+
+
+class SavedAnswer(BaseModel):
+    id: str
+    text: str
+    conversation_id: str = ""
+    created_at: datetime | None = None
 
 
 class ConversationDetail(Conversation):

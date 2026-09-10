@@ -13,7 +13,14 @@
 import { launch, pageAs, seededMemberToken } from "./_shared.mjs";
 
 const APP = process.env.UX_URL || "http://localhost:3100";
-const ROUTES = ["/app", "/app/opportunities"];
+/* `/app/saved` is in the list because it is the only one of the three that
+   uses `.ux-deck`. The other two carry `.ux-i` cards and were being asked
+   whether their neighbours receded — a question with no `.ux-deck` on the page
+   to answer it, so the check reported "0 of them" and had been red since the
+   Home quick-access grid was removed in the navigation rebuild. The lift and
+   scale assertions still run on all three; the neighbour one now runs where
+   the feature actually is. */
+const ROUTES = ["/app", "/app/opportunities", "/app/saved"];
 const MIN_SCALE = 1.012;   // below this nobody perceives it as approaching
 const MIN_LIFT = 4;        // px
 const wait = (ms) => new Promise((r) => setTimeout(r, ms));
@@ -93,10 +100,13 @@ for (const route of ROUTES) {
 
   console.log(`  ${raised === total || flat.length === 0 ? "ok  " : "✗   "} ${raised} of ${total} raise on hover ` +
               `(scale ≥ ${MIN_SCALE}, lift ≥ ${MIN_LIFT}px, shadow grows)`);
-  console.log(`  ${receded > 0 ? "ok  " : "✗   "} neighbours stepped back on ${receded} of them`);
+  // Only assert the recede where there is a deck to recede within.
+  const decks = await page.evaluate(() => document.querySelectorAll("main .ux-deck").length);
+  if (!decks) console.log(`  ok   no deck on this screen, so no neighbours to step back`);
+  else console.log(`  ${receded > 0 ? "ok  " : "✗   "} neighbours stepped back on ${receded} of them`);
   for (const f of flat.slice(0, 4)) console.log(`       flat: ${f}`);
   if (flat.length) fail.push(`${route}: ${flat.length} card(s) do not raise — ${flat[0]}`);
-  if (!receded) fail.push(`${route}: no deck receded, so nothing reads as coming forward`);
+  if (decks && !receded) fail.push(`${route}: no deck receded, so nothing reads as coming forward`);
 
   await page.close();
 }
@@ -113,7 +123,12 @@ for (const route of ROUTES) {
 {
   const page = await pageAs(browser, token, { width: 1536, height: 1024 });
   await page.emulateMediaFeatures([{ name: "prefers-reduced-motion", value: "no-preference" }]);
-  await page.goto(APP + "/app", { waitUntil: "domcontentloaded", timeout: 120000 });
+  /* `/app/saved` and not `/app`. This block hovers a row inside a deck and
+     asserts the dimming stops at that deck's edge — and `/app` has had no
+     `.ux-deck` on it since the navigation rebuild removed the quick-access
+     grid, so `host` came back undefined and the whole check crashed rather
+     than failing. It runs where there is a deck to test. */
+  await page.goto(APP + "/app/saved", { waitUntil: "domcontentloaded", timeout: 120000 });
   await page.waitForFunction(() => document.querySelector("aside") !== null, { timeout: 60000 });
   await wait(2500);
 
@@ -134,12 +149,17 @@ for (const route of ROUTES) {
         const deck = s.querySelector(".ux-deck");
         return deck && deck.querySelectorAll(".ux-i").length >= 2;
       });
+    if (!host) return null;
     const row = host.querySelector(".ux-deck .ux-i");
     row.scrollIntoView({ block: "center", behavior: "instant" });
     const r = row.getBoundingClientRect();
     return { x: r.x + r.width / 2, y: r.y + r.height / 2,
              host: (host.innerText || "").trim().split("\n")[0].slice(0, 26) };
   });
+  if (!box) {
+    console.log("\n  no multi-card deck on this screen — nothing to isolate");
+    await page.close();
+  } else {
   await page.mouse.move(4, 300); await wait(400);
   await page.mouse.move(box.x, box.y); await wait(650);
 
@@ -154,12 +174,15 @@ for (const route of ROUTES) {
   if (!own || own.dimmed === 0) fail.push("the deck did not dim anything, so nothing was actually tested");
   if (strayed.length) fail.push(`hover bleeds into ${strayed.map((c) => `"${c.name}"`).join(", ")}`);
   await page.close();
+  }
 }
 
 /* Under reduced motion the whole thing must stand down. */
 const page = await pageAs(browser, token, { width: 1536, height: 1024 });
 await page.emulateMediaFeatures([{ name: "prefers-reduced-motion", value: "reduce" }]);
-await page.goto(APP + "/app", { waitUntil: "domcontentloaded", timeout: 120000 });
+/* `/app/saved`, for the same reason as the block above: `/app` has carried no
+   `.ux-i` since the quick-access grid was removed, so `main .ux-i` threw. */
+await page.goto(APP + "/app/saved", { waitUntil: "domcontentloaded", timeout: 120000 });
 await page.waitForFunction(() => document.querySelector("aside") !== null, { timeout: 60000 });
 await wait(2200);
 const box = await page.$eval("main .ux-i", (e) => {

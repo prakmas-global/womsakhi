@@ -4,17 +4,17 @@ import { useMemo, useRef, useState } from "react";
 
 import { apiUploadDocument, validateDocument, ACCEPTED_DOC_TYPES } from "@/lib/uploads-api";
 import { messageFrom } from "@/lib/use-action";
-import Link from "next/link";
-import * as Icons from "lucide-react";
+import * as Icons from "@/components/ux/icons";
 
-import {
-  ActionBtn, Btn, Card, EmptyState, IconTile, Pill,
+import {Back, ActionBtn, Btn, Card, EmptyState, IconTile, Pill,
   Progress, SectionHead, SourceNote, Tabs, escapeHtml, letterhead,
   printDocument
 } from "@/components/ux/kit";
 import { HomeShell } from "@/components/ux/home/HomeShell";
 import { useMe } from "@/components/ux/me";
 import { useDocuments, type UxDocument } from "@/components/ux/live";
+import { COPY } from "@/components/ux/copy";
+import { useT } from "@/i18n";
 
 type Row = UxDocument;
 
@@ -35,6 +35,7 @@ type Row = UxDocument;
  *   only thing that keeps it is repeating what happens to them.
  */
 export default function VaultPage() {
+  const tr = useT();
   const ME = useMe();
   const { data: DOCUMENTS, source, refetch } = useDocuments();
   const [tab, setTab] = useState("All");
@@ -117,12 +118,14 @@ export default function VaultPage() {
       <td>${escapeHtml(d.when)}</td>
     </tr>`;
     return printDocument(only ? `Record — ${only.name}` : "Your papers", `
-      ${letterhead(only ? "Document record" : "Your papers", `${ME.name} · ${have.length} of ${needed} held`)}
+      ${letterhead(only ? tr("documentsVault.documentRecord")
+              : tr("documentsVault.yourPapers3"), `${ME.name} · ${have.length} of ${needed} held`)}
       <table>
-        <thead><tr><th>Paper</th><th>Status</th><th>Checked</th></tr></thead>
+        <thead><tr><th scope="col">Paper</th><th scope="col">Status</th><th scope="col">Checked</th></tr></thead>
         <tbody>${list.map(line).join("")}</tbody>
       </table>
-      ${missing.length && !only ? `<h2>Still to give us</h2><p>${escapeHtml(missing.map((x) => x.name).join(", "))}. Schemes that ask for ${missing.length > 1 ? "them" : "it"} cannot go through until ${missing.length > 1 ? "they are" : "it is"} added.</p>` : ""}
+      ${missing.length && !only ? `<h2>${tr("documentsVault.stillToGiveUs")}</h2><p>${escapeHtml(missing.map((x) => x.name).join(", "))}. Schemes that ask for ${missing.length > 1 ? "them" : "it"} cannot go through until ${missing.length > 1 ? tr("documentsVault.theyAre")
+              : tr("documentsVault.itIs")} added.</p>` : ""}
       <p class="foot">
         This is a record of what WomSakhi holds, not a copy of the papers
         themselves. An office asking to see the originals still needs the
@@ -135,9 +138,9 @@ export default function VaultPage() {
       skeleton="list"
       loadFailed="your papers"
       rail={
-        <div className="space-y-[15px]">
+        <div className="space-y-[16px]">
           <Card>
-            <SectionHead title="Your papers"
+            <SectionHead title={tr("documentsVault.yourPapers2")}
                          sub={needed ? `${have.length} of ${needed} with us` : "None added yet"} />
             {/* 0 of 0 is not 0% — it is NaN, and a NaN width is a bar that
                 vanishes. An account with nothing uploaded gets no bar at all. */}
@@ -147,19 +150,18 @@ export default function VaultPage() {
               </div>
             )}
             {!needed ? (
-              <p className="text-[12.5px] leading-relaxed" style={{ color: "var(--ux-ink-2)" }}>
+              <p className="text-xsm leading-relaxed" style={{ color: "var(--ux-ink-2)" }}>
                 You have not given us any papers yet. Aadhaar and a bank passbook are what almost every
                 scheme asks for first.
               </p>
             ) : missing.length ? (
-              <p className="text-[12.5px] leading-relaxed" style={{ color: "var(--ux-ink-2)" }}>
+              <p className="text-xsm leading-relaxed" style={{ color: "var(--ux-ink-2)" }}>
                 {missing.map((m) => m.name).join(" and ")} {missing.length > 1 ? "are" : "is"} still missing. Schemes that ask for {missing.length > 1 ? "them" : "it"} cannot go through until
-                {missing.length > 1 ? " they are" : " it is"} added.
+                {missing.length > 1 ? tr("documentsVault.theyAre2")
+              : tr("documentsVault.itIs2")} added.
               </p>
             ) : (
-              <p className="text-[12.5px] leading-relaxed" style={{ color: "var(--ux-ink-2)" }}>
-                Everything a scheme or a bank normally asks for is here and checked.
-              </p>
+              <p className="text-xsm leading-relaxed" style={{ color: "var(--ux-ink-2)" }}>{tr("documentsVault.everythingASchemeOrABank")}</p>
             )}
             <div className="mt-4 space-y-2.5">
               <Btn variant="primary" full icon="Upload" disabled={busy === "upload"}
@@ -167,9 +169,7 @@ export default function VaultPage() {
                 {busy === "upload" ? "Sending…" : "Add a paper"}
               </Btn>
               <ActionBtn variant="outline" full icon="Printer" doneIcon="Printer"
-                         done="Choose “Save as PDF”" act={() => coverSheet()}>
-                Print the list
-              </ActionBtn>
+                         done={COPY.saveAsPdf} act={() => coverSheet()}>{tr("documentsVault.printTheList")}</ActionBtn>
             </div>
 
             {/* One picker for every button on the screen. `capture` is left
@@ -177,6 +177,9 @@ export default function VaultPage() {
                 files she already has, and most of these papers were
                 photographed once and kept. */}
             <input
+              // Visually hidden, but still in the accessibility tree — without
+              // a name a screen reader announces only "file upload, button".
+              aria-label={tr("documentsVault.chooseADocumentToUpload")}
               ref={picker}
               type="file"
               accept={ACCEPTED_DOC_TYPES.join(",")}
@@ -190,12 +193,12 @@ export default function VaultPage() {
             />
 
             {problem && (
-              <p role="alert" className="ux-slide-up mt-3 text-[12.5px] leading-relaxed"
+              <p role="alert" className="ux-slide-up mt-3 text-xsm leading-relaxed"
                  style={{ color: "var(--ux-orange-ink)" }}>
                 {problem}
               </p>
             )}
-            <p className="mt-2.5 text-[11.5px] leading-relaxed" style={{ color: "var(--ux-faint)" }}>
+            <p className="mt-2.5 text-xs leading-relaxed" style={{ color: "var(--ux-faint)" }}>
               The printed list says what we hold and when each was checked. It is not a copy of the papers
               themselves — an office wanting the originals still needs the originals.
             </p>
@@ -203,7 +206,7 @@ export default function VaultPage() {
 
           <Card>
             {/* Repeated on purpose. Uploading identity papers is an act of trust. */}
-            <SectionHead title="Who can see these" icon="Lock" />
+            <SectionHead title={tr("documentsVault.whoCanSeeThese")} icon="Lock" />
             <ul className="space-y-2.5">
               {[
                 ["You", "Any time, on any phone you sign in on.", true],
@@ -216,8 +219,8 @@ export default function VaultPage() {
                     ? <Icons.Check className="mt-[2px] h-[14px] w-[14px] shrink-0" style={{ color: "var(--ux-green-ink)" }} strokeWidth={2.6} />
                     : <Icons.X className="mt-[2px] h-[14px] w-[14px] shrink-0" style={{ color: "var(--ux-faint)" }} strokeWidth={2.6} />}
                   <span>
-                    <span className="block text-[12.5px] font-medium" style={{ color: "var(--ux-ink)" }}>{who as string}</span>
-                    <span className="block text-[11.5px] leading-snug" style={{ color: "var(--ux-muted)" }}>{what as string}</span>
+                    <span className="block text-xsm font-medium" style={{ color: "var(--ux-ink)" }}>{who as string}</span>
+                    <span className="block text-xs leading-snug" style={{ color: "var(--ux-muted)" }}>{what as string}</span>
                   </span>
                 </li>
               ))}
@@ -226,18 +229,12 @@ export default function VaultPage() {
         </div>
       }
     >
-      <Link href="/app/documents"
-            className="ux-hov -my-1 mb-3.5 inline-flex items-center gap-1.5 py-1 text-[12.5px] font-medium"
-            style={{ color: "var(--ux-brand)" }}>
-        <Icons.ArrowLeft className="ux-ico h-4 w-4" /> Your business
-      </Link>
+      <Back to="/app/documents" label={tr("documentsVault.yourShop")} className="mb-4" />
 
-      <div className="mb-[18px] flex flex-wrap items-end justify-between gap-4">
+      <div className="mb-[20px] flex flex-wrap items-end justify-between gap-4">
         <div>
-          <h1 className="text-[24px] font-bold" style={{ color: "var(--ux-ink)" }}>Your papers</h1>
-          <p className="mt-1.5 text-[13px]" style={{ color: "var(--ux-muted)" }}>
-            Open, download or replace anything you have given us.
-          </p>
+          <h1 className="text-2xl font-bold" style={{ color: "var(--ux-ink)" }}>{tr("documentsVault.yourPapers")}</h1>
+          <p className="mt-1.5 text-xsm" style={{ color: "var(--ux-muted)" }}>{tr("documentsVault.openDownloadOrReplaceAnythingYou")}</p>
 
       <SourceNote source={source} what="papers" />
         </div>
@@ -249,19 +246,19 @@ export default function VaultPage() {
           {shown.map((d, i) => {
             const open = preview === d.id;
             return (
-              <li key={d.id} className="ux-i ux-sq rounded-[14px] border p-3.5"
+              <li key={d.id} className="ux-i ux-sq rounded-[12px] border p-3.5"
                   style={{ borderColor: open ? "var(--ux-brand)" : "var(--ux-line)",
                            background: "var(--ux-surface)", ["--i" as string]: i }}>
                 <div className="flex items-center gap-3.5">
                   <IconTile icon={d.icon} tint={d.tint} ink={d.ink} size={46} radius={12} />
                   <div className="min-w-0 flex-1">
                     <div className="flex flex-wrap items-center gap-2">
-                      <p className="truncate text-[14px] font-semibold" style={{ color: "var(--ux-ink)" }}>{d.name}</p>
+                      <p className="truncate text-sm font-semibold" style={{ color: "var(--ux-ink)" }}>{d.name}</p>
                       {d.status === "verified" && <Pill tone="green" size="sm">Checked</Pill>}
-                      {d.status === "missing" && <Pill tone="orange" size="sm">Not added</Pill>}
+                      {d.status === "missing" && <Pill tone="orange" size="sm">{tr("documentsVault.notAdded")}</Pill>}
                       {d.status === "optional" && <Pill tone="neutral" size="sm">Optional</Pill>}
                     </div>
-                    <p className="mt-0.5 truncate text-[11.5px]" style={{ color: "var(--ux-muted)" }}>
+                    <p className="mt-0.5 truncate text-xs" style={{ color: "var(--ux-muted)" }}>
                       {d.when}{d.size ? ` · ${d.size}` : ""}
                     </p>
                   </div>
@@ -284,9 +281,7 @@ export default function VaultPage() {
                           {open ? "Hide" : "View"}
                         </Btn>
                         <ActionBtn variant="ghost" size="sm" icon="Printer" doneIcon="Printer"
-                                   done="Choose “Save as PDF”" act={() => coverSheet(d)}>
-                          Print its record
-                        </ActionBtn>
+                                   done={COPY.saveAsPdf} act={() => coverSheet(d)}>{tr("documentsVault.printItsRecord")}</ActionBtn>
                       </>
                     )}
                   </div>
@@ -299,8 +294,8 @@ export default function VaultPage() {
                          style={{ borderColor: "var(--ux-line)", background: "var(--ux-surface-2)" }}>
                       <div className="text-center">
                         <Icons.FileText className="mx-auto h-[34px] w-[34px]" style={{ color: "var(--ux-faint)" }} strokeWidth={1.5} />
-                        <p className="mt-2 text-[12.5px] font-medium" style={{ color: "var(--ux-ink-2)" }}>{d.name}</p>
-                        <p className="mt-0.5 text-[11.5px]" style={{ color: "var(--ux-faint)" }}>
+                        <p className="mt-2 text-xsm font-medium" style={{ color: "var(--ux-ink-2)" }}>{d.name}</p>
+                        <p className="mt-0.5 text-xs" style={{ color: "var(--ux-faint)" }}>
                           {d.size ?? "Held with us"}
                         </p>
                       </div>
@@ -312,7 +307,7 @@ export default function VaultPage() {
                            onClick={() => choose(d.id, d.docType ?? "other")}>
                         {busy === d.id ? "Sending…" : "Replace it"}
                       </Btn>
-                      <Btn variant="ghost" size="sm" icon="Share2" href="/app/support-fund">Use it for a scheme</Btn>
+                      <Btn variant="ghost" size="sm" icon="Share2" href="/app/support-fund">{tr("documentsVault.useItForAScheme")}</Btn>
                     </div>
                   </div>
                 )}
@@ -324,7 +319,7 @@ export default function VaultPage() {
         <Card>
           <EmptyState icon="FolderOpen" title={`Nothing under ${tab}`}
                       body="Try another tab, or add a paper and it will show up here."
-                      action={<Btn onClick={() => setTab("All")} variant="soft">Show everything</Btn>} />
+                      action={<Btn onClick={() => setTab("All")} variant="soft">{tr("documentsVault.showEverything")}</Btn>} />
         </Card>
       )}
     </HomeShell>

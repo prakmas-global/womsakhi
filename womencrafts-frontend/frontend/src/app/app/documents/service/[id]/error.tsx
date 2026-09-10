@@ -2,11 +2,13 @@
 
 import { HomeShell } from "@/components/ux/home/HomeShell";
 import { ScreenError } from "@/components/ux/kit";
+import { useT } from "@/i18n";
 
 export default function Error({ error, reset }: { error: Error & { digest?: string }; reset: () => void }) {
+  const tr = useT();
   return (
     <HomeShell>
-      <ScreenError what="this service" reset={reset} detail={error.digest} />
+      <ScreenError what={tr("documentsService.thisService")} reset={reset} detail={error.digest} />
     </HomeShell>
   );
 }

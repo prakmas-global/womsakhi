@@ -639,7 +639,7 @@ export default function AppointmentsPage() {
               <div className="overflow-x-auto">
                 <div className={`flex ${granularity === "Day" ? "min-w-[420px]" : "min-w-[720px]"}`}>
                   {/* time gutter */}
-                  <div className="w-16 shrink-0 border-r border-line pt-[68px]">
+                  <div className="w-16 shrink-0 border-r border-line pt-[64px]">
                     {TIME_GUTTER.map((t) => (
                       <div key={t} className="flex h-24 items-start justify-end pr-2 pt-1 text-2xs font-medium text-ink-subtle">{t}</div>
                     ))}

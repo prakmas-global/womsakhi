@@ -68,16 +68,27 @@ const NOTIF_LOOK: Record<string, { icon: string; tint: string; ink: string }> = 
   system:  { icon: "Bell", tint: "--ux-surface-2", ink: "--ux-muted" },
 };
 
-export type UxNotification = (typeof NOTIFICATIONS)[number];
+export type UxNotification = (typeof NOTIFICATIONS)[number] & {
+  /** Where tapping it goes, and when it happened — both from the server. */
+  href?: string;
+  createdAt?: string;
+};
 
 const toNotification = (n: ApiNotification): UxNotification => ({
   id: n.id,
   kind: n.type,
   title: n.title,
-  body: n.desc,
-  when: n.time,
+  // `n.desc` and `n.time` for a long time, which the server has never sent —
+  // so every notification in the app arrived with an empty body and no
+  // timestamp. The fields are `body` and `when`.
+  body: n.body,
+  when: n.when,
+  href: n.href,
+  createdAt: n.created_at,
   unread: n.unread,
-  ...(NOTIF_LOOK[n.type] ?? NOTIF_LOOK.system),
+  // The look supplies icon/tint/ink; the server's own icon name wins when the
+  // type is one the look does not know.
+  ...(NOTIF_LOOK[n.type] ?? { ...NOTIF_LOOK.system, icon: n.icon || "Bell" }),
 });
 
 export const useNotifications = (): Resource<UxNotification[]> =>
