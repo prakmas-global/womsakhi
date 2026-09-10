@@ -32,7 +32,7 @@ let bad = 0;
 
 // ── nav.ts keys must resolve ────────────────────────────────────────────────
 // `k` is a base: the label is at `${k}.label`, the hint at `${k}.note`.
-const nav = readFileSync("src/components/ux/nav.ts", "utf8");
+const nav = readFileSync("src/components/ux/nav-tree.ts", "utf8");
 const navKeys = [...nav.matchAll(/k:\s*"([a-zA-Z0-9_.]+)"/g)].map((m) => m[1]);
 const dangling = navKeys.filter((k) => !chromeKeys.has(`${k}.label`));
 if (dangling.length) {
