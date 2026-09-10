@@ -1,4 +1,4 @@
-import { MODES } from "../nav";
+import { allNodes } from "../nav-tree";
 /**
  * The Home module's content — mock for now.
  *
@@ -61,7 +61,7 @@ const TINTS: Record<string, { icon: string; tint: string; ink: string }> = {
 };
 
 export const QUICK_ACTIONS = Object.entries(TINTS).map(([href, look]) => {
-  const item = MODES.flatMap((m) => m.items).find((i) => i.href === href);
+  const item = allNodes().find((i) => i.href === href);
   return {
     href,
     label: item?.label ?? href,

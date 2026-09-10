@@ -4,7 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import * as Icons from "@/components/ux/icons";
 
-import { MODES, modeForPath } from "./nav";
+import { TABS, trailFor } from "./nav-tree";
 import { useNavLabel } from "./use-nav-label";
 
 /**
@@ -41,7 +41,10 @@ import { useNavLabel } from "./use-nav-label";
  * every screen, permanently. That is the reading of §65 that actually protects
  * her, rather than the one that satisfies a tab count.
  */
-const BAR = ["home", "discover", "learn", "work", "earn", "circle"] as const;
+/** Every section that is a place she works. Help and You are header
+ *  controls, because they are not places she works — they are where she goes
+ *  when something is wrong or she wants to change a setting. */
+const BAR = TABS.map((t) => t.id);
 
 function Icon({ name, className }: { name: string; className?: string }) {
   const C = (Icons as unknown as Record<string, React.ComponentType<{ className?: string; strokeWidth?: number }>>)[name]
@@ -51,7 +54,7 @@ function Icon({ name, className }: { name: string; className?: string }) {
 
 export function MobileNav() {
   const pathname = usePathname();
-  const mode = modeForPath(pathname);
+  const here = trailFor(pathname)[0];
   const nav = useNavLabel();
 
   // Close on navigation. Without this the sheet stays over the screen she just
@@ -62,7 +65,7 @@ export function MobileNav() {
   // compiler rejects it. Keeping the path the sheet was opened at, and treating
   // a different path as closed, needs no effect at all.
 
-  const tabs = BAR.map((id) => MODES.find((m) => m.id === id)).filter(Boolean) as typeof MODES;
+  const tabs = TABS;
 
   return (
     <>
@@ -78,7 +81,7 @@ export function MobileNav() {
         }}
       >
         {tabs.map((m) => {
-          const on = mode?.id === m.id;
+          const on = here?.id === m.id;
           return (
             <Link
               key={m.id}
@@ -98,65 +101,6 @@ export function MobileNav() {
   );
 }
 
-/**
- * The sub-pages of the mode she is in, on a phone.
- *
- * The rail that carries these is `hidden lg:flex`, so on a phone every child
- * screen — Your journey, Your diary, Notifications, Saved — was reachable only
- * by whatever happened to link to it. A scrolling strip of chips is the
- * smallest thing that puts them back without taking a row of vertical space
- * away from the content.
- */
-export function ModeChips() {
-  const pathname = usePathname();
-  const mode = modeForPath(pathname);
-  // Above the early return on purpose — hooks cannot sit behind a condition.
-  const nav = useNavLabel();
-  if (!mode || mode.items.length < 2) return null;
-
-  return (
-    <div
-      className="-mx-[20px] mb-3 flex gap-2 overflow-x-auto px-[20px] pb-1 lg:hidden"
-      // The scrollbar is hidden but the scroll is real; `overscroll-contain`
-      // stops a sideways flick from also dragging the page.
-      style={{ scrollbarWidth: "none", overscrollBehaviorX: "contain" }}
-      aria-label={`Inside ${nav.label(mode)}`}
-    >
-      {mode.items.map((i) => {
-        const on = pathname === i.href;
-        return (
-          <Link
-            key={i.href}
-            href={i.href}
-            aria-current={on ? "page" : undefined}
-            className="ux-sq flex min-h-[40px] shrink-0 items-center gap-1.5 rounded-full px-3.5 text-xsm font-semibold"
-            style={{
-              background: on ? "var(--ux-fill)" : "var(--ux-surface-2)",
-              color: on ? "var(--ux-on-brand)" : "var(--ux-ink-2)",
-              border: on ? "1px solid transparent" : "1px solid var(--ux-line)",
-            }}
-          >
-            <Icon name={i.icon} className="h-[14px] w-[14px]" />
-            {nav.label(i)}
-          </Link>
-        );
-      })}
-    </div>
-  );
-}
-
-/**
- * Safety, one tap from anywhere on a phone.
- *
- * Help is the one section the six-tab bar cannot carry, and it is the section
- * containing the alert, the helplines and the reporting form. Burying that
- * behind a menu to satisfy a tab count would be following the letter of the
- * navigation spec against the point of the product.
- *
- * Deliberately quiet — a small outlined pill, not a red panic button. A control
- * that shouts is a control she cannot open in front of the person she is
- * afraid of.
- */
 export function SafetyPin() {
   const pathname = usePathname();
   if (pathname.startsWith("/app/safety")) return null;

@@ -4,7 +4,7 @@ import { useCallback } from "react";
 
 import { useT } from "@/i18n";
 import type { MessageKey } from "@/i18n";
-import type { Mode, NavItem } from "./nav";
+import type { NavNode } from "./nav-tree";
 
 /**
  * Reads a nav entry's label and hint in the reader's language.
@@ -22,7 +22,7 @@ export function useNavLabel() {
   // "ch.today" (which does not exist), and `t()` fell through to returning the
   // key itself: every rail item rendered the string "ch.today" on screen.
   const label = useCallback(
-    (n: Pick<NavItem | Mode, "label"> & { k?: string }) =>
+    (n: Pick<NavNode, "label" | "k">) =>
       n.k ? t(`${n.k}.label` as MessageKey) : n.label,
     [t],
   );

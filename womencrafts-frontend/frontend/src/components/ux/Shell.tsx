@@ -13,10 +13,10 @@ import { useAuth } from "@/context/AuthContext";
 import { useTheme } from "@/context/ThemeContext";
 import { useMe } from "./me";
 import { useNavLabel } from "./use-nav-label";
-import { MODES, itemForPath, modeForPath, type Mode } from "./nav";
+import { SECTIONS, TABS, trailFor, type Section } from "./nav-tree";
 import { Avatar } from "./kit";
 import { useSearchHotkey } from "./useSearchHotkey";
-import { MobileNav, ModeChips, SafetyPin } from "./MobileNav";
+import { MobileNav, SafetyPin } from "./MobileNav";
 
 /**
  * The search panel is a ⌘K surface — most sessions never open it, and it drags
@@ -83,21 +83,6 @@ function Icon({ name, className }: { name: string; className?: string }) {
  * `nav.ts`, which means a rename there reaches this strip with nothing to
  * remember — the same rule the Home grid already follows.
  */
-const QUICK_HREFS: { href: string; icon: string; tint: string; ink: string }[] = [
-  { href: "/app/circles",       icon: "UsersRound",     tint: "--ux-tint-pink",   ink: "--ux-pink-ink" },
-  { href: "/app/documents",     icon: "Store",          tint: "--ux-tint-amber",  ink: "--ux-amber-ink" },
-  { href: "/app/market",        icon: "ShoppingBasket", tint: "--ux-tint-green",  ink: "--ux-green-ink" },
-  { href: "/app/wallet",        icon: "Wallet",         tint: "--ux-tint-lilac",  ink: "--ux-violet-ink" },
-  { href: "/app/opportunities", icon: "Search",         tint: "--ux-tint-blue",   ink: "--ux-blue-ink" },
-  { href: "/app/sakhi",         icon: "Sparkles",       tint: "--ux-tint-violet", ink: "--ux-violet-ink" },
-];
-
-const QUICK_LINKS = QUICK_HREFS.map((q) => {
-  const item = MODES.flatMap((m) => [...m.items, ...(m.findable ?? [])]).find((i) => i.href === q.href);
-  // Sakhi is reached from the top bar rather than a rail slot, so it has no
-  // nav entry to read a label from.
-  return { ...q, label: item?.label ?? "Ask Sakhi" };
-});
 
 const MODULE_TINT = ["--ux-tint-violet", "--ux-tint-green", "--ux-tint-amber", "--ux-tint-blue", "--ux-tint-pink"] as const;
 const MODULE_INK  = ["--ux-violet-ink", "--ux-green-ink", "--ux-amber-ink", "--ux-blue-ink", "--ux-pink-ink"] as const;
@@ -127,137 +112,104 @@ const MODULE_INK  = ["--ux-violet-ink", "--ux-green-ink", "--ux-amber-ink", "--u
  * identity card, the six places she goes most, and the screens inside whatever
  * section is currently open. Nothing appears in both.
  */
-export function ModeRail({
-  mode,
-  current,
-  footer,
-}: {
-  mode: Mode | null;
-  current: string | null;
-  footer?: React.ReactNode;
-}) {
+export function ModeRail({ path, footer }: { path: string; footer?: React.ReactNode }) {
   const me = useMe();
   const nav = useNavLabel();
+  const trail = trailFor(path);
+  const here = trail[0]?.id;
 
   return (
     <aside
       className="hidden h-full shrink-0 flex-col overflow-y-auto border-e lg:flex"
       style={{ width: 253, borderColor: "var(--ux-line)", background: "var(--ux-surface)",
-               viewTransitionName: "ux-shell-nav" }}
+               paddingTop: `calc(${TOPBAR_H_VAR} + 12px)` }}
     >
-      {/* Her card. A cover strip, the avatar breaking across it, then the one
-          number worth acting on. */}
-      <div className="p-3">
-        <div className="overflow-hidden rounded-[12px]" style={{ border: "1px solid var(--ux-line)" }}>
-          <div className="h-[54px]" style={{ background: "linear-gradient(96deg, var(--ux-brand-900), var(--ux-fill) 60%, var(--ux-rib-3))" }} />
-          <div className="px-3 pb-3">
-            <div className="-mt-[24px] w-fit rounded-full" style={{ border: "3px solid var(--ux-surface)" }}>
-              <Avatar src={me.avatar} name={me.first || "You"} size={52} />
+      {/* Her, and how far through setting herself up she is. */}
+      <TransitionLink href="/app/profile"
+        className="ux-sq mx-3 mb-4 block overflow-hidden rounded-[16px]"
+        style={{ border: "1px solid var(--ux-line)" }}>
+        <span className="block h-[52px]"
+              style={{ background: "linear-gradient(120deg, var(--ux-brand-700), var(--ux-brand))" }} />
+        <span className="block px-3.5 pb-3.5">
+          <span className="-mt-6 block h-[46px] w-[46px] overflow-hidden rounded-full"
+                style={{ border: "3px solid var(--ux-surface)", background: "var(--ux-brand-tint-2)" }}>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            {me.avatar && <img src={me.avatar} alt="" aria-hidden className="h-full w-full object-cover" />}
+          </span>
+          <b className="mt-2 block text-xsm font-bold" style={{ color: "var(--ux-ink)" }}>{me.name}</b>
+          <span className="mt-0.5 block text-2xs" style={{ color: "var(--ux-muted)" }}>
+            {me.verified ? "Verified member" : "Member"}
+          </span>
+        </span>
+      </TransitionLink>
+
+      {/*
+        The whole map, two levels deep and never three.
+
+        This used to be a "Quick Access" list of six shortcuts followed by the
+        current section's items — and four of those shortcuts were also items,
+        so the same link was drawn twice in the same 253px column. There is one
+        list now: every section, with the one she is in opened.
+
+        Two levels is a hard rule, not a preference. GitLab states it plainly
+        for the same reason: past two, people mistake a menu's back for the
+        phone's and leave the flow entirely.
+      */}
+      <nav className="px-3 pb-3" aria-label="Sections">
+        {SECTIONS.map((s) => {
+          const open = s.id === here;
+          const kids = (s.children ?? []).filter((c) => !c.unlisted);
+          return (
+            <div key={s.id} className="mb-0.5">
+              <TransitionLink
+                href={s.href}
+                aria-current={open && trail.length === 1 ? "page" : undefined}
+                className="ux-row ux-sq flex items-center gap-3 rounded-[12px] px-2.5 py-2"
+                style={{ background: open ? "var(--ux-brand-tint)" : "transparent",
+                         color: open ? "var(--ux-brand)" : "var(--ux-ink)" }}
+              >
+                <Icon name={s.icon} className="ux-ico h-[16px] w-[16px] shrink-0" />
+                <span className="min-w-0 flex-1 truncate text-xsm"
+                      style={{ fontWeight: open ? 700 : 500 }}>
+                  {nav.label(s)}
+                </span>
+              </TransitionLink>
+
+              {open && kids.length > 0 && (
+                <div className="mb-1 ms-[19px] mt-0.5 ps-3"
+                     style={{ borderInlineStart: "1.5px solid var(--ux-line)" }}>
+                  {kids.map((c) => {
+                    const on = trail.some((t) => t.id === c.id);
+                    return (
+                      <TransitionLink
+                        key={c.id}
+                        href={c.href}
+                        aria-current={on ? "page" : undefined}
+                        className="ux-row ux-sq mb-0.5 flex items-start gap-2.5 rounded-[10px] px-2.5 py-1.5"
+                        style={{ background: on ? "var(--ux-brand-tint)" : "transparent",
+                                 color: on ? "var(--ux-brand)" : "var(--ux-ink-2)" }}
+                      >
+                        <Icon name={c.icon} className="ux-ico mt-[2px] h-[14px] w-[14px] shrink-0" />
+                        <span className="min-w-0 flex-1 truncate text-2xs"
+                              style={{ fontWeight: on ? 700 : 500 }}>
+                          {nav.label(c)}
+                        </span>
+                      </TransitionLink>
+                    );
+                  })}
+                </div>
+              )}
             </div>
-            <p className="mt-2 truncate text-sm font-bold" style={{ color: "var(--ux-ink)" }}>{me.first}</p>
-            <p className="mt-0.5 text-2xs" style={{ color: "var(--ux-muted)" }}>Member</p>
-
-            <TransitionLink href="/app/profile"
-                            className="ux-row mt-3 block rounded-[12px] p-2"
-                            style={{ background: "var(--ux-surface-2)" }}>
-              <span className="flex items-baseline justify-between">
-                <span className="text-2xs font-semibold" style={{ color: "var(--ux-muted)" }}>Profile</span>
-                <span className="text-xs font-bold" style={{ color: "var(--ux-brand)" }}>{me.profilePct}%</span>
-              </span>
-              <span className="mt-1.5 block h-[5px] w-full overflow-hidden rounded-full" style={{ background: "var(--ux-track)" }}>
-                <span className="block h-full rounded-full"
-                      style={{ width: `${me.profilePct}%`,
-                               background: "linear-gradient(90deg, var(--ux-rib-2), var(--ux-rib-3))",
-                               transition: "width var(--ux-t-slow) var(--ux-ease-out)" }} />
-              </span>
-            </TransitionLink>
-          </div>
-        </div>
-      </div>
-
-      <p className="px-5 pb-2 pt-2 text-2xs font-bold uppercase tracking-[0.16em]"
-         style={{ color: "var(--ux-faint)" }}>
-        Quick Access
-      </p>
-      <nav className="px-3">
-        {QUICK_LINKS.map((q) => (
-          <TransitionLink
-            key={q.label}
-            href={q.href}
-            className="ux-row ux-sq mb-0.5 flex items-center gap-3 rounded-[12px] px-2.5 py-2 text-sm font-medium"
-            style={{ color: "var(--ux-ink)" }}
-          >
-            <span className="grid h-[26px] w-[26px] shrink-0 place-items-center rounded-[8px]"
-                  style={{ background: `var(${q.tint})`, color: `var(${q.ink})` }}>
-              <Icon name={q.icon} className="ux-ico h-[14px] w-[14px]" />
-            </span>
-            {q.label}
-          </TransitionLink>
-        ))}
+          );
+        })}
       </nav>
 
-      {/* The screens inside the section the top bar has highlighted. This is
-          the half of navigation a single row of tabs cannot hold. */}
-      {mode && (
-        <>
-          <p className="px-5 pb-2 pt-5 text-2xs font-bold uppercase tracking-[0.16em]"
-             style={{ color: "var(--ux-faint)" }}>
-            In {nav.label(mode)}
-          </p>
-          <nav className="px-3 pb-3">
-            {mode.items.map((it) => {
-              const on = it.href === current;
-              return (
-                <TransitionLink
-                  key={it.href}
-                  href={it.href}
-                  aria-current={on ? "page" : undefined}
-                  className="ux-row ux-sq mb-0.5 flex items-start gap-3 rounded-[12px] px-2.5 py-2"
-                  style={{ background: on ? "var(--ux-brand-tint)" : "transparent",
-                           color: on ? "var(--ux-brand)" : "var(--ux-ink)" }}
-                >
-                  <Icon name={it.icon} className="ux-ico mt-[1px] h-[16px] w-[16px] shrink-0" />
-                  <span className="min-w-0 flex-1">
-                    <span className="block truncate text-xsm" style={{ fontWeight: on ? 600 : 500 }}>
-                      {nav.label(it)}
-                    </span>
-                    {it.note && (
-                      <span className="mt-0.5 block truncate text-2xs"
-                            style={{ color: on ? "var(--ux-brand)" : "var(--ux-muted)", opacity: on ? 0.8 : 1 }}>
-                        {nav.note(it)}
-                      </span>
-                    )}
-                  </span>
-                  {it.badge && (
-                    <span className="shrink-0 rounded-full px-2 py-[2px] text-2xs font-semibold"
-                          style={{ background: "var(--ux-brand-tint-2)", color: "var(--ux-brand)" }}>
-                      {it.badge}
-                    </span>
-                  )}
-                </TransitionLink>
-              );
-            })}
-          </nav>
-        </>
-      )}
-
-      <div className="mt-auto px-3 pb-4">
-        <div className="overflow-hidden rounded-[12px] p-3.5"
-             style={{ background: "linear-gradient(150deg, var(--ux-brand-900), var(--ux-fill))" }}>
-          <p className="text-xsm font-extrabold leading-snug" style={{ color: "var(--ux-on-brand)" }}>
-            You are stronger than you think.
-          </p>
-          <p className="mt-1.5 text-2xs" style={{ color: "var(--ux-on-brand-2)" }}>
-            Keep growing, keep glowing.
-          </p>
-        </div>
-        {footer && <div className="mt-3">{footer}</div>}
-      </div>
+      {footer}
     </aside>
   );
 }
 
-/** One shape for every icon button up here, so they line up and hit the same size. */
+
 function TopIconBtn({
   icon, label, href, onClick, badge, ink = "--ux-ink-2",
 }: {
@@ -336,43 +288,9 @@ function ThemeToggle() {
  * pass over a gap and dismiss it — the classic reason menus like this feel
  * broken.
  */
-/**
- * A section in the top bar.
- *
- * Icon over label with an underline, the way LinkedIn and Facebook mark the
- * area you are in. It is a plain link, not a menu: the side rail beside it
- * lists the screens inside whichever section is open, so a dropdown here
- * would be the same list twice — and two ways to reach one place is how a
- * navigation stops being learnable.
- */
-function ModeTab({ mode, on }: { mode: Mode; on: boolean }) {
-  const nav = useNavLabel();
-  return (
-    <TransitionLink
-      href={mode.href}
-      aria-current={on ? "page" : undefined}
-      className="ux-hov ux-sq relative flex h-[62px] w-[82px] shrink-0 flex-col items-center justify-center gap-1 transition-colors"
-      style={{ color: on ? "var(--ux-ink)" : "var(--ux-muted)" }}
-    >
-      <Icon name={mode.icon} className="ux-ico h-[20px] w-[20px]" />
-      <span className="text-xs" style={{ fontWeight: on ? 600 : 500 }}>{nav.label(mode)}</span>
-      <span aria-hidden className="absolute inset-x-0 bottom-0 h-[3px] rounded-t-full"
-            style={{ background: on ? "var(--ux-ink)" : "transparent",
-                     transition: "background var(--ux-t) var(--ux-ease)" }} />
-    </TransitionLink>
-  );
-}
-
-/**
- * Read from CSS, not fixed in JS.
- *
- * The bar is two rows on a laptop and one on a phone, and the content column
- * slides under it by exactly its height. A single constant would have left an
- * 46px band of dead space above every phone screen.
- */
 const TOPBAR_H_VAR = "var(--ux-topbar-h)";
 
-export function Topbar({ user, mode, current }: { user: { name: string; avatar: string; unread?: number }; mode: Mode | null; current: string | null }) {
+export function Topbar({ user }: { user: { name: string; avatar: string; unread?: number } }) {
   const [search, setSearch] = useState(false);
   const [menu, setMenu] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
@@ -415,11 +333,14 @@ export function Topbar({ user, mode, current }: { user: { name: string; avatar: 
           top-left corner of the whole app rather than above one column. */}
       <Brand size="sm" tagline={false} />
 
-      {/* `lg:` only. Five tabs plus their chevrons need ~560px; below that the
-          phone gets `MobileNav`, which carries the whole map. */}
-      <nav className="ms-2 hidden items-center gap-0.5 lg:flex" aria-label="Sections">
-        {MODES.map((m) => <ModeTab key={m.id} mode={m} on={mode?.id === m.id} />)}
-      </nav>
+      {/*
+        No section tabs here.
+
+        They used to sit in this bar AND in the rail AND in the phone's bottom
+        bar — three renderings of one list, with ten hrefs appearing in two of
+        them at once. The bar now carries only things that are not places:
+        search, help, and her account.
+      */}
 
       {/* The full search box needs ~300px. On a phone it is an icon, and the
           palette it opens is the same palette. */}
@@ -465,6 +386,10 @@ export function Topbar({ user, mode, current }: { user: { name: string; avatar: 
           <ThemeToggle />
           <TopIconBtn icon="Sparkles" label="Ask Sakhi" href="/app/sakhi" ink="--ux-brand" />
         </span>
+        {/* Help is not a tab because five is the ceiling for a bottom bar —
+            but it is the one section a woman reaches for on her worst day, so
+            it is in the bar on every screen instead of behind a menu. */}
+        <TopIconBtn icon="LifeBuoy" label="Help" href="/app/helpdesk" />
         <TopIconBtn icon="MessageCircle" label="Messages" href="/app/messages" />
         <TopIconBtn icon="Bell" label="Notifications" href="/app/notifications" badge={user.unread} />
 
@@ -625,12 +550,10 @@ export function Shell({
   wide?: boolean;
 }) {
   const pathname = usePathname();
-  const mode = modeForPath(pathname);
-  const current = mode ? itemForPath(mode, pathname) : null;
 
   return (
     <div className="flex h-screen flex-col overflow-hidden" style={{ background: "var(--ux-canvas)" }}>
-      <Topbar user={user} mode={mode} current={current} />
+      <Topbar user={user} />
 
       {/* Below `lg`: a bottom bar of five and a sheet with everything else. */}
       <MobileNav />
@@ -651,7 +574,7 @@ export function Shell({
           * bottom of the viewport, and the scroller's top padding keeps the
           * first card clear of the bar it now passes under.
           */}
-        {!wide && <ModeRail mode={mode} current={current} footer={sidebarFooter} />}
+        {!wide && <ModeRail path={pathname} footer={sidebarFooter} />}
 
         <div className="relative flex min-w-0 flex-1 flex-col overflow-hidden"
              style={{ marginTop: `calc(${TOPBAR_H_VAR} * -1)`, height: `calc(100% + ${TOPBAR_H_VAR})` }}>
@@ -676,7 +599,6 @@ export function Shell({
                 {/* The rail carrying these is `hidden lg:flex`, so on a phone
                     every sub-page — Your journey, Your calendar, Saved — was
                     reachable only by whatever happened to link to it. */}
-                <ModeChips />
                 {children}
               </main>
               {rail && (

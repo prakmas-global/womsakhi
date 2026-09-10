@@ -1,4 +1,4 @@
-import { MODES } from "./nav";
+import { SECTIONS, nodeFor, type NavNode } from "./nav-tree";
 import type { ApiSearchHit } from "@/lib/me-api";
 
 /**
@@ -39,32 +39,37 @@ export interface PageHit extends ApiSearchHit {
 const PAGES: PageHit[] = (() => {
   const seen = new Set<string>();
   const out: PageHit[] = [];
-  for (const mode of MODES) {
-    for (const item of [...mode.items, ...(mode.findable ?? [])]) {
-      if (seen.has(item.href)) continue;
-      seen.add(item.href);
-      out.push({
-        id: `page:${item.href}`,
-        kind: "page",
-        title: item.label,
-        // The section disambiguates: "Your record" reads differently in Work
-        // than it would anywhere else.
-        sub: item.note ? `${mode.label} · ${item.note}` : mode.label,
-        href: item.href,
-        // "app" rather than "mine": these are places to go, not her records.
-        group: "app",
-        amount: "",
-        tag: mode.label,
-        icon: item.icon,
-        k: item.k,
-        modeK: mode.k,
-      });
+  // Every node, at every depth. The old build only reached two levels, so a
+  // woman could not find "What should you charge" or "Your statement" by
+  // typing their names — 64 of the app's screens were unsearchable.
+  const walk = (ns: NavNode[], section: NavNode) => {
+    for (const n of ns) {
+      if (!n.unlisted && !seen.has(n.href)) {
+        seen.add(n.href);
+        out.push({
+          id: `page:${n.href}`,
+          kind: "page",
+          title: n.label,
+          // The section disambiguates: "Your record" reads differently in
+          // Work than it would anywhere else.
+          sub: n.note ? `${section.label} · ${n.note}` : section.label,
+          href: n.href,
+          // "app" rather than "mine": these are places to go, not her records.
+          group: "app",
+          amount: "",
+          tag: section.label,
+          icon: n.icon,
+          k: n.k,
+          modeK: section.k,
+        });
+      }
+      if (n.children) walk(n.children, section);
     }
-  }
+  };
+  for (const s of SECTIONS) walk([s, ...(s.children ?? [])], s);
   return out;
 })();
 
-/** How many screens are searchable. Exported so a check can assert it. */
 export const PAGE_COUNT = PAGES.length;
 
 /**
@@ -75,14 +80,13 @@ export const PAGE_COUNT = PAGES.length;
  * read. Returns the message key too, so the caller can translate it.
  */
 export function pageFor(href: string): { title: string; k?: string } | null {
-  let path = href.split("?")[0].replace(/\/+$/, "") || "/app";
-  for (;;) {
-    const hit = PAGES.find((p) => p.href === path);
-    if (hit) return { title: hit.title, k: hit.k };
-    const cut = path.lastIndexOf("/");
-    if (cut <= 4) return null;                 // do not climb above /app
-    path = path.slice(0, cut);
-  }
+  // The tree owns every route, so this no longer has to climb a URL and guess.
+  // It used to walk up the path looking for a match and give up above `/app` —
+  // which meant a woman arriving from Settings, or from any of the 26 routes
+  // the old model had never heard of, got no name at all and her Back fell
+  // back to whatever string the page had hardcoded.
+  const n = nodeFor(href);
+  return n ? { title: n.label, k: n.k } : null;
 }
 
 /**
