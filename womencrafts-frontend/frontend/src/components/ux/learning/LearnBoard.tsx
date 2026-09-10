@@ -77,7 +77,7 @@ const PLACES: Place[] = [
   {
     id: "digital", icon: "Smartphone", title: "Using a phone", sub: "From the very beginning",
     body: "New to smartphones? Learn step-by-step with easy guides on using a phone, apps, internet, safety and more — in simple language.",
-    cta: "Start learning", tag: "Digital confidence", href: "/app/digital", art: "learn-phone", artW: 372,
+    cta: "Start learning", tag: "Digital confidence", href: "/app/digital", art: "learn-phone", artW: 306,
   },
 ];
 
@@ -170,16 +170,19 @@ function Hero() {
              style={{ border: `1px solid ${v("--ux-band-edge")}`,
                       background: v("--ux-band-learn") }}>
       {/*
-        The supplied banner arrives with the headline, the paragraph and all
-        four chips baked into it as pixels. None of that ships: this app is
-        translated into eighteen languages and read aloud for women who cannot
-        read, and a sentence baked into a picture cannot be translated,
-        selected or spoken. So the art is cut in two, at the point where the
-        baked copy ends and the picture begins.
+        `lm.png`, whole — the script, the woman and the quote card in one
+        strip. It needed two pieces when it was cut from `larnmainasset.png`,
+        because that file has the headline, the paragraph and the four chips
+        baked into it as pixels and the "Small Steps Big Changes" script
+        overlapped them horizontally, so no single rectangle separated the two.
+        This file carries no baked copy, so one crop does it.
 
-        The handwriting is the exception, and stays a picture in both pieces —
-        "Small Steps Big Changes" and the quote inside the card are lettering
-        no font reproduces. Same rule the Work board follows.
+        The handwriting stays a picture, as it does on the Work board: the
+        script and the quote inside the card are lettering no font reproduces.
+        Everything that IS type — the headline, the paragraph, the four chips —
+        is live text below, because this app is translated into eighteen
+        languages and read aloud, and a sentence baked into a picture cannot be
+        translated, selected or spoken.
       */}
       {/* eslint-disable-next-line @next/next/no-img-element */}
       <img
@@ -188,23 +191,15 @@ function Hero() {
         aria-hidden
         decoding="async"
         fetchPriority="high"
-        width={1450}
-        height={535}
-        className="pointer-events-none absolute inset-y-0 end-0 hidden h-full w-[44%] object-cover object-left lg:block"
-        style={{ maskImage: "linear-gradient(to right, transparent 0%, #000 13%)",
-                 WebkitMaskImage: "linear-gradient(to right, transparent 0%, #000 13%)" }}
-      />
-      {/* eslint-disable-next-line @next/next/no-img-element */}
-      <img
-        src="/ux/art/hero-learn-script.webp"
-        alt=""
-        aria-hidden
-        decoding="async"
-        width={400}
-        height={559}
-        className="pointer-events-none absolute end-[45%] top-[12%] hidden h-[68%] w-auto object-contain xl:block"
-        style={{ maskImage: "linear-gradient(to right, #000 66%, transparent 92%)",
-                 WebkitMaskImage: "linear-gradient(to right, #000 66%, transparent 92%)" }}
+        width={1600}
+        height={418}
+        className="pointer-events-none absolute inset-y-0 end-0 hidden h-full w-[52%] object-cover object-center lg:block"
+        /* A 3% fade, not 14%. The art's own ground at this edge is the same soft
+           pink as the band behind it, so it needs only enough to kill the seam —
+           and a longer fade was eating the "Small Steps Big Changes" script,
+           which sits in the first 90px of the picture. */
+        style={{ maskImage: "linear-gradient(to right, transparent 0%, #000 3%)",
+                 WebkitMaskImage: "linear-gradient(to right, transparent 0%, #000 3%)" }}
       />
 
       <div className="relative p-5 sm:p-6 lg:ps-8"
@@ -227,7 +222,7 @@ function Hero() {
             the left edge of the picture, where the art is only soft colour —
             but it stops before she does. Held to 57% and spaced at 12px, all
             four fit on one line at 1440 as well as at the board's own 1586. */}
-        <ul className="mt-3 flex flex-wrap items-center gap-x-3 gap-y-1.5 lg:max-w-[56%]"
+        <ul className="mt-3 flex flex-wrap items-center gap-x-3 gap-y-1.5 lg:max-w-[50%]"
             style={{ fontSize: "var(--fb-chip, 12px)" }}>
           {PROMISES.map(([icon, label]) => (
             <li key={label} className="flex items-center gap-1.5">
@@ -306,31 +301,32 @@ function PlaceCard({ p }: { p: Place }) {
       </p>
 
       {/*
-        The button and the picture share the floor of the card.
+        The floor of the card: the button on the left, the picture on the
+        right, sharing one baseline.
 
-        This used to be the button and a small text tag, with the picture
-        nowhere — which is why every card had a hollow gap between its two
-        lines of description and a button pinned to the bottom. The artwork
-        fills that space and does it with something worth looking at.
+        They used to overlap — the picture was 128px wide and absolutely
+        placed over the button's row, so on the narrower cards the two sat on
+        top of each other and the row read as broken. They are laid out side
+        by side now, so neither can ever cover the other, and the picture
+        takes only the space the button leaves.
 
-        It bleeds off the bottom-right corner on purpose. Each file carries a
-        pale ground and its own rounded corners baked into the pixels, so laid
-        flat inside the card it would draw a second, misaligned card; pushed
-        past the edge, the card's own `overflow-hidden` cuts those corners off
-        and what remains reads as part of the card.
+        It still bleeds off the right edge. Each file carries a pale ground and
+        its own rounded corners baked into the pixels; pushed past the edge,
+        the card's `overflow-hidden` cuts those corners away and what is left
+        reads as part of the card rather than a sticker on it.
       */}
-      <div className="relative mt-auto flex shrink-0 items-end">
+      <div className="mt-auto flex shrink-0 items-end justify-between gap-2"
+           style={{ paddingInline: "var(--fb-pad)", paddingBottom: "var(--fb-pad)",
+                    paddingTop: "calc(var(--fb-pad) - 6px)" }}>
+        <Btn href={p.href} variant="soft" size="sm" iconEnd="ArrowRight"
+             className="shrink-0 whitespace-nowrap">{p.cta}</Btn>
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img src={`/ux/art/${p.art}.webp`} alt="" aria-hidden loading="lazy" decoding="async"
              width={p.artW} height={202}
-             className="pointer-events-none absolute bottom-0 end-[-10px] w-[128px] max-w-[52%] object-contain object-right-bottom wide:w-[150px]"
-             style={{ maskImage: "linear-gradient(to right, transparent, #000 22%), linear-gradient(to bottom, transparent, #000 26%)",
-                      WebkitMaskImage: "linear-gradient(to right, transparent, #000 22%), linear-gradient(to bottom, transparent, #000 26%)",
+             className="pointer-events-none -mb-[var(--fb-pad)] -me-[calc(var(--fb-pad)+6px)] h-[var(--fb-art)] w-auto shrink object-contain object-right-bottom"
+             style={{ maskImage: "linear-gradient(to right, transparent, #000 26%), linear-gradient(to bottom, transparent, #000 22%)",
+                      WebkitMaskImage: "linear-gradient(to right, transparent, #000 26%), linear-gradient(to bottom, transparent, #000 22%)",
                       maskComposite: "intersect", WebkitMaskComposite: "source-in" }} />
-        <div className="relative" style={{ padding: "var(--fb-pad)", paddingTop: "calc(var(--fb-pad) - 3px)" }}>
-          <Btn href={p.href} variant="soft" size="sm" iconEnd="ArrowRight"
-               className="shrink-0 whitespace-nowrap">{p.cta}</Btn>
-        </div>
       </div>
     </Card>
   );

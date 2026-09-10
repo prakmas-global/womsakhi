@@ -1876,6 +1876,10 @@
   --fb-hero-y: 20px;
   --fb-lines: 1.55;
   --fb-chip: 12px;
+  /* How tall a card's illustration is. It sits beside the button rather
+     than over it, so this is the one number that decides how much of the
+     card's floor the picture may take. */
+  --fb-art: 74px;
   --fb-h1: 2.6rem;
   --fb-tile: 54px;
   --fb-circle: 50px;
