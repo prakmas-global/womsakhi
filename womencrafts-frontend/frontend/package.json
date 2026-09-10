@@ -15,6 +15,7 @@
     "check:contrast:full": "node checks/contrast.mjs --full",
     "check:screens": "node checks/screens.mjs",
     "check:rail": "node checks/rail.mjs",
+    "check:rail-steady": "node checks/rail-steady.mjs",
     "check:ink": "tsx src/theme-engine/__checks__/ink.mjs",
     "check:states": "node checks/states.mjs",
     "check:api": "node checks/api.mjs",

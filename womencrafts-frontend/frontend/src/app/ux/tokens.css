@@ -1604,6 +1604,27 @@
 .ux-reveal[data-open="true"] { grid-template-rows: 1fr; }
 .ux-reveal > * { overflow: hidden; min-height: 0; }
 
+/* The rail's list, which is the only part of the sidebar that scrolls.
+
+   `scrollbar-gutter: stable` because the list crosses the overflow threshold
+   whenever a taller section opens — without a reserved gutter every label in
+   the column steps sideways by the scrollbar's width at that moment, which
+   reads as the whole rail twitching. `overscroll-behavior: contain` so
+   reaching the end of the list does not hand the wheel to the page behind it. */
+.ux-rail-scroll {
+  overflow-y: auto;
+  scrollbar-gutter: stable;
+  overscroll-behavior: contain;
+  scrollbar-width: thin;
+  scrollbar-color: var(--ux-line) transparent;
+}
+.ux-rail-scroll::-webkit-scrollbar { width: 6px; }
+.ux-rail-scroll::-webkit-scrollbar-track { background: transparent; }
+.ux-rail-scroll::-webkit-scrollbar-thumb {
+  background: var(--ux-line);
+  border-radius: 3px;
+}
+
 /* The line down the side of an open section, and the stub that reaches out to
    each child. Drawn rather than bordered so the line can stop at the last
    child instead of running past it. */

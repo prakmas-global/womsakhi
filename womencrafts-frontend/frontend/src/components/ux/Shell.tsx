@@ -117,21 +117,71 @@ export function ModeRail({ path, footer }: { path: string; footer?: React.ReactN
   const nav = useNavLabel();
   const trail = trailFor(path);
   const here = trail[0]?.id;
+  const list = useRef<HTMLElement | null>(null);
+
+  /**
+   * Keep the row she is on where she can see it.
+   *
+   * The rail opens one section and shuts the rest, so every cross-section
+   * navigation changes the list's height — measured, between 431px and 584px
+   * on the same screen. On a 720px-tall laptop that is enough to carry the row
+   * she just picked below the fold, and the only clue would have been a rail
+   * that appeared to have jumped.
+   *
+   * Two passes, because the panel grows over `--ux-t-slow` rather than
+   * instantly: one now for the case where the layout is already settled, one
+   * after the reveal has finished for the case where it is not. Both are
+   * no-ops when the row is already comfortably inside the frame, which is the
+   * common case — a correction that fires when nothing is wrong is itself a
+   * thing that moves.
+   */
+  useEffect(() => {
+    const el = list.current;
+    if (!el) return;
+    const settle = () => {
+      const row = el.querySelector<HTMLElement>('[aria-current="page"]');
+      if (!row) return;
+      const r = row.getBoundingClientRect();
+      const f = el.getBoundingClientRect();
+      const pad = 12;
+      const d = r.top < f.top + pad ? r.top - f.top - pad
+              : r.bottom > f.bottom - pad ? r.bottom - f.bottom + pad
+              : 0;
+      if (!d) return;
+      const still = window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
+      el.scrollBy({ top: d, behavior: still ? "auto" : "smooth" });
+    };
+    settle();
+    const t = setTimeout(settle, 360);
+    return () => clearTimeout(t);
+  }, [path]);
 
   return (
     <aside
-      className="hidden h-full shrink-0 flex-col overflow-y-auto border-e lg:flex"
+      className="hidden h-full shrink-0 flex-col overflow-hidden border-e lg:flex"
       // The one name `tokens.css` asks for that nothing ever set. The header,
       // the content column and the right rail all carried theirs; the left
       // rail did not, so `::view-transition-group(ux-shell-nav)` never matched
       // and the rail was swept into the default animation along with the page.
+      //
+      // `overflow-hidden`, not `auto`: the rail is a frame now, and the list
+      // inside it is what scrolls. When the whole column scrolled, opening a
+      // long section pushed her profile card up and the "Complete your
+      // profile" panel clean off the bottom — measured 177px past the fold on
+      // Help at 720px. Neither of those moves now, whatever the list does.
+      //
+      // 18px of padding, not a topbar's worth. The header above is a flex row
+      // that takes its own band, so the rail already starts beneath it; the
+      // extra `calc(topbar + 12px)` was a second clearance for a bar that was
+      // no longer overlapping, and it left 56px of empty rail above her photo
+      // while the first card in the page began at 80px. They start level now.
       style={{ viewTransitionName: "ux-shell-nav",
                width: 253, borderColor: "var(--ux-line)", background: "var(--ux-surface)",
-               paddingTop: `calc(${TOPBAR_H_VAR} + 12px)` }}
+               paddingTop: 18 }}
     >
       {/* Her, and how far through setting herself up she is. */}
       <TransitionLink href="/app/profile"
-        className="ux-sq mx-3 mb-4 block overflow-hidden rounded-[16px]"
+        className="ux-sq mx-3 mb-4 block shrink-0 overflow-hidden rounded-[16px]"
         style={{ border: "1px solid var(--ux-line)" }}>
         <span className="block h-[52px]"
               style={{ background: "linear-gradient(120deg, var(--ux-brand-700), var(--ux-brand))" }} />
@@ -160,7 +210,7 @@ export function ModeRail({ path, footer }: { path: string; footer?: React.ReactN
         for the same reason: past two, people mistake a menu's back for the
         phone's and leave the flow entirely.
       */}
-      <nav className="px-3 pb-3" aria-label="Sections">
+      <nav ref={list} className="ux-rail-scroll min-h-0 flex-1 px-3 pb-3" aria-label="Sections">
         {SECTIONS.map((s) => {
           const open = s.id === here;
           const kids = (s.children ?? []).filter((c) => !c.unlisted);
@@ -236,7 +286,9 @@ export function ModeRail({ path, footer }: { path: string; footer?: React.ReactN
         })}
       </nav>
 
-      {footer}
+      {/* The same 12px gutter the card and the list have. It had none, so it
+          ran the full 253px and sat wider than everything above it. */}
+      {footer && <div className="shrink-0 px-3 pb-3 pt-1">{footer}</div>}
     </aside>
   );
 }
