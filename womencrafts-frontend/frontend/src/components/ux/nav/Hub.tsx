@@ -29,16 +29,67 @@ import { SECTIONS, type NavNode, type Section } from "@/components/ux/nav-tree";
  * that a nested menu is where people mistake its back button for the phone's
  * and leave the flow entirely.
  */
+/**
+ * The banner a section's hub opens on, where one exists.
+ *
+ * Earn's is cropped from `lm.png` — the woman and the plant, and deliberately
+ * NOT the rest of it: that file carries a quote reading "Learning is not just
+ * for today" and a "Small Steps Big Changes" script, both of which say Learn
+ * things and would be wrong over Earn. The picture travels; the words do not.
+ */
+const HERO: Record<string, { src: string; w: number; h: number }> = {
+  earn: { src: "/ux/art/hero-earn-banner.webp", w: 1300, h: 457 },
+};
+
 export function Hub({ id }: { id: string }) {
   const nav = useNavLabel();
   const section = SECTIONS.find((s) => s.id === id) as Section | undefined;
   if (!section) return null;
 
   const kids = (section.children ?? []).filter((c) => !c.unlisted);
+  const art = HERO[id];
 
   return (
     <HomeShell active={section.href} bare loadFailed={section.label.toLowerCase()}>
       <div className="flex flex-col">
+      {/*
+        A section with art gets a band; one without keeps the plain header.
+
+        The bare version — an icon, a heading and a line of grey type on a flat
+        canvas — is what made these screens look unfinished beside Learn and
+        Work, which have proper heroes. `HERO` is a lookup rather than a flag
+        so a section only gets one when there is a real picture for it; the
+        others are unchanged until there is.
+      */}
+      {art ? (
+        <section className="ux-sq relative isolate mb-4 overflow-hidden rounded-[18px]"
+                 style={{ border: `1px solid ${v("--ux-band-edge")}`,
+                          background: v("--ux-band-learn") }}>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src={art.src} alt="" aria-hidden decoding="async" fetchPriority="high"
+               width={art.w} height={art.h}
+               className="pointer-events-none absolute inset-y-0 end-0 hidden h-full w-[42%] object-cover object-center lg:block"
+               style={{ maskImage: "linear-gradient(to right, transparent 0%, #000 16%)",
+                        WebkitMaskImage: "linear-gradient(to right, transparent 0%, #000 16%)" }} />
+          <div className="relative flex items-start gap-3.5 p-5 sm:p-7 lg:max-w-[56%] lg:py-8">
+            <IconTile icon={section.icon} tint="--ux-brand-tint-2" ink="--ux-brand" size={44} radius={13} />
+            <div className="min-w-0">
+              <h1 className="text-[clamp(1.6rem,2.6vw,2.1rem)] font-extrabold leading-[1.1] tracking-[-0.03em]"
+                  style={{ color: v("--ux-band-ink") }}>
+                {nav.label(section)}
+              </h1>
+              {section.note && (
+                <p className="mt-1.5 text-smd leading-relaxed" style={{ color: v("--ux-band-ink-2") }}>
+                  {section.note}
+                </p>
+              )}
+              <p className="mt-2 text-xs" style={{ color: v("--ux-band-ink-2") }}>
+                {kids.length} places, nothing hidden.
+              </p>
+            </div>
+          </div>
+        </section>
+      ) : (
         <header className="mb-5 flex items-start gap-3.5">
           <IconTile icon={section.icon} tint="--ux-brand-tint-2" ink="--ux-brand" size={46} radius={14} />
           <div className="min-w-0">
@@ -54,6 +105,7 @@ export function Hub({ id }: { id: string }) {
             </p>
           </div>
         </header>
+      )}
 
         <div className="grid items-start gap-3.5" style={{ gridTemplateColumns: "repeat(auto-fit, minmax(268px, 1fr))" }}>
           {kids.map((c) => <HubCard key={c.id} node={c} />)}
