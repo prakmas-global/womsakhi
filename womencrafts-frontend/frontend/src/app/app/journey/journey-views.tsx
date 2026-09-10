@@ -45,10 +45,27 @@ export function JourneyHero() {
 
         <div className="relative hidden w-[200px] shrink-0 items-end xl:flex wide:w-[400px]">
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src="/ux/art/scene-woman-walking-with-bag.webp" alt="" aria-hidden loading="lazy" decoding="async"
-               className="max-h-[300px] w-[186px] self-end object-contain object-bottom"
-               style={{ maskImage: "linear-gradient(100deg, transparent, #000 32%)",
-                        WebkitMaskImage: "linear-gradient(100deg, transparent, #000 32%)" }} />
+          {/*
+            A woman climbing steps toward a flag, which is what this screen is
+            about — the one it replaced was a woman walking with a bag, and it
+            was both off-subject and soft: 523px of source drawn at up to 400px
+            is 1.3x on a 2x display, well under the 2x a picture needs to look
+            sharp. This is 699x760 drawn at 400, and the artwork itself is
+            cleaner.
+
+            Masked on every edge, not one. The art carries a near-white ground
+            and the band behind it is a lilac-to-amber gradient, so ANY hard
+            edge draws a pale rectangle across it — left, right, top and
+            bottom alike. Same problem Sakhi had on the Work board's foot
+            strip, same fix, applied all the way round this time.
+          */}
+          <img src="/ux/art/scene-woman-climbing-steps.webp"
+               alt="" aria-hidden loading="lazy" decoding="async"
+               width={699} height={760}
+               className="max-h-[300px] w-[186px] self-end object-contain object-bottom wide:w-[290px]"
+               style={{ maskImage: "linear-gradient(to right, transparent 0%, #000 22%, #000 84%, transparent 100%), linear-gradient(to bottom, transparent 0%, #000 14%)",
+                        WebkitMaskImage: "linear-gradient(to right, transparent 0%, #000 22%, #000 84%, transparent 100%), linear-gradient(to bottom, transparent 0%, #000 14%)",
+                        maskComposite: "intersect", WebkitMaskComposite: "source-in" }} />
 
           {/* The five signposts of the path, staggered the way they are on it. */}
           <ul className="hidden w-[186px] flex-col gap-1.5 self-center pe-6 wide:flex">
