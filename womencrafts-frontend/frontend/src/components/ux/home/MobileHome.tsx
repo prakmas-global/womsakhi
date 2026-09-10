@@ -40,31 +40,20 @@ function greeting() {
 export function MobileHome() {
   return (
     <div className="lg:hidden" style={{ paddingBottom: 8 }}>
-      {/* ── who she is, and what is waiting ─────────────────────────────── */}
-      <header className="flex items-center gap-3 px-4 pb-3 pt-1">
-        <TransitionLink href="/app/profile" className="ux-sq shrink-0" aria-label="Your profile">
-          <Image src={ME.avatar} alt="" width={44} height={44}
-                 className="h-11 w-11 rounded-full object-cover"
-                 style={{ boxShadow: "0 0 0 2px var(--ux-brand-tint-2)" }} />
-        </TransitionLink>
-        <div className="min-w-0 flex-1">
-          <p className="truncate text-[13px]" style={{ color: "var(--ux-muted)" }}>{greeting()},</p>
-          <p className="truncate text-[19px] font-bold leading-tight" style={{ color: "var(--ux-ink)" }}>
-            {ME.first}
-          </p>
-        </div>
-        <TransitionLink href="/app/notifications"
-          className="ux-sq relative grid h-11 w-11 place-items-center rounded-full"
-          style={{ background: "var(--ux-surface-2)" }} aria-label={`Notifications, ${ME.unread} unread`}>
-          <I name="Bell" className="h-[19px] w-[19px]" style={{ color: "var(--ux-ink-2)" }} />
-          {ME.unread > 0 && (
-            <span aria-hidden
-                  className="absolute right-1.5 top-1.5 grid h-[17px] min-w-[17px] place-items-center rounded-full px-1 text-[10px] font-bold"
-                  style={{ background: "var(--ux-pink)", color: "#fff" }}>
-              {ME.unread > 9 ? "9+" : ME.unread}
-            </span>
-          )}
-        </TransitionLink>
+      {/*
+        The greeting only — no avatar, no bell.
+
+        Both were here first and both are in the top bar, which persists across
+        every screen. Two avatars and two notification icons stacked 60px apart
+        is not richness, it is the same control twice; the top bar wins because
+        it is the one that is always there.
+      */}
+      <header className="px-4 pb-3 pt-1">
+        <p className="text-[13px]" style={{ color: "var(--ux-muted)" }}>{greeting()},</p>
+        <h1 className="ux-large-title mt-0.5 text-[26px] font-extrabold leading-tight"
+            style={{ color: "var(--ux-ink)" }}>
+          {ME.first}
+        </h1>
       </header>
 
       {/* ── the number she actually opens the app for ───────────────────── */}

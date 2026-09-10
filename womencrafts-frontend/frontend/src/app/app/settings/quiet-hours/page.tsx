@@ -250,7 +250,10 @@ function Dial({
                       stroke="var(--ux-faint)" strokeWidth={major ? 2 : 1} opacity={major ? 0.75 : 0.3} />
                 {major && (
                   <text x={C + rl * Math.sin(a)} y={C - rl * Math.cos(a)} fill="var(--ux-faint)"
-                        fontSize={10.5} fontWeight={700} textAnchor="middle" dominantBaseline="middle">
+                        /* 12, not 10.5: the app's floor for anything a phone
+                           has to read, and these four are the only labels
+                           telling her which half of the clock she is on. */
+                        fontSize={12} fontWeight={700} textAnchor="middle" dominantBaseline="middle">
                     {t[h]}
                   </text>
                 )}

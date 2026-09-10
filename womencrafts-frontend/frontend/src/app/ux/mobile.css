@@ -740,3 +740,48 @@
     padding-inline: 8px;
   }
 }
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   The top bar, on a phone.
+
+   Measured at 390x844: the wordmark ran UNDER the icon row. The bar is a flex
+   row of brand + search box + six controls, and the brand is `shrink-0` with a
+   fixed pixel width — so on a 390px screen the icons simply overlapped it.
+   That is the "top navbar disturbed" you are seeing, and it is a real overflow
+   rather than a spacing preference.
+
+   The deeper problem is that the bar is a DESKTOP bar. A native app does not
+   put its logo and six controls on every screen: the logo appears once, at
+   launch, and each screen's own header carries what that screen needs. Home
+   already does exactly that — avatar, greeting and a bell — so the bar was
+   showing a second avatar and a second notification icon directly above them.
+
+   So on a phone the bar keeps the mark, drops the wordmark, and carries only
+   the two things that are not somewhere else: search, and her account. Help
+   and Messages both live in the More sheet, one tap away, where the bottom bar
+   already puts every destination in the app.
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+@media (max-width: 1023px) {
+  /* The mark stays; the wordmark beside it is what does not fit. */
+  .ux .ux-topbar img[alt*="WomSakhi" i]:not(.ux-brand-mark),
+  .ux header img[alt*="WomSakhi" i]:not(.ux-brand-mark) {
+    display: none;
+  }
+
+  /* Redundant with the screen's own header and with the bottom bar's More
+     sheet. Hidden rather than removed, so nothing else has to change. */
+  .ux .ux-topbar a[aria-label="Help"],
+  .ux .ux-topbar a[aria-label="Messages"],
+  .ux header a[aria-label="Help"],
+  .ux header a[aria-label="Messages"] {
+    display: none;
+  }
+
+  /* Whatever is left must never overlap the brand again. */
+  .ux .ux-topbar > div,
+  .ux header.ux-glass > div {
+    gap: 8px;
+    padding-inline: 12px;
+  }
+}

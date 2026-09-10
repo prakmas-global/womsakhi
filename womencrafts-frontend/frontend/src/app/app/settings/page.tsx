@@ -174,9 +174,11 @@ export default function MorePage() {
 
         <div className="px-4 pb-2 text-[12px]" style={{ color: "var(--ux-muted)" }}>
           <p>Version 1.0.0 · Member since March 2025 · WS-4471</p>
-          <p className="mt-1.5 flex gap-4">
-            <Link href="/terms" style={{ color: "var(--ux-brand)" }}>Terms</Link>
-            <Link href="/privacy" style={{ color: "var(--ux-brand)" }}>Privacy</Link>
+          <p className="-ms-2 mt-0.5 flex">
+            <Link href="/terms" className="inline-flex min-h-[44px] min-w-[44px] items-center justify-center px-2 text-[13px] font-semibold"
+                  style={{ color: "var(--ux-brand)" }}>Terms</Link>
+            <Link href="/privacy" className="inline-flex min-h-[44px] min-w-[44px] items-center justify-center px-2 text-[13px] font-semibold"
+                  style={{ color: "var(--ux-brand)" }}>Privacy</Link>
           </p>
         </div>
       </div>

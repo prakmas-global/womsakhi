@@ -50,7 +50,15 @@ const MEASURE = `(() => {
     const fs = parseFloat(getComputedStyle(el).fontSize);
     if (fs < 12) tiny.push({ t: txt.slice(0, 32), fs, c: el.className.toString().slice(0,50) });
   }
-  // tab bar overlap
+  // ── tab bar overlap ───────────────────────────────────────────────────────
+  // Measured with everything scrolled to its END. At the top of a long page
+  // every element below the fold "intersects" a fixed bar's rectangle and none
+  // of it is a bug — it is content that has not been scrolled to. What matters
+  // is whether the LAST thing on the screen can be reached, so both the shell's
+  // scroller and any inner one are run to the bottom first.
+  for (const sc of document.querySelectorAll('#ux-scroll, .ux-scroll-y, .ux-chat-log')) {
+    sc.scrollTop = sc.scrollHeight;
+  }
   const bar = document.querySelector('.ux-tabbar') || document.querySelector('nav[class*="fixed"][class*="bottom-0"]');
   const overlaps = [];
   if (bar && vis(bar)) {
@@ -58,6 +66,7 @@ const MEASURE = `(() => {
     for (const el of document.querySelectorAll('button, a, input, textarea, h1, h2, p, [role="button"]')) {
       if (!vis(el) || bar.contains(el)) continue;
       const r = el.getBoundingClientRect();
+      if (el.scrollHeight > el.clientHeight + 2) continue;
       if (r.bottom > b.top + 2 && r.top < b.bottom - 2 && r.right > b.left && r.left < b.right) {
         overlaps.push({ t: (el.textContent||el.getAttribute('aria-label')||el.tagName).trim().slice(0,30), top: Math.round(r.top), bottom: Math.round(r.bottom) });
       }
@@ -91,6 +100,8 @@ for (const [w, h, label, isMobile] of [[390, 844, "m", true], [1440, 900, "d", f
       await p.goto(APP + route, { waitUntil: "domcontentloaded", timeout: 120000 });
       await new Promise((r) => setTimeout(r, 3200));
       await p.screenshot({ path: `${OUT}/${TAG}-${label}-${name}.png` });
+      await p.evaluate(() => { for (const sc of document.querySelectorAll('#ux-scroll, .ux-scroll-y, .ux-chat-log')) sc.scrollTop = sc.scrollHeight; });
+      await new Promise((r) => setTimeout(r, 500));
       const m = await p.evaluate(MEASURE);
       const bad = [];
       if (m.overflowDoc !== 0 || m.overflowScroller !== 0) bad.push(`OVERFLOW doc=${m.overflowDoc} scr=${m.overflowScroller}`);

@@ -132,9 +132,12 @@ export default function Profile() {
             </span>
             {/* Was a <button> with no handler at all. It goes where the photo
                 is actually changed. */}
+            {/* Measured 33x44 — a camera badge that a finger misses more often
+                than it hits. `!min-w` is what the 44px floor needs; `min-height`
+                already came from `mobile.css`. */}
             <Btn href="/app/settings/account" variant="soft" size="sm" icon="Camera"
                  ariaLabel={tr("profile.changePhoto2")}
-                 className="absolute -bottom-1 -end-1 !rounded-full !px-2 !py-2">
+                 className="absolute -bottom-1 -end-1 !min-w-[44px] !rounded-full !px-2 !py-2">
               <span className="sr-only">{tr("profile.changePhoto")}</span>
             </Btn>
           </div>
