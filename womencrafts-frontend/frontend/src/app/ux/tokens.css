@@ -28,6 +28,8 @@
   --ux-z-base:     0;
   --ux-z-raised:   10;   /* a card lifted on hover, a sticky table header */
   --ux-z-sticky:   30;   /* section headers, the top bar */
+  /* The install card: above the tab bar (60), below toasts (70). */
+  --ux-z-install: 65;
   --ux-z-dropdown: 40;   /* menus, popovers, autocomplete */
   --ux-z-overlay:  50;   /* the dim behind a modal or drawer */
   --ux-z-modal:    60;   /* dialogs, drawers, bottom sheets */

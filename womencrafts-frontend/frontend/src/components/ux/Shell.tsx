@@ -17,6 +17,7 @@ import { SECTIONS, TABS, trailFor, type NavNode, type Section } from "./nav-tree
 import { Avatar } from "./kit";
 import { useSearchHotkey } from "./useSearchHotkey";
 import { MobileNav, SafetyPin } from "./MobileNav";
+import { PageTransition } from "./mobile/PageTransition";
 
 /**
  * The search panel is a ⌘K surface — most sessions never open it, and it drags
@@ -807,7 +808,14 @@ export function Shell({
                 {/* The rail carrying these is `hidden lg:flex`, so on a phone
                     every sub-page — Your journey, Your calendar, Saved — was
                     reachable only by whatever happened to link to it. */}
-                {children}
+                {/* On a phone the fade above becomes a directional slide —
+                    forward from the right, back from the left. `PageTransition`
+                    adds no wrapper element and no click handler: it decides
+                    which way the NEXT arriving screen travels and writes that
+                    to a custom property, so `.ux-swap`'s own animation still
+                    rides on the element the router inserts. Nothing about it
+                    sits between the tap and the navigation. */}
+                <PageTransition>{children}</PageTransition>
               </main>
               {rail && (
                 <div data-rail className="ux-swap hidden w-[320px] shrink-0 pb-24 xl:block">

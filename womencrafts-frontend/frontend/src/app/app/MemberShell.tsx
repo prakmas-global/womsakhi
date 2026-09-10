@@ -4,6 +4,7 @@ import { useEffect } from "react";
 import { usePathname, useRouter } from "next/navigation";
 
 import SakhiLauncher from "@/components/sakhi/SakhiLauncher";
+import InstallPrompt from "@/components/ux/mobile/InstallPrompt";
 import { ShellProvider } from "@/components/ux/ShellProvider";
 import type { MeShell } from "@/lib/shell-api";
 import { NavHistory } from "@/components/ux/kit";
@@ -14,6 +15,8 @@ import { useAuth } from "@/context/AuthContext";
 import { useI18n } from "@/i18n";
 import Spinner from "@/design-system/primitives/Spinner";
 import "@/app/ux/tokens.css";
+// After tokens.css on purpose: both are unlayered, so the later import wins.
+import "@/app/ux/mobile.css";
 
 /**
  * The member app shell — redesigned.
@@ -113,6 +116,9 @@ export default function MemberShell({
           <ChromeShell>{children}</ChromeShell>
         </ChromeProvider>
         <SakhiLauncher />
+        {/* Asked only after she has an account — a prompt to keep the icon
+            means nothing before there is anything to come back to. */}
+        <InstallPrompt />
       </div>
     </ShellProvider>
   );
