@@ -12,20 +12,21 @@
 FROM node:24-alpine AS deps
 WORKDIR /app
 COPY package.json package-lock.json ./
-# `npm ci` first, because it installs exactly the lockfile and fails loudly on
-# drift — which is the point of committing one.
+# `npm ci`, not `npm install` — it installs exactly the lockfile and fails
+# loudly on drift, which is the point of committing one.
 #
-# The fallback is not laziness. `@tailwindcss/oxide-wasm32-wasi` declares
-# `@emnapi/core` and `@emnapi/runtime` as dependencies, but npm only resolves
-# wasm32-wasi packages on a platform that can use them — so a lockfile
-# generated on macOS is missing two entries that `npm ci` on linux then
-# demands, and no amount of regenerating it on macOS adds them. It is an npm
-# optional-dependency bug, not a drifted lockfile. `npm install` resolves the
-# same tree and fills the two gaps; if the lockfile has genuinely drifted, the
-# build still succeeds but the first line will have told you so in the log.
-RUN npm ci --no-audit --no-fund || \
-    (echo ">>> npm ci failed; falling back to npm install (see Dockerfile)" && \
-     npm install --no-audit --no-fund)
+# The lockfile MUST be generated on linux. npm only resolves wasm32-wasi
+# packages on a platform that can use them, so a lockfile made on macOS is
+# missing the `@emnapi/*` entries that `@tailwindcss/oxide-wasm32-wasi`
+# demands here, and `npm ci` refuses to install it. A linux-generated lockfile
+# is a superset and installs cleanly on macOS too, so there is no trade-off —
+# just a rule. To regenerate:
+#
+#   gcloud builds submit --config=<a node:24 job running npm install>
+#
+# See DEPLOYMENT.local.md. Do not "fix" a failure here by switching to
+# `npm install`; that hides real lockfile drift.
+RUN npm ci --no-audit --no-fund
 
 # ── builder ───────────────────────────────────────────────────────────────
 FROM node:24-alpine AS builder
