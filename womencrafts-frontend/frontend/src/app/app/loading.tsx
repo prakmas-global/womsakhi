@@ -1,20 +1,26 @@
 import { HomeShell } from "@/components/ux/home/HomeShell";
-import { RailSkeleton, ScreenSkeleton } from "@/components/ux/kit";
+import { HomeBodySkeleton, HomeRailSkeleton } from "@/components/ux/home/AppSkeleton";
 
 /**
- * Shown while this route's code and data are on their way.
+ * Shown while Home's own code and data are on their way.
  *
- * Next renders this automatically in place of the page — no page changes, and
- * it appears on a real slow connection rather than only when forced.
+ * This file sits INSIDE the member layout, so the chrome around it — the
+ * topbar, the left rail, the mobile bar — is already on screen and stays there;
+ * only the content column and the right rail are being stood in for. The frame
+ * itself is `AppShellSkeleton`, which the layout shows while its own boot is in
+ * flight. Both draw the same body, so the two moments do not disagree.
  *
- * The rail is held open too. This screen renders one, and a skeleton that
- * leaves it out lays the content column out 345px wider than the screen it is
- * standing in for — so the page arrived and everything slid sideways.
+ * It used to render `ScreenSkeleton shape="grid"` — a title, a subtitle and
+ * four cards in two columns — over a screen that opens with a full-width hero
+ * and then five figures, six tiles and three panels. The rail was the kit's
+ * generic pair of cards against the four this screen actually carries. Both
+ * reserved a column; neither reserved the right one, so the page still settled
+ * when it landed.
  */
 export default function Loading() {
   return (
-    <HomeShell skeleton="grid" rail={<RailSkeleton />} bare>
-      <ScreenSkeleton shape="grid" />
+    <HomeShell bare rail={<HomeRailSkeleton />}>
+      <HomeBodySkeleton />
     </HomeShell>
   );
 }

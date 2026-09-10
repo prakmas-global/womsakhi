@@ -155,9 +155,26 @@ export default function FindWorkPage() {
         <div className="relative overflow-hidden rounded-[18px] p-6 sm:p-7"
              style={{ background: "linear-gradient(120deg, var(--ux-tint-lilac), var(--ux-tint-pink))" }}>
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src="/ux/art/scene-woman-with-trolley-bag.webp" alt="" loading="lazy" decoding="async"
-               aria-hidden
-               className="pointer-events-none absolute -bottom-4 end-4 hidden h-[210px] w-[210px] object-contain lg:block" />
+          {/*
+            Same corner, same size as before — only the picture changed.
+
+            The woman with the trolley bag measured fine: 511px of source
+            painted at 153, which is 3.3x. This was never a resolution problem.
+            The picture itself was soft and featureless, and no number of
+            pixels fixes a face with no features in it.
+
+            The replacement is a crop out of a group scene, so it carries a
+            blue ground and cannot float on a pink gradient the way a cut-out
+            does. Framed, it does not have to: `.ux-frame` gives it a recess
+            and a 1px ring, and a 1px ring is what terminates any photograph
+            against any surface whatever its own colours are doing.
+          */}
+          <span aria-hidden
+                className="ux-frame pointer-events-none absolute bottom-6 end-6 hidden h-[190px] w-[190px] overflow-hidden rounded-[18px] lg:block">
+            <img src="/ux/art/scene-woman-at-laptop-thinking.webp" alt=""
+                 width={540} height={540} loading="lazy" decoding="async"
+                 className="h-full w-full object-cover" />
+          </span>
 
           <div className="relative max-w-[62%]">
             <p className="text-2xs font-extrabold uppercase tracking-[0.2em]" style={{ color: v("--ux-brand") }}>

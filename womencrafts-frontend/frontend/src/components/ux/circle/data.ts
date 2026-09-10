@@ -140,15 +140,37 @@ export const PRIVACY = [
   { id: "private", label: "Invite only",       note: "It does not show in search. Only people you invite can see it.", icon: "Lock" },
 ];
 
-/** Six covers she can pick without owning a camera. */
+/**
+ * Six covers she can pick without owning a camera.
+ *
+ * These used to be the cut-out figure art the rest of the app floats over its
+ * cards — which is the wrong shape for a cover twice over. A cut-out has no
+ * background, so cropping it to a 3:1 band left a headless torso on white; and
+ * the cut-outs themselves are 560–700px of soft, badly-matted artwork, painted
+ * up to 320px wide on the circle's own header. Every one showed a fringe.
+ *
+ * A cover is a rectangle. These are whole scenes, painted edge to edge, at 760
+ * natural pixels for a slot that is never wider than 320 CSS px — so they hold
+ * at 2× and crop to any band without losing a face.
+ */
 export const COVER_PRESETS = [
-  A("scene-women-group-circle"),
-  A("course-handmade-market-stall"),
-  A("scene-women-celebrating"),
-  A("scene-woman-planning-board"),
-  A("course-two-women-handshake"),
-  A("scene-woman-planting-sapling"),
+  A("circle-women-talking"),
+  A("circle-vision-board"),
+  A("circle-study-group"),
+  A("circle-rooftop-evening"),
+  A("circle-sharing-help"),
+  A("circle-hands-joined"),
 ];
+
+/** What each cover shows — read out for anyone who cannot see it. */
+export const COVER_ALT: Record<string, string> = {
+  [A("circle-women-talking")]: "Five women sitting together in a circle, talking over cups of tea",
+  [A("circle-vision-board")]: "Five women planning at a laptop beside a vision board of what they want next",
+  [A("circle-study-group")]: "Five women studying together at a laptop, taking notes",
+  [A("circle-rooftop-evening")]: "Five women on a rooftop at dusk, one of them playing a guitar",
+  [A("circle-sharing-help")]: "Six women passing on clothes, food and childcare to one another",
+  [A("circle-hands-joined")]: "Five women sitting close with their hands joined in the middle",
+};
 
 export const CIRCLE_TIPS = [
   "Choose a clear and specific name",
@@ -165,8 +187,8 @@ export const SUGGESTED_TAGS = [
 ];
 
 export const CIRCLE_ART = {
-  hero: A("scene-women-group-circle"),
-  create: A("scene-women-celebrating"),
+  hero: A("circle-women-talking"),
+  create: A("circle-hands-together"),
   empty: A("empty-magnifying-glass-blank-page"),
 };
 

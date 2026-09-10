@@ -4,7 +4,7 @@ import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 
 import { useAuth } from "@/context/AuthContext";
-import { Spinner } from "@/design-system";
+import { WaitPage } from "@/components/ux/WaitScreen";
 import "../ux/tokens.css";
 
 /**
@@ -27,11 +27,9 @@ export default function LearningLayout({ children }: { children: React.ReactNode
   }, [loading, user, router]);
 
   if (loading || !user) {
-    return (
-      <div className="ux grid min-h-screen place-items-center">
-        <Spinner />
-      </div>
-    );
+    // Was a bare `<Spinner />` on an empty page — see WaitPage for why that is
+    // not feedback to somebody who does not already trust that the app works.
+    return <WaitPage title="Opening your learning…" line="Please wait. We are checking you are signed in." />;
   }
   if (!isMember) {
     return (

@@ -5,7 +5,7 @@ import Link from "next/link";
 import * as Icons from "@/components/ux/icons";
 import { Btn, Card, I, IconTile, v } from "@/components/ux/kit";
 import type { Circle } from "@/lib/community-api";
-import { ALL_TOPICS, members, readPost, topicOf, type Topic } from "@/components/ux/circle/data";
+import { ALL_TOPICS, CIRCLE_ART, members, readPost, topicOf, type Topic } from "@/components/ux/circle/data";
 
 /* ------------------------------------------------------------------ */
 /*  The banner, and the box she types her question into                */
@@ -55,11 +55,24 @@ export function CircleHero({ ask, onAsk, onStart }: {
         </div>
 
         <div className="relative hidden lg:flex lg:items-end">
+          {/*
+            A whole scene, not a cut-out.
+
+            The old art here was `scene-women-group-circle` — 700×417 of
+            badly-matted cut-out, painted 358px wide, so it carried a white
+            halo down every arm and three faces you could not focus on. This
+            is a painted rectangle at 900px for a 290px slot, so the mask has
+            to do the blending the alpha channel used to do badly: it dissolves
+            BOTH edges, so the picture reads as a panel set into the band
+            rather than a photograph with a scissored edge.
+          */}
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src="/ux/art/scene-women-group-circle.webp" alt="" aria-hidden loading="lazy" decoding="async"
+          <img src={CIRCLE_ART.hero}
+               alt="Five women sitting together in a circle, talking over cups of tea"
+               loading="lazy" decoding="async" width={900} height={690}
                className="h-full w-[240px] object-cover object-top xl:w-[290px]"
-               style={{ maskImage: "linear-gradient(100deg, transparent, #000 30%)",
-                        WebkitMaskImage: "linear-gradient(100deg, transparent, #000 30%)" }} />
+               style={{ maskImage: "linear-gradient(100deg, transparent 0%, #000 32%, #000 78%, transparent 100%)",
+                        WebkitMaskImage: "linear-gradient(100deg, transparent 0%, #000 32%, #000 78%, transparent 100%)" }} />
           <p className="hidden w-[152px] self-center pe-6 text-end text-smd font-bold italic leading-[1.35] xl:block"
              style={{ color: v("--ux-brand"), fontFamily: "var(--font-display)" }}>
             Real conversations,<br />brighter tomorrows

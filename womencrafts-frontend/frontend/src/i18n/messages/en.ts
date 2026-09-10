@@ -2275,6 +2275,21 @@ const screens = {
   "workviews.whatEmployersAreAskingFor": "What employers are asking for",
   "workviews.learnOne": "Learn one",
   "workviews.countedFromTheOpeningsOnThis": "Counted from the openings on this page, not from a trends list.",
+
+  /* ── Waiting, in words ────────────────────────────────────────────────────
+     Every one of these is read by somebody who does not know whether the app
+     is working or her connection has died. So each says what is happening and
+     what she should do, and none of them is the word "Loading" on its own. */
+  "wait.signingOut": "Signing you out…",
+  "wait.signingOutLine": "Please wait. We are closing WomSakhi on this phone.",
+  "wait.signingIn": "Signing you in…",
+  "wait.signingInLine": "Please wait. We are getting your home screen ready.",
+  "wait.slow": "This is taking longer than usual. Your connection may be slow — WomSakhi is still working.",
+  "wait.stuck": "Take me to the sign-in screen",
+  "wait.signedOut": "You are signed out",
+  "wait.signedOutLine": "Sign in again whenever you are ready.",
+  "wait.opening": "Opening the page…",
+  "wait.openingSlow": "Still opening. Your connection is slow.",
 } as const;
 
 const en = { ...core, ...chrome, ...screens } as const;

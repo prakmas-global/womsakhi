@@ -223,6 +223,13 @@ export function Actions({
   const btn = "ux-row flex items-center gap-1.5 rounded-[8px] px-2 py-1.5 text-xs font-semibold";
   return (
     <div className="mt-3 flex flex-wrap gap-0.5 border-t pt-2.5" style={{ borderColor: "var(--ux-line)" }}>
+      {/* The button's label already changes to "Copied" — but a label that
+          changes on an element that is not a live region announces nothing.
+          This is the same confirmation, said out loud, beside the button
+          rather than in a corner of the screen. */}
+      <span className="sr-only" role="status" aria-live="polite">
+        {copied ? "Copied." : ""}
+      </span>
       <button type="button" className={btn} style={{ color: copied ? "var(--ux-green-ink)" : "var(--ux-muted)" }}
               onClick={async () => {
                 // Guarded: `navigator.clipboard` is undefined outside a secure

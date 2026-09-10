@@ -11,6 +11,9 @@ import { HomeShell } from "@/components/ux/home/HomeShell";
 import { CAN, FOLLOW_UPS, MODE_PREFIX, STARTERS, WONT } from "@/components/ux/sakhi/prompts";
 import { ConvBar, Disclosure, SakhiRail, Thread, Voice, Welcome, type Bubble } from "./views";
 import { Actions, Answer, Cites, Composer, DraftCard, Ico, ModeSwitch, Picker, StopPill, Typing } from "@/components/ux/sakhi/parts";
+import { Sheet } from "@/components/ux/kit/sheet";
+import { Btn } from "@/components/ux/kit";
+import { useToast } from "@/design-system/feedback/ToastProvider";
 import {
   apiSakhiConversation,
   apiSakhiConversations,
@@ -79,6 +82,9 @@ export default function SakhiPage() {
   const [history, setHistory] = useState<SakhiConversation[]>([]);
   const [available, setAvailable] = useState(true);
   const [disclosure, setDisclosure] = useState("");
+  const toast = useToast();
+  const [renaming, setRenaming] = useState(false);
+  const [renameTo, setRenameTo] = useState("");
   const [error, setError] = useState("");
 
   const [mode, setMode] = useState("quick");
@@ -282,14 +288,30 @@ export default function SakhiPage() {
     try { await apiSakhiRate(messageId, helpful); } catch { setError("That could not be recorded."); }
   }
 
-  async function rename() {
+  /**
+   * Naming a conversation, in the app rather than in the browser.
+   *
+   * This was `window.prompt()`. Three things were wrong with that and only one
+   * of them is cosmetic: it blocks the main thread, it appears in the browser's
+   * language rather than the one she chose, and on most Android browsers it
+   * renders as a system dialog with the URL bar's origin at the top — which
+   * looks, to a woman new to a smartphone, like a different program asking her
+   * for something.
+   */
+  function rename() {
     if (!conversationId) return;
-    const now = history.find((c) => c.id === conversationId)?.title ?? "";
-    const next = window.prompt("Name this conversation", now);
-    if (next === null) return;
-    const title = next.trim();
-    if (!title) return;
-    try { await apiSakhiRename(conversationId, title); } catch { setError("That could not be renamed."); }
+    setRenameTo(history.find((c) => c.id === conversationId)?.title ?? "");
+    setRenaming(true);
+  }
+
+  async function saveRename() {
+    const title = renameTo.trim();
+    if (!conversationId || !title) return;
+    setRenaming(false);
+    try {
+      await apiSakhiRename(conversationId, title);
+      toast.success("Conversation renamed");
+    } catch { setError("That could not be renamed."); }
     void loadHistory();
   }
 
@@ -504,6 +526,39 @@ export default function SakhiPage() {
             <Icons.TriangleAlert className="h-4 w-4" /> {error}
           </p>
         )}
+
+        <Sheet
+          open={renaming}
+          onClose={() => setRenaming(false)}
+          title="Name this conversation"
+          description="So you can find it again in your list."
+          icon="Pencil"
+          footer={
+            <div className="flex gap-2.5">
+              <Btn variant="outline" full onClick={() => setRenaming(false)}>Cancel</Btn>
+              <Btn full disabled={!renameTo.trim()} onClick={saveRename}>Save the name</Btn>
+            </div>
+          }
+        >
+          <label className="block text-xsm font-semibold" htmlFor="sakhi-rename"
+                 style={{ color: "var(--ux-ink)" }}>
+            Name
+          </label>
+          <input
+            id="sakhi-rename"
+            value={renameTo}
+            onChange={(e) => setRenameTo(e.target.value)}
+            onKeyDown={(e) => { if (e.key === "Enter" && renameTo.trim()) void saveRename(); }}
+            maxLength={80}
+            autoComplete="off"
+            className="mt-2 w-full rounded-[12px] px-3.5 py-3 text-sm"
+            style={{
+              background: "var(--ux-surface-2)",
+              color: "var(--ux-ink)",
+              border: "1px solid var(--ux-line-strong)",
+            }}
+          />
+        </Sheet>
       </div>
     </HomeShell>
   );

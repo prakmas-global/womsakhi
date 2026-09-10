@@ -221,18 +221,32 @@ export default async function RootLayout({
         <ThemeStyle />
         <LayoutStyle />
         <ThemeProvider>
-          <RouteProgress />
           <QueryProvider>
             <I18nProvider initialLocale={locale}>
+              {/* Inside I18nProvider, not above it. The bar grew a label that
+                  says "Opening…" in words after a second and a half, and a
+                  label the app cannot translate is a label half this audience
+                  cannot read. */}
+              <RouteProgress />
+              {/* Both feedback channels live at the root for the same reason as
+                  ConnectionBanner: a screen should not have to opt in to being
+                  able to tell the user what happened. ConfirmProvider is inside
+                  ToastProvider so a dialog can raise a toast on the way out —
+                  "Deleted · Undo".
+
+                  ToastProvider sits ABOVE AuthProvider, not below it as it did
+                  at first. Signing out is an operation like any other and has
+                  to be able to confirm itself — "You are signed out" is raised
+                  by `signOut` and read on the sign-in screen it lands on. With
+                  the old nesting `useToast()` inside AuthContext threw, so the
+                  one operation that takes the whole app away was the one
+                  operation that could not say it had finished. Nothing else
+                  depends on the order: the toast list needs neither the
+                  session nor the shell. */}
+              <ToastProvider>
               <AuthProvider initialUser={session.user} sessionResolved={session.resolved}>
               <ThemeEngineBridge>
                 <LayoutEngineBridge initialShell={shell}>
-                  {/* Both feedback channels live at the root for the same
-                      reason as ConnectionBanner: a screen should not have to
-                      opt in to being able to tell the user what happened.
-                      ConfirmProvider is inside ToastProvider so a dialog can
-                      raise a toast on the way out — "Deleted · Undo". */}
-                  <ToastProvider>
                     <ConfirmProvider>
                       {children}
                       {/* A failed request must never be mistaken for empty
@@ -240,10 +254,10 @@ export default async function RootLayout({
                           every screen written from here on. */}
                       <ConnectionBanner />
                     </ConfirmProvider>
-                  </ToastProvider>
                 </LayoutEngineBridge>
               </ThemeEngineBridge>
             </AuthProvider>
+              </ToastProvider>
             </I18nProvider>
           </QueryProvider>
         </ThemeProvider>

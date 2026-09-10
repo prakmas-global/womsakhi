@@ -32,6 +32,10 @@
   --ux-z-overlay:  50;   /* the dim behind a modal or drawer */
   --ux-z-modal:    60;   /* dialogs, drawers, bottom sheets */
   --ux-z-toast:    70;   /* confirmations — above everything, deliberately */
+  /* The hand-off curtain: signing in, signing out. Above the toasts, because
+     while it is up the app underneath is being taken away and a confirmation
+     of something that happened on the old screen is no longer news. */
+  --ux-z-curtain:  90;
 
 }
 
@@ -683,7 +687,20 @@
  * The hairline is the part that matters most: 1px of ink at 10% terminates any
  * photograph against any surface, whatever the photographer's white balance.
  */
-.ux-frame { position: relative; isolation: isolate; }
+/* This sets NO `position`, and that is deliberate.
+
+   The recess is a `::after`, so the frame does need a positioned ancestor —
+   but it cannot be set here. This file is UNLAYERED and Tailwind's utilities
+   live in `@layer utilities`, and unlayered CSS beats layered CSS whatever the
+   specificity: `.ux-frame { position: relative }` silently overrode
+   `absolute`, and so did `:where(.ux-frame)` at zero specificity, which is the
+   part that is easy to get wrong twice. Layer order is not specificity.
+
+   So the caller positions it — `relative` or `absolute`, whichever the layout
+   needs — and gets what they asked for. Same trap as `.ux-clay`'s
+   `border-radius: 18px`, which every pill-shaped button had to fight back
+   inline. */
+.ux-frame { isolation: isolate; }
 .ux-frame > img { display: block; border-radius: inherit; }
 .ux-frame::after {
   content: "";
@@ -2085,4 +2102,124 @@
 
 @media (prefers-reduced-motion: reduce) {
   .ux-reveal { transition: none; }
+}
+
+
+/* ── The hand-off curtain ────────────────────────────────────────────────────
+   Signing in and signing out both take the whole app away and put it back
+   different. Between the two there used to be a bare `<Spinner />` on an empty
+   canvas: no logo, no words, nothing that distinguishes "working" from "this
+   phone has stopped". For a woman who is new to smartphones that is not a
+   loading state, it is a dead screen.
+
+   These are the styles for what replaced it. The component is
+   `components/ux/WaitScreen.tsx`; everything it paints comes from the tokens
+   above, so it is correct in both themes without a second definition.
+
+   NOTE for anyone moving this: `.ux-wait` is rendered through a portal into
+   <body>, which is outside the `.ux` wrapper every colour token is declared
+   on. The portal root therefore carries `ux` (and `dark`) itself — see the
+   component. Without that this whole block resolves to nothing and the
+   curtain paints invisible ink on an invisible sheet. */
+.ux-wait {
+  position: fixed;
+  inset: 0;
+  z-index: var(--ux-z-curtain);
+  display: grid;
+  place-items: center;
+  padding: 24px;
+  background: var(--ux-canvas);
+}
+
+/* It arrives rather than appearing. 200ms, the same as everything else that
+   arrives in this app — long enough not to snap, short enough that it is not
+   itself a delay. */
+@keyframes ux-wait-in { from { opacity: 0 } to { opacity: 1 } }
+.ux-wait { animation: ux-wait-in var(--ux-t) var(--ux-ease) backwards; }
+
+.ux-wait-track {
+  position: relative;
+  width: 100%;
+  height: 8px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: var(--ux-line);
+}
+.ux-wait-fill {
+  height: 100%;
+  border-radius: 999px;
+  background: linear-gradient(90deg, var(--ux-fill), var(--ux-fill-2));
+  transition: width var(--ux-t-slow) var(--ux-ease-out);
+}
+
+/* A second, faster light travelling over the fill. It is what separates
+   "moving" from "stopped at 40%" on a connection where the fill itself can sit
+   still for ten seconds — and it is the only part of this screen that is
+   decoration rather than information, so it is the first thing removed below. */
+@keyframes ux-wait-sheen { from { transform: translateX(-100%) } to { transform: translateX(300%) } }
+.ux-wait-sheen {
+  position: absolute;
+  inset-block: 0;
+  inset-inline-start: 0;
+  width: 34%;
+  background: linear-gradient(90deg, transparent,
+              color-mix(in srgb, var(--ux-on-brand) 62%, transparent), transparent);
+  animation: ux-wait-sheen 1.6s var(--ux-ease) infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ux-wait { animation: none; }
+  /* The bar still reaches its value — it just gets there in one step rather
+     than gliding, and nothing travels across it. Reduced motion means "do not
+     animate without being asked", not "tell her nothing". */
+  .ux-wait-fill { transition: none; }
+  .ux-wait-sheen { display: none; }
+}
+
+/* ── The words that go with a slow route change ──────────────────────────────
+   `RouteProgress` draws a 3px bar at the top of the window. That is a fine
+   answer for the 200ms case and no answer at all for the eight-second one: a
+   thin line at the very top of a phone screen, above the notch on some of
+   them, is not something a first-time smartphone user is watching. Past a
+   second and a half the bar grows a label that says what is happening in
+   words. */
+.ux-loadword {
+  position: fixed;
+  /* The wrapper carries `ux` so the variables below resolve — see
+     RouteProgress. `.ux` also paints the canvas, and this element is a
+     full-width strip across the top of the window, so it would have laid a
+     bar of solid page colour over whatever it crossed. Put back what the
+     class is only being borrowed for. */
+  background: transparent;
+  z-index: var(--ux-z-toast);
+  inset-inline: 0;
+  top: 14px;
+  display: flex;
+  justify-content: center;
+  pointer-events: none;
+}
+.ux-loadword > span {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  max-width: calc(100vw - 32px);
+  padding: 8px 14px;
+  border-radius: 999px;
+  border: 1px solid var(--ux-line);
+  background: var(--ux-surface);
+  color: var(--ux-ink-2);
+  box-shadow: var(--ux-shadow-card);
+}
+@keyframes ux-loadword-in { from { opacity: 0; transform: translateY(-6px) } to { opacity: 1; transform: none } }
+.ux-loadword > span { animation: ux-loadword-in var(--ux-t) var(--ux-ease-out) backwards; }
+
+@keyframes ux-turn { to { transform: rotate(360deg) } }
+.ux-turn { animation: ux-turn 1s linear infinite; }
+
+@media (prefers-reduced-motion: reduce) {
+  .ux-loadword > span { animation: none; }
+  /* The ring stops turning and the sentence beside it carries the meaning.
+     A ring that never moves would be a lie if it were the only signal, which
+     is exactly why this pattern always ships with its words. */
+  .ux-turn { animation: none; }
 }

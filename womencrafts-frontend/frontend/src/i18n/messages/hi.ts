@@ -2230,6 +2230,17 @@ const hi: Catalog = {
   "workviews.whatEmployersAreAskingFor": "नियोक्ता क्या माँग रहे हैं",
   "workviews.learnOne": "कोई एक सीखें",
   "workviews.countedFromTheOpeningsOnThis": "इसी पन्ने की जगहों से गिना गया, किसी रुझान की सूची से नहीं।",
+
+  "wait.signingOut": "साइन आउट किया जा रहा है…",
+  "wait.signingOutLine": "कृपया रुकें। हम इस फ़ोन पर WomSakhi बंद कर रहे हैं।",
+  "wait.signingIn": "साइन इन किया जा रहा है…",
+  "wait.signingInLine": "कृपया रुकें। हम आपकी होम स्क्रीन तैयार कर रहे हैं।",
+  "wait.slow": "इसमें सामान्य से ज़्यादा समय लग रहा है। आपका इंटरनेट धीमा हो सकता है — WomSakhi अब भी काम कर रहा है।",
+  "wait.stuck": "मुझे साइन इन स्क्रीन पर ले चलें",
+  "wait.signedOut": "आप साइन आउट हो गई हैं",
+  "wait.signedOutLine": "जब आप तैयार हों, फिर से साइन इन करें।",
+  "wait.opening": "पेज खुल रहा है…",
+  "wait.openingSlow": "अब भी खुल रहा है। आपका इंटरनेट धीमा है।",
 };
 
 export default hi;

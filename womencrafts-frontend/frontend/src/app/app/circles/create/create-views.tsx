@@ -2,7 +2,7 @@
 
 import * as Icons from "@/components/ux/icons";
 import { Card, I, IconTile, v } from "@/components/ux/kit";
-import { CIRCLE_TIPS, COVER_PRESETS, members, topicOf } from "@/components/ux/circle/data";
+import { CIRCLE_ART, CIRCLE_TIPS, COVER_ALT, COVER_PRESETS, members, topicOf } from "@/components/ux/circle/data";
 
 /* ------------------------------------------------------------------ */
 /*  The banner                                                         */
@@ -22,8 +22,17 @@ export function CreateHero() {
         </p>
       </div>
 
+      {/*
+        `scene-women-celebrating` used to sit here: a cut-out whose matte had
+        gone wrong, so three raised arms each trailed a grey shadow of the
+        background it was cut from, on a band that is pale pink. This is a
+        painted scene instead — six women with their hands stacked in the
+        middle, which is the sentence the quote beside it already says.
+      */}
       {/* eslint-disable-next-line @next/next/no-img-element */}
-      <img src="/ux/art/scene-women-celebrating.webp" alt="" aria-hidden loading="lazy" decoding="async"
+      <img src={CIRCLE_ART.create}
+           alt="Six women sitting close together with their hands stacked in the middle"
+           loading="lazy" decoding="async" width={900} height={690}
            className="pointer-events-none absolute bottom-0 end-[240px] hidden h-full w-[26%] object-cover object-top xl:block"
            style={{ maskImage: "linear-gradient(100deg, transparent, #000 26%, #000 82%, transparent)",
                     WebkitMaskImage: "linear-gradient(100deg, transparent, #000 26%, #000 82%, transparent)" }} />
@@ -89,14 +98,18 @@ export function CoverPicker({ cover, onPick, onUpload }: {
       <div className="grid grid-cols-3 gap-2">
         {COVER_PRESETS.map((src) => {
           const on = cover === src;
+          /* Six buttons that all said "Use this cover" are six identical
+             buttons to anyone listening to the page. Each one now says what
+             its picture shows, which is the only thing that tells them apart. */
+          const shows = COVER_ALT[src] ?? "one of ours";
           return (
             <button key={src} type="button" onClick={() => onPick(src)} aria-pressed={on}
-                    aria-label="Use this cover"
+                    aria-label={`Use this cover: ${shows}`}
                     className="ux-press ux-sq relative h-[62px] overflow-hidden rounded-[10px]"
                     style={{ border: `2px solid ${v(on ? "--ux-brand" : "--ux-line")}` }}>
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img src={src} alt="" aria-hidden loading="lazy" decoding="async"
-                   className="h-full w-full object-cover" />
+                   width={760} height={583} className="h-full w-full object-cover" />
               {on && (
                 <span className="absolute end-1 top-1 grid h-[18px] w-[18px] place-items-center rounded-full"
                       style={{ background: v("--ux-fill"), color: v("--ux-on-brand") }}>

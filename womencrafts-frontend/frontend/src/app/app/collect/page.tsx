@@ -64,6 +64,19 @@ export default function CollectPage() {
 
   return (
     <HomeShell active="/app/collect">
+      {/*
+        The copy buttons swap their icon to a tick for two seconds. That is the
+        right place for the feedback — right where she pressed — and it is
+        completely silent, so a woman using a screen reader pressed Copy and got
+        nothing at all. The tick stays; this says the same thing out loud.
+
+        A live region, not a toast: the confirmation belongs beside the button,
+        and it is `polite` because she asked for this and is not to be
+        interrupted mid-sentence to be told it worked.
+      */}
+      <span className="sr-only" role="status" aria-live="polite">
+        {copied ? "Copied." : ""}
+      </span>
       <div className="flex flex-col gap-5">
 
         <header>

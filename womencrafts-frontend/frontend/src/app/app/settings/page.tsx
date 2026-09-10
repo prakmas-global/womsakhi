@@ -183,7 +183,11 @@ export default function MorePage() {
             <h3 className="text-sm font-semibold" style={{ color: "var(--ux-ink)" }}>{tr("settings.signOut")}</h3>
             <p className="mt-1 text-xsm" style={{ color: "var(--ux-muted)" }}>{tr("settings.youWillNeedYourPasswordTo")}</p>
           </div>
-          <Btn variant="outline" icon="LogOut" onClick={() => void signOut()}>{tr("settings.signOut2")}</Btn>
+          {/* `signOut()`, not `void signOut()`. `Btn` watches for a returned
+              promise and holds itself busy until it settles — the `void` threw
+              that promise away, so the one button in the app with the longest
+              wait behind it was the one button that did not answer a press. */}
+          <Btn variant="outline" icon="LogOut" onClick={() => signOut()}>{tr("settings.signOut2")}</Btn>
         </div>
       </Card>
     </HomeShell>

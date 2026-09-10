@@ -39,7 +39,13 @@ export function ReadAloud({ targetId, label = "Read this to me", lang = "hi-IN",
 
   useEffect(() => {
     setAble(typeof window !== "undefined" && "speechSynthesis" in window);
-    return () => { try { window.speechSynthesis?.cancel(); } catch {} };
+    return () => {
+      try { window.speechSynthesis?.cancel(); } catch {
+        /* Silencing the voice as the screen goes away. If the browser refuses,
+           the utterance was already finished — and there is no screen left to
+           put a message on, because this is the unmount. */
+      }
+    };
   }, []);
 
   const toggle = useCallback(() => {

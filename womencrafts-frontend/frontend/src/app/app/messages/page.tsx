@@ -5,6 +5,8 @@ import { COPY } from "@/components/ux/copy";
 import * as Icons from "@/components/ux/icons";
 
 import { HomeShell } from "@/components/ux/home/HomeShell";
+import { useConfirm } from "@/design-system/feedback/ConfirmProvider";
+import { useToast } from "@/design-system/feedback/ToastProvider";
 import { About, EmptyThread, Header, Inbox, Thread } from "./views";
 import { formatMoney } from "@/components/ux/kit/money";
 import Link from "next/link";
@@ -61,6 +63,8 @@ export default function MessagesPage() {
   const [draft, setDraft] = useState("");
   const [sending, setSending] = useState(false);
   const [error, setError] = useState("");
+  const confirm = useConfirm();
+  const toast = useToast();
   /**
    * On a phone, one panel at a time.
    *
@@ -120,9 +124,31 @@ export default function MessagesPage() {
 
   async function removeConversation() {
     if (!thread) return;
-    if (!window.confirm(`Delete your conversation with ${thread.name}? This cannot be undone.`)) return;
-    try { await apiDeleteConversation(thread.id); setOpenId(null); setThread(null); void load(); }
-    catch { setError("That could not be deleted."); }
+    /**
+     * The app's dialog, not the browser's.
+     *
+     * `window.confirm()` blocks the main thread, cannot be styled, and — the
+     * part that matters here — renders in the BROWSER's language. A woman
+     * reading WomSakhi in Hindi got an English "OK / Cancel" over a permanent
+     * deletion, from what looks to her like a different program entirely.
+     */
+    const sure = await confirm({
+      title: `Delete your conversation with ${thread.name}?`,
+      description: "Every message in it goes, on your side and hers. This cannot be undone.",
+      confirmLabel: "Delete it",
+      cancelLabel: "Keep it",
+      danger: true,
+    });
+    if (!sure) return;
+    try {
+      await apiDeleteConversation(thread.id);
+      setOpenId(null);
+      setThread(null);
+      void load();
+      // The thread simply vanishing from the list is not, on its own, a
+      // confirmation that anything reached the server.
+      toast.success("Conversation deleted");
+    } catch { setError("That could not be deleted."); }
   }
 
   const shown = useMemo(() => {
