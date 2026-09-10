@@ -91,7 +91,17 @@ const measure = (page) => page.evaluate(() => {
       }
     });
   }
-  return { overflow, overflowScroller, coarse, hasNav: !!navBox,
+  // The guard that this measurement is worth anything at all.
+  //
+  // Every assertion above is scoped to `#content`, and a Next build-error
+  // overlay renders OUTSIDE it — so a screen that failed to compile measured
+  // as perfectly clean, and a whole 32-screen run reported green against an
+  // app that was showing a red error page. Ask whether the screen rendered.
+  const overlay = !!document.querySelector("nextjs-portal") &&
+    /Build Error|Unhandled Runtime Error|Parsing ecmascript/i.test(document.body.innerText || "");
+  const rendered = !!document.querySelector("#content")?.children.length;
+
+  return { overflow, overflowScroller, coarse, overlay, rendered, hasNav: !!navBox,
            small: [...new Set(small)], tiny: [...new Set(tiny)], over: [...new Set(over)] };
 });
 
@@ -117,6 +127,8 @@ for (const [name, route] of ROUTES) {
     if (m.tiny?.length) bad.push(`TINY ${m.tiny.length}`);
     if (m.over?.length) bad.push(`OVERLAP ${m.over.length}`);
     if (m.error) bad.push(`ERROR`);
+    if (m.overlay) bad.push(`BUILD-ERROR-OVERLAY`);
+    if (m.rendered === false) bad.push(`EMPTY`);
     console.log(`${bad.length ? "FAIL" : "ok  "} ${name.padEnd(14)} ${label.padEnd(5)} ${bad.join(" ") || "clean"} ${JSON.stringify({ s: m.small, t: m.tiny, o: m.over, e: m.error })}`);
     await p.close();
   }

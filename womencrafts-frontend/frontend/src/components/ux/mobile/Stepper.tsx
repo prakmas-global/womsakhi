@@ -32,6 +32,19 @@ import * as Icons from "@/components/ux/icons";
  * so without it the number changes in silence. It can double-announce when
  * focus is already on the spinbutton itself — an annoyance, against a change
  * nobody hears at all.
+ *
+ * ── Why the buttons commit twice over, from two different events ────────────
+ * `onPointerDown` is what makes the press feel immediate on a phone: waiting
+ * for the click means waiting for the finger to lift. But Enter and Space on a
+ * focused button produce a `click` and NO pointer event at all, so a stepper
+ * wired only to pointers is a stepper the keyboard cannot use — and it looks
+ * completely fine in a screenshot. This was caught by driving it: focus landed
+ * on +, Enter was pressed, and the value stayed at 2.
+ *
+ * `event.detail` separates them. A click synthesised from a key press reports
+ * `detail === 0`; a click that came from a real pointer reports 1 or more. So
+ * the pointer path commits on pointer-down and the keyboard path commits on
+ * the click, and neither fires twice.
  */
 
 /** Held-down repeat: the pause before it starts, then the gap between ticks. */
@@ -144,6 +157,10 @@ export function Stepper({
         onPointerUp={stopHold}
         onPointerCancel={stopHold}
         onLostPointerCapture={stopHold}
+        // Keyboard only — a pointer click has already been handled above.
+        onClick={(e) => {
+          if (e.detail === 0) commit(value - step);
+        }}
         className={btn}
         style={{ background: "var(--ux-surface)", color: "var(--ux-ink)" }}
       >
@@ -181,6 +198,10 @@ export function Stepper({
         onPointerUp={stopHold}
         onPointerCancel={stopHold}
         onLostPointerCapture={stopHold}
+        // Keyboard only — a pointer click has already been handled above.
+        onClick={(e) => {
+          if (e.detail === 0) commit(value + step);
+        }}
         className={btn}
         style={{ background: "var(--ux-surface)", color: "var(--ux-ink)" }}
       >

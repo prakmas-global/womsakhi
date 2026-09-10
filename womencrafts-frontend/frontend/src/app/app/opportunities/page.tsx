@@ -187,7 +187,7 @@ export default function FindWorkPage() {
               Work
             </p>
             <h1 className="ux-screen-title mt-2 text-3xl font-extrabold leading-[1.15] tracking-[-0.02em]"
-                style={{ color: v("--ux-ink") }}>{tr("findwork.findWorkThatFits")}<span style={{ color: v("--ux-brand") }}>your life</span>
+                style={{ color: v("--ux-ink") }}>{tr("findwork.findWorkThatFits")}{" "}<span style={{ color: v("--ux-brand") }}>your life</span>
             </h1>
             <p className="mt-1.5 max-w-[52ch] text-[15px] leading-snug lg:text-sm lg:leading-relaxed" style={{ color: v("--ux-muted") }}>{tr("findwork.jobsOrdersFreelanceAndInternshipsF")}</p>
 

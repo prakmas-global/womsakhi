@@ -283,10 +283,10 @@ function Dial({
         </svg>
 
         <div className="pointer-events-none absolute inset-0 grid place-content-center text-center">
-          <span className="text-2xs font-extrabold uppercase tracking-[0.14em]" style={{ color: "var(--ux-faint)" }}>Sleep</span>
+          <span className="text-[12px] lg:text-2xs font-extrabold uppercase tracking-[0.14em]" style={{ color: "var(--ux-faint)" }}>Sleep</span>
           <p className="my-0.5 text-2xlm font-extrabold leading-[1.12] tracking-[-0.03em] tabular-nums"
              style={{ color: "var(--ux-ink)" }}>{fmt(p.quiet_start)}</p>
-          <span className="text-2xs font-extrabold uppercase tracking-[0.14em]" style={{ color: "var(--ux-faint)" }}>Wake</span>
+          <span className="text-[12px] lg:text-2xs font-extrabold uppercase tracking-[0.14em]" style={{ color: "var(--ux-faint)" }}>Wake</span>
           <p className="my-0.5 text-2xlm font-extrabold leading-[1.12] tracking-[-0.03em] tabular-nums"
              style={{ color: "var(--ux-ink)" }}>{fmt(p.quiet_end)}</p>
           <p className="mt-2 text-xsm font-semibold" style={{ color: "var(--ux-ink-2)" }}>
@@ -461,7 +461,7 @@ function Breakthrough({
       <Row icon="ShieldCheck" tint="--ux-tint-green" ink="--ux-green-ink"
            title={tr("settingsQuiethours.yourSafetyAlert")}
            body="If you press the safety button, or someone responds to one, it rings through — silent or not.">
-        <span className="flex items-center gap-1.5 text-2xs font-extrabold uppercase tracking-[0.06em]"
+        <span className="flex items-center gap-1.5 text-[12px] lg:text-2xs font-extrabold uppercase tracking-[0.06em]"
               style={{ color: "var(--ux-green-ink)" }}>
           <Icons.Lock className="h-[11px] w-[11px]" />{tr("settingsQuiethours.alwaysOn")}</span>
       </Row>

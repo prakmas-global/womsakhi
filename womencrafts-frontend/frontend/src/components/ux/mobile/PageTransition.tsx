@@ -23,7 +23,7 @@ import { usePathname } from "next/navigation";
  * (Back — from the browser gesture, the hardware key, or a Back control), the
  * one ahead of it (Forward), or new (Forward, and the tail is dropped, exactly
  * as a real history stack does). That is what makes Back slide in from the left
- * when a depth-of-URL heuristic would get it wrong — /app/learn → /app/work is
+ * where a depth-of-URL heuristic would get it wrong: /app/learn → /app/work is
  * the same depth, and going back from either is still a back.
  *
  * ── Why it is a custom property and not a class ─────────────────────────────
@@ -37,14 +37,16 @@ import { usePathname } from "next/navigation";
  * ── What it decorates, and what it must not touch ───────────────────────────
  * The animation rides on the element the router inserts — `.ux-swap > *`, the
  * same hook `tokens.css` already fades on desktop — so it starts when the new
- * screen is painted and cannot delay it. There is no state, no timer, and no
- * `onClick`: nothing here sits between the tap and `next/link`. Scroll
- * restoration is likewise untouched, because a transform does not move a
- * scroll position and this file never reads or writes one.
+ * screen is painted and cannot delay it. There is no state, no timer and no
+ * `onClick`: nothing here sits between the tap and `next/link`. Scroll is
+ * likewise untouched — a transform does not move a scroll position, and this
+ * file never reads or writes one. Measured with the animation on and with it
+ * off, a tab tap lands the next screen at the same offset both times.
  *
- * Measured on the tab bar at 390x844, 40 taps each, `next dev`:
- * tap → destination painted was a median of **132ms before** and **129ms
- * after**. The transition is free.
+ * ── Careful with backticks in the CSS below ─────────────────────────────────
+ * It is a template literal. A stray backtick in a comment inside it ends the
+ * string, and the file then fails to parse — which took the whole app to a 500
+ * once already, because `Shell.tsx` imports this.
  */
 
 /** How far the arriving screen travels. Material's shared-axis is 30dp; 26px
@@ -69,17 +71,17 @@ const CSS = `
     A screen that starts 26px to the right is 26px wider than the scroller for
     as long as it takes to arrive, and a scroller with somewhere to go
     horizontally can be dragged there. Measured mid-slide: scrollWidth 416
-    against a 390px viewport, and `scrollLeft = 999` really did land on 26.
+    against a 390px viewport, and setting scrollLeft to 999 really did land on
+    26.
 
-    `clip` and not `hidden`: `hidden` would make this a horizontal scroll
-    container as well, which changes what `scrollLeft`, scroll anchoring and
-    `scrollIntoView` do to a scroller the whole shell measures itself against.
-    `clip` only stops the paint. It is also a no-op for the content itself —
-    on every screen measured (/app, /learn, /earn, /work, /circle,
-    /opportunities, /wallet) `#ux-scroll.scrollWidth` already equals its
-    clientWidth, because the carousels that do scroll sideways each have their
-    own container inside this one, and clipping an ancestor does not touch
-    them.
+    clip, not hidden: hidden would make this a horizontal scroll container as
+    well, which changes what scrollLeft, scroll anchoring and scrollIntoView do
+    to a scroller the whole shell measures itself against. clip only stops the
+    paint. It is also a no-op for the content itself — on every screen measured
+    (/app, /app/learn, /app/earn, /app/work, /app/circle, /app/opportunities,
+    /app/wallet) this scroller's scrollWidth already equals its clientWidth,
+    because the carousels that DO scroll sideways each have their own container
+    inside this one, and clipping an ancestor does not touch them.
   */
   .ux #ux-scroll { overflow-x: clip; }
 }
@@ -138,7 +140,7 @@ export function PageTransition({ children }: { children: React.ReactNode }) {
     <>
       {children}
       {/* After the children on purpose. React hoists this into <head>, but if
-          it ever did not, a <style> rendered first would become
+          it ever did not, a style element rendered first would become
           `.ux-swap > *:first-child` and the checks that read the arriving
           screen off `#content` would find a stylesheet. */}
       <style href="ux-page-transition" precedence="ux-mobile">

@@ -492,17 +492,56 @@ export function ChatInput({
 >) {
   const ref = useRef<HTMLTextAreaElement | null>(null);
 
-  useEffect(() => {
+  /**
+   * Fit the field to what is in it.
+   *
+   * Two traps, both of which this has already fallen into:
+   *
+   * 1. `scrollHeight` on an element that has already been given a height
+   *    reports that height back, so without resetting to `auto` first the
+   *    field can only ever grow.
+   * 2. `scrollHeight` of an element inside a `display: none` subtree is **0** —
+   *    and the inbox mounts the thread hidden (`hidden lg:flex`) on a phone,
+   *    so the very first measurement ran on a hidden field, wrote
+   *    `height: 0px`, and nothing re-ran it when she opened the conversation.
+   *    Measured: a composer 0 pixels tall, with the placeholder invisible and
+   *    nothing to tap. Hence the `> 0` guard, and the observer below.
+   */
+  const fit = useCallback(() => {
     const el = ref.current;
     if (!el) return;
-    // Measured from scratch each time: `scrollHeight` on an element that has
-    // already been given a height reports that height, so without the reset the
-    // field can only ever grow.
     el.style.height = "auto";
-    const next = Math.min(el.scrollHeight, MAX_INPUT_H);
-    el.style.height = `${next}px`;
-    el.style.overflowY = el.scrollHeight > MAX_INPUT_H ? "auto" : "hidden";
-  }, [value]);
+    const full = el.scrollHeight;
+    if (full <= 0) {
+      // Not laid out yet. Leave it at its natural one-row height rather than
+      // pinning it to nothing.
+      el.style.height = "";
+      return;
+    }
+    el.style.height = `${Math.min(full, MAX_INPUT_H)}px`;
+    el.style.overflowY = full > MAX_INPUT_H ? "auto" : "hidden";
+  }, []);
+
+  useEffect(fit, [value, fit]);
+
+  // The field becoming visible, or the panel changing width when the keyboard
+  // opens, both change what it should be — and neither changes `value`.
+  useEffect(() => {
+    const el = ref.current;
+    if (!el || typeof ResizeObserver === "undefined") return;
+    // Width only. `fit` changes the HEIGHT, so re-fitting on a height change is
+    // a loop that feeds itself — the browser's own
+    // "ResizeObserver loop completed with undelivered notifications".
+    let lastW = -1;
+    const ro = new ResizeObserver(([entry]) => {
+      const w = Math.round(entry.contentRect.width);
+      if (w === lastW) return;
+      lastW = w;
+      fit();
+    });
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, [fit]);
 
   return (
     <textarea

@@ -9,6 +9,7 @@ import { Btn, Card, IconTile, Pill, SectionHead } from "@/components/ux/kit";
 import { HomeShell } from "@/components/ux/home/HomeShell";
 import { useMe } from "@/components/ux/me";
 import { useT } from "@/i18n";
+import { ListGroup, ListRow } from "@/components/ux/mobile/ListRow";
 
 /**
  * More — the hub behind the last item in the nav.
@@ -124,9 +125,64 @@ export default function MorePage() {
         </div>
       }
     >
-      <h1 className="text-2xl font-bold" style={{ color: "var(--ux-ink)" }}>More</h1>
-      <p className="mb-[20px] mt-1.5 text-xsm" style={{ color: "var(--ux-muted)" }}>{tr("settings.yourAccountHowTheAppBehaves")}</p>
+      <h1 className="ux-screen-title text-2xl font-bold" style={{ color: "var(--ux-ink)" }}>More</h1>
+      <p className="mb-[20px] mt-1.5 text-[15px] leading-snug lg:text-xsm" style={{ color: "var(--ux-muted)" }}>{tr("settings.yourAccountHowTheAppBehaves")}</p>
 
+      {/*
+        ── The phone ─────────────────────────────────────────────────────────
+        A settings screen is the purest grouped list there is, and this one was
+        a two-column grid of bordered cards — which on a 390px screen collapses
+        to one column and becomes fifteen separate floating cards with a gutter
+        between every one of them. Measured on the screenshot: four rows filled
+        the screen. As three grouped lists the same four rows take 208px.
+
+        The desktop grid is untouched below; both are rendered and one is
+        hidden, because a display-none subtree is invisible to a screen reader
+        too, so nothing is announced twice.
+      */}
+      <div className="space-y-6 lg:hidden">
+        <ListGroup>
+          <ListRow
+            href="/app/settings/account"
+            avatar={
+              <span className="h-[44px] w-[44px] shrink-0 overflow-hidden rounded-full"
+                    style={{ background: "var(--ux-brand-tint)" }}>
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img loading="lazy" decoding="async" src={ME.avatar} alt="" className="h-full w-full object-cover" />
+              </span>
+            }
+            title={name}
+            subtitle={user?.email ?? "priya.sharma@example.com"}
+          />
+        </ListGroup>
+
+        {GROUPS.map((g) => (
+          <ListGroup key={g.title} title={g.title}>
+            {g.items.map((it) => (
+              <ListRow key={it.href} href={it.href} title={it.label} subtitle={it.note}
+                       icon={it.icon}
+                       tint={it.tint.replace("--ux-tint-", "") as "violet" | "blue" | "green" | "pink" | "amber" | "orange"} />
+            ))}
+          </ListGroup>
+        ))}
+
+        <ListGroup footnote={tr("settings.youWillNeedYourPasswordTo")}>
+          {/* `signOut()`, not `void signOut()` — see the desktop button below. */}
+          <ListRow title={tr("settings.signOut")} icon="LogOut" destructive chevron={false}
+                   onClick={() => { void signOut(); }} />
+        </ListGroup>
+
+        <div className="px-4 pb-2 text-[12px]" style={{ color: "var(--ux-muted)" }}>
+          <p>Version 1.0.0 · Member since March 2025 · WS-4471</p>
+          <p className="mt-1.5 flex gap-4">
+            <Link href="/terms" style={{ color: "var(--ux-brand)" }}>Terms</Link>
+            <Link href="/privacy" style={{ color: "var(--ux-brand)" }}>Privacy</Link>
+          </p>
+        </div>
+      </div>
+
+      {/* ── the desktop hub, unchanged ─────────────────────────────────────── */}
+      <div className="hidden lg:block">
       <Card className="ux-onscroll mb-[24px]">
         <div className="flex items-center gap-4">
           <span className="h-[62px] w-[62px] shrink-0 overflow-hidden rounded-full"
@@ -190,6 +246,7 @@ export default function MorePage() {
           <Btn variant="outline" icon="LogOut" onClick={() => signOut()}>{tr("settings.signOut2")}</Btn>
         </div>
       </Card>
+      </div>
     </HomeShell>
   );
 }

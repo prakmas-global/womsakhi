@@ -195,7 +195,7 @@ export function ContributionTab() {
       <Card pad={0} style={{ overflow: "hidden" }}>
         <div className="px-6 py-7"
              style={{ background: `linear-gradient(140deg, ${v("--ux-tint-pink")}, ${v("--ux-surface")})` }}>
-          <p className="text-2xs font-extrabold uppercase tracking-[0.18em]" style={{ color: v("--ux-pink-ink") }}>{tr("profile.womenHelpingWomen")}</p>
+          <p className="text-[12px] lg:text-2xs font-extrabold uppercase tracking-[0.18em]" style={{ color: v("--ux-pink-ink") }}>{tr("profile.womenHelpingWomen")}</p>
           <p className="mt-2 text-[clamp(1.5rem,3vw,2.25rem)] font-extrabold leading-tight tracking-[-0.03em]"
              style={{ color: v("--ux-ink") }}>
             {total} women are further along because of you

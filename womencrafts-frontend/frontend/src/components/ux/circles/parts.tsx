@@ -64,7 +64,7 @@ export function CircleCard({ c, i }: { c: Circle; i: number }) {
             </div>
             {typeof c.currentMonth === "number" && c.totalMonths ? (
               <div className="mt-3">
-                <div className="mb-1.5 flex items-center justify-between text-2xs">
+                <div className="mb-1.5 flex items-center justify-between text-[12px] lg:text-2xs">
                   <span style={{ color: "var(--ux-muted)" }}>
                     {c.currentMonth === 0 ? "Not started" : `Month ${c.currentMonth} of ${c.totalMonths}`}
                   </span>
@@ -125,7 +125,7 @@ export function TurnOrder({
             className="ux-hov flex items-center gap-3 rounded-[12px] px-2.5 py-2"
             style={{ background: m.you ? "var(--ux-brand-tint)" : now ? "var(--ux-surface-2)" : "transparent" }}
           >
-            <span className="grid h-[24px] w-[24px] shrink-0 place-items-center rounded-full text-2xs font-bold"
+            <span className="grid h-[24px] w-[24px] shrink-0 place-items-center rounded-full text-[12px] lg:text-2xs font-bold"
                   style={{
                     background: done ? "var(--ux-green-ink)" : now ? "var(--ux-brand-600)" : "var(--ux-track)",
                     color: done || now ? "var(--ux-on-brand)" : "var(--ux-muted)",
@@ -138,7 +138,7 @@ export function TurnOrder({
               // eslint-disable-next-line @next/next/no-img-element
               <img loading="lazy" decoding="async" src={m.avatar} alt="" className="h-[28px] w-[28px] shrink-0 rounded-full object-cover" />
             ) : (
-              <span className="grid h-[28px] w-[28px] shrink-0 place-items-center rounded-full text-2xs font-semibold"
+              <span className="grid h-[28px] w-[28px] shrink-0 place-items-center rounded-full text-[12px] lg:text-2xs font-semibold"
                     style={{ background: "var(--ux-tint-violet)", color: "var(--ux-violet)" }}>
                 {m.name.trim().charAt(0).toUpperCase()}
               </span>
@@ -148,7 +148,7 @@ export function TurnOrder({
               {m.name}{m.you && <span style={{ color: "var(--ux-brand)" }}> — you</span>}
             </span>
             {!m.paid && !done && (
-              <span className="shrink-0 rounded-full px-2 py-[2px] text-2xs font-semibold"
+              <span className="shrink-0 rounded-full px-2 py-[2px] text-[12px] lg:text-2xs font-semibold"
                     style={{ background: "var(--ux-tint-orange)", color: "var(--ux-orange-ink)" }}>
                 not paid
               </span>

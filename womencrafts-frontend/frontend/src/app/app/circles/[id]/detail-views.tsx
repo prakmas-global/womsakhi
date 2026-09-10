@@ -54,7 +54,7 @@ export function CircleBanner({ c, posts, events }: {
 
             <p className="mt-3.5 flex flex-wrap gap-2">
               {tags.map((x) => (
-                <span key={x} className="rounded-full px-3 py-1.5 text-2xs font-semibold"
+                <span key={x} className="rounded-full px-3 py-1.5 text-[12px] lg:text-2xs font-semibold"
                       style={{ background: v("--ux-brand-tint"), color: v("--ux-brand") }}>
                   {x}
                 </span>
@@ -311,15 +311,15 @@ export function CirclePostCard({ p, saved, busy, menu, onMenu, onLike, onSave, o
           <div className="flex items-start gap-2">
             <p className="flex min-w-0 flex-1 flex-wrap items-center gap-x-2 gap-y-1">
               <b className="text-xsm font-bold" style={{ color: v("--ux-ink") }}>{p.author}</b>
-              <span className="text-2xs" style={{ color: v("--ux-muted") }}>{p.when}</span>
+              <span className="text-[12px] lg:text-2xs" style={{ color: v("--ux-muted") }}>{p.when}</span>
               {p.pinned && (
-                <span className="inline-flex items-center gap-1 rounded-full px-2 py-[3px] text-3xs font-extrabold"
+                <span className="inline-flex items-center gap-1 rounded-full px-2 py-[3px] text-[12px] lg:text-3xs font-extrabold"
                       style={{ background: v("--ux-tint-amber"), color: v("--ux-amber-ink") }}>
                   <Icons.Pin className="h-[10px] w-[10px]" /> Pinned
                 </span>
               )}
               {p.kind && (
-                <span className="rounded-full px-2.5 py-[3px] text-3xs font-extrabold"
+                <span className="rounded-full px-2.5 py-[3px] text-[12px] lg:text-3xs font-extrabold"
                       style={{ background: v("--ux-brand-tint"), color: v("--ux-brand") }}>
                   {p.kind}
                 </span>
@@ -371,7 +371,7 @@ export function CirclePostCard({ p, saved, busy, menu, onMenu, onLike, onSave, o
           {tags.length > 0 && (
             <p className="mt-2.5 flex flex-wrap gap-1.5">
               {tags.map((t) => (
-                <span key={t} className="rounded-full px-2.5 py-1 text-3xs font-semibold"
+                <span key={t} className="rounded-full px-2.5 py-1 text-[12px] lg:text-3xs font-semibold"
                       style={{ background: v("--ux-surface-2"), color: v("--ux-brand") }}>
                   #{t}
                 </span>
@@ -437,18 +437,18 @@ export function AboutCircle({ c, posts, onEdit }: {
         {facts.map((f) => (
           <div key={f.k} className="rounded-[12px] p-2.5" style={{ border: "1px solid var(--ux-line)" }}>
             <IconTile icon={f.icon} tint={f.tint} ink={f.ink} size={28} radius={8} />
-            <span className="mt-2 block text-3xs font-semibold" style={{ color: v("--ux-muted") }}>{f.k}</span>
+            <span className="mt-2 block text-[12px] lg:text-3xs font-semibold" style={{ color: v("--ux-muted") }}>{f.k}</span>
             <b className="mt-0.5 block truncate text-xs font-bold" style={{ color: v("--ux-ink") }}>{f.val}</b>
           </div>
         ))}
       </div>
       {c.guidelines && (
         <div className="mt-4 rounded-[12px] p-3.5" style={{ background: v("--ux-surface-2") }}>
-          <p className="flex items-center gap-1.5 text-2xs font-extrabold" style={{ color: v("--ux-ink") }}>
+          <p className="flex items-center gap-1.5 text-[12px] lg:text-2xs font-extrabold" style={{ color: v("--ux-ink") }}>
             <Icons.ShieldCheck className="h-[13px] w-[13px]" style={{ color: v("--ux-green-ink") }} />
             The one rule here
           </p>
-          <p className="mt-1 text-2xs leading-relaxed" style={{ color: v("--ux-ink-2") }}>{c.guidelines}</p>
+          <p className="mt-1 text-[12px] lg:text-2xs leading-relaxed" style={{ color: v("--ux-ink-2") }}>{c.guidelines}</p>
         </div>
       )}
     </Card>
@@ -481,7 +481,7 @@ export function MembersCard({ count, people, onAll }: {
       <div className="flex items-center">
         {people.slice(0, 6).map((m, i) => (
           <span key={m.name} title={m.name}
-                className="grid h-[36px] w-[36px] shrink-0 place-items-center overflow-hidden rounded-full text-2xs font-bold"
+                className="grid h-[36px] w-[36px] shrink-0 place-items-center overflow-hidden rounded-full text-[12px] lg:text-2xs font-bold"
                 style={{ marginInlineStart: i ? -10 : 0, border: `2px solid ${v("--ux-surface")}`,
                          background: v("--ux-brand-tint-2"), color: v("--ux-brand") }}>
             {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -500,7 +500,7 @@ export function MembersCard({ count, people, onAll }: {
           </span>
         ))}
         {count > people.length + anon && (
-          <span className="grid h-[36px] w-[36px] shrink-0 place-items-center rounded-full text-2xs font-bold"
+          <span className="grid h-[36px] w-[36px] shrink-0 place-items-center rounded-full text-[12px] lg:text-2xs font-bold"
                 style={{ marginInlineStart: -10, border: `2px solid ${v("--ux-surface")}`,
                          background: v("--ux-brand-tint"), color: v("--ux-brand") }}>
             +{niceCount(count - people.length - anon)}
@@ -508,7 +508,7 @@ export function MembersCard({ count, people, onAll }: {
         )}
       </div>
 
-      <p className="mt-2.5 text-2xs leading-relaxed" style={{ color: v("--ux-muted") }}>
+      <p className="mt-2.5 text-[12px] lg:text-2xs leading-relaxed" style={{ color: v("--ux-muted") }}>
         {people.length > 0
           ? `${people.slice(0, 2).map((m) => m.name.split(" ")[0]).join(", ")}${count > 2 ? ` and ${niceCount(count - 2)} more` : ""}`
           : "Their names are theirs to share — you will see them as they post."}
@@ -549,7 +549,7 @@ export function EventsRail({ rows, busy, onGo }: {
             <div key={e.id} className="flex items-start gap-3">
               <span className="grid w-[46px] shrink-0 place-items-center rounded-[11px] py-1.5"
                     style={{ background: v("--ux-brand-tint") }}>
-                <span className="text-3xs font-extrabold uppercase tracking-[0.08em]" style={{ color: v("--ux-brand") }}>
+                <span className="text-[12px] lg:text-3xs font-extrabold uppercase tracking-[0.08em]" style={{ color: v("--ux-brand") }}>
                   {e.month}
                 </span>
                 <span className="text-lg font-extrabold leading-none" style={{ color: v("--ux-brand") }}>{e.day}</span>
@@ -558,12 +558,12 @@ export function EventsRail({ rows, busy, onGo }: {
                 <Link href={e.href} className="ux-sq block text-xsm font-bold leading-snug" style={{ color: v("--ux-ink") }}>
                   {e.title}
                 </Link>
-                <span className="mt-1 flex items-center gap-1.5 text-2xs" style={{ color: v("--ux-muted") }}>
+                <span className="mt-1 flex items-center gap-1.5 text-[12px] lg:text-2xs" style={{ color: v("--ux-muted") }}>
                   <Icons.CalendarDays className="h-[12px] w-[12px]" />{e.when}
                 </span>
                 <span className="mt-2 flex items-center gap-2">
                   {e.taken > 0 && (
-                    <span className="text-2xs font-semibold" style={{ color: v("--ux-faint") }}>
+                    <span className="text-[12px] lg:text-2xs font-semibold" style={{ color: v("--ux-faint") }}>
                       +{e.taken} going
                     </span>
                   )}
@@ -580,7 +580,7 @@ export function EventsRail({ rows, busy, onGo }: {
 
       {/* These are WomSakhi's, not this circle's — saying so is the difference
           between an invitation and a false claim about who is running it. */}
-      <p className="mt-3.5 border-t pt-3 text-2xs leading-relaxed"
+      <p className="mt-3.5 border-t pt-3 text-[12px] lg:text-2xs leading-relaxed"
          style={{ borderColor: v("--ux-line"), color: v("--ux-faint") }}>
         Open to every woman on WomSakhi. A circle cannot hold its own event yet.
       </p>
@@ -626,7 +626,7 @@ export function ResourcesRail({ onSoon }: { onSoon: (msg: string) => void }) {
               <span className="block truncate text-xs font-bold" style={{ color: v("--ux-ink") }}>
                 {r.name} ({r.kind})
               </span>
-              <span className="mt-0.5 block text-3xs" style={{ color: v("--ux-muted") }}>{r.size}</span>
+              <span className="mt-0.5 block text-[12px] lg:text-3xs" style={{ color: v("--ux-muted") }}>{r.size}</span>
             </span>
             <button type="button" aria-label={`Download ${r.name}`}
                     onClick={() => onSoon("There is no file behind this one yet — the shelf is built, nothing is on it.")}
@@ -669,7 +669,7 @@ export function PotCard({ id, monthlyLabel, round, paid, total, youPaid, whoseTu
         <IconTile icon="Coins" tint="--ux-tint-amber" ink="--ux-amber-ink" size={38} radius={11} />
         <div className="min-w-0 flex-1">
           <h2 className="text-base font-extrabold" style={{ color: v("--ux-ink") }}>The pot</h2>
-          <p className="mt-0.5 text-2xs" style={{ color: v("--ux-muted") }}>
+          <p className="mt-0.5 text-[12px] lg:text-2xs" style={{ color: v("--ux-muted") }}>
             {monthlyLabel} a month · round {round}
           </p>
         </div>

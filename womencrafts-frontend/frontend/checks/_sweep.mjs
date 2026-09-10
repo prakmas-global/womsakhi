@@ -1,6 +1,8 @@
 import puppeteer from "puppeteer-core";
 import { CHROME, APP, seededMemberToken } from "./_shared.mjs";
-const ROUTES = ["/app/work","/app/documents"];
+const ROUTES = ["/app","/app/learn","/app/work","/app/earn","/app/circle",
+                "/app/programs","/app/mentors","/app/opportunities","/app/wallet",
+                "/app/money","/app/documents","/app/market","/app/sakhi","/app/settings"];
 const tok = await seededMemberToken();
 const b = await puppeteer.launch({ executablePath: CHROME, headless: "new", args: ["--no-sandbox"] });
 const p = await b.newPage();
@@ -13,7 +15,11 @@ for (const r of ROUTES) {
     await new Promise(x => setTimeout(x, 1600));
     const m = await p.evaluate(() => {
       const de = document.documentElement;
+      // `sr-only` controls are clipped to 1px until focused — a skip link is
+      // not something a thumb aims at, and counting it reports a fault that
+      // cannot be fixed without breaking the accessibility feature itself.
       const taps = [...document.querySelectorAll('a,button,[role="button"],input,select')]
+        .filter(e => !e.closest('.sr-only') && !e.className?.toString().includes('sr-only'))
         .filter(e => { const x = e.getBoundingClientRect();
           return x.width > 1 && x.height > 1 && (x.width < 44 || x.height < 44); }).length;
       const small = [...document.querySelectorAll("p,span,li,label")]

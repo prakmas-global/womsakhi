@@ -3,7 +3,6 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
-import * as Icons from "@/components/ux/icons";
 import { MobileIcon, type MobileIconName } from "./MobileIcon";
 
 import { TABS, trailFor } from "../nav-tree";
@@ -34,11 +33,15 @@ import { useHaptics } from "./useHaptics";
  * which survive greyscale:
  *
  *   1. a 3px indicator sitting on the bar's top edge, above that tab only;
- *   2. a filled, outlined pill behind its icon — a shape the others do not
- *      have at all (lucide is a stroke-only set, so there is no filled icon
- *      variant to swap to; the pill is the structural substitute);
- *   3. a heavier icon stroke and an 800-weight label against 600;
+ *   2. a SOLID icon where the others are outlines — the swap every native tab
+ *      bar makes, from the Ionicons pairs in `MobileIcon.tsx`;
+ *   3. a tinted, outlined pill behind that icon, a shape the others lack
+ *      entirely, and an 800-weight label against 600;
  *   4. and, yes, the brand colour as well.
+ *
+ * Checked by rendering the bar through `grayscale(1)`: with every colour gone,
+ * the current tab is still the only one with a pill, a solid glyph, a bar over
+ * it and a bold word under it.
  *
  * ── Where the CSS lives ─────────────────────────────────────────────────────
  * In this file, hoisted into <head> by React. It cannot go in `mobile.css`
@@ -175,13 +178,6 @@ const CSS = `
   }
 }
 `;
-
-function Icon({ name, className, strokeWidth }: { name: string; className?: string; strokeWidth: number }) {
-  const C =
-    (Icons as unknown as Record<string, React.ComponentType<{ className?: string; strokeWidth?: number }>>)[name] ??
-    Icons.Circle;
-  return <C className={className} strokeWidth={strokeWidth} />;
-}
 
 export function TabBar() {
   const pathname = usePathname();

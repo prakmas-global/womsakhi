@@ -244,7 +244,7 @@ export default function PayCircle({ params }: { params: Promise<{ id: string }> 
               </span>
               {m.paid
                 ? <Icons.CheckCircle2 className="h-[16px] w-[16px] shrink-0" style={{ color: "var(--ux-green-ink)" }} />
-                : <span className="shrink-0 text-2xs" style={{ color: "var(--ux-faint)" }}>waiting</span>}
+                : <span className="shrink-0 text-[12px] lg:text-2xs" style={{ color: "var(--ux-faint)" }}>waiting</span>}
             </li>
           ))}
         </ul>

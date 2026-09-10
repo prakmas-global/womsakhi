@@ -243,7 +243,7 @@ export default function CirclePage() {
             </span>
             <div className="min-w-0 flex-1">
               <p className="text-xsm font-bold" style={{ color: v("--ux-ink") }}>Your savings pot</p>
-              <p className="mt-0.5 text-2xs" style={{ color: v("--ux-muted") }}>
+              <p className="mt-0.5 text-[12px] lg:text-2xs" style={{ color: v("--ux-muted") }}>
                 {savingsCircle.name} · {overview.savings.members_paid} of {overview.savings.members.length} paid
               </p>
             </div>
@@ -281,8 +281,13 @@ export default function CirclePage() {
         {trending.length > 0 && <Trending rows={trending} />}
 
         <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
-          <Tabs items={TABS as unknown as string[]} active={tab}
-                onChange={(t) => setTab(t as Tab)} />
+          {/* `Tabs` is an `inline-flex` with no wrap and no scroller, so four
+              tabs at 390px pushed the page sideways. `.ux-scroll-x` gives it
+              somewhere to go and hides the bar. */}
+          <div className="ux-scroll-x -mx-[20px] max-w-[calc(100%+40px)] overflow-x-auto px-[20px] lg:mx-0 lg:max-w-none lg:overflow-visible lg:px-0">
+            <Tabs items={TABS as unknown as string[]} active={tab}
+                  onChange={(t) => setTab(t as Tab)} />
+          </div>
           {topic !== ALL_TOPICS && (
             <button type="button" onClick={() => setTopic(ALL_TOPICS)}
                     className="ux-press ux-sq flex min-h-[36px] items-center gap-1.5 rounded-[10px] px-3 text-xs font-bold"
@@ -316,7 +321,7 @@ export default function CirclePage() {
 
         <div className="mt-5">
           <Link href="/app/circles/create"
-                className="ux-press ux-sq flex items-center justify-center gap-2 rounded-[16px] px-5 py-4 text-xsm font-bold"
+                className="ux-press ux-sq ux-action-primary flex items-center justify-center gap-2 rounded-[16px] px-5 py-4 text-[16px] font-bold lg:text-xsm"
                 style={{ background: v("--ux-brand-tint"), border: `1px solid ${v("--ux-brand")}`,
                          color: v("--ux-brand") }}>
             <I name="UsersRound" className="h-[16px] w-[16px]" />

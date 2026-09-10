@@ -55,6 +55,7 @@ export function SwipeAction({
   fullSwipe = false,
   className = "",
   actionsLabel = "Row actions",
+  closeLabel = "Close actions",
 }: {
   children: ReactNode;
   /** Shown end-side, in order. Two is the practical maximum on a phone. */
@@ -63,6 +64,7 @@ export function SwipeAction({
   fullSwipe?: boolean;
   className?: string;
   actionsLabel?: string;
+  closeLabel?: string;
 }) {
   const faceRef = useRef<HTMLDivElement | null>(null);
   /**
@@ -231,6 +233,28 @@ export function SwipeAction({
           );
         })}
       </div>
+
+      {/*
+        With the row open, the first tap closes it — it does not open whatever
+        the row itself links to. That is what iOS does, and the reason is that
+        an open row has already changed what the tap means: she is looking at
+        Archive and Delete, not at the row.
+
+        A transparent button rather than a click handler on the face, because
+        the face may well contain a link: a handler there would fire the
+        navigation as well as closing. It is inset by exactly the revealed
+        width so it never covers the actions, and it is labelled, so the same
+        escape exists for a screen reader.
+      */}
+      {open && (
+        <button
+          type="button"
+          aria-label={closeLabel}
+          onClick={() => settle(0)}
+          className="ux-tap-exempt absolute inset-y-0 start-0 z-[2]"
+          style={{ insetInlineEnd: `${width}px`, background: "transparent", transform: "none" }}
+        />
+      )}
 
       {/* The row itself. */}
       <div

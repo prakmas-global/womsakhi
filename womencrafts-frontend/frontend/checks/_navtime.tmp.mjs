@@ -13,6 +13,9 @@ const tok = await seededMemberToken();
 if (!tok) { console.error("no token"); process.exit(1); }
 const b = await launch();
 const p = await pageAs(b, tok, { width: 390, height: 844 });
+// Headless Chrome reports `prefers-reduced-motion: reduce` unless told
+// otherwise, which silently switches every animation off.
+await p.emulateMediaFeatures([{ name: "prefers-reduced-motion", value: process.env.MOTION || "reduce" }]);
 const errs = [];
 p.on("pageerror", (e) => errs.push(String(e).slice(0, 160)));
 

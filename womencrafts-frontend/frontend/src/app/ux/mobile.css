@@ -411,7 +411,7 @@
     --fb-earn-title: 17px;
     --fb-earn-sub: 14px;
     --fb-earn-chip: 14px;
-    --fb-earn-chip-h: 36px;
+    --fb-earn-chip-h: 44px;
     --fb-earn-chip-x: 13px;
     --fb-earn-chip-gap: 8px;
     --fb-earn-chip-top: 12px;
@@ -680,8 +680,63 @@
     Height only. Making them wider would push the row further off-screen for
     no gain; a 44px-tall pill is already comfortably hittable.
   */
-  .ux [data-earn-chip],
+  /*
+    Kept for the wrappers, but note the chip itself is sized by
+    `--fb-earn-chip-h` applied as an INLINE style — and an inline style beats
+    any stylesheet rule that is not `!important`. Raising the token is the
+    lever that actually works; this rule only catches anything nested that is
+    not sized that way.
+  */
   .ux [data-earn-chips] > * {
     min-height: 44px;
+  }
+
+  /* A native select is a control, not a label. 36px is a mis-tap. */
+  .ux select {
+    min-height: 44px;
+  }
+}
+
+/* ── Icon controls in the top bar ────────────────────────────────────────── */
+
+@media (max-width: 1023px) {
+  /*
+    Help, Messages and Notifications are 42x42 — two pixels under the floor,
+    which is exactly the kind of miss that never gets noticed by eye and always
+    gets noticed by a thumb.
+
+    They did not match the rule above because that one keys off
+    `a[class*="btn"]` and these carry `ux-press ux-hov ux-sq`. Matching the
+    topbar's own anchors is more honest than widening the class guess: an
+    anchor in the top bar with an aria-label and no text IS an icon button.
+  */
+  .ux .ux-topbar a[aria-label],
+  .ux .ux-topbar button[aria-label],
+  .ux header a[aria-label],
+  .ux header button[aria-label] {
+    min-height: 44px;
+    min-width: 44px;
+  }
+}
+
+/* ── Legal links in a footer row ─────────────────────────────────────────── */
+
+@media (max-width: 1023px) {
+  /*
+    "Terms" and "Privacy" measured 35x44 and 42x44 — full height, short width.
+    They sit on their own row rather than inside a sentence, so WCAG 2.5.8's
+    inline-link exemption does not cover them, and a 35px-wide target between
+    two other links is a genuine mis-tap.
+
+    Padding rather than a min-width, so the two stay optically spaced instead
+    of becoming two wide blocks with a gap.
+  */
+  .ux a[href="/terms"],
+  .ux a[href="/privacy"],
+  .ux a[href*="/legal"] {
+    display: inline-flex;
+    align-items: center;
+    min-height: 44px;
+    padding-inline: 8px;
   }
 }

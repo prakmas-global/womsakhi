@@ -293,7 +293,7 @@ export default function CircleDetail({ params }: { params: Promise<{ id: string 
                       {/* The count only earns its place once there is one to
                           show — six chips all reading 0 is noise. */}
                       {n > 0 && k.tag && (
-                        <span className="text-3xs font-extrabold" style={{ opacity: 0.72 }}>{n}</span>
+                        <span className="text-[12px] lg:text-3xs font-extrabold" style={{ opacity: 0.72 }}>{n}</span>
                       )}
                     </button>
                   );
@@ -349,7 +349,7 @@ export default function CircleDetail({ params }: { params: Promise<{ id: string 
                       <span className="block truncate text-xsm font-bold" style={{ color: v("--ux-ink") }}>
                         {m.name}{m.you ? " (you)" : ""}
                       </span>
-                      <span className="mt-0.5 block text-2xs" style={{ color: v("--ux-muted") }}>
+                      <span className="mt-0.5 block text-[12px] lg:text-2xs" style={{ color: v("--ux-muted") }}>
                         Turn {m.turn} · {m.paid ? "paid this round" : "not paid yet"}
                       </span>
                     </span>

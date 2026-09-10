@@ -1,5 +1,6 @@
-import { Tag } from "@/components/ux/learning/native";
 "use client";
+
+import { Tag } from "@/components/ux/learning/native";
 
 import Link from "next/link";
 import * as Icons from "@/components/ux/icons";

@@ -197,7 +197,18 @@ function Section({ title, href, cta, children }: {
         <h2 className="text-[13px] font-bold uppercase tracking-[0.07em]" style={{ color: "var(--ux-muted)" }}>
           {title}
         </h2>
-        <TransitionLink href={href} className="ux-tap-exempt text-[13px] font-semibold"
+        {/*
+          Padded to a real hit box rather than marked exempt.
+
+          `ux-tap-exempt` exists for a link inside a sentence, which cannot be
+          44px tall without wrecking the sentence — WCAG 2.5.8 exempts those
+          for exactly that reason. This is not one of those: it is a section
+          action sitting on its own line, so the exemption was a way of
+          silencing the audit rather than answering it. The negative margin
+          keeps it optically aligned with the heading beside it.
+        */}
+        <TransitionLink href={href}
+                        className="-me-2 inline-flex min-h-[44px] items-center px-2 text-[13px] font-semibold"
                         style={{ color: "var(--ux-brand)" }}>
           {cta}
         </TransitionLink>

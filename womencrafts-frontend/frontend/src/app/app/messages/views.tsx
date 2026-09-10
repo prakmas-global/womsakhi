@@ -178,7 +178,7 @@ export function Header({ summary, className, rows, onPick }: {
               <b className="block text-base font-bold leading-none tracking-[-0.02em]" style={{ color: "var(--ux-ink)" }}>
                 {s.value}
               </b>
-              <i className="mt-1 block text-2xs not-italic" style={{ color: "var(--ux-muted)" }}>{s.note}</i>
+              <i className="mt-1 block text-[12px] lg:text-2xs not-italic" style={{ color: "var(--ux-muted)" }}>{s.note}</i>
             </span>
           </div>
         ))}
@@ -230,7 +230,7 @@ export function NewMessage({ rows, onPick, full = false }: {
                full ? "inset-x-0 bottom-[calc(100%+8px)]" : "end-0 top-[calc(100%+8px)] w-[290px]"}`}
              style={{ background: "var(--ux-surface)", border: "1px solid var(--ux-line-strong)",
                       boxShadow: "var(--ux-shadow-pop)" }}>
-          <p className="px-2.5 pb-1 pt-2 text-2xs font-bold uppercase tracking-[0.16em]"
+          <p className="px-2.5 pb-1 pt-2 text-[12px] lg:text-2xs font-bold uppercase tracking-[0.16em]"
              style={{ color: "var(--ux-faint)" }}>{tr("messages.writeTo")}</p>
           {rows.map((r) => (
             <button key={r.id} type="button" role="menuitem"
@@ -239,11 +239,11 @@ export function NewMessage({ rows, onPick, full = false }: {
               <Avatar src={r.avatar} kind={r.kind} size={30} />
               <span className="min-w-0 flex-1">
                 <span className="block truncate text-xsm font-semibold" style={{ color: "var(--ux-ink)" }}>{r.name}</span>
-                <span className="block truncate text-2xs" style={{ color: "var(--ux-muted)" }}>{TAG[r.kind].label}</span>
+                <span className="block truncate text-[12px] lg:text-2xs" style={{ color: "var(--ux-muted)" }}>{TAG[r.kind].label}</span>
               </span>
             </button>
           ))}
-          <p className="border-t px-2.5 pb-1.5 pt-2.5 text-2xs leading-snug"
+          <p className="border-t px-2.5 pb-1.5 pt-2.5 text-[12px] lg:text-2xs leading-snug"
              style={{ borderColor: "var(--ux-line)", color: "var(--ux-muted)" }}>
             New conversations start when a buyer writes about an order, or when you
             join a circle.
@@ -370,7 +370,7 @@ export function Inbox({
                           : { background: "transparent", border: "1px solid var(--ux-line)", color: "var(--ux-muted)" }}>
                   {f.label}
                   {n > 0 && (
-                    <b className="rounded-full px-1.5 text-2xs"
+                    <b className="rounded-full px-1.5 text-[12px] lg:text-2xs"
                        style={on ? { background: "var(--ux-on-brand-track)" } : { background: "var(--ux-surface-2)" }}>
                       {n}
                     </b>
@@ -384,7 +384,7 @@ export function Inbox({
         <div className="min-h-0 flex-1 overflow-y-auto" style={{ scrollbarWidth: "thin" }}>
           {waiting.length > 0 && (
             <>
-              <p className="flex items-center gap-2 px-4 pb-1.5 pt-3.5 text-2xs font-bold uppercase tracking-[0.16em]"
+              <p className="flex items-center gap-2 px-4 pb-1.5 pt-3.5 text-[12px] lg:text-2xs font-bold uppercase tracking-[0.16em]"
                  style={{ color: "var(--ux-amber-ink)" }}>
                 <Icons.Clock className="h-[13px] w-[13px]" />{tr("messages.waitingForYourReply")}</p>
               {waiting.map((r) => <Row key={r.id} row={r} on={r.id === openId} onOpen={onOpen} />)}
@@ -392,7 +392,7 @@ export function Inbox({
           )}
           {rest.length > 0 && (
             <>
-              <p className="flex items-center gap-2 px-4 pb-1.5 pt-3.5 text-2xs font-bold uppercase tracking-[0.16em]"
+              <p className="flex items-center gap-2 px-4 pb-1.5 pt-3.5 text-[12px] lg:text-2xs font-bold uppercase tracking-[0.16em]"
                  style={{ color: "var(--ux-faint)" }}>
                 <Icons.List className="h-[13px] w-[13px] " />{tr("messages.everythingElse")}</p>
               {rest.map((r) => <Row key={r.id} row={r} on={r.id === openId} onOpen={onOpen} />)}
@@ -459,23 +459,23 @@ export function Row({ row, on, onOpen }: { row: ConvRow; on: boolean; onOpen: (i
       <span className="min-w-0 flex-1">
         <span className="flex items-baseline gap-2">
           <b className="min-w-0 flex-1 truncate text-sm font-bold" style={{ color: "var(--ux-ink)" }}>{row.name}</b>
-          <time className="shrink-0 text-2xs" style={{ color: "var(--ux-faint)" }}>{shortWhen(row.last_at)}</time>
+          <time className="shrink-0 text-[12px] lg:text-2xs" style={{ color: "var(--ux-faint)" }}>{shortWhen(row.last_at)}</time>
         </span>
         <span className="mt-0.5 block truncate text-xs" style={{ color: "var(--ux-muted)" }}>
           {row.preview || "No messages yet"}
         </span>
         <span className="mt-1.5 flex items-center gap-1.5">
-          <span className="rounded-full px-2 py-[3px] text-2xs font-bold uppercase tracking-[0.08em]"
+          <span className="rounded-full px-2 py-[3px] text-[12px] lg:text-2xs font-bold uppercase tracking-[0.08em]"
                 style={{ background: `var(${tag.tint})`, color: `var(${tag.ink})` }}>
             {row.kind === "circle" && row.subtitle ? `Circle · ${row.subtitle.replace(/\D+/g, "")}` : tag.label}
           </span>
           {row.waiting_since && (
-            <span className="flex items-center gap-1 text-2xs font-bold" style={{ color: "var(--ux-amber-ink)" }}>
+            <span className="flex items-center gap-1 text-[12px] lg:text-2xs font-bold" style={{ color: "var(--ux-amber-ink)" }}>
               <Icons.Clock className="h-[11px] w-[11px]" /> waiting {waited(row.waiting_since)}
             </span>
           )}
           {row.unread > 0 && (
-            <span className="ms-auto grid h-[19px] min-w-[19px] place-items-center rounded-full px-1.5 text-2xs font-bold"
+            <span className="ms-auto grid h-[19px] min-w-[19px] place-items-center rounded-full px-1.5 text-[12px] lg:text-2xs font-bold"
                   style={{ background: "linear-gradient(96deg, var(--ux-rib-2), var(--ux-rib-3))", color: "var(--ux-on-brand)" }}>
               {row.unread}
             </span>
@@ -634,10 +634,10 @@ export function Thread({
             <b className="block truncate text-[13px] font-bold lg:text-xsm" style={{ color: "var(--ux-ink)" }}>
               Order #{ctx.ref} · {ctx.title}
             </b>
-            <i className="mt-0.5 hidden truncate text-2xs not-italic lg:block" style={{ color: "var(--ux-ink-2)" }}>{ctx.sub}</i>
+            <i className="mt-0.5 hidden truncate text-[12px] lg:text-2xs not-italic lg:block" style={{ color: "var(--ux-ink-2)" }}>{ctx.sub}</i>
           </span>
           {ctx.status && (
-            <span className="hidden shrink-0 rounded-full px-2.5 py-1 text-2xs font-bold uppercase tracking-[0.08em] lg:inline"
+            <span className="hidden shrink-0 rounded-full px-2.5 py-1 text-[12px] lg:text-2xs font-bold uppercase tracking-[0.08em] lg:inline"
                   style={{ background: "var(--ux-tint-green)", color: "var(--ux-green-ink)" }}>
               {ctx.status}
             </span>
@@ -659,8 +659,15 @@ export function Thread({
         without sight, and that is most of what "a chat a screen reader cannot
         follow" means.
       */}
+      {/*
+        `justify-end` on the list, `min-h-full` on the wrapper: a two-message
+        conversation sits at the BOTTOM of the thread, against the composer,
+        which is where every phone chat puts it. Top-aligned it left 400px of
+        white between the last message and the field, and read as a page with
+        a form at the end of it rather than as a conversation.
+      */}
       <ChatLog scroll={scroll} label={`Messages with ${conv.name}`} className="px-3 py-2 lg:p-4">
-        <ol className="flex flex-col">
+        <ol className="flex min-h-full flex-col justify-end">
           {conv.messages.map((m, i) => {
             const prev = conv.messages[i - 1];
             const newDay = !prev || dayLabel(prev.at) !== dayLabel(m.at);
@@ -824,7 +831,7 @@ export function OrderCard({ order }: { order: NonNullable<ConvBubble["order"]> }
     <div className="max-w-[320px] overflow-hidden rounded-[16px]"
          style={{ border: "1px solid var(--ux-line-strong)", background: "var(--ux-surface)",
                   boxShadow: "var(--ux-shadow-card)" }}>
-      <p className="flex items-center gap-2 px-3.5 py-2.5 text-2xs font-bold uppercase tracking-[0.11em]"
+      <p className="flex items-center gap-2 px-3.5 py-2.5 text-[12px] lg:text-2xs font-bold uppercase tracking-[0.11em]"
          style={{ background: "var(--ux-tint-amber)", color: "var(--ux-amber-ink)" }}>
         <Icons.Package className="h-[13px] w-[13px]" /> {order.state}
       </p>
@@ -882,19 +889,19 @@ export function About({ conv, onStar, onDraft }: {
         <div className="mt-3.5 grid grid-cols-2 gap-2">
           <div className="rounded-[12px] p-2.5" style={{ background: "var(--ux-surface-2)", border: "1px solid var(--ux-line)" }}>
             <b className="block text-base font-bold tracking-[-0.02em]" style={{ color: "var(--ux-ink)" }}>{p.orders ?? 0}</b>
-            <i className="mt-0.5 block text-2xs not-italic" style={{ color: "var(--ux-muted)" }}>orders</i>
+            <i className="mt-0.5 block text-[12px] lg:text-2xs not-italic" style={{ color: "var(--ux-muted)" }}>orders</i>
           </div>
           <div className="rounded-[12px] p-2.5" style={{ background: "var(--ux-surface-2)", border: "1px solid var(--ux-line)" }}>
             <b className="block text-base font-bold tracking-[-0.02em]" style={{ color: "var(--ux-ink)" }}>
               {formatMoney(p.spent_minor ?? 0)}
             </b>
-            <i className="mt-0.5 block text-2xs not-italic" style={{ color: "var(--ux-muted)" }}>spent with you</i>
+            <i className="mt-0.5 block text-[12px] lg:text-2xs not-italic" style={{ color: "var(--ux-muted)" }}>spent with you</i>
           </div>
         </div>
       </div>
 
       <div className="border-t p-3.5" style={{ borderColor: "var(--ux-line)" }}>
-        <h3 className="mb-2 text-2xs font-bold uppercase tracking-[0.16em]" style={{ color: "var(--ux-faint)" }}>{tr("messages.doNext")}</h3>
+        <h3 className="mb-2 text-[12px] lg:text-2xs font-bold uppercase tracking-[0.16em]" style={{ color: "var(--ux-faint)" }}>{tr("messages.doNext")}</h3>
         {/* Each of these does the thing it names. "Send her an order" opens the
             shop, the other two write the message and star the thread — nothing
             here is a label over an empty handler. */}
@@ -918,7 +925,7 @@ export function About({ conv, onStar, onDraft }: {
 
       {shots.length > 0 && (
         <div className="border-t p-3.5" style={{ borderColor: "var(--ux-line)" }}>
-          <h3 className="mb-2 text-2xs font-bold uppercase tracking-[0.16em]" style={{ color: "var(--ux-faint)" }}>{tr("messages.sharedHere")}</h3>
+          <h3 className="mb-2 text-[12px] lg:text-2xs font-bold uppercase tracking-[0.16em]" style={{ color: "var(--ux-faint)" }}>{tr("messages.sharedHere")}</h3>
           <div className="grid grid-cols-3 gap-1.5">
             {shots.map((m, i) => (
               // eslint-disable-next-line @next/next/no-img-element
@@ -929,7 +936,7 @@ export function About({ conv, onStar, onDraft }: {
       )}
 
       <div className="border-t p-3.5" style={{ borderColor: "var(--ux-line)" }}>
-        <h3 className="mb-2 text-2xs font-bold uppercase tracking-[0.16em]" style={{ color: "var(--ux-faint)" }}>{tr("messages.ifSomethingFeelsWrong")}</h3>
+        <h3 className="mb-2 text-[12px] lg:text-2xs font-bold uppercase tracking-[0.16em]" style={{ color: "var(--ux-faint)" }}>{tr("messages.ifSomethingFeelsWrong")}</h3>
         <Link href="/app/safety"
               className="ux-row flex w-full items-center gap-2.5 rounded-[12px] px-2.5 py-2.5 text-start text-xsm font-semibold"
               style={{ color: "var(--ux-ink-2)" }}>

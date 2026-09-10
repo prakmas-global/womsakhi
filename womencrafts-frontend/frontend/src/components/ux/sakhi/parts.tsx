@@ -65,7 +65,7 @@ export function Picker({
                              color: it.value === value ? "var(--ux-brand)" : "var(--ux-ink)" }}>
               <span className="min-w-0 flex-1">
                 <span className="block truncate text-xsm font-medium">{it.label}</span>
-                {it.note && <span className="block truncate text-2xs" style={{ color: "var(--ux-muted)" }}>{it.note}</span>}
+                {it.note && <span className="block truncate text-[12px] lg:text-2xs" style={{ color: "var(--ux-muted)" }}>{it.note}</span>}
               </span>
               {it.value === value && <Icons.Check className="h-[14px] w-[14px] shrink-0" />}
             </button>
@@ -139,7 +139,7 @@ export function Composer({
               <Icons.X className="h-[12px] w-[12px]" />
             </button>
           </span>
-          <span className="text-2xs" style={{ color: "var(--ux-amber-ink)" }}>
+          <span className="text-[12px] lg:text-2xs" style={{ color: "var(--ux-amber-ink)" }}>
             She will see the name, not what is inside it — reading files is coming.
           </span>
         </div>
@@ -378,7 +378,7 @@ export function DraftCard({
 }) {
   return (
     <div className="mt-3 overflow-hidden rounded-[12px]" style={{ border: "1px solid var(--ux-line-strong)" }}>
-      <p className="flex items-center gap-2 px-3.5 py-2.5 text-2xs font-bold uppercase tracking-[0.12em]"
+      <p className="flex items-center gap-2 px-3.5 py-2.5 text-[12px] lg:text-2xs font-bold uppercase tracking-[0.12em]"
          style={{ background: "var(--ux-tint-amber)", color: "var(--ux-amber-ink)" }}>
         <Icons.PenLine className="h-[13px] w-[13px]" />
         Draft — not sent
@@ -445,7 +445,7 @@ export function Cites({ tools }: { tools: string[] }) {
         const l = look(name);
         return (
           <span key={name}
-                className="flex items-center gap-1.5 rounded-full px-2.5 py-1 text-2xs font-semibold"
+                className="flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[12px] lg:text-2xs font-semibold"
                 style={{ background: "var(--ux-surface-2)", border: "1px solid var(--ux-line-strong)",
                          color: "var(--ux-muted)" }}>
             <Ico name={l.icon} className="h-[12px] w-[12px]" />
