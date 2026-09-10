@@ -3,8 +3,10 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 
 import { useAuth } from "@/context/AuthContext";
-import { ALL_ENABLED, LayoutEngineProvider, UNHIDEABLE } from "@/layout-engine";
-import type { Layout, LayoutFeatures, PersistHandlers } from "@/layout-engine";
+import { LayoutEngineProvider } from "@/layout-engine/LayoutEngineProvider";
+import { ALL_ENABLED, UNHIDEABLE } from "@/layout-engine/types";
+import type { Layout, LayoutFeatures } from "@/layout-engine/types";
+import type { PersistHandlers } from "@/layout-engine/LayoutEngineProvider";
 import { apiMeShell, type MeShell } from "@/lib/shell-api";
 import {
   apiMyFeatures,

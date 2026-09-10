@@ -12,7 +12,7 @@ import { ChromeShell } from "@/components/ux/home/ChromeShell";
 import SkipToContent from "@/components/layout/SkipToContent";
 import { useAuth } from "@/context/AuthContext";
 import { useI18n } from "@/i18n";
-import { Spinner } from "@/design-system";
+import Spinner from "@/design-system/primitives/Spinner";
 import "@/app/ux/tokens.css";
 
 /**

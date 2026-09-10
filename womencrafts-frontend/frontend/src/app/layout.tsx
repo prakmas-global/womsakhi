@@ -18,7 +18,7 @@ import "./globals.css";
 import { AuthProvider } from "@/context/AuthContext";
 import { ThemeProvider } from "@/context/ThemeContext";
 import QueryProvider from "@/lib/query/QueryProvider";
-import { RouteProgress } from "@/design-system";
+import RouteProgress from "@/design-system/primitives/RouteProgress";
 import { I18nProvider } from "@/i18n";
 // Straight from the data module, not the "@/i18n" barrel: that barrel is a
 // client component, so anything re-exported through it cannot be called here.
@@ -31,7 +31,8 @@ import ThemeEngineBridge from "@/components/theme/ThemeEngineBridge";
 import LayoutStyle from "@/layout-engine/LayoutStyle";
 import LayoutEngineBridge from "@/components/layout/LayoutEngineBridge";
 import ConnectionBanner from "@/components/layout/ConnectionBanner";
-import { ToastProvider, ConfirmProvider } from "@/design-system";
+import ToastProvider from "@/design-system/feedback/ToastProvider";
+import ConfirmProvider from "@/design-system/feedback/ConfirmProvider";
 
 const poppins = Poppins({
   subsets: ["latin"],

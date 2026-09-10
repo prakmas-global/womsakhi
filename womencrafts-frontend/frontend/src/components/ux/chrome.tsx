@@ -1,6 +1,7 @@
 "use client";
 
 import { createContext, useCallback, useContext, useLayoutEffect, useMemo, useState } from "react";
+import { usePathname } from "next/navigation";
 
 /**
  * The chrome lives in the layout; a page only says what it needs from it.
@@ -37,12 +38,27 @@ const EMPTY: PageChrome = {};
 
 const ChromeContext = createContext<{
   chrome: PageChrome;
-  set: (c: PageChrome) => void;
+  set: (path: string, c: PageChrome) => void;
 }>({ chrome: EMPTY, set: () => {} });
 
 export function ChromeProvider({ children }: { children: React.ReactNode }) {
-  const [chrome, setChrome] = useState<PageChrome>(EMPTY);
-  const set = useCallback((c: PageChrome) => setChrome(c), []);
+  /**
+   * What was registered, and by WHICH screen.
+   *
+   * Twenty-one member screens never call `HomeShell` — the six section hubs,
+   * the nine settings pages, the redirect stubs. Without the path stamp they
+   * would inherit whatever the previous screen had registered: open Earn, then
+   * Settings, and Settings would wear Earn's rail. Storing the path and
+   * comparing it on read means a screen that asks for nothing gets nothing,
+   * with no effect to run and no order to get wrong.
+   */
+  const [entry, setEntry] = useState<{ path: string; chrome: PageChrome }>({ path: "", chrome: EMPTY });
+  const pathname = usePathname() ?? "";
+
+  const set = useCallback(
+    (path: string, chrome: PageChrome) => setEntry({ path, chrome }), []);
+
+  const chrome = entry.path === pathname ? entry.chrome : EMPTY;
   const value = useMemo(() => ({ chrome, set }), [chrome, set]);
   return <ChromeContext.Provider value={value}>{children}</ChromeContext.Provider>;
 }
@@ -61,8 +77,9 @@ export function useChrome(): PageChrome {
  */
 export function usePageChrome(c: PageChrome) {
   const { set } = useContext(ChromeContext);
+  const pathname = usePathname() ?? "";
   const { rail, wide, bare, name } = c;
   useLayoutEffect(() => {
-    set({ rail, wide, bare, name });
-  }, [set, rail, wide, bare, name]);
+    set(pathname, { rail, wide, bare, name });
+  }, [set, pathname, rail, wide, bare, name]);
 }
