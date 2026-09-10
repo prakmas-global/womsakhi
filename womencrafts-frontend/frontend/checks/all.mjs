@@ -11,6 +11,7 @@ const CHECKS = [
   ["tokens",   "node checks/tokens.mjs"],
   ["type",     "node checks/type-scale.mjs"],
   ["icons",    "node checks/icons.mjs"],
+  ["nav",      "node checks/nav.mjs"],
   ["i18n-keys","node checks/i18n-coverage.mjs"],
   ["ink",      "npx tsx src/theme-engine/__checks__/ink.mjs"],
   ["contrast", "node checks/contrast.mjs"],
@@ -28,6 +29,7 @@ const CHECKS = [
   // Back goes where she came from, and a drawer is on top and reachable.
   ["back",     "node checks/back-flow.mjs"],
   ["overlay",  "node checks/overlay-scope.mjs"],
+  ["phone-nav","node checks/phone-nav.mjs"],
   // Every language, rendered in a real browser.
   ["i18n",     "node checks/i18n.mjs"],
   // Last: it drives a real conversation, so it is the slowest by far and

@@ -117,8 +117,10 @@ export function SafetyPin() {
         color: "var(--ux-ink-2)",
       }}
     >
-      <Icon name="ShieldAlert" className="h-[16px] w-[16px]" />
-      <span className="text-2xs font-bold">Help</span>
+      <span style={{ color: "var(--ux-danger-solid)" }}>
+        <Icon name="ShieldAlert" className="h-[16px] w-[16px]" />
+      </span>
+      <span className="text-2xs font-bold">Get help now</span>
     </Link>
   );
 }
