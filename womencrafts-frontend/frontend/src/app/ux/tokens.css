@@ -290,11 +290,18 @@
      Geometry scales with what it sits under: offset ≈ size/16, blur ≈ size/8.
      A card's 6/14 pasted onto a 40px button is seven times too large, which is
      the single most common way this style is got wrong. */
+  /* Deeper than a flat card, still clearly a separate object.
+     The same-colour version of this — card and page one material, the way the
+     reference boards do it — was tried and reverted: on a six-card grid the
+     cards stopped reading as cards, the canvas dulled, and muted text on the
+     sunken surface measured 4.47:1 against a 4.5 requirement. White on lilac
+     keeps the separation and the contrast; this carries the tactility. */
   --ux-shadow-card:
     inset 0 1px 0 var(--ux-edge-hi),
     inset 0 0 0 1px var(--ux-hairline),
     0 1px 2px var(--ux-sh-1),
-    0 6px 14px -4px var(--ux-sh-2);
+    0 2px 5px -2px var(--ux-sh-1),
+    0 10px 22px -8px var(--ux-sh-2);
   --ux-shadow-sm:
     inset 0 1px 0 var(--ux-edge-hi),
     inset 0 0 0 1px var(--ux-hairline),
@@ -419,7 +426,8 @@
     inset 0 1px 0 var(--ux-edge-hi),
     inset 0 0 0 1px var(--ux-hairline),
     0 1px 2px var(--ux-sh-1),
-    0 8px 20px -6px var(--ux-sh-2);
+    0 2px 6px -2px var(--ux-sh-1),
+    0 12px 26px -8px var(--ux-sh-2);
   --ux-shadow-sm:
     inset 0 1px 0 var(--ux-edge-hi),
     inset 0 0 0 1px var(--ux-hairline),
