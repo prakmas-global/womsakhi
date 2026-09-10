@@ -30,8 +30,10 @@ jobs:
       - run: npm ci
       - name: Typecheck
         run: npx tsc --noEmit -p tsconfig.json
-      - name: Lint
-        run: npx eslint src --max-warnings=0
+      - name: Lint (no new problems)
+        # A ratchet, not a wall — see checks/lint-ratchet.mjs. The repo carries
+        # 288 pre-existing problems; this fails only if a branch adds more.
+        run: node checks/lint-ratchet.mjs
       - name: Production build
         run: npm run build
         env:
