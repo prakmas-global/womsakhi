@@ -405,7 +405,7 @@ function Event({
         {folded > 0 && (
           <>
             <button type="button" onClick={() => setOpen((o) => !o)}
-                    className="ux-press mt-2 flex items-center gap-1.5 text-xs font-bold"
+                    className="ux-press mt-1.5 flex min-h-[24px] items-center gap-1.5 py-1 text-xs font-bold"
                     style={{ color: "var(--ux-brand)" }}>
               {open ? "Hide" : `Show the other ${folded}`}
               <Icons.ChevronDown className={`h-[13px] w-[13px] transition-transform ${open ? "rotate-180" : ""}`} />
@@ -577,7 +577,7 @@ function Channels({ card, style }: { card: string; style: React.CSSProperties })
   return (
     <section className={card} style={style}>
       <h2 className="mb-3 flex items-center gap-2 text-sm font-bold" style={{ color: "var(--ux-ink)" }}>
-        <Icons.Sparkles className="h-[15px] w-[15px]" style={{ color: "var(--ux-brand)" }} />{tr("notifications.howYouAreTold")}<Link href="/app/settings/notifications" className="ms-auto text-xs font-semibold"
+        <Icons.Sparkles className="h-[15px] w-[15px]" style={{ color: "var(--ux-brand)" }} />{tr("notifications.howYouAreTold")}<Link href="/app/settings/notifications" className="ux-tap ms-auto text-xs font-semibold"
               style={{ color: "var(--ux-brand)" }}>Settings</Link>
       </h2>
       {items === null ? (

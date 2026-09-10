@@ -135,7 +135,12 @@
      the bloom is the colour of wherever the tile goes. */
   /* Two rows on a laptop, one on a phone. The content column offsets itself
      by this, so it has to be a variable rather than a number in JS. */
-  --ux-topbar-h: 62px;
+  /* 70px, measured off the supplied boards rather than chosen.
+     `wm.png` (1536 wide) puts the header's bottom border at y=69 and
+     `learnmain.png` (1586 wide) at y=71 — both 4.48% of the width, so ~70px at
+     the design width. It was 62 here and `checks/ux-home.mjs` asserted 75;
+     both were guesses, in opposite directions. */
+  --ux-topbar-h: 70px;
 
   /* The second tick, once a message has been read. Cyan rather than the
      brand, because on a brand-gradient bubble a brand-coloured tick is
@@ -1713,14 +1718,31 @@
    it exactly; a 992-tall window is 32px short of that, which is enough to
    need the tighter step and was landing in the generous one. */
 @media (min-width: 1280px) and (max-height: 1010px) {
-  .ux-fitboard { --fb-gap: 8px; --fb-pad: 13px; --fb-hero-y: 10px; --fb-clamp: 2;
+  .ux-fitboard { --fb-gap: 8px; --fb-pad: 12px; --fb-hero-y: 9px; --fb-clamp: 2;
                  --fb-chip: 11px; --fb-h1: 2.15rem; --fb-tile: 44px; --fb-circle: 44px;
                  --fb-body: 12px; --fb-title: 17px; --fb-ring: 66px; --fb-stat: 26px; --fb-foot: 74px; }
 }
 @media (min-width: 1280px) and (max-height: 850px) {
-  .ux-fitboard { --fb-gap: 5px; --fb-pad: 9px; --fb-hero-y: 3px; --fb-clamp: 2; --fb-lines: 1.28;
+  .ux-fitboard { --fb-gap: 5px; --fb-pad: 8px; --fb-hero-y: 2px; --fb-clamp: 2; --fb-lines: 1.28;
                  --fb-chip: 10.5px; --fb-h1: 1.7rem; --fb-tile: 34px; --fb-circle: 34px;
                  --fb-body: 11px; --fb-title: 15px; --fb-ring: 42px; --fb-stat: 22px; --fb-foot: 56px; }
+}
+
+/* A text link that is still 24px to a finger.
+
+   WCAG 2.2 asks for a 24x24 target. A 12px link on one line measures 16px
+   tall, so a row of perfectly good links quietly fails it — `checks/ux-home.mjs`
+   found them three at a time, because it only reports the first three per
+   screen and fixing those revealed the next.
+
+   Padding plus an equal negative margin: the box grows to 24, the text does
+   not move, and nothing around it reflows. */
+.ux-tap {
+  display: inline-flex;
+  align-items: center;
+  min-height: 24px;
+  padding-block: 4px;
+  margin-block: -4px;
 }
 
 /* The Work board's five places.

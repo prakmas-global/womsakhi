@@ -161,7 +161,10 @@ export function HomeRail() {
           <div className="flex items-center justify-between gap-3">
             <h3 className="text-sm font-bold" style={{ color: "var(--ux-on-brand)" }}>Your Balance</h3>
             <Link href="/app/wallet"
-                  className="ux-hov flex items-center gap-1 text-xs font-semibold"
+                  /* `-my-1 py-1`: 24px of touchable height without the
+                     label moving a pixel — WCAG 2.2 asks for 24, the text
+                     alone measured 16. Same pattern as `SectionHead`. */
+                  className="ux-hov -my-1 flex items-center gap-1 py-1 text-xs font-semibold"
                   style={{ color: "var(--ux-on-brand-2)" }}>
               View Wallet <Icons.ChevronRight className="h-[13px] w-[13px]" />
             </Link>

@@ -388,7 +388,7 @@ function Journey() {
                 <span className="grid shrink-0 place-items-center rounded-full"
                       style={on
                         ? { width: "var(--fb-circle, 50px)", height: "var(--fb-circle, 50px)",
-                            background: v("--ux-brand"), boxShadow: "0 4px 12px -4px rgba(102,66,193,0.55)" }
+                            background: v("--ux-brand"), boxShadow: `0 4px 12px -4px color-mix(in srgb, ${v("--ux-brand")} 55%, transparent)` }
                         : { width: "var(--fb-circle, 50px)", height: "var(--fb-circle, 50px)",
                             background: v("--ux-brand-tint-2") }}>
                   <I name={s.icon} className="h-[21px] w-[21px]" sw={1.9}

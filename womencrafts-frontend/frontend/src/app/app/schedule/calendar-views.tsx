@@ -291,7 +291,7 @@ export function ComingUp({ entries }: { entries: DiaryEntry[] }) {
     <Card>
       <div className="mb-2 flex items-center justify-between gap-3">
         <h2 className="text-lg font-extrabold tracking-[-0.01em]" style={{ color: v("--ux-ink") }}>{tr("calendar.comingUp")}</h2>
-        <Link href="/app/bookings" className="ux-sq flex items-center gap-0.5 text-xs font-bold"
+        <Link href="/app/bookings" className="ux-sq ux-tap gap-0.5 text-xs font-bold"
               style={{ color: v("--ux-brand") }}>
           {tr("calendar.viewAll")} <Icons.ChevronRight className="h-[13px] w-[13px]" />
         </Link>
