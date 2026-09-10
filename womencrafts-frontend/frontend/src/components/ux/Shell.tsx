@@ -1,9 +1,8 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
-import { flushSync } from "react-dom";
+import { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import dynamic from "next/dynamic";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import Link from "next/link";
 import * as Icons from "@/components/ux/icons";
 
@@ -14,7 +13,7 @@ import { useAuth } from "@/context/AuthContext";
 import { useTheme } from "@/context/ThemeContext";
 import { useMe } from "./me";
 import { useNavLabel } from "./use-nav-label";
-import { SECTIONS, TABS, trailFor, type Section } from "./nav-tree";
+import { SECTIONS, TABS, trailFor, type NavNode, type Section } from "./nav-tree";
 import { Avatar } from "./kit";
 import { useSearchHotkey } from "./useSearchHotkey";
 import { MobileNav, SafetyPin } from "./MobileNav";
@@ -113,12 +112,130 @@ const MODULE_INK  = ["--ux-violet-ink", "--ux-green-ink", "--ux-amber-ink", "--u
  * identity card, the six places she goes most, and the screens inside whatever
  * section is currently open. Nothing appears in both.
  */
+/**
+ * One section of the rail, and its children.
+ *
+ * Split out and memoised because opening a section changes one boolean and
+ * used to re-render all 109 nodes of the tree — 71ms of held main thread on
+ * the click, which is three frames the fold never got, and the same cost
+ * again on every route change when the rail re-syncs. Only the section
+ * closing and the section opening take new props now.
+ *
+ * Every prop is a primitive or a stable identity for that reason. `trailKey`
+ * is the path through the tree flattened to a string rather than the array
+ * itself, which would be a new object each render and would defeat the memo
+ * silently — the component would still be correct, just never skipped.
+ */
+const RailSection = memo(function RailSection({
+  s, isOpen, onHub, trailKey, label, onOpen,
+}: {
+  s: Section;
+  isOpen: boolean;
+  onHub: boolean;
+  trailKey: string;
+  label: (n: Pick<NavNode, "label" | "k">) => string;
+  onOpen: (id: string, href: string) => void;
+}) {
+  const kids = (s.children ?? []).filter((c) => !c.unlisted);
+  const onPath = useMemo(() => new Set(trailKey.split("/")), [trailKey]);
+
+  return (
+    <div className="mb-0.5">
+      <TransitionLink
+        href={s.href}
+        /**
+         * Fold first, navigate on the next frame.
+         *
+         * Started inside this handler, the push held the main thread and the
+         * fold's opening frames went to the router instead of to the panel.
+         * One frame of delay on the navigation buys the animation its start,
+         * and 16ms is not perceivable.
+         *
+         * That delay is also what lets the state change stay an ordinary
+         * update. It was wrapped in `flushSync`, because while the push
+         * happened in this same handler React batched it into the
+         * navigation's transition and the section sat there open for another
+         * 120ms — but the flush cost 71ms of its own, the same delay moved one
+         * step earlier. With the push on the next frame there is no
+         * transition to be batched into, and this paints on its own: 2ms.
+         *
+         * Modified clicks fall through to the <Link> untouched, so
+         * open-in-new-tab still works.
+         */
+        onClick={(e) => {
+          if (e.metaKey || e.ctrlKey || e.shiftKey || e.altKey || e.button !== 0) return;
+          e.preventDefault();
+          onOpen(s.id, s.href);
+        }}
+        aria-current={onHub ? "page" : undefined}
+        aria-expanded={kids.length ? isOpen : undefined}
+        className="ux-row ux-sq relative flex items-center gap-3 rounded-[12px] py-2 pe-2 ps-2.5"
+        style={{ background: onHub ? "var(--ux-brand-tint)" : "transparent",
+                 color: isOpen ? "var(--ux-brand)" : "var(--ux-ink)" }}
+      >
+        {/* The bar that says "you are in here" — the one signal that survives
+            at a glance, and the thing 95% of sites get wrong according to
+            Baymard's 2025 benchmark. */}
+        <span aria-hidden
+              className="absolute inset-y-1.5 start-0 w-[3px] rounded-full"
+              style={{ background: isOpen ? "var(--ux-brand)" : "transparent",
+                       transition: "background var(--ux-t) var(--ux-ease)" }} />
+        <Icon name={s.icon} className="ux-ico h-[16px] w-[16px] shrink-0" />
+        <span className="min-w-0 flex-1 truncate text-xsm"
+              style={{ fontWeight: isOpen ? 700 : 500 }}>
+          {label(s)}
+        </span>
+        {kids.length > 0 && (
+          <Icon name="ChevronDown"
+                className="ux-ico h-[14px] w-[14px] shrink-0"
+                // Turned rather than swapped, so the eye follows one shape
+                // instead of noticing two.
+                style={{ opacity: isOpen ? 1 : 0.45,
+                         transform: isOpen ? "rotate(0deg)" : "rotate(-90deg)",
+                         transition: "transform 360ms cubic-bezier(0.42, 0, 0.58, 1), opacity var(--ux-t) var(--ux-ease)" }} />
+        )}
+      </TransitionLink>
+
+      {kids.length > 0 && (
+        <div className="ux-reveal" data-open={isOpen ? "true" : "false"}>
+          <div>
+            <div className="ux-branch mb-1 ms-[18px] mt-0.5">
+              {kids.map((c) => {
+                const on = onPath.has(c.id);
+                return (
+                  <TransitionLink
+                    key={c.id}
+                    href={c.href}
+                    tabIndex={isOpen ? undefined : -1}
+                    aria-current={on ? "page" : undefined}
+                    data-on={on ? "true" : "false"}
+                    className="ux-twig ux-row ux-sq relative mb-0.5 flex items-center gap-2.5 rounded-[10px] px-2.5 py-1.5"
+                    style={{ background: on ? "var(--ux-brand-tint)" : "transparent",
+                             color: on ? "var(--ux-brand)" : "var(--ux-ink-2)" }}
+                  >
+                    <Icon name={c.icon} className="ux-ico h-[14px] w-[14px] shrink-0" />
+                    <span className="min-w-0 flex-1 truncate text-2xs"
+                          style={{ fontWeight: on ? 700 : 500 }}>
+                      {label(c)}
+                    </span>
+                  </TransitionLink>
+                );
+              })}
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+});
+
 export function ModeRail({ path, footer }: { path: string; footer?: React.ReactNode }) {
   const me = useMe();
   const nav = useNavLabel();
   const trail = trailFor(path);
   const here = trail[0]?.id;
   const list = useRef<HTMLElement | null>(null);
+  const router = useRouter();
 
   /**
    * Which section is open — held here, not read from the URL.
@@ -135,6 +252,12 @@ export function ModeRail({ path, footer }: { path: string; footer?: React.ReactN
    */
   const [open, setOpen] = useState<string | undefined>(here);
   useEffect(() => { setOpen(here); }, [here]);
+
+  const trailKey = trail.map((t) => t.id).join("/");
+  const openSection = useCallback((id: string, href: string) => {
+    setOpen(id);
+    requestAnimationFrame(() => router.push(href));
+  }, [router]);
 
   /**
    * Keep the row she is on where she can see it.
@@ -229,86 +352,17 @@ export function ModeRail({ path, footer }: { path: string; footer?: React.ReactN
         phone's and leave the flow entirely.
       */}
       <nav ref={list} className="ux-rail-scroll min-h-0 flex-1 px-3 pb-3" aria-label="Sections">
-        {SECTIONS.map((s) => {
-          const isOpen = s.id === open;
-          const kids = (s.children ?? []).filter((c) => !c.unlisted);
-          // The section row is "current" only when she is on the hub itself;
-          // deeper in, the child carries the highlight and the section stays
-          // merely open. Two things claiming to be the current page is how a
-          // reader stops trusting the highlight.
-          const onHub = s.id === here && trail.length === 1;
-          return (
-            <div key={s.id} className="mb-0.5">
-              <TransitionLink
-                href={s.href}
-                // `flushSync`, because a plain `setOpen` here gets batched
-                // into the navigation's own transition and does not paint
-                // until the new route is ready to commit — measured, 120ms of
-                // a section sitting there open after she had already clicked
-                // somewhere else. The fold has to start on the press or it
-                // reads as the app not having heard her.
-                onClick={() => flushSync(() => setOpen(s.id))}
-                aria-current={onHub ? "page" : undefined}
-                aria-expanded={kids.length ? isOpen : undefined}
-                className="ux-row ux-sq relative flex items-center gap-3 rounded-[12px] py-2 pe-2 ps-2.5"
-                style={{ background: onHub ? "var(--ux-brand-tint)" : "transparent",
-                         color: isOpen ? "var(--ux-brand)" : "var(--ux-ink)" }}
-              >
-                {/* The bar that says "you are in here" — the one signal that
-                    survives at a glance, and the thing 95% of sites get
-                    wrong according to Baymard's 2025 benchmark. */}
-                <span aria-hidden
-                      className="absolute inset-y-1.5 start-0 w-[3px] rounded-full"
-                      style={{ background: isOpen ? "var(--ux-brand)" : "transparent",
-                               transition: "background var(--ux-t) var(--ux-ease)" }} />
-                <Icon name={s.icon} className="ux-ico h-[16px] w-[16px] shrink-0" />
-                <span className="min-w-0 flex-1 truncate text-xsm"
-                      style={{ fontWeight: isOpen ? 700 : 500 }}>
-                  {nav.label(s)}
-                </span>
-                {kids.length > 0 && (
-                  <Icon name="ChevronDown"
-                        className="ux-ico h-[14px] w-[14px] shrink-0"
-                        // Turned rather than swapped, so the eye follows one
-                        // shape instead of noticing two.
-                        style={{ opacity: isOpen ? 1 : 0.45,
-                                 transform: isOpen ? "rotate(0deg)" : "rotate(-90deg)",
-                                 transition: "transform var(--ux-t-slow) var(--ux-ease-out), opacity var(--ux-t) var(--ux-ease)" }} />
-                )}
-              </TransitionLink>
-
-              {kids.length > 0 && (
-                <div className="ux-reveal" data-open={isOpen ? "true" : "false"}>
-                  <div>
-                    <div className="ux-branch mb-1 ms-[18px] mt-0.5">
-                      {kids.map((c) => {
-                        const on = trail.some((t) => t.id === c.id);
-                        return (
-                          <TransitionLink
-                            key={c.id}
-                            href={c.href}
-                            tabIndex={isOpen ? undefined : -1}
-                            aria-current={on ? "page" : undefined}
-                            data-on={on ? "true" : "false"}
-                            className="ux-twig ux-row ux-sq relative mb-0.5 flex items-center gap-2.5 rounded-[10px] px-2.5 py-1.5"
-                            style={{ background: on ? "var(--ux-brand-tint)" : "transparent",
-                                     color: on ? "var(--ux-brand)" : "var(--ux-ink-2)" }}
-                          >
-                            <Icon name={c.icon} className="ux-ico h-[14px] w-[14px] shrink-0" />
-                            <span className="min-w-0 flex-1 truncate text-2xs"
-                                  style={{ fontWeight: on ? 700 : 500 }}>
-                              {nav.label(c)}
-                            </span>
-                          </TransitionLink>
-                        );
-                      })}
-                    </div>
-                  </div>
-                </div>
-              )}
-            </div>
-          );
-        })}
+        {SECTIONS.map((s) => (
+          <RailSection
+            key={s.id}
+            s={s}
+            isOpen={s.id === open}
+            onHub={s.id === here && trail.length === 1}
+            trailKey={trailKey}
+            label={nav.label}
+            onOpen={openSection}
+          />
+        ))}
       </nav>
 
       {/* The same 12px gutter the card and the list have. It had none, so it

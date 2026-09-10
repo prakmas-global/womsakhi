@@ -1618,24 +1618,43 @@
    The links fade as well as being clipped. Height alone slices them off
    mid-row against the section below; fading them out ahead of the fold is
    what makes it look like the panel is closing rather than being cut. */
+/* A section folding open, and folding shut.
+
+   **Eased evenly, not expressively.** The house curve is
+   `cubic-bezier(0.16, 1, 0.3, 1)` — an expo-out that puts most of the movement
+   in the first few frames. It is right for something appearing and wrong for
+   something you are meant to watch: measured, the first painted frame after
+   the click already had the panel 51% open, which does not read as opening at
+   all. A symmetric ease starts near zero, so the first frame shows a few
+   pixels and the fold has somewhere to go.
+
+   **The links carry their own motion, and it is the motion that survives.**
+   Height is a layout property, so its animation is main-thread and gets
+   starved of frames by the very navigation that triggered it — on the dev
+   server the gaps between painted frames run 31-79ms, six frames for the whole
+   fold. `opacity` and `transform` animate on the compositor and keep moving
+   through all of it, so even when the height steps, the rows visibly slide and
+   fade rather than snapping. */
 .ux-reveal {
   display: grid;
   grid-template-rows: 0fr;
-  transition: grid-template-rows 260ms cubic-bezier(0.4, 0, 0.2, 1);
+  transition: grid-template-rows 320ms cubic-bezier(0.42, 0, 0.58, 1);
 }
 .ux-reveal[data-open="true"] {
   grid-template-rows: 1fr;
-  transition: grid-template-rows var(--ux-t-slow) var(--ux-ease-out);
+  transition: grid-template-rows 360ms cubic-bezier(0.42, 0, 0.58, 1);
 }
 .ux-reveal > * {
   overflow: hidden;
   min-height: 0;
   opacity: 0;
-  transition: opacity 140ms linear;
+  transform: translateY(-6px);
+  transition: opacity 200ms linear, transform 240ms cubic-bezier(0.42, 0, 0.58, 1);
 }
 .ux-reveal[data-open="true"] > * {
   opacity: 1;
-  transition: opacity 200ms 70ms linear;
+  transform: none;
+  transition: opacity 260ms 80ms linear, transform 320ms 60ms cubic-bezier(0.42, 0, 0.58, 1);
 }
 
 /* The rail's list, which is the only part of the sidebar that scrolls.

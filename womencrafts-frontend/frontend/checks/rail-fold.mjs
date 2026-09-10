@@ -60,6 +60,18 @@ const trace = await p.evaluate(async () => {
 const { log, vt, full } = trace;
 const mid = [...new Set(log.map(s => s.out))].filter(v => v > 0 && v < full);
 const opened = [...new Set(log.map(s => s.in))].filter(v => v > 0);
+
+// How evenly it moves, which is the whole complaint. "It opens immediately"
+// is a first step that covers most of the distance: with the house expo-out
+// curve the first painted frame was already 51% open.
+const steps = (key, total) => {
+  const seq = log.map(s => s[key]);
+  const jumps = [];
+  for (let i = 1; i < seq.length; i++) if (seq[i] !== seq[i - 1]) jumps.push(Math.abs(seq[i] - seq[i - 1]));
+  return { first: jumps[0] ?? 0, biggest: Math.max(0, ...jumps), pct: (v) => Math.round((v / total) * 100) };
+};
+const opening = steps("in", Math.max(...log.map(s => s.in)));
+const closing = steps("out", full);
 const shut = log.find(s => s.out === 0);
 const moved = log.find(s => s.out < full);
 const before = moved && moved.path !== log.at(-1).path;
@@ -74,8 +86,12 @@ say(!!shut && shut.t < 900, `and it is shut soon after (${shut ? shut.t + "ms" :
 say(!!moved && moved.t < 250, `the fold starts on the press (${moved ? moved.t + "ms" : "never"})`);
 say(!!before, "it has begun before the new screen arrives, not after");
 say(opened.length >= 2, `the section she picked opens as the other closes (${opened.length} steps)`);
+say(opening.pct(opening.first) < 25,
+    `it does not arrive already open (first step ${opening.pct(opening.first)}% of the panel, was 51%)`);
+say(opening.pct(opening.biggest) < 35 && closing.pct(closing.biggest) < 35,
+    `it moves evenly rather than lurching (biggest step: opening ${opening.pct(opening.biggest)}%, closing ${closing.pct(closing.biggest)}%)`);
 say(vt === 0, `no view transition wraps the navigation (${vt}) — that is what froze the rail`);
 
-console.log(bad ? `\n FAIL  ${bad} of 7` : "\n PASS  one closes as the other opens, and you can watch it");
+console.log(bad ? `\n FAIL  ${bad} of 9` : "\n PASS  one closes as the other opens, and you can watch it");
 await b.close();
 process.exit(bad ? 1 : 0);
