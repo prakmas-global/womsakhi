@@ -2,6 +2,7 @@
 
 import { HomeShell } from "@/components/ux/home/HomeShell";
 import { TransitionLink } from "@/components/ux/TransitionLink";
+import { ListGroup, ListRow, type RowTint } from "@/components/ux/mobile/ListRow";
 import { Card, I, IconTile, v } from "@/components/ux/kit";
 
 /**
@@ -36,6 +37,8 @@ type Place = {
   ink: string;
   /** Two of the five carry a filled button, as drawn. */
   solid?: boolean;
+  /** Which tinted tile this row wears in the phone list. */
+  row: RowTint;
   /** Four of the five icons are solid shapes; Find work's magnifier is not. */
   outline?: boolean;
   /**
@@ -49,28 +52,28 @@ type Place = {
 
 const PLACES: Place[] = [
   {
-    id: "opportunities", icon: "Search", title: "Find work",
+    id: "opportunities", row: "pink", icon: "Search", title: "Find work",
     body: "Browse verified jobs, orders and freelance opportunities.",
     cta: "Explore Opportunities", href: "/app/opportunities",
     footIcon: "BarChart3", foot: "1,200+ active opportunities",
     tint: "--ux-tint-pink", ink: "--ux-pink-ink", outline: true, outlineFoot: true,
   },
   {
-    id: "verified", icon: "ShieldCheck", title: "Did they pay her?",
+    id: "verified", row: "violet", icon: "ShieldCheck", title: "Did they pay her?",
     body: "Check reviews and payment history before you take the work.",
     cta: "Check Now", href: "/app/verified",
     footIcon: "Star", foot: "5,000+ verified reviews",
     tint: "--ux-tint-lilac", ink: "--ux-brand", solid: true,
   },
   {
-    id: "applications", icon: "FileText", title: "Your applications",
+    id: "applications", row: "blue", icon: "FileText", title: "Your applications",
     body: "Track all your job applications, messages and interview status.",
     cta: "View Applications", href: "/app/applications",
     footIcon: "Send", foot: "12 applications this month",
     tint: "--ux-tint-blue", ink: "--ux-blue-ink",
   },
   {
-    id: "contracts", icon: "Users", title: "Big orders",
+    id: "contracts", row: "amber", icon: "Users", title: "Big orders",
     body: "Explore larger projects that need a team. Collaborate and grow together.",
     cta: "See Big Orders", href: "/app/contracts",
     footIcon: "Users", foot: "80+ group opportunities",
@@ -82,7 +85,7 @@ const PLACES: Place[] = [
     tint: "--ux-tint-amber", ink: "--ux-work-orange",
   },
   {
-    id: "trust", icon: "FileText", title: "Proof you keep your word",
+    id: "trust", row: "green", icon: "FileText", title: "Proof you keep your word",
     body: "Showcase your completed work, client feedback and certificates.",
     cta: "View My Proof", href: "/app/trust",
     footIcon: "Settings", foot: "Build a trusted profile",
@@ -161,7 +164,9 @@ export function WorkBoard() {
         with the scroller behind it as the floor. Density still does the work
         of making that rare — see `.ux-fitboard` in `ux/tokens.css`.
       */}
-      <div className="ux-fitboard flex flex-col xl:min-h-full" style={{ gap: "var(--fb-gap)" }}>
+      <Phone />
+
+      <div className="ux-fitboard hidden flex-col lg:flex xl:min-h-full" style={{ gap: "var(--fb-gap)" }}>
         <Hero />
 
         {/*
@@ -656,5 +661,146 @@ function HelpStrip() {
                     WebkitMaskImage: "linear-gradient(to right, transparent 0%, #000 8%, #000 90%, transparent 100%), linear-gradient(to bottom, transparent 0%, #000 14%)",
                     maskComposite: "intersect", WebkitMaskComposite: "source-in" }} />
     </section>
+  );
+}
+
+/* ── the same board, as a phone app ───────────────────────────────────────── */
+
+/**
+ * Work on a phone.
+ *
+ * The desktop board is a full-bleed hero, five washed cards each with a tile,
+ * a heading, a paragraph, a pill button and a footnote, then a five-column
+ * journey, a two-column insight panel and a help strip with Sakhi standing in
+ * it. At 390 the hero alone was 950px tall — a whole screen and a half before
+ * the first destination — and "Find work", the thing this section exists for,
+ * began below the fold with its button already sliding under the help pill.
+ *
+ * A phone gets the same five places as a grouped list, her five journey steps
+ * as a list, the month's four numbers as rows with the figure on the right
+ * where a native app puts a value, and one full-width action at the end. The
+ * hero survives as a banner, because the picture is good and a phone screen
+ * can afford 132px of it — not 950.
+ *
+ * `hidden lg:flex` on the board above and `lg:hidden` here: both trees are in
+ * the DOM, one is `display: none`, and `display: none` takes a subtree out of
+ * the accessibility tree too, so nothing is announced twice.
+ */
+function Phone() {
+  return (
+    <div className="lg:hidden">
+      <section className="ux-sq relative overflow-hidden rounded-[16px]"
+               style={{ border: `1px solid ${v("--ux-band-edge")}`, background: v("--ux-band-work") }}>
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img src="/ux/art/hero-work-banner.webp"
+             alt="A woman at her laptop in a bright room, beside the words “Independent women build brighter tomorrows”."
+             decoding="async" fetchPriority="high" width={1720} height={646}
+             className="block h-[132px] w-full object-cover" style={{ objectPosition: "center 40%" }} />
+      </section>
+
+      <h1 className="ux-screen-title mt-4" style={{ color: v("--ux-ink") }}>Work</h1>
+      <p className="mt-1.5 text-[15px] leading-snug" style={{ color: v("--ux-muted") }}>
+        Find meaningful work on your terms — and build a reputation that travels with you.
+      </p>
+
+      <div className="ux-chiprow mt-3.5 flex flex-wrap gap-2"
+           style={{ ["--ux-pad" as string]: "20px" }}>
+        {PROMISES.map(([icon, label]) => (
+          <span key={label}
+                className="ux-sq inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-[13px] font-medium"
+                style={{ borderColor: v("--ux-line"), background: v("--ux-surface"), color: v("--ux-ink-2") }}>
+            <I name={icon} className="h-[15px] w-[15px] shrink-0" sw={1.9} style={{ color: v("--ux-brand") }} />
+            {label}
+          </span>
+        ))}
+      </div>
+
+      <div className="mt-5 space-y-5">
+        <ListGroup title="Where to go">
+          {PLACES.map((p) => (
+            <ListRow key={p.id} href={p.href} icon={p.icon} tint={p.row}
+                     title={p.title} subtitle={p.body} />
+          ))}
+        </ListGroup>
+
+        <section>
+          <h3 className="ux-group-label">Your work journey</h3>
+          <div className="rounded-[var(--ux-r-lg)] border p-4"
+               style={{ background: v("--ux-surface"), borderColor: v("--ux-line") }}>
+            <p className="text-[15px] font-bold leading-tight" style={{ color: v("--ux-ink") }}>
+              Small steps today, bigger opportunities tomorrow.
+            </p>
+            <ol className="mt-3.5 flex flex-col gap-3">
+              {STEPS.map((s, i) => {
+                const on = i === AT;
+                return (
+                  <li key={s.title} className="flex items-start gap-3">
+                    <span aria-hidden className="grid h-[34px] w-[34px] shrink-0 place-items-center rounded-full"
+                          style={on ? { background: v("--ux-brand") } : { background: v("--ux-brand-tint-2") }}>
+                      <I name={s.icon} className="h-[17px] w-[17px]" sw={1.9}
+                         style={{ color: on ? "#fff" : v("--ux-brand") }} />
+                    </span>
+                    <span className="min-w-0">
+                      <b className="block text-[15px] font-bold leading-tight" style={{ color: v("--ux-ink") }}>
+                        {i + 1}. {s.title}
+                      </b>
+                      <span className="mt-0.5 block text-[13px] leading-snug" style={{ color: v("--ux-ink-2") }}>
+                        {s.body}
+                      </span>
+                    </span>
+                    <span className="sr-only">{on ? " — you are here" : ""}</span>
+                  </li>
+                );
+              })}
+            </ol>
+          </div>
+        </section>
+
+        {/*
+          The month's four figures, as rows rather than a 2x2 of tiles.
+
+          Two 160px tiles on a 390px screen is two columns of nothing — the
+          labels truncated to "Applications s…" in the before shot. A native
+          app puts the label on the left and the value on the right, which
+          fits every label at full length and reads at a glance.
+        */}
+        <ListGroup title="This month"
+                   footnote="Applied to 12 jobs, completed 3 and received 3 positive reviews.">
+          {STATS.map((s) => (
+            <ListRow key={s.label} icon={s.icon}
+                     tint={s.ink === "--ux-brand" ? "violet"
+                          : s.ink === "--ux-pink-ink" ? "pink"
+                          : s.ink === "--ux-green-ink" ? "green" : "blue"}
+                     title={s.label} value={s.n} chevron={false} />
+          ))}
+        </ListGroup>
+
+        {/*
+          The help strip, reduced to what it was actually for.
+
+          On desktop it is a quote, a lamp, a leaf field and Sakhi standing at
+          the end of it beside a button. All of that is decoration around one
+          action, and on a phone the action is the only part that fits — full
+          width, at the bottom, where a thumb already is.
+        */}
+        <section>
+          <h3 className="ux-group-label">Need help getting started?</h3>
+          <div className="rounded-[var(--ux-r-lg)] border p-4"
+               style={{ background: v("--ux-band-foot"), borderColor: v("--ux-band-foot-edge") }}>
+            <p className="text-[15px] italic leading-snug" style={{ color: HERO_INK }}>
+              &ldquo;Every opportunity is a step towards a stronger, brighter you.&rdquo;
+            </p>
+            <p className="mt-1 text-[13px] font-semibold" style={{ color: HERO_INK_2 }}>— WomSakhi</p>
+            <TransitionLink href="/app/sakhi"
+              className="ux-press ux-sq ux-action-primary mt-3.5 inline-flex items-center justify-center gap-2.5"
+              style={{ borderRadius: 14,
+                       background: "linear-gradient(96deg, var(--ux-fill), var(--ux-fill-2))", color: "#fff" }}>
+              <I name="MessageCircle" className="h-[17px] w-[17px]" sw={2} />
+              Chat with Sakhi
+            </TransitionLink>
+          </div>
+        </section>
+      </div>
+    </div>
   );
 }

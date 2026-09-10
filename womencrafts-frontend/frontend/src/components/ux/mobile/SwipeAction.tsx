@@ -65,22 +65,37 @@ export function SwipeAction({
   actionsLabel?: string;
 }) {
   const faceRef = useRef<HTMLDivElement | null>(null);
+  /**
+   * Which physical direction "open" is. `-1` in a left-to-right locale (the
+   * face slides left, uncovering the actions on the right), `+1` in Arabic or
+   * Urdu, where `end` is the left edge and everything mirrors.
+   *
+   * `transform` has no logical form — `translateX` is physical in every
+   * writing mode — so the direction is read from the element once per gesture
+   * rather than assumed. Read on pointer-down and on focus, never per frame:
+   * `getComputedStyle` in a move handler forces a style recalculation on every
+   * single pointer event.
+   */
+  const sign = useRef(-1);
   const drag = useRef<{ id: number; startX: number; startY: number; lastX: number; lastT: number; v: number; base: number; claimed: boolean } | null>(null);
   const offset = useRef(0);
   const [open, setOpen] = useState(false);
 
   const width = actions.length * ACTION_W;
 
+  const readDirection = () => {
+    const el = faceRef.current;
+    if (el) sign.current = getComputedStyle(el).direction === "rtl" ? 1 : -1;
+  };
+
   const paint = (x: number) => {
     const el = faceRef.current;
     if (!el) return;
-    // Positive `x` is how far the face has moved off the end edge. Past the
-    // full reveal it resists, so the row cannot be dragged clean off screen.
+    // `x` is always a positive "how much is revealed". Past the full reveal it
+    // resists, so the row cannot be dragged clean off the screen.
     const capped = x <= width ? x : width + (x - width) * 0.3;
     const shown = Math.max(0, capped);
-    // `insetInlineStart` on a negative translate would be wrong in RTL, so the
-    // face is moved with a logical margin instead of a physical transform.
-    el.style.transform = `translateX(${shown}px)`;
+    el.style.transform = `translateX(${sign.current * shown}px)`;
   };
 
   const settle = (to: number) => {
@@ -88,13 +103,14 @@ export function SwipeAction({
     const el = faceRef.current;
     if (el) {
       el.style.transition = "";
-      el.style.transform = to ? `translateX(${to}px)` : "";
+      el.style.transform = to ? `translateX(${sign.current * to}px)` : "";
     }
     setOpen(to > 0);
   };
 
   const onDown = (e: ReactPointerEvent<HTMLDivElement>) => {
     if (e.button !== 0) return;
+    readDirection();
     drag.current = {
       id: e.pointerId,
       startX: e.clientX,
@@ -134,9 +150,10 @@ export function SwipeAction({
     d.lastX = e.clientX;
     d.lastT = now;
 
-    // A swipe towards the start edge opens the end-side actions, so the face
-    // moves the opposite way to the finger's sign.
-    paint(d.base - dx);
+    // The finger travels towards the start edge to open, which is the
+    // opposite physical direction to the reveal in LTR and the same one in
+    // RTL — exactly what `sign` encodes.
+    paint(d.base + sign.current * dx);
   };
 
   const onUp = (e: ReactPointerEvent<HTMLDivElement>) => {
@@ -148,9 +165,10 @@ export function SwipeAction({
     }
     if (!d.claimed) return;
 
-    const x = d.base - (e.clientX - d.startX);
-    // Velocity is measured on the finger; opening is movement towards start.
-    const opening = -d.v;
+    const x = d.base + sign.current * (e.clientX - d.startX);
+    // Velocity is measured on the finger; opening is movement towards the
+    // start edge, so it carries the same sign correction as the distance.
+    const opening = sign.current * d.v;
 
     if (fullSwipe && x > width * 1.6 && actions[0]) {
       settle(0);
@@ -193,7 +211,10 @@ export function SwipeAction({
                 a.onPress();
               }}
               // Focus opens the row, so nothing is ever pressed while hidden.
-              onFocus={() => settle(width)}
+              onFocus={() => {
+                readDirection();
+                settle(width);
+              }}
               onBlur={(e) => {
                 if (!e.currentTarget.parentElement?.contains(e.relatedTarget as Node)) settle(0);
               }}

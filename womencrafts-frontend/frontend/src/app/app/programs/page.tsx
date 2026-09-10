@@ -5,12 +5,13 @@ import * as Icons from "@/components/ux/icons";
 
 import {
   ActionBtn, Btn, Card, Chip, EmptyState, IconTile,
-  SectionHead, SourceNote, Tabs, copy, plural, printCertificate
+  SectionHead, SourceNote, copy, plural, printCertificate
 } from "@/components/ux/kit";
 import { HomeShell } from "@/components/ux/home/HomeShell";
 import { useMe } from "@/components/ux/me";
 
 import { CourseCard, ResumeCard } from "@/components/ux/learning/parts";
+import { ChipRow, ScreenHead, Segments } from "@/components/ux/learning/native";
 import {
   ACHIEVEMENTS, CATEGORIES, SKILLS, STREAK,
 } from "@/components/ux/learning/data";
@@ -131,17 +132,13 @@ export default function LearningPage() {
         </div>
       }
     >
-      <div className="mb-[20px] flex items-end justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-bold" style={{ color: "var(--ux-ink)" }}>Courses</h1>
-          <p className="mt-1.5 text-xsm" style={{ color: "var(--ux-muted)" }}>
-            {CONTINUING.length} {plural("course", CONTINUING.length)} on the go, {avg}% through on average.
-          </p>
-
-      <SourceNote source={source} what="courses" />
-        </div>
-        <Tabs items={[...TABS]} active={tab} onChange={setTab} />
-      </div>
+      <ScreenHead
+        title="Courses"
+        sub={`${CONTINUING.length} ${plural("course", CONTINUING.length)} on the go, ${avg}% through on average.`}
+        note={<SourceNote source={source} what="courses" />}
+      >
+        <Segments items={[...TABS]} active={tab} onChange={setTab} label="Which courses" />
+      </ScreenHead>
 
       {tab === "Keep going" && (
         CONTINUING.length ? (
@@ -159,11 +156,11 @@ export default function LearningPage() {
 
       {tab === "Explore" && (
         <>
-          <div className="mb-[16px] flex flex-wrap gap-2">
+          <ChipRow className="mb-[16px]">
             {categories.map((c) => (
               <Chip key={c} selected={cat === c} onClick={() => setCat(c)}>{c}</Chip>
             ))}
-          </div>
+          </ChipRow>
           {picks.length ? (
             <div className="ux-deck grid grid-cols-3 gap-[16px]">
               {picks.map((c) => <CourseCard key={c.id} c={c} />)}
@@ -194,7 +191,7 @@ export default function LearningPage() {
                     </p>
                   </div>
                 </div>
-                <div className="mt-3.5 flex gap-2 border-t pt-3.5" style={{ borderColor: "var(--ux-line)" }}>
+                <div className="mt-3.5 flex flex-col gap-2 border-t pt-3.5 lg:flex-row" style={{ borderColor: "var(--ux-line)" }}>
                   <ActionBtn variant="outline" size="sm" icon="Download" doneIcon="Printer"
                              done={COPY.saveAsPdf} act={() => printCertificate({
                                name: ME.name, programme: c.title, issued: c.issued, code: c.code,

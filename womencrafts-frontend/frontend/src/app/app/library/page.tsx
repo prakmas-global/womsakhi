@@ -7,9 +7,10 @@ import { apiAskSwap } from "@/lib/shop-api";
 
 import {
   Btn, Card, Chip, EmptyState, IconTile, NoteBtn, Pill,
-  SectionHead, SourceNote, Tabs, plural
+  SectionHead, SourceNote, plural
 } from "@/components/ux/kit";
 import { HomeShell } from "@/components/ux/home/HomeShell";
+import { ChipRow, ScreenHead, Segments } from "@/components/ux/learning/native";
 import { EXCHANGE_ART, SKILL_TAGS } from "@/components/ux/exchange/data";
 import { useMyExchanges, useSwaps } from "@/components/ux/business";
 import { useT } from "@/i18n";
@@ -125,19 +126,17 @@ export default function SkillExchangePage() {
         </div>
       }
     >
-      <div className="mb-[20px] flex items-end justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-bold" style={{ color: "var(--ux-ink)" }}>{tr("library.teachAndLearn")}</h1>
-          <p className="mt-1.5 text-xsm" style={{ color: "var(--ux-muted)" }}>{tr("library.teachWhatYouKnowLearnWhat")}</p>
-
-      <SourceNote source={source} what="swaps" />
-        </div>
-        <Tabs items={["Browse", "Your exchanges"]} active={tab} onChange={setTab} />
-      </div>
+      <ScreenHead
+        title={tr("library.teachAndLearn")}
+        sub={tr("library.teachWhatYouKnowLearnWhat")}
+        note={<SourceNote source={source} what="swaps" />}
+      >
+        <Segments items={["Browse", "Your exchanges"]} active={tab} onChange={setTab} label="Which exchanges" />
+      </ScreenHead>
 
       {tab === "Browse" && (
         <>
-          <div className="mb-[16px] flex flex-wrap items-center gap-2">
+          <ChipRow className="mb-[16px] items-center">
             {(["All", "Offering", "Looking for"] as const).map((s) => (
               <Chip key={s} selected={side === s} onClick={() => setSide(s)}>{s}</Chip>
             ))}
@@ -148,7 +147,7 @@ export default function SkillExchangePage() {
                 {t}
               </Chip>
             ))}
-          </div>
+          </ChipRow>
 
           {shown.length ? (
             <div className="ux-deck ux-stagger space-y-[12px]">

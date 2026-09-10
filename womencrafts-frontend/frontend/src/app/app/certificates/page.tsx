@@ -5,9 +5,10 @@ import * as Icons from "@/components/ux/icons";
 
 import {
   ActionBtn, Btn, Card, Pill, Progress, SectionHead,
-  SourceNote, Tabs, copy, printCertificate
+  SourceNote, copy, printCertificate
 } from "@/components/ux/kit";
 import { HomeShell } from "@/components/ux/home/HomeShell";
+import { ScreenHead, Segments } from "@/components/ux/learning/native";
 import { useLearning } from "@/components/ux/growth";
 import { useMe } from "@/components/ux/me";
 import { useCertificates } from "@/components/ux/live";
@@ -83,15 +84,12 @@ export default function CertificatesPage() {
         </div>
       }
     >
-      <div className="mb-[20px] flex items-end justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-bold" style={{ color: "var(--ux-ink)" }}>Certificates</h1>
-          <p className="mt-1.5 text-xsm" style={{ color: "var(--ux-muted)" }}>
-            {CERTIFICATES.length} earned · {CERTIFICATES.reduce((a, c) => a + c.hours, 0)} hours of learning behind them
-          </p>
-        </div>
-        <Tabs items={["Earned", "In progress"]} active={tab} onChange={setTab} />
-      </div>
+      <ScreenHead
+        title="Certificates"
+        sub={`${CERTIFICATES.length} earned · ${CERTIFICATES.reduce((a, c) => a + c.hours, 0)} hours of learning behind them`}
+      >
+        <Segments items={["Earned", "In progress"]} active={tab} onChange={setTab} label="Which certificates" />
+      </ScreenHead>
 
       <SourceNote source={source} what="certificates" />
 

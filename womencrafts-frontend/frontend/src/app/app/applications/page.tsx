@@ -6,9 +6,10 @@ import * as Icons from "@/components/ux/icons";
 
 import {
   ActionBtn, Btn, Card, EmptyState, IconTile, Pill,
-  Progress, SectionHead, SourceNote, Tabs, copy
+  Progress, SectionHead, SourceNote, copy
 } from "@/components/ux/kit";
 import { HomeShell } from "@/components/ux/home/HomeShell";
+import { ScreenHead, Segments } from "@/components/ux/work/native";
 import { RailStat, StageTrack } from "@/components/ux/work/parts";
 import { STAGES, WORK_ART } from "@/components/ux/work/data";
 import { useApplications, workStats } from "@/components/ux/growth";
@@ -89,21 +90,19 @@ export default function Applications() {
         </div>
       }
     >
-      <div className="mb-[20px] flex items-end justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-bold" style={{ color: "var(--ux-ink)" }}>{tr("applications.yourApplications")}</h1>
-          <p className="mt-1.5 text-xsm" style={{ color: "var(--ux-muted)" }}>
-            {counts.Active === 1
-              ? "One application is still moving."
-              : `${counts.Active} applications are still moving.`}
-            {counts.Interviews > 0 &&
-              ` ${counts.Interviews === 1 ? "One is" : `${counts.Interviews} are`} at interview.`}
-          </p>
-
-      <SourceNote source={source} what="applications" />
-        </div>
-        <Tabs items={[...TABS]} active={tab} onChange={setTab} />
-      </div>
+      <ScreenHead
+        title={tr("applications.yourApplications")}
+        sub={<>
+          {counts.Active === 1
+            ? "One application is still moving."
+            : `${counts.Active} applications are still moving.`}
+          {counts.Interviews > 0 &&
+            ` ${counts.Interviews === 1 ? "One is" : `${counts.Interviews} are`} at interview.`}
+        </>}
+        note={<SourceNote source={source} what="applications" />}
+      >
+        <Segments items={[...TABS]} active={tab} onChange={setTab} label="Which applications" />
+      </ScreenHead>
 
       {shown.length ? (
         <div className="ux-deck space-y-[12px]">

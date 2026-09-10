@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 
 import * as Icons from "@/components/ux/icons";
+import { MobileIcon, type MobileIconName } from "./MobileIcon";
 
 import { TABS, trailFor } from "../nav-tree";
 import { useNavLabel } from "../use-nav-label";
@@ -50,6 +51,23 @@ import { useHaptics } from "./useHaptics";
  * padding longhands below: writing the `padding` shorthand would silently wipe
  * the safe-area inset that keeps the bar off the home indicator.
  */
+
+/**
+ * Which phone glyph each tab wears.
+ *
+ * Keyed on the nav-tree id rather than reusing `t.icon`, because those names
+ * are lucide's and lucide has no filled twin — the whole point of this set. A
+ * tab added to `nav-tree.ts` without a line here falls back to Home rather
+ * than rendering nothing, so a missing entry is visible instead of silent.
+ */
+const TAB_ICON: Record<string, MobileIconName> = {
+  home: "home",
+  learn: "learn",
+  work: "work",
+  earn: "earn",
+  circle: "circle",
+  you: "you",
+};
 
 const CSS = `
 .ux .ux-tabbar { display: none; }
@@ -125,11 +143,14 @@ const CSS = `
   .ux .ux-tab[aria-current="page"] .ux-tab-label { font-weight: 800; }
 
   /* The structural tell: a bar on the top edge, over this tab only. Drawn in
-     currentColor so forced-colors mode recolours it with everything else. */
+     currentColor so forced-colors mode recolours it with everything else.
+     top:0 and not -1px: the anchor's box starts below the bar's hairline, so
+     a negative offset lifts the mark off the bar and onto the content behind
+     it, where it reads as a stray dash rather than as part of the bar. */
   .ux .ux-tab[aria-current="page"]::before {
     content: "";
     position: absolute;
-    top: -1px;
+    top: 0;
     left: 50%;
     width: 30px;
     height: 3px;
@@ -191,7 +212,19 @@ export function TabBar() {
             onClick={on ? undefined : haptics.light}
           >
             <span className="ux-tab-pill">
-              <Icon name={t.icon} className="h-[21px] w-[21px]" strokeWidth={on ? 2.5 : 1.9} />
+              {/*
+                Outline when you are elsewhere, SOLID when you are here.
+
+                This is how every native tab bar on both platforms signals the
+                current tab, and it is not a style preference — it is the one
+                cue that survives colour blindness and direct sunlight, which
+                are the two conditions this app is most used in. It was faked
+                before with a heavier stroke, because lucide is a stroke-only
+                set with no filled twin; the eye reads a bolder outline as a
+                bolder outline, not as "selected". Ionicons ships a real pair
+                for every glyph, so the swap is now the actual thing.
+              */}
+              <MobileIcon name={TAB_ICON[t.id] ?? "home"} active={on} size={23} />
             </span>
             {/* text-2xs (11px) rather than a size in the CSS above: the type
                 scale is a Tailwind utility and it moves with her "Bigger text"
