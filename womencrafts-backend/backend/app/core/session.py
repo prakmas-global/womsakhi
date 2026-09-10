@@ -31,8 +31,15 @@ def set_session_cookie(response: Response, token: str) -> None:
         samesite=settings.COOKIE_SAMESITE,
         max_age=settings.ACCESS_TOKEN_EXPIRE_MINUTES * 60,
         path="/",
+        # `or None`, not the bare string: an empty Domain is not the same as no
+        # Domain — Starlette would emit `Domain=` and the browser drops the
+        # cookie outright.
+        domain=settings.COOKIE_DOMAIN or None,
     )
 
 
 def clear_session_cookie(response: Response) -> None:
-    response.delete_cookie(key=COOKIE_NAME, path="/")
+    # The domain has to match the one it was set with, or the browser treats
+    # this as a different cookie and the session survives the sign-out.
+    response.delete_cookie(key=COOKIE_NAME, path="/",
+                           domain=settings.COOKIE_DOMAIN or None)

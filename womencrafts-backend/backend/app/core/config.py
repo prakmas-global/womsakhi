@@ -151,6 +151,25 @@ class Settings(BaseSettings):
     COOKIE_SECURE: bool = False
     COOKIE_SAMESITE: str = "lax"
 
+    # Which hosts the session cookie is offered to.
+    #
+    # Empty means host-only: the cookie goes back only to the exact host that
+    # set it. That is right in development, where the API and the site are both
+    # `localhost` and cookies ignore the port — so one cookie serves both.
+    #
+    # In production they are two hosts, `app.womsakhi.com` and
+    # `api.womsakhi.com`, and BOTH need to read this cookie: the browser sends
+    # it to the API, and the Next server reads it to decide whether to render
+    # the member shell at all. Host-only means the site never sees it and every
+    # signed-in page bounces to /signin while the API insists the login worked.
+    # Set it to `.womsakhi.com`.
+    #
+    # It CANNOT be made to work across two `*.run.app` hosts at any value:
+    # `run.app` is on the Public Suffix List, so browsers refuse a cookie
+    # scoped to it. The custom domain is a requirement for login, not a polish
+    # step.
+    COOKIE_DOMAIN: str = ""
+
     @property
     def is_production(self) -> bool:
         return self.ENVIRONMENT.strip().lower() in {"production", "prod", "live"}

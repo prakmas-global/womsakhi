@@ -20,7 +20,12 @@ env:
   PROJECT_ID: womsakhi
   REGION: asia-south1
   REGISTRY: asia-south1-docker.pkg.dev/womsakhi/womsakhi
-  API_URL: https://api.womsakhi.com
+  # The /api/v1 suffix is part of the value, not decoration. Every client
+  # module joins paths onto it directly (`${API_URL}/public/stats`), so a
+  # bare host produces a 404 on every single call while the API itself is
+  # perfectly healthy — which is exactly how this was found.
+  API_URL: https://api.womsakhi.com/api/v1
+  API_HOST: https://api.womsakhi.com
   WEB_URL: https://app.womsakhi.com
 
 permissions:
@@ -63,7 +68,7 @@ jobs:
             --allow-unauthenticated \
             --port 8080 --cpu 1 --memory 1Gi --min-instances 0 --max-instances 10 \
             --set-secrets MONGODB_URI=mongodb-uri:latest,JWT_SECRET_KEY=jwt-secret-key:latest,DOCUMENT_ENCRYPTION_KEY=document-encryption-key:latest,ANTHROPIC_API_KEY=anthropic-api-key:latest,AZURE_SPEECH_KEY=azure-speech-key:latest,LANGFUSE_PUBLIC_KEY=langfuse-public-key:latest,LANGFUSE_SECRET_KEY=langfuse-secret-key:latest \
-            --set-env-vars "DB_NAME=womencrafts,JWT_ALGORITHM=HS256,ACCESS_TOKEN_EXPIRE_MINUTES=30,AZURE_SPEECH_REGION=centralindia,LANGFUSE_HOST=https://cloud.langfuse.com,LANGFUSE_ENV=production,ALLOWED_ORIGINS=$WEB_URL,APP_BASE_URL=$WEB_URL,MEDIA_BASE_URL=$API_URL,MEDIA_DIR=/mnt/media/media,PRIVATE_MEDIA_DIR=/mnt/media/private_media" \
+            --set-env-vars "DB_NAME=womencrafts,JWT_ALGORITHM=HS256,ACCESS_TOKEN_EXPIRE_MINUTES=30,AZURE_SPEECH_REGION=centralindia,LANGFUSE_HOST=https://cloud.langfuse.com,LANGFUSE_ENV=production,ALLOWED_ORIGINS=$WEB_URL,APP_BASE_URL=$WEB_URL,MEDIA_BASE_URL=$API_HOST,COOKIE_DOMAIN=.womsakhi.com,COOKIE_SECURE=true,COOKIE_SAMESITE=lax,MEDIA_DIR=/mnt/media/media,PRIVATE_MEDIA_DIR=/mnt/media/private_media" \
             --add-volume name=media,type=cloud-storage,bucket=womsakhi-media \
             --add-volume-mount volume=media,mount-path=/mnt/media
 
