@@ -27,14 +27,19 @@ from app.core.rbac import require_active_member, require_staff
 from app.core.sakhi import engine, memory
 from app.core import voice as voice_service
 from app.db.mongodb import get_database
-from app.models.sakhi import ConversationModel, SakhiMessageModel
+from app.models.sakhi import ConversationModel, SakhiMessageModel, SakhiSavedModel
 from app.schemas.sakhi import (
     ChatRequest,
     ConfirmRequest,
     Conversation,
     ConversationDetail,
+    FeedbackRequest,
     MessageResponse,
+    PinRequest,
+    RenameRequest,
     SakhiMessage,
+    SaveRequest,
+    SavedAnswer,
     SakhiMemory,
     SakhiStatus,
     SpeakRequest,
@@ -200,6 +205,141 @@ async def delete_conversation(conversation_id: str, me: dict = Depends(require_a
         "user_id": str(me["_id"]),
     })
     return MessageResponse(message="Deleted")
+
+
+# --- naming, pinning and marking an answer ----------------------------------
+
+async def _own_conversation(db, conversation_id: str, user_id: str) -> dict:
+    """Load a conversation, or 404.
+
+    Scoped by `user_id` in the query rather than fetched-then-checked, so a
+    guessed id cannot even confirm that someone else's conversation exists.
+    """
+    try:
+        oid = ObjectId(conversation_id)
+    except Exception:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "Conversation not found")
+    doc = await db[ConversationModel.collection_name].find_one({"_id": oid, "user_id": user_id})
+    if not doc:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "Conversation not found")
+    return doc
+
+
+@router.patch(
+    "/conversations/{conversation_id}/title",
+    response_model=Conversation,
+    summary="Rename a conversation",
+)
+async def rename_conversation(
+    conversation_id: str,
+    body: RenameRequest,
+    me: dict = Depends(require_active_member),
+):
+    """Her name for it wins.
+
+    Sakhi titles a conversation from its first message, which is a guess. Once a
+    member types her own, nothing overwrites it — that is why the title is
+    stored here rather than being re-derived on every turn.
+    """
+    db = get_database()
+    await _own_conversation(db, conversation_id, str(me["_id"]))
+    doc = await db[ConversationModel.collection_name].find_one_and_update(
+        {"_id": ObjectId(conversation_id), "user_id": str(me["_id"])},
+        {"$set": {"title": body.title.strip()[:120], "title_is_hers": True}},
+        return_document=True,
+    )
+    return Conversation(**ConversationModel.to_response(doc))
+
+
+@router.patch(
+    "/conversations/{conversation_id}/pin",
+    response_model=Conversation,
+    summary="Pin or unpin a conversation",
+)
+async def pin_conversation(
+    conversation_id: str,
+    body: PinRequest,
+    me: dict = Depends(require_active_member),
+):
+    db = get_database()
+    await _own_conversation(db, conversation_id, str(me["_id"]))
+    doc = await db[ConversationModel.collection_name].find_one_and_update(
+        {"_id": ObjectId(conversation_id), "user_id": str(me["_id"])},
+        {"$set": {"pinned": bool(body.pinned)}},
+        return_document=True,
+    )
+    return Conversation(**ConversationModel.to_response(doc))
+
+
+@router.post(
+    "/messages/{message_id}/feedback",
+    response_model=MessageResponse,
+    summary="Say whether an answer helped",
+)
+async def rate_message(
+    message_id: str,
+    body: FeedbackRequest,
+    me: dict = Depends(require_active_member),
+):
+    """Thumbs, stored against the message.
+
+    `helpful: null` clears it. A rating you cannot take back is a rating people
+    stop giving, and a mis-tap on a phone is common enough to design for.
+    """
+    db = get_database()
+    try:
+        oid = ObjectId(message_id)
+    except Exception:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "Message not found")
+    result = await db[SakhiMessageModel.collection_name].update_one(
+        {"_id": oid, "user_id": str(me["_id"])},
+        {"$set": {"meta.helpful": body.helpful}},
+    )
+    if not result.matched_count:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "Message not found")
+    return MessageResponse(message="Noted")
+
+
+# --- answers she chose to keep ----------------------------------------------
+
+@router.get("/saved", response_model=list[SavedAnswer], summary="Answers I saved")
+async def my_saved(me: dict = Depends(require_active_member)):
+    db = get_database()
+    rows = (
+        await db[SakhiSavedModel.collection_name]
+        .find({"user_id": str(me["_id"])})
+        .sort("created_at", -1)
+        .to_list(length=200)
+    )
+    return [SavedAnswer(**SakhiSavedModel.to_response(r)) for r in rows]
+
+
+@router.post("/saved", response_model=SavedAnswer, summary="Keep this answer")
+async def save_answer(body: SaveRequest, me: dict = Depends(require_active_member)):
+    db = get_database()
+    doc = SakhiSavedModel.create_document(
+        user_id=str(me["_id"]),
+        text=body.text.strip()[:8000],
+        conversation_id=body.conversation_id,
+    )
+    result = await db[SakhiSavedModel.collection_name].insert_one(doc)
+    doc["_id"] = result.inserted_id
+    return SavedAnswer(**SakhiSavedModel.to_response(doc))
+
+
+@router.delete("/saved/{saved_id}", response_model=MessageResponse, summary="Un-save an answer")
+async def unsave_answer(saved_id: str, me: dict = Depends(require_active_member)):
+    db = get_database()
+    try:
+        oid = ObjectId(saved_id)
+    except Exception:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "Not found")
+    result = await db[SakhiSavedModel.collection_name].delete_one(
+        {"_id": oid, "user_id": str(me["_id"])}
+    )
+    if not result.deleted_count:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "Not found")
+    return MessageResponse(message="Removed")
 
 
 # --- what she has told Sakhi before -----------------------------------------

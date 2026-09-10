@@ -1,3 +1,4 @@
+from pydantic import model_validator
 from pydantic_settings import BaseSettings
 from functools import lru_cache
 
@@ -8,6 +9,17 @@ class Settings(BaseSettings):
     JWT_SECRET_KEY: str
     JWT_ALGORITHM: str = "HS256"
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 30
+
+    # Which browser origins may call this API.
+    #
+    # This was two hardcoded localhost ports in main.py until it moved here,
+    # and that is a deployment trap worth naming: the deployed API rejects
+    # every call from the deployed site, the browser shows a CORS error, and
+    # the server log shows a perfectly healthy request. It reads as a frontend
+    # bug for as long as you let it. Comma-separated; set to the real origins
+    # in production and never to "*" — this API is called with credentials,
+    # and a wildcard with credentials is rejected by every browser anyway.
+    ALLOWED_ORIGINS: str = "http://localhost:3100,http://localhost:3000"
 
     # Uploads — where images are written, the host the browser loads them from,
     # and how big a single file may be.
@@ -26,7 +38,11 @@ class Settings(BaseSettings):
     DOCUMENT_ENCRYPTION_KEY: str = ""
 
     # Where the frontend lives, for links inside emails.
-    APP_BASE_URL: str = "http://localhost:3000"
+    # 3100, not 3000. This is the host every emailed link is built from —
+    # verification, password reset, approval — and port 3000 on a dev machine
+    # is very often something else entirely. Set it to the real domain in
+    # production; a wrong value here silently sends people somewhere else.
+    APP_BASE_URL: str = "http://localhost:3100"
 
     # Email. Leave SMTP_HOST empty in development: messages are written to
     # backend/outbox/ instead of being sent.
@@ -110,10 +126,118 @@ class Settings(BaseSettings):
     AZURE_SPEECH_KEY: str = ""
     AZURE_SPEECH_REGION: str = "centralindia"
 
-    # Session cookie. COOKIE_SECURE must be True in production (HTTPS); it is
-    # False locally because development runs on plain http://localhost.
+    # --- Which machine is this? ---------------------------------------------
+    # "development" or "production". Everything below that could be unsafe is
+    # decided from this rather than from a human remembering to flip a flag,
+    # because the failure mode of forgetting is a live platform serving session
+    # cookies over plain HTTP and accepting forged payment webhooks.
+    ENVIRONMENT: str = "development"
+
+    # --- Shared state, for when there is more than one worker ----------------
+    # Empty means "one worker, in-process state", which is right for a laptop.
+    # Set it and the cache and the rate limiter become shared — see
+    # `app/core/shared_state.py` for why the rate limiter in particular stops
+    # being a security control the moment there are two of it.
+    REDIS_URL: str = ""
+    #: How many worker processes this is being run with. Declared rather than
+    #: detected, because uvicorn and gunicorn announce it differently and a
+    #: guard that silently fails to notice is not a guard.
+    WORKERS: int = 1
+
+    # Session cookie. Never sent over plain HTTP in production — `secure=True`
+    # is forced below rather than left to a .env line, so the only way to ship
+    # an insecure cookie is to deliberately set ENVIRONMENT to something other
+    # than production.
     COOKIE_SECURE: bool = False
     COOKIE_SAMESITE: str = "lax"
+
+    @property
+    def is_production(self) -> bool:
+        return self.ENVIRONMENT.strip().lower() in {"production", "prod", "live"}
+
+    @model_validator(mode="after")
+    def _harden_for_production(self) -> "Settings":
+        """
+        In production, derive the settings that must not be got wrong.
+
+        `COOKIE_SECURE` was a plain default of False. That is right for
+        localhost and catastrophic anywhere else, and "remember to set it in
+        the production .env" is not a control — it is a hope. Deriving it from
+        ENVIRONMENT means the unsafe value is unreachable in production
+        regardless of what the .env says.
+        """
+        if self.is_production:
+            object.__setattr__(self, "COOKIE_SECURE", True)
+        return self
+
+    def unsafe_for_production(self) -> list[str]:
+        """
+        Everything that would be a real hole if this booted as a live service.
+
+        Returned rather than raised so the caller decides: `main.py` refuses to
+        start in production and merely warns in development, which keeps local
+        work friction-free while making it impossible to deploy these by
+        accident. Each entry is written to be actionable on its own.
+        """
+        problems: list[str] = []
+
+        if self.PAYMENT_WEBHOOK_SECRET in {"", "dev-webhook-secret-change-me"}:
+            problems.append(
+                "PAYMENT_WEBHOOK_SECRET is unset or still the placeholder. Anyone "
+                "who can reach the webhook URL could forge a 'payment captured' "
+                "event and be given goods for free. Copy the signing secret from "
+                "the payment provider's dashboard."
+            )
+        if self.PAYMENT_PROVIDER.strip().lower() == "sandbox":
+            problems.append(
+                "PAYMENT_PROVIDER is 'sandbox'. Checkout, withdrawals and savings "
+                "circles move numbers in the database and no real money. Set it to "
+                "'razorpay' and supply RAZORPAY_KEY_ID / RAZORPAY_KEY_SECRET."
+            )
+        if self.PAYMENT_PROVIDER.strip().lower() == "razorpay" and not (
+            self.RAZORPAY_KEY_ID and self.RAZORPAY_KEY_SECRET
+        ):
+            problems.append(
+                "PAYMENT_PROVIDER is 'razorpay' but RAZORPAY_KEY_ID / "
+                "RAZORPAY_KEY_SECRET are empty, so every payment will fail."
+            )
+        if not self.SMTP_HOST:
+            problems.append(
+                "SMTP_HOST is empty, so no email is delivered — it is written to "
+                "disk instead. Email verification gates signup, so nobody can "
+                "finish joining, and no password reset link ever arrives."
+            )
+        if not self.DOCUMENT_ENCRYPTION_KEY:
+            problems.append(
+                "DOCUMENT_ENCRYPTION_KEY is empty, so identity documents are "
+                "written to disk in the clear. Generate one with: python -m "
+                "app.core.docvault"
+            )
+        if self.JWT_SECRET_KEY in {"", "change-me", "secret", "dev"}:
+            problems.append("JWT_SECRET_KEY is unset or a placeholder — anyone can mint a session.")
+        # More than one worker without shared state is not a slow app — it is a
+        # rate limiter that no longer limits. Each worker counts to
+        # MAX_FAILED_LOGINS on its own, so the real allowance is that number
+        # times the worker count, and nothing anywhere reports it.
+        if self.WORKERS > 1 and not self.REDIS_URL:
+            problems.append(
+                f"WORKERS is {self.WORKERS} but REDIS_URL is empty. The rate limiter "
+                f"counts per process, so the {self.MAX_FAILED_LOGINS}-attempt lockout "
+                f"becomes {self.WORKERS * self.MAX_FAILED_LOGINS} attempts. Set REDIS_URL, "
+                "or run one worker."
+            )
+        if self.APP_BASE_URL.startswith("http://localhost"):
+            problems.append(
+                f"APP_BASE_URL is still {self.APP_BASE_URL}. Every emailed link — "
+                "verification, password reset — would point at a developer's laptop."
+            )
+        return problems
+
+    @property
+    def allowed_origins(self) -> list[str]:
+        """`ALLOWED_ORIGINS` split and cleaned. Empty entries are dropped so a
+        trailing comma in an env var cannot add an origin called ""."""
+        return [o.strip() for o in self.ALLOWED_ORIGINS.split(",") if o.strip()]
 
     class Config:
         env_file = ".env"

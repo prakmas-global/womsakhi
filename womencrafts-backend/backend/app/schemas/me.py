@@ -1,6 +1,6 @@
 from typing import Optional
 
-from pydantic import BaseModel, field_validator
+from pydantic import BaseModel, Field, field_validator
 
 from app.schemas.auth import UserResponse
 from app.schemas.community import CircleResponse
@@ -293,6 +293,34 @@ class NotificationPrefs(BaseModel):
     #: Text messages. Off by default: they reach her whether she has data or
     #: not, which is the point, and also the reason not to assume consent.
     sms: bool = False
+
+    # ── quiet hours ──────────────────────────────────────────────────────
+    # The Notifications rail has offered "Set your quiet hours" for a while
+    # against no fields at all, so the times it printed were decoration and
+    # the link landed on a page that structurally could not hold them.
+    #
+    # Times are minutes past midnight rather than a string, because the
+    # window wraps midnight far more often than not (21:30 → 07:00) and
+    # comparing "21:30" to "07:00" as text gets that backwards.
+    quiet_hours: bool = True
+    #: Minutes past midnight. Default 21:30.
+    quiet_start: int = Field(default=1290, ge=0, le=1439)
+    #: Minutes past midnight. Default 07:00.
+    quiet_end: int = Field(default=420, ge=0, le=1439)
+    #: Monday-first, seven entries. Every night by default.
+    quiet_days: list[bool] = Field(default_factory=lambda: [True] * 7)
+    #: Money arriving still wakes her — her own income is not an interruption.
+    quiet_allow_money: bool = True
+    #: The woman who runs her savings circle, and only about a payment due.
+    quiet_allow_circle_lead: bool = False
+
+    @field_validator("quiet_days")
+    @classmethod
+    def _seven_days(cls, v: list[bool]) -> list[bool]:
+        """Seven or nothing — a short list would silently mean "never"."""
+        if len(v) != 7:
+            raise ValueError("quiet_days must have exactly 7 entries, Monday first")
+        return v
 
 
 class ChangePasswordBody(BaseModel):

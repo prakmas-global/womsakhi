@@ -48,7 +48,7 @@ const parts = await p.evaluate((want) => {
   const c = document.querySelector("#content");
   const text = c.innerText;
   const hrefs = [...c.querySelectorAll("a")].map(a => a.getAttribute("href"));
-  const art = c.querySelector('img[src*="hero-learn-banner"]');
+  const art = c.querySelector('img[src*="lm-banner"]');
   return {
     heading: /Learn\. Grow\. Achieve\./.test(text),
     places: want.map(([label, href]) => ({

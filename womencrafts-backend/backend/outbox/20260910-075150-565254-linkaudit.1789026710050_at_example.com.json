@@ -1,0 +1,6 @@
+{
+  "to": "linkaudit.1789026710050@example.com",
+  "subject": "Confirm your WomSakhi email",
+  "text": "Hi Link,\n\nConfirm your WomSakhi email address:\nhttp://localhost:3100/verify-email?token=XkXdPrlP_kkjppDlmzNWfn-AN9tL0NZmPW1NNRUYwyk\n\nThis link expires in 24 hours.",
+  "sent_at": "2026-09-10T07:51:50.571297+00:00"
+}

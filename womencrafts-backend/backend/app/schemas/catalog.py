@@ -37,6 +37,11 @@ class CatalogProgram(BaseModel):
     status: str
     note: str
     bar: str
+    #: What is actually in this course. Empty for every seeded programme, and
+    #: the detail screen hides its "What is in it" section when it is — rather
+    #: than showing one hardcoded digital-marketing syllabus for every course
+    #: in the catalogue, which is what it did before.
+    curriculum: list[dict] = []
     # member-specific extras
     joined: bool = False
     seats_left: Optional[int] = None

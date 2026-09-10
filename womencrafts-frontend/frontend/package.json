@@ -28,6 +28,7 @@
     "check:keyboard": "node checks/keyboard.mjs",
     "check:feedback": "node checks/feedback.mjs",
     "check:toast": "node checks/toast.mjs",
+    "check:waiting": "node checks/waiting.mjs",
     "check:i18n:coverage": "node checks/i18n-coverage.mjs",
     "check:type-scale": "node checks/type-scale.mjs",
     "check:back-flow": "node checks/back-flow.mjs",

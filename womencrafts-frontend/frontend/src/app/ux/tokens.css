@@ -1880,6 +1880,8 @@
      than over it, so this is the one number that decides how much of the
      card's floor the picture may take. */
   --fb-art: 74px;
+  /* How tall the Learn banner is allowed to be. */
+  --fb-banner: 268px;
   --fb-h1: 2.6rem;
   --fb-tile: 54px;
   --fb-circle: 50px;
@@ -1912,12 +1914,148 @@
 @media (min-width: 1280px) and (max-height: 1010px) {
   .ux-fitboard { --fb-gap: 8px; --fb-pad: 12px; --fb-hero-y: 9px; --fb-clamp: 2;
                  --fb-chip: 11px; --fb-h1: 2.15rem; --fb-tile: 44px; --fb-circle: 44px;
-                 --fb-body: 12px; --fb-title: 17px; --fb-ring: 66px; --fb-stat: 26px; --fb-foot: 74px; }
+                 --fb-body: 12px; --fb-title: 17px; --fb-ring: 66px; --fb-stat: 26px; --fb-foot: 74px;  --fb-art: 62px;  --fb-banner: 172px; }
 }
 @media (min-width: 1280px) and (max-height: 850px) {
-  .ux-fitboard { --fb-gap: 5px; --fb-pad: 8px; --fb-hero-y: 2px; --fb-clamp: 2; --fb-lines: 1.28;
-                 --fb-chip: 10.5px; --fb-h1: 1.7rem; --fb-tile: 34px; --fb-circle: 34px;
-                 --fb-body: 11px; --fb-title: 15px; --fb-ring: 42px; --fb-stat: 22px; --fb-foot: 56px; }
+  .ux-fitboard { --fb-gap: 5px; --fb-pad: 7px; --fb-hero-y: 2px; --fb-clamp: 2; --fb-lines: 1.24;
+                 --fb-chip: 10px; --fb-h1: 1.45rem; --fb-tile: 34px; --fb-circle: 34px;
+                 --fb-body: 11px; --fb-title: 15px; --fb-ring: 42px; --fb-stat: 22px; --fb-foot: 56px;  --fb-art: 40px;  --fb-banner: 82px; }
+}
+
+/* ── The Earn board's own measures ─────────────────────────────────────────
+   Earn is drawn at 1586x992, which falls under `max-height: 1010px` — so the
+   SECOND tier here carries the numbers measured off the drawing, and the
+   first is the more generous one a taller monitor gets. Read the other way
+   round it would ship the drawing's proportions only to unusually tall
+   screens.
+
+   Measured off `Earn-assets/…11_43_40 PM.png`: a 157px band, four 308px
+   columns on a 14px gutter over an 18px row gutter, cards padded 14/18 with
+   60px icon tiles at an 18px radius, and pills 34px tall on an 8px gap. The
+   pills give up 4px of that height so the band can keep the whole of the
+   handwritten quote; at 30px they still clear the 24px minimum target size
+   by six.
+
+   `--fb-gap` and `--fb-pad` are overridden rather than read, because the
+   shared `.ux-fitboard` tiers are pitched for Learn and Work — 8px and 12px
+   at this height, where Earn is drawn at 14px and 18px. Overriding them here
+   leaves those two boards untouched.
+
+   Every measure steps DOWN as the window gets shorter, and the four tiers are
+   monotonic in all twenty-one of them. That is not decoration: an earlier
+   pass had the 768px band taller than the 900px one, which no screenshot
+   catches because the two are never on screen together. */
+.ux-earnboard {
+  --fb-gap: 16px;
+  --fb-earn-rowgap: 16px;
+  --fb-earn-hero-gap: 4px;
+  --fb-pad: 18px;
+  --fb-earn-pad-y: 15px;
+  --fb-earn-band: 186px;
+  --fb-earn-band-y: 24px;
+  --fb-earn-h1: 2.75rem;
+  --fb-earn-lead: 23px;
+  --fb-earn-count: 17px;
+  --fb-earn-tile: 64px;
+  --fb-earn-title: 19px;
+  --fb-earn-sub: 15.5px;
+  --fb-earn-chip: 14px;
+  --fb-earn-chip-h: 32px;
+  --fb-earn-chip-x: 14px;
+  --fb-earn-chip-gap: 7px;
+  --fb-earn-chip-top: 26px;
+  --fb-earn-card-min: 262px;
+  --fb-earn-art: 126px;
+  --fb-earn-wide: 72px;
+}
+@media (min-width: 1024px) {
+  .ux-earnboard { --fb-earn-wide-cols: 1fr 1fr; }
+  /* The last row is a strip only once there is width for one; below this it
+     stacks like every other card and takes its padding back. */
+  .ux-earnboard [data-wide-head] { padding-block: 0; }
+}
+/* The drawing's own size. */
+@media (min-width: 1280px) and (max-height: 1010px) {
+  .ux-earnboard {
+    --fb-gap: 14px;
+    --fb-earn-rowgap: 14px;
+    --fb-earn-hero-gap: 4px;
+    --fb-pad: 18px;
+    --fb-earn-pad-y: 14px;
+    --fb-earn-band: 157px;
+    --fb-earn-band-y: 22px;
+    --fb-earn-h1: 2.3rem;
+    --fb-earn-lead: 20px;
+    --fb-earn-count: 15px;
+    --fb-earn-tile: 60px;
+    --fb-earn-title: 18px;
+    --fb-earn-sub: 15px;
+    --fb-earn-chip: 14px;
+    --fb-earn-chip-h: 30px;
+    --fb-earn-chip-x: 13px;
+    --fb-earn-chip-gap: 6px;
+    --fb-earn-chip-top: 16px;
+    --fb-earn-card-min: 230px;
+    --fb-earn-art: 110px;
+    --fb-earn-wide: 60px;
+  }
+}
+/* A 1440x900 laptop — 92px shorter than the drawing, which is more slack than
+   the board has. Without this step the tier above overflowed by 64px at the
+   bottom of its own 160px range. */
+@media (min-width: 1280px) and (max-height: 940px) {
+  .ux-earnboard {
+    --fb-gap: 12px;
+    --fb-earn-rowgap: 9px;
+    --fb-earn-hero-gap: 4px;
+    --fb-pad: 15px;
+    --fb-earn-pad-y: 12px;
+    --fb-earn-band: 92px;
+    --fb-earn-band-y: 11px;
+    --fb-earn-h1: 2rem;
+    --fb-earn-lead: 18px;
+    --fb-earn-count: 14px;
+    --fb-earn-tile: 54px;
+    --fb-earn-title: 17px;
+    --fb-earn-sub: 13.5px;
+    --fb-earn-chip: 13px;
+    --fb-earn-chip-h: 28px;
+    --fb-earn-chip-x: 11px;
+    --fb-earn-chip-gap: 6px;
+    --fb-earn-chip-top: 14px;
+    --fb-earn-card-min: 190px;
+    --fb-earn-art: 92px;
+    --fb-earn-wide: 56px;
+  }
+}
+/* A 1366x768 laptop, 224px short. Everything steps down together; nothing is
+   dropped, and the pills stop at 26px rather than the bare 24, because a scale
+   that lands exactly on a limit crosses it the first time a translation runs
+   long. */
+@media (min-width: 1280px) and (max-height: 850px) {
+  .ux-earnboard {
+    --fb-gap: 9px;
+    --fb-earn-rowgap: 8px;
+    --fb-earn-hero-gap: 3px;
+    --fb-pad: 12px;
+    --fb-earn-pad-y: 9px;
+    --fb-earn-band: 74px;
+    --fb-earn-band-y: 7px;
+    --fb-earn-h1: 1.7rem;
+    --fb-earn-lead: 15px;
+    --fb-earn-count: 12.5px;
+    --fb-earn-tile: 46px;
+    --fb-earn-title: 15.5px;
+    --fb-earn-sub: 12.5px;
+    --fb-earn-chip: 12px;
+    --fb-earn-chip-h: 26px;
+    --fb-earn-chip-x: 9px;
+    --fb-earn-chip-gap: 5px;
+    --fb-earn-chip-top: 10px;
+    --fb-earn-card-min: 156px;
+    --fb-earn-art: 76px;
+    --fb-earn-wide: 46px;
+  }
 }
 
 /* ── When the soft treatment has to stand down ────────────────────────────
@@ -2007,6 +2145,12 @@
   --ux-band-edge: #ecdff0;
   --ux-band-learn: linear-gradient(102deg, #fdfbff 0%, #fbf5fb 38%, #f9eef8 58%, #f8e9f5 100%);
   --ux-band-work: linear-gradient(102deg, #fdfbff 0%, #fbf5fc 34%, #f9eef8 54%, #f8e9f4 100%);
+  /* Earn's band is a lavender wash rather than Learn's and Work's pink one —
+     sampled off `Earn-assets/…11_43_40 PM.png` at #e7dcfd / #f7e7fd / #f3f1fe.
+     It runs under the banner photograph, and the two have to meet without a
+     seam where the photo's left edge fades out, so the stops are pitched at
+     the pale lavender the artwork's own ground carries. */
+  --ux-band-earn: linear-gradient(104deg, #f0e5fe 0%, #f7ecfd 34%, #faeafc 62%, #f4f0fe 100%);
   /* The foot strip turns lilac where Sakhi stands, so her art's own pale
      ground has nothing of the wrong pink to show against. */
   --ux-band-foot: linear-gradient(96deg, #fdfaff 0%, #fdf3f8 40%, #fbedf5 66%, #f8f4fe 100%);

@@ -13,7 +13,9 @@ from app.core.config import settings
 from app.core.payments.base import (
     ALL_METHODS,
     METHOD_LABELS,
+    PaymentConfigError,
     PaymentProvider,
+    PaymentProviderError,
     ProviderOrder,
     ProviderPayment,
     ProviderRefund,
@@ -41,7 +43,9 @@ def get_provider() -> PaymentProvider:
 __all__ = [
     "ALL_METHODS",
     "METHOD_LABELS",
+    "PaymentConfigError",
     "PaymentProvider",
+    "PaymentProviderError",
     "ProviderOrder",
     "ProviderPayment",
     "ProviderRefund",

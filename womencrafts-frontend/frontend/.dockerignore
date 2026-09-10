@@ -1,0 +1,14 @@
+# Anything not needed to BUILD the app. Keeps the image small and, more
+# importantly, keeps secrets and local state out of it entirely.
+node_modules
+.next
+.git
+.env*
+!.env.example
+npm-debug.log*
+checks
+*.md
+.DS_Store
+coverage
+playwright-report
+test-results

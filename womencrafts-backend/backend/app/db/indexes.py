@@ -331,6 +331,11 @@ INDEXES: dict[str, list[IndexModel]] = {
     "content_items": [
         # Her library, newest first.
         IndexModel([("created_at", DESCENDING)], name="recent"),
+        # Every read of this collection filters on status before sorting by
+        # date — her library asks for Published, the admin list asks for one
+        # tab. With only the date index that was a scan of every item to throw
+        # most of them away.
+        IndexModel([("status", ASCENDING), ("created_at", DESCENDING)], name="status_recent"),
     ],
     "invoices": [
         IndexModel([("status", ASCENDING)], name="status"),
@@ -354,6 +359,19 @@ INDEXES: dict[str, list[IndexModel]] = {
     "wallet_transactions": [
         # the balance aggregation and the ledger screen both read this
         IndexModel([("user_id", ASCENDING), ("created_at", DESCENDING)], name="user_ledger"),
+    ],
+    # Her inbox: buyer questions, circle threads, staff replies.
+    #
+    # This collection had no entry here at all, while the cluster carried a
+    # `member_id_1` index somebody added by hand. So the live database was fine
+    # and a fresh deployment would have had nothing — the drift was invisible
+    # precisely because it only showed up somewhere nobody was looking. Named
+    # to match what is already there, so this is idempotent against both.
+    #
+    # `member_id` alone is enough: `kind` narrows a handful of rows per member,
+    # and a compound index that saves nothing still costs on every write.
+    "member_conversations": [
+        IndexModel([("member_id", ASCENDING)], name="member_id_1"),
     ],
     "support_requests": [
         IndexModel([("user_id", ASCENDING), ("status", ASCENDING)], name="user_status"),

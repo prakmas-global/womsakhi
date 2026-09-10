@@ -1,0 +1,6 @@
+{
+  "to": "vaultcheck+33da3b55@example.com",
+  "subject": "Confirm your WomSakhi email",
+  "text": "Hi Vault,\n\nConfirm your WomSakhi email address:\nhttp://localhost:3100/verify-email?token=QKau3pmU2yRB0-ToXuC7NV4eCpxbqcGkR_ieDxpSyeM\n\nThis link expires in 24 hours.",
+  "sent_at": "2026-08-30T10:13:39.231059+00:00"
+}

@@ -40,3 +40,6 @@ logs/
 # Backups
 *.bak
 *.old
+
+# Local deploy runbook — real project IDs and console paths. Never committed.
+DEPLOYMENT.local.md

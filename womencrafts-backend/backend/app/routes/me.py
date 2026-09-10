@@ -653,7 +653,9 @@ async def intake(payload: IntakeRequest, me: dict = Depends(require_active_membe
         )
     ]
 
-    result = rank(payload.text, payload.needs, services, programs)
+    # Same forward pass, same reason — and this one runs it twice over the
+    # whole catalogue.
+    result = await asyncio.to_thread(rank, payload.text, payload.needs, services, programs)
 
     # Remember what she asked for — this is the context an assistant will use.
     await get_database()[UserModel.collection_name].update_one(
@@ -857,7 +859,13 @@ async def library(
     # outright; meaning only decides the rest.
     if q and q.strip():
         needle = q.strip().lower()
-        scores = semantic.score(q.strip(), docs)
+        # Off the event loop.
+        #
+        # `semantic.score` is a PyTorch forward pass. Run inline it froze the
+        # whole worker: measured, a concurrent request that normally answers in
+        # 0.9ms took 5,304ms while one cold search ran, and 564ms warm. One
+        # woman searching the library stopped every other woman using the app.
+        scores = await asyncio.to_thread(semantic.score, q.strip(), docs)
         if scores is None:
             docs = [
                 d for d in docs
@@ -962,16 +970,16 @@ async def set_notification_prefs(payload: NotificationPrefs, me: dict = Depends(
 
 @router.post("/settings/password", response_model=MessageResponse, summary="Change my password")
 async def change_my_password(payload: ChangePasswordBody, me: dict = Depends(require_active_member)):
-    from app.core.security import hash_password, verify_password
+    from app.core.security import hash_password, verify_password, hash_password_async, verify_password_async
 
-    if not verify_password(payload.current_password, me["hashed_password"]):
+    if not await verify_password_async(payload.current_password, me["hashed_password"]):
         raise HTTPException(status.HTTP_400_BAD_REQUEST, "That isn't your current password")
     if payload.current_password == payload.new_password:
         raise HTTPException(status.HTTP_400_BAD_REQUEST, "Please choose a different password")
 
     await get_database()[UserModel.collection_name].update_one(
         {"_id": me["_id"]},
-        {"$set": {"hashed_password": hash_password(payload.new_password),
+        {"$set": {"hashed_password": await hash_password_async(payload.new_password),
                   "updated_at": datetime.now(timezone.utc)}},
     )
     return MessageResponse(message="Your password has been changed.")
@@ -1160,17 +1168,22 @@ def _reached(progress: int, sessions_attended: int, total: int) -> int:
 @router.get("/programs/{program_id}/detail", response_model=ProgramDetail, summary="One programme, in full")
 async def program_detail(program_id: str, me: dict = Depends(require_active_member)):
     uid = str(me["_id"])
-    program = await _programs().find_one({"_id": to_object_id(program_id)})
+    # Three independent lookups, awaited one after another, cost three round
+    # trips to Atlas — about 75ms of the 84ms this endpoint took. Neither the
+    # enrolment nor the certificate needs the programme: both are keyed on her
+    # id and the path parameter, which are known before any of them run.
+    program, enrollment, certificate = await asyncio.gather(
+        _programs().find_one({"_id": to_object_id(program_id)}),
+        _enrollments().find_one({"user_id": uid, "program_id": program_id}),
+        get_database()[CertificateModel.collection_name].find_one(
+            {"user_id": uid, "program_id": program_id, "revoked": {"$ne": True}}
+        ),
+    )
     if not program:
         raise HTTPException(status.HTTP_404_NOT_FOUND, "That programme doesn't exist")
 
-    enrollment = await _enrollments().find_one({"user_id": uid, "program_id": program_id})
     joined_at = enrollment.get("created_at") if enrollment else None
     attended = int((enrollment or {}).get("sessions_attended") or 0)
-
-    certificate = await get_database()[CertificateModel.collection_name].find_one(
-        {"user_id": uid, "program_id": program_id, "revoked": {"$ne": True}}
-    )
 
     return ProgramDetail(
         id=str(program["_id"]),

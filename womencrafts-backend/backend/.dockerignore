@@ -1,0 +1,21 @@
+# Secrets and local state must never enter the image. `.env` first and
+# loudest: it holds the Atlas URI, the JWT key and the document-encryption
+# key, and anyone who can pull the image can read every layer of it.
+.env
+.env.*
+!.env.example
+venv
+.venv
+__pycache__
+*.pyc
+.git
+.pytest_cache
+# Uploaded files live in a bucket, not in the image. `media/` alone is 6.4 MB
+# of other people's photographs and `private_media/` is identity documents.
+media
+private_media
+outbox
+docs
+*.md
+bench.json
+.DS_Store

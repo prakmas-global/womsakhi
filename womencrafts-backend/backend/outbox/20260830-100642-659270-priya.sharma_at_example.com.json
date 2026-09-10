@@ -1,0 +1,6 @@
+{
+  "to": "priya.sharma@example.com",
+  "subject": "Reset your WomSakhi password",
+  "text": "You asked to reset your WomSakhi password. Open this link within 24 hours to set a new password: http://localhost:3100/reset-password?token=wtA7y5Cgkcwwu0R9zYV77tK_7Io5ZnfnKQiW3VVp060",
+  "sent_at": "2026-08-30T10:06:42.667613+00:00"
+}

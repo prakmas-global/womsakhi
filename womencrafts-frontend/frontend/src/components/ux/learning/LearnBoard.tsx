@@ -165,64 +165,42 @@ const HERO_INK_2 = v("--ux-band-ink-2");
 const HERO_BRAND = v("--ux-band-brand");
 
 function Hero() {
+  /*
+    `lm.png`, whole and unmodified — the script, the woman and the quote card
+    exactly as supplied, edge to edge across the band.
+
+    It carries no headline of its own, so the words that were live text over it
+    move below it: this app runs in eighteen languages and is read aloud, and
+    text baked into a picture cannot be translated or spoken. The picture is
+    the banner; the sentence under it is still a sentence.
+  */
   return (
-    <section className="ux-sq relative isolate overflow-hidden rounded-[18px]"
-             style={{ border: `1px solid ${v("--ux-band-edge")}`,
-                      background: v("--ux-band-learn") }}>
-      {/*
-        `lm.png`, whole — the script, the woman and the quote card in one
-        strip. It needed two pieces when it was cut from `larnmainasset.png`,
-        because that file has the headline, the paragraph and the four chips
-        baked into it as pixels and the "Small Steps Big Changes" script
-        overlapped them horizontally, so no single rectangle separated the two.
-        This file carries no baked copy, so one crop does it.
-
-        The handwriting stays a picture, as it does on the Work board: the
-        script and the quote inside the card are lettering no font reproduces.
-        Everything that IS type — the headline, the paragraph, the four chips —
-        is live text below, because this app is translated into eighteen
-        languages and read aloud, and a sentence baked into a picture cannot be
-        translated, selected or spoken.
-      */}
+    <section className="ux-sq relative isolate shrink-0 overflow-hidden rounded-[18px]"
+             style={{ border: `1px solid ${v("--ux-band-edge")}` }}>
       {/* eslint-disable-next-line @next/next/no-img-element */}
-      <img
-        src="/ux/art/hero-learn-banner.webp"
-        alt=""
-        aria-hidden
-        decoding="async"
-        fetchPriority="high"
-        width={1600}
-        height={418}
-        className="pointer-events-none absolute inset-y-0 end-0 hidden h-full w-[52%] object-cover object-center lg:block"
-        /* A 3% fade, not 14%. The art's own ground at this edge is the same soft
-           pink as the band behind it, so it needs only enough to kill the seam —
-           and a longer fade was eating the "Small Steps Big Changes" script,
-           which sits in the first 90px of the picture. */
-        style={{ maskImage: "linear-gradient(to right, transparent 0%, #000 3%)",
-                 WebkitMaskImage: "linear-gradient(to right, transparent 0%, #000 3%)" }}
-      />
+      <img src="/ux/art/lm-banner-v2.webp"
+           alt="A woman smiling at her laptop, beside the words “Small steps, big changes” and “Learning is not just for today, but for the life you dream about.”"
+           decoding="async" fetchPriority="high" width={1900} height={648}
+           /* Capped, not free-running. At its own 2.93:1 the picture is 540px
+              tall on a 1580 board — a poster rather than a banner, and it put
+              everything else below the fold. `object-cover` at a fixed height
+              keeps the full width of it, which is where the script, the woman
+              and the quote card all are, and trims only the empty ceiling and
+              the desk. Height steps down with the window like every other
+              measure on this board. */
+           className="block w-full object-cover"
+           style={{ height: "var(--fb-banner, 268px)", objectPosition: "center 42%" }} />
 
-      <div className="relative p-5 sm:p-6 lg:ps-8"
-           style={{ paddingBlock: "var(--fb-hero-y, 26px)" }}>
-        <p className="text-2xs font-bold uppercase tracking-[0.16em]" style={{ color: HERO_BRAND }}>
-          Learn
-        </p>
-        <h1 className="mt-1.5 max-w-[32rem] text-[clamp(1.7rem,2.9vw,2.3rem)] font-extrabold leading-[1.08] tracking-[-0.035em]"
-            style={{ color: HERO_INK, textWrap: "balance" }}>
-          Learn. Grow. Achieve.
-        </h1>
-        <p className="mt-2 max-w-[33rem] text-smd leading-relaxed" style={{ color: HERO_INK_2 }}>
-          Explore courses, connect with mentors, earn certificates and share your knowledge.
-          Everything you need to build a brighter you — in one place.
-        </p>
-
-        {/* Wider than the paragraph above it, as drawn: the row runs on under
-            the left edge of the picture, where the art is only soft colour. */}
-        {/* Wider than the paragraph above it, as drawn — the row runs on under
-            the left edge of the picture, where the art is only soft colour —
-            but it stops before she does. Held to 57% and spaced at 12px, all
-            four fit on one line at 1440 as well as at the board's own 1586. */}
-        <ul className="mt-3 flex flex-wrap items-center gap-x-3 gap-y-1.5 lg:max-w-[50%]"
+      <div className="flex flex-wrap items-center gap-x-6 gap-y-2 px-5 py-3"
+           style={{ background: v("--ux-band-learn"), borderTop: `1px solid ${v("--ux-band-edge")}` }}>
+        <div className="min-w-0 flex-1">
+          <p className="text-2xs font-bold uppercase tracking-[0.16em]" style={{ color: HERO_BRAND }}>Learn</p>
+          <h1 className="mt-0.5 font-extrabold leading-[1.1] tracking-[-0.03em]"
+              style={{ fontSize: "clamp(1.25rem, 2.1vw, 1.7rem)", color: HERO_INK }}>
+            Learn. Grow. Achieve.
+          </h1>
+        </div>
+        <ul className="flex flex-wrap items-center gap-x-4 gap-y-1.5"
             style={{ fontSize: "var(--fb-chip, 12px)" }}>
           {PROMISES.map(([icon, label]) => (
             <li key={label} className="flex items-center gap-1.5">
@@ -232,13 +210,6 @@ function Hero() {
           ))}
         </ul>
       </div>
-
-      {/* Below `lg` the picture cannot sit beside the words, so it sits under
-          them at its own aspect rather than being cropped to a letterbox — the
-          quote card is content, and cover would take it off the edge. */}
-      {/* eslint-disable-next-line @next/next/no-img-element */}
-      <img src="/ux/art/hero-learn-banner.webp" alt="" aria-hidden loading="lazy" decoding="async"
-           width={1720} height={587} className="block w-full lg:hidden" />
     </section>
   );
 }

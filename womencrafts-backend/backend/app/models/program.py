@@ -104,4 +104,7 @@ class ProgramModel:
             "status": doc.get("status", "Draft"),
             "note": doc.get("note", ""),
             "bar": doc.get("bar", "#8b5cf6"),
+            # Empty until somebody writes one. The detail screen hides the
+            # section rather than filling it with another course's lessons.
+            "curriculum": doc.get("curriculum") or [],
         }

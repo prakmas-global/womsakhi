@@ -1,9 +1,9 @@
 "use client";
 
-import { Hub } from "@/components/ux/nav/Hub";
+import { EarnBoard } from "@/components/ux/earn/EarnBoard";
 
-/** The earn section's map — see `components/ux/nav/Hub.tsx` for why it is a
- *  page rather than a menu. */
-export default function EarnHub() {
-  return <Hub id="earn" />;
+/** The Earn section's landing screen — built from `Womsakhi-user-ux/Earn-assets`.
+ *  It stands in for the generic `Hub` here and carries all ten destinations. */
+export default function EarnPage() {
+  return <EarnBoard />;
 }

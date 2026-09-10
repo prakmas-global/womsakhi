@@ -11,6 +11,19 @@ import type { NextConfig } from "next";
 const nextConfig: NextConfig = {
 
   /**
+   * Build a self-contained server for the container image.
+   *
+   * `.next/standalone` carries its own trimmed `node_modules` and a `server.js`
+   * to run instead of `next start`, which takes the runtime image from ~1.4 GB
+   * to ~200 MB. Checked against `node_modules/next/dist/docs/` for 16.2.7:
+   * the minimal server does NOT copy `public/` or `.next/static/` itself, so
+   * the Dockerfile copies both in explicitly. Miss that step and the app boots
+   * perfectly and serves every page without CSS or images — a failure that
+   * looks like a styling bug rather than a packaging one.
+   */
+  output: "standalone",
+
+  /**
    * Drop `X-Powered-By: Next.js` from every response.
    *
    * Verified present before the change (`curl -I` on /signin returned it) and

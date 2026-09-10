@@ -20,6 +20,7 @@ const CHECKS = [
   ["fold",     "node checks/rail-fold.mjs"],
   ["learn",    "node checks/learn-board.mjs"],
   ["work",     "node checks/work-board.mjs"],
+  ["earn",     "node checks/earn-board.mjs"],
   ["banner",   "node checks/home-banner.mjs"],
   ["persist",  "node checks/nav-persist.mjs"],
   ["chrome",   "node checks/chrome-leak.mjs"],
@@ -27,6 +28,9 @@ const CHECKS = [
   ["keyboard", "node checks/keyboard.mjs"],
   ["feedback", "node checks/feedback.mjs"],
   ["toast",    "node checks/toast.mjs"],
+  // What she sees BEFORE the toast — the gap between pressing something and
+  // it being done. Sits beside feedback/toast because it is the same subject.
+  ["waiting",  "node checks/waiting.mjs"],
   ["states",   "node checks/states.mjs"],
   ["api",      "node checks/api.mjs"],
   ["screens",  "node checks/screens.mjs"],

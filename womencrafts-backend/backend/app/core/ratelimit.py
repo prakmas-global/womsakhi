@@ -24,6 +24,8 @@ from collections import deque
 
 from fastapi import HTTPException, Request, status
 
+from app.core import shared_state
+
 #: Per identifier: strict. Six goes a minute at one account is generous for a
 #: woman typing on a phone keyboard and useless for guessing a password.
 SIGN_IN = (6, 60.0)
@@ -90,20 +92,52 @@ def _client_ip(request: Request) -> str:
     return request.client.host if request.client else "unknown"
 
 
-def check(
+async def check(
     request: Request,
     bucket: str,
     identifier: str,
     limit: tuple[int, float],
     ip_limit: tuple[int, float] | None = None,
 ) -> None:
-    """Raise 429 if this identifier — or, far more loosely, this IP — has had too many goes."""
+    """
+    Raise 429 if this identifier — or, far more loosely, this IP — has had too
+    many goes.
+
+    ── Shared when it can be, in-process when it cannot ─────────────────────
+    Counting in a module-level dict is correct for one worker and a security
+    hole for two: `MAX_FAILED_LOGINS = 5` across four workers is up to twenty
+    password attempts before a lockout, because each worker counts to five by
+    itself. Nothing reports that. The setting still reads five.
+
+    So with `REDIS_URL` set the counters are shared and the limit means what it
+    says however many workers there are. Without it, or if Redis does not
+    answer in time, this falls back to exactly the behaviour it always had —
+    degraded but working, because a slow Redis must never become a failed
+    sign-in.
+
+    The shared counter is a FIXED window (INCR + EXPIRE) where the local one is
+    sliding. That is a real difference: at a window boundary a fixed window can
+    allow up to two windows' worth in quick succession. It is the standard
+    trade for a distributed limiter, and it is the right one here — the
+    alternative is a sorted-set implementation whose failure modes are far
+    worse than a brief doubling of an already generous allowance.
+    """
     now = time.monotonic()
     checks = [(f"{bucket}:id:{identifier.lower()}", limit)]
     if ip_limit:
         checks.append((f"{bucket}:ip:{_client_ip(request)}", ip_limit))
 
     for key, (attempts, window) in checks:
+        shared = await shared_state.hit(f"rl:{key}", window)
+        if shared is not None:
+            if shared > attempts:
+                raise HTTPException(
+                    status.HTTP_429_TOO_MANY_REQUESTS,
+                    f"Too many tries. Wait {int(window)} seconds and try again.",
+                    headers={"Retry-After": str(int(window))},
+                )
+            continue
+
         seen = _hits.setdefault(key, deque())
         # Drop what has aged out. The deque is ordered, so this stops at the
         # first live entry rather than walking the whole thing.
@@ -119,7 +153,7 @@ def check(
         seen.append(now)
 
 
-def forget(bucket: str, identifier: str) -> None:
+async def forget(bucket: str, identifier: str) -> None:
     """
     Clear an identifier's budget after a success.
 
@@ -127,4 +161,5 @@ def forget(bucket: str, identifier: str) -> None:
     right is still two tries from being locked out of her own account for a
     minute — punished for eventually succeeding.
     """
+    await shared_state.forget(f"rl:{bucket}:id:{identifier.lower()}")
     _hits.pop(f"{bucket}:id:{identifier.lower()}", None)
