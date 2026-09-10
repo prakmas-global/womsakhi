@@ -1715,7 +1715,7 @@
 @media (min-width: 1280px) and (max-height: 1010px) {
   .ux-fitboard { --fb-gap: 8px; --fb-pad: 13px; --fb-hero-y: 10px; --fb-clamp: 2;
                  --fb-chip: 11px; --fb-h1: 2.15rem; --fb-tile: 44px; --fb-circle: 44px;
-                 --fb-body: 12px; --fb-title: 17px; --fb-ring: 60px; --fb-stat: 26px; --fb-foot: 74px; }
+                 --fb-body: 12px; --fb-title: 17px; --fb-ring: 66px; --fb-stat: 26px; --fb-foot: 74px; }
 }
 @media (min-width: 1280px) and (max-height: 850px) {
   .ux-fitboard { --fb-gap: 5px; --fb-pad: 9px; --fb-hero-y: 3px; --fb-clamp: 2; --fb-lines: 1.28;

@@ -517,21 +517,35 @@ function Ring({ pct }: { pct: number }) {
       <svg viewBox="0 0 70 70" className="h-full w-full -rotate-90" aria-hidden>
         <defs>
           <linearGradient id="ux-work-ring" x1="0" y1="0" x2="1" y2="1">
-            {/* Teal into blue, and it stops there. It ran on into the brand
-                violet, which the board's ring does not do — the whole arc is
-                cool, and the violet made the last third read as a third
-                colour rather than the end of the second. */}
-            <stop offset="0%" stopColor="#2fc3ae" />
-            <stop offset="46%" stopColor="#3b93d4" />
-            <stop offset="100%" stopColor="#4a68cf" />
+            {/*
+              Teal where the arc STARTS, blue where it ends.
+
+              The svg is rotated -90° so the arc begins at twelve o'clock, and
+              the gradient rotates with it — which put the blue at the top and
+              the teal at the bottom, exactly backwards from the board. The
+              stops are reversed to compensate.
+
+              And it stops at blue. It used to run on into the brand violet,
+              which the board's ring does not do: the whole arc is cool, and
+              the violet made the last third read as a third colour rather
+              than the end of the second.
+            */}
+            <stop offset="0%" stopColor="#4a68cf" />
+            <stop offset="54%" stopColor="#3b93d4" />
+            <stop offset="100%" stopColor="#2fc3ae" />
           </linearGradient>
         </defs>
-        <circle cx="35" cy="35" r={r} fill="none" strokeWidth="10" stroke={v("--ux-brand-tint-2")} />
-        <circle cx="35" cy="35" r={r} fill="none" strokeWidth="10" strokeLinecap="round"
+        <circle cx="35" cy="35" r={r} fill="none" strokeWidth="8.5" stroke={v("--ux-brand-tint-2")} />
+        <circle cx="35" cy="35" r={r} fill="none" strokeWidth="8.5" strokeLinecap="round"
                 stroke="url(#ux-work-ring)" strokeDasharray={`${(c * pct) / 100} ${c}`} />
       </svg>
-      <span className="absolute inset-0 grid place-items-center text-smd font-extrabold"
-            style={{ color: v("--ux-ink") }}>
+      {/* Sized off the ring, not fixed. At a fixed 15px the figure was wider
+          than the hole and sat across the arc on both sides — measured at
+          1440, where the ring steps down a size and the text did not. */}
+      <span className="absolute inset-0 grid place-items-center font-extrabold leading-none"
+            style={{ color: v("--ux-ink"),
+                     fontSize: "calc(var(--fb-ring, 72px) * 0.2)",
+                     letterSpacing: "-0.02em" }}>
         {pct}%
       </span>
     </div>
@@ -548,7 +562,13 @@ function HelpStrip() {
        clipping layer of its own underneath. */
     <section className="ux-sq relative isolate shrink-0 rounded-[18px]"
              style={{ border: "1px solid #eee0ee",
-                      background: "linear-gradient(96deg, #fdf9ff 0%, #fdf3f8 46%, #fbeef6 100%)" }}>
+                      /* Pink through the middle and back to lilac at the end.
+                         It ran pink all the way, and Sakhi's art has a pale
+                         lilac ground of its own — so however softly her edges
+                         were masked, a rectangle of the wrong pink showed
+                         around her. The board's strip turns lilac exactly
+                         where she stands, which is why it does not. */
+                      background: "linear-gradient(96deg, #fdfaff 0%, #fdf3f8 40%, #fbedf5 66%, #f8f4fe 100%)" }}>
       <span aria-hidden className="pointer-events-none absolute inset-0 overflow-hidden rounded-[18px]">
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img src="/ux/art/leaves-pink.webp" alt="" aria-hidden loading="lazy" decoding="async"
@@ -557,25 +577,34 @@ function HelpStrip() {
                 opacity it was a pink haze; the board puts a readable plant just
                 to the left of "Need help getting started?" and leaves the rest
                 of the strip clean. The source is cropped to that cluster. */
-             className="absolute inset-y-0 start-[31%] hidden h-full w-[21%] object-cover opacity-55 lg:block"
-             style={{ maskImage: "linear-gradient(to right, transparent, #000 18%, #000 74%, transparent)",
-                      WebkitMaskImage: "linear-gradient(to right, transparent, #000 18%, #000 74%, transparent)" }} />
+             /* The gap the board leaves between the quote and "Need help
+                getting started?", and nothing beyond it. At 21% wide and
+                further right it ran under the heading and the heading lost
+                its ground. */
+             className="absolute inset-y-0 start-[26%] hidden h-full w-[11%] object-cover opacity-50 lg:block"
+             style={{ maskImage: "linear-gradient(to right, transparent, #000 22%, #000 78%, transparent)",
+                      WebkitMaskImage: "linear-gradient(to right, transparent, #000 22%, #000 78%, transparent)" }} />
       </span>
 
-      <div className="relative flex flex-wrap items-center gap-x-5 gap-y-3 px-5 lg:pe-[250px]"
+      <div className="relative flex flex-wrap items-center gap-x-5 gap-y-3 px-5 lg:pe-[272px]"
            style={{ minHeight: "var(--fb-foot, 78px)",
                     paddingBlock: "calc(var(--fb-pad) - 4px)" }}>
         <div className="flex min-w-0 flex-1 items-start gap-3">
-          {/* Outline, not solid. A bulb is mostly its rays and its filament;
-              filled it becomes an amber blob and stops being a bulb. */}
-          <SolidIcon name="Lightbulb" size={26} ink="#e09a12" knockout="transparent" solid={false} />
+          {/* Outline at a heavy weight. A bulb is mostly its glass and its
+              rays; filled it collapses into an amber blob and stops reading as
+              a lamp at all — the one glyph on this board where solid is the
+              wrong answer. */}
+          <SolidIcon name="Lightbulb" size={26} ink="#e59a10" knockout="transparent" solid={false} />
           <div className="min-w-0">
             {/* The board reads "towds". Shipping a typo because a wireframe
                 had one is not fidelity, so it says "towards". */}
-            <p className="text-smd italic leading-snug" style={{ color: HERO_INK }}>
+            {/* One line, as drawn. At 15px it broke after "stronger," and the
+                strip stopped being a strip. */}
+            <p className="italic leading-snug"
+               style={{ color: HERO_INK, fontSize: "var(--fb-body, 13.5px)" }}>
               &ldquo;Every opportunity is a step towards a stronger, brighter you.&rdquo;
             </p>
-            <p className="mt-1 text-xs font-semibold" style={{ color: HERO_INK_2 }}>— WomSakhi</p>
+            <p className="mt-1 text-2xs font-semibold" style={{ color: HERO_INK_2 }}>— WomSakhi</p>
           </div>
         </div>
 
@@ -613,14 +642,18 @@ function HelpStrip() {
       {/* eslint-disable-next-line @next/next/no-img-element */}
       <img src="/ux/art/sakhi-ask-me.webp" alt="" aria-hidden loading="lazy" decoding="async"
            width={860} height={408}
-           className="pointer-events-none absolute bottom-0 end-[54px] hidden h-[128%] w-[196px] object-contain object-bottom lg:block"
+           className="pointer-events-none absolute bottom-0 end-[84px] hidden h-[112%] w-[186px] object-contain object-bottom lg:block"
            /* Two masks, intersected: one dissolves her left edge into the
               strip, the other dissolves the part of her that rises above it.
               Without the second, the art's own pale background drew a hard
               rectangle across the bottom of the card overhead — most visible
               in dark mode, where the card behind her is nearly black. */
-           style={{ maskImage: "linear-gradient(to right, transparent 0%, #000 14%), linear-gradient(to bottom, transparent 0%, #000 30%)",
-                    WebkitMaskImage: "linear-gradient(to right, transparent 0%, #000 14%), linear-gradient(to bottom, transparent 0%, #000 30%)",
+           /* Every edge dissolved, not just two. The art's own pale background
+              is a slightly different pink from the strip's, so any hard edge
+              draws a visible rectangle across it — the right-hand one was the
+              worst, cutting straight down past her raised hand. */
+           style={{ maskImage: "linear-gradient(to right, transparent 0%, #000 8%, #000 90%, transparent 100%), linear-gradient(to bottom, transparent 0%, #000 14%)",
+                    WebkitMaskImage: "linear-gradient(to right, transparent 0%, #000 8%, #000 90%, transparent 100%), linear-gradient(to bottom, transparent 0%, #000 14%)",
                     maskComposite: "intersect", WebkitMaskComposite: "source-in" }} />
     </section>
   );
