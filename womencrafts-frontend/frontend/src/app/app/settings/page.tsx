@@ -117,8 +117,8 @@ export default function MorePage() {
               ))}
             </div>
             <div className="mt-4 flex flex-wrap gap-2 border-t pt-3.5" style={{ borderColor: "var(--ux-line)" }}>
-              <Btn href="/app/help?topic=terms" variant="ghost" size="sm">Terms</Btn>
-              <Btn href="/app/help?topic=privacy" variant="ghost" size="sm">Privacy</Btn>
+              <Btn href="/terms" variant="ghost" size="sm">Terms</Btn>
+              <Btn href="/privacy" variant="ghost" size="sm">Privacy</Btn>
             </div>
           </Card>
         </div>

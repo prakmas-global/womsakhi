@@ -6,6 +6,7 @@ import {
   ACCEPTED_DOCUMENT_TYPES, apiMyVerification, apiResendVerificationEmail,
   apiUploadDocument, validateDocument, type VerificationStatus,
 } from "@/lib/verification-api";
+import { useAuth } from "@/context/AuthContext";
 import { useResource } from "@/lib/use-resource";
 import { messageFrom, useAction } from "@/lib/use-action";
 import * as Icons from "@/components/ux/icons";
@@ -33,6 +34,7 @@ const DOCS = [
  * what is happening, who is doing it, and roughly how long.
  */
 export default function VerifyPage() {
+  const { signOut } = useAuth();
   const tr = useT();
   /**
    * Where she actually is, from the server.
@@ -247,7 +249,7 @@ export default function VerifyPage() {
                 done — you do not need to keep this open.
               </p>
               <div className="mt-4 flex flex-wrap gap-2.5">
-                <Btn href="/signin" variant="outline" icon="LogOut">{tr("verify.signOutForNow")}</Btn>
+                <Btn variant="outline" icon="LogOut" onClick={() => signOut()}>{tr("verify.signOutForNow")}</Btn>
                 <Btn variant="ghost" onClick={() => setAdvanced("rejected")}>{tr("verify.seeWhatHappensIfSomethingIs")}</Btn>
               </div>
             </div>

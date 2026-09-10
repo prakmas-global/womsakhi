@@ -112,7 +112,7 @@ export default function StoryDetail({ params }: { params: Promise<{ id: string }
               </p>
               <p className="mt-1.5 text-xsm leading-relaxed" style={{ color: "var(--ux-ink-2)" }}>{tr("stories.sheNamesThisInHerStory")}</p>
               <div className="mt-3.5">
-                <Btn href="/app/learn" variant="primary" full iconEnd="ArrowRight">{tr("stories.findIt")}</Btn>
+                <Btn href="/app/programs" variant="primary" full iconEnd="ArrowRight">{tr("stories.findIt")}</Btn>
               </div>
             </Card>
           )}

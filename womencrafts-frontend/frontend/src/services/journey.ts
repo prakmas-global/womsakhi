@@ -103,7 +103,7 @@ export function nextStep(s: JourneyState): NextStep {
   if (s.skills === 0)
     return { stage: "skill", title: "Name one thing you can already do",
       because: "Everything here starts from a skill. Yours does not have to be a job title — stitching, cooking and mehendi all count.",
-      cta: "Add your skill", href: "/app/skills", icon: "Sparkles", mins: 2 };
+      cta: "Add your skill", href: "/app/profile", icon: "Sparkles", mins: 2 };
 
   if (s.hasShop && s.productsListed === 0)
     return { stage: "opportunity", title: "Put your first thing in your shop",
@@ -203,7 +203,7 @@ export function journeySteps(f: JourneyFacts): JourneyStep[] {
       id: "skills", n: 1, label: "Your skills",
       blurb: "Name what you can already do. It does not have to be a job title — stitching, cooking and mehendi all count.",
       icon: "Sparkles", tint: "--ux-tint-violet", ink: "--ux-violet-ink",
-      cta: "Add a skill", href: "/app/skills",
+      cta: "Add a skill", href: "/app/profile",
       checks: [
         { label: "Name one thing you can do", done: f.skills > 0 },
         { label: "Add a second skill", done: f.skills > 1, optional: true },
