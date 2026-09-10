@@ -55,10 +55,10 @@ const SearchPalette = dynamic(() => import("./SearchPalette"), {
  * viewport is a picture, not a page.
  */
 
-function Icon({ name, className }: { name: string; className?: string }) {
-  const C = (Icons as unknown as Record<string, React.ComponentType<{ className?: string; strokeWidth?: number }>>)[name]
+function Icon({ name, className, style }: { name: string; className?: string; style?: React.CSSProperties }) {
+  const C = (Icons as unknown as Record<string, React.ComponentType<{ className?: string; strokeWidth?: number; style?: React.CSSProperties }>>)[name]
     ?? Icons.Circle;
-  return <C className={className} strokeWidth={1.75} />;
+  return <C className={className} strokeWidth={1.75} style={style} />;
 }
 
 /**
@@ -159,44 +159,71 @@ export function ModeRail({ path, footer }: { path: string; footer?: React.ReactN
         {SECTIONS.map((s) => {
           const open = s.id === here;
           const kids = (s.children ?? []).filter((c) => !c.unlisted);
+          // The section row is "current" only when she is on the hub itself;
+          // deeper in, the child carries the highlight and the section stays
+          // merely open. Two things claiming to be the current page is how a
+          // reader stops trusting the highlight.
+          const onHub = open && trail.length === 1;
           return (
             <div key={s.id} className="mb-0.5">
               <TransitionLink
                 href={s.href}
-                aria-current={open && trail.length === 1 ? "page" : undefined}
-                className="ux-row ux-sq flex items-center gap-3 rounded-[12px] px-2.5 py-2"
-                style={{ background: open ? "var(--ux-brand-tint)" : "transparent",
+                aria-current={onHub ? "page" : undefined}
+                aria-expanded={kids.length ? open : undefined}
+                className="ux-row ux-sq relative flex items-center gap-3 rounded-[12px] py-2 pe-2 ps-2.5"
+                style={{ background: onHub ? "var(--ux-brand-tint)" : "transparent",
                          color: open ? "var(--ux-brand)" : "var(--ux-ink)" }}
               >
+                {/* The bar that says "you are in here" — the one signal that
+                    survives at a glance, and the thing 95% of sites get
+                    wrong according to Baymard's 2025 benchmark. */}
+                <span aria-hidden
+                      className="absolute inset-y-1.5 start-0 w-[3px] rounded-full"
+                      style={{ background: open ? "var(--ux-brand)" : "transparent",
+                               transition: "background var(--ux-t) var(--ux-ease)" }} />
                 <Icon name={s.icon} className="ux-ico h-[16px] w-[16px] shrink-0" />
                 <span className="min-w-0 flex-1 truncate text-xsm"
                       style={{ fontWeight: open ? 700 : 500 }}>
                   {nav.label(s)}
                 </span>
+                {kids.length > 0 && (
+                  <Icon name="ChevronDown"
+                        className="ux-ico h-[14px] w-[14px] shrink-0"
+                        // Turned rather than swapped, so the eye follows one
+                        // shape instead of noticing two.
+                        style={{ opacity: open ? 1 : 0.45,
+                                 transform: open ? "rotate(0deg)" : "rotate(-90deg)",
+                                 transition: "transform var(--ux-t-slow) var(--ux-ease-out), opacity var(--ux-t) var(--ux-ease)" }} />
+                )}
               </TransitionLink>
 
-              {open && kids.length > 0 && (
-                <div className="mb-1 ms-[19px] mt-0.5 ps-3"
-                     style={{ borderInlineStart: "1.5px solid var(--ux-line)" }}>
-                  {kids.map((c) => {
-                    const on = trail.some((t) => t.id === c.id);
-                    return (
-                      <TransitionLink
-                        key={c.id}
-                        href={c.href}
-                        aria-current={on ? "page" : undefined}
-                        className="ux-row ux-sq mb-0.5 flex items-start gap-2.5 rounded-[10px] px-2.5 py-1.5"
-                        style={{ background: on ? "var(--ux-brand-tint)" : "transparent",
-                                 color: on ? "var(--ux-brand)" : "var(--ux-ink-2)" }}
-                      >
-                        <Icon name={c.icon} className="ux-ico mt-[2px] h-[14px] w-[14px] shrink-0" />
-                        <span className="min-w-0 flex-1 truncate text-2xs"
-                              style={{ fontWeight: on ? 700 : 500 }}>
-                          {nav.label(c)}
-                        </span>
-                      </TransitionLink>
-                    );
-                  })}
+              {kids.length > 0 && (
+                <div className="ux-reveal" data-open={open ? "true" : "false"}>
+                  <div>
+                    <div className="ux-branch mb-1 ms-[18px] mt-0.5">
+                      {kids.map((c) => {
+                        const on = trail.some((t) => t.id === c.id);
+                        return (
+                          <TransitionLink
+                            key={c.id}
+                            href={c.href}
+                            tabIndex={open ? undefined : -1}
+                            aria-current={on ? "page" : undefined}
+                            data-on={on ? "true" : "false"}
+                            className="ux-twig ux-row ux-sq relative mb-0.5 flex items-center gap-2.5 rounded-[10px] px-2.5 py-1.5"
+                            style={{ background: on ? "var(--ux-brand-tint)" : "transparent",
+                                     color: on ? "var(--ux-brand)" : "var(--ux-ink-2)" }}
+                          >
+                            <Icon name={c.icon} className="ux-ico h-[14px] w-[14px] shrink-0" />
+                            <span className="min-w-0 flex-1 truncate text-2xs"
+                                  style={{ fontWeight: on ? 700 : 500 }}>
+                              {nav.label(c)}
+                            </span>
+                          </TransitionLink>
+                        );
+                      })}
+                    </div>
+                  </div>
                 </div>
               )}
             </div>

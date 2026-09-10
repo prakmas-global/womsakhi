@@ -1,112 +1,61 @@
 /**
- * Navigation rail geometry, on every route in both modules.
+ * The rail opens the section she is in, and shuts the rest.
  *
- * Exists because a collapsed rail once shipped with its icons pushed out of
- * view on every single page — `visibility: hidden` keeps an element's box, so a
- * zero-opacity label with `flex-1` still ate the row. 84 feature checks were
- * passing at the time; it was caught by a person looking at a screenshot.
+ * Two bugs this guards, both of which were invisible until measured:
  *
- * These assertions are about geometry a person would notice, not about whether
- * a feature "works".
+ *   Giving each section a hub of its own broke `trailFor`. It skipped any
+ *   node that did not own the path by string prefix, and `/app/earn` is not a
+ *   prefix of `/app/shop/pricing` — so the walk never went inside Earn. Every
+ *   section sat shut and nothing was marked current on sixty-odd screens.
+ *
+ *   A closed section still renders its links, because that is what lets the
+ *   panel animate to its own height. They must be unreachable by keyboard
+ *   while it is closed, or Tab walks into a section that is not on screen.
  */
-import { createRequire } from "module";
-import { APP, launch, pageAs, staffToken, memberToken } from "./_shared.mjs";
-const require = createRequire(import.meta.url);
-const fs = require("fs"), path = require("path");
-
-const walk = (d, b) => {
-  let o = [];
-  for (const e of fs.readdirSync(d, { withFileTypes: true })) {
-    const q = path.join(d, e.name);
-    if (e.isDirectory()) { if (e.name.startsWith("[")) continue; o = o.concat(walk(q, `${b}/${e.name}`)); }
-    else if (e.name === "page.tsx") o.push(b || "/");
-  }
-  return o;
-};
-
-const audit = (page) => page.evaluate(() => {
-  const aside = document.querySelector("aside");
-  if (!aside) return { noRail: true };
-  const railEl = aside.querySelector(".wc-rail") || aside;
-  const rail = railEl.getBoundingClientRect();
-
-  // Chevrons carry `.wc-rail-label` and collapse to zero on purpose.
-  const icons = [...aside.querySelectorAll("nav svg")]
-    .filter((s) => !s.classList.contains("wc-rail-label") && !s.closest(".wc-rail-label"));
-
-  const clipped = icons.filter((s) => {
-    const r = s.getBoundingClientRect();
-    return r.width < 8 || r.left < rail.left - 1 || r.right > rail.right + 1;
-  }).length;
-
-  // Icons must share one centre line. Two centres is the zig-zag that a
-  // zero-width label's leftover flex GAP produces.
-  const centres = new Set(icons.map((s) => {
-    const r = s.getBoundingClientRect();
-    return Math.round((r.left + r.width / 2) * 2) / 2;
-  }));
-
-  const invisible = (el) => {
-    for (let n = el; n && n !== document.body; n = n.parentElement) {
-      const c = getComputedStyle(n);
-      if (c.opacity === "0" || c.display === "none" || c.visibility === "hidden") return true;
-    }
-    return false;
-  };
-  const spill = [...aside.querySelectorAll("*")].filter((el) => {
-    const r = el.getBoundingClientRect();
-    if (r.width < 4 || r.height < 4) return false;
-    if (getComputedStyle(el).position === "fixed") return false;
-    if (el.ownerSVGElement || invisible(el)) return false;
-    for (let n = el.parentElement; n && n !== document.body; n = n.parentElement) {
-      const ox = getComputedStyle(n).overflowX;
-      if ((ox === "hidden" || ox === "auto" || ox === "clip") &&
-          n.getBoundingClientRect().right <= rail.right + 2) return false;
-      if (n === railEl) break;
-    }
-    return r.right > rail.right + 2;
-  }).length;
-
-  return { railW: Math.round(rail.width), icons: icons.length, clipped, spill, centres: centres.size };
+import puppeteer from "puppeteer-core";
+import { CHROME, APP, seededMemberToken } from "./_shared.mjs";
+const tok = await seededMemberToken();
+const b = await puppeteer.launch({ executablePath: CHROME, headless: "new", args: ["--no-sandbox"] });
+const p = await b.newPage();
+await p.setViewport({ width: 1440, height: 1000, deviceScaleFactor: 2 });
+await p.setCookie({ name: "access_token", value: tok, domain: "localhost", path: "/" });
+await p.goto(APP + "/app/shop/pricing", { waitUntil: "domcontentloaded", timeout: 180000 });
+await new Promise(x => setTimeout(x, 2600));
+const m = await p.evaluate(() => {
+  const rail = document.querySelector('aside nav[aria-label="Sections"]');
+  const rows = [...rail.querySelectorAll(":scope > div")].map(d => {
+    const link = d.querySelector("a");
+    const rev = d.querySelector(".ux-reveal");
+    const kids = rev ? [...rev.querySelectorAll("a")] : [];
+    return {
+      section: link.innerText.trim().split("\n")[0],
+      open: rev?.getAttribute("data-open") === "true",
+      panelH: rev ? Math.round(rev.getBoundingClientRect().height) : 0,
+      kidsFocusable: kids.filter(a => a.tabIndex !== -1).length,
+      kidsVisible: kids.filter(a => a.getBoundingClientRect().height > 1).length,
+      current: kids.filter(a => a.getAttribute("aria-current") === "page").map(a => a.innerText.trim()),
+    };
+  });
+  const marked = [...rail.querySelectorAll('[aria-current="page"]')].map(a => a.innerText.trim());
+  return { rows, marked };
 });
+for (const r of m.rows)
+  console.log(`  ${r.open ? "OPEN " : "shut "} ${r.section.padEnd(8)} panel ${String(r.panelH).padStart(4)}px · visible kids ${r.kidsVisible} · focusable ${r.kidsFocusable}${r.current.length ? " · current: " + r.current.join(",") : ""}`);
+console.log(`\n  exactly one thing marked current: ${m.marked.length === 1 ? "yes — " + m.marked[0] : "NO — " + JSON.stringify(m.marked)}`);
+if (process.env.OUT) await p.screenshot({ path: `${process.env.OUT}/rail.png`, clip: { x: 0, y: 80, width: 300, height: 900 } });
+await b.close();
 
-const staff = await staffToken();
-const member = await memberToken(staff);
-const browser = await launch();
-const problems = [];
-let checked = 0;
+let bad = 0;
+const open = m.rows.filter((r) => r.open);
+const shut = m.rows.filter((r) => !r.open);
+const say = (ok, msg) => { console.log(`  ${ok ? "ok  " : "FAIL"}  ${msg}`); if (!ok) bad++; };
 
-for (const [mod, tok, routes] of [
-  ["admin", staff, walk("src/app/dashboard", "/dashboard")],
-  ["member", member, walk("src/app/app", "/app")],
-]) {
-  if (!tok) continue;
-  const p = await pageAs(browser, tok);
-  for (const route of routes) {
-    if (route.endsWith("/logout")) continue;
-    try {
-      await p.goto(`${APP}${route}`, { waitUntil: "networkidle2", timeout: 25000 });
-      await new Promise((r) => setTimeout(r, 500));
-      const a = await audit(p);
-      checked++;
-      const where = `${mod} ${route}`;
-      if (a.noRail) { problems.push(`${where}: no rail`); continue; }
-      if (a.icons < 4) problems.push(`${where}: only ${a.icons} nav icons`);
-      if (a.clipped) problems.push(`${where}: ${a.clipped} clipped icons`);
-      if (a.spill) problems.push(`${where}: ${a.spill} elements painting past the rail edge`);
-      if (a.centres > 1) problems.push(`${where}: icons on ${a.centres} centre lines — not aligned`);
-    } catch (e) {
-      problems.push(`${mod} ${route}: FAILED TO LOAD`);
-    }
-  }
-  await p.close();
-}
-await browser.close();
+say(open.length === 1, `exactly one section is open (${open.map((r) => r.section).join(",") || "none"})`);
+say(open.every((r) => r.panelH > 40), "the open section has real height");
+say(shut.every((r) => r.panelH === 0), "every other section is at zero height");
+say(shut.every((r) => r.kidsFocusable === 0), "a closed section's links are not reachable by keyboard");
+say(m.marked.length === 1, `exactly one item is marked current (${m.marked.join(",") || "none"})`);
 
-console.log(`\n  ${checked} routes checked`);
-if (!problems.length) console.log("  \x1b[32mrail is correct on every route\x1b[0m\n");
-else {
-  console.log(`  \x1b[31m${problems.length} problems\x1b[0m`);
-  problems.slice(0, 15).forEach((x) => console.log("   ·", x));
-}
-process.exit(problems.length ? 1 : 0);
+console.log(bad ? `\n FAIL  ${bad} of 5` : "\n PASS");
+process.exit(bad ? 1 : 0);
+

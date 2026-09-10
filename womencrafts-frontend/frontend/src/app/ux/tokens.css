@@ -1588,3 +1588,47 @@
 @media (min-width: 1400px) {
   .ux-inbox-grid { grid-template-columns: 322px minmax(0, 1fr) 272px; }
 }
+
+/* ── A section of the rail opening and closing ─────────────────────────────
+   Height cannot be transitioned to `auto`, and hard-coding one breaks the
+   moment a label wraps. The grid-rows 0fr→1fr trick animates to the content's
+   own height without anyone having to know what that is.
+
+   The row must clip, or the links inside are still tabbable while closed —
+   a keyboard would walk into a section that is not on screen. */
+.ux-reveal {
+  display: grid;
+  grid-template-rows: 0fr;
+  transition: grid-template-rows var(--ux-t-slow) var(--ux-ease-out);
+}
+.ux-reveal[data-open="true"] { grid-template-rows: 1fr; }
+.ux-reveal > * { overflow: hidden; min-height: 0; }
+
+/* The line down the side of an open section, and the stub that reaches out to
+   each child. Drawn rather than bordered so the line can stop at the last
+   child instead of running past it. */
+.ux-branch { position: relative; padding-inline-start: 14px; }
+.ux-branch::before {
+  content: "";
+  position: absolute;
+  inset-block: 4px 14px;
+  inset-inline-start: 0;
+  width: 1.5px;
+  border-radius: 1px;
+  background: var(--ux-line);
+}
+.ux-twig::before {
+  content: "";
+  position: absolute;
+  inset-inline-start: -14px;
+  top: 50%;
+  width: 10px;
+  height: 1.5px;
+  border-radius: 1px;
+  background: var(--ux-line);
+}
+.ux-twig[data-on="true"]::before { background: var(--ux-brand); }
+
+@media (prefers-reduced-motion: reduce) {
+  .ux-reveal { transition: none; }
+}

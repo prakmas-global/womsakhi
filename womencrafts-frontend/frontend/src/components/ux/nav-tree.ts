@@ -291,20 +291,30 @@ export function trailFor(path: string): NavNode[] {
   const owns = (href: string) =>
     href === clean || (href !== "/app" && clean.startsWith(href + "/"));
 
-  const best: NavNode[] = [];
-  const walk = (ns: NavNode[], trail: NavNode[]) => {
+  /**
+   * Descend ALWAYS; only use `owns` to decide who joins the chain.
+   *
+   * The first version skipped any node that did not own the path — which was
+   * fine while a section's href was a prefix of its children's. It stopped
+   * being true the moment sections got hubs of their own: `/app/earn` is not a
+   * prefix of `/app/shop/pricing`, so the walk never went inside Earn, no
+   * section opened and nothing was marked current on 60-odd screens.
+   *
+   * A section owns its subtree by construction, not by string prefix.
+   */
+  const find = (ns: NavNode[]): NavNode[] | null => {
+    let best: NavNode[] | null = null;
     for (const n of ns) {
-      if (!owns(n.href)) continue;
-      const here = [...trail, n];
-      if (here.length > best.length || n.href.length > (best[best.length - 1]?.href.length ?? 0)) {
-        best.length = 0;
-        best.push(...here);
-      }
-      if (n.children) walk(n.children, here);
+      const deeper = n.children ? find(n.children) : null;
+      const cand = deeper ? [n, ...deeper] : owns(n.href) ? [n] : null;
+      if (!cand) continue;
+      const mine = cand[cand.length - 1].href.length;
+      if (!best || mine > best[best.length - 1].href.length) best = cand;
     }
+    return best;
   };
-  walk(SECTIONS, []);
-  return best;
+
+  return find(SECTIONS) ?? [];
 }
 
 /** Which section a path lives in. Null only for a path outside the tree. */
