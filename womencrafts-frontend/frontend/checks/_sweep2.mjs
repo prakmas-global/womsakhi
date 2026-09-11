@@ -37,28 +37,85 @@ for (const r of ROUTES) {
         false green exactly this way. Any "is it clean" answer is worthless
         without first answering "is it there".
       */
-      const overlay = document.querySelector("nextjs-portal") ||
-                      document.querySelector("[data-nextjs-dialog], [data-nextjs-toast]");
+      // The ERROR dialog only. `nextjs-portal` is present for the ordinary dev
+      // indicator and for warning toasts too, and failing a route because a
+      // hydration WARNING was logged is its own kind of false report — the
+      // screen rendered fine.
+      const portal = document.querySelector("nextjs-portal");
+      const overlay = !!(portal?.shadowRoot?.querySelector("[data-nextjs-dialog]"));
       const content = document.querySelector("#content");
       const rendered = !!content && content.innerText.trim().length > 40;
       if (overlay || !rendered) return { broken: true, overlay: !!overlay, rendered };
 
       const de = document.documentElement;
-      // Content cut off inside its own box, with no scroll to reach it.
+      /*
+        Text a reader cannot reach.
+
+        Three earlier versions of this measured the wrong thing and each one
+        over-reported, which is worse than under-reporting because it buries
+        the real faults:
+
+          `document.scrollWidth` — missed everything clipped INSIDE a card,
+          which is the most common phone failure there is.
+
+          element `scrollWidth` — counted `truncate` (an ellipsis on purpose)
+          and every decorative glow deliberately bleeding past an
+          `overflow-hidden` edge. /app/help's "56px cut" was a 220px radial
+          positioned -56px off the right edge, working exactly as drawn.
+
+        So it asks the only question that matters: is there TEXT whose box
+        extends past its clipping ancestor, with no way to scroll to it? A
+        decorative span has no text. An ellipsis is handled by the browser and
+        is legible. A sentence running under a hard edge is none of those.
+      */
       const clipped = [];
-      for (const el of document.querySelectorAll("body *")) {
-        const over = el.scrollWidth - el.clientWidth;
-        if (over <= 2) continue;
+      const walker = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT);
+      const seen = new Set();
+      for (let n = walker.nextNode(); n; n = walker.nextNode()) {
+        const txt = n.textContent.trim();
+        if (txt.length < 8) continue;
+        const el = n.parentElement;
+        if (!el || seen.has(el)) continue;
+        if (el.closest("[aria-hidden='true']")) continue;
         const cs = getComputedStyle(el);
-        // If it can be scrolled, it is a shelf, not a bug.
-        if (cs.overflowX === "auto" || cs.overflowX === "scroll") continue;
-        if (cs.overflowX === "visible") continue;   // spills, caught elsewhere
-        const b = el.getBoundingClientRect();
-        if (b.width < 40 || b.height < 12) continue;
-        clipped.push({ tag: el.tagName.toLowerCase(), over,
-                       cls: String(el.className || "").slice(0, 48),
-                       txt: (el.textContent || "").trim().slice(0, 30) });
+        if (cs.textOverflow === "ellipsis") continue;   // legible by design
+        /*
+          Invisible elements have a zero-size box, and comparing a zero box
+          against its container reports the container's own left offset as an
+          overflow. /app/journey's "Practice" and "Get opportunities" are
+          `hidden wide:flex` — and `wide:` is not a registered breakpoint in
+          this project (`--breakpoint-wide` lives in `design-system/tokens.css`,
+          not in the `@theme` block Tailwind reads), so `wide:flex` compiles to
+          nothing and `hidden` simply wins. They are display:none, not clipped.
+        */
+        if (cs.display === "none" || cs.visibility === "hidden") continue;
+        /*
+          ...and `display:none` on an ANCESTOR does not show up in the child's
+          own computed style — `getComputedStyle(li).display` is still
+          `list-item` when its `<ul>` is hidden. The rendered box is the only
+          honest test: an element that generates no boxes is not on screen.
+        */
+        if (el.getClientRects().length === 0) continue;
+        // the nearest ancestor that actually clips
+        let clip = el.parentElement;
+        while (clip && clip !== document.body) {
+          const c = getComputedStyle(clip);
+          if (c.overflowX === "hidden" || c.overflowX === "clip") break;
+          if (c.overflowX === "auto" || c.overflowX === "scroll") { clip = null; break; }
+          clip = clip.parentElement;
+        }
+        if (!clip || clip === document.body) continue;
+        const eb = el.getBoundingClientRect(), cb = clip.getBoundingClientRect();
+        const over = Math.round(Math.max(eb.right - cb.right, cb.left - eb.left));
+        if (over > 4) {
+          seen.add(el);
+          clipped.push({ tag: el.tagName.toLowerCase(), over,
+                         cls: String(el.className || "").slice(0, 40),
+                         txt: txt.slice(0, 34) });
+        }
       }
+      clipped.sort((a, b) => b.over - a.over);
+
       const taps = [...document.querySelectorAll('a,button,[role="button"],input,select')]
         .filter(e => !e.closest(".sr-only") && !String(e.className||"").includes("sr-only"))
         .filter(e => { const x = e.getBoundingClientRect();
@@ -67,7 +124,7 @@ for (const r of ROUTES) {
         .filter(e => [...e.childNodes].some(n => n.nodeType===3 && n.textContent.trim().length>12))
         .filter(e => parseFloat(getComputedStyle(e).fontSize) < 12).length;
       return { over: Math.round(de.scrollWidth - de.clientWidth), taps, small,
-               clipped: clipped.sort((a,b)=>b.over-a.over).slice(0,3) };
+               clipped: clipped.slice(0, 3) };
     });
     if (m.broken) { bad++; console.log(`  BROKEN ${r.padEnd(22)} ${m.overlay ? "build-error overlay" : "content never rendered"}`); continue; }
     const ok = m.over === 0 && m.taps === 0 && m.small === 0 && m.clipped.length === 0;

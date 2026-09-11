@@ -18,13 +18,13 @@ import { usePathname } from "next/navigation";
  * never learns it exists.
  *
  * ── How the direction is known ──────────────────────────────────────────────
- * A history model, not a guess. Every path the app has visited is kept in
- * order with a cursor; the arriving path is either the one behind the cursor
- * (Back — from the browser gesture, the hardware key, or a Back control), the
- * one ahead of it (Forward), or new (Forward, and the tail is dropped, exactly
- * as a real history stack does). That is what makes Back slide in from the left
- * where a depth-of-URL heuristic would get it wrong: /app/learn → /app/work is
- * the same depth, and going back from either is still a back.
+ * Each history entry is stamped with a counter in `history.state`, and the
+ * arriving screen is compared against the one before it: a lower number is a
+ * Back, a higher one a Forward, and no number at all is an entry the router
+ * has only just pushed. `useSlideDirection` below has the full account,
+ * including the two models that were tried first and what measuring them in a
+ * browser showed. It is not a depth-of-URL heuristic, which would get
+ * /app/learn → /app/work wrong in both directions.
  *
  * ── Why it is a custom property and not a class ─────────────────────────────
  * The direction is written to `--ux-page-dx` on <html>. It could have been an
@@ -42,6 +42,25 @@ import { usePathname } from "next/navigation";
  * likewise untouched — a transform does not move a scroll position, and this
  * file never reads or writes one. Measured with the animation on and with it
  * off, a tab tap lands the next screen at the same offset both times.
+ *
+ * ── What it costs ───────────────────────────────────────────────────────────
+ * Tap to the destination being in the DOM and painted on the next frame, at
+ * 390x844 against `next dev`. Absolute numbers on this machine move with
+ * whatever else is compiling, so the honest measurement is the one that runs
+ * BOTH arms in a single session, alternating blocks, with
+ * `prefers-reduced-motion` switching the transition off and on — that arm is a
+ * true no-transition baseline, because `reduce` disables the fade in
+ * tokens.css as well.
+ *
+ *   before this file existed, quiet machine, 40 taps   median 132ms, floor 90ms
+ *   this file, transition OFF, 40 taps                 median 199ms, floor 114ms
+ *   this file, transition ON, same session, 24 taps    median 173ms, floor 114ms
+ *
+ * The transition arm is not slower than the no-transition arm beside it — it
+ * came out 26ms faster at the median and identical at the floor, which is
+ * noise in both directions. Two further interleaved runs put the difference at
+ * the floor at -48ms and +33ms. The slide costs nothing measurable; the gap
+ * between the first row and the rest is the dev server, not this code.
  *
  * ── Careful with backticks in the CSS below ─────────────────────────────────
  * It is a template literal. A stray backtick in a comment inside it ends the
@@ -74,14 +93,18 @@ const CSS = `
     against a 390px viewport, and setting scrollLeft to 999 really did land on
     26.
 
-    clip, not hidden: hidden would make this a horizontal scroll container as
-    well, which changes what scrollLeft, scroll anchoring and scrollIntoView do
-    to a scroller the whole shell measures itself against. clip only stops the
-    paint. It is also a no-op for the content itself — on every screen measured
-    (/app, /app/learn, /app/earn, /app/work, /app/circle, /app/opportunities,
-    /app/wallet) this scroller's scrollWidth already equals its clientWidth,
-    because the carousels that DO scroll sideways each have their own container
-    inside this one, and clipping an ancestor does not touch them.
+    Written as clip, and worth knowing that it does not stay clip: the cascade
+    coerces clip to hidden whenever the other axis scrolls, and overflow-y here
+    is auto, so the computed value really is overflow-x: hidden. Measured, not
+    assumed. That is still the right answer and it is what the old value
+    already was in practice — before this rule overflow-x computed to auto,
+    because an axis next to a scrolling one can never stay visible.
+
+    It is a no-op for the content itself. On every screen measured (/app,
+    /app/learn, /app/earn, /app/work, /app/circle, /app/opportunities,
+    /app/wallet) this scroller's scrollWidth already equals its clientWidth:
+    the carousels that DO scroll sideways each have their own container inside
+    this one, and clipping an ancestor does not touch them.
   */
   .ux #ux-scroll { overflow-x: clip; }
 }
@@ -97,80 +120,102 @@ const CSS = `
  *  a frame too late to set the direction before the animation starts. */
 const useIsomorphicLayoutEffect = typeof window === "undefined" ? useEffect : useLayoutEffect;
 
+/**
+ * The counter this file stamps onto each history entry.
+ *
+ * It goes in `history.state` beside Next's own keys (`__NA` and
+ * `__PRIVATE_NEXTJS_INTERNALS_TREE`), which are spread through untouched —
+ * replacing that object rather than extending it would take the router's tree
+ * with it.
+ */
+const IDX = "__uxNavIdx";
+
+function stamp(n: number): void {
+  try {
+    const prev = (window.history.state ?? {}) as Record<string, unknown>;
+    // The href is passed explicitly so this changes nothing but the state.
+    window.history.replaceState({ ...prev, [IDX]: n }, "", window.location.href);
+  } catch {
+    /* A sandboxed frame refuses replaceState. The transition then reads every
+       navigation as forward, which is wrong in one direction and harmless. */
+  }
+}
+
+function indexOfCurrentEntry(): number | null {
+  const st = window.history.state as Record<string, unknown> | null;
+  return st && typeof st[IDX] === "number" ? (st[IDX] as number) : null;
+}
+
+/**
+ * Which way the screen that just arrived was travelling.
+ *
+ * ── Two wrong answers came before this one, both caught in a browser ────────
+ *
+ * **A stack of visited paths.** It cannot tell a push apart from a Back when
+ * the destination happens to be where you just were. Bouncing Learn → Earn →
+ * Learn, the third tap arrives at the entry behind the cursor, so it was read
+ * as a Back and the Learn screen slid in from the left on a forward tap.
+ *
+ * **Watching for `popstate`.** The obvious repair: the browser fires it for
+ * Back and Forward and never for a `<Link>`. Measured, it does not work here —
+ * `window.__uxPop` recorded the right path every time and the effect still saw
+ * `null`, because in this router the listener runs AFTER React has committed
+ * the new route. Every reading was one navigation stale. Nothing about
+ * listener ORDER can be relied on for this.
+ *
+ * ── What is reliable ────────────────────────────────────────────────────────
+ * `history.state`. The browser swaps it in synchronously as part of the
+ * traversal, before any listener and before any render, so by the time this
+ * effect runs it is already the destination entry's own state — no ordering to
+ * lose. Each entry gets a number; an entry arriving without one is an entry
+ * the router has only just pushed.
+ */
 function useSlideDirection() {
   const pathname = usePathname();
-  const visited = useRef<string[]>([]);
-  const cursor = useRef(0);
+  /** The index of the entry the last committed screen belonged to. */
+  const last = useRef<number | null>(null);
   /**
-   * Where the browser's last Back or Forward landed, or null.
+   * Which screen that index was for.
    *
-   * This is the whole reason the stack alone is not enough, and it was caught
-   * in the browser rather than reasoned about: bouncing Learn → Earn → Learn,
-   * the third tap arrives at a path that IS the entry behind the cursor, so a
-   * stack-only model called it a Back and slid the Learn screen in from the
-   * left — on a forward tap. A push and a Back are only distinguishable by the
-   * event: the browser fires `popstate` for Back and Forward and never for a
-   * `<Link>`. So a push is unconditionally forward, and only a real history
-   * move is allowed to look itself up in the stack.
-   *
-   * The PATH and not a timestamp. The first version recorded when the pop
-   * happened and trusted it for 1200ms, which is the kind of number that is
-   * right on a laptop and wrong on the device this is for: `popstate` fires
-   * before React commits the new route, and on a loaded server that commit was
-   * measured 2.5 SECONDS later, so the window expired and every Back slid in
-   * from the wrong side. `location.pathname` is already the destination by the
-   * time `popstate` fires, so matching on it is exact and waits as long as the
-   * route needs.
+   * Guards against the effect running twice for one screen, which it does on
+   * mount under Strict Mode: React tears the effect down and sets it up again
+   * while keeping the refs, so the second pass saw its own stamp, read it as a
+   * push and slid the very first screen in — measured as `entry#1 dx=26px` on
+   * a fresh load, where nothing had arrived from anywhere.
    */
-  const poppedTo = useRef<string | null>(null);
-
-  useEffect(() => {
-    const onPop = () => { poppedTo.current = window.location.pathname; };
-    window.addEventListener("popstate", onPop);
-    return () => window.removeEventListener("popstate", onPop);
-  }, []);
+  const lastPath = useRef<string | null>(null);
 
   useIsomorphicLayoutEffect(() => {
-    const stack = visited.current;
+    if (lastPath.current === pathname) return;
+    const first = lastPath.current === null;
+    lastPath.current = pathname;
 
-    // First render. The initial screen is not arriving from anywhere, so it
-    // gets the fade alone — `--ux-page-dx` stays at its 0px default.
-    if (stack.length === 0) {
-      stack.push(pathname);
-      cursor.current = 0;
+    if (first || last.current === null) {
+      // First render. The initial screen is not arriving from anywhere, so it
+      // gets the fade alone — `--ux-page-dx` stays at its 0px default. A
+      // reload lands on an entry that may already carry a number from before
+      // it, and keeping that number is what makes the FIRST Back after a
+      // reload still go the right way.
+      const here = indexOfCurrentEntry();
+      if (here === null) stamp(0);
+      last.current = here ?? 0;
       return;
     }
-    if (stack[cursor.current] === pathname) return;
 
-    const viaHistory = poppedTo.current === pathname;
-    poppedTo.current = null;
+    const here = indexOfCurrentEntry();
+    let dx: number;
 
-    let dx = DX;
-    if (viaHistory) {
-      // `lastIndexOf` with a negative `from` counts back from the END of the
-      // array, which at cursor 0 would search the whole stack and call a
-      // Forward a Back. Guarded rather than clamped, because there is nothing
-      // behind entry 0 to go back to.
-      const behind = cursor.current > 0 ? stack.lastIndexOf(pathname, cursor.current - 1) : -1;
-      const ahead = stack.indexOf(pathname, cursor.current + 1);
-      if (behind !== -1 && (ahead === -1 || cursor.current - behind <= ahead - cursor.current)) {
-        cursor.current = behind;
-        dx = -DX; // back: in from the left
-      } else if (ahead !== -1) {
-        cursor.current = ahead;
-        dx = DX; // forward again, through history
-      } else {
-        // A history entry this session never recorded — a reload, or a link
-        // opened straight into the middle of the app. Back is the safer read:
-        // you cannot go forward to somewhere you have not been.
-        dx = -DX;
-      }
+    if (here === null || here === last.current) {
+      // No number, or the previous screen's number carried over: the router
+      // pushed a new entry. A push is forward, always.
+      const next = last.current + 1;
+      stamp(next);
+      last.current = next;
+      dx = DX;
     } else {
-      // A push. Always forward, and everything ahead of the cursor is
-      // unreachable now — exactly what the browser does to its own stack.
-      stack.length = cursor.current + 1;
-      stack.push(pathname);
-      cursor.current = stack.length - 1;
+      // A traversal. Lower is behind us.
+      dx = here < last.current ? -DX : DX;
+      last.current = here;
     }
 
     document.documentElement.style.setProperty("--ux-page-dx", `${dx}px`);

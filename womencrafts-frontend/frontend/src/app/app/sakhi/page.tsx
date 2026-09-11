@@ -338,10 +338,23 @@ export default function SakhiPage() {
      The browser's own recogniser. `canVoice` is false where it does not
      exist, and the microphone is then not drawn at all — a button that
      cannot work is worse than no button. */
-  const canVoice = useMemo(() => {
-    if (typeof window === "undefined") return false;
-    return Boolean((window as unknown as Record<string, unknown>).SpeechRecognition
-      || (window as unknown as Record<string, unknown>).webkitSpeechRecognition);
+  /*
+    Read in an EFFECT, not during render.
+
+    `typeof window === "undefined"` is the exact server/client branch React
+    warns about: the server answers false, Chrome answers true, and the two
+    renders disagree over one word — the sentence says "ask." on the server and
+    "ask or speak." on the client. React logged a hydration mismatch on every
+    visit to this screen because of it.
+
+    `useState(false)` plus an effect means the first client render matches the
+    server by construction, and the microphone appears on the render after,
+    which nobody can perceive.
+  */
+  const [canVoice, setCanVoice] = useState(false);
+  useEffect(() => {
+    const w = window as unknown as Record<string, unknown>;
+    setCanVoice(Boolean(w.SpeechRecognition || w.webkitSpeechRecognition));
   }, []);
 
   const listen = useCallback((intoVoiceMode: boolean) => {

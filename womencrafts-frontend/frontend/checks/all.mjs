@@ -21,6 +21,7 @@ const CHECKS = [
   ["learn",    "node checks/learn-board.mjs"],
   ["work",     "node checks/work-board.mjs"],
   ["earn",     "node checks/earn-board.mjs"],
+  ["chat-kb",  "node checks/chat-keyboard.mjs"],
   ["banner",   "node checks/home-banner.mjs"],
   ["persist",  "node checks/nav-persist.mjs"],
   ["chrome",   "node checks/chrome-leak.mjs"],

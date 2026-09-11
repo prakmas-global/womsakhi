@@ -145,7 +145,8 @@ export default function InstallPrompt() {
     // `region`, not `dialog`: nothing is blocked behind it and focus is not
     // trapped, and announcing a dialog that behaves like neither is a lie to
     // a screen-reader user.
-    <div className="ux" role="region" aria-label="Add WomSakhi to your home screen">
+    <div data-install-prompt
+      className="ux" role="region" aria-label="Add WomSakhi to your home screen">
       <div
         className="ux-sheet"
         style={{

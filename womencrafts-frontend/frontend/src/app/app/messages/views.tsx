@@ -614,9 +614,13 @@ export function Thread({
         {/* The telephone icon was here and had nothing to dial — a buyer is not
             a WomSakhi account and no number is stored. It is gone rather than
             decorative. */}
+        {/* `title` alone is not a name: it is never spoken on a touch device
+            and it is the last resort in the accessible-name algorithm. Both of
+            these header controls are icon-only, so they carry a real label. */}
         <button type="button" onClick={onStar}
                 title={conv.starred ? tr("messages.removeStar")
               : tr("messages.starThisConversation")}
+                aria-label={conv.starred ? tr("messages.removeStar") : tr("messages.starThisConversation")}
                 aria-pressed={conv.starred}
                 className="grid h-[44px] w-[44px] place-items-center rounded-full lg:h-[36px] lg:w-[36px] lg:rounded-[12px]"
                 style={{ color: conv.starred ? "var(--ux-amber-ink)" : "var(--ux-faint)", transform: "none" }}>
@@ -624,6 +628,7 @@ export function Thread({
         </button>
         <div ref={menuRef} className="relative">
           <button type="button" onClick={() => setMenu((v) => !v)} title="More"
+                  aria-label="More, in this conversation"
                   aria-haspopup="menu" aria-expanded={menu}
                   className="grid h-[44px] w-[44px] place-items-center rounded-full lg:h-[36px] lg:w-[36px] lg:rounded-[12px]"
                   style={{ color: "var(--ux-faint)", transform: "none" }}>
@@ -779,6 +784,15 @@ export function Thread({
                   style={{ color: "var(--ux-muted)", transform: "none" }}>
             <Icons.Camera className="h-[20px] w-[20px]" />
           </button>
+          {/* "Send an order" keeps its place on desktop, where the composer is
+              a row with room in it. On a phone a fourth 44px button would leave
+              the field under 190px wide, and the same destination is one tap
+              away on the order strip at the top of this thread. */}
+          <Link href="/app/documents" aria-label={tr("messages.sendAnOrder")}
+                className="hidden shrink-0 place-items-center rounded-full lg:grid lg:h-[38px] lg:w-[38px]"
+                style={{ color: "var(--ux-muted)", transform: "none" }}>
+            <Icons.Package className="h-[20px] w-[20px]" />
+          </Link>
           <div className="ux-comp min-w-0 flex-1 rounded-[22px] px-3.5 py-2.5"
                style={{ background: "var(--ux-surface-2)", border: "1px solid var(--ux-line-strong)" }}>
             <ChatInput

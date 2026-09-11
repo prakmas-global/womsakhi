@@ -139,6 +139,21 @@
     min-height: 44px;
     min-width: 44px;
   }
+
+  /*
+    Text fields too. A bare `<input>` inside a padded wrapper measures its own
+    box, not the wrapper's — the messages search field was 297x24 sitting in a
+    comfortable-looking pill. The visible target is fine; the thing a finger
+    actually has to land on to place the caret is 24px tall.
+
+    `min-height` only: a width floor on an input that is meant to fill its row
+    would fight the layout.
+  */
+  .ux input:not([type="checkbox"]):not([type="radio"]):not([type="hidden"]),
+  .ux textarea,
+  .ux select {
+    min-height: 44px;
+  }
 }
 
 /* ── The bottom bar, and what has to clear it ────────────────────────────── */
@@ -658,8 +673,12 @@
 
 @media (max-width: 1023px) {
   .ux {
-    /* Caption. The smallest thing on the screen; a timestamp, a badge count. */
-    --text-3xs: 0.6875rem;  /* 10px  -> 11px */
+    /* Caption — a timestamp, a badge count, a status word under an avatar.
+       12px, not 11: the audit floor for this app is 12, and leaving the
+       smallest step one pixel under it means the standard is a suggestion.
+       "Early learner" under a member's name was the last text on any screen
+       still reading at 11px. */
+    --text-3xs: 0.75rem;    /* 10px  -> 12px */
     /* Secondary. Metadata under a title. */
     --text-2xs: 0.78125rem; /* 11px  -> 12.5px */
     /* THE body size. 806 uses. This is the one that matters. */
@@ -901,4 +920,45 @@
     scrollbar-width: none;
   }
   .ux [role="tablist"]::-webkit-scrollbar { display: none; }
+}
+
+/* ── Three leftovers the module passes could not reach ───────────────────── */
+
+@media (max-width: 1023px) {
+  /*
+    1. The install card sat on top of the chat composer.
+
+    It is `fixed; bottom: calc(var(--tabbar-h) + 12px); z-index: 65` — which is
+    exactly where a keyboard-aware composer lives, and 65 is above the chat
+    frame's 45. On `/app/sakhi` it covered the field she was trying to type in.
+
+    Asking someone to install the app WHILE she is mid-sentence is the wrong
+    moment anyway, so it stands down whenever a chat is on screen rather than
+    being restacked.
+  */
+  .ux:has(.ux-chat) [data-install-prompt],
+  .ux:has(.ux-chat-dock) [data-install-prompt] {
+    display: none;
+  }
+
+  /*
+    2. The tab bar's labels are 11px — under the floor, on every screen in the
+    app. They are the most-read five words in the product.
+  */
+  .ux .ux-tab-label,
+  .ux nav.fixed.bottom-0 span[class*="text-2xs"] {
+    font-size: 12px;
+  }
+
+  /*
+    3. The skip link measured 32x44 — the last sub-44 target anywhere. It is
+    `sr-only` until focused, so this only affects the moment it is visible,
+    which is precisely the moment it has to be hittable.
+  */
+  .ux a[href="#content"]:focus,
+  .ux a[href="#main"]:focus {
+    min-width: 44px;
+    min-height: 44px;
+    padding-inline: 16px;
+  }
 }
