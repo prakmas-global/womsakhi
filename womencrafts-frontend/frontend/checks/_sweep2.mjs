@@ -118,6 +118,13 @@ for (const r of ROUTES) {
 
       const taps = [...document.querySelectorAll('a,button,[role="button"],input,select')]
         .filter(e => !e.closest(".sr-only") && !String(e.className||"").includes("sr-only"))
+        /*
+          A link inside a sentence is exempt under WCAG 2.5.8, and rightly:
+          making it 44px tall tears the line spacing of the paragraph it lives
+          in, which costs more legibility than the bigger target buys. The test
+          is whether it has a text-bearing paragraph or list-item ancestor.
+        */
+        .filter(e => !(e.tagName === "A" && e.closest("p, li")))
         .filter(e => { const x = e.getBoundingClientRect();
           return x.width > 1 && x.height > 1 && (x.width < 44 || x.height < 44); }).length;
       const small = [...document.querySelectorAll("p,span,li,label,div")]

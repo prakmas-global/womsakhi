@@ -962,3 +962,61 @@
     padding-inline: 16px;
   }
 }
+
+/* ── The last shapes the 44px rule did not reach ─────────────────────────── */
+
+@media (max-width: 1023px) {
+  /*
+    Measured across eleven screens, every remaining failure was a WIDTH: 27x63,
+    34x44, 42x44, 26x61. Tall enough, too narrow — a calendar day, a small icon
+    link, a segment in a strip. The earlier rule keyed on `button`,
+    `[role="button"]` and `a[class*="btn"]`, and none of these are any of those:
+    they are plain anchors carrying `ux-sq`.
+
+    Seven 44px cells come to 308px, which fits a 390px screen with room over,
+    so there is no layout cost to paying the floor here.
+  */
+  .ux a.ux-sq:not(.ux-tap-exempt),
+  .ux a[class*="ux-sq"]:not(.ux-tap-exempt),
+  .ux button[class*="rounded-"]:not(.ux-tap-exempt) {
+    min-width: 44px;
+    min-height: 44px;
+  }
+
+  /*
+    ...but not a link inside a sentence. WCAG 2.5.8 exempts those explicitly,
+    and it is right to: a 44px-tall link in the middle of a paragraph tears the
+    line spacing apart, which costs more legibility than it buys.
+  */
+  .ux p a,
+  .ux li > a:not([class*="ux-sq"]),
+  .ux a.underline {
+    min-width: 0;
+    min-height: 0;
+  }
+
+  /*
+    8px text — the smallest thing anywhere in the app, and the last of it.
+
+    It is the brand tagline, which on a phone sits under a wordmark that is
+    itself hidden. It stays in the DOM for the desktop rail, so it is given the
+    floor rather than removed.
+  */
+  /*
+    The brand tagline goes entirely on a phone.
+
+    It renders at 8px — the smallest text anywhere in the app — and the size is
+    an INLINE style (`fontSize: s.tag` in Brand.tsx), so no stylesheet rule can
+    raise it; inline wins. `display` is a different property and can, which is
+    the only lever available without editing a shared component.
+
+    Hiding it is also the right answer rather than a workaround: it sits
+    directly under the wordmark, which is already hidden here, so on a phone it
+    was a strapline with nothing to strap. It stays in the DOM for the desktop
+    rail.
+  */
+  .ux .ux-topbar .whitespace-nowrap.uppercase,
+  .ux header .whitespace-nowrap.uppercase {
+    display: none;
+  }
+}

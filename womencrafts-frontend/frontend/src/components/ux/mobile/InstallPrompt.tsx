@@ -23,7 +23,45 @@ import {
  * once per session — this component is mounted by the member layout, so it
  * survives every navigation inside the app and is not restarted by them.
  */
-const SHOW_AFTER_MS = 12_000;
+/*
+  Not on her first visit, and not twelve seconds in.
+
+  It used to appear 12s into the very first visit, which is the wrong ask at
+  the wrong moment twice over. A woman who has just arrived does not yet know
+  whether she wants this on her home screen, and being asked implies the thing
+  she is already using is somehow not the real app. It is — the site IS the
+  app; installing only removes the browser chrome.
+
+  So the ask has to be earned: she has to come back, more than once, and still
+  be here a minute later. Someone on her third visit has decided something.
+*/
+const SHOW_AFTER_MS = 60_000;
+const MIN_VISITS = 3;
+const VISITS_KEY = "womsakhi.visits";
+
+/**
+ * Sessions that reached the member app, counted once per browser session.
+ *
+ * `sessionStorage` marks the session so a woman who opens six screens in one
+ * sitting counts once — otherwise "three visits" means "three taps" and the
+ * card is back to arriving on day one. Both reads are wrapped: storage throws
+ * outright in some private modes, and a crash here would take the shell with
+ * it for the sake of a promotional card.
+ */
+function countVisit(): number {
+  try {
+    if (!sessionStorage.getItem(VISITS_KEY)) {
+      sessionStorage.setItem(VISITS_KEY, "1");
+      const n = Number(localStorage.getItem(VISITS_KEY) ?? "0") + 1;
+      localStorage.setItem(VISITS_KEY, String(n));
+      return n;
+    }
+    return Number(localStorage.getItem(VISITS_KEY) ?? "0");
+  } catch {
+    /* Storage unavailable: never nag. Silence is the safe direction. */
+    return 0;
+  }
+}
 
 type Mode =
   /** Chromium fired `beforeinstallprompt`; the browser will do the install. */
@@ -60,6 +98,8 @@ export default function InstallPrompt() {
     // Every one of these is a reason to render nothing at all, forever, for
     // this session. Checked before a single listener is attached.
     if (!isPhoneLike() || isStandalone() || isSnoozed()) return;
+    // She has to have come back. See MIN_VISITS.
+    if (countVisit() < MIN_VISITS) return;
 
     let timer: ReturnType<typeof setTimeout> | undefined;
     /*
