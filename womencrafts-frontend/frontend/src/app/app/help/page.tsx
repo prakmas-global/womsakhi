@@ -333,21 +333,31 @@ function Alert() {
   useEffect(() => () => cancelAnimationFrame(raf.current), []);
 
   return (
-    <section className="ux-sq mb-6 flex flex-wrap items-center gap-[20px] overflow-hidden rounded-[20px] px-5 py-[20px]"
+    /*
+      `flex-wrap` with a `shrink-0` button does not wrap on a phone — the row
+      still fits, so the WORDS take what is left. Measured at 390px: the text
+      column was 88px wide and "Something is happening right now" rendered one
+      word per line, eleven lines deep, with the button floating in the middle
+      of it. On a phone this is a column: icon and words, then the button full
+      width underneath, which is also where a thumb can hold it for a second
+      and a half without covering what it is about to do.
+    */
+    <section className="ux-sq mb-6 flex flex-col items-start gap-3 overflow-hidden rounded-[20px] px-4 py-4
+                        sm:flex-row sm:flex-wrap sm:items-center sm:gap-[20px] sm:px-5 sm:py-[20px]"
              style={{ border: "1px solid color-mix(in srgb, var(--ux-danger-solid) 55%, transparent)",
                       background: "linear-gradient(100deg, var(--ux-danger-tint), var(--ux-surface) 62%)",
                       boxShadow: "0 18px 44px -26px var(--ux-danger-solid), var(--ux-shadow-card), inset 0 1px 0 var(--ux-sheen)" }}>
-      <span className="ux-beat grid h-[52px] w-[52px] shrink-0 place-items-center rounded-[16px]"
+      <span className="ux-beat grid h-[44px] w-[44px] shrink-0 place-items-center rounded-[14px] sm:h-[52px] sm:w-[52px] sm:rounded-[16px]"
             style={{ background: "linear-gradient(150deg, var(--ux-danger-solid), color-mix(in srgb, var(--ux-danger-solid) 64%, #000))",
                      color: "var(--ux-on-brand)" }}>
         <Icons.TriangleAlert className="h-[22px] w-[22px]" strokeWidth={2} />
       </span>
-      <div className="min-w-0 flex-1">
+      <div className="min-w-0 flex-1 basis-full sm:basis-auto">
         <p className="text-base font-extrabold tracking-[-0.01em]" style={{ color: "var(--ux-ink)" }}>
           {sent ? (failed ? tr("help.couldNotSendCall")
               : tr("help.sentYourPeopleKnow")) : "Something is happening right now"}
         </p>
-        <p className="mt-0.5 text-xsm" style={{ color: "var(--ux-ink-2)" }}>
+        <p className="mt-0.5 text-[13px] leading-snug sm:text-xsm" style={{ color: "var(--ux-ink-2)" }}>
           {sent
             ? (failed
                 ? tr("help.theAlertDidNotReachUs")
@@ -359,7 +369,7 @@ function Alert() {
               onPointerDown={(e) => { e.preventDefault(); start(); }}
               onPointerUp={stop} onPointerLeave={stop} onPointerCancel={stop}
               aria-label={tr("help.pressAndHoldForOneAnd")}
-              className="relative flex min-h-[50px] shrink-0 items-center gap-2 overflow-hidden rounded-[12px] px-6 text-sm font-extrabold tracking-[-0.005em] transition-transform active:scale-[0.985]"
+              className="relative flex min-h-[50px] w-full shrink-0 items-center justify-center gap-2 overflow-hidden rounded-[14px] px-6 text-[16px] font-extrabold tracking-[-0.005em] transition-transform active:scale-[0.985] sm:w-auto sm:rounded-[12px] sm:text-sm"
               style={{ background: sent && !failed
                          ? "var(--ux-green-ink)"
                          : "linear-gradient(150deg, var(--ux-danger-solid), color-mix(in srgb, var(--ux-danger-solid) 72%, #000))",

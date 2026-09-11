@@ -785,3 +785,120 @@
     padding-inline: 12px;
   }
 }
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   Anything that scrolls sideways must LOOK like it scrolls sideways.
+
+   /app/journey showed the problem exactly: a seven-node stepper with
+   `min-w-[760px] overflow-x-auto` inside a card, and `ux-noscroll` hiding the
+   scrollbar. On a 390px screen the last label reads "Your first opportunit"
+   and stops dead at the card's edge. It is not broken — it scrolls perfectly
+   — but nothing on screen says so, so it reads as a rendering fault, and a
+   woman who does not know to swipe simply never sees steps five to seven.
+
+   Hiding a scrollbar is right on a phone; hiding the fact that something
+   scrolls is not. The fade is the affordance that replaces the scrollbar:
+   content dissolving at the edge is the universal signal for "there is more
+   this way", and it costs nothing.
+
+   Applied to the shapes rather than to a class, so it covers rows written
+   before this rule existed and rows written after it — which is the whole
+   point, given this pattern appears on screens nobody has looked at yet.
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+@media (max-width: 1023px) {
+  .ux .ux-noscroll,
+  .ux .ux-scroll-x,
+  .ux .ux-hscroll,
+  .ux [data-earn-chips],
+  .ux .ux-chiprow {
+    -webkit-mask-image: linear-gradient(to right, #000 calc(100% - 28px), transparent);
+    mask-image: linear-gradient(to right, #000 calc(100% - 28px), transparent);
+  }
+
+  /*
+    ...but only while there is actually something off the end.
+
+    A row whose content fits should not be faded — a permanently dimmed right
+    edge on a row of two chips looks like a bug of its own. `animation-timeline:
+    scroll(self inline)` is zero-JS and runs on the compositor: the mask is
+    removed at both ends of the scroll and present in between. Where the
+    timeline is unsupported the static fade above stands, which is the safe
+    direction to fail in.
+  */
+  @supports (animation-timeline: scroll(self inline)) {
+    .ux .ux-noscroll,
+    .ux .ux-scroll-x,
+    .ux .ux-hscroll,
+    .ux [data-earn-chips],
+    .ux .ux-chiprow {
+      animation: ux-edge-fade steps(1) both;
+      animation-timeline: scroll(self inline);
+    }
+    @keyframes ux-edge-fade {
+      /* at the far right there is nothing more to the right */
+      to {
+        -webkit-mask-image: linear-gradient(to right, transparent, #000 28px);
+        mask-image: linear-gradient(to right, transparent, #000 28px);
+      }
+    }
+  }
+
+  /*
+    The journey stepper's floor comes down.
+
+    760px was chosen so seven nodes fit a 1030px desktop column. On a phone it
+    forces a 2x scroll for a row that is a SUMMARY — the same seven steps are
+    listed in full as cards below it. 470px shows three and a half nodes, which
+    is enough to read it as a sequence and short enough to swipe in one go.
+  */
+  .ux ol.ux-noscroll[class*="min-w-"] {
+    min-width: 470px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  /* The scroll-timeline is motion tied to a gesture; the static fade is not. */
+  .ux .ux-noscroll, .ux .ux-scroll-x, .ux .ux-hscroll,
+  .ux [data-earn-chips], .ux .ux-chiprow { animation: none; }
+}
+
+/* ── Kit controls that never got a phone tier ────────────────────────────── */
+
+@media (max-width: 1023px) {
+  /*
+    Three reported by the module agent, each worked around locally in its own
+    files. Fixing them at the kit level means every OTHER module gets the fix
+    too — including the screens nobody has rewritten yet, which is most of them.
+
+    `Pill` renders `text-2xs` at every width. The phone tier already lifts
+    `--text-2xs` to 12.5px, but a badge is read at a glance beside 15px body
+    text and 12.5px still reads as fine print. 13px, and enough padding to be
+    a shape rather than a smudge.
+  */
+  .ux .ux-pill,
+  .ux [class*="rounded-full"][class*="text-2xs"] {
+    font-size: 13px;
+    padding-inline: 10px;
+    padding-block: 4px;
+  }
+
+  /*
+    `SegmentedControl` uses `px-3` per segment, so four segments do not fit at
+    390px and "Interviews" truncates to "Intervi…". A truncated segment label
+    is worse than a narrow one: you cannot tell what you are choosing. The
+    padding comes down and the label is allowed to use the room.
+  */
+  .ux [role="tablist"] [role="tab"] {
+    padding-inline: 8px;
+    min-width: 0;
+  }
+  .ux [role="tablist"] {
+    /* Four segments at 390 need every pixel; a tablist that scrolls is far
+       better than one that lies about its options. */
+    max-width: 100%;
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+  .ux [role="tablist"]::-webkit-scrollbar { display: none; }
+}

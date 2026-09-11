@@ -83,6 +83,18 @@ export function Segments({
 }) {
   const options = items.map((t) => ({ value: slug(t), label: t }));
   const back = new Map(options.map((o) => [o.value, o.label]));
+
+  /*
+    Four segments do not fit at 390 with the control's own 12px of side
+    padding: 350px of content minus the track's 6px, split four ways, leaves
+    86px a segment and "Interviews" needs about 102px — so it rendered as
+    "Intervi…". Halving the padding gives back 12px a segment, which is enough
+    for every four-way filter in these two modules, and it changes nothing at
+    three segments or fewer. The descendant selector outweighs the component's
+    own `px-3`, so no `!important` is needed.
+  */
+  const tight = options.length > 3 ? "[&_[role=tab]]:px-1.5 [&_[role=tab]]:gap-1" : "";
+
   return (
     <>
       <div className="lg:hidden">
@@ -91,6 +103,7 @@ export function Segments({
           value={slug(active)}
           onChange={(v) => onChange(back.get(v) ?? active)}
           label={label}
+          className={tight}
         />
       </div>
       <div className="hidden lg:block">

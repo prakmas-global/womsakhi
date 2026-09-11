@@ -581,8 +581,8 @@ function Phone() {
                   <li key={step} className="flex items-center gap-3">
                     <span aria-hidden
                           className="grid h-[26px] w-[26px] shrink-0 place-items-center rounded-full text-[12px] font-bold"
-                          style={done ? { background: v("--ux-green"), color: "#fff" }
-                               : now ? { background: v("--ux-brand"), color: "#fff" }
+                          style={done ? { background: v("--ux-green"), color: v("--ux-on-brand") }
+                               : now ? { background: v("--ux-brand"), color: v("--ux-on-brand") }
                                : { background: v("--ux-surface-2"), color: v("--ux-muted"),
                                    border: `1px solid ${v("--ux-line")}` }}>
                       {done ? <I name="Check" className="h-[14px] w-[14px]" sw={3} /> : i + 1}

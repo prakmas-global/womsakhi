@@ -738,7 +738,7 @@ function Phone() {
                     <span aria-hidden className="grid h-[34px] w-[34px] shrink-0 place-items-center rounded-full"
                           style={on ? { background: v("--ux-brand") } : { background: v("--ux-brand-tint-2") }}>
                       <I name={s.icon} className="h-[17px] w-[17px]" sw={1.9}
-                         style={{ color: on ? "#fff" : v("--ux-brand") }} />
+                         style={{ color: on ? v("--ux-on-brand") : v("--ux-brand") }} />
                     </span>
                     <span className="min-w-0">
                       <b className="block text-[15px] font-bold leading-tight" style={{ color: v("--ux-ink") }}>
@@ -794,7 +794,7 @@ function Phone() {
             <TransitionLink href="/app/sakhi"
               className="ux-press ux-sq ux-action-primary mt-3.5 inline-flex items-center justify-center gap-2.5"
               style={{ borderRadius: 14,
-                       background: "linear-gradient(96deg, var(--ux-fill), var(--ux-fill-2))", color: "#fff" }}>
+                       background: "linear-gradient(96deg, var(--ux-fill), var(--ux-fill-2))", color: v("--ux-on-brand") }}>
               <I name="MessageCircle" className="h-[17px] w-[17px]" sw={2} />
               Chat with Sakhi
             </TransitionLink>

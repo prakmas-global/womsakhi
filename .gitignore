@@ -43,3 +43,6 @@ logs/
 
 # Local deploy runbook — real project IDs and console paths. Never committed.
 DEPLOYMENT.local.md
+
+# Local credential reference. Never committed.
+CREDENTIALS.local.env

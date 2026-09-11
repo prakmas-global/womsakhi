@@ -132,14 +132,25 @@ export default function Profile() {
             </span>
             {/* Was a <button> with no handler at all. It goes where the photo
                 is actually changed. */}
-            {/* Measured 33x44 — a camera badge that a finger misses more often
-                than it hits. `!min-w` is what the 44px floor needs; `min-height`
-                already came from `mobile.css`. */}
-            <Btn href="/app/settings/account" variant="soft" size="sm" icon="Camera"
-                 ariaLabel={tr("profile.changePhoto2")}
-                 className="absolute -bottom-1 -end-1 !min-w-[44px] !rounded-full !px-2 !py-2">
-              <span className="sr-only">{tr("profile.changePhoto")}</span>
-            </Btn>
+            {/*
+              Measured 33x44 — under the floor, and the 44px it needs does not
+              fit on the corner of a 72px photograph without hanging off it.
+              On a phone it goes: it links to `/app/settings/account`, which is
+              exactly where "Edit profile" below already goes, so nothing is
+              lost but a duplicate. It stays from `lg`, where the photograph is
+              92px and there is room for a badge on it.
+            */}
+            {/* The `hidden lg:inline-flex` version of this did not hide: `Btn`
+                carries `inline-flex` of its own, and two display utilities in
+                the same layer are settled by Tailwind's emit order rather than
+                by the class list. A wrapper has nothing to argue with. */}
+            <span className="hidden lg:block">
+              <Btn href="/app/settings/account" variant="soft" size="sm" icon="Camera"
+                   ariaLabel={tr("profile.changePhoto2")}
+                   className="absolute -bottom-1 -end-1 !rounded-full !px-2 !py-2">
+                <span className="sr-only">{tr("profile.changePhoto")}</span>
+              </Btn>
+            </span>
           </div>
           <div className="min-w-0 flex-1">
             <h1 className="ux-screen-title flex items-center gap-2 text-xl font-bold" style={{ color: "var(--ux-ink)" }}>
@@ -165,9 +176,12 @@ export default function Profile() {
           </div>
         </div>
 
+        {/* "See it as others do" is four words, and on half of 350px it wrapped
+            onto two lines beside a one-line button. On a phone the label is the
+            verb — the sentence is on the screen it leads to. */}
         <div className="mt-4 grid grid-cols-2 gap-2.5 lg:hidden">
-          <Btn href="/app/profile/preview" variant="outline" icon="Eye" full>{tr("profile.seeItAsOthersDo")}</Btn>
-          <Btn href="/app/settings/account" variant="primary" icon="Pencil" full>{tr("profile.editProfile")}</Btn>
+          <Btn href="/app/profile/preview" variant="outline" icon="Eye" full>Preview</Btn>
+          <Btn href="/app/settings/account" variant="primary" icon="Pencil" full>Edit</Btn>
         </div>
 
         {/* Every one of these four was a constant: 6, 4, 15 and ₹24,350. */}
@@ -203,7 +217,12 @@ export default function Profile() {
         thumb the row continues.
       */}
       <div className="ux-scroll-x mb-[16px] -mx-[20px] max-w-[calc(100%+40px)] overflow-x-auto px-[20px] lg:mx-0 lg:max-w-none lg:overflow-visible lg:px-0">
-        <Tabs items={["Overview", "Skills", "Experience", "What you made", "Helping others", "Documents"]} active={tab} onChange={setTab} />
+        {/* `w-max`: an `inline-flex` inside a scroller still shrinks to the
+            scroller's width and wraps its labels — "What you / made" — instead
+            of overflowing it, which is the whole point of the scroller. */}
+        <div className="w-max">
+          <Tabs items={["Overview", "Skills", "Experience", "What you made", "Helping others", "Documents"]} active={tab} onChange={setTab} />
+        </div>
       </div>
 
       {tab === "Overview" && (

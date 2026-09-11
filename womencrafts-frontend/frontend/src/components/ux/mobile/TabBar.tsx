@@ -203,9 +203,17 @@ export function TabBar() {
             href={t.href}
             className="ux-tab"
             aria-current={on ? "page" : undefined}
-            // Only on an actual change. Buzzing when she taps the tab she is
-            // already on says something happened when nothing did.
-            onClick={on ? undefined : haptics.light}
+            /*
+              Only when the tap actually goes somewhere.
+
+              Keyed on the href and NOT on `on`: `on` means "this section
+              contains the screen you are looking at", which is true for the
+              Earn tab while she is on /app/documents — a tap there really does
+              take her to the Earn hub, and skipping the buzz for it would say
+              nothing happened when something did. It is only a tap on the tab
+              whose own screen is already open that is a no-op.
+            */
+            onClick={pathname === t.href ? undefined : haptics.light}
           >
             <span className="ux-tab-pill">
               {/*

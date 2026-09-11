@@ -285,8 +285,11 @@ export default function CirclePage() {
               tabs at 390px pushed the page sideways. `.ux-scroll-x` gives it
               somewhere to go and hides the bar. */}
           <div className="ux-scroll-x -mx-[20px] max-w-[calc(100%+40px)] overflow-x-auto px-[20px] lg:mx-0 lg:max-w-none lg:overflow-visible lg:px-0">
-            <Tabs items={TABS as unknown as string[]} active={tab}
-                  onChange={(t) => setTab(t as Tab)} />
+            {/* `w-max` — see the note on the same wrapper in `profile/page.tsx`. */}
+            <div className="w-max">
+              <Tabs items={TABS as unknown as string[]} active={tab}
+                    onChange={(t) => setTab(t as Tab)} />
+            </div>
           </div>
           {topic !== ALL_TOPICS && (
             <button type="button" onClick={() => setTopic(ALL_TOPICS)}

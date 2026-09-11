@@ -345,10 +345,20 @@ export function ChatLog({
   className?: string;
   label?: string;
 }) {
+  /*
+    Destructured, not read as `scroll.ref` on the JSX line.
+
+    `react-hooks/refs` reads a member expression ending in `.ref` inside JSX as
+    a ref being dereferenced during render and errors on it. Pulling both out
+    first is the same code and says what is actually happening: a ref object and
+    an event handler are being handed to a DOM node, which is what refs are for.
+  */
+  const { ref: logRef, onScroll } = scroll;
+
   return (
     <div
-      ref={scroll.ref}
-      onScroll={scroll.onScroll}
+      ref={logRef}
+      onScroll={onScroll}
       className={`ux-chat-log ${className}`}
       role="log"
       aria-live="polite"

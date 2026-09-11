@@ -462,16 +462,22 @@ export default function SakhiPage() {
             words without wrapping onto a second row — which it did.
           */}
           <div className="flex shrink-0 gap-1 lg:gap-2">
+            {/* The bordered pill is a desktop shape: at 390px two of them with
+                their words wrapped the header onto a second row. Below `lg` they
+                are 44px icon buttons; from `lg` they are exactly the buttons
+                that were here before, chrome included. */}
             <Link href="/app/saved" aria-label={`Saved${saved.length > 0 ? ` (${saved.length})` : ""}`}
                   className="ux-press flex h-[44px] w-[44px] items-center justify-center gap-2 rounded-full text-xsm font-bold
-                             lg:h-auto lg:min-h-[40px] lg:w-auto lg:rounded-[12px] lg:px-3.5"
+                             lg:h-auto lg:min-h-[40px] lg:w-auto lg:rounded-[12px] lg:border lg:border-[var(--ux-line-strong)]
+                             lg:bg-[var(--ux-surface)] lg:px-3.5"
                   style={{ color: "var(--ux-ink)" }}>
               <Icons.BookmarkCheck className="h-[20px] w-[20px] lg:h-4 lg:w-4" />
               <span className="hidden lg:inline">Saved {saved.length > 0 && `(${saved.length})`}</span>
             </Link>
             <button type="button" onClick={startNew} aria-label={tr("sakhi.newConversation")}
                     className="ux-press flex h-[44px] w-[44px] items-center justify-center gap-2 rounded-full text-xsm font-bold
-                               lg:h-auto lg:min-h-[40px] lg:w-auto lg:rounded-[12px] lg:px-3.5"
+                               lg:h-auto lg:min-h-[40px] lg:w-auto lg:rounded-[12px] lg:border lg:border-[var(--ux-line-strong)]
+                               lg:bg-[var(--ux-surface)] lg:px-3.5"
                     style={{ color: "var(--ux-ink)" }}>
               <Icons.Plus className="h-[22px] w-[22px] lg:h-4 lg:w-4" />
               <span className="hidden lg:inline">{tr("sakhi.newConversation")}</span>
@@ -562,7 +568,10 @@ export default function SakhiPage() {
                 value={draft} onChange={setDraft} onSend={() => ask(draft)}
                 onMic={() => listen(false)} listening={listening} busy={busy}
                 mode={mode} setMode={setMode} locale={locale} setLocale={setLocale} locales={localeItems}
-                placeholder={empty ? tr("sakhi.askAnythingOrSayWhatYou") : tr("sakhi.askAFollowUp")}
+                /* Short enough to sit on one line. Chrome sizes a textarea's
+                   `scrollHeight` around its placeholder, so the long desktop
+                   string made the empty field render three rows tall. */
+                placeholder={empty ? "Ask anything…" : "Ask a follow-up…"}
                 canVoice={canVoice}
                 file={file} onFile={setFile} onClearFile={() => setFile(null)}
               />

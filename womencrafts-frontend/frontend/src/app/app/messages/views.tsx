@@ -46,7 +46,6 @@ import {
   useChatScroll,
 } from "@/components/ux/sakhi/chat";
 import { ListGroup, ListRow } from "@/components/ux/mobile/ListRow";
-import { SegmentedControl } from "@/components/ux/mobile/SegmentedControl";
 
 /**
  * Messages.
@@ -314,12 +313,42 @@ export function Inbox({
                  className="w-full bg-transparent text-[16px] outline-none" style={{ color: "var(--ux-ink)" }} />
         </label>
 
-        <SegmentedControl
-          label="Filter conversations"
-          options={FILTERS.map((f) => ({ value: f.value, label: f.label }))}
-          value={filter}
-          onChange={setFilter}
-        />
+        {/*
+          Chips, not a segmented control — measured rather than preferred.
+
+          A segmented control divides the track evenly, so five segments across
+          390px get 69px each; take away the 24px of padding a 44px-tall segment
+          needs and 45px of text is left. "Mentors" is 56px at 14px semibold, so
+          the control rendered "All · Buy… · Men… · Circ… · Team". A truncated
+          filter is a filter she has to guess at.
+
+          Five-plus filters over one list is what a scrolling chip row is for,
+          and it is what WhatsApp itself uses for exactly this (All / Unread /
+          Favourites / Groups). The segmented control stays the right answer at
+          two to four segments and is used that way elsewhere.
+        */}
+        <div role="group" aria-label="Filter conversations"
+             className="ux-chiprow -mx-[20px] flex gap-2 px-[20px]">
+          {FILTERS.map((f) => {
+            const on = filter === f.value;
+            const n = f.value === "all" ? total : counts[f.value] ?? 0;
+            return (
+              <button key={f.value} type="button" onClick={() => setFilter(f.value)} aria-pressed={on}
+                      className="ux-press flex min-h-[38px] shrink-0 items-center gap-1.5 rounded-full px-3.5 text-[14px] font-semibold"
+                      style={on
+                        ? { background: "linear-gradient(96deg, var(--ux-rib-2), var(--ux-rib-3))", color: "var(--ux-on-brand)" }
+                        : { background: "var(--ux-surface)", border: "1px solid var(--ux-line-strong)", color: "var(--ux-ink-2)" }}>
+                {f.label}
+                {n > 0 && (
+                  <span className="text-[12px] font-bold tabular-nums"
+                        style={{ color: on ? "var(--ux-on-brand-2)" : "var(--ux-faint)" }}>
+                    {n}
+                  </span>
+                )}
+              </button>
+            );
+          })}
+        </div>
 
         <div className="ux-scroll-y -mx-[20px] mt-4 min-h-0 flex-1 space-y-5 overflow-y-auto px-[20px] pb-[76px]">
           {waiting.length > 0 && (
@@ -551,7 +580,16 @@ export function Thread({
     */
     <ChatFrame
       label={`Conversation with ${conv.name}`}
-      className={`ux-sq min-h-0 overflow-hidden bg-[var(--ux-surface)]
+      /*
+        `flex-col` is on the class list, not only in the phone CSS.
+
+        `.ux-chat` sets `flex-direction: column` inside `max-width: 1023px` and
+        nowhere else, so at 1440px this panel inherited the default `row`: the
+        header, the thread, the chips and the composer laid out side by side,
+        and every bubble wrapped one word per line. Caught on the desktop
+        screenshot, which is exactly what it is for.
+      */
+      className={`ux-sq min-h-0 flex-col overflow-hidden bg-[var(--ux-surface)]
                   lg:rounded-[20px] lg:border lg:border-[var(--ux-line)] lg:shadow-[var(--ux-shadow-card)]
                   ${className ?? "flex"}`}
     >

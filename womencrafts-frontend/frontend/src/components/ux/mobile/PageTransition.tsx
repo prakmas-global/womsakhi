@@ -101,6 +101,34 @@ function useSlideDirection() {
   const pathname = usePathname();
   const visited = useRef<string[]>([]);
   const cursor = useRef(0);
+  /**
+   * Where the browser's last Back or Forward landed, or null.
+   *
+   * This is the whole reason the stack alone is not enough, and it was caught
+   * in the browser rather than reasoned about: bouncing Learn → Earn → Learn,
+   * the third tap arrives at a path that IS the entry behind the cursor, so a
+   * stack-only model called it a Back and slid the Learn screen in from the
+   * left — on a forward tap. A push and a Back are only distinguishable by the
+   * event: the browser fires `popstate` for Back and Forward and never for a
+   * `<Link>`. So a push is unconditionally forward, and only a real history
+   * move is allowed to look itself up in the stack.
+   *
+   * The PATH and not a timestamp. The first version recorded when the pop
+   * happened and trusted it for 1200ms, which is the kind of number that is
+   * right on a laptop and wrong on the device this is for: `popstate` fires
+   * before React commits the new route, and on a loaded server that commit was
+   * measured 2.5 SECONDS later, so the window expired and every Back slid in
+   * from the wrong side. `location.pathname` is already the destination by the
+   * time `popstate` fires, so matching on it is exact and waits as long as the
+   * route needs.
+   */
+  const poppedTo = useRef<string | null>(null);
+
+  useEffect(() => {
+    const onPop = () => { poppedTo.current = window.location.pathname; };
+    window.addEventListener("popstate", onPop);
+    return () => window.removeEventListener("popstate", onPop);
+  }, []);
 
   useIsomorphicLayoutEffect(() => {
     const stack = visited.current;
@@ -114,19 +142,35 @@ function useSlideDirection() {
     }
     if (stack[cursor.current] === pathname) return;
 
-    let dx: number;
-    if (stack[cursor.current - 1] === pathname) {
-      cursor.current -= 1;
-      dx = -DX; // back: in from the left
-    } else if (stack[cursor.current + 1] === pathname) {
-      cursor.current += 1;
-      dx = DX; // forward again, through history
+    const viaHistory = poppedTo.current === pathname;
+    poppedTo.current = null;
+
+    let dx = DX;
+    if (viaHistory) {
+      // `lastIndexOf` with a negative `from` counts back from the END of the
+      // array, which at cursor 0 would search the whole stack and call a
+      // Forward a Back. Guarded rather than clamped, because there is nothing
+      // behind entry 0 to go back to.
+      const behind = cursor.current > 0 ? stack.lastIndexOf(pathname, cursor.current - 1) : -1;
+      const ahead = stack.indexOf(pathname, cursor.current + 1);
+      if (behind !== -1 && (ahead === -1 || cursor.current - behind <= ahead - cursor.current)) {
+        cursor.current = behind;
+        dx = -DX; // back: in from the left
+      } else if (ahead !== -1) {
+        cursor.current = ahead;
+        dx = DX; // forward again, through history
+      } else {
+        // A history entry this session never recorded — a reload, or a link
+        // opened straight into the middle of the app. Back is the safer read:
+        // you cannot go forward to somewhere you have not been.
+        dx = -DX;
+      }
     } else {
-      // Somewhere new. Everything ahead of the cursor is unreachable now.
+      // A push. Always forward, and everything ahead of the cursor is
+      // unreachable now — exactly what the browser does to its own stack.
       stack.length = cursor.current + 1;
       stack.push(pathname);
       cursor.current = stack.length - 1;
-      dx = DX;
     }
 
     document.documentElement.style.setProperty("--ux-page-dx", `${dx}px`);

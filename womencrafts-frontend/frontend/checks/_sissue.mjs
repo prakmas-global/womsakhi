@@ -3,7 +3,7 @@ import { CHROME } from "./_shared.mjs";
 const b = await puppeteer.launch({ executablePath: CHROME, headless: "new", args: ["--no-sandbox"] });
 const p = await b.newPage();
 const msgs = [];
-p.on("console", m => { if (m.type() === "error" || m.type() === "warning") msgs.push(`${m.type()}: ${m.text().slice(0,1400)}`); });
+p.on("console", m => { if (m.type() === "error" || m.type() === "warning") msgs.push(`${m.type()}: ${m.text().slice(0,6000)}`); });
 p.on("pageerror", e => msgs.push("PAGEERROR: " + String(e).slice(0,160)));
 p.on("requestfailed", r => msgs.push("FAILED: " + r.url().slice(0,100)));
 await p.setViewport({ width: 1440, height: 900 });
