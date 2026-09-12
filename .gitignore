@@ -34,7 +34,13 @@ uploads/
 
 # Logs and scratch
 *.log
-logs/
+# A bare `logs/` matches at ANY depth, and it silently swallowed a whole
+# application route: womencrafts-frontend/frontend/src/app/dashboard/settings/
+# logs/ — the staff System Logs page — was never committed and existed on one
+# machine only. Anchored to the repository root, which is where log output
+# actually lands.
+/logs/
+**/backend/logs/
 .cache/
 
 # Backups
