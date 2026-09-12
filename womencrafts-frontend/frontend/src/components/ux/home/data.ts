@@ -1,11 +1,38 @@
 import { allNodes } from "../nav-tree";
 /**
- * The Home module's content — mock for now.
+ * What is LEFT of the Home module's mock content.
  *
- * Deliberately shaped like what `/me/summary`, `/me/bookings`, `/catalog/*` and
- * `/growth/opportunities` already return, so wiring it to the backend later is
- * a change of source, not a rewrite of any screen. Frontend first was the
- * explicit ask: see it working, then connect it.
+ * **Home itself no longer reads any of it.** `Dashboard` and `HomeRail` draw
+ * from `GET /me/home`, and the eleven constants they used to render — her
+ * activities, her money, her streak, the mentor suggested to her, the one
+ * opening posted today, the first-run checklist — were deleted with them
+ * rather than left behind. A fixture nothing renders is worse than no fixture:
+ * it reads as a source, and the next screen that needs a number finds one here
+ * that looks plausible and belongs to nobody.
+ *
+ * What remains is here because something live still needs it, and each for a
+ * different reason:
+ *
+ *   `QUICK_ACTIONS` is navigation, not data — the phone's shortcut grid, with
+ *   its labels looked up from `nav-tree` so they cannot drift from the routes.
+ *
+ *   `ME` and `NOTIFICATIONS` are FALLBACKS. `useMe` and `useNotifications` hold
+ *   them while the real request is in flight and when it fails, so a screen
+ *   renders a plausible person rather than "undefined".
+ *
+ *   `SEARCH_*` is the hand-written content index behind the search field, which
+ *   has no catalogue endpoint yet.
+ *
+ *   `JOURNEY`, `SKILLS`, `CIRCLES` and `EARNINGS` are read by
+ *   `services/me.repository`, which still assembles the seven-stage journey
+ *   state for `/app/journey`. Home stopped reading it in this pass — the stage
+ *   it derived from these four fixtures was a claim about a woman's life made
+ *   out of somebody's placeholder — and `/app/journey` is the next screen due
+ *   the same treatment.
+ *
+ *   `RECOMMENDED` and `OPPORTUNITIES` are the last unreferenced pair. They are
+ *   left only because `MobileHome` is being wired to the same endpoint in
+ *   parallel; they go with that change.
  */
 
 const A = (n: string) => `/ux/art/${n}.webp`;
@@ -93,17 +120,6 @@ export const RECOMMENDED = [
   { id: "sp", title: "Speak with Confidence", meta: "Course • All levels", rating: "4.9", count: "2.1k", art: A("course-confident-microphone") },
 ];
 
-/** One mentor surfaced in the rail — matched to what she is currently learning. */
-export const SUGGESTED_MENTOR = {
-  name: "Neha Verma",
-  role: "Digital Marketing • 8 years",
-  art: A("avatar-woman-blazer"),
-  rating: "4.9",
-  sessions: "230 sessions",
-  langs: "Hindi, English",
-  free: "Free first session",
-};
-
 export const SKILLS = [
   { name: "Digital Marketing", pct: 65, tone: "--ux-brand-600" },
   { name: "Communication", pct: 42, tone: "--ux-blue" },
@@ -128,12 +144,6 @@ export const CIRCLES = [
     art: A("scene-women-business-handshake"), tint: "--ux-tint-violet" },
 ];
 
-export const ACTIVITIES = [
-  { id: "a1", d: "18", m: "MAY", title: "Mentor Session with Neha", time: "11:00 AM – 12:00 PM", cta: "Join" },
-  { id: "a2", d: "19", m: "MAY", title: "Digital Marketing Live Class", time: "04:00 PM – 05:30 PM", cta: "Join" },
-  { id: "a3", d: "21", m: "MAY", title: "Women in Tech Webinar", time: "07:00 PM – 08:30 PM", cta: "View" },
-];
-
 export const EARNINGS = {
   // MINOR units — paise — like every other money value in this app, so the
   // mock matches the contract the real endpoint will return. Written as
@@ -142,17 +152,6 @@ export const EARNINGS = {
   total: 2_435_000, delta: "+18.6%", period: "This Month",
   series: [12, 20, 14, 26, 18, 30, 24, 38, 32, 44, 40, 58],
 };
-
-export const SUGGESTIONS = [
-  "How to start freelancing?",
-  "Best skills to learn in 2024?",
-  "How to find a mentor?",
-];
-
-export const MEMBER_FACES = [
-  A("avatar-woman-blazer"), A("avatar-woman-hijab"),
-  A("avatar-woman-teal-shirt"), A("avatar-woman-blue-saree"),
-];
 
 export const NOTIFICATIONS = [
   { id: "n1", kind: "mentor", title: "Neha accepted your mentor request", body: "You can now book a session with her.", when: "12 min ago", unread: true, icon: "Users", tint: "--ux-tint-orange", ink: "--ux-orange" },
@@ -249,84 +248,3 @@ export const SEARCH_SUGGESTED = [
 export const SEARCH_RECENT = ["Tailoring orders", "Neha Verma", "Mudra loan"];
 
 export const SEARCH_KINDS = ["All", "Course", "Opportunity", "Mentor", "Circle", "Scheme", "Page"] as const;
-
-
-/* ── What today actually is ────────────────────────────────────────────────
-   A dashboard that lists modules makes her do the deciding. These three
-   shapes answer the three questions she opens the app with: did money come
-   in, is there work for me today, and what is the one thing to do next. */
-
-/** Money, with the only context that makes a number mean anything: her goal. */
-/** ₹25,000 rather than ₹25000 — the separator is what makes it readable. */
-/**
- * WHOLE rupees, not paise — pay is stored as `25000` meaning ₹25,000.
- * See `kit/money.formatWholeRupees` for why this is a separate name.
- */
-export { formatWholeRupees as money } from "../kit/money";
-
-export const MONEY = {
-  earnedThisMonth: 24350,
-  goal: 30000,
-  lastMonth: 20530,
-  pending: 4200,
-  pendingFrom: "BrandStory",
-  pendingDue: "Friday",
-  /** Her rank inside her own circle — comparison she can actually act on. */
-  betterThanPct: 68,
-};
-
-/** The single best-matched opening posted today. One, not a list. */
-export const TODAYS_WORK = {
-  id: "w1",
-  title: "Digital Marketing Specialist",
-  org: "TechNova Solutions",
-  pay: "₹25,000 – ₹35,000",
-  place: "Remote",
-  match: 92,
-  closesIn: "4 days",
-  applicants: 34,
-};
-
-/**
- * The one next step, and why it is the one.
- *
- * `because` is the important field. "Finish this lesson" is an instruction;
- * "one lesson left before your certificate" is a reason, and she can disagree
- * with a reason.
- */
-export const NEXT_STEP = {
-  title: "Finish Social Media Strategy",
-  because: "It is the last lesson before your certificate.",
-  mins: 14,
-  href: "/app/programs",
-  icon: "PlayCircle",
-  cta: "Continue",
-};
-
-/** Momentum. Seven days, most recent last. */
-export const STREAK = {
-  days: 5,
-  week: [true, true, false, true, true, true, false],
-  best: 12,
-};
-
-/** What Sakhi noticed, unprompted. */
-export const SAKHI_NUDGE = {
-  text: "Three new tailoring orders opened near Jaipur this week — your stitching skill matches all three.",
-  action: "Show me",
-  href: "/app/opportunities",
-};
-
-/**
- * The first-run version of everything above.
- *
- * A new member has no earnings, no streak and no applications, and showing her
- * six cards of zeroes is the worst first impression an app can make. The home
- * screen switches to a guided start instead.
- */
-export const FIRST_RUN_STEPS = [
-  { id: "f1", label: "Tell us what you are good at", mins: 2, icon: "Sparkles", href: "/app/profile", done: false },
-  { id: "f2", label: "Add a photo so employers see you", mins: 1, icon: "Camera", href: "/app/profile", done: false },
-  { id: "f3", label: "Pick one skill to build", mins: 3, icon: "BookOpen", href: "/app/programs", done: false },
-  { id: "f4", label: "Apply for your first opening", mins: 5, icon: "Briefcase", href: "/app/opportunities", done: false },
-];
