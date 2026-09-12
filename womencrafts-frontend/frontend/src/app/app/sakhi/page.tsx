@@ -16,6 +16,7 @@ import { PhoneComposer } from "@/components/ux/sakhi/parts";
 import { Sheet } from "@/components/ux/kit/sheet";
 import { Btn } from "@/components/ux/kit";
 import { useToast } from "@/design-system/feedback/ToastProvider";
+import { SPEECH_UNSUPPORTED, speechFailure, speechSupported, type SpeechFailure } from "@/lib/speech";
 import {
   apiSakhiConversation,
   apiSakhiConversations,
@@ -352,10 +353,25 @@ export default function SakhiPage() {
     which nobody can perceive.
   */
   const [canVoice, setCanVoice] = useState(false);
-  useEffect(() => {
-    const w = window as unknown as Record<string, unknown>;
-    setCanVoice(Boolean(w.SpeechRecognition || w.webkitSpeechRecognition));
-  }, []);
+  useEffect(() => { setCanVoice(speechSupported()); }, []);
+
+  /**
+   * Say why the microphone stopped.
+   *
+   * `onerror` used to be `() => setListening(false)` — the mic lit up, went
+   * dark, and she was told nothing at all. On this screen above all others
+   * that is the wrong silence: a woman pressing the mic is frequently doing it
+   * because typing is the hard part, so "nothing happened" reads as "this app
+   * is broken" and she stops. The overwhelmingly common cause is a permission
+   * she could grant in two taps if anyone told her it was the problem.
+   */
+  const sayWhy = useCallback((f: SpeechFailure | null) => {
+    if (!f) return;   // `aborted` — she pressed stop. Nothing to report.
+    const opts = { description: f.description };
+    if (f.tone === "danger") toast.error(f.title, opts);
+    else if (f.tone === "warn") toast.warn(f.title, opts);
+    else toast.info(f.title, opts);
+  }, [toast]);
 
   const listen = useCallback((intoVoiceMode: boolean) => {
     if (listening) { recogRef.current?.stop(); setListening(false); return; }
@@ -364,9 +380,12 @@ export default function SakhiPage() {
       (new () => {
         lang: string; interimResults: boolean; continuous: boolean;
         onresult: (e: { results: ArrayLike<ArrayLike<{ transcript: string }>> }) => void;
-        onend: () => void; onerror: () => void; start: () => void; stop: () => void;
+        onend: () => void; onerror: (e: { error?: string }) => void;
+        start: () => void; stop: () => void;
       }) | undefined;
-    if (!Ctor) return;
+    // The mic is not drawn where `canVoice` is false, so this is the backstop
+    // for anything that reaches here anyway rather than the path she takes.
+    if (!Ctor) { sayWhy(SPEECH_UNSUPPORTED); return; }
 
     const r = new Ctor();
     r.lang = locale === "en" ? "en-IN" : locale;
@@ -385,11 +404,24 @@ export default function SakhiPage() {
         setHeard((said) => { if (said.trim()) void ask(said); return said; });
       }
     };
-    r.onerror = () => { setListening(false); recogRef.current = null; };
+    r.onerror = (e) => { setListening(false); recogRef.current = null; sayWhy(speechFailure(e?.error)); };
     recogRef.current = r;
     setListening(true);
-    r.start();
-  }, [ask, listening, locale]);
+    /*
+      `start()` throws, and throwing here left her with a mic stuck lit.
+      Chrome raises InvalidStateError when a recognition is already running —
+      which happens on a double tap, and after an `onend` that never arrived
+      because the tab was backgrounded mid-sentence. It also throws outright on
+      an insecure origin, where no `onerror` is ever delivered to explain it.
+    */
+    try {
+      r.start();
+    } catch {
+      setListening(false);
+      recogRef.current = null;
+      sayWhy(speechFailure("unknown"));
+    }
+  }, [ask, listening, locale, sayWhy]);
 
   useEffect(() => () => recogRef.current?.stop(), []);
 

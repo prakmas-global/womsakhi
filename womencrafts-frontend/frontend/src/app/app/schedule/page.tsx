@@ -158,7 +158,14 @@ export default function Schedule() {
           </div>
         </div>
 
-        <div className="flex shrink-0 items-center gap-2.5">
+        {/*
+          Wraps on a phone. As one unbreakable row this is 408px of controls —
+          the Calendar/Agenda toggle plus "Add activity" — inside a 350px
+          column, and `shrink-0` meant the last 38px of the button went under
+          the hard edge of the scroller with no way to reach it. It is still a
+          single row everywhere it fits.
+        */}
+        <div className="flex flex-wrap items-center gap-2.5 sm:flex-nowrap sm:shrink-0">
           {/* Calendar / Agenda */}
           <div className="flex rounded-[13px] border p-1"
                style={{ background: v("--ux-surface"), borderColor: v("--ux-line") }}>

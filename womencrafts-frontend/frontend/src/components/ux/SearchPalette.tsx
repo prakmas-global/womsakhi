@@ -10,7 +10,6 @@ import { searchPages } from "./nav-search";
 import { useTheme } from "@/context/ThemeContext";
 import { useT } from "@/i18n";
 import { useNotifications } from "@/components/ux/live";
-import { useToast } from "@/design-system/feedback/ToastProvider";
 import { SPEECH_UNSUPPORTED, speechFailure, speechSupported, type SpeechFailure } from "@/lib/speech";
 
 /**
@@ -136,7 +135,6 @@ export function SearchPalette({ open, onClose }: { open: boolean; onClose: () =>
   const router = useRouter();
   const { isDark } = useTheme();
   const t = useT();
-  const toast = useToast();
   const [raw, setRaw] = useState("");
   const [scope, setScope] = useState<string>("all");
   const [hits, setHits] = useState<ApiSearchHit[]>([]);
@@ -149,6 +147,7 @@ export function SearchPalette({ open, onClose }: { open: boolean; onClose: () =>
   const listRef = useRef<HTMLDivElement>(null);
   const [hearing, setHearing] = useState(false);
   const [speech, setSpeech] = useState(false);
+  const [micFailed, setMicFailed] = useState<SpeechFailure | null>(null);
 
   // Typing is the real barrier for a member who reads slowly — speaking is
   // the difference between using search and never opening it. Offered only
@@ -156,14 +155,17 @@ export function SearchPalette({ open, onClose }: { open: boolean; onClose: () =>
   // that does nothing.
   useEffect(() => { setSpeech(speechSupported()); }, []);
 
-  /* The same silence, fixed the same way everywhere — see `@/lib/speech`. */
+  /*
+    The same silence as everywhere else — see `@/lib/speech` — but said in the
+    panel rather than as a toast. This palette is a `z-80` portal over the whole
+    screen and the toast list sits at `z-70`, so a toast raised from in here is
+    painted BEHIND the scrim: measured, and the message was invisible. A modal
+    that covers the screen has to carry its own messages.
+  */
   const sayWhy = useCallback((f: SpeechFailure | null) => {
     if (!f) return;                   // `aborted` — she pressed stop.
-    const opts = { description: f.description };
-    if (f.tone === "danger") toast.error(f.title, opts);
-    else if (f.tone === "warn") toast.warn(f.title, opts);
-    else toast.info(f.title, opts);
-  }, [toast]);
+    setMicFailed(f);
+  }, []);
 
   const listen = useCallback(() => {
     const w = window as unknown as Record<string, unknown>;
@@ -176,6 +178,7 @@ export function SearchPalette({ open, onClose }: { open: boolean; onClose: () =>
     // Hindi first, since that is what she speaks; the server understands both.
     r.lang = "hi-IN";
     r.interimResults = true;
+    setMicFailed(null);
     r.onresult = (e) => {
       const said = Array.from({ length: e.results.length },
         (_, i) => e.results[i][0].transcript).join(" ").trim();
@@ -196,7 +199,7 @@ export function SearchPalette({ open, onClose }: { open: boolean; onClose: () =>
 
   useEffect(() => {
     if (!open) return;
-    setRaw(""); setScope("all"); setCursor(0); setHits([]); setAnswer(null);
+    setRaw(""); setScope("all"); setCursor(0); setHits([]); setAnswer(null); setMicFailed(null);
     try { setRecent(JSON.parse(localStorage.getItem(RECENT_KEY) ?? "[]").slice(0, 5)); }
     catch { setRecent([]); }
     const t = setTimeout(() => inputRef.current?.focus(), 30);
@@ -400,6 +403,24 @@ export function SearchPalette({ open, onClose }: { open: boolean; onClose: () =>
                   className="ux-press shrink-0 rounded-md px-[8px] py-1 text-2xs font-bold"
                   style={{ border: "1px solid var(--ux-line-strong)", color: "var(--ux-faint)" }}>ESC</button>
         </div>
+
+        {/* Why the microphone stopped — in the panel, where she is looking. */}
+        {micFailed && (
+          <div role="alert" className="flex items-start gap-2.5 px-[20px] py-2.5"
+               style={{ background: micFailed.tone === "info" ? "var(--ux-surface-2)" : "var(--ux-danger-tint)",
+                        borderBottom: "1px solid var(--ux-line)" }}>
+            <Icons.AlertTriangle className="mt-[2px] h-[15px] w-[15px] shrink-0"
+                                 style={{ color: micFailed.tone === "info" ? "var(--ux-muted)" : "var(--ux-danger-ink)" }} />
+            <div className="min-w-0 flex-1">
+              <p className="text-xs font-bold" style={{ color: "var(--ux-ink)" }}>{micFailed.title}</p>
+              <p className="mt-0.5 text-xs leading-relaxed" style={{ color: "var(--ux-ink-2)" }}>{micFailed.description}</p>
+            </div>
+            <button type="button" onClick={() => setMicFailed(null)} aria-label="Dismiss"
+                    className="ux-press shrink-0 rounded-md p-1" style={{ color: "var(--ux-faint)" }}>
+              <Icons.X className="h-[14px] w-[14px]" />
+            </button>
+          </div>
+        )}
 
         {/* scopes */}
         <div className="flex gap-1.5 overflow-x-auto px-[20px] py-2.5"

@@ -112,7 +112,13 @@ export default function VoiceSettingsPage() {
                      style={{ fontSize: `${14 * TEXT_SIZES[k]}px` }}>
                     {k === "normal" ? "Normal" : k === "large" ? "Bigger" : "Biggest"}
                   </p>
-                  <p className="mt-1 leading-snug" style={{ fontSize: `${11 * TEXT_SIZES[k]}px`, opacity: 0.8 }}>{tr("voice.blouseStitching")}</p>
+                  {/* 12, not 11. The sample is real text she has to read to
+                      choose, and at the "Normal" setting the multiplier is 1 —
+                      so an 11px base put this screen's only specimen below the
+                      12px floor the rest of the app holds. The ratio between
+                      the three options is what the preview is for, and 12 shows
+                      it just as well. */}
+                  <p className="mt-1 leading-snug" style={{ fontSize: `${12 * TEXT_SIZES[k]}px`, opacity: 0.8 }}>{tr("voice.blouseStitching")}</p>
                 </button>
               ))}
             </div>
