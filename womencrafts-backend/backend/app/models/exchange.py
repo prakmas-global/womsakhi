@@ -11,6 +11,7 @@ pinned above the thread.
 from datetime import datetime, timezone
 
 from app.core.serializers import aware
+from app.core.media import media_url
 
 
 class SwapModel:
@@ -50,7 +51,7 @@ class SwapModel:
         return {
             "id": str(doc["_id"]),
             "who": doc.get("who", ""),
-            "avatar": doc.get("avatar", ""),
+            "avatar": media_url(doc.get("avatar", "")),
             "skill": doc.get("skill", ""),
             "detail": doc.get("detail", ""),
             "wants": doc.get("wants", ""),

@@ -18,6 +18,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query, status
 from app.core import mongosafe
 from app.core.rbac import require_active_member
 from app.core.serializers import to_object_id
+from app.core.media import media_url
 from app.db.mongodb import get_database
 from app.models.exchange import ExchangeModel, SwapModel
 from app.schemas.exchange import (
@@ -173,7 +174,7 @@ async def my_threads(me: dict = Depends(require_active_member)):
             id=str(t["_id"]),
             swap_id=t.get("swap_id", ""),
             with_whom=other.get("full_name", "A member"),
-            avatar=other.get("avatar", ""),
+            avatar=media_url(other.get("avatar", "")),
             # The asker learns what the owner offered, and teaches what the
             # owner wanted. Reversed for the owner.
             you_teach=(agreed.get("i_teach") if agreed else

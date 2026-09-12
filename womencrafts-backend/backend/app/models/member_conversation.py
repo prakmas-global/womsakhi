@@ -17,6 +17,8 @@ from __future__ import annotations
 from datetime import datetime, timezone
 from typing import Any, Optional
 
+from app.core.media import media_url
+
 
 def _now() -> datetime:
     return datetime.now(timezone.utc)
@@ -28,10 +30,16 @@ class MemberConversationModel:
     # Who she is talking to. The kind drives the colour of the ring, the tag,
     # and which context a thread is allowed to carry.
     KIND_BUYER = "buyer"
+    #: The other direction. A thread with a woman SHE is buying from — which had
+    #: nowhere to live, so the market's "Ask her something" button showed
+    #: "Message sent" and sent nothing. Filing it under `buyer` would have put
+    #: the tag "Buyer" on a woman who is selling to her, which is a small lie on
+    #: every row.
+    KIND_SELLER = "seller"
     KIND_MENTOR = "mentor"
     KIND_CIRCLE = "circle"
     KIND_TEAM = "team"
-    KINDS = (KIND_BUYER, KIND_MENTOR, KIND_CIRCLE, KIND_TEAM)
+    KINDS = (KIND_BUYER, KIND_SELLER, KIND_MENTOR, KIND_CIRCLE, KIND_TEAM)
 
     @staticmethod
     def bubble(*, direction: str, text: str = "", file: Optional[dict] = None,
@@ -63,10 +71,26 @@ class MemberConversationModel:
         party: Optional[dict] = None,
         messages: Optional[list[dict]] = None,
         starred: bool = False,
+        with_user_id: str = "",
+        counterpart_id: str = "",
     ) -> dict:
+        """
+        `with_user_id` / `counterpart_id` are what make a thread two-sided.
+
+        A conversation document is ONE woman's view of a thread. That is right
+        for a circle and for the team, and it is not enough for two members
+        talking to each other: her reply has to arrive somewhere. So a
+        member-to-member thread is a PAIR of documents that name each other,
+        and `send` writes the mirror. Empty on every seeded thread, which still
+        behaves exactly as before.
+        """
         rows = messages or []
         return {
             "member_id": member_id,
+            # The other member, when there is one.
+            "with_user_id": with_user_id,
+            # Her document for the same thread.
+            "counterpart_id": counterpart_id,
             "kind": kind if kind in MemberConversationModel.KINDS else MemberConversationModel.KIND_BUYER,
             "name": name.strip(),
             "avatar": avatar,
@@ -114,7 +138,10 @@ class MemberConversationModel:
     # among itself and a team announcement are unanswered too, but nobody is
     # sitting there wondering why she has not replied — and putting them in
     # "waiting for your reply" is how that section stops meaning anything.
-    ANSWERABLE = (KIND_BUYER, KIND_MENTOR)
+    #
+    # A seller thread is answerable too: a woman who asked a question about
+    # something she wants to buy is waiting for exactly the same reason.
+    ANSWERABLE = (KIND_BUYER, KIND_SELLER, KIND_MENTOR)
 
     @staticmethod
     def awaits_reply(doc: dict):
@@ -130,7 +157,7 @@ class MemberConversationModel:
             "id": str(doc["_id"]),
             "kind": doc.get("kind", MemberConversationModel.KIND_BUYER),
             "name": doc.get("name", ""),
-            "avatar": doc.get("avatar", ""),
+            "avatar": media_url(doc.get("avatar", "")),
             "online": bool(doc.get("online")),
             "subtitle": doc.get("subtitle", ""),
             "preview": (last or {}).get("text") or ("Photo" if (last or {}).get("file") else ""),

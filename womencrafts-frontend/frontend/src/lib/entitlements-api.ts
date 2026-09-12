@@ -67,7 +67,14 @@ export async function apiMarkReference(id: string, state: MyState["state"], note
 
 /* ── Saved ───────────────────────────────────────────────────────────── */
 
-export type SavedKind = "job" | "program" | "event" | "scheme" | "mentor" | "service";
+/** Must match `SavedModel.KINDS` on the server — a kind it does not know is
+ *  refused with "That is not something you can save". */
+export type SavedKind =
+  | "job" | "program" | "event" | "scheme" | "mentor" | "service"
+  /** Something another woman sells in the market. */
+  | "listing"
+  /** Something another woman wrote in a circle. */
+  | "post";
 
 export interface SavedItem {
   id: string;
@@ -78,10 +85,16 @@ export interface SavedItem {
   gone: boolean;
   title: string;
   sub: string;
+  /** Where to open it, when its own id is not its address — a circle post
+   *  lives inside a circle, so its link has to name one. Empty otherwise. */
+  href: string;
   saved_on: string;
 }
 
-export const apiSaved = (s?: AbortSignal) => get<SavedItem[]>("/saved", s);
+/** Everything, or one kind of thing. The Circle screens ask for `post` alone
+ *  rather than reading her whole bookmark list to find three of them. */
+export const apiSaved = (s?: AbortSignal, kind?: SavedKind) =>
+  get<SavedItem[]>("/saved", s, kind ? { kind } : undefined);
 
 export async function apiSave(kind: SavedKind, refId: string) {
   const { data } = await apiClient.post<SavedItem>("/saved", { kind, ref_id: refId });

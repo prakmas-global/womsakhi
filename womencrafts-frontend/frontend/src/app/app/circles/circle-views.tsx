@@ -279,9 +279,12 @@ export function PostCard({ p, saved, onLike, onSave, onShare, busy }: {
             <Act icon={p.liked ? "Heart" : "Heart"} label={String(p.likes)}
                  on={p.liked} tone="--ux-pink-ink" disabled={busy}
                  onClick={() => onLike(p)} />
-            <Act icon="Bookmark" label="Save" on={saved} tone="--ux-brand"
+            <Act icon="Bookmark" label={saved ? "Saved" : "Save"} on={saved} tone="--ux-brand"
                  onClick={() => onSave(p)} />
-            <Act icon="Share2" label="Share" onClick={() => onShare(p)} />
+            {/* "Share" promised something this button cannot do: a circle is
+                behind the sign-in, so the address it copies opens for another
+                member and for nobody else. It is a copy, so it says copy. */}
+            <Act icon="Link2" label="Copy link" onClick={() => onShare(p)} />
           </div>
         </div>
       </div>

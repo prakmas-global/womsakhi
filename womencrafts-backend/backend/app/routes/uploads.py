@@ -4,6 +4,9 @@ File uploads.
 The admin picks an image, we check it's really an image and not too big, write
 it to `media/<kind>/<random>.<ext>` on disk, and hand back a URL. Any screen can
 then store that URL on its own record (a member's avatar, a content cover, …).
+
+What is STORED is the relative path; the absolute URL is built on the way out.
+app/core/media.py has the whole story.
 """
 
 import re
@@ -100,7 +103,10 @@ async def upload_file(
     document = UploadModel.create_document(
         original_name=file.filename or stored_name,
         stored_name=f"{kind}/{stored_name}",
-        url=f"{settings.MEDIA_BASE_URL.rstrip('/')}/media/{kind}/{stored_name}",
+        # A PATH, not a URL. The host is added by UploadModel.to_response from
+        # whatever MEDIA_BASE_URL this process runs with — baking it in here is
+        # what put `http://localhost:8020` into production. See app/core/media.py.
+        url=f"media/{kind}/{stored_name}",
         content_type=file.content_type or "",
         size=size,
         kind=kind,

@@ -7,7 +7,8 @@ import { ChipRow } from "@/components/ux/work/native";
 import * as Icons from "@/components/ux/icons";
 import { Btn, Card, EmptyState, I, SourceNote, v } from "@/components/ux/kit";
 import { useApplications, useJobs } from "@/components/ux/growth";
-import { KINDS, MODES } from "@/components/ux/work/data";
+import { apiToggleSaveOpportunity } from "@/lib/growth-api";
+import { KINDS, MODES, type Job } from "@/components/ux/work/data";
 import { useT } from "@/i18n";
 
 import { FAMILIES, FamilyStrip, JobCard, SkillsInDemand, WorkSummary, type FamilyId } from "./work-views";
@@ -64,10 +65,60 @@ export default function FindWorkPage() {
   const [mode, setMode] = useState<string | null>(null);
   const [kind, setKind] = useState<string | null>(null);
   const [sort, setSort] = useState<SortId>("match");
-  const [saved, setSaved] = useState<string[]>([]);
 
-  const save = useCallback((id: string) => {
-    setSaved((s) => (s.includes(id) ? s.filter((x) => x !== id) : [...s, id]));
+  /**
+   * Which openings she has bookmarked — on the server, not in this component.
+   *
+   * This was a `useState<string[]>`, so the label flipped to "Saved", nothing
+   * was written anywhere, and the bookmark was gone the moment she reloaded.
+   * `POST /growth/opportunities/{id}/save` has existed the whole time and
+   * `GET /growth/opportunities` already carries `saved` per row, so the truth
+   * for a row is what the server sent — `flips` holds only the ones she has
+   * changed since this list loaded, and is dropped when the list reloads with
+   * the new answer in it.
+   */
+  const [flips, setFlips] = useState<Record<string, boolean>>({});
+  const [saveError, setSaveError] = useState<string | null>(null);
+  const savedOf = useCallback(
+    (j: Job) => flips[j.id] ?? Boolean(j.saved), [flips]);
+
+  /**
+   * Optimistic, and it reverts.
+   *
+   * The flip has to be instant — she is on a phone and a round trip is a
+   * second — but a bookmark that stays lit after the write failed is the same
+   * lie the `useState` was telling, one reload later. `now` is the value the
+   * card was rendered with, so the revert puts back exactly what she saw.
+   */
+  const save = useCallback(async (j: Job, now: boolean) => {
+    const next = !now;
+    setFlips((f) => ({ ...f, [j.id]: next }));
+    setSaveError(null);
+    try {
+      await apiToggleSaveOpportunity(j.id);
+    } catch {
+      setFlips((f) => ({ ...f, [j.id]: now }));
+      setSaveError("That did not save. Nothing has changed — try again in a moment.");
+    }
+  }, []);
+
+  /**
+   * The tabs and the chips filter the same thing, so they must not disagree.
+   *
+   * Three controls on this screen narrow by kind and mode: this tab row, the
+   * family strip, and the chips in the hero. Picking "Freelance" on the chips
+   * took the list from 3465 characters to 1230; pressing "Opportunities" — the
+   * tab whose whole meaning is *all of them* — then did nothing at all, because
+   * `tab` was already "all" and the chip was still set. She had to reload the
+   * page to see the rest of the work.
+   *
+   * So "Opportunities" now means what it says and releases the other two.
+   * The search box is left alone on purpose: those are her own words, they are
+   * still in front of her, and "Clear filters" beside the count takes them.
+   */
+  const pickTab = useCallback((next: TabId) => {
+    setTab(next);
+    if (next === "all") { setFamily(null); setMode(null); setKind(null); }
   }, []);
 
   const shown = useMemo(() => {
@@ -253,7 +304,7 @@ export default function FindWorkPage() {
             {TABS.map((t) => {
               const on = tab === t.id;
               return (
-                <button key={t.id} type="button" onClick={() => setTab(t.id)} aria-pressed={on}
+                <button key={t.id} type="button" onClick={() => pickTab(t.id)} aria-pressed={on}
                         className="ux-press ux-sq shrink-0 border-b-2 px-3.5 pb-2.5 pt-1 text-xsm font-bold"
                         style={{ borderColor: on ? v("--ux-brand") : "transparent",
                                  color: v(on ? "--ux-brand" : "--ux-muted") }}>
@@ -280,14 +331,21 @@ export default function FindWorkPage() {
             }}>{tr("findwork.clearFilters")}</Btn>
           )}
         </div>
+        {saveError && (
+          <p role="alert" className="rounded-[12px] px-4 py-3 text-xsm font-semibold"
+             style={{ background: v("--ux-danger-tint"), color: v("--ux-danger-solid") }}>
+            {saveError}
+          </p>
+        )}
         <SourceNote source={source} what={tr("findwork.theseOpenings")} />
 
         {/* ── The openings ──────────────────────────────────────────────── */}
         {shown.length ? (
           <div className="flex flex-col gap-3">
-            {shown.map((j) => (
-              <JobCard key={j.id} job={j} saved={saved.includes(j.id)} onSave={() => save(j.id)} />
-            ))}
+            {shown.map((j) => {
+              const on = savedOf(j);
+              return <JobCard key={j.id} job={j} saved={on} onSave={() => save(j, on)} />;
+            })}
           </div>
         ) : (
           <Card>

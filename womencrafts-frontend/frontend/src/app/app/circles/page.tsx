@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useMemo, useState, useSyncExternalStore } from "react";
+import { useCallback, useEffect, useMemo, useState, useSyncExternalStore } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 
@@ -13,6 +13,10 @@ import {
   type Circle, type CommunityOverview,
 } from "@/lib/community-api";
 import { apiRegisterForEvent } from "@/lib/growth-api";
+import {
+  loadSavedPosts, savedPostsServerSnapshot, savedPostsSnapshot,
+  subscribeSavedPosts, toggleSavedPost,
+} from "@/lib/saved-posts";
 import { useEvents } from "@/components/ux/growth";
 import { ALL_TOPICS, topicOf, type Topic } from "@/components/ux/circle/data";
 import {
@@ -32,11 +36,15 @@ import {
  * category is its circle's topic — so nothing here says a woman wrote
  * something she did not.
  *
- * ── The one thing the server does not keep ──────────────────────────────────
- * There is no saved-posts endpoint. Saving therefore works, but in her own
- * browser: it survives a reload on that phone and does not follow her to
- * another one. That is a real feature with a stated limit rather than a
- * button that pretends.
+ * ── Saving, and sharing ─────────────────────────────────────────────────────
+ * Saving a post goes to `POST /saved` under the `post` kind, so it follows her
+ * to the next phone she signs in on — see `@/lib/saved-posts`. It used to be
+ * `localStorage`, and the note here used to explain that as a limit.
+ *
+ * Sharing does NOT pretend. A circle is behind the sign-in, so there is no URL
+ * a friend who is not a member can open; the button therefore copies a link to
+ * the post for someone who IS one, and says exactly that. It used to say "send
+ * it on WhatsApp" while copying the same circle address for all 26 posts.
  *
  * ── Why the savings pot is still here ───────────────────────────────────────
  * This screen used to be four views, one of which was the pot she pays into
@@ -49,16 +57,6 @@ const EMPTY: CommunityOverview = { circles: [], circle_id: null, savings: null, 
 const TABS = ["Latest", "Following", "My posts", "Saved"] as const;
 type Tab = (typeof TABS)[number];
 
-/* ── Saved posts, in her own browser ──────────────────────────────────────── */
-
-const SAVED_KEY = "womsakhi.circle.saved";
-const readSaved = (): string => {
-  try { return localStorage.getItem(SAVED_KEY) ?? ""; } catch { return ""; }
-};
-/** Re-read on every write, so every card re-renders when one of them changes. */
-let bump: (() => void) | null = null;
-const onSaved = (cb: () => void) => { bump = cb; return () => { bump = null; }; };
-
 export default function CirclePage() {
   const router = useRouter();
   const [ask, setAsk] = useState("");
@@ -68,8 +66,10 @@ export default function CirclePage() {
   const [note, setNote] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
-  const savedRaw = useSyncExternalStore(onSaved, readSaved, () => "");
+  const savedRaw = useSyncExternalStore(
+    subscribeSavedPosts, savedPostsSnapshot, savedPostsServerSnapshot);
   const saved = useMemo(() => new Set(savedRaw.split(",").filter(Boolean)), [savedRaw]);
+  useEffect(() => { loadSavedPosts().catch(() => {}); }, []);
 
   const { data: overview, refetch } = useResource(
     useCallback((s?: AbortSignal) => apiCommunityOverview(s), []), EMPTY);
@@ -183,18 +183,38 @@ export default function CirclePage() {
     finally { setBusy(null); }
   }, [refetch]);
 
-  const save = useCallback((p: FeedPost) => {
-    const next = new Set(saved);
-    if (next.has(p.id)) next.delete(p.id); else next.add(p.id);
-    try { localStorage.setItem(SAVED_KEY, [...next].join(",")); } catch { /* private window */ }
-    bump?.();
-    say(next.has(p.id) ? "Saved — find it under Saved" : "Removed from saved");
-  }, [saved, say]);
+  const save = useCallback(async (p: FeedPost) => {
+    setError(null);
+    try {
+      const on = await toggleSavedPost(p.id);
+      say(on ? "Saved — find it under Saved, on any phone you sign in on"
+             : "Removed from saved");
+    } catch {
+      // The store has already put the bookmark back, so this describes what
+      // she can see rather than contradicting it.
+      setError("That did not save. Nothing has changed — try again in a moment.");
+    }
+  }, [say]);
 
+  /**
+   * The post, and only for someone who can open it.
+   *
+   * This built `${origin}${p.href}` where `p.href` was the post's *circle* — so
+   * all 26 buttons copied the same address, and it went to the room rather than
+   * the thing she meant to pass on. The fragment names the post, and the
+   * circle page scrolls to it.
+   *
+   * The sentence is the other half of the fix. A circle sits behind the
+   * sign-in; there is no public address for a post, and "send it on WhatsApp"
+   * promised a friend could open it. She can still send it — to another woman
+   * on WomSakhi — and now the toast says which.
+   */
   const share = useCallback(async (p: FeedPost) => {
-    const url = `${window.location.origin}${p.href}`;
-    try { await navigator.clipboard.writeText(url); say("Link copied — send it on WhatsApp"); }
-    catch { say(url); }
+    const url = `${window.location.origin}${p.href}#${p.id}`;
+    try {
+      await navigator.clipboard.writeText(url);
+      say("Link to this post copied — it opens for women signed in to WomSakhi");
+    } catch { say(url); }
   }, [say]);
 
   const join = useCallback(async (c: Circle) => {
@@ -315,7 +335,7 @@ export default function CirclePage() {
                    : tab === "Following" ? "Join a circle and its posts land here"
                    : "No discussions here yet"}
               body={tab === "Saved"
-                ? "The bookmark on any post keeps it here. Saved posts stay on this phone."
+                ? "The bookmark on any post keeps it here — on this phone and on any other you sign in on."
                 : "Ask the first question. Somebody who has been where you are will answer it."}
               action={<Btn size="sm" icon="Plus" onClick={start}>Start a discussion</Btn>}
             />

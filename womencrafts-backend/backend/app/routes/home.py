@@ -41,8 +41,10 @@ from datetime import datetime
 from typing import Awaitable, Optional, TypeVar
 
 from fastapi import APIRouter, Depends
+from pydantic import BaseModel, Field
 
 from app.core.rbac import require_active_member
+from app.core.media import media_url
 from app.db.mongodb import get_database
 from app.models.enrollment import EnrollmentModel
 from app.models.program import ProgramModel
@@ -58,7 +60,7 @@ from app.schemas.home import (
     HomeUpcoming,
     MeHome,
 )
-from app.schemas.me import HomeMoney, UnreadCounts
+from app.schemas.me import HomeMoney, MessageResponse, UnreadCounts
 
 router = APIRouter(prefix="/me", tags=["Member"])
 
@@ -227,7 +229,7 @@ def _journey(row: Optional[dict]) -> tuple[Optional[HomeJourney], Optional[HomeN
         program_id=program_id,
         title=program.get("name", ""),
         category=program.get("category", ""),
-        cover=program.get("cover", ""),
+        cover=media_url(program.get("cover", "")),
         pct=pct,
         done=done,
         total=total,
@@ -485,6 +487,13 @@ async def home(me: dict = Depends(require_active_member)):
 
     journey, next_step = _journey(course)
 
+    # She put this one aside. `href` is the step's identity — a different
+    # lesson, or the certificate at the end of the course, is a different step
+    # and comes back on its own. See `dismiss_next_step` below for why this is
+    # not a boolean.
+    if next_step and me.get("next_step_dismissed") == next_step.href:
+        next_step = None
+
     # The profile document, when it arrived. When it did not, her name and
     # photo still come off the token's own user document — no query — so the
     # greeting survives a slow members collection. Only the completeness rail
@@ -499,7 +508,7 @@ async def home(me: dict = Depends(require_active_member)):
         me=HomeMe(
             first=name.split(" ")[0] if name else "",
             name=name,
-            avatar=fields.get("avatar") or "",
+            avatar=media_url(fields.get("avatar") or ""),
             # True for everyone who can reach this line — she was admitted by a
             # human who read her documents. See the schema.
             verified=True,
@@ -521,3 +530,38 @@ async def home(me: dict = Depends(require_active_member)):
         notifications=notifications[:NOTIFICATIONS],
         unavailable=missing,
     )
+
+
+class NextStepDismissal(BaseModel):
+    """Which step she put aside. Its `href`, which is what identifies one."""
+
+    href: str = Field("", max_length=400)
+
+
+@router.post("/home/next-step/dismiss", response_model=MessageResponse,
+             summary="Put the next step aside")
+async def dismiss_next_step(
+    body: NextStepDismissal, me: dict = Depends(require_active_member)
+) -> MessageResponse:
+    """
+    The X on "YOUR NEXT STEP", made to mean something.
+
+    It used to be a `useState(false)` on the home screen: the card vanished, no
+    request left the phone, and it was back the next time she opened the app —
+    every day, forever, on the one card the design makes the loudest thing on
+    the page.
+
+    **Why the step's `href` and not a boolean.** "Put this aside" is about *this*
+    step, not about the idea of being told what to do next. Stored as a flag,
+    dismissing "finish lesson 3" would also hide "claim your certificate" three
+    weeks later, and she would never learn the certificate was waiting. Stored
+    as the href, the card comes back by itself the moment the answer changes —
+    which is the behaviour the word "for now" in the label promises.
+
+    An empty `href` clears it, so a screen can put the card back.
+    """
+    await get_database()["users"].update_one(
+        {"_id": me["_id"]},
+        {"$set": {"next_step_dismissed": body.href.strip()}},
+    )
+    return MessageResponse(message="Put aside" if body.href.strip() else "Back on your home screen")

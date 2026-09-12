@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useCallback, useState } from "react";
 import Link from "next/link";
 import * as Icons from "@/components/ux/icons";
 
@@ -9,7 +9,7 @@ import { useAuth } from "@/context/AuthContext";
 import { NextStepCard } from "@/components/ux/journey/NextStepCard";
 import { useHome } from "@/components/ux/live";
 import { formatRupees, Skeleton } from "@/components/ux/kit";
-import type { ApiHome } from "@/lib/me-api";
+import { apiDismissNextStep, type ApiHome } from "@/lib/me-api";
 
 /**
  * Home, built to the approved dashboard design — and, since this pass, drawn
@@ -1007,7 +1007,24 @@ export function Dashboard() {
   const { user } = useAuth();
   // One request for the whole screen. Thirteen blocks, gathered server-side.
   const { data: home, source, refetch } = useHome();
-  const [stepAside, setStepAside] = useState(false);
+
+  /**
+   * "Put this aside for now", made to mean it.
+   *
+   * This was `useState(false)`. The card went away and came straight back on
+   * the next load, because nothing was ever written down — a control whose
+   * label promises "for now" and delivers "for ten seconds".
+   *
+   * The href of the dismissed step is held here only until the next `/me/home`
+   * comes back with it already gone; the server is what remembers. Optimistic,
+   * and it puts the card back if the write failed, because a card that went
+   * away and did not stay away is at least honest about it.
+   */
+  const [aside, setAside] = useState<string | null>(null);
+  const putAside = useCallback((href: string) => {
+    setAside(href);
+    apiDismissNextStep(href).catch(() => setAside((a) => (a === href ? null : a)));
+  }, []);
 
   // Her name off the session when the request has not landed yet, so the
   // greeting is right in the first frame rather than a beat later.
@@ -1023,7 +1040,9 @@ export function Dashboard() {
         <>
           {/* Above the numbers, deliberately: the numbers describe where she has
               been and this says where to go. */}
-          {!stepAside && <NextUp h={home} onDismiss={() => setStepAside(true)} />}
+          {home.next_step && aside !== home.next_step.href && (
+            <NextUp h={home} onDismiss={() => putAside(home.next_step!.href)} />
+          )}
           <Journey h={home} />
           <Stats h={home} />
           <QuickAccess />

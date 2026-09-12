@@ -6,6 +6,7 @@ from app.schemas.auth import UserResponse
 from app.schemas.community import CircleResponse
 from app.schemas.shop import ShopSummary
 from app.schemas.wallet import ReferralResponse
+from app.core.media import MediaRef, MediaRefOptional
 
 
 class MeProfileResponse(BaseModel):
@@ -35,7 +36,7 @@ class MeProfileResponse(BaseModel):
 class MeProfileUpdate(BaseModel):
     full_name: Optional[str] = None
     phone: Optional[str] = None
-    avatar: Optional[str] = None
+    avatar: MediaRefOptional = None
     locale: Optional[str] = None
     location: Optional[str] = None
     dob: Optional[str] = None

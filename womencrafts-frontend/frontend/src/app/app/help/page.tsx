@@ -10,6 +10,8 @@ import { apiHelplines, apiRaiseAlert, type Helpline } from "@/lib/safety-api";
 import { apiSendMessage } from "@/lib/member-api";
 import { useT } from "@/i18n";
 import { ListGroup, ListRow } from "@/components/ux/mobile/ListRow";
+import { useToast } from "@/design-system/feedback/ToastProvider";
+import { SPEECH_UNSUPPORTED, speechFailure, speechSupported, type SpeechFailure } from "@/lib/speech";
 
 /**
  * Help.
@@ -393,21 +395,31 @@ function Ask({
   value, onChange, inputRef,
 }: { value: string; onChange: (v: string) => void; inputRef: React.RefObject<HTMLInputElement | null> }) {
   const tr = useT();
+  const toast = useToast();
   const [hearing, setHearing] = useState(false);
   const [speech, setSpeech] = useState(false);
 
-  useEffect(() => {
-    const w = window as unknown as Record<string, unknown>;
-    setSpeech(Boolean(w.SpeechRecognition || w.webkitSpeechRecognition));
-  }, []);
+  useEffect(() => { setSpeech(speechSupported()); }, []);
+
+  /* A microphone that fails in silence is the same bug on every screen that
+     has one — see `@/lib/speech`. This is a help page: if the one control
+     offered to a woman who cannot read the rest of it does nothing when
+     pressed, she has no way left to ask. */
+  const sayWhy = (f: SpeechFailure | null) => {
+    if (!f) return;                   // `aborted` — she pressed stop.
+    const opts = { description: f.description };
+    if (f.tone === "danger") toast.error(f.title, opts);
+    else if (f.tone === "warn") toast.warn(f.title, opts);
+    else toast.info(f.title, opts);
+  };
 
   const listen = () => {
     const w = window as unknown as Record<string, unknown>;
     const Rec = (w.SpeechRecognition || w.webkitSpeechRecognition) as
       (new () => { lang: string; interimResults: boolean; start: () => void;
                    onresult: ((e: { results: ArrayLike<ArrayLike<{ transcript: string }>> }) => void) | null;
-                   onerror: (() => void) | null; onend: (() => void) | null }) | undefined;
-    if (!Rec) return;
+                   onerror: ((e: { error?: string }) => void) | null; onend: (() => void) | null }) | undefined;
+    if (!Rec) { sayWhy(SPEECH_UNSUPPORTED); return; }
     const r = new Rec();
     r.lang = "hi-IN";                 // what she speaks; the answers match either way
     r.interimResults = true;
@@ -416,10 +428,12 @@ function Ask({
         .join(" ").trim();
       if (said) onChange(said);
     };
-    r.onerror = () => setHearing(false);
+    r.onerror = (e) => { setHearing(false); sayWhy(speechFailure(e?.error)); };
     r.onend = () => { setHearing(false); inputRef.current?.focus(); };
     setHearing(true);
-    r.start();
+    // `start()` throws on a double press and on an insecure origin, and no
+    // `onerror` ever arrives to explain either.
+    try { r.start(); } catch { setHearing(false); sayWhy(speechFailure("unknown")); }
   };
 
   return (

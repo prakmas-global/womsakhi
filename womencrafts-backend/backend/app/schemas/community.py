@@ -1,6 +1,7 @@
 from typing import Optional
 
 from pydantic import BaseModel, Field, field_validator
+from app.core.media import MediaRef, MediaRefOptional
 
 
 def _required(v: str, what: str) -> str:
@@ -99,7 +100,7 @@ class PostResponse(BaseModel):
 
 class PostCreate(BaseModel):
     body: str
-    image: str = ""
+    image: MediaRef = ""
 
     @field_validator("body")
     @classmethod
@@ -158,7 +159,7 @@ class StoryCreate(BaseModel):
     title: str
     body: str
     program: str = ""
-    cover: str = ""
+    cover: MediaRef = ""
     allow_name: bool = True
 
     @field_validator("title")

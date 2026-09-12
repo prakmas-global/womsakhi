@@ -203,9 +203,26 @@ export default function ShopPage() {
     finally { setBusy(null); setConfirmDelete(null); }
   }, [reListings, reSummary, say]);
 
+  /**
+   * The link a buyer can actually open.
+   *
+   * `/shop/<id>` did not exist: this copied it anyway and said "Link copied —
+   * send it on WhatsApp", so five buttons put a 404 into a customer's chat
+   * under her name. The page exists now — `src/app/(open)/shop/[id]` — and it
+   * needs no account, which is the point.
+   *
+   * A paused listing has no page on purpose: a buyer must not be shown
+   * something she cannot buy. So the link is still copied, because she may be
+   * getting it ready — and the confirmation says what a buyer would see,
+   * rather than telling her it is live when it is not.
+   */
   const onShare = useCallback(async (l: Listing) => {
     const url = `${window.location.origin}/shop/${l.id}`;
-    try { await navigator.clipboard.writeText(url); say("Link copied — send it on WhatsApp"); }
+    const paused = l.status === "paused";
+    const done = paused
+      ? "Link copied — but this is paused, so a buyer opening it sees nothing. Put it back in your shop first."
+      : "Link copied — send it on WhatsApp";
+    try { await navigator.clipboard.writeText(url); say(done); }
     catch { say(url); }        // no clipboard: show it so she can copy it herself
   }, [say]);
 

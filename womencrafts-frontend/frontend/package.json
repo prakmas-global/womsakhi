@@ -23,6 +23,7 @@
     "check:ink": "tsx src/theme-engine/__checks__/ink.mjs",
     "check:states": "node checks/states.mjs",
     "check:api": "node checks/api.mjs",
+    "check:media": "node checks/media-urls.mjs",
     "check:fast": "node checks/fast.mjs",
     "check:a11y": "node checks/a11y.mjs",
     "check:keyboard": "node checks/keyboard.mjs",

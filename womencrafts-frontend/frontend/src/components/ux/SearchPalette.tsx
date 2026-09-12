@@ -10,6 +10,8 @@ import { searchPages } from "./nav-search";
 import { useTheme } from "@/context/ThemeContext";
 import { useT } from "@/i18n";
 import { useNotifications } from "@/components/ux/live";
+import { useToast } from "@/design-system/feedback/ToastProvider";
+import { SPEECH_UNSUPPORTED, speechFailure, speechSupported, type SpeechFailure } from "@/lib/speech";
 
 /**
  * The search that opens over the page.
@@ -134,6 +136,7 @@ export function SearchPalette({ open, onClose }: { open: boolean; onClose: () =>
   const router = useRouter();
   const { isDark } = useTheme();
   const t = useT();
+  const toast = useToast();
   const [raw, setRaw] = useState("");
   const [scope, setScope] = useState<string>("all");
   const [hits, setHits] = useState<ApiSearchHit[]>([]);
@@ -151,18 +154,24 @@ export function SearchPalette({ open, onClose }: { open: boolean; onClose: () =>
   // the difference between using search and never opening it. Offered only
   // where the browser actually has recognition, rather than showing a button
   // that does nothing.
-  useEffect(() => {
-    const w = window as unknown as Record<string, unknown>;
-    setSpeech(Boolean(w.SpeechRecognition || w.webkitSpeechRecognition));
-  }, []);
+  useEffect(() => { setSpeech(speechSupported()); }, []);
+
+  /* The same silence, fixed the same way everywhere — see `@/lib/speech`. */
+  const sayWhy = useCallback((f: SpeechFailure | null) => {
+    if (!f) return;                   // `aborted` — she pressed stop.
+    const opts = { description: f.description };
+    if (f.tone === "danger") toast.error(f.title, opts);
+    else if (f.tone === "warn") toast.warn(f.title, opts);
+    else toast.info(f.title, opts);
+  }, [toast]);
 
   const listen = useCallback(() => {
     const w = window as unknown as Record<string, unknown>;
     const Rec = (w.SpeechRecognition || w.webkitSpeechRecognition) as
       (new () => { lang: string; interimResults: boolean; start: () => void;
                    onresult: ((e: { results: ArrayLike<ArrayLike<{ transcript: string }>> }) => void) | null;
-                   onerror: (() => void) | null; onend: (() => void) | null }) | undefined;
-    if (!Rec) return;
+                   onerror: ((e: { error?: string }) => void) | null; onend: (() => void) | null }) | undefined;
+    if (!Rec) { sayWhy(SPEECH_UNSUPPORTED); return; }
     const r = new Rec();
     // Hindi first, since that is what she speaks; the server understands both.
     r.lang = "hi-IN";
@@ -172,11 +181,13 @@ export function SearchPalette({ open, onClose }: { open: boolean; onClose: () =>
         (_, i) => e.results[i][0].transcript).join(" ").trim();
       if (said) setRaw(said);
     };
-    r.onerror = () => setHearing(false);
+    r.onerror = (e) => { setHearing(false); sayWhy(speechFailure(e?.error)); };
     r.onend = () => { setHearing(false); inputRef.current?.focus(); };
     setHearing(true);
-    r.start();
-  }, []);
+    // `start()` throws on a double press and on an insecure origin, and no
+    // `onerror` ever arrives to explain either.
+    try { r.start(); } catch { setHearing(false); sayWhy(speechFailure("unknown")); }
+  }, [sayWhy]);
 
   /** A leading prefix sets the scope and is not part of the query. */
   const prefix = PREFIX[raw[0] ?? ""] ?? null;

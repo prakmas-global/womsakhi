@@ -110,18 +110,23 @@ function dayLabel(iso: string | null): string {
 
 export const RING: Record<PartyKind, string> = {
   buyer: "linear-gradient(140deg, var(--ux-green), var(--ux-green-ink))",
+  // A woman she is buying FROM. Amber rather than the buyer's green, because
+  // the two directions must be tellable apart at a glance in one list.
+  seller: "linear-gradient(140deg, var(--ux-amber), var(--ux-amber-ink))",
   mentor: "linear-gradient(140deg, var(--ux-violet), var(--ux-brand-700))",
   circle: "linear-gradient(140deg, var(--ux-pink), var(--ux-pink-ink))",
   team: "linear-gradient(140deg, var(--ux-blue), var(--ux-blue-ink))",
 };
 export const TAG: Record<PartyKind, { tint: string; ink: string; label: string }> = {
   buyer: { tint: "--ux-tint-green", ink: "--ux-green-ink", label: "Buyer" },
+  seller: { tint: "--ux-tint-amber", ink: "--ux-amber-ink", label: "You are buying" },
   mentor: { tint: "--ux-tint-violet", ink: "--ux-violet-ink", label: "Mentor" },
   circle: { tint: "--ux-tint-pink", ink: "--ux-pink-ink", label: "Circle" },
   team: { tint: "--ux-tint-blue", ink: "--ux-blue-ink", label: "Team" },
 };
 export const FILTERS: { value: PartyKind | "all"; label: string }[] = [
   { value: "all", label: "All" }, { value: "buyer", label: "Buyers" },
+  { value: "seller", label: "Sellers" },
   { value: "mentor", label: "Mentors" }, { value: "circle", label: "Circles" },
   { value: "team", label: "Team" },
 ];

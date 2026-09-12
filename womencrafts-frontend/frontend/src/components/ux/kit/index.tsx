@@ -44,10 +44,12 @@ export function I({ name, className, sw = 1.9, style }: {
   return <C className={className} strokeWidth={sw} style={style} />;
 }
 
-export function Card({ children, className = "", pad = 18, style }: {
+export function Card({ children, className = "", pad = 18, style, id }: {
   children: React.ReactNode; className?: string; pad?: number; style?: React.CSSProperties;
+  /** So a card can be the target of a `#fragment` — a shared circle post. */
+  id?: string;
 }) {
-  return <section className={`ux-card ${className}`} style={{ padding: pad, ...style }}>{children}</section>;
+  return <section id={id} className={`ux-card ${className}`} style={{ padding: pad, ...style }}>{children}</section>;
 }
 
 export function SectionHead({ title, sub, action, onAction, icon, chip }: {

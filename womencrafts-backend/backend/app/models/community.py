@@ -14,6 +14,7 @@ from datetime import datetime, timezone
 from typing import Optional
 
 from app.core.serializers import aware
+from app.core.media import media_url
 
 
 def _ago(when: Optional[datetime]) -> str:
@@ -88,7 +89,7 @@ class CircleModel:
             "name": doc.get("name", ""),
             "topic": doc.get("topic", ""),
             "desc": doc.get("desc", ""),
-            "cover": doc.get("cover", ""),
+            "cover": media_url(doc.get("cover", "")),
             "guidelines": doc.get("guidelines", ""),
             "is_private": bool(doc.get("is_private", False)),
             "member_count": doc.get("member_count", 0),
@@ -179,9 +180,9 @@ class PostModel:
             "id": str(doc["_id"]),
             "circle_id": doc.get("circle_id", ""),
             "author_name": doc.get("author_name", ""),
-            "author_avatar": doc.get("author_avatar", ""),
+            "author_avatar": media_url(doc.get("author_avatar", "")),
             "body": doc.get("body", ""),
-            "image": doc.get("image", ""),
+            "image": media_url(doc.get("image", "")),
             "likes": len(likes),
             "liked_by_me": viewer_id in likes,
             "mine": doc.get("user_id", "") == viewer_id,
@@ -217,7 +218,7 @@ class PostReplyModel:
         return {
             "id": str(doc["_id"]),
             "author_name": doc.get("author_name", ""),
-            "author_avatar": doc.get("author_avatar", ""),
+            "author_avatar": media_url(doc.get("author_avatar", "")),
             "body": doc.get("body", ""),
             "mine": doc.get("user_id", "") == viewer_id,
             "when": _ago(doc.get("created_at")),
@@ -274,11 +275,11 @@ class StoryModel:
         return {
             "id": str(doc["_id"]),
             "author_name": doc.get("author_name", ""),
-            "author_avatar": doc.get("author_avatar", ""),
+            "author_avatar": media_url(doc.get("author_avatar", "")),
             "title": doc.get("title", ""),
             "body": doc.get("body", ""),
             "program": doc.get("program", ""),
-            "cover": doc.get("cover", ""),
+            "cover": media_url(doc.get("cover", "")),
             "status": doc.get("status", StoryModel.STATUS_PENDING),
             "featured": bool(doc.get("featured", False)),
             "likes": len(likes),

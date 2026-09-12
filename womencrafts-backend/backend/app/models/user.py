@@ -2,6 +2,7 @@ from datetime import datetime, timezone
 from typing import Optional
 
 from app.models.verification import VerificationStatus
+from app.core.media import media_url
 
 
 class UserModel:
@@ -96,7 +97,7 @@ class UserModel:
             "onboarding_done": document.get("onboarding_done") or [],
             "onboarding_complete": bool(document.get("onboarding_complete", False)),
             "phone": document.get("phone", ""),
-            "avatar": document.get("avatar", ""),
+            "avatar": media_url(document.get("avatar", "")),
             "is_active": document.get("is_active", True),
             # Staff accounts are created by an admin and are active on sight;
             # only member accounts walk the verification path.

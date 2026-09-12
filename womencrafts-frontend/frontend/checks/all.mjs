@@ -34,6 +34,10 @@ const CHECKS = [
   ["waiting",  "node checks/waiting.mjs"],
   ["states",   "node checks/states.mjs"],
   ["api",      "node checks/api.mjs"],
+  // Beside `api` because it is the other one that asks the server rather than
+  // the pixels: no hostname is stored in the database. Static + DB + a real
+  // upload, so it is fast and needs no browser.
+  ["media",    "node checks/media-urls.mjs"],
   ["screens",  "node checks/screens.mjs"],
   // Every dashboard screen at 390px, plus the off-canvas drawer.
   ["phone",    "node checks/phone.mjs"],

@@ -249,3 +249,19 @@ export const apiHome = (s?: AbortSignal) => get<ApiHome>("/me/home", s);
 export const apiCircles = (s?: AbortSignal) => get<ApiCircle[]>("/community/circles", s);
 export const apiStories = (s?: AbortSignal) => get<ApiStory[]>("/community/stories", s);
 export const apiMentors = (s?: AbortSignal) => get<ApiMentor[]>("/growth/mentors", s);
+
+/**
+ * Put "YOUR NEXT STEP" aside — for real, and only this one.
+ *
+ * The X on that card was a `useState(false)`: it vanished, no request left the
+ * phone, and it was back on the next load. Every day, forever, on the loudest
+ * card the home screen has.
+ *
+ * The step's `href` is sent rather than a flag, because "put this aside" is
+ * about *this* step. Stored as a boolean, dismissing "finish lesson 3" would
+ * also have hidden "claim your certificate" three weeks later and she would
+ * never have learned it was waiting. Pass "" to put the card back.
+ */
+export async function apiDismissNextStep(href: string): Promise<void> {
+  await apiClient.post("/me/home/next-step/dismiss", { href });
+}

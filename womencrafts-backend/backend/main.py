@@ -53,6 +53,7 @@ from app.routes.money import router as money_router
 from app.routes.group_buy import router as group_buy_router
 from app.routes.payout import router as payout_router
 from app.routes.shop import router as shop_router
+from app.routes.market import router as market_router
 from app.routes.reference import router as reference_router
 from app.routes.search import router as search_router
 from app.routes.skills import router as skills_router
@@ -283,6 +284,9 @@ app.include_router(growth_router, prefix="/api/v1")
 app.include_router(reference_router, prefix="/api/v1")
 app.include_router(group_buy_router, prefix="/api/v1")
 app.include_router(shop_router, prefix="/api/v1")
+# The buyer's side of the same shop. Separate from /shop, which is scoped to
+# "mine" on every query and therefore had nothing the market could call.
+app.include_router(market_router, prefix="/api/v1")
 app.include_router(exchange_router, prefix="/api/v1")
 app.include_router(payout_router, prefix="/api/v1")
 app.include_router(money_router, prefix="/api/v1")

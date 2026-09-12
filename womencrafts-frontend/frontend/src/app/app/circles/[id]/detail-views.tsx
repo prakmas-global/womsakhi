@@ -297,7 +297,10 @@ export function CirclePostCard({ p, saved, busy, menu, onMenu, onLike, onSave, o
 }) {
   const { title, rest, tags } = readPost(p.body);
   return (
-    <Card className="mb-3.5">
+    // `id` so a copied "#<post>" link lands on the post and not on the top of
+    // the circle. `scrollMarginTop` keeps it out from under the fixed top bar.
+    <Card id={p.id} className="mb-3.5"
+          style={{ scrollMarginTop: "calc(var(--ux-topbar-h) + 16px)" }}>
       <div className="flex items-start gap-3">
         <span className="grid h-[40px] w-[40px] shrink-0 place-items-center overflow-hidden rounded-full text-xs font-bold"
               style={{ background: v("--ux-brand-tint-2"), color: v("--ux-brand") }}>

@@ -183,7 +183,7 @@ export function MobileHome() {
                   style={{ background: `var(${q.tint})` }}>
               <I name={q.icon} className="h-[21px] w-[21px]" sw={1.9} style={{ color: `var(${q.ink})` }} />
             </span>
-            <span className="w-full truncate text-center text-[11px] font-semibold leading-tight"
+            <span className="w-full truncate text-center text-[12px] font-semibold leading-tight"
                   style={{ color: "var(--ux-ink-2)" }}>
               {q.label}
             </span>
