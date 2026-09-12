@@ -140,8 +140,12 @@ export function nextStep(s: JourneyState): NextStep {
 
   if (s.hasShop === true && s.productsListed === 0)
     return { stage: "opportunity", title: "Put your first thing in your shop",
-      because: "Your shop is open but empty, so nobody can buy from you yet. You can say it out loud instead of typing it.",
-      cta: "Add it by speaking", href: "/app/shop/voice", icon: "Mic", mins: 3 };
+      // Was "Add it by speaking" -> /app/shop/voice, a microphone that never
+      // recorded anything and printed a sentence out of a fixture as though she
+      // had said it. The real answer is the microphone key on her own keyboard,
+      // which works inside this form.
+      because: "Your shop is open but empty, so nobody can buy from you yet. You can speak it into the form with the microphone on your keyboard instead of typing.",
+      cta: "Add your first thing", href: "/app/documents/new", icon: "Plus", mins: 3 };
 
   if (s.coursesInProgress > 0 && s.coursesDone === 0)
     return { stage: "learn", title: "Finish the course you started",

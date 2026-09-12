@@ -87,16 +87,6 @@ export const VEHICLES: Vehicle[] = [
   },
 ];
 
-export type GroupStep = { id: string; what: string; detail: string; done: boolean };
-
-export const GROUP_STEPS: GroupStep[] = [
-  { id: "gs1", what: "Ten women who agree", detail: "You have fourteen on the Rangoli bid", done: true },
-  { id: "gs2", what: "Decide who signs", detail: "Two or three names, not one", done: false },
-  { id: "gs3", what: "Agree how the money splits", detail: "Before the order, in writing, or it will end a friendship", done: false },
-  { id: "gs4", what: "Register", detail: "A lawyer does this. Around ₹15,000, about eight weeks", done: false },
-  { id: "gs5", what: "One bank account in the group's name", detail: "Two signatures to take money out", done: false },
-];
-
 /* ── 5. Fraud at the moment it happens ────────────────────────────────────── */
 
 /**

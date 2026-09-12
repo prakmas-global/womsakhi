@@ -172,7 +172,10 @@ export default function VoiceSettingsPage() {
           <SectionHead title={tr("voice.whereYouCanAlreadySpeakInstead")} icon="Mic" />
           <div className="grid gap-3 sm:grid-cols-2">
             {[
-              { icon: "Store", label: "Adding something to sell", href: "/app/shop/voice", note: "Say it and it becomes a listing" },
+              // Points at the real form, not at the screen that pretended to
+              // listen. The microphone that works here is the one on her own
+              // keyboard, and it works inside this form.
+              { icon: "Store", label: "Adding something to sell", href: "/app/documents/new", note: "Use the microphone on your keyboard" },
               { icon: "MessageCircle", label: "Replying to a buyer", href: "/app/messages", note: "Speak your message" },
               { icon: "Search", label: "Looking for something", href: "/app/search", note: "Say what you need" },
               { icon: "BookOpen", label: "Writing down a sale", href: "/app/books", note: "Say who bought and how much" },

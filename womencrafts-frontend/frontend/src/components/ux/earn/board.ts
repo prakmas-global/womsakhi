@@ -49,18 +49,17 @@ export const EARN_PLACES: EarnPlace[] = [
     ],
   },
   {
-    id: "shop", icon: "Sparkles", title: "Ways to sell", sub: "Pre-orders, regulars, big orders",
+    /*
+      Two chips, not nine. Seven of the old ones named features that do not
+      exist — a pre-order book, a standing-order list, a live sale. The screens
+      behind them now say so plainly and are reachable from `/app/shop`; a
+      shortcut on the Earn board is a promise that they work.
+    */
+    id: "shop", icon: "Sparkles", title: "Ways to sell", sub: "What you charge, who comes back",
     href: "/app/shop", pink: true, art: "earn-ways", artW: 427, artH: 440,
     chips: [
       { label: "What should you charge", href: "/app/shop/pricing" },
-      { label: "Take the money first", href: "/app/shop/preorders" },
-      { label: "Regular customers", href: "/app/shop/subscriptions" },
       { label: "Who buys from you", href: "/app/shop/buyers" },
-      { label: "Sell while you work", href: "/app/shop/live" },
-      { label: "Sell to shops", href: "/app/shop/wholesale" },
-      { label: "Say it instead of typing", href: "/app/shop/voice" },
-      { label: "Sell your time", href: "/app/shop/slots" },
-      { label: "When something goes wrong", href: "/app/shop/disputes" },
     ],
   },
   {

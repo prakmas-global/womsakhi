@@ -1,13 +1,12 @@
 "use client";
 
-import { useCallback, useMemo, useState } from "react";
-import { useRouter } from "next/navigation";
+import { useMemo, useState } from "react";
 
 import { HomeShell } from "@/components/ux/home/HomeShell";
 import { Tag } from "@/components/ux/work/native";
-import { Back, Btn, Card, I, SectionHead, v } from "@/components/ux/kit";
+import { Back, Card, I, SectionHead, plural, v } from "@/components/ux/kit";
 import { formatRupees } from "@/components/ux/kit";
-import { GROUP_STEPS, VEHICLES, type Vehicle } from "@/components/ux/reach/data";
+import { VEHICLES, type Vehicle } from "@/components/ux/reach/data";
 import { useT } from "@/i18n";
 
 /**
@@ -32,19 +31,24 @@ import { useT } from "@/i18n";
  *
  * The one thing stated as advice rather than option: agree the money split
  * before the order, in writing. That is not a legal point.
+ *
+ * ── What was a tick-list and is now a list ──────────────────────────────────
+ * The registering steps used to be five tappable rows with `done` flags baked
+ * into the fixture, and the first was ticked: **"Ten women who agree ✓ — you
+ * have fourteen on the Rangoli bid."** There is no Rangoli bid, there are no
+ * fourteen women, and nothing in this product records who has agreed to
+ * anything. The header said "1 of 5 done", and tapping a row toggled a tick
+ * that survived until she reloaded.
+ *
+ * A tick is a statement about her. Nothing here knows anything about her, so
+ * nothing here ticks — the same conclusion the readiness list on
+ * `/app/contracts` reached, for the same reason.
  */
 export default function TogetherPage() {
   const tr = useT();
-  const router = useRouter();
   const [pick, setPick] = useState<string>("v2");
-  const [steps, setSteps] = useState(GROUP_STEPS);
 
   const chosen = useMemo(() => VEHICLES.find((x) => x.id === pick) ?? VEHICLES[0], [pick]);
-  const doneCount = useMemo(() => steps.filter((s) => s.done).length, [steps]);
-
-  const toggle = useCallback((id: string) => {
-    setSteps((r) => r.map((s) => (s.id === id ? { ...s, done: !s.done } : s)));
-  }, []);
 
   return (
     <HomeShell active="/app/contracts">
@@ -93,37 +97,47 @@ export default function TogetherPage() {
               : tr("contractsTogether.noSinglePayment")}
                 </Tag>
                 <Tag tone="neutral" size="sm">
-                  {chosen.costMinor === 0 ? "No cost" : formatRupees(chosen.costMinor)}
+                  {chosen.costMinor === 0 ? "No cost" : `About ${formatRupees(chosen.costMinor)}`}
                 </Tag>
                 <Tag tone="neutral" size="sm">
-                  {chosen.weeks === 0 ? "Ready now" : `About ${chosen.weeks} weeks`}
+                  {chosen.weeks === 0 ? "Ready now" : `About ${chosen.weeks} ${plural("week", chosen.weeks)}`}
                 </Tag>
               </div>
             </div>
           </div>
         </Card>
 
-        {/* The steps, only when they apply */}
+        {/*
+          The steps, only when they apply — and only as a list.
+
+          Not tappable, not ticked, not counted. Registering together is five
+          real pieces of work in a fixed order, and the order is the useful
+          part; whether she has done any of them is something WomSakhi has
+          never asked her and does not know.
+        */}
         {pick === "v3" && (
           <div>
             <SectionHead title={tr("contractsTogether.whatRegisteringActuallyInvolves")}
-                         sub={`${doneCount} of ${steps.length} done`} icon="ListChecks" />
+                         sub="In this order, and not in a different one" icon="ListChecks" />
             <Card pad={0} style={{ overflow: "hidden" }}>
-              {steps.map((s, i) => (
-                <button key={s.id} type="button" onClick={() => toggle(s.id)}
-                        className="ux-press flex w-full items-center gap-3.5 px-5 py-4 text-left"
-                        style={{ borderTop: i === 0 ? "none" : `1px solid ${v("--ux-line")}` }}>
-                  <I name={s.done ? "CheckCircle2" : "Circle"} className="h-[19px] w-[19px] shrink-0"
-                     style={{ color: v(s.done ? "--ux-green-ink" : "--ux-line-strong") }} sw={2.2} />
+              {STEPS.map((s, i) => (
+                <div key={s.what} className="flex items-start gap-3.5 px-5 py-4"
+                     style={{ borderTop: i === 0 ? "none" : `1px solid ${v("--ux-line")}` }}>
+                  <span className="mt-[1px] grid h-[22px] w-[22px] shrink-0 place-items-center rounded-full text-2xs font-extrabold tabular-nums"
+                        style={{ background: v("--ux-surface-2"), color: v("--ux-ink-2") }}>
+                    {i + 1}
+                  </span>
                   <div className="min-w-0 flex-1">
-                    <p className="text-sm font-bold" style={{ color: v(s.done ? "--ux-muted" : "--ux-ink") }}>
-                      {s.what}
-                    </p>
-                    <p className="mt-0.5 text-xs" style={{ color: v("--ux-muted") }}>{s.detail}</p>
+                    <p className="text-sm font-bold" style={{ color: v("--ux-ink") }}>{s.what}</p>
+                    <p className="mt-0.5 text-xs leading-relaxed" style={{ color: v("--ux-muted") }}>{s.detail}</p>
                   </div>
-                </button>
+                </div>
               ))}
             </Card>
+            <p className="mt-2 px-1 text-xs leading-relaxed" style={{ color: v("--ux-muted") }}>
+              Nothing above is ticked because nothing above has been asked of you. WomSakhi keeps no
+              record of who is in your group or how far you have got.
+            </p>
           </div>
         )}
 
@@ -154,6 +168,22 @@ export default function TogetherPage() {
   );
 }
 
+/**
+ * What registering together actually involves.
+ *
+ * General guidance about a legal process, in the order it happens — the same
+ * class of thing as "Udyam is free, and online" on `/app/contracts`. There is
+ * deliberately no `done` field: the fixture this replaced carried one, and the
+ * screen ticked "Ten women who agree" against a bid that does not exist.
+ */
+const STEPS: { what: string; detail: string }[] = [
+  { what: "Ten women who agree", detail: "A producer company needs at least ten. Agreeing means agreeing to the obligations, not just to the idea" },
+  { what: "Decide who signs", detail: "Two or three names, not one. One name is how it ends up being one woman's company" },
+  { what: "Agree how the money splits", detail: "Before the order, in writing. This is the step people skip and the one that ends friendships" },
+  { what: "Register", detail: "A lawyer or a company secretary does this. Around \u20b915,000, about eight weeks" },
+  { what: "One bank account in the group's name", detail: "Two signatures to take money out, so no single person can empty it" },
+];
+
 function Option({ x, on, onPick }: { x: Vehicle; on: boolean; onPick: () => void }) {
   return (
     <button type="button" onClick={onPick} aria-pressed={on}
@@ -176,11 +206,11 @@ function Option({ x, on, onPick }: { x: Vehicle; on: boolean; onPick: () => void
       <div className="mt-3 flex flex-wrap gap-1.5">
         <span className="rounded-full px-2 py-[2px] text-2xs font-bold"
               style={{ background: v("--ux-surface-2"), color: v("--ux-ink-2") }}>
-          {x.costMinor === 0 ? "Free" : formatRupees(x.costMinor)}
+          {x.costMinor === 0 ? "Free" : `about ${formatRupees(x.costMinor)}`}
         </span>
         <span className="rounded-full px-2 py-[2px] text-2xs font-bold"
               style={{ background: v("--ux-surface-2"), color: v("--ux-ink-2") }}>
-          {x.weeks === 0 ? "Today" : `${x.weeks} wk`}
+          {x.weeks === 0 ? "Today" : `about ${x.weeks} wk`}
         </span>
       </div>
 

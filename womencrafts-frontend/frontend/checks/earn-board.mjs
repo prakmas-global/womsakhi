@@ -28,7 +28,7 @@ import { CHROME, APP, seededMemberToken } from "./_shared.mjs";
 /** title, href, how many pills, which picture. Straight from the drawing. */
 const PLACES = [
   ["Your shop", "/app/documents", 3, "earn-shop"],
-  ["Ways to sell", "/app/shop", 9, "earn-ways"],
+  ["Ways to sell", "/app/shop", 2, "earn-ways"],
   ["Your link, and getting paid", "/app/collect", 0, "earn-link"],
   ["The market", "/app/market", 1, "earn-market"],
   ["Selling food from home", "/app/kitchen", 0, "earn-kitchen"],
@@ -45,15 +45,14 @@ const CHIPS = [
   ["Everything you sell", "/app/documents/listings"],
   ["Add something to sell", "/app/documents/new"],
   ["Your shop papers", "/app/documents/vault"],
+  /* "Ways to sell" carried nine chips and seven of them named screens built
+     entirely on a fixture — a pre-order book, a standing-order list, a live
+     sale with takings. Those screens now say plainly that WomSakhi cannot do
+     it yet, and they are reachable from /app/shop under a heading that says
+     so. A shortcut on the Earn board is a promise they work, so there are two
+     chips here now. */
   ["What should you charge", "/app/shop/pricing"],
-  ["Take the money first", "/app/shop/preorders"],
-  ["Regular customers", "/app/shop/subscriptions"],
   ["Who buys from you", "/app/shop/buyers"],
-  ["Sell while you work", "/app/shop/live"],
-  ["Sell to shops", "/app/shop/wholesale"],
-  ["Say it instead of typing", "/app/shop/voice"],
-  ["Sell your time", "/app/shop/slots"],
-  ["When something goes wrong", "/app/shop/disputes"],
   ["Buy together", "/app/group-buy"],
   ["Proof you earn", "/app/books/proof"],
   ["Your busy months", "/app/books/season"],

@@ -1,191 +1,67 @@
 "use client";
 
-import { useCallback, useMemo, useState } from "react";
-import { useRouter } from "next/navigation";
-
-import { HomeShell } from "@/components/ux/home/HomeShell";
-import { Back, Btn, Card, EmptyState, I, IconTile, Pill, Progress, SectionHead, Stat, v } from "@/components/ux/kit";
-import { formatRupees } from "@/components/ux/kit";
-import { PREORDERS, fundedUpfront, type PreOrder } from "@/components/ux/shopplus/data";
-import { useT } from "@/i18n";
+import { NotYetScreen, WriteItDown } from "@/components/ux/shopplus/notyet";
 
 /**
  * Money before you buy cloth.
  *
- * ── The most direct answer to the constraint ────────────────────────────────
- * The typical male-owned firm in Africa holds over six times the capital of a
- * female-owned one, and that gap — not skill, not knowledge, not ambition — is
- * what the profit difference tracks. Lending her the difference means debt.
- * Letting the *buyer* fund the materials means neither.
+ * ── What this screen used to do, and why it had to stop ─────────────────────
+ * It rendered four pre-orders from `@/components/ux/shopplus/data` — "6 festival
+ * blouses for Sunita Devi, ₹4,200, ₹1,800 paid" — summed them into a headline
+ * figure labelled "paid to you up front", and offered two buttons. "Ask again"
+ * set a string: *"Asked Sunita Devi for ₹1,800 cloth money. She sees why, and
+ * what it buys."* Sunita Devi does not exist, nobody was asked, and no request
+ * left the browser. "She paid" moved a progress bar that was drawn from the
+ * same fixture.
  *
- * So a pre-order here is not a booking. It is a specific, small, understandable
- * ask: **the cost of the cloth, up front, so the order can begin.** The rest is
- * paid on delivery, the way it always was.
+ * There is no pre-orders collection, no router, and no payment link — so there
+ * is nothing to wire this to and nothing to half-wire it to either.
  *
- * The framing matters. "Deposit" sounds like a favour she is asking for.
- * "Cloth money" is a thing anyone who has ever had clothes made understands.
+ * ── Why the screen stays ────────────────────────────────────────────────────
+ * The idea behind it is the most direct answer this product has to the thing
+ * that actually binds: capital. The typical male-owned firm in the African
+ * evidence holds over six times the capital of a female-owned one, and the gap
+ * in business *practices* is less than half the capital gap — so training does
+ * not close it and lending only turns it into debt. Letting the buyer fund the
+ * materials does.
+ *
+ * And she can do all of that today, with no app, which is what the screen now
+ * says. The framing is the part worth keeping: "deposit" sounds like a favour
+ * she is asking for, "cloth money" is a thing anyone who has ever had clothes
+ * made understands.
  */
-
-const STATE: Record<PreOrder["state"], { label: string; tint: string; ink: string; icon: string }> = {
-  asking: { label: "Waiting for cloth money", tint: "--ux-tint-amber", ink: "--ux-amber-ink", icon: "Clock" },
-  funded: { label: "Cloth money in", tint: "--ux-tint-green", ink: "--ux-green-ink", icon: "HandCoins" },
-  making: { label: "Being made", tint: "--ux-tint-blue", ink: "--ux-blue-ink", icon: "Scissors" },
-  done: { label: "Delivered and paid", tint: "--ux-surface-2", ink: "--ux-muted", icon: "Check" },
-};
-
 export default function PreOrdersPage() {
-  const tr = useT();
-  const router = useRouter();
-  const [rows, setRows] = useState<PreOrder[]>(PREORDERS);
-  const [note, setNote] = useState<string | null>(null);
-
-  const upfront = useMemo(() => fundedUpfront(rows), [rows]);
-  const waiting = useMemo(() => rows.filter((o) => o.state === "asking"), [rows]);
-  const live = useMemo(() => rows.filter((o) => o.state === "funded" || o.state === "making"), [rows]);
-  const done = useMemo(() => rows.filter((o) => o.state === "done"), [rows]);
-  const owed = useMemo(
-    () => live.reduce((n, o) => n + (o.totalMinor - o.paidMinor), 0),
-    [live],
-  );
-
-  const ask = useCallback((id: string) => {
-    const o = rows.find((x) => x.id === id);
-    setNote(`Asked ${o?.buyer} for ${formatRupees(o?.materialsMinor ?? 0)} cloth money. She sees why, and what it buys.`);
-  }, [rows]);
-
-  const advance = useCallback((id: string) => {
-    setRows((r) => r.map((o) => {
-      if (o.id !== id) return o;
-      if (o.state === "asking") return { ...o, state: "funded", paidMinor: o.materialsMinor };
-      if (o.state === "funded") return { ...o, state: "making" };
-      if (o.state === "making") return { ...o, state: "done", paidMinor: o.totalMinor };
-      return o;
-    }));
-    const o = rows.find((x) => x.id === id);
-    setNote(
-      o?.state === "asking" ? `${o?.buyer} paid the cloth money. You can buy materials today.`
-      : o?.state === "funded" ? tr("shopPreorders.markedAsBeingMade")
-              : tr("shopPreorders.deliveredTheRestOfTheMoney"),
-    );
-  }, [rows, tr]);
-
-  const card = (o: PreOrder) => {
-    const s = STATE[o.state];
-    const pct = Math.round((o.paidMinor / o.totalMinor) * 100);
-    return (
-      <Card key={o.id} pad={16}>
-        <div className="flex flex-wrap items-start gap-3.5">
-          <IconTile icon={s.icon} tint={s.tint} ink={s.ink} size={42} radius={12} />
-          <div className="min-w-0 flex-1">
-            <div className="flex flex-wrap items-center gap-2">
-              <p className="text-sm font-bold" style={{ color: v("--ux-ink") }}>{o.what}</p>
-              <span className="rounded-full px-2 py-[2px] text-2xs font-bold uppercase tracking-[0.06em]"
-                    style={{ background: v(s.tint), color: v(s.ink) }}>{s.label}</span>
-            </div>
-            <p className="mt-0.5 text-xsm" style={{ color: v("--ux-muted") }}>
-              For {o.buyer} · due {o.dueBy}
-            </p>
-          </div>
-          <div className="shrink-0 text-right">
-            <p className="text-lg font-extrabold leading-none tabular-nums" style={{ color: v("--ux-ink") }}>
-              {formatRupees(o.totalMinor)}
-            </p>
-            <p className="mt-0.5 text-2xs" style={{ color: v("--ux-muted") }}>whole order</p>
-          </div>
-        </div>
-
-        <div className="mt-3.5">
-          <div className="mb-1.5 flex items-center justify-between text-xs" style={{ color: v("--ux-muted") }}>
-            <span>
-              <b style={{ color: v("--ux-green-ink") }}>{formatRupees(o.paidMinor)}</b> paid
-              {o.paidMinor < o.totalMinor && ` · ${formatRupees(o.totalMinor - o.paidMinor)} on delivery`}
-            </span>
-            <span className="tabular-nums">{pct}%</span>
-          </div>
-          <Progress pct={pct} tone="--ux-green-ink" track="--ux-tint-green" h={6} />
-        </div>
-
-        {o.state === "asking" && (
-          <div className="mt-3.5 rounded-[12px] px-3 py-2.5" style={{ background: v("--ux-tint-amber") }}>
-            <p className="text-xsm leading-relaxed" style={{ color: v("--ux-ink-2") }}>{tr("shopPreorders.askFor")}<b>{formatRupees(o.materialsMinor)}</b> now — just the cloth and thread.
-              The rest when she collects.
-            </p>
-          </div>
-        )}
-
-        {o.state !== "done" && (
-          <div className="mt-3.5 flex gap-2">
-            {o.state === "asking" && (
-              <Btn size="sm" variant="outline" full onClick={() => ask(o.id)}>{tr("shopPreorders.askAgain")}</Btn>
-            )}
-            <Btn size="sm" full onClick={() => advance(o.id)}>
-              {o.state === "asking" ? "She paid" : o.state === "funded" ? "Started making" : "Delivered"}
-            </Btn>
-          </div>
-        )}
-      </Card>
-    );
-  };
-
   return (
-    <HomeShell active="/app/shop">
-      <div className="flex flex-col gap-5">
-        <Back to="/app/shop" label={tr("shopPreorders.backToYourShops")} />
-
-        <header>
-          <p className="text-2xs font-extrabold uppercase tracking-[0.2em]" style={{ color: v("--ux-brand") }}>{tr("shopPreorders.beforeYouBuyCloth")}</p>
-          <h1 className="mt-2 text-[clamp(1.5rem,3.2vw,2.125rem)] font-extrabold leading-[1.1] tracking-[-0.035em]"
-              style={{ color: v("--ux-ink") }}>{tr("shopPreorders.letTheOrderPayForItself")}</h1>
-          <p className="mt-1.5 max-w-[56ch] text-sm leading-relaxed" style={{ color: v("--ux-muted") }}>
-            Ask for the cost of the materials up front — nothing more. You never spend your own
-            money to start someone else&rsquo;s order, and you never borrow to do it.
-          </p>
-        </header>
-
-        <Card>
-          <div className="grid gap-4 sm:grid-cols-3">
-            <Stat value={formatRupees(upfront)} label={tr("shopPreorders.paidToYouUpFront")}
-                  icon="HandCoins" tint="--ux-tint-green" ink="--ux-green-ink" />
-            <Stat value={formatRupees(owed)} label={tr("shopPreorders.comingOnDelivery")}
-                  icon="Truck" tint="--ux-tint-blue" ink="--ux-blue-ink" />
-            <Stat value={String(waiting.length)} label={tr("shopPreorders.stillWaitingToStart")}
-                  icon="Clock" tint="--ux-tint-amber" ink="--ux-amber-ink" />
-          </div>
-        </Card>
-
-        {note && (
-          <Card pad={16} style={{ background: v("--ux-tint-green"), borderColor: "transparent" }}>
-            <p className="flex items-center gap-2 text-xsm font-semibold" style={{ color: v("--ux-green-ink") }}>
-              <I name="CheckCircle2" className="h-[16px] w-[16px]" />{note}
-            </p>
-          </Card>
-        )}
-
-        {waiting.length > 0 && (
-          <div>
-            <SectionHead title={tr("shopPreorders.waitingOnClothMoney")} icon="Clock" chip={String(waiting.length)} />
-            <div className="flex flex-col gap-3">{waiting.map(card)}</div>
-          </div>
-        )}
-
-        <div>
-          <SectionHead title={tr("shopPreorders.inHand")} sub={tr("shopPreorders.materialsPaidForSafeToStart")} icon="Scissors"
-                       chip={String(live.length)} />
-          {live.length === 0 ? (
-            <Card><EmptyState icon="Scissors" title={tr("shopPreorders.nothingOnTheMachine")}
-                              body="When a buyer pays the cloth money, the order appears here." /></Card>
-          ) : (
-            <div className="flex flex-col gap-3">{live.map(card)}</div>
-          )}
-        </div>
-
-        {done.length > 0 && (
-          <div>
-            <SectionHead title="Finished" icon="Check" chip={String(done.length)} />
-            <div className="flex flex-col gap-3">{done.map(card)}</div>
-          </div>
-        )}
-      </div>
-    </HomeShell>
+    <NotYetScreen
+      eyebrow="Before you buy cloth"
+      title="Let the order pay for its own materials"
+      lede="Ask for the cost of the material up front — nothing more. Then you never spend your own
+            money to start someone else's order, and you never borrow to do it."
+      cannot="WomSakhi cannot take a pre-order for you yet."
+      why="There is nowhere in WomSakhi to record that a buyer has paid for the cloth, nothing that
+           asks her for it, and no payment link to send her. Anything this screen showed you would
+           be a number we made up."
+      today={[
+        {
+          what: "Work out what the material costs — just the cloth, the thread, the lining. Not your time.",
+        },
+        {
+          what: "Ask for that much before you start, and say what it is for. Most buyers say yes to this, because it is not a deposit and it is not a favour — it is the cloth.",
+          say: "The cloth and thread for six blouses comes to ₹1,800. Send that and I will buy it tomorrow and start. The rest when you collect.",
+        },
+        {
+          what: "Take it into your own UPI id or in cash. Your money goes from her hand to yours with nothing in between.",
+        },
+        {
+          what: "Then write the order down under Your shop, so what you are owed is written somewhere and not only in your head.",
+        },
+      ]}
+      later={[
+        "Record the material cost against an order, separately from the whole price, so you can see which orders are already paid for and safe to start.",
+        "Send the buyer the ask, and remind her once, without you having to write the message.",
+        "Show what is funded and what is still your own money at risk — the one number nobody shows a woman running a business from home.",
+      ]}
+      footer={<WriteItDown />}
+    />
   );
 }

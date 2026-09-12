@@ -17,6 +17,14 @@
  *  3. PHONE-ONLY STAYS PHONE-ONLY — a portalled sheet escapes an ancestor's
  *     `lg:hidden`, so the slot sheet started opening on desktops too, on top
  *     of the panel that already showed the same thing.
+ *
+ *     That third case is not checked any more, because its only subject is
+ *     gone: `/app/shop/slots` was a week-grid built entirely from a fixture —
+ *     it told her Sunita Devi was coming at 10:00 today — and the sheet that
+ *     opened when she tapped a square went with it. No screen left in the app
+ *     gates a `Sheet` on `useNarrow`. The lesson is kept here in words so that
+ *     whoever builds the next narrow-only sheet knows to check it; a test that
+ *     opens a screen that no longer exists is not a test.
  */
 import puppeteer from "puppeteer-core";
 import { CHROME, APP, seededMemberToken } from "./_shared.mjs";
@@ -85,24 +93,7 @@ const settle = (ms = 1200) => new Promise((r) => setTimeout(r, ms));
   await p.close();
 }
 
-/* ── 3: a phone-only sheet stays on the phone ─────────────────────────────── */
-async function slotSheet(w, h) {
-  const p = await page(w, h);
-  await p.goto(`${APP}/app/shop/slots`, { waitUntil: "domcontentloaded", timeout: 90000 });
-  await settle(2500);
-  await p.evaluate(() => {
-    // A slot is the tall grid button: "<service>" over "<n> min · free".
-    [...document.querySelectorAll("button")]
-      .find((x) => /min ·|No reason given/i.test(x.textContent || ""))?.click();
-  });
-  await settle();
-  const open = await p.evaluate(() => !!document.querySelector('[role="dialog"]'));
-  await p.close();
-  return open;
-}
-ok(await slotSheet(390, 844) === true, "the slot sheet opens on a phone");
-ok(await slotSheet(1440, 900) === false, "and stays shut on a desktop, where a panel already shows it");
 
 await b.close();
-console.log(fails.length ? `\n FAIL  ${fails.length} of 6` : "\n PASS");
+console.log(fails.length ? `\n FAIL  ${fails.length} of 4` : "\n PASS");
 process.exit(fails.length ? 1 : 0);
