@@ -43,3 +43,43 @@ export async function fetchAuthProviders(): Promise<string[]> {
     return [];
   }
 }
+
+/**
+ * One thing a woman sells, read by somebody who has no account.
+ *
+ * Behind the link "Share" copies in My Shop. That button used to copy
+ * `<origin>/shop/<id>` and say *"Link copied — send it on WhatsApp"* — and
+ * there was no such route, so every one of those links was a 404 landing in a
+ * customer's chat under her name.
+ *
+ * `credentials: "omit"` for the same reason as the two calls above: the reader
+ * is a stranger, and a page that needs a session is a page her buyer cannot
+ * open. It carries no phone number, no email and no seller id — see
+ * `public_listing` in `app/routes/public.py`.
+ */
+export interface PublicListing {
+  id: string;
+  kind: "product" | "service";
+  title: string;
+  desc: string;
+  /** MINOR units — paise. Render with `formatRupees`, never by dividing here. */
+  price_minor: number;
+  price_label: string;
+  rate: string;
+  out_of_stock: boolean;
+  low_stock: boolean;
+  category: string;
+  place: string;
+  photo: string;
+  /** Her first name. Deliberately not her full one. */
+  seller_first: string;
+}
+
+/** `null` means the page is genuinely not there — taken down, paused, or a
+ *  mistyped link. The screen says so rather than showing an empty shape. */
+export async function fetchPublicListing(id: string): Promise<PublicListing | null> {
+  const res = await fetch(`${API_URL}/public/listings/${encodeURIComponent(id)}`,
+                          { credentials: "omit" });
+  if (!res.ok) return null;
+  return res.json();
+}

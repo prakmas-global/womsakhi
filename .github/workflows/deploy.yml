@@ -20,12 +20,22 @@ env:
   PROJECT_ID: womsakhi
   REGION: asia-south1
   REGISTRY: asia-south1-docker.pkg.dev/womsakhi/womsakhi
-  # The /api/v1 suffix is part of the value, not decoration. Every client
-  # module joins paths onto it directly (`${API_URL}/public/stats`), so a
-  # bare host produces a 404 on every single call while the API itself is
-  # perfectly healthy — which is exactly how this was found.
-  API_URL: https://api.womsakhi.com/api/v1
+  # RELATIVE, and that is the whole design. The browser calls `/api/v1/…` on
+  # the app's own origin and `next.config.ts` forwards it to the backend, so
+  # the session cookie belongs to the site — which is the only way both the
+  # browser and the Next server can read it. An absolute host here puts the
+  # cookie on a different origin and every signed-in page bounces to /signin
+  # after a perfectly successful login.
+  #
+  # The `/api/v1` suffix is part of the value, not decoration: client modules
+  # join paths onto it directly (`${API_URL}/public/stats`), so a bare `/`
+  # produces a 404 on every call while the API is perfectly healthy.
+  API_URL: /api/v1
   API_HOST: https://api.womsakhi.com
+  # Server components call the backend directly; `fetch("/api/v1/…")`
+  # from Node throws. Straight to Cloud Run, not via the load balancer —
+  # server-to-server has no reason to leave Google's network.
+  INTERNAL_API_URL: https://womsakhi-api-574825618745.asia-south1.run.app/api/v1
   WEB_URL: https://app.womsakhi.com
 
 permissions:
@@ -55,8 +65,17 @@ jobs:
       - name: Build API
         working-directory: womencrafts-backend/backend
         run: |
+          # `--suppress-logs` because streaming them is what broke this step
+          # the first time it ran: the build SUCCEEDED and pushed the image,
+          # but `gcloud builds submit` exited 1 because the deployer service
+          # account could not READ the logs it was tailing. A green build
+          # reported as a failed deploy is the worst kind of false negative —
+          # it stops the rollout AND sends you looking at the Dockerfile.
+          # The account can read them now; not tailing them is belt and braces,
+          # and the build's own URL is printed for when something really fails.
           gcloud builds submit \
             --tag "$REGISTRY/api:$TAG" \
+            --suppress-logs \
             --project "$PROJECT_ID" --region "$REGION"
 
       - name: Deploy API
@@ -84,7 +103,8 @@ jobs:
         working-directory: womencrafts-frontend/frontend
         run: |
           gcloud builds submit --config cloudbuild.yaml \
-            --substitutions "_API_URL=$API_URL,_IMAGE=$REGISTRY/web:$TAG" \
+            --substitutions "_API_URL=$API_URL,_INTERNAL_API_URL=$INTERNAL_API_URL,_IMAGE=$REGISTRY/web:$TAG" \
+            --suppress-logs \
             --project "$PROJECT_ID" --region "$REGION"
 
       - name: Deploy web

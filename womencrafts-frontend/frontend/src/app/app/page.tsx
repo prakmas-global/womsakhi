@@ -3,6 +3,7 @@
 import { HomeShell } from "@/components/ux/home/HomeShell";
 import { Dashboard } from "@/components/ux/home/Dashboard";
 import { HomeRail } from "@/components/ux/home/HomeRail";
+import { MobileHome } from "@/components/ux/home/MobileHome";
 
 /**
  * Home.
@@ -18,7 +19,13 @@ import { HomeRail } from "@/components/ux/home/HomeRail";
 export default function Home() {
   return (
     <HomeShell active="/app" bare rail={<HomeRail />}>
-      <Dashboard />
+      <>
+        <MobileHome />
+        {/* The desktop home keeps its hero — it is the right shape for a wide
+            screen and the wrong one for a phone. See MobileHome for why this
+            is two components rather than one restyled. */}
+        <div className="hidden lg:block"><Dashboard /></div>
+      </>
     </HomeShell>
   );
 }

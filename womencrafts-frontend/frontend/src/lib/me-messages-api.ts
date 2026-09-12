@@ -8,7 +8,16 @@ import { apiClient } from "./api";
  * every call below is scoped to her session on the server.
  */
 
-export type PartyKind = "buyer" | "mentor" | "circle" | "team";
+/**
+ * Who a thread is with. Must match `MemberConversationModel.KINDS` on the
+ * server — `RING` and `TAG` in the inbox are indexed BY this union, so a kind
+ * the server sends and this does not know reaches `TAG[kind].label` as
+ * undefined and throws on render.
+ *
+ * `seller` is the other direction from `buyer`: a woman SHE is buying from,
+ * which is what the market's "Ask her something" opens.
+ */
+export type PartyKind = "buyer" | "seller" | "mentor" | "circle" | "team";
 
 export interface ConvContext {
   kind: string;

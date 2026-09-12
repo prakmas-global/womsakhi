@@ -1,6 +1,8 @@
 from datetime import datetime, timezone
 from typing import Optional
 
+from app.core.media import media_url
+
 
 class MemberModel:
     """
@@ -72,7 +74,7 @@ class MemberModel:
             "referral": doc.get("referral", ""),
             "engagement": doc.get("engagement", 0),
             "verified_on": doc.get("verified_on", ""),
-            "avatar": doc.get("avatar", ""),
+            "avatar": media_url(doc.get("avatar", "")),
             # "joined" is the human date the UI shows; derived from created_at.
             "joined": joined_at.strftime("%b %d, %Y") if isinstance(joined_at, datetime) else "",
             "created_at": joined_at.isoformat() if isinstance(joined_at, datetime) else "",

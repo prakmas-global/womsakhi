@@ -3,7 +3,7 @@
 import Link from "next/link";
 
 import * as Icons from "@/components/ux/icons";
-import { Btn, Card, I, IconTile, Progress, v } from "@/components/ux/kit";
+import { Btn, Card, I, IconTile, Progress, Skeleton, v } from "@/components/ux/kit";
 import { stepPct, stepState, type JourneyStep, type StepState } from "@/services/journey";
 
 /* ------------------------------------------------------------------ */
@@ -319,8 +319,17 @@ export function Recommended({ rows }: { rows: Rec[] }) {
 /*  Rail: why she is doing this                                        */
 /* ------------------------------------------------------------------ */
 
+/**
+ * Why she is doing this, in her own words.
+ *
+ * Three states, and they are three because two of them used to be one. `null`
+ * is "we have not read her profile yet"; `""` is "she has not written a line";
+ * a string is hers. Collapsing the first two onto a default sentence is what
+ * put "I want to earn my own money and show my daughter it can be done" in
+ * quotation marks above a woman's own name, on a profile whose bio is empty.
+ */
 export function Motivation({ text, name, onEdit }: {
-  text: string; name: string; onEdit: () => void;
+  text: string | null; name: string; onEdit: () => void;
 }) {
   return (
     <Card>
@@ -332,11 +341,22 @@ export function Motivation({ text, name, onEdit }: {
           Edit
         </button>
       </div>
-      <blockquote className="text-xsm font-semibold italic leading-relaxed"
-                  style={{ color: v("--ux-pink-ink"), fontFamily: "var(--font-display)" }}>
-        &ldquo;{text}&rdquo;
-      </blockquote>
-      <p className="mt-2 text-2xs" style={{ color: v("--ux-muted") }}>— {name}</p>
+      {text === null ? (
+        <div className="space-y-2"><Skeleton w="94%" h={13} /><Skeleton w="62%" h={13} /></div>
+      ) : text ? (
+        <>
+          <blockquote className="text-xsm font-semibold italic leading-relaxed"
+                      style={{ color: v("--ux-pink-ink"), fontFamily: "var(--font-display)" }}>
+            &ldquo;{text}&rdquo;
+          </blockquote>
+          <p className="mt-2 text-2xs" style={{ color: v("--ux-muted") }}>— {name}</p>
+        </>
+      ) : (
+        <p className="text-xsm leading-relaxed" style={{ color: v("--ux-muted") }}>
+          You have not written one yet. One line about why you are doing this goes on your
+          profile — and it shows up here.
+        </p>
+      )}
     </Card>
   );
 }
@@ -350,7 +370,7 @@ export interface RailGoal {
   icon: string; tint: string; ink: string;
 }
 
-export function GoalsRail({ rows }: { rows: RailGoal[] }) {
+export function GoalsRail({ rows, loading = false }: { rows: RailGoal[]; loading?: boolean }) {
   return (
     <Card>
       <div className="mb-3 flex items-center justify-between gap-3">
@@ -360,6 +380,15 @@ export function GoalsRail({ rows }: { rows: RailGoal[] }) {
           View all <Icons.ArrowRight className="h-[12px] w-[12px]" />
         </Link>
       </div>
+      {loading && rows.length === 0 && (
+        <div className="space-y-3"><Skeleton w="80%" h={13} /><Skeleton w="60%" h={13} /></div>
+      )}
+      {!loading && rows.length === 0 && (
+        <p className="text-xsm leading-relaxed" style={{ color: v("--ux-muted") }}>
+          No goals yet. Naming one — an amount, a course, a number of clients — is what lets
+          this screen tell you how close you are.
+        </p>
+      )}
       <div className="space-y-3.5">
         {rows.map((g) => (
           <div key={g.id} className="flex items-start gap-2.5">

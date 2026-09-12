@@ -66,7 +66,7 @@ export default function VoiceSettings() {
                   >
                     {/* Her language in her own script — not transliterated. */}
                     <span className="block text-base font-semibold" style={{ color: "var(--ux-ink)" }}>{l.name}</span>
-                    <span className="mt-0.5 block text-2xs" style={{ color: "var(--ux-muted)" }}>
+                    <span className="mt-0.5 block text-[12px] lg:text-2xs" style={{ color: "var(--ux-muted)" }}>
                       {l.ready ? l.en : "Coming soon"}
                     </span>
                   </button>

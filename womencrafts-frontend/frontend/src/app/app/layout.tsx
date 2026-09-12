@@ -4,6 +4,8 @@ import MemberShell from "./MemberShell";
 import { serverBoot } from "@/lib/server-api";
 import { AppShellSkeleton } from "@/components/ux/home/AppSkeleton";
 import "@/app/ux/tokens.css";
+// After tokens.css on purpose: both are unlayered, so the later import wins.
+import "@/app/ux/mobile.css";
 
 /**
  * The member app's server entry point.

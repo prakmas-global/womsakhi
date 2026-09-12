@@ -136,8 +136,12 @@ export default function GroupBuyPage() {
                     </div>
                     <p className="mt-1 text-xs" style={{ color: "var(--ux-muted)" }}>Organised by {g.by}</p>
 
-                    {/* The saving as a number she can check, not "great value". */}
-                    <div className="mt-3 flex items-baseline gap-3">
+                    {/* The saving as a number she can check, not "great value".
+                        Wraps: three prices on one unbreakable row need 186px and
+                        the column beside the photo is 140px on a phone, so
+                        "…less per 20-metre roll" — the part that says what the
+                        saving is measured against — ran off the card edge. */}
+                    <div className="mt-3 flex flex-wrap items-baseline gap-x-3 gap-y-1">
                       <span className="text-xl font-bold tabular-nums" style={{ color: "var(--ux-ink)" }}>
                         {rupees(g.together_minor)}
                       </span>

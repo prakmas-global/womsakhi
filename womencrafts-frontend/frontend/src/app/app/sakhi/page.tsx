@@ -11,9 +11,12 @@ import { HomeShell } from "@/components/ux/home/HomeShell";
 import { CAN, FOLLOW_UPS, MODE_PREFIX, STARTERS, WONT } from "@/components/ux/sakhi/prompts";
 import { ConvBar, Disclosure, SakhiRail, Thread, Voice, Welcome, type Bubble } from "./views";
 import { Actions, Answer, Cites, Composer, DraftCard, Ico, ModeSwitch, Picker, StopPill, Typing } from "@/components/ux/sakhi/parts";
+import { ChatDock, ChatFrame, ChatLog, JumpToLatest, useChatScroll } from "@/components/ux/sakhi/chat";
+import { PhoneComposer } from "@/components/ux/sakhi/parts";
 import { Sheet } from "@/components/ux/kit/sheet";
 import { Btn } from "@/components/ux/kit";
 import { useToast } from "@/design-system/feedback/ToastProvider";
+import { SPEECH_UNSUPPORTED, speechFailure, speechSupported, type SpeechFailure } from "@/lib/speech";
 import {
   apiSakhiConversation,
   apiSakhiConversations,
@@ -336,11 +339,39 @@ export default function SakhiPage() {
      The browser's own recogniser. `canVoice` is false where it does not
      exist, and the microphone is then not drawn at all — a button that
      cannot work is worse than no button. */
-  const canVoice = useMemo(() => {
-    if (typeof window === "undefined") return false;
-    return Boolean((window as unknown as Record<string, unknown>).SpeechRecognition
-      || (window as unknown as Record<string, unknown>).webkitSpeechRecognition);
-  }, []);
+  /*
+    Read in an EFFECT, not during render.
+
+    `typeof window === "undefined"` is the exact server/client branch React
+    warns about: the server answers false, Chrome answers true, and the two
+    renders disagree over one word — the sentence says "ask." on the server and
+    "ask or speak." on the client. React logged a hydration mismatch on every
+    visit to this screen because of it.
+
+    `useState(false)` plus an effect means the first client render matches the
+    server by construction, and the microphone appears on the render after,
+    which nobody can perceive.
+  */
+  const [canVoice, setCanVoice] = useState(false);
+  useEffect(() => { setCanVoice(speechSupported()); }, []);
+
+  /**
+   * Say why the microphone stopped.
+   *
+   * `onerror` used to be `() => setListening(false)` — the mic lit up, went
+   * dark, and she was told nothing at all. On this screen above all others
+   * that is the wrong silence: a woman pressing the mic is frequently doing it
+   * because typing is the hard part, so "nothing happened" reads as "this app
+   * is broken" and she stops. The overwhelmingly common cause is a permission
+   * she could grant in two taps if anyone told her it was the problem.
+   */
+  const sayWhy = useCallback((f: SpeechFailure | null) => {
+    if (!f) return;   // `aborted` — she pressed stop. Nothing to report.
+    const opts = { description: f.description };
+    if (f.tone === "danger") toast.error(f.title, opts);
+    else if (f.tone === "warn") toast.warn(f.title, opts);
+    else toast.info(f.title, opts);
+  }, [toast]);
 
   const listen = useCallback((intoVoiceMode: boolean) => {
     if (listening) { recogRef.current?.stop(); setListening(false); return; }
@@ -349,9 +380,12 @@ export default function SakhiPage() {
       (new () => {
         lang: string; interimResults: boolean; continuous: boolean;
         onresult: (e: { results: ArrayLike<ArrayLike<{ transcript: string }>> }) => void;
-        onend: () => void; onerror: () => void; start: () => void; stop: () => void;
+        onend: () => void; onerror: (e: { error?: string }) => void;
+        start: () => void; stop: () => void;
       }) | undefined;
-    if (!Ctor) return;
+    // The mic is not drawn where `canVoice` is false, so this is the backstop
+    // for anything that reaches here anyway rather than the path she takes.
+    if (!Ctor) { sayWhy(SPEECH_UNSUPPORTED); return; }
 
     const r = new Ctor();
     r.lang = locale === "en" ? "en-IN" : locale;
@@ -370,11 +404,24 @@ export default function SakhiPage() {
         setHeard((said) => { if (said.trim()) void ask(said); return said; });
       }
     };
-    r.onerror = () => { setListening(false); recogRef.current = null; };
+    r.onerror = (e) => { setListening(false); recogRef.current = null; sayWhy(speechFailure(e?.error)); };
     recogRef.current = r;
     setListening(true);
-    r.start();
-  }, [ask, listening, locale]);
+    /*
+      `start()` throws, and throwing here left her with a mic stuck lit.
+      Chrome raises InvalidStateError when a recognition is already running —
+      which happens on a double tap, and after an `onend` that never arrived
+      because the tab was backgrounded mid-sentence. It also throws outright on
+      an insecure origin, where no `onerror` is ever delivered to explain it.
+    */
+    try {
+      r.start();
+    } catch {
+      setListening(false);
+      recogRef.current = null;
+      sayWhy(speechFailure("unknown"));
+    }
+  }, [ask, listening, locale, sayWhy]);
 
   useEffect(() => () => recogRef.current?.stop(), []);
 
@@ -415,6 +462,14 @@ export default function SakhiPage() {
     if (bubbles.length === 0 && history[0]) void openConversation(history[0].id);
   }
 
+  /**
+   * The thread follows the newest answer, and stops following the moment she
+   * scrolls up to read an older one. The signal changes on every streamed
+   * token, which is what keeps a long answer scrolling into view as it is
+   * written rather than growing quietly below the fold.
+   */
+  const scroll = useChatScroll(`${conversationId ?? "new"}:${bubbles.length}:${streaming.length}:${busy ? 1 : 0}`);
+
   const switcher = (
     <ModeSwitch value={view} onPick={goTo}
                 canTalk={bubbles.length > 0 || history.length > 0}
@@ -429,100 +484,161 @@ export default function SakhiPage() {
         togglePin={togglePin} current={conversationId} total={history.length}
       />
     }>
-      <div className="flex flex-col gap-4">
-        <header className="flex flex-wrap items-center gap-3">
+      {/*
+        `ChatFrame` is a plain `flex flex-col` above `lg` — the div that used to
+        be here — and below it a fixed panel that ends where the on-screen
+        keyboard begins. That is the whole point: this screen used to scroll as
+        one long page with the composer at the end of it, so tapping the field
+        put the keyboard over the thing she had just tapped.
+      */}
+      <ChatFrame label="Ask Sakhi" className="flex flex-col gap-3 lg:gap-4">
+        <header className="flex shrink-0 items-center gap-2.5 border-b pb-2.5 lg:flex-wrap lg:gap-3 lg:border-0 lg:pb-0"
+                style={{ borderColor: "var(--ux-line)" }}>
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img loading="lazy" decoding="async" src="/sakhi-face.webp" alt="" className="h-[42px] w-[42px] rounded-full object-cover" />
+          <img loading="lazy" decoding="async" src="/sakhi-face.webp" alt=""
+               className="h-[38px] w-[38px] shrink-0 rounded-full object-cover lg:h-[42px] lg:w-[42px]" />
           <div className="min-w-0 flex-1">
-            <h1 className="text-xl font-bold tracking-tight" style={{ color: "var(--ux-ink)" }}>{tr("sakhi.askSakhi")}</h1>
-            <p className="text-xsm" style={{ color: "var(--ux-muted)" }}>{tr("sakhi.tellHerWhatYouNeedIn")}</p>
+            <h1 className="truncate text-[17px] font-bold tracking-tight lg:text-xl" style={{ color: "var(--ux-ink)" }}>{tr("sakhi.askSakhi")}</h1>
+            <p className="truncate text-[13px] lg:text-xsm" style={{ color: "var(--ux-muted)" }}>{tr("sakhi.tellHerWhatYouNeedIn")}</p>
           </div>
-          <div className="flex gap-2">
-            <Link href="/app/saved"
-                  className="ux-press flex min-h-[40px] items-center gap-2 rounded-[12px] px-3.5 text-xsm font-bold"
-                  style={{ background: "var(--ux-surface)", border: "1px solid var(--ux-line-strong)", color: "var(--ux-ink)" }}>
-              <Icons.BookmarkCheck className="h-4 w-4" />
-              Saved {saved.length > 0 && `(${saved.length})`}
+          {/*
+            Two icon buttons on a phone, two labelled buttons from `lg`. A
+            390px header cannot carry "Saved (2)" and "New conversation" as
+            words without wrapping onto a second row — which it did.
+          */}
+          <div className="flex shrink-0 gap-1 lg:gap-2">
+            {/* The bordered pill is a desktop shape: at 390px two of them with
+                their words wrapped the header onto a second row. Below `lg` they
+                are 44px icon buttons; from `lg` they are exactly the buttons
+                that were here before, chrome included. */}
+            <Link href="/app/saved" aria-label={`Saved${saved.length > 0 ? ` (${saved.length})` : ""}`}
+                  className="ux-press flex h-[44px] w-[44px] items-center justify-center gap-2 rounded-full text-xsm font-bold
+                             lg:h-auto lg:min-h-[40px] lg:w-auto lg:rounded-[12px] lg:border lg:border-[var(--ux-line-strong)]
+                             lg:bg-[var(--ux-surface)] lg:px-3.5"
+                  style={{ color: "var(--ux-ink)" }}>
+              <Icons.BookmarkCheck className="h-[20px] w-[20px] lg:h-4 lg:w-4" />
+              <span className="hidden lg:inline">Saved {saved.length > 0 && `(${saved.length})`}</span>
             </Link>
-            <button type="button" onClick={startNew}
-                    className="ux-press flex min-h-[40px] items-center gap-2 rounded-[12px] px-3.5 text-xsm font-bold"
-                    style={{ background: "var(--ux-surface)", border: "1px solid var(--ux-line-strong)", color: "var(--ux-ink)" }}>
-              <Icons.Plus className="h-4 w-4" />{tr("sakhi.newConversation")}</button>
+            <button type="button" onClick={startNew} aria-label={tr("sakhi.newConversation")}
+                    className="ux-press flex h-[44px] w-[44px] items-center justify-center gap-2 rounded-full text-xsm font-bold
+                               lg:h-auto lg:min-h-[40px] lg:w-auto lg:rounded-[12px] lg:border lg:border-[var(--ux-line-strong)]
+                               lg:bg-[var(--ux-surface)] lg:px-3.5"
+                    style={{ color: "var(--ux-ink)" }}>
+              <Icons.Plus className="h-[22px] w-[22px] lg:h-4 lg:w-4" />
+              <span className="hidden lg:inline">{tr("sakhi.newConversation")}</span>
+            </button>
           </div>
         </header>
 
         {!available && (
-          <p className="rounded-[12px] p-3.5 text-xsm"
+          <p className="shrink-0 rounded-[12px] p-3.5 text-[15px] leading-snug lg:text-xsm"
              style={{ background: "var(--ux-tint-amber)", color: "var(--ux-amber-ink)" }}>{tr("sakhi.sakhiIsRestingRightNowEverything")}</p>
         )}
 
-        {voiceMode ? (
-          <Voice
-            heard={heard} listening={listening}
-            onToggle={() => listen(true)} onEnd={() => { recogRef.current?.stop(); setVoiceMode(false); setHeard(""); }}
-            locale={locale} setLocale={setLocale} localeItems={localeItems}
-            showWords={showWords} onToggleWords={() => setShowWords((v) => !v)}
-            switcher={switcher}
-          />
-        ) : empty ? (
-          <Welcome first={first} onPick={ask} canVoice={canVoice} switcher={switcher}>
-            <Composer
-              value={draft} onChange={setDraft} onSend={() => ask(draft)}
-              onMic={() => listen(false)} listening={listening} busy={busy}
-              mode={mode} setMode={setMode} locale={locale} setLocale={setLocale} locales={localeItems}
-              placeholder={tr("sakhi.askAnythingOrSayWhatYou")} canVoice={canVoice}
-              file={file} onFile={setFile} onClearFile={() => setFile(null)}
+        {/*
+          The thread is its own scrollport on a phone and a plain block on
+          desktop, so the desktop page keeps scrolling exactly as it did while
+          the phone keeps its header and its composer nailed down.
+        */}
+        <ChatLog scroll={scroll} label="Your conversation with Sakhi"
+                 className="flex flex-col gap-4 lg:contents">
+          {voiceMode ? (
+            <Voice
+              heard={heard} listening={listening}
+              onToggle={() => listen(true)} onEnd={() => { recogRef.current?.stop(); setVoiceMode(false); setHeard(""); }}
+              locale={locale} setLocale={setLocale} localeItems={localeItems}
+              showWords={showWords} onToggleWords={() => setShowWords((v) => !v)}
+              switcher={switcher}
             />
-            <Disclosure text={disclosure} />
-          </Welcome>
-        ) : (
-          <>
-            <div className="pb-1">{switcher}</div>
-            <ConvBar
-              title={history.find((c) => c.id === conversationId)?.title || "New conversation"}
-              mode={mode === "steps" ? tr("sakhi.stepByStep")
-              : tr("sakhi.quickAnswer")}
-              locale={localeItems.find((l) => l.value === locale)?.label ?? "English"}
-              pinned={!!history.find((c) => c.id === conversationId)?.pinned}
-              onRename={rename} onPin={() => conversationId && togglePin(conversationId)} onShare={share}
-            />
-            <Thread
-              bubbles={bubbles} streaming={streaming} toolRunning={toolRunning}
-              onStop={stop} onChangeDraft={(t) => setDraft(t)}
-              pending={pending} onAnswer={answer} busy={busy}
-              saved={saved} toggleSave={toggleSave}
-              votes={votes}
-              setVote={(i, v, id) => {
-                // Tapping the same thumb again clears it, both here and on the server.
-                const next = votes[i] === v ? null : v;
-                setVotes((p) => ({ ...p, [i]: next as "up" | "down" }));
-                void rate(id, next === null ? null : next === "up");
-              }}
-              onRetry={() => lastAsk.current && ask(lastAsk.current)}
-              onFollowUp={ask}
-            />
-            {/* Not sticky. The app scrolls an inner container, and a
-                `sticky bottom-0` child of it pinned the composer to the
-                scrollport while `scrollIntoView` sent the thread above the
-                fold — the messages were in the DOM and off screen. In normal
-                flow the composer follows the last message, which is where a
-                thread wants it anyway. */}
-            <div ref={endRef} />
-            <div>
+          ) : empty ? (
+            <Welcome first={first} onPick={ask} canVoice={canVoice} switcher={switcher}>
               <Composer
                 value={draft} onChange={setDraft} onSend={() => ask(draft)}
                 onMic={() => listen(false)} listening={listening} busy={busy}
                 mode={mode} setMode={setMode} locale={locale} setLocale={setLocale} locales={localeItems}
-                placeholder={tr("sakhi.askAFollowUp")} canVoice={canVoice}
+                placeholder={tr("sakhi.askAnythingOrSayWhatYou")} canVoice={canVoice}
                 file={file} onFile={setFile} onClearFile={() => setFile(null)}
               />
               <Disclosure text={disclosure} />
+            </Welcome>
+          ) : (
+            <>
+              <div className="pb-1">{switcher}</div>
+              <ConvBar
+                title={history.find((c) => c.id === conversationId)?.title || "New conversation"}
+                mode={mode === "steps" ? tr("sakhi.stepByStep")
+                : tr("sakhi.quickAnswer")}
+                locale={localeItems.find((l) => l.value === locale)?.label ?? "English"}
+                pinned={!!history.find((c) => c.id === conversationId)?.pinned}
+                onRename={rename} onPin={() => conversationId && togglePin(conversationId)} onShare={share}
+              />
+              <Thread
+                bubbles={bubbles} streaming={streaming} toolRunning={toolRunning}
+                onStop={stop} onChangeDraft={(t) => setDraft(t)}
+                pending={pending} onAnswer={answer} busy={busy}
+                saved={saved} toggleSave={toggleSave}
+                votes={votes}
+                setVote={(i, v, id) => {
+                  // Tapping the same thumb again clears it, both here and on the server.
+                  const next = votes[i] === v ? null : v;
+                  setVotes((p) => ({ ...p, [i]: next as "up" | "down" }));
+                  void rate(id, next === null ? null : next === "up");
+                }}
+                onRetry={() => lastAsk.current && ask(lastAsk.current)}
+                onFollowUp={ask}
+              />
+              {/* Not sticky. The app scrolls an inner container, and a
+                  `sticky bottom-0` child of it pinned the composer to the
+                  scrollport while `scrollIntoView` sent the thread above the
+                  fold — the messages were in the DOM and off screen. In normal
+                  flow the composer follows the last message, which is where a
+                  thread wants it anyway. */}
+              <div ref={endRef} />
+            </>
+          )}
+        </ChatLog>
+
+        {/*
+          The dock. On a phone it holds the composer for every view except
+          voice, which has a microphone of its own; on desktop it holds the
+          talk-mode composer in the same place it has always been — after the
+          thread — and nothing at all in welcome mode, where the composer is
+          inside the welcome card.
+        */}
+        {!voiceMode && (
+          <ChatDock>
+            <JumpToLatest scroll={scroll} label="Latest" />
+            <div className="lg:hidden">
+              <PhoneComposer
+                value={draft} onChange={setDraft} onSend={() => ask(draft)}
+                onMic={() => listen(false)} listening={listening} busy={busy}
+                mode={mode} setMode={setMode} locale={locale} setLocale={setLocale} locales={localeItems}
+                /* Short enough to sit on one line. Chrome sizes a textarea's
+                   `scrollHeight` around its placeholder, so the long desktop
+                   string made the empty field render three rows tall. */
+                placeholder={empty ? "Ask anything…" : "Ask a follow-up…"}
+                canVoice={canVoice}
+                file={file} onFile={setFile} onClearFile={() => setFile(null)}
+              />
+              <div className="ux-chat-tip pb-1"><Disclosure text={disclosure} /></div>
             </div>
-          </>
+            {!empty && (
+              <div className="hidden lg:block">
+                <Composer
+                  value={draft} onChange={setDraft} onSend={() => ask(draft)}
+                  onMic={() => listen(false)} listening={listening} busy={busy}
+                  mode={mode} setMode={setMode} locale={locale} setLocale={setLocale} locales={localeItems}
+                  placeholder={tr("sakhi.askAFollowUp")} canVoice={canVoice}
+                  file={file} onFile={setFile} onClearFile={() => setFile(null)}
+                />
+                <Disclosure text={disclosure} />
+              </div>
+            )}
+          </ChatDock>
         )}
 
         {error && (
-          <p className="flex items-center gap-2 text-xsm" style={{ color: "var(--ux-pink-ink)" }}>
+          <p className="flex shrink-0 items-center gap-2 pb-1 text-[13px] lg:text-xsm" style={{ color: "var(--ux-pink-ink)" }}>
             <Icons.TriangleAlert className="h-4 w-4" /> {error}
           </p>
         )}
@@ -551,7 +667,7 @@ export default function SakhiPage() {
             onKeyDown={(e) => { if (e.key === "Enter" && renameTo.trim()) void saveRename(); }}
             maxLength={80}
             autoComplete="off"
-            className="mt-2 w-full rounded-[12px] px-3.5 py-3 text-sm"
+            className="mt-2 w-full rounded-[12px] px-3.5 py-3 text-[16px] lg:text-sm"
             style={{
               background: "var(--ux-surface-2)",
               color: "var(--ux-ink)",
@@ -559,7 +675,7 @@ export default function SakhiPage() {
             }}
           />
         </Sheet>
-      </div>
+      </ChatFrame>
     </HomeShell>
   );
 }

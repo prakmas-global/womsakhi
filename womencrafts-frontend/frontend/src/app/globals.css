@@ -46,7 +46,7 @@ body {
 
 /* Brand gradient wordmark (magenta -> purple) */
 .text-brand-gradient {
-  background: linear-gradient(90deg, #d21f7c 0%, #a5279a 52%, #7440a6 100%);
+  background: linear-gradient(90deg, #742a4f 0%, #a55168 52%, #8b5cf6 100%);
   -webkit-background-clip: text;
   background-clip: text;
   -webkit-text-fill-color: transparent;

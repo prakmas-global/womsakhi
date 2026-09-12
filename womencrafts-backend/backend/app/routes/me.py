@@ -26,6 +26,7 @@ from app.core import semantic
 from app.core.matching import NEEDS, rank
 from app.core.rbac import is_member
 from app.core.serializers import to_object_id
+from app.core.media import media_url
 from app.db.mongodb import get_database
 from app.models.goal import GoalModel
 from app.models.wallet import WalletTxnModel
@@ -892,7 +893,7 @@ async def library(
             type=doc.get("type", ""),
             description=doc.get("description", ""),
             author=doc.get("author", ""),
-            cover=doc.get("cover", ""),
+            cover=media_url(doc.get("cover", "")),
             icon=doc.get("icon", "FileText"),
             updated=doc.get("last_updated", ""),
             saved=str(doc["_id"]) in saved,
@@ -1194,7 +1195,7 @@ async def program_detail(program_id: str, me: dict = Depends(require_active_memb
         duration=program.get("duration", ""),
         dates=program.get("dates", ""),
         days=program.get("days", ""),
-        cover=program.get("cover", ""),
+        cover=media_url(program.get("cover", "")),
         seats=int(program.get("cap") or 0),
         enrolled=bool(enrollment and enrollment.get("status") != EnrollmentModel.STATUS_WITHDRAWN),
         progress=int((enrollment or {}).get("progress") or 0),

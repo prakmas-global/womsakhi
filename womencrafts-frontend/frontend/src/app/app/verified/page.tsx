@@ -3,7 +3,8 @@
 import { useCallback, useMemo, useState } from "react";
 
 import { HomeShell } from "@/components/ux/home/HomeShell";
-import { Btn, Card, Chip, I, IconTile, Pill, SectionHead, v } from "@/components/ux/kit";
+import { Tag } from "@/components/ux/work/native";
+import { Btn, Card, Chip, I, IconTile, SectionHead, v } from "@/components/ux/kit";
 import { formatRupees } from "@/components/ux/kit";
 import { EMPLOYERS, WORK_CLAIMS, owedFromWork, type Employer } from "@/components/ux/eight/data";
 import { useT } from "@/i18n";
@@ -48,10 +49,10 @@ export default function VerifiedPage() {
       <div className="flex flex-col gap-5">
 
         <header>
-          <p className="text-2xs font-extrabold uppercase tracking-[0.2em]" style={{ color: v("--ux-brand") }}>{tr("verified.beforeYouTakeTheWork")}</p>
-          <h1 className="mt-2 text-[clamp(1.5rem,3.2vw,2.125rem)] font-extrabold leading-[1.1] tracking-[-0.035em]"
+          <p className="text-[13px] font-extrabold uppercase tracking-[0.2em] lg:text-2xs" style={{ color: v("--ux-brand") }}>{tr("verified.beforeYouTakeTheWork")}</p>
+          <h1 className="ux-screen-title mt-2 text-[clamp(1.5rem,3.2vw,2.125rem)] font-extrabold leading-[1.1] tracking-[-0.035em]"
               style={{ color: v("--ux-ink") }}>{tr("verified.didTheyActuallyPayHer")}</h1>
-          <p className="mt-1.5 max-w-[58ch] text-sm leading-relaxed" style={{ color: v("--ux-muted") }}>
+          <p className="mt-1.5 max-w-[58ch] text-[15px] leading-snug lg:text-sm lg:leading-relaxed" style={{ color: v("--ux-muted") }}>
             Every line below was written by a woman who did the work — not by the company, and not
             by us. There are plenty of places to find work. There is nowhere to find out whether
             the money came.
@@ -70,7 +71,7 @@ export default function VerifiedPage() {
                   <I name="AlertTriangle" className="h-[24px] w-[24px]" sw={2.2} />
                 </span>
                 <div className="min-w-0 flex-1">
-                  <p className="text-2xs font-extrabold uppercase tracking-[0.16em]" style={{ color: v("--ux-ink") }}>{tr("verified.womenAreWarningEachOtherAbout")}</p>
+                  <p className="text-[13px] font-extrabold uppercase tracking-[0.16em] lg:text-2xs" style={{ color: v("--ux-ink") }}>{tr("verified.womenAreWarningEachOtherAbout")}</p>
                   <p className="mt-1.5 text-[clamp(1.1875rem,2.4vw,1.5rem)] font-extrabold leading-tight tracking-[-0.025em]"
                      style={{ color: v("--ux-ink") }}>
                     {e.name}
@@ -96,13 +97,16 @@ export default function VerifiedPage() {
                     {e.paidLate} more were paid late · last report {e.lastReport}
                   </p>
 
-                  <div className="mt-4 flex flex-wrap gap-2">
-                    <Btn variant="outline" icon="Flag" disabled={reported.includes(e.id)}
+                  {/* Full width and stacked on a phone: "This happened to me
+                      too" is the whole point of this card and it should not be
+                      a 140px pill in a wrapped row. */}
+                  <div className="mt-4 flex flex-col gap-2 lg:flex-row lg:flex-wrap">
+                    <Btn className="ux-action-primary" variant="outline" icon="Flag" disabled={reported.includes(e.id)}
                          onClick={() => report(e.id, e.name)}>
                       {reported.includes(e.id) ? tr("verified.youHaveReportedThis")
               : tr("verified.thisHappenedToMeToo")}
                     </Btn>
-                    <Btn variant="ghost" icon="MessageCircle" href="/app/messages">{tr("verified.talkToAWomanWhoWorked")}</Btn>
+                    <Btn className="ux-action-primary" variant="ghost" icon="MessageCircle" href="/app/messages">{tr("verified.talkToAWomanWhoWorked")}</Btn>
                   </div>
                 </div>
               </div>
@@ -142,9 +146,9 @@ export default function VerifiedPage() {
                     <p className="text-base font-extrabold tabular-nums" style={{ color: v("--ux-ink") }}>
                       {formatRupees(w.dueMinor)}
                     </p>
-                    <Pill tone={tone as "green" | "orange"} size="sm">
+                    <Tag tone={tone as "green" | "orange"} size="sm">
                       {w.state === "paid" ? "Paid" : w.state === "disputed" ? "They are refusing" : "Late"}
-                    </Pill>
+                    </Tag>
                   </div>
                   {w.state !== "paid" && (
                     <Btn size="sm" variant="outline" href="/app/haq">{tr("verified.chaseIt")}</Btn>
@@ -158,7 +162,7 @@ export default function VerifiedPage() {
         {/* The quiet ledger */}
         <div>
           <SectionHead title={tr("verified.whoElseHasHiredWomenHere")} icon="Building2" chip={String(shown.length)} />
-          <div className="mb-3.5 flex flex-wrap gap-2">
+          <div className="ux-chiprow mb-3.5 flex flex-wrap gap-2" style={{ ["--ux-pad" as string]: "20px" }}>
             <Chip icon="LayoutGrid" selected={filter === "all"} onClick={() => setFilter("all")}>Everyone</Chip>
             <Chip icon="Check" selected={filter === "safe"} onClick={() => setFilter("safe")}>{tr("verified.alwaysPaid")}</Chip>
             <Chip icon="AlertTriangle" selected={filter === "risky"} onClick={() => setFilter("risky")}>{tr("verified.beCareful")}</Chip>
@@ -197,7 +201,7 @@ function Row({ e }: { e: Employer }) {
         <div className="min-w-0 flex-1">
           <div className="flex flex-wrap items-center gap-2">
             <p className="text-sm font-bold" style={{ color: v("--ux-ink") }}>{e.name}</p>
-            {!bad && e.paidLate === 0 && <Pill tone="green" size="sm">{tr("verified.alwaysPaidOnTime")}</Pill>}
+            {!bad && e.paidLate === 0 && <Tag tone="green" size="sm">{tr("verified.alwaysPaidOnTime")}</Tag>}
           </div>
           <p className="mt-0.5 text-xs" style={{ color: v("--ux-muted") }}>
             {e.kind} · {e.workedBy} women have worked for them · last report {e.lastReport}

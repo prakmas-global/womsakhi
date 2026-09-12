@@ -6,6 +6,7 @@ import { HomeShell } from "@/components/ux/home/HomeShell";
 import { Card, I, IconTile, v } from "@/components/ux/kit";
 import { useNavLabel } from "@/components/ux/use-nav-label";
 import { SECTIONS, type NavNode, type Section } from "@/components/ux/nav-tree";
+import { ListGroup, ListRow } from "@/components/ux/mobile/ListRow";
 
 /**
  * A section's landing page, which IS its navigation.
@@ -91,27 +92,62 @@ export function Hub({ id }: { id: string }) {
         </section>
       ) : (
         <header className="mb-5 flex items-start gap-3.5">
-          <IconTile icon={section.icon} tint="--ux-brand-tint-2" ink="--ux-brand" size={46} radius={14} />
+          {/* The tile is decoration beside a 30px title on a 390px screen, and
+              it costs the title 60px of the width it needs. It stays from `lg`. */}
+          <div className="hidden lg:block">
+            <IconTile icon={section.icon} tint="--ux-brand-tint-2" ink="--ux-brand" size={46} radius={14} />
+          </div>
           <div className="min-w-0">
-            <h1 className="text-3xl font-extrabold leading-tight tracking-[-0.025em]"
+            <h1 className="ux-screen-title text-3xl font-extrabold leading-tight tracking-[-0.025em]"
                 style={{ color: v("--ux-ink") }}>
               {nav.label(section)}
             </h1>
             {section.note && (
-              <p className="mt-1 text-smd" style={{ color: v("--ux-ink-2") }}>{section.note}</p>
+              <p className="mt-1 text-[15px] leading-snug lg:text-smd" style={{ color: v("--ux-ink-2") }}>{section.note}</p>
             )}
-            <p className="mt-1.5 text-xs" style={{ color: v("--ux-muted") }}>
+            <p className="mt-1.5 text-[13px] lg:text-xs" style={{ color: v("--ux-muted") }}>
               {kids.length} places, nothing hidden.
             </p>
           </div>
         </header>
       )}
 
-        <div className="grid items-start gap-3.5" style={{ gridTemplateColumns: "repeat(auto-fit, minmax(268px, 1fr))" }}>
+        {/*
+          ── The phone ───────────────────────────────────────────────────────
+          The grid below is `auto-fit, minmax(268px, 1fr)`, which at 390px is one
+          column — and one column of bordered cards with a gutter between every
+          one of them is a web list, not a phone screen. Worse, each card's
+          second level was a wrap of 11px pills: under the 12px floor, and on
+          the Circle hub they wrapped onto three rows.
+
+          As grouped lists the destination and everything under it are one card
+          with hairlines inside, every row 52px and every label 15px. It is the
+          same two levels the comment above argues for — just drawn the way a
+          phone draws them.
+        */}
+        <div className="space-y-5 lg:hidden">
+          {kids.map((c) => <HubList key={c.id} node={c} />)}
+        </div>
+
+        <div className="hidden items-start gap-3.5 lg:grid" style={{ gridTemplateColumns: "repeat(auto-fit, minmax(268px, 1fr))" }}>
           {kids.map((c) => <HubCard key={c.id} node={c} />)}
         </div>
       </div>
     </HomeShell>
+  );
+}
+
+/** One destination and the screens under it, as a grouped list. */
+function HubList({ node }: { node: NavNode }) {
+  const nav = useNavLabel();
+  const kids = (node.children ?? []).filter((c) => !c.unlisted);
+  return (
+    <ListGroup>
+      <ListRow href={node.href} icon={node.icon} title={nav.label(node)} subtitle={nav.note(node)} />
+      {kids.map((k) => (
+        <ListRow key={k.id} href={k.href} icon={k.icon} title={nav.label(k)} subtitle={nav.note(k)} />
+      ))}
+    </ListGroup>
   );
 }
 

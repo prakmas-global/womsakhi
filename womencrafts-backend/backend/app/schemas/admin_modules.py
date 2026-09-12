@@ -3,6 +3,7 @@
 from typing import Optional
 
 from pydantic import BaseModel, field_validator
+from app.core.media import MediaRef, MediaRefOptional
 
 
 def _required(v: str, message: str) -> str:
@@ -81,7 +82,7 @@ class MentorUpsert(BaseModel):
     name: str
     headline: str = ""
     bio: str = ""
-    photo: str = ""
+    photo: MediaRef = ""
     expertise: list[str] = []
     languages: list[str] = []
     experience_years: int = 0

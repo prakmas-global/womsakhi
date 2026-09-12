@@ -16,60 +16,60 @@
      Same identity — magenta on the left, violet on the right — over a pale
      lavender ground instead of a violet night. The accents deepen, because a
      colour that glows on black is unreadable on white. */
-  --a-night: #faf7ff;
-  --a-night-2: #f4ecfd;
-  --a-plum: #f7e9f5;
-  --a-orchid: #efe2fb;
+  --a-night: #fcf8f7;
+  --a-night-2: #f9f0ee;
+  --a-plum: #f3dad7;
+  --a-orchid: #e9ddfb;
 
-  --a-magenta: #c9207a;
-  --a-rose: #e0348f;
-  --a-violet: #6d28d9;
-  --a-violet-2: #5b21b6;
-  --a-lilac: #7c3aed;
+  --a-magenta: #742a4f;
+  --a-rose: #a55168;
+  --a-violet: #8b5cf6;
+  --a-violet-2: #7c3aed;
+  --a-lilac: #8b5cf6;
 
   --a-glass: rgba(255, 255, 255, 0.62);
   --a-glass-2: rgba(255, 255, 255, 0.80);
-  --a-glass-3: rgba(109, 40, 217, 0.10);
-  --a-edge: rgba(90, 50, 140, 0.16);
-  --a-edge-soft: rgba(90, 50, 140, 0.10);
+  --a-glass-3: rgba(116, 42, 79, 0.10);
+  --a-edge: rgba(116, 42, 79, 0.18);
+  --a-edge-soft: rgba(116, 42, 79, 0.10);
 
-  --a-ink: #1c1030;
-  --a-ink-2: #3f2c60;
-  --a-muted: #63527f;
-  --a-faint: #8b7ba3;
+  --a-ink: #29141f;
+  --a-ink-2: #592b43;
+  --a-muted: #6c6065;
+  --a-faint: #736569;
 
-  --a-well: rgba(90, 50, 140, 0.05);
+  --a-well: rgba(116, 42, 79, 0.05);
   --a-well-2: rgba(255, 255, 255, 0.75);
   --a-well-3: rgba(255, 255, 255, 0.92);
   --a-ring: #ffffff;
-  --a-stage: #0d0618;
+  --a-stage: #150c0f;
   /* The stage is dark in BOTH themes — the film is dark — so its scrim is
      defined once here and inherited rather than re-stated in the dark block. */
-  --a-scrim: rgba(10, 5, 20, 0.26);
-  --a-track: rgba(90, 50, 140, 0.14);
+  --a-scrim: rgba(21, 12, 15, 0.28);
+  --a-track: rgba(116, 42, 79, 0.14);
 
-  --a-tint-rose: rgba(201, 32, 122, 0.10);
-  --a-tint-rose-2: rgba(201, 32, 122, 0.08);
-  --a-edge-rose: rgba(201, 32, 122, 0.26);
-  --a-glow-rose: rgba(232, 57, 155, 0.16);
+  --a-tint-rose: rgba(116, 42, 79, 0.10);
+  --a-tint-rose-2: rgba(116, 42, 79, 0.08);
+  --a-edge-rose: rgba(116, 42, 79, 0.26);
+  --a-glow-rose: rgba(165, 81, 104, 0.20);
   --a-tint-violet: rgba(109, 40, 217, 0.08);
   --a-tint-violet-2: rgba(109, 40, 217, 0.14);
   --a-edge-violet: rgba(109, 40, 217, 0.22);
-  --a-corner-light: radial-gradient(circle, rgba(232, 57, 155, 0.16), transparent 68%);
-  --a-sky-1: rgba(232, 57, 155, 0.13);
-  --a-sky-2: rgba(139, 92, 246, 0.14);
-  --a-sky-3: rgba(232, 57, 155, 0.09);
-  --a-focus: rgba(201, 32, 122, 0.18);
-  --a-go-glow: 0 12px 30px -14px rgba(160, 40, 150, 0.45);
-  --a-go-glow-hover: 0 16px 38px -14px rgba(160, 40, 150, 0.60);
-  --a-shadow-stage: 0 26px 60px -28px rgba(90, 40, 130, 0.45);
+  --a-corner-light: radial-gradient(circle, rgba(232, 183, 183, 0.30), transparent 68%);
+  --a-sky-1: rgba(232, 183, 183, 0.34);
+  --a-sky-2: rgba(233, 221, 251, 0.34);
+  --a-sky-3: rgba(246, 199, 168, 0.26);
+  --a-focus: rgba(116, 42, 79, 0.20);
+  --a-go-glow: 0 12px 30px -14px rgba(116, 42, 79, 0.45);
+  --a-go-glow-hover: 0 16px 38px -14px rgba(116, 42, 79, 0.60);
+  --a-shadow-stage: 0 26px 60px -28px rgba(58, 21, 36, 0.45);
 
-  --a-danger-ink: #9d1750;
+  --a-danger-ink: #b3261e;
   --a-ok: #067a55;
   --a-warn: #8a5a00;
-  --a-bad: #b0325c;
+  --a-bad: #a3324f;
 
-  --a-fill: linear-gradient(96deg, var(--a-magenta), var(--a-violet-2));
+  --a-fill: linear-gradient(96deg, var(--a-magenta), var(--a-rose));
   --a-fill-hover: linear-gradient(96deg, var(--a-rose), var(--a-violet));
 
   color: var(--a-ink);
@@ -79,16 +79,16 @@
 /* ── DARK: the violet night the design was drawn in ────────────────────────── */
 .dark .auth-scene,
 .auth-scene.dark {
-  --a-night: #140a26;
-  --a-night-2: #1d0e38;
-  --a-plum: #2b1152;
-  --a-orchid: #4a1a72;
+  --a-night: #150c0f;
+  --a-night-2: #22161b;
+  --a-plum: #302227;
+  --a-orchid: #3f2b35;
 
-  --a-magenta: #e8399b;
-  --a-rose: #ff5fae;
-  --a-violet: #8b5cf6;
-  --a-violet-2: #7c3aed;
-  --a-lilac: #c084fc;
+  --a-magenta: #d75685;
+  --a-rose: #e18e9c;
+  --a-violet: #ab7aeb;
+  --a-violet-2: #8b5cf6;
+  --a-lilac: #c4a2f8;
 
   --a-glass: rgba(255, 255, 255, 0.045);
   --a-glass-2: rgba(255, 255, 255, 0.07);
@@ -96,35 +96,48 @@
   --a-edge: rgba(255, 255, 255, 0.10);
   --a-edge-soft: rgba(255, 255, 255, 0.065);
 
-  --a-ink: #ffffff;
-  --a-ink-2: #ddd2f0;
-  --a-muted: #b3a3d0;
-  --a-faint: #8d7fae;
+  --a-ink: #fbf4f5;
+  --a-ink-2: #e7dadf;
+  --a-muted: #a5838f;
+  --a-faint: #a38590;
 
-  --a-well: rgba(10, 5, 20, 0.30);
-  --a-well-2: rgba(10, 5, 20, 0.42);
-  --a-well-3: rgba(10, 5, 20, 0.55);
-  --a-ring: rgba(30, 15, 55, 0.9);
-  --a-stage: #0d0618;
+  --a-well: rgba(21, 12, 15, 0.34);
+  --a-well-2: rgba(21, 12, 15, 0.46);
+  --a-well-3: rgba(21, 12, 15, 0.58);
+  --a-ring: rgba(48, 34, 39, 0.9);
+  --a-stage: #0f080b;
   --a-track: rgba(255, 255, 255, 0.12);
 
-  --a-tint-rose: rgba(232, 57, 155, 0.16);
-  --a-tint-rose-2: rgba(232, 57, 155, 0.14);
-  --a-edge-rose: rgba(232, 57, 155, 0.32);
-  --a-glow-rose: rgba(232, 57, 155, 0.34);
-  --a-tint-violet: rgba(139, 92, 246, 0.13);
-  --a-tint-violet-2: rgba(139, 92, 246, 0.20);
-  --a-edge-violet: rgba(139, 92, 246, 0.26);
-  --a-corner-light: radial-gradient(circle, rgba(232, 57, 155, 0.34), transparent 68%);
-  --a-sky-1: rgba(232, 57, 155, 0.30);
-  --a-sky-2: rgba(139, 92, 246, 0.30);
-  --a-sky-3: rgba(232, 57, 155, 0.20);
-  --a-focus: rgba(232, 57, 155, 0.22);
-  --a-go-glow: 0 14px 34px -12px rgba(232, 57, 155, 0.62);
-  --a-go-glow-hover: 0 18px 42px -12px rgba(232, 57, 155, 0.75);
-  --a-shadow-stage: 0 26px 60px -24px rgba(232, 57, 155, 0.55);
+  --a-tint-rose: rgba(215, 86, 133, 0.16);
+  --a-tint-rose-2: rgba(215, 86, 133, 0.13);
+  --a-edge-rose: rgba(215, 86, 133, 0.30);
+  --a-glow-rose: rgba(215, 86, 133, 0.26);
+  --a-tint-violet: rgba(171, 122, 235, 0.13);
+  --a-tint-violet-2: rgba(171, 122, 235, 0.20);
+  --a-edge-violet: rgba(171, 122, 235, 0.26);
+  --a-corner-light: radial-gradient(circle, rgba(215, 86, 133, 0.22), transparent 68%);
+  --a-sky-1: rgba(215, 86, 133, 0.18);
+  --a-sky-2: rgba(171, 122, 235, 0.14);
+  --a-sky-3: rgba(116, 42, 79, 0.20);
+  --a-focus: rgba(215, 86, 133, 0.22);
+  --a-go-glow: 0 14px 34px -12px rgba(215, 86, 133, 0.50);
+  --a-go-glow-hover: 0 18px 42px -12px rgba(215, 86, 133, 0.62);
+  --a-shadow-stage: 0 26px 60px -24px rgba(0, 0, 0, 0.6);
 
-  --a-danger-ink: #ffc9e2;
+  --a-danger-ink: #ffc9d6;
+
+  /*
+    The primary button, stated again for dark — and it is the SAME berry pair
+    as light, deliberately.
+
+    It inherited `linear-gradient(var(--a-magenta), var(--a-rose))`, and in dark
+    those two are TEXT colours: light and saturated so they can be read on a
+    plum ground. As a fill behind white type the right-hand stop measured about
+    2.1:1 — the single most important button on the app's front door, failing.
+    Berry and Primary Light carry white at 9.60:1 and 5.28:1 in any theme,
+    which is exactly why `--ux-fill` exists on the member side.
+  */
+  --a-fill: linear-gradient(96deg, #742a4f, #a55168);
   --a-ok: #6ee7b7;
   --a-warn: #fcd34d;
   --a-bad: #fda4af;
@@ -238,4 +251,22 @@
      things a woman most needs to have read before she commits. */
   .auth-brand { display: none; }
   .auth-note { margin-top: 8px !important; }
+}
+
+/*
+  The serif on the front door, for the same reason the marketing site uses one.
+
+  This is the first WomSakhi screen a woman ever sees, and the sentence on it
+  is the promise — "Empowering women to work, earn and grow". A geometric sans
+  says software; Fraunces says somebody wrote this. The fields, the labels and
+  the buttons stay in the sans, because those have to be read rather than felt.
+
+  `--font-display` puts Fraunces ahead of the Noto faces, which is what lets a
+  Devanagari or Tamil version of this line fall through to a face that has the
+  glyphs instead of rendering as boxes.
+*/
+.auth-scene h1,
+.auth-scene .auth-display {
+  font-family: var(--font-display);
+  letter-spacing: -0.02em;
 }

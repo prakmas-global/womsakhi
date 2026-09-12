@@ -26,6 +26,11 @@ INDEXES: dict[str, list[IndexModel]] = {
         # The verification queue: "members awaiting review".
         IndexModel([("role", ASCENDING), ("verification_status", ASCENDING)], name="role_status"),
         IndexModel([("member_id", ASCENDING)], name="member_id", sparse=True),
+        # Her shop's public handle. UNIQUE because the index is what decides a
+        # collision — `handle_for` simply takes the next number when this
+        # refuses — and SPARSE because most accounts never have one, and a
+        # plain unique index would make every one of those collide on null.
+        IndexModel([("shop_handle", ASCENDING)], unique=True, sparse=True, name="shop_handle_unique"),
     ],
     "members": [
         IndexModel([("email", ASCENDING)], name="email"),
@@ -36,11 +41,16 @@ INDEXES: dict[str, list[IndexModel]] = {
     "shop_listings": [
         IndexModel([("user_id", ASCENDING), ("updated_at", DESCENDING)], name="user_updated"),
         IndexModel([("user_id", ASCENDING), ("kind", ASCENDING)], name="user_kind"),
+        # The market browse: live listings that are not hers, newest first.
+        IndexModel([("status", ASCENDING), ("updated_at", DESCENDING)], name="live_updated"),
     ],
     "shop_orders": [
         # "my orders, newest first" and "who is waiting on me"
         IndexModel([("seller_id", ASCENDING), ("created_at", DESCENDING)], name="seller_created"),
         IndexModel([("seller_id", ASCENDING), ("state", ASCENDING)], name="seller_state"),
+        # The other side: what I have ordered, and whether I have ordered THIS.
+        IndexModel([("buyer_id", ASCENDING), ("created_at", DESCENDING)], name="buyer_created"),
+        IndexModel([("buyer_id", ASCENDING), ("listing_id", ASCENDING)], name="buyer_listing"),
     ],
     "shop_reviews": [
         IndexModel([("seller_id", ASCENDING), ("created_at", DESCENDING)], name="seller_created"),
@@ -372,6 +382,10 @@ INDEXES: dict[str, list[IndexModel]] = {
     # and a compound index that saves nothing still costs on every write.
     "member_conversations": [
         IndexModel([("member_id", ASCENDING)], name="member_id_1"),
+        # Finding the one thread she already has with another member. Not
+        # unique: every seeded thread has no `with_user_id` at all, and a
+        # unique index would make them all collide on null.
+        IndexModel([("member_id", ASCENDING), ("with_user_id", ASCENDING)], name="member_with"),
     ],
     "support_requests": [
         IndexModel([("user_id", ASCENDING), ("status", ASCENDING)], name="user_status"),

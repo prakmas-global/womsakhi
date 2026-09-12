@@ -21,6 +21,8 @@ worse product than one that cannot.
 from datetime import datetime, timezone
 from typing import Optional
 
+from app.core.media import media_url
+
 
 def _now() -> datetime:
     return datetime.now(timezone.utc)
@@ -66,7 +68,7 @@ class OrgSettingsModel:
         doc = doc or {}
         return {
             "name": doc.get("name", ""),
-            "logo": doc.get("logo", ""),
+            "logo": media_url(doc.get("logo", "")),
             "wordmark": doc.get("wordmark", ""),
             "default_theme_id": doc.get("default_theme_id", ""),
             "default_primary": doc.get("default_primary", ""),

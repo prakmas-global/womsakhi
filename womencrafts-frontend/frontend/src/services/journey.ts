@@ -43,16 +43,37 @@ export type StageId = (typeof STAGES)[number]["id"];
  * correct.
  */
 export interface JourneyState {
-  skills: number;
+  /**
+   * How many skills she has named.
+   *
+   * **`null` means nothing in this system records it.** There is no skills
+   * field on a member: `expertise` belongs to a mentor and `skills` to an
+   * opportunity listing, and neither one is hers. Every rule below that would
+   * have read this skips itself rather than guessing, because "you have not
+   * named a skill" is a thing we would be saying, not observing.
+   */
+  skills: number | null;
   coursesDone: number;
   coursesInProgress: number;
   /** Work actually finished — the only evidence that a skill is real. */
   ordersDone: number;
-  hasPortfolio: boolean;
+  /**
+   * **`null` — no source.** This product has no portfolio yet: there is
+   * nowhere to upload work samples and nothing that stores them. A `false`
+   * here would be the app telling her she has not done something it never
+   * offered her.
+   */
+  hasPortfolio: boolean | null;
   applications: number;
   /** Paise. Zero is a meaningful state, not a missing one. */
   earnedMinor: number;
-  hasShop: boolean;
+  /**
+   * **`null` — no source.** "Opening a shop" is not an event this system
+   * records; every active member can list something, and `/shop/summary`
+   * answers for a woman who has never sold anything. `true` was hardcoded
+   * here for months, which is what made "Open your shop" tick itself.
+   */
+  hasShop: boolean | null;
   productsListed: number;
   circles: number;
   hasMentor: boolean;
@@ -81,14 +102,19 @@ export interface NextStep {
  * listed. Intentions do not move her forward, which is what stops the journey
  * from congratulating her for browsing.
  */
-export function stageFor(s: JourneyState): StageId {
+export function stageFor(s: JourneyState): StageId | null {
   if (s.earnedMinor > 0 && s.monthsActive >= 3) return "grow";
   if (s.earnedMinor > 0) return "earn";
   if (s.applications > 0 || s.productsListed > 0) return "opportunity";
-  if (s.hasPortfolio || s.ordersDone > 0) return "build";
+  if (s.hasPortfolio === true || s.ordersDone > 0) return "build";
   if (s.coursesDone > 0 || s.coursesInProgress > 0) return "practice";
-  if (s.skills > 0) return "learn";
-  return "skill";
+  // The last two rungs rest entirely on a field nothing records. `null` is
+  // "we cannot place her", and a screen must show her what it does know
+  // instead of standing her at the start of a journey she may be halfway
+  // along — being told you are at square one when you are not is the one
+  // mistake this screen cannot recover from.
+  if (s.skills === null) return null;
+  return s.skills > 0 ? "learn" : "skill";
 }
 
 /**
@@ -100,27 +126,38 @@ export function stageFor(s: JourneyState): StageId {
  * than adding conditions when that opinion changes.
  */
 export function nextStep(s: JourneyState): NextStep {
+  // Every clause below reads `=== true` / `=== false` rather than truthiness,
+  // because three of these fields can be `null` — "this system does not record
+  // it" — and `!s.hasPortfolio` was reading that null as "she has no proof".
+  // It fired "Make proof of what you can do" at a woman who has finished nine
+  // courses, on the strength of a field nothing has ever written. An unknown
+  // field now skips its clause, and the first clause that rests on something
+  // observed wins instead.
   if (s.skills === 0)
     return { stage: "skill", title: "Name one thing you can already do",
       because: "Everything here starts from a skill. Yours does not have to be a job title — stitching, cooking and mehendi all count.",
       cta: "Add your skill", href: "/app/profile", icon: "Sparkles", mins: 2 };
 
-  if (s.hasShop && s.productsListed === 0)
+  if (s.hasShop === true && s.productsListed === 0)
     return { stage: "opportunity", title: "Put your first thing in your shop",
-      because: "Your shop is open but empty, so nobody can buy from you yet. You can say it out loud instead of typing it.",
-      cta: "Add it by speaking", href: "/app/shop/voice", icon: "Mic", mins: 3 };
+      // Was "Add it by speaking" -> /app/shop/voice, a microphone that never
+      // recorded anything and printed a sentence out of a fixture as though she
+      // had said it. The real answer is the microphone key on her own keyboard,
+      // which works inside this form.
+      because: "Your shop is open but empty, so nobody can buy from you yet. You can speak it into the form with the microphone on your keyboard instead of typing.",
+      cta: "Add your first thing", href: "/app/documents/new", icon: "Plus", mins: 3 };
 
   if (s.coursesInProgress > 0 && s.coursesDone === 0)
     return { stage: "learn", title: "Finish the course you started",
       because: "You are most of the way through. Finishing it is what turns it into something you can show someone.",
       cta: "Continue learning", href: "/app/programs", icon: "BookOpen", mins: 14 };
 
-  if (s.coursesDone > 0 && !s.hasPortfolio)
+  if (s.coursesDone > 0 && s.hasPortfolio === false)
     return { stage: "build", title: "Make proof of what you can do",
       because: `You have finished ${s.coursesDone} ${s.coursesDone === 1 ? "course" : "courses"}. A certificate says you learned it — work you can show says you can do it.`,
       cta: "Build your proof", href: "/app/profile", icon: "FileText", mins: 15 };
 
-  if (s.hasPortfolio && s.applications === 0)
+  if (s.hasPortfolio === true && s.applications === 0)
     return { stage: "opportunity", title: "Put yourself forward for one job",
       because: "You have the proof ready. The only thing between it and money is someone seeing it.",
       cta: "Find work that fits", href: "/app/opportunities", icon: "Briefcase", mins: 10 };
@@ -146,8 +183,11 @@ export function nextStep(s: JourneyState): NextStep {
 }
 
 /** How far along, for a progress bar that means something. */
-export function journeyPct(s: JourneyState): number {
-  const i = STAGES.findIndex((x) => x.id === stageFor(s));
+export function journeyPct(s: JourneyState): number | null {
+  const stage = stageFor(s);
+  // No stage, no percentage. `findIndex` returning -1 used to render 14%.
+  if (stage === null) return null;
+  const i = STAGES.findIndex((x) => x.id === stage);
   return Math.round(((i + 1) / STAGES.length) * 100);
 }
 
@@ -166,11 +206,24 @@ export function journeyPct(s: JourneyState): number {
 
 /** What the steps can be computed from: her shop, her learning, and her profile. */
 export interface JourneyFacts extends JourneyState {
-  /** From `useMe` — live, unlike most of `JourneyState` today. */
-  profilePct: number;
+  /**
+   * How complete her profile is, as a percentage.
+   *
+   * `null` when we cannot get the real one. The number the app had here was
+   * `/me/progress.completion_rate`, which is the furthest-along *course*
+   * percentage under a name that reads like a profile — so a woman who had
+   * finished a course was told her profile was 100% complete while four of
+   * its five fields were empty. See `me.repository`.
+   */
+  profilePct: number | null;
   verified: boolean;
   hasAvatar: boolean;
-  hasTagline: boolean;
+  /**
+   * The line she has written about her own work — `""` when she has not
+   * written one. Her words, never a stand-in: this was a module constant
+   * ("Dream • Learn • Achieve") printed as a quotation with her name under it.
+   */
+  bio: string;
 }
 
 export interface StepCheck {
@@ -179,6 +232,23 @@ export interface StepCheck {
   /** Not counted against her — the wireframe's "(optional)" line. */
   optional?: boolean;
 }
+
+/**
+ * A check before we know whether it can be answered.
+ *
+ * `done: null` is not "not done" — it is "this system does not record it".
+ * Drawing it as an empty box tells a woman she has not done something we have
+ * no way of seeing, and an empty box on this screen is an instruction. So
+ * `observed()` drops them, and a step shows fewer boxes rather than wrong ones.
+ */
+interface MaybeCheck {
+  label: string;
+  done: boolean | null;
+  optional?: boolean;
+}
+
+const observed = (checks: MaybeCheck[]): StepCheck[] =>
+  checks.filter((c): c is StepCheck => c.done !== null);
 
 export type StepState = "done" | "doing" | "todo";
 
@@ -204,76 +274,85 @@ export function journeySteps(f: JourneyFacts): JourneyStep[] {
       blurb: "Name what you can already do. It does not have to be a job title — stitching, cooking and mehendi all count.",
       icon: "Sparkles", tint: "--ux-tint-violet", ink: "--ux-violet-ink",
       cta: "Add a skill", href: "/app/profile",
-      checks: [
-        { label: "Name one thing you can do", done: f.skills > 0 },
-        { label: "Add a second skill", done: f.skills > 1, optional: true },
+      // Both skill checks disappear until something stores a skill against a
+      // woman. They used to read a fixture of five and tick themselves.
+      checks: observed([
+        { label: "Name one thing you can do", done: f.skills === null ? null : f.skills > 0 },
+        { label: "Add a second skill", done: f.skills === null ? null : f.skills > 1, optional: true },
         { label: "Start a course in it", done: f.coursesDone + f.coursesInProgress > 0 },
-      ],
+      ]),
     },
     {
       id: "proof", n: 2, label: "Your proof",
       blurb: "Show what you can do. Add your work samples, certificates or photos. This helps people trust your skills and gives you more opportunities.",
       icon: "FolderOpen", tint: "--ux-tint-pink", ink: "--ux-pink-ink",
       cta: "Build your proof", href: "/app/profile",
-      checks: [
-        { label: "Upload at least 1 work sample", done: f.hasPortfolio || f.productsListed > 0 },
+      checks: observed([
+        // Only the listing half is observable — there is no portfolio in this
+        // product — and a thing she has listed, with its photograph, is a work
+        // sample she has genuinely put up.
+        { label: "Upload at least 1 work sample", done: f.hasPortfolio === true || f.productsListed > 0 },
         { label: "Add a course certificate", done: f.coursesDone > 0, optional: true },
-        { label: "Write a short description about your work", done: f.hasTagline },
-      ],
+        { label: "Write a short description about your work", done: f.bio.trim().length > 0 },
+      ]),
     },
     {
       id: "profile", n: 3, label: "Your profile",
       blurb: "The page a buyer or an employer reads before they decide. A photograph and a verified badge do more than any sentence.",
       icon: "UserRound", tint: "--ux-tint-blue", ink: "--ux-blue-ink",
       cta: "Finish your profile", href: "/app/profile",
-      checks: [
+      checks: observed([
         { label: "Add your photograph", done: f.hasAvatar },
         { label: "Get verified", done: f.verified },
-        { label: "Complete every part of it", done: f.profilePct >= 100 },
-      ],
+        { label: "Complete every part of it",
+          done: f.profilePct === null ? null : f.profilePct >= 100 },
+      ]),
     },
     {
       id: "opportunity", n: 4, label: "Your first opportunity",
       blurb: "Put yourself in front of someone. A shop with something in it, or one job you have asked for.",
       icon: "Briefcase", tint: "--ux-tint-amber", ink: "--ux-amber-ink",
       cta: "Find work that fits", href: "/app/opportunities",
-      checks: [
+      checks: observed([
+        // "Open your shop" is gone rather than ticked. Nothing records opening
+        // one — the field was a hardcoded `true`, so this box was green for
+        // every woman in the app on her first morning.
         { label: "Open your shop", done: f.hasShop },
         { label: "List something to sell", done: f.productsListed > 0 },
         { label: "Ask for one job", done: f.applications > 0 },
-      ],
+      ]),
     },
     {
       id: "earning", n: 5, label: "Your first earning",
       blurb: "Finish the work, then ask for the money. Neither one counts on its own.",
       icon: "Wallet", tint: "--ux-tint-green", ink: "--ux-green-ink",
       cta: "Ask to be paid", href: "/app/collect",
-      checks: [
+      checks: observed([
         { label: "Finish one order", done: f.ordersDone > 0 },
         { label: "Get the money into your bank", done: f.earnedMinor > 0 },
-      ],
+      ]),
     },
     {
       id: "grow", n: 6, label: "Grow your work",
       blurb: "Almost every woman here who found more work found it through someone she knew, not through a listing.",
       icon: "TrendingUp", tint: "--ux-tint-violet", ink: "--ux-violet-ink",
       cta: "See circles near you", href: "/app/circles",
-      checks: [
+      checks: observed([
         { label: "Join one circle", done: f.circles > 0 },
         { label: "Talk to a woman further along", done: f.hasMentor },
         { label: "Finish a course", done: f.coursesDone > 0 },
-      ],
+      ]),
     },
     {
       id: "future", n: 7, label: "Build your future",
       blurb: "Earning three months running is the point where this stops being a try and starts being work.",
       icon: "Rocket", tint: "--ux-tint-lilac", ink: "--ux-brand",
       cta: "Set a goal", href: "/app/goals",
-      checks: [
+      checks: observed([
         { label: "Three months on WomSakhi", done: f.monthsActive >= 3 },
         { label: "Earning, not just once", done: f.earnedMinor > 0 && f.monthsActive >= 3 },
         { label: "Be in more than one circle", done: f.circles > 1 },
-      ],
+      ]),
     },
   ];
 }

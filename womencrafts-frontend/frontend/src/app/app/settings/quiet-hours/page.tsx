@@ -250,7 +250,10 @@ function Dial({
                       stroke="var(--ux-faint)" strokeWidth={major ? 2 : 1} opacity={major ? 0.75 : 0.3} />
                 {major && (
                   <text x={C + rl * Math.sin(a)} y={C - rl * Math.cos(a)} fill="var(--ux-faint)"
-                        fontSize={10.5} fontWeight={700} textAnchor="middle" dominantBaseline="middle">
+                        /* 12, not 10.5: the app's floor for anything a phone
+                           has to read, and these four are the only labels
+                           telling her which half of the clock she is on. */
+                        fontSize={12} fontWeight={700} textAnchor="middle" dominantBaseline="middle">
                     {t[h]}
                   </text>
                 )}
@@ -283,10 +286,10 @@ function Dial({
         </svg>
 
         <div className="pointer-events-none absolute inset-0 grid place-content-center text-center">
-          <span className="text-2xs font-extrabold uppercase tracking-[0.14em]" style={{ color: "var(--ux-faint)" }}>Sleep</span>
+          <span className="text-[12px] lg:text-2xs font-extrabold uppercase tracking-[0.14em]" style={{ color: "var(--ux-faint)" }}>Sleep</span>
           <p className="my-0.5 text-2xlm font-extrabold leading-[1.12] tracking-[-0.03em] tabular-nums"
              style={{ color: "var(--ux-ink)" }}>{fmt(p.quiet_start)}</p>
-          <span className="text-2xs font-extrabold uppercase tracking-[0.14em]" style={{ color: "var(--ux-faint)" }}>Wake</span>
+          <span className="text-[12px] lg:text-2xs font-extrabold uppercase tracking-[0.14em]" style={{ color: "var(--ux-faint)" }}>Wake</span>
           <p className="my-0.5 text-2xlm font-extrabold leading-[1.12] tracking-[-0.03em] tabular-nums"
              style={{ color: "var(--ux-ink)" }}>{fmt(p.quiet_end)}</p>
           <p className="mt-2 text-xsm font-semibold" style={{ color: "var(--ux-ink-2)" }}>
@@ -461,7 +464,7 @@ function Breakthrough({
       <Row icon="ShieldCheck" tint="--ux-tint-green" ink="--ux-green-ink"
            title={tr("settingsQuiethours.yourSafetyAlert")}
            body="If you press the safety button, or someone responds to one, it rings through — silent or not.">
-        <span className="flex items-center gap-1.5 text-2xs font-extrabold uppercase tracking-[0.06em]"
+        <span className="flex items-center gap-1.5 text-[12px] lg:text-2xs font-extrabold uppercase tracking-[0.06em]"
               style={{ color: "var(--ux-green-ink)" }}>
           <Icons.Lock className="h-[11px] w-[11px]" />{tr("settingsQuiethours.alwaysOn")}</span>
       </Row>

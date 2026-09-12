@@ -27,6 +27,11 @@ const LOOK: Record<string, { route: string; icon: string; label: string }> = {
   scheme:  { route: "/app/support-fund",  icon: "Landmark",      label: "Money" },
   mentor:  { route: "/app/mentors",       icon: "UserRound",     label: "People" },
   service: { route: "/app/explore",       icon: "Store",         label: "Explore" },
+  // Something another woman sells. Without this the row fell to the default
+  // and linked to `/app/<listing id>`, which is a 404 — and sat under a label
+  // that no tab on this screen offers.
+  listing: { route: "/app/market",        icon: "ShoppingBasket", label: "Market" },
+  post:    { route: "/app/circles",       icon: "MessagesSquare", label: "Circle" },
 };
 
 const TINTS = ["violet", "green", "blue", "orange", "pink"] as const;
@@ -52,7 +57,11 @@ export default function SavedPage() {
       sub: r.sub || `Saved ${r.saved_on}`,
       // A saved thing whose subject has been taken down must not link into a
       // 404 — the row stays, greyed, and goes nowhere.
-      href: r.gone ? "" : `${look.route}/${r.ref_id}`,
+      //
+      // `r.href` is the server's own answer, and it is set only where the
+      // thing's id is NOT its address: a circle post lives inside a circle, so
+      // `/app/circles/<post id>` would be a 404 with a plausible shape.
+      href: r.gone ? "" : (r.href || `${look.route}/${r.ref_id}`),
       icon: look.icon,
       ...tintFor(r.ref_id),
       gone: r.gone,
@@ -63,7 +72,7 @@ export default function SavedPage() {
 
   const live = items.filter((i) => !removed.includes(i.id));
   const shown = tab === "Everything" ? live : live.filter((i) => i.kind === tab);
-  const tabs = ["Everything", "Work", "Learning", "Events", "Money", "People"];
+  const tabs = ["Everything", "Market", "Work", "Learning", "Events", "Money", "People", "Circle"];
   const closing = live.filter((i) => i.urgent && !i.gone);
 
   return (

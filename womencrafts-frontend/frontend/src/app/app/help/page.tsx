@@ -9,6 +9,9 @@ import { useResource } from "@/lib/use-resource";
 import { apiHelplines, apiRaiseAlert, type Helpline } from "@/lib/safety-api";
 import { apiSendMessage } from "@/lib/member-api";
 import { useT } from "@/i18n";
+import { ListGroup, ListRow } from "@/components/ux/mobile/ListRow";
+import { useToast } from "@/design-system/feedback/ToastProvider";
+import { SPEECH_UNSUPPORTED, speechFailure, speechSupported, type SpeechFailure } from "@/lib/speech";
 
 /**
  * Help.
@@ -138,11 +141,11 @@ export default function HelpPage() {
         <Alert />
 
         <header className="mb-1">
-          <p className="text-2xs font-extrabold uppercase tracking-[0.2em]"
+          <p className="text-[12px] lg:text-2xs font-extrabold uppercase tracking-[0.2em]"
              style={{ color: "var(--ux-brand)" }}>Help</p>
-          <h1 className="mt-2 text-[clamp(1.625rem,3.6vw,2.5rem)] font-extrabold leading-[1.06] tracking-[-0.04em]"
+          <h1 className="ux-screen-title mt-2 text-[clamp(1.625rem,3.6vw,2.5rem)] font-extrabold leading-[1.06] tracking-[-0.04em]"
               style={{ color: "var(--ux-ink)" }}>{tr("help.whatHasGoneWrong")}</h1>
-          <p className="mt-2.5 max-w-[56ch] text-sm leading-relaxed" style={{ color: "var(--ux-ink-2)" }}>
+          <p className="mt-2.5 max-w-[56ch] text-[15px] leading-relaxed lg:text-sm" style={{ color: "var(--ux-ink-2)" }}>
             Ask in your own words, in any language — or pick what it is about. If you would rather
             talk to a person, that is on this page too.
           </p>
@@ -153,7 +156,29 @@ export default function HelpPage() {
         <div className="grid items-start gap-[24px] xl:grid-cols-[minmax(0,1fr)_320px]">
           <main className="min-w-0">
         <Head>{tr("help.whatIsItAbout")}</Head>
-        <div className="mb-7 grid gap-3" style={{ gridTemplateColumns: "repeat(auto-fit, minmax(232px, 1fr))" }}>
+        {/* On a phone the grid below is one column, which turns eight bordered
+            tiles into eight floating cards with a gutter between each. One
+            grouped list, hairlines inside, is the same eight destinations in
+            roughly half the height. */}
+        <div className="mb-7 lg:hidden">
+          <ListGroup>
+            {TOPICS.map((t) => (
+              /* `avatar`, not `icon`: these six are this page's own duotone
+                 drawings, not names in `ux/icons`, and one of them is tinted
+                 with `--ux-danger-tint`, which is not one of `ListRow`'s six
+                 named tints either. The tile is handed over whole. */
+              <ListRow key={t.id} href={t.href} title={t.title} subtitle={t.sub}
+                       avatar={
+                         <span aria-hidden="true"
+                               className="grid h-[34px] w-[34px] shrink-0 place-items-center rounded-[var(--ux-r-sm)]"
+                               style={{ color: `var(${t.ink})`, background: `var(${t.tint})` }}>
+                           <Duo name={t.icon} className="h-[19px] w-[19px]" />
+                         </span>
+                       } />
+            ))}
+          </ListGroup>
+        </div>
+        <div className="mb-7 hidden gap-3 lg:grid" style={{ gridTemplateColumns: "repeat(auto-fit, minmax(232px, 1fr))" }}>
           {TOPICS.map((t) => (
             <Link key={t.id} href={t.href}
                   className="ux-press ux-lit ux-tile-lit flex items-start gap-3.5 rounded-[16px] p-[16px] text-start transition-transform hover:-translate-y-[3px]"
@@ -195,7 +220,7 @@ export default function HelpPage() {
               <div key={x.id} style={i ? { borderTop: "1px solid var(--ux-line)" } : undefined}>
                 <button type="button" aria-expanded={on}
                         onClick={() => setOpen(on ? null : x.id)}
-                        className="ux-press flex w-full items-center gap-3 px-[20px] py-[16px] text-start text-sm font-semibold tracking-[-0.01em]"
+                        className="ux-press flex w-full items-center gap-3 px-[16px] py-[16px] text-start text-[15px] font-semibold tracking-[-0.01em] lg:px-[20px] lg:text-sm"
                         style={{ color: "var(--ux-ink)" }}>
                   <Mark text={x.q} q={q} />
                   <Icons.ChevronRight className="ms-auto h-4 w-4 shrink-0 transition-transform"
@@ -244,7 +269,7 @@ export default function HelpPage() {
 
 function Head({ children }: { children: React.ReactNode }) {
   return (
-    <h2 className="mb-3 text-2xs font-extrabold uppercase tracking-[0.16em]" style={{ color: "var(--ux-faint)" }}>
+    <h2 className="mb-3 text-[12px] lg:text-2xs font-extrabold uppercase tracking-[0.16em]" style={{ color: "var(--ux-faint)" }}>
       {children}
     </h2>
   );
@@ -310,21 +335,31 @@ function Alert() {
   useEffect(() => () => cancelAnimationFrame(raf.current), []);
 
   return (
-    <section className="ux-sq mb-6 flex flex-wrap items-center gap-[20px] overflow-hidden rounded-[20px] px-5 py-[20px]"
+    /*
+      `flex-wrap` with a `shrink-0` button does not wrap on a phone — the row
+      still fits, so the WORDS take what is left. Measured at 390px: the text
+      column was 88px wide and "Something is happening right now" rendered one
+      word per line, eleven lines deep, with the button floating in the middle
+      of it. On a phone this is a column: icon and words, then the button full
+      width underneath, which is also where a thumb can hold it for a second
+      and a half without covering what it is about to do.
+    */
+    <section className="ux-sq mb-6 flex flex-col items-start gap-3 overflow-hidden rounded-[20px] px-4 py-4
+                        sm:flex-row sm:flex-wrap sm:items-center sm:gap-[20px] sm:px-5 sm:py-[20px]"
              style={{ border: "1px solid color-mix(in srgb, var(--ux-danger-solid) 55%, transparent)",
                       background: "linear-gradient(100deg, var(--ux-danger-tint), var(--ux-surface) 62%)",
                       boxShadow: "0 18px 44px -26px var(--ux-danger-solid), var(--ux-shadow-card), inset 0 1px 0 var(--ux-sheen)" }}>
-      <span className="ux-beat grid h-[52px] w-[52px] shrink-0 place-items-center rounded-[16px]"
+      <span className="ux-beat grid h-[44px] w-[44px] shrink-0 place-items-center rounded-[14px] sm:h-[52px] sm:w-[52px] sm:rounded-[16px]"
             style={{ background: "linear-gradient(150deg, var(--ux-danger-solid), color-mix(in srgb, var(--ux-danger-solid) 64%, #000))",
                      color: "var(--ux-on-brand)" }}>
         <Icons.TriangleAlert className="h-[22px] w-[22px]" strokeWidth={2} />
       </span>
-      <div className="min-w-0 flex-1">
+      <div className="min-w-0 flex-1 basis-full sm:basis-auto">
         <p className="text-base font-extrabold tracking-[-0.01em]" style={{ color: "var(--ux-ink)" }}>
           {sent ? (failed ? tr("help.couldNotSendCall")
               : tr("help.sentYourPeopleKnow")) : "Something is happening right now"}
         </p>
-        <p className="mt-0.5 text-xsm" style={{ color: "var(--ux-ink-2)" }}>
+        <p className="mt-0.5 text-[13px] leading-snug sm:text-xsm" style={{ color: "var(--ux-ink-2)" }}>
           {sent
             ? (failed
                 ? tr("help.theAlertDidNotReachUs")
@@ -336,7 +371,7 @@ function Alert() {
               onPointerDown={(e) => { e.preventDefault(); start(); }}
               onPointerUp={stop} onPointerLeave={stop} onPointerCancel={stop}
               aria-label={tr("help.pressAndHoldForOneAnd")}
-              className="relative flex min-h-[50px] shrink-0 items-center gap-2 overflow-hidden rounded-[12px] px-6 text-sm font-extrabold tracking-[-0.005em] transition-transform active:scale-[0.985]"
+              className="relative flex min-h-[50px] w-full shrink-0 items-center justify-center gap-2 overflow-hidden rounded-[14px] px-6 text-[16px] font-extrabold tracking-[-0.005em] transition-transform active:scale-[0.985] sm:w-auto sm:rounded-[12px] sm:text-sm"
               style={{ background: sent && !failed
                          ? "var(--ux-green-ink)"
                          : "linear-gradient(150deg, var(--ux-danger-solid), color-mix(in srgb, var(--ux-danger-solid) 72%, #000))",
@@ -360,21 +395,31 @@ function Ask({
   value, onChange, inputRef,
 }: { value: string; onChange: (v: string) => void; inputRef: React.RefObject<HTMLInputElement | null> }) {
   const tr = useT();
+  const toast = useToast();
   const [hearing, setHearing] = useState(false);
   const [speech, setSpeech] = useState(false);
 
-  useEffect(() => {
-    const w = window as unknown as Record<string, unknown>;
-    setSpeech(Boolean(w.SpeechRecognition || w.webkitSpeechRecognition));
-  }, []);
+  useEffect(() => { setSpeech(speechSupported()); }, []);
+
+  /* A microphone that fails in silence is the same bug on every screen that
+     has one — see `@/lib/speech`. This is a help page: if the one control
+     offered to a woman who cannot read the rest of it does nothing when
+     pressed, she has no way left to ask. */
+  const sayWhy = (f: SpeechFailure | null) => {
+    if (!f) return;                   // `aborted` — she pressed stop.
+    const opts = { description: f.description };
+    if (f.tone === "danger") toast.error(f.title, opts);
+    else if (f.tone === "warn") toast.warn(f.title, opts);
+    else toast.info(f.title, opts);
+  };
 
   const listen = () => {
     const w = window as unknown as Record<string, unknown>;
     const Rec = (w.SpeechRecognition || w.webkitSpeechRecognition) as
       (new () => { lang: string; interimResults: boolean; start: () => void;
                    onresult: ((e: { results: ArrayLike<ArrayLike<{ transcript: string }>> }) => void) | null;
-                   onerror: (() => void) | null; onend: (() => void) | null }) | undefined;
-    if (!Rec) return;
+                   onerror: ((e: { error?: string }) => void) | null; onend: (() => void) | null }) | undefined;
+    if (!Rec) { sayWhy(SPEECH_UNSUPPORTED); return; }
     const r = new Rec();
     r.lang = "hi-IN";                 // what she speaks; the answers match either way
     r.interimResults = true;
@@ -383,10 +428,12 @@ function Ask({
         .join(" ").trim();
       if (said) onChange(said);
     };
-    r.onerror = () => setHearing(false);
+    r.onerror = (e) => { setHearing(false); sayWhy(speechFailure(e?.error)); };
     r.onend = () => { setHearing(false); inputRef.current?.focus(); };
     setHearing(true);
-    r.start();
+    // `start()` throws on a double press and on an insecure origin, and no
+    // `onerror` ever arrives to explain either.
+    try { r.start(); } catch { setHearing(false); sayWhy(speechFailure("unknown")); }
   };
 
   return (
@@ -495,7 +542,7 @@ function Numbers({ lines }: { lines: Helpline[] }) {
     <section className="ux-lit rounded-[20px] p-[20px]" style={{ border: "1px solid var(--ux-line)" }}>
       <h2 className="flex items-center gap-2 text-sm font-extrabold" style={{ color: "var(--ux-ink)" }}>
         <Icons.Phone className="h-[17px] w-[17px]" style={{ color: "var(--ux-brand)" }} />{tr("help.numbersThatAlwaysWork")}</h2>
-      <p className="mb-3 mt-1 flex flex-wrap items-center gap-2 text-xsm" style={{ color: "var(--ux-muted)" }}>{tr("help.freeFromAnyPhone")}<span className="rounded-full px-2.5 py-1 text-2xs font-extrabold uppercase tracking-[0.04em]"
+      <p className="mb-3 mt-1 flex flex-wrap items-center gap-2 text-xsm" style={{ color: "var(--ux-muted)" }}>{tr("help.freeFromAnyPhone")}<span className="rounded-full px-2.5 py-1 text-[12px] lg:text-2xs font-extrabold uppercase tracking-[0.04em]"
               style={{ background: "var(--ux-tint-green)", color: "var(--ux-green-ink)" }}>{tr("help.noCreditNeeded")}</span>
       </p>
       {shown.length === 0 ? (

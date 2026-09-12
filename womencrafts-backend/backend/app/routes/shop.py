@@ -19,6 +19,7 @@ from typing import Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from pymongo import ReturnDocument
+from pymongo.errors import DuplicateKeyError
 
 from app.core.rbac import require_active_member
 from app.core.serializers import to_object_id
@@ -46,6 +47,76 @@ def _orders():
 
 def _reviews():
     return get_database()[ReviewModel.collection_name]
+
+
+def _users():
+    return get_database()["users"]
+
+
+#: Everything a handle may contain. Lowercase, digits and single hyphens — the
+#: characters that survive being read down a phone and typed back in.
+_SLUG_OK = "abcdefghijklmnopqrstuvwxyz0123456789"
+
+
+def _slug(name: str) -> str:
+    out = []
+    for ch in name.strip().lower():
+        if ch in _SLUG_OK:
+            out.append(ch)
+        elif out and out[-1] != "-":
+            out.append("-")
+    return "".join(out).strip("-")[:24]
+
+
+async def handle_for(me: dict) -> str:
+    """
+    Her shop's handle — one per member, minted the first time it is needed and
+    never changed after.
+
+    **Why it is not derived from her id.** The old one was
+    `womsakhi.in/<member_id>`, which was three wrong things at once: it matched
+    no route in the app, so every link she copied and sent was a 404 in a
+    customer's chat under her name; it was a domain-and-path rather than a
+    handle; and it put an internal identifier into a WhatsApp group. This is a
+    slug of her FIRST name, so what goes out is `/s/priya` — recognisable,
+    sayable, and it discloses nothing that the page it opens does not already
+    show.
+
+    **Why a first name and a counter rather than a longer, unique-by-design
+    string.** Uniqueness is the database's job, not the string's: a unique index
+    on `shop_handle` decides, and a name already taken simply takes the next
+    number. Encoding the id into the handle to dodge the collision would have
+    put the id back in the URL, which is the thing being removed.
+    """
+    got = (me.get("shop_handle") or "").strip()
+    if got:
+        return got
+
+    first = (me.get("full_name") or "").strip().split(" ")[0]
+    base = _slug(first) or "shop"
+    for n in range(1, 80):
+        candidate = base if n == 1 else f"{base}-{n}"
+        try:
+            updated = await _users().find_one_and_update(
+                {"_id": me["_id"], "$or": [{"shop_handle": {"$exists": False}},
+                           {"shop_handle": {"$in": [None, ""]}}]},
+                {"$set": {"shop_handle": candidate}},
+                return_document=ReturnDocument.AFTER,
+            )
+        except DuplicateKeyError:
+            # Somebody already holds this one. Take the next number.
+            continue
+        if updated and updated.get("shop_handle"):
+            me["shop_handle"] = updated["shop_handle"]
+            return me["shop_handle"]
+        # No match: she was given a handle by a request that raced this one.
+        fresh = await _users().find_one({"_id": me["_id"]}, {"shop_handle": 1})
+        if fresh and fresh.get("shop_handle"):
+            me["shop_handle"] = fresh["shop_handle"]
+            return me["shop_handle"]
+    # Eighty women called Priya. Vanishingly unlikely, and a handle she can
+    # still share beats refusing to give her one.
+    return f"{base}-{str(me['_id'])[-6:]}"
 
 
 @router.get("/summary", response_model=ShopSummary, summary="My business at a glance")
@@ -98,7 +169,9 @@ async def summary(me: dict = Depends(require_active_member)):
     stars = [int(r.get("stars", 0)) for r in reviews if r.get("stars")]
     return ShopSummary(
         name=me.get("full_name", "") + "'s work",
-        handle=f"womsakhi.in/{me.get('member_id', '') or uid[-6:]}".lower(),
+        # The bare handle, which `/s/<handle>` resolves and
+        # `GET /public/shop/<handle>` serves. See `handle_for`.
+        handle=await handle_for(me),
         rating=round(sum(stars) / len(stars), 1) if stars else 0.0,
         review_count=len(stars),
         needs_her=sum(1 for o in orders if o.get("state") in ("New", "Making", "Ready")),

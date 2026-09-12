@@ -9,10 +9,11 @@ import { useAction } from "@/lib/use-action";
 import Link from "next/link";
 import * as Icons from "@/components/ux/icons";
 
-import {Back, ActionBtn, Btn, Card, copy, EmptyState, IconTile, Pill, Progress, RailSkeleton, Rating,
+import {Back, ActionBtn, Btn, Card, copy, EmptyState, IconTile, Progress, RailSkeleton, Rating,
   ScreenSkeleton, SectionHead,
 } from "@/components/ux/kit";
 import { HomeShell } from "@/components/ux/home/HomeShell";
+import { Tag } from "@/components/ux/learning/native";
 import { useLearning } from "@/components/ux/growth";
 import { useT } from "@/i18n";
 
@@ -199,10 +200,10 @@ export default function CourseDetail({ params }: { params: Promise<{ id: string 
           <img loading="lazy" decoding="async" src={course.thumb} alt="" className="h-full w-full object-cover" />
           <span aria-hidden className="absolute inset-0"
                 style={{ background: "linear-gradient(0deg, rgba(0,0,0,0.55), transparent 60%)" }} />
-          {course.tag && <span className="absolute start-4 top-4"><Pill tone="brand" size="sm">{course.tag}</Pill></span>}
+          {course.tag && <span className="absolute start-4 top-4"><Tag tone="brand" size="sm">{course.tag}</Tag></span>}
         </div>
         <div className="p-[20px]">
-          <h1 className="text-2xl font-bold leading-tight" style={{ color: "var(--ux-ink)" }}>{course.title}</h1>
+          <h1 className="ux-screen-title text-2xl font-bold leading-tight" style={{ color: "var(--ux-ink)" }}>{course.title}</h1>
           <p className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1.5 text-xsm" style={{ color: "var(--ux-muted)" }}>
             <span className="inline-flex items-center gap-1.5"><Icons.PlayCircle className="h-4 w-4" /> {flat.length} lessons</span>
             <span className="inline-flex items-center gap-1.5"><Icons.Clock className="h-4 w-4" /> {course.hours || "—"}</span>
@@ -211,12 +212,14 @@ export default function CourseDetail({ params }: { params: Promise<{ id: string 
           </p>
 
           {started && next && (
-            <div className="mt-4 flex items-center gap-3 rounded-[12px] p-3.5" style={{ background: "var(--ux-brand-tint)" }}>
-              <Icons.PlayCircle className="h-[20px] w-[20px] shrink-0" style={{ color: "var(--ux-brand)" }} />
-              <p className="min-w-0 flex-1 text-xsm" style={{ color: "var(--ux-ink-2)" }}>
-                You stopped at lesson {next?.n} — <strong style={{ color: "var(--ux-ink)" }}>{next?.title}</strong>
+            <div className="mt-4 flex flex-col gap-3 rounded-[12px] p-3.5 lg:flex-row lg:items-center" style={{ background: "var(--ux-brand-tint)" }}>
+              <p className="flex min-w-0 flex-1 items-start gap-3 text-smd lg:items-center lg:text-xsm" style={{ color: "var(--ux-ink-2)" }}>
+                <Icons.PlayCircle className="mt-0.5 h-[20px] w-[20px] shrink-0 lg:mt-0" style={{ color: "var(--ux-brand)" }} />
+                <span className="min-w-0">
+                  You stopped at lesson {next?.n} — <strong style={{ color: "var(--ux-ink)" }}>{next?.title}</strong>
+                </span>
               </p>
-              <Btn href={`/app/programs/${course.id}/lesson/${next?.n}`} variant="primary" size="sm" iconEnd="ArrowRight">
+              <Btn className="ux-action-primary" href={`/app/programs/${course.id}/lesson/${next?.n}`} variant="primary" size="sm" iconEnd="ArrowRight">
                 Continue
               </Btn>
             </div>
@@ -226,7 +229,7 @@ export default function CourseDetail({ params }: { params: Promise<{ id: string 
 
       <Card className="mb-[16px]">
         <SectionHead title={tr("programs.whatYouWillBeAbleTo")} />
-        <ul className="ux-stagger grid grid-cols-2 gap-x-6 gap-y-2.5">
+        <ul className="ux-stagger grid grid-cols-1 gap-x-6 gap-y-2.5 lg:grid-cols-2">
           {[
             "Write posts people stop to read",
             "Photograph what you sell, on a phone",
@@ -235,7 +238,7 @@ export default function CourseDetail({ params }: { params: Promise<{ id: string 
             "Spend a small budget without wasting it",
             "Know when you can raise your prices",
           ].map((t) => (
-            <li key={t} className="flex items-start gap-2.5 text-xsm leading-snug" style={{ color: "var(--ux-ink-2)" }}>
+            <li key={t} className="flex items-start gap-2.5 text-smd leading-snug lg:text-xsm" style={{ color: "var(--ux-ink-2)" }}>
               <Icons.Check className="mt-[2px] h-[14px] w-[14px] shrink-0" style={{ color: "var(--ux-green-ink)" }} strokeWidth={2.6} />
               {t}
             </li>
@@ -281,11 +284,11 @@ export default function CourseDetail({ params }: { params: Promise<{ id: string 
                         </span>
                       )}
                     </span>
-                    {current && <Pill tone="brand" size="sm">{tr("programs.youAreHere")}</Pill>}
+                    {current && <Tag tone="brand" size="sm">{tr("programs.youAreHere")}</Tag>}
                     {/* Only when the lesson says how long — an empty duration
                         rendering as a bare "min" is the kind of thing that ships. */}
                     {l.duration && (
-                      <span className="shrink-0 text-2xs" style={{ color: "var(--ux-faint)" }}>{l.duration}</span>
+                      <span className="shrink-0 text-[13px] lg:text-2xs" style={{ color: "var(--ux-faint)" }}>{l.duration}</span>
                     )}
                   </Link>
                 </li>

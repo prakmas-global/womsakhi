@@ -3,20 +3,23 @@
 import { useCallback, useMemo, useState } from "react";
 
 import { HomeShell } from "@/components/ux/home/HomeShell";
-import { v } from "@/components/ux/kit";
+import { ScreenError, ScreenSkeleton, v } from "@/components/ux/kit";
 import { useMe } from "@/components/ux/me";
-import { useJourney } from "@/components/ux/journey";
-import { readJourneyState } from "@/services/me.repository";
+import { useMeFacts } from "@/services/me.repository";
 import {
   currentStep, journeySteps, stepState,
-  type JourneyFacts, type JourneyStep,
+  type JourneyStep,
 } from "@/services/journey";
-import { GOALS, goalPct } from "@/components/ux/discovery/data";
+import { apiGoals, type Goal } from "@/lib/money-api";
+import { useResource } from "@/lib/use-resource";
 import {
   Achievements, GoalsRail, JourneyHero, JourneyStats, Motivation, NeedGuidance,
   OnYourWay, Recommended, StepCard, Stepper,
   type Badge, type Rec, type RailGoal,
 } from "./journey-views";
+
+/** Her goals, or none — never the four invented ones this rail used to show. */
+const NO_GOALS: Goal[] = [];
 
 /**
  * My Journey — skill to income, drawn as the seven places she passes through.
@@ -43,7 +46,24 @@ import {
  */
 export default function JourneyPage() {
   const me = useMe();
-  const { data: live } = useJourney();
+
+  /**
+   * What she has actually done — one read, from the server.
+   *
+   * This was `readJourneyState()`, a synchronous call into a file of fixtures:
+   * five listings she had not made, an earnings total assembled from fabricated
+   * payment requests, a shop recorded as open before she had opened one. Two of
+   * the seven steps ticked themselves on that, and the stepper stood her
+   * wherever the fixture said.
+   *
+   * `null` means we do not know yet, or could not find out. It is never
+   * silently read as zero — see the guard below the hooks.
+   */
+  const { data: facts, source } = useMeFacts();
+
+  /** Goals she set herself. Empty is a real answer; a fixture was not. */
+  const goalsRead = useResource(apiGoals, NO_GOALS);
+
   const [picked, setPicked] = useState<string | null>(null);
   const [note, setNote] = useState<string | null>(null);
 
@@ -52,30 +72,9 @@ export default function JourneyPage() {
     window.setTimeout(() => setNote((n) => (n === msg ? null : n)), 3400);
   }, []);
 
-  /**
-   * What she has actually done.
-   *
-   * `readJourneyState` is still the fixture for her shop and her learning;
-   * the profile half is live from `useMe`, and the months from `/me/journey`.
-   * Mixing them is deliberate — the live parts should not wait for the mocked
-   * ones to be replaced.
-   */
-  const facts: JourneyFacts = useMemo(() => {
-    const base = readJourneyState();
-    return {
-      ...base,
-      monthsActive: live.monthsHere || base.monthsActive,
-      earnedMinor: live.lifetimeMinor || base.earnedMinor,
-      profilePct: me.profilePct,
-      verified: me.verified,
-      hasAvatar: Boolean(me.avatar),
-      hasTagline: Boolean(me.tagline?.trim()),
-    };
-  }, [live.monthsHere, live.lifetimeMinor, me.profilePct, me.verified, me.avatar, me.tagline]);
-
-  const steps = useMemo(() => journeySteps(facts), [facts]);
-  const here = useMemo(() => currentStep(steps), [steps]);
-  const shown: JourneyStep = useMemo(
+  const steps = useMemo(() => (facts ? journeySteps(facts) : []), [facts]);
+  const here = useMemo(() => (steps.length ? currentStep(steps) : null), [steps]);
+  const shown: JourneyStep | null = useMemo(
     () => steps.find((s) => s.id === picked) ?? here, [steps, picked, here]);
 
   const tally = useMemo(() => {
@@ -92,13 +91,30 @@ export default function JourneyPage() {
 
   /* ── The rail ─────────────────────────────────────────────────────────── */
 
-  const goals: RailGoal[] = useMemo(() => GOALS.filter((g) => g.state === "on").slice(0, 3).map((g) => ({
-    id: g.id,
-    title: g.title,
-    pct: goalPct(g),
-    have: goalPct(g) > 0 ? `${goalPct(g)}%` : "Not yet",
-    icon: g.icon, tint: g.tint, ink: g.ink,
-  })), []);
+  /**
+   * Three of her own goals.
+   *
+   * The four that used to be here were written for her — "Buy my own machine",
+   * "So I stop paying rent on someone else's" — in the first person, in a rail
+   * headed "My goals". `/me/goals` has carried the real ones all along, and
+   * the server computes the percentage from whatever counts that goal, so
+   * nothing is recomputed here.
+   */
+  const goals: RailGoal[] = useMemo(
+    () => goalsRead.data
+      .filter((g) => g.status === "open")
+      .slice(0, 3)
+      .map((g) => ({
+        id: g.id,
+        title: g.label,
+        pct: g.pct,
+        have: g.pct > 0 ? `${g.pct}%` : "Not yet",
+        icon: g.icon || "Target",
+        tint: "--ux-tint-amber",
+        ink: "--ux-amber-ink",
+      })),
+    [goalsRead.data],
+  );
 
   /**
    * Four badges, each one earned by something on this very screen.
@@ -107,7 +123,7 @@ export default function JourneyPage() {
    * the same facts, read again, so a woman can always point at the thing that
    * earned her the badge.
    */
-  const badges: Badge[] = useMemo(() => [
+  const badges: Badge[] = useMemo(() => (facts ? [
     { id: "learner", label: "Early learner", icon: "GraduationCap", earned: facts.coursesDone > 0,
       tint: "--ux-tint-violet", ink: "--ux-violet-ink" },
     { id: "member",  label: "Active member", icon: "HeartHandshake", earned: facts.circles > 0,
@@ -116,7 +132,7 @@ export default function JourneyPage() {
       tint: "--ux-tint-amber", ink: "--ux-amber-ink" },
     { id: "next",    label: "Next badge",    icon: "Award", earned: false,
       tint: "--ux-surface-2", ink: "--ux-faint" },
-  ], [facts.coursesDone, facts.circles, goals.length]);
+  ] : []), [facts, goals.length]);
 
   /** Reading that belongs to the step she is standing in. */
   const recs: Rec[] = useMemo(() => {
@@ -132,6 +148,7 @@ export default function JourneyPage() {
           icon: "Sparkles", tint: "--ux-tint-green", ink: "--ux-green-ink", href: "/app/stories" },
       ],
     };
+    if (!shown) return [];
     return forStep[shown.id] ?? [
       { id: "d1", title: `Courses for ${shown.label.toLowerCase()}`, kind: "Guide", meta: "Browse",
         icon: "BookOpen", tint: "--ux-tint-violet", ink: "--ux-violet-ink", href: "/app/programs" },
@@ -142,21 +159,43 @@ export default function JourneyPage() {
       { id: "d4", title: "Ask Sakhi what is next", kind: "Video", meta: "2 min",
         icon: "Play", tint: "--ux-tint-blue", ink: "--ux-blue-ink", href: "/app/sakhi" },
     ];
-  }, [shown.id, shown.label]);
+  }, [shown]);
 
   const rail = (
     <div className="space-y-4">
+      {/* Her words or none. The fallback here was a sentence somebody else
+          wrote — "I want to earn my own money and show my daughter it can be
+          done" — printed as a quotation with her name under it, on top of a
+          `tagline` that was a module constant for every woman in the app. */}
       <Motivation
-        text={me.tagline?.trim() || "I want to earn my own money and show my daughter it can be done."}
+        text={facts ? facts.bio : null}
         name={me.first}
         onEdit={() => say("Your motivation is the line on your profile — change it there and it changes here.")}
       />
-      <GoalsRail rows={goals} />
-      <Achievements rows={badges} />
+      <GoalsRail rows={goals} loading={goalsRead.source === "loading"} />
+      {facts && <Achievements rows={badges} />}
       <NeedGuidance />
       <OnYourWay />
     </div>
   );
+
+  /**
+   * Nothing about her journey is drawn until her journey is known.
+   *
+   * The hero above it is fixed artwork and could be shown either way, but four
+   * counters reading 0/0/0 and seven empty circles is not a loading state — it
+   * is a screen telling a woman she has done none of it. So the whole thing
+   * waits, and says which of the two it is waiting on.
+   */
+  if (!facts || !shown) {
+    return (
+      <HomeShell active="/app/journey" rail={rail} loadFailed="your journey" skeleton="detail">
+        {source === "loading"
+          ? <ScreenSkeleton shape="detail" />
+          : <ScreenError what="your journey" />}
+      </HomeShell>
+    );
+  }
 
   return (
     <HomeShell active="/app/journey" rail={rail} loadFailed="your journey">

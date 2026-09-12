@@ -8,9 +8,10 @@ import { apiAgree, apiAskSwap, apiExchange, apiSayInExchange } from "@/lib/shop-
 import { useAction } from "@/lib/use-action";
 import { useResource } from "@/lib/use-resource";
 
-import {Back, Btn, Card, EmptyState, IconTile, NoteBtn, Pill, RailSkeleton, ScreenSkeleton, SectionHead,
+import {Back, Btn, Card, EmptyState, IconTile, NoteBtn, RailSkeleton, ScreenSkeleton, SectionHead,
 } from "@/components/ux/kit";
 import { HomeShell } from "@/components/ux/home/HomeShell";
+import { Tag } from "@/components/ux/learning/native";
 import { useMyExchanges, useSwaps } from "@/components/ux/business";
 import { useT } from "@/i18n";
 
@@ -186,10 +187,10 @@ export default function ExchangeThread({ params }: { params: Promise<{ id: strin
       <Card className="mb-[16px]">
         <div className="flex items-start justify-between gap-4">
           <div className="min-w-0">
-            <h2 className="flex items-center gap-2 text-base font-semibold" style={{ color: "var(--ux-ink)" }}>{tr("library.whatYouHaveAgreed")}<Pill tone={agreed ? "green" : "blue"} size="sm">
+            <h2 className="flex items-center gap-2 text-base font-semibold" style={{ color: "var(--ux-ink)" }}>{tr("library.whatYouHaveAgreed")}<Tag tone={agreed ? "green" : "blue"} size="sm">
                 {agreed ? "Agreed" : threadId ? tr("library.stillTalking")
               : tr("library.notStarted")}
-              </Pill>
+              </Tag>
             </h2>
             <p className="mt-1 text-xs" style={{ color: "var(--ux-muted)" }}>
               {agreed
@@ -209,13 +210,13 @@ export default function ExchangeThread({ params }: { params: Promise<{ id: strin
           )}
         </div>
 
-        <div className="mt-3.5 grid grid-cols-2 gap-2.5">
+        <div className="mt-3.5 grid grid-cols-1 gap-2.5 sm:grid-cols-2">
           {[["You teach", iTeach, "--ux-tint-violet", "--ux-violet", "GraduationCap"],
             ["You learn", sheTeaches, "--ux-tint-green", "--ux-green", "BookOpen"]].map(([k, v, tint, ink, icon]) => (
             <div key={k} className="ux-sq flex items-center gap-2.5 rounded-[12px] p-3" style={{ background: "var(--ux-surface-2)" }}>
               <IconTile icon={icon} tint={tint} ink={ink} size={34} radius={9} />
               <span className="min-w-0">
-                <span className="block text-2xs uppercase tracking-[0.06em]" style={{ color: "var(--ux-faint)" }}>{k}</span>
+                <span className="block text-[13px] uppercase tracking-[0.06em] lg:text-2xs" style={{ color: "var(--ux-faint)" }}>{k}</span>
                 <span className="mt-0.5 block truncate text-xsm font-medium" style={{ color: "var(--ux-ink)" }}>{v}</span>
               </span>
             </div>
@@ -295,7 +296,7 @@ export default function ExchangeThread({ params }: { params: Promise<{ id: strin
               <div className="ux-sq ux-rise max-w-[76%] rounded-[12px] px-3.5 py-2.5"
                    style={{ background: m.mine ? "var(--ux-fill)" : "var(--ux-surface-2)", color: m.mine ? "var(--ux-on-brand)" : "var(--ux-ink)" }}>
                 <p className="text-xsm leading-relaxed">{m.text}</p>
-                <p className="mt-1 text-2xs" style={{ color: m.mine ? "rgba(255,255,255,0.75)" : "var(--ux-faint)" }}>{m.at}</p>
+                <p className="mt-1 text-[13px] lg:text-2xs" style={{ color: m.mine ? "rgba(255,255,255,0.75)" : "var(--ux-faint)" }}>{m.at}</p>
               </div>
             </div>
           )) : (

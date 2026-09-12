@@ -42,6 +42,7 @@ from app.routes.settings_platform import router as settings_platform_router
 from app.routes.uploads import MEDIA_ROOT, router as uploads_router
 from app.routes.verification import router as verification_router
 from app.routes.me import router as me_router
+from app.routes.home import router as home_router
 from app.routes.me_messages import router as me_messages_router
 from app.routes.catalog import router as catalog_router
 from app.routes.payments import router as payments_router
@@ -52,6 +53,7 @@ from app.routes.money import router as money_router
 from app.routes.group_buy import router as group_buy_router
 from app.routes.payout import router as payout_router
 from app.routes.shop import router as shop_router
+from app.routes.market import router as market_router
 from app.routes.reference import router as reference_router
 from app.routes.search import router as search_router
 from app.routes.skills import router as skills_router
@@ -269,6 +271,10 @@ app.include_router(verification_router, prefix="/api/v1")
 # The member app. Every endpoint scopes to the caller's own account and
 # requires an ADMITTED member — see routes/me.require_active_member.
 app.include_router(me_router, prefix="/api/v1")
+# `/me/home` — the home screen's own composed endpoint. A separate module
+# rather than another thousand lines in routes/me.py, and it carries the same
+# `/me` prefix so the screen's call sits with the rest of her data.
+app.include_router(home_router, prefix="/api/v1")
 app.include_router(catalog_router, prefix="/api/v1")
 app.include_router(payments_router, prefix="/api/v1")
 # The rest of the member app. Each of these routers depends on
@@ -278,6 +284,9 @@ app.include_router(growth_router, prefix="/api/v1")
 app.include_router(reference_router, prefix="/api/v1")
 app.include_router(group_buy_router, prefix="/api/v1")
 app.include_router(shop_router, prefix="/api/v1")
+# The buyer's side of the same shop. Separate from /shop, which is scoped to
+# "mine" on every query and therefore had nothing the market could call.
+app.include_router(market_router, prefix="/api/v1")
 app.include_router(exchange_router, prefix="/api/v1")
 app.include_router(payout_router, prefix="/api/v1")
 app.include_router(money_router, prefix="/api/v1")

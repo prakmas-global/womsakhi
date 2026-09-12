@@ -1,42 +1,109 @@
 "use client";
 
-import { useGreeting } from "@/lib/use-greeting";
-import { useMemo, useState } from "react";
+import { useCallback, useState } from "react";
 import Link from "next/link";
 import * as Icons from "@/components/ux/icons";
 
+import { useGreeting } from "@/lib/use-greeting";
 import { useAuth } from "@/context/AuthContext";
-import { NextStepCard, JourneyTrack } from "@/components/ux/journey/NextStepCard";
-import { readJourneyState } from "@/services/me.repository";
-import { nextStep, stageFor } from "@/services/journey";
-import { useSummary, useCircles, useStories } from "@/components/ux/live";
-import { useOrders } from "@/components/ux/business";
-import { formatMoney } from "@/components/ux/kit/money";
+import { NextStepCard } from "@/components/ux/journey/NextStepCard";
+import { useHome } from "@/components/ux/live";
+import { formatRupees, Skeleton } from "@/components/ux/kit";
+import { apiDismissNextStep, type ApiHome } from "@/lib/me-api";
 
 /**
- * Home, built to the approved dashboard design.
+ * Home, built to the approved dashboard design — and, since this pass, drawn
+ * entirely from `GET /me/home`.
  *
- * ── What is faithful, and what had to change ────────────────────────────────
- * The layout, the type scale, the gradient hero, the five-figure row, the
- * seven Quick Access tiles, the three panels and the closing strip are the
- * design as drawn. Two things could not be copied straight across, and both
- * for the same reason — the design shows numbers this product does not have:
+ * ── What changed, and why it mattered ───────────────────────────────────────
+ * This screen used to read twenty-five module constants: a balance of ₹24,350,
+ * a client called BrandStory, a savings round nobody had paid, a journey stage
+ * derived from three fixtures. Everything a woman could see about her own
+ * money and her own progress was invented, and it was invented *confidently* —
+ * which is worse than a gap, because a gap asks a question and a wrong figure
+ * answers one.
  *
- *   **Trust Score 850** has no endpoint, no model and no agreed formula. Its
- *   slot now carries earnings this month, which is counted server-side *and*
- *   is the only figure here with a real month-on-month comparison behind it.
+ * One request now supplies all of it. Thirteen blocks, gathered server-side,
+ * measured at 69ms; the alternative was eleven hooks and eleven chances for one
+ * slow query to leave a hole in the page.
  *
- *   **Together Challenges** is not a module that exists. Her savings pot took
- *   the slot: same shape — a goal, a bar, the women in it — and every number
- *   in it is real.
+ * ── Three things this screen will not do ────────────────────────────────────
+ * **It does not invent a number.** Three fields come back `null` on purpose and
+ * render as absent rather than as zero: her streak (nothing records which days
+ * she opened the app), `better_than_pct` (the mock's "ahead of 68% of women in
+ * your circle" — this platform does not rank women against each other) and
+ * `left_mins` (lesson durations are mostly unset, and summing blanks produces a
+ * confident wrong answer). The 68% ring is gone rather than refilled.
+ *
+ * **It tells missing apart from empty.** `unavailable` names the blocks whose
+ * own query timed out. A woman with no circles and a woman whose circles did
+ * not load need different sentences — "join one" is wrong for the second, and
+ * reads as though her circles had vanished.
+ *
+ * **It keeps the hero while the data is in flight.** The banner and her
+ * greeting need no request, so they paint immediately and the data-shaped part
+ * of the page carries the skeleton. A blank first frame on a 3G connection is
+ * the difference between an app that is slow and an app that is broken.
+ *
+ * ── What could not be copied from the design, and why ───────────────────────
+ * **Trust Score 850** has no endpoint, no model and no agreed formula. Its slot
+ * carries earnings this month, which is counted server-side.
+ *
+ * **Together Challenges** is not a module that exists. Her savings pot took the
+ * slot: same shape — a goal, a bar, the women in it — and every number real.
  *
  * The deltas are the other quiet change. The design puts a green "+12%" on
  * every card; only earnings has a previous month stored to compare against, so
- * only earnings shows one. A row of invented percentages is the fastest way to
- * make a dashboard untrustworthy.
+ * only earnings can show one.
  */
 
-const AVATARS = ["blazer","blue-saree","elder-saree","hijab","pink-glasses","purple-kurta"] as const;
+/* ── the loosely-typed blocks, narrowed where they are drawn ────────────────
+   `ApiHome` types six blocks as `Record<string, unknown>[]`, because the server
+   returns richer rows than any one screen draws. Narrowing here — rather than
+   reaching into them with index access at each call site — is what lets a
+   renamed field fail the build instead of rendering `undefined`. */
+
+export interface HomeCircle {
+  id: string; name: string; topic: string; desc: string;
+  member_count: number; post_count: number; joined: boolean;
+  /** Stated by the server, never guessed from the circle's name. */
+  is_savings: boolean;
+  /** Each woman's share per round, in MINOR units. */
+  monthly_minor: number;
+  /** Which round it is in. 0 when the circle does not collect money. */
+  round: number;
+}
+
+export interface HomeStory {
+  id: string; author_name: string; author_avatar?: string;
+  title: string; body: string; cover?: string;
+  likes: number; when: string; program?: string;
+}
+
+export interface HomeProgress {
+  member_since: string; sessions_attended: number; sessions_upcoming: number;
+  programs_active: number; programs_completed: number;
+}
+
+export interface HomeNote {
+  id: string; type: string; icon: string; title: string;
+  body: string; href: string; when: string; unread: boolean;
+}
+
+export const rowsOf = <T,>(v: Record<string, unknown>[] | undefined): T[] =>
+  (v ?? []) as unknown as T[];
+
+export const blockOf = <T,>(v: Record<string, unknown> | null | undefined): T | null =>
+  (v ?? null) as T | null;
+
+/**
+ * Did this block fail server-side?
+ *
+ * The names are the server's own block names — "summary", "circles", "stories",
+ * "journey", "progress", "events". A block listed here is MISSING, not empty,
+ * and the two must not share a sentence.
+ */
+export const lost = (h: ApiHome, block: string) => (h.unavailable ?? []).includes(block);
 
 function Ico({ name, className, sw = 1.9 }: { name: string; className?: string; sw?: number }) {
   const C = (Icons as unknown as Record<string, React.ComponentType<{ className?: string; strokeWidth?: number }>>)[name]
@@ -44,28 +111,34 @@ function Ico({ name, className, sw = 1.9 }: { name: string; className?: string; 
   return <C className={className} strokeWidth={sw} />;
 }
 
-/** "Today · 9:00 AM" · "Tomorrow" · "Wed 16 Sept". */
-function whenShort(dateIso: string, time?: string): string {
-  const parts: string[] = [];
-  if (dateIso) {
-    const d = new Date(`${dateIso}T00:00:00`);
-    if (!Number.isNaN(d.getTime())) {
-      const mid = (x: Date) => new Date(x.getFullYear(), x.getMonth(), x.getDate()).getTime();
-      const days = Math.round((mid(d) - mid(new Date())) / 86_400_000);
-      parts.push(days === 0 ? "Today" : days === 1 ? "Tomorrow"
-        // en-GB: day before month. Most of the world does not write "Sep 16".
-        : new Intl.DateTimeFormat("en-GB", { day: "numeric", month: "short" }).format(d));
-    }
-  }
-  if (time) parts.push(clock(time));
-  return parts.join(" · ");
+/**
+ * "09:00" → "9:00 AM". The server stores 24-hour; nobody reads it that way.
+ *
+ * **The guard is the point.** `/me/home` merges two sources into one list:
+ * bookings carry "09:00", events carry a time a person typed — "5:00 PM".
+ * Splitting the second on ":" gives "00 PM" as the minutes, `Number` makes that
+ * `NaN`, and `NaN ?? 0` is still `NaN` — so the rail printed "5:NaN AM" on a
+ * real event the moment the two lists were merged. Anything that is not
+ * 24-hour HH:MM is already readable and is returned untouched.
+ */
+export function clock(time: string): string {
+  const t = (time ?? "").trim();
+  if (!t) return "";
+  const m = /^(\d{1,2}):(\d{2})$/.exec(t);
+  if (!m) return t;
+  const h = Number(m[1]);
+  if (!Number.isFinite(h)) return t;
+  return `${h % 12 === 0 ? 12 : h % 12}:${m[2]} ${h < 12 ? "AM" : "PM"}`;
 }
 
-/** "09:00" -> "9:00 AM". The server stores 24-hour; nobody reads it that way. */
-export function clock(time: string): string {
-  const [h, m] = time.split(":").map(Number);
-  if (!Number.isFinite(h)) return time;
-  return `${h % 12 === 0 ? 12 : h % 12}:${String(m ?? 0).padStart(2, "0")} ${h < 12 ? "AM" : "PM"}`;
+/** A block the server could not fetch. Quiet, and never an empty state. */
+export function Gone({ what }: { what: string }) {
+  return (
+    <p className="flex items-center gap-2 py-5 text-xsm" style={{ color: "var(--ux-muted)" }}>
+      <Icons.CloudOff className="h-[15px] w-[15px] shrink-0" />
+      We could not load {what} just now. Everything else here is up to date.
+    </p>
+  );
 }
 
 function PanelHead({ title, action, href }: { title: string; action: string; href: string }) {
@@ -107,6 +180,9 @@ function Panel({ children }: { children: React.ReactNode }) {
  * The headline it replaces said "Let's make today a step towards your better
  * tomorrow"; the banner says "Independent Women Build Brighter Tomorrows" in
  * type nobody could set here. Saying both would be saying it twice.
+ *
+ * It takes no data, which is why it is outside the loading branch: her name
+ * comes from the session she is already signed in with.
  */
 function Hero({ first }: { first: string }) {
   const greeting = useGreeting();
@@ -177,44 +253,233 @@ function Hero({ first }: { first: string }) {
   );
 }
 
-/* ── the five figures ──────────────────────────────────────────────────── */
+/* ── the one next step ─────────────────────────────────────────────────── */
 
-function Stats() {
-  const { data: summary } = useSummary();
-  const { data: circles } = useCircles();
-  const { data: orders } = useOrders();
+/**
+ * Her next step, as the server computed it.
+ *
+ * It used to come from `readJourneyState()`, which assembles a stage out of
+ * four fixtures — a course that is 8 of 12 done, three skills, three circles
+ * and a mock ledger. None of those are hers. The server derives the same
+ * answer from the enrolment she actually holds: the first unfinished lesson of
+ * the course on the card below, or her certificate when there are none left.
+ *
+ * `stage` is required by the shared `NextStep` type and is inert here: it is
+ * read only to draw the "you are past this" chip, which needs the `at` prop
+ * this screen does not pass — the server sends a step, not a position on the
+ * seven-stage journey, and inventing one would be a claim about her life. Every
+ * step this endpoint can return is a learning step, so "learn" is also true.
+ */
+function NextUp({ h, onDismiss }: { h: ApiHome; onDismiss: () => void }) {
+  const s = h.next_step;
+  if (!s) return null;
+  // "45 min" → 45, "" → absent. The server sends a label, not a number, and
+  // most lessons have no duration set at all — so this is usually absent, and
+  // absent is the correct rendering.
+  const mins = Number.parseInt(s.duration ?? "", 10);
+  return (
+    <NextStepCard
+      step={{
+        stage: "learn",
+        title: s.title,
+        because: s.because,
+        cta: s.cta,
+        href: s.href,
+        icon: s.icon,
+        mins: Number.isFinite(mins) && mins > 0 ? mins : undefined,
+      }}
+      onDismiss={onDismiss}
+    />
+  );
+}
 
-  const money = summary?.money;
-  const pots = circles.mine.filter((c) => c.kind === "Savings");
-  const saved = pots.reduce((a, c) => a + (c.monthly_minor ?? 0) * (c.currentMonth ?? 0), 0);
-  const last = money?.last_month_minor ?? 0;
+/* ── the course she is in ──────────────────────────────────────────────── */
+
+/**
+ * What she is learning, drawn from her enrolment.
+ *
+ * This replaces the seven-stage journey track, which drew its position from
+ * the same fixtures as the old next step — so the two agreed with each other
+ * and with nothing else.
+ *
+ * **"96 min left" is gone and is not coming back.** `left_mins` is null because
+ * lesson durations are optional in the catalogue and almost always unset;
+ * summing blanks produced a number that looked measured and was not. Where the
+ * server does carry a duration for a specific lesson it is printed beside that
+ * lesson, and nowhere else.
+ */
+function Journey({ h }: { h: ApiHome }) {
+  const j = h.journey;
+
+  if (lost(h, "journey")) {
+    return (
+      <section className="ux-sq rounded-[16px] p-5"
+               style={{ background: "var(--ux-surface)", border: "1px solid var(--ux-line)" }}>
+        <PanelHead title="What you are learning" action="All programmes" href="/app/programs" />
+        <Gone what="your course" />
+      </section>
+    );
+  }
+
+  if (!j) {
+    return (
+      <section className="ux-sq rounded-[16px] p-5"
+               style={{ background: "var(--ux-surface)", border: "1px solid var(--ux-line)" }}>
+        <PanelHead title="What you are learning" action="All programmes" href="/app/programs" />
+        <p className="text-xsm leading-relaxed" style={{ color: "var(--ux-muted)" }}>
+          You have not joined a programme yet. They are free, they run in Hindi and
+          English, and most women finish one in six weeks.
+        </p>
+        <Link href="/app/programs"
+              className="ux-press ux-btn-g mt-3.5 inline-flex min-h-[42px] items-center gap-2 rounded-[12px] px-4 text-xsm font-bold"
+              style={{ background: "linear-gradient(96deg, var(--ux-rib-2), var(--ux-rib-3))", color: "var(--ux-on-brand)" }}>
+          Find a programme
+          <Icons.ArrowRight className="h-4 w-4" />
+        </Link>
+      </section>
+    );
+  }
+
+  return (
+    <section className="ux-sq rounded-[16px] p-5"
+             style={{ background: "var(--ux-surface)", border: "1px solid var(--ux-line)" }}>
+      <PanelHead title="What you are learning" action="All programmes" href="/app/programs" />
+
+      <div className="flex flex-wrap items-end justify-between gap-x-4 gap-y-1.5">
+        <div className="min-w-0">
+          <p className="truncate text-sm font-bold" style={{ color: "var(--ux-ink)" }}>{j.title}</p>
+          {j.category && (
+            <p className="mt-1 text-2xs" style={{ color: "var(--ux-muted)" }}>{j.category}</p>
+          )}
+        </div>
+        <p className="text-xs font-bold tabular-nums" style={{ color: "var(--ux-green-ink)" }}>
+          {j.done} of {j.total} done · {j.pct}%
+        </p>
+      </div>
+
+      <div className="mt-2.5 h-[9px] w-full overflow-hidden rounded-full" style={{ background: "var(--ux-track)" }}>
+        <div className="h-full rounded-full"
+             style={{ width: `${Math.min(100, Math.max(0, j.pct))}%`,
+                      background: "linear-gradient(90deg, var(--ux-rib-2), var(--ux-rib-3))",
+                      transition: "width var(--ux-t-slow) var(--ux-ease-out)" }} />
+      </div>
+
+      {j.up_next.length > 0 && (
+        <ul className="mt-3.5 flex flex-wrap gap-2">
+          {j.up_next.map((l) => (
+            <li key={l.n}
+                className="flex items-center gap-2 rounded-[10px] px-2.5 py-1.5 text-2xs font-semibold"
+                style={{ background: "var(--ux-surface-2)", border: "1px solid var(--ux-line)",
+                         color: "var(--ux-ink-2)" }}>
+              {/* The number, unless the title already carries it — a
+                  curriculum whose lessons are called "Week 5" rendered
+                  "5 Week 5". */}
+              {!new RegExp(`(^|\\D)${l.n}(\\D|$)`).test(l.title) && (
+                <span style={{ color: "var(--ux-muted)" }}>{l.n}</span>
+              )}
+              {l.title}
+              {/* Only when the catalogue actually carries one. */}
+              {l.duration && <span style={{ color: "var(--ux-muted)" }}>· {l.duration}</span>}
+            </li>
+          ))}
+        </ul>
+      )}
+
+      <Link href={j.href}
+            className="ux-hov mt-3.5 inline-flex min-h-[40px] items-center gap-1.5 text-xs font-semibold"
+            style={{ color: "var(--ux-brand)" }}>
+        Open the course
+        <Icons.ChevronRight className="h-[14px] w-[14px]" />
+      </Link>
+    </section>
+  );
+}
+
+/* ── the figure row ────────────────────────────────────────────────────── */
+
+/**
+ * Four figures, each of which appears exactly once on this screen.
+ *
+ * It was five, and two of them were repeats. **"Total Balance" is gone**: it
+ * rendered `money.balance_minor`, which is the same expression the rail's
+ * "Your Balance" card renders 300px to the right — and the rail's is the one
+ * that also offers the action, so the rail's is the one that stayed.
+ * **"Savings Pot" is gone** for the same reason: it printed the identical total
+ * to the pot panel two rows below it.
+ *
+ * Nothing was put in their place. A figure invented to keep a five-column
+ * rhythm is how this screen ended up with a trust score.
+ */
+function Stats({ h }: { h: ApiHome }) {
+  const money = h.earnings?.money;
   const earned = money?.earned_this_month_minor ?? 0;
-  // Absent in her first month: a percentage of nothing is undefined, not zero.
-  // A month that has not started is not a 100% collapse. Showing "₹0 ↓ −100%"
-  // in red on the front page greets a woman on the 2nd with the news that her
-  // business has failed — which is what the arithmetic says and not what is
-  // true. No earnings yet means no comparison, so no delta.
-  const delta = last > 0 && earned > 0 ? Math.round(((earned - last) / last) * 100) : null;
 
-  const cards = [
-    { icon: "Wallet", tint: "--ux-tint-violet", ink: "--ux-violet-ink", label: "Total Balance",
-      value: formatMoney(money?.balance_minor ?? 0), note: "In Wallet", delta: null, href: "/app/wallet" },
-    { icon: "TrendingUp", tint: "--ux-tint-green", ink: "--ux-green-ink", label: "Earned",
-      value: formatMoney(earned), note: earned > 0 ? "This Month" : "Ask to be paid",
-      delta, href: earned > 0 ? "/app/wallet" : "/app/collect" },
-    { icon: "UsersRound", tint: "--ux-tint-pink", ink: "--ux-pink-ink", label: "My Circles",
-      value: String(circles.mine.length), note: "Active Circles", delta: null, href: "/app/circles" },
-    { icon: "PiggyBank", tint: "--ux-tint-lilac", ink: "--ux-violet-ink", label: "Savings Pot",
-      value: formatMoney(saved), note: "Total Saved", delta: null, href: "/app/circles" },
-    { icon: "Store", tint: "--ux-tint-amber", ink: "--ux-amber-ink", label: "My Shop",
-      value: String(orders.length), note: "Total Orders", delta: null, href: "/app/documents" },
+  /**
+   * The month-on-month change, as the server computed it — shown only once
+   * there is something to compare.
+   *
+   * `delta_pct` is −100 for a woman who earned ₹3,000 last month and nothing
+   * yet this month, which is arithmetically true and reads, on the 2nd, as the
+   * news that her business has collapsed. A month that has not started is not a
+   * collapse, so the comparison waits until there is money on both sides of it.
+   */
+  const delta = h.earnings?.delta_pct ?? null;
+  const showDelta = delta !== null && earned > 0;
+
+  const circles = rowsOf<HomeCircle>(h.circles).filter((c) => c.joined);
+
+  type Tile = {
+    icon: string; tint: string; ink: string; label: string;
+    value: string; note: string; href: string;
+    delta?: number | null;
+    /** The server could not fetch this one. Unknown — never zero. */
+    gone?: boolean;
+  };
+
+  const tiles: Tile[] = [
+    {
+      icon: "TrendingUp", tint: "--ux-tint-green", ink: "--ux-green-ink", label: "Earned",
+      // "₹0" reads two ways and only one of them is true — she earned nothing
+      // this month, or a formatter divided the paise twice. This screen has
+      // shipped the second bug before, so a legitimate zero is said in words.
+      value: earned > 0 ? formatRupees(earned) : "Nothing yet",
+      note: earned > 0 ? "This month" : "Ask to be paid",
+      delta: showDelta ? delta : null,
+      href: earned > 0 ? "/app/wallet" : "/app/collect",
+      gone: !money,
+    },
+    {
+      icon: "BadgeIndianRupee", tint: "--ux-tint-amber", ink: "--ux-amber-ink", label: "On its way",
+      // Zero here is a real answer, not a missing one — so it is said in words
+      // rather than as "₹0", which reads like a formatter that ran twice.
+      value: (money?.pending_minor ?? 0) > 0 ? formatRupees(money?.pending_minor ?? 0) : "Nothing due",
+      note: "Money owed to you",
+      href: "/app/wallet",
+      gone: !money,
+    },
+    {
+      icon: "UsersRound", tint: "--ux-tint-pink", ink: "--ux-pink-ink", label: "My Circles",
+      value: String(circles.length),
+      note: circles.length === 1 ? "Circle you are in" : "Circles you are in",
+      href: "/app/circles",
+      gone: lost(h, "circles"),
+    },
+    {
+      icon: "CalendarDays", tint: "--ux-tint-violet", ink: "--ux-violet-ink", label: "Coming up",
+      value: String(h.upcoming.length),
+      note: h.upcoming.length === 1 ? "Session booked" : "Sessions and events",
+      href: "/app/schedule",
+      // Two blocks feed this list. Only when BOTH failed is the count unknown;
+      // one of the two missing makes it short, which the calendar itself shows.
+      gone: lost(h, "summary") && lost(h, "events"),
+    },
   ];
 
   return (
-    // Scrolls sideways on a phone rather than crushing five cards to 70px each.
-    <div className="-mx-[20px] flex gap-3 overflow-x-auto px-[20px] pb-1 lg:mx-0 lg:grid lg:grid-cols-5 lg:px-0"
+    // Scrolls sideways on a phone rather than crushing the cards to 70px each.
+    <div className="-mx-[20px] flex gap-3 overflow-x-auto px-[20px] pb-1 lg:mx-0 lg:grid lg:grid-cols-4 lg:px-0"
          style={{ scrollbarWidth: "none" }}>
-      {cards.map((c) => (
+      {tiles.map((c) => (
         <Link key={c.label} href={c.href}
               className="ux-card ux-sq w-[172px] shrink-0 rounded-[16px] p-4 lg:w-auto"
               style={{ background: "var(--ux-surface)", border: "1px solid var(--ux-line)" }}>
@@ -229,13 +494,21 @@ function Stats() {
               {c.label}
             </span>
           </span>
-          <span className="mt-3 block text-xl font-bold leading-none tracking-[-0.03em] tabular-nums"
-                style={{ color: "var(--ux-ink)" }}>
-            {c.value}
-          </span>
+          {c.gone ? (
+            <span className="mt-3 block text-xsm font-semibold leading-tight" style={{ color: "var(--ux-muted)" }}>
+              Could not load
+            </span>
+          ) : (
+            <span className="mt-3 block text-xl font-bold leading-none tracking-[-0.03em] tabular-nums"
+                  style={{ color: "var(--ux-ink)" }}>
+              {c.value}
+            </span>
+          )}
           <span className="mt-2 flex items-center justify-between gap-2">
-            <span className="text-2xs" style={{ color: "var(--ux-muted)" }}>{c.note}</span>
-            {c.delta !== null && (
+            <span className="text-2xs" style={{ color: "var(--ux-muted)" }}>
+              {c.gone ? "Try again in a moment" : c.note}
+            </span>
+            {!c.gone && c.delta !== null && c.delta !== undefined && (
               <span className="flex items-center gap-1 text-2xs font-bold" style={{ color: "var(--ux-green-ink)" }}>
                 <Ico name={c.delta >= 0 ? "TrendingUp" : "TrendingDown"} className="h-[11px] w-[11px]" />
                 {c.delta >= 0 ? "+" : ""}{c.delta}%
@@ -250,6 +523,12 @@ function Stats() {
 
 /* ── quick access ──────────────────────────────────────────────────────── */
 
+/**
+ * Navigation, not data — which is why it is a constant and stays one.
+ *
+ * These six are destinations the app has whether or not she has used them; a
+ * request to find out that /app/wallet exists would be a request for nothing.
+ */
 const TILES = [
   { icon: "UsersRound", label: "My Circles", sub: "Your people, your strength", tint: "--ux-tint-pink", ink: "--ux-pink-ink", href: "/app/circles" },
   { icon: "PiggyBank", label: "Savings Pot", sub: "Save small, dream big", tint: "--ux-tint-violet", ink: "--ux-violet-ink", href: "/app/circles" },
@@ -304,62 +583,75 @@ function QuickAccess() {
 /* ── panel 1 · today's activities ──────────────────────────────────────── */
 
 /**
- * Composed from four different real signals, not from one feed.
+ * Composed from four of the blocks in the same request, not from one feed.
  *
- * The notifications endpoint was the obvious source and the wrong one: the
- * account's rows all carry the same generic title, so the panel rendered
- * "We've got your alert" four times — technically live data, and useless to
- * read. Taking one row each from orders, the savings pot, the calendar and
- * the circle gives the four distinct lines the design is shaped around, and
- * every one of them is still counted server-side.
+ * The notifications block alone was the obvious source and the wrong one: this
+ * account's rows carry the same generic title six times over, so the panel
+ * rendered "We've got your alert" four times — technically live, and useless to
+ * read. One row each from her calendar, her savings round, the community and
+ * her notifications gives the four distinct lines the design is shaped around,
+ * and each is drawn from the block that owns it.
  */
-function Activities() {
-  const { data: orders } = useOrders();
-  const { data: circles } = useCircles();
-  const { data: summary } = useSummary();
-  const { data: stories } = useStories();
+function Activities({ h }: { h: ApiHome }) {
+  const circles = rowsOf<HomeCircle>(h.circles);
+  const stories = rowsOf<HomeStory>(h.stories);
+  const notes = rowsOf<HomeNote>(h.notifications);
 
-  const pot = circles.mine.filter((c) => c.kind === "Savings")[0];
-  const booking = (summary?.upcoming_bookings ?? [])[0];
-  const order = orders[0];
-  const story = stories?.[0];
+  const pot = circles.find((c) => c.joined && c.is_savings && c.round > 0);
+  const next = h.upcoming[0];
+  const story = stories[0];
+  // The newest notification that is not the generic safety receipt every row
+  // above it already is. When they are all the same, one of them is still worth
+  // a line; four of them is not.
+  const note = notes[0];
 
-  type Row = { id: string; icon: string; tint: string; ink: string; title: string; body: string; when: string };
+  type Row = { id: string; icon: string; tint: string; ink: string;
+               title: string; body: string; when: string; href: string };
   const rows: Row[] = [];
 
-  if (order) rows.push({
-    id: `o-${order.id}`, icon: "Package", tint: "--ux-tint-amber", ink: "--ux-amber-ink",
-    title: order.purpose || "New order in My Shop",
-    body: `${formatMoney(order.amount_minor)} · ${order.method}`, when: order.when,
+  if (next) rows.push({
+    id: `u-${next.id}`, icon: "CalendarCheck", tint: "--ux-tint-violet", ink: "--ux-violet-ink",
+    title: next.title || "Session booked",
+    body: next.with_whom || (next.mode ? next.mode[0].toUpperCase() + next.mode.slice(1) : "")
+          || "With your circle",
+    when: [`${next.day} ${next.month}`, clock(next.time)].filter(Boolean).join(" · "),
+    href: next.href || "/app/schedule",
   });
-  if (pot?.currentMonth) rows.push({
+  if (pot) rows.push({
     id: `p-${pot.id}`, icon: "PiggyBank", tint: "--ux-tint-green", ink: "--ux-green-ink",
     title: "Savings round paid",
-    body: `${formatMoney(pot.monthly_minor ?? 0)} into ${pot.name}`, when: `Round ${pot.currentMonth}`,
-  });
-  if (booking) rows.push({
-    id: `b-${booking.id}`, icon: "CalendarCheck", tint: "--ux-tint-violet", ink: "--ux-violet-ink",
-    title: booking.service_name || "Session booked",
-    body: booking.with_whom || "With your circle", when: whenShort(booking.date, booking.time),
+    body: `${formatRupees(pot.monthly_minor)} into ${pot.name}`,
+    when: `Round ${pot.round}`, href: "/app/circles",
   });
   if (story) rows.push({
     id: `s-${story.id}`, icon: "MessageCircle", tint: "--ux-tint-blue", ink: "--ux-blue-ink",
-    title: `${story.name} shared a story`,
-    body: (story.quote || story.body || "").slice(0, 46), when: story.since || "",
+    title: `${story.author_name} shared a story`,
+    body: (story.title || story.body || "").slice(0, 46),
+    when: story.when || "", href: `/app/stories/${story.id}`,
   });
+  if (note) rows.push({
+    id: `n-${note.id}`, icon: note.icon || "Bell", tint: "--ux-tint-orange", ink: "--ux-orange-ink",
+    title: note.title, body: (note.body || "").slice(0, 46),
+    when: note.when || "", href: note.href || "/app/notifications",
+  });
+
+  // Everything this panel draws from failed, rather than everything being
+  // empty. Those are different sentences and she can tell them apart.
+  const allGone = ["summary", "events", "circles", "stories", "notifications"]
+    .every((b) => lost(h, b));
 
   return (
     <Panel>
       <PanelHead title="Today's Activities" action="View All" href="/app/notifications" />
-      {rows.length === 0 ? (
+      {allGone ? <Gone what="your activity" /> : rows.length === 0 ? (
         <p className="py-5 text-xsm" style={{ color: "var(--ux-muted)" }}>
-          Nothing yet today. Orders, circle news and messages land here.
+          Nothing yet today. Bookings, circle news and messages land here.
         </p>
       ) : (
         <ul className="-mx-1.5 space-y-0.5">
           {rows.slice(0, 4).map((r) => (
             <li key={r.id}>
-              <Link href="/app/notifications" className="ux-row flex items-start gap-3 rounded-[12px] p-2.5">
+              <Link href={r.href} className="ux-row flex items-start gap-3 rounded-[12px] p-2.5">
                 <span className="grid h-[34px] w-[34px] shrink-0 place-items-center rounded-[12px]"
                       style={{ background: `var(${r.tint})`, color: `var(${r.ink})` }}>
                   <Ico name={r.icon} className="h-[16px] w-[16px]" />
@@ -386,9 +678,29 @@ function Activities() {
 
 /* ── panel 2 · her savings pot, in the challenge card's shape ──────────── */
 
-function Pot() {
-  const { data: circles } = useCircles();
-  const pot = circles.mine.filter((c) => c.kind === "Savings")[0];
+/**
+ * The one place on this screen that states her savings total.
+ *
+ * The figure row used to print the same number 200px above this, computed from
+ * the same two fields. The panel kept it because the panel is the one that says
+ * what it means — the share, the round, the women, and what the pot is worth
+ * when everyone has paid.
+ *
+ * The row of six avatars that used to sit here has gone to the rail, which has
+ * a card whose subject IS the members. Both stacks drew the same six
+ * illustrations from two hand-copied arrays, and a copied array drifts.
+ */
+function Pot({ h }: { h: ApiHome }) {
+  const pot = rowsOf<HomeCircle>(h.circles).find((c) => c.joined && c.is_savings);
+
+  if (lost(h, "circles")) {
+    return (
+      <Panel>
+        <PanelHead title="Your Savings Pot" action="All Circles" href="/app/circles" />
+        <Gone what="your circles" />
+      </Panel>
+    );
+  }
 
   if (!pot) {
     return (
@@ -408,8 +720,8 @@ function Pot() {
     );
   }
 
-  const put = (pot.monthly_minor ?? 0) * (pot.currentMonth ?? 0);
-  const full = (pot.monthly_minor ?? 0) * pot.members;
+  const put = pot.monthly_minor * pot.round;
+  const full = pot.monthly_minor * pot.member_count;
   const pct = full > 0 ? Math.min(100, Math.round((put * 100) / full)) : 0;
 
   return (
@@ -429,10 +741,10 @@ function Pot() {
           </span>
           <span className="mt-1 flex flex-wrap items-center gap-x-1.5 gap-y-1 text-2xs"
                 style={{ color: "var(--ux-muted)" }}>
-            {formatMoney(pot.monthly_minor ?? 0)} a month · {pot.members} women
+            {formatRupees(pot.monthly_minor)} a month · {pot.member_count} women
             <span className="rounded-full px-2 py-[2px] text-2xs font-bold uppercase tracking-wider"
                   style={{ background: "var(--ux-tint-green)", color: "var(--ux-green-ink)" }}>
-              Round {pot.currentMonth || 0}
+              Round {pot.round}
             </span>
           </span>
         </span>
@@ -444,8 +756,8 @@ function Pot() {
           <span className="text-xs font-bold" style={{ color: "var(--ux-green-ink)" }}>{pct}%</span>
         </div>
         <p className="mt-1.5 text-lg font-bold tabular-nums" style={{ color: "var(--ux-ink)" }}>
-          {formatMoney(put)}{" "}
-          <span className="text-xsm font-semibold" style={{ color: "var(--ux-muted)" }}>/ {formatMoney(full)}</span>
+          {formatRupees(put)}{" "}
+          <span className="text-xsm font-semibold" style={{ color: "var(--ux-muted)" }}>/ {formatRupees(full)}</span>
         </p>
         <div className="mt-2.5 h-[9px] w-full overflow-hidden rounded-full" style={{ background: "var(--ux-track)" }}>
           <div className="h-full rounded-full"
@@ -453,32 +765,16 @@ function Pot() {
                         background: "linear-gradient(90deg, var(--ux-rib-2), var(--ux-rib-3))",
                         transition: "width var(--ux-t-slow) var(--ux-ease-out)" }} />
         </div>
+        <p className="mt-2.5 text-2xs leading-relaxed" style={{ color: "var(--ux-muted)" }}>
+          The full pot is what it is worth when every woman in it has paid this round.
+        </p>
       </div>
 
-      <div className="mt-4 flex items-center">
-        {AVATARS.map((n, i) => (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img loading="lazy" decoding="async" key={n} src={`/ux/art/avatar-woman-${n}.webp`} alt=""
-               className="h-[26px] w-[26px] rounded-full object-cover"
-               style={{ border: "2px solid var(--ux-surface)", marginLeft: i ? -8 : 0 }} />
-        ))}
-        {pot.members > 6 && (
-          <span className="grid h-[26px] w-[26px] place-items-center rounded-full text-2xs font-bold"
-                style={{ background: "var(--ux-surface-2)", border: "2px solid var(--ux-surface)",
-                         color: "var(--ux-muted)", marginLeft: -8 }}>
-            +{pot.members - 6}
-          </span>
-        )}
-        <span className="ms-2.5 text-2xs font-semibold" style={{ color: "var(--ux-muted)" }}>
-          {pot.members} women in this pot
-        </span>
-      </div>
-
-      {/* The full pot is what it is worth when everyone has paid. Whose turn it
-          is, and who has paid this round, are the two things a real chit needs
-          and this app does not store yet — so they are not claimed. */}
+      {/* Whose turn it is, and who has paid this round, are the two things a
+          real chit needs and this database does not store yet — so they are not
+          claimed. */}
       <Link href={`/app/circles/${pot.id}`}
-            className="ux-press ux-btn-g mt-4 flex min-h-[42px] items-center justify-center gap-2 rounded-[12px] text-xsm font-bold"
+            className="ux-press ux-btn-g mt-auto flex min-h-[42px] items-center justify-center gap-2 rounded-[12px] text-xsm font-bold"
             style={{ background: "linear-gradient(96deg, var(--ux-rib-2), var(--ux-rib-3))", color: "var(--ux-on-brand)" }}>
         Open this circle
         <Icons.ArrowRight className="h-4 w-4" />
@@ -489,9 +785,18 @@ function Pot() {
 
 /* ── panel 3 · community feed ──────────────────────────────────────────── */
 
-function Feed() {
-  const { data: stories } = useStories();
-  const [lead, ...rest] = stories ?? [];
+function Feed({ h }: { h: ApiHome }) {
+  const stories = rowsOf<HomeStory>(h.stories);
+  const [lead, ...rest] = stories;
+
+  if (lost(h, "stories")) {
+    return (
+      <Panel>
+        <PanelHead title="Community Feed" action="View All" href="/app/stories" />
+        <Gone what="the community feed" />
+      </Panel>
+    );
+  }
 
   return (
     <Panel>
@@ -504,26 +809,26 @@ function Feed() {
         <>
           <Link href={`/app/stories/${lead.id}`} className="ux-hov block">
             <div className="flex items-center gap-3">
-              {/* Guarded: `<img loading="lazy" decoding="async" src="">` makes the browser re-request the whole
+              {/* Guarded: `<img src="">` makes the browser re-request the whole
                   page and then fail to decode it as an image. */}
-              {lead.avatar ? (
+              {lead.author_avatar ? (
                 // eslint-disable-next-line @next/next/no-img-element
-                <img loading="lazy" decoding="async" src={lead.avatar} alt="" className="h-[36px] w-[36px] shrink-0 rounded-full object-cover" />
+                <img loading="lazy" decoding="async" src={lead.author_avatar} alt="" className="h-[36px] w-[36px] shrink-0 rounded-full object-cover" />
               ) : (
                 <span className="grid h-[36px] w-[36px] shrink-0 place-items-center rounded-full text-xsm font-bold"
                       style={{ background: "var(--ux-brand-tint)", color: "var(--ux-brand)" }} aria-hidden>
-                  {(lead.name || "?").trim().charAt(0).toUpperCase()}
+                  {(lead.author_name || "?").trim().charAt(0).toUpperCase()}
                 </span>
               )}
               <span className="min-w-0 flex-1">
-                <span className="block truncate text-xsm font-bold" style={{ color: "var(--ux-ink)" }}>{lead.name}</span>
+                <span className="block truncate text-xsm font-bold" style={{ color: "var(--ux-ink)" }}>{lead.author_name}</span>
                 <span className="block truncate text-2xs" style={{ color: "var(--ux-muted)" }}>
-                  {lead.since || lead.program || "In your circles"}
+                  {lead.when || lead.program || "In your circles"}
                 </span>
               </span>
             </div>
             <p className="mt-3 text-xsm leading-relaxed" style={{ color: "var(--ux-ink-2)" }}>
-              {(lead.quote || lead.body || "").slice(0, 170)}
+              {(lead.title || lead.body || "").slice(0, 170)}
             </p>
             {lead.cover && (
               // eslint-disable-next-line @next/next/no-img-element
@@ -544,21 +849,21 @@ function Feed() {
               {rest.slice(0, 3).map((s) => (
                 <li key={s.id}>
                   <Link href={`/app/stories/${s.id}`} className="ux-row -mx-1.5 flex items-center gap-2.5 rounded-[12px] px-1.5 py-2">
-                    {s.avatar ? (
+                    {s.author_avatar ? (
                       // eslint-disable-next-line @next/next/no-img-element
-                      <img loading="lazy" decoding="async" src={s.avatar} alt="" className="h-[26px] w-[26px] shrink-0 rounded-full object-cover" />
+                      <img loading="lazy" decoding="async" src={s.author_avatar} alt="" className="h-[26px] w-[26px] shrink-0 rounded-full object-cover" />
                     ) : (
                       <span className="grid h-[26px] w-[26px] shrink-0 place-items-center rounded-full text-2xs font-bold"
                             style={{ background: "var(--ux-brand-tint)", color: "var(--ux-brand)" }} aria-hidden>
-                        {(s.name || "?").trim().charAt(0).toUpperCase()}
+                        {(s.author_name || "?").trim().charAt(0).toUpperCase()}
                       </span>
                     )}
                     <span className="min-w-0 flex-1">
                       <span className="block truncate text-xs font-semibold" style={{ color: "var(--ux-ink)" }}>
-                        {s.name}
+                        {s.author_name}
                       </span>
                       <span className="block truncate text-2xs" style={{ color: "var(--ux-muted)" }}>
-                        {(s.quote || s.body || "").slice(0, 44)}
+                        {(s.title || s.body || "").slice(0, 44)}
                       </span>
                     </span>
                   </Link>
@@ -603,46 +908,152 @@ function Strip() {
   );
 }
 
+/* ── waiting, and failing ──────────────────────────────────────────────── */
+
+/**
+ * The first load only.
+ *
+ * `useResource` holds the last good value across a refetch, so this is never
+ * seen again once the screen has data — coming back to the tab redraws the
+ * figures she was already looking at rather than flashing them all to grey.
+ *
+ * It stands in for the body beneath the hero rather than the whole page: the
+ * hero needs no request, so painting it immediately is the difference between a
+ * slow app and a blank one. The route-level `AppSkeleton` draws the same shapes
+ * for the moment before this component's own code has arrived.
+ */
+function BodySkeleton() {
+  return (
+    <div className="flex flex-col gap-4" role="status" aria-live="polite">
+      <span className="sr-only">Loading your home screen…</span>
+      <div className="ux-sq rounded-[20px] p-6" style={{ background: "var(--ux-surface)", border: "1px solid var(--ux-line)" }}>
+        <Skeleton w={112} h={11} />
+        <Skeleton w="46%" h={30} r={10} className="mt-4" />
+        <Skeleton w="72%" h={13} className="mt-5" />
+        <Skeleton w={196} h={46} r={12} className="mt-6" />
+      </div>
+      <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+        {[0, 1, 2, 3].map((i) => (
+          <div key={i} className="ux-sq rounded-[16px] p-4"
+               style={{ background: "var(--ux-surface)", border: "1px solid var(--ux-line)" }}>
+            <div className="flex items-center gap-2.5">
+              <Skeleton w={34} h={34} r={12} />
+              <Skeleton w="58%" h={11} />
+            </div>
+            <Skeleton w="52%" h={20} r={8} className="mt-3" />
+            <Skeleton w="70%" h={10} className="mt-3" />
+          </div>
+        ))}
+      </div>
+      <div className="grid grid-cols-1 gap-4 xl:grid-cols-3">
+        {[0, 1, 2].map((i) => (
+          <div key={i} className="ux-sq rounded-[16px] p-5"
+               style={{ background: "var(--ux-surface)", border: "1px solid var(--ux-line)", minHeight: 280 }}>
+            <Skeleton w="46%" h={14} />
+            <div className="mt-5 flex flex-col gap-3.5">
+              {[0, 1, 2, 3].map((j) => (
+                <div key={j} className="flex items-start gap-3">
+                  <Skeleton w={34} h={34} r={12} />
+                  <div className="min-w-0 flex-1">
+                    <Skeleton w="82%" h={12} />
+                    <Skeleton w="54%" h={10} className="mt-2" />
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+/**
+ * The request came back with nothing.
+ *
+ * `useHome` catches its own error and resolves `null`, so a failure arrives
+ * looking like a successful empty answer — which is why this is keyed on the
+ * data being absent after loading has finished, and not on `error`. She gets a
+ * reason and a button, never a spinner that will not resolve.
+ */
+function LoadFailed({ onRetry }: { onRetry: () => void }) {
+  return (
+    <section className="ux-sq rounded-[16px] p-6 text-center"
+             style={{ background: "var(--ux-surface)", border: "1px solid var(--ux-line)" }}>
+      <span className="mx-auto grid h-[48px] w-[48px] place-items-center rounded-full"
+            style={{ background: "var(--ux-surface-2)", color: "var(--ux-muted)" }}>
+        <Icons.CloudOff className="h-5 w-5" />
+      </span>
+      <h2 className="mt-3.5 text-sm font-bold" style={{ color: "var(--ux-ink)" }}>
+        We could not load your home screen
+      </h2>
+      <p className="mx-auto mt-1.5 max-w-[42ch] text-xsm leading-relaxed" style={{ color: "var(--ux-muted)" }}>
+        Your money, your circles and your bookings are all safe — this is the app
+        failing to fetch them, not anything changing.
+      </p>
+      <button type="button" onClick={onRetry}
+              className="ux-press ux-btn-g mt-4 inline-flex min-h-[42px] items-center gap-2 rounded-[12px] px-5 text-xsm font-bold"
+              style={{ background: "linear-gradient(96deg, var(--ux-rib-2), var(--ux-rib-3))", color: "var(--ux-on-brand)" }}>
+        <Icons.RefreshCw className="h-4 w-4" />
+        Try again
+      </button>
+    </section>
+  );
+}
+
 /* ── the screen ────────────────────────────────────────────────────────── */
 
 export function Dashboard() {
   const { user } = useAuth();
-  const first = (user?.full_name || "").trim().split(" ")[0];
+  // One request for the whole screen. Thirteen blocks, gathered server-side.
+  const { data: home, source, refetch } = useHome();
 
-  // One question, answered once, from the same engine My Journey uses. Home
-  // used to open with a hero and then five stat tiles and then seven shortcut
-  // tiles — eighteen equally-weighted things, which asks a woman with twenty
-  // minutes to audit her own life and choose. This answers instead of asking.
-  const state = useMemo(() => readJourneyState(), []);
-  const step = useMemo(() => nextStep(state), [state]);
-  const stage = useMemo(() => stageFor(state), [state]);
-  const [stepAside, setStepAside] = useState(false);
+  /**
+   * "Put this aside for now", made to mean it.
+   *
+   * This was `useState(false)`. The card went away and came straight back on
+   * the next load, because nothing was ever written down — a control whose
+   * label promises "for now" and delivers "for ten seconds".
+   *
+   * The href of the dismissed step is held here only until the next `/me/home`
+   * comes back with it already gone; the server is what remembers. Optimistic,
+   * and it puts the card back if the write failed, because a card that went
+   * away and did not stay away is at least honest about it.
+   */
+  const [aside, setAside] = useState<string | null>(null);
+  const putAside = useCallback((href: string) => {
+    setAside(href);
+    apiDismissNextStep(href).catch(() => setAside((a) => (a === href ? null : a)));
+  }, []);
+
+  // Her name off the session when the request has not landed yet, so the
+  // greeting is right in the first frame rather than a beat later.
+  const first = home?.me.first || (user?.full_name || "").trim().split(" ")[0] || "";
 
   return (
     <div className="flex flex-col gap-4">
       <Hero first={first} />
 
-      {/* Above the numbers, deliberately: the numbers describe where she has
-          been and this says where to go. */}
-      {!stepAside && (
+      {!home ? (
+        source === "loading" ? <BodySkeleton /> : <LoadFailed onRetry={refetch} />
+      ) : (
         <>
-          <NextStepCard step={step} at={stage} onDismiss={() => setStepAside(true)} />
-          <section className="ux-sq rounded-[16px] p-5"
-                   style={{ background: "var(--ux-surface)", border: "1px solid var(--ux-line)" }}>
-            <PanelHead title="Your journey" action="See all seven steps" href="/app/journey" />
-            <JourneyTrack current={stage} />
-          </section>
+          {/* Above the numbers, deliberately: the numbers describe where she has
+              been and this says where to go. */}
+          {home.next_step && aside !== home.next_step.href && (
+            <NextUp h={home} onDismiss={() => putAside(home.next_step!.href)} />
+          )}
+          <Journey h={home} />
+          <Stats h={home} />
+          <QuickAccess />
+          <div className="grid grid-cols-1 gap-4 xl:grid-cols-3">
+            <Activities h={home} />
+            <Pot h={home} />
+            <Feed h={home} />
+          </div>
+          <Strip />
         </>
       )}
-
-      <Stats />
-      <QuickAccess />
-      <div className="grid grid-cols-1 gap-4 xl:grid-cols-3">
-        <Activities />
-        <Pot />
-        <Feed />
-      </div>
-      <Strip />
     </div>
   );
 }

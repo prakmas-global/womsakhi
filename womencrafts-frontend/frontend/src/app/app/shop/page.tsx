@@ -1,79 +1,91 @@
 "use client";
 
-import { useCallback, useMemo, useState } from "react";
-import { useRouter } from "next/navigation";
+import { useCallback } from "react";
+import Link from "next/link";
 
 import { HomeShell } from "@/components/ux/home/HomeShell";
-import { Btn, Card, I, IconTile, Pill, SectionHead, Stat, v } from "@/components/ux/kit";
+import { Btn, Card, I, IconTile, SectionHead, Stat, v } from "@/components/ux/kit";
 import { formatRupees } from "@/components/ux/kit";
-import {
-  BULK, BUYERS, LIVES, PREORDERS, PRICES, STREAMS, SUBS,
-  fundedUpfront, monthTotal, prepaidHeld, type Stream,
-} from "@/components/ux/shopplus/data";
+import { apiShopSummary, type ShopSummary } from "@/lib/shop-api";
+import { useResource } from "@/lib/use-resource";
 import { useT } from "@/i18n";
 
 /**
- * Your shops — plural, because she is.
+ * Ways to sell.
  *
- * A woman who stitches also does mehendi in wedding season and sends out tiffin
- * when the machine is quiet. Every marketplace makes her choose one identity.
- * Here each trade is its own shopfront with its own customers and its own
- * rhythm, and there is one set of books underneath.
+ * ── What this screen used to do, and why it had to stop ─────────────────────
+ * The headline was `formatRupees(monthTotal(STREAMS))` — ₹28,000 "this month" —
+ * summed from three invented shopfronts in `@/components/ux/shopplus/data`
+ * ("Priya Tailoring, ₹18,400, 23 orders"). Beneath it sat three more figures
+ * about her money: ₹6.19 lakh "paid to you before you started", ₹5,200 "already
+ * paid for next month", and a count of "buyers with a standing order" — every
+ * one of them a sum over rows nobody had ever created. The open/close switch on
+ * each trade set React state and announced *"Priya's Kitchen is closed. Your
+ * customers see 'back soon'"* to customers who did not exist, and "Another
+ * trade" printed a sentence and added nothing.
  *
- * The tiles below are not a feature menu. They are ordered by how directly each
- * one attacks the binding constraint — capital — which is why "money before you
- * buy cloth" sits above "what to charge", and a listings page appears nowhere.
+ * The tiles carried invented badges too: "3 waiting", "1 new", "2 too low" —
+ * counts computed from the same fixture, which is what made them feel like the
+ * app knew something about her week.
+ *
+ * ── What it does now ────────────────────────────────────────────────────────
+ * One shop, because that is what the server holds. `GET /shop/summary` is hers:
+ * what she has taken this month, what she took last month, how many things she
+ * has listed, and how many orders are waiting on her. Nothing on this screen is
+ * derived from anything else.
+ *
+ * ── And the tiles are split in two, honestly ────────────────────────────────
+ * Seven of the ten things this menu offered are not built. Leaving them mixed
+ * in with the three that work is how a woman ends up believing she has a
+ * standing-order book. So they sit under their own heading, labelled as what
+ * they are — and each one now opens a screen that says plainly what WomSakhi
+ * cannot do and what she can do about it herself today. That is worth keeping;
+ * a 404 is not.
  */
 
-const TOOLS = [
-  { href: "/app/shop/preorders", icon: "HandCoins", label: "Money before you buy cloth",
-    note: "Let the order pay for its own materials", tint: "--ux-tint-green", ink: "--ux-green-ink" },
-  { href: "/app/shop/subscriptions", icon: "Repeat", label: "Customers who pay every month",
-    note: "Predictable money from people who know you", tint: "--ux-tint-violet", ink: "--ux-violet" },
+/** Things that do what the tile says. */
+const WORKING = [
+  { href: "/app/documents", icon: "Store", label: "What you sell, and your orders",
+    note: "Add a piece, change a price, move an order along", tint: "--ux-tint-pink", ink: "--ux-pink-ink" },
   { href: "/app/shop/buyers", icon: "Handshake", label: "Who comes back",
-    note: "One steady buyer beats a hundred lookers", tint: "--ux-tint-blue", ink: "--ux-blue-ink" },
-  { href: "/app/shop/pricing", icon: "Tag", label: "What should you charge",
-    note: "What other women near you ask for the same work", tint: "--ux-tint-amber", ink: "--ux-amber-ink" },
-  { href: "/app/shop/wholesale", icon: "Boxes", label: "Big orders",
-    note: "Twenty pieces to one shop, not twenty sales", tint: "--ux-tint-orange", ink: "--ux-orange-ink" },
-  { href: "/app/shop/live", icon: "Radio", label: "Show and sell",
-    note: "A live half-hour to your own circle", tint: "--ux-tint-pink", ink: "--ux-pink-ink" },
-  { href: "/app/shop/voice", icon: "Mic", label: "Say it instead of typing it",
-    note: "Speak, and it becomes a listing you can correct", tint: "--ux-brand-tint", ink: "--ux-brand" },
-  { href: "/app/shop/slots", icon: "CalendarDays", label: "Sell your time, not just things",
-    note: "Customers pick an hour themselves", tint: "--ux-tint-blue", ink: "--ux-blue-ink" },
-  { href: "/app/shop/disputes", icon: "Scale", label: "When something goes wrong",
-    note: "Sorted by a woman you both know", tint: "--ux-tint-violet", ink: "--ux-violet" },
+    note: "Folded out of the orders you have written down", tint: "--ux-tint-blue", ink: "--ux-blue-ink" },
+  { href: "/app/shop/pricing", icon: "Tag", label: "What you charge",
+    note: "Every price you have set, side by side", tint: "--ux-tint-amber", ink: "--ux-amber-ink" },
+  { href: "/app/collect", icon: "Landmark", label: "Getting paid",
+    note: "Your shop link, and where money reaches you", tint: "--ux-tint-green", ink: "--ux-green-ink" },
+  { href: "/app/contracts", icon: "Briefcase", label: "Big orders from real buyers",
+    note: "Bulk orders placed with us — applying is real", tint: "--ux-tint-violet", ink: "--ux-violet" },
   { href: "/app/kitchen", icon: "ChefHat", label: "Selling food from home",
-    note: "The licence is one hundred rupees a year", tint: "--ux-tint-amber", ink: "--ux-amber-ink" },
+    note: "The licence is one hundred rupees a year", tint: "--ux-tint-orange", ink: "--ux-orange-ink" },
+];
+
+/** Ideas with nothing behind them yet. Each screen says so, and says what to do instead. */
+const NOT_YET = [
+  { href: "/app/shop/preorders", icon: "HandCoins", label: "Money before you buy cloth",
+    note: "How to ask a buyer to pay for the materials" },
+  { href: "/app/shop/subscriptions", icon: "Repeat", label: "Customers who pay every month",
+    note: "How to turn a weekly customer into a monthly one" },
+  { href: "/app/shop/wholesale", icon: "Boxes", label: "Selling to shops",
+    note: "What to ask before you take a big order" },
+  { href: "/app/shop/live", icon: "Radio", label: "Show and sell",
+    note: "How to do it on WhatsApp this Saturday" },
+  { href: "/app/shop/slots", icon: "CalendarDays", label: "Selling your time",
+    note: "Your listed services, and how to hold a diary" },
+  { href: "/app/shop/voice", icon: "Mic", label: "Speaking instead of typing",
+    note: "Where the microphone on your own keyboard is" },
+  { href: "/app/shop/disputes", icon: "Scale", label: "When something goes wrong",
+    note: "How to settle it with a woman you both know" },
 ];
 
 export default function ShopHub() {
   const tr = useT();
-  const router = useRouter();
-  const [streams, setStreams] = useState<Stream[]>(STREAMS);
-  const [note, setNote] = useState<string | null>(null);
 
-  const month = useMemo(() => monthTotal(streams), [streams]);
-  const held = useMemo(() => prepaidHeld(SUBS), []);
-  const upfront = useMemo(() => fundedUpfront(PREORDERS), []);
-  const asking = useMemo(() => PREORDERS.filter((o) => o.state === "asking").length, []);
-  const newBulk = useMemo(() => BULK.filter((b) => b.state === "new").length, []);
-  const under = useMemo(() => PRICES.filter((p) => p.yoursMinor < p.typicalMinor).length, []);
-  const committed = useMemo(() => BUYERS.filter((b) => b.committed).length, []);
-  const nextLive = useMemo(() => LIVES.find((l) => l.state === "scheduled"), []);
-
-  const toggle = useCallback((id: string) => {
-    setStreams((rows) => {
-      const next = rows.map((s) =>
-        s.id === id ? { ...s, live: !s.live, pausedUntil: s.live ? "you say so" : undefined } : s);
-      const s = next.find((x) => x.id === id);
-      setNote(s?.live
-        ? `${s.name} is open again. Nothing was lost while it was closed.`
-        : `${s?.name} is closed. Your customers see "back soon" — your place in search does not drop.`);
-      return next;
-    });
-  }, []);
+  const shop = useResource(
+    useCallback((s: AbortSignal) => apiShopSummary(s), []),
+    null as ShopSummary | null,
+  );
+  /** True only when the server actually answered. A null from a failure is not an answer. */
+  const s = shop.source === "live" ? shop.data : null;
 
   return (
     <HomeShell active="/app/shop">
@@ -81,142 +93,105 @@ export default function ShopHub() {
 
         <header className="flex flex-wrap items-end gap-4">
           <div className="min-w-0 flex-1">
-            <p className="text-2xs font-extrabold uppercase tracking-[0.2em]" style={{ color: v("--ux-brand") }}>{tr("shop.yourShops")}</p>
-            <h1 className="mt-2 text-[clamp(1.5rem,3.2vw,2.125rem)] font-extrabold leading-[1.1] tracking-[-0.035em]"
+            <p className="text-[13px] font-extrabold uppercase tracking-[0.2em] lg:text-2xs"
+               style={{ color: v("--ux-brand") }}>{tr("shop.yourShops")}</p>
+            {/*
+              Her month, from the server, or a dash.
+
+              Never ₹0 while the request is still out: "you have taken nothing"
+              and "we have not asked yet" are different sentences, and only one
+              of them is true at that moment.
+            */}
+            <h1 className="ux-screen-title mt-2 text-[clamp(1.5rem,3.2vw,2.125rem)] font-extrabold leading-[1.1] tracking-[-0.035em]"
                 style={{ color: v("--ux-ink") }}>
-              {formatRupees(month)} this month
+              {s ? `${formatRupees(s.month_minor)} this month` : "Your shop"}
             </h1>
-            <p className="mt-1.5 max-w-[54ch] text-sm leading-relaxed" style={{ color: v("--ux-muted") }}>
-              Across {streams.filter((s) => s.live).length} open{" "}
-              {streams.filter((s) => s.live).length === 1 ? "shop" : "shops"} — one set of books for all of them.
+            <p className="mt-1.5 max-w-[54ch] text-[15px] leading-snug lg:text-sm lg:leading-relaxed"
+               style={{ color: v("--ux-muted") }}>
+              {s
+                ? s.last_month_minor > 0
+                  ? `From the orders you have written down. Last month it was ${formatRupees(s.last_month_minor)}.`
+                  : "From the orders you have written down. An order you took in cash and never recorded is not in this."
+                : shop.error
+                  ? "We could not reach WomSakhi just now, so your figures are not showing."
+                  : "Loading your shop…"}
             </p>
           </div>
           <Btn variant="outline" icon="Store" href="/app/documents">{tr("shop.whatYouSell")}</Btn>
         </header>
 
-        {note && (
-          <Card pad={16} style={{ background: v("--ux-tint-green"), borderColor: "transparent" }}>
-            <p className="flex items-center gap-2 text-xsm font-semibold" style={{ color: v("--ux-green-ink") }}>
-              <I name="CheckCircle2" className="h-[16px] w-[16px]" />{note}
-            </p>
-          </Card>
-        )}
-
-        {/* Working capital — the number nobody shows her */}
+        {/* Three facts the server holds about her shop. No derived money. */}
         <Card>
           <div className="grid gap-4 sm:grid-cols-3">
-            <Stat value={formatRupees(upfront)} label={tr("shop.paidToYouBeforeYouStarted")}
-                  icon="HandCoins" tint="--ux-tint-green" ink="--ux-green-ink" />
-            <Stat value={formatRupees(held)} label={tr("shop.alreadyPaidForNextMonth")}
-                  icon="Repeat" tint="--ux-tint-violet" ink="--ux-violet" />
-            <Stat value={String(committed)} label={tr("shop.buyersWithAStandingOrder")}
-                  icon="Handshake" tint="--ux-tint-blue" ink="--ux-blue-ink" />
+            <Stat value={s ? String(s.needs_her) : "—"} label="orders waiting on you"
+                  icon="Clock" tint="--ux-tint-amber" ink="--ux-amber-ink" />
+            <Stat value={s ? String(s.listings) : "—"} label="things listed in your shop"
+                  icon="Package" tint="--ux-tint-pink" ink="--ux-pink-ink" />
+            <Stat value={s && s.review_count > 0 ? String(s.review_count) : "—"}
+                  label="customers have left a review"
+                  icon="MessageSquare" tint="--ux-tint-blue" ink="--ux-blue-ink" />
           </div>
           <div className="mt-4 flex items-start gap-2.5 border-t pt-3.5" style={{ borderColor: v("--ux-line") }}>
             <I name="Info" className="mt-[2px] h-[15px] w-[15px] shrink-0" style={{ color: v("--ux-muted") }} />
-            <p className="text-xsm leading-relaxed" style={{ color: v("--ux-ink-2") }}>{tr("shop.thisIsMoneyInYourHands")}<b>before</b> you spend on cloth. It is the difference
-              between taking an order and being able to afford to.
+            <p className="text-xsm leading-relaxed" style={{ color: v("--ux-ink-2") }}>
+              One shopfront, because that is what WomSakhi keeps. If you do two trades — stitching
+              and mehendi, tailoring and tiffin — list both here; separate shopfronts for separate
+              trades is something we would like to build and have not.
             </p>
           </div>
         </Card>
 
-        {/* Streams */}
         <div>
-          <SectionHead title={tr("shop.yourTrades")} sub={tr("shop.openOneCloseOneClosingCosts")}
-                       icon="LayoutGrid" chip={String(streams.length)} />
-          <div className="grid gap-3 lg:grid-cols-3">
-            {streams.map((s) => (
-              <Card key={s.id} pad={16}>
-                <div className="flex items-start gap-3.5">
-                  <IconTile icon={s.icon} tint={s.tint} ink={s.ink} size={44} radius={13} />
-                  <div className="min-w-0 flex-1">
-                    <div className="flex flex-wrap items-center gap-2">
-                      <p className="truncate text-sm font-bold" style={{ color: v("--ux-ink") }}>{s.name}</p>
-                      {s.live
-                        ? <Pill tone="green" size="sm">Open</Pill>
-                        : <Pill tone="neutral" size="sm">Closed</Pill>}
-                    </div>
-                    <p className="mt-0.5 text-xs leading-snug" style={{ color: v("--ux-muted") }}>{s.trade}</p>
-                  </div>
+          <SectionHead title="What works today" icon="Sparkles"
+                       sub="These do what they say" />
+          <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-3">
+            {WORKING.map((t) => (
+              <Link key={t.href} href={t.href}
+                    className="ux-press ux-sq flex items-start gap-3.5 rounded-[var(--ux-r-card)] border p-4 text-left"
+                    style={{ borderColor: v("--ux-line"), background: v("--ux-surface") }}>
+                <IconTile icon={t.icon} tint={t.tint} ink={t.ink} size={42} radius={12} />
+                <div className="min-w-0 flex-1">
+                  <p className="text-sm font-bold leading-snug" style={{ color: v("--ux-ink") }}>{t.label}</p>
+                  <p className="mt-1 text-xs leading-relaxed" style={{ color: v("--ux-muted") }}>{t.note}</p>
                 </div>
-
-                {s.live ? (
-                  <div className="mt-3.5 flex items-end justify-between">
-                    <div>
-                      <p className="text-xl font-extrabold leading-none tabular-nums"
-                         style={{ color: v("--ux-ink") }}>{formatRupees(s.monthMinor)}</p>
-                      <p className="mt-1 text-xs" style={{ color: v("--ux-muted") }}>
-                        {s.orders} orders this month
-                      </p>
-                    </div>
-                  </div>
-                ) : (
-                  <p className="mt-3.5 rounded-[8px] px-3 py-2.5 text-xs leading-relaxed"
-                     style={{ background: v("--ux-surface-2"), color: v("--ux-ink-2") }}>
-                    Closed {s.pausedUntil ? `until ${s.pausedUntil}` : "for now"}. Your customers see
-                    &ldquo;back soon&rdquo;, and nothing about your shop is downgraded for it.
-                  </p>
-                )}
-
-                <div className="mt-3.5 flex gap-2">
-                  <Btn size="sm" variant={s.live ? "ghost" : "primary"} full onClick={() => toggle(s.id)}>
-                    {s.live ? tr("shop.closeForNow")
-              : tr("shop.openAgain")}
-                  </Btn>
-                  <Btn size="sm" variant="outline" full href="/app/documents">{tr("shop.openShop")}</Btn>
-                </div>
-              </Card>
+                <I name="ChevronRight" className="mt-1 h-[16px] w-[16px] shrink-0" style={{ color: v("--ux-faint") }} />
+              </Link>
             ))}
-
-            {/* Add another trade */}
-            <button
-              type="button"
-              onClick={() => setNote("A new trade gets its own shopfront and its own customers — the books stay together.")}
-              className="ux-press ux-sq flex min-h-[180px] flex-col items-center justify-center gap-2.5 rounded-[var(--ux-r-card)] border-2 border-dashed p-6 text-center"
-              style={{ borderColor: v("--ux-line-strong"), background: v("--ux-surface") }}
-            >
-              <span className="grid h-[46px] w-[46px] place-items-center rounded-full"
-                    style={{ background: v("--ux-brand-tint"), color: v("--ux-brand") }}>
-                <I name="Plus" className="h-[21px] w-[21px]" sw={2.4} />
-              </span>
-              <p className="text-sm font-bold" style={{ color: v("--ux-ink") }}>{tr("shop.anotherTrade")}</p>
-              <p className="max-w-[24ch] text-xs leading-relaxed" style={{ color: v("--ux-muted") }}>{tr("shop.cookingMehendiTuitionWhateverElseY")}</p>
-            </button>
           </div>
         </div>
 
-        {/* Tools */}
+        {/*
+          The other seven, named as what they are.
+
+          They are kept, and kept reachable, because each one describes
+          something she can go and do on WhatsApp this week — and because a
+          screen that says "this is not ready, here is what it will do" is worth
+          more than a dead link and far more than a fixture.
+        */}
         <div>
-          <SectionHead title={tr("shop.waysToSellMoreWithoutSpending")}
-                       sub={tr("shop.orderedByWhatActuallyHoldsA")} icon="Sparkles" />
-          <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-3">
-            {TOOLS.map((t) => {
-              const badge =
-                t.href.endsWith("preorders") && asking ? `${asking} waiting`
-                : t.href.endsWith("wholesale") && newBulk ? `${newBulk} new`
-                : t.href.endsWith("pricing") && under ? `${under} too low`
-                : t.href.endsWith("live") && nextLive ? nextLive.when
-                : null;
-              return (
-                <button key={t.href} type="button" onClick={() => router.push(t.href)}
-                        className="ux-press ux-sq flex items-start gap-3.5 rounded-[var(--ux-r-card)] border p-4 text-left"
-                        style={{ borderColor: v("--ux-line"), background: v("--ux-surface") }}>
-                  <IconTile icon={t.icon} tint={t.tint} ink={t.ink} size={42} radius={12} />
-                  <div className="min-w-0 flex-1">
-                    <div className="flex flex-wrap items-center gap-2">
-                      <p className="text-sm font-bold leading-snug" style={{ color: v("--ux-ink") }}>{t.label}</p>
-                      {badge && (
-                        <span className="rounded-full px-2 py-[2px] text-2xs font-bold"
-                              style={{ background: v("--ux-brand-tint"), color: v("--ux-brand") }}>{badge}</span>
-                      )}
-                    </div>
-                    <p className="mt-1 text-xs leading-relaxed" style={{ color: v("--ux-muted") }}>{t.note}</p>
-                  </div>
-                  <I name="ChevronRight" className="mt-1 h-[16px] w-[16px] shrink-0" style={{ color: v("--ux-faint") }} />
-                </button>
-              );
-            })}
-          </div>
+          <SectionHead title="Not built yet" icon="Hammer"
+                       sub="Ideas we have written down but not made. Each one explains what you can do yourself in the meantime." />
+          <Card pad={0} style={{ overflow: "hidden" }}>
+            {NOT_YET.map((t, i) => (
+              <Link key={t.href} href={t.href}
+                    className="ux-press flex items-center gap-3.5 px-5 py-4"
+                    style={{ borderTop: i === 0 ? "none" : `1px solid ${v("--ux-line")}` }}>
+                <span className="grid h-[38px] w-[38px] shrink-0 place-items-center rounded-[11px]"
+                      style={{ background: v("--ux-surface-2"), color: v("--ux-muted") }}>
+                  <I name={t.icon} className="h-[17px] w-[17px]" />
+                </span>
+                <div className="min-w-0 flex-1">
+                  <p className="text-sm font-bold" style={{ color: v("--ux-ink") }}>{t.label}</p>
+                  <p className="mt-0.5 text-xs leading-relaxed" style={{ color: v("--ux-muted") }}>{t.note}</p>
+                </div>
+                <I name="ChevronRight" className="h-[16px] w-[16px] shrink-0" style={{ color: v("--ux-faint") }} />
+              </Link>
+            ))}
+          </Card>
+          <p className="mt-2 px-1 text-xs leading-relaxed" style={{ color: v("--ux-muted") }}>
+            These screens used to show orders, customers and takings that were not yours. They
+            showed nothing of yours, because there was nothing of yours to show — so now they say so.
+          </p>
         </div>
       </div>
     </HomeShell>

@@ -1,133 +1,119 @@
-"use client";
+import type { Metadata } from "next";
 
-import { use, useCallback, useMemo, useState } from "react";
-
-import { Btn, Card, EmptyState, I, v } from "@/components/ux/kit";
-import { formatRupees } from "@/components/ux/kit";
-import { REQUESTS, SHOP } from "@/components/ux/reach/data";
+/*
+  `Card`, `Btn` and `I` are client COMPONENTS, which a server component may
+  render freely. `v()` is a client FUNCTION, and calling one during a server
+  render throws "Attempted to call v() from the server" — the whole page then
+  renders as an error boundary. Same trap as the i18n barrel: what crosses the
+  boundary is the reference, not the value. The tokens are written out here.
+*/
+import { Btn, Card, I } from "@/components/ux/kit";
 
 /**
- * Paying her — the page at the end of the link.
+ * The page at the end of a payment link — which cannot take a payment.
  *
- * ── Why it says who she is before it says how much ──────────────────────────
- * A bare amount and a Pay button is what a phishing message looks like. The
- * customer arrived from a WhatsApp message and has to satisfy herself, in about
- * two seconds, that this is the woman who stitched her blouse. So the page
- * opens with the seller, what the money is for, and what she has done before —
- * and only then the amount.
+ * ── What this used to be ────────────────────────────────────────────────────
+ * A seller, an amount, "27 finished orders and no complaints", and a Pay
+ * button that ran `setTimeout(() => setState("paid"), 1400)` and then told a
+ * stranger **"Paid. It went straight to her bank account. She has been told."**
  *
- * ── We do not hold the money, and the page says so ──────────────────────────
- * Settlement is bank to bank, into her own account. Holding pooled customer
- * funds would make WomSakhi a payment aggregator, which is a licensing question
- * this product has no reason to open. Saying it plainly also answers the
- * objection her household raises — "what if the app takes it?"
+ * Nothing was paid. Nobody was told. Every figure on it came from one fixture,
+ * so every visitor saw the same seller and the same amount whatever reference
+ * they arrived with — and this is a PUBLIC route, reachable by anyone holding
+ * the link. It is the only screen in the product where a lie costs a stranger
+ * her money, and it was the most convincing screen we had.
+ *
+ * ── Why it is not simply deleted ────────────────────────────────────────────
+ * `/app/collect` had a Copy link button, so links may already be in real
+ * WhatsApp threads. A 404 tells the customer nothing; she is left assuming the
+ * payment either worked or did not, with no way to tell which. This page's job
+ * now is to answer exactly that question: nothing has been paid, pay her
+ * directly, and here is how not to be robbed while you do it.
  *
  * ── The single sentence that prevents most UPI fraud ────────────────────────
  * A PIN is only ever for sending. Nobody entering a PIN is receiving money.
- * That line lives here as well as in the fraud module, because this is the
- * screen where a customer is about to type one.
+ * It survived the rewrite because it is true regardless of what this platform
+ * can do, and this is still the screen where a customer is about to type one.
+ *
+ * Bring the real page back when there is a payee on the order, a public read
+ * for one request, and a settlement route that pays her directly — see the
+ * notes on `/app/collect`. Until then there is nothing here to render
+ * truthfully but this.
  */
-export default function PayPage({ params }: { params: Promise<{ ref: string }> }) {
-  const { ref } = use(params);
-  const req = useMemo(() => REQUESTS.find((r) => r.ref.toLowerCase() === ref.toLowerCase()), [ref]);
-  const [state, setState] = useState<"ready" | "paying" | "paid">("ready");
 
-  const pay = useCallback(() => {
-    setState("paying");
-    setTimeout(() => setState("paid"), 1400);
-  }, []);
+export const metadata: Metadata = {
+  title: "This link cannot take a payment",
+  // Nothing here should be indexed or previewed: the link is a private message
+  // between two people, and the page is a correction, not a destination.
+  robots: { index: false, follow: false },
+};
 
-  if (!req) {
-    return (
-      <Card>
-        <EmptyState icon="SearchX" title="This request is not here"
-                    body="The link may be old, or already paid. Ask her to send it again." />
-      </Card>
-    );
-  }
-
-  if (state === "paid") {
-    return (
-      <div className="flex flex-col gap-4">
-        <Card pad={0} style={{ overflow: "hidden" }}>
-          <div className="flex flex-col items-center px-6 py-10 text-center"
-               style={{ background: `linear-gradient(160deg, ${v("--ux-tint-green")}, ${v("--ux-surface")})` }}>
-            <span className="grid h-[72px] w-[72px] place-items-center rounded-full"
-                  style={{ background: v("--ux-green-ink"), color: v("--ux-on-brand") }}>
-              <I name="Check" className="h-[36px] w-[36px]" sw={2.6} />
-            </span>
-            <p className="mt-5 text-2xl font-extrabold tracking-[-0.03em]" style={{ color: v("--ux-ink") }}>
-              Paid
-            </p>
-            <p className="mt-1.5 text-sm" style={{ color: v("--ux-ink-2") }}>
-              {formatRupees(req.minor)} to {SHOP.name}
-            </p>
-            <p className="mt-4 max-w-[34ch] text-xsm leading-relaxed" style={{ color: v("--ux-muted") }}>
-              It went straight to her bank account. She has been told. Keep this page or the message
-              she sends you as your receipt.
-            </p>
-          </div>
-        </Card>
-        <Btn variant="outline" full icon="Store" href={`/s/${SHOP.handle}`}>
-          See what else she makes
-        </Btn>
-      </div>
-    );
-  }
-
+export default function PayPage() {
   return (
     <div className="flex flex-col gap-4">
-
-      {/* Who, before how much. */}
-      <Card pad={20}>
-        <div className="flex items-center gap-3.5">
-          <span className="grid h-[46px] w-[46px] shrink-0 place-items-center rounded-full text-lg font-bold"
-                style={{ background: v("--ux-fill"), color: v("--ux-on-brand") }}>
-            {SHOP.name.charAt(0)}
+      <Card pad={0} style={{ overflow: "hidden" }}>
+        <div className="flex flex-col items-center px-6 py-9 text-center"
+             style={{ background: "linear-gradient(160deg, var(--ux-tint-amber), var(--ux-surface))" }}>
+          <span className="grid h-[64px] w-[64px] place-items-center rounded-full"
+                style={{ background: "var(--ux-amber-ink)", color: "var(--ux-on-brand)" }}>
+            <I name="Info" className="h-[32px] w-[32px]" sw={2.4} />
           </span>
-          <div className="min-w-0">
-            <p className="text-base font-bold" style={{ color: v("--ux-ink") }}>{SHOP.name}</p>
-            <p className="text-xs" style={{ color: v("--ux-muted") }}>{SHOP.trade} · {SHOP.place}</p>
-          </div>
-        </div>
-
-        <div className="mt-5 border-t pt-5 text-center" style={{ borderColor: v("--ux-line") }}>
-          <p className="text-xsm" style={{ color: v("--ux-muted") }}>{req.what}</p>
-          <p className="mt-1.5 text-[clamp(2.375rem,10vw,3.25rem)] font-extrabold leading-none tracking-[-0.04em] tabular-nums"
-             style={{ color: v("--ux-ink") }}>
-            {formatRupees(req.minor)}
+          <h1 className="mt-5 text-2xl font-extrabold tracking-[-0.03em]" style={{ color: "var(--ux-ink)" }}>
+            This link cannot take a payment
+          </h1>
+          {/*
+            The first thing she needs is not an apology, it is the fact: no
+            money has moved. A customer holding this link does not know whether
+            she has paid, and that is the question to answer before any other.
+          */}
+          <p className="mt-3 max-w-[36ch] text-[15px] font-semibold leading-relaxed"
+             style={{ color: "var(--ux-ink)" }}>
+            Nothing has been paid, and nothing has been taken from you.
           </p>
-          <p className="mt-2.5 text-xs" style={{ color: v("--ux-faint") }}>
-            Reference {req.ref} · asked {req.when.toLowerCase()}
+          <p className="mt-2.5 max-w-[38ch] text-sm leading-relaxed" style={{ color: "var(--ux-ink-2)" }}>
+            WomSakhi cannot collect money for anyone yet. If someone sent you
+            this link, she is still waiting to be paid.
           </p>
-        </div>
-
-        <div className="mt-5 flex flex-col gap-2">
-          <Btn full size="lg" onClick={pay} disabled={state === "paying"}
-               icon={state === "paying" ? "Loader" : "Smartphone"}>
-            {state === "paying" ? "Opening your UPI app…" : "Pay with UPI"}
-          </Btn>
-          <Btn full variant="outline" icon="QrCode" onClick={pay} disabled={state === "paying"}>
-            Show a QR to scan
-          </Btn>
         </div>
       </Card>
 
-      {/* Reassurance, and the one sentence that stops most UPI fraud */}
-      <Card pad={16} style={{ background: v("--ux-surface-2"), borderColor: "transparent" }}>
+      <Card pad={18}>
+        <h2 className="text-base font-bold" style={{ color: "var(--ux-ink)" }}>
+          Pay her directly instead
+        </h2>
+        <p className="mt-2 text-sm leading-relaxed" style={{ color: "var(--ux-ink-2)" }}>
+          Ask her for her UPI id or her bank details and send the money the way
+          you normally would. It reaches her account the same day, and no part
+          of it passes through us.
+        </p>
+      </Card>
+
+      <Card pad={16} style={{ background: "var(--ux-surface-2)", borderColor: "transparent" }}>
         <ul className="flex flex-col gap-2.5">
           {[
-            { icon: "Landmark", t: "This goes to her own bank account. WomSakhi never holds it and takes nothing." },
-            { icon: "ShieldCheck", t: "You are sending money, so your app will ask for your PIN. Never enter a PIN to receive money — that is always someone taking it." },
-            { icon: "UserCheck", t: `${SHOP.ordersDone} finished orders, ${SHOP.repeatBuyers} buyers who came back, and no complaints.` },
+            {
+              icon: "ShieldCheck",
+              t: "You are sending money, so your app will ask for your PIN. Never enter a PIN to receive money — that is always someone taking it.",
+            },
+            {
+              icon: "MessageCircle",
+              t: "Check the UPI id or account number with her yourself, in a call or in person. A number sent in a message can be changed by whoever forwarded it.",
+            },
           ].map((x) => (
             <li key={x.icon} className="flex items-start gap-2.5">
-              <I name={x.icon} className="mt-[2px] h-[14px] w-[14px] shrink-0" style={{ color: v("--ux-muted") }} />
-              <span className="text-xs leading-relaxed" style={{ color: v("--ux-ink-2") }}>{x.t}</span>
+              <I name={x.icon} className="mt-[2px] h-[15px] w-[15px] shrink-0"
+                 style={{ color: "var(--ux-muted)" }} />
+              <span className="text-[13px] leading-relaxed" style={{ color: "var(--ux-ink-2)" }}>
+                {x.t}
+              </span>
             </li>
           ))}
         </ul>
       </Card>
+
+      <Btn variant="outline" full icon="ArrowRight" href="/">
+        What WomSakhi is
+      </Btn>
     </div>
   );
 }

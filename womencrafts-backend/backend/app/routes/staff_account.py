@@ -17,6 +17,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query, Request, status
 from app.core.deps import get_current_user
 from app.core.rbac import current_user_modules, require_staff
 from app.core.security import hash_password, verify_password, hash_password_async, verify_password_async
+from app.core.media import media_url
 from app.db.mongodb import get_database
 from app.models.staff import (
     ActivityLogModel,
@@ -202,7 +203,7 @@ async def my_profile(me: dict = Depends(require_staff)):
         full_name=me.get("full_name", ""),
         email=me.get("email", ""),
         phone=me.get("phone", ""),
-        avatar=me.get("avatar", ""),
+        avatar=media_url(me.get("avatar", "")),
         role=me.get("role", ""),
         modules=await current_user_modules(me),
         created_at=created.strftime("%b %d, %Y") if isinstance(created, datetime) else "",

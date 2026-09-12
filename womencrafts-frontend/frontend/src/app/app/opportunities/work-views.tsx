@@ -26,7 +26,7 @@ export function FamilyStrip({ active, onPick }: {
   active: FamilyId | null; onPick: (id: FamilyId | null) => void;
 }) {
   return (
-    <div className="ux-noscroll flex items-stretch gap-3 overflow-x-auto pb-1">
+    <div className="ux-noscroll -mx-5 flex items-stretch gap-3 overflow-x-auto px-5 pb-1 lg:mx-0 lg:px-0">
       {FAMILIES.map((f) => {
         const on = active === f.id;
         return (
@@ -78,12 +78,22 @@ export function JobCard({ job, saved, onSave }: {
   const tone = matchTone(match.pct);
   return (
     <Card pad={18}>
-      <div className="flex flex-wrap items-start gap-4">
+      {/*
+        One column on a phone.
+
+        `min-w-[240px]` on the middle block and fixed 172/140px columns beside
+        it means that at 390 the three blocks wrap into an uneven stack with
+        the pay figure and the two buttons sitting in half-width stubs. Below
+        `lg` they are simply stacked full width, in the order she reads them:
+        what the work is, what it pays, what she can do about it.
+      */}
+      <div className="flex flex-col items-stretch gap-4 lg:flex-row lg:flex-wrap lg:items-start">
+        <div className="flex items-start gap-4 lg:contents">
         {/* Who is hiring */}
         <IconTile icon={job.icon} tint={job.logoTint} ink={job.logoInk} size={52} radius={14} />
 
         {/* What the work is */}
-        <div className="min-w-[240px] flex-1">
+        <div className="min-w-0 flex-1 lg:min-w-[240px]">
           <h3 className="text-base font-bold leading-snug" style={{ color: v("--ux-ink") }}>
             {job.title}
           </h3>
@@ -95,7 +105,7 @@ export function JobCard({ job, saved, onSave }: {
             <span aria-hidden>·</span>
             <span>{job.mode}</span>
             {job.verified && (
-              <span className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-2xs font-bold"
+              <span className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[13px] font-bold lg:text-2xs"
                     style={{ background: v("--ux-tint-green"), color: v("--ux-green-ink") }}>
                 <Icons.BadgeCheck className="h-[11px] w-[11px]" />{tr("workviews.theyPaidLastTime")}</span>
             )}
@@ -105,47 +115,54 @@ export function JobCard({ job, saved, onSave }: {
           </p>
           <div className="mt-2.5 flex flex-wrap gap-1.5">
             {job.skills.slice(0, 3).map((s) => (
-              <span key={s} className="rounded-[7px] px-2 py-1 text-2xs font-semibold"
+              <span key={s} className="rounded-[7px] px-2 py-1 text-[13px] font-semibold lg:text-2xs"
                     style={{ background: v("--ux-surface-2"), color: v("--ux-ink-2") }}>
                 {s}
               </span>
             ))}
             {job.skills.length > 3 && (
-              <span className="rounded-[7px] px-2 py-1 text-2xs font-semibold"
+              <span className="rounded-[7px] px-2 py-1 text-[13px] font-semibold lg:text-2xs"
                     style={{ background: v("--ux-surface-2"), color: v("--ux-muted") }}>
                 +{job.skills.length - 3}
               </span>
             )}
           </div>
         </div>
+        </div>
 
         {/* What it pays, and how well it fits */}
-        <div className="w-[172px] shrink-0">
+        <div className="w-full lg:w-[172px] lg:shrink-0">
           {/* Hidden at zero, not shown as "0%". `matchTone` says it plainly: a
               low score here measures how much she has written down, not what
               she can do, and a column of "0%" badges is a discouraging machine
               pointed at exactly the women this exists for. */}
           {match.pct !== null && match.pct > 0 && (
-            <span className="inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-2xs font-bold"
+            <span className="inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-[13px] font-bold lg:text-2xs"
                   title={match.because}
                   style={{ background: v("--ux-surface-2"), color: v(tone.ink) }}>
               <Icons.BadgeCheck className="h-[12px] w-[12px]" />
               {match.pct}% · {tone.label}
             </span>
           )}
-          <p className="mt-2 text-sm font-extrabold" style={{ color: v("--ux-ink") }}>
+          <p className="mt-2 text-[17px] font-extrabold lg:text-sm" style={{ color: v("--ux-ink") }}>
             {payLabel(job)}
           </p>
-          <p className="mt-1.5 flex items-center gap-1.5 text-xs" style={{ color: v("--ux-muted") }}>
-            <Icons.Briefcase className="h-[12px] w-[12px]" /> {job.kind}
-          </p>
-          <p className="mt-1 flex items-center gap-1.5 text-xs" style={{ color: v("--ux-faint") }}>
-            <Icons.Clock className="h-[12px] w-[12px]" /> Posted {job.posted}
+          {/* Side by side on a phone: two facts, one line, rather than two
+              lines of 12px in a column with nothing beside it. */}
+          <p className="mt-1.5 flex flex-wrap items-center gap-x-4 gap-y-1 lg:block">
+            <span className="inline-flex items-center gap-1.5 text-[13px] lg:text-xs" style={{ color: v("--ux-muted") }}>
+              <Icons.Briefcase className="h-[12px] w-[12px]" /> {job.kind}
+            </span>
+            <span className="inline-flex items-center gap-1.5 text-[13px] lg:mt-1 lg:flex lg:text-xs" style={{ color: v("--ux-faint") }}>
+              <Icons.Clock className="h-[12px] w-[12px]" /> Posted {job.posted}
+            </span>
           </p>
         </div>
 
         {/* What she can do about it */}
-        <div className="flex w-[140px] shrink-0 flex-col gap-2">
+        {/* Two halves of the full width on a phone — a stacked pair of
+            50px buttons is a lot of screen for one card in a list of them. */}
+        <div className="grid w-full grid-cols-2 gap-2 lg:flex lg:w-[140px] lg:shrink-0 lg:flex-col">
           <Btn size="sm" variant={saved ? "soft" : "outline"} icon="Bookmark" full onClick={onSave}>
             {saved ? "Saved" : "Save"}
           </Btn>

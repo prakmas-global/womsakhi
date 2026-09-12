@@ -4,8 +4,12 @@ import { useCallback } from "react";
 
 import { useResource, type Resource } from "@/lib/use-resource";
 import {
-  apiSummary,
-  type ApiSummary,
+  apiMarket, apiMarketListing,
+  type MarketListing, type MarketListingDetail,
+} from "@/lib/market-api";
+import {
+  apiSummary, apiHome,
+  type ApiSummary, type ApiHome,
   apiBookings, apiCertificates, apiCircles, apiDocuments, apiMentors,
   apiNotifications, apiProgress, apiReferrals, apiStories,
   type ApiBooking, type ApiCertificate, type ApiCircle, type ApiDocument,
@@ -231,6 +235,16 @@ function readableSize(bytes: number): string {
 export const useSummary = (): Resource<ApiSummary | null> =>
   useResource(useCallback((s: AbortSignal) => apiSummary(s).catch(() => null), []), null);
 
+/* ── Home ──────────────────────────────────────────────────────────────────
+
+   Returns `null` while loading and on failure, and every consumer must handle
+   that — Home is the first screen after sign-in, so a thrown error here is a
+   woman staring at a blank app. `useResource` keeps the last good value across
+   a refetch, which is what stops the whole screen flashing when she comes back
+   to the tab. */
+export const useHome = (): Resource<ApiHome | null> =>
+  useResource(useCallback((s: AbortSignal) => apiHome(s).catch(() => null), []), null);
+
 export const useDocuments = (): Resource<UxDocument[]> =>
   useResource(
     useCallback(async (s: AbortSignal) => (await apiDocuments(s)).map(toDocument), []),
@@ -389,4 +403,39 @@ export const useProgress = () =>
   useResource(
     useCallback(async (s: AbortSignal) => await apiProgress(s), []),
     null as Awaited<ReturnType<typeof apiProgress>> | null,
+  );
+
+/* ── The market ────────────────────────────────────────────────────────────
+
+   **The fallback is empty, and that is the whole point of this batch.**
+
+   `useResource` shows its fallback while the request is in flight AND when it
+   fails. Every other module here can fall back to a fixture safely — a mock
+   course is a course nobody is being asked to act on. A mock LISTING is a named
+   woman, a price and a Buy button: falling back to one would show a buyer
+   "Sunita Devi · ₹420 · 6 women you know bought this" about a woman who does
+   not exist, and let her order it.
+
+   That is exactly what `/app/market` did before this. So there is no fixture
+   behind these two hooks, and the screens read `source` and `error` to say
+   plainly that nothing could be loaded.
+
+   No adapter, either. The server already sends `price_label` with the rate in
+   it, the seller, her tie to the buyer and whether the thing is saved — all of
+   it derived from real rows. There is nothing left for a screen to add that
+   would not be invented. */
+
+export const useMarket = (): Resource<MarketListing[]> =>
+  useResource(useCallback((s: AbortSignal) => apiMarket(s), []), []);
+
+/**
+ * One listing.
+ *
+ * `null` while loading and on failure — a market item is a woman's name and a
+ * price, and a half-loaded one is worse than none.
+ */
+export const useMarketListing = (id: string): Resource<MarketListingDetail | null> =>
+  useResource(
+    useCallback((s: AbortSignal) => apiMarketListing(id, s), [id]),
+    null,
   );

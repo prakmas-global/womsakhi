@@ -21,6 +21,7 @@ from app.core import cache
 from app.core import idempotency
 from app.core.rbac import require_active_member
 from app.core.serializers import to_object_id
+from app.core.media import media_url
 from app.db.mongodb import get_database
 from app.models.wallet import WalletTxnModel
 from app.routes.wallet import balance_minor, symbol
@@ -376,7 +377,7 @@ async def _savings_state(circle: dict, uid: str, members: list[dict] | None = No
         u = named.get(m["user_id"], {})
         rows.append({
             "name": u.get("full_name") or u.get("name") or "A member",
-            "avatar": u.get("avatar", "") or "",
+            "avatar": media_url(u.get("avatar", "") or ""),
             "turn": int(m.get("turn", 0)),
             "paid": m["user_id"] in who_paid,
             "you": m["user_id"] == uid,

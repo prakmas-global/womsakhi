@@ -1,9 +1,10 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import {
   Caveat,
   Fraunces,
   Poppins,
   Inter,
+  Plus_Jakarta_Sans,
   Noto_Sans_Devanagari,
   Noto_Naskh_Arabic,
   Noto_Sans_Tamil,
@@ -29,6 +30,7 @@ import { serverBoot } from "@/lib/server-api";
 import ThemeStyle from "@/theme-engine/ThemeStyle";
 import { TEXT_SIZE_COOKIE, rootPx, type TextSize } from "@/components/ux/reach/text-size";
 import ThemeEngineBridge from "@/components/theme/ThemeEngineBridge";
+import ServiceWorkerRegistrar from "@/components/ux/mobile/ServiceWorkerRegistrar";
 import LayoutStyle from "@/layout-engine/LayoutStyle";
 import LayoutEngineBridge from "@/components/layout/LayoutEngineBridge";
 import ConnectionBanner from "@/components/layout/ConnectionBanner";
@@ -62,7 +64,16 @@ const fraunces = Fraunces({
   // whole variable range, which is what lets one file cover 400 body italics
   // and the 900 cover line without a second download.
   axes: ["SOFT", "WONK", "opsz"],
-  variable: "--font-display",
+  /*
+    `--font-fraunces`, not `--font-display`.
+
+    It was `--font-display`, and `design-system/tokens.css` also declares a
+    `--font-display` — so the two collided and the token file won. Fraunces was
+    downloaded on every request and never drawn anywhere. Naming the face after
+    itself and letting the token compose the STACK is the only arrangement
+    where that cannot happen again.
+  */
+  variable: "--font-fraunces",
   display: "swap",
 });
 
@@ -90,6 +101,23 @@ const caveat = Caveat({
 const inter = Inter({
   subsets: ["latin"],
   variable: "--font-inter",
+  display: "swap",
+});
+
+/**
+ * The reading face, and the reason it is not Inter any more.
+ *
+ * The marketing site is Fraunces over Plus Jakarta Sans. A woman who reads the
+ * site and then signs in should not meet a different typeface on the other
+ * side of the door — the brand is the pair, not the colours alone. Jakarta is
+ * also a slightly warmer, rounder humanist than Inter, which suits a berry and
+ * cream palette better than Inter's neutrality does.
+ *
+ * Variable, so the whole weight range is one file.
+ */
+const jakarta = Plus_Jakarta_Sans({
+  subsets: ["latin"],
+  variable: "--font-jakarta",
   display: "swap",
 });
 
@@ -144,6 +172,27 @@ const SCRIPT_FONTS = [
   notoGujarati, notoKannada, notoMalayalam, notoGurmukhi, notoOdia,
 ].map((f) => f.variable).join(" ");
 
+export const viewport: Viewport = {
+  /*
+    `viewport-fit: cover` is what lets the app reach under the notch and the
+    home indicator — and it is also what makes `env(safe-area-inset-*)` return
+    anything other than zero. Without this line every safe-area rule in
+    `tokens.css` silently evaluates to 0px and the bottom tab bar sits beneath
+    the iPhone's home indicator, where a third of every tap lands on the
+    system gesture instead of the button.
+  */
+  viewportFit: "cover",
+  width: "device-width",
+  initialScale: 1,
+  /* Deliberately NOT `maximumScale: 1` or `userScalable: false`. Locking zoom
+     is the most common accessibility failure on mobile web, and this app is
+     built for women who may well need to pinch a form field larger. */
+  themeColor: [
+    { media: "(prefers-color-scheme: light)", color: "#fcf8f7" },  /* Warm Cream */
+    { media: "(prefers-color-scheme: dark)", color: "#150c0f" },   /* Deep Plum, deepened */
+  ],
+};
+
 export const metadata: Metadata = {
   // "Wom" (women) + "Sakhi" (a woman's trusted friend) — the name is the promise.
   title: {
@@ -153,6 +202,20 @@ export const metadata: Metadata = {
   description:
     "WomSakhi — the admin platform behind womsakhi.com. Manage members, programs, appointments and content for the women's community.",
   applicationName: "WomSakhi",
+  /*
+    iOS ignores the web app manifest for most of this.
+
+    `capable` is what makes the home-screen icon launch WITHOUT Safari's
+    chrome — the entire difference between "a bookmark" and "an app". The
+    status bar stays `default` (dark text) rather than `black-translucent`,
+    because translucent draws the app under the clock with WHITE text, which
+    is invisible on this app's #f4f2fa canvas.
+  */
+  appleWebApp: {
+    capable: true,
+    title: "WomSakhi",
+    statusBarStyle: "default",
+  },
   metadataBase: new URL("https://www.womsakhi.com"),
   openGraph: {
     title: "WomSakhi — Empowering Women",
@@ -207,11 +270,17 @@ export default async function RootLayout({
       lang={lang}
       dir={dir}
       suppressHydrationWarning
-      className={`${poppins.variable} ${inter.variable} ${fraunces.variable} ${caveat.variable} ${SCRIPT_FONTS} h-full${isDark ? " dark" : ""}`}
+      className={`${poppins.variable} ${inter.variable} ${jakarta.variable} ${fraunces.variable} ${caveat.variable} ${SCRIPT_FONTS} h-full${isDark ? " dark" : ""}`}
       data-text-size={textSize}
       style={{ fontSize: `${rootSize}px`, ["--ux-fs-scale" as string]: String(rootSize / 16) }}
     >
       <body className="min-h-full font-sans antialiased text-ink">
+        {/* Next 16 emits only the modern `mobile-web-app-capable`. iOS before
+            16.4 honours only this apple- prefixed name, and without it those
+            phones open the home-screen icon in a Safari tab with chrome —
+            which is the one thing installing was meant to remove. */}
+        <meta name="apple-mobile-web-app-capable" content="yes" />
+        <ServiceWorkerRegistrar />
         {/* Rendered inside <body>, not in an explicit <head>.
             React 19 hoists <style> for us, and an explicit <head> in the root
             layout fights Next's own head management — the server ended up

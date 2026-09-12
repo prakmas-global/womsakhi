@@ -1,6 +1,7 @@
 from typing import Literal, Optional
 
 from pydantic import BaseModel, field_validator
+from app.core.media import MediaRef, MediaRefOptional
 
 ContentType = Literal["Page", "Blog Post", "Media", "Banner", "FAQ", "Program", "Testimonial"]
 ContentStatus = Literal["Published", "Draft", "Scheduled"]
@@ -38,7 +39,7 @@ class ContentCreate(BaseModel):
     author: str = "Neha Verma"
     slug: str = ""
     description: str = ""
-    cover: str = ""  # URL from POST /uploads
+    cover: MediaRef = ""  # URL from POST /uploads
 
     @field_validator("title")
     @classmethod
@@ -56,7 +57,7 @@ class ContentUpdate(BaseModel):
     author: Optional[str] = None
     slug: Optional[str] = None
     description: Optional[str] = None
-    cover: Optional[str] = None
+    cover: MediaRefOptional = None
 
     @field_validator("title")
     @classmethod

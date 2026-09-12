@@ -6,8 +6,10 @@ import { apiStepDone } from "@/lib/entitlements-api";
 import { useAction } from "@/lib/use-action";
 import * as Icons from "@/components/ux/icons";
 
-import { Btn, Card, Pill, Progress, SectionHead, SourceNote } from "@/components/ux/kit";
+import { Btn, Card, Progress, SectionHead, SourceNote } from "@/components/ux/kit";
 import { HomeShell } from "@/components/ux/home/HomeShell";
+import { ScreenHead } from "@/components/ux/learning/native";
+import { Tag } from "@/components/ux/learning/native";
 import { MORE_ART } from "@/components/ux/more/data";
 import { useDigitalStepList } from "@/components/ux/entitlements";
 import { useT } from "@/i18n";
@@ -90,10 +92,11 @@ export default function DigitalPage() {
         </div>
       }
     >
-      <h1 className="text-2xl font-bold" style={{ color: "var(--ux-ink)" }}>{tr("digital.phoneBasics")}</h1>
-      <p className="mb-[20px] mt-1.5 text-xsm" style={{ color: "var(--ux-muted)" }}>{tr("digital.sixStepsInOrderEachOne")}</p>
-
-      <SourceNote source={source} what="steps" />
+      <ScreenHead
+        title={tr("digital.phoneBasics")}
+        sub={tr("digital.sixStepsInOrderEachOne")}
+        note={<SourceNote source={source} what="steps" />}
+      />
 
       <Card>
         <ol className="relative ps-[28px]">
@@ -111,19 +114,19 @@ export default function DigitalPage() {
                     ? <Icons.Check className="h-[12px] w-[12px] text-white" strokeWidth={3.2} />
                     : <span className="text-2xs font-bold" style={{ color: isNext ? "var(--ux-on-brand)" : "var(--ux-faint)" }}>{i + 1}</span>}
                 </span>
-                <div className="flex items-start gap-3">
+                <div className="flex flex-col items-stretch gap-3 lg:flex-row lg:items-start">
                   <div className="min-w-0 flex-1">
                     <p className="flex flex-wrap items-center gap-2">
                       <span className="text-sm font-semibold"
                             style={{ color: isDone || isNext ? "var(--ux-ink)" : "var(--ux-ink-2)" }}>
                         {s.label}
                       </span>
-                      {isNext && <Pill tone="brand" size="sm">Next</Pill>}
+                      {isNext && <Tag tone="brand" size="sm">Next</Tag>}
                     </p>
-                    <p className="mt-1 text-xsm leading-relaxed" style={{ color: "var(--ux-muted)" }}>{s.note}</p>
-                    <p className="mt-1.5 text-2xs" style={{ color: "var(--ux-faint)" }}>{s.mins} min</p>
+                    <p className="mt-1 text-smd leading-relaxed lg:text-xsm" style={{ color: "var(--ux-muted)" }}>{s.note}</p>
+                    <p className="mt-1.5 text-[13px] lg:text-2xs" style={{ color: "var(--ux-faint)" }}>{s.mins} min</p>
                   </div>
-                  <Btn variant={isDone ? "outline" : isNext ? "primary" : "outline"} size="sm"
+                  <Btn className="ux-action-primary" variant={isDone ? "outline" : isNext ? "primary" : "outline"} size="sm"
                        icon={isDone ? "RotateCcw" : undefined}
                        iconEnd={isDone ? undefined : "ArrowRight"}
                        onClick={() => void mark.run(s.id, isDone ? "undone" : "done")}>

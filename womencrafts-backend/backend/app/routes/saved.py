@@ -21,10 +21,12 @@ from fastapi import APIRouter, Depends, HTTPException, Query, status
 
 from app.core.rbac import require_active_member
 from app.db.mongodb import get_database
+from app.models.community import PostModel
 from app.models.growth import EventModel, MentorModel, OpportunityModel
 from app.models.program import ProgramModel
 from app.models.saved import SavedModel
 from app.models.service import ServiceModel
+from app.models.shop import ListingModel
 from app.schemas.saved import SaveRequest, SavedResponse
 
 router = APIRouter(prefix="/saved", tags=["Member"])
@@ -38,6 +40,8 @@ _COLLECTIONS: dict[str, str] = {
     SavedModel.KIND_SERVICE: ServiceModel.collection_name,
     SavedModel.KIND_MENTOR: MentorModel.collection_name,
     SavedModel.KIND_EVENT: EventModel.collection_name,
+    SavedModel.KIND_LISTING: ListingModel.collection_name,
+    SavedModel.KIND_POST: PostModel.collection_name,
     # No schemes collection yet. A kind with no entry here is still saved and
     # still listed — it shows as "no longer listed" rather than crashing the
     # screen, which is what a half-built module should do.

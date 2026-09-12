@@ -4,10 +4,12 @@ import { useState } from "react";
 import * as Icons from "@/components/ux/icons";
 
 import {
-  Btn, Card, IconTile, Pill, Progress, SectionHead,
+  Btn, Card, IconTile, Progress, SectionHead,
   SourceNote
 } from "@/components/ux/kit";
 import { HomeShell } from "@/components/ux/home/HomeShell";
+import { ScreenHead } from "@/components/ux/learning/native";
+import { Tag } from "@/components/ux/learning/native";
 import { MORE_ART } from "@/components/ux/more/data";
 import { useAssessmentList } from "@/components/ux/entitlements";
 import { apiAssessment, apiSubmitAttempt, type Assessment } from "@/lib/entitlements-api";
@@ -250,13 +252,11 @@ export default function AssessPage() {
         </div>
       }
     >
-      <h1 className="text-2xl font-bold" style={{ color: "var(--ux-ink)" }}>{tr("assess.testYourSkills")}</h1>
-      <p className="mb-[20px] mt-1.5 text-xsm" style={{ color: "var(--ux-muted)" }}>
-        {done.length} of {ASSESSMENTS.length} taken · {badges} badge{badges === 1 ? "" : "s"} on your profile.
-        Only your best result ever counts.
-      </p>
-
-      <SourceNote source={source} what="tests" />
+      <ScreenHead
+        title={tr("assess.testYourSkills")}
+        sub={`${done.length} of ${ASSESSMENTS.length} taken · ${badges} badge${badges === 1 ? "" : "s"} on your profile. Only your best result ever counts.`}
+        note={<SourceNote source={source} what="tests" />}
+      />
 
       {/* A test that would not open says so here, where she pressed. */}
       {problem && (
@@ -276,8 +276,8 @@ export default function AssessPage() {
                   <h3 className="min-w-0 flex-1 text-base font-semibold" style={{ color: "var(--ux-ink)" }}>
                     {a.skill}
                   </h3>
-                  {a.badge && <Pill tone="green" size="sm">{tr("assess.onYourProfile")}</Pill>}
-                  {a.level && !a.badge && <Pill tone="neutral" size="sm">{a.level}</Pill>}
+                  {a.badge && <Tag tone="green" size="sm">{tr("assess.onYourProfile")}</Tag>}
+                  {a.level && !a.badge && <Tag tone="neutral" size="sm">{a.level}</Tag>}
                 </div>
 
                 {a.taken ? (
@@ -289,7 +289,7 @@ export default function AssessPage() {
                         {a.pct}%
                       </span>
                     </div>
-                    <p className="mt-1.5 text-xs" style={{ color: "var(--ux-muted)" }}>
+                    <p className="mt-1.5 text-[13px] lg:text-xs" style={{ color: "var(--ux-muted)" }}>
                       Taken {a.taken} · {a.level}
                     </p>
                   </>
@@ -297,21 +297,23 @@ export default function AssessPage() {
                   <p className="mt-1.5 text-xsm" style={{ color: "var(--ux-ink-2)" }}>{a.note}</p>
                 )}
 
-                <p className="mt-2 flex flex-wrap items-center gap-x-3 text-xs" style={{ color: "var(--ux-faint)" }}>
+                <p className="mt-2 flex flex-wrap items-center gap-x-3 text-[13px] lg:text-xs" style={{ color: "var(--ux-faint)" }}>
                   <span className="inline-flex items-center gap-1"><Icons.Clock className="h-3.5 w-3.5" /> {a.mins} min</span>
                   <span>{a.questions} questions</span>
                 </p>
               </div>
             </div>
 
-            <div className="mt-3.5 flex items-center justify-between gap-4 border-t pt-3.5"
+            {/* Stacked on a phone with the action full width at the foot of the
+                card, where a thumb reaches; the row it always was from `lg`. */}
+            <div className="mt-3.5 flex flex-col gap-3 border-t pt-3.5 lg:flex-row lg:items-center lg:justify-between lg:gap-4"
                  style={{ borderColor: "var(--ux-line)" }}>
               {/* Said before she starts, not buried in terms. */}
-              <span className="text-xs" style={{ color: "var(--ux-faint)" }}>
+              <span className="text-[13px] lg:text-xs" style={{ color: "var(--ux-faint)" }}>
                 {a.taken ? tr("assess.aSecondTryCanOnlyImprove")
               : tr("assess.youCanStopAndComeBack")}
               </span>
-              <Btn variant={a.taken ? "outline" : "primary"} size="sm"
+              <Btn className="ux-action-primary" variant={a.taken ? "outline" : "primary"} size="sm"
                    icon={opening === a.id ? "Loader" : undefined}
                    iconEnd={opening === a.id ? undefined : "ArrowRight"}
                    disabled={!!opening}

@@ -31,6 +31,7 @@ from app.core import docvault
 from app.core.permissions import require_permission
 from app.core.rbac import require_staff
 from app.core.serializers import to_object_id
+from app.core.media import media_url
 from app.db.mongodb import get_database
 from app.models.member import MemberModel
 from app.models.user import UserModel
@@ -552,7 +553,7 @@ async def support_threads(staff: dict = Depends(require_staff)):
                 user_id=uid,
                 full_name=user.get("full_name", ""),
                 email=user.get("email", ""),
-                avatar=user.get("avatar", ""),
+                avatar=media_url(user.get("avatar", "")),
                 unread=thread["unread"],
                 last_message=thread["messages"][-1]["body"][:120] if thread["messages"] else "",
                 last_at=thread["messages"][-1]["sent_label"] if thread["messages"] else "",
