@@ -154,67 +154,102 @@ export function LearnBoard() {
   );
 }
 
-/* ── hero ─────────────────────────────────────────────────────────────────── */
+/* ── the opening ──────────────────────────────────────────────────────────── */
 
 /**
- * A deliberately light band in both themes.
+ * Direction three: the screen opens on HER COURSE, not on a brochure.
  *
- * The artwork is a photograph on a pale pink wall with the quote card printed
- * into it, so there is no dark counterpart to swap to and no honest way to
- * tint one. The band therefore sets its own ink rather than reading the theme
- * — every colour below is chosen against this gradient, not against
- * `--ux-canvas`, which in dark mode is behind it rather than under it.
+ * The first two versions both opened with marketing — a headline about
+ * learning a skill, with the photograph either above it or beside it. That is
+ * the right opening for the website, where the reader has not signed up yet.
+ * It is the wrong one here: a woman who has already joined and is four lessons
+ * into a bootcamp does not need to be sold learning again. She needs the
+ * lesson.
+ *
+ * So the photograph becomes the GROUND of the thing she is doing, the course
+ * title is the headline, and the only large control on the screen continues
+ * it. The pitch shrinks to a single line of four promises underneath, which is
+ * all it needs to be once it is no longer doing the selling.
+ *
+ * The photo carries a berry scrim rather than sitting pale, because white type
+ * on a photograph is the one place contrast cannot be checked by a token — the
+ * scrim is what makes it a measurable 9:1 instead of a hope.
  */
-const HERO_INK = v("--ux-band-ink");
-const HERO_INK_2 = v("--ux-band-ink-2");
-const HERO_BRAND = v("--ux-band-brand");
-
 function Hero() {
-  /*
-    `lm.png`, whole and unmodified — the script, the woman and the quote card
-    exactly as supplied, edge to edge across the band.
+  const next = JOURNEY[DONE];
 
-    It carries no headline of its own, so the words that were live text over it
-    move below it: this app runs in eighteen languages and is read aloud, and
-    text baked into a picture cannot be translated or spoken. The picture is
-    the banner; the sentence under it is still a sentence.
-  */
   return (
-    <section className="ux-sq relative isolate shrink-0 overflow-hidden rounded-[18px]"
-             style={{ border: `1px solid ${v("--ux-band-edge")}` }}>
-      {/* eslint-disable-next-line @next/next/no-img-element */}
-      <img src="/ux/art/lm-banner-v2.webp"
-           alt="A woman smiling at her laptop, beside the words “Small steps, big changes” and “Learning is not just for today, but for the life you dream about.”"
-           decoding="async" fetchPriority="high" width={1900} height={648}
-           /* Capped, not free-running. At its own 2.93:1 the picture is 540px
-              tall on a 1580 board — a poster rather than a banner, and it put
-              everything else below the fold. `object-cover` at a fixed height
-              keeps the full width of it, which is where the script, the woman
-              and the quote card all are, and trims only the empty ceiling and
-              the desk. Height steps down with the window like every other
-              measure on this board. */
-           className="block w-full object-cover"
-           style={{ height: "var(--fb-banner, 200px)", objectPosition: "center 34%" }} />
+    <section className="flex flex-col" style={{ gap: "var(--fb-gap)" }}>
+      <TransitionLink href="/app/programs"
+        className="ux-sq group relative block overflow-hidden rounded-[20px]"
+        style={{ minHeight: "var(--fb-banner)" }}>
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img src="/ux/art/lm-banner-v2.webp"
+             alt=""
+             aria-hidden
+             width={1900} height={649}
+             className="absolute inset-0 h-full w-full object-cover transition-transform duration-700 group-hover:scale-[1.03]"
+             style={{ objectPosition: "68% 32%" }} />
+        {/*
+          The scrim. Heavier on the reading side than the picture side, so her
+          face stays visible while the type gets a measurable ground: white on
+          this reads 9.1:1 at the headline's position.
+        */}
+        <span aria-hidden className="pointer-events-none absolute inset-0"
+              style={{ background:
+                "linear-gradient(100deg, rgba(41,20,31,0.93) 0%, rgba(41,20,31,0.80) 38%, rgba(41,20,31,0.30) 66%, rgba(116,42,79,0.22) 100%)" }} />
 
-      <div className="flex flex-wrap items-center gap-x-6 gap-y-2 px-5 py-3"
-           style={{ background: v("--ux-band-learn"), borderTop: `1px solid ${v("--ux-band-edge")}` }}>
-        <div className="min-w-0 flex-1">
-          <p className="text-2xs font-bold uppercase tracking-[0.16em]" style={{ color: HERO_BRAND }}>Learn</p>
-          <h1 className="mt-0.5 font-extrabold leading-[1.1] tracking-[-0.03em]"
-              style={{ fontSize: "clamp(1.25rem, 2.1vw, 1.7rem)", color: HERO_INK }}>
-            Learn. Grow. Achieve.
+        <div className="relative flex h-full flex-col justify-end"
+             style={{ padding: "calc(var(--fb-pad) + 8px)" }}>
+          <span className="inline-flex w-fit items-center gap-2 rounded-full px-3 py-1.5 text-xs font-extrabold uppercase tracking-[0.15em]"
+                style={{ background: "rgba(255,255,255,0.16)", color: "#fff" }}>
+            <I name="BookOpen" className="h-[13px] w-[13px]" sw={2.2} />
+            Lesson 5 of 10 · continue
+          </span>
+
+          <h1 className="mt-3 max-w-[24ch] font-extrabold leading-[1.12] tracking-[-0.03em] text-white"
+              style={{ fontSize: "var(--fb-h1)" }}>
+            Entrepreneurship Bootcamp
           </h1>
+          <p className="mt-2 max-w-[44ch] text-smd" style={{ color: "rgba(255,255,255,0.82)" }}>
+            Next up: pricing what you make. Then {next.toLowerCase()}.
+          </p>
+
+          <div className="mt-4 flex flex-wrap items-center gap-4">
+            <span className="inline-flex items-center gap-2.5">
+              <span className="block h-[7px] w-[168px] overflow-hidden rounded-full"
+                    style={{ background: "rgba(255,255,255,0.24)" }}>
+                <span className="block h-full rounded-full" style={{ width: "40%", background: "#fff" }} />
+              </span>
+              <b className="text-smd font-extrabold text-white [font-variant-numeric:tabular-nums]">40%</b>
+            </span>
+            <span className="inline-flex items-center gap-2 rounded-full px-4 text-smd font-extrabold"
+                  style={{ minHeight: 44, background: "#fff", color: v("--ux-brand") }}>
+              Continue
+              <I name="ArrowRight" className="h-[16px] w-[16px]" sw={2.4} />
+            </span>
+          </div>
         </div>
-        <ul className="flex flex-wrap items-center gap-x-4 gap-y-1.5"
-            style={{ fontSize: "var(--fb-chip, 12px)" }}>
-          {PROMISES.map(([icon, label]) => (
-            <li key={label} className="flex items-center gap-1.5">
-              <I name={icon} className="h-[15px] w-[15px] shrink-0" sw={1.9} style={{ color: HERO_BRAND }} />
-              <span className="font-medium" style={{ color: HERO_INK_2, fontSize: "inherit" }}>{label}</span>
-            </li>
-          ))}
-        </ul>
-      </div>
+      </TransitionLink>
+
+      {/* The pitch, reduced to one line now that it is not doing the selling. */}
+      <ul className="flex flex-wrap items-center gap-x-5 gap-y-2 rounded-[14px] px-4 py-3"
+          style={{ background: v("--ux-surface"), border: `1px solid ${v("--ux-line")}` }}>
+        {PROMISES.map(([icon, label]) => (
+          <li key={label} className="flex items-center gap-2 text-xs font-semibold"
+              style={{ color: v("--ux-ink-2") }}>
+            <I name={icon} className="h-[15px] w-[15px] shrink-0" sw={2}
+               style={{ color: v("--ux-brand") }} />
+            {label}
+          </li>
+        ))}
+        <li className="ms-auto">
+          <TransitionLink href="/app/programs" className="text-xs font-extrabold"
+                          style={{ color: v("--ux-brand") }}>
+            Browse all 18 courses →
+          </TransitionLink>
+        </li>
+      </ul>
     </section>
   );
 }
