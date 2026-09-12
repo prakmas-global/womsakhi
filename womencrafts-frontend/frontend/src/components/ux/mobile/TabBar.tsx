@@ -92,7 +92,7 @@ const CSS = `
     border-radius: 0;
     /* Lifts the bar off the content rather than dropping a shadow onto the
        screen below it, which there isn't one of. */
-    box-shadow: 0 -10px 24px -20px rgba(12, 9, 38, 0.55);
+    box-shadow: 0 -10px 24px -20px rgba(58, 21, 36, 0.55);
   }
 
   .ux .ux-tab {

@@ -76,17 +76,17 @@
   --text-4xlm: 2.75rem;
 
   /* ---- Brand — magenta / cerise (primary actions, section titles) ---- */
-  --color-brand-50: #fdeef6;
-  --color-brand-100: #fbd7e8;
-  --color-brand-200: #f6afd0;
-  --color-brand-300: #f083b6;
-  --color-brand-400: #e85a9b;
-  --color-brand-500: #dd3585;
-  --color-brand-600: #d21f7c;
-  --color-brand-700: #b11667;
-  --color-brand-800: #8f1253;
-  --color-brand-900: #700e41;
-  --color-brand: #d21f7c;
+  --color-brand-50: #f8f4f6;
+  --color-brand-100: #eee5ea;
+  --color-brand-200: #dbc8d1;
+  --color-brand-300: #d4abb7;
+  --color-brand-400: #bc7e8f;
+  --color-brand-500: #a55168;
+  --color-brand-600: #742a4f;
+  --color-brand-700: #642544;
+  --color-brand-800: #54213b;
+  --color-brand-900: #461c31;
+  --color-brand: #742a4f;
 
   /* ---- Violet — royal purple (secondary actions, icon circles) ---- */
   --color-violet-50: #f3ecfa;
@@ -168,8 +168,8 @@
 
   /* Brand text on a brand tint — `text-brand-600` on `bg-brand-50` was
      4.22:1, just under. Pair these two, never brand-600 on brand-50. */
-  --color-brand-tint: #ffeef6;
-  --color-brand-ink: #a3125c;
+  --color-brand-tint: #f9f5f7;
+  --color-brand-ink: #692748;
 
   /* Keyboard focus outline. Only the no-theme fallback — the theme engine
      replaces it with that theme's brand ink, which is already solved for
@@ -226,10 +226,24 @@
     var(--font-bengali), var(--font-telugu), var(--font-gujarati),
     var(--font-kannada), var(--font-malayalam), var(--font-gurmukhi),
     var(--font-odia);
-  --font-sans: var(--font-inter), var(--font-scripts), ui-sans-serif, system-ui,
-    -apple-system, "Segoe UI", Roboto, sans-serif;
-  --font-display: var(--font-poppins), var(--font-inter), var(--font-scripts),
-    ui-sans-serif, system-ui, sans-serif;
+  /*
+    The brand pair, matching the marketing site: Fraunces over Plus Jakarta
+    Sans. `--font-display` used to resolve to Poppins here, which quietly beat
+    the Fraunces variable the root layout was already loading — so the serif
+    was downloaded on every request and never drawn. Poppins stays in the
+    fallback chain for the weights Fraunces has no glyphs for.
+
+    Fraunces first, the Noto faces after it — not before. Putting them first
+    was wrong and the result was visible: the Noto families carry Latin glyphs
+    too, so "Priya" rendered in Noto Sans Devanagari and the serif never
+    appeared. Font fallback is per GLYPH, not per string: Fraunces has no
+    Devanagari, so a Devanagari headline falls through to Noto on its own,
+    which is the behaviour the wrong order was trying to hand-build.
+  */
+  --font-sans: var(--font-jakarta), var(--font-inter), var(--font-scripts),
+    ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --font-display: var(--font-fraunces), var(--font-scripts), var(--font-poppins),
+    var(--font-jakarta), ui-serif, Georgia, serif;
 }
 
 /* ==================================================================
@@ -244,8 +258,8 @@
   --wc-sidebar-width: 248px;
 
   /* Page canvas. Kept a step deeper than --surface so panels lift off it. */
-  --background: #ece0ea;
-  --foreground: #2d1a63;
+  --background: #f6eeec;
+  --foreground: #29141f;
 
   /* Panel colour. Warm bone rather than pure white — softer on the eye.
      Every white surface in the app resolves to this one token. */
@@ -300,7 +314,7 @@
    Semantic tokens — DARK (indigo/violet family, matching the brand)
 ================================================================== */
 .dark {
-  --background: #16112a;
+  --background: #150c0f;
   --surface: #221b3c;
   --surface-hover: #2c2450;
   --surface-inset: #1b1533;
@@ -332,8 +346,8 @@
   /* Tinted surfaces (badges / icon squares) become dark tints. The -600 steps
      stay vivid because they back solid brand buttons; the text-only tones are
      brightened so chips stay readable on dark. */
-  --color-brand-50: #3a1226;
-  --color-brand-100: #491730;
+  --color-brand-50: #401b2d;
+  --color-brand-100: #4b1e35;
   --color-violet-50: #2a2148;
   --color-violet-100: #33285b;
   --color-emerald-50: #0f2b1f;

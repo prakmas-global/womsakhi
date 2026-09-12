@@ -4,6 +4,7 @@ import {
   Fraunces,
   Poppins,
   Inter,
+  Plus_Jakarta_Sans,
   Noto_Sans_Devanagari,
   Noto_Naskh_Arabic,
   Noto_Sans_Tamil,
@@ -63,7 +64,16 @@ const fraunces = Fraunces({
   // whole variable range, which is what lets one file cover 400 body italics
   // and the 900 cover line without a second download.
   axes: ["SOFT", "WONK", "opsz"],
-  variable: "--font-display",
+  /*
+    `--font-fraunces`, not `--font-display`.
+
+    It was `--font-display`, and `design-system/tokens.css` also declares a
+    `--font-display` — so the two collided and the token file won. Fraunces was
+    downloaded on every request and never drawn anywhere. Naming the face after
+    itself and letting the token compose the STACK is the only arrangement
+    where that cannot happen again.
+  */
+  variable: "--font-fraunces",
   display: "swap",
 });
 
@@ -91,6 +101,23 @@ const caveat = Caveat({
 const inter = Inter({
   subsets: ["latin"],
   variable: "--font-inter",
+  display: "swap",
+});
+
+/**
+ * The reading face, and the reason it is not Inter any more.
+ *
+ * The marketing site is Fraunces over Plus Jakarta Sans. A woman who reads the
+ * site and then signs in should not meet a different typeface on the other
+ * side of the door — the brand is the pair, not the colours alone. Jakarta is
+ * also a slightly warmer, rounder humanist than Inter, which suits a berry and
+ * cream palette better than Inter's neutrality does.
+ *
+ * Variable, so the whole weight range is one file.
+ */
+const jakarta = Plus_Jakarta_Sans({
+  subsets: ["latin"],
+  variable: "--font-jakarta",
   display: "swap",
 });
 
@@ -161,8 +188,8 @@ export const viewport: Viewport = {
      is the most common accessibility failure on mobile web, and this app is
      built for women who may well need to pinch a form field larger. */
   themeColor: [
-    { media: "(prefers-color-scheme: light)", color: "#f4f2fa" },
-    { media: "(prefers-color-scheme: dark)", color: "#14122a" },
+    { media: "(prefers-color-scheme: light)", color: "#fcf8f7" },  /* Warm Cream */
+    { media: "(prefers-color-scheme: dark)", color: "#150c0f" },   /* Deep Plum, deepened */
   ],
 };
 
@@ -243,7 +270,7 @@ export default async function RootLayout({
       lang={lang}
       dir={dir}
       suppressHydrationWarning
-      className={`${poppins.variable} ${inter.variable} ${fraunces.variable} ${caveat.variable} ${SCRIPT_FONTS} h-full${isDark ? " dark" : ""}`}
+      className={`${poppins.variable} ${inter.variable} ${jakarta.variable} ${fraunces.variable} ${caveat.variable} ${SCRIPT_FONTS} h-full${isDark ? " dark" : ""}`}
       data-text-size={textSize}
       style={{ fontSize: `${rootSize}px`, ["--ux-fs-scale" as string]: String(rootSize / 16) }}
     >

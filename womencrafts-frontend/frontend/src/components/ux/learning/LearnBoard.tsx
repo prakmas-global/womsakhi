@@ -54,32 +54,32 @@ type Place = {
 const PLACES: Place[] = [
   {
     id: "programs", row: "violet", icon: "BookOpen", title: "Courses", sub: "Started and suggested",
-    body: "Explore curated courses designed for real-life skills, from basics to advanced levels. Learn at your own pace with simple lessons, videos and practice activities.",
+    body: "Real skills, taught in plain language, at whatever pace your day allows.",
     cta: "Browse courses", tag: "Learn new skills", href: "/app/programs", art: "learn-books", artW: 296,
   },
   {
     id: "mentors", row: "pink", icon: "Users", title: "Mentors", sub: "Women who have done it",
-    body: "Connect with inspiring women mentors across different fields. Get guidance, ask questions and learn from their real experiences.",
+    body: "Women who have already done the thing you are trying to do.",
     cta: "Find mentors", tag: "Get guidance", href: "/app/mentors", art: "learn-mentors", artW: 332, pink: true,
   },
   {
     id: "certificates", row: "amber", icon: "Award", title: "Certificates", sub: "Proof you can show",
-    body: "Earn certificates by completing courses and skill tests. Showcase them on your profile and use them for jobs, freelance work or personal growth.",
+    body: "Proof you can put in front of an employer or a buyer.",
     cta: "View certificates", tag: "Show your progress", href: "/app/certificates", art: "learn-certificate", artW: 322,
   },
   {
     id: "library", row: "green", icon: "Handshake", title: "Teach and learn", sub: "Swap what you know",
-    body: "Share your knowledge, skills or experiences with other women. You can also learn directly from community members.",
+    body: "Teach what you know, learn what you do not, from women like you.",
     cta: "Start teaching", tag: "Teach & learn together", href: "/app/library", art: "learn-teaching", artW: 338,
   },
   {
     id: "assess", row: "blue", icon: "BadgeCheck", title: "Prove your skills", sub: "A short test, then a certificate",
-    body: "Take skill tests to validate what you know. Get certified and build trust for opportunities, work or collaborations.",
+    body: "A short test, and a certificate that says you passed it.",
     cta: "Take a test", tag: "Build your credibility", href: "/app/assess", art: "learn-skilltest", artW: 337,
   },
   {
     id: "digital", row: "orange", icon: "Smartphone", title: "Using a phone", sub: "From the very beginning",
-    body: "New to smartphones? Learn step-by-step with easy guides on using a phone, apps, internet, safety and more — in simple language.",
+    body: "New to a smartphone? Start at the very beginning, with no rush.",
     cta: "Start learning", tag: "Digital confidence", href: "/app/digital", art: "learn-phone", artW: 306,
   },
 ];
@@ -128,7 +128,7 @@ export function LearnBoard() {
       */}
       <Phone />
 
-      <div className="ux-fitboard hidden flex-col lg:flex xl:min-h-full" style={{ gap: "var(--fb-gap)" }}>
+      <div className="ux-fitboard hidden flex-col lg:flex" style={{ gap: "var(--fb-gap)" }}>
         <Hero />
 
         <div className="flex flex-col xl:flex-1 xl:flex-row xl:items-stretch"
@@ -194,7 +194,7 @@ function Hero() {
               the desk. Height steps down with the window like every other
               measure on this board. */
            className="block w-full object-cover"
-           style={{ height: "var(--fb-banner, 268px)", objectPosition: "center 42%" }} />
+           style={{ height: "var(--fb-banner, 200px)", objectPosition: "center 34%" }} />
 
       <div className="flex flex-wrap items-center gap-x-6 gap-y-2 px-5 py-3"
            style={{ background: v("--ux-band-learn"), borderTop: `1px solid ${v("--ux-band-edge")}` }}>
@@ -225,88 +225,63 @@ function PlaceCard({ p }: { p: Place }) {
   const tint = p.pink ? "--ux-tint-pink" : "--ux-brand-tint-2";
   const ink = p.pink ? "--ux-pink-ink" : "--ux-brand";
 
+  /*
+    Six cards, rebuilt — and the illustration is gone.
+
+    Each card used to carry a clip-art .webp bleeding off its bottom-right
+    corner, under a three-sentence description clamped to two lines. Three
+    things went wrong at once: the picture crowded the button it sat beside,
+    the sentence stopped mid-word ("from basics to…"), and the card grew tall
+    enough that only a row and a half fitted on screen. Making the card taller
+    to fit the art made the board worse, and clamping the text to fit the card
+    made the writing worse.
+
+    So the art goes and the copy gets shorter. What is left is what a woman
+    actually needs to choose between six doors: an icon she can recognise
+    without reading, a name, and one sentence. The board is dense enough to see
+    whole now, which is the only reason a grid of six beats a list of six.
+
+    The whole card is one link. The button is a second affordance for the same
+    destination, kept because "Browse courses" tells her what happens and
+    "Courses" only tells her where she is.
+  */
   return (
-    <Card pad={0} className="ux-onscroll flex h-full min-h-0 flex-col overflow-hidden"
-          /* A container, so the tag below can ask how much room THIS card has
-             rather than how wide the window is — the answer differs by 34px
-             between the board's own width and a 1440 laptop, and that is the
-             whole difference between the pair fitting and not. */
-          style={{ containerType: "inline-size" }}>
-      <TransitionLink href={p.href}
-                      className="ux-sq group flex shrink-0 items-start gap-3 rounded-t-[16px]"
-                      style={{ padding: "var(--fb-pad)", paddingBottom: "calc(var(--fb-pad) - 5px)" }}>
-        <IconTile icon={p.icon} tint={tint} ink={ink} size={44} radius={13} />
-        <span className="min-w-0 flex-1">
-          <span className="flex items-center gap-2">
-            <b className="min-w-0 flex-1 truncate text-[17px] font-bold leading-tight"
-               style={{ color: v("--ux-ink") }}>{p.title}</b>
-            <I name="ChevronRight" className="h-[17px] w-[17px] shrink-0 transition-transform group-hover:translate-x-0.5"
-               sw={2} style={{ color: v("--ux-muted") }} />
+    <Card pad={0} className="ux-onscroll ux-lift group flex h-full min-h-0 flex-col overflow-hidden">
+      <TransitionLink href={p.href} className="ux-sq flex min-h-0 flex-1 flex-col"
+                      style={{ padding: "var(--fb-pad)" }}>
+        <span className="flex items-start gap-3">
+          <IconTile icon={p.icon} tint={tint} ink={ink} size={40} radius={12} />
+          <span className="min-w-0 flex-1">
+            <span className="flex items-center gap-2">
+              <b className="min-w-0 flex-1 text-[var(--fb-title,17px)] font-bold leading-tight"
+                 style={{ color: v("--ux-ink") }}>{p.title}</b>
+              <I name="ArrowUpRight"
+                 className="h-[16px] w-[16px] shrink-0 transition-transform group-hover:-translate-y-0.5 group-hover:translate-x-0.5"
+                 sw={2.2} style={{ color: v(ink) }} />
+            </span>
+            <span className="mt-0.5 block text-xs" style={{ color: v("--ux-muted") }}>{p.sub}</span>
           </span>
-          <span className="mt-0.5 block text-xs" style={{ color: v("--ux-muted") }}>{p.sub}</span>
+        </span>
+
+        {/* No clamp. The line is one sentence and it fits — that is the fix. */}
+        <span className="mt-3 block text-[var(--fb-body,13.5px)]"
+              style={{ color: v("--ux-ink-2"), lineHeight: "var(--fb-lines, 1.55)" }}>
+          {p.body}
         </span>
       </TransitionLink>
 
-      <div className="h-px shrink-0"
-           style={{ background: v("--ux-line"), marginInline: "var(--fb-pad)" }} />
-
-      {/*
-        The clamp is inline, and it has to be.
-
-        As a class in `tokens.css` it lost: something later in the cascade put
-        `display: flow-root` back on the paragraph, so `-webkit-box` never
-        applied, `-webkit-line-clamp` had nothing to act on, and a six-line
-        description simply made the card six lines tall — which is what was
-        still pushing the board past the window after the columns were fixed.
-
-        `shrink-0` so the clamp is the only thing that ever shortens this.
-        Left flexible, the card's own height squeezed it instead and the text
-        stopped mid-sentence with no ellipsis — "from basics to" and then
-        nothing, which reads as a bug rather than a summary.
-      */}
-      <p className="shrink-0 text-smd"
-         style={{ color: v("--ux-ink-2"),
-                  paddingInline: "var(--fb-pad)",
-                  paddingTop: "calc(var(--fb-pad) - 4px)",
-                  lineHeight: "var(--fb-lines, 1.5)",
-                  display: "-webkit-box",
-                  WebkitBoxOrient: "vertical",
-                  WebkitLineClamp: "var(--fb-clamp, 4)",
-                  overflow: "hidden" }}>
-        {p.body}
-      </p>
-
-      {/*
-        The floor of the card: the button on the left, the picture on the
-        right, sharing one baseline.
-
-        They used to overlap — the picture was 128px wide and absolutely
-        placed over the button's row, so on the narrower cards the two sat on
-        top of each other and the row read as broken. They are laid out side
-        by side now, so neither can ever cover the other, and the picture
-        takes only the space the button leaves.
-
-        It still bleeds off the right edge. Each file carries a pale ground and
-        its own rounded corners baked into the pixels; pushed past the edge,
-        the card's `overflow-hidden` cuts those corners away and what is left
-        reads as part of the card rather than a sticker on it.
-      */}
-      <div className="mt-auto flex shrink-0 items-end justify-between gap-2"
-           style={{ paddingInline: "var(--fb-pad)", paddingBottom: "var(--fb-pad)",
-                    paddingTop: "calc(var(--fb-pad) - 6px)" }}>
+      <div className="mt-auto flex shrink-0 items-center justify-between gap-2"
+           style={{ paddingInline: "var(--fb-pad)", paddingBottom: "var(--fb-pad)" }}>
         <Btn href={p.href} variant="soft" size="sm" iconEnd="ArrowRight"
              className="shrink-0 whitespace-nowrap">{p.cta}</Btn>
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img src={`/ux/art/${p.art}.webp`} alt="" aria-hidden loading="lazy" decoding="async"
-             width={p.artW} height={202}
-             className="pointer-events-none -mb-[var(--fb-pad)] -me-[calc(var(--fb-pad)+6px)] h-[var(--fb-art)] w-auto shrink object-contain object-right-bottom"
-             style={{ maskImage: "linear-gradient(to right, transparent, #000 26%), linear-gradient(to bottom, transparent, #000 22%)",
-                      WebkitMaskImage: "linear-gradient(to right, transparent, #000 26%), linear-gradient(to bottom, transparent, #000 22%)",
-                      maskComposite: "intersect", WebkitMaskComposite: "source-in" }} />
+        <span className="ux-tag-optional truncate text-xs" style={{ color: v("--ux-faint") }}>
+          {p.tag}
+        </span>
       </div>
     </Card>
   );
 }
+
 
 /* ── her progress through the six ─────────────────────────────────────────── */
 

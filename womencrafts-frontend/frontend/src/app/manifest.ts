@@ -52,8 +52,8 @@ export default function manifest(): MetadataRoute.Manifest {
     display_override: ["standalone", "minimal-ui"],
     orientation: "portrait",
 
-    background_color: "#f4f2fa", // --ux-canvas, light
-    theme_color: "#7648b3", // --ux-brand-600
+    background_color: "#fcf8f7", // --ux-canvas, light — Warm Cream
+    theme_color: "#742a4f", // --ux-brand — WomSakhi Berry
 
     lang: "en-IN",
     dir: "ltr",
