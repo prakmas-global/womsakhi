@@ -5,8 +5,8 @@ import { useRouter } from "next/navigation";
 
 import { HomeShell } from "@/components/ux/home/HomeShell";
 import * as Icons from "@/components/ux/icons";
-import { Btn, Card, EmptyState, I, v } from "@/components/ux/kit";
-import { readJourneyState } from "@/services/me.repository";
+import { Btn, Card, EmptyState, I, Skeleton, v } from "@/components/ux/kit";
+import { useMeFacts } from "@/services/me.repository";
 import { nextStep } from "@/services/journey";
 import {
   LIFE_STAGES, readLifeStage, stageBy, weightFor, writeLifeStage, type LifeStageId,
@@ -54,8 +54,18 @@ export default function DiscoverPage() {
   const [lens, setLens] = useState<Lens>("all");
   const [saved, setSaved] = useState<string[]>([]);
 
-  const state = useMemo(() => readJourneyState(), []);
-  const step = useMemo(() => nextStep(state), [state]);
+  /**
+   * The one thing that would move her forward.
+   *
+   * `null` until the server has answered, and `null` again if it could not.
+   * The step used to be computed from a fixture — five invented listings, a
+   * fabricated earnings total — so this card confidently told every woman the
+   * same thing about her own situation. A missing card is a smaller failure
+   * than a wrong instruction, so nothing is drawn here unless it came from her
+   * own record.
+   */
+  const { data: facts, source } = useMeFacts();
+  const step = useMemo(() => (facts ? nextStep(facts) : null), [facts]);
 
   /**
    * Her life stage, read on the client because it lives in a cookie she can
@@ -193,7 +203,19 @@ export default function DiscoverPage() {
         </div>
 
         {/* ── The one thing that would move her forward ─────────────────── */}
-        {lens === "all" && (
+        {lens === "all" && !step && source === "loading" && (
+          <div className="rounded-[18px] p-6 sm:p-7"
+               style={{ background: "linear-gradient(115deg, var(--ux-fill), var(--ux-fill-2))" }}>
+            <div className="max-w-[52ch] space-y-3">
+              <Skeleton w={110} h={11} />
+              <Skeleton w="70%" h={26} r={9} />
+              <Skeleton w="90%" h={13} />
+              <Skeleton w={170} h={40} r={12} />
+            </div>
+          </div>
+        )}
+
+        {lens === "all" && step && (
           <div className="relative overflow-hidden rounded-[18px] p-6 sm:p-7"
                style={{ background: "linear-gradient(115deg, var(--ux-fill), var(--ux-fill-2))" }}>
             {/* Decorative, and deliberately so: the wireframe puts a picture of
