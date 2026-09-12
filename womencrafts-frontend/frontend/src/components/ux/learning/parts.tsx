@@ -1,9 +1,11 @@
 "use client";
 
+import { Tag } from "@/components/ux/learning/native";
+
 import Link from "next/link";
 import * as Icons from "@/components/ux/icons";
 
-import { AvatarStack, Btn, Card, IconTile, Pill, Progress, Rating, SectionHead, v } from "../kit";
+import { AvatarStack, Btn, Card, IconTile, Progress, Rating, SectionHead, v } from "../kit";
 import { ACHIEVEMENTS, type Course, LEARNER, SKILLS, STREAK } from "./data";
 
 const TAG_TONE = { Bestseller: "pink", New: "brand", Popular: "orange", Trending: "green" } as const;
@@ -14,28 +16,52 @@ export function CourseCard({ c, w }: { c: Course; w?: number }) {
     /* `/ux/learning/course/${c.id}` until the /ux preview tree was deleted on
        2026-08-26. `c.id` is the catalogue programme id — `toPick` in growth.ts
        carries it straight through — so this is the screen it always meant. */
+    /*
+      A row on a phone, the poster card it always was from `lg` up.
+
+      In a 3-column grid the poster is right; `.ux-deck` collapses that grid to
+      one column below 1024, and eight full-width posters with 110px covers is
+      1,900px of scrolling to see eight titles. The same eight as rows is 800px,
+      and every title is beside its own picture rather than under it. Only the
+      classes change — same markup, same link, same information.
+    */
     <Link href={`/app/programs/${c.id}`}
-      className="ux-card ux-i ux-sq block shrink-0 overflow-hidden"
+      /* `padding: 0` inline is what lets the picture reach the card's edge on
+         desktop, and an inline rule cannot be undone by a `lg:` class — so the
+         phone row's inset lives on the two children instead. */
+      className="ux-card ux-i ux-sq flex shrink-0 items-center gap-3 overflow-hidden lg:block"
       style={{ width: w, padding: 0 }}>
-      <div className="relative overflow-hidden">
+      <div className="relative m-2.5 me-0 shrink-0 overflow-hidden rounded-[10px] lg:m-0 lg:rounded-none">
         {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img loading="lazy" decoding="async" src={c.thumb} alt="" className="ux-art h-[110px] w-full object-cover" />
-        {c.tag && <span className="absolute start-2.5 top-2.5"><Pill tone={TAG_TONE[c.tag]} size="sm">{c.tag}</Pill></span>}
+        <img loading="lazy" decoding="async" src={c.thumb} alt=""
+             className="ux-art h-[84px] w-[84px] object-cover lg:h-[110px] lg:w-full" />
+        {/* The corner badge needs a corner. On the row it moves inline, under
+            the title, where it is legible against the card rather than against
+            whatever the photograph happens to be. */}
+        {c.tag && (
+          <span className="absolute start-2.5 top-2.5 hidden lg:block">
+            <Tag tone={TAG_TONE[c.tag]} size="sm">{c.tag}</Tag>
+          </span>
+        )}
       </div>
-      <div className="p-3">
-        <h2 className="line-clamp-2 text-xsm font-semibold leading-snug" style={{ color: "var(--ux-ink)" }}>{c.title}</h2>
-        <p className="mt-1 text-xs" style={{ color: "var(--ux-muted)" }}>
-          {c.lessons} Lessons <span aria-hidden>•</span> {c.level}
+      <div className="min-w-0 flex-1 py-2.5 pe-3 lg:p-3">
+        <h2 className="line-clamp-2 text-smd font-semibold leading-snug lg:text-xsm"
+            style={{ color: "var(--ux-ink)" }}>{c.title}</h2>
+        <p className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-[13px] lg:text-xs"
+           style={{ color: "var(--ux-muted)" }}>
+          <span>{c.lessons} Lessons <span aria-hidden>•</span> {c.level}</span>
+          {c.tag && <span className="lg:hidden"><Tag tone={TAG_TONE[c.tag]} size="sm">{c.tag}</Tag></span>}
         </p>
         {typeof c.pct === "number" ? (
           <div className="mt-2.5">
             <Progress pct={c.pct} />
-            <p className="mt-1.5 text-end text-2xs font-medium" style={{ color: "var(--ux-brand)" }}>{c.pct}% Complete</p>
+            <p className="mt-1.5 text-end text-[13px] font-medium lg:text-2xs"
+               style={{ color: "var(--ux-brand)" }}>{c.pct}% Complete</p>
           </div>
         ) : (
           <div className="mt-2 flex items-center justify-between">
             <Rating value={c.rating} count={c.count} />
-            <Icons.Bookmark className="ux-ico h-[15px] w-[15px]" style={{ color: "var(--ux-faint)" }} strokeWidth={1.9} />
+            <Icons.Bookmark className="ux-ico hidden h-[15px] w-[15px] lg:block" style={{ color: "var(--ux-faint)" }} strokeWidth={1.9} />
           </div>
         )}
       </div>
@@ -58,32 +84,42 @@ export function CourseCard({ c, w }: { c: Course; w?: number }) {
 export function ResumeCard({ c }: { c: Course }) {
   const href = `/app/programs/${c.id}`;
   return (
-    <Link href={href} className="ux-card ux-hov flex gap-4 overflow-hidden" style={{ padding: 0 }}>
-      <div className="relative h-[152px] w-[232px] shrink-0">
+    /*
+      Stacked on a phone, side by side from `lg`.
+
+      232px of thumbnail is 60% of a 390px screen, and what was left could not
+      hold the title: the before shot showed "Entrepreneur / Bootcamp" wrapping
+      and clipping at the card edge, with "Resume / Learning" broken across two
+      lines inside a button pushed against the right margin. The picture takes
+      the full width instead, and the action becomes a full-width one under the
+      words — `.ux-action-primary` is the phone-only rule that does it.
+    */
+    <Link href={href} className="ux-card ux-hov flex flex-col overflow-hidden lg:flex-row lg:gap-4" style={{ padding: 0 }}>
+      <div className="relative h-[168px] w-full shrink-0 lg:h-[152px] lg:w-[232px]">
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img loading="lazy" decoding="async" src={c.thumb} alt="" className="h-full w-full object-cover" />
         <span className="absolute inset-0 grid place-items-center">
-          <span className="grid h-[52px] w-[52px] place-items-center rounded-full backdrop-blur"
+          <span className="grid h-[56px] w-[56px] place-items-center rounded-full backdrop-blur lg:h-[52px] lg:w-[52px]"
                 style={{ background: "rgba(255,255,255,.82)" }}>
             <Icons.Play className="h-5 w-5 translate-x-[1px]" fill="var(--ux-brand)" style={{ color: "var(--ux-brand)" }} />
           </span>
         </span>
       </div>
-      <div className="flex min-w-0 flex-1 flex-col justify-center pe-5">
-        <h2 className="text-base font-semibold" style={{ color: "var(--ux-ink)" }}>{c.title}</h2>
-        <p className="mt-1 text-xs" style={{ color: "var(--ux-muted)" }}>
+      <div className="flex min-w-0 flex-1 flex-col justify-center p-4 lg:p-0 lg:pe-5">
+        <h2 className="text-[17px] font-semibold leading-tight lg:text-base" style={{ color: "var(--ux-ink)" }}>{c.title}</h2>
+        <p className="mt-1 text-[14px] lg:text-xs" style={{ color: "var(--ux-muted)" }}>
           Course <span aria-hidden>•</span> {c.lessons} Lessons
         </p>
         <div className="mt-3.5 flex items-center gap-3">
           <Progress pct={c.pct ?? 0} />
-          <span className="shrink-0 text-xs font-medium" style={{ color: "var(--ux-brand)" }}>{c.pct}% Complete</span>
+          <span className="shrink-0 text-[13px] font-medium lg:text-xs" style={{ color: "var(--ux-brand)" }}>{c.pct}% Complete</span>
         </div>
         <div className="mt-4">
           {/* A span, not a nested link: the card around it is already the
               anchor, and an <a> inside an <a> is invalid and unpredictable to
               a keyboard and a screen reader. It still looks and reads as the
               button it always was. */}
-          <span className="ux-press inline-flex items-center gap-2 rounded-[12px] px-4 py-2.5 text-xsm font-semibold"
+          <span className="ux-press ux-action-primary inline-flex items-center justify-center gap-2 rounded-[12px] px-4 py-2.5 text-xsm font-semibold"
                 style={{ background: "linear-gradient(96deg, var(--ux-fill), var(--ux-fill-2))", color: "var(--ux-on-brand)" }}>
             <Icons.Play className="h-4 w-4" fill="currentColor" aria-hidden />
             {(c.pct ?? 0) > 0 ? "Resume Learning" : "Start learning"}

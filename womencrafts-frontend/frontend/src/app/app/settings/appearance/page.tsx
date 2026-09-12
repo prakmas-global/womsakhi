@@ -79,7 +79,7 @@ export default function AppearanceSettings() {
                     <span className="block truncate text-xsm font-semibold" style={{ color: "var(--ux-ink)" }}>
                       {o.label}
                     </span>
-                    <span className="mt-0.5 block truncate text-2xs" style={{ color: "var(--ux-muted)" }}>
+                    <span className="mt-0.5 block truncate text-[12px] lg:text-2xs" style={{ color: "var(--ux-muted)" }}>
                       {o.note}
                     </span>
                   </span>

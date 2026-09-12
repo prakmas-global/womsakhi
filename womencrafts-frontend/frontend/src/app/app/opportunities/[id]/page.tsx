@@ -3,6 +3,7 @@
 import { use, useState } from "react";
 
 import { HomeShell } from "@/components/ux/home/HomeShell";
+import { Tag } from "@/components/ux/work/native";
 import * as Icons from "@/components/ux/icons";
 import { apiApply, apiToggleSaveOpportunity } from "@/lib/growth-api";
 import { useAction } from "@/lib/use-action";
@@ -11,7 +12,7 @@ import { useJobs } from "@/components/ux/growth";
 import { matchFor } from "@/services/job-match";
 import { WORK_ART, payLabel } from "@/components/ux/work/data";
 import {
-  Back, Btn, Card, EmptyState, Pill, RailSkeleton, ScreenSkeleton, SourceNote, v,
+  Back, Btn, Card, EmptyState, RailSkeleton, ScreenSkeleton, SourceNote, v,
 } from "@/components/ux/kit";
 import { useT } from "@/i18n";
 
@@ -147,10 +148,10 @@ export default function OpportunityDetail({ params }: { params: Promise<{ id: st
                     {saved ? "Saved" : "Save for later"}
                   </Btn>
                 </div>
-                <p className="mt-3 flex items-center justify-center gap-1.5 text-2xs"
+                <p className="mt-3 flex items-center justify-center gap-1.5 text-[13px] lg:text-2xs"
                    style={{ color: v("--ux-muted") }}>
                   <Icons.Clock className="h-[12px] w-[12px]" />{tr("jobdetail.applyingTakesAboutAMinute")}</p>
-                <p className="mt-1.5 flex items-center justify-center gap-1.5 text-2xs"
+                <p className="mt-1.5 flex items-center justify-center gap-1.5 text-[13px] lg:text-2xs"
                    style={{ color: v("--ux-muted") }}>
                   <Icons.ShieldCheck className="h-[12px] w-[12px]" />{tr("jobdetail.theySeeYourProfileNeverYour")}</p>
               </>
@@ -221,12 +222,12 @@ export default function OpportunityDetail({ params }: { params: Promise<{ id: st
           </span>
           <div className="min-w-0 flex-1">
             <div className="flex flex-wrap items-center gap-2.5">
-              <h1 className="text-2xl font-extrabold leading-tight tracking-[-0.02em]"
+              <h1 className="ux-screen-title text-2xl font-extrabold leading-tight tracking-[-0.02em]"
                   style={{ color: v("--ux-ink") }}>
                 {job.title}
               </h1>
               {fit.pct !== null && fit.pct > 0 && (
-                <Pill tone="green" size="sm">{fit.pct}% match</Pill>
+                <Tag tone="green" size="sm">{fit.pct}% match</Tag>
               )}
             </div>
             <p className="mt-1.5 flex flex-wrap items-center gap-x-2 gap-y-1 text-xsm"
@@ -252,7 +253,7 @@ export default function OpportunityDetail({ params }: { params: Promise<{ id: st
                 <Icons.Clock className="h-[14px] w-[14px]" style={{ color: v("--ux-muted") }} />Posted {job.posted}
               </span>
             </p>
-            {job.womenLed && <div className="mt-3"><Pill tone="pink" size="sm">Women-led</Pill></div>}
+            {job.womenLed && <div className="mt-3"><Tag tone="pink" size="sm">Women-led</Tag></div>}
           </div>
         </div>
         <SourceNote source={source} what={tr("jobdetail.thisOpening")} />
@@ -325,7 +326,7 @@ export default function OpportunityDetail({ params }: { params: Promise<{ id: st
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img loading="lazy" decoding="async" src={WORK_ART.interview} alt="" aria-hidden
                className="h-[86px] w-[86px] shrink-0 object-contain" />
-          <div className="min-w-[240px] flex-1">
+          <div className="min-w-0 flex-1 lg:min-w-[240px]">
             <p className="text-base font-extrabold" style={{ color: v("--ux-brand") }}>{tr("jobdetail.youAreMoreCapableThanYou")}</p>
             <p className="mt-1 text-xsm leading-relaxed" style={{ color: v("--ux-muted") }}>{tr("jobdetail.mostWomenWhoAppliedHereHad")}</p>
           </div>

@@ -1,6 +1,7 @@
 from typing import Optional
 
 from pydantic import BaseModel, field_validator
+from app.core.media import MediaRef, MediaRefOptional
 
 
 # --- platform settings -------------------------------------------------------
@@ -79,7 +80,7 @@ class StaffProfile(BaseModel):
 class StaffProfileUpdate(BaseModel):
     full_name: Optional[str] = None
     phone: Optional[str] = None
-    avatar: Optional[str] = None
+    avatar: MediaRefOptional = None
 
     @field_validator("full_name")
     @classmethod

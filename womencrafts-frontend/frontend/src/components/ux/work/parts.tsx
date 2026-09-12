@@ -1,10 +1,12 @@
 "use client";
 
+import { Tag } from "@/components/ux/work/native";
+
 import Link from "next/link";
 import * as Icons from "@/components/ux/icons";
 import { matchFor, matchTone } from "@/services/job-match";
 
-import { Btn, I, IconTile, Pill, Progress, SectionHead, Card } from "../kit";
+import { Btn, I, IconTile, Progress, SectionHead, Card } from "../kit";
 import { usePointer } from "../kit/motion";
 import { payLabel, type Job } from "./data";
 
@@ -86,8 +88,8 @@ export function JobRow({
           <p className="mt-2 text-xsm font-semibold" style={{ color: "var(--ux-ink)" }}>{payLabel(job)}</p>
 
           <div className="mt-2.5 flex flex-wrap items-center gap-1.5">
-            <Pill tone="brand" size="sm">{job.kind}</Pill>
-            <Pill tone="neutral" size="sm">{job.mode}</Pill>
+            <Tag tone="brand" size="sm">{job.kind}</Tag>
+            <Tag tone="neutral" size="sm">{job.mode}</Tag>
             {job.skills.map((s) => (
               <span key={s} className="ux-sq rounded-[8px] border px-2 py-[3px] text-2xs"
                     style={{ borderColor: "var(--ux-line-strong)", color: "var(--ux-muted)" }}>{s}</span>

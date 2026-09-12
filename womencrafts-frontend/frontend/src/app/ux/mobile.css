@@ -1,0 +1,1064 @@
+/* ═══════════════════════════════════════════════════════════════════════════
+   Making this feel like an app rather than a website on a phone.
+
+   Loaded AFTER `tokens.css`, deliberately. Both files are unlayered, so on
+   equal specificity the later one wins — that is the mechanism these overrides
+   rely on, and it is also the trap that has bitten this codebase three times:
+   an unlayered rule beats a Tailwind utility no matter how specific the class,
+   because Tailwind's utilities live in `@layer utilities` and layered CSS
+   always loses to unlayered CSS. Anything here that must be beatable by a
+   utility is therefore scoped as tightly as possible.
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+.ux {
+  /*
+    The safe areas, named once.
+
+    These read 0px unless `viewport-fit: cover` is set — which it now is, in
+    `layout.tsx`'s viewport export. Before that line existed every rule below
+    quietly evaluated to zero, the bottom bar sat underneath the iPhone's home
+    indicator, and roughly a third of every tap on it was swallowed by the
+    system's swipe-up gesture instead of hitting the button.
+  */
+  --sa-top: env(safe-area-inset-top, 0px);
+  --sa-bottom: env(safe-area-inset-bottom, 0px);
+  --sa-left: env(safe-area-inset-left, 0px);
+  --sa-right: env(safe-area-inset-right, 0px);
+
+  /* How tall the bottom tab bar is, INCLUDING the home indicator it sits
+     above. Every scrollable region ends this far up so the last row of a list
+     is never parked under the bar. */
+  --tabbar-h: calc(58px + var(--sa-bottom));
+}
+
+/* ── The viewport is not 100vh on a phone ────────────────────────────────── */
+
+/*
+  `100vh` on mobile Safari is the height with the URL bar HIDDEN, so a
+  `100vh` element is taller than what you can actually see until you scroll,
+  and the page jumps by ~60px the moment the bar collapses. `100dvh` is the
+  live value. The fallback line is not decoration — `dvh` is unsupported on
+  older Android WebViews, and they get the old behaviour rather than nothing.
+*/
+.ux-vh { height: 100vh; height: 100dvh; }
+.ux-min-vh { min-height: 100vh; min-height: 100dvh; }
+
+@media (max-width: 1023px) {
+  /* The member shell fills the live viewport and never the static one. */
+  .ux .ux-app-frame { height: 100dvh; min-height: 100dvh; }
+}
+
+/* ── Touch behaviour ─────────────────────────────────────────────────────── */
+
+@media (pointer: coarse) {
+  .ux {
+    /* The grey flash Android draws over anything tappable. It fires ~300ms
+       after the touch and always looks like a rendering fault; the `:active`
+       states below replace it with something immediate and deliberate. */
+    -webkit-tap-highlight-color: transparent;
+    /* Stops a long-press on a button offering "Copy"/"Share" as though the
+       chrome were an article. Inputs and real prose opt back in below. */
+    -webkit-touch-callout: none;
+  }
+
+  .ux input, .ux textarea, .ux [contenteditable], .ux p, .ux h1, .ux h2, .ux h3 {
+    -webkit-touch-callout: default;
+    -webkit-user-select: text;
+    user-select: text;
+  }
+
+  /*
+    Press feedback, which is most of what makes a control feel native.
+
+    A native button acknowledges the finger before anything navigates. 0.97 is
+    deliberately small — enough to feel, not enough to look like a toy — and
+    the transition is 90ms because anything slower reads as lag on a touch.
+  */
+  .ux button:not(:disabled):active,
+  .ux [role="button"]:not([aria-disabled="true"]):active,
+  .ux a:active {
+    transform: scale(0.97);
+    transition: transform 90ms cubic-bezier(0.2, 0, 0, 1);
+  }
+}
+
+/* ── Scrolling ───────────────────────────────────────────────────────────── */
+
+.ux #ux-scroll,
+.ux .ux-scroll-y,
+.ux .ux-sheet-body {
+  /* Momentum, and — more importantly — `contain`: without it, scrolling to
+     the end of a sheet keeps going and drags the PAGE behind it, which is the
+     single clearest tell that something is a web page and not an app. */
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior: contain;
+}
+
+@media (max-width: 1023px) {
+  /* Nothing bounces the whole document. On iOS the rubber-band on <body> also
+     reveals the browser's own background behind the app, which breaks the
+     illusion completely. */
+  html, body { overscroll-behavior-y: none; }
+}
+
+/* ── Forms: the 16px rule ────────────────────────────────────────────────── */
+
+/*
+  iOS Safari zooms the page in when a field with a font-size under 16px takes
+  focus, and it does NOT zoom back out afterwards. The result is an app that is
+  suddenly 1.3x too wide with no way back except a manual pinch — and it is
+  caused by a 14px label, which is a size nobody thinks twice about.
+
+  16px on every text input on touch devices. Not "most". The `select` is
+  included because it zooms too.
+*/
+@media (pointer: coarse) {
+  .ux input:not([type="checkbox"]):not([type="radio"]),
+  .ux select,
+  .ux textarea {
+    font-size: max(16px, 1rem);
+  }
+}
+
+/* ── Tap targets ─────────────────────────────────────────────────────────── */
+
+@media (pointer: coarse) {
+  /*
+    44x44 is Apple's floor and WCAG 2.5.5's; a 24px icon button clears it with
+    padding rather than by growing the icon. `.ux-tap-exempt` exists for the
+    genuine exceptions — a link inside a sentence cannot be 44px tall without
+    destroying the sentence, and WCAG exempts inline text for exactly that
+    reason.
+  */
+  .ux button:not(.ux-tap-exempt),
+  .ux [role="button"]:not(.ux-tap-exempt),
+  .ux a[class*="btn"]:not(.ux-tap-exempt),
+  .ux [role="tab"],
+  .ux input[type="checkbox"],
+  .ux input[type="radio"] {
+    min-height: 44px;
+    min-width: 44px;
+  }
+
+  /*
+    Text fields too. A bare `<input>` inside a padded wrapper measures its own
+    box, not the wrapper's — the messages search field was 297x24 sitting in a
+    comfortable-looking pill. The visible target is fine; the thing a finger
+    actually has to land on to place the caret is 24px tall.
+
+    `min-height` only: a width floor on an input that is meant to fill its row
+    would fight the layout.
+  */
+  .ux input:not([type="checkbox"]):not([type="radio"]):not([type="hidden"]),
+  .ux textarea,
+  .ux select {
+    min-height: 44px;
+  }
+}
+
+/* ── The bottom bar, and what has to clear it ────────────────────────────── */
+
+@media (max-width: 1023px) {
+  /*
+    `.ux-tabbar` AND the shape the nav actually has.
+
+    The class was aspirational: `MobileNav.tsx` renders
+    `fixed inset-x-0 bottom-0 ... lg:hidden` and carries no `ux-tabbar` at all,
+    so every rule written against that class silently did nothing and the bar
+    sat underneath the home indicator exactly as before. Matching the real
+    markup as well means this works today; the class stays so it keeps working
+    when the nav is rewritten to use it.
+  */
+  .ux .ux-tabbar,
+  .ux nav.fixed.bottom-0,
+  .ux nav[class*="fixed"][class*="bottom-0"] {
+    padding-bottom: var(--sa-bottom);
+    z-index: 60;
+
+    /*
+      Glass, like the top bar — and it matters more here, because the content
+      scrolls UNDER this one. An opaque bar cuts the page off at a hard line
+      and the last row of a list simply stops existing; a frosted one lets her
+      see that there is more beneath her thumb.
+
+      Opaque first, blur only inside `@supports`. See `--ux-glass-bg-solid`:
+      a translucent bar with no blur behind it is text over text.
+    */
+    background: var(--ux-glass-bg-solid);
+    border-top: 1px solid var(--ux-glass-line);
+    box-shadow: 0 -1px 0 var(--ux-hairline), 0 -12px 30px -16px var(--ux-sh-2);
+  }
+
+  @supports (backdrop-filter: blur(20px)) or (-webkit-backdrop-filter: blur(20px)) {
+    .ux .ux-tabbar,
+    .ux nav.fixed.bottom-0,
+    .ux nav[class*="fixed"][class*="bottom-0"] {
+      background: var(--ux-glass-bg);
+      -webkit-backdrop-filter: saturate(var(--ux-glass-sat)) blur(var(--ux-glass-blur));
+      backdrop-filter: saturate(var(--ux-glass-sat)) blur(var(--ux-glass-blur));
+    }
+  }
+
+  @media (prefers-reduced-transparency: reduce) {
+    .ux .ux-tabbar,
+    .ux nav.fixed.bottom-0,
+    .ux nav[class*="fixed"][class*="bottom-0"] {
+      background: var(--ux-glass-bg-solid);
+      -webkit-backdrop-filter: none;
+      backdrop-filter: none;
+    }
+  }
+
+  /* Scrollers end above the bar rather than behind it. */
+  .ux #ux-scroll { padding-bottom: calc(var(--tabbar-h) + 12px); }
+
+  /* Anything pinned to the bottom of a screen — a "Save" bar, a total —
+     stacks on top of the tab bar rather than underneath it. */
+  .ux .ux-dock-bottom { bottom: var(--tabbar-h); }
+}
+
+/* ── Sheets ──────────────────────────────────────────────────────────────── */
+
+/*
+  A sheet rises from the bottom edge and settles. The curve matters more than
+  the distance: `cubic-bezier(0.32, 0.72, 0, 1)` is the decelerate curve iOS
+  uses for presentation, and swapping it for a linear or `ease-out` ramp is
+  instantly readable as "web modal" even to someone who could not say why.
+*/
+@keyframes ux-sheet-up {
+  from { transform: translate3d(0, 100%, 0); }
+  to   { transform: translate3d(0, 0, 0); }
+}
+@keyframes ux-scrim-in {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+.ux .ux-sheet {
+  animation: ux-sheet-up 340ms cubic-bezier(0.32, 0.72, 0, 1);
+  padding-bottom: var(--sa-bottom);
+  /* `touch-action: none` on the handle only, not the sheet — the body still
+     has to scroll. Set on the drag handle by the component. */
+}
+.ux .ux-scrim { animation: ux-scrim-in 240ms linear; }
+
+/* ── Standalone (added to home screen) ───────────────────────────────────── */
+
+/*
+  When launched from the home screen there is no browser chrome at all, so the
+  status bar sits directly on top of the app. The top inset becomes real, and
+  anything that looked fine in a tab will be underneath the clock.
+*/
+@media (display-mode: standalone) {
+  .ux .ux-topbar { padding-top: var(--sa-top); }
+  .ux { --standalone: 1; }
+}
+
+/* ── Reduced motion wins over all of it ──────────────────────────────────── */
+
+@media (prefers-reduced-motion: reduce) {
+  .ux .ux-sheet, .ux .ux-scrim { animation: none; }
+  .ux button:active, .ux [role="button"]:active, .ux a:active { transform: none; }
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   Native shapes.
+
+   Everything above this line makes the app BEHAVE like an app — safe areas,
+   momentum, press feedback, no zoom on focus. It is necessary and it is not
+   sufficient: with all of it in place the app still LOOKS like a website that
+   has been narrowed, because the shapes are desktop shapes. A phone-shaped
+   screen is not a desktop screen with less width.
+
+   The single biggest tell is the floating card. Desktop web puts content on
+   white rectangles that hover over a canvas with a shadow and a gap on every
+   side. Native does the opposite: content runs to the edges of the screen in
+   GROUPS, separated by a tinted gutter, with hairlines inside a group and no
+   shadow anywhere. iOS calls it a grouped table view; Android's equivalent is
+   a surface container. Neither of them floats.
+
+   This section converts the app's existing shapes into those, so every screen
+   changes at once rather than 129 screens being edited by hand.
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+@media (max-width: 1023px) {
+
+  /* ── The canvas has to read as the gutter BETWEEN groups ───────────────── */
+  .ux .ux-card {
+    /* No shadow. A shadow says "this floats above the page", which is a web
+       idea; a native group is inset INTO the page. */
+    box-shadow: none;
+    /* A hairline instead of a full border — visible enough to bound the group,
+       quiet enough not to draw a box. */
+    border: 1px solid var(--ux-line);
+    border-radius: 14px;
+  }
+
+  /* Hover lift is meaningless on a touch screen — there is no hover, and the
+     transform fires on tap and leaves the card raised until you tap elsewhere,
+     which reads as a stuck animation. */
+  .ux .ux-card:hover { transform: none; box-shadow: none; border-color: var(--ux-line); }
+  .ux .ux-card:active { transform: none; }
+
+  /* ── Rows inside a group ───────────────────────────────────────────────── */
+  /*
+     A native list row is tall, full-bleed, and separated by a hairline that
+     starts AFTER the leading icon rather than at the card's edge. That inset is
+     the detail people cannot name but always notice: a separator running the
+     full width reads as a table, one that starts under the text reads as a
+     list.
+  */
+  .ux .ux-list > * + * {
+    border-top: 1px solid var(--ux-line);
+  }
+  .ux .ux-list-inset > * + * {
+    border-top: 1px solid var(--ux-line);
+    /* 56px = 40px icon + 16px gap. Matches the app's IconTile sizes. */
+    margin-inline-start: 56px;
+  }
+
+  /* ── Section headings ──────────────────────────────────────────────────── */
+  /*
+     Above a group, native writes a small, quiet, upper-case label — not a
+     heavy heading. The heading weight belongs to the screen title, once, at
+     the top. Repeating it above every group is what makes a phone screen feel
+     like a dashboard.
+  */
+  .ux .ux-group-label {
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--ux-muted);
+    padding-inline: 4px;
+    margin-bottom: 8px;
+  }
+
+  /* ── Chips ─────────────────────────────────────────────────────────────── */
+  /*
+     Desktop chips are small because a mouse is precise. A finger is not: a
+     28px chip is a miss waiting to happen, and a row of them is a row of
+     misses. 34px minimum, more horizontal padding, and they scroll sideways
+     rather than wrapping into a block that pushes everything down the screen.
+  */
+  .ux .ux-chiprow {
+    display: flex;
+    flex-wrap: nowrap;
+    gap: 8px;
+    overflow-x: auto;
+    scrollbar-width: none;
+    overscroll-behavior-x: contain;
+    /* Bleed to the screen edge so the row reads as continuing off-screen,
+       which is what tells a thumb it can be swiped. */
+    margin-inline: calc(var(--ux-pad, 16px) * -1);
+    padding-inline: var(--ux-pad, 16px);
+    scroll-padding-inline: var(--ux-pad, 16px);
+    -webkit-overflow-scrolling: touch;
+  }
+  .ux .ux-chiprow::-webkit-scrollbar { display: none; }
+  .ux .ux-chiprow > * {
+    flex: 0 0 auto;
+    min-height: 34px;
+    scroll-snap-align: start;
+  }
+
+  /* ── Typography ────────────────────────────────────────────────────────── */
+  /*
+     Native type is BIGGER than web type at the same nominal role, because the
+     screen is held at arm's length in bad light. iOS body is 17px; the web's
+     habit of 14px body text is a desktop convention that does not survive the
+     journey to a phone.
+  */
+  .ux .ux-screen-title {
+    font-size: 30px;
+    font-weight: 800;
+    letter-spacing: -0.02em;
+    line-height: 1.15;
+  }
+
+  /* ── Buttons ───────────────────────────────────────────────────────────── */
+  /*
+     A primary action on a phone is full-width and near the bottom, where a
+     thumb reaches. A 120px button floated to the right of a card is a desktop
+     shape and it sits exactly where a right-handed thumb cannot go.
+  */
+  .ux .ux-action-primary {
+    width: 100%;
+    min-height: 50px;
+    border-radius: 14px;
+    font-size: 16px;
+    font-weight: 700;
+  }
+
+  /* ── Get rid of desktop density ────────────────────────────────────────── */
+  /* Multi-column grids become one column. Two 160px columns on a 390px screen
+     is two columns of nothing. */
+  .ux .ux-deck,
+  .ux [data-mobile-stack] {
+    grid-template-columns: 1fr !important;
+  }
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   The density scales were never given a phone tier.
+
+   `.ux-fitboard` and `.ux-earnboard` step their type, padding and artwork down
+   as the WINDOW gets shorter — and every one of those steps is gated behind
+   `min-width: 1280px`, because they were written to make a desktop board fit a
+   laptop. On a 390px phone none of the media queries match, so the board falls
+   through to the BASE tier, which is the most generous one in the file: the
+   set of numbers meant for a tall desktop monitor.
+
+   Measured on `/app/earn` at 390x844 before this block existed: the word
+   "Earn" rendered at 2.75rem and its sub-line at 23px, on a screen where iOS
+   sets body text at 17px. The board was not "a bit large" — it was showing
+   desktop-monitor sizes on a phone, which is most of what made the app read as
+   a website that had been narrowed.
+
+   This is the missing tier. It is not a shrink of the desktop numbers; it is
+   the phone's own scale, built from what a phone is actually held at.
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+@media (max-width: 1023px) {
+  .ux-fitboard,
+  .ux-earnboard {
+    --fb-gap: 10px;
+    --fb-pad: 14px;
+    --fb-lines: 1.5;
+    --fb-chip: 13px;
+    --fb-clamp: 3;
+
+    /* 17px body, 22px title — iOS's own scale. The old base tier put the
+       title at 19px and the body at 15.5px, which is a desktop card's
+       proportions: a big heading over small print. On a phone the body has to
+       come UP, not the heading come down. */
+    --fb-body: 15px;
+    --fb-title: 17px;
+
+    --fb-tile: 44px;
+    --fb-circle: 40px;
+    --fb-ring: 56px;
+    --fb-stat: 24px;
+    --fb-foot: 60px;
+    --fb-art: 56px;
+    --fb-banner: 150px;
+    --fb-h1: 1.7rem;
+    --fb-hero-y: 14px;
+
+    /* Earn's own measures. The band drops to something a thumb can scroll
+       past, and the artwork with it. */
+    --fb-earn-rowgap: 10px;
+    --fb-earn-hero-gap: 10px;
+    --fb-earn-pad-y: 12px;
+    --fb-earn-band: 128px;
+    --fb-earn-band-y: 14px;
+    --fb-earn-h1: 1.75rem;
+    --fb-earn-lead: 16px;
+    --fb-earn-count: 13px;
+    --fb-earn-tile: 44px;
+    --fb-earn-title: 17px;
+    --fb-earn-sub: 14px;
+    --fb-earn-chip: 14px;
+    --fb-earn-chip-h: 44px;
+    --fb-earn-chip-x: 13px;
+    --fb-earn-chip-gap: 8px;
+    --fb-earn-chip-top: 12px;
+    --fb-earn-card-min: 0px;
+    --fb-earn-art: 96px;
+    --fb-earn-wide: auto;
+  }
+
+  /*
+    The card art has to stop competing with the words.
+
+    On the desktop board the picture sits BEHIND the pills, which works because
+    a 313px-wide card has room for both. At 390px full-bleed the pills run the
+    whole width, so the picture ends up directly underneath them — and the
+    screenshot showed "Your shop papers" sitting on top of the shop's awning.
+    On a phone it drops to the corner, small, at low contrast: a mark rather
+    than a scene.
+  */
+  /*
+    The decorative scene comes off on a phone.
+
+    Two attempts at keeping it failed for the same reason. It is positioned
+    `bottom: 0` inside the card, and on a phone the card collapses to the
+    height of its own text — so "bottom" and "behind the title" become the same
+    place. Shrinking it to a corner thumbnail only made a smaller picture sit
+    on the words: the screenshot showed the QR phone drawn straight through
+    "Your link, and getting paid", and jars across "Selling food from home".
+
+    Reserving space for it would mean padding every title on every card by a
+    width that changes with each picture's aspect ratio — that is a lot of
+    fragile CSS to protect decoration.
+
+    So it goes. A native list row does not carry a background scene; it carries
+    an icon, a title, a subtitle and a chevron, and it is legible at a glance
+    in bad light, which is the whole point. The icon tile already does the
+    identifying work, the artwork still carries the desktop board, and the
+    website is where these pictures get to be the size they were drawn at.
+  */
+  .ux-earnboard [data-earn-card] img[aria-hidden="true"],
+  .ux-fitboard [data-earn-card] img[aria-hidden="true"] {
+    display: none;
+  }
+
+  /* A card whose height was pinned for a desktop grid row must let go of it. */
+  .ux-earnboard [data-earn-card] { min-height: 0 !important; }
+}
+
+/* ── Chips scroll sideways rather than wrapping into a wall ──────────────── */
+
+@media (max-width: 1023px) {
+  /*
+    Nine chips wrapped over five rows is 220px of screen spent on navigation
+    before any content — and it is the single most web-looking thing left on
+    the Earn board. Native puts a set like this on one line and lets the thumb
+    push it along; the row bleeding off the right edge is precisely the signal
+    that tells a thumb it CAN be pushed.
+
+    `mask-image` fades the last few pixels so the cut looks intended rather
+    than clipped, which is the difference between "there is more" and "this is
+    broken".
+  */
+  .ux [data-earn-chips] {
+    display: flex !important;
+    flex-wrap: nowrap !important;
+    overflow-x: auto;
+    scrollbar-width: none;
+    overscroll-behavior-x: contain;
+    -webkit-overflow-scrolling: touch;
+    scroll-snap-type: x proximity;
+    padding-block: 2px;
+    mask-image: linear-gradient(to right, #000 calc(100% - 24px), transparent);
+    -webkit-mask-image: linear-gradient(to right, #000 calc(100% - 24px), transparent);
+  }
+  .ux [data-earn-chips]::-webkit-scrollbar { display: none; }
+  .ux [data-earn-chips] > * {
+    flex: 0 0 auto;
+    scroll-snap-align: start;
+  }
+}
+
+/* ── Nothing floats over the tab bar ─────────────────────────────────────── */
+
+@media (max-width: 1023px) {
+  /*
+    The assistant and the help pill are `position: fixed` in the bottom
+    corners, sized for a desktop window where the bottom of the viewport is
+    empty. On a phone that is exactly where the tab bar is, so they sat on top
+    of it — the help pill covered "Home" and the assistant covered "Circle".
+
+    Both move up by the height of the bar. The bar is the one thing on the
+    screen that must never be covered: it is how you get anywhere.
+  */
+  /*
+    Everything fixed to the bottom EXCEPT the nav itself.
+
+    The first version of this excluded `.ux-tabbar`, which the nav does not
+    have — so it matched the tab bar and pushed it 68px up the screen, leaving
+    it floating over the content with a gap beneath it. Excluding `nav` is the
+    fix: the bar is the one fixed thing at the bottom that is not floating
+    ABOVE anything, it IS the bottom.
+  */
+  .ux [class*="fixed"][class*="bottom-"]:not(nav):not(.ux-tabbar):not([data-earn-grid]) {
+    bottom: calc(var(--tabbar-h) + 10px);
+  }
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   The app bar.
+
+   A native top bar is not a website header. Three things separate them, and
+   all three are visible before you read a single word:
+
+   1. It is TRANSLUCENT, and content scrolls under it. A solid bar with content
+      stopping politely beneath it is a web header. The blur is not decoration
+      — it is what tells your eye the content continues behind.
+   2. It respects the status bar. Launched from the home screen there is no
+      browser chrome, so the clock and battery sit directly on the app; without
+      the top inset the title is drawn underneath them.
+   3. The screen's name is LARGE in the content, and only shrinks into the bar
+      once you scroll past it. iOS calls it a large title. It is the single
+      most recognisable shape in mobile UI.
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+@media (max-width: 1023px) {
+  .ux .ux-topbar {
+    /* Under the status bar when installed, flush when in a tab. */
+    padding-top: var(--sa-top);
+    height: calc(var(--ux-topbar-h) + var(--sa-top));
+
+    /* Translucent, with a solid fallback. `backdrop-filter` is unsupported on
+       older Android WebViews, and a 70%-opaque bar with no blur behind it is
+       just a see-through bar with text on top of text — so the fallback is
+       fully opaque and the blur is only applied where it can actually work. */
+    background: var(--ux-glass-bg-solid);
+    border-bottom: 1px solid var(--ux-glass-line);
+    box-shadow: 0 1px 0 var(--ux-hairline), 0 12px 30px -18px var(--ux-sh-2);
+  }
+
+  @supports (backdrop-filter: blur(20px)) or (-webkit-backdrop-filter: blur(20px)) {
+    .ux .ux-topbar {
+      background: var(--ux-glass-bg);
+      -webkit-backdrop-filter: saturate(var(--ux-glass-sat)) blur(var(--ux-glass-blur));
+      backdrop-filter: saturate(var(--ux-glass-sat)) blur(var(--ux-glass-blur));
+    }
+  }
+
+  @media (prefers-reduced-transparency: reduce) {
+    .ux .ux-topbar {
+      background: var(--ux-glass-bg-solid);
+      -webkit-backdrop-filter: none;
+      backdrop-filter: none;
+    }
+  }
+
+  /*
+    The large title.
+
+    Scroll-driven, in CSS, with no JavaScript and no scroll listener — a
+    `scroll()` timeline is handled on the compositor, so it cannot cause the
+    jank that a `scroll` handler updating a transform always eventually does.
+
+    `@supports` guards it because `animation-timeline` is not everywhere yet.
+    Where it is missing the title simply stays large, which is a perfectly good
+    screen — the enhancement is the collapse, not the title.
+  */
+  @supports (animation-timeline: scroll()) {
+    .ux .ux-large-title {
+      animation: ux-title-collapse linear both;
+      animation-timeline: scroll(nearest block);
+      animation-range: 0 96px;
+    }
+    @keyframes ux-title-collapse {
+      from { font-size: 30px; opacity: 1; transform: translateY(0); }
+      to   { font-size: 20px; opacity: 0; transform: translateY(-10px); }
+    }
+  }
+
+  /* Reduced motion: the title is simply always large. Collapsing it on scroll
+     is motion tied to a gesture, which is exactly the kind that causes
+     trouble. */
+  @media (prefers-reduced-motion: reduce) {
+    .ux .ux-large-title { animation: none; }
+  }
+}
+
+/* A horizontal shelf: one line, thumb-scrolled, bleeding off the right edge so
+   it is visibly continuable. Snap is `proximity`, not `mandatory` — mandatory
+   fights a fast flick and makes the shelf feel sticky. */
+.ux .ux-hscroll {
+  overflow-x: auto;
+  scrollbar-width: none;
+  overscroll-behavior-x: contain;
+  -webkit-overflow-scrolling: touch;
+  scroll-snap-type: x proximity;
+  scroll-padding-inline-start: 16px;
+  padding-bottom: 2px;
+}
+.ux .ux-hscroll::-webkit-scrollbar { display: none; }
+.ux .ux-hscroll > * { scroll-snap-align: start; }
+
+/* ── One floating control, not two ───────────────────────────────────────── */
+
+@media (max-width: 1023px) {
+  /*
+    The safety shortcut and the assistant are both pinned above the tab bar, so
+    a 390px screen carries two floating buttons and a nav bar — three layers of
+    chrome over the content. Native apps allow themselves one.
+
+    Safety is not negotiable on this app, so it stays; what goes is its label.
+    Icon-only it is a 44px circle instead of a 150px pill, which stops it
+    lying across a card, and the `aria-label` still reads "Get help now" so
+    nothing is lost to anyone using a screen reader.
+  */
+  .ux a[aria-label="Get help now"] {
+    width: 44px;
+    padding-inline: 0;
+    justify-content: center;
+  }
+  .ux a[aria-label="Get help now"] > span:last-child {
+    /* Visually gone, still announced. */
+    position: absolute;
+    width: 1px; height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   The type scale, on a phone.
+
+   This is the largest single reason the app reads as a website. The scale has
+   four small steps — `text-3xs` 10px, `text-2xs` 11px, `text-xsm` 13px,
+   `text-smd` 15px — and they are used 1,460 times between them. `text-xsm`
+   alone appears 806 times, and it is 13px: it is the app's workhorse body
+   size.
+
+   13px is a desktop body size. It is correct at 60cm on a colour-managed
+   monitor, and it is small at arm's length on a bus. iOS sets Body at 17 and
+   Footnote at 13; Material sets Body Large at 16. An app whose most common
+   text is 13px is not "dense", it is a web page.
+
+   Measured on the sweep before this block existed: 23–43 pieces of text under
+   12px on every member screen at 390x844.
+
+   Raising the SCALE rather than editing 1,460 call sites means every screen
+   moves at once, and the relationships between the steps are preserved — this
+   is a translation of the scale onto a phone, not a set of exceptions.
+
+   The steps stay distinct (11 / 12.5 / 15 / 16), so nothing that relied on two
+   sizes being different collapses into one.
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+@media (max-width: 1023px) {
+  .ux {
+    /* Caption — a timestamp, a badge count, a status word under an avatar.
+       12px, not 11: the audit floor for this app is 12, and leaving the
+       smallest step one pixel under it means the standard is a suggestion.
+       "Early learner" under a member's name was the last text on any screen
+       still reading at 11px. */
+    --text-3xs: 0.75rem;    /* 10px  -> 12px */
+    /* Secondary. Metadata under a title. */
+    --text-2xs: 0.78125rem; /* 11px  -> 12.5px */
+    /* THE body size. 806 uses. This is the one that matters. */
+    --text-xsm: 0.9375rem;  /* 13px  -> 15px */
+    /* Emphasised body. */
+    --text-smd: 1rem;       /* 15px  -> 16px */
+  }
+}
+
+/* ── Tap targets that the scale change does not fix ──────────────────────── */
+
+@media (max-width: 1023px) {
+  /*
+    The Earn board's pills were 36px. That is over the 24px WCAG 2.5.5 floor
+    and well under Apple's 44 and Material's 48, and the sweep counted 29 of
+    them on one screen — a row of near-misses is a row of mis-taps.
+
+    Height only. Making them wider would push the row further off-screen for
+    no gain; a 44px-tall pill is already comfortably hittable.
+  */
+  /*
+    Kept for the wrappers, but note the chip itself is sized by
+    `--fb-earn-chip-h` applied as an INLINE style — and an inline style beats
+    any stylesheet rule that is not `!important`. Raising the token is the
+    lever that actually works; this rule only catches anything nested that is
+    not sized that way.
+  */
+  .ux [data-earn-chips] > * {
+    min-height: 44px;
+  }
+
+  /* A native select is a control, not a label. 36px is a mis-tap. */
+  .ux select {
+    min-height: 44px;
+  }
+}
+
+/* ── Icon controls in the top bar ────────────────────────────────────────── */
+
+@media (max-width: 1023px) {
+  /*
+    Help, Messages and Notifications are 42x42 — two pixels under the floor,
+    which is exactly the kind of miss that never gets noticed by eye and always
+    gets noticed by a thumb.
+
+    They did not match the rule above because that one keys off
+    `a[class*="btn"]` and these carry `ux-press ux-hov ux-sq`. Matching the
+    topbar's own anchors is more honest than widening the class guess: an
+    anchor in the top bar with an aria-label and no text IS an icon button.
+  */
+  .ux .ux-topbar a[aria-label],
+  .ux .ux-topbar button[aria-label],
+  .ux header a[aria-label],
+  .ux header button[aria-label] {
+    min-height: 44px;
+    min-width: 44px;
+  }
+}
+
+/* ── Legal links in a footer row ─────────────────────────────────────────── */
+
+@media (max-width: 1023px) {
+  /*
+    "Terms" and "Privacy" measured 35x44 and 42x44 — full height, short width.
+    They sit on their own row rather than inside a sentence, so WCAG 2.5.8's
+    inline-link exemption does not cover them, and a 35px-wide target between
+    two other links is a genuine mis-tap.
+
+    Padding rather than a min-width, so the two stay optically spaced instead
+    of becoming two wide blocks with a gap.
+  */
+  .ux a[href="/terms"],
+  .ux a[href="/privacy"],
+  .ux a[href*="/legal"] {
+    display: inline-flex;
+    align-items: center;
+    min-height: 44px;
+    padding-inline: 8px;
+  }
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   The top bar, on a phone.
+
+   Measured at 390x844: the wordmark ran UNDER the icon row. The bar is a flex
+   row of brand + search box + six controls, and the brand is `shrink-0` with a
+   fixed pixel width — so on a 390px screen the icons simply overlapped it.
+   That is the "top navbar disturbed" you are seeing, and it is a real overflow
+   rather than a spacing preference.
+
+   The deeper problem is that the bar is a DESKTOP bar. A native app does not
+   put its logo and six controls on every screen: the logo appears once, at
+   launch, and each screen's own header carries what that screen needs. Home
+   already does exactly that — avatar, greeting and a bell — so the bar was
+   showing a second avatar and a second notification icon directly above them.
+
+   So on a phone the bar keeps the mark, drops the wordmark, and carries only
+   the two things that are not somewhere else: search, and her account. Help
+   and Messages both live in the More sheet, one tap away, where the bottom bar
+   already puts every destination in the app.
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+@media (max-width: 1023px) {
+  /* The mark stays; the wordmark beside it is what does not fit. */
+  .ux .ux-topbar img[alt*="WomSakhi" i]:not(.ux-brand-mark),
+  .ux header img[alt*="WomSakhi" i]:not(.ux-brand-mark) {
+    display: none;
+  }
+
+  /* Redundant with the screen's own header and with the bottom bar's More
+     sheet. Hidden rather than removed, so nothing else has to change. */
+  .ux .ux-topbar a[aria-label="Help"],
+  .ux .ux-topbar a[aria-label="Messages"],
+  .ux header a[aria-label="Help"],
+  .ux header a[aria-label="Messages"] {
+    display: none;
+  }
+
+  /* Whatever is left must never overlap the brand again. */
+  .ux .ux-topbar > div,
+  .ux header.ux-glass > div {
+    gap: 8px;
+    padding-inline: 12px;
+  }
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   Anything that scrolls sideways must LOOK like it scrolls sideways.
+
+   /app/journey showed the problem exactly: a seven-node stepper with
+   `min-w-[760px] overflow-x-auto` inside a card, and `ux-noscroll` hiding the
+   scrollbar. On a 390px screen the last label reads "Your first opportunit"
+   and stops dead at the card's edge. It is not broken — it scrolls perfectly
+   — but nothing on screen says so, so it reads as a rendering fault, and a
+   woman who does not know to swipe simply never sees steps five to seven.
+
+   Hiding a scrollbar is right on a phone; hiding the fact that something
+   scrolls is not. The fade is the affordance that replaces the scrollbar:
+   content dissolving at the edge is the universal signal for "there is more
+   this way", and it costs nothing.
+
+   Applied to the shapes rather than to a class, so it covers rows written
+   before this rule existed and rows written after it — which is the whole
+   point, given this pattern appears on screens nobody has looked at yet.
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+@media (max-width: 1023px) {
+  .ux .ux-noscroll,
+  .ux .ux-scroll-x,
+  .ux .ux-hscroll,
+  .ux [data-earn-chips],
+  .ux .ux-chiprow {
+    -webkit-mask-image: linear-gradient(to right, #000 calc(100% - 28px), transparent);
+    mask-image: linear-gradient(to right, #000 calc(100% - 28px), transparent);
+  }
+
+  /*
+    ...but only while there is actually something off the end.
+
+    A row whose content fits should not be faded — a permanently dimmed right
+    edge on a row of two chips looks like a bug of its own. `animation-timeline:
+    scroll(self inline)` is zero-JS and runs on the compositor: the mask is
+    removed at both ends of the scroll and present in between. Where the
+    timeline is unsupported the static fade above stands, which is the safe
+    direction to fail in.
+  */
+  @supports (animation-timeline: scroll(self inline)) {
+    .ux .ux-noscroll,
+    .ux .ux-scroll-x,
+    .ux .ux-hscroll,
+    .ux [data-earn-chips],
+    .ux .ux-chiprow {
+      animation: ux-edge-fade steps(1) both;
+      animation-timeline: scroll(self inline);
+    }
+    @keyframes ux-edge-fade {
+      /* at the far right there is nothing more to the right */
+      to {
+        -webkit-mask-image: linear-gradient(to right, transparent, #000 28px);
+        mask-image: linear-gradient(to right, transparent, #000 28px);
+      }
+    }
+  }
+
+  /*
+    The journey stepper's floor comes down.
+
+    760px was chosen so seven nodes fit a 1030px desktop column. On a phone it
+    forces a 2x scroll for a row that is a SUMMARY — the same seven steps are
+    listed in full as cards below it. 470px shows three and a half nodes, which
+    is enough to read it as a sequence and short enough to swipe in one go.
+  */
+  .ux ol.ux-noscroll[class*="min-w-"] {
+    min-width: 470px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  /* The scroll-timeline is motion tied to a gesture; the static fade is not. */
+  .ux .ux-noscroll, .ux .ux-scroll-x, .ux .ux-hscroll,
+  .ux [data-earn-chips], .ux .ux-chiprow { animation: none; }
+}
+
+/* ── Kit controls that never got a phone tier ────────────────────────────── */
+
+@media (max-width: 1023px) {
+  /*
+    Three reported by the module agent, each worked around locally in its own
+    files. Fixing them at the kit level means every OTHER module gets the fix
+    too — including the screens nobody has rewritten yet, which is most of them.
+
+    `Pill` renders `text-2xs` at every width. The phone tier already lifts
+    `--text-2xs` to 12.5px, but a badge is read at a glance beside 15px body
+    text and 12.5px still reads as fine print. 13px, and enough padding to be
+    a shape rather than a smudge.
+  */
+  .ux .ux-pill,
+  .ux [class*="rounded-full"][class*="text-2xs"] {
+    font-size: 13px;
+    padding-inline: 10px;
+    padding-block: 4px;
+  }
+
+  /*
+    `SegmentedControl` uses `px-3` per segment, so four segments do not fit at
+    390px and "Interviews" truncates to "Intervi…". A truncated segment label
+    is worse than a narrow one: you cannot tell what you are choosing. The
+    padding comes down and the label is allowed to use the room.
+  */
+  .ux [role="tablist"] [role="tab"] {
+    padding-inline: 8px;
+    min-width: 0;
+  }
+  .ux [role="tablist"] {
+    /* Four segments at 390 need every pixel; a tablist that scrolls is far
+       better than one that lies about its options. */
+    max-width: 100%;
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+  .ux [role="tablist"]::-webkit-scrollbar { display: none; }
+}
+
+/* ── Three leftovers the module passes could not reach ───────────────────── */
+
+@media (max-width: 1023px) {
+  /*
+    1. The install card sat on top of the chat composer.
+
+    It is `fixed; bottom: calc(var(--tabbar-h) + 12px); z-index: 65` — which is
+    exactly where a keyboard-aware composer lives, and 65 is above the chat
+    frame's 45. On `/app/sakhi` it covered the field she was trying to type in.
+
+    Asking someone to install the app WHILE she is mid-sentence is the wrong
+    moment anyway, so it stands down whenever a chat is on screen rather than
+    being restacked.
+  */
+  .ux:has(.ux-chat) [data-install-prompt],
+  .ux:has(.ux-chat-dock) [data-install-prompt] {
+    display: none;
+  }
+
+  /*
+    2. The tab bar's labels are 11px — under the floor, on every screen in the
+    app. They are the most-read five words in the product.
+  */
+  .ux .ux-tab-label,
+  .ux nav.fixed.bottom-0 span[class*="text-2xs"] {
+    font-size: 12px;
+  }
+
+  /*
+    3. The skip link measured 32x44 — the last sub-44 target anywhere. It is
+    `sr-only` until focused, so this only affects the moment it is visible,
+    which is precisely the moment it has to be hittable.
+  */
+  .ux a[href="#content"]:focus,
+  .ux a[href="#main"]:focus {
+    min-width: 44px;
+    min-height: 44px;
+    padding-inline: 16px;
+  }
+}
+
+/* ── The last shapes the 44px rule did not reach ─────────────────────────── */
+
+@media (max-width: 1023px) {
+  /*
+    Measured across eleven screens, every remaining failure was a WIDTH: 27x63,
+    34x44, 42x44, 26x61. Tall enough, too narrow — a calendar day, a small icon
+    link, a segment in a strip. The earlier rule keyed on `button`,
+    `[role="button"]` and `a[class*="btn"]`, and none of these are any of those:
+    they are plain anchors carrying `ux-sq`.
+
+    Seven 44px cells come to 308px, which fits a 390px screen with room over,
+    so there is no layout cost to paying the floor here.
+  */
+  .ux a.ux-sq:not(.ux-tap-exempt),
+  .ux a[class*="ux-sq"]:not(.ux-tap-exempt),
+  .ux button[class*="rounded-"]:not(.ux-tap-exempt) {
+    min-width: 44px;
+    min-height: 44px;
+  }
+
+  /*
+    ...but not a link inside a sentence. WCAG 2.5.8 exempts those explicitly,
+    and it is right to: a 44px-tall link in the middle of a paragraph tears the
+    line spacing apart, which costs more legibility than it buys.
+  */
+  .ux p a,
+  .ux li > a:not([class*="ux-sq"]),
+  .ux a.underline {
+    min-width: 0;
+    min-height: 0;
+  }
+
+  /*
+    8px text — the smallest thing anywhere in the app, and the last of it.
+
+    It is the brand tagline, which on a phone sits under a wordmark that is
+    itself hidden. It stays in the DOM for the desktop rail, so it is given the
+    floor rather than removed.
+  */
+  /*
+    The brand tagline goes entirely on a phone.
+
+    It renders at 8px — the smallest text anywhere in the app — and the size is
+    an INLINE style (`fontSize: s.tag` in Brand.tsx), so no stylesheet rule can
+    raise it; inline wins. `display` is a different property and can, which is
+    the only lever available without editing a shared component.
+
+    Hiding it is also the right answer rather than a workaround: it sits
+    directly under the wordmark, which is already hidden here, so on a phone it
+    was a strapline with nothing to strap. It stays in the DOM for the desktop
+    rail.
+  */
+  .ux .ux-topbar .whitespace-nowrap.uppercase,
+  .ux header .whitespace-nowrap.uppercase {
+    display: none;
+  }
+}

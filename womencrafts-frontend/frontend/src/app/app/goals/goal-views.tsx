@@ -1,10 +1,10 @@
 "use client";
 
 import * as Icons from "@/components/ux/icons";
-import { Btn, Card, I, IconTile, v } from "@/components/ux/kit";
+import { Card, I, IconTile, v } from "@/components/ux/kit";
 import {
-  goalPct, goalProgressLine, goalStatus,
-  type Goal, type GoalStatus,
+  goalProgressLine, goalState,
+  type Goal, type GoalState,
 } from "@/components/ux/discovery/data";
 
 /* ------------------------------------------------------------------ */
@@ -81,19 +81,28 @@ export function GoalsHero({ chips, active, onPick }: {
 /*  The four numbers                                                   */
 /* ------------------------------------------------------------------ */
 
-export const STATUS_LOOK: Record<GoalStatus, { label: string; tint: string; ink: string; dot: string; icon: string }> = {
-  "on-track":        { label: "On track",        tint: "--ux-tint-green",   ink: "--ux-green-ink",  dot: "--ux-green",  icon: "CircleCheck" },
-  "needs-attention": { label: "Needs attention", tint: "--ux-tint-orange",  ink: "--ux-orange-ink", dot: "--ux-orange", icon: "Bell" },
-  completed:         { label: "Completed",       tint: "--ux-tint-violet",  ink: "--ux-violet-ink", dot: "--ux-violet", icon: "BadgeCheck" },
-  "not-started":     { label: "Not started",     tint: "--ux-surface-2",    ink: "--ux-muted",      dot: "--ux-line-strong", icon: "Circle" },
+/*
+  Three states, and "Needs attention" is gone.
+
+  It was computed from `targetOn`, a calendar date the fixture invented and the
+  server does not hold — so the app was telling a woman she was behind on a
+  deadline she had never set. The only deadline this product stores is her own
+  words in `by` ("before Diwali", "by September"), which is not a date and
+  cannot be late. What is left is three facts: she reached it, it has moved, or
+  it has not moved yet. None of them is a judgement about her.
+*/
+export const STATUS_LOOK: Record<GoalState, { label: string; tint: string; ink: string; dot: string; icon: string }> = {
+  reached:       { label: "Reached",       tint: "--ux-tint-violet", ink: "--ux-violet-ink", dot: "--ux-violet",      icon: "BadgeCheck" },
+  moving:        { label: "Moving",        tint: "--ux-tint-green",  ink: "--ux-green-ink",  dot: "--ux-green",       icon: "CircleCheck" },
+  "not-started": { label: "Not started",   tint: "--ux-surface-2",   ink: "--ux-muted",      dot: "--ux-line-strong", icon: "Circle" },
 };
 
-export function GoalStats({ total, by }: { total: number; by: Record<GoalStatus, number> }) {
+export function GoalStats({ total, by }: { total: number; by: Record<GoalState, number> }) {
   const cells = [
     { n: total, label: "Total goals", icon: "Target", tint: "--ux-brand-tint-2", ink: "--ux-brand" },
-    { n: by["on-track"], ...STATUS_LOOK["on-track"] },
-    { n: by["needs-attention"], ...STATUS_LOOK["needs-attention"] },
-    { n: by.completed, ...STATUS_LOOK.completed },
+    { n: by.moving, ...STATUS_LOOK.moving },
+    { n: by.reached, ...STATUS_LOOK.reached },
+    { n: by["not-started"], ...STATUS_LOOK["not-started"] },
   ];
   return (
     <div className="mb-4 grid gap-3.5" style={{ gridTemplateColumns: "repeat(auto-fit, minmax(170px, 1fr))" }}>
@@ -133,30 +142,51 @@ export function StaircaseNote() {
 /*  One goal                                                           */
 /* ------------------------------------------------------------------ */
 
-export function GoalCard({ g, money, menu, onMenu, onDone, onNote, onArchive, onEdit }: {
+export function GoalCard({ g, money, menu, onMenu, onDone, onArchive, busy }: {
   g: Goal; money: (minor: number) => string;
   menu: boolean; onMenu: (open: boolean) => void;
-  onDone: (g: Goal) => void; onNote: (g: Goal) => void;
-  onArchive: (g: Goal) => void; onEdit: (g: Goal) => void;
+  /*
+    Only the two actions the server can carry out.
+
+    "Edit", "Add note" and "View details" went with the fixture. There is no
+    endpoint for a note, no endpoint for renaming a goal, and no detail screen
+    — they were four buttons on every card, and a woman who pressed any of them
+    was told the feature was "on the way". A control that cannot act is worse
+    than no control: she presses it once, learns the screen is decoration, and
+    stops pressing the ones that work.
+
+    `onDone` is absent for a goal the server scores itself. A money goal counts
+    her wallet credits and a learning goal counts sessions attended; letting her
+    tick either by hand would make the figure say whatever she pressed.
+  */
+  onDone?: (g: Goal) => void;
+  onArchive: (g: Goal) => void;
+  busy?: boolean;
 }) {
-  const pct = goalPct(g);
-  const st = goalStatus(g);
+  // `pct` comes off the wire. The server scores a goal — a money goal counts
+  // her wallet credits, a learning goal the sessions she attended — and a
+  // percentage recomputed here that disagrees with the screen that produced it
+  // is how a woman stops believing both.
+  const pct = g.pct;
+  const st = goalState(g);
   const look = STATUS_LOOK[st];
   const line = goalProgressLine(g, money);
-  const done = st === "completed";
+  const done = st === "reached";
 
   return (
     <Card className="mb-3.5" pad={18}>
       <div className="flex flex-wrap items-start gap-4 sm:flex-nowrap">
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img src={g.art} alt="" aria-hidden loading="lazy" decoding="async"
-             className="h-[86px] w-[110px] shrink-0 rounded-[12px] object-cover"
-             style={{ background: v(g.tint) }} />
+        {/*
+          There was a photograph here — `g.art`, a stock picture of a sewing
+          machine or a school gate, picked by us for a goal she wrote. It is
+          her icon instead, which is the one she chose.
+        */}
+        <IconTile icon={g.icon || "Target"} tint="--ux-brand-tint-2" ink="--ux-brand" size={56} radius={14} />
 
         <div className="min-w-0 flex-1">
           <div className="flex flex-wrap items-start gap-x-3 gap-y-2">
             <div className="flex min-w-0 flex-1 flex-wrap items-center gap-2">
-              <b className="text-smd font-extrabold leading-snug" style={{ color: v("--ux-ink") }}>{g.title}</b>
+              <b className="text-smd font-extrabold leading-snug" style={{ color: v("--ux-ink") }}>{g.label}</b>
               <span className="inline-flex items-center gap-1 rounded-full px-2.5 py-[3px] text-3xs font-extrabold"
                     style={{ background: v("--ux-brand-tint"), color: v("--ux-brand") }}>
                 <Icons.Tag className="h-[10px] w-[10px]" />
@@ -167,10 +197,11 @@ export function GoalCard({ g, money, menu, onMenu, onDone, onNote, onArchive, on
             <span className="flex shrink-0 items-center gap-2.5">
               <span className="flex items-center gap-1.5 text-2xs font-semibold" style={{ color: v("--ux-muted") }}>
                 <Icons.CalendarDays className="h-[13px] w-[13px]" />
-                Target: {g.targetOn}
+                {/* Her own words, never a date we invented for her. */}
+                {g.by || "No date set"}
               </span>
               <span className="relative">
-                <button type="button" aria-label={`More about ${g.title}`} aria-expanded={menu}
+                <button type="button" aria-label={`More about ${g.label}`} aria-expanded={menu}
                         onClick={() => onMenu(!menu)}
                         className="ux-press ux-sq grid h-[30px] w-[30px] place-items-center rounded-[8px]"
                         style={{ color: v("--ux-faint") }}>
@@ -180,17 +211,19 @@ export function GoalCard({ g, money, menu, onMenu, onDone, onNote, onArchive, on
                   <span className="absolute end-0 top-[calc(100%+6px)] z-[var(--ux-z-dropdown)] block w-[210px] overflow-hidden rounded-[12px]"
                         style={{ background: v("--ux-surface"), border: "1px solid var(--ux-line)",
                                  boxShadow: "var(--ux-shadow-pop)" }}>
-                    <Row icon="Pencil" onClick={() => { onEdit(g); onMenu(false); }}>Edit this goal</Row>
-                    <Row icon="FileText" onClick={() => { onNote(g); onMenu(false); }}>Add a note</Row>
-                    <Row icon="Archive" onClick={() => { onArchive(g); onMenu(false); }}>Move to archive</Row>
+                    <Row icon="Trash2" onClick={() => { onArchive(g); onMenu(false); }}>Remove this goal</Row>
                   </span>
                 )}
               </span>
             </span>
           </div>
 
-          <p className="mt-1.5 text-xsm leading-relaxed" style={{ color: v("--ux-muted") }}>{g.why}</p>
-
+          {/*
+            `g.why` — the sentence about why the goal matters to her — has no
+            field on the server. The five it used to print were written in the
+            first person ("So I stop paying rent on someone else's") and shown
+            to every woman as though she had typed it.
+          */}
           <p className="mt-3 text-xsm">
             <b className="font-extrabold" style={{ color: v("--ux-ink") }}>{line.have}</b>{" "}
             <span style={{ color: v("--ux-muted") }}>{line.of}</span>
@@ -213,13 +246,13 @@ export function GoalCard({ g, money, menu, onMenu, onDone, onNote, onArchive, on
           </div>
 
           <div className="mt-4 flex flex-wrap items-center gap-1">
-            <Btn size="sm" href={g.nextHref} iconEnd="ArrowRight">View details</Btn>
-            <Act icon="Pencil" onClick={() => onEdit(g)}>Edit</Act>
-            <Act icon={done ? "BadgeCheck" : "CircleCheck"} on={done} onClick={() => onDone(g)}>
-              {done ? "Done" : "Mark as done"}
-            </Act>
-            <Act icon="FileText" onClick={() => onNote(g)}>Add note</Act>
-            <Act icon="Archive" onClick={() => onArchive(g)}>Move to archive</Act>
+            {onDone && (
+              <Act icon={done ? "BadgeCheck" : "CircleCheck"} on={done}
+                   onClick={() => !busy && onDone(g)}>
+                {done ? "Reached" : "Mark as reached"}
+              </Act>
+            )}
+            <Act icon="Trash2" onClick={() => !busy && onArchive(g)}>Remove</Act>
           </div>
         </div>
       </div>
@@ -256,7 +289,7 @@ function Act({ icon, children, onClick, on }: {
 /* ------------------------------------------------------------------ */
 
 export function GoalInsights({ pct, onTrack, total, by }: {
-  pct: number; onTrack: number; total: number; by: Record<GoalStatus, number>;
+  pct: number; onTrack: number; total: number; by: Record<GoalState, number>;
 }) {
   const r = 34;
   const c = 2 * Math.PI * r;
@@ -284,13 +317,13 @@ export function GoalInsights({ pct, onTrack, total, by }: {
             {pct >= 60 ? "You're making great progress!" : pct > 0 ? "It has started moving." : "Nothing has moved yet."}
           </p>
           <p className="mt-1 text-xs" style={{ color: v("--ux-muted") }}>
-            {onTrack} of {total} {total === 1 ? "goal is" : "goals are"} on track.
+            {onTrack} of {total} {total === 1 ? "goal has" : "goals have"} moved.
           </p>
         </div>
       </div>
 
       <ul className="mt-4 space-y-2.5">
-        {(Object.keys(STATUS_LOOK) as GoalStatus[]).map((k) => (
+        {(Object.keys(STATUS_LOOK) as GoalState[]).map((k) => (
           <li key={k} className="flex items-center gap-2.5">
             <span aria-hidden className="h-[10px] w-[10px] shrink-0 rounded-full"
                   style={{ background: v(STATUS_LOOK[k].dot) }} />

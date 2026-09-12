@@ -191,8 +191,15 @@ export default function MessagesPage() {
         space the shell keeps clear for the floating assistant and the phone's
         bottom bar.
       */}
-      <div className="flex flex-col gap-4"
-           style={{ height: "calc(100dvh - var(--ux-topbar-h) - 36px)", minHeight: 560 }}>
+      {/*
+        `minHeight: 560` was unconditional, so on a 390x844 phone the column was
+        taller than the space it had and the last conversation row sat under the
+        tab bar. A phone gets the height it actually has; the floor stays from
+        `lg` up, where it is protecting a three-column layout that genuinely
+        cannot work any shorter.
+      */}
+      <div className="ux-inbox-frame flex flex-col gap-3 lg:gap-4"
+           style={{ height: "calc(100dvh - var(--ux-topbar-h) - 36px)" }}>
         {/* The page header costs ~250px, which on a phone is most of the
             conversation. Reading a thread, she does not need her inbox
             statistics — she needs the messages. */}
@@ -204,7 +211,7 @@ export default function MessagesPage() {
             waiting={waitingRows} rest={restRows} counts={summary?.counts ?? {}}
             filter={filter} setFilter={setFilter} search={search} setSearch={setSearch}
             openId={openId} onOpen={(id) => { setOpenId(id); setOnThread(true); }} total={rows.length}
-            className={onThread ? "hidden lg:flex" : "flex"}
+            rows={rows} onPick={(id) => { setOpenId(id); setOnThread(true); }} onThread={onThread}
           />
           {thread
             ? <Thread conv={thread} draft={draft} setDraft={setDraft} onSend={send} sending={sending}

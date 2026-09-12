@@ -140,7 +140,7 @@ export default function LessonPage({ params }: { params: Promise<{ id: string; n
                           {l.title}
                         </span>
                         {l.mins && (
-                          <span className="shrink-0 text-2xs" style={{ color: "var(--ux-faint)" }}>{l.mins}</span>
+                          <span className="shrink-0 text-[13px] lg:text-2xs" style={{ color: "var(--ux-faint)" }}>{l.mins}</span>
                         )}
                       </Link>
                     );
@@ -195,7 +195,7 @@ export default function LessonPage({ params }: { params: Promise<{ id: string; n
               </button>
             )}
           </div>
-          <span className="absolute bottom-3 end-3 rounded-full px-2.5 py-1 text-2xs font-medium text-white"
+          <span className="absolute bottom-3 end-3 rounded-full px-2.5 py-1 text-[13px] font-medium text-white lg:text-2xs"
                 style={{ background: "rgba(0,0,0,0.55)" }}>
             {lesson.mins} min
           </span>
@@ -205,12 +205,17 @@ export default function LessonPage({ params }: { params: Promise<{ id: string; n
           <p className="text-xs font-semibold uppercase tracking-[0.08em]" style={{ color: "var(--ux-faint)" }}>
             Lesson {lesson.n} of {flat.length}
           </p>
-          <h1 className="mt-1.5 text-xl font-bold leading-tight" style={{ color: "var(--ux-ink)" }}>
+          <h1 className="mt-1.5 text-[22px] font-bold leading-tight lg:text-xl" style={{ color: "var(--ux-ink)" }}>
             {lesson.title}
           </h1>
 
-          <div className="mt-4 flex items-center justify-between gap-4 border-t pt-4" style={{ borderColor: "var(--ux-line)" }}>
-            <span className="flex items-center gap-2">
+          {/* Previous and Next: stacked and full width on a phone — the pair
+              was a 90px pill at one edge and a 170px pill at the other, with
+              260px of nothing between them. Next comes first in the source so
+              it is the first thing a screen reader and a thumb both reach; on
+              desktop `order` puts Previous back on the left. */}
+          <div className="mt-4 flex flex-col-reverse gap-2 border-t pt-4 lg:flex-row lg:items-center lg:justify-between lg:gap-4" style={{ borderColor: "var(--ux-line)" }}>
+            <span className="flex items-center gap-2 [&>*]:w-full lg:[&>*]:w-auto">
               {prev && (
                 <Btn href={`/app/programs/${course.id}/lesson/${prev.n}`} variant="outline" size="sm" icon="ArrowLeft">
                   Previous
@@ -243,23 +248,23 @@ export default function LessonPage({ params }: { params: Promise<{ id: string; n
         {/* Always open, never behind a toggle. Reading is free; video is not. */}
         <div className="space-y-3.5 text-sm leading-relaxed" style={{ color: "var(--ux-ink-2)" }}>
           <p>
-            <span className="me-2 font-mono text-2xs" style={{ color: "var(--ux-faint)" }}>0:00</span>
+            <span className="me-2 font-mono text-[13px] lg:text-2xs" style={{ color: "var(--ux-faint)" }}>0:00</span>
             Most women I meet think a strategy is a big word for something complicated. It is not. A strategy is
             deciding, before you post anything, who you are talking to and what you want them to do.
           </p>
           <p>
-            <span className="me-2 font-mono text-2xs" style={{ color: "var(--ux-faint)" }}>1:24</span>
+            <span className="me-2 font-mono text-[13px] lg:text-2xs" style={{ color: "var(--ux-faint)" }}>1:24</span>
             Take three minutes now and write down one sentence: who buys from you, and why they chose you over
             the shop down the road. If you cannot answer the second part, that is the first thing to fix — not
             your posting schedule.
           </p>
           <p>
-            <span className="me-2 font-mono text-2xs" style={{ color: "var(--ux-faint)" }}>4:10</span>
+            <span className="me-2 font-mono text-[13px] lg:text-2xs" style={{ color: "var(--ux-faint)" }}>4:10</span>
             Post twice a week, not twice a day. Twice a week for six months beats twice a day for two weeks,
             every single time, and it is the schedule you can actually keep alongside your work.
           </p>
           <p>
-            <span className="me-2 font-mono text-2xs" style={{ color: "var(--ux-faint)" }}>8:52</span>
+            <span className="me-2 font-mono text-[13px] lg:text-2xs" style={{ color: "var(--ux-faint)" }}>8:52</span>
             When somebody messages you, reply the same day even if the answer is &ldquo;let me check and come back to
             you&rdquo;. A reply that is slow is forgivable. Silence is not.
           </p>

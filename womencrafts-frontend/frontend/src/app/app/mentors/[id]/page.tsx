@@ -7,9 +7,10 @@ import { useAction } from "@/lib/use-action";
 import Link from "next/link";
 import * as Icons from "@/components/ux/icons";
 
-import {Back, Btn, Card, EmptyState, IconTile, Pill, RailSkeleton, Rating, ScreenSkeleton, SectionHead,
+import {Back, Btn, Card, EmptyState, IconTile, RailSkeleton, Rating, ScreenSkeleton, SectionHead,
 } from "@/components/ux/kit";
 import { HomeShell } from "@/components/ux/home/HomeShell";
+import { Tag } from "@/components/ux/learning/native";
 import { useMentors } from "@/components/ux/live";
 import { rupees , PAST_SESSIONS, REVIEWS, reviewStats } from "@/components/ux/mentors/data";
 import { useT } from "@/i18n";
@@ -109,7 +110,7 @@ export default function MentorDetail({ params }: { params: Promise<{ id: string 
                 <div className="space-y-3">
                   {SLOTS.map((d) => (
                     <div key={d.day}>
-                      <p className="mb-1.5 text-2xs font-semibold uppercase tracking-[0.07em]"
+                      <p className="ux-group-label mb-1.5 text-2xs font-semibold uppercase tracking-[0.07em]"
                          style={{ color: "var(--ux-faint)" }}>{d.day}</p>
                       <div className="flex flex-wrap gap-2">
                         {d.times.map((t) => {
@@ -203,7 +204,7 @@ export default function MentorDetail({ params }: { params: Promise<{ id: string 
             <img loading="lazy" decoding="async" src={m.photo} alt="" className="h-full w-full object-cover" />
           </span>
           <div className="min-w-0 flex-1">
-            <h1 className="text-xl font-bold leading-tight" style={{ color: "var(--ux-ink)" }}>{m.name}</h1>
+            <h1 className="text-[22px] font-bold leading-tight lg:text-xl" style={{ color: "var(--ux-ink)" }}>{m.name}</h1>
             <p className="mt-1 text-sm" style={{ color: "var(--ux-ink-2)" }}>{m.headline}</p>
             <p className="mt-2.5 flex flex-wrap items-center gap-x-3 gap-y-1 text-xsm" style={{ color: "var(--ux-muted)" }}>
               <span className="inline-flex items-center gap-1"><Icons.MapPin className="h-4 w-4" /> {m.location}</span>
@@ -212,16 +213,18 @@ export default function MentorDetail({ params }: { params: Promise<{ id: string 
             </p>
             <div className="mt-2.5 flex flex-wrap items-center gap-2">
               <Rating value={m.rating} count={`${m.rating_count} notes`} />
-              {m.free_first && <Pill tone="green" size="sm">{tr("mentors.firstSessionFree")}</Pill>}
+              {m.free_first && <Tag tone="green" size="sm">{tr("mentors.firstSessionFree")}</Tag>}
             </div>
           </div>
         </div>
-        <p className="mt-4 border-t pt-4 text-sm leading-relaxed" style={{ borderColor: "var(--ux-line)", color: "var(--ux-ink-2)" }}>
+        <p className="mt-4 border-t pt-4 text-[15px] leading-relaxed" style={{ borderColor: "var(--ux-line)", color: "var(--ux-ink-2)" }}>
           {m.bio}
         </p>
       </Card>
 
-      <div className="grid grid-cols-[minmax(0,1fr)_300px] gap-[16px]">
+      {/* A fixed 300px second column inside a 350px content area leaves the
+          first column 34px wide. One column below `lg`, the pair above it. */}
+      <div className="grid gap-[16px] lg:grid-cols-[minmax(0,1fr)_300px]">
         <Card>
           <SectionHead title={tr("mentors.whatSheCanHelpWith")} />
           <ul className="ux-stagger space-y-2.5">
@@ -247,7 +250,7 @@ export default function MentorDetail({ params }: { params: Promise<{ id: string 
                 <IconTile icon={icon} tint={tint} ink={ink} size={36} />
                 <div className="min-w-0">
                   <p className="truncate text-sm font-bold" style={{ color: "var(--ux-ink)" }}>{val}</p>
-                  <p className="mt-0.5 truncate text-2xs" style={{ color: "var(--ux-muted)" }}>{label}</p>
+                  <p className="mt-0.5 truncate text-[13px] lg:text-2xs" style={{ color: "var(--ux-muted)" }}>{label}</p>
                 </div>
               </div>
             ))}

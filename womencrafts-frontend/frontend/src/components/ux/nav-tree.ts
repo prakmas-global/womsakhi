@@ -140,17 +140,27 @@ export const SECTIONS: Section[] = [
             { id: "documents-vault", label: "Your shop papers", icon: "FileText", href: "/app/documents/vault", note: "Licences and proof", },
           ],
         },
-        { id: "shop", label: "Ways to sell", k: "ch.shop", icon: "Sparkles", href: "/app/shop", note: "Pre-orders, regulars, big orders",
+        /*
+          Ways to sell: two children, not nine.
+
+          Seven of these hints were promises the screens could not keep —
+          "Speak, and it becomes a listing" pointed at a microphone that never
+          recorded anything, "Customers pick an hour themselves" at a diary
+          nobody can book. Those screens still exist and now say so, but the
+          sidebar is not the place to advertise them: a menu of nine features
+          of which seven are unbuilt is itself the false claim. They are
+          reachable from `/app/shop`, under a heading that says what they are.
+
+          The `note` is dropped from the two that stay rather than reworded,
+          because `k` makes the hint come from the message catalogue in nine
+          languages — and "What women near you ask" is exactly the thing the
+          pricing screen now says it cannot do. No hint is better than a
+          translated one that lies.
+        */
+        { id: "shop", label: "Ways to sell", k: "ch.shop", icon: "Sparkles", href: "/app/shop",
           children: [
-            { id: "shop-pricing", label: "What should you charge", k: "ch.shop.pricing", icon: "Tag", href: "/app/shop/pricing", note: "What women near you ask", },
-            { id: "shop-preorders", label: "Take the money first", icon: "Coins", href: "/app/shop/preorders", note: "Before you make it", },
-            { id: "shop-subscriptions", label: "Regular customers", icon: "Repeat", href: "/app/shop/subscriptions", note: "The same order, every month", },
-            { id: "shop-buyers", label: "Who buys from you", icon: "Users", href: "/app/shop/buyers", note: "And what they come back for", },
-            { id: "shop-live", label: "Sell while you work", icon: "Radio", href: "/app/shop/live", note: "Show it being made", },
-            { id: "shop-wholesale", label: "Sell to shops", icon: "Store", href: "/app/shop/wholesale", note: "Bigger orders, one buyer", },
-            { id: "shop-voice", label: "Say it instead of typing", k: "ch.shop.voice", icon: "Mic", href: "/app/shop/voice", note: "Speak, and it becomes a listing", },
-            { id: "shop-slots", label: "Sell your time", k: "ch.shop.slots", icon: "CalendarDays", href: "/app/shop/slots", note: "Customers pick an hour themselves", },
-            { id: "shop-disputes", label: "When something goes wrong", k: "ch.shop.disputes", icon: "Scale", href: "/app/shop/disputes", note: "Sorted by a woman you both know", },
+            { id: "shop-pricing", label: "What should you charge", k: "ch.shop.pricing", icon: "Tag", href: "/app/shop/pricing", },
+            { id: "shop-buyers", label: "Who buys from you", icon: "Users", href: "/app/shop/buyers", note: "Folded out of the orders you write down", },
           ],
         },
         { id: "collect", label: "Your link, and getting paid", k: "ch.collect", icon: "QrCode", href: "/app/collect", note: "Sell to people not on WomSakhi", },

@@ -202,8 +202,17 @@ export default function AccountSettings() {
         <SectionHead title={tr("settingsAccount.signInEmail")} />
         <div className="flex items-center justify-between gap-4">
           <div className="min-w-0">
-            <p className="flex items-center gap-2 truncate text-sm font-medium" style={{ color: "var(--ux-ink)" }}>
-              {profile?.email ?? user?.email ?? ""}
+            {/*
+              The address truncates; the badge never does.
+
+              As one `truncate` line the two shared a single clipped box, and an
+              ordinary address filled it — so "Confirmed" began 6px PAST the
+              hard edge and all 93px of it was invisible. The one word telling
+              her whether her account actually works was the part that got cut.
+              Wrapping lets it drop to a second line on a phone instead.
+            */}
+            <p className="flex min-w-0 flex-wrap items-center gap-2 text-sm font-medium" style={{ color: "var(--ux-ink)" }}>
+              <span className="min-w-0 max-w-full truncate">{profile?.email ?? user?.email ?? ""}</span>
               {/* The green "Confirmed" was painted whatever the server said. */}
               {profile?.verification_status === "active"
                 ? <Pill tone="green" size="sm">Confirmed</Pill>

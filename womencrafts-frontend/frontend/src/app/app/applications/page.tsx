@@ -5,10 +5,10 @@ import { COPY } from "@/components/ux/copy";
 import * as Icons from "@/components/ux/icons";
 
 import {
-  ActionBtn, Btn, Card, EmptyState, IconTile, Pill,
-  Progress, SectionHead, SourceNote, Tabs, copy
+  ActionBtn, Btn, Card, EmptyState, IconTile, Progress, SectionHead, SourceNote, copy
 } from "@/components/ux/kit";
 import { HomeShell } from "@/components/ux/home/HomeShell";
+import { ScreenHead, Segments, Tag } from "@/components/ux/work/native";
 import { RailStat, StageTrack } from "@/components/ux/work/parts";
 import { STAGES, WORK_ART } from "@/components/ux/work/data";
 import { useApplications, workStats } from "@/components/ux/growth";
@@ -89,21 +89,19 @@ export default function Applications() {
         </div>
       }
     >
-      <div className="mb-[20px] flex items-end justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-bold" style={{ color: "var(--ux-ink)" }}>{tr("applications.yourApplications")}</h1>
-          <p className="mt-1.5 text-xsm" style={{ color: "var(--ux-muted)" }}>
-            {counts.Active === 1
-              ? "One application is still moving."
-              : `${counts.Active} applications are still moving.`}
-            {counts.Interviews > 0 &&
-              ` ${counts.Interviews === 1 ? "One is" : `${counts.Interviews} are`} at interview.`}
-          </p>
-
-      <SourceNote source={source} what="applications" />
-        </div>
-        <Tabs items={[...TABS]} active={tab} onChange={setTab} />
-      </div>
+      <ScreenHead
+        title={tr("applications.yourApplications")}
+        sub={<>
+          {counts.Active === 1
+            ? "One application is still moving."
+            : `${counts.Active} applications are still moving.`}
+          {counts.Interviews > 0 &&
+            ` ${counts.Interviews === 1 ? "One is" : `${counts.Interviews} are`} at interview.`}
+        </>}
+        note={<SourceNote source={source} what="applications" />}
+      >
+        <Segments items={[...TABS]} active={tab} onChange={setTab} label="Which applications" />
+      </ScreenHead>
 
       {shown.length ? (
         <div className="ux-deck space-y-[12px]">
@@ -121,9 +119,9 @@ export default function Applications() {
                           style={{ color: closed ? "var(--ux-muted)" : "var(--ux-ink)" }}>
                         {a.title}
                       </h3>
-                      <Pill tone={closed ? "neutral" : a.stage === "Interview" ? "brand" : "blue"} size="sm">
+                      <Tag tone={closed ? "neutral" : a.stage === "Interview" ? "brand" : "blue"} size="sm">
                         {a.stage}
-                      </Pill>
+                      </Tag>
                     </div>
                     <p className="mt-1 flex flex-wrap items-center gap-x-3 text-xs" style={{ color: "var(--ux-muted)" }}>
                       <span className="inline-flex items-center gap-1"><Icons.Building2 className="h-3.5 w-3.5" /> {a.org}</span>

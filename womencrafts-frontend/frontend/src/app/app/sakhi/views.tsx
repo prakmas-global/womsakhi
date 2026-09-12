@@ -24,6 +24,8 @@ import { useAuth } from "@/context/AuthContext";
 import { HomeShell } from "@/components/ux/home/HomeShell";
 import { CAN, FOLLOW_UPS, MODE_PREFIX, STARTERS, WONT } from "@/components/ux/sakhi/prompts";
 import { Actions, Answer, Cites, Composer, DraftCard, Ico, ModeSwitch, Picker, StopPill, Typing } from "@/components/ux/sakhi/parts";
+import { bubbleRadius, Says } from "@/components/ux/sakhi/chat";
+import { ListGroup, ListRow } from "@/components/ux/mobile/ListRow";
 import {
   apiSakhiConversation,
   apiSakhiConversations,
@@ -100,16 +102,18 @@ export function ConvBar({
   onRename: () => void; onPin: () => void; onShare: () => void;
 }) {
   const tr = useT();
-  const chip = "flex items-center gap-1.5 rounded-full px-2.5 py-1 text-2xs font-semibold";
+  const chip = "flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[12px] lg:text-2xs font-semibold";
   const chipStyle = { background: "var(--ux-surface-2)", border: "1px solid var(--ux-line)",
                       color: "var(--ux-muted)" } as const;
-  const tool = "ux-press grid h-[32px] w-[32px] place-items-center rounded-[8px]";
+  const tool = "ux-press grid h-[44px] w-[44px] place-items-center rounded-full lg:h-[32px] lg:w-[32px] lg:rounded-[8px]";
 
   return (
-    <div className="flex flex-wrap items-center gap-2.5 border-b pb-3" style={{ borderColor: "var(--ux-line)" }}>
-      <b className="truncate text-sm font-bold" style={{ color: "var(--ux-ink)" }}>{title}</b>
-      <span className={chip} style={chipStyle}><Icons.Zap className="h-[12px] w-[12px]" />{mode}</span>
-      <span className={chip} style={chipStyle}><Icons.Globe className="h-[12px] w-[12px]" />{locale}</span>
+    <div className="flex flex-wrap items-center gap-2.5 border-b pb-1 lg:pb-3" style={{ borderColor: "var(--ux-line)" }}>
+      <b className="min-w-0 flex-1 truncate text-[15px] font-bold lg:flex-none lg:text-sm" style={{ color: "var(--ux-ink)" }}>{title}</b>
+      {/* Mode and language are two taps away in the composer on a phone, and
+          they are printed on it. Repeating them here spent a whole row. */}
+      <span className={`hidden lg:flex ${chip}`} style={chipStyle}><Icons.Zap className="h-[12px] w-[12px]" />{mode}</span>
+      <span className={`hidden lg:flex ${chip}`} style={chipStyle}><Icons.Globe className="h-[12px] w-[12px]" />{locale}</span>
       <span className="ms-auto flex gap-0.5">
         <button type="button" onClick={onRename} title="Rename" aria-label={tr("sakhi.renameThisConversation")}
                 className={tool} style={{ color: "var(--ux-faint)" }}>
@@ -153,34 +157,61 @@ export function Welcome({
   const tr = useT();
   const greeting = useGreeting();
   return (
-    <section className="relative overflow-hidden rounded-[20px] p-6 text-center sm:p-8"
-             style={{ background: "var(--ux-surface)", border: "1px solid var(--ux-line)",
-                      boxShadow: "var(--ux-shadow-card)" }}>
+    /*
+      A phone gets the screen, not a card floating on it. Below `lg` the border,
+      the shadow and the rounded corners come off and the greeting runs edge to
+      edge — measured before this change, the card's own chrome plus a 150px
+      portrait plus a 30px heading left room for exactly nothing else above the
+      fold, and the composer she came here to use was below it.
+    */
+    <section className="relative overflow-hidden p-0 lg:rounded-[20px] lg:border lg:border-[var(--ux-line)]
+                        lg:bg-[var(--ux-surface)] lg:p-6 lg:shadow-[var(--ux-shadow-card)] lg:text-center">
       <span aria-hidden className="pointer-events-none absolute left-1/2 top-[-90px] h-[400px] w-[400px] -translate-x-1/2 rounded-full"
             style={{ background: "radial-gradient(closest-side, var(--ux-brand-tint-2), transparent 70%)" }} />
       <div className="relative">
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img loading="lazy" decoding="async" src="/sakhi-still-520.webp" alt="Sakhi" draggable={false}
-             className="ux-bob mx-auto block h-[150px] w-[150px] object-contain" />
-        <h2 className="mt-4 text-[clamp(1.3125rem,2.8vw,1.875rem)] font-extrabold leading-tight tracking-[-0.03em]"
+             className="ux-bob mx-auto block h-[96px] w-[96px] object-contain lg:h-[150px] lg:w-[150px]" />
+        <h2 className="mt-3 text-center text-[22px] font-extrabold leading-tight tracking-[-0.03em]
+                       lg:mt-4 lg:text-[clamp(1.3125rem,2.8vw,1.875rem)]"
             style={{ color: "var(--ux-ink)" }}>
           {greeting}, {first || "friend"}.<br />
           <span style={{ background: "linear-gradient(96deg, var(--ux-rib-2), var(--ux-rib-3))",
                          WebkitBackgroundClip: "text", backgroundClip: "text", color: "transparent" }}>{tr("sakhi.whatDoYouNeedToday")}</span>
         </h2>
-        <p className="mt-2 text-sm" style={{ color: "var(--ux-muted)" }}>
+        <p className="mt-2 text-center text-[15px] leading-snug lg:text-sm" style={{ color: "var(--ux-muted)" }}>
           Work, money, a course, or something you do not understand — ask{canVoice ? " or speak" : ""}.
         </p>
 
-        <div className="mx-auto mt-6 max-w-[700px] text-start">{children}</div>
+        {/* The composer lives in the dock on a phone — see `page.tsx`. Here it
+            is the desktop card's own field, where it has always been. */}
+        <div className="mx-auto mt-6 hidden max-w-[700px] text-start lg:block">{children}</div>
 
         {canVoice && (
-          <div className="mt-5">{switcher}</div>
+          <div className="mt-5 flex justify-center">{switcher}</div>
         )}
 
-        <p className="mb-3 mt-8 text-start text-2xs font-bold uppercase tracking-[0.18em]"
-           style={{ color: "var(--ux-faint)" }}>{tr("sakhi.tryAsking")}</p>
-        <div className="grid grid-cols-1 gap-2.5 text-start sm:grid-cols-2">
+        {/*
+          The suggestions were six bordered tiles in a grid. On a phone the grid
+          collapses to one column and they become six floating cards with a
+          gutter between each — which is a web list. A grouped list is the phone
+          shape for exactly this: one card, hairlines inside it, the icon tile
+          doing the identifying.
+        */}
+        <h3 className="ux-group-label mb-2 mt-7 px-1 text-start text-[12px] font-semibold uppercase tracking-[0.07em] lg:mb-3 lg:mt-8 lg:tracking-[0.18em]"
+            style={{ color: "var(--ux-muted)" }}>{tr("sakhi.tryAsking")}</h3>
+        <div className="lg:hidden">
+          <ListGroup>
+            {STARTERS.map((s) => (
+              /* `--ux-tint-green` → `green`: `ListRow` names its tints, the
+                 starters carry the token. One slice keeps both honest. */
+              <ListRow key={s.title} title={s.title} subtitle={s.note} icon={s.icon}
+                       tint={s.tint.replace("--ux-tint-", "") as "violet" | "blue" | "green" | "pink" | "amber" | "orange"}
+                       chevron onClick={() => onPick(s.ask)} />
+            ))}
+          </ListGroup>
+        </div>
+        <div className="hidden grid-cols-1 gap-2.5 text-start sm:grid-cols-2 lg:grid">
           {STARTERS.map((s) => (
             <button key={s.title} type="button" onClick={() => onPick(s.ask)}
                     className="ux-card ux-tile group flex items-center gap-3 rounded-[16px] p-3.5 text-start"
@@ -296,16 +327,25 @@ export function Thread({
   const lastAssistant = bubbles.map((b) => b.kind).lastIndexOf("assistant");
 
   return (
-    <div className="flex flex-col gap-4">
+    /*
+      An ordered list, not a stack of divs. Everything below is told apart by
+      where it sits and what shape it is — her question hugs the trailing edge
+      with a tail on that side, Sakhi's answer hugs the leading edge with her
+      face beside it — and none of that reaches a screen reader. `Says` puts the
+      speaker back in front of every turn, which is the difference between a
+      thread that can be followed without sight and a wall of sentences.
+    */
+    <ol className="flex flex-col gap-4">
       {bubbles.map((b, i) => {
         if (b.kind === "user") {
           return (
-            <div key={i} className="flex justify-end">
-              <div className="max-w-[76%] rounded-[16px] rounded-br-[4px] px-4 py-3 text-sm leading-relaxed"
+            <li key={i} className="flex justify-end">
+              <div className="max-w-[80%] px-3.5 py-2.5 text-[15px] leading-[1.45] lg:max-w-[76%] lg:px-4 lg:py-3 lg:text-sm"
                    style={{ background: "linear-gradient(96deg, var(--ux-rib-2), var(--ux-rib-3))",
-                            color: "var(--ux-on-brand)" }}>
+                            color: "var(--ux-on-brand)", borderRadius: bubbleRadius("out", true) }}>
+                <Says who="You" />
                 {b.file && (
-                  <span className="mb-2 flex items-center gap-2 rounded-[12px] px-2.5 py-1.5 text-xs"
+                  <span className="mb-2 flex items-center gap-2 rounded-[12px] px-2.5 py-1.5 text-[12px]"
                         style={{ background: "var(--ux-on-brand-track)" }}>
                     <Icons.Paperclip className="h-[13px] w-[13px] shrink-0" />
                     <span className="truncate">{b.file}</span>
@@ -313,7 +353,7 @@ export function Thread({
                 )}
                 {b.text}
               </div>
-            </div>
+            </li>
           );
         }
 
@@ -321,12 +361,12 @@ export function Thread({
           /* Deliberately unlike a chat bubble — she must be able to tell at a
              glance that this is not the assistant talking. */
           return (
-            <section key={i} className="rounded-[16px] p-4"
-                     style={{ background: "var(--ux-tint-pink)", border: "1px solid var(--ux-pink)" }}>
-              <p className="flex items-center gap-2 text-xs font-bold uppercase tracking-[0.12em]"
+            <li key={i} className="rounded-[16px] p-4"
+                style={{ background: "var(--ux-tint-pink)", border: "1px solid var(--ux-pink)" }}>
+              <p className="flex items-center gap-2 text-[12px] font-bold uppercase tracking-[0.12em]"
                  style={{ color: "var(--ux-pink-ink)" }}>
                 <Icons.LifeBuoy className="h-[15px] w-[15px]" />{tr("sakhi.helpRightNow")}</p>
-              <p className="mt-2 text-sm leading-relaxed" style={{ color: "var(--ux-ink)" }}>{b.text}</p>
+              <p className="mt-2 text-[15px] leading-relaxed lg:text-sm" style={{ color: "var(--ux-ink)" }}>{b.text}</p>
               <ul className="mt-3 space-y-2">
                 {b.helplines.map((h) => (
                   <li key={h.number}>
@@ -343,27 +383,29 @@ export function Thread({
                   </li>
                 ))}
               </ul>
-            </section>
+            </li>
           );
         }
 
         if (b.kind === "action") {
           return (
-            <p key={i} className="flex items-center gap-2 self-start rounded-full px-3.5 py-2 text-xs font-semibold"
+            <li key={i} className="flex items-center gap-2 self-start rounded-full px-3.5 py-2 text-[13px] font-semibold"
                style={{ background: b.ok ? "var(--ux-tint-green)" : "var(--ux-tint-pink)",
                         color: b.ok ? "var(--ux-green-ink)" : "var(--ux-pink-ink)" }}>
               <Ico name={b.ok ? "CircleCheck" : "CircleX"} className="h-[14px] w-[14px]" />
               {b.text}
-            </p>
+            </li>
           );
         }
 
         return (
-          <div key={i} className="flex items-start gap-3">
+          <li key={i} className="flex items-start gap-2.5 lg:gap-3">
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img loading="lazy" decoding="async" src="/sakhi-face.webp" alt="" className="h-[34px] w-[34px] shrink-0 rounded-full object-cover" />
-            <div className="min-w-0 max-w-[82%] rounded-[16px] rounded-bl-[4px] p-4"
-                 style={{ background: "var(--ux-surface)", border: "1px solid var(--ux-line)" }}>
+            <img loading="lazy" decoding="async" src="/sakhi-face.webp" alt="" className="h-[30px] w-[30px] shrink-0 rounded-full object-cover lg:h-[34px] lg:w-[34px]" />
+            <div className="min-w-0 max-w-[86%] p-3.5 lg:max-w-[82%] lg:p-4"
+                 style={{ background: "var(--ux-surface)", border: "1px solid var(--ux-line)",
+                          borderRadius: bubbleRadius("in", true) }}>
+              <Says who="Sakhi" />
               <Answer text={b.text} />
               <Cites tools={b.tools ?? []} />
               <Actions
@@ -375,64 +417,70 @@ export function Thread({
                 onVote={(v) => setVote(i, v, b.id)}
               />
             </div>
-          </div>
+          </li>
         );
       })}
 
       {streaming && (
-        <div className="flex items-start gap-3">
+        <li className="flex items-start gap-2.5 lg:gap-3">
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img loading="lazy" decoding="async" src="/sakhi-face.webp" alt="" className="h-[34px] w-[34px] shrink-0 rounded-full object-cover" />
-          <div className="min-w-0 max-w-[82%] rounded-[16px] rounded-bl-[4px] p-4"
-               style={{ background: "var(--ux-surface)", border: "1px solid var(--ux-line)" }}>
+          <img loading="lazy" decoding="async" src="/sakhi-face.webp" alt="" className="h-[30px] w-[30px] shrink-0 rounded-full object-cover lg:h-[34px] lg:w-[34px]" />
+          <div className="min-w-0 max-w-[86%] p-3.5 lg:max-w-[82%] lg:p-4"
+               style={{ background: "var(--ux-surface)", border: "1px solid var(--ux-line)",
+                        borderRadius: bubbleRadius("in", true) }}>
+            <Says who="Sakhi" />
             <Answer text={streaming} />
           </div>
-        </div>
+        </li>
       )}
 
       {busy && !streaming && (
-        <div className="flex items-start gap-3">
+        <li className="flex items-start gap-2.5 lg:gap-3">
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img loading="lazy" decoding="async" src="/sakhi-face.webp" alt="" className="h-[34px] w-[34px] shrink-0 rounded-full object-cover" />
-          <span className="flex items-center gap-2 rounded-[16px] rounded-bl-[4px] px-4 py-3"
-                style={{ background: "var(--ux-surface)", border: "1px solid var(--ux-line)" }}>
+          <img loading="lazy" decoding="async" src="/sakhi-face.webp" alt="" className="h-[30px] w-[30px] shrink-0 rounded-full object-cover lg:h-[34px] lg:w-[34px]" />
+          <span className="flex items-center gap-2 px-4 py-3"
+                style={{ background: "var(--ux-surface)", border: "1px solid var(--ux-line)",
+                         borderRadius: bubbleRadius("in", true) }}>
             <Typing />
+            <span className="sr-only">Sakhi is answering</span>
             {toolRunning && (
-              <span className="text-xs" style={{ color: "var(--ux-muted)" }}>looking it up…</span>
+              <span className="text-[13px]" style={{ color: "var(--ux-muted)" }}>looking it up…</span>
             )}
           </span>
-        </div>
+        </li>
       )}
 
-      {busy && <StopPill onStop={onStop} />}
+      {busy && <li className="flex"><StopPill onStop={onStop} /></li>}
 
       {pending && (
-        <div className="flex items-start gap-3">
+        <li className="flex items-start gap-2.5 lg:gap-3">
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img loading="lazy" decoding="async" src="/sakhi-face.webp" alt="" className="h-[34px] w-[34px] shrink-0 rounded-full object-cover" />
+          <img loading="lazy" decoding="async" src="/sakhi-face.webp" alt="" className="h-[30px] w-[30px] shrink-0 rounded-full object-cover lg:h-[34px] lg:w-[34px]" />
           <div className="min-w-0 flex-1">
             <DraftCard sentence={pending.sentence} busy={busy}
                        onApprove={() => onAnswer(true)} onReject={() => onAnswer(false)}
                        onChange={() => onChangeDraft(pending.sentence)} />
           </div>
-        </div>
+        </li>
       )}
 
-      {/* Shortcuts for typing, offered once she has an answer to build on. */}
+      {/* Shortcuts for typing, offered once she has an answer to build on. On a
+          phone they scroll sideways rather than wrapping into a block that
+          pushes the newest answer off the screen. */}
       {!busy && !pending && lastAssistant >= 0 && (
-        <div className="ms-[48px] flex flex-wrap gap-2">
+        <li className="ux-chiprow ms-[42px] flex gap-2 lg:ms-[48px] lg:flex-wrap">
           {FOLLOW_UPS.map((q) => (
             <button key={q} type="button" onClick={() => onFollowUp(q)}
-                    className="ux-press flex min-h-[38px] items-center gap-2 rounded-full px-4 text-xsm font-semibold"
+                    className="ux-press ux-tap-exempt flex min-h-[38px] shrink-0 items-center gap-2 rounded-full px-4 text-[13px] font-semibold lg:text-xsm"
                     style={{ background: "var(--ux-surface)", border: "1px solid var(--ux-line-strong)",
                              color: "var(--ux-ink-2)" }}>
               <Icons.Sparkles className="h-[13px] w-[13px]" style={{ color: "var(--ux-brand)" }} />
               {q}
             </button>
           ))}
-        </div>
+        </li>
       )}
-    </div>
+    </ol>
   );
 }
 
@@ -497,7 +545,7 @@ export function SakhiRail({
           <Icons.Clock className="h-[15px] w-[15px]" style={{ color: "var(--ux-brand)" }} />
           Your conversations
           {total > 0 && (
-            <span className="ms-auto rounded-full px-2 py-0.5 text-2xs font-bold tabular-nums"
+            <span className="ms-auto rounded-full px-2 py-0.5 text-[12px] lg:text-2xs font-bold tabular-nums"
                   style={{ background: "var(--ux-surface-2)", color: "var(--ux-muted)" }}>
               {total}
             </span>
@@ -525,7 +573,7 @@ export function SakhiRail({
                         WebkitMaskImage: "linear-gradient(to bottom, #000 calc(100% - 22px), transparent)" }}>
             {grouped.map((g) => (
               <div key={g.label}>
-                <p className="px-1 pb-1 pt-2.5 text-2xs font-bold uppercase tracking-[0.15em]"
+                <p className="px-1 pb-1 pt-2.5 text-[12px] lg:text-2xs font-bold uppercase tracking-[0.15em]"
                    style={{ color: "var(--ux-faint)" }}>
                   {g.label}
                 </p>
@@ -538,7 +586,7 @@ export function SakhiRail({
                       <span className="min-w-0 flex-1 truncate">{c.title || "Untitled"}</span>
                       {/* Four chats can share a title. The time is what tells
                           them apart. */}
-                      <span className="shrink-0 text-2xs tabular-nums" style={{ color: "var(--ux-faint)" }}>
+                      <span className="shrink-0 text-[12px] lg:text-2xs tabular-nums" style={{ color: "var(--ux-faint)" }}>
                         {shortWhen(c.updated_at)}
                       </span>
                     </button>

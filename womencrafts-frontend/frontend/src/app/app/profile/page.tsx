@@ -114,29 +114,52 @@ export default function Profile() {
       }
     >
       <Card className="mb-[16px]">
-        <div className="flex items-start gap-5">
+        {/*
+          Three things fought for one row at 390px: a 92px photograph, her name
+          and bio, and two buttons that were `shrink-0`. The buttons won — they
+          ran off the right-hand edge (measured: 151px of sideways scroll on the
+          shell's scroller) and sat on top of "Priya Sharma", while the bio was
+          squeezed into a column one word wide. On a phone the photo and the
+          words share the first row and the two actions get a row of their own,
+          full width, where a thumb can reach them.
+        */}
+        <div className="flex items-start gap-3.5 lg:gap-5">
           <div className="relative shrink-0">
-            <span className="ux-hov block h-[92px] w-[92px] overflow-hidden rounded-full"
+            <span className="ux-hov block h-[72px] w-[72px] overflow-hidden rounded-full lg:h-[92px] lg:w-[92px]"
                   style={{ background: "var(--ux-brand-tint)" }}>
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img loading="lazy" decoding="async" src={avatar} alt="" className="ux-art h-full w-full object-cover" />
             </span>
             {/* Was a <button> with no handler at all. It goes where the photo
                 is actually changed. */}
-            <Btn href="/app/settings/account" variant="soft" size="sm" icon="Camera"
-                 ariaLabel={tr("profile.changePhoto2")}
-                 className="absolute -bottom-1 -end-1 !rounded-full !px-2 !py-2">
-              <span className="sr-only">{tr("profile.changePhoto")}</span>
-            </Btn>
+            {/*
+              Measured 33x44 — under the floor, and the 44px it needs does not
+              fit on the corner of a 72px photograph without hanging off it.
+              On a phone it goes: it links to `/app/settings/account`, which is
+              exactly where "Edit profile" below already goes, so nothing is
+              lost but a duplicate. It stays from `lg`, where the photograph is
+              92px and there is room for a badge on it.
+            */}
+            {/* The `hidden lg:inline-flex` version of this did not hide: `Btn`
+                carries `inline-flex` of its own, and two display utilities in
+                the same layer are settled by Tailwind's emit order rather than
+                by the class list. A wrapper has nothing to argue with. */}
+            <span className="hidden lg:block">
+              <Btn href="/app/settings/account" variant="soft" size="sm" icon="Camera"
+                   ariaLabel={tr("profile.changePhoto2")}
+                   className="absolute -bottom-1 -end-1 !rounded-full !px-2 !py-2">
+                <span className="sr-only">{tr("profile.changePhoto")}</span>
+              </Btn>
+            </span>
           </div>
           <div className="min-w-0 flex-1">
-            <h1 className="flex items-center gap-2 text-xl font-bold" style={{ color: "var(--ux-ink)" }}>
+            <h1 className="ux-screen-title flex items-center gap-2 text-xl font-bold" style={{ color: "var(--ux-ink)" }}>
               {name}
               {/* The blue tick was painted on every profile. It now means what
                   the server says it means. */}
               {verified && <Icons.BadgeCheck className="h-5 w-5" style={{ color: "var(--ux-blue)" }} />}
             </h1>
-            <p className="mt-1 text-xsm" style={{ color: profile?.bio ? "var(--ux-muted)" : "var(--ux-faint)" }}>
+            <p className="mt-1 text-[15px] leading-snug lg:text-xsm" style={{ color: profile?.bio ? "var(--ux-muted)" : "var(--ux-faint)" }}>
               {profile?.bio || "You have not written a line about yourself yet."}
             </p>
             <div className="mt-3 flex flex-wrap gap-2">
@@ -147,14 +170,24 @@ export default function Profile() {
               {profile?.segment && <Pill tone="brand">{profile.segment}</Pill>}
             </div>
           </div>
-          <div className="flex shrink-0 gap-2">
+          <div className="hidden shrink-0 gap-2 lg:flex">
             <Btn href="/app/profile/preview" variant="outline" size="sm" icon="Eye">{tr("profile.seeItAsOthersDo")}</Btn>
             <Btn href="/app/settings/account" variant="primary" size="sm" icon="Pencil">{tr("profile.editProfile")}</Btn>
           </div>
         </div>
 
+        {/* "See it as others do" is four words, and on half of 350px it wrapped
+            onto two lines beside a one-line button. On a phone the label is the
+            verb — the sentence is on the screen it leads to. */}
+        <div className="mt-4 grid grid-cols-2 gap-2.5 lg:hidden">
+          <Btn href="/app/profile/preview" variant="outline" icon="Eye" full>Preview</Btn>
+          <Btn href="/app/settings/account" variant="primary" icon="Pencil" full>Edit</Btn>
+        </div>
+
         {/* Every one of these four was a constant: 6, 4, 15 and ₹24,350. */}
-        <div className="mt-5 grid grid-cols-4 gap-[16px] border-t pt-4" style={{ borderColor: "var(--ux-line)" }}>
+        {/* Four columns on a 390px screen is four columns of nothing: measured,
+            the labels rendered as "C.. f…", "C..", "C.. j…" and "E… t… m…". */}
+        <div className="mt-5 grid grid-cols-2 gap-x-3 gap-y-4 border-t pt-4 lg:grid-cols-4 lg:gap-[16px]" style={{ borderColor: "var(--ux-line)" }}>
           <Stat value={String(progress?.programs_completed ?? 0)} label={tr("profile.coursesFinished")}
                 icon="BookOpenCheck" tint="--ux-tint-violet" ink="--ux-violet" />
           {/* The one metal surface in the app. Cold and hard is the right
@@ -176,10 +209,24 @@ export default function Profile() {
         </div>
       </Card>
 
-      <div className="mb-[16px]"><Tabs items={["Overview", "Skills", "Experience", "What you made", "Helping others", "Documents"]} active={tab} onChange={setTab} /></div>
+      {/*
+        Six tabs do not fit across 390px, and `Tabs` is an `inline-flex` with no
+        wrap and no scroller of its own — so it simply overflowed, and the whole
+        shell gained 151px of sideways scroll. `.ux-scroll-x` gives it somewhere
+        to go and hides the bar; the bleed to the screen edges is what tells a
+        thumb the row continues.
+      */}
+      <div className="ux-scroll-x mb-[16px] -mx-[20px] max-w-[calc(100%+40px)] overflow-x-auto px-[20px] lg:mx-0 lg:max-w-none lg:overflow-visible lg:px-0">
+        {/* `w-max`: an `inline-flex` inside a scroller still shrinks to the
+            scroller's width and wraps its labels — "What you / made" — instead
+            of overflowing it, which is the whole point of the scroller. */}
+        <div className="w-max">
+          <Tabs items={["Overview", "Skills", "Experience", "What you made", "Helping others", "Documents"]} active={tab} onChange={setTab} />
+        </div>
+      </div>
 
       {tab === "Overview" && (
-        <div className="grid grid-cols-[minmax(0,1fr)_320px] gap-[16px]">
+        <div className="grid grid-cols-1 gap-[16px] lg:grid-cols-[minmax(0,1fr)_320px]">
           <Card>
             <SectionHead title={tr("profile.finishYourProfile")}
                          sub={left.length ? `${left.length} still to fill in` : "Nothing left to do"} />
@@ -197,7 +244,7 @@ export default function Profile() {
                                  borderColor: s.done ? "var(--ux-green)" : "var(--ux-line-strong)" }}>
                     {s.done && <Icons.Check className="h-3.5 w-3.5 text-white" strokeWidth={3} />}
                   </span>
-                  <span className="min-w-0 flex-1 text-xsm"
+                  <span className="min-w-0 flex-1 text-[15px] lg:text-xsm"
                         style={{ color: s.done ? "var(--ux-muted)" : "var(--ux-ink)",
                                  textDecoration: s.done ? "line-through" : "none" }}>
                     {s.label}
@@ -216,7 +263,7 @@ export default function Profile() {
                 Rajasthan", "Hindi, English", "Digital marketing" and "March
                 2025" — for everyone. Each is now her own, or says it is
                 missing rather than filling the gap. */}
-            <dl className="space-y-3 text-xsm">
+            <dl className="space-y-3 text-[15px] lg:text-xsm">
               {[
                 ["Location", profile?.location || ""],
                 ["App language", profile?.locale === "hi" ? "हिंदी" : profile?.locale === "en" ? "English" : profile?.locale || ""],

@@ -44,7 +44,7 @@ export function CreateHero() {
                     style={{ color: v("--ux-brand"), fontFamily: "var(--font-display)" }}>
           A small circle can make a big impact.
         </blockquote>
-        <figcaption className="mt-1.5 flex items-center gap-1.5 text-2xs" style={{ color: v("--ux-muted") }}>
+        <figcaption className="mt-1.5 flex items-center gap-1.5 text-[12px] lg:text-2xs" style={{ color: v("--ux-muted") }}>
           — WomSakhi <Icons.Heart className="h-[11px] w-[11px]" style={{ color: v("--ux-pink-ink") }} />
         </figcaption>
       </figure>
@@ -89,7 +89,7 @@ export function CoverPicker({ cover, onPick, onUpload }: {
                onChange={(e) => { const f = e.target.files?.[0]; if (f) onUpload(f); }} />
         <IconTile icon="ImagePlus" tint="--ux-surface" ink="--ux-brand" size={38} radius={11} />
         <span className="mt-1 text-xsm font-bold" style={{ color: v("--ux-ink") }}>Upload a cover</span>
-        <span className="text-2xs" style={{ color: v("--ux-muted") }}>
+        <span className="text-[12px] lg:text-2xs" style={{ color: v("--ux-muted") }}>
           Wide works best — about 1440 × 480. JPG or PNG.
         </span>
       </label>
@@ -152,7 +152,7 @@ export function TagField({ tags, draft, onDraft, onAdd, onRemove, suggestions }:
           style={{ color: v("--ux-ink") }}
         />
       </div>
-      <p className="mt-1.5 text-2xs" style={{ color: v("--ux-muted") }}>
+      <p className="mt-1.5 text-[12px] lg:text-2xs" style={{ color: v("--ux-muted") }}>
         Up to five words that help a woman find this circle. Press Enter after each.
       </p>
 
@@ -161,7 +161,7 @@ export function TagField({ tags, draft, onDraft, onAdd, onRemove, suggestions }:
           {tags.map((t) => (
             <button key={t} type="button" onClick={() => onRemove(t)}
                     aria-label={`Remove ${t}`}
-                    className="ux-press ux-sq flex items-center gap-1.5 rounded-full px-3 py-1.5 text-2xs font-bold"
+                    className="ux-press ux-sq flex items-center gap-1.5 rounded-full px-3 py-1.5 text-[12px] lg:text-2xs font-bold"
                     style={{ background: v("--ux-brand-tint"), color: v("--ux-brand") }}>
               #{t}
               <Icons.X className="h-[11px] w-[11px]" />
@@ -174,7 +174,7 @@ export function TagField({ tags, draft, onDraft, onAdd, onRemove, suggestions }:
         <div className="mt-3 flex flex-wrap gap-1.5">
           {suggestions.filter((s) => !tags.includes(s)).slice(0, 6).map((s) => (
             <button key={s} type="button" onClick={() => onAdd(s)}
-                    className="ux-press ux-sq rounded-full px-2.5 py-1 text-2xs font-semibold"
+                    className="ux-press ux-sq rounded-full px-2.5 py-1 text-[12px] lg:text-2xs font-semibold"
                     style={{ background: v("--ux-surface-2"), color: v("--ux-ink-2") }}>
               + {s}
             </button>
@@ -209,7 +209,7 @@ export function LivePreview({ name, desc, cover, icon, category, privacy, tags, 
           <img src={cover} alt="" aria-hidden loading="lazy" decoding="async"
                className="h-full w-full object-cover" />
         ) : (
-          <span className="flex items-center gap-1.5 text-2xs font-semibold" style={{ color: v(t.ink) }}>
+          <span className="flex items-center gap-1.5 text-[12px] lg:text-2xs font-semibold" style={{ color: v(t.ink) }}>
             <I name="ImagePlus" className="h-[13px] w-[13px]" />
             Your cover goes here
           </span>
@@ -227,7 +227,7 @@ export function LivePreview({ name, desc, cover, icon, category, privacy, tags, 
         <p className="text-smd font-extrabold leading-snug" style={{ color: v("--ux-ink") }}>
           {name.trim() || "Your circle's name"}
         </p>
-        <p className="mt-1.5 flex items-center gap-1.5 text-2xs" style={{ color: v("--ux-muted") }}>
+        <p className="mt-1.5 flex items-center gap-1.5 text-[12px] lg:text-2xs" style={{ color: v("--ux-muted") }}>
           <I name={privacy === "public" ? "Globe" : "Lock"} className="h-[12px] w-[12px]" />
           {privacy === "public" ? "Open circle" : privacy === "request" ? "Ask to join" : "Invite only"}
           {" · "}{members(count)} {count === 1 ? "member" : "members"}
@@ -238,7 +238,7 @@ export function LivePreview({ name, desc, cover, icon, category, privacy, tags, 
         {tags.length > 0 && (
           <p className="mt-3 flex flex-wrap gap-1.5">
             {tags.map((x) => (
-              <span key={x} className="rounded-full px-2.5 py-1 text-3xs font-semibold"
+              <span key={x} className="rounded-full px-2.5 py-1 text-[12px] lg:text-3xs font-semibold"
                     style={{ background: v("--ux-surface-2"), color: v("--ux-ink-2") }}>
                 {x}
               </span>
@@ -273,7 +273,7 @@ export function CircleTips({ at }: { at: number }) {
           const lit = i < 4 ? at === 1 : at > 1;
           return (
             <li key={t} className="flex items-start gap-2.5">
-              <span className="grid h-[20px] w-[20px] shrink-0 place-items-center rounded-full text-3xs font-extrabold"
+              <span className="grid h-[20px] w-[20px] shrink-0 place-items-center rounded-full text-[12px] lg:text-3xs font-extrabold"
                     style={{ background: v(lit ? "--ux-fill" : "--ux-surface-2"),
                              color: v(lit ? "--ux-on-brand" : "--ux-muted") }}>
                 {i + 1}

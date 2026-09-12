@@ -64,6 +64,17 @@ colours and produced four phantom failures.
   Phase 6 screens in both themes, and finally *presses* both feedback
   components — `ActionBtn` must swap its label and swap it back, `NoteBtn` must
   open a box that refuses to send empty.
+- `media-urls.mjs` — **no hostname is ever stored in the database.** `POST
+  /uploads` used to store the absolute URL it had just built, so a file
+  uploaded from a laptop carried `http://localhost:8020` into production and
+  the browser refused it — 40 CORS errors on a real phone, on images that were
+  served correctly the whole time. Nothing caught it: the value was right on
+  the machine that wrote it, the screenshot checks never read the console, and
+  `api.mjs` saw a 200 with a poisoned string inside. It asserts in three
+  independent places — only `app/core/media.py` may read `MEDIA_BASE_URL`; the
+  database holds no loopback URL (asked of the backend, which owns the Mongo
+  driver); and a real upload stores a path, returns a URL that loads, and older
+  absolute rows still read back without being double-prefixed.
 - `ux-nav.mjs` — every route resolves to the right mode and rail section
 - `ux-states.mjs` — every route has a loading state and an error state, and the
   error names what failed in her words

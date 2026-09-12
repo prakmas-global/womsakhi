@@ -47,7 +47,7 @@ export function printDocument(title: string, bodyHtml: string, page = PAGE_DOCUM
   h2 { font-size: 13px; margin: 26px 0 8px; text-transform: uppercase;
        letter-spacing: 0.07em; color: #5b6070; }
   .sub { color: #5b6070; margin: 0 0 22px; }
-  .brand { font-weight: 700; color: #4a2895; letter-spacing: -0.01em; }
+  .brand { font-weight: 700; color: #742a4f; letter-spacing: -0.01em; }
   table { width: 100%; border-collapse: collapse; }
   th { text-align: left; font-size: 11px; text-transform: uppercase; letter-spacing: 0.06em;
        color: #5b6070; border-bottom: 1.5px solid #16181f; padding: 0 8px 6px 0; }

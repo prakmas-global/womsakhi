@@ -24,7 +24,14 @@ class Settings(BaseSettings):
     # Uploads — where images are written, the host the browser loads them from,
     # and how big a single file may be.
     MEDIA_DIR: str = "media"
+    # Only ever used to BUILD a URL on the way out — never stored. See
+    # app/core/media.py for why a host in the database was a bug.
     MEDIA_BASE_URL: str = "http://localhost:8020"
+    # Other hosts this API has answered to. An incoming `/media/…` URL on one of
+    # these is recognised as ours and stored as a bare path instead of a URL,
+    # so a value that round-trips through the frontend does not smuggle a host
+    # back in. Loopback and MEDIA_BASE_URL's own host are always included.
+    MEDIA_ALT_HOSTS: str = "api.womsakhi.com"
     MAX_UPLOAD_MB: int = 5
 
     # Identity documents. Kept in a SEPARATE directory that is never mounted for

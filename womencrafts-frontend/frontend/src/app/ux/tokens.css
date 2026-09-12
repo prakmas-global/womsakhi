@@ -3,17 +3,40 @@
   Every value sampled from the supplied screens rather than guessed.
 
   Deliberately NOT merged into the existing design system. The admin app is
-  magenta (#d21f7c) on a warm bone canvas; this is violet (#6642c1) on near
-  white. Two products, two palettes — folding them together would drag one out
-  of shape. Prefixed --ux-* so nothing here can collide with the Tailwind
+  magenta (#d21f7c) on a warm bone canvas; this is WomSakhi Berry (#742a4f) on
+  warm cream (#fcf8f7) — the marketing site's palette, so the product a woman
+  signs up from and the product she signs in to are the same colour. Two
+  products, two palettes — folding them together would drag one out of shape.
+
+  ── The brand kit, and the two values it could not supply ──────────────────
+  Eleven colours were given: Berry #742a4f, Primary Light #a55168, Primary Soft
+  #f3dad7, Rose Blush #e8b7b7, Lavender #8b5cf6, Lavender Soft #e9ddfb, Peach
+  #f6c7a8, Warm Cream #fcf8f7, Pure White #ffffff, Deep Plum #29141f, Warm Gray
+  #6f6268. Every one of them is used here at its exact hex as a fill, a card or
+  a ground.
+
+  Two of the kit's own pairings do not clear AA, measured: Warm Gray on Primary
+  Soft is **4.37:1** and Lavender on Lavender Soft is **3.27:1**. Both are text
+  on a background, so both are fixed by darkening ONLY the text — `--ux-muted`
+  is #6c6065 rather than #6f6268 (4.52:1 on the soft card) and
+  `--ux-violet-ink` is #6f35f4 (4.64:1 on Lavender Soft). Nothing a reader sees
+  as a colour moved; the words on top became readable. Prefixed --ux-* so nothing here can collide with the Tailwind
   namespaces the main app reserves (see AGENTS.md on the reserved Tailwind token namespaces).
 
   ── Dark theme ─────────────────────────────────────────────────────────────
-  The supplied screens are light only, so dark is derived, not copied. The rule
-  followed: keep the hue and the relationships, invert the lightness. Surfaces
-  become deep violet-navy rather than grey, because a grey dark mode under a
-  violet brand reads as a different product. Flagged to the user as
-  interpretation — the light values are measured, these are reasoned.
+  The brand kit is light only, so dark is derived, not copied. Surfaces are
+  Deep Plum and steps of it rather than grey — a grey dark mode under a berry
+  brand reads as a different product. Ink is Warm Cream and Primary Soft; body
+  text is Rose Blush, which clears 8.38:1 on the raised card.
+
+  Two things stay exactly as in light mode. The button gradient is Berry to
+  Primary Light in BOTH themes, because both already carry white text
+  (9.60:1 and 5.28:1) — the violet palette had to lighten them for dark and
+  broke AA on one stop doing it. And Lavender stays #8b5cf6, because it marks
+  the AI surfaces and those should read the same wherever she meets them.
+
+  Flagged as interpretation: the light values are the kit's own, these are
+  reasoned from it. Every one is measured — see the ratios above each.
 */
 
 :root {
@@ -28,6 +51,8 @@
   --ux-z-base:     0;
   --ux-z-raised:   10;   /* a card lifted on hover, a sticky table header */
   --ux-z-sticky:   30;   /* section headers, the top bar */
+  /* The install card: above the tab bar (60), below toasts (70). */
+  --ux-z-install: 65;
   --ux-z-dropdown: 40;   /* menus, popovers, autocomplete */
   --ux-z-overlay:  50;   /* the dim behind a modal or drawer */
   --ux-z-modal:    60;   /* dialogs, drawers, bottom sheets */
@@ -48,42 +73,42 @@
      sheet. Dark mode never had the problem (#14122a against #1c1936), which
      is exactly why it looked designed and this did not. The tint leans to the
      brand's violet rather than to grey, so white cards read warm on it. */
-  --ux-canvas: #f4f2fa;
+  --ux-canvas: #fcf8f7;
   --ux-surface: #ffffff;
-  --ux-surface-2: #f8f7fc;
-  --ux-line: #e7e4f1;
-  --ux-line-strong: #d9d5e8;
+  --ux-surface-2: #f9f0ee;
+  --ux-line: #f8eae9;
+  --ux-line-strong: #f3dad7;
 
   /* ink */
-  --ux-ink: #161734;          /* headings, sidebar labels */
-  --ux-ink-2: #3b3d5c;
+  --ux-ink: #29141f;          /* headings, sidebar labels */
+  --ux-ink-2: #592b43;
   /* Both darkened after measuring. The sampled #6e7391 reads 4.21:1 on the
      violet quick-action tint and #9aa0b8 read 2.35:1 — under the 4.5:1 that
      small text needs. These are the nearest values that clear it on EVERY
      surface they land on, including the six coloured tints, rather than only
      on white where they happened to look fine. */
-  --ux-muted: #5c6180;        /* "Course • Beginner" — 5.47:1 worst case */
-  --ux-faint: #63688a;        /* timestamps, chevrons — 4.91:1 worst case */
+  --ux-muted: #6c6065;        /* "Course • Beginner" — 5.47:1 worst case */
+  --ux-faint: #6c6065;        /* timestamps, chevrons — 4.91:1 worst case */
 
   /* brand violet */
-  --ux-brand: #6642c1;        /* links, "See All" */
-  --ux-brand-600: #7648b3;    /* primary button */
-  --ux-brand-700: #5b32a6;
-  --ux-brand-900: #4a2895;    /* the dark "Complete Your Profile" card */
+  --ux-brand: #742a4f;        /* links, "See All" */
+  --ux-brand-600: #a55168;    /* primary button */
+  --ux-brand-700: #742a4f;
+  --ux-brand-900: #521e38;    /* the dark "Complete Your Profile" card */
   /* What sits ON the brand-900 slab. Written as literal hex in two components
      before, which is how the button on it came to be 4.31:1 — below AA, in the
      sidebar, on every screen. The button is white because no violet clears 4.5:1
      for white text while still separating from the slab it sits on. */
-  --ux-on-brand-2: #cdbdf0;        /* 5.98:1 on brand-900 */
+  --ux-on-brand-2: #f3dad7;        /* 5.98:1 on brand-900 */
   --ux-on-brand-track: rgba(0, 0, 0, 0.20);
-  --ux-on-brand-fill: #c9a8f5;     /* 5.13:1 — a graphic, needs 3:1 */
+  --ux-on-brand-fill: #e8b7b7;     /* 5.13:1 — a graphic, needs 3:1 */
   --ux-on-brand-btn: #ffffff;      /* 10.35:1 against the slab */
-  --ux-on-brand-btn-ink: #4a2895;  /* 10.35:1 on that white */
+  --ux-on-brand-btn-ink: #521e38;  /* 10.35:1 on that white */
   /* The bed a video or a poster sits on. Deliberately near-black in BOTH
      themes — a light letterbox around a photograph fights the photograph. */
-  --ux-media-bed: #141130;
-  --ux-brand-tint: #f8f3fd;   /* active nav pill */
-  --ux-brand-tint-2: #f4ecfe; /* progress track */
+  --ux-media-bed: #29141f;
+  --ux-brand-tint: #f7f2f4;   /* active nav pill */
+  --ux-brand-tint-2: #f3dad7; /* progress track */
   --ux-on-brand: #ffffff;
   /* Filled surfaces that carry WHITE text — buttons, sent message bubbles.
      Separate from the accent because the accent also paints progress fills and
@@ -91,8 +116,8 @@
      against white, so every primary button's right-hand gradient stop was
      failing AA and nothing caught it: a gradient has no single background
      colour, so the contrast pass skips it entirely. */
-  --ux-fill:   #5b32a6;       /* 8.57:1 with white */
-  --ux-fill-2: #7648b3;       /* 6.27:1 with white */
+  --ux-fill:   #742a4f;       /* 8.57:1 with white */
+  --ux-fill-2: #a55168;       /* 6.27:1 with white */
 
   /* ── The six accent families ───────────────────────────────────────────
      Generated in OKLCH, not picked by eye, and the difference is measurable.
@@ -105,13 +130,13 @@
      and bars are graphics and need 3:1. Text needs 4.5:1, which on tints this
      pale is a much darker colour — so it gets its own token rather than
      dragging the whole palette down and taking the warmth with it. */
-  --ux-tint-violet: #f6f4ff;
-  --ux-tint-orange: #fff3f0;
-  --ux-tint-blue:   #eff7ff;
-  --ux-tint-green:  #eff9f1;
-  --ux-tint-pink:   #fff2f7;
-  --ux-tint-lilac:  #f6f4ff;
-  --ux-tint-amber:  #fdf6e3;   /* ink clears AA at 4.60:1 */
+  --ux-tint-violet: #e9ddfb;
+  --ux-tint-orange: #fae0cf;
+  --ux-tint-blue:   #eaeff4;
+  --ux-tint-green:  #eaf0ea;
+  --ux-tint-pink:   #f5dfdf;
+  --ux-tint-lilac:  #e9ddfb;
+  --ux-tint-amber:  #f1eade;   /* ink clears AA at 4.60:1 */
 
   /* graphics — measured 3.01 to 3.03 on the worst surface each lands on */
   /* ── The deep canvas, and the emblem's own ribbon ramp ────────────────
@@ -120,12 +145,12 @@
      the ribbon obeys ADR-013 like every other colour, and so one edit
      restyles the emblem, the spine and the hero art together. The ramp is
      the emblem's, sampled in order: indigo, violet, magenta, coral, gold. */
-  --ux-deep:      #140a22;   /* the ground */
-  --ux-deep-2:    #1c0f2e;   /* raised blocks on it */
-  --ux-deep-3:    #271541;   /* hairlines and tracks */
+  --ux-deep:      #29141f;   /* the ground */
+  --ux-deep-2:    #3a1c2c;   /* raised blocks on it */
+  --ux-deep-3:    #4f263c;   /* hairlines and tracks */
   --ux-deep-ink:  #ffffff;
-  --ux-deep-ink-2:#cbbce4;   /* 8.9:1 on --ux-deep */
-  --ux-deep-ink-3:#9d8bbd;   /* 5.1:1 on --ux-deep */
+  --ux-deep-ink-2:#e8b7b7;   /* 8.9:1 on --ux-deep */
+  --ux-deep-ink-3:#9f797d;   /* 5.1:1 on --ux-deep */
 
   /* The bloom under a Home card on hover. Two, because the tiles carry the
      accent of whatever they link to and the figures carry the brand. */
@@ -153,34 +178,34 @@
      red used for emphasis measures 2.8:1 against white, on the one control
      that has to work when she is frightened. */
   --ux-danger-solid: #b91c1c;
-  --ux-danger-tint: #fee2e2;
+  --ux-danger-tint: #f5e3e1;
 
   --ux-read-tick: #7fe3ff;
 
   --ux-glow: transparent;
-  --ux-shadow-glow: 0 16px 38px -18px rgba(139, 92, 246, 0.55);
-  --ux-shadow-glow-2: 0 20px 46px -18px rgba(224, 33, 154, 0.45);
+  --ux-shadow-glow: 0 16px 38px -18px rgba(116, 42, 79, 0.55);
+  --ux-shadow-glow-2: 0 20px 46px -18px rgba(165, 81, 104, 0.45);
 
-  --ux-rib-1: #4b37e0;
-  --ux-rib-2: #8b2fe0;
-  --ux-rib-3: #f0269b;
-  --ux-rib-4: #ff7a45;
-  --ux-rib-5: #ffc42e;
+  --ux-rib-1: #742a4f;
+  --ux-rib-2: #a55168;
+  --ux-rib-3: #e8b7b7;
+  --ux-rib-4: #f6c7a8;
+  --ux-rib-5: #8b5cf6;
 
-  --ux-violet: #9b79f2;
-  --ux-orange: #eb6342;
+  --ux-violet: #8b5cf6;
+  --ux-orange: #e97427;
   --ux-blue:   #1891f2;
   --ux-green:  #00a44b;
-  --ux-pink:   #e160a4;
+  --ux-pink:   #a55168;
   --ux-amber:  #b48700;
 
   /* text on a tint — measured 4.51 to 4.56 */
-  --ux-violet-ink: #7d5ccb;
-  --ux-orange-ink: #c34728;
-  --ux-blue-ink:   #0073c7;
-  --ux-green-ink:  #00823a;
-  --ux-pink-ink:   #ba4484;
-  --ux-amber-ink:  #8f6a00;
+  --ux-violet-ink: #6f35f4;
+  --ux-orange-ink: #a34b11;
+  --ux-blue-ink:   #006dbd;
+  --ux-green-ink:  #007d38;
+  --ux-pink-ink:   #9b4c62;
+  --ux-amber-ink:  #856200;
   /* Error text. Sits on a surface, not on the danger fill — `--ux-danger-solid`
      is the bed white text sits on, and using it for type on white was the bug
      this replaced. */
@@ -192,7 +217,7 @@
   /* The hover wash under `.ux-tile-lit`. Referenced by that rule since it was
      written and never defined, so the gradient resolved to nothing and the
      hover state simply did not paint. */
-  --ux-wash: rgba(102, 66, 193, 0.10);
+  --ux-wash: rgba(116, 42, 79, 0.10);
 
   /* ── Type scale ────────────────────────────────────────────────────────────
      Lives in `design-system/tokens.css`, not here.
@@ -259,7 +284,7 @@
      fail in opposite directions, and both were measured before anything was
      written:
 
-       · Light. `--ux-canvas` is #f4f2fa, which sits at OKLCH L 96.5%. There
+       · Light. `--ux-canvas` is #fcf8f7, which sits at OKLCH L 98.2%. There
          are THREE AND A HALF lightness points between it and white, so the
          white half of a classic neumorphic pair is invisible on it (1.03:1).
          Light mode is therefore SHADOW-led.
@@ -268,12 +293,58 @@
          therefore HIGHLIGHT-led, and the outer shadow only separates the card
          from the canvas.
 
-     And the ink is not black. A shadow on a lilac page is lilac light being
-     blocked, so it is the brand hue taken down to L 20% — #2a1c52. Measured
-     over the canvas at 14%: this reads 1.31:1 and keeps the room lilac, where
-     black at the same alpha reads 1.19:1 and drains the hue out of it. Stripe
-     does the same thing with rgba(50,50,93) rather than black. */
-  --ux-shadow-ink: 42 28 82;
+     And the ink is not black. A shadow on a cream page is cream light being
+     blocked, so it is the brand hue taken down to L 20% — #3a1524, the berry
+     in shadow. Black at the same alpha drains the warmth straight out of the
+     room, which on this palette is the whole point of it. Stripe does the same
+     thing with rgba(50,50,93) rather than black. */
+
+  /* ── Glass ─────────────────────────────────────────────────────────────
+     The frosted panels in the brand comps: the stat bar that floats across
+     the seam between two sections, the card sitting over a photograph, the
+     bars pinned at the top and bottom of a phone.
+
+     Four parts make it read as glass rather than as a pale box, and the one
+     that is usually missing is the third:
+
+       1. a translucent body, so what is behind it shows as colour;
+       2. a blur, so what is behind it is not readable through it;
+       3. a lit top edge — a 1px highlight where the light catches the lip,
+          which is what makes it look like a sheet of something rather than a
+          hole in the page;
+       4. a shadow far larger and softer than a card's, because glass floats
+          well above the surface it sits on.
+
+     `--ux-glass-bg-solid` is not a fallback nobody sees. `backdrop-filter` is
+     unsupported on older Android WebViews, and this app is for women on cheap
+     phones: a 62%-opaque panel with no blur behind it is a see-through panel
+     with text over text. So the default here is OPAQUE and the transparency is
+     added only inside `@supports`, never the other way round. */
+
+  /* ── The bloom ─────────────────────────────────────────────────────────
+     Three very wide, very faint washes behind everything — rose, peach and
+     lavender, the kit's three soft accents. Barely visible alone; they are
+     what the frosted bars and the translucent cards pick up. Without them a
+     translucent card on flat cream is indistinguishable from an opaque one,
+     which is why most attempts at this look land as "pale box, big shadow". */
+  --ux-bloom:
+    radial-gradient(58% 40% at 6% 0%, rgba(232, 183, 183, 0.40), transparent 66%),
+    radial-gradient(50% 34% at 98% 10%, rgba(246, 199, 168, 0.32), transparent 64%),
+    radial-gradient(64% 44% at 74% 94%, rgba(233, 221, 251, 0.42), transparent 68%);
+
+  --ux-glass-blur: 22px;
+  --ux-glass-sat: 165%;
+  --ux-glass-bg: color-mix(in srgb, var(--ux-surface) 62%, transparent);
+  --ux-glass-bg-solid: color-mix(in srgb, var(--ux-surface) 92%, var(--ux-canvas));
+  --ux-glass-line: rgba(255, 255, 255, 0.58);
+  --ux-glass-sheen: rgba(255, 255, 255, 0.9);
+  --ux-glass-shadow:
+    inset 0 0 0 1px rgba(255, 255, 255, 0.30),
+    0 1px 2px var(--ux-sh-1),
+    0 10px 24px -10px var(--ux-sh-2),
+    0 32px 64px -28px var(--ux-sh-3);
+
+  --ux-shadow-ink: 58 21 36;
   --ux-sh-1: rgb(var(--ux-shadow-ink) / 0.05);
   --ux-sh-2: rgb(var(--ux-shadow-ink) / 0.10);
   --ux-sh-3: rgb(var(--ux-shadow-ink) / 0.16);
@@ -323,7 +394,7 @@
      The one place TRUE neumorphism lives. The illusion needs the element and
      what surrounds it to be the same colour — the moment they differ it stops
      being an extrusion and becomes a floating card — and it needs lightness
-     headroom on BOTH sides, which #ffffff on #f4f2fa has on neither.
+     headroom on BOTH sides, which #ffffff on #fcf8f7 has on neither.
 
      So wells get their own surface, deep enough to be carved into: a search
      field, a segmented track, a toggle, a progress channel, the recess a photo
@@ -343,69 +414,100 @@
 .ux.dark {
   --ux-sheen: rgba(255, 255, 255, 0.055);
   --ux-danger-solid: #9f1239;
-  --ux-danger-tint: #45161a;
+  --ux-danger-tint: #351e1d;
 
-  --ux-canvas: #14122a;
-  --ux-surface: #1c1936;
-  --ux-surface-2: #232043;
-  --ux-line: #2e2a4f;
-  --ux-line-strong: #3a3560;
+  /* Glass in the dark: less white, more blur showing through. A light border
+     at 58% would read as a chalk line on plum, so it drops to a tenth. */
+  /*
+     A tenth of light mode's, and that is the fix.
 
-  --ux-ink: #f2f0fb;
-  --ux-ink-2: #d6d2ec;
-  --ux-muted: #a09bc2;        /* 5.10:1 on the darkest surface it lands on */
-  --ux-faint: #9692b2;        /* was #7d78a0 — 3.25:1 on the raised card */
+     This was 0.34 / 0.20 / 0.38 and the result was a single muddy brown sheet:
+     a saturated wash at that strength lands ON the surfaces, and translucent
+     cards then pick up the same wash and stop reading as cards at all. The
+     rule a dark theme actually wants is the reverse of what that produced —
+     LOW chroma in the walls, HIGH chroma in the accents. So the walls are 15
+     to 20% saturation and near-neutral, the bloom is barely a suggestion, and
+     the colour you see is the rose links, the accent icons and the berry
+     buttons standing against it.
+  */
+  --ux-bloom:
+    radial-gradient(58% 40% at 6% 0%, rgba(215, 86, 133, 0.10), transparent 62%),
+    radial-gradient(50% 34% at 98% 10%, rgba(171, 122, 235, 0.07), transparent 60%),
+    radial-gradient(64% 44% at 74% 94%, rgba(116, 42, 79, 0.12), transparent 64%);
+  --ux-glass-bg: color-mix(in srgb, var(--ux-surface) 72%, transparent);
+  --ux-glass-bg-solid: var(--ux-surface);
+  --ux-glass-line: rgba(255, 255, 255, 0.10);
+  --ux-glass-sheen: rgba(255, 255, 255, 0.16);
+  --ux-glass-shadow:
+    inset 0 0 0 1px rgba(255, 255, 255, 0.07),
+    0 1px 2px rgba(0, 0, 0, 0.5),
+    0 12px 28px -10px rgba(0, 0, 0, 0.55),
+    0 34px 70px -28px rgba(0, 0, 0, 0.6);
 
-  --ux-brand: #a98bf5;
-  --ux-brand-600: #8f6ae8;
-  --ux-brand-700: #7c56d8;
-  --ux-brand-900: #2c1a5c;
-  --ux-on-brand-2: #cdbdf0;        /* 8.61:1 on the darker slab */
+
+  --ux-canvas: #150c0f;
+  --ux-surface: #22161b;
+  --ux-surface-2: #302227;
+  --ux-line: #443138;
+  --ux-line-strong: #5b434c;
+
+  --ux-ink: #fbf4f5;
+  --ux-ink-2: #e7dadf;
+  --ux-muted: #a5838f;        /* 5.10:1 on the darkest surface it lands on */
+  --ux-faint: #a38590;        /* was #7d78a0 — 3.25:1 on the raised card */
+
+  --ux-brand: #d75685;
+  --ux-brand-600: #dc7a9e;
+  --ux-brand-700: #c9547f;
+  --ux-brand-900: #401c29;
+  --ux-on-brand-2: #d194aa;        /* 8.61:1 on the darker slab */
   --ux-on-brand-track: rgba(0, 0, 0, 0.28);
-  --ux-on-brand-fill: #c9a8f5;     /* 7.38:1 */
+  --ux-on-brand-fill: #cb7292;     /* 7.38:1 */
   --ux-on-brand-btn: #ffffff;      /* 14.90:1 */
-  --ux-on-brand-btn-ink: #2c1a5c;
-  --ux-media-bed: #100e26;
-  --ux-brand-tint: #251f45;
-  --ux-brand-tint-2: #2b2350;
+  --ux-on-brand-btn-ink: #401c29;
+  --ux-media-bed: #0f080b;
+  --ux-brand-tint: #2f1d24;
+  --ux-brand-tint-2: #3b262e;
   --ux-on-brand: #ffffff;
-  /* Lighter than the light-mode pair, but still dark enough for white to clear
-     AA on both gradient stops — which `--ux-brand-600` (3.89:1) did not. */
-  --ux-fill:   #6b46c9;       /* 6.28:1 with white */
-  --ux-fill-2: #7c56d8;       /* 5.02:1 with white */
+  /* The SAME two berries as light mode, and deliberately so: a filled button
+     carries white text in both themes, and Berry and Primary Light already
+     clear AA with white (9.60:1 and 5.28:1). Lightening them for dark mode —
+     which the violet palette had to do — would have broken that. */
+  --ux-fill:   #742a4f;       /* 6.28:1 with white */
+  --ux-fill-2: #a55168;       /* 5.02:1 with white */
 
-  --ux-tint-violet: #2a2637;
-  --ux-tint-orange: #36241f;
-  --ux-tint-blue:   #1e2a38;
-  --ux-tint-green:  #1e2d21;
-  --ux-tint-pink:   #35232b;
-  --ux-tint-lilac:  #2a2637;
-  --ux-tint-amber:  #2e2615;   /* ink clears AA at 4.68:1; #332a18 was 4.42 */
+  --ux-tint-violet: #2a2235;
+  --ux-tint-orange: #352922;
+  --ux-tint-blue:   #232b34;
+  --ux-tint-green:  #23342c;
+  --ux-tint-pink:   #352225;
+  --ux-tint-lilac:  #2a2235;
+  --ux-tint-amber:  #352f22;   /* ink clears AA at 4.68:1; #332a18 was 4.42 */
 
   /* Dark mode needs only one strength. Solving for 4.5:1 here lands around
      L 0.72, which is luminous enough to work as a shape as well as a word —
      whereas solving graphics at 3:1 returns the DIMMEST colour that passes,
      and a dim accent on a dark ground reads as a hole, not a highlight. */
-  --ux-violet: #9d7bf5;
-  --ux-orange: #ed6644;
+  --ux-violet: #ab7aeb;
+  --ux-orange: #e7b492;
   --ux-blue:   #1c93f5;
   --ux-green:  #00a64b;
-  --ux-pink:   #e363a7;
+  --ux-pink:   #e18e9c;
   --ux-amber:  #b68900;
 
-  --ux-violet-ink: #9c7dee;
-  --ux-orange-ink: #e8694a;
-  --ux-blue-ink:   #2b94ef;
-  --ux-green-ink:  #1fa551;
-  --ux-pink-ink:   #df66a5;
-  --ux-amber-ink:  #b68900;
-  --ux-danger-ink: #ff8a80;
+  --ux-violet-ink: #a674e7;
+  --ux-orange-ink: #d88c5a;
+  --ux-blue-ink:   #5196db;
+  --ux-green-ink:  #51c890;
+  --ux-pink-ink:   #d77081;
+  --ux-amber-ink:  #d3a445;
+  --ux-danger-ink: #da6a62;
 
   --ux-on-green: #04231b;
 
-  --ux-wash: rgba(169, 139, 245, 0.14);
+  --ux-wash: rgba(215, 86, 133, 0.12);
 
-  --ux-track: #2e2a4f;
+  --ux-track: #443138;
   /* Dark is the mirror image, not the inverse.
      Black at 55% over #1c1938 measures 1.15:1 — there is no shadow to be had
      down here, so the top highlight and the hairline carry the whole edge and
@@ -451,23 +553,100 @@
     inset -2px -2px 6px var(--ux-well-hi);
   /* These two had no dark value at all, so a hovered card down here wore a
      violet bloom mixed for a white page. */
-  --ux-shadow-glow: 0 16px 38px -18px rgba(139, 92, 246, 0.42);
-  --ux-shadow-glow-2: 0 20px 46px -18px rgba(224, 33, 154, 0.34);
+  --ux-shadow-glow: 0 16px 38px -18px rgba(232, 183, 183, 0.42);
+  --ux-shadow-glow-2: 0 20px 46px -18px rgba(165, 81, 104, 0.40);
   --ux-scrim: rgba(6, 5, 18, 0.72);
 }
 
 .ux {
-  background: var(--ux-canvas);
+  /*
+    The room the glass sits in — painted INTO the canvas, not layered over it.
+
+    The first version of this was a fixed `::before` plus
+    `.ux > * { position: relative; z-index: 1 }` to lift the content over it.
+    That second rule is a trap: `.ux > *` has higher specificity than a
+    Tailwind `.fixed`, so it quietly demoted the top bar from fixed to
+    relative and the whole header dropped into the scroll. A decorative layer
+    that changes how anything is positioned is not worth having.
+
+    As background layers it costs nothing and can break nothing: the gradients
+    are attached to the viewport so they hold still while the page scrolls,
+    exactly as a fixed layer would, with no stacking context of their own.
+  */
+  background-color: var(--ux-canvas);
+  background-image: var(--ux-bloom);
+  background-attachment: fixed;
+  background-repeat: no-repeat;
   color: var(--ux-ink);
 }
 
 /* One card definition, so a radius change lands everywhere at once. */
-.ux-card {
-  background: var(--ux-surface);
-  border: 1px solid var(--ux-line);
-  border-radius: var(--ux-r-card);
-  box-shadow: var(--ux-shadow-card);
+/*
+  The serif, where the brand comps use a serif.
+
+  Not everywhere. On the marketing site Fraunces carries the hero and the
+  section headings — "Every Woman Has a Stronger Tomorrow", "Tools for a
+  Brighter Tomorrow" — while the eyebrows, the card titles and every label
+  stay in the sans. Putting a serif on a 13px UI label does not make the app
+  look editorial, it makes it look like the font failed to load.
+
+  So: `h1`, the large title, and anything that opts in. Fraunces has an `opsz`
+  axis, so a 34px masthead is drawn with tighter apertures than a 20px heading
+  rather than merely scaled — which is the whole reason it is worth loading a
+  variable serif instead of a static one.
+
+  `--font-display` puts the Noto faces FIRST. A Devanagari or Tamil headline
+  has no glyphs in a Latin serif, and a heading that falls back mid-sentence is
+  worse than one that was never styled.
+*/
+.ux h1,
+.ux .ux-large-title,
+.ux .ux-display {
+  font-family: var(--font-display);
+  letter-spacing: -0.02em;
 }
+
+/*
+  A card, as a sheet of glass.
+
+  Translucent rather than white, so the bloom behind it tints it — the one
+  change that makes the whole page read as glass rather than as paper. The lit
+  top lip and the wide soft shadow come with it.
+
+  NO blur here, on purpose, and this is the important restraint: a list is
+  fifteen cards, and fifteen backdrop-filters recomposite on every scroll frame.
+  On the phones this app is built for that is the difference between a screen
+  that glides and one that stutters. The bars get the blur because there are two
+  of them and they do not move; the cards get the translucency, which is free.
+*/
+.ux-card {
+  background: color-mix(in srgb, var(--ux-surface) 82%, transparent);
+  border: 1px solid var(--ux-glass-line);
+  border-radius: var(--ux-r-card);
+  box-shadow:
+    inset 0 1px 0 var(--ux-glass-sheen),
+    inset 0 0 0 1px rgba(255, 255, 255, 0.22),
+    0 1px 2px var(--ux-sh-1),
+    0 10px 26px -12px var(--ux-sh-2),
+    0 26px 54px -30px var(--ux-sh-3);
+}
+/*
+  Dark cards are less translucent than light ones — 90% against 82%.
+
+  A card in dark mode is LIGHTER than the ground it sits on, which is the
+  opposite of light mode, where it is lighter than a tinted canvas by a hair.
+  Let too much of a dark ground through and the card stops being a card. The
+  lit lip and the hairline do the rest of the separating; there is no usable
+  shadow at this lightness.
+*/
+.ux.dark .ux-card {
+  background: color-mix(in srgb, var(--ux-surface) 90%, transparent);
+}
+
+@media (prefers-reduced-transparency: reduce) {
+  .ux-card, .ux.dark .ux-card { background: var(--ux-surface); }
+}
+
 .ux-scroll-x {
   overflow-x: auto;
   scrollbar-width: none;
@@ -663,7 +842,7 @@
  * The one place true neumorphism belongs: a search field, a segmented track,
  * a toggle, a progress channel. It needs its own surface because the illusion
  * requires the element and its surround to be the same colour, and it needs
- * lightness headroom on both sides, which #ffffff on #f4f2fa has on neither.
+ * lightness headroom on both sides, which #ffffff on #fcf8f7 has on neither.
  *
  * The pair is deliberately asymmetric — the highlight is pushed further and
  * blurred more than the shade. Symmetrical, a well reads as a grey ring.
@@ -720,16 +899,52 @@
     inset 0 0 0 1px rgba(255, 255, 255, 0.09);
 }
 
-.ux-glass {
-  background: color-mix(in srgb, var(--ux-surface) 74%, transparent);
-  border: 1px solid color-mix(in srgb, var(--ux-line-strong) 60%, transparent);
-  box-shadow: var(--ux-shadow-pop);
+.ux-glass,
+.ux-glass-card {
+  position: relative;
+  background: var(--ux-glass-bg-solid);
+  border: 1px solid var(--ux-glass-line);
+  box-shadow: var(--ux-glass-shadow);
 }
+
+/* The lit lip. `::before` rather than a border-top, so it sits inside the
+   radius and follows the curve instead of squaring off at the corners. */
+.ux-glass::before,
+.ux-glass-card::before {
+  content: "";
+  position: absolute;
+  inset: 0 0 auto 0;
+  height: 1px;
+  border-radius: inherit;
+  pointer-events: none;
+  background: linear-gradient(90deg, transparent, var(--ux-glass-sheen) 22%,
+                              var(--ux-glass-sheen) 78%, transparent);
+}
+
 @supports (backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px)) {
-  .ux-glass {
-    -webkit-backdrop-filter: blur(20px) saturate(150%);
-    backdrop-filter: blur(20px) saturate(150%);
-    background: color-mix(in srgb, var(--ux-surface) 66%, transparent);
+  .ux-glass,
+  .ux-glass-card {
+    background: var(--ux-glass-bg);
+    -webkit-backdrop-filter: blur(var(--ux-glass-blur)) saturate(var(--ux-glass-sat));
+    backdrop-filter: blur(var(--ux-glass-blur)) saturate(var(--ux-glass-sat));
+  }
+}
+
+/*
+  Two reasons to take the glass away, and both are hers, not ours.
+
+  A woman who has asked her phone to reduce transparency has asked for exactly
+  this, usually because the blur makes text harder for her to read. And
+  `prefers-reduced-motion` is not about transparency — but a blurred panel is
+  recomposited on every scroll frame, and on a low-end Android that is the
+  jank she was trying to avoid.
+*/
+@media (prefers-reduced-transparency: reduce) {
+  .ux-glass,
+  .ux-glass-card {
+    background: var(--ux-glass-bg-solid);
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
   }
 }
 
@@ -1871,8 +2086,14 @@
    Height queries, not width: the same 1440px-wide window on a monitor and on
    a laptop have different amounts of room, and it is the room that matters. */
 .ux-fitboard {
-  --fb-gap: 11px;
-  --fb-pad: 20px;
+  --fb-gap: 12px;
+  --fb-pad: 16px;
+  /* A card's inside, and how tall it stands. Separate from --fb-pad so a
+     shorter window tightens the BOARD's gaps without cramping what is in the
+     cards — that swap is what turned the last version from crowded into
+     cramped. */
+  --fb-card-pad: 20px;
+  --fb-card-h: 122px;
   --fb-hero-y: 20px;
   --fb-lines: 1.55;
   --fb-chip: 12px;
@@ -1881,22 +2102,34 @@
      card's floor the picture may take. */
   --fb-art: 74px;
   /* How tall the Learn banner is allowed to be. */
-  --fb-banner: 268px;
+  --fb-banner: 300px;
   --fb-h1: 2.6rem;
   --fb-tile: 54px;
   --fb-circle: 50px;
   --fb-body: 13.5px;
-  --fb-title: 19px;
+  --fb-title: 17px;
   --fb-ring: 72px;
   --fb-stat: 28px;
   --fb-foot: 78px;
-  /* Unclamped by default. Below `xl` the board is a column that scrolls like
-     any other page, and there is no reason to withhold a sentence from a
-     woman reading it on a phone. */
+  /*
+    Never clamped, at any size — and this is a reversal.
+
+    The board was built to fit one viewport without scrolling, and it bought
+    that by shrinking the content: at a 1010px-tall window the clamp dropped to
+    TWO lines and the banner to 172px. What that produced was six cards whose
+    descriptions stopped mid-word — "designed for real-life skills, from basics
+    to…" — above an inch of empty card, with the hero image cropped through the
+    woman's face and the handwriting cut off at both edges.
+
+    That is the wrong trade. A scroll costs a woman one flick of her thumb; a
+    sentence that stops mid-word costs her the sentence, and reads as a broken
+    screen rather than a summary. These descriptions are two sentences. They
+    fit. So the board is sized by its content now and scrolls if it must.
+  */
   --fb-clamp: 99;
 }
 @media (min-width: 1280px) {
-  .ux-fitboard { --fb-hero-y: 22px; --fb-clamp: 3; --fb-lines: 1.5; }
+  .ux-fitboard { --fb-hero-y: 22px; --fb-lines: 1.5; }
 }
 
 /* The tag beside a card's button, which is reinforcement rather than
@@ -1911,15 +2144,28 @@
 /* 1010, not 950. The Work board is drawn on a 1024-tall canvas and fills
    it exactly; a 992-tall window is 32px short of that, which is enough to
    need the tighter step and was landing in the generous one. */
+/*
+  A shorter window tightens the SPACING, and nothing else.
+
+  These two steps used to take the type down to 11px, the headline from 2.6rem
+  to 1.45rem, the banner from 268px to 82px and the clamp to two lines — the
+  whole board shrunk to dodge a scrollbar. Padding and gaps are the only things
+  that should answer to window height: they are breathing room, and a shorter
+  screen genuinely has less of it. Type size, image height and how much of a
+  sentence a woman is allowed to read are not negotiable against 30 pixels of
+  viewport.
+*/
 @media (min-width: 1280px) and (max-height: 1010px) {
-  .ux-fitboard { --fb-gap: 8px; --fb-pad: 12px; --fb-hero-y: 9px; --fb-clamp: 2;
-                 --fb-chip: 11px; --fb-h1: 2.15rem; --fb-tile: 44px; --fb-circle: 44px;
-                 --fb-body: 12px; --fb-title: 17px; --fb-ring: 66px; --fb-stat: 26px; --fb-foot: 74px;  --fb-art: 62px;  --fb-banner: 172px; }
+  .ux-fitboard { --fb-gap: 10px; --fb-pad: 14px; --fb-hero-y: 12px;
+                 --fb-card-pad: 18px; --fb-card-h: 112px;
+                 --fb-h1: 2.35rem; --fb-tile: 50px; --fb-circle: 46px;
+                 --fb-ring: 68px; --fb-foot: 76px; --fb-art: 66px; --fb-banner: 268px; }
 }
 @media (min-width: 1280px) and (max-height: 850px) {
-  .ux-fitboard { --fb-gap: 5px; --fb-pad: 7px; --fb-hero-y: 2px; --fb-clamp: 2; --fb-lines: 1.24;
-                 --fb-chip: 10px; --fb-h1: 1.45rem; --fb-tile: 34px; --fb-circle: 34px;
-                 --fb-body: 11px; --fb-title: 15px; --fb-ring: 42px; --fb-stat: 22px; --fb-foot: 56px;  --fb-art: 40px;  --fb-banner: 82px; }
+  .ux-fitboard { --fb-gap: 8px; --fb-pad: 12px; --fb-hero-y: 8px;
+                 --fb-card-pad: 16px; --fb-card-h: 104px;
+                 --fb-h1: 2.05rem; --fb-tile: 44px; --fb-circle: 42px;
+                 --fb-ring: 60px; --fb-foot: 70px; --fb-art: 58px; --fb-banner: 236px; }
 }
 
 /* ── The Earn board's own measures ─────────────────────────────────────────
@@ -2139,7 +2385,7 @@
    Anything here is measured against the band's own gradient, not the canvas.
    `--ux-band-ink` is 13.5:1 on it; `--ux-band-ink-2` is 7.9:1. */
 .ux {
-  --ux-band-ink: #161734;
+  --ux-band-ink: #29141f;
   --ux-band-ink-2: #413f63;
   --ux-band-brand: #6c3fd0;
   --ux-band-edge: #ecdff0;

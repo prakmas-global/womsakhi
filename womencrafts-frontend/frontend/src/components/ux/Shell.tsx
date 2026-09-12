@@ -17,6 +17,7 @@ import { SECTIONS, TABS, trailFor, type NavNode, type Section } from "./nav-tree
 import { Avatar } from "./kit";
 import { useSearchHotkey } from "./useSearchHotkey";
 import { MobileNav, SafetyPin } from "./MobileNav";
+import { PageTransition } from "./mobile/PageTransition";
 
 /**
  * The search panel is a ⌘K surface — most sessions never open it, and it drags
@@ -328,7 +329,18 @@ export function ModeRail({ path, footer }: { path: string; footer?: React.ReactN
         className="ux-sq mx-3 mb-4 block shrink-0 overflow-hidden rounded-[16px]"
         style={{ border: "1px solid var(--ux-line)" }}>
         <span className="block h-[52px]"
-              style={{ background: "linear-gradient(120deg, var(--ux-brand-700), var(--ux-brand))" }} />
+              /*
+                The fill pair, not the brand pair.
+
+                This was `--ux-brand-700` to `--ux-brand`, and in dark mode
+                those are TEXT colours: they have to be light and high-chroma
+                to read on a dark ground. Used as a fill they made this slab a
+                hot pink bar across the top of the rail, the loudest thing on a
+                deliberately quiet screen. `--ux-fill` / `--ux-fill-2` are the
+                tokens for a filled surface that carries white — Berry to
+                Primary Light, the same in both themes.
+              */
+              style={{ background: "linear-gradient(120deg, var(--ux-fill), var(--ux-fill-2))" }} />
         <span className="block px-3.5 pb-3.5">
           <span className="-mt-6 block h-[46px] w-[46px] overflow-hidden rounded-full"
                 style={{ border: "3px solid var(--ux-surface)", background: "var(--ux-brand-tint-2)" }}>
@@ -807,7 +819,14 @@ export function Shell({
                 {/* The rail carrying these is `hidden lg:flex`, so on a phone
                     every sub-page — Your journey, Your calendar, Saved — was
                     reachable only by whatever happened to link to it. */}
-                {children}
+                {/* On a phone the fade above becomes a directional slide —
+                    forward from the right, back from the left. `PageTransition`
+                    adds no wrapper element and no click handler: it decides
+                    which way the NEXT arriving screen travels and writes that
+                    to a custom property, so `.ux-swap`'s own animation still
+                    rides on the element the router inserts. Nothing about it
+                    sits between the tap and the navigation. */}
+                <PageTransition>{children}</PageTransition>
               </main>
               {rail && (
                 <div data-rail className="ux-swap hidden w-[320px] shrink-0 pb-24 xl:block">

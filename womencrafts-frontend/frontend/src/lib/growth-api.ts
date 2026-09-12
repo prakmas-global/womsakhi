@@ -21,10 +21,22 @@ export interface Opportunity {
   desc: string;
   location: string;
   mode: string;
-  /** Free text, e.g. "₹12,000–₹18,000 / month". See the note in
-   *  `docs/backend-plan.md`: this ought to be minor units, and cannot be
-   *  filtered or sorted until it is. */
+  /** Free text, e.g. "₹12,000–₹18,000 / month". Kept because it is the
+   *  sentence the buyer wrote; the two fields below are what anything
+   *  arithmetic must use. */
   pay: string;
+  /**
+   * The same figures in PAISE, as the server stores them.
+   *
+   * These have been on the wire since the pay migration and no client type
+   * said so, so every screen fell back to re-parsing `pay` in the browser.
+   * Zero means "the listing did not say", not "unpaid" — show the words, not
+   * a ₹0.
+   */
+  pay_low_minor: number;
+  pay_high_minor: number;
+  /** month | year | week | day | hour | word | piece, or "" when unstated. */
+  pay_period: string;
   skills: string[];
   openings: number;
   deadline: string;
@@ -62,8 +74,10 @@ export interface Application {
   applied_on: string;
 }
 
-export const apiOpportunities = (s?: AbortSignal, params?: { q?: string; kind?: string }) =>
-  get<Opportunity[]>("/growth/opportunities", s, params);
+export const apiOpportunities = (
+  s?: AbortSignal,
+  params?: { q?: string; kind?: string; mode?: string },
+) => get<Opportunity[]>("/growth/opportunities", s, params);
 
 export const apiOpportunity = (id: string, s?: AbortSignal) =>
   get<Opportunity>(`/growth/opportunities/${id}`, s);

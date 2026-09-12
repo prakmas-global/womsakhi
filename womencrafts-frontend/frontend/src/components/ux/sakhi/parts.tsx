@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import * as Icons from "@/components/ux/icons";
+import { ChatInput, SendButton } from "./chat";
 
 /**
  * Ask Sakhi — the pieces.
@@ -64,7 +65,7 @@ export function Picker({
                              color: it.value === value ? "var(--ux-brand)" : "var(--ux-ink)" }}>
               <span className="min-w-0 flex-1">
                 <span className="block truncate text-xsm font-medium">{it.label}</span>
-                {it.note && <span className="block truncate text-2xs" style={{ color: "var(--ux-muted)" }}>{it.note}</span>}
+                {it.note && <span className="block truncate text-[12px] lg:text-2xs" style={{ color: "var(--ux-muted)" }}>{it.note}</span>}
               </span>
               {it.value === value && <Icons.Check className="h-[14px] w-[14px] shrink-0" />}
             </button>
@@ -138,7 +139,7 @@ export function Composer({
               <Icons.X className="h-[12px] w-[12px]" />
             </button>
           </span>
-          <span className="text-2xs" style={{ color: "var(--ux-amber-ink)" }}>
+          <span className="text-[12px] lg:text-2xs" style={{ color: "var(--ux-amber-ink)" }}>
             She will see the name, not what is inside it — reading files is coming.
           </span>
         </div>
@@ -205,6 +206,106 @@ export function Composer({
             </button>
           )}
         </div>
+      </div>
+    </div>
+  );
+}
+
+/* ── the composer, phone-shaped ─────────────────────────────────────────── */
+
+/**
+ * What she types into on a phone.
+ *
+ * The desktop composer above is a box with a toolbar: attach, camera, a
+ * divider, "Quick answer ⌄", a divider, "English ⌄", then mic and send. At
+ * 390px that toolbar wrapped onto a second row — measured on the screenshot,
+ * the microphone and the send button ended up on a line of their own beneath
+ * everything else — and it cost ~90px of a screen that has a keyboard eating
+ * half of it.
+ *
+ * A phone composer is a ROW: one attach, the field, one send. The two settings
+ * that used to be permanent chips move above the field as a single quiet line,
+ * because they are read far more often than they are changed, and they hide
+ * altogether once she starts typing.
+ */
+export function PhoneComposer({
+  value, onChange, onSend, onMic, listening, busy,
+  mode, setMode, locale, setLocale, locales, placeholder, canVoice,
+  file, onFile, onClearFile,
+}: {
+  value: string; onChange: (v: string) => void; onSend: () => void;
+  onMic: () => void; listening: boolean; busy: boolean;
+  mode: string; setMode: (v: string) => void;
+  locale: string; setLocale: (v: string) => void;
+  locales: { value: string; label: string; note?: string }[];
+  placeholder: string; canVoice: boolean;
+  file: File | null; onFile: (f: File | null) => void; onClearFile: () => void;
+}) {
+  const pick = useRef<HTMLInputElement>(null);
+  const MODES = [
+    { value: "quick", label: "Quick answer", note: "Short and to the point" },
+    { value: "steps", label: "Step by step", note: "Explained slowly, in order" },
+  ];
+  const modeLabel = MODES.find((m) => m.value === mode)?.label ?? "Quick answer";
+  const localeLabel = locales.find((l) => l.value === locale)?.label ?? "English";
+  const typed = value.trim().length > 0;
+
+  return (
+    <div>
+      <input ref={pick} type="file" className="hidden"
+             accept="image/*,.pdf,.doc,.docx"
+             onChange={(e) => onFile(e.target.files?.[0] ?? null)} />
+
+      {!typed && (
+        <div className="ux-chat-tip flex items-center gap-1 pb-1.5">
+          <Picker icon="Zap" title="How she should answer" label={modeLabel}
+                  items={MODES} value={mode} onPick={setMode} />
+          <span className="h-[16px] w-px" style={{ background: "var(--ux-line-strong)" }} />
+          <Picker icon="Globe" title="Language" label={localeLabel}
+                  items={locales} value={locale} onPick={setLocale} />
+        </div>
+      )}
+
+      {file && (
+        <div className="flex flex-wrap items-center gap-2 pb-2">
+          <span className="flex min-w-0 items-center gap-2 rounded-full px-2.5 py-1.5 text-[12px]"
+                style={{ background: "var(--ux-surface-2)", border: "1px solid var(--ux-line-strong)" }}>
+            <Icons.Paperclip className="h-[13px] w-[13px] shrink-0" style={{ color: "var(--ux-faint)" }} />
+            <span className="truncate font-semibold" style={{ color: "var(--ux-ink)" }}>{file.name}</span>
+            <button type="button" onClick={onClearFile} aria-label="Remove attachment"
+                    className="ux-press ux-tap-exempt grid h-[20px] w-[20px] shrink-0 place-items-center rounded-full"
+                    style={{ color: "var(--ux-faint)" }}>
+              <Icons.X className="h-[12px] w-[12px]" />
+            </button>
+          </span>
+          <span className="text-[12px]" style={{ color: "var(--ux-amber-ink)" }}>
+            She will see the name, not what is inside it.
+          </span>
+        </div>
+      )}
+
+      <div className="flex items-end gap-1.5 pb-2">
+        <button type="button" onClick={() => pick.current?.click()} aria-label="Attach a file"
+                className="grid h-[44px] w-[44px] shrink-0 place-items-center rounded-full"
+                style={{ color: "var(--ux-muted)", transform: "none" }}>
+          <Icons.Paperclip className="h-[20px] w-[20px]" />
+        </button>
+        <div className="ux-comp min-w-0 flex-1 rounded-[22px] px-3.5 py-2.5"
+             style={{ background: "var(--ux-surface-2)", border: "1px solid var(--ux-line-strong)" }}>
+          <ChatInput value={value} onChange={onChange} onSend={onSend}
+                     placeholder={placeholder} label="Ask Sakhi" />
+        </div>
+        {canVoice && !typed && (
+          <button type="button" onClick={onMic} aria-pressed={listening}
+                  aria-label={listening ? "Stop listening" : "Speak instead of typing"}
+                  className="grid h-[44px] w-[44px] shrink-0 place-items-center rounded-full"
+                  style={listening
+                    ? { background: "var(--ux-tint-pink)", color: "var(--ux-pink-ink)", transform: "none" }
+                    : { color: "var(--ux-muted)", transform: "none" }}>
+            <Ico name={listening ? "MicOff" : "Mic"} className="h-[21px] w-[21px]" />
+          </button>
+        )}
+        <SendButton onClick={onSend} disabled={busy || (!typed && !file)} busy={busy} label="Send" />
       </div>
     </div>
   );
@@ -277,7 +378,7 @@ export function DraftCard({
 }) {
   return (
     <div className="mt-3 overflow-hidden rounded-[12px]" style={{ border: "1px solid var(--ux-line-strong)" }}>
-      <p className="flex items-center gap-2 px-3.5 py-2.5 text-2xs font-bold uppercase tracking-[0.12em]"
+      <p className="flex items-center gap-2 px-3.5 py-2.5 text-[12px] lg:text-2xs font-bold uppercase tracking-[0.12em]"
          style={{ background: "var(--ux-tint-amber)", color: "var(--ux-amber-ink)" }}>
         <Icons.PenLine className="h-[13px] w-[13px]" />
         Draft — not sent
@@ -344,7 +445,7 @@ export function Cites({ tools }: { tools: string[] }) {
         const l = look(name);
         return (
           <span key={name}
-                className="flex items-center gap-1.5 rounded-full px-2.5 py-1 text-2xs font-semibold"
+                className="flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[12px] lg:text-2xs font-semibold"
                 style={{ background: "var(--ux-surface-2)", border: "1px solid var(--ux-line-strong)",
                          color: "var(--ux-muted)" }}>
             <Ico name={l.icon} className="h-[12px] w-[12px]" />

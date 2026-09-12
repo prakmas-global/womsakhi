@@ -174,8 +174,9 @@ export async function apiMeSummary() {
   return data;
 }
 
-export async function apiMeProfile() {
-  const { data } = await apiClient.get<MeProfile>("/me/profile");
+/** Takes a signal so `useResource` can cancel it when she taps away. */
+export async function apiMeProfile(signal?: AbortSignal) {
+  const { data } = await apiClient.get<MeProfile>("/me/profile", { signal });
   return data;
 }
 

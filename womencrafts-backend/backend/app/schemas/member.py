@@ -1,6 +1,7 @@
 from typing import Literal, Optional
 
 from pydantic import BaseModel, EmailStr, field_validator
+from app.core.media import MediaRef, MediaRefOptional
 
 Role = Literal["Member", "Instructor", "Supervisor", "Admin"]
 Status = Literal["Active", "Inactive", "Pending", "Rejected"]
@@ -47,7 +48,7 @@ class MemberCreate(BaseModel):
     dob: str = ""
     referral: str = ""
     engagement: int = 0
-    avatar: str = ""  # URL returned by POST /uploads
+    avatar: MediaRef = ""  # URL returned by POST /uploads
 
     @field_validator("full_name")
     @classmethod
@@ -76,7 +77,7 @@ class MemberUpdate(BaseModel):
     referral: Optional[str] = None
     engagement: Optional[int] = None
     verified_on: Optional[str] = None
-    avatar: Optional[str] = None
+    avatar: MediaRefOptional = None
 
     @field_validator("engagement")
     @classmethod

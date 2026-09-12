@@ -1,6 +1,8 @@
 from datetime import datetime, timezone
 from typing import Optional
 
+from app.core.media import media_url
+
 
 class ContentItemModel:
     """
@@ -105,7 +107,7 @@ class ContentItemModel:
             "description": doc.get("description", ""),
             "updated": doc.get("last_updated", ""),
             "icon": doc.get("icon", "FileText"),
-            "cover": doc.get("cover", ""),
+            "cover": media_url(doc.get("cover", "")),
         }
 
 

@@ -17,10 +17,15 @@ to a promise rather than printing an unimpressive figure, so nothing has to be
 exaggerated to look respectable.
 """
 
-from fastapi import APIRouter
+from bson import ObjectId
+from bson.errors import InvalidId
+from fastapi import APIRouter, HTTPException, status
 
 from app.core import cache
+from app.core.media import media_url
 from app.db.mongodb import get_database
+from app.models.shop import ListingModel
+from app.schemas.shop import ListingCard, PublicShop
 
 router = APIRouter(prefix="/public", tags=["Public"])
 
@@ -36,7 +41,7 @@ async def public_stats() -> dict:
     Four counts, actually counted.
 
     Only what is already public on the platform: how many openings are live,
-    how many courses exist, how many women have joined, how many savings
+    how many courses are open to join, how many women are members, how many savings
     circles are running. No names, nothing about any individual.
     """
 
@@ -45,11 +50,35 @@ async def public_stats() -> dict:
         # Only what a visitor would legitimately be told about. `members` is the
         # profile directory, which is the count of women who have actually
         # joined — `users` also holds staff logins.
+        #
+        # LIVE counts, not totals. This endpoint said "how many openings are
+        # live" while counting every opportunity ever posted — 20, of which 12
+        # were closed. A woman who reads "20 jobs" and finds 8 has been told a
+        # true-sounding number that lied to her, which is the exact failure
+        # this endpoint was written to end. Same for the other three: 10 of the
+        # 28 courses have finished or are archived, and 9 of the 37 member
+        # records are pending review, inactive or rejected.
+        #
+        # Casing differs per collection because the collections do: staff-side
+        # records were seeded Title Case, member-side ones lower. Matching both
+        # would hide a future rename, so each one matches what its own
+        # collection actually stores.
         counts = {
-            "jobs": await db["opportunities"].count_documents({}),
-            "courses": await db["programs"].count_documents({}),
-            "members": await db["members"].count_documents({}),
-            "circles": await db["circles"].count_documents({}),
+            "jobs": await db["opportunities"].count_documents({"status": "open"}),
+            "courses": await db["programs"].count_documents(
+                {"status": {"$in": ["Running", "Upcoming"]}}
+            ),
+            # Minus the accounts our own check scripts create.
+            # `checks/_shared.mjs::memberToken()` signs up `check.<timestamp>
+            # @example.com`, approves it, and leaves it Active — and because
+            # dev points at the SAME Atlas cluster as production, every browser
+            # test run raised the member count on a public marketing page. Five
+            # had accumulated in one afternoon. A number that goes up when
+            # nobody joined is not a count, it is an artefact of our tooling.
+            "members": await db["members"].count_documents(
+                {"status": "Active", "email": {"$not": {"$regex": r"^check\."}}}
+            ),
+            "circles": await db["circles"].count_documents({"status": "active"}),
         }
         return counts
 
@@ -80,3 +109,149 @@ async def auth_providers() -> dict:
     if getattr(settings, "APPLE_CLIENT_ID", "") and getattr(settings, "APPLE_KEY_ID", ""):
         available.append("apple")
     return {"providers": available}
+
+
+@router.get("/listings/{listing_id}", summary="One thing she sells, for a buyer with no account")
+async def public_listing(listing_id: str) -> dict:
+    """
+    The page behind the link she sends on WhatsApp.
+
+    **What was wrong.** "Share" on a listing in My Shop copied
+    `<origin>/shop/<id>` and said *"Link copied — send it on WhatsApp"*. There
+    was no `/shop/<id>` route: every one of those links was a 404 arriving in a
+    customer's chat, under her name, from a button that had already told her it
+    worked. A dead link to a buyer is worse than no share button at all.
+
+    **Why unauthenticated.** The buyer is the whole point and the buyer has no
+    account — she is a neighbour, a cousin, someone from the market. Requiring a
+    sign-in to look at a ₹400 blouse is the same as having no link.
+
+    **What it does not carry.** No phone number, no email, no order history, no
+    seller id. A first name, and the place she typed on the listing herself.
+    A paused or deleted listing is a 404 rather than a page saying "unavailable"
+    — a buyer should not be shown something she cannot buy.
+    """
+
+    async def produce() -> dict:
+        db = get_database()
+        try:
+            oid = ObjectId(listing_id)
+        except (InvalidId, TypeError):
+            raise HTTPException(status.HTTP_404_NOT_FOUND, "That page is not here")
+        doc = await db[ListingModel.collection_name].find_one({"_id": oid})
+        if not doc or doc.get("status") == ListingModel.STATUS_PAUSED:
+            raise HTTPException(status.HTTP_404_NOT_FOUND, "That page is not here")
+
+        row = ListingModel.to_response(doc)
+        seller = None
+        try:
+            seller = await db["users"].find_one(
+                {"_id": ObjectId(doc.get("user_id", ""))}, {"full_name": 1}
+            )
+        except (InvalidId, TypeError):
+            seller = None
+        full = (seller or {}).get("full_name", "").strip()
+        return {
+            "id": row["id"],
+            "kind": row["kind"],
+            "title": row["title"],
+            "desc": row["desc"],
+            "price_minor": row["price_minor"],
+            "price_label": row["price_label"],
+            "rate": row["rate"],
+            "out_of_stock": row["out_of_stock"],
+            "low_stock": row["low_stock"],
+            "category": row["category"],
+            "place": row["place"],
+            "photo": media_url(row["photo"]),
+            # A first name only. She is being shown to strangers here, and her
+            # full name is not needed to sell a blouse to a neighbour.
+            "seller_first": full.split(" ")[0] if full else "",
+        }
+
+    # Short, because a price or a stock count that is half a minute stale is
+    # fine and a page a stranger can hammer must not be a free query.
+    return await cache.cached(f"public:listing:{listing_id}", 30.0, produce)
+
+
+@router.get("/shop/{handle}", response_model=PublicShop, summary="A woman's shop, by her handle")
+async def public_shop(handle: str) -> PublicShop:
+    """
+    The page behind the link she shares on WhatsApp.
+
+    **Why it exists.** The Collect screen's "Copy link" built
+    `womsakhi.com/s/<handle>` from a FIXTURE, so every member in the app shared
+    the same handle — `priya-tailoring` — and the page behind it resolved with
+    `h === SHOP.handle ? SHOP : null`, which means every woman who was not the
+    fixture sent her customers to "This shop is not here". Meanwhile
+    `/shop/summary` returned `womsakhi.in/<member_id>`, a shape no route in the
+    app could resolve at all. Three separate ideas of a handle, none of which
+    reached a real shop.
+
+    **A handle that does not exist is a 404, not an empty shop.** A stranger who
+    follows a mistyped link must be told the shop is not there. A page saying
+    "no items" about a woman who does not exist is a worse answer than nothing,
+    because it reads as her having closed.
+
+    **A shop with no live listings is NOT a 404.** She exists, she has paused
+    everything, and the page can say so truthfully.
+
+    **What it does not carry.** No phone, no email, no address, no order
+    history, no member id, no user id, no surname — see `PublicShop`. And no way
+    to pay: this platform cannot take a payment without holding her money, so
+    buying is arranged between her and the buyer directly.
+
+    **Why unauthenticated.** The buyer is the whole point and the buyer has no
+    account — she is a neighbour, a cousin, someone from the market.
+    """
+
+    async def produce() -> PublicShop:
+        db = get_database()
+        slug = (handle or "").strip().lower()
+        # The handle is matched exactly, never as a pattern: it arrives from a
+        # URL a stranger controls, and a regex built from it would let one
+        # request read every shop at once.
+        owner = await db["users"].find_one(
+            {"shop_handle": slug}, {"full_name": 1, "shop_handle": 1},
+        ) if slug else None
+        if not owner:
+            raise HTTPException(status.HTTP_404_NOT_FOUND, "This shop is not here")
+
+        docs = await db[ListingModel.collection_name].find(
+            {"user_id": str(owner["_id"]), "status": ListingModel.STATUS_LIVE},
+        ).sort("updated_at", -1).to_list(120)
+
+        rows = []
+        for d in docs:
+            row = ListingModel.to_response(d)
+            row.pop("status", None)
+            row.pop("views", None)
+            row["photo"] = media_url(row["photo"])
+            rows.append(ListingCard(**row))
+
+        # Her trade and her place are not asked for anywhere — so they are read
+        # off what she has already written on her own listings, and only when
+        # they agree. The most common answer, or nothing.
+        def commonest(field: str) -> str:
+            counts: dict[str, int] = {}
+            for d in docs:
+                value = (d.get(field) or "").strip()
+                if value:
+                    counts[value] = counts.get(value, 0) + 1
+            return max(counts, key=counts.get) if counts else ""
+
+        full = (owner.get("full_name") or "").strip()
+        return PublicShop(
+            handle=owner.get("shop_handle", slug),
+            # A first name only, exactly as `/public/listing` does. This link
+            # gets forwarded to people she has never met.
+            name=full.split(" ")[0] if full else "A WomSakhi member",
+            trade=commonest("category"),
+            place=commonest("place"),
+            listings=rows,
+            listing_count=len(rows),
+        )
+
+    # Short, because a price or a stock count half a minute stale is fine and a
+    # page a stranger can hammer must not be a free query.
+    return await cache.cached(f"public:shop:{handle}", 30.0, produce)

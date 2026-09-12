@@ -17,4 +17,8 @@ class SavedResponse(BaseModel):
     gone: bool
     title: str
     sub: str
+    #: Where to open it, when its own id is not its address. Empty for every
+    #: kind whose route is `/<section>/<ref_id>`; set for a circle post, which
+    #: lives inside a circle rather than at a page of its own.
+    href: str = ""
     saved_on: str

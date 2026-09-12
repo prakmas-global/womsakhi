@@ -41,13 +41,11 @@ export type { PersistHandlers } from "./LayoutEngineProvider";
 
 export { default as SplitPane } from "./SplitPane";
 export { default as ResizableColumns } from "./ResizableColumns";
-export { default as ResizableSidebar } from "./ResizableSidebar";
 export { default as ResizableBox } from "./ResizableBox";
 export { default as ResizeHandle } from "./ResizeHandle";
 export { default as SortableList } from "./SortableList";
 export { default as ResizeFrame, ALL_HANDLES, FLOW_HANDLES } from "./ResizeFrame";
 export type { Handle, ResizeFrameProps } from "./ResizeFrame";
-export { default as NavFlyout } from "./NavFlyout";
 export { default as WidgetGrid } from "./WidgetGrid";
 export type { WidgetDef } from "./WidgetGrid";
 export { default as CustomiseBar, CustomiseButton } from "./CustomiseBar";

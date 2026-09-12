@@ -1,6 +1,6 @@
 "use client";
 
-import { use, useCallback, useMemo, useState, useSyncExternalStore } from "react";
+import { use, useCallback, useEffect, useMemo, useState, useSyncExternalStore } from "react";
 
 import { HomeShell } from "@/components/ux/home/HomeShell";
 import {
@@ -13,6 +13,10 @@ import {
   type ApiCircleDetail, type ApiCircleSavings, type CirclePost,
 } from "@/lib/growth-api";
 import { apiCreatePost, apiJoinCircle, apiLeaveCircle, apiLikePost } from "@/lib/community-api";
+import {
+  loadSavedPosts, savedPostsServerSnapshot, savedPostsSnapshot,
+  subscribeSavedPosts, toggleSavedPost,
+} from "@/lib/saved-posts";
 import { formatMoney } from "@/components/ux/kit/money";
 import { apiRegisterForEvent } from "@/lib/growth-api";
 import { useEvents } from "@/components/ux/growth";
@@ -44,15 +48,6 @@ import {
  * that mis-tap costs her the room and everything said in it.
  */
 
-/* ── Saved posts, in her own browser — shared with the Circle home ───────── */
-
-const SAVED_KEY = "womsakhi.circle.saved";
-const readSaved = (): string => {
-  try { return localStorage.getItem(SAVED_KEY) ?? ""; } catch { return ""; }
-};
-let bump: (() => void) | null = null;
-const onSaved = (cb: () => void) => { bump = cb; return () => { bump = null; }; };
-
 const TABS = ["Discussion", "Learning", "Events", "Files", "Members", "About"] as const;
 type Tab = (typeof TABS)[number];
 
@@ -78,22 +73,72 @@ const tagsOf = (body: string) =>
 const SORTS = ["Latest", "Most liked", "Most replies"] as const;
 type Sort = (typeof SORTS)[number];
 
-export default function CircleDetail({ params }: { params: Promise<{ id: string }> }) {
+export default function CircleDetail({ params, searchParams }: {
+  params: Promise<{ id: string }>;
+  searchParams: Promise<{ ask?: string | string[] }>;
+}) {
   const { id } = use(params);
   const me = useMe();
+
+  /**
+   * The question she typed on the Circle home, carried the rest of the way.
+   *
+   * "Ask the circle…" sends her here as `?ask=<her text>`, and this screen used
+   * to ignore the parameter completely: the composer loaded empty and the
+   * sentence she had written was gone. Nothing said so — the navigation looked
+   * like it had worked, which is the worst way to lose somebody's words.
+   *
+   * Read off the page's own `searchParams` prop, which a client page may take
+   * through `use()`. Not `useSearchParams` — that forces every route above into
+   * a Suspense boundary (see the note in `HomeShell`, where skipping it blanked
+   * thirty-eight screens) — and not `window.location` in an effect, which is
+   * either a hydration mismatch on a controlled textarea or a `setState` inside
+   * an effect. This is the same value on the server and on the client.
+   *
+   * `?ask=` is deliberately left in the address bar. Taking it out means
+   * writing the text into state first, and the moment the parameter and the
+   * state disagree her sentence is one stray re-render from vanishing.
+   */
+  const asked = use(searchParams).ask;
+  const carried = (Array.isArray(asked) ? asked[0] ?? "" : asked ?? "").trim();
 
   const [tab, setTab] = useState<Tab>("Discussion");
   const [kind, setKind] = useState<string>(KINDS[0].label);
   const [sort, setSort] = useState<Sort>("Latest");
   const [postMenu, setPostMenu] = useState<string | null>(null);
-  const [draft, setDraft] = useState("");
+  // `null` until she touches the box, so the carried question shows through.
+  // `""` once she has cleared it — nullish coalescing keeps an empty box empty.
+  const [typed, setTyped] = useState<string | null>(null);
+  const draft = typed ?? carried;
   const [menu, setMenu] = useState<"joined" | "more" | null>(null);
   const [busy, setBusy] = useState<string | null>(null);
   const [note, setNote] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
-  const savedRaw = useSyncExternalStore(onSaved, readSaved, () => "");
+  /**
+   * A shared "#<post>" link, landed on.
+   *
+   * The browser scrolls to a fragment while the page is loading, which is
+   * before the posts exist — so the link opened the circle at the top and the
+   * post it named was somewhere below, unremarked. This waits for the post to
+   * be in the document and then goes to it.
+   */
+  useEffect(() => {
+    const want = window.location.hash.slice(1);
+    if (!want) return;
+    let tries = 0;
+    const tick = window.setInterval(() => {
+      const el = document.getElementById(want);
+      if (el) { el.scrollIntoView({ block: "start" }); window.clearInterval(tick); }
+      else if (++tries > 40) window.clearInterval(tick);   // ~8s, then give up
+    }, 200);
+    return () => window.clearInterval(tick);
+  }, []);
+
+  const savedRaw = useSyncExternalStore(
+    subscribeSavedPosts, savedPostsSnapshot, savedPostsServerSnapshot);
   const saved = useMemo(() => new Set(savedRaw.split(",").filter(Boolean)), [savedRaw]);
+  useEffect(() => { loadSavedPosts().catch(() => {}); }, []);
 
   const { data: circle, source, refetch } = useResource(
     useCallback((s?: AbortSignal) => apiCircle(id, s).catch(() => null), [id]),
@@ -167,7 +212,7 @@ export default function CircleDetail({ params }: { params: Promise<{ id: string 
     setBusy("post"); setError(null);
     try {
       await apiCreatePost(id, body);
-      setDraft("");
+      setTyped("");
       rePosts(); refetch();
       say("Posted — the circle can see it");
     } catch { setError("That did not post. Nothing you wrote is lost — try again."); }
@@ -181,13 +226,18 @@ export default function CircleDetail({ params }: { params: Promise<{ id: string 
     finally { setBusy(null); }
   }, [rePosts]);
 
-  const save = useCallback((p: CircleFeedPost) => {
-    const next = new Set(saved);
-    if (next.has(p.id)) next.delete(p.id); else next.add(p.id);
-    try { localStorage.setItem(SAVED_KEY, [...next].join(",")); } catch { /* private window */ }
-    bump?.();
-    say(next.has(p.id) ? "Saved — it is under Saved in Circle" : "Removed from saved");
-  }, [saved, say]);
+  /** On the server under the `post` kind — see `@/lib/saved-posts`. It was
+   *  `localStorage`, which meant her bookmarks lived on one handset. */
+  const save = useCallback(async (p: CircleFeedPost) => {
+    setError(null);
+    try {
+      const on = await toggleSavedPost(p.id);
+      say(on ? "Saved — it is under Saved in Circle, on any phone you sign in on"
+             : "Removed from saved");
+    } catch {
+      setError("That did not save. Nothing has changed — try again in a moment.");
+    }
+  }, [say]);
 
   const register = useCallback(async (e: RailEvent) => {
     setBusy(e.id); setError(null);
@@ -206,8 +256,10 @@ export default function CircleDetail({ params }: { params: Promise<{ id: string 
                    "Circle link copied — send it on WhatsApp"),
     [copyLink, id]);
 
+  /** Says who the copied address opens for. A circle is behind the sign-in. */
   const share = useCallback((p: CircleFeedPost) =>
-    copyLink(`${window.location.origin}/app/circles/${id}#${p.id}`, "Link copied"),
+    copyLink(`${window.location.origin}/app/circles/${id}#${p.id}`,
+             "Link to this post copied — it opens for women signed in to WomSakhi"),
     [copyLink, id]);
 
   /* ── Still on its way, or not there at all ────────────────────────────── */
@@ -275,7 +327,7 @@ export default function CircleDetail({ params }: { params: Promise<{ id: string 
 
         {tab === "Discussion" && (
           <>
-            <Composer value={draft} onChange={setDraft} onPost={post} busy={busy === "post"}
+            <Composer value={draft} onChange={setTyped} onPost={post} busy={busy === "post"}
                       avatar={me.avatar} name={me.first} joined={joined} onSoon={say} />
 
             <div className="mb-4 flex items-start gap-3">
@@ -293,7 +345,7 @@ export default function CircleDetail({ params }: { params: Promise<{ id: string 
                       {/* The count only earns its place once there is one to
                           show — six chips all reading 0 is noise. */}
                       {n > 0 && k.tag && (
-                        <span className="text-3xs font-extrabold" style={{ opacity: 0.72 }}>{n}</span>
+                        <span className="text-[12px] lg:text-3xs font-extrabold" style={{ opacity: 0.72 }}>{n}</span>
                       )}
                     </button>
                   );
@@ -349,7 +401,7 @@ export default function CircleDetail({ params }: { params: Promise<{ id: string 
                       <span className="block truncate text-xsm font-bold" style={{ color: v("--ux-ink") }}>
                         {m.name}{m.you ? " (you)" : ""}
                       </span>
-                      <span className="mt-0.5 block text-2xs" style={{ color: v("--ux-muted") }}>
+                      <span className="mt-0.5 block text-[12px] lg:text-2xs" style={{ color: v("--ux-muted") }}>
                         Turn {m.turn} · {m.paid ? "paid this round" : "not paid yet"}
                       </span>
                     </span>

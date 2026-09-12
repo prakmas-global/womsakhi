@@ -4,8 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import * as Icons from "@/components/ux/icons";
 
-import { TABS, trailFor } from "./nav-tree";
-import { useNavLabel } from "./use-nav-label";
+import { TabBar } from "./mobile/TabBar";
 
 /**
  * Navigation on a phone.
@@ -22,29 +21,23 @@ import { useNavLabel } from "./use-nav-label";
  * sections and almost none of the screens inside them.
  *
  * ── What this is ────────────────────────────────────────────────────────────
- * A bottom bar of five, which is the ceiling this codebase already agreed on
- * ("five tabs is the most a phone can carry comfortably"), plus a More sheet
- * that holds the ENTIRE map — all seven modes, every child, and the four things
- * that are deliberately not modes. Nothing in the app is more than two taps
- * away, and there is one screen she can open to see everything there is.
+ * A bottom bar of five — the ceiling this codebase already agreed on ("five
+ * tabs is the most a phone can carry comfortably") — and each of the five
+ * lands on a hub that lists its own children as large labelled cards. Nothing
+ * in the app is more than two taps away.
+ *
+ * The bar itself now lives in `mobile/TabBar.tsx`, where it is a tab bar
+ * rather than a row of links: a translucent bar over the content, a press that
+ * answers before the screen changes, a buzz on Android, and an active tab you
+ * can pick out without seeing colour. This file keeps the reasoning above and
+ * the panic pill below, both of which are about the product rather than about
+ * the control.
  *
  * Below `lg` only. The desktop topbar and rail are good and are left alone.
  */
-
-/**
- * The six from the product's primary navigation.
- *
- * Work split back out of Earn and Discover was promoted, so there are seven
- * sections again and a phone bar comfortably holds six at 60px each. Help is
- * the one left off — and it is the one that matters most on a bad day, so it
- * is not hidden behind a menu: `SafetyPin` below puts it one tap away from
- * every screen, permanently. That is the reading of §65 that actually protects
- * her, rather than the one that satisfies a tab count.
- */
-/** Every section that is a place she works. Help and You are header
- *  controls, because they are not places she works — they are where she goes
- *  when something is wrong or she wants to change a setting. */
-const BAR = TABS.map((t) => t.id);
+export function MobileNav() {
+  return <TabBar />;
+}
 
 function Icon({ name, className }: { name: string; className?: string }) {
   const C = (Icons as unknown as Record<string, React.ComponentType<{ className?: string; strokeWidth?: number }>>)[name]
@@ -52,55 +45,19 @@ function Icon({ name, className }: { name: string; className?: string }) {
   return <C className={className} strokeWidth={1.9} />;
 }
 
-export function MobileNav() {
-  const pathname = usePathname();
-  const here = trailFor(pathname)[0];
-  const nav = useNavLabel();
-
-  // Close on navigation. Without this the sheet stays over the screen she just
-  // asked for, and the only way out is the button she has stopped looking at.
-  //
-  // Derived from the path rather than set in an effect: `setOpenedAt(null)` in an
-  // effect body runs a second render pass on every navigation, and React's
-  // compiler rejects it. Keeping the path the sheet was opened at, and treating
-  // a different path as closed, needs no effect at all.
-
-  const tabs = TABS;
-
-  return (
-    <>
-      {/* ── The bar ───────────────────────────────────────────────────────── */}
-      <nav
-        aria-label="Sections"
-        className="fixed inset-x-0 bottom-0 z-[var(--ux-z-sticky)] flex lg:hidden"
-        style={{
-          background: "var(--ux-surface)",
-          borderTop: "1px solid var(--ux-line)",
-          // Clears the home indicator on an iPhone; zero everywhere else.
-          paddingBottom: "env(safe-area-inset-bottom, 0px)",
-        }}
-      >
-        {tabs.map((m) => {
-          const on = here?.id === m.id;
-          return (
-            <Link
-              key={m.id}
-              href={m.href}
-              aria-current={on ? "page" : undefined}
-              className="flex min-h-[56px] min-w-0 flex-1 flex-col items-center justify-center gap-1 px-0.5 py-2"
-              style={{ color: on ? "var(--ux-brand)" : "var(--ux-muted)" }}
-            >
-              <Icon name={m.icon} className="h-[21px] w-[21px]" />
-              <span className="max-w-full truncate text-2xs font-semibold">{nav.label(m)}</span>
-            </Link>
-          );
-        })}
-
-      </nav>
-    </>
-  );
-}
-
+/**
+ * Help, on every screen, permanently.
+ *
+ * Help is the section left off the bar — and it is the one that matters most on
+ * a bad day, so it is not behind a menu. That is the reading of §65 that
+ * actually protects her, rather than the one that satisfies a tab count.
+ *
+ * `.ux-dock-bottom` is what keeps it above the tab bar: `mobile.css` sets that
+ * class to `bottom: var(--tabbar-h)`, which already includes the home
+ * indicator. It used to carry a hand-written `calc(56px + env(...))` that had
+ * to be kept in step with a bar height defined somewhere else, and was already
+ * two pixels out.
+ */
 export function SafetyPin() {
   const pathname = usePathname();
   if (pathname.startsWith("/app/safety")) return null;
@@ -109,7 +66,7 @@ export function SafetyPin() {
     <Link
       href="/app/safety"
       aria-label="Get help now"
-      className="ux-press ux-sq fixed bottom-[calc(56px+env(safe-area-inset-bottom,0px)+12px)] left-3 z-[var(--ux-z-sticky)] flex min-h-[44px] items-center gap-1.5 rounded-full px-3 lg:hidden"
+      className="ux-press ux-sq ux-dock-bottom fixed bottom-0 left-3 z-[var(--ux-z-sticky)] mb-3 flex min-h-[44px] items-center gap-1.5 rounded-full px-3 lg:hidden"
       style={{
         background: "var(--ux-surface)",
         border: "1px solid var(--ux-line-strong)",

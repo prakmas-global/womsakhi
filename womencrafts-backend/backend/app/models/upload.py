@@ -1,6 +1,8 @@
 from datetime import datetime, timezone
 from typing import Optional
 
+from app.core.media import media_url
+
 
 class UploadModel:
     """
@@ -47,7 +49,7 @@ class UploadModel:
         return {
             "original_name": original_name,
             "stored_name": stored_name,      # the name on disk
-            "url": url,                      # full URL the browser can load
+            "url": url,                      # a PATH — media/<kind>/<name>. See app/core/media.py
             "content_type": content_type,
             "size": size,                    # bytes
             "kind": kind if kind in UploadModel.KINDS else "attachment",
@@ -64,7 +66,7 @@ class UploadModel:
             "id": str(doc["_id"]),
             "original_name": doc.get("original_name", ""),
             "stored_name": doc.get("stored_name", ""),
-            "url": doc.get("url", ""),
+            "url": media_url(doc.get("url", "")),
             "content_type": doc.get("content_type", ""),
             "size": size,
             "size_label": UploadModel.size_label(size),

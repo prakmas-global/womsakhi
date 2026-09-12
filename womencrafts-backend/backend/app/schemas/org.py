@@ -4,6 +4,7 @@ from datetime import datetime
 from typing import Literal, Optional
 
 from pydantic import BaseModel, Field, field_validator
+from app.core.media import MediaRef, MediaRefOptional
 
 
 class OrgSettings(BaseModel):
@@ -23,7 +24,7 @@ class OrgSettings(BaseModel):
 
 class BrandingUpdate(BaseModel):
     name: str = Field("", max_length=80)
-    logo: str = Field("", max_length=500)
+    logo: MediaRef = Field("", max_length=500)
     wordmark: str = Field("", max_length=500)
 
 

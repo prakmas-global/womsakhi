@@ -161,7 +161,7 @@ export default function CreateCirclePage() {
               <Label need>What is this circle called</Label>
               <Text value={name} onChange={setName} max={50} label="Circle name"
                     placeholder="e.g. Handmade Business Hub" />
-              <span className="mt-1 block text-end text-2xs" style={{ color: v("--ux-faint") }}>
+              <span className="mt-1 block text-end text-[12px] lg:text-2xs" style={{ color: v("--ux-faint") }}>
                 {name.length}/50
               </span>
             </div>
@@ -183,7 +183,7 @@ export default function CreateCirclePage() {
                 <Label need>Who can come in</Label>
                 <Select value={privacy} onChange={setPrivacy} label="Privacy"
                         options={PRIVACY.map((p) => ({ value: p.id, label: p.label }))} />
-                <span className="mt-1.5 block text-2xs leading-snug" style={{ color: v("--ux-muted") }}>
+                <span className="mt-1.5 block text-[12px] lg:text-2xs leading-snug" style={{ color: v("--ux-muted") }}>
                   {PRIVACY.find((p) => p.id === privacy)?.note}
                 </span>
               </div>
@@ -207,7 +207,7 @@ export default function CreateCirclePage() {
                       ? <img src={icon} alt="" aria-hidden className="h-full w-full object-cover" />
                       : <Icons.Camera className="h-[20px] w-[20px]" style={{ color: v("--ux-brand") }} />}
                   </label>
-                  <span className="text-2xs leading-snug" style={{ color: v("--ux-muted") }}>
+                  <span className="text-[12px] lg:text-2xs leading-snug" style={{ color: v("--ux-muted") }}>
                     A square picture,<br />at least 300 × 300.
                   </span>
                 </div>
@@ -314,7 +314,7 @@ export default function CreateCirclePage() {
                 <span className="block text-xs font-bold" style={{ color: v("--ux-brand") }}>
                   Or just send the link
                 </span>
-                <span className="mt-0.5 block text-2xs leading-relaxed" style={{ color: v("--ux-ink-2") }}>
+                <span className="mt-0.5 block text-[12px] lg:text-2xs leading-relaxed" style={{ color: v("--ux-ink-2") }}>
                   Once the circle exists you get a link you can put in any WhatsApp group. Most
                   first members arrive that way.
                 </span>
@@ -343,7 +343,7 @@ export default function CreateCirclePage() {
                 ["Invitations ready", invites.length ? `${invites.length}` : "None yet"],
               ].map(([k, val]) => (
                 <div key={k} className="flex flex-wrap items-baseline gap-x-4 gap-y-1 py-3">
-                  <dt className="w-[200px] shrink-0 text-2xs font-semibold" style={{ color: v("--ux-muted") }}>{k}</dt>
+                  <dt className="w-[200px] shrink-0 text-[12px] lg:text-2xs font-semibold" style={{ color: v("--ux-muted") }}>{k}</dt>
                   <dd className="min-w-0 flex-1 text-xsm" style={{ color: v("--ux-ink") }}>{val}</dd>
                 </div>
               ))}
@@ -352,7 +352,7 @@ export default function CreateCirclePage() {
             <div className="mb-5 flex items-start gap-2.5 rounded-[12px] p-3.5"
                  style={{ background: v("--ux-surface-2") }}>
               <I name="ShieldCheck" className="mt-[1px] h-[15px] w-[15px] shrink-0" style={{ color: v("--ux-green-ink") }} />
-              <span className="text-2xs leading-relaxed" style={{ color: v("--ux-ink-2") }}>
+              <span className="text-[12px] lg:text-2xs leading-relaxed" style={{ color: v("--ux-ink-2") }}>
                 You are the host. You can hand that to somebody else, and you can close the circle —
                 but you cannot take back what other women have written in it.
               </span>

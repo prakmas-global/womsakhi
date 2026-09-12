@@ -116,7 +116,7 @@ export function KeyDetails({ job }: { job: Job }) {
              style={{ borderColor: v("--ux-line") }}>
           <IconTile icon={t.icon} tint={t.tint} ink={t.ink} size={34} radius={10} />
           <span className="min-w-0">
-            <span className="block text-2xs font-semibold uppercase tracking-[0.1em]"
+            <span className="block text-[13px] font-semibold uppercase tracking-[0.1em] lg:text-2xs"
                   style={{ color: v("--ux-faint") }}>{t.label}</span>
             <span className="mt-0.5 block text-xsm font-bold" style={{ color: v("--ux-ink") }}>{t.value}</span>
           </span>
@@ -203,7 +203,7 @@ export function SimilarJobs({ jobs }: { jobs: Job[] }) {
             <span className="min-w-0 flex-1">
               <span className="block truncate text-xs" style={{ color: v("--ux-muted") }}>{j.org}</span>
               <span className="block truncate text-xsm font-bold" style={{ color: v("--ux-ink") }}>{j.title}</span>
-              <span className="mt-0.5 flex flex-wrap items-center gap-x-2 text-2xs" style={{ color: v("--ux-faint") }}>
+              <span className="mt-0.5 flex flex-wrap items-center gap-x-2 text-[13px] lg:text-2xs" style={{ color: v("--ux-faint") }}>
                 <span className="inline-flex items-center gap-1">
                   <Icons.MapPin className="h-[10px] w-[10px]" />{j.place}
                 </span>

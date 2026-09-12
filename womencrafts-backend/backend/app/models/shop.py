@@ -15,6 +15,7 @@ list things in boxes had no room for how most of its members actually work.
 from datetime import datetime, timezone
 
 from app.core.serializers import aware
+from app.core.media import media_url
 
 
 class ListingModel:
@@ -94,7 +95,7 @@ class ListingModel:
             "category": doc.get("category", ""),
             "place": doc.get("place", ""),
             "travels_km": int(doc.get("travels_km", 0)),
-            "photo": doc.get("photo", ""),
+            "photo": media_url(doc.get("photo", "")),
             "status": doc.get("status", ListingModel.STATUS_LIVE),
             "views": int(doc.get("views", 0)),
         }
@@ -119,10 +120,21 @@ class ShopOrderModel:
     def create_document(
         *, seller_id: str, buyer_name: str, listing_id: str, title: str,
         quantity: int, total_minor: int, note: str = "", state: str = "New",
+        buyer_id: str = "",
     ) -> dict:
+        """
+        `buyer_id` is how an order stops being one-sided.
+
+        Until the market could place an order, every order here was seeded from
+        the seller's side and the buyer was a NAME — so a buyer could not be
+        shown what she had ordered, and "you have bought from her before" could
+        not be answered at all. It is empty on the seeded rows, which is
+        honest: nobody placed those.
+        """
         now = datetime.now(timezone.utc)
         return {
             "seller_id": seller_id,
+            "buyer_id": buyer_id,
             "buyer_name": buyer_name.strip(),
             "listing_id": listing_id,
             "title": title.strip(),
@@ -141,6 +153,7 @@ class ShopOrderModel:
         total = int(doc.get("total_minor", 0))
         return {
             "id": str(doc["_id"]),
+            "buyer_id": doc.get("buyer_id", ""),
             "buyer_name": doc.get("buyer_name", ""),
             "listing_id": doc.get("listing_id", ""),
             "title": doc.get("title", ""),

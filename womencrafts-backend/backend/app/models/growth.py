@@ -12,6 +12,8 @@ from datetime import date, datetime, timezone
 from typing import Optional
 import re
 
+from app.core.media import media_url
+
 
 def _pretty_date(iso: str) -> str:
     """'2026-08-20' -> 'Thu, 20 Aug'. Falls back to the raw string."""
@@ -154,7 +156,7 @@ class EventModel:
             "title": doc.get("title", ""),
             "desc": doc.get("desc", ""),
             "category": doc.get("category", ""),
-            "cover": doc.get("cover", ""),
+            "cover": media_url(doc.get("cover", "")),
             "date": doc.get("date", ""),
             "date_label": _pretty_date(doc.get("date", "")),
             "time": doc.get("time", ""),
@@ -236,7 +238,7 @@ class MentorModel:
             "name": doc.get("name", ""),
             "headline": doc.get("headline", ""),
             "bio": doc.get("bio", ""),
-            "photo": doc.get("photo", ""),
+            "photo": media_url(doc.get("photo", "")),
             "expertise": doc.get("expertise", []) or [],
             "languages": doc.get("languages", []) or [],
             "experience_years": doc.get("experience_years", 0),
@@ -384,7 +386,7 @@ class OpportunityModel:
             "deadline": doc.get("deadline", ""),
             "deadline_label": _pretty_date(doc.get("deadline", "")),
             "experience": doc.get("experience", ""),
-            "cover": doc.get("cover", ""),
+            "cover": media_url(doc.get("cover", "")),
             "contact_note": doc.get("contact_note", ""),
             "applicant_count": doc.get("applicant_count", 0),
             "status": doc.get("status", "open"),

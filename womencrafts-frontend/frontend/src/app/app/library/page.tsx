@@ -6,10 +6,10 @@ import * as Icons from "@/components/ux/icons";
 import { apiAskSwap } from "@/lib/shop-api";
 
 import {
-  Btn, Card, Chip, EmptyState, IconTile, NoteBtn, Pill,
-  SectionHead, SourceNote, Tabs, plural
+  Btn, Card, Chip, EmptyState, IconTile, NoteBtn, SectionHead, SourceNote, plural
 } from "@/components/ux/kit";
 import { HomeShell } from "@/components/ux/home/HomeShell";
+import { ChipRow, ScreenHead, Segments, Tag } from "@/components/ux/learning/native";
 import { EXCHANGE_ART, SKILL_TAGS } from "@/components/ux/exchange/data";
 import { useMyExchanges, useSwaps } from "@/components/ux/business";
 import { useT } from "@/i18n";
@@ -125,19 +125,17 @@ export default function SkillExchangePage() {
         </div>
       }
     >
-      <div className="mb-[20px] flex items-end justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-bold" style={{ color: "var(--ux-ink)" }}>{tr("library.teachAndLearn")}</h1>
-          <p className="mt-1.5 text-xsm" style={{ color: "var(--ux-muted)" }}>{tr("library.teachWhatYouKnowLearnWhat")}</p>
-
-      <SourceNote source={source} what="swaps" />
-        </div>
-        <Tabs items={["Browse", "Your exchanges"]} active={tab} onChange={setTab} />
-      </div>
+      <ScreenHead
+        title={tr("library.teachAndLearn")}
+        sub={tr("library.teachWhatYouKnowLearnWhat")}
+        note={<SourceNote source={source} what="swaps" />}
+      >
+        <Segments items={["Browse", "Your exchanges"]} active={tab} onChange={setTab} label="Which exchanges" />
+      </ScreenHead>
 
       {tab === "Browse" && (
         <>
-          <div className="mb-[16px] flex flex-wrap items-center gap-2">
+          <ChipRow className="mb-[16px] items-center">
             {(["All", "Offering", "Looking for"] as const).map((s) => (
               <Chip key={s} selected={side === s} onClick={() => setSide(s)}>{s}</Chip>
             ))}
@@ -148,7 +146,7 @@ export default function SkillExchangePage() {
                 {t}
               </Chip>
             ))}
-          </div>
+          </ChipRow>
 
           {shown.length ? (
             <div className="ux-deck ux-stagger space-y-[12px]">
@@ -163,7 +161,7 @@ export default function SkillExchangePage() {
                         </h2>
                         {/* Offer and ask are the same shape, told apart by one
                             word — because the same woman is usually both. */}
-                        <Pill tone={s.side === "Offering" ? "green" : "blue"} size="sm">{s.side}</Pill>
+                        <Tag tone={s.side === "Offering" ? "green" : "blue"} size="sm">{s.side}</Tag>
                       </div>
                       <p className="mt-1.5 text-xsm leading-relaxed" style={{ color: "var(--ux-ink-2)" }}>{s.detail}</p>
                       <p className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs"
@@ -184,7 +182,7 @@ export default function SkillExchangePage() {
                     </div>
                   </div>
 
-                  <p className="mt-3.5 rounded-[12px] p-3 text-xsm leading-relaxed"
+                  <p className="mt-3.5 rounded-[12px] p-3 text-smd leading-relaxed lg:text-xsm"
                      style={{ background: "var(--ux-surface-2)", color: "var(--ux-ink-2)" }}>
                     <span style={{ color: "var(--ux-muted)" }}>
                       {s.side === "Offering" ? tr("library.sheWouldLikeInReturn")
@@ -193,12 +191,16 @@ export default function SkillExchangePage() {
                     <strong style={{ color: "var(--ux-ink)" }}>{s.wants}</strong>
                   </p>
 
-                  <div className="mt-3.5 flex items-center justify-between gap-4 border-t pt-3.5"
+                  {/* "0 womans already interested" was a three-line stub in a
+                      70px column beside two squeezed buttons — "Open the /
+                      exchange" broken in half. The count goes above the
+                      actions on a phone and the actions take the width. */}
+                  <div className="mt-3.5 flex flex-col gap-3 border-t pt-3.5 lg:flex-row lg:items-center lg:justify-between lg:gap-4"
                        style={{ borderColor: "var(--ux-line)" }}>
-                    <span className="text-xs" style={{ color: "var(--ux-faint)" }}>
+                    <span className="text-[13px] lg:text-xs" style={{ color: "var(--ux-faint)" }}>
                       {s.matches} {plural("woman", s.matches)} already interested
                     </span>
-                    <span className="flex items-center gap-2">
+                    <span className="flex items-center gap-2 [&>*]:flex-1 lg:[&>*]:flex-none">
                       {isAsked(s.id) ? (
                         <>
                           <span className="ux-pop ux-sq inline-flex items-center gap-1.5 rounded-[12px] px-3.5 py-2 text-xsm font-semibold"
@@ -262,28 +264,28 @@ export default function SkillExchangePage() {
                     <h2 className="min-w-0 flex-1 truncate text-sm font-semibold" style={{ color: "var(--ux-ink)" }}>
                       With {m.with}
                     </h2>
-                    <Pill tone={m.state === "Agreed" ? "green" : "blue"} size="sm">{m.state}</Pill>
+                    <Tag tone={m.state === "Agreed" ? "green" : "blue"} size="sm">{m.state}</Tag>
                   </div>
                   <p className="mt-1.5 text-xsm" style={{ color: "var(--ux-muted)" }}>{m.next}</p>
                 </div>
               </div>
 
               {/* Both directions, side by side — an exchange is not a favour. */}
-              <div className="mt-3.5 grid grid-cols-2 gap-2.5">
+              <div className="mt-3.5 grid grid-cols-1 gap-2.5 sm:grid-cols-2">
                 {[["You teach", m.youTeach, "--ux-tint-violet", "--ux-violet", "GraduationCap"],
                   ["You learn", m.youLearn, "--ux-tint-green", "--ux-green", "BookOpen"]].map(([k, v, tint, ink, icon]) => (
                   <div key={k} className="ux-sq flex items-center gap-2.5 rounded-[12px] p-3"
                        style={{ background: "var(--ux-surface-2)" }}>
                     <IconTile icon={icon} tint={tint} ink={ink} size={32} radius={9} />
                     <span className="min-w-0">
-                      <span className="block text-2xs uppercase tracking-[0.06em]" style={{ color: "var(--ux-faint)" }}>{k}</span>
+                      <span className="block text-[13px] uppercase tracking-[0.06em] lg:text-2xs" style={{ color: "var(--ux-faint)" }}>{k}</span>
                       <span className="mt-0.5 block truncate text-xsm font-medium" style={{ color: "var(--ux-ink)" }}>{v}</span>
                     </span>
                   </div>
                 ))}
               </div>
 
-              <div className="mt-3.5 flex items-center justify-end gap-2 border-t pt-3.5" style={{ borderColor: "var(--ux-line)" }}>
+              <div className="mt-3.5 flex items-center gap-2 border-t pt-3.5 lg:justify-end [&>*]:flex-1 lg:[&>*]:flex-none" style={{ borderColor: "var(--ux-line)" }}>
                 <Btn href={`/app/library/${m.swapId}`} variant="outline" size="sm" icon="MessageCircle">Message</Btn>
                 <Btn href={`/app/library/${m.swapId}`} variant="primary" size="sm" icon="CalendarCheck">
                   {m.state === "Agreed" ? tr("library.seeThePlan")

@@ -15,9 +15,19 @@ export const PRESETS: (ThemeChoice & { name: string; description: string })[] = 
   {
     id: "womsakhi",
     name: "WomSakhi",
-    description: "Our own — cerise and royal purple",
-    primary: "#d21f7c",
-    secondary: "#7440a6",
+    description: "Our own — berry and lavender",
+    /*
+      The brand kit's Primary, exactly. Berry carries white text at 9.60:1 and
+      reads as text on the cream at 9.10:1, so one colour does both jobs and
+      the generated ramp does not need a second one to fall back on.
+
+      Lavender is the secondary because the kit assigns it to interactive and
+      AI surfaces — it is the one deliberately cool note in a warm palette, and
+      giving it the secondary slot keeps it where it belongs instead of letting
+      a second berry flatten the whole system.
+    */
+    primary: "#742a4f",
+    secondary: "#8b5cf6",
   },
   {
     id: "indigo",
@@ -72,8 +82,11 @@ export const PRESETS: (ThemeChoice & { name: string; description: string })[] = 
 
 export const DEFAULT_THEME: ThemeChoice = {
   id: "womsakhi",
-  primary: "#d21f7c",
-  secondary: "#7440a6",
+  // The same pair as the `womsakhi` preset above, and it has to stay that way:
+  // this is the value used before a stored choice is read, so a mismatch shows
+  // as the brand changing colour one frame after the app opens.
+  primary: "#742a4f",
+  secondary: "#8b5cf6",
 };
 
 export function presetById(id: string) {

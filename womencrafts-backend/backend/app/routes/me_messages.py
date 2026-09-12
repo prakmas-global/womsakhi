@@ -204,11 +204,36 @@ async def delete_conversation(conversation_id: str, me: dict = Depends(require_a
     summary="Send a message",
 )
 async def send(conversation_id: str, body: SendMessage, me: dict = Depends(require_active_member)):
+    """
+    Her message, and — where the thread has another member on the end of it —
+    the same message arriving in that member's inbox.
+
+    Without the mirror, a market thread was a one-way drop: the buyer's question
+    reached the seller and the seller's reply reached nobody. `counterpart_id`
+    is set only on threads the market opened, so every seeded conversation goes
+    through here exactly as it did before.
+    """
     doc = await _mine(conversation_id, str(me["_id"]))
     bubble = Conv.bubble(direction="out", text=body.text.strip())
     await _col().update_one(
         {"_id": doc["_id"]},
         {"$push": {"messages": bubble}, "$set": {"updated_at": bubble["at"]}},
     )
+
+    other = doc.get("counterpart_id")
+    if other:
+        try:
+            # Her "out" is the other woman's "in", unread until she opens it.
+            await _col().update_one(
+                {"_id": ObjectId(other)},
+                {"$push": {"messages": Conv.bubble(
+                    direction="in", text=bubble["text"], at=bubble["at"],
+                )}, "$set": {"updated_at": bubble["at"]}},
+            )
+        except Exception as exc:  # noqa: BLE001
+            # Her own copy is already written and she can see it. A failed
+            # mirror must not read to her as a failed send.
+            print(f"⚠️  Could not mirror a message into {other}: {exc}")
+
     doc.setdefault("messages", []).append(bubble)
     return ConversationDetail(**Conv.to_response(doc, with_messages=True))
