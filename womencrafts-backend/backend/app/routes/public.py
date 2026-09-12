@@ -36,7 +36,7 @@ async def public_stats() -> dict:
     Four counts, actually counted.
 
     Only what is already public on the platform: how many openings are live,
-    how many courses exist, how many women have joined, how many savings
+    how many courses are open to join, how many women are members, how many savings
     circles are running. No names, nothing about any individual.
     """
 
@@ -45,11 +45,26 @@ async def public_stats() -> dict:
         # Only what a visitor would legitimately be told about. `members` is the
         # profile directory, which is the count of women who have actually
         # joined — `users` also holds staff logins.
+        #
+        # LIVE counts, not totals. This endpoint said "how many openings are
+        # live" while counting every opportunity ever posted — 20, of which 12
+        # were closed. A woman who reads "20 jobs" and finds 8 has been told a
+        # true-sounding number that lied to her, which is the exact failure
+        # this endpoint was written to end. Same for the other three: 10 of the
+        # 28 courses have finished or are archived, and 9 of the 37 member
+        # records are pending review, inactive or rejected.
+        #
+        # Casing differs per collection because the collections do: staff-side
+        # records were seeded Title Case, member-side ones lower. Matching both
+        # would hide a future rename, so each one matches what its own
+        # collection actually stores.
         counts = {
-            "jobs": await db["opportunities"].count_documents({}),
-            "courses": await db["programs"].count_documents({}),
-            "members": await db["members"].count_documents({}),
-            "circles": await db["circles"].count_documents({}),
+            "jobs": await db["opportunities"].count_documents({"status": "open"}),
+            "courses": await db["programs"].count_documents(
+                {"status": {"$in": ["Running", "Upcoming"]}}
+            ),
+            "members": await db["members"].count_documents({"status": "Active"}),
+            "circles": await db["circles"].count_documents({"status": "active"}),
         }
         return counts
 

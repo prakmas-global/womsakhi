@@ -64,12 +64,25 @@ export function MobileHome() {
     rather than throwing. This is the first screen after sign-in; an error
     boundary here is a woman staring at a blank app.
   */
-  const { data } = useHome();
+  const { data, refetch } = useHome();
 
   if (!data) return <HomeSkeleton />;
 
   const { me, journey, earnings, opportunities, recommended, unavailable } = data;
-  const lost = (b: string) => unavailable?.includes(b);
+  /*
+    `unavailable` names the blocks whose server-side fetch timed out. The
+    endpoint gathers eleven of them in parallel and returns whatever arrived
+    rather than failing the whole screen, so a slow collection costs one card,
+    not the app.
+
+    It matters most for money. `earnings` is built from the `summary` block, so
+    when that times out `earnings` is null — and `earnings?.money.balance_minor
+    ?? 0` would print a confident **Rs 0** to a woman who has Rs 2,300. That is
+    the same failure as an invented number, arrived at by a different route:
+    the figure is wrong and nothing on screen says so.
+  */
+  const lost = (b: string) => unavailable?.includes(b) ?? false;
+  const balanceUnknown = !earnings || lost("summary");
 
   return (
     <div className="lg:hidden" style={{ paddingBottom: 8 }}>
@@ -90,6 +103,33 @@ export function MobileHome() {
       </header>
 
       {/* ── the number she actually opens the app for ───────────────────── */}
+      {balanceUnknown ? (
+        /*
+          Not a number, and not a zero.
+
+          A retry rather than a link to the wallet, because the wallet reads the
+          same block and would fail the same way. The tile keeps its colour and
+          its place so the screen does not jump when the figure arrives.
+        */
+        <div className="ux-sq mx-4 flex items-center gap-3 rounded-[16px] p-4"
+             style={{ background: "linear-gradient(135deg, var(--ux-brand-700), var(--ux-brand-900))" }}>
+          <div className="min-w-0 flex-1">
+            <p className="text-[12px] font-semibold uppercase tracking-[0.08em]"
+               style={{ color: "rgb(255 255 255 / 0.72)" }}>
+              Your balance
+            </p>
+            <p className="mt-0.5 text-[15px] font-semibold leading-snug text-white">
+              We could not load it just now.
+            </p>
+          </div>
+          <button type="button" onClick={refetch}
+                  className="flex min-h-[44px] shrink-0 items-center gap-1.5 rounded-full px-3.5 text-[13px] font-bold text-white"
+                  style={{ background: "rgb(255 255 255 / 0.18)" }}>
+            <I name="RefreshCw" className="h-4 w-4" sw={2.2} />
+            Try again
+          </button>
+        </div>
+      ) : (
       <TransitionLink href="/app/wallet"
         className="ux-sq mx-4 flex items-center gap-3 rounded-[16px] p-4"
         style={{ background: "linear-gradient(135deg, var(--ux-brand-700), var(--ux-brand-900))" }}>
@@ -100,7 +140,7 @@ export function MobileHome() {
           </p>
           {/* tabular-nums so the figure does not jitter as it changes */}
           <p className="mt-0.5 text-[26px] font-extrabold leading-none text-white [font-variant-numeric:tabular-nums]">
-            {formatRupees(earnings?.money.balance_minor ?? 0)}
+            {formatRupees(earnings.money.balance_minor)}
           </p>
         </div>
         {/*
@@ -117,14 +157,15 @@ export function MobileHome() {
           report. Nothing is hidden: the full picture, including a bad month,
           is one tap away in the wallet.
         */}
-        {(earnings?.money.earned_this_month_minor ?? 0) > 0 && (
+        {earnings.money.earned_this_month_minor > 0 && (
           <span className="flex shrink-0 items-center gap-1 rounded-full px-2.5 py-1 text-[12px] font-bold"
                 style={{ background: "rgb(255 255 255 / 0.16)", color: "#fff" }}>
             <I name="TrendingUp" className="h-3.5 w-3.5" sw={2.4} />
-            {formatRupees(earnings!.money.earned_this_month_minor)} this month
+            {formatRupees(earnings.money.earned_this_month_minor)} this month
           </span>
         )}
       </TransitionLink>
+      )}
 
       {/* ── the launcher ────────────────────────────────────────────────── */}
       {/*
