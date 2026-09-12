@@ -2,41 +2,101 @@
 
 import { useCallback, useMemo, useState } from "react";
 
+import { usePayoutMethods } from "@/components/ux/business";
 import { HomeShell } from "@/components/ux/home/HomeShell";
-import { Btn, Card, I, Pill, SectionHead, v } from "@/components/ux/kit";
+import { Btn, Card, EmptyState, I, Pill, SectionHead, v } from "@/components/ux/kit";
 import { formatRupees } from "@/components/ux/kit";
-import { REQUESTS, SHOP, paidTotal, unpaidTotal, type Request } from "@/components/ux/reach/data";
+import { SHOP } from "@/components/ux/reach/data";
 import { useT } from "@/i18n";
+import { apiShopOrders, type ShopOrder } from "@/lib/shop-api";
+import { useResource } from "@/lib/use-resource";
 
 /**
  * Your link, and getting paid.
  *
- * ── Two gaps, one screen, because they are one job ──────────────────────────
- * Before this, every public route in the app was contact/privacy/terms/about —
- * a customer could not see her shop at all — and `settings/payments` held only
- * her *payout* account, the direction money leaves in. So the app recorded what
- * she was owed and never once observed the money arriving.
+ * ── What this screen used to do, and why it had to stop ─────────────────────
+ * "Make the link" made no request at all. It prepended a row to React state
+ * with a reference this file invented — `PR-${4822 + rows.length}` — and "Copy
+ * link" copied a string that was hardcoded in a fixture: the SAME URL for every
+ * row, pointing at a page whose Pay button is a 1.4-second timer that then says
+ * "Paid. It went straight to her bank account."
  *
- * That is the difference between a diary and a ledger, and it weakened
- * everything downstream: proof of income, the trust record, the employer
- * payment history and the whole pricing corpus all rested on her typing a
- * number in rather than on anything the app saw happen.
+ * That is the most damaging thing a screen in this app could do. A woman sends
+ * that link to a customer, believing she is about to be paid; the reference
+ * disappears on reload; and if the customer opens it, she is told she has paid
+ * when no money has moved anywhere.
  *
- * ── We do not hold the money ────────────────────────────────────────────────
- * Settlement is bank to bank into her own account. Pooling customer funds would
- * make WomSakhi a payment aggregator, which is a licence this product has no
- * reason to need — and a balance held by an app is exactly the thing a
- * household distrusts. Stated on the screen, not buried in terms.
+ * ── Why there is no link, rather than a better one ──────────────────────────
+ * The backend cannot make one, and the reasons are structural, not missing
+ * plumbing:
+ *
+ *   · `POST /payments/orders` is the wrong direction. It is authenticated as
+ *     the member and stores `user_id` = the person paying. There is no payee
+ *     field on the order at all, and `GET /payments/orders/{id}` is scoped by
+ *     `user_id`, so a customer with no account has nothing to open.
+ *   · She cannot name an amount. `CreateOrderRequest` is `{purpose,
+ *     reference_id}` with purpose ∈ {booking, program}, and the price is looked
+ *     up server-side from the catalogue — deliberately, so the client can never
+ *     state a price. "₹750 for kurta stitching" has no row to point at.
+ *   · The gateway is the sandbox one. `/payments/methods` answers
+ *     `provider: "sandbox"`, and `SandboxProvider.create_order` returns
+ *     `upi://pay?pa=womsakhi@sandbox` with `test_mode: true`. No network, no
+ *     money, and a VPA that is not a real payee.
+ *   · Even wired to Razorpay it would be wrong. `RazorpayProvider.create_order`
+ *     posts to WomSakhi's own account with `"name": "WomSakhi"`, so the
+ *     customer's money would settle to WomSakhi and be paid out afterwards.
+ *     That is pooling customer funds — the payment-aggregator licence this
+ *     product has no reason to need, and the exact thing the note at the bottom
+ *     of this screen promises never happens.
+ *
+ * So the screen says so, and shows her the things that are actually hers: where
+ * her money reaches her (`/me/payout/accounts`) and the orders recorded against
+ * her (`/shop/orders`). Both are real, both persist, and neither invents a
+ * reference.
  */
+
+/** The backend's own division: Sent and Done are out of her hands. */
+const DELIVERED = new Set(["Sent", "Done"]);
+
+const toneFor = (state: string): "green" | "orange" | "neutral" =>
+  DELIVERED.has(state) ? "green" : state === "Cancelled" ? "neutral" : "orange";
+
 export default function CollectPage() {
   const tr = useT();
-  const [rows, setRows] = useState<Request[]>(REQUESTS);
   const [copied, setCopied] = useState<string | null>(null);
-  const [amount, setAmount] = useState("");
-  const [what, setWhat] = useState("");
 
-  const owed = useMemo(() => unpaidTotal(rows), [rows]);
-  const got = useMemo(() => paidTotal(rows), [rows]);
+  /**
+   * Her real orders. The fallback is an empty list, never a sample one: on a
+   * screen about money, a plausible row she did not make is worse than a gap.
+   */
+  const orders = useResource(
+    useCallback((s: AbortSignal) => apiShopOrders(s), []),
+    [] as ShopOrder[],
+  );
+  const payout = usePayoutMethods();
+
+  /** True only when the server actually answered. `[]` from a failure is not an answer. */
+  const known = orders.source === "live";
+  const live = useMemo(
+    () => orders.data.filter((o) => o.state !== "Cancelled"),
+    [orders.data],
+  );
+  const openMinor = useMemo(
+    () => live.filter((o) => !DELIVERED.has(o.state)).reduce((n, o) => n + o.total_minor, 0),
+    [live],
+  );
+  const doneMinor = useMemo(
+    () => live.filter((o) => DELIVERED.has(o.state)).reduce((n, o) => n + o.total_minor, 0),
+    [live],
+  );
+
+  /** The UPI id she has saved is the one thing here a customer can pay into. */
+  const upi = useMemo(() => payout.data.find((m) => m.kind === "UPI"), [payout.data]);
+  const primary = useMemo(
+    () => payout.data.find((m) => m.primary) ?? payout.data[0],
+    [payout.data],
+  );
+
   const link = `womsakhi.com/s/${SHOP.handle}`;
 
   const copy = useCallback((text: string, id: string) => {
@@ -50,17 +110,6 @@ export default function CollectPage() {
     const text = `Hello! This is ${SHOP.name}. You can see what I make and pay me here: https://${link}`;
     window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, "_blank", "noopener");
   }, [link]);
-
-  const ask = useCallback(() => {
-    const minor = Math.round(Number(amount.replace(/[^0-9]/g, "")) * 100);
-    if (!minor) return;
-    const n = 4822 + rows.length;
-    setRows((r) => [{
-      id: `q${n}`, ref: `PR-${n}`, what: what.trim() || "Work done", minor,
-      who: "Not sent yet", when: "Just now", state: "unpaid", via: "link",
-    }, ...r]);
-    setAmount(""); setWhat("");
-  }, [amount, what, rows.length]);
 
   return (
     <HomeShell active="/app/collect">
@@ -80,13 +129,12 @@ export default function CollectPage() {
       <div className="flex flex-col gap-5">
 
         <header>
-          <p className="text-2xs font-extrabold uppercase tracking-[0.2em]" style={{ color: v("--ux-brand") }}>{tr("collect.yourLink")}</p>
+          <p className="text-2xs font-extrabold uppercase tracking-[0.2em]" style={{ color: v("--ux-brand") }}>{tr("collect.gettingPaid")}</p>
           <h1 className="mt-2 text-[clamp(1.5rem,3.2vw,2.125rem)] font-extrabold leading-[1.1] tracking-[-0.035em]"
               style={{ color: v("--ux-ink") }}>{tr("collect.sellToPeopleWhoAreNot")}</h1>
           <p className="mt-1.5 max-w-[58ch] text-sm leading-relaxed" style={{ color: v("--ux-muted") }}>
             Your customers are already on WhatsApp. They are not going to install an app to buy a
-            blouse. Send them this link instead — it opens on any phone, needs no account, and the
-            money comes to your bank, not to us.
+            blouse. Send them this link instead — it opens on any phone and needs no account.
           </p>
         </header>
 
@@ -112,11 +160,120 @@ export default function CollectPage() {
           </div>
         </Card>
 
-        {/* Money in, money waiting */}
+        {/*
+          The honest answer, above everything it affects.
+
+          This used to be a form that made a payment reference out of thin air.
+          Saying plainly that the app cannot do it is not a smaller feature than
+          a fake one — it is the only version of this that is not a lie to a
+          woman about being paid.
+        */}
+        <Card pad={0} style={{ overflow: "hidden" }}>
+          <div className="flex items-start gap-3.5 px-5 py-5"
+               style={{ background: v("--ux-tint-amber") }}>
+            <I name="Info" className="mt-[2px] h-[20px] w-[20px] shrink-0" style={{ color: v("--ux-amber-ink") }} />
+            <div className="min-w-0">
+              <p className="text-base font-extrabold leading-snug" style={{ color: v("--ux-amber-ink") }}>
+                {tr("collect.noPaymentLinkYet")}
+              </p>
+              <p className="mt-1.5 text-xsm leading-relaxed" style={{ color: v("--ux-amber-ink") }}>
+                There is no payment link to send. WomSakhi is not connected to a live payment
+                service, so anything this screen made would not take a single rupee from anyone.
+                We would rather tell you that than hand you a link that fails in front of your
+                customer.
+              </p>
+            </div>
+          </div>
+          <div className="px-5 py-5">
+            <p className="text-sm font-bold" style={{ color: v("--ux-ink") }}>
+              {tr("collect.askThemYourself")}
+            </p>
+            <ul className="mt-2.5 flex flex-col gap-2">
+              {[
+                "Give your customer your own UPI id, or your account number from your passbook. The money goes from her bank to yours, with nothing in between.",
+                "Or take cash when you hand the work over. That is not a lesser way to be paid.",
+                "Then write the order down here, so the record of what you earned is yours and not only in your head.",
+              ].map((line) => (
+                <li key={line} className="flex items-start gap-2.5">
+                  <I name="Check" className="mt-[3px] h-[14px] w-[14px] shrink-0" sw={2.6} style={{ color: v("--ux-green-ink") }} />
+                  <span className="text-xsm leading-relaxed" style={{ color: v("--ux-ink-2") }}>{line}</span>
+                </li>
+              ))}
+            </ul>
+            <p className="mt-3.5 text-xs leading-relaxed" style={{ color: v("--ux-muted") }}>
+              When a payment link does exist, it will pay you directly. WomSakhi will not hold the
+              money on the way — not for a day, not for an hour.
+            </p>
+          </div>
+        </Card>
+
+        {/* Where money reaches her — her own saved account, or the gap. */}
+        <div>
+          <SectionHead title={tr("collect.whereYourMoneyReaches")} icon="Landmark" />
+          <Card pad={16}>
+            {payout.source === "loading" ? (
+              <p className="text-xsm" style={{ color: v("--ux-muted") }}>Loading…</p>
+            ) : primary ? (
+              <div className="flex flex-col gap-3">
+                <div className="flex items-center gap-3.5">
+                  <span className="grid h-[44px] w-[44px] shrink-0 place-items-center rounded-[12px]"
+                        style={{ background: v(primary.tint), color: v(primary.ink) }}>
+                    <I name={primary.icon} className="h-[20px] w-[20px]" />
+                  </span>
+                  <div className="min-w-0 flex-1">
+                    <p className="text-sm font-bold" style={{ color: v("--ux-ink") }}>{primary.label}</p>
+                    <p className="mt-0.5 break-all text-xs" style={{ color: v("--ux-muted") }}>
+                      {primary.kind} · {primary.detail}
+                    </p>
+                  </div>
+                  {primary.verified
+                    ? <Pill tone="green" size="sm">Checked</Pill>
+                    : <Pill tone="orange" size="sm">Not checked yet</Pill>}
+                </div>
+                <p className="text-xs leading-relaxed" style={{ color: v("--ux-muted") }}>
+                  {upi
+                    ? `This is the id to read out to a customer: ${upi.detail}. She pays it from her own phone, and it arrives in your account.`
+                    : "This is where WomSakhi sends money you withdraw. It is not something to give a customer — we only keep the last four digits of your account number. Add your UPI id and you will have it here to read out."}
+                </p>
+                <div>
+                  <Btn variant="outline" size="sm" icon="Settings2" href="/app/settings/payments">
+                    {tr("collect.addHowYouGetPaid")}
+                  </Btn>
+                </div>
+              </div>
+            ) : (
+              <div className="flex flex-col gap-3">
+                <p className="text-xsm leading-relaxed" style={{ color: v("--ux-ink-2") }}>
+                  You have not told us where money should reach you. Add your bank account or your
+                  UPI id, and it is yours to read out to a customer.
+                </p>
+                <div>
+                  <Btn variant="outline" size="sm" icon="Plus" href="/app/settings/payments">
+                    {tr("collect.addHowYouGetPaid")}
+                  </Btn>
+                </div>
+              </div>
+            )}
+          </Card>
+        </div>
+
+        {/*
+          Her orders, as the server has them.
+
+          These two totals used to be sums of a fixture, labelled "has reached
+          your bank" — a sentence the app had no way of knowing. What it does
+          know is which orders she has marked delivered, so that is what they
+          say now.
+
+          Until the request lands they read "—", not "₹0". Those are different
+          statements: one is "we have not asked yet", the other is "you are owed
+          nothing", and printing the second while the first is true is the same
+          class of lie this screen was rebuilt to remove.
+        */}
         <div className="grid gap-3 sm:grid-cols-2">
           {[
-            { n: formatRupees(got), l: "has reached your bank", i: "Landmark", tint: "--ux-tint-green", ink: "--ux-green-ink" },
-            { n: formatRupees(owed), l: "asked for, not yet paid", i: "Clock", tint: "--ux-tint-amber", ink: "--ux-amber-ink" },
+            { n: known ? formatRupees(openMinor) : "—", l: tr("collect.stillWithYou"), i: "Clock", tint: "--ux-tint-amber", ink: "--ux-amber-ink" },
+            { n: known ? formatRupees(doneMinor) : "—", l: tr("collect.markedDelivered"), i: "Package", tint: "--ux-tint-green", ink: "--ux-green-ink" },
           ].map((x) => (
             <Card key={x.l} pad={16}>
               <div className="flex items-center gap-3.5">
@@ -135,72 +292,67 @@ export default function CollectPage() {
           ))}
         </div>
 
-        {/* Ask for money — the direction that did not exist */}
         <div>
-          <SectionHead title={tr("collect.askSomeoneForMoney")}
-                       sub={tr("collect.makesALinkYouCanSend")} icon="HandCoins" />
-          <Card pad={16}>
-            <div className="flex flex-wrap items-end gap-3">
-              <label className="min-w-[110px] flex-1">
-                <span className="mb-1.5 block text-xs font-semibold" style={{ color: v("--ux-muted") }}>{tr("collect.howMuch")}</span>
-                <input value={amount} onChange={(e) => setAmount(e.target.value)}
-                       inputMode="numeric" placeholder="400"
-                       className="ux-sq w-full rounded-[12px] border px-3.5 py-3 text-base font-bold outline-none"
-                       style={{ borderColor: v("--ux-line-strong"), background: v("--ux-surface"), color: v("--ux-ink") }} />
-              </label>
-              <label className="min-w-[160px] flex-[2]">
-                <span className="mb-1.5 block text-xs font-semibold" style={{ color: v("--ux-muted") }}>{tr("collect.whatFor")}</span>
-                <input value={what} onChange={(e) => setWhat(e.target.value)}
-                       placeholder={tr("collect.blouseStitching")}
-                       className="ux-sq w-full rounded-[12px] border px-3.5 py-3 text-sm outline-none"
-                       style={{ borderColor: v("--ux-line-strong"), background: v("--ux-surface"), color: v("--ux-ink") }} />
-              </label>
-              <Btn icon="Plus" onClick={ask} disabled={!amount.trim()}>{tr("collect.makeTheLink")}</Btn>
-            </div>
-          </Card>
-        </div>
+          <SectionHead title={tr("collect.yourOrders")} sub={tr("collect.recordedHereNotPaid")}
+                       icon="Receipt" chip={known ? String(live.length) : undefined} />
 
-        {/* What she has asked for */}
-        <div>
-          <SectionHead title={tr("collect.whatYouHaveAskedFor")} icon="Receipt" chip={String(rows.length)} />
-          <Card pad={0} style={{ overflow: "hidden" }}>
-            {rows.map((r, i) => (
-              <div key={r.id} className="flex flex-wrap items-center gap-3.5 px-5 py-4"
-                   style={{ borderTop: i === 0 ? "none" : `1px solid ${v("--ux-line")}` }}>
-                <span className="h-[32px] w-[3px] shrink-0 rounded-full"
-                      style={{ background: v(r.state === "paid" ? "--ux-green-ink"
-                                             : r.state === "seen" ? "--ux-amber-ink" : "--ux-line-strong") }} />
-                <div className="min-w-0 flex-1">
-                  <p className="text-sm font-bold" style={{ color: v("--ux-ink") }}>{r.what}</p>
-                  <p className="mt-0.5 text-xs" style={{ color: v("--ux-muted") }}>
-                    {r.who} · {r.when} · {r.ref}
-                    {r.paidOn ? ` · paid ${r.paidOn.toLowerCase()}` : ""}
-                  </p>
-                </div>
-                <p className="shrink-0 text-base font-extrabold tabular-nums" style={{ color: v("--ux-ink") }}>
-                  {formatRupees(r.minor)}
+          {/*
+            A failed fetch says so and offers the way back. It must not fall
+            through to an empty list: "you have no orders" and "we could not
+            ask" are different sentences, and only one of them is true.
+          */}
+          {orders.error ? (
+            <Card pad={16}>
+              <div className="flex flex-wrap items-center gap-3">
+                <I name="CloudOff" className="h-[18px] w-[18px] shrink-0" style={{ color: v("--ux-amber-ink") }} />
+                <p className="min-w-0 flex-1 text-xsm" style={{ color: v("--ux-ink-2") }}>
+                  {tr("collect.couldNotLoadOrders")}
                 </p>
-                {r.state === "paid"
-                  ? <Pill tone="green" size="sm">{tr("collect.inYourBank")}</Pill>
-                  : r.state === "seen"
-                    ? <Pill tone="orange" size="sm">{tr("collect.sheHasSeenIt")}</Pill>
-                    : <Btn size="sm" variant="outline"
-                           icon={copied === r.id ? "Check" : "Copy"}
-                           onClick={() => copy(`https://womsakhi.com/pay/${r.ref}`, r.id)}>
-                        {copied === r.id ? "Copied" : "Copy link"}
-                      </Btn>}
+                <Btn size="sm" variant="outline" icon="RotateCw" onClick={orders.refetch}>
+                  {tr("common.retry")}
+                </Btn>
               </div>
-            ))}
-          </Card>
+            </Card>
+          ) : orders.source === "loading" ? (
+            <Card pad={16}>
+              <p className="text-xsm" style={{ color: v("--ux-muted") }}>Loading…</p>
+            </Card>
+          ) : live.length === 0 ? (
+            <Card pad={16}>
+              <EmptyState icon="Receipt" title={tr("collect.noOrdersYet")}
+                          body={tr("collect.noOrdersYetLine")} />
+            </Card>
+          ) : (
+            <Card pad={0} style={{ overflow: "hidden" }}>
+              {live.map((o, i) => (
+                <div key={o.id} className="flex flex-wrap items-center gap-3.5 px-5 py-4"
+                     style={{ borderTop: i === 0 ? "none" : `1px solid ${v("--ux-line")}` }}>
+                  <span className="h-[32px] w-[3px] shrink-0 rounded-full"
+                        style={{ background: v(DELIVERED.has(o.state) ? "--ux-green-ink" : "--ux-amber-ink") }} />
+                  <div className="min-w-0 flex-1">
+                    <p className="text-sm font-bold" style={{ color: v("--ux-ink") }}>{o.title}</p>
+                    <p className="mt-0.5 text-xs" style={{ color: v("--ux-muted") }}>
+                      {o.buyer_name} · {o.placed_on}
+                      {o.quantity > 1 ? ` · ${o.quantity}` : ""}
+                    </p>
+                  </div>
+                  <p className="shrink-0 text-base font-extrabold tabular-nums" style={{ color: v("--ux-ink") }}>
+                    {formatRupees(o.total_minor)}
+                  </p>
+                  <Pill tone={toneFor(o.state)} size="sm">{o.state}</Pill>
+                </div>
+              ))}
+            </Card>
+          )}
         </div>
 
         <Card pad={16} style={{ background: v("--ux-surface-2"), borderColor: "transparent" }}>
           <div className="flex items-start gap-3">
             <I name="Landmark" className="mt-[2px] h-[16px] w-[16px] shrink-0" style={{ color: v("--ux-muted") }} />
             <p className="text-xsm leading-relaxed" style={{ color: v("--ux-ink-2") }}>
-              Money paid on your link goes to your own bank account. WomSakhi never holds it, cannot
-              stop it, and takes nothing from it. That is also the answer if anyone at home asks what
-              the app does with your money: nothing — it never touches it.
+              WomSakhi does not hold your money and does not take anything from it. Right now it
+              does not touch it at all — your customer pays you, and the app only keeps the record.
+              That is also the answer if anyone at home asks what the app does with your money.
             </p>
           </div>
         </Card>
