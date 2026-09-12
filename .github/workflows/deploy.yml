@@ -61,21 +61,53 @@ jobs:
       - name: Tag images with the commit
         run: echo "TAG=${GITHUB_SHA::7}" >> "$GITHUB_ENV"
 
+      # ── the build wrapper ────────────────────────────────────────────────
+      #
+      # `gcloud builds submit` cannot be used synchronously by this service
+      # account, and `--suppress-logs` does not save it.
+      #
+      # What happens: the build runs, SUCCEEDS, pushes the image — and then the
+      # CLI exits 1 with "This tool can only stream logs if you are
+      # Viewer/Owner of the project". It needs to read the build's log bucket
+      # to report an outcome, the deployer SA deliberately cannot, and so a
+      # green build is reported as a failed deploy. That stopped the rollout
+      # twice: once before `--suppress-logs` was added, and once after, which
+      # is how we learned the flag only silences the tailing and not the
+      # final read.
+      #
+      # So: `--async`, which returns the build ID and asks nothing of the log
+      # bucket, then poll `gcloud builds describe` — that needs only
+      # `cloudbuild.builds.get`, which `cloudbuild.builds.editor` already
+      # grants. The outcome comes from the build's own STATUS field rather than
+      # from whether the CLI could read a log line, which is the only thing
+      # that was ever actually being tested.
+      - name: Build helper
+        run: |
+          cat > "$RUNNER_TEMP/cbuild.sh" <<'SH'
+          set -euo pipefail
+          ID=$(gcloud builds submit --async --format='value(id)' "$@")
+          echo "build $ID — https://console.cloud.google.com/cloud-build/builds;region=$REGION/$ID?project=$PROJECT_ID"
+          for _ in $(seq 1 120); do
+            ST=$(gcloud builds describe "$ID" --region "$REGION" --project "$PROJECT_ID" --format='value(status)')
+            case "$ST" in
+              SUCCESS)  echo "build $ID SUCCESS"; exit 0 ;;
+              FAILURE|INTERNAL_ERROR|TIMEOUT|CANCELLED|EXPIRED)
+                echo "build $ID $ST"
+                gcloud builds log "$ID" --region "$REGION" --project "$PROJECT_ID" 2>&1 | tail -60 || true
+                exit 1 ;;
+            esac
+            sleep 15
+          done
+          echo "build $ID did not finish within 30 minutes"; exit 1
+          SH
+          chmod +x "$RUNNER_TEMP/cbuild.sh"
+
       # ── API ──────────────────────────────────────────────────────────────
       - name: Build API
         working-directory: womencrafts-backend/backend
         run: |
-          # `--suppress-logs` because streaming them is what broke this step
-          # the first time it ran: the build SUCCEEDED and pushed the image,
-          # but `gcloud builds submit` exited 1 because the deployer service
-          # account could not READ the logs it was tailing. A green build
-          # reported as a failed deploy is the worst kind of false negative —
-          # it stops the rollout AND sends you looking at the Dockerfile.
-          # The account can read them now; not tailing them is belt and braces,
-          # and the build's own URL is printed for when something really fails.
-          gcloud builds submit \
+          "$RUNNER_TEMP/cbuild.sh" \
             --tag "$REGISTRY/api:$TAG" \
-            --suppress-logs \
             --project "$PROJECT_ID" --region "$REGION"
 
       - name: Deploy API
@@ -102,9 +134,8 @@ jobs:
       - name: Build web
         working-directory: womencrafts-frontend/frontend
         run: |
-          gcloud builds submit --config cloudbuild.yaml \
+          "$RUNNER_TEMP/cbuild.sh" --config cloudbuild.yaml \
             --substitutions "_API_URL=$API_URL,_INTERNAL_API_URL=$INTERNAL_API_URL,_IMAGE=$REGISTRY/web:$TAG" \
-            --suppress-logs \
             --project "$PROJECT_ID" --region "$REGION"
 
       - name: Deploy web
