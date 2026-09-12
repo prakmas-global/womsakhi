@@ -3,7 +3,7 @@
 import Link from "next/link";
 
 import * as Icons from "@/components/ux/icons";
-import { Btn, Card, I, IconTile, v } from "@/components/ux/kit";
+import { Avatar, Btn, Card, I, IconTile, v } from "@/components/ux/kit";
 import type { DiscoverItem } from "@/components/ux/discovery/data";
 import { useT } from "@/i18n";
 
@@ -39,101 +39,63 @@ export function Head({ icon, title, sub, href, count }: {
 }
 
 /* ------------------------------------------------------------------ */
-/*  Women near her                                                     */
+/*  A woman she can learn from                                         */
 /* ------------------------------------------------------------------ */
 
 /**
- * A woman a step ahead, in her trade.
+ * A mentor, as her own profile describes her.
  *
- * Led by a face rather than an icon, because that is the whole mechanism: the
- * evidence for this user base is that seeing a *named woman like her doing one
- * specific thing* moves people, where a leaderboard or a "trending" row does
- * not. The quote underneath is why she is on this screen, in her own terms.
+ * ── What came off this card ─────────────────────────────────────────────────
+ * Three things, all of them invented and all of them the kind a woman would
+ * believe:
  *
- * The primary action is Message, not "view profile" — the thing worth doing
- * with a woman two kilometres away is talking to her.
+ *   · **"2 km away".** There is no location on a member, no geocoding and no
+ *     distance anywhere in this product. The number was typed into a fixture.
+ *   · **The quote.** The card led with a sentence in quotation marks —
+ *     "She does what you do, in your area, and has taken bulk orders" — which
+ *     no mentor ever said and which claimed to know the reader's trade.
+ *   · **The face.** Every card carried a stock photograph. Most mentors have
+ *     not uploaded one, and a stranger's face under a real woman's real name
+ *     is the worst of the three. `Avatar` draws her initial instead.
+ *
+ * What is left is what her profile actually says: her headline, the city she
+ * gave, when she said she is free, and what she says she knows. The action is
+ * her profile, where asking for a session is a real request to a real person —
+ * the old Message button opened an empty inbox screen addressed to nobody.
  */
-export function WomanCard({ i, onMessage }: { i: DiscoverItem; onMessage: () => void }) {
+export function WomanCard({ i }: { i: DiscoverItem }) {
   return (
     <Card pad={16} className="flex h-full flex-col">
       <div className="flex items-start gap-3">
-        <span className="relative shrink-0">
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src={i.photo} alt="" loading="lazy" decoding="async"
-               className="h-[64px] w-[64px] rounded-[12px] object-cover"
-               style={{ background: v(i.tint) }} />
-          {/* She is reachable now — the reason Message is worth pressing. */}
-          <span aria-hidden className="absolute -end-1 -top-1 h-[14px] w-[14px] rounded-full border-2"
-                style={{ background: v("--ux-green-ink"), borderColor: v("--ux-surface") }} />
-        </span>
+        <Avatar src={i.photo} name={i.title} size={56} />
         <div className="min-w-0 flex-1">
-          <p className="truncate text-sm font-bold" style={{ color: v("--ux-ink") }}>{i.title}</p>
-          <p className="mt-0.5 truncate text-xsm" style={{ color: v("--ux-muted") }}>{i.detail}</p>
-          {i.away && (
-            <p className="mt-1 flex items-center gap-1 text-xs" style={{ color: v("--ux-faint") }}>
-              <Icons.MapPin className="h-[12px] w-[12px] shrink-0" />
-              {i.away}
-            </p>
-          )}
+          <p className="text-sm font-bold leading-snug" style={{ color: v("--ux-ink") }}>{i.title}</p>
+          <p className="mt-0.5 text-xs leading-snug" style={{ color: v("--ux-muted") }}>{i.detail}</p>
         </div>
       </div>
 
-      <p className="mt-3 flex-1 rounded-[10px] p-2.5 text-xs leading-snug"
-         style={{ background: v("--ux-surface-2"), color: v("--ux-ink-2") }}>
-        <Icons.Quote className="me-1 inline h-[11px] w-[11px] align-[-1px]" style={{ color: v("--ux-faint") }} />
-        {i.because}
-      </p>
+      {i.meta && (
+        <p className="mt-2.5 flex items-start gap-1.5 text-xs leading-snug" style={{ color: v("--ux-faint") }}>
+          <Icons.MapPin className="mt-[2px] h-[12px] w-[12px] shrink-0" />
+          {i.meta}
+        </p>
+      )}
 
-      <div className="mt-3 flex items-center gap-2">
-        <Btn size="sm" full onClick={onMessage}>Message</Btn>
-        <Link href={i.href} aria-label={`More about ${i.title}`}
-              className="ux-press ux-sq grid h-[36px] w-[42px] shrink-0 place-items-center rounded-[10px] border"
-              style={{ borderColor: v("--ux-line"), color: v("--ux-muted") }}>
-          <Icons.MoreHorizontal className="h-[16px] w-[16px]" />
-        </Link>
-      </div>
-    </Card>
-  );
-}
-
-/* ------------------------------------------------------------------ */
-/*  A skill she could cross into                                       */
-/* ------------------------------------------------------------------ */
-
-/**
- * A trade next to the one she already has.
- *
- * The badge carries the reason in two words — "Higher income", "Steady demand"
- * — because that is the thing she is deciding on, and it should be readable
- * before she has read the title.
- */
-export function CrossingCard({ i, saved, onSave }: {
-  i: DiscoverItem; saved: boolean; onSave: () => void;
-}) {
-  const tr = useT();
-  return (
-    <Card pad={0} className="flex h-full overflow-hidden">
-      {/* eslint-disable-next-line @next/next/no-img-element */}
-      <img src={i.photo} alt="" loading="lazy" decoding="async"
-           className="h-auto w-[108px] shrink-0 object-cover"
-           style={{ background: v(i.tint) }} />
-      <div className="flex min-w-0 flex-1 flex-col p-3.5">
-        {i.badge && (
-          <span className="mb-1.5 w-fit rounded-full px-2.5 py-1 text-2xs font-bold"
-                style={{ background: v(i.tint), color: v(i.ink) }}>
-            {i.badge}
-          </span>
-        )}
-        <p className="text-sm font-bold leading-snug" style={{ color: v("--ux-ink") }}>{i.title}</p>
-        <p className="mt-1 text-xs leading-snug" style={{ color: v("--ux-muted") }}>{i.detail}</p>
-        <p className="mt-0.5 text-xs leading-snug" style={{ color: v("--ux-faint") }}>{i.meta}</p>
-
-        <div className="mt-auto flex items-center gap-2 pt-3">
-          <Btn size="sm" variant="outline" href={i.href} full>{tr("foryou.seeDetails")}</Btn>
-          <Btn size="sm" variant={saved ? "soft" : "ghost"} icon="Bookmark" onClick={onSave}>
-            {saved ? "Saved" : "Save"}
-          </Btn>
+      {i.tags && i.tags.length > 0 && (
+        <div className="mt-2.5 flex flex-1 flex-wrap content-start gap-1.5">
+          {i.tags.map((t) => (
+            <span key={t} className="rounded-full px-2.5 py-1 text-2xs font-bold"
+                  style={{ background: v(i.tint), color: v(i.ink) }}>
+              {t}
+            </span>
+          ))}
         </div>
+      )}
+
+      <div className="mt-3">
+        <Btn size="sm" full variant="outline" href={i.href} iconEnd="ArrowRight">
+          See her profile
+        </Btn>
       </div>
     </Card>
   );
@@ -143,9 +105,21 @@ export function CrossingCard({ i, saved, onSave }: {
 /*  Picked for her                                                     */
 /* ------------------------------------------------------------------ */
 
-/** A single suggestion — a contract, a course, a circle, an event. */
+/**
+ * One suggestion — a job, a course, a circle.
+ *
+ * **The reason is optional now, and that is the whole point of this file.**
+ * It renders only when the server sent one, which today means courses alone:
+ * `/me/home` derives `reason` from the course she is actually enrolled on.
+ * Work, circles and mentors have no reason anywhere in this product, so their
+ * cards carry none — rather than the generic sentence in a sparkly box that
+ * used to stand in for one and read as though it were about her.
+ *
+ * `badge` is the other half of the rule: it appears only for something the
+ * server states about her and this row — "You applied" — never a mood.
+ */
 export function PickCard({ i, saved, onSave }: {
-  i: DiscoverItem; saved: boolean; onSave: () => void;
+  i: DiscoverItem; saved?: boolean; onSave?: () => void;
 }) {
   const tr = useT();
   return (
@@ -154,22 +128,44 @@ export function PickCard({ i, saved, onSave }: {
         <IconTile icon={i.icon} tint={i.tint} ink={i.ink} size={44} radius={12} />
         <div className="min-w-0 flex-1">
           <p className="text-sm font-bold leading-snug" style={{ color: v("--ux-ink") }}>{i.title}</p>
-          <p className="mt-0.5 text-xs" style={{ color: v("--ux-muted") }}>{i.detail}</p>
+          {i.detail && (
+            <p className="mt-0.5 text-xs leading-snug" style={{ color: v("--ux-muted") }}>{i.detail}</p>
+          )}
         </div>
       </div>
 
-      {/* The reason. This is the part that makes it not an advertisement. */}
-      <p className="mt-3 flex flex-1 items-start gap-1.5 rounded-[10px] px-2.5 py-2 text-xs leading-snug"
-         style={{ background: v("--ux-brand-tint"), color: v("--ux-brand") }}>
-        <Icons.Sparkles className="mt-[2px] h-[11px] w-[11px] shrink-0" />
-        {i.because}
-      </p>
+      {i.badge && (
+        <span className="mt-2.5 w-fit rounded-full px-2.5 py-1 text-2xs font-bold"
+              style={{ background: v(i.tint), color: v(i.ink) }}>
+          {i.badge}
+        </span>
+      )}
 
-      <div className="mt-3 flex items-center gap-2">
+      {i.meta && (
+        <p className="mt-2 text-xs leading-snug" style={{ color: v("--ux-faint") }}>{i.meta}</p>
+      )}
+
+      {/* Only when the server said why. No line at all otherwise. */}
+      {i.because && (
+        <p className="mt-3 flex items-start gap-1.5 rounded-[10px] px-2.5 py-2 text-xs leading-snug"
+           style={{ background: v("--ux-brand-tint"), color: v("--ux-brand") }}>
+          <Icons.Sparkles className="mt-[2px] h-[11px] w-[11px] shrink-0" />
+          {i.because}
+        </p>
+      )}
+
+      <div className="mt-3 flex flex-1 items-end gap-2">
         <Btn size="sm" href={i.href} full iconEnd="ArrowRight">{tr("foryou.haveALook")}</Btn>
-        <Btn size="sm" variant={saved ? "soft" : "ghost"} icon="Bookmark" onClick={onSave}>
-          {saved ? "Saved" : "Save"}
-        </Btn>
+        {/* Bookmarks appear only where the server keeps one. An opening is
+            saved by `POST /growth/opportunities/{id}/save`; a course and a
+            circle have no such row, and a Save button that flips a React
+            boolean is the same lie one reload later. */}
+        {onSave && (
+          <Btn size="sm" variant={saved ? "soft" : "ghost"} icon="Bookmark" onClick={onSave}
+               ariaLabel={saved ? `Remove ${i.title} from saved` : `Save ${i.title}`}>
+            {saved ? "Saved" : "Save"}
+          </Btn>
+        )}
       </div>
     </Card>
   );

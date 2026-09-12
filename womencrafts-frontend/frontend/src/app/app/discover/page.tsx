@@ -1,7 +1,6 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { useRouter } from "next/navigation";
 
 import { HomeShell } from "@/components/ux/home/HomeShell";
 import * as Icons from "@/components/ux/icons";
@@ -11,10 +10,10 @@ import { nextStep } from "@/services/journey";
 import {
   LIFE_STAGES, readLifeStage, stageBy, weightFor, writeLifeStage, type LifeStageId,
 } from "@/services/life-stage";
-import { CROSSINGS, FOR_YOU, NEARBY_WOMEN } from "@/components/ux/discovery/data";
+import { useDiscoverRails } from "@/components/ux/discovery/data";
 import { useT } from "@/i18n";
 
-import { CrossingCard, Head, PickCard, WomanCard } from "./for-you-views";
+import { Head, PickCard, WomanCard } from "./for-you-views";
 
 /** The lenses across the top. `all` is not a filter — it is the absence of one. */
 const LENSES = [
@@ -50,7 +49,6 @@ type Lens = (typeof LENSES)[number]["id"];
  */
 export default function DiscoverPage() {
   const tr = useT();
-  const router = useRouter();
   const [lens, setLens] = useState<Lens>("all");
   const [saved, setSaved] = useState<string[]>([]);
 
@@ -85,19 +83,37 @@ export default function DiscoverPage() {
     setSaved((s) => (s.includes(id) ? s.filter((x) => x !== id) : [...s, id]));
   }, []);
 
+  /*
+    The rails, from the server.
+
+    They were three constants — `FOR_YOU`, `CROSSINGS`, `NEARBY_WOMEN` — whose
+    whole point was a `because:` line explaining why each card had reached her.
+    Every one of those reasons was invented: "You charge ₹280 for blouses.
+    Women near you charge up to ₹600" (she has never entered a price, and
+    nothing records what women near her charge), "You have finished 87 orders"
+    (she has three), "Six women you have sold to are already in it", "2 km
+    away". A fabricated reason is worse than no reason: it is the app telling
+    her it knows her, out of facts about her life that it made up.
+  */
+  const rails = useDiscoverRails();
+
   /** Weighted, never filtered — a woman on a break can still see a big contract. */
   const forYou = useMemo(() => {
-    const pool = FOR_YOU.filter((i) =>
-      lens === "all" ? true
-      : lens === "work" || lens === "earn" ? i.kind === "opportunity"
-      : lens === "learn" ? i.kind === "course"
-      : lens === "near" ? i.kind === "circle" || i.kind === "event"
-      : i.kind === "circle");
+    const { work, learn, circles } = rails.data;
+    const pool =
+      lens === "work" || lens === "earn" ? work
+      : lens === "learn" ? learn
+      : lens === "near" || lens === "women" ? circles
+      : [...work, ...learn, ...circles];
+    /*
+      The life stage is the one piece of personalisation that is real: she
+      picked it herself on this screen and it is stored on her device. Sorting
+      by it is her preference applied, not a claim about her.
+    */
     return [...pool].sort((a, b) => weightFor(life, b.kind) - weightFor(life, a.kind));
-  }, [lens, life]);
+  }, [lens, life, rails.data]);
 
   const showWomen = lens === "all" || lens === "women" || lens === "near";
-  const showCross = lens === "all" || lens === "work" || lens === "learn" || lens === "earn";
 
   return (
     <HomeShell active="/app/discover">
@@ -257,26 +273,21 @@ export default function DiscoverPage() {
             <Head icon="UserRoundCheck" title={tr("discover.womenNearYouAStepAhead")}
                   sub={tr("discover.sameTradeSameAreaYouCan")} href="/app/mentors" />
             <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-              {NEARBY_WOMEN.map((i) => (
-                <WomanCard key={i.id} i={i} onMessage={() => router.push("/app/messages")} />
+              {rails.data.women.map((i) => (
+                <WomanCard key={i.id} i={i} />
               ))}
             </div>
           </section>
         )}
 
-        {/* ── Trades next to the one she has ───────────────────────────── */}
-        {showCross && (
-          <section>
-            <Head icon="TrendingUp" title={tr("discover.whatYouAlreadyKnowUsedDifferently")}
-                  sub={tr("discover.sameSkillBetterPaidWomenNear")} href="/app/programs" />
-            <div className="grid gap-3 lg:grid-cols-3">
-              {CROSSINGS.map((i) => (
-                <CrossingCard key={i.id} i={i} saved={saved.includes(i.id)} onSave={() => save(i.id)} />
-              ))}
-            </div>
-          </section>
-        )}
-
+        {/*
+          Removed: "What you already know, used differently — same skill,
+          better paid, women near you". Three cross-trade suggestions with an
+          invented reason each, and a heading that promised a comparison to
+          women nearby. Nothing in this database knows what anyone nearby
+          charges, and `/app/shop/pricing` now says so in as many words — so
+          the app was contradicting itself one tap apart.
+        */}
         {/* ── Picked from something she actually did ───────────────────── */}
         <section>
           <Head icon="Zap" title={tr("discover.pickedBecauseOfSomethingYouDid")}
