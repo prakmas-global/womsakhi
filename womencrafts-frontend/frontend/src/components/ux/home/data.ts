@@ -135,7 +135,11 @@ export const ACTIVITIES = [
 ];
 
 export const EARNINGS = {
-  total: 24350, delta: "+18.6%", period: "This Month",
+  // MINOR units — paise — like every other money value in this app, so the
+  // mock matches the contract the real endpoint will return. Written as
+  // rupees it rendered correctly only because a local formatter was also
+  // wrong; the two errors cancelled, and the first one fixed broke the screen.
+  total: 2_435_000, delta: "+18.6%", period: "This Month",
   series: [12, 20, 14, 26, 18, 30, 24, 38, 32, 44, 40, 58],
 };
 

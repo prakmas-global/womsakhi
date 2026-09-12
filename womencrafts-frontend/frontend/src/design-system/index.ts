@@ -63,7 +63,6 @@ export {
   Alert,
 } from "./primitives/Feedback";
 export { default as Spinner } from "./primitives/Spinner";
-export { default as ComingSoon } from "./primitives/ComingSoon";
 
 /* ---- Theming ---- */
 export { default as ThemeToggle } from "./primitives/ThemeToggle";

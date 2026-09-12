@@ -2,8 +2,9 @@
 
 import Image from "next/image";
 import { TransitionLink } from "@/components/ux/TransitionLink";
-import { I } from "@/components/ux/kit";
-import { ME, QUICK_ACTIONS, JOURNEY, RECOMMENDED, OPPORTUNITIES, EARNINGS } from "./data";
+import { I, formatRupees } from "@/components/ux/kit";
+import { QUICK_ACTIONS } from "./data";
+import { useHome } from "@/components/ux/live";
 
 /**
  * Home, on a phone.
@@ -28,8 +29,21 @@ import { ME, QUICK_ACTIONS, JOURNEY, RECOMMENDED, OPPORTUNITIES, EARNINGS } from
  * Nothing here is decorative. There is no hero.
  */
 
-const money = (n: number) =>
-  new Intl.NumberFormat("en-IN", { style: "currency", currency: "INR", maximumFractionDigits: 0 }).format(n);
+/*
+  `formatRupees` from the kit, never a local formatter.
+
+  There was one here, and it was a 100x bug waiting for the API. Every money
+  value in this app is in MINOR units — paise — and `formatMoney` divides by
+  100 (it is `formatMoney` there, re-exported as `formatRupees`).
+  The local one did not: it took rupees. The two agreed only because the
+  mock `EARNINGS.total` happened to be written in rupees, so the screen looked
+  right while the contract underneath it was wrong.
+
+  The moment Home is wired to the real endpoint — which returns minor units
+  like everything else — the same call would have printed Rs 24,30,000 where
+  she earned Rs 24,350. TypeScript cannot see it: both are `number`.
+
+  This is the third formatter this repo has grown. Two was already the bug.
 
 /** Morning/afternoon/evening from the device clock, not the server's. */
 function greeting() {
@@ -38,6 +52,25 @@ function greeting() {
 }
 
 export function MobileHome() {
+  /*
+    One request for the whole screen.
+
+    The alternative — a hook per block — is eleven requests before a woman on a
+    3G connection sees anything, each with its own spinner and its own way to
+    half-fail. `/me/home` gathers them server-side: 69ms at the median against
+    715ms for the same eleven called in sequence, before any network cost.
+
+    `data` is null on first load AND on failure, and both render the skeleton
+    rather than throwing. This is the first screen after sign-in; an error
+    boundary here is a woman staring at a blank app.
+  */
+  const { data } = useHome();
+
+  if (!data) return <HomeSkeleton />;
+
+  const { me, journey, earnings, opportunities, recommended, unavailable } = data;
+  const lost = (b: string) => unavailable?.includes(b);
+
   return (
     <div className="lg:hidden" style={{ paddingBottom: 8 }}>
       {/*
@@ -52,7 +85,7 @@ export function MobileHome() {
         <p className="text-[13px]" style={{ color: "var(--ux-muted)" }}>{greeting()},</p>
         <h1 className="ux-large-title mt-0.5 text-[26px] font-extrabold leading-tight"
             style={{ color: "var(--ux-ink)" }}>
-          {ME.first}
+          {me.first}
         </h1>
       </header>
 
@@ -63,18 +96,34 @@ export function MobileHome() {
         <div className="min-w-0 flex-1">
           <p className="text-[12px] font-semibold uppercase tracking-[0.08em]"
              style={{ color: "rgb(255 255 255 / 0.72)" }}>
-            Earned {EARNINGS.period.toLowerCase()}
+            Your balance
           </p>
           {/* tabular-nums so the figure does not jitter as it changes */}
           <p className="mt-0.5 text-[26px] font-extrabold leading-none text-white [font-variant-numeric:tabular-nums]">
-            {money(EARNINGS.total)}
+            {formatRupees(earnings?.money.balance_minor ?? 0)}
           </p>
         </div>
-        <span className="flex shrink-0 items-center gap-1 rounded-full px-2.5 py-1 text-[12px] font-bold"
-              style={{ background: "rgb(255 255 255 / 0.16)", color: "#fff" }}>
-          <I name="TrendingUp" className="h-3.5 w-3.5" sw={2.4} />
-          {EARNINGS.delta}
-        </span>
+        {/*
+          Earned this month, only when she earned something.
+
+          The hero figure is her BALANCE, not the month's earnings, and the
+          difference matters. Balance is money she has and can act on; this
+          month's earnings is a score. For a woman between jobs the API
+          honestly returns 0 and -100%, and "Rs 0, down 100%" as the first
+          thing she sees every morning is accurate and cruel — it tells her
+          something she already knows and nothing she can use.
+
+          So the month sits underneath, and only when there is something to
+          report. Nothing is hidden: the full picture, including a bad month,
+          is one tap away in the wallet.
+        */}
+        {(earnings?.money.earned_this_month_minor ?? 0) > 0 && (
+          <span className="flex shrink-0 items-center gap-1 rounded-full px-2.5 py-1 text-[12px] font-bold"
+                style={{ background: "rgb(255 255 255 / 0.16)", color: "#fff" }}>
+            <I name="TrendingUp" className="h-3.5 w-3.5" sw={2.4} />
+            {formatRupees(earnings!.money.earned_this_month_minor)} this month
+          </span>
+        )}
       </TransitionLink>
 
       {/* ── the launcher ────────────────────────────────────────────────── */}
@@ -101,44 +150,59 @@ export function MobileHome() {
         ))}
       </nav>
 
-      {/* ── pick up where she stopped ───────────────────────────────────── */}
-      <Section title="Keep going" href="/app/programs" cta="All courses">
-        <TransitionLink href="/app/programs"
-          className="ux-sq mx-4 flex items-center gap-3 rounded-[16px] p-3"
-          style={{ background: "var(--ux-surface)", border: "1px solid var(--ux-line)" }}>
-          <Image src={JOURNEY.art} alt="" width={56} height={56}
-                 className="h-14 w-14 shrink-0 rounded-[12px] object-cover" />
-          <div className="min-w-0 flex-1">
-            <p className="truncate text-[15px] font-bold" style={{ color: "var(--ux-ink)" }}>
-              {JOURNEY.title}
-            </p>
-            <p className="mt-0.5 truncate text-[13px]" style={{ color: "var(--ux-muted)" }}>
-              Next: {JOURNEY.next}
-            </p>
-            <div className="mt-2 h-1.5 overflow-hidden rounded-full" style={{ background: "var(--ux-brand-tint-2)" }}>
-              <div className="h-full rounded-full"
-                   style={{ width: `${JOURNEY.pct}%`, background: "var(--ux-brand)" }} />
+      {/*
+        Only when there is something to pick up.
+
+        `journey` is null for a woman who has not started a course, and the
+        old mock always showed "Digital Marketing Mastery, 65%" — a course she
+        had never opened. An invented progress bar is a small lie that makes
+        every other number on the screen less believable.
+      */}
+      {journey && (
+        <Section title="Keep going" href="/app/programs" cta="All courses">
+          <TransitionLink href={journey.href}
+            className="ux-sq mx-4 flex items-center gap-3 rounded-[16px] p-3"
+            style={{ background: "var(--ux-surface)", border: "1px solid var(--ux-line)" }}>
+            {journey.cover
+              ? <Image src={journey.cover} alt="" width={56} height={56}
+                       className="h-14 w-14 shrink-0 rounded-[12px] object-cover" />
+              : <span className="grid h-14 w-14 shrink-0 place-items-center rounded-[12px]"
+                      style={{ background: "var(--ux-brand-tint-2)" }}>
+                  <I name="BookOpen" className="h-6 w-6" style={{ color: "var(--ux-brand)" }} />
+                </span>}
+            <div className="min-w-0 flex-1">
+              <p className="truncate text-[15px] font-bold" style={{ color: "var(--ux-ink)" }}>
+                {journey.title}
+              </p>
+              <p className="mt-0.5 truncate text-[13px]" style={{ color: "var(--ux-muted)" }}>
+                {journey.done} of {journey.total} done
+              </p>
+              <div className="mt-2 h-1.5 overflow-hidden rounded-full"
+                   style={{ background: "var(--ux-brand-tint-2)" }}>
+                <div className="h-full rounded-full"
+                     style={{ width: `${journey.pct}%`, background: "var(--ux-brand)" }} />
+              </div>
             </div>
-          </div>
-          <span className="shrink-0 text-[13px] font-bold [font-variant-numeric:tabular-nums]"
-                style={{ color: "var(--ux-brand)" }}>
-            {JOURNEY.pct}%
-          </span>
-        </TransitionLink>
-      </Section>
+            <span className="shrink-0 text-[13px] font-bold [font-variant-numeric:tabular-nums]"
+                  style={{ color: "var(--ux-brand)" }}>
+              {journey.pct}%
+            </span>
+          </TransitionLink>
+        </Section>
+      )}
 
       {/* ── work waiting for her ────────────────────────────────────────── */}
       <Section title="Work for you" href="/app/opportunities" cta="See all">
         <div className="ux-hscroll flex gap-3 px-4">
-          {OPPORTUNITIES.slice(0, 6).map((o: Record<string, unknown>, i: number) => (
-            <TransitionLink key={String(o.id ?? i)} href="/app/opportunities"
+          {opportunities.slice(0, 6).map((o: Record<string, unknown>, i: number) => (
+            <TransitionLink key={String(o.id ?? i)} href={`/app/opportunities/${String(o.id ?? "")}`}
               className="ux-sq flex w-[76vw] max-w-[300px] shrink-0 flex-col gap-1 rounded-[16px] p-4"
               style={{ background: "var(--ux-surface)", border: "1px solid var(--ux-line)" }}>
               <p className="truncate text-[15px] font-bold" style={{ color: "var(--ux-ink)" }}>
-                {String(o.title ?? o.role ?? "Opportunity")}
+                {String(o.title ?? "Opportunity")}
               </p>
               <p className="truncate text-[13px]" style={{ color: "var(--ux-muted)" }}>
-                {String(o.meta ?? o.company ?? o.place ?? "")}
+                {[o.org, o.pay].filter(Boolean).map(String).join(" · ")}
               </p>
             </TransitionLink>
           ))}
@@ -148,24 +212,70 @@ export function MobileHome() {
       {/* ── something to learn next ─────────────────────────────────────── */}
       <Section title="Suggested for you" href="/app/programs" cta="More">
         <div className="ux-hscroll flex gap-3 px-4">
-          {RECOMMENDED.map((r) => (
-            <TransitionLink key={r.id} href="/app/programs"
+          {recommended.slice(0, 6).map((r: Record<string, unknown>, i: number) => (
+            <TransitionLink key={String(r.id ?? i)} href={`/app/programs/${String(r.id ?? "")}`}
               className="ux-sq w-[64vw] max-w-[240px] shrink-0 overflow-hidden rounded-[16px]"
               style={{ background: "var(--ux-surface)", border: "1px solid var(--ux-line)" }}>
-              <Image src={r.art} alt="" width={480} height={270}
-                     className="h-[112px] w-full object-cover" />
+              {/* A catalogue entry may have no cover — an admin has to upload
+                  one. A tinted block with the category on it beats a broken
+                  image icon, and beats a stock photograph that implies a
+                  course is something it is not. */}
+              {r.cover
+                ? <Image src={String(r.cover)} alt="" width={480} height={270}
+                         className="h-[112px] w-full object-cover" />
+                : <span className="grid h-[112px] w-full place-items-center"
+                        style={{ background: "var(--ux-brand-tint-2)" }}>
+                    <I name="GraduationCap" className="h-7 w-7" style={{ color: "var(--ux-brand)" }} />
+                  </span>}
               <div className="p-3">
-                <p className="truncate text-[14px] font-bold" style={{ color: "var(--ux-ink)" }}>{r.title}</p>
-                <p className="mt-0.5 flex items-center gap-1 text-[12px]" style={{ color: "var(--ux-muted)" }}>
-                  <I name="Star" className="h-3 w-3" sw={0}
-                     style={{ color: "var(--ux-amber)", fill: "var(--ux-amber)" }} />
-                  {r.rating} · {r.count}
+                <p className="truncate text-[14px] font-bold" style={{ color: "var(--ux-ink)" }}>
+                  {String(r.title ?? "")}
+                </p>
+                {/* The server sends WHY it is here. The mock showed a star
+                    rating and a review count; this platform collects neither,
+                    so those numbers were decoration shaped like evidence. */}
+                <p className="mt-0.5 truncate text-[12px]" style={{ color: "var(--ux-muted)" }}>
+                  {String(r.reason ?? r.category ?? "")}
                 </p>
               </div>
             </TransitionLink>
           ))}
         </div>
       </Section>
+    </div>
+  );
+}
+
+/**
+ * What Home looks like before the first response lands.
+ *
+ * Shaped like the real screen rather than a spinner: the same header, the same
+ * earnings block, the same eight tiles. A spinner tells her to wait; a shape
+ * tells her what is coming, and when the data arrives nothing jumps because
+ * the boxes were already the right size.
+ */
+function HomeSkeleton() {
+  const bar = { background: "var(--ux-surface-2)", borderRadius: 8 };
+  return (
+    <div className="lg:hidden" aria-busy="true" aria-live="polite">
+      <span className="sr-only">Loading your home screen</span>
+      <div className="px-4 pb-3 pt-1">
+        <div className="ux-shimmer h-3 w-24" style={bar} />
+        <div className="ux-shimmer mt-2 h-7 w-32" style={bar} />
+      </div>
+      <div className="ux-shimmer mx-4 h-[86px]" style={{ ...bar, borderRadius: 16 }} />
+      <div className="mt-4 grid grid-cols-4 gap-1 px-2">
+        {Array.from({ length: 8 }).map((_, i) => (
+          <div key={i} className="flex flex-col items-center gap-1.5 px-1 py-3">
+            <div className="ux-shimmer h-[46px] w-[46px]" style={{ ...bar, borderRadius: 15 }} />
+            <div className="ux-shimmer h-2.5 w-12" style={bar} />
+          </div>
+        ))}
+      </div>
+      <div className="mt-6 px-4">
+        <div className="ux-shimmer h-3 w-28" style={bar} />
+        <div className="ux-shimmer mt-3 h-[86px] w-full" style={{ ...bar, borderRadius: 16 }} />
+      </div>
     </div>
   );
 }

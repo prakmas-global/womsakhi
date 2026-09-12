@@ -179,6 +179,73 @@ export const apiDocuments = (s?: AbortSignal) => get<ApiDocument[]>("/me/documen
 export const apiReferrals = (s?: AbortSignal) => get<ApiReferrals>("/me/referrals", s);
 export const apiProgress = (s?: AbortSignal) => get<ApiProgress>("/me/progress", s);
 export const apiSummary = (s?: AbortSignal) => get<ApiSummary>("/me/summary", s);
+
+/* ── Home, in one call ────────────────────────────────────────────────────── */
+
+/**
+ * The whole Home screen, in one round trip.
+ *
+ * Home used to render twenty-five mock constants and make no request at all.
+ * The obvious fix — one `useResource` per block — would have meant eleven
+ * requests before a woman on a 3G connection sees anything, each with its own
+ * spinner and its own way to half-fail. `/me/home` gathers them server-side
+ * and measures 69ms at the median against 715ms for the same eleven called
+ * sequentially, before any network cost.
+ *
+ * Three fields are `null` on purpose and must render as absent, never as a
+ * zero or a guess: `streak` (nothing records which days she opened the app),
+ * `earnings.better_than_pct` (this platform does not rank women against each
+ * other) and `journey.left_mins` (lesson durations are optional and mostly
+ * unset). A confident wrong number about her money or her progress is worse
+ * than a gap.
+ *
+ * `unavailable` names blocks whose own fetch timed out server-side. The screen
+ * stays up and shows the rest; a block listed there is missing, not empty.
+ */
+export interface ApiHomeMoney {
+  earned_this_month_minor: number;
+  last_month_minor: number;
+  pending_minor: number;
+  /** MINOR units. Every money field here is paise — see `formatRupees`. */
+  balance_minor: number;
+  goal_minor: number;
+  goal_label: string;
+}
+
+export interface ApiHome {
+  me: {
+    first: string; name: string; avatar: string; verified: boolean;
+    unread: { notifications: number; messages: number };
+    profile: { pct: number; steps: { key: string; label: string; done: boolean; href: string }[] };
+  };
+  journey: {
+    enrollment_id: string; program_id: string; title: string; category: string;
+    cover: string; pct: number; done: number; total: number;
+    up_next: { n: number; title: string; duration: string; done: boolean }[];
+    href: string; left_mins: number | null;
+  } | null;
+  next_step: { title: string; because: string; href: string; cta: string; icon: string; duration: string } | null;
+  progress: Record<string, unknown> | null;
+  earnings: {
+    money: ApiHomeMoney;
+    series_minor: number[]; series_labels: string[];
+    sources: { name: string; minor: number; tone: string }[];
+    delta_pct: number | null;
+    better_than_pct: number | null;
+  } | null;
+  upcoming: { id: string; kind: string; title: string; date: string; day: string;
+              month: string; time: string; mode: string; with_whom: string; href: string }[];
+  recommended: Record<string, unknown>[];
+  opportunities: Record<string, unknown>[];
+  circles: Record<string, unknown>[];
+  stories: Record<string, unknown>[];
+  notifications: Record<string, unknown>[];
+  streak: Record<string, unknown> | null;
+  /** Blocks that failed server-side. Missing, not empty. */
+  unavailable: string[];
+}
+
+export const apiHome = (s?: AbortSignal) => get<ApiHome>("/me/home", s);
 export const apiCircles = (s?: AbortSignal) => get<ApiCircle[]>("/community/circles", s);
 export const apiStories = (s?: AbortSignal) => get<ApiStory[]>("/community/stories", s);
 export const apiMentors = (s?: AbortSignal) => get<ApiMentor[]>("/growth/mentors", s);

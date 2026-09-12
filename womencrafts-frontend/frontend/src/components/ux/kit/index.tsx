@@ -598,7 +598,5 @@ export { Money, formatMoney as formatRupees, formatMoneyOrFree, formatWholeRupee
 export { Sheet } from "./sheet";
 export { useNarrow } from "./media";
 export { Avatar } from "./avatar";
-export { Field, TextInput } from "./field";
 export { Back, NavHistory } from "./back";
-export { ConfirmButton } from "./confirm";
 export { Rows, rowMemo } from "./rows";

@@ -4,8 +4,8 @@ import { useCallback } from "react";
 
 import { useResource, type Resource } from "@/lib/use-resource";
 import {
-  apiSummary,
-  type ApiSummary,
+  apiSummary, apiHome,
+  type ApiSummary, type ApiHome,
   apiBookings, apiCertificates, apiCircles, apiDocuments, apiMentors,
   apiNotifications, apiProgress, apiReferrals, apiStories,
   type ApiBooking, type ApiCertificate, type ApiCircle, type ApiDocument,
@@ -230,6 +230,16 @@ function readableSize(bytes: number): string {
  */
 export const useSummary = (): Resource<ApiSummary | null> =>
   useResource(useCallback((s: AbortSignal) => apiSummary(s).catch(() => null), []), null);
+
+/* ── Home ──────────────────────────────────────────────────────────────────
+
+   Returns `null` while loading and on failure, and every consumer must handle
+   that — Home is the first screen after sign-in, so a thrown error here is a
+   woman staring at a blank app. `useResource` keeps the last good value across
+   a refetch, which is what stops the whole screen flashing when she comes back
+   to the tab. */
+export const useHome = (): Resource<ApiHome | null> =>
+  useResource(useCallback((s: AbortSignal) => apiHome(s).catch(() => null), []), null);
 
 export const useDocuments = (): Resource<UxDocument[]> =>
   useResource(
