@@ -6,9 +6,8 @@ import { usePayoutMethods } from "@/components/ux/business";
 import { HomeShell } from "@/components/ux/home/HomeShell";
 import { Btn, Card, EmptyState, I, Pill, SectionHead, v } from "@/components/ux/kit";
 import { formatRupees } from "@/components/ux/kit";
-import { SHOP } from "@/components/ux/reach/data";
 import { useT } from "@/i18n";
-import { apiShopOrders, type ShopOrder } from "@/lib/shop-api";
+import { apiShopOrders, apiShopSummary, type ShopOrder } from "@/lib/shop-api";
 import { useResource } from "@/lib/use-resource";
 
 /**
@@ -97,7 +96,23 @@ export default function CollectPage() {
     [payout.data],
   );
 
-  const link = `womsakhi.com/s/${SHOP.handle}`;
+  /*
+    Her shop link, from the server.
+
+    It was `womsakhi.com/s/${SHOP.handle}` off a fixture — so every member who
+    pressed Copy sent her customers to Priya's shop, on the marketing domain
+    rather than the app, where `/s/[handle]` answered for exactly one handle
+    and rendered "This shop is not here" for everyone else. Three wrongs in one
+    string, on the button whose whole job is to be pasted into a stranger's
+    WhatsApp.
+
+    The origin comes from the browser rather than a constant, so a staging
+    build sends a staging link instead of a production one.
+  */
+  const shop = useResource(useCallback((s: AbortSignal) => apiShopSummary(s), []), null);
+  const handle = shop.data?.handle ?? "";
+  const origin = typeof window === "undefined" ? "" : window.location.origin;
+  const link = handle ? `${origin.replace(/^https?:\/\//, "")}/s/${handle}` : "";
 
   const copy = useCallback((text: string, id: string) => {
     navigator.clipboard?.writeText(text).catch(() => {});
@@ -107,9 +122,9 @@ export default function CollectPage() {
 
   /** Hands the link to WhatsApp with the message already written. */
   const sendOnWhatsApp = useCallback(() => {
-    const text = `Hello! This is ${SHOP.name}. You can see what I make and pay me here: https://${link}`;
+    const text = `Hello! This is ${shop.data?.name ?? ""}. You can see what I make here: ${origin}/s/${handle}`;
     window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, "_blank", "noopener");
-  }, [link]);
+  }, [origin, handle, shop.data]);
 
   return (
     <HomeShell active="/app/collect">
@@ -155,7 +170,7 @@ export default function CollectPage() {
             <div className="mt-3 flex flex-wrap gap-2">
               <Btn variant="outline" size="sm" icon="MessageCircle" onClick={sendOnWhatsApp}>{tr("collect.sendOnWhatsapp")}</Btn>
               <Btn variant="ghost" size="sm" icon="QrCode" onClick={() => window.print()}>{tr("collect.printAQrForYourDoor")}</Btn>
-              <Btn variant="ghost" size="sm" icon="ExternalLink" href={`/s/${SHOP.handle}`}>{tr("collect.seeWhatTheySee")}</Btn>
+              <Btn variant="ghost" size="sm" icon="ExternalLink" href={`/s/${handle}`}>{tr("collect.seeWhatTheySee")}</Btn>
             </div>
           </div>
         </Card>

@@ -23,16 +23,13 @@ import { allNodes } from "../nav-tree";
  *   `SEARCH_*` is the hand-written content index behind the search field, which
  *   has no catalogue endpoint yet.
  *
- *   `JOURNEY`, `SKILLS`, `CIRCLES` and `EARNINGS` are read by
- *   `services/me.repository`, which still assembles the seven-stage journey
- *   state for `/app/journey`. Home stopped reading it in this pass — the stage
- *   it derived from these four fixtures was a claim about a woman's life made
- *   out of somebody's placeholder — and `/app/journey` is the next screen due
- *   the same treatment.
- *
- *   `RECOMMENDED` and `OPPORTUNITIES` are the last unreferenced pair. They are
- *   left only because `MobileHome` is being wired to the same endpoint in
- *   parallel; they go with that change.
+ *   `JOURNEY`, `SKILLS`, `CIRCLES`, `EARNINGS`, `RECOMMENDED`, `OPPORTUNITIES`
+ *   and `SEARCH_RECENT` are GONE. Every one of them had lost its last reader:
+ *   Home reads `/me/home`, and `services/me.repository` — which assembled the
+ *   seven-stage journey out of the first four — reads the server now. The
+ *   stage they produced was a claim about a woman's life made out of somebody
+ *   else's placeholder, and a fixture with no reader is worse than dead code:
+ *   it is a plausible-looking answer waiting for the next person who needs one.
  */
 
 const A = (n: string) => `/ux/art/${n}.webp`;
@@ -98,60 +95,6 @@ export const QUICK_ACTIONS = Object.entries(TINTS).map(([href, look]) => {
     ...look,
   };
 });
-
-export const JOURNEY = {
-  title: "Digital Marketing Mastery",
-  next: "Social Media Strategy",
-  pct: 65,
-  done: 8,
-  total: 12,
-  leftMins: 96,
-  art: A("course-working-laptop-smiling"),
-  upNext: [
-    { id: "l9",  n: 9,  title: "Social Media Strategy", mins: 14, kind: "Video" },
-    { id: "l10", n: 10, title: "Writing posts that sell", mins: 11, kind: "Video" },
-    { id: "l11", n: 11, title: "Practice: plan one week", mins: 20, kind: "Task" },
-  ],
-};
-
-export const RECOMMENDED = [
-  { id: "ux", title: "UX Design Fundamentals", meta: "Course • Beginner", rating: "4.8", count: "1.2k", art: A("course-reviewing-tablet-charts") },
-  { id: "cw", title: "Content Writing for Brands", meta: "Course • Beginner", rating: "4.7", count: "982", art: A("course-writing-notebook") },
-  { id: "sp", title: "Speak with Confidence", meta: "Course • All levels", rating: "4.9", count: "2.1k", art: A("course-confident-microphone") },
-];
-
-export const SKILLS = [
-  { name: "Digital Marketing", pct: 65, tone: "--ux-brand-600" },
-  { name: "Communication", pct: 42, tone: "--ux-blue" },
-  { name: "Financial Literacy", pct: 80, tone: "--ux-green" },
-];
-
-export const OPPORTUNITIES = [
-  { id: "o1", title: "Digital Marketing Specialist", org: "TechNova Solutions", place: "Remote",
-    tags: ["Full-time", "₹6 – 9 LPA"], ago: "2h ago", icon: "Briefcase", tint: "--ux-tint-pink", ink: "--ux-pink" },
-  { id: "o2", title: "Content Creator (Freelance)", org: "BrandStory", place: "Work from Anywhere",
-    tags: ["Freelance", "₹25k – 40k /month"], ago: "5h ago", icon: "PenLine", tint: "--ux-tint-green", ink: "--ux-green" },
-  { id: "o3", title: "Social Media Manager", org: "HerConnect", place: "Bangalore",
-    tags: ["Full-time", "₹4 – 6 LPA"], ago: "1d ago", icon: "Monitor", tint: "--ux-tint-blue", ink: "--ux-blue" },
-];
-
-export const CIRCLES = [
-  { id: "c1", name: "Women Entrepreneurs India", members: "12.5k Members", extra: "+320",
-    art: A("scene-women-group-circle"), tint: "--ux-tint-pink" },
-  { id: "c2", name: "Freelancers & Creators Hub", members: "8.3k Members", extra: "+180",
-    art: A("scene-women-celebrating"), tint: "--ux-tint-orange" },
-  { id: "c3", name: "Tech Women Community", members: "15.7k Members", extra: "+410",
-    art: A("scene-women-business-handshake"), tint: "--ux-tint-violet" },
-];
-
-export const EARNINGS = {
-  // MINOR units — paise — like every other money value in this app, so the
-  // mock matches the contract the real endpoint will return. Written as
-  // rupees it rendered correctly only because a local formatter was also
-  // wrong; the two errors cancelled, and the first one fixed broke the screen.
-  total: 2_435_000, delta: "+18.6%", period: "This Month",
-  series: [12, 20, 14, 26, 18, 30, 24, 38, 32, 44, 40, 58],
-};
 
 export const NOTIFICATIONS = [
   { id: "n1", kind: "mentor", title: "Neha accepted your mentor request", body: "You can now book a session with her.", when: "12 min ago", unread: true, icon: "Users", tint: "--ux-tint-orange", ink: "--ux-orange" },
@@ -244,7 +187,5 @@ export const SEARCH_SUGGESTED = [
   "Savings circle near me",
   "Free certificate courses",
 ];
-
-export const SEARCH_RECENT = ["Tailoring orders", "Neha Verma", "Mudra loan"];
 
 export const SEARCH_KINDS = ["All", "Course", "Opportunity", "Mentor", "Circle", "Scheme", "Page"] as const;
