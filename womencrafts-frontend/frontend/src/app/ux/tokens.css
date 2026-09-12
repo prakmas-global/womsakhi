@@ -2088,6 +2088,12 @@
 .ux-fitboard {
   --fb-gap: 12px;
   --fb-pad: 16px;
+  /* A card's inside, and how tall it stands. Separate from --fb-pad so a
+     shorter window tightens the BOARD's gaps without cramping what is in the
+     cards — that swap is what turned the last version from crowded into
+     cramped. */
+  --fb-card-pad: 20px;
+  --fb-card-h: 122px;
   --fb-hero-y: 20px;
   --fb-lines: 1.55;
   --fb-chip: 12px;
@@ -2151,11 +2157,13 @@
 */
 @media (min-width: 1280px) and (max-height: 1010px) {
   .ux-fitboard { --fb-gap: 10px; --fb-pad: 14px; --fb-hero-y: 12px;
+                 --fb-card-pad: 18px; --fb-card-h: 112px;
                  --fb-h1: 2.35rem; --fb-tile: 50px; --fb-circle: 46px;
                  --fb-ring: 68px; --fb-foot: 76px; --fb-art: 66px; --fb-banner: 268px; }
 }
 @media (min-width: 1280px) and (max-height: 850px) {
   .ux-fitboard { --fb-gap: 8px; --fb-pad: 12px; --fb-hero-y: 8px;
+                 --fb-card-pad: 16px; --fb-card-h: 104px;
                  --fb-h1: 2.05rem; --fb-tile: 44px; --fb-circle: 42px;
                  --fb-ring: 60px; --fb-foot: 70px; --fb-art: 58px; --fb-banner: 236px; }
 }
