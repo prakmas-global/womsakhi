@@ -39,8 +39,17 @@ type Place = {
   id: string;
   icon: string;
   title: string;
-  /** One real figure — "18 courses open" beats a sentence about what a course is. */
+  /** One real figure — "18 open" says whether there is anything behind the door. */
   count: string;
+  /**
+   * One line on what she would be doing in there.
+   *
+   * The count alone was too bare: "Teach and learn / 9 swapping skills" tells
+   * her how many, not what it is. One line is the middle ground between that
+   * and the three sentences this card used to carry — enough to choose by,
+   * short enough that six of them still read as six choices rather than a page.
+   */
+  what: string;
   href: string;
   /** Mentors is the one pink card in the board, as drawn. */
   pink?: boolean;
@@ -49,12 +58,18 @@ type Place = {
 };
 
 const PLACES: Place[] = [
-  { id: "programs",     row: "violet", icon: "BookOpen",   title: "Courses",          count: "18 open",               href: "/app/programs" },
-  { id: "mentors",      row: "pink",   icon: "Users",      title: "Mentors",          count: "12 near you", pink: true, href: "/app/mentors" },
-  { id: "certificates", row: "amber",  icon: "Award",      title: "Certificates",     count: "1 earned",              href: "/app/certificates" },
-  { id: "library",      row: "green",  icon: "Handshake",  title: "Teach and learn",  count: "9 swapping skills",     href: "/app/library" },
-  { id: "assess",       row: "blue",   icon: "BadgeCheck", title: "Prove your skills", count: "4 tests",              href: "/app/assess" },
-  { id: "digital",      row: "violet", icon: "Smartphone", title: "Using a phone",    count: "6 short guides",        href: "/app/digital" },
+  { id: "programs",     row: "violet", icon: "BookOpen",   title: "Courses",
+    what: "Learn a skill, at your own pace",        count: "18 open",           href: "/app/programs" },
+  { id: "mentors",      row: "pink",   icon: "Users",      title: "Mentors", pink: true,
+    what: "Ask a woman who has done it",            count: "12 near you",       href: "/app/mentors" },
+  { id: "certificates", row: "amber",  icon: "Award",      title: "Certificates",
+    what: "Proof you can show an employer",         count: "1 earned",          href: "/app/certificates" },
+  { id: "library",      row: "green",  icon: "Handshake",  title: "Teach and learn",
+    what: "Swap what you know with other women",    count: "9 swapping skills", href: "/app/library" },
+  { id: "assess",       row: "blue",   icon: "BadgeCheck", title: "Prove your skills",
+    what: "A short test, then a certificate",       count: "4 tests",           href: "/app/assess" },
+  { id: "digital",      row: "violet", icon: "Smartphone", title: "Using a phone",
+    what: "Start at the very beginning, no rush",   count: "6 short guides",    href: "/app/digital" },
 ];
 
 const PROMISES: [string, string][] = [
@@ -247,7 +262,10 @@ function PlaceCard({ p }: { p: Place }) {
       <span className="min-w-0">
         <b className="block truncate text-[var(--fb-title,17px)] font-bold leading-tight"
            style={{ color: v("--ux-ink") }}>{p.title}</b>
-        <span className="mt-1 block truncate text-xs font-semibold"
+        <span className="mt-1 block text-xs leading-snug" style={{ color: v("--ux-ink-2") }}>
+          {p.what}
+        </span>
+        <span className="mt-1.5 block truncate text-xs font-bold"
               style={{ color: v("--ux-muted") }}>{p.count}</span>
       </span>
     </TransitionLink>
@@ -409,7 +427,7 @@ function Phone() {
         <ListGroup title="Where to go">
           {PLACES.map((p) => (
             <ListRow key={p.id} href={p.href} icon={p.icon} tint={p.row}
-                     title={p.title} subtitle={p.count} />
+                     title={p.title} subtitle={p.what} />
           ))}
         </ListGroup>
 
