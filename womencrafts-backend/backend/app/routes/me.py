@@ -1163,7 +1163,12 @@ def _reached(progress: int, sessions_attended: int, total: int) -> int:
     further along means neither can silently undo the other.
     """
     from_pct = round((max(0, min(100, progress)) / 100) * total) if total else 0
-    return max(int(sessions_attended or 0), from_pct)
+    reached = max(int(sessions_attended or 0), from_pct)
+    # Capped at the course's own length. `sessions_attended` counts SESSIONS,
+    # not modules, and a woman who went to six sessions of a four-module course
+    # came back as "6 of 4 done" — on Home, the first screen she sees. Taking
+    # the further-along number is right; letting it run past the end is not.
+    return min(reached, total) if total else reached
 
 
 @router.get("/programs/{program_id}/detail", response_model=ProgramDetail, summary="One programme, in full")

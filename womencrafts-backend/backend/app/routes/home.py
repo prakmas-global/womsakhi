@@ -214,6 +214,14 @@ def _journey(row: Optional[dict]) -> tuple[Optional[HomeJourney], Optional[HomeN
     attended = int(row.get("sessions_attended") or 0)
     total = _module_count(program)
     done = _reached(pct, attended, total)
+    # The percentage agrees with the count. It was the stored `progress`,
+    # a third number nothing reconciled — so Home read "6 of 4 done, 55%",
+    # three figures that could not all be true. `_reached` already settles on
+    # whichever record is further along; the bar now says the same thing the
+    # count does, and never less than what was stored.
+    if total:
+        pct = max(pct, round(done / total * 100))
+    pct = max(0, min(100, pct))
     modules = _curriculum_for(program, done)
     program_id = str(program["_id"])
 
