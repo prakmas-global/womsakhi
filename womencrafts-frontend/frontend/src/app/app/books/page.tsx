@@ -4,7 +4,8 @@ import { useCallback, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 
 import { HomeShell } from "@/components/ux/home/HomeShell";
-import { Btn, Card, Chip, EmptyState, I, IconTile, Pill, SectionHead, Stat, v } from "@/components/ux/kit";
+import { Btn, Card, Chip, EmptyState, I, IconTile, Pill, Stat, v } from "@/components/ux/kit";
+import { EYEBROW, GROUP, GROUP_ROW, Section } from "@/components/ux/earn/phone";
 import { formatRupees } from "@/components/ux/kit";
 import {
   ENTRIES, VIA_LABEL, offPlatform, owedTotal, paidTotal, promisedTotal, type Entry,
@@ -64,19 +65,19 @@ export default function BooksPage() {
 
   return (
     <HomeShell active="/app/books">
-      <div className="flex flex-col gap-5">
+      <div className="flex flex-col gap-6 lg:gap-5">
 
         <header className="flex flex-wrap items-end gap-4">
           <div className="min-w-0 flex-1">
-            <p className="text-2xs font-extrabold uppercase tracking-[0.2em]" style={{ color: v("--ux-brand") }}>{tr("books.yourBooks")}</p>
-            <h1 className="mt-2 text-[clamp(1.5rem,3.2vw,2.125rem)] font-extrabold leading-[1.1] tracking-[-0.035em]"
+            <p className={EYEBROW}>{tr("books.yourBooks")}</p>
+            <h1 className="ux-screen-title mt-2 text-[clamp(1.5rem,3.2vw,2.125rem)] font-extrabold leading-[1.1] tracking-[-0.035em]"
                 style={{ color: v("--ux-ink") }}>{tr("books.whoOwesYouWhat")}</h1>
             <p className="mt-1.5 max-w-[56ch] text-sm leading-relaxed" style={{ color: v("--ux-muted") }}>
               Keep selling wherever you already sell. This just remembers it — including the{" "}
               <b>{off}%</b> that never touches this app.
             </p>
           </div>
-          <Btn variant="outline" icon="FileText" href="/app/books/proof">{tr("books.proofOfIncome")}</Btn>
+          <Btn variant="outline" icon="FileText" href="/app/books/proof" className="max-lg:w-full">{tr("books.proofOfIncome")}</Btn>
         </header>
 
         <Card>
@@ -109,8 +110,8 @@ export default function BooksPage() {
         )}
 
         <div>
-          <SectionHead title="Everything" sub={tr("books.howeverAndWhereverTheSaleHappened")}
-                       icon="BookOpen" chip={String(rows.length)} />
+          <Section title="Everything" sub={tr("books.howeverAndWhereverTheSaleHappened")}
+                   icon="BookOpen" chip={String(rows.length)} />
           <div className="mb-3.5 flex flex-wrap gap-2">
             <Chip icon="LayoutGrid" selected={filter === "all"} onClick={() => setFilter("all")}>Everything</Chip>
             <Chip icon="Clock" selected={filter === "owed"} onClick={() => setFilter("owed")}>
@@ -125,11 +126,11 @@ export default function BooksPage() {
                               body="Try another filter."
                               action={<Btn size="sm" variant="outline" onClick={() => setFilter("all")}>{tr("books.showEverything")}</Btn>} /></Card>
           ) : (
-            <div className="flex flex-col gap-2.5">
+            <div className={`flex flex-col gap-2.5 ${GROUP}`}>
               {shown.map((e) => {
                 const s = STATE[e.state];
                 return (
-                  <Card key={e.id} pad={16}>
+                  <Card key={e.id} pad={16} className={GROUP_ROW}>
                     <div className="flex flex-wrap items-center gap-3.5">
                       <IconTile icon={s.icon} tint={s.tint} ink={s.ink} size={38} />
                       <div className="min-w-0 flex-1">
@@ -147,13 +148,13 @@ export default function BooksPage() {
                         {formatRupees(e.minor)}
                       </p>
                       {e.state === "owed" && (
-                        <div className="flex shrink-0 gap-2">
-                          <Btn size="sm" variant="outline" onClick={() => remind(e.id)}>Remind</Btn>
-                          <Btn size="sm" onClick={() => markPaid(e.id)}>Paid</Btn>
+                        <div className="flex shrink-0 gap-2 max-lg:w-full max-lg:ps-[52px]">
+                          <Btn size="sm" variant="outline" className="max-lg:flex-1" onClick={() => remind(e.id)}>Remind</Btn>
+                          <Btn size="sm" className="max-lg:flex-1" onClick={() => markPaid(e.id)}>Paid</Btn>
                         </div>
                       )}
                       {e.state === "promised" && (
-                        <Btn size="sm" variant="outline" onClick={() => markPaid(e.id)}>{tr("books.doneAndPaid")}</Btn>
+                        <Btn size="sm" variant="outline" className="max-lg:ms-[52px] max-lg:w-[calc(100%-52px)] max-lg:px-4" onClick={() => markPaid(e.id)}>{tr("books.doneAndPaid")}</Btn>
                       )}
                     </div>
                   </Card>

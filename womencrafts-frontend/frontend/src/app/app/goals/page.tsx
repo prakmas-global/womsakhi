@@ -183,6 +183,15 @@ export default function GoalsPage() {
           </Card>
         )}
 
+        {/* The screen's primary action. On desktop it heads the rail; the rail
+            is not drawn on a phone, so it sits here — full width, at the foot
+            of the list, where a thumb reaches. Same handler as the rail's. */}
+        {!adding && goals.source !== "loading" && !goals.error && shown.length > 0 && (
+          <div className="mt-3 lg:hidden">
+            <Btn full icon="Plus" className="ux-action-primary" onClick={() => setAdding(true)}>Add a goal</Btn>
+          </div>
+        )}
+
         <div className="ux-toast rounded-[12px] px-5 py-3.5 text-xsm font-bold"
              data-on={note ? "true" : "false"} role="status" aria-live="polite"
              style={{ background: v("--ux-ink"), color: v("--ux-canvas"),

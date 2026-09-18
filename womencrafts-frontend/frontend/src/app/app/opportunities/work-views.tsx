@@ -32,7 +32,7 @@ export function FamilyStrip({ active, onPick }: {
         return (
           <button key={f.id} type="button" aria-pressed={on}
                   onClick={() => onPick(on ? null : f.id)}
-                  className="ux-press ux-sq flex w-[196px] shrink-0 items-center gap-3 rounded-[14px] border p-3.5 text-start"
+                  className="ux-press ux-sq flex w-[196px] shrink-0 items-center gap-3 rounded-[12px] border p-4 text-start lg:rounded-[14px] lg:p-3.5"
                   style={{
                     borderColor: v(on ? "--ux-brand" : "--ux-line"),
                     background: v(on ? "--ux-brand-tint" : "--ux-surface"),
@@ -40,7 +40,7 @@ export function FamilyStrip({ active, onPick }: {
             <IconTile icon={f.icon} tint={f.tint} ink={f.ink} size={40} radius={11} />
             <span className="min-w-0">
               <span className="block truncate text-xsm font-bold" style={{ color: v("--ux-ink") }}>{f.label}</span>
-              <span className="block truncate text-xs" style={{ color: v("--ux-muted") }}>{f.sub}</span>
+              <span className="block truncate text-[13px] lg:text-xs" style={{ color: v("--ux-muted") }}>{f.sub}</span>
             </span>
           </button>
         );
@@ -115,13 +115,13 @@ export function JobCard({ job, saved, onSave }: {
           </p>
           <div className="mt-2.5 flex flex-wrap gap-1.5">
             {job.skills.slice(0, 3).map((s) => (
-              <span key={s} className="rounded-[7px] px-2 py-1 text-[13px] font-semibold lg:text-2xs"
+              <span key={s} className="rounded-full px-2.5 py-1 text-[13px] font-semibold lg:rounded-[7px] lg:px-2 lg:text-2xs"
                     style={{ background: v("--ux-surface-2"), color: v("--ux-ink-2") }}>
                 {s}
               </span>
             ))}
             {job.skills.length > 3 && (
-              <span className="rounded-[7px] px-2 py-1 text-[13px] font-semibold lg:text-2xs"
+              <span className="rounded-full px-2.5 py-1 text-[13px] font-semibold lg:rounded-[7px] lg:px-2 lg:text-2xs"
                     style={{ background: v("--ux-surface-2"), color: v("--ux-muted") }}>
                 +{job.skills.length - 3}
               </span>

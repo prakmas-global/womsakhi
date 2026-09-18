@@ -10,11 +10,11 @@ import { CIRCLE_ART, CIRCLE_TIPS, COVER_ALT, COVER_PRESETS, members, topicOf } f
 
 export function CreateHero() {
   return (
-    <section className="relative mb-5 overflow-hidden rounded-[20px]"
+    <section className="relative mb-5 overflow-hidden rounded-[20px] max-lg:rounded-[16px]"
              style={{ background: "linear-gradient(102deg, var(--ux-brand-tint) 0%, var(--ux-tint-lilac) 58%, var(--ux-tint-pink) 100%)",
                       border: "1px solid var(--ux-line)" }}>
-      <div className="relative z-[1] max-w-[520px] p-6 sm:p-7">
-        <h1 className="text-3xl font-extrabold leading-tight tracking-[-0.02em]" style={{ color: v("--ux-ink") }}>
+      <div className="relative z-[1] max-w-[520px] p-6 sm:p-7 max-lg:p-4">
+        <h1 className="ux-screen-title text-3xl font-extrabold leading-tight tracking-[-0.02em]" style={{ color: v("--ux-ink") }}>
           Create your circle
         </h1>
         <p className="mt-2 max-w-[380px] text-xsm leading-relaxed" style={{ color: v("--ux-ink-2") }}>
@@ -105,7 +105,7 @@ export function CoverPicker({ cover, onPick, onUpload }: {
           return (
             <button key={src} type="button" onClick={() => onPick(src)} aria-pressed={on}
                     aria-label={`Use this cover: ${shows}`}
-                    className="ux-press ux-sq relative h-[62px] overflow-hidden rounded-[10px]"
+                    className="ux-press ux-sq relative h-[62px] overflow-hidden rounded-[10px] max-lg:rounded-[12px]"
                     style={{ border: `2px solid ${v(on ? "--ux-brand" : "--ux-line")}` }}>
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img src={src} alt="" aria-hidden loading="lazy" decoding="async"
@@ -135,7 +135,7 @@ export function TagField({ tags, draft, onDraft, onAdd, onRemove, suggestions }:
   const full = tags.length >= 5;
   return (
     <>
-      <div className="flex items-center gap-2 rounded-[12px] border px-3.5"
+      <div className="flex items-center gap-2 rounded-[12px] border px-3.5 max-lg:px-4"
            style={{ borderColor: v("--ux-line"), background: v("--ux-surface"),
                     opacity: full ? 0.6 : 1 }}>
         <Icons.Tag className="h-[15px] w-[15px] shrink-0" style={{ color: v("--ux-faint") }} />
@@ -196,7 +196,7 @@ export function LivePreview({ name, desc, cover, icon, category, privacy, tags, 
   const t = topicOf(category);
   return (
     <Card pad={0} className="overflow-hidden">
-      <div className="px-[18px] pb-3 pt-[18px]">
+      <div className="px-[18px] pb-3 pt-[18px] max-lg:px-4 max-lg:pt-4">
         <h2 className="text-base font-extrabold" style={{ color: v("--ux-ink") }}>Live preview</h2>
         <p className="mt-0.5 text-xs" style={{ color: v("--ux-muted") }}>
           This is how your circle will look to someone who finds it.
@@ -214,7 +214,7 @@ export function LivePreview({ name, desc, cover, icon, category, privacy, tags, 
             Your cover goes here
           </span>
         )}
-        <span className="absolute -bottom-6 start-[18px] grid h-[52px] w-[52px] place-items-center overflow-hidden rounded-[16px]"
+        <span className="absolute -bottom-6 start-[18px] grid h-[52px] w-[52px] place-items-center overflow-hidden rounded-[16px] max-lg:start-4 max-lg:rounded-[12px]"
               style={{ background: v("--ux-tint-pink"), border: `3px solid ${v("--ux-surface")}` }}>
           {icon
             // eslint-disable-next-line @next/next/no-img-element
@@ -223,7 +223,7 @@ export function LivePreview({ name, desc, cover, icon, category, privacy, tags, 
         </span>
       </div>
 
-      <div className="px-[18px] pb-[18px] pt-8">
+      <div className="px-[18px] pb-[18px] pt-8 max-lg:px-4 max-lg:pb-4">
         <p className="text-smd font-extrabold leading-snug" style={{ color: v("--ux-ink") }}>
           {name.trim() || "Your circle's name"}
         </p>
@@ -295,7 +295,7 @@ export function CircleTips({ at }: { at: number }) {
 
 export function SafePromise() {
   return (
-    <section className="flex items-start gap-3 rounded-[16px] p-[18px]"
+    <section className="flex items-start gap-3 rounded-[16px] p-[18px] max-lg:p-4"
              style={{ background: v("--ux-tint-pink") }}>
       <I name="Heart" className="mt-[2px] h-[19px] w-[19px] shrink-0" style={{ color: v("--ux-pink-ink") }} sw={2.4} />
       <div className="min-w-0">
@@ -326,7 +326,7 @@ export function SafePromise() {
 export function PartlySaved({ notYet }: { notYet: string }) {
   return (
     <p role="status"
-       className="ux-sq mb-1 flex items-start gap-2.5 rounded-[12px] px-3.5 py-2.5 text-xs leading-relaxed"
+       className="ux-sq mb-1 flex items-start gap-2.5 rounded-[12px] px-3.5 py-2.5 text-xs leading-relaxed max-lg:px-4 max-lg:text-[13px]"
        style={{ background: v("--ux-surface-2"), color: v("--ux-ink-2") }}>
       <I name="Info" className="mt-[1px] h-[14px] w-[14px] shrink-0" sw={2} />
       <span>

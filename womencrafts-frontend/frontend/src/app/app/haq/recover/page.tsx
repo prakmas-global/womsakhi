@@ -4,7 +4,8 @@ import { useCallback, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 
 import { HomeShell } from "@/components/ux/home/HomeShell";
-import { Back, Btn, Card, EmptyState, I, SectionHead, Stat, v } from "@/components/ux/kit";
+import { Back, Btn, Card, EmptyState, I, Stat, v } from "@/components/ux/kit";
+import { EYEBROW, GROUP, GROUP_ROW, Section } from "@/components/ux/earn/phone";
 import { formatRupees } from "@/components/ux/kit";
 import { LATE, type Late } from "@/components/ux/haq/data";
 import { LateRow } from "@/components/ux/haq/parts";
@@ -46,13 +47,13 @@ export default function RecoverPage() {
 
   return (
     <HomeShell active="/app/haq">
-      <div className="flex flex-col gap-5">
+      <div className="flex flex-col gap-6 lg:gap-5">
 
         <Back to="/app/haq" label={tr("haqRecover.backToHaq")} />
 
         <header>
-          <p className="text-2xs font-extrabold uppercase tracking-[0.2em]" style={{ color: v("--ux-brand") }}>{tr("haqRecover.lateMoney")}</p>
-          <h1 className="mt-2 text-[clamp(1.5rem,3.2vw,2.125rem)] font-extrabold leading-[1.1] tracking-[-0.035em]"
+          <p className={EYEBROW}>{tr("haqRecover.lateMoney")}</p>
+          <h1 className="ux-screen-title mt-2 text-[clamp(1.5rem,3.2vw,2.125rem)] font-extrabold leading-[1.1] tracking-[-0.035em]"
               style={{ color: v("--ux-ink") }}>{tr("haqRecover.theyOweYouForTheWait")}</h1>
           <p className="mt-1.5 max-w-[56ch] text-sm leading-relaxed" style={{ color: v("--ux-muted") }}>
             When a public payment arrives late, compensation is due by law. Almost nobody asks
@@ -71,7 +72,7 @@ export default function RecoverPage() {
             <div className="mt-4 flex flex-wrap items-center gap-2 border-t pt-3.5"
                  style={{ borderColor: v("--ux-line") }}>
               <p className="flex-1 text-xsm" style={{ color: v("--ux-ink-2") }}>{tr("haqRecover.theyCanAllGoInOne")}</p>
-              <Btn size="sm" icon="FileText" onClick={fileAll}>Prepare all {open.length}</Btn>
+              <Btn size="sm" icon="FileText" className="max-lg:w-full max-lg:px-4" onClick={fileAll}>Prepare all {open.length}</Btn>
             </div>
           )}
         </Card>
@@ -85,7 +86,7 @@ export default function RecoverPage() {
         )}
 
         <div>
-          <SectionHead title={tr("haqRecover.notClaimedYet")} icon="AlarmClock" chip={String(open.length)} />
+          <Section title={tr("haqRecover.notClaimedYet")} icon="AlarmClock" chip={String(open.length)} />
           {open.length === 0 ? (
             <Card>
               <EmptyState
@@ -95,17 +96,17 @@ export default function RecoverPage() {
               />
             </Card>
           ) : (
-            <div className="flex flex-col gap-2.5">
-              {open.map((l) => <LateRow key={l.id} l={l} onFile={file} />)}
+            <div className={`flex flex-col gap-2.5 ${GROUP}`}>
+              {open.map((l) => <LateRow key={l.id} l={l} onFile={file} className={GROUP_ROW} />)}
             </div>
           )}
         </div>
 
         {filed.length > 0 && (
           <div>
-            <SectionHead title={tr("haqRecover.alreadyAskedFor")} icon="Send" chip={String(filed.length)} />
-            <div className="flex flex-col gap-2.5">
-              {filed.map((l) => <LateRow key={l.id} l={l} onFile={file} />)}
+            <Section title={tr("haqRecover.alreadyAskedFor")} icon="Send" chip={String(filed.length)} />
+            <div className={`flex flex-col gap-2.5 ${GROUP}`}>
+              {filed.map((l) => <LateRow key={l.id} l={l} onFile={file} className={GROUP_ROW} />)}
             </div>
           </div>
         )}

@@ -94,23 +94,23 @@ export default function CertificatesPage() {
       <SourceNote source={source} what="certificates" />
 
       {tab === "Earned" ? (
-        <div className="ux-deck grid grid-cols-2 gap-[16px]">
+        <div className="ux-deck grid grid-cols-1 items-stretch gap-4 md:grid-cols-2">
           {CERTIFICATES.map((c, i) => (
-            <Card key={c.id} className="ux-i ux-onscroll overflow-hidden" style={{ ["--i" as string]: i }} pad={0}>
+            <Card key={c.id} className="ux-i ux-onscroll flex h-full flex-col overflow-hidden" style={{ ["--i" as string]: i }} pad={0}>
               {/* The metal band is the one place in the app that treatment is
                   used — cold and hard is the right feeling for something
                   awarded, and nowhere else earns it. */}
-              <div className="ux-metal flex items-center gap-3 px-[20px] py-3.5">
+              <div className="ux-metal flex items-center gap-3 px-4 py-3 lg:px-[20px] lg:py-3.5">
                 <Icons.Award className="ux-ico h-[22px] w-[22px] shrink-0" strokeWidth={1.9} />
                 <span className="text-xs font-semibold uppercase tracking-[0.1em]">{tr("certificates.certificateOfCompletion")}</span>
               </div>
-              <div className="p-[20px]">
+              <div className="flex flex-1 flex-col p-4 lg:p-5">
                 <h2 className="text-base font-semibold leading-snug" style={{ color: "var(--ux-ink)" }}>{c.title}</h2>
-                <p className="mt-1.5 flex flex-wrap items-center gap-x-3 text-xs" style={{ color: "var(--ux-muted)" }}>
-                  <span className="inline-flex items-center gap-1"><Icons.Calendar className="h-3.5 w-3.5" /> {c.issued}</span>
-                  <span className="inline-flex items-center gap-1"><Icons.Clock className="h-3.5 w-3.5" /> {c.hours} hours</span>
+                <p className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1 text-[13px] lg:text-xs" style={{ color: "var(--ux-muted)" }}>
+                  <span className="inline-flex items-center gap-1"><Icons.Calendar className="h-[14px] w-[14px] shrink-0" /> {c.issued}</span>
+                  <span className="inline-flex items-center gap-1"><Icons.Clock className="h-[14px] w-[14px] shrink-0" /> {c.hours} hours</span>
                 </p>
-                <div className="mt-2.5 flex flex-wrap items-center gap-2">
+                <div className="mt-3 flex flex-wrap items-center gap-2">
                   <Tag tone="brand" size="sm">{c.skill}</Tag>
                   {c.verified && (
                     <span className="inline-flex items-center gap-1 text-2xs font-medium" style={{ color: "var(--ux-green-ink)" }}>
@@ -129,7 +129,7 @@ export default function CertificatesPage() {
                     setCopied(c.id);
                     window.setTimeout(() => setCopied(null), 1600);
                   }}
-                  className="ux-press ux-hov ux-sq mt-3.5 flex w-full items-center gap-2 rounded-[12px] px-3 py-2.5 text-start"
+                  className="ux-press ux-hov ux-sq mt-4 flex w-full items-center gap-3 rounded-[12px] px-4 py-3 text-start lg:gap-2.5 lg:px-3.5"
                   style={{ background: "var(--ux-surface-2)" }}
                 >
                   <Icons.Hash className="h-[14px] w-[14px] shrink-0" style={{ color: "var(--ux-faint)" }} />
@@ -141,7 +141,7 @@ export default function CertificatesPage() {
                   </span>
                 </button>
 
-                <div className="mt-3.5 flex gap-2 border-t pt-3.5" style={{ borderColor: "var(--ux-line)" }}>
+                <div className="ux-cert-foot mt-auto flex gap-2 border-t pt-4" style={{ borderColor: "var(--ux-line)" }}>
                   <ActionBtn variant="primary" size="sm" icon="Download" doneIcon="Printer"
                              done={COPY.saveAsPdf} act={() => printCertificate({
                                name: ME.name, programme: c.title, issued: c.issued,
@@ -161,7 +161,9 @@ export default function CertificatesPage() {
         <div className="ux-deck ux-stagger space-y-[12px]">
           {IN_PROGRESS.map((c, i) => (
             <Card key={c.id} className="ux-i ux-onscroll" style={{ ["--i" as string]: i }}>
-              <div className="flex items-center gap-4">
+              {/* "Continue" takes its own full-width line on a phone rather
+                  than a 110px pill squeezing the title beside it. */}
+              <div className="flex flex-wrap items-center gap-4 lg:flex-nowrap">
                 <span className="h-[54px] w-[54px] shrink-0 overflow-hidden rounded-[12px]"
                       style={{ background: "var(--ux-tint-violet)" }}>
                   {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -177,7 +179,7 @@ export default function CertificatesPage() {
                   </div>
                   <p className="mt-1.5 text-xs" style={{ color: "var(--ux-faint)" }}>{c.left}</p>
                 </div>
-                <Btn href="/app/programs" variant="primary" size="sm" iconEnd="ArrowRight">Continue</Btn>
+                <Btn href="/app/programs" variant="primary" size="sm" iconEnd="ArrowRight" className="w-full lg:w-auto">Continue</Btn>
               </div>
             </Card>
           ))}

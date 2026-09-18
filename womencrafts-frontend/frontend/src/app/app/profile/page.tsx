@@ -6,7 +6,9 @@ import * as Icons from "@/components/ux/icons";
 import { apiMeProfile, type MeProfile } from "@/lib/member-api";
 import { useResource } from "@/lib/use-resource";
 import { useAuth } from "@/context/AuthContext";
-import { Btn, Card, I, Pill, Progress, SectionHead, Stat, Tabs } from "@/components/ux/kit";
+import { Btn, Card, Chip, I, Pill, Progress, SectionHead, Stat, Tabs } from "@/components/ux/kit";
+import { ListGroup } from "@/components/ux/mobile/ListRow";
+import { GroupLabel, PhoneRow } from "@/components/ux/PhoneParts";
 import { HomeShell } from "@/components/ux/home/HomeShell";
 import { ContributionTab, DocumentsTab, ExperienceTab, PortfolioTab, SkillsTab } from "./tabs";
 import { useMe } from "@/components/ux/me";
@@ -216,7 +218,14 @@ export default function Profile() {
         to go and hides the bar; the bleed to the screen edges is what tells a
         thumb the row continues.
       */}
-      <div className="ux-scroll-x mb-[16px] -mx-[20px] max-w-[calc(100%+40px)] overflow-x-auto px-[20px] lg:mx-0 lg:max-w-none lg:overflow-visible lg:px-0">
+      {/* On a phone the six sections are a sideways row of chips — a native
+          filter row — rather than a desktop tab strip inside a scroller. */}
+      <div className="ux-chiprow mb-4 lg:hidden" role="group" aria-label="Profile sections">
+        {["Overview", "Skills", "Experience", "What you made", "Helping others", "Documents"].map((t) => (
+          <Chip key={t} selected={tab === t} onClick={() => setTab(t)}>{t}</Chip>
+        ))}
+      </div>
+      <div className="ux-scroll-x mb-[16px] -mx-[20px] hidden max-w-[calc(100%+40px)] overflow-x-auto px-[20px] lg:mx-0 lg:block lg:max-w-none lg:overflow-visible lg:px-0">
         {/* `w-max`: an `inline-flex` inside a scroller still shrinks to the
             scroller's width and wraps its labels — "What you / made" — instead
             of overflowing it, which is the whole point of the scroller. */}
@@ -227,7 +236,34 @@ export default function Profile() {
 
       {tab === "Overview" && (
         <div className="grid grid-cols-1 gap-[16px] lg:grid-cols-[minmax(0,1fr)_320px]">
-          <Card>
+          {/* On a phone: the steps as one grouped list, each with its Add. */}
+          <div className="lg:hidden">
+            <GroupLabel sub={left.length ? `${left.length} still to fill in` : "Nothing left to do"}>
+              {tr("profile.finishYourProfile")}
+            </GroupLabel>
+            <ListGroup>
+              {steps.map((s) => (
+                <PhoneRow key={s.id} sepInset={54}
+                          lead={
+                            <span aria-hidden
+                                  className="ux-sq mt-0.5 grid h-[26px] w-[26px] shrink-0 place-items-center rounded-full border-2"
+                                  style={{ background: s.done ? "var(--ux-green)" : "transparent",
+                                           borderColor: s.done ? "var(--ux-green)" : "var(--ux-line-strong)" }}>
+                              {s.done && <Icons.Check className="h-3.5 w-3.5 text-white" strokeWidth={3} />}
+                            </span>
+                          }
+                          title={
+                            <span className="font-normal" style={{ color: s.done ? "var(--ux-muted)" : "var(--ux-ink)",
+                                                                     textDecoration: s.done ? "line-through" : "none" }}>
+                              {s.label}
+                              <span className="sr-only">{s.done ? "Done" : "Not done yet"}</span>
+                            </span>
+                          }
+                          trailing={!s.done ? <Btn href="/app/settings/account" variant="soft" size="sm">Add</Btn> : undefined} />
+              ))}
+            </ListGroup>
+          </div>
+          <Card className="max-lg:hidden">
             <SectionHead title={tr("profile.finishYourProfile")}
                          sub={left.length ? `${left.length} still to fill in` : "Nothing left to do"} />
             <ul className="space-y-2.5">

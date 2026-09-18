@@ -4,6 +4,8 @@ import Link from "next/link";
 
 import * as Icons from "@/components/ux/icons";
 import { Btn, Card, I, IconTile, Progress, Skeleton, v } from "@/components/ux/kit";
+import { GroupHead, MediaRow, RowGroup } from "@/components/ux/learning/native";
+import { ListGroup, ListRow, type RowTint } from "@/components/ux/mobile/ListRow";
 import { stepPct, stepState, type JourneyStep, type StepState } from "@/services/journey";
 
 /* ------------------------------------------------------------------ */
@@ -15,7 +17,24 @@ const SIGNS = ["Learn", "Practice", "Get opportunities", "Earn", "Grow"];
 
 export function JourneyHero() {
   return (
-    <section className="relative mb-4 overflow-hidden rounded-[20px]"
+    <>
+    {/*
+      On a phone: one large title and a quiet line under it. The banner — a
+      34px two-line slogan inside a gradient slab with a quote card — was a
+      website's hero, and it pushed the first thing she can act on below the
+      fold. Every word of it is still here.
+    */}
+    <header className="mb-6 lg:hidden">
+      <h1 className="ux-screen-title" style={{ color: v("--ux-ink") }}>My journey</h1>
+      <p className="mt-2 text-[15px] leading-snug" style={{ color: v("--ux-muted") }}>
+        Small steps. Big possibilities. A guided journey to help you learn, build skills, find
+        opportunities and create the life you deserve.
+      </p>
+      <p className="mt-2 text-[13px] italic leading-snug" style={{ color: v("--ux-brand"), fontFamily: "var(--font-display)" }}>
+        &ldquo;You are not just learning a skill, you are building a stronger you.&rdquo; — WomSakhi
+      </p>
+    </header>
+    <section className="relative mb-4 hidden overflow-hidden rounded-[20px] lg:block"
              style={{ background: "linear-gradient(104deg, var(--ux-brand-tint) 0%, var(--ux-tint-lilac) 46%, var(--ux-tint-pink) 78%, var(--ux-tint-amber) 100%)",
                       border: "1px solid var(--ux-line)" }}>
       <div className="flex items-stretch">
@@ -86,6 +105,7 @@ export function JourneyHero() {
         </div>
       </div>
     </section>
+    </>
   );
 }
 
@@ -102,8 +122,18 @@ export function JourneyStats({ total, done, doing, todo, cheer }: {
     { n: doing, label: "In progress",   icon: "Loader",     tint: "--ux-tint-amber",  ink: "--ux-amber-ink" },
     { n: todo,  label: "Not started",   icon: "Circle",     tint: "--ux-brand-tint-2", ink: "--ux-brand" },
   ];
+  const rowTint: RowTint[] = ["violet", "green", "amber", "pink"];
   return (
-    <Card className="mb-4">
+    <>
+    {/* Four numbers as four value rows on a phone — label left, number right,
+        the way a phone shows a count. The cheer is the group's footnote. */}
+    <ListGroup className="mb-6 lg:hidden" footnote={cheer}>
+      {cells.map((c, i) => (
+        <ListRow key={c.label} icon={c.icon} tint={rowTint[i]} title={c.label}
+                 value={<b className="font-semibold" style={{ color: v("--ux-ink") }}>{c.n}</b>} />
+      ))}
+    </ListGroup>
+    <Card className="mb-4 hidden lg:block">
       <div className="flex flex-wrap items-center gap-x-8 gap-y-4">
         {cells.map((c) => (
           <div key={c.label} className="flex items-center gap-2.5">
@@ -120,6 +150,7 @@ export function JourneyStats({ total, done, doing, todo, cheer }: {
         </span>
       </div>
     </Card>
+    </>
   );
 }
 
@@ -135,7 +166,33 @@ export function Stepper({ steps, at, onPick }: {
   steps: JourneyStep[]; at: string; onPick: (id: string) => void;
 }) {
   return (
-    <Card className="mb-5" pad={16}>
+    <>
+    {/*
+      On a phone the seven are a list, not a strip. The strip was 760px wide
+      inside a 350px card — five of the seven off the glass, labels at 12px —
+      so "where am I?" needed a sideways scroll to answer. As rows, all seven
+      are there at once; the one on show carries the tick.
+    */}
+    <ListGroup className="mb-6 lg:hidden" title="Journey steps">
+      {steps.map((s) => {
+        const st = stepState(s);
+        return (
+          <ListRow key={s.id} onClick={() => onPick(s.id)} selected={s.id === at}
+                   avatar={
+                     <span aria-hidden className="grid h-[32px] w-[32px] shrink-0 place-items-center rounded-full text-[13px] font-bold"
+                           style={{
+                             background: v(st === "done" ? "--ux-green" : st === "doing" ? "--ux-fill" : "--ux-surface-2"),
+                             color: v(st === "done" ? "--ux-on-green" : st === "doing" ? "--ux-on-brand" : "--ux-muted"),
+                           }}>
+                       {st === "done" ? <Icons.Check className="h-[16px] w-[16px]" strokeWidth={3} /> : s.n}
+                     </span>
+                   }
+                   title={s.label}
+                   subtitle={<span style={{ color: v(st === "done" ? "--ux-green-ink" : st === "doing" ? "--ux-brand" : "--ux-muted") }}>{WORD[st]}</span>} />
+        );
+      })}
+    </ListGroup>
+    <Card className="mb-5 hidden lg:block" pad={16}>
       {/* Seven nodes sharing the row, not seven fixed widths: at 132px each the
           last two fell off the end of a 1030px column, and a journey whose end
           you cannot see is not much of a map. */}
@@ -176,6 +233,7 @@ export function Stepper({ steps, at, onPick }: {
         })}
       </ol>
     </Card>
+    </>
   );
 }
 
@@ -189,23 +247,23 @@ export function StepCard({ step, total, onCheck, onLater }: {
 }) {
   const pct = stepPct(step);
   return (
-    <Card className="mb-5" pad={22}>
+    <Card className="mb-6 lg:mb-5" pad={22}>
       <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_240px]">
         <div className="min-w-0">
           <div className="flex items-start gap-4">
             <IconTile icon={step.icon} tint={step.tint} ink={step.ink} size={54} radius={16} />
             <div className="min-w-0">
-              <p className="text-2xs font-extrabold uppercase tracking-[0.14em]" style={{ color: v("--ux-muted") }}>
+              <p className="text-[12px] font-extrabold uppercase tracking-[0.14em] lg:text-2xs" style={{ color: v("--ux-muted") }}>
                 Step {step.n} of {total}
               </p>
-              <h2 className="mt-1.5 text-2xlm font-extrabold leading-tight tracking-[-0.02em]"
+              <h2 className="mt-1 text-xl font-extrabold leading-tight tracking-[-0.02em] lg:mt-1.5 lg:text-2xlm"
                   style={{ color: v("--ux-ink") }}>
                 {step.label}
               </h2>
             </div>
           </div>
 
-          <p className="mt-3.5 max-w-[520px] text-xsm leading-relaxed" style={{ color: v("--ux-ink-2") }}>
+          <p className="mt-4 max-w-[520px] text-xsm leading-relaxed lg:mt-3.5" style={{ color: v("--ux-ink-2") }}>
             {step.blurb}
           </p>
 
@@ -213,7 +271,7 @@ export function StepCard({ step, total, onCheck, onLater }: {
             {step.checks.map((c) => (
               <li key={c.label}>
                 <button type="button" onClick={() => onCheck(c.label)}
-                        className="ux-press ux-sq flex w-full items-center gap-2.5 rounded-[10px] px-1 py-2 text-start">
+                        className="ux-press ux-sq flex min-h-[44px] w-full items-center gap-3 rounded-[12px] px-1 py-2 text-start lg:min-h-0 lg:gap-2.5 lg:rounded-[10px]">
                   <span className="grid h-[21px] w-[21px] shrink-0 place-items-center rounded-full"
                         style={{ background: v(c.done ? "--ux-fill" : "--ux-surface"),
                                  border: `2px solid ${v(c.done ? "--ux-fill" : "--ux-line-strong")}`,
@@ -233,8 +291,9 @@ export function StepCard({ step, total, onCheck, onLater }: {
             ))}
           </ul>
 
-          <div className="mt-5 flex flex-wrap items-center gap-2.5">
-            <Btn href={step.href} iconEnd="ArrowRight">{step.cta}</Btn>
+          {/* The step's action full width on a phone, where a thumb reaches. */}
+          <div className="mt-6 flex flex-col items-stretch gap-2 lg:mt-5 lg:flex-row lg:flex-wrap lg:items-center lg:gap-2.5">
+            <Btn href={step.href} iconEnd="ArrowRight" className="ux-action-primary">{step.cta}</Btn>
             <Btn variant="ghost" icon="Bookmark" onClick={onLater}>Save for later</Btn>
           </div>
         </div>
@@ -284,8 +343,19 @@ export interface Rec {
 
 export function Recommended({ rows }: { rows: Rec[] }) {
   return (
-    <section className="mb-5">
-      <div className="mb-3.5 flex items-center justify-between gap-3">
+    <section className="mb-6 lg:mb-5">
+      {/* A grouped list on a phone — each of these is a place to go. */}
+      <div className="lg:hidden">
+        <GroupHead title="Recommended for you" action="View all" href="/app/programs" />
+        <RowGroup>
+          {rows.map((r) => (
+            <MediaRow key={r.id} href={r.href}
+                      media={<IconTile icon={r.icon} tint={r.tint} ink={r.ink} size={44} radius={12} />}
+                      title={r.title} lines={[`${r.kind} · ${r.meta}`]} />
+          ))}
+        </RowGroup>
+      </div>
+      <div className="mb-3.5 hidden items-center justify-between gap-3 lg:flex">
         <h2 className="text-lg font-extrabold tracking-[-0.01em]" style={{ color: v("--ux-ink") }}>
           Recommended for you
         </h2>
@@ -294,7 +364,7 @@ export function Recommended({ rows }: { rows: Rec[] }) {
           View all <Icons.ArrowRight className="h-[13px] w-[13px]" />
         </Link>
       </div>
-      <div className="grid gap-3.5" style={{ gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))" }}>
+      <div className="hidden gap-3.5 lg:grid" style={{ gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))" }}>
         {rows.map((r) => (
           <Link key={r.id} href={r.href} className="ux-card ux-hov ux-sq flex items-start gap-3 p-4">
             <IconTile icon={r.icon} tint={r.tint} ink={r.ink} size={40} radius={11} />

@@ -1,12 +1,14 @@
 "use client";
 
 import { useState } from "react";
-import * as Icons from "@/components/ux/icons";
 
 import { useDevicePref } from "@/lib/use-device-pref";
 
 import { IconTile } from "@/components/ux/kit";
-import { Card, SectionHead, SettingsPage, Toggle } from "@/components/ux/settings/Frame";
+import { SettingsPage, Toggle } from "@/components/ux/settings/Frame";
+import { ListRow } from "@/components/ux/mobile/ListRow";
+import { PhoneRow } from "@/components/ux/PhoneParts";
+import { Group } from "../_parts/Group";
 import { VOICE_CAN, VOICE_LANGS } from "@/components/ux/more/data";
 import { useT } from "@/i18n";
 
@@ -33,20 +35,34 @@ export default function VoiceSettings() {
       title="Voice"
       sub={tr("settingsVoice.talkToSakhiInsteadOfTyping")}
     >
-      <Card>
+      <Group>
         <Toggle
           on={on} onChange={setOn}
           label={tr("settingsVoice.useVoice")}
           whenOn="The microphone button appears wherever Sakhi does."
           whenOff="Sakhi is typing only. Nothing listens."
         />
-      </Card>
+      </Group>
 
       {on && (
         <>
-          <Card>
-            <SectionHead title={tr("settingsVoice.whatLanguageSheListensIn")}
-                         sub={tr("settingsVoice.theSameOneSheRepliesAnd")} />
+          {/* A phone lists the languages as rows with a checkmark; the
+              three-up grid of tiles is the desktop's shape. */}
+          <Group
+            title={tr("settingsVoice.whatLanguageSheListensIn")}
+            sub={tr("settingsVoice.theSameOneSheRepliesAnd")}
+            inset="flush"
+            phone={VOICE_LANGS.map((l) => (
+              <ListRow
+                key={l.code}
+                title={l.name}
+                subtitle={l.ready ? l.en : "Coming soon"}
+                selected={lang === l.code}
+                disabled={!l.ready}
+                onClick={() => l.ready && setLang(l.code)}
+              />
+            ))}
+          >
             <div className="ux-deck grid grid-cols-3 gap-2.5">
               {VOICE_LANGS.map((l, i) => {
                 const sel = lang === l.code;
@@ -73,10 +89,17 @@ export default function VoiceSettings() {
                 );
               })}
             </div>
-          </Card>
+          </Group>
 
-          <Card>
-            <SectionHead title={tr("settingsVoice.thingsYouCanSay")} sub={tr("settingsVoice.outLoudInYourOwnWords")} />
+          <Group
+            title={tr("settingsVoice.thingsYouCanSay")}
+            sub={tr("settingsVoice.outLoudInYourOwnWords")}
+            inset="flush"
+            phone={VOICE_CAN.map((v) => (
+              <PhoneRow key={v.id} icon={v.icon} tint="--ux-tint-lilac" ink="--ux-brand"
+                        title={v.say} meta={v.does} />
+            ))}
+          >
             <ul className="ux-stagger space-y-3">
               {VOICE_CAN.map((v, i) => (
                 <li key={v.id} className="ux-hov flex items-start gap-3" style={{ ["--i" as string]: i }}>
@@ -88,10 +111,10 @@ export default function VoiceSettings() {
                 </li>
               ))}
             </ul>
-          </Card>
+          </Group>
 
-          <Card>
-            <SectionHead title={tr("settingsVoice.howItBehaves")} />
+          <Group title={tr("settingsVoice.howItBehaves")} noteIcon="Lock"
+                 note={tr("settingsVoice.whatYouSayIsTurnedInto")}>
             <div className="divide-y" style={{ borderColor: "var(--ux-line)" }}>
               <Toggle
                 on={wake} onChange={setWake}
@@ -106,10 +129,7 @@ export default function VoiceSettings() {
                 whenOff="She writes her answer. Nothing is spoken."
               />
             </div>
-            <p className="mt-3.5 flex items-start gap-2.5 rounded-[12px] p-3 text-xs leading-relaxed"
-               style={{ background: "var(--ux-surface-2)", color: "var(--ux-ink-2)" }}>
-              <Icons.Lock className="mt-[1px] h-[14px] w-[14px] shrink-0" style={{ color: "var(--ux-brand)" }} />{tr("settingsVoice.whatYouSayIsTurnedInto")}</p>
-          </Card>
+          </Group>
         </>
       )}
     </SettingsPage>

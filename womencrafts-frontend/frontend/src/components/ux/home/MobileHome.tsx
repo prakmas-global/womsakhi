@@ -3,7 +3,6 @@
 import Image from "next/image";
 import { TransitionLink } from "@/components/ux/TransitionLink";
 import { I, formatRupees } from "@/components/ux/kit";
-import { QUICK_ACTIONS } from "./data";
 import { useHome } from "@/components/ux/live";
 
 /**
@@ -46,6 +45,11 @@ import { useHome } from "@/components/ux/live";
   This is the third formatter this repo has grown. Two was already the bug.
 
 /** Morning/afternoon/evening from the device clock, not the server's. */
+/** White on the brand gradient, from the token rather than a literal — and
+ *  the dimmer caption white as a mix of it, so both follow the token. */
+const ON_BRAND = "var(--ux-on-brand)";
+const ON_BRAND_2 = "color-mix(in srgb, var(--ux-on-brand) 72%, transparent)";
+
 function greeting() {
   const h = new Date().getHours();
   return h < 12 ? "Good morning" : h < 17 ? "Good afternoon" : "Good evening";
@@ -94,9 +98,19 @@ export function MobileHome() {
         is not richness, it is the same control twice; the top bar wins because
         it is the one that is always there.
       */}
-      <header className="px-4 pb-3 pt-1">
+      {/*
+        No side inset of its own. The shell already pads the content column,
+        and this screen added a second 16px inside it, so Home sat 36px from
+        the edge while every other screen sat at the shell's inset — the one
+        screen whose edges did not line up with the rest. Now it uses the
+        shell's inset, whatever that is.
+      */}
+      <header className="pb-3 pt-1">
         <p className="text-[13px]" style={{ color: "var(--ux-muted)" }}>{greeting()},</p>
-        <h1 className="ux-large-title mt-0.5 text-[26px] font-extrabold leading-tight"
+        {/* The one large title on the screen: her name, at 34 — the spec's
+            large-title step. It was 28, a size down from every other screen's
+            title, so Home was the one screen that did not open like the rest. */}
+        <h1 className="ux-screen-title mt-0.5"
             style={{ color: "var(--ux-ink)" }}>
           {me.first}
         </h1>
@@ -111,35 +125,36 @@ export function MobileHome() {
           same block and would fail the same way. The tile keeps its colour and
           its place so the screen does not jump when the figure arrives.
         */
-        <div className="ux-sq mx-4 flex items-center gap-3 rounded-[16px] p-4"
+        <div className="ux-sq flex items-center gap-3 rounded-[16px] p-4"
              style={{ background: "linear-gradient(135deg, var(--ux-brand-700), var(--ux-brand-900))" }}>
           <div className="min-w-0 flex-1">
             <p className="text-[12px] font-semibold uppercase tracking-[0.08em]"
-               style={{ color: "rgb(255 255 255 / 0.72)" }}>
+               style={{ color: ON_BRAND_2 }}>
               Your balance
             </p>
-            <p className="mt-0.5 text-[15px] font-semibold leading-snug text-white">
+            <p className="mt-0.5 text-[15px] font-semibold leading-snug" style={{ color: ON_BRAND }}>
               We could not load it just now.
             </p>
           </div>
           <button type="button" onClick={refetch}
-                  className="flex min-h-[44px] shrink-0 items-center gap-1.5 rounded-full px-3.5 text-[13px] font-bold text-white"
-                  style={{ background: "rgb(255 255 255 / 0.18)" }}>
+                  className="flex min-h-[44px] shrink-0 items-center gap-1.5 rounded-full px-3.5 text-[13px] font-bold"
+                  style={{ background: "color-mix(in srgb, var(--ux-on-brand) 18%, transparent)", color: ON_BRAND }}>
             <I name="RefreshCw" className="h-4 w-4" sw={2.2} />
             Try again
           </button>
         </div>
       ) : (
       <TransitionLink href="/app/wallet"
-        className="ux-sq mx-4 flex items-center gap-3 rounded-[16px] p-4"
+        className="ux-sq flex items-center gap-3 rounded-[16px] p-4"
         style={{ background: "linear-gradient(135deg, var(--ux-brand-700), var(--ux-brand-900))" }}>
         <div className="min-w-0 flex-1">
           <p className="text-[12px] font-semibold uppercase tracking-[0.08em]"
-             style={{ color: "rgb(255 255 255 / 0.72)" }}>
+             style={{ color: ON_BRAND_2 }}>
             Your balance
           </p>
           {/* tabular-nums so the figure does not jitter as it changes */}
-          <p className="mt-0.5 text-[26px] font-extrabold leading-none text-white [font-variant-numeric:tabular-nums]">
+          <p className="mt-0.5 text-[28px] font-bold leading-none [font-variant-numeric:tabular-nums]"
+             style={{ color: ON_BRAND }}>
             {formatRupees(earnings.money.balance_minor)}
           </p>
         </div>
@@ -159,7 +174,7 @@ export function MobileHome() {
         */}
         {earnings.money.earned_this_month_minor > 0 && (
           <span className="flex shrink-0 items-center gap-1 rounded-full px-2.5 py-1 text-[12px] font-bold"
-                style={{ background: "rgb(255 255 255 / 0.16)", color: "#fff" }}>
+                style={{ background: "color-mix(in srgb, var(--ux-on-brand) 16%, transparent)", color: ON_BRAND }}>
             <I name="TrendingUp" className="h-3.5 w-3.5" sw={2.4} />
             {formatRupees(earnings.money.earned_this_month_minor)} this month
           </span>
@@ -167,29 +182,47 @@ export function MobileHome() {
       </TransitionLink>
       )}
 
-      {/* ── the launcher ────────────────────────────────────────────────── */}
       {/*
-        Four across, icon over label — the shape of every app launcher, and the
-        reason is that it is scannable by picture alone. That matters more here
-        than in most apps: a woman who reads slowly should be able to find "the
-        money one" without reading, and the label is there to confirm rather
-        than to inform.
+        ── what used to be a six-tile launcher ──────────────────────────────
+
+        It was Courses, Mentors, Find work, Your wallet, Circles and Ask Sakhi,
+        four across, and the argument for it was accessibility: icon over
+        label, findable by picture for a woman who reads slowly.
+
+        The argument does not survive checking where those tiles went. Five of
+        the six are already in the tab bar pinned to the bottom of every
+        screen — Courses and Mentors are inside Learn, Find work inside Work,
+        Your wallet inside Earn, Circles inside Circle — and the tab bar is
+        also icon-over-label, also findable by picture, and always there rather
+        than only at the top of Home. So the grid was the same navigation a
+        second time, in the one place you have to scroll back to reach.
+
+        Ask Sakhi was the exception: nothing else on a phone reaches her. So
+        she keeps a row of her own, as content rather than as a sixth of a
+        navigation grid — which is also the honest shape for the one thing on
+        this screen that answers back.
       */}
-      <nav aria-label="Quick actions" className="mt-4 grid grid-cols-4 gap-1 px-2">
-        {QUICK_ACTIONS.slice(0, 8).map((q) => (
-          <TransitionLink key={q.href} href={q.href}
-            className="ux-sq flex flex-col items-center gap-1.5 rounded-[14px] px-1 py-3">
-            <span className="grid h-[46px] w-[46px] place-items-center rounded-[15px]"
-                  style={{ background: `var(${q.tint})` }}>
-              <I name={q.icon} className="h-[21px] w-[21px]" sw={1.9} style={{ color: `var(${q.ink})` }} />
-            </span>
-            <span className="w-full truncate text-center text-[12px] font-semibold leading-tight"
-                  style={{ color: "var(--ux-ink-2)" }}>
-              {q.label}
-            </span>
-          </TransitionLink>
-        ))}
-      </nav>
+      <TransitionLink href="/app/sakhi"
+        className="ux-sq mt-4 flex items-center gap-3 rounded-[12px] p-4"
+        style={{ background: "var(--ux-tint-lilac)",
+                 border: `1px solid color-mix(in srgb, var(--ux-violet) 22%, transparent)` }}>
+        <span className="grid h-[44px] w-[44px] shrink-0 place-items-center rounded-[12px]"
+              style={{ background: "color-mix(in srgb, var(--ux-violet) 16%, transparent)" }}>
+          <I name="Sparkles" className="h-[21px] w-[21px]" sw={2}
+             style={{ color: "var(--ux-violet-ink)" }} />
+        </span>
+        <span className="min-w-0 flex-1">
+          <b className="block text-[17px] font-semibold leading-tight" style={{ color: "var(--ux-ink)" }}>
+            Ask Sakhi
+          </b>
+          <span className="mt-0.5 block text-[13px] leading-snug" style={{ color: "var(--ux-ink-2)" }}>
+            She has read every screen you have.
+          </span>
+        </span>
+        <I name="ChevronRight" className="h-[18px] w-[18px] shrink-0" sw={2.2}
+           style={{ color: "var(--ux-violet-ink)" }} />
+      </TransitionLink>
+
 
       {/*
         Only when there is something to pick up.
@@ -200,9 +233,9 @@ export function MobileHome() {
         every other number on the screen less believable.
       */}
       {journey && (
-        <Section title="Keep going" href="/app/programs" cta="All courses">
+        <Section title="Keep going">
           <TransitionLink href={journey.href}
-            className="ux-sq mx-4 flex items-center gap-3 rounded-[16px] p-3"
+            className="ux-sq flex items-center gap-3 rounded-[12px] p-4"
             style={{ background: "var(--ux-surface)", border: "1px solid var(--ux-line)" }}>
             {journey.cover
               ? <Image src={journey.cover} alt="" width={56} height={56}
@@ -233,11 +266,11 @@ export function MobileHome() {
       )}
 
       {/* ── work waiting for her ────────────────────────────────────────── */}
-      <Section title="Work for you" href="/app/opportunities" cta="See all">
-        <div className="ux-hscroll flex gap-3 px-4">
+      <Section title="Work for you">
+        <div className="ux-hscroll flex gap-3">
           {opportunities.slice(0, 6).map((o: Record<string, unknown>, i: number) => (
             <TransitionLink key={String(o.id ?? i)} href={`/app/opportunities/${String(o.id ?? "")}`}
-              className="ux-sq flex w-[76vw] max-w-[300px] shrink-0 flex-col gap-1 rounded-[16px] p-4"
+              className="ux-sq flex w-[76vw] max-w-[300px] shrink-0 flex-col gap-1 rounded-[12px] p-4"
               style={{ background: "var(--ux-surface)", border: "1px solid var(--ux-line)" }}>
               <p className="truncate text-[15px] font-bold" style={{ color: "var(--ux-ink)" }}>
                 {String(o.title ?? "Opportunity")}
@@ -251,11 +284,11 @@ export function MobileHome() {
       </Section>
 
       {/* ── something to learn next ─────────────────────────────────────── */}
-      <Section title="Suggested for you" href="/app/programs" cta="More">
-        <div className="ux-hscroll flex gap-3 px-4">
+      <Section title="Suggested for you">
+        <div className="ux-hscroll flex gap-3">
           {recommended.slice(0, 6).map((r: Record<string, unknown>, i: number) => (
             <TransitionLink key={String(r.id ?? i)} href={`/app/programs/${String(r.id ?? "")}`}
-              className="ux-sq w-[64vw] max-w-[240px] shrink-0 overflow-hidden rounded-[16px]"
+              className="ux-sq w-[64vw] max-w-[240px] shrink-0 overflow-hidden rounded-[12px]"
               style={{ background: "var(--ux-surface)", border: "1px solid var(--ux-line)" }}>
               {/* A catalogue entry may have no cover — an admin has to upload
                   one. A tinted block with the category on it beats a broken
@@ -268,14 +301,14 @@ export function MobileHome() {
                         style={{ background: "var(--ux-brand-tint-2)" }}>
                     <I name="GraduationCap" className="h-7 w-7" style={{ color: "var(--ux-brand)" }} />
                   </span>}
-              <div className="p-3">
-                <p className="truncate text-[14px] font-bold" style={{ color: "var(--ux-ink)" }}>
+              <div className="p-4">
+                <p className="truncate text-[15px] font-bold" style={{ color: "var(--ux-ink)" }}>
                   {String(r.title ?? "")}
                 </p>
                 {/* The server sends WHY it is here. The mock showed a star
                     rating and a review count; this platform collects neither,
                     so those numbers were decoration shaped like evidence. */}
-                <p className="mt-0.5 truncate text-[12px]" style={{ color: "var(--ux-muted)" }}>
+                <p className="mt-0.5 truncate text-[13px]" style={{ color: "var(--ux-muted)" }}>
                   {String(r.reason ?? r.category ?? "")}
                 </p>
               </div>
@@ -300,20 +333,16 @@ function HomeSkeleton() {
   return (
     <div className="lg:hidden" aria-busy="true" aria-live="polite">
       <span className="sr-only">Loading your home screen</span>
-      <div className="px-4 pb-3 pt-1">
+      <div className="pb-3 pt-1">
         <div className="ux-shimmer h-3 w-24" style={bar} />
         <div className="ux-shimmer mt-2 h-7 w-32" style={bar} />
       </div>
-      <div className="ux-shimmer mx-4 h-[86px]" style={{ ...bar, borderRadius: 16 }} />
-      <div className="mt-4 grid grid-cols-4 gap-1 px-2">
-        {Array.from({ length: 8 }).map((_, i) => (
-          <div key={i} className="flex flex-col items-center gap-1.5 px-1 py-3">
-            <div className="ux-shimmer h-[46px] w-[46px]" style={{ ...bar, borderRadius: 15 }} />
-            <div className="ux-shimmer h-2.5 w-12" style={bar} />
-          </div>
-        ))}
-      </div>
-      <div className="mt-6 px-4">
+      <div className="ux-shimmer h-[86px]" style={{ ...bar, borderRadius: 16 }} />
+      {/* The Ask Sakhi row. This was still an eight-tile grid — the launcher
+          that was taken off Home — so the screen jumped from one layout to
+          another the moment it loaded. */}
+      <div className="ux-shimmer mt-4 h-[78px]" style={{ ...bar, borderRadius: 12 }} />
+      <div className="mt-6">
         <div className="ux-shimmer h-3 w-28" style={bar} />
         <div className="ux-shimmer mt-3 h-[86px] w-full" style={{ ...bar, borderRadius: 16 }} />
       </div>
@@ -329,12 +358,28 @@ function HomeSkeleton() {
  * weight down the page is what makes a phone screen read as a dashboard.
  */
 function Section({ title, href, cta, children }: {
-  title: string; href: string; cta: string; children: React.ReactNode;
+  title: string;
+  /*
+    Optional, and usually absent now.
+
+    Measured on this screen: three links to /app/programs, two to
+    /app/opportunities and two to /app/wallet. The launcher already carries
+    every one of those destinations as a tile, and the tiles are the ACCESSIBLE
+    path — icon over label, findable by picture for a woman who reads slowly,
+    which is the whole reason that grid exists. A second text link to the same
+    place three rows below it is not a shortcut, it is the same door drawn
+    twice with the page in between.
+
+    So the heading keeps its action only where the launcher does not already go
+    there. Everything else is reached by the tile.
+  */
+  href?: string; cta?: string;
+  children: React.ReactNode;
 }) {
   return (
     <section className="mt-6">
-      <div className="mb-2.5 flex items-baseline justify-between px-4">
-        <h2 className="text-[13px] font-bold uppercase tracking-[0.07em]" style={{ color: "var(--ux-muted)" }}>
+      <div className="mb-2 flex items-baseline justify-between px-4">
+        <h2 className="text-[12px] font-semibold uppercase tracking-[0.07em]" style={{ color: "var(--ux-muted)" }}>
           {title}
         </h2>
         {/*
@@ -347,11 +392,13 @@ function Section({ title, href, cta, children }: {
           silencing the audit rather than answering it. The negative margin
           keeps it optically aligned with the heading beside it.
         */}
+        {href && cta && (
         <TransitionLink href={href}
                         className="-me-2 inline-flex min-h-[44px] items-center px-2 text-[13px] font-semibold"
                         style={{ color: "var(--ux-brand)" }}>
           {cta}
         </TransitionLink>
+        )}
       </div>
       {children}
     </section>

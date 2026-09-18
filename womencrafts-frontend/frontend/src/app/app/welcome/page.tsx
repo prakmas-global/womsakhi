@@ -14,6 +14,8 @@ import { useAuth } from "@/context/AuthContext";
 import { Btn, IconTile } from "@/components/ux/kit";
 import { OnboardAside, OnboardFrame } from "@/components/ux/onboard/Frame";
 import { useT } from "@/i18n";
+import { ListGroup } from "@/components/ux/mobile/ListRow";
+import { PhoneRow, phonePrimary, phoneSecondary } from "@/components/ux/PhoneParts";
 
 /**
  * A picture for each thing she can ask for.
@@ -191,18 +193,21 @@ export default function WelcomePage() {
               {problem}
             </p>
           )}
-          <div className="flex items-center justify-between gap-4">
+          {/* On a phone: Next full width on top, Back under it, and "Skip" as
+              a quiet line at the bottom — the thumb reaches the one it wants. */}
+          <div className="flex flex-col-reverse gap-3 lg:flex-row lg:items-center lg:justify-between lg:gap-4">
             <button
               onClick={() => void leave(false)}
               disabled={working}
-              className="ux-press -my-1 py-1 text-xsm font-medium"
+              className="ux-press -my-1 py-1 text-xsm font-medium max-lg:my-0 max-lg:min-h-[44px]"
               style={{ color: "var(--ux-muted)", opacity: working ? 0.55 : 1 }}
             >{tr("welcome.skipForNow")}</button>
-            <div className="flex items-center gap-2.5">
+            <div className="flex flex-col-reverse gap-2.5 lg:flex-row lg:items-center">
               {step > 1 && (
-                <Btn variant="outline" icon="ArrowLeft" disabled={working} onClick={() => setStep(step - 1)}>Back</Btn>
+                <Btn variant="outline" icon="ArrowLeft" disabled={working} className={phoneSecondary}
+                     onClick={() => setStep(step - 1)}>Back</Btn>
               )}
-              <Btn variant="primary"
+              <Btn variant="primary" className={phonePrimary}
                    icon={working ? "Loader" : undefined}
                    iconEnd={working ? undefined : "ArrowRight"}
                    disabled={working}
@@ -216,7 +221,19 @@ export default function WelcomePage() {
     >
       {step === 1 && (
         NEEDS.length ? (
-          <div className="ux-deck grid grid-cols-2 gap-[12px]">
+          <>
+          {/* Any number of them: on a phone, a grouped list with a checkmark on each. */}
+          <ListGroup className="lg:hidden">
+            {NEEDS.map((n) => {
+              const on = picked.includes(n.key);
+              const look = NEED_LOOK[n.key] ?? { icon: "Star", tint: "--ux-tint-lilac", ink: "--ux-brand" };
+              return (
+                <PhoneRow key={n.key} icon={look.icon} tint={look.tint} ink={look.ink} title={n.label} meta={n.hint}
+                          selected={on} onClick={() => setPicked((s) => (on ? s.filter((x) => x !== n.key) : [...s, n.key]))} />
+              );
+            })}
+          </ListGroup>
+          <div className="ux-deck hidden grid-cols-2 gap-[12px] lg:grid">
             {NEEDS.map((n, i) => {
               const on = picked.includes(n.key);
               const look = NEED_LOOK[n.key] ?? { icon: "Star", tint: "--ux-tint-lilac", ink: "--ux-brand" };
@@ -242,6 +259,7 @@ export default function WelcomePage() {
               );
             })}
           </div>
+          </>
         ) : (
           <p className="text-sm leading-relaxed" style={{ color: "var(--ux-muted)" }}>
             {source === "loading"
@@ -252,7 +270,14 @@ export default function WelcomePage() {
       )}
 
       {step === 2 && (
-        <div className="flex flex-wrap gap-2.5">
+        <ListGroup className="lg:hidden">
+          {TRADES.map((t) => (
+            <PhoneRow key={t} title={t} selected={trade === t} onClick={() => setTrade(t)} />
+          ))}
+        </ListGroup>
+      )}
+      {step === 2 && (
+        <div className="hidden flex-wrap gap-2.5 lg:flex">
           {TRADES.map((t) => {
             const on = trade === t;
             return (
@@ -275,7 +300,15 @@ export default function WelcomePage() {
       )}
 
       {step === 3 && (
-        <div className="ux-deck space-y-[12px]">
+        <ListGroup className="lg:hidden">
+          {HOURS.map(([label, note, icon]) => (
+            <PhoneRow key={label} icon={icon} tint="--ux-tint-lilac" ink="--ux-brand" title={label} meta={note}
+                      selected={hours === label} onClick={() => setHours(label)} />
+          ))}
+        </ListGroup>
+      )}
+      {step === 3 && (
+        <div className="ux-deck hidden space-y-[12px] lg:block">
           {HOURS.map(([label, note, icon], i) => {
             const on = hours === label;
             return (

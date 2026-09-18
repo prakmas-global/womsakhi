@@ -118,7 +118,7 @@ export function Area({ value, onChange, placeholder, max, rows = 3, label }: {
         maxLength={max}
         onChange={(e) => onChange(e.target.value)}
         placeholder={placeholder}
-        className="ux-sq w-full rounded-[12px] border px-3.5 py-3 text-xsm leading-relaxed outline-none"
+        className="ux-sq w-full rounded-[12px] border px-4 py-3 text-xsm leading-relaxed outline-none lg:px-3.5"
         style={{ borderColor: v("--ux-line"), background: v("--ux-surface"), color: v("--ux-ink") }}
       />
       <span className="mt-1 block text-end text-2xs" style={{ color: v("--ux-faint") }}>
@@ -133,7 +133,7 @@ export function Text({ value, onChange, placeholder, label, prefix, type = "text
   prefix?: string; type?: string; max?: number;
 }) {
   return (
-    <span className="flex min-w-0 flex-1 items-center gap-2 rounded-[12px] border px-3.5"
+    <span className="flex min-w-0 flex-1 items-center gap-2 rounded-[12px] border px-4 lg:px-3.5"
           style={{ borderColor: v("--ux-line"), background: v("--ux-surface") }}>
       {prefix && <span className="shrink-0 text-xsm" style={{ color: v("--ux-muted") }}>{prefix}</span>}
       <input

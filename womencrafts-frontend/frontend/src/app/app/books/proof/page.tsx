@@ -4,7 +4,8 @@ import { useCallback, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 
 import { HomeShell } from "@/components/ux/home/HomeShell";
-import { Back, Btn, Card, I, IconTile, Pill, SectionHead, Stat, v } from "@/components/ux/kit";
+import { Back, Btn, Card, I, IconTile, Pill, Stat, v } from "@/components/ux/kit";
+import { EYEBROW, GROUP, Section } from "@/components/ux/earn/phone";
 import { formatRupees } from "@/components/ux/kit";
 import { MONTHS, PROOF_USES, bestMonth, leanMonth, yearMinor } from "@/components/ux/books/data";
 import { useT } from "@/i18n";
@@ -64,12 +65,12 @@ export default function ProofPage() {
 
   return (
     <HomeShell active="/app/books">
-      <div className="flex flex-col gap-5">
+      <div className="flex flex-col gap-6 lg:gap-5">
         <Back to="/app/books" label={tr("booksProof.backToYourBooks")} />
 
         <header>
-          <p className="text-2xs font-extrabold uppercase tracking-[0.2em]" style={{ color: v("--ux-brand") }}>{tr("booksProof.proofOfIncome")}</p>
-          <h1 className="mt-2 text-[clamp(1.5rem,3.2vw,2.125rem)] font-extrabold leading-[1.1] tracking-[-0.035em]"
+          <p className={EYEBROW}>{tr("booksProof.proofOfIncome")}</p>
+          <h1 className="ux-screen-title mt-2 text-[clamp(1.5rem,3.2vw,2.125rem)] font-extrabold leading-[1.1] tracking-[-0.035em]"
               style={{ color: v("--ux-ink") }}>{tr("booksProof.writtenProofThatYouEarn")}</h1>
           <p className="mt-1.5 max-w-[56ch] text-sm leading-relaxed" style={{ color: v("--ux-muted") }}>
             No payslip, no filings, money from thirty different people — and still nothing to show a
@@ -119,13 +120,13 @@ export default function ProofPage() {
 
         {/* What it is for changes what goes in it */}
         <div>
-          <SectionHead title={tr("booksProof.whatDoYouNeedItFor")}
-                       sub={tr("booksProof.theStatementIsWrittenDifferentlyDe")} icon="FileText" />
-          <div className="grid gap-3 sm:grid-cols-2">
+          <Section title={tr("booksProof.whatDoYouNeedItFor")}
+                   sub={tr("booksProof.theStatementIsWrittenDifferentlyDe")} icon="FileText" />
+          <div className={`grid gap-3 sm:grid-cols-2 ${GROUP}`}>
             {PROOF_USES.map((u) => (
               <button key={u.id} type="button" onClick={() => { setUse(u.id); setMade(false); }}
                       aria-pressed={use === u.id}
-                      className="ux-press ux-sq flex items-start gap-3.5 rounded-[var(--ux-r-card)] border p-4 text-left"
+                      className="ux-press ux-sq flex items-start gap-3.5 rounded-[var(--ux-r-card)] border p-4 text-left max-lg:rounded-none max-lg:border-x-0 max-lg:border-b-0 max-lg:border-[color:var(--ux-line)]! max-lg:first:border-t-0"
                       style={{
                         borderColor: v(use === u.id ? "--ux-brand" : "--ux-line"),
                         background: v(use === u.id ? "--ux-brand-tint" : "--ux-surface"),
@@ -148,10 +149,10 @@ export default function ProofPage() {
 
         {/* The statement */}
         <Card pad={0} style={{ overflow: "hidden" }}>
-          <div className="px-5 py-4" style={{ background: v("--ux-surface-2") }}>
-            <p className="text-2xs font-extrabold uppercase tracking-[0.14em]" style={{ color: v("--ux-muted") }}>{tr("booksProof.whatItWillSay")}</p>
+          <div className="px-4 py-4 lg:px-5" style={{ background: v("--ux-surface-2") }}>
+            <p className="text-xs font-semibold uppercase tracking-[0.06em] lg:text-2xs lg:font-extrabold lg:tracking-[0.14em]" style={{ color: v("--ux-muted") }}>{tr("booksProof.whatItWillSay")}</p>
           </div>
-          <div className="px-5 py-5">
+          <div className="p-4 lg:px-5 lg:py-5">
             <p className="text-base font-bold" style={{ color: v("--ux-ink") }}>{tr("booksProof.priyaSharmaStatementOfEarnings")}</p>
             <p className="mt-1 text-xs" style={{ color: v("--ux-muted") }}>
               April to September · prepared for {chosen?.label.toLowerCase()}
@@ -171,7 +172,7 @@ export default function ProofPage() {
                 </li>
               ))}
             </ul>
-            <div className="mt-4 flex items-start gap-2.5 rounded-[12px] px-3 py-2.5"
+            <div className="mt-4 flex items-start gap-2.5 rounded-[12px] px-4 py-3 lg:px-3 lg:py-2.5"
                  style={{ background: v("--ux-brand-tint") }}>
               <I name="ShieldCheck" className="mt-[2px] h-[15px] w-[15px] shrink-0" style={{ color: v("--ux-brand") }} />
               <p className="text-xs leading-relaxed" style={{ color: v("--ux-ink-2") }}>
@@ -180,12 +181,12 @@ export default function ProofPage() {
               </p>
             </div>
           </div>
-          <div className="flex flex-wrap gap-2 px-5 pb-5">
-            <Btn icon="FileText" onClick={make}>{made ? "Made" : "Make the statement"}</Btn>
+          <div className="flex flex-wrap gap-2 px-4 pb-4 lg:px-5 lg:pb-5">
+            <Btn icon="FileText" onClick={make} className="ux-action-primary">{made ? "Made" : "Make the statement"}</Btn>
             {made && (
               <>
-                <Btn variant="outline" icon="Share2" onClick={shareStatement}>{tr("booksProof.sendIt")}</Btn>
-                <Btn variant="ghost" icon="Printer" onClick={() => window.print()}>Print</Btn>
+                <Btn variant="outline" icon="Share2" onClick={shareStatement} className="max-lg:w-full">{tr("booksProof.sendIt")}</Btn>
+                <Btn variant="ghost" icon="Printer" onClick={() => window.print()} className="max-lg:w-full">Print</Btn>
               </>
             )}
           </div>

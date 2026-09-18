@@ -367,6 +367,12 @@ const hi: Catalog = {
 
 
 
+  // NOT yet reviewed — added with the phone back control, 2026-09-13. Kept
+  // out of the reviewed block below so the date on that heading stays true.
+  // Without it a Hindi reader gets "Back to होम", half in each script, because
+  // every ch.* label around it IS translated.
+  "ch.back.to": "{name} पर वापस",
+
   // navigation chrome — reviewed 2026-09-09
   "ch.mode.home.label": "होम",
   "ch.today.label": "आज",

@@ -7,6 +7,8 @@ import { HomeShell } from "@/components/ux/home/HomeShell";
 import { Back, Btn, Card, I, IconTile, Pill, SectionHead, v } from "@/components/ux/kit";
 import { CARRIES, MOVE_REASONS } from "@/components/ux/together/data";
 import { useT } from "@/i18n";
+import { ListGroup } from "@/components/ux/mobile/ListRow";
+import { GroupLabel, PhoneRow, PhoneTitle, phonePrimary } from "@/components/ux/PhoneParts";
 
 /**
  * If you move.
@@ -41,9 +43,14 @@ export default function MovePage() {
   return (
     <HomeShell active="/app/together">
       <div className="flex flex-col gap-5">
-        <Back to="/app/together" label={tr("togetherMove.backToTogether")} />
+        {/* The top bar carries the way back on a phone; this one is the desktop's. */}
+        <div className="hidden lg:flex">
+          <Back to="/app/together" label={tr("togetherMove.backToTogether")} />
+        </div>
 
-        <header>
+        <PhoneTitle title={tr("togetherMove.ifYouMove")} sub={tr("togetherMove.whatYouBuiltComesWithYou")}
+                    note="Most women move at least once, and usually lose their customers, their circle and everyone who would vouch for them on the same day. It does not have to work like that." />
+        <header className="hidden lg:block">
           <p className="text-2xs font-extrabold uppercase tracking-[0.2em]" style={{ color: v("--ux-brand") }}>{tr("togetherMove.ifYouMove")}</p>
           <h1 className="mt-2 text-[clamp(1.5rem,3.2vw,2.125rem)] font-extrabold leading-[1.1] tracking-[-0.035em]"
               style={{ color: v("--ux-ink") }}>{tr("togetherMove.whatYouBuiltComesWithYou")}</h1>
@@ -54,9 +61,20 @@ export default function MovePage() {
         </header>
 
         <div>
-          <SectionHead title={tr("togetherMove.whatIsTakingYou")} sub={tr("togetherMove.itChangesWhatWePrepareAnd")}
-                       icon="MapPin" />
-          <div className="grid gap-3 sm:grid-cols-2">
+          <GroupLabel sub={tr("togetherMove.itChangesWhatWePrepareAnd")}>{tr("togetherMove.whatIsTakingYou")}</GroupLabel>
+          <div className="hidden lg:block">
+            <SectionHead title={tr("togetherMove.whatIsTakingYou")} sub={tr("togetherMove.itChangesWhatWePrepareAnd")}
+                         icon="MapPin" />
+          </div>
+          {/* One of four, so on a phone it is a list with a checkmark. */}
+          <ListGroup className="lg:hidden">
+            {MOVE_REASONS.map((r) => (
+              <PhoneRow key={r.id} icon={r.icon} tint="--ux-surface-2" ink="--ux-brand"
+                        title={r.label} meta={r.note} selected={reason === r.id}
+                        onClick={() => { setReason(r.id); setPrepared(false); }} />
+            ))}
+          </ListGroup>
+          <div className="hidden gap-3 sm:grid-cols-2 lg:grid">
             {MOVE_REASONS.map((r) => (
               <button key={r.id} type="button" onClick={() => { setReason(r.id); setPrepared(false); }}
                       aria-pressed={reason === r.id}
@@ -103,9 +121,29 @@ export default function MovePage() {
         )}
 
         <div>
-          <SectionHead title={tr("togetherMove.whatTravelsWithYou")} sub={tr("togetherMove.yoursAndPortableNotOursTo")}
-                       icon="Briefcase" chip={String(CARRIES.length)} />
-          <div className="flex flex-col gap-2.5">
+          <GroupLabel sub={tr("togetherMove.yoursAndPortableNotOursTo")} count={CARRIES.length}>{tr("togetherMove.whatTravelsWithYou")}</GroupLabel>
+          <div className="hidden lg:block">
+            <SectionHead title={tr("togetherMove.whatTravelsWithYou")} sub={tr("togetherMove.yoursAndPortableNotOursTo")}
+                         icon="Briefcase" chip={String(CARRIES.length)} />
+          </div>
+          <ListGroup className="lg:hidden">
+            {CARRIES.map((c) => (
+              <PhoneRow key={c.id} icon={c.icon}
+                        tint={c.automatic ? "--ux-tint-green" : "--ux-tint-amber"}
+                        ink={c.automatic ? "--ux-green-ink" : "--ux-amber-ink"}
+                        title={
+                          <span className="flex flex-wrap items-center gap-2">
+                            {c.label}
+                            {!c.automatic && <Pill tone="orange" size="sm">{tr("togetherMove.youAskForThisOne")}</Pill>}
+                          </span>
+                        }
+                        meta={c.detail}
+                        trailing={c.automatic
+                          ? <I name="Check" className="mt-1 h-[16px] w-[16px] shrink-0" style={{ color: v("--ux-green-ink") }} sw={2.8} />
+                          : undefined} />
+            ))}
+          </ListGroup>
+          <div className="hidden flex-col gap-2.5 lg:flex">
             {CARRIES.map((c) => (
               <Card key={c.id} pad={16}>
                 <div className="flex items-center gap-3.5">
@@ -139,7 +177,7 @@ export default function MovePage() {
                 any document here.
               </p>
             </div>
-            <Btn disabled={!reason || prepared} onClick={prepare}>
+            <Btn disabled={!reason || prepared} onClick={prepare} className={phonePrimary}>
               {prepared ? "Ready" : "Get me ready"}
             </Btn>
           </div>

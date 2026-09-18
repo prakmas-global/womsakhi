@@ -5,9 +5,10 @@ import Link from "next/link";
 import * as Icons from "@/components/ux/icons";
 
 import {Back, ActionBtn, Card, EmptyState, IconTile, Pill,
-  SectionHead, SourceNote, Tabs, downloadCsv, escapeHtml, letterhead,
+  SourceNote, Tabs, downloadCsv, escapeHtml, letterhead,
   printDocument
 } from "@/components/ux/kit";
+import { Section } from "@/components/ux/earn/phone";
 import { HomeShell } from "@/components/ux/home/HomeShell";
 import { useMe } from "@/components/ux/me";
 import { rupeesExact } from "@/components/ux/money/data";
@@ -126,7 +127,7 @@ export default function StatementPage() {
       rail={
         <div className="space-y-[16px]">
           <Card>
-            <SectionHead title={showing} sub={tr("walletStatement.whatABankOrAScheme")} />
+            <Section title={showing} sub={tr("walletStatement.whatABankOrAScheme")} />
             <div className="space-y-3 text-xsm">
               {[["Money in", rupeesExact(inMinor), "--ux-green-ink"],
                 ["Money out", rupeesExact(outMinor), "--ux-ink"],
@@ -179,7 +180,7 @@ export default function StatementPage() {
           </Card>
 
           <Card>
-            <SectionHead title={tr("walletStatement.whoAsksForThis")} icon="Info" />
+            <Section title={tr("walletStatement.whoAsksForThis")} icon="Info" />
             <ul className="space-y-2.5">
               {[
                 "A bank, before a Mudra or business loan.",
@@ -198,12 +199,18 @@ export default function StatementPage() {
     >
       <Back to="/app/wallet" label={tr("walletStatement.yourWallet")} className="mb-4" />
 
-      <div className="mb-[20px] flex items-end justify-between gap-4">
+      <div className="mb-6 flex items-end justify-between gap-4 max-lg:flex-col max-lg:items-stretch lg:mb-[20px]">
         <div>
-          <h1 className="text-2xl font-bold" style={{ color: "var(--ux-ink)" }}>Statement</h1>
+          <h1 className="ux-screen-title text-2xl font-bold" style={{ color: "var(--ux-ink)" }}>Statement</h1>
           <p className="mt-1.5 text-xsm" style={{ color: "var(--ux-muted)" }}>{tr("walletStatement.everyRupeeInAndOutIn")}</p>
         </div>
-        <Tabs items={MONTHS} active={showing} onChange={setMonth} />
+        {/* Six months do not fit a phone as segments, so the strip scrolls —
+            each month at its own width instead of squeezed until "September
+            2026" is cut off inside its own button. `contents` on a desktop,
+            so the strip is laid out there exactly as before. */}
+        <div className="max-lg:[&_[role=tablist]>button]:shrink-0 lg:contents">
+          <Tabs items={MONTHS} active={showing} onChange={setMonth} />
+        </div>
       </div>
 
       <SourceNote source={source} what="entries" />
@@ -213,7 +220,7 @@ export default function StatementPage() {
           <ul>
             {TXNS.map((t, i) => (
               <li key={t.id}>
-                <div className="ux-hov flex items-center gap-3.5 px-[20px] py-3.5"
+                <div className="ux-hov flex items-center gap-3.5 px-4 py-3.5 max-lg:flex-wrap max-lg:gap-y-0 lg:px-[20px]"
                      style={{ borderTop: i ? "1px solid var(--ux-line)" : "none" }}>
                   <IconTile icon={t.icon} tint={t.tint} ink={t.ink} size={40} radius={11} />
                   <div className="min-w-0 flex-1">
@@ -226,7 +233,7 @@ export default function StatementPage() {
                   {t.status === "pending" && <Pill tone="orange" size="sm">{tr("walletStatement.onItsWay")}</Pill>}
                   {/* Exact paise, once: it has to match her bank statement, and a
                       rounded figure beside it only invites doubt. */}
-                  <span className="w-[104px] shrink-0 text-end text-sm font-semibold tabular-nums"
+                  <span className="w-[104px] shrink-0 text-end text-sm font-semibold tabular-nums max-lg:w-auto"
                         style={{ color: t.status === "failed" ? "var(--ux-faint)"
                                   : t.kind === "credit" ? "var(--ux-green-ink)" : "var(--ux-ink)",
                                  textDecoration: t.status === "failed" ? "line-through" : "none" }}>
@@ -234,9 +241,10 @@ export default function StatementPage() {
                   </span>
                   {/* No receipt for money that never moved. */}
                   {t.status === "failed" ? (
-                    <span className="w-[92px] shrink-0 text-end text-xs" style={{ color: "var(--ux-faint)" }}>{tr("walletStatement.noReceipt")}</span>
+                    <span className="w-[92px] shrink-0 text-end text-xs max-lg:ms-[54px] max-lg:w-[calc(100%-54px)] max-lg:text-start max-lg:text-[13px]" style={{ color: "var(--ux-faint)" }}>{tr("walletStatement.noReceipt")}</span>
                   ) : (
                     <ActionBtn variant="ghost" size="sm" icon="Download" doneIcon="Printer"
+                               className="max-lg:ms-[54px] max-lg:w-[calc(100%-54px)] max-lg:justify-start max-lg:px-0"
                                done={COPY.saveAsPdf}
                                act={() => printDocument(`Receipt — ${t.label}`, `
                                  ${letterhead("Receipt", `${ME.name} · ${escapeHtml(t.when)}`)}

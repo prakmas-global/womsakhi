@@ -29,6 +29,10 @@
      above. Every scrollable region ends this far up so the last row of a list
      is never parked under the bar. */
   --tabbar-h: calc(58px + var(--sa-bottom));
+
+  /* The screen's side gutter — the same 20px `Shell` pads content with. The
+     chip rows bleed by it, and it was referenced and never defined. */
+  --ux-pad: 20px;
 }
 
 /* ── The viewport is not 100vh on a phone ────────────────────────────────── */
@@ -291,7 +295,10 @@
     /* A hairline instead of a full border — visible enough to bound the group,
        quiet enough not to draw a box. */
     border: 1px solid var(--ux-line);
-    border-radius: 14px;
+    /* 12, the spec's card radius. It was 14 here while every card and button
+       the screen passes built was 12, so shared parts and screen parts sat
+       side by side two pixels apart — close enough to look like a mistake. */
+    border-radius: 12px;
   }
 
   /* Hover lift is meaningless on a touch screen — there is no hover, and the
@@ -385,8 +392,8 @@
   .ux .ux-action-primary {
     width: 100%;
     min-height: 50px;
-    border-radius: 14px;
-    font-size: 16px;
+    border-radius: 12px;   /* the spec's radius; was 14 */
+    font-size: 17px;   /* was 16 — off the scale; iOS button text is 17 */
     font-weight: 700;
   }
 
@@ -632,7 +639,7 @@
       animation-range: 0 96px;
     }
     @keyframes ux-title-collapse {
-      from { font-size: 30px; opacity: 1; transform: translateY(0); }
+      from { font-size: 34px; opacity: 1; transform: translateY(0); }  /* was 30 — it overrode the 34px title */
       to   { font-size: 20px; opacity: 0; transform: translateY(-10px); }
     }
   }
@@ -721,12 +728,17 @@
        "Early learner" under a member's name was the last text on any screen
        still reading at 11px. */
     --text-3xs: 0.75rem;    /* 10px  -> 12px */
-    /* Secondary. Metadata under a title. */
-    --text-2xs: 0.78125rem; /* 11px  -> 12.5px */
+    /* Secondary. Metadata under a title. 13, iOS footnote — it was 12.5,
+       which is a size no scale has and the audit counted 425 times across
+       the app, every one a half-pixel away from the step beside it. */
+    --text-2xs: 0.8125rem;  /* 11px  -> 13px */
     /* THE body size. 806 uses. This is the one that matters. */
     --text-xsm: 0.9375rem;  /* 13px  -> 15px */
-    /* Emphasised body. */
-    --text-smd: 1rem;       /* 15px  -> 16px */
+    /* Emphasised body — 17, iOS body, not 16. The phone type system at the
+       end of this file sets `text-base` to 17 as well; the two were a pixel
+       apart and read as a mistake rather than a step. Weight carries the
+       emphasis now, which is how native does it. */
+    --text-smd: 1.0625rem;  /* 15px  -> 17px */
   }
 }
 
@@ -856,55 +868,265 @@
    and stops dead at the card's edge. It is not broken — it scrolls perfectly
    — but nothing on screen says so, so it reads as a rendering fault, and a
    woman who does not know to swipe simply never sees steps five to seven.
+   Swept at 390x844, thirty-three rows on twenty-seven of the 110 member
+   screens are shaped like that.
 
    Hiding a scrollbar is right on a phone; hiding the fact that something
-   scrolls is not. The fade is the affordance that replaces the scrollbar:
-   content dissolving at the edge is the universal signal for "there is more
-   this way", and it costs nothing.
+   scrolls is not. Two affordances replace it, and which one she gets depends
+   on what she is holding:
+
+     · a fade at the edge she can still scroll TOWARD. Content dissolving is
+       the universal signal for "there is more this way", and it replaces a
+       hard cut through the middle of a word with a soft one — so it makes the
+       edge MORE legible than clipping did, not less.
+
+     · arrow buttons, but only where a drag is not the natural gesture. See
+       the pointer block below for why they are off on a phone.
 
    Applied to the shapes rather than to a class, so it covers rows written
    before this rule existed and rows written after it — which is the whole
    point, given this pattern appears on screens nobody has looked at yet.
+   `[role="tablist"]` is in the list because `SegmentedControl` becomes a
+   scroller at this width (see the kit block below) and was the one shape the
+   earlier version of this rule missed: nine rows across /app/wallet,
+   /app/family, /app/saved and six more.
+
+   All widths, not just the phone. The previous version of this was inside
+   `@media (max-width: 1023px)`, so a 1024px laptop window — where the
+   scrollbar is ALSO hidden — got nothing at all.
    ═══════════════════════════════════════════════════════════════════════════ */
 
-@media (max-width: 1023px) {
-  .ux .ux-noscroll,
-  .ux .ux-scroll-x,
-  .ux .ux-hscroll,
-  .ux [data-earn-chips],
-  .ux .ux-chiprow {
-    -webkit-mask-image: linear-gradient(to right, #000 calc(100% - 28px), transparent);
-    mask-image: linear-gradient(to right, #000 calc(100% - 28px), transparent);
-  }
+/*
+  Registered, so they can be INTERPOLATED.
 
+  An unregistered custom property animates discretely: it would jump from 0 to
+  the full width at the halfway point of the scroll, which reads as a flicker
+  rather than a fade. Registering them as `<length>` is what buys the ramp.
+*/
+@property --ux-fade-s { syntax: "<length>"; inherits: false; initial-value: 0px; }
+@property --ux-fade-e { syntax: "<length>"; inherits: false; initial-value: 0px; }
+
+/* The gradient runs start→end, which is right→left in Urdu and Arabic. */
+.ux { --ux-fade-to: right; }
+[dir="rtl"] .ux { --ux-fade-to: left; }
+
+.ux :is(.ux-noscroll, .ux-scroll-x, .ux-hscroll, .ux-chiprow,
+        [data-earn-chips], [role="tablist"]) {
+  --ux-fade-w: 32px;
   /*
-    ...but only while there is actually something off the end.
-
-    A row whose content fits should not be faded — a permanently dimmed right
-    edge on a row of two chips looks like a bug of its own. `animation-timeline:
-    scroll(self inline)` is zero-JS and runs on the compositor: the mask is
-    removed at both ends of the scroll and present in between. Where the
-    timeline is unsupported the static fade above stands, which is the safe
-    direction to fail in.
+    Both ends start at zero — NO fade — and the scroll timeline below puts
+    them back. That is the whole correctness argument: a row whose content
+    fits has no scroll range, an inactive timeline applies no animation
+    effect, and these initial values stand. The previous version faded the
+    right edge of every row unconditionally, including rows of two chips that
+    fit perfectly, which is a lie about what is there.
   */
-  @supports (animation-timeline: scroll(self inline)) {
-    .ux .ux-noscroll,
-    .ux .ux-scroll-x,
-    .ux .ux-hscroll,
-    .ux [data-earn-chips],
-    .ux .ux-chiprow {
-      animation: ux-edge-fade steps(1) both;
-      animation-timeline: scroll(self inline);
+  --ux-fade-s: 0px;
+  --ux-fade-e: 0px;
+  /*
+    A mask, not a coloured gradient, and deliberately.
+
+    The requirement is that the fade is the surface BEHIND the row, in light
+    and in dark. A mask does not approximate that colour — it dissolves to the
+    real pixels, so it is exactly right on the cream canvas, on a `.ux-card`,
+    on `--ux-surface-2`, and on the gradient hero on /app/opportunities, where
+    any single token colour would paint a visible band. It is also the only
+    mechanism that can draw over the content of a scroller without a child
+    element: a pseudo-element of a scroll container scrolls away with the
+    content, and wrapping 33 rows in markup is not a central fix.
+  */
+  -webkit-mask-image: linear-gradient(to var(--ux-fade-to),
+    transparent 0, #000 var(--ux-fade-s),
+    #000 calc(100% - var(--ux-fade-e)), transparent 100%);
+  mask-image: linear-gradient(to var(--ux-fade-to),
+    transparent 0, #000 var(--ux-fade-s),
+    #000 calc(100% - var(--ux-fade-e)), transparent 100%);
+}
+
+/*
+  ...and the fade follows the thumb.
+
+  Two animations on one timeline, each scoped to its own end of the scroll:
+  the start-side fade grows over the first 32px of travel, the end-side one
+  shrinks over the last 32px. So at rest she sees a fade on the end only — the
+  side that has more — in the middle she sees both, because both are true, and
+  at the far end only the start side. `scroll(self inline)` is zero-JS and
+  runs off the main thread; there is no scroll handler anywhere in this.
+*/
+@supports (animation-timeline: scroll(self inline)) {
+  .ux :is(.ux-noscroll, .ux-scroll-x, .ux-hscroll, .ux-chiprow,
+          [data-earn-chips], [role="tablist"]) {
+    animation: ux-fade-start linear both, ux-fade-end linear both;
+    animation-timeline: scroll(self inline), scroll(self inline);
+    animation-range: 0 var(--ux-fade-w), calc(100% - var(--ux-fade-w)) 100%;
+  }
+  @keyframes ux-fade-start {
+    from { --ux-fade-s: 0px; }
+    to   { --ux-fade-s: var(--ux-fade-w); }
+  }
+  @keyframes ux-fade-end {
+    from { --ux-fade-e: var(--ux-fade-w); }
+    to   { --ux-fade-e: 0px; }
+  }
+}
+
+/*
+  No scroll timeline — Firefox today, Safari before 26.
+
+  A static fade on the end side. It is true at rest, which is where a row
+  starts and where she meets it, and it is the safe direction to fail in: the
+  cost is a dimmed edge on a row that happens to fit, the alternative is
+  content nobody can find.
+*/
+@supports not (animation-timeline: scroll(self inline)) {
+  .ux :is(.ux-noscroll, .ux-scroll-x, .ux-hscroll, .ux-chiprow,
+          [data-earn-chips], [role="tablist"]) {
+    --ux-fade-e: 32px;
+  }
+}
+
+/*
+  ── Arrows, and only where a drag is not the gesture ──────────────────────
+
+  NOT on a phone, deliberately. A thumb already drags — that is how every
+  list, every carousel and every home screen she has ever used works — and the
+  fade is enough to say there is something to drag toward. An arrow on a
+  390px row is a 44px opaque disc parked on top of the very chip it is
+  advertising, and it is a second target competing with chips that are already
+  only just clear of the 44px floor. So it is gated on the pointer, not the
+  width: a 900px browser window with a mouse gets arrows, a 900px tablet does
+  not.
+
+  The exception is `prefers-reduced-transparency`, where the fade is off (see
+  below) and the arrows become the only affordance left. There the tap-target
+  cost is worth paying, because the alternative is nothing at all.
+
+  `::scroll-button()` rather than markup or JS: the browser generates the
+  button, gives it a button role, disables it at the end of its travel and
+  refuses to generate it at all for a container that cannot scroll — so it
+  cannot get out of step with the content the way a React mirror of scroll
+  state does. Where it is unsupported there is simply no arrow and the fade
+  stands, which is the graceful direction.
+*/
+@media (hover: hover) and (pointer: fine), (prefers-reduced-transparency: reduce) {
+  @supports selector(::scroll-button(inline-end)) {
+    .ux :is(.ux-noscroll, .ux-scroll-x, .ux-hscroll, .ux-chiprow,
+            [data-earn-chips], [role="tablist"]) {
+      /*
+        The scroll buttons are laid out in the row's PARENT, not inside the
+        row, so `position: absolute` on them resolves against whatever
+        ancestor happens to be positioned — which put them at the edge of the
+        page. Anchoring them to the row fixes that without touching a single
+        parent. `anchor-scope` is what makes it safe with more than one row on
+        a screen: without it every row on the page shares the name `--ux-rail`
+        and the LAST one in the document wins, so /app/earn's three rows piled
+        all six arrows onto the third.
+      */
+      anchor-name: --ux-rail;
+      anchor-scope: --ux-rail;
+      /* The arrow is 44px; the fade widens so the disc sits inside the band
+         that is already dissolving, rather than on top of readable content. */
+      --ux-fade-w: 56px;
+      scroll-behavior: smooth;
     }
-    @keyframes ux-edge-fade {
-      /* at the far right there is nothing more to the right */
-      to {
-        -webkit-mask-image: linear-gradient(to right, transparent, #000 28px);
-        mask-image: linear-gradient(to right, transparent, #000 28px);
-      }
+
+    .ux :is(.ux-noscroll, .ux-scroll-x, .ux-hscroll, .ux-chiprow,
+            [data-earn-chips], [role="tablist"])::scroll-button(inline-start),
+    .ux :is(.ux-noscroll, .ux-scroll-x, .ux-hscroll, .ux-chiprow,
+            [data-earn-chips], [role="tablist"])::scroll-button(inline-end) {
+      position: absolute;
+      position-anchor: --ux-rail;
+      top: anchor(center);
+      translate: 0 -50%;
+      /* The start-side button precedes the row in tree order, and the row
+         paints as if `z-index: 0` because the mask gives it a stacking
+         context — without this the "back" arrow renders underneath the chips. */
+      z-index: 2;
+      width: 44px;
+      height: 44px;
+      display: grid;
+      place-items: center;
+      border-radius: 999px;
+      background: var(--ux-surface);
+      border: 1px solid var(--ux-line);
+      box-shadow: var(--ux-shadow-lift);
+      color: var(--ux-ink-2);
+      /* Not the brand face: `›` is a punctuation glyph and the system stack
+         has it everywhere. */
+      font: 600 20px/1 ui-sans-serif, system-ui, sans-serif;
+      cursor: pointer;
+    }
+
+    .ux :is(.ux-noscroll, .ux-scroll-x, .ux-hscroll, .ux-chiprow,
+            [data-earn-chips], [role="tablist"])::scroll-button(inline-start) {
+      inset-inline-start: anchor(start);
+      /* The string after the slash is the accessible name. */
+      content: "\2039" / "Scroll back";
+    }
+    .ux :is(.ux-noscroll, .ux-scroll-x, .ux-hscroll, .ux-chiprow,
+            [data-earn-chips], [role="tablist"])::scroll-button(inline-end) {
+      inset-inline-end: anchor(end);
+      content: "\203A" / "Scroll forward";
+    }
+
+    /* Nothing further this way: the browser disables it, and a disabled
+       control that still occupies the edge of the row is just clutter. */
+    .ux :is(.ux-noscroll, .ux-scroll-x, .ux-hscroll, .ux-chiprow,
+            [data-earn-chips], [role="tablist"])::scroll-button(*):disabled {
+      visibility: hidden;
+    }
+    .ux :is(.ux-noscroll, .ux-scroll-x, .ux-hscroll, .ux-chiprow,
+            [data-earn-chips], [role="tablist"])::scroll-button(*):hover {
+      background: var(--ux-surface-2);
+    }
+    .ux :is(.ux-noscroll, .ux-scroll-x, .ux-hscroll, .ux-chiprow,
+            [data-earn-chips], [role="tablist"])::scroll-button(*):focus-visible {
+      outline: 2px solid var(--ux-brand);
+      outline-offset: 2px;
     }
   }
+}
 
+/*
+  Reduced transparency: the fade goes.
+
+  The setting means "do not put see-through things over content", and that is
+  exactly what a mask does — it is the one part of this that trades legibility
+  for a signal. So it is removed wholesale, and the arrows above turn on in
+  its place, opaque and on every device. The card and the top bar already do
+  the same thing at `prefers-reduced-transparency` in tokens.css.
+*/
+@media (prefers-reduced-transparency: reduce) {
+  .ux :is(.ux-noscroll, .ux-scroll-x, .ux-hscroll, .ux-chiprow,
+          [data-earn-chips], [role="tablist"]) {
+    -webkit-mask-image: none;
+    mask-image: none;
+    animation: none;
+  }
+}
+
+/*
+  Reduced motion: the SCROLLING stops being animated. The fade stays.
+
+  This is a deliberate reversal of what this file did before, which switched
+  the scroll timeline off and left a fade stuck on one edge. WCAG 2.3.3 is
+  explicit that "motion animation does not include changes of colour, blur or
+  opacity which do not imply movement" — nothing here moves, the gradient stop
+  sits still and only its opacity ramp changes, and the only thing travelling
+  is the content under her own thumb. Turning it off cost the correctness and
+  bought nothing.
+
+  What IS motion is the arrow throwing the row 300px sideways by itself, so
+  that becomes an instant jump.
+*/
+@media (prefers-reduced-motion: reduce) {
+  .ux :is(.ux-noscroll, .ux-scroll-x, .ux-hscroll, .ux-chiprow,
+          [data-earn-chips], [role="tablist"]) {
+    scroll-behavior: auto;
+  }
+}
+
+@media (max-width: 1023px) {
   /*
     The journey stepper's floor comes down.
 
@@ -916,12 +1138,6 @@
   .ux ol.ux-noscroll[class*="min-w-"] {
     min-width: 470px;
   }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  /* The scroll-timeline is motion tied to a gesture; the static fade is not. */
-  .ux .ux-noscroll, .ux .ux-scroll-x, .ux .ux-hscroll,
-  .ux [data-earn-chips], .ux .ux-chiprow { animation: none; }
 }
 
 /* ── Kit controls that never got a phone tier ────────────────────────────── */
@@ -1020,7 +1236,7 @@
   */
   .ux a.ux-sq:not(.ux-tap-exempt),
   .ux a[class*="ux-sq"]:not(.ux-tap-exempt),
-  .ux button[class*="rounded-"]:not(.ux-tap-exempt) {
+  .ux button[class*="rounded-"]:not(.ux-tap-exempt):not([role="switch"]) {
     min-width: 44px;
     min-height: 44px;
   }
@@ -1061,4 +1277,71 @@
   .ux header .whitespace-nowrap.uppercase {
     display: none;
   }
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   THE PHONE TYPE SYSTEM — one scale, three weights, app-wide.
+
+   Measured across all 110 member screens at 390x844 before this block:
+   EIGHTEEN distinct font sizes (12, 12.5, 13, 14, 15, 15.5, 16, 17, 18, 19,
+   20, 22, 24, 26, 28, 30, 36, 56) and SIX weights (400-900). No single screen
+   was badly set; each had invented its own sizes, so side by side nothing
+   lined up. That is most of what separates an app that feels built by one
+   hand from one that feels assembled.
+
+   The scale below is iOS's, because a phone is held at arm's length in bad
+   light and native type is set for exactly that:
+
+       12  caption     13  footnote     15  subhead     17  body / headline
+       20  title 3     24  title 2      28  title 1     34  large title
+
+   Tailwind v4 emits every `text-*` and `font-*` utility as a CSS variable, so
+   remapping the variables here moves every use of that utility on a phone at
+   once — `text-sm` in 634 places, `text-base` in 436 — without touching one
+   component. Arbitrary values (`text-[12.5px]`) do not read a variable; those
+   are fixed at source, screen by screen.
+
+   Two sizes change direction on purpose. 14px and 16px are desktop habits:
+   iOS has no 14 at all, and its body is 17, not 16. Both move UP, because the
+   women this is built for read it on cheap screens outdoors.
+   ═══════════════════════════════════════════════════════════════════════════ */
+@media (max-width: 1023px) {
+  .ux {
+    --text-sm:   15px;   /* was 14 — subhead; iOS has no 14 */
+    --text-base: 17px;   /* was 16 — body; iOS body is 17 */
+    --text-lg:   17px;   /* was 18 — headline; weight carries the step */
+    --text-3xl:  28px;   /* was 30 — title 1 */
+    --text-4xl:  34px;   /* was 36 — large title */
+
+    /* Three weights. 500 and 800/900 were each a different screen's idea of
+       "a bit more" — semibold and bold already say it. */
+    --font-weight-medium:    600;   /* was 500 */
+    --font-weight-extrabold: 700;   /* was 800 */
+    --font-weight-black:     700;   /* was 900 */
+  }
+
+  /* The large title the screen system already names, brought onto the scale. */
+  .ux .ux-screen-title { font-size: 34px; font-weight: 700; letter-spacing: -0.022em; }
+}
+
+/* One card inset on a phone — see `Card` in kit/index.tsx. */
+@media (max-width: 1023px) {
+  .ux { --ux-card-pad-m: 16px; }
+}
+
+/*
+  One way back on a phone, not two.
+
+  39 screens render the kit's in-page `Back` link, and on a phone the top bar
+  now leads with its own back control on every screen that is not a tab root.
+  So those 39 screens showed two back buttons stacked 60px apart — the same
+  control twice, which is the duplication this pass exists to remove.
+
+  Checked before hiding it: none of the 39 is a tab root or an onboarding
+  screen, so every one of them still has the top bar's back. `!important`
+  because `.ux-tap` sets `display` in this same unlayered sheet, which is why
+  a `hidden` utility could not reach it.
+*/
+@media (max-width: 1023px) {
+  .ux .ux-back-inpage { display: none !important; }
 }

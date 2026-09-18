@@ -222,9 +222,13 @@ export function NewMessage({ rows, onPick, full = false }: {
     <div ref={wrap} className={full ? "relative" : "relative"}>
       <button type="button" onClick={() => setOpen((v) => !v)}
               aria-haspopup="menu" aria-expanded={open}
-              className={`ux-press ux-btn-g flex items-center justify-center gap-2 text-xsm font-bold ${
-                full ? "ux-action-primary min-h-[50px] w-full rounded-[14px] text-[16px]"
-                     : "min-h-[46px] rounded-[12px] px-4"}`}
+              /* The docked phone button carries its own 50px / 14 / 17px bold.
+                 Not `.ux-action-primary`: that shared rule sets 16px, which is
+                 off the phone type scale, and it is unlayered, so it beat the
+                 17px beside it. */
+              className={`ux-press ux-btn-g flex items-center justify-center gap-2 font-bold ${
+                full ? "min-h-[50px] w-full rounded-[14px] text-[17px]"
+                     : "min-h-[46px] rounded-[12px] px-4 text-xsm"}`}
               style={{ background: "linear-gradient(96deg, var(--ux-rib-2), var(--ux-rib-3))",
                        color: "var(--ux-on-brand)", boxShadow: "var(--ux-shadow-glow-2)" }}>
         <Icons.Plus className="h-[18px] w-[18px]" />{tr("messages.newMessage")}</button>
@@ -304,7 +308,7 @@ export function Inbox({
           action docked where a thumb reaches rather than floating at the top
           beside a heading. */}
       <section className={`min-h-0 flex-col lg:hidden ${onThread ? "hidden" : "flex"}`}>
-        <label className="ux-comp mb-3 flex h-[44px] items-center gap-2.5 rounded-[12px] px-3"
+        <label className="ux-comp mb-3 flex h-[44px] items-center gap-2.5 rounded-[12px] px-4"
                style={{ background: "var(--ux-surface-2)", border: "1px solid var(--ux-line)" }}>
           <Icons.Search className="h-[17px] w-[17px] shrink-0" style={{ color: "var(--ux-faint)" }} />
           {/*
@@ -315,7 +319,7 @@ export function Inbox({
           <input type="search" value={search} onChange={(e) => setSearch(e.target.value)}
                  placeholder={tr("messages.searchPeopleAndMessages")} aria-label={tr("messages.searchYourMessages")}
                  inputMode="search" enterKeyHint="search" autoComplete="off"
-                 className="w-full bg-transparent text-[16px] outline-none" style={{ color: "var(--ux-ink)" }} />
+                 className="w-full bg-transparent text-[17px] outline-none" style={{ color: "var(--ux-ink)" }} />
         </label>
 
         {/*
@@ -339,7 +343,7 @@ export function Inbox({
             const n = f.value === "all" ? total : counts[f.value] ?? 0;
             return (
               <button key={f.value} type="button" onClick={() => setFilter(f.value)} aria-pressed={on}
-                      className="ux-press flex min-h-[38px] shrink-0 items-center gap-1.5 rounded-full px-3.5 text-[14px] font-semibold"
+                      className="ux-press flex min-h-[38px] shrink-0 items-center gap-1.5 rounded-full px-3.5 text-[15px] font-semibold"
                       style={on
                         ? { background: "linear-gradient(96deg, var(--ux-rib-2), var(--ux-rib-3))", color: "var(--ux-on-brand)" }
                         : { background: "var(--ux-surface)", border: "1px solid var(--ux-line-strong)", color: "var(--ux-ink-2)" }}>

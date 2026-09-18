@@ -27,7 +27,12 @@ export function SettingsPage({
       */}
       <Link
         href="/app/settings"
-        className="ux-hov -ms-2 -my-1 mb-2 inline-flex min-h-[44px] items-center gap-1 py-1 pe-3 ps-2 text-[15px] font-semibold
+        /* `ux-back-inpage` hides this on a phone, where the top bar already
+           leads with a back control. Two backs 60px apart was one of the
+           duplicates this pass removes — and this frame is also used by
+           /app/wallet/withdraw and the shop's item screens, where "More"
+           sent her to SETTINGS. The top bar's back uses the real parent. */
+        className="ux-back-inpage ux-hov -ms-2 -my-1 mb-2 inline-flex min-h-[44px] items-center gap-1 py-1 pe-3 ps-2 text-[15px] font-semibold
                    lg:-ms-0 lg:mb-3.5 lg:min-h-0 lg:gap-1.5 lg:p-0 lg:py-1 lg:text-xsm lg:font-medium"
         style={{ color: "var(--ux-brand)" }}
       >
@@ -75,7 +80,7 @@ export function TextInput(props: React.InputHTMLAttributes<HTMLInputElement>) {
     <input
       aria-label={named ? undefined : (props.placeholder || "Text field")}
       {...props}
-      className="ux-sq h-[48px] w-full rounded-[12px] border px-3.5 text-[16px] outline-none lg:h-[44px] lg:text-sm"
+      className="ux-sq h-[48px] w-full rounded-[12px] border px-4 text-[17px] outline-none lg:h-[44px] lg:px-3.5 lg:text-sm"
       style={{ borderColor: "var(--ux-line-strong)", background: "var(--ux-surface)", color: "var(--ux-ink)" }}
     />
   );

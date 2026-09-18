@@ -4,7 +4,8 @@ import { useCallback } from "react";
 import Link from "next/link";
 
 import { HomeShell } from "@/components/ux/home/HomeShell";
-import { Btn, Card, I, IconTile, SectionHead, Stat, v } from "@/components/ux/kit";
+import { Btn, Card, I, IconTile, Stat, v } from "@/components/ux/kit";
+import { EYEBROW, GROUP, Section } from "@/components/ux/earn/phone";
 import { formatRupees } from "@/components/ux/kit";
 import { apiShopSummary, type ShopSummary } from "@/lib/shop-api";
 import { useResource } from "@/lib/use-resource";
@@ -89,12 +90,11 @@ export default function ShopHub() {
 
   return (
     <HomeShell active="/app/shop">
-      <div className="flex flex-col gap-5">
+      <div className="flex flex-col gap-6 lg:gap-5">
 
         <header className="flex flex-wrap items-end gap-4">
           <div className="min-w-0 flex-1">
-            <p className="text-[13px] font-extrabold uppercase tracking-[0.2em] lg:text-2xs"
-               style={{ color: v("--ux-brand") }}>{tr("shop.yourShops")}</p>
+            <p className={EYEBROW}>{tr("shop.yourShops")}</p>
             {/*
               Her month, from the server, or a dash.
 
@@ -117,7 +117,7 @@ export default function ShopHub() {
                   : "Loading your shop…"}
             </p>
           </div>
-          <Btn variant="outline" icon="Store" href="/app/documents">{tr("shop.whatYouSell")}</Btn>
+          <Btn variant="outline" icon="Store" href="/app/documents" className="max-lg:w-full">{tr("shop.whatYouSell")}</Btn>
         </header>
 
         {/* Three facts the server holds about her shop. No derived money. */}
@@ -142,12 +142,13 @@ export default function ShopHub() {
         </Card>
 
         <div>
-          <SectionHead title="What works today" icon="Sparkles"
+          <Section title="What works today" icon="Sparkles"
                        sub="These do what they say" />
-          <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-3">
+          {/* A phone gets these as one grouped list of destinations. */}
+          <div className={`grid gap-3 md:grid-cols-2 lg:grid-cols-3 ${GROUP}`}>
             {WORKING.map((t) => (
               <Link key={t.href} href={t.href}
-                    className="ux-press ux-sq flex items-start gap-3.5 rounded-[var(--ux-r-card)] border p-4 text-left"
+                    className="ux-press ux-sq flex items-start gap-3.5 rounded-[var(--ux-r-card)] border p-4 text-left max-lg:rounded-none max-lg:border-x-0 max-lg:border-b-0 max-lg:first:border-t-0"
                     style={{ borderColor: v("--ux-line"), background: v("--ux-surface") }}>
                 <IconTile icon={t.icon} tint={t.tint} ink={t.ink} size={42} radius={12} />
                 <div className="min-w-0 flex-1">
@@ -169,12 +170,12 @@ export default function ShopHub() {
           more than a dead link and far more than a fixture.
         */}
         <div>
-          <SectionHead title="Not built yet" icon="Hammer"
+          <Section title="Not built yet" icon="Hammer"
                        sub="Ideas we have written down but not made. Each one explains what you can do yourself in the meantime." />
           <Card pad={0} style={{ overflow: "hidden" }}>
             {NOT_YET.map((t, i) => (
               <Link key={t.href} href={t.href}
-                    className="ux-press flex items-center gap-3.5 px-5 py-4"
+                    className="ux-press flex items-center gap-3.5 px-4 py-4 lg:px-5"
                     style={{ borderTop: i === 0 ? "none" : `1px solid ${v("--ux-line")}` }}>
                 <span className="grid h-[38px] w-[38px] shrink-0 place-items-center rounded-[11px]"
                       style={{ background: v("--ux-surface-2"), color: v("--ux-muted") }}>

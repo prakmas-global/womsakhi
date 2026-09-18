@@ -6,6 +6,7 @@ import Link from "next/link";
 import { HomeShell } from "@/components/ux/home/HomeShell";
 import * as Icons from "@/components/ux/icons";
 import { Back, Btn, Card, DemoNote, EmptyState, IconTile, v } from "@/components/ux/kit";
+import { GROUP, GROUP_ROW } from "@/components/ux/earn/phone";
 import {
   LISTINGS, discountPct, type ListingStatus, type SellerListing,
 } from "@/components/ux/earn/data";
@@ -132,9 +133,9 @@ export default function MyListingsPage() {
     >
       <Back to="/app/documents" label="Your shop" className="mb-4" />
 
-      <div className="mb-5 flex flex-wrap items-start justify-between gap-4">
+      <div className="mb-6 flex flex-wrap items-start justify-between gap-4 lg:mb-5">
         <div className="min-w-0">
-          <h1 className="text-3xl font-extrabold leading-[1.15] tracking-[-0.02em]"
+          <h1 className="ux-screen-title text-3xl font-extrabold leading-[1.15] tracking-[-0.02em]"
               style={{ color: v("--ux-ink") }}>
             What you sell
           </h1>
@@ -142,11 +143,12 @@ export default function MyListingsPage() {
             Everything in your shop, and how each one is doing.
           </p>
         </div>
-        <Btn href="/app/documents/new" icon="Plus">Add product or service</Btn>
+        <Btn href="/app/documents/new" icon="Plus" className="ux-action-primary">Add product or service</Btn>
       </div>
 
       {/* ── The six numbers ──────────────────────────────────────────────── */}
-      <div className="mb-4 grid gap-2.5 sm:grid-cols-3 xl:grid-cols-6">
+      {/* On a phone: one group, a row per number, the figure on the end. */}
+      <div className={`mb-6 grid gap-2.5 sm:grid-cols-3 lg:mb-4 xl:grid-cols-6 ${GROUP}`}>
         {[
           { n: counts.all,     label: "Listings",  icon: "Package",   tint: "--ux-tint-violet", ink: "--ux-violet-ink" },
           { n: counts.active,  label: "Live",      icon: "Radio",     tint: "--ux-tint-green",  ink: "--ux-green-ink" },
@@ -155,14 +157,14 @@ export default function MyListingsPage() {
           { n: totals.views,   label: "Views",     icon: "Eye",       tint: "--ux-tint-blue",   ink: "--ux-blue-ink" },
           { n: totals.orders,  label: "Orders",    icon: "ShoppingBasket", tint: "--ux-tint-pink", ink: "--ux-pink-ink" },
         ].map((s) => (
-          <Card key={s.label} pad={14}>
-            <div className="flex items-center gap-2.5">
+          <Card key={s.label} pad={14} className={`max-lg:py-2.5! ${GROUP_ROW}`}>
+            <div className="flex items-center gap-2.5 max-lg:gap-3">
               <IconTile icon={s.icon} tint={s.tint} ink={s.ink} size={32} radius={9} />
-              <span className="min-w-0">
+              <span className="min-w-0 max-lg:flex max-lg:flex-1 max-lg:flex-row-reverse max-lg:items-center max-lg:justify-between max-lg:gap-3">
                 <span className="block text-lg font-extrabold leading-none" style={{ color: v("--ux-ink") }}>
                   {s.n}
                 </span>
-                <span className="mt-1 block truncate text-2xs" style={{ color: v("--ux-muted") }}>{s.label}</span>
+                <span className="mt-1 block truncate text-2xs max-lg:mt-0 max-lg:text-[15px]" style={{ color: v("--ux-muted") }}>{s.label}</span>
               </span>
             </div>
           </Card>
@@ -184,7 +186,7 @@ export default function MyListingsPage() {
             );
           })}
         </div>
-        <div className="flex min-w-[220px] flex-1 items-center gap-2 rounded-[10px] border px-3 sm:max-w-[280px]"
+        <div className="flex min-w-[220px] flex-1 items-center gap-2 rounded-[12px] border px-4 sm:max-w-[280px] lg:rounded-[10px] lg:px-3"
              style={{ borderColor: v("--ux-line"), background: v("--ux-surface") }}>
           <Icons.Search className="h-[15px] w-[15px] shrink-0" style={{ color: v("--ux-muted") }} />
           <input value={q} onChange={(e) => setQ(e.target.value)}
@@ -219,7 +221,7 @@ export default function MyListingsPage() {
       <DemoNote what="These listings" />
 
       {/* ── Share it ─────────────────────────────────────────────────────── */}
-      <div className="mt-4 flex flex-wrap items-center gap-4 rounded-[16px] p-5"
+      <div className="mt-6 flex flex-wrap items-center gap-4 rounded-[16px] p-4 lg:mt-4 lg:p-5"
            style={{ background: v("--ux-brand-tint") }}>
         <IconTile icon="TrendingUp" tint="--ux-surface" ink="--ux-brand" size={40} radius={12} />
         <div className="min-w-[240px] flex-1">
@@ -230,7 +232,7 @@ export default function MyListingsPage() {
             Send your link to the groups you are already in. That is where the first orders come from.
           </p>
         </div>
-        <Btn href="/app/collect" icon="Share2" iconEnd="ArrowRight">Share my shop</Btn>
+        <Btn href="/app/collect" icon="Share2" iconEnd="ArrowRight" className="max-lg:w-full">Share my shop</Btn>
       </div>
     </HomeShell>
   );
@@ -241,10 +243,12 @@ function Row({ l }: { l: SellerListing }) {
   const s = STATUS[l.status];
   const off = discountPct(l);
   return (
-    <div className="grid gap-3 border-b px-4 py-3.5 last:border-b-0 xl:grid-cols-[minmax(0,3.2fr)_86px_128px_104px_108px_62px_66px_40px] xl:items-center"
+    /* On a phone the eight cells run as ONE wrapped line of facts under the
+       title — two or three lines a row, not eight stacked cells. */
+    <div className="grid gap-3 border-b px-4 py-3.5 last:border-b-0 max-lg:relative max-lg:flex max-lg:flex-wrap max-lg:items-center max-lg:gap-x-3 max-lg:gap-y-2 xl:grid-cols-[minmax(0,3.2fr)_86px_128px_104px_108px_62px_66px_40px] xl:items-center"
          style={{ borderColor: v("--ux-line") }}>
       {/* What it is */}
-      <div className="flex min-w-0 items-center gap-3">
+      <div className="flex min-w-0 items-center gap-3 max-lg:basis-full max-lg:pe-12">
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img src={l.photo} alt="" loading="lazy" decoding="async"
              className="h-[52px] w-[52px] shrink-0 rounded-[10px] object-cover"
@@ -262,7 +266,7 @@ function Row({ l }: { l: SellerListing }) {
 
       {/* Type */}
       <div>
-        <span className="inline-block rounded-[7px] px-2 py-1 text-2xs font-bold capitalize"
+        <span className="inline-block rounded-full px-2.5 py-1 text-2xs font-bold capitalize lg:rounded-[7px] lg:px-2"
               style={{ background: v(l.kind === "product" ? "--ux-tint-violet" : "--ux-tint-blue"),
                        color: v(l.kind === "product" ? "--ux-violet-ink" : "--ux-blue-ink") }}>
           {l.kind}
@@ -305,7 +309,7 @@ function Row({ l }: { l: SellerListing }) {
       </div>
 
       {/* Stock */}
-      <div className="text-xs" style={{ color: v("--ux-ink-2") }}>
+      <div className="text-[13px] lg:text-xs" style={{ color: v("--ux-ink-2") }}>
         {l.stock === null ? (
           <span style={{ color: v("--ux-muted") }}>By request</span>
         ) : l.stock === 0 ? (
@@ -315,14 +319,14 @@ function Row({ l }: { l: SellerListing }) {
         )}
       </div>
 
-      <div className="text-xs" style={{ color: v("--ux-ink-2") }}>
+      <div className="text-[13px] lg:text-xs" style={{ color: v("--ux-ink-2") }}>
         <span className="xl:hidden" style={{ color: v("--ux-muted") }}>Views </span>{l.views}
       </div>
-      <div className="text-xs" style={{ color: v("--ux-ink-2") }}>
+      <div className="text-[13px] lg:text-xs" style={{ color: v("--ux-ink-2") }}>
         <span className="xl:hidden" style={{ color: v("--ux-muted") }}>Orders </span>{l.orders}
       </div>
 
-      <div className="flex justify-start xl:justify-end">
+      <div className="flex justify-start max-lg:absolute max-lg:end-4 max-lg:top-[18px] xl:justify-end">
         <Link href={`/app/documents/${l.kind}/${l.id}`}
               aria-label={`Edit ${l.title}`}
               className="ux-press ux-sq grid h-[34px] w-[34px] place-items-center rounded-[9px]"

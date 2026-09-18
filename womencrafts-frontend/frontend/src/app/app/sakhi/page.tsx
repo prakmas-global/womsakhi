@@ -667,7 +667,7 @@ export default function SakhiPage() {
             onKeyDown={(e) => { if (e.key === "Enter" && renameTo.trim()) void saveRename(); }}
             maxLength={80}
             autoComplete="off"
-            className="mt-2 w-full rounded-[12px] px-3.5 py-3 text-[16px] lg:text-sm"
+            className="mt-2 w-full rounded-[12px] px-3.5 py-3 text-[17px] lg:text-sm"
             style={{
               background: "var(--ux-surface-2)",
               color: "var(--ux-ink)",

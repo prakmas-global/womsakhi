@@ -6,7 +6,9 @@ import * as Icons from "@/components/ux/icons";
 import { useDevicePref } from "@/lib/use-device-pref";
 
 import { Pill } from "@/components/ux/kit";
-import { Card, SectionHead, SettingsPage, Toggle } from "@/components/ux/settings/Frame";
+import { SettingsPage, Toggle } from "@/components/ux/settings/Frame";
+import { PhoneSwitch } from "@/components/ux/PhoneParts";
+import { Group } from "../_parts/Group";
 import { OFFLINE_ITEMS } from "@/components/ux/more/data";
 import { useT } from "@/i18n";
 
@@ -39,11 +41,11 @@ export default function OfflineSettings() {
       title={tr("settingsOffline.workingWithoutSignal")}
       sub={tr("settingsOffline.whatStaysOnYourPhoneWhen")}
     >
-      <Card>
+      <Group inset="form">
         <div className="flex items-center justify-between gap-4">
           <div className="min-w-0">
             <p className="text-xsm font-semibold" style={{ color: "var(--ux-ink)" }}>{tr("settingsOffline.onYourPhoneNow")}</p>
-            <p className="mt-1 text-xs" style={{ color: "var(--ux-muted)" }}>
+            <p className="mt-1 text-[13px] lg:text-xs" style={{ color: "var(--ux-muted)" }}>
               {items.filter((i) => i.on).length} of {items.length} kept offline
             </p>
           </div>
@@ -59,11 +61,12 @@ export default function OfflineSettings() {
             whenOff="Courses download on mobile data too. This can be expensive."
           />
         </div>
-      </Card>
+      </Group>
 
-      <Card>
-        <SectionHead title={tr("settingsOffline.whatToKeep")} sub={tr("settingsOffline.sizesAreWhatItCostsYou")} />
-        <ul className="space-y-1">
+      <Group title={tr("settingsOffline.whatToKeep")} sub={tr("settingsOffline.sizesAreWhatItCostsYou")}>
+        {/* On a phone the items are rows with a hairline between them, like
+            every other settings list; from `lg` they stay as they were. */}
+        <ul className="space-y-1 max-lg:space-y-0 max-lg:divide-y max-lg:divide-[var(--ux-line)]">
           {items.map((i) => (
             <li key={i.id} className="flex items-center gap-3 py-2.5">
               <div className="min-w-0 flex-1">
@@ -73,34 +76,23 @@ export default function OfflineSettings() {
                       no signal, which is when she cannot download them. */}
                   {i.always && <Pill tone="green" size="sm">{tr("settingsOffline.alwaysKept")}</Pill>}
                 </p>
-                <p className="mt-0.5 text-xs" style={{ color: "var(--ux-muted)" }}>
+                <p className="mt-0.5 text-[13px] lg:text-xs" style={{ color: "var(--ux-muted)" }}>
                   {i.size}{i.always ? " · needed when you have no signal" : ""}
                 </p>
               </div>
               {i.always ? (
                 <Icons.Lock className="h-[16px] w-[16px] shrink-0" style={{ color: "var(--ux-faint)" }} />
               ) : (
-                <button
-                  role="switch"
-                  aria-checked={i.on}
-                  aria-label={i.label}
-                  onClick={() => toggle(i.id)}
-                  className="ux-press relative h-[26px] w-[46px] shrink-0 rounded-full transition-colors"
-                  style={{ background: i.on ? "var(--ux-fill)" : "var(--ux-track)" }}
-                >
-                  <span className="absolute top-[3px] h-[20px] w-[20px] rounded-full bg-white"
-                        style={{ insetInlineStart: i.on ? 23 : 3,
-                                 transition: "inset-inline-start var(--ux-t) var(--ux-ease-spring)",
-                                 boxShadow: "0 1px 3px rgba(0,0,0,0.25)" }} />
-                </button>
+                /* The same 46x26 switch, with a 44px target on a phone. */
+                <PhoneSwitch on={i.on} onChange={() => toggle(i.id)} label={i.label} />
               )}
             </li>
           ))}
         </ul>
-      </Card>
+      </Group>
 
-      <Card>
-        <SectionHead title={tr("settingsOffline.whatStillWorksWithNoSignal")} icon="WifiOff" />
+      <Group title={tr("settingsOffline.whatStillWorksWithNoSignal")} icon="WifiOff" inset="form"
+             noteIcon="RefreshCw" note={tr("settingsOffline.anythingYouChangeOfflineIsSent")}>
         <ul className="space-y-2.5">
           {[
             "Seeing your balance and your last payments.",
@@ -114,10 +106,7 @@ export default function OfflineSettings() {
             </li>
           ))}
         </ul>
-        <p className="mt-3.5 flex items-start gap-2.5 rounded-[12px] p-3 text-xs leading-relaxed"
-           style={{ background: "var(--ux-surface-2)", color: "var(--ux-ink-2)" }}>
-          <Icons.RefreshCw className="mt-[1px] h-[14px] w-[14px] shrink-0" style={{ color: "var(--ux-brand)" }} />{tr("settingsOffline.anythingYouChangeOfflineIsSent")}</p>
-      </Card>
+      </Group>
     </SettingsPage>
   );
 }

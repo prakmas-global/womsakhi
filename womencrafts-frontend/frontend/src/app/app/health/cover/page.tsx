@@ -7,6 +7,8 @@ import { HomeShell } from "@/components/ux/home/HomeShell";
 import { Back, Btn, Card, EmptyState, I, IconTile, Pill, SectionHead, Stat, v } from "@/components/ux/kit";
 import { COVER, COVERERS, type CoverDay } from "@/components/ux/wellness/data";
 import { useT } from "@/i18n";
+import { ListGroup } from "@/components/ux/mobile/ListRow";
+import { GroupLabel, PhoneRow, PhoneTitle, phoneFull, phonePrimary } from "@/components/ux/PhoneParts";
 
 /**
  * Cover when you cannot work.
@@ -55,9 +57,16 @@ export default function CoverPage() {
   return (
     <HomeShell active="/app/health">
       <div className="flex flex-col gap-5">
-        <Back to="/app/health" label={tr("healthCover.backToHealth")} />
+        {/* The top bar carries the way back on a phone; this one is the desktop's. */}
+        <div className="hidden lg:flex">
+          <Back to="/app/health" label={tr("healthCover.backToHealth")} />
+        </div>
 
-        <header className="flex flex-wrap items-end gap-4">
+        <PhoneTitle title="Cover" sub={tr("healthCover.aDayOffShouldNotCost")}
+                    note="There is no sick leave when you work for yourself — and a closed stall loses the customer, not just the day. So someone in your circle opens it instead.">
+          <Btn icon="Plus" className={`mt-4 ${phonePrimary}`} onClick={() => setAsking(true)}>{tr("healthCover.iNeedADay")}</Btn>
+        </PhoneTitle>
+        <header className="hidden flex-wrap items-end gap-4 lg:flex">
           <div className="min-w-0 flex-1">
             <p className="text-2xs font-extrabold uppercase tracking-[0.2em]" style={{ color: v("--ux-brand") }}>
               Cover
@@ -107,11 +116,12 @@ export default function CoverPage() {
         {asking && (
           <Card pad={16} style={{ borderColor: v("--ux-brand") }}>
             <SectionHead title={tr("healthCover.whoCanTakeFriday")} sub={tr("healthCover.theySeeTheWorkNeverThe")} icon="Users" />
+            {/* The women who can step in are a list to pick from. */}
             <div className="flex flex-col gap-2.5">
               {COVERERS.map((c) => (
                 <button key={c.id} type="button"
                         onClick={() => accept(open.find((d) => d.state === "asked")?.id ?? "cv2", c.name)}
-                        className="ux-press ux-sq flex items-center gap-3.5 rounded-[12px] border p-3.5 text-left"
+                        className="ux-press ux-sq flex items-center gap-3.5 rounded-[12px] border p-3.5 text-left max-lg:p-4"
                         style={{ borderColor: v("--ux-line"), background: v("--ux-surface") }}>
                   <span className="grid h-[38px] w-[38px] shrink-0 place-items-center rounded-full text-sm font-bold"
                         style={{ background: v("--ux-brand-tint-2"), color: v("--ux-brand") }}>
@@ -127,17 +137,40 @@ export default function CoverPage() {
                 </button>
               ))}
             </div>
-            <Btn size="sm" variant="ghost" full className="mt-2.5" onClick={() => setAsking(false)}>{tr("healthCover.notNow")}</Btn>
+            <Btn size="sm" variant="ghost" full className={`mt-2.5 ${phoneFull}`} onClick={() => setAsking(false)}>{tr("healthCover.notNow")}</Btn>
           </Card>
         )}
 
         <div>
-          <SectionHead title={tr("healthCover.comingUp")} icon="CalendarDays" chip={String(open.length)} />
+          <GroupLabel count={open.length}>{tr("healthCover.comingUp")}</GroupLabel>
+          <div className="hidden lg:block">
+            <SectionHead title={tr("healthCover.comingUp")} icon="CalendarDays" chip={String(open.length)} />
+          </div>
           {open.length === 0 ? (
             <Card><EmptyState icon="CalendarDays" title={tr("healthCover.nothingNeedingCover")}
                               body="When you need a day, ask here. Someone almost always can." /></Card>
           ) : (
-            <div className="flex flex-col gap-2.5">
+            <>
+            <ListGroup className="lg:hidden">
+              {open.map((d) => {
+                const s = STATE[d.state];
+                return (
+                  <PhoneRow key={d.id} icon={d.state === "covered" ? "Check" : "Clock"} tint={s.tint} ink={s.ink}
+                            title={
+                              <span className="flex flex-wrap items-center gap-2">
+                                {d.when}
+                                <span className="rounded-full px-2 py-[2px] text-[12px] font-semibold uppercase tracking-[0.06em]"
+                                      style={{ background: v(s.tint), color: v(s.ink) }}>{s.label}</span>
+                              </span>
+                            }
+                            meta={`${d.what}${d.who ? ` · ${d.who} is doing it` : ""}`}
+                            trailing={d.state === "asked"
+                              ? <Btn size="sm" onClick={() => setAsking(true)}>{tr("healthCover.findSomeone")}</Btn>
+                              : undefined} />
+                );
+              })}
+            </ListGroup>
+            <div className="hidden flex-col gap-2.5 lg:flex">
               {open.map((d) => {
                 const s = STATE[d.state];
                 return (
@@ -160,12 +193,16 @@ export default function CoverPage() {
                 );
               })}
             </div>
+            </>
           )}
         </div>
 
         {past.length > 0 && (
           <div>
-            <SectionHead title="Before" icon="History" chip={String(past.length)} />
+            <GroupLabel count={past.length}>Before</GroupLabel>
+            <div className="hidden lg:block">
+              <SectionHead title="Before" icon="History" chip={String(past.length)} />
+            </div>
             <Card pad={0}>
               <ul className="divide-y" style={{ borderColor: v("--ux-line") }}>
                 {past.map((d) => (

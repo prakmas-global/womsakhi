@@ -8,6 +8,8 @@ import { Back, Btn, Card, EmptyState, I, IconTile, Pill, SectionHead, Stat, v } 
 import { formatRupees } from "@/components/ux/kit";
 import { ASSIST_QUEUE, HELPED, assistEarned, noPhone, type AssistTask, type Helped } from "@/components/ux/together/data";
 import { useT } from "@/i18n";
+import { ListGroup } from "@/components/ux/mobile/ListRow";
+import { GroupLabel, PhoneRow, PhoneTitle } from "@/components/ux/PhoneParts";
 
 /**
  * You run this for them — the growth engine, made a real role.
@@ -50,9 +52,14 @@ export default function AssistPage() {
   return (
     <HomeShell active="/app/together">
       <div className="flex flex-col gap-5">
-        <Back to="/app/together" label={tr("togetherAssist.backToTogether")} />
+        {/* The top bar carries the way back on a phone; this one is the desktop's. */}
+        <div className="hidden lg:flex">
+          <Back to="/app/together" label={tr("togetherAssist.backToTogether")} />
+        </div>
 
-        <header>
+        <PhoneTitle title={tr("togetherAssist.youRunThisForThem")} sub={`${women.length} women, through you`}
+                    note={`${shared} of them do not own the phone they use. You are how they are here — and this is work, so it is paid.`} />
+        <header className="hidden lg:block">
           <p className="text-2xs font-extrabold uppercase tracking-[0.2em]" style={{ color: v("--ux-brand") }}>{tr("togetherAssist.youRunThisForThem")}</p>
           <h1 className="mt-2 text-[clamp(1.5rem,3.2vw,2.125rem)] font-extrabold leading-[1.1] tracking-[-0.035em]"
               style={{ color: v("--ux-ink") }}>
@@ -84,12 +91,30 @@ export default function AssistPage() {
         )}
 
         <div>
-          <SectionHead title={tr("togetherAssist.waitingOnYou")} icon="ListChecks" chip={String(queue.length)} />
+          <GroupLabel count={queue.length}>{tr("togetherAssist.waitingOnYou")}</GroupLabel>
+          <div className="hidden lg:block">
+            <SectionHead title={tr("togetherAssist.waitingOnYou")} icon="ListChecks" chip={String(queue.length)} />
+          </div>
           {queue.length === 0 ? (
             <Card><EmptyState icon="CheckCircle2" title={tr("togetherAssist.nothingWaiting")}
                               body="Everything is done. We will tell you when one of them needs something." /></Card>
           ) : (
-            <div className="flex flex-col gap-2.5">
+            <>
+            {/* On a phone the queue is one grouped list: who, what, what it
+                pays, and the button — a row each. */}
+            <ListGroup className="lg:hidden">
+              {queue.map((t) => (
+                <PhoneRow key={t.id}
+                          icon={t.urgent ? "AlertTriangle" : "Circle"}
+                          tint={t.urgent ? "--ux-tint-amber" : "--ux-surface-2"}
+                          ink={t.urgent ? "--ux-amber-ink" : "--ux-muted"}
+                          title={t.who}
+                          meta={<span className="font-semibold tabular-nums" style={{ color: v("--ux-green-ink") }}>+{formatRupees(t.paysMinor)}</span>}
+                          body={t.what}
+                          trailing={<Btn size="sm" onClick={() => doTask(t.id)}>{tr("togetherAssist.doIt")}</Btn>} />
+              ))}
+            </ListGroup>
+            <div className="hidden flex-col gap-2.5 lg:flex">
               {queue.map((t) => (
                 <Card key={t.id} pad={16} style={t.urgent ? { borderColor: v("--ux-amber") } : undefined}>
                   <div className="flex flex-wrap items-center gap-3.5">
@@ -108,13 +133,46 @@ export default function AssistPage() {
                 </Card>
               ))}
             </div>
+            </>
           )}
         </div>
 
         <div>
-          <SectionHead title={tr("togetherAssist.theWomenYouHelp")} sub={tr("togetherAssist.eachOneAgreedAndCanStop")}
-                       icon="Users" chip={String(women.length)} />
-          <div className="grid gap-3 sm:grid-cols-2">
+          <GroupLabel sub={tr("togetherAssist.eachOneAgreedAndCanStop")} count={women.length}>{tr("togetherAssist.theWomenYouHelp")}</GroupLabel>
+          <div className="hidden lg:block">
+            <SectionHead title={tr("togetherAssist.theWomenYouHelp")} sub={tr("togetherAssist.eachOneAgreedAndCanStop")}
+                         icon="Users" chip={String(women.length)} />
+          </div>
+          <ListGroup className="lg:hidden">
+            {women.map((w) => (
+              <PhoneRow key={w.id}
+                        lead={
+                          <span className="mt-0.5 grid h-[32px] w-[32px] shrink-0 place-items-center rounded-full text-[15px] font-bold"
+                                style={{ background: v("--ux-brand-tint-2"), color: v("--ux-brand") }}>
+                            {w.name.charAt(0)}
+                          </span>
+                        }
+                        title={
+                          <span className="flex flex-wrap items-center gap-2">
+                            {w.name}
+                            {!w.ownsPhone && <Pill tone="orange" size="sm">{tr("togetherAssist.sharesAPhone")}</Pill>}
+                          </span>
+                        }
+                        meta={`Since ${w.since} · ${w.because.toLowerCase()}`}
+                        body={`Last: ${w.lastDid}`}>
+                <span className="mt-0.5 block text-[13px] leading-snug" style={{ color: v("--ux-muted") }}>
+                  {w.doneCount} things done · she agreed on {w.consentOn}
+                </span>
+                <span className="mt-3 flex gap-2">
+                  <Btn size="sm" variant="outline" full className="max-lg:px-4"
+                       onClick={() => setNote(`${w.name} can see every single thing done in her name, on one screen.`)}>{tr("togetherAssist.whatSheCanSee")}</Btn>
+                  <Btn size="sm" variant="ghost" full className="max-lg:px-4"
+                       onClick={() => setNote(`${w.name} would be asked first, and it stops the moment she says so.`)}>{tr("togetherAssist.stopHelping")}</Btn>
+                </span>
+              </PhoneRow>
+            ))}
+          </ListGroup>
+          <div className="hidden gap-3 sm:grid-cols-2 lg:grid">
             {women.map((w) => (
               <Card key={w.id} pad={16}>
                 <div className="flex items-start gap-3.5">

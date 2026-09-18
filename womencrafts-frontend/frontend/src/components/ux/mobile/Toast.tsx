@@ -174,7 +174,7 @@ export function ToastHost({
               <Ico className="h-[15px] w-[15px]" />
             </span>
 
-            <p className="min-w-0 flex-1 py-1.5 text-[14px] font-medium leading-snug" style={{ color: "var(--ux-ink)" }}>
+            <p className="min-w-0 flex-1 py-1.5 text-[15px] font-medium leading-snug" style={{ color: "var(--ux-ink)" }}>
               {t.message}
             </p>
 

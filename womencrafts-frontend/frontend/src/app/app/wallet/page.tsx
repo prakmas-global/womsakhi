@@ -4,11 +4,12 @@ import { useMemo, useState } from "react";
 import * as Icons from "@/components/ux/icons";
 
 import {
-  Btn, Card, EmptyState, Progress, Rows, SectionHead,
-  SourceNote, Tabs, plural
+  Btn, Card, EmptyState, Progress, Rows, SourceNote, Tabs, plural
 } from "@/components/ux/kit";
+import { Section } from "@/components/ux/earn/phone";
 import { useCountUp } from "@/components/ux/kit/motion";
 import { HomeShell } from "@/components/ux/home/HomeShell";
+import { SegmentedControl } from "@/components/ux/mobile/SegmentedControl";
 import { EarningsBars, PayoutMethod, SourceSplit, TxnRow } from "@/components/ux/money/parts";
 import { MONEY_ART, TXN_FILTERS, rupees } from "@/components/ux/money/data";
 import { formatMoneyOrNothing } from "@/components/ux/kit/money";
@@ -88,7 +89,7 @@ export default function WalletPage() {
       rail={
         <div className="space-y-[16px]">
           <Card className="ux-onscroll-soft">
-            <SectionHead title={tr("wallet.whereItComesFrom")} sub={tr("wallet.lastDays")} />
+            <Section title={tr("wallet.whereItComesFrom")} sub={tr("wallet.lastDays")} />
             <SourceSplit sources={EARNING_SOURCES} />
           </Card>
 
@@ -96,7 +97,7 @@ export default function WalletPage() {
               honest; showing progress towards a number she never chose is not. */}
           {GOAL ? (
             <Card className="ux-onscroll-soft">
-              <SectionHead title={tr("wallet.yourGoal")} action="Edit"
+              <Section title={tr("wallet.yourGoal")} action="Edit"
                            onAction={() => { window.location.href = "/app/goals"; }} />
               <p className="text-xsm font-semibold" style={{ color: "var(--ux-ink)" }}>{GOAL.label}</p>
               <div className="mt-2.5 flex items-center gap-2.5">
@@ -112,7 +113,7 @@ export default function WalletPage() {
             </Card>
           ) : (
             <Card className="ux-onscroll-soft">
-              <SectionHead title={tr("wallet.setAGoal")} />
+              <Section title={tr("wallet.setAGoal")} />
               <p className="text-xsm leading-relaxed" style={{ color: "var(--ux-ink-2)" }}>
                 A number and a date. Women who write one down earn more than women who mean to —
                 not because the number is magic, but because it turns &ldquo;more&rdquo; into something you can
@@ -125,7 +126,7 @@ export default function WalletPage() {
           )}
 
           <Card className="ux-onscroll-soft">
-            <SectionHead title={tr("wallet.whereItGoes")} action="Manage"
+            <Section title={tr("wallet.whereItGoes")} action="Manage"
                          onAction={() => { window.location.href = "/app/settings/payments"; }} />
             <div className="space-y-2.5">
               {PAYOUT_METHODS.map((m) => <PayoutMethod key={m.id} m={m} />)}
@@ -149,19 +150,19 @@ export default function WalletPage() {
         </div>
       }
     >
-      <h1 className="text-2xl font-bold" style={{ color: "var(--ux-ink)" }}>{tr("wallet.yourWallet")}</h1>
-      <p className="mb-[20px] mt-1.5 text-xsm" style={{ color: "var(--ux-muted)" }}>{tr("wallet.everythingYouHaveMadeAndHow")}</p>
+      <h1 className="ux-screen-title text-2xl font-bold" style={{ color: "var(--ux-ink)" }}>{tr("wallet.yourWallet")}</h1>
+      <p className="mb-6 mt-1.5 text-xsm lg:mb-[20px]" style={{ color: "var(--ux-muted)" }}>{tr("wallet.everythingYouHaveMadeAndHow")}</p>
 
       {/* On a money screen an unlabelled fallback is not graceful degradation,
           it is a lie about her balance. */}
       <SourceNote source={source} what="figures" />
 
       {/* ── the answer ──────────────────────────────────────────────────── */}
-      <div className="ux-sq ux-onscroll relative overflow-hidden rounded-[20px] p-[24px]"
+      <div className="ux-sq ux-onscroll relative overflow-hidden rounded-[16px] p-4 lg:rounded-[20px] lg:p-[24px]"
            style={{ background: "linear-gradient(100deg, var(--ux-brand-900) 0%, var(--ux-brand-700) 55%, var(--ux-brand-600) 100%)" }}>
         <span aria-hidden className="pointer-events-none absolute -end-10 -top-16 h-[220px] w-[220px] rounded-full"
               style={{ background: "radial-gradient(circle, rgba(255,255,255,0.16), transparent 68%)" }} />
-        <div className="relative flex items-start justify-between gap-6">
+        <div className="relative flex items-start justify-between gap-6 max-lg:flex-col max-lg:gap-4">
           <div>
             <p className="text-xsm" style={{ color: "rgba(255,255,255,0.82)" }}>{tr("wallet.availableToWithdraw")}</p>
             <p className="mt-1.5 text-4xl font-bold leading-none tabular-nums text-white">
@@ -178,13 +179,13 @@ export default function WalletPage() {
                 : "Everything you have earned is here. Nothing is held back."}
             </p>
           </div>
-          <div className="flex shrink-0 flex-col gap-2.5">
-            <Btn href="/app/wallet/withdraw" variant="soft" icon="ArrowDownToLine">Withdraw</Btn>
-            <Btn href="/app/wallet/statement" variant="on-brand" size="sm" icon="Receipt">Statement</Btn>
+          <div className="flex shrink-0 flex-col gap-2.5 max-lg:w-full max-lg:flex-row">
+            <Btn href="/app/wallet/withdraw" variant="soft" icon="ArrowDownToLine" className="max-lg:flex-1">Withdraw</Btn>
+            <Btn href="/app/wallet/statement" variant="on-brand" size="sm" icon="Receipt" className="max-lg:flex-1 max-lg:px-4">Statement</Btn>
           </div>
         </div>
 
-        <div className="relative mt-5 flex gap-6 border-t pt-4" style={{ borderColor: "rgba(255,255,255,0.18)" }}>
+        <div className="relative mt-5 flex gap-6 border-t pt-4 max-lg:mt-4 max-lg:justify-between max-lg:gap-3" style={{ borderColor: "rgba(255,255,255,0.18)" }}>
           {[
             // A month with nothing in it says so in words. A bare ₹0 here is
             // indistinguishable from a formatter that divided the paise twice.
@@ -201,8 +202,8 @@ export default function WalletPage() {
       </div>
 
       {/* ── the trend ───────────────────────────────────────────────────── */}
-      <Card className="ux-onscroll mt-[16px]">
-        <SectionHead
+      <Card className="ux-onscroll mt-6 lg:mt-[16px]">
+        <Section
           title={tr("wallet.yourLastTwelveMonths")}
           sub={`Up ${Math.round((MONTHLY_MINOR[11] / MONTHLY_MINOR[0] - 1) * 100)}% since ${MONTH_LABELS[0]}`}
           action="Statement"
@@ -212,14 +213,18 @@ export default function WalletPage() {
       </Card>
 
       {/* ── the history ─────────────────────────────────────────────────── */}
-      <div className="mb-3 mt-[24px] flex items-end justify-between gap-4">
-        <div>
-          <h2 className="text-base font-semibold" style={{ color: "var(--ux-ink)" }}>{tr("wallet.everyRupee")}</h2>
-          <p className="mt-1 text-xsm" style={{ color: "var(--ux-muted)" }}>
+      <div className="mb-3 mt-[24px] flex items-end justify-between gap-4 max-lg:flex-col max-lg:items-stretch">
+        <div className="max-lg:px-1">
+          <h2 className="text-xs font-semibold text-[color:var(--ux-muted)] max-lg:uppercase max-lg:tracking-[0.06em] lg:text-base lg:text-[color:var(--ux-ink)]">{tr("wallet.everyRupee")}</h2>
+          <p className="mt-1 text-[13px] lg:text-xsm" style={{ color: "var(--ux-muted)" }}>
             {shown.length} {plural("entry", shown.length)}
           </p>
         </div>
-        <Tabs items={[...TXN_FILTERS]} active={filter} onChange={setFilter} />
+        <div className="hidden lg:flex">
+          <Tabs items={[...TXN_FILTERS]} active={filter} onChange={setFilter} />
+        </div>
+        <SegmentedControl className="lg:hidden" label={tr("wallet.everyRupee")} value={filter} onChange={setFilter}
+                          options={TXN_FILTERS.map((t) => ({ value: t as string, label: t as string }))} />
       </div>
 
       {groups.length ? (
@@ -235,10 +240,13 @@ export default function WalletPage() {
         <Rows
           items={flat}
           keyOf={(row) => (row.kind === "day" ? `day:${row.day}` : row.txn.id)}
-          className="space-y-2.5"
+          /* On a phone each day is one group: the first row after a day
+             label takes the top corners, the last row before the next label
+             (or the end) takes the bottom ones and the closing border. */
+          className="space-y-2.5 max-lg:space-y-0 max-lg:[&>div:has(+h3)]:rounded-b-[16px] max-lg:[&>div:has(+h3)]:border-b max-lg:[&>div:last-child]:rounded-b-[16px] max-lg:[&>div:last-child]:border-b max-lg:[&>h3+div]:rounded-t-[16px]"
           render={(row, i) =>
             row.kind === "day" ? (
-              <h3 className="mb-2 mt-5 text-2xs font-semibold uppercase tracking-[0.08em] first:mt-0"
+              <h3 className="mb-2 mt-5 text-2xs font-semibold uppercase tracking-[0.08em] first:mt-0 max-lg:mt-6 max-lg:px-1 max-lg:text-xs max-lg:tracking-[0.06em] max-lg:text-[color:var(--ux-muted)]! max-lg:first:mt-0"
                   style={{ color: "var(--ux-faint)" }}>
                 {row.day}
               </h3>

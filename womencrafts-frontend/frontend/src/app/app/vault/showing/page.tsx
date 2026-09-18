@@ -4,7 +4,8 @@ import { useCallback, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 
 import { HomeShell } from "@/components/ux/home/HomeShell";
-import { Back, Btn, Card, I, Pill, SectionHead, v } from "@/components/ux/kit";
+import { Back, Btn, Card, I, Pill, v } from "@/components/ux/kit";
+import { EYEBROW, Section } from "@/components/ux/earn/phone";
 import { SHOWABLE, shownCount } from "@/components/ux/eight/data";
 import { useT } from "@/i18n";
 
@@ -40,12 +41,12 @@ export default function ShowingPage() {
 
   return (
     <HomeShell active="/app/vault">
-      <div className="flex flex-col gap-5">
+      <div className="flex flex-col gap-6 lg:gap-5">
         <Back to="/app/vault" label={tr("vaultShowing.backToYourLocker")} />
 
         <header>
-          <p className="text-2xs font-extrabold uppercase tracking-[0.2em]" style={{ color: v("--ux-brand") }}>{tr("vaultShowing.showingSomeone")}</p>
-          <h1 className="mt-2 text-[clamp(1.5rem,3.2vw,2.125rem)] font-extrabold leading-[1.1] tracking-[-0.035em]"
+          <p className={EYEBROW}>{tr("vaultShowing.showingSomeone")}</p>
+          <h1 className="ux-screen-title mt-2 text-[clamp(1.5rem,3.2vw,2.125rem)] font-extrabold leading-[1.1] tracking-[-0.035em]"
               style={{ color: v("--ux-ink") }}>
             &ldquo;Here, look&rdquo;
           </h1>
@@ -56,16 +57,16 @@ export default function ShowingPage() {
           </p>
         </header>
 
-        <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_300px]">
+        <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_300px] lg:gap-5">
 
           {/* Left: the switches */}
           <div className="flex flex-col gap-4">
             <div>
-              <SectionHead title={tr("vaultShowing.whatTheyCanSee")}
+              <Section title={tr("vaultShowing.whatTheyCanSee")}
                            sub={`${count} of ${rows.length} things are on`} icon="Eye" />
               <Card pad={0} style={{ overflow: "hidden" }}>
                 {rows.map((r, i) => (
-                  <div key={r.id} className="flex items-center gap-3.5 px-5 py-4"
+                  <div key={r.id} className="flex items-center gap-3.5 px-4 py-4 lg:px-5"
                        style={{ borderTop: i === 0 ? "none" : `1px solid ${v("--ux-line")}` }}>
                     <span className="grid h-[38px] w-[38px] shrink-0 place-items-center rounded-[12px]"
                           style={{
@@ -92,12 +93,16 @@ export default function ShowingPage() {
                       <button type="button" role="switch" aria-checked={r.on}
                               aria-label={`Show ${r.label}`}
                               onClick={() => toggle(r.id)}
-                              className="ux-press ux-sq relative h-[26px] w-[46px] shrink-0 rounded-full"
+                              className="ux-press ux-sq relative grid h-[26px] w-[46px] shrink-0 place-items-center rounded-full max-lg:-my-[9px] max-lg:h-[44px]">
+                        {/* Track inside the 44px target — see the note on the
+                            privacy screen's switches. */}
+                        <span className="ux-sq relative h-[26px] w-[46px] rounded-full"
                               style={{ background: v(r.on ? "--ux-green-ink" : "--ux-line-strong"),
                                        transition: "background var(--ux-t-fast) var(--ux-ease)" }}>
-                        <span className="absolute top-[3px] h-[20px] w-[20px] rounded-full"
-                              style={{ left: r.on ? 23 : 3, background: v("--ux-surface"),
-                                       transition: "left var(--ux-t-fast) var(--ux-ease)" }} />
+                          <span className="absolute top-[3px] h-[20px] w-[20px] rounded-full"
+                                style={{ left: r.on ? 23 : 3, background: v("--ux-surface"),
+                                         transition: "left var(--ux-t-fast) var(--ux-ease)" }} />
+                        </span>
                       </button>
                     )}
                   </div>
@@ -120,7 +125,7 @@ export default function ShowingPage() {
 
           {/* Right: the actual phone, sticky so it stays visible while she flips switches */}
           <div className="lg:sticky lg:top-4 lg:self-start">
-            <p className="mb-2.5 text-center text-2xs font-extrabold uppercase tracking-[0.14em]"
+            <p className="mb-2 px-1 text-xs font-semibold uppercase tracking-[0.06em] lg:mb-2.5 lg:px-0 lg:text-center lg:text-2xs lg:font-extrabold lg:tracking-[0.14em]"
                style={{ color: v("--ux-muted") }}>{tr("vaultShowing.whatTheyWillSee")}</p>
 
             <div className="mx-auto w-[280px] rounded-[24px] p-[8px]"
@@ -165,7 +170,7 @@ export default function ShowingPage() {
             </div>
 
             <div className="mt-3.5 flex flex-col gap-2">
-              <Btn full icon="Smartphone" onClick={() => setHanded(true)}>
+              <Btn full icon="Smartphone" className="ux-action-primary" onClick={() => setHanded(true)}>
                 {handed ? tr("vaultShowing.showingTapYourPinToCome")
               : tr("vaultShowing.showThisNow")}
               </Btn>

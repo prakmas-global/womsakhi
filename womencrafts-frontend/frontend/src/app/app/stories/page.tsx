@@ -13,6 +13,9 @@ import { useCircles } from "@/components/ux/live";
 import { useHelplines } from "@/components/ux/entitlements";
 import { LOCAL_ART } from "@/components/ux/local/data";
 import { useT } from "@/i18n";
+import { ListGroup } from "@/components/ux/mobile/ListRow";
+import { SegmentedControl } from "@/components/ux/mobile/SegmentedControl";
+import { PhoneRow } from "@/components/ux/PhoneParts";
 
 /**
  * Sakhi Local — her city, not the country.
@@ -146,15 +149,21 @@ export default function LocalPage() {
         </div>
       }
     >
-      <div className="mb-[20px] flex items-end justify-between gap-4">
+      {/* On a phone: a column — the large title, its line, then a full-width
+          segmented control where the desktop has tabs. */}
+      <div className="mb-6 flex flex-col gap-4 lg:mb-[20px] lg:flex-row lg:items-end lg:justify-between">
         <div>
-          <h1 className="text-2xl font-bold" style={{ color: "var(--ux-ink)" }}>{tr("stories.nearYou")}</h1>
+          <h1 className="ux-screen-title text-2xl font-bold" style={{ color: "var(--ux-ink)" }}>{tr("stories.nearYou")}</h1>
           <p className="mt-1.5 flex items-center gap-1.5 text-xsm" style={{ color: "var(--ux-muted)" }}>
             <Icons.MapPin className="h-4 w-4" />
             {city ? `${city} · ` : ""}{STORIES.length} {plural("story", STORIES.length)} from women on WomSakhi
           </p>
         </div>
-        <Tabs items={["Women near you", "Groups"]} active={tab} onChange={setTab} />
+        <div className="hidden lg:flex">
+          <Tabs items={["Women near you", "Groups"]} active={tab} onChange={setTab} />
+        </div>
+        <SegmentedControl className="lg:hidden" label={tr("stories.nearYou")} value={tab} onChange={setTab}
+          options={["Women near you", "Groups"].map((t) => ({ value: t, label: t }))} />
       </div>
 
       <SourceNote source={source} what="stories" />
@@ -208,7 +217,7 @@ export default function LocalPage() {
                   </div>
                 </div>
 
-                <div className="p-[20px]">
+                <div className="p-[20px] max-lg:p-4">
                   {s.title && (
                     <p className="text-base font-semibold leading-snug" style={{ color: "var(--ux-ink)" }}>
                       &ldquo;{s.title}&rdquo;
@@ -262,7 +271,22 @@ export default function LocalPage() {
 
       {tab === "Groups" && (
         GROUPS.length ? (
-          <div className="ux-deck grid grid-cols-2 gap-[16px]">
+          <>
+          {/* Destinations, so on a phone they are rows of one grouped list. */}
+          <ListGroup className="lg:hidden">
+            {GROUPS.map((g) => (
+              <PhoneRow key={g.id} href={`/app/circles/${g.id}`} icon={g.icon} tint={g.tint} ink={g.ink}
+                        title={
+                          <span className="flex flex-wrap items-center gap-2">
+                            {g.name}
+                            {g.joined && <Pill tone="brand" size="sm">{tr("stories.youAreInThis")}</Pill>}
+                          </span>
+                        }
+                        meta={`${g.members} ${plural("member", g.members)} · ${g.place} · ${g.activity}`}
+                        body={g.blurb || undefined} />
+            ))}
+          </ListGroup>
+          <div className="ux-deck hidden grid-cols-2 gap-[16px] lg:grid">
             {GROUPS.map((g, i) => (
               <Card key={g.id} className="ux-i ux-onscroll" style={{ ["--i" as string]: i }}>
                 <div className="flex items-start gap-3.5">
@@ -286,6 +310,7 @@ export default function LocalPage() {
               </Card>
             ))}
           </div>
+          </>
         ) : (
           <Card>
             <EmptyState icon="UsersRound" title={tr("stories.noGroupsYet")}

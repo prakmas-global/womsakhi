@@ -201,11 +201,13 @@ export default function FindWorkPage() {
         </div>
       }
     >
-      <div className="flex flex-col gap-5">
+      <div className="flex flex-col gap-6 lg:gap-5">
 
         {/* ── Hero: the promise, and the search ─────────────────────────── */}
-        <div className="relative overflow-hidden rounded-[18px] p-5 sm:p-6 lg:p-7"
-             style={{ background: "linear-gradient(120deg, var(--ux-tint-lilac), var(--ux-tint-pink))" }}>
+        {/* On a phone the title is not in a banner: no slab, no inset — a
+            large title on the page, the way a native screen opens. The
+            gradient panel is the desktop design and comes back at `lg`. */}
+        <div className="relative overflow-hidden lg:rounded-[18px] lg:p-7 lg:[background:linear-gradient(120deg,var(--ux-tint-lilac),var(--ux-tint-pink))]">
           {/* eslint-disable-next-line @next/next/no-img-element */}
           {/*
             Same corner, same size as before — only the picture changed.
@@ -234,16 +236,16 @@ export default function FindWorkPage() {
               into "Find / work that / fits": three lines in 217px of a 390px
               screen. Full width below `lg`, the reserved column above it. */}
           <div className="relative max-w-none lg:max-w-[62%]">
-            <p className="text-[13px] font-extrabold uppercase tracking-[0.2em] lg:text-2xs" style={{ color: v("--ux-brand") }}>
+            <p className="text-[12px] font-extrabold uppercase tracking-[0.2em] lg:text-2xs" style={{ color: v("--ux-brand") }}>
               Work
             </p>
-            <h1 className="ux-screen-title mt-2 text-3xl font-extrabold leading-[1.15] tracking-[-0.02em]"
+            <h1 className="ux-screen-title mt-1 lg:mt-2 text-3xl font-extrabold leading-[1.15] tracking-[-0.02em]"
                 style={{ color: v("--ux-ink") }}>{tr("findwork.findWorkThatFits")}{" "}<span style={{ color: v("--ux-brand") }}>your life</span>
             </h1>
-            <p className="mt-1.5 max-w-[52ch] text-[15px] leading-snug lg:text-sm lg:leading-relaxed" style={{ color: v("--ux-muted") }}>{tr("findwork.jobsOrdersFreelanceAndInternshipsF")}</p>
+            <p className="mt-2 max-w-[52ch] text-[15px] leading-snug lg:mt-1.5 lg:text-sm lg:leading-relaxed" style={{ color: v("--ux-muted") }}>{tr("findwork.jobsOrdersFreelanceAndInternshipsF")}</p>
 
             <div className="mt-4 flex flex-wrap items-center gap-2">
-              <div className="flex min-w-[280px] flex-1 items-center gap-2 rounded-[12px] border px-3.5"
+              <div className="flex min-w-[280px] flex-1 items-center gap-2 rounded-[12px] border px-4 lg:px-3.5"
                    style={{ background: v("--ux-surface"), borderColor: v("--ux-line") }}>
                 <Icons.Search className="h-[16px] w-[16px] shrink-0" style={{ color: v("--ux-muted") }} />
                 <input
@@ -251,7 +253,7 @@ export default function FindWorkPage() {
                   onChange={(e) => setQ(e.target.value)}
                   placeholder={tr("findwork.searchWorkSkillsPlaces")}
                   aria-label={tr("findwork.searchWork")}
-                  className="min-h-[46px] w-full bg-transparent text-xsm outline-none"
+                  className="min-h-[46px] w-full bg-transparent text-[17px] outline-none lg:text-xsm"
                   style={{ color: v("--ux-ink") }}
                 />
               </div>
@@ -269,7 +271,7 @@ export default function FindWorkPage() {
                 return (
                   <button key={m} type="button" aria-pressed={on}
                           onClick={() => setMode(on ? null : m)}
-                          className="ux-press ux-sq flex min-h-[34px] items-center gap-1.5 rounded-[10px] border px-3 text-xs font-semibold"
+                          className="ux-press ux-sq flex min-h-[44px] items-center gap-1.5 rounded-[12px] border px-4 text-[15px] font-semibold lg:min-h-[34px] lg:rounded-[10px] lg:px-3 lg:text-xs"
                           style={{ borderColor: v(on ? "--ux-brand" : "--ux-line"),
                                    background: v(on ? "--ux-brand-tint" : "--ux-surface"),
                                    color: v(on ? "--ux-brand" : "--ux-ink-2") }}>
@@ -282,7 +284,7 @@ export default function FindWorkPage() {
                 return (
                   <button key={k} type="button" aria-pressed={on}
                           onClick={() => setKind(on ? null : k)}
-                          className="ux-press ux-sq flex min-h-[34px] items-center gap-1.5 rounded-[10px] border px-3 text-xs font-semibold"
+                          className="ux-press ux-sq flex min-h-[44px] items-center gap-1.5 rounded-[12px] border px-4 text-[15px] font-semibold lg:min-h-[34px] lg:rounded-[10px] lg:px-3 lg:text-xs"
                           style={{ borderColor: v(on ? "--ux-brand" : "--ux-line"),
                                    background: v(on ? "--ux-brand-tint" : "--ux-surface"),
                                    color: v(on ? "--ux-brand" : "--ux-ink-2") }}>
@@ -313,8 +315,8 @@ export default function FindWorkPage() {
               );
             })}
           </div>
-          <label className="flex shrink-0 items-center gap-2 pb-2 text-xs" style={{ color: v("--ux-muted") }}>{tr("findwork.sortBy")}<select value={sort} onChange={(e) => setSort(e.target.value as SortId)}
-                    className="ux-sq rounded-[9px] border px-2 py-1.5 text-xs font-bold"
+          <label className="flex shrink-0 items-center gap-2 pb-2 text-[13px] lg:text-xs" style={{ color: v("--ux-muted") }}>{tr("findwork.sortBy")}<select value={sort} onChange={(e) => setSort(e.target.value as SortId)}
+                    className="ux-sq rounded-[12px] border px-2 py-1.5 text-[15px] font-bold lg:rounded-[9px] lg:text-xs"
                     style={{ borderColor: v("--ux-line"), background: v("--ux-surface"), color: v("--ux-ink") }}>
               {SORTS.map((s) => <option key={s.id} value={s.id}>{s.label}</option>)}
             </select>
@@ -358,7 +360,7 @@ export default function FindWorkPage() {
         )}
 
         {/* ── When she does not know what to look for ───────────────────── */}
-        <div className="relative flex flex-wrap items-center gap-4 overflow-hidden rounded-[16px] p-5"
+        <div className="relative flex flex-wrap items-center gap-4 overflow-hidden rounded-[16px] p-4 lg:p-5"
              style={{ background: v("--ux-brand-tint") }}>
           <I name="Sparkles" className="h-[22px] w-[22px] shrink-0" style={{ color: v("--ux-brand") }} />
           <div className="min-w-0 flex-1 lg:min-w-[240px]">

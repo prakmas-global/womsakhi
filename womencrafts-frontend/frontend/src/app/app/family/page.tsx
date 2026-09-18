@@ -11,6 +11,9 @@ import { HomeShell } from "@/components/ux/home/HomeShell";
 import { useCreches, useGuidance } from "@/components/ux/entitlements";
 import { WELLBEING_ART } from "@/components/ux/wellbeing/data";
 import { useT } from "@/i18n";
+import { ListGroup } from "@/components/ux/mobile/ListRow";
+import { SegmentedControl } from "@/components/ux/mobile/SegmentedControl";
+import { PhoneRow } from "@/components/ux/PhoneParts";
 
 /**
  * Family & Childcare.
@@ -72,9 +75,11 @@ export default function FamilyPage() {
         </div>
       }
     >
-      <div className="mb-[20px] flex items-end justify-between gap-4">
+      {/* On a phone: a column — the large title, its line, then a full-width
+          segmented control where the desktop has tabs. */}
+      <div className="mb-6 flex flex-col gap-4 lg:mb-[20px] lg:flex-row lg:items-end lg:justify-between">
         <div>
-          <h1 className="text-2xl font-bold" style={{ color: "var(--ux-ink)" }}>{tr("family.familyAmpChildcare")}</h1>
+          <h1 className="ux-screen-title text-2xl font-bold" style={{ color: "var(--ux-ink)" }}>{tr("family.familyAmpChildcare")}</h1>
           {/* Counted both ways round. "and {CRECHES.length - 1} paid" assumed
               exactly one free option, and "near you" is a distance nobody has
               measured — the API carries no location for these. */}
@@ -84,12 +89,58 @@ export default function FamilyPage() {
 
       <SourceNote source={source} what="places" />
         </div>
-        <Tabs items={["Childcare near you", "Worth knowing"]} active={tab} onChange={setTab} />
+        <div className="hidden lg:flex">
+          <Tabs items={["Childcare near you", "Worth knowing"]} active={tab} onChange={setTab} />
+        </div>
+        <SegmentedControl className="lg:hidden" label={tr("family.familyAmpChildcare")} value={tab} onChange={setTab}
+          options={["Childcare near you", "Worth knowing"].map((t) => ({ value: t, label: t }))} />
       </div>
 
       {tab === "Childcare near you" && (
         CRECHES.length ? (
-          <div className="ux-deck ux-stagger space-y-[12px]">
+          <>
+          {/*
+            On a phone a 170px photograph beside the words left them 150px of
+            a 350px card — "Your ward Anganwadi" broke inside its own words and
+            "Directions" overflowed its button. As rows of one grouped list the
+            photograph is a thumbnail and the words get the width.
+          */}
+          <ListGroup className="lg:hidden">
+            {CRECHES.map((c) => (
+              <PhoneRow key={c.id} sepInset={84}
+                        lead={
+                          <span className="mt-0.5 h-[56px] w-[56px] shrink-0 overflow-hidden rounded-[12px]"
+                                style={{ background: "var(--ux-tint-pink)" }}>
+                            {/* eslint-disable-next-line @next/next/no-img-element */}
+                            <img loading="lazy" decoding="async" src={c.art} alt="" className="ux-art h-full w-full object-cover" />
+                          </span>
+                        }
+                        title={
+                          <span className="flex flex-wrap items-center gap-2">
+                            {c.name}
+                            {c.fee === "Free" && <Pill tone="green" size="sm">Free</Pill>}
+                            <Pill tone={c.kind === "Government" ? "blue" : c.kind === "Private" ? "neutral" : "brand"} size="sm">
+                              {c.kind}
+                            </Pill>
+                          </span>
+                        }
+                        meta={[c.distance, c.hours, c.ages].filter(Boolean).join(" · ")}>
+                <span className="mt-1.5 block text-[17px] font-bold"
+                      style={{ color: c.fee === "Free" ? "var(--ux-green-ink)" : "var(--ux-ink)" }}>
+                  {c.fee}
+                </span>
+                {c.meals && (
+                  <span className="mt-1 flex items-center gap-1.5 text-[13px]" style={{ color: "var(--ux-ink-2)" }}>
+                    <Icons.UtensilsCrossed className="h-[14px] w-[14px]" style={{ color: "var(--ux-brand)" }} />{tr("family.aHotMealIsIncluded")}</span>
+                )}
+                <span className="mt-1 block text-[13px] leading-snug" style={{ color: "var(--ux-muted)" }}>{tr("family.takeYourChildRsquoSAadhaar")}</span>
+                <span className="mt-3 flex">
+                  <Btn href={mapsHref(c.name)} variant="primary" size="sm" icon="Navigation" full className="max-lg:px-4">Directions</Btn>
+                </span>
+              </PhoneRow>
+            ))}
+          </ListGroup>
+          <div className="ux-deck ux-stagger hidden space-y-[12px] lg:block">
             {CRECHES.map((c, i) => (
               <Card key={c.id} className="ux-i ux-onscroll" style={{ ["--i" as string]: i }} pad={0}>
                 <div className="flex">
@@ -142,6 +193,7 @@ export default function FamilyPage() {
               </Card>
             ))}
           </div>
+          </>
         ) : (
           <Card>
             <EmptyState icon="Baby" title={tr("family.nothingFoundNearYou")}
@@ -151,7 +203,16 @@ export default function FamilyPage() {
       )}
 
       {tab === "Worth knowing" && (
-        <div className="ux-deck grid grid-cols-2 gap-[16px]">
+        <ListGroup className="lg:hidden">
+          {FAMILY_HELP.map((f, i) => (
+            <PhoneRow key={f.id} icon="Sparkles"
+                      tint={FAMILY_TINTS[i % FAMILY_TINTS.length][0]} ink={FAMILY_TINTS[i % FAMILY_TINTS.length][1]}
+                      title={f.label} body={f.note} />
+          ))}
+        </ListGroup>
+      )}
+      {tab === "Worth knowing" && (
+        <div className="ux-deck hidden grid-cols-2 gap-[16px] lg:grid">
           {FAMILY_HELP.map((f, i) => (
             <Card key={f.id} className="ux-i ux-onscroll" style={{ ["--i" as string]: i }}>
               <div className="flex items-start gap-3.5">

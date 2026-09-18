@@ -6,6 +6,7 @@ import Link from "next/link";
 
 import * as Icons from "@/components/ux/icons";
 import { HomeShell } from "@/components/ux/home/HomeShell";
+import { SegmentedControl } from "@/components/ux/mobile/SegmentedControl";
 import { Btn, Card, EmptyState, I, Tabs, v } from "@/components/ux/kit";
 import { useResource } from "@/lib/use-resource";
 import {
@@ -304,7 +305,10 @@ export default function CirclePage() {
           {/* `Tabs` is an `inline-flex` with no wrap and no scroller, so four
               tabs at 390px pushed the page sideways. `.ux-scroll-x` gives it
               somewhere to go and hides the bar. */}
-          <div className="ux-scroll-x -mx-[20px] max-w-[calc(100%+40px)] overflow-x-auto px-[20px] lg:mx-0 lg:max-w-none lg:overflow-visible lg:px-0">
+          {/* Four ways to read the feed: on a phone, a segmented control. */}
+          <SegmentedControl<Tab> className="lg:hidden" label="Show" value={tab} onChange={setTab}
+            options={TABS.map((t) => ({ value: t, label: t }))} />
+          <div className="ux-scroll-x -mx-[20px] hidden max-w-[calc(100%+40px)] overflow-x-auto px-[20px] lg:mx-0 lg:block lg:max-w-none lg:overflow-visible lg:px-0">
             {/* `w-max` — see the note on the same wrapper in `profile/page.tsx`. */}
             <div className="w-max">
               <Tabs items={TABS as unknown as string[]} active={tab}
@@ -344,7 +348,9 @@ export default function CirclePage() {
 
         <div className="mt-5">
           <Link href="/app/circles/create"
-                className="ux-press ux-sq ux-action-primary flex items-center justify-center gap-2 rounded-[16px] px-5 py-4 text-[16px] font-bold lg:text-xsm"
+                /* The phone's primary action: 50px, radius 14, 17px bold. Not
+                   `.ux-action-primary`, whose unlayered 16px beat the 17 here. */
+                className="ux-press ux-sq flex items-center justify-center gap-2 rounded-[16px] px-5 py-4 text-[17px] font-bold lg:text-xsm max-lg:min-h-[50px] max-lg:rounded-[14px] max-lg:px-4 max-lg:py-3"
                 style={{ background: v("--ux-brand-tint"), border: `1px solid ${v("--ux-brand")}`,
                          color: v("--ux-brand") }}>
             <I name="UsersRound" className="h-[16px] w-[16px]" />

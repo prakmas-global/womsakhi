@@ -7,6 +7,8 @@ import { HomeShell } from "@/components/ux/home/HomeShell";
 import { Back, Btn, Card, I, IconTile, SectionHead, Stat, v } from "@/components/ux/kit";
 import { CHANGE_TOPICS } from "@/components/ux/wellness/data";
 import { useT } from "@/i18n";
+import { ListGroup } from "@/components/ux/mobile/ListRow";
+import { GroupLabel, PhoneTitle, phoneFull, phonePrimary } from "@/components/ux/PhoneParts";
 
 /**
  * The change — the segment nobody in India serves.
@@ -37,9 +39,14 @@ export default function ChangePage() {
   return (
     <HomeShell active="/app/health">
       <div className="flex flex-col gap-5">
-        <Back to="/app/health" label={tr("healthChange.backToHealth")} />
+        {/* The top bar carries the way back on a phone; this one is the desktop's. */}
+        <div className="hidden lg:flex">
+          <Back to="/app/health" label={tr("healthChange.backToHealth")} />
+        </div>
 
-        <header>
+        <PhoneTitle title="Menopause" sub={tr("healthChange.nobodyToldYouItStartsThis")}
+                    note="In India it usually begins around 46 — about six years earlier than in the West. So most of what you will read online is written for a woman six years older than you." />
+        <header className="hidden lg:block">
           <p className="text-2xs font-extrabold uppercase tracking-[0.2em]" style={{ color: v("--ux-brand") }}>
             Menopause
           </p>
@@ -79,9 +86,39 @@ export default function ChangePage() {
         )}
 
         <div>
-          <SectionHead title={tr("healthChange.theQuestionsWomenActuallyAsk")}
-                       sub={tr("healthChange.answersNotADiary")} icon="MessageCircle" />
-          <div className="flex flex-col gap-2.5">
+          <GroupLabel sub={tr("healthChange.answersNotADiary")}>{tr("healthChange.theQuestionsWomenActuallyAsk")}</GroupLabel>
+          <div className="hidden lg:block">
+            <SectionHead title={tr("healthChange.theQuestionsWomenActuallyAsk")}
+                         sub={tr("healthChange.answersNotADiary")} icon="MessageCircle" />
+          </div>
+          {/* The questions as one grouped list, each opening in place. */}
+          <ListGroup className="lg:hidden">
+            {CHANGE_TOPICS.map((t) => {
+              const isOpen = open === t.id;
+              return (
+                <div key={t.id} className="relative">
+                  <button type="button" onClick={() => setOpen(isOpen ? null : t.id)} aria-expanded={isOpen}
+                          className="flex min-h-[52px] w-full items-start gap-3 px-4 py-3 text-start active:bg-[var(--ux-surface-2)]">
+                    <span aria-hidden className="mt-0.5 grid h-[32px] w-[32px] shrink-0 place-items-center rounded-[var(--ux-r-sm)]"
+                          style={{ background: v("--ux-tint-violet"), color: v("--ux-violet") }}>
+                      <I name={t.icon} className="h-[17px] w-[17px]" />
+                    </span>
+                    <span className="min-w-0 flex-1 text-[15px] font-semibold leading-snug" style={{ color: v("--ux-ink") }}>{t.q}</span>
+                    <I name={isOpen ? "ChevronUp" : "ChevronDown"} className="mt-1 h-[17px] w-[17px] shrink-0"
+                       style={{ color: v("--ux-muted") }} />
+                  </button>
+                  {isOpen && (
+                    <p className="pb-4 pe-4 ps-[60px] text-[15px] leading-relaxed" style={{ color: v("--ux-ink-2") }}>
+                      {t.a}
+                    </p>
+                  )}
+                  <span data-ux-sep aria-hidden className="pointer-events-none absolute bottom-0 end-0 h-px"
+                        style={{ insetInlineStart: 60, background: v("--ux-line") }} />
+                </div>
+              );
+            })}
+          </ListGroup>
+          <div className="hidden flex-col gap-2.5 lg:flex">
             {CHANGE_TOPICS.map((t) => {
               const isOpen = open === t.id;
               return (
@@ -115,7 +152,7 @@ export default function ChangePage() {
                 say is kept anywhere after you leave.
               </p>
             </div>
-            <Btn onClick={() => setNote("You are in. Nine women, all around your age, and nothing said there leaves.")}>{tr("healthChange.joinTheRoom")}</Btn>
+            <Btn className={phonePrimary} onClick={() => setNote("You are in. Nine women, all around your age, and nothing said there leaves.")}>{tr("healthChange.joinTheRoom")}</Btn>
           </div>
         </Card>
 
@@ -127,7 +164,7 @@ export default function ChangePage() {
               Most women are told "it is your age" and sent home. Go with the three things that
               bother you most, written down — it changes the conversation completely.
             </p>
-            <Btn size="sm" variant="outline" full className="mt-3"
+            <Btn size="sm" variant="outline" full className={`mt-3 ${phoneFull}`}
                  onClick={() => setNote("A short list you can hand over. Bring it with you.")}>{tr("healthChange.writeMyThreeThings")}</Btn>
           </Card>
           <Card pad={16}>
@@ -137,7 +174,7 @@ export default function ChangePage() {
               Broken sleep and aching joints cost the most days. Cover for a bad day is already
               built — use it without explaining yourself to anyone.
             </p>
-            <Btn size="sm" variant="outline" full className="mt-3" href="/app/health/cover">{tr("healthChange.arrangeCover")}</Btn>
+            <Btn size="sm" variant="outline" full className={`mt-3 ${phoneFull}`} href="/app/health/cover">{tr("healthChange.arrangeCover")}</Btn>
           </Card>
         </div>
       </div>

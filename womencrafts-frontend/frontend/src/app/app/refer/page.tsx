@@ -9,6 +9,8 @@ import { HomeShell } from "@/components/ux/home/HomeShell";
 import { useReferrals } from "@/components/ux/live";
 import { ACCOUNT_ART, rupees } from "@/components/ux/account/data";
 import { useT } from "@/i18n";
+import { ListGroup } from "@/components/ux/mobile/ListRow";
+import { GroupLabel, PhoneRow } from "@/components/ux/PhoneParts";
 
 /**
  * Refer — bringing another woman in.
@@ -76,14 +78,14 @@ export default function ReferPage() {
         </div>
       }
     >
-      <h1 className="text-2xl font-bold" style={{ color: "var(--ux-ink)" }}>{tr("refer.referAFriend")}</h1>
-      <p className="mb-[20px] mt-1.5 text-xsm" style={{ color: "var(--ux-muted)" }}>
+      <h1 className="ux-screen-title text-2xl font-bold" style={{ color: "var(--ux-ink)" }}>{tr("refer.referAFriend")}</h1>
+      <p className="mb-6 mt-1.5 text-xsm lg:mb-[20px]" style={{ color: "var(--ux-muted)" }}>
         You have brought {REFERRALS.length} {plural("woman", REFERRALS.length)} in so far.
       </p>
 
       <SourceNote source={source} what="referrals" />
 
-      <div className="ux-sq ux-onscroll relative overflow-hidden rounded-[20px] p-[24px]"
+      <div className="ux-sq ux-onscroll relative overflow-hidden rounded-[20px] p-[24px] max-lg:rounded-[16px] max-lg:p-4"
            style={{ background: "linear-gradient(100deg, var(--ux-brand-900) 0%, var(--ux-brand-700) 55%, var(--ux-brand-600) 100%)" }}>
         <span aria-hidden className="pointer-events-none absolute -end-12 -top-16 h-[220px] w-[220px] rounded-full"
               style={{ background: "radial-gradient(circle, rgba(255,255,255,0.16), transparent 68%)" }} />
@@ -92,10 +94,10 @@ export default function ReferPage() {
              className="ux-float pointer-events-none absolute -bottom-2 end-6 h-[124px] w-auto object-contain" />
         <div className="relative max-w-[62%]">
           {/* The condition travels with the number, always. */}
-          <p className="text-xsm" style={{ color: "rgba(255,255,255,0.86)" }}>
+          <p className="text-xsm" style={{ color: "color-mix(in srgb, var(--ux-on-brand) 86%, transparent)" }}>
             {rupees(REFER.reward_minor)} for each woman you bring — {REFER.condition}.
           </p>
-          <p className="mt-2 text-2xlm font-bold leading-none text-white">{REFER.code}</p>
+          <p className="mt-2 text-2xlm font-bold leading-none" style={{ color: "var(--ux-on-brand)" }}>{REFER.code}</p>
 
           {/* Announced, not just shown. The label swap on the button is silent
               to a screen reader — she presses Copy and hears nothing at all. */}
@@ -114,7 +116,7 @@ export default function ReferPage() {
                  variant="on-brand" size="sm" icon="MessageCircle">{tr("refer.sendOnWhatsapp")}</Btn>
           </div>
 
-          <p className="mt-3 truncate text-xs" style={{ color: "rgba(255,255,255,0.7)" }}>{REFER.link}</p>
+          <p className="mt-3 truncate text-xs" style={{ color: "color-mix(in srgb, var(--ux-on-brand) 70%, transparent)" }}>{REFER.link}</p>
         </div>
       </div>
 
@@ -136,9 +138,51 @@ export default function ReferPage() {
       </div>
 
       <div className="mt-[24px]">
-        <SectionHead title={tr("refer.womenYouBroughtIn")} sub={tr("refer.andWhereEachOfThemHas")} />
+        <GroupLabel sub={tr("refer.andWhereEachOfThemHas")}>{tr("refer.womenYouBroughtIn")}</GroupLabel>
+        <div className="hidden lg:block">
+          <SectionHead title={tr("refer.womenYouBroughtIn")} sub={tr("refer.andWhereEachOfThemHas")} />
+        </div>
         {REFERRALS.length ? (
-          <div className="ux-deck ux-stagger space-y-[12px]">
+          <>
+          {/* On a phone: one grouped list — who, where she has got to, and
+              what it has paid you. */}
+          <ListGroup className="lg:hidden">
+            {REFERRALS.map((r) => (
+              <PhoneRow key={r.id}
+                        lead={
+                          <span className="mt-0.5 h-[40px] w-[40px] shrink-0 overflow-hidden rounded-full"
+                                style={{ background: "var(--ux-brand-tint)" }}>
+                            {/* eslint-disable-next-line @next/next/no-img-element */}
+                            <img loading="lazy" decoding="async" src={r.avatar} alt="" className="ux-art h-full w-full object-cover" />
+                          </span>
+                        }
+                        sepInset={68}
+                        title={
+                          <span className="flex flex-wrap items-center gap-2">
+                            {r.name}
+                            <Pill tone={r.state === "Earning" ? "green" : "neutral"} size="sm">{r.state}</Pill>
+                          </span>
+                        }
+                        meta={`Joined ${r.joined}`}
+                        body={r.note}
+                        trailing={
+                          <span className="shrink-0 text-end">
+                            {r.reward_minor > 0 ? (
+                              <>
+                                <span className="block text-[17px] font-bold tabular-nums" style={{ color: "var(--ux-green-ink)" }}>
+                                  +{rupees(r.reward_minor)}
+                                </span>
+                                <span className="mt-0.5 block text-[12px]" style={{ color: "var(--ux-faint)" }}>paid to you</span>
+                              </>
+                            ) : (
+                              <span className="block max-w-[110px] text-[12px] leading-snug" style={{ color: "var(--ux-faint)" }}>{tr("refer.nothingYet")}<br />she has not finished a course
+                              </span>
+                            )}
+                          </span>
+                        } />
+            ))}
+          </ListGroup>
+          <div className="ux-deck ux-stagger hidden space-y-[12px] lg:block">
             {REFERRALS.map((r, i) => (
               <Card key={r.id} className="ux-i ux-onscroll" style={{ ["--i" as string]: i }}>
                 <div className="flex items-center gap-3.5">
@@ -175,6 +219,7 @@ export default function ReferPage() {
               </Card>
             ))}
           </div>
+          </>
         ) : (
           <Card>
             <EmptyState icon="Users" title={tr("refer.nobodyYet")}

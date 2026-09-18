@@ -3,7 +3,8 @@
 import { useCallback, useMemo } from "react";
 
 import { HomeShell } from "@/components/ux/home/HomeShell";
-import { Back, Btn, Card, EmptyState, I, Pill, SectionHead, v } from "@/components/ux/kit";
+import { Back, Btn, Card, EmptyState, I, Pill, v } from "@/components/ux/kit";
+import { EYEBROW, Section } from "@/components/ux/earn/phone";
 import { formatRupees } from "@/components/ux/kit";
 import { apiListings, type Listing } from "@/lib/shop-api";
 import { useResource } from "@/lib/use-resource";
@@ -57,12 +58,11 @@ export default function PricingPage() {
 
   return (
     <HomeShell active="/app/shop">
-      <div className="flex flex-col gap-5">
+      <div className="flex flex-col gap-6 lg:gap-5">
         <Back to="/app/shop" label="Back to ways to sell" />
 
         <header>
-          <p className="text-[13px] font-extrabold uppercase tracking-[0.2em] lg:text-2xs"
-             style={{ color: v("--ux-brand") }}>{tr("shopPricing.yourPrices")}</p>
+          <p className={EYEBROW}>{tr("shopPricing.yourPrices")}</p>
           <h1 className="ux-screen-title mt-2 text-[clamp(1.5rem,3.2vw,2.125rem)] font-extrabold leading-[1.1] tracking-[-0.035em]"
               style={{ color: v("--ux-ink") }}>What you charge, in one place</h1>
           <p className="mt-1.5 max-w-[56ch] text-[15px] leading-snug lg:text-sm lg:leading-relaxed"
@@ -74,7 +74,7 @@ export default function PricingPage() {
 
         {/* The thing this screen cannot do, said before the thing it can. */}
         <Card pad={0} style={{ overflow: "hidden" }}>
-          <div className="flex items-start gap-3.5 px-5 py-5" style={{ background: v("--ux-tint-amber") }}>
+          <div className="flex items-start gap-3.5 p-4 lg:p-5" style={{ background: v("--ux-tint-amber") }}>
             <I name="Info" className="mt-[2px] h-[20px] w-[20px] shrink-0" style={{ color: v("--ux-amber-ink") }} />
             <div className="min-w-0">
               <p className="text-base font-extrabold leading-snug" style={{ color: v("--ux-amber-ink") }}>
@@ -104,7 +104,7 @@ export default function PricingPage() {
         )}
 
         <div>
-          <SectionHead title={tr("shopPricing.whatYouSell")} icon="Tag"
+          <Section title={tr("shopPricing.whatYouSell")} icon="Tag"
                        sub="Your own prices, from your shop"
                        chip={known ? String(rows.length) : undefined} />
 
@@ -126,7 +126,7 @@ export default function PricingPage() {
           ) : (
             <Card pad={0} style={{ overflow: "hidden" }}>
               {rows.map((l, i) => (
-                <div key={l.id} className="flex flex-wrap items-center gap-3.5 px-5 py-4"
+                <div key={l.id} className="flex flex-wrap items-center gap-3.5 px-4 py-4 lg:px-5"
                      style={{ borderTop: i === 0 ? "none" : `1px solid ${v("--ux-line")}` }}>
                   <span className="h-[32px] w-[3px] shrink-0 rounded-full"
                         style={{ background: v(l.kind === "service" ? "--ux-blue-ink" : "--ux-brand") }} />
@@ -170,7 +170,7 @@ export default function PricingPage() {
 
           {known && rows.length > 0 && (
             <div className="mt-3">
-              <Btn variant="outline" size="sm" icon="Pencil" href="/app/documents">
+              <Btn variant="outline" size="sm" icon="Pencil" href="/app/documents" className="max-lg:w-full max-lg:px-4">
                 Change a price
               </Btn>
             </div>
@@ -179,7 +179,7 @@ export default function PricingPage() {
 
         {/* Guidance, not a claim about her. Nothing here is a number about her work. */}
         <Card pad={0} style={{ overflow: "hidden" }}>
-          <div className="px-5 py-5">
+          <div className="p-4 lg:p-5">
             <p className="text-sm font-bold" style={{ color: v("--ux-ink") }}>
               How to find out what others charge
             </p>
@@ -220,7 +220,7 @@ export default function PricingPage() {
               ))}
             </ul>
             <div className="mt-4 flex flex-wrap gap-2">
-              <Btn variant="outline" size="sm" icon="Users" href="/app/circles">Ask your circle</Btn>
+              <Btn variant="outline" size="sm" icon="Users" href="/app/circles" className="max-lg:w-full max-lg:px-4">Ask your circle</Btn>
             </div>
           </div>
         </Card>

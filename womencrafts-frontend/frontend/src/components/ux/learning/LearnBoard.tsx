@@ -39,8 +39,17 @@ type Place = {
   id: string;
   icon: string;
   title: string;
-  /** One real figure — "18 courses open" beats a sentence about what a course is. */
+  /** One real figure — "18 open" says whether there is anything behind the door. */
   count: string;
+  /**
+   * One line on what she would be doing in there.
+   *
+   * The count alone was too bare: "Teach and learn / 9 swapping skills" tells
+   * her how many, not what it is. One line is the middle ground between that
+   * and the three sentences this card used to carry — enough to choose by,
+   * short enough that six of them still read as six choices rather than a page.
+   */
+  what: string;
   href: string;
   /** Mentors is the one pink card in the board, as drawn. */
   pink?: boolean;
@@ -49,12 +58,18 @@ type Place = {
 };
 
 const PLACES: Place[] = [
-  { id: "programs",     row: "violet", icon: "BookOpen",   title: "Courses",          count: "18 open",               href: "/app/programs" },
-  { id: "mentors",      row: "pink",   icon: "Users",      title: "Mentors",          count: "12 near you", pink: true, href: "/app/mentors" },
-  { id: "certificates", row: "amber",  icon: "Award",      title: "Certificates",     count: "1 earned",              href: "/app/certificates" },
-  { id: "library",      row: "green",  icon: "Handshake",  title: "Teach and learn",  count: "9 swapping skills",     href: "/app/library" },
-  { id: "assess",       row: "blue",   icon: "BadgeCheck", title: "Prove your skills", count: "4 tests",              href: "/app/assess" },
-  { id: "digital",      row: "violet", icon: "Smartphone", title: "Using a phone",    count: "6 short guides",        href: "/app/digital" },
+  { id: "programs",     row: "violet", icon: "BookOpen",   title: "Courses",
+    what: "Learn a skill, at your own pace",        count: "18 open",           href: "/app/programs" },
+  { id: "mentors",      row: "pink",   icon: "Users",      title: "Mentors", pink: true,
+    what: "Ask a woman who has done it",            count: "12 near you",       href: "/app/mentors" },
+  { id: "certificates", row: "amber",  icon: "Award",      title: "Certificates",
+    what: "Proof you can show an employer",         count: "1 earned",          href: "/app/certificates" },
+  { id: "library",      row: "green",  icon: "Handshake",  title: "Teach and learn",
+    what: "Swap what you know with other women",    count: "9 swapping skills", href: "/app/library" },
+  { id: "assess",       row: "blue",   icon: "BadgeCheck", title: "Prove your skills",
+    what: "A short test, then a certificate",       count: "4 tests",           href: "/app/assess" },
+  { id: "digital",      row: "violet", icon: "Smartphone", title: "Using a phone",
+    what: "Start at the very beginning, no rush",   count: "6 short guides",    href: "/app/digital" },
 ];
 
 const PROMISES: [string, string][] = [
@@ -247,7 +262,10 @@ function PlaceCard({ p }: { p: Place }) {
       <span className="min-w-0">
         <b className="block truncate text-[var(--fb-title,17px)] font-bold leading-tight"
            style={{ color: v("--ux-ink") }}>{p.title}</b>
-        <span className="mt-1 block truncate text-xs font-semibold"
+        <span className="mt-1 block text-xs leading-snug" style={{ color: v("--ux-ink-2") }}>
+          {p.what}
+        </span>
+        <span className="mt-1.5 block truncate text-xs font-bold"
               style={{ color: v("--ux-muted") }}>{p.count}</span>
       </span>
     </TransitionLink>
@@ -284,7 +302,7 @@ function Journey() {
           return (
             <li key={step} className="flex items-center gap-2.5">
               <span aria-hidden
-                    className="grid h-[23px] w-[23px] shrink-0 place-items-center rounded-full text-[11px] font-bold"
+                    className="grid h-[23px] w-[23px] shrink-0 place-items-center rounded-full text-[12px] font-bold"
                     style={done ? { background: v("--ux-green"), color: "#fff" }
                          : now ? { background: v("--ux-brand"), color: "#fff" }
                          : { background: v("--ux-surface-2"), color: v("--ux-muted"),
@@ -293,7 +311,7 @@ function Journey() {
               </span>
               <span className="min-w-0 text-xs leading-snug"
                     style={{ color: done || now ? v("--ux-ink") : v("--ux-ink-2"),
-                             fontWeight: now ? 700 : 500 }}>
+                             fontWeight: now ? 700 : 400 }}>
                 {step}
               </span>
               <span className="sr-only">
@@ -382,7 +400,7 @@ function Phone() {
       </section>
 
       <h1 className="ux-screen-title mt-4" style={{ color: v("--ux-ink") }}>Learn</h1>
-      <p className="mt-1.5 text-[15px] leading-snug" style={{ color: v("--ux-muted") }}>
+      <p className="mt-2 text-[15px] leading-snug" style={{ color: v("--ux-muted") }}>
         Learn. Grow. Achieve — at your own pace, in your own time.
       </p>
 
@@ -393,7 +411,7 @@ function Phone() {
         on reassurance before a single destination. `.ux-chiprow` bleeds the
         row to both edges, which is what tells a thumb there is more of it.
       */}
-      <div className="ux-chiprow mt-3.5 flex flex-wrap gap-2"
+      <div className="ux-chiprow mt-4 flex flex-wrap gap-2"
            style={{ ["--ux-pad" as string]: "20px" }}>
         {PROMISES.map(([icon, label]) => (
           <span key={label}
@@ -405,11 +423,11 @@ function Phone() {
         ))}
       </div>
 
-      <div className="mt-5 space-y-5">
+      <div className="mt-6 space-y-6">
         <ListGroup title="Where to go">
           {PLACES.map((p) => (
             <ListRow key={p.id} href={p.href} icon={p.icon} tint={p.row}
-                     title={p.title} subtitle={p.count} />
+                     title={p.title} subtitle={p.what} />
           ))}
         </ListGroup>
 
@@ -417,7 +435,7 @@ function Phone() {
           <h3 className="ux-group-label">Your learning journey</h3>
           <div className="rounded-[var(--ux-r-lg)] border p-4"
                style={{ background: v("--ux-surface"), borderColor: v("--ux-line") }}>
-            <div className="flex items-center gap-3.5">
+            <div className="flex items-center gap-4">
               <Donut pct={pct} />
               <div className="min-w-0">
                 <p className="text-[15px] font-bold leading-tight" style={{ color: v("--ux-ink") }}>
@@ -445,7 +463,7 @@ function Phone() {
                     </span>
                     <span className="min-w-0 text-[15px] leading-snug"
                           style={{ color: done || now ? v("--ux-ink") : v("--ux-ink-2"),
-                                   fontWeight: now ? 700 : 500 }}>
+                                   fontWeight: now ? 700 : 400 }}>
                       {step}
                     </span>
                     <span className="sr-only">

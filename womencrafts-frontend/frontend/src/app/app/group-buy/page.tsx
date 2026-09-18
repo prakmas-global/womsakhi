@@ -95,8 +95,8 @@ export default function GroupBuyPage() {
         </div>
       }
     >
-      <h1 className="text-2xl font-bold" style={{ color: "var(--ux-ink)" }}>{tr("groupbuy.buyTogether")}</h1>
-      <p className="mb-[20px] mt-1.5 text-xsm" style={{ color: "var(--ux-muted)" }}>
+      <h1 className="ux-screen-title text-2xl font-bold" style={{ color: "var(--ux-ink)" }}>{tr("groupbuy.buyTogether")}</h1>
+      <p className="mb-6 mt-1.5 text-xsm lg:mb-[20px]" style={{ color: "var(--ux-muted)" }}>
         {open.length} open now. You pay nothing unless enough women join and the order goes ahead.
       </p>
 
@@ -106,7 +106,7 @@ export default function GroupBuyPage() {
           rollback happened silently before this: the button simply went back
           to "Join this buy" and nothing said why. */}
       {membership.error && (
-        <p role="alert" className="ux-slide-up mb-3 rounded-[12px] p-3 text-xsm leading-relaxed"
+        <p role="alert" className="ux-slide-up mb-3 rounded-[12px] px-4 py-3 text-xsm leading-relaxed lg:p-3"
            style={{ background: "var(--ux-tint-orange)", color: "var(--ux-orange-ink)" }}>
           {membership.error}
         </p>
@@ -122,8 +122,11 @@ export default function GroupBuyPage() {
             const pct = g.need > 0 ? Math.round((g.joined / g.need) * 100) : 0;
             return (
               <Card key={g.id} className="ux-i ux-onscroll" style={{ ["--i" as string]: i }} pad={0}>
-                <div className="flex">
-                  <span className="h-[164px] w-[176px] shrink-0 overflow-hidden" style={{ background: "var(--ux-tint-orange)" }}>
+                {/* Picture on top on a phone. Beside the words it left them a
+                    140px column, and a price, a saving and a progress line in
+                    140px is three wraps and a squint. */}
+                <div className="flex max-lg:flex-col">
+                  <span className="h-[164px] w-[176px] shrink-0 overflow-hidden max-lg:h-[140px] max-lg:w-full" style={{ background: "var(--ux-tint-orange)" }}>
                     {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img loading="lazy" decoding="async" src={g.art} alt="" className="ux-art h-full w-full object-cover" />
                   </span>

@@ -8,6 +8,7 @@ import * as Icons from "@/components/ux/icons";
 import {Back, Btn, Card, EmptyState, I, IconTile, SourceNote, v } from "@/components/ux/kit";
 import { HomeShell } from "@/components/ux/home/HomeShell";
 import { useT } from "@/i18n";
+import { SegmentedControl } from "@/components/ux/mobile/SegmentedControl";
 
 import {
   CATEGORIES, ComingUp, MonthGrid, TodayPanel,
@@ -146,13 +147,20 @@ export default function Schedule() {
       }
     >
       {/* ── Header ───────────────────────────────────────────────────── */}
-      <Back to="/app" label={tr("schedule.backToHome")} className="mb-4" />
+      {/* The top bar carries the way back on a phone; this one is the desktop's. */}
+      <div className="hidden lg:block">
+        <Back to="/app" label={tr("schedule.backToHome")} className="mb-4" />
+      </div>
 
-      <div className="mb-5 flex flex-wrap items-start justify-between gap-x-4 gap-y-3">
+      <div className="mb-5 flex flex-wrap items-start justify-between gap-x-4 gap-y-3 max-lg:mb-4 max-lg:gap-y-4">
         <div className="flex min-w-0 items-start gap-3.5">
-          <IconTile icon="CalendarDays" tint="--ux-brand-tint-2" ink="--ux-brand" size={56} radius={28} />
+          {/* Decoration beside the title on a desktop; on a phone it costs the
+              large title 70px of its width. */}
+          <div className="hidden lg:block">
+            <IconTile icon="CalendarDays" tint="--ux-brand-tint-2" ink="--ux-brand" size={56} radius={28} />
+          </div>
           <div>
-            <h1 className="text-3xl font-extrabold leading-[1.15] tracking-[-0.02em]" style={{ color: v("--ux-ink") }}>{tr("schedule.myCalendar")}</h1>
+            <h1 className="ux-screen-title text-3xl font-extrabold leading-[1.15] tracking-[-0.02em]" style={{ color: v("--ux-ink") }}>{tr("schedule.myCalendar")}</h1>
             <p className="mt-1.5 text-sm" style={{ color: v("--ux-muted") }}>{tr("schedule.everythingYouHavePlannedBookedAnd")}</p>
             <SourceNote source={source} what={tr("schedule.yourDiary")} />
           </div>
@@ -165,9 +173,12 @@ export default function Schedule() {
           the hard edge of the scroller with no way to reach it. It is still a
           single row everywhere it fits.
         */}
-        <div className="flex flex-wrap items-center gap-2.5 sm:flex-nowrap sm:shrink-0">
-          {/* Calendar / Agenda */}
-          <div className="flex rounded-[13px] border p-1"
+        <div className="flex flex-wrap items-center gap-2.5 sm:flex-nowrap sm:shrink-0 max-lg:w-full max-lg:flex-col max-lg:items-stretch">
+          {/* Calendar / Agenda — a segmented control on a phone. */}
+          <SegmentedControl className="lg:hidden" label="Show as" value={view} onChange={setView}
+            options={[{ value: "calendar" as const, label: "Calendar", icon: "CalendarDays" },
+                      { value: "agenda" as const, label: "Agenda", icon: "List" }]} />
+          <div className="hidden rounded-[13px] border p-1 lg:flex"
                style={{ background: v("--ux-surface"), borderColor: v("--ux-line") }}>
             {(["calendar", "agenda"] as const).map((mode) => {
               const on = view === mode;
@@ -187,7 +198,7 @@ export default function Schedule() {
           <div className="relative" ref={addRef}>
             <button type="button" onClick={() => setAddOpen((o) => !o)}
                     aria-expanded={addOpen} aria-haspopup="menu"
-                    className="ux-press ux-sq flex min-h-[48px] items-center gap-2 rounded-[14px] px-4 text-sm font-bold"
+                    className="ux-press ux-sq flex min-h-[48px] items-center gap-2 rounded-[14px] px-4 text-sm font-bold max-lg:min-h-[50px] max-lg:w-full max-lg:justify-center max-lg:text-[17px]"
                     style={{ background: v("--ux-fill"), color: v("--ux-on-brand") }}>
               <Icons.Plus className="h-[18px] w-[18px]" />{tr("schedule.addActivity")}<Icons.ChevronDown className="h-[14px] w-[14px]" />
             </button>
@@ -216,15 +227,17 @@ export default function Schedule() {
 
       {/* ── The calendar panel: its own controls, then the month ─────── */}
       <Card pad={20}>
-      <div className="mb-4 flex items-center justify-between gap-x-2">
+      {/* On a phone the month's controls and the filters are two rows — side
+          by side they left the filters no width at all. */}
+      <div className="mb-4 flex items-center justify-between gap-x-2 max-lg:flex-col max-lg:items-stretch max-lg:gap-y-3">
         <div className="flex shrink-0 items-center gap-2">
           <button type="button" onClick={() => step(-1)} aria-label={tr("schedule.previousMonth")}
-                  className="ux-press ux-sq grid h-[34px] w-[34px] place-items-center rounded-[10px] border"
+                  className="ux-press ux-sq grid h-[34px] w-[34px] place-items-center rounded-[10px] border max-lg:rounded-[12px]"
                   style={{ borderColor: v("--ux-line"), color: v("--ux-ink-2") }}>
             <Icons.ChevronLeft className="h-[17px] w-[17px]" />
           </button>
           <button type="button" onClick={() => step(1)} aria-label={tr("schedule.nextMonth")}
-                  className="ux-press ux-sq grid h-[34px] w-[34px] place-items-center rounded-[10px] border"
+                  className="ux-press ux-sq grid h-[34px] w-[34px] place-items-center rounded-[10px] border max-lg:rounded-[12px]"
                   style={{ borderColor: v("--ux-line"), color: v("--ux-ink-2") }}>
             <Icons.ChevronRight className="h-[17px] w-[17px]" />
           </button>
@@ -235,7 +248,7 @@ export default function Schedule() {
             <Icons.ChevronDown className="h-[16px] w-[16px]" style={{ color: v("--ux-muted") }} />
           </button>
           <button type="button" onClick={goToday}
-                  className="ux-press ux-sq ms-1 min-h-[34px] rounded-[10px] border px-3.5 text-xsm font-bold"
+                  className="ux-press ux-sq ms-1 min-h-[34px] rounded-[10px] border px-3.5 text-xsm font-bold max-lg:rounded-[12px]"
                   style={{ borderColor: v("--ux-line"), color: v("--ux-ink-2") }}>
             Today
           </button>
@@ -266,13 +279,36 @@ export default function Schedule() {
       ) : null}
       </Card>
 
+      {/*
+        The picked day and what is coming, under the month, on a phone.
+
+        They live in the rail, and the rail is not shown below `lg` — so on a
+        phone tapping a day did nothing visible, and the only place an event's
+        name appeared was a pill squeezed into a 48px cell. Now the month is
+        the month (a dot per event, as a phone calendar draws it) and the day
+        she taps is listed under it, whole.
+      */}
+      {view === "calendar" && (
+        <div className="mt-4 space-y-4 lg:hidden">
+          <TodayPanel
+            label={pickedLabel}
+            count={dayEntries.length}
+            entries={dayEntries}
+            onToday={goToday}
+            isToday={picked === todayIso}
+            onFullDay={() => setView("agenda")}
+          />
+          <ComingUp entries={upcoming} />
+        </div>
+      )}
+
       {view === "agenda" ? (agenda.length ? (
         <div className="space-y-2">
           {agenda.map((e) => {
             const cat = catFor(categoryOf(e));
             return (
               <Link key={e.id} href={e.href}
-                    className="ux-card ux-hov ux-sq flex items-center gap-3.5 p-3.5">
+                    className="ux-card ux-hov ux-sq flex items-center gap-3.5 p-3.5 max-lg:gap-3 max-lg:p-4">
                 <span className="grid h-[52px] w-[48px] shrink-0 place-items-center rounded-[11px]"
                       style={{ background: v("--ux-brand-tint") }}>
                   <span className="text-lg font-extrabold leading-none" style={{ color: v("--ux-brand") }}>{e.d}</span>

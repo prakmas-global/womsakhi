@@ -5,9 +5,11 @@ import * as Icons from "@/components/ux/icons";
 
 import {
   Btn, Card, Chip, EmptyState, IconTile, Pill,
-  SectionHead, SourceNote, Tabs, plural
+  SourceNote, Tabs, plural
 } from "@/components/ux/kit";
+import { Section } from "@/components/ux/earn/phone";
 import { HomeShell } from "@/components/ux/home/HomeShell";
+import { SegmentedControl } from "@/components/ux/mobile/SegmentedControl";
 import { useSchemes } from "@/components/ux/entitlements";
 import { SCHEME_ART, SCHEME_CATEGORIES } from "@/components/ux/schemes/data";
 import { AlsoHere } from "@/components/ux/AlsoHere";
@@ -49,7 +51,7 @@ export default function SchemesPage() {
       rail={
         <div className="space-y-[16px]">
           <Card className="ux-onscroll-soft">
-            <SectionHead title={tr("supportfund.whatYouWillBeAskedFor")} sub={tr("supportfund.haveTheseReadyAndMostApplications")} />
+            <Section title={tr("supportfund.whatYouWillBeAskedFor")} sub={tr("supportfund.haveTheseReadyAndMostApplications")} />
             <ul className="ux-stagger space-y-2.5">
               {[
                 ["Aadhaar", true], ["PAN card", true], ["Bank passbook", true],
@@ -72,7 +74,7 @@ export default function SchemesPage() {
           </Card>
 
           <Card className="ux-onscroll-soft">
-            <SectionHead title={tr("supportfund.nobodyShouldChargeYou")} icon="ShieldAlert" />
+            <Section title={tr("supportfund.nobodyShouldChargeYou")} icon="ShieldAlert" />
             <p className="text-xsm leading-relaxed" style={{ color: "var(--ux-ink-2)" }}>
               Every scheme here is free to apply for. If an agent asks for a fee to “get it approved”,
               that is not how any of these work. Tell us and we will look into it.
@@ -96,16 +98,20 @@ export default function SchemesPage() {
         </div>
       }
     >
-      <div className="mb-[20px] flex items-end justify-between gap-4">
+      <div className="mb-6 flex items-end justify-between gap-4 max-lg:flex-col max-lg:items-stretch lg:mb-[20px]">
         <div>
-          <h1 className="text-2xl font-bold" style={{ color: "var(--ux-ink)" }}>{tr("supportfund.moneyYouAreOwed")}</h1>
+          <h1 className="ux-screen-title text-2xl font-bold" style={{ color: "var(--ux-ink)" }}>{tr("supportfund.moneyYouAreOwed")}</h1>
           <p className="mt-1.5 text-xsm" style={{ color: "var(--ux-muted)" }}>
             {eligible} of {SCHEMES.length} look like they apply to you. All of them are free to apply for.
           </p>
 
       <SourceNote source={source} what="schemes" />
         </div>
-        <Tabs items={["All schemes", "Applied"]} active={tab} onChange={setTab} />
+        <div className="hidden lg:flex">
+          <Tabs items={["All schemes", "Applied"]} active={tab} onChange={setTab} />
+        </div>
+        <SegmentedControl className="lg:hidden" label={tr("supportfund.moneyYouAreOwed")} value={tab} onChange={setTab}
+                          options={["All schemes", "Applied"].map((t) => ({ value: t, label: t }))} />
       </div>
 
       <div className="mb-[16px] flex flex-wrap gap-2">
@@ -142,7 +148,7 @@ export default function SchemesPage() {
                 </div>
 
                 {/* Eligibility, in a sentence about her — not a rulebook. */}
-                <div className="mt-3.5 flex items-start gap-2.5 rounded-[12px] p-3"
+                <div className="mt-3.5 flex items-start gap-2.5 rounded-[12px] p-4 lg:p-3"
                      style={{ background: s.eligible ? "var(--ux-tint-green)" : "var(--ux-surface-2)" }}>
                   <Icons.Info className="mt-[1px] h-[15px] w-[15px] shrink-0"
                               style={{ color: s.eligible ? "var(--ux-green-ink)" : "var(--ux-muted)" }} />
@@ -169,12 +175,12 @@ export default function SchemesPage() {
                   </div>
                 )}
 
-                <div className="mt-3.5 flex items-center justify-between gap-4 border-t pt-3.5"
+                <div className="mt-3.5 flex items-center justify-between gap-4 border-t pt-3.5 max-lg:flex-wrap max-lg:gap-y-3"
                      style={{ borderColor: "var(--ux-line)" }}>
-                  <span className="flex items-center gap-1.5 text-xs" style={{ color: "var(--ux-faint)" }}>
+                  <span className="flex items-center gap-1.5 text-xs max-lg:text-[13px]" style={{ color: "var(--ux-faint)" }}>
                     <Icons.CalendarClock className="h-[14px] w-[14px]" /> {s.deadline}
                   </span>
-                  <span className="flex items-center gap-2">
+                  <span className="flex items-center gap-2 max-lg:w-full max-lg:[&>*]:flex-1">
                     <Btn variant="outline" size="sm"
                          iconEnd={expanded ? "ChevronUp" : "ChevronDown"}
                          onClick={() => setOpen(expanded ? null : s.id)}>

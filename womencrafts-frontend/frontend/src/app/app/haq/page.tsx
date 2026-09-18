@@ -4,7 +4,8 @@ import { useCallback, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 
 import { HomeShell } from "@/components/ux/home/HomeShell";
-import { Btn, Card, Chip, EmptyState, I, SectionHead, Stat, v } from "@/components/ux/kit";
+import { Btn, Card, Chip, EmptyState, I, Stat, v } from "@/components/ux/kit";
+import { EYEBROW, GROUP, GROUP_ROW, Section } from "@/components/ux/earn/phone";
 import { formatRupees } from "@/components/ux/kit";
 import {
   HAQ, LATE, PAPERS,
@@ -74,15 +75,14 @@ export default function HaqPage() {
 
   return (
     <HomeShell active="/app/haq">
-      <div className="flex flex-col gap-5">
+      <div className="flex flex-col gap-6 lg:gap-5">
 
         <header className="flex flex-wrap items-end gap-4">
           <div className="min-w-0 flex-1">
-            <p className="text-2xs font-extrabold uppercase tracking-[0.2em]"
-               style={{ color: v("--ux-brand") }}>
+            <p className={EYEBROW}>
               Haq
             </p>
-            <h1 className="mt-2 text-[clamp(1.5rem,3.2vw,2.125rem)] font-extrabold leading-[1.1] tracking-[-0.035em]"
+            <h1 className="ux-screen-title mt-2 text-[clamp(1.5rem,3.2vw,2.125rem)] font-extrabold leading-[1.1] tracking-[-0.035em]"
                 style={{ color: v("--ux-ink") }}>{tr("haq.whatYouAreOwed")}</h1>
             <p className="mt-1.5 max-w-[54ch] text-sm leading-relaxed"
                style={{ color: v("--ux-muted") }}>
@@ -90,7 +90,7 @@ export default function HaqPage() {
               whether it keeps arriving.
             </p>
           </div>
-          <Btn variant="outline" icon="FileText" href="/app/haq/papers">{tr("haq.yourPapers")}</Btn>
+          <Btn variant="outline" icon="FileText" href="/app/haq/papers" className="max-lg:w-full">{tr("haq.yourPapers")}</Btn>
         </header>
 
         <AtRisk monthlyMinor={monthly} count={risk.length} soonestDays={soonest} />
@@ -115,7 +115,7 @@ export default function HaqPage() {
         </Card>
 
         <div id="deadlines" className="scroll-mt-24">
-          <SectionHead
+          <Section
             title={tr("haq.everythingInYourName")}
             sub={tr("haq.orderedByWhatNeedsYouSoonest")}
             icon="ListChecks"
@@ -146,8 +146,8 @@ export default function HaqPage() {
               />
             </Card>
           ) : (
-            <div className="flex flex-col gap-2.5">
-              {shown.map((h) => <HaqRow key={h.id} h={h} onOpen={open} />)}
+            <div className={`flex flex-col gap-2.5 ${GROUP}`}>
+              {shown.map((h) => <HaqRow key={h.id} h={h} onOpen={open} className={GROUP_ROW} />)}
             </div>
           )}
         </div>

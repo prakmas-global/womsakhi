@@ -3,7 +3,8 @@
 import { useMemo } from "react";
 
 import { HomeShell } from "@/components/ux/home/HomeShell";
-import { Btn, Card, I, IconTile, Pill, SectionHead, formatRupees, v } from "@/components/ux/kit";
+import { Btn, Card, I, IconTile, Pill, formatRupees, v } from "@/components/ux/kit";
+import { EYEBROW, GROUP, GROUP_ROW, Section } from "@/components/ux/earn/phone";
 import { ReadAloud } from "@/components/ux/reach/ReadAloud";
 import {
   COMMITMENTS, INCOMING, IN_HAND, WEIGHT_LABEL, budgetTotals,
@@ -44,12 +45,12 @@ export default function MoneyPage() {
 
   return (
     <HomeShell active="/app/money">
-      <div className="flex flex-col gap-5" id="money-page">
+      <div className="flex flex-col gap-6 lg:gap-5" id="money-page">
 
         <header>
-          <p className="text-2xs font-extrabold uppercase tracking-[0.2em]" style={{ color: v("--ux-brand") }}>{tr("money.yourMoney")}</p>
+          <p className={EYEBROW}>{tr("money.yourMoney")}</p>
           {/* The answer, in words, before any number. */}
-          <h1 className="mt-2 max-w-[20ch] text-[clamp(1.5rem,3.2vw,2.125rem)] font-extrabold leading-[1.1] tracking-[-0.035em]"
+          <h1 className="ux-screen-title mt-2 max-w-[20ch] text-[clamp(1.5rem,3.2vw,2.125rem)] font-extrabold leading-[1.1] tracking-[-0.035em]"
               style={{ color: v("--ux-ink") }}>
             {t.coversMust
               ? tr("money.youHaveEnoughForTheThings")
@@ -64,7 +65,7 @@ export default function MoneyPage() {
         </header>
 
         {/* The three numbers that matter, and nothing else. */}
-        <div className="grid gap-3 sm:grid-cols-3">
+        <div className={`grid gap-3 sm:grid-cols-3 ${GROUP}`}>
           {[
             { n: formatRupees(IN_HAND), l: "in your hand now", i: "Wallet",
               tint: "--ux-tint-green", ink: "--ux-green-ink" },
@@ -73,7 +74,7 @@ export default function MoneyPage() {
             { n: formatRupees(t.committed), l: "already promised", i: "ArrowUpRight",
               tint: "--ux-tint-amber", ink: "--ux-amber-ink" },
           ].map((x) => (
-            <Card key={x.l} pad={16}>
+            <Card key={x.l} pad={16} className={GROUP_ROW}>
               <div className="flex items-center gap-3.5">
                 <IconTile icon={x.i} tint={x.tint} ink={x.ink} size={42} />
                 <div className="min-w-0">
@@ -104,11 +105,11 @@ export default function MoneyPage() {
 
         {/* Commitments, by consequence. */}
         <div>
-          <SectionHead title={tr("money.whatYouHavePromised")}
+          <Section title={tr("money.whatYouHavePromised")}
                        sub={tr("money.hardestToMissFirstNotBiggest")} icon="ListChecks" />
           <Card pad={0} style={{ overflow: "hidden" }}>
             {ordered.map((c, i) => (
-              <div key={c.id} className="flex flex-wrap items-start gap-3.5 px-5 py-4"
+              <div key={c.id} className="flex flex-wrap items-start gap-3.5 px-4 py-4 lg:px-5"
                    style={{ borderTop: i === 0 ? "none" : `1px solid ${v("--ux-line")}`,
                             opacity: c.weight === "can-move" ? 0.72 : 1 }}>
                 <IconTile icon={c.icon} tint={c.tint} ink={c.ink} size={40} />
@@ -138,11 +139,11 @@ export default function MoneyPage() {
 
         {/* Incoming — agreed and not agreed, kept apart on purpose. */}
         <div>
-          <SectionHead title={tr("money.whatIsComingToYou")}
+          <Section title={tr("money.whatIsComingToYou")}
                        sub={tr("money.onlyTheAgreedMoneyIsCounted")} icon="ArrowDownLeft" />
           <Card pad={0} style={{ overflow: "hidden" }}>
             {INCOMING.map((inc, i) => (
-              <div key={inc.id} className="flex flex-wrap items-center gap-3.5 px-5 py-4"
+              <div key={inc.id} className="flex flex-wrap items-center gap-3.5 px-4 py-4 lg:px-5"
                    style={{ borderTop: i === 0 ? "none" : `1px solid ${v("--ux-line")}` }}>
                 <I name={inc.certain ? "CheckCircle2" : "HelpCircle"} className="h-[1.0625rem] w-[1.0625rem] shrink-0"
                    style={{ color: v(inc.certain ? "--ux-green-ink" : "--ux-muted") }} />
@@ -159,7 +160,7 @@ export default function MoneyPage() {
             ))}
           </Card>
           {t.maybe > 0 && (
-            <p className="mt-2.5 flex items-start gap-2 rounded-[12px] px-3.5 py-3 text-xsm leading-relaxed"
+            <p className="mt-2.5 flex items-start gap-2 rounded-[12px] px-4 py-3 text-xsm leading-relaxed lg:px-3.5"
                style={{ background: v("--ux-tint-amber"), color: v("--ux-ink-2") }}>
               <I name="AlertTriangle" className="mt-[2px] h-[0.9375rem] w-[0.9375rem] shrink-0"
                  style={{ color: v("--ux-amber-ink") }} />
@@ -172,9 +173,9 @@ export default function MoneyPage() {
         </div>
 
         <div className="flex flex-wrap gap-2">
-          <Btn href="/app/collect" icon="QrCode">{tr("money.askSomeoneToPayYou")}</Btn>
-          <Btn variant="outline" href="/app/vault" icon="Lock">{tr("money.putSomeAside")}</Btn>
-          <Btn variant="ghost" href="/app/books" icon="BookOpen">{tr("money.whoOwesYou")}</Btn>
+          <Btn href="/app/collect" icon="QrCode" className="ux-action-primary">{tr("money.askSomeoneToPayYou")}</Btn>
+          <Btn variant="outline" href="/app/vault" icon="Lock" className="max-lg:w-full">{tr("money.putSomeAside")}</Btn>
+          <Btn variant="ghost" href="/app/books" icon="BookOpen" className="max-lg:w-full">{tr("money.whoOwesYou")}</Btn>
         </div>
 
         <Card pad={16} style={{ background: v("--ux-surface-2"), borderColor: "transparent" }}>

@@ -108,7 +108,7 @@ export function ListRow({
       </span>
 
       {value != null && (
-        <span className="shrink-0 text-[14px] tabular-nums" style={{ color: "var(--ux-muted)" }}>
+        <span className="shrink-0 text-[15px] tabular-nums" style={{ color: "var(--ux-muted)" }}>
           {value}
         </span>
       )}
@@ -139,7 +139,7 @@ export function ListRow({
   );
 
   const cls = [
-    "relative flex w-full items-center gap-3 px-4 py-2.5 text-start",
+    "relative flex w-full items-center gap-3 bg-transparent px-4 py-2.5 text-start",
     "min-h-[52px]",
     interactive && !disabled ? "active:bg-[var(--ux-surface-2)]" : "",
     disabled ? "opacity-50" : "",
@@ -148,7 +148,11 @@ export function ListRow({
     .join(" ");
 
   // `transform: none` beats mobile.css's 0.97 press scale — see the note above.
-  const style = { background: "transparent", transform: "none" } as const;
+  // `background` is NOT inline. It used to be, as `transparent`, and an inline
+  // style beats every class — including `active:bg-*` — so no row anywhere in
+  // the app ever showed it had been pressed. The default lives in the class
+  // list now, where the pressed state can override it.
+  const style = { transform: "none" } as const;
 
   if (href && !disabled) {
     return (

@@ -2,6 +2,7 @@
 
 import { HomeShell } from "@/components/ux/home/HomeShell";
 import { TransitionLink } from "@/components/ux/TransitionLink";
+import { ListGroup, ListRow } from "@/components/ux/mobile/ListRow";
 import { I, IconTile, v } from "@/components/ux/kit";
 import { EARN_PLACES, EARN_WIDE, EARN_PLACE_COUNT, type EarnPlace, type EarnChip } from "./board";
 
@@ -169,15 +170,8 @@ function ChipLink({ c }: { c: EarnChip }) {
 function PlaceCard({ p }: { p: EarnPlace }) {
   const tint = p.pink ? "--ux-tint-pink" : "--ux-brand-tint-2";
   const ink = p.pink ? "--ux-pink-ink" : "--ux-brand";
-  /*
-    "Ways to sell" carries nine pills and fills its card to the floor, so the
-    picture has nowhere to go — laid across the full width it came out sliced
-    between the pill gaps, which reads as a rendering fault rather than a
-    background. On a card this dense it retreats to the bottom-right corner
-    instead, which is where the drawing has it too: the pills there stop about
-    two thirds across and the woman with the tablet occupies the rest.
-  */
-  const dense = p.chips.length >= 6;
+  /* `dense` went with the card illustration (see the note at the foot of this
+     card): it only ever decided where the picture sat. */
 
   return (
     /*
@@ -242,41 +236,19 @@ function PlaceCard({ p }: { p: EarnPlace }) {
       )}
 
       {/*
-        The picture takes the floor, and whatever height is left above it.
+        ── the card illustration, removed ───────────────────────────────────
 
-        `flex-1` with `min-h-0` is what makes the eight cards end flush: the
-        row is as tall as its tallest card, and on every other card the
-        difference is absorbed here rather than left as a hole under the
-        pills. `object-contain` at `object-bottom` means the picture is never
-        stretched to do it — it simply sits on the floor at whatever size the
-        space allows.
+        Every one of these eight cards carried a clip-art .webp 140px tall,
+        inside a card 306px tall — so nearly half of each card was a picture,
+        and eight pictures landed on one screen at once. The board reads as
+        cluttered for that reason alone, before a word of it is read.
 
-        The top edge is faded out. Each file carries a pale lavender ground
-        baked into the pixels, which is invisible on a white card and a pale
-        block on a dark one; the mask dissolves it into whichever surface is
-        behind it.
+        The same call as the Learn board: at card size these drawings are
+        texture rather than information. What tells a woman which door this is
+        are the icon, the name and the line under it, and those are cheap. The
+        art files stay on disk for the screens that show them larger.
       */}
-      {/* eslint-disable-next-line @next/next/no-img-element */}
-      <img src={`/ux/art/${p.art}.webp`} alt="" aria-hidden loading="lazy" decoding="async"
-           width={p.artW} height={p.artH}
-           className={`pointer-events-none absolute bottom-0 z-0 object-contain ${
-             dense ? "end-0 object-right-bottom" : "inset-x-0 w-full object-bottom"}`}
-           /* Faded over 55px at the top, the distance measured off the drawing.
-              Each file carries a pale lavender ground baked into the pixels:
-              invisible on a white card, a pale block on a dark one, and the
-              mask dissolves it into whichever surface is behind it. */
-           /* A share of the card, not a fixed band. The first row is 418px
-              tall and the second 240px, and a picture that was the same height
-              on both left a hole under the pills on the tall one. `max()`
-              keeps a floor so the shortest card still shows a real picture. */
-           style={dense
-             ? { height: "38%", width: "52%",
-                 maskImage: "linear-gradient(to bottom, transparent 0, #000 46px), linear-gradient(to right, transparent 0, #000 40%)",
-                 WebkitMaskImage: "linear-gradient(to bottom, transparent 0, #000 46px), linear-gradient(to right, transparent 0, #000 40%)",
-                 maskComposite: "intersect", WebkitMaskComposite: "source-in" }
-             : { height: "max(var(--fb-earn-art, 110px), 46%)",
-                 maskImage: "linear-gradient(to bottom, transparent 0, #000 55px)",
-                 WebkitMaskImage: "linear-gradient(to bottom, transparent 0, #000 55px)" }} />
+
     </section>
   );
 }
@@ -341,12 +313,18 @@ function WideCard({ p }: { p: EarnPlace }) {
            className="ux-scroll-x flex min-w-0 flex-1 flex-wrap items-center overflow-x-auto lg:flex-nowrap"
            /* Faded on the end rather than cut. A label sliced through the
               middle of a word reads as broken; the same label fading out reads
-              as "there is more this way", which is what is true. */
+              as "there is more this way", which is what is true.
+
+              The fade itself used to be an inline style here, fixed on the end
+              edge whether or not there was anything off it. It now comes from
+              the one rule in `mobile.css` that every scrolling row in the app
+              shares, which is also the only way it could respond to scroll
+              position: an inline `mask-image` outranks every stylesheet rule
+              except an animation's, so this declaration was quietly winning
+              over the shared treatment on both of this board's rows. */
            style={{ gap: "var(--fb-earn-chip-gap, 8px)",
                     paddingInline: "var(--fb-pad)",
-                    paddingBlock: "var(--fb-earn-pad-y, 14px)",
-                    maskImage: "linear-gradient(to right, #000 calc(100% - 28px), transparent 100%)",
-                    WebkitMaskImage: "linear-gradient(to right, #000 calc(100% - 28px), transparent 100%)" }}>
+                    paddingBlock: "var(--fb-earn-pad-y, 14px)" }}>
         {p.chips.map((c) => <ChipLink key={c.href} c={c} />)}
       </div>
 
@@ -374,7 +352,9 @@ export function EarnBoard() {
         back, which is the single thing that broke this layout the most times
         on the Learn and Work boards before it.
       */}
-      <div className="ux-fitboard ux-earnboard flex flex-col xl:min-h-full"
+      <EarnPhone />
+
+      <div className="ux-fitboard ux-earnboard hidden flex-col lg:flex xl:min-h-full"
            style={{ gap: "var(--fb-earn-hero-gap, 4px)" }}>
         <Hero />
 
@@ -409,3 +389,66 @@ export function EarnBoard() {
     </HomeShell>
   );
 }
+
+/* ── the phone ────────────────────────────────────────────────────────────── */
+
+/**
+ * Earn, for a phone — and until now there was not one.
+ *
+ * Every other board has a `lg:hidden` branch; this one had none, so a woman on
+ * a phone got the DESKTOP board stacked into a single column. Measured at
+ * 390x844: ten near-identical cards alternating 119px and 61px depending on
+ * whether the card happened to carry chips, 1,343px of scroll, no grouping and
+ * nothing to tell her where to start. A wall.
+ *
+ * Two things fix it, and neither is new work — both already exist in this app.
+ *
+ * The grouped list. `ListGroup` + `ListRow` is the shape a phone uses for a set
+ * of destinations, and the Learn board's phone branch already uses it. Ten rows
+ * in two labelled groups reads as two decisions; ten free-standing cards read
+ * as ten.
+ *
+ * And the chips go. Each card carried two or three of them — "Everything you
+ * sell", "Add something to sell" — which is a link inside a link, and on a
+ * phone it is what made every other card twice the height of its neighbour.
+ * They live on the screen each row opens, which is where she is going anyway.
+ */
+function EarnPhone() {
+  /*
+    Ten places, and they come from TWO arrays — `EARN_PLACES` holds eight and
+    `EARN_WIDE` the two that are drawn as a full-width strip on a desktop
+    board. That split is a fact about the desktop LAYOUT, not about what the
+    ten things are, so the phone ignores it: "Your locker" and "What you are
+    owed" belong with the money, and being wide on a laptop is not a reason to
+    leave them off the end of a phone screen.
+  */
+  const all = [...EARN_PLACES, ...EARN_WIDE];
+  const selling = all.filter((p) => SELLING.has(p.id));
+  const money = all.filter((p) => !SELLING.has(p.id));
+
+  return (
+    <div className="lg:hidden">
+      <h1 className="ux-screen-title" style={{ color: v("--ux-ink") }}>Earn</h1>
+      <p className="mt-1.5 text-[15px] leading-snug" style={{ color: v("--ux-muted") }}>
+        Sell what you make, and keep what you earn.
+      </p>
+
+      <ListGroup title="Selling" className="mt-6">
+        {selling.map((p) => (
+          <ListRow key={p.id} href={p.href} icon={p.icon} tint={p.pink ? "pink" : "violet"}
+                   title={p.title} subtitle={p.sub} chevron />
+        ))}
+      </ListGroup>
+
+      <ListGroup title="Your money" className="mt-6">
+        {money.map((p) => (
+          <ListRow key={p.id} href={p.href} icon={p.icon} tint={p.pink ? "pink" : "green"}
+                   title={p.title} subtitle={p.sub} chevron />
+        ))}
+      </ListGroup>
+    </div>
+  );
+}
+
+/* Which of the ten are about selling; the rest are about the money itself. */
+const SELLING = new Set(["documents", "shop", "collect", "market", "kitchen"]);
