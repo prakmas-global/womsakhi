@@ -205,7 +205,7 @@ export default function LessonPage({ params }: { params: Promise<{ id: string; n
           <p className="text-xs font-semibold uppercase tracking-[0.08em]" style={{ color: "var(--ux-faint)" }}>
             Lesson {lesson.n} of {flat.length}
           </p>
-          <h1 className="mt-1.5 text-[22px] font-bold leading-tight lg:text-xl" style={{ color: "var(--ux-ink)" }}>
+          <h1 className="mt-1.5 text-[24px] font-bold leading-tight lg:text-xl" style={{ color: "var(--ux-ink)" }}>
             {lesson.title}
           </h1>
 

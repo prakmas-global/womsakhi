@@ -123,7 +123,7 @@ export default function Applications() {
                         {a.stage}
                       </Tag>
                     </div>
-                    <p className="mt-1 flex flex-wrap items-center gap-x-3 text-xs" style={{ color: "var(--ux-muted)" }}>
+                    <p className="mt-1 flex flex-wrap items-center gap-x-3 text-[13px] lg:text-xs" style={{ color: "var(--ux-muted)" }}>
                       <span className="inline-flex items-center gap-1"><Icons.Building2 className="h-3.5 w-3.5" /> {a.org}</span>
                       <span className="inline-flex items-center gap-1"><Icons.Clock className="h-3.5 w-3.5" /> Applied {a.at}</span>
                     </p>
@@ -133,10 +133,12 @@ export default function Applications() {
                   </div>
                 </div>
 
-                <div className="mt-3.5 flex items-center justify-between gap-4 border-t pt-3.5"
+                {/* The stage track on its own line on a phone, the actions
+                    sharing the full width under it; the row from `lg`. */}
+                <div className="mt-4 flex flex-col items-stretch gap-3 border-t pt-4 lg:mt-3.5 lg:flex-row lg:items-center lg:justify-between lg:gap-4 lg:pt-3.5"
                      style={{ borderColor: "var(--ux-line)" }}>
                   <StageTrack step={a.step} stages={STAGES} />
-                  <span className="flex items-center gap-2">
+                  <span className="flex items-center gap-2 [&>*]:flex-1 lg:[&>*]:flex-none">
                     <Btn href={`/app/opportunities/${a.jobId}`} variant="outline" size="sm">{tr("applications.theListing")}</Btn>
                     {a.stage === "Interview" && (
                       <ActionBtn variant="primary" size="sm" icon="Video" doneIcon="Copy"

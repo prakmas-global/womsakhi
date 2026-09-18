@@ -3,8 +3,9 @@
 import { useState } from "react";
 import * as Icons from "@/components/ux/icons";
 
-import { Btn, Card, IconTile, Pill, SectionHead, SourceNote, Tabs } from "@/components/ux/kit";
+import { Btn, Card, IconTile, Pill, SectionHead, SourceNote } from "@/components/ux/kit";
 import { HomeShell } from "@/components/ux/home/HomeShell";
+import { Segments } from "@/components/ux/learning/native";
 import { useCover } from "@/components/ux/entitlements";
 import { useAction } from "@/lib/use-action";
 import { apiMarkReference } from "@/lib/entitlements-api";
@@ -91,16 +92,20 @@ export default function CoverPage() {
         </div>
       }
     >
-      <div className="mb-[20px] flex items-end justify-between gap-4">
+      <div className="mb-6 lg:mb-[20px] lg:flex lg:items-end lg:justify-between lg:gap-4">
         <div>
-          <h1 className="text-2xl font-bold" style={{ color: "var(--ux-ink)" }}>{tr("cover.insuranceAmpPension")}</h1>
-          <p className="mt-1.5 text-xsm" style={{ color: "var(--ux-muted)" }}>
+          <h1 className="ux-screen-title text-2xl font-bold" style={{ color: "var(--ux-ink)" }}>{tr("cover.insuranceAmpPension")}</h1>
+          <p className="mt-2 text-xsm lg:mt-1.5" style={{ color: "var(--ux-muted)" }}>
             {have.length} of {COVER.length} in place. All of these are government schemes bought at a bank counter.
           </p>
 
       <SourceNote source={source} what="cover" />
         </div>
-        <Tabs items={["What you could have", "What you have"]} active={tab} onChange={setTab} />
+        {/* The segmented control on its own line on a phone; `lg:contents`
+            hands the old `Tabs` straight back to the row it sat in. */}
+        <div className="mt-4 lg:contents">
+          <Segments items={["What you could have", "What you have"]} active={tab} onChange={setTab} label="Which cover" />
+        </div>
       </div>
 
       <div className="ux-deck ux-stagger space-y-[12px]">
@@ -120,14 +125,16 @@ export default function CoverPage() {
                 </div>
 
                 {/* Pays and costs, on one line, in rupees. This is the decision. */}
-                <div className="mt-3 grid grid-cols-2 gap-2.5">
-                  <div className="ux-sq rounded-[12px] p-3" style={{ background: "var(--ux-tint-green)" }}>
+                {/* One column on a phone: side by side, each half was a
+                    120px box and "₹1,000–₹5,000 a month" broke over three lines. */}
+                <div className="mt-3 grid grid-cols-1 gap-2 lg:grid-cols-2 lg:gap-2.5">
+                  <div className="ux-sq rounded-[12px] px-4 py-3 lg:p-3" style={{ background: "var(--ux-tint-green)" }}>
                     <p className="text-2xs uppercase tracking-[0.06em]" style={{ color: "var(--ux-green-ink)" }}>{tr("cover.itPays")}</p>
                     <p className="mt-1 text-sm font-semibold leading-snug" style={{ color: "var(--ux-ink)" }}>
                       {c.pays}
                     </p>
                   </div>
-                  <div className="ux-sq rounded-[12px] p-3" style={{ background: "var(--ux-surface-2)" }}>
+                  <div className="ux-sq rounded-[12px] px-4 py-3 lg:p-3" style={{ background: "var(--ux-surface-2)" }}>
                     <p className="text-2xs uppercase tracking-[0.06em]" style={{ color: "var(--ux-faint)" }}>{tr("cover.itCosts")}</p>
                     <p className="mt-1 text-sm font-semibold leading-snug" style={{ color: "var(--ux-ink)" }}>
                       {c.costs}
@@ -135,28 +142,29 @@ export default function CoverPage() {
                   </div>
                 </div>
 
-                <p className="mt-2.5 flex items-start gap-1.5 text-xs" style={{ color: "var(--ux-muted)" }}>
+                <p className="mt-3 flex items-start gap-1.5 text-[13px] lg:mt-2.5 lg:text-xs" style={{ color: "var(--ux-muted)" }}>
                   <Icons.Users className="mt-[1px] h-[13px] w-[13px] shrink-0" />
                   {c.who}
                 </p>
               </div>
             </div>
 
-            <div className="mt-3.5 flex items-center justify-between gap-4 border-t pt-3.5"
+            {/* Note on its own line, action full width under it on a phone. */}
+            <div className="mt-4 flex flex-col items-stretch gap-3 border-t pt-4 lg:mt-3.5 lg:flex-row lg:items-center lg:justify-between lg:gap-4 lg:pt-3.5"
                  style={{ borderColor: "var(--ux-line)" }}>
-              <span className="text-xs" style={{ color: "var(--ux-faint)" }}>
+              <span className="text-[13px] lg:text-xs" style={{ color: "var(--ux-faint)" }}>
                 {c.have ? `Renews ${c.renews} — nothing to do` : "Ask at any bank where you have an account"}
               </span>
               {c.have
                 ? (
-                    <span className="flex items-center gap-2">
+                    <span className="flex items-center gap-2 [&>*]:flex-1 lg:[&>*]:flex-none">
                       <Btn href="/app/documents/vault" variant="outline" size="sm" icon="FileText">{tr("cover.yourPolicy")}</Btn>
                       <Btn variant="ghost" size="sm"
                            className={mark.busyWith === c.id ? "pointer-events-none opacity-60" : ""}
                            onClick={() => void mark.run(c.id, "saved")}>{tr("cover.notAnyMore")}</Btn>
                     </span>
                   )
-                : <Btn variant="primary" size="sm" iconEnd={how === c.id ? "ChevronUp" : "ChevronDown"}
+                : <Btn variant="primary" size="sm" className="ux-action-primary" iconEnd={how === c.id ? "ChevronUp" : "ChevronDown"}
                        onClick={() => setHow(how === c.id ? null : c.id)}>
                     {how === c.id ? "Close" : "How to get it"}
                   </Btn>}
@@ -165,7 +173,7 @@ export default function CoverPage() {
             {/* Where to go and what to carry. Two sentences is the whole of it —
                 these are counter transactions, not applications. */}
             {how === c.id && (
-              <div className="ux-slide-up mt-3.5 border-t pt-3.5" style={{ borderColor: "var(--ux-line)" }}>
+              <div className="ux-slide-up mt-4 border-t pt-4 lg:mt-3.5 lg:pt-3.5" style={{ borderColor: "var(--ux-line)" }}>
                 <ol className="space-y-2.5">
                   {[
                     "Go to the bank branch where you already have an account. Any branch of it will do.",
@@ -180,7 +188,7 @@ export default function CoverPage() {
                     </li>
                   ))}
                 </ol>
-                <div className="mt-3.5 flex flex-wrap gap-2">
+                <div className="mt-4 flex flex-col gap-2 lg:mt-3.5 lg:flex-row lg:flex-wrap">
                   {/* The one that changes what the screen is for. */}
                   <Btn variant="primary" size="sm" icon="Check"
                        className={mark.busyWith === c.id ? "pointer-events-none opacity-60" : ""}

@@ -49,7 +49,20 @@ export function Card({ children, className = "", pad = 18, style, id }: {
   /** So a card can be the target of a `#fragment` — a shared circle post. */
   id?: string;
 }) {
-  return <section id={id} className={`ux-card ${className}`} style={{ padding: pad, ...style }}>{children}</section>;
+  /*
+    One inset on a phone. Cards across the app were padded 14, 16, 18, 20, 22
+    and 28 — measured, twelve distinct paddings on screen — so two cards side
+    by side never agreed where their text started, and a column of them read
+    as a stack of different objects. iOS insets content 16 from a card's edge,
+    everywhere, which is the single most "native" thing a screen can do.
+
+    `--ux-card-pad-m` is defined only inside the phone tier of `mobile.css`, so
+    on a laptop it is unset and each card keeps the padding it asked for.
+    `pad={0}` is left alone at every size: those are media cards that own their
+    own insets, and forcing 16px on them puts a frame round a photograph.
+  */
+  const padding = pad === 0 ? 0 : `var(--ux-card-pad-m, ${pad}px)`;
+  return <section id={id} className={`ux-card ${className}`} style={{ padding, ...style }}>{children}</section>;
 }
 
 export function SectionHead({ title, sub, action, onAction, icon, chip }: {
@@ -413,7 +426,7 @@ export function Tabs({ items, active, onChange }: {
         return (
           <button key={t} role="tab" aria-selected={on} data-on={on ? "1" : undefined}
             onClick={() => onChange(t)}
-            className="relative z-[1] rounded-[8px] px-3.5 py-2 text-xsm font-medium transition-colors"
+            className="relative z-[1] shrink-0 whitespace-nowrap rounded-[8px] px-3.5 py-2 text-xsm font-medium transition-colors"
             style={{ color: on ? "var(--ux-brand)" : "var(--ux-muted)" }}>
             {t}
           </button>

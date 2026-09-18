@@ -4,7 +4,8 @@ import { useCallback, useMemo, useState } from "react";
 
 import { usePayoutMethods } from "@/components/ux/business";
 import { HomeShell } from "@/components/ux/home/HomeShell";
-import { Btn, Card, EmptyState, I, Pill, SectionHead, v } from "@/components/ux/kit";
+import { Btn, Card, EmptyState, I, Pill, v } from "@/components/ux/kit";
+import { EYEBROW, GROUP, GROUP_ROW, Section } from "@/components/ux/earn/phone";
 import { formatRupees } from "@/components/ux/kit";
 import { useT } from "@/i18n";
 import { apiShopOrders, apiShopSummary, type ShopOrder } from "@/lib/shop-api";
@@ -141,11 +142,11 @@ export default function CollectPage() {
       <span className="sr-only" role="status" aria-live="polite">
         {copied ? "Copied." : ""}
       </span>
-      <div className="flex flex-col gap-5">
+      <div className="flex flex-col gap-6 lg:gap-5">
 
         <header>
-          <p className="text-2xs font-extrabold uppercase tracking-[0.2em]" style={{ color: v("--ux-brand") }}>{tr("collect.gettingPaid")}</p>
-          <h1 className="mt-2 text-[clamp(1.5rem,3.2vw,2.125rem)] font-extrabold leading-[1.1] tracking-[-0.035em]"
+          <p className={EYEBROW}>{tr("collect.gettingPaid")}</p>
+          <h1 className="ux-screen-title mt-2 text-[clamp(1.5rem,3.2vw,2.125rem)] font-extrabold leading-[1.1] tracking-[-0.035em]"
               style={{ color: v("--ux-ink") }}>{tr("collect.sellToPeopleWhoAreNot")}</h1>
           <p className="mt-1.5 max-w-[58ch] text-sm leading-relaxed" style={{ color: v("--ux-muted") }}>
             Your customers are already on WhatsApp. They are not going to install an app to buy a
@@ -155,11 +156,11 @@ export default function CollectPage() {
 
         {/* The link, made as easy to send as it is to say. */}
         <Card pad={0} style={{ overflow: "hidden" }}>
-          <div className="px-5 py-6 sm:px-7"
+          <div className="p-4 sm:px-7 lg:py-6"
                style={{ background: `linear-gradient(140deg, ${v("--ux-brand-tint")}, ${v("--ux-surface")})` }}>
-            <p className="text-2xs font-extrabold uppercase tracking-[0.14em]" style={{ color: v("--ux-brand") }}>{tr("collect.yourShopOnTheOpenWeb")}</p>
+            <p className="text-xs font-semibold uppercase tracking-[0.06em] lg:text-2xs lg:font-extrabold lg:tracking-[0.14em]" style={{ color: v("--ux-brand") }}>{tr("collect.yourShopOnTheOpenWeb")}</p>
             <div className="mt-3 flex flex-wrap items-center gap-3">
-              <p className="min-w-0 flex-1 break-all rounded-[12px] px-3.5 py-3 text-base font-bold"
+              <p className="min-w-0 flex-1 break-all rounded-[12px] px-4 py-3 text-base font-bold lg:px-3.5"
                  style={{ background: v("--ux-surface"), color: v("--ux-ink"), border: `1px solid ${v("--ux-line")}` }}>
                 {link}
               </p>
@@ -168,9 +169,9 @@ export default function CollectPage() {
               </Btn>
             </div>
             <div className="mt-3 flex flex-wrap gap-2">
-              <Btn variant="outline" size="sm" icon="MessageCircle" onClick={sendOnWhatsApp}>{tr("collect.sendOnWhatsapp")}</Btn>
-              <Btn variant="ghost" size="sm" icon="QrCode" onClick={() => window.print()}>{tr("collect.printAQrForYourDoor")}</Btn>
-              <Btn variant="ghost" size="sm" icon="ExternalLink" href={`/s/${handle}`}>{tr("collect.seeWhatTheySee")}</Btn>
+              <Btn variant="outline" size="sm" icon="MessageCircle" className="max-lg:w-full max-lg:px-4" onClick={sendOnWhatsApp}>{tr("collect.sendOnWhatsapp")}</Btn>
+              <Btn variant="ghost" size="sm" icon="QrCode" className="max-lg:w-full max-lg:px-4" onClick={() => window.print()}>{tr("collect.printAQrForYourDoor")}</Btn>
+              <Btn variant="ghost" size="sm" icon="ExternalLink" className="max-lg:w-full max-lg:px-4" href={`/s/${handle}`}>{tr("collect.seeWhatTheySee")}</Btn>
             </div>
           </div>
         </Card>
@@ -184,7 +185,7 @@ export default function CollectPage() {
           woman about being paid.
         */}
         <Card pad={0} style={{ overflow: "hidden" }}>
-          <div className="flex items-start gap-3.5 px-5 py-5"
+          <div className="flex items-start gap-3.5 p-4 lg:p-5"
                style={{ background: v("--ux-tint-amber") }}>
             <I name="Info" className="mt-[2px] h-[20px] w-[20px] shrink-0" style={{ color: v("--ux-amber-ink") }} />
             <div className="min-w-0">
@@ -199,7 +200,7 @@ export default function CollectPage() {
               </p>
             </div>
           </div>
-          <div className="px-5 py-5">
+          <div className="p-4 lg:p-5">
             <p className="text-sm font-bold" style={{ color: v("--ux-ink") }}>
               {tr("collect.askThemYourself")}
             </p>
@@ -224,7 +225,7 @@ export default function CollectPage() {
 
         {/* Where money reaches her — her own saved account, or the gap. */}
         <div>
-          <SectionHead title={tr("collect.whereYourMoneyReaches")} icon="Landmark" />
+          <Section title={tr("collect.whereYourMoneyReaches")} icon="Landmark" />
           <Card pad={16}>
             {payout.source === "loading" ? (
               <p className="text-xsm" style={{ color: v("--ux-muted") }}>Loading…</p>
@@ -251,7 +252,7 @@ export default function CollectPage() {
                     : "This is where WomSakhi sends money you withdraw. It is not something to give a customer — we only keep the last four digits of your account number. Add your UPI id and you will have it here to read out."}
                 </p>
                 <div>
-                  <Btn variant="outline" size="sm" icon="Settings2" href="/app/settings/payments">
+                  <Btn variant="outline" size="sm" icon="Settings2" href="/app/settings/payments" className="max-lg:w-full max-lg:px-4">
                     {tr("collect.addHowYouGetPaid")}
                   </Btn>
                 </div>
@@ -263,7 +264,7 @@ export default function CollectPage() {
                   UPI id, and it is yours to read out to a customer.
                 </p>
                 <div>
-                  <Btn variant="outline" size="sm" icon="Plus" href="/app/settings/payments">
+                  <Btn variant="outline" size="sm" icon="Plus" href="/app/settings/payments" className="max-lg:w-full max-lg:px-4">
                     {tr("collect.addHowYouGetPaid")}
                   </Btn>
                 </div>
@@ -285,12 +286,12 @@ export default function CollectPage() {
           nothing", and printing the second while the first is true is the same
           class of lie this screen was rebuilt to remove.
         */}
-        <div className="grid gap-3 sm:grid-cols-2">
+        <div className={`grid gap-3 sm:grid-cols-2 ${GROUP}`}>
           {[
             { n: known ? formatRupees(openMinor) : "—", l: tr("collect.stillWithYou"), i: "Clock", tint: "--ux-tint-amber", ink: "--ux-amber-ink" },
             { n: known ? formatRupees(doneMinor) : "—", l: tr("collect.markedDelivered"), i: "Package", tint: "--ux-tint-green", ink: "--ux-green-ink" },
           ].map((x) => (
-            <Card key={x.l} pad={16}>
+            <Card key={x.l} pad={16} className={GROUP_ROW}>
               <div className="flex items-center gap-3.5">
                 <span className="grid h-[44px] w-[44px] shrink-0 place-items-center rounded-[12px]"
                       style={{ background: v(x.tint), color: v(x.ink) }}>
@@ -308,7 +309,7 @@ export default function CollectPage() {
         </div>
 
         <div>
-          <SectionHead title={tr("collect.yourOrders")} sub={tr("collect.recordedHereNotPaid")}
+          <Section title={tr("collect.yourOrders")} sub={tr("collect.recordedHereNotPaid")}
                        icon="Receipt" chip={known ? String(live.length) : undefined} />
 
           {/*
@@ -340,7 +341,7 @@ export default function CollectPage() {
           ) : (
             <Card pad={0} style={{ overflow: "hidden" }}>
               {live.map((o, i) => (
-                <div key={o.id} className="flex flex-wrap items-center gap-3.5 px-5 py-4"
+                <div key={o.id} className="flex flex-wrap items-center gap-3.5 px-4 py-4 lg:px-5"
                      style={{ borderTop: i === 0 ? "none" : `1px solid ${v("--ux-line")}` }}>
                   <span className="h-[32px] w-[3px] shrink-0 rounded-full"
                         style={{ background: v(DELIVERED.has(o.state) ? "--ux-green-ink" : "--ux-amber-ink") }} />

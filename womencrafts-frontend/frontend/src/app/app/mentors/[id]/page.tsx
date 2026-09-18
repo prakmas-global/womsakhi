@@ -204,7 +204,7 @@ export default function MentorDetail({ params }: { params: Promise<{ id: string 
             <img loading="lazy" decoding="async" src={m.photo} alt="" className="h-full w-full object-cover" />
           </span>
           <div className="min-w-0 flex-1">
-            <h1 className="text-[22px] font-bold leading-tight lg:text-xl" style={{ color: "var(--ux-ink)" }}>{m.name}</h1>
+            <h1 className="text-[24px] font-bold leading-tight lg:text-xl" style={{ color: "var(--ux-ink)" }}>{m.name}</h1>
             <p className="mt-1 text-sm" style={{ color: "var(--ux-ink-2)" }}>{m.headline}</p>
             <p className="mt-2.5 flex flex-wrap items-center gap-x-3 gap-y-1 text-xsm" style={{ color: "var(--ux-muted)" }}>
               <span className="inline-flex items-center gap-1"><Icons.MapPin className="h-4 w-4" /> {m.location}</span>

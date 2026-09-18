@@ -4,7 +4,8 @@ import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 
 import { HomeShell } from "@/components/ux/home/HomeShell";
-import { Back, Btn, Card, Chip, EmptyState, I, SectionHead, Stat, v } from "@/components/ux/kit";
+import { Back, Btn, Card, Chip, EmptyState, I, Stat, v } from "@/components/ux/kit";
+import { EYEBROW, Section } from "@/components/ux/earn/phone";
 import { formatRupees } from "@/components/ux/kit";
 import { MOVES, POCKETS } from "@/components/ux/vault/data";
 import { COPY } from "@/components/ux/copy";
@@ -41,16 +42,16 @@ export default function HistoryPage() {
 
   return (
     <HomeShell active="/app/vault">
-      <div className="flex flex-col gap-5">
+      <div className="flex flex-col gap-6 lg:gap-5">
         <Back to="/app/vault" label={tr("vaultHistory.backToYourLocker")} />
 
         <header className="flex flex-wrap items-end gap-4">
           <div className="min-w-0 flex-1">
-            <p className="text-2xs font-extrabold uppercase tracking-[0.2em]" style={{ color: v("--ux-brand") }}>{tr("vaultHistory.everyMovement")}</p>
-            <h1 className="mt-2 text-[clamp(1.5rem,3.2vw,2.125rem)] font-extrabold leading-[1.1] tracking-[-0.035em]"
+            <p className={EYEBROW}>{tr("vaultHistory.everyMovement")}</p>
+            <h1 className="ux-screen-title mt-2 text-[clamp(1.5rem,3.2vw,2.125rem)] font-extrabold leading-[1.1] tracking-[-0.035em]"
                 style={{ color: v("--ux-ink") }}>{tr("vaultHistory.whatCameInWhatWentOut")}</h1>
           </div>
-          <Btn variant="outline" icon={shown ? "EyeOff" : "Eye"} onClick={() => setShown((s) => !s)}>
+          <Btn variant="outline" icon={shown ? "EyeOff" : "Eye"} className="max-lg:w-full" onClick={() => setShown((s) => !s)}>
             {shown ? tr("vaultHistory.hideAmounts")
               : tr("vaultHistory.showAmounts")}
           </Btn>
@@ -83,7 +84,7 @@ export default function HistoryPage() {
         ) : (
           days.map(([day, list]) => (
             <div key={day}>
-              <SectionHead title={day} icon="CalendarDays" chip={String(list.length)} />
+              <Section title={day} icon="CalendarDays" chip={String(list.length)} />
               <Card pad={0}>
                 <ul className="divide-y" style={{ borderColor: v("--ux-line") }}>
                   {list.map((m) => (

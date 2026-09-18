@@ -5,7 +5,10 @@ import { COPY } from "@/components/ux/copy";
 import * as Icons from "@/components/ux/icons";
 
 import { Btn, IconTile, Pill, SourceNote } from "@/components/ux/kit";
-import { Card, Field, SectionHead, SettingsPage, TextInput } from "@/components/ux/settings/Frame";
+import { Card, Field, SettingsPage, TextInput } from "@/components/ux/settings/Frame";
+import { ListRow } from "@/components/ux/mobile/ListRow";
+import { PhoneRow, phonePrimary, phoneSecondary } from "@/components/ux/PhoneParts";
+import { Group } from "../_parts/Group";
 import { usePayoutMethods } from "@/components/ux/business";
 import { apiAddBankAccount, apiAddUpi, apiMakePrimary, apiRemoveAccount } from "@/lib/shop-api";
 import { useT } from "@/i18n";
@@ -13,6 +16,14 @@ import { useT } from "@/i18n";
 type Draft = "bank" | "upi" | null;
 
 const BLANK = { account: "", confirm: "", ifsc: "", holder: "", upi: "" };
+
+/** The two ways to be paid. `row` is the `ListRow` tint name for the phone list. */
+const ADD_WAYS = [
+  { k: "bank" as const, icon: "Landmark", tint: "--ux-tint-blue", ink: "--ux-blue", row: "blue" as const,
+    t: "Bank account", d: "Money in one working day. Works everywhere." },
+  { k: "upi" as const, icon: "Smartphone", tint: "--ux-tint-violet", ink: "--ux-violet", row: "violet" as const,
+    t: "UPI ID", d: "Usually within minutes. Needs a smartphone." },
+];
 
 /**
  * Where her money lands.
@@ -79,8 +90,44 @@ export default function PaymentMethodsPage() {
     >
       <SourceNote source={source} what="accounts" />
 
-      <Card>
-        <SectionHead title={tr("settingsPayments.yourMethods")} sub={`${methods.length} added`} />
+      {/*
+        On a phone each method is a row of one grouped list — the tile, the
+        name with its Primary / Checked marks, the detail, and the two actions
+        under it — rather than a bordered card inside a bordered card.
+      */}
+      <Group
+        title={tr("settingsPayments.yourMethods")}
+        sub={`${methods.length} added`}
+        inset={methods.length ? "flush" : "form"}
+        phone={methods.length ? methods.map((m) => (
+          <PhoneRow
+            key={m.id}
+            icon={m.icon}
+            tint={m.tint}
+            ink={m.ink}
+            title={
+              <span className="flex flex-wrap items-center gap-x-2 gap-y-1">
+                {m.label}
+                {m.primary && <Pill tone="brand" size="sm">Primary</Pill>}
+                {m.verified
+                  ? <Pill tone="green" size="sm">Checked</Pill>
+                  : <Pill tone="orange" size="sm">{tr("settingsPayments.notCheckedYet")}</Pill>}
+              </span>
+            }
+            meta={m.detail.toLowerCase().includes(m.kind.toLowerCase()) ? m.kind : `${m.kind} · ${m.detail}`}
+          >
+            <span className="mt-2 flex flex-wrap items-center gap-2">
+              {m.primary ? (
+                <span className="inline-flex min-h-[44px] items-center gap-1.5 text-[13px] font-semibold" style={{ color: "var(--ux-green-ink)" }}>
+                  <Icons.CheckCircle2 className="h-[14px] w-[14px]" />{tr("settingsPayments.yourMoneyComesHere")}</span>
+              ) : (
+                <Btn variant="outline" size="sm" icon="Star" onClick={() => void run(() => apiMakePrimary(m.id))}>{tr("settingsPayments.sendMyMoneyHere")}</Btn>
+              )}
+              <Btn variant="ghost" size="sm" icon="Trash2" onClick={() => void run(() => apiRemoveAccount(m.id))}>Remove</Btn>
+            </span>
+          </PhoneRow>
+        )) : undefined}
+      >
         {methods.length ? (
           <div className="ux-deck space-y-2.5">
             {methods.map((m, i) => (
@@ -128,7 +175,7 @@ export default function PaymentMethodsPage() {
             Until then, Withdraw has nowhere to send them.
           </p>
         )}
-      </Card>
+      </Group>
 
       {added && (
         <Card>
@@ -146,15 +193,16 @@ export default function PaymentMethodsPage() {
       )}
 
       {draft === null ? (
-        <Card>
-          <SectionHead title={tr("settingsPayments.addAWayToGetPaid")} />
+        <Group
+          title={tr("settingsPayments.addAWayToGetPaid")}
+          inset="flush"
+          phone={ADD_WAYS.map((o) => (
+            <ListRow key={o.k} icon={o.icon} tint={o.row} title={o.t} subtitle={o.d} chevron
+                     onClick={() => setDraft(o.k)} />
+          ))}
+        >
           <div className="grid gap-2.5 sm:grid-cols-2">
-            {[
-              { k: "bank" as const, icon: "Landmark", tint: "--ux-tint-blue", ink: "--ux-blue",
-                t: "Bank account", d: "Money in one working day. Works everywhere." },
-              { k: "upi" as const, icon: "Smartphone", tint: "--ux-tint-violet", ink: "--ux-violet",
-                t: "UPI ID", d: "Usually within minutes. Needs a smartphone." },
-            ].map((o, i) => (
+            {ADD_WAYS.map((o, i) => (
               <button
                 key={o.k}
                 onClick={() => setDraft(o.k)}
@@ -167,11 +215,10 @@ export default function PaymentMethodsPage() {
               </button>
             ))}
           </div>
-        </Card>
+        </Group>
       ) : (
-        <Card>
-          <SectionHead title={draft === "bank" ? tr("settingsPayments.addABankAccount")
-              : tr("settingsPayments.addAUpiId")} />
+        <Group title={draft === "bank" ? tr("settingsPayments.addABankAccount")
+              : tr("settingsPayments.addAUpiId")} inset="form">
           <div className="space-y-3.5">
             {draft === "bank" ? (
               <>
@@ -216,7 +263,7 @@ export default function PaymentMethodsPage() {
 
           <div className="mt-4 flex flex-wrap gap-2.5">
             <Btn variant="primary" iconEnd="ArrowRight"
-                 className={ready && !busy ? "" : "pointer-events-none opacity-50"}
+                 className={`${phonePrimary} ${ready && !busy ? "" : "pointer-events-none opacity-50"}`}
                  onClick={() => void run(async () => {
                    if (draft === "bank") {
                      await apiAddBankAccount({
@@ -234,13 +281,12 @@ export default function PaymentMethodsPage() {
                  })}>
               {busy ? "Saving…" : "Save it"}
             </Btn>
-            <Btn variant="ghost" onClick={() => { setDraft(null); setProblem(""); }}>{tr("settingsPayments.notNow")}</Btn>
+            <Btn variant="ghost" className={phoneSecondary} onClick={() => { setDraft(null); setProblem(""); }}>{tr("settingsPayments.notNow")}</Btn>
           </div>
-        </Card>
+        </Group>
       )}
 
-      <Card>
-        <SectionHead title={tr("settingsPayments.whatWeNeverDo")} icon="ShieldCheck" />
+      <Group title={tr("settingsPayments.whatWeNeverDo")} icon="ShieldCheck" inset="form">
         <ul className="space-y-2.5">
           {[
             "We never ask for your PIN, your password or an OTP. Nobody from WomSakhi will.",
@@ -253,7 +299,7 @@ export default function PaymentMethodsPage() {
             </li>
           ))}
         </ul>
-      </Card>
+      </Group>
     </SettingsPage>
   );
 }

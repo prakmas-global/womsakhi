@@ -239,7 +239,7 @@ export default function InstallPrompt() {
           <p
             style={{
               margin: 0,
-              fontSize: 14.5,
+              fontSize: 15,
               fontWeight: 700,
               color: "var(--ux-ink)",
               lineHeight: 1.3,

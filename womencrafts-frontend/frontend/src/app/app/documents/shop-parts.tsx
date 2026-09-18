@@ -112,7 +112,7 @@ export const OrderCard = memo(function OrderCard({ o, onAdvance, busy }: {
         </b>
         {o.next_state && (
           <button type="button" onClick={() => onAdvance(o)} disabled={busy}
-                  className="ux-press flex min-h-[38px] shrink-0 items-center rounded-[12px] px-4 text-xs font-bold disabled:opacity-60"
+                  className="ux-press flex min-h-[38px] shrink-0 items-center rounded-[12px] px-4 text-xs font-bold disabled:opacity-60 max-lg:min-h-[44px] max-lg:w-full max-lg:justify-center max-lg:text-[15px]"
                   style={{ background: "linear-gradient(96deg, var(--ux-rib-2), var(--ux-rib-3))",
                            color: "var(--ux-on-brand)" }}>
             {busy ? "…" : LABEL[o.state] ?? `Mark ${o.next_state.toLowerCase()}`}
@@ -189,10 +189,10 @@ export const ListingCard = memo(function ListingCard({
   };
 
   return (
-    <article className="ux-rise overflow-hidden rounded-[20px] transition-transform hover:-translate-y-[3px]"
+    <article className="ux-rise overflow-hidden rounded-[16px] transition-transform hover:-translate-y-[3px] lg:rounded-[20px]"
              style={card}>
       <div className="relative h-[150px] overflow-hidden" style={{ background: "var(--ux-surface-2)" }}>
-        <span className="absolute start-2.5 top-2.5 z-[2] rounded-[8px] px-2.5 py-1 text-2xs font-extrabold uppercase tracking-[0.05em]"
+        <span className="absolute start-2.5 top-2.5 z-[2] rounded-full px-2.5 py-1 text-2xs font-extrabold uppercase tracking-[0.05em] lg:rounded-[8px]"
               style={{ background: "var(--ux-surface)", color: `var(${TONE[tone][1]})`,
                        boxShadow: "var(--ux-shadow-card)" }}>
           {l.kind}
@@ -210,7 +210,7 @@ export const ListingCard = memo(function ListingCard({
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img loading="lazy" decoding="async" src={l.photo} alt="" className="h-full w-full object-cover" />
             <button type="button" onClick={() => file.current?.click()}
-                    className="ux-press absolute bottom-2.5 start-2.5 inline-flex min-h-[32px] items-center gap-1.5 rounded-[8px] px-2.5 text-2xs font-extrabold uppercase tracking-[0.04em]"
+                    className="ux-press absolute bottom-2.5 start-2.5 inline-flex min-h-[32px] items-center gap-1.5 rounded-full px-3 text-2xs font-extrabold uppercase tracking-[0.04em] lg:rounded-[8px] lg:px-2.5"
                     style={{ background: "color-mix(in srgb, var(--ux-surface) 92%, transparent)",
                              color: "var(--ux-ink-2)", backdropFilter: "blur(6px)" }}>
               <Icons.Camera className="h-[12px] w-[12px]" /> Change
@@ -246,13 +246,13 @@ export const ListingCard = memo(function ListingCard({
         </div>
 
         {error && (
-          <p className="mt-2.5 rounded-[12px] p-2.5 text-2xs font-semibold"
+          <p className="mt-2.5 rounded-[12px] px-4 py-3 text-2xs font-semibold lg:p-2.5"
              style={{ background: "var(--ux-danger-tint)", color: "var(--ux-danger-solid)" }}>
             {error}
           </p>
         )}
         {!l.photo && !error && (
-          <p className="mt-2.5 flex items-start gap-2 rounded-[12px] p-2.5 text-2xs leading-relaxed"
+          <p className="mt-2.5 flex items-start gap-2 rounded-[12px] px-4 py-3 text-2xs leading-relaxed lg:p-2.5"
              style={{ background: "var(--ux-tint-blue)", color: "var(--ux-ink-2)" }}>
             <Icons.Info className="mt-px h-[13px] w-[13px] shrink-0" style={{ color: "var(--ux-blue-ink)" }} />{tr("documents.aPhotoIsTheDifferenceBetween")}</p>
         )}
@@ -282,20 +282,20 @@ export const ListingCard = memo(function ListingCard({
 
         <div className="mt-3 flex flex-wrap gap-2">
           <Link href={`/app/documents/${l.kind}/${l.id}`}
-                className="ux-press inline-flex min-h-[36px] items-center gap-1.5 rounded-[8px] px-3 text-xs font-bold"
+                className="ux-press inline-flex min-h-[36px] items-center gap-1.5 rounded-[12px] px-3 text-xs font-bold lg:rounded-[8px]"
                 style={{ border: "1px solid var(--ux-line)", background: "var(--ux-surface)",
                          color: "var(--ux-ink-2)" }}>
             <Icons.Pencil className="h-[13px] w-[13px]" /> Edit
           </Link>
           <button type="button" onClick={() => onPause(l)} disabled={busy}
-                  className="ux-press inline-flex min-h-[36px] items-center gap-1.5 rounded-[8px] px-3 text-xs font-bold disabled:opacity-60"
+                  className="ux-press inline-flex min-h-[36px] items-center gap-1.5 rounded-[12px] px-3 text-xs font-bold lg:rounded-[8px] disabled:opacity-60"
                   style={{ border: "1px solid var(--ux-line)", background: "var(--ux-surface)",
                            color: "var(--ux-ink-2)" }}>
             {paused ? <><Icons.Play className="h-[13px] w-[13px]" />{tr("documents.putBack")}</>
                     : <><Icons.Pause className="h-[13px] w-[13px]" /> Pause</>}
           </button>
           <button type="button" onClick={() => onShare(l)}
-                  className="ux-press inline-flex min-h-[36px] items-center gap-1.5 rounded-[8px] px-3 text-xs font-bold"
+                  className="ux-press inline-flex min-h-[36px] items-center gap-1.5 rounded-[12px] px-3 text-xs font-bold lg:rounded-[8px]"
                   style={{ border: "1px solid var(--ux-line)", background: "var(--ux-surface)",
                            color: "var(--ux-ink-2)" }}>
             <Icons.Share2 className="h-[13px] w-[13px]" /> Share
@@ -305,7 +305,7 @@ export const ListingCard = memo(function ListingCard({
               reaches for daily. It asks before it does anything. */}
           <button type="button" onClick={onDelete} disabled={busy}
                   aria-label={`Remove ${l.title} from your shop`}
-                  className="ux-press inline-flex min-h-[36px] items-center gap-1.5 rounded-[8px] px-3 text-xs font-bold"
+                  className="ux-press inline-flex min-h-[36px] items-center gap-1.5 rounded-[12px] px-3 text-xs font-bold lg:rounded-[8px]"
                   style={{ border: "1px solid var(--ux-line)", background: "var(--ux-surface)",
                            color: "var(--ux-faint)", opacity: busy ? 0.5 : 1 }}>
             <Icons.Trash2 className="h-[13px] w-[13px]" /> Remove

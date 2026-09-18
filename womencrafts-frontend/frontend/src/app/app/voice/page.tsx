@@ -8,6 +8,30 @@ import { ReadAloud } from "@/components/ux/reach/ReadAloud";
 import { VOICE_LANGUAGES, VOICE_PREFS } from "@/components/ux/reach/data";
 import { TEXT_SIZES, applyTextSize, readTextSize, type TextSize } from "@/components/ux/reach/text-size";
 import { useT } from "@/i18n";
+import { ListGroup, ListRow } from "@/components/ux/mobile/ListRow";
+import { GroupLabel, PhoneRow, PhoneTitle } from "@/components/ux/PhoneParts";
+
+/**
+ * The phone's specimen sizes for each text-size option: 15 and 13 (subhead
+ * and footnote) scaled by the option's multiplier and landed on the phone
+ * type scale — 1.15 × 15 is 17, 1.3 × 15 is 20. The desktop keeps its own
+ * 14/12 base, which is the scale it is drawn on.
+ */
+const PHONE_SPECIMEN: Record<TextSize, [number, number]> = {
+  normal: [15, 13],
+  large: [17, 15],
+  larger: [20, 17],
+};
+
+/** The places she can already speak instead of typing. Points at the real
+ *  forms, not at a screen that pretended to listen — the microphone that
+ *  works is the one on her own keyboard, and it works inside those forms. */
+const SPEAK_HERE = [
+  { icon: "Store", label: "Adding something to sell", href: "/app/documents/new", note: "Use the microphone on your keyboard" },
+  { icon: "MessageCircle", label: "Replying to a buyer", href: "/app/messages", note: "Speak your message" },
+  { icon: "Search", label: "Looking for something", href: "/app/search", note: "Say what you need" },
+  { icon: "BookOpen", label: "Writing down a sale", href: "/app/books", note: "Say who bought and how much" },
+];
 
 /**
  * Reading and speaking — the accessibility layer the app was missing.
@@ -53,7 +77,11 @@ export default function VoiceSettingsPage() {
     <HomeShell active="/app/voice">
       <div className="flex flex-col gap-5" id="voice-page">
 
-        <header className="flex flex-wrap items-end gap-4">
+        <PhoneTitle title={tr("voice.readingAndSpeaking")} sub={tr("voice.youDoNotHaveToRead")}
+                    note="Every screen can be read out to you, in your own language. Anywhere you would type, you can speak instead. Try it on this page first — press the button.">
+          <div className="mt-3"><ReadAloud targetId="voice-page" lang={`${speech.code}-IN`} money={readsMoney} /></div>
+        </PhoneTitle>
+        <header className="hidden flex-wrap items-end gap-4 lg:flex">
           <div className="min-w-0 flex-1">
             <p className="text-2xs font-extrabold uppercase tracking-[0.2em]" style={{ color: v("--ux-brand") }}>{tr("voice.readingAndSpeaking")}</p>
             <h1 className="mt-2 text-[clamp(1.5rem,3.2vw,2.125rem)] font-extrabold leading-[1.1] tracking-[-0.035em]"
@@ -68,8 +96,20 @@ export default function VoiceSettingsPage() {
 
         {/* Language first — it decides what the voice sounds like */}
         <div>
-          <SectionHead title={tr("voice.whichLanguageShouldItSpeak")}
-                       sub={tr("voice.theVoiceComesFromYourPhone")} icon="Languages" />
+          <GroupLabel sub={tr("voice.theVoiceComesFromYourPhone")}>{tr("voice.whichLanguageShouldItSpeak")}</GroupLabel>
+          <div className="hidden lg:block">
+            <SectionHead title={tr("voice.whichLanguageShouldItSpeak")}
+                         sub={tr("voice.theVoiceComesFromYourPhone")} icon="Languages" />
+          </div>
+          {/* One of several: on a phone, rows with a checkmark. */}
+          <ListGroup className="lg:hidden">
+            {VOICE_LANGUAGES.map((l) => (
+              <ListRow key={l.code} title={l.label} subtitle={l.ready ? l.english : "coming"}
+                       selected={lang === l.code} disabled={!l.ready}
+                       onClick={() => l.ready && setLang(l.code)} />
+            ))}
+          </ListGroup>
+          <div className="hidden lg:block">
           <Card pad={16}>
             <div className="flex flex-wrap gap-2">
               {VOICE_LANGUAGES.map((l) => (
@@ -89,12 +129,35 @@ export default function VoiceSettingsPage() {
               ))}
             </div>
           </Card>
+          </div>
         </div>
 
         {/* Text size — a real control. This was a dead switch before. */}
         <div>
-          <SectionHead title={tr("voice.howBigShouldTheWordsBe")}
-                       sub={tr("voice.changesEverythingEverywhereStraigh")} icon="Type" />
+          <GroupLabel sub={tr("voice.changesEverythingEverywhereStraigh")}>{tr("voice.howBigShouldTheWordsBe")}</GroupLabel>
+          <div className="hidden lg:block">
+            <SectionHead title={tr("voice.howBigShouldTheWordsBe")}
+                         sub={tr("voice.changesEverythingEverywhereStraigh")} icon="Type" />
+          </div>
+          {/*
+            Three across at 390px clipped "Biggest" inside its own button. On a
+            phone each option is a row, and each row is still set at its own
+            scale — she reads the thing she is choosing — on the phone's steps.
+          */}
+          <ListGroup className="lg:hidden">
+            {(Object.keys(TEXT_SIZES) as TextSize[]).map((k) => (
+              <PhoneRow key={k} onClick={() => pickSize(k)} selected={size === k}
+                        title={
+                          <span className="font-bold leading-tight" style={{ fontSize: PHONE_SPECIMEN[k][0] }}>
+                            {k === "normal" ? "Normal" : k === "large" ? "Bigger" : "Biggest"}
+                          </span>
+                        }>
+                <span className="mt-1 block font-normal leading-snug"
+                      style={{ fontSize: PHONE_SPECIMEN[k][1], color: v("--ux-muted") }}>{tr("voice.blouseStitching")}</span>
+              </PhoneRow>
+            ))}
+          </ListGroup>
+          <div className="hidden lg:block">
           <Card pad={16}>
             <div className="flex flex-wrap gap-2.5">
               {(Object.keys(TEXT_SIZES) as TextSize[]).map((k) => (
@@ -123,13 +186,17 @@ export default function VoiceSettingsPage() {
               ))}
             </div>
           </Card>
+          </div>
         </div>
 
         <div>
-          <SectionHead title={tr("voice.whatItShouldDo")} sub={`${on} of ${prefs.length} turned on`} icon="Settings2" />
+          <GroupLabel sub={`${on} of ${prefs.length} turned on`}>{tr("voice.whatItShouldDo")}</GroupLabel>
+          <div className="hidden lg:block">
+            <SectionHead title={tr("voice.whatItShouldDo")} sub={`${on} of ${prefs.length} turned on`} icon="Settings2" />
+          </div>
           <Card pad={0} style={{ overflow: "hidden" }}>
             {prefs.map((p, i) => (
-              <div key={p.id} className="flex items-center gap-3.5 px-5 py-4"
+              <div key={p.id} className="flex items-center gap-3.5 px-5 py-4 max-lg:gap-3 max-lg:px-4 max-lg:py-3"
                    style={{ borderTop: i === 0 ? "none" : `1px solid ${v("--ux-line")}` }}>
                 <span className="grid h-[38px] w-[38px] shrink-0 place-items-center rounded-[12px]"
                       style={{ background: v(p.on ? "--ux-brand-tint" : "--ux-surface-2"),
@@ -141,12 +208,17 @@ export default function VoiceSettingsPage() {
                     <p className="text-sm font-bold" style={{ color: v("--ux-ink") }}>{p.label}</p>
                     {p.id === "vp5" && <Pill tone="orange" size="sm">Careful</Pill>}
                   </div>
-                  <p className="mt-0.5 text-xs" style={{ color: v("--ux-muted") }}>{p.detail}</p>
+                  <p className="mt-0.5 text-[13px] lg:text-xs" style={{ color: v("--ux-muted") }}>{p.detail}</p>
                 </div>
                 <button type="button" role="switch" aria-checked={p.on} aria-label={p.label}
                         onClick={() => toggle(p.id)}
-                        className="ux-press ux-sq relative h-[26px] w-[46px] shrink-0 rounded-full"
-                        style={{ background: v(p.on ? "--ux-green-ink" : "--ux-line-strong"),
+                        /* On a phone the app gives every button a 44px minimum,
+                           which stretched this 26px track into a 44px pill.
+                           Exempt, and grown to 44 by a transparent border
+                           instead — the switch keeps its shape, the target
+                           keeps its size. Nothing changes from `lg`. */
+                        className="ux-press ux-sq ux-tap-exempt relative -my-[9px] box-content h-[26px] w-[46px] shrink-0 rounded-full border-y-[9px] border-solid border-transparent bg-clip-padding lg:my-0 lg:border-y-0"
+                        style={{ backgroundColor: v(p.on ? "--ux-green-ink" : "--ux-line-strong"),
                                  transition: "background var(--ux-t-fast) var(--ux-ease)" }}>
                   <span className="absolute top-[3px] h-[20px] w-[20px] rounded-full"
                         style={{ left: p.on ? 23 : 3, background: v("--ux-surface"),
@@ -169,17 +241,18 @@ export default function VoiceSettingsPage() {
         )}
 
         <div>
-          <SectionHead title={tr("voice.whereYouCanAlreadySpeakInstead")} icon="Mic" />
-          <div className="grid gap-3 sm:grid-cols-2">
-            {[
-              // Points at the real form, not at the screen that pretended to
-              // listen. The microphone that works here is the one on her own
-              // keyboard, and it works inside this form.
-              { icon: "Store", label: "Adding something to sell", href: "/app/documents/new", note: "Use the microphone on your keyboard" },
-              { icon: "MessageCircle", label: "Replying to a buyer", href: "/app/messages", note: "Speak your message" },
-              { icon: "Search", label: "Looking for something", href: "/app/search", note: "Say what you need" },
-              { icon: "BookOpen", label: "Writing down a sale", href: "/app/books", note: "Say who bought and how much" },
-            ].map((x) => (
+          <GroupLabel>{tr("voice.whereYouCanAlreadySpeakInstead")}</GroupLabel>
+          <div className="hidden lg:block">
+            <SectionHead title={tr("voice.whereYouCanAlreadySpeakInstead")} icon="Mic" />
+          </div>
+          {/* Destinations: on a phone, one grouped list. */}
+          <ListGroup className="lg:hidden">
+            {SPEAK_HERE.map((x) => (
+              <PhoneRow key={x.href} href={x.href} icon={x.icon} title={x.label} meta={x.note} />
+            ))}
+          </ListGroup>
+          <div className="hidden gap-3 sm:grid-cols-2 lg:grid">
+            {SPEAK_HERE.map((x) => (
               <Card key={x.href} pad={0} style={{ overflow: "hidden" }}>
                 <a href={x.href} className="ux-press flex items-center gap-3.5 p-4">
                   <span className="grid h-[40px] w-[40px] shrink-0 place-items-center rounded-[12px]"

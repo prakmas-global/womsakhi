@@ -7,6 +7,9 @@ import { HomeShell } from "@/components/ux/home/HomeShell";
 import { useGuidance, useHelplines, useRights } from "@/components/ux/entitlements";
 import { WELLBEING_ART } from "@/components/ux/wellbeing/data";
 import { useT } from "@/i18n";
+import { ListGroup } from "@/components/ux/mobile/ListRow";
+import { SegmentedControl } from "@/components/ux/mobile/SegmentedControl";
+import { PhoneRow, phonePrimary } from "@/components/ux/PhoneParts";
 
 /**
  * Legal Aid & Rights.
@@ -85,18 +88,47 @@ export default function RightsPage() {
         </div>
       }
     >
-      <div className="mb-[20px] flex items-end justify-between gap-4">
+      {/* On a phone: a column — the large title, its line, then a full-width
+          segmented control where the desktop has tabs. */}
+      <div className="mb-6 flex flex-col gap-4 lg:mb-[20px] lg:flex-row lg:items-end lg:justify-between">
         <div>
-          <h1 className="text-2xl font-bold" style={{ color: "var(--ux-ink)" }}>{tr("rights.yourRights")}</h1>
+          <h1 className="ux-screen-title text-2xl font-bold" style={{ color: "var(--ux-ink)" }}>{tr("rights.yourRights")}</h1>
           <p className="mt-1.5 text-xsm" style={{ color: "var(--ux-muted)" }}>{tr("rights.whatTheLawAlreadySaysIs")}</p>
 
       <SourceNote source={source} what="rights" />
         </div>
-        <Tabs items={["What you are owed", "If something is wrong"]} active={tab} onChange={setTab} />
+        <div className="hidden lg:flex">
+          <Tabs items={["What you are owed", "If something is wrong"]} active={tab} onChange={setTab} />
+        </div>
+        <SegmentedControl className="lg:hidden" label={tr("rights.yourRights")} value={tab} onChange={setTab}
+          options={["What you are owed", "If something is wrong"].map((t) => ({ value: t, label: t }))} />
       </div>
 
       {tab === "What you are owed" && (
-        <div className="ux-deck ux-stagger space-y-[12px]">
+        <ListGroup className="lg:hidden">
+          {RIGHTS.map((r) => {
+            const on = open === r.id;
+            return (
+              <PhoneRow key={r.id} icon={r.icon} tint={r.tint} ink={r.ink} title={r.title} body={r.body}>
+                {on && (
+                  <span className="ux-slide-up mt-2.5 block rounded-[12px] p-3 text-[13px] leading-relaxed"
+                        style={{ background: "var(--ux-surface-2)", color: "var(--ux-muted)" }}>
+                    {r.law}
+                  </span>
+                )}
+                <span className="-ms-3 mt-1 flex">
+                  <Btn variant="ghost" size="sm" iconEnd={on ? "ChevronUp" : "ChevronDown"}
+                       onClick={() => setOpen(on ? null : r.id)}>
+                    {on ? "Less" : "Which law"}
+                  </Btn>
+                </span>
+              </PhoneRow>
+            );
+          })}
+        </ListGroup>
+      )}
+      {tab === "What you are owed" && (
+        <div className="ux-deck ux-stagger hidden space-y-[12px] lg:block">
           {RIGHTS.map((r, i) => {
             const on = open === r.id;
             return (
@@ -146,12 +178,13 @@ export default function RightsPage() {
           </Card>
 
           <Card>
-            <div className="flex items-center justify-between gap-4">
+            {/* On a phone the call is the primary action: full width, under the words. */}
+            <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
               <div className="min-w-0">
                 <h3 className="text-base font-semibold" style={{ color: "var(--ux-ink)" }}>{tr("rights.callItIsFreeWhateverYou")}</h3>
                 <p className="mt-1.5 text-xsm leading-relaxed" style={{ color: "var(--ux-muted)" }}>{tr("rights.theyAssignYouALawyerYou")}</p>
               </div>
-              <Btn href="tel:15100" variant="primary" icon="Phone">{tr("rights.call")}</Btn>
+              <Btn href="tel:15100" variant="primary" icon="Phone" className={phonePrimary}>{tr("rights.call")}</Btn>
             </div>
           </Card>
         </>

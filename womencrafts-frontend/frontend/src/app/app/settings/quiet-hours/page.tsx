@@ -8,6 +8,7 @@ import { apiNotificationPrefs, apiSaveNotificationPrefs, type NotificationPrefs 
 import { useResource } from "@/lib/use-resource";
 import { useNotifications } from "@/components/ux/live";
 import { HomeShell } from "@/components/ux/home/HomeShell";
+import { PhoneTitle } from "@/components/ux/PhoneParts";
 import { useT } from "@/i18n";
 
 /**
@@ -96,7 +97,13 @@ export default function QuietHoursPage() {
   return (
     <HomeShell active="/app/settings">
       <div className="mx-auto flex w-full max-w-[1140px] flex-col gap-5">
-        <header>
+        {/* On a phone: the screen's name as the large title, the headline and
+            the paragraph as quiet text under it. The breadcrumb goes — the
+            top bar already carries the way back to Settings. */}
+        <PhoneTitle title={tr("settingsQuiethours.quietHours")}
+                    sub={tr("settingsQuiethours.yourPhoneSleepsWhenYouDo")}
+                    note="Pick the hours you do not want to be disturbed. Everything that arrives while you sleep waits for you in Notifications — nothing is lost, it just waits until morning." />
+        <header className="hidden lg:block">
           {/* Settings › Quiet hours, as the design has it — SettingsPage was
               printing a second "Quiet hours" heading above the real one and
               capping the page at 720px, which collapsed the two columns. */}
@@ -143,15 +150,16 @@ export default function QuietHoursPage() {
           </div>
         </div>
 
-        <div className="flex flex-wrap items-center gap-2.5">
+        {/* On a phone both actions are full width, the primary one first. */}
+        <div className="flex flex-col gap-2.5 lg:flex-row lg:flex-wrap lg:items-center">
           <button type="button" onClick={save} disabled={saving}
-                  className="ux-press flex min-h-[46px] items-center gap-2 rounded-[12px] px-6 text-sm font-bold disabled:opacity-60"
+                  className="ux-press flex min-h-[46px] items-center gap-2 rounded-[12px] px-6 text-sm font-bold disabled:opacity-60 max-lg:min-h-[50px] max-lg:w-full max-lg:justify-center max-lg:rounded-[14px] max-lg:text-[17px]"
                   style={{ background: "linear-gradient(96deg, var(--ux-rib-2), var(--ux-rib-3))",
                            color: "var(--ux-on-brand)" }}>
             {saving ? "Saving…" : "Save quiet hours"}
           </button>
           <button type="button" onClick={() => set({ quiet_start: 1290, quiet_end: 420 })}
-                  className="ux-press flex min-h-[46px] items-center rounded-[12px] px-5 text-sm font-bold"
+                  className="ux-press flex min-h-[46px] items-center rounded-[12px] px-5 text-sm font-bold max-lg:min-h-[50px] max-lg:w-full max-lg:justify-center max-lg:rounded-[14px] max-lg:text-[17px] max-lg:font-semibold"
                   style={{ border: "1px solid var(--ux-line-strong)", color: "var(--ux-ink-2)" }}>{tr("settingsQuiethours.resetToPmAm")}</button>
           {saved && (
             <span className="flex items-center gap-1.5 text-xsm font-bold" style={{ color: "var(--ux-green-ink)" }}>
@@ -212,7 +220,7 @@ function Dial({
   const hrs = Math.floor(span / 60), mins = span % 60;
 
   return (
-    <section className="ux-sq rounded-[20px] p-5"
+    <section className="ux-sq rounded-[20px] p-5 max-lg:rounded-[16px] max-lg:p-4"
              style={{ background: "var(--ux-surface)", border: "1px solid var(--ux-line)",
                       boxShadow: "var(--ux-shadow-card)" }}>
       <h3 className="text-sm font-bold" style={{ color: "var(--ux-ink)" }}>{tr("settingsQuiethours.whenYouSleep")}</h3>
@@ -293,7 +301,7 @@ function Dial({
           <p className="my-0.5 text-2xlm font-extrabold leading-[1.12] tracking-[-0.03em] tabular-nums"
              style={{ color: "var(--ux-ink)" }}>{fmt(p.quiet_end)}</p>
           <p className="mt-2 text-xsm font-semibold" style={{ color: "var(--ux-ink-2)" }}>
-            that is <b className="tabular-nums" style={{ color: "var(--ux-ink)" }}>
+            that is <b className="tabular-nums max-lg:font-bold" style={{ color: "var(--ux-ink)" }}>
               {mins ? `${hrs} hr ${mins} min` : `${hrs} hr`}</b> of quiet
           </p>
         </div>
@@ -369,7 +377,7 @@ function Waited({
   };
 
   return (
-    <section className="ux-sq rounded-[20px] p-5"
+    <section className="ux-sq rounded-[20px] p-5 max-lg:rounded-[16px] max-lg:p-4"
              style={{ background: "var(--ux-surface)", border: "1px solid var(--ux-line)",
                       boxShadow: "var(--ux-shadow-card)" }}>
       <h3 className="text-sm font-bold" style={{ color: "var(--ux-ink)" }}>{tr("settingsQuiethours.whatThisWindowWouldHold")}</h3>
@@ -417,7 +425,7 @@ function Nights({ days, onChange }: { days: boolean[]; onChange: (d: boolean[]) 
     onChange(DAYS.map((_, i) => (which === "all" ? true : which === "week" ? i < 5 : i >= 5)));
 
   return (
-    <section className="ux-sq rounded-[20px] p-5"
+    <section className="ux-sq rounded-[20px] p-5 max-lg:rounded-[16px] max-lg:p-4"
              style={{ background: "var(--ux-surface)", border: "1px solid var(--ux-line)",
                       boxShadow: "var(--ux-shadow-card)" }}>
       <h3 className="text-sm font-bold" style={{ color: "var(--ux-ink)" }}>{tr("settingsQuiethours.whichNights")}</h3>
@@ -453,7 +461,7 @@ function Breakthrough({
 }: { p: NotificationPrefs; set: (patch: Partial<NotificationPrefs>) => void }) {
   const tr = useT();
   return (
-    <section className="ux-sq rounded-[20px] p-5"
+    <section className="ux-sq rounded-[20px] p-5 max-lg:rounded-[16px] max-lg:p-4"
              style={{ background: "var(--ux-surface)", border: "1px solid var(--ux-line)",
                       boxShadow: "var(--ux-shadow-card)" }}>
       <h3 className="text-sm font-bold" style={{ color: "var(--ux-ink)" }}>{tr("settingsQuiethours.whatStillReachesYou")}</h3>
@@ -513,14 +521,23 @@ function Switch({
 }: { on: boolean; label: string; onChange: (v: boolean) => void; small?: boolean }) {
   const w = small ? 44 : 52, h = small ? 26 : 30, k = small ? 20 : 24;
   return (
+    /*
+      The button is the TARGET and the span inside it is the switch. On a phone
+      the app gives every rounded button a 44px minimum height, which stretched
+      the 30px track itself into a 44px pill; now the button grows to 44 with
+      transparent padding (and gives the height back with a negative margin)
+      while the track keeps its shape. From `lg` the two boxes are the same.
+    */
     <button type="button" role="switch" aria-checked={on} aria-label={label}
             onClick={() => onChange(!on)}
-            className="ux-press flex shrink-0 items-center rounded-full p-[3px] transition-colors"
+            className={`ux-press ux-tap-exempt flex shrink-0 items-center lg:my-0 lg:py-0 ${small ? "-my-[9px] py-[9px]" : "-my-[7px] py-[7px]"}`}>
+      <span className="flex items-center rounded-full p-[3px] transition-colors"
             style={{ width: w, height: h,
                      background: on ? "linear-gradient(96deg, var(--ux-rib-2), var(--ux-rib-3))" : "var(--ux-track)" }}>
-      <i className="block rounded-full transition-transform"
-         style={{ width: k, height: k, background: "var(--ux-surface)",
-                  transform: on ? `translateX(${w - k - 6}px)` : "none" }} />
+        <i className="block rounded-full transition-transform"
+           style={{ width: k, height: k, background: "var(--ux-surface)",
+                    transform: on ? `translateX(${w - k - 6}px)` : "none" }} />
+      </span>
     </button>
   );
 }

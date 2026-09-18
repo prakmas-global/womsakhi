@@ -362,3 +362,17 @@ export function isSectionHub(path: string): boolean {
   const clean = (path.split("?")[0].replace(/\/+$/, "")) || "/app";
   return SECTIONS.some((s) => s.href === clean);
 }
+
+/**
+ * Is this path one of the five the bottom bar lands on?
+ *
+ * The question a Back control has to ask before it draws itself. `isSectionHub`
+ * above is the wrong test for it: that is true of Help and You as well, and
+ * those two are NOT tabs — a woman reaches `/app/you` from the header, from
+ * anywhere, so it needs a way back exactly as much as any other screen does.
+ * The five here are the only paths in the app with nowhere above them.
+ */
+export function isTabRoot(path: string): boolean {
+  const clean = (path.split("?")[0].replace(/\/+$/, "")) || "/app";
+  return TABS.some((s) => s.href === clean);
+}

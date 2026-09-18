@@ -3,8 +3,8 @@
 import { useCallback, useMemo, useState } from "react";
 
 import { HomeShell } from "@/components/ux/home/HomeShell";
-import { Tag } from "@/components/ux/work/native";
-import { Btn, Card, EmptyState, I, SectionHead, Skeleton, v } from "@/components/ux/kit";
+import { SectionLabel, Tag } from "@/components/ux/work/native";
+import { Btn, Card, EmptyState, I, Skeleton, v } from "@/components/ux/kit";
 import { formatRupees } from "@/components/ux/kit";
 import { apiApply, apiOpportunities, type Opportunity } from "@/lib/growth-api";
 import { useAction } from "@/lib/use-action";
@@ -98,13 +98,13 @@ export default function ContractsPage() {
 
   return (
     <HomeShell active="/app/contracts">
-      <div className="flex flex-col gap-5">
+      <div className="flex flex-col gap-6 lg:gap-5">
 
         <header>
-          <p className="text-[13px] font-extrabold uppercase tracking-[0.2em] lg:text-2xs" style={{ color: v("--ux-brand") }}>{tr("contracts.bigOrders")}</p>
-          <h1 className="ux-screen-title mt-2 text-[clamp(1.5rem,3.2vw,2.125rem)] font-extrabold leading-[1.1] tracking-[-0.035em]"
+          <p className="text-[12px] font-extrabold uppercase tracking-[0.2em] lg:text-2xs" style={{ color: v("--ux-brand") }}>{tr("contracts.bigOrders")}</p>
+          <h1 className="ux-screen-title mt-1 lg:mt-2 text-[clamp(1.5rem,3.2vw,2.125rem)] font-extrabold leading-[1.1] tracking-[-0.035em]"
               style={{ color: v("--ux-ink") }}>{tr("contracts.ordersTooBigForOneWoman")}</h1>
-          <p className="mt-1.5 max-w-[58ch] text-[15px] leading-snug lg:text-sm lg:leading-relaxed" style={{ color: v("--ux-muted") }}>
+          <p className="mt-2 max-w-[58ch] text-[15px] leading-snug lg:mt-1.5 lg:text-sm lg:leading-relaxed" style={{ color: v("--ux-muted") }}>
             One buyer wants hundreds of pieces, and several of you make them between you. Everything
             below is an order a real buyer has placed with us. When you apply, that buyer sees your
             name — so apply only for work you can actually take on.
@@ -144,8 +144,8 @@ export default function ContractsPage() {
         )}
 
         <div>
-          <SectionHead title={tr("contracts.openRightNow")} sub="Placed by a buyer, still taking applications"
-                       icon="Briefcase" chip={source === "loading" ? undefined : String(open.length)} />
+          <SectionLabel title={tr("contracts.openRightNow")} sub="Placed by a buyer, still taking applications"
+                        icon="Briefcase" chip={source === "loading" ? undefined : String(open.length)} />
 
           {source === "loading" ? (
             <div className="flex flex-col gap-4">
@@ -177,8 +177,8 @@ export default function ContractsPage() {
 
         {closed.length > 0 && (
           <div>
-            <SectionHead title="Closed" sub="Kept here so you can see what has come through before"
-                         icon="Archive" chip={String(closed.length)} />
+            <SectionLabel title="Closed" sub="Kept here so you can see what has come through before"
+                          icon="Archive" chip={String(closed.length)} />
             <div className="flex flex-col gap-4">
               {closed.map((o) => (
                 <OrderCard key={o.id} o={o} closed onApply={() => {}} busy={false} />
@@ -195,11 +195,11 @@ export default function ContractsPage() {
           nothing here ticks.
         */}
         <div>
-          <SectionHead title={tr("contracts.whatBuyersAskFor")}
-                       sub="The things that actually lose bids" icon="ClipboardCheck" />
+          <SectionLabel title={tr("contracts.whatBuyersAskFor")}
+                        sub="The things that actually lose bids" icon="ClipboardCheck" />
           <Card pad={0} style={{ overflow: "hidden" }}>
             {READINESS.map((r, i) => (
-              <div key={r.what} className="flex items-start gap-3.5 px-5 py-4"
+              <div key={r.what} className="flex items-start gap-3 px-4 py-4 lg:gap-3.5 lg:px-5"
                    style={{ borderTop: i === 0 ? "none" : `1px solid ${v("--ux-line")}` }}>
                 <I name="Dot" className="mt-[3px] h-[18px] w-[18px] shrink-0"
                    style={{ color: v("--ux-line-strong") }} sw={2.2} />
@@ -215,7 +215,7 @@ export default function ContractsPage() {
               </div>
             ))}
           </Card>
-          <p className="mt-2 px-1 text-xs leading-relaxed" style={{ color: v("--ux-muted") }}>
+          <p className="mt-2 px-4 text-xs leading-relaxed lg:px-1" style={{ color: v("--ux-muted") }}>
             We do not yet keep a record of which of these you have. Nothing above is ticked because
             nothing above has been asked of you.
           </p>
@@ -296,7 +296,7 @@ function OrderCard({ o, closed, busy, onApply }: {
 
   return (
     <Card pad={0} style={{ overflow: "hidden", opacity: closed ? 0.72 : 1 }}>
-      <div className="flex flex-wrap items-start gap-4 px-5 pt-5">
+      <div className="flex flex-wrap items-start gap-4 px-4 pt-4 lg:px-5 lg:pt-5">
         <div className="min-w-0 flex-1">
           <div className="flex flex-wrap items-center gap-2">
             <p className="text-lg font-extrabold leading-tight tracking-[-0.02em]" style={{ color: v("--ux-ink") }}>
@@ -330,9 +330,9 @@ function OrderCard({ o, closed, busy, onApply }: {
       </div>
 
       {/* The facts the server holds, said plainly. Nothing drawn to scale. */}
-      <div className="mt-4 flex flex-wrap gap-x-5 gap-y-2 px-5">
+      <div className="mt-4 flex flex-wrap gap-x-5 gap-y-2 px-4 lg:px-5">
         {factsOf(o, closed).map((f) => (
-          <span key={f.text} className="flex items-center gap-1.5 text-xs" style={{ color: v("--ux-ink-2") }}>
+          <span key={f.text} className="flex items-center gap-1.5 text-[13px] lg:text-xs" style={{ color: v("--ux-ink-2") }}>
             <I name={f.icon} className="h-[13px] w-[13px] shrink-0" style={{ color: v("--ux-muted") }} />
             {f.text}
           </span>
@@ -340,7 +340,7 @@ function OrderCard({ o, closed, busy, onApply }: {
       </div>
 
       {o.skills.length > 0 && (
-        <div className="mt-3 flex flex-wrap gap-1.5 px-5">
+        <div className="mt-3 flex flex-wrap gap-1.5 px-4 lg:px-5">
           {o.skills.map((s) => <Tag key={s} tone="brand" size="sm">{s}</Tag>)}
         </div>
       )}
@@ -351,8 +351,8 @@ function OrderCard({ o, closed, busy, onApply }: {
         turning it into a bar chart means guessing, and the guess was wrong.
       */}
       {terms && (
-        <div className="mx-5 mt-4 rounded-[12px] p-4" style={{ background: v("--ux-surface-2") }}>
-          <p className="text-2xs font-extrabold uppercase tracking-[0.14em]" style={{ color: v("--ux-muted") }}>
+        <div className="mx-4 mt-4 rounded-[12px] p-4 lg:mx-5" style={{ background: v("--ux-surface-2") }}>
+          <p className="text-[12px] font-extrabold uppercase lg:text-2xs tracking-[0.14em]" style={{ color: v("--ux-muted") }}>
             What the buyer says
           </p>
           <p className="mt-2 whitespace-pre-line text-xsm leading-relaxed" style={{ color: v("--ux-ink-2") }}>
@@ -372,7 +372,7 @@ function OrderCard({ o, closed, busy, onApply }: {
         </div>
       )}
 
-      <div className="mt-4 flex flex-col gap-2 border-t px-5 py-4 lg:flex-row lg:flex-wrap" style={{ borderColor: v("--ux-line") }}>
+      <div className="mt-4 flex flex-col gap-2 border-t px-4 py-4 lg:flex-row lg:flex-wrap lg:px-5" style={{ borderColor: v("--ux-line") }}>
         {o.applied ? (
           <Btn className="ux-action-primary" variant="outline" icon="Check" href="/app/applications">
             You applied — see it

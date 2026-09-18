@@ -468,7 +468,7 @@ const MAX_INPUT_H = 132;
  * what a message field should do and what a `<textarea>` does not do by
  * default on every engine.
  *
- * `text-[16px]` is not a style choice. iOS Safari zooms the whole page in when
+ * `text-[17px]` is not a style choice. iOS Safari zooms the whole page in when
  * a field under 16px takes focus and **does not zoom back out**; the app is
  * then permanently 1.3x too wide. `mobile.css` enforces this for
  * `pointer: coarse`, and it is written here as well so the rule survives a
@@ -577,7 +577,7 @@ export function ChatInput({
       autoCapitalize="sentences"
       autoCorrect="on"
       spellCheck
-      className={`w-full resize-none bg-transparent text-[16px] leading-[1.45] outline-none lg:text-sm ${className}`}
+      className={`w-full resize-none bg-transparent text-[17px] leading-[1.45] outline-none lg:text-sm ${className}`}
       style={{ color: "var(--ux-ink)", maxHeight: MAX_INPUT_H }}
       {...rest}
     />

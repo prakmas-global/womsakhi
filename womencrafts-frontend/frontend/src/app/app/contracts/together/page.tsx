@@ -3,8 +3,8 @@
 import { useMemo, useState } from "react";
 
 import { HomeShell } from "@/components/ux/home/HomeShell";
-import { Tag } from "@/components/ux/work/native";
-import { Back, Card, I, SectionHead, plural, v } from "@/components/ux/kit";
+import { SectionLabel, Tag } from "@/components/ux/work/native";
+import { Back, Card, I, plural, v } from "@/components/ux/kit";
 import { formatRupees } from "@/components/ux/kit";
 import { VEHICLES, type Vehicle } from "@/components/ux/reach/data";
 import { useT } from "@/i18n";
@@ -52,14 +52,14 @@ export default function TogetherPage() {
 
   return (
     <HomeShell active="/app/contracts">
-      <div className="flex flex-col gap-5">
+      <div className="flex flex-col gap-6 lg:gap-5">
         <Back to="/app/contracts" label={tr("contractsTogether.backToBigOrders")} />
 
         <header>
-          <p className="text-[13px] font-extrabold uppercase tracking-[0.2em] lg:text-2xs" style={{ color: v("--ux-brand") }}>{tr("contractsTogether.biddingTogether")}</p>
-          <h1 className="ux-screen-title mt-2 text-[clamp(1.5rem,3.2vw,2.125rem)] font-extrabold leading-[1.1] tracking-[-0.035em]"
+          <p className="text-[12px] font-extrabold uppercase tracking-[0.2em] lg:text-2xs" style={{ color: v("--ux-brand") }}>{tr("contractsTogether.biddingTogether")}</p>
+          <h1 className="ux-screen-title mt-1 lg:mt-2 text-[clamp(1.5rem,3.2vw,2.125rem)] font-extrabold leading-[1.1] tracking-[-0.035em]"
               style={{ color: v("--ux-ink") }}>{tr("contractsTogether.whoActuallySignsIt")}</h1>
-          <p className="mt-1.5 max-w-[58ch] text-[15px] leading-snug lg:text-sm lg:leading-relaxed" style={{ color: v("--ux-muted") }}>
+          <p className="mt-2 max-w-[58ch] text-[15px] leading-snug lg:mt-1.5 lg:text-sm lg:leading-relaxed" style={{ color: v("--ux-muted") }}>
             Fourteen of you can make three hundred covers. But a company will not sign a contract
             with fourteen people, and will not send fourteen payments. Somebody, or something, has
             to be the name on the paper. There are three ways to do it and none of them is free.
@@ -117,11 +117,11 @@ export default function TogetherPage() {
         */}
         {pick === "v3" && (
           <div>
-            <SectionHead title={tr("contractsTogether.whatRegisteringActuallyInvolves")}
-                         sub="In this order, and not in a different one" icon="ListChecks" />
+            <SectionLabel title={tr("contractsTogether.whatRegisteringActuallyInvolves")}
+                          sub="In this order, and not in a different one" icon="ListChecks" />
             <Card pad={0} style={{ overflow: "hidden" }}>
               {STEPS.map((s, i) => (
-                <div key={s.what} className="flex items-start gap-3.5 px-5 py-4"
+                <div key={s.what} className="flex items-start gap-3 px-4 py-4 lg:gap-3.5 lg:px-5"
                      style={{ borderTop: i === 0 ? "none" : `1px solid ${v("--ux-line")}` }}>
                   <span className="mt-[1px] grid h-[22px] w-[22px] shrink-0 place-items-center rounded-full text-2xs font-extrabold tabular-nums"
                         style={{ background: v("--ux-surface-2"), color: v("--ux-ink-2") }}>
@@ -134,7 +134,7 @@ export default function TogetherPage() {
                 </div>
               ))}
             </Card>
-            <p className="mt-2 px-1 text-xs leading-relaxed" style={{ color: v("--ux-muted") }}>
+            <p className="mt-2 px-4 text-xs leading-relaxed lg:px-1" style={{ color: v("--ux-muted") }}>
               Nothing above is ticked because nothing above has been asked of you. WomSakhi keeps no
               record of who is in your group or how far you have got.
             </p>

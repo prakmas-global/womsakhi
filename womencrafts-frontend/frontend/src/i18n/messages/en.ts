@@ -400,6 +400,12 @@ const core = {
  * rather than quietly permanent.
  */
 const chrome = {
+  /* The phone top bar's back control. `{name}` is the destination, itself
+     looked up from this same catalogue — so "Back to Learn" in English and
+     "واپس Learn" until Learn's own label is reviewed, never a raw key. It is
+     the ACCESSIBLE name; what she reads on the bar is the destination alone,
+     because the bar has room for one word. */
+  "ch.back.to": "Back to {name}",
   "ch.mode.home.label": "Home",
   "ch.today.label": "Today",
   "ch.today.note": "What needs you now",
@@ -796,7 +802,7 @@ const screens = {
   "cover.nothingYet": "Nothing yet.",
   "cover.reportAnAgent": "Report an agent",
   "cover.thatIsTheWholePriceOf": "That is the whole price of ₹2 lakh of accident cover. Most members do not know it exists.",
-  "cover.insuranceAmpPension": "Insurance &amp; pension",
+  "cover.insuranceAmpPension": "Insurance & pension",
   "cover.youHaveThis": "You have this",
   "cover.itPays": "It pays",
   "cover.itCosts": "It costs",
@@ -1001,7 +1007,7 @@ const screens = {
   "family.startACareCircle": "Start a care circle",
   "family.workingWithABaby": "Working with a baby",
   "family.whatMembersActuallyDoFromWomen": "What members actually do — from women who have done it, not from a manual.",
-  "family.familyAmpChildcare": "Family &amp; childcare",
+  "family.familyAmpChildcare": "Family & childcare",
   "family.aHotMealIsIncluded": "A hot meal is included",
   "family.takeYourChildRsquoSAadhaar": "Take your child&rsquo;s Aadhaar and immunisation card.",
   "family.whatYouAreEntitledTo": "What you are entitled to",

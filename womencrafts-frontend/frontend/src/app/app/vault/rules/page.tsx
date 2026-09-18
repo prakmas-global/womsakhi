@@ -4,7 +4,8 @@ import { useCallback, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 
 import { HomeShell } from "@/components/ux/home/HomeShell";
-import { Back, Btn, Card, I, IconTile, SectionHead, Stat, v } from "@/components/ux/kit";
+import { Back, Btn, Card, I, IconTile, Stat, v } from "@/components/ux/kit";
+import { EYEBROW, GROUP, GROUP_ROW, Section } from "@/components/ux/earn/phone";
 import { formatRupees } from "@/components/ux/kit";
 import { RULES, savedByRules, type Rule } from "@/components/ux/vault/data";
 import { useT } from "@/i18n";
@@ -37,12 +38,12 @@ export default function RulesPage() {
 
   return (
     <HomeShell active="/app/vault">
-      <div className="flex flex-col gap-5">
+      <div className="flex flex-col gap-6 lg:gap-5">
         <Back to="/app/vault" label={tr("vaultRules.backToYourLocker")} />
 
         <header>
-          <p className="text-2xs font-extrabold uppercase tracking-[0.2em]" style={{ color: v("--ux-brand") }}>{tr("vaultRules.savingRules")}</p>
-          <h1 className="mt-2 text-[clamp(1.5rem,3.2vw,2.125rem)] font-extrabold leading-[1.1] tracking-[-0.035em]"
+          <p className={EYEBROW}>{tr("vaultRules.savingRules")}</p>
+          <h1 className="ux-screen-title mt-2 text-[clamp(1.5rem,3.2vw,2.125rem)] font-extrabold leading-[1.1] tracking-[-0.035em]"
               style={{ color: v("--ux-ink") }}>{tr("vaultRules.saveWithoutDecidingTo")}</h1>
           <p className="mt-1.5 max-w-[54ch] text-sm leading-relaxed" style={{ color: v("--ux-muted") }}>
             A small share of each payment, kept back the moment it arrives. Nothing is taken on
@@ -68,10 +69,10 @@ export default function RulesPage() {
         )}
 
         <div>
-          <SectionHead title={tr("vaultRules.yourRules")} icon="Repeat" chip={String(rules.length)} />
-          <div className="flex flex-col gap-2.5">
+          <Section title={tr("vaultRules.yourRules")} icon="Repeat" chip={String(rules.length)} />
+          <div className={`flex flex-col gap-2.5 ${GROUP}`}>
             {rules.map((r) => (
-              <Card key={r.id} pad={16}>
+              <Card key={r.id} pad={16} className={GROUP_ROW}>
                 <div className="flex flex-wrap items-start gap-3.5">
                   <IconTile icon={r.on ? "Repeat" : "Pause"}
                             tint={r.on ? "--ux-tint-green" : "--ux-surface-2"}
@@ -92,12 +93,18 @@ export default function RulesPage() {
                     aria-label={`${r.on ? tr("vaultRules.turnOff")
               : tr("vaultRules.turnOn")}: ${r.when}`}
                     onClick={() => toggle(r.id)}
-                    className="ux-press relative h-[28px] w-[50px] shrink-0 rounded-full transition-colors"
-                    style={{ background: v(r.on ? "--ux-brand" : "--ux-line-strong") }}
+                    className="ux-press relative grid h-[28px] w-[50px] shrink-0 place-items-center rounded-full max-lg:-my-2 max-lg:h-[44px]"
                   >
-                    <span className="absolute top-[3px] h-[22px] w-[22px] rounded-full transition-[left]"
-                          style={{ left: r.on ? 25 : 3, background: v("--ux-surface"),
-                                   transition: "left var(--ux-t) var(--ux-ease-out)" }} />
+                    {/* The track is drawn inside the button rather than being it. The app's
+                        44px tap floor stretched a 28px switch into a 50x44 slab
+                        with its knob stuck to the top; now the target is 44px
+                        and the switch is still a switch. */}
+                    <span className="relative h-[28px] w-[50px] rounded-full transition-colors"
+                          style={{ background: v(r.on ? "--ux-brand" : "--ux-line-strong") }}>
+                      <span className="absolute top-[3px] h-[22px] w-[22px] rounded-full transition-[left]"
+                            style={{ left: r.on ? 25 : 3, background: v("--ux-surface"),
+                                     transition: "left var(--ux-t) var(--ux-ease-out)" }} />
+                    </span>
                   </button>
                 </div>
               </Card>

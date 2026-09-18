@@ -4,7 +4,8 @@ import { useCallback, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 
 import { HomeShell } from "@/components/ux/home/HomeShell";
-import { Back, Btn, Card, I, Progress, SectionHead, Stat, v } from "@/components/ux/kit";
+import { Back, Btn, Card, I, Progress, Stat, v } from "@/components/ux/kit";
+import { EYEBROW, GROUP, GROUP_ROW, Section } from "@/components/ux/earn/phone";
 import { PAPERS, type Paper } from "@/components/ux/haq/data";
 import { PaperRow } from "@/components/ux/haq/parts";
 import { useT } from "@/i18n";
@@ -45,13 +46,13 @@ export default function PapersPage() {
 
   return (
     <HomeShell active="/app/haq">
-      <div className="flex flex-col gap-5">
+      <div className="flex flex-col gap-6 lg:gap-5">
 
         <Back to="/app/haq" label={tr("haqPapers.backToHaq")} />
 
         <header>
-          <p className="text-2xs font-extrabold uppercase tracking-[0.2em]" style={{ color: v("--ux-brand") }}>{tr("haqPapers.yourPapers")}</p>
-          <h1 className="mt-2 text-[clamp(1.5rem,3.2vw,2.125rem)] font-extrabold leading-[1.1] tracking-[-0.035em]"
+          <p className={EYEBROW}>{tr("haqPapers.yourPapers")}</p>
+          <h1 className="ux-screen-title mt-2 text-[clamp(1.5rem,3.2vw,2.125rem)] font-extrabold leading-[1.1] tracking-[-0.035em]"
               style={{ color: v("--ux-ink") }}>{tr("haqPapers.sortedOnceUsedEverywhere")}</h1>
           <p className="mt-1.5 max-w-[54ch] text-sm leading-relaxed" style={{ color: v("--ux-muted") }}>
             The same eight papers unlock nearly everything. Fix one and it counts for every
@@ -78,22 +79,22 @@ export default function PapersPage() {
 
         {blocking.length > 0 && (
           <div>
-            <SectionHead
+            <Section
               title={tr("haqPapers.theseAreHoldingThingsUp")}
               sub={tr("haqPapers.theOneAtTheTopUnlocks")}
               icon="FileWarning"
               chip={String(blocking.length)}
             />
-            <div className="flex flex-col gap-2.5">
-              {blocking.map((p) => <PaperRow key={p.id} p={p} onFix={fix} />)}
+            <div className={`flex flex-col gap-2.5 ${GROUP}`}>
+              {blocking.map((p) => <PaperRow key={p.id} p={p} onFix={fix} className={GROUP_ROW} />)}
             </div>
           </div>
         )}
 
         <div>
-          <SectionHead title={tr("haqPapers.safeWithYou")} sub={tr("haqPapers.nobodyElseCanSeeThese")} icon="Lock" chip={String(done.length)} />
-          <div className="flex flex-col gap-2.5">
-            {done.map((p) => <PaperRow key={p.id} p={p} onFix={fix} />)}
+          <Section title={tr("haqPapers.safeWithYou")} sub={tr("haqPapers.nobodyElseCanSeeThese")} icon="Lock" chip={String(done.length)} />
+          <div className={`flex flex-col gap-2.5 ${GROUP}`}>
+            {done.map((p) => <PaperRow key={p.id} p={p} onFix={fix} className={GROUP_ROW} />)}
           </div>
         </div>
 

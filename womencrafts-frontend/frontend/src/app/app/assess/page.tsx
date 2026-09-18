@@ -107,8 +107,8 @@ export default function AssessPage() {
                 style={{ color: "var(--ux-brand)" }}>
           <Icons.ArrowLeft className="ux-ico h-4 w-4" />{tr("assess.allTests")}</button>
 
-        <h1 className="text-2xl font-bold" style={{ color: "var(--ux-ink)" }}>{paper.title}</h1>
-        <p className="mb-[20px] mt-1.5 text-xsm" style={{ color: "var(--ux-muted)" }}>
+        <h1 className="ux-screen-title text-2xl font-bold" style={{ color: "var(--ux-ink)" }}>{paper.title}</h1>
+        <p className="mb-6 mt-2 text-xsm lg:mb-[20px] lg:mt-1.5" style={{ color: "var(--ux-muted)" }}>
           {paper.skill} · {paper.question_count} questions · pass mark {paper.pass_mark}%
         </p>
 
@@ -161,7 +161,7 @@ export default function AssessPage() {
                       role="radio"
                       aria-checked={on}
                       onClick={() => setAnswers((p) => p.map((v, n) => (n === at ? i : v)))}
-                      className="ux-press ux-sq flex w-full items-center gap-3 rounded-[12px] border p-3.5 text-start"
+                      className="ux-press ux-sq flex w-full items-center gap-3 rounded-[12px] border p-4 text-start lg:p-3.5"
                       style={{
                         borderColor: on ? "var(--ux-brand)" : "var(--ux-line-strong)",
                         background: on ? "var(--ux-brand-tint)" : "var(--ux-surface)",
@@ -183,7 +183,7 @@ export default function AssessPage() {
             </ul>
 
             {problem && (
-              <p role="alert" className="ux-slide-up mt-3.5 rounded-[12px] p-3 text-xsm leading-relaxed"
+              <p role="alert" className="ux-slide-up mt-4 rounded-[12px] p-4 text-xsm leading-relaxed lg:mt-3.5 lg:p-3"
                  style={{ background: "var(--ux-tint-orange)", color: "var(--ux-orange-ink)" }}>
                 {problem}
               </p>
@@ -260,7 +260,7 @@ export default function AssessPage() {
 
       {/* A test that would not open says so here, where she pressed. */}
       {problem && (
-        <p role="alert" className="ux-slide-up mb-[16px] rounded-[12px] p-3.5 text-xsm leading-relaxed"
+        <p role="alert" className="ux-slide-up mb-4 rounded-[12px] p-4 text-xsm leading-relaxed lg:mb-[16px] lg:p-3.5"
            style={{ background: "var(--ux-tint-orange)", color: "var(--ux-orange-ink)" }}>
           {problem}
         </p>
@@ -306,7 +306,7 @@ export default function AssessPage() {
 
             {/* Stacked on a phone with the action full width at the foot of the
                 card, where a thumb reaches; the row it always was from `lg`. */}
-            <div className="mt-3.5 flex flex-col gap-3 border-t pt-3.5 lg:flex-row lg:items-center lg:justify-between lg:gap-4"
+            <div className="mt-4 flex flex-col gap-3 border-t pt-4 lg:mt-3.5 lg:flex-row lg:items-center lg:justify-between lg:gap-4 lg:pt-3.5"
                  style={{ borderColor: "var(--ux-line)" }}>
               {/* Said before she starts, not buried in terms. */}
               <span className="text-[13px] lg:text-xs" style={{ color: "var(--ux-faint)" }}>

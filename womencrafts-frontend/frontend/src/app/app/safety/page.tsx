@@ -15,6 +15,9 @@ import { Btn, Card, IconTile, NoteBtn, SectionHead, Tabs } from "@/components/ux
 import { HomeShell } from "@/components/ux/home/HomeShell";
 import { AlsoHere } from "@/components/ux/AlsoHere";
 import { useT } from "@/i18n";
+import { ListGroup } from "@/components/ux/mobile/ListRow";
+import { SegmentedControl } from "@/components/ux/mobile/SegmentedControl";
+import { GroupLabel, PhoneRow } from "@/components/ux/PhoneParts";
 
 
 const SCAMS = [
@@ -167,12 +170,18 @@ export default function SafetyPage() {
         </div>
       }
     >
-      <div className="mb-[20px] flex items-end justify-between gap-4">
+      {/* On a phone: a column — the large title, its line, then a full-width
+          segmented control where the desktop has tabs. */}
+      <div className="mb-6 flex flex-col gap-4 lg:mb-[20px] lg:flex-row lg:items-end lg:justify-between">
         <div>
-          <h1 className="text-2xl font-bold" style={{ color: "var(--ux-ink)" }}>{tr("safety.getHelpNow")}</h1>
+          <h1 className="ux-screen-title text-2xl font-bold" style={{ color: "var(--ux-ink)" }}>{tr("safety.getHelpNow")}</h1>
           <p className="mt-1.5 text-xsm" style={{ color: "var(--ux-muted)" }}>{tr("safety.helpYouCanReachInOne")}</p>
         </div>
-        <Tabs items={["Get help now", "Know the tricks"]} active={tab} onChange={setTab} />
+        <div className="hidden lg:flex">
+          <Tabs items={["Get help now", "Know the tricks"]} active={tab} onChange={setTab} />
+        </div>
+        <SegmentedControl className="lg:hidden" label={tr("safety.getHelpNow")} value={tab} onChange={setTab}
+          options={["Get help now", "Know the tricks"].map((t) => ({ value: t, label: t }))} />
       </div>
 
       {tab === "Get help now" && (
@@ -224,7 +233,7 @@ export default function SafetyPage() {
                 onPointerLeave={endHold}
                 onKeyDown={(e) => { if (e.key === " " || e.key === "Enter") startHold(); }}
                 onKeyUp={endHold}
-                className="ux-sq relative w-full overflow-hidden rounded-[16px] px-5 py-5 text-start"
+                className="ux-sq relative w-full overflow-hidden rounded-[16px] px-5 py-5 text-start max-lg:p-4"
                 style={{ background: "var(--ux-tint-orange)", border: "1px solid var(--ux-orange)" }}
               >
                 {/* Press and hold, not tap. A button this consequential sitting
@@ -255,8 +264,24 @@ export default function SafetyPage() {
             )}
           </Card>
 
-          <SectionHead title={tr("safety.numbersThatAlwaysWork")} sub={tr("safety.freeFromAnyPhoneEvenWithout")} />
-          <div className="ux-deck grid grid-cols-3 gap-[16px]">
+          <GroupLabel sub={tr("safety.freeFromAnyPhoneEvenWithout")}>{tr("safety.numbersThatAlwaysWork")}</GroupLabel>
+          <div className="hidden lg:block">
+            <SectionHead title={tr("safety.numbersThatAlwaysWork")} sub={tr("safety.freeFromAnyPhoneEvenWithout")} />
+          </div>
+          {/* On a phone the numbers are one grouped list: the number itself,
+              large, who answers, and a call button on the row. */}
+          <ListGroup className="lg:hidden">
+            {HELPLINES.map((h) => (
+              <PhoneRow key={h.number} icon={h.urgent ? "Siren" : "Phone"}
+                        tint={h.urgent ? "--ux-tint-orange" : "--ux-tint-pink"}
+                        ink={h.urgent ? "--ux-orange" : "--ux-pink"}
+                        title={<span className="text-[20px] font-bold tabular-nums">{h.number}</span>}
+                        body={h.name} meta={h.desc}
+                        trailing={<Btn href={`tel:${h.number}`} variant="soft" size="sm" icon="Phone"
+                                       ariaLabel={`Call ${h.number}`}>Call</Btn>} />
+            ))}
+          </ListGroup>
+          <div className="ux-deck hidden grid-cols-3 gap-[16px] lg:grid">
             {HELPLINES.map((h, i) => (
               <Card key={h.number} className="ux-i ux-onscroll" style={{ ["--i" as string]: i }}>
                 {/* Tone by urgency, from the server, rather than a colour
@@ -281,9 +306,16 @@ export default function SafetyPage() {
       )}
 
       {tab === "Know the tricks" && (
+        <ListGroup className="mb-4 lg:hidden">
+          {SCAMS.map((s) => (
+            <PhoneRow key={s.id} icon={s.icon} tint="--ux-tint-orange" ink="--ux-orange" title={s.title} body={s.body} />
+          ))}
+        </ListGroup>
+      )}
+      {tab === "Know the tricks" && (
         <div className="ux-deck ux-stagger space-y-[12px]">
           {SCAMS.map((s, i) => (
-            <Card key={s.id} className="ux-i ux-onscroll" style={{ ["--i" as string]: i }}>
+            <Card key={s.id} className="ux-i ux-onscroll max-lg:hidden" style={{ ["--i" as string]: i }}>
               <div className="flex items-start gap-3.5">
                 <IconTile icon={s.icon} tint="--ux-tint-orange" ink="--ux-orange" size={44} radius={12} />
                 <div className="min-w-0 flex-1">
@@ -294,7 +326,7 @@ export default function SafetyPage() {
             </Card>
           ))}
           <Card className="ux-onscroll">
-            <div className="flex items-center justify-between gap-4">
+            <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between lg:gap-4">
               <div className="min-w-0">
                 <h3 className="text-sm font-semibold" style={{ color: "var(--ux-ink)" }}>{tr("safety.hasAnyOfThisHappenedTo")}</h3>
                 <p className="mt-1 text-xsm" style={{ color: "var(--ux-muted)" }}>{tr("safety.tellUsWeRemoveTheAccount")}</p>

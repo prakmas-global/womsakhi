@@ -85,7 +85,7 @@ export function Back({ to, label, className = "" }: {
       /* `ux-tap`: a 15px label on one line measures 20px tall, four short of
          WCAG 2.2's 24. This is the back control on 56 screens, so it is worth
          a class rather than a per-screen fix. */
-      className={`ux-press ux-sq ux-tap w-fit gap-1.5 text-xsm font-semibold ${className}`}
+      className={`ux-back-inpage ux-press ux-sq ux-tap w-fit gap-1.5 text-xsm font-semibold ${className}`}
       style={{ color: "var(--ux-muted)" }}
     >
       <Icons.ArrowLeft className="h-[15px] w-[15px]" />

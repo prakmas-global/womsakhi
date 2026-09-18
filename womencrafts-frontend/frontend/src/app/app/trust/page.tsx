@@ -3,9 +3,9 @@
 import { useCallback, useState } from "react";
 
 import { HomeShell } from "@/components/ux/home/HomeShell";
-import { Tag } from "@/components/ux/work/native";
+import { SectionLabel, Tag } from "@/components/ux/work/native";
 import { ReadAloud } from "@/components/ux/reach/ReadAloud";
-import { Btn, Card, I, IconTile, SectionHead, v } from "@/components/ux/kit";
+import { Btn, Card, I, IconTile, v } from "@/components/ux/kit";
 import { PROOFS, RECORD_USES } from "@/components/ux/eight/data";
 import { useT } from "@/i18n";
 
@@ -56,13 +56,13 @@ export default function TrustPage() {
 
   return (
     <HomeShell active="/app/trust">
-      <div className="flex flex-col gap-5" id="trust-page">
+      <div className="flex flex-col gap-6 lg:gap-5" id="trust-page">
 
         <header>
-          <p className="text-[13px] font-extrabold uppercase tracking-[0.2em] lg:text-2xs" style={{ color: v("--ux-brand") }}>{tr("trust.proofYouKeepYourWord")}</p>
-          <h1 className="ux-screen-title mt-2 text-[clamp(1.5rem,3.2vw,2.125rem)] font-extrabold leading-[1.1] tracking-[-0.035em]"
+          <p className="text-[12px] font-extrabold uppercase tracking-[0.2em] lg:text-2xs" style={{ color: v("--ux-brand") }}>{tr("trust.proofYouKeepYourWord")}</p>
+          <h1 className="ux-screen-title mt-1 lg:mt-2 text-[clamp(1.5rem,3.2vw,2.125rem)] font-extrabold leading-[1.1] tracking-[-0.035em]"
               style={{ color: v("--ux-ink") }}>{tr("trust.proofOfWhoYouHaveBeen")}</h1>
-          <p className="mt-1.5 max-w-[58ch] text-[15px] leading-snug lg:text-sm lg:leading-relaxed" style={{ color: v("--ux-muted") }}>
+          <p className="mt-2 max-w-[58ch] text-[15px] leading-snug lg:mt-1.5 lg:text-sm lg:leading-relaxed" style={{ color: v("--ux-muted") }}>
             Nine months of keeping your word, written down. It belongs to you — we never send it
             to anyone, and nothing bad can ever be written on it.
           </p>
@@ -72,14 +72,14 @@ export default function TrustPage() {
         {/* The document itself. Letterhead, seal, ruled entries. */}
         <div className="rounded-[var(--ux-r-card)] p-[2px]"
              style={{ background: `linear-gradient(140deg, ${v("--ux-brand")}, ${v("--ux-violet")}, ${v("--ux-brand-700")})` }}>
-          <div className="rounded-[calc(var(--ux-r-card)-2px)] px-6 py-7 sm:px-9 sm:py-9"
+          <div className="rounded-[calc(var(--ux-r-card)-2px)] p-4 sm:px-9 sm:py-9"
                style={{ background: v("--ux-surface") }}>
 
             {/* letterhead */}
             <div className="flex flex-wrap items-start justify-between gap-4 border-b pb-5"
                  style={{ borderColor: v("--ux-line-strong") }}>
               <div>
-                <p className="text-[13px] font-extrabold uppercase tracking-[0.22em] lg:text-2xs" style={{ color: v("--ux-brand") }}>{tr("trust.recordOfStanding")}</p>
+                <p className="text-[12px] font-extrabold uppercase tracking-[0.22em] lg:text-2xs" style={{ color: v("--ux-brand") }}>{tr("trust.recordOfStanding")}</p>
                 <p className="mt-2 font-serif text-2xl font-bold leading-none tracking-[-0.02em]"
                    style={{ color: v("--ux-ink") }}>{tr("trust.priyaSharma")}</p>
                 <p className="mt-1.5 text-xs" style={{ color: v("--ux-muted") }}>{tr("trust.tailoringAndMehendiJaipur")}</p>
@@ -141,8 +141,8 @@ export default function TrustPage() {
 
         {/* The honest part */}
         <div>
-          <SectionHead title={tr("trust.whoWillActuallyTakeThis")}
-                       sub={tr("trust.toldStraightIncludingWhereItWill")} icon="Handshake" />
+          <SectionLabel title={tr("trust.whoWillActuallyTakeThis")}
+                        sub={tr("trust.toldStraightIncludingWhereItWill")} icon="Handshake" />
           <div className="grid gap-3 sm:grid-cols-2">
             {RECORD_USES.map((u) => (
               <Card key={u.id} pad={16} style={u.accepted ? undefined : { borderStyle: "dashed" }}>

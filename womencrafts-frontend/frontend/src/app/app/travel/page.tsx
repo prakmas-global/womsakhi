@@ -8,6 +8,9 @@ import { HomeShell } from "@/components/ux/home/HomeShell";
 import { useGuidance, useHelplines, useRoutes } from "@/components/ux/entitlements";
 import { WELLBEING_ART } from "@/components/ux/wellbeing/data";
 import { useT } from "@/i18n";
+import { ListGroup } from "@/components/ux/mobile/ListRow";
+import { SegmentedControl } from "@/components/ux/mobile/SegmentedControl";
+import { PhoneRow, phoneFull } from "@/components/ux/PhoneParts";
 
 /**
  * Transport & Safe Travel.
@@ -79,9 +82,11 @@ export default function TravelPage() {
         </div>
       }
     >
-      <div className="mb-[20px] flex items-end justify-between gap-4">
+      {/* On a phone: a column — the large title, its line, then a full-width
+          segmented control where the desktop has tabs. */}
+      <div className="mb-6 flex flex-col gap-4 lg:mb-[20px] lg:flex-row lg:items-end lg:justify-between">
         <div>
-          <h1 className="text-2xl font-bold" style={{ color: "var(--ux-ink)" }}>{tr("travel.travelAndSafety")}</h1>
+          <h1 className="ux-screen-title text-2xl font-bold" style={{ color: "var(--ux-ink)" }}>{tr("travel.travelAndSafety")}</h1>
           <p className="mt-1.5 text-xsm" style={{ color: "var(--ux-muted)" }}>
             {risky.length
               ? `${risky.length} of your routes is not safe to return on after dark.`
@@ -94,12 +99,54 @@ export default function TravelPage() {
 
       <SourceNote source={source} what="routes" />
         </div>
-        <Tabs items={["Your routes", "Getting there safely"]} active={tab} onChange={setTab} />
+        <div className="hidden lg:flex">
+          <Tabs items={["Your routes", "Getting there safely"]} active={tab} onChange={setTab} />
+        </div>
+        <SegmentedControl className="lg:hidden" label={tr("travel.travelAndSafety")} value={tab} onChange={setTab}
+          options={["Your routes", "Getting there safely"].map((t) => ({ value: t, label: t }))} />
       </div>
 
       {tab === "Your routes" && (
         ROUTES.length ? (
-          <div className="ux-deck ux-stagger space-y-[12px]">
+          <>
+          {/*
+            On a phone the "Nobody has checked after dark" pill sat beside the
+            route's name and squeezed it to 31px — "Travelling after dark"
+            broke inside its own words. As rows of one grouped list the pill
+            wraps under the name and both are whole.
+          */}
+          <ListGroup className="lg:hidden">
+            {ROUTES.map((r) => (
+              <PhoneRow key={r.id} icon={r.cost === "Free" ? "Footprints" : "Bus"}
+                        tint={r.safeAfterDark ? "--ux-tint-green" : "--ux-tint-orange"}
+                        ink={r.safeAfterDark ? "--ux-green" : "--ux-orange"}
+                        title={
+                          <span className="flex flex-wrap items-center gap-2">
+                            {r.name}
+                            <Pill tone={r.safeAfterDark === null ? "neutral" : r.safeAfterDark ? "green" : "orange"} size="sm">
+                              {r.safeAfterDark === null ? "Nobody has checked after dark"
+                               : r.safeAfterDark ? tr("travel.fineAfterDark") : tr("travel.notAfterDark")}
+                            </Pill>
+                          </span>
+                        }
+                        meta={[r.mins !== null ? `${r.mins} min` : null, r.cost].filter(Boolean).join(" · ")}
+                        body={r.how}>
+                <span className="mt-1.5 flex items-start gap-1.5 text-[13px] leading-snug"
+                      style={{ color: r.safeAfterDark === false ? "var(--ux-orange-ink)" : "var(--ux-muted)" }}>
+                  <Icons.Info className="mt-[2px] h-[13px] w-[13px] shrink-0" />
+                  {r.note}
+                </span>
+                <span className="mt-3 flex flex-col gap-2">
+                  <ActionBtn variant="primary" size="sm" icon="Share2" doneIcon="Check" full className={phoneFull}
+                             done={tr("travel.sentToWhoeverYouChose")}
+                             act={() => tellSomeone(r.name, r.how)}>{tr("travel.tellSomeoneYourRoute")}</ActionBtn>
+                  <Btn href={mapsHref(r.name.split("→").pop()?.trim() ?? r.name)} variant="outline" size="sm" icon="Navigation"
+                       full className={phoneFull}>Directions</Btn>
+                </span>
+              </PhoneRow>
+            ))}
+          </ListGroup>
+          <div className="ux-deck ux-stagger hidden space-y-[12px] lg:block">
             {ROUTES.map((r, i) => (
               <Card key={r.id} className="ux-i ux-onscroll" style={{ ["--i" as string]: i }}>
                 <div className="flex items-start gap-3.5">
@@ -157,6 +204,7 @@ export default function TravelPage() {
               </Card>
             ))}
           </div>
+          </>
         ) : (
           <Card>
             <EmptyState icon="Bus" title={tr("travel.noRoutesSaved")}

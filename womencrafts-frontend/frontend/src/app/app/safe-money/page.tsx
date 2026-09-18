@@ -4,7 +4,8 @@ import { useCallback, useMemo, useState } from "react";
 
 import { HomeShell } from "@/components/ux/home/HomeShell";
 import { ReadAloud } from "@/components/ux/reach/ReadAloud";
-import { Btn, Card, I, Pill, SectionHead, v } from "@/components/ux/kit";
+import { Btn, Card, I, Pill, v } from "@/components/ux/kit";
+import { EYEBROW, Section } from "@/components/ux/earn/phone";
 import { BUYER_CHECKS, SCAMS, riskCount, type ScamPattern } from "@/components/ux/reach/data";
 import { useT } from "@/i18n";
 
@@ -44,11 +45,11 @@ export default function SafeMoneyPage() {
 
   return (
     <HomeShell active="/app/safe-money">
-      <div className="flex flex-col gap-5" id="safe-money-page">
+      <div className="flex flex-col gap-6 lg:gap-5" id="safe-money-page">
 
         <header>
-          <p className="text-2xs font-extrabold uppercase tracking-[0.2em]" style={{ color: v("--ux-brand") }}>{tr("safemoney.moneyTraps")}</p>
-          <h1 className="mt-2 text-[clamp(1.5rem,3.2vw,2.125rem)] font-extrabold leading-[1.1] tracking-[-0.035em]"
+          <p className={EYEBROW}>{tr("safemoney.moneyTraps")}</p>
+          <h1 className="ux-screen-title mt-2 text-[clamp(1.5rem,3.2vw,2.125rem)] font-extrabold leading-[1.1] tracking-[-0.035em]"
               style={{ color: v("--ux-ink") }}>{tr("safemoney.theTricksAimedAtWomenWorking")}</h1>
           <p className="mt-1.5 max-w-[58ch] text-sm leading-relaxed" style={{ color: v("--ux-muted") }}>
             These are not general internet scams. Each one below is written for a woman who sews,
@@ -58,9 +59,9 @@ export default function SafeMoneyPage() {
         </header>
 
         {/* The one rule, given the whole width it deserves. */}
-        <div className="rounded-[var(--ux-r-card)] px-6 py-7 sm:px-9"
+        <div className="rounded-[var(--ux-r-card)] p-4 sm:px-9 lg:py-7"
              style={{ background: v("--ux-fill") }}>
-          <p className="text-2xs font-extrabold uppercase tracking-[0.18em]"
+          <p className="text-xs font-semibold uppercase tracking-[0.06em] lg:text-2xs lg:font-extrabold lg:tracking-[0.18em]"
              style={{ color: v("--ux-on-brand"), opacity: 0.75 }}>{tr("safemoney.ifYouRememberOneThing")}</p>
           <p className="mt-2.5 max-w-[22ch] text-[clamp(1.5rem,4vw,2.25rem)] font-extrabold leading-[1.1] tracking-[-0.03em]"
              style={{ color: v("--ux-on-brand") }}>{tr("safemoney.aPinIsOnlyEverFor")}</p>
@@ -74,7 +75,7 @@ export default function SafeMoneyPage() {
 
         {/* Their words first. */}
         <div>
-          <SectionHead title={tr("safemoney.whatTheyWillSayToYou")}
+          <Section title={tr("safemoney.whatTheyWillSayToYou")}
                        sub={tr("safemoney.tapOneToSeeWhatIs")} icon="MessageSquareWarning"
                        chip={String(SCAMS.length)} />
           <div className="flex flex-col gap-3">
@@ -84,10 +85,10 @@ export default function SafeMoneyPage() {
 
         {/* Point-of-risk check on a live buyer */}
         <div>
-          <SectionHead title={tr("safemoney.beforeYouSendAnythingToA")}
+          <Section title={tr("safemoney.beforeYouSendAnythingToA")}
                        sub={tr("safemoney.kavitaRPiecesWantsThemCouriered")} icon="UserSearch" />
           <Card pad={0} style={{ overflow: "hidden" }}>
-            <div className="flex flex-wrap items-center gap-3 px-5 py-4"
+            <div className="flex flex-wrap items-center gap-3 px-4 py-4 lg:px-5"
                  style={{ background: v(risks >= 2 ? "--ux-danger-tint" : "--ux-tint-green") }}>
               <I name={risks >= 2 ? "AlertTriangle" : "ShieldCheck"} className="h-[19px] w-[19px] shrink-0"
                  style={{ color: v(risks >= 2 ? "--ux-danger-solid" : "--ux-green-ink") }} />
@@ -98,19 +99,19 @@ export default function SafeMoneyPage() {
               </p>
             </div>
             {checks.map((c, i) => (
-              <div key={c.id} className="flex items-center gap-3.5 px-5 py-3.5"
+              <div key={c.id} className="flex items-center gap-3.5 px-4 py-3.5 max-lg:flex-wrap max-lg:gap-y-0.5 lg:px-5"
                    style={{ borderTop: `1px solid ${v("--ux-line")}` }}>
                 <I name={c.ok ? "Check" : "AlertCircle"} className="h-[16px] w-[16px] shrink-0"
                    style={{ color: v(c.ok ? "--ux-green-ink" : "--ux-danger-solid") }} sw={2.4} />
                 <p className="min-w-0 flex-1 text-xsm font-semibold" style={{ color: v("--ux-ink") }}>
                   {c.what}
                 </p>
-                <p className="shrink-0 text-xs" style={{ color: v("--ux-muted") }}>{c.note}</p>
+                <p className="shrink-0 text-xs max-lg:w-full max-lg:ps-[30px] max-lg:text-[13px]" style={{ color: v("--ux-muted") }}>{c.note}</p>
               </div>
             ))}
-            <div className="flex flex-wrap gap-2 border-t px-5 py-4" style={{ borderColor: v("--ux-line") }}>
-              <Btn size="sm" icon="HandCoins" href="/app/collect">{tr("safemoney.askForTheClothMoneyFirst")}</Btn>
-              <Btn size="sm" variant="outline" icon="Flag" disabled={reported}
+            <div className="flex flex-wrap gap-2 border-t px-4 py-4 lg:px-5" style={{ borderColor: v("--ux-line") }}>
+              <Btn size="sm" icon="HandCoins" href="/app/collect" className="max-lg:w-full max-lg:px-4">{tr("safemoney.askForTheClothMoneyFirst")}</Btn>
+              <Btn size="sm" variant="outline" icon="Flag" disabled={reported} className="max-lg:w-full max-lg:px-4"
                    onClick={() => setReported(true)}>
                 {reported ? "Reported" : "Report this buyer"}
               </Btn>
@@ -145,7 +146,7 @@ function Trap({ s, open, onFlip }: { s: ScamPattern; open: boolean; onFlip: () =
   const tr = useT();
   return (
     <Card pad={0} style={{ overflow: "hidden", borderColor: open ? v("--ux-danger-solid") : undefined }}>
-      <button type="button" onClick={onFlip} aria-expanded={open} className="ux-press w-full p-5 text-left">
+      <button type="button" onClick={onFlip} aria-expanded={open} className="ux-press w-full p-4 text-left lg:p-5">
         <div className="flex items-start gap-3.5">
           <span className="grid h-[38px] w-[38px] shrink-0 place-items-center rounded-[12px]"
                 style={{ background: v("--ux-danger-tint"), color: v("--ux-danger-solid") }}>
@@ -168,11 +169,11 @@ function Trap({ s, open, onFlip }: { s: ScamPattern; open: boolean; onFlip: () =
       </button>
 
       {open && (
-        <div className="border-t px-5 py-4" style={{ borderColor: v("--ux-line") }}>
+        <div className="border-t px-4 py-4 lg:px-5" style={{ borderColor: v("--ux-line") }}>
           <p className="text-xsm leading-relaxed" style={{ color: v("--ux-ink-2") }}>
             {s.whatIsHappening}
           </p>
-          <p className="mt-3 flex items-start gap-2.5 rounded-[12px] px-3.5 py-3 text-xsm font-semibold leading-relaxed"
+          <p className="mt-3 flex items-start gap-2.5 rounded-[12px] px-4 py-3 text-xsm lg:px-3.5 font-semibold leading-relaxed"
              style={{ background: v("--ux-tint-green"), color: v("--ux-ink") }}>
             <I name="ShieldCheck" className="mt-[2px] h-[15px] w-[15px] shrink-0" style={{ color: v("--ux-green-ink") }} />
             {s.whatToDo}

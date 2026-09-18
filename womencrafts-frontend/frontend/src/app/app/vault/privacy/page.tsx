@@ -4,7 +4,8 @@ import { useCallback, useState } from "react";
 import { useRouter } from "next/navigation";
 
 import { HomeShell } from "@/components/ux/home/HomeShell";
-import { Back, Btn, Card, I, IconTile, SectionHead, v } from "@/components/ux/kit";
+import { Back, Btn, Card, I, IconTile, v } from "@/components/ux/kit";
+import { EYEBROW, GROUP, GROUP_ROW, Section } from "@/components/ux/earn/phone";
 import { GUARDS, type Guard } from "@/components/ux/vault/data";
 import { useT } from "@/i18n";
 
@@ -39,12 +40,12 @@ export default function PrivacyPage() {
 
   return (
     <HomeShell active="/app/vault">
-      <div className="flex flex-col gap-5">
+      <div className="flex flex-col gap-6 lg:gap-5">
         <Back to="/app/vault" label={tr("vaultPrivacy.backToYourLocker")} />
 
         <header>
-          <p className="text-2xs font-extrabold uppercase tracking-[0.2em]" style={{ color: v("--ux-brand") }}>{tr("vaultPrivacy.whoCanSee")}</p>
-          <h1 className="mt-2 text-[clamp(1.5rem,3.2vw,2.125rem)] font-extrabold leading-[1.1] tracking-[-0.035em]"
+          <p className={EYEBROW}>{tr("vaultPrivacy.whoCanSee")}</p>
+          <h1 className="ux-screen-title mt-2 text-[clamp(1.5rem,3.2vw,2.125rem)] font-extrabold leading-[1.1] tracking-[-0.035em]"
               style={{ color: v("--ux-ink") }}>{tr("vaultPrivacy.youDecideWhatShows")}</h1>
           <p className="mt-1.5 max-w-[54ch] text-sm leading-relaxed" style={{ color: v("--ux-muted") }}>
             Phones get shared. That is normal, and it should not cost you your privacy.
@@ -61,10 +62,10 @@ export default function PrivacyPage() {
         )}
 
         <div>
-          <SectionHead title={tr("vaultPrivacy.onThisPhone")} icon="ShieldCheck" />
-          <div className="flex flex-col gap-2.5">
+          <Section title={tr("vaultPrivacy.onThisPhone")} icon="ShieldCheck" />
+          <div className={`flex flex-col gap-2.5 ${GROUP}`}>
             {guards.map((g) => (
-              <Card key={g.id} pad={16}>
+              <Card key={g.id} pad={16} className={GROUP_ROW}>
                 <div className="flex items-start gap-3.5">
                   <IconTile icon={g.icon}
                             tint={g.on ? "--ux-tint-violet" : "--ux-surface-2"}
@@ -78,11 +79,17 @@ export default function PrivacyPage() {
                     aria-label={`${g.on ? tr("vaultPrivacy.turnOff")
               : tr("vaultPrivacy.turnOn")}: ${g.label}`}
                     onClick={() => toggle(g.id)}
-                    className="ux-press relative h-[28px] w-[50px] shrink-0 rounded-full transition-colors"
-                    style={{ background: v(g.on ? "--ux-brand" : "--ux-line-strong") }}>
-                    <span className="absolute top-[3px] h-[22px] w-[22px] rounded-full"
-                          style={{ left: g.on ? 25 : 3, background: v("--ux-surface"),
-                                   transition: "left var(--ux-t) var(--ux-ease-out)" }} />
+                    className="ux-press relative grid h-[28px] w-[50px] shrink-0 place-items-center rounded-full max-lg:-my-2 max-lg:h-[44px]">
+                    {/* The track is drawn inside the button rather than being it. The app's
+                        44px tap floor stretched a 28px switch into a 50x44 slab
+                        with its knob stuck to the top; now the target is 44px
+                        and the switch is still a switch. */}
+                    <span className="relative h-[28px] w-[50px] rounded-full transition-colors"
+                          style={{ background: v(g.on ? "--ux-brand" : "--ux-line-strong") }}>
+                      <span className="absolute top-[3px] h-[22px] w-[22px] rounded-full"
+                            style={{ left: g.on ? 25 : 3, background: v("--ux-surface"),
+                                     transition: "left var(--ux-t) var(--ux-ease-out)" }} />
+                    </span>
                   </button>
                 </div>
               </Card>

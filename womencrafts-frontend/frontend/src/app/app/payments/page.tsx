@@ -10,6 +10,7 @@ import {
 } from "@/components/ux/kit";
 import { Rows, rowMemo } from "@/components/ux/kit/rows";
 import { HomeShell } from "@/components/ux/home/HomeShell";
+import { SegmentedControl } from "@/components/ux/mobile/SegmentedControl";
 import { usePayoutMethods, useOrders, type UxOrder } from "@/components/ux/business";
 import { useAction, type Action } from "@/lib/use-action";
 import { apiStartOrder } from "@/lib/member-api";
@@ -121,9 +122,9 @@ export default function PaymentsPage() {
         </div>
       }
     >
-      <div className="mb-[20px] flex items-end justify-between gap-4">
+      <div className="mb-6 flex items-end justify-between gap-4 max-lg:flex-col max-lg:items-stretch lg:mb-[20px]">
         <div>
-          <h1 className="text-2xl font-bold" style={{ color: "var(--ux-ink)" }}>{tr("payments.whatYouPaid")}</h1>
+          <h1 className="ux-screen-title text-2xl font-bold" style={{ color: "var(--ux-ink)" }}>{tr("payments.whatYouPaid")}</h1>
           <p className="mt-1.5 text-xsm" style={{ color: "var(--ux-muted)" }}>
             {shown.length} {plural("payment", shown.length)}
             {trouble > 0 && ` · ${trouble} needs a look`}
@@ -131,7 +132,14 @@ export default function PaymentsPage() {
 
       <SourceNote source={source} what="payments" />
         </div>
-        <Tabs items={["All", "Paid", "Refunds", "Problems"]} active={tab} onChange={setTab} />
+        {/* Four short filters are a segmented control on a phone — equal
+            segments across the width, where the tab strip beside the title
+            had 46px left for "Refunds". */}
+        <div className="hidden lg:flex">
+          <Tabs items={["All", "Paid", "Refunds", "Problems"]} active={tab} onChange={setTab} />
+        </div>
+        <SegmentedControl className="lg:hidden" label={tr("payments.whatYouPaid")} value={tab} onChange={setTab}
+                          options={["All", "Paid", "Refunds", "Problems"].map((t) => ({ value: t, label: t }))} />
       </div>
 
       {shown.length ? (

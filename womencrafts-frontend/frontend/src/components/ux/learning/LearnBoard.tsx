@@ -302,7 +302,7 @@ function Journey() {
           return (
             <li key={step} className="flex items-center gap-2.5">
               <span aria-hidden
-                    className="grid h-[23px] w-[23px] shrink-0 place-items-center rounded-full text-[11px] font-bold"
+                    className="grid h-[23px] w-[23px] shrink-0 place-items-center rounded-full text-[12px] font-bold"
                     style={done ? { background: v("--ux-green"), color: "#fff" }
                          : now ? { background: v("--ux-brand"), color: "#fff" }
                          : { background: v("--ux-surface-2"), color: v("--ux-muted"),
@@ -311,7 +311,7 @@ function Journey() {
               </span>
               <span className="min-w-0 text-xs leading-snug"
                     style={{ color: done || now ? v("--ux-ink") : v("--ux-ink-2"),
-                             fontWeight: now ? 700 : 500 }}>
+                             fontWeight: now ? 700 : 400 }}>
                 {step}
               </span>
               <span className="sr-only">
@@ -400,7 +400,7 @@ function Phone() {
       </section>
 
       <h1 className="ux-screen-title mt-4" style={{ color: v("--ux-ink") }}>Learn</h1>
-      <p className="mt-1.5 text-[15px] leading-snug" style={{ color: v("--ux-muted") }}>
+      <p className="mt-2 text-[15px] leading-snug" style={{ color: v("--ux-muted") }}>
         Learn. Grow. Achieve — at your own pace, in your own time.
       </p>
 
@@ -411,7 +411,7 @@ function Phone() {
         on reassurance before a single destination. `.ux-chiprow` bleeds the
         row to both edges, which is what tells a thumb there is more of it.
       */}
-      <div className="ux-chiprow mt-3.5 flex flex-wrap gap-2"
+      <div className="ux-chiprow mt-4 flex flex-wrap gap-2"
            style={{ ["--ux-pad" as string]: "20px" }}>
         {PROMISES.map(([icon, label]) => (
           <span key={label}
@@ -423,7 +423,7 @@ function Phone() {
         ))}
       </div>
 
-      <div className="mt-5 space-y-5">
+      <div className="mt-6 space-y-6">
         <ListGroup title="Where to go">
           {PLACES.map((p) => (
             <ListRow key={p.id} href={p.href} icon={p.icon} tint={p.row}
@@ -435,7 +435,7 @@ function Phone() {
           <h3 className="ux-group-label">Your learning journey</h3>
           <div className="rounded-[var(--ux-r-lg)] border p-4"
                style={{ background: v("--ux-surface"), borderColor: v("--ux-line") }}>
-            <div className="flex items-center gap-3.5">
+            <div className="flex items-center gap-4">
               <Donut pct={pct} />
               <div className="min-w-0">
                 <p className="text-[15px] font-bold leading-tight" style={{ color: v("--ux-ink") }}>
@@ -463,7 +463,7 @@ function Phone() {
                     </span>
                     <span className="min-w-0 text-[15px] leading-snug"
                           style={{ color: done || now ? v("--ux-ink") : v("--ux-ink-2"),
-                                   fontWeight: now ? 700 : 500 }}>
+                                   fontWeight: now ? 700 : 400 }}>
                       {step}
                     </span>
                     <span className="sr-only">

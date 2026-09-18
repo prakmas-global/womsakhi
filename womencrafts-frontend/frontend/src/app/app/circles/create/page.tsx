@@ -374,7 +374,11 @@ export default function CreateCirclePage() {
 /** The row every step ends with. */
 function Foot({ back, next }: { back: React.ReactNode; next: React.ReactNode }) {
   return (
-    <div className="mt-5 flex flex-wrap items-center justify-between gap-3 border-t pt-4"
+    /* On a phone: the step's forward action full width on top, the way back
+       under it, both 50px — where a thumb is, rather than at the far corners. */
+    <div className="mt-5 flex flex-wrap items-center justify-between gap-3 border-t pt-4
+                    max-lg:flex-col-reverse max-lg:items-stretch
+                    max-lg:[&>*]:min-h-[50px] max-lg:[&>*]:w-full max-lg:[&>*]:rounded-[14px] max-lg:[&>*]:text-[17px]"
          style={{ borderColor: v("--ux-line") }}>
       {back}
       {next}

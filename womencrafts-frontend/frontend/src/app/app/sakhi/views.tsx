@@ -172,7 +172,7 @@ export function Welcome({
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img loading="lazy" decoding="async" src="/sakhi-still-520.webp" alt="Sakhi" draggable={false}
              className="ux-bob mx-auto block h-[96px] w-[96px] object-contain lg:h-[150px] lg:w-[150px]" />
-        <h2 className="mt-3 text-center text-[22px] font-extrabold leading-tight tracking-[-0.03em]
+        <h2 className="mt-3 text-center text-[24px] font-extrabold leading-tight tracking-[-0.03em]
                        lg:mt-4 lg:text-[clamp(1.3125rem,2.8vw,1.875rem)]"
             style={{ color: "var(--ux-ink)" }}>
           {greeting}, {first || "friend"}.<br />

@@ -81,7 +81,7 @@ export default function BarTrendCanvas({
           <YAxis
             tickLine={false}
             axisLine={false}
-            tick={{ fill: ct.tick, fontSize: 11 }}
+            tick={{ fill: ct.tick, fontSize: 12 }}
             width={40}
           />
         )}

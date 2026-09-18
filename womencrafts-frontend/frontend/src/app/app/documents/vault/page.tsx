@@ -11,6 +11,8 @@ import {Back, ActionBtn, Btn, Card, EmptyState, IconTile, Pill,
   printDocument
 } from "@/components/ux/kit";
 import { HomeShell } from "@/components/ux/home/HomeShell";
+import { SegmentedControl } from "@/components/ux/mobile/SegmentedControl";
+import { GROUP, GROUP_ROW } from "@/components/ux/earn/phone";
 import { useMe } from "@/components/ux/me";
 import { useDocuments, type UxDocument } from "@/components/ux/live";
 import { COPY } from "@/components/ux/copy";
@@ -231,25 +233,32 @@ export default function VaultPage() {
     >
       <Back to="/app/documents" label={tr("documentsVault.yourShop")} className="mb-4" />
 
-      <div className="mb-[20px] flex flex-wrap items-end justify-between gap-4">
+      <div className="mb-6 flex flex-wrap items-end justify-between gap-4 lg:mb-[20px]">
         <div>
-          <h1 className="text-2xl font-bold" style={{ color: "var(--ux-ink)" }}>{tr("documentsVault.yourPapers")}</h1>
+          <h1 className="ux-screen-title text-2xl font-bold" style={{ color: "var(--ux-ink)" }}>{tr("documentsVault.yourPapers")}</h1>
           <p className="mt-1.5 text-xsm" style={{ color: "var(--ux-muted)" }}>{tr("documentsVault.openDownloadOrReplaceAnythingYou")}</p>
 
       <SourceNote source={source} what="papers" />
         </div>
-        <Tabs items={["All", "With us", "Still needed", "Optional"]} active={tab} onChange={setTab} />
+        {/* A segmented control on a phone: four short choices fit one line
+            as equal segments, where the desktop tab strip squeezed its
+            labels and cut "Still needed" off mid-word. */}
+        <div className="hidden lg:flex">
+          <Tabs items={["All", "With us", "Still needed", "Optional"]} active={tab} onChange={setTab} />
+        </div>
+        <SegmentedControl className="lg:hidden" label={tr("documentsVault.yourPapers")} value={tab} onChange={setTab}
+                          options={["All", "With us", "Still needed", "Optional"].map((t) => ({ value: t, label: t }))} />
       </div>
 
       {shown.length ? (
-        <ul className="ux-deck space-y-2.5">
+        <ul className={`ux-deck space-y-2.5 max-lg:space-y-0 ${GROUP}`}>
           {shown.map((d, i) => {
             const open = preview === d.id;
             return (
-              <li key={d.id} className="ux-i ux-sq rounded-[12px] border p-3.5"
+              <li key={d.id} className={`ux-i ux-sq rounded-[12px] border p-3.5 max-lg:border-[color:var(--ux-line)]! max-lg:p-4 ${GROUP_ROW}`}
                   style={{ borderColor: open ? "var(--ux-brand)" : "var(--ux-line)",
                            background: "var(--ux-surface)", ["--i" as string]: i }}>
-                <div className="flex items-center gap-3.5">
+                <div className="flex items-center gap-3.5 max-lg:flex-wrap">
                   <IconTile icon={d.icon} tint={d.tint} ink={d.ink} size={46} radius={12} />
                   <div className="min-w-0 flex-1">
                     <div className="flex flex-wrap items-center gap-2">
@@ -263,7 +272,7 @@ export default function VaultPage() {
                     </p>
                   </div>
 
-                  <div className="flex shrink-0 items-center gap-1.5">
+                  <div className="flex shrink-0 items-center gap-1.5 max-lg:w-full max-lg:ps-[60px]">
                     {d.status === "missing" ? (
                       <Btn variant="primary" size="sm" icon="Upload" disabled={busy === d.id}
                            onClick={() => choose(d.id, d.docType ?? "other")}>
@@ -322,6 +331,27 @@ export default function VaultPage() {
                       action={<Btn onClick={() => setTab("All")} variant="soft">{tr("documentsVault.showEverything")}</Btn>} />
         </Card>
       )}
+
+      {/*
+        "Add a paper" and "Print the list", where the side column is not drawn.
+
+        Both lived ONLY in the rail, and the rail is `hidden xl:block` — so
+        below 1280px, which is every phone and most small laptops, there was
+        no general way to add a paper at all. She could only add one through a
+        row that already existed for it. `xl:hidden` matches the rail exactly,
+        so at no width are there two copies and at no width are there none.
+        Same handlers as the rail's buttons; the file picker they open is the
+        one inside the rail, which is hidden, not removed, so it still works.
+      */}
+      <div className="mt-6 space-y-2.5 xl:hidden">
+        <Btn variant="primary" full icon="Upload" disabled={busy === "upload"}
+             className="ux-action-primary"
+             onClick={() => choose("upload", "other")}>
+          {busy === "upload" ? "Sending…" : "Add a paper"}
+        </Btn>
+        <ActionBtn variant="outline" full icon="Printer" doneIcon="Printer"
+                   done={COPY.saveAsPdf} act={() => coverSheet()}>{tr("documentsVault.printTheList")}</ActionBtn>
+      </div>
     </HomeShell>
   );
 }

@@ -2210,7 +2210,7 @@
   --fb-earn-chip-x: 14px;
   --fb-earn-chip-gap: 7px;
   --fb-earn-chip-top: 26px;
-  --fb-earn-card-min: 262px;
+  --fb-earn-card-min: 120px;
   --fb-earn-art: 126px;
   --fb-earn-wide: 72px;
 }
@@ -2241,7 +2241,7 @@
     --fb-earn-chip-x: 13px;
     --fb-earn-chip-gap: 6px;
     --fb-earn-chip-top: 16px;
-    --fb-earn-card-min: 230px;
+    --fb-earn-card-min: 120px;
     --fb-earn-art: 110px;
     --fb-earn-wide: 60px;
   }
@@ -2269,7 +2269,7 @@
     --fb-earn-chip-x: 11px;
     --fb-earn-chip-gap: 6px;
     --fb-earn-chip-top: 14px;
-    --fb-earn-card-min: 190px;
+    --fb-earn-card-min: 120px;
     --fb-earn-art: 92px;
     --fb-earn-wide: 56px;
   }
@@ -2298,7 +2298,7 @@
     --fb-earn-chip-x: 9px;
     --fb-earn-chip-gap: 5px;
     --fb-earn-chip-top: 10px;
-    --fb-earn-card-min: 156px;
+    --fb-earn-card-min: 120px;
     --fb-earn-art: 76px;
     --fb-earn-wide: 46px;
   }
@@ -2617,3 +2617,15 @@
      is exactly why this pattern always ships with its words. */
   .ux-turn { animation: none; }
 }
+
+/*
+  The certificate card's footer.
+
+  Two buttons whose labels are different lengths — "Download" and "Share link"
+  — were laid out at their natural widths, so every card in the grid had a
+  differently-shaped floor and the deck read as ragged even though each card
+  was identical in every other respect. Equal halves, and the row is the same
+  on all of them.
+*/
+.ux .ux-cert-foot > * { flex: 1 1 0; min-width: 0; }
+.ux .ux-cert-foot > * > * { width: 100%; justify-content: center; }

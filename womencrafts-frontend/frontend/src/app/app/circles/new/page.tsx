@@ -12,6 +12,8 @@ import { Field, TextInput } from "@/components/ux/settings/Frame";
 import { HomeShell } from "@/components/ux/home/HomeShell";
 import { rupees } from "@/components/ux/circles/data";
 import { useT } from "@/i18n";
+import { ListGroup } from "@/components/ux/mobile/ListRow";
+import { PhoneRow, phonePrimary, phoneSecondary } from "@/components/ux/PhoneParts";
 
 const KINDS = [
   { id: "Savings", label: "A savings circle", note: "Everyone pays in monthly; one member takes the pot each month",
@@ -162,20 +164,38 @@ export default function NewCircle() {
         ) : undefined
       }
     >
-      <Back to="/app/circles" label={tr("circlesNew.allCircles")} className="mb-4" />
+      {/* The top bar carries the way back on a phone; this one is the desktop's. */}
+      <div className="hidden lg:block">
+        <Back to="/app/circles" label={tr("circlesNew.allCircles")} className="mb-4" />
+      </div>
 
-      <p className="text-xsm" style={{ color: "var(--ux-faint)" }}>Step {step} of 2</p>
-      <h1 className="mt-1 text-2xl font-bold" style={{ color: "var(--ux-ink)" }}>
+      <p className="text-xsm max-lg:text-[13px]" style={{ color: "var(--ux-faint)" }}>Step {step} of 2</p>
+      <h1 className="ux-screen-title mt-1 text-2xl font-bold" style={{ color: "var(--ux-ink)" }}>
         {step === 1 ? "What kind of circle?" : `Set up ${form.name || "your circle"}`}
       </h1>
-      <p className="mb-[20px] mt-1.5 text-xsm" style={{ color: "var(--ux-muted)" }}>
+      <p className="mb-6 mt-1.5 text-xsm lg:mb-[20px]" style={{ color: "var(--ux-muted)" }}>
         {step === 1
           ? tr("circlesNew.threeKindsAndTheyWorkDifferently")
               : tr("circlesNew.nothingIsCommittedUntilWomenJoin")}
       </p>
 
       {step === 1 && (
-        <div className="ux-deck space-y-[12px]">
+        /* One of three: on a phone, a grouped list with a checkmark. */
+        <ListGroup className="lg:hidden">
+          {KINDS.map((k) => (
+            <PhoneRow key={k.id} icon={k.icon} tint={k.tint} ink={k.ink}
+                      title={
+                        <span className="flex flex-wrap items-center gap-2">
+                          {k.label}
+                          {k.id === "Savings" && <Pill tone="green" size="sm">{tr("circlesNew.involvesMoney")}</Pill>}
+                        </span>
+                      }
+                      body={k.note} selected={kind === k.id} onClick={() => setKind(k.id)} />
+          ))}
+        </ListGroup>
+      )}
+      {step === 1 && (
+        <div className="ux-deck hidden space-y-[12px] lg:block">
           {KINDS.map((k, i) => {
             const on = kind === k.id;
             return (
@@ -218,7 +238,7 @@ export default function NewCircle() {
             </Field>
 
             {savings && (
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
                 <Field label={tr("circlesNew.howManyWomen")} hint={tr("circlesNew.eachOneGetsThePotOnce")}>
                   <TextInput value={form.members} onChange={set("members")} inputMode="numeric" placeholder="10" />
                 </Field>
@@ -234,7 +254,7 @@ export default function NewCircle() {
                 onChange={(e) => setForm((f) => ({ ...f, about: e.target.value }))}
                 rows={3}
                 aria-label={tr("circlesNew.sayWhatItIsFor2")}
-                className="ux-sq w-full resize-y rounded-[12px] border p-3.5 text-sm leading-relaxed outline-none"
+                className="ux-sq w-full resize-y rounded-[12px] border p-3.5 text-sm leading-relaxed outline-none max-lg:p-4 max-lg:text-[17px]"
                 style={{ borderColor: "var(--ux-line-strong)", background: "var(--ux-surface)", color: "var(--ux-ink)" }}
               />
             </Field>
@@ -249,16 +269,18 @@ export default function NewCircle() {
         </p>
       )}
 
-      <div className="mt-[20px] flex items-center justify-between gap-4">
-        <p className="text-xs" style={{ color: "var(--ux-faint)" }}>
+      {/* On a phone: the state line, then the primary action full width, Back under it. */}
+      <div className="mt-[20px] flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between lg:gap-4">
+        <p className="text-[13px] lg:text-xs" style={{ color: "var(--ux-faint)" }}>
           {step === 1 && !kind ? "Pick a kind to continue."
             : step === 2 && !ready ? "It needs a name" + (savings ? ", at least 3 women and an amount." : ".")
             : "Nothing is committed yet."}
         </p>
-        <span className="flex items-center gap-2.5">
-          {step === 2 && <Btn variant="outline" icon="ArrowLeft" onClick={() => setStep(1)}>Back</Btn>}
+        <span className="flex flex-col-reverse gap-2.5 lg:flex-row lg:items-center">
+          {step === 2 && <Btn variant="outline" icon="ArrowLeft" className={phoneSecondary} onClick={() => setStep(1)}>Back</Btn>}
           <Btn
             variant="primary"
+            className={phonePrimary}
             iconEnd={making ? undefined : "ArrowRight"}
             icon={making ? "Loader" : undefined}
             disabled={making || !(step === 1 ? !!kind : ready)}

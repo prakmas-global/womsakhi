@@ -11,6 +11,19 @@ import type { NextConfig } from "next";
 const nextConfig: NextConfig = {
 
   /**
+   * Where the build goes — overridable, so a production build can sit beside a
+   * running `next dev` instead of on top of it.
+   *
+   * Both write to `.next`, and building while dev is running either fails or
+   * corrupts the dev cache, so auditing the app against real production speed
+   * used to mean stopping the dev server first. A cold `next dev` compiles each
+   * route the first time it is opened — measured at ~47s a route, which put a
+   * 110-screen audit at over an hour. A production build serves the same 110
+   * in milliseconds each. Unset, this is `.next` and nothing changes.
+   */
+  distDir: process.env.NEXT_DIST_DIR || ".next",
+
+  /**
    * Build a self-contained server for the container image.
    *
    * `.next/standalone` carries its own trimmed `node_modules` and a `server.js`

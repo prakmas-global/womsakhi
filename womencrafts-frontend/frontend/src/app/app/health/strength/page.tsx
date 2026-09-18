@@ -9,6 +9,8 @@ import {
   CHECKS, IRON_WEEKS, TIRED_SIGNS, dueNow, freeCount, ironStreak, type Check,
 } from "@/components/ux/wellness/data";
 import { useT } from "@/i18n";
+import { ListGroup } from "@/components/ux/mobile/ListRow";
+import { GroupLabel, PhoneRow, PhoneTitle, phonePrimary } from "@/components/ux/PhoneParts";
 
 /**
  * Tiredness, treated as a money problem.
@@ -57,9 +59,16 @@ export default function StrengthPage() {
   return (
     <HomeShell active="/app/health">
       <div className="flex flex-col gap-5">
-        <Back to="/app/health" label={tr("healthStrength.backToHealth")} />
+        {/* The top bar carries the way back on a phone; this one is the desktop's. */}
+        <div className="hidden lg:flex">
+          <Back to="/app/health" label={tr("healthStrength.backToHealth")} />
+        </div>
 
-        <header>
+        <PhoneTitle title="Strength" sub={tr("healthStrength.tiredIsNotJustTired")}
+                    note={<>When you are paid for what you finish, feeling weak is money. Women doing piece work
+                      with low iron finished about <b>9% less in a shift</b> and earned about <b>4% less</b> —
+                      without ever taking a day off.</>} />
+        <header className="hidden lg:block">
           <p className="text-2xs font-extrabold uppercase tracking-[0.2em]" style={{ color: v("--ux-brand") }}>
             Strength
           </p>
@@ -74,7 +83,7 @@ export default function StrengthPage() {
 
         {/* Free test */}
         <Card pad={0} style={{ overflow: "hidden", borderColor: v("--ux-brand") }}>
-          <div className="flex flex-wrap items-start gap-4 p-5" style={{ background: v("--ux-brand-tint") }}>
+          <div className="flex flex-wrap items-start gap-4 p-5 max-lg:p-4" style={{ background: v("--ux-brand-tint") }}>
             <IconTile icon="Droplet" tint="--ux-surface" ink="--ux-brand" size={48} radius={14} />
             <div className="min-w-0 flex-1">
               <p className="text-base font-bold" style={{ color: v("--ux-ink") }}>{test.what}</p>
@@ -93,7 +102,7 @@ export default function StrengthPage() {
                 )}
               </div>
             </div>
-            <Btn disabled={booked} onClick={() => { setBooked(true); setNote("We will remind you on Monday evening, and again on the morning."); }}>
+            <Btn disabled={booked} className={phonePrimary} onClick={() => { setBooked(true); setNote("We will remind you on Monday evening, and again on the morning."); }}>
               {booked ? tr("healthStrength.reminderSet")
               : tr("healthStrength.remindMeTuesday")}
             </Btn>
@@ -110,8 +119,41 @@ export default function StrengthPage() {
 
         {/* Signs — a prompt, explicitly not a diagnosis */}
         <div>
-          <SectionHead title={tr("healthStrength.doesAnyOfThisSoundLike")}
-                       sub={tr("healthStrength.thisIsNotADiagnosisOnly")} icon="ListChecks" />
+          <GroupLabel sub={tr("healthStrength.thisIsNotADiagnosisOnly")}>{tr("healthStrength.doesAnyOfThisSoundLike")}</GroupLabel>
+          <div className="hidden lg:block">
+            <SectionHead title={tr("healthStrength.doesAnyOfThisSoundLike")}
+                         sub={tr("healthStrength.thisIsNotADiagnosisOnly")} icon="ListChecks" />
+          </div>
+          {/* A checklist: on a phone, rows of one grouped list, the tick box
+              leading each. */}
+          <ListGroup className="lg:hidden">
+            {TIRED_SIGNS.map((s) => {
+              const on = signs.includes(s);
+              return (
+                <PhoneRow key={s} onClick={() => toggleSign(s)} pressed={on} sepInset={50}
+                          lead={
+                            <span className="mt-0.5 grid h-[22px] w-[22px] shrink-0 place-items-center rounded-[8px] border-2"
+                                  style={{
+                                    borderColor: v(on ? "--ux-brand" : "--ux-line-strong"),
+                                    background: v(on ? "--ux-brand" : "--ux-surface"),
+                                    color: v("--ux-on-brand-btn-ink"),
+                                  }}>
+                              {on && <I name="Check" className="h-[13px] w-[13px]" sw={3} />}
+                            </span>
+                          }
+                          title={<span className="font-normal">{s}</span>} />
+              );
+            })}
+          </ListGroup>
+          {many && (
+            <div className="mt-3 rounded-[12px] p-4 lg:hidden" style={{ background: v("--ux-tint-amber") }}>
+              <p className="text-[15px] leading-relaxed" style={{ color: v("--ux-ink-2") }}>
+                That is worth ten minutes on a Tuesday. It might be iron, it might be something
+                else — the point is that a free test tells you, and guessing does not.
+              </p>
+            </div>
+          )}
+          <div className="hidden lg:block">
           <Card pad={16}>
             <div className="flex flex-col gap-2">
               {TIRED_SIGNS.map((s) => {
@@ -145,12 +187,18 @@ export default function StrengthPage() {
               </div>
             )}
           </Card>
+          </div>
         </div>
 
         {/* Iron — weekly, which beats a monthly ritual */}
         <div>
-          <SectionHead title={tr("healthStrength.theWeeklyTablet")} sub={tr("healthStrength.freeFromTheAnganwadiOneA")}
-                       icon="Pill" chip={streak > 0 ? `${streak} weeks running` : undefined} />
+          <GroupLabel sub={tr("healthStrength.freeFromTheAnganwadiOneA")} count={streak > 0 ? `${streak} weeks running` : undefined}>
+            {tr("healthStrength.theWeeklyTablet")}
+          </GroupLabel>
+          <div className="hidden lg:block">
+            <SectionHead title={tr("healthStrength.theWeeklyTablet")} sub={tr("healthStrength.freeFromTheAnganwadiOneA")}
+                         icon="Pill" chip={streak > 0 ? `${streak} weeks running` : undefined} />
+          </div>
           <Card pad={16}>
             <div className="flex items-end gap-2" style={{ height: 76 }}>
               {weeks.map((w) => (
@@ -175,10 +223,28 @@ export default function StrengthPage() {
 
         {/* Other free checks */}
         <div>
-          <SectionHead title={tr("healthStrength.otherThingsThatCostNothing")}
-                       sub={`${freeCount(CHECKS)} free · ${dueNow(CHECKS)} due soon`} icon="Stethoscope"
-                       action="All of health" onAction={() => router.push("/app/health")} />
-          <div className="grid gap-3 sm:grid-cols-2">
+          <GroupLabel sub={`${freeCount(CHECKS)} free · ${dueNow(CHECKS)} due soon`}>{tr("healthStrength.otherThingsThatCostNothing")}</GroupLabel>
+          <div className="hidden lg:block">
+            <SectionHead title={tr("healthStrength.otherThingsThatCostNothing")}
+                         sub={`${freeCount(CHECKS)} free · ${dueNow(CHECKS)} due soon`} icon="Stethoscope"
+                         action="All of health" onAction={() => router.push("/app/health")} />
+          </div>
+          <ListGroup className="lg:hidden">
+            {CHECKS.filter((c) => c.id !== "ch1").map((c) => (
+              <PhoneRow key={c.id} icon={c.icon} tint="--ux-tint-green" ink="--ux-green-ink"
+                        title={
+                          <span className="flex flex-wrap items-center gap-2">
+                            {c.what}
+                            {c.womanThere && <Pill tone="pink" size="sm">{tr("healthStrength.aWomanDoesIt")}</Pill>}
+                          </span>
+                        }
+                        meta={<><b>{c.costs}</b> · {c.takes} · {c.where}</>}
+                        body={c.why} />
+            ))}
+            {/* The desktop heading's "All of health", as the list's last row. */}
+            <PhoneRow href="/app/health" icon="Stethoscope" title="All of health" />
+          </ListGroup>
+          <div className="hidden gap-3 sm:grid-cols-2 lg:grid">
             {CHECKS.filter((c) => c.id !== "ch1").map((c) => (
               <Card key={c.id} pad={16}>
                 <div className="flex items-start gap-3.5">

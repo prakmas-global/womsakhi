@@ -3,7 +3,8 @@
 import { useCallback, useMemo } from "react";
 
 import { HomeShell } from "@/components/ux/home/HomeShell";
-import { Back, Btn, Card, EmptyState, I, IconTile, Pill, SectionHead, Stat, v } from "@/components/ux/kit";
+import { Back, Btn, Card, EmptyState, I, IconTile, Pill, Stat, v } from "@/components/ux/kit";
+import { EYEBROW, GROUP, GROUP_ROW, Section } from "@/components/ux/earn/phone";
 import { formatRupees } from "@/components/ux/kit";
 import { apiShopOrders, type ShopOrder } from "@/lib/shop-api";
 import { useResource } from "@/lib/use-resource";
@@ -78,7 +79,7 @@ export default function BuyersPage() {
   const spent = useMemo(() => buyers.reduce((n, b) => n + b.spent, 0), [buyers]);
 
   const card = (b: { name: string; orders: number; spent: number; what: string[] }) => (
-    <Card key={b.name} pad={16}>
+    <Card key={b.name} pad={16} className={GROUP_ROW}>
       <div className="flex flex-wrap items-start gap-3.5">
         <span className="grid h-[42px] w-[42px] shrink-0 place-items-center rounded-full text-base font-bold"
               style={{ background: v("--ux-brand-tint-2"), color: v("--ux-brand") }}>
@@ -108,12 +109,11 @@ export default function BuyersPage() {
 
   return (
     <HomeShell active="/app/shop">
-      <div className="flex flex-col gap-5">
+      <div className="flex flex-col gap-6 lg:gap-5">
         <Back to="/app/shop" label="Back to ways to sell" />
 
         <header>
-          <p className="text-[13px] font-extrabold uppercase tracking-[0.2em] lg:text-2xs"
-             style={{ color: v("--ux-brand") }}>{tr("shopBuyers.yourBuyers")}</p>
+          <p className={EYEBROW}>{tr("shopBuyers.yourBuyers")}</p>
           <h1 className="ux-screen-title mt-2 text-[clamp(1.5rem,3.2vw,2.125rem)] font-extrabold leading-[1.1] tracking-[-0.035em]"
               style={{ color: v("--ux-ink") }}>{tr("shopBuyers.oneSteadyBuyerBeatsAHundred")}</h1>
           <p className="mt-1.5 max-w-[56ch] text-[15px] leading-snug lg:text-sm lg:leading-relaxed"
@@ -185,19 +185,19 @@ export default function BuyersPage() {
           <>
             {repeat.length > 0 && (
               <div>
-                <SectionHead title={tr("shopBuyers.theyKeepComingBack")}
+                <Section title={tr("shopBuyers.theyKeepComingBack")}
                              sub="More than one order in your own records" icon="Handshake"
                              chip={String(repeat.length)} />
-                <div className="flex flex-col gap-3">{repeat.map(card)}</div>
+                <div className={`flex flex-col gap-3 ${GROUP}`}>{repeat.map(card)}</div>
               </div>
             )}
 
             {once.length > 0 && (
               <div>
-                <SectionHead title={tr("shopBuyers.boughtOnce")}
+                <Section title={tr("shopBuyers.boughtOnce")}
                              sub={tr("shopBuyers.worthOneMessageBeforeTheSeason")} icon="User"
                              chip={String(once.length)} />
-                <div className="flex flex-col gap-3">{once.map(card)}</div>
+                <div className={`flex flex-col gap-3 ${GROUP}`}>{once.map(card)}</div>
               </div>
             )}
           </>
@@ -212,7 +212,7 @@ export default function BuyersPage() {
           is what this gives her.
         */}
         <Card pad={0} style={{ overflow: "hidden" }}>
-          <div className="px-5 py-5">
+          <div className="p-4 lg:p-5">
             <div className="flex items-start gap-3.5">
               <IconTile icon="Handshake" tint="--ux-tint-green" ink="--ux-green-ink" size={42} radius={12} />
               <div className="min-w-0 flex-1">

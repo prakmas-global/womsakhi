@@ -14,6 +14,8 @@ import * as Icons from "@/components/ux/icons";
 import { Btn, Card, IconTile, Pill } from "@/components/ux/kit";
 import { OnboardAside, OnboardFrame } from "@/components/ux/onboard/Frame";
 import { useT } from "@/i18n";
+import { ListGroup } from "@/components/ux/mobile/ListRow";
+import { PhoneRow, phonePrimary, phoneSecondary } from "@/components/ux/PhoneParts";
 
 type Stage = "email" | "documents" | "review" | "rejected";
 
@@ -157,7 +159,9 @@ export default function VerifyPage() {
     >
       {stage === "email" && (
         <Card>
-          <div className="flex items-start gap-4">
+          {/* On a phone the picture sits above the words, so the buttons get
+              the card's full width rather than what is left beside it. */}
+          <div className="flex items-start gap-4 max-lg:flex-col">
             <IconTile icon="Mail" tint="--ux-tint-violet" ink="--ux-violet" size={52} radius={14} />
             <div className="min-w-0 flex-1">
               <h2 className="text-base font-semibold" style={{ color: "var(--ux-ink)" }}>{tr("verify.checkYourInbox")}</h2>
@@ -165,9 +169,9 @@ export default function VerifyPage() {
                 The link is good for 24 hours. If it is not there, look in spam — it arrives from
                 hello@womsakhi.in.
               </p>
-              <div className="mt-4 flex flex-wrap items-center gap-2.5">
-                <Btn variant="primary" iconEnd="ArrowRight" onClick={() => setAdvanced("documents")}>{tr("verify.iHaveConfirmedIt")}</Btn>
-                <Btn variant="outline" icon={resent ? "Check" : "RotateCcw"} disabled={resend.busy}
+              <div className="mt-4 flex flex-col gap-2.5 lg:flex-row lg:flex-wrap lg:items-center">
+                <Btn variant="primary" iconEnd="ArrowRight" className={phonePrimary} onClick={() => setAdvanced("documents")}>{tr("verify.iHaveConfirmedIt")}</Btn>
+                <Btn variant="outline" icon={resent ? "Check" : "RotateCcw"} disabled={resend.busy} className={phoneSecondary}
                      onClick={() => void resend.run()}>
                   {resend.busy ? "Sending…" : resent ? tr("verify.sentAgain")
               : tr("verify.sendItAgain")}
@@ -195,7 +199,32 @@ export default function VerifyPage() {
             </Card>
           )}
 
-          <div className="ux-deck space-y-[12px]">
+          {/* The papers as one grouped list on a phone, the button on each row. */}
+          <ListGroup className="lg:hidden">
+            {DOCS.map((d) => {
+              const done = uploaded.includes(d.id);
+              return (
+                <PhoneRow key={d.id} icon={done ? "CheckCircle2" : d.icon}
+                          tint={done ? "--ux-tint-green" : d.tint} ink={done ? "--ux-green" : d.ink}
+                          title={
+                            <span className="flex flex-wrap items-center gap-2">
+                              {d.label}
+                              {done && <Pill tone="green" size="sm">Added</Pill>}
+                            </span>
+                          }
+                          meta={d.note}
+                          trailing={
+                            <Btn variant={done ? "outline" : "primary"} size="sm"
+                                 icon={done ? "RotateCcw" : "Upload"}
+                                 disabled={busy === d.docType}
+                                 onClick={() => choose(d.docType)}>
+                              {busy === d.docType ? "Sending…" : done ? "Replace" : "Add photo"}
+                            </Btn>
+                          } />
+              );
+            })}
+          </ListGroup>
+          <div className="ux-deck hidden space-y-[12px] lg:block">
             {DOCS.map((d, i) => {
               const done = uploaded.includes(d.id);
               return (
@@ -223,12 +252,12 @@ export default function VerifyPage() {
             })}
           </div>
 
-          <div className="mt-[24px] flex items-center justify-between gap-4">
-            <p className="text-xs" style={{ color: "var(--ux-faint)" }}>
+          <div className="mt-[24px] flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between lg:gap-4">
+            <p className="text-[13px] lg:text-xs" style={{ color: "var(--ux-faint)" }}>
               {allUploaded ? "That is everything we need." : `${Math.max(0, DOCS.length - sent.length)} still to add.`}
             </p>
             <Btn variant="primary" iconEnd="ArrowRight"
-                 className={allUploaded ? "" : "pointer-events-none opacity-50"}
+                 className={`${phonePrimary} ${allUploaded ? "" : "pointer-events-none opacity-50"}`}
                  onClick={() => allUploaded && setAdvanced("review")}>{tr("verify.sendForReview")}</Btn>
           </div>
           {filePicker}
@@ -237,7 +266,9 @@ export default function VerifyPage() {
 
       {stage === "review" && (
         <Card>
-          <div className="flex items-start gap-4">
+          {/* On a phone the picture sits above the words, so the buttons get
+              the card's full width rather than what is left beside it. */}
+          <div className="flex items-start gap-4 max-lg:flex-col">
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img loading="lazy" decoding="async" src="/ux/art/scene-woman-reading-document.webp" alt=""
                  className="h-[92px] w-[92px] shrink-0 object-contain" />
@@ -248,9 +279,9 @@ export default function VerifyPage() {
                 Two people review new accounts, Monday to Saturday. You will get an email the moment it is
                 done — you do not need to keep this open.
               </p>
-              <div className="mt-4 flex flex-wrap gap-2.5">
-                <Btn variant="outline" icon="LogOut" onClick={() => signOut()}>{tr("verify.signOutForNow")}</Btn>
-                <Btn variant="ghost" onClick={() => setAdvanced("rejected")}>{tr("verify.seeWhatHappensIfSomethingIs")}</Btn>
+              <div className="mt-4 flex flex-col gap-2.5 lg:flex-row lg:flex-wrap">
+                <Btn variant="outline" icon="LogOut" className={phoneSecondary} onClick={() => signOut()}>{tr("verify.signOutForNow")}</Btn>
+                <Btn variant="ghost" className={phoneSecondary} onClick={() => setAdvanced("rejected")}>{tr("verify.seeWhatHappensIfSomethingIs")}</Btn>
               </div>
             </div>
           </div>

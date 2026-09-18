@@ -209,7 +209,7 @@ export default function HelpPage() {
           )}
         </Head>
 
-        <div className="ux-lit mb-7 overflow-hidden rounded-[20px]" style={{ border: "1px solid var(--ux-line)" }}>
+        <div className="ux-lit mb-7 overflow-hidden rounded-[20px] max-lg:mb-6 max-lg:rounded-[16px]" style={{ border: "1px solid var(--ux-line)" }}>
           {rows.length === 0 ? (
             <div className="px-[20px] py-8 text-center text-xsm" style={{ color: "var(--ux-muted)" }}>{tr("help.noAnswerHereForThatYet")}<br />
               Use <b style={{ color: "var(--ux-ink)" }}>{tr("help.messageHer")}</b> below and it goes straight to the team.
@@ -269,7 +269,7 @@ export default function HelpPage() {
 
 function Head({ children }: { children: React.ReactNode }) {
   return (
-    <h2 className="mb-3 text-[12px] lg:text-2xs font-extrabold uppercase tracking-[0.16em]" style={{ color: "var(--ux-faint)" }}>
+    <h2 className="mb-3 text-[12px] font-extrabold uppercase tracking-[0.16em] max-lg:mb-2 max-lg:px-4 max-lg:font-semibold max-lg:tracking-[0.07em] lg:text-2xs" style={{ color: "var(--ux-faint)" }}>
       {children}
     </h2>
   );
@@ -344,7 +344,7 @@ function Alert() {
       width underneath, which is also where a thumb can hold it for a second
       and a half without covering what it is about to do.
     */
-    <section className="ux-sq mb-6 flex flex-col items-start gap-3 overflow-hidden rounded-[20px] px-4 py-4
+    <section className="ux-sq mb-6 flex flex-col items-start gap-3 overflow-hidden rounded-[20px] px-4 py-4 max-lg:rounded-[16px]
                         sm:flex-row sm:flex-wrap sm:items-center sm:gap-[20px] sm:px-5 sm:py-[20px]"
              style={{ border: "1px solid color-mix(in srgb, var(--ux-danger-solid) 55%, transparent)",
                       background: "linear-gradient(100deg, var(--ux-danger-tint), var(--ux-surface) 62%)",
@@ -371,7 +371,7 @@ function Alert() {
               onPointerDown={(e) => { e.preventDefault(); start(); }}
               onPointerUp={stop} onPointerLeave={stop} onPointerCancel={stop}
               aria-label={tr("help.pressAndHoldForOneAnd")}
-              className="relative flex min-h-[50px] w-full shrink-0 items-center justify-center gap-2 overflow-hidden rounded-[14px] px-6 text-[16px] font-extrabold tracking-[-0.005em] transition-transform active:scale-[0.985] sm:w-auto sm:rounded-[12px] sm:text-sm"
+              className="relative flex min-h-[50px] w-full shrink-0 items-center justify-center gap-2 overflow-hidden rounded-[14px] px-6 text-[17px] font-extrabold tracking-[-0.005em] transition-transform active:scale-[0.985] sm:w-auto sm:rounded-[12px] sm:text-sm"
               style={{ background: sent && !failed
                          ? "var(--ux-green-ink)"
                          : "linear-gradient(150deg, var(--ux-danger-solid), color-mix(in srgb, var(--ux-danger-solid) 72%, #000))",
@@ -438,7 +438,7 @@ function Ask({
 
   return (
     <>
-      <div className="ux-lit mb-[8px] mt-[20px] flex items-center gap-3 rounded-[16px] py-1.5 pe-1.5 ps-[18px]"
+      <div className="ux-lit mb-[8px] mt-[20px] flex items-center gap-3 rounded-[16px] py-1.5 pe-1.5 ps-[18px] max-lg:mt-6 max-lg:rounded-[12px] max-lg:ps-4"
            style={{ border: "1px solid var(--ux-line-strong)" }}>
         <Icons.Search className="h-[19px] w-[19px] shrink-0" strokeWidth={2.2} style={{ color: "var(--ux-faint)" }} />
         <input ref={inputRef} value={value} onChange={(e) => onChange(e.target.value)}
@@ -457,7 +457,7 @@ function Ask({
           </button>
         )}
       </div>
-      <p className="mb-6 ms-0.5 text-xs" style={{ color: "var(--ux-faint)" }}>
+      <p className="mb-6 ms-0.5 text-xs max-lg:ms-4 max-lg:text-[13px]" style={{ color: "var(--ux-faint)" }}>
         {speech
           ? tr("help.youCanSpeakInsteadOfTyping")
               : tr("help.typeInAnyLanguageHindiTelugu")}
@@ -485,7 +485,10 @@ function Person({ innerRef }: { innerRef: React.RefObject<HTMLDivElement | null>
 
   return (
     <section ref={innerRef}
-             className="relative flex flex-wrap items-center gap-[20px] overflow-hidden rounded-[20px] p-[24px]"
+             /* On a phone a column: the words get the full width (beside the
+                two buttons they were squeezed to 22px and cut off), then the
+                two actions, full width. */
+             className="relative flex flex-wrap items-center gap-[20px] overflow-hidden rounded-[20px] p-[24px] max-lg:flex-col max-lg:items-stretch max-lg:gap-4 max-lg:rounded-[16px] max-lg:p-4"
              style={{ background: "linear-gradient(140deg, var(--ux-tint-violet), var(--ux-surface) 68%)",
                       border: "1px solid var(--ux-line-strong)",
                       boxShadow: "var(--ux-shadow-card), inset 0 1px 0 var(--ux-sheen)" }}>
@@ -505,16 +508,16 @@ function Person({ innerRef }: { innerRef: React.RefObject<HTMLDivElement | null>
           <p className="mt-1 text-xsm font-semibold" style={{ color: "var(--ux-danger-solid)" }}>{tr("help.thatDidNotSendTryAgain")}</p>
         )}
       </div>
-      <div className="relative flex flex-wrap gap-2">
+      <div className="relative flex flex-wrap gap-2 max-lg:flex-col">
         {sent ? (
           <Link href="/app/messages"
-                className="ux-press flex min-h-[48px] items-center gap-2 rounded-[12px] px-5 text-xsm font-bold"
+                className="ux-press flex min-h-[48px] items-center gap-2 rounded-[12px] px-5 text-xsm font-bold max-lg:min-h-[50px] max-lg:justify-center max-lg:rounded-[14px] max-lg:px-4 max-lg:text-[17px]"
                 style={{ background: "linear-gradient(96deg, var(--ux-rib-2), var(--ux-rib-3))",
                          color: "var(--ux-on-brand)" }}>{tr("help.openMessages")}<Icons.ArrowRight className="h-4 w-4" />
           </Link>
         ) : (
           <button type="button" onClick={message} disabled={busy}
-                  className="ux-press flex min-h-[48px] items-center gap-2 rounded-[12px] px-5 text-xsm font-bold disabled:opacity-60"
+                  className="ux-press flex min-h-[48px] items-center gap-2 rounded-[12px] px-5 text-xsm font-bold disabled:opacity-60 max-lg:min-h-[50px] max-lg:justify-center max-lg:rounded-[14px] max-lg:px-4 max-lg:text-[17px]"
                   style={{ background: "linear-gradient(96deg, var(--ux-rib-2), var(--ux-rib-3))",
                            color: "var(--ux-on-brand)",
                            boxShadow: "inset 0 1px 0 rgba(255,255,255,0.3)" }}>
@@ -522,7 +525,7 @@ function Person({ innerRef }: { innerRef: React.RefObject<HTMLDivElement | null>
           </button>
         )}
         <a href="tel:181"
-           className="ux-press flex min-h-[48px] items-center gap-2 rounded-[12px] px-5 text-xsm font-bold"
+           className="ux-press flex min-h-[48px] items-center gap-2 rounded-[12px] px-5 text-xsm font-bold max-lg:min-h-[50px] max-lg:justify-center max-lg:rounded-[14px] max-lg:px-4 max-lg:text-[17px] max-lg:font-semibold"
            style={{ border: "1px solid var(--ux-line-strong)", background: "var(--ux-surface)",
                     color: "var(--ux-ink-2)", boxShadow: "inset 0 1px 0 var(--ux-sheen)" }}>
           <Icons.Phone className="h-4 w-4" /> Call
@@ -539,7 +542,7 @@ function Numbers({ lines }: { lines: Helpline[] }) {
   // Four is what fits without scrolling; the rest live on the safety screen.
   const shown = lines.slice(0, 4);
   return (
-    <section className="ux-lit rounded-[20px] p-[20px]" style={{ border: "1px solid var(--ux-line)" }}>
+    <section className="ux-lit rounded-[20px] p-[20px] max-lg:rounded-[16px] max-lg:p-4" style={{ border: "1px solid var(--ux-line)" }}>
       <h2 className="flex items-center gap-2 text-sm font-extrabold" style={{ color: "var(--ux-ink)" }}>
         <Icons.Phone className="h-[17px] w-[17px]" style={{ color: "var(--ux-brand)" }} />{tr("help.numbersThatAlwaysWork")}</h2>
       <p className="mb-3 mt-1 flex flex-wrap items-center gap-2 text-xsm" style={{ color: "var(--ux-muted)" }}>{tr("help.freeFromAnyPhone")}<span className="rounded-full px-2.5 py-1 text-[12px] lg:text-2xs font-extrabold uppercase tracking-[0.04em]"
@@ -550,7 +553,7 @@ function Numbers({ lines }: { lines: Helpline[] }) {
         </p>
       ) : shown.map((h) => (
         <div key={h.number}
-             className="mb-2 flex items-center gap-3 rounded-[12px] p-[12px] transition-transform last:mb-0 hover:translate-x-0.5"
+             className="mb-2 flex items-center gap-3 rounded-[12px] p-[12px] transition-transform last:mb-0 hover:translate-x-0.5 max-lg:px-4"
              style={{ border: "1px solid var(--ux-line)", background: "var(--ux-surface)" }}>
           <b className="min-w-[78px] text-xl font-extrabold tabular-nums tracking-[-0.03em]"
              style={{ color: "var(--ux-ink)" }}>{h.number}</b>
@@ -558,7 +561,7 @@ function Numbers({ lines }: { lines: Helpline[] }) {
             {h.name}
           </span>
           <a href={`tel:${h.number}`}
-             className="ux-press flex min-h-[38px] shrink-0 items-center rounded-[12px] px-[16px] text-xs font-extrabold"
+             className="ux-press flex min-h-[38px] shrink-0 items-center rounded-[12px] px-[16px] text-xs font-extrabold max-lg:min-h-[44px] max-lg:text-[15px]"
              style={{ background: "linear-gradient(150deg, var(--ux-tint-green), color-mix(in srgb, var(--ux-tint-green) 60%, var(--ux-surface)))",
                       color: "var(--ux-green-ink)", boxShadow: "inset 0 1px 0 var(--ux-sheen)" }}>
             Call
@@ -572,7 +575,7 @@ function Numbers({ lines }: { lines: Helpline[] }) {
 function LeaveFast({ onLeave }: { onLeave: () => void }) {
   const tr = useT();
   return (
-    <section className="rounded-[20px] p-[20px]"
+    <section className="rounded-[20px] p-[20px] max-lg:rounded-[16px] max-lg:p-4"
              style={{ background: "var(--ux-surface-2)", border: "1px dashed var(--ux-line-strong)" }}>
       <h2 className="flex items-center gap-2 text-sm font-extrabold" style={{ color: "var(--ux-ink)" }}>
         <Icons.LogOut className="h-[17px] w-[17px]" style={{ color: "var(--ux-faint)" }} />{tr("help.leaveThisPageFast")}</h2>
@@ -592,7 +595,7 @@ function Never() {
     "We never share where you are unless you start an alert.",
   ];
   return (
-    <section className="ux-lit rounded-[20px] p-[20px]" style={{ border: "1px solid var(--ux-line)" }}>
+    <section className="ux-lit rounded-[20px] p-[20px] max-lg:rounded-[16px] max-lg:p-4" style={{ border: "1px solid var(--ux-line)" }}>
       <h2 className="mb-3 flex items-center gap-2 text-sm font-extrabold" style={{ color: "var(--ux-ink)" }}>
         <Icons.ShieldCheck className="h-[17px] w-[17px]" style={{ color: "var(--ux-brand)" }} />{tr("help.whatWeNeverDo")}</h2>
       {lines.map((l) => (

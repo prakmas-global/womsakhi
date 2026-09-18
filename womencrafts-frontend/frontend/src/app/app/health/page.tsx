@@ -14,6 +14,9 @@ import { HomeShell } from "@/components/ux/home/HomeShell";
 import { useGuidance, useHealthChecks, useHelplines } from "@/components/ux/entitlements";
 import { WELLBEING_ART } from "@/components/ux/wellbeing/data";
 import { useT } from "@/i18n";
+import { ListGroup } from "@/components/ux/mobile/ListRow";
+import { SegmentedControl } from "@/components/ux/mobile/SegmentedControl";
+import { PhoneRow } from "@/components/ux/PhoneParts";
 
 /**
  * Health & Wellbeing.
@@ -99,9 +102,11 @@ export default function HealthPage() {
         </div>
       }
     >
-      <div className="mb-[20px] flex items-end justify-between gap-4">
+      {/* One header for both: on a phone it is a column — the large title,
+          its line, then a full-width segmented control in place of the tabs. */}
+      <div className="mb-6 flex flex-col gap-4 lg:mb-[20px] lg:flex-row lg:items-end lg:justify-between">
         <div>
-          <h1 className="text-2xl font-bold" style={{ color: "var(--ux-ink)" }}>Health</h1>
+          <h1 className="ux-screen-title text-2xl font-bold" style={{ color: "var(--ux-ink)" }}>Health</h1>
           <p className="mt-1.5 text-xsm" style={{ color: "var(--ux-muted)" }}>
             {due.length
               ? `${due.length} ${plural("check", due.length)} overdue — all of them free.`
@@ -110,12 +115,51 @@ export default function HealthPage() {
 
       <SourceNote source={source} what="checks" />
         </div>
-        <Tabs items={["Your checks", "Worth knowing"]} active={tab} onChange={setTab} />
+        <div className="hidden lg:flex">
+          <Tabs items={["Your checks", "Worth knowing"]} active={tab} onChange={setTab} />
+        </div>
+        <SegmentedControl className="lg:hidden" label="Health" value={tab} onChange={setTab}
+          options={["Your checks", "Worth knowing"].map((t) => ({ value: t, label: t }))} />
       </div>
 
       {tab === "Your checks" && (
         HEALTH_CHECKS.length ? (
-          <div className="ux-deck ux-stagger space-y-[12px]">
+          <>
+          {/* On a phone the checks are one grouped list — what, how often,
+              when last, where, and the button — a row each. */}
+          <ListGroup className="lg:hidden">
+            {HEALTH_CHECKS.map((c) => {
+              const isDone = done.includes(c.id);
+              const overdue = c.due && !isDone;
+              return (
+                <PhoneRow key={c.id} icon={c.icon} tint={c.tint} ink={c.ink}
+                          title={
+                            <span className="flex flex-wrap items-center gap-2">
+                              {c.label}
+                              {c.free && <Pill tone="green" size="sm">Free</Pill>}
+                              {overdue && <Pill tone="orange" size="sm">Overdue</Pill>}
+                            </span>
+                          }
+                          meta={`${c.every} · Last: ${isDone ? "just now" : c.last}`}>
+                  <span className="mt-1.5 flex items-center gap-1.5 text-[15px] leading-snug" style={{ color: "var(--ux-ink-2)" }}>
+                    <Icons.MapPin className="h-[14px] w-[14px] shrink-0" style={{ color: "var(--ux-brand)" }} />
+                    {c.where}
+                  </span>
+                  <span className="mt-1 block text-[13px]" style={{ color: "var(--ux-muted)" }}>
+                    {c.free ? "Costs nothing, takes about ten minutes." : c.where}
+                  </span>
+                  <span className="mt-3 flex">
+                    <Btn variant={isDone ? "outline" : "primary"} size="sm" full className="max-lg:px-4"
+                         icon={isDone ? "Check" : undefined}
+                         onClick={() => void mark.run(c.id, isDone ? "saved" : "done")}>
+                      {isDone ? tr("health.markedDone") : tr("health.markAsDone")}
+                    </Btn>
+                  </span>
+                </PhoneRow>
+              );
+            })}
+          </ListGroup>
+          <div className="ux-deck ux-stagger hidden space-y-[12px] lg:block">
             {HEALTH_CHECKS.map((c, i) => {
               const isDone = done.includes(c.id);
               const overdue = c.due && !isDone;
@@ -158,6 +202,7 @@ export default function HealthPage() {
               );
             })}
           </div>
+          </>
         ) : (
           <Card>
             <EmptyState icon="HeartPulse" title={tr("health.nothingTrackedYet")}
@@ -167,7 +212,16 @@ export default function HealthPage() {
       )}
 
       {tab === "Worth knowing" && (
-        <div className="ux-deck grid grid-cols-2 gap-[16px]">
+        <ListGroup className="lg:hidden">
+          {HEALTH_TOPICS.map((t, i) => (
+            <PhoneRow key={t.id} icon={t.icon ?? "BookOpen"}
+                      tint={TOPIC_TINTS[i % TOPIC_TINTS.length][0]} ink={TOPIC_TINTS[i % TOPIC_TINTS.length][1]}
+                      title={t.label} body={t.note} meta={t.mins ? `${t.mins} min read` : undefined} />
+          ))}
+        </ListGroup>
+      )}
+      {tab === "Worth knowing" && (
+        <div className="ux-deck hidden grid-cols-2 gap-[16px] lg:grid">
           {HEALTH_TOPICS.map((t, i) => (
             <Card key={t.id} className="ux-i ux-onscroll" style={{ ["--i" as string]: i }}>
               <div className="flex items-start gap-3.5">
