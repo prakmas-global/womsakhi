@@ -179,7 +179,7 @@ export function Stepper({
         aria-disabled={disabled || undefined}
         aria-live="polite"
         onKeyDown={onKeyDown}
-        className="min-w-[48px] select-none px-1 text-center text-[16px] font-bold tabular-nums"
+        className="min-w-[48px] select-none px-1 text-center text-[17px] font-bold tabular-nums"
         style={{ color: "var(--ux-ink)" }}
       >
         {text}

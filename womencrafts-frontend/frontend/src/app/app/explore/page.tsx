@@ -10,6 +10,7 @@ import {
   SectionHead, SourceNote, plural
 } from "@/components/ux/kit";
 import { HomeShell } from "@/components/ux/home/HomeShell";
+import { ChipRow, GroupHead, MediaRow, RowGroup } from "@/components/ux/learning/native";
 import { DISCOVER_ART, KINDS, type Find, type Kind } from "@/components/ux/discover/data";
 import { CITY } from "@/components/ux/local/data";
 import { useDiscover } from "@/components/ux/growth";
@@ -73,6 +74,56 @@ function Row({ f, i }: { f: Find; i: number }) {
       </span>
       <Icons.ArrowRight className="ux-arrow h-[17px] w-[17px] shrink-0" style={{ color: "var(--ux-faint)" }} />
     </Link>
+  );
+}
+
+/**
+ * The same find as a grouped-list row, for a phone.
+ *
+ * Every item here is a destination in another module, which is exactly what a
+ * grouped inset list is for: picture, title, two quiet lines, what kind of
+ * thing it is, a chevron. The bordered card per item was the desktop shape.
+ */
+function PhoneRow({ f }: { f: Find }) {
+  const tr = useT();
+  return (
+    <MediaRow
+      href={f.href}
+      media={f.art ? (
+        <span className="h-full w-full" style={{ background: `var(${f.tint})` }}>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img loading="lazy" decoding="async" src={f.art} alt="" className="ux-art h-full w-full object-cover" />
+        </span>
+      ) : (
+        <IconTile icon={f.icon} tint={f.tint} ink={f.ink} size={44} radius={12} />
+      )}
+      title={f.title}
+      badges={<>
+        {f.isNew && <Pill tone="brand" size="sm">New</Pill>}
+        {f.near && <Pill tone="green" size="sm">{tr("explore.nearYou")}</Pill>}
+      </>}
+      lines={[f.sub, <span key="m" style={{ color: "var(--ux-ink-2)" }}>{f.meta}</span>]}
+      trailing={
+        <span className="shrink-0 rounded-full px-2.5 py-[4px] text-[12px] font-semibold"
+              style={{ background: `var(${f.tint})`, color: `var(${f.ink}-ink)` }}>
+          {f.kind}
+        </span>
+      }
+    />
+  );
+}
+
+/** A list of finds: a grouped list on a phone, the bordered rows from `lg`. */
+function Finds({ items }: { items: Find[] }) {
+  return (
+    <>
+      <RowGroup className="lg:hidden">
+        {items.map((f) => <PhoneRow key={f.id} f={f} />)}
+      </RowGroup>
+      <div className="ux-deck ux-stagger hidden space-y-[12px] lg:block">
+        {items.map((f, i) => <Row key={f.id} f={f} i={i} />)}
+      </div>
+    </>
   );
 }
 
@@ -176,14 +227,14 @@ function Discover() {
         </div>
       }
     >
-      <h1 className="text-2xl font-bold" style={{ color: "var(--ux-ink)" }}>Everything</h1>
-      <p className="mt-1.5 text-xsm" style={{ color: "var(--ux-muted)" }}>
+      <h1 className="ux-screen-title text-2xl font-bold" style={{ color: "var(--ux-ink)" }}>Everything</h1>
+      <p className="mt-2 text-xsm lg:mt-1.5" style={{ color: "var(--ux-muted)" }}>
         Courses, work, mentors, circles, events and schemes — {FINDS.length} things in one place.
       </p>
 
       <SourceNote source={source} what="suggestions" />
 
-      <div className="mb-[16px] mt-[20px] flex flex-wrap items-center gap-2">
+      <ChipRow className="mb-6 mt-4 items-center lg:mb-[16px] lg:mt-[20px]">
         {KINDS.map((k) => (
           <Chip key={k} selected={kinds.includes(k)}
                 onClick={() => setKinds(kinds.includes(k) ? kinds.filter((x) => x !== k) : [...kinds, k])}>
@@ -195,17 +246,16 @@ function Discover() {
         {filtering && (
           <Btn variant="ghost" size="sm" icon="X" onClick={() => { setKinds([]); setNearOnly(false); }}>Clear</Btn>
         )}
-      </div>
+      </ChipRow>
 
       {filtering ? (
         shown.length ? (
           <>
-            <p className="mb-3 text-xsm" style={{ color: "var(--ux-muted)" }}>
+            <div className="lg:hidden"><GroupHead title={`${shown.length} ${plural("result", shown.length)}`} /></div>
+            <p className="mb-3 hidden text-xsm lg:block" style={{ color: "var(--ux-muted)" }}>
               {shown.length} {plural("result", shown.length)}
             </p>
-            <div className="ux-deck ux-stagger space-y-[12px]">
-              {shown.map((f, i) => <Row key={f.id} f={f} i={i} />)}
-            </div>
+            <Finds items={shown} />
           </>
         ) : (
           <Card>
@@ -219,19 +269,21 @@ function Discover() {
         )
       ) : (
         /* Themed rows, so the page has a shape rather than being a heap. */
-        <div className="space-y-[24px]">
-          {collections.map((c) => (
-            <section key={c.id}>
-              <SectionHead title={c.title} action="See all"
-                           onAction={() => {
-                             setKinds(Array.from(new Set(c.items.map((f) => f.kind))));
-                             setNearOnly(c.id === "near");
-                           }} />
-              <div className="ux-deck ux-stagger space-y-[12px]">
-                {c.items.slice(0, 4).map((f, i) => <Row key={f.id} f={f} i={i} />)}
-              </div>
-            </section>
-          ))}
+        <div className="space-y-6 lg:space-y-[24px]">
+          {collections.map((c) => {
+            const seeAll = () => {
+              setKinds(Array.from(new Set(c.items.map((f) => f.kind))));
+              setNearOnly(c.id === "near");
+            };
+            return (
+              <section key={c.id}>
+                {/* A quiet label on a phone; the section heading from `lg`. */}
+                <div className="lg:hidden"><GroupHead title={c.title} action="See all" onAction={seeAll} /></div>
+                <div className="hidden lg:block"><SectionHead title={c.title} action="See all" onAction={seeAll} /></div>
+                <Finds items={c.items.slice(0, 4)} />
+              </section>
+            );
+          })}
         </div>
       )}
     </HomeShell>

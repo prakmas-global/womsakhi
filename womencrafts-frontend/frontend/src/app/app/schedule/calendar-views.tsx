@@ -124,7 +124,7 @@ export function lengthOf(raw: string): string {
 function EventPill({ entry }: { entry: DiaryEntry }) {
   const cat = catFor(categoryOf(entry));
   return (
-    <Link href={entry.href} className="ux-sq block rounded-[8px] px-1.5 py-1.5"
+    <Link href={entry.href} className="ux-sq block rounded-[8px] px-1.5 py-1.5 max-lg:hidden"
           style={{ background: v(cat.tint) }}>
       <span className="flex items-start gap-1">
         <I name={cat.icon} className="mt-[1px] h-[13px] w-[13px] shrink-0" style={{ color: v(cat.ink) }} />
@@ -168,7 +168,10 @@ export function MonthGrid({ cells, onPick }: { cells: DayCell[]; onPick: (iso: s
             // A day is only a heading for what it holds, so it is not a
             // heading element — it is the control that opens that day.
             aria-label={`${c.date}, ${c.entries.length} activities`}
-            className="ux-sq relative flex min-h-[132px] flex-col gap-[5px] border-b border-e p-2 text-start"
+            /* A phone cell is 48px wide: a date and a dot per event, as a
+               phone calendar draws a month. The names are listed under the
+               month for the day she taps. */
+            className="ux-sq relative flex min-h-[132px] flex-col gap-[5px] border-b border-e p-2 text-start max-lg:min-h-[56px] max-lg:items-center max-lg:gap-1 max-lg:p-1"
             style={{
               borderColor: v("--ux-line"),
               // The last column and last row sit on the wrapper's own edge.
@@ -193,8 +196,16 @@ export function MonthGrid({ cells, onPick }: { cells: DayCell[]; onPick: (iso: s
               {c.date}
             </span>
             {c.entries.slice(0, 3).map((e) => <EventPill key={e.id} entry={e} />)}
+            {c.entries.length > 0 && (
+              <span aria-hidden className="flex gap-[3px] lg:hidden">
+                {c.entries.slice(0, 3).map((e) => (
+                  <i key={e.id} className="block h-[6px] w-[6px] rounded-full"
+                     style={{ background: v(catFor(categoryOf(e)).ink) }} />
+                ))}
+              </span>
+            )}
             {c.entries.length > 3 && (
-              <span className="ps-1 text-3xs font-semibold" style={{ color: v("--ux-muted") }}>
+              <span className="ps-1 text-3xs font-semibold max-lg:hidden" style={{ color: v("--ux-muted") }}>
                 +{c.entries.length - 3} more
               </span>
             )}
@@ -258,7 +269,7 @@ export function TodayPanel({
         {/* Always present, not only when she has wandered off: a control that
             appears and disappears is one she has to hunt for. */}
         <button type="button" onClick={onToday}
-                className="ux-press ux-sq shrink-0 rounded-[10px] px-3.5 py-2 text-xs font-bold"
+                className="ux-press ux-sq shrink-0 rounded-[10px] px-3.5 py-2 text-xs font-bold max-lg:rounded-[12px]"
                 style={{ background: v("--ux-brand-tint"), color: v("--ux-brand") }}>
           Today
         </button>

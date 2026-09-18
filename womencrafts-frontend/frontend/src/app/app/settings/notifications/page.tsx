@@ -6,11 +6,12 @@ import { COPY } from "@/components/ux/copy";
 import { apiNotificationPrefs, apiSaveNotificationPrefs, type NotificationPrefs } from "@/lib/member-api";
 import { useResource } from "@/lib/use-resource";
 import { useAction } from "@/lib/use-action";
-import * as Icons from "@/components/ux/icons";
 
 import { Btn } from "@/components/ux/kit";
-import { Card, SectionHead, SettingsPage, Toggle } from "@/components/ux/settings/Frame";
+import { SettingsPage, Toggle } from "@/components/ux/settings/Frame";
 import { useT } from "@/i18n";
+import { phonePrimary } from "@/components/ux/PhoneParts";
+import { Group, SaveBar } from "../_parts/Group";
 
 /**
  * Notifications.
@@ -99,21 +100,17 @@ export default function NotificationSettings() {
       title="Notifications"
       sub={tr("settingsNotifications.whatReachesYouAndHowYou")}
       footer={
-        <div className="flex items-center justify-between gap-4">
-          <p className="text-xs"
-             style={{ color: save.error ? "var(--ux-orange-ink)" : saved ? "var(--ux-green-ink)" : "var(--ux-faint)" }}>
-            {save.error ? save.error : saved ? "Saved." : COPY.nothingSavedYet}
-          </p>
+        <SaveBar tone={save.error ? "--ux-orange-ink" : saved ? "--ux-green-ink" : "--ux-faint"}
+                 status={save.error ? save.error : saved ? "Saved." : COPY.nothingSavedYet}>
           <Btn variant="primary" icon={save.busy ? "Loader" : "Check"} disabled={save.busy}
-               onClick={() => void save.run()}>
+               className={phonePrimary} onClick={() => void save.run()}>
             {save.busy ? "Saving…" : "Save changes"}
           </Btn>
-        </div>
+        </SaveBar>
       }
     >
-      <Card>
-        <SectionHead title={tr("settingsNotifications.worthInterruptingYourDay")}
-                     sub={tr("settingsNotifications.weSuggestLeavingTheseOnMoney")} />
+      <Group title={tr("settingsNotifications.worthInterruptingYourDay")}
+             sub={tr("settingsNotifications.weSuggestLeavingTheseOnMoney")}>
         <div className="divide-y" style={{ borderColor: "var(--ux-line)" }}>
           <Toggle on={p.money} onChange={set("money")} label="Money"
                   whenOn="You are told when a payment arrives, or a withdrawal lands."
@@ -128,10 +125,9 @@ export default function NotificationSettings() {
                   whenOn="A reminder an hour before anything you booked."
                   whenOff="No reminder — you will need to remember yourself." />
         </div>
-      </Card>
+      </Group>
 
-      <Card>
-        <SectionHead title={tr("settingsNotifications.niceToKnow")} sub={tr("settingsNotifications.nothingHereIsUrgent")} />
+      <Group title={tr("settingsNotifications.niceToKnow")} sub={tr("settingsNotifications.nothingHereIsUrgent")}>
         <div className="divide-y" style={{ borderColor: "var(--ux-line)" }}>
           <Toggle on={p.circles} onChange={set("circles")} label={tr("settingsNotifications.yourCircles")}
                   whenOn="When a circle you are in posts something."
@@ -140,10 +136,10 @@ export default function NotificationSettings() {
                   whenOn="A message when something new matches what you do."
                   whenOff="You will find them in Discover whenever you look." />
         </div>
-      </Card>
+      </Group>
 
-      <Card>
-        <SectionHead title={tr("settingsNotifications.howTheyReachYou")} />
+      <Group title={tr("settingsNotifications.howTheyReachYou")} noteIcon="ShieldCheck"
+             note={tr("settingsNotifications.safetyAlertsAlwaysReachYouWhatever")}>
         <div className="divide-y" style={{ borderColor: "var(--ux-line)" }}>
           <Toggle on={p.email} onChange={set("email")} label="Email"
                   whenOn="A daily summary of anything you missed."
@@ -152,10 +148,7 @@ export default function NotificationSettings() {
                   whenOn="Money and orders also come by SMS. Useful on a weak connection."
                   whenOff="No text messages except your sign-in code." />
         </div>
-        <p className="mt-3.5 flex items-start gap-2.5 rounded-[12px] p-3 text-xs leading-relaxed"
-           style={{ background: "var(--ux-surface-2)", color: "var(--ux-ink-2)" }}>
-          <Icons.ShieldCheck className="mt-[1px] h-[14px] w-[14px] shrink-0" style={{ color: "var(--ux-brand)" }} />{tr("settingsNotifications.safetyAlertsAlwaysReachYouWhatever")}</p>
-      </Card>
+      </Group>
     </SettingsPage>
   );
 }

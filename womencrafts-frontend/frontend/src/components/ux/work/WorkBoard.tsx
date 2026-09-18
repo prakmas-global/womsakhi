@@ -368,7 +368,7 @@ function Journey() {
       <div className="flex items-start gap-3 pe-[150px]">
         <IconTile icon="Route" tint="--ux-brand-tint-2" ink="--ux-brand" size={38} radius={12} />
         <div className="min-w-0">
-          <h2 className="text-[19px] font-extrabold leading-tight" style={{ color: v("--ux-ink") }}>
+          <h2 className="text-[20px] font-extrabold leading-tight" style={{ color: v("--ux-ink") }}>
             Your Work Journey
           </h2>
           <p className="mt-0.5 text-xs" style={{ color: v("--ux-muted") }}>
@@ -699,11 +699,11 @@ function Phone() {
       </section>
 
       <h1 className="ux-screen-title mt-4" style={{ color: v("--ux-ink") }}>Work</h1>
-      <p className="mt-1.5 text-[15px] leading-snug" style={{ color: v("--ux-muted") }}>
+      <p className="mt-2 text-[15px] leading-snug" style={{ color: v("--ux-muted") }}>
         Find meaningful work on your terms — and build a reputation that travels with you.
       </p>
 
-      <div className="ux-chiprow mt-3.5 flex flex-wrap gap-2"
+      <div className="ux-chiprow mt-4 flex flex-wrap gap-2"
            style={{ ["--ux-pad" as string]: "20px" }}>
         {PROMISES.map(([icon, label]) => (
           <span key={label}
@@ -715,7 +715,7 @@ function Phone() {
         ))}
       </div>
 
-      <div className="mt-5 space-y-5">
+      <div className="mt-6 space-y-6">
         <ListGroup title="Where to go">
           {PLACES.map((p) => (
             <ListRow key={p.id} href={p.href} icon={p.icon} tint={p.row}
@@ -730,7 +730,7 @@ function Phone() {
             <p className="text-[15px] font-bold leading-tight" style={{ color: v("--ux-ink") }}>
               Small steps today, bigger opportunities tomorrow.
             </p>
-            <ol className="mt-3.5 flex flex-col gap-3">
+            <ol className="mt-4 flex flex-col gap-3">
               {STEPS.map((s, i) => {
                 const on = i === AT;
                 return (
@@ -792,7 +792,7 @@ function Phone() {
             </p>
             <p className="mt-1 text-[13px] font-semibold" style={{ color: HERO_INK_2 }}>— WomSakhi</p>
             <TransitionLink href="/app/sakhi"
-              className="ux-press ux-sq ux-action-primary mt-3.5 inline-flex items-center justify-center gap-2.5"
+              className="ux-press ux-sq ux-action-primary mt-4 inline-flex items-center justify-center gap-2.5"
               style={{ borderRadius: 14,
                        background: "linear-gradient(96deg, var(--ux-fill), var(--ux-fill-2))", color: v("--ux-on-brand") }}>
               <I name="MessageCircle" className="h-[17px] w-[17px]" sw={2} />

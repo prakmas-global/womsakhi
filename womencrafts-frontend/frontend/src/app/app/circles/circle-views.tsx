@@ -15,7 +15,7 @@ export function CircleHero({ ask, onAsk, onStart }: {
   ask: string; onAsk: (s: string) => void; onStart: () => void;
 }) {
   return (
-    <section className="relative mb-4 overflow-hidden rounded-[20px]"
+    <section className="relative mb-4 overflow-hidden rounded-[20px] max-lg:rounded-[16px]"
              style={{ background: "linear-gradient(102deg, var(--ux-brand-tint) 0%, var(--ux-tint-lilac) 55%, var(--ux-tint-pink) 100%)",
                       border: "1px solid var(--ux-line)" }}>
       {/*
@@ -28,7 +28,7 @@ export function CircleHero({ ask, onAsk, onStart }: {
         <div className="p-4 sm:p-7">
           {/* `text-4xl` is 36px — a desktop hero's size on a 390px screen,
               where iOS's own large title is 34 and this app's is 30. */}
-          <h1 className="ux-screen-title text-[30px] font-extrabold leading-none tracking-[-0.03em] lg:text-4xl"
+          <h1 className="ux-screen-title text-[28px] font-extrabold leading-none tracking-[-0.03em] lg:text-4xl"
               style={{ color: v("--ux-ink") }}>
             Circle
           </h1>
@@ -53,7 +53,7 @@ export function CircleHero({ ask, onAsk, onStart }: {
               aria-label="What would you like to discuss today?"
               placeholder="Ask the circle…"
               inputMode="text" enterKeyHint="go" autoComplete="off"
-              className="min-h-[38px] w-full min-w-0 bg-transparent text-[16px] outline-none lg:text-xsm"
+              className="min-h-[38px] w-full min-w-0 bg-transparent text-[17px] outline-none lg:text-xsm"
               style={{ color: v("--ux-ink") }}
             />
             <button type="submit" aria-label="Start this discussion"

@@ -10,6 +10,18 @@ import {
   ASSIST_QUEUE, HELPED, LESSONS, SEEDS, assistEarned, noPhone,
 } from "@/components/ux/together/data";
 import { useT } from "@/i18n";
+import { ListGroup } from "@/components/ux/mobile/ListRow";
+import { GroupLabel, PhoneRow, PhoneTitle, phonePrimary } from "@/components/ux/PhoneParts";
+
+/** The three places the circle does together, besides assisting. */
+const PLACES = [
+  { href: "/app/library", icon: "GraduationCap", tint: "--ux-tint-blue", ink: "--ux-blue-ink",
+    title: "Learn it from her", body: "Women teach what they actually do — and you learn it beside a friend, which is the only way it sticks." },
+  { href: "/app/circles", icon: "Users", tint: "--ux-tint-pink", ink: "--ux-pink-ink",
+    title: "Who is missing", body: "A circle works when the money can go round it. Four women near you would close the loop." },
+  { href: "/app/together/move", icon: "MapPin", tint: "--ux-tint-violet", ink: "--ux-violet",
+    title: "If you move", body: "Marriage, work, or something worse. Everything you built comes with you." },
+];
 
 /**
  * Together — the circle doing the things a circle is uniquely able to do.
@@ -34,7 +46,11 @@ export default function TogetherHub() {
     <HomeShell active="/app/together">
       <div className="flex flex-col gap-5">
 
-        <header>
+        {/* On a phone the section's name is the large title; the headline and
+            the paragraph follow it as quiet text. */}
+        <PhoneTitle title="Together" sub={tr("together.thingsOnlyACircleCanDo")}
+                    note="Not a group chat. The four things that genuinely work better with women you already trust than alone." />
+        <header className="hidden lg:block">
           <p className="text-2xs font-extrabold uppercase tracking-[0.2em]" style={{ color: v("--ux-brand") }}>
             Together
           </p>
@@ -67,7 +83,7 @@ export default function TogetherHub() {
 
         {/* Assisted mode */}
         <Card pad={0} style={{ overflow: "hidden", borderColor: v("--ux-brand") }}>
-          <div className="flex flex-wrap items-start gap-4 p-5" style={{ background: v("--ux-brand-tint") }}>
+          <div className="flex flex-wrap items-start gap-4 p-5 max-lg:p-4" style={{ background: v("--ux-brand-tint") }}>
             <IconTile icon="UserPlus" tint="--ux-surface" ink="--ux-brand" size={48} radius={14} />
             <div className="min-w-0 flex-1">
               <div className="flex flex-wrap items-center gap-2">
@@ -79,20 +95,20 @@ export default function TogetherHub() {
                 here at all — and you are paid for every thing you do on their behalf.
               </p>
             </div>
-            <Btn onClick={() => router.push("/app/together/assist")}>Open</Btn>
+            <Btn className={phonePrimary} onClick={() => router.push("/app/together/assist")}>Open</Btn>
           </div>
         </Card>
 
-        {/* The other three */}
-        <div className="grid gap-3 md:grid-cols-3">
-          {[
-            { href: "/app/library", icon: "GraduationCap", tint: "--ux-tint-blue", ink: "--ux-blue-ink",
-              title: "Learn it from her", body: "Women teach what they actually do — and you learn it beside a friend, which is the only way it sticks." },
-            { href: "/app/circles", icon: "Users", tint: "--ux-tint-pink", ink: "--ux-pink-ink",
-              title: "Who is missing", body: "A circle works when the money can go round it. Four women near you would close the loop." },
-            { href: "/app/together/move", icon: "MapPin", tint: "--ux-tint-violet", ink: "--ux-violet",
-              title: "If you move", body: "Marriage, work, or something worse. Everything you built comes with you." },
-          ].map((t) => (
+        {/* The other three. On a phone they are destinations, so they are rows
+            of one grouped list rather than three floating cards. */}
+        <ListGroup className="lg:hidden">
+          {PLACES.map((t) => (
+            <PhoneRow key={t.href} href={t.href} icon={t.icon} tint={t.tint} ink={t.ink}
+                      title={t.title} body={t.body} />
+          ))}
+        </ListGroup>
+        <div className="hidden gap-3 md:grid-cols-3 lg:grid">
+          {PLACES.map((t) => (
             <button key={t.href} type="button" onClick={() => router.push(t.href)}
                     className="ux-press ux-sq flex flex-col items-start gap-3 rounded-[var(--ux-r-card)] border p-5 text-left"
                     style={{ borderColor: v("--ux-line"), background: v("--ux-surface") }}>
@@ -105,15 +121,28 @@ export default function TogetherHub() {
 
         {/* Seeding — who would close the cycle */}
         <div>
-          <SectionHead title={tr("together.whoIsMissingFromYourCircle")}
-                       sub={tr("together.notTheNearestWomenTheOnes")} icon="Users" />
+          <GroupLabel sub={tr("together.notTheNearestWomenTheOnes")}>{tr("together.whoIsMissingFromYourCircle")}</GroupLabel>
+          <div className="hidden lg:block">
+            <SectionHead title={tr("together.whoIsMissingFromYourCircle")}
+                         sub={tr("together.notTheNearestWomenTheOnes")} icon="Users" />
+          </div>
           <Card pad={16} style={{ background: v("--ux-surface-2"), borderColor: "transparent" }}>
             <p className="text-xsm leading-relaxed" style={{ color: v("--ux-ink-2") }}>
               Money only goes round a circle if the trades fit together. A circle of six tailors
               is six women waiting for the same customer.
             </p>
           </Card>
-          <div className="mt-3 grid gap-3 sm:grid-cols-2">
+          {/* The women who would close the loop, as one grouped list. */}
+          <ListGroup className="mt-3 lg:hidden">
+            {SEEDS.map((s) => (
+              <PhoneRow key={s.id} icon={s.icon} tint="--ux-tint-green" ink="--ux-green-ink"
+                        title={s.name} meta={`${s.trade} · ${s.km} km away`} body={s.closes}>
+                <Btn size="sm" variant="outline" full className="mt-3 max-lg:px-4"
+                     onClick={() => setNote(`Invited ${s.name}. She sees who invited her, and nothing else about you.`)}>{tr("together.askHerToJoin")}</Btn>
+              </PhoneRow>
+            ))}
+          </ListGroup>
+          <div className="mt-3 hidden gap-3 sm:grid-cols-2 lg:grid">
             {SEEDS.map((s) => (
               <Card key={s.id} pad={16}>
                 <div className="flex items-start gap-3.5">

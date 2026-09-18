@@ -27,7 +27,9 @@ export const TxnRow = rowMemo(function TxnRow({ item: t, i }: { item: Txn; i: nu
   const pending = t.status === "pending";
   return (
     <div
-      className="ux-i ux-sq flex items-center gap-3.5 rounded-[12px] border p-3"
+      /* On a phone a row in a day's group: the wallet screen rounds the
+         first and last row of each day, so the row itself is square. */
+      className="ux-i ux-sq flex items-center gap-3.5 rounded-[12px] border p-3 max-lg:rounded-none max-lg:border-b-0 max-lg:px-4 max-lg:py-3"
       style={{ borderColor: "var(--ux-line)", background: "var(--ux-surface)", ["--i" as string]: i }}
     >
       <IconTile icon={t.icon} tint={t.tint} ink={t.ink} size={42} radius={11} />

@@ -4,11 +4,12 @@ import { useMemo, useState } from "react";
 import Link from "next/link";
 import * as Icons from "@/components/ux/icons";
 
-import { Btn, Card, EmptyState, IconTile, Pill, SectionHead, SourceNote, Tabs, plural } from "@/components/ux/kit";
+import { Btn, Card, Chip, EmptyState, IconTile, Pill, SectionHead, SourceNote, Tabs, plural } from "@/components/ux/kit";
 import { HomeShell } from "@/components/ux/home/HomeShell";
 import { useSavedItems } from "@/components/ux/entitlements";
 import { apiUnsave, type SavedKind } from "@/lib/entitlements-api";
 import { useT } from "@/i18n";
+import { ListGroup } from "@/components/ux/mobile/ListRow";
 
 type Item = {
   id: string; kind: string; title: string; sub: string; href: string;
@@ -107,20 +108,95 @@ export default function SavedPage() {
         </div>
       }
     >
-      <div className="mb-[20px] flex flex-wrap items-end justify-between gap-4">
+      <div className="mb-6 flex flex-col gap-4 lg:mb-[20px] lg:flex-row lg:flex-wrap lg:items-end lg:justify-between">
         <div>
-          <h1 className="text-2xl font-bold" style={{ color: "var(--ux-ink)" }}>Saved</h1>
+          <h1 className="ux-screen-title text-2xl font-bold" style={{ color: "var(--ux-ink)" }}>Saved</h1>
           <p className="mt-1.5 text-xsm" style={{ color: "var(--ux-muted)" }}>
             {live.length} {plural("thing", live.length)} you kept for later.
           </p>
         </div>
-        <Tabs items={tabs} active={tab} onChange={setTab} />
+        <div className="hidden lg:flex">
+          <Tabs items={tabs} active={tab} onChange={setTab} />
+        </div>
+        {/*
+          Eight kinds do not fit across 390px: as tabs they were squeezed until
+          every label overflowed its own button. On a phone they are a row of
+          filter chips that scrolls sideways, bleeding to the screen edge so a
+          thumb can tell it continues.
+        */}
+        <div className="ux-chiprow lg:hidden" role="group" aria-label="Show">
+          {tabs.map((t) => (
+            <Chip key={t} selected={tab === t} onClick={() => setTab(t)}>{t}</Chip>
+          ))}
+        </div>
       </div>
 
       <SourceNote source={source} what="bookmarks" />
 
       {shown.length ? (
-        <div className="ux-deck space-y-2.5">
+        <>
+        {/*
+          On a phone the saved things are rows of one grouped list. The row
+          opens the thing (as "Open" does on a desktop); the bookmark at the
+          end removes it, at a full 44px.
+        */}
+        <ListGroup className="lg:hidden">
+          {shown.map((it) => {
+            const body = (
+              <>
+                {it.art ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img loading="lazy" decoding="async" src={it.art} alt="" width={40} height={40}
+                       className="ux-sq mt-0.5 h-[40px] w-[40px] shrink-0 rounded-[12px] object-cover"
+                       style={{ filter: it.gone ? "grayscale(1)" : "none" }} />
+                ) : (
+                  <IconTile icon={it.icon} tint={it.tint} ink={it.ink} size={40} radius={12} />
+                )}
+                <span className="min-w-0 flex-1">
+                  <span className="flex flex-wrap items-center gap-x-2 gap-y-1">
+                    <span className="text-[15px] font-semibold leading-snug" style={{ color: "var(--ux-ink)" }}>{it.title}</span>
+                    <Pill tone="neutral" size="sm">{it.kind}</Pill>
+                    {it.gone && <Pill tone="neutral" size="sm">Closed</Pill>}
+                  </span>
+                  <span className="mt-0.5 block text-[13px] leading-snug" style={{ color: "var(--ux-muted)" }}>{it.sub}</span>
+                  {it.urgent && !it.gone && (
+                    <span className="mt-1 inline-flex items-center gap-1.5 text-[13px] font-semibold" style={{ color: "var(--ux-orange-ink)" }}>
+                      <Icons.Clock className="h-[12px] w-[12px]" /> {it.urgent}
+                    </span>
+                  )}
+                </span>
+                {it.href && (
+                  <Icons.ChevronRight className="mt-3 h-[17px] w-[17px] shrink-0 rtl:rotate-180" style={{ color: "var(--ux-faint)" }} aria-hidden="true" />
+                )}
+              </>
+            );
+            return (
+              <div key={it.id} className="relative flex items-start" style={{ opacity: it.gone ? 0.62 : 1 }}>
+                {it.href ? (
+                  <Link href={it.href as never}
+                        className="flex min-h-[52px] min-w-0 flex-1 items-start gap-3 py-3 pe-1 ps-4 active:bg-[var(--ux-surface-2)]">
+                    {body}
+                  </Link>
+                ) : (
+                  <div className="flex min-h-[52px] min-w-0 flex-1 items-start gap-3 py-3 pe-1 ps-4">{body}</div>
+                )}
+                <button
+                  onClick={() => {
+                    setRemoved((r) => [...r, it.id]);
+                    void apiUnsave(it.refKind, it.refId).catch(refetch);
+                  }}
+                  aria-label={`Remove ${it.title} from saved`}
+                  className="ux-press me-1 mt-1 grid h-[44px] w-[44px] shrink-0 place-items-center rounded-[12px]"
+                >
+                  <Icons.BookmarkX className="h-[18px] w-[18px]" style={{ color: "var(--ux-muted)" }} strokeWidth={1.9} />
+                </button>
+                <span data-ux-sep aria-hidden="true" className="pointer-events-none absolute bottom-0 end-0 h-px"
+                      style={{ insetInlineStart: 68, background: "var(--ux-line)" }} />
+              </div>
+            );
+          })}
+        </ListGroup>
+        <div className="ux-deck hidden space-y-2.5 lg:block">
           {shown.map((it, i) => (
             <div
               key={it.id}
@@ -180,6 +256,7 @@ export default function SavedPage() {
             </div>
           ))}
         </div>
+        </>
       ) : (
         <Card>
           <EmptyState

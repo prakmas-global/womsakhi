@@ -4,7 +4,8 @@ import { useMemo, useState } from "react";
 import Link from "next/link";
 import * as Icons from "@/components/ux/icons";
 
-import {Back, Btn, Card, IconTile, SectionHead, SourceNote } from "@/components/ux/kit";
+import {Back, Btn, Card, IconTile, SourceNote } from "@/components/ux/kit";
+import { GROUP, Section } from "@/components/ux/earn/phone";
 import { Field, TextInput } from "@/components/ux/settings/Frame";
 import { HomeShell } from "@/components/ux/home/HomeShell";
 import { usePayoutMethods } from "@/components/ux/business";
@@ -109,8 +110,8 @@ export default function WithdrawPage() {
               {result?.arrives ?? "It reaches most banks by tomorrow, and always within three working days."}
             </p>
             <div className="mt-5 flex flex-wrap justify-center gap-2.5">
-              <Btn href="/app/wallet" variant="primary" iconEnd="ArrowRight">{tr("walletWithdraw.backToEarn")}</Btn>
-              <Btn href="/app/wallet/statement" variant="outline" icon="Receipt">{tr("walletWithdraw.seeTheStatement")}</Btn>
+              <Btn href="/app/wallet" variant="primary" iconEnd="ArrowRight" className="ux-action-primary">{tr("walletWithdraw.backToEarn")}</Btn>
+              <Btn href="/app/wallet/statement" variant="outline" icon="Receipt" className="max-lg:w-full">{tr("walletWithdraw.seeTheStatement")}</Btn>
             </div>
           </div>
         </Card>
@@ -124,7 +125,7 @@ export default function WithdrawPage() {
       rail={
         <div className="space-y-[16px]">
           <Card>
-            <SectionHead title={tr("walletWithdraw.whatYouAreTakingOut")} />
+            <Section title={tr("walletWithdraw.whatYouAreTakingOut")} />
             <div className="space-y-2.5 text-xsm">
               <div className="flex items-center justify-between gap-3">
                 <span style={{ color: "var(--ux-muted)" }}>Amount</span>
@@ -166,7 +167,7 @@ export default function WithdrawPage() {
           </Card>
 
           <Card>
-            <SectionHead title={tr("walletWithdraw.ifItDoesNotArrive")} icon="Info" />
+            <Section title={tr("walletWithdraw.ifItDoesNotArrive")} icon="Info" />
             <p className="text-xsm leading-relaxed" style={{ color: "var(--ux-ink-2)" }}>
               Tell us after three working days and we will trace it. The money is never lost — it is either
               with your bank or still with us, and both are traceable.
@@ -177,13 +178,13 @@ export default function WithdrawPage() {
     >
       <Back to="/app/wallet" label={tr("walletWithdraw.yourWallet")} className="mb-4" />
 
-      <h1 className="text-2xl font-bold" style={{ color: "var(--ux-ink)" }}>Withdraw</h1>
-      <p className="mb-[20px] mt-1.5 text-xsm" style={{ color: "var(--ux-muted)" }}>{tr("walletWithdraw.nothingMovesUntilYouPressThe")}</p>
+      <h1 className="ux-screen-title text-2xl font-bold" style={{ color: "var(--ux-ink)" }}>Withdraw</h1>
+      <p className="mb-6 mt-1.5 text-xsm lg:mb-[20px]" style={{ color: "var(--ux-muted)" }}>{tr("walletWithdraw.nothingMovesUntilYouPressThe")}</p>
 
       <SourceNote source={source} what="figures" />
 
-      <Card className="mb-[16px]">
-        <SectionHead title={tr("walletWithdraw.howMuch")} />
+      <Card className="mb-6 max-lg:[&_input]:px-4 lg:mb-[16px]">
+        <Section title={tr("walletWithdraw.howMuch")} />
         <Field label={tr("walletWithdraw.amountInRupees")} hint={`You can take out up to ${rupees(money.balanceMinor)} right now.`}>
           <TextInput value={amount} onChange={(e) => { setTouched(true); setTyped(e.target.value); }} inputMode="numeric" />
         </Field>
@@ -214,12 +215,12 @@ export default function WithdrawPage() {
 
         {/* Available and pending are separate lines, always. A withdrawal that
             bounces costs her a day and her confidence in the wallet. */}
-        <div className="mt-4 grid grid-cols-2 gap-2.5 border-t pt-4" style={{ borderColor: "var(--ux-line)" }}>
-          <div className="ux-sq rounded-[12px] p-3" style={{ background: "var(--ux-tint-green)" }}>
+        <div className="mt-4 grid grid-cols-1 gap-2.5 border-t pt-4 lg:grid-cols-2" style={{ borderColor: "var(--ux-line)" }}>
+          <div className="ux-sq rounded-[12px] p-4 lg:p-3" style={{ background: "var(--ux-tint-green)" }}>
             <p className="text-2xs uppercase tracking-[0.06em]" style={{ color: "var(--ux-green-ink)" }}>{tr("walletWithdraw.availableNow")}</p>
             <p className="mt-1 text-lg font-bold tabular-nums" style={{ color: "var(--ux-ink)" }}>{rupees(money.balanceMinor)}</p>
           </div>
-          <div className="ux-sq rounded-[12px] p-3" style={{ background: "var(--ux-surface-2)" }}>
+          <div className="ux-sq rounded-[12px] p-4 lg:p-3" style={{ background: "var(--ux-surface-2)" }}>
             <p className="text-2xs uppercase tracking-[0.06em]" style={{ color: "var(--ux-faint)" }}>{tr("walletWithdraw.stillOnItsWay")}</p>
             <p className="mt-1 text-lg font-bold tabular-nums" style={{ color: "var(--ux-muted)" }}>{rupees(money.pendingMinor)}</p>
           </div>
@@ -227,7 +228,7 @@ export default function WithdrawPage() {
       </Card>
 
       <Card>
-        <SectionHead title={tr("walletWithdraw.whereItGoes")} action="Manage" onAction={() => { window.location.href = "/app/settings/payments"; }} />
+        <Section title={tr("walletWithdraw.whereItGoes")} action="Manage" onAction={() => { window.location.href = "/app/settings/payments"; }} />
         {!PAYOUT_METHODS.length && (
           <div className="ux-sq rounded-[12px] border p-4" style={{ borderColor: "var(--ux-line)" }}>
             <p className="text-xsm leading-relaxed" style={{ color: "var(--ux-ink-2)" }}>{tr("walletWithdraw.youHaveNotAddedABank")}</p>
@@ -236,7 +237,7 @@ export default function WithdrawPage() {
             </div>
           </div>
         )}
-        <div className="ux-deck space-y-2.5">
+        <div className={`ux-deck space-y-2.5 max-lg:space-y-0 ${GROUP}`}>
           {PAYOUT_METHODS.map((m, i) => {
             const on = chosenId === m.id;
             return (
@@ -244,7 +245,7 @@ export default function WithdrawPage() {
                 key={m.id}
                 onClick={() => setMethod(m.id)}
                 aria-pressed={on}
-                className="ux-i ux-sq flex w-full items-center gap-3.5 rounded-[12px] border p-3.5 text-start"
+                className="ux-i ux-sq flex w-full items-center gap-3.5 rounded-[12px] border p-3.5 text-start max-lg:rounded-none max-lg:border-x-0 max-lg:border-b-0 max-lg:border-[color:var(--ux-line)]! max-lg:p-4 max-lg:first:border-t-0"
                 style={{
                   borderColor: on ? "var(--ux-brand)" : "var(--ux-line)",
                   background: on ? "var(--ux-brand-tint)" : "var(--ux-surface)",
@@ -265,6 +266,31 @@ export default function WithdrawPage() {
           })}
         </div>
       </Card>
+
+      {/*
+        The Withdraw button lives in the rail, and the rail is not drawn on a
+        phone — so on a phone this screen had no way to send the money at all,
+        and nowhere for a refusal to be said. The same button, the same
+        handler, the same guard, full width at the foot of the screen where a
+        thumb finds it.
+      */}
+      <div className="mt-6 lg:hidden">
+        {problem && (
+          <p role="alert" className="ux-slide-up mb-3 text-xsm leading-relaxed"
+             style={{ color: "var(--ux-orange-ink)" }}>
+            {problem}
+          </p>
+        )}
+        {stage === "sending" ? (
+          <Btn variant="primary" full icon="Loader" className="ux-action-primary">Sending…</Btn>
+        ) : (
+          <Btn variant="primary" full iconEnd="ArrowRight"
+               className={`ux-action-primary ${ok && chosenId ? "" : "pointer-events-none opacity-50"}`}
+               onClick={() => void send()}>
+            Withdraw {minor ? rupees(minor) : ""}
+          </Btn>
+        )}
+      </div>
     </HomeShell>
   );
 }

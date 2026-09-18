@@ -25,7 +25,9 @@ export function OnboardFrame({
 }) {
   return (
     <div className="min-h-screen" style={{ background: "var(--ux-canvas)" }}>
-      <header className="flex items-center justify-between px-8 pb-2 pt-6">
+      {/* 16px from the screen edge on a phone, as everywhere else; the
+          desktop's 32 was a third of a phone's margin budget on each side. */}
+      <header className="flex items-center justify-between px-4 pb-2 pt-6 lg:px-8">
         <Brand size="sm" href={null} />
         <p className="text-xsm" style={{ color: "var(--ux-muted)" }}>
           Step {step} of {total}
@@ -34,7 +36,7 @@ export function OnboardFrame({
 
       {/* One bar rather than dots. Five dashes with "Step 4 of 6" beside them is
           two different counts of the same thing, and people believe the dashes. */}
-      <div className="px-8">
+      <div className="px-4 lg:px-8">
         <div className="ux-sq h-[5px] w-full overflow-hidden rounded-full" style={{ background: "var(--ux-track)" }}>
           <div
             className="h-full rounded-full"
@@ -47,9 +49,10 @@ export function OnboardFrame({
         </div>
       </div>
 
-      <main id="content" className="mx-auto grid w-full max-w-[1080px] gap-[32px] px-8 py-[40px] lg:grid-cols-[minmax(0,1fr)_360px]">
+      <main id="content" className="mx-auto grid w-full max-w-[1080px] gap-[32px] px-4 py-6 lg:grid-cols-[minmax(0,1fr)_360px] lg:px-8 lg:py-[40px]">
         <div className="min-w-0">
-          <h1 className="text-2xlm font-bold leading-tight" style={{ color: "var(--ux-ink)" }}>{title}</h1>
+          {/* The large title on a phone — the one 34px line on the screen. */}
+          <h1 className="ux-screen-title text-2xlm font-bold leading-tight" style={{ color: "var(--ux-ink)" }}>{title}</h1>
           {sub && (
             <p className="mt-2.5 max-w-[54ch] text-sm leading-relaxed" style={{ color: "var(--ux-muted)" }}>
               {sub}
@@ -70,7 +73,7 @@ export function OnboardAside({
   art, title, body, points,
 }: { art: string; title: string; body: string; points: string[] }) {
   return (
-    <div className="ux-clay ux-sq relative overflow-hidden p-[24px]"
+    <div className="ux-clay ux-sq relative overflow-hidden p-[24px] max-lg:rounded-[16px] max-lg:p-4"
          style={{ background: "linear-gradient(150deg, var(--ux-tint-lilac), var(--ux-tint-pink))" }}>
       {/* eslint-disable-next-line @next/next/no-img-element */}
       <img loading="lazy" decoding="async" src={art} alt="" className="ux-float pointer-events-none absolute -bottom-4 -end-5 h-[128px] w-[128px] object-contain" />

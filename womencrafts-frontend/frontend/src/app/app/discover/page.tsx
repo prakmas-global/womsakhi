@@ -13,7 +13,9 @@ import {
 import { useDiscoverRails } from "@/components/ux/discovery/data";
 import { useT } from "@/i18n";
 
-import { Head, PickCard, WomanCard } from "./for-you-views";
+import { RowGroup } from "@/components/ux/learning/native";
+
+import { Head, PickCard, WomanCard, WomanRow } from "./for-you-views";
 
 /** The lenses across the top. `all` is not a filter — it is the absence of one. */
 const LENSES = [
@@ -122,10 +124,11 @@ export default function DiscoverPage() {
         {/* ── Header: who this is for, and a way to sharpen it ──────────── */}
         <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_360px_260px]">
           <header className="min-w-0">
-            <p className="text-2xs font-extrabold uppercase tracking-[0.2em]" style={{ color: v("--ux-brand") }}>{tr("discover.forYou")}</p>
-            <h1 className="mt-2 text-3xl font-extrabold leading-[1.15] tracking-[-0.02em]"
+            <p className="text-[12px] font-extrabold uppercase tracking-[0.2em] lg:text-2xs" style={{ color: v("--ux-brand") }}>{tr("discover.forYou")}</p>
+            {/* The one 34px large title on a phone (`.ux-screen-title`). */}
+            <h1 className="ux-screen-title mt-1 text-3xl font-extrabold leading-[1.15] tracking-[-0.02em] lg:mt-2"
                 style={{ color: v("--ux-ink") }}>{tr("discover.thingsWorthALook")}</h1>
-            <p className="mt-1.5 max-w-[52ch] text-sm leading-relaxed" style={{ color: v("--ux-muted") }}>{tr("discover.notTheMostPopularThingsThe")}</p>
+            <p className="mt-2 max-w-[52ch] text-sm leading-relaxed lg:mt-1.5" style={{ color: v("--ux-muted") }}>{tr("discover.notTheMostPopularThingsThe")}</p>
           </header>
 
           {/* The promise of the page, said once. */}
@@ -177,7 +180,7 @@ export default function DiscoverPage() {
               {LIFE_STAGES.map((s) => (
                 <button key={s.id} type="button" onClick={() => pickLife(s.id)}
                         aria-pressed={life === s.id}
-                        className="ux-press ux-sq rounded-[12px] border p-3.5 text-left"
+                        className="ux-press ux-sq rounded-[12px] border p-4 text-left lg:p-3.5"
                         style={{
                           borderColor: v(life === s.id ? "--ux-fill" : "--ux-line"),
                           background: v(life === s.id ? "--ux-brand-tint" : "--ux-surface"),
@@ -200,12 +203,14 @@ export default function DiscoverPage() {
         )}
 
         {/* ── Lenses ────────────────────────────────────────────────────── */}
-        <div className="ux-noscroll flex items-center gap-2 overflow-x-auto">
+        {/* Bleeds to the screen edge on a phone, which is what tells a thumb
+            the row carries on past the glass. */}
+        <div className="ux-noscroll -mx-5 flex items-center gap-2 overflow-x-auto px-5 lg:mx-0 lg:px-0">
           {LENSES.map((l) => {
             const on = lens === l.id;
             return (
               <button key={l.id} type="button" onClick={() => setLens(l.id)} aria-pressed={on}
-                      className="ux-press ux-sq flex min-h-[42px] shrink-0 items-center gap-2 rounded-[12px] border px-4 text-xsm font-semibold"
+                      className="ux-press ux-sq flex min-h-[44px] shrink-0 items-center gap-2 rounded-[12px] border px-4 text-xsm font-semibold lg:min-h-[42px]"
                       style={{
                         borderColor: v(on ? "--ux-brand" : "--ux-line"),
                         background: v(on ? "--ux-brand-tint" : "--ux-surface"),
@@ -220,7 +225,7 @@ export default function DiscoverPage() {
 
         {/* ── The one thing that would move her forward ─────────────────── */}
         {lens === "all" && !step && source === "loading" && (
-          <div className="rounded-[18px] p-6 sm:p-7"
+          <div className="rounded-[16px] p-4 sm:p-7 lg:rounded-[18px]"
                style={{ background: "linear-gradient(115deg, var(--ux-fill), var(--ux-fill-2))" }}>
             <div className="max-w-[52ch] space-y-3">
               <Skeleton w={110} h={11} />
@@ -232,7 +237,7 @@ export default function DiscoverPage() {
         )}
 
         {lens === "all" && step && (
-          <div className="relative overflow-hidden rounded-[18px] p-6 sm:p-7"
+          <div className="relative overflow-hidden rounded-[16px] p-4 sm:p-7 lg:rounded-[18px]"
                style={{ background: "linear-gradient(115deg, var(--ux-fill), var(--ux-fill-2))" }}>
             {/* Decorative, and deliberately so: the wireframe puts a picture of
                 the outcome here. Inventing three named sub-steps to fill the
@@ -251,7 +256,7 @@ export default function DiscoverPage() {
               <p className="mt-2 text-sm leading-relaxed" style={{ color: v("--ux-on-brand-2") }}>
                 {step.because}
               </p>
-              <div className="mt-5 flex flex-wrap items-center gap-3">
+              <div className="mt-4 flex flex-col items-stretch gap-3 sm:mt-5 sm:flex-row sm:flex-wrap sm:items-center">
                 <Btn href={step.href} variant="on-brand" icon={step.icon} iconEnd="ArrowRight">
                   {step.cta}
                 </Btn>
@@ -272,7 +277,10 @@ export default function DiscoverPage() {
           <section>
             <Head icon="UserRoundCheck" title={tr("discover.womenNearYouAStepAhead")}
                   sub={tr("discover.sameTradeSameAreaYouCan")} href="/app/mentors" />
-            <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+            <RowGroup className="lg:hidden">
+              {rails.data.women.map((i) => <WomanRow key={i.id} i={i} />)}
+            </RowGroup>
+            <div className="hidden gap-3 sm:grid-cols-2 lg:grid xl:grid-cols-4">
               {rails.data.women.map((i) => (
                 <WomanCard key={i.id} i={i} />
               ))}

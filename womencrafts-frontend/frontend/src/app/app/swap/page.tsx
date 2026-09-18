@@ -6,6 +6,9 @@ import { HomeShell } from "@/components/ux/home/HomeShell";
 import { Btn, Card, Chip, EmptyState, I, IconTile, Pill, SectionHead, Stat, v } from "@/components/ux/kit";
 import { SWAPS, type SwapItem } from "@/components/ux/life/data";
 import { useT } from "@/i18n";
+import { ListGroup } from "@/components/ux/mobile/ListRow";
+import { SegmentedControl } from "@/components/ux/mobile/SegmentedControl";
+import { GroupLabel, PhoneRow, PhoneTitle, phonePrimary } from "@/components/ux/PhoneParts";
 
 /**
  * Circle swap — the second-hand economy women already run.
@@ -60,7 +63,12 @@ export default function SwapPage() {
     <HomeShell active="/app/swap">
       <div className="flex flex-col gap-5">
 
-        <header className="flex flex-wrap items-end gap-4">
+        <PhoneTitle title={tr("swap.passItOn")} sub={tr("swap.whatSomeoneNearYouNoLonger")}
+                    note="Uniforms outgrown, baby things finished with, a lehenga worn once. Collected in person from a woman you know. No prices, no posting, no fee.">
+          <Btn icon="Plus" className={`mt-4 ${phonePrimary}`}
+               onClick={() => setNote("Photograph it where it is. No studio, no measurements, no listing fee.")}>{tr("swap.offerSomething")}</Btn>
+        </PhoneTitle>
+        <header className="hidden flex-wrap items-end gap-4 lg:flex">
           <div className="min-w-0 flex-1">
             <p className="text-2xs font-extrabold uppercase tracking-[0.2em]" style={{ color: v("--ux-brand") }}>{tr("swap.passItOn")}</p>
             <h1 className="mt-2 text-[clamp(1.5rem,3.2vw,2.125rem)] font-extrabold leading-[1.1] tracking-[-0.035em]"
@@ -93,9 +101,20 @@ export default function SwapPage() {
         )}
 
         <div>
-          <SectionHead title={tr("swap.goingSpare")} sub={tr("swap.allWithinWalkingDistance")} icon="Gift"
-                       chip={String(shown.length)} />
-          <div className="mb-3.5 flex flex-wrap gap-2">
+          <GroupLabel sub={tr("swap.allWithinWalkingDistance")} count={shown.length}>{tr("swap.goingSpare")}</GroupLabel>
+          <div className="hidden lg:block">
+            <SectionHead title={tr("swap.goingSpare")} sub={tr("swap.allWithinWalkingDistance")} icon="Gift"
+                         chip={String(shown.length)} />
+          </div>
+          {/* One of three, so on a phone it is a segmented control. */}
+          <SegmentedControl<Filter> className="mb-4 lg:hidden" label={tr("swap.goingSpare")}
+            value={filter} onChange={setFilter}
+            options={[
+              { value: "all", label: "Everything" },
+              { value: "free", label: "Free" },
+              { value: "children", label: tr("swap.forChildren") },
+            ]} />
+          <div className="mb-3.5 hidden flex-wrap gap-2 lg:flex">
             <Chip icon="LayoutGrid" selected={filter === "all"} onClick={() => setFilter("all")}>Everything</Chip>
             <Chip icon="Heart" selected={filter === "free"} onClick={() => setFilter("free")}>Free</Chip>
             <Chip icon="Baby" selected={filter === "children"} onClick={() => setFilter("children")}>{tr("swap.forChildren")}</Chip>
@@ -106,7 +125,29 @@ export default function SwapPage() {
                               body="Try another filter, or offer something yourself — someone always needs a uniform in June."
                               action={<Btn size="sm" variant="outline" onClick={() => setFilter("all")}>{tr("swap.showEverything")}</Btn>} /></Card>
           ) : (
-            <div className="grid gap-3 sm:grid-cols-2">
+            <>
+            {/* On a phone: one grouped list — the thing, its condition, who and
+                how far, what she wants for it, and the button. */}
+            <ListGroup className="lg:hidden">
+              {shown.map((s) => {
+                const c = CONDITION[s.condition];
+                return (
+                  <PhoneRow key={s.id} icon={s.icon} tint={s.tint} ink={s.ink}
+                            title={
+                              <span className="flex flex-wrap items-center gap-2">
+                                {s.what}
+                                <span className="rounded-full px-2 py-[2px] text-[13px] font-semibold"
+                                      style={{ background: v(c.tint), color: v(c.ink) }}>{s.condition}</span>
+                              </span>
+                            }
+                            meta={`${s.from} · ${s.km} km${s.size ? ` · ${s.size}` : ""}`}
+                            body={s.wants}>
+                    <Btn size="sm" full className="mt-3 max-lg:px-4" onClick={() => claim(s.id)}>{tr("swap.askHerForIt")}</Btn>
+                  </PhoneRow>
+                );
+              })}
+            </ListGroup>
+            <div className="hidden gap-3 sm:grid-cols-2 lg:grid">
               {shown.map((s) => {
                 const c = CONDITION[s.condition];
                 return (
@@ -132,12 +173,16 @@ export default function SwapPage() {
                 );
               })}
             </div>
+            </>
           )}
         </div>
 
         {taken.length > 0 && (
           <div>
-            <SectionHead title={tr("swap.alreadyGone")} icon="Check" chip={String(taken.length)} />
+            <GroupLabel count={taken.length}>{tr("swap.alreadyGone")}</GroupLabel>
+            <div className="hidden lg:block">
+              <SectionHead title={tr("swap.alreadyGone")} icon="Check" chip={String(taken.length)} />
+            </div>
             <Card pad={0}>
               <ul className="divide-y" style={{ borderColor: v("--ux-line") }}>
                 {taken.map((s) => (

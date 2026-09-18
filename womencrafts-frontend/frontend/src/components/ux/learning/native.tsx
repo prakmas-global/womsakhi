@@ -1,9 +1,11 @@
 "use client";
 
+import Link from "next/link";
 import type { ReactNode } from "react";
 
+import * as Icons from "@/components/ux/icons";
 import { SegmentedControl } from "@/components/ux/mobile/SegmentedControl";
-import { Tabs } from "@/components/ux/kit";
+import { SectionHead, Tabs } from "@/components/ux/kit";
 
 /**
  * The three shapes that make a Learn/Work screen read as an app on a phone.
@@ -48,17 +50,17 @@ export function ScreenHead({
   className?: string;
 }) {
   return (
-    <div className={`mb-[18px] lg:mb-[20px] lg:flex lg:items-end lg:justify-between lg:gap-4 ${className}`}>
+    <div className={`mb-6 lg:mb-[20px] lg:flex lg:items-end lg:justify-between lg:gap-4 ${className}`}>
       <div className="min-w-0">
         <h1 className="ux-screen-title text-2xl font-bold" style={{ color: "var(--ux-ink)" }}>{title}</h1>
         {sub && (
-          <p className="mt-1.5 text-[15px] leading-snug lg:text-xsm" style={{ color: "var(--ux-muted)" }}>
+          <p className="mt-2 text-[15px] leading-snug lg:mt-1.5 lg:text-xsm" style={{ color: "var(--ux-muted)" }}>
             {sub}
           </p>
         )}
         {note}
       </div>
-      {children && <div className="mt-3.5 lg:mt-0 lg:shrink-0">{children}</div>}
+      {children && <div className="mt-4 lg:mt-0 lg:shrink-0">{children}</div>}
     </div>
   );
 }
@@ -202,5 +204,125 @@ export function Tag({ children, tone = "brand", size = "md" }: {
       style={{ background: `var(${bg})`, color: `var(${ink})` }}>
       {children}
     </span>
+  );
+}
+
+/**
+ * The quiet label above a grouped list, with its one action at the far end.
+ *
+ * `ListGroup`'s own caption has no room for "See all", and a `SectionHead`
+ * above a phone list is a 17px bold heading — the dashboard habit the native
+ * shape drops. The label is 12px/600/upper-case muted; the action is a 44px
+ * tall text button so the thumb can hit it without the label growing.
+ */
+export function GroupHead({ title, sub, count, action, onAction, href }: {
+  title: ReactNode;
+  /** One quiet 13px line under the label, where a section explains itself. */
+  sub?: ReactNode;
+  /** A number beside the label — "WHAT IS COMING · 5". */
+  count?: ReactNode;
+  action?: string;
+  onAction?: () => void;
+  href?: string;
+}) {
+  const cls = "inline-flex min-h-[44px] shrink-0 items-center text-[15px] font-semibold";
+  return (
+    <div className="mb-2 px-4">
+      <div className={`flex items-center justify-between gap-3 ${action ? "min-h-[44px]" : ""}`}>
+        <h2 className="min-w-0 truncate text-[12px] font-semibold uppercase tracking-[0.07em]"
+            style={{ color: "var(--ux-muted)" }}>
+          {title}{count != null && count !== "" && <span className="tabular-nums"> · {count}</span>}
+        </h2>
+        {action && (href
+          ? <Link href={href} className={cls} style={{ color: "var(--ux-brand)" }}>{action}</Link>
+          : <button type="button" onClick={onAction} className={cls} style={{ color: "var(--ux-brand)" }}>{action}</button>)}
+      </div>
+      {sub && <p className="mt-0.5 text-[13px] leading-snug" style={{ color: "var(--ux-muted)" }}>{sub}</p>}
+    </div>
+  );
+}
+
+/**
+ * A section's heading: the quiet group label on a phone, the kit's
+ * `SectionHead` — unchanged — from `lg` up. Same props as `SectionHead`, so
+ * a call site swaps one name for the other.
+ */
+export function SectionLabel(props: {
+  title: string; sub?: string; action?: string; onAction?: () => void; icon?: string; chip?: string;
+}) {
+  return (
+    <>
+      <div className="lg:hidden">
+        <GroupHead title={props.title} sub={props.sub} count={props.chip} action={props.action} onAction={props.onAction} />
+      </div>
+      <div className="hidden lg:block"><SectionHead {...props} /></div>
+    </>
+  );
+}
+
+/**
+ * A grouped-list row with room for a picture.
+ *
+ * `ListRow` draws a 32px icon tile; a course, a job or a woman is better told
+ * apart by her photograph or its artwork, and at 32px that is a smudge. Same
+ * row otherwise — 16px insets, 15/600 title, 13px lines in `--ux-muted`, a
+ * chevron, the grey press highlight — and the hairline starts where the text
+ * does (16 + 44 + 12 = 72), not at the card's edge.
+ *
+ * Put a run of these inside `ListGroup` (or any card with the
+ * `[&>*:last-child_[data-ux-sep]]:hidden` rule) so the last hairline goes.
+ */
+export function MediaRow({ href, onClick, media, title, badges, lines, trailing, chevron }: {
+  href?: string;
+  onClick?: () => void;
+  /** 44x44 — a picture, an avatar or an `IconTile`. */
+  media?: ReactNode;
+  title: ReactNode;
+  /** Small pills beside the title. */
+  badges?: ReactNode;
+  /** Each one a 13px line under the title. */
+  lines?: ReactNode[];
+  trailing?: ReactNode;
+  chevron?: boolean;
+}) {
+  const showChevron = chevron ?? Boolean(href || onClick);
+  const inner = (
+    <>
+      {media && <span className="grid h-[44px] w-[44px] shrink-0 place-items-center overflow-hidden rounded-[12px]">{media}</span>}
+      <span className="min-w-0 flex-1 text-start">
+        <span className="flex min-w-0 items-center gap-2">
+          <span className="block min-w-0 truncate text-[15px] font-semibold leading-tight" style={{ color: "var(--ux-ink)" }}>
+            {title}
+          </span>
+          {badges}
+        </span>
+        {lines?.filter(Boolean).map((l, i) => (
+          <span key={i} className="mt-0.5 block truncate text-[13px] leading-snug" style={{ color: "var(--ux-muted)" }}>
+            {l}
+          </span>
+        ))}
+      </span>
+      {trailing}
+      {showChevron && (
+        <Icons.ChevronRight className="h-[17px] w-[17px] shrink-0 rtl:rotate-180" style={{ color: "var(--ux-faint)" }} aria-hidden="true" />
+      )}
+      <span data-ux-sep aria-hidden="true" className="pointer-events-none absolute bottom-0 end-0 h-px"
+            style={{ insetInlineStart: media ? "72px" : "16px", background: "var(--ux-line)" }} />
+    </>
+  );
+  const cls = "relative flex min-h-[60px] w-full items-center gap-3 px-4 py-3 text-start active:bg-[var(--ux-surface-2)]";
+  const style = { background: "transparent", transform: "none" } as const;
+  if (href) return <Link href={href} className={cls} style={style}>{inner}</Link>;
+  if (onClick) return <button type="button" onClick={onClick} className={cls} style={style}>{inner}</button>;
+  return <div className={cls} style={style}>{inner}</div>;
+}
+
+/** The card a run of `MediaRow`s sits in — `ListGroup`'s card without its caption. */
+export function RowGroup({ children, className = "" }: { children: ReactNode; className?: string }) {
+  return (
+    <div className={`overflow-hidden rounded-[var(--ux-r-lg)] border [&>*:last-child_[data-ux-sep]]:hidden ${className}`}
+         style={{ background: "var(--ux-surface)", borderColor: "var(--ux-line)" }}>
+      {children}
+    </div>
   );
 }

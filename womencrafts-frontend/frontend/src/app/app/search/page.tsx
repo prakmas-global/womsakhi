@@ -13,6 +13,8 @@ import { HomeShell } from "@/components/ux/home/HomeShell";
 import { SEARCH_KINDS, SEARCH_SUGGESTED, type SearchHit } from "@/components/ux/home/data";
 import { useSearch } from "@/components/ux/growth";
 import { useT } from "@/i18n";
+import { ListGroup, ListRow } from "@/components/ux/mobile/ListRow";
+import { PhoneRow } from "@/components/ux/PhoneParts";
 
 /**
  * Search results.
@@ -87,8 +89,8 @@ function Results() {
         </div>
       }
     >
-      <div className="mb-[20px]">
-        <h1 className="text-2xl font-bold" style={{ color: "var(--ux-ink)" }}>
+      <div className="mb-6 lg:mb-[20px]">
+        <h1 className="ux-screen-title text-2xl font-bold" style={{ color: "var(--ux-ink)" }}>
           {q ? <>Results for “{q}”</> : "Search"}
         </h1>
         <p className="mt-1.5 text-xsm" style={{ color: "var(--ux-muted)" }}>
@@ -101,7 +103,9 @@ function Results() {
       </div>
 
       {q && all.length > 0 && (
-        <div className="mb-[16px] flex flex-wrap gap-2">
+        /* On a phone the kinds are one sideways-scrolling row of chips rather
+           than a block of them wrapping down the screen. */
+        <div className="ux-chiprow mb-[16px] flex flex-wrap gap-2 max-lg:mb-4">
           {SEARCH_KINDS.filter((k) => k === "All" || counts[k]).map((k) => (
             <Chip key={k} selected={kind === k} onClick={() => setKind(k)}>
               {k === "All" ? "Everything" : plural(k)} · {counts[k] ?? 0}
@@ -111,6 +115,17 @@ function Results() {
       )}
 
       {!q && (
+        /* Things to search for are destinations: on a phone, a grouped list. */
+        <ListGroup className="lg:hidden" title={tr("search.popularSearches")}
+                   footnote={tr("search.whatOtherMembersAreLookingFor")}>
+          {SEARCH_SUGGESTED.map((s) => (
+            <ListRow key={s} icon="Search" title={s} chevron
+                     onClick={() => router.push(`/app/search?q=${encodeURIComponent(s)}`)} />
+          ))}
+        </ListGroup>
+      )}
+      {!q && (
+        <div className="hidden lg:block">
         <Card>
           <SectionHead title={tr("search.popularSearches")} sub={tr("search.whatOtherMembersAreLookingFor")} />
           <div className="flex flex-wrap gap-2">
@@ -126,6 +141,7 @@ function Results() {
             ))}
           </div>
         </Card>
+        </div>
       )}
 
       {q && shown.length === 0 && (
@@ -148,7 +164,25 @@ function Results() {
       )}
 
       {shown.length > 0 && (
-        <div className="ux-deck ux-stagger space-y-[12px]">
+        <ListGroup className="lg:hidden">
+          {shown.map((h) => (
+            <PhoneRow key={h.id} href={h.href}
+                      lead={h.img ? (
+                        <span className="mt-0.5 h-[40px] w-[40px] shrink-0 overflow-hidden rounded-[12px]"
+                              style={{ background: `var(${h.tint})` }}>
+                          {/* eslint-disable-next-line @next/next/no-img-element */}
+                          <img loading="lazy" decoding="async" src={h.img} alt="" className="ux-art h-full w-full object-cover" />
+                        </span>
+                      ) : undefined}
+                      icon={h.img ? undefined : h.icon} tint={h.tint} ink={h.ink}
+                      sepInset={h.img ? 68 : undefined}
+                      title={<Mark text={h.title} q={q} />}
+                      meta={`${h.kind} · ${h.sub}`} />
+          ))}
+        </ListGroup>
+      )}
+      {shown.length > 0 && (
+        <div className="ux-deck ux-stagger hidden space-y-[12px] lg:block">
           {shown.map((h, i) => <Hit key={h.id} h={h} q={q} i={i} />)}
         </div>
       )}

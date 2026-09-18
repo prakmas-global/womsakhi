@@ -1,6 +1,6 @@
 "use client";
 
-import { Tag } from "@/components/ux/learning/native";
+import { MediaRow, Tag } from "@/components/ux/learning/native";
 
 import Link from "next/link";
 import * as Icons from "@/components/ux/icons";
@@ -70,6 +70,33 @@ export function CourseCard({ c, w }: { c: Course; w?: number }) {
 }
 
 /**
+ * A course as a grouped-list row — the phone's catalogue.
+ *
+ * A column of separately bordered cards, 16px apart, reads as a stack of
+ * objects; the same courses as rows in one inset group read as a list, which
+ * is what a catalogue is. Same link, same picture, same facts.
+ */
+export function CourseRow({ c }: { c: Course }) {
+  return (
+    <MediaRow
+      href={`/app/programs/${c.id}`}
+      media={
+        /* eslint-disable-next-line @next/next/no-img-element */
+        <img loading="lazy" decoding="async" src={c.thumb} alt="" className="ux-art h-full w-full object-cover" />
+      }
+      title={c.title}
+      lines={[
+        <>{c.lessons} Lessons <span aria-hidden>•</span> {c.level}</>,
+        typeof c.pct === "number"
+          ? <span style={{ color: "var(--ux-brand)" }}>{c.pct}% Complete</span>
+          : <Rating value={c.rating} count={c.count} />,
+      ]}
+      trailing={c.tag ? <Tag tone={TAG_TONE[c.tag]} size="sm">{c.tag}</Tag> : undefined}
+    />
+  );
+}
+
+/**
  * The wide "resume this" card at the top of Continue Learning.
  *
  * **Its button did nothing.** `<Btn variant="primary" icon="Play">Resume
@@ -107,7 +134,7 @@ export function ResumeCard({ c }: { c: Course }) {
       </div>
       <div className="flex min-w-0 flex-1 flex-col justify-center p-4 lg:p-0 lg:pe-5">
         <h2 className="text-[17px] font-semibold leading-tight lg:text-base" style={{ color: "var(--ux-ink)" }}>{c.title}</h2>
-        <p className="mt-1 text-[14px] lg:text-xs" style={{ color: "var(--ux-muted)" }}>
+        <p className="mt-1 text-[15px] lg:text-xs" style={{ color: "var(--ux-muted)" }}>
           Course <span aria-hidden>•</span> {c.lessons} Lessons
         </p>
         <div className="mt-3.5 flex items-center gap-3">

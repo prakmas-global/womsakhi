@@ -5,6 +5,7 @@ import Link from "next/link";
 import * as Icons from "@/components/ux/icons";
 import { Avatar, Btn, Card, I, IconTile, v } from "@/components/ux/kit";
 import type { DiscoverItem } from "@/components/ux/discovery/data";
+import { GroupHead, MediaRow } from "@/components/ux/learning/native";
 import { useT } from "@/i18n";
 
 /* ------------------------------------------------------------------ */
@@ -17,7 +18,13 @@ export function Head({ icon, title, sub, href, count }: {
 }) {
   const tr = useT();
   return (
-    <div className="mb-3.5 flex items-end justify-between gap-4">
+    <>
+    {/* On a phone: the quiet group label, its reason under it, "View all" at
+        the far end. The 17px bold heading with an icon is the desktop one. */}
+    <div className="lg:hidden">
+      <GroupHead title={title} sub={sub} count={count} action={tr("foryou.viewAll")} href={href} />
+    </div>
+    <div className="mb-3.5 hidden items-end justify-between gap-4 lg:flex">
       <div className="flex items-start gap-2.5">
         <I name={icon} className="mt-[3px] h-[20px] w-[20px] shrink-0" style={{ color: v("--ux-brand") }} />
         <div>
@@ -35,6 +42,26 @@ export function Head({ icon, title, sub, href, count }: {
             style={{ color: v("--ux-brand") }}>{tr("foryou.viewAll")}<Icons.ChevronRight className="h-[14px] w-[14px]" />
       </Link>
     </div>
+    </>
+  );
+}
+
+/**
+ * The same woman as a grouped-list row, for a phone.
+ *
+ * Every card led to one place — her profile — so on a phone the whole row is
+ * that link: her initial, her name, her headline, where she is and what she
+ * knows, and a chevron. Nothing on the card is dropped; the tags become one
+ * quiet line instead of a wrap of pills.
+ */
+export function WomanRow({ i }: { i: DiscoverItem }) {
+  return (
+    <MediaRow
+      href={i.href}
+      media={<Avatar src={i.photo} name={i.title} size={44} />}
+      title={i.title}
+      lines={[i.detail, i.meta, i.tags?.length ? i.tags.join(" · ") : null]}
+    />
   );
 }
 
@@ -147,7 +174,7 @@ export function PickCard({ i, saved, onSave }: {
 
       {/* Only when the server said why. No line at all otherwise. */}
       {i.because && (
-        <p className="mt-3 flex items-start gap-1.5 rounded-[10px] px-2.5 py-2 text-xs leading-snug"
+        <p className="mt-3 flex items-start gap-1.5 rounded-[12px] px-4 py-2 text-[13px] leading-snug lg:rounded-[10px] lg:px-2.5 lg:text-xs"
            style={{ background: v("--ux-brand-tint"), color: v("--ux-brand") }}>
           <Icons.Sparkles className="mt-[2px] h-[11px] w-[11px] shrink-0" />
           {i.because}

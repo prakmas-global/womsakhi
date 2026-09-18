@@ -182,7 +182,7 @@ export default function SkillExchangePage() {
                     </div>
                   </div>
 
-                  <p className="mt-3.5 rounded-[12px] p-3 text-smd leading-relaxed lg:text-xsm"
+                  <p className="mt-4 rounded-[12px] px-4 py-3 text-smd leading-relaxed lg:mt-3.5 lg:p-3 lg:text-xsm"
                      style={{ background: "var(--ux-surface-2)", color: "var(--ux-ink-2)" }}>
                     <span style={{ color: "var(--ux-muted)" }}>
                       {s.side === "Offering" ? tr("library.sheWouldLikeInReturn")
@@ -195,7 +195,7 @@ export default function SkillExchangePage() {
                       70px column beside two squeezed buttons — "Open the /
                       exchange" broken in half. The count goes above the
                       actions on a phone and the actions take the width. */}
-                  <div className="mt-3.5 flex flex-col gap-3 border-t pt-3.5 lg:flex-row lg:items-center lg:justify-between lg:gap-4"
+                  <div className="mt-4 flex flex-col gap-3 border-t pt-4 lg:mt-3.5 lg:flex-row lg:items-center lg:justify-between lg:gap-4 lg:pt-3.5"
                        style={{ borderColor: "var(--ux-line)" }}>
                     <span className="text-[13px] lg:text-xs" style={{ color: "var(--ux-faint)" }}>
                       {s.matches} {plural("woman", s.matches)} already interested
@@ -203,7 +203,7 @@ export default function SkillExchangePage() {
                     <span className="flex items-center gap-2 [&>*]:flex-1 lg:[&>*]:flex-none">
                       {isAsked(s.id) ? (
                         <>
-                          <span className="ux-pop ux-sq inline-flex items-center gap-1.5 rounded-[12px] px-3.5 py-2 text-xsm font-semibold"
+                          <span className="ux-pop ux-sq inline-flex items-center justify-center gap-1.5 rounded-[12px] px-4 py-2 text-xsm font-semibold lg:justify-start lg:px-3.5"
                                 style={{ background: "var(--ux-tint-green)", color: "var(--ux-green-ink)" }}>
                             <Icons.Check className="h-[15px] w-[15px]" strokeWidth={2.6} /> Asked
                           </span>
@@ -271,10 +271,10 @@ export default function SkillExchangePage() {
               </div>
 
               {/* Both directions, side by side — an exchange is not a favour. */}
-              <div className="mt-3.5 grid grid-cols-1 gap-2.5 sm:grid-cols-2">
+              <div className="mt-4 grid grid-cols-1 gap-2 sm:grid-cols-2 lg:mt-3.5 lg:gap-2.5">
                 {[["You teach", m.youTeach, "--ux-tint-violet", "--ux-violet", "GraduationCap"],
                   ["You learn", m.youLearn, "--ux-tint-green", "--ux-green", "BookOpen"]].map(([k, v, tint, ink, icon]) => (
-                  <div key={k} className="ux-sq flex items-center gap-2.5 rounded-[12px] p-3"
+                  <div key={k} className="ux-sq flex items-center gap-3 rounded-[12px] px-4 py-3 lg:gap-2.5 lg:p-3"
                        style={{ background: "var(--ux-surface-2)" }}>
                     <IconTile icon={icon} tint={tint} ink={ink} size={32} radius={9} />
                     <span className="min-w-0">
@@ -285,7 +285,7 @@ export default function SkillExchangePage() {
                 ))}
               </div>
 
-              <div className="mt-3.5 flex items-center gap-2 border-t pt-3.5 lg:justify-end [&>*]:flex-1 lg:[&>*]:flex-none" style={{ borderColor: "var(--ux-line)" }}>
+              <div className="mt-4 flex items-center gap-2 border-t pt-4 lg:mt-3.5 lg:justify-end lg:pt-3.5 [&>*]:flex-1 lg:[&>*]:flex-none" style={{ borderColor: "var(--ux-line)" }}>
                 <Btn href={`/app/library/${m.swapId}`} variant="outline" size="sm" icon="MessageCircle">Message</Btn>
                 <Btn href={`/app/library/${m.swapId}`} variant="primary" size="sm" icon="CalendarCheck">
                   {m.state === "Agreed" ? tr("library.seeThePlan")

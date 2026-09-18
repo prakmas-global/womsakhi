@@ -6,6 +6,8 @@ import { HomeShell } from "@/components/ux/home/HomeShell";
 import { Btn, Card, I, IconTile, Pill, Progress, SectionHead, v } from "@/components/ux/kit";
 import { WISHES, wishesDone, type Wish } from "@/components/ux/life/data";
 import { useT } from "@/i18n";
+import { ListGroup } from "@/components/ux/mobile/ListRow";
+import { GroupLabel, PhoneRow, PhoneTitle } from "@/components/ux/PhoneParts";
 
 /**
  * If something happens to me.
@@ -74,7 +76,9 @@ export default function InCasePage() {
     <HomeShell active="/app/incase">
       <div className="flex flex-col gap-5">
 
-        <header>
+        <PhoneTitle title={tr("incase.ifSomethingHappens")} sub={tr("incase.ifYouAreNotThereTo")}
+                    note="A week in hospital, a move, or worse. Six plain questions, answered once, so nobody has to guess and nothing you built simply stops." />
+        <header className="hidden lg:block">
           <p className="text-2xs font-extrabold uppercase tracking-[0.2em]" style={{ color: v("--ux-brand") }}>{tr("incase.ifSomethingHappens")}</p>
           <h1 className="mt-2 text-[clamp(1.5rem,3.2vw,2.125rem)] font-extrabold leading-[1.1] tracking-[-0.035em]"
               style={{ color: v("--ux-ink") }}>{tr("incase.ifYouAreNotThereTo")}</h1>
@@ -97,7 +101,7 @@ export default function InCasePage() {
               </p>
               <div className="mt-3"><Progress pct={pct} tone="--ux-violet" track="--ux-surface" /></div>
             </div>
-            <Btn size="sm" variant="outline" icon={covered ? "Eye" : "EyeOff"}
+            <Btn size="sm" variant="outline" icon={covered ? "Eye" : "EyeOff"} className="max-lg:w-full max-lg:px-4"
                  onClick={() => setCovered((c) => !c)}>
               {covered ? "Show answers" : "Cover"}
             </Btn>
@@ -121,9 +125,59 @@ export default function InCasePage() {
         )}
 
         <div>
-          <SectionHead title={tr("incase.theSixQuestions")} sub={tr("incase.answerWhatYouWantSkipWhat")}
-                       icon="ListChecks" chip={`${done}/${wishes.length}`} />
-          <div className="flex flex-col gap-2.5">
+          <GroupLabel sub={tr("incase.answerWhatYouWantSkipWhat")} count={`${done}/${wishes.length}`}>{tr("incase.theSixQuestions")}</GroupLabel>
+          <div className="hidden lg:block">
+            <SectionHead title={tr("incase.theSixQuestions")} sub={tr("incase.answerWhatYouWantSkipWhat")}
+                         icon="ListChecks" chip={`${done}/${wishes.length}`} />
+          </div>
+          {/* Six questions, one grouped list: the question, why it is asked,
+              her covered answer, and the button to answer or change it. */}
+          <ListGroup className="lg:hidden">
+            {wishes.map((w) => (
+              <PhoneRow key={w.id} icon={w.icon}
+                        tint={w.answer ? "--ux-tint-green" : "--ux-surface-2"}
+                        ink={w.answer ? "--ux-green-ink" : "--ux-muted"}
+                        title={
+                          <span className="flex flex-wrap items-center gap-2">
+                            {w.question}
+                            {w.answer && <Pill tone="green" size="sm">Written</Pill>}
+                          </span>
+                        }
+                        meta={w.why}
+                        trailing={editing !== w.id ? (
+                          <Btn size="sm" variant={w.answer ? "ghost" : "outline"}
+                               onClick={() => { setEditing(w.id); setDraft(w.answer ?? ""); }}>
+                            {w.answer ? "Change" : "Answer"}
+                          </Btn>
+                        ) : undefined}>
+                {w.answer && editing !== w.id && (
+                  <span className="mt-2.5 block rounded-[12px] px-3 py-2.5 text-[15px] font-semibold"
+                        style={{ background: v("--ux-surface-2"), color: v(covered ? "--ux-muted" : "--ux-ink") }}>
+                    {covered ? "••••••••••" : w.answer}
+                  </span>
+                )}
+                {editing === w.id && (
+                  <span className="mt-2.5 flex flex-col gap-2">
+                    <input
+                      autoFocus
+                      value={draft}
+                      onChange={(e) => setDraft(e.target.value)}
+                      onKeyDown={(e) => { if (e.key === "Enter") save(w.id); }}
+                      placeholder={tr("incase.inYourOwnWords")}
+                      aria-label={w.question}
+                      className="ux-sq h-[48px] w-full rounded-[12px] border px-3 text-[17px] outline-none"
+                      style={{ borderColor: v("--ux-brand"), background: v("--ux-surface"), color: v("--ux-ink") }}
+                    />
+                    <span className="flex gap-2">
+                      <Btn size="sm" full className="max-lg:px-4" onClick={() => save(w.id)}>Save</Btn>
+                      <Btn size="sm" variant="ghost" full className="max-lg:px-4" onClick={() => { setEditing(null); setDraft(""); }}>Cancel</Btn>
+                    </span>
+                  </span>
+                )}
+              </PhoneRow>
+            ))}
+          </ListGroup>
+          <div className="hidden flex-col gap-2.5 lg:flex">
             {wishes.map((w) => (
               <Card key={w.id} pad={16}>
                 <div className="flex items-start gap-3.5">

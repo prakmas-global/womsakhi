@@ -4,11 +4,12 @@ import { useCallback, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 
 import { HomeShell } from "@/components/ux/home/HomeShell";
-import { Btn, Card, Chip, EmptyState, I, IconTile, Pill, Progress, SectionHead, Stat, v } from "@/components/ux/kit";
+import { Btn, Card, Chip, EmptyState, I, IconTile, Pill, Progress, Stat, v } from "@/components/ux/kit";
 import { formatRupees } from "@/components/ux/kit";
 import {
   CHILDREN, SCHOOL_KIND, SCHOOL_TASKS, schoolDue, schoolSoon, type SchoolTask,
 } from "@/components/ux/life/data";
+import { ChipRow, SectionLabel } from "@/components/ux/learning/native";
 import { useT } from "@/i18n";
 
 /**
@@ -55,13 +56,15 @@ export default function SchoolPage() {
 
   return (
     <HomeShell active="/app/school">
-      <div className="flex flex-col gap-5">
+      <div className="flex flex-col gap-6 lg:gap-5">
 
         <header>
-          <p className="text-2xs font-extrabold uppercase tracking-[0.2em]" style={{ color: v("--ux-brand") }}>{tr("school.theSchoolYear")}</p>
-          <h1 className="mt-2 text-[clamp(1.5rem,3.2vw,2.125rem)] font-extrabold leading-[1.1] tracking-[-0.035em]"
+          <p className="text-[12px] font-extrabold uppercase tracking-[0.2em] lg:text-2xs" style={{ color: v("--ux-brand") }}>{tr("school.theSchoolYear")}</p>
+          {/* `.ux-screen-title` makes this the one 34px large title on a phone;
+              the clamp is what desktop keeps. */}
+          <h1 className="ux-screen-title mt-1 text-[clamp(1.5rem,3.2vw,2.125rem)] font-extrabold leading-[1.1] tracking-[-0.035em] lg:mt-2"
               style={{ color: v("--ux-ink") }}>{tr("school.everyDateInOnePlace")}</h1>
-          <p className="mt-1.5 max-w-[56ch] text-sm leading-relaxed" style={{ color: v("--ux-muted") }}>
+          <p className="mt-2 max-w-[56ch] text-sm leading-relaxed lg:mt-1.5" style={{ color: v("--ux-muted") }}>
             Fees, exams, forms, uniforms, the scholarship that has to be renewed or it stops.
             You have been holding all of it. You should not have to.
           </p>
@@ -88,8 +91,8 @@ export default function SchoolPage() {
 
         {/* Fee pots — the school year is what a savings pot is actually for */}
         <div>
-          <SectionHead title={tr("school.savingForTheFees")} sub={tr("school.aPotForEachChildFilled")}
-                       icon="PiggyBank" />
+          <SectionLabel title={tr("school.savingForTheFees")} sub={tr("school.aPotForEachChildFilled")}
+                        icon="PiggyBank" />
           <div className="grid gap-3 sm:grid-cols-2">
             {CHILDREN.map((c) => {
               const pct = c.feeMinor > 0 ? Math.min(100, (c.savedMinor / c.feeMinor) * 100) : 100;
@@ -119,7 +122,7 @@ export default function SchoolPage() {
                            onClick={() => setNote(`₹500 added to ${c.name}'s fee pot.`)}>{tr("school.putIn")}</Btn>
                     </>
                   ) : (
-                    <div className="mt-3.5 rounded-[12px] px-3 py-2.5" style={{ background: v("--ux-tint-green") }}>
+                    <div className="mt-4 rounded-[12px] px-4 py-3 lg:mt-3.5 lg:px-3 lg:py-2.5" style={{ background: v("--ux-tint-green") }}>
                       <p className="text-xsm font-semibold" style={{ color: v("--ux-green-ink") }}>
                         No fees — government school. {formatRupees(c.savedMinor)} saved for books and uniform.
                       </p>
@@ -133,20 +136,20 @@ export default function SchoolPage() {
 
         {/* What is coming */}
         <div>
-          <SectionHead title={tr("school.whatIsComing")} sub={tr("school.soonestFirst")} icon="CalendarDays"
-                       chip={String(shown.length)} />
-          <div className="mb-3.5 flex flex-wrap gap-2">
+          <SectionLabel title={tr("school.whatIsComing")} sub={tr("school.soonestFirst")} icon="CalendarDays"
+                        chip={String(shown.length)} />
+          <ChipRow className="mb-3 lg:mb-3.5">
             <Chip icon="LayoutGrid" selected={child === "all"} onClick={() => setChild("all")}>{tr("school.bothChildren")}</Chip>
             {CHILDREN.map((c) => (
               <Chip key={c.id} icon="Baby" selected={child === c.id} onClick={() => setChild(c.id)}>{c.name}</Chip>
             ))}
-          </div>
+          </ChipRow>
 
           {shown.length === 0 ? (
             <Card><EmptyState icon="CheckCircle2" title={tr("school.nothingDue")}
                               body="Everything for this child is done. We will tell you when the next date is close." /></Card>
           ) : (
-            <div className="flex flex-col gap-2.5">
+            <div className="flex flex-col gap-3 lg:gap-2.5">
               {shown.map((t) => {
                 const k = SCHOOL_KIND[t.kind];
                 const urgent = t.dueIn <= 7;
@@ -167,7 +170,9 @@ export default function SchoolPage() {
                           {formatRupees(t.costMinor)}
                         </p>
                       )}
-                      <div className="flex shrink-0 gap-2">
+                      {/* Its own full-width line on a phone — beside the
+                          words it squeezed the detail to an 8px column. */}
+                      <div className="flex w-full shrink-0 gap-2 [&>*]:flex-1 lg:w-auto lg:[&>*]:flex-none">
                         {t.kind === "buy" && (
                           <Btn size="sm" variant="outline" href="/app/swap">{tr("school.checkTheSwap")}</Btn>
                         )}
@@ -183,7 +188,7 @@ export default function SchoolPage() {
 
         {done.length > 0 && (
           <div>
-            <SectionHead title={tr("school.alreadyDone")} icon="Check" chip={String(done.length)} />
+            <SectionLabel title={tr("school.alreadyDone")} icon="Check" chip={String(done.length)} />
             <Card pad={0}>
               <ul className="divide-y" style={{ borderColor: v("--ux-line") }}>
                 {done.map((t) => (

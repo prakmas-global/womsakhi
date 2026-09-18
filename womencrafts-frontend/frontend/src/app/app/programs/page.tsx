@@ -10,8 +10,9 @@ import {
 import { HomeShell } from "@/components/ux/home/HomeShell";
 import { useMe } from "@/components/ux/me";
 
-import { CourseCard, ResumeCard } from "@/components/ux/learning/parts";
-import { ChipRow, ScreenHead, Segments } from "@/components/ux/learning/native";
+import { CourseCard, CourseRow, ResumeCard } from "@/components/ux/learning/parts";
+import { ChipRow, RowGroup, ScreenHead, Segments } from "@/components/ux/learning/native";
+import { ListGroup, ListRow } from "@/components/ux/mobile/ListRow";
 import {
   ACHIEVEMENTS, CATEGORIES, SKILLS, STREAK,
 } from "@/components/ux/learning/data";
@@ -27,6 +28,12 @@ import { useT } from "@/i18n";
 // that never existed in this app. There is no learning-path feature on the
 // server at all, so the tab is removed rather than left claiming one.
 const TABS = ["Keep going", "Explore", "Finished"] as const;
+
+const ALSO = [
+  { href: "/app/assess", label: "Test your skills", note: "Twenty minutes on your phone, and a result an employer can check.", icon: "BadgeCheck" },
+  { href: "/app/library", label: "Teach and learn", note: "Swap a skill with another woman — teach one, learn one.", icon: "RefreshCw" },
+  { href: "/app/digital", label: "Phone basics", note: "Six steps, from the very start. Free, and at your own pace.", icon: "Smartphone" },
+] as const;
 
 /**
  * Learning — what she is part-way through, and what to take next.
@@ -156,15 +163,21 @@ export default function LearningPage() {
 
       {tab === "Explore" && (
         <>
-          <ChipRow className="mb-[16px]">
+          <ChipRow className="mb-4">
             {categories.map((c) => (
               <Chip key={c} selected={cat === c} onClick={() => setCat(c)}>{c}</Chip>
             ))}
           </ChipRow>
           {picks.length ? (
-            <div className="ux-deck grid grid-cols-3 gap-[16px]">
-              {picks.map((c) => <CourseCard key={c.id} c={c} />)}
-            </div>
+            <>
+              {/* One inset group of rows on a phone; the poster grid from `lg`. */}
+              <RowGroup className="lg:hidden">
+                {picks.map((c) => <CourseRow key={c.id} c={c} />)}
+              </RowGroup>
+              <div className="ux-deck hidden grid-cols-3 gap-[16px] lg:grid">
+                {picks.map((c) => <CourseCard key={c.id} c={c} />)}
+              </div>
+            </>
           ) : (
             <Card>
               <EmptyState icon="SearchX" title={`Nothing in ${cat} yet`}
@@ -191,7 +204,7 @@ export default function LearningPage() {
                     </p>
                   </div>
                 </div>
-                <div className="mt-3.5 flex flex-col gap-2 border-t pt-3.5 lg:flex-row" style={{ borderColor: "var(--ux-line)" }}>
+                <div className="mt-4 flex flex-col gap-2 border-t pt-4 lg:mt-3.5 lg:flex-row lg:pt-3.5" style={{ borderColor: "var(--ux-line)" }}>
                   <ActionBtn variant="outline" size="sm" icon="Download" doneIcon="Printer"
                              done={COPY.saveAsPdf} act={() => printCertificate({
                                name: ME.name, programme: c.title, issued: c.issued, code: c.code,
@@ -215,13 +228,14 @@ export default function LearningPage() {
         )
       )}
 
-      <AlsoHere
-        items={[
-          { href: "/app/assess", label: "Test your skills", note: "Twenty minutes on your phone, and a result an employer can check.", icon: "BadgeCheck" },
-          { href: "/app/library", label: "Teach and learn", note: "Swap a skill with another woman — teach one, learn one.", icon: "RefreshCw" },
-          { href: "/app/digital", label: "Phone basics", note: "Six steps, from the very start. Free, and at your own pace.", icon: "Smartphone" },
-        ]}
-      />
+      {/* Three more places in Learn: a grouped list on a phone, the shared
+          `AlsoHere` cards from `lg`. */}
+      <ListGroup className="mt-6 lg:hidden" title="Also here">
+        {ALSO.map((a) => (
+          <ListRow key={a.href} href={a.href} icon={a.icon} tint="violet" title={a.label} subtitle={a.note} />
+        ))}
+      </ListGroup>
+      <div className="hidden lg:block"><AlsoHere items={ALSO} /></div>
     </HomeShell>
   );
 }

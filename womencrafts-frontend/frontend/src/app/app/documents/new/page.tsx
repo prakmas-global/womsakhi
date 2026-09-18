@@ -8,6 +8,7 @@ import { apiPauseListing, apiSaveListing } from "@/lib/shop-api";
 import { useMe } from "@/components/ux/me";
 import * as Icons from "@/components/ux/icons";
 import { Back, Btn, Card, I, IconTile, SourceNote, v } from "@/components/ux/kit";
+import { CHOICES, FIELDS, STEP_NAV } from "@/components/ux/earn/phone";
 // The centred dialog is a design-system primitive; the ux kit only carries
 // `Sheet`, which is a drawer and the wrong shape for a choice like this.
 import Modal from "@/design-system/primitives/Modal";
@@ -245,9 +246,9 @@ export default function AddListingPage() {
     >
       <Back to="/app/documents/listings" label="What you sell" className="mb-4" />
 
-      <div className="mb-4 flex flex-wrap items-start justify-between gap-4">
+      <div className="mb-6 flex flex-wrap items-start justify-between gap-4 lg:mb-4">
         <div className="min-w-0">
-          <h1 className="text-3xl font-extrabold leading-[1.15] tracking-[-0.02em]"
+          <h1 className="ux-screen-title text-3xl font-extrabold leading-[1.15] tracking-[-0.02em]"
               style={{ color: v("--ux-ink") }}>
             Add something to sell
           </h1>
@@ -255,7 +256,7 @@ export default function AddListingPage() {
             Tell buyers what you make or do. You can change every part of it later.
           </p>
         </div>
-        <Btn variant="outline" icon="Save" onClick={() => router.push("/app/documents/listings")}>
+        <Btn variant="outline" icon="Save" className="max-lg:w-full" onClick={() => router.push("/app/documents/listings")}>
           Save and finish later
         </Btn>
       </div>
@@ -264,13 +265,13 @@ export default function AddListingPage() {
 
       {/* ── 1 · What it is ───────────────────────────────────────────────── */}
       {at === 1 && (
-        <Card pad={20}>
+        <Card pad={20} className={FIELDS}>
           <h2 className="text-lg font-extrabold" style={{ color: v("--ux-ink") }}>What are you selling?</h2>
           <p className="mt-1 text-xsm" style={{ color: v("--ux-muted") }}>
             The basics. This is what a buyer reads first.
           </p>
 
-          <div className="mt-4 flex flex-wrap gap-2.5">
+          <div className={`mt-4 flex flex-wrap gap-2.5 ${CHOICES}`}>
             <Choice icon="Package" title="A product" sub="Something you make or supply"
                     on={kind === "product"} onClick={() => setKind("product")} />
             <Choice icon="Sparkles" title="A service" sub="Something you do, by hand or by hour"
@@ -341,10 +342,10 @@ export default function AddListingPage() {
             </p>
           </div>
 
-          <div className="mt-6 flex flex-wrap items-center justify-between gap-3 border-t pt-4"
+          <div className={`mt-6 flex flex-wrap items-center justify-between gap-3 border-t pt-4 ${STEP_NAV}`}
                style={{ borderColor: v("--ux-line") }}>
-            <Btn variant="ghost" onClick={() => router.push("/app/documents/listings")}>Cancel</Btn>
-            <Btn disabled={!step1Ok} onClick={() => go(2)} iconEnd="ArrowRight">
+            <Btn variant="ghost" className="max-lg:w-full" onClick={() => router.push("/app/documents/listings")}>Cancel</Btn>
+            <Btn disabled={!step1Ok} onClick={() => go(2)} iconEnd="ArrowRight" className="ux-action-primary">
               Next: price and delivery
             </Btn>
           </div>
@@ -353,9 +354,9 @@ export default function AddListingPage() {
 
       {/* ── 2 · Price and delivery ───────────────────────────────────────── */}
       {at === 2 && (
-        <div className="flex flex-col gap-4">
+        <div className={`flex flex-col gap-4 ${FIELDS}`}>
           {band && (
-            <div className="flex flex-wrap items-center gap-3 rounded-[14px] p-4"
+            <div className="flex flex-wrap items-center gap-3 rounded-[12px] p-4 lg:rounded-[14px]"
                  style={{ background: v("--ux-tint-green") }}>
               <Icons.CheckCircle2 className="h-[20px] w-[20px] shrink-0" style={{ color: v("--ux-green-ink") }} />
               <div className="min-w-[200px] flex-1">
@@ -366,7 +367,7 @@ export default function AddListingPage() {
                   A starting point, not a rule. Change it whenever you like.
                 </p>
               </div>
-              <Btn size="sm" variant="outline" onClick={() => setBandOpen(true)}>Change range</Btn>
+              <Btn size="sm" variant="outline" className="max-lg:w-full max-lg:px-4" onClick={() => setBandOpen(true)}>Change range</Btn>
             </div>
           )}
 
@@ -381,7 +382,7 @@ export default function AddListingPage() {
               </div>
             </div>
 
-            <div className="mt-4 flex flex-wrap gap-2.5">
+            <div className={`mt-4 flex flex-wrap gap-2.5 ${CHOICES}`}>
               <Choice icon="Tag" title="One price" sub="The same for everyone"
                       on={mode === "fixed"} onClick={() => setMode("fixed")} />
               <Choice icon="BarChart3" title="A range" sub="From this much to that much"
@@ -417,7 +418,7 @@ export default function AddListingPage() {
                   </div>
                 </div>
 
-                <div className="mt-4 rounded-[12px] p-3.5" style={{ background: v("--ux-surface-2") }}>
+                <div className="mt-4 rounded-[12px] p-4 lg:p-3.5" style={{ background: v("--ux-surface-2") }}>
                   <Toggle on={discountOn} onChange={setDiscountOn}
                           label="Run a discount"
                           sub="A lower price for now. The original stays visible beside it." />
@@ -468,12 +469,12 @@ export default function AddListingPage() {
                       </div>
                     </div>
 
-                    <div className="rounded-[14px] p-4" style={{ background: v("--ux-surface-2") }}>
+                    <div className="rounded-[12px] p-4 lg:rounded-[14px]" style={{ background: v("--ux-surface-2") }}>
                       <p className="flex items-center gap-2 text-xsm font-bold" style={{ color: v("--ux-ink") }}>
                         <Icons.Quote className="h-[15px] w-[15px]" style={{ color: v("--ux-brand") }} />
                         What the buyer sees
                       </p>
-                      <div className="mt-3 rounded-[12px] p-3.5" style={{ background: v("--ux-surface") }}>
+                      <div className="mt-3 rounded-[12px] p-4 lg:p-3.5" style={{ background: v("--ux-surface") }}>
                         <p className="text-xsm font-bold" style={{ color: v("--ux-ink") }}>Ask for a price</p>
                         <p className="mt-1 text-xs leading-snug" style={{ color: v("--ux-muted") }}>
                           Tell her what you need and she will send you a price.
@@ -529,7 +530,7 @@ export default function AddListingPage() {
                     <Label>Warn me at</Label>
                     <Text value={lowAt} onChange={setLowAt} label="Low stock alert" type="number" />
                   </div>
-                  <div className="rounded-[12px] p-3.5" style={{ background: v("--ux-surface-2") }}>
+                  <div className="rounded-[12px] p-4 lg:p-3.5" style={{ background: v("--ux-surface-2") }}>
                     <span className="mb-2 block text-xsm font-bold" style={{ color: v("--ux-ink") }}>
                       When it runs out
                     </span>
@@ -579,7 +580,7 @@ export default function AddListingPage() {
                 const on = delivery === d.id;
                 return (
                   <button key={d.id} type="button" aria-pressed={on} onClick={() => setDelivery(d.id)}
-                          className="ux-press ux-sq min-h-[40px] rounded-[11px] px-4 text-xsm font-bold"
+                          className="ux-press ux-sq min-h-[40px] rounded-[12px] px-4 text-xsm font-bold lg:rounded-[11px]"
                           style={{ background: v(on ? "--ux-fill" : "--ux-surface-2"),
                                    color: v(on ? "--ux-on-brand" : "--ux-ink-2") }}>
                     {d.t}
@@ -599,7 +600,7 @@ export default function AddListingPage() {
                   <Select value={ships} onChange={setShips} label="Shipping within"
                           options={["My city", "My state", "India", "Anywhere"]} />
                 </div>
-                <div className="rounded-[12px] p-3.5" style={{ background: v("--ux-surface-2") }}>
+                <div className="rounded-[12px] p-4 lg:p-3.5" style={{ background: v("--ux-surface-2") }}>
                   <span className="mb-2 block text-xsm font-bold" style={{ color: v("--ux-ink") }}>Postage</span>
                   {([
                     { on: true,  t: "I pay the postage", s: "The price includes it" },
@@ -631,10 +632,10 @@ export default function AddListingPage() {
                     placeholder="Wrapped in cloth, not plastic. Usually reaches in three to five days." />
             </div>
 
-            <div className="mt-5 flex flex-wrap items-center justify-between gap-3 border-t pt-4"
+            <div className={`mt-5 flex flex-wrap items-center justify-between gap-3 border-t pt-4 ${STEP_NAV}`}
                  style={{ borderColor: v("--ux-line") }}>
-              <Btn variant="ghost" icon="ArrowLeft" onClick={() => go(1)}>Back</Btn>
-              <Btn disabled={!step2Ok} onClick={() => go(3)} iconEnd="ArrowRight">Next: photos</Btn>
+              <Btn variant="ghost" icon="ArrowLeft" className="max-lg:w-full" onClick={() => go(1)}>Back</Btn>
+              <Btn disabled={!step2Ok} onClick={() => go(3)} iconEnd="ArrowRight" className="ux-action-primary">Next: photos</Btn>
             </div>
           </Card>
         </div>
@@ -653,9 +654,11 @@ export default function AddListingPage() {
             </div>
           </div>
 
-          <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+          {/* Two across on a phone: photo slots are thumbnails, and four
+              full-width squares would be 1,200px of empty frames. */}
+          <div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-2 lg:grid-cols-4">
             <button type="button"
-                    className="ux-press ux-sq grid aspect-square place-items-center rounded-[14px] border-2 border-dashed"
+                    className="ux-press ux-sq grid aspect-square place-items-center rounded-[12px] border-2 border-dashed lg:rounded-[14px]"
                     style={{ borderColor: v("--ux-line-strong"), background: v("--ux-surface-2") }}>
               <span className="text-center">
                 <Icons.Camera className="mx-auto h-[26px] w-[26px]" style={{ color: v("--ux-brand") }} />
@@ -664,7 +667,7 @@ export default function AddListingPage() {
               </span>
             </button>
             {[1, 2, 3].map((n) => (
-              <div key={n} className="grid aspect-square place-items-center rounded-[14px] border"
+              <div key={n} className="grid aspect-square place-items-center rounded-[12px] border lg:rounded-[14px]"
                    style={{ borderColor: v("--ux-line"), background: v("--ux-surface-2") }}>
                 <span className="text-center">
                   <Icons.Image className="mx-auto h-[22px] w-[22px]" style={{ color: v("--ux-faint") }} />
@@ -691,10 +694,10 @@ export default function AddListingPage() {
 
           <SourceNote source="mock" what="photo uploads" />
 
-          <div className="mt-5 flex flex-wrap items-center justify-between gap-3 border-t pt-4"
+          <div className={`mt-5 flex flex-wrap items-center justify-between gap-3 border-t pt-4 ${STEP_NAV}`}
                style={{ borderColor: v("--ux-line") }}>
-            <Btn variant="ghost" icon="ArrowLeft" onClick={() => go(2)}>Back</Btn>
-            <Btn onClick={() => go(4)} iconEnd="ArrowRight">Next: check it</Btn>
+            <Btn variant="ghost" icon="ArrowLeft" className="max-lg:w-full" onClick={() => go(2)}>Back</Btn>
+            <Btn onClick={() => go(4)} iconEnd="ArrowRight" className="ux-action-primary">Next: check it</Btn>
           </div>
         </Card>
       )}
@@ -726,18 +729,18 @@ export default function AddListingPage() {
                                      : delivery === "digital" ? "They download it" : "You do it for them", step: 2 },
               { k: "Photos",       val: "None added yet", step: 3 },
             ].map((r) => (
-              <div key={r.k} className="flex items-start justify-between gap-4 py-3">
-                <dt className="w-[140px] shrink-0 text-xs font-semibold" style={{ color: v("--ux-muted") }}>{r.k}</dt>
-                <dd className="min-w-0 flex-1 text-xsm" style={{ color: v("--ux-ink") }}>{r.val}</dd>
+              <div key={r.k} className="flex items-start justify-between gap-4 py-3 max-lg:grid max-lg:grid-cols-[minmax(0,1fr)_auto] max-lg:gap-x-4 max-lg:gap-y-0.5">
+                <dt className="w-[140px] shrink-0 text-xs font-semibold max-lg:w-auto max-lg:text-[13px]" style={{ color: v("--ux-muted") }}>{r.k}</dt>
+                <dd className="min-w-0 flex-1 text-xsm max-lg:col-start-1" style={{ color: v("--ux-ink") }}>{r.val}</dd>
                 <button type="button" onClick={() => go(r.step)}
-                        className="ux-sq shrink-0 text-xs font-bold" style={{ color: v("--ux-brand") }}>
+                        className="ux-sq shrink-0 text-xs font-bold max-lg:col-start-2 max-lg:row-span-2 max-lg:row-start-1 max-lg:self-center max-lg:text-[15px] max-lg:font-semibold" style={{ color: v("--ux-brand") }}>
                   Change
                 </button>
               </div>
             ))}
           </dl>
 
-          <div className="mt-4 flex items-start gap-3 rounded-[12px] p-3.5"
+          <div className="mt-4 flex items-start gap-3 rounded-[12px] p-4 lg:p-3.5"
                style={{ background: v("--ux-surface-2") }}>
             <Icons.ShieldCheck className="mt-[2px] h-[16px] w-[16px] shrink-0" style={{ color: v("--ux-muted") }} />
             <p className="text-xs leading-relaxed" style={{ color: v("--ux-ink-2") }}>
@@ -756,15 +759,15 @@ export default function AddListingPage() {
             </p>
           )}
 
-          <div className="mt-5 flex flex-wrap items-center justify-between gap-3 border-t pt-4"
+          <div className={`mt-5 flex flex-wrap items-center justify-between gap-3 border-t pt-4 ${STEP_NAV}`}
                style={{ borderColor: v("--ux-line") }}>
-            <Btn variant="ghost" icon="ArrowLeft" onClick={() => go(3)}>Back</Btn>
-            <div className="flex flex-wrap gap-2">
-              <Btn variant="outline" icon="Save" disabled={!title.trim()}
+            <Btn variant="ghost" icon="ArrowLeft" className="max-lg:w-full" onClick={() => go(3)}>Back</Btn>
+            <div className={`flex flex-wrap gap-2 ${STEP_NAV}`}>
+              <Btn variant="outline" icon="Save" disabled={!title.trim()} className="max-lg:w-full"
                    onClick={() => publish(true)}>
                 Keep as a draft
               </Btn>
-              <Btn icon="Rocket" disabled={!title.trim()} onClick={() => publish(false)}>
+              <Btn icon="Rocket" disabled={!title.trim()} onClick={() => publish(false)} className="ux-action-primary">
                 Put it in my shop
               </Btn>
             </div>
@@ -802,7 +805,7 @@ export default function AddListingPage() {
                             setCustomLow(String(b.low));
                             setCustomHigh(String(b.high || b.low * 4));
                           }}
-                          className="ux-press ux-sq flex items-start gap-3 rounded-[12px] border p-3.5 text-start"
+                          className="ux-press ux-sq flex items-start gap-3 rounded-[12px] border p-4 text-start lg:p-3.5"
                           style={{ borderColor: v(on ? "--ux-brand" : "--ux-line"),
                                    background: v(on ? "--ux-brand-tint" : "--ux-surface") }}>
                     <I name={b.icon} className="mt-[2px] h-[18px] w-[18px] shrink-0"
@@ -824,7 +827,7 @@ export default function AddListingPage() {
               })}
             </div>
 
-            <div className="mt-4 rounded-[12px] p-3.5" style={{ background: v("--ux-surface-2") }}>
+            <div className="mt-4 rounded-[12px] p-4 lg:p-3.5" style={{ background: v("--ux-surface-2") }}>
               <p className="text-xsm font-bold" style={{ color: v("--ux-ink") }}>Or set your own</p>
               <div className="mt-2.5 grid gap-3 sm:grid-cols-2">
                 <div>

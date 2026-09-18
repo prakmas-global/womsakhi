@@ -4,6 +4,7 @@ import Link from "next/link";
 
 import * as Icons from "@/components/ux/icons";
 import { Btn, Card, I, IconTile, Progress, v } from "@/components/ux/kit";
+import { GROUP_ROW } from "@/components/ux/earn/phone";
 
 /**
  * Earn — the dashboard she lands on.
@@ -25,14 +26,16 @@ import { Btn, Card, I, IconTile, Progress, v } from "@/components/ux/kit";
 
 export function EarnHero() {
   return (
-    <section className="relative mb-5 overflow-hidden rounded-[20px]"
+    /* On a phone the banner stands down to a large title: no fill, no frame,
+       no inset — the words and the one action are what she came for. */
+    <section className="relative mb-6 overflow-hidden rounded-[20px] max-lg:overflow-visible max-lg:rounded-none! max-lg:border-0! max-lg:bg-none! lg:mb-5"
              style={{ background: "linear-gradient(105deg, var(--ux-brand-tint) 0%, var(--ux-tint-lilac) 52%, var(--ux-tint-pink) 100%)",
                       border: "1px solid var(--ux-line)" }}>
-      <div className="relative z-[1] max-w-[560px] p-6 sm:p-7">
-        <p className="text-2xs font-extrabold uppercase tracking-[0.14em]" style={{ color: v("--ux-muted") }}>
+      <div className="relative z-[1] max-w-[560px] p-0 lg:p-7">
+        <p className="text-xs font-semibold uppercase tracking-[0.06em] lg:text-2xs lg:font-extrabold lg:tracking-[0.14em]" style={{ color: v("--ux-muted") }}>
           Earn on your terms
         </p>
-        <h1 className="mt-2.5 text-3xl font-extrabold leading-[1.1] tracking-[-0.02em]"
+        <h1 className="ux-screen-title mt-2.5 text-3xl font-extrabold leading-[1.1] tracking-[-0.02em]"
             style={{ color: v("--ux-ink") }}>
           Turn your skills into
           <br />
@@ -42,8 +45,8 @@ export function EarnHero() {
           Sell products, offer services, take orders — and be part of a stronger community of women.
         </p>
         <div className="mt-5 flex flex-wrap gap-2.5">
-          <Btn href="/app/documents/new" icon="Plus">Add a product or service</Btn>
-          <Btn href="/app/programs" variant="outline" icon="Play">Watch how it works</Btn>
+          <Btn href="/app/documents/new" icon="Plus" className="ux-action-primary">Add a product or service</Btn>
+          <Btn href="/app/programs" variant="outline" icon="Play" className="max-lg:w-full">Watch how it works</Btn>
         </div>
       </div>
 
@@ -77,8 +80,8 @@ export function Figure({ label, value, note, noteTone, icon, tint, ink, href }: 
   icon: string; tint: string; ink: string; href: string;
 }) {
   return (
-    <Link href={href} className="ux-card ux-hov ux-sq block p-4">
-      <div className="flex items-start justify-between gap-3">
+    <Link href={href} className={`ux-card ux-hov ux-sq block p-4 ${GROUP_ROW}`}>
+      <div className="flex items-start justify-between gap-3 max-lg:flex-row-reverse max-lg:items-center max-lg:justify-end">
         <span className="min-w-0">
           <span className="block text-xs font-semibold" style={{ color: v("--ux-muted") }}>{label}</span>
           <span className="mt-2 block text-2xl font-extrabold leading-none tracking-[-0.02em]"
@@ -116,7 +119,7 @@ export function Journey({ steps }: { steps: Step[] }) {
   const done = steps.filter((s) => s.done).length;
   const next = steps.find((s) => !s.done);
   return (
-    <Card className="mb-5">
+    <Card className="mb-6 lg:mb-5">
       <div className="flex flex-wrap items-center gap-4">
         <IconTile icon="Rocket" tint="--ux-tint-violet" ink="--ux-violet-ink" size={48} radius={14} />
         <div className="min-w-[220px] flex-1">
@@ -135,7 +138,7 @@ export function Journey({ steps }: { steps: Step[] }) {
             </span>
           </div>
         </div>
-        <Btn href="/app/profile" variant="outline" size="sm" iconEnd="ArrowRight">Complete profile</Btn>
+        <Btn href="/app/profile" variant="outline" size="sm" iconEnd="ArrowRight" className="max-lg:w-full max-lg:px-4">Complete profile</Btn>
       </div>
     </Card>
   );
@@ -166,16 +169,24 @@ export function WaysToEarn() {
       <Head icon="Rocket" title="Ways to earn on WomSakhi"
             sub="Choose how you want to earn — or do it all!"
             more="View all" href="/app/documents/listings" />
-      <div className="grid gap-3.5" style={{ gridTemplateColumns: "repeat(auto-fit, minmax(166px, 1fr))" }}>
+      {/* One column on a phone, each way a row — icon, name, one line, and its
+          button on the end, the App Store's list shape — rather than a 2x2 of
+          168px cards with the words centred in a column of nothing. */}
+      <div data-mobile-stack
+           className="grid gap-3.5 max-lg:gap-0 max-lg:overflow-hidden max-lg:rounded-[16px] max-lg:border max-lg:border-[color:var(--ux-line)] max-lg:bg-[color:var(--ux-surface)]"
+           style={{ gridTemplateColumns: "repeat(auto-fit, minmax(166px, 1fr))" }}>
         {WAYS.map((w) => (
-          <Card key={w.id} pad={18} className="flex h-full flex-col text-center">
-            <span className="mx-auto">
+          <Card key={w.id} pad={18}
+                className={`flex h-full flex-col text-center max-lg:flex-row max-lg:items-center max-lg:gap-3 max-lg:text-start ${GROUP_ROW}`}>
+            <span className="mx-auto max-lg:mx-0">
               <IconTile icon={w.icon} tint={w.tint} ink={w.ink} size={48} radius={14} />
             </span>
-            <p className="mt-3 text-xsm font-bold" style={{ color: v("--ux-ink") }}>{w.title}</p>
-            <p className="mt-1.5 flex-1 text-xs leading-relaxed" style={{ color: v("--ux-muted") }}>{w.sub}</p>
-            <div className="mt-4">
-              <Btn href={w.href} size="sm" variant="outline" full>{w.cta}</Btn>
+            <div className="flex min-w-0 flex-1 flex-col">
+              <p className="mt-3 text-xsm font-bold max-lg:mt-0" style={{ color: v("--ux-ink") }}>{w.title}</p>
+              <p className="mt-1.5 flex-1 text-xs leading-relaxed max-lg:mt-0.5 max-lg:text-[13px] max-lg:leading-snug" style={{ color: v("--ux-muted") }}>{w.sub}</p>
+            </div>
+            <div className="mt-4 max-lg:mt-0 max-lg:shrink-0">
+              <Btn href={w.href} size="sm" variant="outline" full className="max-lg:w-auto">{w.cta}</Btn>
             </div>
           </Card>
         ))}
@@ -192,19 +203,21 @@ export function Head({ icon, title, sub, more, href }: {
   icon: string; title: string; sub?: string; more?: string; href?: string;
 }) {
   return (
-    <div className="mb-3.5 flex items-end justify-between gap-3">
-      <div className="flex min-w-0 items-start gap-2.5">
-        <I name={icon} className="mt-[3px] h-[19px] w-[19px] shrink-0" style={{ color: v("--ux-brand") }} />
+    /* On a phone this is the quiet upper-case group label, not a second bold
+       heading: the screen's one heavy line is its large title. */
+    <div className="mb-2 flex items-end justify-between gap-3 lg:mb-3.5">
+      <div className="flex min-w-0 items-start gap-2.5 max-lg:px-1">
+        <I name={icon} className="mt-[3px] hidden h-[19px] w-[19px] shrink-0 lg:block" style={{ color: v("--ux-brand") }} />
         <span className="min-w-0">
-          <h2 className="text-lg font-extrabold leading-tight tracking-[-0.01em]" style={{ color: v("--ux-ink") }}>
+          <h2 className="text-xs font-semibold uppercase leading-tight tracking-[0.06em] text-[color:var(--ux-muted)] lg:text-lg lg:font-extrabold lg:normal-case lg:tracking-[-0.01em] lg:text-[color:var(--ux-ink)]">
             {title}
           </h2>
-          {sub && <span className="mt-0.5 block text-xs" style={{ color: v("--ux-muted") }}>{sub}</span>}
+          {sub && <span className="mt-1 block text-[13px] max-lg:leading-snug lg:mt-0.5 lg:text-xs" style={{ color: v("--ux-muted") }}>{sub}</span>}
         </span>
       </div>
       {more && href && (
         <Link href={href}
-              className="ux-sq -me-2 flex min-h-[36px] shrink-0 items-center gap-0.5 rounded-[10px] px-2 text-xs font-bold"
+              className="ux-sq -me-2 flex min-h-[36px] shrink-0 items-center gap-0.5 rounded-[10px] px-2 text-[15px] font-semibold lg:text-xs lg:font-bold"
               style={{ color: v("--ux-brand") }}>
           {more} <Icons.ChevronRight className="h-[13px] w-[13px]" />
         </Link>
@@ -264,7 +277,7 @@ export function Activity({ rows }: { rows: Happening[] }) {
 
 export function GrowBanner() {
   return (
-    <section className="relative mb-6 overflow-hidden rounded-[20px]"
+    <section className="relative mb-6 overflow-hidden rounded-[16px] lg:rounded-[20px]"
              style={{ background: "linear-gradient(100deg, var(--ux-tint-lilac), var(--ux-brand-tint) 58%, var(--ux-tint-pink))",
                       border: "1px solid var(--ux-line)" }}>
       {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -272,7 +285,7 @@ export function GrowBanner() {
            className="pointer-events-none absolute bottom-0 start-0 hidden h-full w-[26%] object-cover object-center sm:block"
            style={{ maskImage: "linear-gradient(268deg, transparent, #000 34%)",
                     WebkitMaskImage: "linear-gradient(268deg, transparent, #000 34%)" }} />
-      <div className="relative z-[1] p-6 sm:ps-[30%]">
+      <div className="relative z-[1] p-4 sm:ps-[30%] lg:p-6 lg:ps-[30%]">
         <h2 className="text-xl font-extrabold tracking-[-0.01em]" style={{ color: v("--ux-ink") }}>
           Grow your income with WomSakhi
         </h2>
@@ -280,8 +293,8 @@ export function GrowBanner() {
           Get tips, tools and personal guidance from Sakhi.
         </p>
         <div className="mt-4 flex flex-wrap gap-2.5">
-          <Btn href="/app/programs" variant="outline" icon="Play">Watch tutorial</Btn>
-          <Btn href="/app/help" variant="outline" icon="MessageCircle">Talk to Sakhi</Btn>
+          <Btn href="/app/programs" variant="outline" icon="Play" className="max-lg:w-full">Watch tutorial</Btn>
+          <Btn href="/app/help" variant="outline" icon="MessageCircle" className="max-lg:w-full">Talk to Sakhi</Btn>
         </div>
       </div>
     </section>

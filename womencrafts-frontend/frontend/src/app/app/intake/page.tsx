@@ -12,6 +12,8 @@ import * as Icons from "@/components/ux/icons";
 import { Btn, Card, EmptyState, IconTile, Pill, SectionHead } from "@/components/ux/kit";
 import { HomeShell } from "@/components/ux/home/HomeShell";
 import { useT } from "@/i18n";
+import { ListGroup } from "@/components/ux/mobile/ListRow";
+import { GroupLabel, PhoneRow, phonePrimary } from "@/components/ux/PhoneParts";
 
 /** What a given need maps to. Real routes, so nothing here is a dead end. */
 /**
@@ -91,10 +93,23 @@ export default function IntakePage() {
         </div>
       }
     >
-      <h1 className="text-2xl font-bold" style={{ color: "var(--ux-ink)" }}>{tr("intake.askForHelp")}</h1>
-      <p className="mb-[20px] mt-1.5 text-xsm" style={{ color: "var(--ux-muted)" }}>{tr("intake.pickAsManyAsAreTrue")}</p>
+      <h1 className="ux-screen-title text-2xl font-bold" style={{ color: "var(--ux-ink)" }}>{tr("intake.askForHelp")}</h1>
+      <p className="mb-6 mt-1.5 text-xsm lg:mb-[20px]" style={{ color: "var(--ux-muted)" }}>{tr("intake.pickAsManyAsAreTrue")}</p>
 
-      <div className="ux-deck mb-[20px] grid grid-cols-2 gap-[12px]">
+      {/* Any number of them, so on a phone: a grouped list, a checkmark on
+          each one she picks. */}
+      <ListGroup className="mb-6 lg:hidden">
+        {NEEDS.map((n) => {
+          const on = picked.includes(n.key);
+          const look = LOOK[n.key] ?? PLAIN;
+          return (
+            <PhoneRow key={n.key} icon={look.icon} tint={look.tint} ink={look.ink}
+                      title={n.label} meta={n.hint} selected={on}
+                      onClick={() => { setPicked((p) => (on ? p.filter((x) => x !== n.key) : [...p, n.key])); setResult(null); }} />
+          );
+        })}
+      </ListGroup>
+      <div className="ux-deck mb-[20px] hidden grid-cols-2 gap-[12px] lg:grid">
         {NEEDS.map((n, i) => {
           const on = picked.includes(n.key);
           return (
@@ -129,15 +144,15 @@ export default function IntakePage() {
             rows={4}
             placeholder={tr("intake.optionalHindiOrEnglishWhateverCome")}
             aria-label={tr("intake.anythingElse")}
-            className="ux-sq w-full resize-y rounded-[12px] border p-3.5 text-sm leading-relaxed outline-none"
+            className="ux-sq w-full resize-y rounded-[12px] border p-3.5 text-sm leading-relaxed outline-none max-lg:p-4 max-lg:text-[17px]"
             style={{ borderColor: "var(--ux-line-strong)", background: "var(--ux-surface)", color: "var(--ux-ink)" }}
           />
         </label>
-        <div className="mt-3 flex items-center justify-between gap-4">
-          <p className="text-xs" style={{ color: "var(--ux-faint)" }}>
+        <div className="mt-3 flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between lg:gap-4">
+          <p className="text-[13px] lg:text-xs" style={{ color: "var(--ux-faint)" }}>
             {picked.length ? `${picked.length} selected` : "Pick at least one above."}
           </p>
-          <Btn variant="primary" iconEnd={ask.busy ? undefined : "ArrowRight"}
+          <Btn variant="primary" iconEnd={ask.busy ? undefined : "ArrowRight"} className={phonePrimary}
                icon={ask.busy ? "Loader" : undefined}
                disabled={!picked.length || ask.busy}
                onClick={() => void ask.run()}>
@@ -150,8 +165,26 @@ export default function IntakePage() {
       {answered && (
         results.length ? (
           <div className="ux-slide-up">
-            <SectionHead title={tr("intake.startWithThese")} sub={tr("intake.chosenFromWhatYouJustTold")} />
-            <div className="ux-deck ux-stagger space-y-[12px]">
+            <GroupLabel sub={tr("intake.chosenFromWhatYouJustTold")}>{tr("intake.startWithThese")}</GroupLabel>
+            <div className="hidden lg:block">
+              <SectionHead title={tr("intake.startWithThese")} sub={tr("intake.chosenFromWhatYouJustTold")} />
+            </div>
+            <ListGroup className="lg:hidden">
+              {results.map((r) => (
+                <PhoneRow key={r.id} href={r.kind === "program" ? `/app/programs/${r.id}` : `/app/explore/service/${r.id}`}
+                          icon={r.kind === "program" ? "GraduationCap" : "Store"}
+                          tint={r.kind === "program" ? "--ux-tint-violet" : "--ux-tint-orange"}
+                          ink={r.kind === "program" ? "--ux-violet" : "--ux-orange"}
+                          title={
+                            <span className="flex flex-wrap items-center gap-2">
+                              {r.name}
+                              <Pill tone="brand" size="sm">{r.kind === "program" ? "Course" : "Service"}</Pill>
+                            </span>
+                          }
+                          body={r.reason || r.meta || r.description} />
+              ))}
+            </ListGroup>
+            <div className="ux-deck ux-stagger hidden space-y-[12px] lg:block">
               {results.map((r, i) => (
                 <a key={r.id} href={r.kind === "program" ? `/app/programs/${r.id}` : `/app/explore/service/${r.id}`}
                    className="ux-i ux-sq flex items-center gap-3.5 rounded-[12px] border p-3.5"

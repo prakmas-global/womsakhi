@@ -3,7 +3,9 @@
 import { useCallback, useMemo, useState } from "react";
 
 import { HomeShell } from "@/components/ux/home/HomeShell";
-import { Btn, Card, I, IconTile, Pill, Progress, SectionHead, v } from "@/components/ux/kit";
+import { ListGroup, ListRow } from "@/components/ux/mobile/ListRow";
+import { Btn, Card, I, IconTile, Pill, Progress, v } from "@/components/ux/kit";
+import { EYEBROW, Section } from "@/components/ux/earn/phone";
 import { formatRupees } from "@/components/ux/kit";
 import {
   MOVES, POCKETS, RULES, emergency, savedByRules, total,
@@ -51,16 +53,18 @@ export default function VaultPage() {
 
   return (
     <HomeShell active="/app/vault">
-      <div className="flex flex-col gap-5">
+      <div className="flex flex-col gap-6 lg:gap-5">
 
         <header className="flex flex-wrap items-end gap-4">
           <div className="min-w-0 flex-1">
-            <p className="text-2xs font-extrabold uppercase tracking-[0.2em]" style={{ color: v("--ux-brand") }}>{tr("vault.yourLocker")}</p>
-            <h1 className="mt-2 text-[clamp(1.5rem,3.2vw,2.125rem)] font-extrabold leading-[1.1] tracking-[-0.035em]"
+            <p className={EYEBROW}>{tr("vault.yourLocker")}</p>
+            <h1 className="ux-screen-title mt-2 text-[clamp(1.5rem,3.2vw,2.125rem)] font-extrabold leading-[1.1] tracking-[-0.035em]"
                 style={{ color: v("--ux-ink") }}>{tr("vault.moneyThatIsYours")}</h1>
             <p className="mt-1.5 max-w-[52ch] text-sm leading-relaxed" style={{ color: v("--ux-muted") }}>{tr("vault.keptSeparateKeptQuietAndReachable")}</p>
           </div>
-          <div className="flex flex-wrap gap-2">
+          {/* On a phone these two are rows in a group at the foot of the
+              screen — destinations, not buttons beside a title. */}
+          <div className="hidden flex-wrap gap-2 lg:flex">
             <Btn variant="outline" icon="Smartphone" href="/app/vault/showing">{tr("vault.showingSomeone")}</Btn>
             <Btn variant="ghost" icon="ShieldCheck" href="/app/vault/privacy">{tr("vault.whoCanSee")}</Btn>
           </div>
@@ -68,13 +72,13 @@ export default function VaultPage() {
 
         {/* The balance — hidden until asked for. This is the feature. */}
         <Card pad={0} style={{ overflow: "hidden" }}>
-          <div className="px-6 pt-6 pb-5"
+          <div className="p-4 lg:px-6 lg:pt-6 lg:pb-5"
                style={{ background: `linear-gradient(135deg, ${v("--ux-brand")}, ${v("--ux-brand-700")})` }}>
             <div className="flex items-start justify-between gap-4">
               <div className="min-w-0">
-                <p className="text-xs font-bold uppercase tracking-[0.16em]"
+                <p className="text-xs font-semibold uppercase tracking-[0.06em] lg:font-bold lg:tracking-[0.16em]"
                    style={{ color: v("--ux-on-brand-2") }}>{tr("vault.yoursAltogether")}</p>
-                <p className="mt-2 text-[clamp(1.875rem,5vw,2.75rem)] font-extrabold leading-none tabular-nums tracking-[-0.03em]"
+                <p className="mt-2 text-[28px] font-extrabold lg:text-[clamp(1.875rem,5vw,2.75rem)] leading-none tabular-nums tracking-[-0.03em]"
                    style={{ color: v("--ux-on-brand") }}>
                   {shown ? formatRupees(all) : DOTS}
                 </p>
@@ -98,18 +102,18 @@ export default function VaultPage() {
           </div>
 
           {!shown && (
-            <div className="flex items-center gap-2.5 px-6 py-3"
+            <div className="flex items-center gap-2.5 px-4 py-3 lg:px-6"
                  style={{ background: v("--ux-surface-2") }}>
               <I name="EyeOff" className="h-[15px] w-[15px] shrink-0" style={{ color: v("--ux-muted") }} />
               <p className="text-xsm" style={{ color: v("--ux-ink-2") }}>{tr("vault.hiddenOnPurposeTapTheEye")}</p>
             </div>
           )}
 
-          <div className="flex flex-wrap gap-2 px-6 py-4">
-            <Btn icon="ArrowDownToLine" onClick={() => setNote("Add money to which pocket? Choose one below.")}>{tr("vault.putMoneyIn")}</Btn>
-            <Btn variant="outline" icon="Zap"
+          <div className="flex flex-wrap gap-2 p-4 lg:px-6">
+            <Btn icon="ArrowDownToLine" className="ux-action-primary" onClick={() => setNote("Add money to which pocket? Choose one below.")}>{tr("vault.putMoneyIn")}</Btn>
+            <Btn variant="outline" icon="Zap" className="max-lg:w-full"
                  onClick={() => setNote(`${sos ? formatRupees(sos.minor) : "Nothing"} is ready right now, with no waiting.`)}>{tr("vault.iNeedMoneyNow")}</Btn>
-            <Btn variant="ghost" icon="Repeat" href="/app/vault/rules">
+            <Btn variant="ghost" icon="Repeat" href="/app/vault/rules" className="max-lg:w-full">
               Saving rules ({activeRules})
             </Btn>
           </div>
@@ -151,7 +155,7 @@ export default function VaultPage() {
                   </div>
                 )}
               </div>
-              <div className="flex shrink-0 gap-2">
+              <div className="flex shrink-0 gap-2 max-lg:w-full max-lg:ps-[62px] max-lg:[&>*]:flex-1">
                 <Btn size="sm" variant="outline" disabled={busy === sos.id}
                      onClick={() => move(sos.id, 50000, "₹500 added to your emergency money.")}>{tr("vault.add")}</Btn>
                 <Btn size="sm" disabled={busy === sos.id || sos.minor === 0}
@@ -163,7 +167,7 @@ export default function VaultPage() {
 
         {/* Pockets */}
         <div>
-          <SectionHead
+          <Section
             title={tr("vault.yourPockets")}
             sub={tr("vault.moneySplitByWhatItIs")}
             icon="Wallet"
@@ -203,7 +207,7 @@ export default function VaultPage() {
 
         {/* Recent */}
         <div>
-          <SectionHead title="Lately" icon="History" action="All of it"
+          <Section title="Lately" icon="History" action="All of it"
                        onAction={() => { window.location.href = "/app/vault/history"; }} />
           <Card pad={0}>
             <ul className="divide-y" style={{ borderColor: v("--ux-line") }}>
@@ -235,6 +239,11 @@ export default function VaultPage() {
             </ul>
           </Card>
         </div>
+
+        <ListGroup className="lg:hidden">
+          <ListRow href="/app/vault/showing" icon="Smartphone" tint="violet" title={tr("vault.showingSomeone")} />
+          <ListRow href="/app/vault/privacy" icon="ShieldCheck" tint="green" title={tr("vault.whoCanSee")} />
+        </ListGroup>
       </div>
     </HomeShell>
   );

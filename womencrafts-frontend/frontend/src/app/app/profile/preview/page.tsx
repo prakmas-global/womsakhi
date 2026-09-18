@@ -13,6 +13,7 @@ import { useCertificates, useCircles, useProgress } from "@/components/ux/live";
 import { useBusiness } from "@/components/ux/business";
 import { useMe } from "@/components/ux/me";
 import { useT } from "@/i18n";
+import { phoneFull } from "@/components/ux/PhoneParts";
 
 
 /**
@@ -106,7 +107,10 @@ export default function ProfilePreview() {
         </div>
       }
     >
-      <Back to="/app/profile" label={tr("profilePreview.yourProfile")} className="mb-4" />
+      {/* The top bar carries the way back on a phone; this one is the desktop's. */}
+      <div className="hidden lg:block">
+        <Back to="/app/profile" label={tr("profilePreview.yourProfile")} className="mb-4" />
+      </div>
 
       {/* The banner IS the feature — without it this is just a second profile. */}
       <div className="ux-sq mb-[16px] flex items-center gap-3.5 rounded-[12px] p-4"
@@ -127,7 +131,7 @@ export default function ProfilePreview() {
             <img loading="lazy" decoding="async" src={profile?.avatar || ME.avatar} alt="" className="h-full w-full object-cover" />
           </span>
           <div className="min-w-0 flex-1">
-            <h1 className="flex items-center gap-2 text-xl font-bold" style={{ color: "var(--ux-ink)" }}>
+            <h1 className="ux-screen-title flex items-center gap-2 text-xl font-bold" style={{ color: "var(--ux-ink)" }}>
               {name}
               {verified && <Icons.BadgeCheck className="h-[19px] w-[19px]" style={{ color: "var(--ux-blue)" }} />}
             </h1>
@@ -166,7 +170,9 @@ export default function ProfilePreview() {
         </div>
       </Card>
 
-      <div className="grid grid-cols-[minmax(0,1fr)_320px] gap-[16px]">
+      {/* Two columns from `lg` only. At 390px a fixed 320px column left the
+          other one 14px wide. */}
+      <div className="grid grid-cols-1 gap-[16px] lg:grid-cols-[minmax(0,1fr)_320px]">
         <div className="space-y-[16px]">
           <Card>
             <SectionHead title={tr("profilePreview.whatSheHasDone")} />
@@ -227,7 +233,7 @@ export default function ProfilePreview() {
               </div>
             </div>
             <div className="mt-3.5">
-              <Btn href="/app/documents" variant="soft" size="sm" full iconEnd="ArrowRight">{tr("profilePreview.visitTheShop")}</Btn>
+              <Btn href="/app/documents" variant="soft" size="sm" full iconEnd="ArrowRight" className={phoneFull}>{tr("profilePreview.visitTheShop")}</Btn>
             </div>
           </Card>
 
@@ -235,7 +241,7 @@ export default function ProfilePreview() {
             <SectionHead title={tr("profilePreview.getInTouch")} />
             <p className="text-xsm leading-relaxed" style={{ color: "var(--ux-ink-2)" }}>{tr("profilePreview.messagesReachHerInsideWomsakhiShe")}</p>
             <div className="mt-3.5">
-              <Btn href="/app/messages" variant="primary" size="sm" full icon="MessageCircle">{tr("profilePreview.messageHer")}</Btn>
+              <Btn href="/app/messages" variant="primary" size="sm" full icon="MessageCircle" className={phoneFull}>{tr("profilePreview.messageHer")}</Btn>
             </div>
           </Card>
         </div>

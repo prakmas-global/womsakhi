@@ -66,7 +66,7 @@ export default function MobileKitPage() {
         style={{ background: "var(--ux-surface)", borderColor: "var(--ux-line)" }}
       >
         <div className="min-w-0 flex-1">
-          <h1 className="text-[19px] font-extrabold tracking-[-0.02em]" style={{ color: "var(--ux-ink)" }}>
+          <h1 className="text-[20px] font-extrabold tracking-[-0.02em]" style={{ color: "var(--ux-ink)" }}>
             Mobile kit
           </h1>
           <p className="text-[12px]" style={{ color: "var(--ux-muted)" }}>
@@ -224,7 +224,7 @@ export default function MobileKitPage() {
                 {Array.from({ length: 9 }, (_, i) => (
                   <div
                     key={i}
-                    className="rounded-[var(--ux-r-md)] px-3 py-2.5 text-[14px]"
+                    className="rounded-[var(--ux-r-md)] px-3 py-2.5 text-[15px]"
                     style={{ background: "var(--ux-surface)", color: "var(--ux-ink)" }}
                   >
                     Update {i + 1}
@@ -246,7 +246,7 @@ export default function MobileKitPage() {
         {(["Home", "Learn", "Earn", "Circle", "Me"] as const).map((t, i) => (
           <span
             key={t}
-            className="flex flex-col items-center gap-0.5 text-[10px] font-semibold"
+            className="flex flex-col items-center gap-0.5 text-[12px] font-semibold"
             style={{ color: i === 0 ? "var(--ux-brand)" : "var(--ux-faint)" }}
           >
             <Icons.Circle className="h-[18px] w-[18px]" aria-hidden="true" />
@@ -308,7 +308,7 @@ export default function MobileKitPage() {
           {Array.from({ length: 20 }, (_, i) => (
             <div
               key={i}
-              className="rounded-[var(--ux-r-md)] px-3 py-3 text-[14px]"
+              className="rounded-[var(--ux-r-md)] px-3 py-3 text-[15px]"
               style={{ background: "var(--ux-surface-2)", color: "var(--ux-ink)" }}
             >
               Row {i + 1}
@@ -353,7 +353,7 @@ function Primary({ id, onClick, children }: { id: string; onClick: () => void; c
       id={id}
       type="button"
       onClick={onClick}
-      className="ux-press rounded-[var(--ux-r-pill)] px-4 py-2.5 text-[14px] font-bold"
+      className="ux-press rounded-[var(--ux-r-pill)] px-4 py-2.5 text-[15px] font-bold"
       style={{ background: "var(--ux-fill)", color: "var(--ux-on-brand)" }}
     >
       {children}
@@ -367,7 +367,7 @@ function Secondary({ id, onClick, children }: { id: string; onClick: () => void;
       id={id}
       type="button"
       onClick={onClick}
-      className="ux-press rounded-[var(--ux-r-pill)] border px-4 py-2.5 text-[14px] font-bold"
+      className="ux-press rounded-[var(--ux-r-pill)] border px-4 py-2.5 text-[15px] font-bold"
       style={{ background: "var(--ux-surface)", borderColor: "var(--ux-line)", color: "var(--ux-ink)" }}
     >
       {children}

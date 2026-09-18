@@ -6,8 +6,9 @@ import Link from "next/link";
 import { HomeShell } from "@/components/ux/home/HomeShell";
 import {
   Btn, Card, Chip, EmptyState, I, IconTile, Pill, ScreenError, ScreenSkeleton,
-  SectionHead, Stat, v,
+  Stat, v,
 } from "@/components/ux/kit";
+import { EYEBROW, Section } from "@/components/ux/earn/phone";
 import { formatRupees } from "@/components/ux/kit";
 import { useMarket } from "@/components/ux/live";
 import { lookOf, tieTone } from "@/components/ux/market/data";
@@ -208,19 +209,19 @@ export default function MarketPage() {
 
   return (
     <HomeShell active="/app/market">
-      <div className="flex flex-col gap-5">
+      <div className="flex flex-col gap-6 lg:gap-5">
 
         <header className="flex flex-wrap items-end gap-4">
           <div className="min-w-0 flex-1">
-            <p className="text-2xs font-extrabold uppercase tracking-[0.2em]" style={{ color: v("--ux-brand") }}>{tr("market.theMarket")}</p>
-            <h1 className="mt-2 text-[clamp(1.5rem,3.2vw,2.125rem)] font-extrabold leading-[1.1] tracking-[-0.035em]"
+            <p className={EYEBROW}>{tr("market.theMarket")}</p>
+            <h1 className="ux-screen-title mt-2 text-[clamp(1.5rem,3.2vw,2.125rem)] font-extrabold leading-[1.1] tracking-[-0.035em]"
                 style={{ color: v("--ux-ink") }}>{tr("market.buyFromWomenYouKnow")}</h1>
             <p className="mt-1.5 max-w-[56ch] text-sm leading-relaxed" style={{ color: v("--ux-muted") }}>
               Your circle first, then women you have bought from, then everyone else. Everything
               here is listed by a WomSakhi member, and none of it is yours.
             </p>
           </div>
-          <Btn variant="outline" icon="Store" href="/app/shop">{tr("market.yourOwnShop")}</Btn>
+          <Btn variant="outline" icon="Store" href="/app/shop" className="max-lg:w-full">{tr("market.yourOwnShop")}</Btn>
         </header>
 
         {problem && (
@@ -243,7 +244,7 @@ export default function MarketPage() {
         </Card>
 
         <div>
-          <SectionHead title={tr("market.forYou")} sub={tr("market.closestToYouFirstNotWhoever")}
+          <Section title={tr("market.forYou")} sub={tr("market.closestToYouFirstNotWhoever")}
                        icon="ShoppingBasket" chip={String(shown.length)} />
           <div className="mb-3.5 flex flex-wrap gap-2">
             <Chip icon="LayoutGrid" selected={filter === "all"} onClick={() => setFilter("all")}>Everything</Chip>

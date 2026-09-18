@@ -131,7 +131,7 @@ export default function MentorsPage() {
             than past it. Above 1023 `.ux-chiprow` does not exist and both sets
             wrap as before.
           */}
-          <Card className="mb-[16px] ux-onscroll-soft" pad={16}>
+          <Card className="mb-6 ux-onscroll-soft lg:mb-[16px]" pad={16}>
             <ChipRow label={tr("mentors.whatYouNeedHelpWith")} pad={16}>
               {EXPERTISE.map((e) => (
                 <Chip key={e} selected={skills.includes(e)} onClick={() => toggle(e, skills, setSkills)}>{e}</Chip>
@@ -146,7 +146,7 @@ export default function MentorsPage() {
               </ChipRow>
             </div>
 
-            <div className="mt-4 flex items-center justify-between gap-3 border-t pt-3.5" style={{ borderColor: "var(--ux-line)" }}>
+            <div className="mt-4 flex items-center justify-between gap-3 border-t pt-4 lg:pt-3.5" style={{ borderColor: "var(--ux-line)" }}>
               <Chip selected={freeOnly} onClick={() => setFreeOnly(!freeOnly)} icon="Gift">{tr("mentors.firstSessionFree")}</Chip>
               {active > 0 && (
                 <Btn variant="ghost" size="sm" icon="X"
@@ -191,14 +191,14 @@ export default function MentorsPage() {
 
                       <div className="mt-2.5 flex flex-wrap gap-1.5">
                         {m.expertise.map((e) => (
-                          <span key={e} className="ux-sq rounded-[8px] border px-2 py-[3px] text-[13px] lg:text-2xs"
+                          <span key={e} className="ux-sq rounded-full border px-2.5 py-[3px] text-[13px] lg:rounded-[8px] lg:px-2 lg:text-2xs"
                                 style={{ borderColor: "var(--ux-line-strong)", color: "var(--ux-muted)" }}>{e}</span>
                         ))}
                       </div>
                     </div>
                   </div>
 
-                  <div className="mt-3.5 flex flex-col gap-3 border-t pt-3.5 lg:flex-row lg:items-center lg:justify-between lg:gap-4"
+                  <div className="mt-4 flex flex-col gap-3 border-t pt-4 lg:mt-3.5 lg:flex-row lg:items-center lg:justify-between lg:gap-4 lg:pt-3.5"
                        style={{ borderColor: "var(--ux-line)" }}>
                     <span className="flex flex-wrap items-center gap-x-1.5 gap-y-1 text-[13px] lg:text-xs" style={{ color: "var(--ux-faint)" }}>
                       <Icons.Clock className="h-[14px] w-[14px]" /> {m.availability}
@@ -252,7 +252,9 @@ export default function MentorsPage() {
         <div className="ux-deck ux-stagger space-y-[12px]">
           {MY_SESSIONS.map((s, i) => (
             <Card key={s.id} className="ux-i ux-onscroll" style={{ ["--i" as string]: i }}>
-              <div className="flex items-center gap-3.5">
+              {/* The action drops to its own full-width line on a phone —
+                  beside the words it squeezed the topic to a stub. */}
+              <div className="flex flex-wrap items-center gap-3.5 lg:flex-nowrap">
                 <span className="h-[52px] w-[52px] shrink-0 overflow-hidden rounded-full"
                       style={{ background: "var(--ux-brand-tint)" }}>
                   {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -267,13 +269,13 @@ export default function MentorsPage() {
                       {s.state}
                     </Tag>
                   </div>
-                  <p className="mt-1 flex flex-wrap items-center gap-x-3 text-xs" style={{ color: "var(--ux-muted)" }}>
+                  <p className="mt-1 flex flex-wrap items-center gap-x-3 text-[13px] lg:text-xs" style={{ color: "var(--ux-muted)" }}>
                     <span className="inline-flex items-center gap-1"><Icons.User className="h-3.5 w-3.5" /> {s.mentor}</span>
                     <span className="inline-flex items-center gap-1"><Icons.Clock className="h-3.5 w-3.5" /> {s.when}</span>
                     <span className="inline-flex items-center gap-1"><Icons.Video className="h-3.5 w-3.5" /> {s.mode}</span>
                   </p>
                 </div>
-                <span className="flex shrink-0 items-center gap-2">
+                <span className="flex w-full shrink-0 items-center gap-2 empty:hidden [&>*]:flex-1 lg:w-auto lg:empty:flex lg:[&>*]:flex-none">
                   {s.state === "Upcoming" && (
                     <ActionBtn variant="primary" size="sm" icon="Video" doneIcon="Copy" done={tr("mentors.linkCopied")}
                                act={() => copy(`https://meet.womsakhi.in/${s.id}`, COPY.linkCopied, "meet.womsakhi.in/" + s.id)}>

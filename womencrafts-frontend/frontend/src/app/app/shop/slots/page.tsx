@@ -2,7 +2,8 @@
 
 import { useCallback, useMemo } from "react";
 
-import { Btn, Card, I, Pill, SectionHead, v } from "@/components/ux/kit";
+import { Btn, Card, I, Pill, v } from "@/components/ux/kit";
+import { Section } from "@/components/ux/earn/phone";
 import { formatRupees } from "@/components/ux/kit";
 import { NotYetScreen } from "@/components/ux/shopplus/notyet";
 import { apiListings, type Listing } from "@/lib/shop-api";
@@ -92,12 +93,12 @@ export default function SlotsPage() {
       */}
       {known && services.length > 0 && (
         <div>
-          <SectionHead title="The time you already sell" icon="Clock"
+          <Section title="The time you already sell" icon="Clock"
                        sub="From what you have listed in your shop — not a diary"
                        chip={String(services.length)} />
           <Card pad={0} style={{ overflow: "hidden" }}>
             {services.map((s, i) => (
-              <div key={s.id} className="flex flex-wrap items-center gap-3.5 px-5 py-4"
+              <div key={s.id} className="flex flex-wrap items-center gap-3.5 px-4 py-4 lg:px-5"
                    style={{ borderTop: i === 0 ? "none" : `1px solid ${v("--ux-line")}` }}>
                 <span className="grid h-[38px] w-[38px] shrink-0 place-items-center rounded-[11px]"
                       style={{ background: v("--ux-tint-blue"), color: v("--ux-blue-ink") }}>

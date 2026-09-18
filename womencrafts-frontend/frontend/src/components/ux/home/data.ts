@@ -1,4 +1,3 @@
-import { allNodes } from "../nav-tree";
 /**
  * What is LEFT of the Home module's mock content.
  *
@@ -75,26 +74,15 @@ export const ME = {
  * Only the tint is decided here. Everything a person reads comes from `nav.ts`,
  * which means a rename there reaches this grid with nothing to remember.
  */
-const TINTS: Record<string, { icon: string; tint: string; ink: string }> = {
-  "/app/programs":      { icon: "BookOpen",   tint: "--ux-tint-violet", ink: "--ux-violet" },
-  "/app/mentors":       { icon: "Users",      tint: "--ux-tint-orange", ink: "--ux-orange" },
-  "/app/opportunities": { icon: "Briefcase",  tint: "--ux-tint-blue",   ink: "--ux-blue" },
-  "/app/wallet":        { icon: "Wallet",     tint: "--ux-tint-green",  ink: "--ux-green" },
-  "/app/circles":       { icon: "UsersRound", tint: "--ux-tint-pink",   ink: "--ux-pink" },
-  "/app/sakhi":         { icon: "Sparkles",   tint: "--ux-tint-lilac",  ink: "--ux-violet" },
-};
+/*
+  `TINTS` and `QUICK_ACTIONS` are gone with the launcher they fed.
 
-export const QUICK_ACTIONS = Object.entries(TINTS).map(([href, look]) => {
-  const item = allNodes().find((i) => i.href === href);
-  return {
-    href,
-    label: item?.label ?? href,
-    // The rail's own one-liner, so the tile and the rail say the same thing
-    // about the same destination.
-    sub: item?.note ?? "",
-    ...look,
-  };
-});
+  The six-tile grid on mobile Home repeated five destinations that the tab bar
+  already carries at the foot of every screen — and the tab bar is icon-led and
+  always present, which is the accessibility argument the grid was making for
+  itself. Ask Sakhi, the one tile nothing else reached, is a row of its own now.
+*/
+
 
 export const NOTIFICATIONS = [
   { id: "n1", kind: "mentor", title: "Neha accepted your mentor request", body: "You can now book a session with her.", when: "12 min ago", unread: true, icon: "Users", tint: "--ux-tint-orange", ink: "--ux-orange" },

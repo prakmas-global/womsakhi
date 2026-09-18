@@ -4,6 +4,7 @@ import type { ReactNode } from "react";
 
 import { HomeShell } from "@/components/ux/home/HomeShell";
 import { Back, Btn, Card, I, v } from "@/components/ux/kit";
+import { EYEBROW } from "@/components/ux/earn/phone";
 
 /**
  * The shape of a selling screen that is an intention, not a feature.
@@ -59,12 +60,11 @@ export function NotYetScreen({
 }) {
   return (
     <HomeShell active="/app/shop">
-      <div className="flex flex-col gap-5">
+      <div className="flex flex-col gap-6 lg:gap-5">
         <Back to="/app/shop" label="Back to ways to sell" />
 
         <header>
-          <p className="text-[13px] font-extrabold uppercase tracking-[0.2em] lg:text-2xs"
-             style={{ color: v("--ux-brand") }}>{eyebrow}</p>
+          <p className={EYEBROW}>{eyebrow}</p>
           <h1 className="ux-screen-title mt-2 text-[clamp(1.5rem,3.2vw,2.125rem)] font-extrabold leading-[1.1] tracking-[-0.035em]"
               style={{ color: v("--ux-ink") }}>{title}</h1>
           <p className="mt-1.5 max-w-[58ch] text-[15px] leading-snug lg:text-sm lg:leading-relaxed"
@@ -73,7 +73,7 @@ export function NotYetScreen({
 
         {/* The thing that is not true, said before anything that is. */}
         <Card pad={0} style={{ overflow: "hidden" }}>
-          <div className="flex items-start gap-3.5 px-5 py-5" style={{ background: v("--ux-tint-amber") }}>
+          <div className="flex items-start gap-3.5 p-4 lg:p-5" style={{ background: v("--ux-tint-amber") }}>
             <I name="Info" className="mt-[2px] h-[20px] w-[20px] shrink-0" style={{ color: v("--ux-amber-ink") }} />
             <div className="min-w-0">
               <p className="text-base font-extrabold leading-snug" style={{ color: v("--ux-amber-ink") }}>
@@ -89,7 +89,7 @@ export function NotYetScreen({
         {children}
 
         <Card pad={0} style={{ overflow: "hidden" }}>
-          <div className="px-5 py-5">
+          <div className="p-4 lg:p-5">
             <p className="text-sm font-bold" style={{ color: v("--ux-ink") }}>
               What you can do today, without us
             </p>
@@ -110,13 +110,13 @@ export function NotYetScreen({
                 </li>
               ))}
             </ul>
-            {footer && <div className="mt-4 flex flex-wrap gap-2">{footer}</div>}
+            {footer && <div className="mt-4 flex flex-wrap gap-2 max-lg:[&>*]:w-full max-lg:[&>*]:px-4">{footer}</div>}
           </div>
         </Card>
 
         <div>
           <Card pad={16} style={{ background: v("--ux-surface-2"), borderColor: "transparent" }}>
-            <p className="text-2xs font-extrabold uppercase tracking-[0.14em]" style={{ color: v("--ux-muted") }}>
+            <p className="text-xs font-semibold uppercase tracking-[0.06em] lg:text-2xs lg:font-extrabold lg:tracking-[0.14em]" style={{ color: v("--ux-muted") }}>
               What this screen will do when it is built
             </p>
             <ul className="mt-2.5 flex flex-col gap-1.5">

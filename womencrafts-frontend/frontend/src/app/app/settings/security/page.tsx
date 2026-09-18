@@ -7,7 +7,9 @@ import { useAction } from "@/lib/use-action";
 import * as Icons from "@/components/ux/icons";
 
 import { Btn } from "@/components/ux/kit";
-import { Card, Field, SectionHead, SettingsPage, TextInput } from "@/components/ux/settings/Frame";
+import { Field, SettingsPage, TextInput } from "@/components/ux/settings/Frame";
+import { phonePrimary, phoneSecondary } from "@/components/ux/PhoneParts";
+import { Group } from "../_parts/Group";
 import { useT } from "@/i18n";
 
 /**
@@ -102,8 +104,7 @@ export default function SecuritySettings() {
         * says what is true, and offers the one thing that genuinely does end
         * other sessions: changing the password.
         */}
-      <Card>
-        <SectionHead title={tr("settingsSecurity.whereYouAreSignedIn")} />
+      <Group title={tr("settingsSecurity.whereYouAreSignedIn")} inset="form">
         <p className="text-xsm leading-relaxed" style={{ color: "var(--ux-ink-2)" }}>
           We do not yet keep a list of the devices you have signed in on, so we cannot show you one.
           We would rather tell you that than show you a list we made up.
@@ -120,7 +121,7 @@ export default function SecuritySettings() {
             device had no way to close it. */}
         <div className="mt-3.5">
           <Btn variant="outline" icon="LogOut" onClick={() => void endEverywhere.run()}
-               disabled={endEverywhere.busy}>
+               disabled={endEverywhere.busy} className={phoneSecondary}>
             {endEverywhere.busy ? tr("settingsSecurity.endingEverySession")
               : tr("settingsSecurity.signOutEverywhere")}
           </Btn>
@@ -130,10 +131,9 @@ export default function SecuritySettings() {
             {endEverywhere.error}
           </p>
         )}
-      </Card>
+      </Group>
 
-      <Card>
-        <SectionHead title={tr("settingsSecurity.changeYourPassword")} />
+      <Group title={tr("settingsSecurity.changeYourPassword")} inset="form">
         <div className="space-y-4">
           <Field label={tr("settingsSecurity.yourCurrentPassword")}>
             <TextInput type={show ? "text" : "password"} value={pw.current}
@@ -176,24 +176,25 @@ export default function SecuritySettings() {
                    className="h-[18px] w-[18px] cursor-pointer" />{tr("settingsSecurity.showWhatIAmTyping")}</label>
         </div>
 
-        <div className="mt-4 flex items-center justify-between gap-4 border-t pt-4" style={{ borderColor: "var(--ux-line)" }}>
-          <p className="text-xs"
+        {/* On a phone the button is full width under its status line. */}
+        <div className="mt-4 flex flex-col gap-3 border-t pt-4 lg:flex-row lg:items-center lg:justify-between lg:gap-4" style={{ borderColor: "var(--ux-line)" }}>
+          <p className="text-[13px] lg:text-xs"
              style={{ color: change.error ? "var(--ux-orange-ink)"
                             : changed ? "var(--ux-green-ink)" : "var(--ux-faint)" }}>
             {change.error ? change.error
               : changed ? tr("settingsSecurity.passwordChangedOtherDevicesHaveBee")
               : tr("settingsSecurity.changingItSignsYouOutEverywhere")}
           </p>
-          <Btn variant="primary" icon={change.busy ? "Loader" : "Check"}
+          <Btn variant="primary" icon={change.busy ? "Loader" : "Check"} className={phonePrimary}
                disabled={!canChange || change.busy}
                onClick={() => void change.run()}>
             {change.busy ? "Changing…" : "Change password"}
           </Btn>
         </div>
-      </Card>
+      </Group>
 
-      <Card style={{ borderColor: "var(--ux-orange)" }}>
-        <SectionHead title={tr("settingsSecurity.closeYourAccount")} icon="AlertTriangle" />
+      <Group title={tr("settingsSecurity.closeYourAccount")} icon="AlertTriangle" inset="form"
+             cardStyle={{ borderColor: "var(--ux-orange)" }}>
         <p className="text-xsm leading-relaxed" style={{ color: "var(--ux-ink-2)" }}>
           Your certificates, your shop and your order history go with it, and we cannot bring them back.
           Money still in your wallet is paid out first — that takes up to seven working days.
@@ -204,7 +205,8 @@ export default function SecuritySettings() {
             <p className="text-xsm" style={{ color: "var(--ux-ink-2)" }}>
               Type <strong style={{ color: "var(--ux-ink)" }}>CLOSE</strong> to confirm you mean it.
             </p>
-            <div className="mt-2.5 flex items-center gap-2.5">
+            {/* Three controls do not fit across 390px; on a phone they stack. */}
+            <div className="mt-2.5 flex flex-col gap-2.5 lg:flex-row lg:items-center">
               <TextInput value={confirm} onChange={(e) => setConfirm(e.target.value)} placeholder="CLOSE" />
               <Btn variant="outline" onClick={() => { setDeleting(false); setConfirm(""); }}>{tr("settingsSecurity.keepMyAccount")}</Btn>
               <Btn variant="primary" className={confirm === "CLOSE" ? "" : "pointer-events-none opacity-50"}
@@ -225,10 +227,10 @@ export default function SecuritySettings() {
           </div>
         ) : (
           <div className="mt-4">
-            <Btn variant="outline" icon="Trash2" onClick={() => setDeleting(true)}>{tr("settingsSecurity.closeMyAccount")}</Btn>
+            <Btn variant="outline" icon="Trash2" className={phoneSecondary} onClick={() => setDeleting(true)}>{tr("settingsSecurity.closeMyAccount")}</Btn>
           </div>
         )}
-      </Card>
+      </Group>
     </SettingsPage>
   );
 }

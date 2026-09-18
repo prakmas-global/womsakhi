@@ -6,6 +6,7 @@ import * as Icons from "@/components/ux/icons";
 
 import { HomeShell } from "@/components/ux/home/HomeShell";
 import { Btn, EmptyState, formatWholeRupees, plural } from "@/components/ux/kit";
+import { GROUP } from "@/components/ux/earn/phone";
 import { useResource } from "@/lib/use-resource";
 import {
   apiAdvanceOrder, apiDeleteListing, apiListings, apiPauseListing, apiShopOrders, apiShopSummary, apiUpdateListing,
@@ -254,7 +255,7 @@ export default function ShopPage() {
       <div className="flex flex-col">
         <EarnHero />
 
-        <div className="mb-5 grid gap-3.5"
+        <div className={`mb-6 grid gap-3.5 lg:mb-5 ${GROUP}`}
              style={{ gridTemplateColumns: "repeat(auto-fit, minmax(190px, 1fr))" }}>
           <Figure label="Earned this month" value={figures.month} note={figures.change}
                   noteTone={figures.up ? "up" : "plain"} icon="Wallet"
@@ -288,7 +289,7 @@ export default function ShopPage() {
                     : undefined} />
 
             {confirmDelete && (
-              <div className="mb-4 rounded-[16px] p-5"
+              <div className="mb-4 rounded-[16px] p-4 lg:p-5"
                    style={{ background: "var(--ux-surface)", border: `1px solid var(--ux-danger-solid)` }}>
                 <p className="text-smd font-bold" style={{ color: "var(--ux-ink)" }}>
                   Remove &ldquo;{confirmDelete.title}&rdquo; from your shop?
@@ -298,16 +299,16 @@ export default function ShopPage() {
                   making it for now, pause it instead — it comes back exactly as it was.
                 </p>
                 <div className="mt-4 flex flex-wrap gap-2">
-                  <Btn size="sm" onClick={() => onDelete(confirmDelete)}>{tr("documents.yesRemoveIt")}</Btn>
-                  <Btn size="sm" variant="outline"
+                  <Btn size="sm" className="max-lg:w-full max-lg:px-4" onClick={() => onDelete(confirmDelete)}>{tr("documents.yesRemoveIt")}</Btn>
+                  <Btn size="sm" variant="outline" className="max-lg:w-full max-lg:px-4"
                        onClick={() => { onPause(confirmDelete); setConfirmDelete(null); }}>{tr("documents.pauseItInstead")}</Btn>
-                  <Btn size="sm" variant="ghost" onClick={() => setConfirmDelete(null)}>{tr("documents.keepIt")}</Btn>
+                  <Btn size="sm" variant="ghost" className="max-lg:w-full max-lg:px-4" onClick={() => setConfirmDelete(null)}>{tr("documents.keepIt")}</Btn>
                 </div>
               </div>
             )}
 
             {orders.length === 0 ? (
-              <div className="rounded-[16px] p-6"
+              <div className="rounded-[16px] p-4 lg:p-6"
                    style={{ background: "var(--ux-surface)", border: "1px solid var(--ux-line)" }}>
                 <EmptyState
                   icon="Package"
@@ -339,7 +340,7 @@ export default function ShopPage() {
                              onDelete={() => setConfirmDelete(l)} />
               ))}
               <Link href="/app/documents/product/new"
-                    className="ux-press grid min-h-[330px] place-content-center justify-items-center gap-2.5 rounded-[20px] text-center text-xsm font-bold leading-relaxed"
+                    className="ux-press grid min-h-[88px] place-content-center justify-items-center gap-2.5 rounded-[16px] text-center text-xsm font-bold leading-relaxed lg:min-h-[330px] lg:rounded-[20px]"
                     style={{ border: "1px dashed var(--ux-line-strong)", color: "var(--ux-brand)" }}>
                 <Icons.Plus className="h-[30px] w-[30px]" />
                 <span>{tr("documents.addAProduct")}<br />or a service</span>

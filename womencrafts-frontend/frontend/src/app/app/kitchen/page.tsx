@@ -4,7 +4,8 @@ import { useCallback, useMemo, useState } from "react";
 
 import { HomeShell } from "@/components/ux/home/HomeShell";
 import { ReadAloud } from "@/components/ux/reach/ReadAloud";
-import { Btn, Card, I, Pill, SectionHead, v } from "@/components/ux/kit";
+import { Btn, Card, I, Pill, v } from "@/components/ux/kit";
+import { Section } from "@/components/ux/earn/phone";
 import { HYGIENE, LICENCE_STEPS, hygieneScore, licenceDone } from "@/components/ux/eight/data";
 import { useT } from "@/i18n";
 
@@ -48,15 +49,18 @@ export default function KitchenPage() {
 
   return (
     <HomeShell active="/app/kitchen">
-      <div className="flex flex-col gap-5" id="kitchen-page">
+      <div className="flex flex-col gap-6 lg:gap-5" id="kitchen-page">
 
         {/* ₹100 as the hero. The fee IS the headline. */}
-        <Card pad={0} style={{ overflow: "hidden" }}>
-          <div className="flex flex-wrap items-center gap-7 px-6 py-8 sm:px-9"
+        {/* On a phone the banner stands down to a large title and the fee
+            under it — no frame, no fill, no 56px figure fighting the title. */}
+        <Card pad={0} style={{ overflow: "hidden" }}
+              className="max-lg:overflow-visible! max-lg:rounded-none! max-lg:border-0! max-lg:bg-transparent!">
+          <div className="flex flex-wrap items-center gap-4 p-0 max-lg:bg-none! lg:gap-7 lg:px-9 lg:py-8"
                style={{ background: `linear-gradient(120deg, ${v("--ux-tint-amber")}, ${v("--ux-surface")})` }}>
             <div className="min-w-0 flex-1">
-              <p className="text-2xs font-extrabold uppercase tracking-[0.2em]" style={{ color: v("--ux-amber-ink") }}>{tr("kitchen.sellingFoodFromHome")}</p>
-              <h1 className="mt-2 max-w-[18ch] text-[clamp(1.5rem,3.4vw,2.25rem)] font-extrabold leading-[1.08] tracking-[-0.035em]"
+              <p className="text-xs font-semibold uppercase tracking-[0.06em] text-[color:var(--ux-muted)] lg:text-2xs lg:font-extrabold lg:tracking-[0.2em] lg:text-[color:var(--ux-amber-ink)]">{tr("kitchen.sellingFoodFromHome")}</p>
+              <h1 className="ux-screen-title mt-2 max-w-[18ch] text-[clamp(1.5rem,3.4vw,2.25rem)] font-extrabold leading-[1.08] tracking-[-0.035em]"
                   style={{ color: v("--ux-ink") }}>{tr("kitchen.theLicenceCostsOneHundredRupees")}</h1>
               <p className="mt-2.5 max-w-[52ch] text-sm leading-relaxed" style={{ color: v("--ux-ink-2") }}>
                 A year. That is the entire fee. Your own kitchen is allowed — you write down the
@@ -64,12 +68,12 @@ export default function KitchenPage() {
                 selling food think this costs thousands.
               </p>
             </div>
-            <div className="shrink-0 text-center">
-              <p className="text-[clamp(3.5rem,9vw,5.75rem)] font-extrabold leading-[0.85] tracking-[-0.06em]"
+            <div className="shrink-0 text-center max-lg:flex max-lg:items-baseline max-lg:gap-2 max-lg:text-start">
+              <p className="text-[28px] font-extrabold lg:text-[clamp(3.5rem,9vw,5.75rem)] leading-[0.85] tracking-[-0.06em]"
                  style={{ color: v("--ux-amber-ink") }}>
                 ₹100
               </p>
-              <p className="mt-1.5 text-xs font-bold uppercase tracking-[0.12em]" style={{ color: v("--ux-ink-2") }}>
+              <p className="mt-1.5 text-xs font-bold uppercase tracking-[0.12em] max-lg:mt-0" style={{ color: v("--ux-ink-2") }}>
                 for one year
               </p>
             </div>
@@ -80,13 +84,13 @@ export default function KitchenPage() {
 
         {/* The road. Not a checklist — a route with her position on it. */}
         <div>
-          <SectionHead title={tr("kitchen.howFarYouHaveGot")}
+          <Section title={tr("kitchen.howFarYouHaveGot")}
                        sub={`${done} of ${steps.length} done · usually 7 to 30 days from start to number`}
                        icon="Route" />
 
           <Card pad={0} style={{ overflow: "hidden" }}>
             {/* the track */}
-            <div className="px-5 pt-6 sm:px-7">
+            <div className="px-4 pt-6 sm:px-7">
               <div className="relative h-[6px] rounded-full" style={{ background: v("--ux-line") }}>
                 <div className="absolute inset-y-0 left-0 rounded-full"
                      style={{ width: `${(done / steps.length) * 100}%`, background: v("--ux-fill"),
@@ -100,7 +104,7 @@ export default function KitchenPage() {
               </div>
             </div>
 
-            <ol className="flex flex-col px-5 pb-5 pt-6 sm:px-7">
+            <ol className="flex flex-col px-4 pb-4 pt-6 sm:px-7 lg:pb-5">
               {steps.map((s, i) => {
                 const isNext = !s.done && i === atStep;
                 return (
@@ -140,13 +144,13 @@ export default function KitchenPage() {
               })}
             </ol>
 
-            <div className="flex flex-wrap items-center gap-2 border-t px-5 py-4 sm:px-7"
+            <div className="flex flex-wrap items-center gap-2 border-t p-4 sm:px-7 lg:py-4"
                  style={{ borderColor: v("--ux-line") }}>
-              <Btn icon="ExternalLink" disabled={applied} onClick={() => setApplied(true)}>
+              <Btn icon="ExternalLink" disabled={applied} onClick={() => setApplied(true)} className="ux-action-primary">
                 {applied ? tr("kitchen.startedWeSavedYourAnswers")
               : tr("kitchen.startTheApplication")}
               </Btn>
-              <Btn variant="ghost" icon="MessageCircle" href="/app/mentors">{tr("kitchen.askAWomanWhoHasDone")}</Btn>
+              <Btn variant="ghost" icon="MessageCircle" href="/app/mentors" className="max-lg:w-full">{tr("kitchen.askAWomanWhoHasDone")}</Btn>
             </div>
           </Card>
         </div>
@@ -160,10 +164,10 @@ export default function KitchenPage() {
 
         {/* Hygiene, as a dial rather than a form */}
         <div>
-          <SectionHead title={tr("kitchen.keepingTheFoodSafe")}
+          <Section title={tr("kitchen.keepingTheFoodSafe")}
                        sub={tr("kitchen.notARuleFromUsThis")} icon="ShieldCheck" />
           <Card pad={20}>
-            <div className="flex flex-wrap items-center gap-6">
+            <div className="flex flex-wrap items-center gap-6 max-lg:justify-center">
               <div className="relative grid h-[104px] w-[104px] shrink-0 place-items-center rounded-full"
                    style={{ background: `conic-gradient(${v("--ux-green-ink")} ${score * 3.6}deg, ${v("--ux-line")} 0deg)` }}>
                 <div className="grid h-[80px] w-[80px] place-items-center rounded-full"
@@ -183,7 +187,7 @@ export default function KitchenPage() {
                 {hyg.map((h) => (
                   <li key={h.id}>
                     <button type="button" onClick={() => toggleHyg(h.id)}
-                            className="ux-press ux-sq flex w-full items-center gap-2.5 rounded-[12px] px-3 py-2.5 text-left"
+                            className="ux-press ux-sq flex w-full items-center gap-2.5 rounded-[12px] px-3 py-2.5 text-left max-lg:px-4 max-lg:py-3"
                             style={{ background: v(h.done ? "--ux-tint-green" : "--ux-surface-2") }}>
                       <I name={h.done ? "CheckCircle2" : "Circle"} className="h-[15px] w-[15px] shrink-0"
                          style={{ color: v(h.done ? "--ux-green-ink" : "--ux-muted") }} sw={2.2} />

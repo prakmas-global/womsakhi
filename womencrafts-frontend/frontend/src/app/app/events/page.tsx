@@ -8,9 +8,10 @@ import { useAction } from "@/lib/use-action";
 
 import {
   Btn, Card, Chip, EmptyState, IconTile,
-  Pill, Progress, SectionHead, SourceNote, Tabs, plural
+  Pill, Progress, SectionHead, SourceNote, plural
 } from "@/components/ux/kit";
 import { HomeShell } from "@/components/ux/home/HomeShell";
+import { ChipRow, Segments } from "@/components/ux/learning/native";
 import {
   EVENT_ART, EVENT_KINDS, rupees, type Ev, type EventKind,
 } from "@/components/ux/events/data";
@@ -109,10 +110,14 @@ export default function EventsPage() {
         </div>
       }
     >
-      <div className="mb-[20px] flex items-end justify-between gap-4">
+      {/* One large title with the segmented control under it on a phone; the
+          title-left, tabs-right row it always was from `lg`. Written out rather
+          than `ScreenHead`, whose sub-line carries a line-height this desktop
+          header never had. */}
+      <div className="mb-6 lg:mb-[20px] lg:flex lg:items-end lg:justify-between lg:gap-4">
         <div>
-          <h1 className="text-2xl font-bold" style={{ color: "var(--ux-ink)" }}>Events</h1>
-          <p className="mt-1.5 text-xsm" style={{ color: "var(--ux-muted)" }}>
+          <h1 className="ux-screen-title text-2xl font-bold" style={{ color: "var(--ux-ink)" }}>Events</h1>
+          <p className="mt-2 text-xsm lg:mt-1.5" style={{ color: "var(--ux-muted)" }}>
             {going.length} {plural("event", going.length)} you are going to · {EVENTS.length} coming up
           </p>
 
@@ -124,17 +129,20 @@ export default function EventsPage() {
         </p>
       )}
         </div>
-        <Tabs items={["Coming up", "You are going"]} active={tab} onChange={setTab} />
+        <div className="mt-4 lg:contents">
+          <Segments items={["Coming up", "You are going"]} active={tab} onChange={setTab} label="Which events" />
+        </div>
       </div>
 
-      <div className="mb-[16px] flex flex-wrap gap-2">
+      {/* One line the thumb pushes along on a phone; wraps as before on desktop. */}
+      <ChipRow className="mb-6 lg:mb-[16px]">
         {EVENT_KINDS.map((k) => (
           <Chip key={k} selected={kinds.includes(k)}
                 onClick={() => setKinds(kinds.includes(k) ? kinds.filter((x) => x !== k) : [...kinds, k])}>
             {plural(k, 2)}
           </Chip>
         ))}
-      </div>
+      </ChipRow>
 
       {shown.length ? (
         <div className="ux-deck ux-stagger space-y-[12px]">
@@ -148,8 +156,10 @@ export default function EventsPage() {
             const busy = place.busyWith === e.id;
             return (
               <Card key={e.id} className="ux-i ux-onscroll" style={{ ["--i" as string]: i }} pad={0}>
-                <div className="flex">
-                  <span className="relative h-[168px] w-[190px] shrink-0 overflow-hidden"
+                {/* Picture above the words on a phone. Side by side, the
+                    190px picture left the text a 150px column to wrap in. */}
+                <div className="flex flex-col lg:flex-row">
+                  <span className="relative h-[148px] w-full shrink-0 overflow-hidden lg:h-[168px] lg:w-[190px]"
                         style={{ background: `var(${e.tint})` }}>
                     {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img loading="lazy" decoding="async" src={e.art} alt="" className="ux-art h-full w-full object-cover" />
@@ -171,7 +181,7 @@ export default function EventsPage() {
                       {on && <Pill tone="brand" size="sm">Going</Pill>}
                     </div>
 
-                    <p className="mt-1.5 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs" style={{ color: "var(--ux-muted)" }}>
+                    <p className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-[13px] lg:mt-1.5 lg:text-xs" style={{ color: "var(--ux-muted)" }}>
                       <span className="inline-flex items-center gap-1"><Icons.Clock className="h-3.5 w-3.5" /> {e.time}</span>
                       <span className="inline-flex items-center gap-1">
                         <Icons.MapPin className="h-3.5 w-3.5" /> {e.place}
@@ -181,7 +191,7 @@ export default function EventsPage() {
                     <p className="mt-2 text-xsm leading-relaxed" style={{ color: "var(--ux-ink-2)" }}>{e.blurb}</p>
 
                     <div className="mt-3">
-                      <div className="mb-1.5 flex items-center justify-between text-2xs">
+                      <div className="mb-2 flex items-center justify-between text-2xs lg:mb-1.5">
                         <span style={{ color: full ? "var(--ux-orange-ink)" : "var(--ux-muted)" }}>
                           {!limited ? "Open to everyone" : full ? "Full" : `${e.spots - e.taken} of ${e.spots} places left`}
                         </span>
@@ -193,12 +203,14 @@ export default function EventsPage() {
                       )}
                     </div>
 
-                    <div className="mt-auto flex items-center justify-between gap-3 pt-3.5">
-                      <span className="text-xs" style={{ color: "var(--ux-faint)" }}>
+                    {/* On a phone the note sits on its own line and the two
+                        actions share the full width under it. */}
+                    <div className="mt-auto flex flex-col items-stretch gap-3 pt-4 lg:flex-row lg:items-center lg:justify-between lg:pt-3.5">
+                      <span className="text-[13px] lg:text-xs" style={{ color: "var(--ux-faint)" }}>
                         {e.online ? tr("events.joiningLinkSentOnTheDay")
               : tr("events.bringYourOwnStock")}
                       </span>
-                      <span className="flex items-center gap-2">
+                      <span className="flex items-center gap-2 [&>*]:flex-1 lg:[&>*]:flex-none">
                         {/* "Remind me" and "Tell me if a place opens" used to
                             live here. Both were ActionBtns with no action at
                             all: nothing schedules a reminder and nothing keeps

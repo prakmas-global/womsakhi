@@ -43,11 +43,11 @@ export function AtRisk({ monthlyMinor, count, soonestDays }: {
 
   return (
     <Card pad={0} style={{ overflow: "hidden", borderColor: v("--ux-amber") }}>
-      <div className="px-5 pt-5 pb-4" style={{ background: v("--ux-tint-amber") }}>
+      <div className="p-4 lg:px-5 lg:pt-5 lg:pb-4" style={{ background: v("--ux-tint-amber") }}>
         <div className="flex items-start gap-3.5">
           <IconTile icon="AlertTriangle" tint="--ux-surface" ink="--ux-amber-ink" size={44} />
           <div className="min-w-0 flex-1">
-            <p className="text-2xs font-extrabold uppercase tracking-[0.14em]"
+            <p className="text-xs font-semibold uppercase tracking-[0.06em] lg:text-2xs lg:font-extrabold lg:tracking-[0.14em]"
                style={{ color: v("--ux-amber-ink") }}>
               You are about to lose
             </p>
@@ -66,9 +66,9 @@ export function AtRisk({ monthlyMinor, count, soonestDays }: {
           </div>
         </div>
       </div>
-      <div className="flex flex-wrap gap-2 px-5 py-3.5" style={{ background: v("--ux-surface") }}>
-        <Btn size="sm" icon="ListChecks" href="#deadlines">See what to do</Btn>
-        <Btn size="sm" variant="outline" icon="UserPlus" href="/app/haq/papers">
+      <div className="flex flex-wrap gap-2 p-4 lg:px-5 lg:py-3.5" style={{ background: v("--ux-surface") }}>
+        <Btn size="sm" icon="ListChecks" href="#deadlines" className="max-lg:flex-1 max-lg:px-4">See what to do</Btn>
+        <Btn size="sm" variant="outline" icon="UserPlus" href="/app/haq/papers" className="max-lg:flex-1 max-lg:px-4">
           Fix my papers
         </Btn>
       </div>
@@ -96,13 +96,14 @@ export function Countdown({ days }: { days: number }) {
 
 /* ── one benefit ─────────────────────────────────────────────────────────── */
 
-export function HaqRow({ h, onOpen }: { h: Haq; onOpen: (id: string) => void }) {
+/** `className` lets a screen fold the row into a grouped list on a phone. */
+export function HaqRow({ h, onOpen, className = "" }: { h: Haq; onOpen: (id: string) => void; className?: string }) {
   const tone = STATUS_TONE[h.status];
   return (
     <button
       type="button"
       onClick={() => onOpen(h.id)}
-      className="ux-press ux-sq flex w-full items-start gap-3.5 rounded-[12px] border p-3.5 text-left transition-colors"
+      className={`ux-press ux-sq flex w-full items-start gap-3.5 rounded-[12px] border p-3.5 text-left transition-colors max-lg:p-4 ${className}`}
       style={{ borderColor: v("--ux-line"), background: v("--ux-surface") }}
     >
       <IconTile icon={h.icon} tint={h.tint} ink={h.ink} size={42} />
@@ -128,7 +129,7 @@ export function HaqRow({ h, onOpen }: { h: Haq; onOpen: (id: string) => void }) 
         )}
 
         {h.stoppedBecause && (
-          <p className="mt-2 rounded-[8px] px-2.5 py-2 text-xs leading-relaxed"
+          <p className="mt-2 rounded-[12px] px-2.5 py-2 text-xs leading-relaxed lg:rounded-[8px]"
              style={{ background: v("--ux-danger-tint"), color: v("--ux-ink-2") }}>
             {h.stoppedBecause}
           </p>
@@ -156,14 +157,14 @@ export function HaqRow({ h, onOpen }: { h: Haq; onOpen: (id: string) => void }) 
 
 /* ── papers ──────────────────────────────────────────────────────────────── */
 
-export function PaperRow({ p, onFix }: { p: Paper; onFix: (id: string) => void }) {
+export function PaperRow({ p, onFix, className = "" }: { p: Paper; onFix: (id: string) => void; className?: string }) {
   const tone =
     p.state === "held" ? { t: "--ux-tint-green", i: "--ux-green-ink", icon: "Check", label: "Held" }
     : p.state === "expiring" ? { t: "--ux-tint-amber", i: "--ux-amber-ink", icon: "Clock", label: "Needs updating" }
     : { t: "--ux-danger-tint", i: "--ux-danger-solid", icon: "X", label: "Missing" };
 
   return (
-    <div className="flex items-center gap-3.5 rounded-[12px] border p-3.5"
+    <div className={`flex items-center gap-3.5 rounded-[12px] border p-3.5 max-lg:p-4 ${className}`}
          style={{ borderColor: v("--ux-line"), background: v("--ux-surface") }}>
       <span className="ux-sq grid h-[38px] w-[38px] shrink-0 place-items-center rounded-[12px]"
             style={{ background: v(tone.t), color: v(tone.i) }}>
@@ -251,9 +252,9 @@ export function useCompanionsFor(office: string): Companion[] {
 
 /* ── recover ─────────────────────────────────────────────────────────────── */
 
-export function LateRow({ l, onFile }: { l: Late; onFile: (id: string) => void }) {
+export function LateRow({ l, onFile, className = "" }: { l: Late; onFile: (id: string) => void; className?: string }) {
   return (
-    <div className="flex items-center gap-3.5 rounded-[12px] border p-3.5"
+    <div className={`flex items-center gap-3.5 rounded-[12px] border p-3.5 max-lg:flex-wrap max-lg:p-4 ${className}`}
          style={{ borderColor: v("--ux-line"), background: v("--ux-surface") }}>
       <IconTile icon="AlarmClock" tint="--ux-tint-orange" ink="--ux-orange-ink" size={38} />
       <div className="min-w-0 flex-1">
@@ -272,7 +273,7 @@ export function LateRow({ l, onFile }: { l: Late; onFile: (id: string) => void }
       {l.filed ? (
         <Pill tone="green" size="sm">Filed</Pill>
       ) : (
-        <Btn size="sm" variant="outline" onClick={() => onFile(l.id)}>Claim it</Btn>
+        <Btn size="sm" variant="outline" className="max-lg:ms-[52px] max-lg:w-[calc(100%-52px)] max-lg:px-4" onClick={() => onFile(l.id)}>Claim it</Btn>
       )}
     </div>
   );

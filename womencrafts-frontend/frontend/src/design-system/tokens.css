@@ -38,9 +38,27 @@
      scale is EXTENDED rather than escaped from, which is the same argument as
      colour — see ADR-013. Four steps, on whole pixels at the default 16px root:
 
-       text-3xs   10px    badge counts, table micro-meta
-       text-2xs   11px    table meta, chips, timestamps
+       text-3xs   12px    was 10 — see below
+       text-2xs   12px    was 11 — see below
        text-xs    12px    (Tailwind's own) secondary labels
+
+     ── The bottom two steps are now the floor, and that is deliberate ──────
+     This app's own standard is that nothing carries text under 12px, and the
+     mobile sweep enforces it. Both of these sat under it — 536 uses of
+     `text-2xs` across 170 files, and 42 of `text-3xs` — and they went
+     unnoticed for a simple reason: the sweep only counts text nodes longer
+     than a dozen characters, and these steps are used for exactly the short
+     labels that slip under that. "Verifiable", "Copy", "Download".
+
+     What it produced is the complaint that sent me looking: the certificates
+     screen has TWENTY-ONE elements under 12px, and a screen whose small print
+     is a pixel too small reads as cramped without anyone being able to say
+     why.
+
+     The names stay so 578 call sites keep working, and so the INTENT of each
+     step is still legible — "this is table meta" is worth saying even when it
+     is the same size as the step above. They will separate again if the floor
+     ever moves.
        text-xsm   13px    dense body copy in cards
        text-smd   15px    lead-in copy just under `text-base`
      ───────────────────────────────────────────────────────────────────────── */
@@ -60,8 +78,8 @@
      below does. */
   --breakpoint-wide: 1400px;
 
-  --text-3xs: 0.625rem;
-  --text-2xs: 0.6875rem;
+  --text-3xs: 0.75rem;   /* was 0.625rem (10px) — under the 12px floor */
+  --text-2xs: 0.75rem;   /* was 0.6875rem (11px) — under the 12px floor */
   --text-xsm: 0.8125rem;
   --text-smd: 0.9375rem;
 

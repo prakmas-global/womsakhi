@@ -13,6 +13,7 @@ import { useBookings } from "@/components/ux/live";
 import { useAction } from "@/lib/use-action";
 import { apiCancelBooking, apiLeaveFeedback } from "@/lib/member-api";
 import { useT } from "@/i18n";
+import { SegmentedControl } from "@/components/ux/mobile/SegmentedControl";
 
 
 /**
@@ -96,14 +97,20 @@ export default function BookingsPage() {
         </div>
       }
     >
-      <div className="mb-[20px] flex items-end justify-between gap-4">
+      {/* On a phone: a column — the large title, its line, then a full-width
+          segmented control where the desktop has tabs. */}
+      <div className="mb-6 flex flex-col gap-4 lg:mb-[20px] lg:flex-row lg:items-end lg:justify-between">
         <div>
-          <h1 className="text-2xl font-bold" style={{ color: "var(--ux-ink)" }}>Bookings</h1>
+          <h1 className="ux-screen-title text-2xl font-bold" style={{ color: "var(--ux-ink)" }}>Bookings</h1>
           <p className="mt-1.5 text-xsm" style={{ color: "var(--ux-muted)" }}>
             {upcoming} {plural("booking", upcoming)} coming up
           </p>
         </div>
-        <Tabs items={["Coming up", "Past"]} active={tab} onChange={setTab} />
+        <div className="hidden lg:flex">
+          <Tabs items={["Coming up", "Past"]} active={tab} onChange={setTab} />
+        </div>
+        <SegmentedControl className="lg:hidden" label="Bookings" value={tab} onChange={setTab}
+          options={["Coming up", "Past"].map((t) => ({ value: t, label: t }))} />
       </div>
 
       <SourceNote source={source} what="bookings" />
@@ -157,7 +164,7 @@ export default function BookingsPage() {
                 {/* Confirm in place, saying what it costs — a booking someone
                     else is holding a place for is not a tab she is closing. */}
                 {asking ? (
-                  <div className="ux-slide-up mt-3.5 flex items-center justify-between gap-4 rounded-[12px] p-3.5"
+                  <div className="ux-slide-up mt-3.5 flex flex-col gap-3 rounded-[12px] p-3.5 max-lg:p-4 lg:flex-row lg:items-center lg:justify-between lg:gap-4"
                        style={{ background: "var(--ux-tint-orange)" }}>
                     <p className="text-xsm leading-snug" style={{ color: "var(--ux-ink-2)" }}>
                       {b.kind === "Mentor"
@@ -179,7 +186,7 @@ export default function BookingsPage() {
                     </span>
                   </div>
                 ) : (
-                  <div className="mt-3.5 flex items-center justify-end gap-2 border-t pt-3.5"
+                  <div className="mt-3.5 flex flex-wrap items-center justify-end gap-2 border-t pt-3.5 lg:flex-nowrap"
                        style={{ borderColor: "var(--ux-line)" }}>
                     {/* The detail page existed and nothing linked to it: the only
                         ways in were the calendar and typing the URL. It holds

@@ -12,6 +12,8 @@ import {
 } from "@/lib/me-api";
 import { apiNotificationPrefs, type NotificationPrefs } from "@/lib/member-api";
 import { useT } from "@/i18n";
+import { SegmentedControl } from "@/components/ux/mobile/SegmentedControl";
+import { PhoneTitle } from "@/components/ux/PhoneParts";
 
 /**
  * Notifications — the day as a line.
@@ -203,8 +205,16 @@ export default function NotificationsPage() {
   return (
     <HomeShell active="/app/notifications" bare>
       <div className="flex flex-col gap-6">
-        <header className="flex flex-wrap items-end gap-5">
-          <div className="min-w-0 flex-1">
+        {/* On a phone the screen's name is the large title; the sentence that
+            says what needs her follows it, and the date is the quiet line. */}
+        <PhoneTitle
+          title="Notifications"
+          sub={queue.length > 0
+            ? <>{queue.length === 1 ? "One thing needs" : `${queue.length} things need`} you{unread.length > queue.length && <>, and <span style={{ color: "var(--ux-amber-ink)" }}>{unread.length - queue.length} to read</span></>}.</>
+            : unread.length > 0 ? <>{unread.length} to read, nothing urgent.</> : tr("notifications.youAreAllCaughtUp")}
+          note={new Intl.DateTimeFormat("en-GB", { weekday: "long", day: "numeric", month: "long" }).format(new Date())} />
+        <header className="flex flex-wrap items-end gap-5 max-lg:-mt-2">
+          <div className="hidden min-w-0 flex-1 lg:block">
             <p className="text-2xs font-bold uppercase tracking-[0.2em]" style={{ color: "var(--ux-brand)" }}>
               {new Intl.DateTimeFormat("en-GB", { weekday: "long", day: "numeric", month: "long" }).format(new Date())}
             </p>
@@ -224,7 +234,8 @@ export default function NotificationsPage() {
         {/* Categories. Only shown when there is more than one thing to choose
             between — a single chip row that never changes anything is noise. */}
         {CATEGORIES.filter((c) => c.id === "all" || catCounts[c.id] > 0).length > 2 && (
-          <div className="flex flex-wrap gap-2" role="group" aria-label={tr("notifications.filterNotifications")}>
+          /* `ux-chiprow` turns this into one sideways-scrolling row on a phone. */
+          <div className="ux-chiprow flex flex-wrap gap-2" role="group" aria-label={tr("notifications.filterNotifications")}>
             {CATEGORIES.filter((c) => c.id === "all" || catCounts[c.id] > 0).map((c) => {
               const on = category === c.id;
               const n = catCounts[c.id] ?? 0;
@@ -252,8 +263,14 @@ export default function NotificationsPage() {
           </div>
         )}
 
-          <div className="flex items-center gap-2.5">
-            <div className="flex gap-1 rounded-full p-1"
+          {/* On a phone: the two ways of reading as a segmented control, and
+              "Mark all read" full width under it. */}
+          <div className="flex w-full flex-col gap-2.5 lg:w-auto lg:flex-row lg:items-center">
+            <SegmentedControl className="lg:hidden" label="How to read them" value={mode}
+              onChange={(m) => { setMode(m); setAt(0); }}
+              options={[{ value: "day" as const, label: "Your day", icon: "List" },
+                        { value: "one" as const, label: "One at a time", icon: "Target" }]} />
+            <div className="hidden gap-1 rounded-full p-1 lg:flex"
                  style={{ background: "var(--ux-surface)", border: "1px solid var(--ux-line)" }}>
               {([["day", "Your day", "List"], ["one", "One at a time", "Target"]] as const).map(([m, label, icon]) => (
                 <button key={m} type="button" onClick={() => { setMode(m); setAt(0); }} aria-pressed={mode === m}
@@ -266,7 +283,7 @@ export default function NotificationsPage() {
               ))}
             </div>
             <button type="button" onClick={markAll} disabled={unread.length === 0}
-                    className="ux-press flex min-h-[44px] items-center gap-2 rounded-full px-4 text-xsm font-bold disabled:opacity-40"
+                    className="ux-press flex min-h-[44px] items-center gap-2 rounded-full px-4 text-xsm font-bold disabled:opacity-40 max-lg:justify-center"
                     style={{ background: "var(--ux-surface)", border: "1px solid var(--ux-line)", color: "var(--ux-ink-2)" }}>
               <Icons.CheckCheck className="h-4 w-4" />{tr("notifications.markAllRead")}</button>
           </div>
@@ -300,7 +317,7 @@ function Timeline({
   const tr = useT();
   if (days.length === 0) {
     return (
-      <section className="ux-sq grid place-items-center rounded-[20px] p-12 text-center"
+      <section className="ux-sq grid place-items-center rounded-[20px] p-12 text-center max-lg:rounded-[16px] max-lg:p-8"
                style={{ background: "var(--ux-surface)", border: "1px solid var(--ux-line)" }}>
         <div>
           <Icons.BellOff className="mx-auto h-[32px] w-[32px]" style={{ color: "var(--ux-faint)" }} />
@@ -468,7 +485,7 @@ function Focus({
 
   if (queue.length === 0 || !n) {
     return (
-      <section className="mx-auto w-full max-w-[620px] rounded-[24px] p-12 text-center"
+      <section className="mx-auto w-full max-w-[620px] rounded-[24px] p-12 text-center max-lg:rounded-[16px] max-lg:p-8"
                style={{ background: "var(--ux-surface)", border: "1px solid var(--ux-line-strong)" }}>
         <Icons.CheckCheck className="mx-auto h-[40px] w-[40px]" style={{ color: "var(--ux-green-ink)" }} />
         <h2 className="mt-4 text-2xl font-extrabold tracking-[-0.02em]" style={{ color: "var(--ux-ink)" }}>{tr("notifications.thatIsEverything")}</h2>
@@ -494,7 +511,7 @@ function Focus({
         ))}
       </div>
 
-      <div className="rounded-[24px] p-8 text-center"
+      <div className="rounded-[24px] p-8 text-center max-lg:rounded-[16px] max-lg:p-6"
            style={{ background: "var(--ux-surface)", border: "1px solid var(--ux-line-strong)",
                     boxShadow: "var(--ux-shadow-card)" }}>
         <span className="mx-auto grid h-[56px] w-[56px] place-items-center rounded-[20px]"
@@ -627,7 +644,7 @@ function QuietCard() {
   const days = p?.quiet_days.filter(Boolean).length ?? 7;
 
   return (
-    <section className="overflow-hidden rounded-[20px] p-4"
+    <section className="overflow-hidden rounded-[20px] p-4 max-lg:rounded-[16px]"
              style={{ background: "linear-gradient(150deg, var(--ux-brand-900), var(--ux-fill))" }}>
       <h2 className="mb-2 flex items-center gap-2 text-sm font-bold" style={{ color: "var(--ux-on-brand)" }}>
         <Icons.Moon className="h-[15px] w-[15px]" style={{ color: "var(--ux-rib-5)" }} />{tr("notifications.quietHours")}</h2>
@@ -661,7 +678,7 @@ function QuietCard() {
 function Rail({ counts, unread }: { counts: Record<string, number>; unread: number }) {
   const tr = useT();
   const rows = Object.entries(counts).sort((a, b) => b[1] - a[1]);
-  const card = "ux-sq rounded-[20px] p-4";
+  const card = "ux-sq rounded-[20px] p-4 max-lg:rounded-[16px]";
   const style = { background: "var(--ux-surface)", border: "1px solid var(--ux-line)",
                   boxShadow: "var(--ux-shadow-card)" } as const;
 

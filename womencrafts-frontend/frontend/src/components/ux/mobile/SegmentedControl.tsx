@@ -114,7 +114,7 @@ export function SegmentedControl<T extends string>({
       role="tablist"
       aria-label={label}
       onKeyDown={onKeyDown}
-      className={`relative isolate flex w-full items-stretch rounded-[var(--ux-r-pill)] p-[3px] ${className}`}
+      className={`relative isolate flex w-full items-stretch rounded-[var(--ux-r-pill)] p-1 ${className}`}
       style={{ background: "var(--ux-surface-2)", border: "1px solid var(--ux-line)" }}
     >
       {/* The thumb, behind the labels. `opacity: 0` until it has been measured
@@ -122,7 +122,7 @@ export function SegmentedControl<T extends string>({
       <span
         ref={thumbRef}
         aria-hidden="true"
-        className="pointer-events-none absolute inset-y-[3px] left-0 -z-10 rounded-[var(--ux-r-pill)]
+        className="pointer-events-none absolute inset-y-1 left-0 -z-10 rounded-[var(--ux-r-pill)]
                    transition-[transform,width] duration-[280ms] motion-reduce:transition-none"
         style={{
           opacity: 0,
@@ -149,7 +149,7 @@ export function SegmentedControl<T extends string>({
             data-ux-seg-active={active}
             onClick={() => onChange(o.value)}
             className="ux-tap-exempt flex min-h-[44px] flex-1 items-center justify-center gap-1.5
-                       rounded-[var(--ux-r-pill)] px-3 text-[14px] font-semibold
+                       rounded-[var(--ux-r-pill)] px-3 text-[15px] font-semibold
                        transition-colors duration-200 motion-reduce:transition-none"
             style={{
               // The thumb is what moves. A segment that also scaled itself on

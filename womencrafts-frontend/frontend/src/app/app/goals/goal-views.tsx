@@ -2,6 +2,8 @@
 
 import * as Icons from "@/components/ux/icons";
 import { Card, I, IconTile, v } from "@/components/ux/kit";
+import { ChipRow } from "@/components/ux/learning/native";
+import { ListGroup, ListRow, type RowTint } from "@/components/ux/mobile/ListRow";
 import {
   goalProgressLine, goalState,
   type Goal, type GoalState,
@@ -15,8 +17,35 @@ export function GoalsHero({ chips, active, onPick }: {
   chips: { label: string; n: number }[]; active: string;
   onPick: (label: string) => void;
 }) {
+  const chipButtons = (cls: string) => chips.map((c) => {
+    const on = active === c.label;
+    return (
+      <button key={c.label} type="button" onClick={() => onPick(c.label)} aria-pressed={on}
+              className={cls}
+              style={{ background: v(on ? "--ux-fill" : "--ux-surface"),
+                       color: v(on ? "--ux-on-brand" : "--ux-ink-2"),
+                       border: `1px solid ${v(on ? "--ux-fill" : "--ux-line")}` }}>
+        {c.label} ({c.n})
+      </button>
+    );
+  });
   return (
-    <section className="relative mb-4 overflow-hidden rounded-[20px]"
+    <>
+    {/*
+      On a phone: the large title, a quiet line, and the filter as a row of
+      chips the thumb pushes along. The gradient banner with a 34px slogan in
+      it was a website's hero; every word of it is still here.
+    */}
+    <header className="mb-6 lg:hidden">
+      <h1 className="ux-screen-title" style={{ color: v("--ux-ink") }}>My goals</h1>
+      <p className="mt-2 text-[15px] leading-snug" style={{ color: v("--ux-muted") }}>
+        Big dreams. Real progress. Set your goals, take small steps, and build the life you deserve.
+      </p>
+      <ChipRow className="mt-4">
+        {chipButtons("ux-press ux-sq min-h-[44px] shrink-0 rounded-full px-4 text-[15px] font-semibold")}
+      </ChipRow>
+    </header>
+    <section className="relative mb-4 hidden overflow-hidden rounded-[20px] lg:block"
              style={{ background: "linear-gradient(104deg, var(--ux-brand-tint) 0%, var(--ux-tint-lilac) 44%, var(--ux-tint-pink) 74%, var(--ux-tint-amber) 100%)",
                       border: "1px solid var(--ux-line)" }}>
       <div className="flex items-stretch">
@@ -60,20 +89,10 @@ export function GoalsHero({ chips, active, onPick }: {
       {/* Full width, below both columns. Inside the text column the last two
           chips ran under the artwork and could not be pressed or read. */}
       <div className="ux-noscroll relative flex gap-2 overflow-x-auto px-6 pb-6 pt-5 sm:px-7">
-        {chips.map((c) => {
-          const on = active === c.label;
-          return (
-            <button key={c.label} type="button" onClick={() => onPick(c.label)} aria-pressed={on}
-                    className="ux-press ux-sq shrink-0 rounded-full px-4 py-2.5 text-xs font-bold"
-                    style={{ background: v(on ? "--ux-fill" : "--ux-surface"),
-                             color: v(on ? "--ux-on-brand" : "--ux-ink-2"),
-                             border: `1px solid ${v(on ? "--ux-fill" : "--ux-line")}` }}>
-              {c.label} ({c.n})
-            </button>
-          );
-        })}
+        {chipButtons("ux-press ux-sq shrink-0 rounded-full px-4 py-2.5 text-xs font-bold")}
       </div>
     </section>
+    </>
   );
 }
 
@@ -104,8 +123,17 @@ export function GoalStats({ total, by }: { total: number; by: Record<GoalState, 
     { n: by.reached, ...STATUS_LOOK.reached },
     { n: by["not-started"], ...STATUS_LOOK["not-started"] },
   ];
+  const rowTint: RowTint[] = ["pink", "green", "violet", "blue"];
   return (
-    <div className="mb-4 grid gap-3.5" style={{ gridTemplateColumns: "repeat(auto-fit, minmax(170px, 1fr))" }}>
+    <>
+    {/* Four counts as four value rows on a phone — label left, number right. */}
+    <ListGroup className="mb-6 lg:hidden">
+      {cells.map((c, i) => (
+        <ListRow key={c.label} icon={c.icon} tint={rowTint[i]} title={c.label}
+                 value={<b className="font-semibold" style={{ color: v("--ux-ink") }}>{c.n}</b>} />
+      ))}
+    </ListGroup>
+    <div className="mb-4 hidden gap-3.5 lg:grid" style={{ gridTemplateColumns: "repeat(auto-fit, minmax(170px, 1fr))" }}>
       {cells.map((c) => (
         <Card key={c.label} pad={16}>
           <div className="flex items-center gap-3">
@@ -118,13 +146,14 @@ export function GoalStats({ total, by }: { total: number; by: Record<GoalState, 
         </Card>
       ))}
     </div>
+    </>
   );
 }
 
 /** The line that sits beside the numbers. */
 export function StaircaseNote() {
   return (
-    <Card className="mb-5" pad={16}>
+    <Card className="mb-6 lg:mb-5" pad={16}>
       <div className="flex items-center gap-3.5">
         <IconTile icon="Sprout" tint="--ux-tint-green" ink="--ux-green-ink" size={40} radius={12} />
         <p className="min-w-0 text-xsm leading-relaxed" style={{ color: v("--ux-ink-2") }}>
@@ -174,7 +203,7 @@ export function GoalCard({ g, money, menu, onMenu, onDone, onArchive, busy }: {
   const done = st === "reached";
 
   return (
-    <Card className="mb-3.5" pad={18}>
+    <Card className="mb-3 lg:mb-3.5" pad={18}>
       <div className="flex flex-wrap items-start gap-4 sm:flex-nowrap">
         {/*
           There was a photograph here — `g.art`, a stock picture of a sewing
@@ -276,7 +305,7 @@ function Act({ icon, children, onClick, on }: {
 }) {
   return (
     <button type="button" onClick={onClick}
-            className="ux-press ux-sq flex min-h-[36px] items-center gap-1.5 rounded-[10px] px-2.5 text-xs font-semibold"
+            className="ux-press ux-sq flex min-h-[44px] items-center gap-1.5 rounded-[10px] px-2.5 text-[13px] font-semibold lg:min-h-[36px] lg:text-xs"
             style={{ color: v(on ? "--ux-green-ink" : "--ux-muted") }}>
       <I name={icon} className="h-[15px] w-[15px]" sw={on ? 2.5 : 1.9} />
       {children}

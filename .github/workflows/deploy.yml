@@ -157,12 +157,26 @@ jobs:
           api=$(gcloud run services describe womsakhi-api --region "$REGION" --project "$PROJECT_ID" --format='value(status.url)')
           web=$(gcloud run services describe womsakhi-web --region "$REGION" --project "$PROJECT_ID" --format='value(status.url)')
           echo "api=$api"; echo "web=$web"
+          # `-L`, and this is the whole fix.
+          #
+          # This step failed a deploy that had worked. Both services came up,
+          # the API answered 200, and `/` answered **307** — because `/` is
+          # supposed to redirect: an anonymous visitor is sent to /dashboard
+          # and bounced to /signin by the app's own middleware. The test
+          # demanded a bare 200 from a path whose correct answer is a redirect,
+          # so a healthy rollout was reported as needing a rollback.
+          #
+          # Following redirects tests the thing that matters — does the web app
+          # serve a page — instead of asserting the shape of the route table.
+          # `%{url_effective}` is printed so a redirect to somewhere WRONG is
+          # still visible rather than silently passing.
           for i in $(seq 1 10); do
-            a=$(curl -s -o /dev/null -w '%{http_code}' --max-time 30 "$api/health" || true)
-            w=$(curl -s -o /dev/null -w '%{http_code}' --max-time 30 "$web/" || true)
-            echo "  attempt $i: api=$a web=$w"
+            a=$(curl -s -o /dev/null -w '%{http_code}' -L --max-time 30 "$api/health" || true)
+            w=$(curl -s -o /dev/null -w '%{http_code}' -L --max-time 30 "$web/" || true)
+            wu=$(curl -s -o /dev/null -w '%{url_effective}' -L --max-time 30 "$web/" || true)
+            echo "  attempt $i: api=$a web=$w ($wu)"
             [ "$a" = "200" ] && [ "$w" = "200" ] && exit 0
             sleep 10
           done
-          echo "::error::Deployed revision is not serving 200 — roll back with the previous tag"
+          echo "::error::Deployed revision is not serving 200 after redirects — roll back with the previous tag"
           exit 1

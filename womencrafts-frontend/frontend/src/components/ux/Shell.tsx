@@ -13,11 +13,12 @@ import { useAuth } from "@/context/AuthContext";
 import { useTheme } from "@/context/ThemeContext";
 import { useMe } from "./me";
 import { useNavLabel } from "./use-nav-label";
-import { SECTIONS, TABS, trailFor, type NavNode, type Section } from "./nav-tree";
+import { SECTIONS, TABS, isTabRoot, trailFor, type NavNode, type Section } from "./nav-tree";
 import { Avatar } from "./kit";
 import { useSearchHotkey } from "./useSearchHotkey";
 import { MobileNav, SafetyPin } from "./MobileNav";
 import { PageTransition } from "./mobile/PageTransition";
+import { MobileBack } from "./mobile/BackButton";
 
 /**
  * The search panel is a ⌘K surface — most sessions never open it, and it drags
@@ -469,6 +470,12 @@ function ThemeToggle() {
 const TOPBAR_H_VAR = "var(--ux-topbar-h)";
 
 export function Topbar({ user }: { user: { name: string; avatar: string; unread?: number } }) {
+  /* Whether the bar leads with the way back instead of the logo. `MobileBack`
+     makes the same decision for itself — it has to, because it is the thing
+     being drawn — and the two read the one predicate in `nav-tree` rather than
+     each keeping a list of the five roots. */
+  const here = usePathname() ?? "";
+  const backControl = (here === "/app" || here.startsWith("/app/")) && !isTabRoot(here);
   const [search, setSearch] = useState(false);
   const [menu, setMenu] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
@@ -508,8 +515,20 @@ export function Topbar({ user }: { user: { name: string; avatar: string; unread?
       <div className="flex flex-1 items-center gap-3 ps-[18px] pe-[18px]">
       {/* Brand first, then the six modes. The rail no longer carries the
           wordmark: with a full-width bar above it, the brand belongs at the
-          top-left corner of the whole app rather than above one column. */}
-      <Brand size="sm" tagline={false} />
+          top-left corner of the whole app rather than above one column.
+
+          On a PHONE, on any screen that is not one of the five tab roots, the
+          back control takes this leading slot instead. That is the native
+          arrangement — iOS and Material both give the leading position to the
+          way out, and a logo on a sub-screen tells her nothing she does not
+          already know — and it is also the only way the row fits: the mark is
+          61px wide at 390, which is most of the room a back control needs.
+          `contents` rather than `block` so that above lg the wrapper vanishes
+          from the flex row and the bar is laid out exactly as before. */}
+      <span className={backControl ? "hidden lg:contents" : "contents"}>
+        <Brand size="sm" tagline={false} />
+      </span>
+      <MobileBack />
 
       {/*
         No section tabs here.

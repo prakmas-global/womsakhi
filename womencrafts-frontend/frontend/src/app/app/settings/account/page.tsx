@@ -10,11 +10,12 @@ import { useAction } from "@/lib/use-action";
 
 /** The five things this screen edits. */
 type Field = "name" | "phone" | "place" | "born" | "about";
-import * as Icons from "@/components/ux/icons";
 
 import { useAuth } from "@/context/AuthContext";
 import { Btn, Pill } from "@/components/ux/kit";
-import { Card, Field, SectionHead, SettingsPage, TextInput } from "@/components/ux/settings/Frame";
+import { Field, SettingsPage, TextInput } from "@/components/ux/settings/Frame";
+import { phonePrimary, phoneSecondary } from "@/components/ux/PhoneParts";
+import { Group, SaveBar } from "../_parts/Group";
 import { useMe } from "@/components/ux/me";
 import { useT } from "@/i18n";
 
@@ -116,19 +117,16 @@ export default function AccountSettings() {
       title={tr("settingsAccount.yourDetails")}
       sub={tr("settingsAccount.onlyWhatIsMarkedPublicIs")}
       footer={
-        <div className="flex items-center justify-between gap-4">
-          <p className="text-xs"
-             style={{ color: save.error ? "var(--ux-orange-ink)" : saved ? "var(--ux-green-ink)" : "var(--ux-faint)" }}>
-            {save.error ? save.error : saved ? "Saved." : COPY.nothingSavedYet}
-          </p>
+        <SaveBar tone={save.error ? "--ux-orange-ink" : saved ? "--ux-green-ink" : "--ux-faint"}
+                 status={save.error ? save.error : saved ? "Saved." : COPY.nothingSavedYet}>
           <Btn variant="primary" icon={save.busy ? "Loader" : "Check"} disabled={save.busy}
-               onClick={() => void save.run()}>
+               className={phonePrimary} onClick={() => void save.run()}>
             {save.busy ? "Saving…" : "Save changes"}
           </Btn>
-        </div>
+        </SaveBar>
       }
     >
-      <Card>
+      <Group inset="form">
         <div className="flex items-center gap-4">
           <span className="h-[76px] w-[76px] shrink-0 overflow-hidden rounded-full"
                 style={{ background: "var(--ux-brand-tint)" }}>
@@ -139,7 +137,7 @@ export default function AccountSettings() {
           </span>
           <div className="min-w-0 flex-1">
             <p className="text-sm font-semibold" style={{ color: "var(--ux-ink)" }}>{tr("settingsAccount.yourPhoto")}</p>
-            <p className="mt-1 text-xs leading-snug" style={{ color: "var(--ux-muted)" }}>
+            <p className="mt-1 text-[13px] leading-snug lg:text-xs" style={{ color: "var(--ux-muted)" }}>
               Shown on your profile, your shop and beside anything you post. A clear face photo gets more
               replies than a logo.
             </p>
@@ -166,10 +164,9 @@ export default function AccountSettings() {
             )}
           </div>
         </div>
-      </Card>
+      </Group>
 
-      <Card>
-        <SectionHead title={tr("settingsAccount.shownToEveryone")} chip="Public" />
+      <Group title={tr("settingsAccount.shownToEveryone")} chip="Public" inset="form">
         <div className="space-y-4">
           <Field label={tr("settingsAccount.yourName")} hint={tr("settingsAccount.onYourProfileYourShopAnd")}>
             <TextInput value={form.name} onChange={set("name")} />
@@ -178,10 +175,10 @@ export default function AccountSettings() {
             <TextInput value={form.about} onChange={set("about")} />
           </Field>
         </div>
-      </Card>
+      </Group>
 
-      <Card>
-        <SectionHead title={tr("settingsAccount.onlyYouAndWomsakhi")} chip="Private" />
+      <Group title={tr("settingsAccount.onlyYouAndWomsakhi")} chip="Private" inset="form"
+             noteIcon="Lock" noteGap="mt-4" note={tr("settingsAccount.yourExactAddressIsNeverStored")}>
         <div className="space-y-4">
           <Field label={tr("settingsAccount.phoneNumber")} hint={tr("settingsAccount.neverShownToBuyersOrEmployers")}>
             <TextInput value={form.phone} onChange={set("phone")} placeholder="+91 00000 00000" />
@@ -193,14 +190,12 @@ export default function AccountSettings() {
             <TextInput value={form.born} onChange={set("born")} placeholder="DD MMM YYYY" />
           </Field>
         </div>
-        <p className="mt-4 flex items-start gap-2.5 rounded-[12px] p-3 text-xs leading-relaxed"
-           style={{ background: "var(--ux-surface-2)", color: "var(--ux-ink-2)" }}>
-          <Icons.Lock className="mt-[1px] h-[14px] w-[14px] shrink-0" style={{ color: "var(--ux-brand)" }} />{tr("settingsAccount.yourExactAddressIsNeverStored")}</p>
-      </Card>
+      </Group>
 
-      <Card>
-        <SectionHead title={tr("settingsAccount.signInEmail")} />
-        <div className="flex items-center justify-between gap-4">
+      <Group title={tr("settingsAccount.signInEmail")} inset="form">
+        {/* On a phone the button takes its own full-width row under the
+            address; beside it, it squeezed the address to a sliver. */}
+        <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between lg:gap-4">
           <div className="min-w-0">
             {/*
               The address truncates; the badge never does.
@@ -218,14 +213,14 @@ export default function AccountSettings() {
                 ? <Pill tone="green" size="sm">Confirmed</Pill>
                 : <Pill tone="orange" size="sm">{tr("settingsAccount.notConfirmedYet")}</Pill>}
             </p>
-            <p className="mt-1 text-xs" style={{ color: "var(--ux-muted)" }}>{tr("settingsAccount.youCannotChangeThisYourselfAsk")}</p>
+            <p className="mt-1 text-[13px] lg:text-xs" style={{ color: "var(--ux-muted)" }}>{tr("settingsAccount.youCannotChangeThisYourselfAsk")}</p>
           </div>
           {/* "Check both inboxes" was a lie about two emails nobody sent:
               nothing in this API changes a sign-in address — /users/me takes
               only a name and a locale. So it says who can do it instead. */}
-          <Btn href="/app/help" variant="outline" size="sm" iconEnd="ArrowRight">{tr("settingsAccount.askUsToChangeIt")}</Btn>
+          <Btn href="/app/help" variant="outline" size="sm" iconEnd="ArrowRight" className={phoneSecondary}>{tr("settingsAccount.askUsToChangeIt")}</Btn>
         </div>
-      </Card>
+      </Group>
     </SettingsPage>
   );
 }

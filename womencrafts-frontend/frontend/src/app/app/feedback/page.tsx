@@ -9,6 +9,8 @@ import * as Icons from "@/components/ux/icons";
 import { Btn, Card, IconTile, SectionHead } from "@/components/ux/kit";
 import { HomeShell } from "@/components/ux/home/HomeShell";
 import { useT } from "@/i18n";
+import { ListGroup } from "@/components/ux/mobile/ListRow";
+import { PhoneRow, phonePrimary, phoneSecondary } from "@/components/ux/PhoneParts";
 
 const KINDS = [
   { id: "idea", label: "An idea", note: "Something you wish this app did",
@@ -105,8 +107,8 @@ export default function FeedbackPage() {
         </div>
       }
     >
-      <h1 className="text-2xl font-bold" style={{ color: "var(--ux-ink)" }}>{tr("feedback.tellUsWhatYouThink")}</h1>
-      <p className="mb-[20px] mt-1.5 text-xsm" style={{ color: "var(--ux-muted)" }}>{tr("feedback.weReadEveryMessageOurselvesNo")}</p>
+      <h1 className="ux-screen-title text-2xl font-bold" style={{ color: "var(--ux-ink)" }}>{tr("feedback.tellUsWhatYouThink")}</h1>
+      <p className="mb-6 mt-1.5 text-xsm lg:mb-[20px]" style={{ color: "var(--ux-muted)" }}>{tr("feedback.weReadEveryMessageOurselvesNo")}</p>
 
       {stage === "sent" ? (
         <Card className="ux-slide-up">
@@ -120,17 +122,25 @@ export default function FeedbackPage() {
                 Someone on the team will read this within a few days. If it turns into a change, you will
                 see it in the list of what women asked for.
               </p>
-              <div className="mt-4 flex gap-2.5">
-                <Btn href="/app" variant="primary" iconEnd="ArrowRight">{tr("feedback.backToHome")}</Btn>
-                <Btn variant="outline" onClick={() => { setStage("idle"); setText(""); setKind(null); }}>{tr("feedback.saySomethingElse")}</Btn>
+              <div className="mt-4 flex flex-col gap-2.5 lg:flex-row">
+                <Btn href="/app" variant="primary" iconEnd="ArrowRight" className={phonePrimary}>{tr("feedback.backToHome")}</Btn>
+                <Btn variant="outline" className={phoneSecondary} onClick={() => { setStage("idle"); setText(""); setKind(null); }}>{tr("feedback.saySomethingElse")}</Btn>
               </div>
             </div>
           </div>
         </Card>
       ) : (
         <>
-          <p className="mb-3 text-2xs font-semibold uppercase tracking-[0.07em]" style={{ color: "var(--ux-faint)" }}>{tr("feedback.whatKindOfThingIsIt")}</p>
-          <div className="ux-deck mb-[20px] grid grid-cols-2 gap-[12px]">
+          <p className="mb-3 text-2xs font-semibold uppercase tracking-[0.07em] max-lg:mb-2 max-lg:px-4 max-lg:text-[12px]"
+             style={{ color: "var(--ux-faint)" }}>{tr("feedback.whatKindOfThingIsIt")}</p>
+          {/* One of four: on a phone, a grouped list with a checkmark. */}
+          <ListGroup className="mb-6 lg:hidden">
+            {KINDS.map((k) => (
+              <PhoneRow key={k.id} icon={k.icon} tint={k.tint} ink={k.ink} title={k.label} meta={k.note}
+                        selected={kind === k.id} onClick={() => setKind(k.id)} />
+            ))}
+          </ListGroup>
+          <div className="ux-deck mb-[20px] hidden grid-cols-2 gap-[12px] lg:grid">
             {KINDS.map((k, i) => {
               const on = kind === k.id;
               return (
@@ -169,15 +179,15 @@ export default function FeedbackPage() {
                 rows={6}
                 placeholder={tr("feedback.whateverItIsLongOrShort")}
                 aria-label={tr("feedback.yourMessage")}
-                className="ux-sq w-full resize-y rounded-[12px] border p-3.5 text-sm leading-relaxed outline-none"
+                className="ux-sq w-full resize-y rounded-[12px] border p-3.5 text-sm leading-relaxed outline-none max-lg:p-4 max-lg:text-[17px]"
                 style={{ borderColor: "var(--ux-line-strong)", background: "var(--ux-surface)", color: "var(--ux-ink)" }}
               />
             </label>
 
-            <div className="mt-3 flex items-center justify-between gap-4">
+            <div className="mt-3 flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between lg:gap-4">
               {/* Say what is still needed, rather than a disabled button that
                   gives no reason for being disabled. */}
-              <p className="text-xs" style={{ color: "var(--ux-faint)" }}>
+              <p className="text-[13px] lg:text-xs" style={{ color: "var(--ux-faint)" }}>
                 {!kind
                   ? "Pick what kind of thing it is above."
                   : text.trim().length < 10
@@ -186,6 +196,7 @@ export default function FeedbackPage() {
               </p>
               <Btn
                 variant="primary"
+                className={phonePrimary}
                 icon={stage === "sending" ? "Loader" : undefined}
                 iconEnd={stage === "sending" ? undefined : "Send"}
                 onClick={() => void send()}

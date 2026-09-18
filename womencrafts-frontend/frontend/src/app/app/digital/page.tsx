@@ -126,7 +126,12 @@ export default function DigitalPage() {
                     <p className="mt-1 text-smd leading-relaxed lg:text-xsm" style={{ color: "var(--ux-muted)" }}>{s.note}</p>
                     <p className="mt-1.5 text-[13px] lg:text-2xs" style={{ color: "var(--ux-faint)" }}>{s.mins} min</p>
                   </div>
-                  <Btn className="ux-action-primary" variant={isDone ? "outline" : isNext ? "primary" : "outline"} size="sm"
+                  {/* One full-width primary on a phone — the step she is on.
+                      Six 50px slabs, one per step, made every step shout;
+                      the others keep a normal-sized button at the start of
+                      their row. */}
+                  <Btn className={isNext ? "ux-action-primary" : "self-start lg:self-auto"}
+                       variant={isDone ? "outline" : isNext ? "primary" : "outline"} size="sm"
                        icon={isDone ? "RotateCcw" : undefined}
                        iconEnd={isDone ? undefined : "ArrowRight"}
                        onClick={() => void mark.run(s.id, isDone ? "undone" : "done")}>

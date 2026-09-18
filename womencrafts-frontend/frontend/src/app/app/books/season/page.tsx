@@ -4,7 +4,8 @@ import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 
 import { HomeShell } from "@/components/ux/home/HomeShell";
-import { Back, Btn, Card, I, IconTile, Pill, Progress, SectionHead, Stat, v } from "@/components/ux/kit";
+import { Back, Btn, Card, I, IconTile, Pill, Progress, Stat, v } from "@/components/ux/kit";
+import { EYEBROW, Section } from "@/components/ux/earn/phone";
 import { formatRupees } from "@/components/ux/kit";
 import { SEASONS, type Season } from "@/components/ux/books/data";
 import { useT } from "@/i18n";
@@ -50,12 +51,12 @@ export default function SeasonPage() {
 
   return (
     <HomeShell active="/app/books">
-      <div className="flex flex-col gap-5">
+      <div className="flex flex-col gap-6 lg:gap-5">
         <Back to="/app/books" label={tr("booksSeason.backToYourBooks")} />
 
         <header>
-          <p className="text-2xs font-extrabold uppercase tracking-[0.2em]" style={{ color: v("--ux-brand") }}>{tr("booksSeason.yourYear")}</p>
-          <h1 className="mt-2 text-[clamp(1.5rem,3.2vw,2.125rem)] font-extrabold leading-[1.1] tracking-[-0.035em]"
+          <p className={EYEBROW}>{tr("booksSeason.yourYear")}</p>
+          <h1 className="ux-screen-title mt-2 text-[clamp(1.5rem,3.2vw,2.125rem)] font-extrabold leading-[1.1] tracking-[-0.035em]"
               style={{ color: v("--ux-ink") }}>{tr("booksSeason.theBusyMonthsAndTheThin")}</h1>
           <p className="mt-1.5 max-w-[56ch] text-sm leading-relaxed" style={{ color: v("--ux-muted") }}>
             Your work is not the same every month and never has been. What matters is knowing
@@ -88,8 +89,8 @@ export default function SeasonPage() {
         )}
 
         <div>
-          <SectionHead title={tr("booksSeason.whatIsComing")} sub={tr("booksSeason.soonestFirstWithHowLongYou")}
-                       icon="CalendarDays" chip={String(soon.length)} />
+          <Section title={tr("booksSeason.whatIsComing")} sub={tr("booksSeason.soonestFirstWithHowLongYou")}
+                   icon="CalendarDays" chip={String(soon.length)} />
           <div className="flex flex-col gap-3">
             {soon.map((s) => {
               const sh = SHAPE[s.shape];
@@ -125,7 +126,7 @@ export default function SeasonPage() {
                   <div className="mt-3.5">
                     <Progress pct={urgency} tone={sh.ink} track={sh.tint} h={5} />
                   </div>
-                  <Btn size="sm" variant={done ? "ghost" : "outline"} full className="mt-3"
+                  <Btn size="sm" variant={done ? "ghost" : "outline"} full className="mt-3 max-lg:px-4"
                        onClick={() => mark(s.id)}>
                     {done ? tr("booksSeason.notReadyAfterAll")
               : tr("booksSeason.iHaveDoneThis")}

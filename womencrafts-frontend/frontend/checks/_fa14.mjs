@@ -1,0 +1,15 @@
+import { APP, seededMemberToken, launch, pageAs } from "./_shared.mjs";
+const tok = await seededMemberToken(); const b = await launch();
+const p = await pageAs(b, tok, {width:1600,height:1000});
+const net=[]; p.on("response",r=>{const u=r.url(); if(/\/api\/v1\//.test(u)) net.push(r.status()+" "+r.request().method()+" "+u.replace(/^https?:\/\/[^/]+\/api\/v1/,""));});
+await p.goto(APP+"/app",{waitUntil:"networkidle2",timeout:90000}); await new Promise(r=>setTimeout(r,3000));
+const T=()=>p.evaluate(()=>((document.querySelector("#content")||document.body).innerText||"").replace(/\s+/g," "));
+const t0=await T(); net.length=0;
+await p.evaluate(()=>{const e=[...document.querySelectorAll("button")].find(x=>/Put this aside/i.test(x.getAttribute("aria-label")||x.innerText||"")); e.scrollIntoView({block:"center"}); e.click();});
+await new Promise(r=>setTimeout(r,1500));
+const t1=await T();
+console.log(`"Put this aside for now" (desktop): text ${t0.length}→${t1.length} ${t0===t1?"NO OBSERVABLE EFFECT":"card dismissed"}; net=${[...new Set(net)].join(",")||"none"}`);
+console.log("  'YOUR NEXT STEP' still on screen:", /YOUR NEXT STEP/i.test(t1));
+await p.reload({waitUntil:"networkidle2",timeout:90000}); await new Promise(r=>setTimeout(r,2500));
+console.log("  after reload, 'YOUR NEXT STEP' back:", /YOUR NEXT STEP/i.test(await T()));
+await p.close(); await b.close();

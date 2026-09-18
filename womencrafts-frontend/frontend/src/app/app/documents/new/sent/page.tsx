@@ -10,6 +10,7 @@ import {
 } from "@/components/ux/kit";
 import { LISTINGS, SENT_QUOTE, type QuoteDraft } from "@/components/ux/earn/data";
 import { formatWholeRupees } from "@/components/ux/kit/money";
+import { GROUP, GROUP_ROW, STEP_NAV } from "@/components/ux/earn/phone";
 
 /**
  * "Request sent" — the end of the buyer's half of a quote.
@@ -74,13 +75,13 @@ export default function QuoteSentPage() {
         <DemoNote what="The quote you just sent, and the seller's other listings," />
 
         {/* The tick, and the one line she needs */}
-        <header className="mb-5 flex flex-wrap items-start gap-4">
+        <header className="mb-6 flex flex-wrap items-start gap-4 lg:mb-5">
           <span className="grid h-[52px] w-[52px] shrink-0 place-items-center rounded-full"
                 style={{ background: v("--ux-green"), color: v("--ux-on-green") }}>
             <Icons.Check className="h-[26px] w-[26px]" strokeWidth={3} />
           </span>
           <div className="min-w-[260px] flex-1">
-            <h1 className="text-3xl font-extrabold leading-tight tracking-[-0.02em]"
+            <h1 className="ux-screen-title text-3xl font-extrabold leading-tight tracking-[-0.02em]"
                 style={{ color: v("--ux-ink") }}>
               Request sent
             </h1>
@@ -91,11 +92,11 @@ export default function QuoteSentPage() {
               She will read your requirements and come back to you.
             </p>
           </div>
-          <Btn href="/app/documents#orders" variant="outline">See all your requests</Btn>
+          <Btn href="/app/documents#orders" variant="outline" className="max-lg:w-full">See all your requests</Btn>
         </header>
 
         {/* What happens next */}
-        <Card className="mb-5">
+        <Card className="mb-6 lg:mb-5">
           <div className="grid gap-6 lg:grid-cols-[220px_minmax(0,1fr)_270px]">
             <div className="relative overflow-hidden rounded-[16px]"
                  style={{ background: "linear-gradient(160deg, var(--ux-tint-lilac), var(--ux-tint-pink))" }}>
@@ -137,7 +138,7 @@ export default function QuoteSentPage() {
             </div>
 
             <div className="space-y-3.5">
-              <div className="rounded-[14px] p-4" style={{ background: v("--ux-brand-tint") }}>
+              <div className="rounded-[12px] p-4 lg:rounded-[14px]" style={{ background: v("--ux-brand-tint") }}>
                 <div className="flex items-start gap-2.5">
                   <IconTile icon="Clock" tint="--ux-surface" ink="--ux-brand" size={34} radius={10} />
                   <span className="min-w-0">
@@ -154,7 +155,7 @@ export default function QuoteSentPage() {
                 </p>
               </div>
 
-              <figure className="rounded-[14px] p-4" style={{ background: v("--ux-surface-2") }}>
+              <figure className="rounded-[12px] p-4 lg:rounded-[14px]" style={{ background: v("--ux-surface-2") }}>
                 <I name="Quote" className="h-[17px] w-[17px]" style={{ color: v("--ux-brand") }} />
                 <blockquote className="mt-2 text-smd font-extrabold leading-snug" style={{ color: v("--ux-brand") }}>
                   Every big order started as somebody asking a question.
@@ -166,7 +167,7 @@ export default function QuoteSentPage() {
         </Card>
 
         {/* What she asked for, back in her own words */}
-        <Card className="mb-5">
+        <Card className="mb-6 lg:mb-5">
           <div className="mb-4 flex flex-wrap items-center justify-between gap-2 border-b pb-3.5"
                style={{ borderColor: v("--ux-line") }}>
             <h2 className="text-xl font-extrabold tracking-[-0.01em]" style={{ color: v("--ux-ink") }}>
@@ -223,28 +224,29 @@ export default function QuoteSentPage() {
 
         {/* The rest of the shop, while she is here */}
         <section className="mb-6">
-          <div className="mb-3.5 flex flex-wrap items-end justify-between gap-2">
+          <div className="mb-2 flex flex-wrap items-end justify-between gap-2 lg:mb-3.5">
             <div>
-              <h2 className="text-xl font-extrabold tracking-[-0.01em]" style={{ color: v("--ux-ink") }}>
+              <h2 className="text-xs font-semibold uppercase tracking-[0.06em] text-[color:var(--ux-muted)] max-lg:px-1 lg:text-xl lg:font-extrabold lg:normal-case lg:tracking-[-0.01em] lg:text-[color:var(--ux-ink)]">
                 You might also like
               </h2>
-              <p className="mt-0.5 text-xs" style={{ color: v("--ux-muted") }}>
+              <p className="mt-0.5 text-[13px] max-lg:px-1 lg:text-xs" style={{ color: v("--ux-muted") }}>
                 More from {seller}
               </p>
             </div>
-            <Link href="/app/documents/listings" className="ux-sq flex items-center gap-0.5 text-xs font-bold"
+            <Link href="/app/documents/listings" className="ux-sq flex items-center gap-0.5 text-[15px] font-semibold lg:text-xs lg:font-bold"
                   style={{ color: v("--ux-brand") }}>
               See the whole shop <Icons.ArrowRight className="h-[13px] w-[13px]" />
             </Link>
           </div>
 
-          <div className="grid gap-3.5" style={{ gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))" }}>
+          {/* A phone gets the shelf as a list: thumbnail, name, price, rating. */}
+          <div className={`grid gap-3.5 ${GROUP}`} style={{ gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))" }}>
             {LISTINGS.filter((l) => l.priceMode !== "quote").map((l) => (
-              <Link key={l.id} href="/app/documents/listings" className="ux-card ux-hov ux-sq block overflow-hidden">
+              <Link key={l.id} href="/app/documents/listings" className={`ux-card ux-hov ux-sq block overflow-hidden max-lg:flex max-lg:items-center ${GROUP_ROW}`}>
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img src={l.photo} alt="" aria-hidden loading="lazy" decoding="async"
-                     className="h-[132px] w-full object-cover" style={{ background: v("--ux-media-bed") }} />
-                <span className="block p-3.5">
+                     className="h-[132px] w-full object-cover max-lg:ms-4 max-lg:h-[64px] max-lg:w-[64px] max-lg:shrink-0 max-lg:rounded-[12px]" style={{ background: v("--ux-media-bed") }} />
+                <span className="block p-3.5 max-lg:min-w-0 max-lg:flex-1 max-lg:px-4 max-lg:py-3">
                   <span className="block truncate text-xsm font-bold" style={{ color: v("--ux-ink") }}>{l.title}</span>
                   <span className="mt-1 block text-smd font-extrabold" style={{ color: v("--ux-brand") }}>
                     {formatWholeRupees(l.price)}
@@ -256,9 +258,9 @@ export default function QuoteSentPage() {
           </div>
         </section>
 
-        <div className="flex flex-wrap items-center justify-between gap-3 pb-2">
-          <Btn href="/app/documents/listings" variant="outline" icon="ArrowLeft">Back to what you sell</Btn>
-          <Btn href="/app/documents/new" icon="Plus">Ask about something else</Btn>
+        <div className={`flex flex-wrap items-center justify-between gap-3 pb-2 ${STEP_NAV}`}>
+          <Btn href="/app/documents/listings" variant="outline" icon="ArrowLeft" className="max-lg:w-full">Back to what you sell</Btn>
+          <Btn href="/app/documents/new" icon="Plus" className="ux-action-primary">Ask about something else</Btn>
         </div>
       </div>
     </HomeShell>

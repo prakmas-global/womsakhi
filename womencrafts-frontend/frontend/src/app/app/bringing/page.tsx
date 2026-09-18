@@ -7,6 +7,8 @@ import { ReadAloud } from "@/components/ux/reach/ReadAloud";
 import { Btn, Card, I, Pill, SectionHead, v } from "@/components/ux/kit";
 import { OBJECTIONS, SPEAKERS, type Objection } from "@/components/ux/reach/data";
 import { useT } from "@/i18n";
+import { ListGroup } from "@/components/ux/mobile/ListRow";
+import { GroupLabel, PhoneRow, PhoneTitle } from "@/components/ux/PhoneParts";
 
 /**
  * Bringing them along — deliberately the narrowest module in the app.
@@ -52,7 +54,11 @@ export default function BringingPage() {
     <HomeShell active="/app/bringing">
       <div className="flex flex-col gap-5" id="bringing-page">
 
-        <header>
+        <PhoneTitle title={tr("bringing.atHome")} sub={tr("bringing.whenSomeoneAtHomeIsNot")}
+                    note="For about half the women doing this, the hardest part was never the work — it was somebody at home. This page does not tell you what to say to them. It gives you something to show them, and somebody who will come and speak to them if you want.">
+          <div className="mt-3"><ReadAloud targetId="bringing-page" /></div>
+        </PhoneTitle>
+        <header className="hidden lg:block">
           <p className="text-2xs font-extrabold uppercase tracking-[0.2em]" style={{ color: v("--ux-brand") }}>{tr("bringing.atHome")}</p>
           <h1 className="mt-2 text-[clamp(1.5rem,3.2vw,2.125rem)] font-extrabold leading-[1.1] tracking-[-0.035em]"
               style={{ color: v("--ux-ink") }}>{tr("bringing.whenSomeoneAtHomeIsNot")}</h1>
@@ -66,8 +72,18 @@ export default function BringingPage() {
 
         {/* Their words, then something to show. */}
         <div>
-          <SectionHead title={tr("bringing.whatDidTheySay")} sub={tr("bringing.pickTheOneYouActuallyHeard")} icon="MessageCircle" />
-          <div className="flex flex-wrap gap-2">
+          <GroupLabel sub={tr("bringing.pickTheOneYouActuallyHeard")}>{tr("bringing.whatDidTheySay")}</GroupLabel>
+          <div className="hidden lg:block">
+            <SectionHead title={tr("bringing.whatDidTheySay")} sub={tr("bringing.pickTheOneYouActuallyHeard")} icon="MessageCircle" />
+          </div>
+          {/* One of several, so on a phone: a grouped list with a checkmark. */}
+          <ListGroup className="lg:hidden">
+            {OBJECTIONS.map((o) => (
+              <PhoneRow key={o.id} title={o.said} selected={open === o.id}
+                        onClick={() => setOpen(open === o.id ? null : o.id)} />
+            ))}
+          </ListGroup>
+          <div className="hidden flex-wrap gap-2 lg:flex">
             {OBJECTIONS.map((o) => (
               <button key={o.id} type="button" onClick={() => setOpen(open === o.id ? null : o.id)}
                       aria-pressed={open === o.id}
@@ -87,9 +103,31 @@ export default function BringingPage() {
 
         {/* The arm with the strongest evidence behind it. */}
         <div>
-          <SectionHead title={tr("bringing.orAskAWomanToCome")}
-                       sub={tr("bringing.someoneFromHereWhoHasDone")} icon="UserRoundCheck" />
-          <div className="flex flex-col gap-2.5">
+          <GroupLabel sub={tr("bringing.someoneFromHereWhoHasDone")}>{tr("bringing.orAskAWomanToCome")}</GroupLabel>
+          <div className="hidden lg:block">
+            <SectionHead title={tr("bringing.orAskAWomanToCome")}
+                         sub={tr("bringing.someoneFromHereWhoHasDone")} icon="UserRoundCheck" />
+          </div>
+          <ListGroup className="lg:hidden">
+            {SPEAKERS.map((s) => (
+              <PhoneRow key={s.id}
+                        lead={
+                          <span className="mt-0.5 grid h-[32px] w-[32px] shrink-0 place-items-center rounded-full text-[15px] font-bold"
+                                style={{ background: v("--ux-brand-tint-2"), color: v("--ux-brand") }}>
+                            {s.name.charAt(0)}
+                          </span>
+                        }
+                        title={
+                          <span className="flex flex-wrap items-center gap-2">
+                            {s.name}
+                            <Pill tone="neutral" size="sm">{s.years} years</Pill>
+                          </span>
+                        }
+                        meta={`${s.trade} · ${s.note}`}
+                        trailing={<Btn size="sm" variant="outline" icon="MessageCircle" onClick={() => ask(s.name)}>{tr("bringing.askHer")}</Btn>} />
+            ))}
+          </ListGroup>
+          <div className="hidden flex-col gap-2.5 lg:flex">
             {SPEAKERS.map((s) => (
               <Card key={s.id} pad={16}>
                 <div className="flex flex-wrap items-center gap-3.5">
@@ -154,17 +192,17 @@ function Answer({ o }: { o: Objection }) {
   const tr = useT();
   return (
     <Card pad={0} style={{ overflow: "hidden", borderColor: v("--ux-brand") }}>
-      <div className="px-5 pt-5">
+      <div className="px-5 pt-5 max-lg:px-4 max-lg:pt-4">
         <p className="border-l-2 pl-4 text-lg font-semibold italic leading-relaxed"
            style={{ borderColor: v("--ux-line-strong"), color: v("--ux-muted") }}>
           {o.said}
         </p>
       </div>
-      <div className="px-5 py-5">
+      <div className="px-5 py-5 max-lg:p-4">
         <p className="text-sm leading-relaxed" style={{ color: v("--ux-ink") }}>{o.answer}</p>
         {o.proof && (
           <div className="mt-4 flex flex-wrap items-center gap-2">
-            <span className="inline-flex items-center gap-2 rounded-[12px] px-3 py-2 text-xsm font-bold"
+            <span className="inline-flex items-center gap-2 rounded-[12px] px-3 py-2 text-xsm font-bold max-lg:px-4"
                   style={{ background: v("--ux-brand-tint"), color: v("--ux-brand") }}>
               <I name={o.icon} className="h-[14px] w-[14px]" />
               {o.proof}

@@ -5,8 +5,10 @@ import * as Icons from "@/components/ux/icons";
 import { useDevicePref } from "@/lib/use-device-pref";
 
 import { useTheme } from "@/context/ThemeContext";
-import { Card, SectionHead, SettingsPage, Toggle } from "@/components/ux/settings/Frame";
+import { SettingsPage, Toggle } from "@/components/ux/settings/Frame";
+import { ListRow } from "@/components/ux/mobile/ListRow";
 import { useT } from "@/i18n";
+import { Group } from "../_parts/Group";
 
 /**
  * Appearance.
@@ -14,6 +16,11 @@ import { useT } from "@/i18n";
  * Each theme is shown as a small picture of itself rather than a colour swatch
  * — a two-line preview of the real thing tells her more than the word "Dark"
  * ever will, and it changes the moment she picks one.
+ *
+ * On a phone the three pictures become three rows of a grouped list, each
+ * with a thumbnail of the same picture and a checkmark on the one in use. A
+ * three-up grid at 390px is three tiles too narrow for "Follow my phone", and
+ * rows with a check are how every phone's own settings offer one-of-three.
  */
 export default function AppearanceSettings() {
   const tr = useT();
@@ -30,8 +37,32 @@ export default function AppearanceSettings() {
 
   return (
     <SettingsPage title="Appearance" sub={tr("settingsAppearance.changesStraightAwayNothingToSave")}>
-      <Card>
-        <SectionHead title="Theme" />
+      <Group
+        title="Theme"
+        inset="flush"
+        phone={OPTIONS.map((o) => (
+          <ListRow
+            key={o.id}
+            title={o.label}
+            subtitle={o.note}
+            selected={theme === o.id}
+            onClick={() => setTheme(o.id)}
+            avatar={
+              /* The same picture as the desktop tile, at thumbnail size. */
+              <span aria-hidden className="flex h-[32px] w-[44px] shrink-0 overflow-hidden rounded-[var(--ux-r-sm)]"
+                    style={{ border: "1px solid var(--ux-line)" }}>
+                {o.scopes.map((scope) => (
+                  <span key={scope} className={`${scope} block flex-1 p-1`} style={{ background: "var(--ux-surface)" }}>
+                    <span className="block h-[4px] w-[70%] rounded-full" style={{ background: "var(--ux-ink)", opacity: 0.7 }} />
+                    <span className="mt-1 block h-[12px] rounded-[3px]"
+                          style={{ background: "var(--ux-surface-2)", border: "1px solid var(--ux-line)" }} />
+                  </span>
+                ))}
+              </span>
+            }
+          />
+        ))}
+      >
         <div className="ux-deck grid grid-cols-3 gap-[12px]">
           {OPTIONS.map((o, i) => {
             const on = theme === o.id;
@@ -89,10 +120,10 @@ export default function AppearanceSettings() {
             );
           })}
         </div>
-      </Card>
+      </Group>
 
-      <Card>
-        <SectionHead title={tr("settingsAppearance.makingItEasierToUse")} />
+      <Group title={tr("settingsAppearance.makingItEasierToUse")}
+             note={tr("settingsAppearance.ifYourPhoneIsAlreadySet")}>
         <div className="divide-y" style={{ borderColor: "var(--ux-line)" }}>
           <Toggle
             on={bigText} onChange={setBigText}
@@ -107,10 +138,7 @@ export default function AppearanceSettings() {
             whenOff="Cards lift and pages slide as you move around."
           />
         </div>
-        <p className="mt-3.5 flex items-start gap-2.5 rounded-[12px] p-3 text-xs leading-relaxed"
-           style={{ background: "var(--ux-surface-2)", color: "var(--ux-ink-2)" }}>
-          <Icons.Info className="mt-[1px] h-[14px] w-[14px] shrink-0" style={{ color: "var(--ux-brand)" }} />{tr("settingsAppearance.ifYourPhoneIsAlreadySet")}</p>
-      </Card>
+      </Group>
     </SettingsPage>
   );
 }
