@@ -11,17 +11,20 @@ import type { NextConfig } from "next";
 const nextConfig: NextConfig = {
 
   /**
-   * Where the build goes — overridable, so a production build can sit beside a
-   * running `next dev` instead of on top of it.
+   * Keep development and production output separate so a production build can
+   * sit beside a running `next dev` instead of writing on top of its cache.
    *
    * Both write to `.next`, and building while dev is running either fails or
    * corrupts the dev cache, so auditing the app against real production speed
    * used to mean stopping the dev server first. A cold `next dev` compiles each
    * route the first time it is opened — measured at ~47s a route, which put a
    * 110-screen audit at over an hour. A production build serves the same 110
-   * in milliseconds each. Unset, this is `.next` and nothing changes.
+   * in milliseconds each. Development uses `.next-dev`; builds keep `.next`
+   * for the existing container and deployment workflow.
    */
-  distDir: process.env.NEXT_DIST_DIR || ".next",
+  distDir:
+    process.env.NEXT_DIST_DIR ||
+    (process.env.NODE_ENV === "development" ? ".next-dev" : ".next"),
 
   /**
    * Build a self-contained server for the container image.

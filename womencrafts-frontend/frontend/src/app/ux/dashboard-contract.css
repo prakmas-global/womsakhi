@@ -1,0 +1,255 @@
+/* Shared behavior for the eight primary member dashboards. Their artwork and
+   information architecture remain distinct; geometry and interaction do not. */
+[data-dashboard] {
+  --dashboard-gap: var(--ux-dashboard-gap);
+  --dashboard-section-gap: var(--ux-dashboard-section-gap);
+  --dashboard-card-padding: var(--ux-dashboard-card-padding);
+  --dashboard-compact-padding: var(--ux-dashboard-compact-padding);
+  --dashboard-row-gap: var(--ux-dashboard-row-gap);
+  --dashboard-heading-gap: var(--ux-dashboard-heading-gap);
+  --dashboard-control-height: var(--ux-dashboard-control-h);
+  --dashboard-card-radius: var(--ux-dashboard-card-radius);
+  --dashboard-control-radius: var(--ux-dashboard-control-radius);
+  --dashboard-border: var(--ux-dashboard-border);
+  --dashboard-surface: var(--ux-dashboard-surface);
+  --dashboard-muted-surface: var(--ux-dashboard-muted-surface);
+  --dashboard-shadow: var(--ux-dashboard-shadow);
+  --dashboard-font-body: var(--ux-dashboard-font-body);
+  --dashboard-font-display: var(--ux-dashboard-font-display);
+  width: 100%;
+  min-width: 0;
+  color: var(--ux-ink);
+  font-family: var(--dashboard-font-body);
+}
+
+[data-dashboard],
+[data-dashboard] *,
+[data-dashboard] *::before,
+[data-dashboard] *::after {
+  box-sizing: border-box;
+}
+
+/* Grid and flex children default to min-width:auto, which is the source of
+   most mysterious dashboard overflow. Every composed surface may shrink; the
+   component decides explicitly when content should scroll instead. */
+[data-dashboard] :is(section, article, nav, aside, header, footer, div),
+[data-dashboard] :is(.grid, .flex) > * {
+  min-width: 0;
+}
+
+[data-dashboard] :is(button, input, select, textarea) {
+  font-family: inherit;
+  max-width: 100%;
+}
+
+[data-dashboard] :is(h1, h2) {
+  font-family: var(--dashboard-font-display) !important;
+  letter-spacing: 0;
+  text-align: start;
+}
+
+[data-dashboard] h1 {
+  font-size: var(--ux-dashboard-title-size) !important;
+  font-weight: var(--ux-dashboard-heading-weight) !important;
+  line-height: var(--ux-dashboard-title-leading) !important;
+}
+
+[data-dashboard] h2 {
+  font-size: var(--ux-dashboard-section-size) !important;
+  font-weight: var(--ux-dashboard-heading-weight) !important;
+  line-height: var(--ux-dashboard-section-leading) !important;
+}
+
+/* Side rails and utility widgets have less visual territory than primary
+   sections. They retain the same display face and weight at a compact role,
+   preventing calendar months and panel titles from wrapping prematurely. */
+[data-dashboard] :is(aside, [class*="Rail"], [class*="rail"], [class*="calendar"], [class*="Calendar"]) h2 {
+  font-size: var(--ux-dashboard-widget-title-size) !important;
+  line-height: var(--ux-dashboard-widget-title-leading) !important;
+}
+
+[data-dashboard] h3 {
+  font-family: var(--dashboard-font-body) !important;
+  font-size: var(--ux-dashboard-card-title-size) !important;
+  font-weight: var(--ux-dashboard-heading-weight) !important;
+  line-height: var(--ux-dashboard-card-title-leading) !important;
+  letter-spacing: 0;
+  text-align: start;
+}
+
+[data-dashboard] :is(h1, h2, h3, p) {
+  text-wrap: pretty;
+}
+
+[data-dashboard] p {
+  font-family: var(--dashboard-font-body);
+  line-height: var(--ux-dashboard-body-leading);
+}
+
+[data-dashboard] small {
+  font-family: var(--dashboard-font-body);
+  line-height: var(--ux-dashboard-caption-leading);
+}
+
+[data-dashboard] :is(h1, h2, h3, p):first-child {
+  margin-block-start: 0;
+}
+
+[data-dashboard] :is(h1, h2, h3, p):last-child {
+  margin-block-end: 0;
+}
+
+/* Shared vertical rhythm. Page modules still own composition; these rules
+   align the repeated header/action patterns across all eight dashboards. */
+[data-dashboard] :is(section, article) > header,
+[data-dashboard] [class*="sectionHead"],
+[data-dashboard] [class*="SectionHead"],
+[data-dashboard] [class*="panelHeading"],
+[data-dashboard] [class*="railHeading"] {
+  gap: var(--dashboard-heading-gap);
+}
+
+[data-dashboard] :is(section, article) > header + *,
+[data-dashboard] [class*="sectionHead"] + *,
+[data-dashboard] [class*="SectionHead"] + * {
+  margin-block-start: var(--dashboard-row-gap);
+}
+
+[data-dashboard] :is(section, article) > :is(a, button):last-child {
+  margin-block-start: var(--dashboard-row-gap);
+}
+
+[data-dashboard] :is(button, input, select, textarea) {
+  letter-spacing: 0;
+}
+
+[data-dashboard] :is(a, button, input, select) {
+  -webkit-tap-highlight-color: transparent;
+}
+
+[data-dashboard] :is(a, button) {
+  transition: color 160ms ease, background-color 160ms ease,
+              border-color 160ms ease, box-shadow 160ms ease,
+              opacity 160ms ease !important;
+}
+
+/* Dashboards should feel steady. Action feedback comes from colour, edge and
+   shadow, never from controls moving under the pointer. */
+[data-dashboard] :is(a, button):hover {
+  transform: none !important;
+  filter: none !important;
+}
+
+/* CTA feedback is deliberately tonal, not dimensional. The broad class-name
+   hooks cover each dashboard's locally-scoped button names while preserving
+   neutral icon controls and links. */
+[data-dashboard] :is(a, button):is(
+  [class*="primary"], [class*="Primary"],
+  [class*="Button"], [class*="button"],
+  [class*="Action"], [class*="action"]
+):hover,
+[data-dashboard] :is([class*="jobBody"], [class*="contact"], [class*="help"], [class*="reputation"]) > a:hover {
+  border-color: color-mix(in srgb, var(--ux-brand) 72%, var(--ux-line)) !important;
+  box-shadow: var(--ux-dashboard-cta-hover) !important;
+}
+
+[data-dashboard] :is(
+  [class*="actionList"], [class*="quickActions"],
+  [class*="settings"], [class*="journey"], [class*="tasks"]
+) > a:hover {
+  border-color: color-mix(in srgb, var(--ux-brand) 42%, var(--ux-line)) !important;
+  background-color: var(--ux-dashboard-action-hover) !important;
+  box-shadow: 0 5px 14px color-mix(in srgb, var(--ux-brand) 9%, transparent) !important;
+}
+
+.dark [data-dashboard] {
+  --ux-dashboard-cta-hover: inset 0 0 0 999px color-mix(in srgb, white 7%, transparent),
+    0 7px 18px color-mix(in srgb, black 30%, transparent);
+}
+
+[data-dashboard] :is(a, button):focus-visible {
+  outline: 3px solid var(--ux-dashboard-focus) !important;
+  outline-offset: 2px !important;
+}
+
+/* Form controls use one quiet, deliberate ring. Search fields commonly live
+   inside a bordered wrapper, so the wrapper receives the ring and the nested
+   input never draws a second capsule inside it. */
+[data-dashboard] :is(input, select, textarea) {
+  caret-color: var(--ux-brand);
+  transition: border-color 160ms ease, box-shadow 160ms ease,
+              background-color 160ms ease;
+}
+
+[data-dashboard] :is(input, select, textarea):focus-visible {
+  outline: 0 !important;
+  border-color: var(--ux-brand) !important;
+  box-shadow: 0 0 0 3px var(--ux-dashboard-field-focus) !important;
+}
+
+[data-dashboard] :is(
+  form,
+  label,
+  [class*="search"],
+  [class*="Search"],
+  [role="search"]
+):has(input:focus-visible) {
+  border-color: color-mix(in srgb, var(--ux-brand) 68%, var(--ux-line)) !important;
+  box-shadow: 0 0 0 3px var(--ux-dashboard-field-focus) !important;
+}
+
+[data-dashboard] :is(
+  form,
+  label,
+  [class*="search"],
+  [class*="Search"],
+  [role="search"]
+) > input:focus-visible {
+  border-color: transparent !important;
+  box-shadow: none !important;
+}
+
+[data-dashboard] :is(input, textarea)::placeholder {
+  color: var(--ux-muted);
+  opacity: .82;
+}
+
+[data-dashboard] button:not(:disabled),
+[data-dashboard] a[href] {
+  cursor: pointer;
+}
+
+[data-dashboard] button:disabled {
+  cursor: not-allowed;
+  opacity: .55;
+}
+
+[data-dashboard] img {
+  display: block;
+  max-width: 100%;
+}
+
+[data-dashboard] :is(video, canvas, svg) {
+  max-width: 100%;
+}
+
+[data-dashboard] :is(h1, h2, h3, p) {
+  overflow-wrap: break-word;
+}
+
+/* On touch screens the visual control may stay compact, but its actual target
+   must be comfortably tappable. Desktop density is left unchanged. */
+@media (pointer: coarse) {
+  [data-dashboard] :is(button, input, select, textarea),
+  [data-dashboard] a[href]:not([aria-hidden="true"]) {
+    min-height: var(--ux-dashboard-hit-min);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  [data-dashboard], [data-dashboard] * {
+    scroll-behavior: auto !important;
+    transition-duration: 0ms !important;
+    animation-duration: 0ms !important;
+  }
+}

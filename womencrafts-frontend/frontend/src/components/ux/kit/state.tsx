@@ -442,7 +442,7 @@ export function ScreenError({
           <div className="mt-5 flex flex-wrap justify-center gap-2.5">
             <button
               onClick={() => (reset ? reset() : window.location.reload())}
-              className="ux-press ux-hov ux-sq ux-clay inline-flex items-center gap-2 rounded-[12px] px-4 py-2.5 text-xsm font-semibold"
+              className="ux-press ux-hov ux-sq inline-flex min-h-[42px] items-center gap-2 rounded-[12px] px-4 py-2.5 text-xsm font-semibold"
               style={{ background: "linear-gradient(96deg, var(--ux-fill), var(--ux-fill-2))", color: "var(--ux-on-brand)" }}
             >
               <Icons.RotateCcw className="ux-ico h-[15px] w-[15px]" strokeWidth={2.1} /> Try again

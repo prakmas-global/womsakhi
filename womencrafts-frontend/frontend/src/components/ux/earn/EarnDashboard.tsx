@@ -69,7 +69,7 @@ export function EarnDashboard() {
   ];
 
   return <HomeShell active="/app/earn" loadFailed="your earnings">
-    <div className={styles.dashboard} data-earn-dashboard>
+    <div className={styles.dashboard} data-dashboard="earn" data-earn-dashboard>
       <div className={styles.main}>
         <section className={styles.hero}>
           <img src="/ux/art/earn-dashboard-hero.png" alt="" className={styles.heroImage} />

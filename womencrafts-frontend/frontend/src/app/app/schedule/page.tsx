@@ -1,340 +1,39 @@
 "use client";
-
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
+import Image from "next/image";
+import { useMemo,useState } from "react";
+import {HomeShell} from "@/components/ux/home/HomeShell";
+import {I} from "@/components/ux/kit";
+import s from "./schedule.module.css";
 
-import { useDiary } from "@/components/ux/diary";
-import * as Icons from "@/components/ux/icons";
-import {Back, Btn, Card, EmptyState, I, IconTile, SourceNote, v } from "@/components/ux/kit";
-import { HomeShell } from "@/components/ux/home/HomeShell";
-import { useT } from "@/i18n";
-import { SegmentedControl } from "@/components/ux/mobile/SegmentedControl";
+type Cat="learning"|"work"|"health"|"community"|"personal"|"money"|"mentoring";
+type Module="calendar"|"agenda"|"bookings"|"reminders"|"focus";
+const cats:[Cat,string,string][]=[["learning","Learning","GraduationCap"],["work","Work","Briefcase"],["health","Health","HeartPulse"],["community","Community","Users"],["personal","Personal","Sparkles"],["money","Money","Wallet"],["mentoring","Mentoring","UserRound"]];
+const days=[["Sun",13],["Mon",14],["Tue",15],["Wed",16],["Thu",17],["Fri",18],["Sat",19]] as const;
+const data:[number,number,number,string,string,Cat,string][]=[
+ [0,1,1,"Morning Walk","7:00 - 8:00 AM","health","Leaf"],[0,4,1.5,"UI/UX Course","10:00 - 11:30 AM","learning","Laptop"],[0,7,1,"Lunch Break","1:00 - 2:00 PM","personal","Coffee"],[0,10,1,"Yoga Session","4:00 - 5:00 PM","health","Activity"],[0,14,1,"Reading Time","8:00 - 9:00 PM","learning","BookOpen"],
+ [1,3,1.5,"Work on Project","9:00 - 10:30 AM","work","Briefcase"],[1,8,1.5,"Circle Meetup","2:00 - 3:30 PM","community","Users"],[2,2,1,"Meditation","8:00 - 9:00 AM","health","Heart"],[2,5,1.5,"Financial Planning","11:00 - 12:30 PM","money","TrendingUp"],[2,11,1,"Skill Practice","5:00 - 6:00 PM","learning","Sparkles"],
+ [3,3,1,"Tailoring Class","9:00 - 10:00 AM","mentoring","GraduationCap"],[3,9,1,"Mentoring Call","3:00 - 4:00 PM","work","UserRound"],[3,13,1.5,"Family Time","7:00 - 8:30 PM","community","Users"],[4,4.5,1.5,"Webinar","10:30 AM - 12:00 PM","health","Mic"],[4,10,1,"Travel Planning","4:00 - 5:00 PM","personal","Plane"],
+ [5,1,1,"Fitness","7:00 - 8:00 AM","community","Activity"],[5,7,1,"Lunch with Friend","1:00 - 2:00 PM","community","Briefcase"],[5,12,1.5,"Creative Time","6:00 - 7:30 PM","mentoring","Palette"],[6,3,1.5,"Online Course","9:00 - 10:30 AM","work","Laptop"],[6,9,1,"Community Activity","3:00 - 4:00 PM","health","Sprout"]
+];
+const hours=["6 AM","7 AM","8 AM","9 AM","10 AM","11 AM","12 PM","1 PM","2 PM","3 PM","4 PM","5 PM","6 PM","7 PM","8 PM","9 PM"];
+const mini=[30,31,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,1,2,3];
+const moduleTabs:[Module,string,string][]=[["calendar","Calendar","CalendarDays"],["agenda","Agenda","List"],["bookings","My bookings","BookOpenCheck"],["reminders","Reminders","Bell"],["focus","Focus time","Clock3"]];
+const moduleContent={
+ bookings:{title:"My bookings",subtitle:"Your confirmed sessions and upcoming reservations.",items:[["Tailoring & Stitching","29 Sep · 9:00 AM · Online","GraduationCap","learning","View booking"],["Career counselling with Ananya","3 Oct · 11:00 AM · Video call","UserRound","mentoring","Join session"],["Women in Tech webinar","4 Oct · 4:00 PM · Online","Laptop","work","View details"]]},
+ reminders:{title:"Reminders",subtitle:"Small prompts that keep important plans from slipping away.",items:[["Morning workout","Tomorrow · 7:00 AM","Activity","health","Edit reminder"],["Complete course module 2","20 Sep · 6:00 PM","BookOpen","learning","Mark complete"],["Review monthly savings","25 Sep · 9:00 AM","PiggyBank","money","Review goal"]]},
+ focus:{title:"Focus time",subtitle:"Protect a quiet block for the work that matters most.",items:[["Quick focus","25 minutes · Short task","Timer","personal","Start 25 min"],["Deep work","50 minutes · One meaningful task","Brain","work","Start 50 min"],["Learning block","40 minutes · Course or practice","GraduationCap","learning","Start learning"]]},
+} as const;
 
-import {
-  CATEGORIES, ComingUp, MonthGrid, TodayPanel,
-  buildMonth, catFor, categoryOf, type CategoryId,
-} from "./calendar-views";
-
-const MONTHS = ["January", "February", "March", "April", "May", "June",
-                "July", "August", "September", "October", "November", "December"];
-const DAYS = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
-
-const iso = (d: Date) =>
-  `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
-
-/**
- * Her calendar — a month she can look at, not a list she has to read.
- *
- * ── Why a month grid rather than the list this used to be ───────────────────
- * The old screen was "Upcoming / Past" as a flat list. That answers "what is
- * next", which she already knows, and cannot answer the question she actually
- * has on a Sunday evening: *which days next week are already spoken for.*
- * Shape is the answer to that, and only a grid has a shape.
- *
- * ── Everything here is real ─────────────────────────────────────────────────
- * The entries are her bookings, the events she registered for and her accepted
- * mentor sessions, merged by `useDiary`. Nothing on this screen is invented,
- * and "Add activity" opens the three places she can genuinely create one —
- * there is no endpoint for a free-form event, so offering a form that wrote
- * nowhere would be the dishonest option.
- */
-export default function Schedule() {
-  const tr = useT();
-  const { data: diary, source } = useDiary();
-
-  const today = useMemo(() => new Date(), []);
-  const todayIso = iso(today);
-
-  const [cursor, setCursor] = useState(() => new Date(today.getFullYear(), today.getMonth(), 1));
-  const [picked, setPicked] = useState(todayIso);
-  const [view, setView] = useState<"calendar" | "agenda">("calendar");
-  const [off, setOff] = useState<CategoryId[]>([]);
-  const [addOpen, setAddOpen] = useState(false);
-  const addRef = useRef<HTMLDivElement>(null);
-
-  // Close the add menu on an outside click or Escape — a menu that can only be
-  // closed by choosing something traps her in a decision she may not want.
-  useEffect(() => {
-    if (!addOpen) return;
-    const away = (e: MouseEvent) => {
-      if (addRef.current && !addRef.current.contains(e.target as Node)) setAddOpen(false);
-    };
-    const key = (e: KeyboardEvent) => { if (e.key === "Escape") setAddOpen(false); };
-    document.addEventListener("mousedown", away);
-    document.addEventListener("keydown", key);
-    return () => { document.removeEventListener("mousedown", away); document.removeEventListener("keydown", key); };
-  }, [addOpen]);
-
-  const shown = useMemo(
-    () => diary.entries.filter((e) => !off.includes(categoryOf(e))),
-    [diary.entries, off],
-  );
-
-  const cells = useMemo(
-    () => buildMonth(cursor.getFullYear(), cursor.getMonth(), shown, todayIso),
-    [cursor, shown, todayIso],
-  );
-
-  const dayEntries = useMemo(
-    () => shown.filter((e) => e.on === picked).sort((a, b) => a.time.localeCompare(b.time)),
-    [shown, picked],
-  );
-
-  const upcoming = useMemo(
-    () => shown.filter((e) => e.on > todayIso).sort((a, b) => a.on.localeCompare(b.on)).slice(0, 3),
-    [shown, todayIso],
-  );
-
-  const agenda = useMemo(
-    () => shown.filter((e) => !e.past).sort((a, b) => a.on.localeCompare(b.on)),
-    [shown],
-  );
-
-  const step = useCallback((by: number) => {
-    setCursor((c) => new Date(c.getFullYear(), c.getMonth() + by, 1));
-  }, []);
-
-  const goToday = useCallback(() => {
-    setCursor(new Date(today.getFullYear(), today.getMonth(), 1));
-    setPicked(todayIso);
-  }, [today, todayIso]);
-
-  const toggle = useCallback((id: CategoryId) => {
-    setOff((o) => (o.includes(id) ? o.filter((x) => x !== id) : [...o, id]));
-  }, []);
-
-  const pickedDate = useMemo(() => {
-    const [y, m, d] = picked.split("-").map(Number);
-    return new Date(y, m - 1, d);
-  }, [picked]);
-
-  const pickedLabel = `${DAYS[pickedDate.getDay()].slice(0, 3)}, ${pickedDate.getDate()} ${MONTHS[pickedDate.getMonth()].slice(0, 3)} ${pickedDate.getFullYear()}`;
-
-  return (
-    <HomeShell
-      active="/app/schedule"
-      rail={
-        <div className="space-y-[16px]">
-          <TodayPanel
-            label={pickedLabel}
-            count={dayEntries.length}
-            entries={dayEntries}
-            onToday={goToday}
-            isToday={picked === todayIso}
-            onFullDay={() => setView("agenda")}
-          />
-
-          <ComingUp entries={upcoming} />
-
-          {/* Planning, offered rather than nagged. */}
-          <div className="relative overflow-hidden rounded-[16px] p-[20px]"
-               style={{ background: "linear-gradient(140deg, var(--ux-tint-lilac), var(--ux-tint-pink))" }}>
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img loading="lazy" decoding="async" src="/ux/art/scene-woman-planning-board.webp" alt=""
-                 className="ux-float pointer-events-none absolute -bottom-2 -end-3 h-[108px] w-[108px] object-contain" />
-            <h3 className="relative flex items-center gap-2 text-sm font-bold" style={{ color: v("--ux-ink") }}>
-              <Icons.CalendarDays className="h-[16px] w-[16px]" style={{ color: v("--ux-brand") }} />
-              {tr("schedule.planYourWeek")}
-            </h3>
-            <p className="relative mt-2 w-[62%] text-xs leading-relaxed" style={{ color: v("--ux-muted") }}>
-              {tr("schedule.twoHoursBookedInAdvanceIs")}
-            </p>
-            <div className="relative mt-3">
-              <Btn href="/app/goals" size="sm" iconEnd="ArrowRight">{tr("schedule.createYourPlan")}</Btn>
-            </div>
-          </div>
-        </div>
-      }
-    >
-      {/* ── Header ───────────────────────────────────────────────────── */}
-      {/* The top bar carries the way back on a phone; this one is the desktop's. */}
-      <div className="hidden lg:block">
-        <Back to="/app" label={tr("schedule.backToHome")} className="mb-4" />
-      </div>
-
-      <div className="mb-5 flex flex-wrap items-start justify-between gap-x-4 gap-y-3 max-lg:mb-4 max-lg:gap-y-4">
-        <div className="flex min-w-0 items-start gap-3.5">
-          {/* Decoration beside the title on a desktop; on a phone it costs the
-              large title 70px of its width. */}
-          <div className="hidden lg:block">
-            <IconTile icon="CalendarDays" tint="--ux-brand-tint-2" ink="--ux-brand" size={56} radius={28} />
-          </div>
-          <div>
-            <h1 className="ux-screen-title text-3xl font-extrabold leading-[1.15] tracking-[-0.02em]" style={{ color: v("--ux-ink") }}>{tr("schedule.myCalendar")}</h1>
-            <p className="mt-1.5 text-sm" style={{ color: v("--ux-muted") }}>{tr("schedule.everythingYouHavePlannedBookedAnd")}</p>
-            <SourceNote source={source} what={tr("schedule.yourDiary")} />
-          </div>
-        </div>
-
-        {/*
-          Wraps on a phone. As one unbreakable row this is 408px of controls —
-          the Calendar/Agenda toggle plus "Add activity" — inside a 350px
-          column, and `shrink-0` meant the last 38px of the button went under
-          the hard edge of the scroller with no way to reach it. It is still a
-          single row everywhere it fits.
-        */}
-        <div className="flex flex-wrap items-center gap-2.5 sm:flex-nowrap sm:shrink-0 max-lg:w-full max-lg:flex-col max-lg:items-stretch">
-          {/* Calendar / Agenda — a segmented control on a phone. */}
-          <SegmentedControl className="lg:hidden" label="Show as" value={view} onChange={setView}
-            options={[{ value: "calendar" as const, label: "Calendar", icon: "CalendarDays" },
-                      { value: "agenda" as const, label: "Agenda", icon: "List" }]} />
-          <div className="hidden rounded-[13px] border p-1 lg:flex"
-               style={{ background: v("--ux-surface"), borderColor: v("--ux-line") }}>
-            {(["calendar", "agenda"] as const).map((mode) => {
-              const on = view === mode;
-              return (
-                <button key={mode} type="button" onClick={() => setView(mode)} aria-pressed={on}
-                        className="ux-press ux-sq flex min-h-[40px] items-center gap-2 rounded-[10px] px-3.5 text-xsm font-bold capitalize transition-colors"
-                        style={{ background: on ? v("--ux-fill") : "transparent",
-                                 color: on ? v("--ux-on-brand") : v("--ux-ink-2") }}>
-                  <I name={mode === "calendar" ? "CalendarDays" : "List"} className="h-[15px] w-[15px]" />
-                  {mode}
-                </button>
-              );
-            })}
-          </div>
-
-          {/* Add activity — the three places she can genuinely make one. */}
-          <div className="relative" ref={addRef}>
-            <button type="button" onClick={() => setAddOpen((o) => !o)}
-                    aria-expanded={addOpen} aria-haspopup="menu"
-                    className="ux-press ux-sq flex min-h-[48px] items-center gap-2 rounded-[14px] px-4 text-sm font-bold max-lg:min-h-[50px] max-lg:w-full max-lg:justify-center max-lg:text-[17px]"
-                    style={{ background: v("--ux-fill"), color: v("--ux-on-brand") }}>
-              <Icons.Plus className="h-[18px] w-[18px]" />{tr("schedule.addActivity")}<Icons.ChevronDown className="h-[14px] w-[14px]" />
-            </button>
-            {addOpen && (
-              <div role="menu"
-                   className="ux-pop absolute end-0 top-[calc(100%+6px)] z-[var(--ux-z-dropdown)] w-[228px] rounded-[12px] border p-1.5"
-                   style={{ background: v("--ux-surface"), borderColor: v("--ux-line"),
-                            boxShadow: "var(--ux-shadow-pop)" }}>
-                {[
-                  { label: "Book a mentor session", icon: "UserRound", href: "/app/mentors" },
-                  { label: "Join an event", icon: "Store", href: "/app/events" },
-                  { label: "Start a course", icon: "GraduationCap", href: "/app/programs" },
-                ].map((a) => (
-                  <Link key={a.href} href={a.href} role="menuitem" onClick={() => setAddOpen(false)}
-                        className="ux-hov ux-sq flex items-center gap-2.5 rounded-[9px] px-2.5 py-2.5 text-xsm"
-                        style={{ color: v("--ux-ink") }}>
-                    <I name={a.icon} className="h-[16px] w-[16px]" style={{ color: v("--ux-muted") }} />
-                    {a.label}
-                  </Link>
-                ))}
-              </div>
-            )}
-          </div>
-        </div>
-      </div>
-
-      {/* ── The calendar panel: its own controls, then the month ─────── */}
-      <Card pad={20}>
-      {/* On a phone the month's controls and the filters are two rows — side
-          by side they left the filters no width at all. */}
-      <div className="mb-4 flex items-center justify-between gap-x-2 max-lg:flex-col max-lg:items-stretch max-lg:gap-y-3">
-        <div className="flex shrink-0 items-center gap-2">
-          <button type="button" onClick={() => step(-1)} aria-label={tr("schedule.previousMonth")}
-                  className="ux-press ux-sq grid h-[34px] w-[34px] place-items-center rounded-[10px] border max-lg:rounded-[12px]"
-                  style={{ borderColor: v("--ux-line"), color: v("--ux-ink-2") }}>
-            <Icons.ChevronLeft className="h-[17px] w-[17px]" />
-          </button>
-          <button type="button" onClick={() => step(1)} aria-label={tr("schedule.nextMonth")}
-                  className="ux-press ux-sq grid h-[34px] w-[34px] place-items-center rounded-[10px] border max-lg:rounded-[12px]"
-                  style={{ borderColor: v("--ux-line"), color: v("--ux-ink-2") }}>
-            <Icons.ChevronRight className="h-[17px] w-[17px]" />
-          </button>
-          <button type="button" onClick={goToday}
-                  className="ux-sq ms-1 flex items-center gap-1 text-base font-bold"
-                  style={{ color: v("--ux-ink") }}>
-            {MONTHS[cursor.getMonth()]} {cursor.getFullYear()}
-            <Icons.ChevronDown className="h-[16px] w-[16px]" style={{ color: v("--ux-muted") }} />
-          </button>
-          <button type="button" onClick={goToday}
-                  className="ux-press ux-sq ms-1 min-h-[34px] rounded-[10px] border px-3.5 text-xsm font-bold max-lg:rounded-[12px]"
-                  style={{ borderColor: v("--ux-line"), color: v("--ux-ink-2") }}>
-            Today
-          </button>
-        </div>
-
-        {/* Category filters. Pressed = shown, so the default reads as "all on". */}
-        <div className="ux-noscroll flex min-w-0 items-center gap-[3px] overflow-x-auto">
-          {CATEGORIES.map((c) => {
-            const on = !off.includes(c.id);
-            return (
-              <button key={c.id} type="button" onClick={() => toggle(c.id)} aria-pressed={on}
-                      className="ux-press ux-sq flex min-h-[30px] shrink-0 items-center gap-[3px] rounded-full ps-[3px] pe-2 text-xs font-semibold transition-opacity"
-                      style={{ background: v(c.tint), color: v(c.ink), opacity: on ? 1 : 0.4 }}>
-                <span className="grid h-[20px] w-[20px] place-items-center rounded-[6px]"
-                      style={{ background: v("--ux-surface"), color: v(c.ink) }}>
-                  <I name={c.icon} className="h-[11px] w-[11px]" />
-                </span>
-                {c.label}
-              </button>
-            );
-          })}
-        </div>
-      </div>
-
-      {/* ── The month, or the list ───────────────────────────────────── */}
-      {view === "calendar" ? (
-        <MonthGrid cells={cells} onPick={setPicked} />
-      ) : null}
-      </Card>
-
-      {/*
-        The picked day and what is coming, under the month, on a phone.
-
-        They live in the rail, and the rail is not shown below `lg` — so on a
-        phone tapping a day did nothing visible, and the only place an event's
-        name appeared was a pill squeezed into a 48px cell. Now the month is
-        the month (a dot per event, as a phone calendar draws it) and the day
-        she taps is listed under it, whole.
-      */}
-      {view === "calendar" && (
-        <div className="mt-4 space-y-4 lg:hidden">
-          <TodayPanel
-            label={pickedLabel}
-            count={dayEntries.length}
-            entries={dayEntries}
-            onToday={goToday}
-            isToday={picked === todayIso}
-            onFullDay={() => setView("agenda")}
-          />
-          <ComingUp entries={upcoming} />
-        </div>
-      )}
-
-      {view === "agenda" ? (agenda.length ? (
-        <div className="space-y-2">
-          {agenda.map((e) => {
-            const cat = catFor(categoryOf(e));
-            return (
-              <Link key={e.id} href={e.href}
-                    className="ux-card ux-hov ux-sq flex items-center gap-3.5 p-3.5 max-lg:gap-3 max-lg:p-4">
-                <span className="grid h-[52px] w-[48px] shrink-0 place-items-center rounded-[11px]"
-                      style={{ background: v("--ux-brand-tint") }}>
-                  <span className="text-lg font-extrabold leading-none" style={{ color: v("--ux-brand") }}>{e.d}</span>
-                  <span className="mt-0.5 text-3xs font-bold uppercase" style={{ color: v("--ux-brand") }}>{e.m}</span>
-                </span>
-                <IconTile icon={cat.icon} tint={cat.tint} ink={cat.ink} size={38} />
-                <span className="min-w-0 flex-1">
-                  <span className="block truncate text-sm font-bold" style={{ color: v("--ux-ink") }}>{e.title}</span>
-                  <span className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs" style={{ color: v("--ux-muted") }}>
-                    <span className="inline-flex items-center gap-1"><Icons.Clock className="h-[13px] w-[13px]" />{e.time}</span>
-                    <span className="inline-flex items-center gap-1"><Icons.MapPin className="h-[13px] w-[13px]" />{e.where}</span>
-                    <span className="inline-flex items-center gap-1"><Icons.Tag className="h-[13px] w-[13px]" />{e.kind}</span>
-                  </span>
-                </span>
-                <Icons.ChevronRight className="h-[17px] w-[17px] shrink-0" style={{ color: v("--ux-faint") }} />
-              </Link>
-            );
-          })}
-        </div>
-      ) : (
-        <Card>
-          <EmptyState icon="CalendarX" title={tr("schedule.nothingBookedYet")}
-            body="Sessions and events you join will be listed here, with the time and where to go."
-            action={<Btn href="/app/events" variant="soft" iconEnd="ArrowRight">{tr("schedule.browseEvents")}</Btn>} />
-        </Card>
-      )) : null}
-    </HomeShell>
-  );
+export default function Schedule(){
+ const [view,setView]=useState("week"),[module,setModule]=useState<Module>("calendar"),[selected,setSelected]=useState(6),[off,setOff]=useState<Cat[]>([]),[add,setAdd]=useState(false);
+ const shown=useMemo(()=>data.filter(e=>!off.includes(e[5])),[off]); const today=shown.filter(e=>e[0]===selected);
+ const toggle=(c:Cat)=>setOff(x=>x.includes(c)?x.filter(v=>v!==c):[...x,c]);
+ const rail=<div className={s.rail}><section className={s.mini}><header><h2>September 2026</h2><div><button aria-label="Previous month"><I name="ChevronLeft"/></button><button aria-label="Next month"><I name="ChevronRight"/></button></div></header><div className={s.miniWeek}>{["S","M","T","W","T","F","S"].map((x,i)=><b key={i}>{x}</b>)}</div><div className={s.miniDays}>{mini.map((x,i)=><button className={x===19?s.today:""} key={i}>{x}</button>)}</div><div className={s.todayList}><header><h3>Today · Sat, 19 Sep</h3><span>{today.length} activities</span></header>{today.map((e,i)=><Link href="/app/schedule" className={s.todayItem} data-cat={e[5]} key={i}><span>{e[4].split(" - ")[0]}</span><i><I name={e[6]}/></i><b>{e[3]}<small>{e[5]} · Online</small></b></Link>)}<button onClick={()=>setView("list")} className={s.full}>View full day <I name="ArrowRight"/></button></div></section><blockquote className={s.quote}>“Well planned days<br/>lead to a happier you.”<cite>— WomSakhi</cite></blockquote><section className={s.quick}><h3>Quick Add</h3><div>{[["CalendarPlus","Event"],["Bell","Reminder"],["ListChecks","Task"],["Target","Goal"]].map(x=><button onClick={()=>setAdd(true)} key={x[1]}><i><I name={x[0]}/></i>{x[1]}</button>)}</div><button className={s.natural}><I name="Sparkles"/> Add with natural language</button></section></div>;
+ return <HomeShell active="/app/schedule" rail={rail}><main className={s.page}>
+  <section className={s.hero}><Image src="/ux/schedule/calendar-hero-v1.png" alt="Woman enjoying a calm moment while planning her day" fill priority sizes="(max-width: 760px) 100vw, 75vw"/><div className={s.shade}/><div className={s.heroCopy}><p>← Home&nbsp; / &nbsp;<b>Your Calendar</b></p><h1>Your <em>Calendar</em></h1><span>Plan your time, stay consistent, and make space for what matters.</span></div><p className={s.note}>A balanced<br/>you builds<br/>a brighter<br/>tomorrow ♥<small>— WomSakhi</small></p></section>
+  <nav className={s.nav}>{moduleTabs.map(([id,label,icon])=><button className={module===id?s.active:""} aria-pressed={module===id} onClick={()=>{setModule(id);if(id==="agenda")setView("list");if(id==="calendar"&&view==="list")setView("week")}} key={id}><I name={icon}/>{label}</button>)}<div className={s.add}><button onClick={()=>setAdd(!add)}><I name="Plus"/> Add activity</button>{add&&<div>{[["Book a mentor","/app/mentors"],["Join an event","/app/events"],["Start a course","/app/programs"]].map(x=><Link key={x[1]} href={x[1]}>{x[0]}<I name="ArrowRight"/></Link>)}</div>}</div></nav>
+  {(module==="calendar"||module==="agenda")&&<><section className={s.controls}><div><button>Today</button><button aria-label="Previous week"><I name="ChevronLeft"/></button><button aria-label="Next week"><I name="ChevronRight"/></button><h2>September 2026 <I name="ChevronDown"/></h2></div><div className={s.switch}>{["day","week","month","list"].map(x=><button aria-pressed={view===x} onClick={()=>{setView(x);setModule(x==="list"?"agenda":"calendar")}} key={x}>{x}</button>)}</div><button className={s.filter}><I name="SlidersHorizontal"/> Filters</button></section><div className={s.filters}><button className={!off.length?s.on:""} onClick={()=>setOff([])}>All</button>{cats.map(c=><button data-cat={c[0]} aria-pressed={!off.includes(c[0])} onClick={()=>toggle(c[0])} key={c[0]}><I name={c[2]}/>{c[1]}</button>)}</div>{view==="week"||view==="day"?<section className={s.week}><div className={s.corner}/>{days.map((d,i)=><button className={`${s.dayHead} ${selected===i?s.selected:""}`} onClick={()=>setSelected(i)} key={d[1]}><span>{d[0]}</span><b>{d[1]}</b></button>)}<div className={s.times}>{hours.map(x=><span key={x}>{x}</span>)}</div><div className={s.grid}>{days.map((d,di)=><div className={`${s.col} ${selected===di?s.selectedCol:""}`} key={d[1]}>{shown.filter(e=>e[0]===di).map((e,i)=><Link href="/app/schedule" className={s.event} data-cat={e[5]} style={{top:e[1]*49,height:Math.max(47,e[2]*49)}} key={i}><b><I name={e[6]}/>{e[3]}</b><small>{e[4]}</small></Link>)}</div>)}</div></section>:<section className={s.list}><header><h2>{view==="month"?"September at a glance":"Your agenda"}</h2><span>{shown.length} planned activities</span></header>{shown.map((e,i)=><Link href="/app/schedule" key={i}><i data-cat={e[5]}><I name={e[6]}/></i><span><b>{e[3]}</b><small>{days[e[0]][0]}, {days[e[0]][1]} Sep · {e[4]}</small></span><I name="ChevronRight"/></Link>)}</section>}</>}
+  {(module==="bookings"||module==="reminders"||module==="focus")&&<section className={s.modulePanel}><header><div><span><I name={module==="bookings"?"BookOpenCheck":module==="reminders"?"Bell":"Clock3"}/></span><div><h2>{moduleContent[module].title}</h2><p>{moduleContent[module].subtitle}</p></div></div><button><I name="Plus"/> {module==="bookings"?"New booking":module==="reminders"?"Add reminder":"New focus block"}</button></header><div className={s.moduleCards}>{moduleContent[module].items.map((item)=><article data-cat={item[3]} key={item[0]}><i><I name={item[2]}/></i><div><h3>{item[0]}</h3><p>{item[1]}</p><span>{module==="bookings"?"Confirmed":module==="reminders"?"Active":"Ready"}</span></div><button>{item[4]} <I name="ArrowRight"/></button></article>)}</div></section>}
+ </main></HomeShell>
 }

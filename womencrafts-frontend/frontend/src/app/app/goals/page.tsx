@@ -12,7 +12,7 @@ import {
 import { apiAddGoal, apiDropGoal, apiMoveGoal } from "@/lib/money-api";
 import {
   DisciplineCard, GoalCard, GoalInsights, GoalStats, GoalsHero,
-  QuickActions, StaircaseNote,
+  QuickActions,
   type QuickAction,
 } from "./goal-views";
 
@@ -55,6 +55,7 @@ const manual = (g: Goal) => g.manual || g.kind === "count";
 export default function GoalsPage() {
   const goals = useMyGoals();
   const [kind, setKind] = useState(ALL);
+  const [status, setStatus] = useState<"all" | GoalState>("all");
   const [menu, setMenu] = useState<string | null>(null);
   const [note, setNote] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
@@ -80,10 +81,11 @@ export default function GoalsPage() {
   ], [rows]);
 
   const shown = useMemo(() => {
-    if (kind === ALL) return rows;
+    const stateRows = status === "all" ? rows : rows.filter((g) => goalState(g) === status);
+    if (kind === ALL) return stateRows;
     const k = GOAL_KINDS.find((x) => x.label === kind);
-    return k ? rows.filter((g) => g.kind === k.id) : rows;
-  }, [rows, kind]);
+    return k ? stateRows.filter((g) => g.kind === k.id) : stateRows;
+  }, [rows, kind, status]);
 
   /** The ring: how far along all of them are together, not how many are done. */
   const overall = useMemo(() => rows.length === 0 ? 0
@@ -139,8 +141,7 @@ export default function GoalsPage() {
       <div className="flex flex-col">
         <GoalsHero chips={chips} active={kind} onPick={setKind} />
 
-        <GoalStats total={rows.length} by={by} />
-        <StaircaseNote />
+        <GoalStats total={rows.length} by={by} active={status} onPick={setStatus} />
 
         {adding && (
           <AddGoal

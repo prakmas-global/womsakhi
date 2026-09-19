@@ -72,7 +72,9 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
     });
     return () => window.clearTimeout(reset);
   }, [pathname]);
-  useEffect(() => panelRef.current?.scrollTo({ top: 0 }), [infoPanel]);
+  useEffect(() => {
+    panelRef.current?.scrollTo({ top: 0 });
+  }, [infoPanel]);
 
   return (
     <main className="auth-scene auth-entry">

@@ -70,7 +70,7 @@ export default function CycleStart() {
         {/* The reference's own top: the brand, not a back arrow. */}
         <div className="flex items-center justify-center pt-4 lg:pt-0">
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src="/ux/brand/womsakhi-wordmark.webp" alt="WomSakhi" className="h-[38px] w-auto" />
+          <img src="/womsakhi-wordmark.png" alt="WomSakhi" className="h-[38px] w-auto" />
         </div>
 
         {step === "intro" && (

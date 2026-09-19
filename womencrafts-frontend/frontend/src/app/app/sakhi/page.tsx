@@ -16,6 +16,7 @@ import { PhoneComposer } from "@/components/ux/sakhi/parts";
 import { Sheet } from "@/components/ux/kit/sheet";
 import { Btn } from "@/components/ux/kit";
 import { useToast } from "@/design-system/feedback/ToastProvider";
+import styles from "./sakhi.module.css";
 import { SPEECH_UNSUPPORTED, speechFailure, speechSupported, type SpeechFailure } from "@/lib/speech";
 import {
   apiSakhiConversation,
@@ -478,11 +479,11 @@ export default function SakhiPage() {
 
   return (
     <HomeShell active="/app/sakhi" bare rail={
-      <SakhiRail
-        grouped={grouped} search={search} setSearch={setSearch}
-        openConversation={openConversation} remove={remove}
-        togglePin={togglePin} current={conversationId} total={history.length}
-      />
+      <div className={styles.railScope}><SakhiRail
+          grouped={grouped} search={search} setSearch={setSearch}
+          openConversation={openConversation} remove={remove}
+          togglePin={togglePin} current={conversationId} total={history.length}
+        /></div>
     }>
       {/*
         `ChatFrame` is a plain `flex flex-col` above `lg` — the div that used to
@@ -491,8 +492,8 @@ export default function SakhiPage() {
         one long page with the composer at the end of it, so tapping the field
         put the keyboard over the thing she had just tapped.
       */}
-      <ChatFrame label="Ask Sakhi" className="flex flex-col gap-3 lg:gap-4">
-        <header className="flex shrink-0 items-center gap-2.5 border-b pb-2.5 lg:flex-wrap lg:gap-3 lg:border-0 lg:pb-0"
+      <ChatFrame label="Ask Sakhi" className={`${styles.page} flex flex-col gap-3 lg:gap-4`}>
+        <header data-sakhi-header className="flex shrink-0 items-center gap-2.5 border-b pb-2.5 lg:flex-wrap lg:gap-3 lg:border-0 lg:pb-0"
                 style={{ borderColor: "var(--ux-line)" }}>
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img loading="lazy" decoding="async" src="/sakhi-face.webp" alt=""
@@ -541,7 +542,7 @@ export default function SakhiPage() {
           the phone keeps its header and its composer nailed down.
         */}
         <ChatLog scroll={scroll} label="Your conversation with Sakhi"
-                 className="flex flex-col gap-4 lg:contents">
+                 className={`${styles.chatLog} flex flex-col gap-4 lg:contents`}>
           {voiceMode ? (
             <Voice
               heard={heard} listening={listening}

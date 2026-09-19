@@ -4,7 +4,6 @@ import { useSyncExternalStore } from "react";
 import { createPortal } from "react-dom";
 import { RefreshCw, WifiOff } from "@/components/ux/icons";
 
-import { Brand } from "@/components/ux/Brand";
 import { useWaitState } from "@/lib/wait";
 /**
  * The tokens come with the component, deliberately.
@@ -153,7 +152,13 @@ function WaitBody({
 }) {
   return (
     <div className="flex w-full max-w-[360px] flex-col items-center text-center">
-      <Brand size="lg" href={null} />
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img
+        src="/womsakhi-lockup.png"
+        alt="WomSakhi - Stronger Women. Brighter Tomorrows."
+        className="h-auto w-[min(230px,68vw)] object-contain"
+        decoding="async"
+      />
 
       {/*
         One live region holding every word on the screen, `atomic` so it is read

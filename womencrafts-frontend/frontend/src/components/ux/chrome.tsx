@@ -53,8 +53,9 @@ const EMPTY: PageChrome = {};
 
 const ChromeContext = createContext<{
   chrome: PageChrome;
-  set: (path: string, c: PageChrome) => void;
-}>({ chrome: EMPTY, set: () => {} });
+  set: (path: string, c: PageChrome, owner: symbol) => void;
+  clear: (path: string, owner: symbol) => void;
+}>({ chrome: EMPTY, set: () => {}, clear: () => {} });
 
 export function ChromeProvider({ children }: { children: React.ReactNode }) {
   /**
@@ -67,14 +68,19 @@ export function ChromeProvider({ children }: { children: React.ReactNode }) {
    * comparing it on read means a screen that asks for nothing gets nothing,
    * with no effect to run and no order to get wrong.
    */
-  const [entry, setEntry] = useState<{ path: string; chrome: PageChrome }>({ path: "", chrome: EMPTY });
+  const [entry, setEntry] = useState<{ path: string; chrome: PageChrome; owner?: symbol }>({ path: "", chrome: EMPTY });
   const pathname = usePathname() ?? "";
 
   const set = useCallback(
-    (path: string, chrome: PageChrome) => setEntry({ path, chrome }), []);
+    (path: string, chrome: PageChrome, owner: symbol) => setEntry({ path, chrome, owner }), []);
+  const clear = useCallback((path: string, owner: symbol) => {
+    setEntry((current) => current.path === path && current.owner === owner
+      ? { path: "", chrome: EMPTY }
+      : current);
+  }, []);
 
   const chrome = entry.path === pathname ? entry.chrome : EMPTY;
-  const value = useMemo(() => ({ chrome, set }), [chrome, set]);
+  const value = useMemo(() => ({ chrome, set, clear }), [chrome, set, clear]);
   return <ChromeContext.Provider value={value}>{children}</ChromeContext.Provider>;
 }
 
@@ -91,10 +97,12 @@ export function useChrome(): PageChrome {
  * state on every render and loop.
  */
 export function usePageChrome(c: PageChrome) {
-  const { set } = useContext(ChromeContext);
+  const { set, clear } = useContext(ChromeContext);
   const pathname = usePathname() ?? "";
+  const [owner] = useState(() => Symbol("page-chrome"));
   const { rail, wide, bare, fit, name, immersive } = c;
   useLayoutEffect(() => {
-    set(pathname, { rail, wide, bare, fit, name, immersive });
-  }, [set, pathname, rail, wide, bare, fit, name, immersive]);
+    set(pathname, { rail, wide, bare, fit, name, immersive }, owner);
+    return () => clear(pathname, owner);
+  }, [set, clear, pathname, rail, wide, bare, fit, name, immersive, owner]);
 }
