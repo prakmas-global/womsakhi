@@ -1,6 +1,9 @@
 "use client";
 
 import { useCallback, useMemo, useState } from "react";
+import Image from "next/image";
+import Link from "next/link";
+import { ArrowRight, BookOpen, BriefcaseBusiness, Heart, IndianRupee, MessageCircle, Target, UsersRound } from "lucide-react";
 
 import { HomeShell } from "@/components/ux/home/HomeShell";
 import { ScreenError, ScreenSkeleton, v } from "@/components/ux/kit";
@@ -13,10 +16,11 @@ import {
 import { apiGoals, type Goal } from "@/lib/money-api";
 import { useResource } from "@/lib/use-resource";
 import {
-  Achievements, GoalsRail, JourneyHero, JourneyStats, Motivation, NeedGuidance,
-  OnYourWay, Recommended, StepCard, Stepper,
+  Achievements, GoalsRail, Motivation, NeedGuidance,
+  OnYourWay,
   type Badge, type Rec, type RailGoal,
 } from "./journey-views";
+import styles from "./journey.module.css";
 
 /** Her goals, or none — never the four invented ones this rail used to show. */
 const NO_GOALS: Goal[] = [];
@@ -64,7 +68,6 @@ export default function JourneyPage() {
   /** Goals she set herself. Empty is a real answer; a fixture was not. */
   const goalsRead = useResource(apiGoals, NO_GOALS);
 
-  const [picked, setPicked] = useState<string | null>(null);
   const [note, setNote] = useState<string | null>(null);
 
   const say = useCallback((msg: string) => {
@@ -74,8 +77,7 @@ export default function JourneyPage() {
 
   const steps = useMemo(() => (facts ? journeySteps(facts) : []), [facts]);
   const here = useMemo(() => (steps.length ? currentStep(steps) : null), [steps]);
-  const shown: JourneyStep | null = useMemo(
-    () => steps.find((s) => s.id === picked) ?? here, [steps, picked, here]);
+  const shown: JourneyStep | null = here;
 
   const tally = useMemo(() => {
     const by = { done: 0, doing: 0, todo: 0 };
@@ -84,11 +86,6 @@ export default function JourneyPage() {
   }, [steps]);
 
   /** Said about what she has done, never about who she is. */
-  const cheer = tally.done === 0 ? "The first step is the whole trick"
-              : tally.done >= steps.length ? "You have walked all seven"
-              : tally.done === 1 ? "One down — keep going"
-              : `${tally.done} steps behind you`;
-
   /* ── The rail ─────────────────────────────────────────────────────────── */
 
   /**
@@ -199,19 +196,33 @@ export default function JourneyPage() {
 
   return (
     <HomeShell active="/app/journey" rail={rail} loadFailed="your journey">
-      <div className="flex flex-col">
-        <JourneyHero />
+      <div className={styles.page} data-dashboard="journey">
+        <section className={styles.hero} aria-labelledby="journey-title">
+          <Image src="/ux/journey/journey-hero-v1.png" alt="Women of different ages and backgrounds looking toward a bright mountain horizon" fill priority sizes="(max-width: 760px) 100vw, 70vw" />
+          <div className={styles.heroShade} />
+          <div className={styles.heroCopy}>
+            <p>My journey</p>
+            <h1 id="journey-title">Small Steps.<br /><em>Big Dreams.</em></h1>
+            <span>Your journey is unique. Explore, learn, grow and create the life you deserve.</span>
+          </div>
+          <p className={styles.heroWords}>Learn<br />Earn<br />Connect<br />Grow<br />Together <Heart /></p>
+        </section>
+        <nav className={styles.tabs} aria-label="Journey areas">
+          {[['Overview','Sparkles','/app/journey'],['Learning','BookOpen','/app/learn'],['Work','Briefcase','/app/work'],['Earn','IndianRupee','/app/earn'],['Circle','Users','/app/circle'],['Health & Wellness','Heart','/app/wellness'],['Goals','Target','/app/goals']].map(([label,icon,href],index)=><Link href={href} key={label} aria-current={index===0?'page':undefined}><span>{icon==='BookOpen'?<BookOpen/>:icon==='Briefcase'?<BriefcaseBusiness/>:icon==='IndianRupee'?<IndianRupee/>:icon==='Users'?<UsersRound/>:icon==='Heart'?<Heart/>:icon==='Target'?<Target/>:<Target/>}</span>{label}</Link>)}
+        </nav>
 
-        <JourneyStats total={steps.length} done={tally.done} doing={tally.doing}
-                      todo={tally.todo} cheer={cheer} />
+        <div className={styles.featureGrid}>
+          <section className={styles.motivationCard}><Image src="/ux/journey/journey-motivation-v1.png" alt="Woman looking across a mountain valley at sunrise" fill sizes="(max-width:760px) 100vw, 45vw"/><div className={styles.motivationShade}/><div><small>Today&apos;s motivation</small><blockquote>“Every step you take<br/>builds the stronger you.”</blockquote><cite>— WomSakhi</cite></div></section>
+          <section className={styles.quick}><header><h2>Quick Actions</h2><p>Jump into what matters most</p></header><div>{[
+            [BookOpen,'Explore Learning','/app/learn'],[BriefcaseBusiness,'Find Opportunities','/app/opportunities'],[Target,'Track Goals','/app/goals'],[UsersRound,'Join Circle','/app/circles'],[Heart,'Check Health','/app/wellness'],[MessageCircle,'Ask Sakhi','/app/sakhi'],
+          ].map(([Icon,label,href])=><Link href={href as string} key={label as string}><span><Icon/></span>{label as string}</Link>)}</div></section>
+        </div>
 
-        <Stepper steps={steps} at={shown.id} onPick={setPicked} />
+        <section className={styles.glance}><header><h2>Your Journey at a Glance</h2><p>Here&apos;s where you stand and what&apos;s next.</p></header><div>{[
+          [BookOpen,facts.coursesDone,'Learning milestones','/app/learn'],[BriefcaseBusiness,facts.applications,'Opportunities','/app/work'],[IndianRupee,facts.earnedMinor>0?1:0,'Income sources','/app/earn'],[UsersRound,facts.circles,'Communities','/app/circle'],[Heart,`${Math.round(tally.done/steps.length*100)}%`,'Journey progress','/app/goals'],
+        ].map(([Icon,value,label,href])=>{const MetricIcon=Icon as typeof BookOpen;return <Link href={href as string} key={label as string}><span><MetricIcon/></span><strong>{value as string | number}</strong><small>{label as string}</small><b>Explore more <ArrowRight/></b></Link>})}</div></section>
 
-        <StepCard step={shown} total={steps.length}
-                  onCheck={() => say("These tick themselves. Each one turns green when you have actually done it — nothing here takes your word for it.")}
-                  onLater={() => say("Saved. This step is here whenever you come back.")} />
-
-        <Recommended rows={recs} />
+        <section className={styles.recommended}><header><div><h2>Recommended for You</h2><p>Based on your current journey step: {shown.label}.</p></div><Link href="/app/programs">View all <ArrowRight/></Link></header><div>{recs.map((rec,index)=><Link href={rec.href} key={rec.id} className={styles.rec}><Image src={['/ux/art/learn-dashboard-finance.webp','/ux/art/work-dashboard-writing.webp','/ux/art/circle-study-group.webp','/ux/wellness/morning-yoga-v2.png'][index%4]} alt="" fill sizes="240px"/><span><small>{rec.kind}</small><strong>{rec.title}</strong><b>{rec.meta}</b><i>Explore <ArrowRight/></i></span></Link>)}</div></section>
 
         <div className="ux-toast rounded-[12px] px-5 py-3.5 text-xsm font-bold"
              data-on={note ? "true" : "false"} role="status" aria-live="polite"

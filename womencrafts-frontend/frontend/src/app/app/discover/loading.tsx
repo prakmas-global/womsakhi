@@ -1,5 +1,5 @@
 import { HomeShell } from "@/components/ux/home/HomeShell";
-import { RailSkeleton, ScreenSkeleton } from "@/components/ux/kit";
+import { ScreenSkeleton } from "@/components/ux/kit";
 
 /**
  * Shown while this route's code and data are on their way.
@@ -10,8 +10,8 @@ import { RailSkeleton, ScreenSkeleton } from "@/components/ux/kit";
  */
 export default function Loading() {
   return (
-    <HomeShell skeleton="grid" rail={<RailSkeleton />}>
-      <ScreenSkeleton shape="grid" />
+    <HomeShell skeleton="grid">
+      <div data-dashboard="discover"><ScreenSkeleton shape="grid" /></div>
     </HomeShell>
   );
 }

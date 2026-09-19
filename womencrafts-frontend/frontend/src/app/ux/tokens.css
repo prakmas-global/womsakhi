@@ -277,6 +277,46 @@
   --ux-r-card: var(--ux-r-lg);
   --ux-r-inner: var(--ux-r-md);
   --ux-r-pill: 999px;
+
+  /* ── Member dashboard contract ───────────────────────────────────────────
+     Home, Learn, Work, Earn, Circle, Wellness, You and Help consume these
+     semantic roles. Page styles own composition and artwork; they do not get
+     to invent a second spacing, control or typography system. */
+  --ux-dashboard-gap: var(--ux-sp-3);
+  --ux-dashboard-section-gap: var(--ux-sp-4);
+  --ux-dashboard-card-padding: var(--ux-sp-4);
+  --ux-dashboard-compact-padding: var(--ux-sp-3);
+  --ux-dashboard-row-gap: var(--ux-sp-2);
+  --ux-dashboard-heading-gap: var(--ux-sp-2);
+  --ux-dashboard-control-h: var(--ux-sp-10);
+  --ux-dashboard-hit-min: 44px;
+  --ux-dashboard-card-radius: var(--ux-r-lg);
+  --ux-dashboard-control-radius: var(--ux-r-md);
+  --ux-dashboard-border: var(--ux-line);
+  --ux-dashboard-surface: var(--ux-surface);
+  --ux-dashboard-muted-surface: var(--ux-surface-2);
+  --ux-dashboard-shadow: var(--ux-shadow-card);
+  --ux-dashboard-font-body: var(--font-sans), Arial, sans-serif;
+  --ux-dashboard-font-display: var(--font-fraunces), Georgia, serif;
+  --ux-dashboard-title-size: clamp(40px, 3.45vw, 52px);
+  --ux-dashboard-title-leading: 1.02;
+  --ux-dashboard-section-size: 18px;
+  --ux-dashboard-section-leading: 1.25;
+  --ux-dashboard-widget-title-size: 16px;
+  --ux-dashboard-widget-title-leading: 1.25;
+  --ux-dashboard-card-title-size: 13px;
+  --ux-dashboard-card-title-leading: 1.3;
+  --ux-dashboard-body-size: 13px;
+  --ux-dashboard-body-leading: 1.5;
+  --ux-dashboard-caption-size: 11px;
+  --ux-dashboard-caption-leading: 1.35;
+  --ux-dashboard-heading-weight: 700;
+  --ux-dashboard-body-weight: 400;
+  --ux-dashboard-focus: color-mix(in srgb, var(--ux-brand) 28%, transparent);
+  --ux-dashboard-field-focus: color-mix(in srgb, var(--ux-brand) 15%, transparent);
+  --ux-dashboard-cta-hover: inset 0 0 0 999px color-mix(in srgb, white 10%, transparent),
+    0 7px 18px color-mix(in srgb, var(--ux-brand-900) 18%, transparent);
+  --ux-dashboard-action-hover: color-mix(in srgb, var(--ux-brand-tint) 68%, var(--ux-surface));
   /* Light mode separates with shadow; dark mode separates with value, so it
      keeps the flatter one below. */
   /* ── Depth ────────────────────────────────────────────────────────────
@@ -1540,8 +1580,8 @@
 /* The brand lockup. A logo must not tilt — `ux-ico` rotates, which is right for
    an icon answering a hover and wrong for a mark that has one correct
    orientation. It grows very slightly instead, and its halo comes up with it. */
-.ux-brand-mark { transition: transform var(--ux-t) var(--ux-ease-spring); }
-.ux-hov:hover .ux-brand-mark { transform: scale(1.06); }
+.ux-brand-mark { transition:none; }
+.ux-hov:hover .ux-brand-mark { transform:none; }
 .ux-brand-halo {
   transition: opacity var(--ux-t) var(--ux-ease-out), transform var(--ux-t) var(--ux-ease-out);
   opacity: 0.85;

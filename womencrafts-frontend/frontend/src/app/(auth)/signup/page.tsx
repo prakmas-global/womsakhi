@@ -72,18 +72,14 @@ export default function SignUpPage() {
   return (
     <div>
       {/* ── Brand ── */}
-      <div className="auth-brand flex items-center gap-3">
+      <div className="auth-brand">
         {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img loading="lazy" decoding="async" src="/ux/brand/womsakhi-mark.webp" alt="" aria-hidden className="object-contain"
-          style={{ width: "clamp(2.125rem,5vh,2.5rem)", height: "clamp(2.125rem,5vh,2.5rem)" }} />
-        <div>
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img loading="lazy" decoding="async" src="/ux/brand/womsakhi-wordmark.webp" alt="WomSakhi" className="object-contain"
-            style={{ height: "clamp(1.25rem,3vh,1.5rem)" }} />
-          <p className="auth-tagline mt-1 text-2xs font-semibold tracking-[0.19em]" style={{ color: "var(--a-muted)" }}>
-            EMPOWERING HER JOURNEY
-          </p>
-        </div>
+        <img
+          src="/womsakhi-lockup.png"
+          alt="WomSakhi - Stronger Women. Brighter Tomorrows."
+          className="auth-main-lockup object-contain"
+          decoding="async"
+        />
       </div>
 
       <h1 className="font-bold leading-tight tracking-tight" style={{ color: "var(--a-ink)", fontSize: "clamp(1.35rem, 3.4vh, 2.1rem)", marginTop: "clamp(0.625rem,2.2vh,1.75rem)" }}>

@@ -1031,7 +1031,8 @@ export function Dashboard() {
   const first = home?.me.first || (user?.full_name || "").trim().split(" ")[0] || "";
 
   return (
-    <div className="flex flex-col gap-4">
+    <div className="flex flex-col gap-4" data-dashboard="home">
+      <h1 className="sr-only">Your WomSakhi home</h1>
       <Hero first={first} />
 
       {!home ? (

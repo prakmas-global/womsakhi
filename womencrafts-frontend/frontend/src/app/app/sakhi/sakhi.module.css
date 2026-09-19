@@ -1,0 +1,42 @@
+.page,.railScope{font-family:var(--font-body,Inter,sans-serif);color:var(--ux-ink)}
+.page{width:100%;max-width:1080px;margin-inline:auto;padding:2px 0 18px}
+.page :global(h1),.page :global(h2),.page :global(h3),.railScope :global(h3){letter-spacing:0}
+.page [data-sakhi-header]{padding:12px 14px;border:1px solid var(--ux-line)!important;border-radius:14px;background:var(--ux-surface);box-shadow:0 4px 16px color-mix(in srgb,var(--ux-brand) 6%,transparent)}
+.page [data-sakhi-header] img{box-shadow:0 0 0 3px var(--ux-brand-tint)}
+.page [data-sakhi-header] a,.page [data-sakhi-header] button{border-color:var(--ux-line)!important;background:var(--ux-surface-2)!important;transition:color .18s,background .18s,border-color .18s,transform .18s,box-shadow .18s}
+.page [data-sakhi-header] a:hover,.page [data-sakhi-header] button:hover{border-color:var(--ux-brand)!important;background:var(--ux-brand-tint)!important;color:var(--ux-brand-900)!important;transform:translateY(-1px);box-shadow:0 5px 14px color-mix(in srgb,var(--ux-brand) 13%,transparent)}
+.page :global(.ux-comp){border-color:var(--ux-line-strong)!important;box-shadow:0 8px 26px color-mix(in srgb,var(--ux-brand) 8%,transparent);transition:border-color .18s,box-shadow .18s,background .18s}
+.page :global(.ux-comp:hover){border-color:color-mix(in srgb,var(--ux-brand) 38%,var(--ux-line))!important}
+.page :global(.ux-comp:focus-within){border-color:var(--ux-brand)!important;box-shadow:0 0 0 3px color-mix(in srgb,var(--ux-brand) 13%,transparent),0 10px 28px color-mix(in srgb,var(--ux-brand) 10%,transparent)}
+.page :global(.ux-comp textarea){min-height:28px;color:var(--ux-ink)!important;caret-color:var(--ux-brand)}
+.page :global(.ux-comp textarea::placeholder){color:var(--ux-faint);opacity:1}
+.page :global(.ux-comp textarea),.page :global(.ux-comp textarea:hover),.page :global(.ux-comp textarea:focus),.page :global(.ux-comp textarea:focus-visible){border:0!important;outline:0!important;background:transparent!important;box-shadow:none!important}
+.page :global(.ux-comp button){transition:color .18s,background .18s,transform .18s,box-shadow .18s}
+.page :global(.ux-comp button:not(:disabled):hover){background:var(--ux-brand-tint)!important;color:var(--ux-brand-900)!important;transform:translateY(-1px)}
+.page :global(.ux-comp button[aria-label="Send"]:not(:disabled):hover){background:linear-gradient(96deg,var(--ux-rib-3),var(--ux-rib-2))!important;color:var(--ux-on-brand)!important;box-shadow:0 6px 18px color-mix(in srgb,var(--ux-brand) 30%,transparent)}
+.page :global(.ux-card),.page :global(.ux-tile){transition:border-color .18s,background .18s,transform .18s,box-shadow .18s}
+.page :global(.ux-tile:hover){border-color:color-mix(in srgb,var(--ux-brand) 44%,var(--ux-line))!important;background:color-mix(in srgb,var(--ux-brand-tint) 55%,var(--ux-surface))!important;transform:translateY(-2px);box-shadow:0 9px 22px color-mix(in srgb,var(--ux-brand) 10%,transparent)}
+.page :global(.ux-tile:hover .ux-tile-ic){transform:scale(1.05)}
+.page :global(.ux-tile-ic){transition:transform .18s}
+.page :global(.ux-row){transition:color .18s,background .18s,transform .18s}
+.page :global(.ux-row:hover){background:var(--ux-brand-tint)!important;color:var(--ux-brand-900)!important}
+.page :global(button[aria-pressed="true"]){font-weight:750}
+.page :global(button:focus-visible),.page :global(a:focus-visible),.railScope :global(button:focus-visible),.railScope :global(input:focus-visible){outline:3px solid color-mix(in srgb,var(--ux-brand) 30%,transparent);outline-offset:2px}
+.chatLog{min-height:0;scrollbar-color:color-mix(in srgb,var(--ux-brand) 35%,transparent) transparent;scrollbar-width:thin}
+.railScope>div{gap:12px}.railScope section{border-radius:14px!important;border-color:var(--ux-line)!important;box-shadow:0 4px 16px color-mix(in srgb,var(--ux-brand) 5%,transparent)!important}.railScope section:hover{border-color:color-mix(in srgb,var(--ux-brand) 28%,var(--ux-line))!important}.railScope label{transition:border-color .18s,box-shadow .18s,background .18s}.railScope label:focus-within{border-color:var(--ux-brand)!important;background:var(--ux-surface)!important;box-shadow:0 0 0 3px color-mix(in srgb,var(--ux-brand) 12%,transparent)}.railScope :global(.ux-row:hover){background:var(--ux-brand-tint)!important;color:var(--ux-brand-900)!important}.railScope :global(.group)>span button:hover{background:var(--ux-brand-tint);color:var(--ux-brand)!important}
+:global(.dark) .page [data-sakhi-header]{border-color:#503343!important;background:#251820;box-shadow:0 6px 20px #0003}
+:global(.dark) .page [data-sakhi-header] a,:global(.dark) .page [data-sakhi-header] button{border-color:#5b394c!important;background:#31202a!important;color:#f5e7ed!important}
+:global(.dark) .page [data-sakhi-header] a:hover,:global(.dark) .page [data-sakhi-header] button:hover{border-color:#ec5e9f!important;background:#4b2639!important;color:#fff!important}
+:global(.dark) .page :global(.ux-comp){border-color:#5b394c!important;background:#251820!important;box-shadow:0 10px 28px #0004}
+:global(.dark) .page :global(.ux-comp:hover){border-color:#a44270!important}
+:global(.dark) .page :global(.ux-comp:focus-within){border-color:#ef5e9f!important;box-shadow:0 0 0 3px #ef5e9f25,0 12px 30px #0005}
+:global(.dark) .page :global(.ux-comp button:not(:disabled):hover){background:#4b2639!important;color:#ffb2d2!important}
+:global(.dark) .page :global(.ux-tile:hover){border-color:#b94a7d!important;background:#34202c!important}
+:global(.dark) .page :global(.ux-row:hover),:global(.dark) .railScope :global(.ux-row:hover){background:#452536!important;color:#ffacd0!important}
+:global(.dark) .railScope section{border-color:#503343!important;background:#251820!important;box-shadow:0 6px 20px #0003!important}
+:global(.dark) .railScope section:hover{border-color:#82405e!important}
+:global(.dark) .railScope label:focus-within{border-color:#ef5e9f!important;background:#30202a!important;box-shadow:0 0 0 3px #ef5e9f22}
+:global(.dark) .railScope :global(.group)>span button:hover{background:#4b2639;color:#ff87ba!important}
+@media(min-width:1024px){.page{padding-top:4px}.chatLog{padding-inline:4px}.page>section:not([data-sakhi-header]){border-radius:18px!important}}
+@media(max-width:1023px){.page{padding:0}.page [data-sakhi-header]{border-width:0 0 1px!important;border-radius:0;box-shadow:none}.chatLog{padding:2px 2px 8px}}
+@media(prefers-reduced-motion:reduce){.page *,.railScope *{transition:none!important;scroll-behavior:auto!important}}

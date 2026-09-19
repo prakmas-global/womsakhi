@@ -1,0 +1,64 @@
+.page{display:flex;flex-direction:column;gap:14px;color:var(--ux-ink);font-family:var(--font-body,Inter,sans-serif)}
+.hero{position:relative;isolation:isolate;min-height:150px;overflow:hidden;border:1px solid var(--ux-line);border-radius:18px;background:#fff1f5}.hero>img{z-index:-1;object-fit:cover}.hero>div{max-width:61%;padding:22px 28px}.breadcrumb{display:flex;align-items:center;gap:6px;margin-bottom:8px;font-size:12px;color:var(--ux-muted)}.breadcrumb svg{width:12px}.hero h1{font-family:var(--font-display,Georgia,serif);font-size:42px;line-height:1;font-weight:700;color:#651638}.hero h1+p{max-width:610px;margin-top:10px;color:#69495a;font-size:13px;line-height:1.55}
+.toolbar{display:flex;align-items:center;gap:10px;min-width:0}.filters{display:flex;flex:1;gap:7px;overflow-x:auto;padding:2px;scrollbar-width:none}.filters::-webkit-scrollbar{display:none}.filters button,.sort{min-height:40px;border:1px solid var(--ux-line);border-radius:11px;background:var(--ux-surface);color:var(--ux-ink-2);transition:.18s}.filters button{display:inline-flex;flex:none;align-items:center;gap:7px;padding:0 12px;font-size:11px;font-weight:650;cursor:pointer}.filters svg{width:15px;height:15px}.filters small{color:var(--ux-muted)}.filters button:hover{border-color:var(--ux-brand);background:var(--ux-brand-tint);color:var(--ux-brand-900);transform:translateY(-1px)}.filters button[aria-selected=true]{border-color:transparent;background:linear-gradient(135deg,#a70f62,#72104e);color:#fff;box-shadow:0 6px 16px #8d245037}.filters button[aria-selected=true] small{color:#fff}.sort{display:flex;align-items:center;gap:4px;padding:0 10px;font-size:10px;white-space:nowrap}.sort select{background:transparent;color:var(--ux-ink);font-size:11px;font-weight:700;outline:none}
+.list{display:flex;flex-direction:column;gap:8px}.item{position:relative;display:flex;min-height:104px;border:1px solid var(--ux-line);border-radius:14px;background:var(--ux-surface);box-shadow:0 4px 14px #5f18370a;transition:.18s}.item:hover{transform:translateY(-2px);border-color:color-mix(in srgb,var(--ux-brand) 45%,var(--ux-line));box-shadow:0 10px 25px #5f183714}.item[data-gone]{opacity:.62}.itemLink{display:flex;min-width:0;flex:1;gap:15px;padding:10px}.itemLink>img{width:132px;height:82px;flex:none;border-radius:10px;object-fit:cover}.itemCopy{min-width:0;padding:2px 0}.kind{display:inline-flex;padding:2px 7px;border-radius:5px;background:var(--ux-brand-tint);color:var(--ux-brand);font-size:9px;font-weight:800;text-transform:uppercase}.itemCopy h2{margin-top:4px;font-size:14px;font-weight:750;line-height:1.25}.itemCopy p{overflow:hidden;margin-top:3px;color:var(--ux-muted);font-size:11px;white-space:nowrap;text-overflow:ellipsis}.meta{display:flex;flex-wrap:wrap;gap:13px;margin-top:9px;color:var(--ux-ink-2);font-size:10px}.meta span{display:flex;align-items:center;gap:4px}.meta svg{width:12px;height:12px}.itemActions{position:relative;display:flex;min-width:150px;flex-direction:column;align-items:flex-end;justify-content:space-between;padding:14px}.itemActions>small{font-size:10px;color:var(--ux-muted)}.itemActions>div{display:flex;gap:7px}.iconButton{display:grid;width:36px;height:36px;place-items:center;border:1px solid var(--ux-line);border-radius:10px;color:var(--ux-brand);cursor:pointer;transition:.18s}.iconButton svg{width:17px}.iconButton:hover{border-color:var(--ux-brand);background:var(--ux-brand);color:#fff;transform:translateY(-1px)}.menu{position:absolute;z-index:5;right:12px;bottom:-69px!important;display:grid!important;width:150px;padding:5px;border:1px solid var(--ux-line);border-radius:10px;background:var(--ux-surface);box-shadow:0 12px 30px #240b1a25}.menu a,.menu button{padding:8px;border-radius:7px;text-align:left;font-size:11px}.menu a:hover,.menu button:hover{background:var(--ux-surface-2);color:var(--ux-brand)}
+.rail{display:flex;flex-direction:column;gap:14px}.railCard,.promo,.quote{overflow:hidden;border:1px solid var(--ux-line);border-radius:14px;background:var(--ux-surface)}.railCard{padding:16px}.savedTotal{display:flex;gap:11px}.savedTotal>span{display:grid;width:36px;height:36px;flex:none;place-items:center;border-radius:50%;background:var(--ux-brand-tint);color:var(--ux-brand)}.savedTotal svg{width:18px}.rail h2{font-size:14px;font-weight:750}.savedTotal p{margin-top:3px;color:var(--ux-muted);font-size:10px;line-height:1.5}.countGrid{display:grid;grid-template-columns:repeat(3,1fr);gap:7px;margin-top:14px}.countGrid>div{display:grid;min-width:0;place-items:start;padding:10px;border-radius:10px;background:var(--ux-surface-2)}.countGrid svg{width:17px;color:var(--ux-brand)}.countGrid b{margin-top:6px;font-size:14px}.countGrid small{max-width:100%;overflow:hidden;color:var(--ux-muted);font-size:8px;text-overflow:ellipsis}.promo{position:relative;min-height:145px;background:#fbe8f1}.promo>img{object-fit:cover}.promo>div{position:relative;z-index:1;padding:18px}.promo h2{font-family:var(--font-display,Georgia,serif);font-size:20px;line-height:1;color:#b21167}.promo p{margin-top:9px;color:#6b3450;font-size:10px;line-height:1.5}.railCard header{margin-bottom:8px}.recent{display:grid}.recent a{display:flex;gap:9px;padding:7px 0;border-top:1px solid var(--ux-line);transition:.18s}.recent a:hover{color:var(--ux-brand);transform:translateX(2px)}.recent img{width:48px;height:38px;border-radius:7px;object-fit:cover}.recent span{display:grid;min-width:0}.recent b{overflow:hidden;font-size:10px;white-space:nowrap;text-overflow:ellipsis}.recent small{color:var(--ux-muted);font-size:9px}.quote{padding:22px 18px;background:linear-gradient(135deg,var(--ux-brand-tint),var(--ux-tint-violet));font-family:var(--font-display,Georgia,serif);font-size:17px;font-weight:650;line-height:1.4;color:var(--ux-brand-900)}.quote cite{display:block;margin-top:10px;font-family:var(--font-body,Inter,sans-serif);font-size:10px;font-style:normal}.empty{display:grid;min-height:320px;place-items:center;align-content:center;gap:9px;border:1px dashed var(--ux-line-strong);border-radius:14px;text-align:center}.empty>svg{width:28px;color:var(--ux-brand)}.empty h2{font-family:var(--font-display,Georgia,serif);font-size:22px}.empty p{color:var(--ux-muted);font-size:12px}.empty a{display:inline-flex;align-items:center;gap:7px;margin-top:6px;padding:10px 15px;border-radius:10px;background:var(--ux-brand);color:#fff;font-size:11px;font-weight:700}.empty a:hover{background:var(--ux-brand-900);transform:translateY(-1px)}
+.page button:focus-visible,.page a:focus-visible,.page select:focus-visible{outline:3px solid color-mix(in srgb,var(--ux-brand) 36%,transparent);outline-offset:2px}
+:global(.dark) .hero{background:#351b2a}:global(.dark) .hero>img{filter:brightness(.78) saturate(1.12)}:global(.dark) .hero::after{content:"";position:absolute;z-index:-1;inset:0;background:linear-gradient(90deg,#28131fea,#28131fa8 45%,transparent 78%)}:global(.dark) .hero h1{color:#fff}:global(.dark) .hero h1+p,:global(.dark) .breadcrumb{color:#f4cfdf}:global(.dark) .promo>img{filter:brightness(.82) saturate(1.15)}:global(.dark) .promo{background:#321b29}:global(.dark) .promo::after{content:"";position:absolute;inset:0;background:linear-gradient(90deg,#321b29e8,transparent 70%)}:global(.dark) .promo>div{z-index:2}:global(.dark) .promo p{color:#efd3df}:global(.dark) .quote{background:linear-gradient(135deg,#4a233b,#28203a);color:#ffd3e6}
+@media(max-width:900px){.hero{min-height:175px}.hero>div{max-width:72%;padding:20px}.hero h1{font-size:34px}.toolbar{align-items:stretch;flex-direction:column}.sort{align-self:flex-end}.itemLink>img{width:94px}.meta span:nth-child(n+2){display:none}.itemActions{min-width:96px}.itemActions>small{display:none}}
+@media(max-width:560px){.hero{min-height:190px}.hero>img{object-position:62% center}.hero::before{content:"";position:absolute;z-index:-1;inset:0;background:linear-gradient(90deg,#fff4f8f4,#fff4f8cb 58%,transparent 88%)}.hero>div{max-width:78%;padding:18px}.hero h1{font-size:32px}.hero h1+p{font-size:12px}.item{min-height:96px}.itemLink{gap:10px}.itemLink>img{width:76px;height:72px}.itemCopy p,.meta{display:none}.itemActions{min-width:46px;padding:10px 8px}.itemActions .iconButton:last-child{display:none}}
+@media(prefers-reduced-motion:reduce){.page *{scroll-behavior:auto!important;transition:none!important}}
+.hero>img{object-fit:contain;object-position:right center}
+
+/* Saved owns this toolbar. Do not let the experimental global scroll-button
+   treatment place floating arrows over its filters on desktop. */
+@media(min-width:901px){
+  .filters{flex-wrap:wrap;overflow:visible}
+}
+.filters button[aria-pressed=true]{border-color:transparent;background:linear-gradient(135deg,#a70f62,#72104e);color:#fff;box-shadow:0 6px 16px #8d245037}
+.filters button[aria-pressed=true] small{color:#fff}
+
+.sort{cursor:pointer}
+.sort:hover,.sort:focus-within{border-color:var(--ux-brand);background:var(--ux-brand-tint);box-shadow:0 0 0 3px color-mix(in srgb,var(--ux-brand) 12%,transparent)}
+.sort select{appearance:none;border:0;box-shadow:none;cursor:pointer;padding:0 17px 0 2px;background-image:linear-gradient(45deg,transparent 50%,currentColor 50%),linear-gradient(135deg,currentColor 50%,transparent 50%);background-position:calc(100% - 8px) 50%,calc(100% - 4px) 50%;background-size:4px 4px,4px 4px;background-repeat:no-repeat}
+.sort select:focus,.sort select:focus-visible{outline:0;box-shadow:none}
+.countGrid>div{border:1px solid transparent;transition:border-color .18s,background .18s,transform .18s}
+.countGrid>div:hover{border-color:color-mix(in srgb,var(--ux-brand) 35%,var(--ux-line));background:var(--ux-brand-tint);transform:translateY(-1px)}
+.countGrid>div:hover svg{color:var(--ux-brand-900)}
+.itemLink:focus-visible{border-radius:12px}
+.item:hover .kind{background:color-mix(in srgb,var(--ux-brand) 18%,var(--ux-surface));color:var(--ux-brand-900)}
+.recent a:focus-visible{border-radius:8px}
+
+:global(.dark) .hero>img{filter:brightness(.96) saturate(1.08) contrast(1.03)}
+:global(.dark) .hero::after{background:linear-gradient(90deg,#2a1422f5 0%,#2a1422df 37%,#2a142238 68%,transparent 84%)}
+:global(.dark) .hero h1{color:#fff7fb;text-shadow:0 1px 0 #0003}
+:global(.dark) .hero h1+p,:global(.dark) .breadcrumb{color:#f5dfe9}
+:global(.dark) .filters button{border-color:#5b394c;background:#281a23;color:#f2dfe8}
+:global(.dark) .filters button small{color:#caa8b8}
+:global(.dark) .filters button:hover{border-color:#ee5c9f;background:#4a2438;color:#fff}
+:global(.dark) .filters button:hover small{color:#ffd6e7}
+:global(.dark) .filters button[aria-pressed=true]{border-color:#ef5da2;background:linear-gradient(135deg,#c52d79,#84215f);color:#fff;box-shadow:0 7px 18px #dc3b852e}
+:global(.dark) .filters button[aria-pressed=true] small{color:#fff}
+:global(.dark) .filters button[aria-selected=true]{border-color:#ef5da2;background:linear-gradient(135deg,#c52d79,#84215f);color:#fff;box-shadow:0 7px 18px #dc3b852e}
+:global(.dark) .filters button[aria-selected=true] small{color:#fff}
+:global(.dark) .sort{border-color:#5b394c;background:#281a23;color:#ddbdcc}
+:global(.dark) .sort:hover,:global(.dark) .sort:focus-within{border-color:#ed5a9d;background:#442536;color:#fff;box-shadow:0 0 0 3px #ed5a9d24}
+:global(.dark) .sort select{color:#fff}
+:global(.dark) .item{border-color:#503343;background:#251820;box-shadow:none}
+:global(.dark) .item:hover{border-color:#be477d;background:#2e1c27;box-shadow:0 10px 28px #0005}
+:global(.dark) .itemCopy h2{color:#fff7fb}
+:global(.dark) .itemCopy p,:global(.dark) .meta,:global(.dark) .itemActions>small{color:#cdaeba}
+:global(.dark) .kind{background:#452437;color:#ff76b3}
+:global(.dark) .item:hover .kind{background:#5a2942;color:#ffabd0}
+:global(.dark) .iconButton{border-color:#604052;background:#2c1b25;color:#f061a0}
+:global(.dark) .iconButton:hover{border-color:#f061a0;background:#c52d79;color:#fff;box-shadow:0 6px 16px #c52d7940}
+:global(.dark) .railCard{border-color:#503343;background:#251820}
+:global(.dark) .countGrid>div{background:#32202a}
+:global(.dark) .countGrid>div:hover{border-color:#b8497a;background:#452638}
+:global(.dark) .countGrid small,:global(.dark) .recent small,:global(.dark) .savedTotal p{color:#c5a2b2}
+:global(.dark) .recent a{border-color:#503343;color:#f8edf2}
+:global(.dark) .recent a:hover{border-color:#c04d80;color:#ff86bb}
+:global(.dark) .promo>img{filter:brightness(.98) saturate(1.08) contrast(1.02)}
+:global(.dark) .promo::after{background:linear-gradient(90deg,#321b29ef 0%,#321b2999 36%,transparent 72%)}
+:global(.dark) .promo h2{color:#ff5fa8;text-shadow:0 1px 5px #240715}
+:global(.dark) .promo p{color:#ffe3ef}

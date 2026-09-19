@@ -45,7 +45,7 @@ function Heading({ title, href, label = "View all" }: { title: string; href: str
 
 export function CircleDashboard() {
   return <HomeShell active="/app/circle" loadFailed="your circles">
-    <div className={styles.dashboard} data-circle-dashboard>
+    <div className={styles.dashboard} data-dashboard="circle" data-circle-dashboard>
       <div className={styles.main}>
         <section className={styles.hero}>
           <img src="/ux/art/circle-dashboard-hero-v2.png" alt="" className={styles.heroImage} />

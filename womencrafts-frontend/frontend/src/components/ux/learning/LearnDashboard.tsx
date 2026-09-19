@@ -81,7 +81,7 @@ export function LearnDashboard() {
   const currentPct = current?.pct ?? 0;
 
   return <HomeShell active="/app/learn" loadFailed="your learning" fit>
-    <div className={styles.dashboard}>
+    <div className={styles.dashboard} data-dashboard="learn">
       <div className={styles.main}>
         <section className={styles.hero}>
           <img src={`${ART}hero.webp`} alt="" aria-hidden="true" />

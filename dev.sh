@@ -3,8 +3,8 @@
 # WomenCrafts — one-command dev runner
 # ------------------------------------
 # Starts BOTH services together and connects the backend to MongoDB:
-#   • FastAPI backend  →  http://localhost:8010   (+ MongoDB Atlas)
-#   • Next.js frontend →  http://localhost:3000
+#   • FastAPI backend  →  http://localhost:8020   (+ MongoDB Atlas)
+#   • Next.js frontend →  http://localhost:3100
 #
 # It also: frees stale ports, auto-installs missing deps on first run,
 # streams both logs side-by-side, reports DB connection status, and shuts
@@ -25,7 +25,7 @@ BACKEND_LOG="$LOG_DIR/backend.log"
 FRONTEND_LOG="$LOG_DIR/frontend.log"
 
 BACKEND_PORT=8020
-FRONTEND_PORT=3000
+FRONTEND_PORT=3100
 
 # ---- pretty output ---------------------------------------------------------
 BOLD=$'\033[1m'; DIM=$'\033[2m'; RESET=$'\033[0m'

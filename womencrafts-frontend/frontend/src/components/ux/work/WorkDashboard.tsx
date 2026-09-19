@@ -110,7 +110,7 @@ export function WorkDashboard() {
   };
 
   return <HomeShell active="/app/work" loadFailed="your work" fit>
-    <div className={styles.dashboard}>
+    <div className={styles.dashboard} data-dashboard="work">
       <div className={styles.main}>
         <section className={styles.hero}>
           <img src={`${ART}hero.webp`} alt="" aria-hidden="true" />

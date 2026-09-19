@@ -19,7 +19,7 @@ import Link from "next/link";
 export function LogoMark({
   className = "h-10",
   glow = true,
-  src = "/womsakhi-mark.png",
+  src = "/womsakhi-symbol.png",
   alt = "WomSakhi",
 }: {
   className?: string;
@@ -49,7 +49,7 @@ export function LogoMark({
 
 export function LogoWordmark({
   className = "h-8",
-  src = "/womsakhi-wordmark.png",
+  src = "/womsakhi-wordmark-transparent.png",
   alt = "WomSakhi",
 }: {
   className?: string;
@@ -60,12 +60,12 @@ export function LogoWordmark({
   // re-typed as text. On dark surfaces the deep-purple "Wom" end of the gradient
   // loses contrast, so it gets a soft brand halo and a touch of brightness
   // rather than a colour change.
-  // eslint-disable-next-line @next/next/no-img-element
   return (
+    // eslint-disable-next-line @next/next/no-img-element
     <img loading="lazy" decoding="async"
       src={src}
       alt={alt}
-      className={`block w-auto dark:brightness-110 dark:drop-shadow-[0_0_10px_rgba(242,114,176,0.45)] ${className}`}
+      className={`block w-auto dark:brightness-[1.55] dark:saturate-125 dark:drop-shadow-[0_0_8px_rgba(240,94,157,0.22)] ${className}`}
       draggable={false}
     />
   );
@@ -118,7 +118,7 @@ export default function Logo({
       </span>
     ) : (
       <span className={`inline-flex items-center gap-3 ${className}`}>
-        <LogoMark className={markClassName} src={brand?.logo || undefined} alt={alt} />
+        {brand?.logo && <LogoMark className={markClassName} src={brand.logo} alt={alt} />}
         <span className="flex flex-col gap-1.5 leading-none">
           <LogoWordmark className={wordmarkClassName} src={brand?.wordmark || undefined} alt={alt} />
           {tagline}
