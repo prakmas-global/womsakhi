@@ -315,7 +315,7 @@ export function CycleDashboard({ cycle }: { cycle: ReturnType<typeof useCycle> &
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img src="/ux/art/scene-two-women-support.webp" alt="" aria-hidden className="pointer-events-none absolute -bottom-2 end-0 h-[200px] w-auto object-contain" />
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src="/ux/brand/womsakhi-wordmark.webp" alt="" aria-hidden className="absolute bottom-4 start-5 z-[1] h-[22px] w-auto opacity-80" />
+          <img src="/womsakhi-wordmark.png" alt="" aria-hidden className="absolute bottom-4 start-5 z-[1] h-[22px] w-auto opacity-80" />
         </section>
       </A>
 

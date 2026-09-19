@@ -5,6 +5,7 @@ import { Btn } from "../kit";
 import { useMe } from "../me";
 import { useChrome } from "../chrome";
 import { usePathname } from "next/navigation";
+import { useEffect } from "react";
 
 /**
  * The one Shell, mounted in the layout so it survives every navigation.
@@ -18,6 +19,12 @@ export function ChromeShell({ children }: { children: React.ReactNode }) {
   const me = useMe();
   const { rail, wide, bare, fit, name, immersive } = useChrome();
   const pathname = usePathname();
+
+  // The shell survives route changes, so its content scroller does too. Reset
+  // only the page viewport; the sidebar keeps its own useful scroll position.
+  useEffect(() => {
+    document.getElementById("ux-scroll")?.scrollTo({ top: 0, left: 0 });
+  }, [pathname]);
 
   return (
     <Shell

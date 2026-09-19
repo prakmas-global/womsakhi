@@ -1,13 +1,14 @@
 "use client";
 
+import Image from "next/image";
 import * as Icons from "@/components/ux/icons";
 import { Card, I, IconTile, v } from "@/components/ux/kit";
 import { ChipRow } from "@/components/ux/learning/native";
-import { ListGroup, ListRow, type RowTint } from "@/components/ux/mobile/ListRow";
 import {
   goalProgressLine, goalState,
   type Goal, type GoalState,
 } from "@/components/ux/discovery/data";
+import styles from "./goals.module.css";
 
 /* ------------------------------------------------------------------ */
 /*  The banner                                                         */
@@ -29,71 +30,26 @@ export function GoalsHero({ chips, active, onPick }: {
       </button>
     );
   });
-  return (
-    <>
-    {/*
-      On a phone: the large title, a quiet line, and the filter as a row of
-      chips the thumb pushes along. The gradient banner with a 34px slogan in
-      it was a website's hero; every word of it is still here.
-    */}
-    <header className="mb-6 lg:hidden">
-      <h1 className="ux-screen-title" style={{ color: v("--ux-ink") }}>My goals</h1>
-      <p className="mt-2 text-[15px] leading-snug" style={{ color: v("--ux-muted") }}>
-        Big dreams. Real progress. Set your goals, take small steps, and build the life you deserve.
-      </p>
-      <ChipRow className="mt-4">
-        {chipButtons("ux-press ux-sq min-h-[44px] shrink-0 rounded-full px-4 text-[15px] font-semibold")}
-      </ChipRow>
-    </header>
-    <section className="relative mb-4 hidden overflow-hidden rounded-[20px] lg:block"
-             style={{ background: "linear-gradient(104deg, var(--ux-brand-tint) 0%, var(--ux-tint-lilac) 44%, var(--ux-tint-pink) 74%, var(--ux-tint-amber) 100%)",
-                      border: "1px solid var(--ux-line)" }}>
-      <div className="flex items-stretch">
-        <div className="min-w-0 flex-1 px-6 pt-6 sm:px-7 sm:pt-7">
-          <p className="text-2xs font-extrabold uppercase tracking-[0.16em]" style={{ color: v("--ux-muted") }}>
-            My goals
-          </p>
-          <h1 className="mt-2.5 text-4xl font-extrabold leading-[1.06] tracking-[-0.035em] wide:text-4xlm"
-              style={{ color: v("--ux-ink") }}>
-            Big dreams. Real progress.
-          </h1>
-          <p className="mt-3 max-w-[440px] text-smd leading-relaxed" style={{ color: v("--ux-ink-2") }}>
-            Set your goals, take small steps, and build the life you deserve.
-          </p>
-        </div>
-
-        <div className="relative hidden w-[200px] shrink-0 items-end xl:flex wide:w-[400px]">
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src="/ux/art/scene-woman-planning-board.webp" alt="" aria-hidden loading="lazy" decoding="async"
-               className="max-h-[240px] w-[200px] self-end object-contain object-bottom"
-               style={{ maskImage: "linear-gradient(100deg, transparent, #000 30%)",
-                        WebkitMaskImage: "linear-gradient(100deg, transparent, #000 30%)" }} />
-
-          <div className="hidden w-[186px] flex-col items-end gap-4 self-center pe-6 wide:flex">
-            <p className="text-end text-smd font-bold italic leading-tight"
-               style={{ color: v("--ux-pink-ink"), fontFamily: "var(--font-display)" }}>
-              A brighter you<br />is possible <Icons.Heart className="inline h-[13px] w-[13px]" />
-            </p>
-            <figure className="rounded-[14px] p-3.5 text-end"
-                    style={{ background: v("--ux-surface"), boxShadow: "var(--ux-shadow-card)" }}>
-              <blockquote className="text-xs font-bold italic leading-snug"
-                          style={{ color: v("--ux-brand"), fontFamily: "var(--font-display)" }}>
-                &ldquo;Goals give your dreams a deadline.&rdquo;
-              </blockquote>
-              <figcaption className="mt-1.5 text-2xs" style={{ color: v("--ux-muted") }}>— WomSakhi</figcaption>
-            </figure>
-          </div>
-        </div>
-      </div>
-
-      {/* Full width, below both columns. Inside the text column the last two
-          chips ran under the artwork and could not be pressed or read. */}
-      <div className="ux-noscroll relative flex gap-2 overflow-x-auto px-6 pb-6 pt-5 sm:px-7">
-        {chipButtons("ux-press ux-sq shrink-0 rounded-full px-4 py-2.5 text-xs font-bold")}
+  const areas = [
+    ["Financial Freedom", "PiggyBank", "Money"], ["Career Growth", "Briefcase", "All goals"],
+    ["Learning & Skills", "BookOpen", "Learning"], ["Health & Wellness", "HeartPulse", "Counted by you"],
+    ["Personal Growth", "Sprout", "All goals"], ["Family & Relationships", "Users", "All goals"],
+    ["Community & Giving", "HeartHandshake", "All goals"], ["Travel & Experiences", "Compass", "All goals"],
+    ["Creativity & Hobbies", "Palette", "All goals"], ["Lifestyle & Wellbeing", "Flower2", "All goals"],
+  ] as const;
+  return <>
+    <section className={styles.hero} aria-labelledby="goals-title">
+      <Image src="/ux/goals/goals-hero-v2.png" alt="Women from different backgrounds planning goals together" fill priority sizes="(max-width:760px) 100vw, 70vw" />
+      <div className={styles.heroShade} />
+      <div className={styles.heroCopy}>
+        <p>Home / My Goals</p>
+        <h1 id="goals-title">My <em>Goals</em></h1>
+        <span>Dream. Plan. Do. A brighter you is always possible.</span>
       </div>
     </section>
-    </>
-  );
+    <div className={styles.areas} aria-label="Goal areas">{areas.map(([label,icon,filter],index)=><button type="button" key={label} onClick={()=>onPick(filter)} aria-pressed={active===filter && (index===0 || filter!=="All goals")}><span><I name={icon}/></span><b>{label}</b></button>)}</div>
+    <ChipRow className={styles.mobileCategories}>{chipButtons(styles.category)}</ChipRow>
+  </>;
 }
 
 /* ------------------------------------------------------------------ */
@@ -116,37 +72,10 @@ export const STATUS_LOOK: Record<GoalState, { label: string; tint: string; ink: 
   "not-started": { label: "Not started",   tint: "--ux-surface-2",   ink: "--ux-muted",      dot: "--ux-line-strong", icon: "Circle" },
 };
 
-export function GoalStats({ total, by }: { total: number; by: Record<GoalState, number> }) {
-  const cells = [
-    { n: total, label: "Total goals", icon: "Target", tint: "--ux-brand-tint-2", ink: "--ux-brand" },
-    { n: by.moving, ...STATUS_LOOK.moving },
-    { n: by.reached, ...STATUS_LOOK.reached },
-    { n: by["not-started"], ...STATUS_LOOK["not-started"] },
-  ];
-  const rowTint: RowTint[] = ["pink", "green", "violet", "blue"];
+export function GoalStats({ total, by, active, onPick }: { total: number; by: Record<GoalState, number>; active: "all" | GoalState; onPick:(value:"all"|GoalState)=>void }) {
+  const cells = [{id:"all" as const,n:total,label:"My Goals"},{id:"reached" as const,n:by.reached,label:"Completed"},{id:"moving" as const,n:by.moving,label:"In progress"},{id:"not-started" as const,n:by["not-started"],label:"Not started"}];
   return (
-    <>
-    {/* Four counts as four value rows on a phone — label left, number right. */}
-    <ListGroup className="mb-6 lg:hidden">
-      {cells.map((c, i) => (
-        <ListRow key={c.label} icon={c.icon} tint={rowTint[i]} title={c.label}
-                 value={<b className="font-semibold" style={{ color: v("--ux-ink") }}>{c.n}</b>} />
-      ))}
-    </ListGroup>
-    <div className="mb-4 hidden gap-3.5 lg:grid" style={{ gridTemplateColumns: "repeat(auto-fit, minmax(170px, 1fr))" }}>
-      {cells.map((c) => (
-        <Card key={c.label} pad={16}>
-          <div className="flex items-center gap-3">
-            <IconTile icon={c.icon} tint={c.tint} ink={c.ink} size={38} radius={12} />
-            <span>
-              <b className="block text-xl font-extrabold leading-none" style={{ color: v("--ux-ink") }}>{c.n}</b>
-              <span className="mt-1 block text-2xs font-semibold" style={{ color: v("--ux-muted") }}>{c.label}</span>
-            </span>
-          </div>
-        </Card>
-      ))}
-    </div>
-    </>
+    <nav className={styles.statusTabs} aria-label="Goal status">{cells.map(c=><button type="button" key={c.id} aria-pressed={active===c.id} onClick={()=>onPick(c.id)}>{c.label} <b>({c.n})</b></button>)}</nav>
   );
 }
 
@@ -203,7 +132,7 @@ export function GoalCard({ g, money, menu, onMenu, onDone, onArchive, busy }: {
   const done = st === "reached";
 
   return (
-    <Card className="mb-3 lg:mb-3.5" pad={18}>
+    <Card className={`${styles.goalCard} mb-3 lg:mb-3.5`} pad={18}>
       <div className="flex flex-wrap items-start gap-4 sm:flex-nowrap">
         {/*
           There was a photograph here — `g.art`, a stock picture of a sewing
@@ -232,7 +161,7 @@ export function GoalCard({ g, money, menu, onMenu, onDone, onArchive, busy }: {
               <span className="relative">
                 <button type="button" aria-label={`More about ${g.label}`} aria-expanded={menu}
                         onClick={() => onMenu(!menu)}
-                        className="ux-press ux-sq grid h-[30px] w-[30px] place-items-center rounded-[8px]"
+                        className={`${styles.iconAction} ux-press ux-sq grid h-[30px] w-[30px] place-items-center rounded-[8px]`}
                         style={{ color: v("--ux-faint") }}>
                   <Icons.MoreHorizontal className="h-[16px] w-[16px]" />
                 </button>
@@ -305,7 +234,7 @@ function Act({ icon, children, onClick, on }: {
 }) {
   return (
     <button type="button" onClick={onClick}
-            className="ux-press ux-sq flex min-h-[44px] items-center gap-1.5 rounded-[10px] px-2.5 text-[13px] font-semibold lg:min-h-[36px] lg:text-xs"
+            className={`${styles.goalAction} ux-press ux-sq flex min-h-[44px] items-center gap-1.5 rounded-[10px] px-2.5 text-[13px] font-semibold lg:min-h-[36px] lg:text-xs`}
             style={{ color: v(on ? "--ux-green-ink" : "--ux-muted") }}>
       <I name={icon} className="h-[15px] w-[15px]" sw={on ? 2.5 : 1.9} />
       {children}
@@ -385,7 +314,7 @@ export function QuickActions({ rows }: { rows: QuickAction[] }) {
       <div className="grid grid-cols-2 gap-2">
         {rows.map((a) => (
           <button key={a.id} type="button" onClick={a.onClick}
-                  className="ux-press ux-hov ux-sq flex items-center gap-2 rounded-[11px] px-2.5 py-3 text-start"
+                  className={`${styles.quickAction} ux-press ux-sq flex items-center gap-2 rounded-[11px] px-2.5 py-3 text-start`}
                   style={{ border: "1px solid var(--ux-line)" }}>
             <I name={a.icon} className="h-[15px] w-[15px] shrink-0" style={{ color: v("--ux-brand") }} />
             <span className="min-w-0 text-2xs font-bold leading-tight" style={{ color: v("--ux-ink-2") }}>

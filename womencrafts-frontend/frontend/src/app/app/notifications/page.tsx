@@ -2,7 +2,9 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import * as Icons from "@/components/ux/icons";
+import styles from "./notifications.module.css";
 
 import { HomeShell } from "@/components/ux/home/HomeShell";
 import { useNotifications, type UxNotification } from "@/components/ux/live";
@@ -62,12 +64,13 @@ const look = (kind: string) => LOOK[kind] ?? LOOK.account;
  * on the day it is not empty, it is the only thing she wants to see.
  */
 const CATEGORIES: { id: string; label: string; icon: string; kinds: string[] }[] = [
-  { id: "all",    label: "Everything", icon: "LayoutGrid",   kinds: [] },
-  { id: "money",  label: "Money",      icon: "Wallet",       kinds: ["money"] },
-  { id: "work",   label: "Work",       icon: "Briefcase",    kinds: ["booking", "work", "opportunity"] },
+  { id: "all",    label: "All",         icon: "LayoutGrid",   kinds: [] },
+  { id: "work",   label: "Opportunities",icon: "Briefcase",   kinds: ["booking", "work", "opportunity", "money"] },
   { id: "learn",  label: "Learning",   icon: "BookOpen",     kinds: ["program", "course", "mentorship"] },
-  { id: "circle", label: "Your circle",icon: "UsersRound",   kinds: ["circle", "message", "event"] },
-  { id: "safety", label: "Safety",     icon: "ShieldAlert",  kinds: ["safety"] },
+  { id: "events", label: "Events",      icon: "CalendarDays", kinds: ["event"] },
+  { id: "circle", label: "Community",   icon: "UsersRound",   kinds: ["circle", "message"] },
+  { id: "wins",   label: "Achievements",icon: "Trophy",       kinds: ["achievement", "certificate"] },
+  { id: "system", label: "System",      icon: "Settings",     kinds: ["safety", "account"] },
 ];
 
 /** Types that expect something of her, rather than just telling her. */
@@ -200,11 +203,27 @@ export default function NotificationsPage() {
       c[cat.id] = allRows.filter((n) => isUnread(n) && cat.kinds.includes(n.kind)).length;
     }
     return c;
-  }, [allRows, read]);
+  }, [allRows, isUnread]);
 
   return (
     <HomeShell active="/app/notifications" bare>
-      <div className="flex flex-col gap-6">
+      <div className={`${styles.page} flex flex-col gap-4`}>
+        <section className={styles.hero}>
+          <Image
+            src="/ux/notifications/whats-new-hero-v1.png"
+            alt="Woman calmly reviewing helpful updates"
+            fill
+            priority
+            unoptimized
+            sizes="100vw"
+          />
+          <div className={styles.heroCopy}>
+            <p>WHAT&apos;S NEW</p>
+            <h1>{unread.length > 0 ? `${unread.length} updates for you` : "You’re all caught up!"}</h1>
+            <span>{unread.length > 0 ? "Here’s everything new that matters to you." : "Nothing needs your attention right now."}</span>
+          </div>
+          <p className={styles.heroNote}>New opportunities<br/>New stories<br/>A brighter you</p>
+        </section>
         {/* On a phone the screen's name is the large title; the sentence that
             says what needs her follows it, and the date is the quiet line. */}
         <PhoneTitle
@@ -213,7 +232,7 @@ export default function NotificationsPage() {
             ? <>{queue.length === 1 ? "One thing needs" : `${queue.length} things need`} you{unread.length > queue.length && <>, and <span style={{ color: "var(--ux-amber-ink)" }}>{unread.length - queue.length} to read</span></>}.</>
             : unread.length > 0 ? <>{unread.length} to read, nothing urgent.</> : tr("notifications.youAreAllCaughtUp")}
           note={new Intl.DateTimeFormat("en-GB", { weekday: "long", day: "numeric", month: "long" }).format(new Date())} />
-        <header className="flex flex-wrap items-end gap-5 max-lg:-mt-2">
+        <header className={`${styles.controls} flex flex-wrap items-end gap-5 max-lg:-mt-2`}>
           <div className="hidden min-w-0 flex-1 lg:block">
             <p className="text-2xs font-bold uppercase tracking-[0.2em]" style={{ color: "var(--ux-brand)" }}>
               {new Intl.DateTimeFormat("en-GB", { weekday: "long", day: "numeric", month: "long" }).format(new Date())}
@@ -233,16 +252,16 @@ export default function NotificationsPage() {
 
         {/* Categories. Only shown when there is more than one thing to choose
             between — a single chip row that never changes anything is noise. */}
-        {CATEGORIES.filter((c) => c.id === "all" || catCounts[c.id] > 0).length > 2 && (
+        {(
           /* `ux-chiprow` turns this into one sideways-scrolling row on a phone. */
           <div className="ux-chiprow flex flex-wrap gap-2" role="group" aria-label={tr("notifications.filterNotifications")}>
-            {CATEGORIES.filter((c) => c.id === "all" || catCounts[c.id] > 0).map((c) => {
+            {CATEGORIES.map((c) => {
               const on = category === c.id;
               const n = catCounts[c.id] ?? 0;
               return (
                 <button key={c.id} type="button" onClick={() => setCategory(c.id)}
                         aria-pressed={on}
-                        className="ux-press ux-sq inline-flex items-center gap-2 rounded-[12px] border px-3.5 py-2.5 text-xsm font-semibold"
+                        className={`${styles.filterButton} ux-press ux-sq inline-flex items-center gap-2 rounded-[12px] border px-3.5 py-2.5 text-xsm font-semibold`}
                         style={{
                           borderColor: on ? "var(--ux-fill)" : "var(--ux-line-strong)",
                           background: on ? "var(--ux-fill)" : "var(--ux-surface)",
@@ -329,7 +348,7 @@ function Timeline({
   }
 
   return (
-    <div className="ux-tl">
+    <div className={`${styles.timeline} ux-tl`}>
       {days.map(([day, items], di) => (
         <div key={day}>
           {di === 0 ? (
@@ -395,7 +414,7 @@ function Event({
         <Ico name={n.icon} className="h-[17px] w-[17px]" />
       </span>
 
-      <div className="rounded-[16px] transition-colors"
+      <div className={`${styles.eventCard} rounded-[16px] transition-colors`} data-loud={loud || undefined}
            style={loud
              ? { background: "var(--ux-surface)", border: "1px solid var(--ux-line-strong)",
                  boxShadow: "var(--ux-shadow-card)", padding: 16 }
@@ -683,7 +702,7 @@ function Rail({ counts, unread }: { counts: Record<string, number>; unread: numb
                   boxShadow: "var(--ux-shadow-card)" } as const;
 
   return (
-    <div className="flex flex-col gap-4">
+    <div className={`${styles.rail} flex flex-col gap-4`}>
       <section className={card} style={style}>
         <h2 className="mb-3 flex items-center gap-2 text-sm font-bold" style={{ color: "var(--ux-ink)" }}>
           <Icons.Bell className="h-[15px] w-[15px]" style={{ color: "var(--ux-brand)" }} />

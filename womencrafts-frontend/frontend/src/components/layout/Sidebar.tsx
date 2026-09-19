@@ -364,8 +364,8 @@ export default function Sidebar({
           </Link>
         ) : (
           <Logo
-            markClassName="h-10"
-            wordmarkClassName="h-6"
+            markClassName="h-9"
+            wordmarkClassName="h-11"
             taglineClassName="text-3xs tracking-[0.14em]"
             brand={brand ?? undefined}
           />

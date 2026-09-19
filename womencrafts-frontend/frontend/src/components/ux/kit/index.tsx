@@ -278,15 +278,12 @@ export function Btn({ children, variant = "primary", size = "md", icon, iconEnd,
     // For use on the hero gradient, where the brand violet would disappear.
     "on-brand": { background: "rgba(255,255,255,0.14)", color: "var(--ux-on-brand)", border: "1px solid rgba(255,255,255,0.34)" },
   }[variant];
-  // Clay on the two filled variants only: an outline button has no slab to
-  // shade, and a ghost button would grow a shadow out of nothing.
-  const clay = variant === "primary" || variant === "soft" ? "ux-clay" : "";
   // The animation classes come off when disabled — a button that ripples and
   // lifts under the finger but does nothing reads as a broken button, not a
   // waiting one.
   const cls = disabled
     ? `ux-sq inline-flex items-center justify-center gap-2 rounded-[12px] font-semibold ${pad} ${full ? "w-full" : ""} ${className}`
-    : `ux-press ux-hov ux-sq ux-magnet ux-ripple ${clay} inline-flex items-center justify-center gap-2 rounded-[12px] font-semibold ${pad} ${full ? "w-full" : ""} ${className}`;
+    : `ux-press ux-hov ux-sq ux-magnet ux-ripple inline-flex items-center justify-center gap-2 rounded-[12px] font-semibold ${pad} ${full ? "w-full" : ""} ${className}`;
   const dim = disabled ? { opacity: 0.55, cursor: "not-allowed" } : null;
   const inner = (
     <>
