@@ -20,7 +20,7 @@ import { usePageChrome } from "../chrome";
  * now only registers the parts that differ per page. See `ux/chrome.tsx`.
  */
 export function HomeShell({
-  children, rail, name, bare, wide, fit, skeleton = "list", loadFailed,
+  children, rail, name, bare, wide, fit, immersive, skeleton = "list", loadFailed,
 }: {
   /** Optional and ignored — Shell derives the mode and section from the URL. */
   active?: string; children: React.ReactNode; rail?: React.ReactNode; name?: string;
@@ -30,12 +30,14 @@ export function HomeShell({
   wide?: boolean;
   /** This screen is sized to the window; drop the scroller's bottom clearance. */
   fit?: boolean;
+  /** Phone only: no top bar or tab bar — the screen draws its own header. */
+  immersive?: boolean;
   /** Which skeleton shape best matches this screen while it loads. */
   skeleton?: "list" | "grid" | "detail" | "form";
   /** What could not be loaded, in her words: "your orders", "this course". */
   loadFailed?: string;
 }) {
-  usePageChrome({ rail, wide, bare, fit, name });
+  usePageChrome({ rail, wide, bare, fit, name, immersive });
 
   /**
    * `?state=loading` and `?state=error` render those states on any screen.
@@ -55,10 +57,13 @@ export function HomeShell({
    * one, Next renders the whole page as an empty fallback, which is exactly
    * what happened: thirty-eight screens went blank. Reading in an effect costs
    * one frame on a review-only affordance and asks nothing of any page.
-   */
+  */
   const [forced, setForced] = useState<string | null>(null);
   useEffect(() => {
-    setForced(new URLSearchParams(window.location.search).get("state"));
+    const hydrate = window.setTimeout(() => {
+      setForced(new URLSearchParams(window.location.search).get("state"));
+    });
+    return () => window.clearTimeout(hydrate);
   }, []);
   const pathname = usePathname();
   const body =

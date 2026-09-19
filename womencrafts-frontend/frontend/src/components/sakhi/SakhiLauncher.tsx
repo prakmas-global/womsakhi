@@ -46,6 +46,7 @@ export default function SakhiLauncher() {
         "Mess" on the shop.
       */}
       <div
+        data-float="sakhi"
         className="fixed end-4 z-40 md:bottom-20 md:end-6"
         style={{ bottom: "calc(72px + env(safe-area-inset-bottom, 0px))" }}
       >

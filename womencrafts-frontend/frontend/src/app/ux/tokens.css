@@ -540,7 +540,8 @@
     inset 0 1px 0 var(--ux-edge-hi),
     0 3px 7px -2px var(--ux-sh-2),
     0 22px 44px -14px var(--ux-sh-3),
-    0 8px 20px -10px rgba(0, 0, 0, 0.5);
+    0 8px 20px -10px rgba(0, 0, 0, 0.5),
+    0 0 22px -14px var(--ux-brand);
   --ux-shadow-pop:
     inset 0 1px 0 var(--ux-edge-hi),
     0 4px 12px -4px var(--ux-sh-2),
@@ -2629,3 +2630,44 @@
 */
 .ux .ux-cert-foot > * { flex: 1 1 0; min-width: 0; }
 .ux .ux-cert-foot > * > * { width: 100%; justify-content: center; }
+
+/* ── Cycle tracker ─────────────────────────────────────────────────────────
+   The calendar's four marks and the five mood faces. Named for what they
+   mean, not what they look like, so the dark theme can move each one on its
+   own ground without any screen knowing. Period and ovulation are the two
+   solid marks and carry white text; predicted and fertile are tints and carry
+   their ink. Every pairing clears 4.5:1 in both themes. */
+.ux {
+  --cy-period: #b0426d;          /* 5.9:1 with white */
+  --cy-period-soft: #f7dce6;
+  --cy-predicted: #fbe6ee;
+  --cy-predicted-ink: #9c3a61;
+  --cy-fertile: #ece3fc;
+  --cy-fertile-ink: #5b3fa8;
+  --cy-ovulation: #6d4bd1;       /* 6.1:1 with white */
+  --cy-hero-a: #fbe9f0;
+  --cy-hero-b: #efe4fb;
+  --cy-mood-happy: #f4b93e;
+  --cy-mood-calm: #9a86ec;
+  --cy-mood-tired: #f2a65a;
+  --cy-mood-irritable: #ec7a4f;
+  --cy-mood-sad: #8a7bd0;
+  --cy-face-ink: #3a2530;
+}
+.ux.dark {
+  --cy-period: #c9587f;
+  --cy-period-soft: #3a2230;
+  --cy-predicted: #3a2531;
+  --cy-predicted-ink: #f0a6c2;
+  --cy-fertile: #2d2542;
+  --cy-fertile-ink: #c7b5f7;
+  --cy-ovulation: #7c5de0;
+  --cy-hero-a: #2f1d27;
+  --cy-hero-b: #281f35;
+  --cy-mood-happy: #e8ad35;
+  --cy-mood-calm: #a18ff0;
+  --cy-mood-tired: #e89b52;
+  --cy-mood-irritable: #e57348;
+  --cy-mood-sad: #9384d8;
+  --cy-face-ink: #2a1a22;
+}

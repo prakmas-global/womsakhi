@@ -12,6 +12,11 @@
  * consent, at a ₹200 crore penalty tier — and menarche is around twelve; and
  * period data is the most enforcement-exposed category in consumer software.
  *
+ * **Superseded for the tracker itself (2026-09-18):** the owner chose to build
+ * one, and it is built so each of these risks is designed out rather than
+ * accepted — adults only, hers alone, deletable in one tap, derived rather
+ * than stored. See `womsakhi/decisions/ADR-017` and `components/ux/cycle/`.
+ *
  * ── What it is instead ──────────────────────────────────────────────────────
  * The health problems that measurably cost her income, addressed as income
  * problems. In order of evidence:

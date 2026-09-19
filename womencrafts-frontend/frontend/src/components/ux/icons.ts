@@ -251,6 +251,19 @@ export {
   Wrench,
   X,
   Zap,
+  // cycle tracker
+  BatteryLow,
+  BedDouble,
+  Brain,
+  Cookie,
+  CupSoda,
+  Frown,
+  Hospital,
+  PersonStanding,
+  Salad,
+  ScanFace,
+  Smile,
+  Timer,
 } from "lucide-react";
 
 export type { LucideIcon, LucideProps } from "lucide-react";

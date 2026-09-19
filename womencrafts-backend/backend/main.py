@@ -42,6 +42,7 @@ from app.routes.settings_platform import router as settings_platform_router
 from app.routes.uploads import MEDIA_ROOT, router as uploads_router
 from app.routes.verification import router as verification_router
 from app.routes.me import router as me_router
+from app.routes.cycle import router as cycle_router
 from app.routes.home import router as home_router
 from app.routes.me_messages import router as me_messages_router
 from app.routes.catalog import router as catalog_router
@@ -271,6 +272,7 @@ app.include_router(verification_router, prefix="/api/v1")
 # The member app. Every endpoint scopes to the caller's own account and
 # requires an ADMITTED member — see routes/me.require_active_member.
 app.include_router(me_router, prefix="/api/v1")
+app.include_router(cycle_router, prefix="/api/v1")   # her cycle — personal, member-only
 # `/me/home` — the home screen's own composed endpoint. A separate module
 # rather than another thousand lines in routes/me.py, and it carries the same
 # `/me` prefix so the screen's call sits with the rest of her data.

@@ -28,6 +28,7 @@ from app.routes.group_buy import seed as seed_group_buy
 from app.routes.shop import seed as seed_shop
 from app.routes.reference import seed as seed_reference
 from app.routes.skills import seed as seed_skills
+from app.routes.cycle import seed as seed_cycle
 
 _SEEDERS = [
     ("users (members/roles/segments)", seed_if_empty),
@@ -55,6 +56,7 @@ _SEEDERS = [
     ("her shop", seed_shop),
     ("skill exchange", seed_exchange),
     ("assessments/digital", seed_skills),
+    ("health mentors", seed_cycle),
 ]
 
 

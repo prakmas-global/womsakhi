@@ -13,7 +13,7 @@ import { useAuth } from "@/context/AuthContext";
 import { useTheme } from "@/context/ThemeContext";
 import { useMe } from "./me";
 import { useNavLabel } from "./use-nav-label";
-import { SECTIONS, TABS, isTabRoot, trailFor, type NavNode, type Section } from "./nav-tree";
+import { SECTIONS, isTabRoot, trailFor, type NavNode, type Section } from "./nav-tree";
 import { Avatar } from "./kit";
 import { useSearchHotkey } from "./useSearchHotkey";
 import { MobileNav, SafetyPin } from "./MobileNav";
@@ -85,9 +85,6 @@ function Icon({ name, className, style }: { name: string; className?: string; st
  * `nav.ts`, which means a rename there reaches this strip with nothing to
  * remember — the same rule the Home grid already follows.
  */
-
-const MODULE_TINT = ["--ux-tint-violet", "--ux-tint-green", "--ux-tint-amber", "--ux-tint-blue", "--ux-tint-pink"] as const;
-const MODULE_INK  = ["--ux-violet-ink", "--ux-green-ink", "--ux-amber-ink", "--ux-blue-ink", "--ux-pink-ink"] as const;
 
 /**
  * The side menu, built to the approved design.
@@ -254,15 +251,18 @@ export function ModeRail({ path, footer }: { path: string; footer?: React.ReactN
    * Set on the click instead. The panel she just left starts folding away in
    * the same interaction as the press, while the navigation gets on with
    * itself underneath, and the two are no longer in each other's way.
-   */
+  */
   const [open, setOpen] = useState<string | undefined>(here);
-  useEffect(() => { setOpen(here); }, [here]);
+  useEffect(() => {
+    const sync = window.setTimeout(() => setOpen(here));
+    return () => window.clearTimeout(sync);
+  }, [here]);
 
   const trailKey = trail.map((t) => t.id).join("/");
   const openSection = useCallback((id: string, href: string) => {
     setOpen(id);
     requestAnimationFrame(() => router.push(href));
-  }, [router]);
+  }, [router, setOpen]);
 
   /**
    * Keep the row she is on where she can see it.
@@ -541,7 +541,7 @@ export function Topbar({ user }: { user: { name: string; avatar: string; unread?
 
       {/* The full search box needs ~300px. On a phone it is an icon, and the
           palette it opens is the same palette. */}
-      <div className="ms-auto hidden min-w-0 max-w-[300px] flex-1 justify-end sm:flex">
+      <div className={`ms-auto hidden min-w-0 flex-1 justify-end sm:flex ${here === "/app/circle" ? "max-w-[590px]" : "max-w-[300px]"}`}>
         <div className="w-full">
         {/* A button, not an input: typing happens in the palette, which has the
             results, the keyboard handling and somewhere to put focus. */}
@@ -553,7 +553,7 @@ export function Topbar({ user }: { user: { name: string; avatar: string; unread?
         >
           <Icons.Search className="ux-ico h-4 w-4 shrink-0" style={{ color: "var(--ux-faint)" }} strokeWidth={2} />
           <span className="min-w-0 flex-1 truncate text-xsm" style={{ color: "var(--ux-muted)" }}>
-            Search…
+            {here === "/app/circle" ? "Search circles, women, topics, events…" : "Search…"}
           </span>
           <kbd
             className="shrink-0 rounded-md border px-1.5 py-0.5 text-2xs font-medium"
@@ -598,7 +598,6 @@ export function Topbar({ user }: { user: { name: string; avatar: string; unread?
             aria-expanded={menu}
             className="ux-press flex items-center gap-2.5 rounded-[12px] py-1 pe-2 ps-1 transition-colors hover:bg-[var(--ux-surface-2)]"
           >
-            {/* eslint-disable-next-line @next/next/no-img-element */}
             <Avatar src={user.avatar} name={user.name || "You"} size={38} />
             {/* Cut to "Hi, Priy…" at 390px. The avatar identifies the menu
                 perfectly well; the greeting is a nicety with room only on a
@@ -727,6 +726,7 @@ export function Shell({
   rail,
   wide,
   fit,
+  immersive,
 }: {
   /** Accepted and ignored — kept so callers need not all change at once. */
   nav?: unknown;
@@ -762,16 +762,26 @@ export function Shell({
    * scrolls, which is what scrolling is for.
    */
   fit?: boolean;
+  /**
+   * A focused flow on a phone — logging her cycle, a symptom, a mood. The
+   * screen draws its own "‹ Title  Save" header, and the top bar, the tab bar
+   * and the two floating buttons step aside so its bottom action is not sat
+   * under them. From `lg` up nothing changes: a laptop has room for both.
+   */
+  immersive?: boolean;
 }) {
   const pathname = usePathname();
 
   return (
-    <div className="flex h-screen flex-col overflow-hidden" style={{ background: "var(--ux-canvas)" }}>
-      <Topbar user={user} />
+    <div className="flex h-screen flex-col overflow-hidden" style={{ background: "var(--ux-canvas)" }}
+         data-immersive={immersive ? "" : undefined}>
+      <div className={immersive ? "hidden lg:contents" : "contents"}>
+        <Topbar user={user} />
+      </div>
 
       {/* Below `lg`: a bottom bar of five and a sheet with everything else. */}
-      <MobileNav />
-      <SafetyPin />
+      {!immersive && <MobileNav />}
+      {!immersive && <SafetyPin />}
 
       <div className="flex min-h-0 flex-1 overflow-hidden">
 
@@ -790,8 +800,10 @@ export function Shell({
           */}
         {!wide && <ModeRail path={pathname} footer={sidebarFooter} />}
 
-        <div className="relative flex min-w-0 flex-1 flex-col overflow-hidden"
-             style={{ marginTop: `calc(${TOPBAR_H_VAR} * -1)`, height: `calc(100% + ${TOPBAR_H_VAR})` }}>
+        <div className={`relative flex min-w-0 flex-1 flex-col overflow-hidden ${
+               immersive ? "lg:mt-[calc(var(--ux-topbar-h)*-1)] lg:h-[calc(100%+var(--ux-topbar-h))]" : ""}`}
+             style={immersive ? undefined
+               : { marginTop: `calc(${TOPBAR_H_VAR} * -1)`, height: `calc(100% + ${TOPBAR_H_VAR})` }}>
           <div id="ux-scroll" className="min-h-0 flex-1 overflow-y-auto">
             {/* pb-24: Sakhi floats over the bottom-right corner, so the last card
                 in the rail would otherwise sit underneath her. */}
@@ -813,7 +825,8 @@ export function Shell({
                 `overflow-y-auto` as the floor: on a window too short for any
                 density the page scrolls rather than clipping. */}
             <div className={`flex min-w-0 gap-[24px] px-[20px] ${
-                   wide ? "pb-[20px]"
+                   immersive ? "pb-[calc(24px+env(safe-area-inset-bottom,0px))] pt-[env(safe-area-inset-top,0px)] lg:pb-24 lg:pt-[calc(var(--ux-topbar-h)+18px)]"
+                   : wide ? "pb-[20px]"
                    : fit ? "pb-[calc(96px+env(safe-area-inset-bottom,0px))] xl:h-full xl:pb-[18px]"
                    : "pb-[calc(96px+env(safe-area-inset-bottom,0px))] lg:pb-24"}`}
                  /* 18px on every screen, `fit` included.
@@ -825,7 +838,7 @@ export function Shell({
                     exactly the screens where both are visible at once. Two
                     columns out of step is more visible than six pixels are
                     worth; the boards find them in their own padding. */
-                 style={{ paddingTop: `calc(${TOPBAR_H_VAR} + 18px)` }}>
+                 style={immersive ? undefined : { paddingTop: `calc(${TOPBAR_H_VAR} + 18px)` }}>
               {/* `.ux-swap` fades whatever the router puts inside — see the
                   rule in `ux/tokens.css` for why it is the child that carries
                   the animation and not this element. Emphatically NOT

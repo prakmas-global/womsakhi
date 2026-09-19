@@ -196,6 +196,20 @@ INDEXES: dict[str, list[IndexModel]] = {
     "member_notifications": [
         IndexModel([("user_id", ASCENDING), ("created_at", DESCENDING)], name="user_recent"),
         IndexModel([("user_id", ASCENDING), ("unread", ASCENDING)], name="user_unread"),
+        # A reminder is filed at most once: the cycle tracker writes a key like
+        # "cycle:checkin:2026-09-19", and a second tick that day hits this.
+        IndexModel(
+            [("user_id", ASCENDING), ("dedupe_key", ASCENDING)],
+            name="user_dedupe", unique=True,
+            partialFilterExpression={"dedupe_key": {"$type": "string"}},
+        ),
+    ],
+    "cycle_profiles": [
+        IndexModel([("user_id", ASCENDING)], name="user_unique", unique=True),
+    ],
+    "cycle_days": [
+        # One row per woman per day: the upsert on log relies on it.
+        IndexModel([("user_id", ASCENDING), ("date", ASCENDING)], name="user_date_unique", unique=True),
     ],
     "orders": [
         IndexModel([("user_id", ASCENDING), ("created_at", DESCENDING)], name="user_recent"),

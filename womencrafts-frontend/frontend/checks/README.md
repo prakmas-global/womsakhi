@@ -32,6 +32,7 @@ account it ran under happened to be pink. One theme measures one eighth.
 
 ```bash
 node checks/tokens.mjs           # static, <1s — nothing bypasses the tokens
+node checks/image-quality.mjs    # static — generated app art is not tiny/blurry
 node checks/contrast.mjs         # 8 themes × 2 modes, sampled screens (~3 min)
 node checks/contrast.mjs --full  # …× every route (~30 min)
 node checks/screens.mjs          # every route: a11y, overflow, errors, contrast
@@ -46,6 +47,8 @@ colours and produced four phantom failures.
 ## What each check actually asserts
 
 - `tokens.mjs` — static; no literal colour or type size escapes the tokens
+- `image-quality.mjs` — static; `/ux/art` and the auth hero have enough natural
+  pixels and are not tiny over-compressed placeholders
 - `contrast.mjs` — WCAG AA across every theme × mode
 - `screens.mjs` — per-screen a11y, overflow and console errors
 - `rail.mjs` — navigation rail geometry on every route

@@ -126,6 +126,8 @@ export interface ApiStory {
 
 export interface ApiMentor {
   id: string; name: string; headline: string; bio: string; photo?: string;
+  /** One line on what she helps with — set for the health mentors. */
+  focus?: string;
   expertise: string[]; languages: string[]; experience_years: number; location: string;
   availability: string; rating: number; rating_count: number; sessions_done: number;
   requested: boolean;
