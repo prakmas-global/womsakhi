@@ -111,6 +111,10 @@ def media_url(value: Optional[str]) -> str:
         return ""
     if text.startswith(_ABSOLUTE_SCHEMES):
         return text
+    # Art that ships inside the web app (`public/ux/...`) is served by the app
+    # itself, from whatever host she loaded it on — never by the API.
+    if text.startswith("/ux/"):
+        return text
     return f"{settings.MEDIA_BASE_URL.rstrip('/')}/{text.lstrip('/')}"
 
 

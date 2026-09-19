@@ -67,6 +67,7 @@ Append-only. Each one records what was tried and what broke.
 | 014 | [[ADR-014 An assistant may propose a change, never make one]] |
 | 015 | [[ADR-015 The safety gate runs before the model, not after]] |
 | 016 | [[ADR-016 Languages ship on machine verification, review is tracked separately]] |
+| 017 | [[ADR-017 Cycle tracking is built, private by construction]] |
 
 ## Modules
 

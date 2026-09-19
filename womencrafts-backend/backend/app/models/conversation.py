@@ -74,6 +74,7 @@ class MemberNotificationModel:
     TYPE_EVENT = "event"
     TYPE_MONEY = "money"
     TYPE_CIRCLE = "circle"
+    TYPE_HEALTH = "health"
 
     # Every type the seeds and the app actually produce. Three of them —
     # safety, mentorship, event — were being written but not mapped, so they
@@ -89,6 +90,7 @@ class MemberNotificationModel:
         TYPE_EVENT: "CalendarDays",
         TYPE_MONEY: "Wallet",
         TYPE_CIRCLE: "UsersRound",
+        TYPE_HEALTH: "HeartPulse",
     }
 
     @staticmethod

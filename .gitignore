@@ -41,6 +41,7 @@ uploads/
 # actually lands.
 /logs/
 **/backend/logs/
+**/backend/outbox/
 .cache/
 
 # Backups

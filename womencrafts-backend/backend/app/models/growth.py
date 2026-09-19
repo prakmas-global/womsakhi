@@ -237,6 +237,8 @@ class MentorModel:
             "id": str(doc["_id"]),
             "name": doc.get("name", ""),
             "headline": doc.get("headline", ""),
+            # One line on what she helps with — the health mentors carry it.
+            "focus": doc.get("focus", ""),
             "bio": doc.get("bio", ""),
             "photo": media_url(doc.get("photo", "")),
             "expertise": doc.get("expertise", []) or [],

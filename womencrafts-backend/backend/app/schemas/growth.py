@@ -32,6 +32,7 @@ class MentorResponse(BaseModel):
     id: str
     name: str
     headline: str
+    focus: str = ""
     bio: str
     photo: str
     expertise: list[str]
