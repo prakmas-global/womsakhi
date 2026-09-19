@@ -40,8 +40,10 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
   // hydrate from storage + keep in sync with the OS when on "system"
   useEffect(() => {
     const saved = (localStorage.getItem("theme") as Theme) || "light";
-    setThemeState(saved);
-    setIsDark(applyTheme(saved));
+    const hydrate = window.setTimeout(() => {
+      setThemeState(saved);
+      setIsDark(applyTheme(saved));
+    });
 
     const mq = window.matchMedia("(prefers-color-scheme: dark)");
     const onChange = () => {
@@ -49,7 +51,25 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
       if (current === "system") setIsDark(applyTheme("system"));
     };
     mq.addEventListener("change", onChange);
-    return () => mq.removeEventListener("change", onChange);
+    // A streamed client navigation can replace the server-owned <html> class
+    // with a prefetched snapshot. Keep the saved preference authoritative so
+    // choosing dark on the auth screen also survives the jump into the app.
+    const root = document.documentElement;
+    const observer = new MutationObserver(() => {
+      const current = (localStorage.getItem("theme") as Theme) || "light";
+      const expected = resolveDark(current);
+      if (root.classList.contains("dark") !== expected) {
+        root.classList.toggle("dark", expected);
+        setThemeState(current);
+        setIsDark(expected);
+      }
+    });
+    observer.observe(root, { attributes: true, attributeFilter: ["class"] });
+    return () => {
+      window.clearTimeout(hydrate);
+      mq.removeEventListener("change", onChange);
+      observer.disconnect();
+    };
   }, []);
 
   const setTheme = useCallback((t: Theme) => {

@@ -161,7 +161,12 @@ export function AuthProvider({
         const payload = await apiSignUp(full_name, email, password, extra);
         persistAuth(payload);
         setHandoff({ kind: "in", torn: true });
-        router.push(homeFor(payload.user));
+        // The session cookie was created by a different-origin API response.
+        // A client push can reuse an /app RSC payload prefetched while signed
+        // out, leaving the member shell without its new session until a manual
+        // refresh. A document navigation makes the first app request with the
+        // established cookie and boots user + shell data together.
+        window.location.assign(homeFor(payload.user));
       } catch (e) {
         // The form says what went wrong, in the field it went wrong in. A
         // curtain over that message would hide the only thing worth reading.
@@ -169,7 +174,7 @@ export function AuthProvider({
         throw e;
       }
     },
-    [router]
+    []
   );
 
   const signIn = useCallback(
@@ -179,13 +184,13 @@ export function AuthProvider({
         const payload = await apiSignIn(email, password);
         persistAuth(payload);
         setHandoff({ kind: "in", torn: true });
-        router.push(homeFor(payload.user));
+        window.location.assign(homeFor(payload.user));
       } catch (e) {
         setHandoff(null);   // see signUp
         throw e;
       }
     },
-    [router]
+    []
   );
 
   /**

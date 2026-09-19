@@ -4,6 +4,7 @@ import Image from "next/image";
 import { TransitionLink } from "@/components/ux/TransitionLink";
 import { I, formatRupees } from "@/components/ux/kit";
 import { useHome } from "@/components/ux/live";
+import { HomeCycleCard } from "@/components/ux/cycle/HomeCycleCard";
 
 /**
  * Home, on a phone.
@@ -116,6 +117,11 @@ export function MobileHome() {
         </h1>
       </header>
 
+      {/* Her cycle, first — the owner's mockup puts it straight under her
+          name. When she does not track it is one quiet invitation line, and
+          discreet mode removes it entirely. See HomeCycleCard. */}
+      <div className="-mt-4 mb-4"><HomeCycleCard /></div>
+
       {/* ── the number she actually opens the app for ───────────────────── */}
       {balanceUnknown ? (
         /*
@@ -222,6 +228,7 @@ export function MobileHome() {
         <I name="ChevronRight" className="h-[18px] w-[18px] shrink-0" sw={2.2}
            style={{ color: "var(--ux-violet-ink)" }} />
       </TransitionLink>
+
 
 
       {/*

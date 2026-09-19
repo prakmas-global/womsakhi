@@ -10,6 +10,7 @@
     "start": "next start",
     "lint": "eslint",
     "check": "node checks/all.mjs",
+    "check:images": "node checks/image-quality.mjs",
     "check:tokens": "node checks/tokens.mjs",
     "check:contrast": "node checks/contrast.mjs",
     "check:contrast:full": "node checks/contrast.mjs --full",

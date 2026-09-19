@@ -42,6 +42,11 @@ export interface PageChrome {
    */
   fit?: boolean;
   name?: string;
+  /**
+   * On a phone, the screen draws its own header and there is no tab bar —
+   * a focused flow such as logging her cycle. Desktop is unchanged.
+   */
+  immersive?: boolean;
 }
 
 const EMPTY: PageChrome = {};
@@ -88,8 +93,8 @@ export function useChrome(): PageChrome {
 export function usePageChrome(c: PageChrome) {
   const { set } = useContext(ChromeContext);
   const pathname = usePathname() ?? "";
-  const { rail, wide, bare, fit, name } = c;
+  const { rail, wide, bare, fit, name, immersive } = c;
   useLayoutEffect(() => {
-    set(pathname, { rail, wide, bare, fit, name });
-  }, [set, pathname, rail, wide, bare, fit, name]);
+    set(pathname, { rail, wide, bare, fit, name, immersive });
+  }, [set, pathname, rail, wide, bare, fit, name, immersive]);
 }

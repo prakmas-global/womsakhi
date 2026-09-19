@@ -21,6 +21,7 @@ const GREEN = "\x1b[32m", RED = "\x1b[31m", DIM = "\x1b[2m", OFF = "\x1b[0m";
 
 const STEPS = [
   ["tokens", "node checks/tokens.mjs", "every colour comes from a token"],
+  ["images", "node checks/image-quality.mjs", "app art has enough natural pixels"],
   ["a11y", "node checks/a11y.mjs", "every control has a name"],
   ["feedback", "node checks/feedback.mjs", "one way to say what happened"],
   ["types", "npx tsc --noEmit -p tsconfig.json", "the types agree"],

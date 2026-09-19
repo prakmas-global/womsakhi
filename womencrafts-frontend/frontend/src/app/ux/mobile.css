@@ -1345,3 +1345,11 @@
 @media (max-width: 1023px) {
   .ux .ux-back-inpage { display: none !important; }
 }
+
+/* An immersive screen (see `immersive` in Shell) draws its own header and
+   keeps its main action at the bottom edge. The Sakhi launcher is mounted
+   outside the shell, so it is told from here: on a phone it steps aside
+   rather than sitting on top of "Save". */
+@media (max-width: 1023px) {
+  .ux:has([data-immersive]) [data-float="sakhi"] { display: none !important; }
+}

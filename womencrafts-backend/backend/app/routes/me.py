@@ -792,15 +792,32 @@ async def unread_counts(me: dict = Depends(require_active_member)):
     """
     db = get_database()
     uid = str(me["_id"])
-    notifications, messages = await asyncio.gather(
+    # The cycle tracker's reminders are filed here, alongside the counts rather
+    # than before them: every screen asks for this badge, which makes it the
+    # one moment reminders can come due without a scheduler. For a woman who
+    # does not track, it is one indexed lookup that finds nothing. Anything it
+    # files is added to the count, since the count query may have run first.
+    notifications, messages, filed = await asyncio.gather(
         db[MemberNotificationModel.collection_name].count_documents(
             {"user_id": uid, "unread": True}
         ),
         db[MemberMessageModel.collection_name].count_documents(
             {"user_id": uid, "read_by_member": False}
         ),
+        _cycle_tick(uid),
     )
-    return UnreadCounts(notifications=notifications, messages=messages)
+    return UnreadCounts(notifications=notifications + filed, messages=messages)
+
+
+async def _cycle_tick(uid: str) -> int:
+    """A reminder that fails to file must never cost her the badge."""
+    from app.routes.cycle import tick
+
+    try:
+        return await tick(uid)
+    except Exception:  # noqa: BLE001
+        logging.getLogger(__name__).exception("cycle reminders: tick failed")
+        return 0
 
 
 @router.post("/notifications/read-all", response_model=MessageResponse, summary="Mark all as read")
