@@ -835,11 +835,34 @@
    already puts every destination in the app.
    ═══════════════════════════════════════════════════════════════════════════ */
 
+/*
+  ── Superseded, 2026-09-20 ────────────────────────────────────────────────
+  Hiding the wordmark left the phone bar with NO brand at all: `Brand` draws
+  only the wordmark, so `:not(.ux-brand-mark)` matched the one image there
+  was. The owner wants the text logo on the phone, as the big apps have it.
+
+  It is shown at 104px instead — measured, that leaves 390 − 104 − 24 of
+  padding = 262px for four 40px controls and their gaps, which fits with room
+  to spare, and it is still the app's name rather than a squeezed picture.
+*/
 @media (max-width: 1023px) {
-  /* The mark stays; the wordmark beside it is what does not fit. */
-  .ux .ux-topbar img[alt*="WomSakhi" i]:not(.ux-brand-mark),
-  .ux header img[alt*="WomSakhi" i]:not(.ux-brand-mark) {
-    display: none;
+  /* Sized by HEIGHT, the way a wordmark is set.
+     104px of width made it 34.7px tall in a 69px bar — half the bar's height,
+     which is what reads as oversized. 30px sits with the 21px glyphs beside
+     it and leaves 390 − 90 − 36 = 264px for four 44px controls.
+     Matched on the class, not on `alt`: the dark-theme copy is aria-hidden
+     and has no alt text to match. */
+  .ux .ux-topbar .ux-wordmark,
+  .ux header .ux-wordmark {
+    /* `Brand` sets the width inline, so this has to win. */
+    width: auto !important;
+    height: 26px !important;
+    max-width: 140px;
+    object-fit: contain;
+  }
+  @media (max-width: 359px) {
+    .ux .ux-topbar .ux-wordmark,
+    .ux header .ux-wordmark { height: 23px !important; }
   }
 
   /* Redundant with the screen's own header and with the bottom bar's More
@@ -1247,7 +1270,7 @@
     line spacing apart, which costs more legibility than it buys.
   */
   .ux p a,
-  .ux li > a:not([class*="ux-sq"]),
+  .ux li > a:not([class*="ux-sq"]):not([class*="flex"]):not([class*="grid"]),
   .ux a.underline {
     min-width: 0;
     min-height: 0;
@@ -1352,4 +1375,174 @@
    rather than sitting on top of "Save". */
 @media (max-width: 1023px) {
   .ux:has([data-immersive]) [data-float="sakhi"] { display: none !important; }
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   The tablet, which had no tier of its own.
+
+   The app was built in two: a phone below 1024 and a desktop at or above it.
+   An iPad in portrait is 768 and takes the phone tier — so the phone layout
+   was stretched to 1023px wide. Measured on it: body text ran ~700px per
+   line (about 110 characters, against the 45–75 that reads comfortably),
+   cards spanned the full width for a single sentence, and the side gutter
+   stayed at the 20px a 390px phone needs.
+
+   This is the missing middle. It is deliberately a column and not a second
+   desktop: the rail does not exist here, the bottom bar is still the way
+   around, and a centred column of phone-sized cards reads as a tablet app
+   rather than a stretched phone. Boards that are made of columns opt out
+   with `ux-col-wide`.
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+@media (min-width: 768px) and (max-width: 1023px) {
+  .ux .ux-col {
+    max-width: 768px;
+    margin-inline: auto;
+    /* 32 rather than 20: the gutter grows with the screen, as it does on
+       every native tablet layout. */
+    padding-inline: 32px;
+  }
+  .ux .ux-col.ux-col-wide { max-width: none; padding-inline: 28px; }
+
+  .ux {
+    /* A card has more room, so it gets more air inside it. */
+    --ux-card-pad-m: 20px;
+    --ux-pad: 24px;
+  }
+
+  /*
+    A list of cards becomes two columns.
+
+    `.ux-deck` already marks "this is a list of cards" on 42 screens, so the
+    tablet gets the one layout change that actually uses the width, without
+    every screen being edited. The children's own `space-y` margins would
+    fight the grid, so they are cleared here — the grid's gap replaces them.
+  */
+  /*
+    `:not(.hidden)` matters more than it looks. This file is unlayered, so it
+    beats Tailwind's utilities — and a deck that a screen deliberately hides
+    below `lg` (`hidden lg:block`, the desktop half of a two-layout screen)
+    was being forced back on. Health drew its check-ups twice on a tablet.
+  */
+  .ux .ux-deck:not(.hidden) {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 12px;
+    align-items: start;
+  }
+  .ux .ux-deck:not(.hidden) > * { margin-block: 0; }
+
+  /* A strip that runs edge to edge does it with `-mx-[20px]`, sized for the
+     phone gutter. With a 32px gutter here it would stop 12px short on each
+     side and read as a mistake, so it is re-pulled to the new gutter. */
+  .ux [class*="-mx-[20px]"] { margin-inline: -32px; }
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   Every sideways row, treated the same way.
+
+   The dashboards added in September bring their own scrollers — filters,
+   tabs, quick links, a week of days. They scroll, but the row simply stopped
+   at the edge with a chip cut in half, which reads as broken rather than as
+   "there is more this way". `[data-earn-chips]` above already solved this for
+   one board; these are the same control by another name, so they get the same
+   three things: momentum, snapping, and a fade that makes the cut deliberate.
+
+   The names are hashed by CSS modules (`discover-module__qCqpMW__filters`),
+   so they are matched on the readable suffix the hash keeps.
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+@media (max-width: 1023px) {
+  .ux [class*="__filters"] > div,
+  .ux [class*="__filters"],
+  .ux [class*="__tabs"],
+  .ux [class*="__statusTabs"],
+  .ux [class*="__mobileCategories"],
+  .ux [class*="__quick"],
+  .ux [class*="__wayGrid"],
+  .ux [class*="__nav"] {
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior-x: contain;
+    scrollbar-width: none;
+  }
+  /* Only the ones that actually run out of room get the fade: applied to a
+     row that fits, the last chip would look faded for no reason. */
+  .ux [class*="__filters"] > div,
+  .ux [class*="__tabs"],
+  .ux [class*="__statusTabs"],
+  .ux [class*="__mobileCategories"] {
+    scroll-snap-type: x proximity;
+    mask-image: linear-gradient(to right, #000 calc(100% - 20px), transparent);
+    -webkit-mask-image: linear-gradient(to right, #000 calc(100% - 20px), transparent);
+  }
+  .ux [class*="__filters"] > div > *,
+  .ux [class*="__tabs"] > *,
+  .ux [class*="__statusTabs"] > *,
+  .ux [class*="__mobileCategories"] > * { scroll-snap-align: start; }
+
+  .ux [class*="__filters"]::-webkit-scrollbar,
+  .ux [class*="__filters"] > div::-webkit-scrollbar,
+  .ux [class*="__tabs"]::-webkit-scrollbar,
+  .ux [class*="__nav"]::-webkit-scrollbar { display: none; }
+}
+
+/* A phone with reduced transparency turned on gets no mask — the fade is the
+   one thing that setting is allowed to take away. */
+@media (max-width: 1023px) and (prefers-reduced-transparency: reduce) {
+  .ux [class*="__filters"] > div,
+  .ux [class*="__tabs"],
+  .ux [class*="__statusTabs"],
+  .ux [class*="__mobileCategories"] { mask-image: none; -webkit-mask-image: none; }
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   A chip is the size of its word.
+
+   Measured on /app/discover at 390: seven chips need 380px inside a 350px
+   lane. They are flex children, and a flex child shrinks by default — so
+   instead of the row scrolling, every pill squeezed until "Earning",
+   "Community" and "Mentors" ran over each other's edges and the words sat
+   outside their own backgrounds.
+
+   `flex: 0 0 auto` is the whole fix: a chip keeps its natural width, the row
+   overflows, and overflowing is exactly what a scrolling row is for. The
+   rest is the shape — one height, one radius, one gap — so a row of chips
+   reads as one control everywhere in the app.
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+@media (max-width: 1023px) {
+  .ux [class*="__filters"] > div,
+  .ux [class*="__tabs"],
+  .ux [class*="__statusTabs"],
+  .ux [class*="__mobileCategories"],
+  .ux [class*="__chipRow"],
+  .ux [data-earn-chips],
+  .ux [role="tablist"]:not([class*="grid"]) {
+    display: flex;
+    flex-wrap: nowrap;
+    align-items: center;
+    gap: 8px;
+    /* Room for the pressed ring, and for the lane to read as its own band
+       rather than as the bottom edge of the heading above it. */
+    padding-block: 4px;
+    scroll-padding-inline: 20px;
+  }
+
+  .ux [class*="__filters"] > div > *,
+  .ux [class*="__tabs"] > *,
+  .ux [class*="__statusTabs"] > *,
+  .ux [class*="__mobileCategories"] > *,
+  .ux [class*="__chipRow"] > *,
+  .ux [data-earn-chips] > * {
+    /* `align-self` matters as much as `flex`: where one of these rows is a
+       grid cell that stretches to a tall card, a stretched chip becomes a
+       120px oval with one word floating in it. */
+    flex: 0 0 auto !important;
+    align-self: center;
+    min-width: max-content;
+    min-height: 36px;
+    padding-inline: 14px;
+    border-radius: 999px;
+    white-space: nowrap;
+  }
 }

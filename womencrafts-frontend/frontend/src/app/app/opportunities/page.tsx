@@ -169,7 +169,7 @@ export default function FindWorkPage() {
         <div className="space-y-[16px]">
           <Card>
             <div className="flex items-start gap-3">
-              <span className="grid h-[38px] w-[38px] shrink-0 place-items-center rounded-[11px]"
+              <span className="grid h-[38px] w-[38px] shrink-0 place-items-center rounded-[12px]"
                     style={{ background: v("--ux-brand-tint-2") }}>
                 <Icons.Target className="h-[18px] w-[18px]" style={{ color: v("--ux-brand") }} />
               </span>
@@ -316,7 +316,7 @@ export default function FindWorkPage() {
             })}
           </div>
           <label className="flex shrink-0 items-center gap-2 pb-2 text-[13px] lg:text-xs" style={{ color: v("--ux-muted") }}>{tr("findwork.sortBy")}<select value={sort} onChange={(e) => setSort(e.target.value as SortId)}
-                    className="ux-sq rounded-[12px] border px-2 py-1.5 text-[15px] font-bold lg:rounded-[9px] lg:text-xs"
+                    className="ux-sq rounded-[12px] border px-2 py-1.5 text-[15px] font-bold lg:rounded-[10px] lg:text-xs"
                     style={{ borderColor: v("--ux-line"), background: v("--ux-surface"), color: v("--ux-ink") }}>
               {SORTS.map((s) => <option key={s.id} value={s.id}>{s.label}</option>)}
             </select>

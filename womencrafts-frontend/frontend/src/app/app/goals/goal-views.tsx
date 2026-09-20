@@ -314,7 +314,7 @@ export function QuickActions({ rows }: { rows: QuickAction[] }) {
       <div className="grid grid-cols-2 gap-2">
         {rows.map((a) => (
           <button key={a.id} type="button" onClick={a.onClick}
-                  className={`${styles.quickAction} ux-press ux-sq flex items-center gap-2 rounded-[11px] px-2.5 py-3 text-start`}
+                  className={`${styles.quickAction} ux-press ux-sq flex items-center gap-2 rounded-[12px] px-2.5 py-3 text-start`}
                   style={{ border: "1px solid var(--ux-line)" }}>
             <I name={a.icon} className="h-[15px] w-[15px] shrink-0" style={{ color: v("--ux-brand") }} />
             <span className="min-w-0 text-2xs font-bold leading-tight" style={{ color: v("--ux-ink-2") }}>

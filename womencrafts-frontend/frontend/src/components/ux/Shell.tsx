@@ -19,6 +19,7 @@ import { useSearchHotkey } from "./useSearchHotkey";
 import { MobileNav, SafetyPin } from "./MobileNav";
 import { PageTransition } from "./mobile/PageTransition";
 import { MobileBack } from "./mobile/BackButton";
+import { MoreSheet } from "./mobile/MoreSheet";
 
 /**
  * The search panel is a ⌘K surface — most sessions never open it, and it drags
@@ -211,12 +212,12 @@ const RailSection = memo(function RailSection({
                     tabIndex={isOpen ? undefined : -1}
                     aria-current={on ? "page" : undefined}
                     data-on={on ? "true" : "false"}
-                    className="ux-twig ux-row ux-sq relative mb-0.5 flex items-center gap-2.5 rounded-[10px] px-2.5 py-1.5"
+                    className="ux-twig ux-row ux-sq relative mb-0.5 flex min-h-[34px] items-center gap-2.5 rounded-[10px] px-2.5 py-1.5"
                     style={{ background: on ? "var(--ux-brand-tint)" : "transparent",
                              color: on ? "var(--ux-brand)" : "var(--ux-ink-2)" }}
                   >
-                    <Icon name={c.icon} className="ux-ico h-[14px] w-[14px] shrink-0" />
-                    <span className="min-w-0 flex-1 truncate text-2xs"
+                    <Icon name={c.icon} className="ux-ico h-[15px] w-[15px] shrink-0" />
+                    <span className="min-w-0 flex-1 truncate text-xsm"
                           style={{ fontWeight: on ? 700 : 500 }}>
                       {label(c)}
                     </span>
@@ -395,23 +396,40 @@ function TopIconBtn({
   icon: string; label: string; href?: string; onClick?: () => void; badge?: number; ink?: string;
 }) {
   const inner = (
-    <>
-      <Icon name={icon} className="ux-ico h-[19px] w-[19px]" />
+    /* The badge is positioned against the glyph, not against the 44px tap
+       target: pinned to the button's corner it floated in dead space and read
+       as a second object. Here its centre sits on the bell's top-right corner,
+       the way every phone has drawn this since the first unread count.
+
+       It used to carry `ux-ping`, whose ::before scales the badge to 2.1× on a
+       loop — on a pill holding a numeral that is a throbbing blob, not a
+       count. A number is already the notice; the pulse is for a bare dot. */
+    <span className="relative grid h-[21px] w-[21px] shrink-0 place-items-center">
+      <Icon name={icon} className="ux-ico h-[21px] w-[21px]" />
       {!!badge && (
         <span
-          className="ux-ping absolute top-[3px] end-[3px] grid h-[17px] min-w-[17px] place-items-center rounded-full px-1 text-2xs font-semibold text-white"
-          style={{ background: "var(--ux-brand-600)" }}
+          className="absolute -end-[7px] -top-[7px] grid h-[17px] min-w-[17px] place-items-center rounded-full px-[4px] text-[11px] font-bold leading-none"
+          style={{
+            background: "var(--ux-brand-600)",
+            color: "var(--ux-ink-on-brand)",
+            fontVariantNumeric: "tabular-nums",
+            /* A ring in the bar's own colour, so the count reads as a number
+               on top of the bell rather than part of its outline. */
+            boxShadow: "0 0 0 2px var(--ux-glass-bg-solid, var(--ux-surface))",
+          }}
         >
-          <span className="relative">{badge > 9 ? "9+" : badge}</span>
+          {badge > 99 ? "99+" : badge}
         </span>
       )}
-    </>
+    </span>
   );
+  /* 44px on a phone — the smallest square a thumb hits reliably — and the
+     tighter 42px where a cursor does the aiming. */
   const cls =
-    "ux-press ux-hov ux-sq relative grid h-[42px] w-[42px] place-items-center rounded-[12px] transition-colors hover:bg-[var(--ux-surface-2)]";
+    "ux-press ux-hov ux-sq relative grid h-[44px] w-[44px] place-items-center rounded-[12px] transition-colors hover:bg-[var(--ux-surface-2)] sm:h-[42px] sm:w-[42px]";
   const style = { color: `var(${ink})` };
   return href ? (
-    <Link href={href} aria-label={label} title={label} className={cls} style={style}>{inner}</Link>
+    <Link href={href} aria-label={badge ? `${label}, ${badge} unread` : label} title={label} className={cls} style={style}>{inner}</Link>
   ) : (
     <button type="button" aria-label={label} title={label} onClick={onClick} className={cls} style={style}>{inner}</button>
   );
@@ -469,7 +487,7 @@ function ThemeToggle() {
  */
 const TOPBAR_H_VAR = "var(--ux-topbar-h)";
 
-export function Topbar({ user }: { user: { name: string; avatar: string; unread?: number } }) {
+export function Topbar({ user, onMore }: { user: { name: string; avatar: string; unread?: number }; onMore?: () => void }) {
   /* Whether the bar leads with the way back instead of the logo. `MobileBack`
      makes the same decision for itself — it has to, because it is the thing
      being drawn — and the two read the one predicate in `nav-tree` rather than
@@ -586,8 +604,15 @@ export function Topbar({ user }: { user: { name: string; avatar: string; unread?
         {/* Help is not a tab because five is the ceiling for a bottom bar —
             but it is the one section a woman reaches for on her worst day, so
             it is in the bar on every screen instead of behind a menu. */}
-        <TopIconBtn icon="LifeBuoy" label="Help" href="/app/helpdesk" />
-        <TopIconBtn icon="MessageCircle" label="Messages" href="/app/messages" />
+        {/* Phone only: the rail does not exist here, so this is how she
+            reaches every section and every screen inside it. */}
+        <span className="contents lg:hidden">
+          <TopIconBtn icon="Menu" label="All sections" onClick={onMore} />
+        </span>
+        <span className="hidden sm:contents">
+          <TopIconBtn icon="LifeBuoy" label="Help" href="/app/helpdesk" />
+          <TopIconBtn icon="MessageCircle" label="Messages" href="/app/messages" />
+        </span>
         <TopIconBtn icon="Bell" label="Notifications" href="/app/notifications" badge={user.unread} />
 
         <div ref={menuRef} className="relative ms-2">
@@ -636,10 +661,10 @@ export function Topbar({ user }: { user: { name: string; avatar: string; unread?
                   href={it.href}
                   role="menuitem"
                   onClick={() => setMenu(false)}
-                  className="ux-hov flex items-center gap-3 rounded-[8px] px-2.5 py-2 text-xsm transition-colors hover:bg-[var(--ux-surface-2)]"
+                  className="ux-hov flex min-h-[38px] items-center gap-3 rounded-[10px] px-3 py-2 text-xsm transition-colors hover:bg-[var(--ux-surface-2)]"
                   style={{ color: "var(--ux-ink)" }}
                 >
-                  <Icon name={it.icon} className="ux-ico h-[16px] w-[16px]" />
+                  <Icon name={it.icon} className="ux-ico h-[17px] w-[17px] shrink-0" />
                   {it.label}
                 </Link>
               ))}
@@ -771,16 +796,21 @@ export function Shell({
   immersive?: boolean;
 }) {
   const pathname = usePathname();
+  /* Mounted by the Shell rather than the bar: a `fixed` panel inside the
+     header takes the header's stacking context, and the tab bar would paint
+     over it. */
+  const [more, setMore] = useState(false);
 
   return (
     <div className="flex h-screen flex-col overflow-hidden" style={{ background: "var(--ux-canvas)" }}
          data-immersive={immersive ? "" : undefined}>
       <div className={immersive ? "hidden lg:contents" : "contents"}>
-        <Topbar user={user} />
+        <Topbar user={user} onMore={() => setMore(true)} />
       </div>
 
       {/* Below `lg`: a bottom bar of five and a sheet with everything else. */}
       {!immersive && <MobileNav />}
+      <MoreSheet open={more} onClose={() => setMore(false)} />
       {!immersive && <SafetyPin />}
 
       <div className="flex min-h-0 flex-1 overflow-hidden">
@@ -824,7 +854,12 @@ export function Shell({
                 size it happened to be drawn for. The scroller itself keeps
                 `overflow-y-auto` as the floor: on a window too short for any
                 density the page scrolls rather than clipping. */}
-            <div className={`flex min-w-0 gap-[24px] px-[20px] ${
+            {/* `ux-col` is the tablet column: between 768 and 1023 the rail is
+                hidden and the phone layout was simply stretched, so a line of
+                15px text ran to ~700px — about 110 characters, well past the
+                65 a person reads comfortably. The class caps and centres the
+                column there; `ux-col-wide` opts a board out. See mobile.css. */}
+            <div className={`ux-col ${wide || fit ? "ux-col-wide" : ""} flex min-w-0 flex-col gap-[24px] px-[20px] xl:flex-row ${
                    immersive ? "pb-[calc(24px+env(safe-area-inset-bottom,0px))] pt-[env(safe-area-inset-top,0px)] lg:pb-24 lg:pt-[calc(var(--ux-topbar-h)+18px)]"
                    : wide ? "pb-[20px]"
                    : fit ? "pb-[calc(96px+env(safe-area-inset-bottom,0px))] xl:h-full xl:pb-[18px]"
@@ -860,8 +895,20 @@ export function Shell({
                     sits between the tap and the navigation. */}
                 <PageTransition>{children}</PageTransition>
               </main>
+              {/*
+                ── The rail is not desktop-only any more ────────────────────
+                It held the helplines on Health, Rights and Travel — 112, 181,
+                108, 14416 — and it rendered from `xl` up only. Measured
+                against the same screens at 390: those numbers did not exist
+                on a phone. The phone is the device that can dial them.
+
+                So below `xl` it stops being a column beside the page and
+                becomes a section beneath it, which is what a side column is
+                on a narrow screen. Above `xl` nothing changes.
+              */}
               {rail && (
-                <div data-rail className="ux-swap hidden w-[320px] shrink-0 pb-24 xl:block">
+                <div data-rail className="ux-swap w-full shrink-0 pb-24 xl:w-[320px]">
+                  <div className="mb-4 border-t pt-4 xl:hidden" style={{ borderColor: "var(--ux-line)" }} aria-hidden />
                   {rail}
                 </div>
               )}

@@ -93,6 +93,7 @@
   /* brand violet */
   --ux-brand: #742a4f;        /* links, "See All" */
   --ux-brand-600: #a55168;    /* primary button */
+  --ux-ink-on-brand: #ffffff; /* ink for a --ux-brand / --ux-brand-600 fill */
   --ux-brand-700: #742a4f;
   --ux-brand-900: #521e38;    /* the dark "Complete Your Profile" card */
   /* What sits ON the brand-900 slab. Written as literal hex in two components
@@ -450,10 +451,9 @@
 }
 
 /* Derived, not measured — see the note at the top. */
-.dark .ux,
-.ux.dark {
+:is(.ux.dark, .dark .ux) {
   --ux-sheen: rgba(255, 255, 255, 0.055);
-  --ux-danger-solid: #9f1239;
+  --ux-danger-solid: #f28ba0;   /* 7.2:1 on the dark tint it is printed on */
   --ux-danger-tint: #351e1d;
 
   /* Glass in the dark: less white, more blur showing through. A light border
@@ -493,11 +493,16 @@
 
   --ux-ink: #fbf4f5;
   --ux-ink-2: #e7dadf;
-  --ux-muted: #a5838f;        /* 5.10:1 on the darkest surface it lands on */
+  --ux-muted: #b0929d;        /* 4.66:1 on the lightest tint it lands on */
   --ux-faint: #a38590;        /* was #7d78a0 — 3.25:1 on the raised card */
 
-  --ux-brand: #d75685;
+  /* Measured on the dashboards in dark: #d75685 as TEXT on the raised
+     surfaces (#2f1d27, #352225) lands at 4.2:1 — under the 4.5 a person
+     needs, in 35 places on one screen. Lifted until it clears. Fills that
+     carry white text use `--ux-fill`, which is deliberately deeper. */
+  --ux-brand: #e58aae;
   --ux-brand-600: #dc7a9e;
+  --ux-ink-on-brand: #2a1018; /* 8.6:1 — both brand fills go light in this theme */
   --ux-brand-700: #c9547f;
   --ux-brand-900: #401c29;
   --ux-on-brand-2: #d194aa;        /* 8.61:1 on the darker slab */
@@ -539,7 +544,7 @@
   --ux-orange-ink: #d88c5a;
   --ux-blue-ink:   #5196db;
   --ux-green-ink:  #51c890;
-  --ux-pink-ink:   #d77081;
+  --ux-pink-ink: #db7e8e;
   --ux-amber-ink:  #d3a445;
   --ux-danger-ink: #da6a62;
 
@@ -680,12 +685,12 @@
   lit lip and the hairline do the rest of the separating; there is no usable
   shadow at this lightness.
 */
-.ux.dark .ux-card {
+:is(.ux.dark, .dark .ux) .ux-card {
   background: color-mix(in srgb, var(--ux-surface) 90%, transparent);
 }
 
 @media (prefers-reduced-transparency: reduce) {
-  .ux-card, .ux.dark .ux-card { background: var(--ux-surface); }
+  .ux-card, :is(.ux.dark, .dark .ux) .ux-card { background: var(--ux-surface); }
 }
 
 .ux-scroll-x {
@@ -856,21 +861,21 @@
     inset 0 -1px 0 var(--ux-edge-hi),
     0 1px 2px var(--ux-sh-1);
 }
-.dark .ux-clay, .ux.dark .ux-clay {
+.dark .ux-clay, :is(.ux.dark, .dark .ux) .ux-clay {
   box-shadow:
     inset 0 1px 0 var(--ux-edge-hi),
     inset 0 -8px 12px -8px rgba(0, 0, 0, 0.45),
     0 1px 2px var(--ux-sh-1),
     0 8px 20px -10px var(--ux-sh-2);
 }
-.dark .ux-clay:hover, .ux.dark .ux-clay:hover {
+.dark .ux-clay:hover, :is(.ux.dark, .dark .ux) .ux-clay:hover {
   box-shadow:
     inset 0 1px 0 rgba(255, 255, 255, 0.1),
     inset 0 -10px 14px -8px rgba(0, 0, 0, 0.5),
     0 2px 5px var(--ux-sh-1),
     0 14px 30px -12px var(--ux-sh-2);
 }
-.dark .ux-clay:active, .ux.dark .ux-clay:active {
+.dark .ux-clay:active, :is(.ux.dark, .dark .ux) .ux-clay:active {
   box-shadow:
     inset 0 2px 6px -1px rgba(0, 0, 0, 0.55),
     inset 0 -1px 0 rgba(255, 255, 255, 0.06),
@@ -933,7 +938,7 @@
     inset 0 -1px 0 rgba(255, 255, 255, 0.18),
     inset 0 0 0 1px rgb(var(--ux-shadow-ink) / 0.1);
 }
-.dark .ux-frame::after, .ux.dark .ux-frame::after {
+.dark .ux-frame::after, :is(.ux.dark, .dark .ux) .ux-frame::after {
   box-shadow:
     inset 0 2px 5px rgba(0, 0, 0, 0.45),
     inset 0 -1px 0 rgba(255, 255, 255, 0.06),
@@ -1013,7 +1018,7 @@
   background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.6), transparent);
 }
 .dark .ux-sheet::before,
-.ux.dark .ux-sheet::before {
+:is(.ux.dark, .dark .ux) .ux-sheet::before {
   background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.14), transparent);
 }
 
@@ -1028,7 +1033,7 @@
   background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.55), transparent);
 }
 .dark .ux-glass::before,
-.ux.dark .ux-glass::before {
+:is(.ux.dark, .dark .ux) .ux-glass::before {
   background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.16), transparent);
 }
 
@@ -1043,7 +1048,7 @@
   color: #3b3d5c;
 }
 .dark .ux-metal,
-.ux.dark .ux-metal {
+:is(.ux.dark, .dark .ux) .ux-metal {
   background:
     linear-gradient(103deg, rgba(255, 255, 255, 0.16) 0%, transparent 32%, rgba(255, 255, 255, 0.09) 55%, transparent 78%),
     repeating-linear-gradient(103deg, #3a3560 0 2px, #464073 2px 4px);
@@ -1121,7 +1126,7 @@
 }
 .dark .ux-deck:has(> .ux-i:hover) > .ux-i:not(:hover),
 .dark .ux-deck:has(.ux-i:hover) .ux-i:not(:hover),
-.ux.dark .ux-deck:has(.ux-i:hover) .ux-i:not(:hover) {
+:is(.ux.dark, .dark .ux) .ux-deck:has(.ux-i:hover) .ux-i:not(:hover) {
   filter: saturate(0.55) brightness(0.82);
 }
 
@@ -1140,7 +1145,7 @@
 }
 .ux-i:hover::after { opacity: 1; }
 .dark .ux-i::after,
-.ux.dark .ux-i::after {
+:is(.ux.dark, .dark .ux) .ux-i::after {
   background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.22), transparent);
 }
 
@@ -1793,8 +1798,8 @@
 .ux-btn-g:hover { filter: brightness(1.09); transform: translateY(-1px); }
 
 /* A row in a panel or the rail: the ground lifts, nothing moves. */
-.ux-row { transition: background-color var(--ux-t) var(--ux-ease); }
-.ux-row:hover { background: var(--ux-surface-2); }
+.ux-row { border-radius: 10px; transition: background-color var(--ux-t) var(--ux-ease); }
+.ux-row:hover { background: color-mix(in srgb, var(--ux-brand) 7%, var(--ux-surface-2)); }
 
 @media (prefers-reduced-motion: reduce) {
   .ux-card:hover, .ux-tile:hover, .ux-btn-g:hover { transform: none; }
@@ -2012,6 +2017,20 @@
   .ux-toast { transition: none; }
 }
 
+/* ── Photographs in the dark theme ──────────────────────────────────────────
+   Five stylesheets drop an image's white ground into the page with
+   `mix-blend-mode: multiply`. That is a light-theme device and only a
+   light-theme device: multiply is a product, so against #22161b every channel
+   collapses toward zero and the photograph becomes a black rectangle. On
+   /app/help the hero measured 0.022 mean luminance with 0.067 of variation —
+   an image with no image left in it.
+
+   Stated once here rather than five times, because the next stylesheet to
+   reach for multiply will have the same problem. */
+:is(.ux.dark, .dark .ux) img {
+  mix-blend-mode: normal;
+}
+
 /* ── Touch targets ───────────────────────────────────────────────────────────
    On a finger-driven screen, every control that is its own object gets at
    least 44px of height. Measured across the app, controls were landing at 32px
@@ -2022,17 +2041,32 @@
    density, and deliberately NOT applied to inline links inside prose: forcing
    a 44px box around a word mid-sentence wrecks the line spacing, and WCAG
    exempts inline links for exactly that reason. */
+/* In @layer base, and that is the whole point.
+
+   Unlayered, `.ux a:not(.ux-inline)` outranks both a component's own
+   `min-h-[66px]` utility (Tailwind's utilities are layered, and anything
+   unlayered beats a layer) and a CSS module's `.features > a { min-height }`
+   (0,1,1 against this rule's 0,2,1). So it stopped being a floor and became
+   the value: Help's two feature cards position their image and text
+   absolutely, so with nothing in flow they collapsed to exactly 44px and cut
+   their own content off. From `base`, a stated height always wins and this
+   stays what it was meant to be — the default for everything that states
+   none. */
 @media (pointer: coarse) {
-  .ux button:not(.ux-inline),
-  .ux [role="button"]:not(.ux-inline),
-  .ux a:not(.ux-inline) {
-    min-height: 44px;
-  }
-  /* Restore the exemption for links that sit inside a run of text. */
-  .ux p a,
-  .ux li a,
-  .ux span a {
-    min-height: 0;
+  @layer base {
+    .ux button:not(.ux-inline),
+    .ux [role="button"]:not(.ux-inline),
+    .ux a:not(.ux-inline) {
+      min-height: 44px;
+    }
+    /* Restore the exemption for links that sit inside a run of text — and only
+       those: a list item holding a flex or grid row is a navigation target, and
+       it keeps the 44px. */
+    .ux p a,
+    .ux li a:not([class*="flex"]):not([class*="grid"]):not([class*="ux-sq"]),
+    .ux span a {
+      min-height: 0;
+    }
   }
 }
 
@@ -2406,7 +2440,7 @@
   --ux-veil-ink: #222222;
   --ux-veil-hint: #888888;
 }
-.dark .ux, .ux.dark {
+.dark .ux, :is(.ux.dark, .dark .ux) {
   --ux-veil-bg: #ffffff;
   --ux-veil-ink: #222222;
   --ux-veil-hint: #888888;
@@ -2457,7 +2491,7 @@
      darkened until it clears AA on the amber wash it sits on. */
   --ux-work-orange: #b3631a;
 }
-.dark .ux, .ux.dark { --ux-work-orange: #e0913f; }
+.dark .ux, :is(.ux.dark, .dark .ux) { --ux-work-orange: #e0913f; }
 
 /* A text link that is still 24px to a finger.
 
@@ -2679,6 +2713,7 @@
    their ink. Every pairing clears 4.5:1 in both themes. */
 .ux {
   --cy-period: #b0426d;          /* 5.9:1 with white */
+  --cy-period-ink: #a03a62;      /* the same phase as TEXT, on a light ground */
   --cy-period-soft: #f7dce6;
   --cy-predicted: #fbe6ee;
   --cy-predicted-ink: #9c3a61;
@@ -2694,14 +2729,16 @@
   --cy-mood-sad: #8a7bd0;
   --cy-face-ink: #3a2530;
 }
-.ux.dark {
-  --cy-period: #c9587f;
+:is(.ux.dark, .dark .ux) {
+  --cy-period: #b34a6e;          /* 5.1:1 with white */
+  --cy-period-ink: #f2a8c0;      /* the same phase as TEXT, on a dark ground */
   --cy-period-soft: #3a2230;
   --cy-predicted: #3a2531;
   --cy-predicted-ink: #f0a6c2;
   --cy-fertile: #2d2542;
   --cy-fertile-ink: #c7b5f7;
   --cy-ovulation: #7c5de0;
+  --cy-ovulation-ink: #b7a4f5;   /* the same phase as TEXT, on a dark ground */
   --cy-hero-a: #2f1d27;
   --cy-hero-b: #281f35;
   --cy-mood-happy: #e8ad35;
@@ -2710,4 +2747,42 @@
   --cy-mood-irritable: #e57348;
   --cy-mood-sad: #9384d8;
   --cy-face-ink: #2a1a22;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   Every clickable thing answers the mouse.
+
+   Measured on a laptop by moving the real cursor over ten controls a screen
+   and comparing the pixels underneath: only 2 of 10 on Market and 4 of 10 on
+   Learn changed at all. `.ux-hov` explains why — it animates a child icon
+   (`.ux-ico`, `.ux-arrow`), so a tile with no icon inside it was left with no
+   answer of any kind. A stat tile you can click and that never acknowledges
+   you is the difference people feel between a web page and an app.
+
+   `:where()` keeps this at zero specificity, so any component that has its
+   own hover — a button that changes fill, a card that lifts — still wins;
+   this only fills the silence. `filter` rather than `background-color`
+   because it works on a tint, a gradient and a photograph alike, which is
+   what the app's surfaces actually are.
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+.ux { --ux-hover-filter: brightness(0.965) saturate(1.02); }
+:is(.ux.dark, .dark .ux) { --ux-hover-filter: brightness(1.14); }
+
+@media (hover: hover) and (pointer: fine) {
+  .ux :where(a, button, [role="button"], [role="tab"], [role="switch"], summary):not(:disabled):not([aria-disabled="true"]):hover {
+    filter: var(--ux-hover-filter);
+    transition: filter var(--ux-t, 180ms) var(--ux-ease, ease);
+  }
+
+  /* The ones that already answer: a card that lifts, a deck whose siblings
+     recede. Darkening them as well reads as two effects fighting. */
+  .ux :where(.ux-i, .ux-lift, .ux-card, .ux-tab, .ux-tabbar a):hover { filter: none; }
+
+  /* A link inside a sentence is not a tile: it underlines, as links do. */
+  .ux :where(p, li, dd, blockquote) a:not([class*="btn"]):hover {
+    filter: none;
+    text-decoration: underline;
+    text-underline-offset: 3px;
+  }
 }

@@ -61,7 +61,7 @@ export default function HealthMentors() {
         <div className="relative overflow-hidden rounded-[20px] px-5 py-5" style={{ background: heroBg }}>
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img src="/ux/art/leaves-pink.webp" alt="" aria-hidden className="absolute -end-10 -top-8 h-[150px] w-auto opacity-50 mix-blend-multiply" />
-          <p className="ux-display relative text-[24px] font-bold leading-tight" style={{ color: "var(--cy-period)" }}>You&apos;re not alone</p>
+          <p className="ux-display relative text-[24px] font-bold leading-tight" style={{ color: "var(--cy-period-ink)" }}>You&apos;re not alone</p>
           <p className="relative mt-1 text-[17px] font-semibold" style={{ color: "var(--ux-ink)" }}>Talk to our expert mentors</p>
         </div>
 
@@ -122,7 +122,7 @@ export default function HealthMentors() {
         </ul>
 
         <div className="mt-4 flex items-center gap-3 rounded-[16px] px-4 py-3.5" style={{ background: "var(--cy-predicted)", border: "1px solid var(--ux-line)" }}>
-          <Icons.HeartHandshake className="h-5 w-5 shrink-0" style={{ color: "var(--cy-period)" }} aria-hidden />
+          <Icons.HeartHandshake className="h-5 w-5 shrink-0" style={{ color: "var(--cy-period-ink)" }} aria-hidden />
           <p className="text-[13px]" style={{ color: "var(--ux-ink-2)" }}>
             <b className="font-semibold" style={{ color: "var(--ux-ink)" }}>Real Women. Real Support.</b><br />
             Because every question matters. <SoftHeart className="h-3.5 w-3.5" />

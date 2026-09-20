@@ -28,8 +28,14 @@ export function useNavLabel() {
   );
 
   const note = useCallback(
-    (n: { note?: string; k?: string }) =>
-      n.k && n.note ? t(`${n.k}.note` as MessageKey) : n.note,
+    (n: { note?: string; k?: string }) => {
+      if (!n.k || !n.note) return n.note;
+      // `t()` returns the key when there is no translation, and the five mode
+      // sections have a label key but no `.note` — so the More sheet printed
+      // "ch.mode.home.note" at people. Fall back to the written English.
+      const got = t(`${n.k}.note` as MessageKey);
+      return got === `${n.k}.note` ? n.note : got;
+    },
     [t],
   );
 

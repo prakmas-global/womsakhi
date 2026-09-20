@@ -113,13 +113,19 @@ export function WorkDashboard() {
     <div className={styles.dashboard} data-dashboard="work">
       <div className={styles.main}>
         <section className={styles.hero}>
-          <img src={`${ART}hero.webp`} alt="" aria-hidden="true" />
+          <picture>
+            {/* The wide banner is composed for a laptop and carries lettering in
+              its own artwork; a phone-shaped crop of it cuts the subject or the
+              words. The phone gets a crop made for its shape. */}
+            <source media="(max-width: 1023px)" srcSet={`${ART}hero-mobile.webp`} />
+            <img src={`${ART}hero.webp`} alt="" aria-hidden="true" />
+          </picture>
           <div className={styles.heroContent}>
             <p className={styles.eyebrow}>Work <span>·</span> Opportunities <span>·</span> Growth</p>
             <h1>Work on<br /><em>your terms</em></h1>
             <p className={styles.heroSub}>Discover meaningful opportunities, build your reputation and create the life you want.</p>
             <form className={styles.search} onSubmit={event => { event.preventDefault(); setSearch(query.trim()); resultsRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }); }}>
-              <I name="Search" /><input value={query} onChange={event => setQuery(event.target.value)} placeholder="What kind of work are you looking for?" aria-label="Search opportunities" /><button type="submit">Search</button>
+              <I name="Search" /><input value={query} onChange={event => setQuery(event.target.value)} placeholder="What work are you looking for?" aria-label="Search opportunities" /><button type="submit">Search</button>
             </form>
             <div className={styles.quickFilters}>{FILTERS.slice(1).map(option => <button type="button" key={option} onClick={() => { setFilter(option); setSearch(""); setQuery(""); resultsRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }); }}><I name={option === "Remote" ? "MapPin" : option === "Women-led" ? "Heart" : "Clock"} />{option}</button>)}</div>
           </div>

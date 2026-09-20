@@ -80,7 +80,7 @@ export default function Reminders() {
         <div className="flex items-center gap-3 rounded-[16px] px-4 py-3.5"
              style={{ background: "var(--cy-fertile)", border: "1px solid var(--ux-line)" }}>
           <span className="grid h-[40px] w-[40px] shrink-0 place-items-center rounded-[12px]" style={{ background: "var(--ux-surface)" }}>
-            <Icons.AlarmClock className="h-5 w-5" style={{ color: "var(--cy-ovulation)" }} aria-hidden />
+            <Icons.AlarmClock className="h-5 w-5" style={{ color: "var(--cy-ovulation-ink)" }} aria-hidden />
           </span>
           <span className="min-w-0 flex-1">
             <b className="block text-[15px] font-semibold" style={{ color: "var(--ux-ink)" }}>Smart Reminders</b>
@@ -97,7 +97,7 @@ export default function Reminders() {
               <li key={row.key} className="flex items-center gap-3 rounded-[16px] px-4 py-3"
                   style={{ background: "var(--ux-surface)", border: "1px solid var(--ux-line)" }}>
                 <span className="grid h-[40px] w-[40px] shrink-0 place-items-center rounded-[12px]" style={{ background: "var(--cy-predicted)" }}>
-                  <Icon name={row.icon} className="h-5 w-5" style={{ color: "var(--cy-period)" }} />
+                  <Icon name={row.icon} className="h-5 w-5" style={{ color: "var(--cy-period-ink)" }} />
                 </span>
                 <span className="min-w-0 flex-1">
                   <b className="block text-[15px] font-semibold" style={{ color: "var(--ux-ink)" }}>{row.title}</b>
@@ -107,7 +107,7 @@ export default function Reminders() {
                   <button type="button" disabled={off}
                           onClick={() => { setDraft(time || "09:00"); setTimeFor(row); }}
                           className="ux-press flex h-11 items-center gap-0.5 text-[13px] font-semibold"
-                          style={{ color: "var(--cy-ovulation)" }} aria-label={`${row.title} time, ${fmt12(time || "09:00")}`}>
+                          style={{ color: "var(--cy-ovulation-ink)" }} aria-label={`${row.title} time, ${fmt12(time || "09:00")}`}>
                     {fmt12(time || "09:00")}
                     <Icons.ChevronRight className="h-4 w-4" aria-hidden />
                   </button>
@@ -120,7 +120,7 @@ export default function Reminders() {
 
         <div className="mt-4 flex items-center gap-3 rounded-[16px] px-4 py-3.5"
              style={{ background: "var(--cy-predicted)", border: "1px solid var(--ux-line)" }}>
-          <Icons.Heart className="h-5 w-5 shrink-0" style={{ color: "var(--cy-period)" }} aria-hidden />
+          <Icons.Heart className="h-5 w-5 shrink-0" style={{ color: "var(--cy-period-ink)" }} aria-hidden />
           <p className="text-[13px] leading-snug" style={{ color: "var(--ux-ink-2)" }}>
             <b className="font-semibold" style={{ color: "var(--ux-ink)" }}>We care for you</b> <SoftHeart className="h-3.5 w-3.5" /><br />
             Because your health matters.

@@ -333,6 +333,31 @@
 ================================================================== */
 .dark {
   --background: #150c0f;
+  /* Status inks, read on a dark ground.
+     Green means good and red means stop in either theme — but the LIGHT-theme
+     inks are dark by design (#0a6b45, #8e1f22), and printed on a dark card
+     they measure 2.56:1 and 1.90:1. These are the same four meanings, lifted
+     until each clears AA where it is actually drawn. */
+  --color-status-ok-bg: #12301f;
+  --color-status-ok-ink: #7fd9ab;
+  --color-status-ok-border: #234c35;
+  --color-status-ok-solid: #34a06f;
+
+  --color-status-warn-bg: #33250f;
+  --color-status-warn-ink: #f0c274;
+  --color-status-warn-border: #4d3a1a;
+  --color-status-warn-solid: #c98f2a;
+
+  --color-status-danger-bg: #351b1d;
+  --color-status-danger-ink: #f39ba0;
+  --color-status-danger-border: #532a2d;
+  --color-status-danger-solid: #d4565c;
+
+  --color-status-info-bg: #16263f;
+  --color-status-info-ink: #a8c8f5;
+  --color-status-info-border: #2a3f61;
+  --color-status-info-solid: #5b8fd6;
+
   --surface: #221b3c;
   --surface-hover: #2c2450;
   --surface-inset: #1b1533;

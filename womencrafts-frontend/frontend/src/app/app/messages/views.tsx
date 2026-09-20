@@ -802,7 +802,7 @@ export function Thread({
                 style={{ color: "var(--ux-muted)", transform: "none" }}>
             <Icons.Package className="h-[20px] w-[20px]" />
           </Link>
-          <div className="ux-comp min-w-0 flex-1 rounded-[22px] px-3.5 py-2.5"
+          <div className="ux-comp min-w-0 flex-1 rounded-[24px] px-3.5 py-2.5"
                style={{ background: "var(--ux-surface-2)", border: "1px solid var(--ux-line-strong)" }}>
             <ChatInput
               value={draft} onChange={setDraft} onSend={onSend}

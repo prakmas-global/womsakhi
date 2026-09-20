@@ -38,13 +38,13 @@ export function HomeCycleCard() {
       <Link href="/app/health/cycle/start" className="ux-press mt-4 flex items-center gap-3 rounded-[16px] p-4"
             style={{ background: "linear-gradient(135deg, var(--cy-hero-a), var(--cy-hero-b))", border: "1px solid var(--ux-line)" }}>
         <span className="grid h-[44px] w-[44px] shrink-0 place-items-center rounded-[12px]" style={{ background: "var(--ux-surface)" }}>
-          <Icons.Heart className="h-5 w-5" style={{ color: "var(--cy-period)" }} aria-hidden />
+          <Icons.Heart className="h-5 w-5" style={{ color: "var(--cy-period-ink)" }} aria-hidden />
         </span>
         <span className="min-w-0 flex-1">
           <b className="block text-[17px] font-semibold" style={{ color: "var(--ux-ink)" }}>Track your cycle</b>
           <span className="block text-[13px]" style={{ color: "var(--ux-ink-2)" }}>One tap a day. Only you can see it.</span>
         </span>
-        <Icons.ChevronRight className="h-[18px] w-[18px] shrink-0" style={{ color: "var(--cy-period)" }} aria-hidden />
+        <Icons.ChevronRight className="h-[18px] w-[18px] shrink-0" style={{ color: "var(--cy-period-ink)" }} aria-hidden />
       </Link>
     );
   }

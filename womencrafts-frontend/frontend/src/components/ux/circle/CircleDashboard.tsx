@@ -48,7 +48,13 @@ export function CircleDashboard() {
     <div className={styles.dashboard} data-dashboard="circle" data-circle-dashboard>
       <div className={styles.main}>
         <section className={styles.hero}>
-          <img src="/ux/art/circle-dashboard-hero-v2.png" alt="" className={styles.heroImage} />
+          <picture>
+            {/* The wide banner is composed for a laptop and carries lettering in
+              its own artwork; a phone-shaped crop of it cuts the subject or the
+              words. The phone gets a crop made for its shape. */}
+            <source media="(max-width: 1023px)" srcSet="/ux/art/circle-dashboard-hero-mobile.webp" />
+            <img src="/ux/art/circle-dashboard-hero-v2.png" alt="" className={styles.heroImage} />
+          </picture>
           <span className={styles.heroHandwriting}>Different<br />Journeys<br />Same Strength <I name="Heart" /></span>
           <div className={styles.heroContent}>
             <p className={styles.eyebrow}>Circle</p>

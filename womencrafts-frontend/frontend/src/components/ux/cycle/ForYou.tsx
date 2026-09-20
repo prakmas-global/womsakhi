@@ -84,7 +84,7 @@ export function ForYou({ initial = "food", title = "For You Today" }: { initial?
         {data && !data.setup && (
           <Link href="/app/health/cycle/start" className="ux-press mt-4 flex items-center gap-3 rounded-[16px] px-4 py-3.5"
                 style={{ background: "var(--cy-fertile)", border: "1px solid var(--ux-line)" }}>
-            <Icons.CalendarDays className="h-5 w-5 shrink-0" style={{ color: "var(--cy-ovulation)" }} aria-hidden />
+            <Icons.CalendarDays className="h-5 w-5 shrink-0" style={{ color: "var(--cy-ovulation-ink)" }} aria-hidden />
             <span className="min-w-0 flex-1 text-[13px]" style={{ color: "var(--ux-ink-2)" }}>
               <b className="font-semibold" style={{ color: "var(--ux-ink)" }}>Track your cycle</b> for suggestions that fit your week.
             </span>
@@ -95,9 +95,9 @@ export function ForYou({ initial = "food", title = "For You Today" }: { initial?
         <div className="mt-4 flex items-center gap-3 rounded-[16px] px-4 py-3.5"
              style={{ background: "var(--cy-predicted)", border: "1px solid var(--ux-line)" }}>
           <span className="grid h-[36px] w-[36px] shrink-0 place-items-center rounded-full" style={{ background: "var(--ux-surface)" }}>
-            <Icons.Sparkles className="h-[18px] w-[18px]" style={{ color: "var(--cy-period)" }} aria-hidden />
+            <Icons.Sparkles className="h-[18px] w-[18px]" style={{ color: "var(--cy-period-ink)" }} aria-hidden />
           </span>
-          <p className="text-[15px] font-semibold leading-snug" style={{ color: "var(--cy-period)" }}>
+          <p className="text-[15px] font-semibold leading-snug" style={{ color: "var(--cy-period-ink)" }}>
             Small nourishing choices<br /><span style={{ color: "var(--ux-ink-2)", fontWeight: 400 }}>make a big difference</span> <SoftHeart />
           </p>
         </div>

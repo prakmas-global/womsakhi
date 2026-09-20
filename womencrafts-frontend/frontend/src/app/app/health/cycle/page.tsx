@@ -57,7 +57,7 @@ function MyCycle() {
       <div className="hidden lg:block">
         {state ? <CycleDashboard cycle={{ ...cycle, state }} />
           : error ? <ErrorLine text={error} onRetry={reload} />
-          : <div className="h-[600px] animate-pulse rounded-[22px]" style={{ background: "var(--ux-surface-2)" }} />}
+          : <div className="h-[600px] animate-pulse rounded-[24px]" style={{ background: "var(--ux-surface-2)" }} />}
       </div>
 
       {/* ── Phone: My Cycle ── */}
@@ -102,7 +102,7 @@ function MyCycle() {
                   </p>
                 </div>
                 <span className="grid h-[56px] w-[56px] shrink-0 place-items-center rounded-full" style={{ background: "var(--cy-predicted)" }}>
-                  <Icons.CalendarDays className="h-6 w-6" style={{ color: "var(--cy-period)" }} aria-hidden />
+                  <Icons.CalendarDays className="h-6 w-6" style={{ color: "var(--cy-period-ink)" }} aria-hidden />
                 </span>
               </div>
             </Panel>
@@ -116,7 +116,7 @@ function MyCycle() {
                 <input value={note} onChange={(e) => setNote(e.target.value.slice(0, 500))} placeholder="How are you feeling today?"
                        aria-label="Add a note" className="h-[44px] min-w-0 flex-1 bg-transparent text-[15px] outline-none" style={{ color: "var(--ux-ink)" }} />
                 <button type="submit" disabled={busy || !note.trim()} aria-label="Save note"
-                        className="grid h-10 w-10 place-items-center rounded-full disabled:opacity-40" style={{ color: "var(--cy-period)" }}>
+                        className="grid h-10 w-10 place-items-center rounded-full disabled:opacity-40" style={{ color: "var(--cy-period-ink)" }}>
                   <Icons.Send className="h-[18px] w-[18px]" aria-hidden />
                 </button>
               </form>

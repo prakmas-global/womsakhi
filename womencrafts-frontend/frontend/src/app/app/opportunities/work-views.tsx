@@ -115,13 +115,13 @@ export function JobCard({ job, saved, onSave }: {
           </p>
           <div className="mt-2.5 flex flex-wrap gap-1.5">
             {job.skills.slice(0, 3).map((s) => (
-              <span key={s} className="rounded-full px-2.5 py-1 text-[13px] font-semibold lg:rounded-[7px] lg:px-2 lg:text-2xs"
+              <span key={s} className="rounded-full px-2.5 py-1 text-[13px] font-semibold lg:rounded-[8px] lg:px-2 lg:text-2xs"
                     style={{ background: v("--ux-surface-2"), color: v("--ux-ink-2") }}>
                 {s}
               </span>
             ))}
             {job.skills.length > 3 && (
-              <span className="rounded-full px-2.5 py-1 text-[13px] font-semibold lg:rounded-[7px] lg:px-2 lg:text-2xs"
+              <span className="rounded-full px-2.5 py-1 text-[13px] font-semibold lg:rounded-[8px] lg:px-2 lg:text-2xs"
                     style={{ background: v("--ux-surface-2"), color: v("--ux-muted") }}>
                 +{job.skills.length - 3}
               </span>
@@ -216,7 +216,7 @@ export function SkillsInDemand({ skills }: { skills: string[] }) {
       <div className="flex flex-wrap gap-1.5">
         {skills.map((s) => (
           <Link key={s} href={`/app/search?q=${encodeURIComponent(s)}`}
-                className="ux-press ux-sq rounded-[9px] px-2.5 py-1.5 text-xs font-semibold"
+                className="ux-press ux-sq rounded-[10px] px-2.5 py-1.5 text-xs font-semibold"
                 style={{ background: v("--ux-surface-2"), color: v("--ux-ink-2") }}>
             {s}
           </Link>

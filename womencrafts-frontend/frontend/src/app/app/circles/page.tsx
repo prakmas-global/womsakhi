@@ -258,7 +258,7 @@ export default function CirclePage() {
       {savingsCircle && overview.savings && (
         <Card>
           <div className="flex items-start gap-3">
-            <span className="grid h-[38px] w-[38px] shrink-0 place-items-center rounded-[11px]"
+            <span className="grid h-[38px] w-[38px] shrink-0 place-items-center rounded-[12px]"
                   style={{ background: v("--ux-tint-amber"), color: v("--ux-amber-ink") }}>
               <Icons.Coins className="h-[18px] w-[18px]" />
             </span>

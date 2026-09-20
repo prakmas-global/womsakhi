@@ -27,16 +27,37 @@ export function Brand({
 
   const inner = (
     <span className="flex flex-col items-start" style={{ gap: 2 }}>
+      {/*
+        The brand artwork itself, in both themes.
+
+        A recoloured copy was tried for dark mode — 65% of the mark's opaque
+        pixels sit below 0.18 luminance, which on the #150c0f bar is ink on ink
+        — and the owner's answer was the right one: a wordmark whose colours
+        change is not the wordmark. So this is the original file in both
+        themes, resized to 900px and written LOSSLESS (verified: maximum
+        channel difference from the source is 0), which is still 116KB against
+        the 756KB PNG it replaces on a logo that loads with every screen.
+
+        It is also TRIMMED to its own ink. The source carries 55px of
+        transparent padding above the letters and 77px below in a 300px box —
+        the wordmark filled 56% of its own height, so a box set to 38px drew
+        21px of lettering and read as an undersized logo whatever the box was
+        set to. Cropped to the ink, the box height IS the wordmark height.
+
+        The old `brightness(1.55) saturate(1.25)` plus pink glow is gone with
+        it: a brightness filter cannot lift a near-black stroke, so all it did
+        was add a halo.
+      */}
       <span className="flex items-center">
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
-          src="/womsakhi-wordmark-transparent.png"
+          src="/womsakhi-wordmark.webp"
           alt="WomSakhi"
-          width={2172}
-          height={724}
+          width={900}
+          height={183}
           decoding="async"
           style={{ width: s.word }}
-          className="h-auto shrink-0 dark:brightness-[1.55] dark:saturate-125 dark:drop-shadow-[0_0_8px_rgba(240,94,157,0.22)]"
+          className="ux-wordmark h-auto shrink-0"
           draggable={false}
         />
       </span>
@@ -54,7 +75,11 @@ export function Brand({
 
   if (!href) return inner;
   return (
-    <Link href={href} aria-label="WomSakhi — home" className="inline-flex">
+    /* `items-center`, because the touch-target floor makes this link 44px tall
+       on a phone while the wordmark inside it is 26px. Without it the mark
+       aligns to the top of that box and sits 9px above the bar's centre —
+       measured: mark centre 25.5, bar centre 34.5. */
+    <Link href={href} aria-label="WomSakhi — home" className="inline-flex items-center">
       {inner}
     </Link>
   );
