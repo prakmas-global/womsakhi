@@ -230,7 +230,7 @@ export default function AddListingPage() {
                 {picked.length > 0 && (
                   <p className="mt-2 flex flex-wrap gap-1">
                     {picked.slice(0, 3).map((h) => (
-                      <span key={h} className="rounded-[6px] px-1.5 py-0.5 text-2xs font-semibold"
+                      <span key={h} className="rounded-[8px] px-1.5 py-0.5 text-2xs font-semibold"
                             style={{ background: v("--ux-surface-2"), color: v("--ux-ink-2") }}>{h}</span>
                     ))}
                   </p>
@@ -580,7 +580,7 @@ export default function AddListingPage() {
                 const on = delivery === d.id;
                 return (
                   <button key={d.id} type="button" aria-pressed={on} onClick={() => setDelivery(d.id)}
-                          className="ux-press ux-sq min-h-[40px] rounded-[12px] px-4 text-xsm font-bold lg:rounded-[11px]"
+                          className="ux-press ux-sq min-h-[40px] rounded-[12px] px-4 text-xsm font-bold lg:rounded-[12px]"
                           style={{ background: v(on ? "--ux-fill" : "--ux-surface-2"),
                                    color: v(on ? "--ux-on-brand" : "--ux-ink-2") }}>
                     {d.t}

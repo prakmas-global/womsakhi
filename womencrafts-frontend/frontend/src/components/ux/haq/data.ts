@@ -307,5 +307,5 @@ export const STATUS_TONE: Record<HaqStatus, { tint: string; ink: string }> = {
   "at-risk": { tint: "--ux-tint-amber", ink: "--ux-amber-ink" },
   stopped: { tint: "--ux-danger-tint", ink: "--ux-danger-solid" },
   "can-claim": { tint: "--ux-tint-blue", ink: "--ux-blue-ink" },
-  waiting: { tint: "--ux-tint-lilac", ink: "--ux-violet" },
+  waiting: { tint: "--ux-tint-lilac", ink: "--ux-violet-ink" },
 };

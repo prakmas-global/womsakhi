@@ -373,34 +373,64 @@ export function SearchPalette({ open, onClose }: { open: boolean; onClose: () =>
            style={{ background: "var(--ux-surface)", border: "1px solid var(--ux-line-strong)",
                     boxShadow: "var(--ux-shadow-pop)", maxHeight: "78vh" }}>
 
-        {/* the field */}
-        <div className="flex items-center gap-3 px-[20px] py-4" style={{ borderBottom: "1px solid var(--ux-line)" }}>
-          <Icons.Search className="h-[19px] w-[19px] shrink-0" style={{ color: "var(--ux-faint)" }} strokeWidth={2.2} />
-          {prefix && (
-            <span className="shrink-0 rounded-lg px-2.5 py-1 text-xs font-extrabold"
-                  style={{ background: "var(--ux-tint-violet)", color: "var(--ux-violet-ink)" }}>
-              {SCOPES.find((s) => s.id === prefix)?.label}
-            </span>
-          )}
-          <input ref={inputRef} value={raw} onChange={(e) => setRaw(e.target.value)}
-                 role="combobox" aria-expanded aria-controls="search-results" autoComplete="off" spellCheck={false}
-                 placeholder="Search anything, or type ₹ @ # >"
-                 className="min-w-0 flex-1 border-0 bg-transparent text-base font-medium tracking-[-0.01em] outline-none"
-                 style={{ color: "var(--ux-ink)" }} />
-          {busy && <Icons.Loader2 className="h-4 w-4 shrink-0 animate-spin" style={{ color: "var(--ux-faint)" }} />}
-          {speech && (
-            <button type="button" onClick={listen} aria-label="Search by speaking"
-                    title="Speak instead of typing"
-                    className="ux-press grid h-[34px] w-[34px] shrink-0 place-items-center rounded-[12px]"
-                    style={hearing
-                      ? { background: "linear-gradient(96deg, var(--ux-rib-2), var(--ux-rib-3))",
-                          color: "var(--ux-on-brand)" }
-                      : { background: "var(--ux-tint-violet)", color: "var(--ux-violet-ink)" }}>
-              <Icons.Mic className="h-[17px] w-[17px]" />
-            </button>
-          )}
+        {/*
+          The field.
+
+          On a laptop this is a command bar: a glyph, the text, and ESC, all on
+          one flat row — which is right where a keyboard is doing the work.
+
+          On a phone it was the same row, and there it read as a form that had
+          lost its box: the magnifier, a scope chip, the text, a mic tile and a
+          key labelled ESC, five things in 350px with no field around any of
+          them and nothing to press to get out. A phone draws search as one
+          object — a way back on the left, a filled pill holding everything
+          about the query, and voice inside that pill. So below 620px the same
+          parts are arranged that way; above it, the command bar is untouched.
+        */}
+        <div className="flex items-center gap-3 px-[20px] py-4 max-[620px]:gap-2 max-[620px]:px-3 max-[620px]:py-2.5"
+             style={{ borderBottom: "1px solid var(--ux-line)" }}>
+          <button type="button" onClick={onClose} aria-label="Close search"
+                  className="ux-press hidden shrink-0 place-items-center rounded-full max-[620px]:grid max-[620px]:h-11 max-[620px]:w-11"
+                  style={{ color: "var(--ux-ink-2)" }}>
+            <Icons.ArrowLeft className="h-[21px] w-[21px]" />
+          </button>
+
+          <div className="flex min-w-0 flex-1 items-center gap-3 max-[620px]:h-[48px] max-[620px]:gap-2.5 max-[620px]:rounded-full max-[620px]:bg-(--ux-surface-2) max-[620px]:px-3.5">
+            <Icons.Search className="h-[19px] w-[19px] shrink-0" style={{ color: "var(--ux-faint)" }} strokeWidth={2.2} />
+            {prefix && (
+              <span className="shrink-0 rounded-lg px-2.5 py-1 text-xs font-extrabold"
+                    style={{ background: "var(--ux-tint-violet)", color: "var(--ux-violet-ink)" }}>
+                {SCOPES.find((s) => s.id === prefix)?.label}
+              </span>
+            )}
+            <input ref={inputRef} value={raw} onChange={(e) => setRaw(e.target.value)}
+                   role="combobox" aria-expanded aria-controls="search-results" autoComplete="off" spellCheck={false}
+                   placeholder="Search anything, or type ₹ @ # >"
+                   className="min-w-0 flex-1 border-0 bg-transparent text-base font-medium tracking-[-0.01em] outline-none"
+                   style={{ color: "var(--ux-ink)" }} />
+            {busy && <Icons.Loader2 className="h-4 w-4 shrink-0 animate-spin" style={{ color: "var(--ux-faint)" }} />}
+            {raw && (
+              <button type="button" onClick={() => { setRaw(""); inputRef.current?.focus(); }} aria-label="Clear"
+                      className="ux-press hidden shrink-0 place-items-center rounded-full max-[620px]:grid max-[620px]:h-7 max-[620px]:w-7"
+                      style={{ background: "var(--ux-surface)", color: "var(--ux-muted)" }}>
+                <Icons.X className="h-[15px] w-[15px]" />
+              </button>
+            )}
+            {speech && (
+              <button type="button" onClick={listen} aria-label="Search by speaking"
+                      title="Speak instead of typing"
+                      className="ux-press grid h-[34px] w-[34px] shrink-0 place-items-center rounded-[12px] max-[620px]:h-[34px] max-[620px]:w-[34px] max-[620px]:rounded-full"
+                      style={hearing
+                        ? { background: "linear-gradient(96deg, var(--ux-rib-2), var(--ux-rib-3))",
+                            color: "var(--ux-on-brand)" }
+                        : { background: "var(--ux-tint-violet)", color: "var(--ux-violet-ink)" }}>
+                <Icons.Mic className="h-[17px] w-[17px]" />
+              </button>
+            )}
+          </div>
+
           <button type="button" onClick={onClose}
-                  className="ux-press shrink-0 rounded-md px-[8px] py-1 text-2xs font-bold"
+                  className="ux-press shrink-0 rounded-md px-[8px] py-1 text-2xs font-bold max-[620px]:hidden"
                   style={{ border: "1px solid var(--ux-line-strong)", color: "var(--ux-faint)" }}>ESC</button>
         </div>
 

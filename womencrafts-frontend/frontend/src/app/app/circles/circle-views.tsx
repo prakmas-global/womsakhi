@@ -122,11 +122,13 @@ export function TopicChips({ active, onPick, topics, counts }: {
             <span className="whitespace-nowrap text-[12px] lg:text-2xs font-bold" style={{ color: v(on ? "--ux-brand" : "--ux-ink-2") }}>
               {t.label}
             </span>
-            {counts[t.label] !== undefined && (
-              <span className="text-[12px] lg:text-3xs font-semibold" style={{ color: v("--ux-faint") }}>
-                {counts[t.label]}
-              </span>
-            )}
+            {/* Always rendered, even when there is no count: the tiles are
+                stretched to a common height by the row, so a missing third
+                line moved that tile's icon and label off the line its
+                neighbours sit on. */}
+            <span className="min-h-[15px] text-[12px] lg:text-3xs font-semibold" style={{ color: v("--ux-faint") }}>
+              {counts[t.label] !== undefined ? counts[t.label] : "\u00a0"}
+            </span>
           </button>
         );
       })}
@@ -377,7 +379,7 @@ export function PopularGroups({ rows, busy, onJoin }: {
           return (
             <div key={c.id} className="flex items-center gap-2.5">
               <Link href={`/app/circles/${c.id}`} className="ux-sq shrink-0">
-                <span className="grid h-[40px] w-[40px] place-items-center overflow-hidden rounded-[11px]"
+                <span className="grid h-[40px] w-[40px] place-items-center overflow-hidden rounded-[12px]"
                       style={{ background: v(t.tint) }}>
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   {c.cover ? <img src={c.cover} alt="" aria-hidden loading="lazy" decoding="async"
@@ -427,7 +429,7 @@ export function UpcomingEvents({ rows, busy, onGo }: {
       <div className="space-y-3.5">
         {rows.map((e) => (
           <div key={e.id} className="flex items-start gap-3">
-            <span className="grid w-[46px] shrink-0 place-items-center rounded-[11px] py-1.5"
+            <span className="grid w-[46px] shrink-0 place-items-center rounded-[12px] py-1.5"
                   style={{ background: v("--ux-brand-tint") }}>
               <span className="text-[12px] lg:text-3xs font-extrabold uppercase tracking-[0.08em]" style={{ color: v("--ux-brand") }}>
                 {e.month}

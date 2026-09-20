@@ -417,8 +417,12 @@
 .auth-entry .auth-field { min-height:52px; box-sizing:border-box; border-radius:9px; padding-left:48px !important; background:rgba(255,255,255,.8); font-size:14px; }
 .auth-entry .auth-field:focus-visible { outline:0; border-color:#e52a87; box-shadow:0 0 0 3px rgba(229,42,135,.14); }
 .auth-entry .auth-go { min-height:54px; border-radius:10px; font-size:16px; font-weight:500; }
-.auth-entry .auth-link { color:#ed167f; }
-.auth-entry .auth-note { display:flex; justify-content:center; gap:24px; margin-top:28px; color:#7f6680; font-size:11px; }
+.auth-entry .auth-link { color:#c9126b; }
+.dark .auth-entry .auth-link { color:#ff8ec4; }
+.auth-entry .auth-note { display:flex; justify-content:center; gap:20px; margin-top:28px; color:#6e5771; font-size:13px; }
+/* Four links a woman may genuinely need before she signs in: 13px, and a
+   44px target around each, rather than 11px text with a 4px band. */
+.auth-entry .auth-note button { min-height:44px; padding:0 4px !important; }
 .auth-entry .auth-note a:hover { color:#d5247d; }
 .auth-kindness { right:3.5vw; bottom:5%; font-family:'Segoe Print','Bradley Hand',cursive; font-size:18px; color:#d52587; text-align:right; transform:rotate(-4deg); }
 .auth-principles { position:absolute; bottom:12px; left:64%; margin:0; font-size:9px; letter-spacing:.38em; color:#875084; }

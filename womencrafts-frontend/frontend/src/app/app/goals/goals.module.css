@@ -1,21 +1,130 @@
+/* dark theme, generated from this file's own literals — see darkgen.py.
+   Hand-written :global(.dark) rules below this block still win. */
+:global(.dark) .hero{background:var(--ux-surface)}
+:global(.dark) /* Distinct identities make the ten goal areas easier to scan and remember. */
+.areas button:nth-child(1){background:var(--ux-tint-pink)}
+:global(.dark) .areas button:nth-child(1) span{color:var(--ux-brand)}
+:global(.dark) .areas button:nth-child(2){background:var(--ux-tint-violet)}
+:global(.dark) .areas button:nth-child(2) span{color:var(--ux-violet-ink)}
+:global(.dark) .areas button:nth-child(3){background:var(--ux-tint-blue)}
+:global(.dark) .areas button:nth-child(3) span{color:var(--ux-blue-ink)}
+:global(.dark) .areas button:nth-child(4){background:var(--ux-tint-green)}
+:global(.dark) .areas button:nth-child(4) span{color:var(--ux-green-ink)}
+:global(.dark) .areas button:nth-child(5){background:var(--ux-tint-orange)}
+:global(.dark) .areas button:nth-child(5) span{color:var(--ux-orange-ink)}
+:global(.dark) .areas button:nth-child(6){background:var(--ux-tint-orange)}
+:global(.dark) .areas button:nth-child(6) span{color:var(--ux-brand)}
+:global(.dark) .areas button:nth-child(7){background:var(--ux-tint-blue)}
+:global(.dark) .areas button:nth-child(7) span{color:var(--ux-blue-ink)}
+:global(.dark) .areas button:nth-child(8){background:var(--ux-tint-blue)}
+:global(.dark) .areas button:nth-child(8) span{color:var(--ux-blue-ink)}
+:global(.dark) .areas button:nth-child(9){background:var(--ux-tint-violet)}
+:global(.dark) .areas button:nth-child(9) span{color:var(--ux-violet-ink)}
+:global(.dark) .areas button:nth-child(10){background:var(--ux-tint-green)}
+:global(.dark) .areas button:nth-child(10) span{color:var(--ux-green-ink)}
+
+.areas button:nth-child(1){background:var(--ux-tint-pink)}
+:global(.dark) .areas button:nth-child(1) span{color:var(--ux-brand)}
+:global(.dark) .areas button:nth-child(2){background:var(--ux-tint-violet)}
+:global(.dark) .areas button:nth-child(2) span{color:var(--ux-violet-ink)}
+:global(.dark) .areas button:nth-child(3){background:var(--ux-tint-blue)}
+:global(.dark) .areas button:nth-child(3) span{color:var(--ux-blue-ink)}
+:global(.dark) .areas button:nth-child(4){background:var(--ux-tint-green)}
+:global(.dark) .areas button:nth-child(4) span{color:var(--ux-green-ink)}
+:global(.dark) .areas button:nth-child(5){background:var(--ux-tint-orange)}
+:global(.dark) .areas button:nth-child(5) span{color:var(--ux-orange-ink)}
+:global(.dark) .areas button:nth-child(6){background:var(--ux-tint-pink)}
+:global(.dark) .areas button:nth-child(6) span{color:var(--ux-brand)}
+:global(.dark) .areas button:nth-child(7){background:var(--ux-tint-blue)}
+:global(.dark) .areas button:nth-child(7) span{color:var(--ux-blue-ink)}
+:global(.dark) .areas button:nth-child(8){background:var(--ux-tint-blue)}
+:global(.dark) .areas button:nth-child(8) span{color:var(--ux-blue-ink)}
+:global(.dark) .areas button:nth-child(9){background:var(--ux-tint-violet)}
+:global(.dark) .areas button:nth-child(9) span{color:var(--ux-violet-ink)}
+:global(.dark) .areas button:nth-child(10){background:var(--ux-tint-green)}
+:global(.dark) .areas button:nth-child(10) span{color:var(--ux-green-ink)}
+
+.areas button:nth-child(1){background:var(--ux-surface)}
+:global(.dark) .areas button:nth-child(1) span{color:var(--ux-brand)}
+:global(.dark) .areas button:nth-child(2){background:var(--ux-surface)}
+:global(.dark) .areas button:nth-child(2) span{color:var(--ux-brand)}
+:global(.dark) .areas button:nth-child(3){background:var(--ux-surface)}
+:global(.dark) .areas button:nth-child(3) span{color:var(--ux-brand)}
+:global(.dark) .areas button:nth-child(4){background:var(--ux-surface)}
+:global(.dark) .areas button:nth-child(4) span{color:var(--ux-brand)}
+:global(.dark) .areas button:nth-child(5){background:var(--ux-surface)}
+:global(.dark) .areas button:nth-child(5) span{color:var(--ux-brand)}
+:global(.dark) .areas button:nth-child(6){background:var(--ux-surface)}
+:global(.dark) .areas button:nth-child(6) span{color:var(--ux-brand)}
+:global(.dark) .areas button:nth-child(7){background:var(--ux-surface)}
+:global(.dark) .areas button:nth-child(7) span{color:var(--ux-brand)}
+:global(.dark) .areas button:nth-child(8){background:var(--ux-surface)}
+:global(.dark) .areas button:nth-child(8) span{color:var(--ux-brand)}
+:global(.dark) .areas button:nth-child(9){background:var(--ux-surface)}
+:global(.dark) .areas button:nth-child(9) span{color:var(--ux-brand)}
+:global(.dark) .areas button:nth-child(10){background:var(--ux-surface)}
+:global(.dark) .areas button:nth-child(10) span{color:var(--ux-brand)}
+
+.areas button:nth-child(1){background:var(--ux-surface)}
+:global(.dark) .areas button:nth-child(1) span{color:var(--ux-brand)}
+:global(.dark) .areas button:nth-child(2){background:var(--ux-surface)}
+:global(.dark) .areas button:nth-child(2) span{color:var(--ux-brand)}
+:global(.dark) .areas button:nth-child(3){background:var(--ux-surface)}
+:global(.dark) .areas button:nth-child(3) span{color:var(--ux-brand)}
+:global(.dark) .areas button:nth-child(4){background:var(--ux-surface)}
+:global(.dark) .areas button:nth-child(4) span{color:var(--ux-brand)}
+:global(.dark) .areas button:nth-child(5){background:var(--ux-surface)}
+:global(.dark) .areas button:nth-child(5) span{color:var(--ux-brand)}
+:global(.dark) .areas button:nth-child(6){background:var(--ux-surface)}
+:global(.dark) .areas button:nth-child(6) span{color:var(--ux-brand)}
+:global(.dark) .areas button:nth-child(7){background:var(--ux-surface)}
+:global(.dark) .areas button:nth-child(7) span{color:var(--ux-brand)}
+:global(.dark) .areas button:nth-child(8){background:var(--ux-surface)}
+:global(.dark) .areas button:nth-child(8) span{color:var(--ux-brand)}
+:global(.dark) .areas button:nth-child(9){background:var(--ux-surface)}
+:global(.dark) .areas button:nth-child(9) span{color:var(--ux-brand)}
+:global(.dark) .areas button:nth-child(10){background:var(--ux-surface)}
+:global(.dark) .areas button:nth-child(10) span{color:var(--ux-brand)}
+
+.areas button:nth-child(1){background:var(--ux-surface)}
+:global(.dark) .areas button:nth-child(1) span{color:var(--ux-brand)}
+:global(.dark) .areas button:nth-child(2){background:var(--ux-surface)}
+:global(.dark) .areas button:nth-child(2) span{color:var(--ux-brand)}
+:global(.dark) .areas button:nth-child(3){background:var(--ux-surface)}
+:global(.dark) .areas button:nth-child(3) span{color:var(--ux-brand)}
+:global(.dark) .areas button:nth-child(4){background:var(--ux-surface)}
+:global(.dark) .areas button:nth-child(4) span{color:var(--ux-brand)}
+:global(.dark) .areas button:nth-child(5){background:var(--ux-surface)}
+:global(.dark) .areas button:nth-child(5) span{color:var(--ux-brand)}
+:global(.dark) .areas button:nth-child(6){background:var(--ux-surface)}
+:global(.dark) .areas button:nth-child(6) span{color:var(--ux-brand)}
+:global(.dark) .areas button:nth-child(7){background:var(--ux-surface)}
+:global(.dark) .areas button:nth-child(7) span{color:var(--ux-brand)}
+:global(.dark) .areas button:nth-child(8){background:var(--ux-surface)}
+:global(.dark) .areas button:nth-child(8) span{color:var(--ux-brand)}
+:global(.dark) .areas button:nth-child(9){background:var(--ux-surface)}
+:global(.dark) .areas button:nth-child(9) span{color:var(--ux-brand)}
+:global(.dark) .areas button:nth-child(10){background:var(--ux-surface)}
+:global(.dark) .areas button:nth-child(10) span{color:var(--ux-brand)}
+
 .hero{position:relative;min-height:205px;margin-bottom:12px;overflow:hidden;border:1px solid color-mix(in srgb,var(--ux-brand) 14%,var(--ux-line));border-radius:var(--dashboard-card-radius);background:#fffaf8;box-shadow:0 7px 20px color-mix(in srgb,var(--ux-ink) 5%,transparent)}
 .hero>img{object-fit:cover;object-position:center;filter:saturate(1.1) contrast(1.045) brightness(1.01)}
 .heroShade{position:absolute;inset:0;background:linear-gradient(90deg,rgba(255,250,248,.2) 0 27%,rgba(255,250,248,.08) 39%,transparent 50%)}
-.heroCopy{position:relative;z-index:1;width:48%;padding:27px 28px}
-.heroCopy p{margin:0 0 8px;color:var(--ux-ink-2);font-size:11px;font-weight:650}
+.heroCopy{position:relative;z-index:1;width:48%;padding:28px 28px}
+.heroCopy p{margin:0 0 8px;color:var(--ux-ink-2);font-size:var(--dash-fs-sm, 12px);font-weight:650}
 .heroCopy h1{margin:0!important;color:var(--ux-ink)!important;font-family:var(--dashboard-font-display)!important;font-size:47px!important;font-weight:750!important;line-height:.98!important}
 .heroCopy h1 em{color:var(--ux-brand);font-weight:700}
 .heroCopy span{display:block;max-width:450px;margin-top:12px;color:var(--ux-ink);font-size:14px;font-weight:600;line-height:1.4}
-.areas{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:8px;margin-bottom:14px}.areas button{display:flex;min-height:66px;align-items:center;gap:10px;padding:10px 12px;border:1px solid var(--ux-line);border-radius:13px;background:var(--ux-surface);color:var(--ux-ink);text-align:left;cursor:pointer;transition:transform .18s ease,border-color .18s ease,box-shadow .18s ease}.areas button:nth-child(5n+1){background:color-mix(in srgb,var(--ux-tint-pink) 72%,var(--ux-surface))}.areas button:nth-child(5n+2){background:color-mix(in srgb,var(--ux-tint-violet) 70%,var(--ux-surface))}.areas button:nth-child(5n+3){background:color-mix(in srgb,var(--ux-tint-blue) 70%,var(--ux-surface))}.areas button:nth-child(5n+4){background:color-mix(in srgb,var(--ux-tint-green) 72%,var(--ux-surface))}.areas button:nth-child(5n+5){background:color-mix(in srgb,var(--ux-tint-amber) 72%,var(--ux-surface))}.areas button span{display:grid;width:34px;height:34px;flex:0 0 34px;place-items:center;border-radius:11px;background:color-mix(in srgb,var(--ux-surface) 74%,transparent);color:var(--ux-brand)}.areas button svg{width:18px}.areas button b{font-size:10px;line-height:1.25}.areas button:hover{transform:translateY(-2px);border-color:color-mix(in srgb,var(--ux-brand) 35%,var(--ux-line));box-shadow:0 7px 16px color-mix(in srgb,var(--ux-brand) 9%,transparent)}.areas button:focus-visible{outline:3px solid color-mix(in srgb,var(--ux-brand) 28%,transparent);outline-offset:2px}.mobileCategories{display:none!important}
-.category{display:flex;min-height:48px;align-items:center;justify-content:center;padding:8px 14px;border:1px solid var(--ux-line)!important;border-radius:13px!important;background:var(--ux-surface)!important;color:var(--ux-ink-2)!important;font-size:11px;font-weight:750;cursor:pointer;transition:transform .18s ease,border-color .18s ease,background-color .18s ease,box-shadow .18s ease}
+.areas{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:8px;margin-bottom:16px}.areas button{display:flex;min-height:66px;align-items:center;gap:10px;padding:10px 12px;border:1px solid var(--ux-line);border-radius:14px;background:var(--ux-surface);color:var(--ux-ink);text-align:left;cursor:pointer;transition:transform .18s ease,border-color .18s ease,box-shadow .18s ease}.areas button:nth-child(5n+1){background:color-mix(in srgb,var(--ux-tint-pink) 72%,var(--ux-surface))}.areas button:nth-child(5n+2){background:color-mix(in srgb,var(--ux-tint-violet) 70%,var(--ux-surface))}.areas button:nth-child(5n+3){background:color-mix(in srgb,var(--ux-tint-blue) 70%,var(--ux-surface))}.areas button:nth-child(5n+4){background:color-mix(in srgb,var(--ux-tint-green) 72%,var(--ux-surface))}.areas button:nth-child(5n+5){background:color-mix(in srgb,var(--ux-tint-amber) 72%,var(--ux-surface))}.areas button span{display:grid;width:34px;height:34px;flex:0 0 34px;place-items:center;border-radius:12px;background:color-mix(in srgb,var(--ux-surface) 74%,transparent);color:var(--ux-brand)}.areas button svg{width:18px}.areas button b{font-size:var(--dash-fs-sm, 12px);line-height:1.25}.areas button:hover{;border-color:color-mix(in srgb,var(--ux-brand) 35%,var(--ux-line));box-shadow:0 7px 16px color-mix(in srgb,var(--ux-brand) 9%,transparent)}.areas button:focus-visible{outline:3px solid color-mix(in srgb,var(--ux-brand) 28%,transparent);outline-offset:2px}.mobileCategories{display:none!important}
+.category{display:flex;min-height:48px;align-items:center;justify-content:center;padding:8px 16px;border:1px solid var(--ux-line)!important;border-radius:14px!important;background:var(--ux-surface)!important;color:var(--ux-ink-2)!important;font-size:var(--dash-fs-sm, 12px);font-weight:750;cursor:pointer;transition:transform .18s ease,border-color .18s ease,background-color .18s ease,box-shadow .18s ease}
 .category[aria-pressed=true]{border-color:var(--ux-brand)!important;background:linear-gradient(105deg,var(--ux-brand-900),var(--ux-brand))!important;box-shadow:0 7px 16px color-mix(in srgb,var(--ux-brand) 20%,transparent);color:#fff!important}
-.category:hover{transform:translateY(-2px);border-color:color-mix(in srgb,var(--ux-brand) 42%,var(--ux-line))!important;background:var(--ux-brand-tint)!important;color:var(--ux-brand)!important}
+.category:hover{;border-color:color-mix(in srgb,var(--ux-brand) 42%,var(--ux-line))!important;background:var(--ux-brand-tint)!important;color:var(--ux-brand)!important}
 .category[aria-pressed=true]:hover{background:var(--ux-brand-900)!important;color:#fff!important}
 .category:focus-visible{outline:3px solid color-mix(in srgb,var(--ux-brand) 28%,transparent);outline-offset:2px}
 .goalCard{border-color:var(--ux-line)!important;box-shadow:0 5px 16px color-mix(in srgb,var(--ux-ink) 5%,transparent)!important;transition:transform .18s ease,border-color .18s ease,box-shadow .18s ease}
-.goalCard:hover{transform:translateY(-2px);border-color:color-mix(in srgb,var(--ux-brand) 34%,var(--ux-line))!important;box-shadow:0 10px 22px color-mix(in srgb,var(--ux-brand) 10%,transparent)!important}
-.statusTabs{display:flex;align-items:center;gap:28px;margin-bottom:10px;border-bottom:1px solid var(--ux-line)}.statusTabs button{position:relative;min-height:42px;padding:0 5px;color:var(--ux-muted);font-size:11px;font-weight:700;cursor:pointer}.statusTabs button b{font-weight:800}.statusTabs button[aria-pressed=true]{color:var(--ux-brand)}.statusTabs button[aria-pressed=true]:after{position:absolute;right:0;bottom:-1px;left:0;height:3px;border-radius:4px 4px 0 0;background:var(--ux-brand);content:""}.statusTabs button:hover{color:var(--ux-brand)}.statusTabs button:focus-visible{outline:3px solid color-mix(in srgb,var(--ux-brand) 28%,transparent);outline-offset:2px;border-radius:7px}
-.iconAction,.goalAction,.quickAction{cursor:pointer;transition:color .18s ease,background-color .18s ease,border-color .18s ease,box-shadow .18s ease,transform .18s ease}.iconAction:hover{background:var(--ux-brand-tint);color:var(--ux-brand)!important;transform:rotate(4deg)}.goalAction{border:1px solid transparent}.goalAction:hover{border-color:color-mix(in srgb,var(--ux-brand) 28%,var(--ux-line));background:var(--ux-brand-tint);color:var(--ux-brand)!important;transform:translateY(-1px)}.quickAction:hover{border-color:color-mix(in srgb,var(--ux-brand) 42%,var(--ux-line))!important;background:var(--ux-brand-tint);box-shadow:0 6px 14px color-mix(in srgb,var(--ux-brand) 10%,transparent);transform:translateY(-2px)}.quickAction:hover span{color:var(--ux-brand)!important}.quickAction:active,.goalAction:active,.iconAction:active{transform:translateY(0) scale(.97)}.iconAction:focus-visible,.goalAction:focus-visible,.quickAction:focus-visible{outline:3px solid color-mix(in srgb,var(--ux-brand) 30%,transparent);outline-offset:2px}
+.goalCard:hover{;border-color:color-mix(in srgb,var(--ux-brand) 34%,var(--ux-line))!important;box-shadow:0 10px 22px color-mix(in srgb,var(--ux-brand) 10%,transparent)!important}
+.statusTabs{display:flex;align-items:center;gap:28px;margin-bottom:10px;border-bottom:1px solid var(--ux-line)}.statusTabs button{position:relative;min-height:42px;padding:0 5px;color:var(--ux-muted);font-size:var(--dash-fs-sm, 12px);font-weight:700;cursor:pointer}.statusTabs button b{font-weight:800}.statusTabs button[aria-pressed=true]{color:var(--ux-brand)}.statusTabs button[aria-pressed=true]:after{position:absolute;right:0;bottom:-1px;left:0;height:3px;border-radius:8px 4px 0 0;background:var(--ux-brand);content:""}.statusTabs button:hover{color:var(--ux-brand)}.statusTabs button:focus-visible{outline:3px solid color-mix(in srgb,var(--ux-brand) 28%,transparent);outline-offset:2px;border-radius:8px}
+.iconAction,.goalAction,.quickAction{cursor:pointer;transition:color .18s ease,background-color .18s ease,border-color .18s ease,box-shadow .18s ease,transform .18s ease}.iconAction:hover{background:var(--ux-brand-tint);color:var(--ux-brand)!important;transform:rotate(4deg)}.goalAction{border:1px solid transparent}.goalAction:hover{border-color:color-mix(in srgb,var(--ux-brand) 28%,var(--ux-line));background:var(--ux-brand-tint);color:var(--ux-brand)!important}.quickAction:hover{border-color:color-mix(in srgb,var(--ux-brand) 42%,var(--ux-line))!important;background:var(--ux-brand-tint);box-shadow:0 6px 14px color-mix(in srgb,var(--ux-brand) 10%,transparent)}.quickAction:hover span{color:var(--ux-brand)!important}.quickAction:active,.goalAction:active,.iconAction:active{transform:translateY(0) scale(.97)}.iconAction:focus-visible,.goalAction:focus-visible,.quickAction:focus-visible{outline:3px solid color-mix(in srgb,var(--ux-brand) 30%,transparent);outline-offset:2px}
 :global(.dark) .hero{background:var(--ux-surface);box-shadow:none}
 :global(.dark) .heroShade{background:linear-gradient(90deg,color-mix(in srgb,var(--ux-canvas) 94%,transparent) 0 24%,color-mix(in srgb,var(--ux-canvas) 55%,transparent) 31%,color-mix(in srgb,var(--ux-canvas) 8%,transparent) 39%,transparent 45%)}
 :global(.dark) .hero>img{filter:saturate(1.2) contrast(1.09) brightness(1.1)}
@@ -33,7 +142,7 @@
 :global(.dark) .statusTabs button{color:var(--ux-ink-2)}
 :global(.dark) .statusTabs button[aria-pressed=true]{color:var(--ux-pink)}
 :global(.dark) .goalAction:hover,:global(.dark) .quickAction:hover,:global(.dark) .iconAction:hover{border-color:color-mix(in srgb,var(--ux-pink) 44%,var(--ux-line-strong))!important;background:color-mix(in srgb,var(--ux-brand) 18%,var(--ux-surface-2));color:var(--ux-pink)!important}
-@media(max-width:760px){.hero{min-height:380px;margin:12px}.hero>img{object-position:67% center}.heroShade{background:linear-gradient(180deg,var(--ux-canvas) 0 35%,color-mix(in srgb,var(--ux-canvas) 50%,transparent) 58%,transparent 78%)}.heroCopy{width:auto;padding:20px 18px}.heroCopy h1{font-size:35px!important}.areas{display:none}.mobileCategories{display:flex!important;margin:0 12px 14px!important;overflow-x:auto!important}.category{min-width:140px;flex:none}.statusTabs{gap:18px;margin-inline:12px;overflow-x:auto}.statusTabs button{flex:none}}
+@media(max-width:760px){.hero{min-height:380px;margin:12px}.hero>img{object-position:67% center}.heroShade{background:linear-gradient(180deg,var(--ux-canvas) 0 35%,color-mix(in srgb,var(--ux-canvas) 50%,transparent) 58%,transparent 78%)}.heroCopy{width:auto;padding:20px 16px}.heroCopy h1{font-size:35px!important}.areas{display:none}.mobileCategories{display:flex!important;margin:0 12px 14px!important;overflow-x:auto!important}.category{min-width:140px;flex:none}.statusTabs{gap:16px;margin-inline:12px;overflow-x:auto}.statusTabs button{flex:none}}
 @media(prefers-reduced-motion:reduce){.category,.goalCard,.areas button,.iconAction,.goalAction,.quickAction{transition:none}.category:hover,.goalCard:hover,.areas button:hover,.iconAction:hover,.goalAction:hover,.quickAction:hover{transform:none}}
 
 /* Distinct identities make the ten goal areas easier to scan and remember. */

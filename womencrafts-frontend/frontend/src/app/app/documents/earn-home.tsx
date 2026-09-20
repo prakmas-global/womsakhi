@@ -247,7 +247,7 @@ export function Activity({ rows }: { rows: Happening[] }) {
             {r.photo ? (
               // eslint-disable-next-line @next/next/no-img-element
               <img src={r.photo} alt="" aria-hidden loading="lazy" decoding="async"
-                   className="h-[44px] w-[44px] shrink-0 rounded-[11px] object-cover"
+                   className="h-[44px] w-[44px] shrink-0 rounded-[12px] object-cover"
                    style={{ background: v("--ux-media-bed") }} />
             ) : (
               <IconTile icon={r.icon} tint={r.tint} ink={r.ink} size={44} radius={11} />

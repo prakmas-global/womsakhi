@@ -127,6 +127,16 @@
   -webkit-tap-highlight-color: transparent;
 }
 
+/* The dashboards' smallest body size. 12px is the floor a laptop can carry and
+   a phone cannot: at arm's length on a 390px screen it is fine print, which is
+   not what a woman reading a stipend or an apply-by date should be given. One
+   token, 243 rules, one step up below the laptop breakpoint. */
+.ux { --dash-fs-sm: 12px; }
+@media (max-width: 1023px) { .ux { --dash-fs-sm: 13px; } }
+
+[data-dashboard] { --ux-hover-wash: color-mix(in srgb, var(--ux-ink) 6%, transparent); }
+:is(.dark, .ux.dark) [data-dashboard] { --ux-hover-wash: color-mix(in srgb, #fff 9%, transparent); }
+
 [data-dashboard] :is(a, button) {
   transition: color 160ms ease, background-color 160ms ease,
               border-color 160ms ease, box-shadow 160ms ease,
@@ -214,6 +224,106 @@
   opacity: .82;
 }
 
+/* ── Select fields ───────────────────────────────────────────────────────────
+   A native select is drawn by the operating system: on this Mac it is a 44px
+   grey capsule with a blue chevron, on Android a flat grey bar. Either way it
+   is the one control on the screen that belongs to something else. These get
+   the same shape as every other field — the app's border, radius, ink and a
+   chevron drawn in the brand colour — while staying a real <select>, so the
+   phone still opens its own wheel to choose from.  */
+.ux select,
+[data-dashboard] select {
+  appearance: none;
+  -webkit-appearance: none;
+  min-height: 44px;
+  padding: 0 38px 0 14px;
+  border: 1px solid var(--ux-line-strong);
+  border-radius: 12px;
+  background-color: var(--ux-surface);
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='20' height='20' viewBox='0 0 24 24' fill='none' stroke='%23742a4f' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'><polyline points='6 9 12 15 18 9'/></svg>");
+  background-repeat: no-repeat;
+  background-position: right 12px center;
+  color: var(--ux-ink);
+  font: inherit;
+  font-size: 14px;
+  line-height: 1.2;
+  cursor: pointer;
+}
+[dir="rtl"] .ux select { padding: 0 14px 0 38px; background-position: left 12px center; }
+
+:is(.ux.dark, .dark .ux) select {
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='20' height='20' viewBox='0 0 24 24' fill='none' stroke='%23e58aae' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'><polyline points='6 9 12 15 18 9'/></svg>");
+}
+
+.ux select:focus-visible {
+  outline: 0;
+  border-color: var(--ux-brand);
+  box-shadow: 0 0 0 3px var(--ux-dashboard-field-focus, color-mix(in srgb, var(--ux-brand) 18%, transparent));
+}
+
+/* ── One search field ────────────────────────────────────────────────────────
+   Three dashboards asked the same question three ways: Work drew a 48px
+   rounded rect with a solid button, Help a 13px-radius grid with a gradient
+   button, Earn a 34px bar with a 6px radius and 12px text. On a phone the
+   third is a control you aim at rather than tap.
+
+   This is the shape a phone draws for search and has since the first one: a
+   pill, a leading glyph, the field, one solid action at the end. Stated once
+   so all three match, and so the next dashboard inherits it.  */
+[data-dashboard] :is([class*="__search"], [class*="__searchBar"]):not(:has(> [class*="__search"])) {
+  display: flex !important;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  min-height: 52px;
+  height: auto !important;
+  padding: 6px 6px 6px 18px !important;
+  border-radius: 999px !important;
+  border: 1px solid var(--ux-line-strong) !important;
+  background: var(--ux-surface) !important;
+  box-shadow: none;
+}
+
+[data-dashboard] [class*="__search"] > svg {
+  width: 19px !important;
+  height: 19px !important;
+  flex: none;
+  color: var(--ux-muted) !important;
+}
+
+[data-dashboard] [class*="__search"] input {
+  flex: 1;
+  min-width: 0;
+  border: 0;
+  outline: 0;
+  background: transparent !important;
+  color: var(--ux-ink) !important;
+  font-size: 15px !important;
+  text-overflow: ellipsis;
+}
+
+[data-dashboard] [class*="__search"] button {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 40px;
+  padding: 0 20px !important;
+  border: 0;
+  border-radius: 999px !important;
+  /* --ux-fill is the one brand value that does not move between themes, so
+     white on it is 8.6:1 in light and 6.3:1 in dark. */
+  background: var(--ux-fill) !important;
+  color: var(--ux-on-brand) !important;
+  font-size: 14px !important;
+  font-weight: 650;
+}
+
+@media (max-width: 430px) {
+  [data-dashboard] [class*="__search"] { gap: 10px; padding-inline-start: 16px !important; }
+  [data-dashboard] [class*="__search"] button { padding: 0 16px !important; }
+}
+
 [data-dashboard] button:not(:disabled),
 [data-dashboard] a[href] {
   cursor: pointer;
@@ -240,8 +350,14 @@
 /* On touch screens the visual control may stay compact, but its actual target
    must be comfortably tappable. Desktop density is left unchanged. */
 @media (pointer: coarse) {
-  [data-dashboard] :is(button, input, select, textarea),
-  [data-dashboard] a[href]:not([aria-hidden="true"]) {
+  /* `:where()` so this is a floor and not a value. At full specificity it
+     outranked each card's own `min-height` (0,1,1) and became the height:
+     Help's two feature cards lay their image and text out absolutely, so with
+     nothing in flow they collapsed to exactly the hit minimum and clipped
+     their own content. A card that states a height keeps it; everything that
+     states none still gets a thumb-sized target. */
+  :where([data-dashboard]) :where(button, input, select, textarea),
+  :where([data-dashboard]) :where(a[href]:not([aria-hidden="true"])) {
     min-height: var(--ux-dashboard-hit-min);
   }
 }
@@ -252,4 +368,322 @@
     transition-duration: 0ms !important;
     animation-duration: 0ms !important;
   }
+}
+
+/* ── Everything clickable answers the pointer ──────────────────────────────
+   Measured on a laptop by moving the real cursor across ten controls a screen
+   and diffing the pixels underneath: Work answered 0 of 10, Earn 3 of 10,
+   Learn 4 of 10. The rule above is why a filter cannot do it here, and that
+   rule is right — a dashboard should not wobble. But "no movement" was read
+   as "no answer", and a tile you can click that does nothing under the mouse
+   is the thing that makes a page feel like a document instead of an app.
+
+   So: the same feedback this contract already asks for — colour, edge and
+   shadow — applied to anything clickable that does not define its own.
+   `:where()` keeps it at zero specificity, so every component's own hover
+   still wins, and the CTA rules below still take precedence. */
+
+@media (hover: hover) and (pointer: fine) {
+  /* A wash, not a repaint. Replacing background-color here put a near-white
+     fill under the white text of every filled CTA — this file is unlayered, so
+     it outranked each card's own `background: var(--ux-brand-900)` however
+     specific that was, and "View details" vanished under the cursor. An inset
+     overlay darkens whatever fill is already there and can never invert a
+     control's contrast. */
+  [data-dashboard] :where(a, button):not(:disabled):not([aria-disabled="true"]):hover {
+    border-color: color-mix(in srgb, var(--ux-brand) 28%, var(--ux-line));
+    box-shadow: inset 0 0 0 999px var(--ux-hover-wash),
+      0 6px 16px -11px color-mix(in srgb, var(--ux-brand) 55%, transparent);
+  }
+  /* A link inside a sentence underlines instead — a tinted block behind three
+     words in a paragraph reads as a highlighter pen. */
+  [data-dashboard] :where(p, li, dd) a:hover {
+    background-color: transparent;
+    box-shadow: none;
+    text-decoration: underline;
+    text-underline-offset: 3px;
+  }
+}
+
+/* ── A hero is as tall as what is inside it ────────────────────────────────
+   Measured at 390px: Work's hero is `height: 315px; overflow: hidden`, and
+   the row of filter chips beneath the search box falls past that line — so
+   "Freelance" and "Women-led" are sliced in half. A fixed height is fine on a
+   laptop, where the copy is short and the art is wide; on a phone the same
+   box holds a headline, a paragraph, a search field and two rows of chips.
+
+   `height` becomes a `min-height` below the tablet breakpoint: the art is
+   absolutely positioned to the box, so it simply grows with it. */
+
+@media (max-width: 1023px) {
+  /*
+    `:has(> img)` is not decoration here. `[class*="__hero"]` also matches
+    `heroContent`, `heroActions` and `heroCopy` — every inner block whose name
+    starts the same way — so a `min-height` meant for the banner landed on the
+    button row as well and left 300px of empty plum inside the Learn hero.
+    Only the element that actually holds the photograph is the banner.
+  */
+  [data-dashboard] [class*="__hero"]:has(> picture > img[src*="dashboard-hero"]),
+  [data-dashboard] [class*="__hero"]:has(> img[src*="dashboard-hero"]) {
+    height: auto !important;
+    min-height: 0;
+    overflow: hidden;
+  }
+  [data-dashboard] [class*="__hero"] > picture { position: static !important; }
+  [data-dashboard] [class*="__hero"] > img,
+  [data-dashboard] [class*="__hero"] > picture > img { border-radius: inherit; }
+
+  /* ── A label is allowed a second line ───────────────────────────────────
+     The stat tiles cut their own names — "Opportuni…", "Applicatio…",
+     "Total Earni…" — because the label is `nowrap` with an ellipsis inside a
+     half-width tile. Two lines of 12px is not a layout problem; a name you
+     cannot read is. */
+  [data-dashboard] [class*="__stat"] small,
+  [data-dashboard] [class*="__stat"] span:last-child,
+  [data-dashboard] [class*="__quick"] small {
+    white-space: normal !important;
+    overflow: visible !important;
+    text-overflow: clip !important;
+    line-height: 1.25;
+  }
+  /* Centred, not top-aligned. This was flex-start so that a label wrapping to
+     two lines pushed downward rather than re-centring the row — but the label
+     wraps because of the rules above, not because of this one, and the visible
+     result was a 32px icon sitting 13px above the middle of its own card on
+     every stat in Earn and Learn. */
+  [data-dashboard] [class*="__stat"] { align-items: center; }
+
+  /* ── Chips say their whole name ─────────────────────────────────────────
+     A pill is a shape around a word, so the word decides the width; a fixed
+     height with hidden overflow slices the descenders off "Freelance". */
+  /* Only the chips INSIDE the scrolling lane. `[class*="__filter"] button`
+     also matched Discover's "Filters" button, which its own phone CSS hides —
+     and `display: inline-flex` here brought it back on top of the chips. */
+  [data-dashboard] [class*="__chip"],
+  [data-dashboard] [class*="__filters"] > div button,
+  [data-dashboard] [class*="__tab"] button,
+  [data-dashboard] [class*="__tag"] {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 36px;
+    height: auto;
+    overflow: visible;
+    white-space: nowrap;
+    line-height: 1.1;
+  }
+}
+
+/* ── The banner, on a phone ────────────────────────────────────────────────
+   Every dashboard hero is the same three things: a photograph, a scrim over
+   it, and the copy on top. The scrim is aimed sideways, because on a laptop
+   the text sits in the left third and the photograph fills the right two —
+   `linear-gradient(90deg, …95%, …75% 57%, …22%)`.
+
+   A phone is not that shape. The same sideways scrim covers the whole width,
+   so the photograph is behind a 95%-opaque plum wash: the Learn banner reads
+   as an empty gradient, Work and Earn as very dark rectangles. The image is
+   loading fine — it simply cannot be seen.
+
+   So on a phone the hero stops being a layered rectangle and becomes what a
+   banner is in every app of this kind: the picture, then the words beneath
+   it. The photograph gets its own band at full width and no wash at all, and
+   the copy sits on the hero's own colour, where it has real contrast rather
+   than borrowed contrast. */
+
+@media (max-width: 1023px) {
+  [data-dashboard] [class*="__hero"]:has(> picture > img[src*="dashboard-hero"]),
+  [data-dashboard] [class*="__hero"]:has(> img[src*="dashboard-hero"]) {
+    display: flex !important;
+    flex-direction: column;
+    height: auto !important;
+    min-height: 0 !important;
+    overflow: hidden;
+  }
+
+  /* Written out rather than `:is(> img, > picture > img)`: a relative
+     selector is not allowed inside `:is()`, so that form is invalid and the
+     whole rule is dropped — which is why Earn and Circle kept their text on
+     top of the photograph while Learn and Work stacked correctly. */
+  [data-dashboard] [class*="__hero"] > img[src*="dashboard-hero"],
+  [data-dashboard] [class*="__hero"] > picture > img[src*="dashboard-hero"] {
+    position: static !important;
+    inset: auto !important;
+    width: 100% !important;
+    height: 178px !important;
+    object-fit: cover;
+    /* Faces sit in the upper third of every one of these photographs. */
+    object-position: center 34%;
+    border-radius: 0 !important;
+  }
+
+  /* The wash existed to rescue text off a photograph. There is no text on the
+     photograph any more. */
+  [data-dashboard] [class*="__hero"]:has(img[src*="dashboard-hero"])::after,
+  [data-dashboard] [class*="__hero"]:has(img[src*="dashboard-hero"])::before { display: none !important; }
+
+  [data-dashboard] [class*="__hero"]:has(img[src*="dashboard-hero"]) [class*="__heroContent"] {
+    position: relative !important;
+    width: auto !important;
+    height: auto !important;
+    padding: 18px 18px 20px !important;
+  }
+}
+
+/* Where to crop each banner on a phone.
+
+   These photographs are wide (1900×649) and composed for a laptop: the woman
+   sits a third of the way in on Learn, two thirds on Work and Earn, and the
+   Learn banner carries a quote card in its right-hand third. A phone sees a
+   window about two thirds of that width, so the centre is the wrong place to
+   cut — on Learn it lands between the woman and the quote and shows half of
+   each. Each one is aimed at its own subject. */
+
+@media (max-width: 1023px) {
+  [data-dashboard] [class*="__hero"] > img[src*="learn-dashboard-hero"] { object-position: 32% 42% !important; }
+  [data-dashboard] [class*="__hero"] > img[src*="work-dashboard-hero"] { object-position: 68% 38% !important; }
+  [data-dashboard] [class*="__hero"] > img[src*="earn-dashboard-hero"] { object-position: 63% 36% !important; }
+  [data-dashboard] [class*="__hero"] > img[src*="circle-dashboard-hero"] { object-position: 58% 54% !important; }
+}
+
+/* ── Rows of shortcuts, and rows of filters ───────────────────────────────
+   Two more laptop grids on a phone. Circle's shortcuts are five equal
+   columns, which at 390px is 70px each — "Meaningful Conversations" breaks
+   over three lines and the last two are half off the edge. Work's filter
+   chips are 5px apart with square corners, so they read as one grey bar.
+
+   Shortcuts become a swipe rail of real tiles; filters become pills with
+   room between them. Both already fade at the edge (see mobile.css), which
+   is what says "there is more this way". */
+
+@media (max-width: 1023px) {
+  [data-dashboard] nav[class*="__quick"] {
+    display: grid !important;
+    grid-auto-flow: column !important;
+    grid-template-columns: none !important;
+    grid-auto-columns: 118px !important;
+    gap: 8px !important;
+    padding: 8px !important;
+    overflow-x: auto;
+  }
+  [data-dashboard] nav[class*="__quick"] > a {
+    min-height: 98px !important;
+    border-right: 0 !important;
+    border-radius: 12px;
+    background: var(--ux-surface-2);
+  }
+
+  [data-dashboard] [class*="__tabs"] { gap: 8px !important; padding-block: 2px; }
+  [data-dashboard] [class*="__tabs"] button {
+    min-width: 0 !important;
+    padding: 0 14px !important;
+    border-radius: 999px !important;
+    border: 1px solid var(--ux-line) !important;
+    background: var(--ux-surface) !important;
+  }
+  [data-dashboard] [class*="__tabs"] button[aria-pressed="true"] {
+    border-color: var(--ux-brand) !important;
+    background: var(--ux-brand) !important;
+    color: var(--ux-on-brand) !important;
+  }
+}
+
+/* ── Dark mode: what a light-mode hex cannot do ────────────────────────────
+   Measured at 390px with the dark theme on: 77 pieces of text under the
+   contrast minimum on 30 screens. Three causes, all of them a colour written
+   as a hex instead of a token:
+
+   1. Circle's banner panel is `#f8d1e5` — a light pink that stays light when
+      everything around it goes dark, so its white heading sat at 1.4:1.
+   2. Learn's quote card keeps ink meant for a pale card, giving 1.0:1 —
+      literally invisible.
+   3. Buttons filled with `--ux-brand` carry white text: fine on the light
+      brand, 3.8:1 on the lighter one dark mode needs. Fills switch to
+      `--ux-fill`, which is deep enough for white in both themes. */
+
+.dark [data-dashboard] [class*="__hero"] {
+  background-color: var(--ux-brand-900) !important;
+  color: var(--ux-on-brand) !important;
+}
+.dark [data-dashboard] [class*="__hero"] :is(h1, h2, p, span, b, strong) { color: inherit; }
+
+.dark [data-dashboard] [class*="__quote"] {
+  background: var(--ux-surface-2) !important;
+  color: var(--ux-ink) !important;
+  border-color: var(--ux-line) !important;
+}
+.dark [data-dashboard] [class*="__quote"] :is(p, cite, span) { color: var(--ux-ink) !important; }
+
+.dark [data-dashboard] :is(a, button)[class*="rimary"],
+.dark [data-dashboard] :is(a, button)[class*="continueBtn"],
+.dark [data-dashboard] [class*="__tabs"] button[aria-pressed="true"],
+.dark [data-dashboard] [class*="__filters"] button[aria-pressed="true"] {
+  background: var(--ux-fill) !important;
+  border-color: var(--ux-fill) !important;
+  color: var(--ux-on-brand) !important;
+}
+
+
+/* ── `<picture>` keeps the banner's place ─────────────────────────────────
+   The heroes now offer a phone-shaped crop through `<picture><source>`, so
+   the element inside the hero is a `<picture>` and the module's own
+   `.hero > img { position: absolute; inset: 0 }` no longer matches. The
+   wrapper takes that role, and the image fills it exactly as before. */
+
+[data-dashboard] [class*="__hero"] > picture {
+  position: absolute;
+  inset: 0;
+  display: block;
+}
+[data-dashboard] [class*="__hero"] > picture > img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: inherit;
+}
+
+/* ── Filters, on a tablet ─────────────────────────────────────────────────
+   Discover hides its "Filters" button below 760px and lets the chips have
+   the row. Between 760 and 1023 — an iPad in portrait — the button comes
+   back while the row is still too narrow for seven chips, so the chips
+   scrolled underneath it and "Community" and "Mentors" were sliced. The
+   button keeps its place and the chips get a lane of their own. */
+
+@media (min-width: 761px) and (max-width: 1023px) {
+  [data-dashboard] [class*="__filters"] {
+    flex-wrap: wrap;
+    align-items: flex-start;
+  }
+  [data-dashboard] [class*="__filters"] > div {
+    flex: 1 1 100%;
+    order: 2;
+    padding-block: 2px;
+  }
+  [data-dashboard] [class*="__filterButton"] { order: 1; margin-inline-start: auto; }
+}
+
+
+/* ── A shade built for a light page ───────────────────────────────────────
+   Discover fades its banner into the page with a gradient that starts at
+   `--ux-canvas` — nearly white in the light theme and nearly black in the
+   dark one. In dark mode that opaque band covers the top 40% of the
+   photograph, which is the part with the subject in it: the banner reads as
+   an empty rectangle. Dark gets the same idea the other way up — clear at
+   the top, deepening under the words. */
+
+.dark [data-dashboard] [class*="__heroShade"] {
+  background: linear-gradient(180deg,
+              transparent 0%,
+              color-mix(in srgb, var(--ux-canvas) 55%, transparent) 55%,
+              color-mix(in srgb, var(--ux-canvas) 92%, transparent) 100%) !important;
+}
+
+/* Discover means to hide its "Filters" button on a phone — its own CSS says
+   `.filterButton { display: none }` below 760px. It never took effect: the
+   base rule `.filters button { display: inline-flex }` is a class plus an
+   element, which outranks a class on its own, so the button stayed and the
+   chip lane was squeezed to 241px for 380px of chips. */
+
+@media (max-width: 760px) {
+  [data-dashboard] nav[class*="__filters"] > button[class*="__filterButton"] { display: none !important; }
 }

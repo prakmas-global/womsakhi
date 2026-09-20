@@ -109,7 +109,7 @@ export default function BarTrendCanvas({
               dataKey="value"
               position="top"
               fill="var(--color-ink-muted)"
-              fontSize={11}
+              fontSize={12}
               fontWeight={600}
             />
           )}

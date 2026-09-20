@@ -183,7 +183,7 @@ export function MonthGrid({ cells, onPick }: { cells: DayCell[]; onPick: (iso: s
             {/* Today is ringed as well as tinted: on a pale tint alone the
                 current day is easy to miss at a glance. */}
             {c.today && (
-              <span aria-hidden className="pointer-events-none absolute inset-0 rounded-[6px]"
+              <span aria-hidden className="pointer-events-none absolute inset-0 rounded-[8px]"
                     style={{ border: `1.5px solid ${v("--ux-brand")}` }} />
             )}
             <span
@@ -281,7 +281,7 @@ export function TodayPanel({
             {entries.map((e) => <DayRow key={e.id} entry={e} />)}
           </div>
           <button type="button" onClick={onFullDay}
-                  className="ux-press ux-sq mt-3 flex min-h-[42px] w-full items-center justify-center gap-2 rounded-[11px] border text-xsm font-bold"
+                  className="ux-press ux-sq mt-3 flex min-h-[42px] w-full items-center justify-center gap-2 rounded-[12px] border text-xsm font-bold"
                   style={{ borderColor: v("--ux-line"), color: v("--ux-brand") }}>
             {tr("calendar.viewFullDay")}
             <Icons.ArrowRight className="h-[15px] w-[15px]" />

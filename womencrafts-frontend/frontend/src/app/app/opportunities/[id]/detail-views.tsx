@@ -229,7 +229,7 @@ export function Block({ icon, title, tint, ink, children }: {
     <section>
       <h2 className="mb-3 flex items-center gap-2.5 text-lg font-extrabold tracking-[-0.01em]"
           style={{ color: v("--ux-ink") }}>
-        <span className="grid h-[30px] w-[30px] place-items-center rounded-[9px]"
+        <span className="grid h-[30px] w-[30px] place-items-center rounded-[10px]"
               style={{ background: v(tint) }}>
           <I name={icon} className="h-[16px] w-[16px]" style={{ color: v(ink) }} />
         </span>

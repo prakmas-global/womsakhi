@@ -550,7 +550,7 @@ export function EventsRail({ rows, busy, onGo }: {
         <div className="space-y-3.5">
           {rows.map((e) => (
             <div key={e.id} className="flex items-start gap-3">
-              <span className="grid w-[46px] shrink-0 place-items-center rounded-[11px] py-1.5"
+              <span className="grid w-[46px] shrink-0 place-items-center rounded-[12px] py-1.5"
                     style={{ background: v("--ux-brand-tint") }}>
                 <span className="text-[12px] lg:text-3xs font-extrabold uppercase tracking-[0.08em]" style={{ color: v("--ux-brand") }}>
                   {e.month}
@@ -621,7 +621,7 @@ export function ResourcesRail({ onSoon }: { onSoon: (msg: string) => void }) {
       <div className="space-y-1">
         {EXAMPLE_RESOURCES.map((r) => (
           <div key={r.id} className="flex items-center gap-2.5 rounded-[10px] px-1 py-2">
-            <span className="grid h-[34px] w-[34px] shrink-0 place-items-center rounded-[9px]"
+            <span className="grid h-[34px] w-[34px] shrink-0 place-items-center rounded-[10px]"
                   style={{ background: v(r.tint), color: v(r.ink) }}>
               <Icons.FileText className="h-[16px] w-[16px]" />
             </span>
