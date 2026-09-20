@@ -494,7 +494,7 @@ function Insights() {
 
       <div className="mt-2.5 grid grid-cols-2" style={{ gap: "calc(var(--fb-gap) - 2px)" }}>
         {STATS.map((s) => (
-          <div key={s.label} className="flex items-center gap-2.5 rounded-[13px] px-2 py-1"
+          <div key={s.label} className="flex items-center gap-2.5 rounded-[14px] px-2 py-1"
                style={{ border: `1px solid ${v("--ux-line")}` }}>
             <span className="grid shrink-0 place-items-center rounded-[10px]"
                   style={{ width: "var(--fb-stat, 28px)", height: "var(--fb-stat, 28px)",

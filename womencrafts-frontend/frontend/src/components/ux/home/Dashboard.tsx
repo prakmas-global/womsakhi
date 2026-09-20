@@ -146,7 +146,7 @@ function PanelHead({ title, action, href }: { title: string; action: string; hre
     <div className="mb-3 flex items-center justify-between gap-3">
       <h2 className="text-sm font-bold tracking-tight" style={{ color: "var(--ux-ink)" }}>{title}</h2>
       <Link href={href}
-            className="ux-hov -my-2 flex min-h-[40px] shrink-0 items-center gap-1 py-2 text-xs font-semibold"
+            className="ux-hov -mx-2.5 -my-2 flex min-h-[40px] shrink-0 items-center gap-1 rounded-[10px] px-2.5 py-2 text-xs font-semibold"
             style={{ color: "var(--ux-brand)" }}>
         {action}
         <Icons.ChevronRight className="h-[14px] w-[14px]" />

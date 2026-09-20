@@ -23,9 +23,9 @@ export function Glance({ s, art = true }: { s: CycleState; art?: boolean }) {
         {rows.map((r) => (
           <li key={r.small} className="flex items-center gap-3">
             <span className="grid h-[36px] w-[36px] shrink-0 place-items-center rounded-[10px]" style={{ background: "var(--ux-surface)" }}>
-              {r.icon === "RefreshCw" ? <Icons.RefreshCw className="h-[18px] w-[18px]" style={{ color: "var(--cy-period)" }} aria-hidden />
-                : r.icon === "Droplet" ? <Icons.Droplet className="h-[18px] w-[18px]" style={{ color: "var(--cy-period)" }} aria-hidden />
-                : <Icons.CalendarDays className="h-[18px] w-[18px]" style={{ color: "var(--cy-ovulation)" }} aria-hidden />}
+              {r.icon === "RefreshCw" ? <Icons.RefreshCw className="h-[18px] w-[18px]" style={{ color: "var(--cy-period-ink)" }} aria-hidden />
+                : r.icon === "Droplet" ? <Icons.Droplet className="h-[18px] w-[18px]" style={{ color: "var(--cy-period-ink)" }} aria-hidden />
+                : <Icons.CalendarDays className="h-[18px] w-[18px]" style={{ color: "var(--cy-ovulation-ink)" }} aria-hidden />}
             </span>
             <span>
               <b className="block text-[15px] font-semibold leading-tight" style={{ color: "var(--ux-ink)" }}>{r.big}</b>
@@ -99,7 +99,7 @@ export function Patterns({ s }: { s: CycleState }) {
           </ul>
         ) : (
           <p className="text-[15px]" style={{ color: "var(--ux-muted)" }}>
-            No symptoms logged yet. <Link href="/app/health/cycle/symptoms" className="font-semibold" style={{ color: "var(--cy-period)" }}>Add today&apos;s</Link>
+            No symptoms logged yet. <Link href="/app/health/cycle/symptoms" className="font-semibold" style={{ color: "var(--cy-period-ink)" }}>Add today&apos;s</Link>
           </p>
         )}
       </Panel>
@@ -117,7 +117,7 @@ export function Patterns({ s }: { s: CycleState }) {
           </div>
         ) : (
           <p className="text-[15px]" style={{ color: "var(--ux-muted)" }}>
-            No moods yet. <Link href="/app/health/cycle/mood" className="font-semibold" style={{ color: "var(--cy-period)" }}>How are you today?</Link>
+            No moods yet. <Link href="/app/health/cycle/mood" className="font-semibold" style={{ color: "var(--cy-period-ink)" }}>How are you today?</Link>
           </p>
         )}
       </Panel>
@@ -154,7 +154,7 @@ export function WellnessList({ s }: { s: CycleState }) {
                  className={c.art ? "absolute bottom-0 left-1/2 h-[70px] w-auto max-w-none -translate-x-1/2" : "h-full w-full object-cover"} />
           </span>
           <span className="min-w-0 flex-1">
-            <span className="block text-[12px] font-semibold uppercase tracking-[0.04em]" style={{ color: "var(--cy-period)" }}>{c.label}</span>
+            <span className="block text-[12px] font-semibold uppercase tracking-[0.04em]" style={{ color: "var(--cy-period-ink)" }}>{c.label}</span>
             <b className="block text-[15px] font-semibold leading-snug" style={{ color: "var(--ux-ink)" }}>{c.title}</b>
             <span className="block text-[13px] leading-snug" style={{ color: "var(--ux-muted)" }}>{c.sub}</span>
           </span>

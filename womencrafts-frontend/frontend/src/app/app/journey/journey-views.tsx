@@ -89,7 +89,7 @@ export function JourneyHero() {
           {/* The five signposts of the path, staggered the way they are on it. */}
           <ul className="hidden w-[186px] flex-col gap-1.5 self-center pe-6 wide:flex">
             {SIGNS.map((s, i) => (
-              <li key={s} className="rounded-[9px] px-3 py-1.5 text-end text-2xs font-bold"
+              <li key={s} className="rounded-[10px] px-3 py-1.5 text-end text-2xs font-bold"
                   style={{ background: v("--ux-surface"), color: v("--ux-ink-2"),
                            marginInlineStart: `${i * 9}px`,
                            boxShadow: "var(--ux-shadow-card)" }}>

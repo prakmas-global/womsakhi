@@ -72,7 +72,13 @@ export function EarnDashboard() {
     <div className={styles.dashboard} data-dashboard="earn" data-earn-dashboard>
       <div className={styles.main}>
         <section className={styles.hero}>
-          <img src="/ux/art/earn-dashboard-hero.png" alt="" className={styles.heroImage} />
+          <picture>
+            {/* The wide banner is composed for a laptop and carries lettering in
+              its own artwork; a phone-shaped crop of it cuts the subject or the
+              words. The phone gets a crop made for its shape. */}
+            <source media="(max-width: 1023px)" srcSet="/ux/art/earn-dashboard-hero-mobile.webp" />
+            <img src="/ux/art/earn-dashboard-hero.png" alt="" className={styles.heroImage} />
+          </picture>
           <div className={styles.heroContent}>
             <p className={styles.eyebrow}>Earn <span>·</span> Create <span>·</span> Grow</p>
             <h1>Your Skills.<br />Real <em>Opportunities.</em></h1>

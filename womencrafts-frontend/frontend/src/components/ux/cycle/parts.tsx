@@ -63,11 +63,11 @@ export function CycleHeader({
       <div className="flex justify-end">
         {action && (action.href ? (
           <Link href={action.href} className="ux-press grid h-11 place-items-center px-2 text-[15px] font-semibold"
-                style={{ color: "var(--cy-period)" }}>{action.label}</Link>
+                style={{ color: "var(--cy-period-ink)" }}>{action.label}</Link>
         ) : (
           <button type="button" onClick={action.onClick} disabled={action.disabled}
                   className="ux-press h-11 px-2 text-[15px] font-semibold disabled:opacity-40"
-                  style={{ color: "var(--cy-period)" }}>{action.label}</button>
+                  style={{ color: "var(--cy-period-ink)" }}>{action.label}</button>
         ))}
       </div>
     </div>
@@ -449,7 +449,7 @@ export const heroBg = "linear-gradient(135deg, var(--cy-hero-a), var(--cy-hero-b
 
 /** The heart the reference sets after a kind sentence. */
 export const SoftHeart = ({ className = "h-4 w-4" }: { className?: string }) => (
-  <Icons.Heart className={`inline-block ${className}`} style={{ color: "var(--cy-ovulation)", fill: "var(--cy-ovulation)" }} aria-hidden />
+  <Icons.Heart className={`inline-block ${className}`} style={{ color: "var(--cy-ovulation-ink)", fill: "var(--cy-ovulation)" }} aria-hidden />
 );
 
 export function QuoteCard({ text, img = "/ux/art/avatar-woman-purple-kurta.webp", className = "" }: { text: string; img?: string; className?: string }) {
@@ -484,7 +484,7 @@ export function ErrorLine({ text, onRetry }: { text: string | null; onRetry?: ()
        style={{ background: "var(--ux-danger-tint)", color: "var(--ux-ink)" }}>
       <Icons.AlertCircle className="mt-0.5 h-4 w-4 shrink-0" style={{ color: "var(--ux-orange)" }} aria-hidden />
       <span className="min-w-0 flex-1">{text}</span>
-      {onRetry && <button type="button" onClick={onRetry} className="shrink-0 font-semibold" style={{ color: "var(--cy-period)" }}>Try again</button>}
+      {onRetry && <button type="button" onClick={onRetry} className="shrink-0 font-semibold" style={{ color: "var(--cy-period-ink)" }}>Try again</button>}
     </p>
   );
 }

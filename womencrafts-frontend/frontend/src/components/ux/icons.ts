@@ -264,6 +264,8 @@ export {
   ScanFace,
   Smile,
   Timer,
+  // the phone's More sheet
+  Menu,
 } from "lucide-react";
 
 export type { LucideIcon, LucideProps } from "lucide-react";

@@ -47,7 +47,7 @@ function Card({ children, className = "", style }: { children: React.ReactNode; 
 }
 
 const ViewAll = ({ href, label = "View all" }: { href: string; label?: string }) => (
-  <Link href={href} className="flex shrink-0 items-center gap-1 whitespace-nowrap text-[13px] font-semibold" style={{ color: "var(--cy-period)" }}>
+  <Link href={href} className="flex shrink-0 items-center gap-1 whitespace-nowrap text-[13px] font-semibold" style={{ color: "var(--cy-period-ink)" }}>
     {label} <Icons.ArrowRight className="h-3.5 w-3.5" aria-hidden />
   </Link>
 );
@@ -94,12 +94,12 @@ export function CycleDashboard({ cycle }: { cycle: ReturnType<typeof useCycle> &
 
       {/* ── Hero ── */}
       <A a="hero">
-        <section className="relative h-full min-h-[212px] overflow-hidden rounded-[22px] px-7 py-6" style={{ background: heroBg, border: "1px solid var(--ux-line)" }}>
+        <section className="relative h-full min-h-[212px] overflow-hidden rounded-[24px] px-7 py-6" style={{ background: heroBg, border: "1px solid var(--ux-line)" }}>
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img src="/ux/art/leaves-pink.webp" alt="" aria-hidden className="pointer-events-none absolute -bottom-10 end-[30%] h-[190px] w-auto opacity-40 mix-blend-multiply" />
           <div className="relative z-[1] max-w-[440px]">
             <h1 className="ux-display text-[34px] font-bold leading-[1.1]" style={{ color: "var(--ux-ink)" }}>
-              Understand Your Cycle<br />Embrace Your <span style={{ color: "var(--cy-period)" }}>Power</span>
+              Understand Your Cycle<br />Embrace Your <span style={{ color: "var(--cy-period-ink)" }}>Power</span>
             </h1>
             <p className="mt-3 text-[15px] leading-relaxed" style={{ color: "var(--ux-ink-2)" }}>
               Track. Learn. Get personalised insights.<br />Because a healthier you creates a brighter tomorrow.
@@ -110,7 +110,7 @@ export function CycleDashboard({ cycle }: { cycle: ReturnType<typeof useCycle> &
               Log Today&apos;s Update <Icons.ArrowRight className="h-4 w-4" aria-hidden />
             </Link>
           </div>
-          <p className="ux-display pointer-events-none absolute end-6 top-5 z-[2] hidden rotate-[-6deg] text-[18px] italic leading-tight xl:block" style={{ color: "var(--cy-period)" }}>
+          <p className="ux-display pointer-events-none absolute end-6 top-5 z-[2] hidden rotate-[-6deg] text-[18px] italic leading-tight xl:block" style={{ color: "var(--cy-period-ink)" }}>
             Your health,<br />&nbsp;Your rhythm,<br />&nbsp;&nbsp;Your power&rdquo; <SoftHeart />
           </p>
           {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -126,7 +126,7 @@ export function CycleDashboard({ cycle }: { cycle: ReturnType<typeof useCycle> &
                          onPrev={() => setMonth((m) => shiftMonth(m, -1))} onNext={() => setMonth((m) => shiftMonth(m, 1))} />
           {!cells && (
             <p className="mt-2 text-center text-[13px]" style={{ color: "var(--ux-muted)" }}>
-              <Link href={`/app/health/cycle?month=${month}`} className="font-semibold" style={{ color: "var(--cy-period)" }}>Open this month</Link>
+              <Link href={`/app/health/cycle?month=${month}`} className="font-semibold" style={{ color: "var(--cy-period-ink)" }}>Open this month</Link>
             </p>
           )}
           <Legend className="mt-4 justify-center" />
@@ -193,7 +193,7 @@ export function CycleDashboard({ cycle }: { cycle: ReturnType<typeof useCycle> &
                    placeholder={s.log?.note ? `Today: ${s.log.note}` : "Add a quick note (optional)"}
                    className="h-[40px] min-w-0 flex-1 bg-transparent text-[15px] outline-none" style={{ color: "var(--ux-ink)" }} />
             <button type="submit" disabled={busy || !note.trim()} aria-label="Save note"
-                    className="grid h-9 w-9 place-items-center rounded-full disabled:opacity-40" style={{ color: "var(--cy-period)" }}>
+                    className="grid h-9 w-9 place-items-center rounded-full disabled:opacity-40" style={{ color: "var(--cy-period-ink)" }}>
               <Icons.Send className="h-[18px] w-[18px]" aria-hidden />
             </button>
           </form>
@@ -211,7 +211,7 @@ export function CycleDashboard({ cycle }: { cycle: ReturnType<typeof useCycle> &
               <h2 className="text-[17px] font-semibold" style={{ color: "var(--ux-ink)" }}>Today&apos;s Care Plan</h2>
               <p className="text-[13px]" style={{ color: "var(--ux-muted)" }}>Personalised suggestions based on your cycle phase and mood</p>
             </div>
-            <span className="flex items-center gap-1.5 rounded-full px-3 py-1.5 text-[13px] font-semibold" style={{ background: "var(--cy-predicted)", color: "var(--cy-period)" }}>
+            <span className="flex items-center gap-1.5 rounded-full px-3 py-1.5 text-[13px] font-semibold" style={{ background: "var(--cy-predicted)", color: "var(--cy-period-ink)" }}>
               <Icons.Droplet className="h-3.5 w-3.5" aria-hidden /> {PHASE_COPY[planPhase].chip}
             </span>
             {planPhase === st.phase && inPhaseDay && (
@@ -242,7 +242,7 @@ export function CycleDashboard({ cycle }: { cycle: ReturnType<typeof useCycle> &
                 </div>
                 <b className="mt-2 block text-[13px] font-semibold leading-snug" style={{ color: "var(--ux-ink)" }}>{c.title}</b>
                 <span className="block flex-1 text-[12px] leading-snug" style={{ color: "var(--ux-muted)" }}>{c.sub}</span>
-                <Link href={c.href} className="mt-2 flex items-center gap-1 text-[12px] font-semibold" style={{ color: "var(--cy-period)" }}>
+                <Link href={c.href} className="mt-2 flex items-center gap-1 text-[12px] font-semibold" style={{ color: "var(--cy-period-ink)" }}>
                   {c.cta} <Icons.ArrowRight className="h-3 w-3" aria-hidden />
                 </Link>
               </div>
@@ -256,7 +256,7 @@ export function CycleDashboard({ cycle }: { cycle: ReturnType<typeof useCycle> &
         <Card>
           <div className="mb-3 flex items-center justify-between">
             <h2 className="text-[17px] font-semibold" style={{ color: "var(--ux-ink)" }}>Common Symptoms</h2>
-            <Link href="/app/health/cycle/symptoms" className="text-[13px] font-semibold" style={{ color: "var(--cy-period)" }}>Edit</Link>
+            <Link href="/app/health/cycle/symptoms" className="text-[13px] font-semibold" style={{ color: "var(--cy-period-ink)" }}>Edit</Link>
           </div>
           <div className="grid grid-cols-3 gap-2">
             {SYMPTOMS.map((x) => {
@@ -309,7 +309,7 @@ export function CycleDashboard({ cycle }: { cycle: ReturnType<typeof useCycle> &
       {/* ── Quote ── */}
       <A a="quote">
         <section className="relative h-full min-h-[300px] overflow-hidden rounded-[18px] p-5" style={{ background: heroBg, border: "1px solid var(--ux-line)" }}>
-          <p className="ux-display relative z-[1] max-w-[70%] text-[22px] italic leading-snug" style={{ color: "var(--cy-period)" }}>
+          <p className="ux-display relative z-[1] max-w-[70%] text-[22px] italic leading-snug" style={{ color: "var(--cy-period-ink)" }}>
             &ldquo;{quoteFor(null, s.today).includes("cycle") ? quoteFor(null, s.today) : "It's not just a cycle, it's a sign of a strong, healthy you."}&rdquo; <SoftHeart />
           </p>
           {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -399,20 +399,20 @@ function HistoryChart({ s }: { s: CycleState }) {
       {[0, 7, 14, 21, 28, 35].map((v) => (
         <g key={v}>
           <line x1={L} x2={W - 6} y1={y(v)} y2={y(v)} stroke="var(--ux-line)" strokeWidth={1} />
-          <text x={L - 8} y={y(v) + 4} textAnchor="end" fontSize="11" fill="var(--ux-muted)">{v}</text>
+          <text x={L - 8} y={y(v) + 4} textAnchor="end" fontSize="12" fill="var(--ux-muted)">{v}</text>
         </g>
       ))}
       <path d={d} fill="none" stroke="var(--cy-period)" strokeWidth={2.5} strokeLinejoin="round" />
       {pts.map((p, i) => (
         <g key={p.start}>
           <circle cx={x(i)} cy={y(p.cycle_days!)} r={4.5} fill="var(--ux-surface)" stroke="var(--cy-period)" strokeWidth={2} />
-          <text x={x(i)} y={H - 6} textAnchor="middle" fontSize="11" fill="var(--ux-muted)">{p.label}</text>
+          <text x={x(i)} y={H - 6} textAnchor="middle" fontSize="12" fill="var(--ux-muted)">{p.label}</text>
         </g>
       ))}
       <g transform={`translate(${Math.min(x(pts.length - 1), W - 70) - 34}, ${y(last.cycle_days!) - 44})`}>
         <rect width="68" height="34" rx="8" fill="var(--ux-surface)" stroke="var(--ux-line-strong)" />
         <text x="34" y="15" textAnchor="middle" fontSize="12" fontWeight="600" fill="var(--ux-ink)">{last.cycle_days} days</text>
-        <text x="34" y="28" textAnchor="middle" fontSize="10" fill="var(--ux-muted)">{last.label}</text>
+        <text x="34" y="28" textAnchor="middle" fontSize="12" fill="var(--ux-muted)">{last.label}</text>
       </g>
     </svg>
   );
@@ -432,7 +432,7 @@ function MoodChart({ s }: { s: CycleState }) {
       {MOODS.map((m) => (
         <g key={m.key}>
           <line x1={L} x2={W - 6} y1={y(MOOD_SCORE[m.key])} y2={y(MOOD_SCORE[m.key])} stroke="var(--ux-line)" />
-          <text x={L - 8} y={y(MOOD_SCORE[m.key]) + 4} textAnchor="end" fontSize="11" fill="var(--ux-muted)">{m.label}</text>
+          <text x={L - 8} y={y(MOOD_SCORE[m.key]) + 4} textAnchor="end" fontSize="12" fill="var(--ux-muted)">{m.label}</text>
         </g>
       ))}
       <path d={d} fill="none" stroke="var(--cy-ovulation)" strokeWidth={2.5} strokeLinejoin="round" />
@@ -440,7 +440,7 @@ function MoodChart({ s }: { s: CycleState }) {
         <g key={p.date}>
           <circle cx={x(i)} cy={y(MOOD_SCORE[p.mood!])} r={4} fill={`var(${MOODS.find((m) => m.key === p.mood)?.tone})`} />
           {(i === 0 || i === pts.length - 1 || i % 3 === 0) && (
-            <text x={x(i)} y={H - 6} textAnchor="middle" fontSize="11" fill="var(--ux-muted)">{shortDate(p.date)}</text>
+            <text x={x(i)} y={H - 6} textAnchor="middle" fontSize="12" fill="var(--ux-muted)">{shortDate(p.date)}</text>
           )}
         </g>
       ))}

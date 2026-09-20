@@ -106,21 +106,46 @@ export function MobileHome() {
         screen whose edges did not line up with the rest. Now it uses the
         shell's inset, whatever that is.
       */}
-      <header className="pb-3 pt-1">
-        <p className="text-[13px]" style={{ color: "var(--ux-muted)" }}>{greeting()},</p>
-        {/* The one large title on the screen: her name, at 34 — the spec's
-            large-title step. It was 28, a size down from every other screen's
-            title, so Home was the one screen that did not open like the rest. */}
-        <h1 className="ux-screen-title mt-0.5"
-            style={{ color: "var(--ux-ink)" }}>
-          {me.first}
-        </h1>
+      {/*
+        The banner, at the owner's instruction.
+
+        This screen carried no image at all — the note above explains why, and
+        the reasoning still holds for a hero that spends a whole viewport on an
+        announcement. What the owner is asking for is different and fair: this
+        is the first screen a woman lands on, the laptop opens with the
+        banner, and the phone opened with a grey line of text.
+
+        So it is the same composition as the laptop's, sized for a phone: the
+        photograph at its own 2.8:1, her greeting on the plum bar under it,
+        196px in total against a 844px screen. Everything she can act on still
+        begins in the first viewport.
+      */}
+      <header className="-mt-1 mb-3.5 overflow-hidden rounded-[18px]"
+              style={{ background: "var(--ux-brand-900)", border: "1px solid var(--ux-line)" }}>
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img src="/ux/art/home-banner.webp"
+             alt="Six women working together at a laptop, under the WomSakhi wordmark and the words “Independent Women Build Brighter Tomorrows”."
+             decoding="async" fetchPriority="high" width={1900} height={760}
+             className="block w-full object-cover object-center"
+             style={{ aspectRatio: "2.8 / 1" }} />
+        <div className="px-4 py-3"
+             style={{ background: "linear-gradient(102deg, var(--ux-brand-900) 0%, var(--ux-fill) 78%, var(--ux-rib-2) 130%)" }}>
+          <p className="text-[12.5px] font-semibold" style={{ color: "var(--ux-on-brand-2)" }}>{greeting()},</p>
+          {/* Her name is still the one large title on the screen — it has
+              moved onto the plum, not shrunk. */}
+          <h1 className="ux-screen-title mt-0.5 text-[28px] leading-none" style={{ color: "var(--ux-on-brand)" }}>
+            {me.first}
+          </h1>
+          <p className="mt-1.5 text-[12.5px] font-bold leading-tight" style={{ color: "var(--ux-on-brand)" }}>
+            Connect. Learn. Earn. Grow. <span style={{ color: "var(--ux-rib-5)" }}>Together.</span>
+          </p>
+        </div>
       </header>
 
       {/* Her cycle, first — the owner's mockup puts it straight under her
           name. When she does not track it is one quiet invitation line, and
           discreet mode removes it entirely. See HomeCycleCard. */}
-      <div className="-mt-4 mb-4"><HomeCycleCard /></div>
+      <div className="mb-4"><HomeCycleCard /></div>
 
       {/* ── the number she actually opens the app for ───────────────────── */}
       {balanceUnknown ? (
@@ -246,7 +271,7 @@ export function MobileHome() {
             style={{ background: "var(--ux-surface)", border: "1px solid var(--ux-line)" }}>
             {journey.cover
               ? <Image src={journey.cover} alt="" width={56} height={56}
-                       className="h-14 w-14 shrink-0 rounded-[12px] object-cover" />
+                       className="h-14 w-14 shrink-0 rounded-[12px] object-cover" sizes="(max-width: 767px) 50vw, (max-width: 1023px) 33vw, 240px" />
               : <span className="grid h-14 w-14 shrink-0 place-items-center rounded-[12px]"
                       style={{ background: "var(--ux-brand-tint-2)" }}>
                   <I name="BookOpen" className="h-6 w-6" style={{ color: "var(--ux-brand)" }} />
@@ -303,7 +328,7 @@ export function MobileHome() {
                   course is something it is not. */}
               {r.cover
                 ? <Image src={String(r.cover)} alt="" width={480} height={270}
-                         className="h-[112px] w-full object-cover" />
+                         className="h-[112px] w-full object-cover" sizes="(max-width: 767px) 50vw, (max-width: 1023px) 33vw, 240px" />
                 : <span className="grid h-[112px] w-full place-items-center"
                         style={{ background: "var(--ux-brand-tint-2)" }}>
                     <I name="GraduationCap" className="h-7 w-7" style={{ color: "var(--ux-brand)" }} />
@@ -340,10 +365,9 @@ function HomeSkeleton() {
   return (
     <div className="lg:hidden" aria-busy="true" aria-live="polite">
       <span className="sr-only">Loading your home screen</span>
-      <div className="pb-3 pt-1">
-        <div className="ux-shimmer h-3 w-24" style={bar} />
-        <div className="ux-shimmer mt-2 h-7 w-32" style={bar} />
-      </div>
+      {/* Matches the banner the loaded screen opens with — 139px of photograph
+          and a 57px plum bar — so nothing jumps when the data lands. */}
+      <div className="-mt-1 mb-3.5 ux-shimmer h-[196px]" style={{ ...bar, borderRadius: 18 }} />
       <div className="ux-shimmer h-[86px]" style={{ ...bar, borderRadius: 16 }} />
       {/* The Ask Sakhi row. This was still an eight-tile grid — the launcher
           that was taken off Home — so the screen jumped from one layout to

@@ -98,7 +98,7 @@ export default function CycleStart() {
                 <li key={f.icon} className="flex flex-col items-center gap-2 text-center">
                   <span className="grid h-[52px] w-[52px] place-items-center rounded-[16px]"
                         style={{ background: "var(--cy-predicted)", border: "1px solid var(--ux-line)" }}>
-                    <Icon name={f.icon} className="h-[22px] w-[22px]" style={{ color: "var(--cy-period)" }} />
+                    <Icon name={f.icon} className="h-[22px] w-[22px]" style={{ color: "var(--cy-period-ink)" }} />
                   </span>
                   <span className="whitespace-pre-line text-[12px] leading-tight" style={{ color: "var(--ux-ink-2)" }}>{f.label}</span>
                 </li>
@@ -172,7 +172,7 @@ export default function CycleStart() {
         {step === "young" && (
           <div className="ux-fade mt-8 text-center">
             <span className="mx-auto grid h-[64px] w-[64px] place-items-center rounded-full" style={{ background: "var(--cy-fertile)" }}>
-              <Icons.BookOpen className="h-7 w-7" style={{ color: "var(--cy-ovulation)" }} aria-hidden />
+              <Icons.BookOpen className="h-7 w-7" style={{ color: "var(--cy-ovulation-ink)" }} aria-hidden />
             </span>
             <h1 className="ux-display mt-4 text-[28px] font-bold" style={{ color: "var(--ux-ink)" }}>The guides are for you</h1>
             <p className="mx-auto mt-2 max-w-[340px] text-[15px] leading-relaxed" style={{ color: "var(--ux-ink-2)" }}>

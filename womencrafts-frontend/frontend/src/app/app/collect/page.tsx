@@ -171,7 +171,9 @@ export default function CollectPage() {
             <div className="mt-3 flex flex-wrap gap-2">
               <Btn variant="outline" size="sm" icon="MessageCircle" className="max-lg:w-full max-lg:px-4" onClick={sendOnWhatsApp}>{tr("collect.sendOnWhatsapp")}</Btn>
               <Btn variant="ghost" size="sm" icon="QrCode" className="max-lg:w-full max-lg:px-4" onClick={() => window.print()}>{tr("collect.printAQrForYourDoor")}</Btn>
-              <Btn variant="ghost" size="sm" icon="ExternalLink" className="max-lg:w-full max-lg:px-4" href={`/s/${handle}`}>{tr("collect.seeWhatTheySee")}</Btn>
+              {/* Only once she HAS a shop link. Without a handle this was
+                  `/s/` — a 404 the router prefetched on every open. */}
+              {handle && <Btn variant="ghost" size="sm" icon="ExternalLink" className="max-lg:w-full max-lg:px-4" href={`/s/${handle}`}>{tr("collect.seeWhatTheySee")}</Btn>}
             </div>
           </div>
         </Card>

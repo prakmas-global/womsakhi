@@ -126,7 +126,7 @@ export function Sheet({
             const Ico = (Icons as unknown as Record<string, React.ComponentType<{ className?: string }>>)[icon]
                         ?? Icons.Circle;
             return (
-              <span className="grid h-[38px] w-[38px] shrink-0 place-items-center rounded-[11px]"
+              <span className="grid h-[38px] w-[38px] shrink-0 place-items-center rounded-[12px]"
                     style={{ background: "var(--ux-brand-tint-2)", color: "var(--ux-brand)" }}>
                 <Ico className="h-[19px] w-[19px]" />
               </span>

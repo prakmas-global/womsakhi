@@ -84,7 +84,13 @@ export function LearnDashboard() {
     <div className={styles.dashboard} data-dashboard="learn">
       <div className={styles.main}>
         <section className={styles.hero}>
-          <img src={`${ART}hero.webp`} alt="" aria-hidden="true" />
+          <picture>
+            {/* The wide banner is composed for a laptop and carries lettering in
+              its own artwork; a phone-shaped crop of it cuts the subject or the
+              words. The phone gets a crop made for its shape. */}
+            <source media="(max-width: 1023px)" srcSet={`${ART}hero-mobile.webp`} />
+            <img src={`${ART}hero.webp`} alt="" aria-hidden="true" />
+          </picture>
           <div className={styles.heroContent}>
             <p className={styles.eyebrow}>Learn <span>•</span> Grow <span>•</span> Achieve</p>
             <h1>Learn Without Limits</h1>

@@ -48,7 +48,7 @@ export default function PeriodCheck() {
                 style={{ background: "var(--ux-danger-tint)", boxShadow: "0 0 0 10px var(--cy-predicted)" }}>
             <Icons.AlertCircle className="h-9 w-9" style={{ color: "var(--ux-danger-solid)" }} aria-hidden />
           </span>
-          <h1 className="mx-auto mt-6 max-w-[320px] text-[24px] font-bold leading-snug" style={{ color: "var(--cy-period)", fontFamily: "var(--font-sans)" }}>
+          <h1 className="mx-auto mt-6 max-w-[320px] text-[24px] font-bold leading-snug" style={{ color: "var(--cy-period-ink)", fontFamily: "var(--font-sans)" }}>
             {!state ? "…" : !s?.on_period ? "Your period is not on right now"
               : doctor ? "Your period has lasted more than 7 days"
               : `Your period has continued for ${day} days`}
@@ -67,7 +67,7 @@ export default function PeriodCheck() {
               <Link href={st.href} className="ux-press flex items-center gap-3.5 rounded-[16px] px-4 py-3"
                     style={{ background: "var(--ux-surface)", border: "1px solid var(--ux-line)" }}>
                 <span className="grid h-[44px] w-[44px] shrink-0 place-items-center rounded-[12px]" style={{ background: "var(--cy-predicted)" }}>
-                  <Icon name={st.icon} className="h-5 w-5" style={{ color: "var(--cy-period)" }} />
+                  <Icon name={st.icon} className="h-5 w-5" style={{ color: "var(--cy-period-ink)" }} />
                 </span>
                 <span className="min-w-0 flex-1">
                   <b className="block text-[15px] font-semibold" style={{ color: "var(--ux-ink)" }}>{st.title}</b>

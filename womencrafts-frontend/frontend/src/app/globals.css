@@ -86,11 +86,19 @@ body {
 a,
 button,
 select,
-summary,
 label[for],
 [role="button"],
 [role="option"],
 [role="tab"],
+[role="switch"],
+[role="menuitem"],
+[role="menuitemradio"],
+[role="menuitemcheckbox"],
+[role="radio"],
+[role="checkbox"],
+[role="link"],
+[role="combobox"],
+summary,
 .cursor-pointer,
 input[type="checkbox"],
 input[type="radio"],
@@ -188,3 +196,22 @@ summary:focus-visible,
 }
 .sakhi-float { animation: sakhi-float 5.5s ease-in-out infinite; }
 @media (prefers-reduced-motion: reduce) { .sakhi-float { animation: none; } }
+
+/* ------------------------------------------------------------------
+   A hovered control is a shape, not a rectangle.
+
+   Anything clickable that does not set its own radius gets one, so the
+   tint a hover paints lands as a rounded chip instead of a hard grey
+   box with square corners cutting across a card — the "All Circles"
+   and "Push" rows are what this fixes.
+
+   It sits in @layer base on purpose: Tailwind's `rounded-*` utilities
+   and every CSS-module rule are more weakly layered than nothing at
+   all, so a plain unlayered rule here would square off every pill in
+   the app. From base, anything that states a radius still wins.
+------------------------------------------------------------------- */
+@layer base {
+  .ux :where(a, button, summary, [role="button"], [role="menuitem"], [role="tab"]) {
+    border-radius: 10px;
+  }
+}

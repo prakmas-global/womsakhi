@@ -65,7 +65,7 @@ export default function Symptoms() {
 
         <div className="mt-5 flex items-center gap-3 rounded-[16px] px-4 py-3.5"
              style={{ background: "var(--cy-predicted)", border: "1px solid var(--ux-line)" }}>
-          <Icons.Sparkles className="h-5 w-5 shrink-0" style={{ color: "var(--cy-period)" }} aria-hidden />
+          <Icons.Sparkles className="h-5 w-5 shrink-0" style={{ color: "var(--cy-period-ink)" }} aria-hidden />
           <p className="text-[13px] leading-snug" style={{ color: "var(--ux-ink-2)" }}>
             Tracking helps us give you better insights and suggestions.
           </p>

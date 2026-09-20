@@ -266,7 +266,7 @@ function Row({ l }: { l: SellerListing }) {
 
       {/* Type */}
       <div>
-        <span className="inline-block rounded-full px-2.5 py-1 text-2xs font-bold capitalize lg:rounded-[7px] lg:px-2"
+        <span className="inline-block rounded-full px-2.5 py-1 text-2xs font-bold capitalize lg:rounded-[8px] lg:px-2"
               style={{ background: v(l.kind === "product" ? "--ux-tint-violet" : "--ux-tint-blue"),
                        color: v(l.kind === "product" ? "--ux-violet-ink" : "--ux-blue-ink") }}>
           {l.kind}
@@ -329,7 +329,7 @@ function Row({ l }: { l: SellerListing }) {
       <div className="flex justify-start max-lg:absolute max-lg:end-4 max-lg:top-[18px] xl:justify-end">
         <Link href={`/app/documents/${l.kind}/${l.id}`}
               aria-label={`Edit ${l.title}`}
-              className="ux-press ux-sq grid h-[34px] w-[34px] place-items-center rounded-[9px]"
+              className="ux-press ux-sq grid h-[34px] w-[34px] place-items-center rounded-[10px]"
               style={{ background: v("--ux-surface-2"), color: v("--ux-muted") }}>
           <Icons.MoreVertical className="h-[16px] w-[16px]" />
         </Link>

@@ -198,7 +198,7 @@ export function Check({ on, onChange, label }: {
   return (
     <button type="button" role="checkbox" aria-checked={on} onClick={() => onChange(!on)}
             className="ux-sq flex w-full items-center gap-2.5 py-1.5 text-start">
-      <span className="grid h-[20px] w-[20px] shrink-0 place-items-center rounded-[6px] border-2"
+      <span className="grid h-[20px] w-[20px] shrink-0 place-items-center rounded-[8px] border-2"
             style={{ borderColor: v(on ? "--ux-fill" : "--ux-line-strong"),
                      background: v(on ? "--ux-fill" : "--ux-surface") }}>
         {on && <Icons.Check className="h-[13px] w-[13px]" style={{ color: v("--ux-on-brand") }} />}

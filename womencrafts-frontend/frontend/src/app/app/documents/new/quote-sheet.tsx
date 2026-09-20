@@ -98,7 +98,7 @@ export function QuoteSheet({ open, onClose, listing, ask, message, respondIn }: 
         {listing.photo ? (
           // eslint-disable-next-line @next/next/no-img-element
           <img src={listing.photo} alt="" aria-hidden loading="lazy" decoding="async"
-               className="h-[58px] w-[58px] shrink-0 rounded-[11px] object-cover"
+               className="h-[58px] w-[58px] shrink-0 rounded-[12px] object-cover"
                style={{ background: v("--ux-media-bed") }} />
         ) : (
           <IconTile icon="Package" tint="--ux-tint-pink" ink="--ux-pink-ink" size={58} radius={11} />

@@ -177,7 +177,7 @@ export default function ShopHub() {
               <Link key={t.href} href={t.href}
                     className="ux-press flex items-center gap-3.5 px-4 py-4 lg:px-5"
                     style={{ borderTop: i === 0 ? "none" : `1px solid ${v("--ux-line")}` }}>
-                <span className="grid h-[38px] w-[38px] shrink-0 place-items-center rounded-[11px]"
+                <span className="grid h-[38px] w-[38px] shrink-0 place-items-center rounded-[12px]"
                       style={{ background: v("--ux-surface-2"), color: v("--ux-muted") }}>
                   <I name={t.icon} className="h-[17px] w-[17px]" />
                 </span>
