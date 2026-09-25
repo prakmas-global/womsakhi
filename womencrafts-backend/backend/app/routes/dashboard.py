@@ -78,6 +78,21 @@ def _appointments():
     return get_database()[AppointmentModel.collection_name]
 
 
+def _bookings():
+    # Members' own bookings — the real appointments. The legacy `appointments`
+    # collection holds staff-entered rows and the old undated fixtures.
+    return get_database()["bookings"]
+
+
+async def _member_names() -> dict[str, str]:
+    out: dict[str, str] = {}
+    async for m in _members().find({}, {"full_name": 1}):
+        out[str(m["_id"])] = m.get("full_name", "")
+    async for u in _users().find({}, {"full_name": 1}):
+        out.setdefault(str(u["_id"]), u.get("full_name", ""))
+    return out
+
+
 def _programs():
     return get_database()[ProgramModel.collection_name]
 
@@ -198,7 +213,8 @@ async def _build_stats() -> list[StatCard]:
     since_oid = ObjectId.from_datetime(since)
     (
         total_users, new_users,
-        total_appts, new_appts,
+        legacy_appts, new_legacy_appts,
+        total_bookings, new_bookings,
         total_programs, new_programs,
         paid_invoices,
     ) = await asyncio.gather(
@@ -206,10 +222,14 @@ async def _build_stats() -> list[StatCard]:
         _members().count_documents({"created_at": {"$gte": since}}),
         _appointments().count_documents({}),
         _appointments().count_documents({"_id": {"$gte": since_oid}}),
+        _bookings().count_documents({}),
+        _bookings().count_documents({"created_at": {"$gte": since}}),
         _programs().count_documents({}),
         _programs().count_documents({"created_at": {"$gte": since}}),
         db["invoices"].find({"status": "Paid"}, {"amount": 1, "date": 1}).to_list(None),
     )
+    total_appts = legacy_appts + total_bookings
+    new_appts = new_legacy_appts + new_bookings
     revenue = sum(_money_to_int(inv.get("amount", "0")) for inv in paid_invoices)
     recent_revenue = 0
     for inv in paid_invoices:
@@ -235,12 +255,15 @@ async def _build_stats() -> list[StatCard]:
 async def _build_attention() -> list[AttentionItem]:
     """What is waiting for a person. Each tile links to the screen where she
     deals with it, and each count is the same query that screen runs."""
-    in_review, docs_pending, open_reports, upcoming = await asyncio.gather(
+    today = datetime.now(timezone.utc).strftime("%Y-%m-%d")
+    in_review, docs_pending, open_reports, upcoming_legacy, upcoming_bookings = await asyncio.gather(
         _users().count_documents({"role": "Member", "verification_status": VerificationStatus.IN_REVIEW}),
         _documents().count_documents({"status": DocumentModel.STATUS_PENDING}),
         _reports().count_documents({"status": {"$in": [SafetyReportModel.STATUS_OPEN, SafetyReportModel.STATUS_REVIEWING]}}),
         _appointments().count_documents({"status": {"$in": _UPCOMING}}),
+        _bookings().count_documents({"status": "upcoming", "date": {"$gte": today}}),
     )
+    upcoming = upcoming_legacy + upcoming_bookings
     return [
         AttentionItem(key="verifications", label="Applications to review", value=in_review, note="Women waiting to be admitted", tone="amber", icon="ShieldCheck", href="/dashboard/users/verification"),
         AttentionItem(key="documents", label="ID documents pending", value=docs_pending, note="Uploaded, not yet checked", tone="sky", icon="FileCheck", href="/dashboard/users/verification"),
@@ -250,29 +273,48 @@ async def _build_attention() -> list[AttentionItem]:
 
 
 async def _build_trend() -> AppointmentTrend:
-    """Status tiles + a per-date series, both computed from real appointments.
+    """Status tiles over every appointment there is — members' bookings and the
+    staff-entered rows — and a per-month series of bookings over the last
+    twelve months. Bookings carry a real date; the legacy rows carry a 'May 20'
+    label with no year, so they count in the tiles but not on the line."""
+    legacy = [d async for d in _appointments().find({}, {"status": 1})]
+    bookings = [d async for d in _bookings().find({}, {"status": 1, "date": 1})]
 
-    An appointment carries a 'May 20' label and no year, so no time window can
-    be applied honestly; the series covers every appointment there is, in
-    calendar order of its label."""
-    docs = [d async for d in _appointments().find({}, {"status": 1, "date": 1})]
-    total = len(docs)
-    completed = sum(1 for d in docs if d.get("status") == "Completed")
-    cancelled = sum(1 for d in docs if d.get("status") == "Cancelled")
-    scheduled = sum(1 for d in docs if d.get("status") in _UPCOMING)
+    def _legacy_bucket(st: str) -> str:
+        return "completed" if st == "Completed" else "cancelled" if st == "Cancelled" else "scheduled" if st in _UPCOMING else "other"
+
+    def _booking_bucket(st: str) -> str:
+        return "completed" if st == "completed" else "cancelled" if st in ("cancelled", "no_show") else "scheduled" if st in ("upcoming", "confirmed") else "other"
+
+    buckets = [_legacy_bucket(d.get("status", "")) for d in legacy] + [_booking_bucket(d.get("status", "")) for d in bookings]
+    total = len(buckets)
+    completed = buckets.count("completed")
+    cancelled = buckets.count("cancelled")
+    scheduled = buckets.count("scheduled")
     tiles = [
         {"label": "Total", "value": f"{total:,}", "tone": "text-slate-800 bg-slate-50", "href": "/dashboard/appointments"},
         {"label": "Completed", "value": f"{completed:,}", "tone": "text-emerald-600 bg-emerald-50", "href": "/dashboard/appointments?status=completed"},
         {"label": "Scheduled", "value": f"{scheduled:,}", "tone": "text-sky-600 bg-sky-50", "href": "/dashboard/appointments?status=scheduled"},
         {"label": "Cancelled", "value": f"{cancelled:,}", "tone": "text-rose-500 bg-rose-50", "href": "/dashboard/appointments?status=cancelled"},
     ]
-    by_date: dict[str, int] = {}
-    for d in docs:
-        label = d.get("date", "")
-        if label:
-            by_date[label] = by_date.get(label, 0) + 1
-    series = [{"label": k, "value": v} for k, v in sorted(by_date.items(), key=lambda kv: _label_key(kv[0]))]
-    return AppointmentTrend(range="All appointments", series=series, tiles=tiles)
+
+    # Twelve months ending this month, every month present even when empty.
+    now = datetime.now(timezone.utc)
+    months: list[tuple[str, str]] = []
+    y, m = now.year, now.month
+    for _ in range(12):
+        months.append((f"{y:04d}-{m:02d}", datetime(y, m, 1).strftime("%b %y")))
+        m -= 1
+        if m == 0:
+            y, m = y - 1, 12
+    months.reverse()
+    by_month: dict[str, int] = {key: 0 for key, _ in months}
+    for d in bookings:
+        key = (d.get("date") or "")[:7]
+        if key in by_month:
+            by_month[key] += 1
+    series = [{"label": label, "value": by_month[key]} for key, label in months]
+    return AppointmentTrend(range="Bookings, last 12 months", series=series, tiles=tiles)
 
 
 async def _build_by_role() -> UsersByRole:
@@ -310,21 +352,24 @@ async def _build_recent_users(limit: int) -> list[RecentUser]:
 
 
 async def _build_recent_appointments(limit: int) -> list[RecentAppointment]:
-    """Newest appointments (appointments carry no scheduled_at, so _id desc is
-    the only recency signal). The date is the label the row holds — it has no
-    year, and none is invented for it."""
-    cursor = _appointments().find().sort("_id", -1).limit(limit)
+    """Newest bookings members made, by when they were made; topped up with
+    the newest staff-entered rows if there are too few. A booking's date is a
+    real date; a legacy row's date is the label it holds, with no year
+    invented for it."""
+    names = await _member_names()
     out: list[RecentAppointment] = []
-    async for doc in cursor:
-        out.append(
-            RecentAppointment(
-                title=doc.get("service", ""),
-                who=doc.get("name", ""),
-                date=doc.get("date", ""),
-                time=_start_time(doc.get("time", "")),
-                status=_STATUS_MAP.get(doc.get("status", ""), doc.get("status", "")),
-            )
-        )
+    async for doc in _bookings().find().sort("created_at", -1).limit(limit):
+        who = names.get(str(doc.get("member_id") or "")) or names.get(str(doc.get("user_id") or "")) or "Member"
+        out.append(RecentAppointment(
+            title=doc.get("service_name", ""), who=who, date=doc.get("date", ""),
+            time=_start_time(doc.get("time", "")), status=(doc.get("status") or "").replace("_", " ").capitalize(),
+        ))
+    if len(out) < limit:
+        async for doc in _appointments().find().sort("_id", -1).limit(limit - len(out)):
+            out.append(RecentAppointment(
+                title=doc.get("service", ""), who=doc.get("name", ""), date=doc.get("date", ""),
+                time=_start_time(doc.get("time", "")), status=_STATUS_MAP.get(doc.get("status", ""), doc.get("status", "")),
+            ))
     return out
 
 
