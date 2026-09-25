@@ -1,228 +1,103 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import type { ElementType } from "react";
 import {
-  CreditCard,
-  Crown,
-  Users,
-  CalendarDays,
-  Package,
-  CloudUpload,
-  Headphones,
-  ShieldCheck,
-  Plus,
-  CheckCircle2,
-  FileText,
-  Mail,
-  ChevronRight,
-  Receipt,
-  XCircle,
-  Download,
-  Eye,
-  MoreHorizontal,
+  Building2, Check, CreditCard, Crown, Download, FileText, HardDrive, Pencil, Receipt, Users, Wallet, X,
 } from "lucide-react";
-import { Badge, Card, Input, Menu, MenuItem, Modal, ProgressBar, Select, Switch, useToast } from "@/design-system";
+
+import { Badge, Card, EmptyState, Input, Modal, Spinner, StatCard, useToast } from "@/design-system";
+import { ResizableColumns } from "@/layout-engine";
 import {
-  apiGetBillingAccount,
-  apiListPlans,
-  apiListInvoices,
-  apiChangePlan,
-  apiCancelSubscription,
-  apiUpdatePayment,
-  apiToggleAutoPay,
-  apiUpdateBillingInfo,
-  apiDownloadInvoice,
-  type BillingAccount,
-  type BillingPlan,
-  type BillingInvoice,
-  type BillingInfo,
+  apiBillingOverview, apiDownloadInvoice, apiListInvoices, apiUpdateBillingInfo,
+  type BillingInfo, type BillingInvoice, type BillingOverview,
 } from "@/lib/billing-api";
 import { memberError } from "@/lib/member-api";
-import { ResizableColumns } from "@/layout-engine";
+import { saveBlob } from "@/lib/settings-platform-api";
 
-// Icons are stored on the backend by NAME (features + usage); map them back here.
-const ICON_MAP: Record<string, ElementType> = {
-  Users,
-  CalendarDays,
-  Package,
-  CloudUpload,
-  Headphones,
-  Mail,
-};
-const iconFor = (name: string): ElementType => ICON_MAP[name] ?? Package;
+/**
+ * Billing.
+ *
+ * What this screen used to show: a ₹2,999 "Professional Plan", a Mastercard
+ * ending 4242, five invoices and a usage bar reading 62.4 GB of 100 GB. None
+ * of it was true — WomSakhi takes no payment from the organisation running
+ * it and holds no card.
+ *
+ * What it shows now is counted or measured: the entitlement tier this account
+ * is on (the same flag the Organisation screen is gated by), seats from the
+ * users collection, storage from the disk, invoices only where some code
+ * issued one, and the billing details a person has typed. When there is
+ * nothing, it says so.
+ */
+
+const TIER_TONE: Record<string, "slate" | "violet" | "brand"> = { free: "slate", pro: "violet", org: "brand" };
+const EMPTY_INFO: BillingInfo = { company: "", email: "", gstin: "", address: "" };
 
 export default function BillingPage() {
   const toast = useToast();
-  // Live data from MongoDB
-  const [account, setAccount] = useState<BillingAccount | null>(null);
-  const [plans, setPlans] = useState<BillingPlan[]>([]);
+  const [data, setData] = useState<BillingOverview | null>(null);
   const [invoices, setInvoices] = useState<BillingInvoice[]>([]);
   const [loading, setLoading] = useState(true);
+  const [editing, setEditing] = useState(false);
+  const [draft, setDraft] = useState<BillingInfo>(EMPTY_INFO);
+  const [busy, setBusy] = useState(false);
 
-  // Modals
-  const [planModal, setPlanModal] = useState(false);
-  const [cancelModal, setCancelModal] = useState(false);
-  const [paymentModal, setPaymentModal] = useState(false);
-  const [billingInfoModal, setBillingInfoModal] = useState(false);
-  const [planDetailsModal, setPlanDetailsModal] = useState(false);
-
-  // Plan-selection modal draft
-  const [selectedPlan, setSelectedPlan] = useState("");
-
-  // Payment modal draft
-  const [payDraft, setPayDraft] = useState({
-    name: "",
-    number: "",
-    expiry: "",
-    cvc: "",
-    brand: "Mastercard",
-  });
-
-  // Billing information modal draft
-  const [billingDraft, setBillingDraft] = useState<BillingInfo>({
-    company: "",
-    email: "",
-    gstin: "",
-    address: "",
-  });
-
+  // After a save, from a click.
   const refresh = useCallback(async () => {
     try {
-      const [acc, pls, inv] = await Promise.all([
-        apiGetBillingAccount(),
-        apiListPlans(),
-        apiListInvoices({ page_size: 100 }),
-      ]);
-      setAccount(acc);
-      setPlans(pls);
+      const [ov, inv] = await Promise.all([apiBillingOverview(), apiListInvoices({ page_size: 100 })]);
+      setData(ov);
       setInvoices(inv.items);
-    } catch {
-      /* leave current data; a toast could surface the error */
-    } finally {
-      setLoading(false);
+    } catch (e) {
+      toast.error("Could not load billing", { description: memberError(e) });
     }
-  }, []);
+  }, [toast]);
 
+  // The first load, inline so every setState provably follows an await.
   useEffect(() => {
-    refresh();
-  }, [refresh]);
+    let alive = true;
+    void (async () => {
+      try {
+        const [ov, inv] = await Promise.all([apiBillingOverview(), apiListInvoices({ page_size: 100 })]);
+        if (!alive) return;
+        setData(ov);
+        setInvoices(inv.items);
+      } catch (e) {
+        if (alive) toast.error("Could not load billing", { description: memberError(e) });
+      } finally {
+        if (alive) setLoading(false);
+      }
+    })();
+    return () => { alive = false; };
+  }, [toast]);
 
-  if (!account) {
-    return (
-      <div>
-        <div className="mb-6 flex items-start gap-3">
-          <span className="mt-0.5 flex h-11 w-11 items-center justify-center rounded-xl bg-brand-tint text-brand-ink">
-            <CreditCard className="h-6 w-6" />
-          </span>
-          <div>
-            <h1 className="font-display text-2xl font-bold tracking-tight text-ink">Billing &amp; Subscription</h1>
-            <p className="mt-1 text-sm text-ink-subtle">Manage your subscription plan, billing information and payment history.</p>
-          </div>
-        </div>
-        <div className="flex items-center justify-center py-20 text-sm text-ink-subtle">
-          {loading ? "Loading billing…" : "Unable to load billing information."}
-        </div>
-      </div>
-    );
-  }
-
-  // Derived UI values from the live account (account is non-null past this point).
-  const plan = account.plan;
-  const planPrice = account.plan_price;
-  const planDesc = account.plan_description;
-  const cancelled = account.status === "Cancelled";
-  const autoPay = account.auto_pay;
-  const card = account.card;
-  const nextBillingDate = account.next_billing_date;
-  const usageResetDate = account.usage_reset_date;
-  const features = account.features;
-  const usage = account.usage;
-  const summary = account.summary;
-  const billingInfo = account.billing_info;
-
-  const openPlanModal = () => {
-    setSelectedPlan(plan);
-    setPlanModal(true);
+  const openEdit = () => {
+    setDraft(data?.billing_info_saved ? data.billing_info : EMPTY_INFO);
+    setEditing(true);
   };
 
-  const savePlan = async () => {
-    const chosen = plans.find((p) => p.name === selectedPlan);
-    if (!chosen) return;
+  const save = async () => {
+    if (!draft.company.trim() || !draft.email.trim()) {
+      toast.error("Company name and billing email are needed");
+      return;
+    }
+    setBusy(true);
     try {
-      await apiChangePlan(chosen.name);
+      await apiUpdateBillingInfo({ ...draft, company: draft.company.trim(), email: draft.email.trim() });
+      toast.success("Billing details saved", { description: "Recorded in the activity log." });
+      setEditing(false);
       await refresh();
-      setPlanModal(false);
-    } catch (err) {
-      toast.error("Could not change the plan", { description: memberError(err) });
+    } catch (e) {
+      toast.error("Could not save the billing details", { description: memberError(e) });
+    } finally {
+      setBusy(false);
     }
   };
 
-  const cancelSubscription = async () => {
+  const download = async (inv: BillingInvoice) => {
     try {
-      await apiCancelSubscription();
-      await refresh();
-      setCancelModal(false);
-    } catch (err) {
-      toast.error("Could not cancel the subscription", { description: memberError(err) });
-    }
-  };
-
-  const savePayment = async () => {
-    if (!payDraft.number.trim() || !payDraft.expiry.trim()) return;
-    try {
-      await apiUpdatePayment({
-        number: payDraft.number,
-        expiry: payDraft.expiry.trim(),
-        name: payDraft.name,
-        cvc: payDraft.cvc,
-        brand: payDraft.brand,
-      });
-      await refresh();
-      setPaymentModal(false);
-      setPayDraft({ name: "", number: "", expiry: "", cvc: "", brand: payDraft.brand });
-    } catch (err) {
-      toast.error("Could not save the payment method", { description: memberError(err) });
-    }
-  };
-
-  const handleAutoPay = async (next: boolean) => {
-    try {
-      await apiToggleAutoPay(next);
-      await refresh();
-    } catch (err) {
-      toast.error("Could not change auto-pay", { description: memberError(err) });
-    }
-  };
-
-  const openBillingInfo = () => {
-    setBillingDraft(billingInfo);
-    setBillingInfoModal(true);
-  };
-
-  const saveBillingInfo = async () => {
-    if (!billingDraft.company.trim() || !billingDraft.email.trim()) return;
-    try {
-      await apiUpdateBillingInfo(billingDraft);
-      await refresh();
-      toast.success("Billing details saved");
-      setBillingInfoModal(false);
-    } catch (err) {
-      toast.error("Could not save the billing details", { description: memberError(err) });
-    }
-  };
-
-  const downloadInvoice = async (inv: BillingInvoice) => {
-    try {
-      const blob = await apiDownloadInvoice(inv.invoice_number);
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = `${inv.invoice_number}.csv`;
-      a.click();
-      URL.revokeObjectURL(url);
-    } catch {
-      /* ignore */
+      saveBlob(await apiDownloadInvoice(inv.invoice_number), `${inv.invoice_number}.csv`);
+    } catch (e) {
+      toast.error("Could not download the invoice", { description: memberError(e) });
     }
   };
 
@@ -233,529 +108,166 @@ export default function BillingPage() {
           <CreditCard className="h-6 w-6" />
         </span>
         <div>
-          <h1 className="font-display text-2xl font-bold tracking-tight text-ink">Billing &amp; Subscription</h1>
-          <p className="mt-1 text-sm text-ink-subtle">Manage your subscription plan, billing information and payment history.</p>
+          <h1 className="font-display text-2xl font-bold tracking-tight text-ink">Billing</h1>
+          <p className="mt-1 text-sm text-ink-subtle">
+            What this installation is on — counted and measured, never assumed.
+          </p>
         </div>
       </div>
 
-      <ResizableColumns id="settings-billing" defaultSize={0.74} className="gap-6">
-        {/* LEFT */}
-        <div className="space-y-6">
-          {/* Current Plan */}
-          <Card>
-            <h2 className="mb-4 font-display text-base font-semibold text-ink">Current Plan</h2>
-            <div className="flex flex-wrap items-start justify-between gap-6">
-              <div className="flex gap-4">
-                <span className="flex h-16 w-16 shrink-0 items-center justify-center rounded-2xl bg-linear-to-br from-violet-50 to-violet-tint text-violet-ink">
-                  <Crown className="h-8 w-8" />
-                </span>
-                <div>
-                  <div className="flex items-center gap-2">
-                    <h3 className="font-display text-lg font-bold text-ink">{plan}</h3>
-                    {cancelled ? <Badge tone="rose">Cancelled</Badge> : <Badge tone="emerald">Active</Badge>}
-                  </div>
-                  <p className="mt-0.5 text-sm text-ink-subtle">Billed monthly</p>
-                  <p className="mt-1 max-w-md text-sm text-ink-muted">{planDesc}</p>
-                  <button
-                    onClick={() => setPlanDetailsModal(true)}
-                    className="mt-2 flex items-center gap-1 text-sm font-semibold text-brand-ink hover:text-brand-ink"
-                  >
-                    View Plan Details <ChevronRight className="h-4 w-4" />
-                  </button>
-                </div>
-              </div>
-              <div className="text-right">
-                <p className="font-display text-2xl font-bold text-ink">
-                  {planPrice} <span className="text-sm font-medium text-ink-subtle">/ month</span>
-                </p>
-                <p className="mt-1 text-sm text-ink-subtle">Next billing on</p>
-                <p className="text-sm font-semibold text-ink-muted">{nextBillingDate}</p>
-                <div className="mt-3 flex flex-col gap-2">
-                  <button onClick={openPlanModal} className="btn btn-secondary btn-block">Change Plan</button>
-                  <button
-                    onClick={() => setCancelModal(true)}
-                    disabled={cancelled}
-                    className="btn btn-danger btn-block disabled:cursor-not-allowed disabled:opacity-50"
-                  >
-                    {cancelled ? "Subscription Cancelled" : "Cancel Subscription"}
-                  </button>
-                </div>
-              </div>
-            </div>
-
-            <div className="mt-6 grid grid-cols-2 gap-3 rounded-2xl bg-surface-inset/70 p-3 sm:grid-cols-3 lg:grid-cols-5">
-              {features.map((f) => {
-                const Icon = iconFor(f.icon);
-                return (
-                  <div key={f.sub} className="flex items-center gap-3">
-                    <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-surface text-brand-ink shadow-sm">
-                      <Icon className="h-5 w-5" />
-                    </span>
-                    <div>
-                      <p className="text-sm font-bold text-ink">{f.label}</p>
-                      <p className="text-xs text-ink-subtle">{f.sub}</p>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          </Card>
-
-          {/* Payment Method */}
-          <Card>
-            <h2 className="mb-4 font-display text-base font-semibold text-ink">Payment Method</h2>
-            <div className="flex flex-wrap items-center justify-between gap-4 rounded-xl border border-line p-4">
-              <div className="flex items-center gap-3">
-                <span className="flex h-11 w-14 items-center justify-center rounded-lg bg-surface-inset">
-                  <span className="relative flex items-center">
-                    {/* Mastercard's own red and amber. Deliberately literal:
-                        these identify the card network and are not ours to
-                        theme — recolouring them would misrepresent the brand. */}
-                    <span className="h-6 w-6 rounded-full bg-[#eb001b]" />
-                    <span className="-ml-2.5 h-6 w-6 rounded-full bg-[#f79e1b] opacity-90" />
-                  </span>
-                </span>
-                <div>
-                  <div className="flex items-center gap-2">
-                    <p className="text-sm font-semibold text-ink">{card.brand} ending in {card.last4}</p>
-                    <Badge tone="brand">Primary</Badge>
-                  </div>
-                  <p className="text-xs text-ink-subtle">Expires {card.expiry}</p>
-                </div>
-              </div>
-              <div className="flex items-center gap-4">
-                {autoPay ? (
-                  <span className="flex items-center gap-1.5 text-sm font-medium text-status-ok-ink">
-                    <CheckCircle2 className="h-4 w-4" /> Auto-pay is enabled
-                  </span>
-                ) : (
-                  <span className="flex items-center gap-1.5 text-sm font-medium text-ink-subtle">
-                    <XCircle className="h-4 w-4" /> Auto-pay is disabled
-                  </span>
-                )}
-                <button onClick={() => setPaymentModal(true)} className="btn btn-secondary">Update Payment Method</button>
-              </div>
-            </div>
-            <div className="mt-3 flex flex-wrap items-center gap-3">
-              <button onClick={() => setPaymentModal(true)} className="btn btn-secondary btn-sm">
-                <Plus className="h-4 w-4" /> Add Payment Method
-              </button>
-            </div>
-            <div className="mt-3">
-              <Switch
-                label="Auto-pay"
-                description="Automatically pay invoices on the billing date"
-                checked={autoPay}
-                onChange={handleAutoPay}
-              />
-            </div>
-          </Card>
-
-          {/* Billing History */}
-          <Card>
-            <h2 className="mb-4 font-display text-base font-semibold text-ink">Billing History</h2>
-            <div className="overflow-x-auto">
-              <table className="w-full min-w-200 text-left">
-                <thead>
-                  <tr className="border-b border-line text-2xs font-semibold uppercase tracking-wide text-ink-subtle">
-                    <th scope="col" className="whitespace-nowrap px-2 py-3">Date</th>
-                    <th scope="col" className="px-2 py-3">Description</th>
-                    <th scope="col" className="whitespace-nowrap px-2 py-3">Plan</th>
-                    <th scope="col" className="whitespace-nowrap px-2 py-3">Amount</th>
-                    <th scope="col" className="px-2 py-3">Status</th>
-                    <th scope="col" className="whitespace-nowrap px-2 py-3">Invoice</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-line">
-                  {invoices.map((h) => (
-                    <tr key={h.invoice_number} className="text-sm hover:bg-surface-hover/60">
-                      <td className="whitespace-nowrap px-2 py-3.5 font-medium text-ink-muted">{h.date}</td>
-                      <td className="px-2 py-3.5 text-ink-muted">{h.description}</td>
-                      <td className="whitespace-nowrap px-2 py-3.5 text-ink-subtle">{h.period}</td>
-                      <td className="whitespace-nowrap px-2 py-3.5 font-semibold text-ink">{h.amount}</td>
-                      <td className="px-2 py-3.5">
-                        <span className="inline-flex items-center gap-1.5 rounded-full bg-status-ok-bg px-2.5 py-1 text-2xs font-semibold text-status-ok-ink">
-                          <CheckCircle2 className="h-3.5 w-3.5" /> {h.status}
-                        </span>
-                      </td>
-                      <td className="whitespace-nowrap px-2 py-3.5">
-                        <div className="flex items-center gap-2">
-                          <button
-                            onClick={() => downloadInvoice(h)}
-                            className="inline-flex items-center gap-1.5 text-sm font-semibold text-brand-ink hover:text-brand-ink"
-                          >
-                            <FileText className="h-4 w-4" /> {h.invoice_number}
-                          </button>
-                          <Menu
-                            trigger={
-                              <button
-                                aria-label="Invoice actions"
-                                className="flex h-8 w-8 items-center justify-center rounded-lg text-ink-subtle hover:bg-surface-hover hover:text-ink-muted"
-                              >
-                                <MoreHorizontal className="h-4 w-4" />
-                              </button>
-                            }
-                          >
-                            <MenuItem icon={Download} onClick={() => downloadInvoice(h)}>Download invoice</MenuItem>
-                            <MenuItem icon={Eye} onClick={() => downloadInvoice(h)}>View invoice</MenuItem>
-                          </Menu>
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-            <div className="mt-4 flex justify-center">
-              <button
-                onClick={() => invoices[0] && downloadInvoice(invoices[0])}
-                className="flex items-center gap-1 text-sm font-semibold text-brand-ink hover:text-brand-ink"
-              >
-                View All Invoices <ChevronRight className="h-4 w-4" />
-              </button>
-            </div>
-          </Card>
-        </div>
-
-        {/* RIGHT */}
-        <div className="space-y-6">
-          {/* Usage Overview */}
-          <Card>
-            <div className="mb-4 flex items-center justify-between">
-              <h2 className="font-display text-base font-semibold text-ink">Usage Overview</h2>
-              <span className="text-xs text-ink-subtle">Resets on {usageResetDate}</span>
-            </div>
-            <div className="space-y-4">
-              {usage.map((u) => {
-                const Icon = iconFor(u.icon);
-                return (
-                  <div key={u.label}>
-                    <div className="mb-1.5 flex items-center justify-between">
-                      <span className="flex items-center gap-2 text-sm font-medium text-ink-muted">
-                        <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-surface-inset text-ink-subtle">
-                          <Icon className="h-4 w-4" />
-                        </span>
-                        {u.label}
-                      </span>
-                      <span className="text-sm font-semibold text-ink">{u.value}</span>
-                    </div>
-                    <div className="pl-9"><ProgressBar value={u.pct} color={u.color} /></div>
-                  </div>
-                );
-              })}
-            </div>
-            <div className="mt-4 flex justify-center">
-              <button
-                onClick={() => setPlanDetailsModal(true)}
-                className="flex items-center gap-1 text-sm font-semibold text-brand-ink hover:text-brand-ink"
-              >
-                View All Usage <ChevronRight className="h-4 w-4" />
-              </button>
-            </div>
-          </Card>
-
-          {/* Billing Summary */}
-          <Card>
-            <h2 className="mb-4 font-display text-base font-semibold text-ink">Billing Summary</h2>
-            <dl className="space-y-3 text-sm">
-              <div className="flex items-center justify-between">
-                <dt className="text-ink-subtle">Plan</dt>
-                <dd className="font-semibold text-ink">{summary.plan}</dd>
-              </div>
-              <div className="flex items-center justify-between">
-                <dt className="text-ink-subtle">Billing Cycle</dt>
-                <dd className="font-semibold text-ink">{summary.billing_cycle}</dd>
-              </div>
-              <div className="flex items-center justify-between">
-                <dt className="text-ink-subtle">Subtotal</dt>
-                <dd className="font-semibold text-ink">{summary.subtotal}</dd>
-              </div>
-              <div className="flex items-center justify-between">
-                <dt className="text-ink-subtle">Taxes ({summary.tax_percent}%)</dt>
-                <dd className="font-semibold text-ink">{summary.taxes}</dd>
-              </div>
-            </dl>
-            <div className="my-3 border-t border-line" />
-            <div className="flex items-center justify-between">
-              <span className="text-sm font-semibold text-ink">Total</span>
-              <span className="font-display text-lg font-bold text-brand-ink">{summary.total}</span>
-            </div>
-            <p className="mt-3 text-xs text-ink-subtle">All amounts are in {summary.currency}</p>
-          </Card>
-
-          {/* Need to make a change? */}
-          <Card>
-            <h2 className="mb-4 font-display text-base font-semibold text-ink">Need to make a change?</h2>
-            <div className="space-y-2">
-              <button
-                onClick={openPlanModal}
-                className="flex w-full items-center gap-3 rounded-xl border border-line p-3 text-left hover:bg-surface-hover"
-              >
-                <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-surface-inset text-ink-subtle">
-                  <CreditCard className="h-4.5 w-4.5" />
-                </span>
-                <span className="flex-1">
-                  <span className="block text-sm font-semibold text-ink">Change Plan</span>
-                  <span className="block text-xs text-ink-subtle">Upgrade or downgrade your plan</span>
-                </span>
-                <ChevronRight className="h-4 w-4 text-ink-faint" />
-              </button>
-              <button
-                onClick={openBillingInfo}
-                className="flex w-full items-center gap-3 rounded-xl border border-line p-3 text-left hover:bg-surface-hover"
-              >
-                <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-surface-inset text-ink-subtle">
-                  <Receipt className="h-4.5 w-4.5" />
-                </span>
-                <span className="flex-1">
-                  <span className="block text-sm font-semibold text-ink">Billing Information</span>
-                  <span className="block text-xs text-ink-subtle">Update your billing details</span>
-                </span>
-                <ChevronRight className="h-4 w-4 text-ink-faint" />
-              </button>
-              <button
-                onClick={() => setCancelModal(true)}
-                className="flex w-full items-center gap-3 rounded-xl border border-line p-3 text-left hover:bg-surface-hover"
-              >
-                <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-surface-inset text-ink-subtle">
-                  <XCircle className="h-4.5 w-4.5" />
-                </span>
-                <span className="flex-1">
-                  <span className="block text-sm font-semibold text-ink">Cancel Subscription</span>
-                  <span className="block text-xs text-ink-subtle">Cancel your subscription plan</span>
-                </span>
-                <ChevronRight className="h-4 w-4 text-ink-faint" />
-              </button>
-            </div>
-          </Card>
-        </div>
-      </ResizableColumns>
-
-      {/* Change Plan Modal */}
-      <Modal
-        open={planModal}
-        onClose={() => setPlanModal(false)}
-        title="Change Plan"
-        description="Choose the plan that best fits your team."
-        icon={CreditCard}
-        iconTone="brand"
-        size="lg"
-        footer={
-          <>
-            <button onClick={() => setPlanModal(false)} className="btn btn-outline">Cancel</button>
-            <button onClick={savePlan} className="btn btn-primary">Confirm Plan</button>
-          </>
-        }
-      >
-        <div className="space-y-3">
-          {plans.map((p) => {
-            const active = selectedPlan === p.name;
-            return (
-              <button
-                key={p.name}
-                type="button"
-                onClick={() => setSelectedPlan(p.name)}
-                className={`flex w-full items-start justify-between gap-3 rounded-xl border p-4 text-left transition ${
-                  active
-                    ? "border-brand-500 bg-brand-tint/60 ring-1 ring-brand-500/40"
-                    : "border-line hover:bg-surface-hover"
-                }`}
-              >
-                <span className="min-w-0">
-                  <span className="flex items-center gap-2">
-                    <span className="text-sm font-bold text-ink">{p.name}</span>
-                    {p.name === plan && <Badge tone="emerald">Current</Badge>}
-                  </span>
-                  <span className="mt-1 block text-xs text-ink-subtle">{p.description}</span>
-                </span>
-                <span className="shrink-0 text-right">
-                  <span className="font-display text-lg font-bold text-ink">{p.price}</span>
-                  <span className="block text-xs text-ink-subtle">/ month</span>
-                  {active && (
-                    <CheckCircle2 className="ml-auto mt-1 h-5 w-5 text-brand-ink" />
-                  )}
-                </span>
-              </button>
-            );
-          })}
-        </div>
-      </Modal>
-
-      {/* Cancel Subscription Modal */}
-      <Modal
-        open={cancelModal}
-        onClose={() => setCancelModal(false)}
-        title="Cancel Subscription"
-        description="Your plan will remain active until the end of the current billing period."
-        icon={XCircle}
-        iconTone="rose"
-        size="sm"
-        footer={
-          <>
-            <button onClick={() => setCancelModal(false)} className="btn btn-outline">Keep Plan</button>
-            <button
-              onClick={cancelSubscription}
-              className="btn btn-danger"
-            >
-              Cancel Subscription
-            </button>
-          </>
-        }
-      >
-        <p className="text-sm text-ink-muted">
-          Are you sure you want to cancel your <span className="font-semibold text-ink">{plan}</span>?
-          You will lose access to premium features once the billing period ends.
-        </p>
-      </Modal>
-
-      {/* Payment Method Modal */}
-      <Modal
-        open={paymentModal}
-        onClose={() => setPaymentModal(false)}
-        title="Payment Method"
-        description="Add or update the card used for billing."
-        icon={CreditCard}
-        iconTone="violet"
-        footer={
-          <>
-            <button onClick={() => setPaymentModal(false)} className="btn btn-outline">Cancel</button>
-            <button onClick={savePayment} className="btn btn-primary">Save Card</button>
-          </>
-        }
-      >
-        <div className="space-y-4">
-          <Input
-            label="Cardholder Name"
-            placeholder="Full name on card"
-            value={payDraft.name}
-            onChange={(e) => setPayDraft({ ...payDraft, name: e.target.value })}
-          />
-          <Input
-            label="Card Number"
-            required
-            icon={CreditCard}
-            placeholder="1234 5678 9012 3456"
-            value={payDraft.number}
-            onChange={(e) => setPayDraft({ ...payDraft, number: e.target.value })}
-          />
-          <div className="grid grid-cols-2 gap-4">
-            <Input
-              label="Expiry"
-              required
-              placeholder="MM/YY"
-              value={payDraft.expiry}
-              onChange={(e) => setPayDraft({ ...payDraft, expiry: e.target.value })}
-            />
-            <Input
-              label="CVC"
-              placeholder="123"
-              value={payDraft.cvc}
-              onChange={(e) => setPayDraft({ ...payDraft, cvc: e.target.value })}
-            />
+      {loading || !data ? (
+        <div className="flex items-center justify-center py-20">{loading ? <Spinner /> : <p className="text-sm text-ink-subtle">Unable to load billing.</p>}</div>
+      ) : (
+        <>
+          <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
+            <StatCard label="Plan" value={data.plan.label} icon={Crown} tone={TIER_TONE[data.plan.tier] === "slate" ? "violet" : "brand"}
+                      deltaNote={`${data.plan.features.filter((f) => f.included).length} of ${data.plan.features.length} features on`} />
+            <StatCard label="Staff seats" value={String(data.seats.staff)} icon={Users} tone="violet"
+                      deltaNote={`${data.seats.active_staff} active · ${data.seats.super_admins} Super Admin${data.seats.super_admins === 1 ? "" : "s"}`} />
+            <StatCard label="Members" value={String(data.seats.members)} icon={Users} tone="emerald" deltaNote="Accounts with the Member role" />
+            <StatCard label="Storage used" value={data.storage.label} icon={HardDrive} tone="sky"
+                      deltaNote={`${data.storage.files} file${data.storage.files === 1 ? "" : "s"} on this server`} />
           </div>
-          <Select
-            label="Card Brand"
-            options={["Mastercard", "Visa", "American Express", "RuPay"]}
-            value={payDraft.brand}
-            onChange={(e) => setPayDraft({ ...payDraft, brand: e.target.value })}
-          />
-          <p className="flex items-center gap-1.5 text-xs text-ink-subtle">
-            <ShieldCheck className="h-4 w-4 text-status-ok-ink" /> Card details are stored securely.
-          </p>
-        </div>
-      </Modal>
 
-      {/* Billing Information Modal */}
-      <Modal
-        open={billingInfoModal}
-        onClose={() => setBillingInfoModal(false)}
-        title="Billing Information"
-        description="Update the details shown on your invoices."
-        icon={Receipt}
-        iconTone="sky"
-        footer={
-          <>
-            <button onClick={() => setBillingInfoModal(false)} className="btn btn-outline">Cancel</button>
-            <button onClick={saveBillingInfo} className="btn btn-primary">Save Changes</button>
-          </>
-        }
-      >
-        <div className="space-y-4">
-          <Input
-            label="Company Name"
-            required
-            value={billingDraft.company}
-            onChange={(e) => setBillingDraft({ ...billingDraft, company: e.target.value })}
-          />
-          <Input
-            label="Billing Email"
-            required
-            icon={Mail}
-            value={billingDraft.email}
-            onChange={(e) => setBillingDraft({ ...billingDraft, email: e.target.value })}
-          />
-          <Input
-            label="GSTIN"
-            value={billingDraft.gstin}
-            onChange={(e) => setBillingDraft({ ...billingDraft, gstin: e.target.value })}
-          />
-          <Input
-            label="Billing Address"
-            value={billingDraft.address}
-            onChange={(e) => setBillingDraft({ ...billingDraft, address: e.target.value })}
-          />
-        </div>
-      </Modal>
-
-      {/* Plan Details / Usage Modal */}
-      <Modal
-        open={planDetailsModal}
-        onClose={() => setPlanDetailsModal(false)}
-        title={`${plan} Details`}
-        description="Included features and current usage."
-        icon={Crown}
-        iconTone="violet"
-        size="lg"
-        footer={
-          <button onClick={() => setPlanDetailsModal(false)} className="btn btn-primary">Done</button>
-        }
-      >
-        <div className="space-y-4">
-          <div className="grid grid-cols-2 gap-3 rounded-2xl bg-surface-inset/70 p-3 sm:grid-cols-3">
-            {features.map((f) => {
-              const Icon = iconFor(f.icon);
-              return (
-                <div key={f.sub} className="flex items-center gap-3">
-                  <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-surface text-brand-ink shadow-sm">
-                    <Icon className="h-5 w-5" />
-                  </span>
+          <ResizableColumns id="settings-billing" defaultSize={0.62} className="mt-6 gap-6">
+            <div className="space-y-6">
+              <Card>
+                <div className="flex flex-wrap items-start justify-between gap-3">
                   <div>
-                    <p className="text-sm font-bold text-ink">{f.label}</p>
-                    <p className="text-xs text-ink-subtle">{f.sub}</p>
+                    <h2 className="font-display text-base font-semibold text-ink">Your plan</h2>
+                    <p className="mt-1 text-sm text-ink-subtle">{data.plan.note}</p>
+                  </div>
+                  <Badge tone={TIER_TONE[data.plan.tier] ?? "slate"}>{data.plan.label}</Badge>
+                </div>
+                <ul className="mt-4 grid gap-2 sm:grid-cols-2">
+                  {data.plan.features.map((f) => (
+                    <li key={f.key} className="flex items-center gap-2.5 text-sm">
+                      {f.included
+                        ? <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-status-ok-bg text-status-ok-ink"><Check className="h-3 w-3" strokeWidth={3} /></span>
+                        : <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-surface-inset text-ink-subtle"><X className="h-3 w-3" strokeWidth={3} /></span>}
+                      <span className={f.included ? "text-ink" : "text-ink-subtle"}>{f.label}</span>
+                    </li>
+                  ))}
+                </ul>
+                <p className="mt-4 text-xs text-ink-subtle">
+                  The tier is read from this account&apos;s entitlement — the same flag the Organisation screen is gated by. Changing it is a decision made outside this dashboard, not a button.
+                </p>
+              </Card>
+
+              <Card>
+                <div className="mb-4 flex items-center justify-between">
+                  <h2 className="font-display text-base font-semibold text-ink">Invoices</h2>
+                  <span className="text-xs text-ink-subtle">{data.invoices_total} issued</span>
+                </div>
+                {invoices.length === 0 ? (
+                  <EmptyState icon={Receipt} title="No invoices"
+                              description="WomSakhi has not issued an invoice to this organisation and nothing has been charged. Anything issued in future will be listed here." />
+                ) : (
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-left">
+                      <thead>
+                        <tr className="border-b border-line text-2xs font-semibold uppercase tracking-wide text-ink-subtle">
+                          <th className="px-2 py-2.5">Date</th>
+                          <th className="px-2 py-2.5">Description</th>
+                          <th className="px-2 py-2.5">Period</th>
+                          <th className="px-2 py-2.5">Amount</th>
+                          <th className="px-2 py-2.5">Status</th>
+                          <th className="px-2 py-2.5">Invoice</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {invoices.map((h) => (
+                          <tr key={h.invoice_number} className="border-b border-line text-sm last:border-0 hover:bg-surface-2">
+                            <td className="whitespace-nowrap px-2 py-3 text-ink-muted">{h.date}</td>
+                            <td className="px-2 py-3 text-ink-muted">{h.description}</td>
+                            <td className="whitespace-nowrap px-2 py-3 text-ink-subtle">{h.period}</td>
+                            <td className="whitespace-nowrap px-2 py-3 font-semibold text-ink">{h.amount}</td>
+                            <td className="px-2 py-3"><Badge tone={h.status === "Paid" ? "emerald" : h.status === "Failed" ? "rose" : "amber"}>{h.status}</Badge></td>
+                            <td className="whitespace-nowrap px-2 py-3">
+                              <button onClick={() => void download(h)} className="inline-flex items-center gap-1.5 text-sm font-semibold text-brand-ink">
+                                <FileText className="h-4 w-4" /> {h.invoice_number} <Download className="h-3.5 w-3.5" />
+                              </button>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+              </Card>
+            </div>
+
+            <div className="space-y-6">
+              <Card>
+                <div className="flex items-start gap-3">
+                  <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-violet-tint text-violet-ink"><Wallet className="h-5 w-5" /></span>
+                  <div>
+                    <h2 className="font-display text-base font-semibold text-ink">Payments</h2>
+                    <p className="mt-1 text-sm text-ink-subtle">{data.payments.note}</p>
                   </div>
                 </div>
-              );
-            })}
-          </div>
-          <div className="space-y-4">
-            {usage.map((u) => {
-              const Icon = iconFor(u.icon);
-              return (
-                <div key={u.label}>
-                  <div className="mb-1.5 flex items-center justify-between">
-                    <span className="flex items-center gap-2 text-sm font-medium text-ink-muted">
-                      <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-surface-inset text-ink-subtle">
-                        <Icon className="h-4 w-4" />
-                      </span>
-                      {u.label}
-                    </span>
-                    <span className="text-sm font-semibold text-ink">{u.value}</span>
+                <dl className="mt-4 space-y-2 text-sm">
+                  <div className="flex items-center justify-between"><dt className="text-ink-subtle">Provider</dt><dd className="font-semibold text-ink">{data.payments.provider}</dd></div>
+                  <div className="flex items-center justify-between"><dt className="text-ink-subtle">Member payments</dt><dd className="font-semibold text-ink">{data.payments.enabled ? "Enabled" : "Off"}</dd></div>
+                  <div className="flex items-center justify-between"><dt className="text-ink-subtle">Money held by WomSakhi</dt><dd className="font-semibold text-ink">None</dd></div>
+                  <div className="flex items-center justify-between"><dt className="text-ink-subtle">Card on file</dt><dd className="font-semibold text-ink">None</dd></div>
+                </dl>
+              </Card>
+
+              <Card>
+                <div className="flex items-start justify-between gap-3">
+                  <div className="flex items-start gap-3">
+                    <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-brand-tint text-brand-ink"><Building2 className="h-5 w-5" /></span>
+                    <div>
+                      <h2 className="font-display text-base font-semibold text-ink">Billing details</h2>
+                      <p className="mt-1 text-xs text-ink-subtle">
+                        {data.billing_info_saved
+                          ? `Saved ${new Date(data.billing_info_updated_at).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" })}`
+                          : "For any invoice issued in future"}
+                      </p>
+                    </div>
                   </div>
-                  <div className="pl-9"><ProgressBar value={u.pct} color={u.color} /></div>
+                  <button className="btn btn-sm btn-outline" onClick={openEdit}><Pencil className="h-3.5 w-3.5" /> {data.billing_info_saved ? "Edit" : "Add"}</button>
                 </div>
-              );
-            })}
-          </div>
+                {data.billing_info_saved ? (
+                  <dl className="mt-4 space-y-2 text-sm">
+                    <div><dt className="text-2xs font-semibold uppercase tracking-wide text-ink-subtle">Organisation</dt><dd className="text-ink">{data.billing_info.company}</dd></div>
+                    <div><dt className="text-2xs font-semibold uppercase tracking-wide text-ink-subtle">Billing email</dt><dd className="text-ink">{data.billing_info.email}</dd></div>
+                    {data.billing_info.gstin && <div><dt className="text-2xs font-semibold uppercase tracking-wide text-ink-subtle">GSTIN</dt><dd className="font-mono text-ink">{data.billing_info.gstin}</dd></div>}
+                    {data.billing_info.address && <div><dt className="text-2xs font-semibold uppercase tracking-wide text-ink-subtle">Address</dt><dd className="text-ink">{data.billing_info.address}</dd></div>}
+                  </dl>
+                ) : (
+                  <p className="mt-4 text-sm text-ink-subtle">Not set yet. Nothing here is required until an invoice exists.</p>
+                )}
+              </Card>
+
+              <Card>
+                <div className="flex items-start gap-3">
+                  <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-status-info-bg text-status-info-ink"><HardDrive className="h-5 w-5" /></span>
+                  <div>
+                    <h2 className="font-display text-base font-semibold text-ink">Storage</h2>
+                    <p className="mt-1 text-sm text-ink-subtle">{data.storage.location}</p>
+                    <p className="mt-2 text-sm font-semibold text-ink">{data.storage.label} in {data.storage.files} file{data.storage.files === 1 ? "" : "s"}</p>
+                    <p className="text-xs text-ink-subtle">Measured when you opened this page. There is no quota.</p>
+                  </div>
+                </div>
+              </Card>
+            </div>
+          </ResizableColumns>
+        </>
+      )}
+
+      <Modal open={editing} onClose={() => setEditing(false)} title="Billing details" description="Shown on any invoice issued in future."
+             icon={Receipt} iconTone="sky"
+             footer={<>
+               <button className="btn btn-outline" onClick={() => setEditing(false)}>Cancel</button>
+               <button className="btn btn-primary" disabled={busy} onClick={() => void save()}>{busy ? "Saving…" : "Save"}</button>
+             </>}>
+        <div className="space-y-4">
+          <Input label="Organisation name" required value={draft.company} onChange={(e) => setDraft({ ...draft, company: e.target.value })} />
+          <Input label="Billing email" required type="email" value={draft.email} onChange={(e) => setDraft({ ...draft, email: e.target.value })} />
+          <Input label="GSTIN" hint="Optional. 15 characters, as printed on your registration." value={draft.gstin} onChange={(e) => setDraft({ ...draft, gstin: e.target.value })} />
+          <Input label="Billing address" value={draft.address} onChange={(e) => setDraft({ ...draft, address: e.target.value })} />
         </div>
       </Modal>
     </div>

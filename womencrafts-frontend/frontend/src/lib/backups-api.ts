@@ -23,6 +23,9 @@ export interface BackupItem {
   created_on: string;
   created_at: string;
   downloadable: boolean;
+  /** Whether the file this row points at is on the server's disk. */
+  file_present: boolean;
+  file_note: string;
 }
 
 export interface BackupSchedule {
@@ -94,5 +97,26 @@ export async function apiSaveBackupSchedule(body: {
   keep_last: number;
 }) {
   const { data } = await apiClient.put<BackupSchedule>("/backups/schedule/current", body);
+  return data;
+}
+
+/** Counted and measured on the server: rows, files on disk, bytes, the last real backup. */
+export interface BackupSummary {
+  on_disk: number;
+  records: number;
+  missing_files: number;
+  last_backup_at: string;
+  last_backup_name: string;
+  storage_bytes: number;
+  storage_label: string;
+  location: string;
+  schedule_enabled: boolean;
+  schedule_label: string;
+  /** False: there is no scheduler process; the schedule is a stored preference. */
+  runs_automatically: boolean;
+}
+
+export async function apiBackupSummary() {
+  const { data } = await apiClient.get<BackupSummary>("/backups/summary");
   return data;
 }
