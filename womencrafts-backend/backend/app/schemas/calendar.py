@@ -84,3 +84,24 @@ class CalendarEventUpdate(BaseModel):
 class CalendarStatsResponse(BaseModel):
     total: int
     by_category: dict[str, int]
+
+
+# --- The agenda: everything dated, from every collection that has a date -------------
+class AgendaItem(BaseModel):
+    key: str            # "<source>:<id>" — unique on the grid
+    source: str         # booking | event | programme | staff
+    title: str
+    date: str           # YYYY-MM-DD
+    time: str           # as stored, may be empty
+    subtitle: str       # who / where / which service
+    status: str
+    href: str           # the admin screen that owns it
+    category: str       # staff entries keep their legend category; others use the source name
+    color: str
+
+
+class AgendaResponse(BaseModel):
+    start: str
+    end: str
+    items: list[AgendaItem]
+    counts: dict[str, int]   # per source, inside the window
