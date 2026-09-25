@@ -38,6 +38,7 @@ from app.routes.notifications import router as notifications_router
 from app.routes.engines import router as engines_router
 from app.routes.engines import internal as engines_internal
 from app.routes.dashboard import router as dashboard_router
+from app.routes.admin_notifications import router as admin_notifications_router
 from app.routes.billing import router as billing_router
 from app.routes.settings_security import router as settings_security_router
 from app.routes.settings_platform import router as settings_platform_router
@@ -303,6 +304,7 @@ app.include_router(notifications_router, prefix="/api/v1")  # personal (topbar b
 app.include_router(engines_router, prefix="/api/v1")
 app.include_router(engines_internal, prefix="/api/v1")
 app.include_router(dashboard_router, prefix="/api/v1", dependencies=_mod("dashboard"))
+app.include_router(admin_notifications_router, prefix="/api/v1", dependencies=_mod("dashboard"))
 app.include_router(billing_router, prefix="/api/v1", dependencies=_mod("settings"))
 app.include_router(settings_security_router, prefix="/api/v1", dependencies=_mod("settings"))
 app.include_router(settings_platform_router, prefix="/api/v1", dependencies=_mod("settings"))

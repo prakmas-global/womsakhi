@@ -135,3 +135,60 @@ export async function apiSetChannel(label: string, on: boolean): Promise<ApiChan
   );
   return data;
 }
+
+// --- Staff "needs attention" feed (app/routes/admin_notifications.py) --------
+//
+// The staff Notifications page no longer reads the seeded `notifications`
+// rows above (those remain only for the topbar bell). It reads this: a feed
+// computed live from the same queries each module screen runs, scoped to the
+// modules the caller may view. Nothing is stored, so there is no read state —
+// an item leaves when the work is done.
+
+export interface AttentionItem {
+  id: string;
+  title: string;
+  desc: string;
+  /** ISO — when it started waiting; null when the row has no timestamp. */
+  at: string | null;
+  href: string;
+  /** Assigned to the caller (reports and threads only). */
+  mine: boolean;
+}
+
+export interface AttentionArea {
+  key: string;
+  module: string;
+  label: string;
+  note: string;
+  count: number;
+  mine: number;
+  tone: string;
+  icon: string;
+  href: string;
+  items: AttentionItem[];
+  oldest_at: string | null;
+}
+
+export interface ModuleRef {
+  module: string;
+  label: string;
+}
+
+export interface AttentionFeed {
+  as_of: string;
+  total: number;
+  mine: number;
+  oldest_at: string | null;
+  areas: AttentionArea[];
+  /** Modules whose areas are in the feed. */
+  modules: ModuleRef[];
+  /** Modules with areas the caller may not view — named, never counted. */
+  hidden: ModuleRef[];
+}
+
+export async function apiAttentionFeed(limit = 5): Promise<AttentionFeed> {
+  const { data } = await apiClient.get<AttentionFeed>("/admin/notifications/attention", {
+    params: { limit },
+  });
+  return data;
+}
