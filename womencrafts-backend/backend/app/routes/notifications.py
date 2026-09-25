@@ -251,23 +251,12 @@ _CHANNELS = [
 
 
 async def seed() -> None:
-    """Seed the notification collections only when each is currently empty."""
-    notifications = _notifications()
-    if await notifications.count_documents({}) == 0:
-        docs = [
-            NotificationModel.create_document(
-                type=ntype, title=title, desc=desc, time=time, group=group, unread=unread
-            )
-            for (ntype, title, desc, time, group, unread) in _NOTIFICATIONS
-        ]
-        await notifications.insert_many(docs)
-        print(f"🌱 Seeded {len(docs)} notifications")
-
-    channels = _channels()
-    if await channels.count_documents({}) == 0:
-        docs = [
-            NotificationChannelModel.create_document(label=label, icon=icon, on=on)
-            for (label, icon, on) in _CHANNELS
-        ]
-        await channels.insert_many(docs)
-        print(f"🌱 Seeded {len(docs)} notification channels")
+    """
+    Nothing to seed. This used to insert twelve invented notifications ('AI
+    predicts 15 appointments are likely to be cancelled', 'Backup completed
+    (4.25 GB)') and four delivery-channel toggles whenever the collections were
+    empty. The staff bell and the notifications page now read a feed computed
+    from real queues, and no adapter sends email, push or SMS, so a channel
+    row would be a switch wired to nothing.
+    """
+    return None
