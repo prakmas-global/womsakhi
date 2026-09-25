@@ -15,6 +15,8 @@ export interface ApiContent {
   author: string;
   description: string;
   updated: string; // "May 20, 2024 10:30 AM" style label
+  updated_at: string;   // ISO
+  publish_at: string | null; // ISO, when status is Scheduled
   icon: string; // lucide icon NAME, mapped back to a component in the UI
   cover: string; // uploaded cover image URL ("" = use the placeholder tile)
 }
@@ -65,9 +67,9 @@ export interface ContentStats {
   overview: ContentOverviewSlice[];
   overview_total: string;
   categories: ContentCategoryBar[];
-  storage_used_gb: number;
-  storage_total_gb: number;
-  storage_percent: number;
+  storage_used_bytes: number;
+  storage_files: number;
+  storage_label: string; // e.g. "12.4 MB in 31 files"
 }
 
 export interface ContentActivity {
@@ -82,13 +84,13 @@ export interface ContentInput {
   title: string;
   type?: string;
   status?: string;
-  author?: string;
   slug?: string;
   description?: string;
-  cover?: string; // URL from POST /uploads
+  cover?: string;
+  publish_at?: string | null; // ISO; required when status is Scheduled
 }
 
-export type ContentBulkActionName = "publish" | "draft" | "trash";
+export type ContentBulkActionName = "publish" | "draft" | "trash" | "restore" | "delete";
 
 export interface ContentBulkResult {
   action: ContentBulkActionName;
@@ -126,8 +128,8 @@ export async function apiUpdateContent(id: string, body: Partial<ContentInput>):
   return data;
 }
 
-export async function apiSetContentStatus(id: string, status: string): Promise<ApiContent> {
-  const { data } = await apiClient.patch<ApiContent>(`/content/${id}/status`, { status });
+export async function apiSetContentStatus(id: string, status: string, publish_at?: string | null): Promise<ApiContent> {
+  const { data } = await apiClient.patch<ApiContent>(`/content/${id}/status`, { status, publish_at: publish_at ?? null });
   return data;
 }
 
@@ -137,5 +139,33 @@ export async function apiDeleteContent(id: string): Promise<void> {
 
 export async function apiBulkContent(ids: string[], action: ContentBulkActionName): Promise<ContentBulkResult> {
   const { data } = await apiClient.post<ContentBulkResult>("/content/bulk", { ids, action });
+  return data;
+}
+
+/** Back from Trash, as a draft. */
+export async function apiRestoreContent(id: string): Promise<ApiContent> {
+  const { data } = await apiClient.post<ApiContent>(`/content/${id}/restore`);
+  return data;
+}
+
+/** Only for items already in Trash. */
+export async function apiDeleteContentPermanently(id: string): Promise<void> {
+  await apiClient.delete(`/content/${id}/permanent`);
+}
+
+export interface UploadedFile {
+  id: string;
+  original_name: string;
+  url: string;
+  content_type: string;
+  size: number;
+  size_label: string;
+  kind: string;
+  uploaded_by_name: string;
+  uploaded: string;
+}
+
+export async function apiListUploads(params: { kind?: string; q?: string; page?: number; page_size?: number } = {}): Promise<{ items: UploadedFile[]; total: number }> {
+  const { data } = await apiClient.get<{ items: UploadedFile[]; total: number }>("/uploads", { params });
   return data;
 }

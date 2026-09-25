@@ -927,7 +927,13 @@ async def library(
     """
     from app.models.content import ContentItemModel
 
-    query: dict = {"status": "Published"}
+    # Published, or scheduled for a time that has now passed. There is no
+    # scheduler flipping the flag, so the read applies the date itself; the
+    # admin screen does the same and writes the flip back when it looks.
+    query: dict = {"$or": [
+        {"status": "Published"},
+        {"status": "Scheduled", "publish_at": {"$lte": datetime.now(timezone.utc)}},
+    ]}
     if type and type.lower() not in ("all", "all types"):
         query["type"] = type
 
