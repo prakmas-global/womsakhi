@@ -66,6 +66,8 @@ const NAV: NavItem[] = [
     children: [
       { label: "All Users", href: "/dashboard/users" },
       { label: "Verification", href: "/dashboard/users/verification" },
+      // Who can open this dashboard, as opposed to who uses the member app.
+      { label: "Staff", href: "/dashboard/staff" },
       { label: "User Roles", href: "/dashboard/users/roles" },
       { label: "User Segments", href: "/dashboard/users/segments" },
     ],

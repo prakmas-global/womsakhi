@@ -55,6 +55,7 @@ from app.routes.week import router as week_router
 from app.routes.incase import router as incase_router
 from app.routes.standing import router as standing_router
 from app.routes.goals import router as goals_router
+from app.routes.staff import router as staff_router
 from app.routes.haq import router as haq_router
 from app.routes.school import router as school_router
 from app.routes.kitchen import router as kitchen_router
@@ -66,16 +67,6 @@ from app.routes.payments import router as payments_router
 from app.routes.community import router as community_router
 from app.routes.growth import router as growth_router
 from app.routes.exchange import router as exchange_router
-from app.routes.money import router as money_router
-from app.routes.week import router as week_router
-from app.routes.incase import router as incase_router
-from app.routes.standing import router as standing_router
-from app.routes.goals import router as goals_router
-from app.routes.haq import router as haq_router
-from app.routes.school import router as school_router
-from app.routes.kitchen import router as kitchen_router
-from app.routes.swap import router as swap_router
-from app.routes.together import router as together_router
 from app.routes.group_buy import router as group_buy_router
 from app.routes.payout import router as payout_router
 from app.routes.shop import router as shop_router
@@ -283,6 +274,7 @@ app.include_router(week_router, prefix="/api/v1")
 app.include_router(incase_router, prefix="/api/v1")
 app.include_router(standing_router, prefix="/api/v1")
 app.include_router(goals_router, prefix="/api/v1")
+app.include_router(staff_router, prefix="/api/v1")
 app.include_router(haq_router, prefix="/api/v1")
 app.include_router(school_router, prefix="/api/v1")
 app.include_router(kitchen_router, prefix="/api/v1")
@@ -340,16 +332,6 @@ app.include_router(shop_router, prefix="/api/v1")
 app.include_router(market_router, prefix="/api/v1")
 app.include_router(exchange_router, prefix="/api/v1")
 app.include_router(payout_router, prefix="/api/v1")
-app.include_router(money_router, prefix="/api/v1")
-app.include_router(week_router, prefix="/api/v1")
-app.include_router(incase_router, prefix="/api/v1")
-app.include_router(standing_router, prefix="/api/v1")
-app.include_router(goals_router, prefix="/api/v1")
-app.include_router(haq_router, prefix="/api/v1")
-app.include_router(school_router, prefix="/api/v1")
-app.include_router(kitchen_router, prefix="/api/v1")
-app.include_router(swap_router, prefix="/api/v1")
-app.include_router(together_router, prefix="/api/v1")
 app.include_router(skills_router, prefix="/api/v1")
 app.include_router(search_router, prefix="/api/v1")
 app.include_router(saved_router, prefix="/api/v1")

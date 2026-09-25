@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, type RefObject } from "react";
+import { useEffect, useRef, type RefObject } from "react";
 
 /**
  * Everything a dialog has to do besides look right.
@@ -26,12 +26,33 @@ import { useEffect, type RefObject } from "react";
  *
  * **Scroll.** The page behind is locked, and its previous value restored — not
  * set to `""`, which would discard a lock some other component was holding.
+ *
+ * ── Why `onClose` is held in a ref ──────────────────────────────────────────
+ * It used to be a dependency of the effect. Almost every caller passes an
+ * inline arrow — `onClose={() => setOpen(false)}` — which is a new function on
+ * every render, so the effect tore down and set up again on every parent
+ * render. Its cleanup returns focus to whatever opened the dialog, and its
+ * setup focuses the first control.
+ *
+ * The result: typing in a dialog whose parent re-renders per keystroke moved
+ * focus to the button that opened it after the FIRST character, and every
+ * character after that went nowhere. A form asking for a colleague's name
+ * accepted one letter. Holding the callback in a ref keeps the effect tied to
+ * `open` alone, which is the only thing that should start or stop it.
  */
 export function useDialogBehaviour(
   open: boolean,
   panelRef: RefObject<HTMLElement | null>,
   onClose: () => void,
 ) {
+  // Always the latest callback, without being a dependency. See the note
+  // above. Assigned in an effect rather than during render, because a ref
+  // written while rendering is not safe under concurrent rendering — React
+  // may render a tree it then throws away, and the ref would keep the
+  // discarded render's callback.
+  const closeRef = useRef(onClose);
+  useEffect(() => { closeRef.current = onClose; }, [onClose]);
+
   useEffect(() => {
     if (!open) return;
 
@@ -43,7 +64,7 @@ export function useDialogBehaviour(
       ].filter((el) => el.offsetParent !== null || el === document.activeElement);
 
     const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") return onClose();
+      if (e.key === "Escape") return closeRef.current();
       if (e.key !== "Tab") return;
       const list = focusable();
       if (!list.length) return;
@@ -75,5 +96,6 @@ export function useDialogBehaviour(
       document.body.style.overflow = prev;
       returnTo?.focus?.();
     };
-  }, [open, panelRef, onClose]);
+    // `onClose` deliberately absent — it is read through `closeRef`.
+  }, [open, panelRef]);
 }

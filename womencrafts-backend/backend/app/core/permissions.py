@@ -142,7 +142,25 @@ def summarise(permissions: list[str]) -> list[dict]:
 
 
 async def user_permissions(user: dict) -> list[str]:
-    """What this account may do. Super Admin gets the lot."""
+    """
+    What this account may do: her role, adjusted for her.
+
+    The role is the starting point, not the last word. Two people doing the
+    same job often need different access — one Supervisor also handles safety
+    reports, another must never see them — and the alternative to per-person
+    adjustment is inventing a new role for every exception until nobody can
+    say what any of them mean.
+
+    So a staff account may carry `extra_permissions` (granted to her
+    specifically) and `denied_permissions` (withheld from her specifically).
+    Denials are applied last and win, because the reason to withhold something
+    from one person is usually a stronger reason than the reason her role has
+    it.
+
+    Super Admin still bypasses everything — it is the escape hatch when a
+    permission set is misconfigured, and a Super Admin who could be denied
+    access is not an escape hatch.
+    """
     from app.db.mongodb import get_database
     from app.models.role import RoleModel
 
@@ -153,9 +171,16 @@ async def user_permissions(user: dict) -> list[str]:
     role = await get_database()[RoleModel.collection_name].find_one({"name": name})
     stored = (role or {}).get("permissions")
     if isinstance(stored, list) and stored:
-        return normalise(stored)
-    # No explicit set yet — fall back to what its module access implies.
-    return permissions_for_modules(await current_user_modules(user))
+        base = set(normalise(stored))
+    else:
+        # No explicit set yet — fall back to what its module access implies.
+        base = set(permissions_for_modules(await current_user_modules(user)))
+
+    extra = {p for p in (user.get("extra_permissions") or []) if p in set(all_permissions())}
+    denied = set(user.get("denied_permissions") or [])
+    # `normalise` re-adds the implied `view` for anything granted, so a person
+    # given `safety.approve` can actually open Safety.
+    return sorted(set(normalise(sorted(base | extra))) - denied)
 
 
 async def has_permission(user: dict, permission: str) -> bool:

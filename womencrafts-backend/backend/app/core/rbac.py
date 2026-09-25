@@ -61,8 +61,19 @@ DEFAULT_ROLE_MODULES = {
 
 
 def role_name(user: dict) -> str:
-    """The account's role (defaults to Super Admin for legacy/admin accounts)."""
-    return user.get("role") or SUPER_ADMIN
+    """
+    The account's role.
+
+    An account with no role gets `Viewer`, not Super Admin.
+
+    This used to default to Super Admin "for legacy/admin accounts", which
+    meant any row that lost its `role` field — a bad migration, a hand-edited
+    document, a bug in a write path — silently became the most privileged
+    account on the platform. The blast radius of that default is the whole
+    system; the blast radius of defaulting to the narrowest role is one
+    confused colleague asking why she cannot see anything.
+    """
+    return user.get("role") or "Viewer"
 
 
 def audience_for_role(name: str) -> str:
@@ -129,7 +140,37 @@ async def require_member(user: dict = Depends(get_current_user)) -> dict:
 
 
 async def current_user_modules(user: dict) -> list[str]:
-    return await modules_for_role(role_name(user))
+    """
+    Which sections this account can open — her role, adjusted for her.
+
+    Deliberately does NOT call `user_permissions`: that function falls back to
+    this one when a role has no explicit permission set, and the two calling
+    each other would recurse forever. So the per-person adjustment is applied
+    here directly, from the same two fields.
+
+    A module appears if her role grants it or a personal grant implies it, and
+    disappears only when every action she would have had in it is denied —
+    a sidebar entry that opens a page where nothing is permitted is worse
+    than no entry.
+    """
+    name = role_name(user)
+    mods = set(await modules_for_role(name))
+    if name == SUPER_ADMIN:
+        return sorted(mods)
+
+    extra = user.get("extra_permissions") or []
+    denied = set(user.get("denied_permissions") or [])
+    mods |= {p.split(".", 1)[0] for p in extra}
+
+    from app.core.permissions import CATALOGUE  # local: avoids a cycle
+    for mod in list(mods):
+        if mod == "dashboard":
+            continue
+        actions = CATALOGUE.get(mod, ("", []))[1]
+        if actions and all(f"{mod}.{a}" in denied for a in actions):
+            mods.discard(mod)
+
+    return sorted(m for m in mods if m in ALL_MODULES)
 
 
 async def require_super_admin(user: dict = Depends(get_current_user)) -> dict:
@@ -189,10 +230,13 @@ async def ensure_rbac() -> None:
             mods = DEFAULT_ROLE_MODULES.get(role.get("name", ""), ["dashboard"])
             await roles.update_one({"_id": role["_id"]}, {"$set": {"modules": mods}})
 
+    # A roleless account is backfilled to the NARROWEST staff role, never the
+    # widest. This previously set them all to Super Admin, which turned a
+    # missing field into full control of the platform.
     users = db["users"]
     await users.update_many(
         {"$or": [{"role": {"$exists": False}}, {"role": None}, {"role": ""}]},
-        {"$set": {"role": SUPER_ADMIN}},
+        {"$set": {"role": "Viewer"}},
     )
 
     # Granular permissions backfill. Roles created before they existed get a
