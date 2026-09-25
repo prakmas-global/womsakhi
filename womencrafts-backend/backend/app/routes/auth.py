@@ -33,6 +33,7 @@ from app.core.security import (
     verify_password,
     hash_password_async,
     verify_password_async,
+    token_version_in,
 )
 from app.core.session import COOKIE_NAME, clear_session_cookie, set_session_cookie
 from app.routes.verification import send_verification_email
@@ -251,6 +252,13 @@ async def refresh(request: Request, response: Response):
     if not user or not user.get("is_active", True):
         clear_session_cookie(response)
         raise HTTPException(status.HTTP_401_UNAUTHORIZED, "This account is no longer active")
+    # A session that was ended ("sign out everywhere", a password change) must
+    # not be able to renew itself into a fresh one. `get_current_user` refuses
+    # a stale generation on every request; this path used to mint a new token
+    # without asking, so a browser that kept refreshing outlived the revocation.
+    if TOKEN_VERSION_CLAIM in payload and token_version_in(payload) < token_version_of(user):
+        clear_session_cookie(response)
+        raise HTTPException(status.HTTP_401_UNAUTHORIZED, "This session was ended. Please sign in again.")
 
     # The same helper sign-in uses, so a refreshed token carries every claim
     # the original did — including the version claim that revokes sessions.
