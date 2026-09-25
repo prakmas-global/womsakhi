@@ -20,9 +20,15 @@ from datetime import datetime, timezone
 from typing import Optional
 
 
-# India-wide numbers, correct at the time of writing. Kept in code rather than
-# the database on purpose: this list must work even if the database is down, and
-# it must not be editable by anyone who gets into the admin panel.
+# India-wide numbers, correct at the time of writing.
+#
+# This list is the FALLBACK, not the only copy. Staff holding `safety.edit` can
+# curate the live list in the `helplines` collection (see HelplineModel below
+# and admin_safety.py); every change there is audited. The public endpoint
+# serves the curated list when one exists and comes back to this constant when
+# the collection is empty or unreachable — so the numbers still answer when
+# nothing else does, and removing every curated row can never leave a woman
+# with no number to call.
 HELPLINES = [
     {
         "name": "Women's Helpline (All India)",
@@ -219,4 +225,60 @@ class SafetyReportModel:
             "anonymous": bool(doc.get("anonymous", False)),
             "status": doc.get("status", "open"),
             "filed_on": created.strftime("%b %d, %Y") if isinstance(created, datetime) else "",
+        }
+
+
+class HelplineModel:
+    """
+    A curated emergency number.
+
+    Rows here REPLACE the code list for everyone (member app and the public
+    endpoint) as soon as at least one active row exists. That is why adding the
+    first row copies the built-in list in first: a list of one number is not
+    an improvement on six.
+    """
+
+    collection_name = "helplines"
+
+    @staticmethod
+    def create_document(
+        name: str,
+        number: str,
+        desc: str = "",
+        urgent: bool = False,
+        order: int = 0,
+        created_by: str = "",
+    ) -> dict:
+        now = datetime.now(timezone.utc)
+        return {
+            "name": name,
+            "number": number,
+            "desc": desc,
+            "urgent": bool(urgent),
+            "order": int(order),
+            "active": True,
+            "created_by": created_by,
+            "created_at": now,
+            "updated_at": now,
+        }
+
+    @staticmethod
+    def to_public(doc: dict) -> dict:
+        """The shape the member app already reads — same keys as HELPLINES."""
+        return {
+            "name": doc.get("name", ""),
+            "number": doc.get("number", ""),
+            "desc": doc.get("desc", ""),
+            "urgent": bool(doc.get("urgent", False)),
+        }
+
+    @staticmethod
+    def to_response(doc: dict) -> dict:
+        updated = doc.get("updated_at")
+        return {
+            "id": str(doc["_id"]),
+            **HelplineModel.to_public(doc),
+            "order": int(doc.get("order", 0)),
+            "builtin": False,
+            "updated_at": updated.isoformat() if isinstance(updated, datetime) else "",
         }

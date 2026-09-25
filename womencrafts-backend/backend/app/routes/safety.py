@@ -21,6 +21,7 @@ Two things are different here from every other member route:
 """
 
 import asyncio
+import time
 from datetime import datetime, timezone
 
 from fastapi import APIRouter, Depends, HTTPException, status
@@ -31,6 +32,7 @@ from app.db.mongodb import get_database
 from app.models.conversation import notify
 from app.models.safety import (
     HELPLINES,
+    HelplineModel,
     SafetyAlertModel,
     SafetyReportModel,
     TrustedContactModel,
@@ -64,12 +66,52 @@ def _reports():
 
 # --- helplines (deliberately public) -----------------------------------------
 
+#: The last good curated list and when it was read. Thirty seconds is short
+#: enough that a staff edit shows up promptly, long enough that this endpoint
+#: costs one query a minute rather than one per call.
+_HELPLINE_CACHE: dict = {"at": 0.0, "rows": None}
+_HELPLINE_TTL_SECONDS = 30.0
+
+
+def invalidate_helplines() -> None:
+    """Called by the staff side after a write, so the next read is fresh."""
+    _HELPLINE_CACHE["at"] = 0.0
+
+
+async def effective_helplines() -> list[dict]:
+    """
+    The numbers that are live right now.
+
+    The curated `helplines` collection wins when it holds at least one active
+    row; otherwise the constant in code answers. On ANY failure reaching the
+    database the last good list is served, and if there has never been one,
+    the constant. The fallback is the point: this must work when nothing else
+    does, and a curated list that could be emptied or a database that could be
+    down must never stand between a woman and 181.
+    """
+    now = time.monotonic()
+    cached = _HELPLINE_CACHE["rows"]
+    if cached is not None and now - _HELPLINE_CACHE["at"] < _HELPLINE_TTL_SECONDS:
+        return cached
+    try:
+        rows = await get_database()[HelplineModel.collection_name].find(
+            {"active": {"$ne": False}}
+        ).sort([("order", 1), ("created_at", 1)]).to_list(50)
+    except Exception:  # noqa: BLE001 — the last good list, then the constant
+        return cached if cached is not None else HELPLINES
+    result = [HelplineModel.to_public(r) for r in rows] if rows else HELPLINES
+    _HELPLINE_CACHE["rows"] = result
+    _HELPLINE_CACHE["at"] = now
+    return result
+
+
 @router.get("/helplines", response_model=list[Helpline], summary="Emergency numbers")
 async def helplines():
     """
-    No authentication, no database. This has to work when nothing else does.
+    No authentication. Reads the curated list if staff have made one, and
+    falls back to the constant in code if that read fails or returns nothing.
     """
-    return HELPLINES
+    return await effective_helplines()
 
 
 # --- the safety screen, in one request ---------------------------------------
@@ -93,7 +135,7 @@ async def safety_centre(me: dict = Depends(require_active_member)):
     )
 
     return {
-        "helplines": HELPLINES,
+        "helplines": await effective_helplines(),
         "contacts": [TrustedContactModel.to_response(c) for c in contacts],
         "open_alert": SafetyAlertModel.to_response(open_alert) if open_alert else None,
         "reports": [SafetyReportModel.to_response(r) for r in reports],
