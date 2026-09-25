@@ -33,6 +33,7 @@ from app.models.community import (
     PostReplyModel,
     StoryModel,
 )
+from app.models.community_moderation import CircleModerationModel
 from app.schemas.community import (
     CircleCreate,
     CircleResponse,
@@ -89,6 +90,24 @@ async def _require_membership(circle: dict, user_id: str) -> None:
     )
     if not joined:
         raise HTTPException(status.HTTP_403_FORBIDDEN, "Join this circle to see what's inside")
+
+
+async def _refuse_if_muted(circle_id: str, user_id: str) -> None:
+    """
+    A staff mute is per circle and per member, and it lives in its own
+    collection so that leaving and rejoining does not clear it. Checked on
+    every write into a circle; reads are untouched — she can still follow
+    along, she just cannot speak until the date she was given.
+    """
+    mute = await get_database()[CircleModerationModel.collection_name].find_one(
+        CircleModerationModel.active_mute_query(circle_id, user_id)
+    )
+    if mute:
+        until = CircleModerationModel.until_label(mute)
+        raise HTTPException(
+            status.HTTP_403_FORBIDDEN,
+            f"You can't post in this circle until {until}. " + (mute.get("reason") or ""),
+        )
 
 
 # --- circles -----------------------------------------------------------------
@@ -594,6 +613,7 @@ async def create_post(
     joined = await _circle_members().find_one({"user_id": user_id, "circle_id": circle_id})
     if not joined:
         raise HTTPException(status.HTTP_403_FORBIDDEN, "Join this circle before posting")
+    await _refuse_if_muted(circle_id, user_id)
 
     doc = PostModel.create_document(
         circle_id=circle_id,
@@ -691,6 +711,7 @@ async def create_reply(post_id: str, body: ReplyCreate, me: dict = Depends(requi
     )
     if not joined:
         raise HTTPException(status.HTTP_403_FORBIDDEN, "Join this circle before replying")
+    await _refuse_if_muted(post["circle_id"], user_id)
 
     doc = PostReplyModel.create_document(
         post_id=post_id,
