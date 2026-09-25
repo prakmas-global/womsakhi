@@ -11,6 +11,13 @@ That matters more here than on most products. Staff can read women's ID
 documents, suspend their accounts, see their safety reports and move their
 money. An action nobody can attribute is an action nobody can question.
 
+── One schema, the one that was already here ──────────────────────────────
+`ActivityLogModel` already defined this collection's shape, and the settings
+screen already queries it by `user_id` and `category`. Writing a parallel
+shape — `actor_id`, `module` — would have produced rows the existing screen
+silently filters out: an audit trail that records everything and shows
+nothing. So this goes through that model.
+
 ── What is recorded, and what is not ──────────────────────────────────────
 Every *mutating* staff action: who, what, the target, a short human detail,
 and the request's origin. Reads are not recorded — logging every list view
@@ -35,15 +42,18 @@ from datetime import datetime, timezone
 from fastapi import Request
 
 from app.db.mongodb import get_database
+from app.models.staff import ActivityLogModel
 
 logger = logging.getLogger(__name__)
 
-COLLECTION = "activity_log"
-
-#: How long entries are kept. Long enough for an investigation that starts
-#: months after the fact, and a fixed horizon so the collection cannot grow
-#: without bound. Enforced by a TTL index in `db/indexes.py`.
-RETENTION_DAYS = 730
+#: Dotted action prefix -> the bucket the breakdown chart groups by. The
+#: model's `CATEGORIES` is the vocabulary; this maps our verbs onto it.
+_CATEGORY = {
+    "staff": "Users", "member": "Users", "user": "Users", "role": "Users",
+    "appointment": "Appointments", "program": "Programs",
+    "content": "Content", "community": "Community", "growth": "Growth",
+    "safety": "Safety", "report": "Reports",
+}
 
 
 async def record(
@@ -62,21 +72,18 @@ async def record(
     on, so an investigator can pull every action against one account.
     """
     try:
-        await get_database()[COLLECTION].insert_one({
-            "actor_id": str(actor.get("_id", "")),
-            "actor_name": actor.get("full_name", ""),
-            "actor_email": actor.get("email", ""),
-            "actor_role": actor.get("role", ""),
-            "action": action,
-            "module": action.split(".", 1)[0],
-            "target": target,
-            "detail": detail[:400],
-            # Useful when an account is shared or compromised; absent when the
+        doc = ActivityLogModel.create_document(
+            user_id=str(actor.get("_id", "")),
+            user_name=actor.get("full_name", "") or actor.get("email", ""),
+            action=action,
+            category=_CATEGORY.get(action.split(".", 1)[0], "Settings"),
+            target=target,
+            detail=detail[:400],
+            # Useful when an account is shared or compromised; empty when the
             # call did not pass a request through.
-            "ip": _client_ip(request),
-            "user_agent": (request.headers.get("user-agent", "")[:200] if request else ""),
-            "created_at": datetime.now(timezone.utc),
-        })
+            ip=_client_ip(request),
+        )
+        await get_database()[ActivityLogModel.collection_name].insert_one(doc)
     except Exception:
         # Deliberately swallowed — see the module note. Logged so it is not
         # invisible if the collection is genuinely broken.
