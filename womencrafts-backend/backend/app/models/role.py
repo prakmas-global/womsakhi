@@ -51,5 +51,6 @@ class RoleModel:
             "status": doc.get("status", "Active"),
             "icon": doc.get("icon", "ShieldCheck"),
             "modules": doc.get("modules", []),
-            "created": doc.get("created", ""),
+            # The real insertion time wins over the seeded label ("Jan 15, 2024").
+            "created": (doc["created_at"].strftime("%b %d, %Y") if isinstance(doc.get("created_at"), datetime) else doc.get("created", "")),
         }
