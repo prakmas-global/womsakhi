@@ -1,6 +1,7 @@
 "use client";
 
 import { useRouter, useSearchParams } from "next/navigation";
+import { useT } from "@/i18n";
 import { Suspense, useEffect, useState } from "react";
 
 import * as Icons from "@/components/ux/icons";
@@ -20,6 +21,7 @@ import { apiCycleLog, type Mood } from "@/lib/cycle-api";
  * forgot — and the question changes its words to match the day she picked.
  */
 function LogScreen() {
+  const tr = useT();
   const router = useRouter();
   const params = useSearchParams();
   const { state, data, act, busy, error } = useCycle();
@@ -61,8 +63,8 @@ function LogScreen() {
   return (
     <HomeShell immersive bare>
       <Column>
-        <CycleHeader title="Track Your Cycle" />
-        <DeskTitle title="Track Your Cycle" sub="One tap a day keeps your calendar right." />
+        <CycleHeader title={tr("healthCycleLog.trackYourCycle")} />
+        <DeskTitle title={tr("healthCycleLog.trackYourCycle")} sub={tr("healthCycleLog.oneTapADayKeepsYour")} />
 
         {today && <WeekStrip today={today} selected={day} onPick={setDay} />}
 
@@ -103,7 +105,7 @@ function LogScreen() {
 
         {isToday && (
           <div className="mt-9">
-            <h3 className="mb-3 text-[17px] font-semibold" style={{ color: "var(--ux-ink)" }}>How are you feeling today?</h3>
+            <h3 className="mb-3 text-[17px] font-semibold" style={{ color: "var(--ux-ink)" }}>{tr("healthCycle.howAreYouFeelingToday")}</h3>
             <MoodRow value={mood} onPick={setMood} />
           </div>
         )}

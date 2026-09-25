@@ -75,6 +75,9 @@ class MemberNotificationModel:
     TYPE_MONEY = "money"
     TYPE_CIRCLE = "circle"
     TYPE_HEALTH = "health"
+    # The reminder engine's own. Without it a reminder was filed as
+    # "account" and arrived wearing a security shield.
+    TYPE_REMINDER = "reminder"
 
     # Every type the seeds and the app actually produce. Three of them —
     # safety, mentorship, event — were being written but not mapped, so they
@@ -91,6 +94,10 @@ class MemberNotificationModel:
         TYPE_MONEY: "Wallet",
         TYPE_CIRCLE: "UsersRound",
         TYPE_HEALTH: "HeartPulse",
+        # "Bell", not "BellRing": the app renders from a fixed icon set and a
+        # name it does not have draws nothing at all — a notification row with
+        # a hole where its picture should be.
+        TYPE_REMINDER: "Bell",
     }
 
     @staticmethod
@@ -125,6 +132,12 @@ class MemberNotificationModel:
             "unread": bool(doc.get("unread", True)),
             "when": MemberNotificationModel.relative(created),
             "created_at": created.isoformat() if isinstance(created, datetime) else "",
+            # Only rows the reminder engine wrote carry these, and the empty
+            # string is the signal: a row with an occurrence id is one she can
+            # answer from the inbox — Done, Later, Skip today, Stop — without
+            # opening anything. Every other row has nothing to answer.
+            "occurrence_id": doc.get("occurrence_id", ""),
+            "intent_id": doc.get("intent_id", ""),
         }
 
     @staticmethod

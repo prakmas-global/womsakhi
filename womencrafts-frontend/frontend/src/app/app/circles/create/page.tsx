@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useState } from "react";
+import { useT } from "@/i18n";
 import { useRouter } from "next/navigation";
 
 import * as Icons from "@/components/ux/icons";
@@ -10,10 +11,11 @@ import { Area, Choice, Label, Select, Steps, Text, Toggle } from "@/components/u
 import { apiCreateCircle } from "@/lib/growth-api";
 import { apiUploadImage } from "@/lib/uploads-api";
 import { settled, useAttemptKey } from "@/lib/idempotency";
-import { PRIVACY, SUGGESTED_TAGS, TOPICS } from "@/components/ux/circle/data";
+import { PRIVACY as RAW_PRIVACY, SUGGESTED_TAGS as RAW_SUGGESTED_TAGS, TOPICS as RAW_TOPICS } from "@/components/ux/circle/data";
 import {
   Block, CircleTips, CoverPicker, CreateHero, LivePreview, PartlySaved, SafePromise, TagField,
 } from "./create-views";
+import { useTranslated } from "@/i18n/data";
 
 /**
  * Start a circle.
@@ -50,6 +52,10 @@ const WHO_POSTS = [
 ];
 
 export default function CreateCirclePage() {
+  const SUGGESTED_TAGS = useTranslated(RAW_SUGGESTED_TAGS);
+  const PRIVACY = useTranslated(RAW_PRIVACY);
+  const TOPICS = useTranslated(RAW_TOPICS);
+  const tr = useT();
   const router = useRouter();
   const attempt = useAttemptKey("create-circle");
 
@@ -155,11 +161,11 @@ export default function CreateCirclePage() {
 
         {/* ── 1 · Circle details ──────────────────────────────────────────── */}
         {at === 1 && (
-          <Block icon="UsersRound" title="Basic information"
-                 sub="What it is called, who it is for, and what it looks like.">
+          <Block icon="UsersRound" title={tr("circlesCreate.basicInformation")}
+                 sub={tr("circlesCreate.whatItIsCalledWhoIt")}>
             <div className="mb-5">
-              <Label need>What is this circle called</Label>
-              <Text value={name} onChange={setName} max={50} label="Circle name"
+              <Label need>{tr("circlesCreate.whatIsThisCircleCalled")}</Label>
+              <Text value={name} onChange={setName} max={50} label={tr("circlesCreate.circleName")}
                     placeholder="e.g. Handmade Business Hub" />
               <span className="mt-1 block text-end text-[12px] lg:text-2xs" style={{ color: v("--ux-faint") }}>
                 {name.length}/50
@@ -167,20 +173,20 @@ export default function CreateCirclePage() {
             </div>
 
             <div className="mb-5">
-              <Label need>What happens in it</Label>
-              <Area value={desc} onChange={setDesc} max={200} rows={3} label="Short description"
-                    placeholder="Briefly: who it is for, and what a member can expect." />
+              <Label need>{tr("circlesCreate.whatHappensInIt")}</Label>
+              <Area value={desc} onChange={setDesc} max={200} rows={3} label={tr("circlesCreate.shortDescription")}
+                    placeholder={tr("circlesCreate.brieflyWhoItIsForAnd")} />
             </div>
 
             <div className="mb-5 grid gap-4 sm:grid-cols-2">
               <div>
-                <Label need>What it is about</Label>
+                <Label need>{tr("circlesCreate.whatItIsAbout")}</Label>
                 <Select value={category} onChange={setCategory} label="Category"
-                        placeholder="Pick a topic"
+                        placeholder={tr("circlesCreate.pickATopic")}
                         options={TOPICS.map((t) => t.label)} />
               </div>
               <div>
-                <Label need>Who can come in</Label>
+                <Label need>{tr("circlesCreate.whoCanComeIn")}</Label>
                 <Select value={privacy} onChange={setPrivacy} label="Privacy"
                         options={PRIVACY.map((p) => ({ value: p.id, label: p.label }))} />
                 <span className="mt-1.5 block text-[12px] lg:text-2xs leading-snug" style={{ color: v("--ux-muted") }}>
@@ -190,17 +196,17 @@ export default function CreateCirclePage() {
             </div>
 
             <div className="mb-5">
-              <Label>Cover image</Label>
+              <Label>{tr("circlesCreate.coverImage")}</Label>
               <CoverPicker cover={cover} onPick={setCover} onUpload={(f) => upload(f, setCover)} />
             </div>
 
             <div className="mb-5 grid gap-5 sm:grid-cols-[auto_minmax(0,1fr)]">
               <div>
-                <Label>Circle picture</Label>
+                <Label>{tr("circlesCreate.circlePicture")}</Label>
                 <div className="flex items-center gap-3">
                   <label className="ux-press ux-sq grid h-[64px] w-[64px] cursor-pointer place-items-center overflow-hidden rounded-full"
                          style={{ background: v("--ux-brand-tint"), border: `1px dashed ${v("--ux-brand")}` }}>
-                    <input type="file" accept="image/*" className="sr-only" aria-label="Upload a circle picture"
+                    <input type="file" accept="image/*" className="sr-only" aria-label={tr("circlesCreate.uploadACirclePicture")}
                            onChange={(e) => { const f = e.target.files?.[0]; if (f) upload(f, setIcon); }} />
                     {icon
                       // eslint-disable-next-line @next/next/no-img-element
@@ -208,7 +214,7 @@ export default function CreateCirclePage() {
                       : <Icons.Camera className="h-[20px] w-[20px]" style={{ color: v("--ux-brand") }} />}
                   </label>
                   <span className="text-[12px] lg:text-2xs leading-snug" style={{ color: v("--ux-muted") }}>
-                    A square picture,<br />at least 300 × 300.
+                    {tr("circlesCreate.aSquarePicture")}<br />at least 300 × 300.
                   </span>
                 </div>
               </div>
@@ -231,10 +237,10 @@ export default function CreateCirclePage() {
 
         {/* ── 2 · Settings ────────────────────────────────────────────────── */}
         {at === 2 && (
-          <Block icon="Settings" title="How it is run"
-                 sub="You can change any of this later, from inside the circle.">
+          <Block icon="Settings" title={tr("circlesCreate.howItIsRun")}
+                 sub={tr("circlesCreate.youCanChangeAnyOfThis")}>
             <div className="mb-5">
-              <Label>Who can start a discussion</Label>
+              <Label>{tr("circlesCreate.whoCanStartADiscussion")}</Label>
               <div className="mt-1 flex flex-col gap-2.5 sm:flex-row">
                 {WHO_POSTS.map((w) => (
                   <Choice key={w.id} icon={w.icon} title={w.title} sub={w.sub}
@@ -244,18 +250,18 @@ export default function CreateCirclePage() {
             </div>
 
             <div className="mb-5">
-              <Label hint="(optional)">The one rule you want everyone to read</Label>
-              <Area value={guidelines} onChange={setGuidelines} max={300} rows={3} label="Circle guidelines"
+              <Label hint="(optional)">{tr("circlesCreate.theOneRuleYouWantEveryone")}</Label>
+              <Area value={guidelines} onChange={setGuidelines} max={300} rows={3} label={tr("circlesCreate.circleGuidelines")}
                     placeholder="e.g. Ask anything. Nobody here is an expert at everything, and no question is too small." />
             </div>
 
             <div className="mb-5 space-y-4">
               <Toggle on={reviewFirst} onChange={setReviewFirst}
-                      label="Read posts before they appear"
-                      sub="Slower, but nothing unkind is ever seen by the circle. Good for a circle about money or health." />
+                      label={tr("circlesCreate.readPostsBeforeTheyAppear")}
+                      sub={tr("circlesCreate.slowerButNothingUnkindIsEver")} />
               <Toggle on={tellMe} onChange={setTellMe}
-                      label="Tell me when somebody posts"
-                      sub="A notification, not an email." />
+                      label={tr("circlesCreate.tellMeWhenSomebodyPosts")}
+                      sub={tr("circlesCreate.aNotificationNotAnEmail")} />
             </div>
 
             <PartlySaved notYet="who may post, your one rule, and the two switches above" />
@@ -267,13 +273,13 @@ export default function CreateCirclePage() {
 
         {/* ── 3 · Invite members ──────────────────────────────────────────── */}
         {at === 3 && (
-          <Block icon="UserPlus" title="Who should be in it"
-                 sub="A circle with three women in it feels alive. One with none feels closed.">
+          <Block icon="UserPlus" title={tr("circlesCreate.whoShouldBeInIt")}
+                 sub={tr("circlesCreate.aCircleWithThreeWomenIn")}>
             <div className="mb-4">
               <Label hint="(optional)">Invite by phone number or name</Label>
               <div className="flex flex-wrap items-center gap-2">
                 <span className="min-w-[220px] flex-1">
-                  <Text value={inviteDraft} onChange={setInviteDraft} label="Invite somebody"
+                  <Text value={inviteDraft} onChange={setInviteDraft} label={tr("circlesCreate.inviteSomebody")}
                         placeholder="Meera, or 98765 43210" />
                 </span>
                 <Btn variant="outline" icon="Plus" disabled={!inviteDraft.trim()}
@@ -312,7 +318,7 @@ export default function CreateCirclePage() {
               <I name="Link2" className="mt-[1px] h-[15px] w-[15px] shrink-0" style={{ color: v("--ux-brand") }} />
               <span className="min-w-0">
                 <span className="block text-xs font-bold" style={{ color: v("--ux-brand") }}>
-                  Or just send the link
+                  {tr("circlesCreate.orJustSendTheLink")}
                 </span>
                 <span className="mt-0.5 block text-[12px] lg:text-2xs leading-relaxed" style={{ color: v("--ux-ink-2") }}>
                   Once the circle exists you get a link you can put in any WhatsApp group. Most
@@ -330,8 +336,8 @@ export default function CreateCirclePage() {
 
         {/* ── 4 · Review and create ───────────────────────────────────────── */}
         {at === 4 && (
-          <Block icon="CheckCircle2" title="Check it over"
-                 sub="Everything here can be changed afterwards, except who started it.">
+          <Block icon="CheckCircle2" title={tr("circlesCreate.checkItOver")}
+                 sub={tr("circlesCreate.everythingHereCanBeChangedAfterwards")}>
             <dl className="mb-5 divide-y" style={{ borderColor: v("--ux-line") }}>
               {[
                 ["Called", name.trim() || "—"],
@@ -362,7 +368,7 @@ export default function CreateCirclePage() {
 
             <Foot back={<Btn variant="ghost" icon="ArrowLeft" onClick={() => go(3)}>Back</Btn>}
                   next={<Btn icon="Sparkles" disabled={!step1Ok || saving} loading={saving} onClick={create}>
-                          Create this circle
+                          {tr("circlesCreate.createThisCircle")}
                         </Btn>} />
           </Block>
         )}

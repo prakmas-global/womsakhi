@@ -6,8 +6,9 @@ import { useResource, type Resource } from "@/lib/use-resource";
 import { apiMoneyOverview, type MoneyOverview } from "@/lib/money-api";
 import { apiWallet, type WalletTxn } from "@/lib/wallet-api";
 import {
-  BALANCE_MINOR, PENDING_MINOR, TXNS, type Txn,
+  BALANCE_MINOR as RAW_BALANCE_MINOR, PENDING_MINOR as RAW_PENDING_MINOR, TXNS as RAW_TXNS, type Txn,
 } from "./data";
+import { useTranslated } from "@/i18n/data";
 
 /**
  * The money module, on real data.
@@ -82,6 +83,9 @@ export interface Money {
 }
 
 export function useMoney(): Resource<Money> {
+  const TXNS = useTranslated(RAW_TXNS);
+  const PENDING_MINOR = useTranslated(RAW_PENDING_MINOR);
+  const BALANCE_MINOR = useTranslated(RAW_BALANCE_MINOR);
   return useResource<Money>(
     useCallback(async (signal: AbortSignal) => {
       const w = await apiWallet(signal);
@@ -116,6 +120,9 @@ export function useMoney(): Resource<Money> {
  * frame, and `<SourceNote>` says which she is looking at.
  */
 export function useMoneyOverview(): Resource<Overview> {
+  const TXNS = useTranslated(RAW_TXNS);
+  const PENDING_MINOR = useTranslated(RAW_PENDING_MINOR);
+  const BALANCE_MINOR = useTranslated(RAW_BALANCE_MINOR);
   return useResource<Overview>(
     useCallback(async (signal: AbortSignal) => {
       const d = await apiMoneyOverview(signal);

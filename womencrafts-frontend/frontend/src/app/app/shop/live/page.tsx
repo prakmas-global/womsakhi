@@ -1,6 +1,7 @@
 "use client";
 
 import { Btn } from "@/components/ux/kit";
+import { useT } from "@/i18n";
 import { NotYetScreen } from "@/components/ux/shopplus/notyet";
 
 /**
@@ -27,10 +28,11 @@ import { NotYetScreen } from "@/components/ux/shopplus/notyet";
  * her.
  */
 export default function LivePage() {
+  const tr = useT();
   return (
     <NotYetScreen
-      eyebrow="Show and sell"
-      title="Half an hour, your own people"
+      eyebrow={tr("shopLive.showAndSell")}
+      title={tr("shopLive.halfAnHourYourOwnPeople")}
       lede="Hold things up, say the price, take the orders. No photographs, no stock, no delivery —
             and the women watching already know you."
       cannot="WomSakhi cannot carry video, so there is nothing to go live on here."
@@ -61,8 +63,8 @@ export default function LivePage() {
       ]}
       footer={
         <>
-          <Btn variant="outline" size="sm" icon="Store" href="/app/documents">Your shop and orders</Btn>
-          <Btn variant="ghost" size="sm" icon="ExternalLink" href="/app/collect">Your shop link</Btn>
+          <Btn variant="outline" size="sm" icon="Store" href="/app/documents">{tr("shopLive.yourShopAndOrders")}</Btn>
+          <Btn variant="ghost" size="sm" icon="ExternalLink" href="/app/collect">{tr("shopLive.yourShopLink")}</Btn>
         </>
       }
     />

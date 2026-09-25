@@ -57,6 +57,8 @@ export interface MarketListing {
   place: string;
   travels_km: number;
   photo: string;
+  photos?: string[];
+  price_mode?: "fixed" | "range" | "quote";
   seller: MarketSeller;
   /** Women in her circles who have ordered this. A real count, often zero. */
   bought_by_circle: number;

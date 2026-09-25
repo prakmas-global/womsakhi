@@ -25,26 +25,26 @@ export const metadata: Metadata = {
 const INBOXES = [
   {
     icon: Mail,
-    address: "hello@womsakhi.in",
+    address: "hello@womsakhi.com",
     title: "Anything at all",
     body: "Questions, problems, ideas, or something on the app that is plainly wrong.",
   },
   {
     icon: KeyRound,
-    address: "hello@womsakhi.in",
+    address: "hello@womsakhi.com",
     title: "Cannot get into your account",
     body: "Say which email or phone number you joined with. A person will get you back in.",
     cta: { label: "Or reset it yourself", href: "/forgot-password" },
   },
   {
     icon: ShieldAlert,
-    address: "safety@womsakhi.in",
+    address: "safety@womsakhi.com",
     title: "Report a member",
     body: "Harassment, a fake account, or somebody asking you for money to find work. Read by the safety team only.",
   },
   {
     icon: Scale,
-    address: "privacy@womsakhi.in",
+    address: "privacy@womsakhi.com",
     title: "Your data",
     body: "To see what we hold about you, correct it, or have it deleted. We answer within 30 days.",
   },
@@ -156,7 +156,7 @@ export default function ContactPage() {
         <strong>Nobody from WomSakhi will ever ask you for your password, or ask you to pay
         to find work.</strong> If a message claims to be from us and does either, it is not
         from us — forward it to{" "}
-        <a href="mailto:safety@womsakhi.in">safety@womsakhi.in</a> and we will act on it.
+        <a href="mailto:safety@womsakhi.com">safety@womsakhi.com</a> and we will act on it.
       </p>
     </article>
   );

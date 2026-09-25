@@ -4,9 +4,7 @@ import { use, useCallback, useState } from "react";
 import Link from "next/link";
 import * as Icons from "@/components/ux/icons";
 
-import {Back, ActionBtn, Btn, Card, copy, EmptyState, Pill, RailSkeleton, ScreenSkeleton,
-  SectionHead,
-} from "@/components/ux/kit";
+import { Back, ActionBtn, Btn, Card, copy, EmptyState, Pill, RailSkeleton, ScreenSkeleton, SectionHead } from "@/components/ux/kit";
 import { HomeShell } from "@/components/ux/home/HomeShell";
 import { apiLikeStory, apiStories, apiStory, type Story } from "@/lib/community-api";
 import { useResource } from "@/lib/use-resource";
@@ -81,7 +79,7 @@ export default function StoryDetail({ params }: { params: Promise<{ id: string }
           <EmptyState
             icon="SearchX"
             title={tr("stories.thatStoryIsNotHere")}
-            body="She may have taken it down. The others are still up."
+            body={tr("stories.sheMayHaveTakenItDown")}
             action={<Btn href="/app/stories" variant="primary" iconEnd="ArrowRight">{tr("stories.allStories")}</Btn>}
           />
         </Card>
@@ -205,7 +203,7 @@ export default function StoryDetail({ params }: { params: Promise<{ id: string }
                 {likeCount}
               </button>
               <ActionBtn variant="outline" size="sm" icon="Share2" doneIcon="Copy" done={tr("stories.linkCopied")}
-                        act={() => copy(`https://womsakhi.in/story/${s.id}`, "Link copied — send it to anyone", "Copy it by hand from the address bar")}>
+                        act={() => copy(`https://womsakhi.com/story/${s.id}`, "Link copied — send it to anyone", "Copy it by hand from the address bar")}>
                 Share
               </ActionBtn>
             </span>

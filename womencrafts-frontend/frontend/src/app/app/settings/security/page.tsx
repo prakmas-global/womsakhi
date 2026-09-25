@@ -203,7 +203,7 @@ export default function SecuritySettings() {
         {deleting ? (
           <div className="ux-slide-up mt-4 rounded-[12px] p-3.5" style={{ background: "var(--ux-tint-orange)" }}>
             <p className="text-xsm" style={{ color: "var(--ux-ink-2)" }}>
-              Type <strong style={{ color: "var(--ux-ink)" }}>CLOSE</strong> to confirm you mean it.
+              Type <strong style={{ color: "var(--ux-ink)" }}>CLOSE</strong> {tr("settingsSecurity.toConfirmYouMeanIt")}
             </p>
             {/* Three controls do not fit across 390px; on a phone they stack. */}
             <div className="mt-2.5 flex flex-col gap-2.5 lg:flex-row lg:items-center">

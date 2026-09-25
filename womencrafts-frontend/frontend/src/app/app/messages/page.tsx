@@ -1,6 +1,7 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { useT } from "@/i18n";
 import { COPY } from "@/components/ux/copy";
 import * as Icons from "@/components/ux/icons";
 
@@ -8,22 +9,8 @@ import { HomeShell } from "@/components/ux/home/HomeShell";
 import { useConfirm } from "@/design-system/feedback/ConfirmProvider";
 import { useToast } from "@/design-system/feedback/ToastProvider";
 import { About, EmptyThread, Header, Inbox, Thread } from "./views";
-import { formatMoney } from "@/components/ux/kit/money";
 import Link from "next/link";
-import {
-  apiConversation,
-  apiConversations,
-  apiDeleteConversation,
-  apiMarkUnread,
-  apiStarConversation,
-  apiInboxSummary,
-  apiSendToConversation,
-  type ConvBubble,
-  type ConvDetail,
-  type ConvRow,
-  type InboxSummary,
-  type PartyKind,
-} from "@/lib/me-messages-api";
+import { apiConversation, apiConversations, apiDeleteConversation, apiMarkUnread, apiStarConversation, apiInboxSummary, apiSendToConversation, type ConvBubble, type ConvDetail, type ConvRow, type InboxSummary, type PartyKind } from "@/lib/me-messages-api";
 
 /**
  * Messages.
@@ -54,6 +41,7 @@ import {
 /* ── the shell ──────────────────────────────────────────────────────────── */
 
 export default function MessagesPage() {
+  const tr = useT();
   const [rows, setRows] = useState<ConvRow[]>([]);
   const [summary, setSummary] = useState<InboxSummary | null>(null);
   const [openId, setOpenId] = useState<string | null>(null);
@@ -134,9 +122,9 @@ export default function MessagesPage() {
      */
     const sure = await confirm({
       title: `Delete your conversation with ${thread.name}?`,
-      description: "Every message in it goes, on your side and hers. This cannot be undone.",
-      confirmLabel: "Delete it",
-      cancelLabel: "Keep it",
+      description: tr("messages.everyMessageInItGoesOn"),
+      confirmLabel: tr("messages.deleteIt"),
+      cancelLabel: tr("bookings.cancelKeep"),
       danger: true,
     });
     if (!sure) return;

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useCallback } from "react";
 
 import { useDevicePref } from "@/lib/use-device-pref";
 
@@ -9,8 +9,11 @@ import { SettingsPage, Toggle } from "@/components/ux/settings/Frame";
 import { ListRow } from "@/components/ux/mobile/ListRow";
 import { PhoneRow } from "@/components/ux/PhoneParts";
 import { Group } from "../_parts/Group";
-import { VOICE_CAN, VOICE_LANGS } from "@/components/ux/more/data";
+import { VOICE_CAN as RAW_VOICE_CAN, VOICE_LANGS as RAW_VOICE_LANGS } from "@/components/ux/more/data";
+import { useResource } from "@/lib/use-resource";
+import { apiSetVoicePrefs, apiVoicePrefs, type VoicePrefs } from "@/lib/life-api";
 import { useT } from "@/i18n";
+import { useTranslated } from "@/i18n/data";
 
 /**
  * Voice Mode.
@@ -24,11 +27,28 @@ import { useT } from "@/i18n";
  * is not the listening — it is knowing what you are allowed to ask for.
  */
 export default function VoiceSettings() {
+  const VOICE_CAN = useTranslated(RAW_VOICE_CAN);
+  const VOICE_LANGS = useTranslated(RAW_VOICE_LANGS);
   const tr = useT();
   const [on, setOn] = useDevicePref("voice.on", true);
   const [wake, setWake] = useDevicePref("voice.wake", true);
   const [readOut, setReadOut] = useDevicePref("voice.readOut", true);
-  const [lang, setLang] = useState("hi");
+  /**
+   * The speech language, on the account rather than in component state — it
+   * is the same preference `/app/voice` sets, and the two screens disagreeing
+   * about which language reads her screen would be worse than either.
+   *
+   * The three toggles above stay device-local through `useDevicePref`: whether
+   * the microphone appears is about this handset, not about her.
+   */
+  const saved = useResource<VoicePrefs>(
+    useCallback((sig: AbortSignal) => apiVoicePrefs(sig), []),
+    { on: [], lang: "hi", read_money: false },
+  );
+  const lang = saved.data.lang;
+  const setLang = useCallback((code: string) => {
+    void apiSetVoicePrefs({ ...saved.data, lang: code }).then(() => saved.refetch()).catch(() => {});
+  }, [saved]);
 
   return (
     <SettingsPage

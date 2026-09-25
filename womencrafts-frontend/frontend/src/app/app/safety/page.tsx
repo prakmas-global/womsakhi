@@ -14,7 +14,7 @@ import * as Icons from "@/components/ux/icons";
 import { Btn, Card, IconTile, NoteBtn, SectionHead, Tabs } from "@/components/ux/kit";
 import { HomeShell } from "@/components/ux/home/HomeShell";
 import { AlsoHere } from "@/components/ux/AlsoHere";
-import { useT } from "@/i18n";
+import { useT, useI18n } from "@/i18n";
 import { ListGroup } from "@/components/ux/mobile/ListRow";
 import { SegmentedControl } from "@/components/ux/mobile/SegmentedControl";
 import { GroupLabel, PhoneRow } from "@/components/ux/PhoneParts";
@@ -41,6 +41,41 @@ const SCAMS = [
  */
 export default function SafetyPage() {
   const tr = useT();
+  const { locale } = useI18n();
+  const [shareCopied, setShareCopied] = useState(false);
+
+  /**
+   * Put the alert on somebody else's phone.
+   *
+   * The link carries a 256-bit token minted with the alert, so holding it is
+   * the whole permission — which is what a forwarded link has to be. The page
+   * it opens needs no account and no app.
+   */
+  const shareAlert = useCallback(async (alert: { id: string; share_token?: string }) => {
+    if (!alert.share_token) return;
+    const url = `${window.location.origin}/sos/${alert.id}?t=${encodeURIComponent(alert.share_token)}`;
+    const text = tr("safety.shareMessage");
+    try {
+      if (navigator.share) {
+        await navigator.share({ text: `${text} ${url}` });
+        return;
+      }
+    } catch {
+      // She dismissed the sheet. Not an error, and not a reason to then copy
+      // something to her clipboard she did not ask for.
+      return;
+    }
+    try {
+      await navigator.clipboard.writeText(`${text} ${url}`);
+      setShareCopied(true);
+      window.setTimeout(() => setShareCopied(false), 4000);
+    } catch {
+      // Clipboard blocked. Show it so she can select it by hand rather than
+      // leaving her with a button that did nothing.
+      window.prompt(text, url);
+    }
+  }, [tr]);
+
   const [tab, setTab] = useState("Get help now");
   const [holding, setHolding] = useState(0);
   // A ref, not `useState(...)[0]`: this holds a frame handle that is written
@@ -204,11 +239,57 @@ export default function SafetyPage() {
                       * that staff see the alert straight away and the people
                       * she named are on it.
                       */}
+                    {/*
+                      Through the catalogue, not a template literal.
+
+                      These two sentences are the ones a woman acts on, and
+                      they were the only English left on this screen: a Telugu
+                      or Hindi speaker in trouble read them in a language she
+                      may not have. The joining of the names is a separate
+                      problem — "and" is not a word every language puts in the
+                      same place — so `namesOf` uses Intl's list formatter for
+                      her locale rather than hardcoding it.
+                    */}
                     {openAlert && openAlert.contacts_notified > 0
-                      ? `Our team has it, with ${namesOf(CONTACTS)} named on it.`
-                      : "Our team has it. You have named nobody to be reached, so add someone — or call 112 now."}
+                      ? tr("safety.ourTeamHasItWithNamed", { names: namesOf(CONTACTS, locale) })
+                      : tr("safety.ourTeamHasItNobodyNamed")}
                   </p>
                   <p className="mt-1 text-xs" style={{ color: "var(--ux-ink-2)" }}>{tr("safety.ifYouAreInDangerRight")}</p>
+
+                  {/*
+                    The part that actually reaches somebody.
+
+                    Naming her contacts tells staff who to call. It does not
+                    tell HER contacts anything: there is no SMS provider, no
+                    WhatsApp and no voice line, so nothing in this product can
+                    reach a phone number. Her own phone can, so she sends the
+                    link herself, from whichever app she already has.
+
+                    `navigator.share` where the phone offers it — one tap into
+                    WhatsApp, Messages, anything — and a copy button where it
+                    does not, which is every desktop browser.
+                  */}
+                  {openAlert?.share_token && (
+                    <div className="mt-3 flex flex-wrap items-center gap-2">
+                      <Btn size="sm" variant="primary" icon="Send"
+                           onClick={() => void shareAlert(openAlert)}>
+                        {tr("safety.sendToMyPeople")}
+                      </Btn>
+                      {shareCopied && (
+                        <span className="text-2xs font-semibold" style={{ color: "var(--ux-green-ink)" }}>
+                          {tr("safety.linkCopied")}
+                        </span>
+                      )}
+                    </div>
+                  )}
+
+                  {/* Who has answered. Until somebody opens that link, nobody
+                      has — and saying so is the honest state of an alert. */}
+                  {openAlert?.acknowledged_by && openAlert.acknowledged_by.length > 0 && (
+                    <p className="mt-2 text-xs font-semibold" style={{ color: "var(--ux-green-ink)" }}>
+                      {tr("safety.theyHaveGotIt", { names: namesOf(openAlert.acknowledged_by.map((n) => ({ name: n })), locale) })}
+                    </p>
+                  )}
                 </div>
                 <Btn variant="outline" size="sm" disabled={standDown.busy}
                      onClick={() => void standDown.run()}>
@@ -347,7 +428,7 @@ export default function SafetyPage() {
                          refetch();
                        }}
                        sent={tr("safety.filedTheSafetyTeamHasIt")}
-                       sentBody="It is listed below with what has happened to it. If you are in danger right now, call 112."
+                       sentBody={tr("safety.itIsListedBelowWithWhat")}
                        sentLink={null} />
             </div>
           </Card>
@@ -387,7 +468,7 @@ export default function SafetyPage() {
 
       <AlsoHere
         items={[
-          { href: "/app/intake", label: "Ask for help", note: "Tell us what you need in your own words, and we will find it.", icon: "MessageCircleQuestion" },
+          { href: "/app/intake", label: tr("fund.ask"), note: tr("safety.tellUsWhatYouNeedIn"), icon: "MessageCircleQuestion" },
         ]}
       />
     </HomeShell>
@@ -417,9 +498,20 @@ async function whereSheIs(): Promise<string> {
 }
 
 /** "Your sister and your mother", from the contacts she actually named. */
-function namesOf(contacts: { name: string }[]): string {
-  const names = contacts.map((c) => c.name.split(" ")[0]);
-  if (names.length === 0) return "Nobody";
-  if (names.length === 1) return names[0];
-  return `${names.slice(0, -1).join(", ")} and ${names[names.length - 1]}`;
+/**
+ * "Meera, Kavita and Sunita" — in her language's own way of joining a list.
+ *
+ * This hardcoded ", " and " and ", which is English. `Intl.ListFormat` knows
+ * that Telugu joins with "మరియు" and Hindi with "और", and where each goes.
+ */
+function namesOf(contacts: { name: string }[], locale: string): string {
+  const names = contacts.map((c) => c.name.split(" ")[0]).filter(Boolean);
+  if (names.length === 0) return "";
+  try {
+    return new Intl.ListFormat(locale, { style: "long", type: "conjunction" }).format(names);
+  } catch {
+    // An engine or a locale tag Intl does not know. Never let a formatter
+    // decide whether a safety sentence renders at all.
+    return names.join(", ");
+  }
 }

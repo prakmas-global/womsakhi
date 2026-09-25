@@ -45,6 +45,42 @@ const CATALOGS: Record<string, Catalog> = {
   ta, bn, te, gu, kn, ml, pa, or, ar, es, fr, pt, id, sw,
 };
 
+/**
+ * How much of English each catalogue actually answers, 0–1.
+ *
+ * Counted here rather than written down in `locales.ts`, because a flag that
+ * is maintained by hand drifts and this one had: eighteen languages were
+ * marked `translated: true`, which is what puts a language in the picker, and
+ * nine of them were between 0% and 9% complete. A woman who chose ਪੰਜਾਬੀ got
+ * an app that was entirely English, labelled only "new translation".
+ *
+ * Computed once at module load — two `Object.keys` over objects already in
+ * memory, so it costs nothing and can never disagree with the files again.
+ */
+const EN_KEYS = Object.keys(en).length;
+
+export function coverageOf(code: string): number {
+  const c = CATALOGS[code];
+  if (!c) return 0;
+  if (code === "en") return 1;
+  return Object.keys(c).length / EN_KEYS;
+}
+
+/**
+ * The bar a language must clear to be offered.
+ *
+ * Not 100%: a catalogue one string short of English is still a usable
+ * translation, and holding it back over that would be its own kind of
+ * dishonesty. 90% is high enough that the screens she meets are her language
+ * and the gaps are corners.
+ */
+export const USABLE_COVERAGE = 0.9;
+
+/** Is this language complete enough to be offered to her? */
+export function isUsable(code: string): boolean {
+  return coverageOf(code) >= USABLE_COVERAGE;
+}
+
 
 type Vars = Record<string, string | number>;
 
@@ -124,6 +160,49 @@ export function I18nProvider({
   }, [locale, spec, setLocale]);
 
   return <I18nContext.Provider value={value}>{children}</I18nContext.Provider>;
+}
+
+/**
+ * What THIS browser has already been told, if anything.
+ *
+ * The difference between "she has chosen a language on this device" and "she
+ * has never been asked" is the whole of the sign-in hand-off: a choice made
+ * here is hers and is not overruled by her account, while an absence is the
+ * new-device case where the account is the only thing that knows.
+ */
+export function storedLocale(): string | null {
+  const saved = readCookie(LOCALE_COOKIE);
+  return saved && CATALOGS[saved] ? saved : null;
+}
+
+/**
+ * The language she picked BEFORE she signed in.
+ *
+ * Her account is the source of truth for language, and `MemberShell` applies
+ * it on every visit — which is right on a borrowed phone and wrong in the one
+ * second after she has just chosen a language on the sign-in screen. There her
+ * choice is the newest thing anybody knows, and the account is stale.
+ *
+ * So the sign-in screen leaves a note here and `MemberShell` reads it once,
+ * exactly like a hand-off. `sessionStorage` because it is the right lifetime:
+ * this tab, this sign-in, gone afterwards — a durable flag would keep
+ * overruling her account long after the moment it was meant for.
+ */
+const PRE_SIGNIN_KEY = "womsakhi_locale_choice";
+
+export function rememberPreSignInChoice(code: string): void {
+  // Private browsing and blocked site data both throw here. The choice still
+  // applies in this browser through the cookie; only the hand-off is lost.
+  try { sessionStorage.setItem(PRE_SIGNIN_KEY, code); } catch { /* not important enough to break sign-in */ }
+}
+
+/** Reads the note and tears it up — it must only ever be acted on once. */
+export function takePreSignInChoice(): string | null {
+  try {
+    const code = sessionStorage.getItem(PRE_SIGNIN_KEY);
+    if (code) sessionStorage.removeItem(PRE_SIGNIN_KEY);
+    return code && CATALOGS[code] ? code : null;
+  } catch { return null; }
 }
 
 export function useI18n(): I18nValue {

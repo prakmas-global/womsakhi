@@ -1,14 +1,16 @@
 "use client";
 
-import { useMemo, useSyncExternalStore } from "react";
+import { useCallback, useMemo, useSyncExternalStore } from "react";
+import { useT } from "@/i18n";
 import Link from "next/link";
 
 import { HomeShell } from "@/components/ux/home/HomeShell";
 import * as Icons from "@/components/ux/icons";
-import {
-  Back, Btn, Card, DemoNote, I, IconTile, Rating, v,
-} from "@/components/ux/kit";
-import { LISTINGS, SENT_QUOTE, type QuoteDraft } from "@/components/ux/earn/data";
+import { Back, Btn, Card, I, IconTile, v } from "@/components/ux/kit";
+import { type QuoteDraft } from "@/components/ux/earn/data";
+import { useResource } from "@/lib/use-resource";
+import { apiListings, type Listing } from "@/lib/shop-api";
+import { EmptyState, formatRupees } from "@/components/ux/kit";
 import { formatWholeRupees } from "@/components/ux/kit/money";
 import { GROUP, GROUP_ROW, STEP_NAV } from "@/components/ux/earn/phone";
 
@@ -53,6 +55,19 @@ const readDraft = () => {
 };
 
 export default function QuoteSentPage() {
+  const tr = useT();
+  /**
+   * The seller's other things, from the shop.
+   *
+   * This shelf was a fixture — "Handmade cotton kurta, 4.7, 9 sold" and five
+   * more — presented as the seller's real catalogue under a quote the buyer
+   * had just sent her.
+   */
+  const listings = useResource<Listing[]>(
+    useCallback((sig: AbortSignal) => apiListings(sig), []),
+    [],
+  );
+  const LISTINGS = listings.data;
   const raw = useSyncExternalStore(NOTHING_CHANGES, readDraft, () => null);
   const draft = useMemo<QuoteDraft | null>(() => {
     if (!raw) return null;
@@ -60,19 +75,38 @@ export default function QuoteSentPage() {
     catch { return null; }       // something else wrote nonsense to that key
   }, [raw]);
 
-  const seller = draft?.seller || SENT_QUOTE.seller;
+  /**
+   * Everything here comes from the draft she just sent. There is no longer a
+   * fallback quote.
+   *
+   * The fallback used to be a whole invented request — 20 pieces, ₹1,000 to
+   * ₹2,500, by 15 September, sent to "Priya Sharma" — shown to anybody who
+   * reached this URL without having sent anything. A confirmation screen that
+   * confirms a thing that did not happen is worse than a missing page: she
+   * would believe a supplier had her order.
+   */
+  const seller = draft?.seller ?? "";
   const budget = draft?.budgetLow && draft?.budgetHigh
     ? `${formatWholeRupees(Number(draft.budgetLow))} – ${formatWholeRupees(Number(draft.budgetHigh))}`
     : draft?.budgetLow
       ? `About ${formatWholeRupees(Number(draft.budgetLow))}`
-      : `${formatWholeRupees(SENT_QUOTE.budgetLow ?? 0)} – ${formatWholeRupees(SENT_QUOTE.budgetHigh ?? 0)}`;
+      : "Not said";
 
   return (
     <HomeShell active="/app/documents" wide bare>
       <div className="mx-auto w-full max-w-[1080px]">
-        <Back to="/app/documents/new" label="Add product or service" />
+        <Back to="/app/documents/new" label={tr("documentsListings.addProductOrService")} />
 
-        <DemoNote what="The quote you just sent, and the seller's other listings," />
+        {!draft && (
+          <Card className="mt-4">
+            <EmptyState
+              icon="FileQuestion"
+              title="Nothing was sent"
+              body="This page shows a request straight after you send it. There is nothing here because nothing has been sent from this device — if you sent one earlier, it is with your requests."
+              action={<Btn icon="Plus" href="/app/documents/new">Ask about something</Btn>}
+            />
+          </Card>
+        )}
 
         {/* The tick, and the one line she needs */}
         <header className="mb-6 flex flex-wrap items-start gap-4 lg:mb-5">
@@ -83,16 +117,16 @@ export default function QuoteSentPage() {
           <div className="min-w-[260px] flex-1">
             <h1 className="ux-screen-title text-3xl font-extrabold leading-tight tracking-[-0.02em]"
                 style={{ color: v("--ux-ink") }}>
-              Request sent
+              {tr("documentsNewSent.requestSent")}
             </h1>
             <p className="mt-1.5 text-smd font-bold" style={{ color: v("--ux-ink-2") }}>
               Your quote request has gone to {seller}.
             </p>
             <p className="mt-0.5 text-xsm" style={{ color: v("--ux-muted") }}>
-              She will read your requirements and come back to you.
+              {tr("documentsNewSent.sheWillReadYourRequirementsAnd")}
             </p>
           </div>
-          <Btn href="/app/documents#orders" variant="outline" className="max-lg:w-full">See all your requests</Btn>
+          <Btn href="/app/documents#orders" variant="outline" className="max-lg:w-full">{tr("documentsNewSent.seeAllYourRequests")}</Btn>
         </header>
 
         {/* What happens next */}
@@ -105,13 +139,13 @@ export default function QuoteSentPage() {
                    className="h-full min-h-[190px] w-full object-cover object-top" />
               <p className="absolute end-3 top-3 text-lg font-extrabold italic leading-none"
                  style={{ color: v("--ux-brand") }}>
-                Thank you!
+                {tr("documentsNewSent.thankYou")}
               </p>
             </div>
 
             <div>
               <h2 className="mb-4 text-xl font-extrabold tracking-[-0.01em]" style={{ color: v("--ux-ink") }}>
-                What happens next?
+                {tr("documentsNewSent.whatHappensNext")}
               </h2>
               <ol className="space-y-4">
                 {NEXT.map((n, i) => (
@@ -143,10 +177,10 @@ export default function QuoteSentPage() {
                   <IconTile icon="Clock" tint="--ux-surface" ink="--ux-brand" size={34} radius={10} />
                   <span className="min-w-0">
                     <span className="block text-2xs font-semibold" style={{ color: v("--ux-muted") }}>
-                      She usually replies
+                      {tr("documentsNewSent.sheUsuallyReplies")}
                     </span>
                     <span className="mt-0.5 block text-smd font-extrabold" style={{ color: v("--ux-ink") }}>
-                      Within 24 hours
+                      {tr("documentsNewSent.within24Hours")}
                     </span>
                   </span>
                 </div>
@@ -158,7 +192,7 @@ export default function QuoteSentPage() {
               <figure className="rounded-[12px] p-4 lg:rounded-[14px]" style={{ background: v("--ux-surface-2") }}>
                 <I name="Quote" className="h-[17px] w-[17px]" style={{ color: v("--ux-brand") }} />
                 <blockquote className="mt-2 text-smd font-extrabold leading-snug" style={{ color: v("--ux-brand") }}>
-                  Every big order started as somebody asking a question.
+                  {tr("documentsNewSent.everyBigOrderStartedAsSomebody")}
                 </blockquote>
                 <figcaption className="mt-2 text-2xs" style={{ color: v("--ux-muted") }}>— WomSakhi</figcaption>
               </figure>
@@ -171,41 +205,40 @@ export default function QuoteSentPage() {
           <div className="mb-4 flex flex-wrap items-center justify-between gap-2 border-b pb-3.5"
                style={{ borderColor: v("--ux-line") }}>
             <h2 className="text-xl font-extrabold tracking-[-0.01em]" style={{ color: v("--ux-ink") }}>
-              What you asked for
+              {tr("documentsNewSent.whatYouAskedFor")}
             </h2>
-            <span className="text-xs font-semibold" style={{ color: v("--ux-muted") }}>
-              Request {SENT_QUOTE.id}
-            </span>
+            {/* No request number. It used to print "WSQ-2026-00124" to
+                everyone — a reference she could read out to a supplier who
+                had never heard of it. Nothing issues these yet. */}
           </div>
 
           <div className="grid gap-5 md:grid-cols-[220px_minmax(0,1fr)]">
             <div className="flex gap-3.5 md:block">
               {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src={draft?.photo || LISTINGS[0].photo} alt="" aria-hidden loading="lazy" decoding="async"
+              <img src={draft?.photo || LISTINGS[0]?.photo || ""} alt="" aria-hidden loading="lazy" decoding="async"
                    className="h-[92px] w-[92px] rounded-[12px] object-cover md:h-[150px] md:w-full"
                    style={{ background: v("--ux-media-bed") }} />
               <div className="min-w-0 md:mt-3">
                 <p className="text-xsm font-bold" style={{ color: v("--ux-ink") }}>
-                  {draft?.title || LISTINGS[0].title}
+                  {draft?.title || LISTINGS[0]?.title || "What you asked about"}
                 </p>
                 <p className="mt-0.5 text-xs" style={{ color: v("--ux-muted") }}>By {seller}</p>
-                <span className="mt-1.5 block"><Rating value="4.7" count="3 reviews" /></span>
                 <Link href="/app/documents/listings" className="ux-sq mt-1.5 inline-flex items-center gap-0.5 text-xs font-bold"
                       style={{ color: v("--ux-brand") }}>
-                  See the listing <Icons.ChevronRight className="h-[13px] w-[13px]" />
+                  {tr("documentsNewSent.seeTheListing")} <Icons.ChevronRight className="h-[13px] w-[13px]" />
                 </Link>
               </div>
             </div>
 
             <dl className="grid gap-x-6 gap-y-4 sm:grid-cols-2">
-              <Fact k="How many" v={draft?.quantity ? `${draft.quantity} pieces` : `${SENT_QUOTE.quantity} pieces`} />
-              <Fact k="When you need it" v={draft?.by || SENT_QUOTE.by || "No date given"} />
+              <Fact k="How many" v={draft?.quantity ? `${draft.quantity} pieces` : "Not said"} />
+              <Fact k="When you need it" v={draft?.by || "No date given"} />
               <Fact k="What you can spend" v={budget} />
-              <Fact k="Where it goes" v={draft?.place || SENT_QUOTE.place} />
+              <Fact k="Where it goes" v={draft?.place || "Not said"} />
               <div className="sm:col-span-2">
-                <dt className="text-2xs font-semibold" style={{ color: v("--ux-muted") }}>What you said</dt>
+                <dt className="text-2xs font-semibold" style={{ color: v("--ux-muted") }}>{tr("documentsNewSent.whatYouSaid")}</dt>
                 <dd className="mt-1 text-xsm leading-relaxed" style={{ color: v("--ux-ink") }}>
-                  {draft?.needs?.trim() || SENT_QUOTE.notes.join(". ") + "."}
+                  {draft?.needs?.trim() || "Nothing written."}
                 </dd>
                 {(draft?.extras?.length ?? 0) > 0 && (
                   <dd className="mt-2 flex flex-wrap gap-1.5">
@@ -227,7 +260,7 @@ export default function QuoteSentPage() {
           <div className="mb-2 flex flex-wrap items-end justify-between gap-2 lg:mb-3.5">
             <div>
               <h2 className="text-xs font-semibold uppercase tracking-[0.06em] text-[color:var(--ux-muted)] max-lg:px-1 lg:text-xl lg:font-extrabold lg:normal-case lg:tracking-[-0.01em] lg:text-[color:var(--ux-ink)]">
-                You might also like
+                {tr("documentsNewSent.youMightAlsoLike")}
               </h2>
               <p className="mt-0.5 text-[13px] max-lg:px-1 lg:text-xs" style={{ color: v("--ux-muted") }}>
                 More from {seller}
@@ -235,13 +268,13 @@ export default function QuoteSentPage() {
             </div>
             <Link href="/app/documents/listings" className="ux-sq flex items-center gap-0.5 text-[15px] font-semibold lg:text-xs lg:font-bold"
                   style={{ color: v("--ux-brand") }}>
-              See the whole shop <Icons.ArrowRight className="h-[13px] w-[13px]" />
+              {tr("documentsNewSent.seeTheWholeShop")} <Icons.ArrowRight className="h-[13px] w-[13px]" />
             </Link>
           </div>
 
           {/* A phone gets the shelf as a list: thumbnail, name, price, rating. */}
           <div className={`grid gap-3.5 ${GROUP}`} style={{ gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))" }}>
-            {LISTINGS.filter((l) => l.priceMode !== "quote").map((l) => (
+            {LISTINGS.filter((l) => l.price_mode !== "quote").map((l) => (
               <Link key={l.id} href="/app/documents/listings" className={`ux-card ux-hov ux-sq block overflow-hidden max-lg:flex max-lg:items-center ${GROUP_ROW}`}>
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img src={l.photo} alt="" aria-hidden loading="lazy" decoding="async"
@@ -249,9 +282,16 @@ export default function QuoteSentPage() {
                 <span className="block p-3.5 max-lg:min-w-0 max-lg:flex-1 max-lg:px-4 max-lg:py-3">
                   <span className="block truncate text-xsm font-bold" style={{ color: v("--ux-ink") }}>{l.title}</span>
                   <span className="mt-1 block text-smd font-extrabold" style={{ color: v("--ux-brand") }}>
-                    {formatWholeRupees(l.price)}
+                    {l.price_label || formatRupees(l.price_minor)}
                   </span>
-                  <span className="mt-1.5 block"><Rating value="4.7" count={`${l.orders} sold`} /></span>
+                  {/* The 4.7 was written into the file for every listing. A real
+                      rating or nothing — an invented one on a page about
+                      whether to trust a supplier is the worst place for it. */}
+                  {(l.orders ?? 0) > 0 && (
+                    <span className="mt-1.5 block text-2xs" style={{ color: v("--ux-muted") }}>
+                      {l.orders} sold
+                    </span>
+                  )}
                 </span>
               </Link>
             ))}
@@ -259,8 +299,8 @@ export default function QuoteSentPage() {
         </section>
 
         <div className={`flex flex-wrap items-center justify-between gap-3 pb-2 ${STEP_NAV}`}>
-          <Btn href="/app/documents/listings" variant="outline" icon="ArrowLeft" className="max-lg:w-full">Back to what you sell</Btn>
-          <Btn href="/app/documents/new" icon="Plus" className="ux-action-primary">Ask about something else</Btn>
+          <Btn href="/app/documents/listings" variant="outline" icon="ArrowLeft" className="max-lg:w-full">{tr("documentsNewSent.backToWhatYouSell")}</Btn>
+          <Btn href="/app/documents/new" icon="Plus" className="ux-action-primary">{tr("documentsNewSent.askAboutSomethingElse")}</Btn>
         </div>
       </div>
     </HomeShell>

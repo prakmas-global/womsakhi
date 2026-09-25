@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState, useSyncExternalStore } from "react";
+import { useT } from "@/i18n";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 
@@ -19,12 +20,13 @@ import {
   subscribeSavedPosts, toggleSavedPost,
 } from "@/lib/saved-posts";
 import { useEvents } from "@/components/ux/growth";
-import { ALL_TOPICS, topicOf, type Topic } from "@/components/ux/circle/data";
+import { ALL_TOPICS as RAW_ALL_TOPICS, topicOf, type Topic } from "@/components/ux/circle/data";
 import {
   CircleHero, CircleQuote, MyCircle, PopularGroups, PostCard, TopicChips,
   Trending, UpcomingEvents,
   type FeedPost, type RailEvent, type Trend,
 } from "./circle-views";
+import { useTranslated } from "@/i18n/data";
 
 /**
  * Circle — where women talk to each other.
@@ -59,6 +61,8 @@ const TABS = ["Latest", "Following", "My posts", "Saved"] as const;
 type Tab = (typeof TABS)[number];
 
 export default function CirclePage() {
+  const ALL_TOPICS = useTranslated(RAW_ALL_TOPICS);
+  const tr = useT();
   const router = useRouter();
   const [ask, setAsk] = useState("");
   const [topic, setTopic] = useState(ALL_TOPICS);
@@ -113,7 +117,7 @@ export default function CirclePage() {
     if (tab === "My posts") return byTopic.filter((p) => p.mine);
     if (tab === "Saved") return byTopic.filter((p) => saved.has(p.id));
     return byTopic;
-  }, [feed, topic, tab, saved, byId, overview.posts]);
+  }, [feed, topic, tab, saved, byId, overview.posts, ALL_TOPICS]);
 
   /** The three most talked about — likes and replies together, because a post
    *  with forty replies and two likes is the busier conversation. */
@@ -158,7 +162,7 @@ export default function CirclePage() {
       (b.id.startsWith("other:") ? 0 : 1) - (a.id.startsWith("other:") ? 0 : 1) ||
       (n[b.label] ?? 0) - (n[a.label] ?? 0));
     return { chipTopics: chips, counts: n };
-  }, [allCircles]);
+  }, [allCircles, ALL_TOPICS]);
 
   const popular = useMemo(() => [...allCircles]
     .sort((a, b) => Number(a.joined) - Number(b.joined) || b.member_count - a.member_count)
@@ -248,9 +252,9 @@ export default function CirclePage() {
   const rail = (
     <div className="space-y-4">
       <div className="space-y-2.5">
-        <Btn full icon="Plus" onClick={start}>Start a discussion</Btn>
+        <Btn full icon="Plus" onClick={start}>{tr("circles.startADiscussion")}</Btn>
         <Btn full variant="soft" icon="UsersRound" href="/app/circles/create">
-          Create a circle
+          {tr("circles.createACircle")}
         </Btn>
       </div>
 
@@ -263,7 +267,7 @@ export default function CirclePage() {
               <Icons.Coins className="h-[18px] w-[18px]" />
             </span>
             <div className="min-w-0 flex-1">
-              <p className="text-xsm font-bold" style={{ color: v("--ux-ink") }}>Your savings pot</p>
+              <p className="text-xsm font-bold" style={{ color: v("--ux-ink") }}>{tr("circles.yourSavingsPot")}</p>
               <p className="mt-0.5 text-[12px] lg:text-2xs" style={{ color: v("--ux-muted") }}>
                 {savingsCircle.name} · {overview.savings.members_paid} of {overview.savings.members.length} paid
               </p>
@@ -341,7 +345,7 @@ export default function CirclePage() {
               body={tab === "Saved"
                 ? "The bookmark on any post keeps it here — on this phone and on any other you sign in on."
                 : "Ask the first question. Somebody who has been where you are will answer it."}
-              action={<Btn size="sm" icon="Plus" onClick={start}>Start a discussion</Btn>}
+              action={<Btn size="sm" icon="Plus" onClick={start}>{tr("circles.startADiscussion")}</Btn>}
             />
           </Card>
         )}
@@ -354,7 +358,7 @@ export default function CirclePage() {
                 style={{ background: v("--ux-brand-tint"), border: `1px solid ${v("--ux-brand")}`,
                          color: v("--ux-brand") }}>
             <I name="UsersRound" className="h-[16px] w-[16px]" />
-            Start a circle of your own
+            {tr("circles.startACircleOfYourOwn")}
           </Link>
         </div>
 

@@ -7,10 +7,11 @@ import {
 } from "@/components/ux/kit";
 import { HomeShell } from "@/components/ux/home/HomeShell";
 import { useReferrals } from "@/components/ux/live";
-import { ACCOUNT_ART, rupees } from "@/components/ux/account/data";
+import { ACCOUNT_ART as RAW_ACCOUNT_ART, rupees } from "@/components/ux/account/data";
 import { useT } from "@/i18n";
 import { ListGroup } from "@/components/ux/mobile/ListRow";
 import { GroupLabel, PhoneRow } from "@/components/ux/PhoneParts";
+import { useTranslated } from "@/i18n/data";
 
 /**
  * Refer — bringing another woman in.
@@ -21,6 +22,7 @@ import { GroupLabel, PhoneRow } from "@/components/ux/PhoneParts";
  * arrives, and she has spent her own credibility.
  */
 export default function ReferPage() {
+  const ACCOUNT_ART = useTranslated(RAW_ACCOUNT_ART);
   const tr = useT();
   const { data: ref, source } = useReferrals();
   const REFER = ref.refer;
@@ -172,10 +174,10 @@ export default function ReferPage() {
                                 <span className="block text-[17px] font-bold tabular-nums" style={{ color: "var(--ux-green-ink)" }}>
                                   +{rupees(r.reward_minor)}
                                 </span>
-                                <span className="mt-0.5 block text-[12px]" style={{ color: "var(--ux-faint)" }}>paid to you</span>
+                                <span className="mt-0.5 block text-[12px]" style={{ color: "var(--ux-faint)" }}>{tr("refer.paidToYou")}</span>
                               </>
                             ) : (
-                              <span className="block max-w-[110px] text-[12px] leading-snug" style={{ color: "var(--ux-faint)" }}>{tr("refer.nothingYet")}<br />she has not finished a course
+                              <span className="block max-w-[110px] text-[12px] leading-snug" style={{ color: "var(--ux-faint)" }}>{tr("refer.nothingYet")}<br />{tr("refer.sheHasNotFinishedACourse")}
                               </span>
                             )}
                           </span>
@@ -207,11 +209,11 @@ export default function ReferPage() {
                         <p className="text-base font-bold tabular-nums" style={{ color: "var(--ux-green-ink)" }}>
                           +{rupees(r.reward_minor)}
                         </p>
-                        <p className="mt-0.5 text-2xs" style={{ color: "var(--ux-faint)" }}>paid to you</p>
+                        <p className="mt-0.5 text-2xs" style={{ color: "var(--ux-faint)" }}>{tr("refer.paidToYou")}</p>
                       </>
                     ) : (
                       /* Never imply a reward that has not been earned. */
-                      <p className="text-xs leading-snug" style={{ color: "var(--ux-faint)" }}>{tr("refer.nothingYet")}<br />she has not finished a course
+                      <p className="text-xs leading-snug" style={{ color: "var(--ux-faint)" }}>{tr("refer.nothingYet")}<br />{tr("refer.sheHasNotFinishedACourse")}
                       </p>
                     )}
                   </div>
@@ -223,7 +225,7 @@ export default function ReferPage() {
         ) : (
           <Card>
             <EmptyState icon="Users" title={tr("refer.nobodyYet")}
-                        body="Share your code with one woman who would use this." />
+                        body={tr("refer.shareYourCodeWithOneWoman")} />
           </Card>
         )}
       </div>

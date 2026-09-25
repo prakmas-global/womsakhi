@@ -1,6 +1,7 @@
 "use client";
 
 import { Btn } from "@/components/ux/kit";
+import { useT } from "@/i18n";
 import { NotYetScreen } from "@/components/ux/shopplus/notyet";
 
 /**
@@ -30,10 +31,11 @@ import { NotYetScreen } from "@/components/ux/shopplus/notyet";
  * anywhere in WomSakhi, so there is nothing that could count against her.
  */
 export default function DisputesPage() {
+  const tr = useT();
   return (
     <NotYetScreen
-      eyebrow="When it goes wrong"
-      title="Sorted by someone you both know"
+      eyebrow={tr("shopDisputes.whenItGoesWrong")}
+      title={tr("shopDisputes.sortedBySomeoneYouBothKnow")}
       lede="No complaint form, and no company deciding who is right. If the two of you cannot agree,
             a woman you both trust hears it out."
       cannot="WomSakhi cannot open a case between you and a buyer."
@@ -64,7 +66,7 @@ export default function DisputesPage() {
       ]}
       footer={
         <>
-          <Btn variant="outline" size="sm" icon="MessageCircle" href="/app/messages">Your messages</Btn>
+          <Btn variant="outline" size="sm" icon="MessageCircle" href="/app/messages">{tr("shopDisputes.yourMessages")}</Btn>
           <Btn variant="ghost" size="sm" icon="LifeBuoy" href="/app/help">Ask WomSakhi for help</Btn>
         </>
       }

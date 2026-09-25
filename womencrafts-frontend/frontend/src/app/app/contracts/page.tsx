@@ -144,7 +144,7 @@ export default function ContractsPage() {
         )}
 
         <div>
-          <SectionLabel title={tr("contracts.openRightNow")} sub="Placed by a buyer, still taking applications"
+          <SectionLabel title={tr("contracts.openRightNow")} sub={tr("contracts.placedByABuyerStillTaking")}
                         icon="Briefcase" chip={source === "loading" ? undefined : String(open.length)} />
 
           {source === "loading" ? (
@@ -160,9 +160,9 @@ export default function ContractsPage() {
           ) : open.length === 0 && !error ? (
             <EmptyState
               icon="Briefcase"
-              title="No big orders open right now"
-              body="Bulk orders come in bursts — a festive collection, a uniform contract before June. We will tell you the moment one is placed. In the meantime there is other paid work on the work board."
-              action={<Btn href="/app/opportunities" icon="Search">See all the work</Btn>}
+              title={tr("contracts.noBigOrdersOpenRightNow")}
+              body={tr("contracts.bulkOrdersComeInBurstsA")}
+              action={<Btn href="/app/opportunities" icon="Search">{tr("contracts.seeAllTheWork")}</Btn>}
             />
           ) : (
             <div className="flex flex-col gap-4">
@@ -177,7 +177,7 @@ export default function ContractsPage() {
 
         {closed.length > 0 && (
           <div>
-            <SectionLabel title="Closed" sub="Kept here so you can see what has come through before"
+            <SectionLabel title="Closed" sub={tr("contracts.keptHereSoYouCanSee")}
                           icon="Archive" chip={String(closed.length)} />
             <div className="flex flex-col gap-4">
               {closed.map((o) => (
@@ -196,7 +196,7 @@ export default function ContractsPage() {
         */}
         <div>
           <SectionLabel title={tr("contracts.whatBuyersAskFor")}
-                        sub="The things that actually lose bids" icon="ClipboardCheck" />
+                        sub={tr("contracts.theThingsThatActuallyLoseBids")} icon="ClipboardCheck" />
           <Card pad={0} style={{ overflow: "hidden" }}>
             {READINESS.map((r, i) => (
               <div key={r.what} className="flex items-start gap-3 px-4 py-4 lg:gap-3.5 lg:px-5"
@@ -302,7 +302,7 @@ function OrderCard({ o, closed, busy, onApply }: {
             <p className="text-lg font-extrabold leading-tight tracking-[-0.02em]" style={{ color: v("--ux-ink") }}>
               {o.title}
             </p>
-            {o.applied && <Tag tone="green" size="sm">You applied</Tag>}
+            {o.applied && <Tag tone="green" size="sm">{tr("contracts.youApplied")}</Tag>}
             {closed && <Tag tone="neutral" size="sm">Closed</Tag>}
           </div>
           <p className="mt-1 text-xsm" style={{ color: v("--ux-muted") }}>
@@ -353,7 +353,7 @@ function OrderCard({ o, closed, busy, onApply }: {
       {terms && (
         <div className="mx-4 mt-4 rounded-[12px] p-4 lg:mx-5" style={{ background: v("--ux-surface-2") }}>
           <p className="text-[12px] font-extrabold uppercase lg:text-2xs tracking-[0.14em]" style={{ color: v("--ux-muted") }}>
-            What the buyer says
+            {tr("contracts.whatTheBuyerSays")}
           </p>
           <p className="mt-2 whitespace-pre-line text-xsm leading-relaxed" style={{ color: v("--ux-ink-2") }}>
             {o.desc || "This buyer wrote no description."}
@@ -375,11 +375,11 @@ function OrderCard({ o, closed, busy, onApply }: {
       <div className="mt-4 flex flex-col gap-2 border-t px-4 py-4 lg:flex-row lg:flex-wrap lg:px-5" style={{ borderColor: v("--ux-line") }}>
         {o.applied ? (
           <Btn className="ux-action-primary" variant="outline" icon="Check" href="/app/applications">
-            You applied — see it
+            {tr("contracts.youAppliedSeeIt")}
           </Btn>
         ) : closed ? (
           <Btn className="ux-action-primary" disabled icon="Lock">
-            Applications have closed
+            {tr("work.closed")}
           </Btn>
         ) : (
           <Btn className="ux-action-primary" loading={busy} disabled={busy} onClick={onApply}>

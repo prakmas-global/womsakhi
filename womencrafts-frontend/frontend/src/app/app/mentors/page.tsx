@@ -14,11 +14,12 @@ import { apiLeaveFeedback } from "@/lib/member-api";
 import { HomeShell } from "@/components/ux/home/HomeShell";
 import { ActionRow, ChipRow, ScreenHead, Segments, Tag } from "@/components/ux/learning/native";
 import {
-  EXPERTISE, LANGUAGES, MENTOR_ART, rupees,
+  EXPERTISE as RAW_EXPERTISE, LANGUAGES as RAW_LANGUAGES, MENTOR_ART as RAW_MENTOR_ART, rupees,
 } from "@/components/ux/mentors/data";
 import { useMentors } from "@/components/ux/live";
 import { useMentorSessions } from "@/components/ux/growth";
 import { useT } from "@/i18n";
+import { useTranslated } from "@/i18n/data";
 
 /**
  * Mentors — women who have done it, and will sit with you.
@@ -28,6 +29,9 @@ import { useT } from "@/i18n";
  * wastes both their time.
  */
 export default function MentorsPage() {
+  const LANGUAGES = useTranslated(RAW_LANGUAGES);
+  const EXPERTISE = useTranslated(RAW_EXPERTISE);
+  const MENTOR_ART = useTranslated(RAW_MENTOR_ART);
   const tr = useT();
   const { data: MENTORS, source, refetch } = useMentors();
   const { data: MY_SESSIONS } = useMentorSessions();
@@ -55,7 +59,7 @@ export default function MentorsPage() {
       rail={
         <div className="space-y-[16px]">
           <Card className="ux-onscroll-soft">
-            <SectionHead title={tr("mentors.yourSessions")} action="See all" onAction={() => setTab("My sessions")} />
+            <SectionHead title={tr("mentors.yourSessions")} action={tr("circles.seeAll")} onAction={() => setTab("My sessions")} />
             {MY_SESSIONS.length ? (
               <div className="ux-stagger space-y-2.5">
                 {MY_SESSIONS.map((s) => (
@@ -117,7 +121,7 @@ export default function MentorsPage() {
           : `${upcoming.length} ${plural("session", upcoming.length)} coming up`}
         note={<SourceNote source={source} what="mentors" />}
       >
-        <Segments items={["Find a mentor", "My sessions"]} active={tab} onChange={setTab} label="Mentors view" />
+        <Segments items={["Find a mentor", "My sessions"]} active={tab} onChange={setTab} label={tr("mentors.mentorsView")} />
       </ScreenHead>
 
       {tab === "Find a mentor" && (
@@ -227,8 +231,8 @@ export default function MentorsPage() {
                                placeholder={tr("mentors.sayWhatYouWantHelpWith")}
                                send={async (n) => { await apiRequestMentor(m.id, n.text); refetch(); }}
                                sent={`Your request is with ${m.name}`}
-                               sentBody="She usually replies within a day or two. It is under My sessions until she does."
-                               sentLink={{ href: "/app/mentors", label: "See your sessions" }} />
+                               sentBody={tr("mentors.sheUsuallyRepliesWithinADay")}
+                               sentLink={{ href: "/app/mentors", label: tr("mentors.seeYourSessions") }} />
                       )}
                     </ActionRow>
                   </div>
@@ -240,7 +244,7 @@ export default function MentorsPage() {
               <EmptyState
                 icon="SearchX"
                 title={tr("mentors.noMentorMatchesAllOfThat")}
-                body="Loosen one filter — language is usually the one worth keeping."
+                body={tr("mentors.loosenOneFilterLanguageIsUsually")}
                 action={<Btn onClick={() => { setSkills([]); setFreeOnly(false); }} variant="soft">{tr("mentors.keepLanguageOnly")}</Btn>}
               />
             </Card>
@@ -278,7 +282,7 @@ export default function MentorsPage() {
                 <span className="flex w-full shrink-0 items-center gap-2 empty:hidden [&>*]:flex-1 lg:w-auto lg:empty:flex lg:[&>*]:flex-none">
                   {s.state === "Upcoming" && (
                     <ActionBtn variant="primary" size="sm" icon="Video" doneIcon="Copy" done={tr("mentors.linkCopied")}
-                               act={() => copy(`https://meet.womsakhi.in/${s.id}`, COPY.linkCopied, "meet.womsakhi.in/" + s.id)}>
+                               act={() => copy(`https://meet.womsakhi.com/${s.id}`, COPY.linkCopied, "meet.womsakhi.com/" + s.id)}>
                       Join
                     </ActionBtn>
                   )}
@@ -303,7 +307,7 @@ export default function MentorsPage() {
                                type: "Mentoring Session", program: s.mentor,
                              })}
                              sent={COPY.noteReceived}
-                             sentBody="It goes to the people who run WomSakhi. It is not shown on her profile or anywhere public."
+                             sentBody={tr("mentors.itGoesToThePeopleWho")}
                              sentLink={null} />
                   )}
                 </span>

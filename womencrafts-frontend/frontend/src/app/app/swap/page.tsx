@@ -3,8 +3,11 @@
 import { useCallback, useMemo, useState } from "react";
 
 import { HomeShell } from "@/components/ux/home/HomeShell";
-import { Btn, Card, Chip, EmptyState, I, IconTile, Pill, SectionHead, Stat, v } from "@/components/ux/kit";
-import { SWAPS, type SwapItem } from "@/components/ux/life/data";
+import { Btn, Card, Chip, EmptyState, I, IconTile, SectionHead, SourceNote, Stat, v } from "@/components/ux/kit";
+import { useResource } from "@/lib/use-resource";
+import { apiOfferSwap, apiRemoveSwap, apiSwapTaken, apiSwaps, type SwapCondition, type SwapItem, type Swaps } from "@/lib/life-api";
+import { Sheet } from "@/components/ux/kit/sheet";
+import { Label, Select, Text } from "@/components/ux/kit/form";
 import { useT } from "@/i18n";
 import { ListGroup } from "@/components/ux/mobile/ListRow";
 import { SegmentedControl } from "@/components/ux/mobile/SegmentedControl";
@@ -30,7 +33,7 @@ import { GroupLabel, PhoneRow, PhoneTitle, phonePrimary } from "@/components/ux/
  * item — outgrown every single year, needed every single June.
  */
 
-const CONDITION: Record<SwapItem["condition"], { tint: string; ink: string }> = {
+const CONDITION: Record<SwapCondition, { tint: string; ink: string }> = {
   "as new": { tint: "--ux-tint-green", ink: "--ux-green-ink" },
   good: { tint: "--ux-tint-blue", ink: "--ux-blue-ink" },
   "worn but fine": { tint: "--ux-surface-2", ink: "--ux-muted" },
@@ -40,9 +43,30 @@ type Filter = "all" | "free" | "children";
 
 export default function SwapPage() {
   const tr = useT();
-  const [rows, setRows] = useState<SwapItem[]>(SWAPS);
   const [filter, setFilter] = useState<Filter>("all");
   const [note, setNote] = useState<string | null>(null);
+  const [err, setErr] = useState<string | null>(null);
+  const [busy, setBusy] = useState<string | null>(null);
+  const [offering, setOffering] = useState(false);
+  const [what, setWhat] = useState("");
+  const [size, setSize] = useState("");
+  const [condition, setCondition] = useState<SwapCondition>("good");
+  const [wants, setWants] = useState("Free");
+
+  /**
+   * The real board. It used to show five invented offers — a school uniform
+   * from Kavita Rao 0.6km away, maternity kurtas from Meera Joshi — so a woman
+   * could set out to meet somebody who did not exist.
+   *
+   * The distances are gone with them. Nothing in this product knows where she
+   * lives, and putting a confident "0.6 km" on a screen that sends her to
+   * collect something from a stranger is the wrong thing to guess at.
+   */
+  const swaps = useResource<Swaps>(
+    useCallback((sig) => apiSwaps(false, sig), []),
+    { items: [], available: 0, count: 0 },
+  );
+  const rows = swaps.data.items;
 
   const open = useMemo(() => rows.filter((s) => !s.taken), [rows]);
   const shown = useMemo(() => {
@@ -53,18 +77,58 @@ export default function SwapPage() {
   }, [open, filter]);
   const taken = useMemo(() => rows.filter((s) => s.taken), [rows]);
 
-  const claim = useCallback((id: string) => {
-    setRows((r) => r.map((s) => (s.id === id ? { ...s, taken: true } : s)));
+  /**
+   * Marking something gone.
+   *
+   * Only the woman who offered it can do this, which is also what the server
+   * enforces — otherwise one person could clear the whole board.
+   *
+   * The button used to say the owner "has been told". Nothing was sent to
+   * anybody: it set a flag in React state and wrote that sentence. A woman
+   * would then wait to be contacted about a thing nobody knew she wanted.
+   */
+  const claim = useCallback(async (id: string) => {
     const s = rows.find((x) => x.id === id);
-    setNote(`${s?.from} has been told. Collect it from her — nothing is posted, nothing is charged.`);
-  }, [rows]);
+    setBusy(id); setErr(null);
+    try {
+      await apiSwapTaken(id);
+      setNote(`${s?.what} marked as gone.`);
+      swaps.refetch();
+    } catch { setErr("Could not mark that gone."); }
+    finally { setBusy(null); }
+  }, [rows, swaps]);
+
+  const drop = useCallback(async (id: string) => {
+    setBusy(id); setErr(null);
+    try {
+      await apiRemoveSwap(id);
+      setNote("Taken off the board.");
+      swaps.refetch();
+    } catch { setErr("Could not remove that."); }
+    finally { setBusy(null); }
+  }, [swaps]);
+
+  const offer = useCallback(async () => {
+    if (!what.trim()) { setErr("What are you passing on?"); return; }
+    setBusy("offer"); setErr(null);
+    try {
+      await apiOfferSwap({
+        what: what.trim(), size: size.trim(), condition,
+        wants: wants.trim() || "Free",
+      });
+      setNote("On the board. Women in your circles can see it now.");
+      setOffering(false); setWhat(""); setSize(""); setWants("Free");
+      swaps.refetch();
+    } catch { setErr("That did not save."); }
+    finally { setBusy(null); }
+  }, [what, size, condition, wants, swaps]);
 
   return (
     <HomeShell active="/app/swap">
       <div className="flex flex-col gap-5">
 
         <PhoneTitle title={tr("swap.passItOn")} sub={tr("swap.whatSomeoneNearYouNoLonger")}
-                    note="Uniforms outgrown, baby things finished with, a lehenga worn once. Collected in person from a woman you know. No prices, no posting, no fee.">
+                    note={tr("swap.uniformsOutgrownBabyThingsFinishedWith")}>
           <Btn icon="Plus" className={`mt-4 ${phonePrimary}`}
                onClick={() => setNote("Photograph it where it is. No studio, no measurements, no listing fee.")}>{tr("swap.offerSomething")}</Btn>
         </PhoneTitle>
@@ -78,8 +142,10 @@ export default function SwapPage() {
               person from a woman you know. No prices, no posting, no fee.
             </p>
           </div>
-          <Btn icon="Plus" onClick={() => setNote("Photograph it where it is. No studio, no measurements, no listing fee.")}>{tr("swap.offerSomething")}</Btn>
+          <Btn icon="Plus" onClick={() => { setOffering(true); setErr(null); }}>{tr("swap.offerSomething")}</Btn>
         </header>
+
+        <SourceNote source={swaps.source} what="this board" />
 
         <Card>
           <div className="grid gap-4 sm:grid-cols-3">
@@ -122,7 +188,7 @@ export default function SwapPage() {
 
           {shown.length === 0 ? (
             <Card><EmptyState icon="Gift" title={tr("swap.nothingHereJustNow")}
-                              body="Try another filter, or offer something yourself — someone always needs a uniform in June."
+                              body={tr("swap.tryAnotherFilterOrOfferSomething")}
                               action={<Btn size="sm" variant="outline" onClick={() => setFilter("all")}>{tr("swap.showEverything")}</Btn>} /></Card>
           ) : (
             <>
@@ -140,9 +206,19 @@ export default function SwapPage() {
                                       style={{ background: v(c.tint), color: v(c.ink) }}>{s.condition}</span>
                               </span>
                             }
-                            meta={`${s.from} · ${s.km} km${s.size ? ` · ${s.size}` : ""}`}
+                            meta={[s.from, s.size].filter(Boolean).join(" · ")}
                             body={s.wants}>
-                    <Btn size="sm" full className="mt-3 max-lg:px-4" onClick={() => claim(s.id)}>{tr("swap.askHerForIt")}</Btn>
+                    {s.mine ? (
+                      <div className="mt-3 flex gap-2">
+                        <Btn size="sm" full variant="outline" disabled={busy === s.id}
+                             onClick={() => claim(s.id)}>Mark gone</Btn>
+                        <Btn size="sm" full variant="ghost" disabled={busy === s.id}
+                             onClick={() => drop(s.id)}>Remove</Btn>
+                      </div>
+                    ) : (
+                      <Btn size="sm" full className="mt-3 max-lg:px-4" icon="MessageCircle"
+                           href="/app/messages">{tr("swap.askHerForIt")}</Btn>
+                    )}
                   </PhoneRow>
                 );
               })}
@@ -161,14 +237,24 @@ export default function SwapPage() {
                                 style={{ background: v(c.tint), color: v(c.ink) }}>{s.condition}</span>
                         </div>
                         <p className="mt-0.5 text-xs" style={{ color: v("--ux-muted") }}>
-                          {s.from} · {s.km} km{s.size ? ` · ${s.size}` : ""}
+                          {[s.from, s.size].filter(Boolean).join(" · ")}
                         </p>
                         <p className="mt-2 text-xsm leading-relaxed" style={{ color: v("--ux-ink-2") }}>
                           {s.wants}
                         </p>
                       </div>
                     </div>
-                    <Btn size="sm" full className="mt-3" onClick={() => claim(s.id)}>{tr("swap.askHerForIt")}</Btn>
+                    {s.mine ? (
+                      <div className="mt-3 flex gap-2">
+                        <Btn size="sm" full variant="outline" disabled={busy === s.id}
+                             onClick={() => claim(s.id)}>Mark gone</Btn>
+                        <Btn size="sm" full variant="ghost" disabled={busy === s.id}
+                             onClick={() => drop(s.id)}>Remove</Btn>
+                      </div>
+                    ) : (
+                      <Btn size="sm" full className="mt-3" icon="MessageCircle"
+                           href="/app/messages">{tr("swap.askHerForIt")}</Btn>
+                    )}
                   </Card>
                 );
               })}
@@ -206,6 +292,43 @@ export default function SwapPage() {
           </div>
         </Card>
       </div>
+
+      <Sheet
+        open={offering}
+        onClose={() => { setOffering(false); setErr(null); }}
+        icon="Gift" title="Pass something on"
+        description="Something you no longer need. No price — say what you would like in return, or nothing at all."
+        footer={
+          <div className="flex gap-2">
+            <Btn variant="ghost" full onClick={() => { setOffering(false); setErr(null); }}>Cancel</Btn>
+            <Btn full loading={busy === "offer"} onClick={offer}>Put it up</Btn>
+          </div>
+        }
+      >
+        <div className="flex flex-col gap-4">
+          <div><Label need>What is it</Label>
+            <Text value={what} onChange={setWhat} label="What you are passing on"
+                  placeholder="School uniform, girls" max={120} /></div>
+          <div><Label hint="If it matters">Size</Label>
+            <Text value={size} onChange={setSize} label="What size" placeholder="Class 3–4" max={40} /></div>
+          <div><Label>Condition</Label>
+            <Select value={condition} onChange={(x) => setCondition(x as SwapCondition)} label="What condition it is in"
+                    options={[
+                      { value: "as new", label: "As new" },
+                      { value: "good", label: "Good" },
+                      { value: "worn but fine", label: "Worn but fine" },
+                    ]} /></div>
+          <div><Label hint="Never money">What you would like back</Label>
+            <Text value={wants} onChange={setWants} label="What you would like in return"
+                  placeholder="Free — my daughter outgrew it" max={120} /></div>
+          {err && (
+            <p className="flex items-start gap-2 rounded-[12px] px-3.5 py-3 text-xsm leading-relaxed"
+               style={{ background: v("--ux-danger-tint"), color: v("--ux-danger-ink") }}>
+              <I name="AlertTriangle" className="mt-[2px] h-[15px] w-[15px] shrink-0" />{err}
+            </p>
+          )}
+        </div>
+      </Sheet>
     </HomeShell>
   );
 }

@@ -1,10 +1,13 @@
 "use client";
 
 import { useState, type FormEvent } from "react";
+import { useT } from "@/i18n";
 import Link from "next/link";
 import { ArrowRight, Eye, EyeOff, Loader2, Lock, Mail, Phone, ShieldCheck, UserRound } from "lucide-react";
 
 import { useAuth, getAuthError } from "@/context/AuthContext";
+import { useI18n } from "@/i18n";
+import { BrandLockup } from "@/components/brand/BrandLockup";
 
 /**
  * Joining.
@@ -21,8 +24,10 @@ import { useAuth, getAuthError } from "@/context/AuthContext";
  * a small thing to lose in silence.
  */
 export default function SignUpPage() {
+  const tr = useT();
   const { signUp } = useAuth();
 
+  const { locale } = useI18n();
   const [fullName, setFullName] = useState("");
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
@@ -54,7 +59,11 @@ export default function SignUpPage() {
     setLoading(true);
     try {
       // The phone goes with it. It used to be collected here and dropped.
-      await signUp(fullName, email, password, { phone: phone.trim() || undefined });
+      // The language she chose on this screen, saved with the account rather
+      // than left in a cookie — `apiSignUp` defaulted it to "en", so a woman
+      // who set Telugu before filling the form had an English account from the
+      // moment she created it, and got English on every other device.
+      await signUp(fullName, email, password, { phone: phone.trim() || undefined, locale });
     } catch (err) {
       setError(getAuthError(err));
     } finally {
@@ -73,20 +82,17 @@ export default function SignUpPage() {
     <div>
       {/* ── Brand ── */}
       <div className="auth-brand">
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img
-          src="/womsakhi-lockup.png"
-          alt="WomSakhi - Stronger Women. Brighter Tomorrows."
+        <BrandLockup
+          alt={tr("waitScreen.womsakhiStrongerWomenBrighterTomorrows")}
           className="auth-main-lockup object-contain"
-          decoding="async"
         />
       </div>
 
       <h1 className="font-bold leading-tight tracking-tight" style={{ color: "var(--a-ink)", fontSize: "clamp(1.35rem, 3.4vh, 2.1rem)", marginTop: "clamp(0.625rem,2.2vh,1.75rem)" }}>
-        Join <span className="auth-shine">WomSakhi</span>
+        {tr("page.join1")} <span className="auth-shine">{tr("page.join2")}</span>
       </h1>
       <p className="auth-sub text-xsm" style={{ color: "var(--a-muted)", marginTop: "clamp(0.25rem,0.8vh,0.375rem)" }}>
-        Women only, and free — nobody here may ever charge you to find work.
+        {tr("page.womenOnlyAndFreeNobodyHere")}
       </p>
 
       {error && (
@@ -105,13 +111,13 @@ export default function SignUpPage() {
 
       <form onSubmit={handleSubmit} style={{ marginTop: "clamp(0.625rem,2vh,1.5rem)" }} className="space-y-[clamp(0.4375rem,1.2vh,0.875rem)]">
         <div>
-          <label htmlFor="su-name" className={labelCls} style={labelStyle}>Your name</label>
+          <label htmlFor="su-name" className={labelCls} style={labelStyle}>{tr("settingsAccount.yourName")}</label>
           <div className="relative">
             <UserRound className={iconCls} style={iconStyle} aria-hidden />
             <input
               id="su-name" type="text" required autoComplete="name" autoFocus
               value={fullName} onChange={(e) => setFullName(e.target.value)}
-              placeholder="The name you want to be called" className={field} style={fieldPad}
+              placeholder={tr("page.theNameYouWantToBe")} className={field} style={fieldPad}
             />
           </div>
         </div>
@@ -123,7 +129,7 @@ export default function SignUpPage() {
             <input
               id="su-email" type="email" required autoComplete="email"
               value={email} onChange={(e) => setEmail(e.target.value)}
-              placeholder="you@example.com" className={field} style={fieldPad}
+              placeholder={tr("page.youExampleCom")} className={field} style={fieldPad}
             />
           </div>
         </div>
@@ -141,7 +147,7 @@ export default function SignUpPage() {
             />
           </div>
           <p className="mt-1 text-2xs leading-snug" style={{ color: "var(--a-faint)" }}>
-            Only to reach you about your own work. Never shown to anyone else.
+            {tr("page.onlyToReachYouAboutYour")}
           </p>
         </div>
 
@@ -153,7 +159,7 @@ export default function SignUpPage() {
               id="su-password" type={showPassword ? "text" : "password"} required
               autoComplete="new-password" minLength={8}
               value={password} onChange={(e) => setPassword(e.target.value)}
-              placeholder="At least 8 characters" className={`${field} pe-12`} style={fieldPad}
+              placeholder={tr("page.atLeast8Characters")} className={`${field} pe-12`} style={fieldPad}
             />
             <button
               type="button" onClick={() => setShowPassword((v) => !v)}
@@ -206,7 +212,7 @@ export default function SignUpPage() {
 
       <p className="text-center text-xsm" style={{ color: "var(--a-muted)", marginTop: "clamp(0.625rem,2vh,1.5rem)" }}>
         Already have an account?{" "}
-        <Link href="/signin" className="auth-link font-semibold">Sign in</Link>
+        <Link href="/signin" className="auth-link font-semibold">{tr("page.signIn")}</Link>
       </p>
     </div>
   );

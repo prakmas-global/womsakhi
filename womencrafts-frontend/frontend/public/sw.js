@@ -86,9 +86,15 @@ const OFFLINE_HTML = `<!doctype html>
   p { margin:0 0 22px; color:#5c6180; }
   button { font:inherit; font-weight:600; color:#fff; background:#7648b3; border:0;
            border-radius:14px; padding:13px 26px; min-height:48px; cursor:pointer; }
+  .lines { list-style:none; margin:26px 0 0; padding:18px 0 0; border-top:1px solid #e0dcee;
+           text-align:start; }
+  .lines a { display:flex; align-items:baseline; gap:10px; min-height:48px; padding:6px 0;
+             font-weight:700; font-size:17px; color:#7648b3; text-decoration:none; }
+  .lines span { font-weight:400; font-size:13px; color:#5c6180; }
   @media (prefers-color-scheme: dark) {
     body { background:#14122a; color:#f2f0fb; } p { color:#a09bc2; }
     button { background:#8f6ae8; }
+    .lines { border-top-color:#2b2748; } .lines a { color:#b79cf5; } .lines span { color:#a09bc2; }
   }
 </style></head>
 <body><div class="box">
@@ -96,6 +102,29 @@ const OFFLINE_HTML = `<!doctype html>
   <h1>You are offline</h1>
   <p>WomSakhi needs a connection to show your account. Your data is safe — nothing was lost.</p>
   <button onclick="location.reload()">Try again</button>
+
+  <!--
+    The numbers, written into this page.
+
+    The Offline settings screen promises that "the helpline numbers" stay
+    available without a connection. They did not: bucketFor refuses every
+    /api/ path on purpose, and rightly — a cached wallet balance is her money
+    written to disk, and the API's responses vary on her cookie. So the promise
+    was true of nothing.
+
+    These six are public, national and non-personal, they do not change, and
+    they matter most in exactly the situation this page exists for. Written in
+    here they need no cache, no session and no signal: the page is served by
+    the worker itself, and tel: dials on a phone with no data at all.
+  -->
+  <ul class="lines">
+    <li><a href="tel:181">181<span>Women&rsquo;s Helpline, all India</span></a></li>
+    <li><a href="tel:112">112<span>Emergency &mdash; police, fire, ambulance</span></a></li>
+    <li><a href="tel:7827170170">7827 170 170<span>Domestic abuse &mdash; NCW</span></a></li>
+    <li><a href="tel:1098">1098<span>Childline</span></a></li>
+    <li><a href="tel:14416">14416<span>Mental health &mdash; Tele-MANAS</span></a></li>
+    <li><a href="tel:1091">1091<span>Women in distress</span></a></li>
+  </ul>
 </div></body></html>`;
 
 const offlineResponse = () =>
@@ -235,4 +264,67 @@ self.addEventListener("fetch", (event) => {
   if (!bucket) return; // Not ours: the browser fetches it exactly as it would without us.
 
   event.respondWith(cacheFirst(bucket, request));
+});
+
+/* ── web push ─────────────────────────────────────────────────────────────
+   A reminder arriving while the app is closed.
+
+   Without these two handlers a push is delivered to the worker and nothing
+   happens: the subscription is live, the server records a successful send,
+   and her phone stays silent — the hardest kind of failure to notice, because
+   every log says it worked.
+
+   `showNotification` is not optional. The subscription is created with
+   `userVisibleOnly: true`, so a push that does not display something is a
+   promise broken to the browser, and Chrome eventually revokes the
+   subscription for it.
+*/
+
+self.addEventListener("push", (event) => {
+  let data = {};
+  try {
+    data = event.data ? event.data.json() : {};
+  } catch {
+    // A payload that is not JSON is still worth showing rather than dropping.
+    data = { title: "WomSakhi", body: event.data ? event.data.text() : "" };
+  }
+
+  const title = data.title || "WomSakhi";
+  const options = {
+    body: data.body || "",
+    icon: "/icon.png",
+    badge: "/icon.png",
+    // Her own reminder, on a phone that may be shared: no amounts, no health
+    // detail. The server already renders these short — this is the second
+    // place that has to stay true.
+    tag: data.tag || data.occurrence_id || "womsakhi",
+    // Replace rather than stack: five of the same reminder on a lock screen is
+    // how a woman turns the whole thing off.
+    renotify: Boolean(data.tag || data.occurrence_id),
+    data: {
+      url: data.url || "/app/reminders",
+      occurrence_id: data.occurrence_id || "",
+    },
+  };
+
+  event.waitUntil(self.registration.showNotification(title, options));
+});
+
+self.addEventListener("notificationclick", (event) => {
+  event.notification.close();
+  const target = (event.notification.data && event.notification.data.url) || "/app/reminders";
+
+  // Focus a tab she already has open rather than opening a third one. A woman
+  // who taps three reminders should not end up with three copies of the app.
+  event.waitUntil(
+    self.clients.matchAll({ type: "window", includeUncontrolled: true }).then((tabs) => {
+      for (const tab of tabs) {
+        if ("focus" in tab) {
+          if ("navigate" in tab) void tab.navigate(target);
+          return tab.focus();
+        }
+      }
+      return self.clients.openWindow(target);
+    }),
+  );
 });

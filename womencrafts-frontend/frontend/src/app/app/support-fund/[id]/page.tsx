@@ -72,7 +72,7 @@ export default function SchemeDetail({ params }: { params: Promise<{ id: string 
           <EmptyState
             icon="FileQuestion"
             title={tr("supportfund.thatSchemeIsNotListed")}
-            body="It may have closed, or the link may be old."
+            body={tr("circles.itMayHaveClosedOrThe")}
             action={<Btn href="/app/support-fund" variant="primary" iconEnd="ArrowRight">{tr("supportfund.allSchemes")}</Btn>}
           />
         </Card>

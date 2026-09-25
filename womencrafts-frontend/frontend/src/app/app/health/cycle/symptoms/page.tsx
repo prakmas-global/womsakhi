@@ -1,20 +1,24 @@
 "use client";
 
 import { useRouter } from "next/navigation";
+import { useT } from "@/i18n";
 import { useEffect, useState } from "react";
 
 import * as Icons from "@/components/ux/icons";
 import { HomeShell } from "@/components/ux/home/HomeShell";
 import { Column, CycleHeader, CyButton, DeskTitle, ErrorLine, Icon } from "@/components/ux/cycle/parts";
-import { SYMPTOMS } from "@/components/ux/cycle/data";
+import { SYMPTOMS as RAW_SYMPTOMS } from "@/components/ux/cycle/data";
 import { useCycle } from "@/components/ux/cycle/use-cycle";
 import { apiCycleLog, type Symptom } from "@/lib/cycle-api";
+import { useTranslated } from "@/i18n/data";
 
 /**
  * What she is feeling in her body today. Twelve tiles, any number of them;
  * "None" clears the rest, and choosing anything else clears "None".
  */
 export default function Symptoms() {
+  const SYMPTOMS = useTranslated(RAW_SYMPTOMS);
+  const tr = useT();
   const router = useRouter();
   const { state, data, act, busy, error } = useCycle();
   const [picked, setPicked] = useState<Symptom[] | null>(null);
@@ -67,7 +71,7 @@ export default function Symptoms() {
              style={{ background: "var(--cy-predicted)", border: "1px solid var(--ux-line)" }}>
           <Icons.Sparkles className="h-5 w-5 shrink-0" style={{ color: "var(--cy-period-ink)" }} aria-hidden />
           <p className="text-[13px] leading-snug" style={{ color: "var(--ux-ink-2)" }}>
-            Tracking helps us give you better insights and suggestions.
+            {tr("healthCycleSymptoms.trackingHelpsUsGiveYouBetter")}
           </p>
         </div>
 

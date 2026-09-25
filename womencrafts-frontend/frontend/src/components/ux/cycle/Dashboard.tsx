@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useT } from "@/i18n";
 import { useCallback, useState } from "react";
 
 import * as Icons from "@/components/ux/icons";
@@ -11,8 +12,10 @@ import { useResource } from "@/lib/use-resource";
 import {
   CycleRing, Icon, InsightRow, Legend, MonthCalendar, MoodRow, RingSeed, SoftHeart, heroBg,
 } from "./parts";
-import { GUIDES, MOODS, PHASE_COPY, SYMPTOMS, carePlan, quoteFor, symptomLabel } from "./data";
+import { GUIDES as RAW_GUIDES, MOODS as RAW_MOODS, PHASE_COPY as RAW_PHASE_COPY, SYMPTOMS as RAW_SYMPTOMS, carePlan, quoteFor, symptomLabel } from "./data";
 import { shortDate, shiftMonth, type useCycle } from "./use-cycle";
+import { useTranslated } from "@/i18n/data";
+import { EngineNudge } from "@/components/ux/reminders/EngineNudge";
 
 /**
  * The laptop view of the tracker — the owner's second reference, one screen.
@@ -55,6 +58,10 @@ const ViewAll = ({ href, label = "View all" }: { href: string; label?: string })
 const MOOD_SCORE: Record<Mood, number> = { happy: 5, calm: 4, tired: 3, irritable: 2, sad: 1 };
 
 export function CycleDashboard({ cycle }: { cycle: ReturnType<typeof useCycle> & { state: CycleState } }) {
+  const GUIDES = useTranslated(RAW_GUIDES);
+  const SYMPTOMS = useTranslated(RAW_SYMPTOMS);
+  const PHASE_COPY = useTranslated(RAW_PHASE_COPY);
+  const tr = useT();
   const { state: s, act, busy } = cycle;
   const st = s.status;
   const [month, setMonth] = useState(s.calendar.month);
@@ -71,9 +78,9 @@ export function CycleDashboard({ cycle }: { cycle: ReturnType<typeof useCycle> &
   const phases = s.phases;
   const legend = [
     { tone: "var(--cy-period)", label: "Period", sub: `${st.avg_period} days` },
-    { tone: "var(--cy-fertile-ink)", label: "Fertile window", sub: `Day ${phases[2].from - 4}–${phases[2].from + 1}` },
+    { tone: "var(--cy-fertile-ink)", label: tr("wellness.fertileWindow"), sub: `Day ${phases[2].from - 4}–${phases[2].from + 1}` },
     { tone: "var(--cy-ovulation)", label: "Ovulation", sub: `Day ${phases[2].from + 1}` },
-    { tone: "var(--cy-mood-happy)", label: "Luteal phase", sub: `Day ${phases[3].from}–${phases[3].to}` },
+    { tone: "var(--cy-mood-happy)", label: tr("dashboard.lutealPhase"), sub: `Day ${phases[3].from}–${phases[3].to}` },
   ];
   const plan = carePlan(planPhase);
   const order: Phase[] = ["menstrual", "follicular", "ovulation", "luteal"];
@@ -90,6 +97,16 @@ export function CycleDashboard({ cycle }: { cycle: ReturnType<typeof useCycle> &
 
   return (
     <div className="cy-dash">
+      {/*
+        Her own check-in, pointed at from the module that already asks about
+        her body. It links rather than duplicating the question: one place
+        records a mood, and this is not it.
+      */}
+      <div className="mb-4">
+        <EngineNudge href="/app/health/today"
+          icon="Smile" tint="--ux-tint-violet" ink="--ux-violet-ink"
+          labelKey="nudge.cycle.label" noteKey="nudge.cycle.note" />
+      </div>
       <style>{CSS}</style>
 
       {/* ── Hero ── */}
@@ -99,10 +116,10 @@ export function CycleDashboard({ cycle }: { cycle: ReturnType<typeof useCycle> &
           <img src="/ux/art/leaves-pink.webp" alt="" aria-hidden className="pointer-events-none absolute -bottom-10 end-[30%] h-[190px] w-auto opacity-40 mix-blend-multiply" />
           <div className="relative z-[1] max-w-[440px]">
             <h1 className="ux-display text-[34px] font-bold leading-[1.1]" style={{ color: "var(--ux-ink)" }}>
-              Understand Your Cycle<br />Embrace Your <span style={{ color: "var(--cy-period-ink)" }}>Power</span>
+              {tr("dashboard.understandYourCycle")}<br />{tr("dashboard.embraceYour")} <span style={{ color: "var(--cy-period-ink)" }}>Power</span>
             </h1>
             <p className="mt-3 text-[15px] leading-relaxed" style={{ color: "var(--ux-ink-2)" }}>
-              Track. Learn. Get personalised insights.<br />Because a healthier you creates a brighter tomorrow.
+              {tr("dashboard.trackLearnGetPersonalisedInsights")}<br />{tr("dashboard.becauseAHealthierYouCreatesA")}
             </p>
             <Link href="/app/health/cycle/log"
                   className="ux-press mt-5 inline-flex h-[48px] items-center gap-2 rounded-[14px] px-6 text-[15px] font-semibold"
@@ -111,7 +128,7 @@ export function CycleDashboard({ cycle }: { cycle: ReturnType<typeof useCycle> &
             </Link>
           </div>
           <p className="ux-display pointer-events-none absolute end-6 top-5 z-[2] hidden rotate-[-6deg] text-[18px] italic leading-tight xl:block" style={{ color: "var(--cy-period-ink)" }}>
-            Your health,<br />&nbsp;Your rhythm,<br />&nbsp;&nbsp;Your power&rdquo; <SoftHeart />
+            {tr("dashboard.yourHealth")}<br />&nbsp;Your rhythm,<br />&nbsp;&nbsp;Your power&rdquo; <SoftHeart />
           </p>
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img src="/ux/art/scene-woman-meditating.webp" alt="" aria-hidden
@@ -126,7 +143,7 @@ export function CycleDashboard({ cycle }: { cycle: ReturnType<typeof useCycle> &
                          onPrev={() => setMonth((m) => shiftMonth(m, -1))} onNext={() => setMonth((m) => shiftMonth(m, 1))} />
           {!cells && (
             <p className="mt-2 text-center text-[13px]" style={{ color: "var(--ux-muted)" }}>
-              <Link href={`/app/health/cycle?month=${month}`} className="font-semibold" style={{ color: "var(--cy-period-ink)" }}>Open this month</Link>
+              <Link href={`/app/health/cycle?month=${month}`} className="font-semibold" style={{ color: "var(--cy-period-ink)" }}>{tr("dashboard.openThisMonth")}</Link>
             </p>
           )}
           <Legend className="mt-4 justify-center" />
@@ -137,12 +154,12 @@ export function CycleDashboard({ cycle }: { cycle: ReturnType<typeof useCycle> &
       <A a="ins">
         <Card>
           <div className="mb-4 flex items-center justify-between">
-            <h2 className="text-[17px] font-semibold" style={{ color: "var(--ux-ink)" }}>Cycle Insights</h2>
+            <h2 className="text-[17px] font-semibold" style={{ color: "var(--ux-ink)" }}>{tr("healthCycle.cycleInsights")}</h2>
             <ViewAll href="/app/health/cycle/insights" />
           </div>
           <div className="space-y-4">
             {s.insights.length ? s.insights.slice(0, 4).map((i) => <InsightRow key={i.text} i={i} />)
-              : <p className="text-[15px]" style={{ color: "var(--ux-muted)" }}>Log a few days to see your patterns.</p>}
+              : <p className="text-[15px]" style={{ color: "var(--ux-muted)" }}>{tr("dashboard.logAFewDaysToSee")}</p>}
           </div>
         </Card>
       </A>
@@ -150,7 +167,7 @@ export function CycleDashboard({ cycle }: { cycle: ReturnType<typeof useCycle> &
       {/* ── At a glance ── */}
       <A a="glance">
         <Card>
-          <h2 className="text-[17px] font-semibold" style={{ color: "var(--ux-ink)" }}>Your Cycle at a Glance</h2>
+          <h2 className="text-[17px] font-semibold" style={{ color: "var(--ux-ink)" }}>{tr("dashboard.yourCycleAtAGlance")}</h2>
           <div className="mt-3 flex items-center gap-4">
             <CycleRing value={Math.min(st.cycle_day ?? 0, st.avg_cycle)} max={st.avg_cycle} size={116} stroke={12}>
               <RingSeed size={48} />
@@ -164,7 +181,7 @@ export function CycleDashboard({ cycle }: { cycle: ReturnType<typeof useCycle> &
               </span>
               <Link href="/app/health/cycle/log" className="ux-press mt-3 inline-flex h-[40px] items-center rounded-[12px] px-4 text-[15px] font-semibold"
                     style={{ background: "linear-gradient(90deg, var(--cy-period), var(--ux-fill))", color: "var(--ux-on-brand)" }}>
-                Log Today
+                {tr("dashboard.logToday")}
               </Link>
             </div>
           </div>
@@ -184,15 +201,15 @@ export function CycleDashboard({ cycle }: { cycle: ReturnType<typeof useCycle> &
       {/* ── Feeling ── */}
       <A a="feel">
         <Card>
-          <h2 className="mb-3 text-[17px] font-semibold" style={{ color: "var(--ux-ink)" }}>How are you feeling today?</h2>
+          <h2 className="mb-3 text-[17px] font-semibold" style={{ color: "var(--ux-ink)" }}>{tr("healthCycle.howAreYouFeelingToday")}</h2>
           <MoodRow value={s.log?.mood ?? null} size={40} onPick={(m) => act(() => apiCycleLog(s.today, { mood: m }))} />
           <form className="mt-4 flex items-center gap-2 rounded-[14px] px-3.5 py-1.5"
                 style={{ background: "var(--ux-surface-2)", border: "1px solid var(--ux-line)" }}
                 onSubmit={(e) => { e.preventDefault(); if (note.trim()) act(() => apiCycleLog(s.today, { note: note.trim() })).then((r) => r && setNote("")); }}>
-            <input value={note} onChange={(e) => setNote(e.target.value.slice(0, 500))} aria-label="Add a quick note"
+            <input value={note} onChange={(e) => setNote(e.target.value.slice(0, 500))} aria-label={tr("dashboard.addAQuickNote")}
                    placeholder={s.log?.note ? `Today: ${s.log.note}` : "Add a quick note (optional)"}
                    className="h-[40px] min-w-0 flex-1 bg-transparent text-[15px] outline-none" style={{ color: "var(--ux-ink)" }} />
-            <button type="submit" disabled={busy || !note.trim()} aria-label="Save note"
+            <button type="submit" disabled={busy || !note.trim()} aria-label={tr("healthCycle.saveNote")}
                     className="grid h-9 w-9 place-items-center rounded-full disabled:opacity-40" style={{ color: "var(--cy-period-ink)" }}>
               <Icons.Send className="h-[18px] w-[18px]" aria-hidden />
             </button>
@@ -209,7 +226,7 @@ export function CycleDashboard({ cycle }: { cycle: ReturnType<typeof useCycle> &
             </span>
             <div className="min-w-0 flex-1">
               <h2 className="text-[17px] font-semibold" style={{ color: "var(--ux-ink)" }}>Today&apos;s Care Plan</h2>
-              <p className="text-[13px]" style={{ color: "var(--ux-muted)" }}>Personalised suggestions based on your cycle phase and mood</p>
+              <p className="text-[13px]" style={{ color: "var(--ux-muted)" }}>{tr("dashboard.personalisedSuggestionsBasedOnYourCycle")}</p>
             </div>
             <span className="flex items-center gap-1.5 rounded-full px-3 py-1.5 text-[13px] font-semibold" style={{ background: "var(--cy-predicted)", color: "var(--cy-period-ink)" }}>
               <Icons.Droplet className="h-3.5 w-3.5" aria-hidden /> {PHASE_COPY[planPhase].chip}
@@ -218,10 +235,10 @@ export function CycleDashboard({ cycle }: { cycle: ReturnType<typeof useCycle> &
               <span className="rounded-full px-3 py-1.5 text-[13px]" style={{ border: "1px solid var(--ux-line-strong)", color: "var(--ux-ink-2)" }}>{inPhaseDay}</span>
             )}
             <span className="flex gap-1">
-              <button type="button" onClick={() => stepPhase(-1)} aria-label="Previous phase" className="ux-press grid h-9 w-9 place-items-center rounded-full" style={{ border: "1px solid var(--ux-line-strong)", color: "var(--ux-ink-2)" }}>
+              <button type="button" onClick={() => stepPhase(-1)} aria-label={tr("dashboard.previousPhase")} className="ux-press grid h-9 w-9 place-items-center rounded-full" style={{ border: "1px solid var(--ux-line-strong)", color: "var(--ux-ink-2)" }}>
                 <Icons.ChevronLeft className="h-4 w-4" aria-hidden />
               </button>
-              <button type="button" onClick={() => stepPhase(1)} aria-label="Next phase" className="ux-press grid h-9 w-9 place-items-center rounded-full" style={{ border: "1px solid var(--ux-line-strong)", color: "var(--ux-ink-2)" }}>
+              <button type="button" onClick={() => stepPhase(1)} aria-label={tr("dashboard.nextPhase")} className="ux-press grid h-9 w-9 place-items-center rounded-full" style={{ border: "1px solid var(--ux-line-strong)", color: "var(--ux-ink-2)" }}>
                 <Icons.ChevronRight className="h-4 w-4" aria-hidden />
               </button>
             </span>
@@ -255,7 +272,7 @@ export function CycleDashboard({ cycle }: { cycle: ReturnType<typeof useCycle> &
       <A a="sym">
         <Card>
           <div className="mb-3 flex items-center justify-between">
-            <h2 className="text-[17px] font-semibold" style={{ color: "var(--ux-ink)" }}>Common Symptoms</h2>
+            <h2 className="text-[17px] font-semibold" style={{ color: "var(--ux-ink)" }}>{tr("dashboard.commonSymptoms")}</h2>
             <Link href="/app/health/cycle/symptoms" className="text-[13px] font-semibold" style={{ color: "var(--cy-period-ink)" }}>Edit</Link>
           </div>
           <div className="grid grid-cols-3 gap-2">
@@ -279,7 +296,7 @@ export function CycleDashboard({ cycle }: { cycle: ReturnType<typeof useCycle> &
       <A a="mentor">
         <Card>
           <div className="mb-3 flex items-center justify-between">
-            <h2 className="text-[15px] font-semibold" style={{ color: "var(--ux-ink)", whiteSpace: "nowrap" }}>Your Health Mentor</h2>
+            <h2 className="text-[15px] font-semibold" style={{ color: "var(--ux-ink)", whiteSpace: "nowrap" }}>{tr("dashboard.yourHealthMentor")}</h2>
             <ViewAll href="/app/health/mentors" />
           </div>
           {mentor ? (
@@ -297,11 +314,11 @@ export function CycleDashboard({ cycle }: { cycle: ReturnType<typeof useCycle> &
             <div className="h-[64px] animate-pulse rounded-[12px]" style={{ background: "var(--ux-surface-2)" }} />
           )}
           <p className="mt-3 text-[13px] leading-snug" style={{ color: "var(--ux-ink-2)" }}>
-            Get expert advice on menstrual health, PCOS, hormones and more.
+            {tr("dashboard.getExpertAdviceOnMenstrualHealth")}
           </p>
           <Link href="/app/health/mentors" className="ux-press mt-3 flex h-[44px] items-center justify-center gap-2 rounded-[12px] text-[15px] font-semibold"
                 style={{ background: "linear-gradient(90deg, var(--cy-period), var(--ux-fill))", color: "var(--ux-on-brand)" }}>
-            Ask a Question <Icons.ArrowRight className="h-4 w-4" aria-hidden />
+            {tr("dashboard.askAQuestion")} <Icons.ArrowRight className="h-4 w-4" aria-hidden />
           </Link>
         </Card>
       </A>
@@ -323,8 +340,8 @@ export function CycleDashboard({ cycle }: { cycle: ReturnType<typeof useCycle> &
       <A a="bottom" className="grid gap-4 lg:grid-cols-[minmax(0,1.3fr)_minmax(0,1fr)]">
         <Card>
           <div className="mb-3 flex items-center justify-between">
-            <h2 className="text-[17px] font-semibold" style={{ color: "var(--ux-ink)" }}>Track Your Journey</h2>
-            <span className="rounded-[10px] px-3 py-1.5 text-[13px]" style={{ border: "1px solid var(--ux-line-strong)", color: "var(--ux-ink-2)" }}>Last 6 Months</span>
+            <h2 className="text-[17px] font-semibold" style={{ color: "var(--ux-ink)" }}>{tr("dashboard.trackYourJourney")}</h2>
+            <span className="rounded-[10px] px-3 py-1.5 text-[13px]" style={{ border: "1px solid var(--ux-line-strong)", color: "var(--ux-ink-2)" }}>{tr("dashboard.last6Months")}</span>
           </div>
           <div role="tablist" className="mb-3 flex flex-wrap gap-1.5">
             {([["history", "Cycle History"], ["moods", "Mood Trends"], ["symptoms", "Symptoms"], ["notes", "Health Notes"]] as const).map(([k, l]) => (
@@ -343,7 +360,7 @@ export function CycleDashboard({ cycle }: { cycle: ReturnType<typeof useCycle> &
               {Object.entries(s.symptom_counts).sort((a, b) => (b[1] ?? 0) - (a[1] ?? 0)).slice(0, 5).map(([k, n]) => (
                 <li key={k} className="flex justify-between text-[13px]"><span style={{ color: "var(--ux-ink-2)" }}>{symptomLabel(k)}</span><span style={{ color: "var(--ux-muted)" }}>{n} days</span></li>
               ))}
-              {!Object.keys(s.symptom_counts).length && <li className="text-[13px]" style={{ color: "var(--ux-muted)" }}>No symptoms logged in the last 3 months.</li>}
+              {!Object.keys(s.symptom_counts).length && <li className="text-[13px]" style={{ color: "var(--ux-muted)" }}>{tr("dashboard.noSymptomsLoggedInTheLast")}</li>}
             </ul>
           )}
           {journey === "notes" && (
@@ -351,13 +368,13 @@ export function CycleDashboard({ cycle }: { cycle: ReturnType<typeof useCycle> &
               {s.notes.map((n) => (
                 <li key={n.date} className="text-[13px]"><b style={{ color: "var(--ux-ink)" }}>{shortDate(n.date)}</b> <span style={{ color: "var(--ux-ink-2)" }}>{n.note}</span></li>
               ))}
-              {!s.notes.length && <li className="text-[13px]" style={{ color: "var(--ux-muted)" }}>Notes you add appear here.</li>}
+              {!s.notes.length && <li className="text-[13px]" style={{ color: "var(--ux-muted)" }}>{tr("dashboard.notesYouAddAppearHere")}</li>}
             </ul>
           )}
         </Card>
         <Card>
           <div className="mb-3 flex items-center justify-between">
-            <h2 className="text-[17px] font-semibold" style={{ color: "var(--ux-ink)" }}>Helpful Resources</h2>
+            <h2 className="text-[17px] font-semibold" style={{ color: "var(--ux-ink)" }}>{tr("healthCycleLearn.helpfulResources")}</h2>
             <ViewAll href="/app/health/cycle/learn" />
           </div>
           <ul className="space-y-2.5">
@@ -385,9 +402,10 @@ export function CycleDashboard({ cycle }: { cycle: ReturnType<typeof useCycle> &
 /* ── Charts: one scale, labels only where the data reaches ─────────────── */
 
 function HistoryChart({ s }: { s: CycleState }) {
+  const tr = useT();
   const pts = s.history.filter((h) => h.cycle_days).slice(-6);
   if (pts.length < 2) {
-    return <p className="py-8 text-center text-[13px]" style={{ color: "var(--ux-muted)" }}>Two finished cycles and your history appears here.</p>;
+    return <p className="py-8 text-center text-[13px]" style={{ color: "var(--ux-muted)" }}>{tr("dashboard.twoFinishedCyclesAndYourHistory")}</p>;
   }
   const W = 520, H = 180, L = 30, B = 24, T = 10;
   const x = (i: number) => L + (i * (W - L - 12)) / Math.max(1, pts.length - 1);
@@ -419,16 +437,18 @@ function HistoryChart({ s }: { s: CycleState }) {
 }
 
 function MoodChart({ s }: { s: CycleState }) {
+  const MOODS = useTranslated(RAW_MOODS);
+  const tr = useT();
   const pts = s.moods.filter((m) => m.mood).slice(-14);
   if (pts.length < 2) {
-    return <p className="py-8 text-center text-[13px]" style={{ color: "var(--ux-muted)" }}>Log your mood on a few days and the trend appears here.</p>;
+    return <p className="py-8 text-center text-[13px]" style={{ color: "var(--ux-muted)" }}>{tr("dashboard.logYourMoodOnAFew")}</p>;
   }
   const W = 520, H = 180, L = 70, B = 24, T = 10;
   const x = (i: number) => L + (i * (W - L - 12)) / Math.max(1, pts.length - 1);
   const y = (v: number) => T + (1 - (v - 1) / 4) * (H - T - B);
   const d = pts.map((p, i) => `${i ? "L" : "M"}${x(i)},${y(MOOD_SCORE[p.mood!])}`).join(" ");
   return (
-    <svg viewBox={`0 0 ${W} ${H}`} className="w-full" role="img" aria-label="Your moods over the last two weeks">
+    <svg viewBox={`0 0 ${W} ${H}`} className="w-full" role="img" aria-label={tr("dashboard.yourMoodsOverTheLastTwo")}>
       {MOODS.map((m) => (
         <g key={m.key}>
           <line x1={L} x2={W - 6} y1={y(MOOD_SCORE[m.key])} y2={y(MOOD_SCORE[m.key])} stroke="var(--ux-line)" />

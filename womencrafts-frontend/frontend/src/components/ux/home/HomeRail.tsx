@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useT } from "@/i18n";
 import * as Icons from "@/components/ux/icons";
 
 import { useHome } from "@/components/ux/live";
@@ -91,9 +92,10 @@ const FACES = ["blazer", "blue-saree", "elder-saree", "hijab", "pink-glasses", "
 
 /** One card's worth of waiting. The rail is four cards; this is the shape. */
 function RailSkeleton() {
+  const tr = useT();
   return (
     <div className="flex flex-col gap-4" role="status" aria-live="polite">
-      <span className="sr-only">Loading your summary…</span>
+      <span className="sr-only">{tr("homeRail.loadingYourSummary")}</span>
       {[162, 186, 147].map((h, i) => (
         <div key={i} className="ux-sq rounded-[16px] p-4"
              style={{ background: "var(--ux-surface)", border: "1px solid var(--ux-line)", minHeight: h }}>
@@ -113,6 +115,7 @@ function RailSkeleton() {
 }
 
 export function HomeRail() {
+  const tr = useT();
   const { data: home, source } = useHome();
 
   if (!home) {
@@ -159,32 +162,32 @@ export function HomeRail() {
             </div>
             <div className="min-w-0">
               <p className="text-xsm font-bold leading-tight" style={{ color: "var(--ux-ink)" }}>
-                Complete your profile
+                {tr("homeRail.completeYourProfile")}
               </p>
               {/* The actual field that is missing, named. "Almost there" was
                   encouragement with nothing behind it; this is the one thing
                   she has to do, and the server is the one that knows it. */}
               <p className="mt-1 text-2xs leading-snug" style={{ color: "var(--ux-muted)" }}>
-                {nextField ? nextField.label : "One step left."}
+                {nextField ? nextField.label : tr("homeRail.oneStepLeft")}
               </p>
             </div>
           </div>
           <Link href={nextField?.href || "/app/profile"}
                 className="ux-press ux-btn-g mt-3 flex min-h-[40px] items-center justify-center gap-2 rounded-[12px] text-xsm font-bold"
                 style={{ background: "linear-gradient(96deg, var(--ux-rib-2), var(--ux-rib-3))", color: "var(--ux-on-brand)" }}>
-            Continue now
+            {tr("homeRail.continueNow")}
             <Icons.ArrowRight className="h-4 w-4" />
           </Link>
         </Card>
       )}
 
       <Card>
-        <Head title="Upcoming Events" action="View Calendar" href="/app/schedule" />
+        <Head title={tr("homeRail.upcomingEvents")} action={tr("homeRail.viewCalendar")} href="/app/schedule" />
         {lost(home, "summary") && lost(home, "events") ? (
           <Gone what="your calendar" />
         ) : events.length === 0 ? (
           <p className="py-3 text-xsm" style={{ color: "var(--ux-muted)" }}>
-            Nothing booked yet. Sessions and classes you join appear here.
+            {tr("homeRail.nothingBookedYetSessionsAndClasses")}
           </p>
         ) : (
           <ul className="space-y-1">
@@ -235,14 +238,14 @@ export function HomeRail() {
                       WebkitMaskImage: "radial-gradient(70% 70% at 45% 45%, #000 55%, transparent 88%)" }} />
         <div className="relative">
           <div className="flex items-center justify-between gap-3">
-            <h3 className="text-sm font-bold" style={{ color: "var(--ux-on-brand)" }}>Your Balance</h3>
+            <h3 className="text-sm font-bold" style={{ color: "var(--ux-on-brand)" }}>{tr("homeRail.yourBalance")}</h3>
             <Link href="/app/wallet"
                   /* `-my-1 py-1`: 24px of touchable height without the
                      label moving a pixel — WCAG 2.2 asks for 24, the text
                      alone measured 16. Same pattern as `SectionHead`. */
                   className="ux-hov -my-1 flex items-center gap-1 py-1 text-xs font-semibold"
                   style={{ color: "var(--ux-on-brand-2)" }}>
-              View Wallet <Icons.ChevronRight className="h-[13px] w-[13px]" />
+              {tr("homeRail.viewWallet")} <Icons.ChevronRight className="h-[13px] w-[13px]" />
             </Link>
           </div>
           {money ? (
@@ -251,19 +254,19 @@ export function HomeRail() {
                  style={{ color: "var(--ux-on-brand)" }}>
                 {formatRupees(money.balance_minor)}
               </p>
-              <p className="mt-1 text-xs" style={{ color: "var(--ux-on-brand-2)" }}>Available Balance</p>
+              <p className="mt-1 text-xs" style={{ color: "var(--ux-on-brand-2)" }}>{tr("homeRail.availableBalance")}</p>
             </>
           ) : (
             // Her wallet did not answer. A zero here would be a statement about
             // her money, and this is a statement about the request.
             <p className="mt-2 text-xsm font-semibold leading-snug" style={{ color: "var(--ux-on-brand-2)" }}>
-              We could not reach your wallet just now. Nothing has changed in it.
+              {tr("homeRail.weCouldNotReachYourWallet")}
             </p>
           )}
           <Link href="/app/wallet/withdraw"
                 className="ux-press ux-btn-g mt-3.5 inline-flex min-h-[40px] items-center gap-2 rounded-[12px] px-4 text-xsm font-bold"
                 style={{ background: "var(--ux-on-brand-btn)", color: "var(--ux-on-brand-btn-ink)" }}>
-            Take money out
+            {tr("opportunities.takeMoneyOut")}
             <Icons.ArrowRight className="h-4 w-4" />
           </Link>
         </div>
@@ -271,7 +274,7 @@ export function HomeRail() {
 
       <Card>
         <div className="mb-3 flex items-center justify-between gap-3">
-          <h3 className="text-sm font-bold tracking-tight" style={{ color: "var(--ux-ink)" }}>Your Progress</h3>
+          <h3 className="text-sm font-bold tracking-tight" style={{ color: "var(--ux-ink)" }}>{tr("homeRail.yourProgress")}</h3>
         </div>
         {/* The chip here said "This Month". None of these figures are scoped to
             a month — they are every programme she has ever joined — so the chip
@@ -298,12 +301,12 @@ export function HomeRail() {
       </Card>
 
       <Card>
-        <Head title="My Circle Members" action="View All" href="/app/circles" />
+        <Head title={tr("homeRail.myCircleMembers")} action={tr("dashboard.viewAll")} href="/app/circles" />
         {lost(home, "circles") ? (
           <Gone what="your circles" />
         ) : circles.length === 0 ? (
           <p className="py-3 text-xsm" style={{ color: "var(--ux-muted)" }}>
-            You have not joined a circle yet. They are the fastest way to find work.
+            {tr("homeRail.youHaveNotJoinedACircle")}
           </p>
         ) : (
           <>
@@ -320,7 +323,7 @@ export function HomeRail() {
               className="ux-press mt-3 flex min-h-[42px] w-full items-center justify-center gap-2 rounded-[12px] text-xsm font-bold"
               style={{ background: "var(--ux-surface-2)", border: "1px solid var(--ux-line)", color: "var(--ux-ink)" }}>
           <Icons.UserRoundPlus className="h-4 w-4" />
-          Invite Members
+          {tr("homeRail.inviteMembers")}
         </Link>
       </Card>
     </div>

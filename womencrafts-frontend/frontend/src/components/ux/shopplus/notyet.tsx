@@ -2,6 +2,7 @@
 
 import type { ReactNode } from "react";
 
+import { useT } from "@/i18n";
 import { HomeShell } from "@/components/ux/home/HomeShell";
 import { Back, Btn, Card, I, v } from "@/components/ux/kit";
 import { EYEBROW } from "@/components/ux/earn/phone";
@@ -58,10 +59,11 @@ export function NotYetScreen({
   /** Anything real the server actually holds. */
   children?: ReactNode;
 }) {
+  const tr = useT();
   return (
     <HomeShell active="/app/shop">
       <div className="flex flex-col gap-6 lg:gap-5">
-        <Back to="/app/shop" label="Back to ways to sell" />
+        <Back to="/app/shop" label={tr("shopBuyers.backToWaysToSell")} />
 
         <header>
           <p className={EYEBROW}>{eyebrow}</p>
@@ -91,7 +93,7 @@ export function NotYetScreen({
         <Card pad={0} style={{ overflow: "hidden" }}>
           <div className="p-4 lg:p-5">
             <p className="text-sm font-bold" style={{ color: v("--ux-ink") }}>
-              What you can do today, without us
+              {tr("notyet.whatYouCanDoTodayWithout")}
             </p>
             <ul className="mt-2.5 flex flex-col gap-3">
               {today.map((t) => (
@@ -117,7 +119,7 @@ export function NotYetScreen({
         <div>
           <Card pad={16} style={{ background: v("--ux-surface-2"), borderColor: "transparent" }}>
             <p className="text-xs font-semibold uppercase tracking-[0.06em] lg:text-2xs lg:font-extrabold lg:tracking-[0.14em]" style={{ color: v("--ux-muted") }}>
-              What this screen will do when it is built
+              {tr("notyet.whatThisScreenWillDoWhen")}
             </p>
             <ul className="mt-2.5 flex flex-col gap-1.5">
               {later.map((l) => (
@@ -141,10 +143,11 @@ export function NotYetScreen({
 
 /** The single place these screens send her when she asks "so where do I write it down?" */
 export function WriteItDown() {
+  const tr = useT();
   return (
     <>
-      <Btn variant="outline" size="sm" icon="Store" href="/app/documents">Your shop and orders</Btn>
-      <Btn variant="ghost" size="sm" icon="Landmark" href="/app/collect">How you get paid</Btn>
+      <Btn variant="outline" size="sm" icon="Store" href="/app/documents">{tr("shopLive.yourShopAndOrders")}</Btn>
+      <Btn variant="ghost" size="sm" icon="Landmark" href="/app/collect">{tr("settingsPayments.howYouGetPaid")}</Btn>
     </>
   );
 }

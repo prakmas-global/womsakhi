@@ -223,7 +223,10 @@ export function SwipeAction({
               className="ux-tap-exempt flex flex-1 flex-col items-center justify-center gap-1 text-[12px] font-semibold"
               style={{
                 background: a.destructive ? "var(--ux-danger-solid)" : "var(--ux-fill-2)",
-                color: "var(--ux-on-brand)",
+                /* The danger fill is dark in the light theme and light in the
+                   dark one, so its ink cannot be a constant: white on it
+                   measured 2.34:1 in dark. */
+                color: a.destructive ? "var(--ux-on-danger)" : "var(--ux-on-brand)",
                 transform: "none",
               }}
             >

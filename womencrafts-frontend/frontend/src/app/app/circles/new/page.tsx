@@ -105,7 +105,7 @@ export default function NewCircle() {
             </p>
             <div className="mt-5 flex flex-wrap justify-center gap-2.5">
               <ActionBtn variant="primary" icon="Share2" doneIcon="Copy" done={tr("circlesNew.inviteLinkCopiedSendItOn")}
-                         act={() => copy(`https://womsakhi.in/join/${created.id}`,
+                         act={() => copy(`https://womsakhi.com/join/${created.id}`,
                                          "Invite link copied — send it on WhatsApp", "Copy it by hand from your circle page")}>{tr("circlesNew.inviteWomenYouTrust")}</ActionBtn>
               <Btn href={`/app/circles/${created.id}`} variant="outline" iconEnd="ArrowRight">{tr("circlesNew.openIt")}</Btn>
             </div>
@@ -141,7 +141,7 @@ export default function NewCircle() {
                  style={{ background: "var(--ux-surface-2)", color: "var(--ux-ink-2)" }}>
                 Nobody gains or loses money overall — a circle turns small monthly amounts into one lump sum
                 when your turn comes. What it costs is <strong style={{ color: "var(--ux-ink)" }}>{rupees(monthly_minor)}
-                every month for {n} months</strong>, without fail.
+                every month for {n} months</strong>{tr("circlesNew.withoutFail")}
               </p>
             </Card>
 

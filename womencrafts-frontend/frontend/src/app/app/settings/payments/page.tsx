@@ -249,7 +249,7 @@ export default function PaymentMethodsPage() {
             ) : (
               <Field label="UPI ID"
                      hint={tr("settingsPayments.looksLikeYournameBankFindIt")}>
-                <TextInput placeholder="priya@okhdfcbank" value={form.upi}
+                <TextInput placeholder={tr("settingsPayments.priyaOkhdfcbank")} value={form.upi}
                            onChange={(e) => set("upi", e.target.value.trim())} />
               </Field>
             )}

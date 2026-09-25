@@ -108,17 +108,17 @@ export default function ShopPage() {
    * already on this screen.
    */
   const steps: Step[] = useMemo(() => [
-    { label: "Add your first thing to sell",
+    { label: tr("documents.addYourFirstThingToSell"),
       done: listings.length > 0 },
     { label: "Put a photo on every listing \u2014 they get looked at three times as often",
       done: listings.length > 0 && listings.every((l) => !!l.photo) },
-    { label: "Offer a service as well as products",
+    { label: tr("documents.offerAServiceAsWellAs"),
       done: listings.some((l) => l.kind === "service") },
-    { label: "Take your first order",
+    { label: tr("documents.takeYourFirstOrder"),
       done: orders.length > 0 },
-    { label: "Win a buyer who comes back",
+    { label: tr("documents.winABuyerWhoComesBack"),
       done: (summary?.repeat_buyers_pct ?? 0) > 0 },
-  ], [listings, orders.length, summary]);
+  ], [listings, orders.length, summary, tr]);
 
   /** The last four things that happened, newest first, all of them real. */
   const activity: Happening[] = useMemo(() => orders.slice(0, 4).map((o) => {
@@ -257,14 +257,14 @@ export default function ShopPage() {
 
         <div className={`mb-6 grid gap-3.5 lg:mb-5 ${GROUP}`}
              style={{ gridTemplateColumns: "repeat(auto-fit, minmax(190px, 1fr))" }}>
-          <Figure label="Earned this month" value={figures.month} note={figures.change}
+          <Figure label={tr("profile.earnedThisMonth")} value={figures.month} note={figures.change}
                   noteTone={figures.up ? "up" : "plain"} icon="Wallet"
                   tint="--ux-tint-green" ink="--ux-green-ink" href="/app/wallet" />
-          <Figure label="Waiting to be paid" value={figures.owed} note={figures.owedNote}
+          <Figure label={tr("documents.waitingToBePaid")} value={figures.owed} note={figures.owedNote}
                   icon="Hourglass" tint="--ux-tint-amber" ink="--ux-amber-ink" href="/app/documents#orders" />
-          <Figure label="Total orders" value={figures.orders} note={figures.needs}
+          <Figure label={tr("documents.totalOrders")} value={figures.orders} note={figures.needs}
                   icon="ShoppingBag" tint="--ux-tint-violet" ink="--ux-violet-ink" href="/app/documents#orders" />
-          <Figure label="Live listings" value={figures.live} note={figures.mix}
+          <Figure label={tr("documents.liveListings")} value={figures.live} note={figures.mix}
                   icon="Package" tint="--ux-tint-blue" ink="--ux-blue-ink" href="/app/documents/listings" />
         </div>
 
@@ -313,7 +313,7 @@ export default function ShopPage() {
                 <EmptyState
                   icon="Package"
                   title={tr("documents.noOrdersYet")}
-                  body="They land here the moment somebody buys. Most first orders come from someone who already knows you — send them your shop link."
+                  body={tr("documents.theyLandHereTheMomentSomebody")}
                   action={<Btn size="sm" href="/app/collect" icon="QrCode">{tr("documents.getYourShopLink")}</Btn>}
                 />
               </div>
@@ -329,7 +329,7 @@ export default function ShopPage() {
             )}
 
             <Head icon="Package" title={tr("documents.whatYouSell")}
-                  sub="Stock, pause, photo and share are on the card itself"
+                  sub={tr("documents.stockPausePhotoAndShareAre")}
                   more={tr("documents.addSomething")} href="/app/documents/product/new" />
 
             <div className="grid gap-3.5" style={{ gridTemplateColumns: "repeat(auto-fit, minmax(250px, 1fr))" }}>
@@ -343,7 +343,7 @@ export default function ShopPage() {
                     className="ux-press grid min-h-[88px] place-content-center justify-items-center gap-2.5 rounded-[16px] text-center text-xsm font-bold leading-relaxed lg:min-h-[330px] lg:rounded-[20px]"
                     style={{ border: "1px dashed var(--ux-line-strong)", color: "var(--ux-brand)" }}>
                 <Icons.Plus className="h-[30px] w-[30px]" />
-                <span>{tr("documents.addAProduct")}<br />or a service</span>
+                <span>{tr("documents.addAProduct")}<br />{tr("documents.orAService")}</span>
               </Link>
             </div>
           </main>

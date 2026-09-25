@@ -102,3 +102,28 @@
 :global(.dark) .insightGrid a{background:var(--ux-surface-2);color:var(--ux-ink)}
 :global(.dark) .supportBanner,:global(.dark) .mantra{border-color:var(--ux-line);background:linear-gradient(90deg,var(--ux-surface-2),var(--ux-brand-tint));color:var(--ux-ink)}
 :global(.dark) .score{background:radial-gradient(circle,var(--ux-surface) 53%,transparent 55%),conic-gradient(var(--ux-brand) 0 75%,var(--ux-line) 75%);box-shadow:inset 0 0 0 7px var(--ux-surface)}
+
+.nudgeSpacing{margin-top:var(--dashboard-gap,16px)}
+
+/*
+  The one true thing this card knows.
+
+  It used to hold three invented figures (steps, water, sleep) in a 3-column
+  grid. With those gone, a single link in that grid rendered as a cramped run-on
+  line, so it gets its own row: a full-width tap target with the label and the
+  note on separate lines, like every other row in this product.
+*/
+.todayAsk{display:flex;align-items:center;gap:10px;min-height:56px;padding:10px 12px;border:1px solid var(--ux-line);border-radius:var(--ux-r-sm);background:var(--ux-surface)}
+.todayAsk svg{width:22px;height:22px;flex:none;color:var(--ux-brand)}
+.todayAsk b{display:block;font-size:14px;line-height:1.2}
+.todayAsk small{display:block;margin-top:2px;color:var(--ux-muted);font-size:var(--dash-fs-sm,12px);line-height:1.25}
+
+/*
+  A ring with no number in it must not look like a gauge.
+
+  `.score` draws a 75% arc — it was the frame for the invented "75% wellness
+  score". Kept as a plain circle so the card keeps its shape, with no arc to
+  read a value off.
+*/
+.scoreBlank{background:radial-gradient(circle,var(--ux-surface) 53%,transparent 55%),conic-gradient(var(--ux-brand-tint) 0 100%)}
+.scoreBlank svg{width:30px;height:30px;color:var(--ux-brand)}

@@ -2,6 +2,7 @@
 
 import { createContext, useCallback, useContext, useEffect, useRef, useState } from "react";
 
+import { apiUnreadCounts } from "@/lib/member-api";
 import { apiMeShell, type MeShell } from "@/lib/shell-api";
 
 /**
@@ -99,6 +100,53 @@ export function ShellProvider({
     // that exists.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [load]);
+
+  /*
+    Keep the badge honest while she has the app open.
+
+    `/me/shell` answers once, at boot, and nothing updated it after that — so a
+    member's notification count was frozen for her whole session. Circle
+    replies, order updates and messages arrived and the bell went on showing
+    the number it had when she signed in. The admin topbar had polled for this
+    since it was written; the member app, which is the one women actually use
+    all day, never did.
+
+    `/me/unread` and not `/me/shell`: two integers instead of her whole shell,
+    so the cost of being current is a few hundred bytes a minute. Paused when
+    the tab is hidden, because a phone in her pocket does not need a badge.
+
+    Not a websocket. A minute is well inside "I did not notice it was stale"
+    for a notification count, and a socket per member is a connection to hold
+    open on a connection she pays for.
+  */
+  useEffect(() => {
+    if (!data) return;
+    let alive = true;
+    const tick = () => {
+      if (document.visibilityState === "hidden") return;
+      void apiUnreadCounts()
+        .then((unread) => {
+          if (!alive) return;
+          setData((cur) => {
+            if (!cur) return cur;
+            if (cur.unread?.notifications === unread.notifications
+             && cur.unread?.messages === unread.messages) return cur;
+            return { ...cur, unread };
+          });
+        })
+        .catch(() => { /* a blip; the badge keeps the number it has */ });
+    };
+    const timer = window.setInterval(tick, 60_000);
+    document.addEventListener("visibilitychange", tick);
+    return () => {
+      alive = false;
+      window.clearInterval(timer);
+      document.removeEventListener("visibilitychange", tick);
+    };
+    // Only whether we HAVE a shell matters here, not its contents — depending
+    // on `data` itself would tear this down and rebuild it on every tick.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [Boolean(data)]);
 
   return (
     <ShellContext.Provider value={{ data, status, refresh: load }}>

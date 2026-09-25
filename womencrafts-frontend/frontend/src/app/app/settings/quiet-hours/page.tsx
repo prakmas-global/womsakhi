@@ -102,7 +102,7 @@ export default function QuietHoursPage() {
             top bar already carries the way back to Settings. */}
         <PhoneTitle title={tr("settingsQuiethours.quietHours")}
                     sub={tr("settingsQuiethours.yourPhoneSleepsWhenYouDo")}
-                    note="Pick the hours you do not want to be disturbed. Everything that arrives while you sleep waits for you in Notifications — nothing is lost, it just waits until morning." />
+                    note={tr("settingsQuiet-hours.pickTheHoursYouDoNot")} />
         <header className="hidden lg:block">
           {/* Settings › Quiet hours, as the design has it — SettingsPage was
               printing a second "Quiet hours" heading above the real one and
@@ -301,8 +301,8 @@ function Dial({
           <p className="my-0.5 text-2xlm font-extrabold leading-[1.12] tracking-[-0.03em] tabular-nums"
              style={{ color: "var(--ux-ink)" }}>{fmt(p.quiet_end)}</p>
           <p className="mt-2 text-xsm font-semibold" style={{ color: "var(--ux-ink-2)" }}>
-            that is <b className="tabular-nums max-lg:font-bold" style={{ color: "var(--ux-ink)" }}>
-              {mins ? `${hrs} hr ${mins} min` : `${hrs} hr`}</b> of quiet
+            {tr("settingsQuiet-hours.thatIs")} <b className="tabular-nums max-lg:font-bold" style={{ color: "var(--ux-ink)" }}>
+              {mins ? `${hrs} hr ${mins} min` : `${hrs} hr`}</b> {tr("settingsQuiet-hours.ofQuiet")}
           </p>
         </div>
       </div>
@@ -471,7 +471,7 @@ function Breakthrough({
           safety alert, so it is stated rather than offered. */}
       <Row icon="ShieldCheck" tint="--ux-tint-green" ink="--ux-green-ink"
            title={tr("settingsQuiethours.yourSafetyAlert")}
-           body="If you press the safety button, or someone responds to one, it rings through — silent or not.">
+           body={tr("settingsQuiet-hours.ifYouPressTheSafetyButton")}>
         <span className="flex items-center gap-1.5 text-[12px] lg:text-2xs font-extrabold uppercase tracking-[0.06em]"
               style={{ color: "var(--ux-green-ink)" }}>
           <Icons.Lock className="h-[11px] w-[11px]" />{tr("settingsQuiethours.alwaysOn")}</span>
@@ -479,14 +479,14 @@ function Breakthrough({
 
       <Row icon="Wallet" tint="--ux-tint-green" ink="--ux-green-ink"
            title={tr("settingsQuiethours.moneyArriving")}
-           body="A payment landing in your wallet. Your own income is not an interruption.">
+           body={tr("settingsQuiet-hours.aPaymentLandingInYourWallet")}>
         <Switch on={p.quiet_allow_money} label={tr("settingsQuiethours.moneyArriving2")}
                 onChange={(v) => set({ quiet_allow_money: v })} small />
       </Row>
 
       <Row icon="UsersRound" tint="--ux-tint-violet" ink="--ux-violet-ink"
            title={tr("settingsQuiethours.yourCircleLeader")}
-           body="Only the woman who runs your savings circle, and only about a payment due.">
+           body={tr("settingsQuiet-hours.onlyTheWomanWhoRunsYour")}>
         <Switch on={p.quiet_allow_circle_lead} label={tr("settingsQuiethours.circleLeader")}
                 onChange={(v) => set({ quiet_allow_circle_lead: v })} small />
       </Row>

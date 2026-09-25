@@ -7,9 +7,7 @@ import * as Icons from "@/components/ux/icons";
 import { apiCancelEvent, apiRegisterForEvent } from "@/lib/growth-api";
 import { useAction } from "@/lib/use-action";
 
-import {Back, Btn, Card, EmptyState, IconTile, mapsHref, Pill, Progress, RailSkeleton,
-  ScreenSkeleton, SectionHead,
-} from "@/components/ux/kit";
+import { Back, Btn, Card, EmptyState, IconTile, mapsHref, Pill, Progress, RailSkeleton, ScreenSkeleton, SectionHead } from "@/components/ux/kit";
 import { HomeShell } from "@/components/ux/home/HomeShell";
 import { useEvents } from "@/components/ux/growth";
 import { rupees } from "@/components/ux/events/data";
@@ -71,7 +69,7 @@ export default function EventDetail({ params }: { params: Promise<{ id: string }
           <EmptyState
             icon="CalendarX"
             title={tr("events.thatEventIsNotListed")}
-            body="It may have finished, or the link may be old."
+            body={tr("events.itMayHaveFinishedOrThe")}
             action={<Btn href="/app/events" variant="primary" iconEnd="ArrowRight">{tr("events.allEvents")}</Btn>}
           />
         </Card>

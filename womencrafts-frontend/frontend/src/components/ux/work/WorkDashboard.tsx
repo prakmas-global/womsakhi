@@ -2,6 +2,7 @@
 /* eslint-disable @next/next/no-img-element */
 
 import { useMemo, useRef, useState } from "react";
+import { useT } from "@/i18n";
 import { HomeShell } from "@/components/ux/home/HomeShell";
 import { TransitionLink } from "@/components/ux/TransitionLink";
 import { I } from "@/components/ux/kit";
@@ -11,6 +12,7 @@ import { useWalletInsights } from "@/components/ux/business";
 import { apiToggleSaveOpportunity } from "@/lib/growth-api";
 import { payLabel, type Job } from "./data";
 import styles from "./WorkDashboard.module.css";
+import { DashboardNudge } from "@/components/ux/reminders/DashboardNudge";
 
 const ART = "/ux/art/work-dashboard-";
 const FILTERS = ["For You", "Remote", "Part-time", "Full-time", "Freelance", "Women-led"] as const;
@@ -39,6 +41,7 @@ function PanelHeading({ title, href, action = "View all" }: { title: string; hre
 }
 
 function JobTile({ job, image, saved, onSave }: { job: Job; image: string; saved: boolean; onSave: () => void }) {
+  const tr = useT();
   return <article className={styles.job}>
     <div className={styles.jobImage}>
       <img src={`${ART}${image}.webp`} alt="" loading="lazy" />
@@ -51,12 +54,13 @@ function JobTile({ job, image, saved, onSave }: { job: Job; image: string; saved
       <p className={styles.jobMeta}><I name="MapPin" /> {job.mode} <span>·</span> <I name="Briefcase" /> {job.kind}</p>
       <p className={styles.pay}><I name="Wallet" /> {payLabel(job)}</p>
       <div className={styles.skills}>{job.skills.slice(0, 3).map(skill => <span key={skill}>{skill}</span>)}</div>
-      <TransitionLink href={`/app/opportunities/${job.id}`} className={styles.details}>View Details <I name="ArrowRight" /></TransitionLink>
+      <TransitionLink href={`/app/opportunities/${job.id}`} className={styles.details}>{tr("workDashboard.viewDetails")} <I name="ArrowRight" /></TransitionLink>
     </div>
   </article>;
 }
 
 export function WorkDashboard() {
+  const tr = useT();
   const { data: jobs } = useJobs();
   const { data: applications } = useApplications();
   const { data: events } = useEvents();
@@ -89,7 +93,7 @@ export function WorkDashboard() {
     { icon: "Briefcase", value: jobs.length.toLocaleString("en-IN"), label: "Opportunities", href: "/app/opportunities" },
     { icon: "Users", value: new Set(jobs.map(job => job.org)).size.toLocaleString("en-IN"), label: "Companies", href: "/app/opportunities" },
     { icon: "FileText", value: applications.length.toLocaleString("en-IN"), label: "Applications", href: "/app/applications" },
-    { icon: "Wallet", value: money(earnings), label: "Total Earnings", href: "/app/wallet" },
+    { icon: "Wallet", value: money(earnings), label: tr("workDashboard.totalEarnings"), href: "/app/wallet" },
   ];
 
   const setTopic = (topic: string) => {
@@ -122,10 +126,10 @@ export function WorkDashboard() {
           </picture>
           <div className={styles.heroContent}>
             <p className={styles.eyebrow}>Work <span>·</span> Opportunities <span>·</span> Growth</p>
-            <h1>Work on<br /><em>your terms</em></h1>
-            <p className={styles.heroSub}>Discover meaningful opportunities, build your reputation and create the life you want.</p>
+            <h1>{tr("workDashboard.workOn")}<br /><em>{tr("workBoard.yourTerms")}</em></h1>
+            <p className={styles.heroSub}>{tr("workDashboard.discoverMeaningfulOpportunitiesBuildYourRepu")}</p>
             <form className={styles.search} onSubmit={event => { event.preventDefault(); setSearch(query.trim()); resultsRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }); }}>
-              <I name="Search" /><input value={query} onChange={event => setQuery(event.target.value)} placeholder="What work are you looking for?" aria-label="Search opportunities" /><button type="submit">Search</button>
+              <I name="Search" /><input value={query} onChange={event => setQuery(event.target.value)} placeholder={tr("workDashboard.whatWorkAreYouLookingFor")} aria-label={tr("earnDashboard.searchOpportunities")} /><button type="submit">Search</button>
             </form>
             <div className={styles.quickFilters}>{FILTERS.slice(1).map(option => <button type="button" key={option} onClick={() => { setFilter(option); setSearch(""); setQuery(""); resultsRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }); }}><I name={option === "Remote" ? "MapPin" : option === "Women-led" ? "Heart" : "Clock"} />{option}</button>)}</div>
           </div>
@@ -133,28 +137,35 @@ export function WorkDashboard() {
 
         <div className={styles.stats}>{stats.map(stat => <TransitionLink href={stat.href} className={styles.stat} key={stat.label}><span><I name={stat.icon} /></span><div><strong>{stat.value}</strong><small>{stat.label}</small></div><I name="ChevronRight" /></TransitionLink>)}</div>
 
+        {/* Added to this dashboard, never in place of anything on it: the engine,
+            reachable from the module it belongs to. */}
+        <DashboardNudge
+          preset="rem.preset.deadline"
+          icon="Briefcase" tint="var(--ux-tint-orange)" ink="var(--ux-orange-ink)"
+          labelKey="nudge.work.label" noteKey="nudge.work.note" />
+
         <section className={styles.panel} ref={resultsRef}>
-          <PanelHeading title="Recommended Opportunities" href="/app/opportunities" />
+          <PanelHeading title={tr("workDashboard.recommendedOpportunities")} href="/app/opportunities" />
           <div className={styles.tabs}>{FILTERS.map(option => <button type="button" key={option} onClick={() => setFilter(option)} aria-pressed={filter === option}>{option}</button>)}</div>
           {saveError && <p className={styles.saveError} role="alert">{saveError}</p>}
           {results.length ? <div className={styles.jobs}>{results.map(job => <JobTile key={job.id} job={job} image={imageFor(job)} saved={saved[job.id] ?? Boolean(job.saved)} onSave={() => toggleSave(job)} />)}</div>
-            : <div className={styles.empty}><I name="SearchX" /><p>No opportunities match this search.</p><button type="button" onClick={() => { setFilter("For You"); setSearch(""); setQuery(""); }}>Clear filters</button></div>}
+            : <div className={styles.empty}><I name="SearchX" /><p>{tr("workDashboard.noOpportunitiesMatchThisSearch")}</p><button type="button" onClick={() => { setFilter("For You"); setSearch(""); setQuery(""); }}>{tr("findwork.clearFilters")}</button></div>}
         </section>
 
         <div className={styles.bottom}>
           <section className={styles.panel}>
-            <div className={styles.panelHeading}><h2>Earnings Overview</h2><select value={chartRange} onChange={event => setChartRange(event.target.value)} aria-label="Earnings range"><option value="6">Last 6 months</option><option value="12">Last 12 months</option></select></div>
-            <div className={styles.earnings}><div><strong>{money(earnings)}</strong><span>Total Earnings</span><TransitionLink href="/app/wallet">View wallet <I name="ArrowRight" /></TransitionLink></div><div className={styles.chart}>{months.length ? months.map((amount, i) => <div key={`${labels[i]}-${i}`}><span style={{ height: `${Math.max(8, amount / max * 58)}px` }} /><small>{labels[i] || ""}</small></div>) : <p>Your earnings will appear here.</p>}</div></div>
+            <div className={styles.panelHeading}><h2>{tr("workDashboard.earningsOverview")}</h2><select value={chartRange} onChange={event => setChartRange(event.target.value)} aria-label={tr("workDashboard.earningsRange")}><option value="6">{tr("workDashboard.last6Months")}</option><option value="12">{tr("workDashboard.last12Months")}</option></select></div>
+            <div className={styles.earnings}><div><strong>{money(earnings)}</strong><span>{tr("workDashboard.totalEarnings")}</span><TransitionLink href="/app/wallet">{tr("workDashboard.viewWallet")} <I name="ArrowRight" /></TransitionLink></div><div className={styles.chart}>{months.length ? months.map((amount, i) => <div key={`${labels[i]}-${i}`}><span style={{ height: `${Math.max(8, amount / max * 58)}px` }} /><small>{labels[i] || ""}</small></div>) : <p>{tr("workDashboard.yourEarningsWillAppearHere")}</p>}</div></div>
           </section>
-          <section className={styles.panel}><PanelHeading title="Top Skills in Demand" href="/app/opportunities" /><div className={styles.skillChips}>{SKILLS.map(skill => <button key={skill} type="button" onClick={() => setTopic(skill)}>{skill}</button>)}</div></section>
+          <section className={styles.panel}><PanelHeading title={tr("workDashboard.topSkillsInDemand")} href="/app/opportunities" /><div className={styles.skillChips}>{SKILLS.map(skill => <button key={skill} type="button" onClick={() => setTopic(skill)}>{skill}</button>)}</div></section>
         </div>
       </div>
 
-      <aside className={styles.rail} aria-label="Work overview">
-        <blockquote className={styles.quote}><span aria-hidden="true">“</span><p>Independent women create stronger families and brighter communities.</p><cite>— WomSakhi</cite></blockquote>
-        <section className={styles.railPanel}><PanelHeading title="Upcoming Events" href="/app/schedule" action="View calendar" /><div className={styles.schedule}>{events.upcoming.slice(0, 4).map(event => <TransitionLink href={`/app/events/${event.id}`} key={event.id}><time>{event.day} {event.month}</time><span>{event.title}<small>{event.time || event.when}</small></span></TransitionLink>)}{!events.upcoming.length && <p>No upcoming events yet.</p>}</div></section>
-        <section className={styles.railPanel}><PanelHeading title="Your Progress" href="/app/profile" /><div className={styles.progressTop}><div className={styles.ring} style={{ background: `conic-gradient(var(--ux-brand) ${me.profilePct}%, var(--ux-brand-tint-2) 0)` }}><span>{me.profilePct}%</span></div><div><strong>Your Profile Strength</strong><p>{me.profilePct === 100 ? "Your profile is complete." : "Complete a few more items to get better opportunities."}</p></div></div><div className={styles.tasks}><TransitionLink href="/app/profile"><I name={me.profilePct === 100 ? "CheckCircle2" : "Circle"} /> Complete profile <I name="ChevronRight" /></TransitionLink><TransitionLink href="/app/profile"><I name="Circle" /> Add portfolio <I name="ChevronRight" /></TransitionLink><TransitionLink href="/app/trust"><I name="Circle" /> Get verified reviews <I name="ChevronRight" /></TransitionLink><TransitionLink href="/app/intake"><I name="Circle" /> Link your skills <I name="ChevronRight" /></TransitionLink><TransitionLink href="/app/settings"><I name="Circle" /> Enable availability <I name="ChevronRight" /></TransitionLink></div></section>
-        <section className={styles.reputation}><I name="Trophy" /><div><h2>Build Your Reputation</h2><p>Complete projects, get verified reviews and unlock bigger opportunities.</p><TransitionLink href="/app/trust">See How It Works <I name="ArrowRight" /></TransitionLink></div></section>
+      <aside className={styles.rail} aria-label={tr("workDashboard.workOverview")}>
+        <blockquote className={styles.quote}><span aria-hidden="true">“</span><p>{tr("workDashboard.independentWomenCreateStrongerFamiliesAnd")}</p><cite>— WomSakhi</cite></blockquote>
+        <section className={styles.railPanel}><PanelHeading title={tr("homeRail.upcomingEvents")} href="/app/schedule" action={tr("workDashboard.viewCalendar")} /><div className={styles.schedule}>{events.upcoming.slice(0, 4).map(event => <TransitionLink href={`/app/events/${event.id}`} key={event.id}><time>{event.day} {event.month}</time><span>{event.title}<small>{event.time || event.when}</small></span></TransitionLink>)}{!events.upcoming.length && <p>{tr("workDashboard.noUpcomingEventsYet")}</p>}</div></section>
+        <section className={styles.railPanel}><PanelHeading title={tr("homeRail.yourProgress")} href="/app/profile" /><div className={styles.progressTop}><div className={styles.ring} style={{ background: `conic-gradient(var(--ux-brand) ${me.profilePct}%, var(--ux-brand-tint-2) 0)` }}><span>{me.profilePct}%</span></div><div><strong>{tr("workDashboard.yourProfileStrength")}</strong><p>{me.profilePct === 100 ? "Your profile is complete." : "Complete a few more items to get better opportunities."}</p></div></div><div className={styles.tasks}><TransitionLink href="/app/profile"><I name={me.profilePct === 100 ? "CheckCircle2" : "Circle"} /> {tr("earnhome.completeProfile")} <I name="ChevronRight" /></TransitionLink><TransitionLink href="/app/profile"><I name="Circle" /> {tr("workDashboard.addPortfolio")} <I name="ChevronRight" /></TransitionLink><TransitionLink href="/app/trust"><I name="Circle" /> {tr("workDashboard.getVerifiedReviews")} <I name="ChevronRight" /></TransitionLink><TransitionLink href="/app/intake"><I name="Circle" /> {tr("workDashboard.linkYourSkills")} <I name="ChevronRight" /></TransitionLink><TransitionLink href="/app/settings"><I name="Circle" /> {tr("workDashboard.enableAvailability")} <I name="ChevronRight" /></TransitionLink></div></section>
+        <section className={styles.reputation}><I name="Trophy" /><div><h2>{tr("workDashboard.buildYourReputation")}</h2><p>{tr("workDashboard.completeProjectsGetVerifiedReviewsAnd")}</p><TransitionLink href="/app/trust">{tr("workDashboard.seeHowItWorks")} <I name="ArrowRight" /></TransitionLink></div></section>
       </aside>
     </div>
   </HomeShell>;

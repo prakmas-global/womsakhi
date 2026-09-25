@@ -1,6 +1,7 @@
 "use client";
 
 import Image from "next/image";
+import { useT } from "@/i18n";
 import { TransitionLink } from "@/components/ux/TransitionLink";
 import { I, formatRupees } from "@/components/ux/kit";
 import { useHome } from "@/components/ux/live";
@@ -57,6 +58,7 @@ function greeting() {
 }
 
 export function MobileHome() {
+  const tr = useT();
   /*
     One request for the whole screen.
 
@@ -124,7 +126,7 @@ export function MobileHome() {
               style={{ background: "var(--ux-brand-900)", border: "1px solid var(--ux-line)" }}>
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img src="/ux/art/home-banner.webp"
-             alt="Six women working together at a laptop, under the WomSakhi wordmark and the words “Independent Women Build Brighter Tomorrows”."
+             alt={tr("mobileHome.sixWomenWorkingTogetherAtA")}
              decoding="async" fetchPriority="high" width={1900} height={760}
              className="block w-full object-cover object-center"
              style={{ aspectRatio: "2.8 / 1" }} />
@@ -137,7 +139,7 @@ export function MobileHome() {
             {me.first}
           </h1>
           <p className="mt-1.5 text-[12.5px] font-bold leading-tight" style={{ color: "var(--ux-on-brand)" }}>
-            Connect. Learn. Earn. Grow. <span style={{ color: "var(--ux-rib-5)" }}>Together.</span>
+            {tr("mobileHome.connectLearnEarnGrow")} <span style={{ color: "var(--ux-rib-5)" }}>Together.</span>
           </p>
         </div>
       </header>
@@ -161,17 +163,17 @@ export function MobileHome() {
           <div className="min-w-0 flex-1">
             <p className="text-[12px] font-semibold uppercase tracking-[0.08em]"
                style={{ color: ON_BRAND_2 }}>
-              Your balance
+              {tr("wallet.balance")}
             </p>
             <p className="mt-0.5 text-[15px] font-semibold leading-snug" style={{ color: ON_BRAND }}>
-              We could not load it just now.
+              {tr("mobileHome.weCouldNotLoadItJust")}
             </p>
           </div>
           <button type="button" onClick={refetch}
                   className="flex min-h-[44px] shrink-0 items-center gap-1.5 rounded-full px-3.5 text-[13px] font-bold"
                   style={{ background: "color-mix(in srgb, var(--ux-on-brand) 18%, transparent)", color: ON_BRAND }}>
             <I name="RefreshCw" className="h-4 w-4" sw={2.2} />
-            Try again
+            {tr("common.retry")}
           </button>
         </div>
       ) : (
@@ -181,7 +183,7 @@ export function MobileHome() {
         <div className="min-w-0 flex-1">
           <p className="text-[12px] font-semibold uppercase tracking-[0.08em]"
              style={{ color: ON_BRAND_2 }}>
-            Your balance
+            {tr("wallet.balance")}
           </p>
           {/* tabular-nums so the figure does not jitter as it changes */}
           <p className="mt-0.5 text-[28px] font-bold leading-none [font-variant-numeric:tabular-nums]"
@@ -244,10 +246,10 @@ export function MobileHome() {
         </span>
         <span className="min-w-0 flex-1">
           <b className="block text-[17px] font-semibold leading-tight" style={{ color: "var(--ux-ink)" }}>
-            Ask Sakhi
+            {tr("nav.sakhi")}
           </b>
           <span className="mt-0.5 block text-[13px] leading-snug" style={{ color: "var(--ux-ink-2)" }}>
-            She has read every screen you have.
+            {tr("mobileHome.sheHasReadEveryScreenYou")}
           </span>
         </span>
         <I name="ChevronRight" className="h-[18px] w-[18px] shrink-0" sw={2.2}
@@ -265,7 +267,7 @@ export function MobileHome() {
         every other number on the screen less believable.
       */}
       {journey && (
-        <Section title="Keep going">
+        <Section title={tr("certificates.keepGoing")}>
           <TransitionLink href={journey.href}
             className="ux-sq flex items-center gap-3 rounded-[12px] p-4"
             style={{ background: "var(--ux-surface)", border: "1px solid var(--ux-line)" }}>
@@ -298,7 +300,7 @@ export function MobileHome() {
       )}
 
       {/* ── work waiting for her ────────────────────────────────────────── */}
-      <Section title="Work for you">
+      <Section title={tr("mobileHome.workForYou")}>
         <div className="ux-hscroll flex gap-3">
           {opportunities.slice(0, 6).map((o: Record<string, unknown>, i: number) => (
             <TransitionLink key={String(o.id ?? i)} href={`/app/opportunities/${String(o.id ?? "")}`}
@@ -316,7 +318,7 @@ export function MobileHome() {
       </Section>
 
       {/* ── something to learn next ─────────────────────────────────────── */}
-      <Section title="Suggested for you">
+      <Section title={tr("mobileHome.suggestedForYou")}>
         <div className="ux-hscroll flex gap-3">
           {recommended.slice(0, 6).map((r: Record<string, unknown>, i: number) => (
             <TransitionLink key={String(r.id ?? i)} href={`/app/programs/${String(r.id ?? "")}`}
@@ -361,10 +363,11 @@ export function MobileHome() {
  * the boxes were already the right size.
  */
 function HomeSkeleton() {
+  const tr = useT();
   const bar = { background: "var(--ux-surface-2)", borderRadius: 8 };
   return (
     <div className="lg:hidden" aria-busy="true" aria-live="polite">
-      <span className="sr-only">Loading your home screen</span>
+      <span className="sr-only">{tr("mobileHome.loadingYourHomeScreen")}</span>
       {/* Matches the banner the loaded screen opens with — 139px of photograph
           and a 57px plum bar — so nothing jumps when the data lands. */}
       <div className="-mt-1 mb-3.5 ux-shimmer h-[196px]" style={{ ...bar, borderRadius: 18 }} />

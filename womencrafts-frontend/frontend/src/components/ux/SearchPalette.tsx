@@ -368,7 +368,7 @@ export function SearchPalette({ open, onClose }: { open: boolean; onClose: () =>
     <div className="fixed inset-0 z-[80] grid items-start justify-items-center px-5 pb-5 pt-[9vh] max-[620px]:items-stretch max-[620px]:p-0"
          style={{ background: "var(--ux-scrim)", backdropFilter: "blur(3px)" }}
          onMouseDown={(e) => { if (e.target === e.currentTarget) onClose(); }}>
-      <div role="dialog" aria-modal="true" aria-label="Search WomSakhi"
+      <div role="dialog" aria-modal="true" aria-label={t("searchPalette.searchWomsakhi")}
            className="flex w-full max-w-[720px] flex-col overflow-hidden rounded-[20px] max-[620px]:h-[100dvh] max-[620px]:max-w-none max-[620px]:rounded-none"
            style={{ background: "var(--ux-surface)", border: "1px solid var(--ux-line-strong)",
                     boxShadow: "var(--ux-shadow-pop)", maxHeight: "78vh" }}>
@@ -389,7 +389,7 @@ export function SearchPalette({ open, onClose }: { open: boolean; onClose: () =>
         */}
         <div className="flex items-center gap-3 px-[20px] py-4 max-[620px]:gap-2 max-[620px]:px-3 max-[620px]:py-2.5"
              style={{ borderBottom: "1px solid var(--ux-line)" }}>
-          <button type="button" onClick={onClose} aria-label="Close search"
+          <button type="button" onClick={onClose} aria-label={t("searchPalette.closeSearch")}
                   className="ux-press hidden shrink-0 place-items-center rounded-full max-[620px]:grid max-[620px]:h-11 max-[620px]:w-11"
                   style={{ color: "var(--ux-ink-2)" }}>
             <Icons.ArrowLeft className="h-[21px] w-[21px]" />
@@ -417,8 +417,8 @@ export function SearchPalette({ open, onClose }: { open: boolean; onClose: () =>
               </button>
             )}
             {speech && (
-              <button type="button" onClick={listen} aria-label="Search by speaking"
-                      title="Speak instead of typing"
+              <button type="button" onClick={listen} aria-label={t("searchPalette.searchBySpeaking")}
+                      title={t("searchPalette.speakInsteadOfTyping")}
                       className="ux-press grid h-[34px] w-[34px] shrink-0 place-items-center rounded-[12px] max-[620px]:h-[34px] max-[620px]:w-[34px] max-[620px]:rounded-full"
                       style={hearing
                         ? { background: "linear-gradient(96deg, var(--ux-rib-2), var(--ux-rib-3))",
@@ -540,7 +540,7 @@ export function SearchPalette({ open, onClose }: { open: boolean; onClose: () =>
                     Nothing matches “{q}”.
                   </p>
                   <p className="mt-1.5 text-xsm" style={{ color: "var(--ux-faint)" }}>
-                    Try a name, an amount, or press <Kbd>&gt;</Kbd> to do something instead.
+                    {t("searchPalette.tryANameAnAmountOr")} <Kbd>&gt;</Kbd> {t("searchPalette.toDoSomethingInstead")}
                   </p>
                 </div>
               )}
@@ -618,6 +618,7 @@ function Resting({
   recent: string[]; onPick: (t: string) => void; onGo: (href: string) => void;
   cursor: number; setCursor: (n: number) => void;
 }) {
+  const tr = useT();
   const { data: notifications } = useNotifications();
 
   // The same alert three times is one thing waiting on her, not three. Search
@@ -633,7 +634,7 @@ function Resting({
         <>
           <div className="flex items-center gap-2.5 px-[20px] pb-1.5 pt-3 text-2xs font-extrabold uppercase tracking-[0.15em]"
                style={{ color: "var(--ux-faint)" }}>
-            Waiting on you
+            {tr("opportunities.waitingOnYou")}
             <span className="ms-auto text-2xs font-bold normal-case tracking-normal">{waiting.length}</span>
           </div>
           {waiting.map((n, i) => {
@@ -666,7 +667,7 @@ function Resting({
       )}
 
       <div className="px-[20px] pb-1.5 pt-4 text-2xs font-extrabold uppercase tracking-[0.15em]"
-           style={{ color: "var(--ux-faint)" }}>You searched before</div>
+           style={{ color: "var(--ux-faint)" }}>{tr("searchPalette.youSearchedBefore")}</div>
       <div className="flex flex-wrap gap-1.5 px-[20px] pb-3.5">
         {(recent.length ? recent : SUGGESTED).map((r) => (
           <button key={r} type="button" onClick={() => onPick(r)}

@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 
+import { useT } from "@/i18n";
 /** Website-matched wordmark for expanded application navigation. */
 export function Brand({
   size = "md",
@@ -12,6 +13,7 @@ export function Brand({
   href?: string | null;
   tagline?: boolean;
 }) {
+  const tr = useT();
   /**
    * Sized to the rail, not to taste.
    *
@@ -56,8 +58,21 @@ export function Brand({
           width={900}
           height={183}
           decoding="async"
-          style={{ width: s.word }}
-          className="ux-wordmark h-auto shrink-0"
+          /*
+            `maxWidth`, not just `width`.
+
+            At 390px the row is the lockup plus five 44px controls and their
+            gaps, which leaves the lockup about 104px. The `sm` size asks for
+            126, and `shrink-0` meant it took them — the wordmark ran 20px past
+            its own link and sat underneath the Search button, with the
+            magnifier printed over the "i" in Sakhi.
+
+            The cap only bites on a phone: `--ux-brand-cap` is 96px below the
+            `sm` breakpoint and unset above it, so every other layout keeps the
+            size it was tuned to.
+          */
+          style={{ width: s.word, maxWidth: "var(--ux-brand-cap, none)" }}
+          className="ux-wordmark h-auto min-w-0"
           draggable={false}
         />
       </span>
@@ -67,7 +82,7 @@ export function Brand({
           className="whitespace-nowrap font-medium uppercase"
           style={{ fontSize: s.tag, letterSpacing: "0.11em", color: "var(--ux-muted)" }}
         >
-          Empowering Her Journey
+          {tr("brand.empoweringHerJourney")}
         </span>
       )}
     </span>
@@ -79,7 +94,7 @@ export function Brand({
        on a phone while the wordmark inside it is 26px. Without it the mark
        aligns to the top of that box and sits 9px above the bar's centre —
        measured: mark centre 25.5, bar centre 34.5. */
-    <Link href={href} aria-label="WomSakhi — home" className="inline-flex items-center">
+    <Link href={href} aria-label={tr("brand.womsakhiHome")} className="inline-flex items-center">
       {inner}
     </Link>
   );

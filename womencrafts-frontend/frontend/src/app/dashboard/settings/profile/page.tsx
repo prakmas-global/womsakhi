@@ -1,37 +1,10 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import {
-  UserCircle,
-  Pencil,
-  Camera,
-  Mail,
-  Phone,
-  CheckCircle2,
-  Settings,
-  ShieldCheck,
-  Bell,
-  History,
-  MonitorSmartphone,
-  ChevronRight,
-  LogIn,
-  Settings2,
-  UserPlus,
-  FileSearch,
-  Activity,
-  ListChecks,
-  Users,
-  FileText,
-  BarChart3,
-  Monitor,
-  Smartphone,
-  Lock,
-  UploadCloud,
-  Trash2,
-} from "lucide-react";
+import { UserCircle, Pencil, Camera, Mail, Phone, CheckCircle2, Settings, ShieldCheck, Bell, History, MonitorSmartphone, ChevronRight, LogIn, Settings2, UserPlus, FileSearch, Activity, ListChecks, Users, FileText, BarChart3, Monitor, Smartphone, Lock, UploadCloud, Trash2 } from "lucide-react";
 import { Avatar, Badge, Card, Input, Modal, Select, Switch, Textarea, ThemeSelect, useToast, Alert } from "@/design-system";
 import Link from "next/link";
-import { apiSaveStaffProfile, apiStaffChangePassword, apiStaffProfile } from "@/lib/staff-api";
+import { apiStaffProfile } from "@/lib/staff-api";
 import { memberError } from "@/lib/member-api";
 import { ResizableColumns } from "@/layout-engine";
 

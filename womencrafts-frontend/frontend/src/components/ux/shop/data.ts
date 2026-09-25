@@ -134,7 +134,7 @@ export const DOCUMENTS = [
 
 export const SHOP = {
   name: "Priya's Handloom",
-  handle: "womsakhi.in/priyas-handloom",
+  handle: "womsakhi.com/priyas-handloom",
   rating: "4.9",
   reviews: 47,
   followers: 312,

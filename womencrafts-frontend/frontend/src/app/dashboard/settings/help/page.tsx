@@ -1,26 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import {
-  LifeBuoy,
-  Rocket,
-  Users,
-  CalendarDays,
-  GraduationCap,
-  CreditCard,
-  Puzzle,
-  UserPlus,
-  BellRing,
-  BookOpen,
-  FileText,
-  CalendarCheck,
-  ShieldCheck,
-  ChevronRight,
-  Headset,
-  PlayCircle,
-  Search,
-  X,
-} from "lucide-react";
+import { LifeBuoy, Rocket, Users, CalendarDays, GraduationCap, CreditCard, Puzzle, UserPlus, BellRing, BookOpen, FileText, CalendarCheck, ShieldCheck, ChevronRight, Headset, PlayCircle, Search, X } from "lucide-react";
 import { Card, Modal, NoResults} from "@/design-system";
 import Link from "next/link";
 import { ResizableColumns } from "@/layout-engine";

@@ -42,6 +42,13 @@ const GROUPS = [
         icon: "Palette", tint: "--ux-tint-violet", ink: "--ux-violet" },
       { href: "/app/settings/notifications", label: "Notifications", note: "What reaches you, and how",
         icon: "Bell", tint: "--ux-tint-pink", ink: "--ux-pink" },
+      /*
+        Added beside Notifications rather than folded into it: that row decides
+        WHAT she is told about, this one decides HOW and WHEN it arrives — two
+        different questions, kept in two different stores by the engine.
+      */
+      { href: "/app/settings/delivery", label: "How messages reach you", note: "Which ways, and how often",
+        icon: "Send", tint: "--ux-tint-green", ink: "--ux-green" },
       { href: "/app/voice", label: "Reading it out to you", note: "Any screen read aloud, in your language",
         icon: "Volume2", tint: "--ux-tint-violet", ink: "--ux-violet" },
       { href: "/app/settings/voice", label: "Talking to Sakhi", note: "Speak to the assistant instead of typing",
@@ -152,7 +159,11 @@ export default function MorePage() {
               </span>
             }
             title={name}
-            subtitle={user?.email ?? "priya.sharma@example.com"}
+            // Her address or nothing. The fallback here was a fixture address,
+            // so for the moment before the session lands — and for anyone it
+            // never lands for — her settings screen showed a stranger's email
+            // as if it were hers.
+            subtitle={user?.email ?? ""}
           />
         </ListGroup>
 
@@ -198,7 +209,7 @@ export default function MorePage() {
               <Icons.BadgeCheck className="h-[17px] w-[17px]" style={{ color: "var(--ux-blue)" }} />
             </h2>
             <p className="mt-0.5 truncate text-xsm" style={{ color: "var(--ux-muted)" }}>
-              {user?.email ?? "priya.sharma@example.com"}
+              {user?.email ?? ""}
             </p>
             <div className="mt-2"><Pill tone="green" size="sm">{tr("settings.verifiedMember")}</Pill></div>
           </div>

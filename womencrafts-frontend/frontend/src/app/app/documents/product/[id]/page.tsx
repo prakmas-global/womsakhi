@@ -136,7 +136,7 @@ export default function ProductEditor({ params }: { params: Promise<{ id: string
           <EmptyState
             icon="SearchX"
             title={tr("documentsProduct.thatProductIsNotHere")}
-            body="It may have been removed from your shop."
+            body={tr("documentsProduct.itMayHaveBeenRemovedFrom")}
             action={<Btn href="/app/documents" variant="primary" iconEnd="ArrowRight">{tr("documentsProduct.yourBusiness")}</Btn>}
           />
         </Card>

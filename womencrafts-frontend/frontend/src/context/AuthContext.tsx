@@ -10,7 +10,7 @@ import {
   ReactNode,
 } from "react";
 import { usePathname, useRouter } from "next/navigation";
-import { apiSignIn, apiSignOut, apiSignUp, apiGetSession, AuthPayload, apiErrorMessage } from "@/lib/api";
+import { apiSignIn, apiSignOut, apiSignUp, apiGetSession, AuthPayload, apiErrorMessage, apiRefreshSession } from "@/lib/api";
 import { useToast } from "@/design-system/feedback/ToastProvider";
 import { WaitScreen } from "@/components/ux/WaitScreen";
 import { useT } from "@/i18n";
@@ -139,6 +139,39 @@ export function AuthProvider({
       .catch(() => setUser(null))
       .finally(() => setLoading(false));
   }, [sessionResolved]);
+
+  /*
+    Keep a session she is using alive.
+
+    The token is good for 30 minutes and nothing renewed it, so leaving a
+    screen open while she cooked was enough to end it — and the shell, with no
+    user and no message to show, rendered a blank white page. Renewing every
+    ten minutes while the tab is open, and once whenever she comes back to it,
+    means the leash only runs out after she has genuinely stopped.
+
+    A failed refresh is not an error to show her: it means the session had
+    already gone, and the ordinary signed-out path handles that.
+  */
+  useEffect(() => {
+    if (!user) return;
+    let alive = true;
+    const renew = () => {
+      if (document.visibilityState === "hidden") return;
+      void apiRefreshSession().then((ok) => {
+        if (alive && !ok) setUser(null);
+      });
+    };
+    const timer = window.setInterval(renew, 10 * 60 * 1000);
+    const onFocus = () => renew();
+    window.addEventListener("focus", onFocus);
+    document.addEventListener("visibilitychange", onFocus);
+    return () => {
+      alive = false;
+      window.clearInterval(timer);
+      window.removeEventListener("focus", onFocus);
+      document.removeEventListener("visibilitychange", onFocus);
+    };
+  }, [user]);
 
   // The API already set the httpOnly session cookie on this response; nothing
   // to store client-side.

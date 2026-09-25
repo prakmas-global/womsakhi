@@ -11,11 +11,13 @@ import { useCountUp } from "@/components/ux/kit/motion";
 import { HomeShell } from "@/components/ux/home/HomeShell";
 import { SegmentedControl } from "@/components/ux/mobile/SegmentedControl";
 import { EarningsBars, PayoutMethod, SourceSplit, TxnRow } from "@/components/ux/money/parts";
-import { MONEY_ART, TXN_FILTERS, rupees } from "@/components/ux/money/data";
+import { MONEY_ART as RAW_MONEY_ART, TXN_FILTERS as RAW_TXN_FILTERS, rupees } from "@/components/ux/money/data";
 import { formatMoneyOrNothing } from "@/components/ux/kit/money";
 import { useWalletInsights } from "@/components/ux/business";
 import { useMoneyOverview } from "@/components/ux/money/live";
 import { useT } from "@/i18n";
+import { useTranslated } from "@/i18n/data";
+import { NeedAHuman } from "@/components/ux/support/NeedAHuman";
 
 /**
  * Earn — what she has, what is coming, and how to get it out.
@@ -26,6 +28,8 @@ import { useT } from "@/i18n";
  * withdraw. History last: it matters, but not before the answer does.
  */
 export default function WalletPage() {
+  const TXN_FILTERS = useTranslated(RAW_TXN_FILTERS);
+  const MONEY_ART = useTranslated(RAW_MONEY_ART);
   const tr = useT();
   const [filter, setFilter] = useState<string>("All");
   // The ledger, from the server where there is one and from the mock where
@@ -43,6 +47,37 @@ export default function WalletPage() {
   const MONTH_LABELS = insights.month_labels;
   const EARNING_SOURCES = insights.sources.map((x) => ({ name: x.name, minor: x.minor, tone: x.tone }));
   const WITHDRAWN_MINOR = insights.withdrawn_minor;
+
+  /*
+    The twelve-month trend, in words she can check.
+
+    This read `Math.round((MONTHLY_MINOR[11] / MONTHLY_MINOR[0] - 1) * 100)`.
+    Her first month was ₹0 and so was her latest, so it computed 0/0 and her
+    money screen said "Up NaN% since Oct". Three faults in one line: it divided
+    by a number that is zero for anyone who joined with nothing, it hardcoded
+    the word "Up" so a fall read "Up −40%", and it was a template literal, so
+    it stayed English in every language.
+
+    A percentage against a zero baseline has no meaning, so there is no
+    percentage to show: it says what the months actually were instead.
+  */
+  const trendLine = (() => {
+    const first = MONTHLY_MINOR[0] ?? 0;
+    const last = MONTHLY_MINOR[MONTHLY_MINOR.length - 1] ?? 0;
+    const firstLabel = MONTH_LABELS[0] ?? "";
+    if (first > 0) {
+      const pct = Math.round((last / first - 1) * 100);
+      if (pct === 0) return tr("wallet.trendSame", { month: firstLabel });
+      return pct > 0
+        ? tr("wallet.trendUp", { pct, month: firstLabel })
+        : tr("wallet.trendDown", { pct: Math.abs(pct), month: firstLabel });
+    }
+    // Nothing to compare against. Say the useful thing instead of a ratio.
+    const earned = MONTHLY_MINOR.reduce((a, b) => a + (b ?? 0), 0);
+    return earned > 0
+      ? tr("wallet.trendTotal", { total: rupees(earned) })
+      : tr("wallet.trendNothingYet");
+  })();
   // Her earning goal, from the goals she actually set — `insights.goal` is the
   // older shape and stays null until a goal exists there too.
   const moneyGoal = money.goals.find((g) => g.kind === "money" && g.status === "open");
@@ -88,6 +123,8 @@ export default function WalletPage() {
       active="/app/wallet"
       rail={
         <div className="space-y-[16px]">
+          {/* A person, on a screen about her money. */}
+          <NeedAHuman />
           <Card className="ux-onscroll-soft">
             <Section title={tr("wallet.whereItComesFrom")} sub={tr("wallet.lastDays")} />
             <SourceSplit sources={EARNING_SOURCES} />
@@ -191,7 +228,13 @@ export default function WalletPage() {
             // indistinguishable from a formatter that divided the paise twice.
             ["This month", formatMoneyOrNothing(MONTHLY_MINOR[MONTHLY_MINOR.length - 1])],
             ["Withdrawn this year", formatMoneyOrNothing(WITHDRAWN_MINOR, "None yet")],
-            ["Payouts", `${money.txns.filter((t) => t.kind === "debit").length} so far`],
+            // "Payouts" counted every DEBIT, which here is bookings, programme
+            // fees and refunds — money she spent, not money paid out to her.
+            // It read "9 so far" directly beside "Withdrawn this year: None
+            // yet", which is the authoritative payout total and was zero. Two
+            // tiles about the same thing, disagreeing. This one now says what
+            // it actually counts.
+            [tr("wallet.moneyOut"), `${money.txns.filter((t) => t.kind === "debit").length}`],
           ].map(([k, v]) => (
             <div key={k}>
               <p className="text-2xs" style={{ color: "rgba(255,255,255,0.72)" }}>{k}</p>
@@ -205,7 +248,7 @@ export default function WalletPage() {
       <Card className="ux-onscroll mt-6 lg:mt-[16px]">
         <Section
           title={tr("wallet.yourLastTwelveMonths")}
-          sub={`Up ${Math.round((MONTHLY_MINOR[11] / MONTHLY_MINOR[0] - 1) * 100)}% since ${MONTH_LABELS[0]}`}
+          sub={trendLine}
           action="Statement"
           onAction={() => { window.location.href = "/app/wallet/statement"; }}
         />
@@ -260,7 +303,7 @@ export default function WalletPage() {
           <EmptyState
             icon="Receipt"
             title={`No ${filter.toLowerCase()} yet`}
-            body="Every payment in or out of your wallet shows up here."
+            body={tr("wallet.everyPaymentInOrOutOf")}
             action={<Btn onClick={() => setFilter("All")} variant="soft">{tr("wallet.showEverything")}</Btn>}
           />
         </Card>

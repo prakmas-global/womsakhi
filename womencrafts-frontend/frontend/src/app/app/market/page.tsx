@@ -116,7 +116,7 @@ export default function MarketPage() {
             <div className="min-w-0 flex-1">
               <div className="flex flex-wrap items-center gap-2">
                 <p className="text-sm font-bold leading-snug" style={{ color: v("--ux-ink") }}>{l.title}</p>
-                {l.kind === "service" && <Pill tone="blue" size="sm">Someone to do it</Pill>}
+                {l.kind === "service" && <Pill tone="blue" size="sm">{tr("market.someoneToDoIt")}</Pill>}
                 {l.low_stock && <Pill tone="orange" size="sm">{l.stock} left</Pill>}
               </div>
               {l.desc && (
@@ -236,7 +236,7 @@ export default function MarketPage() {
           <div className="grid gap-4 sm:grid-cols-3">
             <Stat value={String(circleCount)} label={tr("market.thingsYourCircleSells")} icon="Users"
                   tint="--ux-tint-pink" ink="--ux-pink-ink" />
-            <Stat value={String(sellerCount)} label="Women selling here" icon="Store"
+            <Stat value={String(sellerCount)} label={tr("market.womenSellingHere")} icon="Store"
                   tint="--ux-tint-green" ink="--ux-green-ink" />
             <Stat value={String(savedCount)} label={tr("market.youHaveSaved")} icon="Heart"
                   tint="--ux-tint-violet" ink="--ux-violet" />
@@ -255,7 +255,7 @@ export default function MarketPage() {
 
           {shown.length === 0 ? (
             <Card><EmptyState icon="ShoppingBasket" title={COPY.nothingHereYet}
-                              body="Try another filter — or invite a woman whose trade is missing from your circle."
+                              body={tr("market.tryAnotherFilterOrInviteA")}
                               action={<Btn size="sm" variant="outline" onClick={() => setFilter("all")}>{tr("market.showEverything")}</Btn>} /></Card>
           ) : (
             <div className="flex flex-col gap-3">{shown.map(card)}</div>

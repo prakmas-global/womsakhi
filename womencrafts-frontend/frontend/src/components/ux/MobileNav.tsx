@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useT } from "@/i18n";
 import { usePathname } from "next/navigation";
 import * as Icons from "@/components/ux/icons";
 
@@ -59,13 +60,14 @@ function Icon({ name, className }: { name: string; className?: string }) {
  * two pixels out.
  */
 export function SafetyPin() {
+  const tr = useT();
   const pathname = usePathname();
   if (pathname.startsWith("/app/safety")) return null;
 
   return (
     <Link
       href="/app/safety"
-      aria-label="Get help now"
+      aria-label={tr("ch.safety.label")}
       className="ux-press ux-sq ux-dock-bottom fixed bottom-0 left-3 z-[var(--ux-z-sticky)] mb-3 flex min-h-[44px] items-center gap-1.5 rounded-full px-3 lg:hidden"
       style={{
         background: "var(--ux-surface)",
@@ -77,7 +79,7 @@ export function SafetyPin() {
       <span style={{ color: "var(--ux-danger-solid)" }}>
         <Icon name="ShieldAlert" className="h-[16px] w-[16px]" />
       </span>
-      <span className="text-2xs font-bold">Get help now</span>
+      <span className="text-2xs font-bold">{tr("ch.safety.label")}</span>
     </Link>
   );
 }

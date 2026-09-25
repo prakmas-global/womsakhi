@@ -2,6 +2,7 @@
 
 import { NotYetScreen, WriteItDown } from "@/components/ux/shopplus/notyet";
 
+import { useT } from "@/i18n";
 /**
  * Customers who pay every month.
  *
@@ -28,10 +29,11 @@ import { NotYetScreen, WriteItDown } from "@/components/ux/shopplus/notyet";
  * constraint. That is now the thing the screen asks her to go and do.
  */
 export default function SubscriptionsPage() {
+  const tr = useT();
   return (
     <NotYetScreen
-      eyebrow="Every month"
-      title="Money you can count on"
+      eyebrow={tr("shopSubscriptions.everyMonth")}
+      title={tr("shopSubscriptions.moneyYouCanCountOn")}
       lede="Twenty people who know you, paying every month, is a better business than a thousand
             strangers who might buy once."
       cannot="WomSakhi cannot keep a standing order for you yet."

@@ -1,6 +1,7 @@
 "use client";
 
 import Image from "next/image";
+import { useT } from "@/i18n";
 import * as Icons from "@/components/ux/icons";
 import { Card, I, IconTile, v } from "@/components/ux/kit";
 import { ChipRow } from "@/components/ux/learning/native";
@@ -18,6 +19,7 @@ export function GoalsHero({ chips, active, onPick }: {
   chips: { label: string; n: number }[]; active: string;
   onPick: (label: string) => void;
 }) {
+  const tr = useT();
   const chipButtons = (cls: string) => chips.map((c) => {
     const on = active === c.label;
     return (
@@ -39,15 +41,15 @@ export function GoalsHero({ chips, active, onPick }: {
   ] as const;
   return <>
     <section className={styles.hero} aria-labelledby="goals-title">
-      <Image src="/ux/goals/goals-hero-v2.png" alt="Women from different backgrounds planning goals together" fill priority sizes="(max-width:760px) 100vw, 70vw" />
+      <Image src="/ux/goals/goals-hero-v2.png" alt={tr("goalviews.womenFromDifferentBackgroundsPlanningGoals")} fill priority sizes="(max-width:760px) 100vw, 70vw" />
       <div className={styles.heroShade} />
       <div className={styles.heroCopy}>
-        <p>Home / My Goals</p>
+        <p>{tr("goalviews.homeMyGoals")}</p>
         <h1 id="goals-title">My <em>Goals</em></h1>
-        <span>Dream. Plan. Do. A brighter you is always possible.</span>
+        <span>{tr("goalviews.dreamPlanDoABrighterYou")}</span>
       </div>
     </section>
-    <div className={styles.areas} aria-label="Goal areas">{areas.map(([label,icon,filter],index)=><button type="button" key={label} onClick={()=>onPick(filter)} aria-pressed={active===filter && (index===0 || filter!=="All goals")}><span><I name={icon}/></span><b>{label}</b></button>)}</div>
+    <div className={styles.areas} aria-label={tr("goalviews.goalAreas")}>{areas.map(([label,icon,filter],index)=><button type="button" key={label} onClick={()=>onPick(filter)} aria-pressed={active===filter && (index===0 || filter!=="All goals")}><span><I name={icon}/></span><b>{label}</b></button>)}</div>
     <ChipRow className={styles.mobileCategories}>{chipButtons(styles.category)}</ChipRow>
   </>;
 }
@@ -73,9 +75,10 @@ export const STATUS_LOOK: Record<GoalState, { label: string; tint: string; ink: 
 };
 
 export function GoalStats({ total, by, active, onPick }: { total: number; by: Record<GoalState, number>; active: "all" | GoalState; onPick:(value:"all"|GoalState)=>void }) {
-  const cells = [{id:"all" as const,n:total,label:"My Goals"},{id:"reached" as const,n:by.reached,label:"Completed"},{id:"moving" as const,n:by.moving,label:"In progress"},{id:"not-started" as const,n:by["not-started"],label:"Not started"}];
+  const tr = useT();
+  const cells = [{id:"all" as const,n:total,label:tr("goalviews.myGoals")},{id:"reached" as const,n:by.reached,label:"Completed"},{id:"moving" as const,n:by.moving,label:tr("programs.inProgress")},{id:"not-started" as const,n:by["not-started"],label:tr("library.notStarted")}];
   return (
-    <nav className={styles.statusTabs} aria-label="Goal status">{cells.map(c=><button type="button" key={c.id} aria-pressed={active===c.id} onClick={()=>onPick(c.id)}>{c.label} <b>({c.n})</b></button>)}</nav>
+    <nav className={styles.statusTabs} aria-label={tr("goalviews.goalStatus")}>{cells.map(c=><button type="button" key={c.id} aria-pressed={active===c.id} onClick={()=>onPick(c.id)}>{c.label} <b>({c.n})</b></button>)}</nav>
   );
 }
 
@@ -121,6 +124,7 @@ export function GoalCard({ g, money, menu, onMenu, onDone, onArchive, busy }: {
   onArchive: (g: Goal) => void;
   busy?: boolean;
 }) {
+  const tr = useT();
   // `pct` comes off the wire. The server scores a goal — a money goal counts
   // her wallet credits, a learning goal the sessions she attended — and a
   // percentage recomputed here that disagrees with the screen that produced it
@@ -169,7 +173,7 @@ export function GoalCard({ g, money, menu, onMenu, onDone, onArchive, busy }: {
                   <span className="absolute end-0 top-[calc(100%+6px)] z-[var(--ux-z-dropdown)] block w-[210px] overflow-hidden rounded-[12px]"
                         style={{ background: v("--ux-surface"), border: "1px solid var(--ux-line)",
                                  boxShadow: "var(--ux-shadow-pop)" }}>
-                    <Row icon="Trash2" onClick={() => { onArchive(g); onMenu(false); }}>Remove this goal</Row>
+                    <Row icon="Trash2" onClick={() => { onArchive(g); onMenu(false); }}>{tr("goalviews.removeThisGoal")}</Row>
                   </span>
                 )}
               </span>
@@ -249,6 +253,7 @@ function Act({ icon, children, onClick, on }: {
 export function GoalInsights({ pct, onTrack, total, by }: {
   pct: number; onTrack: number; total: number; by: Record<GoalState, number>;
 }) {
+  const tr = useT();
   const r = 34;
   const c = 2 * Math.PI * r;
   return (
@@ -256,7 +261,7 @@ export function GoalInsights({ pct, onTrack, total, by }: {
       <div className="mb-3 flex items-center justify-between gap-3">
         <h2 className="flex items-center gap-2 text-base font-extrabold" style={{ color: v("--ux-ink") }}>
           <I name="BarChart3" className="h-[16px] w-[16px]" style={{ color: v("--ux-brand") }} />
-          Goal insights
+          {tr("goalviews.goalInsights")}
         </h2>
       </div>
 
@@ -305,11 +310,12 @@ export function GoalInsights({ pct, onTrack, total, by }: {
 export interface QuickAction { id: string; label: string; icon: string; onClick: () => void }
 
 export function QuickActions({ rows }: { rows: QuickAction[] }) {
+  const tr = useT();
   return (
     <Card>
       <h2 className="mb-3 flex items-center gap-2 text-base font-extrabold" style={{ color: v("--ux-ink") }}>
         <I name="Zap" className="h-[16px] w-[16px]" style={{ color: v("--ux-brand") }} />
-        Quick actions
+        {tr("goalviews.quickActions")}
       </h2>
       <div className="grid grid-cols-2 gap-2">
         {rows.map((a) => (

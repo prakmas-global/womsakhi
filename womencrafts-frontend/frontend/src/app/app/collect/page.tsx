@@ -246,7 +246,7 @@ export default function CollectPage() {
                   </div>
                   {primary.verified
                     ? <Pill tone="green" size="sm">Checked</Pill>
-                    : <Pill tone="orange" size="sm">Not checked yet</Pill>}
+                    : <Pill tone="orange" size="sm">{tr("settingsPayments.notCheckedYet")}</Pill>}
                 </div>
                 <p className="text-xs leading-relaxed" style={{ color: v("--ux-muted") }}>
                   {upi

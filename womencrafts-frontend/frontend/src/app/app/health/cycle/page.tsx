@@ -1,6 +1,7 @@
 "use client";
 
 import { useRouter, useSearchParams } from "next/navigation";
+import { useT } from "@/i18n";
 import { Suspense, useEffect, useState } from "react";
 
 import * as Icons from "@/components/ux/icons";
@@ -26,6 +27,7 @@ import { apiCycleLog } from "@/lib/cycle-api";
  * support ticket.
  */
 function MyCycle() {
+  const tr = useT();
   const router = useRouter();
   const params = useSearchParams();
   const [month, setMonth] = useState<string | undefined>(params.get("month") ?? undefined);
@@ -62,7 +64,7 @@ function MyCycle() {
 
       {/* ── Phone: My Cycle ── */}
       <div className="lg:hidden">
-        <CycleHeader title="My Cycle" action={{ label: "Log", href: "/app/health/cycle/log" }} />
+        <CycleHeader title={tr("healthCycle.myCycle")} action={{ label: "Log", href: "/app/health/cycle/log" }} />
 
         <div role="tablist" aria-label="View" className="grid grid-cols-2 gap-1 rounded-full p-1"
              style={{ background: "var(--ux-surface)", border: "1px solid var(--ux-line)" }}>
@@ -92,12 +94,12 @@ function MyCycle() {
             <Panel>
               <div className="flex items-center gap-3">
                 <div className="min-w-0 flex-1">
-                  <h2 className="text-[17px] font-semibold" style={{ color: "var(--ux-ink)" }}>Cycle Insights</h2>
+                  <h2 className="text-[17px] font-semibold" style={{ color: "var(--ux-ink)" }}>{tr("healthCycle.cycleInsights")}</h2>
                   <p className="mt-1 text-[15px] leading-snug" style={{ color: "var(--ux-ink-2)" }}>
-                    {st?.on_period ? <>You are on <b style={{ color: "var(--ux-ink)" }}>day {st.period_day}</b> of your period.</>
+                    {st?.on_period ? <>{tr("healthCycle.youAreOn")} <b style={{ color: "var(--ux-ink)" }}>day {st.period_day}</b> {tr("healthCycle.ofYourPeriod")}</>
                       : st?.next_start && st.days_until != null && st.days_until >= 0
-                        ? <>Your next period is likely in<br /><b className="text-[20px]" style={{ color: "var(--ux-ink)" }}>{st.days_until} days ({shortDate(st.next_start)})</b></>
-                        : st?.days_until != null ? <>Your period is <b style={{ color: "var(--ux-ink)" }}>{-st.days_until} days</b> later than expected.</>
+                        ? <>{tr("healthCycle.yourNextPeriodIsLikelyIn")}<br /><b className="text-[20px]" style={{ color: "var(--ux-ink)" }}>{st.days_until} days ({shortDate(st.next_start)})</b></>
+                        : st?.days_until != null ? <>{tr("healthCycle.yourPeriodIs")} <b style={{ color: "var(--ux-ink)" }}>{-st.days_until} days</b> {tr("healthCycle.laterThanExpected")}</>
                         : "Log your period to see predictions."}
                   </p>
                 </div>
@@ -108,14 +110,14 @@ function MyCycle() {
             </Panel>
 
             <Panel>
-              <h2 className="mb-2 text-[17px] font-semibold" style={{ color: "var(--ux-ink)" }}>Add a note</h2>
+              <h2 className="mb-2 text-[17px] font-semibold" style={{ color: "var(--ux-ink)" }}>{tr("healthCycle.addANote")}</h2>
               {state.log?.note && <p className="mb-2 text-[13px]" style={{ color: "var(--ux-muted)" }}>Today: {state.log.note}</p>}
               <form className="flex items-center gap-2 rounded-[14px] px-3.5 py-1"
                     style={{ background: "var(--ux-surface-2)", border: "1px solid var(--ux-line)" }}
                     onSubmit={(e) => { e.preventDefault(); if (note.trim()) act(() => apiCycleLog(state.today, { note: note.trim() })).then((r) => r && setNote("")); }}>
-                <input value={note} onChange={(e) => setNote(e.target.value.slice(0, 500))} placeholder="How are you feeling today?"
-                       aria-label="Add a note" className="h-[44px] min-w-0 flex-1 bg-transparent text-[15px] outline-none" style={{ color: "var(--ux-ink)" }} />
-                <button type="submit" disabled={busy || !note.trim()} aria-label="Save note"
+                <input value={note} onChange={(e) => setNote(e.target.value.slice(0, 500))} placeholder={tr("healthCycle.howAreYouFeelingToday")}
+                       aria-label={tr("healthCycle.addANote")} className="h-[44px] min-w-0 flex-1 bg-transparent text-[15px] outline-none" style={{ color: "var(--ux-ink)" }} />
+                <button type="submit" disabled={busy || !note.trim()} aria-label={tr("healthCycle.saveNote")}
                         className="grid h-10 w-10 place-items-center rounded-full disabled:opacity-40" style={{ color: "var(--cy-period-ink)" }}>
                   <Icons.Send className="h-[18px] w-[18px]" aria-hidden />
                 </button>
@@ -134,12 +136,12 @@ function MyCycle() {
 
       <Sheet open={!!editing} onClose={() => setEditing(null)}
              title={editing ? `${dow(editing)} ${dayNum(editing)} ${monthShort(editing)}` : ""} icon="CalendarDays"
-             description="Were you on your period this day?">
+             description={tr("healthCycle.wereYouOnYourPeriodThis")}>
         <div className="space-y-2.5">
           <button type="button" onClick={() => mark(true)} disabled={busy}
                   className="ux-press h-[52px] w-full rounded-[14px] text-[17px] font-semibold"
                   style={{ background: "linear-gradient(90deg, var(--cy-period), var(--ux-fill))", color: "var(--ux-on-brand)" }}>
-            Yes, I was
+            {tr("healthCycle.yesIWas")}
           </button>
           <button type="button" onClick={() => mark(false)} disabled={busy}
                   className="ux-press h-[52px] w-full rounded-[14px] text-[17px] font-semibold"
@@ -149,7 +151,7 @@ function MyCycle() {
           {editingCell?.period != null && (
             <button type="button" onClick={() => mark(null)} disabled={busy}
                     className="ux-press h-11 w-full text-[15px]" style={{ color: "var(--ux-muted)" }}>
-              Clear this day
+              {tr("healthCycle.clearThisDay")}
             </button>
           )}
         </div>

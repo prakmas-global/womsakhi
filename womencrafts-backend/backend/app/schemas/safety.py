@@ -55,6 +55,12 @@ class AlertResponse(BaseModel):
     contacts_notified: int
     resolution: str
     raised_at: str
+    #: The capability for the link SHE forwards. Returned on her own alert
+    #: only. Until an SMS provider exists this is the only thing that actually
+    #: puts the alert on somebody else's phone.
+    share_token: str = ""
+    #: Who has answered. Empty until somebody opens the link and says so.
+    acknowledged_by: list[str] = []
 
 
 class ReportCreate(BaseModel):

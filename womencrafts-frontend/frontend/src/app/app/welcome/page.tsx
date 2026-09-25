@@ -159,17 +159,29 @@ export default function WelcomePage() {
     setStep(step + 1);
   }
 
+  /**
+   * The server owns this list and sends it in English, with a stable `key`
+   * for each entry. So the key is what we translate on, and the server's own
+   * words are what shows if a new need arrives before its Telugu does — the
+   * screen is never blank and never wrong, only sometimes still English.
+   */
+  const needText = (key: string, part: "label" | "hint", fallback: string) => {
+    const id = `welcome.need.${key}.${part}` as Parameters<typeof tr>[0];
+    const out = tr(id);
+    return out === id ? fallback : out;
+  };
+
   return (
     <OnboardFrame
       step={step}
       total={3}
       title={
-        step === 1 ? `Namaste, ${first}.`
+        step === 1 ? tr("welcome.namaste", { name: first })
         : step === 2 ? tr("welcome.whatDoYouDoOrWant")
               : tr("welcome.howMuchTimeDoYouHave")
       }
       sub={
-        step === 1 ? "Three questions, about a minute. They decide what you see, so it is worth answering honestly."
+        step === 1 ? tr("welcome.threeQuestionsAboutAMinute")
         : step === 2 ? tr("welcome.itDecidesWhichWorkAndWhich")
               : tr("welcome.thereIsNoWrongAnswerIt")
       }
@@ -177,11 +189,11 @@ export default function WelcomePage() {
         <OnboardAside
           art="/ux/art/scene-women-celebrating.webp"
           title={tr("welcome.whyWeAsk")}
-          body="Every answer changes what lands on your home screen. Nothing here is shown to anyone else."
+          body={tr("welcome.everyAnswerChangesWhatLandsOn")}
           points={[
-            "You can change all of it later in Settings",
-            "Skip anything you would rather not answer",
-            "Never shown to employers or buyers",
+            tr("welcome.youCanChangeAllOfIt"),
+            tr("welcome.skipAnythingYouWouldRatherNot"),
+            tr("welcome.neverShownToEmployersOrBuyers"),
           ]}
         />
       }
@@ -228,7 +240,7 @@ export default function WelcomePage() {
               const on = picked.includes(n.key);
               const look = NEED_LOOK[n.key] ?? { icon: "Star", tint: "--ux-tint-lilac", ink: "--ux-brand" };
               return (
-                <PhoneRow key={n.key} icon={look.icon} tint={look.tint} ink={look.ink} title={n.label} meta={n.hint}
+                <PhoneRow key={n.key} icon={look.icon} tint={look.tint} ink={look.ink} title={needText(n.key, "label", n.label)} meta={needText(n.key, "hint", n.hint)}
                           selected={on} onClick={() => setPicked((s) => (on ? s.filter((x) => x !== n.key) : [...s, n.key]))} />
               );
             })}
@@ -251,8 +263,8 @@ export default function WelcomePage() {
                 >
                   <IconTile icon={look.icon} tint={look.tint} ink={look.ink} size={44} radius={12} />
                   <span className="min-w-0 flex-1">
-                    <span className="block text-sm font-semibold" style={{ color: "var(--ux-ink)" }}>{n.label}</span>
-                    <span className="mt-0.5 block truncate text-xs" style={{ color: "var(--ux-muted)" }}>{n.hint}</span>
+                    <span className="block text-sm font-semibold" style={{ color: "var(--ux-ink)" }}>{needText(n.key, "label", n.label)}</span>
+                    <span className="mt-0.5 block truncate text-xs" style={{ color: "var(--ux-muted)" }}>{needText(n.key, "hint", n.hint)}</span>
                   </span>
                   {on && <Icons.Check className="ux-pop h-[19px] w-[19px] shrink-0" style={{ color: "var(--ux-brand)" }} strokeWidth={2.8} />}
                 </button>

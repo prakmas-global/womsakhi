@@ -19,3 +19,31 @@
 .page :is(button,a):focus-visible{outline:3px solid color-mix(in srgb,var(--ux-brand) 34%,transparent);outline-offset:2px}.page :is(button,a):active{transform:translateY(0)}
 .heroCopy h1{font-size:48px!important;line-height:.96!important;letter-spacing:0!important}@media(max-width:760px){.heroCopy h1{font-size:36px!important}}
 .modulePanel{overflow:hidden;border:1px solid var(--ux-line);border-radius:8px;background:var(--ux-surface);box-shadow:0 7px 22px color-mix(in srgb,var(--ux-brand) 5%,transparent)}.modulePanel>header{display:flex;align-items:center;justify-content:space-between;gap:16px;padding:20px;border-bottom:1px solid var(--ux-line);background:linear-gradient(110deg,color-mix(in srgb,var(--ux-brand-tint) 72%,var(--ux-surface)),var(--ux-surface))}.modulePanel>header>div{display:flex;align-items:center;gap:12px}.modulePanel>header>div>span{display:grid;width:46px;height:46px;place-items:center;border-radius:14px;background:var(--ux-brand-tint);color:var(--ux-brand)}.modulePanel>header svg{width:20px}.modulePanel h2,.modulePanel h3,.modulePanel p{margin:0}.modulePanel h2{color:var(--ux-ink);font:750 24px var(--dashboard-font-display)}.modulePanel header p{margin-top:4px;color:var(--ux-muted);font-size:var(--dash-fs-sm, 12px)}.modulePanel>header>button{display:flex;min-height:39px;align-items:center;gap:8px;padding:0 15px;border:0;border-radius:8px;background:linear-gradient(110deg,#c52e7a,#822268);color:#fff;font-size:var(--dash-fs-sm, 12px);font-weight:700;cursor:pointer;transition:.16s}.modulePanel>header>button:hover{background:linear-gradient(110deg,#dd418f,#651a5c);box-shadow:0 7px 16px #8e275738}.modulePanel>header>button svg{width:15px}.moduleCards{display:grid;gap:8px;padding:16px}.moduleCards article{display:flex;align-items:center;gap:12px;min-height:82px;padding:12px;border:1px solid var(--ux-line);border-radius:8px;background:var(--ux-surface);transition:.16s}.moduleCards article:hover{border-color:color-mix(in srgb,var(--i) 45%,var(--ux-line));box-shadow:0 7px 17px color-mix(in srgb,var(--i) 10%,transparent)}.moduleCards article>i{display:grid;width:44px;height:44px;flex:none;place-items:center;border-radius:12px;background:var(--t);color:var(--i)}.moduleCards article>i svg{width:19px}.moduleCards article>div{min-width:0;flex:1}.moduleCards h3{color:var(--ux-ink);font-size:13px}.moduleCards p{margin-top:4px;color:var(--ux-muted);font-size:var(--dash-fs-sm, 12px)}.moduleCards article span{display:inline-flex;margin-top:6px;padding:4px 8px;border-radius:20px;background:var(--t);color:var(--i);font-size:var(--dash-fs-sm, 12px);font-weight:700}.moduleCards article>button{display:flex;min-height:36px;align-items:center;gap:8px;padding:0 13px;border:1px solid color-mix(in srgb,var(--ux-brand) 30%,var(--ux-line));border-radius:8px;background:var(--ux-surface);color:var(--ux-brand);font-size:var(--dash-fs-sm, 12px);font-weight:700;cursor:pointer;transition:.16s}.moduleCards article>button:hover{border-color:var(--ux-brand);background:var(--ux-brand);color:var(--ux-ink-on-brand)}.moduleCards article>button svg{width:13px}@media(max-width:760px){.modulePanel{margin-inline:12px}.modulePanel>header{align-items:flex-start;flex-direction:column}.modulePanel>header>button{width:100%;justify-content:center}.moduleCards article{align-items:flex-start;flex-wrap:wrap}.moduleCards article>button{width:100%;justify-content:center}}
+
+/* ── wired-to-real-data additions ──────────────────────────────────────────
+   Several controls became links when this screen stopped being a mock: the
+   quick-add tiles, the panel's "new" button and the per-row action all now go
+   somewhere real. The existing rules target `button`, so the same look is
+   extended to `a` here rather than restyled. */
+.quick>div a{display:flex;flex-direction:column;align-items:center;gap:6px;border:0;background:transparent;color:var(--ux-ink-2);font-size:var(--dash-fs-sm, 12px);cursor:pointer;text-align:center}
+.quick>div a:hover i{box-shadow:0 5px 12px #63214322}
+.modulePanel>header>.panelBtn{display:flex;min-height:39px;align-items:center;gap:8px;padding:0 15px;border:0;border-radius:8px;background:linear-gradient(110deg,#c52e7a,#822268);color:#fff;font-size:var(--dash-fs-sm, 12px);font-weight:700;cursor:pointer;transition:.16s}
+.modulePanel>header>.panelBtn:hover{background:linear-gradient(110deg,#dd418f,#651a5c);box-shadow:0 7px 16px #8e275738}
+.modulePanel>header>.panelBtn svg{width:15px}
+.moduleCards article>a{display:flex;min-height:36px;align-items:center;gap:8px;padding:0 13px;border:1px solid color-mix(in srgb,var(--ux-brand) 30%,var(--ux-line));border-radius:8px;background:var(--ux-surface);color:var(--ux-brand);font-size:var(--dash-fs-sm, 12px);font-weight:700;cursor:pointer;transition:.16s;white-space:nowrap}
+.moduleCards article>a:hover{border-color:var(--ux-brand);background:var(--ux-brand);color:var(--ux-ink-on-brand)}
+.moduleCards article>a svg{width:13px}
+
+/* Empty states. A calendar with nothing on it says so — it is never filled
+   with examples to look alive, because then the one real appointment is the
+   one she misses. */
+.railEmpty{margin:10px 0 0;color:var(--ux-muted);font-size:var(--dash-fs-sm, 12px)}
+.emptyBody{margin:0;padding:20px 16px;color:var(--ux-muted);font-size:13px;line-height:1.6}
+.emptyActions{display:flex;flex-wrap:wrap;gap:8px;padding:0 16px 16px}
+.emptyActions a{display:flex;min-height:38px;align-items:center;gap:8px;padding:0 14px;border:1px solid var(--ux-line);border-radius:8px;color:var(--ux-brand);font-size:var(--dash-fs-sm, 12px);font-weight:700;transition:.15s}
+.emptyActions a:hover{border-color:var(--ux-brand);background:var(--ux-brand-tint)}
+.emptyActions svg{width:13px}
+
+.focusTimer{margin:0;padding:0 16px 18px;color:var(--ux-brand);font:750 28px/1 var(--dashboard-font-display);font-variant-numeric:tabular-nums}
+
+@media(max-width:760px){.moduleCards article>a{width:100%;justify-content:center}.modulePanel>header>.panelBtn{width:100%;justify-content:center}}

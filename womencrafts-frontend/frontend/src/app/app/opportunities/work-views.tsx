@@ -3,7 +3,7 @@
 import Link from "next/link";
 
 import * as Icons from "@/components/ux/icons";
-import { Btn, Card, I, IconTile, v } from "@/components/ux/kit";
+import { Btn, Card, IconTile, v } from "@/components/ux/kit";
 import { payLabel, type Job } from "@/components/ux/work/data";
 import { matchFor, matchTone } from "@/services/job-match";
 import { useT } from "@/i18n";

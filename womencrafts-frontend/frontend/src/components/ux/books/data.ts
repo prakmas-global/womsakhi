@@ -128,8 +128,18 @@ export const owedTotal = (rows: Entry[]) =>
   rows.filter((e) => e.state === "owed").reduce((n, e) => n + e.minor, 0);
 export const promisedTotal = (rows: Entry[]) =>
   rows.filter((e) => e.state === "promised").reduce((n, e) => n + e.minor, 0);
-export const offPlatform = (rows: Entry[]) =>
-  Math.round((rows.filter((e) => e.via !== "circle").length / rows.length) * 100);
+/**
+ * What share of her sales never touched this app.
+ *
+ * Zero on an empty ledger, not NaN. Over a fixture this divided by a length
+ * that was always nine; over her real books it divides by zero the day she
+ * joins, and the sentence on the screen became "including the NaN% that never
+ * touches this app".
+ */
+export const offPlatform = (rows: { via: Entry["via"] }[]) =>
+  rows.length === 0
+    ? 0
+    : Math.round((rows.filter((e) => e.via !== "circle").length / rows.length) * 100);
 export const yearMinor = (rows: MonthRow[]) => rows.reduce((n, m) => n + m.minor, 0);
 export const bestMonth = (rows: MonthRow[]) => rows.reduce((a, b) => (b.minor > a.minor ? b : a));
 export const leanMonth = (rows: MonthRow[]) => rows.reduce((a, b) => (b.minor < a.minor ? b : a));

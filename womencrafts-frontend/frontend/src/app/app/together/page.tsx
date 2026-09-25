@@ -5,10 +5,8 @@ import { useRouter } from "next/navigation";
 
 import { HomeShell } from "@/components/ux/home/HomeShell";
 import { Btn, Card, I, IconTile, Pill, SectionHead, Stat, v } from "@/components/ux/kit";
-import { formatRupees } from "@/components/ux/kit";
-import {
-  ASSIST_QUEUE, HELPED, LESSONS, SEEDS, assistEarned, noPhone,
-} from "@/components/ux/together/data";
+import { useResource } from "@/lib/use-resource";
+import { apiSisters, apiTogether, type Sister, type Together } from "@/lib/life-api";
 import { useT } from "@/i18n";
 import { ListGroup } from "@/components/ux/mobile/ListRow";
 import { GroupLabel, PhoneRow, PhoneTitle, phonePrimary } from "@/components/ux/PhoneParts";
@@ -37,10 +35,34 @@ export default function TogetherHub() {
   const router = useRouter();
   const [note, setNote] = useState<string | null>(null);
 
-  const earned = useMemo(() => assistEarned(HELPED), []);
-  const shared = useMemo(() => noPhone(HELPED), []);
-  const urgent = useMemo(() => ASSIST_QUEUE.filter((t) => t.urgent).length, []);
-  const learners = useMemo(() => LESSONS.reduce((n, l) => n + l.learners, 0), []);
+  /**
+   * Hers, and her circles'.
+   *
+   * Everything on this hub was written into the file: four women she was
+   * already assisting with dated consents, three tasks waiting, four skills
+   * being taught by named women, and four neighbours to invite — each with a
+   * distance and a worked-out reason the two of them fit.
+   *
+   * The distances and the reasons are gone rather than recomputed. Nothing in
+   * this product knows how far apart two women live, and nothing knows that
+   * she buys vegetables from Rekha every week.
+   */
+  const together = useResource<Together>(
+    useCallback((sig: AbortSignal) => apiTogether(sig), []),
+    { helping: [], queue: [], teaching: [], helped_count: 0, consented_count: 0, waiting: 0 },
+  );
+  const sisters = useResource<{ sisters: Sister[]; count: number }>(
+    useCallback((sig: AbortSignal) => apiSisters(sig), []),
+    { sisters: [], count: 0 },
+  );
+
+  const HELPED = together.data.helping;
+  const LESSONS = together.data.teaching;
+  const SEEDS = sisters.data.sisters;
+
+  const shared = useMemo(() => HELPED.filter((w) => !w.owns_phone).length, [HELPED]);
+  const urgent = useMemo(() => together.data.queue.filter((t) => t.urgent).length, [together.data.queue]);
+  const learners = useMemo(() => LESSONS.reduce((n, l) => n + l.learners, 0), [LESSONS]);
 
   return (
     <HomeShell active="/app/together">
@@ -49,7 +71,7 @@ export default function TogetherHub() {
         {/* On a phone the section's name is the large title; the headline and
             the paragraph follow it as quiet text. */}
         <PhoneTitle title="Together" sub={tr("together.thingsOnlyACircleCanDo")}
-                    note="Not a group chat. The four things that genuinely work better with women you already trust than alone." />
+                    note={tr("together.notAGroupChatTheFour")} />
         <header className="hidden lg:block">
           <p className="text-2xs font-extrabold uppercase tracking-[0.2em]" style={{ color: v("--ux-brand") }}>
             Together
@@ -74,7 +96,7 @@ export default function TogetherHub() {
           <div className="grid gap-4 sm:grid-cols-3">
             <Stat value={String(HELPED.length)} label={tr("together.womenYouRunThisFor")}
                   icon="UserPlus" tint="--ux-tint-violet" ink="--ux-violet" />
-            <Stat value={formatRupees(earned)} label={tr("together.youEarnedHelpingThem")}
+            <Stat value={String(together.data.queue.length)} label="Waiting to be done"
                   icon="Wallet" tint="--ux-tint-green" ink="--ux-green-ink" />
             <Stat value={String(learners)} label={tr("together.womenLearningFromYourCircle")}
                   icon="GraduationCap" tint="--ux-tint-blue" ink="--ux-blue-ink" />
@@ -135,10 +157,13 @@ export default function TogetherHub() {
           {/* The women who would close the loop, as one grouped list. */}
           <ListGroup className="mt-3 lg:hidden">
             {SEEDS.map((s) => (
-              <PhoneRow key={s.id} icon={s.icon} tint="--ux-tint-green" ink="--ux-green-ink"
-                        title={s.name} meta={`${s.trade} · ${s.km} km away`} body={s.closes}>
-                <Btn size="sm" variant="outline" full className="mt-3 max-lg:px-4"
-                     onClick={() => setNote(`Invited ${s.name}. She sees who invited her, and nothing else about you.`)}>{tr("together.askHerToJoin")}</Btn>
+              <PhoneRow key={s.id} icon="UserRound" tint="--ux-tint-green" ink="--ux-green-ink"
+                        title={s.name} meta={[s.trade, s.where].filter(Boolean).join(" · ")}
+                        body="In a circle with you">
+                {/* Goes where she can actually say something. The old button
+                    announced "Invited her" and sent nothing to anybody. */}
+                <Btn size="sm" variant="outline" full className="mt-3 max-lg:px-4" icon="MessageCircle"
+                     href="/app/messages">Message her</Btn>
               </PhoneRow>
             ))}
           </ListGroup>
@@ -146,17 +171,16 @@ export default function TogetherHub() {
             {SEEDS.map((s) => (
               <Card key={s.id} pad={16}>
                 <div className="flex items-start gap-3.5">
-                  <IconTile icon={s.icon} tint="--ux-tint-green" ink="--ux-green-ink" size={40} />
+                  <IconTile icon="UserRound" tint="--ux-tint-green" ink="--ux-green-ink" size={40} />
                   <div className="min-w-0 flex-1">
                     <p className="text-sm font-bold" style={{ color: v("--ux-ink") }}>{s.name}</p>
                     <p className="mt-0.5 text-xs" style={{ color: v("--ux-muted") }}>
-                      {s.trade} · {s.km} km away
+                      {[s.trade, s.where].filter(Boolean).join(" · ") || "In a circle with you"}
                     </p>
-                    <p className="mt-2 text-xsm leading-relaxed" style={{ color: v("--ux-ink-2") }}>{s.closes}</p>
                   </div>
                 </div>
-                <Btn size="sm" variant="outline" full className="mt-3"
-                     onClick={() => setNote(`Invited ${s.name}. She sees who invited her, and nothing else about you.`)}>{tr("together.askHerToJoin")}</Btn>
+                <Btn size="sm" variant="outline" full className="mt-3" icon="MessageCircle"
+                     href="/app/messages">Message her</Btn>
               </Card>
             ))}
           </div>

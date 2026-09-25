@@ -1,54 +1,11 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
-import {
-  MessageSquare,
-  MessagesSquare,
-  Send,
-  Mail,
-  Clock,
-  CircleCheck,
-  SquarePen,
-  Filter,
-  Star,
-  User,
-  MoreVertical,
-  CheckCheck,
-  Smile,
-  Paperclip,
-  FileText,
-  Download,
-  Search,
-  ChevronRight,
-  MessageSquarePlus,
-  Megaphone,
-  LayoutTemplate,
-  Bot,
-  MailOpen,
-  Archive,
-  Trash2,
-  Phone,
-  ListFilter,
-} from "lucide-react";
-import { Avatar, Badge, Card, Input, Menu, MenuItem, Modal, Select, StatCard, Textarea, NoResults, useToast, useConfirm } from "@/design-system";
+import { MessageSquare, MessagesSquare, Send, Mail, Clock, CircleCheck, SquarePen, Filter, Star, User, MoreVertical, CheckCheck, Smile, Paperclip, FileText, Download, Search, ChevronRight, MessageSquarePlus, Megaphone, LayoutTemplate, Bot, MailOpen, Archive, Trash2, Phone, ListFilter } from "lucide-react";
+import { Avatar, Badge, Card, Menu, MenuItem, Modal, Select, StatCard, Textarea, NoResults, useToast, useConfirm } from "@/design-system";
 import DonutChart from "@/components/charts/DonutChart";
 import { TONE_BG } from "@/lib/tones";
-import {
-  apiListConversations,
-  apiMessageStats,
-  apiMessageContacts,
-  apiMessageTemplates,
-  apiMessageAutomations,
-  apiCreateConversation,
-  apiSendMessage,
-  apiUpdateConversation,
-  apiDeleteConversation,
-  apiBroadcast,
-  type ApiConversation,
-  type ApiMessageBubble,
-  type ApiMessageStats,
-  type BroadcastAudience,
-} from "@/lib/messages-api";
+import { apiListConversations, apiMessageStats, apiMessageContacts, apiMessageTemplates, apiMessageAutomations, apiCreateConversation, apiSendMessage, apiUpdateConversation, apiDeleteConversation, apiBroadcast, type ApiConversation, type ApiMessageBubble, type ApiMessageStats, type BroadcastAudience } from "@/lib/messages-api";
 import { memberError } from "@/lib/member-api";
 import { ResizableColumns } from "@/layout-engine";
 

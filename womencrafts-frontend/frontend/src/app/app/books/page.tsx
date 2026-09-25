@@ -1,6 +1,8 @@
 "use client";
 
 import { useCallback, useMemo, useState } from "react";
+import { useResource } from "@/lib/use-resource";
+import { apiBooks, apiEditEntry, type BookEntry, type Books } from "@/lib/books-api";
 import { useRouter } from "next/navigation";
 
 import { HomeShell } from "@/components/ux/home/HomeShell";
@@ -8,9 +10,11 @@ import { Btn, Card, Chip, EmptyState, I, IconTile, Pill, Stat, v } from "@/compo
 import { EYEBROW, GROUP, GROUP_ROW, Section } from "@/components/ux/earn/phone";
 import { formatRupees } from "@/components/ux/kit";
 import {
-  ENTRIES, VIA_LABEL, offPlatform, owedTotal, paidTotal, promisedTotal, type Entry,
+  VIA_LABEL as RAW_VIA_LABEL, offPlatform,
 } from "@/components/ux/books/data";
 import { useT } from "@/i18n";
+import type { MessageKey } from "@/i18n";
+import { useTranslated } from "@/i18n/data";
 
 /**
  * Your books.
@@ -26,24 +30,68 @@ import { useT } from "@/i18n";
  * a third of the effect coming from sellers just watching their own numbers.
  */
 
-const STATE: Record<Entry["state"], { label: string; tint: string; ink: string; icon: string }> = {
+const STATE: Record<BookEntry["state"], { label: string; tint: string; ink: string; icon: string }> = {
   paid: { label: "Paid", tint: "--ux-tint-green", ink: "--ux-green-ink", icon: "Check" },
   owed: { label: "Owes you", tint: "--ux-tint-amber", ink: "--ux-amber-ink", icon: "Clock" },
   promised: { label: "You promised", tint: "--ux-tint-blue", ink: "--ux-blue-ink", icon: "CalendarDays" },
 };
 
+/** Nothing, until the server answers. Never a plausible-looking ledger. */
+const EMPTY_BOOKS: Books = {
+  entries: [], paid_minor: 0, owed_minor: 0, promised_minor: 0, late_count: 0,
+};
+
+/**
+ * "Today", "Yesterday", "3 days ago", then a date.
+ *
+ * The fixture carried these as strings she had written — "Today", "Due 3 days
+ * ago" — and the server sends an instant instead, correctly: only an instant
+ * survives a timezone and still means the same day tomorrow. Rendering it raw
+ * put `2026-09-25T14:37:00.052000` in her ledger, which is the one thing worse
+ * than no date at all.
+ */
+function whenLabel(iso: string, tr: (k: MessageKey, p?: Record<string, string | number>) => string): string {
+  if (!iso) return "";
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return "";
+  const startOfToday = new Date(); startOfToday.setHours(0, 0, 0, 0);
+  const days = Math.floor((startOfToday.getTime() - new Date(d).setHours(0, 0, 0, 0)) / 86_400_000);
+  if (days <= 0) return tr("books.today");
+  if (days === 1) return tr("books.yesterday");
+  if (days < 7) return tr("books.daysAgo", { days });
+  return d.toLocaleDateString(undefined, { day: "numeric", month: "short" });
+}
+
 type Filter = "all" | "owed" | "promised" | "paid";
 
 export default function BooksPage() {
+  const VIA_LABEL = useTranslated(RAW_VIA_LABEL);
   const tr = useT();
   const router = useRouter();
-  const [rows, setRows] = useState<Entry[]>(ENTRIES);
+
+  /*
+    Her ledger, from the server.
+
+    This screen ran on `ENTRIES` — a fixture whose own comment read "Mock data
+    throughout". Nine invented customers owed her money she had never been
+    owed, and anything she added herself lived in React state: she could write
+    down a sale, watch the totals move, and lose it on reload. For the one
+    screen in this product whose entire job is remembering what she is owed,
+    that is the worst possible failure.
+  */
+  const { data: books, refetch } = useResource(
+    useCallback(async (sig: AbortSignal) => apiBooks(sig), []),
+    EMPTY_BOOKS,
+  );
+  const rows = books.entries;
+
   const [filter, setFilter] = useState<Filter>("all");
   const [note, setNote] = useState<string | null>(null);
 
-  const paid = useMemo(() => paidTotal(rows), [rows]);
-  const owed = useMemo(() => owedTotal(rows), [rows]);
-  const promised = useMemo(() => promisedTotal(rows), [rows]);
+  // Totalled by the server, so the header and the rows can never disagree.
+  const paid = books.paid_minor;
+  const owed = books.owed_minor;
+  const promised = books.promised_minor;
   const off = useMemo(() => offPlatform(rows), [rows]);
   const late = useMemo(() => rows.filter((e) => e.state === "owed"), [rows]);
 
@@ -52,11 +100,14 @@ export default function BooksPage() {
     [rows, filter],
   );
 
-  const markPaid = useCallback((id: string) => {
-    setRows((r) => r.map((e) => (e.id === id ? { ...e, state: "paid", on: "Just now", lateDays: undefined } : e)));
+  const markPaid = useCallback(async (id: string) => {
     const e = rows.find((x) => x.id === id);
-    setNote(`${e?.who} paid ${formatRupees(e?.minor ?? 0)}. It is in your month now.`);
-  }, [rows]);
+    // Written before it is said. The old version announced "it is in your
+    // month now" over a change that existed only in this tab.
+    await apiEditEntry(id, { state: "paid" });
+    await refetch();
+    setNote(tr("books.paidNow", { who: e?.who ?? "", amount: formatRupees(e?.minor ?? 0) }));
+  }, [rows, refetch, tr]);
 
   const remind = useCallback((id: string) => {
     const e = rows.find((x) => x.id === id);
@@ -74,7 +125,7 @@ export default function BooksPage() {
                 style={{ color: v("--ux-ink") }}>{tr("books.whoOwesYouWhat")}</h1>
             <p className="mt-1.5 max-w-[56ch] text-sm leading-relaxed" style={{ color: v("--ux-muted") }}>
               Keep selling wherever you already sell. This just remembers it — including the{" "}
-              <b>{off}%</b> that never touches this app.
+              <b>{off}%</b> {tr("books.thatNeverTouchesThisApp")}
             </p>
           </div>
           <Btn variant="outline" icon="FileText" href="/app/books/proof" className="max-lg:w-full">{tr("books.proofOfIncome")}</Btn>
@@ -123,7 +174,7 @@ export default function BooksPage() {
 
           {shown.length === 0 ? (
             <Card><EmptyState icon="BookOpen" title={tr("books.nothingHere")}
-                              body="Try another filter."
+                              body={tr("books.tryAnotherFilter")}
                               action={<Btn size="sm" variant="outline" onClick={() => setFilter("all")}>{tr("books.showEverything")}</Btn>} /></Card>
           ) : (
             <div className={`flex flex-col gap-2.5 ${GROUP}`}>
@@ -138,10 +189,10 @@ export default function BooksPage() {
                           <p className="text-sm font-bold" style={{ color: v("--ux-ink") }}>{e.who}</p>
                           <span className="rounded-full px-2 py-[2px] text-2xs font-bold uppercase tracking-[0.06em]"
                                 style={{ background: v(s.tint), color: v(s.ink) }}>{s.label}</span>
-                          {e.lateDays && e.lateDays > 7 && <Pill tone="orange" size="sm">{e.lateDays} days</Pill>}
+                          {e.late_days > 7 && <Pill tone="orange" size="sm">{tr("books.daysLate", { days: e.late_days })}</Pill>}
                         </div>
                         <p className="mt-0.5 text-xsm" style={{ color: v("--ux-muted") }}>
-                          {e.what} · {e.on} · {VIA_LABEL[e.via]}
+                          {e.what} · {whenLabel(e.on, tr)} · {VIA_LABEL[e.via]}
                         </p>
                       </div>
                       <p className="shrink-0 text-base font-extrabold tabular-nums" style={{ color: v("--ux-ink") }}>

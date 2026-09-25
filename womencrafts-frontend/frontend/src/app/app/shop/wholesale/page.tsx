@@ -1,6 +1,7 @@
 "use client";
 
 import { Btn } from "@/components/ux/kit";
+import { useT } from "@/i18n";
 import { NotYetScreen } from "@/components/ux/shopplus/notyet";
 
 /**
@@ -32,10 +33,11 @@ import { NotYetScreen } from "@/components/ux/shopplus/notyet";
  * the binding constraint, not access to the contract.
  */
 export default function WholesalePage() {
+  const tr = useT();
   return (
     <NotYetScreen
-      eyebrow="Big orders"
-      title="Twenty pieces to one buyer"
+      eyebrow={tr("ch.contracts.label")}
+      title={tr("shopWholesale.twentyPiecesToOneBuyer")}
       lede="One conversation, one delivery, one payment. Too big for one machine is not a reason to
             say no — it is a reason to quote it with your circle."
       cannot="A shop or a hostel cannot send you a bulk order through WomSakhi yet."
@@ -65,8 +67,8 @@ export default function WholesalePage() {
       ]}
       footer={
         <>
-          <Btn variant="outline" size="sm" icon="Briefcase" href="/app/contracts">See real big orders</Btn>
-          <Btn variant="ghost" size="sm" icon="FileSignature" href="/app/contracts/together">Who signs it</Btn>
+          <Btn variant="outline" size="sm" icon="Briefcase" href="/app/contracts">{tr("shopWholesale.seeRealBigOrders")}</Btn>
+          <Btn variant="ghost" size="sm" icon="FileSignature" href="/app/contracts/together">{tr("shopWholesale.whoSignsIt")}</Btn>
         </>
       }
     />

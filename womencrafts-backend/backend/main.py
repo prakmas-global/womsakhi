@@ -35,6 +35,8 @@ from app.routes.content import router as content_router
 from app.routes.feedback import router as feedback_router
 from app.routes.ai import router as ai_router
 from app.routes.notifications import router as notifications_router
+from app.routes.engines import router as engines_router
+from app.routes.engines import internal as engines_internal
 from app.routes.dashboard import router as dashboard_router
 from app.routes.billing import router as billing_router
 from app.routes.settings_security import router as settings_security_router
@@ -45,12 +47,35 @@ from app.routes.me import router as me_router
 from app.routes.cycle import router as cycle_router
 from app.routes.home import router as home_router
 from app.routes.me_messages import router as me_messages_router
+from app.routes.me_export import router as me_export_router
+from app.routes.books import router as books_router
+from app.routes.vault import router as vault_router
+from app.routes.money import router as money_router
+from app.routes.week import router as week_router
+from app.routes.incase import router as incase_router
+from app.routes.standing import router as standing_router
+from app.routes.goals import router as goals_router
+from app.routes.haq import router as haq_router
+from app.routes.school import router as school_router
+from app.routes.kitchen import router as kitchen_router
+from app.routes.swap import router as swap_router
+from app.routes.together import router as together_router
+from app.routes.employers import router as employers_router
 from app.routes.catalog import router as catalog_router
 from app.routes.payments import router as payments_router
 from app.routes.community import router as community_router
 from app.routes.growth import router as growth_router
 from app.routes.exchange import router as exchange_router
 from app.routes.money import router as money_router
+from app.routes.week import router as week_router
+from app.routes.incase import router as incase_router
+from app.routes.standing import router as standing_router
+from app.routes.goals import router as goals_router
+from app.routes.haq import router as haq_router
+from app.routes.school import router as school_router
+from app.routes.kitchen import router as kitchen_router
+from app.routes.swap import router as swap_router
+from app.routes.together import router as together_router
 from app.routes.group_buy import router as group_buy_router
 from app.routes.payout import router as payout_router
 from app.routes.shop import router as shop_router
@@ -61,6 +86,7 @@ from app.routes.skills import router as skills_router
 from app.routes.saved import router as saved_router
 from app.routes.safety import router as safety_router
 from app.routes.wallet import router as wallet_router
+from app.routes.wallet import money_router as money_overview_router
 from app.routes.admin_community import router as admin_community_router
 from app.routes.admin_growth import router as admin_growth_router
 from app.routes.admin_safety import router as admin_safety_router
@@ -247,6 +273,23 @@ app.include_router(users_router, prefix="/api/v1")  # /users/me — own profile
 # A member's own threads. Unguarded by module RBAC on purpose: these are
 # hers, and every query inside is scoped to her session.
 app.include_router(me_messages_router, prefix="/api/v1")
+# Her own copy of herself — DPDP right of access. See the module docstring.
+app.include_router(me_export_router, prefix="/api/v1")
+# Her ledger. Most of what she sells never touches an order record here.
+app.include_router(books_router, prefix="/api/v1")
+app.include_router(vault_router, prefix="/api/v1")
+app.include_router(money_router, prefix="/api/v1")
+app.include_router(week_router, prefix="/api/v1")
+app.include_router(incase_router, prefix="/api/v1")
+app.include_router(standing_router, prefix="/api/v1")
+app.include_router(goals_router, prefix="/api/v1")
+app.include_router(haq_router, prefix="/api/v1")
+app.include_router(school_router, prefix="/api/v1")
+app.include_router(kitchen_router, prefix="/api/v1")
+app.include_router(swap_router, prefix="/api/v1")
+app.include_router(together_router, prefix="/api/v1")
+# "Did they pay her?" — counted from reports, never seeded.
+app.include_router(employers_router, prefix="/api/v1")
 app.include_router(members_router, prefix="/api/v1", dependencies=_mod("users"))
 app.include_router(roles_router, prefix="/api/v1", dependencies=_mod("users"))
 app.include_router(segments_router, prefix="/api/v1", dependencies=_mod("users"))
@@ -261,6 +304,12 @@ app.include_router(content_router, prefix="/api/v1", dependencies=_mod("content"
 app.include_router(feedback_router, prefix="/api/v1", dependencies=_mod("feedback"))
 app.include_router(ai_router, prefix="/api/v1", dependencies=_mod("ai"))
 app.include_router(notifications_router, prefix="/api/v1")  # personal (topbar bell) — baseline
+# The two engines. The member routes need a session like any other; the
+# internal tick is authenticated by Cloud Run IAM in production and by a
+# header secret locally, so it deliberately takes no session dependency —
+# Cloud Scheduler has no account to sign in with.
+app.include_router(engines_router, prefix="/api/v1")
+app.include_router(engines_internal, prefix="/api/v1")
 app.include_router(dashboard_router, prefix="/api/v1", dependencies=_mod("dashboard"))
 app.include_router(billing_router, prefix="/api/v1", dependencies=_mod("settings"))
 app.include_router(settings_security_router, prefix="/api/v1", dependencies=_mod("settings"))
@@ -292,11 +341,21 @@ app.include_router(market_router, prefix="/api/v1")
 app.include_router(exchange_router, prefix="/api/v1")
 app.include_router(payout_router, prefix="/api/v1")
 app.include_router(money_router, prefix="/api/v1")
+app.include_router(week_router, prefix="/api/v1")
+app.include_router(incase_router, prefix="/api/v1")
+app.include_router(standing_router, prefix="/api/v1")
+app.include_router(goals_router, prefix="/api/v1")
+app.include_router(haq_router, prefix="/api/v1")
+app.include_router(school_router, prefix="/api/v1")
+app.include_router(kitchen_router, prefix="/api/v1")
+app.include_router(swap_router, prefix="/api/v1")
+app.include_router(together_router, prefix="/api/v1")
 app.include_router(skills_router, prefix="/api/v1")
 app.include_router(search_router, prefix="/api/v1")
 app.include_router(saved_router, prefix="/api/v1")
 app.include_router(safety_router, prefix="/api/v1")
 app.include_router(wallet_router, prefix="/api/v1")
+app.include_router(money_overview_router, prefix="/api/v1")
 # The staff side of those same modules, each behind its own RBAC module key.
 app.include_router(admin_community_router, prefix="/api/v1", dependencies=_mod("community"))
 app.include_router(admin_growth_router, prefix="/api/v1", dependencies=_mod("growth"))

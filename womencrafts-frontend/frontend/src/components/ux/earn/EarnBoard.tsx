@@ -1,6 +1,7 @@
 "use client";
 
 import { HomeShell } from "@/components/ux/home/HomeShell";
+import { useT } from "@/i18n";
 import { TransitionLink } from "@/components/ux/TransitionLink";
 import { ListGroup, ListRow } from "@/components/ux/mobile/ListRow";
 import { I, IconTile, v } from "@/components/ux/kit";
@@ -77,6 +78,7 @@ const BAND_INK_2 = v("--ux-band-ink-2");
 const BAND_MUTED = v("--ux-band-ink-2");
 
 function Hero() {
+  const tr = useT();
   return (
     <section className="ux-sq relative isolate shrink-0 overflow-hidden rounded-[18px]"
              /* No border. The drawing has no stroke pixel on any edge of this
@@ -100,7 +102,7 @@ function Hero() {
       */}
       {/* eslint-disable-next-line @next/next/no-img-element */}
       <img src="/ux/art/earn-hero-banner.webp"
-           alt="A woman smiling at her laptop, beside the words “Financial independence is a beautiful step towards a brighter you” and “Your skills, your income, your freedom.”"
+           alt={tr("earnBoard.aWomanSmilingAtHerLaptop")}
            decoding="async" fetchPriority="high" width={1900} height={633}
            className="pointer-events-none absolute inset-y-0 end-0 hidden h-full w-[74%] object-cover lg:block"
            /* 34%, not centre. The handwritten quote sits in the upper half of
@@ -121,7 +123,7 @@ function Hero() {
           </h1>
           <p className="mt-1 font-semibold leading-snug"
              style={{ fontSize: "var(--fb-earn-lead, 22px)", color: BAND_INK_2 }}>
-            Sell it, and get paid
+            {tr("earnBoard.sellItAndGetPaid")}
           </p>
           {/* Counted from the list, never typed. A hero that says ten while the
               board shows nine is the kind of thing nobody notices for months. */}
@@ -414,6 +416,7 @@ export function EarnBoard() {
  * They live on the screen each row opens, which is where she is going anyway.
  */
 function EarnPhone() {
+  const tr = useT();
   /*
     Ten places, and they come from TWO arrays — `EARN_PLACES` holds eight and
     `EARN_WIDE` the two that are drawn as a full-width strip on a desktop
@@ -430,7 +433,7 @@ function EarnPhone() {
     <div className="lg:hidden">
       <h1 className="ux-screen-title" style={{ color: v("--ux-ink") }}>Earn</h1>
       <p className="mt-1.5 text-[15px] leading-snug" style={{ color: v("--ux-muted") }}>
-        Sell what you make, and keep what you earn.
+        {tr("earnBoard.sellWhatYouMakeAndKeep")}
       </p>
 
       <ListGroup title="Selling" className="mt-6">
@@ -440,7 +443,7 @@ function EarnPhone() {
         ))}
       </ListGroup>
 
-      <ListGroup title="Your money" className="mt-6">
+      <ListGroup title={tr("ch.money.label")} className="mt-6">
         {money.map((p) => (
           <ListRow key={p.id} href={p.href} icon={p.icon} tint={p.pink ? "pink" : "green"}
                    title={p.title} subtitle={p.sub} chevron />

@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useState } from "react";
+import { useT } from "@/i18n";
 import Link from "next/link";
 import * as Icons from "@/components/ux/icons";
 
@@ -10,6 +11,7 @@ import { NextStepCard } from "@/components/ux/journey/NextStepCard";
 import { useHome } from "@/components/ux/live";
 import { formatRupees, Skeleton } from "@/components/ux/kit";
 import { apiDismissNextStep, type ApiHome } from "@/lib/me-api";
+import { EngineNudge } from "@/components/ux/reminders/EngineNudge";
 
 /**
  * Home, built to the approved dashboard design — and, since this pass, drawn
@@ -185,6 +187,7 @@ function Panel({ children }: { children: React.ReactNode }) {
  * comes from the session she is already signed in with.
  */
 function Hero({ first }: { first: string }) {
+  const tr = useT();
   const greeting = useGreeting();
 
   return (
@@ -205,7 +208,7 @@ function Hero({ first }: { first: string }) {
       */}
       {/* eslint-disable-next-line @next/next/no-img-element */}
       <img src="/ux/art/home-banner.webp"
-           alt="Six women working together at a laptop, under the WomSakhi wordmark and the words “Independent Women Build Brighter Tomorrows”."
+           alt={tr("mobileHome.sixWomenWorkingTogetherAtA")}
            decoding="async" fetchPriority="high" width={1900} height={760}
            className="block w-full object-cover object-center"
            style={{ aspectRatio: "2.8 / 1" }} />
@@ -234,7 +237,7 @@ function Hero({ first }: { first: string }) {
                    that goes down in 60ms and springs back in 220. */
                 className="ux-press ux-clay ux-btn-g flex min-h-[44px] items-center gap-2 rounded-full px-5 text-xsm font-bold"
                 style={{ background: "linear-gradient(96deg, var(--ux-rib-2), var(--ux-rib-3))", color: "var(--ux-on-brand)" }}>
-            Explore Opportunities
+            {tr("dashboard.exploreOpportunities")}
             <Icons.ArrowRight className="h-4 w-4" />
           </Link>
           <Link href="/app/stories"
@@ -245,7 +248,7 @@ function Hero({ first }: { first: string }) {
                   style={{ background: "var(--ux-on-brand-btn)", color: "var(--ux-on-brand-btn-ink)" }}>
               <Icons.Play className="h-[11px] w-[11px]" fill="currentColor" />
             </span>
-            Watch Inspiration
+            {tr("dashboard.watchInspiration")}
           </Link>
         </div>
       </div>
@@ -309,13 +312,14 @@ function NextUp({ h, onDismiss }: { h: ApiHome; onDismiss: () => void }) {
  * lesson, and nowhere else.
  */
 function Journey({ h }: { h: ApiHome }) {
+  const tr = useT();
   const j = h.journey;
 
   if (lost(h, "journey")) {
     return (
       <section className="ux-sq rounded-[16px] p-5"
                style={{ background: "var(--ux-surface)", border: "1px solid var(--ux-line)" }}>
-        <PanelHead title="What you are learning" action="All programmes" href="/app/programs" />
+        <PanelHead title={tr("dashboard.whatYouAreLearning")} action={tr("dashboard.allProgrammes")} href="/app/programs" />
         <Gone what="your course" />
       </section>
     );
@@ -325,7 +329,7 @@ function Journey({ h }: { h: ApiHome }) {
     return (
       <section className="ux-sq rounded-[16px] p-5"
                style={{ background: "var(--ux-surface)", border: "1px solid var(--ux-line)" }}>
-        <PanelHead title="What you are learning" action="All programmes" href="/app/programs" />
+        <PanelHead title={tr("dashboard.whatYouAreLearning")} action={tr("dashboard.allProgrammes")} href="/app/programs" />
         <p className="text-xsm leading-relaxed" style={{ color: "var(--ux-muted)" }}>
           You have not joined a programme yet. They are free, they run in Hindi and
           English, and most women finish one in six weeks.
@@ -333,7 +337,7 @@ function Journey({ h }: { h: ApiHome }) {
         <Link href="/app/programs"
               className="ux-press ux-btn-g mt-3.5 inline-flex min-h-[42px] items-center gap-2 rounded-[12px] px-4 text-xsm font-bold"
               style={{ background: "linear-gradient(96deg, var(--ux-rib-2), var(--ux-rib-3))", color: "var(--ux-on-brand)" }}>
-          Find a programme
+          {tr("dashboard.findAProgramme")}
           <Icons.ArrowRight className="h-4 w-4" />
         </Link>
       </section>
@@ -343,7 +347,7 @@ function Journey({ h }: { h: ApiHome }) {
   return (
     <section className="ux-sq rounded-[16px] p-5"
              style={{ background: "var(--ux-surface)", border: "1px solid var(--ux-line)" }}>
-      <PanelHead title="What you are learning" action="All programmes" href="/app/programs" />
+      <PanelHead title={tr("dashboard.whatYouAreLearning")} action={tr("dashboard.allProgrammes")} href="/app/programs" />
 
       <div className="flex flex-wrap items-end justify-between gap-x-4 gap-y-1.5">
         <div className="min-w-0">
@@ -388,7 +392,7 @@ function Journey({ h }: { h: ApiHome }) {
       <Link href={j.href}
             className="ux-hov mt-3.5 inline-flex min-h-[40px] items-center gap-1.5 text-xs font-semibold"
             style={{ color: "var(--ux-brand)" }}>
-        Open the course
+        {tr("dashboard.openTheCourse")}
         <Icons.ChevronRight className="h-[14px] w-[14px]" />
       </Link>
     </section>
@@ -411,6 +415,7 @@ function Journey({ h }: { h: ApiHome }) {
  * rhythm is how this screen ended up with a trust score.
  */
 function Stats({ h }: { h: ApiHome }) {
+  const tr = useT();
   const money = h.earnings?.money;
   const earned = money?.earned_this_month_minor ?? 0;
 
@@ -449,23 +454,23 @@ function Stats({ h }: { h: ApiHome }) {
       gone: !money,
     },
     {
-      icon: "BadgeIndianRupee", tint: "--ux-tint-amber", ink: "--ux-amber-ink", label: "On its way",
+      icon: "BadgeIndianRupee", tint: "--ux-tint-amber", ink: "--ux-amber-ink", label: tr("walletStatement.onItsWay"),
       // Zero here is a real answer, not a missing one — so it is said in words
       // rather than as "₹0", which reads like a formatter that ran twice.
       value: (money?.pending_minor ?? 0) > 0 ? formatRupees(money?.pending_minor ?? 0) : "Nothing due",
-      note: "Money owed to you",
+      note: tr("dashboard.moneyOwedToYou"),
       href: "/app/wallet",
       gone: !money,
     },
     {
-      icon: "UsersRound", tint: "--ux-tint-pink", ink: "--ux-pink-ink", label: "My Circles",
+      icon: "UsersRound", tint: "--ux-tint-pink", ink: "--ux-pink-ink", label: tr("dashboard.myCircles"),
       value: String(circles.length),
       note: circles.length === 1 ? "Circle you are in" : "Circles you are in",
       href: "/app/circles",
       gone: lost(h, "circles"),
     },
     {
-      icon: "CalendarDays", tint: "--ux-tint-violet", ink: "--ux-violet-ink", label: "Coming up",
+      icon: "CalendarDays", tint: "--ux-tint-violet", ink: "--ux-violet-ink", label: tr("events.upcoming"),
       value: String(h.upcoming.length),
       note: h.upcoming.length === 1 ? "Session booked" : "Sessions and events",
       href: "/app/schedule",
@@ -496,7 +501,7 @@ function Stats({ h }: { h: ApiHome }) {
           </span>
           {c.gone ? (
             <span className="mt-3 block text-xsm font-semibold leading-tight" style={{ color: "var(--ux-muted)" }}>
-              Could not load
+              {tr("dashboard.couldNotLoad")}
             </span>
           ) : (
             <span className="mt-3 block text-xl font-bold leading-none tracking-[-0.03em] tabular-nums"
@@ -536,18 +541,32 @@ const TILES = [
   { icon: "Store", label: "My Shop", sub: "Sell your products", tint: "--ux-tint-amber", ink: "--ux-amber-ink", href: "/app/documents" },
   { icon: "ShoppingBasket", label: "Market", sub: "Buy & sell in your community", tint: "--ux-tint-green", ink: "--ux-green-ink", href: "/app/market" },
   { icon: "Wallet", label: "Wallet", sub: "Your money, your control", tint: "--ux-tint-lilac", ink: "--ux-violet-ink", href: "/app/wallet" },
+  /*
+    The two the reminder engine gave her, added rather than swapped in — the
+    six above are unchanged.
+
+    They carry `k`/`ks` catalogue keys because these tiles render their label
+    raw, so every one of the originals is English whatever language she reads
+    in. Rather than rewrite six lines that are not mine to touch, the render
+    below prefers a key when a tile has one; the originals have none and are
+    left exactly as they were.
+  */
+  { icon: "MapPin", label: "On your way", sub: "Tell someone, and check in",
+    k: "ch.travel-journey.label", ks: "ch.travel-journey.note",
+    tint: "--ux-tint-green", ink: "--ux-green-ink", href: "/app/travel/journey" },
 ] as const;
 
 function QuickAccess() {
+  const tr = useT();
   return (
     <section>
       <div className="mb-3 flex items-center justify-between gap-3">
-        <h2 className="text-base font-bold tracking-tight" style={{ color: "var(--ux-ink)" }}>Quick Access</h2>
+        <h2 className="text-base font-bold tracking-tight" style={{ color: "var(--ux-ink)" }}>{tr("dashboard.quickAccess")}</h2>
         <div className="flex items-center gap-2">
           <Link href="/app/explore"
                 className="ux-hov -my-2 flex min-h-[40px] items-center gap-1.5 py-2 text-xs font-semibold"
                 style={{ color: "var(--ux-brand)" }}>
-            View all 30+ modules
+            {tr("dashboard.viewAll30Modules")}
             <Icons.ChevronRight className="h-[14px] w-[14px]" />
           </Link>
           <Link href="/app/settings/appearance"
@@ -570,8 +589,12 @@ function QuickAccess() {
                   style={{ background: `var(${t.tint})`, color: `var(${t.ink})` }}>
               <Ico name={t.icon} className="h-[21px] w-[21px]" />
             </span>
-            <span className="mt-auto block pt-3 text-sm font-bold" style={{ color: "var(--ux-ink)" }}>{t.label}</span>
-            <span className="mt-0.5 block text-2xs leading-snug" style={{ color: "var(--ux-muted)" }}>{t.sub}</span>
+            <span className="mt-auto block pt-3 text-sm font-bold" style={{ color: "var(--ux-ink)" }}>
+              {"k" in t ? tr(t.k as Parameters<typeof tr>[0]) : t.label}
+            </span>
+            <span className="mt-0.5 block text-2xs leading-snug" style={{ color: "var(--ux-muted)" }}>
+              {"ks" in t ? tr(t.ks as Parameters<typeof tr>[0]) : t.sub}
+            </span>
           </Link>
         ))}
       </div>
@@ -593,6 +616,7 @@ function QuickAccess() {
  * and each is drawn from the block that owns it.
  */
 function Activities({ h }: { h: ApiHome }) {
+  const tr = useT();
   const circles = rowsOf<HomeCircle>(h.circles);
   const stories = rowsOf<HomeStory>(h.stories);
   const notes = rowsOf<HomeNote>(h.notifications);
@@ -619,7 +643,7 @@ function Activities({ h }: { h: ApiHome }) {
   });
   if (pot) rows.push({
     id: `p-${pot.id}`, icon: "PiggyBank", tint: "--ux-tint-green", ink: "--ux-green-ink",
-    title: "Savings round paid",
+    title: tr("dashboard.savingsRoundPaid"),
     body: `${formatRupees(pot.monthly_minor)} into ${pot.name}`,
     when: `Round ${pot.round}`, href: "/app/circles",
   });
@@ -642,10 +666,10 @@ function Activities({ h }: { h: ApiHome }) {
 
   return (
     <Panel>
-      <PanelHead title="Today's Activities" action="View All" href="/app/notifications" />
+      <PanelHead title={tr("dashboard.todaySActivities")} action={tr("dashboard.viewAll")} href="/app/notifications" />
       {allGone ? <Gone what="your activity" /> : rows.length === 0 ? (
         <p className="py-5 text-xsm" style={{ color: "var(--ux-muted)" }}>
-          Nothing yet today. Bookings, circle news and messages land here.
+          {tr("dashboard.nothingYetTodayBookingsCircleNews")}
         </p>
       ) : (
         <ul className="-mx-1.5 space-y-0.5">
@@ -691,12 +715,13 @@ function Activities({ h }: { h: ApiHome }) {
  * illustrations from two hand-copied arrays, and a copied array drifts.
  */
 function Pot({ h }: { h: ApiHome }) {
+  const tr = useT();
   const pot = rowsOf<HomeCircle>(h.circles).find((c) => c.joined && c.is_savings);
 
   if (lost(h, "circles")) {
     return (
       <Panel>
-        <PanelHead title="Your Savings Pot" action="All Circles" href="/app/circles" />
+        <PanelHead title={tr("dashboard.yourSavingsPot")} action={tr("dashboard.allCircles")} href="/app/circles" />
         <Gone what="your circles" />
       </Panel>
     );
@@ -705,7 +730,7 @@ function Pot({ h }: { h: ApiHome }) {
   if (!pot) {
     return (
       <Panel>
-        <PanelHead title="Your Savings Pot" action="All Circles" href="/app/circles" />
+        <PanelHead title={tr("dashboard.yourSavingsPot")} action={tr("dashboard.allCircles")} href="/app/circles" />
         <p className="text-xsm leading-relaxed" style={{ color: "var(--ux-muted)" }}>
           A pot is a group of women who each put in the same amount every month, and
           take turns receiving it. Join one, or start one with women you trust.
@@ -713,7 +738,7 @@ function Pot({ h }: { h: ApiHome }) {
         <Link href="/app/circles"
               className="ux-press mt-auto flex min-h-[42px] items-center justify-center gap-2 rounded-[12px] pt-0 text-xsm font-bold"
               style={{ background: "linear-gradient(96deg, var(--ux-fill), var(--ux-fill-2))", color: "var(--ux-on-brand)" }}>
-          Find a circle
+          {tr("stories.findACircle")}
           <Icons.ArrowRight className="h-4 w-4" />
         </Link>
       </Panel>
@@ -726,7 +751,7 @@ function Pot({ h }: { h: ApiHome }) {
 
   return (
     <Panel>
-      <PanelHead title="Your Savings Pot" action="All Circles" href="/app/circles" />
+      <PanelHead title={tr("dashboard.yourSavingsPot")} action={tr("dashboard.allCircles")} href="/app/circles" />
       <div className="flex items-start gap-3">
         <span className="grid h-[34px] w-[34px] shrink-0 place-items-center rounded-[12px]"
               style={{ background: "var(--ux-tint-green)", color: "var(--ux-green-ink)" }}>
@@ -752,7 +777,7 @@ function Pot({ h }: { h: ApiHome }) {
 
       <div className="mt-4">
         <div className="flex items-baseline justify-between gap-3">
-          <span className="text-xs" style={{ color: "var(--ux-muted)" }}>You have put in</span>
+          <span className="text-xs" style={{ color: "var(--ux-muted)" }}>{tr("dashboard.youHavePutIn")}</span>
           <span className="text-xs font-bold" style={{ color: "var(--ux-green-ink)" }}>{pct}%</span>
         </div>
         <p className="mt-1.5 text-lg font-bold tabular-nums" style={{ color: "var(--ux-ink)" }}>
@@ -766,7 +791,7 @@ function Pot({ h }: { h: ApiHome }) {
                         transition: "width var(--ux-t-slow) var(--ux-ease-out)" }} />
         </div>
         <p className="mt-2.5 text-2xs leading-relaxed" style={{ color: "var(--ux-muted)" }}>
-          The full pot is what it is worth when every woman in it has paid this round.
+          {tr("dashboard.theFullPotIsWhatIt")}
         </p>
       </div>
 
@@ -776,7 +801,7 @@ function Pot({ h }: { h: ApiHome }) {
       <Link href={`/app/circles/${pot.id}`}
             className="ux-press ux-btn-g mt-auto flex min-h-[42px] items-center justify-center gap-2 rounded-[12px] text-xsm font-bold"
             style={{ background: "linear-gradient(96deg, var(--ux-rib-2), var(--ux-rib-3))", color: "var(--ux-on-brand)" }}>
-        Open this circle
+        {tr("dashboard.openThisCircle")}
         <Icons.ArrowRight className="h-4 w-4" />
       </Link>
     </Panel>
@@ -786,13 +811,14 @@ function Pot({ h }: { h: ApiHome }) {
 /* ── panel 3 · community feed ──────────────────────────────────────────── */
 
 function Feed({ h }: { h: ApiHome }) {
+  const tr = useT();
   const stories = rowsOf<HomeStory>(h.stories);
   const [lead, ...rest] = stories;
 
   if (lost(h, "stories")) {
     return (
       <Panel>
-        <PanelHead title="Community Feed" action="View All" href="/app/stories" />
+        <PanelHead title={tr("dashboard.communityFeed")} action={tr("dashboard.viewAll")} href="/app/stories" />
         <Gone what="the community feed" />
       </Panel>
     );
@@ -800,10 +826,10 @@ function Feed({ h }: { h: ApiHome }) {
 
   return (
     <Panel>
-      <PanelHead title="Community Feed" action="View All" href="/app/stories" />
+      <PanelHead title={tr("dashboard.communityFeed")} action={tr("dashboard.viewAll")} href="/app/stories" />
       {!lead ? (
         <p className="py-5 text-xsm" style={{ color: "var(--ux-muted)" }}>
-          Stories from women in your circles will appear here.
+          {tr("dashboard.storiesFromWomenInYourCircles")}
         </p>
       ) : (
         <>
@@ -880,6 +906,7 @@ function Feed({ h }: { h: ApiHome }) {
 /* ── the closing strip ─────────────────────────────────────────────────── */
 
 function Strip() {
+  const tr = useT();
   return (
     <section className="relative overflow-hidden rounded-[20px] p-6 sm:p-7"
              style={{ background: "linear-gradient(100deg, var(--ux-brand-900), var(--ux-fill) 48%, var(--ux-rib-3) 128%)" }}>
@@ -891,16 +918,16 @@ function Strip() {
                       WebkitMaskImage: "radial-gradient(72% 76% at 50% 50%, #000 58%, transparent 92%)" }} />
         <div className="min-w-0 flex-1">
           <h2 className="text-xl font-extrabold tracking-[-0.02em]" style={{ color: "var(--ux-on-brand)" }}>
-            Explore. Connect. Grow.
+            {tr("dashboard.exploreConnectGrow")}
           </h2>
           <p className="mt-1.5 max-w-[46ch] text-xsm" style={{ color: "var(--ux-on-brand-2)" }}>
-            Access every module built to support you at each step of your journey.
+            {tr("dashboard.accessEveryModuleBuiltToSupport")}
           </p>
         </div>
         <Link href="/app/explore"
               className="ux-press ux-btn-g flex min-h-[46px] shrink-0 items-center gap-2 rounded-[12px] px-5 text-xsm font-bold"
               style={{ background: "linear-gradient(96deg, var(--ux-rib-2), var(--ux-rib-3))", color: "var(--ux-on-brand)" }}>
-          Explore All Modules
+          {tr("dashboard.exploreAllModules")}
           <Icons.ArrowRight className="h-4 w-4" />
         </Link>
       </div>
@@ -923,9 +950,10 @@ function Strip() {
  * for the moment before this component's own code has arrived.
  */
 function BodySkeleton() {
+  const tr = useT();
   return (
     <div className="flex flex-col gap-4" role="status" aria-live="polite">
-      <span className="sr-only">Loading your home screen…</span>
+      <span className="sr-only">{tr("dashboard.loadingYourHomeScreen")}</span>
       <div className="ux-sq rounded-[20px] p-6" style={{ background: "var(--ux-surface)", border: "1px solid var(--ux-line)" }}>
         <Skeleton w={112} h={11} />
         <Skeleton w="46%" h={30} r={10} className="mt-4" />
@@ -977,6 +1005,7 @@ function BodySkeleton() {
  * reason and a button, never a spinner that will not resolve.
  */
 function LoadFailed({ onRetry }: { onRetry: () => void }) {
+  const tr = useT();
   return (
     <section className="ux-sq rounded-[16px] p-6 text-center"
              style={{ background: "var(--ux-surface)", border: "1px solid var(--ux-line)" }}>
@@ -985,7 +1014,7 @@ function LoadFailed({ onRetry }: { onRetry: () => void }) {
         <Icons.CloudOff className="h-5 w-5" />
       </span>
       <h2 className="mt-3.5 text-sm font-bold" style={{ color: "var(--ux-ink)" }}>
-        We could not load your home screen
+        {tr("dashboard.weCouldNotLoadYourHome")}
       </h2>
       <p className="mx-auto mt-1.5 max-w-[42ch] text-xsm leading-relaxed" style={{ color: "var(--ux-muted)" }}>
         Your money, your circles and your bookings are all safe — this is the app
@@ -995,7 +1024,7 @@ function LoadFailed({ onRetry }: { onRetry: () => void }) {
               className="ux-press ux-btn-g mt-4 inline-flex min-h-[42px] items-center gap-2 rounded-[12px] px-5 text-xsm font-bold"
               style={{ background: "linear-gradient(96deg, var(--ux-rib-2), var(--ux-rib-3))", color: "var(--ux-on-brand)" }}>
         <Icons.RefreshCw className="h-4 w-4" />
-        Try again
+        {tr("common.retry")}
       </button>
     </section>
   );
@@ -1032,7 +1061,15 @@ export function Dashboard() {
 
   return (
     <div className="flex flex-col gap-4" data-dashboard="home">
-      <h1 className="sr-only">Your WomSakhi home</h1>
+      {/*
+        `h2`, not `h1`.
+
+        The phone layout already gives this page a visible `h1` — her own
+        name in the greeting — so this screen-reader-only one made two,
+        and a page with two `h1`s has no single answer to "what is this
+        page?". The visible greeting is the better answer of the two.
+      */}
+      <h2 className="sr-only">Your WomSakhi home</h2>
       <Hero first={first} />
 
       {!home ? (
@@ -1046,6 +1083,12 @@ export function Dashboard() {
           )}
           <Journey h={home} />
           <Stats h={home} />
+          {/* The same row the module dashboards carry, in home's own radius.
+              Added between two existing children of this column; neither is
+              touched, and deleting this line restores the screen exactly. */}
+          <EngineNudge
+            icon="AlarmClock" tint="--ux-brand-tint" ink="--ux-brand"
+            labelKey="nudge.home.label" noteKey="nudge.home.note" />
           <QuickAccess />
           <div className="grid grid-cols-1 gap-4 xl:grid-cols-3">
             <Activities h={home} />

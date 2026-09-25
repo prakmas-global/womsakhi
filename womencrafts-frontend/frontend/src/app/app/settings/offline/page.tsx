@@ -1,111 +1,94 @@
 "use client";
 
-import { useMemo, useState } from "react";
 import * as Icons from "@/components/ux/icons";
 
-import { useDevicePref } from "@/lib/use-device-pref";
-
-import { Pill } from "@/components/ux/kit";
-import { SettingsPage, Toggle } from "@/components/ux/settings/Frame";
-import { PhoneSwitch } from "@/components/ux/PhoneParts";
+import { SettingsPage } from "@/components/ux/settings/Frame";
 import { Group } from "../_parts/Group";
-import { OFFLINE_ITEMS } from "@/components/ux/more/data";
 import { useT } from "@/i18n";
 
 /**
- * Offline Mode.
+ * What actually works when the signal goes.
  *
- * Every size is shown in megabytes, because data costs money and a member on a
- * ₹99 pack is deciding whether a course is worth a fifth of her month. Hiding
- * that behind "sync automatically" spends her money for her.
+ * ── Why this screen was rewritten ───────────────────────────────────────────
+ * It used to be a download manager: six rows with megabyte figures, switches,
+ * a running total, and green "Always kept" badges on her wallet balance, her
+ * orders and the helpline numbers. None of it was real. `public/sw.js` refuses
+ * every `/api/` path in `bucketFor`, deliberately and correctly — a cached
+ * wallet balance is her money written to disk, and those responses vary on her
+ * session cookie, so replaying one to the wrong person is a leak, not a
+ * feature. Nothing she toggled changed anything, the sizes were invented, and
+ * the three things promised "always kept" were the three things that were not
+ * kept at all.
  *
- * Three things stay offline whatever she chooses: her balance, her orders, and
- * the helpline numbers. Those are the ones she needs when there is no signal,
- * which is exactly when she cannot download them.
+ * A woman on a ₹99 pack deciding whether to trust this screen deserves the
+ * true version, which is smaller and more useful: the app itself stays on her
+ * phone, the numbers that matter in an emergency need no signal at all, and
+ * anything about her own account needs a connection.
+ *
+ * ── What is actually true, and where each fact lives ────────────────────────
+ *   · screens and pictures — `SHELL_PREFIXES` / `ART_PREFIXES` in sw.js,
+ *     cached as she genuinely uses them, never pre-fetched
+ *   · the helplines       — written into `OFFLINE_HTML` in sw.js, so they work
+ *     with no cache, no session and no data
+ *   · her own account     — needs a connection, and says so
+ *
+ * There is nothing to toggle here because there is nothing she can choose:
+ * the caching is automatic and costs her nothing beyond the pages she already
+ * opened. A switch that changes nothing is worse than no switch.
  */
 export default function OfflineSettings() {
   const tr = useT();
-  const [items, setItems] = useState(OFFLINE_ITEMS);
-  const [wifiOnly, setWifiOnly] = useDevicePref("offline.wifiOnly", true);
 
-  const total = useMemo(
-    () => items.filter((i) => i.on).reduce((a, i) => a + parseFloat(i.size), 0),
-    [items],
-  );
-
-  const toggle = (id: string) =>
-    setItems((s) => s.map((i) => (i.id === id ? { ...i, on: !i.on } : i)));
+  const works = [
+    tr("settingsOffline.worksScreens"),
+    tr("settingsOffline.worksHelplines"),
+    tr("settingsOffline.worksWritten"),
+  ];
+  const needs = [
+    tr("settingsOffline.needsMoney"),
+    tr("settingsOffline.needsOrders"),
+    tr("settingsOffline.needsCourses"),
+  ];
 
   return (
     <SettingsPage
       title={tr("settingsOffline.workingWithoutSignal")}
       sub={tr("settingsOffline.whatStaysOnYourPhoneWhen")}
     >
-      <Group inset="form">
-        <div className="flex items-center justify-between gap-4">
-          <div className="min-w-0">
-            <p className="text-xsm font-semibold" style={{ color: "var(--ux-ink)" }}>{tr("settingsOffline.onYourPhoneNow")}</p>
-            <p className="mt-1 text-[13px] lg:text-xs" style={{ color: "var(--ux-muted)" }}>
-              {items.filter((i) => i.on).length} of {items.length} kept offline
-            </p>
-          </div>
-          <p className="shrink-0 text-2xl font-bold tabular-nums" style={{ color: "var(--ux-ink)" }}>
-            {total.toFixed(1)} <span className="text-sm font-semibold">MB</span>
-          </p>
-        </div>
-        <div className="mt-4 border-t pt-2" style={{ borderColor: "var(--ux-line)" }}>
-          <Toggle
-            on={wifiOnly} onChange={setWifiOnly}
-            label={tr("settingsOffline.onlyDownloadOnWiFi")}
-            whenOn="Nothing large is downloaded on mobile data. Recommended."
-            whenOff="Courses download on mobile data too. This can be expensive."
-          />
-        </div>
-      </Group>
-
-      <Group title={tr("settingsOffline.whatToKeep")} sub={tr("settingsOffline.sizesAreWhatItCostsYou")}>
-        {/* On a phone the items are rows with a hairline between them, like
-            every other settings list; from `lg` they stay as they were. */}
-        <ul className="space-y-1 max-lg:space-y-0 max-lg:divide-y max-lg:divide-[var(--ux-line)]">
-          {items.map((i) => (
-            <li key={i.id} className="flex items-center gap-3 py-2.5">
-              <div className="min-w-0 flex-1">
-                <p className="flex flex-wrap items-center gap-2 text-xsm font-medium" style={{ color: "var(--ux-ink)" }}>
-                  {i.label}
-                  {/* Kept whatever she chooses — she needs these when there is
-                      no signal, which is when she cannot download them. */}
-                  {i.always && <Pill tone="green" size="sm">{tr("settingsOffline.alwaysKept")}</Pill>}
-                </p>
-                <p className="mt-0.5 text-[13px] lg:text-xs" style={{ color: "var(--ux-muted)" }}>
-                  {i.size}{i.always ? " · needed when you have no signal" : ""}
-                </p>
-              </div>
-              {i.always ? (
-                <Icons.Lock className="h-[16px] w-[16px] shrink-0" style={{ color: "var(--ux-faint)" }} />
-              ) : (
-                /* The same 46x26 switch, with a 44px target on a phone. */
-                <PhoneSwitch on={i.on} onChange={() => toggle(i.id)} label={i.label} />
-              )}
-            </li>
-          ))}
-        </ul>
-      </Group>
-
-      <Group title={tr("settingsOffline.whatStillWorksWithNoSignal")} icon="WifiOff" inset="form"
-             noteIcon="RefreshCw" note={tr("settingsOffline.anythingYouChangeOfflineIsSent")}>
+      <Group title={tr("settingsOffline.whatStillWorksWithNoSignal")} icon="WifiOff" inset="form">
         <ul className="space-y-2.5">
-          {[
-            "Seeing your balance and your last payments.",
-            "Reading and updating your orders — they send when you are back.",
-            "Any course you have downloaded.",
-            "Every helpline number on the Safety screen.",
-          ].map((t) => (
+          {works.map((t) => (
             <li key={t} className="flex items-start gap-2.5 text-xsm leading-snug" style={{ color: "var(--ux-ink-2)" }}>
               <Icons.Check className="mt-[2px] h-[14px] w-[14px] shrink-0" style={{ color: "var(--ux-green-ink)" }} strokeWidth={2.6} />
               {t}
             </li>
           ))}
         </ul>
+      </Group>
+
+      {/*
+        Said plainly, and not hidden.
+
+        The old screen implied the opposite — that her balance and orders were
+        "always kept" — which is the kind of promise a woman only discovers is
+        false at the moment she is relying on it.
+      */}
+      <Group title={tr("settingsOffline.whatNeedsASignal")} icon="Wifi" inset="form"
+             noteIcon="RefreshCw" note={tr("settingsOffline.nothingIsLost")}>
+        <ul className="space-y-2.5">
+          {needs.map((t) => (
+            <li key={t} className="flex items-start gap-2.5 text-xsm leading-snug" style={{ color: "var(--ux-ink-2)" }}>
+              <Icons.Minus className="mt-[2px] h-[14px] w-[14px] shrink-0" style={{ color: "var(--ux-faint)" }} strokeWidth={2.6} />
+              {t}
+            </li>
+          ))}
+        </ul>
+      </Group>
+
+      <Group title={tr("settingsOffline.whatItCostsYou")} icon="Smartphone" inset="form">
+        <p className="text-xsm leading-relaxed" style={{ color: "var(--ux-ink-2)" }}>
+          {tr("settingsOffline.costBody")}
+        </p>
       </Group>
     </SettingsPage>
   );

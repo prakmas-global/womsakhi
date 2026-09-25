@@ -3,6 +3,7 @@
 import * as Icons from "@/components/ux/icons";
 
 import { Brand } from "../Brand";
+import { useT } from "@/i18n";
 
 /**
  * The frame the three pre-shell screens share.
@@ -13,7 +14,7 @@ import { Brand } from "../Brand";
  * clear sense of how many steps are left, and no way to wander off mid-flow.
  */
 export function OnboardFrame({
-  step, total, title, sub, children, aside, footer,
+  step, total, title, sub, children, aside, footer, onBack, backTo,
 }: {
   step: number;
   total: number;
@@ -22,15 +23,55 @@ export function OnboardFrame({
   children: React.ReactNode;
   aside?: React.ReactNode;
   footer?: React.ReactNode;
+  /**
+   * The way back a step.
+   *
+   * Optional, because the first step of a flow has nowhere to go: a control
+   * that is always drawn and sometimes does nothing is worse than no control.
+   * It moves her within the flow rather than through browser history — she may
+   * have arrived here from an email link with no history in the tab at all.
+   */
+  onBack?: () => void;
+  /** The step she goes back TO, named. See the note at the button. */
+  backTo?: string;
 }) {
+  const tr = useT();
   return (
     <div className="min-h-screen" style={{ background: "var(--ux-canvas)" }}>
       {/* 16px from the screen edge on a phone, as everywhere else; the
           desktop's 32 was a third of a phone's margin budget on each side. */}
-      <header className="flex items-center justify-between px-4 pb-2 pt-6 lg:px-8">
-        <Brand size="sm" href={null} />
-        <p className="text-xsm" style={{ color: "var(--ux-muted)" }}>
-          Step {step} of {total}
+      <header className="flex items-center gap-2 px-4 pb-2 pt-6 lg:px-8">
+        {onBack && (
+          /*
+            The destination is in the accessible name, not only in the arrow.
+            A lone chevron asks her to remember what was behind it, and on this
+            flow the step behind is the one holding her email — the thing she
+            is most likely to be coming back to check.
+
+            44px on both axes even when only the chevron shows, which is what
+            the min-width is for: the glyph is 20px, and its padding alone
+            would leave the target at 32.
+          */
+          <button
+            type="button"
+            onClick={onBack}
+            aria-label={backTo ? `Back to ${backTo}` : "Go back a step"}
+            className="ux-press ux-sq -ms-2 inline-flex h-[44px] min-w-[44px] shrink-0 items-center gap-1 rounded-[12px] px-2"
+            style={{ color: "var(--ux-ink-2)" }}
+          >
+            <Icons.ChevronLeft className="h-[20px] w-[20px] shrink-0 rtl:rotate-180" strokeWidth={2.25} aria-hidden="true" />
+            {backTo && (
+              <span className="truncate text-xsm font-semibold max-sm:hidden">{backTo}</span>
+            )}
+          </button>
+        )}
+        {/* No tagline: at `sm` it renders at 7.5px, which is well under this
+            project's 12px floor and simply cannot be read. `Shell` already
+            drops it at this size for the same reason — this was the only
+            place left still drawing it. */}
+        <Brand size="sm" href={null} tagline={false} />
+        <p className="ms-auto shrink-0 text-xsm" style={{ color: "var(--ux-muted)" }}>
+          {tr("onboard.stepOf", { step, total })}
         </p>
       </header>
 
