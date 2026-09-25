@@ -3,7 +3,7 @@
 import Image from "next/image";
 import { useT } from "@/i18n";
 import Link from "next/link";
-import { Apple, ArrowRight, BookOpen, CalendarDays, ChevronLeft, ChevronRight, Droplets, Dumbbell, Footprints, HeartHandshake, Leaf, MessageCircle, MoonStar, Play, Sparkles, Sprout, Stethoscope } from "lucide-react";
+import { Apple, ArrowRight, BookOpen, CalendarDays, ChevronLeft, ChevronRight, Droplets, Dumbbell, Footprints, HeartHandshake, Leaf, MessageCircle, Play, Sparkles, Sprout, Stethoscope } from "lucide-react";
 import { HomeShell } from "@/components/ux/home/HomeShell";
 import styles from "./wellness.module.css";
 import { DashboardNudge } from "@/components/ux/reminders/DashboardNudge";

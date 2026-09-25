@@ -5,16 +5,11 @@ import { useRouter } from "next/navigation";
 
 import { HomeShell } from "@/components/ux/home/HomeShell";
 import { Back, Btn, Card, EmptyState, I, IconTile, Pill, SectionHead, SourceNote, Stat, v } from "@/components/ux/kit";
-import { formatRupees } from "@/components/ux/kit";
 import { useResource } from "@/lib/use-resource";
-import {
-  apiAddHelping, apiEndHelping, apiFinishAssistTask, apiGiveConsent, apiTogether,
-  type Together,
-} from "@/lib/life-api";
+import { apiFinishAssistTask, apiTogether, type Together } from "@/lib/life-api";
 import { useT } from "@/i18n";
 import { ListGroup } from "@/components/ux/mobile/ListRow";
 import { GroupLabel, PhoneRow, PhoneTitle } from "@/components/ux/PhoneParts";
-import { useTranslated } from "@/i18n/data";
 
 /**
  * You run this for them — the growth engine, made a real role.

@@ -1,27 +1,8 @@
 "use client";
 
 import { useId, useState } from "react";
-import {
-  ShieldCheck,
-  Lock,
-  Shield,
-  Eye,
-  EyeOff,
-  Bell,
-  MailCheck,
-  Monitor,
-  KeyRound,
-  Trash2,
-  ChevronRight,
-  Check,
-  Globe,
-  Smartphone,
-  LogOut,
-  MoreVertical,
-  Download,
-  X,
-} from "lucide-react";
-import { Badge, Card, Input, Menu, MenuItem, Modal, ProgressBar, Switch, NoResults, useToast } from "@/design-system";
+import { ShieldCheck, Lock, Shield, Eye, EyeOff, Bell, MailCheck, Monitor, KeyRound, Trash2, ChevronRight, Check, Globe, Smartphone, LogOut, MoreVertical, Download } from "lucide-react";
+import { Badge, Card, Menu, MenuItem, Modal, ProgressBar, Switch, NoResults, useToast } from "@/design-system";
 import Link from "next/link";
 import { apiStaffChangePassword } from "@/lib/staff-api";
 import { memberError } from "@/lib/member-api";

@@ -7,8 +7,7 @@ import { useAction } from "@/lib/use-action";
 import Link from "next/link";
 import * as Icons from "@/components/ux/icons";
 
-import {Back, Btn, Card, EmptyState, IconTile, RailSkeleton, Rating, ScreenSkeleton, SectionHead,
-} from "@/components/ux/kit";
+import { Back, Btn, Card, EmptyState, IconTile, RailSkeleton, Rating, ScreenSkeleton, SectionHead } from "@/components/ux/kit";
 import { HomeShell } from "@/components/ux/home/HomeShell";
 import { Tag } from "@/components/ux/learning/native";
 import { useMentors } from "@/components/ux/live";

@@ -4,9 +4,7 @@ import { use, useCallback, useState } from "react";
 import Link from "next/link";
 import * as Icons from "@/components/ux/icons";
 
-import {Back, ActionBtn, Btn, Card, copy, EmptyState, Pill, RailSkeleton, ScreenSkeleton,
-  SectionHead,
-} from "@/components/ux/kit";
+import { Back, ActionBtn, Btn, Card, copy, EmptyState, Pill, RailSkeleton, ScreenSkeleton, SectionHead } from "@/components/ux/kit";
 import { HomeShell } from "@/components/ux/home/HomeShell";
 import { apiLikeStory, apiStories, apiStory, type Story } from "@/lib/community-api";
 import { useResource } from "@/lib/use-resource";

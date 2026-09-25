@@ -7,17 +7,13 @@ import { HomeShell } from "@/components/ux/home/HomeShell";
 import { Back, Btn, Card, EmptyState, I, SourceNote, Stat, v } from "@/components/ux/kit";
 import { EYEBROW, GROUP, GROUP_ROW, Section } from "@/components/ux/earn/phone";
 import { formatRupees } from "@/components/ux/kit";
-import { LATE as RAW_LATE, type Late } from "@/components/ux/haq/data";
+import { type Late } from "@/components/ux/haq/data";
 import { LateRow } from "@/components/ux/haq/parts";
 import { useResource } from "@/lib/use-resource";
-import {
-  apiAddLate, apiEditLate, apiLate, apiRemoveLate,
-  type LatePayment, type LatePayments,
-} from "@/lib/life-api";
+import { apiAddLate, apiEditLate, apiLate, apiRemoveLate, type LatePayment, type LatePayments } from "@/lib/life-api";
 import { Sheet } from "@/components/ux/kit/sheet";
 import { Label, Text } from "@/components/ux/kit/form";
 import { useT } from "@/i18n";
-import { useTranslated } from "@/i18n/data";
 
 /**
  * Money that was late — and the compensation nobody claims.

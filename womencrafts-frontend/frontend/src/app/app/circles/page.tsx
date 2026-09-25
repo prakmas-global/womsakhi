@@ -117,7 +117,7 @@ export default function CirclePage() {
     if (tab === "My posts") return byTopic.filter((p) => p.mine);
     if (tab === "Saved") return byTopic.filter((p) => saved.has(p.id));
     return byTopic;
-  }, [feed, topic, tab, saved, byId, overview.posts]);
+  }, [feed, topic, tab, saved, byId, overview.posts, ALL_TOPICS]);
 
   /** The three most talked about — likes and replies together, because a post
    *  with forty replies and two likes is the busier conversation. */
@@ -162,7 +162,7 @@ export default function CirclePage() {
       (b.id.startsWith("other:") ? 0 : 1) - (a.id.startsWith("other:") ? 0 : 1) ||
       (n[b.label] ?? 0) - (n[a.label] ?? 0));
     return { chipTopics: chips, counts: n };
-  }, [allCircles]);
+  }, [allCircles, ALL_TOPICS]);
 
   const popular = useMemo(() => [...allCircles]
     .sort((a, b) => Number(a.joined) - Number(b.joined) || b.member_count - a.member_count)

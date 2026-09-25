@@ -167,7 +167,7 @@ function Discover() {
     ];
     // A row with nothing in it is a heading with a gap under it.
     return groups.filter((g) => g.items.length);
-  }, [FINDS]);
+  }, [FINDS, CITY, tr]);
   const counts = useMemo(() => {
     const m = new Map<Kind, number>();
     for (const f of FINDS) m.set(f.kind, (m.get(f.kind) ?? 0) + 1);

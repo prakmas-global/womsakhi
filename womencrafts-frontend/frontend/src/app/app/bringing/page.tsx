@@ -47,7 +47,7 @@ export default function BringingPage() {
   const [open, setOpen] = useState<string | null>("ob2");
   const [asked, setAsked] = useState<string | null>(null);
 
-  const answer = useMemo(() => OBJECTIONS.find((o) => o.id === open) ?? null, [open]);
+  const answer = useMemo(() => OBJECTIONS.find((o) => o.id === open) ?? null, [open, OBJECTIONS]);
 
   /**
    * Asking a woman to come and speak to her household.

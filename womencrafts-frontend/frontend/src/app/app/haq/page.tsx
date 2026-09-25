@@ -7,18 +7,10 @@ import { HomeShell } from "@/components/ux/home/HomeShell";
 import { Btn, Card, Chip, EmptyState, I, Stat, v } from "@/components/ux/kit";
 import { EYEBROW, GROUP, GROUP_ROW, Section } from "@/components/ux/earn/phone";
 import { formatRupees } from "@/components/ux/kit";
-import {
-  HAQ as RAW_HAQ, LATE as RAW_LATE, PAPERS as RAW_PAPERS,
-  atRisk, atRiskMonthlyMinor, claimable, receiving, stopped,
-  type Haq,
-} from "@/components/ux/haq/data";
+import { HAQ as RAW_HAQ, PAPERS as RAW_PAPERS, atRisk, atRiskMonthlyMinor, claimable, receiving, stopped, type Haq } from "@/components/ux/haq/data";
 import { AtRisk, HaqRow } from "@/components/ux/haq/parts";
 import { useResource } from "@/lib/use-resource";
-import {
-  apiHaq, apiLate, apiPapers,
-  type HaqStates, type LatePayments, type PaperStates,
-} from "@/lib/life-api";
-import { SourceNote } from "@/components/ux/kit";
+import { apiHaq, apiLate, apiPapers, type HaqStates, type LatePayments, type PaperStates } from "@/lib/life-api";
 import { useT } from "@/i18n";
 import { useTranslated } from "@/i18n/data";
 
@@ -88,15 +80,14 @@ export default function HaqPage() {
   const HAQ: Haq[] = useMemo(() => CATALOGUE.map((h) => {
     const mine = haqState.data.states[h.id];
     if (!mine) return { ...h, status: "can-claim" as const, action: undefined, dueDays: undefined, stoppedBecause: undefined };
-    const due = mine.due_on ? new Date(mine.due_on) : null;
     return {
       ...h,
       status: mine.status,
       action: mine.action || undefined,
-      // Counted from the real date every render, so it cannot go stale.
-      dueDays: due && !Number.isNaN(due.getTime())
-        ? Math.ceil((due.getTime() - Date.now()) / 86_400_000)
-        : undefined,
+      // Counted on the server. Doing it here meant calling Date.now() during
+      // render — impure, and the number could differ between two renders of
+      // the same frame.
+      dueDays: mine.due_days ?? undefined,
       stoppedBecause: mine.stopped_because || undefined,
     };
   }), [CATALOGUE, haqState.data.states]);
@@ -132,7 +123,7 @@ export default function HaqPage() {
     // Everything, in the order that matters: urgent, stopped, arriving, possible.
     return [...risk, ...halted, ...getting.filter((h) => h.status === "receiving"),
             ...HAQ.filter((h) => h.status === "waiting"), ...canClaim];
-  }, [filter, risk, halted, getting, canClaim]);
+  }, [filter, risk, halted, getting, canClaim, HAQ]);
 
   const open = useCallback((id: string) => router.push(`/app/haq/${id}`), [router]);
 

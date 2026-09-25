@@ -1,66 +1,11 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import {
-  Bot,
-  Send,
-  Clock,
-  History,
-  ClipboardList,
-  UserCheck,
-  TrendingDown,
-  Users,
-  MessageSquare,
-  Sparkles,
-  ArrowUp,
-  ArrowRight,
-  ClipboardCheck,
-  UserPlus,
-  Flag,
-  CalendarX,
-  FileBarChart,
-  UserCog,
-  UsersRound,
-  Target,
-  MessageCircle,
-  FileText,
-  Megaphone,
-  Smile,
-  Wand2,
-  LineChart,
-  Lightbulb,
-  Mic,
-  BarChart3,
-  MapPin,
-  UserMinus,
-  CheckCircle2,
-  AlertTriangle,
-  Database,
-  FileStack,
-  Network,
-  RefreshCw,
-} from "lucide-react";
+import { Bot, Send, Clock, History, ClipboardList, UserCheck, TrendingDown, MessageSquare, Sparkles, ArrowUp, ClipboardCheck, UserPlus, Flag, CalendarX, FileBarChart, UserCog, UsersRound, Target, MessageCircle, FileText, Megaphone, Smile, Wand2, LineChart, Lightbulb, Mic, BarChart3, MapPin, UserMinus, CheckCircle2, AlertTriangle, Database, FileStack, Network, RefreshCw } from "lucide-react";
 import { Badge, Card, Modal, type Tone, useToast } from "@/design-system";
 import RadialGauge from "@/components/charts/RadialGauge";
 import { TONE_BG } from "@/lib/tones";
-import {
-  apiAiPriorities,
-  apiAiHealthMetrics,
-  apiAiHealthStats,
-  apiAiTasks,
-  apiAiTaskStats,
-  apiUpdateAiTask,
-  apiAiAgents,
-  apiAiInsights,
-  apiAiActions,
-  apiAiActivities,
-  apiAiMemoryStats,
-  apiAiPrompts,
-  apiAiChat,
-  apiAiReport,
-  type AiHealthStats,
-  type AiTaskStats,
-} from "@/lib/ai-api";
+import { apiAiPriorities, apiAiHealthMetrics, apiAiHealthStats, apiAiTasks, apiAiTaskStats, apiUpdateAiTask, apiAiAgents, apiAiInsights, apiAiActions, apiAiActivities, apiAiMemoryStats, apiAiPrompts, apiAiChat, apiAiReport, type AiHealthStats, type AiTaskStats } from "@/lib/ai-api";
 import { memberError } from "@/lib/member-api";
 
 // Lucide icon components keyed by the icon-name strings the backend sends.

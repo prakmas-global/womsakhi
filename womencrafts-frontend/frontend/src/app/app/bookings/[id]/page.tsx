@@ -5,9 +5,7 @@ import { COPY } from "@/components/ux/copy";
 import Link from "next/link";
 import * as Icons from "@/components/ux/icons";
 
-import {Back, ActionBtn, Btn, Card, copy, EmptyState, NoteBtn, Pill, RailSkeleton, ScreenSkeleton,
-  SectionHead,
-} from "@/components/ux/kit";
+import { Back, ActionBtn, Btn, Card, copy, EmptyState, NoteBtn, Pill, RailSkeleton, ScreenSkeleton, SectionHead } from "@/components/ux/kit";
 import { HomeShell } from "@/components/ux/home/HomeShell";
 import { useBookings } from "@/components/ux/live";
 import { useAction } from "@/lib/use-action";

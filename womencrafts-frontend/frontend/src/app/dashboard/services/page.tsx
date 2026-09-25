@@ -1,53 +1,12 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import {
-  Briefcase,
-  LayoutGrid,
-  Leaf,
-  Clock,
-  Star,
-  Calendar,
-  ChevronDown,
-  Search,
-  SlidersHorizontal,
-  Plus,
-  MoreHorizontal,
-  Scissors,
-  Sparkles,
-  Flower2,
-  Camera,
-  Monitor,
-  HeartPulse,
-  Tag,
-  FileBarChart,
-  Eye,
-  Pencil,
-  Power,
-  Trash2,
-} from "lucide-react";
+import { Briefcase, LayoutGrid, Leaf, Clock, Star, Calendar, ChevronDown, SlidersHorizontal, Plus, MoreHorizontal, Scissors, Sparkles, Flower2, Camera, Monitor, HeartPulse, Tag, FileBarChart, Eye, Pencil, Power, Trash2 } from "lucide-react";
 import { Badge, Card, Input, Menu, MenuItem, Modal, ProgressBar, Select, StatCard, Textarea, NoResults, SkeletonRows, useToast, useConfirm } from "@/design-system";
 import DonutChart from "@/components/charts/DonutChart";
 import Link from "next/link";
 import { TONE_BG } from "@/lib/tones";
-import {
-  apiListServices,
-  apiListServiceTypes,
-  apiServiceStats,
-  apiCreateService,
-  apiUpdateService,
-  apiSetServiceStatus,
-  apiDeleteService,
-  apiCreateServiceType,
-  apiUpdateServiceType,
-  apiDeleteServiceType,
-  type ApiService,
-  type ApiServiceType,
-  type ServiceStats,
-  type ServiceStatCard,
-  type ServiceOverviewSlice,
-  type ServicePopularItem,
-} from "@/lib/services-api";
+import { apiListServices, apiListServiceTypes, apiServiceStats, apiCreateService, apiUpdateService, apiSetServiceStatus, apiDeleteService, apiCreateServiceType, apiUpdateServiceType, apiDeleteServiceType, type ApiService, type ApiServiceType, type ServiceStats, type ServiceStatCard, type ServiceOverviewSlice, type ServicePopularItem } from "@/lib/services-api";
 import { memberError } from "@/lib/member-api";
 import { ResizableColumns } from "@/layout-engine";
 

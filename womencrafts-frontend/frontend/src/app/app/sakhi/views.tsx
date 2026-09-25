@@ -15,35 +15,15 @@
  */
 
 import { useGreeting } from "@/lib/use-greeting";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import * as Icons from "@/components/ux/icons";
 
-import { useI18n, LOCALES, useT } from "@/i18n";
-import { useAuth } from "@/context/AuthContext";
-import { HomeShell } from "@/components/ux/home/HomeShell";
-import { CAN, FOLLOW_UPS, MODE_PREFIX, STARTERS, WONT } from "@/components/ux/sakhi/prompts";
-import { Actions, Answer, Cites, Composer, DraftCard, Ico, ModeSwitch, Picker, StopPill, Typing } from "@/components/ux/sakhi/parts";
+import { useT } from "@/i18n";
+import { CAN, FOLLOW_UPS, STARTERS, WONT } from "@/components/ux/sakhi/prompts";
+import { Actions, Answer, Cites, DraftCard, Ico, Picker, StopPill, Typing } from "@/components/ux/sakhi/parts";
 import { bubbleRadius, Says } from "@/components/ux/sakhi/chat";
 import { ListGroup, ListRow } from "@/components/ux/mobile/ListRow";
-import {
-  apiSakhiConversation,
-  apiSakhiConversations,
-  apiSakhiDelete,
-  apiSakhiPin,
-  apiSakhiRate,
-  apiSakhiRename,
-  apiSakhiSave,
-  apiSakhiSaved,
-  apiSakhiStatus,
-  apiSakhiUnsave,
-  sakhiChat,
-  type SakhiSaved,
-  sakhiConfirm,
-  type Helpline,
-  type SakhiConversation,
-  type SakhiEvent,
-} from "@/lib/sakhi-api";
+import { type SakhiSaved, type Helpline, type SakhiConversation, type SakhiEvent } from "@/lib/sakhi-api";
 
 /**
  * Ask Sakhi.

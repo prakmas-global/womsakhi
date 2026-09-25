@@ -131,7 +131,7 @@ export default function JourneyPage() {
       tint: "--ux-tint-amber", ink: "--ux-amber-ink" },
     { id: "next",    label: tr("journey.nextBadge"),    icon: "Award", earned: false,
       tint: "--ux-surface-2", ink: "--ux-faint" },
-  ] : []), [facts, goals.length]);
+  ] : []), [facts, goals.length, tr]);
 
   /** Reading that belongs to the step she is standing in. */
   const recs: Rec[] = useMemo(() => {
@@ -158,7 +158,7 @@ export default function JourneyPage() {
       { id: "d4", title: tr("journey.askSakhiWhatIsNext"), kind: "Video", meta: "2 min",
         icon: "Play", tint: "--ux-tint-blue", ink: "--ux-blue-ink", href: "/app/sakhi" },
     ];
-  }, [shown]);
+  }, [shown, tr]);
 
   const rail = (
     <div className="space-y-4">

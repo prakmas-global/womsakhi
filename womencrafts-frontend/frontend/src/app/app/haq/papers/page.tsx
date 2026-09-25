@@ -4,12 +4,11 @@ import { useCallback, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 
 import { HomeShell } from "@/components/ux/home/HomeShell";
-import { Back, Btn, Card, I, Progress, Stat, v } from "@/components/ux/kit";
+import { Back, Card, I, Progress, Stat, v } from "@/components/ux/kit";
 import { EYEBROW, GROUP, GROUP_ROW, Section } from "@/components/ux/earn/phone";
 import { PAPERS as RAW_PAPERS, type Paper } from "@/components/ux/haq/data";
 import { useResource } from "@/lib/use-resource";
 import { apiPapers, apiSetPaper, type PaperStates } from "@/lib/life-api";
-import { SourceNote } from "@/components/ux/kit";
 import { PaperRow } from "@/components/ux/haq/parts";
 import { useT } from "@/i18n";
 import { useTranslated } from "@/i18n/data";

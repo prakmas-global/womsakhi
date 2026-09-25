@@ -9,7 +9,6 @@ import { Section } from "@/components/ux/earn/phone";
 import { HYGIENE as RAW_HYGIENE, LICENCE_STEPS as RAW_LICENCE_STEPS } from "@/components/ux/eight/data";
 import { useResource } from "@/lib/use-resource";
 import { apiKitchen, apiKitchenHygiene, apiKitchenStep, type Kitchen } from "@/lib/life-api";
-import { SourceNote } from "@/components/ux/kit";
 import { useT } from "@/i18n";
 import { useTranslated } from "@/i18n/data";
 

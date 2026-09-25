@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 
 import { HomeShell } from "@/components/ux/home/HomeShell";
 import { Btn, Card, I, IconTile, Pill, Progress, SectionHead, SourceNote, v } from "@/components/ux/kit";

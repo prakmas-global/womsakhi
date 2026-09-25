@@ -4,7 +4,7 @@ import { useCallback, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 
 import { HomeShell } from "@/components/ux/home/HomeShell";
-import { Back, Btn, Card, EmptyState, I, IconTile, Pill, SectionHead, Stat, v } from "@/components/ux/kit";
+import { Back, Btn, Card, EmptyState, I, IconTile, SectionHead, Stat, v } from "@/components/ux/kit";
 import { COVER as RAW_COVER, COVERERS as RAW_COVERERS, type CoverDay } from "@/components/ux/wellness/data";
 import { useT } from "@/i18n";
 import { ListGroup } from "@/components/ux/mobile/ListRow";
@@ -48,8 +48,8 @@ export default function CoverPage() {
 
   const open = useMemo(() => days.filter((d) => d.state !== "past"), [days]);
   const past = useMemo(() => days.filter((d) => d.state === "past"), [days]);
-  const owed = useMemo(() => COVERERS.reduce((n, c) => n + c.owedHours, 0), []);
-  const timesCovered = useMemo(() => COVERERS.reduce((n, c) => n + c.coveredCount, 0), []);
+  const owed = useMemo(() => COVERERS.reduce((n, c) => n + c.owedHours, 0), [COVERERS]);
+  const timesCovered = useMemo(() => COVERERS.reduce((n, c) => n + c.coveredCount, 0), [COVERERS]);
 
   /**
    * Asking another woman to cover a day.

@@ -1,11 +1,8 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useRef, useState, useSyncExternalStore } from "react";
 
-import {
-  ACCEPTED_DOCUMENT_TYPES, apiMyVerification, apiResendVerificationEmail,
-  apiUploadDocument, validateDocument, type VerificationStatus,
-} from "@/lib/verification-api";
+import { ACCEPTED_DOCUMENT_TYPES, apiMyVerification, apiResendVerificationEmail, apiUploadDocument, validateDocument, type VerificationStatus } from "@/lib/verification-api";
 import { useAuth } from "@/context/AuthContext";
 import { useResource } from "@/lib/use-resource";
 import { messageFrom, useAction } from "@/lib/use-action";
@@ -88,10 +85,19 @@ export default function VerifyPage() {
     laptop. It starts false so the server render and the first client render
     agree, and a real desktop never changes.
   */
-  const [handheld, setHandheld] = useState(false);
-  useEffect(() => {
-    setHandheld(window.matchMedia("(pointer: coarse)").matches);
-  }, []);
+  const handheld = useSyncExternalStore(
+    // Subscribing means the layout also follows a device that changes pointer
+    // mid-session — a tablet with a keyboard attached, say.
+    (cb) => {
+      const mq = window.matchMedia("(pointer: coarse)");
+      mq.addEventListener("change", cb);
+      return () => mq.removeEventListener("change", cb);
+    },
+    () => window.matchMedia("(pointer: coarse)").matches,
+    // The server has no pointer, so it renders the desktop layout and the
+    // first client render agrees with it.
+    () => false,
+  );
 
   /** The server's word, unless she has stepped forward within this visit. */
   const stage: Stage = advanced ?? (

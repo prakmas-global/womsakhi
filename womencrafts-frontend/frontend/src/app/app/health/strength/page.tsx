@@ -4,10 +4,8 @@ import { useCallback, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 
 import { HomeShell } from "@/components/ux/home/HomeShell";
-import { Back, Btn, Card, I, IconTile, Pill, Progress, SectionHead, Stat, v } from "@/components/ux/kit";
-import {
-  CHECKS as RAW_CHECKS, IRON_WEEKS as RAW_IRON_WEEKS, TIRED_SIGNS as RAW_TIRED_SIGNS, dueNow, freeCount, ironStreak, type Check,
-} from "@/components/ux/wellness/data";
+import { Back, Btn, Card, I, IconTile, Pill, SectionHead, v } from "@/components/ux/kit";
+import { CHECKS as RAW_CHECKS, IRON_WEEKS as RAW_IRON_WEEKS, TIRED_SIGNS as RAW_TIRED_SIGNS, dueNow, freeCount, ironStreak, type Check } from "@/components/ux/wellness/data";
 import { useT } from "@/i18n";
 import { ListGroup } from "@/components/ux/mobile/ListRow";
 import { GroupLabel, PhoneRow, PhoneTitle, phonePrimary } from "@/components/ux/PhoneParts";
@@ -49,7 +47,7 @@ export default function StrengthPage() {
   const [note, setNote] = useState<string | null>(null);
 
   const streak = useMemo(() => ironStreak(weeks), [weeks]);
-  const test = useMemo(() => CHECKS.find((c) => c.id === "ch1")!, []);
+  const test = useMemo(() => CHECKS.find((c) => c.id === "ch1")!, [CHECKS]);
   const many = signs.length >= 3;
 
   const took = useCallback(() => {

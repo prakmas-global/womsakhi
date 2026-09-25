@@ -3,13 +3,12 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 
 import { HomeShell } from "@/components/ux/home/HomeShell";
-import { Btn, Card, I, Pill, SectionHead, v } from "@/components/ux/kit";
+import { Card, I, Pill, SectionHead, v } from "@/components/ux/kit";
 import { ReadAloud } from "@/components/ux/reach/ReadAloud";
 import { VOICE_LANGUAGES as RAW_VOICE_LANGUAGES, VOICE_PREFS as RAW_VOICE_PREFS } from "@/components/ux/reach/data";
 import { TEXT_SIZES, applyTextSize, readTextSize, type TextSize } from "@/components/ux/reach/text-size";
 import { useResource } from "@/lib/use-resource";
 import { apiSetVoicePrefs, apiVoicePrefs, type VoicePrefs } from "@/lib/life-api";
-import { SourceNote } from "@/components/ux/kit";
 import { useT } from "@/i18n";
 import { ListGroup, ListRow } from "@/components/ux/mobile/ListRow";
 import { GroupLabel, PhoneRow, PhoneTitle } from "@/components/ux/PhoneParts";

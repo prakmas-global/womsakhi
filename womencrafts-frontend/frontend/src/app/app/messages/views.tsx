@@ -12,39 +12,14 @@
  * component.
  */
 
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import * as Icons from "@/components/ux/icons";
 
-import { HomeShell } from "@/components/ux/home/HomeShell";
 import { formatMoney } from "@/components/ux/kit/money";
 import Link from "next/link";
-import {
-  apiConversation,
-  apiConversations,
-  apiDeleteConversation,
-  apiMarkUnread,
-  apiStarConversation,
-  apiInboxSummary,
-  apiSendToConversation,
-  type ConvBubble,
-  type ConvDetail,
-  type ConvRow,
-  type InboxSummary,
-  type PartyKind,
-} from "@/lib/me-messages-api";
+import { type ConvBubble, type ConvDetail, type ConvRow, type InboxSummary, type PartyKind } from "@/lib/me-messages-api";
 import { useT } from "@/i18n";
-import {
-  bubbleRadius,
-  ChatDock,
-  ChatFrame,
-  ChatInput,
-  ChatLog,
-  JumpToLatest,
-  Says,
-  SendButton,
-  Stamp,
-  useChatScroll,
-} from "@/components/ux/sakhi/chat";
+import { bubbleRadius, ChatDock, ChatFrame, ChatInput, ChatLog, JumpToLatest, Says, SendButton, Stamp, useChatScroll } from "@/components/ux/sakhi/chat";
 import { ListGroup, ListRow } from "@/components/ux/mobile/ListRow";
 
 /**

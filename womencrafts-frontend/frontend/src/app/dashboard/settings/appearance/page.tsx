@@ -1,6 +1,5 @@
 "use client";
 
-import { useState } from "react";
 import { Check, Moon, Palette, RotateCcw, Sun, SunMoon } from "lucide-react";
 
 import AdminPage from "@/components/admin/AdminPage";

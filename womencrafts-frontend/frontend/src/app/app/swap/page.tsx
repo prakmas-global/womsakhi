@@ -3,19 +3,15 @@
 import { useCallback, useMemo, useState } from "react";
 
 import { HomeShell } from "@/components/ux/home/HomeShell";
-import { Btn, Card, Chip, EmptyState, I, IconTile, Pill, SectionHead, SourceNote, Stat, v } from "@/components/ux/kit";
+import { Btn, Card, Chip, EmptyState, I, IconTile, SectionHead, SourceNote, Stat, v } from "@/components/ux/kit";
 import { useResource } from "@/lib/use-resource";
-import {
-  apiOfferSwap, apiRemoveSwap, apiSwapTaken, apiSwaps,
-  type SwapCondition, type SwapItem, type Swaps,
-} from "@/lib/life-api";
+import { apiOfferSwap, apiRemoveSwap, apiSwapTaken, apiSwaps, type SwapCondition, type SwapItem, type Swaps } from "@/lib/life-api";
 import { Sheet } from "@/components/ux/kit/sheet";
 import { Label, Select, Text } from "@/components/ux/kit/form";
 import { useT } from "@/i18n";
 import { ListGroup } from "@/components/ux/mobile/ListRow";
 import { SegmentedControl } from "@/components/ux/mobile/SegmentedControl";
 import { GroupLabel, PhoneRow, PhoneTitle, phonePrimary } from "@/components/ux/PhoneParts";
-import { useTranslated } from "@/i18n/data";
 
 /**
  * Circle swap — the second-hand economy women already run.

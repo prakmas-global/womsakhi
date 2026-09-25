@@ -207,6 +207,8 @@ export interface HaqState {
   status: HaqStatus;
   action: string;
   due_on: string;
+  /** Counted on the server, like every other day count in this product. */
+  due_days: number | null;
   stopped_because: string;
 }
 

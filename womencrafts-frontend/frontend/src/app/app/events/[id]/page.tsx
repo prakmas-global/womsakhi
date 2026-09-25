@@ -7,9 +7,7 @@ import * as Icons from "@/components/ux/icons";
 import { apiCancelEvent, apiRegisterForEvent } from "@/lib/growth-api";
 import { useAction } from "@/lib/use-action";
 
-import {Back, Btn, Card, EmptyState, IconTile, mapsHref, Pill, Progress, RailSkeleton,
-  ScreenSkeleton, SectionHead,
-} from "@/components/ux/kit";
+import { Back, Btn, Card, EmptyState, IconTile, mapsHref, Pill, Progress, RailSkeleton, ScreenSkeleton, SectionHead } from "@/components/ux/kit";
 import { HomeShell } from "@/components/ux/home/HomeShell";
 import { useEvents } from "@/components/ux/growth";
 import { rupees } from "@/components/ux/events/data";

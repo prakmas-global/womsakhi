@@ -1,33 +1,11 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import {
-  Bell,
-  Send,
-  Smartphone,
-  MessageSquare,
-  RotateCcw,
-  Info,
-  Moon,
-  Clock,
-  CalendarPlus,
-  Clock3,
-  Pencil,
-  UserPlus,
-  GraduationCap,
-  CreditCard,
-  TriangleAlert,
-  Megaphone,
-  ChevronDown,
-  Check,
-} from "lucide-react";
+import { Bell, Send, Smartphone, MessageSquare, RotateCcw, Info, Moon, Clock, CalendarPlus, Clock3, Pencil, UserPlus, GraduationCap, CreditCard, TriangleAlert, Megaphone, ChevronDown } from "lucide-react";
 import Link from "next/link";
 import { Card, Menu, MenuItem, Select, StatCard, useToast } from "@/design-system";
 import DonutChart from "@/components/charts/DonutChart";
-import {
-  apiSaveStaffNotificationPrefs,
-  apiStaffNotificationPrefs,
-} from "@/lib/staff-api";
+import { apiSaveStaffNotificationPrefs, apiStaffNotificationPrefs } from "@/lib/staff-api";
 import { memberError } from "@/lib/member-api";
 import { ResizableColumns } from "@/layout-engine";
 type Tone = "violet" | "emerald" | "amber" | "brand" | "sky" | "rose" | "slate";

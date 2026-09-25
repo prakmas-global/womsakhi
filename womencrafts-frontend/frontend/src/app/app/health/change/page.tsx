@@ -164,7 +164,7 @@ export default function ChangePage() {
             <IconTile icon="Stethoscope" tint="--ux-tint-green" ink="--ux-green-ink" size={40} />
             <p className="mt-3 text-sm font-bold" style={{ color: v("--ux-ink") }}>{tr("healthChange.talkingToADoctor")}</p>
             <p className="mt-1.5 text-xsm leading-relaxed" style={{ color: v("--ux-muted") }}>
-              Most women are told "it is your age" and sent home. Go with the three things that
+              Most women are told &ldquo;it is your age&rdquo; and sent home. Go with the three things that
               bother you most, written down — it changes the conversation completely.
             </p>
             <Btn size="sm" variant="outline" full className={`mt-3 ${phoneFull}`}

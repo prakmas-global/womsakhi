@@ -27,7 +27,7 @@ export default function HealthMentors() {
   const HEALTH_TAGS = useTranslated(RAW_HEALTH_TAGS);
   const tr = useT();
   const { data, refetch, source } = useResource(
-    useCallback(async (s: AbortSignal) => (await apiMentors(s)).filter((m) => m.expertise.some((e) => HEALTH_TAGS.includes(e))), []),
+    useCallback(async (s: AbortSignal) => (await apiMentors(s)).filter((m) => m.expertise.some((e) => HEALTH_TAGS.includes(e))), [HEALTH_TAGS]),
     [] as ApiMentor[],
   );
   const [tab, setTab] = useState<(typeof MENTOR_TABS)[number]["key"]>("womens");

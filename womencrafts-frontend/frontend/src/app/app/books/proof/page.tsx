@@ -4,7 +4,7 @@ import { useCallback, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 
 import { HomeShell } from "@/components/ux/home/HomeShell";
-import { Back, Btn, Card, I, IconTile, Pill, Stat, v } from "@/components/ux/kit";
+import { Back, Btn, Card, I, IconTile, Stat, v } from "@/components/ux/kit";
 import { EYEBROW, GROUP, Section } from "@/components/ux/earn/phone";
 import { formatRupees } from "@/components/ux/kit";
 import { PROOF_USES as RAW_PROOF_USES } from "@/components/ux/books/data";
@@ -39,6 +39,11 @@ import { useTranslated } from "@/i18n/data";
 const EMPTY_PROOF: Proof = {
   months: [], total_minor: 0, months_counted: 0, months_with_earnings: 0, average_minor: 0,
 };
+
+/* A zero row rather than `undefined` when she has no months yet. Module-level
+   so it is the same object every render — built inside the component it made
+   the two memos below recompute on every pass. */
+const ZERO_MONTH: ProofMonth = { month: "—", minor: 0, orders: 0, customers: 0 };
 
 export default function ProofPage() {
   const PROOF_USES = useTranslated(RAW_PROOF_USES);
@@ -95,7 +100,6 @@ export default function ProofPage() {
     error boundary, which is why this screen said "We could not load your
     earnings statement" when nothing had failed at all.
   */
-  const ZERO_MONTH: ProofMonth = { month: "—", minor: 0, orders: 0, customers: 0 };
   const best = useMemo(
     () => MONTHS.reduce((a, b) => (b.minor > a.minor ? b : a), MONTHS[0] ?? ZERO_MONTH),
     [MONTHS],

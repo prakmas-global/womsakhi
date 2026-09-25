@@ -6,10 +6,7 @@ import { useT } from "@/i18n";
 import * as Icons from "@/components/ux/icons";
 import { Btn, Card, I, IconTile, Pill, Progress, v } from "@/components/ux/kit";
 import { formatMoney as formatRupees } from "@/components/ux/kit/money";
-import {
-  COMPANIONS as RAW_COMPANIONS, STATUS_LABEL as RAW_STATUS_LABEL, STATUS_TONE as RAW_STATUS_TONE,
-  type Companion, type Haq, type Late, type Paper,
-} from "./data";
+import { COMPANIONS as RAW_COMPANIONS, STATUS_LABEL as RAW_STATUS_LABEL, STATUS_TONE as RAW_STATUS_TONE, type Companion, type Haq, type Late, type Paper } from "./data";
 import { useTranslated } from "@/i18n/data";
 
 /* ── the lead ────────────────────────────────────────────────────────────── */
@@ -254,7 +251,7 @@ export function useCompanionsFor(office: string): Companion[] {
   return useMemo(() => {
     const exact = COMPANIONS.filter((c) => c.knows.toLowerCase().includes(office.toLowerCase()));
     return exact.length ? [...exact, ...COMPANIONS.filter((c) => !exact.includes(c))] : COMPANIONS;
-  }, [office]);
+  }, [office, COMPANIONS]);
 }
 
 /* ── recover ─────────────────────────────────────────────────────────────── */

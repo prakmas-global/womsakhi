@@ -1,4 +1,4 @@
-import { clampChroma, converter, formatHex, formatRgb, parse } from "culori";
+import { clampChroma, converter, formatHex, parse } from "culori";
 
 import { AA_NORMAL, contrast } from "./palette";
 import type { ColorMode } from "./types";

@@ -50,7 +50,7 @@ export default function TogetherPage() {
   const tr = useT();
   const [pick, setPick] = useState<string>("v2");
 
-  const chosen = useMemo(() => VEHICLES.find((x) => x.id === pick) ?? VEHICLES[0], [pick]);
+  const chosen = useMemo(() => VEHICLES.find((x) => x.id === pick) ?? VEHICLES[0], [pick, VEHICLES]);
 
   return (
     <HomeShell active="/app/contracts">

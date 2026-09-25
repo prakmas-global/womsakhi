@@ -15,6 +15,34 @@ import { useCallback, useEffect, useRef, useState } from "react";
  * those users keep the text box, which is why the text box never goes away.
  */
 
+/*
+  The Web Speech API, typed by hand.
+
+  TypeScript ships no lib for it and the vendor-prefixed constructor is not on
+  `Window`, so this used to be eight `any`s. These are the members this file
+  actually touches — narrow on purpose, because a wider guess would be a
+  fiction with a type annotation on it.
+*/
+interface SpeechRecognitionAlternativeLike {
+  transcript: string;
+}
+interface SpeechRecognitionResultLike {
+  readonly length: number;
+  isFinal: boolean;
+  [index: number]: SpeechRecognitionAlternativeLike;
+}
+interface SpeechRecognitionResultListLike {
+  readonly length: number;
+  [index: number]: SpeechRecognitionResultLike;
+}
+interface SpeechRecognitionEventLike {
+  resultIndex: number;
+  results: SpeechRecognitionResultListLike;
+}
+interface SpeechRecognitionErrorEventLike {
+  error?: string;
+}
+
 interface SpeechRecognitionLike {
   lang: string;
   continuous: boolean;
@@ -22,21 +50,30 @@ interface SpeechRecognitionLike {
   start(): void;
   stop(): void;
   abort(): void;
-  onresult: ((e: any) => void) | null;
-  onerror: ((e: any) => void) | null;
+  onresult: ((e: SpeechRecognitionEventLike) => void) | null;
+  onerror: ((e: SpeechRecognitionErrorEventLike) => void) | null;
   onend: (() => void) | null;
 }
 
+/** Neither constructor is on `Window`, and Safari only has the prefixed one. */
+type SpeechWindow = Window & {
+  SpeechRecognition?: new () => SpeechRecognitionLike;
+  webkitSpeechRecognition?: new () => SpeechRecognitionLike;
+};
+
+function recogniserCtor(): (new () => SpeechRecognitionLike) | undefined {
+  if (typeof window === "undefined") return undefined;
+  const w = window as SpeechWindow;
+  return w.SpeechRecognition ?? w.webkitSpeechRecognition;
+}
+
 function getRecogniser(): SpeechRecognitionLike | null {
-  if (typeof window === "undefined") return null;
-  const Ctor =
-    (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+  const Ctor = recogniserCtor();
   return Ctor ? new Ctor() : null;
 }
 
 export function listeningSupported(): boolean {
-  if (typeof window === "undefined") return false;
-  return Boolean((window as any).SpeechRecognition || (window as any).webkitSpeechRecognition);
+  return Boolean(recogniserCtor());
 }
 
 export function useListening(locale: string, onFinal: (text: string) => void) {
@@ -73,7 +110,7 @@ export function useListening(locale: string, onFinal: (text: string) => void) {
     setHeard("");
     setError("");
 
-    rec.onresult = (e: any) => {
+    rec.onresult = (e: SpeechRecognitionEventLike) => {
       let interim = "";
       let final = "";
       for (let i = e.resultIndex; i < e.results.length; i++) {
@@ -87,7 +124,7 @@ export function useListening(locale: string, onFinal: (text: string) => void) {
         finalRef.current(final.trim());
       }
     };
-    rec.onerror = (e: any) => {
+    rec.onerror = (e: SpeechRecognitionErrorEventLike) => {
       // "no-speech" means she opened her mouth and nothing came out. That is not
       // an error worth showing — it is a prompt to try again.
       if (e?.error === "not-allowed") setError("Microphone permission is off.");

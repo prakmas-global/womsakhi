@@ -5,17 +5,11 @@ import { useRouter } from "next/navigation";
 
 import { HomeShell } from "@/components/ux/home/HomeShell";
 import { Btn, Card, I, IconTile, Pill, SectionHead, Stat, v } from "@/components/ux/kit";
-import { formatRupees } from "@/components/ux/kit";
-import {
-  MOVE_REASONS as RAW_MOVE_REASONS,
-} from "@/components/ux/together/data";
 import { useResource } from "@/lib/use-resource";
 import { apiSisters, apiTogether, type Sister, type Together } from "@/lib/life-api";
-import { SourceNote } from "@/components/ux/kit";
 import { useT } from "@/i18n";
 import { ListGroup } from "@/components/ux/mobile/ListRow";
 import { GroupLabel, PhoneRow, PhoneTitle, phonePrimary } from "@/components/ux/PhoneParts";
-import { useTranslated } from "@/i18n/data";
 
 /** The three places the circle does together, besides assisting. */
 const PLACES = [

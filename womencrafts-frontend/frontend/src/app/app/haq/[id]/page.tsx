@@ -7,13 +7,10 @@ import { useRouter } from "next/navigation";
 import { HomeShell } from "@/components/ux/home/HomeShell";
 import { Btn, Card, EmptyState, I, IconTile, Pill, SectionHead, v } from "@/components/ux/kit";
 import { formatRupees } from "@/components/ux/kit";
-import {
-  HAQ as RAW_HAQ, PAPERS as RAW_PAPERS, STATUS_LABEL as RAW_STATUS_LABEL, STATUS_TONE as RAW_STATUS_TONE, type Paper,
-} from "@/components/ux/haq/data";
+import { HAQ as RAW_HAQ, PAPERS as RAW_PAPERS, STATUS_LABEL as RAW_STATUS_LABEL, STATUS_TONE as RAW_STATUS_TONE, type Paper } from "@/components/ux/haq/data";
 import { ClaimSteps, CompanionCard, Countdown, useCompanionsFor } from "@/components/ux/haq/parts";
 import { useResource } from "@/lib/use-resource";
 import { apiHaq, apiPapers, type HaqStates, type PaperStates } from "@/lib/life-api";
-import { SourceNote } from "@/components/ux/kit";
 import { useT } from "@/i18n";
 import { useTranslated } from "@/i18n/data";
 
@@ -53,14 +50,11 @@ export default function HaqDetail({ params }: { params: Promise<{ id: string }> 
   const HAQ = useMemo(() => CATALOGUE.map((x) => {
     const mine = haqState.data.states[x.id];
     if (!mine) return { ...x, status: "can-claim" as const, action: undefined, dueDays: undefined, stoppedBecause: undefined };
-    const due = mine.due_on ? new Date(mine.due_on) : null;
     return {
       ...x,
       status: mine.status,
       action: mine.action || undefined,
-      dueDays: due && !Number.isNaN(due.getTime())
-        ? Math.ceil((due.getTime() - Date.now()) / 86_400_000)
-        : undefined,
+      dueDays: mine.due_days ?? undefined,
       stoppedBecause: mine.stopped_because || undefined,
     };
   }), [CATALOGUE, haqState.data.states]);
@@ -79,7 +73,7 @@ export default function HaqDetail({ params }: { params: Promise<{ id: string }> 
 
   const needed: Paper[] = useMemo(
     () => (h?.needs ?? []).map((n) => PAPERS.find((p) => p.id === n)).filter(Boolean) as Paper[],
-    [h],
+    [h, PAPERS],
   );
   const blocking = useMemo(() => needed.filter((p) => p.state !== "held"), [needed]);
 

@@ -1,55 +1,13 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
-import {
-  ShieldCheck,
-  Users,
-  UsersRound,
-  Lock,
-  Settings2,
-  Calendar,
-  ChevronDown,
-  Plus,
-  SlidersHorizontal,
-  MoreHorizontal,
-  Crown,
-  UserCog,
-  Presentation,
-  UserCheck,
-  User,
-  Headset,
-  Pencil,
-  Eye,
-  CircleCheck,
-  Circle,
-  ChevronRight,
-  Copy,
-  Trash2,
-  Search,
-} from "lucide-react";
+import { ShieldCheck, Users, UsersRound, Lock, Settings2, ChevronDown, Plus, SlidersHorizontal, MoreHorizontal, Crown, UserCog, Presentation, UserCheck, User, Headset, Pencil, Eye, Copy, Trash2, Search } from "lucide-react";
 import { Badge, Card, Input, Menu, MenuItem, Modal, Pagination, Select, StatCard, Textarea, useToast } from "@/design-system";
-import {
-  apiListRoles,
-  apiCreateRole,
-  apiUpdateRole,
-  apiDeleteRole,
-  apiSetRoleModules,
-  type ApiRole,
-} from "@/lib/api";
-import {
-  apiListPermissionGroups,
-  apiPermissionStats,
-  type ApiPermissionGroup,
-  type PermissionStats,
-} from "@/lib/permissions-api";
+import { apiListRoles, apiCreateRole, apiUpdateRole, apiDeleteRole, apiSetRoleModules, type ApiRole } from "@/lib/api";
+import { apiListPermissionGroups, apiPermissionStats, type ApiPermissionGroup, type PermissionStats } from "@/lib/permissions-api";
 import { useAuth } from "@/context/AuthContext";
 import { memberError } from "@/lib/member-api";
-import {
-  apiRolePermissions,
-  apiSaveRolePermissions,
-  type PermissionGroup,
-  type RolePermissions,
-} from "@/lib/permissions-api";
+import { apiRolePermissions, apiSaveRolePermissions, type PermissionGroup, type RolePermissions } from "@/lib/permissions-api";
 import { MODULE_CATALOG } from "@/lib/modules";
 import RolePermissionPanel from "@/components/admin/RolePermissionPanel";
 import { ResizableColumns } from "@/layout-engine";

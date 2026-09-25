@@ -8,13 +8,7 @@ import { useT } from "@/i18n";
 import { useListening } from "./useListening";
 import { useSpeech } from "./useSpeech";
 import { dataChanged } from "@/lib/data-changed";
-import {
-  apiSakhiSpeak,
-  sakhiChat,
-  sakhiConfirm,
-  type Helpline,
-  type SakhiEvent,
-} from "@/lib/sakhi-api";
+import { sakhiChat, sakhiConfirm, type Helpline, type SakhiEvent } from "@/lib/sakhi-api";
 
 /**
  * Sakhi, as a person you talk to — not a chat window with her photo on it.

@@ -118,7 +118,7 @@ export default function ShopPage() {
       done: orders.length > 0 },
     { label: tr("documents.winABuyerWhoComesBack"),
       done: (summary?.repeat_buyers_pct ?? 0) > 0 },
-  ], [listings, orders.length, summary]);
+  ], [listings, orders.length, summary, tr]);
 
   /** The last four things that happened, newest first, all of them real. */
   const activity: Happening[] = useMemo(() => orders.slice(0, 4).map((o) => {

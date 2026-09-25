@@ -6,16 +6,13 @@ import Link from "next/link";
 
 import { HomeShell } from "@/components/ux/home/HomeShell";
 import * as Icons from "@/components/ux/icons";
-import {
-  Back, Btn, Card, DemoNote, I, IconTile, Rating, v,
-} from "@/components/ux/kit";
+import { Back, Btn, Card, I, IconTile, v } from "@/components/ux/kit";
 import { type QuoteDraft } from "@/components/ux/earn/data";
 import { useResource } from "@/lib/use-resource";
 import { apiListings, type Listing } from "@/lib/shop-api";
 import { EmptyState, formatRupees } from "@/components/ux/kit";
 import { formatWholeRupees } from "@/components/ux/kit/money";
 import { GROUP, GROUP_ROW, STEP_NAV } from "@/components/ux/earn/phone";
-import { useTranslated } from "@/i18n/data";
 
 /**
  * "Request sent" — the end of the buyer's half of a quote.

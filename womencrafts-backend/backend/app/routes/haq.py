@@ -60,10 +60,34 @@ def _col():
     return get_database()[COLLECTION]
 
 
+def _days_until(iso: str) -> int | None:
+    """
+    Whole days until a dated action, counted here rather than on the screen.
+
+    Same rule as `late_days` in books and `due_in` in school: a day count is
+    a fact about today, so it is worked out on every read. Computing it in the
+    client's render also made it impure — the number changed between renders
+    of the same frame.
+    """
+    if not iso:
+        return None
+    try:
+        due = datetime.fromisoformat(iso)
+    except ValueError:
+        return None
+    if due.tzinfo is None:
+        due = due.replace(tzinfo=timezone.utc)
+    delta = due.date() - datetime.now(timezone.utc).date()
+    return delta.days
+
+
 @router.get("", summary="Where each of her claims stands")
 async def get_haq(me: dict = Depends(require_active_member)):
     doc = await _col().find_one({"user_id": str(me["_id"])}) or {}
-    states = doc.get("states", {})
+    states = {
+        k: {**v, "due_days": _days_until(v.get("due_on", ""))}
+        for k, v in doc.get("states", {}).items()
+    }
     return {
         # Keyed by scheme id. Anything absent is `can-claim` on the client,
         # which is what a woman who has never applied actually is.

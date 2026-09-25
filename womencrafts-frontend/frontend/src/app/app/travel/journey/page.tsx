@@ -1,14 +1,11 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
 
 import { useT } from "@/i18n";
 import { HomeShell } from "@/components/ux/home/HomeShell";
 import { Btn, Card, I, SectionHead, v } from "@/components/ux/kit";
-import {
-  apiRaiseEngineAlert, apiResolveEngineAlert, apiTrackingHealth,
-  apiTravelCheckIn, apiTravelEnd, apiTravelStart,
-} from "@/lib/engines-api";
+import { apiRaiseEngineAlert, apiResolveEngineAlert, apiTrackingHealth, apiTravelCheckIn, apiTravelEnd, apiTravelStart } from "@/lib/engines-api";
 
 /**
  * A tracked journey.
@@ -46,12 +43,29 @@ interface Active {
 }
 
 function read(): Active | null {
-  try {
-    const raw = localStorage.getItem(STORE);
-    return raw ? (JSON.parse(raw) as Active) : null;
-  } catch {
-    return null;
-  }
+  return parse(readRaw());
+}
+
+/*
+  The snapshot is the raw STRING, not the parsed object.
+
+  `useSyncExternalStore` compares snapshots by reference, and `JSON.parse`
+  returns a new object every call — so handing it `read()` re-renders forever.
+  The string is stable by value, and the parse happens once in a `useMemo`.
+  Same pattern as the quote-sent screen.
+*/
+function readRaw(): string | null {
+  try { return localStorage.getItem(STORE); }
+  catch { return null; }        // private window, or storage switched off
+}
+function parse(raw: string | null): Active | null {
+  if (!raw) return null;
+  try { return JSON.parse(raw) as Active; }
+  catch { return null; }        // something else wrote nonsense to that key
+}
+function subscribeStore(cb: () => void) {
+  window.addEventListener("storage", cb);
+  return () => window.removeEventListener("storage", cb);
 }
 function write(a: Active | null) {
   try {
@@ -79,7 +93,12 @@ export default function JourneyPage() {
   const [now, setNow] = useState(() => Date.now());
   const warned = useRef(false);
 
-  useEffect(() => { setActive(read()); }, []);
+  // `read()` is an external store, so it is subscribed to rather than copied
+  // into state by an effect — the effect painted the empty state for a frame
+  // before the real journey appeared.
+  const raw = useSyncExternalStore(subscribeStore, readRaw, () => null);
+  const stored = useMemo(() => parse(raw), [raw]);
+  useEffect(() => { setActive(stored); }, [stored]);
 
   // One second is enough for a countdown and cheap enough to leave running;
   // it stops as soon as there is no journey, so an idle screen does no work.

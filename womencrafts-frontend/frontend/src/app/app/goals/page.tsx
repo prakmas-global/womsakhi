@@ -83,14 +83,14 @@ export default function GoalsPage() {
   const chips = useMemo(() => [
     { label: ALL, n: rows.length },
     ...GOAL_KINDS.map((k) => ({ label: k.label, n: rows.filter((g) => g.kind === k.id).length })),
-  ], [rows]);
+  ], [rows, GOAL_KINDS]);
 
   const shown = useMemo(() => {
     const stateRows = status === "all" ? rows : rows.filter((g) => goalState(g) === status);
     if (kind === ALL) return stateRows;
     const k = GOAL_KINDS.find((x) => x.label === kind);
     return k ? stateRows.filter((g) => g.kind === k.id) : stateRows;
-  }, [rows, kind, status]);
+  }, [rows, kind, status, GOAL_KINDS]);
 
   /** The ring: how far along all of them are together, not how many are done. */
   const overall = useMemo(() => rows.length === 0 ? 0
@@ -130,7 +130,7 @@ export default function GoalsPage() {
       onClick: () => { window.location.href = "/app/journey"; } },
     { id: "money", label: tr("goals.whereMyMoneyGoes"), icon: "TrendingUp",
       onClick: () => { window.location.href = "/app/wallet"; } },
-  ], []);
+  ], [tr]);
 
   const rail = (
     <div className="space-y-4">

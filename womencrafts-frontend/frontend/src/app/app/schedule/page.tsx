@@ -239,7 +239,7 @@ export default function Schedule(){
             </button>
           </article>)}
       </div>
-      {focusFor!==null&&<FocusTimer minutes={focusFor} onDone={()=>setFocusFor(null)}/>}
+      {focusFor!==null&&<FocusTimer key={focusFor} minutes={focusFor} onDone={()=>setFocusFor(null)}/>}
     </section>}
   </main></HomeShell>
 }
@@ -252,10 +252,11 @@ export default function Schedule(){
  * left, and stopping it stops it.
  */
 function FocusTimer({minutes,onDone}:{minutes:number;onDone:()=>void}){
+  // Initialised from the prop and never reset by an effect: the caller passes
+  // `key={minutes}`, so picking a different block remounts this and the
+  // countdown starts again. Resetting in an effect painted the old number for
+  // a frame first.
   const [left,setLeft]=useState(minutes*60);
-
-  // Restart whenever she picks a different block.
-  useEffect(()=>{setLeft(minutes*60);},[minutes]);
 
   useEffect(()=>{
     // `setInterval` inside an effect, so React clears it when she stops the

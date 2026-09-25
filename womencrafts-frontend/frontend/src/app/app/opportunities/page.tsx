@@ -11,7 +11,7 @@ import { apiToggleSaveOpportunity } from "@/lib/growth-api";
 import { KINDS as RAW_KINDS, MODES as RAW_MODES, type Job } from "@/components/ux/work/data";
 import { useT } from "@/i18n";
 
-import { FAMILIES, FamilyStrip, JobCard, SkillsInDemand, WorkSummary, type FamilyId } from "./work-views";
+import { FamilyStrip, JobCard, SkillsInDemand, WorkSummary, type FamilyId } from "./work-views";
 import { useTranslated } from "@/i18n/data";
 
 /** The lists across the top. Each is a real subset, never a mood. */

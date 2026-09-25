@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useT } from "@/i18n";
 import { COPY } from "@/components/ux/copy";
 import * as Icons from "@/components/ux/icons";
@@ -9,22 +9,8 @@ import { HomeShell } from "@/components/ux/home/HomeShell";
 import { useConfirm } from "@/design-system/feedback/ConfirmProvider";
 import { useToast } from "@/design-system/feedback/ToastProvider";
 import { About, EmptyThread, Header, Inbox, Thread } from "./views";
-import { formatMoney } from "@/components/ux/kit/money";
 import Link from "next/link";
-import {
-  apiConversation,
-  apiConversations,
-  apiDeleteConversation,
-  apiMarkUnread,
-  apiStarConversation,
-  apiInboxSummary,
-  apiSendToConversation,
-  type ConvBubble,
-  type ConvDetail,
-  type ConvRow,
-  type InboxSummary,
-  type PartyKind,
-} from "@/lib/me-messages-api";
+import { apiConversation, apiConversations, apiDeleteConversation, apiMarkUnread, apiStarConversation, apiInboxSummary, apiSendToConversation, type ConvBubble, type ConvDetail, type ConvRow, type InboxSummary, type PartyKind } from "@/lib/me-messages-api";
 
 /**
  * Messages.

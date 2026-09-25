@@ -8,9 +8,9 @@ import * as Icons from "@/components/ux/icons";
 import { useI18n, LOCALES, useT } from "@/i18n";
 import { useAuth } from "@/context/AuthContext";
 import { HomeShell } from "@/components/ux/home/HomeShell";
-import { CAN, FOLLOW_UPS, MODE_PREFIX, STARTERS, WONT } from "@/components/ux/sakhi/prompts";
+import { MODE_PREFIX } from "@/components/ux/sakhi/prompts";
 import { ConvBar, Disclosure, SakhiRail, Thread, Voice, Welcome, type Bubble } from "./views";
-import { Actions, Answer, Cites, Composer, DraftCard, Ico, ModeSwitch, Picker, StopPill, Typing } from "@/components/ux/sakhi/parts";
+import { Composer, ModeSwitch } from "@/components/ux/sakhi/parts";
 import { ChatDock, ChatFrame, ChatLog, JumpToLatest, useChatScroll } from "@/components/ux/sakhi/chat";
 import { PhoneComposer } from "@/components/ux/sakhi/parts";
 import { Sheet } from "@/components/ux/kit/sheet";
@@ -18,24 +18,7 @@ import { Btn } from "@/components/ux/kit";
 import { useToast } from "@/design-system/feedback/ToastProvider";
 import styles from "./sakhi.module.css";
 import { SPEECH_UNSUPPORTED, speechFailure, speechSupported, type SpeechFailure } from "@/lib/speech";
-import {
-  apiSakhiConversation,
-  apiSakhiConversations,
-  apiSakhiDelete,
-  apiSakhiPin,
-  apiSakhiRate,
-  apiSakhiRename,
-  apiSakhiSave,
-  apiSakhiSaved,
-  apiSakhiStatus,
-  apiSakhiUnsave,
-  sakhiChat,
-  type SakhiSaved,
-  sakhiConfirm,
-  type Helpline,
-  type SakhiConversation,
-  type SakhiEvent,
-} from "@/lib/sakhi-api";
+import { apiSakhiConversation, apiSakhiConversations, apiSakhiDelete, apiSakhiPin, apiSakhiRate, apiSakhiRename, apiSakhiSave, apiSakhiSaved, apiSakhiStatus, apiSakhiUnsave, sakhiChat, type SakhiSaved, sakhiConfirm, type Helpline, type SakhiConversation, type SakhiEvent } from "@/lib/sakhi-api";
 
 /**
  * Ask Sakhi.

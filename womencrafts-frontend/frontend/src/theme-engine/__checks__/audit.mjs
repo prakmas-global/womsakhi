@@ -5,7 +5,7 @@
  * that passes WCAG AA. This is what stops someone shipping a theme that makes
  * the app unreadable, so it exits non-zero on any failure.
  */
-import { generateScale, auditScale, contrast, readableOn } from "../palette.ts";
+import { generateScale, auditScale } from "../palette.ts";
 import { PRESETS } from "../presets.ts";
 
 const HOSTILE = [
