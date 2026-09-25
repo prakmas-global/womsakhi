@@ -190,6 +190,11 @@ export default function ServicesPage() {
 
   const typeNames = useMemo(() => types.filter((t) => t.status === "Active").map((t) => t.name), [types]);
   const availableTypes = useMemo(() => Array.from(new Set(services.map((s) => s.type))), [services]);
+  /** Type names services carry that no row in Service Types defines. */
+  const undefinedTypes = useMemo(() => {
+    const defined = new Set(types.map((t) => t.name));
+    return availableTypes.filter((t) => t && !defined.has(t)).sort();
+  }, [availableTypes, types]);
 
   const filteredServices = useMemo(() => {
     const q = query.trim().toLowerCase();
@@ -266,9 +271,9 @@ export default function ServicesPage() {
   };
 
   // ---- types ----
-  const openAddType = () => {
+  const openAddType = (name = "") => {
     setEditTypeId(null);
-    setTypeForm(EMPTY_TYPE_FORM);
+    setTypeForm({ ...EMPTY_TYPE_FORM, name });
     setTypeModalOpen(true);
   };
 
@@ -535,10 +540,32 @@ export default function ServicesPage() {
                   <h2 className="font-display text-base font-semibold text-ink">Service Types / Categories</h2>
                   <p className="text-xs text-ink-subtle">Rename a type and its services move with it. A type in use cannot be deleted.</p>
                 </div>
-                <button className="btn btn-primary" onClick={openAddType}>
+                <button className="btn btn-primary" onClick={() => openAddType()}>
                   <Plus className="h-4 w-4" /> Add New Type
                 </button>
               </div>
+              {undefinedTypes.length > 0 && (
+                <div className="mb-4 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
+                  <p className="font-semibold">
+                    {undefinedTypes.length} {undefinedTypes.length === 1 ? "type is" : "types are"} used by services but not defined here
+                  </p>
+                  <p className="mt-0.5 text-xs text-amber-800">
+                    Until a type is defined, new services cannot be added under it. Tap one to define it.
+                  </p>
+                  <div className="mt-2 flex flex-wrap gap-1.5">
+                    {undefinedTypes.map((t) => (
+                      <button
+                        key={t}
+                        type="button"
+                        onClick={() => openAddType(t)}
+                        className="rounded-full border border-amber-300 bg-white px-2.5 py-1 text-xs font-semibold text-amber-900 hover:bg-amber-100"
+                      >
+                        <Plus className="mr-1 inline h-3 w-3" />{t}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
               <div className="overflow-x-auto">
                 <table className="w-full min-w-[640px] text-left">
                   <thead>
@@ -684,7 +711,7 @@ export default function ServicesPage() {
             <div className="grid grid-cols-2 gap-3">
               {[
                 { icon: Briefcase, label: "Add New Service", tone: "brand", onClick: openAddService },
-                { icon: LayoutGrid, label: "Add New Type", tone: "violet", onClick: openAddType },
+                { icon: LayoutGrid, label: "Add New Type", tone: "violet", onClick: () => openAddType() },
                 { icon: Download, label: "Export CSV", tone: "amber", onClick: exportCsv },
               ].map((q) => (
                 <button

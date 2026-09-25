@@ -31,16 +31,32 @@ export interface ApiFeedback {
   status: string;
   s_tone: string; // status badge tone
   created_at: string;
+  /** Staff replies and internal notes on this entry, oldest first. */
+  replies: FeedbackReply[];
+}
+
+export interface FeedbackReply {
+  id: string;
+  by: string;        // staff name
+  text: string;
+  at: string;        // ISO timestamp
+  internal: boolean; // true = note only she never sees
+  emailed: boolean;  // true = the reply went out by email
 }
 
 export interface FeedbackStats {
   total_feedback: string;
   average_rating: string;
   positive_percentage: string;
-  positive_delta: string;
+  /** Change vs the previous 30 days; absent when there is nothing to compare. */
+  positive_delta: string | null;
+  positive_up: boolean;
   responses_this_month: string;
-  responses_delta: string;
+  responses_delta: string | null;
+  responses_up: boolean;
   feedback_users: string;
+  unresolved: number;
+  programs: string[]; // every programme feedback has named, for the filter
 }
 
 export interface FeedbackOverviewItem {
@@ -57,21 +73,20 @@ export interface FeedbackOverview {
 }
 
 export interface ApiFeedbackTheme {
-  id: string;
-  seq: number;
+  key: string;
   label: string;
-  icon: string; // lucide icon name: "ThumbsUp" | "BookOpen" | "Clock" | "FileText"
+  icon: string; // lucide icon name
   tone: string;
-  mentions: string; // e.g. "128 mentions"
-  delta: string; // e.g. "20%"
+  count: number;
+  mentions: string; // e.g. "12 in the last 30 days"
+  delta: string | null; // vs the 30 days before; null when nothing to compare
   up: boolean;
 }
 
 export interface ApiProgramRating {
-  id: string;
-  seq: number;
   name: string;
-  rating: string; // e.g. "4.8"
+  rating: string; // average of real ratings, e.g. "4.8"
+  count: number;  // how many ratings that average rests on
 }
 
 export interface FeedbackListParams {
@@ -87,9 +102,15 @@ export interface FeedbackListParams {
 }
 
 export interface FeedbackRequestInput {
-  recipient: string;
+  recipient: string; // her email
   program?: string;
   message?: string;
+}
+
+export interface FeedbackRequestResult {
+  id: string;
+  emailed: boolean;
+  message: string;
 }
 
 export async function apiListFeedback(
@@ -111,9 +132,10 @@ export async function apiFeedbackOverview(dateRange?: string): Promise<FeedbackO
   return data;
 }
 
-export async function apiFeedbackThemes(): Promise<ApiFeedbackTheme[]> {
+export async function apiFeedbackThemes(dateRange?: string): Promise<ApiFeedbackTheme[]> {
   const { data } = await apiClient.get<{ items: ApiFeedbackTheme[]; total: number }>(
     "/feedback/themes",
+    { params: dateRange ? { date_range: dateRange } : {} },
   );
   return data.items;
 }
@@ -137,9 +159,21 @@ export async function apiDeleteFeedback(id: string): Promise<void> {
   await apiClient.delete(`/feedback/${id}`);
 }
 
-export async function apiRequestFeedback(
-  body: FeedbackRequestInput,
-): Promise<{ message: string }> {
-  const { data } = await apiClient.post<{ message: string }>("/feedback/requests", body);
+export async function apiRequestFeedback(body: FeedbackRequestInput): Promise<FeedbackRequestResult> {
+  const { data } = await apiClient.post<FeedbackRequestResult>("/feedback/requests", body);
+  return data;
+}
+
+export async function apiReplyToFeedback(
+  id: string,
+  body: { text: string; internal: boolean },
+): Promise<ApiFeedback> {
+  const { data } = await apiClient.post<ApiFeedback>(`/feedback/${id}/replies`, body);
+  return data;
+}
+
+/** The server builds the CSV from the same filters the table uses. */
+export async function apiExportFeedback(params: FeedbackListParams = {}): Promise<Blob> {
+  const { data } = await apiClient.get<Blob>("/feedback/export", { params, responseType: "blob" });
   return data;
 }
