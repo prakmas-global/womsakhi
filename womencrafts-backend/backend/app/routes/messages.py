@@ -1,469 +1,634 @@
-from datetime import datetime, timezone
+"""
+The staff inbox: every member's thread with the team.
+
+── One store, the one she reads ────────────────────────────────────────────
+A member has exactly one thread with the team (`models/conversation.py`). Her
+app reads it from `GET /me/messages`, counts what she has not seen at
+`GET /me/unread`, and is told about a new reply through her notifications.
+This module reads and writes those same `member_messages` rows, so what staff
+see here is what she sees there — there is no admin-side copy to drift.
+
+What the rows cannot carry — who on the team is looking after a thread, and
+whether it has been resolved — lives in `member_threads` (`models/message.py`),
+one document per member, created the first time staff assign or resolve.
+
+── What is measured, and what is not ───────────────────────────────────────
+Every figure here is computed from stored timestamps and flags: unread is the
+`read_by_team` flag, "seen" is `read_by_member`, the reply time is the median
+gap between a member's message and the team's next one. Nothing is presence,
+typing, or an estimate. A reply is delivered *in the app*: stored in her
+thread and filed as a notification. No SMS, WhatsApp or email is sent, and
+the screen says so.
+
+── What stays private ──────────────────────────────────────────────────────
+The panel beside a thread shows the member's name, email, avatar, join date
+and verification state. Never her vault, her in-case-of-emergency data or her
+documents; there is no endpoint here that reads them.
+"""
+
+from __future__ import annotations
+
+from datetime import datetime, timedelta, timezone
 from typing import Optional
 
-from fastapi import APIRouter, Depends, HTTPException, Query, status
+from bson import ObjectId
+from bson.errors import InvalidId
+from fastapi import APIRouter, Depends, HTTPException, Query, Request, status
 
 from app.core import mongosafe
+from app.core.audit import record
 from app.core.deps import get_current_user
-from app.core.serializers import page_meta, to_object_id
+from app.core.media import media_url
 from app.core.permissions import require_permission
+from app.core.rbac import MEMBER_ROLE
+from app.core.serializers import page_meta
 from app.db.mongodb import get_database
-from app.models.message import ConversationModel, MessageModel, MessageStatsModel
+from app.models.conversation import MemberMessageModel, MemberNotificationModel, notify
+from app.models.message import SupportThreadModel
+from app.models.user import UserModel
 from app.schemas.message import (
-    BroadcastCreate,
-    BroadcastResult,
-    ConversationCreate,
-    ConversationFlagUpdate,
-    ConversationListResponse,
-    ConversationResponse,
-    MessageCreate,
-    MessageStatsResponse,
-    SimpleListResponse,
-    StatsRange,
+    AssignRequest,
+    MemberHit,
+    MessageStats,
+    ReplyRequest,
+    SimpleMessage,
+    StaffOption,
+    StartThreadRequest,
+    ThreadCounts,
+    ThreadDetail,
+    ThreadFilter,
+    ThreadListResponse,
+    ThreadMessage,
+    ThreadRow,
 )
 
 router = APIRouter(prefix="/messages", tags=["Messages"])
 
 
-def _conversations():
-    return get_database()[ConversationModel.collection_name]
+def _messages():
+    return get_database()[MemberMessageModel.collection_name]
 
 
-def _stats():
-    return get_database()[MessageStatsModel.collection_name]
+def _threads():
+    return get_database()[SupportThreadModel.collection_name]
 
 
-async def _display_total() -> int:
-    """The grand total shown in the 'Showing 1 to N of N' footer.
-
-    It is the real number of conversation rows we store — computed live from
-    the `conversations` collection, not a seeded vanity count.
-    """
-    return await _conversations().count_documents({})
+def _users():
+    return get_database()[UserModel.collection_name]
 
 
-# Donut ring colours, kept from the seeded Messages Overview palette.
-_OVERVIEW_COLORS = {"Sent": "#8b5cf6", "Received": "#3b82f6"}
+# --- small helpers -------------------------------------------------------------
+
+_EPOCH = datetime(1970, 1, 1, tzinfo=timezone.utc)
 
 
-async def _compute_stats() -> dict:
-    """Compute the Messages statistics live from the `conversations` collection.
+def _aware(dt: Optional[datetime]) -> Optional[datetime]:
+    if not isinstance(dt, datetime):
+        return None
+    return dt if dt.tzinfo else dt.replace(tzinfo=timezone.utc)
 
-    Everything is derived from the stored conversation rows and their embedded
-    message bubbles, EXCEPT avgResponseTime — that has no timestamp source, so
-    the seeded label is kept verbatim.
 
-        totalConversations     -> real conversation count
-        messagesSent/Received  -> embedded bubbles counted by direction (out/in)
-        resolvedConversations  -> conversations with nothing pending (unread == 0)
-        overview donut         -> Sent vs Received message breakdown
-        topContacts            -> conversations ranked by real message count
-    """
-    convos = [doc async for doc in _conversations().find({})]
-    total_conversations = len(convos)
+def _iso(dt: Optional[datetime]) -> Optional[str]:
+    dt = _aware(dt)
+    return dt.isoformat() if dt else None
 
-    messages_sent = 0
-    messages_received = 0
-    resolved = 0
-    contacts: list[tuple[str, int, int]] = []  # (name, message_count, unread)
-    for c in convos:
-        bubbles = c.get("messages", []) or []
-        messages_sent += sum(1 for b in bubbles if b.get("dir") == "out")
-        messages_received += sum(1 for b in bubbles if b.get("dir") == "in")
-        if int(c.get("unread", 0) or 0) == 0:
-            resolved += 1
-        contacts.append((c.get("name", ""), len(bubbles), int(c.get("unread", 0) or 0)))
 
-    overview_total = messages_sent + messages_received
+def _label(dt: Optional[datetime]) -> str:
+    dt = _aware(dt)
+    return dt.strftime("%d %b, %I:%M %p") if dt else ""
 
-    def _pct(v: int) -> str:
-        return f"{round(v / overview_total * 100, 1)}%" if overview_total else "0%"
 
-    overview = [
-        {"name": "Sent", "value": messages_sent, "pct": _pct(messages_sent), "color": _OVERVIEW_COLORS["Sent"]},
-        {"name": "Received", "value": messages_received, "pct": _pct(messages_received), "color": _OVERVIEW_COLORS["Received"]},
-    ]
+def _oid(value: str, what: str = "Member") -> ObjectId:
+    try:
+        return ObjectId(value)
+    except (InvalidId, TypeError):
+        raise HTTPException(status.HTTP_404_NOT_FOUND, f"{what} not found")
 
-    top_contacts = [
-        {"name": name, "count": count, "badge": unread}
-        for name, count, unread in sorted(contacts, key=lambda t: t[1], reverse=True)[:5]
-    ]
 
-    # avgResponseTime has no timestamp source — keep the seeded display label.
-    stats_doc = await _stats().find_one({}, {"avgResponseTime": 1}) or {}
+async def _member(user_id: str) -> dict:
+    doc = await _users().find_one({"_id": _oid(user_id), "role": MEMBER_ROLE})
+    if not doc:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "Member not found")
+    return doc
 
+
+def _name(user: dict) -> str:
+    return user.get("full_name") or user.get("email") or "this member"
+
+
+def _message_row(m: dict) -> dict:
+    created = m.get("created_at")
     return {
-        "total_conversations": total_conversations,
-        "messages_sent": messages_sent,
-        "messages_received": messages_received,
-        "avg_response_time": stats_doc.get("avgResponseTime", "2h 15m"),
-        "resolved_conversations": resolved,
-        "overview_total": overview_total,
-        "overview": overview,
-        "top_contacts": top_contacts,
+        "id": str(m["_id"]),
+        "sender": m.get("sender", MemberMessageModel.FROM_MEMBER),
+        "sender_name": m.get("sender_name", ""),
+        "body": m.get("body", ""),
+        "sent_at": _iso(created) or "",
+        "sent_label": _label(created),
+        "read_by_member": bool(m.get("read_by_member")),
+        "read_by_team": bool(m.get("read_by_team")),
     }
 
 
-# Static template / automation lists shown in their respective modals.
-_TEMPLATES = [
-    "Welcome message",
-    "Program brochure",
-    "Appointment confirmation",
-    "Workshop reminder",
-]
-_AUTOMATIONS = [
-    "Auto-reply when away",
-    "New enrollment notification",
-    "Appointment reminder",
-    "Weekly digest",
-]
+# --- folding the message rows into per-member summaries ------------------------
+
+_SUMMARY_PROJECTION = {
+    "user_id": 1, "sender": 1, "body": 1, "created_at": 1, "read_by_team": 1,
+}
 
 
-# --- Conversations ------------------------------------------------------------
-@router.get("/conversations", response_model=ConversationListResponse, summary="List conversations",
+def _fold(summary: dict, m: dict) -> None:
+    """Advance one thread's summary by one message, in created_at order."""
+    created = _aware(m.get("created_at"))
+    sender = m.get("sender", MemberMessageModel.FROM_MEMBER)
+    summary["count"] += 1
+    summary["last_body"] = m.get("body", "")
+    summary["last_sender"] = sender
+    summary["last_at"] = created
+    summary["first_at"] = summary["first_at"] or created
+    if sender == MemberMessageModel.FROM_MEMBER:
+        summary["received"] += 1
+        summary["last_member_at"] = created
+        if not m.get("read_by_team"):
+            summary["unread"] += 1
+        if summary["waiting_since"] is None:
+            summary["waiting_since"] = created
+        if summary["asked_at"] is None:
+            summary["asked_at"] = created
+    else:
+        summary["sent"] += 1
+        summary["last_team_at"] = created
+        summary["waiting_since"] = None
+        if summary["asked_at"] is not None and created is not None:
+            summary["gaps"].append((created - summary["asked_at"]).total_seconds() / 60)
+            summary["asked_at"] = None
+
+
+def _blank(uid: str) -> dict:
+    return {
+        "user_id": uid, "count": 0, "unread": 0, "received": 0, "sent": 0,
+        "last_body": "", "last_sender": "", "last_at": None, "first_at": None,
+        "last_member_at": None, "last_team_at": None,
+        "waiting_since": None, "asked_at": None, "gaps": [],
+    }
+
+
+async def _summaries(user_id: Optional[str] = None) -> dict[str, dict]:
+    query = {"user_id": user_id} if user_id else {}
+    out: dict[str, dict] = {}
+    async for m in _messages().find(query, _SUMMARY_PROJECTION).sort("created_at", 1):
+        uid = m.get("user_id") or ""
+        if not uid:
+            continue
+        _fold(out.setdefault(uid, _blank(uid)), m)
+    return out
+
+
+async def _users_for(uids: list[str]) -> dict[str, dict]:
+    oids = []
+    for uid in uids:
+        try:
+            oids.append(ObjectId(uid))
+        except (InvalidId, TypeError):
+            continue
+    if not oids:
+        return {}
+    return {str(u["_id"]): u async for u in _users().find({"_id": {"$in": oids}})}
+
+
+async def _states_for(uids: list[str]) -> dict[str, dict]:
+    if not uids:
+        return {}
+    return {s["user_id"]: s async for s in _threads().find({"user_id": {"$in": uids}})}
+
+
+def _row(summary: dict, user: dict, state: Optional[dict]) -> dict:
+    status_, reopened = SupportThreadModel.effective_status(state, summary["last_member_at"])
+    return {
+        "user_id": summary["user_id"],
+        "full_name": user.get("full_name", ""),
+        "email": user.get("email", ""),
+        "avatar": media_url(user.get("avatar", "")),
+        "message_count": summary["count"],
+        "unread": summary["unread"],
+        "last_message": (summary["last_body"] or "")[:140],
+        "last_sender": summary["last_sender"],
+        "last_at": _iso(summary["last_at"]),
+        "last_label": _label(summary["last_at"]),
+        "waiting_since": _iso(summary["waiting_since"]) if status_ == "open" else None,
+        "status": status_,
+        "reopened": reopened,
+        "resolved_at": _iso((state or {}).get("resolved_at")) if status_ == "resolved" else None,
+        "resolved_by_name": (state or {}).get("resolved_by_name", "") if status_ == "resolved" else "",
+        "assigned_to": SupportThreadModel.assignee(state),
+    }
+
+
+def _ordered(rows: list[dict]) -> list[dict]:
+    """Whoever has waited longest first, then the most recent thread."""
+    waiting = [r for r in rows if r["status"] == "open" and r.get("waiting_since")]
+    rest = [r for r in rows if not (r["status"] == "open" and r.get("waiting_since"))]
+    waiting.sort(key=lambda r: r["waiting_since"])
+    rest.sort(key=lambda r: r.get("last_at") or "", reverse=True)
+    return waiting + rest
+
+
+def _matches(row: dict, filter_: str, me_id: str) -> bool:
+    if filter_ == "awaiting":
+        return row["status"] == "open" and bool(row["waiting_since"])
+    if filter_ == "unread":
+        return row["unread"] > 0
+    if filter_ == "mine":
+        return bool(row["assigned_to"]) and row["assigned_to"]["id"] == me_id
+    if filter_ == "unassigned":
+        return row["status"] == "open" and not row["assigned_to"]
+    if filter_ == "resolved":
+        return row["status"] == "resolved"
+    return True
+
+
+async def _all_rows() -> list[dict]:
+    summaries = await _summaries()
+    uids = list(summaries)
+    users, states = await _users_for(uids), await _states_for(uids)
+    rows = []
+    for uid, s in summaries.items():
+        user = users.get(uid)
+        if not user:
+            # A thread whose account is gone cannot be answered; it is not shown.
+            continue
+        rows.append(_row(s, user, states.get(uid)))
+    return _ordered(rows)
+
+
+async def _detail(user_id: str, member: Optional[dict] = None) -> dict:
+    member = member or await _member(user_id)
+    docs = [m async for m in _messages().find({"user_id": user_id}).sort("created_at", 1)]
+    if not docs:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "No thread with this member yet")
+    summary = _blank(user_id)
+    for m in docs:
+        _fold(summary, m)
+    state = await _threads().find_one({"user_id": user_id})
+    row = _row(summary, member, state)
+    row.update(
+        member={
+            "id": str(member["_id"]),
+            "full_name": member.get("full_name", ""),
+            "email": member.get("email", ""),
+            "avatar": media_url(member.get("avatar", "")),
+            "joined_at": _iso(member.get("created_at")),
+            "verification_status": str(member.get("verification_status") or ""),
+            "is_active": bool(member.get("is_active", True)),
+        },
+        messages=[_message_row(m) for m in docs],
+        first_at=_iso(summary["first_at"]),
+        last_team_at=_iso(summary["last_team_at"]),
+        last_member_at=_iso(summary["last_member_at"]),
+        assigned_at=_iso((state or {}).get("assigned_at")),
+    )
+    return row
+
+
+async def _upsert_state(user_id: str, sets: dict) -> None:
+    sets = {**sets, "updated_at": datetime.now(timezone.utc)}
+    on_insert = {
+        k: v for k, v in SupportThreadModel.create_document(user_id=user_id).items()
+        if k not in sets and k != "user_id"
+    }
+    await _threads().update_one(
+        {"user_id": user_id}, {"$set": sets, "$setOnInsert": on_insert}, upsert=True
+    )
+
+
+async def _deliver(member: dict, body: str, me: dict) -> dict:
+    """
+    Store the team's message in her thread and tell her about it.
+
+    This is the whole delivery: the row her app reads at /me/messages, the
+    `read_by_member=False` flag her badge counts, and a notification with a
+    link to the thread. Nothing leaves the platform.
+    """
+    db = get_database()
+    user_id = str(member["_id"])
+    doc = MemberMessageModel.create_document(
+        user_id=user_id,
+        member_id=member.get("member_id") or "",
+        body=body,
+        sender=MemberMessageModel.FROM_TEAM,
+        sender_name=me.get("full_name") or "WomSakhi team",
+    )
+    result = await _messages().insert_one(doc)
+    doc["_id"] = result.inserted_id
+    # Answering her is reading her.
+    await _messages().update_many(
+        {"user_id": user_id, "sender": MemberMessageModel.FROM_MEMBER, "read_by_team": False},
+        {"$set": {"read_by_team": True}},
+    )
+    await notify(
+        db, user_id,
+        title="New reply from the team",
+        body=body[:90],
+        ntype=MemberNotificationModel.TYPE_MESSAGE,
+        href="/app/messages",
+    )
+    return doc
+
+
+# --- threads -------------------------------------------------------------------
+
+@router.get(
+    "/threads", response_model=ThreadListResponse, summary="Every member's thread with the team",
     dependencies=[Depends(require_permission("messages.view"))],
 )
-async def list_conversations(
-    q: Optional[str] = Query(None, description="Search by name or preview"),
-    filter: str = Query("all", description="all | unread | starred | attachments"),
+async def list_threads(
+    q: Optional[str] = Query(None, description="Member name or email"),
+    filter: ThreadFilter = Query("all"),
     page: int = Query(1, ge=1),
-    page_size: int = Query(20, ge=1, le=200),
-    _: dict = Depends(get_current_user),
+    page_size: int = Query(50, ge=1, le=200),
+    me: dict = Depends(get_current_user),
 ):
-    query: dict = {}
-    if filter == "unread":
-        query["unread"] = {"$gt": 0}
-    elif filter == "starred":
-        query["starred"] = True
-    elif filter == "attachments":
-        query["messages.file"] = {"$exists": True}
+    me_id = str(me.get("_id", ""))
+    rows = await _all_rows()
+    counts = ThreadCounts(
+        all=len(rows),
+        awaiting=sum(1 for r in rows if _matches(r, "awaiting", me_id)),
+        unread=sum(1 for r in rows if _matches(r, "unread", me_id)),
+        mine=sum(1 for r in rows if _matches(r, "mine", me_id)),
+        unassigned=sum(1 for r in rows if _matches(r, "unassigned", me_id)),
+        resolved=sum(1 for r in rows if _matches(r, "resolved", me_id)),
+    )
+    shown = [r for r in rows if _matches(r, filter, me_id)]
     if q and q.strip():
-        query.update(mongosafe.any_of(q, ["name", "preview"]))
-
-    cursor = (
-        _conversations()
-        .find(query)
-        .sort("_id", 1)
-        .skip((page - 1) * page_size)
-        .limit(page_size)
-    )
-    items = [ConversationModel.to_response(doc) async for doc in cursor]
-    # The footer total is the real conversation count, computed from the DB.
-    return ConversationListResponse(items=items, **page_meta(await _display_total(), page, page_size))
-
-
-@router.post(
-    "/conversations",
-    response_model=ConversationResponse,
-    status_code=status.HTTP_201_CREATED,
-    summary="Start a new conversation",
-    dependencies=[Depends(require_permission("messages.create"))],
-)
-async def create_conversation(payload: ConversationCreate, _: dict = Depends(get_current_user)):
-    now = datetime.now(timezone.utc)
-    name = payload.name.strip()
-    body = (payload.body or "").strip()
-
-    # Mirror the UI's ensureConvo: reuse an existing thread with the same name.
-    existing = await _conversations().find_one({"name": name})
-    if existing:
-        sets: dict = {"active": True, "updated_at": now}
-        push: dict = {}
-        if body:
-            push["messages"] = MessageModel.build(dir="out", text=body, time="Now")
-            sets["preview"] = body
-            sets["time"] = "Now"
-        update: dict = {"$set": sets}
-        if push:
-            update["$push"] = push
-        doc = await _conversations().find_one_and_update(
-            {"_id": existing["_id"]},
-            update,
-            return_document=True,
-        )
-        return ConversationResponse(**ConversationModel.to_response(doc))
-
-    messages = [{"dir": "out", "text": body, "time": "Now"}] if body else []
-    doc = ConversationModel.create_document(
-        name=name,
-        preview=body or "New conversation",
-        time="Now",
-        active=True,
-        messages=messages,
-    )
-    result = await _conversations().insert_one(doc)
-    doc["_id"] = result.inserted_id
-    return ConversationResponse(**ConversationModel.to_response(doc))
+        needle = q.strip().lower()
+        shown = [r for r in shown if needle in r["full_name"].lower() or needle in r["email"].lower()]
+    total = len(shown)
+    start = (page - 1) * page_size
+    items = [ThreadRow(**r) for r in shown[start:start + page_size]]
+    return ThreadListResponse(items=items, counts=counts, **page_meta(total, page, page_size))
 
 
 @router.get(
-    "/conversations/{conversation_id}",
-    response_model=ConversationResponse,
-    summary="Get a conversation with its full thread",
+    "/threads/{user_id}", response_model=ThreadDetail, summary="One member's thread, in full",
     dependencies=[Depends(require_permission("messages.view"))],
 )
-async def get_conversation(conversation_id: str, _: dict = Depends(get_current_user)):
-    doc = await _conversations().find_one({"_id": to_object_id(conversation_id)})
-    if not doc:
-        raise HTTPException(status.HTTP_404_NOT_FOUND, "Conversation not found")
-    return ConversationResponse(**ConversationModel.to_response(doc))
+async def get_thread(user_id: str, _: dict = Depends(get_current_user)):
+    return ThreadDetail(**await _detail(user_id))
 
 
 @router.post(
-    "/conversations/{conversation_id}/messages",
-    response_model=ConversationResponse,
-    summary="Append a message (composer send or attachment)",
+    "/threads", response_model=ThreadDetail, status_code=status.HTTP_201_CREATED,
+    summary="Start a conversation with a member",
     dependencies=[Depends(require_permission("messages.create"))],
 )
-async def add_message(conversation_id: str, payload: MessageCreate, _: dict = Depends(get_current_user)):
-    oid = to_object_id(conversation_id)
-    conv = await _conversations().find_one({"_id": oid})
-    if not conv:
-        raise HTTPException(status.HTTP_404_NOT_FOUND, "Conversation not found")
-
-    bubble = MessageModel.build(
-        dir=payload.dir,
-        text=payload.text,
-        file=payload.file.model_dump() if payload.file else None,
-        time=payload.time or "Now",
+async def start_thread(payload: StartThreadRequest, request: Request, me: dict = Depends(get_current_user)):
+    member = await _member(payload.user_id)
+    existed = await _messages().count_documents({"user_id": payload.user_id}, limit=1) > 0
+    await _deliver(member, payload.body, me)
+    await record(
+        me, "messages.reply" if existed else "messages.start", target=payload.user_id,
+        detail=f"{'Replied to' if existed else 'Started a conversation with'} {_name(member)}: “{payload.body[:80]}”",
+        request=request,
     )
-    # Preview = the text, or the file name for an attachment (matches the UI).
-    preview = bubble.get("text") or (bubble.get("file", {}) or {}).get("name") or conv.get("preview", "")
-    doc = await _conversations().find_one_and_update(
-        {"_id": oid},
-        {
-            "$push": {"messages": bubble},
-            "$set": {"preview": preview, "time": bubble["time"], "updated_at": datetime.now(timezone.utc)},
-        },
-        return_document=True,
+    return ThreadDetail(**await _detail(payload.user_id, member))
+
+
+@router.post(
+    "/threads/{user_id}/reply", response_model=ThreadDetail, status_code=status.HTTP_201_CREATED,
+    summary="Reply in a member's thread",
+    dependencies=[Depends(require_permission("messages.create"))],
+)
+async def reply(user_id: str, payload: ReplyRequest, request: Request, me: dict = Depends(get_current_user)):
+    member = await _member(user_id)
+    await _deliver(member, payload.body, me)
+    await record(
+        me, "messages.reply", target=user_id,
+        detail=f"Replied to {_name(member)}: “{payload.body[:80]}”", request=request,
     )
-    return ConversationResponse(**ConversationModel.to_response(doc))
+    return ThreadDetail(**await _detail(user_id, member))
 
 
-@router.patch(
-    "/conversations/{conversation_id}",
-    response_model=ConversationResponse,
-    summary="Update conversation flags (star / unread / archive / read)",
+@router.post(
+    "/threads/{user_id}/read", response_model=ThreadDetail, summary="Mark her messages read by the team",
     dependencies=[Depends(require_permission("messages.edit"))],
 )
-async def update_conversation(
-    conversation_id: str, payload: ConversationFlagUpdate, _: dict = Depends(get_current_user)
-):
-    oid = to_object_id(conversation_id)
-    conv = await _conversations().find_one({"_id": oid})
-    if not conv:
-        raise HTTPException(status.HTTP_404_NOT_FOUND, "Conversation not found")
-
-    sets: dict = {}
-    action = payload.action
-    if action == "star":
-        sets["starred"] = True
-    elif action == "unstar":
-        sets["starred"] = False
-    elif action == "toggle_star":
-        sets["starred"] = not bool(conv.get("starred", False))
-    elif action == "mark_unread":
-        sets["unread"] = int(conv.get("unread", 0)) or 1
-    elif action == "archive":
-        sets["unread"] = 0
-        sets["starred"] = False
-    elif action == "read":
-        sets["unread"] = 0
-
-    # Direct overrides win over the action shortcut.
-    if payload.starred is not None:
-        sets["starred"] = payload.starred
-    if payload.unread is not None:
-        sets["unread"] = payload.unread
-    if payload.active is not None:
-        sets["active"] = payload.active
-
-    sets["updated_at"] = datetime.now(timezone.utc)
-    doc = await _conversations().find_one_and_update(
-        {"_id": oid},
-        {"$set": sets},
-        return_document=True,
+async def mark_read(user_id: str, request: Request, me: dict = Depends(get_current_user)):
+    member = await _member(user_id)
+    result = await _messages().update_many(
+        {"user_id": user_id, "sender": MemberMessageModel.FROM_MEMBER, "read_by_team": False},
+        {"$set": {"read_by_team": True}},
     )
-    return ConversationResponse(**ConversationModel.to_response(doc))
+    if result.modified_count:
+        await record(
+            me, "messages.read", target=user_id,
+            detail=f"Read {result.modified_count} new message(s) from {_name(member)}", request=request,
+        )
+    return ThreadDetail(**await _detail(user_id, member))
 
 
-@router.delete("/conversations/{conversation_id}", summary="Delete a conversation",
-    dependencies=[Depends(require_permission("messages.delete"))],
+@router.post(
+    "/threads/{user_id}/unread", response_model=ThreadDetail, summary="Put her last message back in the unread pile",
+    dependencies=[Depends(require_permission("messages.edit"))],
 )
-async def delete_conversation(conversation_id: str, _: dict = Depends(get_current_user)):
-    result = await _conversations().delete_one({"_id": to_object_id(conversation_id)})
-    if result.deleted_count == 0:
-        raise HTTPException(status.HTTP_404_NOT_FOUND, "Conversation not found")
-    return {"message": "Conversation deleted"}
+async def mark_unread(user_id: str, request: Request, me: dict = Depends(get_current_user)):
+    member = await _member(user_id)
+    docs = [m async for m in _messages().find({"user_id": user_id}, {"sender": 1, "created_at": 1}).sort("created_at", 1)]
+    # The final run of her messages — what the team still owes an answer to —
+    # or, if the team had the last word, just her latest one.
+    ids: list = []
+    for m in reversed(docs):
+        if m.get("sender") == MemberMessageModel.FROM_MEMBER:
+            ids.append(m["_id"])
+        elif ids:
+            break
+    if not ids:
+        last_member = next((m for m in reversed(docs) if m.get("sender") == MemberMessageModel.FROM_MEMBER), None)
+        if not last_member:
+            raise HTTPException(status.HTTP_400_BAD_REQUEST, "She has not written anything yet")
+        ids = [last_member["_id"]]
+    await _messages().update_many({"_id": {"$in": ids}}, {"$set": {"read_by_team": False}})
+    await record(
+        me, "messages.unread", target=user_id,
+        detail=f"Marked {len(ids)} message(s) from {_name(member)} unread", request=request,
+    )
+    return ThreadDetail(**await _detail(user_id, member))
 
 
-# --- Broadcast ----------------------------------------------------------------
-@router.post("/broadcast", response_model=BroadcastResult, summary="Broadcast a message to a group",
-    dependencies=[Depends(require_permission("messages.create"))],
+@router.post(
+    "/threads/{user_id}/assign", response_model=ThreadDetail, summary="Hand a thread to a staff account",
+    dependencies=[Depends(require_permission("messages.edit"))],
 )
-async def broadcast(payload: BroadcastCreate, _: dict = Depends(get_current_user)):
-    if payload.recipients == "Starred contacts":
-        sent = await _conversations().count_documents({"starred": True})
+async def assign(user_id: str, payload: AssignRequest, request: Request, me: dict = Depends(get_current_user)):
+    member = await _member(user_id)
+    if not await _messages().count_documents({"user_id": user_id}, limit=1):
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "No thread with this member yet")
+    staff_id = (payload.staff_id or "").strip()
+    if staff_id:
+        staff = await _users().find_one(
+            {"_id": _oid(staff_id, "Staff account"), "role": {"$ne": MEMBER_ROLE}, "is_active": True}
+        )
+        if not staff:
+            raise HTTPException(status.HTTP_404_NOT_FOUND, "Staff account not found")
+        sets = {
+            "assigned_to": str(staff["_id"]),
+            "assigned_name": staff.get("full_name") or staff.get("email", ""),
+            "assigned_at": datetime.now(timezone.utc),
+            "assigned_by": str(me.get("_id", "")),
+        }
+        detail = f"Assigned {_name(member)}'s thread to {sets['assigned_name']}"
     else:
-        sent = await _conversations().count_documents({})
-    return BroadcastResult(
-        message=f"Broadcast queued for {payload.recipients}",
-        recipients=payload.recipients,
-        sent=sent,
+        sets = {"assigned_to": "", "assigned_name": "", "assigned_at": None, "assigned_by": str(me.get("_id", ""))}
+        detail = f"Unassigned {_name(member)}'s thread"
+    await _upsert_state(user_id, sets)
+    await record(me, "messages.assign", target=user_id, detail=detail, request=request)
+    return ThreadDetail(**await _detail(user_id, member))
+
+
+@router.post(
+    "/threads/{user_id}/resolve", response_model=ThreadDetail, summary="Mark a thread resolved",
+    dependencies=[Depends(require_permission("messages.edit"))],
+)
+async def resolve(user_id: str, request: Request, me: dict = Depends(get_current_user)):
+    member = await _member(user_id)
+    if not await _messages().count_documents({"user_id": user_id}, limit=1):
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "No thread with this member yet")
+    await _upsert_state(user_id, {
+        "status": SupportThreadModel.STATUS_RESOLVED,
+        "resolved_at": datetime.now(timezone.utc),
+        "resolved_by": str(me.get("_id", "")),
+        "resolved_by_name": me.get("full_name") or me.get("email", ""),
+    })
+    # Resolving is reading: nothing in a closed thread should stay counted.
+    await _messages().update_many(
+        {"user_id": user_id, "sender": MemberMessageModel.FROM_MEMBER, "read_by_team": False},
+        {"$set": {"read_by_team": True}},
     )
+    await record(me, "messages.resolve", target=user_id, detail=f"Resolved {_name(member)}'s thread", request=request)
+    return ThreadDetail(**await _detail(user_id, member))
 
 
-# --- Stats / lookups ----------------------------------------------------------
-@router.get("/stats", response_model=MessageStatsResponse, summary="Messages statistics",
+@router.post(
+    "/threads/{user_id}/reopen", response_model=ThreadDetail, summary="Reopen a resolved thread",
+    dependencies=[Depends(require_permission("messages.edit"))],
+)
+async def reopen(user_id: str, request: Request, me: dict = Depends(get_current_user)):
+    member = await _member(user_id)
+    if not await _messages().count_documents({"user_id": user_id}, limit=1):
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "No thread with this member yet")
+    await _upsert_state(user_id, {
+        "status": SupportThreadModel.STATUS_OPEN,
+        "resolved_at": None, "resolved_by": "", "resolved_by_name": "",
+    })
+    await record(me, "messages.reopen", target=user_id, detail=f"Reopened {_name(member)}'s thread", request=request)
+    return ThreadDetail(**await _detail(user_id, member))
+
+
+# --- lookups -------------------------------------------------------------------
+
+@router.get(
+    "/members", response_model=list[MemberHit], summary="Find a member to write to",
     dependencies=[Depends(require_permission("messages.view"))],
 )
-async def message_stats(
-    range: StatsRange = Query("This Month", description="Reporting range (currently static)"),
+async def find_members(
+    q: str = Query("", description="Name or email"),
+    limit: int = Query(20, ge=1, le=50),
     _: dict = Depends(get_current_user),
 ):
-    data = await _compute_stats()
-    return MessageStatsResponse(**data, range=range)
+    query: dict = {"role": MEMBER_ROLE}
+    if q.strip():
+        query.update(mongosafe.any_of(q.strip(), ["full_name", "email"]))
+    users = [
+        u async for u in _users()
+        .find(query, {"full_name": 1, "email": 1, "avatar": 1})
+        .sort("full_name", 1)
+        .limit(limit)
+    ]
+    ids = [str(u["_id"]) for u in users]
+    with_thread = set(await _messages().distinct("user_id", {"user_id": {"$in": ids}})) if ids else set()
+    return [
+        MemberHit(
+            id=str(u["_id"]), full_name=u.get("full_name", ""), email=u.get("email", ""),
+            avatar=media_url(u.get("avatar", "")), has_thread=str(u["_id"]) in with_thread,
+        )
+        for u in users
+    ]
 
 
-@router.get("/contacts", response_model=SimpleListResponse, summary="Recipient options for New Message",
+@router.get(
+    "/staff", response_model=list[StaffOption], summary="Staff accounts a thread can be handed to",
     dependencies=[Depends(require_permission("messages.view"))],
 )
-async def contacts(_: dict = Depends(get_current_user)):
-    names = [doc.get("name", "") async for doc in _conversations().find({}, {"name": 1}).sort("_id", 1)]
-    return SimpleListResponse(items=names)
+async def staff_options(_: dict = Depends(get_current_user)):
+    cursor = (
+        _users()
+        .find({"role": {"$ne": MEMBER_ROLE}, "is_active": True}, {"full_name": 1, "email": 1, "role": 1})
+        .sort("full_name", 1)
+    )
+    return [
+        StaffOption(id=str(u["_id"]), full_name=u.get("full_name") or u.get("email", ""), role=u.get("role", ""))
+        async for u in cursor
+    ]
 
 
-@router.get("/templates", response_model=SimpleListResponse, summary="Message templates",
+# --- stats ---------------------------------------------------------------------
+
+@router.get(
+    "/stats", response_model=MessageStats, summary="Inbox figures, computed from the rows",
     dependencies=[Depends(require_permission("messages.view"))],
 )
-async def templates(_: dict = Depends(get_current_user)):
-    return SimpleListResponse(items=list(_TEMPLATES))
+async def stats(_: dict = Depends(get_current_user)):
+    summaries = await _summaries()
+    uids = list(summaries)
+    users, states = await _users_for(uids), await _states_for(uids)
+    week_ago = datetime.now(timezone.utc) - timedelta(days=7)
+
+    threads = open_ = resolved = awaiting = unread = sent = received = 0
+    gaps: list[float] = []
+    for uid, s in summaries.items():
+        if uid not in users:
+            continue
+        threads += 1
+        status_, _reopened = SupportThreadModel.effective_status(states.get(uid), s["last_member_at"])
+        if status_ == "resolved":
+            resolved += 1
+        else:
+            open_ += 1
+            if s["waiting_since"]:
+                awaiting += 1
+        unread += s["unread"]
+        sent += s["sent"]
+        received += s["received"]
+        gaps.extend(s["gaps"])
+
+    received_week = await _messages().count_documents(
+        {"sender": MemberMessageModel.FROM_MEMBER, "created_at": {"$gte": week_ago}}
+    )
+    sent_week = await _messages().count_documents(
+        {"sender": MemberMessageModel.FROM_TEAM, "created_at": {"$gte": week_ago}}
+    )
+
+    median = within_24h = None
+    if gaps:
+        gaps.sort()
+        mid = len(gaps) // 2
+        median = int(gaps[mid] if len(gaps) % 2 else (gaps[mid - 1] + gaps[mid]) / 2)
+        within_24h = round(sum(1 for g in gaps if g <= 24 * 60) * 100 / len(gaps))
+
+    return MessageStats(
+        threads=threads, open=open_, resolved=resolved, awaiting_reply=awaiting,
+        unread_messages=unread, sent_by_team=sent, received_from_members=received,
+        received_this_week=received_week, sent_this_week=sent_week,
+        median_first_reply_minutes=median, replies_measured=len(gaps),
+        replied_within_24h_pct=within_24h,
+    )
 
 
-@router.get("/automations", response_model=SimpleListResponse, summary="Automated messages",
-    dependencies=[Depends(require_permission("messages.view"))],
-)
-async def automations(_: dict = Depends(get_current_user)):
-    return SimpleListResponse(items=list(_AUTOMATIONS))
-
-
-# --- Seeding ------------------------------------------------------------------
-
-# The exact 7 conversations (with their embedded threads) the UI ships with.
-# messages transcribed verbatim from INITIAL_THREADS in the frontend page.
-_SEED_CONVERSATIONS = [
-    dict(
-        name="Priya Sharma",
-        preview="Hi, I would like to know more about...",
-        time="10:30 AM",
-        unread=2,
-        active=True,
-        messages=[
-            dict(dir="in", text="Hi, I would like to know more about the Handicrafts Training Program.", time="10:28 AM"),
-            dict(dir="out", text="Hello Priya! Thank you for your interest in our Handicrafts Training Program. I'd be happy to share more details. What would you like to know?", time="10:29 AM"),
-            dict(dir="in", text="What are the course fees and duration?", time="10:30 AM"),
-            dict(dir="out", text="The course duration is 8 weeks and the fee is Rs.4,999. We also offer early bird discounts. Would you like me to send you the brochure?", time="10:31 AM"),
-            dict(dir="in", text="Yes, please send me the brochure.", time="10:31 AM"),
-            dict(dir="out", file={"name": "Handicrafts_Program_Brochure.pdf", "size": "1.4 MB"}, time="10:32 AM"),
-        ],
-    ),
-    dict(
-        name="Neha Verma",
-        preview="Thank you for the information!",
-        time="9:15 AM",
-        starred=True,
-        messages=[
-            dict(dir="out", text="Hi Neha, here are the details you asked for regarding the tailoring workshop.", time="9:10 AM"),
-            dict(dir="in", text="Thank you for the information!", time="9:15 AM"),
-            dict(dir="out", text="You're most welcome. Let me know if you need anything else!", time="9:16 AM"),
-        ],
-    ),
-    dict(
-        name="Anjali Mehta",
-        preview="Can I reschedule my appointment?",
-        time="Yesterday",
-        unread=1,
-        messages=[
-            dict(dir="in", text="Can I reschedule my appointment?", time="Yesterday"),
-            dict(dir="out", text="Of course! Which day works best for you?", time="Yesterday"),
-        ],
-    ),
-    dict(
-        name="Ritika Singh",
-        preview="Please send me the workshop details.",
-        time="Yesterday",
-        messages=[
-            dict(dir="in", text="Please send me the workshop details.", time="Yesterday"),
-            dict(dir="out", text="Sure Ritika, I'll share the full schedule with you shortly.", time="Yesterday"),
-        ],
-    ),
-    dict(
-        name="Sneha Patil",
-        preview="Do you have any upcoming events?",
-        time="May 19",
-        unread=3,
-        messages=[
-            dict(dir="in", text="Do you have any upcoming events?", time="May 19"),
-            dict(dir="out", text="Yes! We have a craft fair and two workshops next month.", time="May 19"),
-            dict(dir="in", text="That sounds great, please add me to the list.", time="May 19"),
-        ],
-    ),
-    dict(
-        name="Kavita Joshi",
-        preview="Thanks for your support",
-        time="May 18",
-        starred=True,
-        messages=[
-            dict(dir="out", text="We really appreciate you being part of our community, Kavita.", time="May 18"),
-            dict(dir="in", text="Thanks for your support", time="May 18"),
-        ],
-    ),
-    dict(
-        name="Pooja Gupta",
-        preview="I'm interested in your training program.",
-        time="May 18",
-        messages=[
-            dict(dir="in", text="I'm interested in your training program.", time="May 18"),
-            dict(dir="out", text="Wonderful! I'll send you the enrollment details right away.", time="May 18"),
-        ],
-    ),
-]
-
-# The single message_stats summary document — 5 stat cards + donut + top contacts.
-_SEED_STATS = dict(
-    totalConversations=248,
-    messagesSent=1286,
-    messagesReceived=1132,
-    avgResponseTime="2h 15m",
-    resolvedConversations=186,
-    overviewTotal=1286,
-    overview=[
-        {"name": "Sent", "value": 568, "pct": "44.1%", "color": "#8b5cf6"},
-        {"name": "Received", "value": 542, "pct": "42.1%", "color": "#3b82f6"},
-        {"name": "System", "value": 96, "pct": "7.5%", "color": "#22c55e"},
-        {"name": "Notifications", "value": 56, "pct": "4.3%", "color": "#f59e0b"},
-        {"name": "Other", "value": 24, "pct": "1.9%", "color": "#e6117e"},
-    ],
-    topContacts=[
-        {"name": "Priya Sharma", "count": 12, "badge": 5},
-        {"name": "Neha Verma", "count": 9, "badge": 3},
-        {"name": "Anjali Mehta", "count": 8, "badge": 2},
-        {"name": "Ritika Singh", "count": 7, "badge": 2},
-        {"name": "Sneha Patil", "count": 6, "badge": 1},
-    ],
-)
-
+# --- seeding -------------------------------------------------------------------
 
 async def seed() -> None:
-    """Seed conversations (with embedded threads) and the stats summary, if empty."""
-    convos = _conversations()
-    if await convos.count_documents({}) == 0:
-        docs = [ConversationModel.create_document(**c) for c in _SEED_CONVERSATIONS]
-        await convos.insert_many(docs)
-        bubble_count = sum(len(c["messages"]) for c in _SEED_CONVERSATIONS)
-        print(f"🌱 Seeded {len(docs)} conversations ({bubble_count} messages)")
-
-    stats = _stats()
-    if await stats.count_documents({}) == 0:
-        await stats.insert_one(MessageStatsModel.create_document(**_SEED_STATS))
-        print("🌱 Seeded 1 message_stats summary")
+    """
+    Nothing to seed. The inbox is the members' real threads; inventing
+    conversations here would put made-up women in front of staff. Kept as a
+    callable because `core/seed_all.py` imports it by name.
+    """
+    return None

@@ -1,142 +1,80 @@
+"""
+The staff side of a member's thread with the team.
+
+The messages themselves live in `member_messages` (see models/conversation.py):
+one row per message, `user_id` naming the member whose thread it is, `sender`
+saying which side wrote it. That collection is what the member app reads
+(`GET /me/messages`, the `/me/unread` badge), so the admin inbox reads and
+writes the same rows rather than keeping a copy that could drift.
+
+What that collection cannot hold is the *state of the thread* — who on the
+team is looking after it, and whether it is done. That is this document: one
+per member, keyed by `user_id`, created lazily the first time staff assign or
+resolve a thread. A member with messages and no row here has an open,
+unassigned thread, which is the honest default.
+"""
+
+from __future__ import annotations
+
 from datetime import datetime, timezone
-from typing import Optional
+from typing import Any, Optional
 
 
-class MessageModel:
-    """
-    A single chat bubble that lives inside a conversation's 'messages' array.
+def _now() -> datetime:
+    return datetime.now(timezone.utc)
 
-    Messages are NOT their own collection — they are embedded under
-    conversations.messages — so this class is just a small helper that keeps
-    every bubble shaped the same way (a text bubble OR a file bubble).
-    """
 
-    DIRECTIONS = ["in", "out"]
+class SupportThreadModel:
+    collection_name = "member_threads"
 
-    @staticmethod
-    def build(
-        dir: str = "out",
-        text: Optional[str] = None,
-        file: Optional[dict] = None,
-        time: str = "Now",
-    ) -> dict:
-        bubble: dict = {
-            "dir": dir if dir in MessageModel.DIRECTIONS else "out",
-            "time": time,
-        }
-        if file:
-            bubble["file"] = {
-                "name": str(file.get("name", "")),
-                "size": str(file.get("size", "")),
-            }
-        else:
-            bubble["text"] = (text or "").strip()
-        return bubble
+    STATUS_OPEN = "open"
+    STATUS_RESOLVED = "resolved"
 
     @staticmethod
-    def to_response(bubble: dict) -> dict:
-        out: dict = {"dir": bubble.get("dir", "out"), "time": bubble.get("time", "")}
-        if bubble.get("file"):
-            f = bubble["file"]
-            out["file"] = {"name": f.get("name", ""), "size": f.get("size", "")}
-            out["text"] = None
-        else:
-            out["text"] = bubble.get("text", "")
-            out["file"] = None
-        return out
-
-
-class ConversationModel:
-    """
-    The 'conversations' collection — one row per chat shown in the left pane,
-    with its full message thread embedded in the 'messages' array.
-    """
-
-    collection_name = "conversations"
-
-    @staticmethod
-    def create_document(
-        name: str,
-        preview: str = "",
-        time: str = "Now",
-        unread: int = 0,
-        starred: bool = False,
-        active: bool = False,
-        messages: Optional[list] = None,
-        created_at: Optional[datetime] = None,
-    ) -> dict:
-        now = datetime.now(timezone.utc)
-        bubbles = [MessageModel.build(**m) for m in (messages or [])]
+    def create_document(*, user_id: str) -> dict:
         return {
-            "name": name.strip(),
-            "preview": preview.strip(),
-            "time": time,
-            "unread": int(unread or 0),
-            "starred": bool(starred),
-            "active": bool(active),
-            "messages": bubbles,
-            "created_at": created_at or now,
-            "updated_at": now,
+            "user_id": user_id,
+            "status": SupportThreadModel.STATUS_OPEN,
+            # Staff account looking after this thread. Empty = nobody yet.
+            "assigned_to": "",
+            "assigned_name": "",
+            "assigned_at": None,
+            "assigned_by": "",
+            "resolved_at": None,
+            "resolved_by": "",
+            "resolved_by_name": "",
+            "created_at": _now(),
+            "updated_at": _now(),
         }
 
     @staticmethod
-    def to_response(doc: dict) -> dict:
-        bubbles = doc.get("messages", []) or []
-        return {
-            "id": str(doc["_id"]),
-            "name": doc.get("name", ""),
-            "preview": doc.get("preview", ""),
-            "time": doc.get("time", ""),
-            "unread": doc.get("unread", 0),
-            "starred": bool(doc.get("starred", False)),
-            "active": bool(doc.get("active", False)),
-            "has_attachment": any(bool(b.get("file")) for b in bubbles),
-            "messages": [MessageModel.to_response(b) for b in bubbles],
-        }
+    def effective_status(state: Optional[dict], last_member_at: Optional[datetime]) -> tuple[str, bool]:
+        """
+        (status, reopened_by_member)
 
-
-class MessageStatsModel:
-    """
-    The 'message_stats' collection — a single summary document that feeds the
-    5 stat cards, the Messages Overview donut, and the Top Contacts rail.
-    """
-
-    collection_name = "message_stats"
+        A thread marked resolved stays resolved only until the member writes
+        again. Her message after the resolution is a new question, and hiding
+        it under "resolved" is how a woman gets ignored. Derived rather than
+        written on her send, because her send goes through /me and this module
+        does not touch that path.
+        """
+        if not state or state.get("status") != SupportThreadModel.STATUS_RESOLVED:
+            return SupportThreadModel.STATUS_OPEN, False
+        resolved_at = state.get("resolved_at")
+        if (
+            isinstance(resolved_at, datetime)
+            and isinstance(last_member_at, datetime)
+            and _aware(last_member_at) > _aware(resolved_at)
+        ):
+            return SupportThreadModel.STATUS_OPEN, True
+        return SupportThreadModel.STATUS_RESOLVED, False
 
     @staticmethod
-    def create_document(
-        totalConversations: int = 0,
-        messagesSent: int = 0,
-        messagesReceived: int = 0,
-        avgResponseTime: str = "",
-        resolvedConversations: int = 0,
-        overviewTotal: int = 0,
-        overview: Optional[list] = None,
-        topContacts: Optional[list] = None,
-    ) -> dict:
-        now = datetime.now(timezone.utc)
-        return {
-            "totalConversations": int(totalConversations),
-            "messagesSent": int(messagesSent),
-            "messagesReceived": int(messagesReceived),
-            "avgResponseTime": avgResponseTime,
-            "resolvedConversations": int(resolvedConversations),
-            "overviewTotal": int(overviewTotal),
-            "overview": overview or [],
-            "topContacts": topContacts or [],
-            "created_at": now,
-            "updated_at": now,
-        }
+    def assignee(state: Optional[dict]) -> Optional[dict[str, Any]]:
+        if not state or not state.get("assigned_to"):
+            return None
+        return {"id": state["assigned_to"], "name": state.get("assigned_name", "")}
 
-    @staticmethod
-    def to_response(doc: dict) -> dict:
-        return {
-            "totalConversations": doc.get("totalConversations", 0),
-            "messagesSent": doc.get("messagesSent", 0),
-            "messagesReceived": doc.get("messagesReceived", 0),
-            "avgResponseTime": doc.get("avgResponseTime", ""),
-            "resolvedConversations": doc.get("resolvedConversations", 0),
-            "overviewTotal": doc.get("overviewTotal", 0),
-            "overview": doc.get("overview", []),
-            "topContacts": doc.get("topContacts", []),
-        }
+
+def _aware(dt: datetime) -> datetime:
+    return dt if dt.tzinfo else dt.replace(tzinfo=timezone.utc)
