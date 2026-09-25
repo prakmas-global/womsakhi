@@ -1,116 +1,76 @@
-from typing import Literal, Optional
+from typing import Any, Optional
 
-from pydantic import BaseModel, field_validator
-
-ReportCategory = Literal[
-    "User Activity", "Appointments", "Program & Services", "Financial", "Marketing", "Others"
-]
-ReportType = Literal["Summary", "Detailed", "Custom"]
-ReportSchedule = Literal["Daily", "Weekly", "Monthly", "On Demand"]
+from pydantic import BaseModel
 
 
-class ReportResponse(BaseModel):
-    id: str
+class ReportRunSummary(BaseModel):
+    at: str            # ISO timestamp of the generation
+    by: str            # staff name
+    rows: int
+    range_label: str
+
+
+class ReportDefinitionResponse(BaseModel):
+    key: str
     name: str
     description: str
     category: str
     tone: str
     icon: str
-    type: str
-    schedule: str
-    schedule_detail: str
-    last_generated: str
-    created_by: str
-    scheduled: bool
-    created_at: str
+    columns: list[str]
+    dated: bool                       # whether a date range narrows it
+    privacy_note: str = ""
+    last_run: Optional[ReportRunSummary] = None
+    runs: int = 0                     # how many times it has been generated
 
 
 class ReportListResponse(BaseModel):
-    items: list[ReportResponse]
+    items: list[ReportDefinitionResponse]
     total: int
-    page: int
-    page_size: int
-    pages: int
 
 
-class ReportCreate(BaseModel):
-    name: str
-    # The create modal may leave these blank; blanks fall back to the defaults
-    # below on the server (cat -> Others, type -> Summary, sched -> On Demand).
-    category: Optional[ReportCategory] = None
-    type: Optional[ReportType] = None
-    schedule: Optional[ReportSchedule] = None
-    description: str = ""
-
-    @field_validator("category", "type", "schedule", mode="before")
-    @classmethod
-    def blank_to_none(cls, v):
-        return None if v in ("", None) else v
-
-    @field_validator("name")
-    @classmethod
-    def name_not_empty(cls, v: str) -> str:
-        v = v.strip()
-        if not v:
-            raise ValueError("Report name cannot be empty")
-        return v
-
-
-class ReportUpdate(BaseModel):
-    name: Optional[str] = None
-    description: Optional[str] = None
-    category: Optional[ReportCategory] = None
-    type: Optional[ReportType] = None
-    schedule: Optional[ReportSchedule] = None
-
-    @field_validator("category", "type", "schedule", mode="before")
-    @classmethod
-    def blank_to_none(cls, v):
-        return None if v in ("", None) else v
-
-
-# --- Reports Overview (stats singleton) --------------------------------------
-class GeneratedPoint(BaseModel):
-    label: str
-    value: int
+class ReportRunResponse(BaseModel):
+    id: str
+    report_key: str
+    report_name: str
+    category: str
+    by: str
+    at: str
+    rows: int
+    range_label: str
+    duration_ms: int
 
 
 class CategorySlice(BaseModel):
     name: str
-    value: int
+    value: int        # share of all generations, %
+    runs: int
     color: str
 
 
-class ReportsOverviewResponse(BaseModel):
-    total_reports: int
-    scheduled_reports: int
-    reports_generated: int
-    reports_generated_delta: float
-    avg_generation_time: str
-    data_points_analyzed: str
-    data_points_delta: float
-    generated_trend: list[GeneratedPoint]
-    data_points_trend: list[float]
+class MostUsed(BaseModel):
+    key: str
+    name: str
+    runs: int
+
+
+class ReportsStatsResponse(BaseModel):
+    available: int
+    generated_this_month: int
+    generated_last_month: int
+    generated_delta: Optional[str] = None   # None when last month had nothing to compare
+    generated_up: bool = True
+    rows_this_month: int
+    last_generated_at: Optional[str] = None
+    last_generated_by: str = ""
     top_categories: list[CategorySlice]
+    most_used: list[MostUsed]
 
 
-# --- Side panels / modals -----------------------------------------------------
-class RecentReportResponse(BaseModel):
+class ReportPreviewResponse(BaseModel):
+    key: str
     name: str
-    last_generated: str
-    icon: str
-
-
-class ScheduledReportResponse(BaseModel):
-    name: str
-    schedule_detail: str
-    status: str
-
-
-class TemplateResponse(BaseModel):
-    category: str
-    name: str
-    description: str
-    tone: str
-    icon: str
-    status: str
+    columns: list[str]
+    total: int
+    range_label: str
+    rows: list[list[Any]]   # first few rows, as printable cells
