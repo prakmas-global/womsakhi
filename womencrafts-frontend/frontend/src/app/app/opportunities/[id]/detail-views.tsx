@@ -99,14 +99,15 @@ export function MatchCard({ fit, job }: { fit: Match; job: Job }) {
  * would read as "apply whenever", which is worse than not asking.
  */
 export function KeyDetails({ job }: { job: Job }) {
+  const tr = useT();
   const tiles = [
-    { label: "Kind of work", value: job.kind,          icon: "Briefcase",    tint: "--ux-tint-violet", ink: "--ux-violet-ink" },
+    { label: tr("detailviews.kindOfWork"), value: job.kind,          icon: "Briefcase",    tint: "--ux-tint-violet", ink: "--ux-violet-ink" },
     { label: "Where",        value: job.place,         icon: "MapPin",       tint: "--ux-tint-pink",   ink: "--ux-pink-ink" },
     { label: "How",          value: job.mode,          icon: "Laptop",       tint: "--ux-tint-blue",   ink: "--ux-blue-ink" },
     { label: "Pay",          value: payLabel(job),     icon: "IndianRupee",  tint: "--ux-tint-green",  ink: "--ux-green-ink" },
     { label: "Posted",       value: job.posted,        icon: "Clock",        tint: "--ux-tint-amber",  ink: "--ux-amber-ink" },
     ...(job.applicants
-      ? [{ label: "Women applied", value: `${job.applicants}`, icon: "Users", tint: "--ux-surface-2", ink: "--ux-muted" }]
+      ? [{ label: tr("detailviews.womenApplied"), value: `${job.applicants}`, icon: "Users", tint: "--ux-surface-2", ink: "--ux-muted" }]
       : []),
   ];
   return (
@@ -160,9 +161,9 @@ export function WhoCanApply({ job }: { job: Job }) {
   const tr = useT();
   const rows = [
     { icon: "UsersRound", tint: "--ux-tint-pink",   ink: "--ux-pink-ink",
-      text: "Women from every background are encouraged to apply" },
+      text: tr("detailviews.womenFromEveryBackgroundAreEncouraged") },
     { icon: "Undo2",      tint: "--ux-tint-blue",   ink: "--ux-blue-ink",
-      text: "Open to women coming back after a break" },
+      text: tr("detailviews.openToWomenComingBackAfter") },
     ...(job.mode !== "On-site"
       ? [{ icon: "Home", tint: "--ux-tint-green", ink: "--ux-green-ink",
            text: `Can be done ${job.mode === "Remote" ? tr("jobviews.fromHome")

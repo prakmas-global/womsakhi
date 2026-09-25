@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 
+import { useT } from "@/i18n";
 import * as Icons from "@/components/ux/icons";
 import { Btn, Card, I, IconTile, Progress, Skeleton, v } from "@/components/ux/kit";
 import { GroupHead, MediaRow, RowGroup } from "@/components/ux/learning/native";
@@ -16,6 +17,7 @@ import { stepPct, stepState, type JourneyStep, type StepState } from "@/services
 const SIGNS = ["Learn", "Practice", "Get opportunities", "Earn", "Grow"];
 
 export function JourneyHero() {
+  const tr = useT();
   return (
     <>
     {/*
@@ -25,7 +27,7 @@ export function JourneyHero() {
       fold. Every word of it is still here.
     */}
     <header className="mb-6 lg:hidden">
-      <h1 className="ux-screen-title" style={{ color: v("--ux-ink") }}>My journey</h1>
+      <h1 className="ux-screen-title" style={{ color: v("--ux-ink") }}>{tr("ch.journey.label")}</h1>
       <p className="mt-2 text-[15px] leading-snug" style={{ color: v("--ux-muted") }}>
         Small steps. Big possibilities. A guided journey to help you learn, build skills, find
         opportunities and create the life you deserve.
@@ -40,11 +42,11 @@ export function JourneyHero() {
       <div className="flex items-stretch">
         <div className="min-w-0 flex-1 p-6 sm:p-7">
           <p className="text-2xs font-extrabold uppercase tracking-[0.16em]" style={{ color: v("--ux-muted") }}>
-            My journey
+            {tr("ch.journey.label")}
           </p>
           <h1 className="mt-2.5 text-4xl font-extrabold leading-[1.06] tracking-[-0.035em] xl:text-4xlm"
               style={{ color: v("--ux-ink") }}>
-            Small steps.<br />Big possibilities.
+            {tr("discover.smallSteps")}<br />{tr("discover.bigPossibilities")}
           </h1>
           <p className="mt-3 max-w-[420px] text-smd leading-relaxed" style={{ color: v("--ux-ink-2") }}>
             A guided journey to help you learn, build skills, find opportunities and create the
@@ -100,7 +102,7 @@ export function JourneyHero() {
 
           <p className="pointer-events-none absolute end-6 top-5 hidden text-end text-smd font-bold italic leading-tight wide:block"
              style={{ color: v("--ux-pink-ink"), fontFamily: "var(--font-display)" }}>
-            A brighter you <Icons.Heart className="inline h-[13px] w-[13px]" />
+            {tr("journeyviews.aBrighterYou")} <Icons.Heart className="inline h-[13px] w-[13px]" />
           </p>
         </div>
       </div>
@@ -116,11 +118,12 @@ export function JourneyHero() {
 export function JourneyStats({ total, done, doing, todo, cheer }: {
   total: number; done: number; doing: number; todo: number; cheer: string;
 }) {
+  const tr = useT();
   const cells = [
-    { n: total, label: "Journey steps", icon: "ListChecks", tint: "--ux-tint-violet", ink: "--ux-violet-ink" },
+    { n: total, label: tr("journeyviews.journeySteps"), icon: "ListChecks", tint: "--ux-tint-violet", ink: "--ux-violet-ink" },
     { n: done,  label: "Completed",     icon: "CheckCircle2", tint: "--ux-tint-green", ink: "--ux-green-ink" },
-    { n: doing, label: "In progress",   icon: "Loader",     tint: "--ux-tint-amber",  ink: "--ux-amber-ink" },
-    { n: todo,  label: "Not started",   icon: "Circle",     tint: "--ux-brand-tint-2", ink: "--ux-brand" },
+    { n: doing, label: tr("programs.inProgress"),   icon: "Loader",     tint: "--ux-tint-amber",  ink: "--ux-amber-ink" },
+    { n: todo,  label: tr("library.notStarted"),   icon: "Circle",     tint: "--ux-brand-tint-2", ink: "--ux-brand" },
   ];
   const rowTint: RowTint[] = ["violet", "green", "amber", "pink"];
   return (
@@ -165,6 +168,7 @@ const WORD: Record<StepState, string> = {
 export function Stepper({ steps, at, onPick }: {
   steps: JourneyStep[]; at: string; onPick: (id: string) => void;
 }) {
+  const tr = useT();
   return (
     <>
     {/*
@@ -173,7 +177,7 @@ export function Stepper({ steps, at, onPick }: {
       so "where am I?" needed a sideways scroll to answer. As rows, all seven
       are there at once; the one on show carries the tick.
     */}
-    <ListGroup className="mb-6 lg:hidden" title="Journey steps">
+    <ListGroup className="mb-6 lg:hidden" title={tr("journeyviews.journeySteps")}>
       {steps.map((s) => {
         const st = stepState(s);
         return (
@@ -245,6 +249,7 @@ export function StepCard({ step, total, onCheck, onLater }: {
   step: JourneyStep; total: number;
   onCheck: (label: string) => void; onLater: () => void;
 }) {
+  const tr = useT();
   const pct = stepPct(step);
   return (
     <Card className="mb-6 lg:mb-5" pad={22}>
@@ -294,7 +299,7 @@ export function StepCard({ step, total, onCheck, onLater }: {
           {/* The step's action full width on a phone, where a thumb reaches. */}
           <div className="mt-6 flex flex-col items-stretch gap-2 lg:mt-5 lg:flex-row lg:flex-wrap lg:items-center lg:gap-2.5">
             <Btn href={step.href} iconEnd="ArrowRight" className="ux-action-primary">{step.cta}</Btn>
-            <Btn variant="ghost" icon="Bookmark" onClick={onLater}>Save for later</Btn>
+            <Btn variant="ghost" icon="Bookmark" onClick={onLater}>{tr("journeyviews.saveForLater")}</Btn>
           </div>
         </div>
 
@@ -342,11 +347,12 @@ export interface Rec {
 }
 
 export function Recommended({ rows }: { rows: Rec[] }) {
+  const tr = useT();
   return (
     <section className="mb-6 lg:mb-5">
       {/* A grouped list on a phone — each of these is a place to go. */}
       <div className="lg:hidden">
-        <GroupHead title="Recommended for you" action="View all" href="/app/programs" />
+        <GroupHead title={tr("wellness.recommendedForYou")} action={tr("calendar.viewAll")} href="/app/programs" />
         <RowGroup>
           {rows.map((r) => (
             <MediaRow key={r.id} href={r.href}
@@ -357,11 +363,11 @@ export function Recommended({ rows }: { rows: Rec[] }) {
       </div>
       <div className="mb-3.5 hidden items-center justify-between gap-3 lg:flex">
         <h2 className="text-lg font-extrabold tracking-[-0.01em]" style={{ color: v("--ux-ink") }}>
-          Recommended for you
+          {tr("wellness.recommendedForYou")}
         </h2>
         <Link href="/app/programs" className="ux-sq -me-2 flex min-h-[36px] items-center gap-0.5 rounded-[10px] px-2 text-xs font-bold"
               style={{ color: v("--ux-brand") }}>
-          View all <Icons.ArrowRight className="h-[13px] w-[13px]" />
+          {tr("calendar.viewAll")} <Icons.ArrowRight className="h-[13px] w-[13px]" />
         </Link>
       </div>
       <div className="hidden gap-3.5 lg:grid" style={{ gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))" }}>
@@ -401,10 +407,11 @@ export function Recommended({ rows }: { rows: Rec[] }) {
 export function Motivation({ text, name, onEdit }: {
   text: string | null; name: string; onEdit: () => void;
 }) {
+  const tr = useT();
   return (
     <Card>
       <div className="mb-2.5 flex items-center justify-between gap-3">
-        <h2 className="text-base font-extrabold" style={{ color: v("--ux-ink") }}>My motivation</h2>
+        <h2 className="text-base font-extrabold" style={{ color: v("--ux-ink") }}>{tr("journeyviews.myMotivation")}</h2>
         <button type="button" onClick={onEdit}
                 className="ux-sq -me-2 flex min-h-[36px] items-center rounded-[10px] px-2 text-xs font-bold"
                 style={{ color: v("--ux-brand") }}>
@@ -441,13 +448,14 @@ export interface RailGoal {
 }
 
 export function GoalsRail({ rows, loading = false }: { rows: RailGoal[]; loading?: boolean }) {
+  const tr = useT();
   return (
     <Card>
       <div className="mb-3 flex items-center justify-between gap-3">
-        <h2 className="text-base font-extrabold" style={{ color: v("--ux-ink") }}>My goals</h2>
+        <h2 className="text-base font-extrabold" style={{ color: v("--ux-ink") }}>{tr("ch.goals.label")}</h2>
         <Link href="/app/goals" className="ux-sq -me-2 flex min-h-[36px] items-center gap-0.5 rounded-[10px] px-2 text-xs font-bold"
               style={{ color: v("--ux-brand") }}>
-          View all <Icons.ArrowRight className="h-[12px] w-[12px]" />
+          {tr("calendar.viewAll")} <Icons.ArrowRight className="h-[12px] w-[12px]" />
         </Link>
       </div>
       {loading && rows.length === 0 && (
@@ -489,13 +497,14 @@ export interface Badge {
 }
 
 export function Achievements({ rows }: { rows: Badge[] }) {
+  const tr = useT();
   return (
     <Card>
       <div className="mb-3 flex items-center justify-between gap-3">
-        <h2 className="text-base font-extrabold" style={{ color: v("--ux-ink") }}>My achievements</h2>
+        <h2 className="text-base font-extrabold" style={{ color: v("--ux-ink") }}>{tr("journeyviews.myAchievements")}</h2>
         <Link href="/app/certificates" className="ux-sq -me-2 flex min-h-[36px] items-center gap-0.5 rounded-[10px] px-2 text-xs font-bold"
               style={{ color: v("--ux-brand") }}>
-          View all <Icons.ArrowRight className="h-[12px] w-[12px]" />
+          {tr("calendar.viewAll")} <Icons.ArrowRight className="h-[12px] w-[12px]" />
         </Link>
       </div>
       <div className="grid grid-cols-4 gap-2">
@@ -523,20 +532,21 @@ export function Achievements({ rows }: { rows: Badge[] }) {
 /* ------------------------------------------------------------------ */
 
 export function NeedGuidance() {
+  const tr = useT();
   return (
     <section className="rounded-[16px] p-[18px]"
              style={{ background: "linear-gradient(150deg, var(--ux-tint-pink), var(--ux-tint-lilac))" }}>
       <div className="flex items-start gap-3">
         <IconTile icon="MessageCircle" tint="--ux-surface" ink="--ux-brand" size={38} radius={11} />
         <div className="min-w-0">
-          <p className="text-xsm font-extrabold" style={{ color: v("--ux-ink") }}>Need guidance?</p>
+          <p className="text-xsm font-extrabold" style={{ color: v("--ux-ink") }}>{tr("journeyviews.needGuidance")}</p>
           <p className="mt-1 text-xs leading-relaxed" style={{ color: v("--ux-ink-2") }}>
-            Ask Sakhi what to do next on your journey. She has read every screen you have.
+            {tr("journeyviews.askSakhiWhatToDoNext")}
           </p>
         </div>
       </div>
       <div className="mt-3.5">
-        <Btn href="/app/sakhi" size="sm" full variant="outline" iconEnd="ArrowRight">Chat with Sakhi</Btn>
+        <Btn href="/app/sakhi" size="sm" full variant="outline" iconEnd="ArrowRight">{tr("journeyviews.chatWithSakhi")}</Btn>
       </div>
     </section>
   );

@@ -1,4 +1,4 @@
-import { apiClient } from "./api";
+import { apiClient, expected } from "./api";
 
 import type { Layout, LayoutFeatures } from "@/layout-engine";
 import type { UnreadCounts } from "./member-api";
@@ -15,7 +15,14 @@ import type { UnreadCounts } from "./member-api";
  * "signed out" has to read the status instead.
  */
 export interface MeShellProgress {
+  /** The furthest-along PROGRAMME, not her profile. See `MeShell.profile_pct`. */
   completion_rate?: number;
+  programs_active?: number;
+  programs_completed?: number;
+  learning_hours?: number;
+  sessions_attended?: number;
+  sessions_upcoming?: number;
+  member_since?: string;
   [key: string]: unknown;
 }
 
@@ -25,10 +32,20 @@ export interface MeShell {
   features: LayoutFeatures;
   progress: MeShellProgress;
   unread: UnreadCounts;
+  /**
+   * How much of her PROFILE is filled in, 0–100.
+   *
+   * Not `progress.completion_rate` — that is the furthest-along *programme*,
+   * and reading it here is what made every screen say "Complete Your Profile ·
+   * 100% completed" for a woman whose profile was 20% filled.
+   */
+  profile_pct?: number;
 }
 
 export const apiMeShell = (signal?: AbortSignal) =>
-  apiClient.get<MeShell>("/me/shell", { signal }).then((r) => r.data);
+  // `expected`: this endpoint refuses a woman who is still in verification,
+  // and that refusal is not something to put a red bar on her screen about.
+  apiClient.get<MeShell>("/me/shell", expected({ signal })).then((r) => r.data);
 
 
 /**

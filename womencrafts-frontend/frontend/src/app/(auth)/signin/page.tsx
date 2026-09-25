@@ -1,12 +1,14 @@
 "use client";
 
 import { useEffect, useState, type FormEvent } from "react";
+import { useT } from "@/i18n";
 import Link from "next/link";
 import { ArrowRight, Eye, EyeOff, Loader2, Lock, Mail } from "lucide-react";
 
 import { useAuth, getAuthError } from "@/context/AuthContext";
 import { fetchAuthProviders } from "@/lib/public-api";
 import { apiBase } from "@/lib/api-base";
+import { BrandLockup } from "@/components/brand/BrandLockup";
 
 /**
  * Google and Apple marks. lucide dropped third-party brand icons, and these
@@ -42,6 +44,7 @@ const AppleMark = () => (
  * leaves. The row goes back the day a provider is wired up.
  */
 export default function SignInPage() {
+  const tr = useT();
   const { signIn } = useAuth();
 
   const [email, setEmail] = useState("");
@@ -79,20 +82,17 @@ export default function SignInPage() {
     <div>
       {/* ── Brand ── */}
       <div className="auth-brand">
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img
-          src="/womsakhi-lockup.png"
-          alt="WomSakhi - Stronger Women. Brighter Tomorrows."
+        <BrandLockup
+          alt={tr("waitScreen.womsakhiStrongerWomenBrighterTomorrows")}
           className="auth-main-lockup object-contain"
-          decoding="async"
         />
       </div>
 
       <h1 className="font-bold leading-tight tracking-tight" style={{ color: "var(--a-ink)", fontSize: "clamp(1.35rem, 3.4vh, 2.1rem)", marginTop: "clamp(0.875rem,3.4vh,2rem)" }}>
-        Welcome <span className="auth-shine">back</span>
+        {tr("page.welcome1")} <span className="auth-shine">{tr("page.welcome2")}</span>
       </h1>
       <p className="auth-sub text-xsm" style={{ color: "var(--a-muted)", marginTop: "clamp(0.25rem,0.8vh,0.375rem)" }}>
-        Sign in to pick up where you left off.
+        {tr("page.signInToPickUpWhere")}
       </p>
 
       {error && (
@@ -119,7 +119,7 @@ export default function SignInPage() {
             <input
               id="si-email" type="email" required autoComplete="email" autoFocus
               value={email} onChange={(e) => setEmail(e.target.value)}
-              placeholder="you@example.com" className={field} style={fieldPad}
+              placeholder={tr("page.youExampleCom")} className={field} style={fieldPad}
             />
           </div>
         </div>
@@ -133,7 +133,7 @@ export default function SignInPage() {
             <input
               id="si-password" type={showPassword ? "text" : "password"} required autoComplete="current-password"
               value={password} onChange={(e) => setPassword(e.target.value)}
-              placeholder="Your password" className={`${field} pe-12`} style={fieldPad}
+              placeholder={tr("page.yourPassword")} className={`${field} pe-12`} style={fieldPad}
             />
             {/* Offered, not buried. A woman typing on a borrowed phone keyboard
                 needs to be able to see what she typed. */}
@@ -158,10 +158,10 @@ export default function SignInPage() {
               className="h-[18px] w-[18px] rounded-[8px]"
               style={{ accentColor: "var(--a-magenta)" }}
             />
-            <span className="text-xsm" style={{ color: "var(--a-ink-2)" }}>Keep me signed in</span>
+            <span className="text-xsm" style={{ color: "var(--a-ink-2)" }}>{tr("page.keepMeSignedIn")}</span>
           </label>
           <Link href="/forgot-password" className="auth-link -my-2 flex min-h-[44px] items-center text-xsm font-medium">
-            Forgot password?
+            {tr("page.forgotPassword")}
           </Link>
         </div>
 
@@ -201,7 +201,7 @@ export default function SignInPage() {
                 style={{ background: "var(--a-well-2)", border: "1px solid var(--a-edge)", color: "var(--a-ink)" }}
               >
                 <GoogleMark />
-                Continue with Google
+                {tr("page.continueWithGoogle")}
               </a>
             )}
             {providers.includes("apple") && (
@@ -211,7 +211,7 @@ export default function SignInPage() {
                 style={{ background: "var(--a-well-2)", border: "1px solid var(--a-edge)", color: "var(--a-ink)" }}
               >
                 <AppleMark />
-                Continue with Apple
+                {tr("page.continueWithApple")}
               </a>
             )}
           </div>
@@ -221,7 +221,7 @@ export default function SignInPage() {
       <p className="text-center text-xsm" style={{ color: "var(--a-muted)", marginTop: "clamp(0.625rem,1.9vh,1.5rem)" }}>
         New to WomSakhi?{" "}
         <Link href="/signup" className="auth-link inline-flex items-center gap-1 font-semibold">
-          Create your account
+          {tr("page.createYourAccount")}
           <ArrowRight className="h-3.5 w-3.5" aria-hidden />
         </Link>
       </p>

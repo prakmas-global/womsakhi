@@ -6,8 +6,9 @@ import { HomeShell } from "@/components/ux/home/HomeShell";
 import { SectionLabel, Tag } from "@/components/ux/work/native";
 import { Back, Card, I, plural, v } from "@/components/ux/kit";
 import { formatRupees } from "@/components/ux/kit";
-import { VEHICLES, type Vehicle } from "@/components/ux/reach/data";
+import { VEHICLES as RAW_VEHICLES, type Vehicle } from "@/components/ux/reach/data";
 import { useT } from "@/i18n";
+import { useTranslated } from "@/i18n/data";
 
 /**
  * Something that can sign — the counterparty consortium bidding assumed.
@@ -45,10 +46,11 @@ import { useT } from "@/i18n";
  * `/app/contracts` reached, for the same reason.
  */
 export default function TogetherPage() {
+  const VEHICLES = useTranslated(RAW_VEHICLES);
   const tr = useT();
   const [pick, setPick] = useState<string>("v2");
 
-  const chosen = useMemo(() => VEHICLES.find((x) => x.id === pick) ?? VEHICLES[0], [pick]);
+  const chosen = useMemo(() => VEHICLES.find((x) => x.id === pick) ?? VEHICLES[0], [pick, VEHICLES]);
 
   return (
     <HomeShell active="/app/contracts">
@@ -118,7 +120,7 @@ export default function TogetherPage() {
         {pick === "v3" && (
           <div>
             <SectionLabel title={tr("contractsTogether.whatRegisteringActuallyInvolves")}
-                          sub="In this order, and not in a different one" icon="ListChecks" />
+                          sub={tr("contractsTogether.inThisOrderAndNotIn")} icon="ListChecks" />
             <Card pad={0} style={{ overflow: "hidden" }}>
               {STEPS.map((s, i) => (
                 <div key={s.what} className="flex items-start gap-3 px-4 py-4 lg:gap-3.5 lg:px-5"

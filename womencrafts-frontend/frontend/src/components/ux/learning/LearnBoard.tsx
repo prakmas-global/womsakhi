@@ -1,6 +1,7 @@
 "use client";
 
 import { HomeShell } from "@/components/ux/home/HomeShell";
+import { useT } from "@/i18n";
 import { TransitionLink } from "@/components/ux/TransitionLink";
 import { ListGroup, ListRow, type RowTint } from "@/components/ux/mobile/ListRow";
 import { Card, I, IconTile, v } from "@/components/ux/kit";
@@ -166,6 +167,7 @@ export function LearnBoard() {
  * scrim is what makes it a measurable 9:1 instead of a hope.
  */
 function Hero() {
+  const tr = useT();
   const next = JOURNEY[DONE];
 
   return (
@@ -194,12 +196,12 @@ function Hero() {
           <span className="inline-flex w-fit items-center gap-2 rounded-full px-3 py-1.5 text-xs font-extrabold uppercase tracking-[0.15em]"
                 style={{ background: "rgba(255,255,255,0.16)", color: "#fff" }}>
             <I name="BookOpen" className="h-[13px] w-[13px]" sw={2.2} />
-            Lesson 5 of 10 · continue
+            {tr("learnBoard.lesson5Of10Continue")}
           </span>
 
           <h1 className="mt-3 max-w-[24ch] font-extrabold leading-[1.12] tracking-[-0.03em] text-white"
               style={{ fontSize: "var(--fb-h1)" }}>
-            Entrepreneurship Bootcamp
+            {tr("learnBoard.entrepreneurshipBootcamp")}
           </h1>
           <p className="mt-2 max-w-[44ch] text-smd" style={{ color: "rgba(255,255,255,0.82)" }}>
             Next up: pricing what you make. Then {next.toLowerCase()}.
@@ -278,12 +280,13 @@ function PlaceCard({ p }: { p: Place }) {
 /* ── her progress through the six ─────────────────────────────────────────── */
 
 function Journey() {
+  const tr = useT();
   const pct = Math.round(((DONE + 1) / JOURNEY.length) * 100);
 
   return (
     <Card pad={0} className="flex w-full shrink-0 flex-col xl:w-[276px]"
           style={{ padding: "var(--fb-pad)" }}>
-      <h2 className="text-[15px] font-bold" style={{ color: v("--ux-ink") }}>Your learning journey</h2>
+      <h2 className="text-[15px] font-bold" style={{ color: v("--ux-ink") }}>{tr("learnBoard.yourLearningJourney")}</h2>
 
       <div className="mt-3 flex items-center gap-3.5">
         <Donut pct={pct} />
@@ -378,6 +381,7 @@ function Donut({ pct }: { pct: number }) {
 }
 
 function Phone() {
+  const tr = useT();
   const pct = Math.round(((DONE + 1) / JOURNEY.length) * 100);
 
   return (
@@ -393,7 +397,7 @@ function Phone() {
                style={{ border: `1px solid ${v("--ux-band-edge")}` }}>
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img src="/ux/art/lm-banner-v2.webp"
-             alt="A woman smiling at her laptop, beside the words “Small steps, big changes”."
+             alt={tr("learnBoard.aWomanSmilingAtHerLaptop")}
              decoding="async" fetchPriority="high" width={1900} height={648}
              className="block h-[132px] w-full object-cover"
              style={{ objectPosition: "34% 44%" }} />
@@ -401,7 +405,7 @@ function Phone() {
 
       <h1 className="ux-screen-title mt-4" style={{ color: v("--ux-ink") }}>Learn</h1>
       <p className="mt-2 text-[15px] leading-snug" style={{ color: v("--ux-muted") }}>
-        Learn. Grow. Achieve — at your own pace, in your own time.
+        {tr("learnBoard.learnGrowAchieveAtYourOwn")}
       </p>
 
       {/*
@@ -424,7 +428,7 @@ function Phone() {
       </div>
 
       <div className="mt-6 space-y-6">
-        <ListGroup title="Where to go">
+        <ListGroup title={tr("haq.whereToGo")}>
           {PLACES.map((p) => (
             <ListRow key={p.id} href={p.href} icon={p.icon} tint={p.row}
                      title={p.title} subtitle={p.what} />
@@ -432,7 +436,7 @@ function Phone() {
         </ListGroup>
 
         <section>
-          <h3 className="ux-group-label">Your learning journey</h3>
+          <h3 className="ux-group-label">{tr("learnBoard.yourLearningJourney")}</h3>
           <div className="rounded-[var(--ux-r-lg)] border p-4"
                style={{ background: v("--ux-surface"), borderColor: v("--ux-line") }}>
             <div className="flex items-center gap-4">
@@ -477,8 +481,8 @@ function Phone() {
         </section>
 
         {/* The sequence, as four rows rather than four cards in a strip. */}
-        <ListGroup title="How it works"
-                   footnote="Each step brings you closer to new opportunities and a stronger, more confident you.">
+        <ListGroup title={tr("groupbuy.howItWorks")}
+                   footnote={tr("learnBoard.eachStepBringsYouCloserTo")}>
           {HOW.map((s, i) => (
             <ListRow key={s.title} icon={s.icon} tint={s.pink ? "pink" : "violet"}
                      title={`${i + 1}. ${s.title}`} subtitle={s.body} chevron={false} />

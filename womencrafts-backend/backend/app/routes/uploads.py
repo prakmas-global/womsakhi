@@ -19,6 +19,7 @@ from fastapi import APIRouter, Depends, File, Form, HTTPException, Query, Upload
 from app.core import mongosafe
 from app.core.config import settings
 from app.core.deps import get_current_user
+from app.core.rbac import SUPER_ADMIN
 from app.core.serializers import page_meta, to_object_id
 from app.db.mongodb import get_database
 from app.models.upload import UploadModel
@@ -44,6 +45,11 @@ CHUNK = 1024 * 1024
 
 def _uploads():
     return get_database()[UploadModel.collection_name]
+
+
+def _ownership_scope(user: dict) -> dict:
+    # Missing roles must not inherit the legacy administrative default here.
+    return {} if user.get("role") == SUPER_ADMIN else {"uploaded_by": str(user["_id"])}
 
 
 def _safe_stem(name: str) -> str:
@@ -124,9 +130,9 @@ async def list_uploads(
     q: Optional[str] = Query(None, description="Search the original file name"),
     page: int = Query(1, ge=1),
     page_size: int = Query(50, ge=1, le=200),
-    _: dict = Depends(get_current_user),
+    current_user: dict = Depends(get_current_user),
 ):
-    query: dict = {}
+    query: dict = _ownership_scope(current_user)
     if kind and kind in UploadModel.KINDS:
         query["kind"] = kind
     if q and q.strip():
@@ -141,11 +147,11 @@ async def list_uploads(
 
 
 @router.get("/stats", response_model=UploadStatsResponse, summary="Media library totals")
-async def upload_stats(_: dict = Depends(get_current_user)):
+async def upload_stats(current_user: dict = Depends(get_current_user)):
     total = 0
     total_bytes = 0
     by_kind = {k: 0 for k in UploadModel.KINDS}
-    async for doc in _uploads().find({}, {"size": 1, "kind": 1}):
+    async for doc in _uploads().find(_ownership_scope(current_user), {"size": 1, "kind": 1}):
         total += 1
         total_bytes += doc.get("size", 0)
         by_kind[doc.get("kind", "attachment")] = by_kind.get(doc.get("kind", "attachment"), 0) + 1
@@ -158,8 +164,9 @@ async def upload_stats(_: dict = Depends(get_current_user)):
 
 
 @router.delete("/{upload_id}", response_model=DeleteResponse, summary="Delete an uploaded file")
-async def delete_upload(upload_id: str, _: dict = Depends(get_current_user)):
-    doc = await _uploads().find_one({"_id": to_object_id(upload_id)})
+async def delete_upload(upload_id: str, current_user: dict = Depends(get_current_user)):
+    query = {"_id": to_object_id(upload_id), **_ownership_scope(current_user)}
+    doc = await _uploads().find_one(query)
     if not doc:
         raise HTTPException(status.HTTP_404_NOT_FOUND, "File not found")
 
@@ -169,5 +176,5 @@ async def delete_upload(upload_id: str, _: dict = Depends(get_current_user)):
     if stored and target.is_file() and MEDIA_ROOT.resolve() in target.parents:
         target.unlink(missing_ok=True)
 
-    await _uploads().delete_one({"_id": doc["_id"]})
+    await _uploads().delete_one(query)
     return DeleteResponse(message="File deleted")

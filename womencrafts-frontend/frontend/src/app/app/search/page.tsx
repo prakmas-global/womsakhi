@@ -10,11 +10,12 @@ import {
   SourceNote, plural
 } from "@/components/ux/kit";
 import { HomeShell } from "@/components/ux/home/HomeShell";
-import { SEARCH_KINDS, SEARCH_SUGGESTED, type SearchHit } from "@/components/ux/home/data";
+import { SEARCH_KINDS as RAW_SEARCH_KINDS, SEARCH_SUGGESTED as RAW_SEARCH_SUGGESTED, type SearchHit } from "@/components/ux/home/data";
 import { useSearch } from "@/components/ux/growth";
 import { useT } from "@/i18n";
 import { ListGroup, ListRow } from "@/components/ux/mobile/ListRow";
 import { PhoneRow } from "@/components/ux/PhoneParts";
+import { useTranslated } from "@/i18n/data";
 
 /**
  * Search results.
@@ -33,6 +34,8 @@ export default function SearchPage() {
 }
 
 function Results() {
+  const SEARCH_SUGGESTED = useTranslated(RAW_SEARCH_SUGGESTED);
+  const SEARCH_KINDS = useTranslated(RAW_SEARCH_KINDS);
   const tr = useT();
   const params = useSearchParams();
   const router = useRouter();

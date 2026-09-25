@@ -12,11 +12,12 @@ import {
 } from "@/components/ux/kit";
 import { HomeShell } from "@/components/ux/home/HomeShell";
 import { useGuidance, useHealthChecks, useHelplines } from "@/components/ux/entitlements";
-import { WELLBEING_ART } from "@/components/ux/wellbeing/data";
+import { WELLBEING_ART as RAW_WELLBEING_ART } from "@/components/ux/wellbeing/data";
 import { useT } from "@/i18n";
 import { ListGroup } from "@/components/ux/mobile/ListRow";
 import { SegmentedControl } from "@/components/ux/mobile/SegmentedControl";
 import { PhoneRow } from "@/components/ux/PhoneParts";
+import { useTranslated } from "@/i18n/data";
 
 /**
  * Health & Wellbeing.
@@ -34,6 +35,7 @@ const TOPIC_TINTS = [
 ] as const;
 
 export default function HealthPage() {
+  const WELLBEING_ART = useTranslated(RAW_WELLBEING_ART);
   const tr = useT();
   const { data: HEALTH_CHECKS, source, refetch } = useHealthChecks();
   // From the server, so a helpline that changes is an edit and not a deploy.
@@ -67,6 +69,13 @@ export default function HealthPage() {
     <HomeShell
       rail={
         <div className="space-y-[16px]">
+          {/* Added above the helplines, not in place of them. */}
+          <Card>
+            <SectionHead title={tr("today.title")} icon="HeartPulse" sub={tr("today.subtitle")} />
+            <Btn href="/app/health/today" icon="Smile" full>
+              {tr("today.howAreYou")}
+            </Btn>
+          </Card>
           <Card>
             <SectionHead title={tr("health.freeRightNow")} icon="Phone" />
             <ul className="space-y-3">
@@ -206,7 +215,7 @@ export default function HealthPage() {
         ) : (
           <Card>
             <EmptyState icon="HeartPulse" title={tr("health.nothingTrackedYet")}
-                        body="Add the checks that matter for you and we will remind you." />
+                        body={tr("health.addTheChecksThatMatterFor")} />
           </Card>
         )
       )}

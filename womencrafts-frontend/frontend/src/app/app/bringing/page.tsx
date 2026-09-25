@@ -5,10 +5,11 @@ import { useCallback, useMemo, useState } from "react";
 import { HomeShell } from "@/components/ux/home/HomeShell";
 import { ReadAloud } from "@/components/ux/reach/ReadAloud";
 import { Btn, Card, I, Pill, SectionHead, v } from "@/components/ux/kit";
-import { OBJECTIONS, SPEAKERS, type Objection } from "@/components/ux/reach/data";
+import { OBJECTIONS as RAW_OBJECTIONS, SPEAKERS as RAW_SPEAKERS, type Objection } from "@/components/ux/reach/data";
 import { useT } from "@/i18n";
 import { ListGroup } from "@/components/ux/mobile/ListRow";
 import { GroupLabel, PhoneRow, PhoneTitle } from "@/components/ux/PhoneParts";
+import { useTranslated } from "@/i18n/data";
 
 /**
  * Bringing them along — deliberately the narrowest module in the app.
@@ -40,14 +41,30 @@ import { GroupLabel, PhoneRow, PhoneTitle } from "@/components/ux/PhoneParts";
  * something to show.
  */
 export default function BringingPage() {
+  const SPEAKERS = useTranslated(RAW_SPEAKERS);
+  const OBJECTIONS = useTranslated(RAW_OBJECTIONS);
   const tr = useT();
   const [open, setOpen] = useState<string | null>("ob2");
   const [asked, setAsked] = useState<string | null>(null);
 
-  const answer = useMemo(() => OBJECTIONS.find((o) => o.id === open) ?? null, [open]);
+  const answer = useMemo(() => OBJECTIONS.find((o) => o.id === open) ?? null, [open, OBJECTIONS]);
 
+  /**
+   * Asking a woman to come and speak to her household.
+   *
+   * This used to print "<name> has been asked. She will message you first" —
+   * and send nothing to anybody. A woman would then wait for a visitor who
+   * was never contacted, on the one screen whose evidence base is strongest
+   * (in the Delhi trial, someone who physically went with her raised
+   * follow-through to 70%, against 41% for paperwork help alone).
+   *
+   * It also contradicted this screen's own rule, four paragraphs above:
+   * *nothing is ever sent to anyone on her behalf.* So it does not send
+   * anything now either — it hands her the message to send herself, which is
+   * what the rule requires and what actually reaches the other woman.
+   */
   const ask = useCallback((name: string) => {
-    setAsked(`${name} has been asked. She will message you first — nobody at your home is contacted until you say so.`);
+    setAsked(`Open your messages and ask ${name} yourself — nothing is sent for you, and nobody at your home is contacted.`);
   }, []);
 
   return (
@@ -55,7 +72,7 @@ export default function BringingPage() {
       <div className="flex flex-col gap-5" id="bringing-page">
 
         <PhoneTitle title={tr("bringing.atHome")} sub={tr("bringing.whenSomeoneAtHomeIsNot")}
-                    note="For about half the women doing this, the hardest part was never the work — it was somebody at home. This page does not tell you what to say to them. It gives you something to show them, and somebody who will come and speak to them if you want.">
+                    note={tr("bringing.forAboutHalfTheWomenDoing")}>
           <div className="mt-3"><ReadAloud targetId="bringing-page" /></div>
         </PhoneTitle>
         <header className="hidden lg:block">
@@ -124,7 +141,7 @@ export default function BringingPage() {
                           </span>
                         }
                         meta={`${s.trade} · ${s.note}`}
-                        trailing={<Btn size="sm" variant="outline" icon="MessageCircle" onClick={() => ask(s.name)}>{tr("bringing.askHer")}</Btn>} />
+                        trailing={<Btn size="sm" variant="outline" icon="MessageCircle" href="/app/messages" onClick={() => ask(s.name)}>{tr("bringing.askHer")}</Btn>} />
             ))}
           </ListGroup>
           <div className="hidden flex-col gap-2.5 lg:flex">
@@ -144,7 +161,7 @@ export default function BringingPage() {
                       {s.trade} · {s.note}
                     </p>
                   </div>
-                  <Btn size="sm" variant="outline" icon="MessageCircle" onClick={() => ask(s.name)}>{tr("bringing.askHer")}</Btn>
+                  <Btn size="sm" variant="outline" icon="MessageCircle" href="/app/messages" onClick={() => ask(s.name)}>{tr("bringing.askHer")}</Btn>
                 </div>
               </Card>
             ))}

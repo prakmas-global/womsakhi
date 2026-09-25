@@ -1,13 +1,18 @@
 "use client";
 
 import { useState, type FormEvent } from "react";
+import { useT } from "@/i18n";
 import Link from "next/link";
-import { ArrowLeft, ArrowRight, CircleCheck, Loader2, Mail } from "lucide-react";
+import { ArrowLeft, ArrowRight, CircleCheck, Info, Loader2, Mail } from "lucide-react";
 
 import { apiForgotPassword, verificationErrorMessage } from "@/lib/verification-api";
+import { BrandLockup } from "@/components/brand/BrandLockup";
 
 /** Where a woman who cannot get in can still reach a person. */
-const HELP_EMAIL = "hello@womsakhi.in";
+// Must match what the backend sends FROM and what staff monitor.
+// This read `hello@womsakhi.com` while every backend address is `.com`,
+// so a woman following it wrote into nothing.
+const HELP_EMAIL = "support@womsakhi.com";
 
 /**
  * Getting back in.
@@ -28,9 +33,13 @@ const HELP_EMAIL = "hello@womsakhi.in";
  * abstract risk.
  */
 export default function ForgotPasswordPage() {
+  const tr = useT();
   const [email, setEmail] = useState("");
   const [sent, setSent] = useState(false);
   const [message, setMessage] = useState("");
+  // Whether a link is genuinely coming. The server knows; the screen used
+  // to assume yes and say so over a mailer that delivers nothing.
+  const [canEmail, setCanEmail] = useState(true);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
@@ -41,6 +50,7 @@ export default function ForgotPasswordPage() {
     try {
       const res = await apiForgotPassword(email.trim());
       setMessage(res.message);
+      setCanEmail(res.can_email !== false);
       setSent(true);
     } catch (err) {
       setError(verificationErrorMessage(err));
@@ -53,37 +63,36 @@ export default function ForgotPasswordPage() {
     <div>
       {/* ── Brand ── */}
       <div className="auth-brand">
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img
-          src="/womsakhi-lockup.png"
-          alt="WomSakhi - Stronger Women. Brighter Tomorrows."
+        <BrandLockup
+          alt={tr("waitScreen.womsakhiStrongerWomenBrighterTomorrows")}
           className="auth-main-lockup object-contain"
-          decoding="async"
         />
       </div>
 
       <Link href="/signin" className="auth-link mt-6 inline-flex min-h-[36px] items-center gap-1.5 text-xsm font-medium">
         <ArrowLeft className="h-4 w-4" aria-hidden />
-        Back to sign in
+        {tr("page.backToSignIn")}
       </Link>
 
       {sent ? (
         <>
           <span className="mt-4 flex h-14 w-14 items-center justify-center rounded-full"
                 style={{ background: "var(--a-tint-violet-2)", color: "var(--a-lilac)" }}>
-            <CircleCheck className="h-7 w-7" aria-hidden />
+            {canEmail ? <CircleCheck className="h-7 w-7" aria-hidden /> : <Info className="h-7 w-7" aria-hidden />}
           </span>
           <h1 className="mt-4 font-bold leading-tight tracking-tight"
               style={{ color: "var(--a-ink)", fontSize: "clamp(1.35rem, 3.4vh, 2.1rem)" }}>
-            Check your <span className="auth-shine">inbox</span>
+            {canEmail
+              ? <>{tr("page.checkYour")} <span className="auth-shine">{tr("page.inbox2")}</span></>
+              : tr("forgot.noEmailTitle")}
           </h1>
           <p className="mt-2 text-xsm leading-relaxed" style={{ color: "var(--a-muted)" }}>
             {message}
           </p>
           <p className="mt-3 text-xs leading-relaxed" style={{ color: "var(--a-faint)" }}>
-            Nothing after a few minutes? Look in spam, then write to{" "}
+            {canEmail ? <>{tr("forgot.nothingAfterAFewMinutes")}{" "}</> : null}
             <a href={`mailto:${HELP_EMAIL}`} className="auth-link font-semibold">{HELP_EMAIL}</a>{" "}
-            and a person will get you back in.
+            {tr("forgot.andAPersonWillGetYouBackIn")}
           </p>
           <button
             type="button"
@@ -91,14 +100,14 @@ export default function ForgotPasswordPage() {
             className="mt-5 inline-flex min-h-[40px] items-center gap-2 rounded-full px-4 text-xsm font-semibold"
             style={{ background: "var(--a-well-2)", border: "1px solid var(--a-edge)", color: "var(--a-ink-2)" }}
           >
-            Use a different address
+            {tr("page.useADifferentAddress")}
           </button>
         </>
       ) : (
         <>
           <h1 className="mt-4 font-bold leading-tight tracking-tight"
               style={{ color: "var(--a-ink)", fontSize: "clamp(1.35rem, 3.4vh, 2.1rem)" }}>
-            Locked <span className="auth-shine">out?</span>
+            {tr("page.locked1")} <span className="auth-shine">{tr("page.locked2")}</span>
           </h1>
           <p className="auth-sub text-xsm leading-relaxed" style={{ color: "var(--a-muted)", marginTop: "clamp(0.25rem,0.8vh,0.375rem)" }}>
             Give us the address you joined with and we will send you a link to set
@@ -122,7 +131,7 @@ export default function ForgotPasswordPage() {
               <input
                 id="fp-email" type="email" required autoComplete="email" autoFocus
                 value={email} onChange={(e) => setEmail(e.target.value)}
-                placeholder="you@example.com"
+                placeholder={tr("page.youExampleCom")}
                 className="auth-field min-h-[46px] w-full rounded-[12px] pe-4 ps-11 text-sm"
                 style={{ paddingBlock: "clamp(0.5625rem,1.5vh,0.875rem)" }}
               />
@@ -142,7 +151,7 @@ export default function ForgotPasswordPage() {
       )}
 
       <p className="text-center text-xsm" style={{ color: "var(--a-muted)", marginTop: "clamp(0.75rem,2.4vh,1.625rem)" }}>
-        Remembered it? <Link href="/signin" className="auth-link font-semibold">Sign in</Link>
+        {tr("page.rememberedIt")} <Link href="/signin" className="auth-link font-semibold">{tr("page.signIn")}</Link>
       </p>
     </div>
   );

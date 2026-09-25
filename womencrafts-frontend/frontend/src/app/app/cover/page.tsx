@@ -9,8 +9,9 @@ import { Segments } from "@/components/ux/learning/native";
 import { useCover } from "@/components/ux/entitlements";
 import { useAction } from "@/lib/use-action";
 import { apiMarkReference } from "@/lib/entitlements-api";
-import { MORE_ART } from "@/components/ux/more/data";
+import { MORE_ART as RAW_MORE_ART } from "@/components/ux/more/data";
 import { useT } from "@/i18n";
+import { useTranslated } from "@/i18n/data";
 
 /**
  * Insurance & Pension.
@@ -21,6 +22,7 @@ import { useT } from "@/i18n";
  * cover is a decision anyone can make in five seconds once it is put that way.
  */
 export default function CoverPage() {
+  const MORE_ART = useTranslated(RAW_MORE_ART);
   const tr = useT();
   const { data: COVER, source, refetch } = useCover();
 
@@ -104,7 +106,7 @@ export default function CoverPage() {
         {/* The segmented control on its own line on a phone; `lg:contents`
             hands the old `Tabs` straight back to the row it sat in. */}
         <div className="mt-4 lg:contents">
-          <Segments items={["What you could have", "What you have"]} active={tab} onChange={setTab} label="Which cover" />
+          <Segments items={["What you could have", "What you have"]} active={tab} onChange={setTab} label={tr("cover.whichCover")} />
         </div>
       </div>
 

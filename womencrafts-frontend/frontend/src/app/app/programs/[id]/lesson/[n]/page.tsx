@@ -97,7 +97,7 @@ export default function LessonPage({ params }: { params: Promise<{ id: string; n
           <EmptyState
             icon="SearchX"
             title={tr("programsLesson.thatLessonIsNotHere")}
-            body="The course may have changed since this link was made."
+            body={tr("programsLesson.theCourseMayHaveChangedSince")}
             action={<Btn href="/app/programs" variant="primary" iconEnd="ArrowRight">{tr("programsLesson.allCourses")}</Btn>}
           />
         </Card>
@@ -242,7 +242,7 @@ export default function LessonPage({ params }: { params: Promise<{ id: string; n
         <SectionHead
           title={tr("programsLesson.whatSheSaysInWords")}
           sub={tr("programsLesson.readItInsteadOfWatchingNo")}
-          action="Keep offline"
+          action={tr("programsLesson.keepOffline")}
           onAction={() => { window.location.href = "/app/settings/offline"; }}
         />
         {/* Always open, never behind a toggle. Reading is free; video is not. */}

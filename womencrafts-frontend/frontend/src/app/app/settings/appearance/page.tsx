@@ -29,9 +29,9 @@ export default function AppearanceSettings() {
   const [lessMotion, setLessMotion] = useDevicePref("appearance.lessMotion", false);
 
   const OPTIONS = [
-    { id: "light" as const, label: "Light", note: "Best in daylight and outdoors", scopes: ["ux"] },
-    { id: "dark" as const, label: "Dark", note: "Easier at night, and on the eyes", scopes: ["ux dark"] },
-    { id: "system" as const, label: "Follow my phone", note: "Changes with your phone's setting",
+    { id: "light" as const, label: "Light", note: tr("settingsAppearance.bestInDaylightAndOutdoors"), scopes: ["ux"] },
+    { id: "dark" as const, label: "Dark", note: tr("settingsAppearance.easierAtNightAndOnThe"), scopes: ["ux dark"] },
+    { id: "system" as const, label: tr("settingsAppearance.followMyPhone"), note: tr("settingsAppearance.changesWithYourPhoneSSetting"),
       scopes: ["ux", "ux dark"] },
   ];
 

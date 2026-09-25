@@ -192,7 +192,22 @@ async def list_listings(
     if kind:
         query["kind"] = kind
     docs = await _listings().find(query).sort("updated_at", -1).to_list(300)
-    return [ListingResponse(**ListingModel.to_response(d)) for d in docs]
+
+    # How many orders each listing has actually had. One grouped pass over her
+    # orders rather than a query per listing — a woman with sixty listings
+    # should not cost sixty round trips to draw one table.
+    counts: dict[str, int] = {}
+    async for row in _orders().aggregate([
+        {"$match": {"seller_id": str(me["_id"])}},
+        {"$group": {"_id": "$listing_id", "n": {"$sum": 1}}},
+    ]):
+        counts[str(row["_id"])] = int(row["n"])
+
+    out = []
+    for d in docs:
+        d["orders"] = counts.get(str(d["_id"]), 0)
+        out.append(ListingResponse(**ListingModel.to_response(d)))
+    return out
 
 
 @router.post(
@@ -218,7 +233,7 @@ async def update_listing(
     # enough to edit somebody else's shop.
     updated = await _listings().find_one_and_update(
         {"_id": to_object_id(listing_id), "user_id": str(me["_id"])},
-        {"$set": {**body.model_dump(), "updated_at": datetime.now(timezone.utc)}},
+        {"$set": {**body.model_dump(exclude_unset=True), "updated_at": datetime.now(timezone.utc)}},
     )
     if not updated:
         raise HTTPException(status.HTTP_404_NOT_FOUND, "That listing is not yours, or is gone")

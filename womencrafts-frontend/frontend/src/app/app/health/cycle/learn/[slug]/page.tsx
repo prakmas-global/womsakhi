@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useT } from "@/i18n";
 import { useParams } from "next/navigation";
 
 import * as Icons from "@/components/ux/icons";
@@ -10,6 +11,7 @@ import { guide } from "@/components/ux/cycle/data";
 
 /** One guide. Sources at the foot, and the urgent line first where there is one. */
 export default function GuidePage() {
+  const tr = useT();
   const { slug } = useParams<{ slug: string }>();
   const g = guide(slug);
 
@@ -18,8 +20,8 @@ export default function GuidePage() {
       <HomeShell immersive bare>
         <Column>
           <CycleHeader title="Guide" back="/app/health/cycle/learn" />
-          <p className="mt-8 text-center text-[15px]" style={{ color: "var(--ux-muted)" }}>That guide is not here any more.</p>
-          <div className="mt-4"><CyButton href="/app/health/cycle/learn">See all guides</CyButton></div>
+          <p className="mt-8 text-center text-[15px]" style={{ color: "var(--ux-muted)" }}>{tr("healthCycleLearn.thatGuideIsNotHereAny")}</p>
+          <div className="mt-4"><CyButton href="/app/health/cycle/learn">{tr("healthCycleLearn.seeAllGuides")}</CyButton></div>
         </Column>
       </HomeShell>
     );
@@ -70,13 +72,13 @@ export default function GuidePage() {
           <ul className="mt-1 text-[13px] leading-relaxed" style={{ color: "var(--ux-muted)" }}>
             {g.sources.map((s) => <li key={s}>{s}</li>)}
           </ul>
-          <p className="mt-2 text-[12px]" style={{ color: "var(--ux-muted)" }}>This is general information, not a diagnosis.</p>
+          <p className="mt-2 text-[12px]" style={{ color: "var(--ux-muted)" }}>{tr("healthCycleLearn.thisIsGeneralInformationNotA")}</p>
         </div>
 
         <div className="mt-5 space-y-1">
-          <CyButton href="/app/health/mentors">Ask a health mentor</CyButton>
+          <CyButton href="/app/health/mentors">{tr("healthCycleLearn.askAHealthMentor")}</CyButton>
           <Link href="/app/health/cycle/learn" className="flex h-11 items-center justify-center text-[15px]" style={{ color: "var(--ux-muted)" }}>
-            More guides
+            {tr("healthCycleLearn.moreGuides")}
           </Link>
         </div>
       </Column>

@@ -6,8 +6,11 @@ import { HomeShell } from "@/components/ux/home/HomeShell";
 import { ReadAloud } from "@/components/ux/reach/ReadAloud";
 import { Btn, Card, I, Pill, v } from "@/components/ux/kit";
 import { Section } from "@/components/ux/earn/phone";
-import { HYGIENE, LICENCE_STEPS, hygieneScore, licenceDone } from "@/components/ux/eight/data";
+import { HYGIENE as RAW_HYGIENE, LICENCE_STEPS as RAW_LICENCE_STEPS } from "@/components/ux/eight/data";
+import { useResource } from "@/lib/use-resource";
+import { apiKitchen, apiKitchenHygiene, apiKitchenStep, type Kitchen } from "@/lib/life-api";
 import { useT } from "@/i18n";
+import { useTranslated } from "@/i18n/data";
 
 /**
  * From your kitchen to a customer, legally.
@@ -31,21 +34,58 @@ import { useT } from "@/i18n";
  * you", and there is no fleet.
  */
 export default function KitchenPage() {
+  const HYGIENE = useTranslated(RAW_HYGIENE);
+  const LICENCE_STEPS = useTranslated(RAW_LICENCE_STEPS);
   const tr = useT();
-  const [steps, setSteps] = useState(LICENCE_STEPS);
-  const [hyg, setHyg] = useState(HYGIENE);
   const [applied, setApplied] = useState(false);
+  const [busy, setBusy] = useState<string | null>(null);
+  const [err, setErr] = useState<string | null>(null);
 
-  const done = useMemo(() => licenceDone(steps), [steps]);
-  const score = useMemo(() => hygieneScore(hyg), [hyg]);
+  /**
+   * How far she has actually got.
+   *
+   * The steps and the hygiene points are what the registration requires —
+   * the same for everybody, and they stay with the copy. Which of them she
+   * has DONE was written in too: "Aadhaar and a photo — done", "Your kitchen
+   * address — done", and five of six hygiene points ticked.
+   *
+   * A woman who believes her FSSAI registration is half finished does not
+   * start it, and selling cooked food without one is what gets a stall shut
+   * down and her stock taken.
+   */
+  const kitchen = useResource<Kitchen>(
+    useCallback((sig) => apiKitchen(sig), []),
+    { done: [], hygiene: [], licence_no: "" },
+  );
+  const doneIds = useMemo(() => new Set(kitchen.data.done), [kitchen.data.done]);
+  const hygIds = useMemo(() => new Set(kitchen.data.hygiene), [kitchen.data.hygiene]);
+
+  // The catalogue, with her own ticks laid over it.
+  const steps = useMemo(() => LICENCE_STEPS.map((x) => ({ ...x, done: doneIds.has(x.id) })), [LICENCE_STEPS, doneIds]);
+  const hyg = useMemo(() => HYGIENE.map((x) => ({ ...x, done: hygIds.has(x.id) })), [HYGIENE, hygIds]);
+
+  const done = steps.filter((x) => x.done).length;
+  const score = hyg.length ? Math.round((hyg.filter((x) => x.done).length / hyg.length) * 100) : 0;
   const atStep = Math.min(done, steps.length - 1);
 
-  const toggleStep = useCallback((id: string) => {
-    setSteps((r) => r.map((s) => (s.id === id ? { ...s, done: !s.done } : s)));
-  }, []);
-  const toggleHyg = useCallback((id: string) => {
-    setHyg((r) => r.map((h) => (h.id === id ? { ...h, done: !h.done } : h)));
-  }, []);
+  /* Both of these used to flip a boolean in React state, so every tick was
+     gone on reload — on a checklist whose whole purpose is remembering where
+     she got to between one office visit and the next. */
+  const toggleStep = useCallback(async (id: string) => {
+    const now = doneIds.has(id);
+    setBusy(id); setErr(null);
+    try { await apiKitchenStep(id, !now); kitchen.refetch(); }
+    catch { setErr("That did not save."); }
+    finally { setBusy(null); }
+  }, [doneIds, kitchen]);
+
+  const toggleHyg = useCallback(async (id: string) => {
+    const now = hygIds.has(id);
+    setBusy(id); setErr(null);
+    try { await apiKitchenHygiene(id, !now); kitchen.refetch(); }
+    catch { setErr("That did not save."); }
+    finally { setBusy(null); }
+  }, [hygIds, kitchen]);
 
   return (
     <HomeShell active="/app/kitchen">
@@ -74,7 +114,7 @@ export default function KitchenPage() {
                 ₹100
               </p>
               <p className="mt-1.5 text-xs font-bold uppercase tracking-[0.12em] max-lg:mt-0" style={{ color: v("--ux-ink-2") }}>
-                for one year
+                {tr("kitchen.forOneYear")}
               </p>
             </div>
           </div>

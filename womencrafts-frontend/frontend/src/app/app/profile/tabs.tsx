@@ -2,10 +2,11 @@
 
 import { Btn, Card, EmptyState, I, IconTile, Pill, SectionHead, formatRupees, v } from "@/components/ux/kit";
 import {
-  CONTRIBUTION, LEARNING, PORTFOLIO, SKILLS, WORK,
+  CONTRIBUTION as RAW_CONTRIBUTION, LEARNING as RAW_LEARNING, PORTFOLIO as RAW_PORTFOLIO, SKILLS as RAW_SKILLS, WORK as RAW_WORK,
 } from "@/components/ux/profile/data";
 import { COPY } from "@/components/ux/copy";
 import { useT } from "@/i18n";
+import { useTranslated } from "@/i18n/data";
 
 /**
  * The profile tabs that used to be one "coming soon" card.
@@ -28,12 +29,13 @@ import { useT } from "@/i18n";
  * buyers came back" is checkable and cannot be talked up.
  */
 export function SkillsTab() {
+  const SKILLS = useTranslated(RAW_SKILLS);
   const tr = useT();
   return (
     <div className="flex flex-col gap-4">
       <div>
         <SectionHead title={tr("profile.whatYouCanDo")} sub={tr("profile.withWhatYouDidWithIt")}
-                     icon="Sparkles" action="Add a skill" />
+                     icon="Sparkles" action={tr("tabs.addASkill")} />
         <div className="grid gap-3 sm:grid-cols-2">
           {SKILLS.map((s) => (
             <Card key={s.id} pad={16}>
@@ -80,6 +82,8 @@ export function SkillsTab() {
  * otherwise teaches her that the truth is a problem.
  */
 export function ExperienceTab() {
+  const LEARNING = useTranslated(RAW_LEARNING);
+  const WORK = useTranslated(RAW_WORK);
   const tr = useT();
   return (
     <div className="flex flex-col gap-4">
@@ -144,16 +148,17 @@ export function ExperienceTab() {
 
 /** Work she can point at. The thing a buyer asks for before an order. */
 export function PortfolioTab() {
+  const PORTFOLIO = useTranslated(RAW_PORTFOLIO);
   const tr = useT();
   return (
     <div className="flex flex-col gap-4">
       <div>
         <SectionHead title={tr("profile.workYouCanShowSomeone")}
-                     sub={tr("profile.theThingABuyerAsksFor")} icon="Camera" action="Add a photo" />
+                     sub={tr("profile.theThingABuyerAsksFor")} icon="Camera" action={tr("shopVoice.addAPhoto")} />
         {PORTFOLIO.length === 0 ? (
           <Card>
             <EmptyState icon="Camera" title={COPY.nothingHereYet}
-                        body="Photograph the next thing you finish. One clear photo of real work does more than any description."
+                        body={tr("tabs.photographTheNextThingYouFinish")}
                         action={<Btn size="sm" icon="Camera">{tr("profile.addYourFirst")}</Btn>} />
           </Card>
         ) : (
@@ -188,6 +193,7 @@ export function PortfolioTab() {
  * turn helping into a way of climbing, which is the opposite of the point.
  */
 export function ContributionTab() {
+  const CONTRIBUTION = useTranslated(RAW_CONTRIBUTION);
   const tr = useT();
   const total = CONTRIBUTION.reduce((n, c) => n + c.value, 0);
   return (
@@ -244,7 +250,7 @@ export function DocumentsTab() {
       <EmptyState
         icon="FolderLock"
         title={tr("profile.yourPapersLiveInYourLocker")}
-        body="Aadhaar, PAN, bank details and registrations are kept there rather than on your profile, so nothing anyone can see is ever one tap from a document."
+        body={tr("tabs.aadhaarPanBankDetailsAndRegistrations")}
         action={<Btn size="sm" href="/app/vault" icon="Lock">{tr("profile.openYourLocker")}</Btn>}
       />
     </Card>

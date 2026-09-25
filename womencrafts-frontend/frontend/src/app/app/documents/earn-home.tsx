@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 
+import { useT } from "@/i18n";
 import * as Icons from "@/components/ux/icons";
 import { Btn, Card, I, IconTile, Progress, v } from "@/components/ux/kit";
 import { GROUP_ROW } from "@/components/ux/earn/phone";
@@ -25,6 +26,7 @@ import { GROUP_ROW } from "@/components/ux/earn/phone";
 /* ------------------------------------------------------------------ */
 
 export function EarnHero() {
+  const tr = useT();
   return (
     /* On a phone the banner stands down to a large title: no fill, no frame,
        no inset — the words and the one action are what she came for. */
@@ -33,20 +35,20 @@ export function EarnHero() {
                       border: "1px solid var(--ux-line)" }}>
       <div className="relative z-[1] max-w-[560px] p-0 lg:p-7">
         <p className="text-xs font-semibold uppercase tracking-[0.06em] lg:text-2xs lg:font-extrabold lg:tracking-[0.14em]" style={{ color: v("--ux-muted") }}>
-          Earn on your terms
+          {tr("earnhome.earnOnYourTerms")}
         </p>
         <h1 className="ux-screen-title mt-2.5 text-3xl font-extrabold leading-[1.1] tracking-[-0.02em]"
             style={{ color: v("--ux-ink") }}>
-          Turn your skills into
+          {tr("earnhome.turnYourSkillsInto")}
           <br />
           <span style={{ color: v("--ux-brand") }}>income &amp; impact</span>
         </h1>
         <p className="mt-3 max-w-[400px] text-xsm leading-relaxed" style={{ color: v("--ux-ink-2") }}>
-          Sell products, offer services, take orders — and be part of a stronger community of women.
+          {tr("earnhome.sellProductsOfferServicesTakeOrders")}
         </p>
         <div className="mt-5 flex flex-wrap gap-2.5">
-          <Btn href="/app/documents/new" icon="Plus" className="ux-action-primary">Add a product or service</Btn>
-          <Btn href="/app/programs" variant="outline" icon="Play" className="max-lg:w-full">Watch how it works</Btn>
+          <Btn href="/app/documents/new" icon="Plus" className="ux-action-primary">{tr("earnhome.addAProductOrService")}</Btn>
+          <Btn href="/app/programs" variant="outline" icon="Play" className="max-lg:w-full">{tr("earnhome.watchHowItWorks")}</Btn>
         </div>
       </div>
 
@@ -116,6 +118,7 @@ export interface Step { label: string; done: boolean }
  * listings and orders, and each one, done, makes a difference she can see.
  */
 export function Journey({ steps }: { steps: Step[] }) {
+  const tr = useT();
   const done = steps.filter((s) => s.done).length;
   const next = steps.find((s) => !s.done);
   return (
@@ -127,7 +130,7 @@ export function Journey({ steps }: { steps: Step[] }) {
             {done === steps.length ? "You have done all five" : "You're doing great!"}
           </p>
           <p className="mt-0.5 text-xs" style={{ color: v("--ux-muted") }}>
-            {next ? next.label : "Every step done — keep the orders moving."}
+            {next ? next.label : tr("earnhome.everyStepDoneKeepTheOrders")}
           </p>
           <div className="mt-3 flex items-center gap-3">
             <span className="max-w-[420px] flex-1">
@@ -138,7 +141,7 @@ export function Journey({ steps }: { steps: Step[] }) {
             </span>
           </div>
         </div>
-        <Btn href="/app/profile" variant="outline" size="sm" iconEnd="ArrowRight" className="max-lg:w-full max-lg:px-4">Complete profile</Btn>
+        <Btn href="/app/profile" variant="outline" size="sm" iconEnd="ArrowRight" className="max-lg:w-full max-lg:px-4">{tr("earnhome.completeProfile")}</Btn>
       </div>
     </Card>
   );
@@ -164,10 +167,11 @@ export const WAYS = [
 ] as const;
 
 export function WaysToEarn() {
+  const tr = useT();
   return (
     <section className="mb-6">
-      <Head icon="Rocket" title="Ways to earn on WomSakhi"
-            sub="Choose how you want to earn — or do it all!"
+      <Head icon="Rocket" title={tr("earnhome.waysToEarnOnWomsakhi")}
+            sub={tr("earnhome.chooseHowYouWantToEarn")}
             more="View all" href="/app/documents/listings" />
       {/* One column on a phone, each way a row — icon, name, one line, and its
           button on the end, the App Store's list shape — rather than a 2x2 of
@@ -236,9 +240,10 @@ export interface Happening {
 }
 
 export function Activity({ rows }: { rows: Happening[] }) {
+  const tr = useT();
   return (
     <section className="mb-6">
-      <Head icon="Zap" title="Recent activity" more="View all" href="/app/documents#orders" />
+      <Head icon="Zap" title={tr("earnhome.recentActivity")} more="View all" href="/app/documents#orders" />
       <Card pad={0} className="overflow-hidden">
         {rows.map((r) => (
           <Link key={r.id} href={r.href}
@@ -276,6 +281,7 @@ export function Activity({ rows }: { rows: Happening[] }) {
 /* ------------------------------------------------------------------ */
 
 export function GrowBanner() {
+  const tr = useT();
   return (
     <section className="relative mb-6 overflow-hidden rounded-[16px] lg:rounded-[20px]"
              style={{ background: "linear-gradient(100deg, var(--ux-tint-lilac), var(--ux-brand-tint) 58%, var(--ux-tint-pink))",
@@ -290,11 +296,11 @@ export function GrowBanner() {
           Grow your income with WomSakhi
         </h2>
         <p className="mt-1.5 text-xsm" style={{ color: v("--ux-ink-2") }}>
-          Get tips, tools and personal guidance from Sakhi.
+          {tr("earnhome.getTipsToolsAndPersonalGuidance")}
         </p>
         <div className="mt-4 flex flex-wrap gap-2.5">
-          <Btn href="/app/programs" variant="outline" icon="Play" className="max-lg:w-full">Watch tutorial</Btn>
-          <Btn href="/app/help" variant="outline" icon="MessageCircle" className="max-lg:w-full">Talk to Sakhi</Btn>
+          <Btn href="/app/programs" variant="outline" icon="Play" className="max-lg:w-full">{tr("earnhome.watchTutorial")}</Btn>
+          <Btn href="/app/help" variant="outline" icon="MessageCircle" className="max-lg:w-full">{tr("sakhi.talk")}</Btn>
         </div>
       </div>
     </section>
@@ -315,9 +321,10 @@ export const ACTIONS = [
 ] as const;
 
 export function QuickActions() {
+  const tr = useT();
   return (
     <Card>
-      <h2 className="mb-3 text-base font-extrabold" style={{ color: v("--ux-ink") }}>Quick actions</h2>
+      <h2 className="mb-3 text-base font-extrabold" style={{ color: v("--ux-ink") }}>{tr("goalviews.quickActions")}</h2>
       <div className="space-y-1.5">
         {ACTIONS.map((a) => (
           <Link key={a.label} href={a.href}
@@ -346,17 +353,18 @@ export const SELL_TIPS = [
 ] as const;
 
 export function SellTips() {
+  const tr = useT();
   return (
     <Card>
       <div className="mb-3 flex items-center justify-between gap-3">
         <h2 className="flex items-center gap-2 text-base font-extrabold" style={{ color: v("--ux-ink") }}>
           <I name="Lightbulb" className="h-[17px] w-[17px]" style={{ color: v("--ux-amber-ink") }} />
-          Tips for more sales
+          {tr("earnhome.tipsForMoreSales")}
         </h2>
         <Link href="/app/shop/pricing"
               className="ux-sq -me-2 flex min-h-[36px] items-center rounded-[10px] px-2 text-xs font-bold"
               style={{ color: v("--ux-brand") }}>
-          See all
+          {tr("circles.seeAll")}
         </Link>
       </div>
       <div className="space-y-3">
@@ -380,6 +388,7 @@ export function SellTips() {
 /* ------------------------------------------------------------------ */
 
 export function SuccessStory() {
+  const tr = useT();
   return (
     <section className="relative overflow-hidden rounded-[16px] p-[18px]"
              style={{ background: "linear-gradient(150deg, var(--ux-tint-lilac), var(--ux-tint-pink))" }}>
@@ -390,15 +399,15 @@ export function SuccessStory() {
                     WebkitMaskImage: "linear-gradient(105deg, transparent, #000 40%)" }} />
       <div className="relative w-[62%]">
         <h2 className="text-smd font-extrabold leading-tight" style={{ color: v("--ux-ink") }}>
-          Sakhi Success Stories
+          {tr("earnhome.sakhiSuccessStories")}
         </h2>
         <blockquote className="mt-2.5 text-xs leading-relaxed" style={{ color: v("--ux-ink-2") }}>
           &ldquo;I started with mehendi services, now I earn ₹25,000+ every month!&rdquo;
         </blockquote>
-        <p className="mt-1.5 text-2xs font-semibold" style={{ color: v("--ux-muted") }}>— Neha, Jaipur</p>
+        <p className="mt-1.5 text-2xs font-semibold" style={{ color: v("--ux-muted") }}>{tr("earnhome.nehaJaipur")}</p>
       </div>
       <div className="relative mt-4">
-        <Btn href="/app/stories" size="sm" variant="outline" iconEnd="ArrowRight">Read more stories</Btn>
+        <Btn href="/app/stories" size="sm" variant="outline" iconEnd="ArrowRight">{tr("earnhome.readMoreStories")}</Btn>
       </div>
     </section>
   );
@@ -409,19 +418,20 @@ export function SuccessStory() {
 /* ------------------------------------------------------------------ */
 
 export function NeedHelp() {
+  const tr = useT();
   return (
     <Card>
       <div className="flex items-start gap-3">
         <IconTile icon="Heart" tint="--ux-tint-pink" ink="--ux-pink-ink" size={38} radius={11} />
         <div className="min-w-0">
-          <p className="text-xsm font-extrabold" style={{ color: v("--ux-brand") }}>Need help?</p>
+          <p className="text-xsm font-extrabold" style={{ color: v("--ux-brand") }}>{tr("earnhome.needHelp")}</p>
           <p className="mt-0.5 text-xs" style={{ color: v("--ux-muted") }}>
-            Our Sakhi team is here for you.
+            {tr("earnhome.ourSakhiTeamIsHereFor")}
           </p>
         </div>
       </div>
       <div className="mt-3.5">
-        <Btn href="/app/help" size="sm" variant="outline" full iconEnd="ArrowRight">Ask Sakhi</Btn>
+        <Btn href="/app/help" size="sm" variant="outline" full iconEnd="ArrowRight">{tr("nav.sakhi")}</Btn>
       </div>
     </Card>
   );

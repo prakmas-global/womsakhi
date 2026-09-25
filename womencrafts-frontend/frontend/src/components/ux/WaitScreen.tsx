@@ -1,6 +1,7 @@
 "use client";
 
 import { useSyncExternalStore } from "react";
+import { useT } from "@/i18n";
 import { createPortal } from "react-dom";
 import { RefreshCw, WifiOff } from "@/components/ux/icons";
 
@@ -19,6 +20,7 @@ import { useWaitState } from "@/lib/wait";
  * member app carries that class.
  */
 import "@/app/ux/tokens.css";
+import { BrandLockup } from "@/components/brand/BrandLockup";
 
 /** A stable subscribe, so React never resubscribes. Same shape as `Sheet`. */
 const NEVER_CHANGES = () => () => {};
@@ -150,14 +152,12 @@ function WaitBody({
   stuckLabel?: string;
   onStuck?: () => void;
 }) {
+  const tr = useT();
   return (
     <div className="flex w-full max-w-[360px] flex-col items-center text-center">
-      {/* eslint-disable-next-line @next/next/no-img-element */}
-      <img
-        src="/womsakhi-lockup.png"
-        alt="WomSakhi - Stronger Women. Brighter Tomorrows."
+      <BrandLockup
+        alt={tr("waitScreen.womsakhiStrongerWomenBrighterTomorrows")}
         className="h-auto w-[min(230px,68vw)] object-contain"
-        decoding="async"
       />
 
       {/*

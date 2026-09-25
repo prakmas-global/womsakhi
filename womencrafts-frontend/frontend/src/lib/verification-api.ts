@@ -74,8 +74,21 @@ export const ACCEPTED_DOCUMENT_TYPES = [
   "application/pdf",
 ];
 
+/**
+ * Extensions for the same kinds, used only when the browser gives us no type.
+ *
+ * A file arriving straight from a camera often has a blank `type`: several
+ * Android camera apps hand the picture back through a content URI without a
+ * MIME type, and the old check read that blank as "not a photo" and refused a
+ * picture the woman had just taken. The name is the fallback, never the
+ * override — a real `image/*` type is still what decides.
+ */
+const ACCEPTED_DOCUMENT_EXTENSIONS = [".jpg", ".jpeg", ".png", ".webp", ".heic", ".heif", ".pdf"];
+
 export function validateDocument(file: File): string | null {
-  if (!ACCEPTED_DOCUMENT_TYPES.includes(file.type.toLowerCase())) {
+  const type = file.type.toLowerCase();
+  const named = ACCEPTED_DOCUMENT_EXTENSIONS.some((ext) => file.name.toLowerCase().endsWith(ext));
+  if (type ? !ACCEPTED_DOCUMENT_TYPES.includes(type) : !named) {
     return "Please upload a photo (JPG, PNG, WEBP, HEIC) or a PDF.";
   }
   if (file.size > MAX_DOCUMENT_MB * 1024 * 1024) {
@@ -111,7 +124,7 @@ export async function apiConfirmEmail(token: string): Promise<{ message: string 
  * telling a stranger which emails are members is an enumeration oracle, and on
  * a women-only platform that answers "is she here?" for anyone who asks.
  */
-export async function apiForgotPassword(email: string): Promise<{ message: string }> {
+export async function apiForgotPassword(email: string): Promise<{ message: string; can_email?: boolean }> {
   const { data } = await axios.post(`${API_URL}/auth/forgot-password`, { email });
   return data;
 }

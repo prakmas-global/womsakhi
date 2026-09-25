@@ -215,3 +215,16 @@ summary:focus-visible,
     border-radius: 10px;
   }
 }
+
+/*
+  Brand lockup theme swap.
+
+  `BrandLockup` renders both files and lets CSS pick, so the correct one is on
+  screen at first paint. The selectors carry `img` to out-specify the layout
+  rules the callers put on the same element (`.auth-main-lockup` sets width and
+  height with !important); a bare class here would lose to them and both
+  lockups would stack.
+*/
+img.brand-lockup-dark { display: none; }
+.dark img.brand-lockup-light { display: none; }
+.dark img.brand-lockup-dark { display: block; }

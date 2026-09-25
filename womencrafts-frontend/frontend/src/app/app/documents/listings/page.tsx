@@ -1,25 +1,25 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import Link from "next/link";
 
 import { HomeShell } from "@/components/ux/home/HomeShell";
 import * as Icons from "@/components/ux/icons";
-import { Back, Btn, Card, DemoNote, EmptyState, IconTile, v } from "@/components/ux/kit";
+import { Back, Btn, Card, EmptyState, IconTile, SourceNote, formatRupees, v } from "@/components/ux/kit";
 import { GROUP, GROUP_ROW } from "@/components/ux/earn/phone";
-import {
-  LISTINGS, discountPct, type ListingStatus, type SellerListing,
-} from "@/components/ux/earn/data";
+import { useResource } from "@/lib/use-resource";
+import { apiListings, type Listing } from "@/lib/shop-api";
+import { useT } from "@/i18n";
 
-const money = (n: number) => `₹${n.toLocaleString("en-IN")}`;
-
-const STATUS: Record<ListingStatus, { label: string; tint: string; ink: string }> = {
-  active: { label: "Live",   tint: "--ux-tint-green",  ink: "--ux-green-ink" },
+const STATUS: Record<string, { label: string; tint: string; ink: string }> = {
+  live:   { label: "Live",   tint: "--ux-tint-green",  ink: "--ux-green-ink" },
   paused: { label: "Paused", tint: "--ux-tint-amber",  ink: "--ux-amber-ink" },
-  draft:  { label: "Draft",  tint: "--ux-surface-2",   ink: "--ux-muted" },
 };
+const UNKNOWN_STATUS = { label: "—", tint: "--ux-surface-2", ink: "--ux-muted" };
 
-type Filter = "all" | "product" | "service" | "active" | "paused" | "draft";
+/* No "draft": a listing is live or paused and there is no third state, so the
+   tab that offered drafts could never have had anything in it. */
+type Filter = "all" | "product" | "service" | "live" | "paused";
 
 /**
  * Everything she sells, in one table she can act on.
@@ -34,18 +34,28 @@ type Filter = "all" | "product" | "service" | "active" | "paused" | "draft";
  * table, it is a puzzle.
  */
 export default function MyListingsPage() {
+  const tr = useT();
   const [filter, setFilter] = useState<Filter>("all");
   const [q, setQ] = useState("");
 
-  const all = LISTINGS;
+  /**
+   * Her real shop. This table used to render a fixture of six listings —
+   * "Handmade cotton kurta, WK-CK-001, 412 views, 9 orders" — for every woman,
+   * on the one screen built so she can audit her own shop and find the listing
+   * she paused in June and forgot.
+   */
+  const listings = useResource<Listing[]>(
+    useCallback((sig: AbortSignal) => apiListings(sig), []),
+    [],
+  );
+  const all = listings.data;
 
   const counts = useMemo(() => ({
     all: all.length,
     product: all.filter((l) => l.kind === "product").length,
     service: all.filter((l) => l.kind === "service").length,
-    active: all.filter((l) => l.status === "active").length,
+    live: all.filter((l) => l.status === "live").length,
     paused: all.filter((l) => l.status === "paused").length,
-    draft: all.filter((l) => l.status === "draft").length,
   }), [all]);
 
   const shown = useMemo(() => {
@@ -54,23 +64,22 @@ export default function MyListingsPage() {
       if (filter === "product" || filter === "service") { if (l.kind !== filter) return false; }
       else if (filter !== "all" && l.status !== filter) return false;
       if (!words.length) return true;
-      const hay = `${l.title} ${l.sku}`.toLowerCase();
+      const hay = `${l.title} ${l.category}`.toLowerCase();
       return words.every((w) => hay.includes(w));
     });
   }, [all, filter, q]);
 
   const totals = useMemo(() => ({
     views: all.reduce((s, l) => s + l.views, 0),
-    orders: all.reduce((s, l) => s + l.orders, 0),
+    orders: all.reduce((s, l) => s + (l.orders ?? 0), 0),
   }), [all]);
 
   const TABS: { id: Filter; label: string; n: number }[] = [
     { id: "all",     label: "All",      n: counts.all },
     { id: "product", label: "Products", n: counts.product },
     { id: "service", label: "Services", n: counts.service },
-    { id: "active",  label: "Live",     n: counts.active },
+    { id: "live",    label: "Live",     n: counts.live },
     { id: "paused",  label: "Paused",   n: counts.paused },
-    { id: "draft",   label: "Drafts",   n: counts.draft },
   ];
 
   return (
@@ -81,18 +90,18 @@ export default function MyListingsPage() {
           <div className="relative overflow-hidden rounded-[16px] p-[20px]"
                style={{ background: "linear-gradient(140deg, var(--ux-tint-lilac), var(--ux-tint-pink))" }}>
             <IconTile icon="Package" tint="--ux-surface" ink="--ux-brand" size={38} radius={11} />
-            <h3 className="mt-3 text-sm font-bold" style={{ color: v("--ux-ink") }}>Grow your shop</h3>
+            <h3 className="mt-3 text-sm font-bold" style={{ color: v("--ux-ink") }}>{tr("documentsListings.growYourShop")}</h3>
             <p className="mt-1.5 text-xs leading-relaxed" style={{ color: v("--ux-muted") }}>
-              More listings means more ways a buyer can find you.
+              {tr("documentsListings.moreListingsMeansMoreWaysA")}
             </p>
             <div className="mt-3">
-              <Btn href="/app/documents/new" size="sm" icon="Plus">Add new</Btn>
+              <Btn href="/app/documents/new" size="sm" icon="Plus">{tr("documentsListings.addNew")}</Btn>
             </div>
           </div>
 
           <Card>
             <h2 className="text-base font-extrabold" style={{ color: v("--ux-ink") }}>
-              What sells better
+              {tr("documentsListings.whatSellsBetter")}
             </h2>
             <ul className="mt-3 space-y-2.5">
               {[
@@ -112,48 +121,47 @@ export default function MyListingsPage() {
             </ul>
             <div className="mt-3">
               <Btn href="/app/collect" size="sm" variant="outline" full iconEnd="ArrowRight">
-                Get my shop link
+                {tr("documentsListings.getMyShopLink")}
               </Btn>
             </div>
           </Card>
 
           <Card>
-            <h2 className="text-base font-extrabold" style={{ color: v("--ux-ink") }}>Need a hand?</h2>
+            <h2 className="text-base font-extrabold" style={{ color: v("--ux-ink") }}>{tr("documentsListings.needAHand")}</h2>
             <p className="mt-1.5 text-xs leading-relaxed" style={{ color: v("--ux-muted") }}>
-              Sakhi can write a description, suggest a price, or tell you why something is not selling.
+              {tr("documentsListings.sakhiCanWriteADescriptionSuggest")}
             </p>
             <div className="mt-3">
               <Btn href="/app/sakhi" size="sm" variant="outline" full icon="Sparkles" iconEnd="ArrowRight">
-                Ask Sakhi
+                {tr("nav.sakhi")}
               </Btn>
             </div>
           </Card>
         </div>
       }
     >
-      <Back to="/app/documents" label="Your shop" className="mb-4" />
+      <Back to="/app/documents" label={tr("ch.documents.label")} className="mb-4" />
 
       <div className="mb-6 flex flex-wrap items-start justify-between gap-4 lg:mb-5">
         <div className="min-w-0">
           <h1 className="ux-screen-title text-3xl font-extrabold leading-[1.15] tracking-[-0.02em]"
               style={{ color: v("--ux-ink") }}>
-            What you sell
+            {tr("documents.whatYouSell")}
           </h1>
           <p className="mt-1.5 text-sm" style={{ color: v("--ux-muted") }}>
-            Everything in your shop, and how each one is doing.
+            {tr("documentsListings.everythingInYourShopAndHow")}
           </p>
         </div>
-        <Btn href="/app/documents/new" icon="Plus" className="ux-action-primary">Add product or service</Btn>
+        <Btn href="/app/documents/new" icon="Plus" className="ux-action-primary">{tr("documentsListings.addProductOrService")}</Btn>
       </div>
 
-      {/* ── The six numbers ──────────────────────────────────────────────── */}
+      {/* ── The five numbers ─────────────────────────────────────────────── */}
       {/* On a phone: one group, a row per number, the figure on the end. */}
-      <div className={`mb-6 grid gap-2.5 sm:grid-cols-3 lg:mb-4 xl:grid-cols-6 ${GROUP}`}>
+      <div className={`mb-6 grid gap-2.5 sm:grid-cols-3 lg:mb-4 xl:grid-cols-5 ${GROUP}`}>
         {[
           { n: counts.all,     label: "Listings",  icon: "Package",   tint: "--ux-tint-violet", ink: "--ux-violet-ink" },
-          { n: counts.active,  label: "Live",      icon: "Radio",     tint: "--ux-tint-green",  ink: "--ux-green-ink" },
+          { n: counts.live,    label: "Live",      icon: "Radio",     tint: "--ux-tint-green",  ink: "--ux-green-ink" },
           { n: counts.paused,  label: "Paused",    icon: "PauseCircle", tint: "--ux-tint-amber", ink: "--ux-amber-ink" },
-          { n: counts.draft,   label: "Drafts",    icon: "FileText",  tint: "--ux-surface-2",   ink: "--ux-muted" },
           { n: totals.views,   label: "Views",     icon: "Eye",       tint: "--ux-tint-blue",   ink: "--ux-blue-ink" },
           { n: totals.orders,  label: "Orders",    icon: "ShoppingBasket", tint: "--ux-tint-pink", ink: "--ux-pink-ink" },
         ].map((s) => (
@@ -190,7 +198,7 @@ export default function MyListingsPage() {
              style={{ borderColor: v("--ux-line"), background: v("--ux-surface") }}>
           <Icons.Search className="h-[15px] w-[15px] shrink-0" style={{ color: v("--ux-muted") }} />
           <input value={q} onChange={(e) => setQ(e.target.value)}
-                 placeholder="Find in your shop…" aria-label="Find in your shop"
+                 placeholder={tr("documentsListings.findInYourShop")} aria-label={tr("documentsListings.findInYourShop2")}
                  className="min-h-[38px] w-full bg-transparent text-xs outline-none"
                  style={{ color: v("--ux-ink") }} />
         </div>
@@ -212,13 +220,13 @@ export default function MyListingsPage() {
         </Card>
       ) : (
         <Card>
-          <EmptyState icon="Package" title="Nothing here yet"
-                      body="Add the first thing you sell. It takes about two minutes, and you can change any of it later."
-                      action={<Btn href="/app/documents/new" icon="Plus">Add product or service</Btn>} />
+          <EmptyState icon="Package" title={tr("events.emptyAll")}
+                      body={tr("documentsListings.addTheFirstThingYouSell")}
+                      action={<Btn href="/app/documents/new" icon="Plus">{tr("documentsListings.addProductOrService")}</Btn>} />
         </Card>
       )}
 
-      <DemoNote what="These listings" />
+      <SourceNote source={listings.source} what="these listings" />
 
       {/* ── Share it ─────────────────────────────────────────────────────── */}
       <div className="mt-6 flex flex-wrap items-center gap-4 rounded-[16px] p-4 lg:mt-4 lg:p-5"
@@ -226,22 +234,22 @@ export default function MyListingsPage() {
         <IconTile icon="TrendingUp" tint="--ux-surface" ink="--ux-brand" size={40} radius={12} />
         <div className="min-w-[240px] flex-1">
           <p className="text-sm font-bold" style={{ color: v("--ux-ink") }}>
-            A shop nobody knows about sells nothing.
+            {tr("documentsListings.aShopNobodyKnowsAboutSells")}
           </p>
           <p className="mt-1 text-xsm leading-relaxed" style={{ color: v("--ux-muted") }}>
-            Send your link to the groups you are already in. That is where the first orders come from.
+            {tr("documentsListings.sendYourLinkToTheGroups")}
           </p>
         </div>
-        <Btn href="/app/collect" icon="Share2" iconEnd="ArrowRight" className="max-lg:w-full">Share my shop</Btn>
+        <Btn href="/app/collect" icon="Share2" iconEnd="ArrowRight" className="max-lg:w-full">{tr("documentsListings.shareMyShop")}</Btn>
       </div>
     </HomeShell>
   );
 }
 
 /** One listing — a table row on a desktop, a stacked block on a phone. */
-function Row({ l }: { l: SellerListing }) {
-  const s = STATUS[l.status];
-  const off = discountPct(l);
+function Row({ l }: { l: Listing }) {
+  const tr = useT();
+  const s = STATUS[l.status] ?? UNKNOWN_STATUS;
   return (
     /* On a phone the eight cells run as ONE wrapped line of facts under the
        title — two or three lines a row, not eight stacked cells. */
@@ -258,8 +266,11 @@ function Row({ l }: { l: SellerListing }) {
                 className="ux-sq block text-xsm font-bold leading-snug" style={{ color: v("--ux-ink") }}>
             {l.title}
           </Link>
+          {/* Her category and the real date she listed it. There is no SKU
+              on a listing, so the code that used to sit here was invented. */}
           <p className="mt-0.5 text-2xs" style={{ color: v("--ux-faint") }}>
-            {l.sku} · added {l.addedOn}
+            {[l.category, l.created_at ? `added ${addedOn(l.created_at)}` : ""]
+              .filter(Boolean).join(" · ")}
           </p>
         </div>
       </div>
@@ -275,27 +286,15 @@ function Row({ l }: { l: SellerListing }) {
 
       {/* Price */}
       <div>
-        {l.priceMode === "quote" ? (
-          <span className="text-xsm font-bold" style={{ color: v("--ux-ink") }}>By quote</span>
+        {/* Amounts are paise, like everywhere else. The struck-through "was"
+            price and the discount badge are gone: nothing records a previous
+            price, so both were computed from numbers that did not exist. */}
+        {l.price_mode === "quote" ? (
+          <span className="text-xsm font-bold" style={{ color: v("--ux-ink") }}>{tr("documentsListings.byQuote")}</span>
         ) : (
-          <>
-            <span className="text-xsm font-bold" style={{ color: v("--ux-ink") }}>
-              {l.priceMode === "range" && l.rangeLow && l.rangeHigh
-                ? `${money(l.rangeLow)} – ${money(l.rangeHigh)}`
-                : money(l.price)}
-            </span>
-            {l.wasPrice && (
-              <span className="ms-1.5 text-2xs line-through" style={{ color: v("--ux-faint") }}>
-                {money(l.wasPrice)}
-              </span>
-            )}
-            {off > 0 && (
-              <span className="mt-0.5 block w-fit rounded-full px-1.5 py-0.5 text-2xs font-bold"
-                    style={{ background: v("--ux-tint-pink"), color: v("--ux-pink-ink") }}>
-                {off}% off
-              </span>
-            )}
-          </>
+          <span className="text-xsm font-bold" style={{ color: v("--ux-ink") }}>
+            {l.price_label || formatRupees(l.price_minor)}
+          </span>
         )}
       </div>
 
@@ -311,9 +310,9 @@ function Row({ l }: { l: SellerListing }) {
       {/* Stock */}
       <div className="text-[13px] lg:text-xs" style={{ color: v("--ux-ink-2") }}>
         {l.stock === null ? (
-          <span style={{ color: v("--ux-muted") }}>By request</span>
+          <span style={{ color: v("--ux-muted") }}>{tr("documentsListings.byRequest")}</span>
         ) : l.stock === 0 ? (
-          <span style={{ color: v("--ux-amber-ink") }}>None left</span>
+          <span style={{ color: v("--ux-amber-ink") }}>{tr("documentsListings.noneLeft")}</span>
         ) : (
           <span>{l.stock} left</span>
         )}
@@ -323,7 +322,7 @@ function Row({ l }: { l: SellerListing }) {
         <span className="xl:hidden" style={{ color: v("--ux-muted") }}>Views </span>{l.views}
       </div>
       <div className="text-[13px] lg:text-xs" style={{ color: v("--ux-ink-2") }}>
-        <span className="xl:hidden" style={{ color: v("--ux-muted") }}>Orders </span>{l.orders}
+        <span className="xl:hidden" style={{ color: v("--ux-muted") }}>Orders </span>{l.orders ?? 0}
       </div>
 
       <div className="flex justify-start max-lg:absolute max-lg:end-4 max-lg:top-[18px] xl:justify-end">
@@ -336,4 +335,11 @@ function Row({ l }: { l: SellerListing }) {
       </div>
     </div>
   );
+}
+
+/** "13 Aug 2026", from the ISO date the server returns. */
+function addedOn(iso: string): string {
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return "";
+  return d.toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" });
 }

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import { usePathname, useRouter } from "next/navigation";
 
 import SakhiLauncher from "@/components/sakhi/SakhiLauncher";
@@ -12,7 +12,8 @@ import { ChromeProvider } from "@/components/ux/chrome";
 import { ChromeShell } from "@/components/ux/home/ChromeShell";
 import SkipToContent from "@/components/layout/SkipToContent";
 import { useAuth } from "@/context/AuthContext";
-import { useI18n } from "@/i18n";
+import { apiUpdateMeProfile } from "@/lib/member-api";
+import { takePreSignInChoice, useI18n, useT } from "@/i18n";
 import Spinner from "@/design-system/primitives/Spinner";
 import "@/app/ux/tokens.css";
 // After tokens.css on purpose: both are unlayered, so the later import wins.
@@ -50,7 +51,8 @@ export default function MemberShell({
   /** The shell payload the server already fetched, or null if it could not. */
   initialShell: MeShell | null;
 }) {
-  const { user, loading, isMember } = useAuth();
+  const { user, loading, isMember, updateUser } = useAuth();
+  const tr = useT();
   const { locale, setLocale } = useI18n();
   const router = useRouter();
   const pathname = usePathname();
@@ -63,11 +65,53 @@ export default function MemberShell({
   const needsOnboarding =
     verified && user?.onboarding_complete === false && !onWelcomeScreen;
 
-  // Her account is the source of truth for language — the cookie only exists so
-  // the first paint isn't in the wrong one.
+  /*
+    Her account is the source of truth for language — the cookie only exists so
+    the first paint isn't in the wrong one.
+
+    With ONE exception, and it is the whole reason the sign-in screen now has a
+    language picker. A woman who chose Telugu there, then signed in, was put
+    straight back into English by this effect: her account still said "en"
+    because she had never been able to reach a language setting. The screen she
+    picked her language on was the last screen it worked on.
+
+    So a choice made in the seconds before signing in is taken as the newest
+    thing anybody knows, applied, and written to her account — after which the
+    account and the choice agree and this is an ordinary account sync again.
+  */
+  /*
+    It applies the account's language when the ACCOUNT changes it — not
+    whenever the two disagree.
+
+    That distinction is the whole bug: the old condition was
+    `user.locale !== locale`, and this effect lists `locale` in its
+    dependencies. So choosing Hindi from the bar set `locale` to "hi", the
+    effect woke up, saw the account still saying "te" (the PATCH had not
+    landed, and the in-memory user is never refreshed anyway) and set it
+    straight back. Nothing on screen ever changed until a reload, which is
+    exactly what it looked like from outside: a language picker that does
+    nothing. The Settings screen had it too.
+  */
+  const appliedAccount = useRef<string | null>(null);
   useEffect(() => {
-    if (user?.locale && user.locale !== locale) setLocale(user.locale);
-  }, [user?.locale, locale, setLocale]);
+    if (!user) return;
+    const chosen = takePreSignInChoice();
+    if (chosen) {
+      appliedAccount.current = chosen;
+      if (chosen !== locale) setLocale(chosen);
+      // Her account has to learn it, or the next device undoes her again.
+      if (chosen !== user.locale) {
+        void apiUpdateMeProfile({ locale: chosen })
+          .then(() => updateUser({ ...user, locale: chosen }))
+          .catch(() => {});
+      }
+      return;
+    }
+    const account = user.locale;
+    if (!account || appliedAccount.current === account) return;
+    appliedAccount.current = account;
+    if (account !== locale) setLocale(account);
+  }, [user, locale, setLocale, updateUser]);
 
   useEffect(() => {
     if (loading) return;
@@ -77,9 +121,39 @@ export default function MemberShell({
     else if (needsOnboarding) router.replace("/app/welcome");
   }, [loading, user, isMember, verified, onVerifyScreen, needsOnboarding, router]);
 
-  if (loading || !user) {
+  /*
+    A spinner is the right thing while we are still asking. It is the WRONG
+    thing once we know the answer is "nobody".
+
+    Both cases rendered the same endless spinner, which is what a woman whose
+    30-minute token had quietly expired actually saw: a blank white screen, no
+    message, no way forward. The redirect below does fire, but a full page load
+    to /signin is not instant on a slow connection, and what fills that gap
+    should say something.
+  */
+  if (loading) {
     return (
       <div className="ux grid min-h-screen place-items-center"><Spinner /></div>
+    );
+  }
+
+  if (!user) {
+    return (
+      <div className="ux grid min-h-screen place-items-center px-6">
+        <div className="text-center">
+          <p className="text-base font-semibold" style={{ color: "var(--ux-ink)" }}>
+            {tr("shell.signedOutTitle")}
+          </p>
+          <p className="mx-auto mt-2 max-w-[34ch] text-xsm leading-relaxed" style={{ color: "var(--ux-muted)" }}>
+            {tr("shell.signedOutBody")}
+          </p>
+          <a href="/signin"
+             className="ux-press mt-5 inline-flex h-[44px] items-center rounded-[14px] px-6 text-sm font-semibold"
+             style={{ background: "var(--ux-brand)", color: "var(--ux-ink-on-brand)" }}>
+            {tr("shell.signInAgain")}
+          </a>
+        </div>
+      </div>
     );
   }
 

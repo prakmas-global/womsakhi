@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 
+import { useT } from "@/i18n";
 import * as Icons from "@/components/ux/icons";
 import { Btn, Card, DemoNote, EmptyState, I, IconTile, v } from "@/components/ux/kit";
 import type { ApiCircleDetail, ApiCircleMember } from "@/lib/growth-api";
@@ -19,6 +20,7 @@ export function CircleBanner({ c, posts, events }: {
   posts: number;
   events: number;
 }) {
+  const tr = useT();
   const t = topicOf(c.topic);
   const shownPosts = Math.max(posts, c.post_count);
 
@@ -83,7 +85,7 @@ export function CircleBanner({ c, posts, events }: {
           ) : (
             <p className="flex h-full w-[210px] items-center justify-end pe-7 text-end text-lg font-bold italic leading-[1.3] xl:w-[270px]"
                style={{ color: v("--ux-brand"), fontFamily: "var(--font-display)" }}>
-              Learn.<br />Share.<br />Grow together.
+              Learn.<br />Share.<br />{tr("detailviews.growTogether")}
             </p>
           )}
         </div>
@@ -113,6 +115,7 @@ export function CircleActions({ joined, busy, onJoin, onLeave, onInvite, onSoon,
   onJoin: () => void; onLeave: () => void; onInvite: () => void;
   onSoon: (msg: string) => void;
 }) {
+  const tr = useT();
   return (
     <div className="mb-4 flex items-center gap-2">
       <span className="flex-1"><Btn full variant="outline" icon="UserPlus" onClick={onInvite}>Invite</Btn></span>
@@ -128,9 +131,9 @@ export function CircleActions({ joined, busy, onJoin, onLeave, onInvite, onSoon,
                by accident from a list, and hard to undo in a private circle. */
             <Menu>
               <MenuRow icon="BellOff" onClick={() => onSoon("Muting a circle is on the way. For now it stays quiet unless somebody replies to you.")}>
-                Mute this circle
+                {tr("detailviews.muteThisCircle")}
               </MenuRow>
-              <MenuRow icon="LogOut" danger onClick={onLeave}>Leave this circle</MenuRow>
+              <MenuRow icon="LogOut" danger onClick={onLeave}>{tr("circles.leave")}</MenuRow>
             </Menu>
           )}
         </div>
@@ -150,9 +153,9 @@ export function CircleActions({ joined, busy, onJoin, onLeave, onInvite, onSoon,
         </button>
         {menu === "more" && (
           <Menu>
-            <MenuRow icon="Share2" onClick={onInvite}>Copy the circle link</MenuRow>
+            <MenuRow icon="Share2" onClick={onInvite}>{tr("detailviews.copyTheCircleLink")}</MenuRow>
             <MenuRow icon="Flag" onClick={() => onSoon("Thank you. Reporting a circle is on the way — until then, tell us through Help and a person will read it.")}>
-              Report this circle
+              {tr("detailviews.reportThisCircle")}
             </MenuRow>
           </Menu>
         )}
@@ -229,6 +232,7 @@ export function Composer({ value, onChange, onPost, busy, avatar, name, onSoon, 
   busy: boolean; avatar: string; name: string; joined: boolean;
   onSoon: (msg: string) => void;
 }) {
+  const tr = useT();
   return (
     <Card className="mb-4">
       <div className="flex items-start gap-3">
@@ -242,7 +246,7 @@ export function Composer({ value, onChange, onPost, busy, avatar, name, onSoon, 
           value={value}
           rows={value.length > 90 ? 4 : 2}
           onChange={(e) => onChange(e.target.value)}
-          aria-label="Share something with your circle"
+          aria-label={tr("detailviews.shareSomethingWithYourCircle")}
           placeholder={joined ? "Share something with your circle…" : "Join the circle to write in it"}
           disabled={!joined}
           className="ux-sq min-h-[52px] w-full rounded-[14px] border px-3.5 py-3 text-xsm leading-relaxed outline-none"
@@ -295,6 +299,7 @@ export function CirclePostCard({ p, saved, busy, menu, onMenu, onLike, onSave, o
   onShare: (p: CircleFeedPost) => void;
   onSoon: (msg: string) => void;
 }) {
+  const tr = useT();
   const { title, rest, tags } = readPost(p.body);
   return (
     // `id` so a copied "#<post>" link lands on the post and not on the top of
@@ -330,7 +335,7 @@ export function CirclePostCard({ p, saved, busy, menu, onMenu, onLike, onSave, o
             </p>
 
             <div className="relative shrink-0">
-              <button type="button" aria-label="More about this post" aria-expanded={menu}
+              <button type="button" aria-label={tr("detailviews.moreAboutThisPost")} aria-expanded={menu}
                       onClick={() => onMenu(!menu)}
                       className="ux-press ux-sq grid h-[30px] w-[30px] place-items-center rounded-[8px]"
                       style={{ color: v("--ux-faint") }}>
@@ -341,7 +346,7 @@ export function CirclePostCard({ p, saved, busy, menu, onMenu, onLike, onSave, o
                   <MenuRow icon="Bookmark" onClick={() => { onSave(p); onMenu(false); }}>
                     {saved ? "Remove from saved" : "Save this post"}
                   </MenuRow>
-                  <MenuRow icon="Share2" onClick={() => { onShare(p); onMenu(false); }}>Copy its link</MenuRow>
+                  <MenuRow icon="Share2" onClick={() => { onShare(p); onMenu(false); }}>{tr("detailviews.copyItsLink")}</MenuRow>
                   <MenuRow icon="Flag" danger onClick={() => {
                     onMenu(false);
                     onSoon(p.mine
@@ -416,6 +421,7 @@ function PostAct({ icon, label, onClick, on, tone = "--ux-muted", disabled }: {
 export function AboutCircle({ c, posts, onEdit }: {
   c: ApiCircleDetail; posts: number; onEdit: () => void;
 }) {
+  const tr = useT();
   const t = topicOf(c.topic);
   const facts = [
     { k: "What it is about", val: t.label,                                   icon: "Tag",      tint: "--ux-brand-tint-2", ink: "--ux-brand" },
@@ -426,7 +432,7 @@ export function AboutCircle({ c, posts, onEdit }: {
   return (
     <Card>
       <div className="mb-2.5 flex items-center justify-between gap-3">
-        <h2 className="text-base font-extrabold" style={{ color: v("--ux-ink") }}>About this circle</h2>
+        <h2 className="text-base font-extrabold" style={{ color: v("--ux-ink") }}>{tr("circles.aboutThisCircle")}</h2>
         <button type="button" onClick={onEdit}
                 className="ux-sq -me-2 flex min-h-[36px] items-center rounded-[10px] px-2 text-xs font-bold"
                 style={{ color: v("--ux-brand") }}>
@@ -449,7 +455,7 @@ export function AboutCircle({ c, posts, onEdit }: {
         <div className="mt-4 rounded-[12px] p-3.5" style={{ background: v("--ux-surface-2") }}>
           <p className="flex items-center gap-1.5 text-[12px] lg:text-2xs font-extrabold" style={{ color: v("--ux-ink") }}>
             <Icons.ShieldCheck className="h-[13px] w-[13px]" style={{ color: v("--ux-green-ink") }} />
-            The one rule here
+            {tr("detailviews.theOneRuleHere")}
           </p>
           <p className="mt-1 text-[12px] lg:text-2xs leading-relaxed" style={{ color: v("--ux-ink-2") }}>{c.guidelines}</p>
         </div>
@@ -465,6 +471,7 @@ export function AboutCircle({ c, posts, onEdit }: {
 export function MembersCard({ count, people, onAll }: {
   count: number; people: ApiCircleMember[]; onAll: () => void;
 }) {
+  const tr = useT();
   // With no member list the server still sends a count. Six invented faces
   // would be a claim about who is in the room; six unnamed marks are not.
   const anon = Math.max(0, Math.min(6, count) - people.length);
@@ -477,7 +484,7 @@ export function MembersCard({ count, people, onAll }: {
         <button type="button" onClick={onAll}
                 className="ux-sq -me-2 flex min-h-[36px] items-center gap-0.5 rounded-[10px] px-2 text-xs font-bold"
                 style={{ color: v("--ux-brand") }}>
-          View all <Icons.ArrowRight className="h-[12px] w-[12px]" />
+          {tr("calendar.viewAll")} <Icons.ArrowRight className="h-[12px] w-[12px]" />
         </button>
       </div>
 
@@ -532,19 +539,20 @@ export interface RailEvent {
 export function EventsRail({ rows, busy, onGo }: {
   rows: RailEvent[]; busy: string | null; onGo: (e: RailEvent) => void;
 }) {
+  const tr = useT();
   return (
     <Card>
       <div className="mb-3 flex items-center justify-between gap-3">
-        <h2 className="text-base font-extrabold" style={{ color: v("--ux-ink") }}>Upcoming events</h2>
+        <h2 className="text-base font-extrabold" style={{ color: v("--ux-ink") }}>{tr("detailviews.upcomingEvents")}</h2>
         <Link href="/app/events" className="ux-sq -me-2 flex min-h-[36px] items-center gap-0.5 rounded-[10px] px-2 text-xs font-bold"
               style={{ color: v("--ux-brand") }}>
-          View all <Icons.ArrowRight className="h-[12px] w-[12px]" />
+          {tr("calendar.viewAll")} <Icons.ArrowRight className="h-[12px] w-[12px]" />
         </Link>
       </div>
 
       {rows.length === 0 ? (
         <p className="text-xs leading-relaxed" style={{ color: v("--ux-muted") }}>
-          Nothing on the calendar just now.
+          {tr("detailviews.nothingOnTheCalendarJustNow")}
         </p>
       ) : (
         <div className="space-y-3.5">
@@ -604,15 +612,16 @@ export const EXAMPLE_RESOURCES = [
 ];
 
 export function ResourcesRail({ onSoon }: { onSoon: (msg: string) => void }) {
+  const tr = useT();
   return (
     <Card>
       <div className="mb-3 flex items-center justify-between gap-3">
-        <h2 className="text-base font-extrabold" style={{ color: v("--ux-ink") }}>Popular resources</h2>
+        <h2 className="text-base font-extrabold" style={{ color: v("--ux-ink") }}>{tr("detailviews.popularResources")}</h2>
         <button type="button"
                 onClick={() => onSoon("A circle's shared files are on the way. Until then, put a link in a post — everyone in the circle can open it.")}
                 className="ux-sq -me-2 flex min-h-[36px] items-center gap-0.5 rounded-[10px] px-2 text-xs font-bold"
                 style={{ color: v("--ux-brand") }}>
-          View all <Icons.ArrowRight className="h-[12px] w-[12px]" />
+          {tr("calendar.viewAll")} <Icons.ArrowRight className="h-[12px] w-[12px]" />
         </button>
       </div>
 
@@ -666,12 +675,13 @@ export function PotCard({ id, monthlyLabel, round, paid, total, youPaid, whoseTu
   id: string; monthlyLabel: string; round: number;
   paid: number; total: number; youPaid: boolean; whoseTurn: string;
 }) {
+  const tr = useT();
   return (
     <Card>
       <div className="flex items-start gap-3">
         <IconTile icon="Coins" tint="--ux-tint-amber" ink="--ux-amber-ink" size={38} radius={11} />
         <div className="min-w-0 flex-1">
-          <h2 className="text-base font-extrabold" style={{ color: v("--ux-ink") }}>The pot</h2>
+          <h2 className="text-base font-extrabold" style={{ color: v("--ux-ink") }}>{tr("detailviews.thePot")}</h2>
           <p className="mt-0.5 text-[12px] lg:text-2xs" style={{ color: v("--ux-muted") }}>
             {monthlyLabel} a month · round {round}
           </p>

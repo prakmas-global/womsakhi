@@ -6,7 +6,10 @@ import { HomeShell } from "@/components/ux/home/HomeShell";
 import { SectionLabel, Tag } from "@/components/ux/work/native";
 import { Btn, Card, Chip, I, IconTile, v } from "@/components/ux/kit";
 import { formatRupees } from "@/components/ux/kit";
-import { EMPLOYERS, WORK_CLAIMS, owedFromWork, type Employer } from "@/components/ux/eight/data";
+import { apiBooks, type BookEntry, type Books } from "@/lib/books-api";
+import { EmptyState } from "@/components/ux/kit";
+import { useResource } from "@/lib/use-resource";
+import { apiEmployers, apiReportEmployer, type EmployerRecord } from "@/lib/employers-api";
 import { useT } from "@/i18n";
 
 /**
@@ -34,15 +37,66 @@ export default function VerifiedPage() {
   const [reported, setReported] = useState<string[]>([]);
   const [note, setNote] = useState<string | null>(null);
 
-  const owed = useMemo(() => owedFromWork(WORK_CLAIMS), []);
-  const risky = useMemo(() => EMPLOYERS.filter((e) => e.neverPaid > 0), []);
-  const clean = useMemo(() => EMPLOYERS.filter((e) => e.neverPaid === 0), []);
+  /*
+    Real employers, real reports, or an empty screen.
+
+    This ran on four invented businesses. One of them, "Bright Future
+    Exports", carried the line "Four women say they were never paid. Ask for
+    money up front, or walk away." Nobody had said anything. If that name had
+    matched a real company it is a defamatory claim about them, and either way
+    a woman was deciding whether to take work on evidence that did not exist.
+
+    `enough` is the important field: below two reports the counts come back
+    null rather than zero, so the row can say "too few women have reported"
+    instead of reading as a clean record.
+  */
+  const { data: directory, refetch } = useResource(
+    useCallback(async (sig: AbortSignal) => apiEmployers("", sig), []),
+    { employers: [] as EmployerRecord[], reported_total: 0 },
+  );
+  const EMPLOYERS = directory.employers;
+
+  /**
+   * What she is actually owed, from her own books.
+   *
+   * This section used to list three invented jobs — ₹1,480 late from "Ghar Ka
+   * Khana", ₹960 that "Bright Future Exports" were refusing — on a screen
+   * whose whole subject is which employers pay women and which do not. A woman
+   * checking whether she had been paid would have read someone else's debts.
+   *
+   * An `owed` row in her books is precisely this: work delivered, money not
+   * yet arrived. `paid` rows are shown alongside so the list is a record of
+   * the work and not only of the trouble.
+   */
+  const books = useResource<Books>(
+    useCallback(async (sig: AbortSignal) => apiBooks(sig),
+      []),
+    { entries: [], paid_minor: 0, owed_minor: 0, promised_minor: 0, late_count: 0 },
+  );
+  const claims = useMemo(
+    () => books.data.entries
+      .filter((e) => e.state === "owed" || e.state === "paid")
+      // Outstanding first — the reason she opened this screen.
+      .sort((a, b) => Number(b.state === "owed") - Number(a.state === "owed")
+        || b.late_days - a.late_days)
+      .slice(0, 12),
+    [books.data.entries],
+  );
+  const owed = books.data.owed_minor;
+  // Only ever split on counts we are actually showing. An unreported employer
+  // is neither safe nor risky, and putting it in "safe" is the whole bug.
+  const risky = useMemo(() => EMPLOYERS.filter((e) => e.enough && (e.never_paid ?? 0) > 0), [EMPLOYERS]);
+  const clean = useMemo(() => EMPLOYERS.filter((e) => e.enough && (e.never_paid ?? 0) === 0), [EMPLOYERS]);
   const shown = filter === "safe" ? clean : filter === "risky" ? risky : EMPLOYERS;
 
-  const report = useCallback((id: string, name: string) => {
+  const report = useCallback(async (id: string, name: string) => {
+    // Written before it is claimed. The old version only pushed an id into
+    // local state and told her the next woman would see it.
+    await apiReportEmployer(id, { outcome: "never_paid" });
+    await refetch();
     setReported((r) => [...r, id]);
-    setNote(`Recorded. The next woman offered work by ${name} will see it — your name is not shown.`);
-  }, []);
+    setNote(tr("verified.recorded", { name }));
+  }, [refetch, tr]);
 
   return (
     <HomeShell active="/app/verified">
@@ -70,7 +124,7 @@ export default function VerifiedPage() {
                  style={{ background: v("--ux-danger-tint") }}>
               <div className="flex flex-wrap items-start gap-4">
                 <span className="grid h-[46px] w-[46px] shrink-0 place-items-center rounded-full"
-                      style={{ background: v("--ux-danger-solid"), color: v("--ux-on-brand") }}>
+                      style={{ background: v("--ux-danger-solid"), color: v("--ux-on-danger") }}>
                   <I name="AlertTriangle" className="h-[24px] w-[24px]" sw={2.2} />
                 </span>
                 <div className="min-w-0 flex-1">
@@ -79,25 +133,31 @@ export default function VerifiedPage() {
                      style={{ color: v("--ux-ink") }}>
                     {e.name}
                   </p>
+                  {/*
+                    The old fixture wrote her advice into the data — "Ask for
+                    money up front, or walk away" — beside a number nobody had
+                    reported. The count is ours to state; what to do about it
+                    is hers.
+                  */}
                   <p className="mt-2 max-w-[52ch] text-sm font-semibold leading-relaxed" style={{ color: v("--ux-ink") }}>
-                    {e.flag}
+                    {tr("verified.reportedByWomenWhoWorked", { count: e.worked_by })}
                   </p>
 
                   {/* the count, drawn as bodies not a bar */}
                   <div className="mt-4 flex flex-wrap items-center gap-3">
                     <div className="flex gap-1">
-                      {Array.from({ length: e.workedBy }).map((_, i) => (
+                      {Array.from({ length: e.worked_by }).map((_, i) => (
                         <I key={i} name="User" className="h-[17px] w-[17px]"
                            sw={2.4}
-                           style={{ color: v(i < e.neverPaid ? "--ux-danger-solid" : "--ux-line-strong") }} />
+                           style={{ color: v(i < (e.never_paid ?? 0) ? "--ux-danger-solid" : "--ux-line-strong") }} />
                       ))}
                     </div>
                     <p className="text-xsm font-bold" style={{ color: v("--ux-ink") }}>
-                      {e.neverPaid} of {e.workedBy} were never paid at all
+                      {tr("verified.neverPaidOf", { never: e.never_paid ?? 0, total: e.worked_by })}
                     </p>
                   </div>
                   <p className="mt-1.5 text-xs" style={{ color: v("--ux-ink-2") }}>
-                    {e.paidLate} more were paid late · last report {e.lastReport}
+                    {tr("verified.morePaidLate", { late: e.paid_late ?? 0 })}
                   </p>
 
                   {/* Full width and stacked on a phone: "This happened to me
@@ -131,26 +191,33 @@ export default function VerifiedPage() {
                         sub={owed > 0 ? `${formatRupees(owed)} of it has not reached you` : "All paid"}
                         icon="Receipt" />
           <Card pad={0} style={{ overflow: "hidden" }}>
-            {WORK_CLAIMS.map((w, i) => {
-              const tone = w.state === "paid" ? "green" : "orange";
+            {claims.length === 0 ? (
+              <EmptyState
+                icon="Receipt"
+                title="Nothing recorded yet"
+                body="What you are owed comes from your books. Write down a job when you deliver it, and it shows here until the money arrives."
+                action={<Btn size="sm" variant="outline" icon="BookOpen" href="/app/books">Open your books</Btn>}
+              />
+            ) : claims.map((w: BookEntry, i: number) => {
+              const late = w.state === "owed" && w.late_days > 0;
               return (
                 <div key={w.id} className="flex flex-wrap items-center gap-x-3 gap-y-3 px-4 py-4 lg:gap-4 lg:px-5"
                      style={{ borderTop: i === 0 ? "none" : `1px solid ${v("--ux-line")}` }}>
                   <span className="h-[34px] w-[3px] shrink-0 rounded-full"
-                        style={{ background: v(w.state === "paid" ? "--ux-green-ink" : w.state === "disputed" ? "--ux-danger-solid" : "--ux-amber-ink") }} />
+                        style={{ background: v(w.state === "paid" ? "--ux-green-ink" : late ? "--ux-amber-ink" : "--ux-line-strong") }} />
                   <div className="min-w-0 flex-1">
-                    <p className="text-sm font-bold" style={{ color: v("--ux-ink") }}>{w.what}</p>
+                    <p className="text-sm font-bold" style={{ color: v("--ux-ink") }}>{w.what || w.who}</p>
                     <p className="mt-0.5 text-xs" style={{ color: v("--ux-muted") }}>
-                      {w.employer} · {w.dueOn}
-                      {w.daysLate ? ` · ${w.daysLate} days late` : ""}
+                      {w.who}
+                      {late ? ` · ${w.late_days} ${w.late_days === 1 ? "day" : "days"} late` : ""}
                     </p>
                   </div>
                   <div className="shrink-0 text-right">
                     <p className="text-base font-extrabold tabular-nums" style={{ color: v("--ux-ink") }}>
-                      {formatRupees(w.dueMinor)}
+                      {formatRupees(w.minor)}
                     </p>
-                    <Tag tone={tone as "green" | "orange"} size="sm">
-                      {w.state === "paid" ? "Paid" : w.state === "disputed" ? "They are refusing" : "Late"}
+                    <Tag tone={w.state === "paid" ? "green" : late ? "orange" : "neutral"} size="sm">
+                      {w.state === "paid" ? "Paid" : late ? "Late" : "Waiting"}
                     </Tag>
                   </div>
                   {/* Its own full-width line on a phone: beside the amount it
@@ -193,10 +260,14 @@ export default function VerifiedPage() {
 }
 
 /** A quiet ledger row — deliberately unlike the warning panel above it. */
-function Row({ e }: { e: Employer }) {
+function Row({ e }: { e: EmployerRecord }) {
   const tr = useT();
-  const bad = e.neverPaid > 0;
-  const pct = Math.round((e.paidOnTime / e.workedBy) * 100);
+  // Below the reporting threshold there is nothing to judge, so nothing is
+  // drawn as good or bad. `enough` is false and the row says why.
+  const bad = e.enough && (e.never_paid ?? 0) > 0;
+  const pct = e.enough && e.worked_by > 0
+    ? Math.round(((e.paid_on_time ?? 0) / e.worked_by) * 100)
+    : null;
   return (
     <Card pad={16} style={bad ? { borderColor: v("--ux-danger-solid") } : undefined}>
       <div className="flex flex-wrap items-center gap-4">
@@ -206,30 +277,46 @@ function Row({ e }: { e: Employer }) {
         <div className="min-w-0 flex-1">
           <div className="flex flex-wrap items-center gap-2">
             <p className="text-sm font-bold" style={{ color: v("--ux-ink") }}>{e.name}</p>
-            {!bad && e.paidLate === 0 && <Tag tone="green" size="sm">{tr("verified.alwaysPaidOnTime")}</Tag>}
+            {e.enough && !bad && e.paid_late === 0 && <Tag tone="green" size="sm">{tr("verified.alwaysPaidOnTime")}</Tag>}
           </div>
           <p className="mt-0.5 text-xs" style={{ color: v("--ux-muted") }}>
-            {e.kind} · {e.workedBy} women have worked for them · last report {e.lastReport}
+            {e.kind ? `${e.kind} · ` : ""}{tr("verified.womenHaveWorked", { count: e.worked_by })}
           </p>
 
           {/* Payment history as a stacked bar — reads at a glance, no stars anywhere */}
-          <div className="mt-2.5 flex h-[7px] w-full overflow-hidden rounded-full"
-               style={{ background: v("--ux-line") }}>
-            <span style={{ width: `${(e.paidOnTime / e.workedBy) * 100}%`, background: v("--ux-green-ink") }} />
-            <span style={{ width: `${(e.paidLate / e.workedBy) * 100}%`, background: v("--ux-amber-ink") }} />
-            <span style={{ width: `${(e.neverPaid / e.workedBy) * 100}%`, background: v("--ux-danger-solid") }} />
-          </div>
-          <p className="mt-1.5 text-xs" style={{ color: v("--ux-muted") }}>
-            {e.paidOnTime} on time · {e.paidLate} late
-            {e.neverPaid > 0 ? ` · ${e.neverPaid} never paid` : ""}
-          </p>
+          {/* Drawn only when there is something to draw. A full grey bar over
+              one report reads as a record; it is not one. */}
+          {e.enough ? (
+            <>
+              <div className="mt-2.5 flex h-[7px] w-full overflow-hidden rounded-full"
+                   style={{ background: v("--ux-line") }}>
+                <span style={{ width: `${((e.paid_on_time ?? 0) / e.worked_by) * 100}%`, background: v("--ux-green-ink") }} />
+                <span style={{ width: `${((e.paid_late ?? 0) / e.worked_by) * 100}%`, background: v("--ux-amber-ink") }} />
+                <span style={{ width: `${((e.never_paid ?? 0) / e.worked_by) * 100}%`, background: v("--ux-danger-solid") }} />
+              </div>
+              <p className="mt-1.5 text-xs" style={{ color: v("--ux-muted") }}>
+                {tr("verified.onTimeLate", { onTime: e.paid_on_time ?? 0, late: e.paid_late ?? 0 })}
+                {(e.never_paid ?? 0) > 0 ? tr("verified.neverPaidSuffix", { n: e.never_paid ?? 0 }) : ""}
+              </p>
+            </>
+          ) : (
+            <p className="mt-2 text-xs leading-relaxed" style={{ color: v("--ux-muted") }}>
+              {tr("verified.tooFewReports")}
+            </p>
+          )}
         </div>
         <div className="shrink-0 text-right">
-          <p className="text-xl font-extrabold leading-none tabular-nums"
-             style={{ color: v(bad ? "--ux-danger-solid" : "--ux-green-ink") }}>
-            {pct}%
-          </p>
-          <p className="mt-1 text-2xs font-semibold" style={{ color: v("--ux-muted") }}>paid on time</p>
+          {pct === null ? (
+            <p className="text-2xs font-semibold" style={{ color: v("--ux-faint") }}>{tr("verified.noRecordYet")}</p>
+          ) : (
+            <>
+              <p className="text-xl font-extrabold leading-none tabular-nums"
+                 style={{ color: v(bad ? "--ux-danger-solid" : "--ux-green-ink") }}>
+                {pct}%
+              </p>
+              <p className="mt-1 text-2xs font-semibold" style={{ color: v("--ux-muted") }}>{tr("verified.paidOnTime")}</p>
+            </>
+          )}
         </div>
       </div>
     </Card>

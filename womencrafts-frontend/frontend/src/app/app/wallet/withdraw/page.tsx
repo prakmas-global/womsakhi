@@ -8,12 +8,13 @@ import {Back, Btn, Card, IconTile, SourceNote } from "@/components/ux/kit";
 import { GROUP, Section } from "@/components/ux/earn/phone";
 import { Field, TextInput } from "@/components/ux/settings/Frame";
 import { HomeShell } from "@/components/ux/home/HomeShell";
-import { usePayoutMethods } from "@/components/ux/business";
+import { usePayoutMethods, usePayoutsLive } from "@/components/ux/business";
 import { apiWithdraw, type WithdrawResult } from "@/lib/shop-api";
 import { settled, useAttemptKey } from "@/lib/idempotency";
 import { rupees, rupeesExact } from "@/components/ux/money/data";
 import { useMoney } from "@/components/ux/money/live";
 import { useT } from "@/i18n";
+import { NeedAHuman } from "@/components/ux/support/NeedAHuman";
 
 /**
  * Moving money to her bank.
@@ -27,10 +28,18 @@ import { useT } from "@/i18n";
  *    line reads as a charge waiting to appear.
  * 3. Confirming is one-way and says WHEN it will arrive, in days she can plan
  *    around — not "processing".
+ * 4. It only says any of that when money can actually move. While the
+ *    gateway is the sandbox one the button is not offered at all: the
+ *    sandbox still writes the ledger row and still drops her balance, so an
+ *    enabled button here is a screen that takes her money and posts her a
+ *    date. `usePayoutsLive` decides, and defaults to no.
  */
 export default function WithdrawPage() {
   const tr = useT();
   const { data: PAYOUT_METHODS } = usePayoutMethods();
+  // Whether a rupee leaving here reaches a real bank. False while the
+  // gateway is the sandbox one, and false when we cannot tell.
+  const { data: payoutsLive } = usePayoutsLive();
   const { data: money, source } = useMoney();
   const [typed, setTyped] = useState("");
   const [method, setMethod] = useState<string>("");
@@ -124,6 +133,8 @@ export default function WithdrawPage() {
       skeleton="form"
       rail={
         <div className="space-y-[16px]">
+          {/* A person, on a screen about her money. */}
+          <NeedAHuman />
           <Card>
             <Section title={tr("walletWithdraw.whatYouAreTakingOut")} />
             <div className="space-y-2.5 text-xsm">
@@ -147,7 +158,26 @@ export default function WithdrawPage() {
               </span>
             </div>
             <div className="mt-4">
-              {stage === "sending" ? (
+              {/*
+                No button at all while payouts are not live — not a disabled
+                one she can keep pressing. The sandbox would accept this and
+                drop her balance.
+              */}
+              {!payoutsLive ? (
+                <div className="rounded-[12px] p-3.5" style={{ background: "var(--ux-tint-amber)" }}>
+                  <div className="flex items-start gap-2.5">
+                    <Icons.Info className="mt-px h-[18px] w-[18px] shrink-0" style={{ color: "var(--ux-amber-ink)" }} />
+                    <div className="min-w-0">
+                      <p className="text-xsm font-semibold" style={{ color: "var(--ux-ink)" }}>
+                        {tr("walletWithdraw.notYetTitle")}
+                      </p>
+                      <p className="mt-1 text-xs leading-relaxed" style={{ color: "var(--ux-ink-2)" }}>
+                        {tr("walletWithdraw.notYetBody")}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              ) : stage === "sending" ? (
                 <Btn variant="primary" full icon="Loader">Sending…</Btn>
               ) : (
                 <Btn variant="primary" full iconEnd="ArrowRight"
@@ -163,16 +193,23 @@ export default function WithdrawPage() {
                 {problem}
               </p>
             )}
-            <p className="mt-2.5 text-xs leading-relaxed" style={{ color: "var(--ux-faint)" }}>{tr("walletWithdraw.mostBanksHaveItByTomorrow")}</p>
+            {payoutsLive && (
+              <p className="mt-2.5 text-xs leading-relaxed" style={{ color: "var(--ux-faint)" }}>{tr("walletWithdraw.mostBanksHaveItByTomorrow")}</p>
+            )}
           </Card>
 
-          <Card>
-            <Section title={tr("walletWithdraw.ifItDoesNotArrive")} icon="Info" />
-            <p className="text-xsm leading-relaxed" style={{ color: "var(--ux-ink-2)" }}>
-              Tell us after three working days and we will trace it. The money is never lost — it is either
-              with your bank or still with us, and both are traceable.
-            </p>
-          </Card>
+          {/*
+            Offering to trace a payment that was never sent is worse than
+            saying nothing: it sends her away for three days first.
+          */}
+          {payoutsLive && (
+            <Card>
+              <Section title={tr("walletWithdraw.ifItDoesNotArrive")} icon="Info" />
+              <p className="text-xsm leading-relaxed" style={{ color: "var(--ux-ink-2)" }}>
+                {tr("walletWithdraw.traceBody")}
+              </p>
+            </Card>
+          )}
         </div>
       }
     >

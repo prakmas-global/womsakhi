@@ -34,10 +34,30 @@ apiClient.interceptors.response.use(
     // No response at all means the API is unreachable — the most important
     // case to surface, and the one a status-code check would miss entirely.
     const status = error?.response?.status ?? 0;
-    recordFailure(path, status);
+    // Some refusals are answers. See `expected` below.
+    if (!error?.config?.expected) recordFailure(path, status);
     return Promise.reject(error);
   },
 );
+
+/**
+ * Mark a request whose refusal is an ANSWER, not a fault.
+ *
+ * `recordFailure` already ignores 401 and 404 for this reason, and that was
+ * enough until a call turned out to be legitimately forbidden. `/me/shell` is
+ * the case: it does not serve a woman who is still in verification, her
+ * screens fall back to the calls that do, and the provider has always caught
+ * it — its comment even says so. But the server answers 403 rather than the
+ * 401 that comment assumed, and 403 is reported. So every woman waiting to be
+ * verified had a red "Something didn't load" bar across the bottom of the
+ * screen that was asking her for her ID.
+ *
+ * This is deliberately per-call and not a blanket 403 rule: a 403 anywhere
+ * else is a real fault and the banner should still say so.
+ */
+export function expected<T extends object>(config?: T): T {
+  return { ...(config ?? ({} as T)), expected: true };
+}
 
 // --- Auth API calls ---
 
@@ -516,4 +536,25 @@ for (const verb of ["post", "put", "patch", "delete"] as const) {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     return (raw as any)(...args).finally(invalidateReads);
   };
+}
+
+/**
+ * Renew a session that is still alive.
+ *
+ * Tokens last 30 minutes. Nothing renewed them, so a woman who left a screen
+ * open came back to a dead session — and, because the shell then had no user,
+ * to a blank page rather than a sign-in screen. Called on a timer and on
+ * focus, so an app she is actually using never runs out.
+ *
+ * Resolves false rather than throwing when the session has already gone: the
+ * caller's job then is to let the normal signed-out path take over, not to
+ * show her an error about a background request she never made.
+ */
+export async function apiRefreshSession(): Promise<boolean> {
+  try {
+    await apiClient.post("/auth/refresh", null, expected());
+    return true;
+  } catch {
+    return false;
+  }
 }

@@ -7,11 +7,12 @@ import { useRouter } from "next/navigation";
 import { HomeShell } from "@/components/ux/home/HomeShell";
 import { Btn, Card, EmptyState, I, IconTile, Pill, SectionHead, v } from "@/components/ux/kit";
 import { formatRupees } from "@/components/ux/kit";
-import {
-  HAQ, PAPERS, STATUS_LABEL, STATUS_TONE, type Paper,
-} from "@/components/ux/haq/data";
+import { HAQ as RAW_HAQ, PAPERS as RAW_PAPERS, STATUS_LABEL as RAW_STATUS_LABEL, STATUS_TONE as RAW_STATUS_TONE, type Paper } from "@/components/ux/haq/data";
 import { ClaimSteps, CompanionCard, Countdown, useCompanionsFor } from "@/components/ux/haq/parts";
+import { useResource } from "@/lib/use-resource";
+import { apiHaq, apiPapers, type HaqStates, type PaperStates } from "@/lib/life-api";
 import { useT } from "@/i18n";
+import { useTranslated } from "@/i18n/data";
 
 /**
  * One benefit, and the exact next thing to do about it.
@@ -31,17 +32,48 @@ const OFFICE_FOR = (needs: string[]) =>
   : "CSC on the main road";
 
 export default function HaqDetail({ params }: { params: Promise<{ id: string }> }) {
+  const STATUS_LABEL = useTranslated(RAW_STATUS_LABEL);
+  const STATUS_TONE = useTranslated(RAW_STATUS_TONE);
+  const PAPER_TYPES = useTranslated(RAW_PAPERS);
+  const CATALOGUE = useTranslated(RAW_HAQ);
+
+  /* The scheme is reference; where her claim stands is hers. See /app/haq. */
+  const haqState = useResource<HaqStates>(
+    useCallback((sig: AbortSignal) => apiHaq(sig), []),
+    { states: {}, default: "can-claim", tracked: 0 },
+  );
+  const paperState = useResource<PaperStates>(
+    useCallback((sig: AbortSignal) => apiPapers(sig), []),
+    { states: {}, default: "missing", held: 0 },
+  );
+
+  const HAQ = useMemo(() => CATALOGUE.map((x) => {
+    const mine = haqState.data.states[x.id];
+    if (!mine) return { ...x, status: "can-claim" as const, action: undefined, dueDays: undefined, stoppedBecause: undefined };
+    return {
+      ...x,
+      status: mine.status,
+      action: mine.action || undefined,
+      dueDays: mine.due_days ?? undefined,
+      stoppedBecause: mine.stopped_because || undefined,
+    };
+  }), [CATALOGUE, haqState.data.states]);
+
+  const PAPERS = useMemo(() => PAPER_TYPES.map((x) => {
+    const mine = paperState.data.states[x.id];
+    return { ...x, state: mine?.state ?? "missing", expires: mine?.expires || undefined };
+  }), [PAPER_TYPES, paperState.data.states]);
   const tr = useT();
   const { id } = use(params);
   const router = useRouter();
 
-  const h = useMemo(() => HAQ.find((x) => x.id === id), [id]);
+  const h = useMemo(() => HAQ.find((x) => x.id === id), [HAQ, id]);
   const office = useMemo(() => OFFICE_FOR(h?.needs ?? []), [h]);
   const companions = useCompanionsFor(office);
 
   const needed: Paper[] = useMemo(
     () => (h?.needs ?? []).map((n) => PAPERS.find((p) => p.id === n)).filter(Boolean) as Paper[],
-    [h],
+    [h, PAPERS],
   );
   const blocking = useMemo(() => needed.filter((p) => p.state !== "held"), [needed]);
 
@@ -62,7 +94,7 @@ export default function HaqDetail({ params }: { params: Promise<{ id: string }> 
           <EmptyState
             icon="SearchX"
             title={tr("haq.thatIsNotOneOfYours")}
-            body="This benefit is not in your list. It may have been renamed, or the link may be old."
+            body={tr("haq.thisBenefitIsNotInYour")}
             action={<Btn size="sm" href="/app/haq">{tr("haq.backToHaq")}</Btn>}
           />
         </Card>
@@ -167,7 +199,7 @@ export default function HaqDetail({ params }: { params: Promise<{ id: string }> 
             title={tr("haq.whatItNeeds")}
             sub={blocking.length ? `${blocking.length} still to sort out` : "Everything is in place"}
             icon="FileText"
-            action="All your papers"
+            action={tr("haq.allYourPapers")}
             onAction={() => router.push("/app/haq/papers")}
           />
           <div className="flex flex-col gap-2.5">

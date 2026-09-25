@@ -5,11 +5,12 @@ import { useState } from "react";
 import { Btn, Card, IconTile, SectionHead, SourceNote, Tabs } from "@/components/ux/kit";
 import { HomeShell } from "@/components/ux/home/HomeShell";
 import { useGuidance, useHelplines, useRights } from "@/components/ux/entitlements";
-import { WELLBEING_ART } from "@/components/ux/wellbeing/data";
+import { WELLBEING_ART as RAW_WELLBEING_ART } from "@/components/ux/wellbeing/data";
 import { useT } from "@/i18n";
 import { ListGroup } from "@/components/ux/mobile/ListRow";
 import { SegmentedControl } from "@/components/ux/mobile/SegmentedControl";
 import { PhoneRow, phonePrimary } from "@/components/ux/PhoneParts";
+import { useTranslated } from "@/i18n/data";
 
 /**
  * Legal Aid & Rights.
@@ -22,6 +23,7 @@ import { PhoneRow, phonePrimary } from "@/components/ux/PhoneParts";
  * every woman in India regardless of income. It is stated three times.
  */
 export default function RightsPage() {
+  const WELLBEING_ART = useTranslated(RAW_WELLBEING_ART);
   const tr = useT();
   const { data: RIGHTS, source } = useRights();
   // Numbers and steps from the server, not from a constant. The list here used

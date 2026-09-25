@@ -1,0 +1,51 @@
+/*
+  Borrowed, not invented.
+
+  Every value here is read off the module dashboards this row sits inside —
+  `.stat` gives the border, radius, surface and the 42px tinted icon chip;
+  `.sectionTitle h2` gives the 17px/700 heading; `--dash-fs-sm` gives the
+  second line. Nothing here is a new size, because a row that arrives in a
+  dashboard with its own paddings reads as bolted on, which is exactly what it
+  must not read as.
+*/
+.nudge {
+  display: flex; align-items: center; gap: 10px;
+  min-width: 0; min-height: 72px; padding: 10px 12px;
+  border: 1px solid var(--ux-line); border-radius: var(--ux-r-sm);
+  background: var(--ux-surface); color: var(--ux-ink);
+}
+.icon {
+  display: grid; place-items: center;
+  width: 42px; height: 42px; flex: none;
+  border-radius: var(--ux-r-sm);
+  background: var(--tint, var(--ux-tint-pink));
+  color: var(--ink, var(--ux-brand));
+}
+.icon svg { width: 22px; height: 22px; }
+
+.body { min-width: 0; flex: 1; }
+.body strong { display: block; font-size: 14px; line-height: 1.2; font-weight: 700; }
+.body span {
+  display: block; margin-top: 3px;
+  color: var(--ux-muted); font-size: var(--dash-fs-sm, 12px); line-height: 1.25;
+}
+
+/* Reads as the affordance it is, and matches `.sectionTitle > a` beside it. */
+.go {
+  display: inline-flex; align-items: center; gap: 5px; flex: none;
+  color: var(--ux-brand); font-size: var(--dash-fs-sm, 12px); font-weight: 700;
+  white-space: nowrap;
+}
+.go svg { width: 14px; height: 14px; }
+
+/* On a phone the label alone is the tap target; the word would wrap the row. */
+@media (max-width: 560px) {
+  .go span { display: none; }
+}
+
+/*
+  For a dashboard whose children space themselves with `margin-top` rather than
+  a column `gap` — the wellness page is the one. Same value, read from the same
+  variable the grids beside it read.
+*/
+.spaced { margin-top: var(--dashboard-gap, 16px); }

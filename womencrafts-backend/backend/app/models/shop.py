@@ -50,6 +50,9 @@ class ListingModel:
         place: str = "",
         travels_km: int = 0,
         photo: str = "",
+        photos: list[str] | None = None,
+        status: str = "live",
+        price_mode: str = "fixed",
     ) -> dict:
         now = datetime.now(timezone.utc)
         return {
@@ -60,6 +63,7 @@ class ListingModel:
             "title": title.strip(),
             "desc": desc.strip(),
             "price_minor": int(price_minor),
+            "price_mode": price_mode,
             "rate": rate if rate in ListingModel.RATES else "",
             # None means "not something you count" — a service has no stock, and
             # storing 0 would render as "out of stock" on a tailor's listing.
@@ -67,8 +71,9 @@ class ListingModel:
             "category": category.strip(),
             "place": place.strip(),
             "travels_km": int(travels_km),
-            "photo": photo,
-            "status": ListingModel.STATUS_LIVE,
+            "photo": photo or (photos[0] if photos else ""),
+            "photos": list(photos or ([photo] if photo else [])),
+            "status": status if status in (ListingModel.STATUS_LIVE, ListingModel.STATUS_PAUSED) else ListingModel.STATUS_LIVE,
             "views": 0,
             "created_at": now,
             "updated_at": now,
@@ -79,6 +84,7 @@ class ListingModel:
         price = int(doc.get("price_minor", 0))
         rate = doc.get("rate", "")
         stock = doc.get("stock")
+        price_mode = doc.get("price_mode", "fixed")
         return {
             "id": str(doc["_id"]),
             "kind": doc.get("kind", ListingModel.KIND_PRODUCT),
@@ -87,7 +93,16 @@ class ListingModel:
             "price_minor": price,
             # Formatted once so the rate never gets lost between screens: a
             # tailor charging "₹400" and "₹400 per piece" are different offers.
-            "price_label": f"₹{price // 100:,}" + (f" {rate}" if rate else ""),
+            # Whole rupees read as whole rupees. This always printed two
+            # decimals, so every price that used this label said "₹1,400.00"
+            # while the same amount rendered "₹1,400" everywhere the frontend
+            # formatted it — the same shop, two different prices. Paise are
+            # still shown when there are any.
+            "price_label": "By quote" if price_mode == "quote" else
+                ("From " if price_mode == "range" else "")
+                + (f"₹{price // 100:,}" if price % 100 == 0 else f"₹{price / 100:,.2f}")
+                + (f" {rate}" if rate else ""),
+            "price_mode": price_mode,
             "rate": rate,
             "stock": stock,
             "low_stock": stock is not None and 0 < stock <= 3,
@@ -96,8 +111,18 @@ class ListingModel:
             "place": doc.get("place", ""),
             "travels_km": int(doc.get("travels_km", 0)),
             "photo": media_url(doc.get("photo", "")),
+            "photos": [media_url(p) for p in doc.get("photos", [])],
             "status": doc.get("status", ListingModel.STATUS_LIVE),
             "views": int(doc.get("views", 0)),
+            # When she listed it. Stored since the beginning and never
+            # returned, so the one screen built to audit her shop — "which
+            # one did I pause in June and forget" — had no date to sort on
+            # and showed a made-up one.
+            "created_at": (doc.get("created_at").isoformat()
+                           if isinstance(doc.get("created_at"), datetime) else ""),
+            # Counted by the caller, which has the orders in hand. Zero here
+            # rather than absent, so the field is always the same shape.
+            "orders": int(doc.get("orders", 0)),
         }
 
 

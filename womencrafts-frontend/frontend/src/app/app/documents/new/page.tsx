@@ -1,10 +1,12 @@
 "use client";
 
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useMemo, useRef, useState } from "react";
+import { useT } from "@/i18n";
 import { useRouter } from "next/navigation";
 
 import { HomeShell } from "@/components/ux/home/HomeShell";
-import { apiPauseListing, apiSaveListing } from "@/lib/shop-api";
+import { apiSaveListing } from "@/lib/shop-api";
+import { ACCEPTED_IMAGE_TYPES, apiUploadImage, uploadErrorMessage, validateImage } from "@/lib/uploads-api";
 import { useMe } from "@/components/ux/me";
 import * as Icons from "@/components/ux/icons";
 import { Back, Btn, Card, I, IconTile, SourceNote, v } from "@/components/ux/kit";
@@ -13,8 +15,8 @@ import { CHOICES, FIELDS, STEP_NAV } from "@/components/ux/earn/phone";
 // `Sheet`, which is a drawer and the wrong shape for a choice like this.
 import Modal from "@/design-system/primitives/Modal";
 import {
-  CATEGORIES, HIGHLIGHTS, PRICE_BANDS, PRICE_TYPES, PROCESSING_TIMES,
-  QUOTE_FIELDS, RESPONSE_TIMES,
+  CATEGORIES as RAW_CATEGORIES, HIGHLIGHTS as RAW_HIGHLIGHTS, PRICE_BANDS as RAW_PRICE_BANDS, PRICE_TYPES as RAW_PRICE_TYPES, PROCESSING_TIMES as RAW_PROCESSING_TIMES,
+  QUOTE_FIELDS as RAW_QUOTE_FIELDS, RESPONSE_TIMES as RAW_RESPONSE_TIMES,
 } from "@/components/ux/earn/data";
 
 import { Saying, Tips } from "./wizard-views";
@@ -30,6 +32,7 @@ const STEPS = [
   { id: 4, label: "Check and publish" },
 ] as const;
 import { QuoteSheet } from "./quote-sheet";
+import { useTranslated } from "@/i18n/data";
 
 type Kind = "product" | "service" | "both";
 type PriceMode = "fixed" | "range" | "quote";
@@ -74,16 +77,21 @@ const TIPS: Record<number, { title: string; items: string[] }> = {
  * forgets when you step backwards teaches you not to check your work.
  *
  * ── What is saved, and what is not ──────────────────────────────────────────
- * `POST /shop/listings` takes a kind, a title, a description, a price, a rate,
- * a stock count and a category — and those are written. It has no field for
- * the highlights, the price band, the quote settings or the media, so those
- * are held only in this form and `SourceNote` says so on the steps that
- * collect them.
+ * Listing photos, pricing mode and draft status are saved with the core fields.
+ * Additional merchandising options still need their own persisted contract.
  *
  * Before this, both buttons on the last step called `router.push` and nothing
  * else: she filled in four steps and the listing was silently thrown away.
  */
 export default function AddListingPage() {
+  const PRICE_BANDS = useTranslated(RAW_PRICE_BANDS);
+  const HIGHLIGHTS = useTranslated(RAW_HIGHLIGHTS);
+  const CATEGORIES = useTranslated(RAW_CATEGORIES);
+  const RESPONSE_TIMES = useTranslated(RAW_RESPONSE_TIMES);
+  const QUOTE_FIELDS = useTranslated(RAW_QUOTE_FIELDS);
+  const PROCESSING_TIMES = useTranslated(RAW_PROCESSING_TIMES);
+  const PRICE_TYPES = useTranslated(RAW_PRICE_TYPES);
+  const tr = useT();
   const router = useRouter();
 
   // The preview says "By <her>", not "By the seller" — she is the seller.
@@ -134,44 +142,79 @@ export default function AddListingPage() {
   const [askOpen, setAskOpen] = useState(false);
   const [respondIn, setRespondIn] = useState(RESPONSE_TIMES[1]);
 
-  const subs = useMemo(() => CATEGORIES.find((c) => c.label === cat)?.subs ?? [], [cat]);
+  const subs = useMemo(() => CATEGORIES.find((c) => c.label === cat)?.subs ?? [], [cat, CATEGORIES]);
 
   const [saveError, setSaveError] = useState<string | null>(null);
+  const [saving, setSaving] = useState(false);
+  const [photos, setPhotos] = useState<string[]>([]);
+  const [uploading, setUploading] = useState(false);
+  const [uploadError, setUploadError] = useState("");
+  const photoInput = useRef<HTMLInputElement>(null);
+
+  const uploadPhotos = async (files: File[]) => {
+    if (uploading || !files.length) return;
+    setUploadError("");
+    if (files.length + photos.length > 4) {
+      setUploadError("Choose up to four photos for this listing.");
+      return;
+    }
+    const invalid = files.map(validateImage).find(Boolean);
+    if (invalid) { setUploadError(invalid); return; }
+    setUploading(true);
+    try {
+      for (const file of files) {
+        const uploaded = await apiUploadImage(file);
+        setPhotos((current) => [...current, uploaded.url]);
+      }
+    } catch (error) {
+      setUploadError(uploadErrorMessage(error));
+    } finally {
+      setUploading(false);
+    }
+  };
 
   /**
    * Write the listing, then go and look at it.
    *
-   * A draft is saved and then paused rather than created paused: the create
-   * endpoint takes a `ListingCreate`, which has no `status` — the same gap
-   * that made `apiPauseListing` a separate call in the first place.
+   * Draft status is included in the insert, so a draft is never briefly public.
    */
   const publish = useCallback(async (asDraft: boolean) => {
+    if (saving || uploading) return;
     setSaveError(null);
-    const rupees = Number(price.replace(/[^\d]/g, "")) || 0;
+    setSaving(true);
+    const effectivePrice = mode === "range" && band ? band.low
+      : Number((discountOn && discount ? discount : price).replace(/[^\d.]/g, "")) || 0;
     try {
-      const made = await apiSaveListing({
+      await apiSaveListing({
         kind: kind === "service" ? "service" : "product",
         title: title.trim(),
         desc: [short.trim(), long.trim()].filter(Boolean).join("\n\n"),
-        price_minor: mode === "quote" ? 0 : rupees * 100,
+        price_minor: mode === "quote" ? 0 : Math.round(effectivePrice * 100),
         rate: mode === "quote" ? "By quote" : priceType,
         stock: kind === "service" || mode === "quote" || !trackStock
           ? null : Number(stock.replace(/[^\d]/g, "")) || 0,
         category: sub || cat,
+        photo: photos[0] || "",
+        photos,
+        status: asDraft ? "paused" : "live",
+        price_mode: mode,
       });
-      if (asDraft && made?.id) await apiPauseListing(made.id, true);
       router.push("/app/documents/listings");
     } catch {
       setSaveError("That did not save. Nothing you typed is lost — try again in a moment.");
+    } finally {
+      setSaving(false);
     }
-  }, [kind, title, short, long, mode, price, priceType, trackStock, stock, sub, cat, router]);
+  }, [kind, title, short, long, mode, price, priceType, trackStock, stock, sub, cat, router,
+      saving, uploading, photos, band, discountOn, discount]);
 
   const toggleIn = useCallback((list: string[], set: (v: string[]) => void, id: string) => {
     set(list.includes(id) ? list.filter((x) => x !== id) : [...list, id]);
   }, []);
 
   const step1Ok = title.trim().length > 2 && cat && short.trim().length > 5;
-  const step2Ok = mode === "quote" ? quoteOn : Boolean(price.trim());
+  const step2Ok = mode === "quote" ? quoteOn : mode === "range" ? Boolean(band && band.low > 0)
+    : Number(price.replace(/[^\d.]/g, "")) > 0;
 
   const go = useCallback((n: number) => {
     setAt(n);
@@ -179,9 +222,9 @@ export default function AddListingPage() {
     if (typeof window !== "undefined") window.scrollTo({ top: 0, behavior: "smooth" });
   }, []);
 
-  const priceNum = Number(price.replace(/[^\d]/g, "")) || 0;
-  const wasNum = Number(was.replace(/[^\d]/g, "")) || 0;
-  const discNum = Number(discount.replace(/[^\d]/g, "")) || 0;
+  const priceNum = Number(price.replace(/[^\d.]/g, "")) || 0;
+  const wasNum = Number(was.replace(/[^\d.]/g, "")) || 0;
+  const discNum = Number(discount.replace(/[^\d.]/g, "")) || 0;
   const shownPrice = discountOn && discNum ? discNum : priceNum;
   const off = wasNum > shownPrice && shownPrice > 0
     ? Math.round((1 - shownPrice / wasNum) * 100) : 0;
@@ -201,11 +244,12 @@ export default function AddListingPage() {
           <Card>
             <h2 className="mb-2.5 flex items-center gap-2 text-base font-extrabold" style={{ color: v("--ux-ink") }}>
               <Icons.Eye className="h-[16px] w-[16px]" style={{ color: v("--ux-brand") }} />
-              How it will look
+              {tr("documentsNew.howItWillLook")}
             </h2>
             <div className="overflow-hidden rounded-[12px] border" style={{ borderColor: v("--ux-line") }}>
               <div className="grid h-[132px] place-items-center" style={{ background: v("--ux-surface-2") }}>
-                <Icons.Image className="h-[30px] w-[30px]" style={{ color: v("--ux-faint") }} />
+                {photos[0] ? <img src={photos[0]} alt={title || "Listing photo"} className="h-full w-full object-contain" />
+                  : <Icons.Image className="h-[30px] w-[30px]" style={{ color: v("--ux-faint") }} />}
               </div>
               <div className="p-3">
                 <p className="truncate text-xsm font-bold" style={{ color: v("--ux-ink") }}>
@@ -244,46 +288,49 @@ export default function AddListingPage() {
         </div>
       }
     >
-      <Back to="/app/documents/listings" label="What you sell" className="mb-4" />
+      <Back to="/app/documents/listings" label={tr("documents.whatYouSell")} className="mb-4" />
 
       <div className="mb-6 flex flex-wrap items-start justify-between gap-4 lg:mb-4">
         <div className="min-w-0">
           <h1 className="ux-screen-title text-3xl font-extrabold leading-[1.15] tracking-[-0.02em]"
               style={{ color: v("--ux-ink") }}>
-            Add something to sell
+            {tr("documents.addSomethingToSell")}
           </h1>
           <p className="mt-1.5 max-w-[56ch] text-sm leading-relaxed" style={{ color: v("--ux-muted") }}>
-            Tell buyers what you make or do. You can change every part of it later.
+            {tr("documentsNew.tellBuyersWhatYouMakeOr")}
           </p>
         </div>
-        <Btn variant="outline" icon="Save" className="max-lg:w-full" onClick={() => router.push("/app/documents/listings")}>
-          Save and finish later
+        <Btn variant="outline" icon="Save" className="max-lg:w-full"
+             disabled={title.trim().length < 2 || saving || uploading} onClick={() => publish(true)}>
+          {tr("documentsNew.saveAndFinishLater")}
         </Btn>
       </div>
+
+      {saveError && at !== 4 && <p role="alert" className="mb-4 text-sm" style={{ color: v("--ux-danger-solid") }}>{saveError}</p>}
 
       <Steps steps={STEPS} at={at} done={done} onGo={go} />
 
       {/* ── 1 · What it is ───────────────────────────────────────────────── */}
       {at === 1 && (
         <Card pad={20} className={FIELDS}>
-          <h2 className="text-lg font-extrabold" style={{ color: v("--ux-ink") }}>What are you selling?</h2>
+          <h2 className="text-lg font-extrabold" style={{ color: v("--ux-ink") }}>{tr("documentsNew.whatAreYouSelling")}</h2>
           <p className="mt-1 text-xsm" style={{ color: v("--ux-muted") }}>
-            The basics. This is what a buyer reads first.
+            {tr("documentsNew.theBasicsThisIsWhatA")}
           </p>
 
           <div className={`mt-4 flex flex-wrap gap-2.5 ${CHOICES}`}>
-            <Choice icon="Package" title="A product" sub="Something you make or supply"
+            <Choice icon="Package" title="A product" sub={tr("documentsNew.somethingYouMakeOrSupply")}
                     on={kind === "product"} onClick={() => setKind("product")} />
-            <Choice icon="Sparkles" title="A service" sub="Something you do, by hand or by hour"
+            <Choice icon="Sparkles" title="A service" sub={tr("documentsNew.somethingYouDoByHandOr")}
                     on={kind === "service"} onClick={() => setKind("service")} />
-            <Choice icon="Boxes" title="Both" sub="A thing and the work that goes with it"
+            <Choice icon="Boxes" title="Both" sub={tr("documentsNew.aThingAndTheWorkThat")}
                     on={kind === "both"} onClick={() => setKind("both")} />
           </div>
 
           <div className="mt-5">
-            <Label need>What is it called</Label>
+            <Label need>{tr("circlesNew.whatIsItCalled")}</Label>
             <Text value={title} onChange={setTitle} max={100} label="Title"
-                  placeholder="Handmade cotton kurta" />
+                  placeholder={tr("documentsNew.handmadeCottonKurta")} />
             <span className="mt-1 block text-end text-2xs" style={{ color: v("--ux-faint") }}>
               {title.length}/100
             </span>
@@ -293,7 +340,7 @@ export default function AddListingPage() {
             <div>
               <Label need>Category</Label>
               <Select value={cat} onChange={(c) => { setCat(c); setSub(""); }} label="Category"
-                      placeholder="Choose one" options={CATEGORIES.map((c) => c.label)} />
+                      placeholder={tr("documentsNew.chooseOne")} options={CATEGORIES.map((c) => c.label)} />
             </div>
             <div>
               <Label>Kind of {cat ? "it" : "thing"}</Label>
@@ -303,19 +350,19 @@ export default function AddListingPage() {
           </div>
 
           <div className="mt-4">
-            <Label need>In one line</Label>
-            <Area value={short} onChange={setShort} max={200} rows={2} label="Short description"
-                  placeholder="Hand-stitched cotton kurta, available in six colours." />
+            <Label need>{tr("documentsNew.inOneLine")}</Label>
+            <Area value={short} onChange={setShort} max={200} rows={2} label={tr("circlesCreate.shortDescription")}
+                  placeholder={tr("documentsNew.handStitchedCottonKurtaAvailableIn")} />
           </div>
 
           <div className="mt-3">
-            <Label>Everything else</Label>
-            <Area value={long} onChange={setLong} max={1000} rows={5} label="Detailed description"
-                  placeholder="Material, sizes, how it is made, how to wash it, how long it takes you." />
+            <Label>{tr("messages.everythingElse")}</Label>
+            <Area value={long} onChange={setLong} max={1000} rows={5} label={tr("documentsNew.detailedDescription")}
+                  placeholder={tr("documentsNew.materialSizesHowItIsMade")} />
           </div>
 
           <div className="mt-4">
-            <Label hint="up to six">What makes it worth buying</Label>
+            <Label hint={tr("documentsNew.upToSix")}>{tr("documentsNew.whatMakesItWorthBuying")}</Label>
             <div className="flex flex-wrap gap-2">
               {HIGHLIGHTS.map((h) => {
                 const on = picked.includes(h);
@@ -334,11 +381,11 @@ export default function AddListingPage() {
           </div>
 
           <div className="mt-4">
-            <Label>Words people might search</Label>
+            <Label>{tr("documentsNew.wordsPeopleMightSearch")}</Label>
             <Text value={tags} onChange={setTags} label="Tags"
-                  placeholder="cotton, kurta, handmade, festival" />
+                  placeholder={tr("documentsNew.cottonKurtaHandmadeFestival")} />
             <p className="mt-1 text-2xs" style={{ color: v("--ux-faint") }}>
-              Separate with commas. These help buyers find you, and are never shown as written.
+              {tr("documentsNew.separateWithCommasTheseHelpBuyers")}
             </p>
           </div>
 
@@ -364,10 +411,10 @@ export default function AddListingPage() {
                   Working within {money(band.low)} – {money(band.high)}
                 </p>
                 <p className="mt-0.5 text-xs" style={{ color: v("--ux-ink-2") }}>
-                  A starting point, not a rule. Change it whenever you like.
+                  {tr("documentsNew.aStartingPointNotARule")}
                 </p>
               </div>
-              <Btn size="sm" variant="outline" className="max-lg:w-full max-lg:px-4" onClick={() => setBandOpen(true)}>Change range</Btn>
+              <Btn size="sm" variant="outline" className="max-lg:w-full max-lg:px-4" onClick={() => setBandOpen(true)}>{tr("documentsNew.changeRange")}</Btn>
             </div>
           )}
 
@@ -375,19 +422,19 @@ export default function AddListingPage() {
             <div className="flex items-start gap-3">
               <IconTile icon="IndianRupee" tint="--ux-tint-violet" ink="--ux-violet-ink" size={36} radius={11} />
               <div>
-                <h2 className="text-lg font-extrabold" style={{ color: v("--ux-ink") }}>What it costs</h2>
+                <h2 className="text-lg font-extrabold" style={{ color: v("--ux-ink") }}>{tr("documentsNew.whatItCosts")}</h2>
                 <p className="mt-0.5 text-xsm" style={{ color: v("--ux-muted") }}>
-                  Set a fair price. You can always change it later.
+                  {tr("documentsNew.setAFairPriceYouCan")}
                 </p>
               </div>
             </div>
 
             <div className={`mt-4 flex flex-wrap gap-2.5 ${CHOICES}`}>
-              <Choice icon="Tag" title="One price" sub="The same for everyone"
+              <Choice icon="Tag" title={tr("documentsNew.onePrice")} sub={tr("documentsNew.theSameForEveryone")}
                       on={mode === "fixed"} onClick={() => setMode("fixed")} />
-              <Choice icon="BarChart3" title="A range" sub="From this much to that much"
+              <Choice icon="BarChart3" title="A range" sub={tr("documentsNew.fromThisMuchToThatMuch")}
                       on={mode === "range"} onClick={() => { setMode("range"); setBandOpen(true); }} />
-              <Choice icon="MessageSquare" title="By quote" sub="Buyers ask, you price it"
+              <Choice icon="MessageSquare" title={tr("documentsListings.byQuote")} sub={tr("documentsNew.buyersAskYouPriceIt")}
                       on={mode === "quote"} onClick={() => setMode("quote")} />
             </div>
 
@@ -395,7 +442,7 @@ export default function AddListingPage() {
               <>
                 <div className="mt-5 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
                   <div>
-                    <Label need>Your price</Label>
+                    <Label need>{tr("documentsNew.yourPrice")}</Label>
                     <Text value={price} onChange={setPrice} label="Price" prefix="₹" type="number"
                           placeholder="1400" />
                     {band && (
@@ -405,48 +452,48 @@ export default function AddListingPage() {
                     )}
                   </div>
                   <div>
-                    <Label>What it used to be</Label>
-                    <Text value={was} onChange={setWas} label="Compare at price" prefix="₹" type="number"
+                    <Label>{tr("documentsNew.whatItUsedToBe")}</Label>
+                    <Text value={was} onChange={setWas} label={tr("documentsNew.compareAtPrice")} prefix="₹" type="number"
                           placeholder="2000" />
                     <p className="mt-1 text-2xs" style={{ color: v("--ux-faint") }}>
-                      Shown struck through, so the saving is visible.
+                      {tr("documentsNew.shownStruckThroughSoTheSaving")}
                     </p>
                   </div>
                   <div>
-                    <Label>Sold by</Label>
-                    <Select value={priceType} onChange={setPriceType} label="Price type" options={PRICE_TYPES} />
+                    <Label>{tr("documentsNew.soldBy")}</Label>
+                    <Select value={priceType} onChange={setPriceType} label={tr("documentsNew.priceType")} options={PRICE_TYPES} />
                   </div>
                 </div>
 
                 <div className="mt-4 rounded-[12px] p-4 lg:p-3.5" style={{ background: v("--ux-surface-2") }}>
                   <Toggle on={discountOn} onChange={setDiscountOn}
-                          label="Run a discount"
-                          sub="A lower price for now. The original stays visible beside it." />
+                          label={tr("documentsNew.runADiscount")}
+                          sub={tr("documentsNew.aLowerPriceForNowThe")} />
                   {discountOn && (
                     <div className="mt-3 max-w-[240px]">
-                      <Label>Discounted price</Label>
-                      <Text value={discount} onChange={setDiscount} label="Discount price" prefix="₹"
+                      <Label>{tr("documentsNew.discountedPrice")}</Label>
+                      <Text value={discount} onChange={setDiscount} label={tr("documentsNew.discountPrice")} prefix="₹"
                             type="number" placeholder="1200" />
                     </div>
                   )}
                 </div>
 
                 <div className="mt-4 max-w-[240px]">
-                  <Label>Smallest order you will take</Label>
-                  <Text value={minQty} onChange={setMinQty} label="Minimum order quantity" type="number" />
+                  <Label>{tr("documentsNew.smallestOrderYouWillTake")}</Label>
+                  <Text value={minQty} onChange={setMinQty} label={tr("documentsNew.minimumOrderQuantity")} type="number" />
                 </div>
               </>
             ) : (
               /* By quote */
               <div className="mt-5">
                 <Toggle on={quoteOn} onChange={setQuoteOn}
-                        label="Let buyers ask for a price"
-                        sub="They send what they need, you reply with a price. Nothing is agreed until you both say so." />
+                        label={tr("documentsNew.letBuyersAskForAPrice")}
+                        sub={tr("documentsNew.theySendWhatTheyNeedYou")} />
 
                 {quoteOn && (
                   <div className="mt-4 grid gap-5 lg:grid-cols-[minmax(0,1fr)_300px]">
                     <div>
-                      <Label>What to ask them for</Label>
+                      <Label>{tr("documentsNew.whatToAskThemFor")}</Label>
                       <div className="mt-1">
                         {QUOTE_FIELDS.map((f) => (
                           <Check key={f.id} label={f.label}
@@ -456,15 +503,15 @@ export default function AddListingPage() {
                       </div>
 
                       <div className="mt-4">
-                        <Label>Anything you want to say first</Label>
+                        <Label>{tr("documentsNew.anythingYouWantToSayFirst")}</Label>
                         <Area value={quoteMsg} onChange={setQuoteMsg} max={300} rows={3}
-                              label="Message to buyers"
-                              placeholder="Tell me the size, the colour and how many, and I will send you a price the same day." />
+                              label={tr("documentsNew.messageToBuyers")}
+                              placeholder={tr("documentsNew.tellMeTheSizeTheColour")} />
                       </div>
 
                       <div className="mt-3 max-w-[280px]">
-                        <Label>How fast you usually reply</Label>
-                        <Select value={respondIn} onChange={setRespondIn} label="Expected response time"
+                        <Label>{tr("documentsNew.howFastYouUsuallyReply")}</Label>
+                        <Select value={respondIn} onChange={setRespondIn} label={tr("documentsNew.expectedResponseTime")}
                                 options={RESPONSE_TIMES} />
                       </div>
                     </div>
@@ -472,15 +519,15 @@ export default function AddListingPage() {
                     <div className="rounded-[12px] p-4 lg:rounded-[14px]" style={{ background: v("--ux-surface-2") }}>
                       <p className="flex items-center gap-2 text-xsm font-bold" style={{ color: v("--ux-ink") }}>
                         <Icons.Quote className="h-[15px] w-[15px]" style={{ color: v("--ux-brand") }} />
-                        What the buyer sees
+                        {tr("documentsNew.whatTheBuyerSees")}
                       </p>
                       <div className="mt-3 rounded-[12px] p-4 lg:p-3.5" style={{ background: v("--ux-surface") }}>
-                        <p className="text-xsm font-bold" style={{ color: v("--ux-ink") }}>Ask for a price</p>
+                        <p className="text-xsm font-bold" style={{ color: v("--ux-ink") }}>{tr("documentsNew.askForAPrice")}</p>
                         <p className="mt-1 text-xs leading-snug" style={{ color: v("--ux-muted") }}>
-                          Tell her what you need and she will send you a price.
+                          {tr("documentsNew.tellHerWhatYouNeedAnd")}
                         </p>
                         <div className="mt-2.5">
-                          <Btn size="sm" full onClick={() => setAskOpen(true)}>Ask for a price</Btn>
+                          <Btn size="sm" full onClick={() => setAskOpen(true)}>{tr("documentsNew.askForAPrice")}</Btn>
                         </div>
                       </div>
                       <ul className="mt-3 space-y-1.5">
@@ -508,31 +555,31 @@ export default function AddListingPage() {
               <div className="flex items-start gap-3">
                 <IconTile icon="Package" tint="--ux-tint-blue" ink="--ux-blue-ink" size={36} radius={11} />
                 <div>
-                  <h2 className="text-lg font-extrabold" style={{ color: v("--ux-ink") }}>How many you have</h2>
+                  <h2 className="text-lg font-extrabold" style={{ color: v("--ux-ink") }}>{tr("documentsNew.howManyYouHave")}</h2>
                   <p className="mt-0.5 text-xsm" style={{ color: v("--ux-muted") }}>
-                    Only if you keep a count. A tailor who makes to order does not need this.
+                    {tr("documentsNew.onlyIfYouKeepACount")}
                   </p>
                 </div>
               </div>
 
               <div className="mt-4">
                 <Toggle on={trackStock} onChange={setTrackStock}
-                        label="Keep a count" sub="We will tell you when it is running low." />
+                        label={tr("documentsNew.keepACount")} sub={tr("documentsNew.weWillTellYouWhenIt")} />
               </div>
 
               {trackStock && (
                 <div className="mt-4 grid gap-4 lg:grid-cols-[160px_160px_minmax(0,1fr)]">
                   <div>
-                    <Label need>How many now</Label>
-                    <Text value={stock} onChange={setStock} label="Total stock" type="number" placeholder="50" />
+                    <Label need>{tr("documentsNew.howManyNow")}</Label>
+                    <Text value={stock} onChange={setStock} label={tr("documentsNew.totalStock")} type="number" placeholder="50" />
                   </div>
                   <div>
-                    <Label>Warn me at</Label>
-                    <Text value={lowAt} onChange={setLowAt} label="Low stock alert" type="number" />
+                    <Label>{tr("documentsNew.warnMeAt")}</Label>
+                    <Text value={lowAt} onChange={setLowAt} label={tr("documentsNew.lowStockAlert")} type="number" />
                   </div>
                   <div className="rounded-[12px] p-4 lg:p-3.5" style={{ background: v("--ux-surface-2") }}>
                     <span className="mb-2 block text-xsm font-bold" style={{ color: v("--ux-ink") }}>
-                      When it runs out
+                      {tr("documentsNew.whenItRunsOut")}
                     </span>
                     {([
                       { id: "stop",     t: "Stop taking orders", s: "The listing pauses itself" },
@@ -564,9 +611,9 @@ export default function AddListingPage() {
             <div className="flex items-start gap-3">
               <IconTile icon="Truck" tint="--ux-tint-amber" ink="--ux-amber-ink" size={36} radius={11} />
               <div>
-                <h2 className="text-lg font-extrabold" style={{ color: v("--ux-ink") }}>How it reaches them</h2>
+                <h2 className="text-lg font-extrabold" style={{ color: v("--ux-ink") }}>{tr("documentsNew.howItReachesThem")}</h2>
                 <p className="mt-0.5 text-xsm" style={{ color: v("--ux-muted") }}>
-                  Buyers decide on this almost as much as on the price.
+                  {tr("documentsNew.buyersDecideOnThisAlmostAs")}
                 </p>
               </div>
             </div>
@@ -592,12 +639,12 @@ export default function AddListingPage() {
             {delivery === "physical" && (
               <div className="mt-4 grid gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_minmax(0,1.2fr)]">
                 <div>
-                  <Label need>Time to get it ready</Label>
-                  <Select value={prep} onChange={setPrep} label="Processing time" options={PROCESSING_TIMES} />
+                  <Label need>{tr("documentsNew.timeToGetItReady")}</Label>
+                  <Select value={prep} onChange={setPrep} label={tr("documentsNew.processingTime")} options={PROCESSING_TIMES} />
                 </div>
                 <div>
-                  <Label need>Where you send to</Label>
-                  <Select value={ships} onChange={setShips} label="Shipping within"
+                  <Label need>{tr("documentsNew.whereYouSendTo")}</Label>
+                  <Select value={ships} onChange={setShips} label={tr("documentsNew.shippingWithin")}
                           options={["My city", "My state", "India", "Anywhere"]} />
                 </div>
                 <div className="rounded-[12px] p-4 lg:p-3.5" style={{ background: v("--ux-surface-2") }}>
@@ -626,10 +673,10 @@ export default function AddListingPage() {
             )}
 
             <div className="mt-4">
-              <Label>Anything else they should know</Label>
+              <Label>{tr("documentsNew.anythingElseTheyShouldKnow")}</Label>
               <Area value={deliveryNote} onChange={setDeliveryNote} max={300} rows={2}
-                    label="Additional delivery information"
-                    placeholder="Wrapped in cloth, not plastic. Usually reaches in three to five days." />
+                    label={tr("documentsNew.additionalDeliveryInformation")}
+                    placeholder={tr("documentsNew.wrappedInClothNotPlasticUsually")} />
             </div>
 
             <div className={`mt-5 flex flex-wrap items-center justify-between gap-3 border-t pt-4 ${STEP_NAV}`}
@@ -647,9 +694,9 @@ export default function AddListingPage() {
           <div className="flex items-start gap-3">
             <IconTile icon="Camera" tint="--ux-tint-pink" ink="--ux-pink-ink" size={36} radius={11} />
             <div>
-              <h2 className="text-lg font-extrabold" style={{ color: v("--ux-ink") }}>Show it</h2>
+              <h2 className="text-lg font-extrabold" style={{ color: v("--ux-ink") }}>{tr("documentsNew.showIt")}</h2>
               <p className="mt-0.5 text-xsm" style={{ color: v("--ux-muted") }}>
-                A photograph is the difference between being looked at and being scrolled past.
+                {tr("documentsNew.aPhotographIsTheDifferenceBetween")}
               </p>
             </div>
           </div>
@@ -657,16 +704,32 @@ export default function AddListingPage() {
           {/* Two across on a phone: photo slots are thumbnails, and four
               full-width squares would be 1,200px of empty frames. */}
           <div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-2 lg:grid-cols-4">
+            <input ref={photoInput} type="file" multiple accept={ACCEPTED_IMAGE_TYPES.join(",")}
+                   className="hidden" aria-label="Choose listing photos"
+                   onChange={(event) => { void uploadPhotos(Array.from(event.target.files || [])); event.target.value = ""; }} />
+            {photos.map((photo, index) => (
+              <div key={photo} className="relative aspect-square overflow-hidden rounded-lg border" style={{ borderColor: v("--ux-line") }}>
+                <img src={photo} alt={`Listing photo ${index + 1}`} className="h-full w-full object-contain" />
+                <button type="button" aria-label={`Remove photo ${index + 1}`} title={`Remove photo ${index + 1}`}
+                        disabled={uploading} onClick={() => setPhotos((current) => current.filter((_, i) => i !== index))}
+                        className="absolute right-1 top-1 grid h-11 w-11 place-items-center rounded-lg border hover:brightness-95 focus-visible:outline-2"
+                        style={{ background: v("--ux-surface"), color: v("--ux-ink"), borderColor: v("--ux-line") }}>
+                  <Icons.X className="h-4 w-4" />
+                </button>
+              </div>
+            ))}
+            {photos.length < 4 && (
             <button type="button"
+                    disabled={uploading} onClick={() => photoInput.current?.click()}
                     className="ux-press ux-sq grid aspect-square place-items-center rounded-[12px] border-2 border-dashed lg:rounded-[14px]"
                     style={{ borderColor: v("--ux-line-strong"), background: v("--ux-surface-2") }}>
               <span className="text-center">
                 <Icons.Camera className="mx-auto h-[26px] w-[26px]" style={{ color: v("--ux-brand") }} />
-                <span className="mt-2 block text-xsm font-bold" style={{ color: v("--ux-ink") }}>Take a photo</span>
-                <span className="mt-0.5 block text-2xs" style={{ color: v("--ux-muted") }}>or choose from your phone</span>
+                <span className="mt-2 block text-xsm font-bold" style={{ color: v("--ux-ink") }}>{tr("documentsNew.takeAPhoto")}</span>
+                <span className="mt-0.5 block text-2xs" style={{ color: v("--ux-muted") }}>{tr("documentsNew.orChooseFromYourPhone")}</span>
               </span>
-            </button>
-            {[1, 2, 3].map((n) => (
+            </button>)}
+            {Array.from({ length: Math.max(0, 3 - photos.length) }, (_, i) => i + photos.length + 1).map((n) => (
               <div key={n} className="grid aspect-square place-items-center rounded-[12px] border lg:rounded-[14px]"
                    style={{ borderColor: v("--ux-line"), background: v("--ux-surface-2") }}>
                 <span className="text-center">
@@ -678,7 +741,7 @@ export default function AddListingPage() {
           </div>
 
           <div className="mt-4 rounded-[12px] p-4" style={{ background: v("--ux-surface-2") }}>
-            <p className="text-xsm font-bold" style={{ color: v("--ux-ink") }}>What works</p>
+            <p className="text-xsm font-bold" style={{ color: v("--ux-ink") }}>{tr("documentsNew.whatWorks")}</p>
             <ul className="mt-2 grid gap-2 sm:grid-cols-2">
               {["Daylight, near a window",
                 "One of the whole thing, one close up",
@@ -692,12 +755,13 @@ export default function AddListingPage() {
             </ul>
           </div>
 
-          <SourceNote source="mock" what="photo uploads" />
+          {uploading && <p role="status" className="mt-3 text-sm">Uploading photos...</p>}
+          {uploadError && <p role="alert" className="mt-3 text-sm" style={{ color: v("--ux-danger-solid") }}>{uploadError}</p>}
 
           <div className={`mt-5 flex flex-wrap items-center justify-between gap-3 border-t pt-4 ${STEP_NAV}`}
                style={{ borderColor: v("--ux-line") }}>
             <Btn variant="ghost" icon="ArrowLeft" className="max-lg:w-full" onClick={() => go(2)}>Back</Btn>
-            <Btn onClick={() => go(4)} iconEnd="ArrowRight" className="ux-action-primary">Next: check it</Btn>
+            <Btn disabled={uploading} onClick={() => go(4)} iconEnd="ArrowRight" className="ux-action-primary">Next: check it</Btn>
           </div>
         </Card>
       )}
@@ -708,9 +772,9 @@ export default function AddListingPage() {
           <div className="flex items-start gap-3">
             <IconTile icon="CheckCircle2" tint="--ux-tint-green" ink="--ux-green-ink" size={36} radius={11} />
             <div>
-              <h2 className="text-lg font-extrabold" style={{ color: v("--ux-ink") }}>Read it as a buyer would</h2>
+              <h2 className="text-lg font-extrabold" style={{ color: v("--ux-ink") }}>{tr("documentsNew.readItAsABuyerWould")}</h2>
               <p className="mt-0.5 text-xsm" style={{ color: v("--ux-muted") }}>
-                Anything wrong here can be fixed after it is live.
+                {tr("documentsNew.anythingWrongHereCanBeFixed")}
               </p>
             </div>
           </div>
@@ -727,7 +791,7 @@ export default function AddListingPage() {
                                      : trackStock ? `${stock || 0} now` : "Not counted", step: 2 },
               { k: "Delivery",     val: delivery === "physical" ? `${prep}, ${ships.toLowerCase()}`
                                      : delivery === "digital" ? "They download it" : "You do it for them", step: 2 },
-              { k: "Photos",       val: "None added yet", step: 3 },
+              { k: "Photos",       val: photos.length ? `${photos.length} added` : "None added yet", step: 3 },
             ].map((r) => (
               <div key={r.k} className="flex items-start justify-between gap-4 py-3 max-lg:grid max-lg:grid-cols-[minmax(0,1fr)_auto] max-lg:gap-x-4 max-lg:gap-y-0.5">
                 <dt className="w-[140px] shrink-0 text-xs font-semibold max-lg:w-auto max-lg:text-[13px]" style={{ color: v("--ux-muted") }}>{r.k}</dt>
@@ -750,7 +814,7 @@ export default function AddListingPage() {
           </div>
 
           <SourceNote source="mock"
-                      what="the highlights, the price band and the photos — those are not saved yet" />
+                      what="the highlights and price-band upper limit are not saved yet" />
 
           {saveError && (
             <p role="alert" className="mt-3 rounded-[12px] px-4 py-3 text-xsm font-semibold"
@@ -763,12 +827,12 @@ export default function AddListingPage() {
                style={{ borderColor: v("--ux-line") }}>
             <Btn variant="ghost" icon="ArrowLeft" className="max-lg:w-full" onClick={() => go(3)}>Back</Btn>
             <div className={`flex flex-wrap gap-2 ${STEP_NAV}`}>
-              <Btn variant="outline" icon="Save" disabled={!title.trim()} className="max-lg:w-full"
+              <Btn variant="outline" icon="Save" disabled={!title.trim() || saving || uploading} className="max-lg:w-full"
                    onClick={() => publish(true)}>
-                Keep as a draft
+                {tr("documentsNew.keepAsADraft")}
               </Btn>
-              <Btn icon="Rocket" disabled={!title.trim()} onClick={() => publish(false)} className="ux-action-primary">
-                Put it in my shop
+              <Btn icon="Rocket" disabled={!title.trim() || saving || uploading} onClick={() => publish(false)} className="ux-action-primary">
+                {tr("documentsNew.putItInMyShop")}
               </Btn>
             </div>
           </div>
@@ -777,8 +841,8 @@ export default function AddListingPage() {
 
       {/* ── The price band picker ────────────────────────────────────────── */}
       <Modal open={bandOpen} onClose={() => setBandOpen(false)} size="lg"
-             title="What should you charge?"
-             description="Pick the range your work belongs in. It is a starting point, not a rule."
+             title={tr("documentsNew.whatShouldYouCharge")}
+             description={tr("documentsNew.pickTheRangeYourWorkBelongs")}
              icon={Icons.BarChart3} iconTone="brand"
              footer={
                <>
@@ -789,7 +853,7 @@ export default function AddListingPage() {
                    if (low && high) setBand({ low: Math.min(low, high), high: Math.max(low, high) });
                    setBandOpen(false);
                  }}>
-                   Use this range
+                   {tr("documentsNew.useThisRange")}
                  </Btn>
                </>
              }>
@@ -818,7 +882,7 @@ export default function AddListingPage() {
                       {b.popular && (
                         <span className="mt-1.5 inline-block rounded-full px-2 py-0.5 text-2xs font-bold"
                               style={{ background: v("--ux-tint-pink"), color: v("--ux-pink-ink") }}>
-                          Most women pick this
+                          {tr("documentsNew.mostWomenPickThis")}
                         </span>
                       )}
                     </span>
@@ -828,16 +892,16 @@ export default function AddListingPage() {
             </div>
 
             <div className="mt-4 rounded-[12px] p-4 lg:p-3.5" style={{ background: v("--ux-surface-2") }}>
-              <p className="text-xsm font-bold" style={{ color: v("--ux-ink") }}>Or set your own</p>
+              <p className="text-xsm font-bold" style={{ color: v("--ux-ink") }}>{tr("documentsNew.orSetYourOwn")}</p>
               <div className="mt-2.5 grid gap-3 sm:grid-cols-2">
                 <div>
                   <Label>Lowest</Label>
-                  <Text value={customLow} onChange={setCustomLow} label="Minimum price"
+                  <Text value={customLow} onChange={setCustomLow} label={tr("documentsNew.minimumPrice")}
                         prefix="₹" type="number" placeholder="500" />
                 </div>
                 <div>
                   <Label>Highest</Label>
-                  <Text value={customHigh} onChange={setCustomHigh} label="Maximum price"
+                  <Text value={customHigh} onChange={setCustomHigh} label={tr("documentsNew.maximumPrice")}
                         prefix="₹" type="number" placeholder="2500" />
                 </div>
               </div>
@@ -845,7 +909,7 @@ export default function AddListingPage() {
           </div>
 
           <div className="rounded-[12px] p-4" style={{ background: v("--ux-brand-tint") }}>
-            <p className="text-xsm font-bold" style={{ color: v("--ux-ink") }}>How to decide</p>
+            <p className="text-xsm font-bold" style={{ color: v("--ux-ink") }}>{tr("documentsNew.howToDecide")}</p>
             <ul className="mt-2.5 space-y-2">
               {["Look at what similar work sells for here",
                 "Count the material and your hours, both",
@@ -859,7 +923,7 @@ export default function AddListingPage() {
             </ul>
             <p className="mt-4 border-t pt-3 text-xs italic leading-relaxed"
                style={{ borderColor: v("--ux-line"), color: v("--ux-brand") }}>
-              “Price it like the work took time. It did.”
+              {tr("documentsNew.priceItLikeTheWorkTook")}
             </p>
           </div>
         </div>

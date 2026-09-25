@@ -25,7 +25,11 @@ from app.core.rbac import require_active_member
 from app.db.mongodb import get_database
 from app.models.conversation import notify
 from app.models.goal import GoalModel
+from app.models.payout import PayoutAccountModel
 from app.models.wallet import SupportRequestModel, WalletTxnModel
+# Composed, not reimplemented — a second way to count her goals is a second
+# set of goals.
+from app.routes.goals import list_goals
 from app.schemas.wallet import (
     SupportRequestCreate,
     SupportRequestResponse,
@@ -33,6 +37,10 @@ from app.schemas.wallet import (
 )
 
 router = APIRouter(prefix="/wallet", tags=["Member · Money"])
+
+#: The Earn screen's one aggregate call. It sits under /money rather than
+#: /wallet only because that is the path the client has always asked for.
+money_router = APIRouter(prefix="/money", tags=["Member · Money"])
 
 _SYMBOLS = {"INR": "₹", "USD": "$", "EUR": "€", "GBP": "£", "AED": "د.إ"}
 
@@ -108,6 +116,49 @@ async def my_wallet(me: dict = Depends(require_active_member)):
         "balance_label": f"{sym}{total / 100:,.0f}",
         "currency": settings.PAYMENT_CURRENCY.upper(),
         "transactions": [WalletTxnModel.to_response(d, sym) for d in docs],
+    }
+
+
+# --- the Earn screen, in one request -----------------------------------------
+
+
+@money_router.get("/overview", summary="Everything the Earn screen needs, in one round trip")
+async def money_overview(me: dict = Depends(require_active_member)):
+    """
+    Her balance, her ledger, her payout accounts and her goals, together.
+
+    The client has called this since the Earn screen was built — and it was a
+    404 the whole time, so that screen lost its balance, its transactions, its
+    accounts and its goals in one go and fell back to whatever it had.
+
+    Same rule as `my_wallet` above: one wave, not four. The three helpers below
+    are handed to a single `gather`, so the screen waits for the slowest query
+    rather than the sum of all of them.
+
+    Deliberately a composition of endpoints that already exist rather than new
+    logic — a second way to compute her balance is a second balance.
+    """
+    uid = str(me["_id"])
+
+    async def _accounts() -> list[dict]:
+        rows = await get_database()[PayoutAccountModel.collection_name].find(
+            {"user_id": uid}
+        ).sort("created_at", -1).to_list(20)
+        return [PayoutAccountModel.to_response(d) for d in rows]
+
+    wallet, accounts, goals = await asyncio.gather(
+        my_wallet(me),
+        _accounts(),
+        list_goals(me),
+    )
+
+    return {
+        "balance_minor": wallet["balance_minor"],
+        "balance_label": wallet["balance_label"],
+        "currency": wallet.get("currency", settings.PAYMENT_CURRENCY.upper()),
+        "transactions": wallet["transactions"],
+        "accounts": accounts,
+        "goals": goals,
     }
 
 

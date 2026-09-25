@@ -18,10 +18,11 @@ from typing import Optional
 
 from bson import ObjectId
 from fastapi import APIRouter, Depends, File, Form, HTTPException, Query, UploadFile, status
+from pydantic import BaseModel, Field
 
 from app.core.config import settings
 from app.core.deps import get_current_user
-from app.core.rbac import require_active_member
+from app.core.rbac import require_active_member, require_member
 from app.core import semantic
 from app.core.matching import NEEDS, rank
 from app.core.rbac import is_member
@@ -117,7 +118,23 @@ def _services():
 
 
 @router.get("/shell", response_model=MeShell, summary="Everything the member shell needs")
-async def shell(me: dict = Depends(require_active_member)):
+async def shell(me: dict = Depends(require_member)):
+    # `require_member`, not `require_active_member` — the ONE member endpoint
+    # that answers before admission.
+    #
+    # This is the request the whole member app boots from. Behind the active
+    # gate it 403'd for a woman who had just signed up, so the shell received
+    # no user at all, could not tell "not signed in" from "signed in, not yet
+    # verified", and rendered its spinner forever: a brand-new account landed
+    # on a blank white screen with nothing on it and no way forward.
+    #
+    # The client already knows what to do with her — `MemberShell` routes on
+    # `verification_status` and sends her to /app/verify. It just never had the
+    # field. Nothing below needs admission: every figure here is her own row or
+    # her own count, and an unadmitted member's counts are zero.
+    #
+    # Everything else stays behind `require_active_member`. This endpoint tells
+    # her where she stands; it does not let her in.
     """
     One request, one round trip, instead of six requests and eight queries.
 
@@ -144,6 +161,11 @@ async def shell(me: dict = Depends(require_active_member)):
     uid = str(me["_id"])
     db = get_database()
 
+    # Her profile row, for the completeness figure the chrome shows on every
+    # screen. One extra find on a document we often already need, and it is the
+    # difference between a truthful nag and a permanent one.
+    member_doc = None
+
     (
         user, layout, (booking_rows, enrolments), unread_notifications, unread_messages,
     ) = await asyncio.gather(
@@ -162,13 +184,33 @@ async def shell(me: dict = Depends(require_active_member)):
         ),
     )
 
+    if me.get("member_id"):
+        member_doc = await db[MemberModel.collection_name].find_one(
+            {"_id": ObjectId(me["member_id"])},
+            {"location": 1, "bio": 1, "dob": 1},
+        )
+
     return MeShell(
         user=user,
         layout=layout,
         features=enabled_features(me),
         progress=_progress_response(me, booking_rows, enrolments),
         unread=UnreadCounts(notifications=unread_notifications, messages=unread_messages),
+        profile_pct=_profile_pct(me, member_doc or {}),
     )
+
+
+#: The five stored fields `/me/home` counts, kept in one place so the chrome and
+#: the home rail can never disagree about how complete she is.
+_PROFILE_FIELDS = ("avatar", "phone", "location", "bio", "dob")
+
+
+def _profile_pct(user: dict, member: dict) -> int:
+    filled = sum(
+        1 for f in _PROFILE_FIELDS
+        if str(user.get(f) or member.get(f) or "").strip()
+    )
+    return round(filled * 100 / len(_PROFILE_FIELDS))
 
 
 @router.get("/journey", response_model=MeJourney, summary="Everything the progress screen needs")
@@ -439,6 +481,27 @@ async def create_booking(payload: BookingCreate, me: dict = Depends(require_acti
     result = await _bookings().insert_one(doc)
     doc["_id"] = result.inserted_id
 
+    # A10: the reminder before, and the follow-up that asks whether it actually
+    # happened. Both are scheduled HERE, at booking time, because the case
+    # worth catching is the one where nothing happens at all — a follow-up
+    # created by a "session finished" event would never exist for the woman
+    # whose mentor did not turn up, which is exactly who needs to be asked.
+    #
+    # Guarded by the flag and by a swallowed exception: a scheduling problem
+    # must never turn a successful booking into a 500 for her.
+    if settings.ENGINES_ENABLED:
+        try:
+            from app.engines.domain import book_with_followup
+            starts = BookingModel.starts_at(doc)
+            if starts:
+                await book_with_followup(
+                    user_id=str(me["_id"]), module="bookings",
+                    ref=str(result.inserted_id), starts_at=starts,
+                    tz=me.get("timezone") or "Asia/Kolkata",
+                    subject_key="bookings.session")
+        except Exception as exc:  # noqa: BLE001
+            print(f"⚠️  Booking {result.inserted_id} scheduled no reminders: {exc}")
+
     await notify(
         get_database(), str(me["_id"]),
         title="Session booked",
@@ -464,6 +527,16 @@ async def cancel_booking(
         raise HTTPException(status.HTTP_404_NOT_FOUND, "Booking not found")
     if booking.get("status") != BookingModel.STATUS_UPCOMING:
         raise HTTPException(status.HTTP_400_BAD_REQUEST, "That booking can no longer be cancelled")
+
+    # Cancelling stops both halves of A10. Emitted rather than called directly
+    # so the outbox owns it: the engine catches up on the next tick even if
+    # this process dies immediately after the booking is written.
+    if settings.ENGINES_ENABLED:
+        try:
+            from app.engines.domain import emit
+            await emit(event="booking.cancelled", module="bookings", ref=booking_id)
+        except Exception as exc:  # noqa: BLE001
+            print(f"⚠️  Booking {booking_id} cancellation not emitted: {exc}")
 
     fresh = await _bookings().find_one_and_update(
         {"_id": booking["_id"]},
@@ -982,6 +1055,41 @@ async def get_notification_prefs(me: dict = Depends(require_active_member)):
 async def set_notification_prefs(payload: NotificationPrefs, me: dict = Depends(require_active_member)):
     await get_database()[UserModel.collection_name].update_one(
         {"_id": me["_id"]}, {"$set": {"notification_prefs": payload.model_dump()}}
+    )
+    return payload
+
+
+class VoicePrefs(BaseModel):
+    """
+    How she wants the app read to her.
+
+    Kept beside her notification settings rather than in a new collection,
+    because it is the same kind of thing: a handful of switches that belong
+    to the account.
+
+    `read_money` is separate from the rest on purpose. Handsets are shared,
+    and a screen reading "twenty-three thousand rupees" out loud in a room is
+    a different exposure from one reading a course title. It is off unless she
+    turns it on.
+    """
+
+    #: Which things get read aloud, by preference id.
+    on: list[str] = Field(default_factory=list)
+    #: The language the speech engine should use.
+    lang: str = "hi"
+    #: Whether amounts are spoken. Off by default — see above.
+    read_money: bool = False
+
+
+@router.get("/settings/voice", response_model=VoicePrefs, summary="My reading-aloud settings")
+async def get_voice_prefs(me: dict = Depends(require_active_member)):
+    return VoicePrefs(**(me.get("voice_prefs") or {}))
+
+
+@router.put("/settings/voice", response_model=VoicePrefs, summary="Update reading-aloud settings")
+async def set_voice_prefs(payload: VoicePrefs, me: dict = Depends(require_active_member)):
+    await get_database()[UserModel.collection_name].update_one(
+        {"_id": me["_id"]}, {"$set": {"voice_prefs": payload.model_dump()}}
     )
     return payload
 

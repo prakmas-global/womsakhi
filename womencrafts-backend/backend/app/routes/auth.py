@@ -217,6 +217,48 @@ async def signin(payload: SignInRequest, response: Response, request: Request):
     return AuthResponse(access_token=token, user=await _user_response(user))
 
 
+@router.post("/refresh", summary="Keep this session alive")
+async def refresh(request: Request, response: Response):
+    """
+    A sliding session: a woman who is using the app is not signed out of it.
+
+    Tokens last 30 minutes and there was nothing to renew them, so a woman who
+    left the app open while she cooked came back to a session that had quietly
+    died — and, because `/me/shell` then answered 401, to a blank white screen
+    with no message on it. Thirty minutes is a short leash for an app somebody
+    opens between one job and the next.
+
+    This is deliberately NOT a refresh token. It renews a session that is still
+    valid, nothing more: present a live cookie and get a fresh one, 30 minutes
+    from now. An expired session cannot be renewed here and she signs in again,
+    which is the behaviour we want — the long-lived credential that would avoid
+    that is also the one worth stealing, and this app holds identity documents.
+
+    The client calls it on a timer while a screen is open and when the tab is
+    focused again, so the leash only runs out after she has genuinely stopped.
+    """
+    token = request.cookies.get(COOKIE_NAME)
+    if not token:
+        raise HTTPException(status.HTTP_401_UNAUTHORIZED, "No session to refresh")
+    payload = decode_access_token(token)
+    if not payload:
+        raise HTTPException(status.HTTP_401_UNAUTHORIZED, "Session has expired")
+
+    user = await get_database()[UserModel.collection_name].find_one(
+        {"_id": ObjectId(payload["sub"])}
+    )
+    # A disabled account stops being a session immediately, not in 30 minutes.
+    if not user or not user.get("is_active", True):
+        clear_session_cookie(response)
+        raise HTTPException(status.HTTP_401_UNAUTHORIZED, "This account is no longer active")
+
+    # The same helper sign-in uses, so a refreshed token carries every claim
+    # the original did — including the version claim that revokes sessions.
+    fresh = _token_for(user)
+    set_session_cookie(response, fresh)
+    return {"ok": True, "expires_in": settings.ACCESS_TOKEN_EXPIRE_MINUTES * 60}
+
+
 @router.get("/session", summary="Am I signed in?")
 async def session(request: Request):
     """
@@ -305,11 +347,23 @@ _RESET_SENT = (
     "way. It expires in 24 hours."
 )
 
+#: What to say when no mail provider is configured.
+#:
+#: The sentence above was being returned over a file adapter that writes to
+#: `outbox/` and delivers nothing, so a woman locked out was told to wait for a
+#: link that would never arrive. This says what is true without answering "is
+#: she a member here?" — it is returned for every address, exactly like the one
+#: above, so it still leaks nothing.
+_RESET_NO_EMAIL = (
+    "We cannot send email yet, so no link is coming. Write to "
+    "support@womsakhi.com from this address and a person will reset it for you."
+)
+
 
 @router.post("/forgot-password", summary="Ask for a password reset link")
 async def forgot_password(payload: ForgotPasswordRequest, request: Request):
     """Issue a single-use reset link and email it to her."""
-    from app.core.email import reset_email, send
+    from app.core.email import can_deliver, reset_email, send
     from app.models.verification import EmailTokenModel
 
     await ratelimit.check(
@@ -337,7 +391,14 @@ async def forgot_password(payload: ForgotPasswordRequest, request: Request):
         url = f"{settings.APP_BASE_URL}/reset-password?token={token_doc['token']}"
         await send(reset_email(user.get("full_name", ""), url), user["email"])
 
-    return {"message": _RESET_SENT}
+    # The token is still minted and still stored either way — the moment a
+    # provider is configured the link she already asked for starts working,
+    # and staff can read it out of `outbox/` meanwhile.
+    deliverable = can_deliver()
+    return {
+        "message": _RESET_SENT if deliverable else _RESET_NO_EMAIL,
+        "can_email": deliverable,
+    }
 
 
 @router.post("/reset-password", summary="Set a new password from a reset link")

@@ -4,8 +4,13 @@ import Link from "next/link";
  * WomSakhi brand lockup.
  *
  * Two real assets, both cut out with transparency:
- *   • /womsakhi-mark.png     — the "WS" monogram (two women shaking hands)
+ *   • /womsakhi-emblem.png   — the "WS" monogram (two women shaking hands)
  *   • /womsakhi-wordmark.png — the "WomSakhi" gradient wordmark
+ *
+ * The emblem is the owner's final artwork, cut off its flat #f7f7f7 backing.
+ * The cut is seeded only from regions that are already that exact colour, so
+ * the white saree — eight levels away from the backing and the thing a naive
+ * "remove white" destroys — survives intact.
  *
  * The monogram is ~1.8:1, so it is sized by HEIGHT with `w-auto` and never
  * boxed into a square — cropping or letterboxing it would hide the handshake
@@ -19,7 +24,7 @@ import Link from "next/link";
 export function LogoMark({
   className = "h-10",
   glow = true,
-  src = "/womsakhi-symbol.png",
+  src = "/womsakhi-emblem.png",
   alt = "WomSakhi",
 }: {
   className?: string;

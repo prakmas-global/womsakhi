@@ -14,6 +14,7 @@ import { SCHEMES, type Scheme } from "./schemes/data";
 import {
   CRECHES, HEALTH_CHECKS, RIGHTS, ROUTES,
 } from "./wellbeing/data";
+import { useTranslated } from "@/i18n/data";
 
 /**
  * The ten modules that had no server until the backend pass.
@@ -74,7 +75,7 @@ function toScheme(r: Reference): Scheme {
 }
 
 export const useSchemes = (): Resource<Scheme[]> =>
-  useResource(useCallback(async (s: AbortSignal) => (await apiSchemes(s)).map(toScheme), []), SCHEMES);
+  useResource(useCallback(async (s: AbortSignal) => (await apiSchemes(s)).map(toScheme), []), useTranslated(SCHEMES));
 
 /* ── Insurance & pension ─────────────────────────────────────────────── */
 
@@ -131,7 +132,7 @@ const toHealthCheck = (r: Reference): UxHealthCheck => ({
 export const useHealthChecks = (): Resource<UxHealthCheck[]> =>
   useResource(
     useCallback(async (s: AbortSignal) => (await apiHealth(s)).map(toHealthCheck), []),
-    HEALTH_CHECKS,
+    useTranslated(HEALTH_CHECKS),
   );
 
 
@@ -214,7 +215,7 @@ const toRight = (r: Reference): UxRight => ({
 });
 
 export const useRights = (): Resource<UxRight[]> =>
-  useResource(useCallback(async (s: AbortSignal) => (await apiRights(s)).map(toRight), []), RIGHTS);
+  useResource(useCallback(async (s: AbortSignal) => (await apiRights(s)).map(toRight), []), useTranslated(RIGHTS));
 
 /**
  * A creche or childcare place.
@@ -247,7 +248,7 @@ const toCreche = (r: Reference): UxCreche => ({
 });
 
 export const useCreches = (): Resource<UxCreche[]> =>
-  useResource(useCallback(async (s: AbortSignal) => (await apiFamily(s)).map(toCreche), []), CRECHES);
+  useResource(useCallback(async (s: AbortSignal) => (await apiFamily(s)).map(toCreche), []), useTranslated(CRECHES));
 
 export type UxRoute = (typeof ROUTES)[number];
 
@@ -269,7 +270,7 @@ const toRoute = (r: Reference): UxRoute => ({
 });
 
 export const useRoutes = (): Resource<UxRoute[]> =>
-  useResource(useCallback(async (s: AbortSignal) => (await apiTravel(s)).map(toRoute), []), ROUTES);
+  useResource(useCallback(async (s: AbortSignal) => (await apiTravel(s)).map(toRoute), []), useTranslated(ROUTES));
 
 /* ── Buying together ─────────────────────────────────────────────────── */
 
@@ -322,7 +323,7 @@ const toGroupBuy = (g: GroupBuy): UxGroupBuy => ({
 export const useGroupBuys = (): Resource<UxGroupBuy[]> =>
   useResource(
     useCallback(async (s: AbortSignal) => (await apiGroupBuys(s)).map(toGroupBuy), []),
-    GROUP_BUYS,
+    useTranslated(GROUP_BUYS),
   );
 
 /* ── Saved · assessments · digital ───────────────────────────────────── */
@@ -380,7 +381,7 @@ const toAssessment = (a: Assessment): UxAssessment => ({
 export const useAssessmentList = (): Resource<UxAssessment[]> =>
   useResource(
     useCallback(async (s: AbortSignal) => (await apiAssessments(s)).map(toAssessment), []),
-    ASSESSMENTS,
+    useTranslated(ASSESSMENTS),
   );
 
 export type UxDigitalStep = (typeof DIGITAL_STEPS)[number];
@@ -396,5 +397,5 @@ const toStep = (d: DigitalStep): UxDigitalStep => ({
 export const useDigitalStepList = (): Resource<UxDigitalStep[]> =>
   useResource(
     useCallback(async (s: AbortSignal) => (await apiDigitalSteps(s)).map(toStep), []),
-    DIGITAL_STEPS,
+    useTranslated(DIGITAL_STEPS),
   );

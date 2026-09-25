@@ -39,7 +39,7 @@ export default function PrivacyPage() {
       <h2>Who we are</h2>
       <p>
         WomSakhi is operated by PRAKMAS GLOBAL. For anything on this page, write to{" "}
-        <a href="mailto:privacy@womsakhi.in">privacy@womsakhi.in</a>.
+        <a href="mailto:privacy@womsakhi.com">privacy@womsakhi.com</a>.
       </p>
 
       <h2>What we collect, and why</h2>
@@ -198,7 +198,7 @@ export default function PrivacyPage() {
       <p>
         Under India&rsquo;s Digital Personal Data Protection Act, 2023 you can ask us to
         show you what we hold, correct it, or delete it. Write to{" "}
-        <a href="mailto:privacy@womsakhi.in">privacy@womsakhi.in</a> and we will answer
+        <a href="mailto:privacy@womsakhi.com">privacy@womsakhi.com</a> and we will answer
         within 30 days.
       </p>
       <p>
@@ -209,7 +209,7 @@ export default function PrivacyPage() {
         some records have to be kept for a period under Indian tax and accounting law, and
         a person checks that before the rest is deleted. You will get an email when it is
         done. If you would rather not use the button, write to{" "}
-        <a href="mailto:privacy@womsakhi.in">privacy@womsakhi.in</a> and we will do the same
+        <a href="mailto:privacy@womsakhi.com">privacy@womsakhi.com</a> and we will do the same
         thing.
       </p>
 

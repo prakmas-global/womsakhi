@@ -8,8 +8,7 @@ import { apiAgree, apiAskSwap, apiExchange, apiSayInExchange } from "@/lib/shop-
 import { useAction } from "@/lib/use-action";
 import { useResource } from "@/lib/use-resource";
 
-import {Back, Btn, Card, EmptyState, IconTile, NoteBtn, RailSkeleton, ScreenSkeleton, SectionHead,
-} from "@/components/ux/kit";
+import { Back, Btn, Card, EmptyState, IconTile, NoteBtn, RailSkeleton, ScreenSkeleton, SectionHead } from "@/components/ux/kit";
 import { HomeShell } from "@/components/ux/home/HomeShell";
 import { Tag } from "@/components/ux/learning/native";
 import { useMyExchanges, useSwaps } from "@/components/ux/business";
@@ -120,7 +119,7 @@ export default function ExchangeThread({ params }: { params: Promise<{ id: strin
           <EmptyState
             icon="SearchX"
             title={tr("library.thatExchangeIsNotHere")}
-            body="She may have taken the offer down."
+            body={tr("library.sheMayHaveTakenTheOffer")}
             action={<Btn href="/app/library" variant="primary" iconEnd="ArrowRight">{tr("library.skillExchange")}</Btn>}
           />
         </Card>
@@ -269,7 +268,7 @@ export default function ExchangeThread({ params }: { params: Promise<{ id: strin
                      title={tr("library.suggestATime")} to={swap.who}
                      placeholder={tr("library.whichDayAndHourSuitsYou")}
                      sent={tr("library.sentSheWillConfirmOne")}
-                     sentBody="It is in the conversation below. No money changes hands, in either direction."
+                     sentBody={tr("library.itIsInTheConversationBelow")}
                      sentLink={null}
                      send={async ({ text }) => { await apiSayInExchange(threadId, text); refetchConvo(); }} />
           </div>

@@ -4,11 +4,14 @@ import { useCallback, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 
 import { HomeShell } from "@/components/ux/home/HomeShell";
-import { Back, Btn, Card, I, Progress, Stat, v } from "@/components/ux/kit";
+import { Back, Card, I, Progress, Stat, v } from "@/components/ux/kit";
 import { EYEBROW, GROUP, GROUP_ROW, Section } from "@/components/ux/earn/phone";
-import { PAPERS, type Paper } from "@/components/ux/haq/data";
+import { PAPERS as RAW_PAPERS, type Paper } from "@/components/ux/haq/data";
+import { useResource } from "@/lib/use-resource";
+import { apiPapers, apiSetPaper, type PaperStates } from "@/lib/life-api";
 import { PaperRow } from "@/components/ux/haq/parts";
 import { useT } from "@/i18n";
+import { useTranslated } from "@/i18n/data";
 
 /**
  * Her papers — the actual binding constraint.
@@ -24,10 +27,32 @@ import { useT } from "@/i18n";
  * can spend is the one that fixes the document three benefits are waiting on.
  */
 export default function PapersPage() {
+  const PAPER_TYPES = useTranslated(RAW_PAPERS);
   const tr = useT();
   const router = useRouter();
-  const [rows, setRows] = useState<Paper[]>(PAPERS);
   const [note, setNote] = useState<string | null>(null);
+  const [err, setErr] = useState<string | null>(null);
+  const [busy, setBusy] = useState<string | null>(null);
+
+  /**
+   * Which papers she actually holds.
+   *
+   * Which document is which is reference material and stays above. Whether
+   * she HAS it was written in too: five of seven held, a ration card expiring
+   * in 24 days, a life certificate missing. The same for everybody.
+   *
+   * A woman who believes her ration card is on file does not go and get it.
+   * One told hers expires in 24 days makes a trip for nothing. Both cost her
+   * a day she is not paid for.
+   */
+  const papers = useResource<PaperStates>(
+    useCallback((sig: AbortSignal) => apiPapers(sig), []),
+    { states: {}, default: "missing", held: 0 },
+  );
+  const rows: Paper[] = useMemo(() => PAPER_TYPES.map((x) => {
+    const mine = papers.data.states[x.id];
+    return { ...x, state: mine?.state ?? "missing", expires: mine?.expires || undefined };
+  }), [PAPER_TYPES, papers.data.states]);
 
   const held = useMemo(() => rows.filter((p) => p.state === "held").length, [rows]);
   const pct = Math.round((held / rows.length) * 100);
@@ -37,12 +62,19 @@ export default function PapersPage() {
   );
   const done = useMemo(() => rows.filter((p) => p.state === "held"), [rows]);
 
-  const fix = useCallback((id: string) => {
+  /** Saved, not just ticked. It used to be React state and came back missing
+   *  on reload — on the list she checks before walking to an office. */
+  const fix = useCallback(async (id: string) => {
     const p = rows.find((x) => x.id === id);
-    setRows((r) => r.map((x) => (x.id === id ? { ...x, state: "held", note: "Just added" } : x)));
-    setNote(`${p?.name} added. ${p?.unlocks} ${p?.unlocks === 1 ? tr("haqPapers.benefitIs")
-              : tr("haqPapers.benefitsAre")} no longer blocked.`);
-  }, [rows]);
+    setBusy(id); setErr(null);
+    try {
+      await apiSetPaper(id, { state: "held" });
+      setNote(`${p?.name} added. ${p?.unlocks} ${p?.unlocks === 1 ? tr("haqPapers.benefitIs")
+                : tr("haqPapers.benefitsAre")} no longer blocked.`);
+      papers.refetch();
+    } catch { setErr("That did not save."); }
+    finally { setBusy(null); }
+  }, [rows, papers, tr]);
 
   return (
     <HomeShell active="/app/haq">

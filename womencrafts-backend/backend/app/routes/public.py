@@ -255,3 +255,101 @@ async def public_shop(handle: str) -> PublicShop:
     # Short, because a price or a stock count half a minute stale is fine and a
     # page a stranger can hammer must not be a free query.
     return await cache.cached(f"public:shop:{handle}", 30.0, produce)
+
+
+# ── an alert somebody was sent ───────────────────────────────────────────────
+#
+# WHY THIS IS PUBLIC
+#
+# A woman raises an alert and her trusted contacts are two phone numbers. There
+# is no SMS provider, no WhatsApp and no voice line, so nothing in this system
+# can reach them; `contacts_notified` only ever counted how many people she had
+# named. What CAN reach them is her own phone — she forwards a link from
+# whichever app she already uses, and it opens for whoever she sent it to.
+#
+# So these two must work with no account, on a borrowed phone, in one tap. Her
+# sister is not going to sign up in the middle of it.
+#
+# WHAT GUARDS IT
+#
+# `share_token` — 256 bits, minted per alert. Holding the link is the whole
+# permission, which is the point: it is meant to be forwarded. The alert id
+# alone is not enough, because ids show up in logs and staff screens and this
+# link is not.
+#
+# WHAT IS DELIBERATELY NOT HERE
+#
+# Her address, her phone number, her documents, her circles, her money. A link
+# she forwards in a hurry can end up anywhere, so it carries only what somebody
+# needs in order to help: her name, when she raised it, and what she typed.
+
+from datetime import datetime, timezone   # noqa: E402
+
+from pydantic import BaseModel            # noqa: E402
+
+from app.models.safety import SafetyAlertModel   # noqa: E402
+
+
+class AlertAck(BaseModel):
+    #: What to call whoever pressed the button. Free text, never matched
+    #: against her contacts: the person who picks it up may not be one of them.
+    name: str = ""
+
+
+async def _alert_by_token(alert_id: str, token: str) -> dict:
+    if not token:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "Not found")
+    try:
+        oid = ObjectId(alert_id)
+    except (InvalidId, TypeError):
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "Not found")
+    doc = await get_database()[SafetyAlertModel.collection_name].find_one(
+        {"_id": oid, "share_token": token}
+    )
+    # The same 404 for a wrong id and a wrong token, so this cannot be used to
+    # discover which alerts exist.
+    if not doc:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "Not found")
+    return doc
+
+
+@router.get("/safety/alert/{alert_id}", summary="An alert somebody sent you")
+async def shared_alert(alert_id: str, t: str = ""):
+    doc = await _alert_by_token(alert_id, t)
+    raised = doc.get("created_at")
+    acks = doc.get("acknowledgements") or []
+    return {
+        "name": doc.get("member_name", ""),
+        "note": doc.get("note", ""),
+        "raised_at": raised.isoformat() if isinstance(raised, datetime) else "",
+        "status": doc.get("status", "open"),
+        # So the second person to open it knows somebody is already on it, and
+        # the fifth does not think nobody is.
+        "acknowledged_by": [a.get("name", "") for a in acks if a.get("name")],
+        "acknowledged": bool(acks),
+    }
+
+
+@router.post("/safety/alert/{alert_id}/ack", summary="Tell her you have got it")
+async def acknowledge_shared_alert(alert_id: str, body: AlertAck, t: str = ""):
+    """
+    The only thing on this record that counts as help arriving.
+
+    Appends rather than replaces: several people may be on their way, and the
+    one who arrives is not always the one who answered first.
+    """
+    doc = await _alert_by_token(alert_id, t)
+    name = (body.name or "").strip()[:60]
+    await get_database()[SafetyAlertModel.collection_name].update_one(
+        {"_id": doc["_id"]},
+        {
+            "$push": {"acknowledgements": {
+                "name": name,
+                "at": datetime.now(timezone.utc),
+            }},
+            # Staff see this move the moment somebody answers, so an alert
+            # nobody has picked up stays visibly unanswered.
+            "$set": {"status": SafetyAlertModel.STATUS_ACKNOWLEDGED},
+        },
+    )
+    return {"ok": True}

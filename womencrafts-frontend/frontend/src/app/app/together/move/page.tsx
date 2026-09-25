@@ -5,10 +5,11 @@ import { useRouter } from "next/navigation";
 
 import { HomeShell } from "@/components/ux/home/HomeShell";
 import { Back, Btn, Card, I, IconTile, Pill, SectionHead, v } from "@/components/ux/kit";
-import { CARRIES, MOVE_REASONS } from "@/components/ux/together/data";
+import { CARRIES as RAW_CARRIES, MOVE_REASONS as RAW_MOVE_REASONS } from "@/components/ux/together/data";
 import { useT } from "@/i18n";
 import { ListGroup } from "@/components/ux/mobile/ListRow";
 import { GroupLabel, PhoneRow, PhoneTitle, phonePrimary } from "@/components/ux/PhoneParts";
+import { useTranslated } from "@/i18n/data";
 
 /**
  * If you move.
@@ -29,6 +30,8 @@ import { GroupLabel, PhoneRow, PhoneTitle, phonePrimary } from "@/components/ux/
  * herself to a form — and nothing in what she carries names where she has gone.
  */
 export default function MovePage() {
+  const CARRIES = useTranslated(RAW_CARRIES);
+  const MOVE_REASONS = useTranslated(RAW_MOVE_REASONS);
   const tr = useT();
   const router = useRouter();
   const [reason, setReason] = useState<string | null>(null);
@@ -49,7 +52,7 @@ export default function MovePage() {
         </div>
 
         <PhoneTitle title={tr("togetherMove.ifYouMove")} sub={tr("togetherMove.whatYouBuiltComesWithYou")}
-                    note="Most women move at least once, and usually lose their customers, their circle and everyone who would vouch for them on the same day. It does not have to work like that." />
+                    note={tr("togetherMove.mostWomenMoveAtLeastOnce")} />
         <header className="hidden lg:block">
           <p className="text-2xs font-extrabold uppercase tracking-[0.2em]" style={{ color: v("--ux-brand") }}>{tr("togetherMove.ifYouMove")}</p>
           <h1 className="mt-2 text-[clamp(1.5rem,3.2vw,2.125rem)] font-extrabold leading-[1.1] tracking-[-0.035em]"

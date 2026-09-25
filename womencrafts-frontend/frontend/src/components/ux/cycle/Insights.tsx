@@ -2,14 +2,17 @@
 
 import Link from "next/link";
 
+import { useT } from "@/i18n";
 import * as Icons from "@/components/ux/icons";
 import type { CycleState } from "@/lib/cycle-api";
 import { InsightRow, MoodFace, Panel, PhaseBar, SoftHeart, heroBg } from "./parts";
-import { GUIDES, PHASE_COPY, carePlan, symptomLabel } from "./data";
+import { GUIDES as RAW_GUIDES, PHASE_COPY as RAW_PHASE_COPY, carePlan, symptomLabel } from "./data";
 import { shortDate } from "./use-cycle";
+import { useTranslated } from "@/i18n/data";
 
 /** "Your cycle at a glance" — three numbers, each with what it means. */
 export function Glance({ s, art = true }: { s: CycleState; art?: boolean }) {
+  const tr = useT();
   const st = s.status;
   const rows = [
     { icon: "RefreshCw", big: `${st.avg_cycle} days`, small: st.measured_cycles ? "Average cycle length" : "Usual cycle length" },
@@ -18,7 +21,7 @@ export function Glance({ s, art = true }: { s: CycleState; art?: boolean }) {
   ];
   return (
     <section className="relative overflow-hidden rounded-[20px] p-4" style={{ background: heroBg, border: "1px solid var(--ux-line)" }}>
-      <h3 className="relative z-[1] text-[17px] font-semibold" style={{ color: "var(--ux-ink)" }}>Your cycle at a glance</h3>
+      <h3 className="relative z-[1] text-[17px] font-semibold" style={{ color: "var(--ux-ink)" }}>{tr("insights.yourCycleAtAGlance")}</h3>
       <ul className="relative z-[1] mt-3 space-y-3">
         {rows.map((r) => (
           <li key={r.small} className="flex items-center gap-3">
@@ -44,13 +47,15 @@ export function Glance({ s, art = true }: { s: CycleState; art?: boolean }) {
 }
 
 export function Phases({ s }: { s: CycleState }) {
+  const PHASE_COPY = useTranslated(RAW_PHASE_COPY);
+  const tr = useT();
   const st = s.status;
   const phase = st.phase ?? "follicular";
   const copy = PHASE_COPY[phase];
   return (
     <Panel>
       <div className="mb-4 flex items-center justify-between">
-        <h3 className="text-[17px] font-semibold" style={{ color: "var(--ux-ink)" }}>Your phases</h3>
+        <h3 className="text-[17px] font-semibold" style={{ color: "var(--ux-ink)" }}>{tr("insights.yourPhases")}</h3>
         {st.cycle_day && (
           <span className="text-[13px]" style={{ color: "var(--ux-muted)" }}>Day {st.cycle_day} of {st.avg_cycle}</span>
         )}
@@ -67,22 +72,23 @@ export function Phases({ s }: { s: CycleState }) {
 }
 
 export function Patterns({ s }: { s: CycleState }) {
+  const tr = useT();
   const top = Object.entries(s.symptom_counts).sort((a, b) => (b[1] ?? 0) - (a[1] ?? 0)).slice(0, 5);
   const max = Math.max(1, ...top.map(([, n]) => n ?? 0));
   const moods = s.moods.slice(-14);
   return (
     <div className="space-y-3">
       <Panel>
-        <h3 className="mb-3 text-[17px] font-semibold" style={{ color: "var(--ux-ink)" }}>What your data says</h3>
+        <h3 className="mb-3 text-[17px] font-semibold" style={{ color: "var(--ux-ink)" }}>{tr("insights.whatYourDataSays")}</h3>
         {s.insights.length ? (
           <div className="space-y-3.5">{s.insights.map((i) => <InsightRow key={i.text} i={i} />)}</div>
         ) : (
-          <p className="text-[15px]" style={{ color: "var(--ux-muted)" }}>Log a few days and your patterns will show here.</p>
+          <p className="text-[15px]" style={{ color: "var(--ux-muted)" }}>{tr("insights.logAFewDaysAndYour")}</p>
         )}
       </Panel>
 
       <Panel>
-        <h3 className="mb-3 text-[17px] font-semibold" style={{ color: "var(--ux-ink)" }}>Symptoms, last 3 months</h3>
+        <h3 className="mb-3 text-[17px] font-semibold" style={{ color: "var(--ux-ink)" }}>{tr("insights.symptomsLast3Months")}</h3>
         {top.length ? (
           <ul className="space-y-2.5">
             {top.map(([k, n]) => (
@@ -99,13 +105,13 @@ export function Patterns({ s }: { s: CycleState }) {
           </ul>
         ) : (
           <p className="text-[15px]" style={{ color: "var(--ux-muted)" }}>
-            No symptoms logged yet. <Link href="/app/health/cycle/symptoms" className="font-semibold" style={{ color: "var(--cy-period-ink)" }}>Add today&apos;s</Link>
+            {tr("insights.noSymptomsLoggedYet")} <Link href="/app/health/cycle/symptoms" className="font-semibold" style={{ color: "var(--cy-period-ink)" }}>Add today&apos;s</Link>
           </p>
         )}
       </Panel>
 
       <Panel>
-        <h3 className="mb-3 text-[17px] font-semibold" style={{ color: "var(--ux-ink)" }}>Your moods, last two weeks</h3>
+        <h3 className="mb-3 text-[17px] font-semibold" style={{ color: "var(--ux-ink)" }}>{tr("insights.yourMoodsLastTwoWeeks")}</h3>
         {moods.length ? (
           <div className="flex flex-wrap gap-2">
             {moods.map((m) => (
@@ -117,14 +123,14 @@ export function Patterns({ s }: { s: CycleState }) {
           </div>
         ) : (
           <p className="text-[15px]" style={{ color: "var(--ux-muted)" }}>
-            No moods yet. <Link href="/app/health/cycle/mood" className="font-semibold" style={{ color: "var(--cy-period-ink)" }}>How are you today?</Link>
+            {tr("insights.noMoodsYet")} <Link href="/app/health/cycle/mood" className="font-semibold" style={{ color: "var(--cy-period-ink)" }}>{tr("insights.howAreYouToday")}</Link>
           </p>
         )}
       </Panel>
 
       {s.history.length > 0 && (
         <Panel>
-          <h3 className="mb-3 text-[17px] font-semibold" style={{ color: "var(--ux-ink)" }}>Your recent cycles</h3>
+          <h3 className="mb-3 text-[17px] font-semibold" style={{ color: "var(--ux-ink)" }}>{tr("insights.yourRecentCycles")}</h3>
           <ul className="divide-y" style={{ borderColor: "var(--ux-line)" }}>
             {[...s.history].reverse().map((h) => (
               <li key={h.start} className="flex items-center justify-between py-2.5 text-[15px]" style={{ borderColor: "var(--ux-line)" }}>
@@ -142,6 +148,8 @@ export function Patterns({ s }: { s: CycleState }) {
 }
 
 export function WellnessList({ s }: { s: CycleState }) {
+  const GUIDES = useTranslated(RAW_GUIDES);
+  const tr = useT();
   const cards = carePlan(s.status.phase ?? "follicular");
   return (
     <div className="space-y-3">
@@ -160,7 +168,7 @@ export function WellnessList({ s }: { s: CycleState }) {
           </span>
         </Link>
       ))}
-      <h3 className="pt-2 text-[17px] font-semibold" style={{ color: "var(--ux-ink)" }}>Helpful Resources</h3>
+      <h3 className="pt-2 text-[17px] font-semibold" style={{ color: "var(--ux-ink)" }}>{tr("healthCycleLearn.helpfulResources")}</h3>
       {GUIDES.slice(0, 3).map((g) => (
         <Link key={g.slug} href={`/app/health/cycle/learn/${g.slug}`} className="ux-press flex items-center justify-between gap-3 rounded-[14px] px-4 py-3"
               style={{ background: "var(--ux-surface)", border: "1px solid var(--ux-line)" }}>

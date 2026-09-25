@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { useT } from "@/i18n";
 import { createPortal } from "react-dom";
 import * as Icons from "@/components/ux/icons";
 
@@ -82,6 +83,7 @@ export function NoteBtn({
   icon?: string;
   full?: boolean;
 }) {
+  const tr = useT();
   const [open, setOpen] = useState(false);
   const [text, setText] = useState("");
   const [rating, setRating] = useState(0);
@@ -142,7 +144,7 @@ export function NoteBtn({
     }
   }
 
-  const link = sentLink === undefined ? { href: "/app/messages", label: "Go to Messages" } : sentLink;
+  const link = sentLink === undefined ? { href: "/app/messages", label: tr("note.goToMessages") } : sentLink;
 
   return (
     <>
@@ -214,7 +216,7 @@ export function NoteBtn({
 
                 {stars && (
                   <div className="mb-3.5">
-                    <p className="mb-2 text-xsm font-semibold" style={{ color: "var(--ux-ink)" }}>How did it go?</p>
+                    <p className="mb-2 text-xsm font-semibold" style={{ color: "var(--ux-ink)" }}>{tr("note.howDidItGo")}</p>
                     <div className="flex gap-1.5">
                       {[1, 2, 3, 4, 5].map((n) => (
                         <button key={n} onClick={() => setRating(n)} aria-label={`${n} out of 5`}
@@ -257,7 +259,7 @@ export function NoteBtn({
                       : `This box is not connected yet — nothing written here would reach ${to}.`}
                   </p>
                   <div className="flex shrink-0 gap-2">
-                    <Btn variant="ghost" size="sm" onClick={() => setOpen(false)}>Not now</Btn>
+                    <Btn variant="ghost" size="sm" onClick={() => setOpen(false)}>{tr("discover.notNow")}</Btn>
                     <Btn variant="primary" size="sm" iconEnd={sending ? undefined : "Send"}
                          icon={sending ? "Loader" : undefined}
                          disabled={!send || !ready || sending}

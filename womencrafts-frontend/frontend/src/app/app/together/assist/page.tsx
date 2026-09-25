@@ -4,9 +4,9 @@ import { useCallback, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 
 import { HomeShell } from "@/components/ux/home/HomeShell";
-import { Back, Btn, Card, EmptyState, I, IconTile, Pill, SectionHead, Stat, v } from "@/components/ux/kit";
-import { formatRupees } from "@/components/ux/kit";
-import { ASSIST_QUEUE, HELPED, assistEarned, noPhone, type AssistTask, type Helped } from "@/components/ux/together/data";
+import { Back, Btn, Card, EmptyState, I, IconTile, Pill, SectionHead, SourceNote, Stat, v } from "@/components/ux/kit";
+import { useResource } from "@/lib/use-resource";
+import { apiFinishAssistTask, apiTogether, type Together } from "@/lib/life-api";
 import { useT } from "@/i18n";
 import { ListGroup } from "@/components/ux/mobile/ListRow";
 import { GroupLabel, PhoneRow, PhoneTitle } from "@/components/ux/PhoneParts";
@@ -33,21 +33,56 @@ import { GroupLabel, PhoneRow, PhoneTitle } from "@/components/ux/PhoneParts";
  * that pays a million ASHA workers below minimum wage.
  */
 export default function AssistPage() {
+  /**
+   * Who she actually helps.
+   *
+   * This screen shipped with four women written into it — "Lakshmi Bai, since
+   * March, cannot read the screen, consent given 12 March, 34 things done,
+   * ₹680 earned" — and a queue of three tasks belonging to them.
+   *
+   * Assisting means one woman operating the app as another. That is the most
+   * dangerous permission in this product: an un-consented version of it is
+   * exactly what financial abuse looks like. Shipping it with four consents
+   * already granted, dated, and attributed to women who did not exist is not
+   * a placeholder problem.
+   */
+  const together = useResource<Together>(
+    useCallback((sig: AbortSignal) => apiTogether(sig), []),
+    { helping: [], queue: [], teaching: [], helped_count: 0, consented_count: 0, waiting: 0 },
+  );
   const tr = useT();
   const router = useRouter();
-  const [queue, setQueue] = useState<AssistTask[]>(ASSIST_QUEUE);
-  const [women] = useState<Helped[]>(HELPED);
+  const queue = together.data.queue;
+  const women = together.data.helping;
   const [note, setNote] = useState<string | null>(null);
+  const [err, setErr] = useState<string | null>(null);
+  const [busy, setBusy] = useState<string | null>(null);
 
-  const earned = useMemo(() => assistEarned(women), [women]);
-  const shared = useMemo(() => noPhone(women), [women]);
-  const pending = useMemo(() => queue.reduce((n, t) => n + t.paysMinor, 0), [queue]);
+  const shared = useMemo(() => women.filter((w) => !w.owns_phone).length, [women]);
+  const doneTotal = useMemo(() => women.reduce((n, w) => n + w.done_count, 0), [women]);
 
-  const doTask = useCallback((id: string) => {
+  /**
+   * Marking a job done.
+   *
+   * It used to say "₹20 added to your wallet". Nothing was added to any
+   * wallet — there is no way to pay her for this work, which is the same
+   * licensing wall the rest of the money in this product is behind.
+   *
+   * The right answer is not to quietly drop the idea that this is work. It
+   * is to stop saying money moved when it did not, and to say plainly that
+   * it should be paid and is not yet. A woman doing unpaid labour should at
+   * least not be told she is being paid for it.
+   */
+  const doTask = useCallback(async (id: string) => {
     const t = queue.find((x) => x.id === id);
-    setQueue((q) => q.filter((x) => x.id !== id));
-    setNote(`Done for ${t?.who}. ${formatRupees(t?.paysMinor ?? 0)} added to your wallet, and she can see exactly what you did.`);
-  }, [queue]);
+    setBusy(id); setErr(null);
+    try {
+      await apiFinishAssistTask(id);
+      setNote(`Done for ${t?.who}. She can see exactly what you did.`);
+      together.refetch();
+    } catch { setErr("That did not save."); }
+    finally { setBusy(null); }
+  }, [queue, together]);
 
   return (
     <HomeShell active="/app/together">
@@ -71,13 +106,32 @@ export default function AssistPage() {
           </p>
         </header>
 
+        <SourceNote source={together.source} what="who you help" />
+
+        {err && (
+          <Card pad={16} style={{ background: v("--ux-danger-tint"), borderColor: "transparent" }}>
+            <p className="flex items-center gap-2 text-xsm font-semibold" style={{ color: v("--ux-danger-ink") }}>
+              <I name="AlertTriangle" className="h-[16px] w-[16px] shrink-0" />{err}
+            </p>
+          </Card>
+        )}
+
+        {together.source !== "loading" && women.length === 0 && (
+          <EmptyState
+            icon="HeartHandshake"
+            title="You are not helping anyone yet"
+            body="Assisting means using the app as someone else — for a woman who cannot read the screen, or whose son keeps the phone. She has to agree first, and either of you can end it at any time."
+            action={<Btn icon="UserPlus" href="/app/together">Find someone to help</Btn>}
+          />
+        )}
+
         <Card>
           <div className="grid gap-4 sm:grid-cols-3">
-            <Stat value={formatRupees(earned)} label={tr("togetherAssist.youHaveEarnedDoingThis")}
-                  icon="Wallet" tint="--ux-tint-green" ink="--ux-green-ink" />
-            <Stat value={formatRupees(pending)} label={tr("togetherAssist.waitingToBeDone")}
+            <Stat value={String(women.length)} label="Women you help"
+                  icon="Users" tint="--ux-tint-green" ink="--ux-green-ink" />
+            <Stat value={String(queue.length)} label={tr("togetherAssist.waitingToBeDone")}
                   icon="Clock" tint="--ux-tint-amber" ink="--ux-amber-ink" />
-            <Stat value={String(women.reduce((n, w) => n + w.doneCount, 0))} label={tr("togetherAssist.thingsDoneForThem")}
+            <Stat value={String(doneTotal)} label={tr("togetherAssist.thingsDoneForThem")}
                   icon="ListChecks" tint="--ux-tint-blue" ink="--ux-blue-ink" />
           </div>
         </Card>
@@ -97,7 +151,7 @@ export default function AssistPage() {
           </div>
           {queue.length === 0 ? (
             <Card><EmptyState icon="CheckCircle2" title={tr("togetherAssist.nothingWaiting")}
-                              body="Everything is done. We will tell you when one of them needs something." /></Card>
+                              body={tr("togetherAssist.everythingIsDoneWeWillTell")} /></Card>
           ) : (
             <>
             {/* On a phone the queue is one grouped list: who, what, what it
@@ -109,9 +163,9 @@ export default function AssistPage() {
                           tint={t.urgent ? "--ux-tint-amber" : "--ux-surface-2"}
                           ink={t.urgent ? "--ux-amber-ink" : "--ux-muted"}
                           title={t.who}
-                          meta={<span className="font-semibold tabular-nums" style={{ color: v("--ux-green-ink") }}>+{formatRupees(t.paysMinor)}</span>}
+                          meta={t.urgent ? <span className="font-semibold" style={{ color: v("--ux-amber-ink") }}>Urgent</span> : undefined}
                           body={t.what}
-                          trailing={<Btn size="sm" onClick={() => doTask(t.id)}>{tr("togetherAssist.doIt")}</Btn>} />
+                          trailing={<Btn size="sm" disabled={busy === t.id} onClick={() => doTask(t.id)}>{tr("togetherAssist.doIt")}</Btn>} />
               ))}
             </ListGroup>
             <div className="hidden flex-col gap-2.5 lg:flex">
@@ -125,10 +179,7 @@ export default function AssistPage() {
                       <p className="text-sm font-bold" style={{ color: v("--ux-ink") }}>{t.who}</p>
                       <p className="mt-0.5 text-xsm" style={{ color: v("--ux-muted") }}>{t.what}</p>
                     </div>
-                    <p className="shrink-0 text-xsm font-bold tabular-nums" style={{ color: v("--ux-green-ink") }}>
-                      +{formatRupees(t.paysMinor)}
-                    </p>
-                    <Btn size="sm" onClick={() => doTask(t.id)}>{tr("togetherAssist.doIt")}</Btn>
+                    <Btn size="sm" disabled={busy === t.id} onClick={() => doTask(t.id)}>{tr("togetherAssist.doIt")}</Btn>
                   </div>
                 </Card>
               ))}
@@ -155,13 +206,13 @@ export default function AssistPage() {
                         title={
                           <span className="flex flex-wrap items-center gap-2">
                             {w.name}
-                            {!w.ownsPhone && <Pill tone="orange" size="sm">{tr("togetherAssist.sharesAPhone")}</Pill>}
+                            {!w.owns_phone && <Pill tone="orange" size="sm">{tr("togetherAssist.sharesAPhone")}</Pill>}
                           </span>
                         }
                         meta={`Since ${w.since} · ${w.because.toLowerCase()}`}
-                        body={`Last: ${w.lastDid}`}>
+                        body={`Last: ${w.last_did}`}>
                 <span className="mt-0.5 block text-[13px] leading-snug" style={{ color: v("--ux-muted") }}>
-                  {w.doneCount} things done · she agreed on {w.consentOn}
+                  {w.done_count} things done · she agreed on {w.consent_on}
                 </span>
                 <span className="mt-3 flex gap-2">
                   <Btn size="sm" variant="outline" full className="max-lg:px-4"
@@ -183,7 +234,7 @@ export default function AssistPage() {
                   <div className="min-w-0 flex-1">
                     <div className="flex flex-wrap items-center gap-2">
                       <p className="text-sm font-bold" style={{ color: v("--ux-ink") }}>{w.name}</p>
-                      {!w.ownsPhone && <Pill tone="orange" size="sm">{tr("togetherAssist.sharesAPhone")}</Pill>}
+                      {!w.owns_phone && <Pill tone="orange" size="sm">{tr("togetherAssist.sharesAPhone")}</Pill>}
                     </div>
                     <p className="mt-0.5 text-xs" style={{ color: v("--ux-muted") }}>
                       Since {w.since} · {w.because.toLowerCase()}
@@ -193,10 +244,10 @@ export default function AssistPage() {
 
                 <div className="mt-3 rounded-[12px] px-3 py-2.5" style={{ background: v("--ux-surface-2") }}>
                   <p className="text-xs font-semibold" style={{ color: v("--ux-ink-2") }}>
-                    Last: {w.lastDid}
+                    Last: {w.last_did}
                   </p>
                   <p className="mt-1 text-2xs" style={{ color: v("--ux-muted") }}>
-                    {w.doneCount} things done · she agreed on {w.consentOn}
+                    {w.done_count} things done · she agreed on {w.consent_on}
                   </p>
                 </div>
 

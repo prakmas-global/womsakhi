@@ -9,11 +9,12 @@ import {
 } from "@/components/ux/kit";
 import { HomeShell } from "@/components/ux/home/HomeShell";
 import { useCreches, useGuidance } from "@/components/ux/entitlements";
-import { WELLBEING_ART } from "@/components/ux/wellbeing/data";
+import { WELLBEING_ART as RAW_WELLBEING_ART } from "@/components/ux/wellbeing/data";
 import { useT } from "@/i18n";
 import { ListGroup } from "@/components/ux/mobile/ListRow";
 import { SegmentedControl } from "@/components/ux/mobile/SegmentedControl";
 import { PhoneRow } from "@/components/ux/PhoneParts";
+import { useTranslated } from "@/i18n/data";
 
 /**
  * Family & Childcare.
@@ -31,6 +32,7 @@ const FAMILY_TINTS = [
 ] as const;
 
 export default function FamilyPage() {
+  const WELLBEING_ART = useTranslated(RAW_WELLBEING_ART);
   const tr = useT();
   const { data: CRECHES, source } = useCreches();
   // Editorial, from the server, so it can be corrected and translated.
@@ -197,7 +199,7 @@ export default function FamilyPage() {
         ) : (
           <Card>
             <EmptyState icon="Baby" title={tr("family.nothingFoundNearYou")}
-                        body="Every ward has an Anganwadi centre — tell us your ward and we will find it." />
+                        body={tr("family.everyWardHasAnAnganwadiCentre")} />
           </Card>
         )
       )}

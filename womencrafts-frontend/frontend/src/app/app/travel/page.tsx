@@ -6,11 +6,12 @@ import * as Icons from "@/components/ux/icons";
 import { ActionBtn, Btn, Card, EmptyState, IconTile, Pill, SectionHead, SourceNote, Tabs, mapsHref } from "@/components/ux/kit";
 import { HomeShell } from "@/components/ux/home/HomeShell";
 import { useGuidance, useHelplines, useRoutes } from "@/components/ux/entitlements";
-import { WELLBEING_ART } from "@/components/ux/wellbeing/data";
+import { WELLBEING_ART as RAW_WELLBEING_ART } from "@/components/ux/wellbeing/data";
 import { useT } from "@/i18n";
 import { ListGroup } from "@/components/ux/mobile/ListRow";
 import { SegmentedControl } from "@/components/ux/mobile/SegmentedControl";
 import { PhoneRow, phoneFull } from "@/components/ux/PhoneParts";
+import { useTranslated } from "@/i18n/data";
 
 /**
  * Transport & Safe Travel.
@@ -21,6 +22,7 @@ import { PhoneRow, phoneFull } from "@/components/ux/PhoneParts";
  * it is safe to come back on after dark.
  */
 export default function TravelPage() {
+  const WELLBEING_ART = useTranslated(RAW_WELLBEING_ART);
   const tr = useT();
   const { data: ROUTES, source } = useRoutes();
   // Numbers and rules from the server, so both can be corrected — or a
@@ -38,6 +40,18 @@ export default function TravelPage() {
     <HomeShell
       rail={
         <div className="space-y-[16px]">
+          {/*
+            Added, not replacing anything: the rest of this screen is about
+            which route to take, and this is the one thing she can do once she
+            has set off.
+          */}
+          <Card>
+            <SectionHead title={tr("ch.travel-journey.label")} icon="MapPin"
+                         sub={tr("journey.subtitle")} />
+            <Btn href="/app/travel/journey" icon="Play" full>
+              {tr("journey.start")}
+            </Btn>
+          </Card>
           <Card>
             <SectionHead title={tr("travel.beforeYouSetOut")} icon="ShieldCheck" />
             <ul className="ux-stagger space-y-2.5">
@@ -208,7 +222,7 @@ export default function TravelPage() {
         ) : (
           <Card>
             <EmptyState icon="Bus" title={tr("travel.noRoutesSaved")}
-                        body="Save the journeys you make often and we will tell you what they cost and when to come back." />
+                        body={tr("travel.saveTheJourneysYouMakeOften")} />
           </Card>
         )
       )}

@@ -15,6 +15,7 @@ itself a safety problem) but the member's identity is never returned to anyone
 outside staff. That trade-off is deliberate and is stated to her in the UI.
 """
 
+import secrets
 from datetime import datetime, timezone
 from typing import Optional
 
@@ -128,6 +129,23 @@ class SafetyAlertModel:
             "resolution": "",
             "created_at": now,
             "resolved_at": None,
+
+            # ── how her people actually find out ──────────────────────────
+            #
+            # There is no SMS provider, no WhatsApp and no voice line, so
+            # nothing in this system can reach her cousin's phone. What CAN
+            # reach it is her own phone: she sends the link herself, from
+            # whichever app she already uses.
+            #
+            # 256 bits, so the link is the capability — anyone holding it can
+            # see that she raised an alert and say they have it, and nobody
+            # without it can. Deliberately not her alert id alone: ids appear
+            # in logs and in staff screens, and this one is meant to be
+            # forwarded.
+            "share_token": secrets.token_urlsafe(32),
+            # Who has said "I've got it", and when. The only thing on this
+            # record that counts as help arriving.
+            "acknowledgements": [],
         }
 
     @staticmethod
@@ -139,6 +157,11 @@ class SafetyAlertModel:
             "status": doc.get("status", "open"),
             "contacts_notified": doc.get("contacts_notified", 0),
             "resolution": doc.get("resolution", ""),
+            # The link she forwards herself. Returned only to HER — this is the
+            # member's own alert — and it is what makes the alert reach anybody
+            # at all while there is no SMS provider.
+            "share_token": doc.get("share_token", ""),
+            "acknowledged_by": [a.get("name", "") for a in (doc.get("acknowledgements") or []) if a.get("name")],
             "raised_at": created.strftime("%b %d, %Y · %I:%M %p") if isinstance(created, datetime) else "",
         }
 

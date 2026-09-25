@@ -3,6 +3,7 @@
 import { useState } from "react";
 
 import { apiUpdateMeProfile } from "@/lib/member-api";
+import { useAuth } from "@/context/AuthContext";
 import { useAction } from "@/lib/use-action";
 import * as Icons from "@/components/ux/icons";
 
@@ -28,6 +29,7 @@ import { Group, SaveBar } from "../_parts/Group";
 export default function LanguageSettings() {
   const tr = useT();
   const { locale, setLocale } = useI18n();
+  const { user, updateUser } = useAuth();
   const [picked, setPicked] = useState(locale);
   const [saved, setSaved] = useState(false);
 
@@ -44,6 +46,7 @@ export default function LanguageSettings() {
     async () => {
       setLocale(picked);
       await apiUpdateMeProfile({ locale: picked });
+      if (user) updateUser({ ...user, locale: picked });
     },
     {
       onDone: () => setSaved(true),

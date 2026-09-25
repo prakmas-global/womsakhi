@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { Check, Globe, Loader2 } from "lucide-react";
 
-import { useI18n } from "@/i18n";
+import { useI18n, isUsable } from "@/i18n";
 import { LOCALES } from "@/i18n/locales";
 
 /**
@@ -54,7 +54,10 @@ export default function LanguageSwitcher({
         // A complete catalogue is enough to offer it. `showUnreviewed` now only
         // controls whether the review note is spelled out at length, which is
         // useful on the staff surface where someone is actually checking.
-        const usable = l.translated;
+        // Counted from the catalogue, not read off a flag. `l.translated` was
+        // hand-maintained and said yes for nine languages that were between
+        // 0% and 9% done.
+        const usable = isUsable(l.code);
         return (
           <button
             key={l.code}
@@ -84,8 +87,8 @@ export default function LanguageSwitcher({
               </span>
               <span className="block text-xs text-ink-subtle">
                 {l.name}
-                {!l.translated && " · coming soon"}
-                {l.translated && !l.reviewed &&
+                {!isUsable(l.code) && " · coming soon"}
+                {isUsable(l.code) && !l.reviewed &&
                   (showUnreviewed
                     ? " · not yet read by a native speaker"
                     : " · new translation")}

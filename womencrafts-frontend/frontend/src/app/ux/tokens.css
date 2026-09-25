@@ -179,6 +179,7 @@
      red used for emphasis measures 2.8:1 against white, on the one control
      that has to work when she is frightened. */
   --ux-danger-solid: #b91c1c;
+  --ux-on-danger: #ffffff;    /* ink for a --ux-danger-solid fill */
   --ux-danger-tint: #f5e3e1;
 
   --ux-read-tick: #7fe3ff;
@@ -454,6 +455,7 @@
 :is(.ux.dark, .dark .ux) {
   --ux-sheen: rgba(255, 255, 255, 0.055);
   --ux-danger-solid: #f28ba0;   /* 7.2:1 on the dark tint it is printed on */
+  --ux-on-danger: #3a0d14;    /* 10.4:1 — the fill is light in this theme */
   --ux-danger-tint: #351e1d;
 
   /* Glass in the dark: less white, more blur showing through. A light border
@@ -2785,4 +2787,55 @@
     text-decoration: underline;
     text-underline-offset: 3px;
   }
+}
+
+
+/* ── Right-to-left: keep foreign runs from reordering ────────────────────
+   Urdu and Arabic set `dir="rtl"` on the document, and the bidi algorithm then
+   reorders any left-to-right run inside it — numbers, latin names, times,
+   URLs — against the surrounding text. Measured in Urdu, with the catalogue
+   still mostly English, every one of these came out backwards:
+
+     "Set one without typing a word."   ->  ".Set one without typing a word"
+     "8 at night"                       ->  "at night 8"
+     "100% completed"                   ->  "completed 100%"
+     "99+"                              ->  "+99"
+     "10-min morning yoga"              ->  "min morning-10 yoga"
+
+   `isolate` is the fix the algorithm provides for exactly this: a run inside
+   an isolate is ordered on its own and then placed as a single unit, so its
+   internal order survives whatever direction surrounds it.
+
+   Applied where mixed content actually lands — times, money, counts, code and
+   anything explicitly marked `ltr` — rather than globally, because isolating
+   every element would also isolate the Urdu, and a paragraph of isolated words
+   is its own kind of broken. A translated language needs this too: a woman's
+   balance is still "₹23,501" in Urdu.
+*/
+[dir="rtl"] .tabular-nums,
+[dir="rtl"] time,
+[dir="rtl"] code,
+[dir="rtl"] samp,
+[dir="rtl"] kbd,
+[dir="rtl"] [lang="en"],
+[dir="rtl"] [dir="ltr"],
+[dir="rtl"] .ux-num,
+[dir="rtl"] .ux-badge,
+[dir="rtl"] .ux-amount {
+  unicode-bidi: isolate;
+}
+
+/* A whole sentence that is still English inside an RTL page. `plaintext` reads
+   the run's own first strong character and lays it out in THAT direction, so
+   English keeps its full stop at the end and Urdu keeps its own order — which
+   is what a part-translated catalogue needs while the rest is being written. */
+[dir="rtl"] p,
+[dir="rtl"] li,
+[dir="rtl"] h1,
+[dir="rtl"] h2,
+[dir="rtl"] h3,
+[dir="rtl"] label,
+[dir="rtl"] button,
+[dir="rtl"] a {
+  unicode-bidi: plaintext;
 }

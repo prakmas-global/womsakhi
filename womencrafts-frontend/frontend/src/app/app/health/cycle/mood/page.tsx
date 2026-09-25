@@ -1,13 +1,15 @@
 "use client";
 
 import { useRouter } from "next/navigation";
+import { useT } from "@/i18n";
 import { useEffect, useState } from "react";
 
 import { HomeShell } from "@/components/ux/home/HomeShell";
 import { Column, CycleHeader, CyButton, DeskTitle, ErrorLine, MoodFace } from "@/components/ux/cycle/parts";
-import { FEELINGS, MOODS } from "@/components/ux/cycle/data";
+import { FEELINGS as RAW_FEELINGS, MOODS as RAW_MOODS } from "@/components/ux/cycle/data";
 import { useCycle } from "@/components/ux/cycle/use-cycle";
 import { apiCycleLog, type Feeling, type Mood } from "@/lib/cycle-api";
+import { useTranslated } from "@/i18n/data";
 
 /**
  * How she feels right now — a face, any words that fit, and a note if she
@@ -15,6 +17,9 @@ import { apiCycleLog, type Feeling, type Mood } from "@/lib/cycle-api";
  * it never changes a claim, only which suggestion comes first.
  */
 export default function MoodTracker() {
+  const FEELINGS = useTranslated(RAW_FEELINGS);
+  const MOODS = useTranslated(RAW_MOODS);
+  const tr = useT();
   const router = useRouter();
   const { state, data, act, busy, error } = useCycle();
   // Her edits, or — until she makes one — what she saved earlier today.
@@ -41,14 +46,14 @@ export default function MoodTracker() {
   return (
     <HomeShell immersive bare>
       <Column>
-        <CycleHeader title="Mood Tracker" action={{ label: "Save", onClick: save, disabled: busy || !state }} />
-        <DeskTitle title="Mood Tracker" />
+        <CycleHeader title={tr("healthCycleMood.moodTracker")} action={{ label: "Save", onClick: save, disabled: busy || !state }} />
+        <DeskTitle title={tr("healthCycleMood.moodTracker")} />
 
-        <h2 className="mt-2 text-center text-[17px] font-semibold" style={{ color: "var(--ux-ink)" }}>How are you feeling right now?</h2>
+        <h2 className="mt-2 text-center text-[17px] font-semibold" style={{ color: "var(--ux-ink)" }}>{tr("healthCycleMood.howAreYouFeelingRightNow")}</h2>
 
         {/* The reference's dial: the chosen face large in the middle, the
             others small and quiet either side. Each is still its own button. */}
-        <div role="radiogroup" aria-label="How are you feeling right now" className="mt-5 flex items-center justify-center gap-2.5">
+        <div role="radiogroup" aria-label={tr("healthCycleMood.howAreYouFeelingRightNow2")} className="mt-5 flex items-center justify-center gap-2.5">
           {MOODS.map((m) => {
             const on = m.key === mood;
             return (
@@ -84,7 +89,7 @@ export default function MoodTracker() {
         <label className="mt-6 block rounded-[16px] p-3.5" style={{ background: "var(--ux-surface)", border: "1px solid var(--ux-line)" }}>
           <span className="block text-[13px]" style={{ color: "var(--ux-ink-2)" }}>Add a personal note (optional)</span>
           <textarea value={note} onChange={(e) => setNote(e.target.value.slice(0, 500))} rows={3}
-                    placeholder="Write what's on your mind…"
+                    placeholder={tr("healthCycleMood.writeWhatSOnYourMind")}
                     className="mt-2 w-full resize-none bg-transparent text-[15px] outline-none"
                     style={{ color: "var(--ux-ink)" }} />
         </label>

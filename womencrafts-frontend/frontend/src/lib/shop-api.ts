@@ -29,8 +29,14 @@ export interface Listing {
   place: string;
   travels_km: number;
   photo: string;
+  photos?: string[];
+  price_mode?: "fixed" | "range" | "quote";
   status: string;
   views: number;
+  /** ISO. When she listed it — the audit table sorts on this. */
+  created_at?: string;
+  /** Orders this listing has actually had, counted from her orders. */
+  orders?: number;
 }
 
 export interface ShopOrder {

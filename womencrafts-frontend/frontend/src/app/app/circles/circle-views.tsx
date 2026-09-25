@@ -2,10 +2,12 @@
 
 import Link from "next/link";
 
+import { useT } from "@/i18n";
 import * as Icons from "@/components/ux/icons";
 import { Btn, Card, I, IconTile, v } from "@/components/ux/kit";
 import type { Circle } from "@/lib/community-api";
-import { ALL_TOPICS, CIRCLE_ART, members, readPost, topicOf, type Topic } from "@/components/ux/circle/data";
+import { ALL_TOPICS as RAW_ALL_TOPICS, CIRCLE_ART as RAW_CIRCLE_ART, members, readPost, topicOf, type Topic } from "@/components/ux/circle/data";
+import { useTranslated } from "@/i18n/data";
 
 /* ------------------------------------------------------------------ */
 /*  The banner, and the box she types her question into                */
@@ -14,6 +16,8 @@ import { ALL_TOPICS, CIRCLE_ART, members, readPost, topicOf, type Topic } from "
 export function CircleHero({ ask, onAsk, onStart }: {
   ask: string; onAsk: (s: string) => void; onStart: () => void;
 }) {
+  const CIRCLE_ART = useTranslated(RAW_CIRCLE_ART);
+  const tr = useT();
   return (
     <section className="relative mb-4 overflow-hidden rounded-[20px] max-lg:rounded-[16px]"
              style={{ background: "linear-gradient(102deg, var(--ux-brand-tint) 0%, var(--ux-tint-lilac) 55%, var(--ux-tint-pink) 100%)",
@@ -33,7 +37,7 @@ export function CircleHero({ ask, onAsk, onStart }: {
             Circle
           </h1>
           <p className="mt-2 max-w-[400px] text-[15px] leading-snug lg:mt-2.5 lg:text-smd" style={{ color: v("--ux-ink-2") }}>
-            A safe, supportive space for women to connect, ask, share and grow — together.
+            {tr("circleviews.aSafeSupportiveSpaceForWomen")}
           </p>
 
           <form className="mt-4 flex max-w-[440px] items-center gap-2 rounded-full py-1.5 pe-1.5 ps-4 lg:mt-5"
@@ -50,13 +54,13 @@ export function CircleHero({ ask, onAsk, onStart }: {
             <input
               value={ask}
               onChange={(e) => onAsk(e.target.value)}
-              aria-label="What would you like to discuss today?"
-              placeholder="Ask the circle…"
+              aria-label={tr("circleviews.whatWouldYouLikeToDiscuss")}
+              placeholder={tr("circleviews.askTheCircle")}
               inputMode="text" enterKeyHint="go" autoComplete="off"
               className="min-h-[38px] w-full min-w-0 bg-transparent text-[17px] outline-none lg:text-xsm"
               style={{ color: v("--ux-ink") }}
             />
-            <button type="submit" aria-label="Start this discussion"
+            <button type="submit" aria-label={tr("circleviews.startThisDiscussion")}
                     className="ux-press ux-sq grid h-[40px] w-[40px] shrink-0 place-items-center rounded-full lg:h-[36px] lg:w-[36px]"
                     style={{ background: "linear-gradient(96deg, var(--ux-fill), var(--ux-fill-2))",
                              color: v("--ux-on-brand") }}>
@@ -79,14 +83,14 @@ export function CircleHero({ ask, onAsk, onStart }: {
           */}
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img src={CIRCLE_ART.hero}
-               alt="Five women sitting together in a circle, talking over cups of tea"
+               alt={tr("circleviews.fiveWomenSittingTogetherInA")}
                loading="lazy" decoding="async" width={900} height={690}
                className="h-full w-[240px] object-cover object-top xl:w-[290px]"
                style={{ maskImage: "linear-gradient(100deg, transparent 0%, #000 32%, #000 78%, transparent 100%)",
                         WebkitMaskImage: "linear-gradient(100deg, transparent 0%, #000 32%, #000 78%, transparent 100%)" }} />
           <p className="hidden w-[152px] self-center pe-6 text-end text-smd font-bold italic leading-[1.35] xl:block"
              style={{ color: v("--ux-brand"), fontFamily: "var(--font-display)" }}>
-            Real conversations,<br />brighter tomorrows
+            {tr("circleviews.realConversations")}<br />{tr("circleviews.brighterTomorrows")}
           </p>
         </div>
       </div>
@@ -104,6 +108,7 @@ export function TopicChips({ active, onPick, topics, counts }: {
   topics: Topic[];
   counts: Record<string, number>;
 }) {
+  const ALL_TOPICS = useTranslated(RAW_ALL_TOPICS);
   const all = [{ id: "all", label: ALL_TOPICS, icon: "MessageCircle",
                  tint: "--ux-brand-tint-2", ink: "--ux-brand" } as Topic, ...topics];
   return (
@@ -146,17 +151,18 @@ export interface Trend {
 }
 
 export function Trending({ rows }: { rows: Trend[] }) {
+  const tr = useT();
   return (
     <Card className="mb-5">
       <div className="mb-3.5 flex items-center justify-between gap-3">
         <h2 className="flex items-center gap-2.5 text-lg font-extrabold tracking-[-0.01em]"
             style={{ color: v("--ux-ink") }}>
           <I name="Flame" className="h-[19px] w-[19px]" style={{ color: v("--ux-orange-ink") }} />
-          Trending discussions
+          {tr("circleviews.trendingDiscussions")}
         </h2>
         <Link href="/app/circles" className="ux-sq -me-2 flex min-h-[36px] items-center gap-0.5 rounded-[10px] px-2 text-xs font-bold"
               style={{ color: v("--ux-brand") }}>
-          See all <Icons.ArrowRight className="h-[13px] w-[13px]" />
+          {tr("circles.seeAll")} <Icons.ArrowRight className="h-[13px] w-[13px]" />
         </Link>
       </div>
       <div className="grid gap-3.5" style={{ gridTemplateColumns: "repeat(auto-fit, minmax(210px, 1fr))" }}>
@@ -230,6 +236,7 @@ export function PostCard({ p, saved, onLike, onSave, onShare, busy }: {
   onSave: (p: FeedPost) => void;
   onShare: (p: FeedPost) => void;
 }) {
+  const tr = useT();
   const { title, rest, tags } = readPost(p.body);
   return (
     <Card className="mb-3.5">
@@ -286,7 +293,7 @@ export function PostCard({ p, saved, onLike, onSave, onShare, busy }: {
             {/* "Share" promised something this button cannot do: a circle is
                 behind the sign-in, so the address it copies opens for another
                 member and for nobody else. It is a copy, so it says copy. */}
-            <Act icon="Link2" label="Copy link" onClick={() => onShare(p)} />
+            <Act icon="Link2" label={tr("circleviews.copyLink")} onClick={() => onShare(p)} />
           </div>
         </div>
       </div>
@@ -322,18 +329,19 @@ function Act({ icon, label, onClick, href, on, tone = "--ux-muted", disabled }: 
 export function MyCircle({ posts, likes, saved }: {
   posts: number; likes: number; saved: number;
 }) {
+  const tr = useT();
   const cells = [
-    { n: posts, label: "My posts",      icon: "Users",    tint: "--ux-brand-tint-2", ink: "--ux-brand" },
-    { n: likes, label: "Likes received", icon: "Heart",   tint: "--ux-tint-pink",    ink: "--ux-pink-ink" },
-    { n: saved, label: "Saved posts",   icon: "Bookmark", tint: "--ux-tint-blue",    ink: "--ux-blue-ink" },
+    { n: posts, label: tr("circleviews.myPosts"),      icon: "Users",    tint: "--ux-brand-tint-2", ink: "--ux-brand" },
+    { n: likes, label: tr("circleviews.likesReceived"), icon: "Heart",   tint: "--ux-tint-pink",    ink: "--ux-pink-ink" },
+    { n: saved, label: tr("circleviews.savedPosts"),   icon: "Bookmark", tint: "--ux-tint-blue",    ink: "--ux-blue-ink" },
   ];
   return (
     <Card>
       <div className="mb-3 flex items-center justify-between gap-3">
-        <h2 className="text-base font-extrabold" style={{ color: v("--ux-ink") }}>My circle</h2>
+        <h2 className="text-base font-extrabold" style={{ color: v("--ux-ink") }}>{tr("market.myCircle")}</h2>
         <Link href="/app/circles" className="ux-sq -me-2 flex min-h-[36px] items-center gap-0.5 rounded-[10px] px-2 text-xs font-bold"
               style={{ color: v("--ux-brand") }}>
-          View all <Icons.ArrowRight className="h-[12px] w-[12px]" />
+          {tr("calendar.viewAll")} <Icons.ArrowRight className="h-[12px] w-[12px]" />
         </Link>
       </div>
       <div className="grid grid-cols-3 gap-2">
@@ -359,6 +367,7 @@ export function MyCircle({ posts, likes, saved }: {
 export function PopularGroups({ rows, busy, onJoin }: {
   rows: Circle[]; busy: string | null; onJoin: (c: Circle) => void;
 }) {
+  const tr = useT();
   // "Popular circles" above five she is already in is a dead panel. When there
   // is nothing left to discover, the card says what it is actually showing.
   const anyOpen = rows.some((c) => !c.joined);
@@ -370,7 +379,7 @@ export function PopularGroups({ rows, busy, onJoin }: {
         </h2>
         <Link href="/app/circles" className="ux-sq -me-2 flex min-h-[36px] items-center gap-0.5 rounded-[10px] px-2 text-xs font-bold"
               style={{ color: v("--ux-brand") }}>
-          View all <Icons.ArrowRight className="h-[12px] w-[12px]" />
+          {tr("calendar.viewAll")} <Icons.ArrowRight className="h-[12px] w-[12px]" />
         </Link>
       </div>
       <div className="space-y-2.5">
@@ -417,13 +426,14 @@ export interface RailEvent {
 export function UpcomingEvents({ rows, busy, onGo }: {
   rows: RailEvent[]; busy: string | null; onGo: (e: RailEvent) => void;
 }) {
+  const tr = useT();
   return (
     <Card>
       <div className="mb-3 flex items-center justify-between gap-3">
-        <h2 className="text-base font-extrabold" style={{ color: v("--ux-ink") }}>Coming up</h2>
+        <h2 className="text-base font-extrabold" style={{ color: v("--ux-ink") }}>{tr("events.upcoming")}</h2>
         <Link href="/app/events" className="ux-sq -me-2 flex min-h-[36px] items-center gap-0.5 rounded-[10px] px-2 text-xs font-bold"
               style={{ color: v("--ux-brand") }}>
-          View all <Icons.ArrowRight className="h-[12px] w-[12px]" />
+          {tr("calendar.viewAll")} <Icons.ArrowRight className="h-[12px] w-[12px]" />
         </Link>
       </div>
       <div className="space-y-3.5">
@@ -467,12 +477,13 @@ export function UpcomingEvents({ rows, busy, onGo }: {
 /* ------------------------------------------------------------------ */
 
 export function CircleQuote() {
+  const tr = useT();
   return (
     <figure className="relative overflow-hidden rounded-[16px] p-[18px]"
             style={{ background: "linear-gradient(150deg, var(--ux-tint-lilac), var(--ux-tint-pink))" }}>
       <I name="Quote" className="h-[18px] w-[18px]" style={{ color: v("--ux-brand") }} />
       <blockquote className="mt-2 text-smd font-bold leading-snug" style={{ color: v("--ux-ink") }}>
-        When women support each other, incredible things happen.
+        {tr("circleviews.whenWomenSupportEachOtherIncredible")}
       </blockquote>
       <figcaption className="mt-2 flex items-center gap-1.5 text-[12px] lg:text-2xs font-semibold" style={{ color: v("--ux-muted") }}>
         — WomSakhi <Icons.Heart className="h-[11px] w-[11px]" style={{ color: v("--ux-pink-ink") }} />

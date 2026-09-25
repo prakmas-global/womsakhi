@@ -12,39 +12,14 @@
  * component.
  */
 
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import * as Icons from "@/components/ux/icons";
 
-import { HomeShell } from "@/components/ux/home/HomeShell";
 import { formatMoney } from "@/components/ux/kit/money";
 import Link from "next/link";
-import {
-  apiConversation,
-  apiConversations,
-  apiDeleteConversation,
-  apiMarkUnread,
-  apiStarConversation,
-  apiInboxSummary,
-  apiSendToConversation,
-  type ConvBubble,
-  type ConvDetail,
-  type ConvRow,
-  type InboxSummary,
-  type PartyKind,
-} from "@/lib/me-messages-api";
+import { type ConvBubble, type ConvDetail, type ConvRow, type InboxSummary, type PartyKind } from "@/lib/me-messages-api";
 import { useT } from "@/i18n";
-import {
-  bubbleRadius,
-  ChatDock,
-  ChatFrame,
-  ChatInput,
-  ChatLog,
-  JumpToLatest,
-  Says,
-  SendButton,
-  Stamp,
-  useChatScroll,
-} from "@/components/ux/sakhi/chat";
+import { bubbleRadius, ChatDock, ChatFrame, ChatInput, ChatLog, JumpToLatest, Says, SendButton, Stamp, useChatScroll } from "@/components/ux/sakhi/chat";
 import { ListGroup, ListRow } from "@/components/ux/mobile/ListRow";
 
 /**
@@ -138,15 +113,15 @@ export function Header({ summary, className, rows, onPick }: {
   const tr = useT();
   const stats = [
     { icon: "Clock", tint: "--ux-tint-amber", ink: "--ux-amber-ink",
-      value: String(summary?.waiting ?? 0), note: "waiting on you" },
+      value: String(summary?.waiting ?? 0), note: tr("views.waitingOnYou") },
     { icon: "Wallet", tint: "--ux-tint-green", ink: "--ux-green-ink",
-      value: formatMoney(summary?.open_order_minor ?? 0), note: "in open orders" },
+      value: formatMoney(summary?.open_order_minor ?? 0), note: tr("views.inOpenOrders") },
     { icon: "Zap", tint: "--ux-tint-violet", ink: "--ux-violet-ink",
       // Measured from her own replies, not a promise. Absent until there is
       // at least one answered message to measure.
       value: summary?.reply_minutes == null ? "—"
         : summary.reply_minutes < 60 ? `${summary.reply_minutes}m` : `${Math.round(summary.reply_minutes / 60)}h`,
-      note: "your reply time" },
+      note: tr("views.yourReplyTime") },
   ];
   /*
     On a phone the three stat cards were 250px — most of the conversation list —
@@ -336,7 +311,7 @@ export function Inbox({
           Favourites / Groups). The segmented control stays the right answer at
           two to four segments and is used that way elsewhere.
         */}
-        <div role="group" aria-label="Filter conversations"
+        <div role="group" aria-label={tr("views.filterConversations")}
              className="ux-chiprow -mx-[20px] flex gap-2 px-[20px]">
           {FILTERS.map((f) => {
             const on = filter === f.value;
@@ -637,7 +612,7 @@ export function Thread({
         </button>
         <div ref={menuRef} className="relative">
           <button type="button" onClick={() => setMenu((v) => !v)} title="More"
-                  aria-label="More, in this conversation"
+                  aria-label={tr("views.moreInThisConversation")}
                   aria-haspopup="menu" aria-expanded={menu}
                   className="grid h-[44px] w-[44px] place-items-center rounded-full lg:h-[36px] lg:w-[36px] lg:rounded-[12px]"
                   style={{ color: "var(--ux-faint)", transform: "none" }}>
@@ -648,7 +623,7 @@ export function Thread({
                  style={{ background: "var(--ux-surface)", border: "1px solid var(--ux-line-strong)",
                           boxShadow: "var(--ux-shadow-pop)" }}>
               {[
-                { icon: "MailOpen", label: "Mark as unread", run: onUnread },
+                { icon: "MailOpen", label: tr("views.markAsUnread"), run: onUnread },
                 { icon: conv.starred ? "StarOff" : "Star", label: conv.starred ? tr("messages.removeStar2")
               : tr("messages.starThisConversation2"), run: onStar },
               ].map((a) => (
@@ -956,7 +931,7 @@ export function About({ conv, onStar, onDraft }: {
             <b className="block text-base font-bold tracking-[-0.02em]" style={{ color: "var(--ux-ink)" }}>
               {formatMoney(p.spent_minor ?? 0)}
             </b>
-            <i className="mt-0.5 block text-[12px] lg:text-2xs not-italic" style={{ color: "var(--ux-muted)" }}>spent with you</i>
+            <i className="mt-0.5 block text-[12px] lg:text-2xs not-italic" style={{ color: "var(--ux-muted)" }}>{tr("views.spentWithYou")}</i>
           </div>
         </div>
       </div>

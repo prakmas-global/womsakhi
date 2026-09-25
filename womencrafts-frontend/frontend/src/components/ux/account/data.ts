@@ -75,7 +75,7 @@ export const REFERRALS = [
 
 export const REFER = {
   code: "PRIYA2026",
-  link: "womsakhi.in/join/PRIYA2026",
+  link: "womsakhi.com/join/PRIYA2026",
   reward_minor: 25000,
   condition: "when she finishes her first course",
   earned_minor: 50000,

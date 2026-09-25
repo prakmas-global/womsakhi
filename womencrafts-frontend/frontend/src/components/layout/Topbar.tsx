@@ -2,37 +2,14 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
-import {
-  Search,
-  Menu,
-  Bell,
-  HelpCircle,
-  Settings as SettingsIcon,
-  ChevronDown,
-  User,
-  Cog,
-  ShieldCheck,
-  Moon,
-  Repeat,
-  Activity,
-  CreditCard,
-  LifeBuoy,
-  Headset,
-  LogOut,
-  CheckCheck,
-} from "lucide-react";
+import { Search, Menu, Bell, HelpCircle, Settings as SettingsIcon, ChevronDown, User, Cog, ShieldCheck, Moon, Repeat, Activity, CreditCard, LifeBuoy, Headset, LogOut, CheckCheck } from "lucide-react";
 import { Avatar } from "@/design-system";
 import CommandPalette from "@/components/search/CommandPalette";
 import { CustomiseButton } from "@/layout-engine";
 import { useAuth } from "@/context/AuthContext";
 import { useTheme } from "@/context/ThemeContext";
 import { NOTIF_META, TONE_CHIP, type NotifType } from "@/lib/notifications";
-import {
-  apiListNotifications,
-  apiMarkAllNotificationsRead,
-  apiMarkNotificationRead,
-  type ApiNotification,
-} from "@/lib/notifications-api";
+import { apiListNotifications, apiMarkAllNotificationsRead, apiMarkNotificationRead, type ApiNotification } from "@/lib/notifications-api";
 
 const MENU_GROUPS: {
   items: { label: string; href: string; icon: React.ElementType; badge?: string }[];

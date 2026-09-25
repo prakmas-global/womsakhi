@@ -154,7 +154,7 @@ export default function PaymentsPage() {
           <EmptyState
             icon="Receipt"
             title={tab === "Problems" ? "Nothing has gone wrong" : `No ${tab.toLowerCase()} yet`}
-            body="Courses, sessions and circle contributions you pay for appear here with a receipt."
+            body={tr("payments.coursesSessionsAndCircleContributionsYou")}
             action={<Btn onClick={() => setTab("All")} variant="soft">{tr("payments.showEverything")}</Btn>}
           />
         </Card>
@@ -233,7 +233,7 @@ const PaymentRow = rowMemo(function PaymentRow({
                            <p class="foot">Reference ${escapeHtml(item.ref)}.
                            ${item.status === "failed" ? "No money left your account." :
                              item.status === "refunded" ? "This amount was returned to the way you paid." :
-                             "Verify at womsakhi.in/verify."}</p>`)}>
+                             "Verify at womsakhi.com/verify."}</p>`)}>
                 Receipt
               </ActionBtn>
               {item.status === "failed" && (

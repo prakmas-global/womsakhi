@@ -433,6 +433,9 @@ async def _place_order(listing_id: str, body: PlaceOrderRequest, me: dict) -> Pl
             status.HTTP_404_NOT_FOUND, "That is not for sale any more. She may have paused it.")
     if listing.get("user_id") == uid:
         raise HTTPException(status.HTTP_400_BAD_REQUEST, "That is your own listing.")
+    if listing.get("price_mode", "fixed") != "fixed":
+        raise HTTPException(status.HTTP_409_CONFLICT,
+                            "Ask the seller to agree a fixed price before ordering.")
 
     quantity = max(1, int(body.quantity))
     stock = listing.get("stock")

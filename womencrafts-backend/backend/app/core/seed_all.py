@@ -77,6 +77,22 @@ async def seed_all() -> None:
     #
     #     python3 scripts/seed_depth.py
     #
+    # The four domains the engines schedule from, plus the reviewed wellbeing
+    # content. Cheap and idempotent like the seeders above: each row is keyed
+    # by `seed_key` and skipped if it exists, and nothing is created when
+    # there are no active members to attach it to.
+    try:
+        from app.core.seed_wellbeing import seed_wellbeing
+        from app.engines.mood import seed_activities, seed_cards
+
+        made = await seed_wellbeing()
+        made["support_cards"] = await seed_cards()
+        made["wellbeing_activities"] = await seed_activities()
+        if any(v for v in made.values() if isinstance(v, int)):
+            print(f"🌱 Wellbeing seed: {made}")
+    except Exception as exc:  # noqa: BLE001 - never block startup
+        print(f"⚠️  Wellbeing seed skipped: {exc}")
+
     # RBAC backfill (idempotent): ensure roles have module lists + admin is Super Admin.
     try:
         from app.core.rbac import ensure_rbac

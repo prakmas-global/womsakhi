@@ -13,14 +13,16 @@
  */
 
 import Link from "next/link";
+import { useT } from "@/i18n";
 import { useId, type ReactNode } from "react";
 import { usePathname } from "next/navigation";
 
 import * as Icons from "@/components/ux/icons";
 import { parentFor } from "@/components/ux/nav-tree";
 import type { CycleCell, CycleInsight, Mark, Mood, Phase } from "@/lib/cycle-api";
-import { MOODS, type CareItem } from "./data";
+import { MOODS as RAW_MOODS, type CareItem } from "./data";
 import { addDays, dayNum, dow, monthShort, monthTitle } from "./use-cycle";
+import { useTranslated } from "@/i18n/data";
 
 const Icon = ({ name, className, style }: { name: string; className?: string; style?: React.CSSProperties }) => {
   const C = (Icons as unknown as Record<string, React.ComponentType<{ className?: string; style?: React.CSSProperties; strokeWidth?: number; "aria-hidden"?: boolean }>>)[name] ?? Icons.Heart;
@@ -158,6 +160,7 @@ export function RingSeed({ size = 44 }: { size?: number }) {
 /* ── Mood faces ──────────────────────────────────────────────────────────── */
 
 export function MoodFace({ mood, size = 40, muted = false }: { mood: Mood; size?: number; muted?: boolean }) {
+  const MOODS = useTranslated(RAW_MOODS);
   const tone = MOODS.find((m) => m.key === mood)?.tone ?? "--cy-mood-happy";
   const fill = muted ? "var(--ux-surface)" : `var(${tone})`;
   const ink = muted ? "var(--ux-faint)" : "var(--cy-face-ink)";
@@ -196,8 +199,10 @@ export function MoodFace({ mood, size = 40, muted = false }: { mood: Mood; size?
 
 /** A row of five faces — pick one. The chosen one gets a ring and bold label. */
 export function MoodRow({ value, onPick, size = 44 }: { value: Mood | null; onPick: (m: Mood) => void; size?: number }) {
+  const MOODS = useTranslated(RAW_MOODS);
+  const tr = useT();
   return (
-    <div role="radiogroup" aria-label="How are you feeling" className="flex items-start justify-between gap-1">
+    <div role="radiogroup" aria-label={tr("parts.howAreYouFeeling")} className="flex items-start justify-between gap-1">
       {MOODS.map((m) => {
         const on = value === m.key;
         return (
@@ -271,18 +276,19 @@ export function MonthCalendar({
   month: string; cells: CycleCell[]; today: string;
   onPrev: () => void; onNext: () => void; onPick?: (d: string) => void; compact?: boolean;
 }) {
+  const tr = useT();
   const [y, m] = month.split("-").map(Number);
   const lead = new Date(y, m - 1, 1).getDay();
   const size = compact ? 34 : 38;
   return (
     <div>
       <div className="mb-3 flex items-center justify-between">
-        <button type="button" onClick={onPrev} aria-label="Previous month"
+        <button type="button" onClick={onPrev} aria-label={tr("schedule.previousMonth")}
                 className="ux-press grid h-10 w-10 place-items-center rounded-full" style={{ color: "var(--ux-ink-2)" }}>
           <Icons.ChevronLeft className="h-5 w-5" aria-hidden />
         </button>
         <p className="text-[17px] font-semibold" style={{ color: "var(--ux-ink)" }}>{monthTitle(month)}</p>
-        <button type="button" onClick={onNext} aria-label="Next month"
+        <button type="button" onClick={onNext} aria-label={tr("schedule.nextMonth")}
                 className="ux-press grid h-10 w-10 place-items-center rounded-full" style={{ color: "var(--ux-ink-2)" }}>
           <Icons.ChevronRight className="h-5 w-5" aria-hidden />
         </button>
@@ -322,10 +328,11 @@ export function MonthCalendar({
 }
 
 export function Legend({ className = "" }: { className?: string }) {
+  const tr = useT();
   const items: { label: string; bg: string; ring?: boolean }[] = [
     { label: "Period", bg: "var(--cy-period)" },
     { label: "Predicted", bg: "var(--cy-predicted)", ring: true },
-    { label: "Fertile window", bg: "var(--cy-fertile)", ring: true },
+    { label: tr("wellness.fertileWindow"), bg: "var(--cy-fertile)", ring: true },
     { label: "Ovulation", bg: "var(--cy-ovulation)" },
   ];
   return (
@@ -478,13 +485,14 @@ export function Heading({ children, right }: { children: ReactNode; right?: Reac
 }
 
 export function ErrorLine({ text, onRetry }: { text: string | null; onRetry?: () => void }) {
+  const tr = useT();
   if (!text) return null;
   return (
     <p role="alert" className="mt-3 flex items-start gap-2 rounded-[12px] px-3 py-2.5 text-[15px]"
        style={{ background: "var(--ux-danger-tint)", color: "var(--ux-ink)" }}>
       <Icons.AlertCircle className="mt-0.5 h-4 w-4 shrink-0" style={{ color: "var(--ux-orange)" }} aria-hidden />
       <span className="min-w-0 flex-1">{text}</span>
-      {onRetry && <button type="button" onClick={onRetry} className="shrink-0 font-semibold" style={{ color: "var(--cy-period-ink)" }}>Try again</button>}
+      {onRetry && <button type="button" onClick={onRetry} className="shrink-0 font-semibold" style={{ color: "var(--cy-period-ink)" }}>{tr("common.retry")}</button>}
     </p>
   );
 }

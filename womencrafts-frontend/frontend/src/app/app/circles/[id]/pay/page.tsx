@@ -62,7 +62,7 @@ export default function PayCircle({ params }: { params: Promise<{ id: string }> 
           <EmptyState
             icon="PiggyBank"
             title={tr("circlesPay.nothingToPayHere")}
-            body="Only savings circles collect money. This one does not."
+            body={tr("circlesPay.onlySavingsCirclesCollectMoneyThis")}
             action={<Btn href="/app/circles" variant="primary" iconEnd="ArrowRight">{tr("circlesPay.yourCircles")}</Btn>}
           />
         </Card>

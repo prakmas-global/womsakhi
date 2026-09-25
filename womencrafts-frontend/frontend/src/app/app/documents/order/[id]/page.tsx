@@ -11,8 +11,9 @@ import {Back, Btn, Card, EmptyState, IconTile, Pill, RailSkeleton, ScreenSkeleto
 } from "@/components/ux/kit";
 import { HomeShell } from "@/components/ux/home/HomeShell";
 import { useBusiness } from "@/components/ux/business";
-import { STATE_TONE, rupees, type OrderState } from "@/components/ux/shop/data";
+import { STATE_TONE as RAW_STATE_TONE, rupees, type OrderState } from "@/components/ux/shop/data";
 import { useT } from "@/i18n";
+import { useTranslated } from "@/i18n/data";
 
 const FLOW: OrderState[] = ["New", "Making", "Ready", "Sent", "Done"];
 
@@ -27,6 +28,7 @@ const FLOW: OrderState[] = ["New", "Making", "Ready", "Sent", "Done"];
  * request buried under a status track is how the wrong thing gets made.
  */
 export default function OrderDetail({ params }: { params: Promise<{ id: string }> }) {
+  const STATE_TONE = useTranslated(RAW_STATE_TONE);
   const tr = useT();
   const { id } = use(params);
   const { data: biz, source, refetch } = useBusiness();
@@ -204,7 +206,7 @@ export default function OrderDetail({ params }: { params: Promise<{ id: string }
           <Icons.Quote className="mt-[2px] h-[15px] w-[15px] shrink-0" style={{ color: "var(--ux-brand)" }} />
           <div className="min-w-0">
             <p className="text-xsm leading-relaxed" style={{ color: "var(--ux-ink)" }}>
-              “Could you make it a little longer at the back? About two inches.”
+              {tr("documentsOrder.couldYouMakeItALittle")}
             </p>
             <p className="mt-1.5 text-xs" style={{ color: "var(--ux-muted)" }}>
               {o.buyer}, when she ordered

@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useT } from "@/i18n";
 import { useRouter } from "next/navigation";
 import { useEffect } from "react";
 
@@ -19,6 +20,7 @@ import { useCycle } from "@/components/ux/cycle/use-cycle";
  * is drawn where the guidance draws it: more than seven days.
  */
 export default function PeriodCheck() {
+  const tr = useT();
   const router = useRouter();
   const { state, data } = useCycle();
 
@@ -32,16 +34,16 @@ export default function PeriodCheck() {
   const long = !!s?.long_level;
 
   const steps = [
-    { icon: "UserRound", title: "Consult a mentor", sub: "Get guidance from our health experts", href: "/app/health/mentors" },
-    { icon: "Activity", title: "Track your symptoms", sub: "Help us understand better", href: "/app/health/cycle/symptoms" },
-    { icon: "BookOpen", title: "Read helpful resources", sub: "Learn about possible reasons", href: "/app/health/cycle/learn/long-periods" },
+    { icon: "UserRound", title: tr("healthCycleCheck.consultAMentor"), sub: tr("healthCycleCheck.getGuidanceFromOurHealthExperts"), href: "/app/health/mentors" },
+    { icon: "Activity", title: tr("healthCycleCheck.trackYourSymptoms"), sub: tr("healthCycleCheck.helpUsUnderstandBetter"), href: "/app/health/cycle/symptoms" },
+    { icon: "BookOpen", title: tr("healthCycleCheck.readHelpfulResources"), sub: tr("healthCycleCheck.learnAboutPossibleReasons"), href: "/app/health/cycle/learn/long-periods" },
   ];
 
   return (
     <HomeShell immersive bare>
       <Column>
         <CycleHeader title="" />
-        <DeskTitle title="A check on your period" />
+        <DeskTitle title={tr("healthCycleCheck.aCheckOnYourPeriod")} />
 
         <div className="text-center">
           <span className="mx-auto grid h-[72px] w-[72px] place-items-center rounded-full"
@@ -82,13 +84,13 @@ export default function PeriodCheck() {
         <p role="note" className="mt-4 flex items-start gap-2 rounded-[14px] px-3.5 py-3 text-[13px] leading-snug"
            style={{ background: "var(--ux-danger-tint)", color: "var(--ux-ink)" }}>
           <Icons.ShieldAlert className="mt-0.5 h-4 w-4 shrink-0" style={{ color: "var(--ux-danger-solid)" }} aria-hidden />
-          Go to a hospital now if you are soaking a pad every hour for several hours, or you feel faint.
+          {tr("healthCycleCheck.goToAHospitalNowIf")}
         </p>
 
         <div className="mt-6 space-y-1">
-          <CyButton href="/app/health/mentors">Talk to a Mentor</CyButton>
+          <CyButton href="/app/health/mentors">{tr("healthCycleCheck.talkToAMentor")}</CyButton>
           <Link href="/app/health/cycle" className="flex h-11 items-center justify-center text-[15px] underline underline-offset-4"
-                style={{ color: "var(--ux-muted)" }}>Not now</Link>
+                style={{ color: "var(--ux-muted)" }}>{tr("discover.notNow")}</Link>
         </div>
       </Column>
     </HomeShell>

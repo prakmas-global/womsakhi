@@ -2,11 +2,12 @@
 
 import { useCallback, useMemo, useState } from "react";
 
+import { useT } from "@/i18n";
 import { HomeShell } from "@/components/ux/home/HomeShell";
 import { Btn, Card, EmptyState, v } from "@/components/ux/kit";
 import { formatRupees } from "@/components/ux/kit";
 import {
-  GOAL_KINDS, goalState, useMyGoals,
+  GOAL_KINDS as RAW_GOAL_KINDS, goalState, useMyGoals,
   type Goal, type GoalState,
 } from "@/components/ux/discovery/data";
 import { apiAddGoal, apiDropGoal, apiMoveGoal } from "@/lib/money-api";
@@ -15,6 +16,8 @@ import {
   QuickActions,
   type QuickAction,
 } from "./goal-views";
+import { useTranslated } from "@/i18n/data";
+import { EngineNudge } from "@/components/ux/reminders/EngineNudge";
 
 /**
  * My goals.
@@ -53,6 +56,8 @@ const ALL = "All goals";
 const manual = (g: Goal) => g.manual || g.kind === "count";
 
 export default function GoalsPage() {
+  const GOAL_KINDS = useTranslated(RAW_GOAL_KINDS);
+  const tr = useT();
   const goals = useMyGoals();
   const [kind, setKind] = useState(ALL);
   const [status, setStatus] = useState<"all" | GoalState>("all");
@@ -78,14 +83,14 @@ export default function GoalsPage() {
   const chips = useMemo(() => [
     { label: ALL, n: rows.length },
     ...GOAL_KINDS.map((k) => ({ label: k.label, n: rows.filter((g) => g.kind === k.id).length })),
-  ], [rows]);
+  ], [rows, GOAL_KINDS]);
 
   const shown = useMemo(() => {
     const stateRows = status === "all" ? rows : rows.filter((g) => goalState(g) === status);
     if (kind === ALL) return stateRows;
     const k = GOAL_KINDS.find((x) => x.label === kind);
     return k ? stateRows.filter((g) => g.kind === k.id) : stateRows;
-  }, [rows, kind, status]);
+  }, [rows, kind, status, GOAL_KINDS]);
 
   /** The ring: how far along all of them are together, not how many are done. */
   const overall = useMemo(() => rows.length === 0 ? 0
@@ -120,16 +125,16 @@ export default function GoalsPage() {
   }, [write]);
 
   const actions: QuickAction[] = useMemo(() => [
-    { id: "add", label: "Write a new goal", icon: "Plus", onClick: () => setAdding(true) },
-    { id: "journey", label: "See my journey", icon: "Sparkles",
+    { id: "add", label: tr("goals.writeANewGoal"), icon: "Plus", onClick: () => setAdding(true) },
+    { id: "journey", label: tr("goals.seeMyJourney"), icon: "Sparkles",
       onClick: () => { window.location.href = "/app/journey"; } },
-    { id: "money", label: "Where my money goes", icon: "TrendingUp",
+    { id: "money", label: tr("goals.whereMyMoneyGoes"), icon: "TrendingUp",
       onClick: () => { window.location.href = "/app/wallet"; } },
-  ], []);
+  ], [tr]);
 
   const rail = (
     <div className="space-y-4">
-      <Btn full icon="Plus" onClick={() => setAdding(true)}>Add a goal</Btn>
+      <Btn full icon="Plus" onClick={() => setAdding(true)}>{tr("goals.addAGoal")}</Btn>
       <GoalInsights pct={overall} onTrack={by.moving + by.reached} total={rows.length} by={by} />
       <QuickActions rows={actions} />
       <DisciplineCard />
@@ -138,6 +143,12 @@ export default function GoalsPage() {
 
   return (
     <HomeShell active="/app/goals" rail={rail} loadFailed="your goals">
+      {/* The engine, where this module already is. Added, not replacing. */}
+      <div className="mb-4">
+        <EngineNudge
+          icon="Target" tint="--ux-tint-pink" ink="--ux-pink-ink"
+          labelKey="nudge.goals.label" noteKey="nudge.goals.note" />
+      </div>
       <div className="flex flex-col">
         <GoalsHero chips={chips} active={kind} onPick={setKind} />
 
@@ -155,12 +166,12 @@ export default function GoalsPage() {
         )}
 
         {goals.source === "loading" ? (
-          <Card><EmptyState icon="Target" title="Reading your goals…" body="" /></Card>
+          <Card><EmptyState icon="Target" title={tr("goals.readingYourGoals")} body="" /></Card>
         ) : goals.error ? (
           <Card>
-            <EmptyState icon="CloudOff" title="We could not load your goals"
-                        body="Nothing has been lost — the list is on the server and this screen could not reach it."
-                        action={<Btn size="sm" onClick={goals.refetch}>Try again</Btn>} />
+            <EmptyState icon="CloudOff" title={tr("goals.weCouldNotLoadYourGoals")}
+                        body={tr("goals.nothingHasBeenLostTheList")}
+                        action={<Btn size="sm" onClick={goals.refetch}>{tr("common.retry")}</Btn>} />
           </Card>
         ) : shown.length > 0 ? (
           shown.map((g) => (
@@ -178,8 +189,8 @@ export default function GoalsPage() {
                 ? "A goal is just the thing you are working towards, written down. It can be small, and you can put it down whenever you like."
                 : "Your goals under the other headings are still there — press All goals to see them."}
               action={kind === ALL
-                ? <Btn size="sm" icon="Plus" onClick={() => setAdding(true)}>Add a goal</Btn>
-                : <Btn size="sm" onClick={() => setKind(ALL)}>See all goals</Btn>}
+                ? <Btn size="sm" icon="Plus" onClick={() => setAdding(true)}>{tr("goals.addAGoal")}</Btn>
+                : <Btn size="sm" onClick={() => setKind(ALL)}>{tr("goals.seeAllGoals")}</Btn>}
             />
           </Card>
         )}
@@ -189,7 +200,7 @@ export default function GoalsPage() {
             of the list, where a thumb reaches. Same handler as the rail's. */}
         {!adding && goals.source !== "loading" && !goals.error && shown.length > 0 && (
           <div className="mt-3 lg:hidden">
-            <Btn full icon="Plus" className="ux-action-primary" onClick={() => setAdding(true)}>Add a goal</Btn>
+            <Btn full icon="Plus" className="ux-action-primary" onClick={() => setAdding(true)}>{tr("goals.addAGoal")}</Btn>
           </div>
         )}
 
@@ -221,6 +232,8 @@ function AddGoal({ busy, onCancel, onSave }: {
   onCancel: () => void;
   onSave: (body: { label: string; kind: Goal["kind"]; target: number; by: string; unit?: string }) => void;
 }) {
+  const GOAL_KINDS = useTranslated(RAW_GOAL_KINDS);
+  const tr = useT();
   const [label, setLabel] = useState("");
   const [kind, setKind] = useState<Goal["kind"]>("money");
   const [target, setTarget] = useState("");
@@ -239,22 +252,22 @@ function AddGoal({ busy, onCancel, onSave }: {
   return (
     <Card className="mb-3.5" pad={18}>
       <h2 className="text-base font-extrabold" style={{ color: v("--ux-ink") }}>
-        Write down a goal
+        {tr("goals.writeDownAGoal")}
       </h2>
 
       <div className="mt-3.5 flex flex-col gap-3">
         <label className="flex flex-col gap-1.5">
           <span className="text-xs font-bold" style={{ color: v("--ux-ink-2") }}>
-            What are you working towards?
+            {tr("goals.whatAreYouWorkingTowards")}
           </span>
           <input className={field} style={fieldStyle} value={label} maxLength={80}
                  onChange={(e) => setLabel(e.target.value)}
-                 placeholder="Say it in your own words" />
+                 placeholder={tr("goals.sayItInYourOwnWords")} />
         </label>
 
         <fieldset className="flex flex-col gap-1.5">
           <legend className="mb-1.5 text-xs font-bold" style={{ color: v("--ux-ink-2") }}>
-            What kind of goal is it?
+            {tr("goals.whatKindOfGoalIsIt")}
           </legend>
           <div className="flex flex-wrap gap-2">
             {GOAL_KINDS.map((k) => (
@@ -284,20 +297,20 @@ function AddGoal({ busy, onCancel, onSave }: {
           {kind === "count" && (
             <label className="flex min-w-[9rem] flex-1 flex-col gap-1.5">
               <span className="text-xs font-bold" style={{ color: v("--ux-ink-2") }}>
-                How many what?
+                {tr("goals.howManyWhat")}
               </span>
               <input className={field} style={fieldStyle} value={unit} maxLength={24}
-                     onChange={(e) => setUnit(e.target.value)} placeholder="clients, sarees, weeks" />
+                     onChange={(e) => setUnit(e.target.value)} placeholder={tr("goals.clientsSareesWeeks")} />
             </label>
           )}
         </div>
 
         <label className="flex flex-col gap-1.5">
           <span className="text-xs font-bold" style={{ color: v("--ux-ink-2") }}>
-            By when? Your own words are fine.
+            {tr("goals.byWhenYourOwnWordsAre")}
           </span>
           <input className={field} style={fieldStyle} value={by} maxLength={40}
-                 onChange={(e) => setBy(e.target.value)} placeholder="before Diwali" />
+                 onChange={(e) => setBy(e.target.value)} placeholder={tr("goals.beforeDiwali")} />
         </label>
       </div>
 
@@ -311,9 +324,9 @@ function AddGoal({ busy, onCancel, onSave }: {
                by: by.trim(),
                ...(kind === "count" && unit.trim() ? { unit: unit.trim() } : {}),
              })}>
-          Save it
+          {tr("goals.saveIt")}
         </Btn>
-        <Btn variant="ghost" onClick={onCancel}>Not now</Btn>
+        <Btn variant="ghost" onClick={onCancel}>{tr("discover.notNow")}</Btn>
       </div>
     </Card>
   );

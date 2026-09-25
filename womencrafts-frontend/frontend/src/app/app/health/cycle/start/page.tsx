@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useT } from "@/i18n";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 
@@ -40,6 +41,7 @@ const WHEN = [
 ] as const;
 
 export default function CycleStart() {
+  const tr = useT();
   const router = useRouter();
   const { data, act, busy, error } = useCycle();
   const [step, setStep] = useState<"intro" | "ask" | "young">("intro");
@@ -76,10 +78,10 @@ export default function CycleStart() {
         {step === "intro" && (
           <div className="ux-fade">
             <h1 className="ux-display mt-4 text-center text-[34px] font-bold leading-[1.1]" style={{ color: "var(--ux-ink)" }}>
-              Your Cycle<br />Your Power
+              {tr("healthCycleStart.yourCycle")}<br />{tr("healthCycleStart.yourPower")}
             </h1>
             <p className="mt-3 text-center text-[15px] leading-relaxed" style={{ color: "var(--ux-ink-2)" }}>
-              Track. Understand. Feel Better.<br />A healthier, happier you — every day.
+              {tr("healthCycleStart.trackUnderstandFeelBetter")}<br />{tr("healthCycleStart.aHealthierHappierYouEveryDay")}
             </p>
 
             <div className="relative mx-auto mt-4 h-[300px] max-w-[340px] overflow-hidden rounded-[28px]" style={{ background: heroBg }}>
@@ -89,7 +91,7 @@ export default function CycleStart() {
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img src="/ux/art/hero-petals-left.webp" alt="" aria-hidden className="absolute -start-2 top-8 h-[220px] w-auto opacity-80" />
               {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src="/ux/art/scene-woman-meditating.webp" alt="A woman sitting calmly, eyes closed"
+              <img src="/ux/art/scene-woman-meditating.webp" alt={tr("healthCycleStart.aWomanSittingCalmlyEyesClosed")}
                    className="absolute bottom-0 left-1/2 h-[285px] w-auto max-w-none -translate-x-1/2 object-contain" />
             </div>
 
@@ -108,7 +110,7 @@ export default function CycleStart() {
             <div className="mt-6 space-y-2">
               <CyButton onClick={() => setStep("ask")}>Let&apos;s Get Started</CyButton>
               <Link href="/app" className="flex h-11 items-center justify-center text-[15px]" style={{ color: "var(--ux-muted)" }}>
-                Maybe later
+                {tr("healthCycleStart.maybeLater")}
               </Link>
             </div>
           </div>
@@ -116,10 +118,10 @@ export default function CycleStart() {
 
         {step === "ask" && (
           <div className="ux-fade mt-6">
-            <h1 className="ux-display text-[28px] font-bold leading-tight" style={{ color: "var(--ux-ink)" }}>Two quick questions</h1>
-            <p className="mt-1.5 text-[15px]" style={{ color: "var(--ux-muted)" }}>So your calendar is right from today.</p>
+            <h1 className="ux-display text-[28px] font-bold leading-tight" style={{ color: "var(--ux-ink)" }}>{tr("healthCycleStart.twoQuickQuestions")}</h1>
+            <p className="mt-1.5 text-[15px]" style={{ color: "var(--ux-muted)" }}>{tr("healthCycleStart.soYourCalendarIsRightFrom")}</p>
 
-            <p className="mt-6 text-[15px] font-semibold" style={{ color: "var(--ux-ink)" }}>Are you 18 or older?</p>
+            <p className="mt-6 text-[15px] font-semibold" style={{ color: "var(--ux-ink)" }}>{tr("healthCycleStart.areYou18OrOlder")}</p>
             <div className="mt-2.5 grid grid-cols-2 gap-2.5">
               {[{ v: true, l: "Yes, I am" }, { v: false, l: "No, not yet" }].map((o) => (
                 <button key={o.l} type="button" onClick={() => setAdult(o.v)} aria-pressed={adult === o.v}
@@ -134,7 +136,7 @@ export default function CycleStart() {
 
             {adult !== false && (
               <>
-                <p className="mt-6 text-[15px] font-semibold" style={{ color: "var(--ux-ink)" }}>When did your last period start?</p>
+                <p className="mt-6 text-[15px] font-semibold" style={{ color: "var(--ux-ink)" }}>{tr("healthCycleStart.whenDidYourLastPeriodStart")}</p>
                 <div className="mt-2.5 flex flex-wrap gap-2">
                   {WHEN.map((w) => (
                     <button key={w.key} type="button" onClick={() => setWhen(w.key)} aria-pressed={when === w.key}
@@ -148,7 +150,7 @@ export default function CycleStart() {
                 </div>
                 {when === "pick" && (
                   <input type="date" value={picked} max={today} min={addDays(today, -120)}
-                         onChange={(e) => setPicked(e.target.value)} aria-label="The day your last period started"
+                         onChange={(e) => setPicked(e.target.value)} aria-label={tr("healthCycleStart.theDayYourLastPeriodStarted")}
                          className="mt-3 h-[52px] w-full rounded-[14px] px-4 text-[17px]"
                          style={{ background: "var(--ux-surface)", border: "1px solid var(--ux-line-strong)", color: "var(--ux-ink)" }} />
                 )}
@@ -174,14 +176,14 @@ export default function CycleStart() {
             <span className="mx-auto grid h-[64px] w-[64px] place-items-center rounded-full" style={{ background: "var(--cy-fertile)" }}>
               <Icons.BookOpen className="h-7 w-7" style={{ color: "var(--cy-ovulation-ink)" }} aria-hidden />
             </span>
-            <h1 className="ux-display mt-4 text-[28px] font-bold" style={{ color: "var(--ux-ink)" }}>The guides are for you</h1>
+            <h1 className="ux-display mt-4 text-[28px] font-bold" style={{ color: "var(--ux-ink)" }}>{tr("healthCycleStart.theGuidesAreForYou")}</h1>
             <p className="mx-auto mt-2 max-w-[340px] text-[15px] leading-relaxed" style={{ color: "var(--ux-ink-2)" }}>
               The tracker is for women 18 and over, so we have not saved anything. Everything in the guides is
               open to you — periods, cramps, what to eat, and when to see a doctor.
             </p>
             <div className="mt-6 space-y-2">
-              <CyButton href="/app/health/cycle/learn">Read the guides</CyButton>
-              <Link href="/app" className="flex h-11 items-center justify-center text-[15px]" style={{ color: "var(--ux-muted)" }}>Back to Home</Link>
+              <CyButton href="/app/health/cycle/learn">{tr("healthCycleStart.readTheGuides")}</CyButton>
+              <Link href="/app" className="flex h-11 items-center justify-center text-[15px]" style={{ color: "var(--ux-muted)" }}>{tr("schedule.backToHome")}</Link>
             </div>
           </div>
         )}

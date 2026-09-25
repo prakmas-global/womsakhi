@@ -220,6 +220,10 @@ class MemberNotification(BaseModel):
     unread: bool
     when: str
     created_at: str
+    # Set only on rows the reminder engine wrote. An occurrence id is what
+    # turns a row from something she reads into something she can answer.
+    occurrence_id: str = ""
+    intent_id: str = ""
 
 
 class UnreadCounts(BaseModel):
@@ -405,6 +409,15 @@ class MeShell(BaseModel):
     features: dict[str, bool]
     progress: ProgressResponse
     unread: UnreadCounts
+    #: How much of her PROFILE is filled in, 0–100, counted from the same five
+    #: stored fields `/me/home` counts.
+    #:
+    #: The chrome used to read `progress.completion_rate` for this, which is the
+    #: furthest-along PROGRAMME — a different number about a different thing. It
+    #: read 100 for a woman who had written nothing about herself, so every
+    #: screen carried "Complete Your Profile · 100% completed · Complete Now"
+    #: while her profile page said 80%.
+    profile_pct: int = 0
 
 
 class MeJourney(BaseModel):

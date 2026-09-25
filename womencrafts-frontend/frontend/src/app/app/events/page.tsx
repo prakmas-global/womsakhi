@@ -13,10 +13,11 @@ import {
 import { HomeShell } from "@/components/ux/home/HomeShell";
 import { ChipRow, Segments } from "@/components/ux/learning/native";
 import {
-  EVENT_ART, EVENT_KINDS, rupees, type Ev, type EventKind,
+  EVENT_ART as RAW_EVENT_ART, EVENT_KINDS as RAW_EVENT_KINDS, rupees, type Ev, type EventKind,
 } from "@/components/ux/events/data";
 import { useEvents } from "@/components/ux/growth";
 import { useT } from "@/i18n";
+import { useTranslated } from "@/i18n/data";
 
 /**
  * Events — melas, workshops, webinars and meets.
@@ -26,6 +27,8 @@ import { useT } from "@/i18n";
  * same principle: the cost of a decision belongs next to the decision.
  */
 export default function EventsPage() {
+  const EVENT_KINDS = useTranslated(RAW_EVENT_KINDS);
+  const EVENT_ART = useTranslated(RAW_EVENT_ART);
   const tr = useT();
   // Split in the fetcher, not here: reading the clock during render makes the
   // same props produce different output.
@@ -130,7 +133,7 @@ export default function EventsPage() {
       )}
         </div>
         <div className="mt-4 lg:contents">
-          <Segments items={["Coming up", "You are going"]} active={tab} onChange={setTab} label="Which events" />
+          <Segments items={["Coming up", "You are going"]} active={tab} onChange={setTab} label={tr("events.whichEvents")} />
         </div>
       </div>
 
@@ -243,7 +246,7 @@ export default function EventsPage() {
             icon="CalendarX"
             title={tab === "You are going" ? tr("events.nothingBookedYet")
               : tr("events.nothingOfThatKindComingUp")}
-            body="Melas, workshops and meets are added every month."
+            body={tr("events.melasWorkshopsAndMeetsAreAdded")}
             action={<Btn onClick={() => { setTab("Coming up"); setKinds([]); }} variant="soft">{tr("events.seeEverything")}</Btn>}
           />
         </Card>

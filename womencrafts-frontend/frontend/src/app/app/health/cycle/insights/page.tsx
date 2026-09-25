@@ -1,6 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
+import { useT } from "@/i18n";
 import { useEffect, useState } from "react";
 
 import { HomeShell } from "@/components/ux/home/HomeShell";
@@ -16,6 +17,7 @@ const TABS = [
 
 /** Cycle Insights — the glance, the phases, and what her own data shows. */
 export default function CycleInsights() {
+  const tr = useT();
   const router = useRouter();
   const { state, data, error, reload } = useCycle();
   const [tab, setTab] = useState<(typeof TABS)[number]["key"]>("overview");
@@ -27,8 +29,8 @@ export default function CycleInsights() {
   return (
     <HomeShell immersive bare>
       <Column>
-        <CycleHeader title="Cycle Insights" />
-        <DeskTitle title="Cycle Insights" sub="Worked out from what you have logged — nothing else." />
+        <CycleHeader title={tr("healthCycle.cycleInsights")} />
+        <DeskTitle title={tr("healthCycle.cycleInsights")} sub={tr("healthCycleInsights.workedOutFromWhatYouHave")} />
 
         <div role="tablist" aria-label="Insights" className="grid grid-cols-3 gap-1 rounded-full p-1"
              style={{ background: "var(--ux-surface)", border: "1px solid var(--ux-line)" }}>

@@ -1,24 +1,28 @@
 "use client";
 
 import * as Icons from "@/components/ux/icons";
+import { useT } from "@/i18n";
 import { Card, I, IconTile, v } from "@/components/ux/kit";
-import { CIRCLE_ART, CIRCLE_TIPS, COVER_ALT, COVER_PRESETS, members, topicOf } from "@/components/ux/circle/data";
+import { CIRCLE_ART as RAW_CIRCLE_ART, CIRCLE_TIPS as RAW_CIRCLE_TIPS, COVER_ALT as RAW_COVER_ALT, COVER_PRESETS as RAW_COVER_PRESETS, members, topicOf } from "@/components/ux/circle/data";
+import { useTranslated } from "@/i18n/data";
 
 /* ------------------------------------------------------------------ */
 /*  The banner                                                         */
 /* ------------------------------------------------------------------ */
 
 export function CreateHero() {
+  const CIRCLE_ART = useTranslated(RAW_CIRCLE_ART);
+  const tr = useT();
   return (
     <section className="relative mb-5 overflow-hidden rounded-[20px] max-lg:rounded-[16px]"
              style={{ background: "linear-gradient(102deg, var(--ux-brand-tint) 0%, var(--ux-tint-lilac) 58%, var(--ux-tint-pink) 100%)",
                       border: "1px solid var(--ux-line)" }}>
       <div className="relative z-[1] max-w-[520px] p-6 sm:p-7 max-lg:p-4">
         <h1 className="ux-screen-title text-3xl font-extrabold leading-tight tracking-[-0.02em]" style={{ color: v("--ux-ink") }}>
-          Create your circle
+          {tr("createviews.createYourCircle")}
         </h1>
         <p className="mt-2 max-w-[380px] text-xsm leading-relaxed" style={{ color: v("--ux-ink-2") }}>
-          Bring people together around shared interests, goals and passions.
+          {tr("createviews.bringPeopleTogetherAroundSharedInterests")}
         </p>
       </div>
 
@@ -31,7 +35,7 @@ export function CreateHero() {
       */}
       {/* eslint-disable-next-line @next/next/no-img-element */}
       <img src={CIRCLE_ART.create}
-           alt="Six women sitting close together with their hands stacked in the middle"
+           alt={tr("createviews.sixWomenSittingCloseTogetherWith")}
            loading="lazy" decoding="async" width={900} height={690}
            className="pointer-events-none absolute bottom-0 end-[240px] hidden h-full w-[26%] object-cover object-top xl:block"
            style={{ maskImage: "linear-gradient(100deg, transparent, #000 26%, #000 82%, transparent)",
@@ -42,7 +46,7 @@ export function CreateHero() {
                        boxShadow: "var(--ux-shadow-card)" }}>
         <blockquote className="text-xsm font-bold italic leading-snug"
                     style={{ color: v("--ux-brand"), fontFamily: "var(--font-display)" }}>
-          A small circle can make a big impact.
+          {tr("createviews.aSmallCircleCanMakeA")}
         </blockquote>
         <figcaption className="mt-1.5 flex items-center gap-1.5 text-[12px] lg:text-2xs" style={{ color: v("--ux-muted") }}>
           — WomSakhi <Icons.Heart className="h-[11px] w-[11px]" style={{ color: v("--ux-pink-ink") }} />
@@ -80,17 +84,20 @@ export function Block({ icon, title, sub, children }: {
 export function CoverPicker({ cover, onPick, onUpload }: {
   cover: string; onPick: (src: string) => void; onUpload: (f: File) => void;
 }) {
+  const COVER_ALT = useTranslated(RAW_COVER_ALT);
+  const COVER_PRESETS = useTranslated(RAW_COVER_PRESETS);
+  const tr = useT();
   return (
     <div className="grid gap-3.5 sm:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
       {/* Her own photograph, which always beats a stock one. */}
       <label className="flex cursor-pointer flex-col items-center justify-center gap-1.5 rounded-[14px] px-4 py-7 text-center"
              style={{ border: "1.5px dashed var(--ux-brand)", background: v("--ux-brand-tint") }}>
-        <input type="file" accept="image/*" className="sr-only" aria-label="Upload a cover image"
+        <input type="file" accept="image/*" className="sr-only" aria-label={tr("createviews.uploadACoverImage")}
                onChange={(e) => { const f = e.target.files?.[0]; if (f) onUpload(f); }} />
         <IconTile icon="ImagePlus" tint="--ux-surface" ink="--ux-brand" size={38} radius={11} />
-        <span className="mt-1 text-xsm font-bold" style={{ color: v("--ux-ink") }}>Upload a cover</span>
+        <span className="mt-1 text-xsm font-bold" style={{ color: v("--ux-ink") }}>{tr("createviews.uploadACover")}</span>
         <span className="text-[12px] lg:text-2xs" style={{ color: v("--ux-muted") }}>
-          Wide works best — about 1440 × 480. JPG or PNG.
+          {tr("createviews.wideWorksBestAbout1440480")}
         </span>
       </label>
 
@@ -132,6 +139,7 @@ export function TagField({ tags, draft, onDraft, onAdd, onRemove, suggestions }:
   tags: string[]; draft: string; suggestions: string[];
   onDraft: (s: string) => void; onAdd: (t: string) => void; onRemove: (t: string) => void;
 }) {
+  const tr = useT();
   const full = tags.length >= 5;
   return (
     <>
@@ -142,7 +150,7 @@ export function TagField({ tags, draft, onDraft, onAdd, onRemove, suggestions }:
         <input
           value={draft}
           disabled={full}
-          aria-label="Add a tag"
+          aria-label={tr("createviews.addATag")}
           placeholder={full ? "Five is the most" : "business, handmade, women, india"}
           onChange={(e) => onDraft(e.target.value)}
           onKeyDown={(e) => {
@@ -153,7 +161,7 @@ export function TagField({ tags, draft, onDraft, onAdd, onRemove, suggestions }:
         />
       </div>
       <p className="mt-1.5 text-[12px] lg:text-2xs" style={{ color: v("--ux-muted") }}>
-        Up to five words that help a woman find this circle. Press Enter after each.
+        {tr("createviews.upToFiveWordsThatHelp")}
       </p>
 
       {tags.length > 0 && (
@@ -193,13 +201,14 @@ export function LivePreview({ name, desc, cover, icon, category, privacy, tags, 
   name: string; desc: string; cover: string; icon: string;
   category: string; privacy: string; tags: string[]; count: number;
 }) {
+  const tr = useT();
   const t = topicOf(category);
   return (
     <Card pad={0} className="overflow-hidden">
       <div className="px-[18px] pb-3 pt-[18px] max-lg:px-4 max-lg:pt-4">
-        <h2 className="text-base font-extrabold" style={{ color: v("--ux-ink") }}>Live preview</h2>
+        <h2 className="text-base font-extrabold" style={{ color: v("--ux-ink") }}>{tr("createviews.livePreview")}</h2>
         <p className="mt-0.5 text-xs" style={{ color: v("--ux-muted") }}>
-          This is how your circle will look to someone who finds it.
+          {tr("createviews.thisIsHowYourCircleWill")}
         </p>
       </div>
 
@@ -211,7 +220,7 @@ export function LivePreview({ name, desc, cover, icon, category, privacy, tags, 
         ) : (
           <span className="flex items-center gap-1.5 text-[12px] lg:text-2xs font-semibold" style={{ color: v(t.ink) }}>
             <I name="ImagePlus" className="h-[13px] w-[13px]" />
-            Your cover goes here
+            {tr("createviews.yourCoverGoesHere")}
           </span>
         )}
         <span className="absolute -bottom-6 start-[18px] grid h-[52px] w-[52px] place-items-center overflow-hidden rounded-[16px] max-lg:start-4 max-lg:rounded-[12px]"
@@ -249,7 +258,7 @@ export function LivePreview({ name, desc, cover, icon, category, privacy, tags, 
              style={{ background: "linear-gradient(96deg, var(--ux-fill), var(--ux-fill-2))",
                       color: v("--ux-on-brand"), opacity: 0.5 }}
              aria-hidden>
-          Join circle
+          {tr("createviews.joinCircle")}
         </div>
       </div>
     </Card>
@@ -261,11 +270,13 @@ export function LivePreview({ name, desc, cover, icon, category, privacy, tags, 
 /* ------------------------------------------------------------------ */
 
 export function CircleTips({ at }: { at: number }) {
+  const CIRCLE_TIPS = useTranslated(RAW_CIRCLE_TIPS);
+  const tr = useT();
   return (
     <Card>
       <h2 className="mb-3 flex items-center gap-2 text-base font-extrabold" style={{ color: v("--ux-ink") }}>
         <I name="Lightbulb" className="h-[17px] w-[17px]" style={{ color: v("--ux-amber-ink") }} />
-        What makes a circle work
+        {tr("createviews.whatMakesACircleWork")}
       </h2>
       <ol className="space-y-2.5">
         {CIRCLE_TIPS.map((t, i) => {
@@ -294,13 +305,14 @@ export function CircleTips({ at }: { at: number }) {
 /* ------------------------------------------------------------------ */
 
 export function SafePromise() {
+  const tr = useT();
   return (
     <section className="flex items-start gap-3 rounded-[16px] p-[18px] max-lg:p-4"
              style={{ background: v("--ux-tint-pink") }}>
       <I name="Heart" className="mt-[2px] h-[19px] w-[19px] shrink-0" style={{ color: v("--ux-pink-ink") }} sw={2.4} />
       <div className="min-w-0">
         <p className="text-xsm font-extrabold" style={{ color: v("--ux-pink-ink") }}>
-          Safe. Supportive. Meaningful.
+          {tr("createviews.safeSupportiveMeaningful")}
         </p>
         <p className="mt-1 text-xs leading-relaxed" style={{ color: v("--ux-ink-2") }}>
           Every circle is moderated. Anything cruel, or anyone selling what they should not,
