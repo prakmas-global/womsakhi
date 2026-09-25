@@ -9,6 +9,7 @@ from fastapi.responses import Response
 from app.core import mongosafe
 from app.core.deps import get_current_user
 from app.core.serializers import page_meta, to_object_id
+from app.core.permissions import require_permission
 from app.db.mongodb import get_database
 from app.models.report import ReportModel, ReportsOverviewModel
 from app.routes._paging import paged
@@ -121,7 +122,9 @@ def _now_stamp() -> str:
 
 
 # --- list + overview + side panels -------------------------------------------
-@router.get("", response_model=ReportListResponse, summary="List reports")
+@router.get("", response_model=ReportListResponse, summary="List reports",
+    dependencies=[Depends(require_permission("reports.view"))],
+)
 async def list_reports(
     q: Optional[str] = Query(None, description="Search by name, description or category"),
     category: Optional[str] = Query(None, description="Filter by category"),
@@ -141,12 +144,16 @@ async def list_reports(
     return ReportListResponse(items=items, **page_meta(total, page, page_size))
 
 
-@router.get("/stats", response_model=ReportsOverviewResponse, summary="Stat cards + overview widgets")
+@router.get("/stats", response_model=ReportsOverviewResponse, summary="Stat cards + overview widgets",
+    dependencies=[Depends(require_permission("reports.view"))],
+)
 async def report_stats(_: dict = Depends(get_current_user)):
     return ReportsOverviewResponse(**await _build_overview())
 
 
-@router.get("/recent", response_model=list[RecentReportResponse], summary="Recent Reports panel")
+@router.get("/recent", response_model=list[RecentReportResponse], summary="Recent Reports panel",
+    dependencies=[Depends(require_permission("reports.view"))],
+)
 async def recent_reports(
     limit: int = Query(4, ge=1, le=50),
     _: dict = Depends(get_current_user),
@@ -162,7 +169,9 @@ async def recent_reports(
     ]
 
 
-@router.get("/scheduled", response_model=list[ScheduledReportResponse], summary="Scheduled Reports panel")
+@router.get("/scheduled", response_model=list[ScheduledReportResponse], summary="Scheduled Reports panel",
+    dependencies=[Depends(require_permission("reports.view"))],
+)
 async def scheduled_reports(_: dict = Depends(get_current_user)):
     cursor = _reports().find({"scheduled": True}).sort("created_at", -1)
     return [
@@ -175,7 +184,9 @@ async def scheduled_reports(_: dict = Depends(get_current_user)):
     ]
 
 
-@router.get("/templates", response_model=list[TemplateResponse], summary="Manage Templates modal")
+@router.get("/templates", response_model=list[TemplateResponse], summary="Manage Templates modal",
+    dependencies=[Depends(require_permission("reports.view"))],
+)
 async def report_templates(_: dict = Depends(get_current_user)):
     """One reusable template per category, derived like the UI's Templates modal."""
     return [
@@ -191,7 +202,9 @@ async def report_templates(_: dict = Depends(get_current_user)):
     ]
 
 
-@router.get("/export", summary="Export filtered reports as CSV")
+@router.get("/export", summary="Export filtered reports as CSV",
+    dependencies=[Depends(require_permission("reports.export"))],
+)
 async def export_reports(
     q: Optional[str] = Query(None, description="Search by name, description or category"),
     category: Optional[str] = Query(None, description="Filter by category"),
@@ -223,7 +236,9 @@ async def export_reports(
 
 
 # --- create ------------------------------------------------------------------
-@router.post("", response_model=ReportResponse, status_code=status.HTTP_201_CREATED, summary="Create a report")
+@router.post("", response_model=ReportResponse, status_code=status.HTTP_201_CREATED, summary="Create a report",
+    dependencies=[Depends(require_permission("reports.create"))],
+)
 async def create_report(payload: ReportCreate, _: dict = Depends(get_current_user)):
     category = payload.category or "Others"
     doc = ReportModel.create_document(
@@ -241,7 +256,9 @@ async def create_report(payload: ReportCreate, _: dict = Depends(get_current_use
 
 
 # --- detail / edit / delete / run --------------------------------------------
-@router.get("/{report_id}", response_model=ReportResponse, summary="Get a report")
+@router.get("/{report_id}", response_model=ReportResponse, summary="Get a report",
+    dependencies=[Depends(require_permission("reports.view"))],
+)
 async def get_report(report_id: str, _: dict = Depends(get_current_user)):
     doc = await _reports().find_one({"_id": to_object_id(report_id)})
     if not doc:
@@ -249,7 +266,9 @@ async def get_report(report_id: str, _: dict = Depends(get_current_user)):
     return ReportResponse(**ReportModel.to_response(doc))
 
 
-@router.put("/{report_id}", response_model=ReportResponse, summary="Update a report")
+@router.put("/{report_id}", response_model=ReportResponse, summary="Update a report",
+    dependencies=[Depends(require_permission("reports.create"))],
+)
 async def update_report(report_id: str, payload: ReportUpdate, _: dict = Depends(get_current_user)):
     oid = to_object_id(report_id)
     updates = payload.model_dump(exclude_unset=True)
@@ -270,7 +289,9 @@ async def update_report(report_id: str, payload: ReportUpdate, _: dict = Depends
     return ReportResponse(**ReportModel.to_response(doc))
 
 
-@router.delete("/{report_id}", summary="Delete a report")
+@router.delete("/{report_id}", summary="Delete a report",
+    dependencies=[Depends(require_permission("reports.create"))],
+)
 async def delete_report(report_id: str, _: dict = Depends(get_current_user)):
     result = await _reports().delete_one({"_id": to_object_id(report_id)})
     if result.deleted_count == 0:
@@ -278,7 +299,9 @@ async def delete_report(report_id: str, _: dict = Depends(get_current_user)):
     return {"message": "Report deleted"}
 
 
-@router.post("/{report_id}/run", response_model=ReportResponse, summary="Regenerate a report now")
+@router.post("/{report_id}/run", response_model=ReportResponse, summary="Regenerate a report now",
+    dependencies=[Depends(require_permission("reports.create"))],
+)
 async def run_report(report_id: str, _: dict = Depends(get_current_user)):
     oid = to_object_id(report_id)
     doc = await _reports().find_one_and_update(

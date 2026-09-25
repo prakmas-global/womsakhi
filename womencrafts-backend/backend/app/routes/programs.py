@@ -111,7 +111,9 @@ async def _build_categories() -> list[CategoryItem]:
     ]
 
 
-@router.get("", response_model=ProgramListResponse, summary="List programs")
+@router.get("", response_model=ProgramListResponse, summary="List programs",
+    dependencies=[Depends(require_permission("programs.view"))],
+)
 async def list_programs(
     q: Optional[str] = Query(None, description="Search by program name or description"),
     status: Optional[str] = Query(None, description="Filter by status"),
@@ -145,12 +147,16 @@ async def list_programs(
     return ProgramListResponse(items=items, **page_meta(total, page, page_size))
 
 
-@router.get("/stats", response_model=ProgramStatsResponse, summary="Program KPI cards")
+@router.get("/stats", response_model=ProgramStatsResponse, summary="Program KPI cards",
+    dependencies=[Depends(require_permission("programs.view"))],
+)
 async def program_stats(_: dict = Depends(get_current_user)):
     return await _build_stats()
 
 
-@router.get("/overview", response_model=ProgramOverviewResponse, summary="Program overview trend")
+@router.get("/overview", response_model=ProgramOverviewResponse, summary="Program overview trend",
+    dependencies=[Depends(require_permission("programs.view"))],
+)
 async def program_overview(
     range: str = Query("This Month", description="This Week | This Month | This Quarter | This Year"),
     _: dict = Depends(get_current_user),
@@ -158,7 +164,9 @@ async def program_overview(
     return await _build_overview(range)
 
 
-@router.get("/categories", response_model=list[CategoryItem], summary="Top categories rail")
+@router.get("/categories", response_model=list[CategoryItem], summary="Top categories rail",
+    dependencies=[Depends(require_permission("programs.view"))],
+)
 async def program_categories(_: dict = Depends(get_current_user)):
     return await _build_categories()
 
@@ -186,7 +194,9 @@ async def create_program(payload: ProgramCreate, _: dict = Depends(get_current_u
     return ProgramResponse(**ProgramModel.to_response(doc))
 
 
-@router.get("/{program_id}", response_model=ProgramResponse, summary="Get a program")
+@router.get("/{program_id}", response_model=ProgramResponse, summary="Get a program",
+    dependencies=[Depends(require_permission("programs.view"))],
+)
 async def get_program(program_id: str, _: dict = Depends(get_current_user)):
     doc = await _programs().find_one({"_id": to_object_id(program_id)})
     if not doc:

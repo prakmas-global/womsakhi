@@ -92,7 +92,9 @@ _STATUS_SLICE_COLORS = {
 }
 
 
-@router.get("", response_model=AppointmentListResponse, summary="List appointments")
+@router.get("", response_model=AppointmentListResponse, summary="List appointments",
+    dependencies=[Depends(require_permission("appointments.view"))],
+)
 async def list_appointments(
     status: Optional[str] = Query(None, description="Filter by status: Upcoming|Completed|Cancelled|Rescheduled"),
     service: Optional[str] = Query(None, description="Filter by service"),
@@ -130,7 +132,9 @@ async def list_appointments(
     return AppointmentListResponse(items=items, **page_meta(total, page, page_size))
 
 
-@router.get("/stats", response_model=AppointmentStatsResponse, summary="Appointment statistics")
+@router.get("/stats", response_model=AppointmentStatsResponse, summary="Appointment statistics",
+    dependencies=[Depends(require_permission("appointments.view"))],
+)
 async def appointment_stats(_: dict = Depends(get_current_user)):
     """Single payload feeding all analytics widgets on the screen. Every figure
     is computed live from the real `appointments` collection (status cards,
@@ -265,7 +269,9 @@ async def create_appointment(payload: AppointmentCreate, _: dict = Depends(get_c
     return AppointmentResponse(**AppointmentModel.to_response(doc))
 
 
-@router.get("/{appointment_id}", response_model=AppointmentResponse, summary="Get an appointment")
+@router.get("/{appointment_id}", response_model=AppointmentResponse, summary="Get an appointment",
+    dependencies=[Depends(require_permission("appointments.view"))],
+)
 async def get_appointment(appointment_id: str, _: dict = Depends(get_current_user)):
     doc = await _appointments().find_one({"_id": to_object_id(appointment_id)})
     if not doc:

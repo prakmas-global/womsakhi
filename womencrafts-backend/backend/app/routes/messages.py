@@ -6,6 +6,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query, status
 from app.core import mongosafe
 from app.core.deps import get_current_user
 from app.core.serializers import page_meta, to_object_id
+from app.core.permissions import require_permission
 from app.db.mongodb import get_database
 from app.models.message import ConversationModel, MessageModel, MessageStatsModel
 from app.schemas.message import (
@@ -119,7 +120,9 @@ _AUTOMATIONS = [
 
 
 # --- Conversations ------------------------------------------------------------
-@router.get("/conversations", response_model=ConversationListResponse, summary="List conversations")
+@router.get("/conversations", response_model=ConversationListResponse, summary="List conversations",
+    dependencies=[Depends(require_permission("messages.view"))],
+)
 async def list_conversations(
     q: Optional[str] = Query(None, description="Search by name or preview"),
     filter: str = Query("all", description="all | unread | starred | attachments"),
@@ -154,6 +157,7 @@ async def list_conversations(
     response_model=ConversationResponse,
     status_code=status.HTTP_201_CREATED,
     summary="Start a new conversation",
+    dependencies=[Depends(require_permission("messages.create"))],
 )
 async def create_conversation(payload: ConversationCreate, _: dict = Depends(get_current_user)):
     now = datetime.now(timezone.utc)
@@ -196,6 +200,7 @@ async def create_conversation(payload: ConversationCreate, _: dict = Depends(get
     "/conversations/{conversation_id}",
     response_model=ConversationResponse,
     summary="Get a conversation with its full thread",
+    dependencies=[Depends(require_permission("messages.view"))],
 )
 async def get_conversation(conversation_id: str, _: dict = Depends(get_current_user)):
     doc = await _conversations().find_one({"_id": to_object_id(conversation_id)})
@@ -208,6 +213,7 @@ async def get_conversation(conversation_id: str, _: dict = Depends(get_current_u
     "/conversations/{conversation_id}/messages",
     response_model=ConversationResponse,
     summary="Append a message (composer send or attachment)",
+    dependencies=[Depends(require_permission("messages.create"))],
 )
 async def add_message(conversation_id: str, payload: MessageCreate, _: dict = Depends(get_current_user)):
     oid = to_object_id(conversation_id)
@@ -238,6 +244,7 @@ async def add_message(conversation_id: str, payload: MessageCreate, _: dict = De
     "/conversations/{conversation_id}",
     response_model=ConversationResponse,
     summary="Update conversation flags (star / unread / archive / read)",
+    dependencies=[Depends(require_permission("messages.edit"))],
 )
 async def update_conversation(
     conversation_id: str, payload: ConversationFlagUpdate, _: dict = Depends(get_current_user)
@@ -280,7 +287,9 @@ async def update_conversation(
     return ConversationResponse(**ConversationModel.to_response(doc))
 
 
-@router.delete("/conversations/{conversation_id}", summary="Delete a conversation")
+@router.delete("/conversations/{conversation_id}", summary="Delete a conversation",
+    dependencies=[Depends(require_permission("messages.delete"))],
+)
 async def delete_conversation(conversation_id: str, _: dict = Depends(get_current_user)):
     result = await _conversations().delete_one({"_id": to_object_id(conversation_id)})
     if result.deleted_count == 0:
@@ -289,7 +298,9 @@ async def delete_conversation(conversation_id: str, _: dict = Depends(get_curren
 
 
 # --- Broadcast ----------------------------------------------------------------
-@router.post("/broadcast", response_model=BroadcastResult, summary="Broadcast a message to a group")
+@router.post("/broadcast", response_model=BroadcastResult, summary="Broadcast a message to a group",
+    dependencies=[Depends(require_permission("messages.create"))],
+)
 async def broadcast(payload: BroadcastCreate, _: dict = Depends(get_current_user)):
     if payload.recipients == "Starred contacts":
         sent = await _conversations().count_documents({"starred": True})
@@ -303,7 +314,9 @@ async def broadcast(payload: BroadcastCreate, _: dict = Depends(get_current_user
 
 
 # --- Stats / lookups ----------------------------------------------------------
-@router.get("/stats", response_model=MessageStatsResponse, summary="Messages statistics")
+@router.get("/stats", response_model=MessageStatsResponse, summary="Messages statistics",
+    dependencies=[Depends(require_permission("messages.view"))],
+)
 async def message_stats(
     range: StatsRange = Query("This Month", description="Reporting range (currently static)"),
     _: dict = Depends(get_current_user),
@@ -312,18 +325,24 @@ async def message_stats(
     return MessageStatsResponse(**data, range=range)
 
 
-@router.get("/contacts", response_model=SimpleListResponse, summary="Recipient options for New Message")
+@router.get("/contacts", response_model=SimpleListResponse, summary="Recipient options for New Message",
+    dependencies=[Depends(require_permission("messages.view"))],
+)
 async def contacts(_: dict = Depends(get_current_user)):
     names = [doc.get("name", "") async for doc in _conversations().find({}, {"name": 1}).sort("_id", 1)]
     return SimpleListResponse(items=names)
 
 
-@router.get("/templates", response_model=SimpleListResponse, summary="Message templates")
+@router.get("/templates", response_model=SimpleListResponse, summary="Message templates",
+    dependencies=[Depends(require_permission("messages.view"))],
+)
 async def templates(_: dict = Depends(get_current_user)):
     return SimpleListResponse(items=list(_TEMPLATES))
 
 
-@router.get("/automations", response_model=SimpleListResponse, summary="Automated messages")
+@router.get("/automations", response_model=SimpleListResponse, summary="Automated messages",
+    dependencies=[Depends(require_permission("messages.view"))],
+)
 async def automations(_: dict = Depends(get_current_user)):
     return SimpleListResponse(items=list(_AUTOMATIONS))
 

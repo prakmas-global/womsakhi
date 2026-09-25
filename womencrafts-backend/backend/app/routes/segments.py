@@ -6,6 +6,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query, status
 from app.core import mongosafe
 from app.core.deps import get_current_user
 from app.core.serializers import to_object_id
+from app.core.permissions import require_permission
 from app.db.mongodb import get_database
 from app.models.segment import SegmentModel
 from app.schemas.segment import (
@@ -22,7 +23,9 @@ def _segments():
     return get_database()[SegmentModel.collection_name]
 
 
-@router.get("", response_model=SegmentListResponse, summary="List segments")
+@router.get("", response_model=SegmentListResponse, summary="List segments",
+    dependencies=[Depends(require_permission("users.view"))],
+)
 async def list_segments(
     q: Optional[str] = Query(None, description="Search by segment name"),
     status: Optional[str] = Query(None, description="Filter by status"),
@@ -38,7 +41,9 @@ async def list_segments(
     return SegmentListResponse(items=items, total=len(items))
 
 
-@router.post("", response_model=SegmentResponse, status_code=status.HTTP_201_CREATED, summary="Create a segment")
+@router.post("", response_model=SegmentResponse, status_code=status.HTTP_201_CREATED, summary="Create a segment",
+    dependencies=[Depends(require_permission("users.create"))],
+)
 async def create_segment(payload: SegmentCreate, _: dict = Depends(get_current_user)):
     if await _segments().find_one({"name": payload.name.strip()}):
         raise HTTPException(status.HTTP_409_CONFLICT, "A segment with this name already exists")
@@ -48,7 +53,9 @@ async def create_segment(payload: SegmentCreate, _: dict = Depends(get_current_u
     return SegmentResponse(**SegmentModel.to_response(doc))
 
 
-@router.get("/{segment_id}", response_model=SegmentResponse, summary="Get a segment")
+@router.get("/{segment_id}", response_model=SegmentResponse, summary="Get a segment",
+    dependencies=[Depends(require_permission("users.view"))],
+)
 async def get_segment(segment_id: str, _: dict = Depends(get_current_user)):
     doc = await _segments().find_one({"_id": to_object_id(segment_id)})
     if not doc:
@@ -56,7 +63,9 @@ async def get_segment(segment_id: str, _: dict = Depends(get_current_user)):
     return SegmentResponse(**SegmentModel.to_response(doc))
 
 
-@router.patch("/{segment_id}", response_model=SegmentResponse, summary="Update a segment")
+@router.patch("/{segment_id}", response_model=SegmentResponse, summary="Update a segment",
+    dependencies=[Depends(require_permission("users.edit"))],
+)
 async def update_segment(segment_id: str, payload: SegmentUpdate, _: dict = Depends(get_current_user)):
     oid = to_object_id(segment_id)
     updates = payload.model_dump(exclude_unset=True)
@@ -71,7 +80,9 @@ async def update_segment(segment_id: str, payload: SegmentUpdate, _: dict = Depe
     return SegmentResponse(**SegmentModel.to_response(doc))
 
 
-@router.delete("/{segment_id}", summary="Delete a segment")
+@router.delete("/{segment_id}", summary="Delete a segment",
+    dependencies=[Depends(require_permission("users.delete"))],
+)
 async def delete_segment(segment_id: str, _: dict = Depends(get_current_user)):
     result = await _segments().delete_one({"_id": to_object_id(segment_id)})
     if result.deleted_count == 0:

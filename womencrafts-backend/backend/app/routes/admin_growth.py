@@ -97,7 +97,9 @@ async def _member_map(user_ids: list[str]) -> dict[str, dict]:
 
 # --- events ------------------------------------------------------------------
 
-@router.get("/events", response_model=list[AdminEvent], summary="All events")
+@router.get("/events", response_model=list[AdminEvent], summary="All events",
+    dependencies=[Depends(require_permission("growth.view"))],
+)
 async def list_events(
     q: str = Query("", max_length=80),
     status_filter: str = Query("", alias="status", max_length=20),
@@ -192,6 +194,7 @@ async def cancel_event(event_id: str, me: dict = Depends(get_current_user)):
     "/events/{event_id}/attendees",
     response_model=list[EventAttendee],
     summary="Who is coming",
+    dependencies=[Depends(require_permission("growth.view"))],
 )
 async def event_attendees(event_id: str, me: dict = Depends(get_current_user)):
     regs = await _registrations().find({"event_id": event_id}).sort("created_at", 1).to_list(1000)
@@ -216,7 +219,9 @@ async def event_attendees(event_id: str, me: dict = Depends(get_current_user)):
 
 # --- mentors -----------------------------------------------------------------
 
-@router.get("/mentors", response_model=list[AdminMentor], summary="All mentors")
+@router.get("/mentors", response_model=list[AdminMentor], summary="All mentors",
+    dependencies=[Depends(require_permission("growth.view"))],
+)
 async def list_mentors(q: str = Query("", max_length=80), me: dict = Depends(get_current_user)):
     query: dict = {}
     if q.strip():
@@ -294,6 +299,7 @@ async def retire_mentor(mentor_id: str, me: dict = Depends(get_current_user)):
     "/mentor-requests",
     response_model=list[AdminMentorRequest],
     summary="Mentorship requests",
+    dependencies=[Depends(require_permission("growth.view"))],
 )
 async def list_mentor_requests(
     status_filter: str = Query("", alias="status", max_length=20),
@@ -366,7 +372,9 @@ async def decide_mentor_request(
 
 # --- opportunities -----------------------------------------------------------
 
-@router.get("/opportunities", response_model=list[AdminOpportunity], summary="All opportunities")
+@router.get("/opportunities", response_model=list[AdminOpportunity], summary="All opportunities",
+    dependencies=[Depends(require_permission("growth.view"))],
+)
 async def list_opportunities(
     q: str = Query("", max_length=80),
     kind: str = Query("", max_length=30),
@@ -471,7 +479,9 @@ async def close_opportunity(opp_id: str, me: dict = Depends(get_current_user)):
     return {"message": "Closed — it no longer accepts applications"}
 
 
-@router.get("/applications", response_model=list[AdminApplication], summary="Applications")
+@router.get("/applications", response_model=list[AdminApplication], summary="Applications",
+    dependencies=[Depends(require_permission("growth.view"))],
+)
 async def list_applications(
     opportunity_id: str = Query("", max_length=40),
     status_filter: str = Query("", alias="status", max_length=20),

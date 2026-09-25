@@ -32,6 +32,7 @@ from typing import Iterable
 from fastapi import APIRouter, Depends, Query
 
 from app.core.deps import get_current_user
+from app.core.permissions import require_permission
 from app.db.mongodb import get_database
 from app.schemas.analytics import (
     DeviceResponse,
@@ -350,7 +351,9 @@ def _period(label: str) -> tuple[int, str]:
 
 # --- endpoints ----------------------------------------------------------------
 
-@router.get("/overview", response_model=OverviewResponse, summary="Whole-screen analytics bundle")
+@router.get("/overview", response_model=OverviewResponse, summary="Whole-screen analytics bundle",
+    dependencies=[Depends(require_permission("analytics.view"))],
+)
 async def analytics_overview(
     range: str = Query("Last 30 Days", description="Date window for the stat cards and tables"),
     period: str = Query("This Month", description="Date window for the trend charts"),
@@ -390,7 +393,9 @@ async def analytics_overview(
     )
 
 
-@router.get("/summary", response_model=SummaryResponse, summary="Stat cards + active-members block")
+@router.get("/summary", response_model=SummaryResponse, summary="Stat cards + active-members block",
+    dependencies=[Depends(require_permission("analytics.view"))],
+)
 async def analytics_summary(
     range: str = Query("Last 30 Days", description="Date window"),
     _: dict = Depends(get_current_user),
@@ -400,7 +405,9 @@ async def analytics_summary(
     return SummaryResponse(stats=stats, realtime=RealtimeResponse(**realtime))
 
 
-@router.get("/stats", response_model=SummaryResponse, summary="Alias for the stat cards block")
+@router.get("/stats", response_model=SummaryResponse, summary="Alias for the stat cards block",
+    dependencies=[Depends(require_permission("analytics.view"))],
+)
 async def analytics_stats(
     range: str = Query("Last 30 Days", description="Date window"),
     _: dict = Depends(get_current_user),
@@ -410,12 +417,16 @@ async def analytics_stats(
     return SummaryResponse(stats=stats, realtime=RealtimeResponse(**realtime))
 
 
-@router.get("/realtime", response_model=RealtimeResponse, summary="Members active in the last 7 days")
+@router.get("/realtime", response_model=RealtimeResponse, summary="Members active in the last 7 days",
+    dependencies=[Depends(require_permission("analytics.view"))],
+)
 async def analytics_realtime(_: dict = Depends(get_current_user)):
     return RealtimeResponse(**await _realtime())
 
 
-@router.get("/traffic", response_model=list[TrafficPointResponse], summary="New members over time")
+@router.get("/traffic", response_model=list[TrafficPointResponse], summary="New members over time",
+    dependencies=[Depends(require_permission("analytics.view"))],
+)
 async def analytics_traffic(
     period: str = Query("This Month", description="Date window"),
     _: dict = Depends(get_current_user),
@@ -424,12 +435,16 @@ async def analytics_traffic(
     return await _traffic(days, bucket)
 
 
-@router.get("/devices", response_model=list[DeviceResponse], summary="Members by segment")
+@router.get("/devices", response_model=list[DeviceResponse], summary="Members by segment",
+    dependencies=[Depends(require_permission("analytics.view"))],
+)
 async def analytics_devices(_: dict = Depends(get_current_user)):
     return await _by_segment()
 
 
-@router.get("/sources", response_model=list[SourceResponse], summary="Bookings by service type")
+@router.get("/sources", response_model=list[SourceResponse], summary="Bookings by service type",
+    dependencies=[Depends(require_permission("analytics.view"))],
+)
 async def analytics_sources(
     range: str = Query("Last 30 Days", description="Date window"),
     _: dict = Depends(get_current_user),
@@ -438,7 +453,9 @@ async def analytics_sources(
     return await _by_service_type(days)
 
 
-@router.get("/engagement", response_model=list[EngagementPointResponse], summary="Sessions vs. members booking them")
+@router.get("/engagement", response_model=list[EngagementPointResponse], summary="Sessions vs. members booking them",
+    dependencies=[Depends(require_permission("analytics.view"))],
+)
 async def analytics_engagement(
     period: str = Query("This Month", description="Date window"),
     _: dict = Depends(get_current_user),
@@ -447,7 +464,9 @@ async def analytics_engagement(
     return await _engagement(days, bucket)
 
 
-@router.get("/top-pages", response_model=list[TopPageResponse], summary="Most-booked services")
+@router.get("/top-pages", response_model=list[TopPageResponse], summary="Most-booked services",
+    dependencies=[Depends(require_permission("analytics.view"))],
+)
 async def analytics_top_pages(
     range: str = Query("Last 30 Days", description="Date window"),
     _: dict = Depends(get_current_user),
@@ -456,6 +475,8 @@ async def analytics_top_pages(
     return await _top_services(days)
 
 
-@router.get("/referrers", response_model=list[ReferrerResponse], summary="How members found WomSakhi")
+@router.get("/referrers", response_model=list[ReferrerResponse], summary="How members found WomSakhi",
+    dependencies=[Depends(require_permission("analytics.view"))],
+)
 async def analytics_referrers(_: dict = Depends(get_current_user)):
     return await _by_referral()

@@ -116,7 +116,9 @@ def _sort_spec(sort: str) -> list[tuple[str, int]]:
 
 
 # --- List --------------------------------------------------------------------
-@router.get("", response_model=FeedbackListResponse, summary="List feedback")
+@router.get("", response_model=FeedbackListResponse, summary="List feedback",
+    dependencies=[Depends(require_permission("feedback.view"))],
+)
 async def list_feedback(
     q: Optional[str] = Query(None, description="Search text, user or program"),
     type: Optional[str] = Query(None, description="Filter by feedback type"),
@@ -139,7 +141,9 @@ async def list_feedback(
 
 
 # --- Stats / aggregates (static paths BEFORE the dynamic /{id}) --------------
-@router.get("/stats", response_model=FeedbackStatsResponse, summary="Feedback stat cards")
+@router.get("/stats", response_model=FeedbackStatsResponse, summary="Feedback stat cards",
+    dependencies=[Depends(require_permission("feedback.view"))],
+)
 async def feedback_stats(_: dict = Depends(get_current_user)):
     """Headline figures for the five cards, computed live from the real
     `feedback` collection. The period-over-period deltas have no historical
@@ -162,7 +166,9 @@ async def feedback_stats(_: dict = Depends(get_current_user)):
     )
 
 
-@router.get("/overview", response_model=FeedbackOverviewResponse, summary="Feedback overview donut")
+@router.get("/overview", response_model=FeedbackOverviewResponse, summary="Feedback overview donut",
+    dependencies=[Depends(require_permission("feedback.view"))],
+)
 async def feedback_overview(
     date_range: Optional[str] = Query(None, description="Display-only date range"),
     _: dict = Depends(get_current_user),
@@ -188,7 +194,9 @@ async def feedback_overview(
     return FeedbackOverviewResponse(total=f"{total:,}", center_label="Total", items=items)
 
 
-@router.get("/top-programs", response_model=ProgramRatingListResponse, summary="Top programs by feedback")
+@router.get("/top-programs", response_model=ProgramRatingListResponse, summary="Top programs by feedback",
+    dependencies=[Depends(require_permission("feedback.view"))],
+)
 async def top_programs(_: dict = Depends(get_current_user)):
     cursor = _program_ratings().find({}).sort([("rating", -1), ("seq", 1)])
     items = [ProgramRatingModel.to_response(doc) async for doc in cursor]
@@ -196,21 +204,27 @@ async def top_programs(_: dict = Depends(get_current_user)):
 
 
 # Alias for the same data under the /program-ratings prefix.
-@router.get("/program-ratings", response_model=ProgramRatingListResponse, summary="Program ratings")
+@router.get("/program-ratings", response_model=ProgramRatingListResponse, summary="Program ratings",
+    dependencies=[Depends(require_permission("feedback.view"))],
+)
 async def program_ratings(_: dict = Depends(get_current_user)):
     cursor = _program_ratings().find({}).sort([("rating", -1), ("seq", 1)])
     items = [ProgramRatingModel.to_response(doc) async for doc in cursor]
     return ProgramRatingListResponse(items=items, total=len(items))
 
 
-@router.get("/themes", response_model=FeedbackThemeListResponse, summary="Common feedback themes")
+@router.get("/themes", response_model=FeedbackThemeListResponse, summary="Common feedback themes",
+    dependencies=[Depends(require_permission("feedback.view"))],
+)
 async def feedback_themes(_: dict = Depends(get_current_user)):
     cursor = _themes().find({}).sort("seq", 1)
     items = [FeedbackThemeModel.to_response(doc) async for doc in cursor]
     return FeedbackThemeListResponse(items=items, total=len(items))
 
 
-@router.get("/export", summary="Export filtered feedback as CSV")
+@router.get("/export", summary="Export filtered feedback as CSV",
+    dependencies=[Depends(require_permission("feedback.export"))],
+)
 async def export_feedback(
     q: Optional[str] = Query(None),
     type: Optional[str] = Query(None),
@@ -250,7 +264,9 @@ async def request_feedback(payload: FeedbackRequestCreate, _: dict = Depends(get
 
 
 # --- Detail / mutations (dynamic /{id} comes last) ---------------------------
-@router.get("/{feedback_id}", response_model=FeedbackResponse, summary="Get a feedback entry")
+@router.get("/{feedback_id}", response_model=FeedbackResponse, summary="Get a feedback entry",
+    dependencies=[Depends(require_permission("feedback.view"))],
+)
 async def get_feedback(feedback_id: str, _: dict = Depends(get_current_user)):
     doc = await _feedback().find_one({"_id": to_object_id(feedback_id)})
     if not doc:

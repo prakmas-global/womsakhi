@@ -76,7 +76,7 @@ def _decode(value):
 
 
 @router.get("", response_model=list[BackupItem], summary="Backup history")
-async def list_backups(_: dict = Depends(require_staff)):
+async def list_backups(_: dict = Depends(require_permission("settings.view"))):
     docs = await _backups().find({}).sort("created_at", -1).to_list(200)
     return [BackupModel.to_response(d) for d in docs]
 
@@ -155,7 +155,7 @@ async def create_backup(body: BackupCreate, me: dict = Depends(require_staff)):
 
 
 @router.get("/collections", summary="What can be backed up")
-async def backup_collections(_: dict = Depends(require_staff)):
+async def backup_collections(_: dict = Depends(require_permission("settings.view"))):
     db = get_database()
     existing = set(await db.list_collection_names())
     out = []

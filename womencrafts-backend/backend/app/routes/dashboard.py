@@ -23,6 +23,7 @@ from datetime import datetime
 from fastapi import APIRouter, Depends, Query
 
 from app.core.deps import get_current_user
+from app.core.permissions import require_permission
 from app.db.mongodb import get_database
 from app.models.appointment import AppointmentModel
 from app.models.dashboard import SystemOverviewModel
@@ -204,7 +205,9 @@ async def _build_system_overview() -> SystemOverviewResponse:
 
 # --- Endpoints ----------------------------------------------------------------
 
-@router.get("/overview", response_model=DashboardOverview, summary="Full dashboard bundle")
+@router.get("/overview", response_model=DashboardOverview, summary="Full dashboard bundle",
+    dependencies=[Depends(require_permission("dashboard.view"))],
+)
 async def dashboard_overview(_: dict = Depends(get_current_user)):
     """One call hydrating the whole screen: KPI cards, appointment trend + tiles,
     users-by-role donut, recent users, recent appointments and system overview."""
@@ -233,12 +236,16 @@ async def dashboard_overview(_: dict = Depends(get_current_user)):
     )
 
 
-@router.get("/stats", response_model=list[StatCard], summary="4 KPI cards")
+@router.get("/stats", response_model=list[StatCard], summary="4 KPI cards",
+    dependencies=[Depends(require_permission("dashboard.view"))],
+)
 async def dashboard_stats(_: dict = Depends(get_current_user)):
     return await _build_stats()
 
 
-@router.get("/appointments/trend", response_model=AppointmentTrend, summary="Appointments overview trend")
+@router.get("/appointments/trend", response_model=AppointmentTrend, summary="Appointments overview trend",
+    dependencies=[Depends(require_permission("dashboard.view"))],
+)
 async def dashboard_appointments_trend(
     range: str = Query("This Month", description="This Week | This Month | This Quarter | This Year"),
     _: dict = Depends(get_current_user),
@@ -246,12 +253,16 @@ async def dashboard_appointments_trend(
     return await _build_trend(range)
 
 
-@router.get("/users/by-role", response_model=UsersByRole, summary="Users-by-role donut")
+@router.get("/users/by-role", response_model=UsersByRole, summary="Users-by-role donut",
+    dependencies=[Depends(require_permission("dashboard.view"))],
+)
 async def dashboard_users_by_role(_: dict = Depends(get_current_user)):
     return await _build_by_role()
 
 
-@router.get("/users/recent", response_model=list[RecentUser], summary="Recently registered users")
+@router.get("/users/recent", response_model=list[RecentUser], summary="Recently registered users",
+    dependencies=[Depends(require_permission("dashboard.view"))],
+)
 async def dashboard_recent_users(
     limit: int = Query(5, ge=1, le=50),
     _: dict = Depends(get_current_user),
@@ -259,7 +270,9 @@ async def dashboard_recent_users(
     return await _build_recent_users(limit)
 
 
-@router.get("/appointments/recent", response_model=list[RecentAppointment], summary="Recent appointments")
+@router.get("/appointments/recent", response_model=list[RecentAppointment], summary="Recent appointments",
+    dependencies=[Depends(require_permission("dashboard.view"))],
+)
 async def dashboard_recent_appointments(
     limit: int = Query(5, ge=1, le=50),
     _: dict = Depends(get_current_user),
@@ -267,7 +280,9 @@ async def dashboard_recent_appointments(
     return await _build_recent_appointments(limit)
 
 
-@router.get("/system-overview", response_model=SystemOverviewResponse, summary="System overview card")
+@router.get("/system-overview", response_model=SystemOverviewResponse, summary="System overview card",
+    dependencies=[Depends(require_permission("dashboard.view"))],
+)
 async def dashboard_system_overview(_: dict = Depends(get_current_user)):
     return await _build_system_overview()
 

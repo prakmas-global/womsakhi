@@ -88,7 +88,9 @@ async def _noop_list() -> list:
 
 # --- alerts ------------------------------------------------------------------
 
-@router.get("/alerts", response_model=list[AdminAlert], summary="Safety alerts")
+@router.get("/alerts", response_model=list[AdminAlert], summary="Safety alerts",
+    dependencies=[Depends(require_permission("safety.view"))],
+)
 async def list_alerts(
     status_filter: str = Query("", alias="status", max_length=20),
     me: dict = Depends(get_current_user),
@@ -173,7 +175,9 @@ async def decide_alert(alert_id: str, body: AlertDecision, me: dict = Depends(ge
 
 # --- reports -----------------------------------------------------------------
 
-@router.get("/reports", response_model=list[AdminReport], summary="Reports")
+@router.get("/reports", response_model=list[AdminReport], summary="Reports",
+    dependencies=[Depends(require_permission("safety.view"))],
+)
 async def list_reports(
     status_filter: str = Query("", alias="status", max_length=20),
     me: dict = Depends(get_current_user),
@@ -229,7 +233,9 @@ async def decide_report(report_id: str, body: ReportDecision, me: dict = Depends
 
 # --- support fund ------------------------------------------------------------
 
-@router.get("/support", response_model=list[AdminSupportRequest], summary="Support requests")
+@router.get("/support", response_model=list[AdminSupportRequest], summary="Support requests",
+    dependencies=[Depends(require_permission("safety.view"))],
+)
 async def list_support(
     status_filter: str = Query("", alias="status", max_length=20),
     me: dict = Depends(get_current_user),
@@ -338,7 +344,9 @@ async def decide_support(
 
 # --- what's waiting for a human ----------------------------------------------
 
-@router.get("/counts", response_model=ModuleCounts, summary="Badge counts for the sidebar")
+@router.get("/counts", response_model=ModuleCounts, summary="Badge counts for the sidebar",
+    dependencies=[Depends(require_permission("safety.view"))],
+)
 async def module_counts(me: dict = Depends(get_current_user)):
     db = get_database()
     return ModuleCounts(

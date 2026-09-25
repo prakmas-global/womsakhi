@@ -38,7 +38,9 @@ async def _next_code() -> str:
     return f"WC-{highest + 1}"
 
 
-@router.get("", response_model=MemberListResponse, summary="List members")
+@router.get("", response_model=MemberListResponse, summary="List members",
+    dependencies=[Depends(require_permission("users.view"))],
+)
 async def list_members(
     q: Optional[str] = Query(None, description="Search by name, email, phone or code"),
     role: Optional[str] = Query(None, description="Filter by role"),
@@ -68,7 +70,9 @@ async def list_members(
     return MemberListResponse(items=items, **page_meta(total, page, page_size))
 
 
-@router.get("/stats", response_model=MemberStatsResponse, summary="Member statistics")
+@router.get("/stats", response_model=MemberStatsResponse, summary="Member statistics",
+    dependencies=[Depends(require_permission("users.view"))],
+)
 async def member_stats(_: dict = Depends(get_current_user)):
     docs = [doc async for doc in _members().find({})]
     total = len(docs)
@@ -123,7 +127,9 @@ async def create_member(payload: MemberCreate, _: dict = Depends(get_current_use
     return MemberResponse(**MemberModel.to_response(doc))
 
 
-@router.get("/{member_id}", response_model=MemberResponse, summary="Get a member")
+@router.get("/{member_id}", response_model=MemberResponse, summary="Get a member",
+    dependencies=[Depends(require_permission("users.view"))],
+)
 async def get_member(member_id: str, _: dict = Depends(get_current_user)):
     doc = await _members().find_one({"_id": to_object_id(member_id)})
     if not doc:

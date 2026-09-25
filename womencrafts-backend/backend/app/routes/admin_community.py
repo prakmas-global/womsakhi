@@ -54,7 +54,9 @@ def _users():
 
 # --- circles -----------------------------------------------------------------
 
-@router.get("/circles", response_model=list[AdminCircle], summary="All circles")
+@router.get("/circles", response_model=list[AdminCircle], summary="All circles",
+    dependencies=[Depends(require_permission("community.view"))],
+)
 async def list_circles(q: str = Query("", max_length=80), me: dict = Depends(get_current_user)):
     query: dict = {}
     if q.strip():
@@ -124,7 +126,9 @@ async def archive_circle(circle_id: str, me: dict = Depends(get_current_user)):
 
 # --- posts (moderation) ------------------------------------------------------
 
-@router.get("/posts", response_model=list[AdminPost], summary="Recent posts across all circles")
+@router.get("/posts", response_model=list[AdminPost], summary="Recent posts across all circles",
+    dependencies=[Depends(require_permission("community.view"))],
+)
 async def list_posts(
     circle_id: str = Query("", max_length=40),
     hidden: bool = Query(False, description="Only hidden posts"),
@@ -193,7 +197,9 @@ async def toggle_pinned(post_id: str, me: dict = Depends(get_current_user)):
 
 # --- stories -----------------------------------------------------------------
 
-@router.get("/stories", response_model=list[AdminStory], summary="Submitted stories")
+@router.get("/stories", response_model=list[AdminStory], summary="Submitted stories",
+    dependencies=[Depends(require_permission("community.view"))],
+)
 async def list_stories(
     status_filter: str = Query("", alias="status", max_length=20),
     me: dict = Depends(get_current_user),

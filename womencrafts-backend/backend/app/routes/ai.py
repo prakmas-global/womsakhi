@@ -5,6 +5,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query, Response, status
 
 from app.core.deps import get_current_user
 from app.core.serializers import to_object_id
+from app.core.permissions import require_permission
 from app.db.mongodb import get_database
 from app.models.ai import (
     AiActionModel,
@@ -75,18 +76,24 @@ def _prompts():
 
 
 # --- greeting priorities ------------------------------------------------------
-@router.get("/priorities", response_model=list[AiPriorityResponse], summary="Today's key priorities")
+@router.get("/priorities", response_model=list[AiPriorityResponse], summary="Today's key priorities",
+    dependencies=[Depends(require_permission("ai.view"))],
+)
 async def list_priorities(_: dict = Depends(get_current_user)):
     return [AiPriorityModel.to_response(d) async for d in _priorities().find({}).sort("order", 1)]
 
 
 # --- business health ----------------------------------------------------------
-@router.get("/health/metrics", response_model=list[AiHealthMetricResponse], summary="Business Health Score components")
+@router.get("/health/metrics", response_model=list[AiHealthMetricResponse], summary="Business Health Score components",
+    dependencies=[Depends(require_permission("ai.view"))],
+)
 async def list_health_metrics(_: dict = Depends(get_current_user)):
     return [AiHealthMetricModel.to_response(d) async for d in _health().find({}).sort("order", 1)]
 
 
-@router.get("/health/stats", response_model=AiHealthStatsResponse, summary="Overall Business Health gauge")
+@router.get("/health/stats", response_model=AiHealthStatsResponse, summary="Overall Business Health gauge",
+    dependencies=[Depends(require_permission("ai.view"))],
+)
 async def health_stats(_: dict = Depends(get_current_user)):
     values = [d.get("value", 0) async for d in _health().find({}, {"value": 1})]
     # Overall gauge is the rounded mean of the component scores (round(91.6) = 92).
@@ -111,7 +118,9 @@ async def health_stats(_: dict = Depends(get_current_user)):
 
 
 # --- tasks --------------------------------------------------------------------
-@router.get("/tasks", response_model=list[AiTaskResponse], summary="AI Tasks Center tasks")
+@router.get("/tasks", response_model=list[AiTaskResponse], summary="AI Tasks Center tasks",
+    dependencies=[Depends(require_permission("ai.view"))],
+)
 async def list_tasks(
     priority: Optional[Literal["high", "medium"]] = Query(None, description="Filter by priority tab"),
     _: dict = Depends(get_current_user),
@@ -122,14 +131,18 @@ async def list_tasks(
     return [AiTaskModel.to_response(d) async for d in _tasks().find(query).sort("order", 1)]
 
 
-@router.get("/tasks/stats", response_model=AiTaskStatsResponse, summary="Task tab-badge counts")
+@router.get("/tasks/stats", response_model=AiTaskStatsResponse, summary="Task tab-badge counts",
+    dependencies=[Depends(require_permission("ai.view"))],
+)
 async def task_stats(_: dict = Depends(get_current_user)):
     high = await _tasks().count_documents({"priority": "high"})
     medium = await _tasks().count_documents({"priority": "medium"})
     return AiTaskStatsResponse(high=high, medium=medium, total=high + medium)
 
 
-@router.patch("/tasks/{task_id}", response_model=AiTaskResponse, summary="Toggle a task's done state")
+@router.patch("/tasks/{task_id}", response_model=AiTaskResponse, summary="Toggle a task's done state",
+    dependencies=[Depends(require_permission("ai.edit"))],
+)
 async def update_task(task_id: str, payload: AiTaskUpdate, _: dict = Depends(get_current_user)):
     oid = to_object_id(task_id)
     doc = await _tasks().find_one({"_id": oid})
@@ -147,12 +160,16 @@ async def update_task(task_id: str, payload: AiTaskUpdate, _: dict = Depends(get
 
 
 # --- agents -------------------------------------------------------------------
-@router.get("/agents", response_model=list[AiAgentResponse], summary="AI Workforce agents")
+@router.get("/agents", response_model=list[AiAgentResponse], summary="AI Workforce agents",
+    dependencies=[Depends(require_permission("ai.view"))],
+)
 async def list_agents(_: dict = Depends(get_current_user)):
     return [AiAgentModel.to_response(d) async for d in _agents().find({}).sort("order", 1)]
 
 
-@router.get("/agents/{agent_id}", response_model=AiAgentResponse, summary="Single agent detail")
+@router.get("/agents/{agent_id}", response_model=AiAgentResponse, summary="Single agent detail",
+    dependencies=[Depends(require_permission("ai.view"))],
+)
 async def get_agent(agent_id: str, _: dict = Depends(get_current_user)):
     doc = await _agents().find_one({"_id": to_object_id(agent_id)})
     if not doc:
@@ -161,19 +178,25 @@ async def get_agent(agent_id: str, _: dict = Depends(get_current_user)):
 
 
 # --- insights -----------------------------------------------------------------
-@router.get("/insights", response_model=list[AiInsightResponse], summary="AI Insights")
+@router.get("/insights", response_model=list[AiInsightResponse], summary="AI Insights",
+    dependencies=[Depends(require_permission("ai.view"))],
+)
 async def list_insights(_: dict = Depends(get_current_user)):
     return [AiInsightModel.to_response(d) async for d in _insights().find({}).sort("order", 1)]
 
 
 # --- one-click actions --------------------------------------------------------
-@router.get("/actions", response_model=list[AiActionResponse], summary="One Click AI Actions")
+@router.get("/actions", response_model=list[AiActionResponse], summary="One Click AI Actions",
+    dependencies=[Depends(require_permission("ai.view"))],
+)
 async def list_actions(_: dict = Depends(get_current_user)):
     return [AiActionModel.to_response(d) async for d in _actions().find({}).sort("order", 1)]
 
 
 # --- command timeline ---------------------------------------------------------
-@router.get("/activities", response_model=list[AiActivityResponse], summary="AI Command Timeline events")
+@router.get("/activities", response_model=list[AiActivityResponse], summary="AI Command Timeline events",
+    dependencies=[Depends(require_permission("ai.view"))],
+)
 async def list_activities(
     status_filter: Optional[Literal["Success", "Alert"]] = Query(
         None, alias="status", description="Filter by event status"
@@ -188,13 +211,17 @@ async def list_activities(
 
 
 # --- memory & knowledge -------------------------------------------------------
-@router.get("/memory/stats", response_model=list[AiMemoryStatResponse], summary="AI Memory & Knowledge tiles")
+@router.get("/memory/stats", response_model=list[AiMemoryStatResponse], summary="AI Memory & Knowledge tiles",
+    dependencies=[Depends(require_permission("ai.view"))],
+)
 async def list_memory_stats(_: dict = Depends(get_current_user)):
     return [AiMemoryStatModel.to_response(d) async for d in _memory().find({}).sort("order", 1)]
 
 
 # --- prompt chips -------------------------------------------------------------
-@router.get("/prompts", response_model=list[AiPromptResponse], summary="Ask-AI suggestions & voice chips")
+@router.get("/prompts", response_model=list[AiPromptResponse], summary="Ask-AI suggestions & voice chips",
+    dependencies=[Depends(require_permission("ai.view"))],
+)
 async def list_prompts(
     kind: Optional[Literal["suggestion", "voice"]] = Query(None, description="Filter by chip kind"),
     _: dict = Depends(get_current_user),
@@ -206,7 +233,9 @@ async def list_prompts(
 
 
 # --- chat (client-side simulation, no persistence) ----------------------------
-@router.post("/chat", response_model=AiChatResponse, summary="Ask the AI executive (canned reply)")
+@router.post("/chat", response_model=AiChatResponse, summary="Ask the AI executive (canned reply)",
+    dependencies=[Depends(require_permission("ai.edit"))],
+)
 async def ai_chat(payload: AiChatRequest, _: dict = Depends(get_current_user)):
     q = payload.question.strip()
     reply = (
@@ -218,7 +247,9 @@ async def ai_chat(payload: AiChatRequest, _: dict = Depends(get_current_user)):
 
 
 # --- report CSV export --------------------------------------------------------
-@router.get("/report", summary="Download the AI business-health report (CSV)")
+@router.get("/report", summary="Download the AI business-health report (CSV)",
+    dependencies=[Depends(require_permission("ai.view"))],
+)
 async def ai_report(_: dict = Depends(get_current_user)):
     rows = [["Metric", "Value"]]
     async for d in _health().find({}).sort("order", 1):

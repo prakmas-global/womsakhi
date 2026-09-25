@@ -138,7 +138,9 @@ def _filter_query(
     return query
 
 
-@router.get("", response_model=ContentListResponse, summary="List content items")
+@router.get("", response_model=ContentListResponse, summary="List content items",
+    dependencies=[Depends(require_permission("content.view"))],
+)
 async def list_content(
     tab: Optional[str] = Query(None, description="Active tab; maps to a content type"),
     type: Optional[str] = Query(None, description="Filter by type"),
@@ -241,13 +243,19 @@ async def _build_stats() -> ContentStatsResponse:
     )
 
 
-@router.get("/stats", response_model=ContentStatsResponse, summary="Content stat snapshot")
+@router.get("/stats", response_model=ContentStatsResponse, summary="Content stat snapshot",
+    dependencies=[Depends(require_permission("content.view"))],
+)
 async def content_stats(_: dict = Depends(get_current_user)):
     return await _build_stats()
 
 
-@router.get("/activity", response_model=list[ContentActivityResponse], summary="Recent activity feed")
-@router.get("/activities", response_model=list[ContentActivityResponse], include_in_schema=False)
+@router.get("/activity", response_model=list[ContentActivityResponse], summary="Recent activity feed",
+    dependencies=[Depends(require_permission("content.view"))],
+)
+@router.get("/activities", response_model=list[ContentActivityResponse], include_in_schema=False,
+    dependencies=[Depends(require_permission("content.view"))],
+)
 async def content_activity(
     limit: int = Query(4, ge=1, le=50),
     _: dict = Depends(get_current_user),
@@ -256,7 +264,9 @@ async def content_activity(
     return [ContentActivityResponse(**ContentActivityModel.to_response(doc)) async for doc in cursor]
 
 
-@router.get("/authors", response_model=list[str], summary="Distinct authors")
+@router.get("/authors", response_model=list[str], summary="Distinct authors",
+    dependencies=[Depends(require_permission("content.view"))],
+)
 async def content_authors(_: dict = Depends(get_current_user)):
     present = set(await _items().distinct("author"))
     # Keep the known authors in their UI order, then append any extras.
@@ -265,7 +275,9 @@ async def content_authors(_: dict = Depends(get_current_user)):
     return ordered
 
 
-@router.get("/export", summary="Export filtered content as CSV")
+@router.get("/export", summary="Export filtered content as CSV",
+    dependencies=[Depends(require_permission("content.view"))],
+)
 async def export_content(
     type: Optional[str] = Query(None),
     status: Optional[str] = Query(None),
@@ -327,7 +339,9 @@ async def bulk_content(payload: ContentBulkAction, _: dict = Depends(get_current
     return ContentBulkResult(action=payload.action, affected=result.modified_count, message=verb)
 
 
-@router.get("/{item_id}", response_model=ContentResponse, summary="Get a content item")
+@router.get("/{item_id}", response_model=ContentResponse, summary="Get a content item",
+    dependencies=[Depends(require_permission("content.view"))],
+)
 async def get_content(item_id: str, _: dict = Depends(get_current_user)):
     doc = await _items().find_one({"_id": to_object_id(item_id)})
     if not doc:

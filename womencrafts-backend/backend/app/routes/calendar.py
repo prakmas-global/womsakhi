@@ -7,6 +7,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query, status
 from app.core import mongosafe
 from app.core.deps import get_current_user
 from app.core.serializers import page_meta
+from app.core.permissions import require_permission
 from app.db.mongodb import get_database
 from app.models.calendar import CalendarEventModel
 from app.schemas.calendar import (
@@ -60,7 +61,9 @@ async def _next_id() -> int:
     return highest + 1
 
 
-@router.get("/events", response_model=CalendarEventListResponse, summary="List calendar events")
+@router.get("/events", response_model=CalendarEventListResponse, summary="List calendar events",
+    dependencies=[Depends(require_permission("calendar.view"))],
+)
 async def list_events(
     category: Optional[str] = Query(None, description="Filter by legend category"),
     start: Optional[str] = Query(None, description="Window start (YYYY-MM-DD, inclusive)"),
@@ -97,6 +100,7 @@ async def list_events(
     "/events/upcoming",
     response_model=list[CalendarEventResponse],
     summary="Upcoming events for the sidebar",
+    dependencies=[Depends(require_permission("calendar.view"))],
 )
 async def upcoming_events(
     after: str = Query("2024-05-20", description="Include events on/after this day (YYYY-MM-DD)"),
@@ -109,7 +113,9 @@ async def upcoming_events(
     return [CalendarEventModel.to_response(doc) for doc in docs[:limit]]
 
 
-@router.get("/events/stats", response_model=CalendarStatsResponse, summary="Per-category event counts")
+@router.get("/events/stats", response_model=CalendarStatsResponse, summary="Per-category event counts",
+    dependencies=[Depends(require_permission("calendar.view"))],
+)
 async def event_stats(_: dict = Depends(get_current_user)):
     docs = [doc async for doc in _events().find({})]
     by_category: dict[str, int] = {}
@@ -124,6 +130,7 @@ async def event_stats(_: dict = Depends(get_current_user)):
     response_model=CalendarEventResponse,
     status_code=status.HTTP_201_CREATED,
     summary="Create a calendar event",
+    dependencies=[Depends(require_permission("calendar.create"))],
 )
 async def create_event(payload: CalendarEventCreate, _: dict = Depends(get_current_user)):
     doc = CalendarEventModel.create_document(
@@ -140,7 +147,9 @@ async def create_event(payload: CalendarEventCreate, _: dict = Depends(get_curre
     return CalendarEventResponse(**CalendarEventModel.to_response(doc))
 
 
-@router.get("/events/{event_id}", response_model=CalendarEventResponse, summary="Get an event")
+@router.get("/events/{event_id}", response_model=CalendarEventResponse, summary="Get an event",
+    dependencies=[Depends(require_permission("calendar.view"))],
+)
 async def get_event(event_id: int, _: dict = Depends(get_current_user)):
     doc = await _events().find_one({"event_id": event_id})
     if not doc:
@@ -148,7 +157,9 @@ async def get_event(event_id: int, _: dict = Depends(get_current_user)):
     return CalendarEventResponse(**CalendarEventModel.to_response(doc))
 
 
-@router.patch("/events/{event_id}", response_model=CalendarEventResponse, summary="Update an event")
+@router.patch("/events/{event_id}", response_model=CalendarEventResponse, summary="Update an event",
+    dependencies=[Depends(require_permission("calendar.edit"))],
+)
 async def update_event(event_id: int, payload: CalendarEventUpdate, _: dict = Depends(get_current_user)):
     updates = payload.model_dump(exclude_unset=True)
 
@@ -169,7 +180,9 @@ async def update_event(event_id: int, payload: CalendarEventUpdate, _: dict = De
     return CalendarEventResponse(**CalendarEventModel.to_response(doc))
 
 
-@router.delete("/events/{event_id}", summary="Delete an event")
+@router.delete("/events/{event_id}", summary="Delete an event",
+    dependencies=[Depends(require_permission("calendar.delete"))],
+)
 async def delete_event(event_id: int, _: dict = Depends(get_current_user)):
     result = await _events().delete_one({"event_id": event_id})
     if result.deleted_count == 0:

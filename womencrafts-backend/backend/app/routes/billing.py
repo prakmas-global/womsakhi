@@ -4,6 +4,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query, Response, status
 
 from app.core.deps import get_current_user
 from app.core.serializers import page_meta
+from app.core.permissions import require_permission
 from app.db.mongodb import get_database
 from app.models.billing import BillingAccountModel, InvoiceModel, PlanModel
 from app.routes._paging import paged
@@ -79,7 +80,9 @@ def _summary(doc: dict) -> dict:
 
 # --- Account (singleton) ------------------------------------------------------
 
-@router.get("/account", response_model=BillingAccountResponse, summary="Get the billing account")
+@router.get("/account", response_model=BillingAccountResponse, summary="Get the billing account",
+    dependencies=[Depends(require_permission("settings.view"))],
+)
 async def get_account(_: dict = Depends(get_current_user)):
     doc = await _account_doc()
     data = BillingAccountModel.to_response(doc)
@@ -87,25 +90,33 @@ async def get_account(_: dict = Depends(get_current_user)):
     return BillingAccountResponse(**data)
 
 
-@router.get("/account/billing-info", response_model=BillingInfoResponse, summary="Get billing information")
+@router.get("/account/billing-info", response_model=BillingInfoResponse, summary="Get billing information",
+    dependencies=[Depends(require_permission("settings.view"))],
+)
 async def get_billing_info(_: dict = Depends(get_current_user)):
     doc = await _account_doc()
     return BillingInfoResponse(**doc.get("billing_info", {}))
 
 
-@router.get("/account/usage", response_model=UsageOverviewResponse, summary="Get usage overview")
+@router.get("/account/usage", response_model=UsageOverviewResponse, summary="Get usage overview",
+    dependencies=[Depends(require_permission("settings.view"))],
+)
 async def get_usage(_: dict = Depends(get_current_user)):
     doc = await _account_doc()
     return UsageOverviewResponse(usage=doc.get("usage", []), usage_reset_date=doc.get("usage_reset_date", ""))
 
 
-@router.get("/account/summary", response_model=BillingSummaryResponse, summary="Get billing summary")
+@router.get("/account/summary", response_model=BillingSummaryResponse, summary="Get billing summary",
+    dependencies=[Depends(require_permission("settings.view"))],
+)
 async def get_summary(_: dict = Depends(get_current_user)):
     doc = await _account_doc()
     return BillingSummaryResponse(**_summary(doc))
 
 
-@router.put("/account/plan", response_model=BillingAccountResponse, summary="Change the current plan")
+@router.put("/account/plan", response_model=BillingAccountResponse, summary="Change the current plan",
+    dependencies=[Depends(require_permission("settings.edit"))],
+)
 async def change_plan(payload: ChangePlanRequest, _: dict = Depends(get_current_user)):
     plan = await _plans().find_one({"name": payload.plan_name})
     if not plan:
@@ -126,7 +137,9 @@ async def change_plan(payload: ChangePlanRequest, _: dict = Depends(get_current_
     return BillingAccountResponse(**data)
 
 
-@router.post("/account/cancel", response_model=BillingAccountResponse, summary="Cancel the subscription")
+@router.post("/account/cancel", response_model=BillingAccountResponse, summary="Cancel the subscription",
+    dependencies=[Depends(require_permission("settings.edit"))],
+)
 async def cancel_subscription(_: dict = Depends(get_current_user)):
     doc = await _account_doc()
     await _accounts().update_one(
@@ -138,7 +151,9 @@ async def cancel_subscription(_: dict = Depends(get_current_user)):
     return BillingAccountResponse(**data)
 
 
-@router.put("/account/payment", response_model=BillingAccountResponse, summary="Update the payment method")
+@router.put("/account/payment", response_model=BillingAccountResponse, summary="Update the payment method",
+    dependencies=[Depends(require_permission("settings.edit"))],
+)
 async def update_payment(payload: UpdatePaymentRequest, _: dict = Depends(get_current_user)):
     doc = await _account_doc()
     digits = "".join(ch for ch in payload.number if ch.isdigit())
@@ -156,7 +171,9 @@ async def update_payment(payload: UpdatePaymentRequest, _: dict = Depends(get_cu
     return BillingAccountResponse(**data)
 
 
-@router.patch("/account/autopay", response_model=BillingAccountResponse, summary="Toggle auto-pay")
+@router.patch("/account/autopay", response_model=BillingAccountResponse, summary="Toggle auto-pay",
+    dependencies=[Depends(require_permission("settings.edit"))],
+)
 async def toggle_autopay(payload: AutoPayRequest, _: dict = Depends(get_current_user)):
     doc = await _account_doc()
     await _accounts().update_one({"_id": doc["_id"]}, {"$set": {"auto_pay": payload.auto_pay}})
@@ -166,7 +183,9 @@ async def toggle_autopay(payload: AutoPayRequest, _: dict = Depends(get_current_
     return BillingAccountResponse(**data)
 
 
-@router.put("/account/billing-info", response_model=BillingInfoResponse, summary="Update billing information")
+@router.put("/account/billing-info", response_model=BillingInfoResponse, summary="Update billing information",
+    dependencies=[Depends(require_permission("settings.edit"))],
+)
 async def update_billing_info(payload: BillingInfoUpdate, _: dict = Depends(get_current_user)):
     doc = await _account_doc()
     billing_info = {
@@ -181,7 +200,9 @@ async def update_billing_info(payload: BillingInfoUpdate, _: dict = Depends(get_
 
 # --- Plans --------------------------------------------------------------------
 
-@router.get("/plans", response_model=list[PlanResponse], summary="List available plans")
+@router.get("/plans", response_model=list[PlanResponse], summary="List available plans",
+    dependencies=[Depends(require_permission("settings.view"))],
+)
 async def list_plans(_: dict = Depends(get_current_user)):
     account = await _accounts().find_one({})
     current_name = account.get("plan") if account else None
@@ -195,7 +216,9 @@ async def list_plans(_: dict = Depends(get_current_user)):
 
 # --- Invoices -----------------------------------------------------------------
 
-@router.get("/invoices", response_model=InvoiceListResponse, summary="List invoices (Billing History)")
+@router.get("/invoices", response_model=InvoiceListResponse, summary="List invoices (Billing History)",
+    dependencies=[Depends(require_permission("settings.view"))],
+)
 async def list_invoices(
     status: Optional[str] = Query(None, description="Filter by status: Paid|Pending|Failed"),
     page: int = Query(1, ge=1),
@@ -215,7 +238,9 @@ async def list_invoices(
     return InvoiceListResponse(items=items, **page_meta(total, page, page_size))
 
 
-@router.get("/invoices/{invoice_number}/download", summary="Download an invoice as CSV")
+@router.get("/invoices/{invoice_number}/download", summary="Download an invoice as CSV",
+    dependencies=[Depends(require_permission("settings.view"))],
+)
 async def download_invoice(invoice_number: str, _: dict = Depends(get_current_user)):
     doc = await _invoices().find_one({"invoice_number": invoice_number})
     if not doc:
@@ -234,7 +259,9 @@ async def download_invoice(invoice_number: str, _: dict = Depends(get_current_us
     )
 
 
-@router.get("/invoices/{invoice_number}", response_model=InvoiceResponse, summary="Get an invoice")
+@router.get("/invoices/{invoice_number}", response_model=InvoiceResponse, summary="Get an invoice",
+    dependencies=[Depends(require_permission("settings.view"))],
+)
 async def get_invoice(invoice_number: str, _: dict = Depends(get_current_user)):
     doc = await _invoices().find_one({"invoice_number": invoice_number})
     if not doc:

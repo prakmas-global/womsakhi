@@ -34,6 +34,7 @@ from pymongo import UpdateOne
 from fastapi import APIRouter, Depends, HTTPException, status
 
 from app.core.entitlements import Feature, allows
+from app.core.permissions import require_permission
 from app.core.rbac import require_staff, require_super_admin
 from app.core.serializers import to_object_id
 from app.db.mongodb import get_database
@@ -105,7 +106,7 @@ async def _update_settings(changes: dict) -> dict:
 # --- reading -----------------------------------------------------------------
 
 @router.get("", response_model=OrgSettings, summary="Organisation settings")
-async def read_settings(_: dict = Depends(require_staff)):
+async def read_settings(_: dict = Depends(require_permission("settings.view"))):
     """Readable by any staff account — the shell needs the logo and the default
     palette to render, and hiding them behind Super Admin would mean every other
     staff member sees unbranded screens."""
