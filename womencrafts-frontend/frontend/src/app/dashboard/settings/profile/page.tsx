@@ -271,7 +271,7 @@ export default function ProfilePage() {
                 </Link>
               </div>
               {activity.length === 0 ? (
-                <p className="py-8 text-center text-sm text-ink-subtle">Nothing audited on this account yet.</p>
+                <p className="py-8 text-center text-sm text-ink-subtle">Nothing audited on this account in the last 30 days.</p>
               ) : (
                 <ul className="divide-y divide-line">
                   {activity.map((a) => (

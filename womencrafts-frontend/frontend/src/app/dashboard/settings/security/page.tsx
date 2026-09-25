@@ -326,7 +326,7 @@ export default function SecuritySettingsPage() {
               </Link>
             </div>
             {recent.length === 0 ? (
-              <p className="py-4 text-center text-sm text-ink-subtle">Nothing audited on this account yet.</p>
+              <p className="py-4 text-center text-sm text-ink-subtle">Nothing audited on this account in the last 30 days.</p>
             ) : (
               <ul className="space-y-3.5">
                 {recent.map((a) => (
