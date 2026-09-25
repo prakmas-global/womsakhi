@@ -14,16 +14,20 @@ Security posture, deliberately:
     from the token, never from the request body.
 """
 
+import asyncio
 import re
 import uuid
+from html import escape
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Optional
 
 from bson import ObjectId
-from fastapi import APIRouter, Depends, File, Form, HTTPException, Query, UploadFile, status
+from fastapi import APIRouter, Depends, File, Form, HTTPException, Query, Request, UploadFile, status
 from fastapi.responses import Response
+from pydantic import BaseModel
 
+from app.core.audit import record
 from app.core.config import settings
 from app.core.email import can_deliver
 from app.core.deps import get_current_user
@@ -35,6 +39,7 @@ from app.core.serializers import to_object_id
 from app.core.media import media_url
 from app.db.mongodb import get_database
 from app.models.member import MemberModel
+from app.models.staff import ActivityLogModel
 from app.models.user import UserModel
 from app.models.verification import DocumentModel, EmailTokenModel, VerificationStatus
 from app.schemas.verification import (
@@ -301,8 +306,8 @@ async def upload_document(
 
 # --- reviewer (approvers only) -----------------------------------------------
 #
-# These four were guarded by `require_staff`, which means one thing and one
-# thing only: **the caller is not a Member**. It does not mean the caller is a
+# These were guarded by `require_staff`, which means one thing and one thing
+# only: **the caller is not a Member**. It does not mean the caller is a
 # reviewer. A Viewer, a Content Editor, a Support Agent — every staff role in
 # the catalogue passed it.
 #
@@ -324,16 +329,163 @@ async def upload_document(
 #
 # Members cannot reach any of it: a member role holds no permissions at all, so
 # the check refuses them before the staff question is even asked.
+#
+# ── Every decision is written down ──────────────────────────────────────────
+# Approving, rejecting and asking for a new document each go through
+# `app.core.audit.record` with the applicant's user id as the target, so an
+# investigator can pull every decision ever taken about one woman. Opening a
+# document is not in that log; it has its own, on the document (`access_log`),
+# which the detail endpoint below reads back.
+#
+# ── Her vault is not the queue ──────────────────────────────────────────────
+# `verification_documents` holds two different things: the ID she submitted
+# for review, and the papers she keeps in her own vault (`routes/me.py` writes
+# those with `status="stored"`). The queue used to `$lookup` every document
+# for a user regardless, so a reviewer saw — and could open — a passbook that
+# nobody had asked anyone to look at. Every reviewer-side read now says which
+# kind it means, and the file endpoint refuses the other kind outright.
 
-@router.get("/queue", response_model=VerificationQueueResponse, summary="Applications awaiting review")
+#: The identity check, as opposed to the vault.
+REVIEWABLE: dict = {"status": {"$ne": DocumentModel.STATUS_STORED}}
+
+#: Decisions in the activity log that concern an applicant. `member.*` rather
+#: than `users.*` because that prefix is what `app/core/audit.py` buckets
+#: under "Users" on the activity screen; `users.` would land in "Settings".
+DECISION_ACTIONS = {
+    "member.approve": "Approved",
+    "member.reject": "Rejected",
+    "member.resubmit": "Asked for a new document",
+}
+
+
+class ReviewQueueItem(VerificationQueueItem):
+    rejection_reason: str = ""
+    updated: str = ""
+
+
+class ReviewQueueResponse(BaseModel):
+    items: list[ReviewQueueItem]
+    total: int
+    #: Every state, always, so the tabs can show a number even for the
+    #: states not being listed right now.
+    counts: dict[str, int]
+
+
+class DocumentAccess(BaseModel):
+    by: str
+    name: str
+    at: str
+
+
+class ReviewedDocument(DocumentResponse):
+    access_count: int = 0
+    access_log: list[DocumentAccess] = []
+    encrypted: bool = False
+
+
+class DecisionRecord(BaseModel):
+    id: str
+    user_name: str
+    action: str
+    label: str
+    detail: str
+    when: str
+    created_at: str
+
+
+class ApplicantDetail(BaseModel):
+    user_id: str
+    member_id: str
+    full_name: str
+    email: str
+    phone: str
+    status: str
+    status_label: str
+    applied: str
+    applied_at: str
+    email_verified_at: str
+    verified_at: str
+    updated_at: str
+    rejection_reason: str
+    documents: list[ReviewedDocument]
+    history: list[DecisionRecord]
+
+
+class ResubmissionRequest(RejectRequest):
+    """Same rule as a rejection: she is told why, so a reason is required."""
+
+
+def _label(value) -> str:
+    return value.strftime("%b %d, %Y") if isinstance(value, datetime) else ""
+
+
+def _iso(value) -> str:
+    return value.isoformat() if isinstance(value, datetime) else ""
+
+
+def _state_of(user: dict) -> str:
+    # An account created before verification existed has no status at all;
+    # `my_status` reads that as verified, so the queue must too.
+    return user.get("verification_status") or VerificationStatus.ACTIVE
+
+
+def _state_filter(state: str) -> dict:
+    if state == VerificationStatus.ACTIVE:
+        return {"verification_status": {"$in": [VerificationStatus.ACTIVE, None]}}
+    return {"verification_status": state}
+
+
+async def _state_counts() -> dict[str, int]:
+    counts = {s: 0 for s in VerificationStatus.ALL}
+    async for row in _users().aggregate([
+        {"$match": {"role": "Member"}},
+        {"$group": {"_id": "$verification_status", "n": {"$sum": 1}}},
+    ]):
+        key = row["_id"] if row["_id"] in counts else VerificationStatus.ACTIVE
+        counts[key] += row["n"]
+    return counts
+
+
+def _resubmission_email(name: str, reason: str, url: str) -> mailer.EmailMessageSpec:
+    """
+    Not `rejected_email`: that one opens with "We couldn't verify your
+    account", and her account has not been refused — it is waiting on a
+    better photo. Told the wrong thing, a woman gives up; told the right
+    thing, she goes and takes it again in daylight.
+    """
+    first = (name or "").strip().split(" ")[0] or "there"
+    safe = escape(reason)
+    html = mailer._wrap(  # noqa: SLF001 — the one branded shell every email uses
+        "Please send your ID again",
+        f"<p>Hi {first},</p><p>We looked at the document you sent, and we need a new "
+        f"one before we can finish verifying you.</p>"
+        f"<p><strong>What to change:</strong> {safe}</p>"
+        f"<p>Nothing else about your application has changed. Upload the new "
+        f"document and a person will look at it again, usually within 1–2 working days.</p>",
+        "Upload again",
+        url,
+    )
+    text = (
+        f"Hi {first},\n\nWe need a new copy of your ID before we can finish verifying you.\n\n"
+        f"What to change: {reason}\n\nUpload it again here: {url}"
+    )
+    return mailer.EmailMessageSpec(
+        to="", subject="WomSakhi — please send your ID again", html=html, text=text
+    )
+
+
+@router.get("/queue", response_model=ReviewQueueResponse, summary="Applications, by state")
 async def review_queue(
-    state: Optional[str] = Query(None, description="Filter by verification status"),
+    state: Optional[str] = Query(None, description="One verification status, or `all`"),
+    q: Optional[str] = Query(None, max_length=80, description="Name, email, phone or member id"),
     _: dict = Depends(require_permission("users.approve")),
 ):
     query: dict = {"role": "Member"}
-    query["verification_status"] = (
-        state if state in VerificationStatus.ALL else VerificationStatus.IN_REVIEW
-    )
+    if state != "all":
+        query.update(_state_filter(state if state in VerificationStatus.ALL else VerificationStatus.IN_REVIEW))
+    if q and q.strip():
+        rx = {"$regex": re.escape(q.strip()), "$options": "i"}
+        query["$or"] = [{"full_name": rx}, {"email": rx}, {"phone": rx}, {"member_id": rx}]
 
     # One query, not one per applicant.
     #
@@ -343,38 +495,100 @@ async def review_queue(
     # longer, which is the moment somebody is trying to work through it.
     #
     # The `$lookup` joins on the string form of the user id, because that is
-    # what the documents store.
-    items = []
-    rows = await _users().aggregate([
-        {"$match": query},
-        {"$sort": {"created_at": -1}},
-        {"$lookup": {
-            "from": DocumentModel.collection_name,
-            "let": {"uid": {"$toString": "$_id"}},
-            "pipeline": [
-                {"$match": {"$expr": {"$eq": ["$user_id", "$$uid"]}}},
-                {"$sort": {"created_at": -1}},
-            ],
-            "as": "_documents",
-        }},
-    ]).to_list(500)
+    # what the documents store. It takes only the identity check — see
+    # REVIEWABLE — never what she keeps in her vault.
+    rows, counts = await asyncio.gather(
+        _users().aggregate([
+            {"$match": query},
+            {"$sort": {"created_at": -1}},
+            {"$limit": 500},
+            {"$lookup": {
+                "from": DocumentModel.collection_name,
+                "let": {"uid": {"$toString": "$_id"}},
+                "pipeline": [
+                    {"$match": {"$expr": {"$eq": ["$user_id", "$$uid"]}, **REVIEWABLE}},
+                    {"$sort": {"created_at": -1}},
+                ],
+                "as": "_documents",
+            }},
+        ]).to_list(500),
+        _state_counts(),
+    )
 
+    items = []
     for user in rows:
-        docs = [DocumentModel.to_response(d) for d in user.get("_documents", [])]
-        created = user.get("created_at")
         items.append(
-            VerificationQueueItem(
+            ReviewQueueItem(
                 user_id=str(user["_id"]),
                 member_id=user.get("member_id") or "",
                 full_name=user.get("full_name", ""),
                 email=user.get("email", ""),
                 phone=user.get("phone", ""),
-                status=user.get("verification_status", ""),
-                applied=created.strftime("%b %d, %Y") if isinstance(created, datetime) else "",
-                documents=docs,
+                status=_state_of(user),
+                applied=_label(user.get("created_at")),
+                documents=[DocumentModel.to_response(d) for d in user.get("_documents", [])],
+                rejection_reason=user.get("rejection_reason", "") or "",
+                updated=_label(user.get("updated_at")),
             )
         )
-    return VerificationQueueResponse(items=items, total=len(items))
+    return ReviewQueueResponse(items=items, total=len(items), counts=counts)
+
+
+@router.get("/applicants/{user_id}", response_model=ApplicantDetail, summary="One application, in full")
+async def applicant_detail(user_id: str, _: dict = Depends(require_permission("users.approve"))):
+    """
+    Everything a reviewer may see about one applicant: her details, the
+    documents she submitted (with who has opened each one), and every decision
+    taken about her so far. Nothing from her vault, nothing from her
+    in-case-of-emergency data — those are hers.
+    """
+    user = await _users().find_one({"_id": to_object_id(user_id), "role": "Member"})
+    if not user:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "Applicant not found")
+
+    uid = str(user["_id"])
+    docs = [
+        DocumentModel.to_response(d, include_private=True)
+        async for d in _docs().find({"user_id": uid, **REVIEWABLE}).sort("created_at", -1)
+    ]
+    history = []
+    async for row in (
+        get_database()[ActivityLogModel.collection_name]
+        .find({"target": uid, "action": {"$in": list(DECISION_ACTIONS)}})
+        .sort("created_at", -1)
+        .limit(50)
+    ):
+        entry = ActivityLogModel.to_response(row)
+        history.append(
+            DecisionRecord(
+                id=entry["id"],
+                user_name=entry["user_name"],
+                action=entry["action"],
+                label=DECISION_ACTIONS.get(entry["action"], entry["action"]),
+                detail=entry["detail"],
+                when=entry["when"],
+                created_at=entry["created_at"],
+            )
+        )
+
+    state = _state_of(user)
+    return ApplicantDetail(
+        user_id=uid,
+        member_id=user.get("member_id") or "",
+        full_name=user.get("full_name", ""),
+        email=user.get("email", ""),
+        phone=user.get("phone", ""),
+        status=state,
+        status_label=VerificationStatus.LABELS.get(state, state),
+        applied=_label(user.get("created_at")),
+        applied_at=_iso(user.get("created_at")),
+        email_verified_at=_iso(user.get("email_verified_at")),
+        verified_at=_iso(user.get("verified_at")),
+        updated_at=_iso(user.get("updated_at")),
+        rejection_reason=user.get("rejection_reason", "") or "",
+        documents=[ReviewedDocument(**d) for d in docs],
+        history=history,
+    )
 
 
 @router.get("/documents/{document_id}/file", summary="Open an identity document (audited)")
@@ -384,7 +598,9 @@ async def read_document(document_id: str, staff: dict = Depends(require_permissi
     URL, and records who looked at it — identity documents deserve a paper trail.
     """
     doc = await _docs().find_one({"_id": to_object_id(document_id)})
-    if not doc:
+    # A paper in her vault is hers alone. 404 rather than 403, so the reviewer
+    # side cannot even confirm that one exists.
+    if not doc or doc.get("status") == DocumentModel.STATUS_STORED:
         raise HTTPException(status.HTTP_404_NOT_FOUND, "Document not found")
 
     target = (PRIVATE_ROOT / doc["stored_name"]).resolve()
@@ -435,11 +651,33 @@ async def read_document(document_id: str, staff: dict = Depends(require_permissi
     )
 
 
-@router.post("/{user_id}/approve", response_model=MessageResponse, summary="Approve an applicant")
-async def approve(user_id: str, staff: dict = Depends(require_permission("users.approve"))):
-    user = await _users().find_one({"_id": to_object_id(user_id)})
+async def _applicant(user_id: str) -> dict:
+    user = await _users().find_one({"_id": to_object_id(user_id), "role": "Member"})
     if not user:
-        raise HTTPException(status.HTTP_404_NOT_FOUND, "Account not found")
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "Applicant not found")
+    return user
+
+
+def _who(user: dict) -> str:
+    """`Asha Verma (asha@example.com, WS-0042)` — enough to recognise her in the log."""
+    bits = [user.get("email", "")]
+    if user.get("member_id"):
+        bits.append(str(user["member_id"]))
+    return f"{user.get('full_name', '') or 'Applicant'} ({', '.join(b for b in bits if b)})"
+
+
+@router.post("/{user_id}/approve", response_model=MessageResponse, summary="Approve an applicant")
+async def approve(
+    user_id: str,
+    request: Request,
+    staff: dict = Depends(require_permission("users.approve")),
+):
+    user = await _applicant(user_id)
+    was = _state_of(user)
+    if was == VerificationStatus.ACTIVE:
+        # Not an error worth a stack trace, but not a silent second "You're
+        # in" email and a duplicate audit row either.
+        raise HTTPException(status.HTTP_400_BAD_REQUEST, "She is already verified.")
 
     now = datetime.now(timezone.utc)
     await _users().update_one(
@@ -471,14 +709,23 @@ async def approve(user_id: str, staff: dict = Depends(require_permission("users.
         mailer.approved_email(user.get("full_name", ""), f"{settings.APP_BASE_URL.rstrip('/')}/signin"),
         user["email"],
     )
+    await record(
+        staff, "member.approve", target=str(user["_id"]),
+        detail=f"Approved {_who(user)}; was {VerificationStatus.LABELS.get(was, was)}",
+        request=request,
+    )
     return MessageResponse(message=f"{user.get('full_name', 'Applicant')} approved.")
 
 
 @router.post("/{user_id}/reject", response_model=MessageResponse, summary="Reject an applicant")
-async def reject(user_id: str, payload: RejectRequest, staff: dict = Depends(require_permission("users.approve"))):
-    user = await _users().find_one({"_id": to_object_id(user_id)})
-    if not user:
-        raise HTTPException(status.HTTP_404_NOT_FOUND, "Account not found")
+async def reject(
+    user_id: str,
+    payload: RejectRequest,
+    request: Request,
+    staff: dict = Depends(require_permission("users.approve")),
+):
+    user = await _applicant(user_id)
+    was = _state_of(user)
 
     now = datetime.now(timezone.utc)
     await _users().update_one(
@@ -507,7 +754,87 @@ async def reject(user_id: str, payload: RejectRequest, staff: dict = Depends(req
     await mailer.send(
         mailer.rejected_email(user.get("full_name", ""), payload.reason), user["email"]
     )
+    await record(
+        staff, "member.reject", target=str(user["_id"]),
+        detail=f"Rejected {_who(user)}; was {VerificationStatus.LABELS.get(was, was)}. Reason: {payload.reason}",
+        request=request,
+    )
     return MessageResponse(message="Applicant rejected and notified.")
+
+
+@router.post(
+    "/{user_id}/request-resubmission",
+    response_model=MessageResponse,
+    summary="Ask an applicant for a new document",
+)
+async def request_resubmission(
+    user_id: str,
+    payload: ResubmissionRequest,
+    request: Request,
+    staff: dict = Depends(require_permission("users.approve")),
+):
+    """
+    The third answer, between yes and no. The photo is blurred, the card is
+    cut off, the name does not match — none of that is a reason to refuse a
+    woman, and none of it is a reason to admit her. She goes back to the
+    upload step with a note saying what to change; the app stays closed
+    until a person has looked again.
+    """
+    user = await _applicant(user_id)
+    was = _state_of(user)
+    if was == VerificationStatus.PENDING_EMAIL:
+        raise HTTPException(
+            status.HTTP_400_BAD_REQUEST,
+            "She has not confirmed her email yet, so there is nothing to send again.",
+        )
+    if was == VerificationStatus.ACTIVE:
+        # Asking a verified member for her ID again would close the app on
+        # her. That is a suspension, which lives in Users, with its own trail.
+        raise HTTPException(
+            status.HTTP_400_BAD_REQUEST,
+            "She is already verified. To withdraw access, suspend the account instead.",
+        )
+
+    now = datetime.now(timezone.utc)
+    await _users().update_one(
+        {"_id": user["_id"]},
+        {"$set": {
+            "verification_status": VerificationStatus.PENDING_DOCUMENTS,
+            # Read back by `/verification/status`, so her status screen can
+            # carry the note as well as the email.
+            "rejection_reason": payload.reason,
+            "resubmission_requested_at": now,
+            "updated_at": now,
+        }},
+    )
+    await _docs().update_many(
+        {"user_id": str(user["_id"]), "status": DocumentModel.STATUS_PENDING},
+        {"$set": {
+            "status": DocumentModel.STATUS_REJECTED,
+            "reviewed_by": str(staff["_id"]),
+            "reviewed_by_name": staff.get("full_name", ""),
+            "reviewed_at": now,
+            "review_note": payload.reason,
+        }},
+    )
+    if user.get("member_id"):
+        await get_database()[MemberModel.collection_name].update_one(
+            {"_id": ObjectId(user["member_id"])}, {"$set": {"status": "Pending"}}
+        )
+
+    await mailer.send(
+        _resubmission_email(
+            user.get("full_name", ""), payload.reason,
+            f"{settings.APP_BASE_URL.rstrip('/')}/app/verify",
+        ),
+        user["email"],
+    )
+    await record(
+        staff, "member.resubmit", target=str(user["_id"]),
+        detail=f"Asked {_who(user)} for a new document; was {VerificationStatus.LABELS.get(was, was)}. Note: {payload.reason}",
+        request=request,
+    )
+    return MessageResponse(message=f"Asked {user.get('full_name', 'the applicant')} for a new document.")
 
 
 # --- member support threads (staff side) -------------------------------------
