@@ -1,901 +1,471 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import { Bot, Send, Clock, History, ClipboardList, UserCheck, TrendingDown, MessageSquare, Sparkles, ArrowUp, ClipboardCheck, UserPlus, Flag, CalendarX, FileBarChart, UserCog, UsersRound, Target, MessageCircle, FileText, Megaphone, Smile, Wand2, LineChart, Lightbulb, Mic, BarChart3, MapPin, UserMinus, CheckCircle2, AlertTriangle, Database, FileStack, Network, RefreshCw } from "lucide-react";
-import { Badge, Card, Modal, type Tone, useToast } from "@/design-system";
+import Link from "next/link";
+import {
+  Bot, Send, UserCheck, ShieldAlert, MessageSquare, HandCoins, MessageSquareHeart, FileText, BookOpen, CalendarX,
+  CalendarCheck, Smile, GraduationCap, Users, ArrowRight, CheckCircle2, Circle, Plus, Trash2, Download, RotateCcw,
+  Loader2, Info, Clock, UserPlus, Pencil,
+} from "lucide-react";
+
+import { Badge, Card, Input, Modal, Select, Textarea, useConfirm, useToast } from "@/design-system";
 import RadialGauge from "@/components/charts/RadialGauge";
 import { TONE_BG } from "@/lib/tones";
-import { apiAiPriorities, apiAiHealthMetrics, apiAiHealthStats, apiAiTasks, apiAiTaskStats, apiUpdateAiTask, apiAiAgents, apiAiInsights, apiAiActions, apiAiActivities, apiAiMemoryStats, apiAiPrompts, apiAiChat, apiAiReport, type AiHealthStats, type AiTaskStats } from "@/lib/ai-api";
+import {
+  apiCommandOverview, apiStaffTasks, apiStaffTaskStats, apiCreateStaffTask, apiUpdateStaffTask, apiDeleteStaffTask,
+  apiCommandActivity, apiAsk, apiCommandReport,
+  type Overview, type StaffTask, type TaskStats, type ActivityRow, type TaskPriority,
+} from "@/lib/ai-api";
 import { memberError } from "@/lib/member-api";
+import { ResizableColumns } from "@/layout-engine";
 
-// Lucide icon components keyed by the icon-name strings the backend sends.
+/**
+ * Command Center — what needs doing, how the platform is doing, and a box
+ * that answers questions from the data.
+ *
+ * ── What is real on this screen ──────────────────────────────────────────────
+ * No AI model runs here, and the screen says so at the top. The waiting
+ * queues are the same queries their screens run; each health indicator says
+ * what it measures and shows the figures behind it; insights compare this
+ * week with last only where there is data; the tasks are a real staff to-do
+ * list, assigned and audited; the question box answers a fixed set of
+ * questions from live counts and says when it cannot.
+ *
+ * The old "AI Command Center" had four seeded agents ("WhatsApp Agent:
+ * 2,451 messages sent"), a health gauge over five seeded scores, insights
+ * about Texas and Los Angeles, a timeline of things no AI did, a memory
+ * panel counting documents indexed by nothing, and a chat that replied with
+ * one canned paragraph whatever you typed.
+ */
+
 const ICON_MAP: Record<string, React.ElementType> = {
-  ClipboardList,
-  UserCheck,
-  TrendingDown,
-  Target,
-  MessageSquare,
-  CalendarX,
-  LineChart,
-  ClipboardCheck,
-  Flag,
-  FileBarChart,
-  UserPlus,
-  UsersRound,
-  Bot,
-  MessageCircle,
-  FileText,
-  BarChart3,
-  MapPin,
-  UserMinus,
-  Megaphone,
-  Smile,
-  Wand2,
-  Lightbulb,
-  CheckCircle2,
-  AlertTriangle,
-  Database,
-  FileStack,
-  Network,
-  RefreshCw,
+  UserCheck, ShieldAlert, MessageSquare, HandCoins, MessageSquareHeart, FileText, BookOpen, CalendarX, CalendarCheck, Smile,
+  GraduationCap, Users,
 };
 const iconFor = (name: string): React.ElementType => ICON_MAP[name] ?? Bot;
 
-// View-model shapes the JSX consumes (icon strings already resolved to components).
-type PriorityVM = { icon: React.ElementType; text: string; tone: string };
-type HealthVM = { icon: React.ElementType; label: string; value: number; tone: string };
-type TaskVM = { id: string; icon: React.ElementType; title: string; due: string; done: boolean };
-type AgentVM = {
-  id: string;
-  name: string;
-  icon: React.ElementType;
-  tone: string;
-  metric: string;
-  label: string;
-  rate: string;
-  last: string;
-  status: string;
-};
-type InsightVM = { id: string; icon: React.ElementType; tone: string; title: string; desc: string; action: string };
-type ActionVM = { id: string; icon: React.ElementType; tone: string; title: string; desc: string };
-type TimelineVM = { time: string; icon: React.ElementType; text: string; status: string; tone: string };
-type MemoryVM = { icon: React.ElementType; tone: string; label: string; value: string; sub: string };
+const PRIORITY_TONE: Record<TaskPriority, "rose" | "amber" | "slate"> = { high: "rose", medium: "amber", low: "slate" };
 
-const TILE_BG: Record<string, string> = {
-  brand: "bg-brand-tint/50",
-  violet: "bg-violet-tint/50",
-  emerald: "bg-status-ok-bg/50",
-  amber: "bg-status-warn-bg/50",
-  sky: "bg-status-info-bg/50",
-  rose: "bg-status-danger-bg/50",
-};
-
-type ChatRole = "user" | "assistant";
-type ChatMessage = { id: number; role: ChatRole; text: string };
-
-// Local fallback used only if the /ai/chat request fails — mirrors the backend reply.
-function cannedReply(question: string): string {
-  return `Here's what I found for "${question.trim()}": I analyzed your latest platform data and prepared a concise summary with recommended next actions. Ask me to dig deeper into any metric, agent, or region.`;
+function when(iso: string | null | undefined): string {
+  if (!iso) return "";
+  const d = new Date(iso);
+  return Number.isNaN(d.getTime()) ? "" : d.toLocaleString("en-IN", { day: "numeric", month: "short", hour: "numeric", minute: "2-digit" });
+}
+function prettyDate(d: string): string {
+  if (!d) return "";
+  const dt = new Date(`${d}T00:00:00`);
+  return Number.isNaN(dt.getTime()) ? d : dt.toLocaleDateString("en-IN", { day: "numeric", month: "short" });
 }
 
-export default function AiCommandCenterPage() {
+type Exchange = { id: number; question: string; answer?: string; href?: string; understood?: boolean };
+type TaskForm = { title: string; notes: string; priority: TaskPriority; due: string; assignMe: boolean };
+const EMPTY_TASK: TaskForm = { title: "", notes: "", priority: "medium", due: "", assignMe: true };
+
+export default function CommandCenterPage() {
   const toast = useToast();
-  // ---- Live data ----
-  const [loading, setLoading] = useState(true);
-  const [priorities, setPriorities] = useState<PriorityVM[]>([]);
-  const [health, setHealth] = useState<HealthVM[]>([]);
-  const [healthStats, setHealthStats] = useState<AiHealthStats | null>(null);
-  const [highTasks, setHighTasks] = useState<TaskVM[]>([]);
-  const [medTasks, setMedTasks] = useState<TaskVM[]>([]);
-  const [taskStats, setTaskStats] = useState<AiTaskStats | null>(null);
-  const [agents, setAgents] = useState<AgentVM[]>([]);
-  const [insights, setInsights] = useState<InsightVM[]>([]);
-  const [oneClick, setOneClick] = useState<ActionVM[]>([]);
-  const [timeline, setTimeline] = useState<TimelineVM[]>([]);
-  const [memory, setMemory] = useState<MemoryVM[]>([]);
-  const [suggestions, setSuggestions] = useState<string[]>([]);
-  const [voiceChips, setVoiceChips] = useState<string[]>([]);
+  const confirm = useConfirm();
+  const [overview, setOverview] = useState<Overview | null>(null);
+  const [tasks, setTasks] = useState<StaffTask[] | null>(null);
+  const [taskStats, setTaskStats] = useState<TaskStats | null>(null);
+  const [activity, setActivity] = useState<ActivityRow[] | null>(null);
+  const [loadError, setLoadError] = useState("");
+  const [show, setShow] = useState<"open" | "done" | "all">("open");
+  const [mine, setMine] = useState(false);
+  const [reloadKey, setReloadKey] = useState(0);
+  const [exporting, setExporting] = useState(false);
 
-  // One pass hydrates every widget on the screen.
-  const refresh = useCallback(async () => {
-    try {
-      const [
-        priorityData,
-        healthData,
-        healthStatsData,
-        tasksData,
-        taskStatsData,
-        agentsData,
-        insightsData,
-        actionsData,
-        activitiesData,
-        memoryData,
-        promptsData,
-      ] = await Promise.all([
-        apiAiPriorities(),
-        apiAiHealthMetrics(),
-        apiAiHealthStats(),
-        apiAiTasks(),
-        apiAiTaskStats(),
-        apiAiAgents(),
-        apiAiInsights(),
-        apiAiActions(),
-        apiAiActivities(),
-        apiAiMemoryStats(),
-        apiAiPrompts(),
-      ]);
+  const [taskOpen, setTaskOpen] = useState(false);
+  const [editing, setEditing] = useState<StaffTask | null>(null);
+  const [form, setForm] = useState<TaskForm>(EMPTY_TASK);
+  const [saving, setSaving] = useState(false);
 
-      setPriorities(priorityData.map((p) => ({ icon: iconFor(p.icon), text: p.text, tone: p.tone })));
-      setHealth(healthData.map((h) => ({ icon: iconFor(h.icon), label: h.label, value: h.value, tone: h.tone })));
-      setHealthStats(healthStatsData);
-
-      const toTask = (t: (typeof tasksData)[number]): TaskVM => ({
-        id: t.id,
-        icon: iconFor(t.icon),
-        title: t.title,
-        due: t.due,
-        done: t.done,
-      });
-      setHighTasks(tasksData.filter((t) => t.priority === "high").map(toTask));
-      setMedTasks(tasksData.filter((t) => t.priority === "medium").map(toTask));
-      setTaskStats(taskStatsData);
-
-      setAgents(
-        agentsData.map((a) => ({
-          id: a.id,
-          name: a.name,
-          icon: iconFor(a.icon),
-          tone: a.tone,
-          metric: a.metric,
-          label: a.label,
-          rate: a.rate,
-          last: a.last_active,
-          status: a.status,
-        })),
-      );
-      setInsights(
-        insightsData.map((i) => ({
-          id: i.id,
-          icon: iconFor(i.icon),
-          tone: i.tone,
-          title: i.title,
-          desc: i.description,
-          action: i.action,
-        })),
-      );
-      setOneClick(
-        actionsData.map((a) => ({
-          id: a.id,
-          icon: iconFor(a.icon),
-          tone: a.tone,
-          title: a.title,
-          desc: a.description,
-        })),
-      );
-      setTimeline(
-        activitiesData.map((a) => ({
-          time: a.time,
-          icon: iconFor(a.icon),
-          text: a.text,
-          status: a.status,
-          tone: a.tone,
-        })),
-      );
-      setMemory(
-        memoryData.map((m) => ({ icon: iconFor(m.icon), tone: m.tone, label: m.label, value: m.value, sub: m.sub })),
-      );
-      setSuggestions(promptsData.filter((p) => p.kind === "suggestion").map((p) => p.text));
-      setVoiceChips(promptsData.filter((p) => p.kind === "voice").map((p) => p.text));
-    } catch {
-      /* leave current data; a toast could surface the error */
-    } finally {
-      setLoading(false);
-    }
-  }, []);
+  const [draft, setDraft] = useState("");
+  const [exchanges, setExchanges] = useState<Exchange[]>([]);
+  const [asking, setAsking] = useState(false);
+  const idRef = useRef(0);
+  const askRef = useRef<HTMLTextAreaElement>(null);
 
   useEffect(() => {
-    refresh();
-  }, [refresh]);
+    let live = true;
+    (async () => {
+      const [ov, act] = await Promise.allSettled([apiCommandOverview(), apiCommandActivity(10)]);
+      if (!live) return;
+      if (ov.status === "fulfilled") { setOverview(ov.value); setLoadError(""); } else setLoadError(memberError(ov.reason));
+      if (act.status === "fulfilled") setActivity(act.value);
+    })();
+    return () => { live = false; };
+  }, [reloadKey]);
 
-  // ---- Ask AI chat state ----
-  const [draft, setDraft] = useState("");
-  const [chat, setChat] = useState<ChatMessage[]>([]);
-  const msgIdRef = useRef(0);
-  const textareaRef = useRef<HTMLTextAreaElement>(null);
+  useEffect(() => {
+    let live = true;
+    (async () => {
+      const [t, s] = await Promise.allSettled([apiStaffTasks(show, mine), apiStaffTaskStats()]);
+      if (!live) return;
+      if (t.status === "fulfilled") setTasks(t.value);
+      if (s.status === "fulfilled") setTaskStats(s.value);
+    })();
+    return () => { live = false; };
+  }, [show, mine, reloadKey]);
 
-  const pushExchange = async (question: string) => {
-    const q = question.trim();
-    if (!q) return;
-    const userId = (msgIdRef.current += 1);
-    setChat((prev) => [...prev, { id: userId, role: "user", text: q }]);
-    setDraft("");
-    let reply = cannedReply(q);
+  const reload = useCallback(() => setReloadKey((k) => k + 1), []);
+
+  // ---- tasks ----
+  const openAdd = () => { setEditing(null); setForm(EMPTY_TASK); setTaskOpen(true); };
+  const openEdit = (t: StaffTask) => { setEditing(t); setForm({ title: t.title, notes: t.notes, priority: t.priority, due: t.due, assignMe: !!t.assignee_id }); setTaskOpen(true); };
+  const submitTask = async () => {
+    if (!form.title.trim()) return;
+    setSaving(true);
     try {
-      reply = await apiAiChat(q);
+      if (editing) {
+        await apiUpdateStaffTask(editing.id, { title: form.title.trim(), notes: form.notes, priority: form.priority, due: form.due, assignee_id: form.assignMe ? (editing.assignee_id || "me") : "" });
+        toast.success("Task updated");
+      } else {
+        await apiCreateStaffTask({ title: form.title.trim(), notes: form.notes, priority: form.priority, due: form.due, assignee_id: form.assignMe ? "me" : "" });
+        toast.success("Task added", { description: form.assignMe ? "Assigned to you." : "Unassigned." });
+      }
+      setTaskOpen(false);
+      reload();
     } catch (err) {
-      toast.error("Could not send your message", { description: memberError(err) });
+      toast.error("Could not save the task", { description: memberError(err) });
+    } finally {
+      setSaving(false);
     }
-    const botId = (msgIdRef.current += 1);
-    setChat((prev) => [...prev, { id: botId, role: "assistant", text: reply }]);
   };
-
-  const sendDraft = () => pushExchange(draft);
-
-  const askQuestion = (question: string) => pushExchange(question);
-
-  const focusAsk = () => {
-    textareaRef.current?.focus();
-    textareaRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
-  };
-
-  // ---- Task done toggles (persisted) ----
-  const toggleTask = async (task: TaskVM) => {
+  const toggleDone = async (t: StaffTask) => {
     try {
-      await apiUpdateAiTask(task.id);
-      await refresh();
+      const updated = await apiUpdateStaffTask(t.id, { done: !t.done });
+      setTasks((ts) => (ts ?? []).map((x) => (x.id === t.id ? updated : x)));
+      toast.success(updated.done ? "Done" : "Reopened");
+      apiStaffTaskStats().then(setTaskStats).catch(() => undefined);
     } catch (err) {
       toast.error("Could not update the task", { description: memberError(err) });
     }
   };
-
-  // ---- Voice assistant ----
-  const [listening, setListening] = useState(false);
-
-  // ---- Modals ----
-  const [chatHistoryOpen, setChatHistoryOpen] = useState(false);
-  const [tasksModalOpen, setTasksModalOpen] = useState(false);
-  const [healthOpen, setHealthOpen] = useState(false);
-  const [allHighOpen, setAllHighOpen] = useState(false);
-  const [allMedOpen, setAllMedOpen] = useState(false);
-  const [allTasksOpen, setAllTasksOpen] = useState(false);
-  const [manageAgentsOpen, setManageAgentsOpen] = useState(false);
-  const [allInsightsOpen, setAllInsightsOpen] = useState(false);
-  const [allActivityOpen, setAllActivityOpen] = useState(false);
-  const [memoryOpen, setMemoryOpen] = useState(false);
-
-  const [agentDetail, setAgentDetail] = useState<AgentVM | null>(null);
-  const [insightResult, setInsightResult] = useState<InsightVM | null>(null);
-  const [oneClickResult, setOneClickResult] = useState<ActionVM | null>(null);
-
-  const scrollToTasks = () => {
-    document.getElementById("ai-tasks-center")?.scrollIntoView({ behavior: "smooth", block: "start" });
-  };
-
-  // ---- CSV export for "Generate Report" (from the backend) ----
-  const downloadReport = async () => {
+  const takeTask = async (t: StaffTask) => {
     try {
-      const blob = await apiAiReport();
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = "ai-business-report.csv";
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      URL.revokeObjectURL(url);
-    } catch {
-      /* ignore — could surface a toast */
+      const updated = await apiUpdateStaffTask(t.id, { assignee_id: "me" });
+      setTasks((ts) => (ts ?? []).map((x) => (x.id === t.id ? updated : x)));
+      toast.success("It is yours now");
+    } catch (err) {
+      toast.error("Could not assign it", { description: memberError(err) });
+    }
+  };
+  const removeTask = async (t: StaffTask) => {
+    const ok = await confirm({ title: `Delete “${t.title}”?`, description: "Only this task goes.", confirmLabel: "Delete", danger: true });
+    if (!ok) return;
+    try {
+      await apiDeleteStaffTask(t.id);
+      toast.success("Task deleted");
+      reload();
+    } catch (err) {
+      toast.error("Could not delete it", { description: memberError(err) });
     }
   };
 
-  const runOneClick = (a: ActionVM) => {
-    if (a.title === "Generate Report") {
-      downloadReport();
+  // ---- ask ----
+  const ask = async (question: string) => {
+    const q = question.trim();
+    if (!q || asking) return;
+    const id = (idRef.current += 1);
+    setExchanges((x) => [...x, { id, question: q }]);
+    setDraft("");
+    setAsking(true);
+    try {
+      const res = await apiAsk(q);
+      setExchanges((x) => x.map((e) => (e.id === id ? { ...e, answer: res.answer, href: res.href, understood: res.understood } : e)));
+    } catch (err) {
+      setExchanges((x) => x.map((e) => (e.id === id ? { ...e, answer: `Could not answer: ${memberError(err)}`, understood: false } : e)));
+    } finally {
+      setAsking(false);
     }
-    setOneClickResult(a);
   };
+  const canAnswer = ["What needs attention?", "How many new members this week?", "Who is waiting for a reply?", "How many bookings this week?", "How is feedback looking?", "When was the last backup?", "How many programmes are running?", "How many members do we have?"];
+
+  const exportCsv = async () => {
+    setExporting(true);
+    try {
+      const blob = await apiCommandReport();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a"); a.href = url; a.download = "command-center.csv";
+      document.body.appendChild(a); a.click(); document.body.removeChild(a); URL.revokeObjectURL(url);
+      toast.success("Overview exported", { description: "Recorded in the activity log." });
+    } catch (err) {
+      toast.error("Could not export", { description: memberError(err) });
+    } finally {
+      setExporting(false);
+    }
+  };
+
+  const health = overview?.health ?? null;
 
   return (
     <div>
-      {/* Header */}
-      <div className="mb-6 flex items-start gap-3">
-        <span className="mt-0.5 flex h-11 w-11 items-center justify-center rounded-xl bg-violet-tint text-violet-ink">
-          <Bot className="h-6 w-6" />
-        </span>
-        <div>
-          <div className="flex items-center gap-2.5">
-            <h1 className="font-display text-2xl font-bold tracking-tight text-ink">AI Command Center</h1>
-            <span className="rounded-full bg-violet-tint px-2.5 py-0.5 text-2xs font-semibold text-violet-ink">Agentic AI</span>
+      <div className="mb-6 flex flex-wrap items-start justify-between gap-4">
+        <div className="flex items-start gap-3">
+          <span className="mt-0.5 flex h-11 w-11 items-center justify-center rounded-xl bg-brand-tint text-brand-ink"><Bot className="h-6 w-6" /></span>
+          <div>
+            <h1 className="font-display text-2xl font-bold tracking-tight text-ink">Command Center</h1>
+            <p className="mt-1 text-sm text-ink-subtle">What is waiting, how the platform is doing, and your team&apos;s tasks.</p>
           </div>
-          <p className="mt-1 text-sm text-ink-subtle">Your AI executive assistant that thinks, analyzes and acts to grow WomSakhi.</p>
+        </div>
+        <div className="flex items-center gap-2">
+          <button className="btn btn-sm btn-outline" onClick={reload}><RotateCcw className="h-3.5 w-3.5" /> Refresh</button>
+          <button className="btn btn-sm btn-outline" disabled={exporting || !overview} onClick={() => void exportCsv()}><Download className="h-3.5 w-3.5" /> {exporting ? "Exporting…" : "Export CSV"}</button>
+          <button className="btn btn-sm btn-primary" onClick={openAdd}><Plus className="h-4 w-4" /> Add task</button>
         </div>
       </div>
 
-      {loading ? (
-        <div className="flex items-center justify-center py-24 text-sm text-ink-subtle">Loading AI Command Center…</div>
-      ) : (
-        <>
-          {/* TOP ROW */}
-          <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
-            {/* Greeting */}
-            <Card padded={false} className="overflow-hidden bg-linear-to-br from-violet-50 to-brand-50 p-5">
-              <div className="flex items-start gap-4">
-                <span className="flex h-16 w-16 shrink-0 items-center justify-center rounded-2xl bg-linear-to-br from-violet-500 to-brand-500 text-white shadow-lg shadow-violet-200">
-                  <Bot className="h-9 w-9" />
-                </span>
-                <div className="min-w-0">
-                  <h2 className="font-display text-xl font-bold text-ink">Good Morning, Praveen</h2>
-                  <p className="mt-1 text-sm text-ink-muted">I analyzed your platform overnight. Here are today&apos;s key priorities:</p>
-                </div>
-              </div>
-              <div className="mt-4 space-y-2">
-                {priorities.map((p) => (
-                  <div key={p.text} className="flex items-center gap-3 rounded-xl bg-white/80 px-3 py-2.5 shadow-sm">
-                    <span className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-lg ${TONE_BG[p.tone]}`}>
-                      <p.icon className="h-4 w-4" />
-                    </span>
-                    <span className="text-sm font-medium text-ink-muted">{p.text}</span>
-                  </div>
-                ))}
-              </div>
-              <div className="mt-4 flex flex-wrap gap-2.5">
-                <button className="btn btn-primary" onClick={scrollToTasks}>
-                  <ClipboardCheck className="h-4 w-4" /> Review My Tasks
-                </button>
-                <button className="btn btn-secondary" onClick={focusAsk}>
-                  <MessageSquare className="h-4 w-4" /> Chat with AI
-                </button>
-              </div>
-            </Card>
+      <div className="mb-6 flex items-start gap-2.5 rounded-xl border border-line bg-surface-2 px-4 py-3 text-xs leading-relaxed text-ink-muted">
+        <Info className="mt-0.5 h-4 w-4 shrink-0 text-ink-subtle" />
+        <span>{overview?.note ?? "No AI model runs behind this screen. Every figure is counted from the platform's own records when you open it."}</span>
+      </div>
 
-            {/* Ask AI Anything */}
-            <Card>
-              <div className="mb-3 flex items-center justify-between">
-                <h2 className="font-display text-base font-semibold text-ink">Ask AI Anything</h2>
-                <button onClick={() => setChatHistoryOpen(true)} className="flex items-center gap-1.5 text-xs font-semibold text-violet-ink"><History className="h-3.5 w-3.5" /> View Chat History</button>
-              </div>
-              <p className="mb-3 text-sm text-ink-subtle">Your AI executive is ready to help.</p>
-              {chat.length > 0 && (
-                <div className="mb-3 max-h-56 space-y-2 overflow-y-auto rounded-xl bg-surface-inset p-3">
-                  {chat.map((m) => (
-                    <div key={m.id} className={`flex ${m.role === "user" ? "justify-end" : "justify-start"}`}>
-                      <div
-                        className={`max-w-[85%] rounded-2xl px-3 py-2 text-sm ${
-                          m.role === "user"
-                            ? "bg-brand-600 text-white"
-                            : "bg-surface text-ink-muted shadow-sm"
-                        }`}
-                      >
-                        {m.text}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
-              <div className="relative">
-                <textarea
-                  ref={textareaRef}
-                  rows={5}
-                  value={draft}
-                  onChange={(e) => setDraft(e.target.value)}
-                  onKeyDown={(e) => {
-                    if ((e.metaKey || e.ctrlKey) && e.key === "Enter") {
-                      e.preventDefault();
-                      sendDraft();
-                    }
-                  }}
-                  placeholder="Ask anything about your business..."
-                  className="w-full resize-none rounded-xl border border-line-strong p-3 pr-14 text-sm text-ink-muted placeholder-ink-subtle outline-none focus:border-violet-300 focus:ring-4 focus:ring-violet-50"
-                />
-                <button aria-label="Send" onClick={sendDraft} className="absolute bottom-3 right-3 flex h-10 w-10 items-center justify-center rounded-full bg-brand-600 text-white hover:bg-brand-700">
-                  <Send className="h-4 w-4" />
-                </button>
-              </div>
-              <div className="mt-3 flex flex-wrap gap-2">
-                {suggestions.map((s) => (
-                  <button key={s} onClick={() => askQuestion(s)} className="rounded-full border border-line-strong bg-surface px-3 py-1.5 text-xs font-medium text-ink-muted hover:bg-surface-hover">{s}</button>
-                ))}
-              </div>
-            </Card>
+      {loadError && (
+        <div className="mb-4 flex flex-wrap items-center justify-between gap-2 rounded-xl border border-status-danger-edge bg-status-danger-bg px-4 py-3 text-sm text-status-danger-ink">
+          <span>Could not load the overview: {loadError}</span>
+          <button className="btn btn-sm btn-outline" onClick={reload}>Try again</button>
+        </div>
+      )}
 
-            {/* Business Health Score */}
-            <Card>
-              <div className="mb-3 flex items-center justify-between">
-                <h2 className="font-display text-base font-semibold text-ink">Business Health Score</h2>
-                <button onClick={() => setHealthOpen(true)} className="text-xs font-semibold text-violet-ink transition hover:underline">View Details</button>
-              </div>
-              <div className="flex items-center gap-4">
-                <div className="flex flex-col items-center">
-                  <RadialGauge value={healthStats?.overall ?? 0} color={healthStats?.color ?? "var(--status-ok-solid)"} size={130} thickness={12} centerValue={String(healthStats?.overall ?? 0)} centerLabel={healthStats?.center_label ?? "/100"} />
-                  <span className="mt-1 flex items-center gap-1 text-sm font-semibold text-status-ok-ink"><ArrowUp className="h-4 w-4" /> {healthStats?.rating ?? "Excellent"}</span>
+      {/* waiting */}
+      <Card className="mb-6">
+        <div className="mb-3 flex items-center justify-between">
+          <div>
+            <h2 className="font-display text-base font-semibold text-ink">Waiting on the team</h2>
+            <p className="text-xs text-ink-subtle">The same queues their screens show, counted now.</p>
+          </div>
+          {overview && <span className="text-xs text-ink-subtle">as of {when(overview.generated_at)}</span>}
+        </div>
+        {overview === null ? (
+          <p className="flex items-center gap-2 py-4 text-xs text-ink-subtle"><Loader2 className="h-4 w-4 animate-spin" /> Counting…</p>
+        ) : overview.priorities.length === 0 ? (
+          <p className="rounded-lg bg-status-ok-bg px-3 py-2.5 text-sm text-status-ok-ink">Every queue is empty. Nothing is waiting.</p>
+        ) : (
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
+            {overview.priorities.map((p) => {
+              const Icon = iconFor(p.icon);
+              return (
+                <Link key={p.key} href={p.href} className="flex items-center gap-3 rounded-xl border border-line p-3 transition hover:bg-surface-hover">
+                  <span className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-lg ${TONE_BG[p.tone] ?? TONE_BG.brand}`}><Icon className="h-5 w-5" /></span>
+                  <span className="min-w-0 flex-1">
+                    <span className="block font-display text-xl font-bold text-ink">{p.count.toLocaleString("en-IN")}</span>
+                    <span className="block truncate text-xs text-ink-subtle">{p.text.replace(/^[\d,]+\s/, "")}</span>
+                  </span>
+                  <ArrowRight className="h-4 w-4 shrink-0 text-ink-subtle" />
+                </Link>
+              );
+            })}
+          </div>
+        )}
+      </Card>
+
+      <ResizableColumns id="command-center" defaultSize={0.62} className="gap-6">
+        <div className="space-y-6">
+          {/* health */}
+          <Card>
+            <div className="mb-3">
+              <h2 className="font-display text-base font-semibold text-ink">Platform health</h2>
+              <p className="text-xs text-ink-subtle">Each indicator says what it measures. The gauge is their average.</p>
+            </div>
+            {health === null ? (
+              <p className="text-xs text-ink-subtle">Loading…</p>
+            ) : (
+              <div className="flex flex-col gap-5 sm:flex-row sm:items-start">
+                <div className="flex shrink-0 flex-col items-center gap-1">
+                  <RadialGauge value={health.overall ?? 0} color={health.color} size={140} />
+                  <p className="text-sm font-semibold text-ink">{health.rating}</p>
+                  <p className="text-2xs text-ink-subtle">{health.measured} of {health.indicators.length} measured</p>
                 </div>
-                <ul className="flex-1 space-y-2.5">
-                  {health.map((h) => (
-                    <li key={h.label} className="flex items-center gap-2 text-sm">
-                      <span className={`flex h-6 w-6 shrink-0 items-center justify-center rounded-md ${TONE_BG[h.tone]}`}><h.icon className="h-3.5 w-3.5" /></span>
-                      <span className="flex-1 text-ink-muted">{h.label}</span>
-                      <span className="font-semibold text-ink">{h.value}%</span>
-                      <ArrowUp className="h-3.5 w-3.5 text-status-ok-ink" />
-                    </li>
-                  ))}
+                <ul className="min-w-0 flex-1 space-y-2.5">
+                  {health.indicators.map((i) => {
+                    const Icon = iconFor(i.icon);
+                    return (
+                      <li key={i.key} className="flex items-start gap-3">
+                        <span className={`mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg ${TONE_BG[i.tone] ?? TONE_BG.brand}`}><Icon className="h-4 w-4" /></span>
+                        <div className="min-w-0 flex-1">
+                          <div className="flex items-center justify-between gap-2">
+                            <p className="text-sm font-semibold text-ink">{i.label}</p>
+                            <p className="font-display text-base font-bold tabular-nums text-ink">{i.value === null ? "—" : `${i.value}%`}</p>
+                          </div>
+                          <p className="text-xs text-ink-subtle">{i.measures}. <span className="text-ink-muted">{i.detail}</span></p>
+                        </div>
+                      </li>
+                    );
+                  })}
                 </ul>
               </div>
-              <div className="mt-4 flex items-start gap-2 rounded-xl bg-status-ok-bg p-3">
-                <Sparkles className="mt-0.5 h-4 w-4 shrink-0 text-status-ok-ink" />
-                <p className="text-xs text-ink-muted">{healthStats?.note ?? "Your platform is performing excellent! Keep up the great work."}</p>
-              </div>
-            </Card>
-          </div>
+            )}
+          </Card>
 
-          {/* MIDDLE ROW */}
-          <div className="mt-6 grid grid-cols-1 gap-6 lg:grid-cols-3">
-            {/* AI Tasks Center */}
-            <Card>
-              <div id="ai-tasks-center" className="mb-1 flex items-center justify-between scroll-mt-24">
-                <h2 className="font-display text-base font-semibold text-ink">AI Tasks Center</h2>
-                <button onClick={() => setAllTasksOpen(true)} className="text-xs font-semibold text-violet-ink transition hover:underline">View All Tasks</button>
+          {/* insights */}
+          <Card>
+            <div className="mb-3">
+              <h2 className="font-display text-base font-semibold text-ink">This week against last</h2>
+              <p className="text-xs text-ink-subtle">Only where there is something to compare.</p>
+            </div>
+            {overview === null ? (
+              <p className="text-xs text-ink-subtle">Loading…</p>
+            ) : overview.insights.length === 0 ? (
+              <p className="rounded-lg bg-surface-2 px-3 py-2.5 text-xs text-ink-subtle">Nothing happened in the last two weeks to compare.</p>
+            ) : (
+              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                {overview.insights.map((i) => {
+                  const Icon = iconFor(i.icon);
+                  return (
+                    <Link key={i.key} href={i.href} className="flex items-start gap-3 rounded-xl border border-line p-3 transition hover:bg-surface-hover">
+                      <span className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-lg ${TONE_BG[i.tone] ?? TONE_BG.brand}`}><Icon className="h-4.5 w-4.5" /></span>
+                      <span className="min-w-0">
+                        <span className="block text-sm font-semibold text-ink">{i.title}</span>
+                        <span className="block text-xs text-ink-subtle">{i.description}</span>
+                      </span>
+                    </Link>
+                  );
+                })}
               </div>
-              <p className="mb-4 text-xs text-ink-subtle">Tasks generated &amp; prioritized by AI</p>
-              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                {/* High */}
-                <div>
-                  <div className="mb-2 flex items-center gap-2 border-b border-status-danger-border pb-2">
-                    <span className="text-sm font-semibold text-status-danger-ink">High Priority</span>
-                    <Badge tone="rose">{taskStats?.high ?? 0}</Badge>
-                  </div>
-                  <ul className="space-y-2.5">
-                    {highTasks.map((t) => {
-                      const done = t.done;
-                      return (
-                        <li key={t.title}>
-                          <button onClick={() => toggleTask(t)} className="flex w-full items-start gap-2.5 text-left">
-                            <span className={`mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-lg ${done ? "bg-status-ok-bg text-status-ok-ink" : "bg-status-danger-bg text-status-danger-ink"}`}>
-                              {done ? <CheckCircle2 className="h-3.5 w-3.5" /> : <t.icon className="h-3.5 w-3.5" />}
-                            </span>
-                            <div><p className={`text-sm font-semibold ${done ? "text-ink-subtle line-through" : "text-ink"}`}>{t.title}</p><p className="text-xs text-ink-subtle">{t.due}</p></div>
-                          </button>
-                        </li>
-                      );
-                    })}
-                  </ul>
-                  <button onClick={() => setAllHighOpen(true)} className="mt-3 w-full rounded-lg bg-status-danger-bg py-2 text-xs font-semibold text-status-danger-ink hover:bg-status-danger-bg">View All High Priority</button>
+            )}
+          </Card>
+
+          {/* tasks */}
+          <Card>
+            <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+              <div>
+                <h2 className="font-display text-base font-semibold text-ink">Team tasks</h2>
+                <p className="text-xs text-ink-subtle">
+                  {taskStats ? `${taskStats.open} open · ${taskStats.overdue} overdue · ${taskStats.mine} yours · ${taskStats.done} done` : "Loading…"}
+                </p>
+              </div>
+              <div className="flex items-center gap-1.5">
+                <div className="flex rounded-lg border border-line-strong p-0.5 text-xs">
+                  {(["open", "done", "all"] as const).map((s) => (
+                    <button key={s} onClick={() => setShow(s)} className={show === s ? "rounded-md bg-brand-600 px-2.5 py-1 font-semibold text-white" : "px-2.5 py-1 text-ink-subtle hover:text-ink-muted"}>{s[0].toUpperCase() + s.slice(1)}</button>
+                  ))}
                 </div>
-                {/* Medium */}
-                <div>
-                  <div className="mb-2 flex items-center gap-2 border-b border-status-warn-border pb-2">
-                    <span className="text-sm font-semibold text-status-warn-ink">Medium Priority</span>
-                    <Badge tone="amber">{taskStats?.medium ?? 0}</Badge>
-                  </div>
-                  <ul className="space-y-2.5">
-                    {medTasks.map((t) => {
-                      const done = t.done;
-                      return (
-                        <li key={t.title}>
-                          <button onClick={() => toggleTask(t)} className="flex w-full items-start gap-2.5 text-left">
-                            <span className={`mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-lg ${done ? "bg-status-ok-bg text-status-ok-ink" : "bg-status-warn-bg text-status-warn-ink"}`}>
-                              {done ? <CheckCircle2 className="h-3.5 w-3.5" /> : <t.icon className="h-3.5 w-3.5" />}
-                            </span>
-                            <div><p className={`text-sm font-semibold ${done ? "text-ink-subtle line-through" : "text-ink"}`}>{t.title}</p><p className="text-xs text-ink-subtle">{t.due}</p></div>
-                          </button>
-                        </li>
-                      );
-                    })}
-                  </ul>
-                  <button onClick={() => setAllMedOpen(true)} className="mt-3 w-full rounded-lg bg-status-warn-bg py-2 text-xs font-semibold text-status-warn-ink hover:bg-status-warn-bg">View All Medium Priority</button>
-                </div>
+                <button onClick={() => setMine((m) => !m)} className={`btn btn-sm ${mine ? "btn-primary" : "btn-outline"}`}>Mine</button>
+                <button className="btn btn-sm btn-outline" onClick={openAdd}><Plus className="h-3.5 w-3.5" /> Add</button>
               </div>
-            </Card>
-
-            {/* AI Workforce */}
-            <Card>
-              <div className="mb-1 flex items-center justify-between">
-                <h2 className="font-display text-base font-semibold text-ink">AI Workforce <span className="text-ink-subtle">(Your Agents)</span></h2>
-                <button onClick={() => setManageAgentsOpen(true)} className="text-xs font-semibold text-violet-ink transition hover:underline">Manage Agents</button>
-              </div>
-              <p className="mb-4 text-xs text-ink-subtle">All agents are working for you 24/7</p>
-              <div className="grid grid-cols-2 gap-3">
-                {agents.map((a) => (
-                  <button key={a.name} onClick={() => setAgentDetail(a)} className="rounded-xl border border-line p-3 text-center transition hover:shadow-sm">
-                    <p className="mb-1 text-xs font-semibold text-ink-muted">{a.name}</p>
-                    <p className="mb-2 flex items-center justify-center gap-1 text-2xs text-status-ok-ink"><span className="h-1.5 w-1.5 rounded-full bg-status-ok-solid" /> {a.status}</p>
-                    <span className={`mx-auto mb-2 flex h-11 w-11 items-center justify-center rounded-full ${TONE_BG[a.tone]}`}><a.icon className="h-5 w-5" /></span>
-                    <p className="font-display text-lg font-bold text-ink">{a.metric}</p>
-                    <p className="text-2xs text-ink-subtle">{a.label}</p>
-                    <p className="mt-1 text-sm font-semibold text-ink">{a.rate}</p>
-                    <p className="text-2xs text-ink-subtle">Success Rate</p>
-                    <p className="mt-1.5 text-2xs text-ink-subtle">Last Active <span className="font-medium text-ink-subtle">{a.last}</span></p>
-                  </button>
-                ))}
-              </div>
-            </Card>
-
-            {/* AI Insights */}
-            <Card>
-              <div className="mb-4 flex items-center justify-between">
-                <h2 className="font-display text-base font-semibold text-ink">AI Insights</h2>
-                <button onClick={() => setAllInsightsOpen(true)} className="text-xs font-semibold text-violet-ink transition hover:underline">View All Insights</button>
-              </div>
-              <ul className="space-y-3">
-                {insights.map((i) => (
-                  <li key={i.title} className="flex items-center gap-3">
-                    <span className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-lg ${TONE_BG[i.tone]}`}><i.icon className="h-4.5 w-4.5" /></span>
+            </div>
+            {tasks === null ? (
+              <p className="text-xs text-ink-subtle">Loading…</p>
+            ) : tasks.length === 0 ? (
+              <p className="rounded-lg bg-surface-2 px-3 py-2.5 text-xs text-ink-subtle">{show === "done" ? "Nothing finished yet." : mine ? "Nothing assigned to you." : "No tasks. Add one for the team."}</p>
+            ) : (
+              <ul className="divide-y divide-line">
+                {tasks.map((t) => (
+                  <li key={t.id} className="flex items-start gap-3 py-2.5">
+                    <button aria-label={t.done ? "Reopen" : "Mark done"} onClick={() => void toggleDone(t)} className={`mt-0.5 shrink-0 ${t.done ? "text-status-ok-ink" : "text-ink-subtle hover:text-ink"}`}>
+                      {t.done ? <CheckCircle2 className="h-5 w-5" /> : <Circle className="h-5 w-5" />}
+                    </button>
                     <div className="min-w-0 flex-1">
-                      <p className="text-sm font-semibold text-ink">{i.title}</p>
-                      <p className="text-xs text-ink-subtle">{i.desc}</p>
+                      <p className={`text-sm font-medium ${t.done ? "text-ink-subtle line-through" : "text-ink"}`}>{t.title}</p>
+                      <p className="mt-0.5 flex flex-wrap items-center gap-x-3 gap-y-0.5 text-xs text-ink-subtle">
+                        <Badge tone={PRIORITY_TONE[t.priority]}>{t.priority}</Badge>
+                        {t.due && <span className={`flex items-center gap-1 ${t.overdue ? "font-semibold text-status-danger-ink" : ""}`}><Clock className="h-3 w-3" /> {t.overdue ? "Overdue · " : ""}{prettyDate(t.due)}</span>}
+                        <span>{t.assignee_name ? t.assignee_name : <button className="text-brand-ink hover:underline" onClick={() => void takeTask(t)}><UserPlus className="mr-0.5 inline h-3 w-3" />Take it</button>}</span>
+                        {t.href && <Link href={t.href} className="text-brand-ink hover:underline">Open</Link>}
+                      </p>
+                      {t.notes && <p className="mt-1 text-xs text-ink-muted">{t.notes}</p>}
                     </div>
-                    <button onClick={() => setInsightResult(i)} className="btn btn-sm btn-secondary shrink-0">{i.action}</button>
+                    <div className="flex shrink-0 items-center gap-1">
+                      <button aria-label="Edit task" className="text-ink-subtle hover:text-ink" onClick={() => openEdit(t)}><Pencil className="h-4 w-4" /></button>
+                      <button aria-label="Delete task" className="text-ink-subtle hover:text-status-danger-ink" onClick={() => void removeTask(t)}><Trash2 className="h-4 w-4" /></button>
+                    </div>
                   </li>
                 ))}
               </ul>
-            </Card>
-          </div>
+            )}
+          </Card>
+        </div>
 
-          {/* One Click AI Actions */}
-          <Card className="mt-6">
-            <div className="mb-1 flex items-center justify-between">
-              <h2 className="font-display text-base font-semibold text-ink">One Click AI Actions</h2>
+        <div className="space-y-6">
+          {/* ask */}
+          <Card>
+            <div className="mb-3">
+              <h2 className="font-display text-base font-semibold text-ink">Ask the data</h2>
+              <p className="text-xs text-ink-subtle">A fixed set of questions, answered from live counts. Not a chatbot.</p>
             </div>
-            <p className="mb-4 text-xs text-ink-subtle">Let AI do the heavy lifting for you</p>
-            <div className="grid grid-cols-2 gap-3 md:grid-cols-3 lg:grid-cols-6">
-              {oneClick.map((a) => (
-                <button key={a.title} onClick={() => runOneClick(a)} className={`rounded-xl border border-line p-4 text-left transition hover:shadow-sm ${TILE_BG[a.tone]}`}>
-                  <span className={`mb-2 flex h-9 w-9 items-center justify-center rounded-lg ${TONE_BG[a.tone]}`}><a.icon className="h-4.5 w-4.5" /></span>
-                  <p className="text-sm font-semibold text-ink">{a.title}</p>
-                  <p className="mt-0.5 text-xs text-ink-subtle">{a.desc}</p>
-                </button>
+            <div className="mb-3 flex flex-wrap gap-1.5">
+              {canAnswer.map((q) => (
+                <button key={q} onClick={() => void ask(q)} disabled={asking} className="rounded-full border border-line px-2.5 py-1 text-xs text-ink-muted transition hover:border-line-strong hover:text-ink">{q}</button>
               ))}
+            </div>
+            {exchanges.length > 0 && (
+              <ul className="mb-3 max-h-[40vh] space-y-2 overflow-y-auto">
+                {exchanges.map((e) => (
+                  <li key={e.id} className="space-y-1.5">
+                    <p className="ml-6 rounded-xl rounded-tr-sm bg-brand-tint px-3 py-2 text-sm text-brand-ink">{e.question}</p>
+                    <div className={`mr-6 rounded-xl rounded-tl-sm px-3 py-2 text-sm ${e.understood === false ? "bg-status-warn-bg text-status-warn-ink" : "bg-surface-2 text-ink"}`}>
+                      {e.answer === undefined ? <span className="flex items-center gap-2 text-ink-subtle"><Loader2 className="h-3.5 w-3.5 animate-spin" /> Counting…</span> : e.answer}
+                      {e.href && e.answer !== undefined && <Link href={e.href} className="ml-2 text-xs font-semibold text-brand-ink hover:underline">Open →</Link>}
+                    </div>
+                  </li>
+                ))}
+              </ul>
+            )}
+            <div className="flex items-end gap-2">
+              <textarea
+                ref={askRef}
+                rows={2}
+                value={draft}
+                onChange={(e) => setDraft(e.target.value)}
+                onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); void ask(draft); } }}
+                placeholder="Type one of the questions above, or close to it"
+                className="min-h-[44px] flex-1 resize-none rounded-lg border border-line-strong bg-surface px-3 py-2 text-sm text-ink outline-none focus:border-violet-300 focus:ring-4 focus:ring-violet-50"
+              />
+              <button className="btn btn-primary" disabled={asking || !draft.trim()} onClick={() => void ask(draft)} aria-label="Ask"><Send className="h-4 w-4" /></button>
             </div>
           </Card>
 
-          {/* BOTTOM ROW */}
-          <div className="mt-6 grid grid-cols-1 gap-6 lg:grid-cols-3">
-            {/* AI Voice Assistant */}
-            <Card>
-              <h2 className="font-display text-base font-semibold text-ink">AI Voice Assistant</h2>
-              <p className="mb-4 text-xs text-ink-subtle">Talk to your AI executive</p>
-              <div className="flex flex-col items-center py-2">
-                <div className="flex items-center gap-3">
-                  <div className="flex items-end gap-0.5">
-                    {[8, 14, 20, 12, 24, 16].map((h, i) => (
-                      <span key={i} className={`w-1 rounded-full bg-violet-200 ${listening ? "animate-pulse" : ""}`} style={{ height: h }} />
-                    ))}
-                  </div>
-                  <button aria-label={listening ? "Stop listening" : "Start voice input"} aria-pressed={listening} onClick={() => setListening((v) => !v)} className={`flex h-16 w-16 items-center justify-center rounded-full text-white shadow-lg shadow-violet-200 ring-8 ring-violet-100 ${listening ? "bg-status-danger-solid hover:bg-status-danger-solid animate-pulse" : "bg-violet-600 hover:bg-violet-700"}`}>
-                    <Mic className="h-6 w-6" />
-                  </button>
-                  <div className="flex items-end gap-0.5">
-                    {[16, 24, 12, 20, 14, 8].map((h, i) => (
-                      <span key={i} className={`w-1 rounded-full bg-violet-200 ${listening ? "animate-pulse" : ""}`} style={{ height: h }} />
-                    ))}
-                  </div>
-                </div>
-                <p className="mt-4 text-sm font-medium text-ink-subtle">{listening ? "Listening..." : "Click mic and ask anything..."}</p>
-              </div>
-              <div className="mt-3 flex flex-wrap justify-center gap-2">
-                {voiceChips.map((c) => (
-                  <button key={c} onClick={() => { setListening(false); askQuestion(c); }} className="rounded-full border border-line-strong bg-surface px-3 py-1.5 text-xs font-medium text-ink-muted hover:bg-surface-hover">{c}</button>
-                ))}
-              </div>
-            </Card>
-
-            {/* AI Command Timeline */}
-            <Card>
-              <div className="mb-1 flex items-center justify-between">
-                <h2 className="font-display text-base font-semibold text-ink">AI Command Timeline</h2>
-                <button onClick={() => setAllActivityOpen(true)} className="text-xs font-semibold text-violet-ink transition hover:underline">View All Activity</button>
-              </div>
-              <p className="mb-4 text-xs text-ink-subtle">Live actions taken by AI</p>
-              <ul className="space-y-3.5">
-                {timeline.map((t) => (
-                  <li key={t.time} className="flex items-center gap-3">
-                    <span className="w-16 shrink-0 text-xs font-medium text-ink-subtle">{t.time}</span>
-                    <span className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-lg ${TONE_BG[t.tone]}`}><t.icon className="h-4 w-4" /></span>
-                    <p className="min-w-0 flex-1 text-sm text-ink-muted">{t.text}</p>
-                    <Badge tone={t.tone as Tone}>{t.status}</Badge>
+          {/* activity */}
+          <Card>
+            <div className="mb-3 flex items-center justify-between">
+              <h2 className="font-display text-base font-semibold text-ink">Latest actions</h2>
+              <Link href="/dashboard/settings/activity" className="text-xs font-semibold text-brand-ink hover:underline">Full log</Link>
+            </div>
+            {activity === null ? (
+              <p className="text-xs text-ink-subtle">Loading…</p>
+            ) : activity.length === 0 ? (
+              <p className="rounded-lg bg-surface-2 px-3 py-2.5 text-xs text-ink-subtle">Nothing recorded yet.</p>
+            ) : (
+              <ul className="space-y-2.5">
+                {activity.map((a) => (
+                  <li key={a.id} className="text-xs">
+                    <p className="text-sm text-ink-muted">{a.detail || a.action}</p>
+                    <p className="text-ink-subtle">{a.who} · {when(a.at)}{a.category ? ` · ${a.category}` : ""}</p>
                   </li>
                 ))}
               </ul>
-            </Card>
-
-            {/* AI Memory & Knowledge */}
-            <Card>
-              <div className="mb-1 flex items-center justify-between">
-                <h2 className="font-display text-base font-semibold text-ink">AI Memory &amp; Knowledge</h2>
-                <button onClick={() => setMemoryOpen(true)} className="text-xs font-semibold text-violet-ink transition hover:underline">View Details</button>
-              </div>
-              <p className="mb-4 text-xs text-ink-subtle">Your AI learns from your business</p>
-              <div className="grid grid-cols-2 gap-3">
-                {memory.map((m) => (
-                  <div key={m.label} className="rounded-xl border border-line p-3 text-center">
-                    <span className={`mx-auto mb-2 flex h-9 w-9 items-center justify-center rounded-lg ${TONE_BG[m.tone]}`}><m.icon className="h-4.5 w-4.5" /></span>
-                    <p className="text-2xs text-ink-subtle">{m.label}</p>
-                    <p className="font-display text-base font-bold text-ink">{m.value}</p>
-                    {m.sub && <p className="text-2xs font-medium text-status-ok-ink">{m.sub}</p>}
-                  </div>
-                ))}
-              </div>
-              <div className="mt-4 flex items-center gap-2 rounded-xl bg-violet-tint p-3">
-                <Sparkles className="h-4 w-4 shrink-0 text-violet-ink" />
-                <p className="text-xs text-ink-muted">AI learns from every interaction to serve you better</p>
-              </div>
-            </Card>
-          </div>
-
-          {/* ===== MODALS ===== */}
-
-          {/* Chat History */}
-          <Modal
-            open={chatHistoryOpen}
-            onClose={() => setChatHistoryOpen(false)}
-            title="Chat History"
-            description="Your recent conversation with the AI executive."
-            icon={History}
-            iconTone="violet"
-            footer={<button className="btn btn-outline" onClick={() => setChatHistoryOpen(false)}>Close</button>}
-          >
-            {chat.length === 0 ? (
-              <p className="text-sm text-ink-subtle">No messages yet. Ask the AI anything to start a conversation.</p>
-            ) : (
-              <div className="space-y-2">
-                {chat.map((m) => (
-                  <div key={m.id} className={`flex ${m.role === "user" ? "justify-end" : "justify-start"}`}>
-                    <div className={`max-w-[85%] rounded-2xl px-3 py-2 text-sm ${m.role === "user" ? "bg-brand-600 text-white" : "bg-surface-inset text-ink-muted"}`}>
-                      {m.text}
-                    </div>
-                  </div>
-                ))}
-              </div>
             )}
-          </Modal>
+          </Card>
+        </div>
+      </ResizableColumns>
 
-          {/* Tasks Modal (from greeting fallback / not primary path) */}
-          <Modal
-            open={tasksModalOpen}
-            onClose={() => setTasksModalOpen(false)}
-            title="My Tasks"
-            icon={ClipboardCheck}
-            iconTone="brand"
-            footer={<button className="btn btn-primary" onClick={() => setTasksModalOpen(false)}>Done</button>}
-          >
-            <ul className="space-y-2">
-              {[...highTasks, ...medTasks].map((t) => (
-                <li key={t.title} className="flex items-center gap-2.5 text-sm">
-                  <t.icon className="h-4 w-4 text-ink-subtle" />
-                  <span className={t.done ? "text-ink-subtle line-through" : "text-ink-muted"}>{t.title}</span>
-                  <span className="ml-auto text-xs text-ink-subtle">{t.due}</span>
-                </li>
-              ))}
-            </ul>
-          </Modal>
-
-          {/* Health breakdown */}
-          <Modal
-            open={healthOpen}
-            onClose={() => setHealthOpen(false)}
-            title="Business Health Breakdown"
-            description={`Score components (overall ${healthStats?.overall ?? 0} / 100).`}
-            icon={LineChart}
-            iconTone="emerald"
-            footer={<button className="btn btn-outline" onClick={() => setHealthOpen(false)}>Close</button>}
-          >
-            <ul className="space-y-3">
-              {health.map((h) => (
-                <li key={h.label} className="flex items-center gap-3">
-                  <span className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-lg ${TONE_BG[h.tone]}`}><h.icon className="h-4 w-4" /></span>
-                  <span className="flex-1 text-sm text-ink-muted">{h.label}</span>
-                  <span className="text-sm font-semibold text-ink">{h.value}%</span>
-                </li>
-              ))}
-            </ul>
-          </Modal>
-
-          {/* View All High Priority */}
-          <Modal
-            open={allHighOpen}
-            onClose={() => setAllHighOpen(false)}
-            title="All High Priority Tasks"
-            icon={Flag}
-            iconTone="rose"
-            footer={<button className="btn btn-outline" onClick={() => setAllHighOpen(false)}>Close</button>}
-          >
-            <ul className="space-y-2">
-              {highTasks.map((t) => (
-                <li key={t.title} className="flex items-center gap-2.5 text-sm">
-                  <t.icon className="h-4 w-4 text-status-danger-ink" />
-                  <span className={t.done ? "text-ink-subtle line-through" : "text-ink-muted"}>{t.title}</span>
-                  <span className="ml-auto text-xs text-ink-subtle">{t.due}</span>
-                </li>
-              ))}
-            </ul>
-          </Modal>
-
-          {/* View All Medium Priority */}
-          <Modal
-            open={allMedOpen}
-            onClose={() => setAllMedOpen(false)}
-            title="All Medium Priority Tasks"
-            icon={FileBarChart}
-            iconTone="amber"
-            footer={<button className="btn btn-outline" onClick={() => setAllMedOpen(false)}>Close</button>}
-          >
-            <ul className="space-y-2">
-              {medTasks.map((t) => (
-                <li key={t.title} className="flex items-center gap-2.5 text-sm">
-                  <t.icon className="h-4 w-4 text-status-warn-ink" />
-                  <span className={t.done ? "text-ink-subtle line-through" : "text-ink-muted"}>{t.title}</span>
-                  <span className="ml-auto text-xs text-ink-subtle">{t.due}</span>
-                </li>
-              ))}
-            </ul>
-          </Modal>
-
-          {/* View All Tasks */}
-          <Modal
-            open={allTasksOpen}
-            onClose={() => setAllTasksOpen(false)}
-            title="All AI Tasks"
-            description="Tasks generated & prioritized by AI. Tap a task in the card to mark it done."
-            icon={ClipboardList}
-            iconTone="violet"
-            footer={<button className="btn btn-outline" onClick={() => setAllTasksOpen(false)}>Close</button>}
-          >
-            <ul className="space-y-2">
-              {[...highTasks, ...medTasks].map((t) => (
-                <li key={t.title} className="flex items-center gap-2.5 text-sm">
-                  <t.icon className="h-4 w-4 text-ink-subtle" />
-                  <span className={t.done ? "text-ink-subtle line-through" : "text-ink-muted"}>{t.title}</span>
-                  <span className="ml-auto text-xs text-ink-subtle">{t.due}</span>
-                </li>
-              ))}
-            </ul>
-          </Modal>
-
-          {/* Manage Agents */}
-          <Modal
-            open={manageAgentsOpen}
-            onClose={() => setManageAgentsOpen(false)}
-            title="Manage Agents"
-            description="Your AI workforce is running 24/7."
-            icon={UserCog}
-            iconTone="violet"
-            footer={<button className="btn btn-primary" onClick={() => setManageAgentsOpen(false)}>Done</button>}
-          >
-            <ul className="space-y-2">
-              {agents.map((a) => (
-                <li key={a.name} className="flex items-center gap-3 rounded-xl border border-line p-3">
-                  <span className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-lg ${TONE_BG[a.tone]}`}><a.icon className="h-4.5 w-4.5" /></span>
-                  <div className="min-w-0 flex-1">
-                    <p className="text-sm font-semibold text-ink">{a.name}</p>
-                    <p className="text-xs text-ink-subtle">{a.metric} · {a.label}</p>
-                  </div>
-                  <Badge tone="emerald">{a.status}</Badge>
-                </li>
-              ))}
-            </ul>
-          </Modal>
-
-          {/* Agent detail */}
-          <Modal
-            open={agentDetail !== null}
-            onClose={() => setAgentDetail(null)}
-            title={agentDetail?.name ?? "Agent"}
-            description="Live agent metrics"
-            icon={agentDetail?.icon ?? Bot}
-            iconTone="violet"
-            footer={<button className="btn btn-outline" onClick={() => setAgentDetail(null)}>Close</button>}
-          >
-            {agentDetail && (
-              <div className="grid grid-cols-2 gap-3">
-                <div className="rounded-xl bg-surface-inset p-3 text-center">
-                  <p className="font-display text-2xl font-bold text-ink">{agentDetail.metric}</p>
-                  <p className="text-xs text-ink-subtle">{agentDetail.label}</p>
-                </div>
-                <div className="rounded-xl bg-surface-inset p-3 text-center">
-                  <p className="font-display text-2xl font-bold text-ink">{agentDetail.rate}</p>
-                  <p className="text-xs text-ink-subtle">Success Rate</p>
-                </div>
-                <div className="col-span-2 flex items-center gap-2 rounded-xl bg-status-ok-bg p-3 text-sm text-ink-muted">
-                  <span className="h-1.5 w-1.5 rounded-full bg-status-ok-solid" /> {agentDetail.status} · Last active {agentDetail.last}
-                </div>
-              </div>
-            )}
-          </Modal>
-
-          {/* Insight result */}
-          <Modal
-            open={insightResult !== null}
-            onClose={() => setInsightResult(null)}
-            title={insightResult?.title ?? "Insight"}
-            description={insightResult?.desc}
-            icon={insightResult?.icon ?? Lightbulb}
-            iconTone="violet"
-            footer={<button className="btn btn-primary" onClick={() => setInsightResult(null)}>Got it</button>}
-          >
-            <div className="flex items-start gap-2 rounded-xl bg-violet-tint p-3">
-              <Sparkles className="mt-0.5 h-4 w-4 shrink-0 text-violet-ink" />
-              <p className="text-sm text-ink-muted">AI is on it — &quot;{insightResult?.action}&quot; has been queued. Your agents are working on this insight and will report back shortly.</p>
-            </div>
-          </Modal>
-
-          {/* One Click result */}
-          <Modal
-            open={oneClickResult !== null}
-            onClose={() => setOneClickResult(null)}
-            title={oneClickResult?.title ?? "AI Action"}
-            description={oneClickResult?.desc}
-            icon={oneClickResult?.icon ?? Wand2}
-            iconTone="brand"
-            footer={<button className="btn btn-primary" onClick={() => setOneClickResult(null)}>Done</button>}
-          >
-            <div className="flex items-start gap-2 rounded-xl bg-brand-tint p-3">
-              <Sparkles className="mt-0.5 h-4 w-4 shrink-0 text-brand-ink" />
-              <p className="text-sm text-ink-muted">
-                {oneClickResult?.title === "Generate Report"
-                  ? "Your report is being downloaded as a CSV file. AI compiled the latest business health metrics for you."
-                  : `AI is on it — "${oneClickResult?.title}" is running. Your agents will complete this shortly and notify you.`}
-              </p>
-            </div>
-          </Modal>
-
-          {/* View All Insights */}
-          <Modal
-            open={allInsightsOpen}
-            onClose={() => setAllInsightsOpen(false)}
-            title="All AI Insights"
-            icon={Lightbulb}
-            iconTone="amber"
-            footer={<button className="btn btn-outline" onClick={() => setAllInsightsOpen(false)}>Close</button>}
-          >
-            <ul className="space-y-3">
-              {insights.map((i) => (
-                <li key={i.title} className="flex items-center gap-3">
-                  <span className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-lg ${TONE_BG[i.tone]}`}><i.icon className="h-4.5 w-4.5" /></span>
-                  <div className="min-w-0 flex-1">
-                    <p className="text-sm font-semibold text-ink">{i.title}</p>
-                    <p className="text-xs text-ink-subtle">{i.desc}</p>
-                  </div>
-                </li>
-              ))}
-            </ul>
-          </Modal>
-
-          {/* View All Activity */}
-          <Modal
-            open={allActivityOpen}
-            onClose={() => setAllActivityOpen(false)}
-            title="All AI Activity"
-            description="Live actions taken by AI"
-            icon={Clock}
-            iconTone="emerald"
-            footer={<button className="btn btn-outline" onClick={() => setAllActivityOpen(false)}>Close</button>}
-          >
-            <ul className="space-y-3">
-              {timeline.map((t) => (
-                <li key={t.time} className="flex items-center gap-3">
-                  <span className="w-16 shrink-0 text-xs font-medium text-ink-subtle">{t.time}</span>
-                  <span className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-lg ${TONE_BG[t.tone]}`}><t.icon className="h-4 w-4" /></span>
-                  <p className="min-w-0 flex-1 text-sm text-ink-muted">{t.text}</p>
-                  <Badge tone={t.tone as Tone}>{t.status}</Badge>
-                </li>
-              ))}
-            </ul>
-          </Modal>
-
-          {/* Memory details */}
-          <Modal
-            open={memoryOpen}
-            onClose={() => setMemoryOpen(false)}
-            title="AI Memory & Knowledge"
-            description="Your AI learns from your business."
-            icon={Database}
-            iconTone="sky"
-            footer={<button className="btn btn-outline" onClick={() => setMemoryOpen(false)}>Close</button>}
-          >
-            <ul className="space-y-2">
-              {memory.map((m) => (
-                <li key={m.label} className="flex items-center gap-3 rounded-xl border border-line p-3">
-                  <span className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-lg ${TONE_BG[m.tone]}`}><m.icon className="h-4.5 w-4.5" /></span>
-                  <div className="min-w-0 flex-1">
-                    <p className="text-sm text-ink-subtle">{m.label}</p>
-                    <p className="font-display text-base font-bold text-ink">{m.value}</p>
-                  </div>
-                  {m.sub && <span className="text-xs font-medium text-status-ok-ink">{m.sub}</span>}
-                </li>
-              ))}
-            </ul>
-          </Modal>
-        </>
-      )}
+      {/* task modal */}
+      <Modal
+        open={taskOpen}
+        onClose={() => setTaskOpen(false)}
+        title={editing ? "Edit task" : "Add a task"}
+        description="A to-do for the team. Members never see it."
+        icon={CheckCircle2}
+        iconTone="brand"
+        size="md"
+        footer={
+          <>
+            <button className="btn btn-outline" onClick={() => setTaskOpen(false)}>Cancel</button>
+            <button className="btn btn-primary" disabled={saving || !form.title.trim()} onClick={() => void submitTask()}>{saving ? "Saving…" : editing ? "Save" : "Add task"}</button>
+          </>
+        }
+      >
+        <div className="grid grid-cols-2 gap-4">
+          <Input label="Title" required className="col-span-2" value={form.title} onChange={(e) => setForm((f) => ({ ...f, title: e.target.value }))} placeholder="e.g. Call the venue about Saturday" />
+          <Select label="Priority" options={["high", "medium", "low"]} value={form.priority} onChange={(e) => setForm((f) => ({ ...f, priority: e.target.value as TaskPriority }))} />
+          <Input label="Due" type="date" value={form.due} onChange={(e) => setForm((f) => ({ ...f, due: e.target.value }))} />
+          <Textarea label="Notes" className="col-span-2" rows={3} value={form.notes} onChange={(e) => setForm((f) => ({ ...f, notes: e.target.value }))} placeholder="Optional" />
+          <label className="col-span-2 flex items-center gap-2 text-sm text-ink-muted">
+            <input type="checkbox" className="rounded border-line-strong accent-brand-600" checked={form.assignMe} onChange={(e) => setForm((f) => ({ ...f, assignMe: e.target.checked }))} />
+            {editing ? "Keep it assigned (untick to leave it for anyone)" : "Assign it to me"}
+          </label>
+        </div>
+      </Modal>
     </div>
   );
 }

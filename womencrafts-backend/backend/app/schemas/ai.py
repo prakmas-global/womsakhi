@@ -1,133 +1,118 @@
-from typing import Optional
+from typing import Any, Literal, Optional
 
 from pydantic import BaseModel, field_validator
 
-# Enums the UI uses — kept as Literal so Swagger renders proper dropdowns.
-Tone = str  # one of: brand | violet | emerald | amber | sky | rose (presentation only)
 
-
-class AiPriorityResponse(BaseModel):
-    id: str
+class Priority(BaseModel):
+    key: str
+    icon: str
+    tone: str
+    count: int
     text: str
+    href: str
+
+
+class HealthIndicator(BaseModel):
+    key: str
     icon: str
     tone: str
-    order: int
-
-
-class AiHealthMetricResponse(BaseModel):
-    id: str
     label: str
-    value: int
-    icon: str
-    tone: str
-    trend: str
-    order: int
+    value: Optional[int] = None    # 0–100; None when there is nothing to measure yet
+    measures: str                  # what the number actually is
+    detail: str                    # the figures behind it
 
 
-class AiHealthStatsResponse(BaseModel):
-    """The Business Health Score radial gauge summary."""
-
-    overall: int
+class HealthResponse(BaseModel):
+    overall: Optional[int] = None
     rating: str
     color: str
-    center_label: str
-    note: str
+    measured: int                  # how many indicators had data
+    indicators: list[HealthIndicator]
 
 
-class AiTaskResponse(BaseModel):
+class Insight(BaseModel):
+    key: str
+    icon: str
+    tone: str
+    title: str
+    description: str
+    href: str
+
+
+class OverviewResponse(BaseModel):
+    generated_at: str
+    note: str                      # what this screen is and is not
+    priorities: list[Priority]
+    health: HealthResponse
+    insights: list[Insight]
+
+
+class TaskResponse(BaseModel):
     id: str
     title: str
-    due: str
-    priority: str
-    icon: str
+    notes: str
+    priority: Literal["high", "medium", "low"]
+    due: str                       # YYYY-MM-DD or ""
     done: bool
-    order: int
+    done_at: Optional[str] = None
+    href: str
+    assignee_id: str
+    assignee_name: str
+    created_by_name: str
+    created_at: str
+    overdue: bool
 
 
-class AiTaskStatsResponse(BaseModel):
-    """Tab-badge counts for the High / Medium priority tabs."""
+class TaskCreate(BaseModel):
+    title: str
+    notes: str = ""
+    priority: Literal["high", "medium", "low"] = "medium"
+    due: str = ""
+    href: str = ""
+    assignee_id: str = ""          # "" = unassigned, "me" = the caller
 
-    high: int
-    medium: int
-    total: int
+    @field_validator("title")
+    @classmethod
+    def title_not_empty(cls, v: str) -> str:
+        v = v.strip()
+        if not v:
+            raise ValueError("Give the task a title")
+        return v[:200]
 
 
-class AiTaskUpdate(BaseModel):
-    """Toggle a task's completion. If 'done' is omitted, the flag is flipped."""
-
+class TaskUpdate(BaseModel):
+    title: Optional[str] = None
+    notes: Optional[str] = None
+    priority: Optional[Literal["high", "medium", "low"]] = None
+    due: Optional[str] = None
+    href: Optional[str] = None
+    assignee_id: Optional[str] = None
     done: Optional[bool] = None
 
 
-class AiAgentResponse(BaseModel):
-    id: str
-    name: str
-    icon: str
-    tone: str
-    metric: str
-    label: str
-    rate: str
-    last_active: str
-    status: str
-    order: int
+class TaskStats(BaseModel):
+    open: int
+    done: int
+    overdue: int
+    mine: int
 
 
-class AiInsightResponse(BaseModel):
+class ActivityRow(BaseModel):
     id: str
-    title: str
-    description: str
+    at: str
+    who: str
     action: str
-    icon: str
-    tone: str
-    order: int
+    category: str
+    detail: str
 
 
-class AiActionResponse(BaseModel):
-    id: str
-    title: str
-    description: str
-    icon: str
-    tone: str
-    order: int
-
-
-class AiActivityResponse(BaseModel):
-    id: str
-    time: str
-    text: str
-    status: str
-    icon: str
-    tone: str
-    order: int
-
-
-class AiMemoryStatResponse(BaseModel):
-    id: str
-    label: str
-    value: str
-    sub: str
-    icon: str
-    tone: str
-    order: int
-
-
-class AiPromptResponse(BaseModel):
-    id: str
-    text: str
-    kind: str
-    order: int
-
-
-class AiChatRequest(BaseModel):
+class AskRequest(BaseModel):
     question: str
 
-    @field_validator("question")
-    @classmethod
-    def question_not_empty(cls, v: str) -> str:
-        v = v.strip()
-        if not v:
-            raise ValueError("Question cannot be empty")
-        return v
 
-
-class AiChatResponse(BaseModel):
-    reply: str
+class AskResponse(BaseModel):
+    answer: str
+    figures: dict[str, Any] = {}
+    href: str = ""
+    understood: bool               # False when the question is outside what can be answered
+    can_answer: list[str]          # the questions this box can answer
