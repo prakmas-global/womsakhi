@@ -52,7 +52,11 @@ _CATEGORY = {
     "staff": "Users", "member": "Users", "user": "Users", "role": "Users",
     "appointment": "Appointments", "program": "Programs",
     "content": "Content", "community": "Community", "growth": "Growth",
-    "safety": "Safety", "report": "Reports",
+    "safety": "Safety", "report": "Reports", "analytics": "Reports",
+    # Added as the modules were rebuilt: each verb prefix goes to the screen
+    # a reader would look for it under.
+    "service": "Appointments", "calendar": "Appointments", "feedback": "Programs",
+    "messages": "Community", "task": "Settings",
 }
 
 

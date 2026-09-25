@@ -101,11 +101,8 @@ const NAV: NavItem[] = [
     href: "/dashboard/messages",
     icon: MessageSquare,
     module: "messages",
-    badge: "12",
-    badgeTone: "muted",
     children: [
-      { label: "Campaigns", href: "/dashboard/messages" },
-      { label: "Member support", href: "/dashboard/messages/members" },
+      { label: "Inbox", href: "/dashboard/messages" },
     ],
   },
   {
@@ -168,12 +165,10 @@ const NAV: NavItem[] = [
     module: "feedback",
   },
   {
-    label: "AI Command Center",
+    label: "Command Center",
     href: "/dashboard/ai",
     icon: Bot,
     module: "ai",
-    badge: "New",
-    badgeTone: "brand",
   },
   {
     label: "Settings",

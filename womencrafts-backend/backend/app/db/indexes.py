@@ -19,6 +19,39 @@ from app.db.mongodb import get_database
 
 # collection -> indexes it needs
 INDEXES: dict[str, list[IndexModel]] = {
+    # ── Collections the admin rebuild added (2026-09-26) ──────────────────
+    "member_threads": [
+        # One state document per member: assignee, resolved flag.
+        IndexModel([("user_id", ASCENDING)], unique=True, name="user_unique"),
+    ],
+    "member_messages": [
+        # The inbox's this-week counters and "waiting for a reply" scan.
+        IndexModel([("sender", ASCENDING), ("created_at", DESCENDING)], name="sender_created"),
+        IndexModel([("user_id", ASCENDING), ("created_at", ASCENDING)], name="user_created"),
+    ],
+    "circle_moderation": [
+        # The member-side mute check on every post/reply write, and the roster join.
+        IndexModel([("circle_id", ASCENDING), ("user_id", ASCENDING), ("kind", ASCENDING)], name="circle_user_kind"),
+        IndexModel([("kind", ASCENDING), ("until", ASCENDING)], name="kind_until"),
+    ],
+    "mentor_sessions": [
+        IndexModel([("mentor_id", ASCENDING), ("created_at", DESCENDING)], name="mentor_recent"),
+    ],
+    "staff_tasks": [
+        IndexModel([("done", ASCENDING), ("due", ASCENDING)], name="done_due"),
+        IndexModel([("assignee_id", ASCENDING), ("done", ASCENDING)], name="assignee_done"),
+    ],
+    "report_runs": [
+        IndexModel([("created_at", DESCENDING)], name="recent"),
+        IndexModel([("report_key", ASCENDING), ("created_at", DESCENDING)], name="report_recent"),
+    ],
+    "feedback_requests": [
+        IndexModel([("created_at", DESCENDING)], name="recent"),
+    ],
+    "content_items": [
+        IndexModel([("slug", ASCENDING)], name="slug"),
+        IndexModel([("status", ASCENDING), ("publish_at", ASCENDING)], name="status_publish_at"),
+    ],
     "users": [
         # Sign-in looks up by email on every attempt; unique also stops two
         # accounts racing to claim the same address.
