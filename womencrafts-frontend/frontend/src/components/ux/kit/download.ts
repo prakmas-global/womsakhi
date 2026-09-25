@@ -289,9 +289,9 @@ export function certificateHtml(c: CertificateFields): string {
     <p class="c-verify">
       ${c.revoked
         ? `This record has been withdrawn. Checking the certificate number at
-           <strong>womsakhi.in/verify</strong> will show it as withdrawn.`
+           <strong>womsakhi.com/verify</strong> will show it as withdrawn.`
         : `Issued electronically and valid without signature.
-           Authenticity may be verified at <strong>womsakhi.in/verify</strong> using the certificate number above.`}
+           Authenticity may be verified at <strong>womsakhi.com/verify</strong> using the certificate number above.`}
     </p>
   </div></div>
 </div>`;

@@ -8,7 +8,8 @@ import { useShell } from "./ShellProvider";
 import { apiUnreadCounts } from "@/lib/member-api";
 import { apiProgress } from "@/lib/me-api";
 
-import { ME } from "./home/data";
+import { ME as RAW_ME } from "./home/data";
+import { useTranslated } from "@/i18n/data";
 
 /**
  * The signed-in woman, from her account rather than from a fixture.
@@ -33,6 +34,7 @@ export interface Me {
 }
 
 export function useMe(): Me {
+  const ME = useTranslated(RAW_ME);
   const { user } = useAuth();
 
   // Live where the session has it, the fixture where it does not — never a

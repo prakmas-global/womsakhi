@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useMemo, useState } from "react";
+import { useT } from "@/i18n";
 import Image from "next/image";
 import Link from "next/link";
 import { ArrowRight, BookOpen, BriefcaseBusiness, Heart, IndianRupee, MessageCircle, Target, UsersRound } from "lucide-react";
@@ -49,6 +50,7 @@ const NO_GOALS: Goal[] = [];
  * about her own life.
  */
 export default function JourneyPage() {
+  const tr = useT();
   const me = useMe();
 
   /**
@@ -121,13 +123,13 @@ export default function JourneyPage() {
    * earned her the badge.
    */
   const badges: Badge[] = useMemo(() => (facts ? [
-    { id: "learner", label: "Early learner", icon: "GraduationCap", earned: facts.coursesDone > 0,
+    { id: "learner", label: tr("journey.earlyLearner"), icon: "GraduationCap", earned: facts.coursesDone > 0,
       tint: "--ux-tint-violet", ink: "--ux-violet-ink" },
-    { id: "member",  label: "Active member", icon: "HeartHandshake", earned: facts.circles > 0,
+    { id: "member",  label: tr("journey.activeMember"), icon: "HeartHandshake", earned: facts.circles > 0,
       tint: "--ux-tint-pink", ink: "--ux-pink-ink" },
-    { id: "setter",  label: "Goal setter",   icon: "Target", earned: goals.length > 0,
+    { id: "setter",  label: tr("journey.goalSetter"),   icon: "Target", earned: goals.length > 0,
       tint: "--ux-tint-amber", ink: "--ux-amber-ink" },
-    { id: "next",    label: "Next badge",    icon: "Award", earned: false,
+    { id: "next",    label: tr("journey.nextBadge"),    icon: "Award", earned: false,
       tint: "--ux-surface-2", ink: "--ux-faint" },
   ] : []), [facts, goals.length]);
 
@@ -135,13 +137,13 @@ export default function JourneyPage() {
   const recs: Rec[] = useMemo(() => {
     const forStep: Record<string, Rec[]> = {
       proof: [
-        { id: "r1", title: "How to create a portfolio", kind: "Video", meta: "12 min",
+        { id: "r1", title: tr("journey.howToCreateAPortfolio"), kind: "Video", meta: "12 min",
           icon: "Play", tint: "--ux-tint-violet", ink: "--ux-violet-ink", href: "/app/programs" },
-        { id: "r2", title: "Certificate templates", kind: "Resource", meta: "PDF",
+        { id: "r2", title: tr("journey.certificateTemplates"), kind: "Resource", meta: "PDF",
           icon: "FileText", tint: "--ux-tint-pink", ink: "--ux-pink-ink", href: "/app/certificates" },
-        { id: "r3", title: "Writing a great profile", kind: "Guide", meta: "8 min",
+        { id: "r3", title: tr("journey.writingAGreatProfile"), kind: "Guide", meta: "8 min",
           icon: "BookOpen", tint: "--ux-tint-blue", ink: "--ux-blue-ink", href: "/app/profile" },
-        { id: "r4", title: "Real stories from women like you", kind: "Article", meta: "5 min",
+        { id: "r4", title: tr("journey.realStoriesFromWomenLikeYou"), kind: "Article", meta: "5 min",
           icon: "Sparkles", tint: "--ux-tint-green", ink: "--ux-green-ink", href: "/app/stories" },
       ],
     };
@@ -149,11 +151,11 @@ export default function JourneyPage() {
     return forStep[shown.id] ?? [
       { id: "d1", title: `Courses for ${shown.label.toLowerCase()}`, kind: "Guide", meta: "Browse",
         icon: "BookOpen", tint: "--ux-tint-violet", ink: "--ux-violet-ink", href: "/app/programs" },
-      { id: "d2", title: "Women who have done this", kind: "Article", meta: "5 min",
+      { id: "d2", title: tr("journey.womenWhoHaveDoneThis"), kind: "Article", meta: "5 min",
         icon: "Sparkles", tint: "--ux-tint-green", ink: "--ux-green-ink", href: "/app/stories" },
-      { id: "d3", title: "Find a mentor", kind: "Guide", meta: "10 min",
+      { id: "d3", title: tr("journey.findAMentor"), kind: "Guide", meta: "10 min",
         icon: "BookOpen", tint: "--ux-tint-pink", ink: "--ux-pink-ink", href: "/app/mentors" },
-      { id: "d4", title: "Ask Sakhi what is next", kind: "Video", meta: "2 min",
+      { id: "d4", title: tr("journey.askSakhiWhatIsNext"), kind: "Video", meta: "2 min",
         icon: "Play", tint: "--ux-tint-blue", ink: "--ux-blue-ink", href: "/app/sakhi" },
     ];
   }, [shown]);
@@ -198,31 +200,31 @@ export default function JourneyPage() {
     <HomeShell active="/app/journey" rail={rail} loadFailed="your journey">
       <div className={styles.page} data-dashboard="journey">
         <section className={styles.hero} aria-labelledby="journey-title">
-          <Image src="/ux/journey/journey-hero-v1.png" alt="Women of different ages and backgrounds looking toward a bright mountain horizon" fill priority sizes="(max-width: 760px) 100vw, 70vw" />
+          <Image src="/ux/journey/journey-hero-v1.png" alt={tr("journey.womenOfDifferentAgesAndBackgrounds")} fill priority sizes="(max-width: 760px) 100vw, 70vw" />
           <div className={styles.heroShade} />
           <div className={styles.heroCopy}>
-            <p>My journey</p>
-            <h1 id="journey-title">Small Steps.<br /><em>Big Dreams.</em></h1>
-            <span>Your journey is unique. Explore, learn, grow and create the life you deserve.</span>
+            <p>{tr("ch.journey.label")}</p>
+            <h1 id="journey-title">{tr("journey.smallSteps")}<br /><em>{tr("journey.bigDreams")}</em></h1>
+            <span>{tr("journey.yourJourneyIsUniqueExploreLearn")}</span>
           </div>
           <p className={styles.heroWords}>Learn<br />Earn<br />Connect<br />Grow<br />Together <Heart /></p>
         </section>
-        <nav className={styles.tabs} aria-label="Journey areas">
+        <nav className={styles.tabs} aria-label={tr("journey.journeyAreas")}>
           {[['Overview','Sparkles','/app/journey'],['Learning','BookOpen','/app/learn'],['Work','Briefcase','/app/work'],['Earn','IndianRupee','/app/earn'],['Circle','Users','/app/circle'],['Health & Wellness','Heart','/app/wellness'],['Goals','Target','/app/goals']].map(([label,icon,href],index)=><Link href={href} key={label} aria-current={index===0?'page':undefined}><span>{icon==='BookOpen'?<BookOpen/>:icon==='Briefcase'?<BriefcaseBusiness/>:icon==='IndianRupee'?<IndianRupee/>:icon==='Users'?<UsersRound/>:icon==='Heart'?<Heart/>:icon==='Target'?<Target/>:<Target/>}</span>{label}</Link>)}
         </nav>
 
         <div className={styles.featureGrid}>
-          <section className={styles.motivationCard}><Image src="/ux/journey/journey-motivation-v1.png" alt="Woman looking across a mountain valley at sunrise" fill sizes="(max-width:760px) 100vw, 45vw"/><div className={styles.motivationShade}/><div><small>Today&apos;s motivation</small><blockquote>“Every step you take<br/>builds the stronger you.”</blockquote><cite>— WomSakhi</cite></div></section>
-          <section className={styles.quick}><header><h2>Quick Actions</h2><p>Jump into what matters most</p></header><div>{[
+          <section className={styles.motivationCard}><Image src="/ux/journey/journey-motivation-v1.png" alt={tr("journey.womanLookingAcrossAMountainValley")} fill sizes="(max-width:760px) 100vw, 45vw"/><div className={styles.motivationShade}/><div><small>Today&apos;s motivation</small><blockquote>{tr("journey.everyStepYouTake")}<br/>{tr("journey.buildsTheStrongerYou")}</blockquote><cite>— WomSakhi</cite></div></section>
+          <section className={styles.quick}><header><h2>{tr("journey.quickActions")}</h2><p>{tr("journey.jumpIntoWhatMattersMost")}</p></header><div>{[
             [BookOpen,'Explore Learning','/app/learn'],[BriefcaseBusiness,'Find Opportunities','/app/opportunities'],[Target,'Track Goals','/app/goals'],[UsersRound,'Join Circle','/app/circles'],[Heart,'Check Health','/app/wellness'],[MessageCircle,'Ask Sakhi','/app/sakhi'],
           ].map(([Icon,label,href])=><Link href={href as string} key={label as string}><span><Icon/></span>{label as string}</Link>)}</div></section>
         </div>
 
-        <section className={styles.glance}><header><h2>Your Journey at a Glance</h2><p>Here&apos;s where you stand and what&apos;s next.</p></header><div>{[
+        <section className={styles.glance}><header><h2>{tr("journey.yourJourneyAtAGlance")}</h2><p>Here&apos;s where you stand and what&apos;s next.</p></header><div>{[
           [BookOpen,facts.coursesDone,'Learning milestones','/app/learn'],[BriefcaseBusiness,facts.applications,'Opportunities','/app/work'],[IndianRupee,facts.earnedMinor>0?1:0,'Income sources','/app/earn'],[UsersRound,facts.circles,'Communities','/app/circle'],[Heart,`${Math.round(tally.done/steps.length*100)}%`,'Journey progress','/app/goals'],
-        ].map(([Icon,value,label,href])=>{const MetricIcon=Icon as typeof BookOpen;return <Link href={href as string} key={label as string}><span><MetricIcon/></span><strong>{value as string | number}</strong><small>{label as string}</small><b>Explore more <ArrowRight/></b></Link>})}</div></section>
+        ].map(([Icon,value,label,href])=>{const MetricIcon=Icon as typeof BookOpen;return <Link href={href as string} key={label as string}><span><MetricIcon/></span><strong>{value as string | number}</strong><small>{label as string}</small><b>{tr("journey.exploreMore")} <ArrowRight/></b></Link>})}</div></section>
 
-        <section className={styles.recommended}><header><div><h2>Recommended for You</h2><p>Based on your current journey step: {shown.label}.</p></div><Link href="/app/programs">View all <ArrowRight/></Link></header><div>{recs.map((rec,index)=><Link href={rec.href} key={rec.id} className={styles.rec}><Image src={['/ux/art/learn-dashboard-finance.webp','/ux/art/work-dashboard-writing.webp','/ux/art/circle-study-group.webp','/ux/wellness/morning-yoga-v2.png'][index%4]} alt="" fill sizes="240px"/><span><small>{rec.kind}</small><strong>{rec.title}</strong><b>{rec.meta}</b><i>Explore <ArrowRight/></i></span></Link>)}</div></section>
+        <section className={styles.recommended}><header><div><h2>{tr("journey.recommendedForYou")}</h2><p>Based on your current journey step: {shown.label}.</p></div><Link href="/app/programs">{tr("calendar.viewAll")} <ArrowRight/></Link></header><div>{recs.map((rec,index)=><Link href={rec.href} key={rec.id} className={styles.rec}><Image src={['/ux/art/learn-dashboard-finance.webp','/ux/art/work-dashboard-writing.webp','/ux/art/circle-study-group.webp','/ux/wellness/morning-yoga-v2.png'][index%4]} alt="" fill sizes="240px"/><span><small>{rec.kind}</small><strong>{rec.title}</strong><b>{rec.meta}</b><i>Explore <ArrowRight/></i></span></Link>)}</div></section>
 
         <div className="ux-toast rounded-[12px] px-5 py-3.5 text-xsm font-bold"
              data-on={note ? "true" : "false"} role="status" aria-live="polite"

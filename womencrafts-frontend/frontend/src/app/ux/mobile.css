@@ -1265,6 +1265,28 @@
   }
 
   /*
+    The module dashboards, which none of the above reaches.
+
+    Learn, Work, Earn, Circle, Wellness and You are built from CSS modules, so
+    their calls to action carry a hashed class and neither `ux-sq` nor a
+    `rounded-` utility. Measured at 390px they were the last failures left:
+    "View Details" at 112x26, "Open" and "Join" at 153x27, and the work
+    checklist's rows at 316x30 — wide enough, and all of them too short.
+
+    Scoped to `[data-dashboard]` and to links that are already their own block,
+    so a link inside a sentence is untouched (the exemption below still holds).
+  */
+  .ux [data-dashboard] a:not(p a):not(.ux-tap-exempt) {
+    min-height: 44px;
+  }
+  /* A link that is a block already lays its content out; centre it in the
+     height the floor just gave it, or the words sit on its top edge. */
+  .ux [data-dashboard] a:not(p a):not(.ux-tap-exempt):not([class*="grid"]) {
+    display: inline-flex;
+    align-items: center;
+  }
+
+  /*
     ...but not a link inside a sentence. WCAG 2.5.8 exempts those explicitly,
     and it is right to: a 44px-tall link in the middle of a paragraph tears the
     line spacing apart, which costs more legibility than it buys.
@@ -1545,4 +1567,16 @@
     border-radius: 999px;
     white-space: nowrap;
   }
+}
+
+/*
+  How much room the wordmark may take in the phone top bar.
+
+  The bar holds the lockup plus search, sections, reminders, notifications and
+  her avatar — five 44px targets and their gaps — which leaves the lockup about
+  104px at 390. Unset from `sm` up, where the bar has room and the sizes were
+  tuned by eye.
+*/
+@media (max-width: 639px) {
+  .ux { --ux-brand-cap: 96px; }
 }

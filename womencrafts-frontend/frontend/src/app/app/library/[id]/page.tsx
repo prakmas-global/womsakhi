@@ -120,7 +120,7 @@ export default function ExchangeThread({ params }: { params: Promise<{ id: strin
           <EmptyState
             icon="SearchX"
             title={tr("library.thatExchangeIsNotHere")}
-            body="She may have taken the offer down."
+            body={tr("library.sheMayHaveTakenTheOffer")}
             action={<Btn href="/app/library" variant="primary" iconEnd="ArrowRight">{tr("library.skillExchange")}</Btn>}
           />
         </Card>
@@ -269,7 +269,7 @@ export default function ExchangeThread({ params }: { params: Promise<{ id: strin
                      title={tr("library.suggestATime")} to={swap.who}
                      placeholder={tr("library.whichDayAndHourSuitsYou")}
                      sent={tr("library.sentSheWillConfirmOne")}
-                     sentBody="It is in the conversation below. No money changes hands, in either direction."
+                     sentBody={tr("library.itIsInTheConversationBelow")}
                      sentLink={null}
                      send={async ({ text }) => { await apiSayInExchange(threadId, text); refetchConvo(); }} />
           </div>

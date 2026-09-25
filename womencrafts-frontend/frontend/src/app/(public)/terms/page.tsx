@@ -113,7 +113,7 @@ export default function TermsPage() {
       <h2>9. Closing an account</h2>
       <p>
         You may leave whenever you like — write to{" "}
-        <a href="mailto:hello@womsakhi.in">hello@womsakhi.in</a>. We may suspend or close an
+        <a href="mailto:hello@womsakhi.com">hello@womsakhi.com</a>. We may suspend or close an
         account that breaks section 4, or where we believe a member is at risk. Where we
         can, we say why.
       </p>

@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { useT } from "@/i18n";
 import * as Icons from "@/components/ux/icons";
 import { ChatInput, SendButton } from "./chat";
 
@@ -91,6 +92,7 @@ export function Composer({
   placeholder: string; canVoice: boolean;
   file: File | null; onFile: (f: File | null) => void; onClearFile: () => void;
 }) {
+  const tr = useT();
   const box = useRef<HTMLTextAreaElement>(null);
   const pick = useRef<HTMLInputElement>(null);
   const shoot = useRef<HTMLInputElement>(null);
@@ -105,8 +107,8 @@ export function Composer({
   }, [value]);
 
   const MODES = [
-    { value: "quick", label: "Quick answer", note: "Short and to the point" },
-    { value: "steps", label: "Step by step", note: "Explained slowly, in order" },
+    { value: "quick", label: tr("sakhi.quickAnswer"), note: tr("parts.shortAndToThePoint") },
+    { value: "steps", label: tr("sakhi.stepByStep"), note: tr("parts.explainedSlowlyInOrder") },
   ];
   const modeLabel = MODES.find((m) => m.value === mode)?.label ?? "Quick answer";
   const localeLabel = locales.find((l) => l.value === locale)?.label ?? "English";
@@ -133,14 +135,14 @@ export function Composer({
                 style={{ background: "var(--ux-surface-2)", border: "1px solid var(--ux-line-strong)" }}>
             <Icons.Paperclip className="h-[13px] w-[13px] shrink-0" style={{ color: "var(--ux-faint)" }} />
             <span className="truncate font-semibold" style={{ color: "var(--ux-ink)" }}>{file.name}</span>
-            <button type="button" onClick={onClearFile} aria-label="Remove attachment"
+            <button type="button" onClick={onClearFile} aria-label={tr("messages.removeAttachment")}
                     className="ux-press grid h-[18px] w-[18px] shrink-0 place-items-center rounded-full"
                     style={{ color: "var(--ux-faint)" }}>
               <Icons.X className="h-[12px] w-[12px]" />
             </button>
           </span>
           <span className="text-[12px] lg:text-2xs" style={{ color: "var(--ux-amber-ink)" }}>
-            She will see the name, not what is inside it — reading files is coming.
+            {tr("parts.sheWillSeeTheNameNot")}
           </span>
         </div>
       )}
@@ -157,7 +159,7 @@ export function Composer({
             if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); onSend(); }
           }}
           placeholder={placeholder}
-          aria-label="Ask Sakhi"
+          aria-label={tr("nav.sakhi")}
           className="w-full resize-none bg-transparent text-sm leading-relaxed outline-none"
           style={{ color: "var(--ux-ink)", maxHeight: 150 }}
         />
@@ -166,18 +168,18 @@ export function Composer({
       <div className="flex flex-wrap items-center justify-between gap-2 border-t px-2 py-2"
            style={{ borderColor: "var(--ux-line)" }}>
         <div className="flex items-center gap-1">
-          <button type="button" onClick={() => pick.current?.click()} title="Attach a file"
+          <button type="button" onClick={() => pick.current?.click()} title={tr("messages.attachAFile")}
                   className="ux-press grid h-[34px] w-[34px] place-items-center rounded-[12px] transition-colors hover:bg-[var(--ux-surface-2)]"
                   style={{ color: "var(--ux-muted)" }}>
             <Icons.Paperclip className="h-[17px] w-[17px]" />
           </button>
-          <button type="button" onClick={() => shoot.current?.click()} title="Photograph a form"
+          <button type="button" onClick={() => shoot.current?.click()} title={tr("parts.photographAForm")}
                   className="ux-press grid h-[34px] w-[34px] place-items-center rounded-[12px] transition-colors hover:bg-[var(--ux-surface-2)]"
                   style={{ color: "var(--ux-muted)" }}>
             <Icons.Camera className="h-[17px] w-[17px]" />
           </button>
           <span className="h-[20px] w-px" style={{ background: "var(--ux-line-strong)" }} />
-          <Picker icon="Zap" title="How she should answer" label={modeLabel}
+          <Picker icon="Zap" title={tr("parts.howSheShouldAnswer")} label={modeLabel}
                   items={MODES} value={mode} onPick={setMode} />
           <span className="h-[20px] w-px" style={{ background: "var(--ux-line-strong)" }} />
           <Picker icon="Globe" title="Language" label={localeLabel}
@@ -241,10 +243,11 @@ export function PhoneComposer({
   placeholder: string; canVoice: boolean;
   file: File | null; onFile: (f: File | null) => void; onClearFile: () => void;
 }) {
+  const tr = useT();
   const pick = useRef<HTMLInputElement>(null);
   const MODES = [
-    { value: "quick", label: "Quick answer", note: "Short and to the point" },
-    { value: "steps", label: "Step by step", note: "Explained slowly, in order" },
+    { value: "quick", label: tr("sakhi.quickAnswer"), note: tr("parts.shortAndToThePoint") },
+    { value: "steps", label: tr("sakhi.stepByStep"), note: tr("parts.explainedSlowlyInOrder") },
   ];
   const modeLabel = MODES.find((m) => m.value === mode)?.label ?? "Quick answer";
   const localeLabel = locales.find((l) => l.value === locale)?.label ?? "English";
@@ -258,7 +261,7 @@ export function PhoneComposer({
 
       {!typed && (
         <div className="ux-chat-tip flex items-center gap-1 pb-1.5">
-          <Picker icon="Zap" title="How she should answer" label={modeLabel}
+          <Picker icon="Zap" title={tr("parts.howSheShouldAnswer")} label={modeLabel}
                   items={MODES} value={mode} onPick={setMode} />
           <span className="h-[16px] w-px" style={{ background: "var(--ux-line-strong)" }} />
           <Picker icon="Globe" title="Language" label={localeLabel}
@@ -272,20 +275,20 @@ export function PhoneComposer({
                 style={{ background: "var(--ux-surface-2)", border: "1px solid var(--ux-line-strong)" }}>
             <Icons.Paperclip className="h-[13px] w-[13px] shrink-0" style={{ color: "var(--ux-faint)" }} />
             <span className="truncate font-semibold" style={{ color: "var(--ux-ink)" }}>{file.name}</span>
-            <button type="button" onClick={onClearFile} aria-label="Remove attachment"
+            <button type="button" onClick={onClearFile} aria-label={tr("messages.removeAttachment")}
                     className="ux-press ux-tap-exempt grid h-[20px] w-[20px] shrink-0 place-items-center rounded-full"
                     style={{ color: "var(--ux-faint)" }}>
               <Icons.X className="h-[12px] w-[12px]" />
             </button>
           </span>
           <span className="text-[12px]" style={{ color: "var(--ux-amber-ink)" }}>
-            She will see the name, not what is inside it.
+            {tr("parts.sheWillSeeTheNameNot2")}
           </span>
         </div>
       )}
 
       <div className="flex items-end gap-1.5 pb-2">
-        <button type="button" onClick={() => pick.current?.click()} aria-label="Attach a file"
+        <button type="button" onClick={() => pick.current?.click()} aria-label={tr("messages.attachAFile")}
                 className="grid h-[44px] w-[44px] shrink-0 place-items-center rounded-full"
                 style={{ color: "var(--ux-muted)", transform: "none" }}>
           <Icons.Paperclip className="h-[20px] w-[20px]" />
@@ -293,7 +296,7 @@ export function PhoneComposer({
         <div className="ux-comp min-w-0 flex-1 rounded-[24px] px-3.5 py-2.5"
              style={{ background: "var(--ux-surface-2)", border: "1px solid var(--ux-line-strong)" }}>
           <ChatInput value={value} onChange={onChange} onSend={onSend}
-                     placeholder={placeholder} label="Ask Sakhi" />
+                     placeholder={placeholder} label={tr("nav.sakhi")} />
         </div>
         {canVoice && !typed && (
           <button type="button" onClick={onMic} aria-pressed={listening}
@@ -319,6 +322,7 @@ export function Actions({
   text: string; onRetry?: () => void; onSave: () => void; saved: boolean;
   vote: "up" | "down" | null; onVote: (v: "up" | "down") => void;
 }) {
+  const tr = useT();
   const [copied, setCopied] = useState(false);
 
   const btn = "ux-row flex items-center gap-1.5 rounded-[8px] px-2 py-1.5 text-xs font-semibold";
@@ -344,7 +348,7 @@ export function Actions({
 
       {onRetry && (
         <button type="button" className={btn} style={{ color: "var(--ux-muted)" }} onClick={onRetry}>
-          <Icons.RotateCw className="h-[13px] w-[13px]" /> Try again
+          <Icons.RotateCw className="h-[13px] w-[13px]" /> {tr("common.retry")}
         </button>
       )}
 
@@ -362,7 +366,7 @@ export function Actions({
       <button type="button" className={btn} onClick={() => onVote("down")}
               aria-pressed={vote === "down"}
               style={{ color: vote === "down" ? "var(--ux-pink-ink)" : "var(--ux-muted)" }}>
-        <Icons.ThumbsDown className="h-[13px] w-[13px]" /> Not helpful
+        <Icons.ThumbsDown className="h-[13px] w-[13px]" /> {tr("parts.notHelpful")}
       </button>
     </div>
   );
@@ -376,12 +380,13 @@ export function DraftCard({
   sentence: string; onApprove: () => void; onReject: () => void;
   onChange: () => void; busy: boolean;
 }) {
+  const tr = useT();
   return (
     <div className="mt-3 overflow-hidden rounded-[12px]" style={{ border: "1px solid var(--ux-line-strong)" }}>
       <p className="flex items-center gap-2 px-3.5 py-2.5 text-[12px] lg:text-2xs font-bold uppercase tracking-[0.12em]"
          style={{ background: "var(--ux-tint-amber)", color: "var(--ux-amber-ink)" }}>
         <Icons.PenLine className="h-[13px] w-[13px]" />
-        Draft — not sent
+        {tr("parts.draftNotSent")}
       </p>
       <p className="px-3.5 pt-3.5 text-xsm leading-relaxed" style={{ color: "var(--ux-ink-2)" }}>
         {sentence}
@@ -395,12 +400,12 @@ export function DraftCard({
         <button type="button" onClick={onApprove} disabled={busy}
                 className="ux-press flex min-h-[40px] items-center justify-center gap-2 rounded-[12px] px-4 text-xsm font-bold disabled:opacity-50"
                 style={{ background: "linear-gradient(96deg, var(--ux-rib-2), var(--ux-rib-3))", color: "var(--ux-on-brand)" }}>
-          <Icons.Check className="h-4 w-4" /> Send it
+          <Icons.Check className="h-4 w-4" /> {tr("booksProof.sendIt")}
         </button>
         <button type="button" onClick={onChange} disabled={busy}
                 className="ux-press flex min-h-[40px] items-center justify-center gap-2 rounded-[12px] px-4 text-xsm font-bold disabled:opacity-50"
                 style={{ background: "var(--ux-surface-2)", border: "1px solid var(--ux-line-strong)", color: "var(--ux-ink)" }}>
-          <Icons.PenLine className="h-4 w-4" /> Change something
+          <Icons.PenLine className="h-4 w-4" /> {tr("parts.changeSomething")}
         </button>
         <button type="button" onClick={onReject} disabled={busy}
                 className="ux-press flex min-h-[40px] items-center justify-center gap-2 rounded-[12px] px-4 text-xsm font-bold disabled:opacity-50"
@@ -458,8 +463,9 @@ export function Cites({ tools }: { tools: string[] }) {
 }
 
 export function Typing() {
+  const tr = useT();
   return (
-    <span className="ux-blip flex items-center gap-[4px] py-1" aria-label="Sakhi is typing">
+    <span className="ux-blip flex items-center gap-[4px] py-1" aria-label={tr("parts.sakhiIsTyping")}>
       {[0, 1, 2].map((i) => (
         <i key={i} className="block h-[7px] w-[7px] rounded-full" style={{ background: "var(--ux-brand)" }} />
       ))}
@@ -501,13 +507,14 @@ export function ModeSwitch({
   onPick: (v: "welcome" | "talk" | "voice") => void;
   canTalk: boolean; canVoice: boolean;
 }) {
+  const tr = useT();
   const items = [
     { v: "welcome" as const, label: "Welcome", icon: "Sparkles", on: true },
-    { v: "talk" as const, label: "In conversation", icon: "MessageCircle", on: canTalk },
+    { v: "talk" as const, label: tr("parts.inConversation"), icon: "MessageCircle", on: canTalk },
     { v: "voice" as const, label: "Voice", icon: "AudioLines", on: canVoice },
   ];
   return (
-    <div role="group" aria-label="Ask Sakhi view"
+    <div role="group" aria-label={tr("parts.askSakhiView")}
          className="mx-auto flex w-fit max-w-full gap-1 overflow-x-auto rounded-full p-1"
          style={{ background: "var(--ux-surface-2)", border: "1px solid var(--ux-line-strong)",
                   scrollbarWidth: "none" }}>

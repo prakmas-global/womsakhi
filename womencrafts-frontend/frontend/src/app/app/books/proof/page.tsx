@@ -7,8 +7,12 @@ import { HomeShell } from "@/components/ux/home/HomeShell";
 import { Back, Btn, Card, I, IconTile, Pill, Stat, v } from "@/components/ux/kit";
 import { EYEBROW, GROUP, Section } from "@/components/ux/earn/phone";
 import { formatRupees } from "@/components/ux/kit";
-import { MONTHS, PROOF_USES, bestMonth, leanMonth, yearMinor } from "@/components/ux/books/data";
+import { PROOF_USES as RAW_PROOF_USES } from "@/components/ux/books/data";
+import { useResource } from "@/lib/use-resource";
+import { apiProof, type Proof, type ProofMonth } from "@/lib/books-api";
+import { useAuth } from "@/context/AuthContext";
 import { useT } from "@/i18n";
+import { useTranslated } from "@/i18n/data";
 
 /**
  * Proof of income — the document she cannot get anywhere else.
@@ -31,17 +35,48 @@ import { useT } from "@/i18n";
  * says so — because "irregular but never zero, for six months" is a true and
  * genuinely persuasive claim.
  */
+/** Nothing until the server answers. A statement must never show a guess. */
+const EMPTY_PROOF: Proof = {
+  months: [], total_minor: 0, months_counted: 0, months_with_earnings: 0, average_minor: 0,
+};
+
 export default function ProofPage() {
+  const PROOF_USES = useTranslated(RAW_PROOF_USES);
   const tr = useT();
+
+  /*
+    Her real months, counted from her own paid entries.
+
+    `MONTHS` was six invented rows — April to September, ₹13,400 to ₹23,800 —
+    identical for every woman in the product. This screen's whole purpose is a
+    document she hands a landlord, a school or a loan officer; a fabricated one
+    is not a weaker version of that, it is the opposite of it.
+
+    Only `paid` rows count, and every month in the window is included even when
+    it is zero. See `/me/books/proof`.
+  */
+  const { data: proof } = useResource(
+    useCallback(async (sig: AbortSignal) => apiProof(6, sig), []),
+    EMPTY_PROOF,
+  );
+  const MONTHS = proof.months;
+  const { user } = useAuth();
   /**
    * Hands the statement to the phone's own share sheet, or copies it.
    * Nothing is uploaded — the statement is hers, and a landlord receiving it
    * should receive it from her, not from us.
    */
   const shareStatement = async () => {
-    const text = "Earnings statement — WomSakhi. Issued to Priya Sharma.";
+    // Her name, from her account. This read "Issued to Priya Sharma" for
+    // every woman — on the one document in this product whose entire value is
+    // that it is about HER, handed to somebody deciding whether to trust her.
+    const text = tr("booksProof.statementText", {
+      name: (user?.full_name || "").trim(),
+      total: formatRupees(proof.total_minor),
+      months: proof.months_counted,
+    });
     try {
-      if (navigator.share) await navigator.share({ title: "My earnings statement", text });
+      if (navigator.share) await navigator.share({ title: tr("booksProof.myEarningsStatement"), text });
       else await navigator.clipboard?.writeText(text);
     } catch { /* she closed the sheet */ }
   };
@@ -50,13 +85,56 @@ export default function ProofPage() {
   const [use, setUse] = useState<string>("u1");
   const [made, setMade] = useState(false);
 
-  const year = useMemo(() => yearMinor(MONTHS), []);
-  const best = useMemo(() => bestMonth(MONTHS), []);
-  const lean = useMemo(() => leanMonth(MONTHS), []);
-  const avg = Math.round(year / MONTHS.length);
-  const orders = useMemo(() => MONTHS.reduce((n, m) => n + m.orders, 0), []);
-  const people = useMemo(() => Math.max(...MONTHS.map((m) => m.customers)), []);
-  const peak = useMemo(() => Math.max(...MONTHS.map((m) => m.minor)), []);
+  const year = proof.total_minor;
+  /*
+    A zero row, not `undefined`, when she has no months yet.
+
+    `MONTHS` is empty on the first render — before the server answers, and for
+    a woman who has written nothing down. Reducing an empty array returns
+    undefined, and `best.month` three hundred lines below then throws into the
+    error boundary, which is why this screen said "We could not load your
+    earnings statement" when nothing had failed at all.
+  */
+  const ZERO_MONTH: ProofMonth = { month: "—", minor: 0, orders: 0, customers: 0 };
+  const best = useMemo(
+    () => MONTHS.reduce((a, b) => (b.minor > a.minor ? b : a), MONTHS[0] ?? ZERO_MONTH),
+    [MONTHS],
+  );
+  const lean = useMemo(
+    () => MONTHS.reduce((a, b) => (b.minor < a.minor ? b : a), MONTHS[0] ?? ZERO_MONTH),
+    [MONTHS],
+  );
+  const avg = proof.average_minor;
+  const orders = useMemo(() => MONTHS.reduce((n, m) => n + m.orders, 0), [MONTHS]);
+  /*
+    Both of these read `Math.max(...[])` on the first render, which is
+    `-Infinity`, and both had an EMPTY dependency array — so the value computed
+    before the server answered was the value kept forever. The screen showed
+    "People paid you: -Infinity", and told a landlord she had been "paid by up
+    to -Infinity different customers in a single month".
+
+    `peak` was worse than it looked: dividing by -Infinity made every bar in
+    the chart -0% tall, so the whole six-month graph flatlined at the 10%
+    floor whatever she had earned.
+  */
+  const people = useMemo(
+    () => MONTHS.reduce((n, m) => Math.max(n, m.customers), 0),
+    [MONTHS],
+  );
+  const peak = useMemo(
+    () => MONTHS.reduce((n, m) => Math.max(n, m.minor), 0),
+    [MONTHS],
+  );
+  /*
+    Whether the "earned in every month" claim is actually true. The screen
+    asserted it unconditionally — on a statement whose only job is to be
+    believed by somebody deciding whether to rent her a room. A woman with a
+    lean month handing over a document that overstates her is worse off than
+    one handing over nothing.
+  */
+  const everyMonth = MONTHS.length > 0 && proof.months_with_earnings === MONTHS.length;
+  const span = MONTHS.length > 0 ? `${MONTHS[0].month} to ${MONTHS[MONTHS.length - 1].month}` : "";
+  const hasAny = proof.total_minor > 0;
   const chosen = PROOF_USES.find((u) => u.id === use);
 
   const make = useCallback(() => {
@@ -92,7 +170,10 @@ export default function ProofPage() {
           <div className="mt-5">
             <div className="flex items-end gap-2" style={{ height: 120 }}>
               {MONTHS.map((m) => {
-                const h = Math.max(10, (m.minor / peak) * 100);
+                // `peak` is 0 for a woman who has written nothing down, and
+                // 0/0 is NaN — `Math.max(10, NaN)` is NaN, so every bar got
+                // `height: NaN%` and the chart drew nothing at all.
+                const h = peak > 0 ? Math.max(10, (m.minor / peak) * 100) : 10;
                 const isLean = m.month === lean.month;
                 const isBest = m.month === best.month;
                 return (
@@ -110,11 +191,20 @@ export default function ProofPage() {
                 );
               })}
             </div>
-            <p className="mt-3 text-xsm leading-relaxed" style={{ color: v("--ux-ink-2") }}>{tr("booksProof.yourBestMonthWas")}<b>{best.month}</b> at {formatRupees(best.minor)}; your leanest
-              was <b>{lean.month}</b> at {formatRupees(lean.minor)}. <b>You earned in every one of
-              them.</b> That is the sentence that convinces a landlord — not a tidy average that
-              anyone can see through.
-            </p>
+            {hasAny ? (
+              <p className="mt-3 text-xsm leading-relaxed" style={{ color: v("--ux-ink-2") }}>{tr("booksProof.yourBestMonthWas")}<b>{best.month}</b> at {formatRupees(best.minor)}; your leanest
+                was <b>{lean.month}</b> at {formatRupees(lean.minor)}.{" "}
+                {everyMonth && <><b>You earned in every one of them.</b>{" "}</>}
+                That is the sentence that convinces a landlord — not a tidy average that
+                anyone can see through.
+              </p>
+            ) : (
+              <p className="mt-3 text-xsm leading-relaxed" style={{ color: v("--ux-ink-2") }}>
+                Nothing is written down yet, so there is nothing to prove. Every sale you enter in
+                your books — the WhatsApp ones and the cash ones too — becomes a line on this
+                statement.
+              </p>
+            )}
           </div>
         </Card>
 
@@ -153,17 +243,33 @@ export default function ProofPage() {
             <p className="text-xs font-semibold uppercase tracking-[0.06em] lg:text-2xs lg:font-extrabold lg:tracking-[0.14em]" style={{ color: v("--ux-muted") }}>{tr("booksProof.whatItWillSay")}</p>
           </div>
           <div className="p-4 lg:px-5 lg:py-5">
-            <p className="text-base font-bold" style={{ color: v("--ux-ink") }}>{tr("booksProof.priyaSharmaStatementOfEarnings")}</p>
+            {/*
+              Her name, her months, her trade. Every one of these four lines
+              used to be a constant: the heading said "Priya Sharma" to every
+              woman who opened it, the dates said "April to September" whatever
+              month it was, and the work was always "tailoring and mehendi".
+
+              On any other screen that is a cosmetic bug. On this one it is the
+              whole document — a landlord reads it precisely because it is
+              supposed to be about the woman standing in front of him.
+            */}
+            <p className="text-base font-bold" style={{ color: v("--ux-ink") }}>
+              {(user?.full_name || "").trim() || "Your name"} — statement of earnings
+            </p>
             <p className="mt-1 text-xs" style={{ color: v("--ux-muted") }}>
-              April to September · prepared for {chosen?.label.toLowerCase()}
+              {span && <>{span} · </>}prepared for {chosen?.label.toLowerCase()}
             </p>
             <ul className="mt-4 flex flex-col gap-2.5">
               {[
-                `Earned ${formatRupees(year)} over six months, from her own tailoring and mehendi work.`,
-                `An average of ${formatRupees(avg)} a month, across ${orders} separate orders.`,
-                `Paid by up to ${people} different customers in a single month.`,
-                `Earned in every one of the six months — the lowest was ${formatRupees(lean.minor)}.`,
-              ].map((line) => (
+                `Earned ${formatRupees(year)} over ${proof.months_counted} months, from her own work.`,
+                `An average of ${formatRupees(avg)} a month, across ${orders} separate ${orders === 1 ? "order" : "orders"}.`,
+                people > 0 && `Paid by up to ${people} different ${people === 1 ? "customer" : "customers"} in a single month.`,
+                // Only claimed when it is true. See `everyMonth` above.
+                everyMonth
+                  ? `Earned in every one of the ${proof.months_counted} months — the lowest was ${formatRupees(lean.minor)}.`
+                  : proof.months_with_earnings > 0 &&
+                    `Earned in ${proof.months_with_earnings} of the ${proof.months_counted} months.`,
+              ].filter((x): x is string => Boolean(x)).map((line) => (
                 <li key={line} className="flex items-start gap-2.5 text-xsm leading-relaxed"
                     style={{ color: v("--ux-ink-2") }}>
                   <I name="Check" className="mt-[3px] h-[14px] w-[14px] shrink-0"
@@ -182,7 +288,12 @@ export default function ProofPage() {
             </div>
           </div>
           <div className="flex flex-wrap gap-2 px-4 pb-4 lg:px-5 lg:pb-5">
-            <Btn icon="FileText" onClick={make} className="ux-action-primary">{made ? "Made" : "Make the statement"}</Btn>
+            <Btn icon="FileText" onClick={make} disabled={!hasAny} className="ux-action-primary">{made ? "Made" : "Make the statement"}</Btn>
+            {!hasAny && (
+              <Btn variant="outline" icon="Plus" href="/app/books" className="max-lg:w-full">
+                Add what you have sold
+              </Btn>
+            )}
             {made && (
               <>
                 <Btn variant="outline" icon="Share2" onClick={shareStatement} className="max-lg:w-full">{tr("booksProof.sendIt")}</Btn>

@@ -6,8 +6,12 @@ import { HomeShell } from "@/components/ux/home/HomeShell";
 import { SectionLabel, Tag } from "@/components/ux/work/native";
 import { ReadAloud } from "@/components/ux/reach/ReadAloud";
 import { Btn, Card, I, IconTile, v } from "@/components/ux/kit";
-import { PROOFS, RECORD_USES } from "@/components/ux/eight/data";
+import { RECORD_USES as RAW_RECORD_USES } from "@/components/ux/eight/data";
+import { useResource } from "@/lib/use-resource";
+import { apiStanding, type Standing } from "@/lib/standing-api";
+import { useAuth } from "@/context/AuthContext";
 import { useT } from "@/i18n";
+import { useTranslated } from "@/i18n/data";
 
 /**
  * Your record — designed as a document, not a dashboard.
@@ -35,9 +39,21 @@ import { useT } from "@/i18n";
  * make the module dishonest.
  */
 export default function TrustPage() {
+  const RECORD_USES = useTranslated(RAW_RECORD_USES);
   const tr = useT();
+  const { user } = useAuth();
   const [made, setMade] = useState(false);
-  const months = 9;
+
+  /**
+   * Counted from her own rows. Every number on this page used to be a
+   * constant — and this is a page with a Share button on it.
+   */
+  const standing = useResource<Standing>(
+    useCallback((sig: AbortSignal) => apiStanding(sig), []),
+    { proofs: [], months: 0, since: "", has_record: false },
+  );
+  const PROOFS = standing.data.proofs;
+  const months = standing.data.months;
 
   const make = useCallback(() => setMade(true), []);
 
@@ -47,12 +63,18 @@ export default function TrustPage() {
    * it anywhere on her behalf is the one thing this module must never do.
    */
   const share = useCallback(async () => {
-    const text = `Record of standing — Priya Sharma. ${months} months, ${PROOFS.map((p) => `${p.count} ${p.label.toLowerCase()}`).join(", ")}.`;
+    // Her name, and only the lines that have something behind them. The old
+    // text named Priya Sharma to everyone and listed every category whether
+    // or not she had ever done it.
+    const name = (user?.full_name || "").trim();
+    const lines = PROOFS.filter((p) => p.count > 0)
+      .map((p) => `${p.count} ${p.label.toLowerCase()}`).join(", ");
+    const text = `Record of standing${name ? ` — ${name}` : ""}. ${months} ${months === 1 ? "month" : "months"}${lines ? `, ${lines}` : ""}.`;
     try {
-      if (navigator.share) await navigator.share({ title: "My record", text });
+      if (navigator.share) await navigator.share({ title: tr("trust.myRecord"), text });
       else await navigator.clipboard?.writeText(text);
     } catch { /* she closed the sheet */ }
-  }, [months]);
+  }, [months, PROOFS, user, tr]);
 
   return (
     <HomeShell active="/app/trust">
@@ -63,7 +85,10 @@ export default function TrustPage() {
           <h1 className="ux-screen-title mt-1 lg:mt-2 text-[clamp(1.5rem,3.2vw,2.125rem)] font-extrabold leading-[1.1] tracking-[-0.035em]"
               style={{ color: v("--ux-ink") }}>{tr("trust.proofOfWhoYouHaveBeen")}</h1>
           <p className="mt-2 max-w-[58ch] text-[15px] leading-snug lg:mt-1.5 lg:text-sm lg:leading-relaxed" style={{ color: v("--ux-muted") }}>
-            Nine months of keeping your word, written down. It belongs to you — we never send it
+            {months > 0
+              ? `${months} ${months === 1 ? "month" : "months"} of keeping your word, written down.`
+              : "This fills itself in as you go — from your books, your orders and your circle."}
+            {" "}It belongs to you — we never send it
             to anyone, and nothing bad can ever be written on it.
           </p>
           <div className="mt-3"><ReadAloud targetId="trust-page" /></div>
@@ -81,7 +106,7 @@ export default function TrustPage() {
               <div>
                 <p className="text-[12px] font-extrabold uppercase tracking-[0.22em] lg:text-2xs" style={{ color: v("--ux-brand") }}>{tr("trust.recordOfStanding")}</p>
                 <p className="mt-2 font-serif text-2xl font-bold leading-none tracking-[-0.02em]"
-                   style={{ color: v("--ux-ink") }}>{tr("trust.priyaSharma")}</p>
+                   style={{ color: v("--ux-ink") }}>{(user?.full_name || "").trim() || "Your name"}</p>
                 <p className="mt-1.5 text-xs" style={{ color: v("--ux-muted") }}>{tr("trust.tailoringAndMehendiJaipur")}</p>
               </div>
               <div className="grid h-[62px] w-[62px] shrink-0 place-items-center rounded-full border-2"
@@ -119,7 +144,7 @@ export default function TrustPage() {
               </p>
               <div className="text-right">
                 <p className="text-2xs font-bold uppercase tracking-[0.14em]" style={{ color: v("--ux-muted") }}>{tr("trust.keptBy")}</p>
-                <p className="mt-1 font-serif text-base font-bold" style={{ color: v("--ux-ink") }}>{tr("trust.priyaSharma2")}</p>
+                <p className="mt-1 font-serif text-base font-bold" style={{ color: v("--ux-ink") }}>{(user?.full_name || "").trim() || "Your name"}</p>
                 <p className="text-2xs" style={{ color: v("--ux-muted") }}>{tr("trust.notByWomsakhi")}</p>
               </div>
             </div>

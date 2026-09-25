@@ -11,9 +11,10 @@ import { Section } from "@/components/ux/earn/phone";
 import { HomeShell } from "@/components/ux/home/HomeShell";
 import { SegmentedControl } from "@/components/ux/mobile/SegmentedControl";
 import { useSchemes } from "@/components/ux/entitlements";
-import { SCHEME_ART, SCHEME_CATEGORIES } from "@/components/ux/schemes/data";
+import { SCHEME_ART as RAW_SCHEME_ART, SCHEME_CATEGORIES as RAW_SCHEME_CATEGORIES } from "@/components/ux/schemes/data";
 import { AlsoHere } from "@/components/ux/AlsoHere";
 import { useT } from "@/i18n";
+import { useTranslated } from "@/i18n/data";
 
 /**
  * Schemes & Benefits — public money she may already be entitled to.
@@ -24,6 +25,8 @@ import { useT } from "@/i18n";
  * printing the rules and leaving her to work it out.
  */
 export default function SchemesPage() {
+  const SCHEME_CATEGORIES = useTranslated(RAW_SCHEME_CATEGORIES);
+  const SCHEME_ART = useTranslated(RAW_SCHEME_ART);
   const tr = useT();
   const { data: SCHEMES, source } = useSchemes();
   // "You may qualify" was a third tab here and it filtered nothing: `eligible`
@@ -201,7 +204,7 @@ export default function SchemesPage() {
             icon="Landmark"
             title={tab === "Applied" ? tr("supportfund.youHaveNotAppliedForAnything")
               : tr("supportfund.nothingOfThatKind")}
-            body="New schemes are added as governments announce them."
+            body={tr("support-fund.newSchemesAreAddedAsGovernments")}
             action={<Btn onClick={() => { setTab("All schemes"); setCats([]); }} variant="soft">{tr("supportfund.seeAllSchemes")}</Btn>}
           />
         </Card>
@@ -209,7 +212,7 @@ export default function SchemesPage() {
 
       <AlsoHere
         items={[
-          { href: "/app/cover", label: "Insurance & pension", note: "From ₹20 a year. Cover you are entitled to and may not know about.", icon: "ShieldCheck" },
+          { href: "/app/cover", label: tr("cover.insuranceAmpPension"), note: tr("support-fund.from20AYearCoverYou"), icon: "ShieldCheck" },
         ]}
       />
     </HomeShell>

@@ -324,8 +324,8 @@ export interface Order {
   created_at: string;
 }
 
-export async function apiPaymentMethods() {
-  const { data } = await apiClient.get<PaymentConfig>("/payments/methods");
+export async function apiPaymentMethods(signal?: AbortSignal) {
+  const { data } = await apiClient.get<PaymentConfig>("/payments/methods", { signal });
   return data;
 }
 

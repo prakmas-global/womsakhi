@@ -2,13 +2,15 @@
 
 import { useMemo } from "react";
 
+import { useT } from "@/i18n";
 import * as Icons from "@/components/ux/icons";
 import { Btn, Card, I, IconTile, Pill, Progress, v } from "@/components/ux/kit";
 import { formatMoney as formatRupees } from "@/components/ux/kit/money";
 import {
-  COMPANIONS, STATUS_LABEL, STATUS_TONE,
+  COMPANIONS as RAW_COMPANIONS, STATUS_LABEL as RAW_STATUS_LABEL, STATUS_TONE as RAW_STATUS_TONE,
   type Companion, type Haq, type Late, type Paper,
 } from "./data";
+import { useTranslated } from "@/i18n/data";
 
 /* ── the lead ────────────────────────────────────────────────────────────── */
 
@@ -23,6 +25,7 @@ import {
 export function AtRisk({ monthlyMinor, count, soonestDays }: {
   monthlyMinor: number; count: number; soonestDays: number;
 }) {
+  const tr = useT();
   if (count === 0) {
     return (
       <Card pad={20} style={{ background: v("--ux-tint-green"), borderColor: "transparent" }}>
@@ -30,10 +33,10 @@ export function AtRisk({ monthlyMinor, count, soonestDays }: {
           <IconTile icon="ShieldCheck" tint="--ux-surface" ink="--ux-green-ink" size={44} />
           <div className="min-w-0">
             <p className="text-base font-bold" style={{ color: v("--ux-green-ink") }}>
-              Nothing is about to stop
+              {tr("parts.nothingIsAboutToStop")}
             </p>
             <p className="mt-0.5 text-xsm" style={{ color: v("--ux-ink-2") }}>
-              Every paper is in date. We will tell you before that changes.
+              {tr("parts.everyPaperIsInDateWe")}
             </p>
           </div>
         </div>
@@ -49,7 +52,7 @@ export function AtRisk({ monthlyMinor, count, soonestDays }: {
           <div className="min-w-0 flex-1">
             <p className="text-xs font-semibold uppercase tracking-[0.06em] lg:text-2xs lg:font-extrabold lg:tracking-[0.14em]"
                style={{ color: v("--ux-amber-ink") }}>
-              You are about to lose
+              {tr("parts.youAreAboutToLose")}
             </p>
             <p className="mt-1.5 text-2xlm font-extrabold leading-none tracking-[-0.02em]"
                style={{ color: v("--ux-ink") }}>
@@ -67,9 +70,9 @@ export function AtRisk({ monthlyMinor, count, soonestDays }: {
         </div>
       </div>
       <div className="flex flex-wrap gap-2 p-4 lg:px-5 lg:py-3.5" style={{ background: v("--ux-surface") }}>
-        <Btn size="sm" icon="ListChecks" href="#deadlines" className="max-lg:flex-1 max-lg:px-4">See what to do</Btn>
+        <Btn size="sm" icon="ListChecks" href="#deadlines" className="max-lg:flex-1 max-lg:px-4">{tr("parts.seeWhatToDo")}</Btn>
         <Btn size="sm" variant="outline" icon="UserPlus" href="/app/haq/papers" className="max-lg:flex-1 max-lg:px-4">
-          Fix my papers
+          {tr("parts.fixMyPapers")}
         </Btn>
       </div>
     </Card>
@@ -98,6 +101,8 @@ export function Countdown({ days }: { days: number }) {
 
 /** `className` lets a screen fold the row into a grouped list on a phone. */
 export function HaqRow({ h, onOpen, className = "" }: { h: Haq; onOpen: (id: string) => void; className?: string }) {
+  const STATUS_LABEL = useTranslated(RAW_STATUS_LABEL);
+  const STATUS_TONE = useTranslated(RAW_STATUS_TONE);
   const tone = STATUS_TONE[h.status];
   return (
     <button
@@ -158,9 +163,10 @@ export function HaqRow({ h, onOpen, className = "" }: { h: Haq; onOpen: (id: str
 /* ── papers ──────────────────────────────────────────────────────────────── */
 
 export function PaperRow({ p, onFix, className = "" }: { p: Paper; onFix: (id: string) => void; className?: string }) {
+  const tr = useT();
   const tone =
     p.state === "held" ? { t: "--ux-tint-green", i: "--ux-green-ink", icon: "Check", label: "Held" }
-    : p.state === "expiring" ? { t: "--ux-tint-amber", i: "--ux-amber-ink", icon: "Clock", label: "Needs updating" }
+    : p.state === "expiring" ? { t: "--ux-tint-amber", i: "--ux-amber-ink", icon: "Clock", label: tr("parts.needsUpdating") }
     : { t: "--ux-danger-tint", i: "--ux-danger-solid", icon: "X", label: "Missing" };
 
   return (
@@ -244,6 +250,7 @@ export function CompanionCard({ c, chosen, onChoose }: {
 }
 
 export function useCompanionsFor(office: string): Companion[] {
+  const COMPANIONS = useTranslated(RAW_COMPANIONS);
   return useMemo(() => {
     const exact = COMPANIONS.filter((c) => c.knows.toLowerCase().includes(office.toLowerCase()));
     return exact.length ? [...exact, ...COMPANIONS.filter((c) => !exact.includes(c))] : COMPANIONS;
@@ -252,7 +259,19 @@ export function useCompanionsFor(office: string): Companion[] {
 
 /* ── recover ─────────────────────────────────────────────────────────────── */
 
-export function LateRow({ l, onFile, className = "" }: { l: Late; onFile: (id: string) => void; className?: string }) {
+/**
+ * One late payment.
+ *
+ * Takes the server's shape now, not the fixture's — `days_late` is counted
+ * from the dates on every read, so a delay cannot go on saying "28 days"
+ * forever the way a stored number would.
+ */
+export function LateRow({ l, onFile, className = "" }: {
+  l: { id: string; what: string; due_on: string; paid_on: string; days_late: number; owed_minor: number; filed: boolean };
+  onFile: (id: string) => void;
+  className?: string;
+}) {
+  const tr = useT();
   return (
     <div className={`flex items-center gap-3.5 rounded-[12px] border p-3.5 max-lg:flex-wrap max-lg:p-4 ${className}`}
          style={{ borderColor: v("--ux-line"), background: v("--ux-surface") }}>
@@ -260,20 +279,20 @@ export function LateRow({ l, onFile, className = "" }: { l: Late; onFile: (id: s
       <div className="min-w-0 flex-1">
         <p className="truncate text-sm font-bold" style={{ color: v("--ux-ink") }}>{l.what}</p>
         <p className="mt-0.5 text-xs" style={{ color: v("--ux-muted") }}>
-          Due {l.dueOn}{l.paidOn ? ` · paid ${l.paidOn}` : " · still not paid"} ·{" "}
-          <b style={{ color: v("--ux-orange-ink") }}>{l.daysLate} days late</b>
+          Due {l.due_on}{l.paid_on ? ` · paid ${l.paid_on}` : " · still not paid"} ·{" "}
+          <b style={{ color: v("--ux-orange-ink") }}>{l.days_late} {l.days_late === 1 ? "day" : "days"} late</b>
         </p>
       </div>
       <div className="shrink-0 text-right">
         <p className="text-sm font-extrabold tabular-nums" style={{ color: v("--ux-ink") }}>
-          {formatRupees(l.owedMinor)}
+          {formatRupees(l.owed_minor)}
         </p>
-        <p className="text-2xs" style={{ color: v("--ux-muted") }}>owed to you</p>
+        <p className="text-2xs" style={{ color: v("--ux-muted") }}>{tr("parts.owedToYou")}</p>
       </div>
       {l.filed ? (
         <Pill tone="green" size="sm">Filed</Pill>
       ) : (
-        <Btn size="sm" variant="outline" className="max-lg:ms-[52px] max-lg:w-[calc(100%-52px)] max-lg:px-4" onClick={() => onFile(l.id)}>Claim it</Btn>
+        <Btn size="sm" variant="outline" className="max-lg:ms-[52px] max-lg:w-[calc(100%-52px)] max-lg:px-4" onClick={() => onFile(l.id)}>{tr("parts.claimIt")}</Btn>
       )}
     </div>
   );

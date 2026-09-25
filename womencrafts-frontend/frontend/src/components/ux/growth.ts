@@ -23,6 +23,7 @@ import { MY_SESSIONS } from "./mentors/data";
 import { type SearchHit } from "./home/data";
 import { CONTINUING, TOP_PICKS, type Course } from "./learning/data";
 import { APPLICATIONS, JOBS, type Job, type WorkKind, type WorkMode } from "./work/data";
+import { useTranslated } from "@/i18n/data";
 
 /**
  * Work, events and courses — the modules whose server existed all along.
@@ -111,11 +112,26 @@ export function toJob(o: Opportunity): Job {
     // mapped, so the detail screen started every visit at "Apply now" — and a
     // woman who had applied last week was invited to apply again.
     applied: o.applied,
+    deadline: o.deadline,
+    // Compared against the START of today, not the instant: a listing closing
+    // "today" is open all day, and marking it shut at 00:01 would lose her a
+    // day of a job she could still have applied for.
+    closed: isPast(o.deadline),
   };
 }
 
+/** True when a deadline has gone by. An absent or unparseable one is not past. */
+function isPast(deadline: string | undefined): boolean {
+  if (!deadline) return false;
+  const t = new Date(deadline).getTime();
+  if (Number.isNaN(t)) return false;
+  const startOfToday = new Date();
+  startOfToday.setHours(0, 0, 0, 0);
+  return t < startOfToday.getTime();
+}
+
 export const useJobs = (): Resource<Job[]> =>
-  useResource(useCallback(async (s: AbortSignal) => (await apiOpportunities(s)).map(toJob), []), JOBS);
+  useResource(useCallback(async (s: AbortSignal) => (await apiOpportunities(s)).map(toJob), []), useTranslated(JOBS));
 
 export type UxApplication = (typeof APPLICATIONS)[number];
 
@@ -183,7 +199,7 @@ export function workStats(apps: UxApplication[], saved = 0) {
 export const useApplications = (): Resource<UxApplication[]> =>
   useResource(
     useCallback(async (s: AbortSignal) => (await apiApplications(s)).map(toApplication), []),
-    APPLICATIONS,
+    useTranslated(APPLICATIONS),
   );
 
 /* ── Events ──────────────────────────────────────────────────────────── */
@@ -261,7 +277,7 @@ export const useEvents = (): Resource<EventLists> =>
         past: rows.filter((e) => when(e) < cutoff),
       };
     }, []),
-    { upcoming: EVENTS, past: [] },
+    { upcoming: useTranslated(EVENTS), past: [] },
   );
 
 /* ── Mentor sessions ─────────────────────────────────────────────────── */
@@ -347,7 +363,7 @@ export const useLearning = (): Resource<Learning> =>
         picks: catalog.filter((p) => !p.joined).map(toPick),
       };
     }, []),
-    { continuing: CONTINUING, picks: TOP_PICKS },
+    { continuing: useTranslated(CONTINUING), picks: useTranslated(TOP_PICKS) },
   );
 
 /* ── Search ──────────────────────────────────────────────────────────── */
@@ -539,5 +555,5 @@ export const useDiscover = (): Resource<Find[]> =>
       }
       return out;
     }, []),
-    FINDS,
+    useTranslated(FINDS),
   );

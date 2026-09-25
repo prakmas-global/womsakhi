@@ -2,6 +2,7 @@
 
 import { useCallback, useMemo } from "react";
 
+import { useT } from "@/i18n";
 import { Btn, Card, I, Pill, v } from "@/components/ux/kit";
 import { Section } from "@/components/ux/earn/phone";
 import { formatRupees } from "@/components/ux/kit";
@@ -35,6 +36,7 @@ import { useResource } from "@/lib/use-resource";
  * what she sells by the hour or by the visit, and what she asks for it.
  */
 export default function SlotsPage() {
+  const tr = useT();
   const listings = useResource(
     useCallback((s: AbortSignal) => apiListings(s), []),
     [] as Listing[],
@@ -49,8 +51,8 @@ export default function SlotsPage() {
 
   return (
     <NotYetScreen
-      eyebrow="Your week"
-      title="Sell your time, not just things"
+      eyebrow={tr("programs.yourWeek")}
+      title={tr("shopSlots.sellYourTimeNotJustThings")}
       lede="Half of what women here sell is time — a fitting, mehendi, tuition, a house call. A shop
             built only around stock cannot hold any of it."
       cannot="WomSakhi cannot take a booking for your time yet."
@@ -80,8 +82,8 @@ export default function SlotsPage() {
       ]}
       footer={
         <>
-          <Btn variant="outline" size="sm" icon="Store" href="/app/documents">What you sell</Btn>
-          <Btn variant="ghost" size="sm" icon="MessageCircle" href="/app/messages">Your messages</Btn>
+          <Btn variant="outline" size="sm" icon="Store" href="/app/documents">{tr("documents.whatYouSell")}</Btn>
+          <Btn variant="ghost" size="sm" icon="MessageCircle" href="/app/messages">{tr("shopDisputes.yourMessages")}</Btn>
         </>
       }
     >
@@ -93,8 +95,8 @@ export default function SlotsPage() {
       */}
       {known && services.length > 0 && (
         <div>
-          <Section title="The time you already sell" icon="Clock"
-                       sub="From what you have listed in your shop — not a diary"
+          <Section title={tr("shopSlots.theTimeYouAlreadySell")} icon="Clock"
+                       sub={tr("shopSlots.fromWhatYouHaveListedIn")}
                        chip={String(services.length)} />
           <Card pad={0} style={{ overflow: "hidden" }}>
             {services.map((s, i) => (

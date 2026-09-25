@@ -2,10 +2,12 @@
 
 import Link from "next/link";
 
+import { useT } from "@/i18n";
 import * as Icons from "@/components/ux/icons";
 import { CycleRing, Icon, QuoteCard, RingSeed } from "./parts";
-import { PHASE_COPY, TODAY_CARE, quoteFor } from "./data";
+import { PHASE_COPY as RAW_PHASE_COPY, TODAY_CARE as RAW_TODAY_CARE, quoteFor } from "./data";
 import { dow, useCycle } from "./use-cycle";
+import { useTranslated } from "@/i18n/data";
 
 const QUICK = [
   { label: "Mood", icon: "Smile", href: "/app/health/cycle/mood", tint: "--cy-predicted", ink: "--cy-period" },
@@ -26,6 +28,9 @@ const QUICK = [
  * - **Not tracking is not an error.** She gets one quiet line inviting her in.
  */
 export function HomeCycleCard() {
+  const PHASE_COPY = useTranslated(RAW_PHASE_COPY);
+  const TODAY_CARE = useTranslated(RAW_TODAY_CARE);
+  const tr = useT();
   const { data, state, loading } = useCycle();
 
   if (loading && !data) {
@@ -41,8 +46,8 @@ export function HomeCycleCard() {
           <Icons.Heart className="h-5 w-5" style={{ color: "var(--cy-period-ink)" }} aria-hidden />
         </span>
         <span className="min-w-0 flex-1">
-          <b className="block text-[17px] font-semibold" style={{ color: "var(--ux-ink)" }}>Track your cycle</b>
-          <span className="block text-[13px]" style={{ color: "var(--ux-ink-2)" }}>One tap a day. Only you can see it.</span>
+          <b className="block text-[17px] font-semibold" style={{ color: "var(--ux-ink)" }}>{tr("homeCycleCard.trackYourCycle")}</b>
+          <span className="block text-[13px]" style={{ color: "var(--ux-ink-2)" }}>{tr("homeCycleCard.oneTapADayOnlyYou")}</span>
         </span>
         <Icons.ChevronRight className="h-[18px] w-[18px] shrink-0" style={{ color: "var(--cy-period-ink)" }} aria-hidden />
       </Link>
@@ -63,7 +68,7 @@ export function HomeCycleCard() {
             style={{ background: "var(--ux-surface)", border: "1px solid var(--ux-line)", boxShadow: "var(--ux-shadow-sm)" }}>
         <div className="flex items-start gap-3">
           <div className="min-w-0 flex-1">
-            <p className="text-[13px] font-semibold" style={{ color: "var(--ux-ink-2)" }}>Your Cycle</p>
+            <p className="text-[13px] font-semibold" style={{ color: "var(--ux-ink-2)" }}>{tr("healthCycleStart.yourCycle")}</p>
             <p className="mt-0.5 text-[24px] font-bold leading-tight" style={{ color: "var(--ux-ink)" }}>
               {st.cycle_day ? `Day ${st.cycle_day} of ${st.avg_cycle}` : "Log your period"}
             </p>
@@ -78,7 +83,7 @@ export function HomeCycleCard() {
             <RingSeed size={42} />
           </CycleRing>
         </div>
-        <div className="mt-4 grid grid-cols-7 text-center" aria-label="This week">
+        <div className="mt-4 grid grid-cols-7 text-center" aria-label={tr("schedule.thisWeek")}>
           {state.week.map((c) => {
             const period = c.marks.includes("period");
             const predicted = c.marks.includes("predicted");
@@ -114,7 +119,7 @@ export function HomeCycleCard() {
 
       <QuoteCard className="mt-3" text={quoteFor(state.log?.mood, state.today)} />
 
-      <h2 className="mb-2.5 mt-5 text-[17px] font-semibold" style={{ color: "var(--ux-ink)" }}>For You Today</h2>
+      <h2 className="mb-2.5 mt-5 text-[17px] font-semibold" style={{ color: "var(--ux-ink)" }}>{tr("homeCycleCard.forYouToday")}</h2>
       <Link href="/app/health/cycle/today" className="ux-press flex items-center gap-3 rounded-[16px] p-3.5"
             style={{ background: "var(--ux-surface)", border: "1px solid var(--ux-line)" }}>
         <span className="grid h-[44px] w-[44px] shrink-0 place-items-center rounded-[12px]" style={{ background: `var(${tip.tint})` }}>

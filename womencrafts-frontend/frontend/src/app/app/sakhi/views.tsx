@@ -442,9 +442,9 @@ export function Thread({
                 style={{ background: "var(--ux-surface)", border: "1px solid var(--ux-line)",
                          borderRadius: bubbleRadius("in", true) }}>
             <Typing />
-            <span className="sr-only">Sakhi is answering</span>
+            <span className="sr-only">{tr("views.sakhiIsAnswering")}</span>
             {toolRunning && (
-              <span className="text-[13px]" style={{ color: "var(--ux-muted)" }}>looking it up…</span>
+              <span className="text-[13px]" style={{ color: "var(--ux-muted)" }}>{tr("views.lookingItUp")}</span>
             )}
           </span>
         </li>

@@ -190,7 +190,7 @@ export default function BookingDetail({ params }: { params: Promise<{ id: string
             {live && b.kind === "Mentor" && (
               <ActionBtn variant="primary" icon="Video" doneIcon="Copy"
                          done={COPY.linkCopied}
-                         act={() => copy(`https://meet.womsakhi.in/${b.id}`, COPY.linkCopied, "Copy it by hand: meet.womsakhi.in/" + b.id)}>{tr("bookings.joinTheCall")}</ActionBtn>
+                         act={() => copy(`https://meet.womsakhi.com/${b.id}`, COPY.linkCopied, "Copy it by hand: meet.womsakhi.com/" + b.id)}>{tr("bookings.joinTheCall")}</ActionBtn>
             )}
             {cancelled && <Btn href={b.kind === "Mentor" ? "/app/mentors" : "/app/events"} variant="soft" icon="RotateCcw">{tr("bookings.bookAgain")}</Btn>}
             {/* Went nowhere, and named a recipient who would never have seen

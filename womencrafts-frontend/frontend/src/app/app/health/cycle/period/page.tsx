@@ -1,6 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
+import { useT } from "@/i18n";
 import { useEffect, useState } from "react";
 
 import { HomeShell } from "@/components/ux/home/HomeShell";
@@ -8,9 +9,10 @@ import { Sheet } from "@/components/ux/kit/sheet";
 import {
   CareRow, Column, CycleHeader, CyButton, DeskTitle, ErrorLine, Heading, SoftHeart, heroBg,
 } from "@/components/ux/cycle/parts";
-import { TODAY_CARE } from "@/components/ux/cycle/data";
+import { TODAY_CARE as RAW_TODAY_CARE } from "@/components/ux/cycle/data";
 import { useCycle } from "@/components/ux/cycle/use-cycle";
 import { apiCycleLog } from "@/lib/cycle-api";
+import { useTranslated } from "@/i18n/data";
 
 /**
  * "Day 1 of your period" — what she sees while it is on.
@@ -21,6 +23,8 @@ import { apiCycleLog } from "@/lib/cycle-api";
  * exactly what it says.
  */
 export default function YourPeriod() {
+  const TODAY_CARE = useTranslated(RAW_TODAY_CARE);
+  const tr = useT();
   const router = useRouter();
   const { state, data, act, busy, error } = useCycle();
   const [ask, setAsk] = useState(false);
@@ -48,14 +52,14 @@ export default function YourPeriod() {
   return (
     <HomeShell immersive bare>
       <Column>
-        <CycleHeader title="Your Period" action={{ label: "Edit", href: "/app/health/cycle" }} />
-        <DeskTitle title="Your Period" sub="Today's care, for today." />
+        <CycleHeader title={tr("healthCyclePeriod.yourPeriod")} action={{ label: "Edit", href: "/app/health/cycle" }} />
+        <DeskTitle title={tr("healthCyclePeriod.yourPeriod")} sub={tr("healthCyclePeriod.todaySCareForToday")} />
 
         <div className="relative -mx-[20px] overflow-hidden lg:mx-0 lg:rounded-[24px]" style={{ background: heroBg }}>
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img src="/ux/art/leaves-pink.webp" alt="" aria-hidden className="absolute -end-16 -top-10 h-[220px] w-auto opacity-50 mix-blend-multiply" />
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src="/ux/art/course-meditation.webp" alt="A woman resting calmly"
+          <img src="/ux/art/course-meditation.webp" alt={tr("healthCyclePeriod.aWomanRestingCalmly")}
                className="relative mx-auto h-[230px] w-[230px] rounded-full object-cover"
                style={{ marginTop: 14, boxShadow: "0 0 0 8px var(--ux-surface)" }} />
           <div className="relative -mt-2 rounded-t-[28px] px-5 pb-5 pt-6 text-center" style={{ background: "var(--ux-canvas)" }}>
@@ -88,19 +92,19 @@ export default function YourPeriod() {
           {day ? (
             <CyButton onClick={() => setAsk(true)} busy={busy} iconEnd={null}>I&apos;m feeling better today</CyButton>
           ) : (
-            <CyButton href="/app/health/cycle/log">Log today</CyButton>
+            <CyButton href="/app/health/cycle/log">{tr("healthCyclePeriod.logToday")}</CyButton>
           )}
         </div>
         <ErrorLine text={error} />
 
-        <Sheet open={ask} onClose={() => setAsk(false)} title="Glad you're feeling better" icon="Heart"
-               description="Has your period stopped?">
+        <Sheet open={ask} onClose={() => setAsk(false)} title={tr("healthCyclePeriod.gladYouReFeelingBetter")} icon="Heart"
+               description={tr("healthCyclePeriod.hasYourPeriodStopped")}>
           <div className="space-y-2.5 pb-2">
-            <CyButton onClick={stopped} iconEnd="Check">Yes, it has stopped</CyButton>
+            <CyButton onClick={stopped} iconEnd="Check">{tr("healthCyclePeriod.yesItHasStopped")}</CyButton>
             <button type="button" onClick={better}
                     className="ux-press h-[52px] w-full rounded-[14px] text-[17px] font-semibold"
                     style={{ background: "var(--ux-surface-2)", color: "var(--ux-ink)" }}>
-              No, just feeling better
+              {tr("healthCyclePeriod.noJustFeelingBetter")}
             </button>
           </div>
         </Sheet>

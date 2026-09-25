@@ -5,10 +5,11 @@ import { useRouter } from "next/navigation";
 
 import { HomeShell } from "@/components/ux/home/HomeShell";
 import { Back, Btn, Card, EmptyState, I, IconTile, Pill, SectionHead, Stat, v } from "@/components/ux/kit";
-import { COVER, COVERERS, type CoverDay } from "@/components/ux/wellness/data";
+import { COVER as RAW_COVER, COVERERS as RAW_COVERERS, type CoverDay } from "@/components/ux/wellness/data";
 import { useT } from "@/i18n";
 import { ListGroup } from "@/components/ux/mobile/ListRow";
 import { GroupLabel, PhoneRow, PhoneTitle, phoneFull, phonePrimary } from "@/components/ux/PhoneParts";
+import { useTranslated } from "@/i18n/data";
 
 /**
  * Cover when you cannot work.
@@ -37,6 +38,8 @@ const STATE: Record<CoverDay["state"], { label: string; tint: string; ink: strin
 };
 
 export default function CoverPage() {
+  const COVERERS = useTranslated(RAW_COVERERS);
+  const COVER = useTranslated(RAW_COVER);
   const tr = useT();
   const router = useRouter();
   const [days, setDays] = useState<CoverDay[]>(COVER);
@@ -48,10 +51,20 @@ export default function CoverPage() {
   const owed = useMemo(() => COVERERS.reduce((n, c) => n + c.owedHours, 0), []);
   const timesCovered = useMemo(() => COVERERS.reduce((n, c) => n + c.coveredCount, 0), []);
 
+  /**
+   * Asking another woman to cover a day.
+   *
+   * This said "<name> will cover it. She was not told why, and she will not
+   * ask" — and asked nobody. The day went green, and on the morning she stayed
+   * home nobody turned up, because nobody had been told.
+   *
+   * On a screen for a woman too unwell to work, that is the failure that costs
+   * her the day's earnings she was trying to protect. Nothing here can send
+   * the request yet, so it says so and hands her the way to ask.
+   */
   const accept = useCallback((dayId: string, who: string) => {
-    setDays((r) => r.map((d) => (d.id === dayId ? { ...d, who, state: "covered" } : d)));
     setAsking(false);
-    setNote(`${who} will cover it. She was not told why, and she will not ask.`);
+    setNote(`Ask ${who} yourself in your messages — nothing has been sent to her, and she has not been told anything.`);
   }, []);
 
   return (
@@ -63,7 +76,7 @@ export default function CoverPage() {
         </div>
 
         <PhoneTitle title="Cover" sub={tr("healthCover.aDayOffShouldNotCost")}
-                    note="There is no sick leave when you work for yourself — and a closed stall loses the customer, not just the day. So someone in your circle opens it instead.">
+                    note={tr("healthCover.thereIsNoSickLeaveWhen")}>
           <Btn icon="Plus" className={`mt-4 ${phonePrimary}`} onClick={() => setAsking(true)}>{tr("healthCover.iNeedADay")}</Btn>
         </PhoneTitle>
         <header className="hidden flex-wrap items-end gap-4 lg:flex">
@@ -115,7 +128,8 @@ export default function CoverPage() {
 
         {asking && (
           <Card pad={16} style={{ borderColor: v("--ux-brand") }}>
-            <SectionHead title={tr("healthCover.whoCanTakeFriday")} sub={tr("healthCover.theySeeTheWorkNeverThe")} icon="Users" />
+            <SectionHead title={tr("healthCover.whoCanTakeFriday")}
+                         sub="Pick one and ask her yourself — nothing is sent for you" icon="Users" />
             {/* The women who can step in are a list to pick from. */}
             <div className="flex flex-col gap-2.5">
               {COVERERS.map((c) => (
@@ -148,7 +162,7 @@ export default function CoverPage() {
           </div>
           {open.length === 0 ? (
             <Card><EmptyState icon="CalendarDays" title={tr("healthCover.nothingNeedingCover")}
-                              body="When you need a day, ask here. Someone almost always can." /></Card>
+                              body={tr("healthCover.whenYouNeedADayAsk")} /></Card>
           ) : (
             <>
             <ListGroup className="lg:hidden">

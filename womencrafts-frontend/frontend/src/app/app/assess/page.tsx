@@ -10,11 +10,12 @@ import {
 import { HomeShell } from "@/components/ux/home/HomeShell";
 import { ScreenHead } from "@/components/ux/learning/native";
 import { Tag } from "@/components/ux/learning/native";
-import { MORE_ART } from "@/components/ux/more/data";
+import { MORE_ART as RAW_MORE_ART } from "@/components/ux/more/data";
 import { useAssessmentList } from "@/components/ux/entitlements";
 import { apiAssessment, apiSubmitAttempt, type Assessment } from "@/lib/entitlements-api";
 import { messageFrom } from "@/lib/use-action";
 import { useT } from "@/i18n";
+import { useTranslated } from "@/i18n/data";
 
 /**
  * Skill Assessment — proof of what she can already do.
@@ -34,6 +35,7 @@ import { useT } from "@/i18n";
  * marked.
  */
 export default function AssessPage() {
+  const MORE_ART = useTranslated(RAW_MORE_ART);
   const tr = useT();
   const { data: ASSESSMENTS, source, refetch } = useAssessmentList();
 

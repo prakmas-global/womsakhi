@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 
 import {
   ACCEPTED_DOCUMENT_TYPES, apiMyVerification, apiResendVerificationEmail,
@@ -20,11 +20,18 @@ import { PhoneRow, phonePrimary, phoneSecondary } from "@/components/ux/PhonePar
 type Stage = "email" | "documents" | "review" | "rejected";
 
 const DOCS = [
-  // `docType` is the server's own kind, sent with the file.
+  /*
+    `docType` is the server's own kind, sent with the file.
+
+    `facing` is which camera opens when she taps Take photo. The ID wants the
+    back camera, which is the sharp one and the one she can aim at a card on a
+    table; the picture of her holding it wants the front camera, because she
+    has to be able to see that both her face and the card are in the frame.
+  */
   { id: "d1", docType: "aadhaar", label: "A photo ID", note: "Aadhaar, voter card or driving licence — any one",
-    icon: "IdCard", tint: "--ux-tint-violet", ink: "--ux-violet", required: true },
+    icon: "IdCard", tint: "--ux-tint-violet", ink: "--ux-violet", facing: "environment", required: true },
   { id: "d2", docType: "other", label: "A photo of you", note: "Holding the same ID, so we know it is yours",
-    icon: "Camera", tint: "--ux-tint-blue", ink: "--ux-blue", required: true },
+    icon: "Camera", tint: "--ux-tint-blue", ink: "--ux-blue", facing: "user", required: true },
 ];
 
 /**
@@ -36,7 +43,11 @@ const DOCS = [
  * what is happening, who is doing it, and roughly how long.
  */
 export default function VerifyPage() {
-  const { signOut } = useAuth();
+  // Her own address, from the session. This line used to read
+  // "We sent a link to priya.sharma@example.com" for every woman in the
+  // product — the one screen where getting the address wrong means she
+  // watches the wrong inbox and never gets in.
+  const { signOut, user } = useAuth();
   const tr = useT();
   /**
    * Where she actually is, from the server.
@@ -52,9 +63,35 @@ export default function VerifyPage() {
   );
   const [advanced, setAdvanced] = useState<Stage | null>(null);
   const [problem, setProblem] = useState("");
-  const picker = useRef<HTMLInputElement | null>(null);
+  /*
+    Two inputs, because they are two different questions to the phone.
+
+    `camera` carries the `capture` attribute, which is what makes Android and
+    iOS open the camera itself instead of a file browser. `files` deliberately
+    does not: the same attribute on one shared input would take away the woman
+    who photographed her ID last week, or scanned it, or has it in her
+    downloads — and on a laptop `capture` is ignored anyway, so one input could
+    not have honestly offered both.
+  */
+  const camera = useRef<HTMLInputElement | null>(null);
+  const files = useRef<HTMLInputElement | null>(null);
   const pickingFor = useRef<string>("aadhaar");
   const [busy, setBusy] = useState<string | null>(null);
+  /*
+    Does this device have a camera the browser will open?
+
+    `capture` is ignored on a desktop browser — it silently falls back to the
+    file dialog — so a "Take photo" button there would open a file browser
+    under a name that promises a camera. Below `lg` the button is always drawn
+    (that branch only renders on a phone-width screen); at desktop widths it
+    waits for this, which is what puts it on a tablet and keeps it off a
+    laptop. It starts false so the server render and the first client render
+    agree, and a real desktop never changes.
+  */
+  const [handheld, setHandheld] = useState(false);
+  useEffect(() => {
+    setHandheld(window.matchMedia("(pointer: coarse)").matches);
+  }, []);
 
   /** The server's word, unless she has stepped forward within this visit. */
   const stage: Stage = advanced ?? (
@@ -66,6 +103,14 @@ export default function VerifyPage() {
 
   // Her documents, as the server holds them — not a list of ids she clicked.
   const sent = status?.documents ?? [];
+  /*
+    The server's kinds — "aadhaar", "other" — NOT the row ids above.
+
+    This read `d.id` at both call sites, so `uploaded.includes(...)` compared
+    "d1" against "aadhaar" and was false for every row: a woman who had already
+    sent both photographs was still shown two empty rows saying "Add photo",
+    with no Added tick and no way to tell the upload had worked.
+  */
   const uploaded = sent.map((d) => d.doc_type);
   const allUploaded = sent.length >= DOCS.length;
 
@@ -80,10 +125,21 @@ export default function VerifyPage() {
     },
   );
 
-  function choose(docType: string) {
+  /**
+   * Open the camera, or the files, for one of the two documents.
+   *
+   * `facing` is written onto the node here rather than passed as a React prop
+   * on purpose. The attribute has to be correct at the instant `.click()`
+   * runs, and a `setState` would not have landed yet — the camera would open
+   * on whichever side the previous row asked for. React never rendered a
+   * `capture` prop on that input, so it has no value of its own to put back.
+   */
+  function choose(docType: string, how: "camera" | "files", facing = "environment") {
     setProblem("");
     pickingFor.current = docType;
-    picker.current?.click();
+    if (how === "files") { files.current?.click(); return; }
+    camera.current?.setAttribute("capture", facing);
+    camera.current?.click();
   }
 
   async function send(file: File) {
@@ -102,22 +158,58 @@ export default function VerifyPage() {
   }
   const stepOf: Record<Stage, number> = { email: 1, documents: 2, review: 3, rejected: 2 };
 
-  /** One picker for both rows; `pickingFor` says which kind it is. */
+  /*
+    The way back, from step 2 onwards.
+
+    Step 2 asks for an ID, and the step behind it is the one holding her email
+    — which is exactly where a woman goes when the link has not arrived, or
+    when she wants to check she confirmed the right address before handing over
+    a document. Without this she could only get there by signing out.
+
+    It moves the stage rather than calling `history.back()`: she may have
+    arrived on this screen straight from the confirmation email, with no
+    history in the tab for a back to pop.
+
+    Step 3 gets one only when she reached it in this visit — `advanced` is set
+    and the server has not yet said `in_review`. Once the review has actually
+    begun there is nothing to go back and change, so no control is drawn.
+  */
+  const back =
+    stage === "documents" || stage === "rejected"
+      ? { to: "Your email", go: () => setAdvanced("email") }
+      : stage === "review" && advanced === "review"
+        ? { to: "Your photos", go: () => setAdvanced("documents") }
+        : null;
+
+  /** Both ways in. `pickingFor` says which of the two documents it is for. */
+  const take = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    // Cleared before we do anything with it, so choosing the SAME file again —
+    // after a rejection, or a retake she was not happy with — still fires.
+    e.target.value = "";
+    if (file) void send(file);
+  };
   const filePicker = (
     <>
       <input
-        ref={picker}
+        ref={camera}
         type="file"
-        accept={ACCEPTED_DOCUMENT_TYPES.join(",")}
+        // Photographs only on this one: it is the camera, and no camera
+        // returns a PDF.
+        accept="image/*"
         className="hidden"
         // Visually hidden, but still in the accessibility tree — without a name
         // a screen reader announces only "file upload, button".
+        aria-label={tr("verify.takeAPhotoWithTheCamera")}
+        onChange={take}
+      />
+      <input
+        ref={files}
+        type="file"
+        accept={ACCEPTED_DOCUMENT_TYPES.join(",")}
+        className="hidden"
         aria-label={tr("verify.chooseAPhotoOfYourId")}
-        onChange={(e) => {
-          const file = e.target.files?.[0];
-          e.target.value = "";
-          if (file) void send(file);
-        }}
+        onChange={take}
       />
       {problem && (
         <p role="alert" className="ux-slide-up mt-3 text-xsm leading-relaxed"
@@ -132,6 +224,8 @@ export default function VerifyPage() {
     <OnboardFrame
       step={stepOf[stage]}
       total={3}
+      onBack={back?.go}
+      backTo={back?.to}
       title={
         stage === "email" ? "Confirm your email"
         : stage === "documents" ? "Show us it is you"
@@ -139,7 +233,7 @@ export default function VerifyPage() {
               : tr("verify.weCouldNotConfirmThat")
       }
       sub={
-        stage === "email" ? "We sent a link to priya.sharma@example.com. Open it and come back here."
+        stage === "email" ? tr("verify.weSentALinkTo", { email: user?.email ?? "" })
         : stage === "documents" ? "WomSakhi is for women only, and a person checks every account by hand. This is the part that keeps it that way."
         : stage === "review" ? undefined
         : "The photo was too blurred to read. It happens — try once more."
@@ -148,7 +242,7 @@ export default function VerifyPage() {
         <OnboardAside
           art="/ux/art/icon-padlock.webp"
           title={tr("verify.whatHappensToYourId")}
-          body="It is seen by the two people who review accounts, and by nobody else — not employers, not buyers, not other members."
+          body={tr("verify.itIsSeenByTheTwo")}
           points={[
             "Stored encrypted, never shown on your profile",
             "Deleted if you close your account",
@@ -166,8 +260,7 @@ export default function VerifyPage() {
             <div className="min-w-0 flex-1">
               <h2 className="text-base font-semibold" style={{ color: "var(--ux-ink)" }}>{tr("verify.checkYourInbox")}</h2>
               <p className="mt-1.5 text-xsm leading-relaxed" style={{ color: "var(--ux-ink-2)" }}>
-                The link is good for 24 hours. If it is not there, look in spam — it arrives from
-                hello@womsakhi.in.
+                {tr("verify.theLinkIsGoodFor24Hours")}
               </p>
               <div className="mt-4 flex flex-col gap-2.5 lg:flex-row lg:flex-wrap lg:items-center">
                 <Btn variant="primary" iconEnd="ArrowRight" className={phonePrimary} onClick={() => setAdvanced("documents")}>{tr("verify.iHaveConfirmedIt")}</Btn>
@@ -202,7 +295,7 @@ export default function VerifyPage() {
           {/* The papers as one grouped list on a phone, the button on each row. */}
           <ListGroup className="lg:hidden">
             {DOCS.map((d) => {
-              const done = uploaded.includes(d.id);
+              const done = uploaded.includes(d.docType);
               return (
                 <PhoneRow key={d.id} icon={done ? "CheckCircle2" : d.icon}
                           tint={done ? "--ux-tint-green" : d.tint} ink={done ? "--ux-green" : d.ink}
@@ -212,21 +305,35 @@ export default function VerifyPage() {
                               {done && <Pill tone="green" size="sm">Added</Pill>}
                             </span>
                           }
-                          meta={d.note}
-                          trailing={
-                            <Btn variant={done ? "outline" : "primary"} size="sm"
-                                 icon={done ? "RotateCcw" : "Upload"}
-                                 disabled={busy === d.docType}
-                                 onClick={() => choose(d.docType)}>
-                              {busy === d.docType ? "Sending…" : done ? "Replace" : "Add photo"}
-                            </Btn>
-                          } />
+                          meta={d.note}>
+                  {/* The two ways in, side by side on their own line rather
+                      than squeezed into the end of the row: at 390px the row
+                      has about 96px left after the tile and the words, which
+                      is one small button — and it was the wrong one, because
+                      the phone in her hand IS the scanner. */}
+                  <span className="mt-2.5 flex gap-2">
+                    <Btn variant={done ? "outline" : "primary"} size="sm"
+                         icon="Camera"
+                         disabled={busy === d.docType}
+                         className="flex-1 max-lg:min-h-[44px] max-lg:text-[15px]"
+                         onClick={() => choose(d.docType, "camera", d.facing)}>
+                      {busy === d.docType ? "Sending…" : done ? "Take again" : "Take photo"}
+                    </Btn>
+                    <Btn variant="outline" size="sm"
+                         icon="Upload"
+                         disabled={busy === d.docType}
+                         className="flex-1 max-lg:min-h-[44px] max-lg:text-[15px]"
+                         onClick={() => choose(d.docType, "files")}>
+                      {done ? "Choose another" : "Choose a photo"}
+                    </Btn>
+                  </span>
+                </PhoneRow>
               );
             })}
           </ListGroup>
           <div className="ux-deck hidden space-y-[12px] lg:block">
             {DOCS.map((d, i) => {
-              const done = uploaded.includes(d.id);
+              const done = uploaded.includes(d.docType);
               return (
                 <Card key={d.id} className="ux-i" style={{ ["--i" as string]: i }}>
                   <div className="flex items-center gap-3.5">
@@ -240,12 +347,23 @@ export default function VerifyPage() {
                       </p>
                       <p className="mt-0.5 text-xs" style={{ color: "var(--ux-muted)" }}>{d.note}</p>
                     </div>
-                    <Btn variant={done ? "outline" : "primary"} size="sm"
-                         icon={done ? "RotateCcw" : "Upload"}
-                         disabled={busy === d.docType}
-                         onClick={() => choose(d.docType)}>
-                      {busy === d.docType ? "Sending…" : done ? "Replace" : "Add photo"}
-                    </Btn>
+                    <div className="flex shrink-0 gap-2">
+                      {/* Only where a camera will actually open — see `handheld`. */}
+                      {handheld && (
+                        <Btn variant={done ? "outline" : "primary"} size="sm" icon="Camera"
+                             disabled={busy === d.docType}
+                             onClick={() => choose(d.docType, "camera", d.facing)}>
+                          {busy === d.docType ? "Sending…" : done ? "Take again" : "Take photo"}
+                        </Btn>
+                      )}
+                      <Btn variant={done || handheld ? "outline" : "primary"} size="sm"
+                           icon={done ? "RotateCcw" : "Upload"}
+                           disabled={busy === d.docType}
+                           onClick={() => choose(d.docType, "files")}>
+                        {busy === d.docType && !handheld ? "Sending…"
+                          : done ? "Choose another" : "Choose a photo"}
+                      </Btn>
+                    </div>
                   </div>
                 </Card>
               );

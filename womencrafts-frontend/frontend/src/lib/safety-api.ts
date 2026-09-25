@@ -30,6 +30,16 @@ export interface SafetyAlert {
   contacts_notified: number;
   resolution: string;
   raised_at: string;
+  /**
+   * The capability for the link SHE forwards.
+   *
+   * Nothing in this product can reach a phone number — no SMS, no WhatsApp,
+   * no voice — so `contacts_notified` only ever counted how many people she
+   * had named. Her own phone can reach them, and this is what she sends.
+   */
+  share_token?: string;
+  /** Who has opened that link and said they have it. */
+  acknowledged_by?: string[];
 }
 
 export interface SafetyReport {

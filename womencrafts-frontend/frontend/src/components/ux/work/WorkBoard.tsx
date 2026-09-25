@@ -1,6 +1,7 @@
 "use client";
 
 import { HomeShell } from "@/components/ux/home/HomeShell";
+import { useT } from "@/i18n";
 import { TransitionLink } from "@/components/ux/TransitionLink";
 import { ListGroup, ListRow, type RowTint } from "@/components/ux/mobile/ListRow";
 import { Card, I, IconTile, v } from "@/components/ux/kit";
@@ -208,6 +209,7 @@ const HERO_INK_2 = v("--ux-band-ink-2");
 const HERO_BRAND = v("--ux-band-brand");
 
 function Hero() {
+  const tr = useT();
   return (
     <section className="ux-sq relative isolate shrink-0 overflow-hidden rounded-[18px]"
              style={{ border: `1px solid ${v("--ux-band-edge")}`,
@@ -242,7 +244,7 @@ function Hero() {
         <h1 className="mt-2 max-w-[30rem] leading-[1.04] tracking-[-0.025em]"
             style={{ color: HERO_INK, fontFamily: "var(--font-display), Georgia, serif",
                      fontWeight: 800, fontSize: "clamp(1.75rem, 3.2vw, var(--fb-h1, 2.6rem))" }}>
-          Find meaningful work<br />
+          {tr("workBoard.findMeaningfulWork")}<br />
           on{" "}
           <em style={{ fontStyle: "italic", fontWeight: 700,
                        /* Violet into magenta across the two words, as drawn.
@@ -251,12 +253,12 @@ function Hero() {
                        background: v("--ux-band-italic"),
                        WebkitBackgroundClip: "text", backgroundClip: "text",
                        color: "transparent" }}>
-            your terms
+            {tr("workBoard.yourTerms")}
           </em>
         </h1>
 
         <p className="mt-2 max-w-[27rem] text-smd" style={{ color: HERO_INK_2, lineHeight: "var(--fb-lines, 1.55)" }}>
-          Explore opportunities, build your reputation, and create a financially independent you.
+          {tr("workBoard.exploreOpportunitiesBuildYourReputationAnd")}
         </p>
 
         <ul className="mt-3.5 flex flex-wrap items-center gap-x-5 gap-y-2 lg:max-w-[58%]"
@@ -359,6 +361,7 @@ function PlaceCard({ p }: { p: Place }) {
 /* ── the five steps of the journey ────────────────────────────────────────── */
 
 function Journey() {
+  const tr = useT();
   return (
     <Card pad={0} className="relative min-w-0 flex-1 overflow-hidden"
           /* Shallower than the cards above. On the board this row is 230 tall
@@ -369,10 +372,10 @@ function Journey() {
         <IconTile icon="Route" tint="--ux-brand-tint-2" ink="--ux-brand" size={38} radius={12} />
         <div className="min-w-0">
           <h2 className="text-[20px] font-extrabold leading-tight" style={{ color: v("--ux-ink") }}>
-            Your Work Journey
+            {tr("workBoard.yourWorkJourney")}
           </h2>
           <p className="mt-0.5 text-xs" style={{ color: v("--ux-muted") }}>
-            Small steps today, bigger opportunities tomorrow.
+            {tr("workBoard.smallStepsTodayBiggerOpportunitiesTomorrow")}
           </p>
         </div>
       </div>
@@ -442,11 +445,12 @@ function Journey() {
 
 /** The lettering on the journey card, live text so it can be translated. */
 function YouCanDoThis() {
+  const tr = useT();
   return (
     <div className="pointer-events-none absolute end-[16px] top-[14px] hidden items-center gap-1.5 lg:flex">
       <span className="text-[20px] font-bold leading-none"
             style={{ fontFamily: "var(--font-script), ui-rounded, cursive", color: v("--ux-brand") }}>
-        You can do this
+        {tr("workBoard.youCanDoThis")}
       </span>
       <I name="Heart" className="h-[16px] w-[16px]" sw={0}
          style={{ color: v("--ux-pink"), fill: v("--ux-pink") }} />
@@ -457,24 +461,25 @@ function YouCanDoThis() {
 /* ── what the month adds up to ────────────────────────────────────────────── */
 
 function Insights() {
+  const tr = useT();
   return (
     <Card pad={0} className="flex w-full shrink-0 flex-col xl:w-[408px]"
           style={{ padding: "calc(var(--fb-pad) - 4px)" }}>
       <div className="flex items-center gap-2.5">
         <IconTile icon="BarChart3" tint="--ux-brand-tint-2" ink="--ux-brand" size={34} radius={11} />
         <h2 className="min-w-0 flex-1 text-[17px] font-bold" style={{ color: v("--ux-ink") }}>
-          Work Insights
+          {tr("workBoard.workInsights")}
         </h2>
         {/* Drawn as a control and behaves as one — the range it reads is the
             only thing on this card she can change. */}
         <label className="ux-sq flex shrink-0 items-center gap-1 rounded-[10px] px-2.5 py-1.5 text-2xs font-semibold"
                style={{ background: v("--ux-surface-2"), color: v("--ux-ink-2"),
                         border: `1px solid ${v("--ux-line")}` }}>
-          <span className="sr-only">Show insights for</span>
+          <span className="sr-only">{tr("workBoard.showInsightsFor")}</span>
           <select defaultValue="month" className="cursor-pointer appearance-none bg-transparent pe-1 outline-none">
-            <option value="month">This month</option>
-            <option value="quarter">Last 3 months</option>
-            <option value="year">This year</option>
+            <option value="month">{tr("circles.thisMonth")}</option>
+            <option value="quarter">{tr("workBoard.last3Months")}</option>
+            <option value="year">{tr("payments.thisYear")}</option>
           </select>
           <I name="ChevronDown" className="h-[13px] w-[13px]" sw={2.2} />
         </label>
@@ -487,7 +492,7 @@ function Insights() {
             You&rsquo;re building something great!
           </p>
           <p className="mt-1 text-xs leading-snug" style={{ color: v("--ux-ink-2") }}>
-            Applied to 12 jobs, completed 3 and received 3 positive reviews.
+            {tr("workBoard.appliedTo12JobsCompleted3")}
           </p>
         </div>
       </div>
@@ -560,6 +565,7 @@ function Ring({ pct }: { pct: number }) {
 /* ── the strip at the foot ────────────────────────────────────────────────── */
 
 function HelpStrip() {
+  const tr = useT();
   return (
     /* No `overflow-hidden` on the section itself. Sakhi stands a little taller
        than this strip, as she is drawn, and clipping her took her head off. The
@@ -614,7 +620,7 @@ function HelpStrip() {
         </div>
 
         <div className="min-w-0">
-          <p className="text-smd font-bold" style={{ color: HERO_INK }}>Need help getting started?</p>
+          <p className="text-smd font-bold" style={{ color: HERO_INK }}>{tr("workBoard.needHelpGettingStarted")}</p>
           <p className="mt-0.5 text-xs" style={{ color: HERO_INK_2 }}>
             We&rsquo;re here to guide you at every step.
           </p>
@@ -625,7 +631,7 @@ function HelpStrip() {
           style={{ borderRadius: 999,
                    background: "linear-gradient(96deg, var(--ux-fill), var(--ux-fill-2))", color: "#fff" }}>
           <I name="MessageCircle" className="h-[17px] w-[17px]" sw={2} />
-          Chat with Sakhi
+          {tr("journeyviews.chatWithSakhi")}
           <I name="ArrowRight" className="h-[15px] w-[15px]" sw={2.4} />
         </TransitionLink>
       </div>
@@ -687,20 +693,21 @@ function HelpStrip() {
  * the accessibility tree too, so nothing is announced twice.
  */
 function Phone() {
+  const tr = useT();
   return (
     <div className="lg:hidden">
       <section className="ux-sq relative overflow-hidden rounded-[16px]"
                style={{ border: `1px solid ${v("--ux-band-edge")}`, background: v("--ux-band-work") }}>
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img src="/ux/art/hero-work-banner.webp"
-             alt="A woman at her laptop in a bright room, beside the words “Independent women build brighter tomorrows”."
+             alt={tr("workBoard.aWomanAtHerLaptopIn")}
              decoding="async" fetchPriority="high" width={1720} height={646}
              className="block h-[132px] w-full object-cover" style={{ objectPosition: "center 40%" }} />
       </section>
 
       <h1 className="ux-screen-title mt-4" style={{ color: v("--ux-ink") }}>Work</h1>
       <p className="mt-2 text-[15px] leading-snug" style={{ color: v("--ux-muted") }}>
-        Find meaningful work on your terms — and build a reputation that travels with you.
+        {tr("workBoard.findMeaningfulWorkOnYourTerms")}
       </p>
 
       <div className="ux-chiprow mt-4 flex flex-wrap gap-2"
@@ -716,7 +723,7 @@ function Phone() {
       </div>
 
       <div className="mt-6 space-y-6">
-        <ListGroup title="Where to go">
+        <ListGroup title={tr("haq.whereToGo")}>
           {PLACES.map((p) => (
             <ListRow key={p.id} href={p.href} icon={p.icon} tint={p.row}
                      title={p.title} subtitle={p.body} />
@@ -724,11 +731,11 @@ function Phone() {
         </ListGroup>
 
         <section>
-          <h3 className="ux-group-label">Your work journey</h3>
+          <h3 className="ux-group-label">{tr("workBoard.yourWorkJourney2")}</h3>
           <div className="rounded-[var(--ux-r-lg)] border p-4"
                style={{ background: v("--ux-surface"), borderColor: v("--ux-line") }}>
             <p className="text-[15px] font-bold leading-tight" style={{ color: v("--ux-ink") }}>
-              Small steps today, bigger opportunities tomorrow.
+              {tr("workBoard.smallStepsTodayBiggerOpportunitiesTomorrow")}
             </p>
             <ol className="mt-4 flex flex-col gap-3">
               {STEPS.map((s, i) => {
@@ -764,8 +771,8 @@ function Phone() {
           app puts the label on the left and the value on the right, which
           fits every label at full length and reads at a glance.
         */}
-        <ListGroup title="This month"
-                   footnote="Applied to 12 jobs, completed 3 and received 3 positive reviews.">
+        <ListGroup title={tr("circles.thisMonth")}
+                   footnote={tr("workBoard.appliedTo12JobsCompleted3")}>
           {STATS.map((s) => (
             <ListRow key={s.label} icon={s.icon}
                      tint={s.ink === "--ux-brand" ? "violet"
@@ -784,7 +791,7 @@ function Phone() {
           width, at the bottom, where a thumb already is.
         */}
         <section>
-          <h3 className="ux-group-label">Need help getting started?</h3>
+          <h3 className="ux-group-label">{tr("workBoard.needHelpGettingStarted")}</h3>
           <div className="rounded-[var(--ux-r-lg)] border p-4"
                style={{ background: v("--ux-band-foot"), borderColor: v("--ux-band-foot-edge") }}>
             <p className="text-[15px] italic leading-snug" style={{ color: HERO_INK }}>
@@ -796,7 +803,7 @@ function Phone() {
               style={{ borderRadius: 14,
                        background: "linear-gradient(96deg, var(--ux-fill), var(--ux-fill-2))", color: v("--ux-on-brand") }}>
               <I name="MessageCircle" className="h-[17px] w-[17px]" sw={2} />
-              Chat with Sakhi
+              {tr("journeyviews.chatWithSakhi")}
             </TransitionLink>
           </div>
         </section>

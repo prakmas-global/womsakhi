@@ -51,14 +51,44 @@ class Settings(BaseSettings):
     # production; a wrong value here silently sends people somewhere else.
     APP_BASE_URL: str = "http://localhost:3100"
 
-    # Email. Leave SMTP_HOST empty in development: messages are written to
-    # backend/outbox/ instead of being sent.
+    # ── Email ────────────────────────────────────────────────────────────
+    #
+    # Three ways out, chosen in this order: Mailgun if it is configured, SMTP
+    # if it is, and otherwise the file adapter that writes to backend/outbox/.
+    #
+    # `EMAIL_PROVIDER` forces one. Left empty it picks whichever is configured,
+    # which is what you want in development: adding a key is enough.
+    EMAIL_PROVIDER: str = ""        # "mailgun" | "smtp" | "file" | "" (auto)
+
+    #: Run the real mail flow against a sandbox domain.
+    #:
+    #: A sandbox delivers only to recipients added and confirmed in the Mailgun
+    #: dashboard, so `can_deliver()` answers no and the signup, verify and
+    #: forgot-password screens say "we cannot send email yet" — correct for a
+    #: real woman, and useless when you are trying to TEST the flow with your
+    #: own authorised address.
+    #:
+    #: Turning this on makes those screens behave as they will in production:
+    #: "check your inbox", a real link, a real arrival. It changes nothing
+    #: about who actually receives mail — Mailgun still refuses every address
+    #: that is not on the authorised list.
+    #:
+    #: For a real launch this stays FALSE and the DOMAIN changes instead.
+    #: `unsafe_for_production()` refuses to go quiet about the sandbox either
+    #: way, so this cannot be used to ship a silent one.
+    EMAIL_TEST_MODE: bool = False
+
+    MAILGUN_API_KEY: str = ""
+    MAILGUN_DOMAIN: str = ""
+    MAILGUN_BASE_URL: str = "https://api.mailgun.net"
+
     SMTP_HOST: str = ""
     SMTP_PORT: int = 587
     SMTP_USER: str = ""
     SMTP_PASSWORD: str = ""
     SMTP_USE_TLS: bool = True
     SMTP_USE_SSL: bool = False
+
     EMAIL_FROM: str = "no-reply@womsakhi.com"
     EMAIL_FROM_NAME: str = "WomSakhi"
     EMAIL_TOKEN_HOURS: int = 24
@@ -227,11 +257,39 @@ class Settings(BaseSettings):
                 "PAYMENT_PROVIDER is 'razorpay' but RAZORPAY_KEY_ID / "
                 "RAZORPAY_KEY_SECRET are empty, so every payment will fail."
             )
-        if not self.SMTP_HOST:
+        # Deliberately asks "does mail REACH her?", not "is a provider set?".
+        #
+        # A Mailgun sandbox domain is configured, working, and still reaches
+        # nobody except a handful of addresses added by hand in the dashboard.
+        # Treating that as "email works" is how a woman ends up waiting for a
+        # reset link that was refused with a 400 she never sees.
+        from app.core.email import can_deliver, is_sandbox_domain  # local: cycle
+
+        # The sandbox is named FIRST and unconditionally — before `can_deliver`
+        # is consulted at all.
+        #
+        # `EMAIL_TEST_MODE` exists so a developer can run the real "check your
+        # inbox" flow against their own authorised address, and it makes
+        # `can_deliver()` answer yes. Hanging this warning off that would mean
+        # the one flag that makes the app *look* production-ready is also the
+        # flag that silences the check telling you it is not. So it does not.
+        if is_sandbox_domain():
             problems.append(
-                "SMTP_HOST is empty, so no email is delivered — it is written to "
-                "disk instead. Email verification gates signup, so nobody can "
-                "finish joining, and no password reset link ever arrives."
+                "MAILGUN_DOMAIN is a SANDBOX domain, which only delivers to "
+                "recipients added and confirmed in the Mailgun dashboard. Every "
+                "other woman's reset and verification mail is refused with a "
+                "403. Point it at a verified domain before launch."
+                + (" EMAIL_TEST_MODE is on, so the screens are promising a link "
+                   "that most addresses will never receive — that is correct for "
+                   "testing and wrong for anybody else."
+                   if self.EMAIL_TEST_MODE else "")
+            )
+        elif not can_deliver():
+            problems.append(
+                "No mail provider is configured, so no email is delivered — "
+                "it is written to disk instead. Email verification gates "
+                "signup, so nobody can finish joining, and no password reset "
+                "link ever arrives."
             )
         if not self.DOCUMENT_ENCRYPTION_KEY:
             problems.append(
@@ -264,6 +322,47 @@ class Settings(BaseSettings):
         """`ALLOWED_ORIGINS` split and cleaned. Empty entries are dropped so a
         trailing comma in an env var cannot add an origin called ""."""
         return [o.strip() for o in self.ALLOWED_ORIGINS.split(",") if o.strip()]
+
+
+    # ── Reminder + Notification engines ─────────────────────────────────────
+    # Off until the tests pass. Nothing existing changes behaviour while this
+    # is false: the collections exist and the routes answer, but no reminder
+    # is materialised and no intent is dispatched.
+    ENGINES_ENABLED: bool = False
+    # Cloud Run scales to zero, so time comes from outside: Cloud Scheduler
+    # calls the tick endpoint on a cadence. In production the caller is
+    # authenticated by GCP OIDC; this shared secret is the local-development
+    # path and is refused when it is empty.
+    ENGINES_TICK_SECRET: str = ""
+    # How long a worker owns an occurrence before another may claim it. Longer
+    # than the slowest dispatch, shorter than a member would notice.
+    ENGINES_LEASE_SECONDS: int = 120
+    # Ten instances may tick at once; each takes a bounded slice.
+    ENGINES_TICK_BATCH: int = 200
+    # After an outage, how far back is still worth sending. Older optional
+    # work expires instead of arriving in a burst (REM-UC-008).
+    ENGINES_CATCHUP_MINUTES: int = 60
+    # Starting defaults for the shared attention budget (catalogue §24.4).
+    # Product defaults to validate with women, not industry limits.
+    ENGINES_DISCRETIONARY_PER_DAY: int = 2
+    ENGINES_MIN_GAP_MINUTES: int = 240
+    # Web push. Generated once with `vapid --gen`; the public key also ships
+    # to the browser.
+    VAPID_PUBLIC_KEY: str = ""
+    VAPID_PRIVATE_KEY: str = ""
+    VAPID_SUBJECT: str = "mailto:hello@womsakhi.com"
+    # Outbound providers. Each is off until its credentials are present, so a
+    # missing account degrades to "in-app only" rather than an error.
+    SMS_PROVIDER: str = ""          # twilio | msg91 | ""
+    SMS_ACCOUNT_SID: str = ""
+    SMS_AUTH_TOKEN: str = ""
+    SMS_FROM: str = ""
+    SMS_COST_MICROS: int = 0
+    WHATSAPP_PROVIDER: str = ""     # meta | twilio | ""
+    WHATSAPP_PHONE_ID: str = ""
+    WHATSAPP_TOKEN: str = ""
+    WHATSAPP_COST_MICROS: int = 0
+    EMAIL_COST_MICROS: int = 0
 
     class Config:
         env_file = ".env"

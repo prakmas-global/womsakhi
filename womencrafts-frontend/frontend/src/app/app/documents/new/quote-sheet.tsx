@@ -1,13 +1,15 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { useT } from "@/i18n";
 import { useRouter } from "next/navigation";
 
 import * as Icons from "@/components/ux/icons";
 import { Btn, I, IconTile, Rating, Sheet, v } from "@/components/ux/kit";
-import { QUOTE_ASK, type QuoteDraft } from "@/components/ux/earn/data";
+import { QUOTE_ASK as RAW_QUOTE_ASK, type QuoteDraft } from "@/components/ux/earn/data";
 
 import { Area, Check, Label, Text } from "@/components/ux/kit/form";
+import { useTranslated } from "@/i18n/data";
 
 /**
  * The other side of "let buyers ask for a price".
@@ -36,6 +38,8 @@ export function QuoteSheet({ open, onClose, listing, ask, message, respondIn }: 
   message?: string;
   respondIn?: string;
 }) {
+  const QUOTE_ASK = useTranslated(RAW_QUOTE_ASK);
+  const tr = useT();
   const router = useRouter();
 
   const [needs, setNeeds] = useState("");
@@ -76,18 +80,18 @@ export function QuoteSheet({ open, onClose, listing, ask, message, respondIn }: 
       onClose={onClose}
       icon="FileText"
       width={480}
-      title="Request a quote"
+      title={tr("quotesheet.requestAQuote")}
       description={`Share your requirements and get a price from ${listing.seller}.`}
       footer={
         <>
           <div className="flex items-center justify-end gap-2.5">
             <Btn variant="ghost" onClick={onClose}>Cancel</Btn>
-            <Btn icon="Send" onClick={send} disabled={!ready}>Send request</Btn>
+            <Btn icon="Send" onClick={send} disabled={!ready}>{tr("fund.send")}</Btn>
           </div>
           <p className="mt-2.5 flex items-center justify-center gap-1.5 text-2xs"
              style={{ color: v("--ux-muted") }}>
             <Icons.ShieldCheck className="h-[13px] w-[13px]" style={{ color: v("--ux-green-ink") }} />
-            Your details go to the seller and nobody else.
+            {tr("quotesheet.yourDetailsGoToTheSeller")}
           </p>
         </>
       }
@@ -120,7 +124,7 @@ export function QuoteSheet({ open, onClose, listing, ask, message, respondIn }: 
         <I name="Gift" className="mt-[1px] h-[16px] w-[16px] shrink-0" style={{ color: v("--ux-brand") }} />
         <span className="min-w-0">
           <span className="block text-xs font-bold" style={{ color: v("--ux-brand") }}>
-            Get a price for exactly what you need
+            {tr("quotesheet.getAPriceForExactlyWhat")}
           </span>
           <span className="mt-0.5 block text-2xs leading-relaxed" style={{ color: v("--ux-ink-2") }}>
             {message?.trim()
@@ -130,51 +134,51 @@ export function QuoteSheet({ open, onClose, listing, ask, message, respondIn }: 
         </span>
       </div>
 
-      <Numbered n={1} title="Your requirements" />
+      <Numbered n={1} title={tr("quotesheet.yourRequirements")} />
 
       {wants.has("needs") && (
         <div className="mb-4">
-          <Label need>What do you need?</Label>
-          <Area value={needs} onChange={setNeeds} max={500} rows={4} label="What do you need"
+          <Label need>{tr("intake.title")}</Label>
+          <Area value={needs} onChange={setNeeds} max={500} rows={4} label={tr("quotesheet.whatDoYouNeed")}
                 placeholder="e.g. 20 kurtas for my boutique. Please share pricing, available designs and delivery timeline." />
         </div>
       )}
 
       <div className="mb-4 grid gap-3 sm:grid-cols-2">
         <div>
-          <Label need>How many</Label>
+          <Label need>{tr("quotesheet.howMany")}</Label>
           <Text value={qty} onChange={setQty} type="number" label="Quantity" placeholder="e.g. 20" />
         </div>
         {wants.has("when") && (
           <div>
-            <Label hint="(optional)">When you need it by</Label>
-            <Text value={by} onChange={setBy} type="date" label="Preferred delivery date" />
+            <Label hint="(optional)">{tr("quotesheet.whenYouNeedItBy")}</Label>
+            <Text value={by} onChange={setBy} type="date" label={tr("quotesheet.preferredDeliveryDate")} />
           </div>
         )}
       </div>
 
       {wants.has("budget") && (
         <div className="mb-4">
-          <Label hint="(optional)">What you can spend</Label>
+          <Label hint="(optional)">{tr("quotesheet.whatYouCanSpend")}</Label>
           <div className="flex items-center gap-2.5">
             <Text value={budgetLow} onChange={setBudgetLow} type="number"
-                  prefix="₹" label="Lowest you can spend" placeholder="1,000" />
+                  prefix="₹" label={tr("quotesheet.lowestYouCanSpend")} placeholder="1,000" />
             <span className="shrink-0 text-xs" style={{ color: v("--ux-faint") }}>to</span>
             <Text value={budgetHigh} onChange={setBudgetHigh} type="number"
-                  prefix="₹" label="Most you can spend" placeholder="2,500" />
+                  prefix="₹" label={tr("quotesheet.mostYouCanSpend")} placeholder="2,500" />
           </div>
         </div>
       )}
 
       {wants.has("where") && (
         <div className="mb-4">
-          <Label need>Where it has to reach</Label>
-          <Text value={place} onChange={setPlace} label="Delivery location"
-                placeholder="City or pincode" />
+          <Label need>{tr("quotesheet.whereItHasToReach")}</Label>
+          <Text value={place} onChange={setPlace} label={tr("quotesheet.deliveryLocation")}
+                placeholder={tr("quotesheet.cityOrPincode")} />
         </div>
       )}
 
-      <Numbered n={2} title="Anything else" hint="(optional)" />
+      <Numbered n={2} title={tr("intake.anythingElse")} hint="(optional)" />
       <div className="mb-4">
         {QUOTE_ASK.map((x) => (
           <Check key={x} label={x} on={extras.includes(x)}
@@ -182,25 +186,25 @@ export function QuoteSheet({ open, onClose, listing, ask, message, respondIn }: 
         ))}
       </div>
 
-      <Numbered n={3} title="Pictures of what you want" hint="(optional)" />
+      <Numbered n={3} title={tr("quotesheet.picturesOfWhatYouWant")} hint="(optional)" />
       <label className="mb-4 flex cursor-pointer flex-col items-center gap-1 rounded-[14px] px-4 py-6 text-center"
              style={{ border: "1.5px dashed var(--ux-brand)", background: v("--ux-brand-tint") }}>
         <input type="file" accept="image/*,application/pdf" multiple className="sr-only"
-               aria-label="Pictures of what you want" />
+               aria-label={tr("quotesheet.picturesOfWhatYouWant")} />
         <Icons.Upload className="h-[19px] w-[19px]" style={{ color: v("--ux-brand") }} />
         <span className="text-xs font-bold" style={{ color: v("--ux-brand") }}>
-          Add a photo of what you have in mind
+          {tr("quotesheet.addAPhotoOfWhatYou")}
         </span>
         <span className="text-2xs" style={{ color: v("--ux-muted") }}>
-          JPG, PNG or PDF — up to 5 files, 10MB each
+          {tr("quotesheet.jpgPngOrPdfUpTo")}
         </span>
       </label>
 
-      <Numbered n={4} title="How she can reach you" />
+      <Numbered n={4} title={tr("quotesheet.howSheCanReachYou")} />
       <div className="grid gap-3 sm:grid-cols-2">
         <div>
-          <Label>Your name</Label>
-          <Text value={name} onChange={setName} label="Your name" placeholder="Priya" />
+          <Label>{tr("settingsAccount.yourName")}</Label>
+          <Text value={name} onChange={setName} label={tr("settingsAccount.yourName")} placeholder="Priya" />
         </div>
         <div>
           <Label>Phone</Label>
@@ -208,11 +212,11 @@ export function QuoteSheet({ open, onClose, listing, ask, message, respondIn }: 
         </div>
         <div className="sm:col-span-2">
           <Label hint="(optional)">Email</Label>
-          <Text value={email} onChange={setEmail} type="email" label="Email" placeholder="priya@email.com" />
+          <Text value={email} onChange={setEmail} type="email" label="Email" placeholder={tr("quotesheet.priyaEmailCom")} />
         </div>
       </div>
       <div className="mt-1.5">
-        <Check on={remember} onChange={setRemember} label="Remember these for next time" />
+        <Check on={remember} onChange={setRemember} label={tr("quotesheet.rememberTheseForNextTime")} />
       </div>
     </Sheet>
   );

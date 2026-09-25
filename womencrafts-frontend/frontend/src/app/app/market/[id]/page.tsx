@@ -66,6 +66,8 @@ export default function ItemPage({ params }: { params: Promise<{ id: string }> }
   const [asking, setAsking] = useState(false);
   const [question, setQuestion] = useState("");
   const [pressedSave, setPressedSave] = useState<boolean | null>(null);
+  const [selectedPhoto, setSelectedPhoto] = useState(0);
+  const photos = item?.photos?.length ? item.photos : item?.photo ? [item.photo] : [];
 
   /**
    * Every order she has on this listing — the server's, plus anything placed
@@ -148,6 +150,7 @@ export default function ItemPage({ params }: { params: Promise<{ id: string }> }
 
   const look = lookOf(item);
   const soldOut = item.out_of_stock;
+  const needsQuote = item.price_mode === "quote" || item.price_mode === "range";
 
   const smallRow = (l: MarketListing) => {
     const lk = lookOf(l);
@@ -173,13 +176,33 @@ export default function ItemPage({ params }: { params: Promise<{ id: string }> }
         <Back to="/app/market" label={tr("market.backToTheMarket2")} />
 
         <Card pad={0} style={{ overflow: "hidden" }}>
+          {photos.length > 0 && (
+            <div className="p-4" style={{ background: v("--ux-surface") }}>
+              <div className="grid h-[260px] place-items-center sm:h-[360px]">
+                <img src={photos[selectedPhoto] || photos[0]} alt={item.title}
+                     className="h-full min-h-0 w-full object-contain" />
+              </div>
+              {photos.length > 1 && (
+                <div className="mt-3 flex flex-wrap justify-center gap-2" aria-label="Product photos">
+                  {photos.map((photo, index) => (
+                    <button key={photo} type="button" onClick={() => setSelectedPhoto(index)}
+                            aria-label={`View photo ${index + 1}`} aria-pressed={selectedPhoto === index}
+                            className="h-16 w-16 overflow-hidden rounded-lg border-2 transition-colors hover:ring-1 hover:ring-[var(--ux-brand)] focus-visible:outline-2 focus-visible:outline-offset-2"
+                            style={{ borderColor: selectedPhoto === index ? v("--ux-brand") : v("--ux-line") }}>
+                      <img src={photo} alt="" className="h-full w-full object-contain" />
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
           <div className="flex flex-wrap items-start gap-4 p-5" style={{ background: v(look.tint) }}>
             <IconTile icon={look.icon} tint="--ux-surface" ink={look.ink} size={56} radius={15} />
             <div className="min-w-0 flex-1">
               <div className="flex flex-wrap items-center gap-2">
-                <h1 className="text-[clamp(1.25rem,2.6vw,1.625rem)] font-extrabold leading-tight tracking-[-0.03em]"
+                <h1 className="text-2xl font-bold leading-tight tracking-normal"
                     style={{ color: v("--ux-ink") }}>{item.title}</h1>
-                {item.kind === "service" && <Pill tone="blue" size="sm">Someone to do it</Pill>}
+                {item.kind === "service" && <Pill tone="blue" size="sm">{tr("market.someoneToDoIt")}</Pill>}
               </div>
               {item.desc && (
                 <p className="mt-1.5 text-sm leading-relaxed" style={{ color: v("--ux-ink-2") }}>{item.desc}</p>
@@ -192,7 +215,7 @@ export default function ItemPage({ params }: { params: Promise<{ id: string }> }
             </div>
             <div className="shrink-0 text-right">
               <p className="text-2xl font-extrabold leading-none tabular-nums" style={{ color: v("--ux-ink") }}>
-                {formatRupees(item.price_minor)}
+                {item.price_label}
               </p>
               {item.rate && <p className="mt-1 text-xs" style={{ color: v("--ux-ink-2") }}>{item.rate}</p>}
               {item.stock !== null && (
@@ -215,8 +238,8 @@ export default function ItemPage({ params }: { params: Promise<{ id: string }> }
           </div>
 
           <div className="flex flex-wrap gap-2 px-5 py-4">
-            <Btn disabled={soldOut} onClick={order}>
-              {soldOut ? "None left just now"
+            <Btn disabled={soldOut} onClick={needsQuote ? () => setAsking(true) : order}>
+              {soldOut ? "None left just now" : needsQuote ? "Ask for a quote"
                 : item.kind === "service" ? "Book her"
                 : orders.length > 0 ? "Order it again" : "Order it"}
             </Btn>
@@ -236,12 +259,12 @@ export default function ItemPage({ params }: { params: Promise<{ id: string }> }
                 Ask {item.seller.name} about {item.title}
               </label>
               <textarea id="ask" rows={3} value={question} onChange={(e) => setQuestion(e.target.value)}
-                        placeholder="Do you have this in dark blue?"
+                        placeholder={tr("market.doYouHaveThisInDark")}
                         className="ux-sq mt-2 w-full rounded-[12px] border p-3 text-sm"
                         style={{ borderColor: v("--ux-line-strong"), background: v("--ux-surface"), color: v("--ux-ink") }} />
               <div className="mt-2 flex flex-wrap gap-2">
-                <Btn size="sm" disabled={!question.trim()} onClick={ask}>Send it</Btn>
-                <Btn size="sm" variant="ghost" onClick={() => { setAsking(false); setQuestion(""); }}>Not now</Btn>
+                <Btn size="sm" disabled={!question.trim()} onClick={ask}>{tr("booksProof.sendIt")}</Btn>
+                <Btn size="sm" variant="ghost" onClick={() => { setAsking(false); setQuestion(""); }}>{tr("discover.notNow")}</Btn>
               </div>
             </div>
           )}
@@ -263,7 +286,7 @@ export default function ItemPage({ params }: { params: Promise<{ id: string }> }
             </p>
             <div className="mt-2.5">
               <Btn size="sm" variant="outline" icon="MessageCircle" href="/app/messages">
-                Open the conversation
+                {tr("market.openTheConversation")}
               </Btn>
             </div>
           </Card>

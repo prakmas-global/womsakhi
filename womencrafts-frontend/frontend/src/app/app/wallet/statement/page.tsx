@@ -116,7 +116,7 @@ export default function StatementPage() {
         <tbody>${TXNS.map(row).join("")}</tbody>
       </table>
       <p class="foot">
-        Reference ${ref} · issued ${issued}. Any bank may verify this at womsakhi.in/verify
+        Reference ${ref} · issued ${issued}. Any bank may verify this at womsakhi.com/verify
         using the reference above. Amounts are in Indian rupees. Entries marked
         “On its way” are not included in the totals.
       </p>`);
@@ -256,7 +256,7 @@ export default function StatementPage() {
                                    <tr class="total"><td>Amount</td><td class="num">${rupeesExact(t.amount_minor)}</td></tr>
                                  </tbody></table>
                                  <p class="foot">Reference ${ref}-${escapeHtml(t.id.toUpperCase())} · issued ${issued}.
-                                 Verify at womsakhi.in/verify.</p>`)}>
+                                 Verify at womsakhi.com/verify.</p>`)}>
                       Receipt
                     </ActionBtn>
                   )}
@@ -268,7 +268,7 @@ export default function StatementPage() {
       ) : (
         <Card>
           <EmptyState icon="Receipt" title={`Nothing in ${showing}`}
-                      body="Pick another month, or start earning and it will fill up." />
+                      body={tr("walletStatement.pickAnotherMonthOrStartEarning")} />
         </Card>
       )}
     </HomeShell>

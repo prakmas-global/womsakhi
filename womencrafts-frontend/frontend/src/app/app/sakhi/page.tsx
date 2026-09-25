@@ -322,7 +322,7 @@ export default function SakhiPage() {
   async function share() {
     const url = `${window.location.origin}/app/sakhi`;
     try {
-      if (navigator.share) await navigator.share({ title: "Ask Sakhi", url });
+      if (navigator.share) await navigator.share({ title: tr("nav.sakhi"), url });
       else await navigator.clipboard?.writeText(url);
     } catch { /* she cancelled the sheet, or there is no clipboard */ }
   }
@@ -492,7 +492,7 @@ export default function SakhiPage() {
         one long page with the composer at the end of it, so tapping the field
         put the keyboard over the thing she had just tapped.
       */}
-      <ChatFrame label="Ask Sakhi" className={`${styles.page} flex flex-col gap-3 lg:gap-4`}>
+      <ChatFrame label={tr("nav.sakhi")} className={`${styles.page} flex flex-col gap-3 lg:gap-4`}>
         <header data-sakhi-header className="flex shrink-0 items-center gap-2.5 border-b pb-2.5 lg:flex-wrap lg:gap-3 lg:border-0 lg:pb-0"
                 style={{ borderColor: "var(--ux-line)" }}>
           {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -541,7 +541,7 @@ export default function SakhiPage() {
           desktop, so the desktop page keeps scrolling exactly as it did while
           the phone keeps its header and its composer nailed down.
         */}
-        <ChatLog scroll={scroll} label="Your conversation with Sakhi"
+        <ChatLog scroll={scroll} label={tr("sakhi.yourConversationWithSakhi")}
                  className={`${styles.chatLog} flex flex-col gap-4 lg:contents`}>
           {voiceMode ? (
             <Voice
@@ -647,13 +647,13 @@ export default function SakhiPage() {
         <Sheet
           open={renaming}
           onClose={() => setRenaming(false)}
-          title="Name this conversation"
-          description="So you can find it again in your list."
+          title={tr("sakhi.nameThisConversation")}
+          description={tr("sakhi.soYouCanFindItAgain")}
           icon="Pencil"
           footer={
             <div className="flex gap-2.5">
               <Btn variant="outline" full onClick={() => setRenaming(false)}>Cancel</Btn>
-              <Btn full disabled={!renameTo.trim()} onClick={saveRename}>Save the name</Btn>
+              <Btn full disabled={!renameTo.trim()} onClick={saveRename}>{tr("sakhi.saveTheName")}</Btn>
             </div>
           }
         >

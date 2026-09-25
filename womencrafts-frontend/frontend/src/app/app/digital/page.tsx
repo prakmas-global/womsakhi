@@ -10,9 +10,10 @@ import { Btn, Card, Progress, SectionHead, SourceNote } from "@/components/ux/ki
 import { HomeShell } from "@/components/ux/home/HomeShell";
 import { ScreenHead } from "@/components/ux/learning/native";
 import { Tag } from "@/components/ux/learning/native";
-import { MORE_ART } from "@/components/ux/more/data";
+import { MORE_ART as RAW_MORE_ART } from "@/components/ux/more/data";
 import { useDigitalStepList } from "@/components/ux/entitlements";
 import { useT } from "@/i18n";
+import { useTranslated } from "@/i18n/data";
 
 /**
  * Digital Literacy.
@@ -23,6 +24,7 @@ import { useT } from "@/i18n";
  * members actually ask about.
  */
 export default function DigitalPage() {
+  const MORE_ART = useTranslated(RAW_MORE_ART);
   const tr = useT();
   const { data: DIGITAL_STEPS, source, refetch } = useDigitalStepList();
   /**

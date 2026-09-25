@@ -10,6 +10,7 @@ import { formatRupees } from "@/components/ux/kit";
 import { apiShopSummary, type ShopSummary } from "@/lib/shop-api";
 import { useResource } from "@/lib/use-resource";
 import { useT } from "@/i18n";
+import { EngineNudge } from "@/components/ux/reminders/EngineNudge";
 
 /**
  * Ways to sell.
@@ -90,6 +91,13 @@ export default function ShopHub() {
 
   return (
     <HomeShell active="/app/shop">
+      {/* The engine, where this module already is. Added, not replacing. */}
+      <div className="mb-4">
+        <EngineNudge
+          preset="rem.preset.order"
+          icon="Package" tint="--ux-tint-amber" ink="--ux-amber-ink"
+          labelKey="nudge.shop.label" noteKey="nudge.shop.note" />
+      </div>
       <div className="flex flex-col gap-6 lg:gap-5">
 
         <header className="flex flex-wrap items-end gap-4">
@@ -123,12 +131,12 @@ export default function ShopHub() {
         {/* Three facts the server holds about her shop. No derived money. */}
         <Card>
           <div className="grid gap-4 sm:grid-cols-3">
-            <Stat value={s ? String(s.needs_her) : "—"} label="orders waiting on you"
+            <Stat value={s ? String(s.needs_her) : "—"} label={tr("shop.ordersWaitingOnYou")}
                   icon="Clock" tint="--ux-tint-amber" ink="--ux-amber-ink" />
-            <Stat value={s ? String(s.listings) : "—"} label="things listed in your shop"
+            <Stat value={s ? String(s.listings) : "—"} label={tr("shop.thingsListedInYourShop")}
                   icon="Package" tint="--ux-tint-pink" ink="--ux-pink-ink" />
             <Stat value={s && s.review_count > 0 ? String(s.review_count) : "—"}
-                  label="customers have left a review"
+                  label={tr("shop.customersHaveLeftAReview")}
                   icon="MessageSquare" tint="--ux-tint-blue" ink="--ux-blue-ink" />
           </div>
           <div className="mt-4 flex items-start gap-2.5 border-t pt-3.5" style={{ borderColor: v("--ux-line") }}>
@@ -142,8 +150,8 @@ export default function ShopHub() {
         </Card>
 
         <div>
-          <Section title="What works today" icon="Sparkles"
-                       sub="These do what they say" />
+          <Section title={tr("shop.whatWorksToday")} icon="Sparkles"
+                       sub={tr("shop.theseDoWhatTheySay")} />
           {/* A phone gets these as one grouped list of destinations. */}
           <div className={`grid gap-3 md:grid-cols-2 lg:grid-cols-3 ${GROUP}`}>
             {WORKING.map((t) => (
@@ -170,8 +178,8 @@ export default function ShopHub() {
           more than a dead link and far more than a fixture.
         */}
         <div>
-          <Section title="Not built yet" icon="Hammer"
-                       sub="Ideas we have written down but not made. Each one explains what you can do yourself in the meantime." />
+          <Section title={tr("shop.notBuiltYet")} icon="Hammer"
+                       sub={tr("shop.ideasWeHaveWrittenDownBut")} />
           <Card pad={0} style={{ overflow: "hidden" }}>
             {NOT_YET.map((t, i) => (
               <Link key={t.href} href={t.href}

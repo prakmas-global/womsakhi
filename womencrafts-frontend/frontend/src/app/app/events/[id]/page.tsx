@@ -71,7 +71,7 @@ export default function EventDetail({ params }: { params: Promise<{ id: string }
           <EmptyState
             icon="CalendarX"
             title={tr("events.thatEventIsNotListed")}
-            body="It may have finished, or the link may be old."
+            body={tr("events.itMayHaveFinishedOrThe")}
             action={<Btn href="/app/events" variant="primary" iconEnd="ArrowRight">{tr("events.allEvents")}</Btn>}
           />
         </Card>

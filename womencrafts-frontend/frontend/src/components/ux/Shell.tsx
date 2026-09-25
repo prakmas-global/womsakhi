@@ -1,6 +1,7 @@
 "use client";
 
 import { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useT } from "@/i18n";
 import dynamic from "next/dynamic";
 import { usePathname, useRouter } from "next/navigation";
 import Link from "next/link";
@@ -11,6 +12,7 @@ import { TransitionLink } from "./TransitionLink";
 
 import { useAuth } from "@/context/AuthContext";
 import { useTheme } from "@/context/ThemeContext";
+import { TopLanguageBtn } from "@/components/ux/LanguageMenu";
 import { useMe } from "./me";
 import { useNavLabel } from "./use-nav-label";
 import { SECTIONS, isTabRoot, trailFor, type NavNode, type Section } from "./nav-tree";
@@ -488,6 +490,7 @@ function ThemeToggle() {
 const TOPBAR_H_VAR = "var(--ux-topbar-h)";
 
 export function Topbar({ user, onMore }: { user: { name: string; avatar: string; unread?: number }; onMore?: () => void }) {
+  const tr = useT();
   /* Whether the bar leads with the way back instead of the logo. `MobileBack`
      makes the same decision for itself — it has to, because it is the thing
      being drawn — and the two read the one predicate in `nav-tree` rather than
@@ -599,7 +602,13 @@ export function Topbar({ user, onMore }: { user: { name: string; avatar: string;
             duplicate goes on a phone where the row has no room for it. */}
         <span className="hidden sm:contents">
           <ThemeToggle />
-          <TopIconBtn icon="Sparkles" label="Ask Sakhi" href="/app/sakhi" ink="--ux-brand" />
+          {/* Beside the theme toggle rather than behind Settings: a woman
+              reading the wrong language is the last person who can be asked to
+              navigate three screens of it to reach the setting. On a phone the
+              row has no width for a fifth icon, so it is a row in the All
+              sections sheet instead — the same place Appearance lives. */}
+          <TopLanguageBtn />
+          <TopIconBtn icon="Sparkles" label={tr("nav.sakhi")} href="/app/sakhi" ink="--ux-brand" />
         </span>
         {/* Help is not a tab because five is the ceiling for a bottom bar —
             but it is the one section a woman reaches for on her worst day, so
@@ -607,12 +616,24 @@ export function Topbar({ user, onMore }: { user: { name: string; avatar: string;
         {/* Phone only: the rail does not exist here, so this is how she
             reaches every section and every screen inside it. */}
         <span className="contents lg:hidden">
-          <TopIconBtn icon="Menu" label="All sections" onClick={onMore} />
+          <TopIconBtn icon="Menu" label={tr("shell.allSections")} onClick={onMore} />
         </span>
         <span className="hidden sm:contents">
           <TopIconBtn icon="LifeBuoy" label="Help" href="/app/helpdesk" />
           <TopIconBtn icon="MessageCircle" label="Messages" href="/app/messages" />
         </span>
+        {/*
+          The two engines, in the chrome rather than behind a menu.
+
+          Reminders and the inbox are the only things in this app that reach
+          her when she is not holding it, so they are the two that have to be
+          one tap from every screen. The bell was already here; this puts the
+          thing that CREATES what lands in it beside the thing that shows it.
+
+          `AlarmClock`, not `Bell`, so two adjacent controls are not the same
+          picture — the bell is what arrived, this is what she set.
+        */}
+        <TopIconBtn icon="AlarmClock" label={tr("rem.title")} href="/app/reminders" />
         <TopIconBtn icon="Bell" label="Notifications" href="/app/notifications" badge={user.unread} />
 
         <div ref={menuRef} className="relative ms-2">
@@ -648,13 +669,14 @@ export function Topbar({ user, onMore }: { user: { name: string; avatar: string;
                 // things, which is the confusion this menu should relieve.
                 // What is left is the personal admin that has no place in a
                 // daily navigation bar.
-                { label: "Your profile", icon: "User", href: "/app/profile" },
-                { label: "Your journey", icon: "Route", href: "/app/journey" },
+                { label: tr("profile.title"), icon: "User", href: "/app/profile" },
+                { label: tr("you.yourJourney"), icon: "Route", href: "/app/journey" },
+                { label: tr("rem.title"), icon: "AlarmClock", href: "/app/reminders" },
                 { label: "Notifications", icon: "Bell", href: "/app/notifications" },
                 { label: "Saved", icon: "Bookmark", href: "/app/saved" },
                 { label: "Settings", icon: "Settings", href: "/app/settings" },
                 { label: "Questions", icon: "HelpCircle", href: "/app/help" },
-                { label: "Refer a friend", icon: "Gift", href: "/app/refer" },
+                { label: tr("refer.referAFriend"), icon: "Gift", href: "/app/refer" },
               ].map((it) => (
                 <Link
                   key={it.label}
@@ -711,7 +733,7 @@ export function Topbar({ user, onMore }: { user: { name: string; avatar: string;
                 style={{ color: "var(--ux-pink-ink)" }}
               >
                 <Icon name="LogOut" className="ux-ico h-[16px] w-[16px]" />
-                Sign out
+                {tr("common.signOut")}
               </button>
             </div>
           )}

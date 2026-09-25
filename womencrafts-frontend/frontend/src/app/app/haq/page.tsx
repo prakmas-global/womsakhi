@@ -8,12 +8,19 @@ import { Btn, Card, Chip, EmptyState, I, Stat, v } from "@/components/ux/kit";
 import { EYEBROW, GROUP, GROUP_ROW, Section } from "@/components/ux/earn/phone";
 import { formatRupees } from "@/components/ux/kit";
 import {
-  HAQ, LATE, PAPERS,
+  HAQ as RAW_HAQ, LATE as RAW_LATE, PAPERS as RAW_PAPERS,
   atRisk, atRiskMonthlyMinor, claimable, receiving, stopped,
   type Haq,
 } from "@/components/ux/haq/data";
 import { AtRisk, HaqRow } from "@/components/ux/haq/parts";
+import { useResource } from "@/lib/use-resource";
+import {
+  apiHaq, apiLate, apiPapers,
+  type HaqStates, type LatePayments, type PaperStates,
+} from "@/lib/life-api";
+import { SourceNote } from "@/components/ux/kit";
 import { useT } from "@/i18n";
+import { useTranslated } from "@/i18n/data";
 
 /**
  * Haq — everything she is owed, led by what she is about to lose.
@@ -40,18 +47,74 @@ const FILTERS: { id: Filter; label: string; icon: string }[] = [
 ];
 
 export default function HaqPage() {
+  const CATALOGUE = useTranslated(RAW_HAQ);
+  const PAPER_TYPES = useTranslated(RAW_PAPERS);
   const tr = useT();
   const router = useRouter();
   const [filter, setFilter] = useState<Filter>("all");
 
-  const risk = useMemo(() => atRisk(HAQ), []);
-  const halted = useMemo(() => stopped(HAQ), []);
-  const getting = useMemo(() => receiving(HAQ), []);
-  const canClaim = useMemo(() => claimable(HAQ), []);
+  /**
+   * Which schemes exist, what they pay and which papers they need is reference
+   * material about real government programmes — the same for everybody, and it
+   * stays with the copy above.
+   *
+   * Where each of HER claims stands is not. This screen used to ship with its
+   * statuses written in: "Ladki Bahin · at risk · finish e-KYC · 9 days", one
+   * scheme stopped, one arriving, one waiting. Five of seven papers held.
+   * ₹152 owed in late payments.
+   *
+   * Both directions of that hurt her. Told she is *receiving* something she
+   * has never had, she does not go and claim it. Told a benefit she does not
+   * have is *at risk in nine days*, she queues at an office for nothing — and
+   * a wasted day at a government office is a day's earnings gone.
+   *
+   * So an entitlement she has never touched now reads "you may be able to
+   * claim this", which is the one thing that is true of everybody.
+   */
+  const haqState = useResource<HaqStates>(
+    useCallback((sig: AbortSignal) => apiHaq(sig), []),
+    { states: {}, default: "can-claim", tracked: 0 },
+  );
+  const paperState = useResource<PaperStates>(
+    useCallback((sig: AbortSignal) => apiPapers(sig), []),
+    { states: {}, default: "missing", held: 0 },
+  );
+  const lateState = useResource<LatePayments>(
+    useCallback((sig: AbortSignal) => apiLate(sig), []),
+    { late: [], owed_minor: 0, count: 0 },
+  );
 
-  const monthly = useMemo(() => atRiskMonthlyMinor(HAQ), []);
+  /** The catalogue with her own status laid over it. */
+  const HAQ: Haq[] = useMemo(() => CATALOGUE.map((h) => {
+    const mine = haqState.data.states[h.id];
+    if (!mine) return { ...h, status: "can-claim" as const, action: undefined, dueDays: undefined, stoppedBecause: undefined };
+    const due = mine.due_on ? new Date(mine.due_on) : null;
+    return {
+      ...h,
+      status: mine.status,
+      action: mine.action || undefined,
+      // Counted from the real date every render, so it cannot go stale.
+      dueDays: due && !Number.isNaN(due.getTime())
+        ? Math.ceil((due.getTime() - Date.now()) / 86_400_000)
+        : undefined,
+      stoppedBecause: mine.stopped_because || undefined,
+    };
+  }), [CATALOGUE, haqState.data.states]);
+
+  const PAPERS = useMemo(() => PAPER_TYPES.map((x) => {
+    const mine = paperState.data.states[x.id];
+    return { ...x, state: mine?.state ?? "missing", expires: mine?.expires || undefined };
+  }), [PAPER_TYPES, paperState.data.states]);
+
+  const risk = useMemo(() => atRisk(HAQ), [HAQ]);
+  const halted = useMemo(() => stopped(HAQ), [HAQ]);
+  const getting = useMemo(() => receiving(HAQ), [HAQ]);
+  const canClaim = useMemo(() => claimable(HAQ), [HAQ]);
+
+  const monthly = useMemo(() => atRiskMonthlyMinor(HAQ), [HAQ]);
+  // `Math.min` of an empty list is Infinity, which would render as a deadline.
   const soonest = useMemo(
-    () => Math.min(...risk.map((h) => h.dueDays ?? 99), 99),
+    () => risk.length ? Math.min(...risk.map((h) => h.dueDays ?? 99), 99) : 99,
     [risk],
   );
 
@@ -59,8 +122,8 @@ export default function HaqPage() {
     () => getting.reduce((n, h) => (h.cadence === "every month" ? n + h.amountMinor : n), 0),
     [getting],
   );
-  const owed = useMemo(() => LATE.filter((l) => !l.filed).reduce((n, l) => n + l.owedMinor, 0), []);
-  const missing = useMemo(() => PAPERS.filter((p) => p.state !== "held").length, []);
+  const owed = lateState.data.owed_minor;
+  const missing = useMemo(() => PAPERS.filter((p) => p.state !== "held").length, [PAPERS]);
 
   const shown: Haq[] = useMemo(() => {
     if (filter === "risk") return [...risk, ...halted];
@@ -141,7 +204,7 @@ export default function HaqPage() {
               <EmptyState
                 icon="SearchX"
                 title={tr("haq.nothingHereRightNow")}
-                body="Try another filter. Everything you receive, and everything you qualify for, is in this list."
+                body={tr("haq.tryAnotherFilterEverythingYouReceive")}
                 action={<Btn size="sm" variant="outline" onClick={() => setFilter("all")}>{tr("haq.showEverything")}</Btn>}
               />
             </Card>

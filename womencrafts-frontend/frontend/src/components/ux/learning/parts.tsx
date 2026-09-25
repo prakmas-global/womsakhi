@@ -2,11 +2,13 @@
 
 import { MediaRow, Tag } from "@/components/ux/learning/native";
 
+import { useT } from "@/i18n";
 import Link from "next/link";
 import * as Icons from "@/components/ux/icons";
 
 import { AvatarStack, Btn, Card, IconTile, Progress, Rating, SectionHead, v } from "../kit";
-import { ACHIEVEMENTS, type Course, LEARNER, SKILLS, STREAK } from "./data";
+import { ACHIEVEMENTS as RAW_ACHIEVEMENTS, type Course, LEARNER as RAW_LEARNER, SKILLS as RAW_SKILLS, STREAK as RAW_STREAK } from "./data";
+import { useTranslated } from "@/i18n/data";
 
 const TAG_TONE = { Bestseller: "pink", New: "brand", Popular: "orange", Trending: "green" } as const;
 
@@ -165,7 +167,7 @@ export function ResumeCard({ c }: { c: Course }) {
  * gone: there is no learning-path feature on the server to render.
  */
 
-export function SkillCard({ s }: { s: (typeof SKILLS)[number] }) {
+export function SkillCard({ s }: { s: (typeof RAW_SKILLS)[number] }) {
   return (
     <div className="ux-card flex w-[176px] shrink-0 items-start gap-2.5" style={{ padding: 13 }}>
       <IconTile icon={s.icon} tint={s.tint} ink={s.ink} size={34} radius={9} />
@@ -180,6 +182,7 @@ export function SkillCard({ s }: { s: (typeof SKILLS)[number] }) {
 /* ── right rail ─────────────────────────────────────────────────────────── */
 
 export function LearnerCard() {
+  const LEARNER = useTranslated(RAW_LEARNER);
   const pct = (LEARNER.xp / LEARNER.xpMax) * 100;
   return (
     <Card>
@@ -205,14 +208,16 @@ export function LearnerCard() {
 }
 
 export function StreakCard() {
+  const STREAK = useTranslated(RAW_STREAK);
+  const tr = useT();
   const days = ["M", "T", "W", "T", "F", "S", "S"];
   return (
     <Card>
       <div className="flex items-center justify-between">
         <h2 className="flex items-center gap-2 text-sm font-semibold" style={{ color: "var(--ux-ink)" }}>
-          <Icons.Flame className="h-[16px] w-[16px]" style={{ color: "var(--ux-orange-ink)" }} aria-hidden /> Learning Streak
+          <Icons.Flame className="h-[16px] w-[16px]" style={{ color: "var(--ux-orange-ink)" }} aria-hidden /> {tr("parts.learningStreak")}
         </h2>
-        <Btn variant="outline" size="sm">View Calendar</Btn>
+        <Btn variant="outline" size="sm">{tr("homeRail.viewCalendar")}</Btn>
       </div>
       <div className="mt-3.5 flex items-center gap-4">
         <div className="shrink-0 text-center">
@@ -238,9 +243,11 @@ export function StreakCard() {
 }
 
 export function AchievementsCard() {
+  const ACHIEVEMENTS = useTranslated(RAW_ACHIEVEMENTS);
+  const tr = useT();
   return (
     <Card>
-      <SectionHead title="Achievements" action="View All" />
+      <SectionHead title="Achievements" action={tr("dashboard.viewAll")} />
       <div className="grid grid-cols-3 gap-2">
         {ACHIEVEMENTS.map((a) => (
           <div key={a.name} className="text-center">
@@ -256,17 +263,18 @@ export function AchievementsCard() {
 }
 
 export function ReminderCard() {
+  const tr = useT();
   return (
     <Card>
       <div className="flex items-start gap-3">
         <div className="min-w-0 flex-1">
           <h2 className="flex items-center gap-2 text-sm font-semibold" style={{ color: "var(--ux-ink)" }}>
-            <Icons.Bell className="h-[16px] w-[16px]" style={{ color: "var(--ux-brand)" }} /> Study Reminder
+            <Icons.Bell className="h-[16px] w-[16px]" style={{ color: "var(--ux-brand)" }} /> {tr("parts.studyReminder")}
           </h2>
           <p className="mt-2 text-xs leading-relaxed" style={{ color: "var(--ux-muted)" }}>
-            Keep the momentum going. You have a study goal for today.
+            {tr("parts.keepTheMomentumGoingYouHave")}
           </p>
-          <div className="mt-3"><Btn variant="soft" size="sm">Start Learning Now</Btn></div>
+          <div className="mt-3"><Btn variant="soft" size="sm">{tr("parts.startLearningNow")}</Btn></div>
         </div>
         <IconTile icon="CalendarClock" tint="--ux-tint-violet" ink="--ux-violet" size={52} radius={14} />
       </div>
@@ -275,6 +283,7 @@ export function ReminderCard() {
 }
 
 export function AskSakhiCard() {
+  const tr = useT();
   return (
     <div className="relative overflow-hidden rounded-[16px] p-[20px]"
          style={{ background: "linear-gradient(150deg, var(--ux-tint-lilac), var(--ux-tint-pink))" }}>
@@ -285,7 +294,7 @@ export function AskSakhiCard() {
       {/* eslint-disable-next-line @next/next/no-img-element */}
       <img loading="lazy" decoding="async" src="/ux/art/avatar-woman-pink-glasses.webp" alt=""
            className="pointer-events-none absolute -bottom-1 end-1 h-[96px] w-[96px] object-contain" />
-      <div className="mt-4 w-[70%]"><Btn variant="primary" full iconEnd="ArrowRight">Chat with Sakhi</Btn></div>
+      <div className="mt-4 w-[70%]"><Btn variant="primary" full iconEnd="ArrowRight">{tr("journeyviews.chatWithSakhi")}</Btn></div>
     </div>
   );
 }

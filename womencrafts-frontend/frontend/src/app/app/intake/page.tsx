@@ -210,7 +210,7 @@ export default function IntakePage() {
         ) : (
           <Card>
             <EmptyState icon="Compass" title={tr("intake.nothingMatched")}
-                        body="Tell Sakhi instead — she can look in places this form cannot."
+                        body={tr("intake.tellSakhiInsteadSheCanLook")}
                         action={<Btn href="/app/sakhi" variant="primary" iconEnd="ArrowRight">{tr("intake.talkToSakhi2")}</Btn>} />
           </Card>
         )

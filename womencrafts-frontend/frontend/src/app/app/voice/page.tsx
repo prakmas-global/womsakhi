@@ -5,11 +5,15 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { HomeShell } from "@/components/ux/home/HomeShell";
 import { Btn, Card, I, Pill, SectionHead, v } from "@/components/ux/kit";
 import { ReadAloud } from "@/components/ux/reach/ReadAloud";
-import { VOICE_LANGUAGES, VOICE_PREFS } from "@/components/ux/reach/data";
+import { VOICE_LANGUAGES as RAW_VOICE_LANGUAGES, VOICE_PREFS as RAW_VOICE_PREFS } from "@/components/ux/reach/data";
 import { TEXT_SIZES, applyTextSize, readTextSize, type TextSize } from "@/components/ux/reach/text-size";
+import { useResource } from "@/lib/use-resource";
+import { apiSetVoicePrefs, apiVoicePrefs, type VoicePrefs } from "@/lib/life-api";
+import { SourceNote } from "@/components/ux/kit";
 import { useT } from "@/i18n";
 import { ListGroup, ListRow } from "@/components/ux/mobile/ListRow";
 import { GroupLabel, PhoneRow, PhoneTitle } from "@/components/ux/PhoneParts";
+import { useTranslated } from "@/i18n/data";
 
 /**
  * The phone's specimen sizes for each text-size option: 15 and 13 (subhead
@@ -54,31 +58,66 @@ const SPEAK_HERE = [
  * them explicitly.
  */
 export default function VoiceSettingsPage() {
+  const VOICE_LANGUAGES = useTranslated(RAW_VOICE_LANGUAGES);
+  const VOICE_PREFS = useTranslated(RAW_VOICE_PREFS);
   const tr = useT();
-  const [prefs, setPrefs] = useState(VOICE_PREFS.filter((p) => p.id !== "vp4"));
   const [size, setSize] = useState<TextSize>("normal");
+  const [err, setErr] = useState<string | null>(null);
 
+  // Text size is a device thing and already persists through `applyTextSize`.
   useEffect(() => setSize(readTextSize()), []);
   const pickSize = useCallback((s: TextSize) => { setSize(s); applyTextSize(s); }, []);
-  const [lang, setLang] = useState("hi");
 
-  const readsMoney = useMemo(() => prefs.find((p) => p.id === "vp5")?.on ?? false, [prefs]);
+  /**
+   * What gets read aloud, and in which language.
+   *
+   * These were React state: she would turn reading-aloud on, leave the
+   * screen, and come back to find it off again — on the screen a woman who
+   * cannot read the screen depends on.
+   */
+  const saved = useResource<VoicePrefs>(
+    useCallback((sig: AbortSignal) => apiVoicePrefs(sig), []),
+    { on: [], lang: "hi", read_money: false },
+  );
+  const onIds = useMemo(() => new Set(saved.data.on), [saved.data.on]);
+  const prefs = useMemo(
+    () => VOICE_PREFS.filter((p) => p.id !== "vp4").map((p) => ({ ...p, on: onIds.has(p.id) })),
+    [VOICE_PREFS, onIds],
+  );
+  const lang = saved.data.lang;
+
+  const save = useCallback(async (next: Partial<VoicePrefs>) => {
+    setErr(null);
+    try {
+      await apiSetVoicePrefs({ ...saved.data, ...next });
+      saved.refetch();
+    } catch { setErr("That did not save."); }
+  }, [saved]);
+
+  const setLang = useCallback((code: string) => { void save({ lang: code }); }, [save]);
+
+  const readsMoney = saved.data.read_money;
   const on = useMemo(() => prefs.filter((p) => p.on).length, [prefs]);
   const speech = useMemo(
     () => VOICE_LANGUAGES.find((l) => l.code === lang) ?? VOICE_LANGUAGES[0],
-    [lang],
+    [VOICE_LANGUAGES, lang],
   );
 
   const toggle = useCallback((id: string) => {
-    setPrefs((r) => r.map((p) => (p.id === id ? { ...p, on: !p.on } : p)));
-  }, []);
+    const next = onIds.has(id)
+      ? saved.data.on.filter((x) => x !== id)
+      : [...saved.data.on, id];
+    // `vp5` is the one that reads amounts out loud, and it is tracked
+    // separately so the server can keep it off by default.
+    void save({ on: next, read_money: next.includes("vp5") });
+  }, [onIds, saved.data.on, save]);
 
   return (
     <HomeShell active="/app/voice">
       <div className="flex flex-col gap-5" id="voice-page">
 
         <PhoneTitle title={tr("voice.readingAndSpeaking")} sub={tr("voice.youDoNotHaveToRead")}
-                    note="Every screen can be read out to you, in your own language. Anywhere you would type, you can speak instead. Try it on this page first — press the button.">
+                    note={tr("voice.everyScreenCanBeReadOut")}>
           <div className="mt-3"><ReadAloud targetId="voice-page" lang={`${speech.code}-IN`} money={readsMoney} /></div>
         </PhoneTitle>
         <header className="hidden flex-wrap items-end gap-4 lg:flex">

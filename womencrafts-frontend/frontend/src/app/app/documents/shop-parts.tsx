@@ -337,7 +337,7 @@ export const Storefront = memo(function Storefront(
             </span>
             <h2 className="mt-3 text-lg font-extrabold tracking-[-0.02em]">{summary?.name ?? "Your shop"}</h2>
             <p className="mt-1 text-xs" style={{ color: "var(--ux-on-brand-2)" }}>
-              {summary?.handle ?? "womsakhi.in"}
+              {summary?.handle ?? "womsakhi.com"}
             </p>
             <div className="mt-3 flex flex-wrap gap-1.5">
               {[["ShieldCheck", "Verified"],

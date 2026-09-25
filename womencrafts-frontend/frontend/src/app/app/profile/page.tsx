@@ -220,7 +220,7 @@ export default function Profile() {
       */}
       {/* On a phone the six sections are a sideways row of chips — a native
           filter row — rather than a desktop tab strip inside a scroller. */}
-      <div className="ux-chiprow mb-4 lg:hidden" role="group" aria-label="Profile sections">
+      <div className="ux-chiprow mb-4 lg:hidden" role="group" aria-label={tr("profile.profileSections")}>
         {["Overview", "Skills", "Experience", "What you made", "Helping others", "Documents"].map((t) => (
           <Chip key={t} selected={tab === t} onClick={() => setTab(t)}>{t}</Chip>
         ))}

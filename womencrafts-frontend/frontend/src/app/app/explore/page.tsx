@@ -11,10 +11,11 @@ import {
 } from "@/components/ux/kit";
 import { HomeShell } from "@/components/ux/home/HomeShell";
 import { ChipRow, GroupHead, MediaRow, RowGroup } from "@/components/ux/learning/native";
-import { DISCOVER_ART, KINDS, type Find, type Kind } from "@/components/ux/discover/data";
-import { CITY } from "@/components/ux/local/data";
+import { DISCOVER_ART as RAW_DISCOVER_ART, KINDS as RAW_KINDS, type Find, type Kind } from "@/components/ux/discover/data";
+import { CITY as RAW_CITY } from "@/components/ux/local/data";
 import { useDiscover } from "@/components/ux/growth";
 import { useT } from "@/i18n";
+import { useTranslated } from "@/i18n/data";
 
 /**
  * Discover — a lens over the whole app, not a copy of it.
@@ -128,6 +129,9 @@ function Finds({ items }: { items: Find[] }) {
 }
 
 function Discover() {
+  const DISCOVER_ART = useTranslated(RAW_DISCOVER_ART);
+  const CITY = useTranslated(RAW_CITY);
+  const KINDS = useTranslated(RAW_KINDS);
   const tr = useT();
   const params = useSearchParams();
   const [kinds, setKinds] = useState<Kind[]>(() => {
@@ -157,9 +161,9 @@ function Discover() {
   const collections = useMemo(() => {
     const groups: { id: string; title: string; items: Find[] }[] = [
       { id: "near", title: `Near you in ${CITY}`, items: FINDS.filter((f) => f.near) },
-      { id: "work", title: "Work you could apply for", items: FINDS.filter((f) => f.kind === "Work") },
-      { id: "learn", title: "Learn something new", items: FINDS.filter((f) => f.kind === "Course") },
-      { id: "people", title: "Women who will sit with you", items: FINDS.filter((f) => f.kind === "Mentor") },
+      { id: "work", title: tr("explore.workYouCouldApplyFor"), items: FINDS.filter((f) => f.kind === "Work") },
+      { id: "learn", title: tr("explore.learnSomethingNew"), items: FINDS.filter((f) => f.kind === "Course") },
+      { id: "people", title: tr("explore.womenWhoWillSitWithYou"), items: FINDS.filter((f) => f.kind === "Mentor") },
     ];
     // A row with nothing in it is a heading with a gap under it.
     return groups.filter((g) => g.items.length);
@@ -262,7 +266,7 @@ function Discover() {
             <EmptyState
               icon="SearchX"
               title={tr("explore.nothingMatchesThat")}
-              body="Try one fewer filter, or ask Sakhi in your own words."
+              body={tr("explore.tryOneFewerFilterOrAsk")}
               action={<Btn onClick={() => { setKinds([]); setNearOnly(false); }} variant="soft">{tr("explore.showEverything")}</Btn>}
             />
           </Card>
@@ -278,8 +282,8 @@ function Discover() {
             return (
               <section key={c.id}>
                 {/* A quiet label on a phone; the section heading from `lg`. */}
-                <div className="lg:hidden"><GroupHead title={c.title} action="See all" onAction={seeAll} /></div>
-                <div className="hidden lg:block"><SectionHead title={c.title} action="See all" onAction={seeAll} /></div>
+                <div className="lg:hidden"><GroupHead title={c.title} action={tr("circles.seeAll")} onAction={seeAll} /></div>
+                <div className="hidden lg:block"><SectionHead title={c.title} action={tr("circles.seeAll")} onAction={seeAll} /></div>
                 <Finds items={c.items.slice(0, 4)} />
               </section>
             );

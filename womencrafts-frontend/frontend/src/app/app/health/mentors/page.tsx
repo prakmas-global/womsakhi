@@ -2,15 +2,17 @@
 
 import { useCallback, useState } from "react";
 
+import { useT } from "@/i18n";
 import * as Icons from "@/components/ux/icons";
 import { HomeShell } from "@/components/ux/home/HomeShell";
 import { Sheet } from "@/components/ux/kit/sheet";
 import { Column, CycleHeader, CyButton, DeskTitle, ErrorLine, SoftHeart, heroBg } from "@/components/ux/cycle/parts";
-import { HEALTH_TAGS, MENTOR_TABS } from "@/components/ux/cycle/data";
+import { HEALTH_TAGS as RAW_HEALTH_TAGS, MENTOR_TABS as RAW_MENTOR_TABS } from "@/components/ux/cycle/data";
 import { apiMentors, type ApiMentor } from "@/lib/me-api";
 import { apiRequestMentor } from "@/lib/growth-api";
 import { useResource } from "@/lib/use-resource";
 import { messageFrom } from "@/lib/use-action";
+import { useTranslated } from "@/i18n/data";
 
 /**
  * "You're not alone. Talk to our expert mentors."
@@ -21,6 +23,9 @@ import { messageFrom } from "@/lib/use-action";
  * heavy bleeding needs an examination, which the guides say plainly.
  */
 export default function HealthMentors() {
+  const MENTOR_TABS = useTranslated(RAW_MENTOR_TABS);
+  const HEALTH_TAGS = useTranslated(RAW_HEALTH_TAGS);
+  const tr = useT();
   const { data, refetch, source } = useResource(
     useCallback(async (s: AbortSignal) => (await apiMentors(s)).filter((m) => m.expertise.some((e) => HEALTH_TAGS.includes(e))), []),
     [] as ApiMentor[],
@@ -55,17 +60,17 @@ export default function HealthMentors() {
   return (
     <HomeShell immersive bare>
       <Column>
-        <CycleHeader title="Health Mentors" />
-        <DeskTitle title="Health Mentors" sub="Doctors and coaches who answer women's questions." />
+        <CycleHeader title={tr("healthMentors.healthMentors")} />
+        <DeskTitle title={tr("healthMentors.healthMentors")} sub={tr("healthMentors.doctorsAndCoachesWhoAnswerWomen")} />
 
         <div className="relative overflow-hidden rounded-[20px] px-5 py-5" style={{ background: heroBg }}>
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img src="/ux/art/leaves-pink.webp" alt="" aria-hidden className="absolute -end-10 -top-8 h-[150px] w-auto opacity-50 mix-blend-multiply" />
           <p className="ux-display relative text-[24px] font-bold leading-tight" style={{ color: "var(--cy-period-ink)" }}>You&apos;re not alone</p>
-          <p className="relative mt-1 text-[17px] font-semibold" style={{ color: "var(--ux-ink)" }}>Talk to our expert mentors</p>
+          <p className="relative mt-1 text-[17px] font-semibold" style={{ color: "var(--ux-ink)" }}>{tr("healthMentors.talkToOurExpertMentors")}</p>
         </div>
 
-        <div className="ux-scroll-x -mx-[20px] mt-4 flex gap-2 px-[20px]" role="tablist" aria-label="Kind of mentor">
+        <div className="ux-scroll-x -mx-[20px] mt-4 flex gap-2 px-[20px]" role="tablist" aria-label={tr("healthMentors.kindOfMentor")}>
           {MENTOR_TABS.map((t) => {
             const on = t.key === tab;
             return (
@@ -94,7 +99,7 @@ export default function HealthMentors() {
           ))}
           {source !== "loading" && shown.length === 0 && (
             <li className="rounded-[16px] px-4 py-6 text-center text-[15px]" style={{ background: "var(--ux-surface)", color: "var(--ux-muted)", border: "1px solid var(--ux-line)" }}>
-              No mentors here yet. We are adding more every week.
+              {tr("healthMentors.noMentorsHereYetWeAre")}
             </li>
           )}
           {shown.map((m) => (
@@ -124,19 +129,19 @@ export default function HealthMentors() {
         <div className="mt-4 flex items-center gap-3 rounded-[16px] px-4 py-3.5" style={{ background: "var(--cy-predicted)", border: "1px solid var(--ux-line)" }}>
           <Icons.HeartHandshake className="h-5 w-5 shrink-0" style={{ color: "var(--cy-period-ink)" }} aria-hidden />
           <p className="text-[13px]" style={{ color: "var(--ux-ink-2)" }}>
-            <b className="font-semibold" style={{ color: "var(--ux-ink)" }}>Real Women. Real Support.</b><br />
-            Because every question matters. <SoftHeart className="h-3.5 w-3.5" />
+            <b className="font-semibold" style={{ color: "var(--ux-ink)" }}>{tr("healthMentors.realWomenRealSupport")}</b><br />
+            {tr("healthMentors.becauseEveryQuestionMatters")} <SoftHeart className="h-3.5 w-3.5" />
           </p>
         </div>
 
         <Sheet open={!!asking} onClose={() => setAsking(null)} title={`Ask ${asking?.name ?? ""}`} icon="MessageCircle"
-               description="What would you like to talk about? A sentence is enough.">
+               description={tr("healthMentors.whatWouldYouLikeToTalk")}>
           <textarea value={goal} onChange={(e) => setGoal(e.target.value.slice(0, 400))} rows={4} autoFocus
-                    placeholder="For example: My periods have been irregular for three months."
+                    placeholder={tr("healthMentors.forExampleMyPeriodsHaveBeen")}
                     className="w-full resize-none rounded-[14px] p-3.5 text-[15px]"
                     style={{ background: "var(--ux-surface-2)", color: "var(--ux-ink)", border: "1px solid var(--ux-line-strong)" }} />
           <div className="mt-3">
-            <CyButton onClick={send} busy={sending} disabled={goal.trim().length < 5}>Send my question</CyButton>
+            <CyButton onClick={send} busy={sending} disabled={goal.trim().length < 5}>{tr("healthMentors.sendMyQuestion")}</CyButton>
           </div>
           <ErrorLine text={error} />
           <p className="mt-3 text-[12px] leading-relaxed" style={{ color: "var(--ux-muted)" }}>

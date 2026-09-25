@@ -2,18 +2,22 @@
 
 import Link from "next/link";
 
+import { useT } from "@/i18n";
 import * as Icons from "@/components/ux/icons";
 import { HomeShell } from "@/components/ux/home/HomeShell";
 import { Column, CycleHeader, DeskTitle } from "@/components/ux/cycle/parts";
-import { GUIDES } from "@/components/ux/cycle/data";
+import { GUIDES as RAW_GUIDES } from "@/components/ux/cycle/data";
+import { useTranslated } from "@/i18n/data";
 
 /** The guides — open to everyone, tracker or not, any age. */
 export default function Guides() {
+  const GUIDES = useTranslated(RAW_GUIDES);
+  const tr = useT();
   return (
     <HomeShell immersive bare>
       <Column>
-        <CycleHeader title="Helpful Resources" />
-        <DeskTitle title="Helpful Resources" sub="Short, plain, and drawn from NHS, WHO and ACOG guidance." />
+        <CycleHeader title={tr("healthCycleLearn.helpfulResources")} />
+        <DeskTitle title={tr("healthCycleLearn.helpfulResources")} sub={tr("healthCycleLearn.shortPlainAndDrawnFromNhs")} />
         <ul className="space-y-2.5">
           {GUIDES.map((g) => (
             <li key={g.slug}>

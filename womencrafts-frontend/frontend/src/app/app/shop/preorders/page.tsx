@@ -2,6 +2,7 @@
 
 import { NotYetScreen, WriteItDown } from "@/components/ux/shopplus/notyet";
 
+import { useT } from "@/i18n";
 /**
  * Money before you buy cloth.
  *
@@ -31,10 +32,11 @@ import { NotYetScreen, WriteItDown } from "@/components/ux/shopplus/notyet";
  * made understands.
  */
 export default function PreOrdersPage() {
+  const tr = useT();
   return (
     <NotYetScreen
-      eyebrow="Before you buy cloth"
-      title="Let the order pay for its own materials"
+      eyebrow={tr("shopPreorders.beforeYouBuyCloth")}
+      title={tr("shopPreorders.letTheOrderPayForIts")}
       lede="Ask for the cost of the material up front — nothing more. Then you never spend your own
             money to start someone else's order, and you never borrow to do it."
       cannot="WomSakhi cannot take a pre-order for you yet."

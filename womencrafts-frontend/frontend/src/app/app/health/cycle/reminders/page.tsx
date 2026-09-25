@@ -1,6 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
+import { useT } from "@/i18n";
 import { useEffect, useState } from "react";
 
 import * as Icons from "@/components/ux/icons";
@@ -39,6 +40,7 @@ const ROWS: Row[] = [
 ];
 
 export default function Reminders() {
+  const tr = useT();
   const router = useRouter();
   const { state, data, act, busy, error, forget } = useCycle();
   const [timeFor, setTimeFor] = useState<Row | null>(null);
@@ -75,7 +77,7 @@ export default function Reminders() {
     <HomeShell immersive bare>
       <Column>
         <CycleHeader title="Reminders" />
-        <DeskTitle title="Reminders" sub="They arrive in your notifications, on their own." />
+        <DeskTitle title="Reminders" sub={tr("healthCycleReminders.theyArriveInYourNotificationsOn")} />
 
         <div className="flex items-center gap-3 rounded-[16px] px-4 py-3.5"
              style={{ background: "var(--cy-fertile)", border: "1px solid var(--ux-line)" }}>
@@ -83,10 +85,10 @@ export default function Reminders() {
             <Icons.AlarmClock className="h-5 w-5" style={{ color: "var(--cy-ovulation-ink)" }} aria-hidden />
           </span>
           <span className="min-w-0 flex-1">
-            <b className="block text-[15px] font-semibold" style={{ color: "var(--ux-ink)" }}>Smart Reminders</b>
+            <b className="block text-[15px] font-semibold" style={{ color: "var(--ux-ink)" }}>{tr("healthCycleReminders.smartReminders")}</b>
             <span className="block text-[13px]" style={{ color: "var(--ux-muted)" }}>We&apos;ll remind you at the right time.</span>
           </span>
-          <Toggle on={!!r?.smart} onChange={(v) => set({ smart: v })} label="Smart reminders" disabled={!r || busy} />
+          <Toggle on={!!r?.smart} onChange={(v) => set({ smart: v })} label={tr("healthCycleReminders.smartReminders2")} disabled={!r || busy} />
         </div>
 
         <ul className="mt-3 space-y-2.5" style={{ opacity: off ? 0.5 : 1 }}>
@@ -122,28 +124,28 @@ export default function Reminders() {
              style={{ background: "var(--cy-predicted)", border: "1px solid var(--ux-line)" }}>
           <Icons.Heart className="h-5 w-5 shrink-0" style={{ color: "var(--cy-period-ink)" }} aria-hidden />
           <p className="text-[13px] leading-snug" style={{ color: "var(--ux-ink-2)" }}>
-            <b className="font-semibold" style={{ color: "var(--ux-ink)" }}>We care for you</b> <SoftHeart className="h-3.5 w-3.5" /><br />
-            Because your health matters.
+            <b className="font-semibold" style={{ color: "var(--ux-ink)" }}>{tr("healthCycleReminders.weCareForYou")}</b> <SoftHeart className="h-3.5 w-3.5" /><br />
+            {tr("healthCycleReminders.becauseYourHealthMatters")}
           </p>
         </div>
 
-        <h2 className="mb-3 mt-8 text-[17px] font-semibold" style={{ color: "var(--ux-ink)" }}>Your privacy</h2>
+        <h2 className="mb-3 mt-8 text-[17px] font-semibold" style={{ color: "var(--ux-ink)" }}>{tr("profile.privacy")}</h2>
         <div className="space-y-2.5">
           <div className="flex items-center gap-3 rounded-[16px] px-4 py-3" style={{ background: "var(--ux-surface)", border: "1px solid var(--ux-line)" }}>
             <Icons.EyeOff className="h-5 w-5 shrink-0" style={{ color: "var(--ux-ink-2)" }} aria-hidden />
             <span className="min-w-0 flex-1">
-              <b className="block text-[15px] font-semibold" style={{ color: "var(--ux-ink)" }}>Discreet mode</b>
-              <span className="block text-[13px]" style={{ color: "var(--ux-muted)" }}>Hide the cycle card on Home, and keep reminders vague on your lock screen.</span>
+              <b className="block text-[15px] font-semibold" style={{ color: "var(--ux-ink)" }}>{tr("healthCycleReminders.discreetMode")}</b>
+              <span className="block text-[13px]" style={{ color: "var(--ux-muted)" }}>{tr("healthCycleReminders.hideTheCycleCardOnHome")}</span>
             </span>
-            <Toggle on={!!state?.profile.discreet} onChange={(v) => act(() => apiCycleSettings({ discreet: v }))} label="Discreet mode" disabled={!state || busy} />
+            <Toggle on={!!state?.profile.discreet} onChange={(v) => act(() => apiCycleSettings({ discreet: v }))} label={tr("healthCycleReminders.discreetMode")} disabled={!state || busy} />
           </div>
           <button type="button" onClick={download}
                   className="ux-press flex w-full items-center gap-3 rounded-[16px] px-4 py-3 text-start"
                   style={{ background: "var(--ux-surface)", border: "1px solid var(--ux-line)" }}>
             <Icons.Download className="h-5 w-5 shrink-0" style={{ color: "var(--ux-ink-2)" }} aria-hidden />
             <span className="min-w-0 flex-1">
-              <b className="block text-[15px] font-semibold" style={{ color: "var(--ux-ink)" }}>Download my data</b>
-              <span className="block text-[13px]" style={{ color: "var(--ux-muted)" }}>Everything the tracker keeps about you, as a file.</span>
+              <b className="block text-[15px] font-semibold" style={{ color: "var(--ux-ink)" }}>{tr("healthCycleReminders.downloadMyData")}</b>
+              <span className="block text-[13px]" style={{ color: "var(--ux-muted)" }}>{tr("healthCycleReminders.everythingTheTrackerKeepsAboutYou")}</span>
             </span>
           </button>
           <button type="button" onClick={() => setConfirmErase(true)}
@@ -151,8 +153,8 @@ export default function Reminders() {
                   style={{ background: "var(--ux-surface)", border: "1px solid var(--ux-line)" }}>
             <Icons.Trash2 className="h-5 w-5 shrink-0" style={{ color: "var(--ux-orange)" }} aria-hidden />
             <span className="min-w-0 flex-1">
-              <b className="block text-[15px] font-semibold" style={{ color: "var(--ux-ink)" }}>Delete all my cycle data</b>
-              <span className="block text-[13px]" style={{ color: "var(--ux-muted)" }}>Every day you logged, and every reminder.</span>
+              <b className="block text-[15px] font-semibold" style={{ color: "var(--ux-ink)" }}>{tr("healthCycleReminders.deleteAllMyCycleData")}</b>
+              <span className="block text-[13px]" style={{ color: "var(--ux-muted)" }}>{tr("healthCycleReminders.everyDayYouLoggedAndEvery")}</span>
             </span>
           </button>
         </div>
@@ -163,30 +165,30 @@ export default function Reminders() {
         <ErrorLine text={error} />
 
         <Sheet open={!!timeFor} onClose={() => setTimeFor(null)} title={timeFor?.title ?? ""} icon="Clock"
-               description="What time should we remind you?">
-          <input type="time" value={draft} onChange={(e) => setDraft(e.target.value)} aria-label="Reminder time"
+               description={tr("healthCycleReminders.whatTimeShouldWeRemindYou")}>
+          <input type="time" value={draft} onChange={(e) => setDraft(e.target.value)} aria-label={tr("healthCycleReminders.reminderTime")}
                  className="h-[56px] w-full rounded-[14px] px-4 text-[20px]"
                  style={{ background: "var(--ux-surface-2)", color: "var(--ux-ink)", border: "1px solid var(--ux-line-strong)" }} />
           <button type="button"
                   onClick={async () => { if (timeFor?.time && /^\d{2}:\d{2}$/.test(draft)) await set({ [timeFor.time]: draft } as Partial<CycleReminders>); setTimeFor(null); }}
                   className="ux-press mt-3 h-[52px] w-full rounded-[14px] text-[17px] font-semibold"
                   style={{ background: "linear-gradient(90deg, var(--cy-period), var(--ux-fill))", color: "var(--ux-on-brand)" }}>
-            Save time
+            {tr("healthCycleReminders.saveTime")}
           </button>
         </Sheet>
 
-        <Sheet open={confirmErase} onClose={() => setConfirmErase(false)} title="Delete all your cycle data?" icon="Trash2"
-               description="This removes every day you logged, your settings and your cycle reminders. It cannot be undone.">
+        <Sheet open={confirmErase} onClose={() => setConfirmErase(false)} title={tr("healthCycleReminders.deleteAllYourCycleData")} icon="Trash2"
+               description={tr("healthCycleReminders.thisRemovesEveryDayYouLogged")}>
           <div className="space-y-2.5">
             <button type="button" onClick={erase}
                     className="ux-press h-[52px] w-full rounded-[14px] text-[17px] font-semibold"
-                    style={{ background: "var(--ux-danger-solid)", color: "var(--ux-on-brand)" }}>
-              Delete everything
+                    style={{ background: "var(--ux-danger-solid)", color: "var(--ux-on-danger)" }}>
+              {tr("healthCycleReminders.deleteEverything")}
             </button>
             <button type="button" onClick={() => setConfirmErase(false)}
                     className="ux-press h-[52px] w-full rounded-[14px] text-[17px] font-semibold"
                     style={{ background: "var(--ux-surface-2)", color: "var(--ux-ink)" }}>
-              Keep my data
+              {tr("healthCycleReminders.keepMyData")}
             </button>
           </div>
         </Sheet>

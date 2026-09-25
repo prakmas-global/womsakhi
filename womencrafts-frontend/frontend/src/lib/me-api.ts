@@ -35,6 +35,16 @@ export interface ApiNotification {
   when: string;
   /** ISO, for grouping onto a day. */
   created_at: string;
+  /**
+   * Set only on rows the reminder engine wrote.
+   *
+   * An occurrence id is the difference between a row she reads and a row she
+   * can answer: with it the inbox offers Done, Later, Skip today and Stop
+   * without opening anything. Every other notification has nothing to answer,
+   * and arrives with these empty.
+   */
+  occurrence_id?: string;
+  intent_id?: string;
 }
 
 export interface ApiBooking {

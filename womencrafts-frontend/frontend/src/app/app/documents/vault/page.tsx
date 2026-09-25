@@ -131,7 +131,7 @@ export default function VaultPage() {
       <p class="foot">
         This is a record of what WomSakhi holds, not a copy of the papers
         themselves. An office asking to see the originals still needs the
-        originals. Verify this record at womsakhi.in/verify.
+        originals. Verify this record at womsakhi.com/verify.
       </p>`);
   };
 
@@ -327,7 +327,7 @@ export default function VaultPage() {
       ) : (
         <Card>
           <EmptyState icon="FolderOpen" title={`Nothing under ${tab}`}
-                      body="Try another tab, or add a paper and it will show up here."
+                      body={tr("documentsVault.tryAnotherTabOrAddA")}
                       action={<Btn onClick={() => setTab("All")} variant="soft">{tr("documentsVault.showEverything")}</Btn>} />
         </Card>
       )}

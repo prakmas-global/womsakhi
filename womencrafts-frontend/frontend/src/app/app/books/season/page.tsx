@@ -1,13 +1,15 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useCallback, useState } from "react";
 import { useRouter } from "next/navigation";
 
 import { HomeShell } from "@/components/ux/home/HomeShell";
 import { Back, Btn, Card, I, IconTile, Pill, Progress, Stat, v } from "@/components/ux/kit";
 import { EYEBROW, Section } from "@/components/ux/earn/phone";
 import { formatRupees } from "@/components/ux/kit";
-import { SEASONS, type Season } from "@/components/ux/books/data";
+import { useResource } from "@/lib/use-resource";
+import { apiSeasons, type Season, type Seasons } from "@/lib/books-api";
+import { SourceNote } from "@/components/ux/kit";
 import { useT } from "@/i18n";
 
 /**
@@ -37,15 +39,26 @@ export default function SeasonPage() {
   const [ready, setReady] = useState<string[]>([]);
   const [note, setNote] = useState<string | null>(null);
 
-  const soon = useMemo(() => [...SEASONS].sort((a, b) => a.weeksAhead - b.weeksAhead), []);
-  const rushes = useMemo(() => SEASONS.filter((s) => s.shape === "rush"), []);
-  const quiets = useMemo(() => SEASONS.filter((s) => s.shape === "quiet"), []);
-  const good = useMemo(() => rushes.reduce((n, s) => n + s.expectMinor, 0), [rushes]);
-  const thin = useMemo(() => quiets.reduce((n, s) => n + s.expectMinor, 0), [quiets]);
+  const year = useResource<Seasons>(
+    useCallback((sig) => apiSeasons(sig), []),
+    { seasons: [], rush_minor: 0, quiet_minor: 0, months_of_history: 0 },
+  );
+
+  // Already sorted soonest-first by the server, which is also where the
+  // countdown is worked out — from today's date rather than from a constant.
+  const soon = year.data.seasons;
+  const good = year.data.rush_minor;
+  const thin = year.data.quiet_minor;
+  /**
+   * Whether anything here is grounded in her own trading. Below one month of
+   * records the figures are all zero, and the screen says that plainly rather
+   * than drawing her a year-shaped story about herself out of nothing.
+   */
+  const grounded = year.data.months_of_history > 0;
 
   const mark = (id: string) => {
     setReady((r) => (r.includes(id) ? r.filter((x) => x !== id) : [...r, id]));
-    const s = SEASONS.find((x) => x.id === id);
+    const s = soon.find((x) => x.id === id);
     setNote(ready.includes(id) ? "Unmarked." : `Good. We will stop reminding you about ${s?.name.toLowerCase()}.`);
   };
 
@@ -66,16 +79,22 @@ export default function SeasonPage() {
 
         <Card>
           <div className="grid gap-4 sm:grid-cols-2">
-            <Stat value={formatRupees(good)} label={tr("booksSeason.expectedInTheBusyMonths")}
+            {/* "Earned", not "expected". These are counted from her books;
+                the fixture called them expectations and invented them. */}
+            <Stat value={formatRupees(good)} label="Earned in the busy months"
                   icon="TrendingUp" tint="--ux-tint-green" ink="--ux-green-ink" />
-            <Stat value={formatRupees(thin)} label={tr("booksSeason.expectedInTheThinOnes")}
+            <Stat value={formatRupees(thin)} label="Earned in the thin ones"
                   icon="TrendingDown" tint="--ux-tint-amber" ink="--ux-amber-ink" />
           </div>
           <div className="mt-4 flex items-start gap-2.5 border-t pt-3.5" style={{ borderColor: v("--ux-line") }}>
             <I name="Info" className="mt-[2px] h-[15px] w-[15px] shrink-0" style={{ color: v("--ux-muted") }} />
             <p className="text-xsm leading-relaxed" style={{ color: v("--ux-ink-2") }}>
-              The thin months are not a failure. They are the part of the year to plan around —
-              and the reason not to promise a large pot instalment in July.
+              {grounded
+                ? <>The thin months are not a failure. They are the part of the year to plan around —
+                    and the reason not to promise a large pot instalment in July.</>
+                : <>These are counted from your own books, and you have not written anything down
+                    yet — so the amounts are all zero. The months below are still worth knowing:
+                    they are when the work comes for everyone in this trade.</>}
             </p>
           </div>
         </Card>
@@ -88,6 +107,8 @@ export default function SeasonPage() {
           </Card>
         )}
 
+        <SourceNote source={year.source} what="these figures" />
+
         <div>
           <Section title={tr("booksSeason.whatIsComing")} sub={tr("booksSeason.soonestFirstWithHowLongYou")}
                    icon="CalendarDays" chip={String(soon.length)} />
@@ -95,7 +116,7 @@ export default function SeasonPage() {
             {soon.map((s) => {
               const sh = SHAPE[s.shape];
               const done = ready.includes(s.id);
-              const urgency = Math.max(0, 100 - s.weeksAhead * 10);
+              const urgency = s.now ? 100 : Math.max(0, 100 - s.weeks_ahead * 10);
               return (
                 <Card key={s.id} pad={16} style={done ? { opacity: 0.72 } : undefined}>
                   <div className="flex flex-wrap items-start gap-3.5">
@@ -108,7 +129,10 @@ export default function SeasonPage() {
                         {done && <Pill tone="green" size="sm">Ready</Pill>}
                       </div>
                       <p className="mt-0.5 text-xsm" style={{ color: v("--ux-muted") }}>
-                        {s.when} · about {formatRupees(s.expectMinor)}
+                        {s.when}
+                        {s.months_recorded > 0
+                          ? <> · {formatRupees(s.earned_minor)} last time</>
+                          : <> · nothing recorded yet</>}
                       </p>
                       <p className="mt-2.5 flex items-start gap-2 text-xsm leading-relaxed"
                          style={{ color: v("--ux-ink-2") }}>
@@ -117,10 +141,26 @@ export default function SeasonPage() {
                         {s.prepare}
                       </p>
                     </div>
+                    {/* "0 weeks" means two different things — this week, and
+                        already here — so they are never shown the same way. */}
                     <div className="shrink-0 text-right">
-                      <p className="text-xl font-extrabold leading-none tabular-nums"
-                         style={{ color: v("--ux-ink") }}>{s.weeksAhead}</p>
-                      <p className="mt-0.5 text-2xs" style={{ color: v("--ux-muted") }}>weeks to go</p>
+                      {s.now ? (
+                        <>
+                          <p className="text-smd font-extrabold leading-tight" style={{ color: v(sh.ink) }}>Now</p>
+                          <p className="mt-0.5 text-2xs" style={{ color: v("--ux-muted") }}>happening</p>
+                        </>
+                      ) : s.weeks_ahead === 0 ? (
+                        <>
+                          <p className="text-smd font-extrabold leading-tight" style={{ color: v("--ux-ink") }}>Days</p>
+                          <p className="mt-0.5 text-2xs" style={{ color: v("--ux-muted") }}>away</p>
+                        </>
+                      ) : (
+                        <>
+                          <p className="text-xl font-extrabold leading-none tabular-nums"
+                             style={{ color: v("--ux-ink") }}>{s.weeks_ahead}</p>
+                          <p className="mt-0.5 text-2xs" style={{ color: v("--ux-muted") }}>{tr("booksSeason.weeksToGo")}</p>
+                        </>
+                      )}
                     </div>
                   </div>
                   <div className="mt-3.5">

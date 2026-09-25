@@ -14,13 +14,14 @@ import { CourseCard, CourseRow, ResumeCard } from "@/components/ux/learning/part
 import { ChipRow, RowGroup, ScreenHead, Segments } from "@/components/ux/learning/native";
 import { ListGroup, ListRow } from "@/components/ux/mobile/ListRow";
 import {
-  ACHIEVEMENTS, CATEGORIES, SKILLS, STREAK,
+  ACHIEVEMENTS as RAW_ACHIEVEMENTS, CATEGORIES as RAW_CATEGORIES, SKILLS as RAW_SKILLS, STREAK as RAW_STREAK,
 } from "@/components/ux/learning/data";
 import { useLearning } from "@/components/ux/growth";
 import { useCertificates } from "@/components/ux/live";
 import { AlsoHere } from "@/components/ux/AlsoHere";
 import { COPY } from "@/components/ux/copy";
 import { useT } from "@/i18n";
+import { useTranslated } from "@/i18n/data";
 
 // "Paths" is gone. It showed four learning paths from a constant — "Career
 // Growth Path · 8 courses · 32 lessons · 60% complete" — with progress nothing
@@ -43,6 +44,10 @@ const ALSO = [
  * quietly suggests otherwise.
  */
 export default function LearningPage() {
+  const ACHIEVEMENTS = useTranslated(RAW_ACHIEVEMENTS);
+  const SKILLS = useTranslated(RAW_SKILLS);
+  const STREAK = useTranslated(RAW_STREAK);
+  const CATEGORIES = useTranslated(RAW_CATEGORIES);
   const tr = useT();
   const { data: learning, source } = useLearning();
   const CONTINUING = learning.continuing;
@@ -120,7 +125,7 @@ export default function LearningPage() {
           </Card>
 
           <Card className="ux-onscroll-soft">
-            <SectionHead title={tr("programs.whatYouHaveEarned")} action="See all" onAction={() => setTab("Finished")} />
+            <SectionHead title={tr("programs.whatYouHaveEarned")} action={tr("circles.seeAll")} onAction={() => setTab("Finished")} />
             <div className="ux-stagger space-y-2.5">
               {ACHIEVEMENTS.slice(0, 3).map((a, i) => (
                 <div key={a.name} className="ux-hov flex items-center gap-3">
@@ -144,7 +149,7 @@ export default function LearningPage() {
         sub={`${CONTINUING.length} ${plural("course", CONTINUING.length)} on the go, ${avg}% through on average.`}
         note={<SourceNote source={source} what="courses" />}
       >
-        <Segments items={[...TABS]} active={tab} onChange={setTab} label="Which courses" />
+        <Segments items={[...TABS]} active={tab} onChange={setTab} label={tr("programs.whichCourses")} />
       </ScreenHead>
 
       {tab === "Keep going" && (
@@ -155,7 +160,7 @@ export default function LearningPage() {
         ) : (
           <Card>
             <EmptyState icon="BookOpen" title={tr("programs.nothingStartedYet")}
-                        body="Pick something from Explore and it will wait for you here."
+                        body={tr("programs.pickSomethingFromExploreAndIt")}
                         action={<Btn onClick={() => setTab("Explore")} variant="primary">{tr("programs.exploreCourses")}</Btn>} />
           </Card>
         )
@@ -181,7 +186,7 @@ export default function LearningPage() {
           ) : (
             <Card>
               <EmptyState icon="SearchX" title={`Nothing in ${cat} yet`}
-                          body="More is added every month. Try another subject in the meantime."
+                          body={tr("programs.moreIsAddedEveryMonthTry")}
                           action={<Btn onClick={() => setCat("All")} variant="soft">{tr("programs.showEverything")}</Btn>} />
             </Card>
           )}
@@ -212,7 +217,7 @@ export default function LearningPage() {
                     Download
                   </ActionBtn>
                   <ActionBtn variant="soft" size="sm" icon="Share2" doneIcon="Copy" done={tr("programs.linkCopied")}
-                             act={() => copy(`https://womsakhi.in/verify/${c.code}`, "Link copied — anyone can check it", "Copy the code instead")}>
+                             act={() => copy(`https://womsakhi.com/verify/${c.code}`, "Link copied — anyone can check it", "Copy the code instead")}>
                     Share
                   </ActionBtn>
                 </div>
@@ -222,7 +227,7 @@ export default function LearningPage() {
         ) : (
           <Card>
             <EmptyState icon="Award" title={tr("programs.noCertificatesYet")}
-                        body="Finish a course and the certificate lands here, ready to share."
+                        body={tr("programs.finishACourseAndTheCertificate")}
                         action={<Btn onClick={() => setTab("Keep going")} variant="primary">{tr("programs.keepGoing")}</Btn>} />
           </Card>
         )
@@ -230,7 +235,7 @@ export default function LearningPage() {
 
       {/* Three more places in Learn: a grouped list on a phone, the shared
           `AlsoHere` cards from `lg`. */}
-      <ListGroup className="mt-6 lg:hidden" title="Also here">
+      <ListGroup className="mt-6 lg:hidden" title={tr("programs.alsoHere")}>
         {ALSO.map((a) => (
           <ListRow key={a.href} href={a.href} icon={a.icon} tint="violet" title={a.label} subtitle={a.note} />
         ))}

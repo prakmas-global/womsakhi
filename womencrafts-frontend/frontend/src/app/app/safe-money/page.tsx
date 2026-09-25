@@ -6,8 +6,13 @@ import { HomeShell } from "@/components/ux/home/HomeShell";
 import { ReadAloud } from "@/components/ux/reach/ReadAloud";
 import { Btn, Card, I, Pill, v } from "@/components/ux/kit";
 import { EYEBROW, Section } from "@/components/ux/earn/phone";
-import { BUYER_CHECKS, SCAMS, riskCount, type ScamPattern } from "@/components/ux/reach/data";
+import { BUYER_CHECKS as RAW_BUYER_CHECKS, SCAMS as RAW_SCAMS, riskCount, type ScamPattern } from "@/components/ux/reach/data";
+import { apiFileReport } from "@/lib/safety-api";
+import { Sheet } from "@/components/ux/kit/sheet";
+import { Label, Text } from "@/components/ux/kit/form";
+import { Area } from "@/components/ux/kit/form";
 import { useT } from "@/i18n";
+import { useTranslated } from "@/i18n/data";
 
 /**
  * Money traps — the lesson turned into a guardrail.
@@ -35,11 +40,44 @@ import { useT } from "@/i18n";
  * order, the expiring-KYC link.
  */
 export default function SafeMoneyPage() {
+  const SCAMS = useTranslated(RAW_SCAMS);
+  const BUYER_CHECKS = useTranslated(RAW_BUYER_CHECKS);
   const tr = useT();
   const [open, setOpen] = useState<string | null>(null);
   const [checks] = useState(BUYER_CHECKS);
   const risks = useMemo(() => riskCount(checks), [checks]);
   const [reported, setReported] = useState(false);
+  const [reporting, setReporting] = useState(false);
+  const [who, setWho] = useState("");
+  const [what, setWhat] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [err, setErr] = useState<string | null>(null);
+
+  /**
+   * Filing a report about a buyer.
+   *
+   * The button used to set a boolean and print "Recorded — the next woman
+   * this buyer approaches will see it." Nothing was recorded and no woman
+   * would see anything. On a screen about being cheated, telling her she has
+   * warned the next woman when she has not is the worst possible lie: she
+   * stops there, satisfied, and the buyer moves on to somebody else.
+   *
+   * It now goes to `/safety/reports`, which is read by staff.
+   */
+  const file = useCallback(async () => {
+    if (!what.trim()) { setErr("What happened?"); return; }
+    setBusy(true); setErr(null);
+    try {
+      await apiFileReport({
+        category: "Money or fraud",
+        details: what.trim(),
+        about: who.trim(),
+      });
+      setReported(true); setReporting(false); setWho(""); setWhat("");
+    } catch {
+      setErr("That did not send. Nothing has been filed — please try again.");
+    } finally { setBusy(false); }
+  }, [who, what]);
 
   const flip = useCallback((id: string) => setOpen((o) => (o === id ? null : id)), []);
 
@@ -112,7 +150,7 @@ export default function SafeMoneyPage() {
             <div className="flex flex-wrap gap-2 border-t px-4 py-4 lg:px-5" style={{ borderColor: v("--ux-line") }}>
               <Btn size="sm" icon="HandCoins" href="/app/collect" className="max-lg:w-full max-lg:px-4">{tr("safemoney.askForTheClothMoneyFirst")}</Btn>
               <Btn size="sm" variant="outline" icon="Flag" disabled={reported} className="max-lg:w-full max-lg:px-4"
-                   onClick={() => setReported(true)}>
+                   onClick={() => { setReporting(true); setErr(null); }}>
                 {reported ? "Reported" : "Report this buyer"}
               </Btn>
             </div>
@@ -122,7 +160,9 @@ export default function SafeMoneyPage() {
         {reported && (
           <Card pad={16} style={{ background: v("--ux-tint-green"), borderColor: "transparent" }}>
             <p className="flex items-center gap-2 text-xsm font-semibold" style={{ color: v("--ux-green-ink") }}>
-              <I name="CheckCircle2" className="h-[16px] w-[16px]" />{tr("safemoney.recordedTheNextWomanThisBuyer")}</p>
+              <I name="CheckCircle2" className="h-[16px] w-[16px] shrink-0" />
+              Filed. Someone at WomSakhi will read it. You can see everything you have
+              reported under Safety.</p>
           </Card>
         )}
 
@@ -137,6 +177,35 @@ export default function SafeMoneyPage() {
           </div>
         </Card>
       </div>
+
+      <Sheet
+        open={reporting}
+        onClose={() => { setReporting(false); setErr(null); }}
+        icon="Flag" title="Report a buyer"
+        description="This goes to a person at WomSakhi, not to the buyer. Nothing is sent to them and they are not told."
+        footer={
+          <div className="flex gap-2">
+            <Btn variant="ghost" full onClick={() => { setReporting(false); setErr(null); }}>Cancel</Btn>
+            <Btn full loading={busy} onClick={file}>Send it</Btn>
+          </div>
+        }
+      >
+        <div className="flex flex-col gap-4">
+          <div><Label hint="If you know it">Who</Label>
+            <Text value={who} onChange={setWho} label="Who the buyer is"
+                  placeholder="A name, a shop, or a number" max={120} /></div>
+          <div><Label need>What happened</Label>
+            <Area value={what} onChange={setWhat} label="What happened"
+                  placeholder="They took the work and did not pay. It was ₹1,200, agreed on WhatsApp."
+                  max={1000} rows={5} /></div>
+          {err && (
+            <p className="flex items-start gap-2 rounded-[12px] px-3.5 py-3 text-xsm leading-relaxed"
+               style={{ background: v("--ux-danger-tint"), color: v("--ux-danger-ink") }}>
+              <I name="AlertTriangle" className="mt-[2px] h-[15px] w-[15px] shrink-0" />{err}
+            </p>
+          )}
+        </div>
+      </Sheet>
     </HomeShell>
   );
 }

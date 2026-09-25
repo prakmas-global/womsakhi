@@ -131,6 +131,46 @@ class BookingModel:
         }
 
     @staticmethod
+    def starts_at(doc: dict, tz_name: str = "Asia/Kolkata"):
+        """
+        The booking as a real instant, for scheduling its reminders.
+
+        A booking stores a display date ("2026-08-20") and a display time
+        label ("10:00 AM") — two strings a person reads, not a moment a
+        scheduler can act on. Combining them needs her timezone, because
+        "10:00 AM" is 10:00 where SHE is, not in UTC.
+
+        Returns None rather than guessing when either part is unreadable: a
+        reminder at the wrong hour is worse than no reminder, because she
+        stops trusting the ones that are right.
+        """
+        from datetime import datetime
+        from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
+
+        date_s = (doc.get("date") or "").strip()
+        time_s = (doc.get("time") or "").strip()
+        if not date_s:
+            return None
+        try:
+            tz = ZoneInfo(tz_name or "Asia/Kolkata")
+        except (ZoneInfoNotFoundError, ValueError, KeyError):
+            tz = ZoneInfo("UTC")
+
+        for fmt in ("%I:%M %p", "%I %p", "%H:%M"):
+            try:
+                t = datetime.strptime(time_s, fmt).time()
+                break
+            except ValueError:
+                continue
+        else:
+            return None
+        try:
+            d = datetime.strptime(date_s, "%Y-%m-%d").date()
+        except ValueError:
+            return None
+        return datetime.combine(d, t).replace(tzinfo=tz)
+
+    @staticmethod
     def to_response(doc: dict) -> dict:
         created = doc.get("created_at")
         return {

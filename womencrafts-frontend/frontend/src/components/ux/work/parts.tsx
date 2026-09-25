@@ -2,6 +2,7 @@
 
 import { Tag } from "@/components/ux/work/native";
 
+import { useT } from "@/i18n";
 import Link from "next/link";
 import * as Icons from "@/components/ux/icons";
 import { matchFor, matchTone } from "@/services/job-match";
@@ -44,6 +45,7 @@ export function MatchRing({ pct, size = 44 }: { pct: number; size?: number }) {
 export function JobRow({
   job, i, saved, onSave,
 }: { job: Job; i: number; saved: boolean; onSave: (id: string) => void }) {
+  const tr = useT();
   const point = usePointer<HTMLDivElement>();
   // Computed from her skills against the ones the listing asks for, rather than
   // read from a `match` field that live listings never populate.
@@ -74,7 +76,7 @@ export function JobRow({
             {job.womenLed && (
               <span className="inline-flex shrink-0 items-center gap-1 rounded-full px-2 py-[2px] text-2xs font-semibold"
                     style={{ background: "var(--ux-tint-pink)", color: "var(--ux-pink-ink)" }}>
-                Women-led
+                {tr("opportunities.womenLed")}
               </span>
             )}
           </div>
@@ -140,7 +142,7 @@ export function JobRow({
           {job.applicants} {job.applicants === 1 ? "woman has" : "women have"} applied
         </span>
         <span className="flex items-center gap-2">
-          <Btn href={`/app/opportunities/${job.id}`} variant="outline" size="sm">Read more</Btn>
+          <Btn href={`/app/opportunities/${job.id}`} variant="outline" size="sm">{tr("mentors.readMore")}</Btn>
           <Btn href={`/app/opportunities/${job.id}`} variant="primary" size="sm" iconEnd="ArrowRight">Apply</Btn>
         </span>
       </div>

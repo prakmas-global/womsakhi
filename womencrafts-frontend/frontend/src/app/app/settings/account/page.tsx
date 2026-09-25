@@ -221,6 +221,32 @@ export default function AccountSettings() {
           <Btn href="/app/help" variant="outline" size="sm" iconEnd="ArrowRight" className={phoneSecondary}>{tr("settingsAccount.askUsToChangeIt")}</Btn>
         </div>
       </Group>
+
+      {/*
+        Her own copy of herself.
+
+        There was no way for a member to get her data out of this product —
+        `/me/export` was a 404, and the only exports were staff reports ABOUT
+        members. Under the DPDP Act 2023 a Data Principal has a right of
+        access, and more plainly: a woman who is thinking about leaving should
+        be able to take her nine months of records with her.
+
+        A plain link, not a fetch-and-blob: the browser downloads it, no
+        JavaScript has to hold her whole record in memory, and it still works
+        if the page's scripts have failed.
+      */}
+      <Group title={tr("settingsAccount.yourDataTitle")} icon="Download"
+             note={tr("settingsAccount.yourDataNote")}>
+        <div className="flex flex-col gap-3 py-1 lg:flex-row lg:items-center lg:justify-between lg:gap-4">
+          <p className="min-w-0 text-[13px] leading-relaxed lg:text-xs" style={{ color: "var(--ux-muted)" }}>
+            {tr("settingsAccount.yourDataBody")}
+          </p>
+          <Btn href="/api/v1/me/export" download="womsakhi-my-data.json"
+               variant="outline" size="sm" icon="Download" className={phoneSecondary}>
+            {tr("settingsAccount.downloadMyData")}
+          </Btn>
+        </div>
+      </Group>
     </SettingsPage>
   );
 }

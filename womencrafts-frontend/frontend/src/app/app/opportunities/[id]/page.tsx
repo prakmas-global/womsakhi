@@ -10,13 +10,14 @@ import { useAction } from "@/lib/use-action";
 import { useAttemptKey } from "@/lib/idempotency";
 import { useJobs } from "@/components/ux/growth";
 import { matchFor } from "@/services/job-match";
-import { WORK_ART, payLabel } from "@/components/ux/work/data";
+import { WORK_ART as RAW_WORK_ART, payLabel } from "@/components/ux/work/data";
 import {
   Back, Btn, Card, EmptyState, RailSkeleton, ScreenSkeleton, SourceNote, v,
 } from "@/components/ux/kit";
 import { useT } from "@/i18n";
 
 import { Block, CheckList, KeyDetails, MatchCard, SimilarJobs, WhoCanApply } from "./detail-views";
+import { useTranslated } from "@/i18n/data";
 
 /**
  * One opening, in the order she has to decide in.
@@ -39,6 +40,7 @@ import { Block, CheckList, KeyDetails, MatchCard, SimilarJobs, WhoCanApply } fro
  * empty "Deadline —" reads as "apply whenever", which is worse than not asking.
  */
 export default function OpportunityDetail({ params }: { params: Promise<{ id: string }> }) {
+  const WORK_ART = useTranslated(RAW_WORK_ART);
   const tr = useT();
   const { id } = use(params);
   const { data: JOBS, source, refetch } = useJobs();
@@ -90,7 +92,7 @@ export default function OpportunityDetail({ params }: { params: Promise<{ id: st
           <EmptyState
             icon="SearchX"
             title={tr("opportunities.thatOpeningIsNoLongerListed")}
-            body="It may have been filled, or the link may be old. The rest are still here."
+            body={tr("opportunities.itMayHaveBeenFilledOr")}
             action={<Btn href="/app/opportunities" variant="primary" iconEnd="ArrowRight">{tr("opportunities.backToWork")}</Btn>}
           />
         </Card>
@@ -198,9 +200,9 @@ export default function OpportunityDetail({ params }: { params: Promise<{ id: st
             <h2 className="text-base font-extrabold" style={{ color: v("--ux-ink") }}>{tr("jobdetail.needHelpApplying")}</h2>
             <div className="mt-2.5 space-y-1">
               {[
-                { icon: "Sparkles", label: "Ask Sakhi about this one", href: "/app/sakhi" },
-                { icon: "FileText", label: "Get your papers ready",    href: "/app/vault" },
-                { icon: "Search",   label: "Find work like this",      href: "/app/opportunities" },
+                { icon: "Sparkles", label: tr("opportunities.askSakhiAboutThisOne"), href: "/app/sakhi" },
+                { icon: "FileText", label: tr("opportunities.getYourPapersReady"),    href: "/app/vault" },
+                { icon: "Search",   label: tr("opportunities.findWorkLikeThis"),      href: "/app/opportunities" },
               ].map((a) => (
                 <Btn key={a.href} href={a.href} variant="ghost" size="sm" full icon={a.icon} iconEnd="ArrowRight">
                   {a.label}
@@ -253,7 +255,7 @@ export default function OpportunityDetail({ params }: { params: Promise<{ id: st
                 <Icons.Clock className="h-[14px] w-[14px]" style={{ color: v("--ux-muted") }} />Posted {job.posted}
               </span>
             </p>
-            {job.womenLed && <div className="mt-3"><Tag tone="pink" size="sm">Women-led</Tag></div>}
+            {job.womenLed && <div className="mt-3"><Tag tone="pink" size="sm">{tr("opportunities.womenLed")}</Tag></div>}
           </div>
         </div>
         <SourceNote source={source} what={tr("jobdetail.thisOpening")} />

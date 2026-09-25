@@ -6,11 +6,12 @@ import { useRouter } from "next/navigation";
 import { HomeShell } from "@/components/ux/home/HomeShell";
 import { Back, Btn, Card, I, IconTile, Pill, Progress, SectionHead, Stat, v } from "@/components/ux/kit";
 import {
-  CHECKS, IRON_WEEKS, TIRED_SIGNS, dueNow, freeCount, ironStreak, type Check,
+  CHECKS as RAW_CHECKS, IRON_WEEKS as RAW_IRON_WEEKS, TIRED_SIGNS as RAW_TIRED_SIGNS, dueNow, freeCount, ironStreak, type Check,
 } from "@/components/ux/wellness/data";
 import { useT } from "@/i18n";
 import { ListGroup } from "@/components/ux/mobile/ListRow";
 import { GroupLabel, PhoneRow, PhoneTitle, phonePrimary } from "@/components/ux/PhoneParts";
+import { useTranslated } from "@/i18n/data";
 
 /**
  * Tiredness, treated as a money problem.
@@ -37,6 +38,9 @@ import { GroupLabel, PhoneRow, PhoneTitle, phonePrimary } from "@/components/ux/
  * Stored: "I took the tablet." A boolean. Nothing else.
  */
 export default function StrengthPage() {
+  const TIRED_SIGNS = useTranslated(RAW_TIRED_SIGNS);
+  const CHECKS = useTranslated(RAW_CHECKS);
+  const IRON_WEEKS = useTranslated(RAW_IRON_WEEKS);
   const tr = useT();
   const router = useRouter();
   const [weeks, setWeeks] = useState(IRON_WEEKS);
@@ -66,7 +70,7 @@ export default function StrengthPage() {
 
         <PhoneTitle title="Strength" sub={tr("healthStrength.tiredIsNotJustTired")}
                     note={<>When you are paid for what you finish, feeling weak is money. Women doing piece work
-                      with low iron finished about <b>9% less in a shift</b> and earned about <b>4% less</b> —
+                      with low iron finished about <b>9% less in a shift</b> {tr("healthStrength.andEarnedAbout")} <b>4% less</b> —
                       without ever taking a day off.</>} />
         <header className="hidden lg:block">
           <p className="text-2xs font-extrabold uppercase tracking-[0.2em]" style={{ color: v("--ux-brand") }}>
@@ -76,7 +80,7 @@ export default function StrengthPage() {
               style={{ color: v("--ux-ink") }}>{tr("healthStrength.tiredIsNotJustTired")}</h1>
           <p className="mt-1.5 max-w-[58ch] text-sm leading-relaxed" style={{ color: v("--ux-muted") }}>
             When you are paid for what you finish, feeling weak is money. Women doing piece work
-            with low iron finished about <b>9% less in a shift</b> and earned about <b>4% less</b> —
+            with low iron finished about <b>9% less in a shift</b> {tr("healthStrength.andEarnedAbout")} <b>4% less</b> —
             without ever taking a day off.
           </p>
         </header>
@@ -88,7 +92,7 @@ export default function StrengthPage() {
             <div className="min-w-0 flex-1">
               <p className="text-base font-bold" style={{ color: v("--ux-ink") }}>{test.what}</p>
               <p className="mt-1.5 max-w-[52ch] text-xsm leading-relaxed" style={{ color: v("--ux-ink-2") }}>
-                {test.why}. It costs <b>nothing</b>, takes <b>ten minutes</b>, and a woman does it.
+                {test.why}. It costs <b>nothing</b>, takes <b>{tr("healthStrength.tenMinutes")}</b>, and a woman does it.
                 Most women skip it because nobody ever told them those three things.
               </p>
               <div className="mt-2.5 flex flex-wrap gap-x-4 gap-y-1 text-xs" style={{ color: v("--ux-ink-2") }}>
@@ -227,7 +231,7 @@ export default function StrengthPage() {
           <div className="hidden lg:block">
             <SectionHead title={tr("healthStrength.otherThingsThatCostNothing")}
                          sub={`${freeCount(CHECKS)} free · ${dueNow(CHECKS)} due soon`} icon="Stethoscope"
-                         action="All of health" onAction={() => router.push("/app/health")} />
+                         action={tr("healthStrength.allOfHealth")} onAction={() => router.push("/app/health")} />
           </div>
           <ListGroup className="lg:hidden">
             {CHECKS.filter((c) => c.id !== "ch1").map((c) => (
@@ -242,7 +246,7 @@ export default function StrengthPage() {
                         body={c.why} />
             ))}
             {/* The desktop heading's "All of health", as the list's last row. */}
-            <PhoneRow href="/app/health" icon="Stethoscope" title="All of health" />
+            <PhoneRow href="/app/health" icon="Stethoscope" title={tr("healthStrength.allOfHealth")} />
           </ListGroup>
           <div className="hidden gap-3 sm:grid-cols-2 lg:grid">
             {CHECKS.filter((c) => c.id !== "ch1").map((c) => (

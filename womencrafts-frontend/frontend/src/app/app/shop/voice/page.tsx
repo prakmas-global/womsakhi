@@ -1,6 +1,7 @@
 "use client";
 
 import { Btn } from "@/components/ux/kit";
+import { useT } from "@/i18n";
 import { NotYetScreen } from "@/components/ux/shopplus/notyet";
 
 /**
@@ -35,10 +36,11 @@ import { NotYetScreen } from "@/components/ux/shopplus/notyet";
  * this screen was pretending to be.
  */
 export default function VoicePage() {
+  const tr = useT();
   return (
     <NotYetScreen
-      eyebrow="Add something to sell"
-      title="Say it instead of typing it"
+      eyebrow={tr("documents.addSomethingToSell")}
+      title={tr("shopVoice.sayItInsteadOfTypingIt")}
       lede="Nobody should have to be good at typing to sell what she makes. In your own words, in
             your own language."
       cannot="WomSakhi cannot listen to you yet."
@@ -71,8 +73,8 @@ export default function VoicePage() {
       ]}
       footer={
         <>
-          <Btn variant="outline" size="sm" icon="Store" href="/app/documents">Add something to sell</Btn>
-          <Btn variant="ghost" size="sm" icon="Languages" href="/app/settings">Change your language</Btn>
+          <Btn variant="outline" size="sm" icon="Store" href="/app/documents">{tr("documents.addSomethingToSell")}</Btn>
+          <Btn variant="ghost" size="sm" icon="Languages" href="/app/settings">{tr("shopVoice.changeYourLanguage")}</Btn>
         </>
       }
     />

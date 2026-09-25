@@ -11,11 +11,12 @@ import { useResource } from "@/lib/use-resource";
 import { HomeShell } from "@/components/ux/home/HomeShell";
 import { useCircles } from "@/components/ux/live";
 import { useHelplines } from "@/components/ux/entitlements";
-import { LOCAL_ART } from "@/components/ux/local/data";
+import { LOCAL_ART as RAW_LOCAL_ART } from "@/components/ux/local/data";
 import { useT } from "@/i18n";
 import { ListGroup } from "@/components/ux/mobile/ListRow";
 import { SegmentedControl } from "@/components/ux/mobile/SegmentedControl";
 import { PhoneRow } from "@/components/ux/PhoneParts";
+import { useTranslated } from "@/i18n/data";
 
 /**
  * Sakhi Local — her city, not the country.
@@ -26,6 +27,7 @@ import { PhoneRow } from "@/components/ux/PhoneParts";
  * country is just the home page again.
  */
 export default function LocalPage() {
+  const LOCAL_ART = useTranslated(RAW_LOCAL_ART);
   const tr = useT();
   /**
    * The stories, from `/community/stories` rather than through `useStories`.
@@ -93,7 +95,7 @@ export default function LocalPage() {
       rail={
         <div className="space-y-[16px]">
           <Card className="ux-onscroll-soft">
-            <SectionHead title={city ? `Groups in ${city}` : "Groups"} action="See all"
+            <SectionHead title={city ? `Groups in ${city}` : "Groups"} action={tr("circles.seeAll")}
                          onAction={() => { window.location.href = "/app/circles"; }} />
             <ul className="ux-deck ux-stagger space-y-2.5">
               {GROUPS.slice(0, 3).map((g, i) => (
@@ -314,7 +316,7 @@ export default function LocalPage() {
         ) : (
           <Card>
             <EmptyState icon="UsersRound" title={tr("stories.noGroupsYet")}
-                        body="Circles are where women near you organise — savings, shared orders, and getting somebody to answer at 9pm."
+                        body={tr("stories.circlesAreWhereWomenNearYou")}
                         action={<Btn href="/app/circles" variant="primary" iconEnd="ArrowRight">{tr("stories.seeCircles")}</Btn>} />
           </Card>
         )

@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 
+import { useT } from "@/i18n";
 import { I, v } from "@/components/ux/kit";
 import { STAGES, type NextStep, type StageId } from "@/services/journey";
 
@@ -32,6 +33,7 @@ export function NextStepCard({ step, at, onDismiss, compact = false }: {
   /** Inside Learn or Work, where Home's framing would repeat itself. */
   compact?: boolean;
 }) {
+  const tr = useT();
   const stage = STAGES.find((s) => s.id === step.stage);
   const stepIdx = STAGES.findIndex((s) => s.id === step.stage);
   const atIdx = at ? STAGES.findIndex((s) => s.id === at) : stepIdx;
@@ -45,10 +47,10 @@ export function NextStepCard({ step, at, onDismiss, compact = false }: {
         <div className="flex items-start justify-between gap-4">
           <p className="text-2xs font-extrabold uppercase tracking-[0.18em]"
              style={{ color: v("--ux-on-brand"), opacity: 0.72 }}>
-            Your next step
+            {tr("discover.yourNextStep")}
           </p>
           {onDismiss && (
-            <button type="button" onClick={onDismiss} aria-label="Put this aside for now"
+            <button type="button" onClick={onDismiss} aria-label={tr("nextStepCard.putThisAsideForNow")}
                     className="ux-press ux-sq shrink-0 rounded-full p-1"
                     style={{ color: v("--ux-on-brand"), opacity: 0.65 }}>
               <I name="X" className="h-[1rem] w-[1rem]" />
@@ -106,10 +108,11 @@ export function NextStepCard({ step, at, onDismiss, compact = false }: {
  * spine rather than a statistic.
  */
 export function JourneyTrack({ current, compact = false }: { current: StageId; compact?: boolean }) {
+  const tr = useT();
   const at = STAGES.findIndex((s) => s.id === current);
 
   return (
-    <ol className="flex items-stretch gap-1.5 overflow-x-auto pb-1" aria-label="Your journey">
+    <ol className="flex items-stretch gap-1.5 overflow-x-auto pb-1" aria-label={tr("you.yourJourney")}>
       {STAGES.map((s, i) => {
         const done = i < at;
         const here = i === at;

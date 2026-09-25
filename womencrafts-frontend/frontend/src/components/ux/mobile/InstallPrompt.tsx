@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 
+import { useT } from "@/i18n";
 import { Btn, I } from "@/components/ux/kit";
 import {
   canAddToHomeScreenOnIos,
@@ -91,6 +92,7 @@ type Mode =
  * looking for, and no button that pretends to do it for her.
  */
 export default function InstallPrompt() {
+  const tr = useT();
   const [mode, setMode] = useState<Mode>(null);
   const [visible, setVisible] = useState(false);
 
@@ -186,7 +188,7 @@ export default function InstallPrompt() {
     // trapped, and announcing a dialog that behaves like neither is a lie to
     // a screen-reader user.
     <div data-install-prompt
-      className="ux" role="region" aria-label="Add WomSakhi to your home screen">
+      className="ux" role="region" aria-label={tr("installPrompt.addWomsakhiToYourHomeScreen")}>
       <div
         className="ux-sheet"
         style={{
@@ -265,7 +267,7 @@ export default function InstallPrompt() {
               />{" "}
               Share below, then{" "}
               <span style={{ color: "var(--ux-ink)", fontWeight: 600 }}>
-                Add to Home Screen
+                {tr("installPrompt.addToHomeScreen")}
               </span>
               . It opens full screen, with no browser around it.
             </p>
@@ -286,7 +288,7 @@ export default function InstallPrompt() {
           <div style={{ display: "flex", gap: 8, marginTop: 12 }}>
             {!ios && (
               <Btn size="sm" icon="ArrowDownToLine" onClick={install}>
-                Add it
+                {tr("installPrompt.addIt")}
               </Btn>
             )}
             <Btn size="sm" variant="ghost" onClick={dismiss}>

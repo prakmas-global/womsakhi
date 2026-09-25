@@ -3,8 +3,9 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 
 import { HomeShell } from "@/components/ux/home/HomeShell";
-import { Btn, Card, I, IconTile, Pill, Progress, SectionHead, v } from "@/components/ux/kit";
-import { WISHES, wishesDone, type Wish } from "@/components/ux/life/data";
+import { Btn, Card, I, IconTile, Pill, Progress, SectionHead, SourceNote, v } from "@/components/ux/kit";
+import { useResource } from "@/lib/use-resource";
+import { apiInCase, apiSetWish, type InCase, type Wish } from "@/lib/incase-api";
 import { useT } from "@/i18n";
 import { ListGroup } from "@/components/ux/mobile/ListRow";
 import { GroupLabel, PhoneRow, PhoneTitle } from "@/components/ux/PhoneParts";
@@ -45,39 +46,63 @@ import { GroupLabel, PhoneRow, PhoneTitle } from "@/components/ux/PhoneParts";
  * leave anyone, because in the femicide literature estrangement is the peak-risk
  * moment and this screen must not read like a first step towards it.
  */
+const NOTHING: InCase = { wishes: [], answered: 0, total: 6, updated_at: "" };
+
 export default function InCasePage() {
   const tr = useT();
-  const [wishes, setWishes] = useState<Wish[]>(WISHES);
+  /**
+   * Hers, from the server. This screen used to open with three answers
+   * already filled in — a sister called Sunita, papers in a steel almirah —
+   * the same three for every woman, and anything she typed over them lived in
+   * React state and was gone on reload.
+   *
+   * She would have read "3 of 6 answered", believed her instructions were
+   * written down, and been wrong on the day it mattered.
+   */
+  const incase = useResource<InCase>(useCallback((sig) => apiInCase(sig), []), NOTHING);
+  const wishes = incase.data.wishes;
   const [editing, setEditing] = useState<string | null>(null);
   const [draft, setDraft] = useState("");
   const [note, setNote] = useState<string | null>(null);
+  const [err, setErr] = useState<string | null>(null);
+  const [busy, setBusy] = useState<string | null>(null);
   /**
    * Answers are covered until she asks for them. The threat model here is not a
    * hacker — it is a husband or a son picking up the phone she is holding.
    */
   const [covered, setCovered] = useState(true);
 
-  const done = useMemo(() => wishesDone(wishes), [wishes]);
-  const pct = Math.round((done / wishes.length) * 100);
+  const done = incase.data.answered;
+  // Guard the divide: `wishes` is empty on the first render, and 0/0 is NaN.
+  const pct = wishes.length ? Math.round((done / wishes.length) * 100) : 0;
 
   // Cover again whenever she leaves — the state must not survive a return trip.
   useEffect(() => () => setCovered(true), []);
 
-  const save = useCallback((id: string) => {
+  const save = useCallback(async (id: string) => {
     const text = draft.trim();
     if (!text) { setEditing(null); return; }
-    setWishes((r) => r.map((w) => (w.id === id ? { ...w, answer: text } : w)));
-    setEditing(null);
-    setDraft("");
-    setNote("Written down. Only the person you name can ever be shown this.");
-  }, [draft]);
+    setBusy(id); setErr(null);
+    try {
+      await apiSetWish(id, text);
+      setEditing(null);
+      setDraft("");
+      // Says what is true. It used to promise "only the person you name can
+      // ever be shown this" — there is no sharing here at all, named or
+      // otherwise, so that was a promise about a feature that does not exist.
+      setNote("Written down. It is saved to your account and nobody else can see it.");
+      incase.refetch();
+    } catch {
+      setErr("That did not save. Nothing has been written — please try again.");
+    } finally { setBusy(null); }
+  }, [draft, incase]);
 
   return (
     <HomeShell active="/app/incase">
       <div className="flex flex-col gap-5">
 
         <PhoneTitle title={tr("incase.ifSomethingHappens")} sub={tr("incase.ifYouAreNotThereTo")}
-                    note="A week in hospital, a move, or worse. Six plain questions, answered once, so nobody has to guess and nothing you built simply stops." />
+                    note={tr("incase.aWeekInHospitalAMove")} />
         <header className="hidden lg:block">
           <p className="text-2xs font-extrabold uppercase tracking-[0.2em]" style={{ color: v("--ux-brand") }}>{tr("incase.ifSomethingHappens")}</p>
           <h1 className="mt-2 text-[clamp(1.5rem,3.2vw,2.125rem)] font-extrabold leading-[1.1] tracking-[-0.035em]"
@@ -115,6 +140,16 @@ export default function InCasePage() {
             </p>
           </div>
         </Card>
+
+        <SourceNote source={incase.source} what="your answers" />
+
+        {err && (
+          <Card pad={16} style={{ background: v("--ux-danger-tint"), borderColor: "transparent" }}>
+            <p className="flex items-center gap-2 text-xsm font-semibold" style={{ color: v("--ux-danger-ink") }}>
+              <I name="AlertTriangle" className="h-[16px] w-[16px] shrink-0" />{err}
+            </p>
+          </Card>
+        )}
 
         {note && (
           <Card pad={16} style={{ background: v("--ux-tint-green"), borderColor: "transparent" }}>

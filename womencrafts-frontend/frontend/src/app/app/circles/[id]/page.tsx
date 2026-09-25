@@ -2,6 +2,7 @@
 
 import { use, useCallback, useEffect, useMemo, useState, useSyncExternalStore } from "react";
 
+import { useT } from "@/i18n";
 import { HomeShell } from "@/components/ux/home/HomeShell";
 import {
   Back, Btn, Card, EmptyState, RailSkeleton, ScreenSkeleton, v,
@@ -77,6 +78,7 @@ export default function CircleDetail({ params, searchParams }: {
   params: Promise<{ id: string }>;
   searchParams: Promise<{ ask?: string | string[] }>;
 }) {
+  const tr = useT();
   const { id } = use(params);
   const me = useMe();
 
@@ -279,9 +281,9 @@ export default function CircleDetail({ params, searchParams }: {
         <Card>
           <EmptyState
             icon="SearchX"
-            title="That circle is not here"
-            body="It may have closed, or the link may be old."
-            action={<Btn href="/app/circles" iconEnd="ArrowRight">All circles</Btn>}
+            title={tr("circles.thatCircleIsNotHere")}
+            body={tr("circles.itMayHaveClosedOrThe")}
+            action={<Btn href="/app/circles" iconEnd="ArrowRight">{tr("circles.all")}</Btn>}
           />
         </Card>
       </HomeShell>
@@ -351,7 +353,7 @@ export default function CircleDetail({ params, searchParams }: {
                   );
                 })}
               </div>
-              <select value={sort} aria-label="Sort the discussion"
+              <select value={sort} aria-label={tr("circles.sortTheDiscussion")}
                       onChange={(e) => setSort(e.target.value as Sort)}
                       className="ux-sq min-h-[38px] shrink-0 rounded-[10px] border px-3 text-xs font-semibold outline-none"
                       style={{ borderColor: v("--ux-line"), background: v("--ux-surface"), color: v("--ux-ink-2") }}>
@@ -374,8 +376,8 @@ export default function CircleDetail({ params, searchParams }: {
                   ? "Be the first. A question with a real detail in it gets more answers than a general one."
                   : `Posts land here when someone writes #${KINDS.find((k) => k.label === kind)?.tag} in them.`}
                 action={joined
-                  ? <Btn size="sm" icon="Plus" onClick={() => setTab("Discussion")}>Write something</Btn>
-                  : <Btn size="sm" icon="Plus" onClick={() => membership("join")}>Join first</Btn>}
+                  ? <Btn size="sm" icon="Plus" onClick={() => setTab("Discussion")}>{tr("circles.writeSomething")}</Btn>
+                  : <Btn size="sm" icon="Plus" onClick={() => membership("join")}>{tr("circles.joinFirst")}</Btn>}
               />
             )}
           </>
@@ -385,7 +387,7 @@ export default function CircleDetail({ params, searchParams }: {
           savings?.members?.length ? (
             <Card>
               <h2 className="mb-3 text-lg font-extrabold" style={{ color: v("--ux-ink") }}>
-                Who is in this circle
+                {tr("circles.whoIsInThisCircle")}
               </h2>
               <ul className="divide-y" style={{ borderColor: v("--ux-line") }}>
                 {savings.members.map((m) => (
@@ -413,8 +415,8 @@ export default function CircleDetail({ params, searchParams }: {
             <NotBuiltYet
               icon="Users"
               title={`${circle.member_count} women are in this circle`}
-              body="The server sends the count but not the list, so there is nobody here to name yet. You will meet them as they post."
-              action={<Btn size="sm" onClick={() => setTab("Discussion")}>Read the discussion</Btn>}
+              body={tr("circles.theServerSendsTheCountBut")}
+              action={<Btn size="sm" onClick={() => setTab("Discussion")}>{tr("circles.readTheDiscussion")}</Btn>}
             />
           )
         )}
@@ -422,40 +424,40 @@ export default function CircleDetail({ params, searchParams }: {
         {tab === "Learning" && (
           <NotBuiltYet
             icon="GraduationCap"
-            title="No course belongs to this circle yet"
-            body="A circle will be able to carry its own short course — a set of lessons the women in it work through together. Until then, every course on WomSakhi is open to you."
-            action={<Btn size="sm" href="/app/programs" iconEnd="ArrowRight">See the courses</Btn>}
+            title={tr("circles.noCourseBelongsToThisCircle")}
+            body={tr("circles.aCircleWillBeAbleTo")}
+            action={<Btn size="sm" href="/app/programs" iconEnd="ArrowRight">{tr("circles.seeTheCourses")}</Btn>}
           />
         )}
 
         {tab === "Events" && (
           <NotBuiltYet
             icon="CalendarDays"
-            title="This circle has no meets of its own yet"
-            body="Circles cannot hold their own events yet. Workshops and melas open to every woman on WomSakhi are under Events."
-            action={<Btn size="sm" href="/app/events" iconEnd="ArrowRight">See all events</Btn>}
+            title={tr("circles.thisCircleHasNoMeetsOf")}
+            body={tr("circles.circlesCannotHoldTheirOwnEvents")}
+            action={<Btn size="sm" href="/app/events" iconEnd="ArrowRight">{tr("circles.seeAllEvents")}</Btn>}
           />
         )}
 
         {tab === "Files" && (
           <NotBuiltYet
             icon="FileText"
-            title="No shared files yet"
-            body="Patterns, price lists and templates will live here. Until then, put a link in a post — everyone in the circle can open it."
-            action={<Btn size="sm" onClick={() => setTab("Discussion")}>Write a post</Btn>}
+            title={tr("circles.noSharedFilesYet")}
+            body={tr("circles.patternsPriceListsAndTemplatesWill")}
+            action={<Btn size="sm" onClick={() => setTab("Discussion")}>{tr("circles.writeAPost")}</Btn>}
           />
         )}
 
         {tab === "About" && (
           <Card>
-            <h2 className="text-lg font-extrabold" style={{ color: v("--ux-ink") }}>About this circle</h2>
+            <h2 className="text-lg font-extrabold" style={{ color: v("--ux-ink") }}>{tr("circles.aboutThisCircle")}</h2>
             <p className="mt-2.5 text-xsm leading-relaxed" style={{ color: v("--ux-ink-2") }}>
               {circle.desc || "Nobody has written a description yet."}
             </p>
             {circle.guidelines && (
               <>
                 <h3 className="mt-5 text-base font-extrabold" style={{ color: v("--ux-ink") }}>
-                  How women here treat each other
+                  {tr("circles.howWomenHereTreatEachOther")}
                 </h3>
                 <p className="mt-2 text-xsm leading-relaxed" style={{ color: v("--ux-ink-2") }}>
                   {circle.guidelines}
@@ -463,11 +465,11 @@ export default function CircleDetail({ params, searchParams }: {
               </>
             )}
             <div className="mt-5 flex flex-wrap gap-2.5">
-              <Btn variant="outline" icon="UserPlus" onClick={invite}>Invite someone</Btn>
+              <Btn variant="outline" icon="UserPlus" onClick={invite}>{tr("circles.inviteSomeone")}</Btn>
               {joined && (
                 <Btn variant="ghost" icon="LogOut" disabled={busy === "membership"}
                      onClick={() => membership("leave")}>
-                  Leave this circle
+                  {tr("circles.leave")}
                 </Btn>
               )}
             </div>

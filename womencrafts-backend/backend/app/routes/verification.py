@@ -25,6 +25,7 @@ from fastapi import APIRouter, Depends, File, Form, HTTPException, Query, Upload
 from fastapi.responses import Response
 
 from app.core.config import settings
+from app.core.email import can_deliver
 from app.core.deps import get_current_user
 from app.core import email as mailer
 from app.core import docvault
@@ -124,6 +125,17 @@ async def resend_email(current_user: dict = Depends(get_current_user)):
     if current_user.get("verification_status") != VerificationStatus.PENDING_EMAIL:
         return MessageResponse(message="Your email address is already confirmed.")
     await send_verification_email(current_user)
+    # `send` succeeds over the file adapter too, which is how a woman came to
+    # be told "we've sent you a fresh confirmation link" any number of times
+    # while every one of them sat in `outbox/`. Pressing a button that says it
+    # worked, and waiting, is worse than being told there is another way in.
+    if not can_deliver():
+        return MessageResponse(
+            message=(
+                "We cannot send email yet, so no link is coming. Write to "
+                "support@womsakhi.com from this address and a person will let you in."
+            )
+        )
     return MessageResponse(message="We've sent you a fresh confirmation link.")
 
 

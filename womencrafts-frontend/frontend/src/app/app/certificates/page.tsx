@@ -13,9 +13,10 @@ import { useLearning } from "@/components/ux/growth";
 import { useMe } from "@/components/ux/me";
 import { useCertificates } from "@/components/ux/live";
 
-import { ACCOUNT_ART } from "@/components/ux/account/data";
+import { ACCOUNT_ART as RAW_ACCOUNT_ART } from "@/components/ux/account/data";
 import { COPY } from "@/components/ux/copy";
 import { useT } from "@/i18n";
+import { useTranslated } from "@/i18n/data";
 
 /**
  * Certificates — proof, in a form she can hand to someone else.
@@ -25,6 +26,7 @@ import { useT } from "@/i18n";
  * a screen inside an app she alone can open is not proof of anything.
  */
 export default function CertificatesPage() {
+  const ACCOUNT_ART = useTranslated(RAW_ACCOUNT_ART);
   const tr = useT();
   const ME = useMe();
   const { data: CERTIFICATES, source } = useCertificates();
@@ -71,7 +73,7 @@ export default function CertificatesPage() {
             <ul className="space-y-2.5">
               {[
                 "Employers hiring through WomSakhi see them on your profile.",
-                "Anyone can check a code at womsakhi.in/verify.",
+                "Anyone can check a code at womsakhi.com/verify.",
                 "Some schemes accept them as proof of training.",
               ].map((t) => (
                 <li key={t} className="flex items-start gap-2.5 text-xsm leading-snug" style={{ color: "var(--ux-ink-2)" }}>
@@ -88,7 +90,7 @@ export default function CertificatesPage() {
         title="Certificates"
         sub={`${CERTIFICATES.length} earned · ${CERTIFICATES.reduce((a, c) => a + c.hours, 0)} hours of learning behind them`}
       >
-        <Segments items={["Earned", "In progress"]} active={tab} onChange={setTab} label="Which certificates" />
+        <Segments items={["Earned", "In progress"]} active={tab} onChange={setTab} label={tr("certificates.whichCertificates")} />
       </ScreenHead>
 
       <SourceNote source={source} what="certificates" />
@@ -151,7 +153,7 @@ export default function CertificatesPage() {
                     Download
                   </ActionBtn>
                   <ActionBtn variant="outline" size="sm" icon="Share2" doneIcon="Copy" done={tr("certificates.linkCopied")}
-                             act={() => copy(`https://womsakhi.in/verify/${c.code}`, "Link copied — anyone can check it", "Copy the code instead")}>{tr("certificates.shareLink")}</ActionBtn>
+                             act={() => copy(`https://womsakhi.com/verify/${c.code}`, "Link copied — anyone can check it", "Copy the code instead")}>{tr("certificates.shareLink")}</ActionBtn>
                 </div>
               </div>
             </Card>

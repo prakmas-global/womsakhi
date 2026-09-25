@@ -5,10 +5,11 @@ import { useRouter } from "next/navigation";
 
 import { HomeShell } from "@/components/ux/home/HomeShell";
 import { Back, Btn, Card, I, IconTile, SectionHead, Stat, v } from "@/components/ux/kit";
-import { CHANGE_TOPICS } from "@/components/ux/wellness/data";
+import { CHANGE_TOPICS as RAW_RAW_CHANGE_TOPICS } from "@/components/ux/wellness/data";
 import { useT } from "@/i18n";
 import { ListGroup } from "@/components/ux/mobile/ListRow";
 import { GroupLabel, PhoneTitle, phoneFull, phonePrimary } from "@/components/ux/PhoneParts";
+import { useTranslated } from "@/i18n/data";
 
 /**
  * The change — the segment nobody in India serves.
@@ -31,6 +32,8 @@ import { GroupLabel, PhoneTitle, phoneFull, phonePrimary } from "@/components/ux
  * online is calibrated to a woman six years older than her.
  */
 export default function ChangePage() {
+  const RAW_CHANGE_TOPICS = useTranslated(RAW_RAW_CHANGE_TOPICS);
+  const CHANGE_TOPICS = useTranslated(RAW_CHANGE_TOPICS);
   const tr = useT();
   const router = useRouter();
   const [open, setOpen] = useState<string | null>("cg1");
@@ -45,7 +48,7 @@ export default function ChangePage() {
         </div>
 
         <PhoneTitle title="Menopause" sub={tr("healthChange.nobodyToldYouItStartsThis")}
-                    note="In India it usually begins around 46 — about six years earlier than in the West. So most of what you will read online is written for a woman six years older than you." />
+                    note={tr("healthChange.inIndiaItUsuallyBeginsAround")} />
         <header className="hidden lg:block">
           <p className="text-2xs font-extrabold uppercase tracking-[0.2em]" style={{ color: v("--ux-brand") }}>
             Menopause

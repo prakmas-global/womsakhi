@@ -10,9 +10,10 @@ import {
 import { HomeShell } from "@/components/ux/home/HomeShell";
 import { ScreenHead, Segments, Tag } from "@/components/ux/work/native";
 import { RailStat, StageTrack } from "@/components/ux/work/parts";
-import { STAGES, WORK_ART } from "@/components/ux/work/data";
+import { STAGES as RAW_STAGES, WORK_ART as RAW_WORK_ART } from "@/components/ux/work/data";
 import { useApplications, workStats } from "@/components/ux/growth";
 import { useT } from "@/i18n";
+import { useTranslated } from "@/i18n/data";
 
 const TABS = ["Active", "Interviews", "Closed", "All"] as const;
 
@@ -24,6 +25,8 @@ const TABS = ["Active", "Interviews", "Closed", "All"] as const;
  * ended say so plainly rather than sitting at "Applied" forever.
  */
 export default function Applications() {
+  const STAGES = useTranslated(RAW_STAGES);
+  const WORK_ART = useTranslated(RAW_WORK_ART);
   const tr = useT();
   const { data: APPLICATIONS, source } = useApplications();
   const WORK_STATS = workStats(APPLICATIONS);
@@ -100,7 +103,7 @@ export default function Applications() {
         </>}
         note={<SourceNote source={source} what="applications" />}
       >
-        <Segments items={[...TABS]} active={tab} onChange={setTab} label="Which applications" />
+        <Segments items={[...TABS]} active={tab} onChange={setTab} label={tr("applications.whichApplications")} />
       </ScreenHead>
 
       {shown.length ? (
@@ -143,7 +146,7 @@ export default function Applications() {
                     {a.stage === "Interview" && (
                       <ActionBtn variant="primary" size="sm" icon="Video" doneIcon="Copy"
                                  done={COPY.linkCopied}
-                                 act={() => copy(`https://meet.womsakhi.in/${a.id}`, COPY.linkCopied, "Copy it by hand: meet.womsakhi.in/" + a.id)}>{tr("applications.joinTheCall")}</ActionBtn>
+                                 act={() => copy(`https://meet.womsakhi.com/${a.id}`, COPY.linkCopied, "Copy it by hand: meet.womsakhi.com/" + a.id)}>{tr("applications.joinTheCall")}</ActionBtn>
                     )}
                     {closed && <Btn href="/app/opportunities" variant="soft" size="sm">{tr("applications.findSimilar")}</Btn>}
                   </span>
@@ -157,7 +160,7 @@ export default function Applications() {
           <EmptyState
             icon="Inbox"
             title={tab === "Closed" ? "Nothing has closed" : `No ${tab.toLowerCase()} applications`}
-            body="Everything you apply for shows up here, with what is happening next."
+            body={tr("applications.everythingYouApplyForShowsUp")}
             action={<Btn href="/app/opportunities" variant="primary" iconEnd="ArrowRight">{tr("applications.findWork")}</Btn>}
           />
         </Card>

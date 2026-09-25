@@ -110,7 +110,7 @@ export default function BuyersPage() {
   return (
     <HomeShell active="/app/shop">
       <div className="flex flex-col gap-6 lg:gap-5">
-        <Back to="/app/shop" label="Back to ways to sell" />
+        <Back to="/app/shop" label={tr("shopBuyers.backToWaysToSell")} />
 
         <header>
           <p className={EYEBROW}>{tr("shopBuyers.yourBuyers")}</p>
@@ -150,9 +150,9 @@ export default function BuyersPage() {
         */}
         <Card>
           <div className="grid gap-4 sm:grid-cols-3">
-            <Stat value={known ? String(repeat.length) : "—"} label="have bought more than once"
+            <Stat value={known ? String(repeat.length) : "—"} label={tr("shopBuyers.haveBoughtMoreThanOnce")}
                   icon="Repeat" tint="--ux-tint-blue" ink="--ux-blue-ink" />
-            <Stat value={known ? String(buyers.length) : "—"} label="people have bought from you"
+            <Stat value={known ? String(buyers.length) : "—"} label={tr("shopBuyers.peopleHaveBoughtFromYou")}
                   icon="Users" tint="--ux-tint-green" ink="--ux-green-ink" />
             <Stat value={known ? formatRupees(spent) : "—"} label={tr("shopBuyers.theyHaveSpentWithYou")}
                   icon="Wallet" tint="--ux-tint-violet" ink="--ux-violet" />
@@ -176,9 +176,9 @@ export default function BuyersPage() {
           <Card>
             <EmptyState
               icon="Users"
-              title="No buyers here yet"
-              body="This fills up from your orders. Write down what you sell — including what you sold for cash at the door — and the people who come back will show up here on their own."
-              action={<Btn href="/app/documents" icon="Store">Your shop and orders</Btn>}
+              title={tr("shopBuyers.noBuyersHereYet")}
+              body={tr("shopBuyers.thisFillsUpFromYourOrders")}
+              action={<Btn href="/app/documents" icon="Store">{tr("shopLive.yourShopAndOrders")}</Btn>}
             />
           </Card>
         ) : (
@@ -186,7 +186,7 @@ export default function BuyersPage() {
             {repeat.length > 0 && (
               <div>
                 <Section title={tr("shopBuyers.theyKeepComingBack")}
-                             sub="More than one order in your own records" icon="Handshake"
+                             sub={tr("shopBuyers.moreThanOneOrderInYour")} icon="Handshake"
                              chip={String(repeat.length)} />
                 <div className={`flex flex-col gap-3 ${GROUP}`}>{repeat.map(card)}</div>
               </div>
@@ -217,7 +217,7 @@ export default function BuyersPage() {
               <IconTile icon="Handshake" tint="--ux-tint-green" ink="--ux-green-ink" size={42} radius={12} />
               <div className="min-w-0 flex-1">
                 <p className="text-sm font-bold" style={{ color: v("--ux-ink") }}>
-                  When someone buys twice, ask her to make it regular
+                  {tr("shopBuyers.whenSomeoneBuysTwiceAskHer")}
                 </p>
                 <p className="mt-1 text-xsm leading-relaxed" style={{ color: v("--ux-ink-2") }}>
                   WomSakhi cannot message them for you — we do not keep your buyers&rsquo; phone

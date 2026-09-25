@@ -483,6 +483,114 @@ INDEXES: dict[str, list[IndexModel]] = {
         IndexModel([("month", ASCENDING)], name="month"),
         IndexModel([("user_id", ASCENDING), ("created_at", DESCENDING)], name="user_created"),
     ],
+
+    # ── Reminder + Notification engines ─────────────────────────────────────
+    # The tick's query is the one that decides whether any of this scales:
+    # every 60 seconds it asks for occurrences that are due and unclaimed. At
+    # a million rows that has to be an index scan over a handful of documents,
+    # not a collection scan. Equality on state, then range on due_at — ESR,
+    # the same rule the rest of this file follows.
+    "reminder_definitions": [
+        IndexModel([("user_id", ASCENDING), ("state", ASCENDING)], name="user_state"),
+        IndexModel([("domain.module", ASCENDING), ("domain.ref", ASCENDING)],
+                   name="domain_ref"),
+        # The expiry sweep: rules that have outlived their end date.
+        IndexModel([("state", ASCENDING), ("expires_at", ASCENDING)],
+                   name="state_expires", sparse=True),
+        # `top_up_horizons`, every tick on every instance. Without the
+        # schedule type in the key this bounded on state and then fetched
+        # every scheduled rule in the system to filter in memory; `filled_at`
+        # serves the rotation sort from the index rather than a blocking sort.
+        IndexModel([("state", ASCENDING), ("schedule.type", ASCENDING),
+                    ("horizon_until", ASCENDING), ("filled_at", ASCENDING)],
+                   name="state_type_horizon"),
+    ],
+    "reminder_occurrences": [
+        # THE tick query: equality on state, then the sort it actually uses.
+        # Without `priority` in the key, claiming degrades to an in-memory sort
+        # of every due document.
+        IndexModel([("state", ASCENDING), ("priority", ASCENDING),
+                    ("due_at", ASCENDING)], name="state_priority_due"),
+        IndexModel([("state", ASCENDING), ("due_at", ASCENDING)], name="state_due"),
+        # Reclaiming work from a worker that died mid-dispatch.
+        IndexModel([("state", ASCENDING), ("lease_expires_at", ASCENDING)],
+                   name="state_lease", sparse=True),
+        # "Show me this series" — editing, cancelling, or answering Done.
+        IndexModel([("definition_id", ASCENDING), ("due_at", ASCENDING)],
+                   name="definition_due"),
+        IndexModel([("user_id", ASCENDING), ("due_at", DESCENDING)], name="user_due"),
+        # Unique is not an optimisation here, it is the correctness mechanism:
+        # ten instances ticking at once cannot create the same occurrence twice.
+        IndexModel([("idem", ASCENDING)], unique=True, name="idem_unique"),
+    ],
+    "outbox": [
+        # NOT sparse. `{processed_at: null}` is the whole query, and a sparse
+        # index cannot be proven to hold every matching document, so the
+        # planner is entitled to reject it and scan the collection instead —
+        # every tick, on every instance. `created_at` is always present, so
+        # sparse excluded nothing and bought nothing.
+        IndexModel([("processed_at", ASCENDING), ("claimed_until", ASCENDING),
+                    ("created_at", ASCENDING)], name="unprocessed"),
+        IndexModel([("idem", ASCENDING)], unique=True, name="idem_unique"),
+        IndexModel([("module", ASCENDING), ("ref", ASCENDING)], name="module_ref"),
+    ],
+    "notification_intents": [
+        IndexModel([("state", ASCENDING), ("created_at", ASCENDING)], name="state_created"),
+        IndexModel([("dedupe_key", ASCENDING)], unique=True, name="dedupe_unique"),
+        IndexModel([("user_id", ASCENDING), ("created_at", DESCENDING)], name="user_created"),
+        # Held messages waiting for quiet hours to end.
+        IndexModel([("state", ASCENDING), ("release_after", ASCENDING)],
+                   name="state_release", sparse=True),
+        # Expiry rather than a late-night burst.
+        IndexModel([("expires_at", ASCENDING)], name="expires", sparse=True),
+        # The fatigue sweep reads recently-expired optional prompts.
+        IndexModel([("state", ASCENDING), ("expires_at", ASCENDING)],
+                   name="state_expires"),
+    ],
+    "preference_versions": [
+        # The dispatcher reads the newest version immediately before sending.
+        IndexModel([("user_id", ASCENDING), ("version", DESCENDING)], name="user_version"),
+    ],
+    "policy_decisions": [
+        IndexModel([("intent_id", ASCENDING)], name="intent"),
+        IndexModel([("user_id", ASCENDING), ("decided_at", DESCENDING)], name="user_decided"),
+        # The budget check counts today's allowed discretionary messages.
+        IndexModel([("user_id", ASCENDING), ("decision", ASCENDING), ("decided_at", DESCENDING)],
+                   name="user_decision_at"),
+    ],
+    "delivery_attempts": [
+        IndexModel([("intent_id", ASCENDING)], name="intent"),
+        IndexModel([("state", ASCENDING), ("next_retry_at", ASCENDING)],
+                   name="state_retry", sparse=True),
+        IndexModel([("user_id", ASCENDING), ("created_at", DESCENDING)], name="user_created"),
+    ],
+    "device_subscriptions": [
+        IndexModel([("user_id", ASCENDING)], name="user"),
+        # One row per browser endpoint; re-subscribing updates rather than
+        # accumulating dead rows that are pushed to forever.
+        IndexModel([("endpoint", ASCENDING)], unique=True, name="endpoint_unique"),
+    ],
+    "action_receipts": [
+        # Done is recorded once. A double-tap or a retried request cannot
+        # complete the same occurrence twice.
+        IndexModel([("occurrence_id", ASCENDING)], unique=True, name="occurrence_unique"),
+        IndexModel([("user_id", ASCENDING), ("at", DESCENDING)], name="user_at"),
+    ],
+    "audit_events": [
+        IndexModel([("user_id", ASCENDING), ("at", DESCENDING)], name="user_at"),
+        IndexModel([("actor", ASCENDING), ("at", DESCENDING)], name="actor_at"),
+    ],
+}
+
+
+# Indexes whose KEYS changed while keeping their name. Mongo refuses to
+# redefine one in place, so the old must go first — and it is named here
+# rather than dropped blindly, so this file stays the single record of what
+# the database is supposed to look like.
+REPLACED: dict[str, list[str]] = {
+    # was [processed_at, created_at] and sparse, which the planner may refuse
+    # for `{processed_at: null}` — the outbox drain's only query.
+    "outbox": ["unprocessed"],
 }
 
 
@@ -490,6 +598,18 @@ async def ensure_indexes() -> None:
     """Create every index. Safe to call on each boot; logs rather than crashes."""
     db = get_database()
     created = 0
+    for collection, names in REPLACED.items():
+        for name in names:
+            try:
+                existing = await db[collection].index_information()
+                spec = existing.get(name)
+                wanted = next((m.document for m in INDEXES.get(collection, [])
+                               if m.document.get("name") == name), None)
+                if spec and wanted and list(spec["key"]) != list(wanted["key"].items()):
+                    await db[collection].drop_index(name)
+                    print(f"↻ Replaced stale index {collection}.{name}")
+            except Exception as exc:  # noqa: BLE001 - never block startup
+                print(f"⚠️  Could not replace {collection}.{name}: {exc}")
     for collection, models in INDEXES.items():
         try:
             await db[collection].create_indexes(models)

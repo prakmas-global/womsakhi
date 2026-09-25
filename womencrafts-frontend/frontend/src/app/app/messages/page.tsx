@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useT } from "@/i18n";
 import { COPY } from "@/components/ux/copy";
 import * as Icons from "@/components/ux/icons";
 
@@ -54,6 +55,7 @@ import {
 /* ── the shell ──────────────────────────────────────────────────────────── */
 
 export default function MessagesPage() {
+  const tr = useT();
   const [rows, setRows] = useState<ConvRow[]>([]);
   const [summary, setSummary] = useState<InboxSummary | null>(null);
   const [openId, setOpenId] = useState<string | null>(null);
@@ -134,9 +136,9 @@ export default function MessagesPage() {
      */
     const sure = await confirm({
       title: `Delete your conversation with ${thread.name}?`,
-      description: "Every message in it goes, on your side and hers. This cannot be undone.",
-      confirmLabel: "Delete it",
-      cancelLabel: "Keep it",
+      description: tr("messages.everyMessageInItGoesOn"),
+      confirmLabel: tr("messages.deleteIt"),
+      cancelLabel: tr("bookings.cancelKeep"),
       danger: true,
     });
     if (!sure) return;

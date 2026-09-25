@@ -14,6 +14,7 @@ import {
 } from "@/lib/me-api";
 import { apiNotificationPrefs, type NotificationPrefs } from "@/lib/member-api";
 import { useT } from "@/i18n";
+import { apiActOnOccurrence, apiAnswerFollowUp, apiWhy, type ReminderAction, type WhyAnswer } from "@/lib/engines-api";
 import { SegmentedControl } from "@/components/ux/mobile/SegmentedControl";
 import { PhoneTitle } from "@/components/ux/PhoneParts";
 
@@ -211,7 +212,7 @@ export default function NotificationsPage() {
         <section className={styles.hero}>
           <Image
             src="/ux/notifications/whats-new-hero-v1.png"
-            alt="Woman calmly reviewing helpful updates"
+            alt={tr("notifications.womanCalmlyReviewingHelpfulUpdates")}
             fill
             priority
             unoptimized
@@ -222,7 +223,7 @@ export default function NotificationsPage() {
             <h1>{unread.length > 0 ? `${unread.length} updates for you` : "You’re all caught up!"}</h1>
             <span>{unread.length > 0 ? "Here’s everything new that matters to you." : "Nothing needs your attention right now."}</span>
           </div>
-          <p className={styles.heroNote}>New opportunities<br/>New stories<br/>A brighter you</p>
+          <p className={styles.heroNote}>{tr("notifications.newOpportunities")}<br/>{tr("notifications.newStories")}<br/>{tr("journeyviews.aBrighterYou")}</p>
         </section>
         {/* On a phone the screen's name is the large title; the sentence that
             says what needs her follows it, and the date is the quiet line. */}
@@ -232,6 +233,24 @@ export default function NotificationsPage() {
             ? <>{queue.length === 1 ? "One thing needs" : `${queue.length} things need`} you{unread.length > queue.length && <>, and <span style={{ color: "var(--ux-amber-ink)" }}>{unread.length - queue.length} to read</span></>}.</>
             : unread.length > 0 ? <>{unread.length} to read, nothing urgent.</> : tr("notifications.youAreAllCaughtUp")}
           note={new Intl.DateTimeFormat("en-GB", { weekday: "long", day: "numeric", month: "long" }).format(new Date())} />
+        {/*
+          Added: the inbox is where engine reminders arrive, so it points at
+          the screen where she can change or stop them.
+        */}
+        <div className="mb-3 flex flex-wrap gap-2">
+          <Link href="/app/reminders"
+                className="ux-press flex min-h-[36px] items-center gap-2 rounded-[12px] px-3.5 text-xs font-bold"
+                style={{ background: "var(--ux-surface)", border: "1px solid var(--ux-line-strong)", color: "var(--ux-ink-2)" }}>
+            <Icons.Bell className="h-[13px] w-[13px]" />
+            {tr("rem.title")}
+          </Link>
+          <Link href="/app/settings/delivery"
+                className="ux-press flex min-h-[36px] items-center gap-2 rounded-[12px] px-3.5 text-xs font-bold"
+                style={{ background: "var(--ux-surface)", border: "1px solid var(--ux-line-strong)", color: "var(--ux-muted)" }}>
+            <Icons.Send className="h-[13px] w-[13px]" />
+            {tr("deliv.title")}
+          </Link>
+        </div>
         <header className={`${styles.controls} flex flex-wrap items-end gap-5 max-lg:-mt-2`}>
           <div className="hidden min-w-0 flex-1 lg:block">
             <p className="text-2xs font-bold uppercase tracking-[0.2em]" style={{ color: "var(--ux-brand)" }}>
@@ -285,10 +304,10 @@ export default function NotificationsPage() {
           {/* On a phone: the two ways of reading as a segmented control, and
               "Mark all read" full width under it. */}
           <div className="flex w-full flex-col gap-2.5 lg:w-auto lg:flex-row lg:items-center">
-            <SegmentedControl className="lg:hidden" label="How to read them" value={mode}
+            <SegmentedControl className="lg:hidden" label={tr("notifications.howToReadThem")} value={mode}
               onChange={(m) => { setMode(m); setAt(0); }}
-              options={[{ value: "day" as const, label: "Your day", icon: "List" },
-                        { value: "one" as const, label: "One at a time", icon: "Target" }]} />
+              options={[{ value: "day" as const, label: tr("notifications.yourDay"), icon: "List" },
+                        { value: "one" as const, label: tr("notifications.oneAtATime"), icon: "Target" }]} />
             <div className="hidden gap-1 rounded-full p-1 lg:flex"
                  style={{ background: "var(--ux-surface)", border: "1px solid var(--ux-line)" }}>
               {([["day", "Your day", "List"], ["one", "One at a time", "Target"]] as const).map(([m, label, icon]) => (
@@ -389,6 +408,190 @@ function Timeline({
   );
 }
 
+/**
+ * Done · Later · Skip today · Stop, on the row itself.
+ *
+ * Only rows the reminder engine wrote carry an occurrence id, and only those
+ * get these. The point is that she never has to open anything: REM-UC-003 asks
+ * for four answers with no typing, and a reminder she can only act on by
+ * navigating somewhere else is a reminder that gets ignored on a busy morning.
+ *
+ * **Stop is last and quiet on purpose.** An accidental Done costs one row; an
+ * accidental Stop costs her the series — so it never sits where a thumb lands
+ * by habit.
+ */
+function ReminderActions({ occurrenceId, onActed }: {
+  occurrenceId: string;
+  onActed: () => void;
+}) {
+  const tr = useT();
+  const [busy, setBusy] = useState<ReminderAction | null>(null);
+  const [failed, setFailed] = useState(false);
+
+  const act = useCallback(async (action: ReminderAction) => {
+    setBusy(action);
+    setFailed(false);
+    try {
+      await apiActOnOccurrence(occurrenceId, action);
+      onActed();
+    } catch {
+      // Said plainly rather than swallowed: she tapped Done and it is not
+      // done, and a row that quietly stays put is how a woman stops trusting
+      // the whole thing.
+      setFailed(true);
+    } finally {
+      setBusy(null);
+    }
+  }, [occurrenceId, onActed]);
+
+  // `Pause` for "skip today", because this icon set has no SkipForward and a
+  // missing name renders nothing at all — a button with a hole where its
+  // picture should be, on the screen most likely to be used one-handed.
+  const BUTTONS = [
+    { action: "done" as const, label: tr("rem.done"), Ico: Icons.Check },
+    { action: "snooze" as const, label: tr("rem.later"), Ico: Icons.Clock },
+    { action: "skip" as const, label: tr("rem.skipToday"), Ico: Icons.Pause },
+  ];
+
+  return (
+    <>
+      {BUTTONS.map(({ action, label, Ico }) => (
+        <button key={action} type="button" disabled={busy !== null}
+                onClick={() => void act(action)}
+                className="ux-press flex min-h-[36px] items-center gap-2 rounded-[12px] px-3.5 text-xs font-bold disabled:opacity-45"
+                style={{ background: "var(--ux-surface)", border: "1px solid var(--ux-line-strong)", color: "var(--ux-ink-2)" }}>
+          <Ico className="h-[13px] w-[13px]" />
+          {label}
+        </button>
+      ))}
+      <button type="button" disabled={busy !== null} onClick={() => void act("stop")}
+              className="ux-press flex min-h-[36px] items-center gap-2 rounded-[12px] px-3 text-xs font-semibold disabled:opacity-45"
+              style={{ color: "var(--ux-muted)" }}>
+        {tr("rem.stop")}
+      </button>
+      {failed && (
+        <span className="basis-full text-2xs" style={{ color: "var(--ux-muted)" }}>
+          {tr("rem.saveFailed")}
+        </span>
+      )}
+    </>
+  );
+}
+
+/**
+ * "Why am I being told this?"
+ *
+ * Reads the decision that was stored when the message was sent, rather than
+ * working out a new one — so the answer is what actually happened, including
+ * when the reason has since stopped being true. A missing decision is an
+ * ordinary answer for an old row, not an error, so it says so plainly instead
+ * of showing a failure.
+ */
+/**
+ * "Did it actually happen?"
+ *
+ * The second half of a booking reminder, and the reason it exists is the
+ * **no**: a mentor who simply did not turn up produces no event anywhere, so
+ * without this a woman quietly gives up and nobody ever learns. The answer
+ * goes back to the booking, not just into the message.
+ */
+function DidItHappen({ occurrenceId, onAnswered }: {
+  occurrenceId: string;
+  onAnswered: () => void;
+}) {
+  const tr = useT();
+  const [busy, setBusy] = useState(false);
+  const [answered, setAnswered] = useState(false);
+
+  const answer = useCallback(async (happened: boolean) => {
+    setBusy(true);
+    try {
+      await apiAnswerFollowUp(occurrenceId, happened);
+      setAnswered(true);
+      onAnswered();
+    } finally {
+      setBusy(false);
+    }
+  }, [occurrenceId, onAnswered]);
+
+  if (answered) {
+    return (
+      <span className="basis-full text-2xs" style={{ color: "var(--ux-muted)" }}>
+        {tr("followUp.thanks")}
+      </span>
+    );
+  }
+
+  return (
+    <>
+      <span className="basis-full text-xs font-semibold" style={{ color: "var(--ux-ink)" }}>
+        {tr("followUp.didItHappen")}
+      </span>
+      <button type="button" disabled={busy} onClick={() => void answer(true)}
+              className="ux-press flex min-h-[36px] items-center gap-2 rounded-[12px] px-3.5 text-xs font-bold disabled:opacity-45"
+              style={{ background: "var(--ux-surface)", border: "1px solid var(--ux-line-strong)", color: "var(--ux-ink-2)" }}>
+        <Icons.Check className="h-[13px] w-[13px]" />
+        {tr("followUp.yes")}
+      </button>
+      <button type="button" disabled={busy} onClick={() => void answer(false)}
+              className="ux-press flex min-h-[36px] items-center gap-2 rounded-[12px] px-3.5 text-xs font-bold disabled:opacity-45"
+              style={{ background: "var(--ux-surface)", border: "1px solid var(--ux-line-strong)", color: "var(--ux-ink-2)" }}>
+        {/* `Minus`, because this set has no X and a missing name draws nothing. */}
+        <Icons.Minus className="h-[13px] w-[13px]" />
+        {tr("followUp.no")}
+      </button>
+    </>
+  );
+}
+
+function WhyThis({ intentId }: { intentId: string }) {
+  const tr = useT();
+  const [open, setOpen] = useState(false);
+  const [answer, setAnswer] = useState<WhyAnswer | null | "none">(null);
+
+  const load = useCallback(async () => {
+    setOpen(true);
+    if (answer !== null) return;
+    const a = await apiWhy(intentId);
+    setAnswer(a ?? "none");
+  }, [intentId, answer]);
+
+  if (!open) {
+    return (
+      <button type="button" onClick={() => void load()}
+              className="ux-press flex min-h-[36px] items-center gap-1.5 px-2 text-xs font-semibold"
+              style={{ color: "var(--ux-muted)" }}>
+        <Icons.Info className="h-[13px] w-[13px]" />
+        {tr("why.whyThis")}
+      </button>
+    );
+  }
+
+  return (
+    <div className="basis-full rounded-[12px] px-3 py-2.5" style={{ background: "var(--ux-surface-2)" }}>
+      {answer === null ? (
+        <p className="text-2xs" style={{ color: "var(--ux-muted)" }}>{tr("why.reading")}</p>
+      ) : answer === "none" ? (
+        <p className="text-2xs" style={{ color: "var(--ux-muted)" }}>{tr("why.noRecord")}</p>
+      ) : (
+        <>
+          <p className="text-xs font-semibold" style={{ color: "var(--ux-ink)" }}>
+            {tr(`why.decision.${answer.decision}` as Parameters<typeof tr>[0])}
+          </p>
+          <p className="mt-1 text-2xs leading-snug" style={{ color: "var(--ux-muted)" }}>
+            {answer.reason}
+          </p>
+          {answer.channels.length > 0 && (
+            <p className="mt-1 text-2xs" style={{ color: "var(--ux-muted)" }}>
+              {tr("why.sentBy", { ways: answer.channels.join(", ") })}
+            </p>
+          )}
+        </>
+      )}
+    </div>
+  );
+}
+
 function Event({
   bundle, unread, onRead, loud, isUnread,
 }: {
@@ -477,6 +680,17 @@ function Event({
               <Icons.ArrowRight className="h-[13px] w-[13px]" />
             </Link>
           )}
+          {n.occurrenceId && (
+            <ReminderActions occurrenceId={n.occurrenceId} onActed={readAll} />
+          )}
+          {/*
+            A follow-up row asks its question instead of offering the four
+            actions: "Done" on "did your session happen?" is not an answer.
+          */}
+          {n.occurrenceId && n.kind === "booking" && (
+            <DidItHappen occurrenceId={n.occurrenceId} onAnswered={readAll} />
+          )}
+          {n.intentId && <WhyThis intentId={n.intentId} />}
           {unreadInBundle > 0 && (
             <button type="button" onClick={readAll}
                     className="ux-press flex min-h-[36px] items-center gap-2 rounded-[12px] px-3.5 text-xs font-bold"

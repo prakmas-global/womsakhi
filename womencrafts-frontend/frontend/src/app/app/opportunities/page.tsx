@@ -8,10 +8,11 @@ import * as Icons from "@/components/ux/icons";
 import { Btn, Card, EmptyState, I, SourceNote, v } from "@/components/ux/kit";
 import { useApplications, useJobs } from "@/components/ux/growth";
 import { apiToggleSaveOpportunity } from "@/lib/growth-api";
-import { KINDS, MODES, type Job } from "@/components/ux/work/data";
+import { KINDS as RAW_KINDS, MODES as RAW_MODES, type Job } from "@/components/ux/work/data";
 import { useT } from "@/i18n";
 
 import { FAMILIES, FamilyStrip, JobCard, SkillsInDemand, WorkSummary, type FamilyId } from "./work-views";
+import { useTranslated } from "@/i18n/data";
 
 /** The lists across the top. Each is a real subset, never a mood. */
 const TABS = [
@@ -55,6 +56,8 @@ type SortId = (typeof SORTS)[number]["id"];
  * machine pointed at exactly the women this app exists for.
  */
 export default function FindWorkPage() {
+  const KINDS = useTranslated(RAW_KINDS);
+  const MODES = useTranslated(RAW_MODES);
   const tr = useT();
   const { data: jobs, source } = useJobs();
   const { data: apps } = useApplications();
@@ -124,6 +127,14 @@ export default function FindWorkPage() {
   const shown = useMemo(() => {
     const words = q.toLowerCase().split(/\s+/).filter(Boolean);
     const list = jobs.filter((j) => {
+      // Closed first, before any other filter.
+      //
+      // Eight of eight listings here had deadlines between 12 and 32 days in
+      // the past, shown exactly like live ones. She read them, chose one, and
+      // the Apply button answered "The deadline for this has passed" — the
+      // work module's whole promise, spent on a list she could do nothing
+      // with. A closed listing is not a listing.
+      if (j.closed) return false;
       if (tab === "remote" ? j.mode !== "Remote" : tab !== "all" && j.kind !== tab) return false;
       if (family === "Remote" && j.mode !== "Remote") return false;
       if (family === "Freelance" && j.kind !== "Freelance") return false;
@@ -142,6 +153,9 @@ export default function FindWorkPage() {
       : b.match - a.match);
   }, [jobs, q, tab, family, mode, kind, sort]);
 
+  /** Every listing we hold has closed — a different emptiness from "no match". */
+  const allClosed = jobs.length > 0 && jobs.every((j) => j.closed);
+
   /** Counted off her real applications — never a fixed set of numbers. */
   const counts = useMemo(() => {
     const at = (s: string) => apps.filter((a) => a.stage === s).length;
@@ -154,9 +168,18 @@ export default function FindWorkPage() {
   }, [apps]);
 
   /** The skills these openings actually ask for, most common first. */
+  /*
+    Counted from the OPEN listings, which is what the note under it claims.
+    Counting closed ones too left nine skill chips under the heading "What
+    employers are asking for" on a page that had just said there were no
+    openings at all.
+  */
   const skills = useMemo(() => {
     const n = new Map<string, number>();
-    for (const j of jobs) for (const s of j.skills) n.set(s, (n.get(s) ?? 0) + 1);
+    for (const j of jobs) {
+      if (j.closed) continue;
+      for (const s of j.skills) n.set(s, (n.get(s) ?? 0) + 1);
+    }
     return [...n.entries()].sort((a, b) => b[1] - a[1]).slice(0, 8).map(([s]) => s);
   }, [jobs]);
 
@@ -184,7 +207,7 @@ export default function FindWorkPage() {
           </Card>
 
           <WorkSummary counts={counts} />
-          <SkillsInDemand skills={skills} />
+          {skills.length > 0 && <SkillsInDemand skills={skills} />}
 
           <div className="relative overflow-hidden rounded-[16px] p-[20px]"
                style={{ background: "linear-gradient(140deg, var(--ux-tint-lilac), var(--ux-tint-pink))" }}>
@@ -240,7 +263,7 @@ export default function FindWorkPage() {
               Work
             </p>
             <h1 className="ux-screen-title mt-1 lg:mt-2 text-3xl font-extrabold leading-[1.15] tracking-[-0.02em]"
-                style={{ color: v("--ux-ink") }}>{tr("findwork.findWorkThatFits")}{" "}<span style={{ color: v("--ux-brand") }}>your life</span>
+                style={{ color: v("--ux-ink") }}>{tr("findwork.findWorkThatFits")}{" "}<span style={{ color: v("--ux-brand") }}>{tr("opportunities.yourLife")}</span>
             </h1>
             <p className="mt-2 max-w-[52ch] text-[15px] leading-snug lg:mt-1.5 lg:text-sm lg:leading-relaxed" style={{ color: v("--ux-muted") }}>{tr("findwork.jobsOrdersFreelanceAndInternshipsF")}</p>
 
@@ -349,10 +372,26 @@ export default function FindWorkPage() {
               return <JobCard key={j.id} job={j} saved={on} onSave={() => save(j, on)} />;
             })}
           </div>
+        ) : allClosed ? (
+          /*
+            Nothing open, and nothing she filtered away.
+
+            "Try a wider filter" is the wrong thing to say to a woman whose
+            filters are already clear — it sends her round the controls looking
+            for work that is not there. This says so, and offers the one thing
+            that does help: to be told when something opens.
+          */
+          <Card>
+            <EmptyState icon="CalendarClock" title={tr("findwork.nothingOpenRightNow")}
+                        body={tr("findwork.everyListingHasClosed")}
+                        action={<Btn size="sm" variant="primary" href="/app/reminders?preset=rem.preset.deadline">
+                          {tr("findwork.tellMeWhenSomethingOpens")}
+                        </Btn>} />
+          </Card>
         ) : (
           <Card>
             <EmptyState icon="SearchX" title={tr("findwork.nothingMatchesThatYet")}
-                        body="Try a wider filter, or look at what women near you moved into — that is where most work here actually comes from."
+                        body={tr("opportunities.tryAWiderFilterOrLook")}
                         action={<Btn size="sm" variant="outline" onClick={() => {
                           setQ(""); setTab("all"); setFamily(null); setMode(null); setKind(null);
                         }}>{tr("findwork.clearFilters2")}</Btn>} />

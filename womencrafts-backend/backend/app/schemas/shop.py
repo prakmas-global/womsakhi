@@ -1,6 +1,6 @@
 """Request and response shapes for her business."""
 
-from typing import Optional
+from typing import Literal, Optional
 
 from pydantic import BaseModel, Field
 
@@ -37,6 +37,8 @@ class ListingCard(BaseModel):
     place: str
     travels_km: int
     photo: str
+    photos: list[str] = Field(default_factory=list)
+    price_mode: Literal["fixed", "range", "quote"] = "fixed"
 
 
 class PublicShop(BaseModel):
@@ -85,6 +87,12 @@ class ListingResponse(BaseModel):
     photo: str
     status: str
     views: int
+    photos: list[str] = Field(default_factory=list)
+    price_mode: Literal["fixed", "range", "quote"] = "fixed"
+    #: When she listed it, ISO. The audit table sorts on this.
+    created_at: str = ""
+    #: Orders this listing has actually had, counted from her orders.
+    orders: int = 0
 
 
 class ListingCreate(BaseModel):
@@ -98,6 +106,9 @@ class ListingCreate(BaseModel):
     place: str = Field("", max_length=120)
     travels_km: int = Field(0, ge=0, le=200)
     photo: MediaRef = Field("", max_length=400)
+    photos: list[MediaRef] = Field(default_factory=list, max_length=4)
+    status: str = Field("live", pattern="^(live|paused)$")
+    price_mode: Literal["fixed", "range", "quote"] = "fixed"
 
 
 class OrderResponse(BaseModel):

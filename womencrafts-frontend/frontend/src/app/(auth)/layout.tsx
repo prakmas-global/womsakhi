@@ -1,9 +1,11 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { useT } from "@/i18n";
 import { usePathname } from "next/navigation";
-import { ArrowLeft, ChevronDown, Globe2, Mail, Moon, ShieldCheck, Sun } from "lucide-react";
+import { ArrowLeft, Mail, Moon, ShieldCheck, Sun } from "lucide-react";
 import AuthShowcase from "@/components/auth/AuthShowcase";
+import LanguageMenu from "@/components/auth/LanguageMenu";
 import { useTheme } from "@/context/ThemeContext";
 import "./auth-tokens.css";
 
@@ -42,11 +44,12 @@ const INFO: Record<InfoPanel, { title: string; intro: string; points: string[] }
   contact: {
     title: "Contact WomSakhi",
     intro: "A real person can help with account access, safety, verification, or general questions.",
-    points: ["Email us at hello@womsakhi.in", "Include the email address used for your account.", "For your safety, never send a password or one-time code."],
+    points: ["Email us at hello@womsakhi.com", "Include the email address used for your account.", "For your safety, never send a password or one-time code."],
   },
 };
 
 function InformationPanel({ panel, onBack }: { panel: InfoPanel; onBack: () => void }) {
+  const tr = useT();
   const info = INFO[panel];
   return (
     <div className="auth-info-view" role="region" aria-live="polite">
@@ -55,12 +58,13 @@ function InformationPanel({ panel, onBack }: { panel: InfoPanel; onBack: () => v
       <h1>{info.title}</h1>
       <p className="auth-info-intro">{info.intro}</p>
       <ul>{info.points.map((point) => <li key={point}>{point}</li>)}</ul>
-      {(panel === "contact" || panel === "help") && <a className="auth-go auth-info-action" href="mailto:hello@womsakhi.in">Email support</a>}
+      {(panel === "contact" || panel === "help") && <a className="auth-go auth-info-action" href="mailto:hello@womsakhi.com">{tr("layout.emailSupport")}</a>}
     </div>
   );
 }
 
 export default function AuthLayout({ children }: { children: React.ReactNode }) {
+  const tr = useT();
   const pathname = usePathname();
   const { isDark, setTheme } = useTheme();
   const [infoPanel, setInfoPanel] = useState<InfoPanel | null>(null);
@@ -80,11 +84,11 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
     <main className="auth-scene auth-entry">
       <div className="auth-canvas" aria-hidden />
 
-      <section className="auth-story" aria-label="WomSakhi community">
-        <p className="auth-promise"><span>Different Women.</span><br /><strong>Brighter Tomorrows.</strong></p>
-        <p className="auth-values">Learn • Work • Earn • Belong</p>
+      <section className="auth-story" aria-label={tr("layout.womsakhiCommunity")}>
+        <p className="auth-promise"><span>{tr("layout.differentWomen")}</span><br /><strong>{tr("layout.brighterTomorrows")}</strong></p>
+        <p className="auth-values">{tr("layout.learnWorkEarnBelong")}</p>
         <AuthShowcase />
-        <p className="auth-sisterhood">A global sisterhood, growing together.</p>
+        <p className="auth-sisterhood">{tr("layout.aGlobalSisterhoodGrowingTogether")}</p>
       </section>
 
       <section className="auth-form-zone">
@@ -92,9 +96,10 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
           onClick={() => setTheme(isDark ? "light" : "dark")}>
           {isDark ? <Sun aria-hidden /> : <Moon aria-hidden />}
         </button>
-        <button type="button" className="auth-language" aria-label="Choose language">
-          <Globe2 aria-hidden /> <span>English</span> <ChevronDown aria-hidden />
-        </button>
+        {/* Was a pill that said "English" and did nothing. The one screen a
+            woman who does not read English has to get through is the one
+            screen that was written only in English. */}
+        <LanguageMenu />
 
         <div className="auth-panel" ref={panelRef}>
           <div className="auth-panel-content" key={infoPanel ?? pathname}>
@@ -107,7 +112,7 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
             <button type="button" onClick={() => setInfoPanel("contact")}>Contact</button>
           </footer>
         </div>
-        <p className="auth-kindness">More Women<br />A Kinder World ♡</p>
+        <p className="auth-kindness">{tr("layout.moreWomen")}<br />{tr("layout.aKinderWorld")}</p>
       </section>
 
       <p className="auth-principles">SAFE&nbsp;&nbsp; • &nbsp;&nbsp;EMPOWERED&nbsp;&nbsp; • &nbsp;&nbsp;CONNECTED&nbsp;&nbsp; • &nbsp;&nbsp;LIMITLESS</p>

@@ -210,7 +210,7 @@ export default function BookingsPage() {
                     {b.state === "Confirmed" && b.kind === "Mentor" && (
                       <ActionBtn variant="primary" size="sm" icon="Video" doneIcon="Copy"
                                  done={tr("bookings.linkCopied")}
-                                 act={() => copy(`https://meet.womsakhi.in/${b.id}`, "Link copied", "meet.womsakhi.in/" + b.id)}>
+                                 act={() => copy(`https://meet.womsakhi.com/${b.id}`, "Link copied", "meet.womsakhi.com/" + b.id)}>
                         Join
                       </ActionBtn>
                     )}
@@ -243,7 +243,7 @@ export default function BookingsPage() {
             icon="CalendarX"
             title={tab === "Past" ? tr("bookings.nothingHasFinishedYet")
               : tr("bookings.nothingBooked")}
-            body="Mentor sessions, workshops and melas you say yes to appear here."
+            body={tr("bookings.mentorSessionsWorkshopsAndMelasYou")}
             action={<Btn href="/app/events" variant="primary" iconEnd="ArrowRight">{tr("bookings.findSomething")}</Btn>}
           />
         </Card>

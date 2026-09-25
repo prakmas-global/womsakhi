@@ -34,6 +34,16 @@ export type Job = {
   payText?: string;
   posted: string;
   postedDays: number;
+  /**
+   * When applications close, ISO, and whether that moment has passed.
+   *
+   * The API carried `deadline` all along and nothing mapped it, so the Find
+   * Work screen listed eight jobs whose deadlines had gone by between 12 and
+   * 32 days earlier as though they were open. A woman read them, picked one,
+   * and the Apply button answered "The deadline for this has passed."
+   */
+  deadline?: string;
+  closed?: boolean;
   skills: string[];
   verified: boolean;
   womenLed: boolean;

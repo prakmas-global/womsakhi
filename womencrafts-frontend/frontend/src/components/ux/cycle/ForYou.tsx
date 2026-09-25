@@ -1,13 +1,15 @@
 "use client";
 
 import Link from "next/link";
+import { useT } from "@/i18n";
 import { useState } from "react";
 
 import * as Icons from "@/components/ux/icons";
 import { HomeShell } from "@/components/ux/home/HomeShell";
 import { Column, CycleHeader, DeskTitle, QuoteCard, SoftHeart } from "./parts";
-import { MOODS, PHASE_COPY, forYou, quoteFor, type ForYouTab } from "./data";
+import { MOODS as RAW_MOODS, PHASE_COPY as RAW_PHASE_COPY, forYou, quoteFor, type ForYouTab } from "./data";
 import { useCycle } from "./use-cycle";
+import { useTranslated } from "@/i18n/data";
 
 const TABS: { key: ForYouTab; label: string; head: string; sub: string }[] = [
   { key: "food", label: "Food", head: "Food suggestions for today", sub: "Nutritious choices to support your body and mood." },
@@ -26,6 +28,9 @@ const TABS: { key: ForYouTab; label: string; head: string; sub: string }[] = [
  * the general suggestions and one line offering the personal ones.
  */
 export function ForYou({ initial = "food", title = "For You Today" }: { initial?: ForYouTab; title?: string }) {
+  const PHASE_COPY = useTranslated(RAW_PHASE_COPY);
+  const MOODS = useTranslated(RAW_MOODS);
+  const tr = useT();
   const { state, data } = useCycle();
   const [tab, setTab] = useState<ForYouTab>(initial);
   const phase = state?.status.phase ?? "menstrual";
@@ -61,7 +66,7 @@ export function ForYou({ initial = "food", title = "For You Today" }: { initial?
           <h2 className="text-[17px] font-semibold" style={{ color: "var(--ux-ink)" }}>{t.head}</h2>
           <p className="mt-1 text-[13px]" style={{ color: "var(--ux-muted)" }}>
             {t.sub}
-            {moodLabel && tab === "food" && <> Chosen for feeling <b style={{ color: "var(--ux-ink-2)" }}>{moodLabel.toLowerCase()}</b>.</>}
+            {moodLabel && tab === "food" && <> {tr("forYou.chosenForFeeling")} <b style={{ color: "var(--ux-ink-2)" }}>{moodLabel.toLowerCase()}</b>.</>}
           </p>
         </div>
 
@@ -86,7 +91,7 @@ export function ForYou({ initial = "food", title = "For You Today" }: { initial?
                 style={{ background: "var(--cy-fertile)", border: "1px solid var(--ux-line)" }}>
             <Icons.CalendarDays className="h-5 w-5 shrink-0" style={{ color: "var(--cy-ovulation-ink)" }} aria-hidden />
             <span className="min-w-0 flex-1 text-[13px]" style={{ color: "var(--ux-ink-2)" }}>
-              <b className="font-semibold" style={{ color: "var(--ux-ink)" }}>Track your cycle</b> for suggestions that fit your week.
+              <b className="font-semibold" style={{ color: "var(--ux-ink)" }}>{tr("homeCycleCard.trackYourCycle")}</b> {tr("forYou.forSuggestionsThatFitYourWeek")}
             </span>
             <Icons.ChevronRight className="h-4 w-4 shrink-0" style={{ color: "var(--ux-faint)" }} aria-hidden />
           </Link>
@@ -98,7 +103,7 @@ export function ForYou({ initial = "food", title = "For You Today" }: { initial?
             <Icons.Sparkles className="h-[18px] w-[18px]" style={{ color: "var(--cy-period-ink)" }} aria-hidden />
           </span>
           <p className="text-[15px] font-semibold leading-snug" style={{ color: "var(--cy-period-ink)" }}>
-            Small nourishing choices<br /><span style={{ color: "var(--ux-ink-2)", fontWeight: 400 }}>make a big difference</span> <SoftHeart />
+            {tr("forYou.smallNourishingChoices")}<br /><span style={{ color: "var(--ux-ink-2)", fontWeight: 400 }}>{tr("forYou.makeABigDifference")}</span> <SoftHeart />
           </p>
         </div>
 

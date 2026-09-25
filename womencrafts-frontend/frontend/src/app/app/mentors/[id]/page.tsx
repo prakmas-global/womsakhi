@@ -12,8 +12,9 @@ import {Back, Btn, Card, EmptyState, IconTile, RailSkeleton, Rating, ScreenSkele
 import { HomeShell } from "@/components/ux/home/HomeShell";
 import { Tag } from "@/components/ux/learning/native";
 import { useMentors } from "@/components/ux/live";
-import { rupees , PAST_SESSIONS, REVIEWS, reviewStats } from "@/components/ux/mentors/data";
+import { rupees , PAST_SESSIONS as RAW_PAST_SESSIONS, REVIEWS as RAW_REVIEWS, reviewStats } from "@/components/ux/mentors/data";
 import { useT } from "@/i18n";
+import { useTranslated } from "@/i18n/data";
 
 const SLOTS = [
   { day: "Mon 26 May", times: ["11:00 AM", "5:30 PM"] },
@@ -30,6 +31,8 @@ const SLOTS = [
  * person's evening.
  */
 export default function MentorDetail({ params }: { params: Promise<{ id: string }> }) {
+  const REVIEWS = useTranslated(RAW_REVIEWS);
+  const PAST_SESSIONS = useTranslated(RAW_PAST_SESSIONS);
   const tr = useT();
   const { id } = use(params);
   const { data: MENTORS, source, refetch } = useMentors();
@@ -74,7 +77,7 @@ export default function MentorDetail({ params }: { params: Promise<{ id: string 
           <EmptyState
             icon="SearchX"
             title={tr("mentors.thatMentorIsNotListed")}
-            body="She may have paused her sessions. The others are still here."
+            body={tr("mentors.sheMayHavePausedHerSessions")}
             action={<Btn href="/app/mentors" variant="primary" iconEnd="ArrowRight">{tr("mentors.allMentors")}</Btn>}
           />
         </Card>

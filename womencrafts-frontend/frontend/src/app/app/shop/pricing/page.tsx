@@ -59,12 +59,12 @@ export default function PricingPage() {
   return (
     <HomeShell active="/app/shop">
       <div className="flex flex-col gap-6 lg:gap-5">
-        <Back to="/app/shop" label="Back to ways to sell" />
+        <Back to="/app/shop" label={tr("shopBuyers.backToWaysToSell")} />
 
         <header>
           <p className={EYEBROW}>{tr("shopPricing.yourPrices")}</p>
           <h1 className="ux-screen-title mt-2 text-[clamp(1.5rem,3.2vw,2.125rem)] font-extrabold leading-[1.1] tracking-[-0.035em]"
-              style={{ color: v("--ux-ink") }}>What you charge, in one place</h1>
+              style={{ color: v("--ux-ink") }}>{tr("shopPricing.whatYouChargeInOnePlace")}</h1>
           <p className="mt-1.5 max-w-[56ch] text-[15px] leading-snug lg:text-sm lg:leading-relaxed"
              style={{ color: v("--ux-muted") }}>
             Every price you have set, side by side. Seeing them together is usually enough to notice
@@ -78,7 +78,7 @@ export default function PricingPage() {
             <I name="Info" className="mt-[2px] h-[20px] w-[20px] shrink-0" style={{ color: v("--ux-amber-ink") }} />
             <div className="min-w-0">
               <p className="text-base font-extrabold leading-snug" style={{ color: v("--ux-amber-ink") }}>
-                We cannot tell you what other women near you charge.
+                {tr("shopPricing.weCannotTellYouWhatOther")}
               </p>
               <p className="mt-1.5 text-xsm leading-relaxed" style={{ color: v("--ux-amber-ink") }}>
                 Nobody has collected it. This screen used to draw a range and say it came from eleven
@@ -105,7 +105,7 @@ export default function PricingPage() {
 
         <div>
           <Section title={tr("shopPricing.whatYouSell")} icon="Tag"
-                       sub="Your own prices, from your shop"
+                       sub={tr("shopPricing.yourOwnPricesFromYourShop")}
                        chip={known ? String(rows.length) : undefined} />
 
           {!known ? (
@@ -118,9 +118,9 @@ export default function PricingPage() {
             <Card>
               <EmptyState
                 icon="Tag"
-                title="You have not listed anything yet"
-                body="Add what you make and what you ask for it. Then this screen is a list of your prices in one place, which is the only thing it can honestly be."
-                action={<Btn href="/app/documents" icon="Plus">Add something to sell</Btn>}
+                title={tr("shopPricing.youHaveNotListedAnythingYet")}
+                body={tr("shopPricing.addWhatYouMakeAndWhat")}
+                action={<Btn href="/app/documents" icon="Plus">{tr("documents.addSomethingToSell")}</Btn>}
               />
             </Card>
           ) : (
@@ -152,7 +152,7 @@ export default function PricingPage() {
                       </>
                     ) : (
                       <p className="text-xsm font-bold" style={{ color: v("--ux-amber-ink") }}>
-                        No price set
+                        {tr("shopPricing.noPriceSet")}
                       </p>
                     )}
                   </div>
@@ -171,7 +171,7 @@ export default function PricingPage() {
           {known && rows.length > 0 && (
             <div className="mt-3">
               <Btn variant="outline" size="sm" icon="Pencil" href="/app/documents" className="max-lg:w-full max-lg:px-4">
-                Change a price
+                {tr("shopPricing.changeAPrice")}
               </Btn>
             </div>
           )}
@@ -181,7 +181,7 @@ export default function PricingPage() {
         <Card pad={0} style={{ overflow: "hidden" }}>
           <div className="p-4 lg:p-5">
             <p className="text-sm font-bold" style={{ color: v("--ux-ink") }}>
-              How to find out what others charge
+              {tr("shopPricing.howToFindOutWhatOthers")}
             </p>
             <p className="mt-1.5 text-xsm leading-relaxed" style={{ color: v("--ux-ink-2") }}>
               This is the one piece of information that would change your income most, and the only
@@ -220,7 +220,7 @@ export default function PricingPage() {
               ))}
             </ul>
             <div className="mt-4 flex flex-wrap gap-2">
-              <Btn variant="outline" size="sm" icon="Users" href="/app/circles" className="max-lg:w-full max-lg:px-4">Ask your circle</Btn>
+              <Btn variant="outline" size="sm" icon="Users" href="/app/circles" className="max-lg:w-full max-lg:px-4">{tr("shopPricing.askYourCircle")}</Btn>
             </div>
           </div>
         </Card>

@@ -3,6 +3,7 @@
 import { useCallback } from "react";
 
 import { apiGoals, type Goal as ApiGoal } from "@/lib/money-api";
+import { apiPaymentMethods } from "@/lib/member-api";
 import { useResource, type Resource } from "@/lib/use-resource";
 import {
   apiListings, apiPayoutAccounts, apiShopOrders, apiShopReviews,
@@ -13,6 +14,7 @@ import {
 
 import { ORDERS, PRODUCTS, REVIEWS, SERVICES, SHOP, type OrderState } from "./shop/data";
 import { MY_SWAPS, SWAPS, type Swap as UxSwap } from "./exchange/data";
+import { useTranslated } from "@/i18n/data";
 
 /**
  * Her business, her payout accounts, her swaps, and the wallet's charts.
@@ -182,10 +184,10 @@ export function useBusiness(): Resource<Business> {
       } satisfies Business;
     }, []),
     {
-      shop: SHOP,
+      shop: useTranslated(SHOP),
       stats: { month_minor: 0, lastMonth_minor: 0, listings: 0, needsHer: 0, repeatBuyers: 0 },
       week: [0, 0, 0, 0, 0, 0, 0],
-      products: PRODUCTS, services: SERVICES, orders: ORDERS, reviews: REVIEWS,
+      products: useTranslated(PRODUCTS), services: useTranslated(SERVICES), orders: useTranslated(ORDERS), reviews: useTranslated(REVIEWS),
     },
   );
 }
@@ -216,6 +218,34 @@ export const usePayoutMethods = (): Resource<UxPayoutMethod[]> =>
     // the withdraw screen is the worst possible fallback: she would press the
     // button believing her money had somewhere to go.
     [],
+  );
+
+/* ── Can money actually move? ─────────────────────────────────────────── */
+
+/**
+ * Whether a rupee leaving this app reaches a real bank.
+ *
+ * `/payments/methods` answers `provider` — `"sandbox"` until a gateway is
+ * bought and configured. Sandbox runs the whole journey locally: it writes the
+ * ledger row, drops her visible balance and hands back an arrival date. No
+ * money moves, and nothing downstream ever corrects it.
+ *
+ * Before this existed the withdraw screen took ₹500 off a woman's balance and
+ * told her "most banks have it by tomorrow". She would wait three days, follow
+ * the screen's own advice and ask us to trace it, and there would be nothing
+ * to trace. A screen about her money is the last place in the app allowed to
+ * guess.
+ *
+ * Defaults to NOT live: if the call fails we do not know the gateway is real,
+ * and the safe reading of "I cannot tell" is "promise her nothing".
+ */
+export const usePayoutsLive = (): Resource<boolean> =>
+  useResource(
+    useCallback(async (s: AbortSignal) => {
+      const cfg = await apiPaymentMethods(s);
+      return Boolean(cfg.enabled) && String(cfg.provider).trim().toLowerCase() !== "sandbox";
+    }, []),
+    false,
   );
 
 /* ── Wallet charts ───────────────────────────────────────────────────── */
@@ -273,7 +303,7 @@ export const useMyExchanges = (): Resource<UxExchange[]> =>
 export const useSwaps = (mine = false): Resource<UxSwap[]> =>
   useResource(
     useCallback(async (s: AbortSignal) => (await apiSwaps(s, { mine })).map(toSwap), [mine]),
-    SWAPS,
+    useTranslated(SWAPS),
   );
 
 /* ── Goals ───────────────────────────────────────────────────────────── */

@@ -12,9 +12,10 @@ import { Field, TextInput, Toggle } from "@/components/ux/settings/Frame";
 import { HomeShell } from "@/components/ux/home/HomeShell";
 import { useBusiness } from "@/components/ux/business";
 import {
-  RATE_KINDS, SERVICE_CATEGORIES, rupees, type RateKind,
+  RATE_KINDS as RAW_RATE_KINDS, SERVICE_CATEGORIES as RAW_SERVICE_CATEGORIES, rupees, type RateKind,
 } from "@/components/ux/shop/data";
 import { useT } from "@/i18n";
+import { useTranslated } from "@/i18n/data";
 
 const BLANK = {
   id: "new", name: "", category: "Tailoring", rate_minor: 0, rateKind: "per visit" as RateKind,
@@ -38,6 +39,8 @@ const WHERES = ["At her place", "At your place", "Either", "Online"] as const;
  * woman running a household cannot spare.
  */
 export default function ServiceEditor({ params }: { params: Promise<{ id: string }> }) {
+  const RATE_KINDS = useTranslated(RAW_RATE_KINDS);
+  const SERVICE_CATEGORIES = useTranslated(RAW_SERVICE_CATEGORIES);
   const tr = useT();
   const { id } = use(params);
   const { data: biz, refetch } = useBusiness();
@@ -146,7 +149,7 @@ export default function ServiceEditor({ params }: { params: Promise<{ id: string
           <EmptyState
             icon="SearchX"
             title={tr("documentsService.thatServiceIsNotHere")}
-            body="It may have been removed from your shop."
+            body={tr("documentsProduct.itMayHaveBeenRemovedFrom")}
             action={<Btn href="/app/documents" variant="primary" iconEnd="ArrowRight">{tr("documentsService.yourBusiness")}</Btn>}
           />
         </Card>

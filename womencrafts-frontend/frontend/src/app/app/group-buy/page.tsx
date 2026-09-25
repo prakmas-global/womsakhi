@@ -11,8 +11,9 @@ import {
 } from "@/components/ux/kit";
 import { HomeShell } from "@/components/ux/home/HomeShell";
 import { useGroupBuys } from "@/components/ux/entitlements";
-import { MORE_ART, rupees } from "@/components/ux/more/data";
+import { MORE_ART as RAW_MORE_ART, rupees } from "@/components/ux/more/data";
 import { useT } from "@/i18n";
+import { useTranslated } from "@/i18n/data";
 
 /**
  * Group Buying.
@@ -23,6 +24,7 @@ import { useT } from "@/i18n";
  * "great value" — and the number of women still needed.
  */
 export default function GroupBuyPage() {
+  const MORE_ART = useTranslated(RAW_MORE_ART);
   const tr = useT();
   const { data: GROUP_BUYS, source, refetch } = useGroupBuys();
   /**
@@ -192,7 +194,7 @@ export default function GroupBuyPage() {
       ) : (
         <Card>
           <EmptyState icon="ShoppingBasket" title={tr("groupbuy.nothingOpenRightNow")}
-                      body="Propose something you buy often and see who else needs it."
+                      body={tr("group-buy.proposeSomethingYouBuyOftenAnd")}
                       action={<Btn href="/app/circles/new" variant="primary" icon="Plus">{tr("groupbuy.proposeABuy2")}</Btn>} />
         </Card>
       )}

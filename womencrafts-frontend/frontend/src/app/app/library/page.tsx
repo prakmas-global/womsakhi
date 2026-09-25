@@ -10,9 +10,10 @@ import {
 } from "@/components/ux/kit";
 import { HomeShell } from "@/components/ux/home/HomeShell";
 import { ChipRow, ScreenHead, Segments, Tag } from "@/components/ux/learning/native";
-import { EXCHANGE_ART, SKILL_TAGS } from "@/components/ux/exchange/data";
+import { EXCHANGE_ART as RAW_EXCHANGE_ART, SKILL_TAGS as RAW_SKILL_TAGS } from "@/components/ux/exchange/data";
 import { useMyExchanges, useSwaps } from "@/components/ux/business";
 import { useT } from "@/i18n";
+import { useTranslated } from "@/i18n/data";
 
 /**
  * Skill Exchange — teaching each other, with no money involved.
@@ -22,6 +23,8 @@ import { useT } from "@/i18n";
  * quietly tell her she is only one of the two.
  */
 export default function SkillExchangePage() {
+  const SKILL_TAGS = useTranslated(RAW_SKILL_TAGS);
+  const EXCHANGE_ART = useTranslated(RAW_EXCHANGE_ART);
   const tr = useT();
   const { data: SWAPS, source } = useSwaps();
   const { data: MY_SWAPS, refetch: refetchMine } = useMyExchanges();
@@ -130,7 +133,7 @@ export default function SkillExchangePage() {
         sub={tr("library.teachWhatYouKnowLearnWhat")}
         note={<SourceNote source={source} what="swaps" />}
       >
-        <Segments items={["Browse", "Your exchanges"]} active={tab} onChange={setTab} label="Which exchanges" />
+        <Segments items={["Browse", "Your exchanges"]} active={tab} onChange={setTab} label={tr("library.whichExchanges")} />
       </ScreenHead>
 
       {tab === "Browse" && (
@@ -222,8 +225,8 @@ export default function SkillExchangePage() {
                           to={s.who}
                           placeholder={`Say what you would like to learn from her, and what you can teach in return — she asked for ${s.wants}.`}
                           sent={tr("library.sentSheHasItNow")}
-                          sentBody="You will both see the reply in the exchange. No money changes hands, in either direction."
-                          sentLink={{ href: `/app/library/${s.id}`, label: "Open the exchange" }}
+                          sentBody={tr("library.youWillBothSeeTheReply")}
+                          sentLink={{ href: `/app/library/${s.id}`, label: tr("library.openTheExchange") }}
                           send={async ({ text }) => {
                             await apiAskSwap(s.id, text);
                             setPending((p) => ({ ...p, [s.id]: true }));

@@ -25,6 +25,7 @@ import { NOTIFICATIONS } from "./home/data";
 import { MENTORS, type Mentor } from "./mentors/data";
 
 import { DOCUMENTS } from "./shop/data";
+import { useTranslated } from "@/i18n/data";
 
 /**
  * Every module that has a real endpoint behind it, in one place.
@@ -76,6 +77,9 @@ export type UxNotification = (typeof NOTIFICATIONS)[number] & {
   /** Where tapping it goes, and when it happened — both from the server. */
   href?: string;
   createdAt?: string;
+  /** Present on reminder-engine rows: what makes the four quick actions possible. */
+  occurrenceId?: string;
+  intentId?: string;
 };
 
 const toNotification = (n: ApiNotification): UxNotification => ({
@@ -89,6 +93,8 @@ const toNotification = (n: ApiNotification): UxNotification => ({
   when: n.when,
   href: n.href,
   createdAt: n.created_at,
+  occurrenceId: n.occurrence_id || undefined,
+  intentId: n.intent_id || undefined,
   unread: n.unread,
   // The look supplies icon/tint/ink; the server's own icon name wins when the
   // type is one the look does not know.
@@ -98,7 +104,7 @@ const toNotification = (n: ApiNotification): UxNotification => ({
 export const useNotifications = (): Resource<UxNotification[]> =>
   useResource(
     useCallback(async (s: AbortSignal) => (await apiNotifications(s)).map(toNotification), []),
-    NOTIFICATIONS,
+    useTranslated(NOTIFICATIONS),
   );
 
 /* ── Bookings ──────────────────────────────────────────────────────────── */
@@ -135,7 +141,7 @@ const toBooking = (b: ApiBooking): UxBooking => ({
 export const useBookings = (): Resource<UxBooking[]> =>
   useResource(
     useCallback(async (s: AbortSignal) => (await apiBookings(s)).map(toBooking), []),
-    BOOKINGS,
+    useTranslated(BOOKINGS),
   );
 
 /* ── Certificates ──────────────────────────────────────────────────────── */
@@ -162,7 +168,7 @@ const toCertificate = (c: ApiCertificate): UxCertificate => ({
 export const useCertificates = (): Resource<UxCertificate[]> =>
   useResource(
     useCallback(async (s: AbortSignal) => (await apiCertificates(s)).map(toCertificate), []),
-    CERTIFICATES,
+    useTranslated(CERTIFICATES),
   );
 
 /* ── Documents ─────────────────────────────────────────────────────────── */
@@ -248,7 +254,7 @@ export const useHome = (): Resource<ApiHome | null> =>
 export const useDocuments = (): Resource<UxDocument[]> =>
   useResource(
     useCallback(async (s: AbortSignal) => (await apiDocuments(s)).map(toDocument), []),
-    DOCUMENTS,
+    useTranslated(DOCUMENTS),
   );
 
 /* ── Referrals ─────────────────────────────────────────────────────────── */
@@ -269,7 +275,7 @@ export const useReferrals = (): Resource<UxReferrals> =>
         people: [] as typeof REFERRALS,
       };
     }, []),
-    { refer: REFER, people: REFERRALS },
+    { refer: useTranslated(REFER), people: useTranslated(REFERRALS) },
   );
 
 /* ── Circles ───────────────────────────────────────────────────────────── */
@@ -306,7 +312,7 @@ export const useCircles = (): Resource<UxCircles> =>
       const all = (await apiCircles(s)).map(toCircle);
       return { mine: all.filter((c) => c.joined), discover: all.filter((c) => !c.joined) };
     }, []),
-    { mine: MY_CIRCLES, discover: [] },
+    { mine: useTranslated(MY_CIRCLES), discover: [] },
   );
 
 /* ── Stories ───────────────────────────────────────────────────────────── */
@@ -394,7 +400,7 @@ const toMentor = (m: ApiMentor): Mentor => ({
 export const useMentors = (): Resource<Mentor[]> =>
   useResource(
     useCallback(async (s: AbortSignal) => (await apiMentors(s)).map(toMentor), []),
-    MENTORS,
+    useTranslated(MENTORS),
   );
 
 /* ── Progress ──────────────────────────────────────────────────────────── */

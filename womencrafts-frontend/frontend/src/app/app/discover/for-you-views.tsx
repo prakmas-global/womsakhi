@@ -91,6 +91,7 @@ export function WomanRow({ i }: { i: DiscoverItem }) {
  * the old Message button opened an empty inbox screen addressed to nobody.
  */
 export function WomanCard({ i }: { i: DiscoverItem }) {
+  const tr = useT();
   return (
     <Card pad={16} className="flex h-full flex-col">
       <div className="flex items-start gap-3">
@@ -121,7 +122,7 @@ export function WomanCard({ i }: { i: DiscoverItem }) {
 
       <div className="mt-3">
         <Btn size="sm" full variant="outline" href={i.href} iconEnd="ArrowRight">
-          See her profile
+          {tr("foryouviews.seeHerProfile")}
         </Btn>
       </div>
     </Card>

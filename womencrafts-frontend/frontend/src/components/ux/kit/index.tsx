@@ -65,20 +65,30 @@ export function Card({ children, className = "", pad = 18, style, id }: {
   return <section id={id} className={`ux-card ${className}`} style={{ padding, ...style }}>{children}</section>;
 }
 
-export function SectionHead({ title, sub, action, onAction, icon, chip }: {
+export function SectionHead({ title, sub, action, onAction, icon, chip, level = 2 }: {
   title: string; sub?: string; action?: string; onAction?: () => void; icon?: string; chip?: string;
+  /** 1 when this heading IS the page's title; 2 (default) when it sits under one. */
+  level?: 1 | 2;
 }) {
+  const Head = level === 1 ? "h1" : "h2";
   return (
     <div className="mb-3.5 flex items-start justify-between gap-3">
       <div className="min-w-0">
-        <h2 className="flex items-center gap-2 text-base font-semibold" style={{ color: "var(--ux-ink)" }}>
+        {/*
+          `level` exists because some screens ARE their section: /app/reminders
+          is one heading and a list, and rendering that heading as an `h2` left
+          the page with no `h1` at all — a screen reader announcing it had
+          nothing to say the page was. Everywhere else the default `h2` is
+          right, because there the section sits under a page title.
+        */}
+        <Head className="flex items-center gap-2 text-base font-semibold" style={{ color: "var(--ux-ink)" }}>
           {icon && <I name={icon} className="h-[17px] w-[17px]" style={{ color: "var(--ux-brand)" }} />}
           {title}
           {chip && (
             <span className="rounded-full px-2.5 py-[3px] text-2xs font-semibold"
                   style={{ background: "var(--ux-brand-tint)", color: "var(--ux-brand)" }}>{chip}</span>
           )}
-        </h2>
+        </Head>
         {sub && <p className="mt-1 text-xs" style={{ color: "var(--ux-muted)" }}>{sub}</p>}
       </div>
       {action && (
@@ -213,7 +223,7 @@ export function Chip({ children, selected, onClick, icon }: {
  * thing the pointer actually hits ends up ~20px tall no matter how much padding
  * the button inside it has.
  */
-export function Btn({ children, variant = "primary", size = "md", icon, iconEnd, onClick, href, className = "", full, type = "button", ariaLabel, disabled, loading }: {
+export function Btn({ children, variant = "primary", size = "md", icon, iconEnd, onClick, href, className = "", full, type = "button", ariaLabel, disabled, loading, download }: {
   children: React.ReactNode;
   variant?: "primary" | "soft" | "outline" | "ghost" | "on-brand";
   size?: "sm" | "md" | "lg"; icon?: string; iconEnd?: string;
@@ -232,6 +242,14 @@ export function Btn({ children, variant = "primary", size = "md", icon, iconEnd,
    * work is owned by a parent that already tracks it.
    */
   loading?: boolean;
+  /**
+   * Save the target instead of navigating to it, under this filename.
+   *
+   * Needs a plain `<a>`, not `next/link`: the router intercepts the click and
+   * tries to render `/api/v1/me/export` as a page, so the download never
+   * starts and she lands on a blank route instead.
+   */
+  download?: string;
 }) {
   /**
    * The double-submit guard, automatic.
@@ -315,6 +333,13 @@ export function Btn({ children, variant = "primary", size = "md", icon, iconEnd,
         <button type="button" disabled aria-label={ariaLabel} className={cls} style={{ ...look, ...dim }}>
           {inner}
         </button>
+      );
+    }
+    if (download) {
+      return (
+        <a href={href} download={download} aria-label={ariaLabel} className={cls} style={look}>
+          {inner}
+        </a>
       );
     }
     return (

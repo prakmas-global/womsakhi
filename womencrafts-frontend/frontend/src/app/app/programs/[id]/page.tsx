@@ -106,7 +106,7 @@ export default function CourseDetail({ params }: { params: Promise<{ id: string 
           <EmptyState
             icon="SearchX"
             title={tr("programs.thatCourseIsNotHere")}
-            body="It may have been retired, or the link may be old."
+            body={tr("programs.itMayHaveBeenRetiredOr")}
             action={<Btn href="/app/programs" variant="primary" iconEnd="ArrowRight">{tr("programs.allCourses")}</Btn>}
           />
         </Card>
@@ -164,7 +164,7 @@ export default function CourseDetail({ params }: { params: Promise<{ id: string 
                 {saved ? "Saved" : "Save"}
               </Btn>
               <ActionBtn variant="outline" size="sm" icon="Share2" doneIcon="Copy" done={tr("programs.linkCopied")}
-                         act={() => copy(`https://womsakhi.in/course/${course.id}`, "Link copied — send it to a friend", "Copy it by hand from the address bar")}>
+                         act={() => copy(`https://womsakhi.com/course/${course.id}`, "Link copied — send it to a friend", "Copy it by hand from the address bar")}>
                 Share
               </ActionBtn>
             </div>
