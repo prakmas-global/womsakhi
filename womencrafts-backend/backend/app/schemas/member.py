@@ -87,6 +87,7 @@ class MemberUpdate(BaseModel):
 
 class MemberStatusUpdate(BaseModel):
     status: Status
+    reason: str = ""
 
 
 class MemberStatsResponse(BaseModel):
@@ -95,6 +96,134 @@ class MemberStatsResponse(BaseModel):
     inactive: int
     pending: int
     rejected: int
-    avg_engagement: float
+    # Accounts that completed verification — counted from `users`, where the
+    # verification path actually lives.
+    verified: int
+    new_this_month: int
+    new_last_month: int
     by_role: dict[str, int]
     by_segment: dict[str, int]
+    by_status: dict[str, int]
+
+
+# ── Admin actions that need a reason ─────────────────────────────────────────
+# A suspension, rejection or deletion with no reason is an action nobody can
+# explain later. The reason goes into the audit row and, where it is hers to
+# know, into the notice she receives.
+
+
+class ReasonRequest(BaseModel):
+    reason: str = ""
+
+    @field_validator("reason")
+    @classmethod
+    def trim(cls, v: str) -> str:
+        return (v or "").strip()[:400]
+
+
+class RequiredReasonRequest(ReasonRequest):
+    @field_validator("reason")
+    @classmethod
+    def required(cls, v: str) -> str:
+        v = (v or "").strip()
+        if not v:
+            raise ValueError("A reason is needed")
+        return v[:400]
+
+
+class BulkStatusRequest(BaseModel):
+    ids: list[str]
+    status: Literal["Active", "Inactive"]
+    reason: str = ""
+
+    @field_validator("ids")
+    @classmethod
+    def some_ids(cls, v: list[str]) -> list[str]:
+        cleaned = [s for s in dict.fromkeys(v or []) if s]
+        if not cleaned:
+            raise ValueError("Pick at least one member")
+        return cleaned[:200]
+
+
+# ── The profile screen ────────────────────────────────────────────────────────
+# The directory row (`members`) plus the login behind it (`users`), plus what
+# she has actually done on the platform — counted from the collections that
+# record it, never from a stored score.
+
+
+class AccountSummary(BaseModel):
+    """The `users` row, with nothing a staff member has no business seeing."""
+    id: str
+    verification_status: str
+    verification_label: str
+    verified_at: str
+    email_verified_at: str
+    is_active: bool
+    locale: str
+    onboarding_complete: bool
+    last_login_at: str
+    rejection_reason: str
+    created_at: str
+
+
+class ActivityCounts(BaseModel):
+    bookings: int = 0
+    enrolments: int = 0
+    posts: int = 0
+    replies: int = 0
+    circles: int = 0
+    events: int = 0
+    applications: int = 0
+    orders: int = 0
+    total: int = 0
+
+
+class ProfileEnrolment(BaseModel):
+    id: str
+    program_name: str
+    status: str
+    progress: int
+    started: str
+
+
+class ProfileBooking(BaseModel):
+    id: str
+    service_name: str
+    date: str
+    time: str
+    mode: str
+    status: str
+
+
+class ProfileAuditRow(BaseModel):
+    id: str
+    by: str
+    action: str
+    detail: str
+    when: str
+
+
+class MemberProfileResponse(BaseModel):
+    member: MemberResponse
+    account: Optional[AccountSummary] = None
+    activity: ActivityCounts
+    enrolments: list[ProfileEnrolment]
+    bookings: list[ProfileBooking]
+    history: list[ProfileAuditRow]
+
+
+class GrowthPoint(BaseModel):
+    label: str
+    value: int
+    new: int
+
+
+class MemberGrowthResponse(BaseModel):
+    points: list[GrowthPoint]
+    weeks: int
+
+
+class BulkStatusResponse(BaseModel):
+    changed: int
+    skipped: int
+    message: str

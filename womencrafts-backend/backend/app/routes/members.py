@@ -1,31 +1,98 @@
-from datetime import datetime, timezone
+"""
+The members directory, as a Super Admin runs it.
+
+── Two collections, one person ──────────────────────────────────────────────
+`members` is the directory row the admin screen manages; `users` is the login
+behind it (`users.member_id` points at the directory row, and the two share an
+email). Everything an admin does to "a member" here touches both, in that
+order: the directory first, because that is what she is looking at, and the
+account second, because that is what decides whether the woman can sign in.
+
+── Every write is guarded and recorded ──────────────────────────────────────
+A `users.*` permission guard decides who may; `record()` writes who
+did, to whom, and why, after the write succeeded. A suspension, rejection or
+deletion carries a reason, because "why was my account closed?" is a question
+somebody will one day have to answer from this log alone.
+
+── What an admin never sees from here ───────────────────────────────────────
+Her private vault, her in-case-of-emergency data, and the bytes of her ID
+documents. The profile endpoint counts what she has done (bookings, enrolments,
+posts, orders) from the collections that record it, and it never reads a
+stored "engagement score" — there was one, seeded, updated by nothing, and it
+was shown as if it were hers.
+"""
+
+import csv
+import io
+from datetime import datetime, timedelta, timezone
 from typing import Optional
 
-from fastapi import APIRouter, Depends, HTTPException, Query, status
+from bson import ObjectId
+from fastapi import APIRouter, Depends, HTTPException, Query, Request, status
+from fastapi.responses import Response
 
-from app.core import mongosafe
+from app.core import cache, mongosafe
+from app.core import email as mailer
+from app.core.audit import record
 from app.core.config import settings
-from app.core.permissions import require_permission
 from app.core.deps import get_current_user
-from app.core.serializers import page_meta, to_object_id
+from app.core.permissions import require_permission
+from app.core.serializers import aware, page_meta, to_object_id
 from app.db.mongodb import get_database
+from app.models.conversation import notify
 from app.models.member import MemberModel
 from app.models.user import UserModel
+from app.models.verification import DocumentModel, VerificationStatus
 from app.routes._paging import paged
 from app.schemas.member import (
+    BulkStatusRequest,
+    BulkStatusResponse,
     MemberCreate,
+    MemberGrowthResponse,
     MemberListResponse,
+    MemberProfileResponse,
     MemberResponse,
     MemberStatsResponse,
     MemberStatusUpdate,
     MemberUpdate,
+    ReasonRequest,
+    RequiredReasonRequest,
 )
 
 router = APIRouter(prefix="/members", tags=["Users"])
 
+#: The only fields a caller may sort on. `paged` would happily sort on any
+#: string it was handed, including one that indexes nothing.
+SORTABLE = {"created_at", "updated_at", "full_name", "email", "status", "role", "segment", "code"}
+
+#: Collections that record something a member did, and the field that names
+#: her in each. Counted for the profile; never her vault or her in-case data.
+_ACTIVITY = {
+    "bookings": "bookings",
+    "enrollments": "enrolments",
+    "circle_posts": "posts",
+    "post_replies": "replies",
+    "circle_members": "circles",
+    "event_registrations": "events",
+    "applications": "applications",
+    "orders": "orders",
+}
+
 
 def _members():
     return get_database()[MemberModel.collection_name]
+
+
+def _users():
+    return get_database()[UserModel.collection_name]
+
+
+def _iso(value) -> str:
+    return value.isoformat() if isinstance(value, datetime) else ""
+
+
+def _name(doc: dict) -> str:
+    return doc.get("full_name") or doc.get("email") or str(doc.get("_id", ""))
 
 
 async def _next_code() -> str:
@@ -38,6 +105,56 @@ async def _next_code() -> str:
     return f"WC-{highest + 1}"
 
 
+async def _member_or_404(member_id: str) -> dict:
+    doc = await _members().find_one({"_id": to_object_id(member_id)})
+    if not doc:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "Member not found")
+    return doc
+
+
+async def _linked_user(member: dict) -> Optional[dict]:
+    """The login behind a directory row: by the explicit link, else by email."""
+    user = await _users().find_one({"member_id": str(member["_id"])})
+    if user:
+        return user
+    if member.get("email"):
+        return await _users().find_one({"email": member["email"], "role": "Member"})
+    return None
+
+
+def _query(
+    q: Optional[str], role: Optional[str], status_: Optional[str],
+    segment: Optional[str], ids: Optional[str],
+) -> dict:
+    query: dict = {}
+    if role and role not in ("All Roles", "all"):
+        query["role"] = role
+    if status_ and status_ not in ("All Status", "all"):
+        query["status"] = status_
+    if segment and segment not in ("All Segments", "all"):
+        query["segment"] = "" if segment == "__none__" else segment
+    if q and q.strip():
+        query.update(mongosafe.any_of(q, ["full_name", "email", "phone", "code"]))
+    if ids:
+        oids = []
+        for raw in ids.split(","):
+            raw = raw.strip()
+            if ObjectId.is_valid(raw):
+                oids.append(ObjectId(raw))
+        query["_id"] = {"$in": oids}
+    return query
+
+
+def _sort(sort: str) -> tuple[str, int]:
+    field = sort.lstrip("-") or "created_at"
+    if field not in SORTABLE:
+        field = "created_at"
+    return field, -1 if sort.startswith("-") else 1
+
+
+# ── Lists and figures ────────────────────────────────────────────────────────
+
+
 @router.get("", response_model=MemberListResponse, summary="List members",
     dependencies=[Depends(require_permission("users.view"))],
 )
@@ -45,26 +162,17 @@ async def list_members(
     q: Optional[str] = Query(None, description="Search by name, email, phone or code"),
     role: Optional[str] = Query(None, description="Filter by role"),
     status: Optional[str] = Query(None, description="Filter by status"),
-    segment: Optional[str] = Query(None, description="Filter by segment"),
+    segment: Optional[str] = Query(None, description="Filter by segment; '__none__' for unset"),
+    ids: Optional[str] = Query(None, description="Comma-separated member ids"),
     sort: str = Query("-created_at", description="Sort field; prefix '-' for descending"),
     page: int = Query(1, ge=1),
-    page_size: int = Query(6, ge=1, le=100),
+    page_size: int = Query(10, ge=1, le=100),
     _: dict = Depends(get_current_user),
 ):
-    query: dict = {}
-    if role and role not in ("All Roles", "all"):
-        query["role"] = role
-    if status and status not in ("All Status", "all"):
-        query["status"] = status
-    if segment and segment not in ("All Segments", "all"):
-        query["segment"] = segment
-    if q and q.strip():
-        query.update(mongosafe.any_of(q, ["full_name", "email", "phone", "code"]))
-
+    field, direction = _sort(sort)
     total, docs = await paged(
-        _members(), query,
-        sort=sort.lstrip("-"), direction=-1 if sort.startswith("-") else 1,
-        page=page, page_size=page_size,
+        _members(), _query(q, role, status, segment, ids),
+        sort=field, direction=direction, page=page, page_size=page_size,
     )
     items = [MemberModel.to_response(doc) for doc in docs]
     return MemberListResponse(items=items, **page_meta(total, page, page_size))
@@ -74,34 +182,140 @@ async def list_members(
     dependencies=[Depends(require_permission("users.view"))],
 )
 async def member_stats(_: dict = Depends(get_current_user)):
-    docs = [doc async for doc in _members().find({})]
+    projection = {"role": 1, "segment": 1, "status": 1, "created_at": 1}
+    docs = [doc async for doc in _members().find({}, projection)]
     total = len(docs)
 
     by_role: dict[str, int] = {}
     by_segment: dict[str, int] = {}
-    engagement_sum = 0
+    by_status: dict[str, int] = {}
     for doc in docs:
-        by_role[doc.get("role", "")] = by_role.get(doc.get("role", ""), 0) + 1
-        by_segment[doc.get("segment", "")] = by_segment.get(doc.get("segment", ""), 0) + 1
-        engagement_sum += doc.get("engagement", 0)
+        by_role[doc.get("role") or "Member"] = by_role.get(doc.get("role") or "Member", 0) + 1
+        seg = doc.get("segment") or ""
+        by_segment[seg] = by_segment.get(seg, 0) + 1
+        st = doc.get("status") or "Active"
+        by_status[st] = by_status.get(st, 0) + 1
 
-    def count_status(value: str) -> int:
-        return sum(1 for doc in docs if doc.get("status") == value)
+    now = datetime.now(timezone.utc)
+    this_month = now.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+    last_month = (this_month - timedelta(days=1)).replace(day=1)
+
+    def created_between(start: datetime, end: datetime) -> int:
+        n = 0
+        for doc in docs:
+            when = aware(doc.get("created_at"))
+            if when and start <= when < end:
+                n += 1
+        return n
+
+    # "Verified" is the account's state, not the directory's — it is the login
+    # that walked the verification path.
+    verified = await _users().count_documents(
+        {"role": "Member", "verification_status": VerificationStatus.ACTIVE}
+    )
 
     return MemberStatsResponse(
         total=total,
-        active=count_status("Active"),
-        inactive=count_status("Inactive"),
-        pending=count_status("Pending"),
-        rejected=count_status("Rejected"),
-        avg_engagement=round(engagement_sum / total, 1) if total else 0.0,
+        active=by_status.get("Active", 0),
+        inactive=by_status.get("Inactive", 0),
+        pending=by_status.get("Pending", 0),
+        rejected=by_status.get("Rejected", 0),
+        verified=verified,
+        new_this_month=created_between(this_month, now + timedelta(days=1)),
+        new_last_month=created_between(last_month, this_month),
         by_role=by_role,
         by_segment=by_segment,
+        by_status=by_status,
     )
 
 
-@router.post("", response_model=MemberResponse, status_code=status.HTTP_201_CREATED, summary="Create a member", dependencies=[Depends(require_permission("users.create"))])
-async def create_member(payload: MemberCreate, _: dict = Depends(get_current_user)):
+@router.get("/growth", response_model=MemberGrowthResponse, summary="Members over time, by week",
+    dependencies=[Depends(require_permission("users.view"))],
+)
+async def member_growth(
+    weeks: int = Query(12, ge=4, le=52),
+    _: dict = Depends(get_current_user),
+):
+    """
+    Cumulative directory size at the end of each of the last N weeks, from
+    `created_at`. This replaces a chart whose six points were typed in.
+    """
+    now = datetime.now(timezone.utc)
+    this_monday = (now - timedelta(days=now.weekday())).replace(hour=0, minute=0, second=0, microsecond=0)
+    starts = [this_monday - timedelta(weeks=weeks - 1 - i) for i in range(weeks)]
+
+    stamps = [
+        aware(doc.get("created_at"))
+        async for doc in _members().find({}, {"created_at": 1})
+    ]
+    stamps = [s for s in stamps if s is not None]
+    base = sum(1 for s in stamps if s < starts[0])
+
+    points = []
+    running = base
+    for i, start in enumerate(starts):
+        end = start + timedelta(weeks=1)
+        fresh = sum(1 for s in stamps if start <= s < end)
+        running += fresh
+        points.append({"label": f"{start.strftime('%b')} {start.day}", "value": running, "new": fresh})
+    return MemberGrowthResponse(points=points, weeks=weeks)
+
+
+@router.get("/export", summary="Export the filtered member list as CSV",
+    dependencies=[Depends(require_permission("users.export"))],
+)
+async def export_members(
+    request: Request,
+    q: Optional[str] = Query(None),
+    role: Optional[str] = Query(None),
+    status: Optional[str] = Query(None),
+    segment: Optional[str] = Query(None),
+    ids: Optional[str] = Query(None),
+    sort: str = Query("-created_at"),
+    me: dict = Depends(get_current_user),
+):
+    field, direction = _sort(sort)
+    cursor = _members().find(_query(q, role, status, segment, ids)).sort(field, direction)
+
+    buffer = io.StringIO()
+    writer = csv.writer(buffer)
+    writer.writerow([
+        "Code", "Full name", "Email", "Phone", "Role", "Status", "Segment",
+        "Location", "Gender", "Joined",
+    ])
+    n = 0
+    async for doc in cursor:
+        row = MemberModel.to_response(doc)
+        writer.writerow([
+            row["code"], row["full_name"], row["email"], row["phone"], row["role"],
+            row["status"], row["segment"], row["location"], row["gender"], row["joined"],
+        ])
+        n += 1
+
+    # An export is a read, but it is a read of everybody at once, and one that
+    # leaves the building. It goes in the log.
+    filters = ", ".join(
+        f"{k}={v}" for k, v in (("q", q), ("role", role), ("status", status), ("segment", segment)) if v
+    ) or ("selected rows" if ids else "no filters")
+    await record(
+        me, "member.export", target="members",
+        detail=f"Exported {n} member{'s' if n != 1 else ''} as CSV ({filters})", request=request,
+    )
+    stamp = datetime.now(timezone.utc).strftime("%Y-%m-%d")
+    return Response(
+        content=buffer.getvalue(),
+        media_type="text/csv",
+        headers={"Content-Disposition": f'attachment; filename="members-{stamp}.csv"'},
+    )
+
+
+# ── Creating and changing ────────────────────────────────────────────────────
+
+
+@router.post("", response_model=MemberResponse, status_code=status.HTTP_201_CREATED,
+    summary="Create a member", dependencies=[Depends(require_permission("users.create"))],
+)
+async def create_member(payload: MemberCreate, request: Request, me: dict = Depends(get_current_user)):
     email = str(payload.email).lower().strip()
     if await _members().find_one({"email": email}):
         raise HTTPException(status.HTTP_409_CONFLICT, "A member with this email already exists")
@@ -124,23 +338,189 @@ async def create_member(payload: MemberCreate, _: dict = Depends(get_current_use
     )
     result = await _members().insert_one(doc)
     doc["_id"] = result.inserted_id
+    await record(
+        me, "member.create", target=str(doc["_id"]),
+        detail=f"Added {_name(doc)} ({doc['code']}) to the directory as {doc['role']}, {doc['status']}",
+        request=request,
+    )
     return MemberResponse(**MemberModel.to_response(doc))
+
+
+async def _apply_status(
+    member: dict, new_status: str, me: dict, reason: str, request: Request, *, action: str,
+) -> dict:
+    """
+    Change a directory row's status, and make the account agree.
+
+    Inactive means she cannot sign in — `is_active` goes false, every existing
+    session is ended by bumping her token version, and her cached record is
+    dropped so the refusal is immediate rather than fifteen seconds away.
+    Active undoes exactly that. Pending and Rejected are the verification
+    path's states and leave the login alone.
+    """
+    now = datetime.now(timezone.utc)
+    updates: dict = {"status": new_status, "updated_at": now}
+    if new_status == "Active" and not member.get("verified_on"):
+        updates["verified_on"] = now.strftime("%b %d, %Y")
+    doc = await _members().find_one_and_update(
+        {"_id": member["_id"]}, {"$set": updates}, return_document=True,
+    )
+
+    user = await _linked_user(member)
+    if user and new_status in ("Active", "Inactive"):
+        active = new_status == "Active"
+        change: dict = {"$set": {"is_active": active, "updated_at": now}}
+        if not active:
+            change["$inc"] = {"token_version": 1}
+        await _users().update_one({"_id": user["_id"]}, change)
+        cache.forget_user(str(user["_id"]))
+        if active:
+            await notify(
+                get_database(), str(user["_id"]),
+                "Your account is open again",
+                reason or "You can sign in and carry on where you left off.",
+            )
+        else:
+            await notify(
+                get_database(), str(user["_id"]),
+                "Your account has been suspended",
+                reason or "Please contact support if you think this is a mistake.",
+            )
+
+    why = f" — {reason}" if reason else ""
+    await record(
+        me, action, target=str(member["_id"]),
+        detail=f"{_name(member)}: {member.get('status', '')} → {new_status}{why}", request=request,
+    )
+    return doc
+
+
+@router.post("/bulk-status", response_model=BulkStatusResponse,
+    summary="Suspend or restore several members at once",
+    dependencies=[Depends(require_permission("users.edit"))],
+)
+async def bulk_status(payload: BulkStatusRequest, request: Request, me: dict = Depends(get_current_user)):
+    changed = skipped = 0
+    for raw in payload.ids:
+        if not ObjectId.is_valid(raw):
+            skipped += 1
+            continue
+        member = await _members().find_one({"_id": ObjectId(raw)})
+        if not member or member.get("status") == payload.status:
+            skipped += 1
+            continue
+        await _apply_status(
+            member, payload.status, me, payload.reason, request,
+            action="member.suspend" if payload.status == "Inactive" else "member.restore",
+        )
+        changed += 1
+    verb = "suspended" if payload.status == "Inactive" else "restored"
+    return BulkStatusResponse(
+        changed=changed, skipped=skipped,
+        message=f"{changed} member{'s' if changed != 1 else ''} {verb}"
+                + (f", {skipped} already were or could not be found" if skipped else ""),
+    )
 
 
 @router.get("/{member_id}", response_model=MemberResponse, summary="Get a member",
     dependencies=[Depends(require_permission("users.view"))],
 )
 async def get_member(member_id: str, _: dict = Depends(get_current_user)):
-    doc = await _members().find_one({"_id": to_object_id(member_id)})
-    if not doc:
-        raise HTTPException(status.HTTP_404_NOT_FOUND, "Member not found")
-    return MemberResponse(**MemberModel.to_response(doc))
+    return MemberResponse(**MemberModel.to_response(await _member_or_404(member_id)))
 
 
-@router.patch("/{member_id}", response_model=MemberResponse, summary="Update a member", dependencies=[Depends(require_permission("users.edit"))])
-async def update_member(member_id: str, payload: MemberUpdate, _: dict = Depends(get_current_user)):
+@router.get("/{member_id}/profile", response_model=MemberProfileResponse,
+    summary="A member's profile: directory row, account state, and what she has done",
+    dependencies=[Depends(require_permission("users.view"))],
+)
+async def member_profile(member_id: str, _: dict = Depends(get_current_user)):
+    member = await _member_or_404(member_id)
+    db = get_database()
+    user = await _linked_user(member)
+    mid = str(member["_id"])
+    uid = str(user["_id"]) if user else ""
+
+    account = None
+    if user:
+        state = user.get("verification_status") or VerificationStatus.ACTIVE
+        account = {
+            "id": uid,
+            "verification_status": state,
+            "verification_label": VerificationStatus.LABELS.get(state, state),
+            "verified_at": _iso(user.get("verified_at")),
+            "email_verified_at": _iso(user.get("email_verified_at")),
+            "is_active": bool(user.get("is_active", True)),
+            "locale": user.get("locale") or "en",
+            "onboarding_complete": bool(user.get("onboarding_complete", False)),
+            "last_login_at": _iso(user.get("last_login_at")),
+            "rejection_reason": user.get("rejection_reason") or "",
+            "created_at": _iso(user.get("created_at")),
+        }
+
+    # Rows are keyed by user_id or member_id depending on the collection's age;
+    # match either so nothing she did is missed.
+    keys = [k for k in (uid, mid) if k]
+    owner = {"$or": [{"user_id": {"$in": keys}}, {"member_id": {"$in": keys}}]}
+    counts: dict[str, int] = {}
+    for coll, key in _ACTIVITY.items():
+        counts[key] = await db[coll].count_documents(owner)
+    counts["total"] = sum(counts.values())
+
+    enrolments = []
+    async for e in db["enrollments"].find(owner).sort("created_at", -1).limit(10):
+        enrolments.append({
+            "id": str(e["_id"]),
+            "program_name": e.get("program_name") or "",
+            "status": e.get("status") or "",
+            "progress": int(e.get("progress") or 0),
+            "started": _iso(e.get("created_at")),
+        })
+    bookings = []
+    async for b in db["bookings"].find(owner).sort("created_at", -1).limit(10):
+        bookings.append({
+            "id": str(b["_id"]),
+            "service_name": b.get("service_name") or "",
+            "date": str(b.get("date") or ""),
+            "time": str(b.get("time") or ""),
+            "mode": b.get("mode") or "",
+            "status": b.get("status") or "",
+        })
+
+    # What staff have done to her. Older rows named the target by full name;
+    # newer ones by id. Match both.
+    targets = [t for t in (mid, uid, member.get("full_name", ""), member.get("code", "")) if t]
+    history = []
+    async for a in db["activity_log"].find({"target": {"$in": targets}}).sort("created_at", -1).limit(20):
+        history.append({
+            "id": str(a["_id"]),
+            "by": a.get("user_name") or "",
+            "action": a.get("action") or "",
+            "detail": a.get("detail") or "",
+            "when": _iso(a.get("created_at")),
+        })
+
+    return MemberProfileResponse(
+        member=MemberResponse(**MemberModel.to_response(member)),
+        account=account,
+        activity=counts,
+        enrolments=enrolments,
+        bookings=bookings,
+        history=history,
+    )
+
+
+@router.patch("/{member_id}", response_model=MemberResponse, summary="Update a member",
+    dependencies=[Depends(require_permission("users.edit"))],
+)
+async def update_member(
+    member_id: str, payload: MemberUpdate, request: Request, me: dict = Depends(get_current_user),
+):
     oid = to_object_id(member_id)
     updates = payload.model_dump(exclude_unset=True)
+    # Status has its own endpoints, with a reason and an account-side effect.
+    updates.pop("status", None)
+    if not updates:
+        raise HTTPException(status.HTTP_400_BAD_REQUEST, "Nothing to change")
 
     if updates.get("email"):
         updates["email"] = str(updates["email"]).lower().strip()
@@ -148,32 +528,185 @@ async def update_member(member_id: str, payload: MemberUpdate, _: dict = Depends
         if clash:
             raise HTTPException(status.HTTP_409_CONFLICT, "Another member already uses this email")
 
+    before = await _member_or_404(member_id)
     updates["updated_at"] = datetime.now(timezone.utc)
-    doc = await _members().find_one_and_update(
-        {"_id": oid},
-        {"$set": updates},
-        return_document=True,
-    )
+    doc = await _members().find_one_and_update({"_id": oid}, {"$set": updates}, return_document=True)
     if not doc:
         raise HTTPException(status.HTTP_404_NOT_FOUND, "Member not found")
+
+    # Keep the login's name, phone and avatar in step, so what she sees on her
+    # own profile is what the admin just typed.
+    user = await _linked_user(before)
+    if user:
+        mirrored = {k: updates[k] for k in ("full_name", "phone", "avatar", "email") if k in updates}
+        if mirrored:
+            mirrored["updated_at"] = updates["updated_at"]
+            await _users().update_one({"_id": user["_id"]}, {"$set": mirrored})
+            cache.forget_user(str(user["_id"]))
+
+    fields = ", ".join(k for k in updates if k != "updated_at")
+    await record(
+        me, "member.update", target=str(oid),
+        detail=f"Edited {_name(doc)}: {fields}", request=request,
+    )
     return MemberResponse(**MemberModel.to_response(doc))
 
 
-@router.patch("/{member_id}/status", response_model=MemberResponse, summary="Change a member's status", dependencies=[Depends(require_permission("users.edit"))])
-async def set_member_status(member_id: str, payload: MemberStatusUpdate, _: dict = Depends(get_current_user)):
-    oid = to_object_id(member_id)
-    doc = await _members().find_one_and_update(
-        {"_id": oid},
-        {"$set": {"status": payload.status, "updated_at": datetime.now(timezone.utc)}},
-        return_document=True,
-    )
-    if not doc:
-        raise HTTPException(status.HTTP_404_NOT_FOUND, "Member not found")
+@router.patch("/{member_id}/status", response_model=MemberResponse, summary="Change a member's status",
+    dependencies=[Depends(require_permission("users.edit"))],
+)
+async def set_member_status(
+    member_id: str, payload: MemberStatusUpdate, request: Request, me: dict = Depends(get_current_user),
+):
+    member = await _member_or_404(member_id)
+    doc = await _apply_status(member, payload.status, me, payload.reason, request, action="member.status")
     return MemberResponse(**MemberModel.to_response(doc))
 
 
-@router.delete("/{member_id}", summary="Delete a member", dependencies=[Depends(require_permission("users.delete"))])
-async def delete_member(member_id: str, _: dict = Depends(get_current_user)):
+@router.post("/{member_id}/suspend", response_model=MemberResponse,
+    summary="Suspend a member — she cannot sign in until restored",
+    dependencies=[Depends(require_permission("users.edit"))],
+)
+async def suspend_member(
+    member_id: str, payload: RequiredReasonRequest, request: Request, me: dict = Depends(get_current_user),
+):
+    member = await _member_or_404(member_id)
+    if member.get("status") == "Inactive":
+        raise HTTPException(status.HTTP_409_CONFLICT, "This member is already suspended")
+    doc = await _apply_status(member, "Inactive", me, payload.reason, request, action="member.suspend")
+    return MemberResponse(**MemberModel.to_response(doc))
+
+
+@router.post("/{member_id}/restore", response_model=MemberResponse,
+    summary="Restore a suspended member",
+    dependencies=[Depends(require_permission("users.edit"))],
+)
+async def restore_member(
+    member_id: str, payload: ReasonRequest, request: Request, me: dict = Depends(get_current_user),
+):
+    member = await _member_or_404(member_id)
+    if member.get("status") == "Active":
+        raise HTTPException(status.HTTP_409_CONFLICT, "This member is already active")
+    doc = await _apply_status(member, "Active", me, payload.reason, request, action="member.restore")
+    return MemberResponse(**MemberModel.to_response(doc))
+
+
+@router.post("/{member_id}/approve", response_model=MemberResponse,
+    summary="Approve a pending member",
+    dependencies=[Depends(require_permission("users.approve"))],
+)
+async def approve_member(
+    member_id: str, payload: ReasonRequest, request: Request, me: dict = Depends(get_current_user),
+):
+    """
+    The same transition the verification queue makes, reachable from her
+    profile. The account becomes usable, any pending ID documents are marked
+    approved by this reviewer, the directory row goes Active, and she is
+    emailed.
+    """
+    member = await _member_or_404(member_id)
+    if member.get("status") == "Active":
+        raise HTTPException(status.HTTP_409_CONFLICT, "This member is already approved")
+    now = datetime.now(timezone.utc)
+    db = get_database()
+
+    user = await _linked_user(member)
+    if user:
+        await _users().update_one(
+            {"_id": user["_id"]},
+            {"$set": {
+                "verification_status": VerificationStatus.ACTIVE,
+                "verified_at": now,
+                "rejection_reason": "",
+                "is_active": True,
+                "updated_at": now,
+            }},
+        )
+        await db[DocumentModel.collection_name].update_many(
+            {"user_id": str(user["_id"]), "status": DocumentModel.STATUS_PENDING},
+            {"$set": {
+                "status": DocumentModel.STATUS_APPROVED,
+                "reviewed_by": str(me["_id"]),
+                "reviewed_by_name": me.get("full_name", ""),
+                "reviewed_at": now,
+            }},
+        )
+        cache.forget_user(str(user["_id"]))
+        await mailer.send(
+            mailer.approved_email(user.get("full_name", ""), f"{settings.APP_BASE_URL.rstrip('/')}/signin"),
+            user["email"],
+        )
+
+    doc = await _members().find_one_and_update(
+        {"_id": member["_id"]},
+        {"$set": {"status": "Active", "verified_on": now.strftime("%b %d, %Y"), "updated_at": now}},
+        return_document=True,
+    )
+    why = f" — {payload.reason}" if payload.reason else ""
+    await record(
+        me, "member.approve", target=str(member["_id"]),
+        detail=f"Approved {_name(member)}{why}", request=request,
+    )
+    return MemberResponse(**MemberModel.to_response(doc))
+
+
+@router.post("/{member_id}/reject", response_model=MemberResponse,
+    summary="Reject a pending member, with a reason she is told",
+    dependencies=[Depends(require_permission("users.approve"))],
+)
+async def reject_member(
+    member_id: str, payload: RequiredReasonRequest, request: Request, me: dict = Depends(get_current_user),
+):
+    member = await _member_or_404(member_id)
+    if member.get("status") == "Rejected":
+        raise HTTPException(status.HTTP_409_CONFLICT, "This member is already rejected")
+    now = datetime.now(timezone.utc)
+    db = get_database()
+
+    user = await _linked_user(member)
+    if user:
+        await _users().update_one(
+            {"_id": user["_id"]},
+            {"$set": {
+                "verification_status": VerificationStatus.REJECTED,
+                "rejection_reason": payload.reason,
+                "updated_at": now,
+            }},
+        )
+        await db[DocumentModel.collection_name].update_many(
+            {"user_id": str(user["_id"]), "status": DocumentModel.STATUS_PENDING},
+            {"$set": {
+                "status": DocumentModel.STATUS_REJECTED,
+                "reviewed_by": str(me["_id"]),
+                "reviewed_by_name": me.get("full_name", ""),
+                "reviewed_at": now,
+                "review_note": payload.reason,
+            }},
+        )
+        cache.forget_user(str(user["_id"]))
+        await mailer.send(mailer.rejected_email(user.get("full_name", ""), payload.reason), user["email"])
+
+    doc = await _members().find_one_and_update(
+        {"_id": member["_id"]},
+        {"$set": {"status": "Rejected", "updated_at": now}},
+        return_document=True,
+    )
+    await record(
+        me, "member.reject", target=str(member["_id"]),
+        detail=f"Rejected {_name(member)} — {payload.reason}", request=request,
+    )
+    return MemberResponse(**MemberModel.to_response(doc))
+
+
+@router.delete("/{member_id}", summary="Delete a member",
+    dependencies=[Depends(require_permission("users.delete"))],
+)
+async def delete_member(
+    member_id: str,
+    request: Request,
+    reason: str = Query("", max_length=400, description="Why — goes in the audit log"),
+    me: dict = Depends(get_current_user),
+):
     """
     Delete a member, and everything that only existed because of her.
 
@@ -201,16 +734,10 @@ async def delete_member(member_id: str, _: dict = Depends(get_current_user)):
     from pathlib import Path
 
     from app.core import integrity
-    from app.core.config import settings
 
     db = get_database()
-    member = await db[MemberModel.collection_name].find_one({"_id": to_object_id(member_id)})
-    if not member:
-        raise HTTPException(status.HTTP_404_NOT_FOUND, "Member not found")
-
-    # The login behind the profile, if there is one. Matched on email because
-    # that is the only link the two collections share in both directions.
-    user = await db[UserModel.collection_name].find_one({"email": member.get("email", "")})
+    member = await _member_or_404(member_id)
+    user = await _linked_user(member)
 
     removed: dict[str, int] = {}
     if user:
@@ -223,12 +750,19 @@ async def delete_member(member_id: str, _: dict = Depends(get_current_user)):
             folder.rmdir()
         removed.update(await integrity.cascade_delete("users", user["_id"]))
         await db[UserModel.collection_name].delete_one({"_id": user["_id"]})
+        cache.forget_user(uid)
         removed["users deleted"] = 1
 
     removed.update(await integrity.cascade_delete("members", member["_id"]))
     await db[MemberModel.collection_name].delete_one({"_id": member["_id"]})
 
     detail = ", ".join(f"{n} {what}" for what, n in sorted(removed.items())) or "nothing else"
+    why = f" — {reason.strip()}" if reason.strip() else ""
+    await record(
+        me, "member.delete", target=str(member["_id"]),
+        detail=f"Deleted {_name(member)} ({member.get('code', '')}){why}. Also removed: {detail}",
+        request=request,
+    )
     return {"message": f"Member deleted. Also removed: {detail}."}
 
 
@@ -238,7 +772,7 @@ async def delete_member(member_id: str, _: dict = Depends(get_current_user)):
     summary="Start a password reset for a member",
     dependencies=[Depends(require_permission("users.edit"))],
 )
-async def start_password_reset(member_id: str, me: dict = Depends(get_current_user)):
+async def start_password_reset(member_id: str, request: Request, me: dict = Depends(get_current_user)):
     """
     Staff-initiated password reset.
 
@@ -246,16 +780,11 @@ async def start_password_reset(member_id: str, me: dict = Depends(get_current_us
     would mean a staff member briefly knowing a member's credentials. Instead
     this issues a single-use, 24-hour link and emails it to her.
     """
-    from app.core.email import reset_email, send
     from app.models.verification import EmailTokenModel
-    from app.routes.staff_account import log_activity
 
     db = get_database()
-    member = await db[MemberModel.collection_name].find_one({"_id": to_object_id(member_id)})
-    if not member:
-        raise HTTPException(status.HTTP_404_NOT_FOUND, "Member not found")
-
-    user = await db[UserModel.collection_name].find_one({"email": member.get("email", "")})
+    member = await _member_or_404(member_id)
+    user = await _linked_user(member)
     if not user:
         raise HTTPException(
             status.HTTP_404_NOT_FOUND, "That member has no sign-in account to reset"
@@ -271,15 +800,21 @@ async def start_password_reset(member_id: str, me: dict = Depends(get_current_us
     await db[EmailTokenModel.collection_name].insert_one(token_doc)
 
     url = f"{settings.APP_BASE_URL}/reset-password?token={token_doc['token']}"
-    delivered = await send(
-        reset_email(user.get("full_name", ""), url, by_staff=True), user["email"]
+    delivered = await mailer.send(
+        mailer.reset_email(user.get("full_name", ""), url, by_staff=True), user["email"]
     )
 
-    await log_activity(
-        me, "Started a password reset", "Users",
-        target=member.get("full_name", member.get("email", "")),
+    await record(
+        me, "member.reset_password", target=str(member["_id"]),
+        detail=f"Started a password reset for {_name(member)}"
+               + ("" if delivered else " (email could not be delivered)"),
+        request=request,
     )
     return {
-        "message": f"A reset link has been sent to {user['email']}. It expires in 24 hours.",
+        "message": (
+            f"A reset link has been sent to {user['email']}. It expires in 24 hours."
+            if delivered
+            else f"A reset link was issued for {user['email']}, but email is not set up to deliver it yet."
+        ),
         "delivered": delivered,
     }
