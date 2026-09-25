@@ -10,8 +10,9 @@ export interface DashboardStatCard {
   key: string;
   label: string;
   value: string; // preformatted, e.g. "1,248" or "$24,568"
-  delta: string; // e.g. "12.5%"
+  delta: string; // "+12" — how many arrived in the window; "" when none
   delta_dir: "up" | "down";
+  delta_note: string; // what the delta counts, e.g. "new in the last 30 days"
   tone: StatTone;
   icon: string; // lucide icon name, e.g. "Users"
   href: string;
@@ -70,25 +71,27 @@ export interface RecentAppointment {
 }
 
 export interface SystemOverview {
-  storage_percent: number;
-  storage_percent_label: string;
-  storage_used_gb: number;
-  storage_total_gb: number;
-  storage_label: string;
-  active_sessions: number;
-  system_status: string;
-  status_label: string;
-  last_backup_at: string;
+  database_ok: boolean;
+  database_latency_ms: number;
+  status_label: string; // "Database reachable · 12 ms" | "Database unreachable"
+  storage_bytes: number;
+  storage_label: string; // "24.6 MB of data in 61 collections"
+  collections: number;
+  staff_signed_in_24h: number;
+  last_backup_at: string; // ISO, or "" when there has never been one
   last_backup_label: string;
-  last_backup_type: string;
+  last_backup_type: string; // "Full backup" | "Custom backup" | ""
 }
 
 export interface DashboardOverview {
+  generated_at: string;
   stats: DashboardStatCard[];
+  attention: AttentionItem[];
   appointment_trend: AppointmentTrend;
   users_by_role: UsersByRole;
   recent_users: RecentUser[];
   recent_appointments: RecentAppointment[];
+  recent_activity: RecentActivity[];
   system_overview: SystemOverview;
 }
 
@@ -105,10 +108,8 @@ export async function apiDashboardStats(): Promise<DashboardStatCard[]> {
   return data;
 }
 
-export async function apiDashboardApptTrend(range = "This Month"): Promise<AppointmentTrend> {
-  const { data } = await apiClient.get<AppointmentTrend>("/dashboard/appointments/trend", {
-    params: { range },
-  });
+export async function apiDashboardApptTrend(): Promise<AppointmentTrend> {
+  const { data } = await apiClient.get<AppointmentTrend>("/dashboard/appointments/trend");
   return data;
 }
 
@@ -133,5 +134,51 @@ export async function apiDashboardRecentAppointments(limit = 5): Promise<RecentA
 
 export async function apiDashboardSystemOverview(): Promise<SystemOverview> {
   const { data } = await apiClient.get<SystemOverview>("/dashboard/system-overview");
+  return data;
+}
+
+// --- What is waiting for a person ------------------------------------------
+
+export interface AttentionItem {
+  key: string;
+  label: string;
+  value: number;
+  note: string; // what the number counts
+  tone: "amber" | "rose" | "sky" | "emerald";
+  icon: string; // lucide icon name
+  href: string; // the screen where she deals with it
+}
+
+export async function apiDashboardAttention(): Promise<AttentionItem[]> {
+  const { data } = await apiClient.get<AttentionItem[]>("/dashboard/attention");
+  return data;
+}
+
+// --- Recent staff actions (the activity_log rows app/core/audit.py writes) ---
+
+export interface RecentActivity {
+  id: string;
+  user_name: string;
+  action: string; // dotted verb, e.g. "staff.invite"
+  category: string;
+  target: string;
+  detail: string;
+  when: string; // "Sep 26, 2026 · 10:14 AM"
+  created_at: string;
+}
+
+export async function apiDashboardRecentActivity(limit = 8): Promise<RecentActivity[]> {
+  const { data } = await apiClient.get<RecentActivity[]>("/dashboard/activity/recent", {
+    params: { limit },
+  });
+  return data;
+}
+
+// --- Export ------------------------------------------------------------------
+
+/** Every figure and list on the home, as of now, as a CSV blob. Needs
+ *  `dashboard.export`; the server records the download in the audit trail. */
+export async function apiDashboardExportCsv(): Promise<Blob> {
+  const { data } = await apiClient.get<Blob>("/dashboard/export", { responseType: "blob" });
   return data;
 }
