@@ -92,14 +92,21 @@ EXEMPT = {
     "uploads.upload_file", "uploads.list_uploads", "uploads.upload_stats",
     "uploads.delete_upload",
     "roles.my_permissions", "roles.permission_catalogue",
+    # Her own sign-ins. The caller is the object; there is no role that should
+    # be unable to sign herself out. (Scoping them to the caller is the
+    # settings-account rebuild's job — see settings_security.py.)
+    "settings_security.revoke_other_sessions", "settings_security.revoke_session",
 }
 
 #: Prefixes whose whole file is member-facing. These sit behind the member
 #: gate in their own way and are not part of the admin surface.
 MEMBER_FILES = {"engines", "layout", "notifications", "me", "me_export", "public"}
 
+# `@router.` and any sub-router (`@services_router.`, `@integrations_router.`):
+# a file that mounts two prefixes on one router used to hide every write on
+# the second one from this test.
 DECORATOR = re.compile(
-    r'@router\.(get|post|put|patch|delete)\((.*?)\n(?:async )?def (\w+)\((.*?)\):',
+    r'@\w*router\.(get|post|put|patch|delete)\((.*?)\n(?:async )?def (\w+)\((.*?)\):',
     re.S,
 )
 PERMISSION = re.compile(r'require_permission\(\s*"([^"]+)"')

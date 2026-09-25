@@ -5,6 +5,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query, status
 
 from app.core import mongosafe
 from app.core.deps import get_current_user
+from app.core.permissions import require_permission
 from app.core.serializers import page_meta, to_object_id
 from app.db.mongodb import get_database
 from app.models.integration import (
@@ -178,7 +179,7 @@ async def get_webhook(_: dict = Depends(get_current_user)):
     return WebhookResponse(**WebhookConfigModel.to_response(doc))
 
 
-@integrations_router.put("/webhook", response_model=WebhookResponse, summary="Update webhook URL")
+@integrations_router.put("/webhook", response_model=WebhookResponse, summary="Update webhook URL", dependencies=[Depends(require_permission("settings.edit"))])
 async def update_webhook(payload: WebhookUpdate, _: dict = Depends(get_current_user)):
     doc = await _webhooks().find_one({})
     if not doc:
@@ -200,6 +201,7 @@ async def update_webhook(payload: WebhookUpdate, _: dict = Depends(get_current_u
     response_model=IntegrationRequestResponse,
     status_code=status.HTTP_201_CREATED,
     summary="Request a custom integration",
+    dependencies=[Depends(require_permission("settings.edit"))],
 )
 async def create_integration_request(payload: IntegrationRequestCreate, _: dict = Depends(get_current_user)):
     doc = IntegrationRequestModel.create_document(
@@ -210,7 +212,7 @@ async def create_integration_request(payload: IntegrationRequestCreate, _: dict 
     return IntegrationRequestResponse(**IntegrationRequestModel.to_response(doc))
 
 
-@integrations_router.patch("/{integration_id}", response_model=IntegrationResponse, summary="Update an integration (toggle / connect / disconnect)")
+@integrations_router.patch("/{integration_id}", response_model=IntegrationResponse, summary="Update an integration (toggle / connect / disconnect)", dependencies=[Depends(require_permission("settings.edit"))])
 async def update_integration(integration_id: str, payload: IntegrationUpdate, _: dict = Depends(get_current_user)):
     oid = to_object_id(integration_id)
     doc = await _integrations().find_one({"_id": oid})
@@ -248,7 +250,7 @@ async def update_integration(integration_id: str, payload: IntegrationUpdate, _:
     return IntegrationResponse(**IntegrationModel.to_response(doc))
 
 
-@integrations_router.post("/{integration_id}/connect", response_model=IntegrationResponse, summary="Connect an integration")
+@integrations_router.post("/{integration_id}/connect", response_model=IntegrationResponse, summary="Connect an integration", dependencies=[Depends(require_permission("settings.edit"))])
 async def connect_integration(integration_id: str, _: dict = Depends(get_current_user)):
     oid = to_object_id(integration_id)
     updates: dict = {"connected_at": datetime.now(timezone.utc)}
@@ -263,7 +265,7 @@ async def connect_integration(integration_id: str, _: dict = Depends(get_current
     return IntegrationResponse(**IntegrationModel.to_response(doc))
 
 
-@integrations_router.post("/{integration_id}/disconnect", response_model=IntegrationResponse, summary="Disconnect an integration")
+@integrations_router.post("/{integration_id}/disconnect", response_model=IntegrationResponse, summary="Disconnect an integration", dependencies=[Depends(require_permission("settings.edit"))])
 async def disconnect_integration(integration_id: str, _: dict = Depends(get_current_user)):
     oid = to_object_id(integration_id)
     doc = await _integrations().find_one({"_id": oid})
@@ -280,7 +282,7 @@ async def disconnect_integration(integration_id: str, _: dict = Depends(get_curr
     return IntegrationResponse(**IntegrationModel.to_response(doc))
 
 
-@integrations_router.post("/{integration_id}/sync", response_model=IntegrationResponse, summary="Sync an integration now")
+@integrations_router.post("/{integration_id}/sync", response_model=IntegrationResponse, summary="Sync an integration now", dependencies=[Depends(require_permission("settings.edit"))])
 async def sync_integration(integration_id: str, _: dict = Depends(get_current_user)):
     oid = to_object_id(integration_id)
     doc = await _integrations().find_one_and_update(
@@ -293,7 +295,7 @@ async def sync_integration(integration_id: str, _: dict = Depends(get_current_us
     return IntegrationResponse(**IntegrationModel.to_response(doc))
 
 
-@integrations_router.delete("/{integration_id}", summary="Remove an integration")
+@integrations_router.delete("/{integration_id}", summary="Remove an integration", dependencies=[Depends(require_permission("settings.edit"))])
 async def delete_integration(integration_id: str, _: dict = Depends(get_current_user)):
     result = await _integrations().delete_one({"_id": to_object_id(integration_id)})
     if result.deleted_count == 0:

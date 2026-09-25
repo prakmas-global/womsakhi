@@ -3,7 +3,8 @@ from typing import Literal, Optional
 from pydantic import BaseModel, field_validator
 
 ServiceStatus = Literal["Active", "Inactive"]
-ServiceTypeName = Literal["Fashion", "Beauty", "Photography", "Digital", "Wellness"]
+# Any type the admin has created; the route checks it exists in service_types.
+ServiceTypeName = str
 Duration = Literal["30 min", "45 min", "60 min", "90 min", "120 min"]
 
 
@@ -18,8 +19,7 @@ class ServiceResponse(BaseModel):
     duration: str
     price: str
     status: str
-    bookings: int
-    rating: str
+    bookings: int  # live: appointments naming this service
     description: str
 
 
@@ -69,7 +69,7 @@ class ServiceTypeResponse(BaseModel):
     desc: str
     services: int
     status: str
-    pop: int
+    pop: int   # share of all bookings, 0-100, computed
     color: str
     icon: str
     slot: int = 1
@@ -87,7 +87,6 @@ class ServiceTypeCreate(BaseModel):
     name: str
     desc: str = ""
     status: ServiceStatus = "Active"
-    pop: int = 0
 
     @field_validator("name")
     @classmethod
@@ -97,22 +96,12 @@ class ServiceTypeCreate(BaseModel):
             raise ValueError("Type name cannot be empty")
         return v
 
-    @field_validator("pop")
-    @classmethod
-    def pop_in_range(cls, v: int) -> int:
-        return max(0, min(100, v))
 
 
 class ServiceTypeUpdate(BaseModel):
     name: Optional[str] = None
     desc: Optional[str] = None
     status: Optional[ServiceStatus] = None
-    pop: Optional[int] = None
-
-    @field_validator("pop")
-    @classmethod
-    def pop_in_range(cls, v: Optional[int]) -> Optional[int]:
-        return None if v is None else max(0, min(100, v))
 
 
 # --- Stats (stat cards + overview donut + popular list) -----------------------
@@ -122,7 +111,7 @@ class ServiceStatCard(BaseModel):
     value: str
     icon: str
     tone: str
-    delta: str
+    delta: Optional[str] = None  # only when there is real history to compare
 
 
 class ServiceOverviewSlice(BaseModel):

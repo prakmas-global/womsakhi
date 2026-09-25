@@ -19,8 +19,7 @@ export interface ApiService {
   duration: string;
   price: string; // display string shown verbatim, e.g. "₹499"
   status: string;
-  bookings: number;
-  rating: string; // label string, e.g. "4.9"
+  bookings: number; // live: appointments that name this service
   description: string;
   /** Colour slot 1-8 from the theme's categorical palette. */
   slot: number;
@@ -50,7 +49,7 @@ export interface ApiServiceType {
   desc: string;
   services: number;
   status: string;
-  pop: number; // popularity 0-100
+  pop: number; // share of all bookings, 0-100, computed on the server
   color: string;
   icon: string; // lucide icon name, e.g. "Scissors"
   /** Colour slot 1-8 from the theme's categorical palette. */
@@ -68,7 +67,6 @@ export interface ServiceTypeInput {
   name: string;
   desc?: string;
   status?: string;
-  pop?: number;
 }
 
 // --- Stats (stat cards + overview donut + popular list) ----------------------
@@ -78,7 +76,8 @@ export interface ServiceStatCard {
   value: string;
   icon: string;
   tone: string;
-  delta: string;
+  /** Only present when there is real history to compare against. */
+  delta?: string;
 }
 
 export interface ServiceOverviewSlice {
@@ -162,4 +161,18 @@ export async function apiUpdateServiceType(
 
 export async function apiDeleteServiceType(id: string): Promise<void> {
   await apiClient.delete(`/service-types/${id}`);
+}
+
+// --- The appointments behind a service's bookings number ----------------------
+export interface ServiceBooking {
+  id: string;
+  name: string;   // who booked
+  date: string;   // short label as the appointment stores it, e.g. "May 20"
+  time: string;
+  status: string;
+}
+
+export async function apiServiceBookings(id: string, limit = 10): Promise<{ items: ServiceBooking[]; total: number }> {
+  const { data } = await apiClient.get<{ items: ServiceBooking[]; total: number }>(`/services/${id}/bookings`, { params: { limit } });
+  return data;
 }
