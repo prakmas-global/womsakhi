@@ -29,8 +29,12 @@ import asyncio
 from datetime import datetime, timedelta, timezone
 from typing import Iterable
 
-from fastapi import APIRouter, Depends, Query
+from fastapi import APIRouter, Depends, Query, Request, Response
 
+import csv
+import io
+
+from app.core.audit import record
 from app.core.deps import get_current_user
 from app.core.permissions import require_permission
 from app.db.mongodb import get_database
@@ -138,14 +142,14 @@ async def _count_between(collection: str, start: datetime, end: datetime, extra:
     return await get_database()[collection].count_documents(query)
 
 
-def _delta(current: int | float, previous: int | float) -> tuple[str, str]:
+def _delta(current: int | float, previous: int | float) -> tuple[str | None, str]:
     """Period over period, honestly.
 
     No previous activity is not "+100%" — a percentage of zero means nothing.
-    It reports as a flat 0% rather than an invented surge.
+    It reports as no delta at all, and the card shows no arrow.
     """
     if not previous:
-        return "0%", "up" if current else "down"
+        return None, "up" if current else "down"
     change = (current - previous) / previous * 100
     return f"{abs(change):.1f}%", ("up" if change >= 0 else "down")
 
@@ -401,8 +405,10 @@ async def analytics_summary(
     _: dict = Depends(get_current_user),
 ):
     days, _bucket = _range(range)
-    stats, realtime = await asyncio.gather(_stat_cards(days), _realtime())
-    return SummaryResponse(stats=stats, realtime=RealtimeResponse(**realtime))
+    stats, realtime, members_total = await asyncio.gather(
+        _stat_cards(days), _realtime(), get_database()["members"].count_documents({}),
+    )
+    return SummaryResponse(stats=stats, realtime=RealtimeResponse(**realtime), members_total=members_total)
 
 
 @router.get("/stats", response_model=SummaryResponse, summary="Alias for the stat cards block",
@@ -413,8 +419,10 @@ async def analytics_stats(
     _: dict = Depends(get_current_user),
 ):
     days, _bucket = _range(range)
-    stats, realtime = await asyncio.gather(_stat_cards(days), _realtime())
-    return SummaryResponse(stats=stats, realtime=RealtimeResponse(**realtime))
+    stats, realtime, members_total = await asyncio.gather(
+        _stat_cards(days), _realtime(), get_database()["members"].count_documents({}),
+    )
+    return SummaryResponse(stats=stats, realtime=RealtimeResponse(**realtime), members_total=members_total)
 
 
 @router.get("/realtime", response_model=RealtimeResponse, summary="Members active in the last 7 days",
@@ -480,3 +488,63 @@ async def analytics_top_pages(
 )
 async def analytics_referrers(_: dict = Depends(get_current_user)):
     return await _by_referral()
+
+
+@router.get("/export", summary="Everything on the screen, as CSV",
+    dependencies=[Depends(require_permission("analytics.export"))],
+)
+async def analytics_export(
+    request: Request,
+    range: str = Query("Last 30 Days"),
+    period: str = Query("This Month"),
+    me: dict = Depends(get_current_user),
+):
+    """
+    The same numbers the screen shows, in one file, so what leaves the platform
+    is what was on the platform. Built on the server and recorded, because a
+    download of member figures is an action somebody should be able to trace.
+    """
+    r_days, _ = _range(range)
+    p_days, p_bucket = _period(period)
+    stats, realtime, traffic, segments, sources, engagement, top, referrers = await asyncio.gather(
+        _stat_cards(r_days), _realtime(), _traffic(p_days, p_bucket), _by_segment(),
+        _by_service_type(r_days), _engagement(p_days, p_bucket), _top_services(r_days), _by_referral(),
+    )
+    buf = io.StringIO()
+    w = csv.writer(buf)
+    w.writerow(["WomSakhi analytics", f"range: {range}", f"trend period: {period}", f"generated: {_now().isoformat(timespec='seconds')}"])
+    w.writerow([])
+    w.writerow(["Stat", "Value", "Change vs previous period", "Direction"])
+    for c in stats:
+        w.writerow([c["label"], c["value"], c["delta"] or "no comparison", c["delta_dir"]])
+    w.writerow(["Active members (last 7 days)", realtime["active"], realtime["change"], realtime["change_dir"]])
+    w.writerow([])
+    w.writerow(["New members", "Period", "Count"])
+    for t in traffic:
+        w.writerow(["", t["label"], t["value"]])
+    w.writerow([])
+    w.writerow(["Engagement", "Period", "Sessions", "Members booking"])
+    for e in engagement:
+        w.writerow(["", e["label"], e["sessions"], e["users"]])
+    w.writerow([])
+    w.writerow(["Members by segment", "Segment", "Share %"])
+    for d in segments:
+        w.writerow(["", d["name"], d["value"]])
+    w.writerow([])
+    w.writerow(["Bookings by service type", "Type", "Bookings"])
+    for b in sources:
+        w.writerow(["", b["label"], b["value"]])
+    w.writerow([])
+    w.writerow(["Most-booked services", "Service", "Bookings", "Members", "Cancelled %", "Length"])
+    for p in top:
+        w.writerow(["", p["page"], p["views"], p["unique"], p["bounce"], p["time"]])
+    w.writerow([])
+    w.writerow(["How members found us", "Source", "Members", "Share %"])
+    for r in referrers:
+        w.writerow(["", r["name"], r["visits"], r["pct"]])
+
+    await record(me, "analytics.export", detail=f"Downloaded analytics as CSV ({range}, trends {period})", request=request)
+    return Response(
+        content=buf.getvalue(), media_type="text/csv",
+        headers={"Content-Disposition": "attachment; filename=analytics.csv"},
+    )

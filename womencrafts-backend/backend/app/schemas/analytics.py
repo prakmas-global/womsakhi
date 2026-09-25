@@ -1,5 +1,7 @@
 from typing import Literal
 
+from typing import Optional
+
 from pydantic import BaseModel
 
 Direction = Literal["up", "down"]
@@ -14,7 +16,7 @@ class StatCard(BaseModel):
     value: str
     icon: str
     tone: str
-    delta: str
+    delta: Optional[str] = None  # None when the previous period had nothing to compare
     delta_dir: Direction
 
 
@@ -30,6 +32,7 @@ class SummaryResponse(BaseModel):
     """5 stat cards + the realtime block (also served at /analytics/stats)."""
 
     stats: list[StatCard]
+    members_total: int = 0  # every member in the directory, for the by-segment donut centre
     realtime: RealtimeResponse
 
 
