@@ -24,6 +24,7 @@ the platform's own rows:
 Reads need `ai.view`; task writes `ai.edit`. Task writes are recorded.
 """
 
+import asyncio
 import re
 from datetime import datetime, timedelta, timezone
 from typing import Optional
@@ -84,16 +85,19 @@ async def _waiting_threads() -> int:
 
 async def _priorities() -> list[dict]:
     db = _db()
-    counts = {
-        "verification": await db["users"].count_documents({"verification_status": "in_review"}),
-        "safety": await db["safety_reports"].count_documents({"status": {"$in": ["open", "reviewing"]}}),
-        "messages": await _waiting_threads(),
-        "feedback": await db["feedback"].count_documents({"status": {"$in": ["Open", "In Review"]}}),
-        "support": await db["support_requests"].count_documents({"status": "pending"}),
-        "applications": await db["applications"].count_documents({"status": {"$in": ["applied", "shortlisted"]}}),
-        "stories": await db["stories"].count_documents({"status": "pending"}),
-        "appointments": await db["appointments"].count_documents({"date": {"$not": {"$regex": r"\d{4}"}}}),
-    }
+    # Eight independent questions, asked at once rather than one after another.
+    keys = ["verification", "safety", "messages", "feedback", "support", "applications", "stories", "appointments"]
+    values = await asyncio.gather(
+        db["users"].count_documents({"verification_status": "in_review"}),
+        db["safety_reports"].count_documents({"status": {"$in": ["open", "reviewing"]}}),
+        _waiting_threads(),
+        db["feedback"].count_documents({"status": {"$in": ["Open", "In Review"]}}),
+        db["support_requests"].count_documents({"status": "pending"}),
+        db["applications"].count_documents({"status": {"$in": ["applied", "shortlisted"]}}),
+        db["stories"].count_documents({"status": "pending"}),
+        db["appointments"].count_documents({"date": {"$not": {"$regex": r"\d{4}"}}}),
+    )
+    counts = dict(zip(keys, values))
     spec = [
         ("verification", "UserCheck", "violet", "ID document{s} waiting for review", "/dashboard/users/verification"),
         ("safety", "ShieldAlert", "rose", "safety report{s} open", "/dashboard/safety/reports"),
@@ -120,25 +124,20 @@ async def _health() -> dict:
     now = _now()
     month_ago = now - timedelta(days=30)
 
-    # 1. Members whose identity is verified.
-    members = await db["users"].count_documents({"role": "Member"})
-    verified = await db["users"].count_documents({"role": "Member", "verification_status": "active"})
-
-    # 2. Bookings kept (not cancelled) in the last 30 days.
-    recent = [b async for b in db["bookings"].find({"created_at": {"$gte": month_ago}}, {"status": 1})]
+    # Five indicators, nine independent reads, one round of waiting.
+    (members, verified, recent, fb, waiting, thread_ids, programmes, visible) = await asyncio.gather(
+        db["users"].count_documents({"role": "Member"}),                                          # 1. verified share
+        db["users"].count_documents({"role": "Member", "verification_status": "active"}),
+        db["bookings"].find({"created_at": {"$gte": month_ago}}, {"status": 1}).to_list(None),     # 2. bookings kept
+        db["feedback"].find({}, {"sentiment": 1}).to_list(None),                                  # 3. positive feedback
+        _waiting_threads(),                                                                       # 4. members answered
+        db["member_messages"].distinct("user_id"),
+        db["programs"].count_documents({"status": {"$nin": ["Archived", "Completed"]}}),          # 5. programmes visible
+        db["programs"].count_documents({"status": {"$in": ["Ongoing", "Upcoming", "Active", "Published", "Running"]}}),
+    )
     kept = sum(1 for b in recent if b.get("status") != "cancelled")
-
-    # 3. Feedback that was positive, all time.
-    fb = [f async for f in db["feedback"].find({}, {"sentiment": 1})]
     positive = sum(1 for f in fb if f.get("sentiment") == "Positive")
-
-    # 4. Members written to who have been answered.
-    waiting = await _waiting_threads()
-    threads = len(await db["member_messages"].distinct("user_id"))
-
-    # 5. Programmes members can actually see (running/upcoming that are visible).
-    programmes = await db["programs"].count_documents({"status": {"$nin": ["Archived", "Completed"]}})
-    visible = await db["programs"].count_documents({"status": {"$in": ["Ongoing", "Upcoming", "Active", "Published", "Running"]}})
+    threads = len(thread_ids)
 
     indicators = [
         {"key": "verified", "icon": "UserCheck", "tone": "violet", "label": "Members verified",
@@ -228,11 +227,12 @@ async def _insights() -> list[dict]:
     dependencies=[Depends(require_permission("ai.view"))],
 )
 async def overview():
+    priorities, h, insights = await asyncio.gather(_priorities(), _health(), _insights())
     return OverviewResponse(
         generated_at=_now().isoformat(), note=NOTE,
-        priorities=[Priority(**p) for p in await _priorities()],
-        health=HealthResponse(**{**(h := await _health()), "indicators": [HealthIndicator(**i) for i in h["indicators"]]}),
-        insights=[Insight(**i) for i in await _insights()],
+        priorities=[Priority(**p) for p in priorities],
+        health=HealthResponse(**{**h, "indicators": [HealthIndicator(**i) for i in h["indicators"]]}),
+        insights=[Insight(**i) for i in insights],
     )
 
 
