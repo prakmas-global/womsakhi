@@ -31,7 +31,7 @@ export default function AdminAppearancePage() {
   return (
     <AdminPage
       title="Appearance"
-      subtitle="Your colours and brightness. Saved to your account, so the dashboard looks the same wherever you sign in."
+      subtitle="Your colours are saved to your account and follow you to any device. Light or dark is remembered on this device only."
     >
 
       <ResizableColumns id="settings-appearance" defaultSize={0.74} className="gap-4">
@@ -69,7 +69,7 @@ export default function AdminAppearancePage() {
               </span>
               <div>
                 <h2 className="font-display text-base font-bold text-ink">Light or dark</h2>
-                <p className="text-xs text-ink-subtle">Colours adjust to match</p>
+                <p className="text-xs text-ink-subtle">Remembered on this device; colours adjust to match</p>
               </div>
             </div>
             <div className="grid grid-cols-3 gap-2">

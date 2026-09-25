@@ -9,13 +9,15 @@ routers:
     /system-logs   → audit log list, stats and detail
 """
 
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Optional
 
-from fastapi import APIRouter, Depends, HTTPException, Query, status
+from fastapi import APIRouter, Depends, HTTPException, Query, Request, status
 
 from app.core import mongosafe
+from app.core.audit import record
 from app.core.deps import get_current_user
+from app.core.security import token_version_of
 from app.core.serializers import page_meta, to_object_id
 from app.db.mongodb import get_database
 from app.models.session import SessionModel, SystemLogModel
@@ -60,14 +62,36 @@ def _log_when(time_label: str) -> str:
 
 # ==============================================================================
 # Sessions
+#
+# Every query below is scoped to the caller. The collection also holds seeded
+# demonstration rows with no `user_id` at all; they are deliberately left in
+# the database and simply never match, so no screen shows them as hers.
+#
+# Sign-in does not write a row here (see `routes/auth.py::signin`), so for a
+# real account these lists are honestly empty. The Sessions screen says so and
+# offers the control that IS real: ending every session by bumping the
+# account's token version — `staff_account.py::sign_out_everywhere`.
 # ==============================================================================
+
+def _mine(me: dict) -> dict:
+    return {"user_id": str(me["_id"])}
+
+
+def _when(value) -> str:
+    """An absolute label for a stat card, from a real datetime only."""
+    if isinstance(value, datetime):
+        if value.tzinfo is None:
+            value = value.replace(tzinfo=timezone.utc)
+        return value.strftime("%b %d, %Y %I:%M %p UTC")
+    return ""
+
 
 @sessions_router.get("", response_model=SessionListResponse, summary="List active sessions")
 async def list_active_sessions(
     q: Optional[str] = Query(None, description="Search device, details, location or IP"),
-    _: dict = Depends(get_current_user),
+    me: dict = Depends(get_current_user),
 ):
-    query: dict = {"status": "Active"}
+    query: dict = {"status": "Active", **_mine(me)}
     if q and q.strip():
         query.update(_search_clause(q, ["device", "details", "location", "ip"]))
     # Current session first, then by creation order.
@@ -77,52 +101,54 @@ async def list_active_sessions(
 
 
 @sessions_router.get("/stats", response_model=SessionStatsResponse, summary="Session stat cards")
-async def session_stats(_: dict = Depends(get_current_user)):
-    """The four stat cards on top of the Sessions screen. Counts are derived
-    live; the current session supplies the "Last Active" labels."""
-    active_count = await _sessions().count_documents({"status": "Active"})
-    trusted_count = await _sessions().count_documents(
-        {"status": "Active", "location_note": "Trusted Device"}
-    )
-    current = await _sessions().find_one({"status": "Active", "is_current": True})
-    last_active = (current or {}).get("last_active") or "2 mins ago"
-    last_active_at = (current or {}).get("last_active_at") or "May 20, 2024 10:30 AM"
+async def session_stats(me: dict = Depends(get_current_user)):
+    """
+    The stat cards on top of the Sessions screen, from the caller's account.
+
+    This used to fall back to "2 mins ago" and a date in 2024 whenever there
+    was no current row — which was always, because nothing writes one. Every
+    value here now comes from a real field, and a field that is empty is
+    shown as empty.
+    """
+    recorded = await _sessions().count_documents({"status": "Active", **_mine(me)})
+    last_login = me.get("last_login_at")
+    generation = token_version_of(me)
+    ended_at = me.get("sessions_ended_at")
 
     return SessionStatsResponse(
         stat_cards=[
             {
-                "label": "Active Sessions",
-                "value": str(active_count),
+                "label": "Recorded devices",
+                "value": str(recorded),
                 "icon": "MonitorSmartphone",
                 "tone": "violet",
-                "note": "Currently signed in",
-                "note_tone": "ok",
+                "note": "Sign-in does not record the device yet" if recorded == 0 else "Devices with a recorded session",
+                "note_tone": "subtle",
             },
             {
-                "label": "Trusted Devices",
-                "value": str(trusted_count),
-                "icon": "ShieldCheck",
-                "tone": "emerald",
-                "note": "Your trusted devices",
-                "note_tone": "ok",
-            },
-            {
-                "label": "Last Active",
-                "value": last_active,
+                "label": "Last signed in",
+                "value": _when(last_login) or "Not recorded",
                 "icon": "Clock",
                 "tone": "amber",
-                "note": last_active_at,
+                "note": "Your most recent successful sign-in" if last_login else "No sign-in has been recorded on this account",
                 "note_tone": "subtle",
                 "value_class": "text-lg",
             },
             {
-                "label": "Security Status",
-                "value": "Secure",
-                "icon": "Lock",
+                "label": "Sessions ended everywhere",
+                "value": str(generation),
+                "icon": "ShieldCheck",
                 "tone": "emerald",
-                "note": "All sessions are secure",
+                "note": f"Last on {_when(ended_at)}" if ended_at else "Never, on this account",
                 "note_tone": "subtle",
-                "value_class": "text-lg",
+            },
+            {
+                "label": "Failed sign-in attempts",
+                "value": str(int(me.get("failed_logins") or 0)),
+                "icon": "Lock",
+                "tone": "violet",
+                "note": "Since your last successful sign-in",
+                "note_tone": "warn" if int(me.get("failed_logins") or 0) > 0 else "ok",
             },
         ]
     )
@@ -138,10 +164,10 @@ async def session_stats(_: dict = Depends(get_current_user)):
 @sessions_router.get("/history", response_model=SessionListResponse, summary="Session history")
 async def session_history(
     q: Optional[str] = Query(None, description="Search device, details, location or IP"),
-    _: dict = Depends(get_current_user),
+    me: dict = Depends(get_current_user),
 ):
     """Past (signed-out) sessions shown in the Session History table."""
-    query: dict = {"status": "Signed Out"}
+    query: dict = {"status": "Signed Out", **_mine(me)}
     if q and q.strip():
         query.update(_search_clause(q, ["device", "details", "location", "ip"]))
     cursor = _sessions().find(query).sort("_id", 1)
@@ -149,24 +175,38 @@ async def session_history(
     return SessionListResponse(items=items, total=len(items))
 
 
-@sessions_router.post("/revoke-others", response_model=RevokeResult, summary="Sign out all other sessions")
-async def revoke_other_sessions(_: dict = Depends(get_current_user)):
-    """Sign out every active session except the current one (Revoke All Other
-    Sessions / Secure My Account)."""
-    result = await _sessions().delete_many({"status": "Active", "is_current": False})
+@sessions_router.post("/revoke-others", response_model=RevokeResult, summary="Sign out all other recorded sessions")
+async def revoke_other_sessions(request: Request, me: dict = Depends(get_current_user)):
+    """
+    Remove every recorded session of the caller's except the current one.
+
+    Scoped to her own rows: this used to `delete_many` across the whole
+    collection, so anyone signed in could wipe everybody's sessions. It only
+    removes RECORDS — a stateless token keeps working until it expires — so
+    the real control is `POST /staff/me/sign-out-everywhere`, which the
+    screen uses. This endpoint stays for any client that still calls it.
+    """
+    result = await _sessions().delete_many({"status": "Active", "is_current": False, **_mine(me)})
     n = result.deleted_count
+    if n:
+        await record(me, "settings.sessions_revoke", target=str(me["_id"]),
+                     detail=f"Removed {n} recorded session(s)", request=request)
     return RevokeResult(revoked=n, message=f"Signed out {n} other session{'' if n == 1 else 's'}")
 
 
 @sessions_router.delete("/{session_id}", response_model=RevokeResult, summary="Sign out a single session")
-async def revoke_session(session_id: str, _: dict = Depends(get_current_user)):
+async def revoke_session(session_id: str, request: Request, me: dict = Depends(get_current_user)):
     oid = to_object_id(session_id)
-    doc = await _sessions().find_one({"_id": oid})
+    # Hers or nothing: a row that is not hers answers 404, not 403, so the
+    # id space of other people's sessions is not confirmed either way.
+    doc = await _sessions().find_one({"_id": oid, **_mine(me)})
     if not doc:
         raise HTTPException(status.HTTP_404_NOT_FOUND, "Session not found")
     if doc.get("is_current"):
         raise HTTPException(status.HTTP_400_BAD_REQUEST, "You cannot sign out your current session")
-    await _sessions().delete_one({"_id": oid})
+    await _sessions().delete_one({"_id": oid, **_mine(me)})
+    await record(me, "settings.sessions_revoke", target=str(me["_id"]),
+                 detail=f"Removed recorded session {doc.get('device', '')}".strip(), request=request)
     return RevokeResult(revoked=1, message="Session signed out")
 
 
@@ -321,27 +361,16 @@ _SEED_LOGS = [
 
 
 async def seed() -> None:
-    """Seed the sessions and system_logs collections, each only when empty."""
-    sessions = _sessions()
-    if await sessions.count_documents({}) == 0:
-        docs = [
-            SessionModel.create_document(
-                device_type=dt, device=dev, details=det, location=loc, ip=ip,
-                status="Active", is_current=cur, tag=tag, location_note=note,
-                last_active=la, last_active_at=laa,
-            )
-            for (dt, dev, det, loc, ip, cur, tag, note, la, laa) in _SEED_ACTIVE
-        ] + [
-            SessionModel.create_document(
-                device_type=dt, device=dev, details=det, location=loc, ip=ip,
-                status="Signed Out", is_current=False,
-                login_time=login, logout_time=logout,
-            )
-            for (dt, dev, det, loc, ip, login, logout) in _SEED_HISTORY
-        ]
-        await sessions.insert_many(docs)
-        print(f"🌱 Seeded {len(docs)} sessions")
+    """
+    Seed the system_logs collection when empty.
 
+    Sessions are NOT seeded any more. The seeded rows belonged to nobody (no
+    `user_id`) and were shown to whoever was signed in as her own devices —
+    a fixture rendered as data. Rows already in the database are left where
+    they are; every session query is now scoped to the caller, so they never
+    surface. `_SEED_ACTIVE` / `_SEED_HISTORY` are kept only as documentation
+    of the old shape.
+    """
     logs = _logs()
     if await logs.count_documents({}) == 0:
         docs = [
