@@ -46,6 +46,7 @@ import RouteLoading from "@/components/common/RouteLoading";
 import { apiCreateMember, apiUpdateMember, apiResetMemberPassword, type ApiMember } from "@/lib/api";
 import {
   apiApproveMember,
+  apiBulkMemberRegion,
   apiBulkMemberStatus,
   apiDeleteMemberWithReason,
   apiExportMembers,
@@ -65,6 +66,7 @@ import {
 } from "@/lib/members-admin-api";
 import { memberError } from "@/lib/member-api";
 import MemberThemeControl from "@/components/admin/MemberThemeControl";
+import { apiRegions, type AdminRegion } from "@/lib/regions-admin-api";
 
 /**
  * Members — everyone in the directory, and everything an admin does to one.
@@ -205,8 +207,8 @@ function MembersScreen() {
   const [pages, setPages] = useState(1);
   const [page, setPage] = useState(1);
   const [listLoading, setListLoading] = useState(true);
-  const [search, setSearch] = useState("");
-  const [q, setQ] = useState("");
+  const [search, setSearch] = useState(params.get("q") ?? "");
+  const [q, setQ] = useState(params.get("q") ?? "");
   const [roleFilter, setRoleFilter] = useState(params.get("role") ?? "");
   const [statusFilter, setStatusFilter] = useState(params.get("status") ?? "");
   const [segmentFilter, setSegmentFilter] = useState(params.get("segment") ?? "");
@@ -230,6 +232,10 @@ function MembersScreen() {
   const [reason, setReason] = useState("");
   const [busy, setBusy] = useState(false);
   const [exporting, setExporting] = useState(false);
+  const [regions, setRegions] = useState<AdminRegion[]>([]);
+  const [regionOpen, setRegionOpen] = useState(false);
+  const [bulkRegion, setBulkRegion] = useState("");
+  const [bulkRegionReason, setBulkRegionReason] = useState("");
 
   // Typing pauses for a moment before the server is asked; a new question
   // starts on page 1.
@@ -282,6 +288,9 @@ function MembersScreen() {
   useEffect(() => { void (async () => { await loadList(); })(); }, [loadList]);
   useEffect(() => { void (async () => { await loadFigures(); })(); }, [loadFigures]);
   useEffect(() => { void (async () => { await loadProfile(selectedId); })(); }, [selectedId, loadProfile]);
+  useEffect(() => {
+    void apiRegions().then(setRegions).catch(() => setRegions([]));
+  }, []);
 
   /** After any write: the list, the figures, and the open profile. */
   const refreshAll = useCallback(async () => {
@@ -450,6 +459,27 @@ function MembersScreen() {
     }
   }
 
+  async function assignSelectedRegion() {
+    if (!bulkRegion) {
+      toast.error("Choose a region");
+      return;
+    }
+    setBusy(true);
+    try {
+      const res = await apiBulkMemberRegion(selected, bulkRegion, bulkRegionReason);
+      toast.success(res.message);
+      setRegionOpen(false);
+      setSelected([]);
+      setBulkRegion("");
+      setBulkRegionReason("");
+      await refreshAll();
+    } catch (err) {
+      toast.error("Could not assign the region", { description: memberError(err) });
+    } finally {
+      setBusy(false);
+    }
+  }
+
   async function handleAvatarChange(id: string, url: string | null) {
     try {
       await apiUpdateMember(id, { avatar: url ?? "" });
@@ -612,6 +642,9 @@ function MembersScreen() {
                 </button>
                 <button className="btn btn-sm btn-outline" onClick={() => askFor("bulk-restore", undefined, selected)}>
                   <RotateCcw className="h-3.5 w-3.5" /> Restore
+                </button>
+                <button className="btn btn-sm btn-outline" onClick={() => { setBulkRegion(""); setBulkRegionReason(""); setRegionOpen(true); }}>
+                  <MapPin className="h-3.5 w-3.5" /> Assign region
                 </button>
                 <button className="btn btn-sm btn-outline" disabled={exporting} onClick={() => void exportCsv(selected)}>
                   <Download className="h-3.5 w-3.5" /> Export
@@ -813,6 +846,23 @@ function MembersScreen() {
                         {profile.account.rejection_reason && (
                           <p className="rounded-lg bg-status-danger-bg px-2 py-1.5 text-status-danger-ink">
                             Rejected: {profile.account.rejection_reason}
+                          </p>
+                        )}
+                        {profile.account.needs.length > 0 && (
+                          <div className="flex items-start justify-between gap-2">
+                            <span className="shrink-0 text-ink-subtle">Asked for</span>
+                            <span className="flex flex-wrap justify-end gap-1">
+                              {profile.account.needs.map((n) => (
+                                <Badge key={n} tone="brand">{n}</Badge>
+                              ))}
+                            </span>
+                          </div>
+                        )}
+                        {profile.account.deletion_requested_at && (
+                          <p className="rounded-lg bg-status-danger-bg px-2 py-1.5 text-status-danger-ink">
+                            Asked to delete her account on {shortDate(profile.account.deletion_requested_at)}
+                            {profile.account.deletion_reason ? ` — “${profile.account.deletion_reason}”` : ""}.{" "}
+                            <Link href="/dashboard/users/deletions" className="font-semibold underline">Open the queue</Link>
                           </p>
                         )}
                         {profile.account.verification_status === "in_review" && (
@@ -1031,8 +1081,16 @@ function MembersScreen() {
                     onChange={(e) => setForm((f) => ({ ...f, status: e.target.value as Status }))}
                     options={[{ value: "Active", label: "Active" }, { value: "Pending", label: "Pending review" }]} />
           )}
-          <Input label="Location" icon={MapPin} value={form.location}
-                 onChange={(e) => setForm((f) => ({ ...f, location: e.target.value }))} placeholder="City, State" />
+          <Select label="Region" icon={MapPin} value={form.location}
+                  onChange={(e) => setForm((f) => ({ ...f, location: e.target.value }))}
+                  placeholder={regions.length ? "Choose a region" : "No active regions available"}
+                  options={[
+                    { value: "", label: "Not assigned" },
+                    ...regions.filter((r) => r.status === "Active" || r.name === form.location)
+                      .map((r) => ({ value: r.name, label: `${r.name} · ${r.member_count} members` })),
+                    ...(form.location && !regions.some((r) => r.name === form.location)
+                      ? [{ value: form.location, label: `${form.location} · legacy value` }] : []),
+                  ]} />
           <Select label="Segment" value={form.segment}
                   onChange={(e) => setForm((f) => ({ ...f, segment: e.target.value as Segment | "" }))}
                   options={[{ value: "", label: "Not set" }, "Entrepreneur", "Student", "Artisan", "Job Seeker", "Support Seeker"]} />
@@ -1043,6 +1101,41 @@ function MembersScreen() {
                  onChange={(e) => setForm((f) => ({ ...f, dob: e.target.value }))} placeholder="e.g. 12 Mar 1990" />
           <Input label="Referral code" value={form.referral}
                  onChange={(e) => setForm((f) => ({ ...f, referral: e.target.value }))} placeholder="Optional" />
+        </div>
+      </Modal>
+
+      <Modal
+        open={regionOpen}
+        onClose={() => setRegionOpen(false)}
+        title={`Assign ${selected.length} member${selected.length === 1 ? "" : "s"} to a region`}
+        description="The selected directory records move together. Existing history stays unchanged, and each assignment is written to the audit log."
+        icon={MapPin}
+        iconTone="brand"
+        footer={<>
+          <button className="btn btn-outline" onClick={() => setRegionOpen(false)}>Cancel</button>
+          <button className="btn btn-primary" disabled={busy || !bulkRegion} onClick={() => void assignSelectedRegion()}>
+            <MapPin className="h-4 w-4" /> {busy ? "Assigning…" : "Assign region"}
+          </button>
+        </>}
+      >
+        <div className="space-y-4">
+          <Select
+            label="Region"
+            value={bulkRegion}
+            onChange={(e) => setBulkRegion(e.target.value)}
+            placeholder="Search and choose an active region"
+            options={regions.filter((r) => r.status === "Active").map((r) => ({
+              value: r.name,
+              label: `${r.name} · ${r.member_count} members · ${r.admin_count} admins`,
+            }))}
+          />
+          <Textarea
+            label="Reason or assignment note (optional)"
+            rows={3}
+            value={bulkRegionReason}
+            onChange={(e) => setBulkRegionReason(e.target.value)}
+            placeholder="For example: transferred to the Pune regional team"
+          />
         </div>
       </Modal>
 

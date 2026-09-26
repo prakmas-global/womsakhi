@@ -149,6 +149,7 @@ export default function DashboardPage() {
   const [refreshing, setRefreshing] = useState(false);
   const [exporting, setExporting] = useState(false);
   const [error, setError] = useState("");
+  const [days, setDays] = useState<7 | 30 | 90>(30);
   // Whether this account may download the snapshot. Super Admin holds every
   // permission; anyone else is asked, so the button is not offered to someone
   // the server would refuse.
@@ -161,7 +162,7 @@ export default function DashboardPage() {
   // button share it; only the button shows its own spinner.
   const load = useCallback(async () => {
     try {
-      const data = await apiDashboardOverview();
+      const data = await apiDashboardOverview(days);
       setOverview(data);
       setError("");
       return true;
@@ -171,7 +172,7 @@ export default function DashboardPage() {
       toast.error("Could not load the dashboard", { description: msg });
       return false;
     }
-  }, [toast]);
+  }, [days, toast]);
 
   useEffect(() => {
     let alive = true;
@@ -211,7 +212,7 @@ export default function DashboardPage() {
   const exportCsv = useCallback(async () => {
     setExporting(true);
     try {
-      const blob = await apiDashboardExportCsv();
+      const blob = await apiDashboardExportCsv(days);
       const url = URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = url;
@@ -228,7 +229,7 @@ export default function DashboardPage() {
     } finally {
       setExporting(false);
     }
-  }, [toast]);
+  }, [days, toast]);
 
   const updatedAt = overview
     ? new Date(overview.generated_at).toLocaleTimeString("en-IN", {
@@ -255,7 +256,16 @@ export default function DashboardPage() {
             </p>
           </div>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
+          <div className="flex rounded-lg border border-line bg-surface p-1" role="group" aria-label="Dashboard time range">
+            {([7, 30, 90] as const).map((value) => (
+              <button key={value} type="button" aria-pressed={days === value}
+                className={`rounded-md px-3 py-1.5 text-xs font-semibold ${days === value ? "bg-brand-tint text-brand-ink" : "text-ink-subtle hover:text-ink"}`}
+                onClick={() => setDays(value)} disabled={loading || refreshing}>
+                {value} days
+              </button>
+            ))}
+          </div>
           <button
             className="btn btn-outline"
             onClick={() => void refresh()}

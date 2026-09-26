@@ -20,8 +20,8 @@ import { useTranslated } from "@/i18n/data";
  * the only things worth a request are the two numbers that change while she is
  * looking at the app: her unread count and how complete her profile is.
  *
- * The mock stays as the shape and as the fallback, so a screen rendered before
- * the session resolves shows a plausible person rather than "undefined".
+ * Before the session resolves the shell uses neutral copy and zero counts. It
+ * never borrows another woman's name, photograph, or activity numbers.
  */
 export interface Me {
   first: string;
@@ -37,8 +37,6 @@ export function useMe(): Me {
   const ME = useTranslated(RAW_ME);
   const { user } = useAuth();
 
-  // Live where the session has it, the fixture where it does not — never a
-  // blank, because a greeting with a hole in it is worse than a generic one.
   const name = (user?.full_name || "").trim();
   // One request for the whole shell when it is available — see ShellProvider.
   // These two calls are what it replaces; they stay as the fallback for a
@@ -52,25 +50,25 @@ export function useMe(): Me {
       // requests the batch is about to make unnecessary. Without this the
       // fallback raced the batch and both went out.
       if (shell.status === "loading") {
-        return { unread: ME.unread, profilePct: ME.profilePct };
+        return { unread: 0, profilePct: 0 };
       }
       if (shell.status === "ready" && shell.data) {
         const u = shell.data.unread;
         return {
-          unread: u ? u.notifications + u.messages : ME.unread,
+          unread: u ? u.notifications + u.messages : 0,
           profilePct:
-            Math.min(100, Math.round(shell.data.progress?.completion_rate ?? 0)) || ME.profilePct,
+            Math.min(100, Math.round(shell.data.progress?.completion_rate ?? 0)),
         };
       }
       const [unread, progress] = await Promise.all([
-        apiUnreadCounts().catch(() => null),
-        apiProgress(s).catch(() => null),
+        apiUnreadCounts(),
+        apiProgress(s),
       ]);
       return {
         // Both, because the bell in the topbar covers both: a woman with two
         // unread messages and no notifications must not see a bell with no
         // number on it.
-        unread: unread ? unread.notifications + unread.messages : ME.unread,
+        unread: unread.notifications + unread.messages,
         // Profile completeness is a real percentage the server already
         // computes for her journey screen; recomputing it here from a
         // different set of fields would give two different answers to the
@@ -78,18 +76,17 @@ export function useMe(): Me {
         // `completion_rate` is ALREADY a percentage — 100 means 100%. The
         // `* 100` turned it into 10000, and "10000% completed" was rendered in
         // the rail of every screen in the app.
-        profilePct: progress ? Math.min(100, Math.round(progress.completion_rate ?? 0)) || ME.profilePct
-                             : ME.profilePct,
+        profilePct: Math.min(100, Math.round(progress.completion_rate ?? 0)),
       };
     }, [shell.status, shell.data]),
-    { unread: ME.unread, profilePct: ME.profilePct },
+    { unread: 0, profilePct: 0 },
   );
 
   return {
-    first: name.split(" ")[0] || ME.first,
-    name: name || ME.name,
+    first: name.split(" ")[0] || "there",
+    name: name || "WomSakhi member",
     tagline: ME.tagline,
-    avatar: user?.avatar || ME.avatar,
+    avatar: user?.avatar || "",
     verified: user?.verification_status === "active",
     profilePct: extra.profilePct,
     unread: extra.unread,

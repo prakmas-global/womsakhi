@@ -55,6 +55,9 @@ DEFAULT_ROLE_MODULES = {
     "Admin": list(ALL_MODULES),
     "Instructor": ["dashboard", "appointments", "programs", "calendar", "messages", "content", "community", "growth"],
     "Supervisor": ["dashboard", "users", "appointments", "calendar", "feedback", "reports", "safety", "community", "growth"],
+    "Regional Admin": ["dashboard", "users", "appointments", "programs", "calendar", "messages", "analytics", "reports", "community", "growth", "safety"],
+    "Category Admin": ["dashboard", "users", "programs", "content", "analytics", "reports", "community", "growth", "learning", "resources"],
+    "Member Manager": ["dashboard", "users", "appointments", "messages", "community", "growth", "safety"],
     # A Member gets NOTHING in the admin app — their experience is the member
     # app, which is gated by `audience`, not by these module keys.
     "Member": [],
@@ -229,6 +232,20 @@ async def ensure_rbac() -> None:
     """
     db = get_database()
     roles = db[RoleModel.collection_name]
+    # These roles express the hierarchy used by staff scopes. They are created
+    # idempotently for existing installations as well as fresh databases.
+    scoped_roles = {
+        "Regional Admin": "Manage members and operations in assigned regions",
+        "Category Admin": "Manage assigned member and content categories",
+        "Member Manager": "Support specifically assigned members and groups",
+    }
+    for name, desc in scoped_roles.items():
+        if not await roles.find_one({"name": name}):
+            doc = RoleModel.create_document(
+                name=name, desc=desc, type="System",
+                modules=DEFAULT_ROLE_MODULES[name],
+            )
+            await roles.insert_one(doc)
     async for role in roles.find({}):
         if not isinstance(role.get("modules"), list):
             mods = DEFAULT_ROLE_MODULES.get(role.get("name", ""), ["dashboard"])

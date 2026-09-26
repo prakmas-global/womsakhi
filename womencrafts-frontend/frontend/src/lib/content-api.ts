@@ -19,6 +19,8 @@ export interface ApiContent {
   publish_at: string | null; // ISO, when status is Scheduled
   icon: string; // lucide icon NAME, mapped back to a component in the UI
   cover: string; // uploaded cover image URL ("" = use the placeholder tile)
+  audience_mode: "everyone" | "regions" | "segments";
+  audience_values: string[];
 }
 
 export interface ContentListResult {
@@ -88,6 +90,8 @@ export interface ContentInput {
   description?: string;
   cover?: string;
   publish_at?: string | null; // ISO; required when status is Scheduled
+  audience_mode?: "everyone" | "regions" | "segments";
+  audience_values?: string[];
 }
 
 export type ContentBulkActionName = "publish" | "draft" | "trash" | "restore" | "delete";
@@ -168,4 +172,8 @@ export interface UploadedFile {
 export async function apiListUploads(params: { kind?: string; q?: string; page?: number; page_size?: number } = {}): Promise<{ items: UploadedFile[]; total: number }> {
   const { data } = await apiClient.get<{ items: UploadedFile[]; total: number }>("/uploads", { params });
   return data;
+}
+
+export async function apiDeleteUpload(id: string): Promise<void> {
+  await apiClient.delete(`/uploads/${id}`);
 }

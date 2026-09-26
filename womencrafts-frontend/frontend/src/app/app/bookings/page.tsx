@@ -130,10 +130,10 @@ export default function BookingsPage() {
                   </span>
                   <div className="min-w-0 flex-1">
                     <div className="flex items-start gap-2">
-                      <h3 className="min-w-0 flex-1 text-sm font-semibold"
+                      <h2 className="min-w-0 flex-1 text-sm font-semibold"
                           style={{ color: gone ? "var(--ux-muted)" : "var(--ux-ink)" }}>
                         {b.what}
-                      </h3>
+                      </h2>
                       <Pill tone={gone ? "neutral" : b.state === "Confirmed" ? "green" : b.state === "Waitlisted" ? "orange" : "neutral"} size="sm">
                         {gone ? "Cancelled" : b.state}
                       </Pill>

@@ -7,34 +7,28 @@ import { invalidateReads } from "./api";
 /**
  * One hook every redesigned screen reads its data through.
  *
- * The redesign was built on mock data by instruction, so that the screens could
- * be judged before the server existed. Wiring them up afterwards has an obvious
- * failure mode: thirty screens each grow their own `useEffect`, their own
- * `loading` boolean and their own idea of what to show when the request fails,
- * and the loading and error states that Phase 3 built as architecture get
- * quietly bypassed one screen at a time.
+ * Fetching stays here so screens share cancellation, refetching, and a single
+ * honest source state instead of each growing its own `useEffect`.
  *
  * So the fetch lives here instead, and it does three things no screen should
  * have to repeat:
  *
- * **It falls back to the mock rather than to nothing.** A module whose endpoint
- * does not exist yet — and a third of them do not — keeps working exactly as it
- * did. `source` says which she is looking at, so nobody has to guess whether a
- * screen is live.
+ * **It never presents fallback data as a successful response.** Callers pass a
+ * safe empty shape so the screen can keep rendering, while `source: "error"`
+ * and `error` preserve the failure for the connection banner and local states.
  *
- * **It never leaves her on a spinner.** The mock is returned immediately and
- * replaced when the real data lands, so the screen is readable from the first
- * frame on a slow connection instead of blank for four seconds.
+ * **It never leaves her on a spinner.** The empty shape is available from the
+ * first frame and replaced when real data lands.
  *
  * **It cancels on unmount.** A woman who taps away mid-request should not have
  * a reply arriving into a component that no longer exists.
  */
-export type Source = "live" | "mock" | "loading";
+export type Source = "live" | "error" | "loading";
 
 export interface Resource<T> {
   data: T;
   source: Source;
-  /** The error, if the request failed. The mock is still in `data`. */
+  /** The error, if the request failed. The caller's safe empty shape is in `data`. */
   error: Error | null;
   refetch: () => void;
 }
@@ -69,12 +63,9 @@ export function useResource<T>(
       })
       .catch((e: unknown) => {
         if (!alive || ctl.signal.aborted) return;
-        // Deliberately not empty. The mock is a worse answer than the real one
-        // and a far better answer than a blank screen — and `source` says which
-        // she is looking at, so nothing pretends the fallback is hers.
         setState({
           data: fallback,
-          source: "mock",
+          source: "error",
           error: e instanceof Error ? e : new Error(String(e)),
         });
       });

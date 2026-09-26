@@ -338,6 +338,8 @@ export interface ResetActivity {
   text: string;
   minutes: number;
   icon: string;
+  saved: boolean;
+  last_action: string;
 }
 
 /**
@@ -358,8 +360,8 @@ export async function apiMoodCheckIn(
   return data;
 }
 
-export async function apiMoodCard(): Promise<SupportCard | null> {
-  const { data } = await apiClient.get<{ card: SupportCard | null }>("/engines/mood/card");
+export async function apiMoodCard(mood?: Mood): Promise<SupportCard | null> {
+  const { data } = await apiClient.get<{ card: SupportCard | null }>("/engines/mood/card", { params: mood ? { mood } : undefined });
   return data.card;
 }
 
@@ -367,6 +369,17 @@ export async function apiMoodCard(): Promise<SupportCard | null> {
 export async function apiResetActivity(): Promise<ResetActivity | null> {
   const { data } = await apiClient.get<{ activity: ResetActivity | null }>("/engines/mood/activity");
   return data.activity;
+}
+
+export async function apiActivityAction(
+  id: string, action: "started" | "completed" | "skipped" | "saved" | "unsaved",
+): Promise<void> {
+  await apiClient.post(`/engines/mood/activity/${id}/action`, { action });
+}
+
+export async function apiSavedActivities(): Promise<ResetActivity[]> {
+  const { data } = await apiClient.get<{ activities: ResetActivity[] }>("/engines/mood/activities/saved");
+  return data.activities;
 }
 
 /** General, a chosen scripture, or none — and `none` switches off nothing else. */

@@ -86,9 +86,9 @@ export default function CoverPage() {
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img loading="lazy" decoding="async" src={MORE_ART.cover} alt=""
                  className="ux-float pointer-events-none absolute -bottom-3 -end-4 h-[92px] w-[92px] object-contain" />
-            <h3 className="relative w-[62%] text-sm font-semibold" style={{ color: "var(--ux-ink)" }}>
+            <h2 className="relative w-[62%] text-sm font-semibold" style={{ color: "var(--ux-ink)" }}>
               ₹20 a year
-            </h3>
+            </h2>
             <p className="relative mt-2 w-[62%] text-xs leading-relaxed" style={{ color: "var(--ux-muted)" }}>{tr("cover.thatIsTheWholePriceOf")}</p>
           </div>
         </div>
@@ -117,9 +117,9 @@ export default function CoverPage() {
               <IconTile icon={c.icon} tint={c.tint} ink={c.ink} size={50} radius={13} />
               <div className="min-w-0 flex-1">
                 <div className="flex items-start gap-2">
-                  <h3 className="min-w-0 flex-1 text-base font-semibold" style={{ color: "var(--ux-ink)" }}>
+                  <h2 className="min-w-0 flex-1 text-base font-semibold" style={{ color: "var(--ux-ink)" }}>
                     {c.name}
-                  </h3>
+                  </h2>
                   <Pill tone={c.kind === "Pension" ? "brand" : c.kind === "Health" ? "blue" : "green"} size="sm">
                     {c.kind}
                   </Pill>

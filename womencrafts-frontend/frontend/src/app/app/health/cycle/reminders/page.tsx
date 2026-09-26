@@ -9,6 +9,7 @@ import { HomeShell } from "@/components/ux/home/HomeShell";
 import { Sheet } from "@/components/ux/kit/sheet";
 import { Column, CycleHeader, DeskTitle, ErrorLine, Icon, SoftHeart, Toggle } from "@/components/ux/cycle/parts";
 import { useCycle } from "@/components/ux/cycle/use-cycle";
+import { CycleDesktopNav } from "@/components/ux/cycle/AdvancedDailyLog";
 import { apiCycleErase, apiCycleExport, apiCycleReminders, apiCycleSettings, type CycleReminders } from "@/lib/cycle-api";
 
 /**
@@ -78,6 +79,7 @@ export default function Reminders() {
       <Column>
         <CycleHeader title="Reminders" />
         <DeskTitle title="Reminders" sub={tr("healthCycleReminders.theyArriveInYourNotificationsOn")} />
+        <div className="hidden lg:block"><CycleDesktopNav active="Reminders" /></div>
 
         <div className="flex items-center gap-3 rounded-[16px] px-4 py-3.5"
              style={{ background: "var(--cy-fertile)", border: "1px solid var(--ux-line)" }}>

@@ -72,6 +72,7 @@ const NAV: NavItem[] = [
       { label: "Staff", href: "/dashboard/staff" },
       { label: "User Roles", href: "/dashboard/users/roles" },
       { label: "User Segments", href: "/dashboard/users/segments" },
+      { label: "Regions", href: "/dashboard/users/regions" },
       { label: "Deletion requests", href: "/dashboard/users/deletions" },
     ],
   },
@@ -106,8 +107,6 @@ const NAV: NavItem[] = [
     module: "messages",
     children: [
       { label: "Inbox", href: "/dashboard/messages" },
-      { label: "Broadcasts", href: "/dashboard/messages/broadcasts" },
-      { label: "Delivery", href: "/dashboard/messages/delivery" },
     ],
   },
   {
@@ -119,9 +118,6 @@ const NAV: NavItem[] = [
       { label: "Circles", href: "/dashboard/circles" },
       { label: "Moderation", href: "/dashboard/circles/moderation" },
       { label: "Success stories", href: "/dashboard/stories" },
-      { label: "Savings pots", href: "/dashboard/circles/pots" },
-      { label: "Swap board", href: "/dashboard/circles/swap" },
-      { label: "Skill exchange", href: "/dashboard/circles/exchange" },
     ],
   },
   {
@@ -135,7 +131,6 @@ const NAV: NavItem[] = [
       { label: "Events", href: "/dashboard/events" },
       { label: "Mentors", href: "/dashboard/mentors" },
       { label: "Mentor requests", href: "/dashboard/mentors/requests" },
-      { label: "Employers", href: "/dashboard/opportunities/employers" },
     ],
   },
   {

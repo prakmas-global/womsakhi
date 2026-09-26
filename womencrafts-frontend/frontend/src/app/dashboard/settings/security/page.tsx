@@ -2,13 +2,15 @@
 
 import { useCallback, useEffect, useId, useState } from "react";
 import {
-  Activity, Check, Eye, EyeOff, KeyRound, Lock, LogOut, ShieldCheck, ShieldOff,
+  Activity, Check, Copy, Eye, EyeOff, KeyRound, Lock, LogOut, ShieldCheck,
 } from "lucide-react";
 import Link from "next/link";
 import { Alert, Badge, Card, ProgressBar, Spinner, useConfirm, useToast } from "@/design-system";
 import { useAuth } from "@/context/AuthContext";
 import {
-  apiChangeMyPassword, apiMyAccount, apiSignOutEverywhere, apiStaffActivity, formatWhen,
+  apiChangeMyPassword, apiDisableTwoFactor, apiEnableTwoFactor, apiMyAccount,
+  apiSignOutEverywhere, apiStaffActivity, apiStartTwoFactor, formatWhen,
+  type TwoFactorSetup,
   type ActivityItem, type MyAccount,
 } from "@/lib/staff-api";
 import { memberError } from "@/lib/member-api";
@@ -25,10 +27,9 @@ import { ResizableColumns } from "@/layout-engine";
  * "Two-factor authentication is enabled" to every account.
  *
  * ── What is here now ────────────────────────────────────────────────────────
- * A password change that also ends every other session; the honest statement
- * that two-factor sign-in is not available yet (there is no authenticator
- * library on the server, so a switch would be a lie); "sign out everywhere",
- * which is real; and the facts the account actually carries — last sign-in,
+ * A password change that also ends every other session; TOTP authenticator
+ * sign-in with one-time recovery codes; "sign out everywhere", which is real;
+ * and the facts the account actually carries — last sign-in,
  * when the password was last changed, failed attempts, lock state — plus the
  * last few audited actions with the address they came from.
  */
@@ -101,6 +102,12 @@ export default function SecuritySettingsPage() {
   const [pwError, setPwError] = useState("");
   const [changing, setChanging] = useState(false);
   const [ending, setEnding] = useState(false);
+  const [twoFactorPassword, setTwoFactorPassword] = useState("");
+  const [twoFactorCode, setTwoFactorCode] = useState("");
+  const [twoFactorSetup, setTwoFactorSetup] = useState<TwoFactorSetup | null>(null);
+  const [recoveryCodes, setRecoveryCodes] = useState<string[]>([]);
+  const [twoFactorBusy, setTwoFactorBusy] = useState(false);
+  const [twoFactorError, setTwoFactorError] = useState("");
 
   const fetchAll = useCallback(async () => {
     const [acc, acts] = await Promise.all([
@@ -189,6 +196,41 @@ export default function SecuritySettingsPage() {
     }
   }, [confirm, signOut, toast]);
 
+  const beginTwoFactor = useCallback(async () => {
+    if (!twoFactorPassword) { setTwoFactorError("Enter your current password first."); return; }
+    setTwoFactorBusy(true); setTwoFactorError("");
+    try {
+      setTwoFactorSetup(await apiStartTwoFactor(twoFactorPassword));
+      setTwoFactorCode("");
+    } catch (e) { setTwoFactorError(memberError(e)); }
+    finally { setTwoFactorBusy(false); }
+  }, [twoFactorPassword]);
+
+  const enableTwoFactor = useCallback(async () => {
+    if (!twoFactorCode.trim()) { setTwoFactorError("Enter the six-digit code shown in your app."); return; }
+    setTwoFactorBusy(true); setTwoFactorError("");
+    try {
+      const result = await apiEnableTwoFactor(twoFactorCode.trim());
+      setRecoveryCodes(result.recovery_codes);
+      setTwoFactorSetup(null); setTwoFactorCode(""); setTwoFactorPassword("");
+      toast.success("Two-factor sign-in is on");
+      await load();
+    } catch (e) { setTwoFactorError(memberError(e)); }
+    finally { setTwoFactorBusy(false); }
+  }, [load, toast, twoFactorCode]);
+
+  const disableTwoFactor = useCallback(async () => {
+    if (!twoFactorPassword || !twoFactorCode.trim()) { setTwoFactorError("Enter your password and a current code."); return; }
+    setTwoFactorBusy(true); setTwoFactorError("");
+    try {
+      await apiDisableTwoFactor(twoFactorPassword, twoFactorCode.trim());
+      setTwoFactorPassword(""); setTwoFactorCode(""); setRecoveryCodes([]);
+      toast.success("Two-factor sign-in is off");
+      await load();
+    } catch (e) { setTwoFactorError(memberError(e)); }
+    finally { setTwoFactorBusy(false); }
+  }, [load, toast, twoFactorCode, twoFactorPassword]);
+
   const lockedUntil = account?.locked_until ? new Date(account.locked_until) : null;
   const isLocked = !!lockedUntil && lockedUntil.getTime() > loadedAt;
 
@@ -250,19 +292,74 @@ export default function SecuritySettingsPage() {
           <Card>
             <div className="flex flex-wrap items-start justify-between gap-3">
               <div className="flex items-start gap-3">
-                <span className="flex h-11 w-11 items-center justify-center rounded-xl bg-surface-inset text-ink-subtle">
-                  <ShieldOff className="h-5 w-5" />
+                <span className="flex h-11 w-11 items-center justify-center rounded-xl bg-violet-tint text-violet-ink">
+                  <ShieldCheck className="h-5 w-5" />
                 </span>
                 <div>
                   <h2 className="font-display text-base font-bold text-ink">Two-factor sign-in</h2>
                   <p className="mt-0.5 text-sm text-ink-subtle">A code from an authenticator app at sign-in.</p>
                 </div>
               </div>
-              <Badge tone="slate">Not available yet</Badge>
+              <Badge tone={account?.two_factor.enabled ? "emerald" : "slate"}>
+                {account?.two_factor.enabled ? "On" : "Off"}
+              </Badge>
             </div>
             <p className="mt-4 text-sm leading-relaxed text-ink-muted">
-              {account?.two_factor.note ?? "Two-factor sign-in is not available yet."}
+              {account?.two_factor.note ?? "Use any TOTP authenticator app."}
             </p>
+
+            {recoveryCodes.length > 0 ? (
+              <div className="mt-4 rounded-xl border border-amber-200 bg-amber-50 p-4">
+                <p className="text-sm font-semibold text-amber-900">Save these recovery codes now</p>
+                <p className="mt-1 text-xs text-amber-800">Each code works once. They will not be shown again.</p>
+                <div className="mt-3 grid grid-cols-2 gap-2 font-mono text-sm text-amber-950">
+                  {recoveryCodes.map((code) => <span key={code}>{code}</span>)}
+                </div>
+                <button className="btn btn-sm btn-outline mt-3" onClick={() => void navigator.clipboard.writeText(recoveryCodes.join("\n"))}>
+                  <Copy className="h-3.5 w-3.5" /> Copy codes
+                </button>
+              </div>
+            ) : account?.two_factor.enabled ? (
+              <div className="mt-4 grid gap-3 sm:grid-cols-2">
+                <PasswordField label="Current password" value={twoFactorPassword} onChange={setTwoFactorPassword} autoComplete="current-password" />
+                <div>
+                  <label className="mb-1.5 block text-sm font-medium text-ink-muted">Current authenticator or recovery code</label>
+                  <input value={twoFactorCode} onChange={(e) => setTwoFactorCode(e.target.value.toUpperCase())} autoComplete="one-time-code"
+                    className="w-full rounded-lg border border-line-strong bg-surface px-3 py-2.5 font-mono text-sm text-ink outline-none focus:border-violet-300" />
+                </div>
+                <div className="sm:col-span-2 flex justify-end">
+                  <button className="btn btn-outline" disabled={twoFactorBusy} onClick={() => void disableTwoFactor()}>
+                    {twoFactorBusy ? "Turning off…" : "Turn off two-factor sign-in"}
+                  </button>
+                </div>
+              </div>
+            ) : twoFactorSetup ? (
+              <div className="mt-4 space-y-3 rounded-xl border border-line bg-surface-2 p-4">
+                <p className="text-sm font-semibold text-ink">1. Add WomSakhi to your authenticator app</p>
+                <p className="text-xs text-ink-subtle">Choose “enter setup key” and use this secret:</p>
+                <div className="flex items-center gap-2 rounded-lg border border-line-strong bg-surface p-3">
+                  <code className="min-w-0 flex-1 break-all text-sm font-semibold tracking-wider text-ink">{twoFactorSetup.secret}</code>
+                  <button aria-label="Copy setup key" className="btn btn-sm btn-ghost" onClick={() => void navigator.clipboard.writeText(twoFactorSetup.secret)}><Copy className="h-4 w-4" /></button>
+                </div>
+                <label className="block text-sm font-medium text-ink-muted">2. Enter the six-digit code it shows</label>
+                <div className="flex flex-wrap gap-2">
+                  <input value={twoFactorCode} onChange={(e) => setTwoFactorCode(e.target.value.replace(/\D/g, "").slice(0, 6))}
+                    inputMode="numeric" autoComplete="one-time-code" placeholder="123456"
+                    className="min-w-40 flex-1 rounded-lg border border-line-strong bg-surface px-3 py-2.5 font-mono text-sm tracking-[0.3em] text-ink outline-none focus:border-violet-300" />
+                  <button className="btn btn-primary" disabled={twoFactorBusy || twoFactorCode.length !== 6} onClick={() => void enableTwoFactor()}>
+                    {twoFactorBusy ? "Checking…" : "Verify and turn on"}
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <div className="mt-4 flex flex-wrap items-end gap-3">
+                <div className="min-w-64 flex-1"><PasswordField label="Current password" value={twoFactorPassword} onChange={setTwoFactorPassword} autoComplete="current-password" /></div>
+                <button className="btn btn-primary" disabled={twoFactorBusy} onClick={() => void beginTwoFactor()}>
+                  {twoFactorBusy ? "Starting…" : "Set up authenticator"}
+                </button>
+              </div>
+            )}
+            {twoFactorError && <p className="mt-3 text-sm font-medium text-status-danger-ink">{twoFactorError}</p>}
           </Card>
 
           {/* sign out everywhere */}
@@ -304,7 +401,7 @@ export default function SecuritySettingsPage() {
                 <Fact label="Sign-in lock" value={isLocked ? `Locked until ${formatWhen(account.locked_until)}` : "None"} tone={isLocked ? "danger" : undefined} />
                 <Fact label="Sessions ended everywhere" value={account.sessions_ended_at ? `${account.token_version} · last ${formatWhen(account.sessions_ended_at)}` : String(account.token_version)} />
                 <Fact label="This session started" value={formatWhen(account.this_session.started_at) || "Unknown"} />
-                <Fact label="Two-factor sign-in" value="Not available" />
+                <Fact label="Two-factor sign-in" value={account.two_factor.enabled ? "Enabled" : "Off"} />
               </div>
             )}
             {!loading && account && !account.password_changed_at && (

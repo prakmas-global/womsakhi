@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
+import Image from "next/image";
 import {
   AlertTriangle, Check, Copy, KeyRound, Mail, MoreHorizontal,
   Search, ShieldAlert, ShieldCheck, SlidersHorizontal, UserCog, UserPlus, Users,
@@ -217,6 +218,25 @@ export default function StaffPage() {
         )}
       </div>
 
+      <div className="relative mb-6 min-h-52 overflow-hidden rounded-2xl border border-line bg-[#fff8f2] sm:min-h-60">
+        <Image
+          src="/images/admin/staff-scope-v1.webp"
+          alt="Illustration of a diverse group of fictional women administrators planning together"
+          fill priority sizes="(max-width: 1024px) 100vw, 1180px"
+          className="object-cover object-center sm:object-right"
+        />
+        <div className="absolute inset-0 bg-gradient-to-r from-[#fffaf5] via-[#fffaf5]/90 to-transparent sm:via-[#fffaf5]/55" />
+        <div className="relative flex min-h-52 max-w-lg flex-col justify-center p-5 sm:min-h-60 sm:p-7">
+          <Badge tone="violet">Secure responsibility</Badge>
+          <h2 className="mt-3 max-w-sm font-display text-xl font-bold text-ink sm:text-2xl">
+            Give each administrator the people and work she is responsible for
+          </h2>
+          <p className="mt-2 max-w-sm text-sm leading-relaxed text-ink-muted">
+            Combine a role with assigned regions, member categories, or selected members. The API applies both on every protected action.
+          </p>
+        </div>
+      </div>
+
       <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
         <StatCard label="Staff accounts" value={String(data.total)} icon={Users} tone="brand"
                   deltaNote="Everyone with dashboard access" />
@@ -344,6 +364,11 @@ export default function StaffPage() {
                             {s.extra_permissions.length > 0 && `+${s.extra_permissions.length} granted`}
                             {s.extra_permissions.length > 0 && s.denied_permissions.length > 0 && " · "}
                             {s.denied_permissions.length > 0 && `−${s.denied_permissions.length} withheld`}
+                          </p>
+                        )}
+                        {s.role !== "Super Admin" && s.scope.mode === "assigned" && (
+                          <p className="mt-0.5 text-2xs font-medium text-violet-700">
+                            Assigned scope · {s.scope.regions.length + s.scope.categories.length + s.scope.member_ids.length} selections
                           </p>
                         )}
                       </td>

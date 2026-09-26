@@ -28,7 +28,7 @@ export function BrandLockup({
     <>
       {/* eslint-disable-next-line @next/next/no-img-element */}
       <img
-        src="/womsakhi-brand.png"
+        src="/womsakhi-brand.webp"
         alt={alt}
         className={`brand-lockup-light ${className}`}
         decoding="async"
@@ -38,7 +38,7 @@ export function BrandLockup({
           accessible name, and announcing the brand twice is noise. */}
       {/* eslint-disable-next-line @next/next/no-img-element */}
       <img
-        src="/womsakhi-brand-dark.png"
+        src="/womsakhi-brand-dark.webp"
         alt=""
         aria-hidden
         className={`brand-lockup-dark ${className}`}

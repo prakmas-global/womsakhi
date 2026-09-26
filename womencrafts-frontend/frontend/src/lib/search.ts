@@ -33,6 +33,7 @@ import {
   LifeBuoy,
   Headset,
   Tag,
+  MapPin,
 } from "lucide-react";
 
 /* ------------------------------------------------------------------
@@ -60,7 +61,14 @@ export type SearchGroup =
   | "Feedback"
   | "AI Command Center"
   | "Notifications"
-  | "Settings";
+  | "Settings"
+  | "Community"
+  | "Growth & Work"
+  | "Safety"
+  | "Market"
+  | "Money"
+  | "Learning"
+  | "Resources";
 
 export type SearchKind = "action" | "page" | "record";
 
@@ -100,6 +108,36 @@ const PAGES: SearchItem[] = [
   { id: "pg-users", title: "All Users", subtitle: "Manage members & staff", group: "Users", kind: "page", href: "/dashboard/users", icon: Users, tone: "emerald", keywords: ["people", "members", "accounts", "directory"] },
   { id: "pg-users-roles", title: "User Roles", subtitle: "Roles & access levels", group: "Users", kind: "page", href: "/dashboard/users/roles", icon: ShieldCheck, tone: "emerald", keywords: ["permissions", "access", "role"] },
   { id: "pg-users-segments", title: "User Segments", subtitle: "Audience segments", group: "Users", kind: "page", href: "/dashboard/users/segments", icon: Layers, tone: "emerald", keywords: ["groups", "cohorts", "audience", "segment"] },
+  { id: "pg-users-regions", title: "Regions", subtitle: "Places and regional assignments", group: "Users", kind: "page", href: "/dashboard/users/regions", icon: MapPin, tone: "emerald", keywords: ["region", "location", "area", "regional admin"] },
+  { id: "pg-staff", title: "Staff", subtitle: "Dashboard accounts and their access", group: "Users", kind: "page", href: "/dashboard/staff", icon: UserCog, tone: "violet", keywords: ["staff", "admin", "invite", "access", "team"] },
+  { id: "pg-circles", title: "Circles", subtitle: "Every circle and its roster", group: "Community", kind: "page", href: "/dashboard/circles", icon: Users, tone: "brand", keywords: ["circle", "community", "group", "roster"] },
+  { id: "pg-circles-moderation", title: "Moderation", subtitle: "Posts and replies across circles", group: "Community", kind: "page", href: "/dashboard/circles/moderation", icon: ShieldCheck, tone: "amber", keywords: ["moderate", "hide", "post", "reply"] },
+  { id: "pg-stories", title: "Success stories", subtitle: "Stories members submitted", group: "Community", kind: "page", href: "/dashboard/stories", icon: Layers, tone: "brand", keywords: ["story", "stories", "approve"] },
+  { id: "pg-opportunities", title: "Opportunities", subtitle: "Jobs and craft orders", group: "Growth & Work", kind: "page", href: "/dashboard/opportunities", icon: Briefcase, tone: "amber", keywords: ["job", "opportunity", "work", "craft order"] },
+  { id: "pg-applications", title: "Applications", subtitle: "Who applied to what", group: "Growth & Work", kind: "page", href: "/dashboard/applications", icon: Briefcase, tone: "amber", keywords: ["application", "applied", "shortlist"] },
+  { id: "pg-events", title: "Events", subtitle: "Events and attendees", group: "Growth & Work", kind: "page", href: "/dashboard/events", icon: Layers, tone: "sky", keywords: ["event", "attendee", "register"] },
+  { id: "pg-mentors", title: "Mentors", subtitle: "The mentor roster", group: "Growth & Work", kind: "page", href: "/dashboard/mentors", icon: UserRound, tone: "violet", keywords: ["mentor", "mentorship"] },
+  { id: "pg-mentor-requests", title: "Mentor requests", subtitle: "Members asking for a mentor", group: "Growth & Work", kind: "page", href: "/dashboard/mentors/requests", icon: UserRound, tone: "violet", keywords: ["mentor request", "match"] },
+  { id: "pg-safety-alerts", title: "Safety alerts", subtitle: "Alerts members raised", group: "Safety", kind: "page", href: "/dashboard/safety", icon: ShieldCheck, tone: "rose", keywords: ["alert", "safety", "emergency", "sos"] },
+  { id: "pg-safety-reports", title: "Safety reports", subtitle: "Reports filed by members", group: "Safety", kind: "page", href: "/dashboard/safety/reports", icon: ShieldCheck, tone: "rose", keywords: ["report", "abuse", "scam", "harassment"] },
+  { id: "pg-support-fund", title: "Support fund", subtitle: "Fee help and scholarships", group: "Safety", kind: "page", href: "/dashboard/support-fund", icon: Layers, tone: "emerald", keywords: ["support", "fund", "scholarship", "fee help"] },
+  { id: "pg-users-deletions", title: "Deletion requests", subtitle: "Members who asked to be deleted", group: "Users", kind: "page", href: "/dashboard/users/deletions", icon: UserRound, tone: "rose", keywords: ["delete", "erase", "gdpr", "account deletion", "deletion"] },
+  { id: "pg-safety-assist", title: "Assist links", subtitle: "Consent one member holds for another", group: "Safety", kind: "page", href: "/dashboard/safety/assist-links", icon: ShieldCheck, tone: "amber", keywords: ["together", "consent", "helper", "assist"] },
+  { id: "pg-market-listings", title: "Market listings", subtitle: "Moderate what members sell", group: "Market", kind: "page", href: "/dashboard/market/listings", icon: Layers, tone: "brand", keywords: ["shop", "listing", "product", "market", "sell"] },
+  { id: "pg-market-orders", title: "Market orders", subtitle: "Orders between members", group: "Market", kind: "page", href: "/dashboard/market/orders", icon: Layers, tone: "brand", keywords: ["order", "shop", "buyer", "seller"] },
+  { id: "pg-market-reviews", title: "Reviews", subtitle: "Moderate shop reviews", group: "Market", kind: "page", href: "/dashboard/market/reviews", icon: Layers, tone: "brand", keywords: ["review", "rating", "shop"] },
+  { id: "pg-market-group-buys", title: "Group buys", subtitle: "Wholesale orders members join", group: "Market", kind: "page", href: "/dashboard/market/group-buys", icon: Layers, tone: "brand", keywords: ["group buy", "wholesale", "bulk"] },
+  { id: "pg-market-sellers", title: "Sellers & licences", subtitle: "Who sells, and FSSAI licences", group: "Market", kind: "page", href: "/dashboard/market/sellers", icon: Layers, tone: "brand", keywords: ["seller", "fssai", "licence", "kitchen", "suspend"] },
+  { id: "pg-money-orders", title: "Payments", subtitle: "Payment orders and refunds", group: "Money", kind: "page", href: "/dashboard/money/orders", icon: Layers, tone: "emerald", keywords: ["payment", "refund", "order", "razorpay"] },
+  { id: "pg-money-withdrawals", title: "Withdrawals", subtitle: "Payouts waiting to be recorded", group: "Money", kind: "page", href: "/dashboard/money/withdrawals", icon: Layers, tone: "emerald", keywords: ["withdraw", "payout", "utr", "bank"] },
+  { id: "pg-money-ledger", title: "Ledger", subtitle: "Every wallet movement", group: "Money", kind: "page", href: "/dashboard/money/ledger", icon: Layers, tone: "emerald", keywords: ["wallet", "ledger", "balance", "adjustment"] },
+  { id: "pg-money-payout-accounts", title: "Payout accounts", subtitle: "Bank and UPI accounts to verify", group: "Money", kind: "page", href: "/dashboard/money/payout-accounts", icon: Layers, tone: "emerald", keywords: ["upi", "bank account", "verify", "payout"] },
+  { id: "pg-money-referrals", title: "Referrals", subtitle: "Invites and rewards", group: "Money", kind: "page", href: "/dashboard/money/referrals", icon: Layers, tone: "emerald", keywords: ["refer", "referral", "invite", "reward"] },
+  { id: "pg-learning-assessments", title: "Assessments", subtitle: "Skill tests and attempts", group: "Learning", kind: "page", href: "/dashboard/learning/assessments", icon: Layers, tone: "violet", keywords: ["assessment", "test", "quiz", "skill", "attempt"] },
+  { id: "pg-learning-digital", title: "Digital steps", subtitle: "Digital-literacy steps", group: "Learning", kind: "page", href: "/dashboard/learning/digital-steps", icon: Layers, tone: "violet", keywords: ["digital", "literacy", "steps"] },
+  { id: "pg-learning-certificates", title: "Certificates", subtitle: "Issue, verify, revoke", group: "Learning", kind: "page", href: "/dashboard/learning/certificates", icon: Layers, tone: "violet", keywords: ["certificate", "verify", "revoke", "code"] },
+  { id: "pg-resources", title: "Resources catalogue", subtitle: "Schemes, cover, health, rights, family, travel", group: "Resources", kind: "page", href: "/dashboard/resources", icon: Layers, tone: "sky", keywords: ["scheme", "reference", "catalogue", "entitlement", "insurance", "rights"] },
+  { id: "pg-resources-wellbeing", title: "Wellbeing cards", subtitle: "Mood support cards to review", group: "Resources", kind: "page", href: "/dashboard/resources/wellbeing", icon: Layers, tone: "sky", keywords: ["wellbeing", "mood", "cards", "review"] },
 
   { id: "pg-appointments", title: "Appointments", subtitle: "Bookings & sessions", group: "Appointments", kind: "page", href: "/dashboard/appointments", icon: CalendarClock, tone: "violet", keywords: ["bookings", "sessions", "schedule", "meetings"] },
   { id: "pg-services", title: "Services & Types", subtitle: "Service catalogue", group: "Services", kind: "page", href: "/dashboard/services", icon: Briefcase, tone: "amber", keywords: ["offerings", "catalogue", "types"] },

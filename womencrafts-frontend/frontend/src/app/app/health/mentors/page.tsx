@@ -114,7 +114,7 @@ export default function HealthMentors() {
                 <span className="mt-0.5 block text-[13px] leading-snug" style={{ color: "var(--ux-muted)" }}>{m.focus || m.bio}</span>
               </span>
               {m.requested ? (
-                <span className="shrink-0 rounded-full px-3 py-1.5 text-[12px] font-semibold" style={{ background: "var(--ux-tint-green)", color: "var(--ux-green)" }}>Asked</span>
+                <span className="shrink-0 rounded-full px-3 py-1.5 text-[12px] font-semibold" style={{ background: "var(--ux-tint-green)", color: "var(--ux-green-ink)" }}>Asked</span>
               ) : (
                 <button type="button" onClick={() => { setAsking(m); setGoal(""); setError(null); }}
                         className="ux-press h-[36px] shrink-0 rounded-[10px] px-4 text-[13px] font-semibold"

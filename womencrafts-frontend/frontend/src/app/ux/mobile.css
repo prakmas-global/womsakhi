@@ -35,6 +35,11 @@
   --ux-pad: 20px;
 }
 
+/* Browser-blue links are unreadable on the dark app canvas. Links with an
+   explicit text utility keep their intended colour; structural links inherit
+   the card or navigation text around them. */
+.ux :where(a:not([class*="text-"])) { color: inherit; }
+
 /* ── The viewport is not 100vh on a phone ────────────────────────────────── */
 
 /*
@@ -1031,93 +1036,19 @@
   state does. Where it is unsupported there is simply no arrow and the fade
   stands, which is the graceful direction.
 */
-@media (hover: hover) and (pointer: fine), (prefers-reduced-transparency: reduce) {
-  @supports selector(::scroll-button(inline-end)) {
-    .ux :is(.ux-noscroll, .ux-scroll-x, .ux-hscroll, .ux-chiprow,
-            [data-earn-chips], [role="tablist"]) {
-      /*
-        The scroll buttons are laid out in the row's PARENT, not inside the
-        row, so `position: absolute` on them resolves against whatever
-        ancestor happens to be positioned — which put them at the edge of the
-        page. Anchoring them to the row fixes that without touching a single
-        parent. `anchor-scope` is what makes it safe with more than one row on
-        a screen: without it every row on the page shares the name `--ux-rail`
-        and the LAST one in the document wins, so /app/earn's three rows piled
-        all six arrows onto the third.
-      */
-      anchor-name: --ux-rail;
-      anchor-scope: --ux-rail;
-      /* The arrow is 44px; the fade widens so the disc sits inside the band
-         that is already dissolving, rather than on top of readable content. */
-      --ux-fade-w: 56px;
-      scroll-behavior: smooth;
-    }
-
-    .ux :is(.ux-noscroll, .ux-scroll-x, .ux-hscroll, .ux-chiprow,
-            [data-earn-chips], [role="tablist"])::scroll-button(inline-start),
-    .ux :is(.ux-noscroll, .ux-scroll-x, .ux-hscroll, .ux-chiprow,
-            [data-earn-chips], [role="tablist"])::scroll-button(inline-end) {
-      position: absolute;
-      position-anchor: --ux-rail;
-      top: anchor(center);
-      translate: 0 -50%;
-      /* The start-side button precedes the row in tree order, and the row
-         paints as if `z-index: 0` because the mask gives it a stacking
-         context — without this the "back" arrow renders underneath the chips. */
-      z-index: 2;
-      width: 44px;
-      height: 44px;
-      display: grid;
-      place-items: center;
-      border-radius: 999px;
-      background: var(--ux-surface);
-      border: 1px solid var(--ux-line);
-      box-shadow: var(--ux-shadow-lift);
-      color: var(--ux-ink-2);
-      /* Not the brand face: `›` is a punctuation glyph and the system stack
-         has it everywhere. */
-      font: 600 20px/1 ui-sans-serif, system-ui, sans-serif;
-      cursor: pointer;
-    }
-
-    .ux :is(.ux-noscroll, .ux-scroll-x, .ux-hscroll, .ux-chiprow,
-            [data-earn-chips], [role="tablist"])::scroll-button(inline-start) {
-      inset-inline-start: anchor(start);
-      /* The string after the slash is the accessible name. */
-      content: "\2039" / "Scroll back";
-    }
-    .ux :is(.ux-noscroll, .ux-scroll-x, .ux-hscroll, .ux-chiprow,
-            [data-earn-chips], [role="tablist"])::scroll-button(inline-end) {
-      inset-inline-end: anchor(end);
-      content: "\203A" / "Scroll forward";
-    }
-
-    /* Nothing further this way: the browser disables it, and a disabled
-       control that still occupies the edge of the row is just clutter. */
-    .ux :is(.ux-noscroll, .ux-scroll-x, .ux-hscroll, .ux-chiprow,
-            [data-earn-chips], [role="tablist"])::scroll-button(*):disabled {
-      visibility: hidden;
-    }
-    .ux :is(.ux-noscroll, .ux-scroll-x, .ux-hscroll, .ux-chiprow,
-            [data-earn-chips], [role="tablist"])::scroll-button(*):hover {
-      background: var(--ux-surface-2);
-    }
-    .ux :is(.ux-noscroll, .ux-scroll-x, .ux-hscroll, .ux-chiprow,
-            [data-earn-chips], [role="tablist"])::scroll-button(*):focus-visible {
-      outline: 2px solid var(--ux-brand);
-      outline-offset: 2px;
-    }
-  }
-}
+/* Native scroll buttons are intentionally omitted until the build toolchain
+   parses the CSS Overflow 5 pseudo-elements. Rows retain touch, wheel,
+   keyboard scrolling and their edge fade without emitting production build
+   warnings for syntax current stable engines ignore. */
 
 /*
   Reduced transparency: the fade goes.
 
   The setting means "do not put see-through things over content", and that is
   exactly what a mask does — it is the one part of this that trades legibility
-  for a signal. So it is removed wholesale, and the arrows above turn on in
-  its place, opaque and on every device. The card and the top bar already do
-  the same thing at `prefers-reduced-transparency` in tokens.css.
+  for a signal. So it is removed wholesale. The row remains directly
+  scrollable by touch, wheel, trackpad and keyboard. The card and the top bar
+  already do the same thing at `prefers-reduced-transparency` in tokens.css.
 */
 @media (prefers-reduced-transparency: reduce) {
   .ux :is(.ux-noscroll, .ux-scroll-x, .ux-hscroll, .ux-chiprow,
@@ -1139,8 +1070,7 @@
   is the content under her own thumb. Turning it off cost the correctness and
   bought nothing.
 
-  What IS motion is the arrow throwing the row 300px sideways by itself, so
-  that becomes an instant jump.
+  Any browser-provided smooth scrolling becomes an instant jump.
 */
 @media (prefers-reduced-motion: reduce) {
   .ux :is(.ux-noscroll, .ux-scroll-x, .ux-hscroll, .ux-chiprow,

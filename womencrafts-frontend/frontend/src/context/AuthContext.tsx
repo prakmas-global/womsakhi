@@ -26,7 +26,7 @@ interface AuthContextValue {
     password: string,
     extra?: { phone?: string; locale?: string }
   ) => Promise<void>;
-  signIn: (email: string, password: string) => Promise<void>;
+  signIn: (email: string, password: string, twoFactorCode?: string) => Promise<void>;
   signOut: () => Promise<void>;
   updateUser: (updated: User) => void;
   /** RBAC — can the signed-in user open this module? */
@@ -211,10 +211,10 @@ export function AuthProvider({
   );
 
   const signIn = useCallback(
-    async (email: string, password: string) => {
+    async (email: string, password: string, twoFactorCode = "") => {
       setHandoff({ kind: "in", torn: false });
       try {
-        const payload = await apiSignIn(email, password);
+        const payload = await apiSignIn(email, password, twoFactorCode);
         persistAuth(payload);
         setHandoff({ kind: "in", torn: true });
         window.location.assign(homeFor(payload.user));

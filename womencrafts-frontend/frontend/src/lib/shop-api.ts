@@ -37,6 +37,10 @@ export interface Listing {
   created_at?: string;
   /** Orders this listing has actually had, counted from her orders. */
   orders?: number;
+  price_high_minor?: number; compare_at_minor?: number; min_quantity?: number;
+  low_stock_at?: number; continue_when_out?: boolean; delivery?: "physical" | "digital" | "service";
+  processing_time?: string; ships_to?: string; free_shipping?: boolean; delivery_note?: string;
+  highlights?: string[]; tags?: string[]; quote_fields?: string[]; quote_message?: string; response_time?: string;
 }
 
 export interface ShopOrder {
@@ -115,6 +119,43 @@ export async function apiUpdateListing(id: string, body: Record<string, unknown>
 
 export const apiDeleteListing = (id: string) =>
   apiClient.delete(`/shop/listings/${id}`).then(() => undefined);
+
+export type ShopOperationKind =
+  | "preorder" | "subscription" | "slot" | "wholesale" | "live" | "voice" | "dispute";
+export type ShopOperationStatus =
+  | "draft" | "open" | "waiting" | "paid" | "scheduled" | "resolved" | "paused";
+
+export interface ShopOperation {
+  id: string;
+  kind: ShopOperationKind;
+  title: string;
+  contact: string;
+  amount_minor: number;
+  amount_label: string;
+  status: ShopOperationStatus;
+  due_on: string;
+  note: string;
+  details: Record<string, unknown>;
+  archived: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+export const apiShopOperations = (kind: ShopOperationKind, signal?: AbortSignal) =>
+  get<ShopOperation[]>("/shop/operations", signal, { kind });
+
+export async function apiCreateShopOperation(body: Omit<ShopOperation, "id" | "amount_label" | "archived" | "created_at" | "updated_at">) {
+  const { data } = await apiClient.post<ShopOperation>("/shop/operations", body);
+  return data;
+}
+
+export async function apiUpdateShopOperation(id: string, body: Partial<ShopOperation>) {
+  const { data } = await apiClient.patch<ShopOperation>(`/shop/operations/${id}`, body);
+  return data;
+}
+
+export const apiArchiveShopOperation = (id: string) =>
+  apiClient.delete(`/shop/operations/${id}`).then(() => undefined);
 
 /* ── Getting paid ────────────────────────────────────────────────────── */
 

@@ -34,7 +34,7 @@ export default function HelpPage(){
   return <HomeShell><div className={styles.page} data-dashboard="help">
     <main className={styles.main}>
       <section className={styles.hero}>
-        <Image src="/ux/help/help-hero-v2.png" alt={tr("help.fiveWomenSupportingAndListeningTo")} fill priority sizes="(max-width: 900px) 100vw, 70vw" />
+        <Image src="/ux/help/help-hero-v2.webp" alt={tr("help.fiveWomenSupportingAndListeningTo")} fill priority sizes="(max-width: 900px) 100vw, 70vw" />
         <div className={styles.heroCopy}><p>Help &amp; support</p><h1>You&apos;re not alone,<br/><em>we&apos;re here for you</em></h1><span>{tr("help.getAnswersFindSupportTakeThe")}<br/>{tr("help.togetherWeCanHandleAnything")}</span>
           <form className={styles.search} onSubmit={e=>e.preventDefault()}><Search/><input value={query} onChange={e=>setQuery(e.target.value)} placeholder={tr("help.whatDoYouNeedHelpWith")} aria-label={tr("help.searchHelpTopics")}/><button type="submit">Search</button></form>
         </div><p className={styles.heroNote}>{tr("help.realConversations")}<br/>{tr("help.realSupport")}<br/>{tr("help.realChange")}<small>— WomSakhi</small></p>
@@ -45,8 +45,8 @@ export default function HelpPage(){
       </section>
 
       <section className={styles.features}>
-        <Link href="/app/circles" className={styles.community}><Image src="/ux/wellness/community-women-v2.png" alt={tr("help.womenStandingTogether")} fill sizes="(max-width: 760px) 100vw, 32vw"/><span><b>Stronger<br/>together</b><small>{tr("help.realStoriesRealSupport")}<br/>{tr("help.aKinderWorldForEveryWoman")}</small><i>{tr("help.joinCommunity")} <ChevronRight/></i></span></Link>
-        <Link href="/app/travel" className={styles.article}><Image src="/ux/help/safe-travel-v2.png" alt={tr("help.womanTravellingSafelyThroughAMountain")} fill sizes="(max-width: 760px) 100vw, 32vw"/><span><small>{tr("help.featuredArticle")}</small><b>{tr("help.howToKeepYourselfSafeWhile")}</b><i>{tr("help.readNow")} <ArrowRight/></i></span></Link>
+        <Link href="/app/circles" className={styles.community}><Image src="/ux/wellness/community-women-v2.webp" alt={tr("help.womenStandingTogether")} fill sizes="(max-width: 760px) 100vw, 32vw"/><span><b>Stronger<br/>together</b><small>{tr("help.realStoriesRealSupport")}<br/>{tr("help.aKinderWorldForEveryWoman")}</small><i>{tr("help.joinCommunity")} <ChevronRight/></i></span></Link>
+        <Link href="/app/travel" className={styles.article}><Image src="/ux/help/safe-travel-v2.webp" alt={tr("help.womanTravellingSafelyThroughAMountain")} fill sizes="(max-width: 760px) 100vw, 32vw"/><span><small>{tr("help.featuredArticle")}</small><b>{tr("help.howToKeepYourselfSafeWhile")}</b><i>{tr("help.readNow")} <ArrowRight/></i></span></Link>
         <section className={styles.contact}><div><b>Can&apos;t find what you need?</b><p>{tr("help.ourTeamIsHereToHelp")}</p><Link href="/app/helpdesk">{tr("help.contactSupport")} <ArrowRight/></Link></div><span aria-hidden>❦</span></section>
       </section>
     </main>

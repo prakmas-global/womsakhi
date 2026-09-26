@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import {
-  CalendarDays, CalendarX2, Check, Download, FileText, Loader2, MapPin, MoreHorizontal,
+  CalendarDays, CalendarX2, Check, Copy, Download, FileText, Loader2, MapPin, MoreHorizontal,
   Pencil, Plus, Search, SlidersHorizontal, Ticket, Users, Video, X,
 } from "lucide-react";
 import {
@@ -37,6 +37,15 @@ const STATUS_TONE: Record<string, "emerald" | "amber" | "rose" | "slate"> = {
 const STATUS_LABEL: Record<string, string> = {
   "": "All events", published: "Published", draft: "Drafts", cancelled: "Cancelled",
 };
+
+function inputTime(value: string): string {
+  if (/^\d{2}:\d{2}$/.test(value)) return value;
+  const match = value.trim().match(/^(\d{1,2}):(\d{2})\s*(AM|PM)$/i);
+  if (!match) return "";
+  let hour = Number(match[1]) % 12;
+  if (match[3].toUpperCase() === "PM") hour += 12;
+  return `${String(hour).padStart(2, "0")}:${match[2]}`;
+}
 
 export default function AdminEventsPage() {
   const toast = useToast();
@@ -85,9 +94,18 @@ export default function AdminEventsPage() {
   const openEdit = (e: EventRow) => {
     setEditing(e);
     setForm({
-      title: e.title, desc: e.desc, category: e.category, date: e.date, time: e.time,
+      title: e.title, desc: e.desc, category: e.category, date: e.date, time: inputTime(e.time),
       duration: e.duration, mode: e.mode, venue: e.venue, host: e.host, seats: e.seats,
       fee: e.fee, language: e.language, status: e.status,
+    });
+    setFormOpen(true);
+  };
+  const duplicate = (e: EventRow) => {
+    setEditing(null);
+    setForm({
+      title: `Copy of ${e.title}`, desc: e.desc, category: e.category, date: "", time: inputTime(e.time),
+      duration: e.duration, mode: e.mode, venue: e.venue, host: e.host, seats: e.seats,
+      fee: e.fee, language: e.language, status: "draft",
     });
     setFormOpen(true);
   };
@@ -289,6 +307,7 @@ export default function AdminEventsPage() {
                         <MenuItem icon={Users} onClick={() => void showAttendees(e)}>See who&apos;s coming</MenuItem>
                         <MenuItem icon={Download} onClick={() => void exportAttendees(e)}>Download attendee list</MenuItem>
                         <MenuItem icon={Pencil} onClick={() => openEdit(e)}>Edit</MenuItem>
+                        <MenuItem icon={Copy} onClick={() => duplicate(e)}>Duplicate as draft</MenuItem>
                         {e.status !== "cancelled" && (
                           <MenuItem icon={X} danger onClick={() => { setCancelling(e); setReason(""); }}>Cancel event</MenuItem>
                         )}
@@ -327,12 +346,15 @@ export default function AdminEventsPage() {
             <Select label="Category" value={form.category} onChange={(e) => set("category")(e.target.value)}
                     options={["Workshop", "Talk", "Mela", "Meet-up", "Training"]} />
             <Select label="Mode" value={form.mode} onChange={(e) => set("mode")(e.target.value)} options={["Online", "In person"]} />
-            <Input label="Date" type="date" value={form.date} onChange={(e) => set("date")(e.target.value)} />
-            <Input label="Time" value={form.time} onChange={(e) => set("time")(e.target.value)} placeholder="6:00 PM" />
-            <Input label="How long" value={form.duration} onChange={(e) => set("duration")(e.target.value)} placeholder="90 min" />
+            <Input label="Date" type="date" min={editing ? undefined : today} value={form.date} onChange={(e) => set("date")(e.target.value)} />
+            <Input label="Time" type="time" value={form.time} onChange={(e) => set("time")(e.target.value)} />
+            <Select label="How long" value={form.duration} onChange={(e) => set("duration")(e.target.value)}
+                    options={["30 minutes", "45 minutes", "1 hour", "90 minutes", "2 hours", "Half day", "Full day"]} />
             <Input label="Who's leading it" value={form.host} onChange={(e) => set("host")(e.target.value)} />
             <Input label="Seats (0 = unlimited)" type="number" value={String(form.seats)} onChange={(e) => set("seats")(Math.max(0, Number(e.target.value) || 0))} />
-            <Input label="Language" value={form.language} onChange={(e) => set("language")(e.target.value)} placeholder="Hindi & English" />
+            <Select label="Language" value={form.language} onChange={(e) => set("language")(e.target.value)}
+                    placeholder="Choose a language"
+                    options={["Hindi", "English", "Hindi & English", "Telugu", "Tamil", "Kannada", "Marathi", "Bengali", "Gujarati", "Malayalam"]} />
           </div>
           {form.mode !== "Online" && (
             <Input label="Venue" value={form.venue} onChange={(e) => set("venue")(e.target.value)} placeholder="Community Hall, Sector 12" />

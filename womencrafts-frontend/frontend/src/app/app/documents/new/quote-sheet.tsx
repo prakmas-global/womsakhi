@@ -2,11 +2,10 @@
 
 import { useMemo, useState } from "react";
 import { useT } from "@/i18n";
-import { useRouter } from "next/navigation";
 
 import * as Icons from "@/components/ux/icons";
 import { Btn, I, IconTile, Rating, Sheet, v } from "@/components/ux/kit";
-import { QUOTE_ASK as RAW_QUOTE_ASK, type QuoteDraft } from "@/components/ux/earn/data";
+import { QUOTE_ASK as RAW_QUOTE_ASK } from "@/components/ux/earn/data";
 
 import { Area, Check, Label, Text } from "@/components/ux/kit/form";
 import { useTranslated } from "@/i18n/data";
@@ -22,9 +21,8 @@ import { useTranslated } from "@/i18n/data";
  * a price" preview is not a picture of a button; it opens the real form, with
  * her own choices already applied, and she can feel how long it is.
  *
- * ── Nothing is sent ─────────────────────────────────────────────────────────
- * There is no quote endpoint yet. "Send request" carries the draft to the
- * confirmation screen and no further, and the screen says so.
+ * This is a seller-side preview. Buyers send real quote questions from the
+ * market listing, through `/market/listings/{id}/ask` into the seller inbox.
  */
 
 export function QuoteSheet({ open, onClose, listing, ask, message, respondIn }: {
@@ -40,7 +38,6 @@ export function QuoteSheet({ open, onClose, listing, ask, message, respondIn }: 
 }) {
   const QUOTE_ASK = useTranslated(RAW_QUOTE_ASK);
   const tr = useT();
-  const router = useRouter();
 
   const [needs, setNeeds] = useState("");
   const [qty, setQty] = useState("");
@@ -60,20 +57,6 @@ export function QuoteSheet({ open, onClose, listing, ask, message, respondIn }: 
   const ready = (!wants.has("needs") || needs.trim().length > 0)
              && (!wants.has("where") || place.trim().length > 0);
 
-  const send = () => {
-    const draft: QuoteDraft = {
-      title: listing.title || "Your listing",
-      photo: listing.photo,
-      seller: listing.seller,
-      needs, quantity: qty, budgetLow, budgetHigh, by, place,
-      extras, name, email, phone,
-    };
-    try { sessionStorage.setItem("ws.quote.draft", JSON.stringify(draft)); }
-    catch { /* private window — the confirmation falls back to its own example */ }
-    onClose();
-    router.push("/app/documents/new/sent");
-  };
-
   return (
     <Sheet
       open={open}
@@ -86,12 +69,12 @@ export function QuoteSheet({ open, onClose, listing, ask, message, respondIn }: 
         <>
           <div className="flex items-center justify-end gap-2.5">
             <Btn variant="ghost" onClick={onClose}>Cancel</Btn>
-            <Btn icon="Send" onClick={send} disabled={!ready}>{tr("fund.send")}</Btn>
+            <Btn icon="Check" onClick={onClose} disabled={!ready}>Finish preview</Btn>
           </div>
           <p className="mt-2.5 flex items-center justify-center gap-1.5 text-2xs"
              style={{ color: v("--ux-muted") }}>
             <Icons.ShieldCheck className="h-[13px] w-[13px]" style={{ color: v("--ux-green-ink") }} />
-            {tr("quotesheet.yourDetailsGoToTheSeller")}
+            Preview only — no buyer is contacted from your listing setup.
           </p>
         </>
       }

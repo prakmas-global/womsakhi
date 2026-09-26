@@ -37,7 +37,6 @@ export default function KitchenPage() {
   const HYGIENE = useTranslated(RAW_HYGIENE);
   const LICENCE_STEPS = useTranslated(RAW_LICENCE_STEPS);
   const tr = useT();
-  const [applied, setApplied] = useState(false);
   const [busy, setBusy] = useState<string | null>(null);
   const [err, setErr] = useState<string | null>(null);
 
@@ -186,21 +185,13 @@ export default function KitchenPage() {
 
             <div className="flex flex-wrap items-center gap-2 border-t p-4 sm:px-7 lg:py-4"
                  style={{ borderColor: v("--ux-line") }}>
-              <Btn icon="ExternalLink" disabled={applied} onClick={() => setApplied(true)} className="ux-action-primary">
-                {applied ? tr("kitchen.startedWeSavedYourAnswers")
-              : tr("kitchen.startTheApplication")}
+              <Btn icon="ExternalLink" href="https://foscos.fssai.gov.in/" className="ux-action-primary">
+                Open the official FSSAI application
               </Btn>
               <Btn variant="ghost" icon="MessageCircle" href="/app/mentors" className="max-lg:w-full">{tr("kitchen.askAWomanWhoHasDone")}</Btn>
             </div>
           </Card>
         </div>
-
-        {applied && (
-          <Card pad={16} style={{ background: v("--ux-tint-green"), borderColor: "transparent" }}>
-            <p className="flex items-center gap-2 text-xsm font-semibold" style={{ color: v("--ux-green-ink") }}>
-              <I name="CheckCircle2" className="h-[16px] w-[16px]" />{tr("kitchen.startedTheNumberUsuallyComesIn")}</p>
-          </Card>
-        )}
 
         {/* Hygiene, as a dial rather than a form */}
         <div>

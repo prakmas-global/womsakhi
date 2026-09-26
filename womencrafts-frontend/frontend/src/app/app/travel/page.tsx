@@ -90,7 +90,7 @@ export default function TravelPage() {
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img loading="lazy" decoding="async" src={WELLBEING_ART.travel} alt=""
                  className="ux-float pointer-events-none absolute -bottom-3 -end-4 h-[100px] w-[100px] object-contain" />
-            <h3 className="relative w-[60%] text-sm font-semibold" style={{ color: "var(--ux-ink)" }}>{tr("travel.shareYourJourney")}</h3>
+            <h2 className="relative w-[60%] text-sm font-semibold" style={{ color: "var(--ux-ink)" }}>{tr("travel.shareYourJourney")}</h2>
             <p className="relative mt-2 w-[60%] text-xs leading-relaxed" style={{ color: "var(--ux-muted)" }}>{tr("travel.yourTrustedContactsSeeWhereYou")}</p>
           </div>
         </div>
@@ -169,9 +169,9 @@ export default function TravelPage() {
                             ink={r.safeAfterDark ? "--ux-green" : "--ux-orange"} size={46} radius={12} />
                   <div className="min-w-0 flex-1">
                     <div className="flex items-start gap-2">
-                      <h3 className="min-w-0 flex-1 text-sm font-semibold" style={{ color: "var(--ux-ink)" }}>
+                      <h2 className="min-w-0 flex-1 text-sm font-semibold" style={{ color: "var(--ux-ink)" }}>
                         {r.name}
-                      </h3>
+                      </h2>
                       {/* The part nobody publishes, said plainly — including
                           when nobody has said it. An unchecked route must not
                           borrow the confidence of a checked one. */}

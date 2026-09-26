@@ -47,7 +47,7 @@ export default function DiscoverPage() {
 
   return <HomeShell active="/app/discover" skeleton="grid" loadFailed="your recommendations"><main className={styles.page} data-dashboard="discover">
     <section className={styles.hero} aria-labelledby="chosen-title">
-      <Image src="/ux/discover/chosen-hero-v1.png" alt={tr("discover.aConfidentWomanLookingTowardNew")} fill priority sizes="(max-width: 760px) 100vw, 80vw" />
+      <Image src="/ux/discover/chosen-hero-v1.webp" alt={tr("discover.aConfidentWomanLookingTowardNew")} fill priority sizes="(max-width: 760px) 100vw, 80vw" />
       <div className={styles.heroShade} /><div className={styles.heroCopy}><p><Link href="/app">Home</Link> / Chosen for you</p><h1 id="chosen-title">Chosen <em>{tr("discover.forYou2")}</em></h1><span>{tr("discover.curatedOpportunitiesPeopleAndResourcesThat")}</span></div>
       <p className={styles.heroNote}>Opportunities<br />{tr("discover.findYouToo")}<br />Here <Heart /></p><blockquote>{tr("discover.theRightOpportunityAtTheRight")}<cite>— WomSakhi</cite></blockquote>
     </section>

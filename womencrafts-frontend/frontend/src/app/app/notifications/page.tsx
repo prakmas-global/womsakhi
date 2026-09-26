@@ -209,9 +209,10 @@ export default function NotificationsPage() {
   return (
     <HomeShell active="/app/notifications" bare>
       <div className={`${styles.page} flex flex-col gap-4`}>
+        <h1 className="hidden lg:block sr-only">Notifications</h1>
         <section className={styles.hero}>
           <Image
-            src="/ux/notifications/whats-new-hero-v1.png"
+            src="/ux/notifications/whats-new-hero-v1.webp"
             alt={tr("notifications.womanCalmlyReviewingHelpfulUpdates")}
             fill
             priority
@@ -220,7 +221,7 @@ export default function NotificationsPage() {
           />
           <div className={styles.heroCopy}>
             <p>WHAT&apos;S NEW</p>
-            <h1>{unread.length > 0 ? `${unread.length} updates for you` : "You’re all caught up!"}</h1>
+            <h2>{unread.length > 0 ? `${unread.length} updates for you` : "You’re all caught up!"}</h2>
             <span>{unread.length > 0 ? "Here’s everything new that matters to you." : "Nothing needs your attention right now."}</span>
           </div>
           <p className={styles.heroNote}>{tr("notifications.newOpportunities")}<br/>{tr("notifications.newStories")}<br/>{tr("journeyviews.aBrighterYou")}</p>

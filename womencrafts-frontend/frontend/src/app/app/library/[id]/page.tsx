@@ -181,6 +181,10 @@ export default function ExchangeThread({ params }: { params: Promise<{ id: strin
     >
       <Back to="/app/library" label={tr("library.teachAndLearn")} className="mb-4" />
 
+      <h1 className="mb-4 text-xl font-bold" style={{ color: "var(--ux-ink)" }}>
+        {swap.skill} with {swap.who}
+      </h1>
+
       {/* Pinned above the messages, always. An exchange that lives only in a
           thread is one two women remember differently in a month. */}
       <Card className="mb-[16px]">

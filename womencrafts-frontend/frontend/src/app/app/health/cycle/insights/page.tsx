@@ -8,6 +8,7 @@ import { HomeShell } from "@/components/ux/home/HomeShell";
 import { Column, CycleHeader, DeskTitle, ErrorLine } from "@/components/ux/cycle/parts";
 import { Glance, Patterns, Phases, WellnessList } from "@/components/ux/cycle/Insights";
 import { useCycle } from "@/components/ux/cycle/use-cycle";
+import { CycleDesktopNav } from "@/components/ux/cycle/AdvancedDailyLog";
 
 const TABS = [
   { key: "overview", label: "Overview" },
@@ -31,6 +32,7 @@ export default function CycleInsights() {
       <Column>
         <CycleHeader title={tr("healthCycle.cycleInsights")} />
         <DeskTitle title={tr("healthCycle.cycleInsights")} sub={tr("healthCycleInsights.workedOutFromWhatYouHave")} />
+        <div className="hidden lg:block"><CycleDesktopNav active="Insights" /></div>
 
         <div role="tablist" aria-label="Insights" className="grid grid-cols-3 gap-1 rounded-full p-1"
              style={{ background: "var(--ux-surface)", border: "1px solid var(--ux-line)" }}>

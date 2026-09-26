@@ -28,6 +28,7 @@ class SignUpRequest(BaseModel):
 class SignInRequest(BaseModel):
     email: EmailStr
     password: str
+    two_factor_code: str = ""
 
 
 class ForgotPasswordRequest(BaseModel):

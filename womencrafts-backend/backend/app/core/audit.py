@@ -57,6 +57,7 @@ _CATEGORY = {
     # a reader would look for it under.
     "service": "Appointments", "calendar": "Appointments", "feedback": "Programs",
     "messages": "Community", "task": "Settings",
+    "market": "Market", "money": "Money", "learning": "Learning", "resources": "Resources",
 }
 
 

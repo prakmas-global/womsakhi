@@ -64,12 +64,8 @@ import { memberError } from "@/lib/member-api";
  * screen: visible, hidden (out of members' view, expected back) and removed
  * (out of the circle's counters too, still on disk with its reason).
  *
- * ── This is not a queue of reports ──────────────────────────────────────────
- * The member app has no report button. The server says so (`reports_supported`)
- * and the banner below repeats it, because a screen called "Moderation" that
- * silently showed the newest posts would let a moderator believe that nothing
- * listed means nothing is wrong. What is listed is the newest writing on the
- * platform; reading it is the job until reports exist.
+ * Member reports enter the central safety queue. This view retains the full
+ * circle writing stream so moderators can inspect context and take action.
  */
 
 const EMPTY_SUMMARY: QueueSummary = {
@@ -222,9 +218,12 @@ function ModerationInner() {
             </p>
           </div>
         </div>
-        <Link href="/dashboard/circles" className="btn btn-outline">
-          <ArrowLeft className="h-4 w-4" /> Circles
-        </Link>
+        <div className="flex gap-2">
+          <Link href="/dashboard/safety/reports" className="btn btn-primary">Safety reports</Link>
+          <Link href="/dashboard/circles" className="btn btn-outline">
+            <ArrowLeft className="h-4 w-4" /> Circles
+          </Link>
+        </div>
       </div>
 
       {!summary.reports_supported && !loading && (

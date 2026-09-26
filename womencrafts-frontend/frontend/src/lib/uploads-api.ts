@@ -59,13 +59,47 @@ export function validateImage(file: File): string | null {
   return null;
 }
 
+/**
+ * Resize camera-sized images before they leave the device. GIFs stay intact so
+ * animation is not lost; unsupported browser decoders fall back to the source
+ * and the server still applies its normal type and size checks.
+ */
+async function optimiseImage(file: File, kind: UploadKind): Promise<File> {
+  if (file.type.toLowerCase() === "image/gif" || typeof document === "undefined") return file;
+  try {
+    const bitmap = await createImageBitmap(file);
+    const limit = kind === "avatar" ? 640 : kind === "cover" ? 1600 : 2000;
+    const scale = Math.min(1, limit / Math.max(bitmap.width, bitmap.height));
+    const width = Math.max(1, Math.round(bitmap.width * scale));
+    const height = Math.max(1, Math.round(bitmap.height * scale));
+    if (scale === 1 && file.type === "image/webp" && file.size < 600 * 1024) {
+      bitmap.close();
+      return file;
+    }
+    const canvas = document.createElement("canvas");
+    canvas.width = width;
+    canvas.height = height;
+    const context = canvas.getContext("2d", { alpha: true });
+    if (!context) { bitmap.close(); return file; }
+    context.drawImage(bitmap, 0, 0, width, height);
+    bitmap.close();
+    const blob = await new Promise<Blob | null>((resolve) => canvas.toBlob(resolve, "image/webp", 0.84));
+    if (!blob || blob.size >= file.size) return file;
+    const stem = file.name.replace(/\.[^.]+$/, "") || "image";
+    return new File([blob], `${stem}.webp`, { type: "image/webp", lastModified: file.lastModified });
+  } catch {
+    return file;
+  }
+}
+
 export async function apiUploadImage(
   file: File,
   kind: UploadKind = "attachment",
   onProgress?: (percent: number) => void
 ): Promise<ApiUpload> {
+  const uploadFile = await optimiseImage(file, kind);
   const form = new FormData();
-  form.append("file", file);
+  form.append("file", uploadFile);
   form.append("kind", kind);
 
   const { data } = await uploadClient.post<ApiUpload>("/uploads", form, {

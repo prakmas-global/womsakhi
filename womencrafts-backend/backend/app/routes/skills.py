@@ -63,6 +63,10 @@ async def list_assessments(me: dict = Depends(require_active_member)):
     # second round trip to count them would cost more than the loop.
     best: dict[str, dict] = {}
     for a in attempts:
+        # Struck out by staff (admin_learning.py): it counts for nothing, not
+        # as a try and not as a score.
+        if a.get("invalidated"):
+            continue
         key = a.get("assessment_id", "")
         got = best.setdefault(key, {"score": 0, "passed": False, "attempts": 0})
         got["attempts"] += 1

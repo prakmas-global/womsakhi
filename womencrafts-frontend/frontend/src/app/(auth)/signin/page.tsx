@@ -3,7 +3,7 @@
 import { useEffect, useState, type FormEvent } from "react";
 import { useT } from "@/i18n";
 import Link from "next/link";
-import { ArrowRight, Eye, EyeOff, Loader2, Lock, Mail } from "lucide-react";
+import { ArrowRight, Eye, EyeOff, KeyRound, Loader2, Lock, Mail } from "lucide-react";
 
 import { useAuth, getAuthError } from "@/context/AuthContext";
 import { fetchAuthProviders } from "@/lib/public-api";
@@ -49,6 +49,8 @@ export default function SignInPage() {
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [twoFactorCode, setTwoFactorCode] = useState("");
+  const [needsTwoFactor, setNeedsTwoFactor] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [remember, setRemember] = useState(true);
   const [error, setError] = useState("");
@@ -67,9 +69,15 @@ export default function SignInPage() {
     setError("");
     setLoading(true);
     try {
-      await signIn(email, password);
+      await signIn(email, password, twoFactorCode);
     } catch (err) {
-      setError(getAuthError(err));
+      const response = (err as { response?: { status?: number; data?: { detail?: { code?: string } } } }).response;
+      if (response?.status === 428 && response.data?.detail?.code === "two_factor_required") {
+        setNeedsTwoFactor(true);
+        setError("Enter the six-digit code from your authenticator app.");
+      } else {
+        setError(getAuthError(err));
+      }
     } finally {
       setLoading(false);
     }
@@ -123,6 +131,23 @@ export default function SignInPage() {
             />
           </div>
         </div>
+
+        {needsTwoFactor && (
+          <div>
+            <label htmlFor="si-two-factor" className="mb-1.5 block text-xsm font-medium" style={{ color: "var(--a-ink-2)" }}>
+              Authenticator or recovery code
+            </label>
+            <div className="relative">
+              <KeyRound className="pointer-events-none absolute start-4 top-1/2 h-[17px] w-[17px] -translate-y-1/2" style={{ color: "var(--a-faint)" }} aria-hidden />
+              <input id="si-two-factor" required autoFocus autoComplete="one-time-code" inputMode="numeric"
+                value={twoFactorCode} onChange={(e) => setTwoFactorCode(e.target.value.toUpperCase())}
+                placeholder="123456" className={field} style={fieldPad} />
+            </div>
+            <p className="mt-1.5 text-2xs" style={{ color: "var(--a-muted)" }}>
+              A saved recovery code also works once.
+            </p>
+          </div>
+        )}
 
         <div>
           <label htmlFor="si-password" className="mb-1.5 block text-xsm font-medium" style={{ color: "var(--a-ink-2)" }}>

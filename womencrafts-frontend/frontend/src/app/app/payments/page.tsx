@@ -186,9 +186,9 @@ const PaymentRow = rowMemo(function PaymentRow({
             <IconTile icon={item.icon} tint={item.tint} ink={item.ink} size={46} radius={12} />
             <div className="min-w-0 flex-1">
               <div className="flex items-start gap-2">
-                <h3 className="min-w-0 flex-1 truncate text-sm font-semibold" style={{ color: "var(--ux-ink)" }}>
+                <h2 className="min-w-0 flex-1 truncate text-sm font-semibold" style={{ color: "var(--ux-ink)" }}>
                   {item.title}
-                </h3>
+                </h2>
                 <Pill tone={TONE[item.status].pill} size="sm">{TONE[item.status].word}</Pill>
               </div>
               <p className="mt-1 flex flex-wrap items-center gap-x-3 text-xs" style={{ color: "var(--ux-muted)" }}>

@@ -145,6 +145,33 @@ class BulkStatusRequest(BaseModel):
         return cleaned[:200]
 
 
+class BulkRegionRequest(BaseModel):
+    ids: list[str]
+    region: str
+    reason: str = ""
+
+    @field_validator("ids")
+    @classmethod
+    def some_member_ids(cls, v: list[str]) -> list[str]:
+        cleaned = [s for s in dict.fromkeys(v or []) if s]
+        if not cleaned:
+            raise ValueError("Pick at least one member")
+        return cleaned[:200]
+
+    @field_validator("region")
+    @classmethod
+    def valid_region(cls, v: str) -> str:
+        v = (v or "").strip()
+        if not v:
+            raise ValueError("Choose a region")
+        return v[:120]
+
+    @field_validator("reason")
+    @classmethod
+    def trim_reason(cls, v: str) -> str:
+        return (v or "").strip()[:400]
+
+
 # ── The profile screen ────────────────────────────────────────────────────────
 # The directory row (`members`) plus the login behind it (`users`), plus what
 # she has actually done on the platform — counted from the collections that
@@ -164,6 +191,31 @@ class AccountSummary(BaseModel):
     last_login_at: str
     rejection_reason: str
     created_at: str
+    #: What she said she needed at intake — the context staff use to help her.
+    needs: list[str] = []
+    #: Set when she asked for her account to be deleted; "" otherwise.
+    deletion_requested_at: str = ""
+    deletion_reason: str = ""
+
+
+class DeletionRequestRow(BaseModel):
+    """One woman who asked us to delete her account, still waiting for a human."""
+    user_id: str
+    member_id: str
+    name: str
+    email: str
+    code: str
+    reason: str
+    requested_at: str
+    days_waiting: int
+    #: The statutory window the member screen promises: "within 30 days".
+    overdue: bool
+
+
+class DeletionRequestList(BaseModel):
+    items: list[DeletionRequestRow]
+    total: int
+    overdue: int
 
 
 class ActivityCounts(BaseModel):

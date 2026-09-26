@@ -34,6 +34,7 @@ from app.core import mongosafe
 from app.core.audit import record
 from app.core.deps import get_current_user
 from app.core.permissions import require_permission
+from app.core.rbac import require_active_member
 from app.core.serializers import to_object_id
 from app.db.mongodb import get_database
 from app.models.content import ContentItemModel
@@ -51,6 +52,7 @@ from app.schemas.content import (
 )
 
 router = APIRouter(prefix="/content", tags=["Content"])
+member_router = APIRouter(prefix="/member-content", tags=["Content"])
 
 TRASH = "Trash"
 
@@ -94,6 +96,26 @@ async def _slug_free(slug: str, except_id=None) -> None:
         q["_id"] = {"$ne": except_id}
     if await _items().find_one(q, {"_id": 1}):
         raise HTTPException(status.HTTP_409_CONFLICT, f"'{slug}' is already used by another item")
+
+
+async def _validated_audience(mode: str, values: list[str]) -> tuple[str, list[str]]:
+    """Keep targeting tied to the live catalogues, never arbitrary typed labels."""
+    clean = list(dict.fromkeys(v.strip() for v in values if v.strip()))
+    if mode == "everyone":
+        return mode, []
+    collection = "regions" if mode == "regions" else "segments"
+    docs = await get_database()[collection].find(
+        {"name": {"$in": clean}, "status": "Active"}, {"name": 1}
+    ).to_list(100)
+    found = {d.get("name", "") for d in docs}
+    missing = [v for v in clean if v not in found]
+    if missing:
+        raise HTTPException(status.HTTP_422_UNPROCESSABLE_ENTITY,
+                            f"Inactive or unknown {mode}: {', '.join(missing)}")
+    if not clean:
+        raise HTTPException(status.HTTP_422_UNPROCESSABLE_ENTITY,
+                            f"Choose at least one {mode[:-1]}")
+    return mode, clean
 
 
 def _check_schedule(status_value: Optional[str], publish_at: Optional[datetime], existing: Optional[datetime] = None) -> Optional[datetime]:
@@ -324,10 +346,12 @@ async def create_content(payload: ContentCreate, request: Request, me: dict = De
     slug = _normalise_slug(payload.slug) if payload.slug.strip() else _slugify(payload.title)
     await _slug_free(slug)
     publish_at = _check_schedule(payload.status, payload.publish_at)
+    audience_mode, audience_values = await _validated_audience(payload.audience_mode, payload.audience_values)
     doc = ContentItemModel.create_document(
         title=payload.title, slug=slug, type=payload.type, status=payload.status,
         author=me.get("full_name", "") or me.get("email", ""),
         description=payload.description, cover=payload.cover, last_updated=_label(_now()),
+        audience_mode=audience_mode, audience_values=audience_values,
     )
     doc["publish_at"] = publish_at
     doc["author_id"] = str(me.get("_id", ""))
@@ -371,6 +395,27 @@ async def _doc_or_404(item_id: str) -> dict:
     return doc
 
 
+@member_router.get("", response_model=list[ContentResponse], summary="Published content for this member")
+async def member_content_feed(me: dict = Depends(require_active_member)):
+    """Apply the audience chosen by staff when member screens request content."""
+    await _publish_due()
+    member = {}
+    if me.get("member_id"):
+        member = await get_database().members.find_one({"_id": to_object_id(me["member_id"])}) or {}
+    region = (member.get("location") or "").strip()
+    segment = (member.get("segment") or "").strip()
+    clauses: list[dict] = [
+        {"audience_mode": {"$exists": False}},
+        {"audience_mode": "everyone"},
+    ]
+    if region:
+        clauses.append({"audience_mode": "regions", "audience_values": region})
+    if segment:
+        clauses.append({"audience_mode": "segments", "audience_values": segment})
+    docs = await _items().find({"status": "Published", "$or": clauses}).sort("updated_at", -1).to_list(100)
+    return [ContentResponse(**_row(d)) for d in docs]
+
+
 @router.get("/{item_id}", response_model=ContentResponse, summary="Get a content item",
     dependencies=[Depends(require_permission("content.view"))],
 )
@@ -384,6 +429,10 @@ async def get_content(item_id: str):
 async def update_content(item_id: str, payload: ContentUpdate, request: Request, me: dict = Depends(get_current_user)):
     doc = await _doc_or_404(item_id)
     updates = payload.model_dump(exclude_unset=True)
+    if "audience_mode" in updates or "audience_values" in updates:
+        mode = updates.get("audience_mode", doc.get("audience_mode", "everyone"))
+        values = updates.get("audience_values", doc.get("audience_values", []))
+        updates["audience_mode"], updates["audience_values"] = await _validated_audience(mode, values)
     if updates.get("title"):
         updates["title"] = updates["title"].strip()
     if updates.get("type"):

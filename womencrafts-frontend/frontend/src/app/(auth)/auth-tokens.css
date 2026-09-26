@@ -291,7 +291,7 @@
   position:absolute;
   inset:0;
   z-index:-2;
-  background:url('/ux/brand/auth-global-sisterhood-v2.png') left center / cover no-repeat;
+  background:url('/ux/brand/auth-global-sisterhood-v2.webp') left center / cover no-repeat;
 }
 .auth-canvas::after {
   content:"";
@@ -508,7 +508,7 @@
   .auth-entry { overflow:auto; }
   .auth-canvas { position:fixed; background:#f8eef2; }
   .auth-canvas::after { background:radial-gradient(circle at 10% 0,rgba(239,188,211,.38),transparent 38%); }
-  .auth-story { display:block; width:calc(100% - 32px); min-height:250px; height:250px; margin:16px 16px 0; overflow:hidden; border-radius:22px; background:linear-gradient(90deg,rgba(45,15,40,.18),transparent),url('/ux/brand/auth-community-panel-v1.png') center 30%/cover no-repeat; box-shadow:0 14px 34px rgba(70,27,56,.12); }
+  .auth-story { display:block; width:calc(100% - 32px); min-height:250px; height:250px; margin:16px 16px 0; overflow:hidden; border-radius:22px; background:linear-gradient(90deg,rgba(45,15,40,.18),transparent),url('/ux/brand/auth-community-panel-v1.webp') center 30%/cover no-repeat; box-shadow:0 14px 34px rgba(70,27,56,.12); }
   .auth-story::after { content:""; position:absolute; inset:0; background:linear-gradient(180deg,rgba(33,10,29,.05),rgba(33,10,29,.28)); pointer-events:none; }
   .auth-promise { top:20px; left:20px; color:#fff; font-size:25px; line-height:1.05; text-shadow:0 2px 12px rgba(29,6,25,.55); }
   .auth-promise span { font-size:16px; font-family:Arial,sans-serif; font-style:normal; }
@@ -676,7 +676,7 @@
     border-radius:26px;
     background:
       linear-gradient(180deg,rgba(54,16,47,.03),rgba(54,16,47,.18)),
-      url('/ux/brand/auth-community-panel-v1.png') center 28% / cover no-repeat;
+      url('/ux/brand/auth-community-panel-v1.webp') center 28% / cover no-repeat;
     box-shadow:0 24px 70px rgba(76,31,60,.13);
   }
   .auth-story::after {

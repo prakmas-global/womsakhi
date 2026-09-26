@@ -695,15 +695,39 @@ async def mood_check_in(body: MoodIn, me: dict = Depends(get_current_user)):
 
 
 @router.get("/mood/card", summary="One card, if she wants one")
-async def mood_card(me: dict = Depends(get_current_user)):
+async def mood_card(mood: str | None = None, me: dict = Depends(get_current_user)):
     from app.engines import mood as mood_engine
-    return {"card": await mood_engine.support_card(user_id=str(me["_id"]))}
+    chosen = mood if mood in mood_engine.MOODS else None
+    return {"card": await mood_engine.support_card(user_id=str(me["_id"]), mood=chosen)}
 
 
 @router.get("/mood/activity", summary="Something to do, not read")
 async def mood_activity(me: dict = Depends(get_current_user)):
     from app.engines import mood as mood_engine
     return {"activity": await mood_engine.reset_activity(user_id=str(me["_id"]))}
+
+
+class ActivityActionIn(BaseModel):
+    action: Literal["started", "completed", "skipped", "saved", "unsaved"]
+
+
+@router.post("/mood/activity/{activity_id}/action", summary="Save or record an activity")
+async def mood_activity_action(
+    activity_id: str, body: ActivityActionIn, me: dict = Depends(get_current_user),
+):
+    from app.engines import mood as mood_engine
+    ok = await mood_engine.activity_action(
+        user_id=str(me["_id"]), activity_id=activity_id, action=body.action,
+    )
+    if not ok:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "That activity is no longer available")
+    return {"ok": True, "action": body.action}
+
+
+@router.get("/mood/activities/saved", summary="Activities I kept")
+async def mood_saved_activities(me: dict = Depends(get_current_user)):
+    from app.engines import mood as mood_engine
+    return {"activities": await mood_engine.saved_activities(user_id=str(me["_id"]))}
 
 
 @router.put("/mood/encouragement", summary="General, scripture or none")

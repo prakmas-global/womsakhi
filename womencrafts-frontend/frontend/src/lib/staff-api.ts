@@ -268,6 +268,30 @@ export async function apiSignOutEverywhere() {
   return data;
 }
 
+export interface TwoFactorSetup {
+  secret: string;
+  provisioning_uri: string;
+}
+
+export async function apiStartTwoFactor(current_password: string) {
+  const { data } = await apiClient.post<TwoFactorSetup>("/staff/me/two-factor/setup", { current_password });
+  return data;
+}
+
+export async function apiEnableTwoFactor(code: string) {
+  const { data } = await apiClient.post<{ enabled: boolean; recovery_codes: string[] }>(
+    "/staff/me/two-factor/enable", { code },
+  );
+  return data;
+}
+
+export async function apiDisableTwoFactor(current_password: string, code: string) {
+  const { data } = await apiClient.post<{ enabled: boolean }>(
+    "/staff/me/two-factor/disable", { current_password, code },
+  );
+  return data;
+}
+
 export interface PasswordChanged {
   message: string;
   other_sessions_ended: boolean;

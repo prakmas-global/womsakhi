@@ -88,7 +88,7 @@ export default function GroupBuyPage() {
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img loading="lazy" decoding="async" src={MORE_ART.group} alt=""
                  className="ux-float pointer-events-none absolute -bottom-3 -end-4 h-[100px] w-[100px] object-contain" />
-            <h3 className="relative w-[60%] text-sm font-semibold" style={{ color: "var(--ux-ink)" }}>{tr("groupbuy.startOneYourself")}</h3>
+            <h2 className="relative w-[60%] text-sm font-semibold" style={{ color: "var(--ux-ink)" }}>{tr("groupbuy.startOneYourself")}</h2>
             <p className="relative mt-2 w-[60%] text-xs leading-relaxed" style={{ color: "var(--ux-muted)" }}>{tr("groupbuy.ifYouBuySomethingRegularlyOthers")}</p>
             <div className="relative mt-3 w-[60%]">
               <Btn href="/app/circles/new" variant="soft" size="sm" icon="Plus">{tr("groupbuy.proposeABuy")}</Btn>
@@ -134,9 +134,9 @@ export default function GroupBuyPage() {
                   </span>
                   <div className="flex min-w-0 flex-1 flex-col p-[16px]">
                     <div className="flex items-start gap-2">
-                      <h3 className="min-w-0 flex-1 text-base font-semibold" style={{ color: "var(--ux-ink)" }}>
+                      <h2 className="min-w-0 flex-1 text-base font-semibold" style={{ color: "var(--ux-ink)" }}>
                         {g.what}
-                      </h3>
+                      </h2>
                       {full && <Pill tone="green" size="sm">{tr("groupbuy.goingAhead")}</Pill>}
                     </div>
                     <p className="mt-1 text-xs" style={{ color: "var(--ux-muted)" }}>Organised by {g.by}</p>

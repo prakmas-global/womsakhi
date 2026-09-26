@@ -41,7 +41,7 @@ export function GoalsHero({ chips, active, onPick }: {
   ] as const;
   return <>
     <section className={styles.hero} aria-labelledby="goals-title">
-      <Image src="/ux/goals/goals-hero-v2.png" alt={tr("goalviews.womenFromDifferentBackgroundsPlanningGoals")} fill priority sizes="(max-width:760px) 100vw, 70vw" />
+      <Image src="/ux/goals/goals-hero-v2.webp" alt={tr("goalviews.womenFromDifferentBackgroundsPlanningGoals")} fill priority sizes="(max-width:760px) 100vw, 70vw" />
       <div className={styles.heroShade} />
       <div className={styles.heroCopy}>
         <p>{tr("goalviews.homeMyGoals")}</p>
@@ -103,7 +103,7 @@ export function StaircaseNote() {
 /*  One goal                                                           */
 /* ------------------------------------------------------------------ */
 
-export function GoalCard({ g, money, menu, onMenu, onDone, onArchive, busy }: {
+export function GoalCard({ g, money, menu, onMenu, onDone, onEdit, onArchive, busy }: {
   g: Goal; money: (minor: number) => string;
   menu: boolean; onMenu: (open: boolean) => void;
   /*
@@ -121,6 +121,7 @@ export function GoalCard({ g, money, menu, onMenu, onDone, onArchive, busy }: {
     tick either by hand would make the figure say whatever she pressed.
   */
   onDone?: (g: Goal) => void;
+  onEdit: (g: Goal) => void;
   onArchive: (g: Goal) => void;
   busy?: boolean;
 }) {
@@ -173,6 +174,7 @@ export function GoalCard({ g, money, menu, onMenu, onDone, onArchive, busy }: {
                   <span className="absolute end-0 top-[calc(100%+6px)] z-[var(--ux-z-dropdown)] block w-[210px] overflow-hidden rounded-[12px]"
                         style={{ background: v("--ux-surface"), border: "1px solid var(--ux-line)",
                                  boxShadow: "var(--ux-shadow-pop)" }}>
+                    <Row icon="Pencil" onClick={() => { onEdit(g); onMenu(false); }}>Edit goal</Row>
                     <Row icon="Trash2" onClick={() => { onArchive(g); onMenu(false); }}>{tr("goalviews.removeThisGoal")}</Row>
                   </span>
                 )}
@@ -194,6 +196,7 @@ export function GoalCard({ g, money, menu, onMenu, onDone, onArchive, busy }: {
               {look.label}
             </span>
           </p>
+          {g.note && <p className="mt-2 text-xs leading-relaxed" style={{ color: v("--ux-ink-2") }}>{g.note}</p>}
 
           <div className="mt-2 flex items-center gap-3">
             <span className="h-[8px] min-w-0 flex-1 overflow-hidden rounded-full"

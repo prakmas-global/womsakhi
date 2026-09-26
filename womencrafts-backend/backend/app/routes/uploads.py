@@ -14,9 +14,10 @@ import uuid
 from pathlib import Path
 from typing import Optional
 
-from fastapi import APIRouter, Depends, File, Form, HTTPException, Query, UploadFile, status
+from fastapi import APIRouter, Depends, File, Form, HTTPException, Query, Request, UploadFile, status
 
 from app.core import mongosafe
+from app.core.audit import record
 from app.core.config import settings
 from app.core.deps import get_current_user
 from app.core.rbac import SUPER_ADMIN
@@ -164,11 +165,35 @@ async def upload_stats(current_user: dict = Depends(get_current_user)):
 
 
 @router.delete("/{upload_id}", response_model=DeleteResponse, summary="Delete an uploaded file")
-async def delete_upload(upload_id: str, current_user: dict = Depends(get_current_user)):
+async def delete_upload(
+    upload_id: str,
+    current_user: dict = Depends(get_current_user),
+    request: Request = None,  # type: ignore[assignment]
+):
     query = {"_id": to_object_id(upload_id), **_ownership_scope(current_user)}
     doc = await _uploads().find_one(query)
     if not doc:
         raise HTTPException(status.HTTP_404_NOT_FOUND, "File not found")
+
+    # Never leave a broken image behind. These are the fields that can hold an
+    # upload URL in the current data model; array fields use the same equality
+    # predicate in MongoDB.
+    url = doc.get("url", "")
+    references = (
+        ("content_items", "cover"), ("members", "avatar"), ("users", "avatar"),
+        ("circles", "cover"), ("circles", "icon"), ("circle_posts", "image"),
+        ("stories", "cover"), ("events", "cover"), ("opportunities", "cover"),
+        ("shop_listings", "photo"), ("shop_listings", "photos"),
+    )
+    used_by = 0
+    db = get_database()
+    for collection, field in references:
+        used_by += await db[collection].count_documents({field: url}, limit=1)
+    if used_by:
+        raise HTTPException(
+            status.HTTP_409_CONFLICT,
+            "This file is still used by an app record. Replace it there before removing it from the library.",
+        )
 
     # Remove the bytes too, but never let a missing file block the delete.
     stored = (doc.get("stored_name") or "").lstrip("/")
@@ -177,4 +202,6 @@ async def delete_upload(upload_id: str, current_user: dict = Depends(get_current
         target.unlink(missing_ok=True)
 
     await _uploads().delete_one(query)
+    await record(current_user, "media.delete", target=upload_id,
+                 detail=f"Deleted media file '{doc.get('original_name', '')}'", request=request)
     return DeleteResponse(message="File deleted")

@@ -1,16 +1,17 @@
 "use client";
 
-import { use, useState } from "react";
+import { use, useCallback, useState } from "react";
 import Link from "next/link";
 import * as Icons from "@/components/ux/icons";
 
-import { apiCancelEvent, apiRegisterForEvent } from "@/lib/growth-api";
+import { apiCancelEvent, apiEvent, apiRegisterForEvent } from "@/lib/growth-api";
 import { useAction } from "@/lib/use-action";
+import { useResource } from "@/lib/use-resource";
 
 import { Back, Btn, Card, EmptyState, IconTile, mapsHref, Pill, Progress, RailSkeleton, ScreenSkeleton, SectionHead } from "@/components/ux/kit";
 import { HomeShell } from "@/components/ux/home/HomeShell";
-import { useEvents } from "@/components/ux/growth";
-import { rupees } from "@/components/ux/events/data";
+import { toEvent, useEvents } from "@/components/ux/growth";
+import { rupees, type Ev } from "@/components/ux/events/data";
 import { useT } from "@/i18n";
 
 /**
@@ -23,9 +24,16 @@ import { useT } from "@/i18n";
 export default function EventDetail({ params }: { params: Promise<{ id: string }> }) {
   const tr = useT();
   const { id } = use(params);
-  const { data: events, source, refetch } = useEvents();
+  // Read the event by id. The list endpoint intentionally returns upcoming
+  // events only, but a notification, circle post, or saved link can open a
+  // finished event. Looking it up in the list made those valid links say the
+  // event did not exist even though the detail endpoint returned it.
+  const { data: e, source, refetch } = useResource(
+    useCallback(async (signal: AbortSignal) => toEvent(await apiEvent(id, signal)), [id]),
+    null as Ev | null,
+  );
+  const { data: events } = useEvents();
   const EVENTS = [...events.upcoming, ...events.past];
-  const e = EVENTS.find((x) => x.id === id);
 
   /**
    * Whether she has a place — the server's answer, with a press still in

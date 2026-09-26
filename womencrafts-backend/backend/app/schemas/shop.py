@@ -1,6 +1,6 @@
 """Request and response shapes for her business."""
 
-from typing import Literal, Optional
+from typing import Any, Literal, Optional
 
 from pydantic import BaseModel, Field
 
@@ -39,6 +39,19 @@ class ListingCard(BaseModel):
     photo: str
     photos: list[str] = Field(default_factory=list)
     price_mode: Literal["fixed", "range", "quote"] = "fixed"
+    price_high_minor: int = 0
+    compare_at_minor: int = 0
+    min_quantity: int = 1
+    delivery: str = "physical"
+    processing_time: str = ""
+    ships_to: str = ""
+    free_shipping: bool = False
+    delivery_note: str = ""
+    highlights: list[str] = []
+    tags: list[str] = []
+    quote_fields: list[str] = []
+    quote_message: str = ""
+    response_time: str = ""
 
 
 class PublicShop(BaseModel):
@@ -93,6 +106,21 @@ class ListingResponse(BaseModel):
     created_at: str = ""
     #: Orders this listing has actually had, counted from her orders.
     orders: int = 0
+    price_high_minor: int = 0
+    compare_at_minor: int = 0
+    min_quantity: int = 1
+    low_stock_at: int = 0
+    continue_when_out: bool = False
+    delivery: str = "physical"
+    processing_time: str = ""
+    ships_to: str = ""
+    free_shipping: bool = False
+    delivery_note: str = ""
+    highlights: list[str] = []
+    tags: list[str] = []
+    quote_fields: list[str] = []
+    quote_message: str = ""
+    response_time: str = ""
 
 
 class ListingCreate(BaseModel):
@@ -109,6 +137,21 @@ class ListingCreate(BaseModel):
     photos: list[MediaRef] = Field(default_factory=list, max_length=4)
     status: str = Field("live", pattern="^(live|paused)$")
     price_mode: Literal["fixed", "range", "quote"] = "fixed"
+    price_high_minor: int = Field(0, ge=0)
+    compare_at_minor: int = Field(0, ge=0)
+    min_quantity: int = Field(1, ge=1, le=9999)
+    low_stock_at: int = Field(0, ge=0, le=1_000_000)
+    continue_when_out: bool = False
+    delivery: Literal["physical", "digital", "service"] = "physical"
+    processing_time: str = Field("", max_length=80)
+    ships_to: str = Field("", max_length=120)
+    free_shipping: bool = False
+    delivery_note: str = Field("", max_length=500)
+    highlights: list[str] = Field(default_factory=list, max_length=6)
+    tags: list[str] = Field(default_factory=list, max_length=12)
+    quote_fields: list[str] = Field(default_factory=list, max_length=12)
+    quote_message: str = Field("", max_length=300)
+    response_time: str = Field("", max_length=80)
 
 
 class OrderResponse(BaseModel):
@@ -163,3 +206,44 @@ class ShopSummary(BaseModel):
     #: Share of her buyers who came back. A real number from her own orders —
     #: and the single best signal that what she makes is worth returning for.
     repeat_buyers_pct: int
+
+
+ShopOperationKind = Literal["preorder", "subscription", "slot", "wholesale", "live", "voice", "dispute"]
+ShopOperationStatus = Literal["draft", "open", "waiting", "paid", "scheduled", "resolved", "paused"]
+
+
+class ShopOperationCreate(BaseModel):
+    kind: ShopOperationKind
+    title: str = Field(..., min_length=2, max_length=120)
+    contact: str = Field("", max_length=120)
+    amount_minor: int = Field(0, ge=0, le=100_000_000)
+    status: ShopOperationStatus = "draft"
+    due_on: str = Field("", max_length=40)
+    note: str = Field("", max_length=2000)
+    details: dict[str, Any] = Field(default_factory=dict)
+
+
+class ShopOperationUpdate(BaseModel):
+    title: Optional[str] = Field(None, min_length=2, max_length=120)
+    contact: Optional[str] = Field(None, max_length=120)
+    amount_minor: Optional[int] = Field(None, ge=0, le=100_000_000)
+    status: Optional[ShopOperationStatus] = None
+    due_on: Optional[str] = Field(None, max_length=40)
+    note: Optional[str] = Field(None, max_length=2000)
+    details: Optional[dict[str, Any]] = None
+
+
+class ShopOperationResponse(BaseModel):
+    id: str
+    kind: ShopOperationKind
+    title: str
+    contact: str
+    amount_minor: int
+    amount_label: str
+    status: ShopOperationStatus
+    due_on: str
+    note: str
+    details: dict[str, Any]
+    archived: bool
+    created_at: str
+    updated_at: str

@@ -154,7 +154,7 @@ export default function StoryDetail({ params }: { params: Promise<{ id: string }
                 </span>
               )}
             <div className="min-w-0 flex-1">
-              <p className="text-xl font-bold text-white">{s.author_name}</p>
+              <h1 className="text-xl font-bold text-white">{s.author_name}</h1>
               <p className="mt-1 text-xsm" style={{ color: "rgba(255,255,255,0.88)" }}>{s.when}</p>
             </div>
             {s.featured && <Pill tone="green" size="sm">Featured</Pill>}

@@ -14,7 +14,7 @@ from app.core.payments import PaymentConfigError, PaymentProviderError
 from app.core.errors import RequestIdMiddleware
 from app.core.headers import SecurityHeadersMiddleware
 from app.core.observability import TimingMiddleware
-from app.core.rbac import module_guard
+from app.core.rbac import ensure_rbac, module_guard
 from app.core.seed_all import seed_all
 from app.db.indexes import ensure_indexes
 from app.db.mongodb import connect_db, close_db
@@ -24,6 +24,7 @@ from app.routes.users import router as users_router
 from app.routes.members import router as members_router
 from app.routes.roles import router as roles_router
 from app.routes.segments import router as segments_router
+from app.routes.regions import router as regions_router
 from app.routes.appointments import router as appointments_router
 from app.routes.programs import router as programs_router
 from app.routes.calendar import router as calendar_router
@@ -31,7 +32,7 @@ from app.routes.analytics import router as analytics_router
 from app.routes.services import router as services_router
 from app.routes.messages import router as messages_router
 from app.routes.reports import router as reports_router
-from app.routes.content import router as content_router
+from app.routes.content import router as content_router, member_router as member_content_router
 from app.routes.feedback import router as feedback_router
 from app.routes.ai import router as ai_router
 from app.routes.notifications import router as notifications_router
@@ -145,8 +146,21 @@ async def lifespan(app: FastAPI):
     try:
         await connect_db()
         await ensure_indexes()
-        await seed_all()
-    except Exception as exc:  # noqa: BLE001 - never let a DB outage block startup
+        if settings.is_production:
+            print("✅ Demo seeding is disabled in production")
+        elif settings.should_seed_demo_data:
+            await seed_all()
+        else:
+            print("ℹ️  Demo seeding is disabled")
+
+        # Role definitions are operational configuration rather than demo
+        # content. Keep the idempotent backfill on every environment.
+        await ensure_rbac()
+    except Exception as exc:  # noqa: BLE001 - development may run UI-only
+        if settings.is_production:
+            raise RuntimeError(
+                "Database initialisation failed; refusing to start the live service."
+            ) from exc
         print(f"⚠️  Starting without a database connection: {exc}")
 
     # Load the matching model now, off the request path. Cold load is tens of
@@ -290,6 +304,7 @@ app.include_router(employers_router, prefix="/api/v1")
 app.include_router(members_router, prefix="/api/v1", dependencies=_mod("users"))
 app.include_router(roles_router, prefix="/api/v1", dependencies=_mod("users"))
 app.include_router(segments_router, prefix="/api/v1", dependencies=_mod("users"))
+app.include_router(regions_router, prefix="/api/v1", dependencies=_mod("users"))
 app.include_router(appointments_router, prefix="/api/v1", dependencies=_mod("appointments"))
 app.include_router(programs_router, prefix="/api/v1", dependencies=_mod("programs"))
 app.include_router(calendar_router, prefix="/api/v1", dependencies=_mod("calendar"))
@@ -298,6 +313,7 @@ app.include_router(services_router, prefix="/api/v1", dependencies=_mod("service
 app.include_router(messages_router, prefix="/api/v1", dependencies=_mod("messages"))
 app.include_router(reports_router, prefix="/api/v1", dependencies=_mod("reports"))
 app.include_router(content_router, prefix="/api/v1", dependencies=_mod("content"))
+app.include_router(member_content_router, prefix="/api/v1")
 app.include_router(feedback_router, prefix="/api/v1", dependencies=_mod("feedback"))
 app.include_router(ai_router, prefix="/api/v1", dependencies=_mod("ai"))
 app.include_router(notifications_router, prefix="/api/v1")  # personal (topbar bell) — baseline

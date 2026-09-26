@@ -110,6 +110,7 @@ class StaffAccountModel:
     @staticmethod
     def to_response(doc: dict, *, modules: list[str] | None = None,
                     permissions: list[str] | None = None) -> dict:
+        from app.core.staff_scope import scope_for
         last = doc.get("last_login_at")
         created = doc.get("created_at")
         return {
@@ -129,6 +130,7 @@ class StaffAccountModel:
             # inherited and what was granted to her specifically.
             "extra_permissions": list(doc.get("extra_permissions") or []),
             "denied_permissions": list(doc.get("denied_permissions") or []),
+            "scope": scope_for(doc),
             "last_login_at": last.isoformat() if isinstance(last, datetime) else "",
             "created_at": created.isoformat() if isinstance(created, datetime) else "",
         }

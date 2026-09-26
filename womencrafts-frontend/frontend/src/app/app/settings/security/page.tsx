@@ -172,7 +172,7 @@ export default function SecuritySettings() {
               clickable needs. The negative margin keeps the spacing. */}
           <label className="ux-hov -my-1 flex w-fit cursor-pointer items-center gap-2.5 py-1 text-xsm"
                  style={{ color: "var(--ux-ink-2)" }}>
-            <input type="checkbox" checked={show} onChange={(e) => setShow(e.target.checked)}
+            <input aria-label="Show what I am typing" type="checkbox" checked={show} onChange={(e) => setShow(e.target.checked)}
                    className="h-[18px] w-[18px] cursor-pointer" />{tr("settingsSecurity.showWhatIAmTyping")}</label>
         </div>
 

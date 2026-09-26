@@ -36,6 +36,15 @@ from app.core.security import (
 )
 from app.core.session import COOKIE_NAME, clear_session_cookie, set_session_cookie
 from app.core.media import media_url
+from app.core.two_factor import (
+    decrypt_secret,
+    encrypt_secret,
+    new_recovery_codes,
+    new_secret,
+    provisioning_uri,
+    recovery_digest,
+    verify_code,
+)
 from app.db.mongodb import get_database
 from app.models.role import RoleModel
 from app.models.staff import (
@@ -593,10 +602,7 @@ class MyAccount(BaseModel):
     prefs_applied: bool
 
 
-_TWO_FACTOR_NOTE = (
-    "Two-factor sign-in is not available yet. There is no authenticator "
-    "library installed on the server, so there is nothing here to switch on."
-)
+_TWO_FACTOR_NOTE = "Use any TOTP authenticator app. A code is required after the password on every new sign-in."
 
 _DEVICES_NOTE = (
     "Signing in records when it happened, not which device it happened on, "
@@ -663,7 +669,11 @@ async def my_account(request: Request, me: dict = Depends(require_staff)):
         sessions_ended_at=_iso(doc.get("sessions_ended_at")),
         failed_logins=int(doc.get("failed_logins") or 0),
         locked_until=_iso(doc.get("locked_until")),
-        two_factor=TwoFactor(available=False, enabled=False, note=_TWO_FACTOR_NOTE),
+        two_factor=TwoFactor(
+            available=True,
+            enabled=bool((doc.get("two_factor") or {}).get("enabled")),
+            note=_TWO_FACTOR_NOTE,
+        ),
         this_session=this_session,
         devices_recorded=False,
         devices_note=_DEVICES_NOTE,
@@ -674,6 +684,77 @@ async def my_account(request: Request, me: dict = Depends(require_staff)):
         ),
         prefs_applied=False,
     )
+
+
+class TwoFactorSetupIn(BaseModel):
+    current_password: str
+
+
+class TwoFactorCodeIn(BaseModel):
+    code: str
+
+
+class TwoFactorDisableIn(BaseModel):
+    current_password: str
+    code: str
+
+
+@router.post("/me/two-factor/setup", summary="Start authenticator setup")
+async def start_two_factor(body: TwoFactorSetupIn, request: Request, me: dict = Depends(require_staff)):
+    if not await verify_password_async(body.current_password, me.get("hashed_password", "")):
+        raise HTTPException(status.HTTP_400_BAD_REQUEST, "Current password is incorrect")
+    secret = new_secret()
+    await _users().update_one(
+        {"_id": me["_id"]},
+        {"$set": {"two_factor_pending_secret": encrypt_secret(secret),
+                  "updated_at": datetime.now(timezone.utc)}},
+    )
+    await record(me, "security.two_factor_setup", target=str(me["_id"]),
+                 detail="Authenticator setup started", request=request)
+    return {"secret": secret, "provisioning_uri": provisioning_uri(secret, me.get("email", ""))}
+
+
+@router.post("/me/two-factor/enable", summary="Confirm and enable authenticator sign-in")
+async def enable_two_factor(body: TwoFactorCodeIn, request: Request, me: dict = Depends(require_staff)):
+    fresh = await _users().find_one({"_id": me["_id"]}) or me
+    secret = decrypt_secret(fresh.get("two_factor_pending_secret", ""))
+    if not secret:
+        raise HTTPException(status.HTTP_409_CONFLICT, "Start setup first")
+    if not verify_code(secret, body.code):
+        raise HTTPException(status.HTTP_400_BAD_REQUEST, "That code is not valid")
+    recovery = new_recovery_codes()
+    await _users().update_one(
+        {"_id": me["_id"]},
+        {"$set": {"two_factor": {
+            "enabled": True,
+            "secret": encrypt_secret(secret),
+            "recovery_codes": [recovery_digest(code) for code in recovery],
+            "enabled_at": datetime.now(timezone.utc),
+        }, "updated_at": datetime.now(timezone.utc)},
+         "$unset": {"two_factor_pending_secret": ""}},
+    )
+    await record(me, "security.two_factor_enabled", target=str(me["_id"]),
+                 detail="Authenticator sign-in enabled", request=request)
+    return {"enabled": True, "recovery_codes": recovery}
+
+
+@router.post("/me/two-factor/disable", summary="Disable authenticator sign-in")
+async def disable_two_factor(body: TwoFactorDisableIn, request: Request, me: dict = Depends(require_staff)):
+    if not await verify_password_async(body.current_password, me.get("hashed_password", "")):
+        raise HTTPException(status.HTTP_400_BAD_REQUEST, "Current password is incorrect")
+    config = me.get("two_factor") or {}
+    secret = decrypt_secret(config.get("secret", ""))
+    digest = recovery_digest(body.code)
+    if not verify_code(secret, body.code) and digest not in (config.get("recovery_codes") or []):
+        raise HTTPException(status.HTTP_400_BAD_REQUEST, "That authentication code is not valid")
+    await _users().update_one(
+        {"_id": me["_id"]},
+        {"$unset": {"two_factor": "", "two_factor_pending_secret": ""},
+         "$set": {"updated_at": datetime.now(timezone.utc)}},
+    )
+    await record(me, "security.two_factor_disabled", target=str(me["_id"]),
+                 detail="Authenticator sign-in disabled", request=request)
+    return {"enabled": False}
 
 
 class SessionsEnded(BaseModel):
