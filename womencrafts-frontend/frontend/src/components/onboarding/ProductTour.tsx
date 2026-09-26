@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { OnboardFrame } from "@/components/ux/onboard/Frame";
 import { Btn, IconTile } from "@/components/ux/kit";
@@ -61,20 +61,15 @@ const SLIDES = [
   },
 ] as const;
 
-export default function ProductTour({ mode }: { mode: "member" | "public" }) {
+export default function ProductTour({ mode, initialStep = 1 }: { mode: "member" | "public"; initialStep?: number }) {
   const router = useRouter();
   const { user, updateUser } = useAuth();
-  const [step, setStep] = useState(1);
+  const [step, setStep] = useState(initialStep >= 1 && initialStep <= SLIDES.length ? initialStep : 1);
   const [working, setWorking] = useState(false);
   const [problem, setProblem] = useState("");
   const [direction, setDirection] = useState<"forward" | "back">("forward");
   const [activeFeature, setActiveFeature] = useState(0);
   const replay = mode === "member" && user?.onboarding_complete !== false;
-
-  useEffect(() => {
-    const requested = Number(new URLSearchParams(window.location.search).get("step"));
-    if (requested >= 1 && requested <= SLIDES.length) setStep(requested);
-  }, []);
 
   const slide = SLIDES[step - 1];
 

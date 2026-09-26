@@ -208,11 +208,15 @@ export default function VerificationQueuePage() {
 
   useEffect(() => {
     if (deepLinkHandled.current || typeof window === "undefined") return;
-    deepLinkHandled.current = true;
     const params = new URLSearchParams(window.location.search);
     const account = params.get("account") || params.get("assign") || "";
-    if (account) void openDetail(account);
-    if (params.get("assign") && isSuperAdmin) void openAssignment(account);
+    const timer = window.setTimeout(() => {
+      if (deepLinkHandled.current) return;
+      deepLinkHandled.current = true;
+      if (account) void openDetail(account);
+      if (params.get("assign") && isSuperAdmin) void openAssignment(account);
+    }, 0);
+    return () => window.clearTimeout(timer);
   }, [isSuperAdmin, openAssignment, openDetail]);
 
   const closeDetail = useCallback(() => {

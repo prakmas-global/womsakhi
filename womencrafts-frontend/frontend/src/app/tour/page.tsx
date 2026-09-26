@@ -7,6 +7,8 @@ export const metadata = {
   description: "Explore learning, work, money, wellbeing and community in WomSakhi.",
 };
 
-export default function TourPage() {
-  return <div className="ux min-h-screen"><ProductTour mode="public" /></div>;
+export default async function TourPage({ searchParams }: { searchParams: Promise<{ step?: string | string[] }> }) {
+  const value = (await searchParams).step;
+  const initialStep = Number(Array.isArray(value) ? value[0] : value);
+  return <div className="ux min-h-screen"><ProductTour mode="public" initialStep={initialStep} /></div>;
 }
