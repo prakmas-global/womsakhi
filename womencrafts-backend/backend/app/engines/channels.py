@@ -25,6 +25,7 @@ the person she is hiding it from.
 
 from __future__ import annotations
 
+import html
 import json
 from datetime import datetime, timezone
 
@@ -193,7 +194,7 @@ async def _email(intent: dict) -> dict:
     title, body = await render(intent)
     ok = await send_mail(
         EmailMessageSpec(to=address, subject=title,
-                         html=_wrap(title, f"<p>{body}</p>"), text=f"{title}\n\n{body}"),
+                         html=_wrap(title, f"<p>{html.escape(body)}</p>"), text=f"{title}\n\n{body}"),
         address)
     if not ok:
         raise RuntimeError("smtp_send_failed")

@@ -32,7 +32,9 @@ from bson.errors import InvalidId
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from pydantic import BaseModel, EmailStr, Field
 
+from app.core import email as mailer
 from app.core.audit import record
+from app.core.config import settings
 from app.core.permissions import all_permissions, normalise, require_permission
 from app.core.rbac import (
     MEMBER_ROLE,
@@ -235,10 +237,9 @@ async def create_staff(body: StaffCreate, me: dict = Depends(require_super_admin
     """
     Creates the login and an invitation. **No password is set here.**
 
-    The raw invitation token comes back exactly once, in this response, so it
-    can be emailed or — while the sending domain is still a sandbox — copied
-    and handed over another way. It is stored only as a digest and cannot be
-    read again.
+    The invitation is emailed automatically. The raw token also comes back
+    exactly once so the Super Admin has a copyable fallback if delivery is
+    delayed. It is stored only as a digest and cannot be read again.
     """
     email = str(body.email).lower().strip()
     if body.role == MEMBER_ROLE:
@@ -278,14 +279,21 @@ async def create_staff(body: StaffCreate, me: dict = Depends(require_super_admin
     )
     await _invites().insert_one(invite)
 
+    invite_url = f"{settings.APP_BASE_URL.rstrip('/')}/accept-invite?token={raw}"
+    delivered = await mailer.send(
+        mailer.staff_invitation_email(body.full_name, body.role, invite_url), email
+    )
+
     await record(me, "staff.invite", target=str(res.inserted_id),
-                 detail=f"{body.full_name} <{email}> as {body.role}")
+                 detail=f"{body.full_name} <{email}> as {body.role}"
+                        + (" (invitation emailed)" if delivered else " (email delivery failed)"))
 
     return {
         "staff": await _shaped(doc),
         # Shown once. The screen copies it and says so.
         "invite_token": raw,
         "expires_in_hours": 72,
+        "email_sent": delivered,
     }
 
 
@@ -306,8 +314,17 @@ async def resend_invite(staff_id: str, me: dict = Depends(require_super_admin)):
         user_id=staff_id, email=doc.get("email", ""), invited_by=str(me["_id"]),
     )
     await _invites().insert_one(invite)
-    await record(me, "staff.reinvite", target=staff_id, detail=doc.get("email", ""))
-    return {"invite_token": raw, "expires_in_hours": 72}
+    invite_url = f"{settings.APP_BASE_URL.rstrip('/')}/accept-invite?token={raw}"
+    delivered = await mailer.send(
+        mailer.staff_invitation_email(doc.get("full_name", ""), doc.get("role", ""), invite_url),
+        doc.get("email", ""),
+    )
+    await record(
+        me, "staff.reinvite", target=staff_id,
+        detail=doc.get("email", "")
+               + (" (invitation emailed)" if delivered else " (email delivery failed)"),
+    )
+    return {"invite_token": raw, "expires_in_hours": 72, "email_sent": delivered}
 
 
 # ── accepting one ───────────────────────────────────────────────────────────

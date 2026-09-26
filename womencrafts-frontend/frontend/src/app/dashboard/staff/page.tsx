@@ -60,7 +60,7 @@ export default function StaffPage() {
   const [form, setForm] = useState({ full_name: "", email: "", role: "", phone: "" });
   const [busy, setBusy] = useState(false);
   /** The one-time link, held only long enough to show it. */
-  const [issued, setIssued] = useState<{ name: string; email: string; link: string } | null>(null);
+  const [issued, setIssued] = useState<{ name: string; email: string; link: string; emailSent: boolean } | null>(null);
   const [copied, setCopied] = useState(false);
   const [editing, setEditing] = useState<StaffAccount | null>(null);
 
@@ -127,7 +127,12 @@ export default function StaffPage() {
         name: res.staff.full_name,
         email: res.staff.email,
         link: `${window.location.origin}/accept-invite?token=${res.invite_token}`,
+        emailSent: res.email_sent,
       });
+      toast.success(
+        res.email_sent ? "Invitation emailed" : "Account created; copy the invitation link",
+        { description: res.email_sent ? `Sent to ${res.staff.email}.` : "Email delivery failed, so use the secure link shown next." },
+      );
       await refresh();
     } catch (e) {
       toast.error("Could not create that account", { description: memberError(e) });
@@ -144,8 +149,12 @@ export default function StaffPage() {
         name: s.full_name,
         email: s.email,
         link: `${window.location.origin}/accept-invite?token=${res.invite_token}`,
+        emailSent: res.email_sent,
       });
-      toast.success("A fresh link was issued", { description: "The previous one stopped working." });
+      toast.success(
+        res.email_sent ? "A fresh invitation was emailed" : "A fresh link was issued",
+        { description: res.email_sent ? `Sent to ${s.email}; the previous link stopped working.` : "The previous one stopped working. Copy this link and send it securely." },
+      );
     } catch (e) {
       toast.error("Could not issue a new link", { description: memberError(e) });
     }
@@ -436,25 +445,28 @@ export default function StaffPage() {
           <div className="flex justify-end gap-2 pt-2">
             <button className="btn btn-outline" onClick={() => setInviting(false)}>Cancel</button>
             <button className="btn btn-primary" disabled={busy} onClick={() => void invite()}>
-              {busy ? "Creating…" : "Create and get the link"}
+              {busy ? "Creating…" : "Create and send invitation"}
             </button>
           </div>
         </div>
       </Modal>
 
       {/* ── the one-time link ────────────────────────────────────────────── */}
-      <Modal open={!!issued} onClose={() => setIssued(null)} title="Send her this link">
+      <Modal open={!!issued} onClose={() => setIssued(null)} title={issued?.emailSent ? "Invitation sent" : "Send her this link"}>
         {issued && (
           <div className="space-y-4">
             <p className="text-sm text-ink-muted">
-              <b className="text-ink">{issued.name}</b> can set her password with this link. It works once and
-              expires in three days.
+              {issued.emailSent ? (
+                <>We emailed <b className="text-ink">{issued.name}</b> at <b className="text-ink">{issued.email}</b>.</>
+              ) : (
+                <><b className="text-ink">{issued.name}</b> can set her password with this link.</>
+              )}{" "}It works once and expires in three days.
             </p>
             <div className="flex items-start gap-3 rounded-xl border border-amber-200 bg-amber-50 p-3">
               <KeyRound className="mt-0.5 h-4 w-4 shrink-0 text-amber-600" />
               <p className="text-xs leading-relaxed text-amber-900">
-                This is the only time it can be shown. We store it scrambled, so it cannot be looked up
-                again — if you lose it, issue a fresh one from her row.
+                This fallback link is shown only once. We store it scrambled, so it cannot be looked up
+                again. If the email is delayed, copy it now; if it is lost, issue a fresh invitation from her row.
               </p>
             </div>
             <div className="rounded-lg border border-line-strong bg-surface-2 p-3">

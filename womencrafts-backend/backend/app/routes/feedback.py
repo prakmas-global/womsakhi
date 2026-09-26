@@ -23,6 +23,7 @@ recorded through `app.core.audit`.
 """
 
 import csv
+import html
 import io
 import re
 from datetime import datetime, timedelta, timezone
@@ -432,7 +433,7 @@ async def request_feedback(payload: FeedbackRequestCreate, request: Request, me:
     if can_deliver():
         greeting = f"Hi {name.split(' ')[0]}," if name else "Hi,"
         about = f" about <b>{payload.program.strip()}</b>" if payload.program.strip() else ""
-        note = f"<p>{payload.message.strip()}</p>" if payload.message.strip() else ""
+        note = f"<p>{html.escape(payload.message.strip())}</p>" if payload.message.strip() else ""
         html = _wrap(
             "We'd love your feedback",
             f"<p>{greeting}</p><p>The WomSakhi team would like to hear how it went{about}.</p>{note}"
@@ -496,8 +497,8 @@ async def reply_to_feedback(feedback_id: str, payload: FeedbackReplyCreate, requ
         html = _wrap(
             "A reply to your feedback",
             f"<p>Hi {(doc.get('user_name') or '').split(' ')[0] or 'there'},</p>"
-            f"<p>You wrote:</p><blockquote>{_snippet(doc, 400)}</blockquote>"
-            f"<p>{payload.text}</p><p>— {me.get('full_name', '') or 'The WomSakhi team'}</p>",
+            f"<p>You wrote:</p><blockquote>{html.escape(_snippet(doc, 400))}</blockquote>"
+            f"<p>{html.escape(payload.text)}</p><p>— {html.escape(me.get('full_name', '') or 'The WomSakhi team')}</p>",
         )
         emailed = await send(EmailMessageSpec(to=to, subject="A reply to your feedback", html=html, text=payload.text), to)
 

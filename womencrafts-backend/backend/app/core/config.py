@@ -279,7 +279,7 @@ class Settings(BaseSettings):
         # nobody except a handful of addresses added by hand in the dashboard.
         # Treating that as "email works" is how a woman ends up waiting for a
         # reset link that was refused with a 400 she never sees.
-        from app.core.email import can_deliver, is_sandbox_domain  # local: cycle
+        from app.core.email import can_deliver, get_provider, is_sandbox_domain  # local: cycle
 
         # The sandbox is named FIRST and unconditionally — before `can_deliver`
         # is consulted at all.
@@ -289,7 +289,7 @@ class Settings(BaseSettings):
         # `can_deliver()` answer yes. Hanging this warning off that would mean
         # the one flag that makes the app *look* production-ready is also the
         # flag that silences the check telling you it is not. So it does not.
-        if is_sandbox_domain():
+        if get_provider().name == "mailgun" and is_sandbox_domain():
             problems.append(
                 "MAILGUN_DOMAIN is a SANDBOX domain, which only delivers to "
                 "recipients added and confirmed in the Mailgun dashboard. Every "

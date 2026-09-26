@@ -118,8 +118,8 @@ jobs:
             --service-account womsakhi-run@womsakhi.iam.gserviceaccount.com \
             --allow-unauthenticated \
             --port 8080 --cpu 1 --memory 1Gi --min-instances 1 --max-instances 10 --cpu-boost \
-            --set-secrets MONGODB_URI=mongodb-uri:latest,JWT_SECRET_KEY=jwt-secret-key:latest,DOCUMENT_ENCRYPTION_KEY=document-encryption-key:latest,ANTHROPIC_API_KEY=anthropic-api-key:latest,AZURE_SPEECH_KEY=azure-speech-key:latest,LANGFUSE_PUBLIC_KEY=langfuse-public-key:latest,LANGFUSE_SECRET_KEY=langfuse-secret-key:latest \
-            --set-env-vars "DB_NAME=womencrafts,JWT_ALGORITHM=HS256,ACCESS_TOKEN_EXPIRE_MINUTES=30,AZURE_SPEECH_REGION=centralindia,LANGFUSE_HOST=https://cloud.langfuse.com,LANGFUSE_ENV=production,ALLOWED_ORIGINS=$WEB_URL,APP_BASE_URL=$WEB_URL,MEDIA_BASE_URL=$API_HOST,COOKIE_SECURE=true,COOKIE_SAMESITE=lax,MEDIA_DIR=/mnt/media/media,PRIVATE_MEDIA_DIR=/mnt/media/private_media" \
+            --set-secrets MONGODB_URI=mongodb-uri:latest,JWT_SECRET_KEY=jwt-secret-key:latest,DOCUMENT_ENCRYPTION_KEY=document-encryption-key:latest,SMTP_PASSWORD=brevo-smtp-password:latest,ANTHROPIC_API_KEY=anthropic-api-key:latest,AZURE_SPEECH_KEY=azure-speech-key:latest,LANGFUSE_PUBLIC_KEY=langfuse-public-key:latest,LANGFUSE_SECRET_KEY=langfuse-secret-key:latest \
+            --set-env-vars "DB_NAME=womencrafts,JWT_ALGORITHM=HS256,ACCESS_TOKEN_EXPIRE_MINUTES=30,EMAIL_PROVIDER=smtp,SMTP_HOST=smtp-relay.brevo.com,SMTP_PORT=587,SMTP_USER=bb43f3001@smtp-brevo.com,SMTP_USE_TLS=true,SMTP_USE_SSL=false,EMAIL_FROM=no-reply@womsakhi.com,EMAIL_FROM_NAME=WomSakhi,AZURE_SPEECH_REGION=centralindia,LANGFUSE_HOST=https://cloud.langfuse.com,LANGFUSE_ENV=production,ALLOWED_ORIGINS=$WEB_URL,APP_BASE_URL=$WEB_URL,MEDIA_BASE_URL=$API_HOST,COOKIE_SECURE=true,COOKIE_SAMESITE=lax,MEDIA_DIR=/mnt/media/media,PRIVATE_MEDIA_DIR=/mnt/media/private_media" \
             --add-volume name=media,type=cloud-storage,bucket=womsakhi-media \
             --add-volume-mount volume=media,mount-path=/mnt/media
 

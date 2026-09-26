@@ -453,7 +453,7 @@ def _resubmission_email(name: str, reason: str, url: str) -> mailer.EmailMessage
     better photo. Told the wrong thing, a woman gives up; told the right
     thing, she goes and takes it again in daylight.
     """
-    first = (name or "").strip().split(" ")[0] or "there"
+    first = escape((name or "").strip().split(" ")[0] or "there")
     safe = escape(reason)
     html = mailer._wrap(  # noqa: SLF001 — the one branded shell every email uses
         "Please send your ID again",

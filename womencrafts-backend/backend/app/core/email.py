@@ -18,6 +18,7 @@ import smtplib
 import ssl
 from datetime import datetime, timezone
 from email.message import EmailMessage
+from html import escape
 from pathlib import Path
 from typing import Optional
 
@@ -214,7 +215,8 @@ def can_deliver() -> bool:
     Callers that promise a person something arrives must ask this first and say
     something else when it is False.
     """
-    if _mailgun_configured():
+    provider = get_provider()
+    if provider.name == "mailgun":
         # Configured, but a sandbox domain only reaches a handful of addresses
         # somebody added by hand. For the woman this function exists to protect
         # that is the same as not being able to send, so it answers no until
@@ -226,44 +228,81 @@ def can_deliver() -> bool:
         if is_sandbox_domain():
             return bool(settings.EMAIL_TEST_MODE)
         return True
-    return bool(settings.SMTP_HOST)
+    if provider.name == "smtp":
+        return bool(settings.SMTP_HOST)
+    return False
 
 
 # --- templates ---------------------------------------------------------------
 
-def _wrap(title: str, body_html: str, cta_label: str = "", cta_url: str = "") -> str:
-    """One branded shell for every email, inline-styled so mail clients respect it."""
+def _wrap(
+    title: str,
+    body_html: str,
+    cta_label: str = "",
+    cta_url: str = "",
+    *,
+    preheader: str = "A message from WomSakhi",
+    footer_note: str = "You received this message because your email address is connected to WomSakhi.",
+) -> str:
+    """Render the shared, responsive WomSakhi transactional-email shell.
+
+    Email clients remove modern application CSS, so the layout deliberately
+    uses presentation tables and inline styles. Every URL rendered here is an
+    absolute production URL; the action is also printed below the button for
+    people whose mail client blocks buttons or images.
+    """
+    app_url = settings.APP_BASE_URL.rstrip("/")
+    logo_url = f"{app_url}/womsakhi-email-logo.png"
+    safe_title = escape(title)
+    safe_preheader = escape(preheader)
+    safe_footer = escape(footer_note)
+    safe_cta_label = escape(cta_label)
+    safe_cta_url = escape(cta_url, quote=True)
     cta = (
         f"""
-        <tr><td style="padding:8px 0 24px;">
-          <a href="{cta_url}" style="display:inline-block;background:#d21f7c;color:#ffffff;
-             text-decoration:none;font-weight:600;font-size:15px;padding:13px 26px;border-radius:12px;">
-            {cta_label}
-          </a>
+        <tr><td bgcolor="#ffffff" style="background:#ffffff;padding:8px 40px 8px;border-left:1px solid #eadde6;border-right:1px solid #eadde6;">
+          <table role="presentation" cellpadding="0" cellspacing="0"><tr><td bgcolor="#c21868"
+                 style="border-radius:12px;background:#c21868;box-shadow:0 6px 16px rgba(194,24,104,.18);">
+            <a href="{safe_cta_url}" style="display:inline-block;border:1px solid #c21868;border-radius:12px;
+               color:#ffffff;text-decoration:none;font-weight:700;font-size:15px;line-height:20px;
+               padding:14px 24px;">{safe_cta_label}</a>
+          </td></tr></table>
+        </td></tr>
+        <tr><td bgcolor="#ffffff" style="background:#ffffff;padding:8px 40px 26px;font-size:12px;line-height:18px;color:#766b80;border-left:1px solid #eadde6;border-right:1px solid #eadde6;">
+          If the button does not open, copy and paste this link into your browser:<br>
+          <a href="{safe_cta_url}" style="color:#7a2c82;text-decoration:underline;word-break:break-all;">{safe_cta_url}</a>
         </td></tr>"""
         if cta_label and cta_url
         else ""
     )
     return f"""<!doctype html>
-<html><body style="margin:0;padding:0;background:#ece0ea;font-family:-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;">
-  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#ece0ea;padding:32px 16px;">
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>{safe_title}</title>
+</head><body style="margin:0;padding:0;background:#f7eef4;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;">
+  <div style="display:none;max-height:0;overflow:hidden;opacity:0;color:transparent;">{safe_preheader}</div>
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" bgcolor="#f7eef4" style="background:#f7eef4;">
     <tr><td align="center">
-      <table role="presentation" width="100%" cellpadding="0" cellspacing="0"
-             style="max-width:520px;background:#f5f5f0;border-radius:20px;padding:32px;">
-        <tr><td style="padding-bottom:8px;">
-          <span style="font-size:22px;font-weight:800;color:#d21f7c;letter-spacing:-0.02em;">WomSakhi</span>
-          <div style="font-size:10px;font-weight:700;letter-spacing:0.18em;color:#7a6cb0;text-transform:uppercase;margin-top:2px;">
-            Empowering Women
-          </div>
+      <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:600px;margin:28px 14px;">
+        <tr><td bgcolor="#4b174f" style="height:8px;background:#4b174f;border-radius:20px 20px 0 0;font-size:0;line-height:0;">&nbsp;</td></tr>
+        <tr><td align="center" bgcolor="#fffafc" style="background:#fffafc;padding:26px 32px 22px;border-left:1px solid #eadde6;border-right:1px solid #eadde6;">
+          <a href="{escape(app_url, quote=True)}" style="text-decoration:none;">
+            <img src="{escape(logo_url, quote=True)}" width="210" alt="WomSakhi" style="display:block;width:210px;max-width:100%;height:auto;border:0;">
+          </a>
+          <div style="font-size:10px;font-weight:700;letter-spacing:2px;color:#8a4a86;text-transform:uppercase;margin-top:8px;">Together, women thrive</div>
         </td></tr>
-        <tr><td style="padding:16px 0 8px;">
-          <h1 style="margin:0;font-size:20px;line-height:1.3;color:#2d1a63;">{title}</h1>
+        <tr><td bgcolor="#ffffff" style="background:#ffffff;padding:30px 40px 10px;border-left:1px solid #eadde6;border-right:1px solid #eadde6;">
+          <h1 style="margin:0;font-size:25px;line-height:33px;color:#35123d;font-weight:750;letter-spacing:-.3px;">{safe_title}</h1>
         </td></tr>
-        <tr><td style="font-size:15px;line-height:1.6;color:#4a4460;padding-bottom:20px;">{body_html}</td></tr>
+        <tr><td bgcolor="#ffffff" style="background:#ffffff;font-size:15px;line-height:24px;color:#514658;padding:4px 40px 18px;border-left:1px solid #eadde6;border-right:1px solid #eadde6;">{body_html}</td></tr>
         {cta}
-        <tr><td style="border-top:1px solid #e3e3d9;padding-top:16px;font-size:12px;color:#8b849e;">
-          You're receiving this because someone used this address to join WomSakhi.
-          If that wasn't you, you can safely ignore this email.
+        <tr><td bgcolor="#fffafc" style="background:#fffafc;border:1px solid #eadde6;border-top:0;border-radius:0 0 20px 20px;padding:22px 40px;font-size:12px;line-height:18px;color:#807486;">
+          {safe_footer}<br><br>
+          <a href="{escape(app_url, quote=True)}" style="color:#7a2c82;text-decoration:none;font-weight:700;">Open WomSakhi</a>
+          &nbsp;&nbsp;·&nbsp;&nbsp;
+          <a href="{escape(app_url + '/contact', quote=True)}" style="color:#7a2c82;text-decoration:none;">Contact support</a>
+          &nbsp;&nbsp;·&nbsp;&nbsp;
+          <a href="{escape(app_url + '/privacy', quote=True)}" style="color:#7a2c82;text-decoration:none;">Privacy</a>
+          <br><span style="color:#a397a7;">WomSakhi · India</span>
         </td></tr>
       </table>
     </td></tr>
@@ -272,7 +311,7 @@ def _wrap(title: str, body_html: str, cta_label: str = "", cta_url: str = "") ->
 
 
 def verification_email(name: str, url: str) -> EmailMessageSpec:
-    first = (name or "").strip().split(" ")[0] or "there"
+    first = escape((name or "").strip().split(" ")[0] or "there")
     html = _wrap(
         "Confirm your email address",
         f"<p>Hi {first},</p><p>Welcome to WomSakhi. Please confirm this is your email "
@@ -281,45 +320,57 @@ def verification_email(name: str, url: str) -> EmailMessageSpec:
         f"{settings.EMAIL_TOKEN_HOURS} hours.</p>",
         "Confirm my email",
         url,
+        preheader="Confirm your email to continue your WomSakhi application.",
+        footer_note="If you did not create this application, you can safely ignore this email.",
     )
     text = f"Hi {first},\n\nConfirm your WomSakhi email address:\n{url}\n\nThis link expires in {settings.EMAIL_TOKEN_HOURS} hours."
     return EmailMessageSpec(to="", subject="Confirm your WomSakhi email", html=html, text=text)
 
 
 def submitted_email(name: str) -> EmailMessageSpec:
-    first = (name or "").strip().split(" ")[0] or "there"
+    first = escape((name or "").strip().split(" ")[0] or "there")
     html = _wrap(
         "We've received your documents",
         f"<p>Hi {first},</p><p>Thank you. Our team is reviewing your application now. "
         f"Because WomSakhi is a women-only community, every account is checked by a "
         f"real person — it usually takes 1–2 working days.</p>"
         f"<p>We'll email you the moment it's done.</p>",
+        "View application status",
+        f"{settings.APP_BASE_URL.rstrip('/')}/app/verify",
+        preheader="Your documents reached the WomSakhi review team.",
+        footer_note="This is a status update for your WomSakhi application.",
     )
     text = f"Hi {first},\n\nWe've received your documents. Our team reviews every account by hand; this usually takes 1-2 working days."
     return EmailMessageSpec(to="", subject="WomSakhi — your application is being reviewed", html=html, text=text)
 
 
 def approved_email(name: str, url: str) -> EmailMessageSpec:
-    first = (name or "").strip().split(" ")[0] or "there"
+    first = escape((name or "").strip().split(" ")[0] or "there")
     html = _wrap(
         "You're in 🎉",
         f"<p>Hi {first},</p><p>Your WomSakhi account has been approved. You can now book "
         f"sessions, join programs and message our team.</p>",
         "Open WomSakhi",
         url,
+        preheader="Your WomSakhi membership is approved and ready.",
+        footer_note="This approval was completed by an authorised WomSakhi administrator.",
     )
     text = f"Hi {first},\n\nYour WomSakhi account has been approved. Sign in: {url}"
     return EmailMessageSpec(to="", subject="Your WomSakhi account is approved", html=html, text=text)
 
 
 def rejected_email(name: str, reason: str) -> EmailMessageSpec:
-    first = (name or "").strip().split(" ")[0] or "there"
-    detail = f"<p><strong>Reason:</strong> {reason}</p>" if reason else ""
+    first = escape((name or "").strip().split(" ")[0] or "there")
+    detail = f"<p><strong>Reason:</strong> {escape(reason)}</p>" if reason else ""
     html = _wrap(
         "We couldn't verify your account",
         f"<p>Hi {first},</p><p>We weren't able to verify your account with the documents "
         f"provided.</p>{detail}<p>You can reply to this email and our team will help you "
         f"sort it out.</p>",
+        "Contact support",
+        f"{settings.APP_BASE_URL.rstrip('/')}/contact",
+        preheader="An update about your WomSakhi application.",
+        footer_note="This is a status update for your WomSakhi application.",
     )
     text = f"Hi {first},\n\nWe couldn't verify your account. {reason}"
     return EmailMessageSpec(to="", subject="WomSakhi — about your application", html=html, text=text)
@@ -342,15 +393,39 @@ def reset_email(name: str, url: str, by_staff: bool = False) -> EmailMessageSpec
         subject="Reset your WomSakhi password",
         html=_wrap(
             "Reset your password",
-            f"<p>Hello {name or 'there'},</p>"
+            f"<p>Hello {escape(name or 'there')},</p>"
             f"<p>{who} Use the button below within 24 hours to choose a new one.</p>"
             "<p>If you weren't expecting this, ignore this email — your current "
             "password keeps working and nobody can see it.</p>",
             "Choose a new password",
             url,
+            preheader="Use this secure link to reset your WomSakhi password.",
+            footer_note="If you did not expect this reset, ignore this email. Your current password will keep working.",
         ),
         text=f"{who} Open this link within 24 hours to set a new password: {url}",
     )
+
+
+def staff_invitation_email(name: str, role: str, url: str) -> EmailMessageSpec:
+    """Invitation sent when a super admin creates or reissues a staff account."""
+    first = escape((name or "").strip().split(" ")[0] or "there")
+    safe_role = escape(role or "staff member")
+    html = _wrap(
+        "You’re invited to the WomSakhi team",
+        f"<p>Hi {first},</p><p>A WomSakhi administrator invited you to join as "
+        f"<strong>{safe_role}</strong>.</p><p>Use the secure link below to choose your "
+        "password. The invitation expires in 72 hours and can be used only once.</p>",
+        "Accept invitation",
+        url,
+        preheader="Set your password and activate your WomSakhi staff account.",
+        footer_note="If you were not expecting this invitation, contact WomSakhi support.",
+    )
+    text = (
+        f"Hi {(name or '').strip().split(' ')[0] or 'there'},\n\n"
+        f"You were invited to join the WomSakhi team as {role or 'a staff member'}.\n"
+        f"Set your password within 72 hours: {url}"
+    )
+    return EmailMessageSpec(to="", subject="You’re invited to the WomSakhi team", html=html, text=text)
 
 
 async def send(message: EmailMessageSpec, to: str) -> bool:

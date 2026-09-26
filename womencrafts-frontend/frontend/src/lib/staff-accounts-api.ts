@@ -74,14 +74,20 @@ export const apiAssignableRoles = () =>
   apiClient.get<{ roles: AssignableRole[] }>("/staff/roles").then((r) => r.data.roles);
 
 /** The `invite_token` in this response is the only time it is ever readable. */
+export interface StaffInviteResult {
+  invite_token: string;
+  expires_in_hours: number;
+  email_sent: boolean;
+}
+
 export const apiInviteStaff = (body: {
   full_name: string; email: string; role: string; phone?: string;
-}) => apiClient.post<{ staff: StaffAccount; invite_token: string; expires_in_hours: number }>(
+}) => apiClient.post<StaffInviteResult & { staff: StaffAccount }>(
   "/staff", body,
 ).then((r) => r.data);
 
 export const apiResendInvite = (id: string) =>
-  apiClient.post<{ invite_token: string; expires_in_hours: number }>(
+  apiClient.post<StaffInviteResult>(
     `/staff/${id}/resend`,
   ).then((r) => r.data);
 
