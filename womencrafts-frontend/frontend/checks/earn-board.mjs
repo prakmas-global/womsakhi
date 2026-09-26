@@ -18,7 +18,7 @@ try {
     await page.waitForFunction(() => document.querySelectorAll("#content article").length > 0, { timeout: 30000 });
     const state = await page.evaluate(async () => {
       const root = document.querySelector("[data-earn-dashboard]");
-      const image = root.querySelector('img[src="/ux/art/earn-dashboard-hero.png"]');
+      const image = root.querySelector('img[src="/ux/art/earn-dashboard-hero.webp"]');
       await image.decode().catch(() => {});
       const cardImages = await Promise.all([...root.querySelectorAll("article")].map(async card => {
         const art = card.firstElementChild;

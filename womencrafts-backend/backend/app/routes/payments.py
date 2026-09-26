@@ -12,19 +12,16 @@ Two rules run through everything here:
 """
 
 from datetime import datetime, timezone
-from typing import Optional
-
-from fastapi import APIRouter, Depends, HTTPException, Query, Request, status
+from fastapi import APIRouter, Depends, HTTPException, Request, status
 
 from app.core import idempotency
 from app.core.config import settings
 from app.core.payments import METHOD_LABELS, get_provider
-from app.core.rbac import require_staff
 from app.core.serializers import to_object_id
 from app.db.mongodb import get_database
 from app.models.conversation import MemberNotificationModel, notify
 from app.models.enrollment import BookingModel
-from app.models.payment import OrderModel, RefundModel
+from app.models.payment import OrderModel
 from app.models.program import ProgramModel
 from app.models.service import ServiceModel
 from app.routes.me import require_active_member
@@ -33,8 +30,6 @@ from app.schemas.payment import (
     CreateOrderRequest,
     OrderResponse,
     PaymentMethodsResponse,
-    RefundRequest,
-    RefundResponse,
     StartedOrderResponse,
 )
 
@@ -43,10 +38,6 @@ router = APIRouter(prefix="/payments", tags=["Payments"])
 
 def _orders():
     return get_database()[OrderModel.collection_name]
-
-
-def _refunds():
-    return get_database()[RefundModel.collection_name]
 
 
 @router.get("/methods", response_model=PaymentMethodsResponse, summary="How she can pay")
@@ -267,65 +258,11 @@ async def my_orders(me: dict = Depends(require_active_member)):
 
 
 # --- staff -------------------------------------------------------------------
-
-@router.get("/admin/orders", response_model=list[OrderResponse], summary="All payments")
-async def all_orders(
-    state: Optional[str] = Query(None, description="created | paid | failed | refunded"),
-    _: dict = Depends(require_staff),
-):
-    query: dict = {}
-    if state:
-        query["status"] = state
-    cursor = _orders().find(query).sort("created_at", -1).limit(200)
-    return [OrderResponse(**OrderModel.to_response(o)) async for o in cursor]
-
-
-@router.post("/admin/orders/{order_id}/refund", response_model=RefundResponse, summary="Refund a payment")
-async def refund(order_id: str, payload: RefundRequest, staff: dict = Depends(require_staff)):
-    order = await _orders().find_one({"_id": to_object_id(order_id)})
-    if not order:
-        raise HTTPException(status.HTTP_404_NOT_FOUND, "Order not found")
-    if order.get("status") != OrderModel.STATUS_PAID:
-        raise HTTPException(status.HTTP_400_BAD_REQUEST, "Only a paid order can be refunded")
-
-    paid = int(order["amount_minor"])
-    already = int(order.get("refunded_minor") or 0)
-    amount = payload.amount_minor or (paid - already)
-    if amount <= 0 or already + amount > paid:
-        raise HTTPException(status.HTTP_400_BAD_REQUEST, "Refund exceeds what was paid")
-
-    provider = get_provider()
-    result = await provider.refund(order.get("provider_payment_id", ""), amount)
-
-    doc = RefundModel.create_document(
-        order_id=str(order["_id"]),
-        user_id=order["user_id"],
-        amount_minor=amount,
-        reason=payload.reason,
-        provider_refund_id=result.provider_refund_id,
-        status=result.status,
-        by_name=staff.get("full_name", ""),
-    )
-    inserted = await _refunds().insert_one(doc)
-    doc["_id"] = inserted.inserted_id
-
-    total_refunded = already + amount
-    await _orders().update_one(
-        {"_id": order["_id"]},
-        {"$set": {
-            "refunded_minor": total_refunded,
-            "status": OrderModel.STATUS_REFUNDED if total_refunded >= paid else OrderModel.STATUS_PAID,
-            "updated_at": datetime.now(timezone.utc),
-        }},
-    )
-    await notify(
-        get_database(), order["user_id"],
-        title="Refund issued",
-        body=f"{OrderModel.money(amount, order.get('currency', 'INR'))} for {order.get('title', '')}.",
-        ntype=MemberNotificationModel.TYPE_ACCOUNT,
-        href="/app/bookings",
-    )
-    return RefundResponse(**RefundModel.to_response(doc))
+#
+# The two staff endpoints that lived here (`GET /payments/admin/orders` and
+# `POST /payments/admin/orders/{id}/refund`) were guarded by `require_staff`
+# only — any staff role could refund any payment, unaudited. They now live in
+# admin_money.py under `money.view` / `money.approve` with an audit record.
 
 
 # --- webhook -----------------------------------------------------------------

@@ -84,7 +84,7 @@ export default function RightsPage() {
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img loading="lazy" decoding="async" src={WELLBEING_ART.legal} alt=""
                  className="ux-float pointer-events-none absolute -bottom-3 -end-4 h-[100px] w-[100px] object-contain" />
-            <h3 className="relative w-[60%] text-sm font-semibold" style={{ color: "var(--ux-ink)" }}>{tr("rights.notLegalAdvice")}</h3>
+            <h2 className="relative w-[60%] text-sm font-semibold" style={{ color: "var(--ux-ink)" }}>{tr("rights.notLegalAdvice")}</h2>
             <p className="relative mt-2 w-[60%] text-xs leading-relaxed" style={{ color: "var(--ux-muted)" }}>{tr("rights.thisIsWhatTheLawSays")}</p>
           </div>
         </div>
@@ -139,7 +139,7 @@ export default function RightsPage() {
                   <IconTile icon={r.icon} tint={r.tint} ink={r.ink} size={46} radius={12} />
                   <div className="min-w-0 flex-1">
                     {/* The sentence she can repeat comes first. The Act comes second. */}
-                    <h3 className="text-base font-semibold" style={{ color: "var(--ux-ink)" }}>{r.title}</h3>
+                    <h2 className="text-base font-semibold" style={{ color: "var(--ux-ink)" }}>{r.title}</h2>
                     <p className="mt-1.5 text-xsm leading-relaxed" style={{ color: "var(--ux-ink-2)" }}>{r.body}</p>
                     {on && (
                       <p className="ux-slide-up mt-2.5 rounded-[12px] p-3 text-xs leading-relaxed"
@@ -183,7 +183,7 @@ export default function RightsPage() {
             {/* On a phone the call is the primary action: full width, under the words. */}
             <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
               <div className="min-w-0">
-                <h3 className="text-base font-semibold" style={{ color: "var(--ux-ink)" }}>{tr("rights.callItIsFreeWhateverYou")}</h3>
+                <h2 className="text-base font-semibold" style={{ color: "var(--ux-ink)" }}>{tr("rights.callItIsFreeWhateverYou")}</h2>
                 <p className="mt-1.5 text-xsm leading-relaxed" style={{ color: "var(--ux-muted)" }}>{tr("rights.theyAssignYouALawyerYou")}</p>
               </div>
               <Btn href="tel:15100" variant="primary" icon="Phone" className={phonePrimary}>{tr("rights.call")}</Btn>

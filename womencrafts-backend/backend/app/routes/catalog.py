@@ -36,7 +36,7 @@ CATALOG_PREFIX = "catalog:"
 
 # Only these ever reach a member. Anything else is staff work-in-progress.
 OPEN_SERVICE_STATUSES = ["Active"]
-OPEN_PROGRAM_STATUSES = ["Ongoing", "Upcoming", "Active", "Published"]
+OPEN_PROGRAM_STATUSES = ["Ongoing", "Upcoming", "Active", "Published", "Running"]
 
 
 @router.get("/services", response_model=list[CatalogService], summary="Services I can book")

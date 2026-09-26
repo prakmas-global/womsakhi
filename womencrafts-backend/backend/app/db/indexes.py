@@ -19,6 +19,52 @@ from app.db.mongodb import get_database
 
 # collection -> indexes it needs
 INDEXES: dict[str, list[IndexModel]] = {
+    # ── Collections the admin rebuild added (2026-09-26) ──────────────────
+    "member_threads": [
+        # One state document per member: assignee, resolved flag.
+        IndexModel([("user_id", ASCENDING)], unique=True, name="user_unique"),
+    ],
+    "member_messages": [
+        # The inbox's this-week counters and "waiting for a reply" scan.
+        IndexModel([("sender", ASCENDING), ("created_at", DESCENDING)], name="sender_created"),
+        IndexModel([("user_id", ASCENDING), ("created_at", ASCENDING)], name="thread"),
+        # Her unread count and the "mark my thread read" write.
+        IndexModel([("user_id", ASCENDING), ("read_by_member", ASCENDING)], name="user_unread_member"),
+        # The staff inbox's unread counter.
+        IndexModel([("read_by_team", ASCENDING)], name="unread_team"),
+    ],
+    "circle_moderation": [
+        # The member-side mute check on every post/reply write, and the roster join.
+        IndexModel([("circle_id", ASCENDING), ("user_id", ASCENDING), ("kind", ASCENDING)], name="circle_user_kind"),
+        IndexModel([("kind", ASCENDING), ("until", ASCENDING)], name="kind_until"),
+    ],
+    "mentor_sessions": [
+        IndexModel([("mentor_id", ASCENDING), ("created_at", DESCENDING)], name="mentor_recent"),
+    ],
+    "staff_tasks": [
+        IndexModel([("done", ASCENDING), ("due", ASCENDING)], name="done_due"),
+        IndexModel([("assignee_id", ASCENDING), ("done", ASCENDING)], name="assignee_done"),
+    ],
+    "report_runs": [
+        IndexModel([("created_at", DESCENDING)], name="recent"),
+        IndexModel([("report_key", ASCENDING), ("created_at", DESCENDING)], name="report_recent"),
+    ],
+    "feedback_requests": [
+        IndexModel([("created_at", DESCENDING)], name="recent"),
+    ],
+    "content_items": [
+        IndexModel([("slug", ASCENDING)], name="slug"),
+        IndexModel([("status", ASCENDING), ("publish_at", ASCENDING)], name="status_publish_at"),
+        IndexModel([("created_at", DESCENDING)], name="recent"),
+        IndexModel([("status", ASCENDING), ("created_at", DESCENDING)], name="status_recent"),
+        # The authenticated member feed filters published items by audience
+        # before ordering the newest matching content first.
+        IndexModel(
+            [("status", ASCENDING), ("audience_mode", ASCENDING),
+             ("audience_values", ASCENDING), ("updated_at", DESCENDING)],
+            name="status_audience_updated",
+        ),
+    ],
     "users": [
         # Sign-in looks up by email on every attempt; unique also stops two
         # accounts racing to claim the same address.
@@ -54,6 +100,10 @@ INDEXES: dict[str, list[IndexModel]] = {
     ],
     "shop_reviews": [
         IndexModel([("seller_id", ASCENDING), ("created_at", DESCENDING)], name="seller_created"),
+    ],
+    "shop_operations": [
+        IndexModel([("user_id", ASCENDING), ("kind", ASCENDING), ("updated_at", DESCENDING)], name="user_kind_updated"),
+        IndexModel([("user_id", ASCENDING), ("archived", ASCENDING), ("status", ASCENDING)], name="user_active_status"),
     ],
 
     # ── Skill exchange ─────────────────────────────────────────────────
@@ -185,14 +235,6 @@ INDEXES: dict[str, list[IndexModel]] = {
         ),
         IndexModel([("program_id", ASCENDING)], name="program"),
     ],
-    "member_messages": [
-        # Her unread count and the "mark my thread read" write both match on
-        # user_id + read_by_member; the existing keys cover neither pair.
-        IndexModel([("user_id", ASCENDING), ("read_by_member", ASCENDING)], name="user_unread_member"),
-        IndexModel([("user_id", ASCENDING), ("created_at", ASCENDING)], name="thread"),
-        # the staff inbox's unread counter
-        IndexModel([("read_by_team", ASCENDING)], name="unread_team"),
-    ],
     "member_notifications": [
         IndexModel([("user_id", ASCENDING), ("created_at", DESCENDING)], name="user_recent"),
         IndexModel([("user_id", ASCENDING), ("unread", ASCENDING)], name="user_unread"),
@@ -252,6 +294,30 @@ INDEXES: dict[str, list[IndexModel]] = {
             name="user_circle_unique",
         ),
         IndexModel([("circle_id", ASCENDING)], name="circle"),
+    ],
+    "circle_invites": [
+        IndexModel([("circle_id", ASCENDING), ("target_normalized", ASCENDING)], unique=True, name="circle_target_unique"),
+        IndexModel([("target_normalized", ASCENDING), ("status", ASCENDING)], name="target_status"),
+    ],
+    "circle_resources": [
+        IndexModel([("circle_id", ASCENDING), ("archived", ASCENDING), ("created_at", DESCENDING)], name="circle_active_recent"),
+        IndexModel([("user_id", ASCENDING), ("created_at", DESCENDING)], name="user_recent"),
+    ],
+    "circle_preferences": [
+        IndexModel(
+            [("user_id", ASCENDING), ("circle_id", ASCENDING)],
+            unique=True,
+            name="user_circle_unique",
+        ),
+        IndexModel([("circle_id", ASCENDING), ("muted", ASCENDING)], name="circle_muted"),
+    ],
+    "wellbeing_activity_engagements": [
+        IndexModel(
+            [("user_id", ASCENDING), ("activity_id", ASCENDING)],
+            unique=True,
+            name="user_activity_unique",
+        ),
+        IndexModel([("user_id", ASCENDING), ("saved", ASCENDING), ("updated_at", DESCENDING)], name="user_saved_recent"),
     ],
     "circle_contributions": [
         # The rule that makes paying twice for one round impossible. It is a
@@ -351,15 +417,6 @@ INDEXES: dict[str, list[IndexModel]] = {
         # ESR: status is the equality match, bookings is the sort.
         IndexModel([("status", ASCENDING), ("bookings", DESCENDING)], name="status_bookings"),
         IndexModel([("type", ASCENDING), ("status", ASCENDING)], name="type_status"),
-    ],
-    "content_items": [
-        # Her library, newest first.
-        IndexModel([("created_at", DESCENDING)], name="recent"),
-        # Every read of this collection filters on status before sorting by
-        # date — her library asks for Published, the admin list asks for one
-        # tab. With only the date index that was a scan of every item to throw
-        # most of them away.
-        IndexModel([("status", ASCENDING), ("created_at", DESCENDING)], name="status_recent"),
     ],
     "invoices": [
         IndexModel([("status", ASCENDING)], name="status"),

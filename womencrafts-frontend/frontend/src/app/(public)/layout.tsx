@@ -27,7 +27,7 @@ export default function PublicLayout({ children }: { children: React.ReactNode }
         <div className="mx-auto flex max-w-[880px] items-center justify-between gap-4 px-5 py-3.5">
           <Link href="/signin" className="flex items-center gap-2.5" aria-label="WomSakhi">
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src="/womsakhi-wordmark.png" alt="WomSakhi" className="h-10 w-auto object-contain" />
+            <img src="/womsakhi-wordmark.webp" alt="WomSakhi" className="h-10 w-auto object-contain" />
           </Link>
           <nav className="flex items-center gap-1">
             {[

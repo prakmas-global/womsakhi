@@ -1,9 +1,12 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { lazy, Suspense, useEffect, useState } from "react";
 
 import { useI18n } from "@/i18n";
-import SakhiStage from "./SakhiStage";
+
+// Speech, recording and conversation code is only needed after a member opens
+// Sakhi. Loading it here keeps it out of every member screen's initial JS.
+const SakhiStage = lazy(() => import("./SakhiStage"));
 
 /**
  * The button that brings Sakhi up, and the panel she appears in.
@@ -65,7 +68,7 @@ export default function SakhiLauncher() {
           >
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
-              src="/sakhi-avatar.png"
+              src="/sakhi-avatar.webp"
               width={160} height={160}
               /* 1240x1269 and 1.8MB before, drawn at 46px. Now 160px / 47KB. */
               alt=""
@@ -77,7 +80,11 @@ export default function SakhiLauncher() {
           </button>
         )}
       </div>
-      {open && <SakhiStage locale={locale} onClose={() => setOpen(false)} />}
+      {open && (
+        <Suspense fallback={null}>
+          <SakhiStage locale={locale} onClose={() => setOpen(false)} />
+        </Suspense>
+      )}
     </>
   );
 }

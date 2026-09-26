@@ -14,6 +14,9 @@ export const apiClient = axios.create({
   baseURL: API_URL,
   headers: { "Content-Type": "application/json" },
   withCredentials: true,
+  // Turn a stalled mobile connection into an actionable error state instead
+  // of leaving a screen on its loading state forever.
+  timeout: 20_000,
 });
 
 /**
@@ -164,11 +167,13 @@ export async function apiSignUp(
 
 export async function apiSignIn(
   email: string,
-  password: string
+  password: string,
+  two_factor_code = "",
 ): Promise<AuthPayload> {
   const { data } = await apiClient.post<AuthPayload>("/auth/signin", {
     email,
     password,
+    two_factor_code,
   });
   return data;
 }

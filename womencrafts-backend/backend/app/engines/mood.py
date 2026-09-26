@@ -130,11 +130,61 @@ async def reset_activity(*, user_id: str) -> dict | None:
     # NOT `content_activities` — that is the admin content feed, and reading
     # it offered a woman having a bad afternoon "Blog post updated". Its own
     # collection, reviewed like the cards.
-    row = await _db()["wellbeing_activities"].find_one({"reviewed": True})
+    recent = await _db()["wellbeing_activity_engagements"].find(
+        {"user_id": user_id}
+    ).sort("updated_at", -1).to_list(10)
+    excluded = [ObjectId(r["activity_id"]) for r in recent if ObjectId.is_valid(r.get("activity_id", ""))]
+    query = {"reviewed": True}
+    if excluded:
+        query["_id"] = {"$nin": excluded}
+    row = await _db()["wellbeing_activities"].find_one(query)
+    if not row:
+        row = await _db()["wellbeing_activities"].find_one({"reviewed": True})
     if not row:
         return None
+    now = datetime.now(timezone.utc)
+    await _db()["wellbeing_activity_engagements"].update_one(
+        {"user_id": user_id, "activity_id": str(row["_id"])},
+        {"$set": {"last_action": "shown", "updated_at": now},
+         "$setOnInsert": {"created_at": now, "saved": False}}, upsert=True,
+    )
     return {"id": str(row["_id"]), "text": row.get("text", ""),
-            "minutes": row.get("minutes", 0), "icon": row.get("icon", "")}
+            "minutes": row.get("minutes", 0), "icon": row.get("icon", ""),
+            "saved": False, "last_action": "shown"}
+
+
+async def activity_action(*, user_id: str, activity_id: str, action: str) -> bool:
+    if action not in {"started", "completed", "skipped", "saved", "unsaved"}:
+        return False
+    oid = _oid(activity_id)
+    if not oid or not await _db()["wellbeing_activities"].find_one({"_id": oid, "reviewed": True}):
+        return False
+    now = datetime.now(timezone.utc)
+    changes = {"last_action": action, "updated_at": now}
+    if action in {"saved", "unsaved"}:
+        changes["saved"] = action == "saved"
+    initial = {"created_at": now}
+    if "saved" not in changes:
+        initial["saved"] = False
+    await _db()["wellbeing_activity_engagements"].update_one(
+        {"user_id": user_id, "activity_id": activity_id},
+        {"$set": changes, "$setOnInsert": initial}, upsert=True,
+    )
+    return True
+
+
+async def saved_activities(*, user_id: str) -> list[dict]:
+    saved = await _db()["wellbeing_activity_engagements"].find(
+        {"user_id": user_id, "saved": True}
+    ).sort("updated_at", -1).to_list(50)
+    ids = [ObjectId(r["activity_id"]) for r in saved if ObjectId.is_valid(r.get("activity_id", ""))]
+    rows = await _db()["wellbeing_activities"].find({"_id": {"$in": ids}, "reviewed": True}).to_list(50)
+    by_id = {str(r["_id"]): r for r in rows}
+    return [{"id": item["activity_id"], "text": by_id[item["activity_id"]].get("text", ""),
+             "minutes": by_id[item["activity_id"]].get("minutes", 0),
+             "icon": by_id[item["activity_id"]].get("icon", ""),
+             "saved": True, "last_action": item.get("last_action", "saved")}
+            for item in saved if item["activity_id"] in by_id]
 
 
 async def set_encouragement(*, user_id: str, choice: str) -> bool:

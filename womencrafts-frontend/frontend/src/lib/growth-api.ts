@@ -169,6 +169,11 @@ export async function apiRequestMentor(id: string, goal: string, preferredTime =
   return data;
 }
 
+export async function apiWithdrawMentorRequest(id: string) {
+  const { data } = await apiClient.post<MentorRequest>(`/growth/mentors/requests/${id}/withdraw`);
+  return data;
+}
+
 /* ── Courses ─────────────────────────────────────────────────────────── */
 
 export interface Enrollment {
@@ -256,6 +261,8 @@ export interface ApiCircleDetail {
   guidelines: string; is_private: boolean; member_count: number;
   post_count: number; joined: boolean;
   is_savings: boolean; monthly_minor: number; round: number;
+  icon: string; tags: string[]; who_posts: "all" | "hosts";
+  review_first: boolean; tell_me: boolean; owner: boolean; muted: boolean; can_post: boolean;
 }
 
 /** One member of a savings circle, as the pay screen needs her. */
@@ -302,7 +309,11 @@ export const apiCircle = (id: string, s?: AbortSignal) =>
 
 /** Start a circle. The woman who starts it is its first member and its host. */
 export async function apiCreateCircle(
-  body: { name: string; topic: string; desc: string; is_savings: boolean; monthly_minor: number },
+  body: {
+    name: string; topic: string; desc: string; is_savings: boolean; monthly_minor: number;
+    is_private?: boolean; cover?: string; icon?: string; tags?: string[]; guidelines?: string;
+    who_posts?: "all" | "hosts"; review_first?: boolean; tell_me?: boolean; invites?: string[];
+  },
   attemptKey?: string,
 ) {
   const { data } = await apiClient.post<ApiCircleDetail>(
@@ -315,6 +326,37 @@ export async function apiCreateCircle(
 
 export const apiCircleSavings = (id: string, s?: AbortSignal) =>
   get<ApiCircleSavings>(`/community/circles/${id}/savings`, s);
+
+export const apiCircleMembers = (id: string, s?: AbortSignal) =>
+  get<ApiCircleMember[]>(`/community/circles/${id}/members`, s);
+
+export async function apiUpdateCircle(id: string, body: {
+  name: string; topic: string; desc: string; guidelines: string; tags: string[];
+  who_posts: "all" | "hosts"; review_first: boolean; tell_me: boolean;
+}) {
+  const { data } = await apiClient.patch<ApiCircleDetail>(`/community/circles/${id}`, body);
+  return data;
+}
+
+export async function apiSetCircleMuted(id: string, muted: boolean) {
+  const { data } = await apiClient.patch<ApiCircleDetail>(`/community/circles/${id}/preferences`, { muted });
+  return data;
+}
+
+export interface ApiCircleResource {
+  id: string; name: string; url: string; added_by: string; mine: boolean; when: string;
+}
+
+export const apiCircleResources = (id: string, s?: AbortSignal) =>
+  get<ApiCircleResource[]>(`/community/circles/${id}/resources`, s);
+
+export async function apiAddCircleResource(circleId: string, body: { name: string; url: string }) {
+  const { data } = await apiClient.post<ApiCircleResource>(`/community/circles/${circleId}/resources`, body);
+  return data;
+}
+
+export const apiArchiveCircleResource = (circleId: string, resourceId: string) =>
+  apiClient.delete(`/community/circles/${circleId}/resources/${resourceId}`).then(() => undefined);
 
 /**
  * Pay this month's share.

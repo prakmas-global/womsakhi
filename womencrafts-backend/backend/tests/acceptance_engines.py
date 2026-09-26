@@ -56,7 +56,7 @@ async def cleanup(db):
               "delivery_attempts", "action_receipts", "audit_events",
               "device_subscriptions"):
         await db[c].delete_many({"user_id": USER})
-    await db["notifications"].delete_many({"user_id": USER})
+    await db["member_notifications"].delete_many({"user_id": USER})
     await db["outbox"].delete_many({"module": "e2e"})
 
 
@@ -78,7 +78,7 @@ async def main():
     check("tick raised one intent", res.get("raised"), 1)
     intent = await db[IntentModel.collection_name].find_one({"user_id": USER})
     check("intent dispatched", (intent or {}).get("state"), IntentModel.STATE_DISPATCHED)
-    inbox = await db["notifications"].count_documents({"user_id": USER})
+    inbox = await db["member_notifications"].count_documents({"user_id": USER})
     check("inbox row written", inbox, 1)
 
     print("\n── 2. ticking again does not send it twice ──")
@@ -326,7 +326,7 @@ async def main():
         {"$set": {"release_after": now - timedelta(seconds=1)}})
     await policy.update(USER, {"quiet": {"enabled": False}})
     await asyncio.gather(*[notify.release_held() for _ in range(10)])
-    rows = await db["notifications"].count_documents({"user_id": USER})
+    rows = await db["member_notifications"].count_documents({"user_id": USER})
     check("one inbox row, not ten", rows, 1)
 
     await cleanup(db)

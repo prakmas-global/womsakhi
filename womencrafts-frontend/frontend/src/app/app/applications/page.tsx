@@ -83,7 +83,7 @@ export default function Applications() {
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img loading="lazy" decoding="async" src={WORK_ART.interview} alt=""
                  className="ux-float pointer-events-none absolute -bottom-3 -end-4 h-[100px] w-[100px] object-contain" />
-            <h3 className="relative w-[60%] text-sm font-semibold" style={{ color: "var(--ux-ink)" }}>{tr("applications.interviewOnMonday")}</h3>
+            <h2 className="relative w-[60%] text-sm font-semibold" style={{ color: "var(--ux-ink)" }}>{tr("applications.interviewOnMonday")}</h2>
             <p className="relative mt-2 w-[60%] text-xs leading-relaxed" style={{ color: "var(--ux-muted)" }}>{tr("applications.tenMinutesOfPracticeMakesA")}</p>
             <div className="relative mt-3 w-[60%]">
               <Btn href="/app/sakhi" variant="soft" size="sm" iconEnd="ArrowRight">Practise</Btn>
@@ -118,10 +118,10 @@ export default function Applications() {
                             ink={closed ? "--ux-muted" : a.ink} size={46} radius={12} />
                   <div className="min-w-0 flex-1">
                     <div className="flex items-start gap-2">
-                      <h3 className="min-w-0 flex-1 truncate text-sm font-semibold"
+                      <h2 className="min-w-0 flex-1 truncate text-sm font-semibold"
                           style={{ color: closed ? "var(--ux-muted)" : "var(--ux-ink)" }}>
                         {a.title}
-                      </h3>
+                      </h2>
                       <Tag tone={closed ? "neutral" : a.stage === "Interview" ? "brand" : "blue"} size="sm">
                         {a.stage}
                       </Tag>

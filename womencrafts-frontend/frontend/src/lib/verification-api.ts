@@ -229,3 +229,115 @@ export function verificationErrorMessage(err: unknown): string {
   // missed and every expired reset link said "Something went wrong."
   return apiErrorMessage(err);
 }
+
+// --- review desk (admin side) ---
+//
+// What the queue screen at /dashboard/users/verification reads. The older
+// `apiVerificationQueue` above is kept for anything else that calls it; the
+// server answers both with the same, wider shape.
+
+export const REVIEW_STATES: VerificationState[] = [
+  "in_review",
+  "pending_documents",
+  "pending_email",
+  "active",
+  "rejected",
+  "suspended",
+];
+
+export const REVIEW_STATE_LABEL: Record<VerificationState, string> = {
+  in_review: "Awaiting review",
+  pending_documents: "No ID yet",
+  pending_email: "Unconfirmed email",
+  active: "Approved",
+  rejected: "Rejected",
+  suspended: "Suspended",
+};
+
+export const REVIEW_STATE_TONE: Record<VerificationState, "amber" | "sky" | "slate" | "emerald" | "rose"> = {
+  in_review: "amber",
+  pending_documents: "sky",
+  pending_email: "slate",
+  active: "emerald",
+  rejected: "rose",
+  suspended: "slate",
+};
+
+export type QueueCounts = Record<VerificationState, number>;
+
+export interface QueueRow extends QueueItem {
+  rejection_reason: string;
+  updated: string;
+}
+
+export interface ReviewQueue {
+  items: QueueRow[];
+  total: number;
+  counts: QueueCounts;
+}
+
+export async function apiReviewQueue(params: {
+  state?: VerificationState | "all";
+  q?: string;
+}): Promise<ReviewQueue> {
+  const { data } = await apiClient.get<ReviewQueue>("/verification/queue", {
+    params: { state: params.state, q: params.q || undefined },
+  });
+  return data;
+}
+
+/** One staff member opening one document, from the document's own access log. */
+export interface DocumentAccess {
+  by: string;
+  name: string;
+  at: string;
+}
+
+export interface ReviewedDocument extends ApiDocument {
+  access_count: number;
+  access_log: DocumentAccess[];
+  encrypted: boolean;
+}
+
+/** One decision taken about an applicant, read back from the audit log. */
+export interface DecisionRecord {
+  id: string;
+  user_name: string;
+  action: string;
+  label: string;
+  detail: string;
+  when: string;
+  created_at: string;
+}
+
+export interface ApplicantDetail {
+  user_id: string;
+  member_id: string;
+  full_name: string;
+  email: string;
+  phone: string;
+  status: VerificationState;
+  status_label: string;
+  applied: string;
+  applied_at: string;
+  email_verified_at: string;
+  verified_at: string;
+  updated_at: string;
+  rejection_reason: string;
+  documents: ReviewedDocument[];
+  history: DecisionRecord[];
+}
+
+export async function apiApplicantDetail(userId: string): Promise<ApplicantDetail> {
+  const { data } = await apiClient.get<ApplicantDetail>(`/verification/applicants/${userId}`);
+  return data;
+}
+
+/** Send her back to the upload step with a note saying what to change. */
+export async function apiRequestResubmission(
+  userId: string,
+  reason: string,
+): Promise<{ message: string }> {
+  const { data } = await apiClient.post(`/verification/${userId}/request-resubmission`, { reason });
+  return data;
+}

@@ -46,7 +46,9 @@ export function ChromeShell({ children }: { children: React.ReactNode }) {
       user={{ name: name ?? me.first, avatar: me.avatar, unread: me.unread }}
       sidebarFooter={bare ? undefined : (pathname === "/app/circle" || profilePct >= 100) ? (
         <div className="relative overflow-hidden rounded-[8px] px-4 py-5" style={{ minHeight: 168, background: "linear-gradient(135deg, #ffe7f1, #f8cce7)" }}>
-          <img src="/ux/art/circle-dashboard-leaves.png" alt="" className="pointer-events-none absolute -bottom-14 -right-12 h-[190px] w-[150px] object-contain" />
+          <img src="/ux/art/circle-dashboard-leaves.webp" alt="" width={150} height={190}
+               style={{ width: 150, height: 190, maxWidth: 150 }}
+               className="pointer-events-none absolute -bottom-14 -right-12 object-contain" />
           <p className="relative max-w-[140px] font-serif text-xl italic leading-tight" style={{ color: "#8b2b66" }}>{tr("chromeShell.aKinderStrongerWorldForWomen")}</p>
           <Btn href="/app/refer" variant="primary" size="sm" iconEnd="ArrowRight">{tr("chromeShell.inviteAFriend")}</Btn>
         </div>

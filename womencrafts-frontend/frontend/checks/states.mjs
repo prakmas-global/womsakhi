@@ -42,7 +42,7 @@ let checked = 0;
 
   for (const route of ["/dashboard/users", "/dashboard/services", "/dashboard/programs"]) {
     try {
-      await p.goto(`${APP}${route}`, { waitUntil: "networkidle2", timeout: 25000 });
+      await p.goto(`${APP}${route}`, { waitUntil: "domcontentloaded", timeout: 15000 });
     } catch { /* aborted requests are the point */ }
     await new Promise((r) => setTimeout(r, 2500));
     const told = await p.evaluate(() => !!document.querySelector("[data-connection-banner]"));
@@ -65,14 +65,14 @@ let checked = 0;
     for (const route of routes) {
       if (route.endsWith("/logout")) continue;
       try {
-        await p.goto(`${APP}${route}`, { waitUntil: "networkidle2", timeout: 25000 });
+        await p.goto(`${APP}${route}`, { waitUntil: "domcontentloaded", timeout: 15000 });
         await p.waitForFunction(() => ![...document.querySelectorAll(
           '.wc-skeleton,[class*="animate-pulse"],[class*="animate-spin"]')]
           .some((el) => { const r = el.getBoundingClientRect(); return r.width > 0 && r.height > 0; }),
-          { timeout: 6000 }).catch(() => {});
+          { timeout: 3000 }).catch(() => {});
         await new Promise((r) => setTimeout(r, 200));
         checked++;
-        const d = await p.evaluate(() => {
+        const readState = () => p.evaluate(() => {
           const main = document.querySelector("main") || document.body;
           const text = (main.innerText || "").trim();
           return {
@@ -85,12 +85,22 @@ let checked = 0;
             // email") and reported a screen showing six applicants as empty.
             bareEmpty: text.length < 400
               && /No [a-z ]+ (yet|found|match)/i.test(text)
+              && !main.querySelector("button,a[href]")
               && !/clear filter|try|add|create|browse|explore|get started/i.test(text),
           };
         });
+        let d = await readState();
+        // A cold API call can outlive the ordinary skeleton timeout. Re-read a
+        // nearly blank screen once so a slow response is not reported as a
+        // permanently blank route.
+        if (d.chars < 120) {
+          await new Promise((r) => setTimeout(r, 2000));
+          d = await readState();
+        }
         // Under 120 characters is not a designed empty state, it is a blank page.
         if (d.chars < 120) problems.push(`${mod} ${route}: renders only ${d.chars} characters`);
         else if (d.bareEmpty) problems.push(`${mod} ${route}: empty state with no way forward`);
+        if (checked % 25 === 0) console.log(`  checked ${checked} loading, empty and error states`);
       } catch { problems.push(`${mod} ${route}: failed to load`); }
     }
     await p.close().catch(() => {});

@@ -4,8 +4,8 @@ import Link from "next/link";
  * WomSakhi brand lockup.
  *
  * Two real assets, both cut out with transparency:
- *   • /womsakhi-emblem.png   — the "WS" monogram (two women shaking hands)
- *   • /womsakhi-wordmark.png — the "WomSakhi" gradient wordmark
+ *   • /womsakhi-emblem.webp   — the "WS" monogram (two women shaking hands)
+ *   • /womsakhi-wordmark.webp — the "WomSakhi" gradient wordmark
  *
  * The emblem is the owner's final artwork, cut off its flat #f7f7f7 backing.
  * The cut is seeded only from regions that are already that exact colour, so
@@ -24,7 +24,7 @@ import Link from "next/link";
 export function LogoMark({
   className = "h-10",
   glow = true,
-  src = "/womsakhi-emblem.png",
+  src = "/womsakhi-emblem.webp",
   alt = "WomSakhi",
 }: {
   className?: string;
@@ -54,7 +54,7 @@ export function LogoMark({
 
 export function LogoWordmark({
   className = "h-8",
-  src = "/womsakhi-wordmark-transparent.png",
+  src = "/womsakhi-wordmark-transparent.webp",
   alt = "WomSakhi",
 }: {
   className?: string;

@@ -29,6 +29,15 @@ class CircleResponse(BaseModel):
     monthly_minor: int = 0
     #: Which round it is in. 0 when the circle does not collect money.
     round: int = 0
+    icon: str = ""
+    tags: list[str] = []
+    who_posts: str = "all"
+    review_first: bool = False
+    tell_me: bool = True
+    invite_count: int = 0
+    owner: bool = False
+    muted: bool = False
+    can_post: bool = False
 
 
 class CircleCreate(BaseModel):
@@ -41,6 +50,29 @@ class CircleCreate(BaseModel):
     is_savings: bool = False
     #: Each member's share per round, in minor units. Ignored unless savings.
     monthly_minor: int = Field(default=0, ge=0, le=10_000_000)
+    cover: MediaRef = ""
+    icon: MediaRef = ""
+    tags: list[str] = Field(default_factory=list, max_length=5)
+    guidelines: str = Field(default="", max_length=300)
+    who_posts: str = Field(default="all", pattern="^(all|hosts)$")
+    review_first: bool = False
+    tell_me: bool = True
+    invites: list[str] = Field(default_factory=list, max_length=50)
+
+
+class CircleUpdate(BaseModel):
+    name: str = Field(min_length=2, max_length=80)
+    topic: str = Field(default="", max_length=80)
+    desc: str = Field(default="", max_length=600)
+    guidelines: str = Field(default="", max_length=300)
+    tags: list[str] = Field(default_factory=list, max_length=5)
+    who_posts: str = Field(default="all", pattern="^(all|hosts)$")
+    review_first: bool = False
+    tell_me: bool = True
+
+
+class CirclePreferenceUpdate(BaseModel):
+    muted: bool
 
 
 class CircleMemberRow(BaseModel):
@@ -135,6 +167,28 @@ class ReplyCreate(BaseModel):
 class LikeResponse(BaseModel):
     likes: int
     liked_by_me: bool
+
+
+class CircleResourceCreate(BaseModel):
+    name: str = Field(min_length=2, max_length=120)
+    url: str = Field(min_length=8, max_length=500)
+
+    @field_validator("url")
+    @classmethod
+    def safe_url(cls, v: str) -> str:
+        value = v.strip()
+        if not value.startswith(("https://", "http://")):
+            raise ValueError("Use a full http:// or https:// link")
+        return value
+
+
+class CircleResourceResponse(BaseModel):
+    id: str
+    name: str
+    url: str
+    added_by: str
+    mine: bool
+    when: str
 
 
 # --- stories -----------------------------------------------------------------

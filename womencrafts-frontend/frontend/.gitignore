@@ -12,6 +12,8 @@
 
 # testing
 /coverage
+/checks/_screens.json
+/checks/_responsive.json
 
 # next.js
 /.next/
@@ -48,3 +50,4 @@ next-env.d.ts
 
 # Production builds parked beside `next dev` — see `distDir` in next.config.ts.
 /.next-*/
+/.next.*/

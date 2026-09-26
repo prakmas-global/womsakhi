@@ -1,690 +1,324 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { UserCircle, Pencil, Camera, Mail, Phone, CheckCircle2, Settings, ShieldCheck, Bell, History, MonitorSmartphone, ChevronRight, LogIn, Settings2, UserPlus, FileSearch, Activity, ListChecks, Users, FileText, BarChart3, Monitor, Smartphone, Lock, UploadCloud, Trash2 } from "lucide-react";
-import { Avatar, Badge, Card, Input, Modal, Select, Switch, Textarea, ThemeSelect, useToast, Alert } from "@/design-system";
+import {
+  Activity, Bell, ChevronRight, History, Mail, MonitorSmartphone, Palette, Pencil, Phone,
+  ShieldCheck, Ticket, UserCircle,
+} from "lucide-react";
 import Link from "next/link";
-import { apiStaffProfile } from "@/lib/staff-api";
+import { Alert, Badge, Card, ImageUpload, Input, Modal, Spinner, useToast } from "@/design-system";
+import { useAuth } from "@/context/AuthContext";
+import {
+  apiMyAccount, apiSaveStaffProfile, apiStaffActivity, formatWhen, MODULE_LABEL,
+  type ActivityItem, type MyAccount,
+} from "@/lib/staff-api";
 import { memberError } from "@/lib/member-api";
-import { ResizableColumns } from "@/layout-engine";
+
+/**
+ * My profile — the signed-in staff member's own account.
+ *
+ * ── What was here before ────────────────────────────────────────────────────
+ * "Admin User", "AD-0001", a bio about being the top administrator, "6+
+ * years", "Mumbai", 28 logins this month, 1,248 users managed, five fixed
+ * activity rows, two fixed sessions, a photo that took a pasted URL and an
+ * Edit form whose Save only changed local state. The account's real name was
+ * merged over the top of it, so the screen was one-third real and said which
+ * third nowhere.
+ *
+ * ── What is here now ────────────────────────────────────────────────────────
+ * Only fields the `users` row has: name, email, phone, photo, role, active,
+ * joined, last sign-in, and the sections her access lets her open. The photo
+ * is uploaded through /uploads and saved to the account. The activity is her
+ * audited actions. The counts are counted.
+ */
 
 const QUICK_LINKS: { icon: React.ElementType; label: string; href: string }[] = [
-  { icon: Settings, label: "Account Settings", href: "/dashboard/settings" },
-  { icon: ShieldCheck, label: "Security Settings", href: "/dashboard/settings/security" },
-  { icon: Bell, label: "Notification Preferences", href: "/dashboard/settings/notifications" },
-  { icon: History, label: "Activity Log", href: "/dashboard/settings/activity" },
+  { icon: ShieldCheck, label: "Security", href: "/dashboard/settings/security" },
   { icon: MonitorSmartphone, label: "Sessions", href: "/dashboard/settings/sessions" },
+  { icon: Bell, label: "Notifications", href: "/dashboard/settings/notifications" },
+  { icon: Palette, label: "Appearance", href: "/dashboard/settings/appearance" },
+  { icon: History, label: "My activity", href: "/dashboard/settings/activity" },
 ];
 
-const TABS = [
-  "Overview",
-  "Profile Information",
-  "Security",
-  "Preferences",
-  "Sessions",
-  "Activity Log",
-];
-
-const SUMMARY = [
-  { icon: LogIn, tone: "violet", label: "Logins (This Month)", value: "28" },
-  { icon: Activity, tone: "brand", label: "Actions Performed", value: "142" },
-  { icon: Users, tone: "amber", label: "Users Managed", value: "1,248" },
-  { icon: FileText, tone: "emerald", label: "Content Published", value: "32" },
-  { icon: BarChart3, tone: "sky", label: "Reports Generated", value: "18" },
-];
-
-const ACTIVITY = [
-  { icon: LogIn, tone: "sky", title: "Logged in to the system", when: "May 20, 2024 10:15 AM", ip: "103.21.244.18" },
-  { icon: Settings2, tone: "violet", title: "Updated system settings", when: "May 19, 2024 06:45 PM", ip: "103.21.244.18" },
-  { icon: UserPlus, tone: "brand", title: "Created new admin user", when: "May 18, 2024 02:30 PM", ip: "103.21.244.18" },
-  { icon: FileSearch, tone: "amber", title: "Reviewed user report", when: "May 17, 2024 11:20 AM", ip: "103.21.244.18" },
-  { icon: LogIn, tone: "emerald", title: "Logged in to the system", when: "May 17, 2024 09:05 AM", ip: "103.21.244.18" },
-];
-
-const TONE_BG: Record<string, string> = {
-  brand: "bg-brand-tint text-brand-ink",
-  violet: "bg-violet-tint text-violet-ink",
-  emerald: "bg-status-ok-bg text-status-ok-ink",
-  amber: "bg-status-warn-bg text-status-warn-ink",
-  sky: "bg-status-info-bg text-status-info-ink",
-};
-
-function InfoRow({ label, value }: { label: string; value: string }) {
+function Fact({ label, value }: { label: string; value: React.ReactNode }) {
   return (
-    <div className="flex gap-2 text-sm">
-      <span className="w-28 shrink-0 text-ink-subtle">{label}</span>
-      <span className="text-ink-subtle">:</span>
-      <span className="font-medium text-ink">{value}</span>
+    <div>
+      <p className="text-xs text-ink-subtle">{label}</p>
+      <div className="mt-0.5 text-sm font-medium text-ink">{value}</div>
     </div>
   );
 }
 
-type Profile = {
-  name: string;
-  email: string;
-  phone: string;
-  bio: string;
-  userId: string;
-  username: string;
-  joinedOn: string;
-  lastLogin: string;
-  ipAddress: string;
-  location: string;
-  department: string;
-  designation: string;
-  experience: string;
-  languages: string;
-  timeZone: string;
-};
-
-type SessionRow = {
-  id: string;
-  icon: React.ElementType;
-  iconBg: string;
-  title: string;
-  badge?: string;
-  meta: string;
-  ip: string;
-  when: string;
-  removable: boolean;
-};
-
-const INITIAL_PROFILE: Profile = {
-  name: "Admin User",
-  email: "admin@womsakhi.com",
-  phone: "+91 98765 43210",
-  bio: "I am the top administrator of the WomSakhi platform. I manage all the operations, users, and system settings to ensure everything runs smoothly.",
-  userId: "AD-0001",
-  username: "adminuser",
-  joinedOn: "Jan 10, 2023 10:30 AM",
-  lastLogin: "May 20, 2024 10:15 AM",
-  ipAddress: "103.21.244.18",
-  location: "Mumbai, Maharashtra, India",
-  department: "Administration",
-  designation: "Super Administrator",
-  experience: "6+ Years",
-  languages: "English, Hindi, Marathi",
-  timeZone: "(GMT+05:30) Asia/Kolkata",
-};
-
-const TIME_ZONES = [
-  "(GMT+05:30) Asia/Kolkata",
-  "(GMT+00:00) UTC",
-  "(GMT-05:00) America/New_York",
-  "(GMT-08:00) America/Los_Angeles",
-  "(GMT+01:00) Europe/London",
-  "(GMT+04:00) Asia/Dubai",
-  "(GMT+08:00) Asia/Singapore",
-];
-
 export default function ProfilePage() {
   const toast = useToast();
-  const [profile, setProfile] = useState<Profile>(INITIAL_PROFILE);
-  const [avatarSrc, setAvatarSrc] = useState<string | null>(null);
+  const { user, updateUser } = useAuth();
+
+  const [account, setAccount] = useState<MyAccount | null>(null);
+  const [activity, setActivity] = useState<ActivityItem[]>([]);
+  const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState("");
 
-  // Fill the screen from the signed-in account rather than a fixed object.
-  const loadProfile = useCallback(async () => {
-    try {
-      const p = await apiStaffProfile();
-      setProfile((cur) => ({
-        ...cur,
-        name: p.full_name || cur.name,
-        email: p.email || cur.email,
-        phone: p.phone || cur.phone,
-      }));
-      if (p.avatar) setAvatarSrc(p.avatar);
-      setLoadError("");
-    } catch (err) {
-      setLoadError(memberError(err));
-    }
+  const [editOpen, setEditOpen] = useState(false);
+  const [draft, setDraft] = useState({ full_name: "", phone: "" });
+  const [saving, setSaving] = useState(false);
+  const [draftError, setDraftError] = useState("");
+
+  const fetchAll = useCallback(async () => {
+    const [acc, acts] = await Promise.all([
+      apiMyAccount(),
+      apiStaffActivity({ mine: true, limit: 8 }).catch(() => [] as ActivityItem[]),
+    ]);
+    return { acc, acts };
   }, []);
 
+  const load = useCallback(async () => {
+    try {
+      const { acc, acts } = await fetchAll();
+      setAccount(acc);
+      setActivity(acts);
+      setLoadError("");
+    } catch (e) {
+      setLoadError(memberError(e));
+    }
+  }, [fetchAll]);
+
+  // One wave on mount, the way the reference screen does it: state is set only
+  // after the request answers, never synchronously in the effect body.
   useEffect(() => {
-    void loadProfile();
-  }, [loadProfile]);
+    let alive = true;
+    void (async () => {
+      try {
+        const { acc, acts } = await fetchAll();
+        if (!alive) return;
+        setAccount(acc);
+        setActivity(acts);
+        setLoadError("");
+      } catch (e) {
+        if (alive) setLoadError(memberError(e));
+      } finally {
+        if (alive) setLoading(false);
+      }
+    })();
+    return () => { alive = false; };
+  }, [fetchAll]);
 
-  const [activeTab, setActiveTab] = useState(0);
+  /** Keep the shell (sidebar name, avatar) in step with what was just saved. */
+  const syncShell = useCallback((p: { full_name: string; phone: string; avatar: string }) => {
+    if (user) updateUser({ ...user, full_name: p.full_name, phone: p.phone, avatar: p.avatar });
+  }, [updateUser, user]);
 
-  // Edit-profile modal
-  const [editOpen, setEditOpen] = useState(false);
-  const [draft, setDraft] = useState<Profile>(INITIAL_PROFILE);
-
-  // Change-photo modal
-  const [photoOpen, setPhotoOpen] = useState(false);
-  const [photoUrl, setPhotoUrl] = useState("");
-
-  // Change-password modal
-  const [pwOpen, setPwOpen] = useState(false);
-  const [pwCurrent, setPwCurrent] = useState("");
-  const [pwNew, setPwNew] = useState("");
-  const [pwConfirm, setPwConfirm] = useState("");
-  const [pwError, setPwError] = useState("");
-
-  // Sessions
-  const [sessions, setSessions] = useState<SessionRow[]>([
-    {
-      id: "s1",
-      icon: Monitor,
-      iconBg: "bg-violet-tint text-violet-ink",
-      title: "Current Session",
-      badge: "This Device",
-      meta: "Chrome on Windows • Mumbai, India",
-      ip: "103.21.244.18",
-      when: "May 20, 2024 10:15 AM",
-      removable: false,
-    },
-    {
-      id: "s2",
-      icon: Smartphone,
-      iconBg: "bg-surface-inset text-ink-subtle",
-      title: "Mobile Session",
-      meta: "Safari on iPhone • Mumbai, India",
-      ip: "103.21.244.18",
-      when: "May 19, 2024 08:45 PM",
-      removable: true,
-    },
-  ]);
-
-  // Security + preferences (tab-driven)
-  const [twoFactor, setTwoFactor] = useState(true);
-  const [loginAlerts, setLoginAlerts] = useState(true);
-  const [prefs, setPrefs] = useState({ email: true, sms: false, updates: true, digest: true });
-
-  const infoLeft = [
-    { label: "User ID", value: profile.userId },
-    { label: "Username", value: profile.username },
-    { label: "Joined On", value: profile.joinedOn },
-    { label: "Last Login", value: profile.lastLogin },
-    { label: "IP Address", value: profile.ipAddress },
-    { label: "Location", value: profile.location },
-  ];
-
-  const aboutInfo = [
-    { label: "Department", value: profile.department },
-    { label: "Designation", value: profile.designation },
-    { label: "Experience", value: profile.experience },
-    { label: "Languages", value: profile.languages },
-    { label: "Time Zone", value: profile.timeZone },
-  ];
-
-  function openEdit() {
-    setDraft(profile);
+  const openEdit = () => {
+    if (!account) return;
+    setDraft({ full_name: account.full_name, phone: account.phone });
+    setDraftError("");
     setEditOpen(true);
-  }
+  };
 
-  function saveEdit() {
-    if (!draft.name.trim() || !draft.email.trim()) return;
-    setProfile(draft);
-    setEditOpen(false);
-    toast.success("Profile saved");
-  }
-
-  function savePhoto() {
-    if (!photoUrl.trim()) return;
-    setAvatarSrc(photoUrl.trim());
-    setPhotoOpen(false);
-    setPhotoUrl("");
-    toast.success("Profile saved");
-  }
-
-  function removePhoto() {
-    setAvatarSrc(null);
-    setPhotoOpen(false);
-    setPhotoUrl("");
-  }
-
-  function savePassword() {
-    if (!pwCurrent || !pwNew || !pwConfirm) {
-      setPwError("All fields are required.");
-      return;
+  const saveEdit = useCallback(async () => {
+    if (!draft.full_name.trim()) { setDraftError("Your name cannot be empty."); return; }
+    setSaving(true);
+    try {
+      const p = await apiSaveStaffProfile({ full_name: draft.full_name.trim(), phone: draft.phone.trim() });
+      syncShell(p);
+      setEditOpen(false);
+      toast.success("Profile saved");
+      await load();
+    } catch (e) {
+      setDraftError(memberError(e));
+    } finally {
+      setSaving(false);
     }
-    if (pwNew.length < 8) {
-      setPwError("New password must be at least 8 characters.");
-      return;
-    }
-    if (pwNew !== pwConfirm) {
-      setPwError("New passwords do not match.");
-      return;
-    }
-    setPwError("");
-    setPwOpen(false);
-    setPwCurrent("");
-    setPwNew("");
-    setPwConfirm("");
-    toast.success("Password changed");
-  }
+  }, [draft, load, syncShell, toast]);
 
-  function logoutSession(id: string) {
-    setSessions((prev) => prev.filter((s) => s.id !== id));
-  }
+  const savePhoto = useCallback(async (url: string | null) => {
+    try {
+      const p = await apiSaveStaffProfile({ avatar: url ?? "" });
+      syncShell(p);
+      toast.success(url ? "Photo saved" : "Photo removed");
+      await load();
+    } catch (e) {
+      toast.error("Could not save the photo", { description: memberError(e) });
+    }
+  }, [load, syncShell, toast]);
 
   return (
     <div>
-      {/*
-        A failed LOAD is a state, not an event: the data is still missing after
-        a toast would have faded. This message was being assigned to a variable
-        that no JSX ever read, so the screen simply rendered empty fields and
-        said nothing — indistinguishable from settings that have never been
-        filled in.
-      */}
-      {loadError && (
-        <Alert variant="danger" className="mb-4">
-          {loadError}
-        </Alert>
-      )}
+      {loadError && <Alert variant="danger" className="mb-4">{loadError}</Alert>}
+
       <div className="mb-6 flex flex-wrap items-start justify-between gap-4">
         <div className="flex items-start gap-3">
           <span className="mt-0.5 flex h-11 w-11 items-center justify-center rounded-xl bg-brand-tint text-brand-ink">
             <UserCircle className="h-6 w-6" />
           </span>
           <div>
-            <h1 className="font-display text-2xl font-bold tracking-tight text-ink">My Profile</h1>
-            <p className="mt-1 text-sm text-ink-subtle">View and manage your personal information and preferences.</p>
+            <h1 className="font-display text-2xl font-bold tracking-tight text-ink">My profile</h1>
+            <p className="mt-1 text-sm text-ink-subtle">Your name, photo and contact details, and what this account records about you.</p>
           </div>
         </div>
-        <div className="flex items-center gap-3">
-          <button className="btn btn-secondary" onClick={openEdit}>
-            <Pencil className="h-4 w-4" /> Edit Profile
-          </button>
-        </div>
+        <button className="btn btn-secondary" onClick={openEdit} disabled={!account}>
+          <Pencil className="h-4 w-4" /> Edit profile
+        </button>
       </div>
 
-      {/* Profile header card */}
-      <Card>
-        <ResizableColumns id="settings-profile" defaultSize={0.75} className="gap-6">
-          <div className="flex flex-col gap-6 sm:flex-row">
-            {/* Avatar column */}
-            <div className="flex shrink-0 flex-col items-center gap-3">
-              <Avatar name={profile.name} src={avatarSrc} size="xl" className="!h-28 !w-28 !text-3xl" ring />
-              <button className="btn btn-secondary btn-sm" onClick={() => setPhotoOpen(true)}>
-                <Camera className="h-3.5 w-3.5" /> Change Photo
-              </button>
-            </div>
-
-            {/* Details */}
-            <div className="min-w-0 flex-1">
-              <div className="flex flex-wrap items-center gap-2.5">
-                <h2 className="font-display text-2xl font-bold text-ink">{profile.name}</h2>
-                <Badge tone="violet">Super Admin</Badge>
-                <Badge tone="emerald">Active</Badge>
-              </div>
-              <div className="mt-3 space-y-1.5">
-                <p className="flex items-center gap-2 text-sm text-ink-muted">
-                  <Mail className="h-4 w-4 text-ink-subtle" /> {profile.email}
-                </p>
-                <p className="flex items-center gap-2 text-sm text-ink-muted">
-                  <Phone className="h-4 w-4 text-ink-subtle" /> {profile.phone}
-                </p>
-              </div>
-
-              <div className="mt-5 grid grid-cols-1 gap-x-8 gap-y-2.5 md:grid-cols-2">
-                <div className="space-y-2.5">
-                  {infoLeft.map((i) => (
-                    <InfoRow key={i.label} label={i.label} value={i.value} />
-                  ))}
-                </div>
-                <div className="space-y-2.5 text-sm">
-                  <div className="flex items-center justify-between gap-2">
-                    <span className="text-ink-subtle">Email Verified</span>
-                    <CheckCircle2 className="h-4 w-4 text-status-ok-ink" />
-                  </div>
-                  <div className="flex items-center justify-between gap-2">
-                    <span className="text-ink-subtle">Phone Verified</span>
-                    <CheckCircle2 className="h-4 w-4 text-status-ok-ink" />
-                  </div>
-                  <div className="flex items-center justify-between gap-2">
-                    <span className="text-ink-subtle">Two-Factor Auth</span>
-                    <CheckCircle2 className="h-4 w-4 text-status-ok-ink" />
-                  </div>
-                  <div className="flex items-center justify-between gap-2">
-                    <span className="text-ink-subtle">Status</span>
-                    <Badge tone="emerald">Active</Badge>
-                  </div>
-                  <div className="flex items-center justify-between gap-2">
-                    <span className="text-ink-subtle">User Type</span>
-                    <span className="font-medium text-ink">Top Admin</span>
-                  </div>
-                  <div className="flex items-center justify-between gap-2">
-                    <span className="text-ink-subtle">Role</span>
-                    <span className="font-medium text-ink">Super Admin</span>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* Quick links */}
-          <div className="rounded-xl border border-line p-4">
-            <h3 className="mb-3 font-display text-base font-semibold text-ink">Quick Links</h3>
-            <ul className="space-y-1">
-              {QUICK_LINKS.map((q) => (
-                <li key={q.label}>
-                  <Link
-                    href={q.href}
-                    className="flex w-full items-center gap-3 rounded-lg px-2 py-2.5 text-left hover:bg-surface-hover"
-                  >
-                    <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-violet-tint text-violet-ink">
-                      <q.icon className="h-4 w-4" />
-                    </span>
-                    <span className="flex-1 text-sm font-medium text-ink-muted">{q.label}</span>
-                    <ChevronRight className="h-4 w-4 text-ink-subtle" />
-                  </Link>
-                </li>
-              ))}
-            </ul>
-          </div>
-        </ResizableColumns>
-      </Card>
-
-      {/* Tabs */}
-      <div className="mt-6 flex flex-wrap items-center gap-6 border-b border-line-strong">
-        {TABS.map((t, i) => (
-          <button
-            key={t}
-            onClick={() => setActiveTab(i)}
-            className={`-mb-px border-b-2 pb-3 text-sm font-semibold ${
-              i === activeTab
-                ? "border-brand-600 text-brand-ink"
-                : "border-transparent text-ink-subtle hover:text-ink-muted"
-            }`}
-          >
-            {t}
-          </button>
-        ))}
-      </div>
-
-      {/* ── Tab content (switches with the active tab) ── */}
-
-      {/* Overview */}
-      {activeTab === 0 && (
-        <div className="mt-6 grid grid-cols-1 gap-6 lg:grid-cols-3">
+      {loading ? (
+        <div className="flex items-center justify-center py-16"><Spinner /></div>
+      ) : account && (
+        <>
           <Card>
-            <h2 className="mb-3 font-display text-base font-semibold text-ink">About Me</h2>
-            <p className="text-sm leading-relaxed text-ink-subtle">{profile.bio}</p>
-            <div className="mt-4 space-y-2.5 border-t border-line pt-4">
-              {aboutInfo.map((i) => (
-                <InfoRow key={i.label} label={i.label} value={i.value} />
-              ))}
-            </div>
-          </Card>
-
-          <Card>
-            <h2 className="mb-4 font-display text-base font-semibold text-ink">Account Summary</h2>
-            <ul className="space-y-4">
-              {SUMMARY.map((s) => (
-                <li key={s.label} className="flex items-center gap-3">
-                  <span className={`flex h-9 w-9 items-center justify-center rounded-lg ${TONE_BG[s.tone]}`}>
-                    <s.icon className="h-4.5 w-4.5" />
-                  </span>
-                  <span className="flex-1 text-sm text-ink-muted">{s.label}</span>
-                  <span className="font-display text-base font-bold text-ink">{s.value}</span>
-                </li>
-              ))}
-            </ul>
-          </Card>
-
-          <Card>
-            <div className="mb-4 flex items-center justify-between">
-              <h2 className="font-display text-base font-semibold text-ink">Recent Activity</h2>
-              <button onClick={() => setActiveTab(5)} className="text-xs font-semibold text-brand-ink hover:underline">
-                View All
-              </button>
-            </div>
-            <ul className="space-y-4">
-              {ACTIVITY.slice(0, 4).map((a, idx) => (
-                <li key={idx} className="flex items-start gap-3">
-                  <span className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-lg ${TONE_BG[a.tone]}`}>
-                    <a.icon className="h-4 w-4" />
-                  </span>
-                  <div className="min-w-0 flex-1">
-                    <p className="text-sm font-medium text-ink-muted">{a.title}</p>
-                    <p className="text-xs text-ink-subtle">{a.when}</p>
-                  </div>
-                </li>
-              ))}
-            </ul>
-          </Card>
-        </div>
-      )}
-
-      {/* Profile Information */}
-      {activeTab === 1 && (
-        <div className="mt-6 grid grid-cols-1 gap-6 lg:grid-cols-[minmax(0,1fr)_320px]">
-          <Card>
-            <div className="mb-4 flex items-center justify-between">
-              <h2 className="font-display text-base font-semibold text-ink">Personal Information</h2>
-              <button className="btn btn-sm btn-secondary" onClick={openEdit}>
-                <Pencil className="h-3.5 w-3.5" /> Edit
-              </button>
-            </div>
-            <div className="grid grid-cols-1 gap-x-8 gap-y-4 sm:grid-cols-2">
-              {[
-                ["Full Name", profile.name],
-                ["Username", profile.username],
-                ["Email", profile.email],
-                ["Phone", profile.phone],
-                ["User ID", profile.userId],
-                ["Location", profile.location],
-                ["Department", profile.department],
-                ["Designation", profile.designation],
-                ["Experience", profile.experience],
-                ["Languages", profile.languages],
-                ["Time Zone", profile.timeZone],
-                ["Joined On", profile.joinedOn],
-              ].map(([k, v]) => (
-                <div key={k}>
-                  <p className="text-xs text-ink-subtle">{k}</p>
-                  <p className="mt-0.5 text-sm font-medium text-ink">{v}</p>
-                </div>
-              ))}
-            </div>
-          </Card>
-          <Card>
-            <h2 className="mb-3 font-display text-base font-semibold text-ink">About Me</h2>
-            <p className="text-sm leading-relaxed text-ink-subtle">{profile.bio}</p>
-            <div className="mt-4 space-y-2.5 border-t border-line pt-4">
-              {aboutInfo.map((i) => (
-                <InfoRow key={i.label} label={i.label} value={i.value} />
-              ))}
-            </div>
-          </Card>
-        </div>
-      )}
-
-      {/* Security */}
-      {activeTab === 2 && (
-        <div className="mt-6 grid grid-cols-1 gap-6 lg:grid-cols-[minmax(0,1fr)_320px]">
-          <Card>
-            <h2 className="mb-4 font-display text-base font-semibold text-ink">Security</h2>
-            <div className="space-y-3">
-              <Switch
-                label="Two-Factor Authentication"
-                description="Require a verification code when signing in."
-                checked={twoFactor}
-                onChange={setTwoFactor}
-              />
-              <Switch
-                label="Login Alerts"
-                description="Email me whenever a new device signs in."
-                checked={loginAlerts}
-                onChange={setLoginAlerts}
-              />
-            </div>
-            <div className="mt-5 grid grid-cols-1 gap-x-8 gap-y-2.5 text-sm sm:grid-cols-2">
-              {[
-                ["Email Verified", true],
-                ["Phone Verified", true],
-                ["Two-Factor Auth", twoFactor],
-                ["Last Login", null],
-              ].map(([label, ok]) => (
-                <div key={String(label)} className="flex items-center justify-between gap-2">
-                  <span className="text-ink-subtle">{label}</span>
-                  {label === "Last Login" ? (
-                    <span className="font-medium text-ink">{profile.lastLogin}</span>
-                  ) : ok ? (
-                    <Badge tone="emerald">Enabled</Badge>
-                  ) : (
-                    <Badge tone="rose">Disabled</Badge>
+            <div className="grid grid-cols-1 gap-6 lg:grid-cols-[minmax(0,1fr)_280px]">
+              <div className="flex flex-col gap-6 sm:flex-row">
+                <div className="flex shrink-0 flex-col items-center gap-3">
+                  <ImageUpload
+                    variant="avatar"
+                    kind="avatar"
+                    size="lg"
+                    compact
+                    name={account.full_name}
+                    value={account.avatar || null}
+                    onChange={(url) => void savePhoto(url)}
+                  />
+                  {account.avatar && (
+                    <button className="text-xs font-semibold text-ink-subtle hover:text-status-danger-ink" onClick={() => void savePhoto(null)}>
+                      Remove photo
+                    </button>
                   )}
                 </div>
-              ))}
-            </div>
-          </Card>
 
-          <Card>
-            <h2 className="mb-3 font-display text-base font-semibold text-ink">Change Password</h2>
-            <p className="text-sm leading-relaxed text-ink-subtle">
-              For your account security, we recommend changing your password regularly.
-            </p>
-            <button className="btn btn-secondary btn-block mt-4" onClick={() => setPwOpen(true)}>
-              <Lock className="h-4 w-4" /> Change Password
-            </button>
-          </Card>
-        </div>
-      )}
-
-      {/* Preferences */}
-      {activeTab === 3 && (
-        <div className="mt-6 grid grid-cols-1 gap-6 lg:grid-cols-[minmax(0,1fr)_320px]">
-          <Card>
-            <h2 className="mb-4 font-display text-base font-semibold text-ink">Notification Preferences</h2>
-            <div className="space-y-3">
-              <Switch label="Email Notifications" description="Receive updates and alerts by email." checked={prefs.email} onChange={(v) => setPrefs({ ...prefs, email: v })} />
-              <Switch label="SMS Notifications" description="Receive important alerts by SMS." checked={prefs.sms} onChange={(v) => setPrefs({ ...prefs, sms: v })} />
-              <Switch label="Product Updates" description="News about new features and releases." checked={prefs.updates} onChange={(v) => setPrefs({ ...prefs, updates: v })} />
-              <Switch label="Weekly Digest" description="A summary of platform activity every week." checked={prefs.digest} onChange={(v) => setPrefs({ ...prefs, digest: v })} />
-            </div>
-            <Link href="/dashboard/settings/notifications" className="btn btn-outline btn-block mt-4">
-              <Bell className="h-4 w-4" /> Manage all notifications
-            </Link>
-          </Card>
-
-          <Card>
-            <h2 className="mb-2 font-display text-base font-semibold text-ink">Appearance</h2>
-            <p className="mb-3 text-xs text-ink-subtle">Choose how WomSakhi looks to you.</p>
-            <ThemeSelect />
-            <div className="mt-5 space-y-2.5 border-t border-line pt-4">
-              <InfoRow label="Language" value={profile.languages.split(",")[0].trim()} />
-              <InfoRow label="Time Zone" value={profile.timeZone} />
-            </div>
-          </Card>
-        </div>
-      )}
-
-      {/* Sessions */}
-      {activeTab === 4 && (
-        <Card className="mt-6">
-          <div className="mb-4 flex items-center justify-between">
-            <h2 className="font-display text-base font-semibold text-ink">Active Sessions</h2>
-            <Link
-              href="/dashboard/settings/sessions"
-              className="rounded-lg border border-line-strong px-3 py-1.5 text-xs font-medium text-ink-muted hover:bg-surface-hover"
-            >
-              View All Sessions
-            </Link>
-          </div>
-          <ul className="space-y-3">
-            {sessions.map((s) => (
-              <li key={s.id} className="flex flex-wrap items-center gap-4 rounded-xl border border-line p-4">
-                <span className={`flex h-10 w-10 items-center justify-center rounded-lg ${s.iconBg}`}>
-                  <s.icon className="h-5 w-5" />
-                </span>
                 <div className="min-w-0 flex-1">
-                  {s.badge ? (
-                    <div className="flex items-center gap-2">
-                      <p className="text-sm font-semibold text-ink">{s.title}</p>
-                      <Badge tone="emerald">{s.badge}</Badge>
+                  <div className="flex flex-wrap items-center gap-2.5">
+                    <h2 className="font-display text-2xl font-bold text-ink">{account.full_name}</h2>
+                    <Badge tone={account.role === "Super Admin" ? "violet" : "slate"}>{account.role}</Badge>
+                    <Badge tone={account.is_active ? "emerald" : "rose"}>{account.is_active ? "Active" : "Suspended"}</Badge>
+                  </div>
+                  <div className="mt-3 space-y-1.5">
+                    <p className="flex items-center gap-2 text-sm text-ink-muted">
+                      <Mail className="h-4 w-4 text-ink-subtle" /> {account.email}
+                    </p>
+                    <p className="flex items-center gap-2 text-sm text-ink-muted">
+                      <Phone className="h-4 w-4 text-ink-subtle" /> {account.phone || <span className="text-ink-subtle">No phone on file</span>}
+                    </p>
+                  </div>
+
+                  <div className="mt-5 grid grid-cols-1 gap-x-8 gap-y-4 sm:grid-cols-2">
+                    <Fact label="Joined" value={formatWhen(account.created_at, false) || "Not recorded"} />
+                    <Fact label="Last signed in" value={formatWhen(account.last_login_at) || "Not recorded"} />
+                    <Fact label="Password last changed" value={formatWhen(account.password_changed_at) || "Not recorded"} />
+                    <Fact label="Account id" value={<code className="text-xs">{account.id}</code>} />
+                    <div className="sm:col-span-2">
+                      <p className="text-xs text-ink-subtle">Can open ({account.modules.length} sections)</p>
+                      <div className="mt-1.5 flex flex-wrap gap-1.5">
+                        {account.modules.length === 0
+                          ? <span className="text-sm text-ink-subtle">Nothing yet — ask a Super Admin</span>
+                          : account.modules.map((m) => (
+                            <span key={m} className="rounded-full bg-surface-inset px-2.5 py-0.5 text-xs font-medium text-ink-muted">
+                              {MODULE_LABEL[m] ?? m}
+                            </span>
+                          ))}
+                      </div>
                     </div>
-                  ) : (
-                    <p className="text-sm font-semibold text-ink">{s.title}</p>
-                  )}
-                  <p className="text-xs text-ink-subtle">{s.meta}</p>
+                  </div>
                 </div>
-                <span className="text-sm text-ink-subtle">{s.ip}</span>
-                <span className="text-sm text-ink-subtle">{s.when}</span>
-                {s.removable && (
-                  <button className="btn btn-danger btn-sm" onClick={() => logoutSession(s.id)}>
-                    <ListChecks className="h-3.5 w-3.5" /> Logout
-                  </button>
-                )}
-              </li>
-            ))}
-            {sessions.length === 1 && (
-              <li className="rounded-xl border border-dashed border-line-strong p-4 text-center text-xs text-ink-subtle">
-                No other active sessions.
-              </li>
-            )}
-          </ul>
-        </Card>
-      )}
+              </div>
 
-      {/* Activity Log */}
-      {activeTab === 5 && (
-        <Card className="mt-6">
-          <div className="mb-4 flex items-center justify-between">
-            <h2 className="font-display text-base font-semibold text-ink">Activity Log</h2>
-            <Link href="/dashboard/settings/activity" className="text-xs font-semibold text-brand-ink hover:underline">
-              Full Activity Log
-            </Link>
+              <div className="rounded-xl border border-line p-4">
+                <h3 className="mb-3 font-display text-base font-semibold text-ink">Your settings</h3>
+                <ul className="space-y-1">
+                  {QUICK_LINKS.map((q) => (
+                    <li key={q.label}>
+                      <Link href={q.href} className="flex w-full items-center gap-3 rounded-lg px-2 py-2.5 text-left hover:bg-surface-hover">
+                        <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-violet-tint text-violet-ink">
+                          <q.icon className="h-4 w-4" />
+                        </span>
+                        <span className="flex-1 text-sm font-medium text-ink-muted">{q.label}</span>
+                        <ChevronRight className="h-4 w-4 text-ink-subtle" />
+                      </Link>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            </div>
+          </Card>
+
+          <div className="mt-6 grid grid-cols-1 gap-6 lg:grid-cols-[320px_minmax(0,1fr)]">
+            <Card>
+              <h2 className="mb-4 font-display text-base font-semibold text-ink">Account summary</h2>
+              <ul className="space-y-4">
+                {[
+                  { icon: Activity, tone: "bg-brand-tint text-brand-ink", label: "Audited actions", value: account.activity.total },
+                  { icon: Activity, tone: "bg-violet-tint text-violet-ink", label: "Actions this month", value: account.activity.this_month },
+                  { icon: Ticket, tone: "bg-status-warn-bg text-status-warn-ink", label: "Open support tickets", value: account.tickets_open },
+                  { icon: ShieldCheck, tone: "bg-status-ok-bg text-status-ok-ink", label: "Sessions ended everywhere", value: account.token_version },
+                ].map((s) => (
+                  <li key={s.label} className="flex items-center gap-3">
+                    <span className={`flex h-9 w-9 items-center justify-center rounded-lg ${s.tone}`}>
+                      <s.icon className="h-4.5 w-4.5" />
+                    </span>
+                    <span className="flex-1 text-sm text-ink-muted">{s.label}</span>
+                    <span className="font-display text-base font-bold text-ink">{s.value.toLocaleString("en-IN")}</span>
+                  </li>
+                ))}
+              </ul>
+              <p className="mt-4 text-xs text-ink-subtle">
+                Actions are counted from the audit trail, which records every change staff make. Reads are not recorded.
+              </p>
+            </Card>
+
+            <Card>
+              <div className="mb-4 flex items-center justify-between">
+                <h2 className="font-display text-base font-semibold text-ink">Recent activity</h2>
+                <Link href="/dashboard/settings/activity" className="text-xs font-semibold text-brand-ink hover:underline">
+                  Full log
+                </Link>
+              </div>
+              {activity.length === 0 ? (
+                <p className="py-8 text-center text-sm text-ink-subtle">Nothing audited on this account in the last 30 days.</p>
+              ) : (
+                <ul className="divide-y divide-line">
+                  {activity.map((a) => (
+                    <li key={a.id} className="flex items-start gap-3 py-3">
+                      <span className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-surface-inset text-ink-subtle">
+                        <Activity className="h-4 w-4" />
+                      </span>
+                      <div className="min-w-0 flex-1">
+                        <p className="text-sm font-medium text-ink-muted">{a.detail || a.action}</p>
+                        <p className="text-xs text-ink-subtle">
+                          {a.category}{a.target ? ` · ${a.target}` : ""}{a.ip ? ` · from ${a.ip}` : ""}
+                        </p>
+                      </div>
+                      <span className="shrink-0 text-xs text-ink-subtle">{a.when}</span>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </Card>
           </div>
-          <ul className="space-y-4">
-            {ACTIVITY.map((a, idx) => (
-              <li key={idx} className="flex items-start gap-3">
-                <span className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-lg ${TONE_BG[a.tone]}`}>
-                  <a.icon className="h-4 w-4" />
-                </span>
-                <div className="min-w-0 flex-1">
-                  <p className="text-sm font-medium text-ink-muted">{a.title}</p>
-                  <p className="text-xs text-ink-subtle">{a.when}</p>
-                </div>
-                <span className="shrink-0 text-xs text-ink-subtle">{a.ip}</span>
-              </li>
-            ))}
-          </ul>
-        </Card>
+        </>
       )}
 
-      {/* Edit Profile modal */}
       <Modal
         open={editOpen}
         onClose={() => setEditOpen(false)}
-        title="Edit Profile"
-        description="Update your personal information and preferences."
+        title="Edit profile"
+        description="Your name and phone. Your email is how you sign in, so it is not changed here."
         icon={Pencil}
         iconTone="brand"
-        size="lg"
+        size="sm"
         footer={
           <>
-            <button className="btn btn-outline" onClick={() => setEditOpen(false)}>
-              Cancel
-            </button>
-            <button className="btn btn-primary" onClick={saveEdit}>
-              Save Changes
+            <button className="btn btn-outline" onClick={() => setEditOpen(false)}>Cancel</button>
+            <button className="btn btn-primary" onClick={() => void saveEdit()} disabled={saving}>
+              {saving ? "Saving…" : "Save changes"}
             </button>
           </>
         }
       >
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+        <div className="space-y-4">
           <Input
-            label="Full Name"
+            label="Full name"
             required
             icon={UserCircle}
-            value={draft.name}
-            onChange={(e) => setDraft({ ...draft, name: e.target.value })}
-          />
-          <Input
-            label="Username"
-            value={draft.username}
-            onChange={(e) => setDraft({ ...draft, username: e.target.value })}
-          />
-          <Input
-            label="Email"
-            required
-            type="email"
-            icon={Mail}
-            value={draft.email}
-            onChange={(e) => setDraft({ ...draft, email: e.target.value })}
+            value={draft.full_name}
+            onChange={(e) => setDraft({ ...draft, full_name: e.target.value })}
           />
           <Input
             label="Phone"
@@ -692,136 +326,11 @@ export default function ProfilePage() {
             value={draft.phone}
             onChange={(e) => setDraft({ ...draft, phone: e.target.value })}
           />
-          <Input
-            label="Department"
-            value={draft.department}
-            onChange={(e) => setDraft({ ...draft, department: e.target.value })}
-          />
-          <Input
-            label="Designation"
-            value={draft.designation}
-            onChange={(e) => setDraft({ ...draft, designation: e.target.value })}
-          />
-          <Input
-            label="Experience"
-            value={draft.experience}
-            onChange={(e) => setDraft({ ...draft, experience: e.target.value })}
-          />
-          <Input
-            label="Languages"
-            value={draft.languages}
-            onChange={(e) => setDraft({ ...draft, languages: e.target.value })}
-          />
-          <Input
-            label="Location"
-            className="sm:col-span-2"
-            value={draft.location}
-            onChange={(e) => setDraft({ ...draft, location: e.target.value })}
-          />
-          <Select
-            label="Time Zone"
-            className="sm:col-span-2"
-            options={TIME_ZONES}
-            value={draft.timeZone}
-            onChange={(e) => setDraft({ ...draft, timeZone: e.target.value })}
-          />
-          <Textarea
-            label="About Me"
-            className="sm:col-span-2"
-            rows={4}
-            value={draft.bio}
-            onChange={(e) => setDraft({ ...draft, bio: e.target.value })}
-          />
-        </div>
-      </Modal>
-
-      {/* Change Photo modal */}
-      <Modal
-        open={photoOpen}
-        onClose={() => setPhotoOpen(false)}
-        title="Change Photo"
-        description="Update the profile picture shown across your account."
-        icon={Camera}
-        iconTone="violet"
-        footer={
-          <>
-            <button className="btn btn-outline" onClick={() => setPhotoOpen(false)}>
-              Cancel
-            </button>
-            <button className="btn btn-primary" onClick={savePhoto}>
-              <UploadCloud className="h-4 w-4" /> Save Photo
-            </button>
-          </>
-        }
-      >
-        <div className="space-y-4">
-          <div className="flex items-center gap-4">
-            <Avatar name={profile.name} src={photoUrl.trim() || avatarSrc} size="xl" className="!h-20 !w-20 !text-2xl" ring />
-            <div className="min-w-0 flex-1 text-sm text-ink-subtle">
-              Paste an image URL to preview it, then save to apply the new photo.
-            </div>
-          </div>
-          <Input
-            label="Image URL"
-            icon={UploadCloud}
-            placeholder="https://example.com/photo.jpg"
-            value={photoUrl}
-            onChange={(e) => setPhotoUrl(e.target.value)}
-          />
-          {avatarSrc && (
-            <button className="btn btn-danger btn-sm" onClick={removePhoto}>
-              <Trash2 className="h-3.5 w-3.5" /> Remove current photo
-            </button>
-          )}
-        </div>
-      </Modal>
-
-      {/* Change Password modal */}
-      <Modal
-        open={pwOpen}
-        onClose={() => setPwOpen(false)}
-        title="Change Password"
-        description="For your account security, choose a strong, unique password."
-        icon={Lock}
-        iconTone="amber"
-        footer={
-          <>
-            <button className="btn btn-outline" onClick={() => setPwOpen(false)}>
-              Cancel
-            </button>
-            <button className="btn btn-primary" onClick={savePassword}>
-              Update Password
-            </button>
-          </>
-        }
-      >
-        <div className="space-y-4">
-          <Input
-            label="Current Password"
-            required
-            type="password"
-            icon={Lock}
-            value={pwCurrent}
-            onChange={(e) => setPwCurrent(e.target.value)}
-          />
-          <Input
-            label="New Password"
-            required
-            type="password"
-            icon={Lock}
-            hint="At least 8 characters."
-            value={pwNew}
-            onChange={(e) => setPwNew(e.target.value)}
-          />
-          <Input
-            label="Confirm New Password"
-            required
-            type="password"
-            icon={Lock}
-            value={pwConfirm}
-            onChange={(e) => setPwConfirm(e.target.value)}
-          />
-          {pwError && <p className="text-sm font-medium text-status-danger-ink">{pwError}</p>}
+          <p className="text-xs text-ink-subtle">
+            To change the email this account signs in with, ask a Super Admin — there is no self-service email change yet,
+            because it needs a confirmation step that does not exist.
+          </p>
+          {draftError && <p className="text-sm font-medium text-status-danger-ink">{draftError}</p>}
         </div>
       </Modal>
     </div>

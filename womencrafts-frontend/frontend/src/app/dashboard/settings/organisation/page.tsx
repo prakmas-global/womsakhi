@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { Building2, CheckCircle2, Clock, Globe, Layers, Palette, Trash2, XCircle } from "lucide-react";
 
 import PageHeader from "@/components/layout/PageHeader";
@@ -52,23 +52,26 @@ export default function OrganisationPage() {
 
   const may = (key: string) => !!features[key];
 
-  const load = useCallback(async () => {
-    try {
-      setOrg(await apiOrgSettings());
-      if (features["org.layout_templates"]) {
-        setTemplates(await apiOrgTemplates().catch(() => []));
-      }
-      setError("");
-    } catch {
-      setError("Could not load organisation settings.");
-    } finally {
-      setLoading(false);
-    }
-  }, [features]);
-
+  // Inline so every setState provably follows an await; a reply arriving
+  // after the entitlements changed underneath is dropped.
   useEffect(() => {
-    void load();
-  }, [load]);
+    let alive = true;
+    void (async () => {
+      try {
+        const settings = await apiOrgSettings();
+        const list = features["org.layout_templates"] ? await apiOrgTemplates().catch(() => []) : null;
+        if (!alive) return;
+        setOrg(settings);
+        if (list) setTemplates(list);
+        setError("");
+      } catch {
+        if (alive) setError("Could not load organisation settings.");
+      } finally {
+        if (alive) setLoading(false);
+      }
+    })();
+    return () => { alive = false; };
+  }, [features]);
 
   async function run(work: () => Promise<OrgSettings | void>, done: string) {
     setNote("");
@@ -92,8 +95,9 @@ export default function OrganisationPage() {
   return (
     <div>
       <PageHeader
+        icon={Building2}
         title="Organisation"
-        subtitle="Branding, the palette new accounts start from, layout templates and your own domain."
+        subtitle="Branding, the palette new accounts start from, layout templates and your own domain. Every save is recorded in the activity log."
       />
 
       {!licensed && (

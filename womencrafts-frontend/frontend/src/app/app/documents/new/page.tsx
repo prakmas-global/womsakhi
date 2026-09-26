@@ -9,7 +9,7 @@ import { apiSaveListing } from "@/lib/shop-api";
 import { ACCEPTED_IMAGE_TYPES, apiUploadImage, uploadErrorMessage, validateImage } from "@/lib/uploads-api";
 import { useMe } from "@/components/ux/me";
 import * as Icons from "@/components/ux/icons";
-import { Back, Btn, Card, I, IconTile, SourceNote, v } from "@/components/ux/kit";
+import { Back, Btn, Card, I, IconTile, v } from "@/components/ux/kit";
 import { CHOICES, FIELDS, STEP_NAV } from "@/components/ux/earn/phone";
 // The centred dialog is a design-system primitive; the ux kit only carries
 // `Sheet`, which is a drawer and the wrong shape for a choice like this.
@@ -33,6 +33,8 @@ const STEPS = [
 ] as const;
 import { QuoteSheet } from "./quote-sheet";
 import { useTranslated } from "@/i18n/data";
+import { useAuth } from "@/context/AuthContext";
+import { useFormDraft } from "@/lib/use-form-draft";
 
 type Kind = "product" | "service" | "both";
 type PriceMode = "fixed" | "range" | "quote";
@@ -93,6 +95,7 @@ export default function AddListingPage() {
   const PRICE_TYPES = useTranslated(RAW_PRICE_TYPES);
   const tr = useT();
   const router = useRouter();
+  const { user } = useAuth();
 
   // The preview says "By <her>", not "By the seller" — she is the seller.
   const me = useMe();
@@ -151,6 +154,40 @@ export default function AddListingPage() {
   const [uploadError, setUploadError] = useState("");
   const photoInput = useRef<HTMLInputElement>(null);
 
+  const draft = useMemo(() => ({
+    at, done, kind, title, cat, sub, short, long, tags, picked,
+    mode, price, was, discountOn, discount, priceType, minQty, band,
+    customLow, customHigh, trackStock, stock, lowAt, whenOut, delivery,
+    prep, ships, freeShip, deliveryNote, quoteOn, quoteAsk, quoteMsg,
+    respondIn, photos,
+  }), [at, done, kind, title, cat, sub, short, long, tags, picked,
+    mode, price, was, discountOn, discount, priceType, minQty, band,
+    customLow, customHigh, trackStock, stock, lowAt, whenOut, delivery,
+    prep, ships, freeShip, deliveryNote, quoteOn, quoteAsk, quoteMsg,
+    respondIn, photos]);
+  const restoreDraft = useCallback((d: typeof draft) => {
+    setAt(d.at || 1); setDone(d.done || 1); setKind(d.kind || "product");
+    setTitle(d.title || ""); setCat(d.cat || ""); setSub(d.sub || "");
+    setShort(d.short || ""); setLong(d.long || ""); setTags(d.tags || "");
+    setPicked(Array.isArray(d.picked) ? d.picked : []); setMode(d.mode || "fixed");
+    setPrice(d.price || ""); setWas(d.was || ""); setDiscountOn(Boolean(d.discountOn));
+    setDiscount(d.discount || ""); setPriceType(d.priceType || RAW_PRICE_TYPES[0]);
+    setMinQty(d.minQty || "1"); setBand(d.band || null); setCustomLow(d.customLow || "");
+    setCustomHigh(d.customHigh || ""); setTrackStock(d.trackStock !== false);
+    setStock(d.stock || ""); setLowAt(d.lowAt || "5"); setWhenOut(d.whenOut || "stop");
+    setDelivery(d.delivery || "physical"); setPrep(d.prep || RAW_PROCESSING_TIMES[1]);
+    setShips(d.ships || "India"); setFreeShip(d.freeShip !== false);
+    setDeliveryNote(d.deliveryNote || ""); setQuoteOn(d.quoteOn !== false);
+    setQuoteAsk(Array.isArray(d.quoteAsk) ? d.quoteAsk : []); setQuoteMsg(d.quoteMsg || "");
+    setRespondIn(d.respondIn || RAW_RESPONSE_TIMES[1]);
+    setPhotos(Array.isArray(d.photos) ? d.photos : []);
+  }, []);
+  const { clear: clearDraft } = useFormDraft(
+    `womsakhi.form.listing.${user?.id || "member"}`,
+    draft,
+    restoreDraft,
+  );
+
   const uploadPhotos = async (files: File[]) => {
     if (uploading || !files.length) return;
     setUploadError("");
@@ -198,7 +235,23 @@ export default function AddListingPage() {
         photos,
         status: asDraft ? "paused" : "live",
         price_mode: mode,
+        price_high_minor: mode === "range" && band ? Math.round(band.high * 100) : 0,
+        compare_at_minor: Math.round((Number(was.replace(/[^\d.]/g, "")) || 0) * 100),
+        min_quantity: Math.max(1, Number(minQty.replace(/[^\d]/g, "")) || 1),
+        low_stock_at: Math.max(0, Number(lowAt.replace(/[^\d]/g, "")) || 0),
+        continue_when_out: whenOut === "continue",
+        delivery,
+        processing_time: prep,
+        ships_to: ships,
+        free_shipping: freeShip,
+        delivery_note: deliveryNote.trim(),
+        highlights: picked,
+        tags: tags.split(",").map((x) => x.trim()).filter(Boolean).slice(0, 12),
+        quote_fields: mode === "quote" ? quoteAsk : [],
+        quote_message: mode === "quote" ? quoteMsg.trim() : "",
+        response_time: mode === "quote" ? respondIn : "",
       });
+      clearDraft();
       router.push("/app/documents/listings");
     } catch {
       setSaveError("That did not save. Nothing you typed is lost — try again in a moment.");
@@ -206,7 +259,8 @@ export default function AddListingPage() {
       setSaving(false);
     }
   }, [kind, title, short, long, mode, price, priceType, trackStock, stock, sub, cat, router,
-      saving, uploading, photos, band, discountOn, discount]);
+      saving, uploading, photos, band, discountOn, discount, was, minQty, lowAt, whenOut,
+      delivery, prep, ships, freeShip, deliveryNote, picked, tags, quoteAsk, quoteMsg, respondIn, clearDraft]);
 
   const toggleIn = useCallback((list: string[], set: (v: string[]) => void, id: string) => {
     set(list.includes(id) ? list.filter((x) => x !== id) : [...list, id]);
@@ -812,9 +866,6 @@ export default function AddListingPage() {
               reach you through WomSakhi until you decide otherwise.
             </p>
           </div>
-
-          <SourceNote source="mock"
-                      what="the highlights and price-band upper limit are not saved yet" />
 
           {saveError && (
             <p role="alert" className="mt-3 rounded-[12px] px-4 py-3 text-xsm font-semibold"

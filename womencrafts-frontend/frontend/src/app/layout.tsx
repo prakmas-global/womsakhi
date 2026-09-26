@@ -5,26 +5,15 @@ import {
   Poppins,
   Inter,
   Plus_Jakarta_Sans,
-  Noto_Sans_Devanagari,
-  Noto_Naskh_Arabic,
-  Noto_Sans_Tamil,
-  Noto_Sans_Bengali,
-  Noto_Sans_Telugu,
-  Noto_Sans_Gujarati,
-  Noto_Sans_Kannada,
-  Noto_Sans_Malayalam,
-  Noto_Sans_Gurmukhi,
-  Noto_Sans_Oriya,
 } from "next/font/google";
 import "./globals.css";
 import { AuthProvider } from "@/context/AuthContext";
 import { ThemeProvider } from "@/context/ThemeContext";
-import QueryProvider from "@/lib/query/QueryProvider";
 import RouteProgress from "@/design-system/primitives/RouteProgress";
 import { I18nProvider } from "@/i18n";
 // Straight from the data module, not the "@/i18n" barrel: that barrel is a
 // client component, so anything re-exported through it cannot be called here.
-import { isRtl, LOCALE_COOKIE } from "@/i18n/locales";
+import { DEFAULT_LOCALE, isRtl, localeSpec } from "@/i18n/locales";
 import { cookies } from "next/headers";
 import { serverBoot } from "@/lib/server-api";
 import ThemeStyle from "@/theme-engine/ThemeStyle";
@@ -121,57 +110,6 @@ const jakarta = Plus_Jakarta_Sans({
   display: "swap",
 });
 
-// Script coverage for non-Latin locales. `preload: false` keeps these out of
-// the critical path — they are only fetched when such a locale is rendered.
-const notoDevanagari = Noto_Sans_Devanagari({
-  subsets: ["devanagari"],
-  variable: "--font-devanagari",
-  display: "swap",
-  preload: false,
-});
-
-const notoArabic = Noto_Naskh_Arabic({
-  subsets: ["arabic"],
-  variable: "--font-arabic",
-  display: "swap",
-  preload: false,
-});
-
-// One family per script the app is actually translated into. Without these a
-// device that happens not to ship a Tamil or Odia font renders every string as
-// empty boxes — the language switch appears to work and the screen is
-// unreadable, which is worse than leaving it in English.
-const notoTamil = Noto_Sans_Tamil({
-  subsets: ["tamil"], variable: "--font-tamil", display: "swap", preload: false,
-});
-const notoBengali = Noto_Sans_Bengali({
-  subsets: ["bengali"], variable: "--font-bengali", display: "swap", preload: false,
-});
-const notoTelugu = Noto_Sans_Telugu({
-  subsets: ["telugu"], variable: "--font-telugu", display: "swap", preload: false,
-});
-const notoGujarati = Noto_Sans_Gujarati({
-  subsets: ["gujarati"], variable: "--font-gujarati", display: "swap", preload: false,
-});
-const notoKannada = Noto_Sans_Kannada({
-  subsets: ["kannada"], variable: "--font-kannada", display: "swap", preload: false,
-});
-const notoMalayalam = Noto_Sans_Malayalam({
-  subsets: ["malayalam"], variable: "--font-malayalam", display: "swap", preload: false,
-});
-const notoGurmukhi = Noto_Sans_Gurmukhi({
-  subsets: ["gurmukhi"], variable: "--font-gurmukhi", display: "swap", preload: false,
-});
-const notoOdia = Noto_Sans_Oriya({
-  subsets: ["oriya"], variable: "--font-odia", display: "swap", preload: false,
-});
-
-/** Every script variable, for the <body> class. */
-const SCRIPT_FONTS = [
-  notoDevanagari, notoArabic, notoTamil, notoBengali, notoTelugu,
-  notoGujarati, notoKannada, notoMalayalam, notoGurmukhi, notoOdia,
-].map((f) => f.variable).join(" ");
-
 export const viewport: Viewport = {
   /*
     `viewport-fit: cover` is what lets the app reach under the notch and the
@@ -250,11 +188,11 @@ export default async function RootLayout({
   // Her language, read here for the same reason as the two above. Without it
   // the first paint is always English and then swaps once the provider has
   // mounted — which on a slow phone is long enough to read.
-  const locale = jar.get(LOCALE_COOKIE)?.value;
+  const locale = DEFAULT_LOCALE;
   // `lang` and `dir` belong on the server render, not on a mount effect: they
   // drive screen-reader pronunciation, hyphenation and every start/end style
   // rule, all of which are decided before an effect gets to run.
-  const lang = locale ?? "en";
+  const lang = localeSpec(locale).code;
   const dir = isRtl(locale) ? "rtl" : "ltr";
 
   // Who is signed in, and — for a member — her whole shell, answered here
@@ -270,7 +208,7 @@ export default async function RootLayout({
       lang={lang}
       dir={dir}
       suppressHydrationWarning
-      className={`${poppins.variable} ${inter.variable} ${jakarta.variable} ${fraunces.variable} ${caveat.variable} ${SCRIPT_FONTS} h-full${isDark ? " dark" : ""}`}
+      className={`${poppins.variable} ${inter.variable} ${jakarta.variable} ${fraunces.variable} ${caveat.variable} h-full${isDark ? " dark" : ""}`}
       data-text-size={textSize}
       style={{ fontSize: `${rootSize}px`, ["--ux-fs-scale" as string]: String(rootSize / 16) }}
     >
@@ -290,8 +228,7 @@ export default async function RootLayout({
         <ThemeStyle />
         <LayoutStyle />
         <ThemeProvider>
-          <QueryProvider>
-            <I18nProvider initialLocale={locale}>
+          <I18nProvider initialLocale={locale}>
               {/* Inside I18nProvider, not above it. The bar grew a label that
                   says "Opening…" in words after a second and a half, and a
                   label the app cannot translate is a label half this audience
@@ -327,8 +264,7 @@ export default async function RootLayout({
               </ThemeEngineBridge>
             </AuthProvider>
               </ToastProvider>
-            </I18nProvider>
-          </QueryProvider>
+          </I18nProvider>
         </ThemeProvider>
       </body>
     </html>

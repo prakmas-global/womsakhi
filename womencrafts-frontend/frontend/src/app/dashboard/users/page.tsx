@@ -1,13 +1,13 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { Suspense, useCallback, useEffect, useMemo, useState } from "react";
+import { useSearchParams } from "next/navigation";
 import {
   Users,
   UserCheck,
   UserPlus,
   BadgeCheck,
-  UserX,
-  Calendar,
+  Clock,
   ChevronDown,
   Search,
   SlidersHorizontal,
@@ -17,6 +17,7 @@ import {
   Mail,
   X,
   ShieldCheck,
+  ShieldAlert,
   User,
   MapPin,
   Pencil,
@@ -25,117 +26,142 @@ import {
   Activity,
   Ban,
   Trash2,
-  ChevronRight,
   Eye,
   Inbox,
+  Download,
+  Check,
+  RotateCcw,
+  CalendarDays,
+  BookOpen,
+  ExternalLink,
 } from "lucide-react";
 import Link from "next/link";
-import { Avatar, Card, ImageUpload, Input, Menu, MenuItem, Modal, Select, StatCard, Switch, useToast, useConfirm } from "@/design-system";
+import {
+  Avatar, Badge, Card, EmptyState, ImageUpload, Input, Menu, MenuItem, Modal, Pagination, Select,
+  Spinner, StatCard, Textarea, useToast, useConfirm, type Tone,
+} from "@/design-system";
 import DonutChart from "@/components/charts/DonutChart";
 import AreaTrend from "@/components/charts/AreaTrend";
+import RouteLoading from "@/components/common/RouteLoading";
+import { apiCreateMember, apiUpdateMember, apiResetMemberPassword, type ApiMember } from "@/lib/api";
 import {
-  apiListMembers,
-  apiMemberStats,
-  apiCreateMember,
-  apiUpdateMember,
-  apiDeleteMember,
-  apiResetMemberPassword,
-  apiSetMemberStatus,
-  type ApiMember,
+  apiApproveMember,
+  apiBulkMemberRegion,
+  apiBulkMemberStatus,
+  apiDeleteMemberWithReason,
+  apiExportMembers,
+  apiListMembersLive,
+  apiMemberGrowth,
+  apiMemberProfile,
+  apiMemberStatsLive,
+  apiRejectMember,
+  apiRestoreMember,
+  apiSuspendMember,
+  saveBlob,
+  shortDate,
+  shortDateTime,
+  type GrowthPoint,
+  type MemberProfile,
   type MemberStats,
-} from "@/lib/api";
+} from "@/lib/members-admin-api";
 import { memberError } from "@/lib/member-api";
 import MemberThemeControl from "@/components/admin/MemberThemeControl";
+import { apiRegions, type AdminRegion } from "@/lib/regions-admin-api";
 
-const GROWTH = [
-  { label: "Apr 20", value: 3000 },
-  { label: "Apr 27", value: 4200 },
-  { label: "May 4", value: 5600 },
-  { label: "May 11", value: 7500 },
-  { label: "May 18", value: 9800 },
-  { label: "May 25", value: 12845 },
-];
+/**
+ * Members — everyone in the directory, and everything an admin does to one.
+ *
+ * ── What changed ────────────────────────────────────────────────────────────
+ * This screen fetched the first 100 members and filtered them in the browser,
+ * drew a growth chart from six numbers typed into the file, showed a fixed
+ * "12.5%" on every stat card, and told you every member was "Verified on —"
+ * with "High engagement". The profile tabs said "No programs yet" whether or
+ * not she was enrolled in any.
+ *
+ * Now: search, filters and paging run on the server; growth and the deltas
+ * are counted from `created_at`; the profile shows her directory row, the
+ * state of her login, and what she has actually done (bookings, enrolments,
+ * posts, orders — counted, not scored). Approve, reject, suspend, restore and
+ * delete each take a reason that goes into the audit log, and "suspend" really
+ * does stop her signing in.
+ */
 
-// Fixed brand colours per role / verification bucket (charts are a frontend concern).
+type Role = "Member" | "Instructor" | "Supervisor" | "Admin";
+type Status = "Active" | "Inactive" | "Pending" | "Rejected";
+type Segment = "Entrepreneur" | "Student" | "Artisan" | "Job Seeker" | "Support Seeker";
+
+const ROLE_TONE: Record<string, Tone> = { Member: "brand", Instructor: "violet", Supervisor: "emerald", Admin: "sky" };
+const STATUS_TONE: Record<string, Tone> = { Active: "emerald", Inactive: "slate", Pending: "amber", Rejected: "rose" };
+/** "Inactive" in the database means she cannot sign in; say so. */
+const STATUS_LABEL: Record<string, string> = { Active: "Active", Inactive: "Suspended", Pending: "Pending", Rejected: "Rejected" };
+const VERIFY_TONE: Record<string, Tone> = {
+  active: "emerald", in_review: "amber", pending_documents: "amber", pending_email: "slate", rejected: "rose", suspended: "slate",
+};
+
 const ROLE_COLORS: Record<string, string> = {
   Member: "var(--color-brand-600)",
   Instructor: "var(--color-violet-500)",
   Supervisor: "var(--status-ok-solid)",
   Admin: "var(--status-info-solid)",
 };
-
-type Role = "Member" | "Instructor" | "Supervisor" | "Admin";
-type Status = "Active" | "Inactive" | "Pending" | "Rejected";
-type Segment = "Entrepreneur" | "Student" | "Artisan" | "Job Seeker" | "Support Seeker";
-type UserRow = {
-  _id: string; // mongo id — used for update/delete/status calls
-  name: string;
-  role: Role;
-  email: string;
-  phone: string;
-  status: Status;
-  joined: string;
-  createdAt: string;
-  id: string; // display code, e.g. WC-12564
-  location: string;
-  dob: string;
-  gender: string;
-  referral: string;
-  engagement: number;
-  segment: Segment;
-  verifiedOn: string;
-  avatar: string;
+const STATUS_COLORS: Record<string, string> = {
+  Active: "var(--status-ok-solid)",
+  Pending: "var(--status-warn-solid)",
+  Inactive: "var(--color-violet-300)",
+  Rejected: "var(--status-danger-solid)",
 };
 
-function toRow(m: ApiMember): UserRow {
-  return {
-    _id: m.id,
-    name: m.full_name,
-    role: (m.role as Role) || "Member",
-    email: m.email,
-    phone: m.phone || "—",
-    status: (m.status as Status) || "Active",
-    joined: m.joined || "—",
-    createdAt: m.created_at || "",
-    id: m.code || m.id,
-    location: m.location || "—",
-    dob: m.dob || "—",
-    gender: m.gender || "—",
-    referral: m.referral || "—",
-    engagement: m.engagement ?? 0,
-    segment: (m.segment as Segment) || "Entrepreneur",
-    verifiedOn: m.verified_on || "—",
-    avatar: m.avatar || "",
-  };
-}
+const ROLE_OPTIONS: { value: string; label: string }[] = [
+  { value: "", label: "All roles" }, { value: "Member", label: "Member" },
+  { value: "Instructor", label: "Instructor" }, { value: "Supervisor", label: "Supervisor" }, { value: "Admin", label: "Admin" },
+];
+const STATUS_OPTIONS: { value: string; label: string }[] = [
+  { value: "", label: "All statuses" }, { value: "Active", label: "Active" }, { value: "Pending", label: "Pending" },
+  { value: "Inactive", label: "Suspended" }, { value: "Rejected", label: "Rejected" },
+];
+const NONE = "__none__";
+const SEGMENT_OPTIONS: { value: string; label: string }[] = [
+  { value: "", label: "All segments" }, { value: "Entrepreneur", label: "Entrepreneur" }, { value: "Student", label: "Student" },
+  { value: "Artisan", label: "Artisan" }, { value: "Job Seeker", label: "Job Seeker" }, { value: "Support Seeker", label: "Support Seeker" },
+  { value: NONE, label: "No segment set" },
+];
+const labelOf = (opts: { value: string; label: string }[], v: string) => opts.find((o) => o.value === v)?.label ?? opts[0].label;
 
-const ROLE_TONE: Record<Role, string> = {
-  Member: "bg-brand-tint text-brand-ink",
-  Instructor: "bg-violet-tint text-violet-ink",
-  Supervisor: "bg-status-ok-bg text-status-ok-ink",
-  Admin: "bg-status-info-bg text-status-info-ink",
+const PAGE_SIZE = 10;
+const TABS = ["Overview", "Activity", "Programmes", "Appointments"] as const;
+type Tab = (typeof TABS)[number];
+
+type MemberForm = {
+  name: string; email: string; phone: string; role: Role; status: Status; location: string;
+  segment: Segment | ""; gender: string; dob: string; referral: string; avatar: string;
 };
-const STATUS_TONE: Record<Status, string> = {
-  Active: "bg-status-ok-bg text-status-ok-ink",
-  Inactive: "bg-status-danger-bg text-status-danger-ink",
-  Pending: "bg-status-warn-bg text-status-warn-ink",
-  Rejected: "bg-status-danger-bg text-status-danger-ink",
+const EMPTY_FORM: MemberForm = {
+  name: "", email: "", phone: "", role: "Member", status: "Active", location: "",
+  segment: "Entrepreneur", gender: "Female", dob: "", referral: "", avatar: "",
 };
 
-const ROLE_OPTIONS: (Role | "All Roles")[] = ["All Roles", "Member", "Instructor", "Supervisor"];
-const STATUS_OPTIONS: (Status | "All Status")[] = ["All Status", "Active", "Inactive", "Pending", "Rejected"];
-const SEGMENT_OPTIONS: (Segment | "All Segments")[] = ["All Segments", "Entrepreneur", "Student", "Artisan", "Job Seeker"];
+/** One dialog for every action that needs a reason. */
+type ReasonKind = "approve" | "reject" | "suspend" | "restore" | "delete" | "bulk-suspend" | "bulk-restore";
+type ReasonAsk = { kind: ReasonKind; member?: ApiMember; ids?: string[] };
+const REASON_COPY: Record<ReasonKind, { title: (n: string) => string; body: string; confirm: string; required: boolean; danger: boolean }> = {
+  approve: { title: (n) => `Approve ${n}?`, body: "Her account becomes usable, any ID documents waiting on review are marked approved by you, and she is emailed.", confirm: "Approve", required: false, danger: false },
+  reject: { title: (n) => `Reject ${n}?`, body: "She is told the reason by email, and it is kept on her record. Write it for her, not for the log.", confirm: "Reject", required: true, danger: true },
+  suspend: { title: (n) => `Suspend ${n}?`, body: "She is signed out everywhere now and refused at sign-in until restored. Her profile and everything she has done are kept.", confirm: "Suspend", required: true, danger: true },
+  restore: { title: (n) => `Restore ${n}?`, body: "She can sign in again straight away. She is told her account is open.", confirm: "Restore", required: false, danger: false },
+  delete: { title: (n) => `Delete ${n}?`, body: "Her profile, login, documents, bookings and enrolments are removed for good. Money records survive with the link cleared. This cannot be undone.", confirm: "Delete member", required: false, danger: true },
+  "bulk-suspend": { title: (n) => `Suspend ${n}?`, body: "Each of them is signed out now and refused at sign-in until restored. One reason is recorded against each.", confirm: "Suspend all", required: true, danger: true },
+  "bulk-restore": { title: (n) => `Restore ${n}?`, body: "Each of them can sign in again straight away.", confirm: "Restore all", required: false, danger: false },
+};
 
-const PAGE_SIZE = 6;
-
-function Dropdown({ label, className = "" }: { label: string; className?: string }) {
+function Dropdown({ label }: { label: string }) {
   return (
-    <button className={`btn btn-sm btn-outline ${className}`}>
+    <span className="btn btn-sm btn-outline">
       {label}
       <ChevronDown className="h-3.5 w-3.5 text-ink-subtle" />
-    </button>
+    </span>
   );
 }
+
 function Legend({ items }: { items: { name: string; value: string; color: string }[] }) {
   return (
     <ul className="space-y-2.5">
@@ -152,249 +178,330 @@ function Legend({ items }: { items: { name: string; value: string; color: string
   );
 }
 
-export default function UserManagementPage() {
+function Field({ k, v }: { k: string; v: string }) {
+  return (
+    <div>
+      <p className="text-ink-subtle">{k}</p>
+      <p className="font-medium text-ink-muted">{v || "—"}</p>
+    </div>
+  );
+}
+
+export default function MembersPage() {
+  // useSearchParams needs a Suspense boundary during prerender.
+  return (
+    <Suspense fallback={<RouteLoading shape="table" title={true} />}>
+      <MembersScreen />
+    </Suspense>
+  );
+}
+
+function MembersScreen() {
   const toast = useToast();
   const confirm = useConfirm();
-  const [rows, setRows] = useState<UserRow[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [stats, setStats] = useState<MemberStats | null>(null);
-  const [search, setSearch] = useState("");
-  const [roleFilter, setRoleFilter] = useState<(typeof ROLE_OPTIONS)[number]>("All Roles");
-  const [statusFilter, setStatusFilter] = useState<(typeof STATUS_OPTIONS)[number]>("All Status");
-  const [segmentFilter, setSegmentFilter] = useState<(typeof SEGMENT_OPTIONS)[number]>("All Segments");
-  const [page, setPage] = useState(1);
-  const [selectedId, setSelectedId] = useState<string>("");
-  const [panelOpen, setPanelOpen] = useState(true);
-  const [activeTab, setActiveTab] = useState("Overview");
-  const [addOpen, setAddOpen] = useState(false);
-  const [dateRange, setDateRange] = useState("This Month");
-  // When set, the modal is editing this member rather than creating one.
-  const [editingId, setEditingId] = useState<string | null>(null);
-  const [form, setForm] = useState<{
-    name: string;
-    email: string;
-    phone: string;
-    role: Role;
-    status: Status;
-    location: string;
-    segment: Segment;
-    gender: string;
-    avatar: string;
-    welcomeEmail: boolean;
-  }>({
-    name: "",
-    email: "",
-    phone: "",
-    role: "Member",
-    status: "Active",
-    location: "",
-    segment: "Entrepreneur",
-    gender: "Female",
-    avatar: "",
-    welcomeEmail: true,
-  });
+  const params = useSearchParams();
 
-  // Load members + stats from the backend (client-side filtering/paging stays as-is).
-  const refresh = useCallback(async () => {
+  // ── list ──────────────────────────────────────────────────────────────────
+  const [rows, setRows] = useState<ApiMember[]>([]);
+  const [total, setTotal] = useState(0);
+  const [pages, setPages] = useState(1);
+  const [page, setPage] = useState(1);
+  const [listLoading, setListLoading] = useState(true);
+  const [search, setSearch] = useState(params.get("q") ?? "");
+  const [q, setQ] = useState(params.get("q") ?? "");
+  const [roleFilter, setRoleFilter] = useState(params.get("role") ?? "");
+  const [statusFilter, setStatusFilter] = useState(params.get("status") ?? "");
+  const [segmentFilter, setSegmentFilter] = useState(params.get("segment") ?? "");
+  const [selected, setSelected] = useState<string[]>([]);
+
+  // ── figures ───────────────────────────────────────────────────────────────
+  const [stats, setStats] = useState<MemberStats | null>(null);
+  const [growth, setGrowth] = useState<GrowthPoint[]>([]);
+
+  // ── one member ────────────────────────────────────────────────────────────
+  const [selectedId, setSelectedId] = useState<string>("");
+  const [profile, setProfile] = useState<MemberProfile | null>(null);
+  const [profileLoading, setProfileLoading] = useState(false);
+  const [activeTab, setActiveTab] = useState<Tab>("Overview");
+
+  // ── dialogs ───────────────────────────────────────────────────────────────
+  const [formOpen, setFormOpen] = useState(false);
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [form, setForm] = useState<MemberForm>(EMPTY_FORM);
+  const [ask, setAsk] = useState<ReasonAsk | null>(null);
+  const [reason, setReason] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [exporting, setExporting] = useState(false);
+  const [regions, setRegions] = useState<AdminRegion[]>([]);
+  const [regionOpen, setRegionOpen] = useState(false);
+  const [bulkRegion, setBulkRegion] = useState("");
+  const [bulkRegionReason, setBulkRegionReason] = useState("");
+
+  // Typing pauses for a moment before the server is asked; a new question
+  // starts on page 1.
+  useEffect(() => {
+    const t = setTimeout(() => { setQ(search.trim()); setPage(1); }, 300);
+    return () => clearTimeout(t);
+  }, [search]);
+
+  const loadList = useCallback(async () => {
     try {
-      const [list, s] = await Promise.all([
-        apiListMembers({ page_size: 100, sort: "-created_at" }),
-        apiMemberStats(),
-      ]);
-      const mapped = list.items.map(toRow);
-      setRows(mapped);
-      setStats(s);
-      setSelectedId((cur) => (cur && mapped.some((r) => r.id === cur) ? cur : mapped[0]?.id ?? ""));
-    } catch {
-      /* leave current rows; a toast could surface the error */
+      const res = await apiListMembersLive({
+        q: q || undefined, role: roleFilter || undefined, status: statusFilter || undefined,
+        segment: segmentFilter || undefined, page, page_size: PAGE_SIZE, sort: "-created_at",
+      });
+      setRows(res.items);
+      setTotal(res.total);
+      setPages(Math.max(1, res.pages));
+      setSelected((cur) => cur.filter((id) => res.items.some((m) => m.id === id)));
+    } catch (e) {
+      toast.error("Could not load members", { description: memberError(e) });
     } finally {
-      setLoading(false);
+      setListLoading(false);
     }
+  }, [q, roleFilter, statusFilter, segmentFilter, page, toast]);
+
+  const loadFigures = useCallback(async () => {
+    const [s, g] = await Promise.all([
+      apiMemberStatsLive().catch(() => null),
+      apiMemberGrowth(12).catch(() => null),
+    ]);
+    if (s) setStats(s);
+    if (g) setGrowth(g.points);
   }, []);
 
+  const loadProfile = useCallback(async (id: string) => {
+    if (!id) { setProfile(null); return; }
+    setProfileLoading(true);
+    try {
+      setProfile(await apiMemberProfile(id));
+    } catch (e) {
+      setProfile(null);
+      toast.error("Could not open that profile", { description: memberError(e) });
+    } finally {
+      setProfileLoading(false);
+    }
+  }, [toast]);
+
+  // Each fetch is started from inside an async IIFE, as staff/page.tsx does:
+  // the effect body itself sets no state.
+  useEffect(() => { void (async () => { await loadList(); })(); }, [loadList]);
+  useEffect(() => { void (async () => { await loadFigures(); })(); }, [loadFigures]);
+  useEffect(() => { void (async () => { await loadProfile(selectedId); })(); }, [selectedId, loadProfile]);
   useEffect(() => {
-    refresh();
-  }, [refresh]);
+    void apiRegions().then(setRegions).catch(() => setRegions([]));
+  }, []);
 
-  const filtered = useMemo(() => {
-    const q = search.trim().toLowerCase();
-    return rows.filter((r) => {
-      const matchesSearch =
-        q === "" ||
-        r.name.toLowerCase().includes(q) ||
-        r.email.toLowerCase().includes(q) ||
-        r.phone.toLowerCase().includes(q);
-      const matchesRole = roleFilter === "All Roles" || r.role === roleFilter;
-      const matchesStatus = statusFilter === "All Status" || r.status === statusFilter;
-      const matchesSegment = segmentFilter === "All Segments" || r.segment === segmentFilter;
-      return matchesSearch && matchesRole && matchesStatus && matchesSegment;
-    });
-  }, [rows, search, roleFilter, statusFilter, segmentFilter]);
+  /** After any write: the list, the figures, and the open profile. */
+  const refreshAll = useCallback(async () => {
+    await Promise.all([loadList(), loadFigures(), selectedId ? loadProfile(selectedId) : Promise.resolve()]);
+  }, [loadList, loadFigures, loadProfile, selectedId]);
 
-  const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
-  const currentPage = Math.min(page, totalPages);
-  const startIdx = (currentPage - 1) * PAGE_SIZE;
-  const pageRows = filtered.slice(startIdx, startIdx + PAGE_SIZE);
-  const showingFrom = filtered.length === 0 ? 0 : startIdx + 1;
-  const showingTo = Math.min(startIdx + PAGE_SIZE, filtered.length);
+  // A changed filter is a new question, so it starts on page 1.
+  const pickRole = (v: string) => { setRoleFilter(v); setPage(1); };
+  const pickStatus = (v: string) => { setStatusFilter(v); setPage(1); };
+  const pickSegment = (v: string) => { setSegmentFilter(v); setPage(1); };
 
-  const selectedUser = rows.find((r) => r.id === selectedId) ?? filtered[0] ?? rows[0] ?? null;
+  const anyFilter = q !== "" || roleFilter !== "" || statusFilter !== "" || segmentFilter !== "";
+  const clearFilters = () => { setSearch(""); setQ(""); setRoleFilter(""); setStatusFilter(""); setSegmentFilter(""); setPage(1); };
 
-  // Live figures for the stat cards + donuts, derived from the backend stats.
-  const totalUsers = stats?.total ?? rows.length;
-  const pct = (v: number) => (totalUsers ? Math.round((v / totalUsers) * 100) : 0);
+  // ── figures for the cards and charts ──────────────────────────────────────
+  const totalMembers = stats?.total ?? 0;
+  const pct = (v: number) => (totalMembers ? Math.round((v / totalMembers) * 100) : 0);
   const roleSplit = useMemo(
-    () =>
-      Object.entries(stats?.by_role ?? {}).map(([name, value]) => ({
-        name: `${name}s`,
-        value,
-        color: ROLE_COLORS[name] ?? "var(--color-violet-300)",
-      })),
+    () => Object.entries(stats?.by_role ?? {}).filter(([, v]) => v > 0).map(([name, value]) => ({
+      name, value, color: ROLE_COLORS[name] ?? "var(--color-violet-300)",
+    })),
     [stats],
   );
-  const roleLegend = roleSplit.map((r) => ({
-    name: r.name,
-    value: `${r.value.toLocaleString()} (${pct(r.value)}%)`,
-    color: r.color,
-  }));
-  const verifiedCount = stats ? Math.max(0, stats.total - stats.pending - stats.rejected) : 0;
-  const verifySplit = [
-    { name: "Verified", value: verifiedCount, color: "var(--status-ok-solid)" },
-    { name: "Pending", value: stats?.pending ?? 0, color: "var(--status-warn-solid)" },
-    { name: "Rejected", value: stats?.rejected ?? 0, color: "var(--status-danger-solid)" },
-  ];
-  const verifyLegend = verifySplit.map((v) => ({
-    name: v.name,
-    value: `${v.value.toLocaleString()} (${pct(v.value)}%)`,
-    color: v.color,
-  }));
-  const newThisMonth = useMemo(() => {
-    const now = new Date();
-    return rows.filter((r) => {
-      const d = new Date(r.createdAt);
-      return (
-        !Number.isNaN(d.getTime()) &&
-        d.getMonth() === now.getMonth() &&
-        d.getFullYear() === now.getFullYear()
-      );
-    }).length;
-  }, [rows]);
+  const statusSplit = useMemo(
+    () => (["Active", "Pending", "Inactive", "Rejected"] as const)
+      .map((s) => ({ name: STATUS_LABEL[s], value: stats?.by_status?.[s] ?? 0, color: STATUS_COLORS[s] }))
+      .filter((d) => d.value > 0),
+    [stats],
+  );
+  const newThis = stats?.new_this_month ?? 0;
+  const newLast = stats?.new_last_month ?? 0;
+  const monthDelta = newLast > 0 ? Math.round(((newThis - newLast) / newLast) * 100) : null;
+  const joinedInWindow = growth.reduce((sum, p) => sum + p.new, 0);
+  const growthHasData = growth.some((p) => p.value > 0);
 
-  const resetPage = () => setPage(1);
+  // ── selection ─────────────────────────────────────────────────────────────
+  const allOnPage = rows.length > 0 && rows.every((r) => selected.includes(r.id));
+  const toggleAll = () => setSelected(allOnPage ? [] : rows.map((r) => r.id));
+  const toggleOne = (id: string) =>
+    setSelected((cur) => (cur.includes(id) ? cur.filter((x) => x !== id) : [...cur, id]));
 
-  function selectRow(id: string) {
-    setSelectedId(id);
-    setPanelOpen(true);
-    setActiveTab("Overview");
+  // ── actions ───────────────────────────────────────────────────────────────
+  function openAdd() {
+    setEditingId(null);
+    setForm(EMPTY_FORM);
+    setFormOpen(true);
   }
 
-  async function deleteRow(mongoId: string) {
-    if (!(await confirm({
-      title: "Delete this member?",
-      description: "Her profile, bookings and enrolments are removed. This cannot be undone.",
-      confirmLabel: "Delete member",
-      danger: true,
-    }))) return;
+  function openEdit(m: ApiMember) {
+    setEditingId(m.id);
+    setForm({
+      name: m.full_name, email: m.email, phone: m.phone, role: (m.role as Role) || "Member",
+      status: (m.status as Status) || "Active", location: m.location, segment: (m.segment as Segment) || "",
+      gender: m.gender || "Female", dob: m.dob, referral: m.referral, avatar: m.avatar,
+    });
+    setFormOpen(true);
+  }
+
+  async function submitForm() {
+    if (!form.name.trim() || !form.email.trim()) {
+      toast.error("Name and email are both needed");
+      return;
+    }
+    setBusy(true);
     try {
-      await apiDeleteMember(mongoId);
-      await refresh();
+      const body = {
+        full_name: form.name.trim(), email: form.email.trim(), phone: form.phone.trim(), role: form.role,
+        location: form.location.trim(), segment: form.segment || undefined, gender: form.gender,
+        dob: form.dob.trim(), referral: form.referral.trim(), avatar: form.avatar,
+      };
+      if (editingId) {
+        const saved = await apiUpdateMember(editingId, body);
+        toast.success(`${saved.full_name} saved`);
+      } else {
+        const created = await apiCreateMember({ ...body, status: form.status });
+        toast.success(`${created.full_name} added to the directory`, {
+          description: "No login was created — she signs up herself, and her account links to this row.",
+        });
+        setSelectedId(created.id);
+        setActiveTab("Overview");
+      }
+      setFormOpen(false);
+      await refreshAll();
     } catch (err) {
-      toast.error("Could not delete the member", { description: memberError(err) });
+      toast.error(editingId ? "Could not save the member" : "Could not add the member", { description: memberError(err) });
+    } finally {
+      setBusy(false);
     }
   }
 
+  function askFor(kind: ReasonKind, member?: ApiMember, ids?: string[]) {
+    setReason("");
+    setAsk({ kind, member, ids });
+  }
 
-  /** Emails a reset link to the selected member. */
-  async function resetPasswordFor(id: string, name: string) {
+  async function runAsk() {
+    if (!ask) return;
+    const copy = REASON_COPY[ask.kind];
+    const why = reason.trim();
+    if (copy.required && !why) {
+      toast.error("A reason is needed", { description: "It is recorded, and where it is hers to know, she is told." });
+      return;
+    }
+    setBusy(true);
     try {
-      const res = await apiResetMemberPassword(id);
-      toast.success(res.message || `A reset link is on its way to ${name}.`);
+      const m = ask.member;
+      const name = m?.full_name ?? "";
+      switch (ask.kind) {
+        case "approve": if (m) { await apiApproveMember(m.id, why); toast.success(`${name} approved`); } break;
+        case "reject": if (m) { await apiRejectMember(m.id, why); toast.success(`${name} rejected`, { description: "She has been told why." }); } break;
+        case "suspend": if (m) { await apiSuspendMember(m.id, why); toast.success(`${name} suspended`, { description: "She cannot sign in until restored." }); } break;
+        case "restore": if (m) { await apiRestoreMember(m.id, why); toast.success(`${name} can sign in again`); } break;
+        case "delete":
+          if (m) {
+            const res = await apiDeleteMemberWithReason(m.id, why);
+            toast.success(`${name} deleted`, { description: res.message });
+            if (selectedId === m.id) setSelectedId("");
+          }
+          break;
+        case "bulk-suspend":
+        case "bulk-restore": {
+          const res = await apiBulkMemberStatus(ask.ids ?? [], ask.kind === "bulk-suspend" ? "Inactive" : "Active", why);
+          toast.success(res.message);
+          setSelected([]);
+          break;
+        }
+      }
+      setAsk(null);
+      await refreshAll();
     } catch (err) {
-      // This used to set the same `resetNote` as the success path, which was
-      // rendered in a GREEN box — so a failed reset was reported to the admin
-      // as though it had worked, in the colour reserved for success.
-      toast.error(memberError(err));
+      toast.error("That did not go through", { description: memberError(err) });
+    } finally {
+      setBusy(false);
     }
   }
 
-  async function suspendSelected() {
-    if (!selectedUser) return;
-    const next = selectedUser.status === "Active" ? "Inactive" : "Active";
+  async function resetPasswordFor(m: ApiMember) {
+    const ok = await confirm({
+      title: `Send ${m.full_name} a reset link?`,
+      description: "A single-use link, valid 24 hours, goes to her email. Nobody here sees or sets her password.",
+      confirmLabel: "Send the link",
+    });
+    if (!ok) return;
     try {
-      await apiSetMemberStatus(selectedUser._id, next);
-      await refresh();
+      const res = await apiResetMemberPassword(m.id);
+      if (res.delivered) toast.success("Reset link sent", { description: res.message });
+      else toast.error("Link issued but not delivered", { description: res.message });
+      if (selectedId === m.id) void loadProfile(m.id);
     } catch (err) {
-      toast.error("Could not suspend the member", { description: memberError(err) });
+      toast.error("Could not start a reset", { description: memberError(err) });
     }
   }
 
-  /** Save a newly uploaded (or removed) profile photo straight to the member. */
-  async function handleAvatarChange(mongoId: string, url: string | null) {
+  async function exportCsv(ids?: string[]) {
+    setExporting(true);
     try {
-      await apiUpdateMember(mongoId, { avatar: url ?? "" });
-      await refresh();
+      const blob = await apiExportMembers(ids
+        ? { ids: ids.join(",") }
+        : { q: q || undefined, role: roleFilter || undefined, status: statusFilter || undefined, segment: segmentFilter || undefined });
+      saveBlob(blob, `members-${new Date().toISOString().slice(0, 10)}.csv`);
+      toast.success(ids ? `Exported ${ids.length} selected member${ids.length === 1 ? "" : "s"}` : `Exported ${total.toLocaleString()} member${total === 1 ? "" : "s"}`);
+    } catch (err) {
+      toast.error("Could not export", { description: memberError(err) });
+    } finally {
+      setExporting(false);
+    }
+  }
+
+  async function assignSelectedRegion() {
+    if (!bulkRegion) {
+      toast.error("Choose a region");
+      return;
+    }
+    setBusy(true);
+    try {
+      const res = await apiBulkMemberRegion(selected, bulkRegion, bulkRegionReason);
+      toast.success(res.message);
+      setRegionOpen(false);
+      setSelected([]);
+      setBulkRegion("");
+      setBulkRegionReason("");
+      await refreshAll();
+    } catch (err) {
+      toast.error("Could not assign the region", { description: memberError(err) });
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function handleAvatarChange(id: string, url: string | null) {
+    try {
+      await apiUpdateMember(id, { avatar: url ?? "" });
+      await refreshAll();
     } catch (err) {
       toast.error("Could not update the photo", { description: memberError(err) });
     }
   }
 
-  /** Open the modal pre-filled, so "Edit" changes a member instead of adding one. */
-  function startEdit(u: {
-    id: string; name: string; email: string; phone?: string; role?: string;
-    status?: string; location?: string; segment?: string; avatar?: string;
-  }) {
-    setEditingId(u.id);
-    setForm({
-      name: u.name ?? "",
-      email: u.email ?? "",
-      phone: u.phone ?? "",
-      role: (u.role as typeof form.role) ?? "Member",
-      status: (u.status as typeof form.status) ?? "Active",
-      location: u.location ?? "",
-      segment: (u.segment as typeof form.segment) ?? "Entrepreneur",
-      gender: "Female",
-      avatar: u.avatar ?? "",
-      welcomeEmail: false,
-    });
-    setAddOpen(true);
+  /** The row actions, shared by the table menu and the profile's quick actions. */
+  function actionsFor(m: ApiMember) {
+    return {
+      canApprove: m.status === "Pending" || m.status === "Rejected",
+      canReject: m.status === "Pending",
+      canSuspend: m.status === "Active",
+      canRestore: m.status === "Inactive",
+    };
   }
 
-  async function handleAddUser() {
-    if (!form.name.trim() || !form.email.trim()) return;
-    try {
-      const created = await apiCreateMember({
-        full_name: form.name.trim(),
-        email: form.email.trim(),
-        phone: form.phone.trim(),
-        role: form.role,
-        status: form.status,
-        location: form.location.trim(),
-        segment: form.segment,
-        gender: form.gender,
-        avatar: form.avatar,
-      });
-      await refresh();
-      setSelectedId(created.code || created.id);
-      setPanelOpen(true);
-      setActiveTab("Overview");
-      setForm({
-        name: "",
-        email: "",
-        phone: "",
-        role: "Member",
-        status: "Active",
-        location: "",
-        segment: "Entrepreneur",
-        gender: "Female",
-        avatar: "",
-        welcomeEmail: true,
-      });
-      setAddOpen(false);
-      setPage(1);
-    } catch (err) {
-      toast.error("Could not add the user", { description: memberError(err) });
-    }
-  }
+  const member = profile?.member ?? rows.find((r) => r.id === selectedId) ?? null;
+  const showingFrom = total === 0 ? 0 : (page - 1) * PAGE_SIZE + 1;
+  const showingTo = Math.min(page * PAGE_SIZE, total);
 
   return (
     <div>
@@ -405,321 +512,269 @@ export default function UserManagementPage() {
             <Users className="h-6 w-6" />
           </span>
           <div>
-            <h1 className="font-display text-2xl font-bold tracking-tight text-ink">
-              User Management
-            </h1>
+            <h1 className="font-display text-2xl font-bold tracking-tight text-ink">Members</h1>
             <p className="mt-1 text-sm text-ink-subtle">
-              Manage all platform users, view details and take action.
+              Everyone in the directory — find her, see where her account stands, and act on it.
             </p>
           </div>
         </div>
-        <button className="btn btn-sm btn-outline">
-          <Calendar className="h-4 w-4 text-ink-subtle" />
-          May 20, 2024 - May 26, 2024
-          <ChevronDown className="h-4 w-4 text-ink-subtle" />
-        </button>
+        <div className="flex flex-wrap items-center gap-2">
+          <button className="btn btn-sm btn-outline" disabled={exporting || total === 0} onClick={() => void exportCsv()}>
+            <Download className="h-4 w-4" /> {exporting ? "Exporting…" : anyFilter ? `Export ${total.toLocaleString()} filtered` : "Export CSV"}
+          </button>
+          <button className="btn btn-primary" onClick={openAdd}>
+            <Plus className="h-4 w-4" /> Add member
+          </button>
+        </div>
       </div>
 
       {/* stats */}
       <div className="grid grid-cols-2 gap-4 lg:grid-cols-5">
-        <StatCard label="Total Users" value={totalUsers.toLocaleString()} icon={Users} tone="brand" delta="12.5%" />
-        <StatCard label="Active Users" value={(stats?.active ?? 0).toLocaleString()} icon={UserCheck} tone="violet" delta="8.3%" />
-        <StatCard label="New This Month" value={newThisMonth.toLocaleString()} icon={UserPlus} tone="emerald" delta="15.7%" />
-        <StatCard label="Verified Users" value={verifiedCount.toLocaleString()} icon={BadgeCheck} tone="amber" delta="10.2%" />
-        <StatCard label="Inactive Users" value={(stats?.inactive ?? 0).toLocaleString()} icon={UserX} tone="rose" delta="3.1%" deltaDir="down" />
+        <StatCard label="Members" value={totalMembers.toLocaleString()} icon={Users} tone="brand"
+                  deltaNote={stats ? `${newThis} joined this month` : "Counting…"} />
+        <StatCard label="Active" value={(stats?.active ?? 0).toLocaleString()} icon={UserCheck} tone="violet"
+                  deltaNote={stats ? `${pct(stats.active)}% of members · ${stats.inactive} suspended` : "Counting…"} />
+        <StatCard label="New this month" value={newThis.toLocaleString()} icon={UserPlus} tone="emerald"
+                  delta={monthDelta === null ? undefined : `${Math.abs(monthDelta)}%`}
+                  deltaDir={monthDelta !== null && monthDelta < 0 ? "down" : "up"}
+                  deltaNote={monthDelta === null ? (stats ? "none joined last month" : "Counting…") : `vs ${newLast} last month`} />
+        <StatCard label="Verified accounts" value={(stats?.verified ?? 0).toLocaleString()} icon={BadgeCheck} tone="sky"
+                  deltaNote="Completed ID verification" />
+        <StatCard label="Pending review" value={(stats?.pending ?? 0).toLocaleString()} icon={Clock}
+                  tone={(stats?.pending ?? 0) > 0 ? "amber" : "slate"}
+                  deltaNote={(stats?.pending ?? 0) > 0 ? "Waiting for a decision" : "Nobody waiting"} />
       </div>
 
       {/* charts */}
       <div className="mt-6 grid grid-cols-1 gap-6 lg:grid-cols-3">
         <Card>
           <div className="mb-1 flex items-center justify-between">
-            <h2 className="font-display text-base font-semibold text-ink">User Growth</h2>
-            <Menu
-              align="right"
-              trigger={<Dropdown label={dateRange} />}
-            >
-              {["This Month", "Last Month", "This Quarter", "This Year", "All Time"].map((r) => (
-                <MenuItem key={r} onClick={() => setDateRange(r)}>
-                  {r}
-                </MenuItem>
-              ))}
-            </Menu>
+            <h2 className="font-display text-base font-semibold text-ink">Directory growth</h2>
+            <span className="text-xs text-ink-subtle">Last 12 weeks</span>
           </div>
           <p className="font-display text-2xl font-bold text-ink">
-            {totalUsers.toLocaleString()}{" "}
-            <span className="align-middle text-xs font-semibold text-status-ok-ink">↑ 12.5%</span>
+            {totalMembers.toLocaleString()}{" "}
+            {joinedInWindow > 0 && (
+              <span className="align-middle text-xs font-semibold text-status-ok-ink">+{joinedInWindow} in 12 weeks</span>
+            )}
           </p>
-          <AreaTrend data={GROWTH} color="var(--color-brand-600)" height={170} id="growth" chartLabel="Member growth" />
+          {growthHasData ? (
+            <AreaTrend data={growth.map((p) => ({ label: p.label, value: p.value }))} color="var(--color-brand-600)" height={170} id="growth" chartLabel="Directory size by week" />
+          ) : (
+            <p className="py-12 text-center text-sm text-ink-subtle">{stats ? "No members yet." : "Loading…"}</p>
+          )}
         </Card>
         <Card>
           <div className="mb-2 flex items-center justify-between">
-            <Link
-              href="/dashboard/users/roles"
-              className="font-display text-base font-semibold text-ink hover:text-brand-ink"
-            >
-              Users by Role
+            <Link href="/dashboard/users/roles" className="font-display text-base font-semibold text-ink hover:text-brand-ink">
+              Members by role
             </Link>
-            <Link
-              href="/dashboard/users/roles"
-              className="text-xs font-semibold text-brand-ink hover:text-brand-ink"
-            >
-              View All
+            <Link href="/dashboard/users/roles" className="text-xs font-semibold text-brand-ink hover:text-brand-ink">
+              Roles
             </Link>
           </div>
-          <div className="flex flex-col items-center">
-            <DonutChart data={roleSplit} centerValue={totalUsers.toLocaleString()} centerLabel="Total Users" size={156} />
-          </div>
-          <div className="mt-4">
-            <Legend items={roleLegend} />
-          </div>
+          {roleSplit.length === 0 ? (
+            <p className="py-12 text-center text-sm text-ink-subtle">{stats ? "No members yet." : "Loading…"}</p>
+          ) : (
+            <>
+              <div className="flex flex-col items-center">
+                <DonutChart data={roleSplit} centerValue={totalMembers.toLocaleString()} centerLabel="Members" size={156} />
+              </div>
+              <div className="mt-4">
+                <Legend items={roleSplit.map((r) => ({ name: r.name, value: `${r.value.toLocaleString()} (${pct(r.value)}%)`, color: r.color }))} />
+              </div>
+            </>
+          )}
         </Card>
         <Card>
-          <h2 className="mb-2 font-display text-base font-semibold text-ink">
-            User Verification Status
-          </h2>
-          <div className="flex flex-col items-center">
-            <DonutChart data={verifySplit} centerValue={totalUsers.toLocaleString()} centerLabel="Total Users" size={156} />
-          </div>
-          <div className="mt-4">
-            <Legend items={verifyLegend} />
-          </div>
+          <h2 className="mb-2 font-display text-base font-semibold text-ink">Members by status</h2>
+          {statusSplit.length === 0 ? (
+            <p className="py-12 text-center text-sm text-ink-subtle">{stats ? "No members yet." : "Loading…"}</p>
+          ) : (
+            <>
+              <div className="flex flex-col items-center">
+                <DonutChart data={statusSplit} centerValue={totalMembers.toLocaleString()} centerLabel="Members" size={156} />
+              </div>
+              <div className="mt-4">
+                <Legend items={statusSplit.map((v) => ({ name: v.name, value: `${v.value.toLocaleString()} (${pct(v.value)}%)`, color: v.color }))} />
+              </div>
+            </>
+          )}
         </Card>
       </div>
 
       {/* table + detail panel */}
       <div className="mt-6 flex flex-col gap-6 xl:flex-row">
-        {/* table */}
         <Card className="min-w-0 flex-1">
           <div className="mb-4 flex flex-wrap items-center gap-3">
             <div className="relative min-w-[220px] flex-1">
               <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-ink-subtle" />
               <input
                 value={search}
-                onChange={(e) => {
-                  setSearch(e.target.value);
-                  resetPage();
-                }}
-                placeholder="Search by name, email or phone..."
+                onChange={(e) => setSearch(e.target.value)}
+                placeholder="Search by name, email, phone or code…"
                 className="w-full rounded-lg border border-line-strong bg-surface py-2 pl-9 pr-3 text-sm text-ink-muted placeholder-ink-subtle outline-none focus:border-violet-300 focus:ring-4 focus:ring-violet-50"
               />
             </div>
-            <Menu
-              align="left"
-              trigger={<Dropdown label={roleFilter} />}
-            >
-              {ROLE_OPTIONS.map((opt) => (
-                <MenuItem
-                  key={opt}
-                  onClick={() => {
-                    setRoleFilter(opt);
-                    resetPage();
-                  }}
-                >
-                  {opt}
-                </MenuItem>
-              ))}
+            <Menu align="left" trigger={<Dropdown label={labelOf(ROLE_OPTIONS, roleFilter)} />}>
+              {ROLE_OPTIONS.map((o) => <MenuItem key={o.value} onClick={() => pickRole(o.value)}>{o.label}</MenuItem>)}
             </Menu>
-            <Menu
-              align="left"
-              trigger={<Dropdown label={statusFilter} />}
-            >
-              {STATUS_OPTIONS.map((opt) => (
-                <MenuItem
-                  key={opt}
-                  onClick={() => {
-                    setStatusFilter(opt);
-                    resetPage();
-                  }}
-                >
-                  {opt}
-                </MenuItem>
-              ))}
+            <Menu align="left" trigger={<Dropdown label={labelOf(STATUS_OPTIONS, statusFilter)} />}>
+              {STATUS_OPTIONS.map((o) => <MenuItem key={o.value} onClick={() => pickStatus(o.value)}>{o.label}</MenuItem>)}
             </Menu>
-            <Menu
-              align="left"
-              trigger={<Dropdown label={segmentFilter} />}
-            >
-              {SEGMENT_OPTIONS.map((opt) => (
-                <MenuItem
-                  key={opt}
-                  onClick={() => {
-                    setSegmentFilter(opt);
-                    resetPage();
-                  }}
-                >
-                  {opt}
-                </MenuItem>
-              ))}
+            <Menu align="left" trigger={<Dropdown label={labelOf(SEGMENT_OPTIONS, segmentFilter)} />}>
+              {SEGMENT_OPTIONS.map((o) => <MenuItem key={o.value} onClick={() => pickSegment(o.value)}>{o.label}</MenuItem>)}
             </Menu>
-            <Menu
-              align="right"
-              trigger={
-                <button className="btn btn-sm btn-outline">
-                  <SlidersHorizontal className="h-3.5 w-3.5" /> Filters
+            <Menu align="right" trigger={<span className="btn btn-sm btn-outline"><SlidersHorizontal className="h-3.5 w-3.5" /> Quick</span>}>
+              <MenuItem onClick={() => pickStatus("Pending")}>Waiting for review</MenuItem>
+              <MenuItem onClick={() => pickStatus("Inactive")}>Suspended only</MenuItem>
+              <MenuItem onClick={() => pickSegment(NONE)}>No segment set</MenuItem>
+              <MenuItem onClick={clearFilters}>Clear all filters</MenuItem>
+            </Menu>
+          </div>
+
+          {selected.length > 0 && (
+            <div className="mb-3 flex flex-wrap items-center justify-between gap-2 rounded-xl border border-brand-200 bg-brand-tint/60 px-3 py-2 text-sm">
+              <span className="font-semibold text-brand-ink">{selected.length} selected on this page</span>
+              <div className="flex flex-wrap items-center gap-2">
+                <button className="btn btn-sm btn-outline" onClick={() => askFor("bulk-suspend", undefined, selected)}>
+                  <Ban className="h-3.5 w-3.5" /> Suspend
                 </button>
-              }
-            >
-              <MenuItem onClick={() => setStatusFilter("Active")}>Only active</MenuItem>
-              <MenuItem onClick={() => setStatusFilter("Inactive")}>Only inactive</MenuItem>
-              <MenuItem onClick={() => setRoleFilter("Member")}>Members only</MenuItem>
-              <MenuItem
-                onClick={() => {
-                  setSearch("");
-                  setRoleFilter("All Roles");
-                  setStatusFilter("All Status");
-                  setSegmentFilter("All Segments");
-                  setPage(1);
-                }}
-              >
-                Clear all filters
-              </MenuItem>
-            </Menu>
-            <button className="btn btn-primary" onClick={() => setAddOpen(true)}>
-              <Plus className="h-4 w-4" /> Add User
-            </button>
-          </div>
-
-          <div className="overflow-x-auto">
-            <table className="w-full min-w-215 border-collapse text-left">
-              <thead>
-                <tr className="border-b border-line text-2xs font-semibold uppercase tracking-wide text-ink-subtle">
-                  <th scope="col" className="px-2 py-3"><input type="checkbox" aria-label="Select all users on this page" className="rounded border-line-strong accent-brand-600" /></th>
-                  <th scope="col" className="px-2 py-3">User</th>
-                  <th scope="col" className="px-2 py-3">Role</th>
-                  <th scope="col" className="whitespace-nowrap px-2 py-3">Email</th>
-                  <th scope="col" className="whitespace-nowrap px-2 py-3">Phone</th>
-                  <th scope="col" className="px-2 py-3">Status</th>
-                  <th scope="col" className="whitespace-nowrap px-2 py-3">Joined On</th>
-                  <th scope="col" className="px-2 py-3">Actions</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-line">
-                {pageRows.map((r) => (
-                  <tr
-                    key={r.email}
-                    onClick={() => selectRow(r.id)}
-                    className={`cursor-pointer text-sm hover:bg-surface-hover/60 ${
-                      panelOpen && r.id === selectedId ? "bg-brand-tint/60 dark:bg-brand-500/10" : ""
-                    }`}
-                  >
-                    <td className="px-2 py-3"><input type="checkbox" aria-label={`Select ${r.name}`} onClick={(e) => e.stopPropagation()} className="rounded border-line-strong accent-brand-600" /></td>
-                    <td className="px-2 py-3">
-                      <div className="flex items-center gap-2.5">
-                        <Avatar name={r.name} src={r.avatar} size="sm" />
-                        <span className="font-medium text-ink">{r.name}</span>
-                      </div>
-                    </td>
-                    <td className="px-2 py-3">
-                      <span className={`rounded-full px-2.5 py-1 text-2xs font-semibold ${ROLE_TONE[r.role]}`}>
-                        {r.role}
-                      </span>
-                    </td>
-                    <td className="whitespace-nowrap px-2 py-3 text-ink-subtle">{r.email}</td>
-                    <td className="whitespace-nowrap px-2 py-3 text-ink-subtle">{r.phone}</td>
-                    <td className="px-2 py-3">
-                      <span className={`rounded-full px-2.5 py-1 text-2xs font-semibold ${STATUS_TONE[r.status]}`}>
-                        {r.status}
-                      </span>
-                    </td>
-                    <td className="whitespace-nowrap px-2 py-3 text-ink-subtle">{r.joined}</td>
-                    <td className="px-2 py-3">
-                      <div onClick={(e) => e.stopPropagation()}>
-                        <Menu
-                          trigger={
-                            <span className="flex text-ink-subtle hover:text-ink-muted"><MoreHorizontal className="h-4 w-4" /></span>
-                          }
-                        >
-                          <MenuItem icon={Eye} onClick={() => selectRow(r.id)}>View details</MenuItem>
-                          <MenuItem icon={MessageSquare} href="/dashboard/messages">Send message</MenuItem>
-                          <MenuItem icon={KeyRound} onClick={() => resetPasswordFor(r._id, r.name)}>
-                            Reset password
-                          </MenuItem>
-                          <MenuItem icon={Trash2} danger onClick={() => deleteRow(r._id)}>Delete user</MenuItem>
-                        </Menu>
-                      </div>
-                    </td>
-                  </tr>
-                ))}
-                {loading && rows.length === 0 && (
-                  <tr className="text-sm">
-                    <td colSpan={8} className="px-2 py-10 text-center text-ink-subtle">
-                      Loading users…
-                    </td>
-                  </tr>
-                )}
-                {!loading && pageRows.length === 0 && (
-                  <tr className="text-sm">
-                    <td colSpan={8} className="px-2 py-10 text-center text-ink-subtle">
-                      No users match your filters.
-                    </td>
-                  </tr>
-                )}
-              </tbody>
-            </table>
-          </div>
-
-          <div className="mt-4 flex flex-wrap items-center justify-between gap-3 text-sm">
-            <p className="text-ink-subtle">Showing {showingFrom} to {showingTo} of {filtered.length} users</p>
-            {/* Page numbers wrap on a narrow card rather than running past its
-                right edge — with many pages this row is wider than a phone. */}
-            <div className="flex min-w-0 flex-wrap items-center gap-1">
-              <button
-                onClick={() => setPage((p) => Math.max(1, p - 1))}
-                disabled={currentPage === 1}
-                className="flex h-8 w-8 items-center justify-center rounded-lg border border-line-strong text-ink-subtle hover:bg-surface-hover disabled:cursor-not-allowed disabled:opacity-40"
-              >‹</button>
-              {Array.from({ length: totalPages }, (_, i) => i + 1).map((n) => (
-                <button
-                  key={n}
-                  onClick={() => setPage(n)}
-                  className={
-                    n === currentPage
-                      ? "flex h-8 w-8 items-center justify-center rounded-lg bg-brand-600 text-sm font-semibold text-white"
-                      : "flex h-8 w-8 items-center justify-center rounded-lg border border-line-strong text-ink-subtle hover:bg-surface-hover"
-                  }
-                >{n}</button>
-              ))}
-              <button
-                onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
-                disabled={currentPage === totalPages}
-                className="flex h-8 w-8 items-center justify-center rounded-lg border border-line-strong text-ink-subtle hover:bg-surface-hover disabled:cursor-not-allowed disabled:opacity-40"
-              >›</button>
+                <button className="btn btn-sm btn-outline" onClick={() => askFor("bulk-restore", undefined, selected)}>
+                  <RotateCcw className="h-3.5 w-3.5" /> Restore
+                </button>
+                <button className="btn btn-sm btn-outline" onClick={() => { setBulkRegion(""); setBulkRegionReason(""); setRegionOpen(true); }}>
+                  <MapPin className="h-3.5 w-3.5" /> Assign region
+                </button>
+                <button className="btn btn-sm btn-outline" disabled={exporting} onClick={() => void exportCsv(selected)}>
+                  <Download className="h-3.5 w-3.5" /> Export
+                </button>
+                <button className="btn btn-sm btn-ghost" onClick={() => setSelected([])}>Clear</button>
+              </div>
             </div>
-          </div>
+          )}
+
+          {listLoading ? (
+            <div className="flex items-center justify-center py-16"><Spinner /></div>
+          ) : rows.length === 0 ? (
+            <EmptyState
+              icon={Users}
+              title={anyFilter ? "No member matches that" : "No members yet"}
+              description={anyFilter ? "Try a different search, or clear the filters." : "When a woman signs up, or you add one, she appears here."}
+              action={anyFilter
+                ? <button className="btn btn-sm btn-outline" onClick={clearFilters}>Clear filters</button>
+                : <button className="btn btn-sm btn-primary" onClick={openAdd}><Plus className="h-4 w-4" /> Add member</button>}
+            />
+          ) : (
+            <>
+              <div className="overflow-x-auto">
+                <table className="w-full min-w-[860px] border-collapse text-left">
+                  <thead>
+                    <tr className="border-b border-line text-2xs font-semibold uppercase tracking-wide text-ink-subtle">
+                      <th scope="col" className="px-2 py-3">
+                        <input type="checkbox" aria-label="Select everyone on this page" checked={allOnPage} onChange={toggleAll} className="rounded border-line-strong accent-brand-600" />
+                      </th>
+                      <th scope="col" className="px-2 py-3">Member</th>
+                      <th scope="col" className="px-2 py-3">Role</th>
+                      <th scope="col" className="whitespace-nowrap px-2 py-3">Contact</th>
+                      <th scope="col" className="px-2 py-3">Segment</th>
+                      <th scope="col" className="px-2 py-3">Status</th>
+                      <th scope="col" className="whitespace-nowrap px-2 py-3">Joined</th>
+                      <th scope="col" className="px-2 py-3 text-right">&nbsp;</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-line">
+                    {rows.map((r) => {
+                      const a = actionsFor(r);
+                      return (
+                        <tr
+                          key={r.id}
+                          onClick={() => { setSelectedId(r.id); setActiveTab("Overview"); }}
+                          className={`cursor-pointer text-sm hover:bg-surface-hover/60 ${r.id === selectedId ? "bg-brand-tint/60 dark:bg-brand-500/10" : ""}`}
+                        >
+                          <td className="px-2 py-3" onClick={(e) => e.stopPropagation()}>
+                            <input type="checkbox" aria-label={`Select ${r.full_name}`} checked={selected.includes(r.id)} onChange={() => toggleOne(r.id)} className="rounded border-line-strong accent-brand-600" />
+                          </td>
+                          <td className="px-2 py-3">
+                            <div className="flex items-center gap-2.5">
+                              <Avatar name={r.full_name} src={r.avatar} size="sm" />
+                              <div className="min-w-0">
+                                <p className="truncate font-medium text-ink">{r.full_name}</p>
+                                <p className="text-2xs text-ink-subtle">{r.code || r.id}</p>
+                              </div>
+                            </div>
+                          </td>
+                          <td className="px-2 py-3"><Badge tone={ROLE_TONE[r.role] ?? "slate"}>{r.role}</Badge></td>
+                          <td className="whitespace-nowrap px-2 py-3 text-ink-subtle">
+                            <p className="text-xs">{r.email}</p>
+                            <p className="text-2xs">{r.phone || "—"}</p>
+                          </td>
+                          <td className="px-2 py-3 text-xs text-ink-subtle">{r.segment || "—"}</td>
+                          <td className="px-2 py-3"><Badge tone={STATUS_TONE[r.status] ?? "slate"}>{STATUS_LABEL[r.status] ?? r.status}</Badge></td>
+                          <td className="whitespace-nowrap px-2 py-3 text-xs text-ink-subtle">{r.joined || "—"}</td>
+                          <td className="px-2 py-3 text-right">
+                            <div onClick={(e) => e.stopPropagation()}>
+                              <Menu trigger={<span className="btn btn-sm btn-ghost"><MoreHorizontal className="h-4 w-4" /></span>}>
+                                <MenuItem icon={Eye} onClick={() => { setSelectedId(r.id); setActiveTab("Overview"); }}>View profile</MenuItem>
+                                <MenuItem icon={Pencil} onClick={() => openEdit(r)}>Edit details</MenuItem>
+                                {a.canApprove && <MenuItem icon={Check} onClick={() => askFor("approve", r)}>Approve</MenuItem>}
+                                {a.canReject && <MenuItem icon={X} onClick={() => askFor("reject", r)}>Reject…</MenuItem>}
+                                {a.canSuspend && <MenuItem icon={Ban} onClick={() => askFor("suspend", r)}>Suspend…</MenuItem>}
+                                {a.canRestore && <MenuItem icon={RotateCcw} onClick={() => askFor("restore", r)}>Restore</MenuItem>}
+                                <MenuItem icon={KeyRound} onClick={() => void resetPasswordFor(r)}>Send reset link</MenuItem>
+                                <MenuItem icon={MessageSquare} href="/dashboard/messages">Send message</MenuItem>
+                                <MenuItem icon={Trash2} danger onClick={() => askFor("delete", r)}>Delete…</MenuItem>
+                              </Menu>
+                            </div>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+              <Pagination
+                page={page}
+                pageCount={pages}
+                onPageChange={(p) => setPage(Math.min(Math.max(1, p), pages))}
+                showing={`Showing ${showingFrom} to ${showingTo} of ${total.toLocaleString()} member${total === 1 ? "" : "s"}`}
+              />
+            </>
+          )}
         </Card>
 
         {/* detail panel */}
-        {panelOpen && selectedUser && (
-          <div className="w-full min-w-0 shrink-0 xl:w-[340px]">
+        {selectedId && member && (
+          <div className="w-full min-w-0 shrink-0 xl:w-[360px]">
             <Card className="overflow-hidden p-0">
               <div className="relative rounded-t-2xl bg-linear-to-br from-brand-50 to-violet-50 p-5">
-                <button aria-label="Close details" onClick={() => setPanelOpen(false)} className="absolute right-4 top-4 text-ink-subtle hover:text-ink-muted"><X className="h-4 w-4" /></button>
+                <button aria-label="Close profile" onClick={() => setSelectedId("")} className="absolute right-4 top-4 text-ink-subtle hover:text-ink-muted"><X className="h-4 w-4" /></button>
                 <div className="flex items-center gap-3">
                   <ImageUpload
                     variant="avatar"
                     kind="avatar"
                     size="md"
                     compact
-                    name={selectedUser.name}
-                    value={selectedUser.avatar || null}
-                    onChange={(url) => void handleAvatarChange(selectedUser._id, url)}
+                    name={member.full_name}
+                    value={member.avatar || null}
+                    onChange={(url) => void handleAvatarChange(member.id, url)}
                   />
-                  <div>
-                    <div className="flex items-center gap-2">
-                      <p className="font-display text-lg font-bold text-ink">{selectedUser.name}</p>
-                      <span className={`rounded-full px-2 py-0.5 text-2xs font-semibold ${STATUS_TONE[selectedUser.status]}`}>{selectedUser.status}</span>
+                  <div className="min-w-0">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <p className="truncate font-display text-lg font-bold text-ink">{member.full_name}</p>
+                      <Badge tone={STATUS_TONE[member.status] ?? "slate"}>{STATUS_LABEL[member.status] ?? member.status}</Badge>
                     </div>
-                    <p className="text-xs text-ink-subtle">{selectedUser.role} · ID: {selectedUser.id}</p>
+                    <p className="text-xs text-ink-subtle">{member.role} · {member.code || member.id}</p>
                   </div>
                 </div>
                 <div className="mt-3 space-y-1 text-xs text-ink-subtle">
-                  <p className="flex items-center gap-2"><Phone className="h-3.5 w-3.5" /> {selectedUser.phone}</p>
-                  <p className="flex items-center gap-2"><Mail className="h-3.5 w-3.5" /> {selectedUser.email}</p>
+                  <p className="flex items-center gap-2"><Phone className="h-3.5 w-3.5" /> {member.phone || "—"}</p>
+                  <p className="flex items-center gap-2 break-all"><Mail className="h-3.5 w-3.5 shrink-0" /> {member.email}</p>
                 </div>
               </div>
 
               <div className="flex gap-3 overflow-x-auto border-b border-line px-4 text-xs [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-                {["Overview", "Activity", "Programs", "Appointments", "Documents"].map((t) => (
+                {TABS.map((t) => (
                   <button
                     key={t}
                     onClick={() => setActiveTab(t)}
@@ -728,125 +783,254 @@ export default function UserManagementPage() {
                     }`}
                   >
                     {t}
+                    {t === "Activity" && profile && profile.history.length > 0 && <span className="ml-1 text-ink-faint">{profile.history.length}</span>}
+                    {t === "Programmes" && profile && profile.activity.enrolments > 0 && <span className="ml-1 text-ink-faint">{profile.activity.enrolments}</span>}
+                    {t === "Appointments" && profile && profile.activity.bookings > 0 && <span className="ml-1 text-ink-faint">{profile.activity.bookings}</span>}
                   </button>
                 ))}
               </div>
 
-              {activeTab === "Overview" ? (
-                <div className="space-y-4 p-5">
+              {profileLoading && !profile ? (
+                <div className="flex items-center justify-center py-16"><Spinner /></div>
+              ) : activeTab === "Overview" ? (
+                <div className="space-y-5 p-5">
                   <div>
                     <div className="mb-2 flex items-center justify-between">
-                      <h3 className="text-sm font-semibold text-ink">User Information</h3>
-                      <button
-                        className="btn btn-sm btn-secondary"
-                        onClick={() => startEdit(selectedUser)}
-                      >
+                      <h3 className="text-sm font-semibold text-ink">Directory</h3>
+                      <button className="btn btn-sm btn-secondary" onClick={() => openEdit(member)}>
                         <Pencil className="h-3 w-3" /> Edit
                       </button>
                     </div>
                     <div className="grid grid-cols-2 gap-x-4 gap-y-3 text-xs">
-                      {[
-                        ["Full Name", selectedUser.name],
-                        ["Location", selectedUser.location],
-                        ["Date of Birth", selectedUser.dob],
-                        ["Joined On", selectedUser.joined],
-                        ["Gender", selectedUser.gender],
-                        ["Referral Code", selectedUser.referral],
-                      ].map(([k, v]) => (
-                        <div key={k}>
-                          <p className="text-ink-subtle">{k}</p>
-                          <p className="font-medium text-ink-muted">{v}</p>
+                      <Field k="Full name" v={member.full_name} />
+                      <Field k="Location" v={member.location} />
+                      <Field k="Date of birth" v={member.dob} />
+                      <Field k="Joined" v={member.joined} />
+                      <Field k="Gender" v={member.gender} />
+                      <Field k="Referral code" v={member.referral} />
+                      <Field k="Segment" v={member.segment} />
+                      <Field k="Verified on" v={member.verified_on} />
+                    </div>
+                  </div>
+
+                  <div>
+                    <h3 className="mb-2 text-sm font-semibold text-ink">Account</h3>
+                    {profile?.account ? (
+                      <div className="space-y-2 rounded-xl border border-line p-3 text-xs">
+                        <div className="flex items-center justify-between gap-2">
+                          <span className="text-ink-subtle">Verification</span>
+                          <Badge tone={VERIFY_TONE[profile.account.verification_status] ?? "slate"}>{profile.account.verification_label}</Badge>
                         </div>
-                      ))}
-                    </div>
-                  </div>
-
-                  <PanelRow icon={ShieldCheck} tone="text-status-ok-ink bg-status-ok-bg" title="Verification Status" sub={`Verified on ${selectedUser.verifiedOn}`} />
-                  <PanelRow icon={Users} tone="text-violet-ink bg-violet-tint" title="User Segment" sub={`${selectedUser.segment} · High engagement segment`} />
-
-                  <div>
-                    <h3 className="mb-2 text-sm font-semibold text-ink">Engagement Score</h3>
-                    <div className="flex items-center gap-4">
-                      <DonutChart
-                        data={[
-                          { name: "Score", value: selectedUser.engagement, color: "var(--color-brand-600)" },
-                          { name: "Rest", value: 100 - selectedUser.engagement, color: "var(--color-surface-inset)" },
-                        ]}
-                        centerValue={String(selectedUser.engagement)}
-                        centerLabel="/100"
-                        size={92}
-                        thickness={10}
-                      />
-                      <div>
-                        <p className="text-sm font-semibold text-brand-ink">
-                          {selectedUser.engagement >= 70 ? "High Engagement" : selectedUser.engagement >= 40 ? "Moderate Engagement" : "Low Engagement"}
-                        </p>
-                        <p className="text-xs text-ink-subtle">Active platform user with consistent platform interaction.</p>
+                        <div className="flex items-center justify-between gap-2">
+                          <span className="text-ink-subtle">Can sign in</span>
+                          <span className={`font-medium ${profile.account.is_active ? "text-status-ok-ink" : "text-status-danger-ink"}`}>
+                            {profile.account.is_active ? "Yes" : "No — suspended"}
+                          </span>
+                        </div>
+                        <div className="flex items-center justify-between gap-2">
+                          <span className="text-ink-subtle">Last signed in</span>
+                          <span className="font-medium text-ink-muted">{profile.account.last_login_at ? shortDateTime(profile.account.last_login_at) : "Never"}</span>
+                        </div>
+                        <div className="flex items-center justify-between gap-2">
+                          <span className="text-ink-subtle">Email confirmed</span>
+                          <span className="font-medium text-ink-muted">{profile.account.email_verified_at ? shortDate(profile.account.email_verified_at) : "Not yet"}</span>
+                        </div>
+                        <div className="flex items-center justify-between gap-2">
+                          <span className="text-ink-subtle">Verified</span>
+                          <span className="font-medium text-ink-muted">{profile.account.verified_at ? shortDate(profile.account.verified_at) : "Not yet"}</span>
+                        </div>
+                        <div className="flex items-center justify-between gap-2">
+                          <span className="text-ink-subtle">Language · onboarding</span>
+                          <span className="font-medium text-ink-muted">{profile.account.locale.toUpperCase()} · {profile.account.onboarding_complete ? "done" : "not finished"}</span>
+                        </div>
+                        {profile.account.rejection_reason && (
+                          <p className="rounded-lg bg-status-danger-bg px-2 py-1.5 text-status-danger-ink">
+                            Rejected: {profile.account.rejection_reason}
+                          </p>
+                        )}
+                        {profile.account.needs.length > 0 && (
+                          <div className="flex items-start justify-between gap-2">
+                            <span className="shrink-0 text-ink-subtle">Asked for</span>
+                            <span className="flex flex-wrap justify-end gap-1">
+                              {profile.account.needs.map((n) => (
+                                <Badge key={n} tone="brand">{n}</Badge>
+                              ))}
+                            </span>
+                          </div>
+                        )}
+                        {profile.account.deletion_requested_at && (
+                          <p className="rounded-lg bg-status-danger-bg px-2 py-1.5 text-status-danger-ink">
+                            Asked to delete her account on {shortDate(profile.account.deletion_requested_at)}
+                            {profile.account.deletion_reason ? ` — “${profile.account.deletion_reason}”` : ""}.{" "}
+                            <Link href="/dashboard/users/deletions" className="font-semibold underline">Open the queue</Link>
+                          </p>
+                        )}
+                        {profile.account.verification_status === "in_review" && (
+                          <Link href="/dashboard/users/verification" className="flex items-center gap-1 font-semibold text-brand-ink">
+                            Open her documents in the review queue <ExternalLink className="h-3 w-3" />
+                          </Link>
+                        )}
                       </div>
-                    </div>
-                  </div>
-
-                  <div className="border-t border-line pt-4 dark:border-white/10">
-                    <MemberThemeControl
-                      memberId={selectedUser._id}
-                      memberName={selectedUser.name}
-                    />
+                    ) : profile ? (
+                      <div className="flex items-start gap-2 rounded-xl border border-dashed border-line-strong p-3 text-xs text-ink-subtle">
+                        <ShieldAlert className="mt-0.5 h-4 w-4 shrink-0" />
+                        <span>No login behind this profile. She was added by staff and has not signed up herself, so there is nothing to suspend or reset.</span>
+                      </div>
+                    ) : (
+                      <p className="text-xs text-ink-subtle">Loading…</p>
+                    )}
                   </div>
 
                   <div>
-                    <h3 className="mb-2 text-sm font-semibold text-ink">Quick Actions</h3>
+                    <h3 className="mb-2 text-sm font-semibold text-ink">What she has done</h3>
+                    {profile ? (
+                      profile.activity.total === 0 ? (
+                        <p className="rounded-xl border border-dashed border-line-strong p-3 text-xs text-ink-subtle">
+                          Nothing recorded yet — no bookings, enrolments, posts or orders.
+                        </p>
+                      ) : (
+                        <div className="grid grid-cols-4 gap-2 text-center">
+                          {([
+                            ["Bookings", profile.activity.bookings], ["Enrolled", profile.activity.enrolments],
+                            ["Posts", profile.activity.posts + profile.activity.replies], ["Circles", profile.activity.circles],
+                            ["Events", profile.activity.events], ["Applied", profile.activity.applications],
+                            ["Orders", profile.activity.orders], ["Total", profile.activity.total],
+                          ] as [string, number][]).map(([k, v]) => (
+                            <div key={k} className="rounded-lg bg-surface-inset/70 px-1 py-2">
+                              <p className="font-display text-base font-bold text-ink">{v}</p>
+                              <p className="text-2xs text-ink-subtle">{k}</p>
+                            </div>
+                          ))}
+                        </div>
+                      )
+                    ) : (
+                      <p className="text-xs text-ink-subtle">Counting…</p>
+                    )}
+                  </div>
+
+                  {profile?.account && (
+                    <div className="border-t border-line pt-4 dark:border-white/10">
+                      <MemberThemeControl memberId={member.id} memberName={member.full_name} />
+                    </div>
+                  )}
+
+                  <div>
+                    <h3 className="mb-2 text-sm font-semibold text-ink">Actions</h3>
                     <div className="grid grid-cols-3 gap-2">
-                      <Link
-                        href="/dashboard/messages"
-                        className="flex flex-col items-center gap-1.5 rounded-xl border border-line py-3 text-2xs font-medium text-ink-muted hover:bg-surface-hover"
-                      >
-                        <MessageSquare className="h-4 w-4" />
-                        Send Message
+                      {actionsFor(member).canApprove && (
+                        <button onClick={() => askFor("approve", member)} className="flex flex-col items-center gap-1.5 rounded-xl border border-line py-3 text-2xs font-medium text-status-ok-ink hover:bg-surface-hover">
+                          <Check className="h-4 w-4" /> Approve
+                        </button>
+                      )}
+                      {actionsFor(member).canReject && (
+                        <button onClick={() => askFor("reject", member)} className="flex flex-col items-center gap-1.5 rounded-xl border border-line py-3 text-2xs font-medium text-status-danger-ink hover:bg-surface-hover">
+                          <X className="h-4 w-4" /> Reject
+                        </button>
+                      )}
+                      {actionsFor(member).canSuspend && (
+                        <button onClick={() => askFor("suspend", member)} className="flex flex-col items-center gap-1.5 rounded-xl border border-line py-3 text-2xs font-medium text-ink-muted hover:bg-surface-hover">
+                          <Ban className="h-4 w-4" /> Suspend
+                        </button>
+                      )}
+                      {actionsFor(member).canRestore && (
+                        <button onClick={() => askFor("restore", member)} className="flex flex-col items-center gap-1.5 rounded-xl border border-line py-3 text-2xs font-medium text-status-ok-ink hover:bg-surface-hover">
+                          <RotateCcw className="h-4 w-4" /> Restore
+                        </button>
+                      )}
+                      {profile?.account && (
+                        <button onClick={() => void resetPasswordFor(member)} className="flex flex-col items-center gap-1.5 rounded-xl border border-line py-3 text-2xs font-medium text-ink-muted hover:bg-surface-hover">
+                          <KeyRound className="h-4 w-4" /> Reset link
+                        </button>
+                      )}
+                      <Link href="/dashboard/messages" className="flex flex-col items-center gap-1.5 rounded-xl border border-line py-3 text-2xs font-medium text-ink-muted hover:bg-surface-hover">
+                        <MessageSquare className="h-4 w-4" /> Message
                       </Link>
-                      <button
-                        onClick={() =>
-                          selectedUser && resetPasswordFor(selectedUser._id, selectedUser.name)
-                        }
-                        className="flex flex-col items-center gap-1.5 rounded-xl border border-line py-3 text-2xs font-medium text-ink-muted hover:bg-surface-hover"
-                      >
-                        <KeyRound className="h-4 w-4" />
-                        Reset Password
-                      </button>
-                      <Link
-                        href="/dashboard/settings/activity"
-                        className="flex flex-col items-center gap-1.5 rounded-xl border border-line py-3 text-2xs font-medium text-ink-muted hover:bg-surface-hover"
-                      >
-                        <Activity className="h-4 w-4" />
-                        View Activity
-                      </Link>
-                      <button
-                        onClick={suspendSelected}
-                        className="flex flex-col items-center gap-1.5 rounded-xl border border-line py-3 text-2xs font-medium text-ink-muted hover:bg-surface-hover"
-                      >
-                        <Ban className="h-4 w-4" />
-                        Suspend User
-                      </button>
-                      <button
-                        onClick={() => deleteRow(selectedUser._id)}
-                        className="flex flex-col items-center gap-1.5 rounded-xl border border-line py-3 text-2xs font-medium text-status-danger-ink hover:bg-surface-hover"
-                      >
-                        <Trash2 className="h-4 w-4" />
-                        Delete User
+                      <button onClick={() => askFor("delete", member)} className="flex flex-col items-center gap-1.5 rounded-xl border border-line py-3 text-2xs font-medium text-status-danger-ink hover:bg-surface-hover">
+                        <Trash2 className="h-4 w-4" /> Delete
                       </button>
                     </div>
                   </div>
                 </div>
+              ) : activeTab === "Activity" ? (
+                <div className="p-5">
+                  {!profile || profile.history.length === 0 ? (
+                    <div className="flex flex-col items-center justify-center gap-2 rounded-xl border border-dashed border-line-strong py-10 text-center">
+                      <span className="flex h-10 w-10 items-center justify-center rounded-full bg-surface-inset text-ink-subtle"><Activity className="h-5 w-5" /></span>
+                      <p className="text-sm font-medium text-ink-muted">No staff action recorded</p>
+                      <p className="text-xs text-ink-subtle">Nothing has been done to {member.full_name}&apos;s account from this dashboard yet.</p>
+                    </div>
+                  ) : (
+                    <ul className="space-y-3">
+                      {profile.history.map((h) => (
+                        <li key={h.id} className="rounded-xl border border-line p-3 text-xs">
+                          <div className="flex items-center justify-between gap-2">
+                            <span className="font-semibold text-ink">{h.action}</span>
+                            <span className="shrink-0 text-ink-subtle">{shortDateTime(h.when)}</span>
+                          </div>
+                          {h.detail && <p className="mt-1 text-ink-muted">{h.detail}</p>}
+                          <p className="mt-1 text-ink-subtle">by {h.by || "—"}</p>
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                  <Link href="/dashboard/settings/activity" className="mt-3 flex items-center gap-1 text-xs font-semibold text-brand-ink">
+                    Full activity log <ExternalLink className="h-3 w-3" />
+                  </Link>
+                </div>
+              ) : activeTab === "Programmes" ? (
+                <div className="p-5">
+                  {!profile || profile.enrolments.length === 0 ? (
+                    <div className="flex flex-col items-center justify-center gap-2 rounded-xl border border-dashed border-line-strong py-10 text-center">
+                      <span className="flex h-10 w-10 items-center justify-center rounded-full bg-surface-inset text-ink-subtle"><BookOpen className="h-5 w-5" /></span>
+                      <p className="text-sm font-medium text-ink-muted">Not enrolled in any programme</p>
+                      <p className="text-xs text-ink-subtle">{member.full_name} has no enrolments on record.</p>
+                    </div>
+                  ) : (
+                    <ul className="space-y-2">
+                      {profile.enrolments.map((e) => (
+                        <li key={e.id} className="rounded-xl border border-line p-3 text-xs">
+                          <div className="flex items-center justify-between gap-2">
+                            <span className="truncate font-semibold text-ink">{e.program_name || "Programme"}</span>
+                            <Badge tone={e.status === "completed" ? "emerald" : e.status === "active" ? "brand" : "slate"}>{e.status || "—"}</Badge>
+                          </div>
+                          <div className="mt-2 h-1.5 w-full overflow-hidden rounded-full bg-surface-inset">
+                            <div className="h-full rounded-full bg-brand-600" style={{ width: `${Math.max(0, Math.min(100, e.progress))}%` }} />
+                          </div>
+                          <p className="mt-1 text-ink-subtle">{e.progress}% · started {shortDate(e.started)}</p>
+                        </li>
+                      ))}
+                      {profile.activity.enrolments > profile.enrolments.length && (
+                        <li className="text-center text-2xs text-ink-subtle">Showing the latest {profile.enrolments.length} of {profile.activity.enrolments}</li>
+                      )}
+                    </ul>
+                  )}
+                </div>
               ) : (
                 <div className="p-5">
-                  <div className="flex flex-col items-center justify-center gap-2 rounded-xl border border-dashed border-line-strong py-10 text-center">
-                    <span className="flex h-10 w-10 items-center justify-center rounded-full bg-surface-inset text-ink-subtle">
-                      <Inbox className="h-5 w-5" />
-                    </span>
-                    <p className="text-sm font-medium text-ink-muted">No {activeTab.toLowerCase()} yet</p>
-                    <p className="text-xs text-ink-subtle">
-                      {selectedUser.name} has no {activeTab.toLowerCase()} records to show.
-                    </p>
-                  </div>
+                  {!profile || profile.bookings.length === 0 ? (
+                    <div className="flex flex-col items-center justify-center gap-2 rounded-xl border border-dashed border-line-strong py-10 text-center">
+                      <span className="flex h-10 w-10 items-center justify-center rounded-full bg-surface-inset text-ink-subtle"><Inbox className="h-5 w-5" /></span>
+                      <p className="text-sm font-medium text-ink-muted">No appointments</p>
+                      <p className="text-xs text-ink-subtle">{member.full_name} has not booked anything.</p>
+                    </div>
+                  ) : (
+                    <ul className="space-y-2">
+                      {profile.bookings.map((b) => (
+                        <li key={b.id} className="rounded-xl border border-line p-3 text-xs">
+                          <div className="flex items-center justify-between gap-2">
+                            <span className="truncate font-semibold text-ink">{b.service_name || "Appointment"}</span>
+                            <Badge tone={b.status === "completed" ? "emerald" : b.status === "cancelled" ? "rose" : "brand"}>{b.status || "—"}</Badge>
+                          </div>
+                          <p className="mt-1 flex items-center gap-1.5 text-ink-subtle">
+                            <CalendarDays className="h-3 w-3" /> {b.date || "—"}{b.time ? ` · ${b.time}` : ""}{b.mode ? ` · ${b.mode}` : ""}
+                          </p>
+                        </li>
+                      ))}
+                      {profile.activity.bookings > profile.bookings.length && (
+                        <li className="text-center text-2xs text-ink-subtle">Showing the latest {profile.bookings.length} of {profile.activity.bookings}</li>
+                      )}
+                    </ul>
+                  )}
                 </div>
               )}
             </Card>
@@ -854,24 +1038,20 @@ export default function UserManagementPage() {
         )}
       </div>
 
-
-
-
-      {/* add user modal */}
+      {/* add / edit member */}
       <Modal
-        open={addOpen}
-        onClose={() => setAddOpen(false)}
-        title="Add New User"
-        description="Create a new platform user account."
-        icon={UserPlus}
+        open={formOpen}
+        onClose={() => setFormOpen(false)}
+        title={editingId ? "Edit member" : "Add a member"}
+        description={editingId ? "Changes her directory row, and her name, phone and photo on her own profile." : "A directory row only — she creates her own login when she signs up, and it links to this."}
+        icon={editingId ? Pencil : UserPlus}
         iconTone="brand"
         footer={
           <>
-            <button className="btn btn-outline" onClick={() => setAddOpen(false)}>
-              Cancel
-            </button>
-            <button className="btn btn-primary" onClick={handleAddUser}>
-              <UserPlus className="h-4 w-4" /> Add User
+            <button className="btn btn-outline" onClick={() => setFormOpen(false)}>Cancel</button>
+            <button className="btn btn-primary" disabled={busy} onClick={() => void submitForm()}>
+              {editingId ? <Check className="h-4 w-4" /> : <UserPlus className="h-4 w-4" />}
+              {busy ? "Saving…" : editingId ? "Save changes" : "Add member"}
             </button>
           </>
         }
@@ -881,106 +1061,116 @@ export default function UserManagementPage() {
             className="col-span-2"
             variant="avatar"
             kind="avatar"
-            name={form.name || "New Member"}
+            name={form.name || "New member"}
             label="Profile photo"
-            hint="Optional — drag one in, or browse. JPG, PNG or WEBP up to 5 MB."
+            hint="Optional — JPG, PNG or WEBP up to 5 MB."
             value={form.avatar || null}
             onChange={(url) => setForm((f) => ({ ...f, avatar: url ?? "" }))}
           />
-          <Input
-            label="Full Name"
-            icon={User}
-            required
-            className="col-span-2"
-            value={form.name}
-            onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))}
-            placeholder="Enter full name"
-          />
-          <Input
-            label="Email"
-            icon={Mail}
-            type="email"
-            required
-            className="col-span-2"
-            value={form.email}
-            onChange={(e) => setForm((f) => ({ ...f, email: e.target.value }))}
-            placeholder="name@example.com"
-          />
-          <Input
-            label="Phone"
-            icon={Phone}
-            type="tel"
-            value={form.phone}
-            onChange={(e) => setForm((f) => ({ ...f, phone: e.target.value }))}
-            placeholder="+91 00000 00000"
-          />
-          <Select
-            label="Role"
-            icon={ShieldCheck}
-            value={form.role}
-            onChange={(e) => setForm((f) => ({ ...f, role: e.target.value as Role }))}
-            options={["Member", "Instructor", "Supervisor", "Admin"]}
-          />
-          <Select
-            label="Status"
-            value={form.status}
-            onChange={(e) => setForm((f) => ({ ...f, status: e.target.value as Status }))}
-            options={["Active", "Inactive", "Pending"]}
-          />
-          <Input
-            label="Location"
-            icon={MapPin}
-            value={form.location}
-            onChange={(e) => setForm((f) => ({ ...f, location: e.target.value }))}
-            placeholder="City, State"
-          />
-          <Select
-            label="Segment"
-            value={form.segment}
-            onChange={(e) => setForm((f) => ({ ...f, segment: e.target.value as Segment }))}
-            options={["Entrepreneur", "Student", "Artisan", "Job Seeker", "Support Seeker"]}
-          />
-          <Select
-            label="Gender"
-            value={form.gender}
-            onChange={(e) => setForm((f) => ({ ...f, gender: e.target.value }))}
-            options={["Female", "Male", "Other"]}
-          />
-          <div className="col-span-2">
-            <Switch
-              label="Send welcome email"
-              description="Email the user account setup instructions."
-              checked={form.welcomeEmail}
-              onChange={(v) => setForm((f) => ({ ...f, welcomeEmail: v }))}
-            />
-          </div>
+          <Input label="Full name" icon={User} required className="col-span-2" value={form.name}
+                 onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))} placeholder="Her full name" />
+          <Input label="Email" icon={Mail} type="email" required className="col-span-2" value={form.email}
+                 onChange={(e) => setForm((f) => ({ ...f, email: e.target.value }))} placeholder="name@example.com" />
+          <Input label="Phone" icon={Phone} type="tel" value={form.phone}
+                 onChange={(e) => setForm((f) => ({ ...f, phone: e.target.value }))} placeholder="+91 00000 00000" />
+          <Select label="Role" icon={ShieldCheck} value={form.role}
+                  onChange={(e) => setForm((f) => ({ ...f, role: e.target.value as Role }))}
+                  options={["Member", "Instructor", "Supervisor", "Admin"]} />
+          {!editingId && (
+            <Select label="Starting status" value={form.status}
+                    onChange={(e) => setForm((f) => ({ ...f, status: e.target.value as Status }))}
+                    options={[{ value: "Active", label: "Active" }, { value: "Pending", label: "Pending review" }]} />
+          )}
+          <Select label="Region" icon={MapPin} value={form.location}
+                  onChange={(e) => setForm((f) => ({ ...f, location: e.target.value }))}
+                  placeholder={regions.length ? "Choose a region" : "No active regions available"}
+                  options={[
+                    { value: "", label: "Not assigned" },
+                    ...regions.filter((r) => r.status === "Active" || r.name === form.location)
+                      .map((r) => ({ value: r.name, label: `${r.name} · ${r.member_count} members` })),
+                    ...(form.location && !regions.some((r) => r.name === form.location)
+                      ? [{ value: form.location, label: `${form.location} · legacy value` }] : []),
+                  ]} />
+          <Select label="Segment" value={form.segment}
+                  onChange={(e) => setForm((f) => ({ ...f, segment: e.target.value as Segment | "" }))}
+                  options={[{ value: "", label: "Not set" }, "Entrepreneur", "Student", "Artisan", "Job Seeker", "Support Seeker"]} />
+          <Select label="Gender" value={form.gender}
+                  onChange={(e) => setForm((f) => ({ ...f, gender: e.target.value }))}
+                  options={["Female", "Male", "Other"]} />
+          <Input label="Date of birth" value={form.dob}
+                 onChange={(e) => setForm((f) => ({ ...f, dob: e.target.value }))} placeholder="e.g. 12 Mar 1990" />
+          <Input label="Referral code" value={form.referral}
+                 onChange={(e) => setForm((f) => ({ ...f, referral: e.target.value }))} placeholder="Optional" />
         </div>
       </Modal>
-    </div>
-  );
-}
 
-function PanelRow({
-  icon: Icon,
-  tone,
-  title,
-  sub,
-}: {
-  icon: React.ElementType;
-  tone: string;
-  title: string;
-  sub: string;
-}) {
-  return (
-    <button className="flex w-full items-center gap-3 rounded-xl border border-line p-3 text-left hover:bg-surface-hover">
-      <span className={`flex h-9 w-9 items-center justify-center rounded-lg ${tone}`}>
-        <Icon className="h-4.5 w-4.5" />
-      </span>
-      <div className="min-w-0 flex-1">
-        <p className="text-sm font-medium text-ink-muted">{title}</p>
-        <p className="truncate text-xs text-ink-subtle">{sub}</p>
-      </div>
-      <ChevronRight className="h-4 w-4 text-ink-faint" />
-    </button>
+      <Modal
+        open={regionOpen}
+        onClose={() => setRegionOpen(false)}
+        title={`Assign ${selected.length} member${selected.length === 1 ? "" : "s"} to a region`}
+        description="The selected directory records move together. Existing history stays unchanged, and each assignment is written to the audit log."
+        icon={MapPin}
+        iconTone="brand"
+        footer={<>
+          <button className="btn btn-outline" onClick={() => setRegionOpen(false)}>Cancel</button>
+          <button className="btn btn-primary" disabled={busy || !bulkRegion} onClick={() => void assignSelectedRegion()}>
+            <MapPin className="h-4 w-4" /> {busy ? "Assigning…" : "Assign region"}
+          </button>
+        </>}
+      >
+        <div className="space-y-4">
+          <Select
+            label="Region"
+            value={bulkRegion}
+            onChange={(e) => setBulkRegion(e.target.value)}
+            placeholder="Search and choose an active region"
+            options={regions.filter((r) => r.status === "Active").map((r) => ({
+              value: r.name,
+              label: `${r.name} · ${r.member_count} members · ${r.admin_count} admins`,
+            }))}
+          />
+          <Textarea
+            label="Reason or assignment note (optional)"
+            rows={3}
+            value={bulkRegionReason}
+            onChange={(e) => setBulkRegionReason(e.target.value)}
+            placeholder="For example: transferred to the Pune regional team"
+          />
+        </div>
+      </Modal>
+
+      {/* reason dialog */}
+      <Modal
+        open={ask !== null}
+        onClose={() => setAsk(null)}
+        title={ask ? REASON_COPY[ask.kind].title(ask.member?.full_name ?? `${ask.ids?.length ?? 0} member${(ask.ids?.length ?? 0) === 1 ? "" : "s"}`) : ""}
+        icon={ask?.kind === "delete" ? Trash2 : ask?.kind.includes("suspend") ? Ban : ask?.kind === "reject" ? X : ask?.kind === "approve" ? Check : RotateCcw}
+        iconTone={ask && REASON_COPY[ask.kind].danger ? "rose" : "brand"}
+        size="sm"
+        footer={
+          <>
+            <button className="btn btn-outline" onClick={() => setAsk(null)}>Cancel</button>
+            <button className={`btn ${ask && REASON_COPY[ask.kind].danger ? "btn-danger" : "btn-primary"}`} disabled={busy} onClick={() => void runAsk()}>
+              {busy ? "Working…" : ask ? REASON_COPY[ask.kind].confirm : ""}
+            </button>
+          </>
+        }
+      >
+        {ask && (
+          <div className="space-y-3">
+            <p className="text-sm text-ink-muted">{REASON_COPY[ask.kind].body}</p>
+            <Textarea
+              label={REASON_COPY[ask.kind].required ? "Reason" : "Reason (optional)"}
+              required={REASON_COPY[ask.kind].required}
+              rows={3}
+              value={reason}
+              onChange={(e) => setReason(e.target.value)}
+              placeholder={ask.kind === "reject" ? "What she needs to fix or send" : ask.kind.includes("suspend") ? "What happened" : "Kept in the audit log"}
+              hint="Recorded with your name and the time."
+            />
+          </div>
+        )}
+      </Modal>
+    </div>
   );
 }

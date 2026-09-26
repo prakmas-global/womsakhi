@@ -1,22 +1,43 @@
+"""
+Content — the pages, posts, media and banners on the public site.
+
+── What changed and why ───────────────────────────────────────────────────
+Three things on this screen were invented. "Recent Activity" was a seeded
+list ("Neha Verma published About Us, May 2024") that no edit ever fed;
+"Storage Usage" was 24.6 GB of 100 GB typed into a seed row; and the author
+of every item was a name picked from a dropdown of four people who do not
+work here. "Move to Trash" deleted the row outright while the screen
+promised it could be restored, and "Scheduled" was a label with no date.
+
+Now: the activity feed is the audit log filtered to content actions; storage
+is the sum of the files actually uploaded; the author is the staff account
+that created the item; Trash is a state a row can come back from; and a
+scheduled item carries the time it goes live, which the member-facing read
+honours without a scheduler.
+
+── Access ──────────────────────────────────────────────────────────────────
+Reads need `content.view`; creating `content.create`; editing `content.edit`;
+publishing, unpublishing, scheduling and bulk actions `content.approve`;
+trashing and permanent deletion `content.delete`. Every write is recorded.
+"""
+
 import csv
 import io
 import re
-from datetime import datetime, timedelta, timezone
+from datetime import datetime, timezone
 from math import ceil
 from typing import Optional
 
-from fastapi import APIRouter, Depends, HTTPException, Query, Response, status
+from fastapi import APIRouter, Depends, HTTPException, Query, Request, Response, status
 
 from app.core import mongosafe
-from app.core.permissions import require_permission
+from app.core.audit import record
 from app.core.deps import get_current_user
+from app.core.permissions import require_permission
+from app.core.rbac import require_active_member
 from app.core.serializers import to_object_id
 from app.db.mongodb import get_database
-from app.models.content import (
-    ContentActivityModel,
-    ContentItemModel,
-    ContentStatsModel,
-)
+from app.models.content import ContentItemModel
 from app.routes._paging import paged
 from app.schemas.content import (
     ContentActivityResponse,
@@ -31,80 +52,117 @@ from app.schemas.content import (
 )
 
 router = APIRouter(prefix="/content", tags=["Content"])
+member_router = APIRouter(prefix="/member-content", tags=["Content"])
+
+TRASH = "Trash"
 
 
 def _items():
     return get_database()[ContentItemModel.collection_name]
 
 
-def _activities():
-    return get_database()[ContentActivityModel.collection_name]
+def _now() -> datetime:
+    return datetime.now(timezone.utc)
 
 
-def _stats():
-    return get_database()[ContentStatsModel.collection_name]
+def _label(dt: Optional[datetime]) -> str:
+    return dt.strftime("%b %d, %Y %I:%M %p") if isinstance(dt, datetime) else ""
+
+
+def _iso(dt) -> Optional[str]:
+    return dt.isoformat() if isinstance(dt, datetime) else None
+
+
+def _row(doc: dict) -> dict:
+    out = ContentItemModel.to_response(doc)
+    out["updated"] = _label(doc.get("updated_at")) or out.get("updated", "")
+    out["updated_at"] = _iso(doc.get("updated_at")) or ""
+    out["publish_at"] = _iso(doc.get("publish_at"))
+    return out
+
+
+def _slugify(title: str) -> str:
+    return "/" + re.sub(r"[^a-z0-9]+", "-", title.strip().lower()).strip("-")
+
+
+def _normalise_slug(slug: str) -> str:
+    slug = slug.strip()
+    return slug if slug.startswith("/") else "/" + slug
+
+
+async def _slug_free(slug: str, except_id=None) -> None:
+    q: dict = {"slug": slug}
+    if except_id is not None:
+        q["_id"] = {"$ne": except_id}
+    if await _items().find_one(q, {"_id": 1}):
+        raise HTTPException(status.HTTP_409_CONFLICT, f"'{slug}' is already used by another item")
+
+
+async def _validated_audience(mode: str, values: list[str]) -> tuple[str, list[str]]:
+    """Keep targeting tied to the live catalogues, never arbitrary typed labels."""
+    clean = list(dict.fromkeys(v.strip() for v in values if v.strip()))
+    if mode == "everyone":
+        return mode, []
+    collection = "regions" if mode == "regions" else "segments"
+    docs = await get_database()[collection].find(
+        {"name": {"$in": clean}, "status": "Active"}, {"name": 1}
+    ).to_list(100)
+    found = {d.get("name", "") for d in docs}
+    missing = [v for v in clean if v not in found]
+    if missing:
+        raise HTTPException(status.HTTP_422_UNPROCESSABLE_ENTITY,
+                            f"Inactive or unknown {mode}: {', '.join(missing)}")
+    if not clean:
+        raise HTTPException(status.HTTP_422_UNPROCESSABLE_ENTITY,
+                            f"Choose at least one {mode[:-1]}")
+    return mode, clean
+
+
+def _check_schedule(status_value: Optional[str], publish_at: Optional[datetime], existing: Optional[datetime] = None) -> Optional[datetime]:
+    """A scheduled item needs a future time; anything else drops the time."""
+    if status_value != "Scheduled":
+        return None
+    when = publish_at or existing
+    if when is None:
+        raise HTTPException(status.HTTP_422_UNPROCESSABLE_ENTITY, "Pick when it should go live")
+    if when.tzinfo is None:
+        when = when.replace(tzinfo=timezone.utc)
+    if when <= _now():
+        raise HTTPException(status.HTTP_422_UNPROCESSABLE_ENTITY, "That time has already passed — publish it now instead")
+    return when
+
+
+async def _publish_due() -> int:
+    """
+    Scheduled items whose time has come become Published.
+
+    Nothing runs on a timer here, so the flip happens when somebody looks: the
+    member-facing read already treats a due item as published, and this writes
+    that fact back so both sides agree.
+    """
+    res = await _items().update_many(
+        {"status": "Scheduled", "publish_at": {"$lte": _now()}},
+        {"$set": {"status": "Published", "s_tone": ContentItemModel.s_tone_for("Published"),
+                  "last_updated": _label(_now()), "updated_at": _now()}},
+    )
+    return res.modified_count
 
 
 # The tabs shown above the table map onto a content type ('All Content' = no gate).
 TAB_TYPE = {
-    "All Content": None,
-    "Pages": "Page",
-    "Blog Posts": "Blog Post",
-    "Media": "Media",
-    "Testimonials": "Testimonial",
-    "FAQs": "FAQ",
-    "Banners": "Banner",
+    "All Content": None, "Pages": "Page", "Blog Posts": "Blog Post", "Media": "Media",
+    "Testimonials": "Testimonial", "FAQs": "FAQ", "Banners": "Banner", "Trash": None,
 }
 
-# The Author filter dropdown, in the order the UI lists them.
-AUTHORS = ["Neha Verma", "Priya Sharma", "Ritika Singh", "Anjali Mehta"]
-
-# The Content Overview donut's 5 fixed, coloured slices (order + colour are the
-# UI's design, only the counts change). Real content types are folded into these
-# buckets; anything not mapped lands in "Others".
-_OVERVIEW_BUCKETS = [
-    ("Pages", "#22c55e"),
-    ("Blog Posts", "#3b82f6"),
-    ("Media", "#f59e0b"),
-    ("Banners", "#a855f7"),
-    ("Others", "#e6117e"),
-]
-_TYPE_TO_BUCKET = {
-    "Page": "Pages",
-    "Blog Post": "Blog Posts",
-    "Media": "Media",
-    "Banner": "Banners",
-    # FAQ / Program / Testimonial / anything else -> "Others"
-}
-
-# Storage Usage has no per-item source; these are the fixed figures the widget
-# paints when the seeded content_stats singleton is unavailable.
-_STORAGE_DEFAULTS = {"storage_used_gb": 24.6, "storage_total_gb": 100, "storage_percent": 24.6}
+_OVERVIEW_BUCKETS = [("Pages", "#22c55e"), ("Blog Posts", "#3b82f6"), ("Media", "#f59e0b"), ("Banners", "#a855f7"), ("Others", "#e6117e")]
+_TYPE_TO_BUCKET = {"Page": "Pages", "Blog Post": "Blog Posts", "Media": "Media", "Banner": "Banners"}
 
 
-def _now_label() -> str:
-    """The 'May 20, 2024 10:30 AM' style stamp the UI shows for Last Updated."""
-    return datetime.now(timezone.utc).strftime("%b %d, %Y %I:%M %p")
-
-
-def _slugify(title: str) -> str:
-    """Auto-slug: '/' + title lowercased with whitespace collapsed to hyphens."""
-    return "/" + re.sub(r"\s+", "-", title.strip().lower())
-
-
-def _filter_query(
-    type: Optional[str],
-    status: Optional[str],
-    author: Optional[str],
-    q: Optional[str],
-    tab: Optional[str] = None,
-    published_only: bool = False,
-) -> dict:
+def _filter_query(type: Optional[str], status_value: Optional[str], author: Optional[str], q: Optional[str],
+                  tab: Optional[str] = None, published_only: bool = False) -> dict:
     """Translate the screen's filters into a Mongo query (shared by list + export)."""
     query: dict = {}
 
-    # Tab and the Type dropdown both constrain type; the UI ANDs them, so two
-    # different values can never both match -> force an empty result set.
     type_constraints = []
     tab_type = TAB_TYPE.get(tab) if tab else None
     if tab_type:
@@ -117,368 +175,359 @@ def _filter_query(
     elif len(distinct_types) > 1:
         query["type"] = {"$in": []}
 
-    # Status dropdown + the 'Published only' extra filter combine the same way.
-    status_constraints = []
-    if status and status not in ("All Status", "all"):
-        status_constraints.append(status)
-    if published_only:
-        status_constraints.append("Published")
-    distinct_status = set(status_constraints)
-    if len(distinct_status) == 1:
-        query["status"] = status_constraints[0]
-    elif len(distinct_status) > 1:
-        query["status"] = {"$in": []}
+    # Trash is its own place: shown only when asked for, never mixed in.
+    in_trash = tab == "Trash" or status_value == TRASH
+    if in_trash:
+        query["status"] = TRASH
+    else:
+        status_constraints = []
+        if status_value and status_value not in ("All Status", "all"):
+            status_constraints.append(status_value)
+        if published_only:
+            status_constraints.append("Published")
+        distinct_status = set(status_constraints)
+        if len(distinct_status) == 1:
+            query["status"] = status_constraints[0]
+        elif len(distinct_status) > 1:
+            query["status"] = {"$in": []}
+        else:
+            query["status"] = {"$ne": TRASH}
 
     if author and author not in ("All Authors", "all"):
         query["author"] = author
-
     if q and q.strip():
         query.update(mongosafe.any_of(q, ["title", "slug"]))
-
     return query
 
 
-@router.get("", response_model=ContentListResponse, summary="List content items")
+@router.get("", response_model=ContentListResponse, summary="List content items",
+    dependencies=[Depends(require_permission("content.view"))],
+)
 async def list_content(
-    tab: Optional[str] = Query(None, description="Active tab; maps to a content type"),
-    type: Optional[str] = Query(None, description="Filter by type"),
-    status: Optional[str] = Query(None, description="Filter by status"),
-    author: Optional[str] = Query(None, description="Filter by author"),
+    tab: Optional[str] = Query(None, description="Active tab; maps to a content type, or Trash"),
+    type: Optional[str] = Query(None),
+    status_: Optional[str] = Query(None, alias="status"),
+    author: Optional[str] = Query(None),
     q: Optional[str] = Query(None, description="Search by title or slug"),
-    published_only: bool = Query(False, description="Force status = Published"),
+    published_only: bool = Query(False),
     page: int = Query(1, ge=1),
-    page_size: int = Query(8, ge=1, le=100),
-    _: dict = Depends(get_current_user),
+    page_size: int = Query(8, ge=1, le=200),
 ):
-    query = _filter_query(type, status, author, q, tab=tab, published_only=published_only)
-
-    total, docs = await paged(
-        _items(), query,
-        sort="created_at", direction=-1,  # newest first — new items surface at the top
-        page=page, page_size=page_size,
-    )
+    await _publish_due()
+    query = _filter_query(type, status_, author, q, tab=tab, published_only=published_only)
+    total, docs = await paged(_items(), query, sort="updated_at", direction=-1, page=page, page_size=page_size)
     total_pages = max(1, ceil(total / page_size)) if page_size else 1
     start = (page - 1) * page_size
-    items = [ContentItemModel.to_response(doc) for doc in docs]
     return ContentListResponse(
-        items=items,
-        total=total,
-        showing_from=0 if total == 0 else start + 1,
-        showing_to=min(start + page_size, total),
-        page=page,
-        total_pages=total_pages,
+        items=[_row(d) for d in docs], total=total,
+        showing_from=0 if total == 0 else start + 1, showing_to=min(start + page_size, total),
+        page=page, total_pages=total_pages,
     )
 
 
 def _pct(part: int, total: int) -> float:
-    """Percentage of `total`, rounded to 1 decimal — the UI's '(71.8%)' format."""
     return round(part / total * 100, 1) if total else 0.0
 
 
-async def _build_stats() -> ContentStatsResponse:
-    """Compute the content stat snapshot live from the `content_items` collection.
+def _size_label(n: int) -> str:
+    if n < 1024:
+        return f"{n} B"
+    if n < 1024 ** 2:
+        return f"{n / 1024:.1f} KB"
+    if n < 1024 ** 3:
+        return f"{n / 1024 ** 2:.1f} MB"
+    return f"{n / 1024 ** 3:.2f} GB"
 
-    Everything derivable from the real documents is counted here: the total, the
-    status breakdown (top cards), and the type breakdown that feeds both the
-    Content Overview donut and the Content Categories bars. Only Storage Usage —
-    which has no per-item source — is read from the seeded content_stats
-    singleton (falling back to fixed defaults)."""
+
+@router.get("/stats", response_model=ContentStatsResponse, summary="Content stat snapshot, counted live",
+    dependencies=[Depends(require_permission("content.view"))],
+)
+async def content_stats():
+    await _publish_due()
     docs = [d async for d in _items().find({}, {"type": 1, "status": 1})]
-    total = len(docs)
+    live = [d for d in docs if d.get("status") != TRASH]
+    total = len(live)
+    published = sum(1 for d in live if d.get("status") == "Published")
+    draft = sum(1 for d in live if d.get("status") == "Draft")
+    scheduled = sum(1 for d in live if d.get("status") == "Scheduled")
+    trash = len(docs) - total
 
-    # --- Status breakdown (top cards). Trashing deletes the document, so there
-    # is no live source for a 'trash' status -> anything outside the three known
-    # statuses is counted as trash, which is 0 in practice.
-    def _status_count(name: str) -> int:
-        return sum(1 for d in docs if d.get("status") == name)
-
-    published = _status_count("Published")
-    draft = _status_count("Draft")
-    scheduled = _status_count("Scheduled")
-    trash = sum(1 for d in docs if d.get("status") not in ("Published", "Draft", "Scheduled"))
-
-    # --- Type breakdown, feeding both the overview donut and the category bars.
     type_counts: dict[str, int] = {}
-    for d in docs:
-        t = d.get("type", "")
-        type_counts[t] = type_counts.get(t, 0) + 1
-
-    # Overview donut: fold real types into the 5 fixed, coloured buckets.
-    bucket_counts: dict[str, int] = {name: 0 for name, _ in _OVERVIEW_BUCKETS}
+    for d in live:
+        type_counts[d.get("type", "")] = type_counts.get(d.get("type", ""), 0) + 1
+    bucket_counts = {name: 0 for name, _ in _OVERVIEW_BUCKETS}
     for t, c in type_counts.items():
         bucket_counts[_TYPE_TO_BUCKET.get(t, "Others")] += c
     overview = [
-        {
-            "name": name,
-            "value": bucket_counts[name],
-            "color": color,
-            "label": f"{bucket_counts[name]} ({_pct(bucket_counts[name], total)}%)",
-        }
-        for name, color in _OVERVIEW_BUCKETS
+        {"name": name, "value": bucket_counts[name], "color": color, "label": f"{bucket_counts[name]} ({_pct(bucket_counts[name], total)}%)"}
+        for name, color in _OVERVIEW_BUCKETS if bucket_counts[name] > 0
     ]
-
-    # Category bars: one bar per actual content type, largest first (ties A→Z).
-    ordered_types = sorted(type_counts.items(), key=lambda kv: (-kv[1], kv[0]))
     categories = [
         {"name": t, "value": _pct(c, total), "label": f"{c} ({_pct(c, total)}%)"}
-        for t, c in ordered_types
+        for t, c in sorted(type_counts.items(), key=lambda kv: (-kv[1], kv[0]))
     ]
 
-    # Storage Usage: no per-item source, so keep the seeded figures (or defaults).
-    storage = await _stats().find_one({}) or {}
+    # Storage: the files that were actually uploaded, whatever they were for.
+    used, files = 0, 0
+    async for u in get_database()["uploads"].find({}, {"size": 1}):
+        used += int(u.get("size") or 0)
+        files += 1
+
     return ContentStatsResponse(
         total_content=total,
         published=published, published_pct=_pct(published, total),
         draft=draft, draft_pct=_pct(draft, total),
         scheduled=scheduled, scheduled_pct=_pct(scheduled, total),
-        trash=trash, trash_pct=_pct(trash, total),
-        overview=overview,
-        overview_total=str(total),
-        categories=categories,
-        storage_used_gb=storage.get("storage_used_gb", _STORAGE_DEFAULTS["storage_used_gb"]),
-        storage_total_gb=storage.get("storage_total_gb", _STORAGE_DEFAULTS["storage_total_gb"]),
-        storage_percent=storage.get("storage_percent", _STORAGE_DEFAULTS["storage_percent"]),
+        trash=trash, trash_pct=_pct(trash, len(docs)),
+        overview=overview, overview_total=str(total), categories=categories,
+        storage_used_bytes=used, storage_files=files,
+        storage_label=f"{_size_label(used)} in {files} file{'s' if files != 1 else ''}" if files else "No files uploaded yet",
     )
 
 
-@router.get("/stats", response_model=ContentStatsResponse, summary="Content stat snapshot")
-async def content_stats(_: dict = Depends(get_current_user)):
-    return await _build_stats()
+_VERB_ICON = {
+    "create": ("FileText", "violet"), "edit": ("Pencil", "violet"), "publish": ("CircleCheck", "emerald"),
+    "unpublish": ("PencilLine", "amber"), "schedule": ("CalendarClock", "sky"), "trash": ("Trash2", "rose"),
+    "restore": ("RotateCcw", "emerald"), "delete": ("Trash2", "rose"), "export": ("Download", "sky"),
+}
 
 
-@router.get("/activity", response_model=list[ContentActivityResponse], summary="Recent activity feed")
-@router.get("/activities", response_model=list[ContentActivityResponse], include_in_schema=False)
-async def content_activity(
-    limit: int = Query(4, ge=1, le=50),
-    _: dict = Depends(get_current_user),
-):
-    cursor = _activities().find({}).sort("order", 1).limit(limit)
-    return [ContentActivityResponse(**ContentActivityModel.to_response(doc)) async for doc in cursor]
+@router.get("/activity", response_model=list[ContentActivityResponse], summary="Recent content actions, from the audit log",
+    dependencies=[Depends(require_permission("content.view"))],
+)
+async def content_activity(limit: int = Query(6, ge=1, le=50)):
+    out = []
+    cursor = get_database()["activity_log"].find({"action": {"$regex": "^content\\."}}).sort("created_at", -1).limit(limit)
+    async for a in cursor:
+        verb = a.get("action", "").split(".")[-1]
+        icon, tone = _VERB_ICON.get(verb, ("FileText", "violet"))
+        when = a.get("created_at")
+        out.append({
+            "id": str(a["_id"]), "icon": icon, "tone": tone, "text": a.get("detail", "") or a.get("action", ""),
+            "meta": f"{_label(when)} by {a.get('user_name', '')}".strip(),
+        })
+    return out
 
 
-@router.get("/authors", response_model=list[str], summary="Distinct authors")
-async def content_authors(_: dict = Depends(get_current_user)):
-    present = set(await _items().distinct("author"))
-    # Keep the known authors in their UI order, then append any extras.
-    ordered = [a for a in AUTHORS if a in present]
-    ordered += sorted(a for a in present if a not in AUTHORS)
-    return ordered
+@router.get("/authors", response_model=list[str], summary="Staff who have created content",
+    dependencies=[Depends(require_permission("content.view"))],
+)
+async def content_authors():
+    return sorted(a for a in await _items().distinct("author") if a)
 
 
-@router.get("/export", summary="Export filtered content as CSV")
+@router.get("/export", summary="Export filtered content as CSV",
+    dependencies=[Depends(require_permission("content.view"))],
+)
 async def export_content(
-    type: Optional[str] = Query(None),
-    status: Optional[str] = Query(None),
-    author: Optional[str] = Query(None),
-    q: Optional[str] = Query(None),
-    _: dict = Depends(get_current_user),
+    request: Request,
+    type: Optional[str] = Query(None), status_: Optional[str] = Query(None, alias="status"),
+    author: Optional[str] = Query(None), q: Optional[str] = Query(None), tab: Optional[str] = Query(None),
+    me: dict = Depends(get_current_user),
 ):
-    query = _filter_query(type, status, author, q)
+    query = _filter_query(type, status_, author, q, tab=tab)
     buffer = io.StringIO()
     writer = csv.writer(buffer)
-    writer.writerow(["Title", "Slug", "Type", "Status", "Author", "Last Updated"])
-    cursor = _items().find(query).sort("created_at", -1)
-    async for doc in cursor:
-        row = ContentItemModel.to_response(doc)
-        writer.writerow([row["title"], row["slug"], row["type"], row["status"], row["author"], row["updated"]])
-    return Response(
-        content=buffer.getvalue(),
-        media_type="text/csv",
-        headers={"Content-Disposition": 'attachment; filename="content-export.csv"'},
-    )
+    writer.writerow(["Title", "Slug", "Type", "Status", "Author", "Goes live", "Last Updated"])
+    n = 0
+    async for doc in _items().find(query).sort("updated_at", -1):
+        r = _row(doc)
+        writer.writerow([r["title"], r["slug"], r["type"], r["status"], r["author"], r["publish_at"] or "", r["updated_at"]])
+        n += 1
+    await record(me, "content.export", detail=f"Exported {n} content item{'s' if n != 1 else ''} as CSV", request=request)
+    return Response(content=buffer.getvalue(), media_type="text/csv",
+                    headers={"Content-Disposition": 'attachment; filename="content-export.csv"'})
 
 
-@router.post("", response_model=ContentResponse, status_code=status.HTTP_201_CREATED, summary="Create content", dependencies=[Depends(require_permission("content.create"))])
-async def create_content(payload: ContentCreate, _: dict = Depends(get_current_user)):
-    slug = payload.slug.strip() or _slugify(payload.title)
+@router.post("", response_model=ContentResponse, status_code=status.HTTP_201_CREATED, summary="Create content",
+    dependencies=[Depends(require_permission("content.create"))],
+)
+async def create_content(payload: ContentCreate, request: Request, me: dict = Depends(get_current_user)):
+    slug = _normalise_slug(payload.slug) if payload.slug.strip() else _slugify(payload.title)
+    await _slug_free(slug)
+    publish_at = _check_schedule(payload.status, payload.publish_at)
+    audience_mode, audience_values = await _validated_audience(payload.audience_mode, payload.audience_values)
     doc = ContentItemModel.create_document(
-        title=payload.title,
-        slug=slug,
-        type=payload.type,
-        status=payload.status,
-        author=payload.author,
-        description=payload.description,
-        cover=payload.cover,
-        last_updated=_now_label(),
+        title=payload.title, slug=slug, type=payload.type, status=payload.status,
+        author=me.get("full_name", "") or me.get("email", ""),
+        description=payload.description, cover=payload.cover, last_updated=_label(_now()),
+        audience_mode=audience_mode, audience_values=audience_values,
     )
+    doc["publish_at"] = publish_at
+    doc["author_id"] = str(me.get("_id", ""))
     result = await _items().insert_one(doc)
     doc["_id"] = result.inserted_id
-    return ContentResponse(**ContentItemModel.to_response(doc))
+    await record(me, "content.create", target=str(doc["_id"]),
+                 detail=f"Created {payload.type.lower()} “{payload.title}” as {payload.status.lower()}", request=request)
+    return ContentResponse(**_row(doc))
 
 
-@router.post("/bulk", response_model=ContentBulkResult, summary="Bulk publish / draft / trash", dependencies=[Depends(require_permission("content.edit"))])
-async def bulk_content(payload: ContentBulkAction, _: dict = Depends(get_current_user)):
+@router.post("/bulk", response_model=ContentBulkResult, summary="Bulk publish / draft / trash / restore / delete",
+    dependencies=[Depends(require_permission("content.approve"))],
+)
+async def bulk_content(payload: ContentBulkAction, request: Request, me: dict = Depends(get_current_user)):
     oids = [to_object_id(i) for i in payload.ids]
+    if not oids:
+        return ContentBulkResult(action=payload.action, affected=0, message="Nothing selected")
     query = {"_id": {"$in": oids}}
+    if payload.action == "delete":
+        # Only what is already in Trash can be destroyed.
+        res = await _items().delete_many({**query, "status": TRASH})
+        affected, msg = res.deleted_count, "Deleted permanently"
+    else:
+        new_status = {"publish": "Published", "draft": "Draft", "trash": TRASH, "restore": "Draft"}[payload.action]
+        if payload.action == "restore":
+            query["status"] = TRASH
+        res = await _items().update_many(query, {"$set": {
+            "status": new_status, "s_tone": ContentItemModel.s_tone_for(new_status),
+            "last_updated": _label(_now()), "updated_at": _now(), "publish_at": None,
+        }})
+        affected = res.modified_count
+        msg = {"publish": "Published", "draft": "Moved to draft", "trash": "Moved to Trash", "restore": "Restored to draft"}[payload.action]
+    await record(me, f"content.{payload.action}", detail=f"Bulk: {msg.lower()} {affected} item{'s' if affected != 1 else ''}", request=request)
+    return ContentBulkResult(action=payload.action, affected=affected, message=msg)
 
-    if payload.action == "trash":
-        result = await _items().delete_many(query)
-        return ContentBulkResult(action="trash", affected=result.deleted_count, message="Moved to trash")
 
-    new_status = "Published" if payload.action == "publish" else "Draft"
-    updates = {
-        "status": new_status,
-        "s_tone": ContentItemModel.s_tone_for(new_status),
-        "last_updated": _now_label(),
-        "updated_at": datetime.now(timezone.utc),
-    }
-    result = await _items().update_many(query, {"$set": updates})
-    verb = "Published" if payload.action == "publish" else "Moved to draft"
-    return ContentBulkResult(action=payload.action, affected=result.modified_count, message=verb)
-
-
-@router.get("/{item_id}", response_model=ContentResponse, summary="Get a content item")
-async def get_content(item_id: str, _: dict = Depends(get_current_user)):
+async def _doc_or_404(item_id: str) -> dict:
     doc = await _items().find_one({"_id": to_object_id(item_id)})
     if not doc:
         raise HTTPException(status.HTTP_404_NOT_FOUND, "Content not found")
-    return ContentResponse(**ContentItemModel.to_response(doc))
+    return doc
 
 
-@router.put("/{item_id}", response_model=ContentResponse, summary="Edit a content item", dependencies=[Depends(require_permission("content.edit"))])
-async def update_content(item_id: str, payload: ContentUpdate, _: dict = Depends(get_current_user)):
-    oid = to_object_id(item_id)
-    doc = await _items().find_one({"_id": oid})
-    if not doc:
-        raise HTTPException(status.HTTP_404_NOT_FOUND, "Content not found")
+@member_router.get("", response_model=list[ContentResponse], summary="Published content for this member")
+async def member_content_feed(me: dict = Depends(require_active_member)):
+    """Apply the audience chosen by staff when member screens request content."""
+    await _publish_due()
+    member = {}
+    if me.get("member_id"):
+        member = await get_database().members.find_one({"_id": to_object_id(me["member_id"])}) or {}
+    region = (member.get("location") or "").strip()
+    segment = (member.get("segment") or "").strip()
+    clauses: list[dict] = [
+        {"audience_mode": {"$exists": False}},
+        {"audience_mode": "everyone"},
+    ]
+    if region:
+        clauses.append({"audience_mode": "regions", "audience_values": region})
+    if segment:
+        clauses.append({"audience_mode": "segments", "audience_values": segment})
+    docs = await _items().find({"status": "Published", "$or": clauses}).sort("updated_at", -1).to_list(100)
+    return [ContentResponse(**_row(d)) for d in docs]
 
+
+@router.get("/{item_id}", response_model=ContentResponse, summary="Get a content item",
+    dependencies=[Depends(require_permission("content.view"))],
+)
+async def get_content(item_id: str):
+    return ContentResponse(**_row(await _doc_or_404(item_id)))
+
+
+@router.put("/{item_id}", response_model=ContentResponse, summary="Edit a content item",
+    dependencies=[Depends(require_permission("content.edit"))],
+)
+async def update_content(item_id: str, payload: ContentUpdate, request: Request, me: dict = Depends(get_current_user)):
+    doc = await _doc_or_404(item_id)
     updates = payload.model_dump(exclude_unset=True)
-
+    if "audience_mode" in updates or "audience_values" in updates:
+        mode = updates.get("audience_mode", doc.get("audience_mode", "everyone"))
+        values = updates.get("audience_values", doc.get("audience_values", []))
+        updates["audience_mode"], updates["audience_values"] = await _validated_audience(mode, values)
     if updates.get("title"):
         updates["title"] = updates["title"].strip()
-
-    # Changing the type re-derives its badge tone and icon.
     if updates.get("type"):
         updates["tone"] = ContentItemModel.tone_for(updates["type"])
         updates["icon"] = ContentItemModel.icon_for(updates["type"])
-
-    # Changing the status re-derives its status-dot tone.
-    if updates.get("status"):
-        updates["s_tone"] = ContentItemModel.s_tone_for(updates["status"])
-
-    # A blank slug keeps the existing one (matches the edit form behaviour).
     if "slug" in updates:
         slug = (updates["slug"] or "").strip()
         if slug:
-            updates["slug"] = slug
+            updates["slug"] = _normalise_slug(slug)
+            await _slug_free(updates["slug"], except_id=doc["_id"])
         else:
             updates.pop("slug")
+    new_status = updates.get("status", doc.get("status"))
+    if "status" in updates or "publish_at" in updates:
+        updates["publish_at"] = _check_schedule(new_status, updates.get("publish_at"), doc.get("publish_at"))
+        updates["s_tone"] = ContentItemModel.s_tone_for(new_status)
+    updates["last_updated"] = _label(_now())
+    updates["updated_at"] = _now()
+    doc = await _items().find_one_and_update({"_id": doc["_id"]}, {"$set": updates}, return_document=True)
+    changed = sorted(k for k in updates if k not in ("last_updated", "updated_at", "tone", "icon", "s_tone"))
+    await record(me, "content.edit", target=item_id,
+                 detail=f"Edited “{doc.get('title', '')}”: {', '.join(changed) or 'nothing changed'}", request=request)
+    return ContentResponse(**_row(doc))
 
-    updates["last_updated"] = _now_label()
-    updates["updated_at"] = datetime.now(timezone.utc)
+
+@router.patch("/{item_id}/status", response_model=ContentResponse, summary="Publish, unpublish or schedule",
+    dependencies=[Depends(require_permission("content.approve"))],
+)
+async def set_content_status(item_id: str, payload: ContentStatusUpdate, request: Request, me: dict = Depends(get_current_user)):
+    doc = await _doc_or_404(item_id)
+    if doc.get("status") == TRASH:
+        raise HTTPException(status.HTTP_409_CONFLICT, "Restore it from Trash first")
+    publish_at = _check_schedule(payload.status, payload.publish_at, doc.get("publish_at"))
     doc = await _items().find_one_and_update(
-        {"_id": oid},
-        {"$set": updates},
+        {"_id": doc["_id"]},
+        {"$set": {"status": payload.status, "s_tone": ContentItemModel.s_tone_for(payload.status),
+                  "publish_at": publish_at, "last_updated": _label(_now()), "updated_at": _now()}},
         return_document=True,
     )
-    return ContentResponse(**ContentItemModel.to_response(doc))
+    verb = {"Published": "publish", "Draft": "unpublish", "Scheduled": "schedule"}[payload.status]
+    detail = {"publish": f"Published “{doc.get('title', '')}”", "unpublish": f"Moved “{doc.get('title', '')}” to draft",
+              "schedule": f"Scheduled “{doc.get('title', '')}” for {_label(publish_at)}"}[verb]
+    await record(me, f"content.{verb}", target=item_id, detail=detail, request=request)
+    return ContentResponse(**_row(doc))
 
 
-@router.patch("/{item_id}/status", response_model=ContentResponse, summary="Change content status", dependencies=[Depends(require_permission("content.approve"))])
-async def set_content_status(item_id: str, payload: ContentStatusUpdate, _: dict = Depends(get_current_user)):
-    oid = to_object_id(item_id)
+@router.delete("/{item_id}", summary="Move a content item to Trash",
+    dependencies=[Depends(require_permission("content.delete"))],
+)
+async def trash_content(item_id: str, request: Request, me: dict = Depends(get_current_user)):
+    doc = await _doc_or_404(item_id)
+    if doc.get("status") == TRASH:
+        raise HTTPException(status.HTTP_409_CONFLICT, "It is already in Trash")
+    await _items().update_one({"_id": doc["_id"]}, {"$set": {
+        "status": TRASH, "s_tone": "rose", "previous_status": doc.get("status"),
+        "publish_at": None, "last_updated": _label(_now()), "updated_at": _now(),
+    }})
+    await record(me, "content.trash", target=item_id, detail=f"Moved “{doc.get('title', '')}” to Trash", request=request)
+    return {"message": "Moved to Trash"}
+
+
+@router.post("/{item_id}/restore", response_model=ContentResponse, summary="Bring an item back from Trash",
+    dependencies=[Depends(require_permission("content.edit"))],
+)
+async def restore_content(item_id: str, request: Request, me: dict = Depends(get_current_user)):
+    doc = await _doc_or_404(item_id)
+    if doc.get("status") != TRASH:
+        raise HTTPException(status.HTTP_409_CONFLICT, "It is not in Trash")
+    # Back as a draft, never straight to the public site.
     doc = await _items().find_one_and_update(
-        {"_id": oid},
-        {"$set": {
-            "status": payload.status,
-            "s_tone": ContentItemModel.s_tone_for(payload.status),
-            "last_updated": _now_label(),
-            "updated_at": datetime.now(timezone.utc),
-        }},
+        {"_id": doc["_id"]},
+        {"$set": {"status": "Draft", "s_tone": ContentItemModel.s_tone_for("Draft"),
+                  "last_updated": _label(_now()), "updated_at": _now()}},
         return_document=True,
     )
-    if not doc:
-        raise HTTPException(status.HTTP_404_NOT_FOUND, "Content not found")
-    return ContentResponse(**ContentItemModel.to_response(doc))
+    await record(me, "content.restore", target=item_id, detail=f"Restored “{doc.get('title', '')}” from Trash as a draft", request=request)
+    return ContentResponse(**_row(doc))
 
 
-@router.delete("/{item_id}", summary="Move a content item to trash / delete", dependencies=[Depends(require_permission("content.delete"))])
-async def delete_content(item_id: str, _: dict = Depends(get_current_user)):
-    result = await _items().delete_one({"_id": to_object_id(item_id)})
-    if result.deleted_count == 0:
-        raise HTTPException(status.HTTP_404_NOT_FOUND, "Content not found")
-    return {"message": "Content deleted"}
-
-
-# --- Seed --------------------------------------------------------------------
-# The exact eight rows the UI renders today (INITIAL_ROWS on the Content screen).
-_ITEMS = [
-    dict(title="About Us", slug="/about-us", type="Page", status="Published", author="Neha Verma", updated="May 20, 2024 10:30 AM"),
-    dict(title="Empowering Women Through Handicrafts", slug="/blog/empowering-women", type="Blog Post", status="Published", author="Priya Sharma", updated="May 19, 2024 03:15 PM"),
-    dict(title="Summer Workshop Banner", slug="/banners/summer-workshop", type="Banner", status="Scheduled", author="Ritika Singh", updated="May 21, 2024 09:00 AM"),
-    dict(title="Our Services", slug="/services", type="Page", status="Published", author="Neha Verma", updated="May 18, 2024 11:45 AM"),
-    dict(title="Sewing Basics for Beginners", slug="/programs/sewing-basics", type="Program", status="Draft", author="Anjali Mehta", updated="May 18, 2024 09:20 AM"),
-    dict(title="Frequently Asked Questions", slug="/faqs", type="FAQ", status="Published", author="Priya Sharma", updated="May 17, 2024 02:40 PM"),
-    dict(title="Our Impact", slug="/impact", type="Page", status="Draft", author="Ritika Singh", updated="May 16, 2024 10:10 AM"),
-    dict(title="Handmade Bags Collection", slug="/media/handmade-bags.jpg", type="Media", status="Published", author="Anjali Mehta", updated="May 15, 2024 04:30 PM"),
-]
-
-# The Recent Activity feed (ACTIVITY on the screen), top to bottom.
-_ACTIVITIES = [
-    dict(icon="CircleCheck", tone="emerald", text='Page "About Us" published', meta="May 20, 2024 at 10:30 AM by Neha Verma"),
-    dict(icon="Pencil", tone="violet", text='Blog post "Empowering Women…" updated', meta="May 19, 2024 at 03:15 PM by Priya Sharma"),
-    dict(icon="CalendarClock", tone="amber", text='Banner "Summer Workshop" scheduled', meta="May 18, 2024 at 11:45 AM by Ritika Singh"),
-    dict(icon="Trash2", tone="rose", text='FAQ "Returns Policy" moved to trash', meta="May 17, 2024 at 01:20 PM by Admin User"),
-]
-
-# The Content Overview donut (values + colours) with its legend labels.
-_OVERVIEW = [
-    dict(name="Pages", value=48, color="#22c55e", label="48 (30.8%)"),
-    dict(name="Blog Posts", value=62, color="#3b82f6", label="62 (39.7%)"),
-    dict(name="Media", value=24, color="#f59e0b", label="24 (15.4%)"),
-    dict(name="Banners", value=12, color="#a855f7", label="12 (7.7%)"),
-    dict(name="Others", value=10, color="#e6117e", label="10 (6.4%)"),
-]
-
-# The Content Categories progress bars.
-_CATEGORIES = [
-    dict(name="Women Empowerment", value=29, label="18 (29.0%)"),
-    dict(name="Handicrafts", value=25.8, label="16 (25.8%)"),
-    dict(name="Training & Workshops", value=22.6, label="14 (22.6%)"),
-    dict(name="Success Stories", value=12.9, label="8 (12.9%)"),
-    dict(name="Events", value=9.7, label="6 (9.7%)"),
-]
+@router.delete("/{item_id}/permanent", summary="Delete an item in Trash for good",
+    dependencies=[Depends(require_permission("content.delete"))],
+)
+async def delete_content_permanently(item_id: str, request: Request, me: dict = Depends(get_current_user)):
+    doc = await _doc_or_404(item_id)
+    if doc.get("status") != TRASH:
+        raise HTTPException(status.HTTP_409_CONFLICT, "Move it to Trash first")
+    await _items().delete_one({"_id": doc["_id"]})
+    await record(me, "content.delete", target=item_id, detail=f"Deleted “{doc.get('title', '')}” permanently", request=request)
+    return {"message": "Deleted permanently"}
 
 
 async def seed() -> None:
-    """Seed the content collections with the exact UI mock data, only if empty."""
-    db = get_database()
-
-    if await db[ContentItemModel.collection_name].count_documents({}) == 0:
-        base = datetime.now(timezone.utc)
-        docs = [
-            ContentItemModel.create_document(
-                title=it["title"], slug=it["slug"], type=it["type"], status=it["status"],
-                author=it["author"], last_updated=it["updated"],
-                # Descending created_at preserves the on-screen row order.
-                created_at=base - timedelta(seconds=i),
-            )
-            for i, it in enumerate(_ITEMS)
-        ]
-        await db[ContentItemModel.collection_name].insert_many(docs)
-        print(f"🌱 Seeded {len(docs)} content items")
-
-    if await db[ContentActivityModel.collection_name].count_documents({}) == 0:
-        docs = [
-            ContentActivityModel.create_document(
-                icon=a["icon"], tone=a["tone"], text=a["text"], meta=a["meta"], order=i,
-            )
-            for i, a in enumerate(_ACTIVITIES)
-        ]
-        await db[ContentActivityModel.collection_name].insert_many(docs)
-        print(f"🌱 Seeded {len(docs)} content activities")
-
-    if await db[ContentStatsModel.collection_name].count_documents({}) == 0:
-        doc = ContentStatsModel.create_document(
-            total_content=156,
-            published=112, published_pct=71.8,
-            draft=28, draft_pct=17.9,
-            scheduled=12, scheduled_pct=7.7,
-            trash=4, trash_pct=2.6,
-            overview=_OVERVIEW,
-            overview_total="156",
-            categories=_CATEGORIES,
-            storage_used_gb=24.6, storage_total_gb=100, storage_percent=24.6,
-        )
-        await db[ContentStatsModel.collection_name].insert_one(doc)
-        print("🌱 Seeded content stats")
+    """
+    Nothing to seed. Content is what staff write; the eight invented pages by
+    four invented authors, the seeded activity feed and the seeded storage
+    snapshot this used to insert are no longer read by anything.
+    """
+    return None

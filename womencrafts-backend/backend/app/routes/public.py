@@ -24,6 +24,7 @@ from fastapi import APIRouter, HTTPException, status
 from app.core import cache
 from app.core.media import media_url
 from app.db.mongodb import get_database
+from app.models.certificate import CertificateModel
 from app.models.shop import ListingModel
 from app.schemas.shop import ListingCard, PublicShop
 
@@ -353,3 +354,40 @@ async def acknowledge_shared_alert(alert_id: str, body: AlertAck, t: str = ""):
         },
     )
     return {"ok": True}
+
+
+@router.get("/certificates/{code}", summary="Is this certificate real? For an employer with no account")
+async def public_certificate(code: str) -> dict:
+    """
+    What the number on her certificate resolves to.
+
+    `CertificateModel` says the code is public by design: an employer or an
+    NGO checks it without an account. This is that check. It carries her
+    first name, the programme, the date, and whether it still stands —
+    nothing else. Not her member number, not her user id, not the grade.
+
+    A revoked certificate answers `valid: false` rather than 404, because the
+    person asking is holding a piece of paper that says otherwise and needs
+    to be told so. A number that was never issued is a 404.
+    """
+    code = code.strip().upper()
+
+    async def produce() -> dict:
+        doc = await get_database()[CertificateModel.collection_name].find_one(
+            {"code": code}, sort=[("issued_at", -1)]
+        )
+        if not doc:
+            raise HTTPException(status.HTTP_404_NOT_FOUND, "No certificate carries that number")
+        row = CertificateModel.to_response(doc)
+        full = (row["holder_name"] or "").strip()
+        return {
+            "code": row["code"],
+            "holder_first": full.split(" ")[0] if full else "",
+            "programme": row["program_name"],
+            "issued_on": row["issued_on"],
+            "valid": not row["revoked"],
+        }
+
+    # Short, and forgotten by admin_learning.py the moment a revoke lands, so
+    # a withdrawn certificate never verifies for a minute after it shouldn't.
+    return await cache.cached(f"public:cert:{code}", 60.0, produce)

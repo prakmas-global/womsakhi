@@ -17,14 +17,15 @@ import asyncio
 from datetime import datetime, timedelta, timezone
 from typing import Optional
 
-from fastapi import APIRouter, Depends, HTTPException, Query, status
+from fastapi import APIRouter, Depends, HTTPException, Query, Request, status
 from pymongo import ReturnDocument
 from pymongo.errors import DuplicateKeyError
 
 from app.core.rbac import require_active_member
 from app.core.serializers import to_object_id
 from app.db.mongodb import get_database
-from app.models.shop import ListingModel, ReviewModel, ShopOrderModel
+from app.core.audit import record
+from app.models.shop import ListingModel, ReviewModel, ShopOperationModel, ShopOrderModel
 from app.schemas.shop import (
     ListingCreate,
     ListingResponse,
@@ -32,6 +33,9 @@ from app.schemas.shop import (
     ReplyRequest,
     ReviewResponse,
     ShopSummary,
+    ShopOperationCreate,
+    ShopOperationResponse,
+    ShopOperationUpdate,
 )
 
 router = APIRouter(prefix="/shop", tags=["Member · Work"])
@@ -49,8 +53,28 @@ def _reviews():
     return get_database()[ReviewModel.collection_name]
 
 
+def _operations():
+    return get_database()[ShopOperationModel.collection_name]
+
+
 def _users():
     return get_database()["users"]
+
+
+#: Rows a moderator has hidden stay on disk and out of her lists. See
+#: admin_market.py — hiding never deletes, so the record outlives the decision.
+NOT_HIDDEN = {"hidden": {"$ne": True}}
+
+
+def _refuse_if_suspended(me: dict) -> None:
+    """A seller staff have suspended can neither list nor re-publish."""
+    if me.get("seller_suspended"):
+        reason = (me.get("seller_suspension") or {}).get("reason", "")
+        raise HTTPException(
+            status.HTTP_403_FORBIDDEN,
+            "Your shop is suspended, so nothing can be listed just now."
+            + (f" Reason: {reason}" if reason else ""),
+        )
 
 
 #: Everything a handle may contain. Lowercase, digits and single hyphens — the
@@ -134,7 +158,7 @@ async def summary(me: dict = Depends(require_active_member)):
             {"state": 1, "total_minor": 1, "created_at": 1, "buyer_name": 1},
         ).to_list(2000),
         _reviews().find({"seller_id": uid}, {"stars": 1}).to_list(500),
-        _listings().count_documents({"user_id": uid}),
+        _listings().count_documents({"user_id": uid, **NOT_HIDDEN}),
     )
 
     def paid(o: dict) -> bool:
@@ -188,7 +212,7 @@ async def list_listings(
     kind: Optional[str] = Query(None, description="product | service"),
     me: dict = Depends(require_active_member),
 ):
-    query: dict = {"user_id": str(me["_id"])}
+    query: dict = {"user_id": str(me["_id"]), **NOT_HIDDEN}
     if kind:
         query["kind"] = kind
     docs = await _listings().find(query).sort("updated_at", -1).to_list(300)
@@ -217,6 +241,7 @@ async def list_listings(
     summary="List something new",
 )
 async def create_listing(body: ListingCreate, me: dict = Depends(require_active_member)):
+    _refuse_if_suspended(me)
     doc = ListingModel.create_document(
         user_id=str(me["_id"]), member_id=me.get("member_id", ""), **body.model_dump(),
     )
@@ -232,7 +257,7 @@ async def update_listing(
     # Scoped by user_id as well as _id: a listing id in a URL must never be
     # enough to edit somebody else's shop.
     updated = await _listings().find_one_and_update(
-        {"_id": to_object_id(listing_id), "user_id": str(me["_id"])},
+        {"_id": to_object_id(listing_id), "user_id": str(me["_id"]), **NOT_HIDDEN},
         {"$set": {**body.model_dump(exclude_unset=True), "updated_at": datetime.now(timezone.utc)}},
     )
     if not updated:
@@ -255,10 +280,12 @@ async def pause_listing(
     away for a wedding, had only one lever — destroy the listing and rebuild it
     later, losing its reviews with it.
     """
+    if not paused:
+        _refuse_if_suspended(me)
     updated = await _listings().find_one_and_update(
         # Scoped by user_id as well as _id: a listing id in a URL must never be
         # enough to change somebody else's shop.
-        {"_id": to_object_id(listing_id), "user_id": str(me["_id"])},
+        {"_id": to_object_id(listing_id), "user_id": str(me["_id"]), **NOT_HIDDEN},
         {"$set": {"status": ListingModel.STATUS_PAUSED if paused else ListingModel.STATUS_LIVE,
                   "updated_at": datetime.now(timezone.utc)}},
         return_document=ReturnDocument.AFTER,
@@ -271,6 +298,78 @@ async def pause_listing(
 @router.delete("/listings/{listing_id}", status_code=status.HTTP_204_NO_CONTENT, summary="Take it down")
 async def delete_listing(listing_id: str, me: dict = Depends(require_active_member)):
     await _listings().delete_one({"_id": to_object_id(listing_id), "user_id": str(me["_id"])})
+    return None
+
+
+@router.get("/operations", response_model=list[ShopOperationResponse], summary="My selling workflows")
+async def list_operations(
+    kind: Optional[str] = Query(None),
+    include_archived: bool = Query(False),
+    me: dict = Depends(require_active_member),
+):
+    if kind and kind not in ShopOperationModel.KINDS:
+        raise HTTPException(status.HTTP_422_UNPROCESSABLE_ENTITY, "Unknown shop workflow")
+    query: dict = {"user_id": str(me["_id"])}
+    if kind:
+        query["kind"] = kind
+    if not include_archived:
+        query["archived"] = {"$ne": True}
+    docs = await _operations().find(query).sort("updated_at", -1).to_list(300)
+    return [ShopOperationResponse(**ShopOperationModel.to_response(d)) for d in docs]
+
+
+@router.post("/operations", response_model=ShopOperationResponse, status_code=status.HTTP_201_CREATED)
+async def create_operation(
+    body: ShopOperationCreate,
+    request: Request,
+    me: dict = Depends(require_active_member),
+):
+    data = body.model_dump()
+    if len(data["details"]) > 20 or any(len(str(k)) > 60 or len(str(v)) > 500 for k, v in data["details"].items()):
+        raise HTTPException(status.HTTP_422_UNPROCESSABLE_ENTITY, "Workflow details are too large")
+    doc = ShopOperationModel.create_document(user_id=str(me["_id"]), **data)
+    result = await _operations().insert_one(doc)
+    doc["_id"] = result.inserted_id
+    await record(me, "shop.operation.create", target=str(result.inserted_id), detail=body.kind, request=request)
+    return ShopOperationResponse(**ShopOperationModel.to_response(doc))
+
+
+@router.patch("/operations/{operation_id}", response_model=ShopOperationResponse)
+async def update_operation(
+    operation_id: str,
+    body: ShopOperationUpdate,
+    request: Request,
+    me: dict = Depends(require_active_member),
+):
+    changes = body.model_dump(exclude_unset=True)
+    details = changes.get("details")
+    if details is not None and (len(details) > 20 or any(len(str(k)) > 60 or len(str(v)) > 500 for k, v in details.items())):
+        raise HTTPException(status.HTTP_422_UNPROCESSABLE_ENTITY, "Workflow details are too large")
+    changes["updated_at"] = datetime.now(timezone.utc)
+    updated = await _operations().find_one_and_update(
+        {"_id": to_object_id(operation_id), "user_id": str(me["_id"]), "archived": {"$ne": True}},
+        {"$set": changes},
+        return_document=ReturnDocument.AFTER,
+    )
+    if not updated:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "That workflow is not yours, or is gone")
+    await record(me, "shop.operation.update", target=operation_id, detail=updated.get("kind", ""), request=request)
+    return ShopOperationResponse(**ShopOperationModel.to_response(updated))
+
+
+@router.delete("/operations/{operation_id}", status_code=status.HTTP_204_NO_CONTENT)
+async def archive_operation(
+    operation_id: str,
+    request: Request,
+    me: dict = Depends(require_active_member),
+):
+    updated = await _operations().find_one_and_update(
+        {"_id": to_object_id(operation_id), "user_id": str(me["_id"]), "archived": {"$ne": True}},
+        {"$set": {"archived": True, "updated_at": datetime.now(timezone.utc)}},
+    )
+    if not updated:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "That workflow is not yours, or is gone")
+    await record(me, "shop.operation.archive", target=operation_id, detail=updated.get("kind", ""), request=request)
     return None
 
 
@@ -338,14 +437,14 @@ async def cancel_order(order_id: str, me: dict = Depends(require_active_member))
 
 @router.get("/reviews", response_model=list[ReviewResponse], summary="What buyers said")
 async def list_reviews(me: dict = Depends(require_active_member)):
-    docs = await _reviews().find({"seller_id": str(me["_id"])}).sort("created_at", -1).to_list(200)
+    docs = await _reviews().find({"seller_id": str(me["_id"]), **NOT_HIDDEN}).sort("created_at", -1).to_list(200)
     return [ReviewResponse(**ReviewModel.to_response(d)) for d in docs]
 
 
 @router.post("/reviews/{review_id}/reply", response_model=ReviewResponse, summary="Reply to a review")
 async def reply(review_id: str, body: ReplyRequest, me: dict = Depends(require_active_member)):
     updated = await _reviews().find_one_and_update(
-        {"_id": to_object_id(review_id), "seller_id": str(me["_id"])},
+        {"_id": to_object_id(review_id), "seller_id": str(me["_id"]), **NOT_HIDDEN},
         {"$set": {"reply": body.reply}},
     )
     if not updated:

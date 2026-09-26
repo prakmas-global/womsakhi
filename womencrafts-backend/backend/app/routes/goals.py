@@ -51,6 +51,14 @@ class GoalPatch(BaseModel):
     current: int = Field(ge=0)
 
 
+class GoalDetailsPatch(BaseModel):
+    label: str = Field(min_length=1, max_length=120)
+    target: int = Field(ge=0)
+    by: str = Field(default="", max_length=40)
+    unit: str = Field(default="", max_length=24)
+    note: str = Field(default="", max_length=500)
+
+
 def _col():
     return get_database()[GoalModel.collection_name]
 
@@ -152,6 +160,24 @@ async def move_goal(goal_id: str, body: GoalPatch, me: dict = Depends(require_ac
         "status": GoalModel.STATUS_REACHED if target and current >= target else GoalModel.STATUS_OPEN,
         "updated_at": datetime.now(timezone.utc),
     }})
+    return await _all(uid)
+
+
+@router.patch("/{goal_id}/details", summary="Edit a goal's details")
+async def edit_goal_details(
+    goal_id: str, body: GoalDetailsPatch, me: dict = Depends(require_active_member),
+):
+    uid = str(me["_id"])
+    res = await _col().update_one(
+        {"_id": _oid(goal_id), "user_id": uid, "status": {"$ne": GoalModel.STATUS_DROPPED}},
+        {"$set": {
+            "label": body.label.strip(), "target": body.target, "by": body.by.strip(),
+            "unit": body.unit.strip(), "note": body.note.strip(),
+            "updated_at": datetime.now(timezone.utc),
+        }},
+    )
+    if not res.matched_count:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "No such goal")
     return await _all(uid)
 
 

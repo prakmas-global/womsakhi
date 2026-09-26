@@ -16,6 +16,7 @@ import { GUIDES as RAW_GUIDES, MOODS as RAW_MOODS, PHASE_COPY as RAW_PHASE_COPY,
 import { shortDate, shiftMonth, type useCycle } from "./use-cycle";
 import { useTranslated } from "@/i18n/data";
 import { EngineNudge } from "@/components/ux/reminders/EngineNudge";
+import { CycleDesktopNav } from "./AdvancedDailyLog";
 
 /**
  * The laptop view of the tracker — the owner's second reference, one screen.
@@ -78,9 +79,13 @@ export function CycleDashboard({ cycle }: { cycle: ReturnType<typeof useCycle> &
   const phases = s.phases;
   const legend = [
     { tone: "var(--cy-period)", label: "Period", sub: `${st.avg_period} days` },
-    { tone: "var(--cy-fertile-ink)", label: tr("wellness.fertileWindow"), sub: `Day ${phases[2].from - 4}–${phases[2].from + 1}` },
-    { tone: "var(--cy-ovulation)", label: "Ovulation", sub: `Day ${phases[2].from + 1}` },
-    { tone: "var(--cy-mood-happy)", label: tr("dashboard.lutealPhase"), sub: `Day ${phases[3].from}–${phases[3].to}` },
+    ...(s.profile.predictions.fertility ? [
+      { tone: "var(--cy-fertile-ink)", label: tr("wellness.fertileWindow"), sub: `Day ${phases[2].from - 4}–${phases[2].from + 1}` },
+      { tone: "var(--cy-ovulation)", label: "Ovulation", sub: `Day ${phases[2].from + 1}` },
+    ] : []),
+    ...(s.profile.predictions.phase ? [
+      { tone: "var(--cy-mood-happy)", label: tr("dashboard.lutealPhase"), sub: `Day ${phases[3].from}–${phases[3].to}` },
+    ] : []),
   ];
   const plan = carePlan(planPhase);
   const order: Phase[] = ["menstrual", "follicular", "ovulation", "luteal"];
@@ -96,7 +101,9 @@ export function CycleDashboard({ cycle }: { cycle: ReturnType<typeof useCycle> &
   };
 
   return (
-    <div className="cy-dash">
+    <>
+      <CycleDesktopNav active="Overview" />
+      <div className="cy-dash">
       {/*
         Her own check-in, pointed at from the module that already asks about
         her body. It links rather than duplicating the question: one place
@@ -121,7 +128,7 @@ export function CycleDashboard({ cycle }: { cycle: ReturnType<typeof useCycle> &
             <p className="mt-3 text-[15px] leading-relaxed" style={{ color: "var(--ux-ink-2)" }}>
               {tr("dashboard.trackLearnGetPersonalisedInsights")}<br />{tr("dashboard.becauseAHealthierYouCreatesA")}
             </p>
-            <Link href="/app/health/cycle/log"
+            <Link href="/app/health/cycle/daily"
                   className="ux-press mt-5 inline-flex h-[48px] items-center gap-2 rounded-[14px] px-6 text-[15px] font-semibold"
                   style={{ background: "linear-gradient(90deg, var(--cy-period), var(--ux-fill))", color: "var(--ux-on-brand)", boxShadow: "0 10px 22px -12px var(--cy-period)" }}>
               Log Today&apos;s Update <Icons.ArrowRight className="h-4 w-4" aria-hidden />
@@ -179,7 +186,7 @@ export function CycleDashboard({ cycle }: { cycle: ReturnType<typeof useCycle> &
               <span className="block text-[13px]" style={{ color: "var(--ux-muted)" }}>
                 {st.on_period ? `Period day ${st.period_day}` : st.days_until != null && st.days_until >= 0 ? `Next period in ${st.days_until} days` : st.days_until != null ? `${-st.days_until} days late` : ""}
               </span>
-              <Link href="/app/health/cycle/log" className="ux-press mt-3 inline-flex h-[40px] items-center rounded-[12px] px-4 text-[15px] font-semibold"
+              <Link href="/app/health/cycle/daily" className="ux-press mt-3 inline-flex h-[40px] items-center rounded-[12px] px-4 text-[15px] font-semibold"
                     style={{ background: "linear-gradient(90deg, var(--cy-period), var(--ux-fill))", color: "var(--ux-on-brand)" }}>
                 {tr("dashboard.logToday")}
               </Link>
@@ -332,7 +339,7 @@ export function CycleDashboard({ cycle }: { cycle: ReturnType<typeof useCycle> &
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img src="/ux/art/scene-two-women-support.webp" alt="" aria-hidden className="pointer-events-none absolute -bottom-2 end-0 h-[200px] w-auto object-contain" />
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src="/womsakhi-wordmark.png" alt="" aria-hidden className="absolute bottom-4 start-5 z-[1] h-[22px] w-auto opacity-80" />
+          <img src="/womsakhi-wordmark.webp" alt="" aria-hidden className="absolute bottom-4 start-5 z-[1] h-[22px] w-auto opacity-80" />
         </section>
       </A>
 
@@ -395,7 +402,8 @@ export function CycleDashboard({ cycle }: { cycle: ReturnType<typeof useCycle> &
           </ul>
         </Card>
       </A>
-    </div>
+      </div>
+    </>
   );
 }
 

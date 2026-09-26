@@ -1,128 +1,142 @@
+"""Shapes for the staff inbox (routes/messages.py)."""
+
 from typing import Literal, Optional
 
-from pydantic import AliasChoices, BaseModel, Field, field_validator, model_validator
+from pydantic import BaseModel, Field, field_validator
 
-# Enums (Literal so Swagger renders proper dropdowns) ---------------------------
-Direction = Literal["in", "out"]
-FilterKind = Literal["all", "unread", "starred", "attachments"]
-FlagAction = Literal["star", "unstar", "toggle_star", "mark_unread", "archive", "read"]
-BroadcastAudience = Literal["All users", "Active users", "Workshop enrollees", "Starred contacts"]
-StatsRange = Literal["This Week", "This Month", "This Quarter", "This Year"]
+ThreadFilter = Literal["all", "awaiting", "unread", "mine", "unassigned", "resolved"]
+ThreadStatus = Literal["open", "resolved"]
 
 
-class MessageFile(BaseModel):
-    name: str
-    size: str
-
-
-class MessageBubble(BaseModel):
-    dir: str
-    text: Optional[str] = None
-    file: Optional[MessageFile] = None
-    time: str
-
-
-class ConversationResponse(BaseModel):
+class Assignee(BaseModel):
     id: str
     name: str
-    preview: str
-    time: str
-    unread: int
-    starred: bool
-    active: bool
-    has_attachment: bool
-    messages: list[MessageBubble]
 
 
-class ConversationListResponse(BaseModel):
-    items: list[ConversationResponse]
+class ThreadMessage(BaseModel):
+    id: str
+    sender: str            # "member" | "team"
+    sender_name: str
+    body: str
+    sent_at: str           # ISO 8601
+    sent_label: str
+    # Whether the *other* side has read it. Stored flags, not a guess.
+    read_by_member: bool
+    read_by_team: bool
+
+
+class ThreadRow(BaseModel):
+    user_id: str
+    full_name: str
+    email: str
+    avatar: str
+    message_count: int
+    unread: int                       # her messages the team has not read
+    last_message: str
+    last_sender: str                  # "member" | "team" | ""
+    last_at: Optional[str] = None     # ISO
+    last_label: str = ""
+    # When the oldest still-unanswered message from her arrived. None when the
+    # last word was the team's.
+    waiting_since: Optional[str] = None
+    status: ThreadStatus = "open"
+    reopened: bool = False            # she wrote again after it was resolved
+    resolved_at: Optional[str] = None
+    resolved_by_name: str = ""
+    assigned_to: Optional[Assignee] = None
+
+
+class ThreadCounts(BaseModel):
+    all: int
+    awaiting: int
+    unread: int          # threads with at least one unread message
+    mine: int
+    unassigned: int
+    resolved: int
+
+
+class ThreadListResponse(BaseModel):
+    items: list[ThreadRow]
     total: int
     page: int
     page_size: int
     pages: int
+    counts: ThreadCounts
 
 
-class ConversationCreate(BaseModel):
-    # The New Message modal posts a recipient name; accept either key.
-    name: str = Field(..., validation_alias=AliasChoices("name", "recipient"))
-    body: str = ""
-
-    @field_validator("name")
-    @classmethod
-    def name_not_empty(cls, v: str) -> str:
-        v = (v or "").strip()
-        if not v:
-            raise ValueError("Recipient is required")
-        return v
+class MemberCard(BaseModel):
+    """What the panel beside a thread may show. Nothing private: no vault,
+    no in-case-of-emergency data, no documents."""
+    id: str
+    full_name: str
+    email: str
+    avatar: str
+    joined_at: Optional[str] = None
+    verification_status: str = ""
+    is_active: bool = True
 
 
-class MessageCreate(BaseModel):
-    dir: Direction = "out"
-    text: Optional[str] = None
-    file: Optional[MessageFile] = None
-    time: Optional[str] = None
-
-    @model_validator(mode="after")
-    def require_text_or_file(self) -> "MessageCreate":
-        if not (self.text and self.text.strip()) and not self.file:
-            raise ValueError("Provide either 'text' or 'file'")
-        return self
+class ThreadDetail(ThreadRow):
+    member: MemberCard
+    messages: list[ThreadMessage]
+    first_at: Optional[str] = None
+    last_team_at: Optional[str] = None
+    last_member_at: Optional[str] = None
+    assigned_at: Optional[str] = None
 
 
-class ConversationFlagUpdate(BaseModel):
-    # High-level action (matches the chat menu) …
-    action: Optional[FlagAction] = None
-    # … or direct flag overrides.
-    starred: Optional[bool] = None
-    unread: Optional[int] = None
-    active: Optional[bool] = None
-
-
-class BroadcastCreate(BaseModel):
-    recipients: BroadcastAudience = "All users"
+class ReplyRequest(BaseModel):
     body: str
 
     @field_validator("body")
     @classmethod
-    def body_not_empty(cls, v: str) -> str:
+    def not_empty(cls, v: str) -> str:
         v = (v or "").strip()
         if not v:
-            raise ValueError("Broadcast message cannot be empty")
-        return v
+            raise ValueError("Write something first")
+        return v[:2000]
 
 
-class OverviewSlice(BaseModel):
-    name: str
-    value: int
-    pct: str
-    color: str
+class StartThreadRequest(ReplyRequest):
+    user_id: str = Field(min_length=1)
 
 
-class TopContact(BaseModel):
-    name: str
-    count: int
-    badge: int
+class AssignRequest(BaseModel):
+    # Empty / null clears the assignment.
+    staff_id: Optional[str] = None
 
 
-class MessageStatsResponse(BaseModel):
-    total_conversations: int
-    messages_sent: int
-    messages_received: int
-    avg_response_time: str
-    resolved_conversations: int
-    overview_total: int
-    overview: list[OverviewSlice]
-    top_contacts: list[TopContact]
-    range: str = "This Month"
+class MemberHit(BaseModel):
+    id: str
+    full_name: str
+    email: str
+    avatar: str
+    has_thread: bool
 
 
-class SimpleListResponse(BaseModel):
-    """Plain string list used for contacts, templates and automations."""
+class StaffOption(BaseModel):
+    id: str
+    full_name: str
+    role: str
 
-    items: list[str]
+
+class MessageStats(BaseModel):
+    threads: int
+    open: int
+    resolved: int
+    awaiting_reply: int
+    unread_messages: int
+    sent_by_team: int
+    received_from_members: int
+    received_this_week: int
+    sent_this_week: int
+    # Median minutes from a member's message to the team's next reply, over
+    # every measured pair. None until at least one reply has been sent.
+    median_first_reply_minutes: Optional[int] = None
+    replies_measured: int = 0
+    # Share of measured replies that came within 24 hours. None when unmeasured.
+    replied_within_24h_pct: Optional[int] = None
 
 
-class BroadcastResult(BaseModel):
+class SimpleMessage(BaseModel):
     message: str
-    recipients: str
-    sent: int

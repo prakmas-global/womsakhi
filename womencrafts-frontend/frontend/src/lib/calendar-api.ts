@@ -83,3 +83,38 @@ export async function apiUpdateCalendarEvent(
 export async function apiDeleteCalendarEvent(id: number): Promise<void> {
   await apiClient.delete(`/calendar/events/${id}`);
 }
+
+// --- The merged agenda: bookings, events, programmes and staff entries ---------------
+export type AgendaSource = "booking" | "event" | "programme" | "staff";
+
+export interface AgendaItem {
+  key: string;        // "<source>:<id>"
+  source: AgendaSource;
+  title: string;
+  date: string;       // YYYY-MM-DD
+  time: string;       // as stored, may be empty
+  subtitle: string;   // who / where / which service
+  status: string;
+  href: string;       // the admin screen that owns it ("" for staff entries)
+  category: string;
+  color: string;
+}
+
+export interface AgendaResponse {
+  start: string;
+  end: string;
+  items: AgendaItem[];
+  counts: Partial<Record<AgendaSource, number>>;
+}
+
+export async function apiCalendarAgenda(start: string, end: string, sources?: AgendaSource[]): Promise<AgendaResponse> {
+  const { data } = await apiClient.get<AgendaResponse>("/calendar/agenda", {
+    params: { start, end, ...(sources ? { sources: sources.join(",") } : {}) },
+  });
+  return data;
+}
+
+export async function apiCalendarUpcoming(days = 30, limit = 8): Promise<AgendaResponse> {
+  const { data } = await apiClient.get<AgendaResponse>("/calendar/upcoming", { params: { days, limit } });
+  return data;
+}

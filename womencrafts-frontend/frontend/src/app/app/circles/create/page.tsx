@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import { useT } from "@/i18n";
 import { useRouter } from "next/navigation";
 
@@ -13,9 +13,11 @@ import { apiUploadImage } from "@/lib/uploads-api";
 import { settled, useAttemptKey } from "@/lib/idempotency";
 import { PRIVACY as RAW_PRIVACY, SUGGESTED_TAGS as RAW_SUGGESTED_TAGS, TOPICS as RAW_TOPICS } from "@/components/ux/circle/data";
 import {
-  Block, CircleTips, CoverPicker, CreateHero, LivePreview, PartlySaved, SafePromise, TagField,
+  Block, CircleTips, CoverPicker, CreateHero, LivePreview, SafePromise, TagField,
 } from "./create-views";
 import { useTranslated } from "@/i18n/data";
+import { useAuth } from "@/context/AuthContext";
+import { useFormDraft } from "@/lib/use-form-draft";
 
 /**
  * Start a circle.
@@ -57,6 +59,7 @@ export default function CreateCirclePage() {
   const TOPICS = useTranslated(RAW_TOPICS);
   const tr = useT();
   const router = useRouter();
+  const { user } = useAuth();
   const attempt = useAttemptKey("create-circle");
 
   const [at, setAt] = useState(1);
@@ -84,6 +87,25 @@ export default function CreateCirclePage() {
 
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  const draft = useMemo(() => ({
+    at, done, name, desc, category, privacy, cover, icon, tags,
+    whoPosts, guidelines, reviewFirst, tellMe, invites,
+  }), [at, done, name, desc, category, privacy, cover, icon, tags,
+    whoPosts, guidelines, reviewFirst, tellMe, invites]);
+  const restoreDraft = useCallback((d: typeof draft) => {
+    setAt(d.at || 1); setDone(d.done || 1); setName(d.name || ""); setDesc(d.desc || "");
+    setCategory(d.category || ""); setPrivacy(d.privacy || "public"); setCover(d.cover || "");
+    setIcon(d.icon || ""); setTags(Array.isArray(d.tags) ? d.tags : []);
+    setWhoPosts(d.whoPosts || "all"); setGuidelines(d.guidelines || "");
+    setReviewFirst(Boolean(d.reviewFirst)); setTellMe(d.tellMe !== false);
+    setInvites(Array.isArray(d.invites) ? d.invites : []);
+  }, []);
+  const { clear: clearDraft } = useFormDraft(
+    `womsakhi.form.circle.${user?.id || "member"}`,
+    draft,
+    restoreDraft,
+  );
 
   const step1Ok = name.trim().length > 2 && desc.trim().length > 9 && Boolean(category);
 
@@ -121,9 +143,19 @@ export default function CreateCirclePage() {
         desc: desc.trim(),
         is_savings: false,
         monthly_minor: 0,
+        is_private: privacy !== "public",
+        cover,
+        icon,
+        tags,
+        guidelines: guidelines.trim(),
+        who_posts: whoPosts as "all" | "hosts",
+        review_first: reviewFirst,
+        tell_me: tellMe,
+        invites,
       }, attempt.current());
       // The server answered: the next press is a new circle, not a retry.
       attempt.settle();
+      clearDraft();
       router.push(made?.id ? `/app/circles/${made.id}` : "/app/circles");
     } catch (e) {
       // Only burn the key if the server actually replied. A dropped
@@ -133,7 +165,7 @@ export default function CreateCirclePage() {
       setError("That did not save. Nothing you typed is lost — try again in a moment.");
       setSaving(false);
     }
-  }, [name, category, desc, attempt, router]);
+  }, [name, category, desc, privacy, cover, icon, tags, guidelines, whoPosts, reviewFirst, tellMe, invites, attempt, router, clearDraft]);
 
   const rail = (
     <div className="space-y-4">
@@ -226,8 +258,6 @@ export default function CreateCirclePage() {
               </div>
             </div>
 
-            <PartlySaved notYet="the cover, the circle picture and the tags" />
-
             <Foot back={<Btn variant="ghost" href="/app/circles">Cancel</Btn>}
                   next={<Btn disabled={!step1Ok} iconEnd="ArrowRight" onClick={() => go(2)}>
                           Next: settings
@@ -263,8 +293,6 @@ export default function CreateCirclePage() {
                       label={tr("circlesCreate.tellMeWhenSomebodyPosts")}
                       sub={tr("circlesCreate.aNotificationNotAnEmail")} />
             </div>
-
-            <PartlySaved notYet="who may post, your one rule, and the two switches above" />
 
             <Foot back={<Btn variant="ghost" icon="ArrowLeft" onClick={() => go(1)}>Back</Btn>}
                   next={<Btn iconEnd="ArrowRight" onClick={() => go(3)}>Next: invite members</Btn>} />
@@ -327,8 +355,6 @@ export default function CreateCirclePage() {
               </span>
             </div>
 
-            <PartlySaved notYet="the invitations — nobody is contacted from this screen" />
-
             <Foot back={<Btn variant="ghost" icon="ArrowLeft" onClick={() => go(2)}>Back</Btn>}
                   next={<Btn iconEnd="ArrowRight" onClick={() => go(4)}>Next: check it over</Btn>} />
           </Block>
@@ -363,8 +389,6 @@ export default function CreateCirclePage() {
                 but you cannot take back what other women have written in it.
               </span>
             </div>
-
-            <PartlySaved notYet="the cover, picture, tags, settings and invitations" />
 
             <Foot back={<Btn variant="ghost" icon="ArrowLeft" onClick={() => go(3)}>Back</Btn>}
                   next={<Btn icon="Sparkles" disabled={!step1Ok || saving} loading={saving} onClick={create}>

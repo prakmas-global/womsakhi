@@ -13,7 +13,8 @@ import {
   ArrowUpRight,
   type LucideIcon,
 } from "lucide-react";
-import { Badge, Card, Menu, MenuItem, Modal, ProgressBar, SelectButton, StatCard, type Tone } from "@/design-system";
+import { Badge, Card, Menu, MenuItem, Modal, ProgressBar, SelectButton, StatCard, useToast, type Tone } from "@/design-system";
+import { memberError } from "@/lib/member-api";
 import AreaTrend from "@/components/charts/AreaTrend";
 import BarTrend from "@/components/charts/BarTrend";
 import DonutChart from "@/components/charts/DonutChart";
@@ -27,6 +28,7 @@ import {
   apiAnalyticsEngagement,
   apiAnalyticsTopPages,
   apiAnalyticsReferrers,
+  apiAnalyticsExport,
   type AnalyticsStatCard,
   type AnalyticsRealtime,
   type TrafficPoint,
@@ -70,6 +72,7 @@ const STAT_SCROLL: Record<string, string> = {
 type AnalyticsData = {
   stats: AnalyticsStatCard[];
   realtime: AnalyticsRealtime;
+  membersTotal: number;
   traffic: TrafficPoint[];
   devices: DeviceSlice[];
   sources: SourceBar[];
@@ -79,6 +82,7 @@ type AnalyticsData = {
 };
 
 export default function AnalyticsPage() {
+  const toast = useToast();
   const [range, setRange] = useState("Last 30 Days");
   const [period, setPeriod] = useState("This Month");
   const [activeStat, setActiveStat] = useState<StatKey | null>(null);
@@ -86,6 +90,8 @@ export default function AnalyticsPage() {
   const [detailPage, setDetailPage] = useState<TopPageRow | null>(null);
   const [data, setData] = useState<AnalyticsData | null>(null);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState("");
+  const [exporting, setExporting] = useState(false);
 
   // Pull every chart/table/KPI dataset from the live backend in parallel. The
   // range/period selectors are passed through so the toggles re-fetch on change.
@@ -104,6 +110,7 @@ export default function AnalyticsPage() {
       setData({
         stats: summary.stats,
         realtime: summary.realtime,
+        membersTotal: summary.members_total,
         traffic,
         devices,
         sources,
@@ -111,8 +118,9 @@ export default function AnalyticsPage() {
         topPages,
         referrers,
       });
-    } catch {
-      /* leave current data; a toast could surface the error */
+      setLoadError("");
+    } catch (err) {
+      setLoadError(memberError(err));
     } finally {
       setLoading(false);
     }
@@ -142,8 +150,6 @@ export default function AnalyticsPage() {
     [data],
   );
 
-  const membersValue = stat("members")?.value ?? "";
-
   const selectStat = (key: StatKey) => {
     setActiveStat(key);
     const target = STAT_SCROLL[key];
@@ -151,29 +157,24 @@ export default function AnalyticsPage() {
     if (el) el.scrollIntoView({ behavior: "smooth", block: "center" });
   };
 
-  const handleExport = () => {
-    if (!data) return;
-    const header = ["Service", "Bookings", "Members", "Cancelled %", "Length"];
-    const rows = data.topPages.map((p) => [
-      p.page,
-      p.views,
-      p.unique,
-      `${p.bounce}%`,
-      p.time,
-    ]);
-    const escape = (v: string) => `"${v.replace(/"/g, '""')}"`;
-    const csv = [header, ...rows]
-      .map((cols) => cols.map(escape).join(","))
-      .join("\n");
-    const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
-    const url = URL.createObjectURL(blob);
-    const anchor = document.createElement("a");
-    anchor.href = url;
-    anchor.download = "analytics-export.csv";
-    document.body.appendChild(anchor);
-    anchor.click();
-    document.body.removeChild(anchor);
-    URL.revokeObjectURL(url);
+  const handleExport = async () => {
+    setExporting(true);
+    try {
+      const blob = await apiAnalyticsExport(range, period);
+      const url = URL.createObjectURL(blob);
+      const anchor = document.createElement("a");
+      anchor.href = url;
+      anchor.download = "analytics.csv";
+      document.body.appendChild(anchor);
+      anchor.click();
+      document.body.removeChild(anchor);
+      URL.revokeObjectURL(url);
+      toast.success("Analytics exported", { description: `${range}; trends for ${period.toLowerCase()}.` });
+    } catch (err) {
+      toast.error("Could not export", { description: memberError(err) });
+    } finally {
+      setExporting(false);
+    }
   };
 
   const statRing = (key: StatKey) =>
@@ -199,15 +200,20 @@ export default function AnalyticsPage() {
               </MenuItem>
             ))}
           </Menu>
-          <button className="btn btn-sm btn-outline" onClick={handleExport}>
-            <Download className="h-4 w-4" /> Export
+          <button className="btn btn-sm btn-outline" onClick={() => void handleExport()} disabled={exporting || !data}>
+            <Download className="h-4 w-4" /> {exporting ? "Exporting…" : "Export CSV"}
           </button>
         </div>
       </div>
 
       {!data ? (
-        <div className="flex items-center justify-center py-24 text-sm text-ink-subtle">
-          {loading ? "Loading analytics…" : "Unable to load analytics."}
+        <div className="flex flex-col items-center justify-center gap-3 py-24 text-sm text-ink-subtle">
+          {loading ? "Loading analytics…" : (
+            <>
+              <span>Could not load analytics{loadError ? `: ${loadError}` : "."}</span>
+              <button className="btn btn-sm btn-outline" onClick={() => { setLoading(true); void refresh(); }}>Try again</button>
+            </>
+          )}
         </div>
       ) : (
         <>
@@ -230,8 +236,9 @@ export default function AnalyticsPage() {
                     value={card.value}
                     icon={Icon}
                     tone={card.tone as Tone}
-                    delta={card.delta}
+                    delta={card.delta ?? undefined}
                     deltaDir={card.delta_dir}
+                    deltaNote="vs previous period"
                   />
                 </button>
               );
@@ -258,9 +265,10 @@ export default function AnalyticsPage() {
             </Card>
 
             <Card>
-              <h2 className="mb-4 font-display text-base font-semibold text-ink">Members by Segment</h2>
+              <h2 className="mb-1 font-display text-base font-semibold text-ink">Members by Segment</h2>
+              <p className="mb-4 text-xs text-ink-subtle">Everyone in the directory, not only this period.</p>
               <div className="flex justify-center">
-                <DonutChart data={data.devices} centerValue={membersValue} centerLabel="New" size={180} thickness={22} />
+                <DonutChart data={data.devices} centerValue={data.membersTotal.toLocaleString("en-IN")} centerLabel="Members" size={180} thickness={22} />
               </div>
               <ul className="mt-5 space-y-2.5">
                 {data.devices.map((d) => (
@@ -317,6 +325,9 @@ export default function AnalyticsPage() {
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-line">
+                    {data.topPages.length === 0 && (
+                      <tr><td colSpan={5} className="px-2 py-6 text-center text-xs text-ink-subtle">No bookings in this period.</td></tr>
+                    )}
                     {data.topPages.map((p) => (
                       <tr
                         key={p.page}
@@ -340,6 +351,7 @@ export default function AnalyticsPage() {
             <div className="space-y-6">
               <Card>
                 <h2 className="mb-4 font-display text-base font-semibold text-ink">How Members Found Us</h2>
+                {data.referrers.length === 0 && <p className="text-xs text-ink-subtle">No members yet.</p>}
                 <ul className="space-y-4">
                   {data.referrers.map((r) => (
                     <li key={r.name}>
@@ -400,7 +412,7 @@ export default function AnalyticsPage() {
         open={detailPage !== null}
         onClose={() => setDetailPage(null)}
         title={detailPage?.page ?? ""}
-        description="Page performance details"
+        description={`Bookings in the selected period (${range.toLowerCase()})`}
         icon={Globe}
         iconTone="violet"
         footer={
@@ -412,21 +424,21 @@ export default function AnalyticsPage() {
         {detailPage && (
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <p className="text-xs font-medium text-ink-subtle">Views</p>
+              <p className="text-xs font-medium text-ink-subtle">Bookings</p>
               <p className="mt-1 font-display text-lg font-bold text-ink">{detailPage.views}</p>
             </div>
             <div>
-              <p className="text-xs font-medium text-ink-subtle">Unique</p>
+              <p className="text-xs font-medium text-ink-subtle">Members who booked</p>
               <p className="mt-1 font-display text-lg font-bold text-ink">{detailPage.unique}</p>
             </div>
             <div>
-              <p className="text-xs font-medium text-ink-subtle">Bounce</p>
+              <p className="text-xs font-medium text-ink-subtle">Cancelled</p>
               <p className="mt-1">
                 <Badge tone={detailPage.tone}>{detailPage.bounce}%</Badge>
               </p>
             </div>
             <div>
-              <p className="text-xs font-medium text-ink-subtle">Avg. Time</p>
+              <p className="text-xs font-medium text-ink-subtle">Session length</p>
               <p className="mt-1 font-display text-lg font-bold text-ink">{detailPage.time}</p>
             </div>
           </div>

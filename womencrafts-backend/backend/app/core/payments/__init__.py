@@ -35,8 +35,11 @@ except ImportError:  # pragma: no cover
 
 
 def get_provider() -> PaymentProvider:
-    """The configured gateway, falling back to sandbox rather than crashing."""
-    cls = _PROVIDERS.get(settings.PAYMENT_PROVIDER.lower(), SandboxProvider)
+    """Return the configured gateway; an unknown name is a deployment error."""
+    name = settings.PAYMENT_PROVIDER.lower()
+    cls = _PROVIDERS.get(name)
+    if cls is None:
+        raise PaymentConfigError(f"Payment provider '{name}' is not installed")
     return cls()
 
 

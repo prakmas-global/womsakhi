@@ -105,7 +105,7 @@ export default function HealthPage() {
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img loading="lazy" decoding="async" src={WELLBEING_ART.health} alt=""
                  className="ux-float pointer-events-none absolute -bottom-3 -end-4 h-[100px] w-[100px] object-contain" />
-            <h3 className="relative w-[60%] text-sm font-semibold" style={{ color: "var(--ux-ink)" }}>{tr("health.tenMinutesADay")}</h3>
+            <h2 className="relative w-[60%] text-sm font-semibold" style={{ color: "var(--ux-ink)" }}>{tr("health.tenMinutesADay")}</h2>
             <p className="relative mt-2 w-[60%] text-xs leading-relaxed" style={{ color: "var(--ux-muted)" }}>{tr("health.sittingBentOverCloseWorkFor")}</p>
           </div>
         </div>
@@ -178,9 +178,9 @@ export default function HealthPage() {
                     <IconTile icon={c.icon} tint={c.tint} ink={c.ink} size={46} radius={12} />
                     <div className="min-w-0 flex-1">
                       <div className="flex items-start gap-2">
-                        <h3 className="min-w-0 flex-1 text-sm font-semibold" style={{ color: "var(--ux-ink)" }}>
+                        <h2 className="min-w-0 flex-1 text-sm font-semibold" style={{ color: "var(--ux-ink)" }}>
                           {c.label}
-                        </h3>
+                        </h2>
                         {/* Free is the headline, because cost is the barrier. */}
                         {c.free && <Pill tone="green" size="sm">Free</Pill>}
                         {overdue && <Pill tone="orange" size="sm">Overdue</Pill>}
@@ -240,7 +240,7 @@ export default function HealthPage() {
                 <IconTile icon={t.icon ?? "BookOpen"} tint={TOPIC_TINTS[i % TOPIC_TINTS.length][0]}
                           ink={TOPIC_TINTS[i % TOPIC_TINTS.length][1]} size={44} radius={12} />
                 <div className="min-w-0 flex-1">
-                  <h3 className="text-sm font-semibold leading-snug" style={{ color: "var(--ux-ink)" }}>{t.label}</h3>
+                  <h2 className="text-sm font-semibold leading-snug" style={{ color: "var(--ux-ink)" }}>{t.label}</h2>
                   <p className="mt-1.5 text-xsm leading-relaxed" style={{ color: "var(--ux-muted)" }}>{t.note}</p>
                   {/* Only when the entry actually says. "undefined min read"
                       is the kind of thing that ships. */}

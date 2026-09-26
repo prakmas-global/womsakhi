@@ -180,7 +180,7 @@ export default function MorePage() {
         <ListGroup footnote={tr("settings.youWillNeedYourPasswordTo")}>
           {/* `signOut()`, not `void signOut()` — see the desktop button below. */}
           <ListRow title={tr("settings.signOut")} icon="LogOut" destructive chevron={false}
-                   onClick={() => { void signOut(); }} />
+                   onClick={() => signOut()} />
         </ListGroup>
 
         <div className="px-4 pb-2 text-[12px]" style={{ color: "var(--ux-muted)" }}>

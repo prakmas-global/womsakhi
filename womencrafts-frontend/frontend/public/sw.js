@@ -36,7 +36,14 @@
        back to the foreground, which is the only moment an installed PWA has.
 */
 
-const VERSION = "v1";
+/* v3 (2026-09-26): scripts are network-first and launch artwork uses the
+   compressed WebP assets. v1 served `/_next/static/`
+   cache-first, which is right for a production build (hashed, immutable) and
+   wrong for `next dev` on the same origin, whose chunk paths do not change
+   between builds — so a worker left behind by one production run kept every
+   later edit invisible. Bumping the version retires every v1 worker and its
+   caches on the next navigation. */
+const VERSION = "v3";
 const SHELL = `womsakhi-shell-${VERSION}`;
 const ART = `womsakhi-art-${VERSION}`;
 const KEEP = [SHELL, ART];
@@ -52,12 +59,7 @@ const LIMITS = { [SHELL]: 220, [ART]: 140 };
 const SHELL_PREFIXES = ["/_next/static/"];
 const ART_PREFIXES = ["/icons/", "/ux/"];
 const ART_FILES = [
-  "/brand-mark.png",
-  "/womsakhi-mark.png",
-  "/womsakhi-wordmark.png",
-  "/womsakhi-symbol.png",
-  "/womsakhi-lockup.png",
-  "/womsakhi-lotus.png",
+  "/womsakhi-wordmark.webp",
   "/icon.png",
   "/apple-icon.png",
   "/favicon.ico",
@@ -138,6 +140,9 @@ const offlineResponse = () =>
   });
 
 self.addEventListener("install", () => {
+  // A newer worker should not wait behind an older one: the older one is
+  // exactly what a fix is trying to replace.
+  self.skipWaiting();
   /* Nothing is pre-fetched. A precache list would be a second copy of the
      build's asset names, wrong the moment a chunk hash changes, and would make
      installing fail on the connections this is meant to help. Everything is
@@ -263,8 +268,27 @@ self.addEventListener("fetch", (event) => {
   const bucket = bucketFor(url);
   if (!bucket) return; // Not ours: the browser fetches it exactly as it would without us.
 
-  event.respondWith(cacheFirst(bucket, request));
+  // Scripts and styles: the network is the truth and the cache is for being
+  // offline. Art (icons, brand marks) never changes under the same path, so it
+  // is served from the cache first.
+  event.respondWith(bucket === SHELL ? networkFirst(bucket, request) : cacheFirst(bucket, request));
 });
+
+/**
+ * Fetch from the network; keep a copy for when there is none; fall back to
+ * that copy only when the network fails.
+ */
+async function networkFirst(bucket, request) {
+  try {
+    const res = await fetch(request);
+    if (storable(res)) put(bucket, request, res.clone());
+    return res;
+  } catch {
+    const cached = await caches.match(request, { cacheName: bucket });
+    if (cached) return cached;
+    return new Response("", { status: 504, statusText: "Offline" });
+  }
+}
 
 /* ── web push ─────────────────────────────────────────────────────────────
    A reminder arriving while the app is closed.

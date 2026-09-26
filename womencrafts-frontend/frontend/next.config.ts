@@ -58,6 +58,24 @@ const nextConfig: NextConfig = {
     return [{ source: "/api/v1/:path*", destination: `${api}/:path*` }];
   },
 
+  /** Reuse static artwork while always checking immediately for a new worker. */
+  async headers() {
+    return [
+      {
+        source: "/sw.js",
+        headers: [{ key: "Cache-Control", value: "no-cache, no-store, must-revalidate" }],
+      },
+      {
+        source: "/ux/:path*",
+        headers: [{ key: "Cache-Control", value: "public, max-age=86400, stale-while-revalidate=604800" }],
+      },
+      {
+        source: "/:file*.webp",
+        headers: [{ key: "Cache-Control", value: "public, max-age=86400, stale-while-revalidate=604800" }],
+      },
+    ];
+  },
+
   /**
    * Drop `X-Powered-By: Next.js` from every response.
    *

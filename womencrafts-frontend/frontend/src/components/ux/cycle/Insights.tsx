@@ -21,7 +21,7 @@ export function Glance({ s, art = true }: { s: CycleState; art?: boolean }) {
   ];
   return (
     <section className="relative overflow-hidden rounded-[20px] p-4" style={{ background: heroBg, border: "1px solid var(--ux-line)" }}>
-      <h3 className="relative z-[1] text-[17px] font-semibold" style={{ color: "var(--ux-ink)" }}>{tr("insights.yourCycleAtAGlance")}</h3>
+      <h2 className="relative z-[1] text-[17px] font-semibold" style={{ color: "var(--ux-ink)" }}>{tr("insights.yourCycleAtAGlance")}</h2>
       <ul className="relative z-[1] mt-3 space-y-3">
         {rows.map((r) => (
           <li key={r.small} className="flex items-center gap-3">
@@ -52,10 +52,17 @@ export function Phases({ s }: { s: CycleState }) {
   const st = s.status;
   const phase = st.phase ?? "follicular";
   const copy = PHASE_COPY[phase];
+  if (!s.profile.predictions.phase) return (
+    <Panel>
+      <h2 className="text-[17px] font-semibold" style={{ color: "var(--ux-ink)" }}>Phase guidance is off</h2>
+      <p className="mt-1 text-[14px]" style={{ color: "var(--ux-muted)" }}>You can turn phase estimates back on from Cycle settings.</p>
+      <Link href="/app/health/cycle/settings" className="mt-3 inline-flex min-h-10 items-center text-[13px] font-semibold" style={{ color: "var(--cy-period-ink)" }}>Open settings <Icons.ArrowRight className="ms-1 h-4 w-4" /></Link>
+    </Panel>
+  );
   return (
     <Panel>
       <div className="mb-4 flex items-center justify-between">
-        <h3 className="text-[17px] font-semibold" style={{ color: "var(--ux-ink)" }}>{tr("insights.yourPhases")}</h3>
+        <h2 className="text-[17px] font-semibold" style={{ color: "var(--ux-ink)" }}>{tr("insights.yourPhases")}</h2>
         {st.cycle_day && (
           <span className="text-[13px]" style={{ color: "var(--ux-muted)" }}>Day {st.cycle_day} of {st.avg_cycle}</span>
         )}
@@ -78,8 +85,9 @@ export function Patterns({ s }: { s: CycleState }) {
   const moods = s.moods.slice(-14);
   return (
     <div className="space-y-3">
+      <HealthMetrics s={s} />
       <Panel>
-        <h3 className="mb-3 text-[17px] font-semibold" style={{ color: "var(--ux-ink)" }}>{tr("insights.whatYourDataSays")}</h3>
+        <h2 className="mb-3 text-[17px] font-semibold" style={{ color: "var(--ux-ink)" }}>{tr("insights.whatYourDataSays")}</h2>
         {s.insights.length ? (
           <div className="space-y-3.5">{s.insights.map((i) => <InsightRow key={i.text} i={i} />)}</div>
         ) : (
@@ -88,7 +96,7 @@ export function Patterns({ s }: { s: CycleState }) {
       </Panel>
 
       <Panel>
-        <h3 className="mb-3 text-[17px] font-semibold" style={{ color: "var(--ux-ink)" }}>{tr("insights.symptomsLast3Months")}</h3>
+        <h2 className="mb-3 text-[17px] font-semibold" style={{ color: "var(--ux-ink)" }}>{tr("insights.symptomsLast3Months")}</h2>
         {top.length ? (
           <ul className="space-y-2.5">
             {top.map(([k, n]) => (
@@ -111,7 +119,7 @@ export function Patterns({ s }: { s: CycleState }) {
       </Panel>
 
       <Panel>
-        <h3 className="mb-3 text-[17px] font-semibold" style={{ color: "var(--ux-ink)" }}>{tr("insights.yourMoodsLastTwoWeeks")}</h3>
+        <h2 className="mb-3 text-[17px] font-semibold" style={{ color: "var(--ux-ink)" }}>{tr("insights.yourMoodsLastTwoWeeks")}</h2>
         {moods.length ? (
           <div className="flex flex-wrap gap-2">
             {moods.map((m) => (
@@ -130,7 +138,7 @@ export function Patterns({ s }: { s: CycleState }) {
 
       {s.history.length > 0 && (
         <Panel>
-          <h3 className="mb-3 text-[17px] font-semibold" style={{ color: "var(--ux-ink)" }}>{tr("insights.yourRecentCycles")}</h3>
+          <h2 className="mb-3 text-[17px] font-semibold" style={{ color: "var(--ux-ink)" }}>{tr("insights.yourRecentCycles")}</h2>
           <ul className="divide-y" style={{ borderColor: "var(--ux-line)" }}>
             {[...s.history].reverse().map((h) => (
               <li key={h.start} className="flex items-center justify-between py-2.5 text-[15px]" style={{ borderColor: "var(--ux-line)" }}>
@@ -144,6 +152,44 @@ export function Patterns({ s }: { s: CycleState }) {
         </Panel>
       )}
     </div>
+  );
+}
+
+function HealthMetrics({ s }: { s: CycleState }) {
+  const m = s.health_metrics;
+  const bbt = m.bbt.slice(-14);
+  const min = bbt.length ? Math.min(...bbt.map((p) => p.value)) : 0;
+  const max = bbt.length ? Math.max(...bbt.map((p) => p.value)) : 0;
+  const spread = Math.max(0.15, max - min);
+  const metrics = [
+    ["Days logged", String(m.days_logged), "Last 90 days"],
+    ["Average pain", m.average_pain == null ? "—" : `${m.average_pain}/10`, "On logged days"],
+    ["Average sleep", m.average_sleep == null ? "—" : `${m.average_sleep} h`, "On logged days"],
+    ["Average energy", m.average_energy == null ? "—" : `${m.average_energy}/5`, "On logged days"],
+  ];
+  return (
+    <Panel>
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div>
+          <h2 className="text-[17px] font-semibold" style={{ color: "var(--ux-ink)" }}>Your health patterns</h2>
+          <p className="mt-1 text-[13px]" style={{ color: "var(--ux-muted)" }}>Averages use only the details you chose to record.</p>
+        </div>
+        <Link href="/app/health/cycle/report" className="inline-flex min-h-10 items-center text-[13px] font-semibold" style={{ color: "var(--cy-period-ink)" }}>Open full report <Icons.ArrowRight className="ms-1 h-4 w-4" /></Link>
+      </div>
+      <div className="mt-4 grid grid-cols-2 gap-2 lg:grid-cols-4">
+        {metrics.map(([label, value, note]) => <div key={label} className="rounded-[13px] p-3" style={{ background: "var(--ux-surface-2)" }}><span className="block text-[11px]" style={{ color: "var(--ux-muted)" }}>{label}</span><b className="mt-1 block text-[19px]" style={{ color: "var(--ux-ink)" }}>{value}</b><span className="text-[11px]" style={{ color: "var(--ux-muted)" }}>{note}</span></div>)}
+      </div>
+      {bbt.length > 1 && <div className="mt-5">
+        <div className="mb-2 flex items-center justify-between"><h3 className="text-[14px] font-semibold" style={{ color: "var(--ux-ink)" }}>Morning temperature</h3><span className="text-[11px]" style={{ color: "var(--ux-muted)" }}>Last {bbt.length} readings</span></div>
+        <div className="flex h-[110px] items-end gap-1.5 rounded-[14px] px-3 pb-3 pt-5" style={{ background: "var(--ux-surface-2)" }}>
+          {bbt.map((point) => {
+            const height = 24 + ((point.value - min) / spread) * 56;
+            return <span key={point.date} className="group relative flex min-w-0 flex-1 justify-center" title={`${shortDate(point.date)}: ${point.value} °C`}><span className="w-full max-w-5 rounded-t-full" style={{ height, background: "linear-gradient(180deg, var(--cy-ovulation), var(--cy-period))" }} /><span className="sr-only">{shortDate(point.date)}: {point.value} degrees Celsius</span></span>;
+          })}
+        </div>
+        <p className="mt-2 text-[11px] leading-relaxed" style={{ color: "var(--ux-muted)" }}>Temperature patterns can support awareness but cannot confirm ovulation or pregnancy.</p>
+      </div>}
+    </Panel>
   );
 }
 
@@ -168,7 +214,7 @@ export function WellnessList({ s }: { s: CycleState }) {
           </span>
         </Link>
       ))}
-      <h3 className="pt-2 text-[17px] font-semibold" style={{ color: "var(--ux-ink)" }}>{tr("healthCycleLearn.helpfulResources")}</h3>
+      <h2 className="pt-2 text-[17px] font-semibold" style={{ color: "var(--ux-ink)" }}>{tr("healthCycleLearn.helpfulResources")}</h2>
       {GUIDES.slice(0, 3).map((g) => (
         <Link key={g.slug} href={`/app/health/cycle/learn/${g.slug}`} className="ux-press flex items-center justify-between gap-3 rounded-[14px] px-4 py-3"
               style={{ background: "var(--ux-surface)", border: "1px solid var(--ux-line)" }}>

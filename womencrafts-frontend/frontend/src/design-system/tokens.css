@@ -273,7 +273,7 @@
      useSidebarVariable, so the rail, the top bar and the content area all
      follow one number. Declared here so the shell has a width before any of
      that runs. */
-  --wc-sidebar-width: 248px;
+  --wc-sidebar-width: 253px;
 
   /* Page canvas. Kept a step deeper than --surface so panels lift off it. */
   --background: #f6eeec;

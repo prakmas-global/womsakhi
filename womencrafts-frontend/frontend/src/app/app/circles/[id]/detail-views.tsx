@@ -1,11 +1,18 @@
 "use client";
 
 import Link from "next/link";
+import { FormEvent, useCallback, useState } from "react";
 
 import { useT } from "@/i18n";
 import * as Icons from "@/components/ux/icons";
-import { Btn, Card, DemoNote, EmptyState, I, IconTile, v } from "@/components/ux/kit";
-import type { ApiCircleDetail, ApiCircleMember } from "@/lib/growth-api";
+import { Btn, Card, EmptyState, I, IconTile, v } from "@/components/ux/kit";
+import {
+  apiAddCircleResource, apiArchiveCircleResource, apiCircleResources,
+  type ApiCircleDetail, type ApiCircleMember, type ApiCircleResource,
+} from "@/lib/growth-api";
+import { useResource } from "@/lib/use-resource";
+import { toast } from "@/components/ux/mobile/Toast";
+import { apiUploadImage, uploadErrorMessage, validateImage } from "@/lib/uploads-api";
 import { members as niceCount, readPost, topicOf } from "@/components/ux/circle/data";
 
 /* ------------------------------------------------------------------ */
@@ -107,13 +114,13 @@ function Meta({ icon, children }: { icon: string; children: React.ReactNode }) {
 /*  Invite, Joined, and the rest                                       */
 /* ------------------------------------------------------------------ */
 
-export function CircleActions({ joined, busy, onJoin, onLeave, onInvite, onSoon, menu, onMenu }: {
-  joined: boolean; busy: boolean;
+export function CircleActions({ joined, muted, busy, onJoin, onLeave, onInvite, onMute, onReport, menu, onMenu }: {
+  joined: boolean; muted: boolean; busy: boolean;
   /** Which menu is open: the Joined one, the "…" one, or neither. */
   menu: "joined" | "more" | null;
   onMenu: (m: "joined" | "more" | null) => void;
   onJoin: () => void; onLeave: () => void; onInvite: () => void;
-  onSoon: (msg: string) => void;
+  onMute: () => void; onReport: () => void;
 }) {
   const tr = useT();
   return (
@@ -130,8 +137,8 @@ export function CircleActions({ joined, busy, onJoin, onLeave, onInvite, onSoon,
             /* Leaving is one press behind a menu on purpose: it is easy to do
                by accident from a list, and hard to undo in a private circle. */
             <Menu>
-              <MenuRow icon="BellOff" onClick={() => onSoon("Muting a circle is on the way. For now it stays quiet unless somebody replies to you.")}>
-                {tr("detailviews.muteThisCircle")}
+              <MenuRow icon={muted ? "Bell" : "BellOff"} onClick={onMute}>
+                {muted ? "Turn notifications on" : tr("detailviews.muteThisCircle")}
               </MenuRow>
               <MenuRow icon="LogOut" danger onClick={onLeave}>{tr("circles.leave")}</MenuRow>
             </Menu>
@@ -154,7 +161,7 @@ export function CircleActions({ joined, busy, onJoin, onLeave, onInvite, onSoon,
         {menu === "more" && (
           <Menu>
             <MenuRow icon="Share2" onClick={onInvite}>{tr("detailviews.copyTheCircleLink")}</MenuRow>
-            <MenuRow icon="Flag" onClick={() => onSoon("Thank you. Reporting a circle is on the way — until then, tell us through Help and a person will read it.")}>
+            <MenuRow icon="Flag" onClick={onReport}>
               {tr("detailviews.reportThisCircle")}
             </MenuRow>
           </Menu>
@@ -220,19 +227,30 @@ export function UnderTabs({ items, active, onChange }: {
 /* ------------------------------------------------------------------ */
 
 export const COMPOSER_EXTRAS = [
-  { id: "photo",    icon: "ImagePlus",    label: "Photo/Video",     soon: "Photos in a post are on the way. For now, describe it — women here answer words." },
-  { id: "poll",     icon: "BarChart3",    label: "Poll",            soon: "Polls are on the way. For now, ask the question and count the replies." },
-  { id: "event",    icon: "CalendarDays", label: "Event",           soon: "A circle cannot hold its own event yet. Melas and workshops are under Events." },
-  { id: "file",     icon: "Paperclip",    label: "File",            soon: "Attachments are on the way. A link in the post works today." },
+  { id: "photo",    icon: "ImagePlus",    label: "Photo",          soon: "" },
+  { id: "event",    icon: "CalendarDays", label: "See events",      soon: "" },
+  { id: "file",     icon: "Paperclip",    label: "Share a file",    soon: "" },
   { id: "question", icon: "HelpCircle",   label: "Ask a question",  soon: "" },
 ] as const;
 
-export function Composer({ value, onChange, onPost, busy, avatar, name, onSoon, joined }: {
+export function Composer({ value, onChange, onPost, busy, avatar, name, joined, blockedReason, image, onImage, onEvent, onFile }: {
   value: string; onChange: (s: string) => void; onPost: () => void;
   busy: boolean; avatar: string; name: string; joined: boolean;
-  onSoon: (msg: string) => void;
+  blockedReason?: string;
+  image: string; onImage: (url: string) => void;
+  onEvent: () => void; onFile: () => void;
 }) {
   const tr = useT();
+  const [uploading, setUploading] = useState(false);
+  const upload = async (file?: File) => {
+    if (!file) return;
+    const problem = validateImage(file);
+    if (problem) { toast(problem, { tone: "error" }); return; }
+    setUploading(true);
+    try { onImage((await apiUploadImage(file, "attachment")).url); }
+    catch (error) { toast(uploadErrorMessage(error), { tone: "error" }); }
+    finally { setUploading(false); }
+  };
   return (
     <Card className="mb-4">
       <div className="flex items-start gap-3">
@@ -247,12 +265,19 @@ export function Composer({ value, onChange, onPost, busy, avatar, name, onSoon, 
           rows={value.length > 90 ? 4 : 2}
           onChange={(e) => onChange(e.target.value)}
           aria-label={tr("detailviews.shareSomethingWithYourCircle")}
-          placeholder={joined ? "Share something with your circle…" : "Join the circle to write in it"}
+          placeholder={joined ? "Share something with your circle…" : (blockedReason || "Join the circle to write in it")}
           disabled={!joined}
           className="ux-sq min-h-[52px] w-full rounded-[14px] border px-3.5 py-3 text-xsm leading-relaxed outline-none"
           style={{ borderColor: v("--ux-line"), background: v("--ux-surface"), color: v("--ux-ink") }}
         />
       </div>
+
+      {image && <div className="mt-3 flex items-center gap-3 rounded-xl p-2" style={{ background: v("--ux-surface-2") }}>
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img src={image} alt="Selected post attachment" className="h-16 w-16 rounded-lg object-cover" />
+        <span className="text-xs font-semibold" style={{ color: v("--ux-ink-2") }}>Photo ready to post</span>
+        <button type="button" onClick={() => onImage("")} className="ms-auto text-xs font-bold" style={{ color: v("--ux-danger-solid") }}>Remove</button>
+      </div>}
 
       <div className="mt-3 flex flex-wrap items-center gap-1">
         {COMPOSER_EXTRAS.map((x) => (
@@ -263,18 +288,23 @@ export function Composer({ value, onChange, onPost, busy, avatar, name, onSoon, 
             onClick={() => {
               // "Ask a question" is real: a `#question` tag is what the
               // Questions filter reads, so this writes the tag for her.
-              if (!x.soon) onChange(value.includes("#question") ? value : `${value}${value ? " " : ""}#question `);
-              else onSoon(x.soon);
+              if (x.id === "photo") document.getElementById("circle-post-image")?.click();
+              else if (x.id === "event") onEvent();
+              else if (x.id === "file") onFile();
+              else onChange(value.includes("#question") ? value : `${value}${value ? " " : ""}#question `);
             }}
             className="ux-press ux-sq flex min-h-[36px] items-center gap-1.5 rounded-[10px] px-2.5 text-xs font-semibold"
-            style={{ color: v(x.soon ? "--ux-muted" : "--ux-brand"), opacity: joined ? 1 : 0.5 }}
+            style={{ color: v("--ux-brand"), opacity: joined ? 1 : 0.5 }}
           >
             <I name={x.icon} className="h-[15px] w-[15px]" />
             {x.label}
           </button>
         ))}
+        <input id="circle-post-image" type="file" accept="image/jpeg,image/png,image/webp,image/gif"
+               className="sr-only" disabled={!joined || uploading}
+               onChange={(e) => { void upload(e.target.files?.[0]); e.currentTarget.value = ""; }} />
         <span className="ms-auto">
-          <Btn disabled={!joined || busy || !value.trim()} loading={busy} onClick={onPost}>Post</Btn>
+          <Btn disabled={!joined || busy || uploading || !value.trim()} loading={busy || uploading} onClick={onPost}>Post</Btn>
         </span>
       </div>
     </Card>
@@ -291,13 +321,14 @@ export interface CircleFeedPost {
   mine: boolean; pinned: boolean; kind: string | null;
 }
 
-export function CirclePostCard({ p, saved, busy, menu, onMenu, onLike, onSave, onShare, onSoon }: {
+export function CirclePostCard({ p, saved, busy, menu, onMenu, onLike, onSave, onShare, onDelete, onReport }: {
   p: CircleFeedPost; saved: boolean; busy: boolean;
   menu: boolean; onMenu: (open: boolean) => void;
   onLike: (p: CircleFeedPost) => void;
   onSave: (p: CircleFeedPost) => void;
   onShare: (p: CircleFeedPost) => void;
-  onSoon: (msg: string) => void;
+  onDelete: (p: CircleFeedPost) => void;
+  onReport: (p: CircleFeedPost) => void;
 }) {
   const tr = useT();
   const { title, rest, tags } = readPost(p.body);
@@ -349,9 +380,8 @@ export function CirclePostCard({ p, saved, busy, menu, onMenu, onLike, onSave, o
                   <MenuRow icon="Share2" onClick={() => { onShare(p); onMenu(false); }}>{tr("detailviews.copyItsLink")}</MenuRow>
                   <MenuRow icon="Flag" danger onClick={() => {
                     onMenu(false);
-                    onSoon(p.mine
-                      ? "Deleting your own post is on the way."
-                      : "Thank you. Reporting a post is on the way — until then tell us through Help and a person will read it.");
+                    if (p.mine) onDelete(p);
+                    else onReport(p);
                   }}>
                     {p.mine ? "Delete this post" : "Report this post"}
                   </MenuRow>
@@ -603,49 +633,80 @@ export function EventsRail({ rows, busy, onGo }: {
 /*  Rail: things worth keeping                                         */
 /* ------------------------------------------------------------------ */
 
-/** What this card is drawn around. There is no files endpoint yet. */
-export const EXAMPLE_RESOURCES = [
-  { id: "r1", name: "Blouse measurement guide", kind: "PDF", size: "2.4 MB", tint: "--ux-tint-pink",   ink: "--ux-pink-ink" },
-  { id: "r2", name: "Fabric types cheat sheet", kind: "PDF", size: "1.1 MB", tint: "--ux-tint-blue",   ink: "--ux-blue-ink" },
-  { id: "r3", name: "Pricing your work",        kind: "XLS", size: "850 KB", tint: "--ux-tint-green",  ink: "--ux-green-ink" },
-  { id: "r4", name: "Beginner tools list",      kind: "PDF", size: "1.3 MB", tint: "--ux-tint-amber",  ink: "--ux-amber-ink" },
-];
+const EMPTY_RESOURCES: ApiCircleResource[] = [];
 
-export function ResourcesRail({ onSoon }: { onSoon: (msg: string) => void }) {
+export function ResourcesRail({ circleId }: { circleId: string }) {
   const tr = useT();
+  const load = useCallback((signal: AbortSignal) => apiCircleResources(circleId, signal), [circleId]);
+  const resources = useResource(load, EMPTY_RESOURCES);
+  const [adding, setAdding] = useState(false);
+  const [name, setName] = useState("");
+  const [url, setUrl] = useState("");
+  const [saving, setSaving] = useState(false);
+
+  const add = async (event: FormEvent) => {
+    event.preventDefault();
+    if (name.trim().length < 2 || !/^https?:\/\//i.test(url.trim())) return;
+    setSaving(true);
+    try {
+      await apiAddCircleResource(circleId, { name: name.trim(), url: url.trim() });
+      setName(""); setUrl(""); setAdding(false); resources.refetch();
+      toast("Resource shared with the circle", { tone: "success" });
+    } catch { toast("Could not share that resource.", { tone: "error" }); }
+    finally { setSaving(false); }
+  };
+
+  const archive = async (row: ApiCircleResource) => {
+    try { await apiArchiveCircleResource(circleId, row.id); resources.refetch(); }
+    catch { toast("Could not remove that resource.", { tone: "error" }); }
+  };
+
   return (
     <Card>
       <div className="mb-3 flex items-center justify-between gap-3">
         <h2 className="text-base font-extrabold" style={{ color: v("--ux-ink") }}>{tr("detailviews.popularResources")}</h2>
         <button type="button"
-                onClick={() => onSoon("A circle's shared files are on the way. Until then, put a link in a post — everyone in the circle can open it.")}
+                onClick={() => setAdding((x) => !x)}
                 className="ux-sq -me-2 flex min-h-[36px] items-center gap-0.5 rounded-[10px] px-2 text-xs font-bold"
                 style={{ color: v("--ux-brand") }}>
-          {tr("calendar.viewAll")} <Icons.ArrowRight className="h-[12px] w-[12px]" />
+          {adding ? "Close" : "Share a link"} <Icons.Plus className="h-[12px] w-[12px]" />
         </button>
       </div>
 
-      <DemoNote what="These four files" />
+      {adding && (
+        <form onSubmit={add} className="mb-3 space-y-2 rounded-xl p-3" style={{ background: v("--ux-surface-2") }}>
+          <label className="block text-xs font-semibold" style={{ color: v("--ux-ink-2") }}>Name
+            <input value={name} onChange={(e) => setName(e.target.value)} maxLength={120} placeholder="Pricing worksheet"
+                   className="mt-1 w-full rounded-lg border px-3 py-2 text-sm" style={{ borderColor: v("--ux-line"), background: v("--ux-surface") }} />
+          </label>
+          <label className="block text-xs font-semibold" style={{ color: v("--ux-ink-2") }}>Link
+            <input value={url} onChange={(e) => setUrl(e.target.value)} type="url" placeholder="https://…"
+                   className="mt-1 w-full rounded-lg border px-3 py-2 text-sm" style={{ borderColor: v("--ux-line"), background: v("--ux-surface") }} />
+          </label>
+          <Btn type="submit" size="sm" loading={saving} disabled={name.trim().length < 2 || !/^https?:\/\//i.test(url.trim())}>Share</Btn>
+        </form>
+      )}
 
+      {resources.source === "loading" && <p className="text-xs" style={{ color: v("--ux-muted") }}>Loading resources…</p>}
+      {resources.source === "error" && <p role="alert" className="text-xs" style={{ color: v("--ux-danger-ink") }}>Resources could not load. <button onClick={resources.refetch} className="font-bold underline">Try again</button></p>}
+      {resources.source === "live" && resources.data.length === 0 && <p className="text-xs leading-relaxed" style={{ color: v("--ux-muted") }}>No resources shared yet. Add a useful document, video, or worksheet link.</p>}
       <div className="space-y-1">
-        {EXAMPLE_RESOURCES.map((r) => (
+        {resources.data.map((r) => (
           <div key={r.id} className="flex items-center gap-2.5 rounded-[10px] px-1 py-2">
             <span className="grid h-[34px] w-[34px] shrink-0 place-items-center rounded-[10px]"
-                  style={{ background: v(r.tint), color: v(r.ink) }}>
-              <Icons.FileText className="h-[16px] w-[16px]" />
+                  style={{ background: v("--ux-tint-blue"), color: v("--ux-blue-ink") }}>
+              <Icons.Link2 className="h-[16px] w-[16px]" />
             </span>
             <span className="min-w-0 flex-1">
-              <span className="block truncate text-xs font-bold" style={{ color: v("--ux-ink") }}>
-                {r.name} ({r.kind})
-              </span>
-              <span className="mt-0.5 block text-[12px] lg:text-3xs" style={{ color: v("--ux-muted") }}>{r.size}</span>
+              <a href={r.url} target="_blank" rel="noopener noreferrer" className="block truncate text-xs font-bold hover:underline" style={{ color: v("--ux-ink") }}>{r.name}</a>
+              <span className="mt-0.5 block text-[12px] lg:text-3xs" style={{ color: v("--ux-muted") }}>{r.added_by} · {r.when}</span>
             </span>
-            <button type="button" aria-label={`Download ${r.name}`}
-                    onClick={() => onSoon("There is no file behind this one yet — the shelf is built, nothing is on it.")}
+            {r.mine && <button type="button" aria-label={`Remove ${r.name}`}
+                    onClick={() => archive(r)}
                     className="ux-press ux-sq grid h-[32px] w-[32px] shrink-0 place-items-center rounded-[8px]"
                     style={{ color: v("--ux-faint") }}>
-              <Icons.Download className="h-[15px] w-[15px]" />
-            </button>
+              <Icons.Trash2 className="h-[15px] w-[15px]" />
+            </button>}
           </div>
         ))}
       </div>

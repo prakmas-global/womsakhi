@@ -1,0 +1,248 @@
+/*
+  The admin dashboard in the member app's clothes.
+
+  ── Why a remap and not a rewrite ────────────────────────────────────────────
+  The 46 admin screens are built from the design-system primitives and the
+  Tailwind tokens (`bg-surface`, `text-ink`, `bg-brand-tint`, `.btn-primary`,
+  `.wc-card`). Every one of those resolves through a CSS custom property, so
+  the whole surface can be re-pointed at the member app's palette in one
+  scope: warm cream canvas, white cards with a 1px warm line, Berry brand with
+  the Berry→Primary-Light gradient on primary actions, Fraunces headings, the
+  six OKLCH tints for status. The member tokens (`--ux-*`) are the source; this
+  file only says which admin token reads which member token.
+
+  Scoped to `.ux-admin`, which the dashboard layout puts on its root, inside
+  `.ux` so every `--ux-*` token — light and dark — is in scope. Custom
+  properties set here win over the theme engine's runtime values on `:root`
+  for everything inside the dashboard, which is the point: the dashboard
+  follows the WomSakhi design system, not a per-account palette.
+*/
+
+.ux-admin {
+  /* ── Page and panels ─────────────────────────────────────────────────── */
+  --background: var(--ux-canvas);
+  --foreground: var(--ux-ink);
+  --color-canvas: var(--ux-canvas);
+  --surface: var(--ux-surface);
+  --surface-hover: var(--ux-surface-2);
+  --surface-inset: var(--ux-surface-2);
+  --color-surface: var(--ux-surface);
+  --color-surface-hover: var(--ux-surface-2);
+  --color-surface-inset: var(--ux-surface-2);
+
+  /* ── Ink ─────────────────────────────────────────────────────────────── */
+  --color-ink: var(--ux-ink);
+  --color-ink-muted: var(--ux-ink-2);
+  --color-ink-subtle: var(--ux-muted);
+  --color-ink-faint: var(--ux-faint);
+  --color-ink-900: var(--ux-ink);
+  --color-ink-800: var(--ux-ink);
+  --color-ink-700: var(--ux-ink-2);
+  --color-ink-600: var(--ux-ink-2);
+  --color-ink-500: var(--ux-ink-2);
+  --color-ink-400: var(--ux-muted);
+  --color-ink-300: var(--ux-faint);
+  --color-ink-200: var(--ux-line-strong);
+  --color-ink-100: var(--ux-line);
+  --color-ink-50: var(--ux-surface-2);
+
+  /* ── Hairlines ───────────────────────────────────────────────────────── */
+  --color-line: var(--ux-line);
+  --color-line-strong: var(--ux-line-strong);
+  --wc-border-subtle: var(--ux-line);
+  --wc-ring-focus: color-mix(in srgb, var(--ux-brand) 40%, transparent);
+  --color-focus: var(--ux-brand);
+
+  /* ── Brand: Berry, and the tints the member app uses around it ───────── */
+  --color-brand: var(--ux-brand);
+  --color-brand-50: var(--ux-brand-tint);
+  --color-brand-100: var(--ux-brand-tint-2);
+  --color-brand-200: #e8b7b7;
+  --color-brand-300: #d59aa8;
+  --color-brand-400: #bc7e8f;
+  --color-brand-500: var(--ux-brand-600);
+  --color-brand-600: var(--ux-brand);
+  --color-brand-700: var(--ux-brand-700);
+  --color-brand-800: #54213b;
+  --color-brand-900: var(--ux-brand-900);
+  --color-brand-tint: var(--ux-brand-tint);
+  --color-brand-ink: var(--ux-brand);
+  --color-brand-contrast: var(--ux-on-brand);
+
+  /* ── Violet: the member app's Lavender, its one cool note ────────────── */
+  --color-violet: var(--ux-violet);
+  --color-violet-50: #f5f0fd;
+  --color-violet-100: var(--ux-tint-violet);
+  --color-violet-200: #d9c5f8;
+  --color-violet-300: #c1a3f4;
+  --color-violet-400: #a97ff0;
+  --color-violet-500: var(--ux-violet);
+  --color-violet-600: var(--ux-violet-ink);
+  --color-violet-700: #5b2bd0;
+  --color-violet-800: #4a23a9;
+  --color-violet-900: #391b82;
+  --color-violet-tint: var(--ux-tint-violet);
+  --color-violet-ink: var(--ux-violet-ink);
+
+  /* ── Status: the OKLCH tint families ─────────────────────────────────── */
+  --color-status-ok-bg: var(--ux-tint-green);
+  --color-status-ok-border: color-mix(in srgb, var(--ux-green) 35%, var(--ux-tint-green));
+  --color-status-ok-ink: var(--ux-green-ink);
+  --color-status-ok-solid: var(--ux-green);
+  --color-status-warn-bg: var(--ux-tint-amber);
+  --color-status-warn-border: color-mix(in srgb, var(--ux-amber) 35%, var(--ux-tint-amber));
+  --color-status-warn-ink: var(--ux-amber-ink);
+  --color-status-warn-solid: var(--ux-amber);
+  --color-status-info-bg: var(--ux-tint-blue);
+  --color-status-info-border: color-mix(in srgb, var(--ux-blue) 35%, var(--ux-tint-blue));
+  --color-status-info-ink: var(--ux-blue-ink);
+  --color-status-info-solid: var(--ux-blue);
+  --color-status-danger-bg: var(--ux-danger-tint);
+  --color-status-danger-border: color-mix(in srgb, var(--ux-danger-solid) 35%, var(--ux-danger-tint));
+  --color-status-danger-ink: var(--ux-danger-ink);
+  --color-status-danger-solid: var(--ux-danger-solid);
+
+  /* The raw Tailwind families a few screens reach for directly. */
+  --color-emerald-50: var(--ux-tint-green);
+  --color-emerald-100: var(--ux-tint-green);
+  --color-emerald-600: var(--ux-green-ink);
+  --color-amber-50: var(--ux-tint-amber);
+  --color-amber-100: var(--ux-tint-amber);
+  --color-amber-600: var(--ux-amber-ink);
+  --color-sky-50: var(--ux-tint-blue);
+  --color-sky-100: var(--ux-tint-blue);
+  --color-sky-600: var(--ux-blue-ink);
+  --color-blue-50: var(--ux-tint-blue);
+  --color-blue-100: var(--ux-tint-blue);
+  --color-blue-600: var(--ux-blue-ink);
+  --color-rose-50: var(--ux-tint-pink);
+  --color-rose-100: var(--ux-tint-pink);
+  --color-fuchsia-50: var(--ux-tint-pink);
+  --color-fuchsia-100: var(--ux-tint-pink);
+  --color-fuchsia-600: var(--ux-pink-ink);
+
+  /* ── Shape and depth: flat cards on a warm ground, not neumorphism ───── */
+  --wc-radius-sm: var(--ux-r-sm);
+  --wc-radius-md: var(--ux-r-md);
+  --wc-radius-lg: var(--ux-r-lg);
+  --wc-radius-xl: var(--ux-r-lg);
+  --wc-radius-2xl: var(--ux-r-xl);
+  --wc-shadow-raised: var(--ux-shadow-card);
+  --wc-shadow-soft: var(--ux-shadow-sm);
+  --wc-shadow-inset: none;
+  --wc-shadow-overlay: var(--ux-shadow-pop);
+  --wc-shadow-modal: var(--ux-shadow-pop);
+
+  /* ── Charts, skeletons, scrollbars ───────────────────────────────────── */
+  --chart-grid: var(--ux-line);
+  --chart-tick: var(--ux-muted);
+  --chart-tt-bg: var(--ux-surface);
+  --chart-tt-border: var(--ux-line-strong);
+  --chart-tt-text: var(--ux-ink);
+  --skeleton-base: var(--ux-surface-2);
+  --skeleton-sheen: rgba(255, 255, 255, 0.7);
+  --scrollbar-thumb: var(--ux-line-strong);
+
+
+  background: var(--ux-canvas);
+  color: var(--ux-ink);
+  font-family: var(--font-sans), Arial, sans-serif;
+}
+
+/* ── Cards: white, one warm line, the member card's shadow ─────────────── */
+.ux-admin .wc-card,
+.ux-admin .wc-soft {
+  border: 1px solid var(--ux-line);
+}
+.ux-admin .wc-inset {
+  background: var(--ux-surface-2);
+  border: 1px solid var(--ux-line-strong);
+  box-shadow: none;
+}
+.ux-admin .wc-inset:focus-within,
+.ux-admin .wc-inset:focus {
+  border-color: var(--ux-brand);
+}
+
+/* ── Buttons: the member kit's variants ────────────────────────────────── */
+.ux-admin .btn {
+  border-radius: var(--ux-r-md);
+  font-weight: 600;
+}
+.ux-admin .btn-primary {
+  background: linear-gradient(96deg, var(--ux-fill), var(--ux-fill-2));
+  color: var(--ux-on-brand);
+  box-shadow: var(--ux-shadow-glow);
+}
+.ux-admin .btn-primary:hover {
+  background: linear-gradient(96deg, var(--ux-fill), var(--ux-fill));
+}
+.ux-admin .btn-secondary {
+  background: var(--ux-brand-tint);
+  color: var(--ux-brand);
+  box-shadow: none;
+}
+.ux-admin .btn-secondary:hover {
+  background: var(--ux-brand-tint-2);
+}
+.ux-admin .btn-outline {
+  background: var(--ux-surface);
+  color: var(--ux-ink);
+  border: 1px solid var(--ux-line-strong);
+  box-shadow: none;
+}
+.ux-admin .btn-outline:hover {
+  border-color: var(--ux-brand);
+  background: var(--ux-surface);
+}
+.ux-admin .btn-ghost {
+  color: var(--ux-brand);
+}
+.ux-admin .btn-ghost:hover {
+  background: var(--ux-brand-tint);
+}
+
+/* ── Overlays ──────────────────────────────────────────────────────────── */
+.ux-admin .wc-modal {
+  border: 1px solid var(--ux-line-strong);
+  border-radius: var(--ux-r-xl);
+  box-shadow: var(--ux-shadow-pop);
+}
+.ux-admin .wc-flyout {
+  border: 1px solid var(--ux-line-strong);
+  box-shadow: var(--ux-shadow-pop);
+}
+
+/* ── Headings carry the member display face ─────────────────────────────── */
+.ux-admin h1,
+.ux-admin h2.font-display {
+  font-family: var(--font-fraunces), Georgia, serif;
+  letter-spacing: 0;
+}
+
+/* Tables: quiet header, warm dividers. */
+.ux-admin thead th {
+  color: var(--ux-muted);
+  font-weight: 600;
+}
+
+/* ── The shell: a white rail with one warm line, a glass top bar ───────── */
+.ux-admin .wc-shell {
+  background: var(--ux-surface);
+  box-shadow: none;
+  border-inline-end: 1px solid var(--ux-line);
+}
+.ux-admin .wc-shell-top {
+  background: var(--ux-glass-bg-solid);
+  border-bottom: 1px solid var(--ux-line);
+  box-shadow: none;
+}
+.ux-admin .wc-rail-floating {
+  box-shadow: var(--ux-shadow-pop);
+}
+
+/* The document itself, so nothing outside the root — a taller scroller, a
+   portal — shows the theme engine's canvas around the dashboard. Literal hex
+   because `--ux-canvas` is declared on `.ux`, which body is outside of. */
+body:has(.ux-admin) { background: #fcf8f7; }
+.dark body:has(.ux-admin) { background: #14122a; }

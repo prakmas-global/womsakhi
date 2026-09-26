@@ -1,15 +1,10 @@
 import { apiClient } from "@/lib/api";
 
-// --- Billing & Subscription module (Settings) ---
-// Typed wrappers over the FastAPI /billing endpoints. Money / usage figures are
-// display strings ("₹2,999", "128 / Unlimited") painted verbatim by the UI.
-
-export interface BillingCard {
-  brand: string;
-  last4: string;
-  expiry: string;
-  is_primary: boolean;
-}
+// --- Billing (Settings) ---
+// Typed wrappers over /billing. What comes back is counted or measured on the
+// server: the entitlement tier, seats, storage on disk, and only invoices some
+// code actually issued. There is no card, no plan price and no auto-pay,
+// because none of those exist for this installation.
 
 export interface BillingInfo {
   company: string;
@@ -18,55 +13,21 @@ export interface BillingInfo {
   address: string;
 }
 
-export interface BillingFeature {
-  icon: string; // lucide icon NAME, mapped back on the client
+export interface PlanFeature {
+  key: string;
   label: string;
-  sub: string;
+  included: boolean;
 }
 
-export interface BillingUsageItem {
-  icon: string; // lucide icon NAME
-  label: string;
-  value: string;
-  pct: number;
-  color: string;
-}
-
-export interface BillingSummary {
-  plan: string;
-  billing_cycle: string;
-  subtotal: string;
-  tax_percent: number;
-  taxes: string;
-  total: string;
-  currency: string;
-}
-
-export interface BillingAccount {
-  id: string;
-  plan: string;
-  plan_price: string;
-  plan_description: string;
-  status: string; // "Active" | "Cancelled"
-  billing_cycle: string;
-  next_billing_date: string;
-  usage_reset_date: string;
-  auto_pay: boolean;
-  card: BillingCard;
+export interface BillingOverview {
+  plan: { tier: string; label: string; features: PlanFeature[]; note: string };
+  seats: { staff: number; super_admins: number; active_staff: number; members: number };
+  storage: { bytes: number; label: string; files: number; location: string };
   billing_info: BillingInfo;
-  features: BillingFeature[];
-  usage: BillingUsageItem[];
-  summary: BillingSummary;
-}
-
-export interface BillingPlan {
-  id: string;
-  name: string;
-  price: string;
-  description: string;
-  billing_cycle: string;
-  order: number;
-  current: boolean;
+  billing_info_saved: boolean;
+  billing_info_updated_at: string;
+  payments: { provider: string; enabled: boolean; custody: boolean; note: string };
+  invoices_total: number;
 }
 
 export interface BillingInvoice {
@@ -88,43 +49,10 @@ export interface InvoiceList {
   pages: number;
 }
 
-export interface UsageOverview {
-  usage: BillingUsageItem[];
-  usage_reset_date: string;
-}
-
-export interface UpdatePaymentInput {
-  number: string;
-  expiry: string;
-  name?: string;
-  cvc?: string;
-  brand: string;
-}
-
 // --- Reads --------------------------------------------------------------------
 
-export async function apiGetBillingAccount(): Promise<BillingAccount> {
-  const { data } = await apiClient.get<BillingAccount>("/billing/account");
-  return data;
-}
-
-export async function apiGetBillingInfo(): Promise<BillingInfo> {
-  const { data } = await apiClient.get<BillingInfo>("/billing/account/billing-info");
-  return data;
-}
-
-export async function apiGetUsage(): Promise<UsageOverview> {
-  const { data } = await apiClient.get<UsageOverview>("/billing/account/usage");
-  return data;
-}
-
-export async function apiGetBillingSummary(): Promise<BillingSummary> {
-  const { data } = await apiClient.get<BillingSummary>("/billing/account/summary");
-  return data;
-}
-
-export async function apiListPlans(): Promise<BillingPlan[]> {
-  const { data } = await apiClient.get<BillingPlan[]>("/billing/plans");
+export async function apiBillingOverview(): Promise<BillingOverview> {
+  const { data } = await apiClient.get<BillingOverview>("/billing/account");
   return data;
 }
 
@@ -148,30 +76,6 @@ export async function apiDownloadInvoice(invoiceNumber: string): Promise<Blob> {
 }
 
 // --- Writes -------------------------------------------------------------------
-
-export async function apiChangePlan(planName: string): Promise<BillingAccount> {
-  const { data } = await apiClient.put<BillingAccount>("/billing/account/plan", {
-    plan_name: planName,
-  });
-  return data;
-}
-
-export async function apiCancelSubscription(): Promise<BillingAccount> {
-  const { data } = await apiClient.post<BillingAccount>("/billing/account/cancel");
-  return data;
-}
-
-export async function apiUpdatePayment(body: UpdatePaymentInput): Promise<BillingAccount> {
-  const { data } = await apiClient.put<BillingAccount>("/billing/account/payment", body);
-  return data;
-}
-
-export async function apiToggleAutoPay(autoPay: boolean): Promise<BillingAccount> {
-  const { data } = await apiClient.patch<BillingAccount>("/billing/account/autopay", {
-    auto_pay: autoPay,
-  });
-  return data;
-}
 
 export async function apiUpdateBillingInfo(body: BillingInfo): Promise<BillingInfo> {
   const { data } = await apiClient.put<BillingInfo>("/billing/account/billing-info", body);

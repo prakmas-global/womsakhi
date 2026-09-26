@@ -31,9 +31,11 @@ from datetime import datetime, timezone
 
 from bson import ObjectId
 from pymongo import UpdateOne
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, Request, status
 
+from app.core.audit import record
 from app.core.entitlements import Feature, allows
+from app.core.permissions import require_permission
 from app.core.rbac import require_staff, require_super_admin
 from app.core.serializers import to_object_id
 from app.db.mongodb import get_database
@@ -105,7 +107,7 @@ async def _update_settings(changes: dict) -> dict:
 # --- reading -----------------------------------------------------------------
 
 @router.get("", response_model=OrgSettings, summary="Organisation settings")
-async def read_settings(_: dict = Depends(require_staff)):
+async def read_settings(_: dict = Depends(require_permission("settings.view"))):
     """Readable by any staff account — the shell needs the logo and the default
     palette to render, and hiding them behind Super Admin would mean every other
     staff member sees unbranded screens."""
@@ -117,15 +119,23 @@ async def read_settings(_: dict = Depends(require_staff)):
 @router.put("/branding", response_model=OrgSettings, summary="Set the organisation's name and marks")
 async def set_branding(
     payload: BrandingUpdate,
-    _: dict = Depends(require_feature(Feature.ORG_BRANDING)),
+    request: Request,
+    me: dict = Depends(require_feature(Feature.ORG_BRANDING)),
 ):
     """`logo` and `wordmark` are URLs returned by `POST /uploads` — this does not
     take file bytes, so there is one upload path in the whole product."""
-    return OrgSettings(**OrgSettingsModel.to_response(await _update_settings({
+    doc = await _update_settings({
         "name": payload.name.strip(),
         "logo": payload.logo.strip(),
         "wordmark": payload.wordmark.strip(),
-    })))
+    })
+    await record(
+        me, "settings.org.branding", target="org_settings",
+        detail=f"Set organisation branding: name '{payload.name.strip() or '—'}'"
+               + (", logo set" if payload.logo.strip() else ", no logo"),
+        request=request,
+    )
+    return OrgSettings(**OrgSettingsModel.to_response(doc))
 
 
 # --- org.default_theme -------------------------------------------------------
@@ -133,16 +143,24 @@ async def set_branding(
 @router.put("/theme", response_model=OrgSettings, summary="Set the starting palette for new accounts")
 async def set_default_theme(
     payload: DefaultThemeUpdate,
-    _: dict = Depends(require_feature(Feature.ORG_DEFAULT_THEME)),
+    request: Request,
+    me: dict = Depends(require_feature(Feature.ORG_DEFAULT_THEME)),
 ):
     """A *starting* palette, not an enforced one. Anyone who has chosen a theme
     keeps it — see the module docstring."""
-    return OrgSettings(**OrgSettingsModel.to_response(await _update_settings({
+    doc = await _update_settings({
         "default_theme_id": payload.theme_id.strip(),
         "default_primary": payload.primary.strip(),
         "default_secondary": payload.secondary.strip(),
         "default_mode": payload.mode,
-    })))
+    })
+    theme_name = payload.theme_id.strip() or "WomSakhi's own"
+    await record(
+        me, "settings.org.default_theme", target="org_settings",
+        detail=f"Set the default palette to '{theme_name}' ({payload.mode or 'follow the device'})",
+        request=request,
+    )
+    return OrgSettings(**OrgSettingsModel.to_response(doc))
 
 
 # --- org.layout_templates ----------------------------------------------------
@@ -161,6 +179,7 @@ async def list_templates(_: dict = Depends(require_feature(Feature.ORG_LAYOUT_TE
 )
 async def create_template(
     payload: LayoutTemplateCreate,
+    request: Request,
     me: dict = Depends(require_feature(Feature.ORG_LAYOUT_TEMPLATES)),
 ):
     layout = payload.layout
@@ -175,6 +194,11 @@ async def create_template(
     )
     result = await _templates().insert_one(doc)
     doc["_id"] = result.inserted_id
+    await record(
+        me, "settings.org.template.create", target=str(result.inserted_id),
+        detail=f"Saved layout template '{doc['name']}' for {payload.role} ({payload.app})",
+        request=request,
+    )
     return LayoutTemplate(**LayoutTemplateModel.to_response(doc))
 
 
@@ -185,7 +209,8 @@ async def create_template(
 )
 async def apply_template(
     template_id: str,
-    _: dict = Depends(require_feature(Feature.ORG_LAYOUT_TEMPLATES)),
+    request: Request,
+    me: dict = Depends(require_feature(Feature.ORG_LAYOUT_TEMPLATES)),
 ):
     """Writes only to accounts that have **no layout of their own**.
 
@@ -258,6 +283,11 @@ async def apply_template(
     note = f"Applied to {applied} account(s)."
     if skipped:
         note += f" {skipped} kept their own layout."
+    await record(
+        me, "settings.org.template.apply", target=template_id,
+        detail=f"Applied layout template '{template.get('name', '')}' to {template.get('role', '')}: {note}",
+        request=request,
+    )
     return ApplyResult(applied_count=applied, message=note)
 
 
@@ -268,11 +298,17 @@ async def apply_template(
 )
 async def delete_template(
     template_id: str,
-    _: dict = Depends(require_feature(Feature.ORG_LAYOUT_TEMPLATES)),
+    request: Request,
+    me: dict = Depends(require_feature(Feature.ORG_LAYOUT_TEMPLATES)),
 ):
-    result = await _templates().delete_one({"_id": to_object_id(template_id)})
-    if not result.deleted_count:
+    doc = await _templates().find_one_and_delete({"_id": to_object_id(template_id)})
+    if not doc:
         raise HTTPException(status.HTTP_404_NOT_FOUND, "Template not found")
+    await record(
+        me, "settings.org.template.delete", target=template_id,
+        detail=f"Deleted layout template '{doc.get('name', '')}' ({doc.get('role', '')})",
+        request=request,
+    )
     return MessageResponse(message="Deleted")
 
 
@@ -281,30 +317,40 @@ async def delete_template(
 @router.put("/domain", response_model=OrgSettings, summary="Claim a custom domain")
 async def set_domain(
     payload: DomainUpdate,
-    _: dict = Depends(require_feature(Feature.ORG_CUSTOM_DOMAIN)),
+    request: Request,
+    me: dict = Depends(require_feature(Feature.ORG_CUSTOM_DOMAIN)),
 ):
     """Issues a verification token. The domain is NOT live until DNS proves
     ownership — anyone can type a domain they do not own."""
     if not payload.domain:
-        return OrgSettings(**OrgSettingsModel.to_response(await _update_settings({
+        doc = await _update_settings({
             "domain": "", "domain_status": OrgSettingsModel.DOMAIN_UNSET,
             "domain_token": "", "domain_checked_at": None,
-        })))
+        })
+        await record(me, "settings.org.domain", target="org_settings",
+                     detail="Cleared the custom domain", request=request)
+        return OrgSettings(**OrgSettingsModel.to_response(doc))
 
     current = await _read_settings()
     # Keep the token if the domain has not changed, so a half-finished DNS
     # record does not have to be redone because someone re-saved the form.
     token = current.get("domain_token") if current.get("domain") == payload.domain else ""
-    return OrgSettings(**OrgSettingsModel.to_response(await _update_settings({
+    doc = await _update_settings({
         "domain": payload.domain,
         "domain_token": token or f"womsakhi-verify={secrets.token_urlsafe(24)}",
         "domain_status": OrgSettingsModel.DOMAIN_PENDING,
         "domain_checked_at": None,
-    })))
+    })
+    await record(me, "settings.org.domain", target="org_settings",
+                 detail=f"Claimed custom domain {payload.domain} (awaiting DNS)", request=request)
+    return OrgSettings(**OrgSettingsModel.to_response(doc))
 
 
 @router.post("/domain/verify", response_model=OrgSettings, summary="Check the DNS record")
-async def verify_domain(_: dict = Depends(require_feature(Feature.ORG_CUSTOM_DOMAIN))):
+async def verify_domain(
+    request: Request,
+    me: dict = Depends(require_feature(Feature.ORG_CUSTOM_DOMAIN)),
+):
     """Looks for the token in a TXT record, for real.
 
     A "verified" flag that nothing checks is worse than no flag: it is a claim
@@ -330,9 +376,13 @@ async def verify_domain(_: dict = Depends(require_feature(Feature.ORG_CUSTOM_DOM
         # Missing record, NXDOMAIN, timeout — all mean "not proven".
         found = False
 
-    return OrgSettings(**OrgSettingsModel.to_response(await _update_settings({
+    doc = await _update_settings({
         "domain_status": (
             OrgSettingsModel.DOMAIN_VERIFIED if found else OrgSettingsModel.DOMAIN_FAILED
         ),
         "domain_checked_at": datetime.now(timezone.utc),
-    })))
+    })
+    await record(me, "settings.org.domain.verify", target="org_settings",
+                 detail=f"Checked DNS for {domain}: {'verified' if found else 'token not found'}",
+                 request=request)
+    return OrgSettings(**OrgSettingsModel.to_response(doc))

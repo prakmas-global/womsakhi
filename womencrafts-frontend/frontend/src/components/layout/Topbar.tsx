@@ -2,14 +2,14 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
-import { Search, Menu, Bell, HelpCircle, Settings as SettingsIcon, ChevronDown, User, Cog, ShieldCheck, Moon, Repeat, Activity, CreditCard, LifeBuoy, Headset, LogOut, CheckCheck } from "lucide-react";
+import { Search, Menu, Bell, HelpCircle, Settings as SettingsIcon, ChevronDown, User, Cog, ShieldCheck, Moon, Activity, LifeBuoy, Headset, LogOut } from "lucide-react";
 import { Avatar } from "@/design-system";
+import { Brand } from "@/components/ux/Brand";
 import CommandPalette from "@/components/search/CommandPalette";
 import { CustomiseButton } from "@/layout-engine";
 import { useAuth } from "@/context/AuthContext";
 import { useTheme } from "@/context/ThemeContext";
-import { NOTIF_META, TONE_CHIP, type NotifType } from "@/lib/notifications";
-import { apiListNotifications, apiMarkAllNotificationsRead, apiMarkNotificationRead, type ApiNotification } from "@/lib/notifications-api";
+import { apiAttentionFeed, type AttentionFeed } from "@/lib/notifications-api";
 
 const MENU_GROUPS: {
   items: { label: string; href: string; icon: React.ElementType; badge?: string }[];
@@ -19,14 +19,12 @@ const MENU_GROUPS: {
       { label: "My Profile", href: "/dashboard/settings/profile", icon: User },
       { label: "Account Settings", href: "/dashboard/settings", icon: Cog },
       { label: "Security", href: "/dashboard/settings/security", icon: ShieldCheck },
-      { label: "Notifications", href: "/dashboard/settings/notifications", icon: Bell, badge: "5" },
+      { label: "Notifications", href: "/dashboard/settings/notifications", icon: Bell },
     ],
   },
   {
     items: [
-      { label: "Switch Role", href: "/dashboard/settings/switch-role", icon: Repeat },
       { label: "My Activity", href: "/dashboard/settings/activity", icon: Activity },
-      { label: "Billing", href: "/dashboard/settings/billing", icon: CreditCard },
     ],
   },
   {
@@ -43,61 +41,44 @@ export default function Topbar({ onMenu }: { onMenu?: () => void } = {}) {
   const [open, setOpen] = useState(false);
   const [bellOpen, setBellOpen] = useState(false);
   const [paletteOpen, setPaletteOpen] = useState(false);
-  const [notifs, setNotifs] = useState<ApiNotification[]>([]);
+  const [feed, setFeed] = useState<AttentionFeed | null>(null);
   const ref = useRef<HTMLDivElement>(null);
   const bellRef = useRef<HTMLDivElement>(null);
 
-  const bellUnread = notifs.filter((n) => n.unread).length;
+  // What is waiting on the team right now, across the modules this account
+  // can open. Nothing is stored and nothing is "read": an item leaves the
+  // bell when the work is done on its own screen.
+  const bellCount = feed?.total ?? 0;
 
   /**
-   * The bell reads the same API as the notifications page.
+   * The bell reads the same feed as the notifications page.
    *
-   * It used to render a hardcoded array, so the badge showed a count nobody
-   * could clear and rows describing people who had never booked anything. A
+   * It used to read twelve seeded rows ('AI predicts 15 cancellations',
+   * 'Backup completed 4.25 GB') that nothing on the platform ever wrote. A
    * fabricated notification is worse than none: it teaches staff that the bell
    * is decorative, and then the real alert is ignored too.
    */
-  const loadNotifs = useCallback(async () => {
+  const loadFeed = useCallback(async () => {
     try {
-      const { items } = await apiListNotifications({ page_size: 8 });
-      setNotifs(items);
+      const next = await apiAttentionFeed(1);
+      setFeed(next);
     } catch {
       // Leave whatever is on screen. A failed poll must not blank the bell.
     }
   }, []);
 
   useEffect(() => {
-    void loadNotifs();
+    void loadFeed();
     // Slow on purpose: this runs on every dashboard screen, and the bell is a
-    // hint that something arrived, not a live feed.
-    const timer = setInterval(() => void loadNotifs(), 60_000);
+    // hint that something is waiting, not a live feed.
+    const timer = setInterval(() => void loadFeed(), 60_000);
     return () => clearInterval(timer);
-  }, [loadNotifs]);
+  }, [loadFeed]);
 
   // Re-read when it is opened, so the list is current at the moment it is read.
   useEffect(() => {
-    if (bellOpen) void loadNotifs();
-  }, [bellOpen, loadNotifs]);
-
-  async function markAllRead() {
-    const previous = notifs;
-    setNotifs((xs) => xs.map((n) => ({ ...n, unread: false })));  // optimistic
-    try {
-      await apiMarkAllNotificationsRead();
-    } catch {
-      setNotifs(previous);
-    }
-  }
-
-  async function openNotification(id: string) {
-    setBellOpen(false);
-    setNotifs((xs) => xs.map((n) => (n.id === id ? { ...n, unread: false } : n)));
-    try {
-      await apiMarkNotificationRead(id);
-    } catch {
-      void loadNotifs();
-    }
-  }
+    if (bellOpen) void loadFeed();
+  }, [bellOpen, loadFeed]);
 
   useEffect(() => {
     function onClick(e: MouseEvent) {
@@ -124,7 +105,7 @@ export default function Topbar({ onMenu }: { onMenu?: () => void } = {}) {
   const name = user?.full_name ?? "Admin User";
 
   return (
-    <header className="fixed right-0 left-0 lg:left-[var(--wc-sidebar-width)] top-0 z-30 flex h-20 items-center gap-3 sm:gap-4 wc-shell-top px-4 sm:px-6 backdrop-blur">
+    <header className="fixed right-0 left-0 lg:left-[var(--wc-sidebar-width)] top-0 z-30 flex h-[var(--ux-topbar-h)] items-center gap-3 wc-shell-top ps-[18px] pe-[18px] backdrop-blur">
       {/* Below `lg` the rail is off-canvas, so this is the only way to it. */}
       {onMenu && (
         <button
@@ -136,29 +117,40 @@ export default function Topbar({ onMenu }: { onMenu?: () => void } = {}) {
           <Menu className="h-5 w-5" />
         </button>
       )}
-      {/* global search trigger — opens the ⌘K command palette */}
+      {/* The brand, top-left of the whole app — where the member app keeps it. */}
+      <Brand size="sm" href="/dashboard" tagline={false} />
+
+      {/* global search trigger — opens the ⌘K command palette; a button, not
+          an input, because typing happens in the palette. */}
+      <div className="ms-auto hidden min-w-0 flex-1 justify-end sm:flex sm:max-w-[300px]">
+        <button
+          type="button"
+          onClick={() => setPaletteOpen(true)}
+          aria-label="Open search (Command K)"
+          className="ux-hov flex h-[42px] w-full items-center gap-2.5 rounded-[12px] border px-3.5 text-start transition-colors hover:border-[var(--ux-brand)]"
+          style={{ borderColor: "var(--ux-line-strong)", background: "var(--ux-surface-2)" }}
+        >
+          <Search className="ux-ico h-4 w-4 shrink-0" style={{ color: "var(--ux-faint)" }} strokeWidth={2} />
+          <span className="min-w-0 flex-1 truncate text-xsm" style={{ color: "var(--ux-muted)" }}>Search…</span>
+          <kbd className="shrink-0 rounded-md border px-1.5 py-0.5 text-2xs font-medium" style={{ borderColor: "var(--ux-line-strong)", color: "var(--ux-muted)" }}>⌘ K</kbd>
+        </button>
+      </div>
       <button
         type="button"
         onClick={() => setPaletteOpen(true)}
-        aria-label="Open search (Command K)"
-        className="group relative flex items-center wc-inset text-left text-sm text-ink-subtle outline-none transition hover:ring-2 hover:ring-brand-500/25
-          max-sm:h-10 max-sm:w-10 max-sm:shrink-0 max-sm:justify-center max-sm:rounded-xl
-          sm:w-full sm:max-w-md sm:rounded-xl sm:py-2.5 sm:pl-10 sm:pr-16"
+        aria-label="Open search"
+        className="ux-press grid h-10 w-10 shrink-0 place-items-center rounded-xl text-ink-muted sm:hidden"
       >
-        <Search className="h-4 w-4 text-ink-subtle transition-colors group-hover:text-brand-ink sm:pointer-events-none sm:absolute sm:left-3.5 sm:top-1/2 sm:-translate-y-1/2" />
-        <span className="hidden truncate sm:inline">Search anything...</span>
-        <span className="pointer-events-none absolute right-3 top-1/2 hidden -translate-y-1/2 items-center gap-1 rounded-md border border-line-strong bg-surface px-1.5 py-0.5 text-2xs font-semibold text-ink-subtle shadow-sm sm:flex dark:border-white/10 dark:bg-white/10">
-          ⌘K
-        </span>
+        <Search className="h-[19px] w-[19px]" strokeWidth={2} />
       </button>
 
       <CommandPalette open={paletteOpen} onClose={() => setPaletteOpen(false)} />
 
-      <div className="ml-auto flex items-center gap-1.5">
+      <div className="ml-auto flex items-center gap-1 sm:ml-0">
         {/* bell */}
         <div className="relative" ref={bellRef}>
           <button
-            aria-label={bellUnread ? `Notifications, ${bellUnread} unread` : "Notifications"}
+            aria-label={bellCount ? `Needs attention, ${bellCount} waiting` : "Needs attention"}
             aria-expanded={bellOpen}
             aria-haspopup="dialog"
             onClick={() => setBellOpen((v) => !v)}
@@ -169,66 +161,50 @@ export default function Topbar({ onMenu }: { onMenu?: () => void } = {}) {
             }`}
           >
             <Bell className="h-5 w-5" />
-            {bellUnread > 0 && (
+            {bellCount > 0 && (
               <span className="absolute right-1.5 top-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-brand-600 px-1 text-3xs font-bold text-white ring-2 ring-white dark:ring-[var(--surface)]">
-                {bellUnread}
+                {bellCount > 99 ? "99+" : bellCount}
               </span>
             )}
           </button>
 
           {bellOpen && (
-            <div className="absolute right-0 top-14 w-[22rem] overflow-hidden rounded-2xl border border-line bg-surface shadow-xl shadow-[color:var(--wc-shadow-overlay)]">
+            <div className="ux-sheet absolute right-0 top-14 w-[22rem] overflow-hidden rounded-[16px]">
               <div className="flex items-center justify-between border-b border-line px-4 py-3">
                 <div className="flex items-center gap-2">
-                  <p className="text-sm font-semibold text-ink">Notifications</p>
-                  {bellUnread > 0 && (
+                  <p className="text-sm font-semibold text-ink">Needs attention</p>
+                  {bellCount > 0 && (
                     <span className="rounded-full bg-brand-100 px-1.5 text-2xs font-bold text-brand-ink">
-                      {bellUnread} new
+                      {bellCount} waiting
                     </span>
                   )}
                 </div>
-                <button
-                  onClick={markAllRead}
-                  disabled={bellUnread === 0}
-                  className="flex items-center gap-1 text-2xs font-semibold text-violet-ink hover:text-violet-ink disabled:cursor-not-allowed disabled:text-ink-faint"
-                >
-                  <CheckCheck className="h-3.5 w-3.5" /> Mark all read
-                </button>
+                {feed?.mine ? <span className="text-2xs font-semibold text-violet-ink">{feed.mine} yours</span> : null}
               </div>
 
               <div className="max-h-[22rem] overflow-y-auto py-1">
-                {notifs.slice(0, 5).map((n) => {
-                  // The backend owns the type string; fall back rather than
-                  // crash on one this build has no icon for.
-                  const meta = NOTIF_META[n.type as NotifType] ?? NOTIF_META.system;
-                  const Icon = meta.icon;
-                  return (
+                {feed === null ? (
+                  <p className="px-4 py-6 text-center text-xs text-ink-subtle">Counting…</p>
+                ) : feed.areas.length === 0 ? (
+                  <p className="px-4 py-6 text-center text-xs text-ink-subtle">Nothing is waiting on anyone.</p>
+                ) : (
+                  feed.areas.slice(0, 6).map((a) => (
                     <Link
-                      key={n.id}
-                      href="/dashboard/notifications"
-                      onClick={() => void openNotification(n.id)}
-                      className={`flex gap-3 px-4 py-2.5 transition hover:bg-surface-hover dark:hover:bg-white/5 ${
-                        n.unread ? "bg-brand-500/6 dark:bg-brand-500/10" : ""
-                      }`}
+                      key={a.key}
+                      href={a.href}
+                      onClick={() => setBellOpen(false)}
+                      className="flex gap-3 px-4 py-2.5 transition hover:bg-surface-hover dark:hover:bg-white/5"
                     >
-                      <span
-                        className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-lg ${TONE_CHIP[meta.tone]}`}
-                      >
-                        <Icon className="h-4.5 w-4.5" strokeWidth={2} />
+                      <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-brand-tint font-display text-sm font-bold text-brand-ink">
+                        {a.count > 99 ? "99+" : a.count}
                       </span>
                       <div className="min-w-0 flex-1">
-                        <p className="truncate text-xsm font-semibold text-ink">
-                          {n.title}
-                        </p>
-                        <p className="truncate text-xs text-ink-subtle">{n.desc}</p>
-                        <p className="mt-0.5 text-2xs text-ink-subtle">{n.time}</p>
+                        <p className="truncate text-xsm font-semibold text-ink">{a.label}</p>
+                        <p className="truncate text-xs text-ink-subtle">{a.items[0]?.title ?? a.note}</p>
                       </div>
-                      {n.unread && (
-                        <span className="mt-1.5 h-2 w-2 shrink-0 rounded-full bg-brand-600" />
-                      )}
                     </Link>
-                  );
-                })}
+                  ))
+                )}
               </div>
 
               <Link
@@ -236,7 +212,7 @@ export default function Topbar({ onMenu }: { onMenu?: () => void } = {}) {
                 onClick={() => setBellOpen(false)}
                 className="block border-t border-line py-2.5 text-center text-xsm font-semibold text-violet-ink hover:bg-surface-hover hover:text-violet-ink"
               >
-                View All Notifications
+                See everything waiting
               </Link>
             </div>
           )}
@@ -283,7 +259,7 @@ export default function Topbar({ onMenu }: { onMenu?: () => void } = {}) {
           </button>
 
           {open && (
-            <div className="wc-page-enter absolute right-0 top-14 w-72 overflow-hidden rounded-2xl border border-line bg-surface shadow-[0_20px_50px_-16px_rgba(80,40,120,0.4)] ring-1 ring-black/5 dark:border-white/10 dark:ring-white/10">
+            <div className="ux-sheet wc-page-enter absolute right-0 top-14 w-72 overflow-hidden rounded-[16px]">
               <div className="flex items-center gap-3 border-b border-line bg-linear-to-br from-brand-50/70 to-violet-50/50 px-4 py-4 dark:from-white/5 dark:to-transparent">
                 <Avatar name={name} size="md" ring />
                 <div className="min-w-0">

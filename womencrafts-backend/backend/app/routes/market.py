@@ -115,6 +115,26 @@ def _members_of_circles():
     return get_database()[CircleMemberModel.collection_name]
 
 
+#: A listing a moderator has hidden stays on disk and off the market. See
+#: admin_market.py — hiding never deletes.
+NOT_HIDDEN = {"hidden": {"$ne": True}}
+
+
+async def _suspended_sellers() -> list[str]:
+    """Accounts staff have suspended from selling; their listings are not for sale."""
+    return [str(i) for i in await _users().distinct("_id", {"seller_suspended": True})]
+
+
+async def _for_sale(doc: dict | None) -> bool:
+    """Live, not hidden by a moderator, and from a seller who may still sell."""
+    if not doc or doc.get("status") != ListingModel.STATUS_LIVE or doc.get("hidden"):
+        return False
+    seller = await _users().find_one(
+        {"_id": to_object_id(doc.get("user_id", ""))}, {"seller_suspended": 1},
+    ) if doc.get("user_id") else None
+    return not (seller or {}).get("seller_suspended")
+
+
 def _oids(ids) -> list[ObjectId]:
     out = []
     for i in ids:
@@ -290,7 +310,10 @@ async def browse(
     her stock ran out must not keep taking orders.
     """
     uid = str(me["_id"])
-    query: dict = {"status": ListingModel.STATUS_LIVE, "user_id": {"$ne": uid}}
+    query: dict = {
+        "status": ListingModel.STATUS_LIVE, **NOT_HIDDEN,
+        "user_id": {"$nin": [uid, *await _suspended_sellers()]},
+    }
     if kind in (ListingModel.KIND_PRODUCT, ListingModel.KIND_SERVICE):
         query["kind"] = kind
     if category:
@@ -314,7 +337,7 @@ async def one_listing(
 ):
     uid = str(me["_id"])
     doc = await _listings().find_one({"_id": to_object_id(listing_id)})
-    if not doc or doc.get("status") != ListingModel.STATUS_LIVE:
+    if not await _for_sale(doc):
         raise HTTPException(
             status.HTTP_404_NOT_FOUND,
             "That is not for sale any more. She may have paused it.",
@@ -332,7 +355,7 @@ async def one_listing(
     also, mine, thread = await asyncio.gather(
         _listings().find({
             "user_id": seller_id,
-            "status": ListingModel.STATUS_LIVE,
+            "status": ListingModel.STATUS_LIVE, **NOT_HIDDEN,
             "_id": {"$ne": doc["_id"]},
         }).sort("updated_at", -1).to_list(8),
         _orders().find({"buyer_id": uid, "listing_id": listing_id}).sort("created_at", -1).to_list(20),
@@ -428,14 +451,17 @@ async def _place_order(listing_id: str, body: PlaceOrderRequest, me: dict) -> Pl
     uid = str(me["_id"])
     oid = to_object_id(listing_id)
     listing = await _listings().find_one({"_id": oid})
-    if not listing or listing.get("status") != ListingModel.STATUS_LIVE:
+    if not listing or listing.get("status") != ListingModel.STATUS_LIVE or listing.get("hidden"):
+        raise HTTPException(
+            status.HTTP_404_NOT_FOUND, "That is not for sale any more. She may have paused it.")
+    if listing.get("price_mode", "fixed") != "fixed":
+        raise HTTPException(status.HTTP_409_CONFLICT,
+                            "Ask the seller to agree a fixed price before ordering.")
+    if not await _for_sale(listing):
         raise HTTPException(
             status.HTTP_404_NOT_FOUND, "That is not for sale any more. She may have paused it.")
     if listing.get("user_id") == uid:
         raise HTTPException(status.HTTP_400_BAD_REQUEST, "That is your own listing.")
-    if listing.get("price_mode", "fixed") != "fixed":
-        raise HTTPException(status.HTTP_409_CONFLICT,
-                            "Ask the seller to agree a fixed price before ordering.")
 
     quantity = max(1, int(body.quantity))
     stock = listing.get("stock")
@@ -445,7 +471,7 @@ async def _place_order(listing_id: str, body: PlaceOrderRequest, me: dict) -> Pl
     # buyers on a slow connection both get the last one.
     if stock is not None:
         taken = await _listings().find_one_and_update(
-            {"_id": oid, "status": ListingModel.STATUS_LIVE, "stock": {"$gte": quantity}},
+            {"_id": oid, "status": ListingModel.STATUS_LIVE, **NOT_HIDDEN, "stock": {"$gte": quantity}},
             {"$inc": {"stock": -quantity}, "$set": {"updated_at": datetime.now(timezone.utc)}},
         )
         if not taken:
@@ -541,7 +567,7 @@ async def ask(listing_id: str, body: AskRequest, me: dict = Depends(require_acti
     """
     uid = str(me["_id"])
     listing = await _listings().find_one({"_id": to_object_id(listing_id)})
-    if not listing or listing.get("status") != ListingModel.STATUS_LIVE:
+    if not await _for_sale(listing):
         raise HTTPException(
             status.HTTP_404_NOT_FOUND, "That is not for sale any more. She may have paused it.")
     seller_id = listing.get("user_id", "")

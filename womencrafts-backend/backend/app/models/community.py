@@ -55,6 +55,11 @@ class CircleModel:
         is_savings: bool = False,
         monthly_minor: int = 0,
         round_started_on: "datetime | None" = None,
+        icon: str = "",
+        tags: list[str] | None = None,
+        who_posts: str = "all",
+        review_first: bool = False,
+        tell_me: bool = True,
     ) -> dict:
         now = datetime.now(timezone.utc)
         return {
@@ -63,6 +68,11 @@ class CircleModel:
             "desc": desc,
             "cover": cover,
             "guidelines": guidelines,
+            "icon": icon,
+            "tags": list(tags or []),
+            "who_posts": who_posts,
+            "review_first": bool(review_first),
+            "tell_me": bool(tell_me),
             "is_private": is_private,
             # Whether this circle collects money, stated rather than guessed.
             # The screens used to decide it with a regex on the circle's name —
@@ -83,7 +93,10 @@ class CircleModel:
         }
 
     @staticmethod
-    def to_response(doc: dict, joined: bool = False) -> dict:
+    def to_response(
+        doc: dict, joined: bool = False, *, owner: bool = False, muted: bool = False,
+        can_post: bool | None = None,
+    ) -> dict:
         return {
             "id": str(doc["_id"]),
             "name": doc.get("name", ""),
@@ -98,6 +111,18 @@ class CircleModel:
             "is_savings": bool(doc.get("is_savings", False)),
             "monthly_minor": int(doc.get("monthly_minor", 0)),
             "round": CircleModel.round_of(doc),
+            "icon": media_url(doc.get("icon", "")),
+            "tags": doc.get("tags", []),
+            "who_posts": doc.get("who_posts", "all"),
+            "review_first": bool(doc.get("review_first", False)),
+            "tell_me": bool(doc.get("tell_me", True)),
+            "invite_count": int(doc.get("invite_count", 0)),
+            "owner": owner,
+            "muted": muted,
+            "can_post": (
+                bool(joined) and (doc.get("who_posts", "all") == "all" or owner)
+                if can_post is None else can_post
+            ),
         }
 
     @staticmethod

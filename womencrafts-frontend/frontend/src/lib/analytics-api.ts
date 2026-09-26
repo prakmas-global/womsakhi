@@ -13,7 +13,7 @@ export interface AnalyticsStatCard {
   value: string; // preformatted, e.g. "48,592" / "4m 32s" / "38.4%"
   icon: string; // lucide icon name, e.g. "Users"
   tone: string;
-  delta: string; // e.g. "14.2%"
+  delta: string | null; // e.g. "14.2%"; null when the previous period had nothing to compare
   delta_dir: Direction;
 }
 
@@ -26,6 +26,8 @@ export interface AnalyticsRealtime {
 export interface AnalyticsSummary {
   stats: AnalyticsStatCard[];
   realtime: AnalyticsRealtime;
+  /** Every member in the directory — the centre of the by-segment donut. */
+  members_total: number;
 }
 
 export interface TrafficPoint {
@@ -142,5 +144,11 @@ export async function apiAnalyticsTopPages(range = "Last 30 Days"): Promise<TopP
 
 export async function apiAnalyticsReferrers(): Promise<ReferrerRow[]> {
   const { data } = await apiClient.get<ReferrerRow[]>("/analytics/referrers");
+  return data;
+}
+
+/** The whole screen as CSV, built on the server and recorded in the activity log. */
+export async function apiAnalyticsExport(range = "Last 30 Days", period = "This Month"): Promise<Blob> {
+  const { data } = await apiClient.get<Blob>("/analytics/export", { params: { range, period }, responseType: "blob" });
   return data;
 }

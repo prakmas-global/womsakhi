@@ -80,7 +80,7 @@ export function EarnDashboard() {
               its own artwork; a phone-shaped crop of it cuts the subject or the
               words. The phone gets a crop made for its shape. */}
             <source media="(max-width: 1023px)" srcSet="/ux/art/earn-dashboard-hero-mobile.webp" />
-            <img src="/ux/art/earn-dashboard-hero.png" alt="" className={styles.heroImage} />
+            <img src="/ux/art/earn-dashboard-hero.webp" alt="" className={styles.heroImage} />
           </picture>
           <div className={styles.heroContent}>
             <p className={styles.eyebrow}>Earn <span>·</span> Create <span>·</span> Grow</p>

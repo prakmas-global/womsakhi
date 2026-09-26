@@ -5,7 +5,7 @@ from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from bson import ObjectId
 
 from app.core import cache
-from app.core.security import decode_access_token, token_version_in, token_version_of
+from app.core.security import TOKEN_VERSION_CLAIM, decode_access_token, token_version_in, token_version_of
 from app.core.session import COOKIE_NAME
 from app.db.mongodb import get_database
 from app.models.user import UserModel
@@ -69,7 +69,12 @@ async def get_current_user(
     # signing in again would also have no claim and would also be behind. A
     # revocation switch that does nothing is a bug to be finished; one that
     # cannot be undone by signing in again is a woman with no account.
-    if token_version_in(payload) and token_version_in(payload) < token_version_of(user):
+    # A claim of 0 IS a claim: every account starts at generation 0, so the
+    # first "sign out everywhere" or password change bumps it to 1, and a
+    # token still saying 0 must be refused. Only a token with no claim at all —
+    # one minted before the claim existed — is let through, for the reason
+    # above.
+    if TOKEN_VERSION_CLAIM in payload and token_version_in(payload) < token_version_of(user):
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="This session was ended. Please sign in again.",

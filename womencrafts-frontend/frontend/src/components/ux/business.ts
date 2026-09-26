@@ -12,9 +12,8 @@ import {
   type Swap, type WalletInsights,
 } from "@/lib/shop-api";
 
-import { ORDERS, PRODUCTS, REVIEWS, SERVICES, SHOP, type OrderState } from "./shop/data";
+import { ORDERS, PRODUCTS, SERVICES, SHOP, type OrderState } from "./shop/data";
 import { MY_SWAPS, SWAPS, type Swap as UxSwap } from "./exchange/data";
-import { useTranslated } from "@/i18n/data";
 
 /**
  * Her business, her payout accounts, her swaps, and the wallet's charts.
@@ -184,10 +183,10 @@ export function useBusiness(): Resource<Business> {
       } satisfies Business;
     }, []),
     {
-      shop: useTranslated(SHOP),
+      shop: { ...SHOP, name: "", handle: "", rating: "—", reviews: 0 },
       stats: { month_minor: 0, lastMonth_minor: 0, listings: 0, needsHer: 0, repeatBuyers: 0 },
       week: [0, 0, 0, 0, 0, 0, 0],
-      products: useTranslated(PRODUCTS), services: useTranslated(SERVICES), orders: useTranslated(ORDERS), reviews: useTranslated(REVIEWS),
+      products: [], services: [], orders: [], reviews: [],
     },
   );
 }
@@ -303,7 +302,7 @@ export const useMyExchanges = (): Resource<UxExchange[]> =>
 export const useSwaps = (mine = false): Resource<UxSwap[]> =>
   useResource(
     useCallback(async (s: AbortSignal) => (await apiSwaps(s, { mine })).map(toSwap), [mine]),
-    useTranslated(SWAPS),
+    [],
   );
 
 /* ── Goals ───────────────────────────────────────────────────────────── */

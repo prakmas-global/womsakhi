@@ -18,8 +18,8 @@ try {
     await page.waitForFunction(() => document.querySelectorAll("[data-circle-dashboard] article").length > 0, { timeout: 30000 });
     const state = await page.evaluate(async () => {
       const root = document.querySelector("[data-circle-dashboard]");
-      const hero = root.querySelector('img[src="/ux/art/circle-dashboard-hero-v2.png"]');
-      const leaves = root.querySelector('img[src="/ux/art/circle-dashboard-leaves.png"]');
+      const hero = root.querySelector('img[src="/ux/art/circle-dashboard-hero-v2.webp"]');
+      const leaves = root.querySelector('img[src="/ux/art/circle-dashboard-leaves.webp"]');
       await Promise.all([hero.decode().catch(() => {}), leaves.decode().catch(() => {})]);
       const cardArts = [...root.querySelectorAll("article")].slice(0, 4).map(card => {
         const css = getComputedStyle(card.firstElementChild);

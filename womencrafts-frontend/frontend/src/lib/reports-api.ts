@@ -1,152 +1,99 @@
 import { apiClient } from "@/lib/api";
 
-// --- Reports module (reports table + overview snapshot + side panels) ---
-//
-// Backed by two Mongo collections via /api/v1/reports:
-//   reports          — one doc per "All Reports" table row
-//   reports_overview — a singleton snapshot feeding the stat cards + widgets
-// Mirrors the field names returned by app/routes/reports.py exactly.
+// --- Reports: real data, generated on demand -------------------------------------
+// Every report is defined on the server (app/routes/reports.py CATALOGUE) and
+// built from the live collections when generated. There is no stored "report"
+// row to create or edit; a generation is recorded as a run.
 
-export interface ApiReport {
-  id: string; // mongo id (used for update/delete/run)
+export interface ReportRunSummary {
+  at: string;          // ISO timestamp
+  by: string;          // staff name
+  rows: number;
+  range_label: string;
+}
+
+export interface ReportDefinition {
+  key: string;
   name: string;
   description: string;
   category: string;
-  tone: string; // badge/icon tone derived from category
-  icon: string; // lucide icon name (mapped back on the client)
-  type: string;
-  schedule: string;
-  schedule_detail: string;
-  last_generated: string;
-  created_by: string;
-  scheduled: boolean;
-  created_at: string;
+  tone: string;
+  icon: string;        // lucide icon name
+  columns: string[];
+  dated: boolean;      // a date range narrows it
+  privacy_note: string;
+  last_run: ReportRunSummary | null;
+  runs: number;
 }
 
-export interface ReportListResponse {
-  items: ApiReport[];
-  total: number;
-  page: number;
-  page_size: number;
-  pages: number;
-}
-
-export interface GeneratedPoint {
-  label: string;
-  value: number;
+export interface ReportRun {
+  id: string;
+  report_key: string;
+  report_name: string;
+  category: string;
+  by: string;
+  at: string;
+  rows: number;
+  range_label: string;
+  duration_ms: number;
 }
 
 export interface CategorySlice {
   name: string;
-  value: number;
+  value: number;   // share of all generations, %
+  runs: number;
   color: string;
 }
 
-export interface ReportsOverview {
-  total_reports: number;
-  scheduled_reports: number;
-  reports_generated: number;
-  reports_generated_delta: number;
-  avg_generation_time: string;
-  data_points_analyzed: string;
-  data_points_delta: number;
-  generated_trend: GeneratedPoint[];
-  data_points_trend: number[];
+export interface ReportsStats {
+  available: number;
+  generated_this_month: number;
+  generated_last_month: number;
+  generated_delta: string | null;
+  generated_up: boolean;
+  rows_this_month: number;
+  last_generated_at: string | null;
+  last_generated_by: string;
   top_categories: CategorySlice[];
+  most_used: { key: string; name: string; runs: number }[];
 }
 
-export interface RecentReport {
+export interface ReportPreview {
+  key: string;
   name: string;
-  last_generated: string;
-  icon: string;
+  columns: string[];
+  total: number;
+  range_label: string;
+  rows: (string | number | null)[][];
 }
 
-export interface ScheduledReport {
-  name: string;
-  schedule_detail: string;
-  status: string;
-}
-
-export interface ReportTemplate {
-  category: string;
-  name: string;
-  description: string;
-  tone: string;
-  icon: string;
-  status: string;
-}
-
-export interface ReportListParams {
-  q?: string;
-  category?: string;
-  type?: string;
-  page?: number;
-  page_size?: number;
-}
-
-export interface ReportInput {
-  name: string;
-  category?: string;
-  type?: string;
-  schedule?: string;
-  description?: string;
-}
-
-export interface ReportUpdateInput {
-  name?: string;
-  description?: string;
-  category?: string;
-  type?: string;
-  schedule?: string;
-}
-
-export async function apiListReports(params: ReportListParams = {}): Promise<ReportListResponse> {
-  const { data } = await apiClient.get<ReportListResponse>("/reports", { params });
+export async function apiListReports(params: { q?: string; category?: string } = {}): Promise<{ items: ReportDefinition[]; total: number }> {
+  const { data } = await apiClient.get<{ items: ReportDefinition[]; total: number }>("/reports", { params });
   return data;
 }
 
-export async function apiReportStats(): Promise<ReportsOverview> {
-  const { data } = await apiClient.get<ReportsOverview>("/reports/stats");
+export async function apiReportStats(): Promise<ReportsStats> {
+  const { data } = await apiClient.get<ReportsStats>("/reports/stats");
   return data;
 }
 
-export async function apiRecentReports(limit = 4): Promise<RecentReport[]> {
-  const { data } = await apiClient.get<RecentReport[]>("/reports/recent", { params: { limit } });
+export async function apiReportRuns(limit = 8): Promise<ReportRun[]> {
+  const { data } = await apiClient.get<ReportRun[]>("/reports/runs", { params: { limit } });
   return data;
 }
 
-export async function apiScheduledReports(): Promise<ScheduledReport[]> {
-  const { data } = await apiClient.get<ScheduledReport[]>("/reports/scheduled");
+export async function apiPreviewReport(key: string, dateRange?: string, limit = 8): Promise<ReportPreview> {
+  const { data } = await apiClient.get<ReportPreview>(`/reports/${key}/preview`, {
+    params: { ...(dateRange ? { date_range: dateRange } : {}), limit },
+  });
   return data;
 }
 
-export async function apiReportTemplates(): Promise<ReportTemplate[]> {
-  const { data } = await apiClient.get<ReportTemplate[]>("/reports/templates");
+/** Builds the CSV on the server, records the run, and returns the file. */
+export async function apiGenerateReport(key: string, dateRange?: string): Promise<Blob> {
+  const { data } = await apiClient.get<Blob>(`/reports/${key}/generate`, {
+    params: dateRange ? { date_range: dateRange } : {},
+    responseType: "blob",
+  });
   return data;
-}
-
-export async function apiCreateReport(body: ReportInput): Promise<ApiReport> {
-  const { data } = await apiClient.post<ApiReport>("/reports", body);
-  return data;
-}
-
-export async function apiUpdateReport(id: string, body: ReportUpdateInput): Promise<ApiReport> {
-  const { data } = await apiClient.put<ApiReport>(`/reports/${id}`, body);
-  return data;
-}
-
-export async function apiDeleteReport(id: string): Promise<void> {
-  await apiClient.delete(`/reports/${id}`);
-}
-
-/** Regenerate a report now (the row's "Run now" action). */
-export async function apiRunReport(id: string): Promise<ApiReport> {
-  const { data } = await apiClient.post<ApiReport>(`/reports/${id}/run`);
-  return data;
-}
-
-/** Download the filtered reports as a CSV blob from the backend. */
-export async function apiExportReports(params: ReportListParams = {}): Promise<Blob> {
-  const { data } = await apiClient.get("/reports/export", { params, responseType: "blob" });
-  return data as Blob;
 }

@@ -53,6 +53,21 @@ class ListingModel:
         photos: list[str] | None = None,
         status: str = "live",
         price_mode: str = "fixed",
+        price_high_minor: int = 0,
+        compare_at_minor: int = 0,
+        min_quantity: int = 1,
+        low_stock_at: int = 0,
+        continue_when_out: bool = False,
+        delivery: str = "physical",
+        processing_time: str = "",
+        ships_to: str = "",
+        free_shipping: bool = False,
+        delivery_note: str = "",
+        highlights: list[str] | None = None,
+        tags: list[str] | None = None,
+        quote_fields: list[str] | None = None,
+        quote_message: str = "",
+        response_time: str = "",
     ) -> dict:
         now = datetime.now(timezone.utc)
         return {
@@ -64,6 +79,21 @@ class ListingModel:
             "desc": desc.strip(),
             "price_minor": int(price_minor),
             "price_mode": price_mode,
+            "price_high_minor": max(0, int(price_high_minor)),
+            "compare_at_minor": max(0, int(compare_at_minor)),
+            "min_quantity": max(1, int(min_quantity)),
+            "low_stock_at": max(0, int(low_stock_at)),
+            "continue_when_out": bool(continue_when_out),
+            "delivery": delivery,
+            "processing_time": processing_time.strip(),
+            "ships_to": ships_to.strip(),
+            "free_shipping": bool(free_shipping),
+            "delivery_note": delivery_note.strip(),
+            "highlights": list(highlights or []),
+            "tags": list(tags or []),
+            "quote_fields": list(quote_fields or []),
+            "quote_message": quote_message.strip(),
+            "response_time": response_time.strip(),
             "rate": rate if rate in ListingModel.RATES else "",
             # None means "not something you count" — a service has no stock, and
             # storing 0 would render as "out of stock" on a tailor's listing.
@@ -103,9 +133,24 @@ class ListingModel:
                 + (f"₹{price // 100:,}" if price % 100 == 0 else f"₹{price / 100:,.2f}")
                 + (f" {rate}" if rate else ""),
             "price_mode": price_mode,
+            "price_high_minor": int(doc.get("price_high_minor", 0)),
+            "compare_at_minor": int(doc.get("compare_at_minor", 0)),
+            "min_quantity": int(doc.get("min_quantity", 1)),
+            "low_stock_at": int(doc.get("low_stock_at", 0)),
+            "continue_when_out": bool(doc.get("continue_when_out", False)),
+            "delivery": doc.get("delivery", "physical"),
+            "processing_time": doc.get("processing_time", ""),
+            "ships_to": doc.get("ships_to", ""),
+            "free_shipping": bool(doc.get("free_shipping", False)),
+            "delivery_note": doc.get("delivery_note", ""),
+            "highlights": doc.get("highlights", []),
+            "tags": doc.get("tags", []),
+            "quote_fields": doc.get("quote_fields", []),
+            "quote_message": doc.get("quote_message", ""),
+            "response_time": doc.get("response_time", ""),
             "rate": rate,
             "stock": stock,
-            "low_stock": stock is not None and 0 < stock <= 3,
+            "low_stock": stock is not None and 0 < stock <= int(doc.get("low_stock_at", 3) or 3),
             "out_of_stock": stock == 0,
             "category": doc.get("category", ""),
             "place": doc.get("place", ""),
@@ -226,4 +271,44 @@ class ReviewModel:
             "what": doc.get("what", ""),
             "reply": doc.get("reply", ""),
             "when": when.strftime("%d %b %Y") if when else "",
+        }
+
+
+class ShopOperationModel:
+    """A member-owned workflow around selling that is not itself a listing/order."""
+
+    collection_name = "shop_operations"
+    KINDS = ("preorder", "subscription", "slot", "wholesale", "live", "voice", "dispute")
+    STATUSES = ("draft", "open", "waiting", "paid", "scheduled", "resolved", "paused")
+
+    @staticmethod
+    def create_document(
+        *, user_id: str, kind: str, title: str, contact: str = "",
+        amount_minor: int = 0, status: str = "draft", due_on: str = "",
+        note: str = "", details: dict | None = None,
+    ) -> dict:
+        now = datetime.now(timezone.utc)
+        return {
+            "user_id": user_id, "kind": kind, "title": title.strip(),
+            "contact": contact.strip(), "amount_minor": max(0, int(amount_minor)),
+            "status": status, "due_on": due_on.strip(), "note": note.strip(),
+            "details": details or {}, "archived": False,
+            "created_at": now, "updated_at": now,
+        }
+
+    @staticmethod
+    def to_response(doc: dict) -> dict:
+        amount = int(doc.get("amount_minor", 0))
+        created = aware(doc.get("created_at"))
+        updated = aware(doc.get("updated_at"))
+        return {
+            "id": str(doc["_id"]), "kind": doc.get("kind", "preorder"),
+            "title": doc.get("title", ""), "contact": doc.get("contact", ""),
+            "amount_minor": amount,
+            "amount_label": f"₹{amount / 100:,.2f}" if amount % 100 else f"₹{amount // 100:,}",
+            "status": doc.get("status", "draft"), "due_on": doc.get("due_on", ""),
+            "note": doc.get("note", ""), "details": doc.get("details", {}),
+            "archived": bool(doc.get("archived", False)),
+            "created_at": created.isoformat() if created else "",
+            "updated_at": updated.isoformat() if updated else "",
         }

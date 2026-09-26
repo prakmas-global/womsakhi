@@ -313,6 +313,29 @@ async def my_mentor_requests(me: dict = Depends(require_active_member)):
     return [MentorshipRequestModel.to_response(d) for d in docs]
 
 
+@router.post(
+    "/mentors/requests/{request_id}/withdraw",
+    response_model=MentorshipRequestResponse,
+    summary="Withdraw my pending mentorship request",
+)
+async def withdraw_mentor_request(request_id: str, me: dict = Depends(require_active_member)):
+    query = {"_id": to_object_id(request_id), "user_id": str(me["_id"])}
+    doc = await _requests().find_one(query)
+    if not doc:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "That request is not yours, or is gone")
+    if doc.get("status") == MentorshipRequestModel.STATUS_WITHDRAWN:
+        return MentorshipRequestModel.to_response(doc)
+    if doc.get("status") != MentorshipRequestModel.STATUS_PENDING:
+        raise HTTPException(status.HTTP_409_CONFLICT, "Only a request still waiting can be withdrawn")
+    now = datetime.now(timezone.utc)
+    await _requests().update_one(query, {"$set": {
+        "status": MentorshipRequestModel.STATUS_WITHDRAWN, "updated_at": now,
+    }})
+    doc["status"] = MentorshipRequestModel.STATUS_WITHDRAWN
+    doc["updated_at"] = now
+    return MentorshipRequestModel.to_response(doc)
+
+
 # --- opportunities -----------------------------------------------------------
 
 @router.get("/opportunities", response_model=list[OpportunityResponse], summary="Work I can apply for")

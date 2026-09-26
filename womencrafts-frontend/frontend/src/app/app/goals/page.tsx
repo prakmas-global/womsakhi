@@ -10,7 +10,7 @@ import {
   GOAL_KINDS as RAW_GOAL_KINDS, goalState, useMyGoals,
   type Goal, type GoalState,
 } from "@/components/ux/discovery/data";
-import { apiAddGoal, apiDropGoal, apiMoveGoal } from "@/lib/money-api";
+import { apiAddGoal, apiDropGoal, apiEditGoal, apiMoveGoal } from "@/lib/money-api";
 import {
   DisciplineCard, GoalCard, GoalInsights, GoalStats, GoalsHero,
   QuickActions,
@@ -65,6 +65,7 @@ export default function GoalsPage() {
   const [note, setNote] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [adding, setAdding] = useState(false);
+  const [editing, setEditing] = useState<Goal | null>(null);
 
   const say = useCallback((msg: string) => {
     setNote(msg);
@@ -165,6 +166,14 @@ export default function GoalsPage() {
           />
         )}
 
+        {editing && (
+          <EditGoal goal={editing} busy={busy} onCancel={() => setEditing(null)}
+                    onSave={(body) => {
+                      void write(() => apiEditGoal(editing.id, body), `“${body.label}” is updated`);
+                      setEditing(null);
+                    }} />
+        )}
+
         {goals.source === "loading" ? (
           <Card><EmptyState icon="Target" title={tr("goals.readingYourGoals")} body="" /></Card>
         ) : goals.error ? (
@@ -178,6 +187,7 @@ export default function GoalsPage() {
             <GoalCard key={g.id} g={g} money={formatRupees} busy={busy}
                       menu={menu === g.id} onMenu={(open) => setMenu(open ? g.id : null)}
                       onDone={manual(g) ? markReached : undefined}
+                      onEdit={setEditing}
                       onArchive={remove} />
           ))
         ) : (
@@ -213,6 +223,52 @@ export default function GoalsPage() {
         </div>
       </div>
     </HomeShell>
+  );
+}
+
+function EditGoal({ goal, busy, onCancel, onSave }: {
+  goal: Goal; busy: boolean; onCancel: () => void;
+  onSave: (body: { label: string; target: number; by: string; unit: string; note: string }) => void;
+}) {
+  const [label, setLabel] = useState(goal.label);
+  const [target, setTarget] = useState(goal.kind === "money" ? goal.target / 100 : goal.target);
+  const [by, setBy] = useState(goal.by);
+  const [unit, setUnit] = useState(goal.unit);
+  const [note, setGoalNote] = useState(goal.note ?? "");
+  return (
+    <Card className="mb-4">
+      <h2 className="text-lg font-extrabold" style={{ color: v("--ux-ink") }}>Edit goal</h2>
+      <div className="mt-4 grid gap-3 sm:grid-cols-2">
+        <label className="text-xs font-bold">Goal
+          <input value={label} onChange={(e) => setLabel(e.target.value)} maxLength={120}
+                 className="mt-1 w-full rounded-xl border px-3 py-2.5 text-sm" style={{ borderColor: v("--ux-line") }} />
+        </label>
+        <label className="text-xs font-bold">Target {goal.kind === "money" ? "(₹)" : ""}
+          <input type="number" min={0} value={target} onChange={(e) => setTarget(Number(e.target.value))}
+                 className="mt-1 w-full rounded-xl border px-3 py-2.5 text-sm" style={{ borderColor: v("--ux-line") }} />
+        </label>
+        <label className="text-xs font-bold">By when
+          <input value={by} onChange={(e) => setBy(e.target.value)} maxLength={40}
+                 className="mt-1 w-full rounded-xl border px-3 py-2.5 text-sm" style={{ borderColor: v("--ux-line") }} />
+        </label>
+        <label className="text-xs font-bold">Unit
+          <input value={unit} onChange={(e) => setUnit(e.target.value)} maxLength={24}
+                 className="mt-1 w-full rounded-xl border px-3 py-2.5 text-sm" style={{ borderColor: v("--ux-line") }} />
+        </label>
+        <label className="text-xs font-bold sm:col-span-2">Note (optional)
+          <textarea value={note} onChange={(e) => setGoalNote(e.target.value)} maxLength={500} rows={3}
+                    placeholder="Why this matters or the next small step"
+                    className="mt-1 w-full rounded-xl border px-3 py-2.5 text-sm" style={{ borderColor: v("--ux-line") }} />
+        </label>
+      </div>
+      <div className="mt-4 flex gap-2">
+        <Btn disabled={busy || !label.trim() || target < 0} onClick={() => onSave({
+          label: label.trim(), target: Math.round(goal.kind === "money" ? target * 100 : target),
+          by: by.trim(), unit: unit.trim(), note: note.trim(),
+        })}>{busy ? "Saving…" : "Save changes"}</Btn>
+        <Btn variant="outline" disabled={busy} onClick={onCancel}>Cancel</Btn>
+      </div>
+    </Card>
   );
 }
 

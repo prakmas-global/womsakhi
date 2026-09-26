@@ -75,7 +75,7 @@ export const EMPTY_LAYOUT: Layout = {
 
 /** Limits. Must match the server, which clamps to these on every read. */
 export const LIMITS = {
-  sidebar: { min: 64, max: 420, default: 248 },
+  sidebar: { min: 64, max: 420, default: 253 },
   pane: { min: 0.2, max: 0.8 },
   chart: { min: 140, max: 640 },
   column: { min: 60, max: 640 },

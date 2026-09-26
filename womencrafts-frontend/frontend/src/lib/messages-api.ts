@@ -1,190 +1,186 @@
 import { apiClient } from "@/lib/api";
 
-// --- Response shapes (mirror app/schemas/message.py) --------------------------
+/**
+ * The staff inbox — every member's thread with the team.
+ *
+ * Mirrors app/routes/messages.py. The rows are the same `member_messages`
+ * her app reads at /me/messages; the thread state (assignee, resolved) is the
+ * admin side's own. Every figure is computed on the server from stored
+ * timestamps and flags — nothing here is presence or an estimate.
+ */
 
-export interface ApiMessageFile {
+export type ThreadFilter = "all" | "awaiting" | "unread" | "mine" | "unassigned" | "resolved";
+export type ThreadStatus = "open" | "resolved";
+
+export interface Assignee {
+  id: string;
   name: string;
-  size: string;
 }
 
-export interface ApiMessageBubble {
-  dir: string; // "in" | "out"
-  text: string | null;
-  file: ApiMessageFile | null;
-  time: string;
+export interface ThreadMessage {
+  id: string;
+  sender: "member" | "team" | string;
+  sender_name: string;
+  body: string;
+  sent_at: string;
+  sent_label: string;
+  /** Stored flags: whether the OTHER side has read it. */
+  read_by_member: boolean;
+  read_by_team: boolean;
 }
 
-export interface ApiConversation {
-  id: string; // mongo id (used for updates/deletes/sends)
-  name: string;
-  preview: string;
-  time: string;
+export interface ThreadRow {
+  user_id: string;
+  full_name: string;
+  email: string;
+  avatar: string;
+  message_count: number;
   unread: number;
-  starred: boolean;
-  active: boolean;
-  has_attachment: boolean;
-  messages: ApiMessageBubble[];
+  last_message: string;
+  last_sender: "member" | "team" | "";
+  last_at: string | null;
+  last_label: string;
+  /** When the oldest unanswered message from her arrived; null when the team had the last word. */
+  waiting_since: string | null;
+  status: ThreadStatus;
+  /** She wrote again after the thread was resolved. */
+  reopened: boolean;
+  resolved_at: string | null;
+  resolved_by_name: string;
+  assigned_to: Assignee | null;
 }
 
-export interface ConversationList {
-  items: ApiConversation[];
+export interface ThreadCounts {
+  all: number;
+  awaiting: number;
+  unread: number;
+  mine: number;
+  unassigned: number;
+  resolved: number;
+}
+
+export interface ThreadList {
+  items: ThreadRow[];
   total: number;
   page: number;
   page_size: number;
   pages: number;
+  counts: ThreadCounts;
 }
 
-export interface ApiOverviewSlice {
-  name: string;
-  value: number;
-  pct: string;
-  color: string;
+export interface MemberCard {
+  id: string;
+  full_name: string;
+  email: string;
+  avatar: string;
+  joined_at: string | null;
+  verification_status: string;
+  is_active: boolean;
 }
 
-export interface ApiTopContact {
-  name: string;
-  count: number;
-  badge: number;
+export interface ThreadDetail extends ThreadRow {
+  member: MemberCard;
+  messages: ThreadMessage[];
+  first_at: string | null;
+  last_team_at: string | null;
+  last_member_at: string | null;
+  assigned_at: string | null;
 }
 
-export interface ApiMessageStats {
-  total_conversations: number;
-  messages_sent: number;
-  messages_received: number;
-  avg_response_time: string;
-  resolved_conversations: number;
-  overview_total: number;
-  overview: ApiOverviewSlice[];
-  top_contacts: ApiTopContact[];
-  range: string;
+export interface MemberHit {
+  id: string;
+  full_name: string;
+  email: string;
+  avatar: string;
+  has_thread: boolean;
 }
 
-export interface SimpleList {
-  items: string[];
+export interface StaffOption {
+  id: string;
+  full_name: string;
+  role: string;
 }
 
-export interface BroadcastResult {
-  message: string;
-  recipients: string;
-  sent: number;
+export interface MessageStats {
+  threads: number;
+  open: number;
+  resolved: number;
+  awaiting_reply: number;
+  unread_messages: number;
+  sent_by_team: number;
+  received_from_members: number;
+  received_this_week: number;
+  sent_this_week: number;
+  median_first_reply_minutes: number | null;
+  replies_measured: number;
+  replied_within_24h_pct: number | null;
 }
 
-// --- Enums (mirror the backend Literals) -------------------------------------
+// --- reads -------------------------------------------------------------------
 
-export type ConversationFilter = "all" | "unread" | "starred" | "attachments";
-export type FlagAction =
-  | "star"
-  | "unstar"
-  | "toggle_star"
-  | "mark_unread"
-  | "archive"
-  | "read";
-export type BroadcastAudience =
-  | "All users"
-  | "Active users"
-  | "Workshop enrollees"
-  | "Starred contacts";
-export type StatsRange = "This Week" | "This Month" | "This Quarter" | "This Year";
-
-// --- Params ------------------------------------------------------------------
-
-export interface ConversationListParams {
+export async function apiThreads(params: {
   q?: string;
-  filter?: ConversationFilter;
+  filter?: ThreadFilter;
   page?: number;
   page_size?: number;
-}
-
-export interface SendMessageInput {
-  dir?: "in" | "out";
-  text?: string;
-  file?: ApiMessageFile;
-  time?: string;
-}
-
-export interface FlagUpdateInput {
-  action?: FlagAction;
-  starred?: boolean;
-  unread?: number;
-  active?: boolean;
-}
-
-// --- Reads -------------------------------------------------------------------
-
-export async function apiListConversations(
-  params: ConversationListParams = {}
-): Promise<ConversationList> {
-  const { data } = await apiClient.get<ConversationList>("/messages/conversations", { params });
+} = {}): Promise<ThreadList> {
+  const { data } = await apiClient.get<ThreadList>("/messages/threads", { params });
   return data;
 }
 
-export async function apiGetConversation(id: string): Promise<ApiConversation> {
-  const { data } = await apiClient.get<ApiConversation>(`/messages/conversations/${id}`);
+export async function apiThread(userId: string): Promise<ThreadDetail> {
+  const { data } = await apiClient.get<ThreadDetail>(`/messages/threads/${userId}`);
   return data;
 }
 
-export async function apiMessageStats(range?: StatsRange): Promise<ApiMessageStats> {
-  const { data } = await apiClient.get<ApiMessageStats>("/messages/stats", {
-    params: range ? { range } : {},
-  });
+export async function apiMessageStats(): Promise<MessageStats> {
+  const { data } = await apiClient.get<MessageStats>("/messages/stats");
   return data;
 }
 
-export async function apiMessageContacts(): Promise<string[]> {
-  const { data } = await apiClient.get<SimpleList>("/messages/contacts");
-  return data.items;
-}
-
-export async function apiMessageTemplates(): Promise<string[]> {
-  const { data } = await apiClient.get<SimpleList>("/messages/templates");
-  return data.items;
-}
-
-export async function apiMessageAutomations(): Promise<string[]> {
-  const { data } = await apiClient.get<SimpleList>("/messages/automations");
-  return data.items;
-}
-
-// --- Mutations ---------------------------------------------------------------
-
-export async function apiCreateConversation(body: {
-  name: string;
-  body?: string;
-}): Promise<ApiConversation> {
-  const { data } = await apiClient.post<ApiConversation>("/messages/conversations", body);
+export async function apiFindMembers(q: string, limit = 20): Promise<MemberHit[]> {
+  const { data } = await apiClient.get<MemberHit[]>("/messages/members", { params: { q, limit } });
   return data;
 }
 
-export async function apiSendMessage(
-  id: string,
-  body: SendMessageInput
-): Promise<ApiConversation> {
-  const { data } = await apiClient.post<ApiConversation>(
-    `/messages/conversations/${id}/messages`,
-    body
-  );
+export async function apiStaffOptions(): Promise<StaffOption[]> {
+  const { data } = await apiClient.get<StaffOption[]>("/messages/staff");
   return data;
 }
 
-export async function apiUpdateConversation(
-  id: string,
-  body: FlagUpdateInput
-): Promise<ApiConversation> {
-  const { data } = await apiClient.patch<ApiConversation>(
-    `/messages/conversations/${id}`,
-    body
-  );
+// --- writes (each one is guarded and audited on the server) ------------------
+
+export async function apiReply(userId: string, body: string): Promise<ThreadDetail> {
+  const { data } = await apiClient.post<ThreadDetail>(`/messages/threads/${userId}/reply`, { body });
   return data;
 }
 
-export async function apiDeleteConversation(id: string): Promise<void> {
-  await apiClient.delete(`/messages/conversations/${id}`);
+export async function apiStartThread(userId: string, body: string): Promise<ThreadDetail> {
+  const { data } = await apiClient.post<ThreadDetail>("/messages/threads", { user_id: userId, body });
+  return data;
 }
 
-export async function apiBroadcast(body: {
-  recipients: BroadcastAudience;
-  body: string;
-}): Promise<BroadcastResult> {
-  const { data } = await apiClient.post<BroadcastResult>("/messages/broadcast", body);
+export async function apiMarkThreadRead(userId: string): Promise<ThreadDetail> {
+  const { data } = await apiClient.post<ThreadDetail>(`/messages/threads/${userId}/read`);
+  return data;
+}
+
+export async function apiMarkThreadUnread(userId: string): Promise<ThreadDetail> {
+  const { data } = await apiClient.post<ThreadDetail>(`/messages/threads/${userId}/unread`);
+  return data;
+}
+
+export async function apiAssignThread(userId: string, staffId: string | null): Promise<ThreadDetail> {
+  const { data } = await apiClient.post<ThreadDetail>(`/messages/threads/${userId}/assign`, { staff_id: staffId });
+  return data;
+}
+
+export async function apiResolveThread(userId: string): Promise<ThreadDetail> {
+  const { data } = await apiClient.post<ThreadDetail>(`/messages/threads/${userId}/resolve`);
+  return data;
+}
+
+export async function apiReopenThread(userId: string): Promise<ThreadDetail> {
+  const { data } = await apiClient.post<ThreadDetail>(`/messages/threads/${userId}/reopen`);
   return data;
 }

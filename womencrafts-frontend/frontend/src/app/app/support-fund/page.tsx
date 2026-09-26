@@ -92,7 +92,7 @@ export default function SchemesPage() {
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img loading="lazy" decoding="async" src={SCHEME_ART.hero} alt=""
                  className="ux-float pointer-events-none absolute -bottom-3 -end-4 h-[100px] w-[100px] object-contain" />
-            <h3 className="relative w-[60%] text-sm font-semibold" style={{ color: "var(--ux-ink)" }}>{tr("supportfund.notSureWhich")}</h3>
+            <h2 className="relative w-[60%] text-sm font-semibold" style={{ color: "var(--ux-ink)" }}>{tr("supportfund.notSureWhich")}</h2>
             <p className="relative mt-2 w-[60%] text-xs leading-relaxed" style={{ color: "var(--ux-muted)" }}>{tr("supportfund.tellSakhiWhatYouNeedThe")}</p>
             <div className="relative mt-3 w-[60%]">
               <Btn href="/app/sakhi" variant="soft" size="sm" iconEnd="ArrowRight">{tr("supportfund.askSakhi")}</Btn>
@@ -136,9 +136,9 @@ export default function SchemesPage() {
                   <IconTile icon={s.icon} tint={s.tint} ink={s.ink} size={50} radius={13} />
                   <div className="min-w-0 flex-1">
                     <div className="flex items-start gap-2">
-                      <h3 className="min-w-0 flex-1 text-base font-semibold" style={{ color: "var(--ux-ink)" }}>
+                      <h2 className="min-w-0 flex-1 text-base font-semibold" style={{ color: "var(--ux-ink)" }}>
                         {s.name}
-                      </h3>
+                      </h2>
                       <Pill tone={s.category === "Loan" ? "green" : s.category === "Savings" ? "brand" : "blue"} size="sm">
                         {s.category}
                       </Pill>

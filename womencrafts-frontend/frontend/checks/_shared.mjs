@@ -26,8 +26,9 @@ function apiFromEnvFile() {
   return null;
 }
 
+const configuredApi = process.env.INTERNAL_API_URL || process.env.NEXT_PUBLIC_API_URL || apiFromEnvFile();
 export const API = (
-  process.env.NEXT_PUBLIC_API_URL || apiFromEnvFile() || "http://127.0.0.1:8000/api/v1"
+  configuredApi?.startsWith("http") ? configuredApi : "http://127.0.0.1:8020/api/v1"
 ).replace("localhost", "127.0.0.1");
 
 /**
