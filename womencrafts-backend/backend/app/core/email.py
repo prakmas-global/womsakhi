@@ -214,7 +214,8 @@ def can_deliver() -> bool:
     Callers that promise a person something arrives must ask this first and say
     something else when it is False.
     """
-    if _mailgun_configured():
+    provider = get_provider()
+    if provider.name == "mailgun":
         # Configured, but a sandbox domain only reaches a handful of addresses
         # somebody added by hand. For the woman this function exists to protect
         # that is the same as not being able to send, so it answers no until
@@ -226,7 +227,9 @@ def can_deliver() -> bool:
         if is_sandbox_domain():
             return bool(settings.EMAIL_TEST_MODE)
         return True
-    return bool(settings.SMTP_HOST)
+    if provider.name == "smtp":
+        return bool(settings.SMTP_HOST)
+    return False
 
 
 # --- templates ---------------------------------------------------------------
