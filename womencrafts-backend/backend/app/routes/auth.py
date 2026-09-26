@@ -1,7 +1,7 @@
 from datetime import datetime, timedelta, timezone
 
 from bson import ObjectId
-from fastapi import APIRouter, HTTPException, Request, Response, status, Depends
+from fastapi import APIRouter, BackgroundTasks, HTTPException, Request, Response, status, Depends
 
 from app.core.deps import get_current_user
 from app.core.rbac import (
@@ -91,6 +91,41 @@ def _token_for(doc: dict) -> str:
     )
 
 
+async def _notify_super_admins_of_member_login(user: dict, occurred_at: datetime) -> None:
+    """Send after the login response; notification failure never blocks access."""
+    if role_name(user) != MEMBER_ROLE:
+        return
+    try:
+        from app.core.email import member_login_alert_email, send
+
+        admins = await get_database()[UserModel.collection_name].find(
+            {
+                "role": "Super Admin",
+                "is_active": {"$ne": False},
+                "email": {"$type": "string", "$ne": ""},
+            },
+            {"email": 1, "full_name": 1},
+        ).limit(20).to_list(length=20)
+        stamp = occurred_at.strftime("%d %b %Y, %H:%M UTC")
+        for admin in admins:
+            address = (admin.get("email") or "").strip()
+            if not address:
+                continue
+            await send(
+                member_login_alert_email(
+                    admin.get("full_name", ""),
+                    user.get("full_name", ""),
+                    user.get("email", ""),
+                    user.get("verification_status", ""),
+                    stamp,
+                    str(user["_id"]),
+                ),
+                address,
+            )
+    except Exception as exc:  # noqa: BLE001 - a notice must never break login
+        print(f"⚠️  Could not send member login notice: {exc}")
+
+
 async def _next_member_code(db) -> str:
     """Next 'WC-#####' code, matching the admin members directory."""
     highest = 12564
@@ -160,7 +195,12 @@ async def signup(payload: SignUpRequest, response: Response, request: Request):
 
 
 @router.post("/signin", response_model=AuthResponse)
-async def signin(payload: SignInRequest, response: Response, request: Request):
+async def signin(
+    payload: SignInRequest,
+    response: Response,
+    request: Request,
+    background_tasks: BackgroundTasks,
+):
     # Before touching the database: an attacker guessing passwords should cost
     # us a dictionary lookup, not a round trip to Atlas for every guess.
     await ratelimit.check(request, "signin", payload.email, ratelimit.SIGN_IN, ratelimit.SIGN_IN_IP)
@@ -234,6 +274,7 @@ async def signin(payload: SignInRequest, response: Response, request: Request):
     )
     token = _token_for(user)
     set_session_cookie(response, token)
+    background_tasks.add_task(_notify_super_admins_of_member_login, dict(user), now)
     return AuthResponse(access_token=token, user=await _user_response(user))
 
 
@@ -305,6 +346,8 @@ async def session(request: Request):
         {"_id": ObjectId(payload["sub"])}
     )
     if not user or not user.get("is_active", True):
+        return {"user": None}
+    if TOKEN_VERSION_CLAIM in payload and token_version_in(payload) < token_version_of(user):
         return {"user": None}
     return {"user": await _user_response(user)}
 
@@ -411,11 +454,11 @@ async def forgot_password(payload: ForgotPasswordRequest, request: Request):
                 "used_at": None,
             }
         )
-        token_doc = EmailTokenModel.create_document(
+        token_doc, raw_token = EmailTokenModel.create_document(
             str(user["_id"]), EmailTokenModel.PURPOSE_RESET, hours=24
         )
         await db[EmailTokenModel.collection_name].insert_one(token_doc)
-        url = f"{settings.APP_BASE_URL}/reset-password?token={token_doc['token']}"
+        url = f"{settings.APP_BASE_URL}/reset-password?token={raw_token}"
         await send(reset_email(user.get("full_name", ""), url), user["email"])
 
     # The token is still minted and still stored either way — the moment a
@@ -442,7 +485,7 @@ async def reset_password(payload: ResetPasswordRequest, request: Request):
 
     db = get_database()
     record = await db[EmailTokenModel.collection_name].find_one(
-        {"token": payload.token, "purpose": EmailTokenModel.PURPOSE_RESET}
+        EmailTokenModel.lookup(payload.token, EmailTokenModel.PURPOSE_RESET)
     )
     if not EmailTokenModel.is_valid(record):
         raise HTTPException(

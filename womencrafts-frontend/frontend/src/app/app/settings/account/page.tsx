@@ -222,6 +222,25 @@ export default function AccountSettings() {
         </div>
       </Group>
 
+      <Group title="WomSakhi tour" icon="Sparkles"
+             note="Revisit any part of the getting-started guide whenever you want.">
+        <div className="py-1">
+          <p className="text-[13px] leading-relaxed lg:text-xs" style={{ color: "var(--ux-muted)" }}>
+            Open the full guide or jump straight to one part of WomSakhi.
+          </p>
+          <div className="mt-3 flex gap-2 overflow-x-auto pb-1">
+            {["Home & Sakhi", "Learn", "Work", "Earn & Money", "Circle", "Health", "Help & Safety"].map((label, index) => (
+              <a key={label} href={`/app/welcome?replay=1&step=${index + 1}`} className="ux-press min-h-[44px] shrink-0 rounded-full border px-3.5 py-2.5 text-xs font-semibold" style={{ borderColor: "var(--ux-line)", color: "var(--ux-brand)", background: "var(--ux-surface)" }}>
+                {label}
+              </a>
+            ))}
+          </div>
+          <Btn href="/app/welcome?replay=1" variant="outline" size="sm" iconEnd="ArrowRight" className={`${phoneSecondary} mt-3`}>
+            Start the full tour
+          </Btn>
+        </div>
+      </Group>
+
       {/*
         Her own copy of herself.
 

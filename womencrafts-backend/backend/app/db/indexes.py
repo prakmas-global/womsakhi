@@ -71,6 +71,13 @@ INDEXES: dict[str, list[IndexModel]] = {
         IndexModel([("email", ASCENDING)], unique=True, name="email_unique"),
         # The verification queue: "members awaiting review".
         IndexModel([("role", ASCENDING), ("verification_status", ASCENDING)], name="role_status"),
+        # The minute tick claims only requested reviews whose follow-up is due.
+        IndexModel(
+            [("role", ASCENDING), ("verification_status", ASCENDING),
+             ("verification_next_reminder_at", ASCENDING)],
+            name="verification_followup_due",
+            sparse=True,
+        ),
         IndexModel([("member_id", ASCENDING)], name="member_id", sparse=True),
         # Her shop's public handle. UNIQUE because the index is what decides a
         # collision — `handle_for` simply takes the next number when this

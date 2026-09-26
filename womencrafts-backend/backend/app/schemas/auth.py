@@ -2,6 +2,14 @@ from typing import Optional
 from pydantic import BaseModel, EmailStr, field_validator
 
 
+def _valid_password(value: str, label: str = "Password") -> str:
+    if len(value) < 8:
+        raise ValueError(f"{label} must be at least 8 characters")
+    if len(value.encode("utf-8")) > 72:
+        raise ValueError(f"{label} must be at most 72 bytes")
+    return value
+
+
 class SignUpRequest(BaseModel):
     full_name: str
     email: EmailStr
@@ -20,9 +28,7 @@ class SignUpRequest(BaseModel):
     @field_validator("password")
     @classmethod
     def password_min_length(cls, v: str) -> str:
-        if len(v) < 8:
-            raise ValueError("Password must be at least 8 characters")
-        return v
+        return _valid_password(v)
 
 
 class SignInRequest(BaseModel):
@@ -54,11 +60,7 @@ class ResetPasswordRequest(BaseModel):
     @field_validator("password")
     @classmethod
     def password_min_length(cls, v: str) -> str:
-        # Same floor as signing up. A reset is not the place to let a weaker
-        # password in through the side door.
-        if len(v) < 8:
-            raise ValueError("Password must be at least 8 characters")
-        return v
+        return _valid_password(v)
 
 
 class TokenResponse(BaseModel):
@@ -105,9 +107,7 @@ class ChangePasswordRequest(BaseModel):
     @field_validator("new_password")
     @classmethod
     def new_password_min_length(cls, v: str) -> str:
-        if len(v) < 8:
-            raise ValueError("New password must be at least 8 characters")
-        return v
+        return _valid_password(v, "New password")
 
 
 class UpdateProfileRequest(BaseModel):

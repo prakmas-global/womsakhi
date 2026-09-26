@@ -1510,3 +1510,70 @@
 @media (max-width: 639px) {
   .ux { --ux-brand-cap: 96px; }
 }
+@keyframes ux-tour-forward {
+  from { opacity: 0; transform: translate3d(22px, 0, 0) scale(.992); }
+  to { opacity: 1; transform: translate3d(0, 0, 0) scale(1); }
+}
+
+@keyframes ux-tour-back {
+  from { opacity: 0; transform: translate3d(-22px, 0, 0) scale(.992); }
+  to { opacity: 1; transform: translate3d(0, 0, 0) scale(1); }
+}
+
+@keyframes ux-tour-art {
+  from { opacity: .35; transform: scale(1.035); }
+  to { opacity: 1; transform: scale(1); }
+}
+
+.ux-tour-slide--forward { animation: ux-tour-forward 420ms var(--ux-ease-out) both; }
+.ux-tour-slide--back { animation: ux-tour-back 420ms var(--ux-ease-out) both; }
+.ux-tour-slide img { animation: ux-tour-art 560ms var(--ux-ease-out) both; }
+
+/* The phone tour behaves like a focused app walkthrough: its three actions
+   become one compact interactive control instead of a desktop card stack. */
+@media (max-width: 639px) {
+  .ux-tour-guide { padding: 16px !important; }
+  .ux-tour-steps {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 6px;
+  }
+  .ux-tour-steps-line {
+    inset: 20px 32px auto !important;
+    width: auto !important;
+    height: 1px !important;
+  }
+  .ux-tour-step {
+    min-width: 0 !important;
+    min-height: 86px !important;
+    margin: 0 !important;
+    padding: 8px 4px !important;
+    flex-direction: column;
+    justify-content: center;
+    gap: 7px !important;
+    text-align: center;
+  }
+  .ux-tour-step-icon { transform: scale(.9); }
+  .ux-tour-step-title { font-size: 11px !important; line-height: 1.15 !important; }
+  .ux-tour-step-note { display: none; }
+}
+
+/* Keep the primary tour action visible on common 768px-high laptops without
+   flattening the visual stage on taller displays. */
+@media (min-width: 1024px) and (max-height: 820px) {
+  .ux-onboard-main { padding-top: 20px !important; padding-bottom: 20px !important; }
+  .ux-onboard-children { margin-top: 14px !important; }
+  .ux-tour-stage > .grid { grid-template-columns: minmax(0, 1.12fr) minmax(300px, .88fr); }
+  .ux-tour-art-frame { min-height: 315px !important; }
+  .ux-tour-guide { padding: 12px !important; }
+  .ux-tour-step { min-height: 54px !important; margin-bottom: 4px !important; padding: 6px 8px !important; }
+  .ux-tour-result { margin-top: 7px !important; padding: 8px 10px !important; }
+  .ux-tour-nav { margin-top: 7px !important; }
+  .ux-onboard-footer { margin-top: 12px !important; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ux-tour-slide--forward,
+  .ux-tour-slide--back,
+  .ux-tour-slide img { animation: none !important; }
+}

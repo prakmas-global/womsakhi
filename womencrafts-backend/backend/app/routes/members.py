@@ -375,7 +375,11 @@ async def _apply_status(
     user = await _linked_user(member)
     if user and new_status in ("Active", "Inactive"):
         active = new_status == "Active"
-        change: dict = {"$set": {"is_active": active, "updated_at": now}}
+        change: dict = {"$set": {
+            "is_active": active,
+            "verification_status": "active" if active else "suspended",
+            "updated_at": now,
+        }}
         if not active:
             change["$inc"] = {"token_version": 1}
         await _users().update_one({"_id": user["_id"]}, change)
@@ -999,12 +1003,12 @@ async def start_password_reset(member_id: str, request: Request, me: dict = Depe
     await db[EmailTokenModel.collection_name].delete_many(
         {"user_id": str(user["_id"]), "purpose": EmailTokenModel.PURPOSE_RESET, "used_at": None}
     )
-    token_doc = EmailTokenModel.create_document(
+    token_doc, raw_token = EmailTokenModel.create_document(
         str(user["_id"]), EmailTokenModel.PURPOSE_RESET, hours=24
     )
     await db[EmailTokenModel.collection_name].insert_one(token_doc)
 
-    url = f"{settings.APP_BASE_URL}/reset-password?token={token_doc['token']}"
+    url = f"{settings.APP_BASE_URL}/reset-password?token={raw_token}"
     delivered = await mailer.send(
         mailer.reset_email(user.get("full_name", ""), url, by_staff=True), user["email"]
     )

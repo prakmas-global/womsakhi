@@ -483,6 +483,107 @@ def staff_invitation_email(name: str, role: str, url: str) -> EmailMessageSpec:
     return EmailMessageSpec(to="", subject="You’re invited to the WomSakhi team", html=html, text=text)
 
 
+def member_login_alert_email(
+    admin_name: str,
+    member_name: str,
+    member_email: str,
+    verification_status: str,
+    occurred_at: str,
+    member_id: str,
+) -> EmailMessageSpec:
+    """Security notice for super admins after a member signs in."""
+    safe_member = escape(member_name or "Member")
+    safe_email = escape(member_email)
+    safe_status = escape((verification_status or "unknown").replace("_", " ").title())
+    safe_time = escape(occurred_at)
+    base = settings.APP_BASE_URL.rstrip("/")
+    review_url = f"{base}/dashboard/users/verification?account={escape(member_id, quote=True)}"
+    assign_url = f"{base}/dashboard/users/verification?account={escape(member_id, quote=True)}&assign={escape(member_id, quote=True)}"
+    manage_url = f"{base}/dashboard/users?account={escape(member_id, quote=True)}"
+    body = (
+        f"<strong style='color:#4b1645;'>{safe_member}</strong> "
+        f"(<a href='mailto:{safe_email}' style='color:#9a286d;'>{safe_email}</a>) signed in at "
+        f"<strong>{safe_time}</strong>."
+        "<table role='presentation' width='100%' cellpadding='0' cellspacing='0' "
+        "style='margin-top:10px;background:#fff5fa;border:1px solid #ebcede;border-radius:10px;'>"
+        "<tr><td style='padding:9px 12px;font-size:11px;line-height:16px;color:#655568;'>"
+        f"Current account state: <strong style='color:#a51e67;'>{safe_status}</strong><br>"
+        f"<a href='{assign_url}' style='color:#8c246a;font-weight:700;'>Assign to an admin</a>"
+        "&nbsp;&nbsp;·&nbsp;&nbsp;"
+        f"<a href='{manage_url}' style='color:#8c246a;font-weight:700;'>Manage activation or deactivation</a>"
+        "</td></tr></table>"
+    )
+    html = _wrap(
+        "Member sign-in alert",
+        body,
+        "Review documents",
+        review_url,
+        preheader=f"{member_name or 'A member'} signed in to WomSakhi.",
+        footer_note="This security notice was sent to an authorised WomSakhi super administrator.",
+        recipient_name=admin_name,
+        title_accent="sign-in",
+        next_step="Review the documents yourself or assign this verification task to another eligible admin.",
+    )
+    text = (
+        f"{member_name or 'Member'} ({member_email}) signed in at {occurred_at}. "
+        f"Account state: {verification_status or 'unknown'}. Review: {review_url}. "
+        f"Assign: {assign_url}. Manage: {manage_url}"
+    )
+    return EmailMessageSpec(to="", subject=f"WomSakhi sign-in: {member_name or member_email}", html=html, text=text)
+
+
+def verification_review_alert_email(
+    admin_name: str,
+    member_name: str,
+    member_email: str,
+    verification_status: str,
+    member_id: str,
+    reminder_number: int,
+) -> EmailMessageSpec:
+    """Numbered request/follow-up for an application awaiting human review."""
+    base = settings.APP_BASE_URL.rstrip("/")
+    safe_id = escape(member_id, quote=True)
+    review_url = f"{base}/dashboard/users/verification?account={safe_id}"
+    assign_url = f"{review_url}&assign={safe_id}"
+    safe_member = escape(member_name or "Member")
+    safe_email = escape(member_email)
+    safe_status = escape((verification_status or "in_review").replace("_", " ").title())
+    number = max(1, int(reminder_number))
+    body = (
+        f"<strong style='color:#4b1645;'>{safe_member}</strong> "
+        f"(<a href='mailto:{safe_email}' style='color:#9a286d;'>{safe_email}</a>) "
+        "has asked the team to complete her account review."
+        "<table role='presentation' width='100%' cellpadding='0' cellspacing='0' "
+        "style='margin-top:10px;background:#fff5fa;border:1px solid #ebcede;border-radius:10px;'>"
+        "<tr><td style='padding:9px 12px;font-size:11px;line-height:16px;color:#655568;'>"
+        f"Follow-up number: <strong style='color:#a51e67;'>#{number}</strong><br>"
+        f"Current state: <strong>{safe_status}</strong><br>"
+        f"<a href='{assign_url}' style='color:#8c246a;font-weight:700;'>Assign this review to an admin</a>"
+        "</td></tr></table>"
+    )
+    html = _wrap(
+        f"Verification follow-up #{number}",
+        body,
+        "Review application",
+        review_url,
+        preheader=f"Follow-up #{number} for {member_name or 'a member'} awaiting verification.",
+        footer_note="This review reminder stops automatically when the application leaves the review queue.",
+        recipient_name=admin_name,
+        title_accent=f"#{number}",
+        next_step="Review the identity documents or assign the task to another eligible admin.",
+    )
+    text = (
+        f"Verification follow-up #{number}: {member_name or 'Member'} ({member_email}), "
+        f"state {verification_status}. Review: {review_url}. Assign: {assign_url}"
+    )
+    return EmailMessageSpec(
+        to="",
+        subject=f"Verification follow-up #{number}: {member_name or member_email}",
+        html=html,
+        text=text,
+    )
+
+
 async def send(message: EmailMessageSpec, to: str) -> bool:
     """Send a templated message to an address."""
     message.to = to

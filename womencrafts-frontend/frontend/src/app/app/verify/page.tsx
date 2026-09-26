@@ -2,7 +2,7 @@
 
 import { useCallback, useRef, useState, useSyncExternalStore } from "react";
 
-import { ACCEPTED_DOCUMENT_TYPES, apiMyVerification, apiResendVerificationEmail, apiUploadDocument, validateDocument, type VerificationStatus } from "@/lib/verification-api";
+import { ACCEPTED_DOCUMENT_TYPES, apiMyVerification, apiRequestMyVerificationReview, apiResendVerificationEmail, apiUploadDocument, validateDocument, type VerificationStatus } from "@/lib/verification-api";
 import { useAuth } from "@/context/AuthContext";
 import { useResource } from "@/lib/use-resource";
 import { messageFrom, useAction } from "@/lib/use-action";
@@ -11,8 +11,7 @@ import * as Icons from "@/components/ux/icons";
 import { Btn, Card, IconTile, Pill } from "@/components/ux/kit";
 import { OnboardAside, OnboardFrame } from "@/components/ux/onboard/Frame";
 import { useT } from "@/i18n";
-import { ListGroup } from "@/components/ux/mobile/ListRow";
-import { PhoneRow, phonePrimary, phoneSecondary } from "@/components/ux/PhoneParts";
+import { phonePrimary, phoneSecondary } from "@/components/ux/PhoneParts";
 
 type Stage = "email" | "documents" | "review" | "rejected";
 
@@ -130,6 +129,17 @@ export default function VerifyPage() {
       fallbackError: "Could not send it again just now. Try in a moment.",
     },
   );
+  const requestReview = useAction(
+    () => apiRequestMyVerificationReview(),
+    {
+      onDone: () => refetch(),
+      fallbackError: "Could not notify the verification team just now. Try again in a moment.",
+    },
+  );
+  const nextRequestAt = status?.next_review_request_at
+    ? new Date(status.next_review_request_at)
+    : null;
+  const canRequestReview = !nextRequestAt || Number.isNaN(nextRequestAt.getTime()) || nextRequestAt <= new Date();
 
   /**
    * Open the camera, or the files, for one of the two documents.
@@ -298,78 +308,48 @@ export default function VerifyPage() {
             </Card>
           )}
 
-          {/* The papers as one grouped list on a phone, the button on each row. */}
-          <ListGroup className="lg:hidden">
-            {DOCS.map((d) => {
-              const done = uploaded.includes(d.docType);
-              return (
-                <PhoneRow key={d.id} icon={done ? "CheckCircle2" : d.icon}
-                          tint={done ? "--ux-tint-green" : d.tint} ink={done ? "--ux-green" : d.ink}
-                          title={
-                            <span className="flex flex-wrap items-center gap-2">
-                              {d.label}
-                              {done && <Pill tone="green" size="sm">Added</Pill>}
-                            </span>
-                          }
-                          meta={d.note}>
-                  {/* The two ways in, side by side on their own line rather
-                      than squeezed into the end of the row: at 390px the row
-                      has about 96px left after the tile and the words, which
-                      is one small button — and it was the wrong one, because
-                      the phone in her hand IS the scanner. */}
-                  <span className="mt-2.5 flex gap-2">
-                    <Btn variant={done ? "outline" : "primary"} size="sm"
-                         icon="Camera"
-                         disabled={busy === d.docType}
-                         className="flex-1 max-lg:min-h-[44px] max-lg:text-[15px]"
-                         onClick={() => choose(d.docType, "camera", d.facing)}>
-                      {busy === d.docType ? "Sending…" : done ? "Take again" : "Take photo"}
-                    </Btn>
-                    <Btn variant="outline" size="sm"
-                         icon="Upload"
-                         disabled={busy === d.docType}
-                         className="flex-1 max-lg:min-h-[44px] max-lg:text-[15px]"
-                         onClick={() => choose(d.docType, "files")}>
-                      {done ? "Choose another" : "Choose a photo"}
-                    </Btn>
-                  </span>
-                </PhoneRow>
-              );
-            })}
-          </ListGroup>
-          <div className="ux-deck hidden space-y-[12px] lg:block">
+          <Card className="mb-3 overflow-hidden p-0">
+            <div className="grid items-center gap-4 p-4 sm:grid-cols-[minmax(0,1fr)_150px] sm:p-5">
+              <div>
+                <p className="text-xs font-bold uppercase tracking-[0.16em]" style={{ color: "var(--ux-brand)" }}>Secure identity check</p>
+                <h2 className="mt-1.5 text-lg font-bold" style={{ color: "var(--ux-ink)" }}>Two clear photos, then a person reviews them</h2>
+                <p className="mt-2 text-xsm leading-relaxed" style={{ color: "var(--ux-ink-2)" }}>
+                  Use bright light, keep every corner visible, and make sure the name can be read. Your files stay private and never appear on your profile.
+                </p>
+                <div className="mt-3 flex items-center gap-2" aria-label={`${Math.min(sent.length, DOCS.length)} of ${DOCS.length} items added`}>
+                  {DOCS.map((d) => <span key={d.id} className="h-2 flex-1 rounded-full" style={{ background: uploaded.includes(d.docType) ? "var(--ux-green)" : "var(--ux-track)" }} />)}
+                  <span className="shrink-0 text-xs font-semibold" style={{ color: "var(--ux-muted)" }}>{Math.min(sent.length, DOCS.length)}/{DOCS.length}</span>
+                </div>
+              </div>
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src="/ux/art/scene-woman-reading-document.webp" alt="" className="mx-auto h-[118px] w-[150px] object-contain max-sm:hidden" decoding="async" />
+            </div>
+          </Card>
+
+          <div className="ux-deck grid gap-3 sm:grid-cols-2">
             {DOCS.map((d, i) => {
               const done = uploaded.includes(d.docType);
               return (
-                <Card key={d.id} className="ux-i" style={{ ["--i" as string]: i }}>
-                  <div className="flex items-center gap-3.5">
-                    <IconTile icon={done ? "CheckCircle2" : d.icon}
-                              tint={done ? "--ux-tint-green" : d.tint}
-                              ink={done ? "--ux-green" : d.ink} size={46} radius={12} />
+                <Card key={d.id} className="ux-i relative overflow-hidden" style={{ ["--i" as string]: i, borderColor: done ? "var(--ux-green)" : "var(--ux-line)" }}>
+                  <div className="flex items-start gap-3.5">
+                    <div className="relative">
+                      <IconTile icon={done ? "CheckCircle2" : d.icon} tint={done ? "--ux-tint-green" : d.tint} ink={done ? "--ux-green" : d.ink} size={48} radius={13} />
+                      <span className="absolute -start-1 -top-1 grid h-5 w-5 place-items-center rounded-full text-[10px] font-bold text-white" style={{ background: "var(--ux-brand)" }}>{i + 1}</span>
+                    </div>
                     <div className="min-w-0 flex-1">
-                      <p className="flex items-center gap-2 text-sm font-semibold" style={{ color: "var(--ux-ink)" }}>
-                        {d.label}
-                        {done && <Pill tone="green" size="sm">Added</Pill>}
-                      </p>
-                      <p className="mt-0.5 text-xs" style={{ color: "var(--ux-muted)" }}>{d.note}</p>
+                      <p className="flex flex-wrap items-center gap-2 text-sm font-semibold" style={{ color: "var(--ux-ink)" }}>{d.label}{done && <Pill tone="green" size="sm">Added</Pill>}</p>
+                      <p className="mt-1 text-xs leading-relaxed" style={{ color: "var(--ux-muted)" }}>{d.note}</p>
                     </div>
-                    <div className="flex shrink-0 gap-2">
-                      {/* Only where a camera will actually open — see `handheld`. */}
-                      {handheld && (
-                        <Btn variant={done ? "outline" : "primary"} size="sm" icon="Camera"
-                             disabled={busy === d.docType}
-                             onClick={() => choose(d.docType, "camera", d.facing)}>
-                          {busy === d.docType ? "Sending…" : done ? "Take again" : "Take photo"}
-                        </Btn>
-                      )}
-                      <Btn variant={done || handheld ? "outline" : "primary"} size="sm"
-                           icon={done ? "RotateCcw" : "Upload"}
-                           disabled={busy === d.docType}
-                           onClick={() => choose(d.docType, "files")}>
-                        {busy === d.docType && !handheld ? "Sending…"
-                          : done ? "Choose another" : "Choose a photo"}
+                  </div>
+                  <div className="mt-4 grid grid-cols-1 gap-2 sm:grid-cols-2">
+                    {handheld && (
+                      <Btn variant={done ? "outline" : "primary"} size="sm" icon="Camera" disabled={busy === d.docType} className="min-h-[44px]" onClick={() => choose(d.docType, "camera", d.facing)}>
+                        {busy === d.docType ? "Sending…" : done ? "Retake" : "Take photo"}
                       </Btn>
-                    </div>
+                    )}
+                    <Btn variant={done || handheld ? "outline" : "primary"} size="sm" icon={done ? "RotateCcw" : "Upload"} disabled={busy === d.docType} className="min-h-[44px]" onClick={() => choose(d.docType, "files")}>
+                      {busy === d.docType && !handheld ? "Sending…" : done ? "Replace" : "Choose file"}
+                    </Btn>
                   </div>
                 </Card>
               );
@@ -404,9 +384,34 @@ export default function VerifyPage() {
                 done — you do not need to keep this open.
               </p>
               <div className="mt-4 flex flex-col gap-2.5 lg:flex-row lg:flex-wrap">
+                <Btn
+                  variant="primary"
+                  icon={requestReview.busy ? "Loader" : "BellRing"}
+                  className={phonePrimary}
+                  disabled={requestReview.busy || !canRequestReview}
+                  onClick={() => void requestReview.run()}
+                >
+                  {requestReview.busy
+                    ? "Notifying the team…"
+                    : !canRequestReview
+                      ? `Request #${status?.review_request_count || 1} is with the team`
+                      : status?.review_request_count
+                        ? "Send another follow-up"
+                        : "Ask the team to review now"}
+                </Btn>
                 <Btn variant="outline" icon="LogOut" className={phoneSecondary} onClick={() => signOut()}>{tr("verify.signOutForNow")}</Btn>
                 <Btn variant="ghost" className={phoneSecondary} onClick={() => setAdvanced("rejected")}>{tr("verify.seeWhatHappensIfSomethingIs")}</Btn>
               </div>
+              {requestReview.error && (
+                <p role="alert" className="mt-3 text-xsm leading-relaxed" style={{ color: "var(--ux-orange-ink)" }}>
+                  {requestReview.error}
+                </p>
+              )}
+              {!canRequestReview && nextRequestAt && (
+                <p className="mt-3 text-xs leading-relaxed" style={{ color: "var(--ux-muted)" }}>
+                  The team has been notified. You can send another follow-up after {nextRequestAt.toLocaleString("en-IN", { day: "numeric", month: "short", hour: "numeric", minute: "2-digit" })}.
+                </p>
+              )}
             </div>
           </div>
         </Card>

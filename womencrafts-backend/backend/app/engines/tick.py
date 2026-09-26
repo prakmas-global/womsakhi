@@ -224,6 +224,7 @@ async def run_tick() -> dict:
     from app.engines import notify
 
     from app.engines import domain
+    from app.engines import verification_followups
 
     started = datetime.now(timezone.utc)
     # Before anything else: a booking that moved five seconds ago should move
@@ -236,6 +237,7 @@ async def run_tick() -> dict:
     unheld = await notify.release_held()
     retried = await notify.retry_failed()
     topped = await rem.top_up_horizons()
+    verification = await verification_followups.run_due()
 
     return {
         "enabled": True,
@@ -248,5 +250,6 @@ async def run_tick() -> dict:
         "unheld": unheld,
         "retried": retried,
         "horizon_added": topped,
+        "verification_followups": verification,
         "ms": int((datetime.now(timezone.utc) - started).total_seconds() * 1000),
     }

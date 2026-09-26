@@ -18,6 +18,7 @@ end, never a silent failure.
 """
 
 import secrets
+import hashlib
 from datetime import datetime, timedelta, timezone
 from typing import Optional
 
@@ -54,17 +55,32 @@ class EmailTokenModel:
     PURPOSE_RESET = "password_reset"
 
     @staticmethod
-    def create_document(user_id: str, purpose: str, hours: int = 24) -> dict:
-        now = datetime.now(timezone.utc)
+    def digest(token: str) -> str:
+        """One-way value stored in Mongo; a database read cannot spend a link."""
+        return hashlib.sha256(token.encode("utf-8")).hexdigest()
+
+    @staticmethod
+    def lookup(token: str, purpose: str) -> dict:
+        """Read new hashed rows and legacy plaintext rows during migration."""
         return {
+            "token": {"$in": [EmailTokenModel.digest(token), token]},
+            "purpose": purpose,
+        }
+
+    @staticmethod
+    def create_document(user_id: str, purpose: str, hours: int = 24) -> tuple[dict, str]:
+        now = datetime.now(timezone.utc)
+        raw_token = secrets.token_urlsafe(32)
+        return ({
             "user_id": user_id,
             "purpose": purpose,
-            # 43 url-safe chars of entropy — not guessable, safe in a link.
-            "token": secrets.token_urlsafe(32),
+            # Store only the digest. The raw 256-bit secret exists long enough
+            # to build the email link and is never written to the database.
+            "token": EmailTokenModel.digest(raw_token),
             "used_at": None,
             "expires_at": now + timedelta(hours=hours),
             "created_at": now,
-        }
+        }, raw_token)
 
     @staticmethod
     def is_valid(doc: Optional[dict]) -> bool:
