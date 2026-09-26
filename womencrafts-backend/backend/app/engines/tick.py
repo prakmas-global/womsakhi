@@ -41,7 +41,10 @@ from __future__ import annotations
 
 import os
 import uuid
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
+
+from pymongo import ReturnDocument
+from pymongo.errors import DuplicateKeyError
 
 from app.core.config import settings
 from app.db.mongodb import get_database
@@ -196,18 +199,43 @@ async def run_sweep() -> dict | None:
     """
     from app.engines import wiring
 
-    hour = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H")
+    now = datetime.now(timezone.utc)
+    hour = now.strftime("%Y-%m-%dT%H")
+    sweeps = _db()["engine_sweeps"]
     try:
-        await _db()["engine_sweeps"].insert_one(
-            {"_id": hour, "started_at": datetime.now(timezone.utc),
-             "worker": WORKER_ID})
-    except Exception:  # noqa: BLE001 - duplicate key: someone else has it
+        # A lease, rather than a permanent insert-only lock. If the process is
+        # killed (for example by an OOM) the same hour becomes claimable again
+        # after three minutes. A live worker keeps exclusivity for longer than
+        # the measured 47-second sweep.
+        claim = await sweeps.find_one_and_update(
+            {"_id": hour,
+             "finished_at": {"$exists": False},
+             "$or": [{"lease_expires_at": {"$lte": now}},
+                     {"lease_expires_at": {"$exists": False}}]},
+            {"$set": {"started_at": now,
+                      "lease_expires_at": now + timedelta(minutes=3),
+                      "worker": WORKER_ID},
+             "$inc": {"attempts": 1}},
+            upsert=True,
+            return_document=ReturnDocument.AFTER,
+        )
+    except DuplicateKeyError:
+        existing = await sweeps.find_one({"_id": hour}) or {}
+        if existing.get("finished_at"):
+            return None
+        # Cloud Scheduler treats this as retryable. This matters after a
+        # process crash: returning 200 here would mark the hour successful
+        # while its sweep never completed.
+        raise RuntimeError("hourly sweep is already running")
+
+    if not claim:
         return None
 
     out = await wiring.run_sync()
-    await _db()["engine_sweeps"].update_one(
+    await sweeps.update_one(
         {"_id": hour}, {"$set": {"finished_at": datetime.now(timezone.utc),
-                                 "result": out}})
+                                 "result": out},
+                        "$unset": {"lease_expires_at": ""}})
     return out
 
 
