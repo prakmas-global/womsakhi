@@ -61,6 +61,10 @@ CATALOGUE: dict[str, tuple[str, list[str]]] = {
     "growth": ("Growth & Work", [VIEW, CREATE, EDIT, DELETE, APPROVE]),
     "safety": ("Safety & Support fund", [VIEW, EDIT, APPROVE, EXPORT]),
     "settings": ("Settings", [VIEW, EDIT]),
+    "market": ("Market & Shops", [VIEW, CREATE, EDIT, DELETE, APPROVE, EXPORT]),
+    "money": ("Money & Payouts", [VIEW, EDIT, APPROVE, EXPORT]),
+    "learning": ("Learning & Certificates", [VIEW, CREATE, EDIT, DELETE, APPROVE, EXPORT]),
+    "resources": ("Resources catalogue", [VIEW, CREATE, EDIT, DELETE, APPROVE]),
 }
 
 

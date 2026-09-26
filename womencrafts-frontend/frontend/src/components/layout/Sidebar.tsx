@@ -25,6 +25,9 @@ import {
   PanelLeftOpen,
   UsersRound,
   ShieldAlert,
+  Store,
+  Wallet,
+  BookOpen,
 } from "lucide-react";
 import {
   LIMITS,
@@ -69,6 +72,7 @@ const NAV: NavItem[] = [
       { label: "Staff", href: "/dashboard/staff" },
       { label: "User Roles", href: "/dashboard/users/roles" },
       { label: "User Segments", href: "/dashboard/users/segments" },
+      { label: "Deletion requests", href: "/dashboard/users/deletions" },
     ],
   },
   {
@@ -102,6 +106,8 @@ const NAV: NavItem[] = [
     module: "messages",
     children: [
       { label: "Inbox", href: "/dashboard/messages" },
+      { label: "Broadcasts", href: "/dashboard/messages/broadcasts" },
+      { label: "Delivery", href: "/dashboard/messages/delivery" },
     ],
   },
   {
@@ -113,6 +119,9 @@ const NAV: NavItem[] = [
       { label: "Circles", href: "/dashboard/circles" },
       { label: "Moderation", href: "/dashboard/circles/moderation" },
       { label: "Success stories", href: "/dashboard/stories" },
+      { label: "Savings pots", href: "/dashboard/circles/pots" },
+      { label: "Swap board", href: "/dashboard/circles/swap" },
+      { label: "Skill exchange", href: "/dashboard/circles/exchange" },
     ],
   },
   {
@@ -126,6 +135,54 @@ const NAV: NavItem[] = [
       { label: "Events", href: "/dashboard/events" },
       { label: "Mentors", href: "/dashboard/mentors" },
       { label: "Mentor requests", href: "/dashboard/mentors/requests" },
+      { label: "Employers", href: "/dashboard/opportunities/employers" },
+    ],
+  },
+  {
+    label: "Market & Shops",
+    href: "/dashboard/market/listings",
+    icon: Store,
+    module: "market",
+    children: [
+      { label: "Listings", href: "/dashboard/market/listings" },
+      { label: "Orders", href: "/dashboard/market/orders" },
+      { label: "Reviews", href: "/dashboard/market/reviews" },
+      { label: "Group buys", href: "/dashboard/market/group-buys" },
+      { label: "Sellers & licences", href: "/dashboard/market/sellers" },
+    ],
+  },
+  {
+    label: "Money & Payouts",
+    href: "/dashboard/money/orders",
+    icon: Wallet,
+    module: "money",
+    children: [
+      { label: "Payments", href: "/dashboard/money/orders" },
+      { label: "Withdrawals", href: "/dashboard/money/withdrawals" },
+      { label: "Ledger", href: "/dashboard/money/ledger" },
+      { label: "Payout accounts", href: "/dashboard/money/payout-accounts" },
+      { label: "Referrals", href: "/dashboard/money/referrals" },
+    ],
+  },
+  {
+    label: "Learning",
+    href: "/dashboard/learning/assessments",
+    icon: GraduationCap,
+    module: "learning",
+    children: [
+      { label: "Assessments", href: "/dashboard/learning/assessments" },
+      { label: "Digital steps", href: "/dashboard/learning/digital-steps" },
+      { label: "Certificates", href: "/dashboard/learning/certificates" },
+    ],
+  },
+  {
+    label: "Resources",
+    href: "/dashboard/resources",
+    icon: BookOpen,
+    module: "resources",
+    children: [
+      { label: "Catalogue", href: "/dashboard/resources" },
+      { label: "Wellbeing cards", href: "/dashboard/resources/wellbeing" },
     ],
   },
   {
@@ -137,6 +194,7 @@ const NAV: NavItem[] = [
       { label: "Alerts", href: "/dashboard/safety" },
       { label: "Reports", href: "/dashboard/safety/reports" },
       { label: "Support fund", href: "/dashboard/support-fund" },
+      { label: "Assist links", href: "/dashboard/safety/assist-links" },
     ],
   },
   {
@@ -180,15 +238,11 @@ const NAV: NavItem[] = [
       { label: "Appearance", href: "/dashboard/settings/appearance" },
       { label: "Security", href: "/dashboard/settings/security" },
       { label: "Notifications", href: "/dashboard/settings/notifications" },
-      { label: "Billing & Subscription", href: "/dashboard/settings/billing" },
-      { label: "Roles & Permissions", href: "/dashboard/settings/roles" },
       { label: "Organisation", href: "/dashboard/settings/organisation" },
       { label: "Integrations", href: "/dashboard/settings/integrations" },
       { label: "Backup & Restore", href: "/dashboard/settings/backup" },
-      { label: "System Logs", href: "/dashboard/settings/logs" },
       { label: "Sessions", href: "/dashboard/settings/sessions" },
       { label: "My Activity", href: "/dashboard/settings/activity" },
-      { label: "Switch Role", href: "/dashboard/settings/switch-role" },
       { label: "Contact Support", href: "/dashboard/settings/support" },
       { label: "Help Center", href: "/dashboard/settings/help" },
     ],

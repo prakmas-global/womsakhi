@@ -334,7 +334,7 @@ export default function SupportPage() {
                 <Link href="/dashboard/settings/help" className="wc-inset flex items-center gap-2.5 rounded-xl px-3.5 py-2.5 text-sm text-ink-muted transition hover:bg-surface-hover">
                   <BookOpen className="h-4 w-4 shrink-0 text-ink-subtle" /> Help centre
                 </Link>
-                <Link href="/dashboard/settings/logs" className="wc-inset flex items-center gap-2.5 rounded-xl px-3.5 py-2.5 text-sm text-ink-muted transition hover:bg-surface-hover">
+                <Link href="/dashboard/settings/activity" className="wc-inset flex items-center gap-2.5 rounded-xl px-3.5 py-2.5 text-sm text-ink-muted transition hover:bg-surface-hover">
                   <ScrollText className="h-4 w-4 shrink-0 text-ink-subtle" /> Platform events
                 </Link>
               </div>

@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
-import { Search, Menu, Bell, HelpCircle, Settings as SettingsIcon, ChevronDown, User, Cog, ShieldCheck, Moon, Repeat, Activity, CreditCard, LifeBuoy, Headset, LogOut } from "lucide-react";
+import { Search, Menu, Bell, HelpCircle, Settings as SettingsIcon, ChevronDown, User, Cog, ShieldCheck, Moon, Activity, LifeBuoy, Headset, LogOut } from "lucide-react";
 import { Avatar } from "@/design-system";
 import { Brand } from "@/components/ux/Brand";
 import CommandPalette from "@/components/search/CommandPalette";
@@ -24,9 +24,7 @@ const MENU_GROUPS: {
   },
   {
     items: [
-      { label: "Switch Role", href: "/dashboard/settings/switch-role", icon: Repeat },
       { label: "My Activity", href: "/dashboard/settings/activity", icon: Activity },
-      { label: "Billing", href: "/dashboard/settings/billing", icon: CreditCard },
     ],
   },
   {

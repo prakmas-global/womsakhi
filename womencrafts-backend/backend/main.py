@@ -82,6 +82,10 @@ from app.routes.wallet import money_router as money_overview_router
 from app.routes.admin_community import router as admin_community_router
 from app.routes.admin_growth import router as admin_growth_router
 from app.routes.admin_safety import router as admin_safety_router
+from app.routes.admin_market import router as admin_market_router
+from app.routes.admin_money import router as admin_money_router
+from app.routes.admin_learning import router as admin_learning_router
+from app.routes.admin_resources import router as admin_resources_router
 from app.routes.staff_account import router as staff_account_router
 from app.routes.backups import router as backups_router
 from app.routes.theme import router as theme_router
@@ -344,6 +348,10 @@ app.include_router(money_overview_router, prefix="/api/v1")
 app.include_router(admin_community_router, prefix="/api/v1", dependencies=_mod("community"))
 app.include_router(admin_growth_router, prefix="/api/v1", dependencies=_mod("growth"))
 app.include_router(admin_safety_router, prefix="/api/v1", dependencies=_mod("safety"))
+app.include_router(admin_market_router, prefix="/api/v1", dependencies=_mod("market"))
+app.include_router(admin_money_router, prefix="/api/v1", dependencies=_mod("money"))
+app.include_router(admin_learning_router, prefix="/api/v1", dependencies=_mod("learning"))
+app.include_router(admin_resources_router, prefix="/api/v1", dependencies=_mod("resources"))
 # A staff member's own account and the platform settings. Guarded by
 # require_staff rather than a module key: every staff role owns its own profile.
 app.include_router(staff_account_router, prefix="/api/v1")

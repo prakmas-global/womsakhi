@@ -44,7 +44,7 @@ const GUIDES: Guide[] = [
     steps: ["Open Notifications.", "Switch channels per event and save.", "Choices are stored now and applied once staff notifications are sent by channel."] },
   { title: "Invite a colleague to the dashboard", group: "People and access", icon: UserCog, tone: "violet", href: "/dashboard/staff",
     steps: ["Open Staff (Super Admin only).", "Invite someone and choose a role.", "Send her the one-time link; she sets her own password."] },
-  { title: "Change what a role can do", group: "People and access", icon: ShieldCheck, tone: "emerald", href: "/dashboard/settings/roles",
+  { title: "Change what a role can do", group: "People and access", icon: ShieldCheck, tone: "emerald", href: "/dashboard/users/roles",
     steps: ["Open Roles & Permissions.", "Pick the role and tick the actions per section.", "Anyone holding the role gets the change on her next request."] },
   { title: "Admit a woman who has signed up", group: "People and access", icon: Users, tone: "brand", href: "/dashboard/applications",
     steps: ["Open Applications.", "Check her email confirmation and her document.", "Approve, or reject with a reason she will see."] },

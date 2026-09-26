@@ -43,6 +43,10 @@ ALL_MODULES = [
     "growth",
     "safety",
     "settings",
+    "market",
+    "money",
+    "learning",
+    "resources",
 ]
 
 # Sensible starting access per seeded role (Super Admin/Admin get everything).
