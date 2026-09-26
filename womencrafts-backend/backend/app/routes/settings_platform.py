@@ -311,6 +311,9 @@ async def test_email(request: Request, me: dict = Depends(get_current_user)):
             settings.APP_BASE_URL.rstrip("/"),
             preheader="WomSakhi email delivery test completed successfully.",
             footer_note="This test was requested by an authorised WomSakhi administrator.",
+            recipient_name=me.get("full_name", ""),
+            title_accent="working",
+            next_step="No action is required. Transactional email delivery is ready.",
         ),
         text=f"This is a test from the WomSakhi dashboard, sent {stamp}.",
     )
@@ -821,6 +824,9 @@ async def support_reply(
                 f"{settings.APP_BASE_URL.rstrip('/')}/app/help",
                 preheader=f"WomSakhi replied to support ticket {ref}.",
                 footer_note="You received this because you contacted WomSakhi support.",
+                recipient_name=doc.get("user_name", ""),
+                title_accent="reply",
+                next_step="Open support to continue the conversation if you still need help.",
             ),
             text=f"{by} replied to {ref}:\n\n{body.body}",
         )

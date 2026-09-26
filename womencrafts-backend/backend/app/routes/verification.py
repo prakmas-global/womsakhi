@@ -457,13 +457,13 @@ def _resubmission_email(name: str, reason: str, url: str) -> mailer.EmailMessage
     safe = escape(reason)
     html = mailer._wrap(  # noqa: SLF001 — the one branded shell every email uses
         "Please send your ID again",
-        f"<p>Hi {first},</p><p>We looked at the document you sent, and we need a new "
-        f"one before we can finish verifying you.</p>"
-        f"<p><strong>What to change:</strong> {safe}</p>"
-        f"<p>Nothing else about your application has changed. Upload the new "
-        f"document and a person will look at it again, usually within 1–2 working days.</p>",
+        "We looked at the document you sent, and we need a new one before we can "
+        f"finish verifying you.<br><strong style='color:#8f2b68;'>What to change:</strong> {safe}",
         "Upload again",
         url,
+        recipient_name=name,
+        title_accent="ID",
+        next_step="Upload the new document and a person will review it again, usually within 1–2 working days.",
     )
     text = (
         f"Hi {first},\n\nWe need a new copy of your ID before we can finish verifying you.\n\n"

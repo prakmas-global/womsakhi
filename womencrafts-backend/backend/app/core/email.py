@@ -243,66 +243,111 @@ def _wrap(
     *,
     preheader: str = "A message from WomSakhi",
     footer_note: str = "You received this message because your email address is connected to WomSakhi.",
+    recipient_name: str = "",
+    title_accent: str = "",
+    next_step: str = "",
 ) -> str:
-    """Render the shared, responsive WomSakhi transactional-email shell.
-
-    Email clients remove modern application CSS, so the layout deliberately
-    uses presentation tables and inline styles. Every URL rendered here is an
-    absolute production URL; the action is also printed below the button for
-    people whose mail client blocks buttons or images.
-    """
+    """Render the shared, responsive WomSakhi transactional-email shell."""
     app_url = settings.APP_BASE_URL.rstrip("/")
-    logo_url = f"{app_url}/womsakhi-email-logo.png"
+    safe_app_url = escape(app_url, quote=True)
+    reveal_url = f"{safe_app_url}/womsakhi-email-reveal.gif"
+    lotus_url = f"{safe_app_url}/womsakhi-lotus-airflow.gif"
+    icons_url = f"{safe_app_url}/email-icons"
     safe_title = escape(title)
     safe_preheader = escape(preheader)
     safe_footer = escape(footer_note)
     safe_cta_label = escape(cta_label)
     safe_cta_url = escape(cta_url, quote=True)
+    safe_next_step = escape(next_step)
+
+    heading = safe_title
+    if title_accent:
+        index = title.casefold().find(title_accent.casefold())
+        if index >= 0:
+            before = escape(title[:index])
+            highlighted = escape(title[index:index + len(title_accent)])
+            after = escape(title[index + len(title_accent):])
+            heading = f'{before}<span style="color:#d52b75;">{highlighted}</span>{after}'
+
+    first_name = (recipient_name or "").strip().split(" ")[0]
+    greeting = ""
+    if first_name:
+        greeting = f"""
+        <table role="presentation" cellpadding="0" cellspacing="0" style="margin:0 auto;">
+          <tr>
+            <td valign="middle" style="padding-right:10px;">
+              <table role="presentation" cellpadding="0" cellspacing="0" style="background:#f9e9f2;border:1px solid #ecc9da;border-radius:999px;">
+                <tr>
+                  <td style="padding:4px 5px 4px 7px;"><img src="{icons_url}/shield.png" width="17" height="17" alt="" style="display:block;width:17px;height:17px;border:0;"></td>
+                  <td style="padding:4px 9px 4px 0;font-size:8px;line-height:12px;font-weight:800;letter-spacing:.8px;color:#8e2b69;text-transform:uppercase;white-space:nowrap;">Secure message</td>
+                </tr>
+              </table>
+            </td>
+            <td valign="middle" style="padding-right:6px;"><img src="{icons_url}/profile.png" width="24" height="24" alt="" style="display:block;width:24px;height:24px;border:0;"></td>
+            <td valign="middle" style="font-size:14px;line-height:20px;color:#67576b;white-space:nowrap;">Hello, <strong style="color:#b01d65;font-size:15px;font-weight:700;">{escape(first_name)}</strong></td>
+          </tr>
+        </table>"""
+
     cta = (
         f"""
-        <tr><td bgcolor="#ffffff" style="background:#ffffff;padding:8px 40px 8px;border-left:1px solid #eadde6;border-right:1px solid #eadde6;">
-          <table role="presentation" cellpadding="0" cellspacing="0"><tr><td bgcolor="#c21868"
-                 style="border-radius:12px;background:#c21868;box-shadow:0 6px 16px rgba(194,24,104,.18);">
-            <a href="{safe_cta_url}" style="display:inline-block;border:1px solid #c21868;border-radius:12px;
-               color:#ffffff;text-decoration:none;font-weight:700;font-size:15px;line-height:20px;
-               padding:14px 24px;">{safe_cta_label}</a>
+        <tr><td align="center" class="content-pad" bgcolor="#ffffff" style="background:#ffffff;padding:12px 42px 6px;border-left:1px solid #eadde6;border-right:1px solid #eadde6;">
+          <table role="presentation" cellpadding="0" cellspacing="0" style="margin:0 auto;"><tr><td bgcolor="#bd1765" style="border:1px solid #a90c58;border-radius:15px;background:#bd1765;background-image:linear-gradient(100deg,#a60058 0%,#cf176d 46%,#ef4386 100%);box-shadow:0 12px 27px rgba(201,31,111,.28);">
+            <a href="{safe_cta_url}" class="action-button" style="display:inline-block;padding:14px 27px;border-radius:15px;color:#ffffff;text-decoration:none;font-size:15px;line-height:20px;font-weight:700;letter-spacing:.1px;"><img src="{icons_url}/mail-white.png" width="21" height="21" alt="" style="display:inline-block;width:21px;height:21px;border:0;vertical-align:-6px;margin-right:9px;">{safe_cta_label}&nbsp;&nbsp; →</a>
           </td></tr></table>
-        </td></tr>
-        <tr><td bgcolor="#ffffff" style="background:#ffffff;padding:8px 40px 26px;font-size:12px;line-height:18px;color:#766b80;border-left:1px solid #eadde6;border-right:1px solid #eadde6;">
-          If the button does not open, copy and paste this link into your browser:<br>
-          <a href="{safe_cta_url}" style="color:#7a2c82;text-decoration:underline;word-break:break-all;">{safe_cta_url}</a>
+          <div style="margin-top:9px;font-size:10px;line-height:15px;color:#8b7c8e;">Secure action for your WomSakhi account.</div>
         </td></tr>"""
         if cta_label and cta_url
         else ""
     )
+    next_step_html = (
+        f"""
+        <tr><td align="center" class="content-pad" bgcolor="#ffffff" style="background:#ffffff;padding:7px 42px 12px;border-left:1px solid #eadde6;border-right:1px solid #eadde6;">
+          <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#fff5fa;border:1px solid #e9c9da;border-radius:12px;">
+            <tr>
+              <td width="35" valign="middle" style="padding:9px 0 9px 12px;"><img src="{icons_url}/user-check.png" width="27" height="27" alt="" style="display:block;width:27px;height:27px;border:0;"></td>
+              <td valign="middle" style="padding:9px 10px;font-size:11px;line-height:16px;color:#6a586b;text-align:left;"><strong style="color:#8f2b68;">Next step:</strong> {safe_next_step}</td>
+              {f'<td valign="middle" align="right" style="padding:9px 12px 9px 0;white-space:nowrap;"><a href="{safe_cta_url}" style="color:#8c246a;text-decoration:underline;font-size:10px;line-height:15px;font-weight:700;">Backup link</a></td>' if cta_url else ''}
+            </tr>
+          </table>
+        </td></tr>"""
+        if next_step
+        else ""
+    )
     return f"""<!doctype html>
-<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-  <title>{safe_title}</title>
-</head><body style="margin:0;padding:0;background:#f7eef4;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;">
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>{safe_title}</title>
+  <style>
+    @media only screen and (max-width:620px) {{.page-pad{{padding-left:0!important;padding-right:0!important}}.email-shell{{width:100%!important;border-radius:0!important}}.content-pad{{padding-left:20px!important;padding-right:20px!important}}.reveal-animation{{width:190px!important;height:190px!important}}.email-title{{font-size:30px!important;line-height:35px!important}}.lotus-animation{{width:100%!important;height:auto!important}}}}
+    @media only screen and (max-width:380px) {{.content-pad{{padding-left:15px!important;padding-right:15px!important}}.reveal-animation{{width:168px!important;height:168px!important}}.email-title{{font-size:27px!important;line-height:32px!important}}.action-button{{display:block!important;padding-left:18px!important;padding-right:18px!important}}.footer-link{{padding-left:5px!important;padding-right:5px!important}}}}
+  </style>
+</head><body style="margin:0;padding:0;background:#f8f0f5;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Arial,sans-serif;color:#38283d;">
   <div style="display:none;max-height:0;overflow:hidden;opacity:0;color:transparent;">{safe_preheader}</div>
-  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" bgcolor="#f7eef4" style="background:#f7eef4;">
-    <tr><td align="center">
-      <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:600px;margin:28px 14px;">
-        <tr><td bgcolor="#4b174f" style="height:8px;background:#4b174f;border-radius:20px 20px 0 0;font-size:0;line-height:0;">&nbsp;</td></tr>
-        <tr><td align="center" bgcolor="#fffafc" style="background:#fffafc;padding:26px 32px 22px;border-left:1px solid #eadde6;border-right:1px solid #eadde6;">
-          <a href="{escape(app_url, quote=True)}" style="text-decoration:none;">
-            <img src="{escape(logo_url, quote=True)}" width="210" alt="WomSakhi" style="display:block;width:210px;max-width:100%;height:auto;border:0;">
-          </a>
-          <div style="font-size:10px;font-weight:700;letter-spacing:2px;color:#8a4a86;text-transform:uppercase;margin-top:8px;">Together, women thrive</div>
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" bgcolor="#f8f0f5" style="width:100%;background:#f8f0f5;">
+    <tr><td align="center" class="page-pad" style="padding:14px 10px;">
+      <table role="presentation" width="570" cellpadding="0" cellspacing="0" class="email-shell" style="width:570px;max-width:570px;background:#ffffff;border:1px solid #eadde6;border-radius:22px;box-shadow:0 16px 48px rgba(76,27,72,.1);overflow:hidden;">
+        <tr><td bgcolor="#571451" style="height:6px;background:#571451;font-size:0;line-height:0;">&nbsp;</td></tr>
+        <tr><td align="center" class="content-pad" bgcolor="#fffafd" style="padding:12px 34px 10px;background:#fffafd;">
+          <img src="{reveal_url}" width="218" height="218" class="reveal-animation" alt="Animated WomSakhi logo reveal" style="display:block;width:218px;height:218px;max-width:100%;margin:0 auto;border:1px solid #56304f;border-radius:18px;box-shadow:0 16px 34px rgba(106,25,91,.2);">
         </td></tr>
-        <tr><td bgcolor="#ffffff" style="background:#ffffff;padding:30px 40px 10px;border-left:1px solid #eadde6;border-right:1px solid #eadde6;">
-          <h1 style="margin:0;font-size:25px;line-height:33px;color:#35123d;font-weight:750;letter-spacing:-.3px;">{safe_title}</h1>
+        <tr><td align="center" class="content-pad" bgcolor="#ffffff" style="background:#ffffff;padding:15px 42px 8px;border-left:1px solid #eadde6;border-right:1px solid #eadde6;">
+          {greeting}
+          <h1 class="email-title" style="margin:{'9px' if greeting else '0'} 0 0;font-family:Georgia,'Times New Roman',serif;font-size:38px;line-height:43px;font-weight:700;letter-spacing:-.75px;color:#40113f;">{heading}</h1>
+          <div style="margin:9px auto 0;max-width:445px;font-size:14px;line-height:21px;color:#6f6273;">{body_html}</div>
         </td></tr>
-        <tr><td bgcolor="#ffffff" style="background:#ffffff;font-size:15px;line-height:24px;color:#514658;padding:4px 40px 18px;border-left:1px solid #eadde6;border-right:1px solid #eadde6;">{body_html}</td></tr>
         {cta}
-        <tr><td bgcolor="#fffafc" style="background:#fffafc;border:1px solid #eadde6;border-top:0;border-radius:0 0 20px 20px;padding:22px 40px;font-size:12px;line-height:18px;color:#807486;">
-          {safe_footer}<br><br>
-          <a href="{escape(app_url, quote=True)}" style="color:#7a2c82;text-decoration:none;font-weight:700;">Open WomSakhi</a>
-          &nbsp;&nbsp;·&nbsp;&nbsp;
-          <a href="{escape(app_url + '/contact', quote=True)}" style="color:#7a2c82;text-decoration:none;">Contact support</a>
-          &nbsp;&nbsp;·&nbsp;&nbsp;
-          <a href="{escape(app_url + '/privacy', quote=True)}" style="color:#7a2c82;text-decoration:none;">Privacy</a>
-          <br><span style="color:#a397a7;">WomSakhi · India</span>
+        {next_step_html}
+        <tr><td align="center" class="content-pad" bgcolor="#fffafd" style="padding:5px 34px 6px;background:#fffafd;border-left:1px solid #eadde6;border-right:1px solid #eadde6;border-top:1px solid #f5e8ef;">
+          <img src="{lotus_url}" width="455" height="92" class="lotus-animation" alt="Animated WomSakhi lotus" style="display:block;width:455px;max-width:100%;height:auto;margin:0 auto;border:0;">
+        </td></tr>
+        <tr><td align="center" class="content-pad" bgcolor="#fff8fc" style="padding:10px 34px 12px;background:#fff8fc;border:1px solid #efdee8;border-top:0;border-radius:0 0 22px 22px;">
+          <div style="font-size:9px;line-height:13px;color:#8f8291;margin-bottom:7px;">{safe_footer}</div>
+          <table role="presentation" cellpadding="0" cellspacing="0" style="margin:0 auto;"><tr>
+            <td style="padding:0 4px;"><img src="{icons_url}/instagram.png" width="26" height="26" alt="Instagram" style="display:block;width:26px;height:26px;border:0;"></td>
+            <td style="padding:0 4px;"><img src="{icons_url}/facebook.png" width="26" height="26" alt="Facebook" style="display:block;width:26px;height:26px;border:0;"></td>
+            <td style="padding:0 4px;"><img src="{icons_url}/linkedin.png" width="26" height="26" alt="LinkedIn" style="display:block;width:26px;height:26px;border:0;"></td>
+            <td style="padding:0 4px;"><img src="{icons_url}/youtube.png" width="26" height="26" alt="YouTube" style="display:block;width:26px;height:26px;border:0;"></td>
+          </tr></table>
+          <p style="margin:7px 0 0;font-size:10px;line-height:15px;"><a href="{safe_app_url}" class="footer-link" style="padding:3px 7px;color:#842866;text-decoration:underline;font-weight:700;">WomSakhi</a><a href="{safe_app_url}/contact" class="footer-link" style="padding:3px 7px;color:#842866;text-decoration:underline;font-weight:600;">Support</a><a href="{safe_app_url}/privacy" class="footer-link" style="padding:3px 7px;color:#842866;text-decoration:underline;font-weight:600;">Privacy</a></p>
+          <p style="margin:3px 0 0;font-size:9px;line-height:13px;color:#aa9bab;">WomSakhi · India</p>
         </td></tr>
       </table>
     </td></tr>
@@ -311,66 +356,74 @@ def _wrap(
 
 
 def verification_email(name: str, url: str) -> EmailMessageSpec:
-    first = escape((name or "").strip().split(" ")[0] or "there")
+    first = (name or "").strip().split(" ")[0] or "there"
     html = _wrap(
-        "Confirm your email address",
-        f"<p>Hi {first},</p><p>Welcome to WomSakhi. Please confirm this is your email "
-        f"address so we can keep your account secure.</p>"
-        f"<p style='font-size:13px;color:#8b849e;'>This link expires in "
-        f"{settings.EMAIL_TOKEN_HOURS} hours.</p>",
-        "Confirm my email",
+        "Verify your email",
+        "We received a request to create your WomSakhi account. Verify your email "
+        "address to continue your journey with us.",
+        "Verify Email Address",
         url,
         preheader="Confirm your email to continue your WomSakhi application.",
         footer_note="If you did not create this application, you can safely ignore this email.",
+        recipient_name=name,
+        title_accent="email",
+        next_step="Complete your profile, then our authorised team will review your account.",
     )
     text = f"Hi {first},\n\nConfirm your WomSakhi email address:\n{url}\n\nThis link expires in {settings.EMAIL_TOKEN_HOURS} hours."
     return EmailMessageSpec(to="", subject="Confirm your WomSakhi email", html=html, text=text)
 
 
 def submitted_email(name: str) -> EmailMessageSpec:
-    first = escape((name or "").strip().split(" ")[0] or "there")
+    first = (name or "").strip().split(" ")[0] or "there"
     html = _wrap(
         "We've received your documents",
-        f"<p>Hi {first},</p><p>Thank you. Our team is reviewing your application now. "
-        f"Because WomSakhi is a women-only community, every account is checked by a "
-        f"real person — it usually takes 1–2 working days.</p>"
-        f"<p>We'll email you the moment it's done.</p>",
+        "Thank you. Our team is reviewing your application now. Because WomSakhi is "
+        "a women-only community, every account is checked by a real person. This "
+        "usually takes 1–2 working days.",
         "View application status",
         f"{settings.APP_BASE_URL.rstrip('/')}/app/verify",
         preheader="Your documents reached the WomSakhi review team.",
         footer_note="This is a status update for your WomSakhi application.",
+        recipient_name=name,
+        title_accent="documents",
+        next_step="We will email you as soon as the review is complete.",
     )
     text = f"Hi {first},\n\nWe've received your documents. Our team reviews every account by hand; this usually takes 1-2 working days."
     return EmailMessageSpec(to="", subject="WomSakhi — your application is being reviewed", html=html, text=text)
 
 
 def approved_email(name: str, url: str) -> EmailMessageSpec:
-    first = escape((name or "").strip().split(" ")[0] or "there")
+    first = (name or "").strip().split(" ")[0] or "there"
     html = _wrap(
-        "You're in 🎉",
-        f"<p>Hi {first},</p><p>Your WomSakhi account has been approved. You can now book "
-        f"sessions, join programs and message our team.</p>",
+        "Your account is approved",
+        "Your WomSakhi membership is ready. You can now book sessions, join programs "
+        "and message our team.",
         "Open WomSakhi",
         url,
         preheader="Your WomSakhi membership is approved and ready.",
         footer_note="This approval was completed by an authorised WomSakhi administrator.",
+        recipient_name=name,
+        title_accent="approved",
+        next_step="Sign in and complete any remaining profile details.",
     )
     text = f"Hi {first},\n\nYour WomSakhi account has been approved. Sign in: {url}"
     return EmailMessageSpec(to="", subject="Your WomSakhi account is approved", html=html, text=text)
 
 
 def rejected_email(name: str, reason: str) -> EmailMessageSpec:
-    first = escape((name or "").strip().split(" ")[0] or "there")
-    detail = f"<p><strong>Reason:</strong> {escape(reason)}</p>" if reason else ""
+    first = (name or "").strip().split(" ")[0] or "there"
+    detail = f"<br><strong style='color:#8f2b68;'>Reason:</strong> {escape(reason)}" if reason else ""
     html = _wrap(
         "We couldn't verify your account",
-        f"<p>Hi {first},</p><p>We weren't able to verify your account with the documents "
-        f"provided.</p>{detail}<p>You can reply to this email and our team will help you "
-        f"sort it out.</p>",
+        "We weren't able to verify your account with the documents provided."
+        f"{detail}",
         "Contact support",
         f"{settings.APP_BASE_URL.rstrip('/')}/contact",
         preheader="An update about your WomSakhi application.",
         footer_note="This is a status update for your WomSakhi application.",
+        recipient_name=name,
+        title_accent="account",
+        next_step="Contact support and our team will help you resolve the issue.",
     )
     text = f"Hi {first},\n\nWe couldn't verify your account. {reason}"
     return EmailMessageSpec(to="", subject="WomSakhi — about your application", html=html, text=text)
@@ -393,14 +446,14 @@ def reset_email(name: str, url: str, by_staff: bool = False) -> EmailMessageSpec
         subject="Reset your WomSakhi password",
         html=_wrap(
             "Reset your password",
-            f"<p>Hello {escape(name or 'there')},</p>"
-            f"<p>{who} Use the button below within 24 hours to choose a new one.</p>"
-            "<p>If you weren't expecting this, ignore this email — your current "
-            "password keeps working and nobody can see it.</p>",
+            f"{escape(who)} Use the secure button below within 24 hours to choose a new password.",
             "Choose a new password",
             url,
             preheader="Use this secure link to reset your WomSakhi password.",
             footer_note="If you did not expect this reset, ignore this email. Your current password will keep working.",
+            recipient_name=name,
+            title_accent="password",
+            next_step="After changing it, sign in again with your new password.",
         ),
         text=f"{who} Open this link within 24 hours to set a new password: {url}",
     )
@@ -412,13 +465,15 @@ def staff_invitation_email(name: str, role: str, url: str) -> EmailMessageSpec:
     safe_role = escape(role or "staff member")
     html = _wrap(
         "You’re invited to the WomSakhi team",
-        f"<p>Hi {first},</p><p>A WomSakhi administrator invited you to join as "
-        f"<strong>{safe_role}</strong>.</p><p>Use the secure link below to choose your "
-        "password. The invitation expires in 72 hours and can be used only once.</p>",
+        f"A WomSakhi administrator invited you to join as <strong>{safe_role}</strong>. "
+        "Use the secure link below to choose your password.",
         "Accept invitation",
         url,
         preheader="Set your password and activate your WomSakhi staff account.",
         footer_note="If you were not expecting this invitation, contact WomSakhi support.",
+        recipient_name=name,
+        title_accent="team",
+        next_step="This invitation expires in 72 hours and can be used only once.",
     )
     text = (
         f"Hi {(name or '').strip().split(' ')[0] or 'there'},\n\n"

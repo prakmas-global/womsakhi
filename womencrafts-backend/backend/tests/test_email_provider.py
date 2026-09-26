@@ -29,11 +29,17 @@ def test_branded_template_has_logo_action_fallback_and_support_links(monkeypatch
 
     message = email.approved_email("Asha", "https://app.womsakhi.com/signin")
 
-    assert 'src="https://app.womsakhi.com/womsakhi-email-logo.png"' in message.html
+    assert 'src="https://app.womsakhi.com/womsakhi-email-reveal.gif"' in message.html
+    assert 'src="https://app.womsakhi.com/womsakhi-lotus-airflow.gif"' in message.html
+    assert 'src="https://app.womsakhi.com/email-icons/mail-white.png"' in message.html
     assert message.html.count('href="https://app.womsakhi.com/signin"') == 2
     assert 'href="https://app.womsakhi.com/contact"' in message.html
     assert 'href="https://app.womsakhi.com/privacy"' in message.html
     assert "Your WomSakhi membership is approved and ready." in message.html
+    assert "Hello, <strong" in message.html
+    assert ">Asha</strong>" in message.html
+    assert "@media only screen and (max-width:620px)" in message.html
+    assert "width:570px;max-width:570px" in message.html
 
 
 def test_template_escapes_member_supplied_content(monkeypatch) -> None:

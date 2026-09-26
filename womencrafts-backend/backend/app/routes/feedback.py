@@ -34,6 +34,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query, Request, Response,
 
 from app.core import mongosafe
 from app.core.audit import record
+from app.core.config import settings
 from app.core.deps import get_current_user
 from app.core.email import EmailMessageSpec, _wrap, can_deliver, send
 from app.core.permissions import require_permission
@@ -432,12 +433,16 @@ async def request_feedback(payload: FeedbackRequestCreate, request: Request, me:
     emailed = False
     if can_deliver():
         greeting = f"Hi {name.split(' ')[0]}," if name else "Hi,"
-        about = f" about <b>{payload.program.strip()}</b>" if payload.program.strip() else ""
+        about = f" about <b>{html.escape(payload.program.strip())}</b>" if payload.program.strip() else ""
         note = f"<p>{html.escape(payload.message.strip())}</p>" if payload.message.strip() else ""
         html = _wrap(
             "We'd love your feedback",
-            f"<p>{greeting}</p><p>The WomSakhi team would like to hear how it went{about}.</p>{note}"
-            "<p>Reply to this email, or leave your feedback in the app.</p>",
+            f"The WomSakhi team would like to hear how it went{about}.{note}",
+            "Share feedback",
+            f"{settings.APP_BASE_URL.rstrip('/')}/app/help",
+            recipient_name=name,
+            title_accent="feedback",
+            next_step="Reply to this email or leave your feedback securely in the app.",
         )
         text = f"{greeting}\n\nThe WomSakhi team would like to hear how it went{about.replace('<b>', '').replace('</b>', '')}.\n\n{payload.message.strip()}".strip()
         emailed = await send(EmailMessageSpec(to=email, subject="We'd love your feedback", html=html, text=text), email)
@@ -496,9 +501,13 @@ async def reply_to_feedback(feedback_id: str, payload: FeedbackReplyCreate, requ
     if not payload.internal and to and can_deliver():
         html = _wrap(
             "A reply to your feedback",
-            f"<p>Hi {(doc.get('user_name') or '').split(' ')[0] or 'there'},</p>"
             f"<p>You wrote:</p><blockquote>{html.escape(_snippet(doc, 400))}</blockquote>"
             f"<p>{html.escape(payload.text)}</p><p>— {html.escape(me.get('full_name', '') or 'The WomSakhi team')}</p>",
+            "Open WomSakhi",
+            f"{settings.APP_BASE_URL.rstrip('/')}/app/help",
+            recipient_name=doc.get("user_name", ""),
+            title_accent="reply",
+            next_step="Open WomSakhi if you would like to continue the conversation.",
         )
         emailed = await send(EmailMessageSpec(to=to, subject="A reply to your feedback", html=html, text=payload.text), to)
 
