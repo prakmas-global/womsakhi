@@ -10,6 +10,12 @@ import Sidebar from "@/components/layout/Sidebar";
 import Topbar from "@/components/layout/Topbar";
 import { CustomiseBar } from "@/layout-engine";
 import SkipToContent from "@/components/layout/SkipToContent";
+// The member app's token sheets, then the admin skin that reads them. The
+// dashboard follows the WomSakhi design system the member app is built on:
+// same canvas, cards, brand, tints and type — see ux/admin.css.
+import "@/app/ux/tokens.css";
+import "@/app/ux/mobile.css";
+import "@/app/ux/admin.css";
 
 function AccessDenied() {
   return (
@@ -80,7 +86,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const allowed = isModuleAllowed(moduleForPath(pathname), user.modules);
 
   return (
-    <div className="min-h-screen">
+    <div className="ux ux-admin min-h-screen">
       <SkipToContent />
       {/* Tapping away closes it — the expected gesture, and the reason the
           drawer needs no visible close button competing with the nav items. */}
@@ -100,7 +106,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       */}
       <div className="lg:pl-[var(--wc-sidebar-width)]">
         <Topbar onMenu={() => setNavOpen(true)} />
-        <main id="content" tabIndex={-1} className="px-6 pb-6 pt-26">
+        <main id="content" tabIndex={-1} className="px-5 pb-24 pt-[calc(var(--ux-topbar-h)+18px)]">
           <div key={pathname} className="wc-page-enter">
             {allowed ? children : <AccessDenied />}
           </div>

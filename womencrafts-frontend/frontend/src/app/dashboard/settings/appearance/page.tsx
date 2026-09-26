@@ -1,11 +1,10 @@
 "use client";
 
-import { Check, Moon, Palette, RotateCcw, Sun, SunMoon } from "lucide-react";
+import { Check, Moon, Palette, Sun, SunMoon } from "lucide-react";
 
 import AdminPage from "@/components/admin/AdminPage";
 import { Card, useToast } from "@/design-system";
 import { useTheme } from "@/context/ThemeContext";
-import { DEFAULT_THEME, ThemePicker, useThemeEngine } from "@/theme-engine";
 import { ResizableColumns } from "@/layout-engine";
 import LanguageSwitcher from "@/components/LanguageSwitcher";
 import { apiUpdateMyLocale } from "@/lib/org-api";
@@ -18,47 +17,34 @@ import { apiUpdateMyLocale } from "@/lib/org-api";
  */
 export default function AdminAppearancePage() {
   const toast = useToast();
-  const { theme, setTheme } = useThemeEngine();
   const { theme: mode, setTheme: setMode } = useTheme();
 
   const flash = () => {
     toast.success("Saved");
   };
 
-  const isDefault =
-    theme.primary === DEFAULT_THEME.primary && theme.secondary === DEFAULT_THEME.secondary;
-
   return (
     <AdminPage
       title="Appearance"
-      subtitle="Your colours are saved to your account and follow you to any device. Light or dark is remembered on this device only."
+      subtitle="The dashboard wears the WomSakhi design system, the same one members see. Light or dark is remembered on this device only."
     >
 
       <ResizableColumns id="settings-appearance" defaultSize={0.74} className="gap-4">
         <Card>
-          <div className="mb-4 flex items-center gap-3">
+          <div className="flex items-start gap-3">
             <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-brand-tint text-brand-ink">
               <Palette className="h-5 w-5" />
             </span>
             <div className="min-w-0 flex-1">
               <h2 className="font-display text-base font-bold text-ink">Colours</h2>
-              <p className="text-xs text-ink-subtle">
-                Hover to preview across the whole dashboard.
+              <p className="mt-1 text-sm leading-relaxed text-ink-muted">
+                The dashboard uses the WomSakhi design system: the warm cream canvas, white cards,
+                the Berry brand and the same type as the member app, so the product a woman signs
+                into and the one you run it from are one product. There is no palette to pick
+                here; the one thing that is yours is light or dark.
               </p>
             </div>
-            {!isDefault && (
-              <button
-                onClick={() => {
-                  setTheme(DEFAULT_THEME);
-                  flash();
-                }}
-                className="flex shrink-0 items-center gap-1.5 text-xs font-semibold text-ink-subtle transition hover:text-ink-muted"
-              >
-                <RotateCcw className="h-3.5 w-3.5" /> Reset
-              </button>
-            )}
           </div>
-          <ThemePicker onChange={flash} />
         </Card>
 
         <div className="space-y-4 lg:sticky lg:top-24 lg:self-start">

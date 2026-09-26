@@ -4,6 +4,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { Search, Menu, Bell, HelpCircle, Settings as SettingsIcon, ChevronDown, User, Cog, ShieldCheck, Moon, Repeat, Activity, CreditCard, LifeBuoy, Headset, LogOut } from "lucide-react";
 import { Avatar } from "@/design-system";
+import { Brand } from "@/components/ux/Brand";
 import CommandPalette from "@/components/search/CommandPalette";
 import { CustomiseButton } from "@/layout-engine";
 import { useAuth } from "@/context/AuthContext";
@@ -106,7 +107,7 @@ export default function Topbar({ onMenu }: { onMenu?: () => void } = {}) {
   const name = user?.full_name ?? "Admin User";
 
   return (
-    <header className="fixed right-0 left-0 lg:left-[var(--wc-sidebar-width)] top-0 z-30 flex h-20 items-center gap-3 sm:gap-4 wc-shell-top px-4 sm:px-6 backdrop-blur">
+    <header className="fixed right-0 left-0 lg:left-[var(--wc-sidebar-width)] top-0 z-30 flex h-[var(--ux-topbar-h)] items-center gap-3 wc-shell-top ps-[18px] pe-[18px] backdrop-blur">
       {/* Below `lg` the rail is off-canvas, so this is the only way to it. */}
       {onMenu && (
         <button
@@ -118,25 +119,36 @@ export default function Topbar({ onMenu }: { onMenu?: () => void } = {}) {
           <Menu className="h-5 w-5" />
         </button>
       )}
-      {/* global search trigger — opens the ⌘K command palette */}
+      {/* The brand, top-left of the whole app — where the member app keeps it. */}
+      <Brand size="sm" href="/dashboard" tagline={false} />
+
+      {/* global search trigger — opens the ⌘K command palette; a button, not
+          an input, because typing happens in the palette. */}
+      <div className="ms-auto hidden min-w-0 flex-1 justify-end sm:flex sm:max-w-[300px]">
+        <button
+          type="button"
+          onClick={() => setPaletteOpen(true)}
+          aria-label="Open search (Command K)"
+          className="ux-hov flex h-[42px] w-full items-center gap-2.5 rounded-[12px] border px-3.5 text-start transition-colors hover:border-[var(--ux-brand)]"
+          style={{ borderColor: "var(--ux-line-strong)", background: "var(--ux-surface-2)" }}
+        >
+          <Search className="ux-ico h-4 w-4 shrink-0" style={{ color: "var(--ux-faint)" }} strokeWidth={2} />
+          <span className="min-w-0 flex-1 truncate text-xsm" style={{ color: "var(--ux-muted)" }}>Search…</span>
+          <kbd className="shrink-0 rounded-md border px-1.5 py-0.5 text-2xs font-medium" style={{ borderColor: "var(--ux-line-strong)", color: "var(--ux-muted)" }}>⌘ K</kbd>
+        </button>
+      </div>
       <button
         type="button"
         onClick={() => setPaletteOpen(true)}
-        aria-label="Open search (Command K)"
-        className="group relative flex items-center wc-inset text-left text-sm text-ink-subtle outline-none transition hover:ring-2 hover:ring-brand-500/25
-          max-sm:h-10 max-sm:w-10 max-sm:shrink-0 max-sm:justify-center max-sm:rounded-xl
-          sm:w-full sm:max-w-md sm:rounded-xl sm:py-2.5 sm:pl-10 sm:pr-16"
+        aria-label="Open search"
+        className="ux-press grid h-10 w-10 shrink-0 place-items-center rounded-xl text-ink-muted sm:hidden"
       >
-        <Search className="h-4 w-4 text-ink-subtle transition-colors group-hover:text-brand-ink sm:pointer-events-none sm:absolute sm:left-3.5 sm:top-1/2 sm:-translate-y-1/2" />
-        <span className="hidden truncate sm:inline">Search anything...</span>
-        <span className="pointer-events-none absolute right-3 top-1/2 hidden -translate-y-1/2 items-center gap-1 rounded-md border border-line-strong bg-surface px-1.5 py-0.5 text-2xs font-semibold text-ink-subtle shadow-sm sm:flex dark:border-white/10 dark:bg-white/10">
-          ⌘K
-        </span>
+        <Search className="h-[19px] w-[19px]" strokeWidth={2} />
       </button>
 
       <CommandPalette open={paletteOpen} onClose={() => setPaletteOpen(false)} />
 
-      <div className="ml-auto flex items-center gap-1.5">
+      <div className="ml-auto flex items-center gap-1 sm:ml-0">
         {/* bell */}
         <div className="relative" ref={bellRef}>
           <button
@@ -159,7 +171,7 @@ export default function Topbar({ onMenu }: { onMenu?: () => void } = {}) {
           </button>
 
           {bellOpen && (
-            <div className="absolute right-0 top-14 w-[22rem] overflow-hidden rounded-2xl border border-line bg-surface shadow-xl shadow-[color:var(--wc-shadow-overlay)]">
+            <div className="ux-sheet absolute right-0 top-14 w-[22rem] overflow-hidden rounded-[16px]">
               <div className="flex items-center justify-between border-b border-line px-4 py-3">
                 <div className="flex items-center gap-2">
                   <p className="text-sm font-semibold text-ink">Needs attention</p>
@@ -249,7 +261,7 @@ export default function Topbar({ onMenu }: { onMenu?: () => void } = {}) {
           </button>
 
           {open && (
-            <div className="wc-page-enter absolute right-0 top-14 w-72 overflow-hidden rounded-2xl border border-line bg-surface shadow-[0_20px_50px_-16px_rgba(80,40,120,0.4)] ring-1 ring-black/5 dark:border-white/10 dark:ring-white/10">
+            <div className="ux-sheet wc-page-enter absolute right-0 top-14 w-72 overflow-hidden rounded-[16px]">
               <div className="flex items-center gap-3 border-b border-line bg-linear-to-br from-brand-50/70 to-violet-50/50 px-4 py-4 dark:from-white/5 dark:to-transparent">
                 <Avatar name={name} size="md" ring />
                 <div className="min-w-0">

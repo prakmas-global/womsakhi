@@ -26,7 +26,6 @@ import {
   UsersRound,
   ShieldAlert,
 } from "lucide-react";
-import Logo, { LogoMark } from "@/components/brand/Logo";
 import {
   LIMITS,
   ResizeHandle,
@@ -346,26 +345,31 @@ export default function Sidebar({
       }`}
       data-nav-open={navOpen ? "true" : "false"}
     >
-      {/* logo */}
-      {/* Collapsed, only the mark fits. Rendering the full lockup in a 64px
-          rail clips the wordmark mid-letter, which looks like a broken image
-          rather than a deliberate compact state. */}
-      <div
-        className={`flex h-20 shrink-0 items-center overflow-hidden border-b border-line ${
-          iconOnly ? "justify-center px-0" : "px-5"
-        }`}
-      >
+      {/* Who is signed in — the member rail opens the same way, with her card.
+          The brand lives in the top bar now, as it does for members. */}
+      <div className="shrink-0 px-3 pb-4 pt-[18px]">
         {iconOnly ? (
-          <Link href="/dashboard" aria-label="WomSakhi — dashboard">
-            <LogoMark className="h-9" />
+          <Link href="/dashboard/settings/profile" aria-label="My profile" className="mx-auto block h-9 w-9 overflow-hidden rounded-full"
+                style={{ border: "2px solid var(--ux-surface)", background: "var(--ux-brand-tint-2)" }}>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            {user?.avatar ? <img src={user.avatar} alt="" className="h-full w-full object-cover" /> : null}
           </Link>
         ) : (
-          <Logo
-            markClassName="h-9"
-            wordmarkClassName="h-11"
-            taglineClassName="text-3xs tracking-[0.14em]"
-            brand={brand ?? undefined}
-          />
+          <Link href="/dashboard/settings/profile" className="ux-sq block overflow-hidden rounded-[16px]"
+                style={{ border: "1px solid var(--ux-line)" }}>
+            <span className="block h-[52px]" style={{ background: "linear-gradient(120deg, var(--ux-fill), var(--ux-fill-2))" }} />
+            <span className="block px-3.5 pb-3.5">
+              <span className="-mt-6 block h-[46px] w-[46px] overflow-hidden rounded-full"
+                    style={{ border: "3px solid var(--ux-surface)", background: "var(--ux-brand-tint-2)" }}>
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                {user?.avatar ? <img src={user.avatar} alt="" aria-hidden className="h-full w-full object-cover" /> : null}
+              </span>
+              <b className="mt-2 block truncate text-xsm font-bold" style={{ color: "var(--ux-ink)" }}>{user?.full_name || "Staff"}</b>
+              <span className="mt-0.5 block truncate text-2xs" style={{ color: "var(--ux-muted)" }}>
+                {brand?.name ? `${user?.role || "Staff"} · ${brand.name}` : (user?.role || "Staff")}
+              </span>
+            </span>
+          </Link>
         )}
       </div>
 
@@ -461,17 +465,19 @@ export default function Sidebar({
                     <button
                       onClick={() => toggle(item.label)}
                       aria-label={iconOnly ? item.label : undefined}
-                      className={`flex w-full items-center rounded-xl py-2.5 text-sm font-medium transition ${
-                        iconOnly ? "justify-center gap-0 px-0" : "gap-3 px-3"
+                      className={`ux-row ux-hov relative flex w-full items-center rounded-[12px] py-2 text-xsm transition ${
+                        iconOnly ? "justify-center gap-0 px-0" : "gap-3 pe-2 ps-2.5"
                       } ${
-                        active
-                          ? "bg-linear-to-r from-brand-600 to-brand-500 text-white shadow-sm shadow-brand-500/30"
-                          : "text-ink-muted hover:bg-surface-hover"
-                      }`}
+                        active || expanded
+                          ? "font-bold text-brand-ink"
+                          : "font-medium text-ink"
+                      } ${active ? "bg-brand-tint" : ""}`}
                     >
+                      <span aria-hidden className="absolute inset-y-1.5 start-0 w-[3px] rounded-full"
+                            style={{ background: active || expanded ? "var(--ux-brand)" : "transparent" }} />
                       <Icon
-                        className="h-[18px] w-[18px] shrink-0"
-                        strokeWidth={2}
+                        className="ux-ico h-[16px] w-[16px] shrink-0"
+                        strokeWidth={1.75}
                       />
                       <span
                         className="wc-rail-label flex-1 text-left"
@@ -483,20 +489,18 @@ export default function Sidebar({
                         <span
                           title={`${waiting(item.label)} waiting`}
                           className={`rounded-full px-2 py-0.5 text-2xs font-bold ${
-                            active
-                              ? "bg-white/25 text-white"
-                              : item.label === "Safety & Support"
-                                ? "bg-status-danger-bg text-status-danger-ink"
-                                : "bg-brand-100 text-brand-ink"
+                            item.label === "Safety & Support"
+                              ? "bg-status-danger-bg text-status-danger-ink"
+                              : "bg-brand-100 text-brand-ink"
                           }`}
                         >
                           {waiting(item.label)}
                         </span>
                       )}
                       <ChevronDown
-                        className={`wc-rail-label h-4 w-4 shrink-0 transition-transform ${
-                          expanded ? "rotate-180" : ""
-                        } ${active ? "text-white/80" : "text-ink-subtle"}`}
+                        className={`wc-rail-label ux-ico h-[14px] w-[14px] shrink-0 transition-transform ${
+                          expanded ? "" : "-rotate-90 opacity-50"
+                        } ${active || expanded ? "text-brand-ink" : "text-ink-subtle"}`}
                         data-hidden={iconOnly || undefined}
                       />
                       {/* A count still has to be visible when the label is not —
@@ -507,17 +511,18 @@ export default function Sidebar({
                       )}
                     </button>
                     {expanded && !iconOnly && (
-                      <div className="mt-0.5 space-y-0.5 pb-1 pl-11 pr-1">
+                      <div className="ux-branch mb-1 ms-[18px] mt-0.5 pb-1">
                         {item.children.map((c) => {
                           const cActive = pathname === c.href;
                           return (
                             <Link
                               key={c.href}
                               href={c.href}
-                              className={`block rounded-lg px-3 py-2 text-xsm transition ${
+                              data-on={cActive ? "true" : "false"}
+                              className={`ux-twig ux-row relative mb-0.5 flex min-h-[34px] items-center rounded-[10px] px-2.5 py-1.5 text-xsm transition ${
                                 cActive
-                                  ? "bg-brand-tint font-semibold text-brand-ink"
-                                  : "text-ink-subtle hover:bg-surface-hover hover:text-ink-muted"
+                                  ? "bg-brand-tint font-bold text-brand-ink"
+                                  : "font-medium text-ink-muted hover:text-ink"
                               }`}
                             >
                               {c.label}
@@ -535,17 +540,19 @@ export default function Sidebar({
                   <Link
                     href={item.href}
                     aria-label={iconOnly ? item.label : undefined}
-                    className={`mb-0.5 flex items-center rounded-xl py-2.5 text-sm font-medium transition ${
-                      iconOnly ? "justify-center gap-0 px-0" : "gap-3 px-3"
+                    className={`ux-row ux-hov relative mb-0.5 flex items-center rounded-[12px] py-2 text-xsm transition ${
+                      iconOnly ? "justify-center gap-0 px-0" : "gap-3 pe-2 ps-2.5"
                     } ${
                       active
-                        ? "bg-linear-to-r from-brand-600 to-brand-500 text-white shadow-sm shadow-brand-500/30"
-                        : "text-ink-muted hover:bg-surface-hover"
+                        ? "bg-brand-tint font-bold text-brand-ink"
+                        : "font-medium text-ink"
                     }`}
                   >
+                    <span aria-hidden className="absolute inset-y-1.5 start-0 w-[3px] rounded-full"
+                          style={{ background: active ? "var(--ux-brand)" : "transparent" }} />
                     <Icon
-                      className="h-[18px] w-[18px] shrink-0"
-                      strokeWidth={2}
+                      className="ux-ico h-[16px] w-[16px] shrink-0"
+                      strokeWidth={1.75}
                     />
                     <span
                       className="wc-rail-label flex-1"
@@ -556,11 +563,9 @@ export default function Sidebar({
                     {!iconOnly && item.badge && (
                       <span
                         className={`rounded-full px-2 py-0.5 text-2xs font-bold ${
-                          active
-                            ? "bg-white/25 text-white"
-                            : item.badgeTone === "brand"
-                              ? "bg-brand-100 text-brand-ink"
-                              : "bg-surface-inset text-ink-subtle"
+                          item.badgeTone === "brand"
+                            ? "bg-brand-100 text-brand-ink"
+                            : "bg-surface-inset text-ink-subtle"
                         }`}
                       >
                         {item.badge}
@@ -610,26 +615,16 @@ export default function Sidebar({
           </Link>
         </div>
       ) : (
-        <div className="mt-auto px-3 pb-4">
-          <div className="rounded-2xl bg-linear-to-br from-violet-50 to-brand-50 p-4">
-            <div className="flex items-center gap-2.5">
-              <span className="flex h-9 w-9 items-center justify-center rounded-full bg-surface shadow-sm">
-                <Headset className="h-4.5 w-4.5 text-violet-ink" />
-              </span>
-              <div>
-                <p className="text-sm font-semibold text-ink">
-                  Need Help?
-                </p>
-                <p className="text-2xs leading-tight text-ink-subtle">
-                  Our support team is here to help you.
-                </p>
-              </div>
-            </div>
+        <div className="mt-auto px-3 pb-3 pt-1">
+          <div className="rounded-[12px] p-4" style={{ background: "var(--ux-brand-900)" }}>
+            <p className="text-sm font-semibold text-white">Need a hand?</p>
+            <p className="mt-1 text-xs" style={{ color: "var(--ux-on-brand-2)" }}>The support team answers from the dashboard.</p>
             <Link
               href="/dashboard/settings/support"
-              className="mt-3 block rounded-lg bg-violet-600 py-2 text-center text-xsm font-semibold text-white transition hover:bg-violet-700"
+              className="mt-3 flex h-[36px] items-center justify-center gap-1.5 rounded-[10px] text-xsm font-semibold transition hover:opacity-95"
+              style={{ background: "var(--ux-on-brand-btn)", color: "var(--ux-on-brand-btn-ink)" }}
             >
-              Contact Support
+              <Headset className="h-4 w-4" /> Contact support
             </Link>
           </div>
         </div>
