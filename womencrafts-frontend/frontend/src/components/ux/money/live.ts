@@ -5,10 +5,7 @@ import { useCallback } from "react";
 import { useResource, type Resource } from "@/lib/use-resource";
 import { apiMoneyOverview, type MoneyOverview } from "@/lib/money-api";
 import { apiWallet, type WalletTxn } from "@/lib/wallet-api";
-import {
-  BALANCE_MINOR as RAW_BALANCE_MINOR, PENDING_MINOR as RAW_PENDING_MINOR, TXNS as RAW_TXNS, type Txn,
-} from "./data";
-import { useTranslated } from "@/i18n/data";
+import { type Txn } from "./data";
 
 /**
  * The money module, on real data.
@@ -83,9 +80,6 @@ export interface Money {
 }
 
 export function useMoney(): Resource<Money> {
-  const TXNS = useTranslated(RAW_TXNS);
-  const PENDING_MINOR = useTranslated(RAW_PENDING_MINOR);
-  const BALANCE_MINOR = useTranslated(RAW_BALANCE_MINOR);
   return useResource<Money>(
     useCallback(async (signal: AbortSignal) => {
       const w = await apiWallet(signal);
@@ -101,7 +95,7 @@ export function useMoney(): Resource<Money> {
         txns,
       };
     }, []),
-    { balanceMinor: BALANCE_MINOR, pendingMinor: PENDING_MINOR, txns: TXNS },
+    { balanceMinor: 0, pendingMinor: 0, txns: [] },
   );
 }
 
@@ -116,13 +110,11 @@ export function useMoney(): Resource<Money> {
  * how many times it asked. `/money/overview` sends them together and the
  * screen waits for the slowest rather than the sum: **294ms → 73ms.**
  *
- * The mock stays as the fallback so the screen is readable from the first
- * frame, and `<SourceNote>` says which she is looking at.
+ * Until the API answers, the screen has zero totals and no transactions. A
+ * failed request is labelled by `<SourceNote>` instead of showing invented
+ * money.
  */
 export function useMoneyOverview(): Resource<Overview> {
-  const TXNS = useTranslated(RAW_TXNS);
-  const PENDING_MINOR = useTranslated(RAW_PENDING_MINOR);
-  const BALANCE_MINOR = useTranslated(RAW_BALANCE_MINOR);
   return useResource<Overview>(
     useCallback(async (signal: AbortSignal) => {
       const d = await apiMoneyOverview(signal);
@@ -146,8 +138,8 @@ export function useMoneyOverview(): Resource<Overview> {
       };
     }, []),
     {
-      balanceMinor: BALANCE_MINOR, pendingMinor: PENDING_MINOR,
-      txns: TXNS, accounts: [], goals: [],
+      balanceMinor: 0, pendingMinor: 0,
+      txns: [], accounts: [], goals: [],
     },
   );
 }

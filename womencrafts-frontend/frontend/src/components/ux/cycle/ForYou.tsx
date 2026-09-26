@@ -2,14 +2,15 @@
 
 import Link from "next/link";
 import { useT } from "@/i18n";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 import * as Icons from "@/components/ux/icons";
 import { HomeShell } from "@/components/ux/home/HomeShell";
 import { Column, CycleHeader, DeskTitle, QuoteCard, SoftHeart } from "./parts";
-import { MOODS as RAW_MOODS, PHASE_COPY as RAW_PHASE_COPY, forYou, quoteFor, type ForYouTab } from "./data";
+import { MOODS as RAW_MOODS, PHASE_COPY as RAW_PHASE_COPY, forYou, type ForYouTab } from "./data";
 import { useCycle } from "./use-cycle";
 import { useTranslated } from "@/i18n/data";
+import { apiMoodCard, type Mood as EngineMood, type SupportCard } from "@/lib/engines-api";
 
 const TABS: { key: ForYouTab; label: string; head: string; sub: string }[] = [
   { key: "food", label: "Food", head: "Food suggestions for today", sub: "Nutritious choices to support your body and mood." },
@@ -33,12 +34,20 @@ export function ForYou({ initial = "food", title = "For You Today" }: { initial?
   const tr = useT();
   const { state, data } = useCycle();
   const [tab, setTab] = useState<ForYouTab>(initial);
+  const [support, setSupport] = useState<SupportCard | null>(null);
   const phase = state?.status.phase ?? "menstrual";
   const mood = state?.log?.mood ?? null;
   const feelings = state?.log?.feelings ?? [];
   const items = forYou(tab, phase, mood, feelings);
   const t = TABS.find((x) => x.key === tab)!;
   const moodLabel = MOODS.find((m) => m.key === mood)?.label;
+  useEffect(() => {
+    const mapped: Record<string, EngineMood> = {
+      happy: "good", calm: "good", tired: "tired", irritable: "angry", sad: "low",
+    };
+    if (!mood) { setSupport(null); return; }
+    void apiMoodCard(mapped[mood]).then(setSupport).catch(() => setSupport(null));
+  }, [mood]);
 
   return (
     <HomeShell immersive bare>
@@ -107,7 +116,7 @@ export function ForYou({ initial = "food", title = "For You Today" }: { initial?
           </p>
         </div>
 
-        {state && <QuoteCard className="mt-4" text={quoteFor(mood, state.today)} />}
+        {support?.body && <QuoteCard className="mt-4" text={support.body} />}
       </Column>
     </HomeShell>
   );

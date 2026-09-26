@@ -120,8 +120,8 @@ export async function apiPosts(circleId: string) {
   return data;
 }
 
-export async function apiCreatePost(circleId: string, body: string) {
-  const { data } = await apiClient.post<Post>(`/community/circles/${circleId}/posts`, { body });
+export async function apiCreatePost(circleId: string, body: string, image = "") {
+  const { data } = await apiClient.post<Post>(`/community/circles/${circleId}/posts`, { body, image });
   return data;
 }
 

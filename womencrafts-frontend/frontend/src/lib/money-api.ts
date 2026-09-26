@@ -28,6 +28,7 @@ export interface Goal {
    *  hand is a money goal that can be made to say anything. */
   manual: boolean;
   set_on: string;
+  note: string;
 }
 
 export const apiGoals = (s?: AbortSignal) => get<Goal[]>("/me/goals", s);
@@ -41,6 +42,13 @@ export async function apiAddGoal(body: {
 
 export async function apiMoveGoal(id: string, current: number) {
   const { data } = await apiClient.patch<Goal[]>(`/me/goals/${id}`, { current });
+  return data;
+}
+
+export async function apiEditGoal(id: string, body: {
+  label: string; target: number; by: string; unit: string; note: string;
+}) {
+  const { data } = await apiClient.patch<Goal[]>(`/me/goals/${id}/details`, body);
   return data;
 }
 

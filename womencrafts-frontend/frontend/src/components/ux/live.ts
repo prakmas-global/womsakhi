@@ -17,15 +17,13 @@ import {
 } from "@/lib/me-api";
 
 import {
-  BOOKINGS, CERTIFICATES, REFERRALS, REFER,
+  BOOKINGS, REFERRALS, REFER,
   type Booking, type BookingKind, type BookingState, type Certificate,
 } from "./account/data";
 import { MY_CIRCLES, type Circle } from "./circles/data";
 import { NOTIFICATIONS } from "./home/data";
 import { MENTORS, type Mentor } from "./mentors/data";
 
-import { DOCUMENTS } from "./shop/data";
-import { useTranslated } from "@/i18n/data";
 
 /**
  * Every module that has a real endpoint behind it, in one place.
@@ -104,7 +102,7 @@ const toNotification = (n: ApiNotification): UxNotification => ({
 export const useNotifications = (): Resource<UxNotification[]> =>
   useResource(
     useCallback(async (s: AbortSignal) => (await apiNotifications(s)).map(toNotification), []),
-    useTranslated(NOTIFICATIONS),
+    [],
   );
 
 /* ── Bookings ──────────────────────────────────────────────────────────── */
@@ -141,7 +139,7 @@ const toBooking = (b: ApiBooking): UxBooking => ({
 export const useBookings = (): Resource<UxBooking[]> =>
   useResource(
     useCallback(async (s: AbortSignal) => (await apiBookings(s)).map(toBooking), []),
-    useTranslated(BOOKINGS),
+    [],
   );
 
 /* ── Certificates ──────────────────────────────────────────────────────── */
@@ -168,7 +166,7 @@ const toCertificate = (c: ApiCertificate): UxCertificate => ({
 export const useCertificates = (): Resource<UxCertificate[]> =>
   useResource(
     useCallback(async (s: AbortSignal) => (await apiCertificates(s)).map(toCertificate), []),
-    useTranslated(CERTIFICATES),
+    [],
   );
 
 /* ── Documents ─────────────────────────────────────────────────────────── */
@@ -239,7 +237,7 @@ function readableSize(bytes: number): string {
  * would have replaced it sat there, gathered and fast.
  */
 export const useSummary = (): Resource<ApiSummary | null> =>
-  useResource(useCallback((s: AbortSignal) => apiSummary(s).catch(() => null), []), null);
+  useResource(useCallback((s: AbortSignal) => apiSummary(s), []), null);
 
 /* ── Home ──────────────────────────────────────────────────────────────────
 
@@ -249,12 +247,12 @@ export const useSummary = (): Resource<ApiSummary | null> =>
    a refetch, which is what stops the whole screen flashing when she comes back
    to the tab. */
 export const useHome = (): Resource<ApiHome | null> =>
-  useResource(useCallback((s: AbortSignal) => apiHome(s).catch(() => null), []), null);
+  useResource(useCallback((s: AbortSignal) => apiHome(s), []), null);
 
 export const useDocuments = (): Resource<UxDocument[]> =>
   useResource(
     useCallback(async (s: AbortSignal) => (await apiDocuments(s)).map(toDocument), []),
-    useTranslated(DOCUMENTS),
+    [],
   );
 
 /* ── Referrals ─────────────────────────────────────────────────────────── */
@@ -275,7 +273,7 @@ export const useReferrals = (): Resource<UxReferrals> =>
         people: [] as typeof REFERRALS,
       };
     }, []),
-    { refer: useTranslated(REFER), people: useTranslated(REFERRALS) },
+    { refer: { ...REFER, code: "", link: "", earned_minor: 0 }, people: [] },
   );
 
 /* ── Circles ───────────────────────────────────────────────────────────── */
@@ -312,7 +310,7 @@ export const useCircles = (): Resource<UxCircles> =>
       const all = (await apiCircles(s)).map(toCircle);
       return { mine: all.filter((c) => c.joined), discover: all.filter((c) => !c.joined) };
     }, []),
-    { mine: useTranslated(MY_CIRCLES), discover: [] },
+    { mine: [], discover: [] },
   );
 
 /* ── Stories ───────────────────────────────────────────────────────────── */
@@ -400,7 +398,7 @@ const toMentor = (m: ApiMentor): Mentor => ({
 export const useMentors = (): Resource<Mentor[]> =>
   useResource(
     useCallback(async (s: AbortSignal) => (await apiMentors(s)).map(toMentor), []),
-    useTranslated(MENTORS),
+    [],
   );
 
 /* ── Progress ──────────────────────────────────────────────────────────── */

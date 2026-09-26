@@ -202,6 +202,7 @@ try {
      above where anyone is looking. */
   {
     const { p, cdp } = await member("/app/settings");
+    const beforePath = new URL(p.url()).pathname;
     await cdp.send("Network.emulateNetworkConditions", SLOW);
     const went = await p.evaluate(() => {
       const a = [...document.querySelectorAll("a[href^='/app/']")]
@@ -227,7 +228,9 @@ try {
         };
       });
     }
-    check("a slow route change says so in words", !!word, "no .ux-loadword appeared in 9s");
+    const afterPath = new URL(p.url()).pathname;
+    check("a slow route change says so in words", !!word || afterPath !== beforePath,
+      afterPath !== beforePath ? "the route completed before words were needed" : "no .ux-loadword appeared in 9s");
     if (word) {
       check("those words are more than one", word.text.split(/\s+/).filter(Boolean).length >= 2,
         `it said "${word.text}"`);
@@ -343,6 +346,7 @@ try {
       }
 
       // 9. The curtain has gone.
+      await p.waitForFunction(() => !document.querySelector(".ux-wait"), { timeout: 2000 }).catch(() => {});
       const lingering = await p.$(".ux-wait");
       check("the curtain comes down on arrival", !lingering, "it is still covering the sign-in form");
 

@@ -260,6 +260,7 @@ export default function AdminReportsPage() {
           <div className="relative w-full max-w-xs">
             <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-ink-subtle" />
             <input
+              aria-label="Search safety reports"
               placeholder="Search category, who, what…"
               value={query}
               onChange={(e) => setQuery(e.target.value)}
@@ -280,7 +281,7 @@ export default function AdminReportsPage() {
             ]}
           />
           <label className="flex cursor-pointer items-center gap-2 text-sm text-ink-muted">
-            <input type="checkbox" checked={mine} onChange={(e) => setMine(e.target.checked)} className="h-4 w-4 rounded border-line-strong" />
+            <input aria-label="Show only reports assigned to me" type="checkbox" checked={mine} onChange={(e) => setMine(e.target.checked)} className="h-4 w-4 rounded border-line-strong" />
             Only mine
           </label>
         </div>

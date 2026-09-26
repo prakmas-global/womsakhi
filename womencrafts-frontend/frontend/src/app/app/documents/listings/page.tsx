@@ -90,7 +90,7 @@ export default function MyListingsPage() {
           <div className="relative overflow-hidden rounded-[16px] p-[20px]"
                style={{ background: "linear-gradient(140deg, var(--ux-tint-lilac), var(--ux-tint-pink))" }}>
             <IconTile icon="Package" tint="--ux-surface" ink="--ux-brand" size={38} radius={11} />
-            <h3 className="mt-3 text-sm font-bold" style={{ color: v("--ux-ink") }}>{tr("documentsListings.growYourShop")}</h3>
+            <h2 className="mt-3 text-sm font-bold" style={{ color: v("--ux-ink") }}>{tr("documentsListings.growYourShop")}</h2>
             <p className="mt-1.5 text-xs leading-relaxed" style={{ color: v("--ux-muted") }}>
               {tr("documentsListings.moreListingsMeansMoreWaysA")}
             </p>

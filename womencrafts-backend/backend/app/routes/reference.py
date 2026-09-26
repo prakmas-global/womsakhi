@@ -58,6 +58,11 @@ def _ref():
     return get_database()[ReferenceModel.collection_name]
 
 
+#: What a member may see. A row written before the publish workflow existed
+#: has no `status` field at all; it was live then and stays live now.
+_VISIBLE = {"$in": [ReferenceModel.STATUS_PUBLISHED, None]}
+
+
 def _mine():
     return get_database()[MyReferenceModel.collection_name]
 
@@ -65,7 +70,7 @@ def _mine():
 async def _entries(topic: str, city: str, uid: str, free_only: bool) -> list[ReferenceResponse]:
     query: dict = {
         "topic": topic,
-        "status": ReferenceModel.STATUS_PUBLISHED,
+        "status": _VISIBLE,
         # Hers and everywhere, in one pass.
         "city": {"$in": [city, ReferenceModel.EVERYWHERE]},
     }
@@ -145,7 +150,7 @@ async def mark(ref_id: str, body: MarkRequest, me: dict = Depends(require_active
         raise HTTPException(status.HTTP_400_BAD_REQUEST, "That is not a state we record")
 
     from app.core.serializers import to_object_id
-    entry = await _ref().find_one({"_id": to_object_id(ref_id)})
+    entry = await _ref().find_one({"_id": to_object_id(ref_id), "status": _VISIBLE})
     if not entry:
         raise HTTPException(status.HTTP_404_NOT_FOUND, "That is no longer listed")
 

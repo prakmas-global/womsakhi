@@ -248,7 +248,7 @@ export default function AssessPage() {
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img loading="lazy" decoding="async" src={MORE_ART.assess} alt=""
                  className="ux-float pointer-events-none absolute -bottom-3 -end-4 h-[100px] w-[100px] object-contain" />
-            <h3 className="relative w-[60%] text-sm font-semibold" style={{ color: "var(--ux-ink)" }}>{tr("assess.twentyYearsIsWorthProving")}</h3>
+            <h2 className="relative w-[60%] text-sm font-semibold" style={{ color: "var(--ux-ink)" }}>{tr("assess.twentyYearsIsWorthProving")}</h2>
             <p className="relative mt-2 w-[60%] text-xs leading-relaxed" style={{ color: "var(--ux-muted)" }}>{tr("assess.mostMembersLearnedTheirTradeAt")}</p>
           </div>
         </div>
@@ -275,9 +275,9 @@ export default function AssessPage() {
               <IconTile icon={a.icon} tint={a.tint} ink={a.ink} size={48} radius={13} />
               <div className="min-w-0 flex-1">
                 <div className="flex items-start gap-2">
-                  <h3 className="min-w-0 flex-1 text-base font-semibold" style={{ color: "var(--ux-ink)" }}>
+                  <h2 className="min-w-0 flex-1 text-base font-semibold" style={{ color: "var(--ux-ink)" }}>
                     {a.skill}
-                  </h3>
+                  </h2>
                   {a.badge && <Tag tone="green" size="sm">{tr("assess.onYourProfile")}</Tag>}
                   {a.level && !a.badge && <Tag tone="neutral" size="sm">{a.level}</Tag>}
                 </div>

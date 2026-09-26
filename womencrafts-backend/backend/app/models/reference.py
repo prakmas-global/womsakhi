@@ -56,6 +56,9 @@ class ReferenceModel:
 
     STATUS_PUBLISHED = "published"
     STATUS_DRAFT = "draft"
+    #: Withdrawn, but kept: a member's "applied" mark points at this row by
+    #: id, so an entry is archived rather than deleted.
+    STATUS_ARCHIVED = "archived"
 
     #: Entries that apply everywhere. A national scheme is not "in Jaipur".
     EVERYWHERE = "*"

@@ -10,24 +10,7 @@ import {
   type ReactNode,
 } from "react";
 
-import en, { type Catalog, type MessageKey } from "./messages/en";
-import hi from "./messages/hi";
-import ur from "./messages/ur";
-import mr from "./messages/mr";
-import ta from "./messages/ta";
-import bn from "./messages/bn";
-import te from "./messages/te";
-import gu from "./messages/gu";
-import kn from "./messages/kn";
-import ml from "./messages/ml";
-import pa from "./messages/pa";
-import or from "./messages/or";
-import ar from "./messages/ar";
-import es from "./messages/es";
-import fr from "./messages/fr";
-import pt from "./messages/pt";
-import id from "./messages/id";
-import sw from "./messages/sw";
+import en, { type MessageKey } from "./messages/en";
 import { DEFAULT_LOCALE, localeSpec, type LocaleSpec, LOCALE_COOKIE } from "./locales";
 
 /**
@@ -39,11 +22,6 @@ import { DEFAULT_LOCALE, localeSpec, type LocaleSpec, LOCALE_COOKIE } from "./lo
  * Anything without a catalogue falls back to English rather than showing a raw
  * key — a missing translation should look plain, never broken.
  */
-
-const CATALOGS: Record<string, Catalog> = {
-  en, hi, ur, mr,
-  ta, bn, te, gu, kn, ml, pa, or, ar, es, fr, pt, id, sw,
-};
 
 /**
  * How much of English each catalogue actually answers, 0–1.
@@ -57,13 +35,8 @@ const CATALOGS: Record<string, Catalog> = {
  * Computed once at module load — two `Object.keys` over objects already in
  * memory, so it costs nothing and can never disagree with the files again.
  */
-const EN_KEYS = Object.keys(en).length;
-
 export function coverageOf(code: string): number {
-  const c = CATALOGS[code];
-  if (!c) return 0;
-  if (code === "en") return 1;
-  return Object.keys(c).length / EN_KEYS;
+  return code === "en" ? 1 : 0;
 }
 
 /**
@@ -110,13 +83,14 @@ export function I18nProvider({
   children: ReactNode;
   initialLocale?: string;
 }) {
-  const [locale, setLocaleState] = useState(initialLocale || DEFAULT_LOCALE);
+  const startingLocale = isUsable(initialLocale ?? "") ? initialLocale! : DEFAULT_LOCALE;
+  const [locale, setLocaleState] = useState(startingLocale);
 
   // Pick up the cookie on mount (the server render can't read it in a client
   // component tree without threading it through every page).
   useEffect(() => {
     const saved = readCookie(LOCALE_COOKIE);
-    if (saved && CATALOGS[saved] && saved !== locale) setLocaleState(saved);
+    if (saved && isUsable(saved) && saved !== locale) setLocaleState(saved);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -130,19 +104,19 @@ export function I18nProvider({
   }, [spec.code, spec.dir]);
 
   const setLocale = useCallback((code: string) => {
+    if (!isUsable(code)) return;
     setLocaleState(code);
     document.cookie = `${LOCALE_COOKIE}=${code}; path=/; max-age=${60 * 60 * 24 * 365}; SameSite=Lax`;
   }, []);
 
   const value = useMemo<I18nValue>(() => {
-    const catalog = CATALOGS[locale] ?? en;
     return {
       locale,
       spec,
       dir: spec.dir,
       setLocale,
       t: (key, vars) => {
-        const template = catalog[key] ?? en[key] ?? String(key);
+        const template = String(en[key] ?? key);
         if (!vars) return template;
         return Object.entries(vars).reduce(
           (out, [k, v]) => out.replaceAll(`{${k}}`, String(v)),
@@ -172,7 +146,7 @@ export function I18nProvider({
  */
 export function storedLocale(): string | null {
   const saved = readCookie(LOCALE_COOKIE);
-  return saved && CATALOGS[saved] ? saved : null;
+  return saved && isUsable(saved) ? saved : null;
 }
 
 /**
@@ -201,7 +175,7 @@ export function takePreSignInChoice(): string | null {
   try {
     const code = sessionStorage.getItem(PRE_SIGNIN_KEY);
     if (code) sessionStorage.removeItem(PRE_SIGNIN_KEY);
-    return code && CATALOGS[code] ? code : null;
+    return code && isUsable(code) ? code : null;
   } catch { return null; }
 }
 

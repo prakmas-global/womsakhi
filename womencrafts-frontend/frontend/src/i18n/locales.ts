@@ -46,28 +46,28 @@ export interface LocaleSpec {
 
 export const LOCALES: LocaleSpec[] = [
   { code: "en", name: "English", nativeName: "English", dir: "ltr", script: "latin", translated: true, reviewed: true },
-  { code: "hi", name: "Hindi", nativeName: "हिन्दी", dir: "ltr", script: "devanagari", translated: true, reviewed: true },
+  { code: "hi", name: "Hindi", nativeName: "हिन्दी", dir: "ltr", script: "devanagari", translated: false, reviewed: true },
   
   
-  { code: "ur", name: "Urdu", nativeName: "اردو", dir: "rtl", script: "arabic", translated: true, reviewed: true },
+  { code: "ur", name: "Urdu", nativeName: "اردو", dir: "rtl", script: "arabic", translated: false, reviewed: true },
 
   // Wired, catalogues pending. Each needs one file in messages/ — and a native
   // speaker to read it before it goes in front of real users.
-  { code: "ta", name: "Tamil", nativeName: "தமிழ்", dir: "ltr", script: "tamil", translated: true, reviewed: false },
-  { code: "bn", name: "Bengali", nativeName: "বাংলা", dir: "ltr", script: "bengali", translated: true, reviewed: false },
-  { code: "te", name: "Telugu", nativeName: "తెలుగు", dir: "ltr", script: "telugu", translated: true, reviewed: false },
-  { code: "mr", name: "Marathi", nativeName: "मराठी", dir: "ltr", script: "devanagari", translated: true, reviewed: false },
-  { code: "gu", name: "Gujarati", nativeName: "ગુજરાતી", dir: "ltr", script: "gujarati", translated: true, reviewed: false },
-  { code: "kn", name: "Kannada", nativeName: "ಕನ್ನಡ", dir: "ltr", script: "kannada", translated: true, reviewed: false },
-  { code: "ml", name: "Malayalam", nativeName: "മലയാളം", dir: "ltr", script: "malayalam", translated: true, reviewed: false },
-  { code: "pa", name: "Punjabi", nativeName: "ਪੰਜਾਬੀ", dir: "ltr", script: "gurmukhi", translated: true, reviewed: false },
-  { code: "or", name: "Odia", nativeName: "ଓଡ଼ିଆ", dir: "ltr", script: "odia", translated: true, reviewed: false },
-  { code: "ar", name: "Arabic", nativeName: "العربية", dir: "rtl", script: "arabic", translated: true, reviewed: false },
-  { code: "es", name: "Spanish", nativeName: "Español", dir: "ltr", script: "latin", translated: true, reviewed: false },
-  { code: "fr", name: "French", nativeName: "Français", dir: "ltr", script: "latin", translated: true, reviewed: false },
-  { code: "pt", name: "Portuguese", nativeName: "Português", dir: "ltr", script: "latin", translated: true, reviewed: false },
-  { code: "id", name: "Indonesian", nativeName: "Bahasa Indonesia", dir: "ltr", script: "latin", translated: true, reviewed: false },
-  { code: "sw", name: "Swahili", nativeName: "Kiswahili", dir: "ltr", script: "latin", translated: true, reviewed: false },
+  { code: "ta", name: "Tamil", nativeName: "தமிழ்", dir: "ltr", script: "tamil", translated: false, reviewed: false },
+  { code: "bn", name: "Bengali", nativeName: "বাংলা", dir: "ltr", script: "bengali", translated: false, reviewed: false },
+  { code: "te", name: "Telugu", nativeName: "తెలుగు", dir: "ltr", script: "telugu", translated: false, reviewed: false },
+  { code: "mr", name: "Marathi", nativeName: "मराठी", dir: "ltr", script: "devanagari", translated: false, reviewed: false },
+  { code: "gu", name: "Gujarati", nativeName: "ગુજરાતી", dir: "ltr", script: "gujarati", translated: false, reviewed: false },
+  { code: "kn", name: "Kannada", nativeName: "ಕನ್ನಡ", dir: "ltr", script: "kannada", translated: false, reviewed: false },
+  { code: "ml", name: "Malayalam", nativeName: "മലയാളം", dir: "ltr", script: "malayalam", translated: false, reviewed: false },
+  { code: "pa", name: "Punjabi", nativeName: "ਪੰਜਾਬੀ", dir: "ltr", script: "gurmukhi", translated: false, reviewed: false },
+  { code: "or", name: "Odia", nativeName: "ଓଡ଼ିଆ", dir: "ltr", script: "odia", translated: false, reviewed: false },
+  { code: "ar", name: "Arabic", nativeName: "العربية", dir: "rtl", script: "arabic", translated: false, reviewed: false },
+  { code: "es", name: "Spanish", nativeName: "Español", dir: "ltr", script: "latin", translated: false, reviewed: false },
+  { code: "fr", name: "French", nativeName: "Français", dir: "ltr", script: "latin", translated: false, reviewed: false },
+  { code: "pt", name: "Portuguese", nativeName: "Português", dir: "ltr", script: "latin", translated: false, reviewed: false },
+  { code: "id", name: "Indonesian", nativeName: "Bahasa Indonesia", dir: "ltr", script: "latin", translated: false, reviewed: false },
+  { code: "sw", name: "Swahili", nativeName: "Kiswahili", dir: "ltr", script: "latin", translated: false, reviewed: false },
 ];
 
 export const DEFAULT_LOCALE = "en";

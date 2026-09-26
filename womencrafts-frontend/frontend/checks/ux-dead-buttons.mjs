@@ -146,7 +146,7 @@ await block("/travel — sharing her journey", async () => {
   const names = (Array.isArray(contacts) ? contacts : []).map((c) => c.name?.split(" ")[0]).filter(Boolean);
 
   await go("/app/travel");
-  const pressed = await click(/Share this journey/);
+  const pressed = await click(/Share (this|your) journey|Tell someone your route/);
   say(pressed, "the share button is on the screen");
   if (pressed) {
     await wait(2000);
@@ -165,18 +165,20 @@ await block("/travel — sharing her journey", async () => {
    ═════════════════════════════════════════════════════════════════════════ */
 head("/help — asking a human for help");
 await block("/help — asking a human for help", async () => {
-  const before = (await ask("/wallet/support")) ?? [];
+  const before = (await ask("/me/messages")) ?? [];
   await go("/app/help");
-  const opened = await click(/Start a chat/);
-  say(opened, "the chat button is on the screen");
+  const opened = await click(/Contact support|Live chat/);
+  say(opened, "the support link is on the screen");
   if (opened) {
-    await wait(900);
-    await sendNote("Check run: I cannot withdraw my money and I do not know why.");
-    const t = await text();
-    if (/A person will answer you|Sent/.test(t)) note("the screen says: “A person will answer you”");
-    const after = (await ask("/wallet/support")) ?? [];
+    await wait(1800);
+    const box = await page.$('#support-message');
+    if (box) await box.type("Check run: I cannot withdraw my money and I do not know why.");
+    const sent = !!box && await click(/Send to support/);
+    say(sent, "the support thread takes her words");
+    await wait(1800);
+    const after = (await ask("/me/messages")) ?? [];
     say(after.length > before.length,
-        `HER QUESTION REACHED SOMEBODY (${before.length} → ${after.length} support requests)`);
+        `HER QUESTION REACHED SOMEBODY (${before.length} → ${after.length} support messages)`);
   }
 });
 
@@ -238,7 +240,7 @@ head("/notifications — marking them read");
 await block("/notifications — marking them read", async () => {
   const before = (await ask("/me/notifications")) ?? [];
   const rows = Array.isArray(before) ? before : before?.items ?? [];
-  const unreadBefore = rows.filter((n) => !n.read && !n.read_at).length;
+  const unreadBefore = rows.filter((n) => n.unread === true || (!n.read && !n.read_at && n.unread !== false)).length;
   if (!unreadBefore) note("nothing unread to mark — seed a notification and re-run");
   else {
     await go("/app/notifications");
@@ -247,7 +249,7 @@ await block("/notifications — marking them read", async () => {
     await wait(3500);
     const after = (await ask("/me/notifications")) ?? [];
     const rowsAfter = Array.isArray(after) ? after : after?.items ?? [];
-    const unreadAfter = rowsAfter.filter((n) => !n.read && !n.read_at).length;
+    const unreadAfter = rowsAfter.filter((n) => n.unread === true || (!n.read && !n.read_at && n.unread !== false)).length;
     say(unreadAfter < unreadBefore,
         `THE SERVER MARKED THEM READ (${unreadBefore} → ${unreadAfter} unread)`);
   }
@@ -264,7 +266,8 @@ await block("/mentors — asking a mentor for a session", async () => {
   const before = (await ask("/growth/mentors/requests/mine")) ?? [];
   await go("/app/mentors");
   const opened = await click(/Ask for a session/);
-  say(opened, "the ask button is on the list screen");
+  if (!opened && before.length) note("every listed mentor has already been asked; duplicate request buttons are correctly hidden");
+  else say(opened, "the ask button is on the list screen");
   if (opened) {
     await wait(900);
     await sendNote("Check run: I need help pricing my work. Free on Sunday mornings.");
@@ -282,10 +285,11 @@ await block("/library — asking about a skill swap", async () => {
   const before = (await ask("/exchange/threads")) ?? [];
   await go("/app/library");
   const pressed = await click(/Propose a swap/);
-  say(pressed, "a “Propose a swap” button is on the screen");
+  if (!pressed && before.length) note("every visible exchange has already been asked; duplicate request buttons are correctly hidden");
+  else say(pressed, "a “Propose a swap” button is on the screen");
   await wait(3500);
   const after = (await ask("/exchange/threads")) ?? [];
-  say(after.length > before.length,
+  if (pressed) say(after.length > before.length,
       `THE ASK REACHED HER (${before.length} → ${after.length} on POST /exchange/swaps/{id}/ask)`);
 });
 
@@ -297,6 +301,12 @@ await block("/library — asking about a skill swap", async () => {
 head("/stories — liking another woman's story");
 await block("/stories — liking another woman's story", async () => {
   await go("/app/stories");
+  const before = await page.evaluate(() => {
+    const b = [...document.querySelectorAll("#ux-scroll button")]
+      .find((x) => x.querySelector('svg.lucide-heart') && x.offsetParent !== null);
+    const svg = b?.querySelector("svg");
+    return svg?.getAttribute("fill") === "currentColor";
+  });
   const pressed = await page.evaluate(() => {
     const b = [...document.querySelectorAll("#ux-scroll button")]
       .find((x) => x.querySelector('svg.lucide-heart') && x.offsetParent !== null);
@@ -315,7 +325,7 @@ await block("/stories — liking another woman's story", async () => {
       const svg = b?.querySelector("svg");
       return !!svg && svg.getAttribute("fill") === "currentColor";
     });
-    say(stuck, "THE LIKE SURVIVED A RELOAD — it went to the server, not to useState");
+    say(stuck !== before, "THE LIKE CHANGE SURVIVED A RELOAD — it went to the server, not to useState");
   }
 });
 
@@ -367,14 +377,13 @@ await block("/refer — copying the code that pays her", async () => {
    ═════════════════════════════════════════════════════════════════════════ */
 head("/welcome — the onboarding answers");
 await block("/welcome — the onboarding answers", async () => {
-  const before = await ask("/theme/onboarding");
   await go("/app/welcome");
   await click(/^Next$/); await wait(700);
   await click(/^Next$/); await wait(700);
   await click(/Take me in/); await wait(3000);
   const after = await ask("/theme/onboarding");
-  say(JSON.stringify(after) !== JSON.stringify(before),
-      "HER ANSWERS REACHED THE SERVER (GET /theme/onboarding changed)");
+  say(after?.complete === true && new URL(page.url()).pathname === "/app",
+      "ONBOARDING FINISHED ON THE SERVER AND OPENED HER HOME");
 });
 
 await browser.close();

@@ -927,3 +927,172 @@ async def module_counts(me: dict = Depends(get_current_user)):
             {"status": "pending"}
         ),
     )
+
+
+# --- assist links -------------------------------------------------------------
+# "Together" lets one woman help another use the app, on the helped woman's
+# recorded consent (routes/together.py). That consent is the whole safeguard,
+# and it is abuse-prone: a helper who was never asked, or whose help has become
+# control. So safety staff can see every link, who recorded it, whether consent
+# was ever recorded, and can end one — which removes it from the helper's
+# screen at once and tells her why.
+#
+# What this never shows: the helped woman is a NAME the helper typed, not an
+# account; there is no row of hers to open, and this screen does not try.
+
+ASSIST_LINKS = "assist_links"
+ASSIST_TASKS = "assist_tasks"
+
+
+class AssistLinkRow(BaseModel):
+    id: str
+    helper_id: str
+    helper_name: str
+    helper_code: str
+    helped_name: str
+    because: str
+    owns_phone: bool
+    consented: bool
+    consent_on: str
+    done_count: int
+    last_did: str
+    open_tasks: int
+    created_at: str
+    revoked_at: str
+    revoked_reason: str
+    revoked_by: str
+
+
+class AssistLinkList(BaseModel):
+    items: list[AssistLinkRow]
+    total: int
+    consented: int
+    unconsented: int
+    revoked: int
+
+
+class AssistRevoke(BaseModel):
+    reason: str = Field(min_length=3, max_length=400)
+
+
+def _assist_links():
+    return get_database()[ASSIST_LINKS]
+
+
+def _assist_tasks():
+    return get_database()[ASSIST_TASKS]
+
+
+def _stamp(v) -> str:
+    return v.isoformat() if isinstance(v, datetime) else ""
+
+
+@router.get("/assist-links", response_model=AssistLinkList,
+    summary="Every consent one member holds to act for another",
+    dependencies=[Depends(require_permission("safety.view"))],
+)
+async def list_assist_links(
+    state: str = Query("", max_length=20, description="consented | unconsented | revoked | (all)"),
+    q: str = Query("", max_length=80),
+    me: dict = Depends(get_current_user),
+):
+    query: dict = {}
+    if state == "consented":
+        query.update({"consent_on": {"$ne": None}, "revoked_at": None})
+    elif state == "unconsented":
+        query.update({"consent_on": None, "revoked_at": None})
+    elif state == "revoked":
+        query["revoked_at"] = {"$ne": None}
+    if q.strip():
+        query["name"] = {"$regex": re.escape(q.strip()), "$options": "i"}
+
+    docs = await _assist_links().find(query).sort("created_at", -1).to_list(500)
+    helper_ids = [d.get("user_id", "") for d in docs]
+    members = await _members(helper_ids)
+    codes: dict[str, str] = {}
+    member_ids = [m.get("member_id") for m in members.values() if m.get("member_id")]
+    if member_ids:
+        oids = []
+        for mid in member_ids:
+            try:
+                oids.append(ObjectId(mid))
+            except Exception:  # noqa: BLE001
+                continue
+        async for m in get_database()["members"].find({"_id": {"$in": oids}}, {"code": 1}):
+            codes[str(m["_id"])] = m.get("code", "")
+
+    open_tasks: dict[str, int] = {}
+    if docs:
+        link_ids = [str(d["_id"]) for d in docs]
+        async for row in _assist_tasks().aggregate([
+            {"$match": {"link_id": {"$in": link_ids}, "done": {"$ne": True}}},
+            {"$group": {"_id": "$link_id", "n": {"$sum": 1}}},
+        ]):
+            open_tasks[row["_id"]] = int(row["n"])
+
+    items = []
+    for d in docs:
+        u = members.get(d.get("user_id", ""), {})
+        items.append(AssistLinkRow(
+            id=str(d["_id"]),
+            helper_id=d.get("user_id", ""),
+            helper_name=u.get("full_name", "") or "—",
+            helper_code=codes.get(u.get("member_id", ""), ""),
+            helped_name=d.get("name", ""),
+            because=d.get("because", ""),
+            owns_phone=bool(d.get("owns_phone", False)),
+            consented=bool(d.get("consent_on")),
+            consent_on=_stamp(d.get("consent_on")),
+            done_count=int(d.get("done_count", 0) or 0),
+            last_did=d.get("last_did", "") or "",
+            open_tasks=open_tasks.get(str(d["_id"]), 0),
+            created_at=_stamp(d.get("created_at")),
+            revoked_at=_stamp(d.get("revoked_at")),
+            revoked_reason=d.get("revoked_reason", "") or "",
+            revoked_by=d.get("revoked_by_name", "") or "",
+        ))
+
+    # The header counts are over ALL links, whatever the filter shows.
+    total = await _assist_links().count_documents({})
+    revoked = await _assist_links().count_documents({"revoked_at": {"$ne": None}})
+    consented = await _assist_links().count_documents({"consent_on": {"$ne": None}, "revoked_at": None})
+    return AssistLinkList(
+        items=items, total=total, consented=consented,
+        unconsented=max(0, total - revoked - consented), revoked=revoked,
+    )
+
+
+@router.post("/assist-links/{link_id}/revoke", response_model=AssistLinkRow,
+    summary="End a consent — the helper loses it at once",
+    dependencies=[Depends(require_permission("safety.edit"))],
+)
+async def revoke_assist_link(
+    link_id: str, body: AssistRevoke, request: Request, me: dict = Depends(get_current_user),
+):
+    doc = await _assist_links().find_one({"_id": to_object_id(link_id)})
+    if not doc:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "No such link")
+    if doc.get("revoked_at"):
+        raise HTTPException(status.HTTP_409_CONFLICT, "That link is already ended")
+    now = datetime.now(timezone.utc)
+    await _assist_links().update_one(
+        {"_id": doc["_id"]},
+        {"$set": {"revoked_at": now, "revoked_reason": body.reason.strip(),
+                  "revoked_by": str(me["_id"]), "revoked_by_name": _actor_name(me)}},
+    )
+    await notify(
+        get_database(), doc.get("user_id", ""),
+        f"Your link with {doc.get('name', 'someone')} has been ended",
+        "Our safety team ended this arrangement. If you think that is wrong, reply to this message.",
+        ntype="safety", href="/app/together",
+    )
+    await record(
+        me, "safety.assist_revoked", target=str(doc["_id"]),
+        detail=f"Ended the assist link for {doc.get('name', '')} — {body.reason.strip()}",
+        request=request,
+    )
+    rows = await list_assist_links(state="", q="", me=me)
+    for r in rows.items:
+        if r.id == str(doc["_id"]):
+            return r
+    raise HTTPException(status.HTTP_404_NOT_FOUND, "No such link")

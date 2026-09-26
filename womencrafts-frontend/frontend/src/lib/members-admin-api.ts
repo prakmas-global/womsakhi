@@ -67,6 +67,11 @@ export interface AccountSummary {
   last_login_at: string;
   rejection_reason: string;
   created_at: string;
+  /** What she said she needed at intake — the context staff use to help her. */
+  needs: string[];
+  /** Set when she asked for her account to be deleted; "" otherwise. */
+  deletion_requested_at: string;
+  deletion_reason: string;
 }
 
 export interface ActivityCounts {
@@ -137,6 +142,11 @@ export const apiDeleteMemberWithReason = (id: string, reason = "") =>
 export const apiBulkMemberStatus = (ids: string[], status: "Active" | "Inactive", reason = "") =>
   apiClient.post<{ changed: number; skipped: number; message: string }>(
     "/members/bulk-status", { ids, status, reason },
+  ).then((r) => r.data);
+
+export const apiBulkMemberRegion = (ids: string[], region: string, reason = "") =>
+  apiClient.post<{ changed: number; skipped: number; message: string }>(
+    "/members/bulk-region", { ids, region, reason },
   ).then((r) => r.data);
 
 /** The filtered list (or the given ids) as a CSV blob, ready to save. */
@@ -245,3 +255,33 @@ export function describeRule(rule: SegmentRule): string {
   if (rule.status !== undefined) parts.push(rule.status === "" ? "No status set" : `Status is ${rule.status}`);
   return parts.length ? parts.join(" · ") : "All members";
 }
+
+
+/* ---------------- deletion requests ---------------- */
+
+export interface DeletionRequestRow {
+  user_id: string;
+  member_id: string;
+  name: string;
+  email: string;
+  code: string;
+  reason: string;
+  requested_at: string;
+  days_waiting: number;
+  overdue: boolean;
+}
+
+export interface DeletionRequestList {
+  items: DeletionRequestRow[];
+  total: number;
+  overdue: number;
+}
+
+export const apiDeletionRequests = () =>
+  apiClient.get<DeletionRequestList>("/members/deletions").then((r) => r.data);
+
+export const apiCompleteDeletion = (userId: string, note = "") =>
+  apiClient.post<{ message: string }>(`/members/deletions/${userId}/complete`, null, { params: { note } }).then((r) => r.data);
+
+export const apiCancelDeletion = (userId: string, reason = "") =>
+  apiClient.post<{ message: string }>(`/members/deletions/${userId}/cancel`, null, { params: { reason } }).then((r) => r.data);

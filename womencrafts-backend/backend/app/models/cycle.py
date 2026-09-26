@@ -16,10 +16,10 @@ risks are designed out rather than accepted:
 * **Hers alone.** Every read and write is keyed on the user id from her token
   (ADR-007). There is no staff route, no admin view, no export to anyone but
   her, and no Sakhi tool that reads it.
-* **As little as possible.** One answer a day — was she on her period — plus
-  how she felt, if she chooses to say. No flow volume, no sexual activity, no
-  contraception, no pregnancy test result. Nothing that would matter more in
-  the wrong hands than it helps her in hers.
+* **Progressive, optional detail.** A one-tap period answer remains enough.
+  Flow, pain, fertility signs, sleep, medicines and other sensitive fields are
+  blank unless she deliberately adds them in the advanced log. The API never
+  infers or fills a sensitive answer for her.
 * **Gone when she says.** One request deletes every row, including the
   reminders already in her feed.
 """
@@ -36,6 +36,14 @@ SYMPTOMS = (
     "cramps", "headache", "bloating", "back-pain", "acne", "mood-swings",
     "fatigue", "breast-tenderness", "food-cravings", "trouble-sleeping", "nausea", "none",
 )
+FLOWS = ("spotting", "light", "medium", "heavy")
+SLEEP_QUALITY = ("poor", "fair", "good", "restful")
+CERVICAL_MUCUS = ("dry", "sticky", "creamy", "watery", "egg-white")
+OVULATION_TESTS = ("not-taken", "negative", "high", "peak", "positive")
+PREGNANCY_TESTS = ("not-taken", "negative", "positive", "unclear")
+INTIMACY = ("none", "protected", "unprotected")
+TRACKING_GOALS = ("understand-cycle", "trying-to-conceive", "symptom-care", "perimenopause")
+CONDITIONS = ("pcos", "endometriosis", "fibroids", "thyroid", "pmdd", "anaemia", "none")
 
 DEFAULT_TZ = "Asia/Kolkata"
 
@@ -79,6 +87,10 @@ class CycleProfileModel:
             "typical_period": int(typical_period),
             # A setup answer, used until she logs a real period.
             "declared_last_start": declared_last_start,
+            "tracking_goal": "understand-cycle",
+            "conditions": [],
+            "predictions": {"period": True, "fertility": True, "phase": True},
+            "care_sharing": {"phase": False, "mood": False, "support_tips": False},
             "reminders": dict(DEFAULT_REMINDERS),
             # Hides the Home card and makes every reminder read neutrally — for
             # a phone that is shared, or seen over her shoulder.
@@ -101,6 +113,21 @@ class CycleDayModel:
             "mood": None,
             "feelings": [],
             "symptoms": [],
+            "symptom_severity": {},
+            "flow": None,
+            "pain": None,
+            "energy": None,
+            "sleep_hours": None,
+            "sleep_quality": None,
+            "basal_temp_c": None,
+            "weight_kg": None,
+            "water_glasses": None,
+            "exercise_minutes": None,
+            "cervical_mucus": None,
+            "ovulation_test": None,
+            "pregnancy_test": None,
+            "intimacy": None,
+            "medications_taken": [],
             "note": "",
             "created_at": now,
             "updated_at": now,
@@ -114,5 +141,20 @@ class CycleDayModel:
             "mood": doc.get("mood"),
             "feelings": list(doc.get("feelings") or []),
             "symptoms": list(doc.get("symptoms") or []),
+            "symptom_severity": dict(doc.get("symptom_severity") or {}),
+            "flow": doc.get("flow"),
+            "pain": doc.get("pain"),
+            "energy": doc.get("energy"),
+            "sleep_hours": doc.get("sleep_hours"),
+            "sleep_quality": doc.get("sleep_quality"),
+            "basal_temp_c": doc.get("basal_temp_c"),
+            "weight_kg": doc.get("weight_kg"),
+            "water_glasses": doc.get("water_glasses"),
+            "exercise_minutes": doc.get("exercise_minutes"),
+            "cervical_mucus": doc.get("cervical_mucus"),
+            "ovulation_test": doc.get("ovulation_test"),
+            "pregnancy_test": doc.get("pregnancy_test"),
+            "intimacy": doc.get("intimacy"),
+            "medications_taken": list(doc.get("medications_taken") or []),
             "note": doc.get("note") or "",
         }

@@ -24,6 +24,8 @@ without being able to change any of them.
 """
 
 from datetime import datetime, timezone
+import re
+from typing import Literal
 
 from bson import ObjectId
 from bson.errors import InvalidId
@@ -40,6 +42,7 @@ from app.core.rbac import (
     role_name,
 )
 from app.core.security import hash_password_async
+from app.core.staff_scope import SCOPE_ASSIGNED, normalise_scope
 from app.db.mongodb import get_database
 from app.models.member import MemberModel
 from app.models.role import RoleModel
@@ -68,6 +71,15 @@ class AccessChange(BaseModel):
     """Per-person adjustments on top of whatever her role grants."""
     extra_permissions: list[str] = Field(default_factory=list)
     denied_permissions: list[str] = Field(default_factory=list)
+
+
+class ScopeChange(BaseModel):
+    mode: str = Field(pattern="^(all|assigned)$")
+    regions: list[str] = Field(default_factory=list, max_length=100)
+    categories: list[str] = Field(default_factory=list, max_length=100)
+    organizations: list[str] = Field(default_factory=list, max_length=100)
+    communities: list[str] = Field(default_factory=list, max_length=200)
+    member_ids: list[str] = Field(default_factory=list, max_length=500)
 
 
 class AcceptInvite(BaseModel):
@@ -183,6 +195,36 @@ async def assignable_roles():
             "permissions": len(r.get("permissions") or []),
         })
     return {"roles": sorted(out, key=lambda r: r["name"])}
+
+
+@router.get("/scope-options", summary="Search values available for staff assignments")
+async def scope_options(
+    kind: Literal["region", "category", "member"] = Query(...),
+    q: str = Query("", max_length=100),
+    limit: int = Query(30, ge=1, le=100),
+    _: dict = Depends(require_super_admin),
+):
+    members = get_database()[MemberModel.collection_name]
+    needle = re.compile(re.escape(q.strip()), re.IGNORECASE) if q.strip() else None
+    if kind in ("region", "category"):
+        field = "location" if kind == "region" else "segment"
+        values = await members.distinct(field)
+        cleaned = sorted({str(v).strip() for v in values if str(v).strip()})
+        if needle:
+            cleaned = [v for v in cleaned if needle.search(v)]
+        return {"options": [{"value": v, "label": v} for v in cleaned[:limit]]}
+
+    query = {}
+    if needle:
+        query = {"$or": [
+            {"full_name": needle}, {"email": needle}, {"code": needle},
+        ]}
+    rows = await members.find(query, {"full_name": 1, "email": 1, "code": 1}).sort("full_name", 1).limit(limit).to_list(limit)
+    return {"options": [{
+        "value": str(row["_id"]),
+        "label": row.get("full_name") or row.get("email") or str(row["_id"]),
+        "detail": " · ".join(v for v in (row.get("code", ""), row.get("email", "")) if v),
+    } for row in rows]}
 
 
 # ── creating one ────────────────────────────────────────────────────────────
@@ -338,6 +380,36 @@ async def set_access(staff_id: str, body: AccessChange, me: dict = Depends(requi
     doc["extra_permissions"], doc["denied_permissions"] = extra, denied
     await record(me, "staff.access", target=staff_id,
                  detail=f"+{len(extra)} / −{len(denied)}")
+    return await _shaped(doc)
+
+
+@router.put("/{staff_id}/scope", summary="Assign the records one staff member may access")
+async def set_scope(staff_id: str, body: ScopeChange, me: dict = Depends(require_super_admin)):
+    doc = await _load(staff_id)
+    _guard_not_self(doc, me, "change the scope of")
+    if doc.get("role") == SUPER_ADMIN and body.mode != "all":
+        raise HTTPException(status.HTTP_400_BAD_REQUEST, "A Super Admin always has platform-wide scope")
+
+    scope = normalise_scope(body.model_dump())
+    assigned = sum(len(scope[key]) for key in (
+        "regions", "categories", "organizations", "communities", "member_ids"
+    ))
+    if scope["mode"] == SCOPE_ASSIGNED and assigned == 0:
+        raise HTTPException(
+            status.HTTP_400_BAD_REQUEST,
+            "Choose at least one region, category, organization, community, or member",
+        )
+
+    await _users().update_one(
+        {"_id": doc["_id"]},
+        {"$set": {"staff_scope": scope, "updated_at": datetime.now(timezone.utc)},
+         "$inc": {"token_version": 1}},
+    )
+    doc["staff_scope"] = scope
+    await record(
+        me, "staff.scope", target=staff_id,
+        detail="All records" if scope["mode"] == "all" else f"{assigned} scope assignments",
+    )
     return await _shaped(doc)
 
 

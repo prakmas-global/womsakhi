@@ -43,6 +43,7 @@ from fastapi import APIRouter, Depends, Query, Request, Response
 from app.core.audit import record
 from app.core.deps import get_current_user
 from app.core.permissions import require_permission
+from app.core.staff_scope import member_scope_query
 from app.db.mongodb import get_database
 from app.models.appointment import AppointmentModel
 from app.models.backup import BackupModel
@@ -84,11 +85,42 @@ def _bookings():
     return get_database()["bookings"]
 
 
-async def _member_names() -> dict[str, str]:
+async def _scope_context(user: dict) -> dict | None:
+    """Resolve an assigned staff scope once for all dashboard rollups."""
+    query = member_scope_query(user)
+    if not query:
+        return None
+    rows = await _members().find(query, {"full_name": 1, "email": 1}).to_list(None)
+    member_ids = [str(row["_id"]) for row in rows]
+    emails = [row.get("email", "") for row in rows if row.get("email")]
+    users = await _users().find({"$or": [
+        {"member_id": {"$in": member_ids}}, {"email": {"$in": emails}},
+    ]}, {"_id": 1}).to_list(None) if rows else []
+    return {
+        "member_query": query,
+        "member_ids": member_ids,
+        "user_ids": [str(row["_id"]) for row in users],
+    }
+
+
+def _owned(query: dict, scope: dict | None, fields: tuple[str, ...] = ("member_id", "user_id")) -> dict:
+    if scope is None:
+        return query
+    clauses = []
+    for field in fields:
+        values = scope["member_ids"] if field == "member_id" else scope["user_ids"]
+        if values:
+            clauses.append({field: {"$in": values}})
+    gate = {"$or": clauses} if clauses else {"_id": {"$exists": False}}
+    return {"$and": [query, gate]} if query else gate
+
+
+async def _member_names(scope: dict | None = None) -> dict[str, str]:
     out: dict[str, str] = {}
-    async for m in _members().find({}, {"full_name": 1}):
+    async for m in _members().find(scope["member_query"] if scope else {}, {"full_name": 1}):
         out[str(m["_id"])] = m.get("full_name", "")
-    async for u in _users().find({}, {"full_name": 1}):
+    user_query = {"_id": {"$in": [ObjectId(v) for v in scope["user_ids"]]}} if scope else {}
+    async for u in _users().find(user_query, {"full_name": 1}):
         out.setdefault(str(u["_id"]), u.get("full_name", ""))
     return out
 
@@ -203,11 +235,11 @@ def _fmt_when(dt: datetime | None) -> str:
 
 # --- Rollup builders (shared by /overview, the granular endpoints and /export) --
 
-async def _build_stats() -> list[StatCard]:
+async def _build_stats(scope: dict | None = None, days: int = WINDOW_DAYS) -> list[StatCard]:
     """The 4 KPI cards, each counted from its collection, with how many arrived
     in the last 30 days beside it."""
     db = get_database()
-    since = _since()
+    since = _since(days)
     # Appointments carry no created_at; the ObjectId was minted when the row
     # was, so its embedded timestamp is the honest signal.
     since_oid = ObjectId.from_datetime(since)
@@ -218,12 +250,12 @@ async def _build_stats() -> list[StatCard]:
         total_programs, new_programs,
         paid_invoices,
     ) = await asyncio.gather(
-        _members().count_documents({}),
-        _members().count_documents({"created_at": {"$gte": since}}),
-        _appointments().count_documents({}),
-        _appointments().count_documents({"_id": {"$gte": since_oid}}),
-        _bookings().count_documents({}),
-        _bookings().count_documents({"created_at": {"$gte": since}}),
+        _members().count_documents(scope["member_query"] if scope else {}),
+        _members().count_documents({"$and": [scope["member_query"], {"created_at": {"$gte": since}}]} if scope else {"created_at": {"$gte": since}}),
+        _appointments().count_documents({} if scope is None else {"_id": {"$exists": False}}),
+        _appointments().count_documents({"_id": {"$gte": since_oid}} if scope is None else {"_id": {"$exists": False}}),
+        _bookings().count_documents(_owned({}, scope)),
+        _bookings().count_documents(_owned({"created_at": {"$gte": since}}, scope)),
         _programs().count_documents({}),
         _programs().count_documents({"created_at": {"$gte": since}}),
         db["invoices"].find({"status": "Paid"}, {"amount": 1, "date": 1}).to_list(None),
@@ -237,31 +269,32 @@ async def _build_stats() -> list[StatCard]:
         if paid_on and paid_on >= since:
             recent_revenue += _money_to_int(inv.get("amount", "0"))
 
-    window = f"new in the last {WINDOW_DAYS} days"
+    window = f"new in the last {days} days"
     d_users, n_users = _delta(new_users, window)
     d_appts, n_appts = _delta(new_appts, window)
     d_programs, n_programs = _delta(new_programs, window)
     d_rev, n_rev = (
-        (f"+₹{recent_revenue:,}", f"paid in the last {WINDOW_DAYS} days") if recent_revenue > 0 else ("", "")
+        (f"+₹{recent_revenue:,}", f"paid in the last {days} days") if recent_revenue > 0 else ("", "")
     )
     return [
         StatCard(key="total_users", label="Members", value=f"{total_users:,}", delta=d_users, delta_dir="up", delta_note=n_users, tone="violet", icon="Users", href="/dashboard/users"),
         StatCard(key="appointments", label="Appointments", value=f"{total_appts:,}", delta=d_appts, delta_dir="up", delta_note=n_appts, tone="emerald", icon="CalendarCheck", href="/dashboard/appointments"),
-        StatCard(key="revenue", label="Revenue (paid invoices)", value=f"₹{revenue:,}", delta=d_rev, delta_dir="up", delta_note=n_rev, tone="amber", icon="ShoppingBag", href="/dashboard/settings/billing"),
+        StatCard(key="revenue", label="Revenue (paid invoices)", value=f"₹{revenue:,}", delta=d_rev, delta_dir="up", delta_note=n_rev, tone="amber", icon="ShoppingBag", href="/dashboard/money/orders"),
         StatCard(key="programs", label="Programmes", value=f"{total_programs:,}", delta=d_programs, delta_dir="up", delta_note=n_programs, tone="sky", icon="BookMarked", href="/dashboard/programs"),
     ]
 
 
-async def _build_attention() -> list[AttentionItem]:
+async def _build_attention(scope: dict | None = None) -> list[AttentionItem]:
     """What is waiting for a person. Each tile links to the screen where she
     deals with it, and each count is the same query that screen runs."""
     today = datetime.now(timezone.utc).strftime("%Y-%m-%d")
     in_review, docs_pending, open_reports, upcoming_legacy, upcoming_bookings = await asyncio.gather(
-        _users().count_documents({"role": "Member", "verification_status": VerificationStatus.IN_REVIEW}),
-        _documents().count_documents({"status": DocumentModel.STATUS_PENDING}),
-        _reports().count_documents({"status": {"$in": [SafetyReportModel.STATUS_OPEN, SafetyReportModel.STATUS_REVIEWING]}}),
-        _appointments().count_documents({"status": {"$in": _UPCOMING}}),
-        _bookings().count_documents({"status": "upcoming", "date": {"$gte": today}}),
+        _users().count_documents({"role": "Member", "verification_status": VerificationStatus.IN_REVIEW,
+                                  **({"_id": {"$in": [ObjectId(v) for v in scope["user_ids"]]}} if scope else {})}),
+        _documents().count_documents(_owned({"status": DocumentModel.STATUS_PENDING}, scope)),
+        _reports().count_documents(_owned({"status": {"$in": [SafetyReportModel.STATUS_OPEN, SafetyReportModel.STATUS_REVIEWING]}}, scope)),
+        _appointments().count_documents({"status": {"$in": _UPCOMING}} if scope is None else {"_id": {"$exists": False}}),
+        _bookings().count_documents(_owned({"status": "upcoming", "date": {"$gte": today}}, scope)),
     )
     upcoming = upcoming_legacy + upcoming_bookings
     return [
@@ -272,13 +305,13 @@ async def _build_attention() -> list[AttentionItem]:
     ]
 
 
-async def _build_trend() -> AppointmentTrend:
+async def _build_trend(scope: dict | None = None, days: int = WINDOW_DAYS) -> AppointmentTrend:
     """Status tiles over every appointment there is — members' bookings and the
     staff-entered rows — and a per-month series of bookings over the last
     twelve months. Bookings carry a real date; the legacy rows carry a 'May 20'
     label with no year, so they count in the tiles but not on the line."""
-    legacy = [d async for d in _appointments().find({}, {"status": 1})]
-    bookings = [d async for d in _bookings().find({}, {"status": 1, "date": 1})]
+    legacy = [d async for d in _appointments().find({} if scope is None else {"_id": {"$exists": False}}, {"status": 1})]
+    bookings = [d async for d in _bookings().find(_owned({}, scope), {"status": 1, "date": 1})]
 
     def _legacy_bucket(st: str) -> str:
         return "completed" if st == "Completed" else "cancelled" if st == "Cancelled" else "scheduled" if st in _UPCOMING else "other"
@@ -298,29 +331,36 @@ async def _build_trend() -> AppointmentTrend:
         {"label": "Cancelled", "value": f"{cancelled:,}", "tone": "text-rose-500 bg-rose-50", "href": "/dashboard/appointments?status=cancelled"},
     ]
 
-    # Twelve months ending this month, every month present even when empty.
-    now = datetime.now(timezone.utc)
-    months: list[tuple[str, str]] = []
-    y, m = now.year, now.month
-    for _ in range(12):
-        months.append((f"{y:04d}-{m:02d}", datetime(y, m, 1).strftime("%b %y")))
-        m -= 1
-        if m == 0:
-            y, m = y - 1, 12
-    months.reverse()
-    by_month: dict[str, int] = {key: 0 for key, _ in months}
-    for d in bookings:
-        key = (d.get("date") or "")[:7]
-        if key in by_month:
-            by_month[key] += 1
-    series = [{"label": label, "value": by_month[key]} for key, label in months]
-    return AppointmentTrend(range="Bookings, last 12 months", series=series, tiles=tiles)
+    # A readable number of buckets for the chosen fast filter. Each point is a
+    # real booking date, and empty periods stay visible instead of vanishing.
+    today = datetime.now(timezone.utc).date()
+    start = today - timedelta(days=days - 1)
+    bucket_days = 1 if days <= 14 else 7
+    buckets: list[tuple] = []
+    cursor = start
+    while cursor <= today:
+        end = min(cursor + timedelta(days=bucket_days - 1), today)
+        label = cursor.strftime("%d %b") if cursor == end else f"{cursor.strftime('%d %b')}–{end.strftime('%d %b')}"
+        buckets.append((cursor, end, label))
+        cursor = end + timedelta(days=1)
+    values = [0 for _ in buckets]
+    for row in bookings:
+        try:
+            booked = datetime.strptime((row.get("date") or "")[:10], "%Y-%m-%d").date()
+        except ValueError:
+            continue
+        for i, (begin, end, _) in enumerate(buckets):
+            if begin <= booked <= end:
+                values[i] += 1
+                break
+    series = [{"label": bucket[2], "value": values[i]} for i, bucket in enumerate(buckets)]
+    return AppointmentTrend(range=f"Bookings, last {days} days", series=series, tiles=tiles)
 
 
-async def _build_by_role() -> UsersByRole:
+async def _build_by_role(scope: dict | None = None) -> UsersByRole:
     """Users-by-role donut, computed from the members' actual roles."""
     counts: dict[str, int] = {}
-    async for doc in _members().find({}, {"role": 1}):
+    async for doc in _members().find(scope["member_query"] if scope else {}, {"role": 1}):
         role = doc.get("role", "Member")
         counts[role] = counts.get(role, 0) + 1
     total = sum(counts.values())
@@ -334,9 +374,9 @@ async def _build_by_role() -> UsersByRole:
     return UsersByRole(segments=segments, legend=legend, center_value=f"{total:,}", center_label="Members")
 
 
-async def _build_recent_users(limit: int) -> list[RecentUser]:
+async def _build_recent_users(limit: int, scope: dict | None = None) -> list[RecentUser]:
     """Newest members registered, with the status their directory row holds."""
-    cursor = _members().find().sort("created_at", -1).limit(limit)
+    cursor = _members().find(scope["member_query"] if scope else {}).sort("created_at", -1).limit(limit)
     out: list[RecentUser] = []
     async for doc in cursor:
         joined = doc.get("created_at")
@@ -351,20 +391,20 @@ async def _build_recent_users(limit: int) -> list[RecentUser]:
     return out
 
 
-async def _build_recent_appointments(limit: int) -> list[RecentAppointment]:
+async def _build_recent_appointments(limit: int, scope: dict | None = None) -> list[RecentAppointment]:
     """Newest bookings members made, by when they were made; topped up with
     the newest staff-entered rows if there are too few. A booking's date is a
     real date; a legacy row's date is the label it holds, with no year
     invented for it."""
-    names = await _member_names()
+    names = await _member_names(scope)
     out: list[RecentAppointment] = []
-    async for doc in _bookings().find().sort("created_at", -1).limit(limit):
+    async for doc in _bookings().find(_owned({}, scope)).sort("created_at", -1).limit(limit):
         who = names.get(str(doc.get("member_id") or "")) or names.get(str(doc.get("user_id") or "")) or "Member"
         out.append(RecentAppointment(
             title=doc.get("service_name", ""), who=who, date=doc.get("date", ""),
             time=_start_time(doc.get("time", "")), status=(doc.get("status") or "").replace("_", " ").capitalize(),
         ))
-    if len(out) < limit:
+    if len(out) < limit and scope is None:
         async for doc in _appointments().find().sort("_id", -1).limit(limit - len(out)):
             out.append(RecentAppointment(
                 title=doc.get("service", ""), who=doc.get("name", ""), date=doc.get("date", ""),
@@ -373,9 +413,12 @@ async def _build_recent_appointments(limit: int) -> list[RecentAppointment]:
     return out
 
 
-async def _build_recent_activity(limit: int) -> list[RecentActivity]:
+async def _build_recent_activity(limit: int, scope: dict | None = None, actor_id: str = "") -> list[RecentActivity]:
     """The newest staff actions, straight from the audit trail."""
-    docs = await _activity().find({}).sort("created_at", -1).to_list(limit)
+    query = {}
+    if scope is not None:
+        query = {"$or": [{"user_id": actor_id}, {"target": {"$in": scope["member_ids"]}}]}
+    docs = await _activity().find(query).sort("created_at", -1).to_list(limit)
     return [RecentActivity(**ActivityLogModel.to_response(d)) for d in docs]
 
 
@@ -429,20 +472,21 @@ async def _build_system_overview() -> SystemOverviewResponse:
     )
 
 
-async def _build_overview() -> DashboardOverview:
+async def _build_overview(user: dict, days: int = WINDOW_DAYS) -> DashboardOverview:
     # Eight independent builders in one wave; nothing here reads anything
     # another produces, and the screen opens on every sign-in.
+    scope = await _scope_context(user)
     (
         stats, attention, appointment_trend, users_by_role,
         recent_users, recent_appointments, recent_activity, system_overview,
     ) = await asyncio.gather(
-        _build_stats(),
-        _build_attention(),
-        _build_trend(),
-        _build_by_role(),
-        _build_recent_users(5),
-        _build_recent_appointments(5),
-        _build_recent_activity(8),
+        _build_stats(scope, days),
+        _build_attention(scope),
+        _build_trend(scope, days),
+        _build_by_role(scope),
+        _build_recent_users(5, scope),
+        _build_recent_appointments(5, scope),
+        _build_recent_activity(8, scope, str(user.get("_id", ""))),
         _build_system_overview(),
     )
     return DashboardOverview(
@@ -463,43 +507,40 @@ async def _build_overview() -> DashboardOverview:
 @router.get("/overview", response_model=DashboardOverview, summary="Full dashboard bundle",
     dependencies=[Depends(require_permission("dashboard.view"))],
 )
-async def dashboard_overview(_: dict = Depends(get_current_user)):
+async def dashboard_overview(days: int = Query(WINDOW_DAYS, ge=7, le=90), me: dict = Depends(get_current_user)):
     """One call hydrating the whole screen."""
-    return await _build_overview()
+    return await _build_overview(me, days)
 
 
 @router.get("/stats", response_model=list[StatCard], summary="4 KPI cards",
     dependencies=[Depends(require_permission("dashboard.view"))],
 )
-async def dashboard_stats(_: dict = Depends(get_current_user)):
-    return await _build_stats()
+async def dashboard_stats(days: int = Query(WINDOW_DAYS, ge=7, le=90), me: dict = Depends(get_current_user)):
+    return await _build_stats(await _scope_context(me), days)
 
 
 @router.get("/attention", response_model=list[AttentionItem], summary="What is waiting for a person",
     dependencies=[Depends(require_permission("dashboard.view"))],
 )
-async def dashboard_attention(_: dict = Depends(get_current_user)):
-    return await _build_attention()
+async def dashboard_attention(me: dict = Depends(get_current_user)):
+    return await _build_attention(await _scope_context(me))
 
 
 @router.get("/appointments/trend", response_model=AppointmentTrend, summary="Appointments overview trend",
     dependencies=[Depends(require_permission("dashboard.view"))],
 )
 async def dashboard_appointments_trend(
-    range: str = Query(
-        "All appointments",
-        description="Accepted for older clients and not applied: an appointment carries no year, so no window can be.",
-    ),
-    _: dict = Depends(get_current_user),
+    days: int = Query(WINDOW_DAYS, ge=7, le=90),
+    me: dict = Depends(get_current_user),
 ):
-    return await _build_trend()
+    return await _build_trend(await _scope_context(me), days)
 
 
 @router.get("/users/by-role", response_model=UsersByRole, summary="Users-by-role donut",
     dependencies=[Depends(require_permission("dashboard.view"))],
 )
-async def dashboard_users_by_role(_: dict = Depends(get_current_user)):
-    return await _build_by_role()
+async def dashboard_users_by_role(me: dict = Depends(get_current_user)):
+    return await _build_by_role(await _scope_context(me))
 
 
 @router.get("/users/recent", response_model=list[RecentUser], summary="Recently registered users",
@@ -507,9 +548,9 @@ async def dashboard_users_by_role(_: dict = Depends(get_current_user)):
 )
 async def dashboard_recent_users(
     limit: int = Query(5, ge=1, le=50),
-    _: dict = Depends(get_current_user),
+    me: dict = Depends(get_current_user),
 ):
-    return await _build_recent_users(limit)
+    return await _build_recent_users(limit, await _scope_context(me))
 
 
 @router.get("/appointments/recent", response_model=list[RecentAppointment], summary="Recent appointments",
@@ -517,9 +558,9 @@ async def dashboard_recent_users(
 )
 async def dashboard_recent_appointments(
     limit: int = Query(5, ge=1, le=50),
-    _: dict = Depends(get_current_user),
+    me: dict = Depends(get_current_user),
 ):
-    return await _build_recent_appointments(limit)
+    return await _build_recent_appointments(limit, await _scope_context(me))
 
 
 @router.get("/activity/recent", response_model=list[RecentActivity], summary="Newest staff actions",
@@ -527,9 +568,10 @@ async def dashboard_recent_appointments(
 )
 async def dashboard_recent_activity(
     limit: int = Query(8, ge=1, le=50),
-    _: dict = Depends(get_current_user),
+    me: dict = Depends(get_current_user),
 ):
-    return await _build_recent_activity(limit)
+    scope = await _scope_context(me)
+    return await _build_recent_activity(limit, scope, str(me.get("_id", "")))
 
 
 @router.get("/system-overview", response_model=SystemOverviewResponse, summary="System overview card",
@@ -542,12 +584,12 @@ async def dashboard_system_overview(_: dict = Depends(get_current_user)):
 @router.get("/export", summary="Download the home screen as CSV",
     dependencies=[Depends(require_permission("dashboard.export"))],
 )
-async def dashboard_export(request: Request, me: dict = Depends(get_current_user)):
+async def dashboard_export(request: Request, days: int = Query(WINDOW_DAYS, ge=7, le=90), me: dict = Depends(get_current_user)):
     """Every figure and list on the home, as it stands right now, in one CSV.
 
     An export is data leaving the building — member names and emails among it —
     so it is recorded in the audit trail the way a write is."""
-    o = await _build_overview()
+    o = await _build_overview(me, days)
     rows: list[list[str]] = [["section", "label", "value", "note"]]
     for s in o.stats:
         rows.append(["stat", s.label, s.value, f"{s.delta} {s.delta_note}".strip()])

@@ -1,12 +1,15 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { ChevronRight, Loader2, Minus, Plus, RotateCcw, ShieldCheck } from "lucide-react";
+import { ChevronRight, Loader2, MapPin, Minus, Plus, RotateCcw, Search, ShieldCheck, Tags, UserRound } from "lucide-react";
 
 import { Modal, useToast } from "@/design-system";
 import { apiClient } from "@/lib/api";
 import { memberError } from "@/lib/member-api";
-import { apiSetStaffAccess, type StaffAccount } from "@/lib/staff-accounts-api";
+import {
+  apiSetStaffAccess, apiSetStaffScope, apiStaffScopeOptions,
+  type ScopeOption, type StaffAccount, type StaffScope,
+} from "@/lib/staff-accounts-api";
 
 /**
  * What one person can do, as distinct from what her role can do.
@@ -66,12 +69,29 @@ export default function StaffAccessPanel({
   const [extra, setExtra] = useState<Set<string>>(new Set(staff.extra_permissions));
   const [denied, setDenied] = useState<Set<string>>(new Set(staff.denied_permissions));
   const [saving, setSaving] = useState(false);
+  const [scope, setScope] = useState<StaffScope>(staff.scope);
+  const [scopeOptions, setScopeOptions] = useState<{
+    regions: ScopeOption[]; categories: ScopeOption[]; members: ScopeOption[];
+  }>({ regions: [], categories: [], members: [] });
+  const [scopeSearch, setScopeSearch] = useState("");
 
   useEffect(() => {
     apiClient
       .get<{ modules: CatalogueModule[] }>("/roles/catalogue/all")
       .then((r) => setModules(r.data.modules))
       .catch(() => setModules([]));
+  }, []);
+
+  useEffect(() => {
+    let alive = true;
+    void Promise.all([
+      apiStaffScopeOptions("region"),
+      apiStaffScopeOptions("category"),
+      apiStaffScopeOptions("member", "", 100),
+    ]).then(([regions, categories, members]) => {
+      if (alive) setScopeOptions({ regions, categories, members });
+    }).catch(() => undefined);
+    return () => { alive = false; };
   }, []);
 
   /** Her role's own grant, worked back out of what she holds now. */
@@ -111,6 +131,7 @@ export default function StaffAccessPanel({
         extra_permissions: [...extra],
         denied_permissions: [...denied],
       });
+      await apiSetStaffScope(staff.id, scope);
       toast.success(`${staff.full_name}'s access updated`);
       onSaved();
     } catch (e) {
@@ -118,10 +139,24 @@ export default function StaffAccessPanel({
     } finally {
       setSaving(false);
     }
-  }, [denied, extra, onSaved, staff.full_name, staff.id, toast]);
+  }, [denied, extra, onSaved, scope, staff.full_name, staff.id, toast]);
 
   const changes = extra.size + denied.size;
   const isSuper = staff.role === "Super Admin";
+
+  const toggleScope = useCallback((key: "regions" | "categories" | "member_ids", value: string) => {
+    setScope((current) => {
+      const values = new Set(current[key]);
+      if (values.has(value)) values.delete(value); else values.add(value);
+      return { ...current, [key]: [...values] };
+    });
+  }, []);
+
+  const scopeGroups = [
+    { key: "regions" as const, label: "Regions", icon: MapPin, options: scopeOptions.regions },
+    { key: "categories" as const, label: "Member categories", icon: Tags, options: scopeOptions.categories },
+    { key: "member_ids" as const, label: "Selected members", icon: UserRound, options: scopeOptions.members },
+  ];
 
   return (
     <Modal open onClose={onClose} title={`What ${staff.full_name} can do`} size="lg">
@@ -144,6 +179,60 @@ export default function StaffAccessPanel({
             alone — once to <b className="text-emerald-700">grant</b> it, again to{" "}
             <b className="text-rose-700">withhold</b> it, again to go back to what her role says.
           </div>
+
+          <section className="rounded-xl border border-line p-3.5">
+            <div className="flex flex-wrap items-start justify-between gap-3">
+              <div>
+                <h3 className="text-sm font-semibold text-ink">Whose records she can access</h3>
+                <p className="mt-0.5 text-xs text-ink-subtle">
+                  This is enforced by the API on member searches, profiles, exports and changes.
+                </p>
+              </div>
+              <div className="flex rounded-lg border border-line bg-surface-2 p-1 text-xs font-semibold">
+                <button type="button" className={`rounded-md px-3 py-1.5 ${scope.mode === "all" ? "bg-surface text-ink shadow-sm" : "text-ink-subtle"}`}
+                  onClick={() => setScope({ ...scope, mode: "all" })}>All records</button>
+                <button type="button" className={`rounded-md px-3 py-1.5 ${scope.mode === "assigned" ? "bg-surface text-ink shadow-sm" : "text-ink-subtle"}`}
+                  onClick={() => setScope({ ...scope, mode: "assigned" })}>Assigned only</button>
+              </div>
+            </div>
+
+            {scope.mode === "assigned" && (
+              <div className="mt-3 space-y-3">
+                <label className="relative block">
+                  <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-ink-subtle" />
+                  <input className="w-full rounded-lg border border-line-strong bg-surface py-2 pl-9 pr-3 text-sm outline-none focus:border-violet-300"
+                    value={scopeSearch} onChange={(e) => setScopeSearch(e.target.value)}
+                    placeholder="Search regions, categories or members…" />
+                </label>
+                {scopeGroups.map((group) => {
+                  const q = scopeSearch.trim().toLowerCase();
+                  const visible = group.options.filter((option) => !q || `${option.label} ${option.detail ?? ""}`.toLowerCase().includes(q));
+                  const selected = new Set(scope[group.key]);
+                  return (
+                    <div key={group.key}>
+                      <p className="mb-1.5 flex items-center gap-1.5 text-xs font-semibold text-ink-muted">
+                        <group.icon className="h-3.5 w-3.5" /> {group.label}
+                      </p>
+                      <div className="flex max-h-24 flex-wrap gap-1.5 overflow-y-auto">
+                        {visible.length === 0 ? (
+                          <span className="text-xs text-ink-subtle">No matching options</span>
+                        ) : visible.map((option) => (
+                          <button key={option.value} type="button" onClick={() => toggleScope(group.key, option.value)}
+                            title={option.detail}
+                            className={`rounded-full border px-2.5 py-1 text-xs font-medium ${selected.has(option.value) ? "border-violet-300 bg-violet-50 text-violet-800" : "border-line bg-surface text-ink-muted"}`}>
+                            {selected.has(option.value) ? "✓ " : ""}{option.label}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  );
+                })}
+                <p className="text-2xs text-ink-subtle">
+                  A record is available when it matches any selected region, category, or named member.
+                </p>
+              </div>
+            )}
+          </section>
 
           {modules === null ? (
             <div className="flex items-center justify-center py-12">

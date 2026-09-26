@@ -9,7 +9,7 @@ import {
   ActionBtn, Btn, Card, Chip, EmptyState, NoteBtn, Rating, SectionHead, SourceNote,
   copy, plural
 } from "@/components/ux/kit";
-import { apiRequestMentor } from "@/lib/growth-api";
+import { apiRequestMentor, apiWithdrawMentorRequest } from "@/lib/growth-api";
 import { apiLeaveFeedback } from "@/lib/member-api";
 import { HomeShell } from "@/components/ux/home/HomeShell";
 import { ActionRow, ChipRow, ScreenHead, Segments, Tag } from "@/components/ux/learning/native";
@@ -20,6 +20,7 @@ import { useMentors } from "@/components/ux/live";
 import { useMentorSessions } from "@/components/ux/growth";
 import { useT } from "@/i18n";
 import { useTranslated } from "@/i18n/data";
+import { toast } from "@/components/ux/mobile/Toast";
 
 /**
  * Mentors — women who have done it, and will sit with you.
@@ -34,7 +35,8 @@ export default function MentorsPage() {
   const MENTOR_ART = useTranslated(RAW_MENTOR_ART);
   const tr = useT();
   const { data: MENTORS, source, refetch } = useMentors();
-  const { data: MY_SESSIONS } = useMentorSessions();
+  const { data: MY_SESSIONS, refetch: refetchSessions } = useMentorSessions();
+  const [withdrawing, setWithdrawing] = useState("");
   const [tab, setTab] = useState("Find a mentor");
   const [skills, setSkills] = useState<string[]>([]);
   const [langs, setLangs] = useState<string[]>([]);
@@ -286,13 +288,16 @@ export default function MentorsPage() {
                       Join
                     </ActionBtn>
                   )}
-                  {/* This said "We have told {her}" and told nobody: there is
-                      no member endpoint for withdrawing a mentor request —
-                      only staff can move one. So it no longer claims. It goes
-                      where she can actually ask, which is her thread with the
-                      team. */}
                   {s.state === "Requested" && (
-                    <Btn href="/app/messages" variant="outline" size="sm" icon="MessageCircle">{tr("mentors.askUsToCancel")}</Btn>
+                    <Btn variant="outline" size="sm" icon="X" loading={withdrawing === s.id}
+                         onClick={async () => {
+                           setWithdrawing(s.id);
+                           try {
+                             await apiWithdrawMentorRequest(s.id); refetchSessions();
+                             toast("Mentor request withdrawn", { tone: "success" });
+                           } catch { toast("Could not withdraw that request.", { tone: "error" }); }
+                           finally { setWithdrawing(""); }
+                         }}>Withdraw request</Btn>
                   )}
                   {/* `to` and the placeholder both used to say this reached
                       the mentor and was published for other women. It does

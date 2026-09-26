@@ -84,7 +84,8 @@ async def get_together(me: dict = Depends(require_active_member)):
     uid = str(me["_id"])
 
     links = []
-    async for d in _links().find({"user_id": uid}).sort("created_at", 1):
+    # A link safety staff revoked is over: it leaves her screen along with its tasks.
+    async for d in _links().find({"user_id": uid, "revoked_at": None}).sort("created_at", 1):
         consent = d.get("consent_on")
         links.append({
             "id": str(d["_id"]),
@@ -177,7 +178,7 @@ async def end_link(link_id: str, me: dict = Depends(require_active_member)):
 @router.post("/queue", status_code=status.HTTP_201_CREATED, summary="Something she needs doing")
 async def add_task(body: TaskIn, me: dict = Depends(require_active_member)):
     uid = str(me["_id"])
-    if not await _links().find_one({"_id": _oid(body.link_id, "link"), "user_id": uid}):
+    if not await _links().find_one({"_id": _oid(body.link_id, "link"), "user_id": uid, "revoked_at": None}):
         raise HTTPException(status.HTTP_404_NOT_FOUND, "No such person")
     now = datetime.now(timezone.utc)
     await _tasks().insert_one({
@@ -242,15 +243,25 @@ async def sisters(me: dict = Depends(require_active_member)):
         if u not in trades and row["_id"].get("c"):
             trades[u] = row["_id"]["c"]
 
-    rows = []
+    # Fetch both collections in batches. The previous loop made two Atlas
+    # round trips per woman (29 queries and ~800 ms in the seeded account).
+    valid_ids: list[ObjectId] = []
     for oid in others:
         try:
-            u = await db["users"].find_one({"_id": ObjectId(oid)})
+            valid_ids.append(ObjectId(oid))
         except (InvalidId, TypeError):
             continue
-        if not u:
-            continue
-        member = await db["members"].find_one({"email": u.get("email", "")}) or {}
+    users = await db["users"].find({"_id": {"$in": valid_ids}}).to_list(len(valid_ids))
+    emails = [u.get("email", "") for u in users if u.get("email")]
+    members = await db["members"].find(
+        {"email": {"$in": emails}}, {"email": 1, "location": 1, "avatar": 1}
+    ).to_list(len(emails))
+    member_by_email = {m.get("email", ""): m for m in members}
+
+    rows = []
+    for u in users:
+        oid = str(u["_id"])
+        member = member_by_email.get(u.get("email", ""), {})
         rows.append({
             "id": oid,
             "name": u.get("full_name", ""),

@@ -96,20 +96,20 @@ export interface DashboardOverview {
 }
 
 // One call hydrating the whole dashboard screen.
-export async function apiDashboardOverview(): Promise<DashboardOverview> {
-  const { data } = await apiClient.get<DashboardOverview>("/dashboard/overview");
+export async function apiDashboardOverview(days = 30): Promise<DashboardOverview> {
+  const { data } = await apiClient.get<DashboardOverview>("/dashboard/overview", { params: { days } });
   return data;
 }
 
 // --- Granular endpoints (available if a section needs to refresh on its own) ---
 
-export async function apiDashboardStats(): Promise<DashboardStatCard[]> {
-  const { data } = await apiClient.get<DashboardStatCard[]>("/dashboard/stats");
+export async function apiDashboardStats(days = 30): Promise<DashboardStatCard[]> {
+  const { data } = await apiClient.get<DashboardStatCard[]>("/dashboard/stats", { params: { days } });
   return data;
 }
 
-export async function apiDashboardApptTrend(): Promise<AppointmentTrend> {
-  const { data } = await apiClient.get<AppointmentTrend>("/dashboard/appointments/trend");
+export async function apiDashboardApptTrend(days = 30): Promise<AppointmentTrend> {
+  const { data } = await apiClient.get<AppointmentTrend>("/dashboard/appointments/trend", { params: { days } });
   return data;
 }
 
@@ -178,7 +178,7 @@ export async function apiDashboardRecentActivity(limit = 8): Promise<RecentActiv
 
 /** Every figure and list on the home, as of now, as a CSV blob. Needs
  *  `dashboard.export`; the server records the download in the audit trail. */
-export async function apiDashboardExportCsv(): Promise<Blob> {
-  const { data } = await apiClient.get<Blob>("/dashboard/export", { responseType: "blob" });
+export async function apiDashboardExportCsv(days = 30): Promise<Blob> {
+  const { data } = await apiClient.get<Blob>("/dashboard/export", { params: { days }, responseType: "blob" });
   return data;
 }

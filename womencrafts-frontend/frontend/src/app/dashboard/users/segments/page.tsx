@@ -308,17 +308,17 @@ export default function UserSegmentsPage() {
 
   async function deleteSegment(seg: LiveSegment) {
     if (!(await confirm({
-      title: `Delete the ${seg.name} segment?`,
-      description: "Members stay exactly as they are; only this saved grouping is removed.",
-      confirmLabel: "Delete segment",
+      title: `Archive the ${seg.name} segment?`,
+      description: "It leaves active targeting and assignment choices. Members, history, and the grouping itself are kept so it can be restored.",
+      confirmLabel: "Archive segment",
       danger: true,
     }))) return;
     try {
       await apiDeleteSegmentLive(seg.id);
-      toast.success(`${seg.name} deleted`);
+      toast.success(`${seg.name} archived`, { description: "Its history and member relationships were kept." });
       await refresh();
     } catch (err) {
-      toast.error("Could not delete the segment", { description: memberError(err) });
+      toast.error("Could not archive the segment", { description: memberError(err) });
     }
   }
 
@@ -586,7 +586,7 @@ export default function UserSegmentsPage() {
                           >
                             <MenuItem icon={Eye} href={membersHref(s.rule)}>View members</MenuItem>
                             <MenuItem icon={Pencil} onClick={() => openEdit(s)}>Edit</MenuItem>
-                            <MenuItem icon={Trash2} danger onClick={() => void deleteSegment(s)}>Delete</MenuItem>
+                            {s.status === "Active" && <MenuItem icon={Trash2} danger onClick={() => void deleteSegment(s)}>Archive</MenuItem>}
                           </Menu>
                         </td>
                       </tr>

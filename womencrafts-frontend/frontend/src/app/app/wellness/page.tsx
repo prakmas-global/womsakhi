@@ -43,8 +43,8 @@ export default function WellnessDashboard() {
   const { data: cycle } = useCycle();
   const cycleOn = Boolean(cycle && "setup" in cycle && cycle.setup);
   const status = cycleOn && cycle && "status" in cycle ? cycle.status : null;
-  const today = new Date().toLocaleDateString(undefined, {
-    weekday: "short", day: "numeric", month: "short", year: "numeric",
+  const today = new Date().toLocaleDateString("en-IN", {
+    weekday: "short", day: "numeric", month: "short", year: "numeric", timeZone: "Asia/Kolkata",
   });
 
   return <HomeShell><div className={styles.page} data-dashboard="wellness">
@@ -59,7 +59,7 @@ export default function WellnessDashboard() {
         </div>
       </div>
       <div className={styles.heroArt}>
-        <Image src="/ux/wellness/wellness-hero-v2.png" alt={tr("wellness.aWomanTakingACalmMoment")} fill priority sizes="(max-width: 900px) 100vw, 58vw" />
+        <Image src="/ux/wellness/wellness-hero-v2.webp" alt={tr("wellness.aWomanTakingACalmMoment")} fill priority sizes="(max-width: 900px) 100vw, 58vw" />
         <p className={styles.heroNote}>{tr("wellness.healthyWomen")}<br />{tr("wellness.happierWorld")}<small>— WomSakhi</small></p>
         <blockquote>{tr("wellness.takeCareOfYourself")}<br />You&apos;re doing incredibly.”<cite>— WomSakhi</cite></blockquote>
       </div>
@@ -120,12 +120,12 @@ export default function WellnessDashboard() {
       <article className={`${styles.card} ${styles.insights}`}><header><h2>{tr("wellness.healthInsights")}</h2><Link href="/app/health">{tr("calendar.viewAll")}</Link></header><div className={styles.insightGrid}>
         {insights.map(([Icon,title,copy,href,tone]) => <Link key={title} href={href} className={styles[tone]}><span><Icon /></span><b>{title}</b><small>{copy}</small></Link>)}</div></article>
       <article className={`${styles.card} ${styles.recommended}`}><header><h2>{tr("wellness.recommendedForYou")}</h2><Link href="/app/health/workouts">{tr("circles.seeAll")}</Link></header>
-        <Link href="/app/health/workouts" className={styles.videoCard}><Image src="/ux/wellness/morning-yoga-v2.png" alt={tr("wellness.womanPractisingAnEnergisingMorningYoga")} fill sizes="(max-width: 900px) 100vw, 32vw" /><span className={styles.videoShade} /><span className={styles.videoText}><b>10-min morning<br />{tr("wellness.yogaForEnergy")}</b><small>15 min · All levels</small></span><span className={styles.play}><Play fill="currentColor" /></span></Link><div className={styles.dots} aria-hidden><b /><i /><i /><i /><i /></div>
+        <Link href="/app/health/workouts" className={styles.videoCard}><Image src="/ux/wellness/morning-yoga-v2.webp" alt={tr("wellness.womanPractisingAnEnergisingMorningYoga")} fill sizes="(max-width: 900px) 100vw, 32vw" /><span className={styles.videoShade} /><span className={styles.videoText}><b>10-min morning<br />{tr("wellness.yogaForEnergy")}</b><small>15 min · All levels</small></span><span className={styles.play}><Play fill="currentColor" /></span></Link><div className={styles.dots} aria-hidden><b /><i /><i /><i /><i /></div>
       </article>
       <article className={`${styles.card} ${styles.community}`}><header><div className={styles.communityTitle}><h2>{tr("wellness.communitySupport")}</h2><span className={styles.memberStack} aria-label={tr("wellness.womenActiveInCommunity")}><Image src="/ux/art/avatar-woman-teal-shirt.webp" alt="" width={24} height={24} sizes="(max-width: 767px) 50vw, (max-width: 1023px) 33vw, 240px" /><Image src="/ux/art/avatar-woman-hijab.webp" alt="" width={24} height={24} sizes="(max-width: 767px) 50vw, (max-width: 1023px) 33vw, 240px" /><Image src="/ux/art/avatar-woman-purple-kurta.webp" alt="" width={24} height={24} sizes="(max-width: 767px) 50vw, (max-width: 1023px) 33vw, 240px" /><Image src="/ux/art/avatar-woman-pink-glasses.webp" alt="" width={24} height={24} sizes="(max-width: 767px) 50vw, (max-width: 1023px) 33vw, 240px" /></span></div><Link href="/app/circles">{tr("wellness.joinDiscussions")} <ArrowRight /></Link></header>
         <Link href="/app/circles" className={styles.discussion}><Image className={styles.avatar} src="/ux/art/avatar-woman-purple-kurta.webp" alt="Priya" width={34} height={34} sizes="(max-width: 767px) 50vw, (max-width: 1023px) 33vw, 240px" /><span><b>{tr("wellness.tipsForHealthyEatingAtWork")}</b><small>{tr("wellness.postedInNutrition")}</small></span><MessageCircle /><small>24</small></Link>
         <Link href="/app/circles" className={styles.discussion}><Image className={styles.avatar} src="/ux/art/avatar-woman-hijab.webp" alt="Aisha" width={34} height={34} sizes="(max-width: 767px) 50vw, (max-width: 1023px) 33vw, 240px" /><span><b>{tr("wellness.howDoYouManagePeriodPain")}</b><small>Posted in Women&apos;s Health</small></span><MessageCircle /><small>18</small></Link>
-        <Link href="/app/circles" className={styles.supportBanner}><span><b>You&apos;re not alone.</b><small>{tr("wellness.aCommunityThatCares")}</small></span><Image src="/ux/wellness/community-women-v2.png" alt={tr("wellness.threeWomenStandingTogetherInSupport")} width={170} height={100} sizes="(max-width: 767px) 50vw, (max-width: 1023px) 33vw, 240px" /><ArrowRight /></Link>
+        <Link href="/app/circles" className={styles.supportBanner}><span><b>You&apos;re not alone.</b><small>{tr("wellness.aCommunityThatCares")}</small></span><Image src="/ux/wellness/community-women-v2.webp" alt={tr("wellness.threeWomenStandingTogetherInSupport")} width={170} height={100} sizes="(max-width: 767px) 50vw, (max-width: 1023px) 33vw, 240px" /><ArrowRight /></Link>
       </article>
     </section>
     <footer className={styles.mantra}><Leaf /><p>{tr("wellness.healthyWomenBuildHealthierFamiliesCommunitie")} <cite>— WomSakhi</cite></p><Link href="/app/health">{tr("wellness.togetherForAHealthierTomorrow")} <ArrowRight /></Link></footer>

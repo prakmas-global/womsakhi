@@ -17,6 +17,17 @@ const ART = path.join(ROOT, "ux/art");
 const EXTRA = [path.join(ROOT, "ux/brand/auth-hero.png")];
 const fails = [];
 
+function sourceText(dir = path.resolve("src")) {
+  let out = "";
+  for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
+    const file = path.join(dir, entry.name);
+    if (entry.isDirectory()) out += sourceText(file);
+    else if (/\.(tsx?|css|json)$/i.test(entry.name)) out += fs.readFileSync(file, "utf8");
+  }
+  return out;
+}
+const sources = sourceText();
+
 function pngSize(buf) {
   if (buf.toString("ascii", 1, 4) !== "PNG") return null;
   return { w: buf.readUInt32BE(16), h: buf.readUInt32BE(20) };
@@ -76,6 +87,9 @@ function minBytesFor(name) {
 
 const files = fs.readdirSync(ART)
   .filter((name) => /\.(png|webp)$/i.test(name))
+  // Obsolete variants may remain for design history. Launch quality concerns
+  // the assets the app can actually render.
+  .filter((name) => sources.includes(`/ux/art/${name}`))
   .map((name) => path.join(ART, name))
   .concat(EXTRA);
 

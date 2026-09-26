@@ -18,12 +18,11 @@ import {
 
 import { EVENTS, type Ev, type EventKind } from "./events/data";
 import { CIRCLE_POSTS, MY_CIRCLES, type Circle } from "./circles/data";
-import { FINDS, type Find } from "./discover/data";
+import { type Find } from "./discover/data";
 import { MY_SESSIONS } from "./mentors/data";
 import { type SearchHit } from "./home/data";
 import { CONTINUING, TOP_PICKS, type Course } from "./learning/data";
-import { APPLICATIONS, JOBS, type Job, type WorkKind, type WorkMode } from "./work/data";
-import { useTranslated } from "@/i18n/data";
+import { APPLICATIONS, type Job, type WorkKind, type WorkMode } from "./work/data";
 
 /**
  * Work, events and courses — the modules whose server existed all along.
@@ -131,7 +130,7 @@ function isPast(deadline: string | undefined): boolean {
 }
 
 export const useJobs = (): Resource<Job[]> =>
-  useResource(useCallback(async (s: AbortSignal) => (await apiOpportunities(s)).map(toJob), []), useTranslated(JOBS));
+  useResource(useCallback(async (s: AbortSignal) => (await apiOpportunities(s)).map(toJob), []), []);
 
 export type UxApplication = (typeof APPLICATIONS)[number];
 
@@ -199,7 +198,7 @@ export function workStats(apps: UxApplication[], saved = 0) {
 export const useApplications = (): Resource<UxApplication[]> =>
   useResource(
     useCallback(async (s: AbortSignal) => (await apiApplications(s)).map(toApplication), []),
-    useTranslated(APPLICATIONS),
+    [],
   );
 
 /* ── Events ──────────────────────────────────────────────────────────── */
@@ -277,7 +276,7 @@ export const useEvents = (): Resource<EventLists> =>
         past: rows.filter((e) => when(e) < cutoff),
       };
     }, []),
-    { upcoming: useTranslated(EVENTS), past: [] },
+    { upcoming: [], past: [] },
   );
 
 /* ── Mentor sessions ─────────────────────────────────────────────────── */
@@ -286,7 +285,7 @@ export type UxSession = (typeof MY_SESSIONS)[number];
 
 const SESSION_STATE: Record<string, UxSession["state"]> = {
   pending: "Requested", accepted: "Upcoming",
-  completed: "Done", declined: "Done", cancelled: "Done",
+  completed: "Done", declined: "Done", cancelled: "Done", withdrawn: "Done",
 };
 
 /**
@@ -363,7 +362,7 @@ export const useLearning = (): Resource<Learning> =>
         picks: catalog.filter((p) => !p.joined).map(toPick),
       };
     }, []),
-    { continuing: useTranslated(CONTINUING), picks: useTranslated(TOP_PICKS) },
+    { continuing: [], picks: [] },
   );
 
 /* ── Search ──────────────────────────────────────────────────────────── */
@@ -438,11 +437,11 @@ const toPost = (p: CirclePost): (typeof CIRCLE_POSTS)[number] => ({
  * the turn order only when the API starts carrying it.
  */
 export const useCircle = (id: string): Resource<CircleDetail> =>
-  useResource(
+  useResource<CircleDetail>(
     useCallback(async (s: AbortSignal) => {
       const [circle, posts] = await Promise.all([
-        apiCircle(id, s).catch(() => null),
-        apiCirclePosts(id, s).catch(() => []),
+        apiCircle(id, s),
+        apiCirclePosts(id, s),
       ]);
       return {
         circle: circle && {
@@ -480,7 +479,7 @@ export const useCircle = (id: string): Resource<CircleDetail> =>
  */
 export const useCircleSavings = (id: string): Resource<ApiCircleSavings | null> =>
   useResource(
-    useCallback((s: AbortSignal) => apiCircleSavings(id, s).catch(() => null), [id]),
+    useCallback((s: AbortSignal) => apiCircleSavings(id, s), [id]),
     null,
   );
 
@@ -492,7 +491,7 @@ export const useCircleSavings = (id: string): Resource<ApiCircleSavings | null> 
  */
 export const useProgramDetail = (id: string): Resource<ApiProgramDetail | null> =>
   useResource(
-    useCallback((s: AbortSignal) => apiProgramDetail(id, s).catch(() => null), [id]),
+    useCallback((s: AbortSignal) => apiProgramDetail(id, s), [id]),
     null,
   );
 
@@ -510,10 +509,10 @@ export const useDiscover = (): Resource<Find[]> =>
   useResource(
     useCallback(async (s: AbortSignal) => {
       const [jobs, events, mentors, courses] = await Promise.all([
-        apiOpportunities(s).catch(() => []),
-        apiEvents(s).catch(() => []),
-        apiMentors(s).catch(() => []),
-        apiCatalogPrograms(s).catch(() => []),
+        apiOpportunities(s),
+        apiEvents(s),
+        apiMentors(s),
+        apiCatalogPrograms(s),
       ]);
 
       const out: Find[] = [];
@@ -555,5 +554,5 @@ export const useDiscover = (): Resource<Find[]> =>
       }
       return out;
     }, []),
-    useTranslated(FINDS),
+    [],
   );

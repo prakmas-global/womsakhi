@@ -330,7 +330,7 @@ export default function ShopPage() {
 
             <Head icon="Package" title={tr("documents.whatYouSell")}
                   sub={tr("documents.stockPausePhotoAndShareAre")}
-                  more={tr("documents.addSomething")} href="/app/documents/product/new" />
+                  more={tr("documents.addSomething")} href="/app/documents/new" />
 
             <div className="grid gap-3.5" style={{ gridTemplateColumns: "repeat(auto-fit, minmax(250px, 1fr))" }}>
               {listings.map((l) => (
@@ -339,7 +339,7 @@ export default function ShopPage() {
                              onPause={onPause} onShare={onShare}
                              onDelete={() => setConfirmDelete(l)} />
               ))}
-              <Link href="/app/documents/product/new"
+              <Link href="/app/documents/new"
                     className="ux-press grid min-h-[88px] place-content-center justify-items-center gap-2.5 rounded-[16px] text-center text-xsm font-bold leading-relaxed lg:min-h-[330px] lg:rounded-[20px]"
                     style={{ border: "1px dashed var(--ux-line-strong)", color: "var(--ux-brand)" }}>
                 <Icons.Plus className="h-[30px] w-[30px]" />

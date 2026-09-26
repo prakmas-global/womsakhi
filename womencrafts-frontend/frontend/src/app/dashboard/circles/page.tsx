@@ -241,7 +241,7 @@ export default function AdminCirclesPage() {
     if (!roster) return;
     const ok = await confirm({
       title: `Make ${m.name} a moderator of “${roster.name}”?`,
-      description: "She is told, and is marked as a moderator on the roster. The member app does not yet give moderators extra powers — that is coming.",
+      description: "She is told and marked as a moderator. She can post in host-only circles, while staff retain hide, remove and mute controls.",
       confirmLabel: "Make her a moderator",
     });
     if (!ok) return;
@@ -529,8 +529,8 @@ export default function AdminCirclesPage() {
         }
       >
         <p className="mb-3 rounded-lg bg-surface-2 px-3 py-2.5 text-xs leading-relaxed text-ink-muted">
-          A moderator is marked here and told. The member app does not yet give her extra powers in the room —
-          that is on the way, and this list is where it will read from.
+          A moderator is marked here and told. Moderators can post in host-only circles; staff moderation
+          controls remain in the moderation queue.
         </p>
         {rosterLoading ? (
           <div className="flex items-center justify-center py-12"><Spinner /></div>

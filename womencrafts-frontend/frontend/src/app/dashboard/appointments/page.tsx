@@ -607,7 +607,7 @@ function AppointmentsInner() {
 
         <div className="space-y-6">
           <Card>
-            <h3 className="font-display text-sm font-bold text-ink">All time</h3>
+            <h2 className="font-display text-sm font-bold text-ink">All time</h2>
             <p className="text-xs text-ink-subtle">{stats ? `${stats.total} sessions on record` : "…"}</p>
             {stats && (
               <ul className="mt-3 space-y-1.5">
@@ -629,7 +629,7 @@ function AppointmentsInner() {
           </Card>
 
           <Card>
-            <h3 className="font-display text-sm font-bold text-ink">By service</h3>
+            <h2 className="font-display text-sm font-bold text-ink">By service</h2>
             {!stats ? (
               <p className="mt-2 text-xs text-ink-subtle">…</p>
             ) : stats.by_service.length === 0 ? (

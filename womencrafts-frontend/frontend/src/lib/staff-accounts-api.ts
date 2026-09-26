@@ -23,6 +23,15 @@ import { apiClient } from "./api";
 
 export type StaffState = "invited" | "active" | "suspended";
 
+export interface StaffScope {
+  mode: "all" | "assigned";
+  regions: string[];
+  categories: string[];
+  organizations: string[];
+  communities: string[];
+  member_ids: string[];
+}
+
 export interface StaffAccount {
   id: string;
   full_name: string;
@@ -37,6 +46,7 @@ export interface StaffAccount {
   /** The personal adjustments, kept apart so the UI can show what is hers. */
   extra_permissions: string[];
   denied_permissions: string[];
+  scope: StaffScope;
   last_login_at: string;
   created_at: string;
 }
@@ -85,6 +95,17 @@ export const apiChangeStaffRole = (id: string, role: string) =>
 export const apiSetStaffAccess = (id: string, body: {
   extra_permissions: string[]; denied_permissions: string[];
 }) => apiClient.put<StaffAccount>(`/staff/${id}/access`, body).then((r) => r.data);
+
+export const apiSetStaffScope = (id: string, body: StaffScope) =>
+  apiClient.put<StaffAccount>(`/staff/${id}/scope`, body).then((r) => r.data);
+
+export interface ScopeOption { value: string; label: string; detail?: string }
+
+export const apiStaffScopeOptions = (
+  kind: "region" | "category" | "member", q = "", limit = 50,
+) => apiClient.get<{ options: ScopeOption[] }>("/staff/scope-options", {
+  params: { kind, q, limit },
+}).then((r) => r.data.options);
 
 export const apiSuspendStaff = (id: string) =>
   apiClient.post<StaffAccount>(`/staff/${id}/suspend`).then((r) => r.data);

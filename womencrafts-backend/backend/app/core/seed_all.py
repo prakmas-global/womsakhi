@@ -92,11 +92,3 @@ async def seed_all() -> None:
             print(f"🌱 Wellbeing seed: {made}")
     except Exception as exc:  # noqa: BLE001 - never block startup
         print(f"⚠️  Wellbeing seed skipped: {exc}")
-
-    # RBAC backfill (idempotent): ensure roles have module lists + admin is Super Admin.
-    try:
-        from app.core.rbac import ensure_rbac
-
-        await ensure_rbac()
-    except Exception as exc:  # noqa: BLE001
-        print(f"⚠️  RBAC backfill skipped: {exc}")

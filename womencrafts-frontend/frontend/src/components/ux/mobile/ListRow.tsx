@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import type { ReactNode } from "react";
+import { useRef, useState, type ReactNode } from "react";
 
 import * as Icons from "@/components/ux/icons";
 
@@ -48,7 +48,7 @@ type ListRowProps = {
   /** Defaults to true when the row navigates, false when it does not. */
   chevron?: boolean;
   href?: string;
-  onClick?: () => void;
+  onClick?: () => unknown;
   disabled?: boolean;
   /** Delete / Leave / Sign out — the row that should look like it means it. */
   destructive?: boolean;
@@ -72,6 +72,8 @@ export function ListRow({
   selected,
 }: ListRowProps) {
   const interactive = Boolean(href || onClick);
+  const [busy, setBusy] = useState(false);
+  const running = useRef(false);
   const showChevron = chevron ?? Boolean(href);
   const leading = Boolean(avatar || icon);
   const Ico = icon
@@ -142,7 +144,7 @@ export function ListRow({
     "relative flex w-full items-center gap-3 bg-transparent px-4 py-2.5 text-start",
     "min-h-[52px]",
     interactive && !disabled ? "active:bg-[var(--ux-surface-2)]" : "",
-    disabled ? "opacity-50" : "",
+    disabled || busy ? "opacity-50" : "",
   ]
     .filter(Boolean)
     .join(" ");
@@ -162,11 +164,27 @@ export function ListRow({
     );
   }
   if (onClick) {
+    const guarded = () => {
+      if (disabled || running.current) return;
+      const result = onClick();
+      if (
+        result &&
+        typeof result === "object" &&
+        "finally" in result &&
+        typeof (result as Promise<unknown>).finally === "function"
+      ) {
+        const pending = result as Promise<unknown>;
+        running.current = true;
+        setBusy(true);
+        pending.finally(() => { running.current = false; setBusy(false); });
+      }
+    };
     return (
       <button
         type="button"
-        onClick={onClick}
-        disabled={disabled}
+        onClick={guarded}
+        disabled={disabled || busy}
+        aria-busy={busy || undefined}
         aria-pressed={selected === undefined ? undefined : selected}
         className={cls}
         style={style}

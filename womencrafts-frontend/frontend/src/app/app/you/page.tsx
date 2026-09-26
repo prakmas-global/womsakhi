@@ -62,10 +62,10 @@ export default function YouDashboard() {
   const firstName = name.split(" ")[0] || "";
   const joined = user?.created_at ? new Date(user.created_at) : null;
   const sinceLabel = joined
-    ? joined.toLocaleDateString(undefined, { month: "short", year: "numeric" })
+    ? joined.toLocaleDateString("en-IN", { month: "short", year: "numeric", timeZone: "Asia/Kolkata" })
     : "—";
   const joinedLabel = joined
-    ? joined.toLocaleDateString(undefined, { day: "numeric", month: "short", year: "numeric" })
+    ? joined.toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric", timeZone: "Asia/Kolkata" })
     : "";
   const verified = user?.verification_status === "active";
   // Only what she is actually part of. `withdrawn` is not an enrolment.

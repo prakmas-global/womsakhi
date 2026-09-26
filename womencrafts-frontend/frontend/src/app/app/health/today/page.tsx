@@ -7,8 +7,8 @@ import type { MessageKey } from "@/i18n";
 import { HomeShell } from "@/components/ux/home/HomeShell";
 import { Btn, Card, I, SectionHead, v } from "@/components/ux/kit";
 import {
-  MOODS, SUPPORT_STYLES, apiHabitTaken, apiListHabits, apiMoodCard,
-  apiMoodCheckIn, apiResetActivity, apiSetEncouragement,
+  MOODS, SUPPORT_STYLES, apiActivityAction, apiHabitTaken, apiListHabits, apiMoodCard,
+  apiMoodCheckIn, apiResetActivity, apiSavedActivities, apiSetEncouragement,
   type Habit, type Mood, type ResetActivity, type SupportCard, type SupportStyle,
 } from "@/lib/engines-api";
 
@@ -49,6 +49,8 @@ export default function TodayPage() {
   const [style, setStyle] = useState<SupportStyle | null>(null);
   const [card, setCard] = useState<SupportCard | null>(null);
   const [activity, setActivity] = useState<ResetActivity | null>(null);
+  const [startedActivity, setStartedActivity] = useState<string | null>(null);
+  const [savedActivities, setSavedActivities] = useState<ResetActivity[]>([]);
   const [busy, setBusy] = useState(false);
   const [failed, setFailed] = useState(false);
   const [done, setDone] = useState(false);
@@ -68,6 +70,9 @@ export default function TodayPage() {
       .catch(() => {});
     void apiListHabits()
       .then((h) => { if (alive) setHabits(h); })
+      .catch(() => {});
+    void apiSavedActivities()
+      .then((rows) => { if (alive) setSavedActivities(rows); })
       .catch(() => {});
     return () => { alive = false; };
   }, []);
@@ -113,6 +118,7 @@ export default function TodayPage() {
     setBusy(true);
     try {
       setActivity(await apiResetActivity());
+      setStartedActivity(null);
     } catch {
       setFailed(true);
     } finally {
@@ -120,10 +126,26 @@ export default function TodayPage() {
     }
   }, []);
 
+  const actOnActivity = useCallback(async (
+    row: ResetActivity, action: "completed" | "skipped" | "saved" | "unsaved",
+  ) => {
+    setBusy(true); setFailed(false);
+    try {
+      await apiActivityAction(row.id, action);
+      if (action === "saved") setSavedActivities((old) => [
+        { ...row, saved: true, last_action: action }, ...old.filter((x) => x.id !== row.id),
+      ]);
+      if (action === "unsaved") setSavedActivities((old) => old.filter((x) => x.id !== row.id));
+      if (action === "completed" || action === "skipped") { setActivity(null); setStartedActivity(null); }
+      if (action === "skipped") setActivity(await apiResetActivity());
+    } catch { setFailed(true); }
+    finally { setBusy(false); }
+  }, []);
+
   return (
     <HomeShell>
       <div className="space-y-4">
-        <SectionHead icon="HeartPulse" title={tr("today.title")} sub={tr("today.subtitle")} />
+        <SectionHead level={1} icon="HeartPulse" title={tr("today.title")} sub={tr("today.subtitle")} />
 
         {/* ── the one question ─────────────────────────────────────────── */}
         {!done && (
@@ -247,6 +269,37 @@ export default function TodayPage() {
                       </p>
                     )}
                   </div>
+                </div>
+                <div className="mt-3 flex flex-wrap gap-2">
+                  {startedActivity === activity.id ? (
+                    <Btn size="sm" disabled={busy} onClick={() => void actOnActivity(activity, "completed")}>Mark done</Btn>
+                  ) : (
+                    <Btn size="sm" disabled={busy} onClick={() => {
+                      setStartedActivity(activity.id); void apiActivityAction(activity.id, "started");
+                    }}>Start now</Btn>
+                  )}
+                  <Btn size="sm" variant="soft" disabled={busy} onClick={() => void actOnActivity(activity, "saved")}>Save for later</Btn>
+                  <Btn size="sm" variant="ghost" disabled={busy} onClick={() => void actOnActivity(activity, "skipped")}>Show another</Btn>
+                </div>
+              </Card>
+            )}
+
+            {savedActivities.length > 0 && (
+              <Card pad={14}>
+                <h3 className="text-sm font-semibold" style={{ color: v("--ux-ink") }}>Saved for another day</h3>
+                <div className="mt-2 space-y-2">
+                  {savedActivities.map((row) => (
+                    <div key={row.id} className="flex flex-wrap items-center gap-2 rounded-xl p-3"
+                         style={{ background: v("--ux-surface-2") }}>
+                      <p className="min-w-[180px] flex-1 text-xsm leading-relaxed" style={{ color: v("--ux-ink-2") }}>{row.text}</p>
+                      <Btn size="sm" variant="ghost" onClick={() => {
+                        setActivity(row); setStartedActivity(row.id); void apiActivityAction(row.id, "started");
+                      }}>Do now</Btn>
+                      <button type="button" className="min-h-[36px] px-2 text-xs font-bold"
+                              style={{ color: v("--ux-muted") }}
+                              onClick={() => void actOnActivity(row, "unsaved")}>Remove</button>
+                    </div>
+                  ))}
                 </div>
               </Card>
             )}

@@ -32,6 +32,9 @@ export default function PeriodCheck() {
   const day = s?.on_period ? s.period_day ?? 0 : 0;
   const doctor = s?.long_level === "doctor";
   const long = !!s?.long_level;
+  const statusTitle = !state ? "…" : !s?.on_period ? "Your period is not on right now"
+    : doctor ? "Your period has lasted more than 7 days"
+    : `Your period has continued for ${day} days`;
 
   const steps = [
     { icon: "UserRound", title: tr("healthCycleCheck.consultAMentor"), sub: tr("healthCycleCheck.getGuidanceFromOurHealthExperts"), href: "/app/health/mentors" },
@@ -50,11 +53,12 @@ export default function PeriodCheck() {
                 style={{ background: "var(--ux-danger-tint)", boxShadow: "0 0 0 10px var(--cy-predicted)" }}>
             <Icons.AlertCircle className="h-9 w-9" style={{ color: "var(--ux-danger-solid)" }} aria-hidden />
           </span>
-          <h1 className="mx-auto mt-6 max-w-[320px] text-[24px] font-bold leading-snug" style={{ color: "var(--cy-period-ink)", fontFamily: "var(--font-sans)" }}>
-            {!state ? "…" : !s?.on_period ? "Your period is not on right now"
-              : doctor ? "Your period has lasted more than 7 days"
-              : `Your period has continued for ${day} days`}
+          <h1 className="mx-auto mt-6 max-w-[320px] text-[24px] font-bold leading-snug lg:hidden" style={{ color: "var(--cy-period-ink)", fontFamily: "var(--font-sans)" }}>
+            {statusTitle}
           </h1>
+          <h2 className="mx-auto mt-6 hidden max-w-[320px] text-[24px] font-bold leading-snug lg:block" style={{ color: "var(--cy-period-ink)", fontFamily: "var(--font-sans)" }}>
+            {statusTitle}
+          </h2>
           <p className="mx-auto mt-3 max-w-[340px] text-[15px] leading-relaxed" style={{ color: "var(--ux-ink-2)" }}>
             {!s?.on_period ? "Nothing to check today. If a period runs long, we will let you know here."
               : doctor ? "That is worth checking with a doctor. It is usually easy to treat, and you don't have to put up with it. Here is what you can do:"

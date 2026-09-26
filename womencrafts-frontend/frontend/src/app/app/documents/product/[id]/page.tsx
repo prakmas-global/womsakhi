@@ -249,6 +249,8 @@ export default function ProductEditor({ params }: { params: Promise<{ id: string
           {[0, 1, 2, 3].map((i) => (
             <button
               key={i}
+              type="button"
+              aria-label={i === 0 ? "Current primary photo" : `Add photo ${i + 1}`}
               className="ux-i ux-sq grid aspect-square place-items-center overflow-hidden rounded-[12px] border"
               style={{ borderColor: i === 0 ? "var(--ux-brand)" : "var(--ux-line)",
                        borderStyle: i === 0 ? "solid" : "dashed", ["--i" as string]: i }}

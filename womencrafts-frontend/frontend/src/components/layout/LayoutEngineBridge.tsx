@@ -90,16 +90,17 @@ export default function LayoutEngineBridge({
         // request rather than a second one.
         //
         // Staff have no `/me/shell` (it is behind `require_active_member`), so
-        // they keep the two calls. Tried in that order rather than branching on
-        // the role, because the role is a routing hint and the server is the
-        // thing that actually knows.
+        // they keep the two calls. The authenticated session already identifies
+        // the audience; using it here avoids deliberately making a forbidden
+        // member request on every staff screen and filling the console with a
+        // misleading 403.
         let layout: Layout;
         let plan: LayoutFeatures;
-        try {
+        if (user.audience === "member") {
           const shell = await apiMeShell();
           layout = shell.layout;
           plan = shell.features;
-        } catch {
+        } else {
           [layout, plan] = await Promise.all([apiMyLayout(), apiMyFeatures()]);
         }
         if (cancelled) return;

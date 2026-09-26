@@ -1,13 +1,15 @@
 "use client";
 
 import Link from "next/link";
+import { useEffect, useState } from "react";
 
 import { useT } from "@/i18n";
 import * as Icons from "@/components/ux/icons";
 import { CycleRing, Icon, QuoteCard, RingSeed } from "./parts";
-import { PHASE_COPY as RAW_PHASE_COPY, TODAY_CARE as RAW_TODAY_CARE, quoteFor } from "./data";
+import { PHASE_COPY as RAW_PHASE_COPY, TODAY_CARE as RAW_TODAY_CARE } from "./data";
 import { dow, useCycle } from "./use-cycle";
 import { useTranslated } from "@/i18n/data";
+import { apiMoodCard, type Mood as EngineMood, type SupportCard } from "@/lib/engines-api";
 
 const QUICK = [
   { label: "Mood", icon: "Smile", href: "/app/health/cycle/mood", tint: "--cy-predicted", ink: "--cy-period" },
@@ -32,6 +34,15 @@ export function HomeCycleCard() {
   const TODAY_CARE = useTranslated(RAW_TODAY_CARE);
   const tr = useT();
   const { data, state, loading } = useCycle();
+  const [support, setSupport] = useState<SupportCard | null>(null);
+  const cycleMood = state?.log?.mood;
+  useEffect(() => {
+    const mapped: Record<string, EngineMood> = {
+      happy: "good", calm: "good", tired: "tired", irritable: "angry", sad: "low",
+    };
+    if (!cycleMood) { setSupport(null); return; }
+    void apiMoodCard(mapped[cycleMood]).then(setSupport).catch(() => setSupport(null));
+  }, [cycleMood]);
 
   if (loading && !data) {
     return <div className="mt-4 h-[176px] animate-pulse rounded-[18px]" style={{ background: "var(--ux-surface-2)" }} aria-hidden />;
@@ -117,7 +128,7 @@ export function HomeCycleCard() {
         ))}
       </div>
 
-      <QuoteCard className="mt-3" text={quoteFor(state.log?.mood, state.today)} />
+      {support?.body && <QuoteCard className="mt-3" text={support.body} />}
 
       <h2 className="mb-2.5 mt-5 text-[17px] font-semibold" style={{ color: "var(--ux-ink)" }}>{tr("homeCycleCard.forYouToday")}</h2>
       <Link href="/app/health/cycle/today" className="ux-press flex items-center gap-3 rounded-[16px] p-3.5"

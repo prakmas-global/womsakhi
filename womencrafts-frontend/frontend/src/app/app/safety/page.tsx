@@ -18,6 +18,7 @@ import { useT, useI18n } from "@/i18n";
 import { ListGroup } from "@/components/ux/mobile/ListRow";
 import { SegmentedControl } from "@/components/ux/mobile/SegmentedControl";
 import { GroupLabel, PhoneRow } from "@/components/ux/PhoneParts";
+import { useToast } from "@/design-system";
 
 
 const SCAMS = [
@@ -41,8 +42,9 @@ const SCAMS = [
  */
 export default function SafetyPage() {
   const tr = useT();
+  const toast = useToast();
   const { locale } = useI18n();
-  const [shareCopied, setShareCopied] = useState(false);
+  const [manualShareUrl, setManualShareUrl] = useState("");
 
   /**
    * Put the alert on somebody else's phone.
@@ -67,14 +69,13 @@ export default function SafetyPage() {
     }
     try {
       await navigator.clipboard.writeText(`${text} ${url}`);
-      setShareCopied(true);
-      window.setTimeout(() => setShareCopied(false), 4000);
+      setManualShareUrl("");
+      toast.success(tr("safety.linkCopied"));
     } catch {
-      // Clipboard blocked. Show it so she can select it by hand rather than
-      // leaving her with a button that did nothing.
-      window.prompt(text, url);
+      setManualShareUrl(url);
+      toast.error("Copy was blocked", { description: "Press and hold the link below to copy or share it." });
     }
-  }, [tr]);
+  }, [toast, tr]);
 
   const [tab, setTab] = useState("Get help now");
   const [holding, setHolding] = useState(0);
@@ -275,10 +276,11 @@ export default function SafetyPage() {
                            onClick={() => void shareAlert(openAlert)}>
                         {tr("safety.sendToMyPeople")}
                       </Btn>
-                      {shareCopied && (
-                        <span className="text-2xs font-semibold" style={{ color: "var(--ux-green-ink)" }}>
-                          {tr("safety.linkCopied")}
-                        </span>
+                      {manualShareUrl && (
+                        <a href={manualShareUrl} className="min-w-0 break-all text-2xs font-semibold underline"
+                           style={{ color: "var(--ux-brand)" }}>
+                          {manualShareUrl}
+                        </a>
                       )}
                     </div>
                   )}

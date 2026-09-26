@@ -338,7 +338,7 @@ export default function FindWorkPage() {
               );
             })}
           </div>
-          <label className="flex shrink-0 items-center gap-2 pb-2 text-[13px] lg:text-xs" style={{ color: v("--ux-muted") }}>{tr("findwork.sortBy")}<select value={sort} onChange={(e) => setSort(e.target.value as SortId)}
+          <label className="flex shrink-0 items-center gap-2 pb-2 text-[13px] lg:text-xs" style={{ color: v("--ux-muted") }}>{tr("findwork.sortBy")}<select aria-label="Sort opportunities" value={sort} onChange={(e) => setSort(e.target.value as SortId)}
                     className="ux-sq rounded-[12px] border px-2 py-1.5 text-[15px] font-bold lg:rounded-[10px] lg:text-xs"
                     style={{ borderColor: v("--ux-line"), background: v("--ux-surface"), color: v("--ux-ink") }}>
               {SORTS.map((s) => <option key={s.id} value={s.id}>{s.label}</option>)}

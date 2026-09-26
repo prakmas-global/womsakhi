@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import {
-  Activity, Bell, Building2, ChevronRight, Clock, Database, FileClock, HelpCircle, KeyRound, LogOut,
+  Activity, Bell, Building2, ChevronRight, Clock, Database, HelpCircle, KeyRound, LogOut,
   MonitorSmartphone, Palette, RefreshCw, Settings as SettingsIcon, ShieldCheck, UserCircle, UserCog, Users,
 } from "lucide-react";
 import Link from "next/link";
@@ -141,7 +141,7 @@ export default function SettingsPage() {
     { icon: MonitorSmartphone, label: "Sessions", href: "/dashboard/settings/sessions", fact: account.this_session.started_at ? `This one started ${formatWhen(account.this_session.started_at)}` : "Sign out everywhere lives here" },
     { icon: Bell, label: "Notifications", href: "/dashboard/settings/notifications", fact: account.prefs_applied ? "Applied" : "Stored, not applied yet" },
     { icon: Palette, label: "Appearance", href: "/dashboard/settings/appearance", fact: "Colours and language, saved to your account" },
-    { icon: UserCog, label: "Your role", href: "/dashboard/settings/switch-role", fact: `${account.role} · opens ${account.modules.length} sections` },
+    { icon: UserCog, label: "Your role", href: "/dashboard/settings/security", fact: `${account.role} · opens ${account.modules.length} sections` },
     { icon: HelpCircle, label: "Help", href: "/dashboard/settings/help", fact: account.tickets_open > 0 ? `${account.tickets_open} open ticket${account.tickets_open === 1 ? "" : "s"}` : "How things are done here" },
     { icon: LogOut, label: "Log out", href: "/dashboard/logout", fact: "This device, or everywhere" },
   ] : [];
@@ -288,8 +288,7 @@ export default function SettingsPage() {
                 <ul className="space-y-1">
                   {[
                     { icon: UserCog, label: "Staff and roles", href: "/dashboard/staff" },
-                    { icon: KeyRound, label: "Roles & permissions", href: "/dashboard/settings/roles" },
-                    { icon: FileClock, label: "System logs", href: "/dashboard/settings/logs" },
+                    { icon: KeyRound, label: "Roles & permissions", href: "/dashboard/users/roles" },
                     { icon: Activity, label: "Activity log", href: "/dashboard/settings/activity" },
                     { icon: Database, label: "Backup & restore", href: "/dashboard/settings/backup" },
                   ].map((l) => (

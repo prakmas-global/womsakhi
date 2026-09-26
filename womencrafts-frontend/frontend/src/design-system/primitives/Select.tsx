@@ -2,7 +2,7 @@
 
 import { useEffect, useId, useRef, useState } from "react";
 import { createPortal } from "react-dom";
-import { ChevronDown, Check } from "lucide-react";
+import { ChevronDown, Check, Search } from "lucide-react";
 
 import { controlClass, labelClass } from "./Input";
 
@@ -32,6 +32,8 @@ export default function Select({
   value,
   onChange,
   placeholder = "Select…",
+  searchable,
+  searchPlaceholder = "Search options…",
 }: {
   label?: string;
   icon?: React.ElementType;
@@ -41,9 +43,13 @@ export default function Select({
   value?: string;
   onChange?: (e: { target: { value: string } }) => void;
   placeholder?: string;
+  /** Defaults on for lists long enough to be slow to scan. */
+  searchable?: boolean;
+  searchPlaceholder?: string;
 }) {
   const norm = options.map((o) => (typeof o === "string" ? { value: o, label: o } : o));
   const selected = norm.find((o) => o.value === value);
+  const canSearch = searchable ?? norm.length > 7;
 
   /**
    * This is a <button>, not a native <select>, so a <label> cannot be tied to
@@ -59,9 +65,14 @@ export default function Select({
   const valueId = `${id}-value`;
 
   const [open, setOpen] = useState(false);
+  const [query, setQuery] = useState("");
   const [coords, setCoords] = useState({ top: 0, left: 0, width: 0, flip: false });
   const triggerRef = useRef<HTMLButtonElement>(null);
   const panelRef = useRef<HTMLDivElement>(null);
+  const searchRef = useRef<HTMLInputElement>(null);
+  const shown = query.trim()
+    ? norm.filter((o) => `${o.label} ${o.value}`.toLocaleLowerCase().includes(query.trim().toLocaleLowerCase()))
+    : norm;
 
   const place = () => {
     const el = triggerRef.current;
@@ -75,6 +86,7 @@ export default function Select({
 
   const toggle = () => {
     if (!open) place();
+    if (open) setQuery("");
     setOpen((o) => !o);
   };
 
@@ -119,8 +131,11 @@ export default function Select({
     // Start on the current value, so arrowing moves from where she is rather
     // than from the top of a list she has already made a choice in.
     const focusFrame = requestAnimationFrame(() => {
-      const list = options();
-      (list.find((o) => o.getAttribute("aria-selected") === "true") ?? list[0])?.focus();
+      if (canSearch) searchRef.current?.focus();
+      else {
+        const list = options();
+        (list.find((o) => o.getAttribute("aria-selected") === "true") ?? list[0])?.focus();
+      }
     });
     document.addEventListener("mousedown", onDown);
     window.addEventListener("scroll", onScrollResize, true);
@@ -133,10 +148,11 @@ export default function Select({
       window.removeEventListener("resize", onScrollResize);
       document.removeEventListener("keydown", onKey);
     };
-  }, [open]);
+  }, [open, canSearch]);
 
   const pick = (v: string) => {
     onChange?.({ target: { value: v } });
+    setQuery("");
     setOpen(false);
     // The option that had focus is about to be unmounted. Without this, focus
     // falls to <body> and the next Tab starts again from the top of the page.
@@ -188,7 +204,22 @@ export default function Select({
             }}
             className="wc-overlay z-[250] max-h-64 overflow-y-auto !rounded-xl py-1"
           >
-            {norm.map((o) => {
+            {canSearch && (
+              <div className="sticky top-0 z-10 border-b border-line bg-surface p-2">
+                <label className="relative block">
+                  <span className="sr-only">Search {label || "options"}</span>
+                  <Search className="pointer-events-none absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-ink-subtle" />
+                  <input
+                    ref={searchRef}
+                    value={query}
+                    onChange={(e) => setQuery(e.target.value)}
+                    placeholder={searchPlaceholder}
+                    className="h-9 w-full rounded-lg border border-line-strong bg-surface-2 pl-8 pr-2 text-sm text-ink outline-none focus:border-violet-300 focus:ring-2 focus:ring-violet-50"
+                  />
+                </label>
+              </div>
+            )}
+            {shown.map((o) => {
               const active = o.value === value;
               return (
                 <button
@@ -208,6 +239,9 @@ export default function Select({
                 </button>
               );
             })}
+            {shown.length === 0 && (
+              <p className="px-3.5 py-4 text-center text-sm text-ink-subtle">No matching option</p>
+            )}
           </div>,
           document.body
         )}

@@ -92,4 +92,5 @@ class GoalModel:
             # Whether she moves it herself. The screen shows +/− only for these.
             "manual": doc.get("kind") == GoalModel.KIND_COUNT,
             "set_on": when.strftime("%d %b %Y") if when else "",
+            "note": doc.get("note", ""),
         }

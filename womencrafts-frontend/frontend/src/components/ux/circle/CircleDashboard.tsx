@@ -91,11 +91,11 @@ export function CircleDashboard() {
     { circles: [], circle_id: null, savings: null, posts: [] },
   );
   const discover = useResource<Circle[]>(
-    useCallback(() => apiCircles({}).catch(() => []), []),
+    useCallback(() => apiCircles({}), []),
     [],
   );
   const events = useResource<GrowthEvent[]>(
-    useCallback((sig: AbortSignal) => apiEvents(sig).catch(() => []), []),
+    useCallback((sig: AbortSignal) => apiEvents(sig), []),
     [],
   );
 
@@ -120,8 +120,8 @@ export function CircleDashboard() {
             {/* The wide banner is composed for a laptop and carries lettering in
               its own artwork; a phone-shaped crop of it cuts the subject or the
               words. The phone gets a crop made for its shape. */}
-            <source media="(max-width: 1023px)" srcSet="/ux/art/circle-dashboard-hero-mobile.webp" />
-            <img src="/ux/art/circle-dashboard-hero-v2.png" alt="" className={styles.heroImage} />
+            <source media="(max-width: 1023px)" srcSet="/ux/art/circle-dashboard-hero-mobile-v2.webp" />
+            <img src="/ux/art/circle-dashboard-hero-v2.webp" alt="" className={styles.heroImage} />
           </picture>
           <span className={styles.heroHandwriting}>Different<br />Journeys<br />{tr("circleDashboard.sameStrength")} <I name="Heart" /></span>
           <div className={styles.heroContent}>
@@ -153,7 +153,7 @@ export function CircleDashboard() {
 
         <div className={styles.bottom}>
           <section className={styles.panel}><Heading title={tr("circleDashboard.featuredCircles")} href="/app/circles" /><div className={styles.featuredGrid}>{featured.map((circle, i) => <CircleCard key={circle.id} circle={circle} art={FEATURE_ART[i % FEATURE_ART.length]} />)}</div></section>
-          <section className={styles.startCard}><img src="/ux/art/circle-dashboard-leaves.png" alt="" aria-hidden="true" /><h2>{tr("circleDashboard.startACircle")}<br />{tr("circleDashboard.sparkAMovement")}</h2><p>{tr("circleDashboard.createYourOwnCircleAroundA")}</p><TransitionLink href="/app/circles/create">{tr("circleDashboard.createACircle")} <I name="ArrowRight" /></TransitionLink></section>
+          <section className={styles.startCard}><img src="/ux/art/circle-dashboard-leaves.webp" alt="" aria-hidden="true" /><h2>{tr("circleDashboard.startACircle")}<br />{tr("circleDashboard.sparkAMovement")}</h2><p>{tr("circleDashboard.createYourOwnCircleAroundA")}</p><TransitionLink href="/app/circles/create">{tr("circleDashboard.createACircle")} <I name="ArrowRight" /></TransitionLink></section>
         </div>
       </div>
 

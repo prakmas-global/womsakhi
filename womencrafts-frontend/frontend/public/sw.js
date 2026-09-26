@@ -36,13 +36,14 @@
        back to the foreground, which is the only moment an installed PWA has.
 */
 
-/* v2 (2026-09-26): scripts are network-first. v1 served `/_next/static/`
+/* v3 (2026-09-26): scripts are network-first and launch artwork uses the
+   compressed WebP assets. v1 served `/_next/static/`
    cache-first, which is right for a production build (hashed, immutable) and
    wrong for `next dev` on the same origin, whose chunk paths do not change
    between builds — so a worker left behind by one production run kept every
    later edit invisible. Bumping the version retires every v1 worker and its
    caches on the next navigation. */
-const VERSION = "v2";
+const VERSION = "v3";
 const SHELL = `womsakhi-shell-${VERSION}`;
 const ART = `womsakhi-art-${VERSION}`;
 const KEEP = [SHELL, ART];
@@ -58,12 +59,7 @@ const LIMITS = { [SHELL]: 220, [ART]: 140 };
 const SHELL_PREFIXES = ["/_next/static/"];
 const ART_PREFIXES = ["/icons/", "/ux/"];
 const ART_FILES = [
-  "/brand-mark.png",
-  "/womsakhi-mark.png",
-  "/womsakhi-wordmark.png",
-  "/womsakhi-symbol.png",
-  "/womsakhi-lockup.png",
-  "/womsakhi-lotus.png",
+  "/womsakhi-wordmark.webp",
   "/icon.png",
   "/apple-icon.png",
   "/favicon.ico",

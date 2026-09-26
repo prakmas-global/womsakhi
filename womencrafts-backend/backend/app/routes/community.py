@@ -36,8 +36,13 @@ from app.models.community import (
 from app.models.community_moderation import CircleModerationModel
 from app.schemas.community import (
     CircleCreate,
+    CircleMemberRow,
+    CirclePreferenceUpdate,
+    CircleResourceCreate,
+    CircleResourceResponse,
     CircleResponse,
     CircleSavingsResponse,
+    CircleUpdate,
     CommunityOverview,
     ContributionResponse,
     LikeResponse,
@@ -61,6 +66,14 @@ def _circle_members():
     return get_database()[CircleMemberModel.collection_name]
 
 
+def _circle_invites():
+    return get_database()["circle_invites"]
+
+
+def _circle_preferences():
+    return get_database()["circle_preferences"]
+
+
 def _posts():
     return get_database()[PostModel.collection_name]
 
@@ -71,6 +84,10 @@ def _replies():
 
 def _stories():
     return get_database()[StoryModel.collection_name]
+
+
+def _circle_resources():
+    return get_database()["circle_resources"]
 
 
 async def _get_circle_or_404(circle_id: str) -> dict:
@@ -266,6 +283,13 @@ async def _create_circle(body: CircleCreate, me: dict):
         # A share only means anything on a circle that collects money. Storing
         # one on a community circle would put a Pay button on it later.
         monthly_minor=body.monthly_minor if body.is_savings else 0,
+        cover=body.cover,
+        icon=body.icon,
+        tags=[t.strip().lower().lstrip("#") for t in body.tags if t.strip()],
+        guidelines=body.guidelines.strip(),
+        who_posts=body.who_posts,
+        review_first=body.review_first,
+        tell_me=body.tell_me,
     )
     result = await _circles().insert_one(doc)
     circle_id = str(result.inserted_id)
@@ -280,9 +304,27 @@ async def _create_circle(body: CircleCreate, me: dict):
     )
     await _circles().update_one({"_id": result.inserted_id}, {"$set": {"member_count": 1}})
 
+    invites = []
+    seen = set()
+    for raw in body.invites:
+        target = raw.strip()
+        normalized = "".join(ch.lower() for ch in target if ch.isalnum() or ch in "@+._-")
+        if not target or not normalized or normalized in seen:
+            continue
+        seen.add(normalized)
+        invites.append({
+            "circle_id": circle_id, "invited_by": uid, "target": target,
+            "target_normalized": normalized, "status": "pending",
+            "created_at": datetime.now(timezone.utc),
+        })
+    if invites:
+        await _circle_invites().insert_many(invites, ordered=False)
+        await _circles().update_one({"_id": result.inserted_id}, {"$set": {"invite_count": len(invites)}})
+        doc["invite_count"] = len(invites)
+
     doc["_id"] = result.inserted_id
     doc["member_count"] = 1
-    return CircleModel.to_response(doc, True)
+    return CircleModel.to_response(doc, True, owner=True, can_post=True)
 
 
 @router.get("/circles/{circle_id}", response_model=CircleResponse, summary="One circle")
@@ -294,15 +336,137 @@ async def get_circle(circle_id: str, me: dict = Depends(require_active_member)):
     # answers both questions below: a private circle is readable from the
     # inside only, and the response carries whether she has joined. It used to
     # be fetched twice for a private circle.
-    circle, joined = await asyncio.gather(
+    circle, joined, preference = await asyncio.gather(
         _circles().find_one({"_id": to_object_id(circle_id)}),
         _circle_members().find_one({"user_id": user_id, "circle_id": circle_id}),
+        _circle_preferences().find_one({"user_id": user_id, "circle_id": circle_id}),
     )
     if not circle:
         raise HTTPException(status.HTTP_404_NOT_FOUND, "That circle doesn't exist")
     if circle.get("is_private") and not joined:
         raise HTTPException(status.HTTP_403_FORBIDDEN, "This circle is for its members")
-    return CircleModel.to_response(circle, bool(joined))
+    return CircleModel.to_response(
+        circle, bool(joined), owner=circle.get("created_by") == user_id,
+        muted=bool((preference or {}).get("muted", False)),
+        can_post=bool(joined) and (
+            circle.get("who_posts", "all") == "all"
+            or joined.get("role") in {"host", "moderator"}
+        ),
+    )
+
+
+@router.patch("/circles/{circle_id}", response_model=CircleResponse, summary="Edit my circle")
+async def update_circle(
+    circle_id: str, body: CircleUpdate, me: dict = Depends(require_active_member),
+):
+    uid = str(me["_id"])
+    tags = list(dict.fromkeys(t.strip() for t in body.tags if t.strip()))[:5]
+    updated = await _circles().find_one_and_update(
+        {"_id": to_object_id(circle_id), "status": "active", "created_by": uid},
+        {"$set": {
+            "name": body.name.strip(), "topic": body.topic.strip(),
+            "desc": body.desc.strip(), "guidelines": body.guidelines.strip(),
+            "tags": tags, "who_posts": body.who_posts,
+            "review_first": body.review_first, "tell_me": body.tell_me,
+            "updated_at": datetime.now(timezone.utc),
+        }},
+        return_document=True,
+    )
+    if not updated:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "Only the circle host can change its details")
+    return CircleModel.to_response(updated, True, owner=True)
+
+
+@router.patch("/circles/{circle_id}/preferences", response_model=CircleResponse)
+async def update_circle_preferences(
+    circle_id: str, body: CirclePreferenceUpdate, me: dict = Depends(require_active_member),
+):
+    circle = await _get_circle_or_404(circle_id)
+    uid = str(me["_id"])
+    joined = await _circle_members().find_one({"user_id": uid, "circle_id": circle_id})
+    if not joined:
+        raise HTTPException(status.HTTP_403_FORBIDDEN, "Join this circle before changing its notifications")
+    now = datetime.now(timezone.utc)
+    await _circle_preferences().update_one(
+        {"user_id": uid, "circle_id": circle_id},
+        {"$set": {"muted": body.muted, "updated_at": now},
+         "$setOnInsert": {"created_at": now}},
+        upsert=True,
+    )
+    return CircleModel.to_response(
+        circle, True, owner=circle.get("created_by") == uid, muted=body.muted,
+    )
+
+
+@router.get("/circles/{circle_id}/members", response_model=list[CircleMemberRow])
+async def circle_members(circle_id: str, me: dict = Depends(require_active_member)):
+    """Return the real roster without exposing savings payment status."""
+    circle = await _get_circle_or_404(circle_id)
+    uid = str(me["_id"])
+    await _require_membership(circle, uid)
+    members = await _circle_members().find({"circle_id": circle_id}).sort("created_at", 1).to_list(200)
+    ids = [ObjectId(m["user_id"]) for m in members if ObjectId.is_valid(m.get("user_id", ""))]
+    users = await get_database()["users"].find(
+        {"_id": {"$in": ids}}, {"full_name": 1, "name": 1, "avatar": 1}
+    ).to_list(200)
+    named = {str(u["_id"]): u for u in users}
+    rows = []
+    for membership in members:
+        user = named.get(membership["user_id"], {})
+        rows.append(CircleMemberRow(
+            name=user.get("full_name") or user.get("name") or "A member",
+            avatar=media_url(user.get("avatar", "") or ""),
+            you=membership["user_id"] == uid,
+        ))
+    return rows
+
+
+@router.get("/circles/{circle_id}/resources", response_model=list[CircleResourceResponse])
+async def circle_resources(circle_id: str, me: dict = Depends(require_active_member)):
+    circle = await _get_circle_or_404(circle_id)
+    uid = str(me["_id"])
+    await _require_membership(circle, uid)
+    docs = await _circle_resources().find(
+        {"circle_id": circle_id, "archived": {"$ne": True}}
+    ).sort("created_at", -1).to_list(100)
+    return [CircleResourceResponse(
+        id=str(d["_id"]), name=d.get("name", ""), url=d.get("url", ""),
+        added_by=d.get("added_by_name", ""), mine=d.get("user_id") == uid,
+        when=d.get("created_at").strftime("%d %b") if isinstance(d.get("created_at"), datetime) else "",
+    ) for d in docs]
+
+
+@router.post("/circles/{circle_id}/resources", response_model=CircleResourceResponse, status_code=status.HTTP_201_CREATED)
+async def add_circle_resource(
+    circle_id: str, body: CircleResourceCreate, me: dict = Depends(require_active_member),
+):
+    await _get_circle_or_404(circle_id)
+    uid = str(me["_id"])
+    joined = await _circle_members().find_one({"circle_id": circle_id, "user_id": uid})
+    if not joined:
+        raise HTTPException(status.HTTP_403_FORBIDDEN, "Join this circle before sharing a resource")
+    now = datetime.now(timezone.utc)
+    doc = {
+        "circle_id": circle_id, "user_id": uid, "name": body.name.strip(), "url": body.url,
+        "added_by_name": me.get("full_name", "") or "A member", "archived": False,
+        "created_at": now, "updated_at": now,
+    }
+    result = await _circle_resources().insert_one(doc)
+    return CircleResourceResponse(id=str(result.inserted_id), name=doc["name"], url=doc["url"],
+                                  added_by=doc["added_by_name"], mine=True, when=now.strftime("%d %b"))
+
+
+@router.delete("/circles/{circle_id}/resources/{resource_id}", status_code=status.HTTP_204_NO_CONTENT)
+async def archive_circle_resource(
+    circle_id: str, resource_id: str, me: dict = Depends(require_active_member),
+):
+    updated = await _circle_resources().find_one_and_update(
+        {"_id": to_object_id(resource_id), "circle_id": circle_id, "user_id": str(me["_id"]), "archived": {"$ne": True}},
+        {"$set": {"archived": True, "updated_at": datetime.now(timezone.utc)}},
+    )
+    if not updated:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "That resource is not yours, or is gone")
+    return None
 
 
 @router.post("/circles/{circle_id}/join", response_model=CircleResponse, summary="Join a circle")
@@ -613,6 +777,8 @@ async def create_post(
     joined = await _circle_members().find_one({"user_id": user_id, "circle_id": circle_id})
     if not joined:
         raise HTTPException(status.HTTP_403_FORBIDDEN, "Join this circle before posting")
+    if circle.get("who_posts", "all") == "hosts" and joined.get("role") not in {"host", "moderator"}:
+        raise HTTPException(status.HTTP_403_FORBIDDEN, "Only this circle's hosts can post")
     await _refuse_if_muted(circle_id, user_id)
 
     doc = PostModel.create_document(

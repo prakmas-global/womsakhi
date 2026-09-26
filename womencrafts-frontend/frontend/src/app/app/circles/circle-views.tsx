@@ -387,7 +387,8 @@ export function PopularGroups({ rows, busy, onJoin }: {
           const t = topicOf(c.topic);
           return (
             <div key={c.id} className="flex items-center gap-2.5">
-              <Link href={`/app/circles/${c.id}`} className="ux-sq shrink-0">
+              <Link href={`/app/circles/${c.id}`} className="ux-sq shrink-0"
+                    aria-label={`Open ${c.name}`}>
                 <span className="grid h-[40px] w-[40px] place-items-center overflow-hidden rounded-[12px]"
                       style={{ background: v(t.tint) }}>
                   {/* eslint-disable-next-line @next/next/no-img-element */}

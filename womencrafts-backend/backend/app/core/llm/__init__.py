@@ -1,9 +1,8 @@
 """
 Pick the supplier once, here.
 
-A blank ANTHROPIC_API_KEY is a supported configuration, not an error: the app
-falls back to the mock provider and every screen keeps working. An assistant
-that takes the product down with it when a key expires is a worse assistant.
+A blank ANTHROPIC_API_KEY is supported for local development. Production
+startup rejects it, so simulated assistant answers can never reach members.
 """
 
 from functools import lru_cache

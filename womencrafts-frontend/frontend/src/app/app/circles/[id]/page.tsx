@@ -11,16 +11,19 @@ import { useResource } from "@/lib/use-resource";
 import { useMe } from "@/components/ux/me";
 import {
   apiCircle, apiCirclePosts, apiCircleSavings,
-  type ApiCircleDetail, type ApiCircleSavings, type CirclePost,
+  apiCircleMembers, apiSetCircleMuted, apiUpdateCircle,
+  type ApiCircleDetail, type ApiCircleMember, type ApiCircleSavings, type CirclePost,
 } from "@/lib/growth-api";
-import { apiCreatePost, apiJoinCircle, apiLeaveCircle, apiLikePost } from "@/lib/community-api";
+import { apiFileReport } from "@/lib/safety-api";
+import { apiCreatePost, apiDeletePost, apiJoinCircle, apiLeaveCircle, apiLikePost } from "@/lib/community-api";
 import {
   loadSavedPosts, savedPostsServerSnapshot, savedPostsSnapshot,
   subscribeSavedPosts, toggleSavedPost,
 } from "@/lib/saved-posts";
 import { formatMoney } from "@/components/ux/kit/money";
 import { apiRegisterForEvent } from "@/lib/growth-api";
-import { useEvents } from "@/components/ux/growth";
+import { useConfirm } from "@/design-system";
+import { useEvents, useLearning } from "@/components/ux/growth";
 import {
   AboutCircle, CircleActions, CircleBanner, CirclePostCard, Composer,
   EventsRail, MembersCard, NotBuiltYet, PotCard, ResourcesRail, UnderTabs,
@@ -79,6 +82,7 @@ export default function CircleDetail({ params, searchParams }: {
   searchParams: Promise<{ ask?: string | string[] }>;
 }) {
   const tr = useT();
+  const confirm = useConfirm();
   const { id } = use(params);
   const me = useMe();
 
@@ -111,11 +115,13 @@ export default function CircleDetail({ params, searchParams }: {
   // `null` until she touches the box, so the carried question shows through.
   // `""` once she has cleared it — nullish coalescing keeps an empty box empty.
   const [typed, setTyped] = useState<string | null>(null);
+  const [postImage, setPostImage] = useState("");
   const draft = typed ?? carried;
   const [menu, setMenu] = useState<"joined" | "more" | null>(null);
   const [busy, setBusy] = useState<string | null>(null);
   const [note, setNote] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [editing, setEditing] = useState(false);
 
   /**
    * A shared "#<post>" link, landed on.
@@ -151,8 +157,12 @@ export default function CircleDetail({ params, searchParams }: {
   const { data: savings } = useResource(
     useCallback((s?: AbortSignal) => apiCircleSavings(id, s).catch(() => null), [id]),
     null as ApiCircleSavings | null);
+  const { data: members } = useResource(
+    useCallback((s?: AbortSignal) => apiCircleMembers(id, s).catch(() => []), [id]),
+    [] as ApiCircleMember[]);
 
   const events = useEvents();
+  const learning = useLearning();
   const railEvents: RailEvent[] = useMemo(() => (events.data?.upcoming ?? [])
     .slice(0, 2)
     .map((e) => ({
@@ -160,6 +170,13 @@ export default function CircleDetail({ params, searchParams }: {
       when: `${e.when} · ${e.time}`, going: e.going, taken: e.taken,
       href: `/app/events/${e.id}`,
     })), [events.data]);
+  const circleCourses = useMemo(() => {
+    const words = `${circle?.topic ?? ""} ${(circle?.tags ?? []).join(" ")}`.toLowerCase().split(/\s+/).filter(Boolean);
+    const rows = [...learning.data.continuing, ...learning.data.picks];
+    const scored = rows.map((course) => ({ course, score: words.filter((word) =>
+      `${course.title} ${course.category}`.toLowerCase().includes(word)).length }));
+    return scored.sort((a, b) => b.score - a.score).slice(0, 6).map((row) => row.course);
+  }, [circle?.tags, circle?.topic, learning.data]);
 
   const say = useCallback((msg: string) => {
     setNote(msg);
@@ -213,13 +230,14 @@ export default function CircleDetail({ params, searchParams }: {
     if (!body) return;
     setBusy("post"); setError(null);
     try {
-      await apiCreatePost(id, body);
+      await apiCreatePost(id, body, postImage);
       setTyped("");
+      setPostImage("");
       rePosts(); refetch();
       say("Posted — the circle can see it");
     } catch { setError("That did not post. Nothing you wrote is lost — try again."); }
     finally { setBusy(null); }
-  }, [draft, id, rePosts, refetch, say]);
+  }, [draft, id, postImage, rePosts, refetch, say]);
 
   const like = useCallback(async (p: CircleFeedPost) => {
     setBusy(p.id); setError(null);
@@ -227,6 +245,60 @@ export default function CircleDetail({ params, searchParams }: {
     catch { setError("Could not like that just now."); }
     finally { setBusy(null); }
   }, [rePosts]);
+
+  const removePost = useCallback(async (p: CircleFeedPost) => {
+    if (!p.mine) return;
+    setBusy(p.id); setError(null); setPostMenu(null);
+    try {
+      await apiDeletePost(p.id);
+      rePosts(); refetch();
+      say("Your post was deleted");
+    } catch { setError("That post could not be deleted. Nothing has changed."); }
+    finally { setBusy(null); }
+  }, [rePosts, refetch, say]);
+
+  const report = useCallback(async (kind: "circle" | "post", post?: CircleFeedPost) => {
+    const target = kind === "circle" ? circle?.name ?? id : `${post?.author ?? "Member"}'s post`;
+    const approved = await confirm({
+      title: `Report ${target}?`,
+      description: "This sends it privately to the WomSakhi safety team for review. The circle or post author is not told who reported it.",
+      confirmLabel: "Send report",
+      danger: true,
+    });
+    if (!approved) return;
+    setBusy(`report-${post?.id ?? id}`); setError(null); setPostMenu(null); setMenu(null);
+    try {
+      await apiFileReport({
+        category: "Something in a circle or post",
+        details: kind === "circle"
+          ? `Please review the circle “${circle?.name ?? id}” and its recent activity.`
+          : `Please review the selected post by ${post?.author ?? "a member"} in “${circle?.name ?? id}”.`,
+        about: kind === "circle" ? `circle:${id}` : `post:${post?.id ?? ""}`,
+      });
+      say("Report sent privately to the safety team");
+    } catch { setError("The report could not be sent. Please try again."); }
+    finally { setBusy(null); }
+  }, [circle?.name, confirm, id, say]);
+
+  const toggleMute = useCallback(async () => {
+    if (!circle) return;
+    setBusy("mute"); setError(null); setMenu(null);
+    try {
+      await apiSetCircleMuted(id, !circle.muted);
+      refetch();
+      say(circle.muted ? "Circle notifications are on" : "Circle notifications are muted");
+    } catch { setError("Notification settings could not be changed."); }
+    finally { setBusy(null); }
+  }, [circle, id, refetch, say]);
+
+  const saveCircle = useCallback(async (body: Parameters<typeof apiUpdateCircle>[1]) => {
+    setBusy("edit"); setError(null);
+    try {
+      await apiUpdateCircle(id, body);
+      setEditing(false); refetch(); say("Circle details updated");
+    } catch { setError("Circle details could not be saved. Nothing has changed."); }
+    finally { setBusy(null); }
+  }, [id, refetch, say]);
 
   /** On the server under the `post` kind — see `@/lib/saved-posts`. It was
    *  `localStorage`, which meant her bookmarks lived on one handset. */
@@ -292,8 +364,8 @@ export default function CircleDetail({ params, searchParams }: {
 
   const rail = (
     <div className="space-y-4">
-      <CircleActions joined={joined} busy={busy === "membership"} menu={menu} onMenu={setMenu}
-                     onInvite={invite} onSoon={say}
+      <CircleActions joined={joined} muted={circle.muted} busy={busy === "membership" || busy === "mute"} menu={menu} onMenu={setMenu}
+                     onInvite={invite} onMute={toggleMute} onReport={() => report("circle")}
                      onJoin={() => membership("join")} onLeave={() => membership("leave")} />
 
       {savings?.is_savings && (
@@ -303,11 +375,11 @@ export default function CircleDetail({ params, searchParams }: {
                  whoseTurn={savings.whose_turn} />
       )}
       <AboutCircle c={circle} posts={posts.length}
-                   onEdit={() => say("Changing a circle's details is on the way. Its name, topic and description are set when it is created.")} />
-      <MembersCard count={circle.member_count} people={savings?.members ?? []}
+                   onEdit={() => circle.owner ? setEditing(true) : say("Only this circle's host can change its details.")} />
+      <MembersCard count={circle.member_count} people={members}
                    onAll={() => setTab("Members")} />
       <EventsRail rows={railEvents} busy={busy} onGo={register} />
-      <ResourcesRail onSoon={say} />
+      <ResourcesRail circleId={id} />
     </div>
   );
 
@@ -320,6 +392,11 @@ export default function CircleDetail({ params, searchParams }: {
 
         <UnderTabs items={TABS} active={tab} onChange={(t) => setTab(t as Tab)} />
 
+        {editing && (
+          <CircleEditPanel circle={circle} saving={busy === "edit"}
+                           onCancel={() => setEditing(false)} onSave={saveCircle} />
+        )}
+
         {error && (
           <p role="alert" className="mb-4 rounded-[12px] px-4 py-3 text-xsm font-semibold"
              style={{ background: v("--ux-danger-tint"), color: v("--ux-danger-solid") }}>
@@ -330,7 +407,10 @@ export default function CircleDetail({ params, searchParams }: {
         {tab === "Discussion" && (
           <>
             <Composer value={draft} onChange={setTyped} onPost={post} busy={busy === "post"}
-                      avatar={me.avatar} name={me.first} joined={joined} onSoon={say} />
+                      avatar={me.avatar} name={me.first} joined={joined && circle.can_post}
+                      image={postImage} onImage={setPostImage}
+                      onEvent={() => setTab("Events")} onFile={() => setTab("Files")}
+                      blockedReason={joined ? "Only this circle's hosts can post" : undefined} />
 
             <div className="mb-4 flex items-start gap-3">
               <div className="ux-noscroll flex flex-1 items-center gap-2 overflow-x-auto pb-1">
@@ -366,7 +446,8 @@ export default function CircleDetail({ params, searchParams }: {
                 <CirclePostCard key={p.id} p={p} saved={saved.has(p.id)} busy={busy === p.id}
                                 menu={postMenu === p.id}
                                 onMenu={(open) => setPostMenu(open ? p.id : null)}
-                                onLike={like} onSave={save} onShare={share} onSoon={say} />
+                                onLike={like} onSave={save} onShare={share} onDelete={removePost}
+                                onReport={(row) => report("post", row)} />
               ))
             ) : (
               <NotBuiltYet
@@ -384,13 +465,13 @@ export default function CircleDetail({ params, searchParams }: {
         )}
 
         {tab === "Members" && (
-          savings?.members?.length ? (
+          members.length ? (
             <Card>
               <h2 className="mb-3 text-lg font-extrabold" style={{ color: v("--ux-ink") }}>
                 {tr("circles.whoIsInThisCircle")}
               </h2>
               <ul className="divide-y" style={{ borderColor: v("--ux-line") }}>
-                {savings.members.map((m) => (
+                {members.map((m) => (
                   <li key={m.name} className="flex items-center gap-3 py-3">
                     <span className="grid h-[38px] w-[38px] shrink-0 place-items-center overflow-hidden rounded-full text-xs font-bold"
                           style={{ background: v("--ux-brand-tint-2"), color: v("--ux-brand") }}>
@@ -403,9 +484,9 @@ export default function CircleDetail({ params, searchParams }: {
                       <span className="block truncate text-xsm font-bold" style={{ color: v("--ux-ink") }}>
                         {m.name}{m.you ? " (you)" : ""}
                       </span>
-                      <span className="mt-0.5 block text-[12px] lg:text-2xs" style={{ color: v("--ux-muted") }}>
+                      {savings?.is_savings && <span className="mt-0.5 block text-[12px] lg:text-2xs" style={{ color: v("--ux-muted") }}>
                         Turn {m.turn} · {m.paid ? "paid this round" : "not paid yet"}
-                      </span>
+                      </span>}
                     </span>
                   </li>
                 ))}
@@ -422,30 +503,34 @@ export default function CircleDetail({ params, searchParams }: {
         )}
 
         {tab === "Learning" && (
-          <NotBuiltYet
-            icon="GraduationCap"
-            title={tr("circles.noCourseBelongsToThisCircle")}
-            body={tr("circles.aCircleWillBeAbleTo")}
-            action={<Btn size="sm" href="/app/programs" iconEnd="ArrowRight">{tr("circles.seeTheCourses")}</Btn>}
-          />
+          <Card>
+            <h2 className="text-lg font-extrabold" style={{ color: v("--ux-ink") }}>Learning for this topic</h2>
+            <p className="mt-1 text-xs" style={{ color: v("--ux-muted") }}>Courses are selected from the live catalogue using this circle&apos;s topic and tags.</p>
+            {circleCourses.length ? <div className="mt-4 grid gap-3 sm:grid-cols-2">
+              {circleCourses.map((course) => <div key={course.id} className="rounded-xl border p-3" style={{ borderColor: v("--ux-line") }}>
+                <p className="text-sm font-bold" style={{ color: v("--ux-ink") }}>{course.title}</p>
+                <p className="mt-1 text-xs" style={{ color: v("--ux-muted") }}>{course.category} · {course.hours || course.level}</p>
+                <Btn size="sm" variant="soft" className="mt-3" href={`/app/programs/${course.id}`}>Open course</Btn>
+              </div>)}
+            </div> : <EmptyState icon="GraduationCap" title="No matching courses yet" body="New reviewed courses will appear here automatically." />}
+            <div className="mt-4"><Btn size="sm" href="/app/programs" iconEnd="ArrowRight">{tr("circles.seeTheCourses")}</Btn></div>
+          </Card>
         )}
 
         {tab === "Events" && (
-          <NotBuiltYet
-            icon="CalendarDays"
-            title={tr("circles.thisCircleHasNoMeetsOf")}
-            body={tr("circles.circlesCannotHoldTheirOwnEvents")}
-            action={<Btn size="sm" href="/app/events" iconEnd="ArrowRight">{tr("circles.seeAllEvents")}</Btn>}
-          />
+          <Card>
+            <h2 className="text-lg font-extrabold" style={{ color: v("--ux-ink") }}>Events open to this circle</h2>
+            <p className="mt-1 text-xs" style={{ color: v("--ux-muted") }}>These are live WomSakhi events. Registration is saved to your account.</p>
+            <div className="mt-4"><EventsRail rows={(events.data?.upcoming ?? []).map((e) => ({
+              id: e.id, title: e.title, day: e.day, month: e.month, when: `${e.when} · ${e.time}`,
+              going: e.going, taken: e.taken, href: `/app/events/${e.id}`,
+            }))} busy={busy} onGo={register} /></div>
+            <div className="mt-4"><Btn size="sm" href="/app/events" iconEnd="ArrowRight">{tr("circles.seeAllEvents")}</Btn></div>
+          </Card>
         )}
 
         {tab === "Files" && (
-          <NotBuiltYet
-            icon="FileText"
-            title={tr("circles.noSharedFilesYet")}
-            body={tr("circles.patternsPriceListsAndTemplatesWill")}
-            action={<Btn size="sm" onClick={() => setTab("Discussion")}>{tr("circles.writeAPost")}</Btn>}
-          />
+          <ResourcesRail circleId={id} />
         )}
 
         {tab === "About" && (
@@ -485,5 +570,59 @@ export default function CircleDetail({ params, searchParams }: {
         </div>
       </div>
     </HomeShell>
+  );
+}
+
+function CircleEditPanel({ circle, saving, onCancel, onSave }: {
+  circle: ApiCircleDetail; saving: boolean; onCancel: () => void;
+  onSave: (body: Parameters<typeof apiUpdateCircle>[1]) => void;
+}) {
+  const [name, setName] = useState(circle.name);
+  const [topic, setTopic] = useState(circle.topic);
+  const [desc, setDesc] = useState(circle.desc);
+  const [guidelines, setGuidelines] = useState(circle.guidelines);
+  const [tags, setTags] = useState(circle.tags.join(", "));
+  const [whoPosts, setWhoPosts] = useState<"all" | "hosts">(circle.who_posts);
+  return (
+    <Card className="mb-4">
+      <h2 className="text-lg font-extrabold" style={{ color: v("--ux-ink") }}>Edit circle details</h2>
+      <p className="mt-1 text-xs" style={{ color: v("--ux-muted") }}>Keep the name clear and use tags women can search.</p>
+      <div className="mt-4 grid gap-3 sm:grid-cols-2">
+        <label className="text-xs font-bold" style={{ color: v("--ux-ink-2") }}>Name
+          <input value={name} onChange={(e) => setName(e.target.value)} maxLength={80}
+                 className="mt-1 w-full rounded-xl border px-3 py-2.5 text-sm" style={{ borderColor: v("--ux-line") }} />
+        </label>
+        <label className="text-xs font-bold" style={{ color: v("--ux-ink-2") }}>Topic
+          <input value={topic} onChange={(e) => setTopic(e.target.value)} maxLength={80}
+                 className="mt-1 w-full rounded-xl border px-3 py-2.5 text-sm" style={{ borderColor: v("--ux-line") }} />
+        </label>
+        <label className="text-xs font-bold sm:col-span-2" style={{ color: v("--ux-ink-2") }}>Description
+          <textarea value={desc} onChange={(e) => setDesc(e.target.value)} maxLength={600} rows={3}
+                    className="mt-1 w-full rounded-xl border px-3 py-2.5 text-sm" style={{ borderColor: v("--ux-line") }} />
+        </label>
+        <label className="text-xs font-bold sm:col-span-2" style={{ color: v("--ux-ink-2") }}>Guidelines
+          <textarea value={guidelines} onChange={(e) => setGuidelines(e.target.value)} maxLength={300} rows={2}
+                    className="mt-1 w-full rounded-xl border px-3 py-2.5 text-sm" style={{ borderColor: v("--ux-line") }} />
+        </label>
+        <label className="text-xs font-bold" style={{ color: v("--ux-ink-2") }}>Tags, separated by commas
+          <input value={tags} onChange={(e) => setTags(e.target.value)} placeholder="business, tailoring"
+                 className="mt-1 w-full rounded-xl border px-3 py-2.5 text-sm" style={{ borderColor: v("--ux-line") }} />
+        </label>
+        <label className="text-xs font-bold" style={{ color: v("--ux-ink-2") }}>Who can post
+          <select value={whoPosts} onChange={(e) => setWhoPosts(e.target.value as "all" | "hosts")}
+                  className="mt-1 w-full rounded-xl border px-3 py-2.5 text-sm" style={{ borderColor: v("--ux-line") }}>
+            <option value="all">Every member</option><option value="hosts">Hosts only</option>
+          </select>
+        </label>
+      </div>
+      <div className="mt-4 flex gap-2">
+        <Btn disabled={saving || name.trim().length < 2} onClick={() => onSave({
+          name: name.trim(), topic: topic.trim(), desc: desc.trim(), guidelines: guidelines.trim(),
+          tags: tags.split(",").map((x) => x.trim()).filter(Boolean).slice(0, 5), who_posts: whoPosts,
+          review_first: circle.review_first, tell_me: circle.tell_me,
+        })}>{saving ? "Saving…" : "Save changes"}</Btn>
+        <Btn variant="outline" disabled={saving} onClick={onCancel}>Cancel</Btn>
+      </div>
+    </Card>
   );
 }

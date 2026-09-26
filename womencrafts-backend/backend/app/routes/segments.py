@@ -196,14 +196,20 @@ async def update_segment(
     return SegmentResponse(**SegmentModel.to_response(doc, _live(doc, members, datetime.now(timezone.utc))))
 
 
-@router.delete("/{segment_id}", summary="Delete a segment",
+@router.delete("/{segment_id}", summary="Archive a segment while preserving history",
     dependencies=[Depends(require_permission("users.delete"))],
 )
 async def delete_segment(segment_id: str, request: Request, me: dict = Depends(get_current_user)):
     doc = await _segment_or_404(segment_id)
-    await _segments().delete_one({"_id": doc["_id"]})
-    await record(
-        me, "user.segment_delete", target=str(doc["_id"]),
-        detail=f"Deleted segment '{doc.get('name', '')}' (members untouched)", request=request,
+    if doc.get("status") == "Inactive":
+        raise HTTPException(status.HTTP_409_CONFLICT, "This segment is already archived")
+    await _segments().update_one(
+        {"_id": doc["_id"]},
+        {"$set": {"status": "Inactive", "archived_at": datetime.now(timezone.utc),
+                  "updated_at": datetime.now(timezone.utc)}},
     )
-    return {"message": "Segment deleted"}
+    await record(
+        me, "user.segment_archive", target=str(doc["_id"]),
+        detail=f"Archived segment '{doc.get('name', '')}' (members and history kept)", request=request,
+    )
+    return {"message": "Segment archived"}

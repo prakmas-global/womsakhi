@@ -580,18 +580,12 @@ export { NoteBtn } from "./note";
 export { downloadCsv, escapeHtml, letterhead, printDocument } from "./download";
 
 /**
- * Says when a screen is showing example figures rather than her own.
- *
- * `useResource` falls back to the mock when an endpoint is missing or the
- * request fails, which keeps every screen readable — but on a screen about
- * money, an unlabelled fallback is not a graceful degradation, it is a lie
- * about her balance. So the fallback announces itself.
- *
- * Renders nothing at all when the data is real, which is the point: this
- * disappears on its own as each module gets wired, with no screen to revisit.
+ * Says when the app could not load the requested live data. Callers retain an
+ * empty, type-safe shape; this notice makes clear that an empty view is not a
+ * confirmed zero result.
  */
-export function SourceNote({ source, what = "figures" }: { source: "live" | "mock" | "loading"; what?: string }) {
-  if (source !== "mock") return null;
+export function SourceNote({ source, what = "information" }: { source: "live" | "error" | "loading"; what?: string }) {
+  if (source !== "error") return null;
   return (
     <p
       role="status"
@@ -600,8 +594,7 @@ export function SourceNote({ source, what = "figures" }: { source: "live" | "moc
     >
       <I name="Info" className="mt-[1px] h-[14px] w-[14px] shrink-0" sw={2} />
       <span>
-        These are example {what}, not yours. We could not reach WomSakhi just now — pull down or try again
-        in a moment.
+        We could not load {what} just now. Nothing shown here is sample data. Pull down or try again in a moment.
       </span>
     </p>
   );
@@ -609,8 +602,7 @@ export function SourceNote({ source, what = "figures" }: { source: "live" | "moc
 /**
  * "This screen is built, the endpoint is not yet."
  *
- * Distinct from `SourceNote`, which means something else entirely: that a live
- * fetch FAILED and she is looking at a fallback. Saying that on a screen whose
+ * Distinct from `SourceNote`, which means a live fetch failed. Saying that on a screen whose
  * API was never written would be a lie in the other direction — it would send
  * her to pull down and try again forever.
  */

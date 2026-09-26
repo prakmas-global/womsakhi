@@ -17,9 +17,12 @@ import { TONE_BG } from "@/lib/tones";
 import {
   apiListContent, apiContentStats, apiContentActivity, apiContentAuthors, apiCreateContent, apiUpdateContent,
   apiSetContentStatus, apiDeleteContent, apiRestoreContent, apiDeleteContentPermanently, apiBulkContent, apiListUploads,
+  apiDeleteUpload,
   type ApiContent, type ContentStats, type ContentActivity, type UploadedFile,
 } from "@/lib/content-api";
 import { memberError } from "@/lib/member-api";
+import { apiRegions } from "@/lib/regions-admin-api";
+import { apiListSegmentsLive } from "@/lib/members-admin-api";
 import { ResizableColumns } from "@/layout-engine";
 
 /**
@@ -54,8 +57,9 @@ const TYPE_OPTIONS: ContentType[] = ["Page", "Blog Post", "Media", "Banner", "FA
 const STATUS_OPTIONS: ContentStatus[] = ["Published", "Draft", "Scheduled"];
 const PAGE_SIZE = 8;
 
-type FormState = { title: string; type: ContentType; status: ContentStatus; slug: string; description: string; cover: string; publishAt: string };
-const EMPTY_FORM: FormState = { title: "", type: "Page", status: "Draft", slug: "", description: "", cover: "", publishAt: "" };
+type AudienceMode = "everyone" | "regions" | "segments";
+type FormState = { title: string; type: ContentType; status: ContentStatus; slug: string; description: string; cover: string; publishAt: string; audienceMode: AudienceMode; audienceValues: string[] };
+const EMPTY_FORM: FormState = { title: "", type: "Page", status: "Draft", slug: "", description: "", cover: "", publishAt: "", audienceMode: "everyone", audienceValues: [] };
 
 /** ISO → the value a datetime-local input wants (local time, no seconds). */
 function toLocalInput(iso: string | null | undefined): string {
@@ -116,6 +120,9 @@ export default function ContentPage() {
   const [scheduleAt, setScheduleAt] = useState("");
   const [mediaOpen, setMediaOpen] = useState(false);
   const [uploads, setUploads] = useState<{ items: UploadedFile[]; total: number } | null>(null);
+  const [mediaSearch, setMediaSearch] = useState("");
+  const [mediaKind, setMediaKind] = useState("");
+  const [audienceChoices, setAudienceChoices] = useState<{ regions: string[]; segments: string[] }>({ regions: [], segments: [] });
 
   const inTrash = activeTab === "Trash";
 
@@ -142,15 +149,28 @@ export default function ContentPage() {
   }, [inTrash]);
 
   useEffect(() => { void refresh(); }, [refresh]);
+  useEffect(() => {
+    if (!addOpen) return;
+    void Promise.all([apiRegions(), apiListSegmentsLive({ status: "Active" })])
+      .then(([regions, segments]) => setAudienceChoices({
+        regions: regions.filter((r) => r.status === "Active").map((r) => r.name),
+        segments: segments.items.filter((s) => s.status === "Active").map((s) => s.name),
+      }))
+      .catch(() => setAudienceChoices({ regions: [], segments: [] }));
+  }, [addOpen]);
   useEffect(() => { setSelectedIds([]); setPage(1); }, [activeTab]);
 
   useEffect(() => {
     if (!mediaOpen) return;
     let live = true;
     setUploads(null);
-    apiListUploads({ page_size: 50 }).then((u) => { if (live) setUploads(u); }).catch(() => { if (live) setUploads({ items: [], total: 0 }); });
-    return () => { live = false; };
-  }, [mediaOpen]);
+    const timer = setTimeout(() => {
+      apiListUploads({ page_size: 50, q: mediaSearch.trim() || undefined, kind: mediaKind || undefined })
+        .then((u) => { if (live) setUploads(u); })
+        .catch(() => { if (live) setUploads({ items: [], total: 0 }); });
+    }, 250);
+    return () => { live = false; clearTimeout(timer); };
+  }, [mediaOpen, mediaSearch, mediaKind]);
 
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
@@ -280,18 +300,20 @@ export default function ContentPage() {
   function openAdd() { setEditId(null); setForm(EMPTY_FORM); setAddOpen(true); }
   function openEdit(r: ApiContent) {
     setEditId(r.id);
-    setForm({ title: r.title, type: r.type as ContentType, status: (r.status === "Trash" ? "Draft" : r.status) as ContentStatus, slug: r.slug, description: r.description, cover: r.cover, publishAt: toLocalInput(r.publish_at) });
+    setForm({ title: r.title, type: r.type as ContentType, status: (r.status === "Trash" ? "Draft" : r.status) as ContentStatus, slug: r.slug, description: r.description, cover: r.cover, publishAt: toLocalInput(r.publish_at), audienceMode: r.audience_mode ?? "everyone", audienceValues: r.audience_values ?? [] });
     setDetailId(null);
     setAddOpen(true);
   }
   async function submitForm() {
     if (!form.title.trim()) return;
     if (form.status === "Scheduled" && !fromLocalInput(form.publishAt)) { toast.error("Pick when it should go live"); return; }
+    if (form.audienceMode !== "everyone" && !form.audienceValues.length) { toast.error(`Choose at least one ${form.audienceMode === "regions" ? "region" : "segment"}`); return; }
     setSaving(true);
     const body = {
       title: form.title.trim(), type: form.type, status: form.status, slug: form.slug.trim(),
       description: form.description, cover: form.cover,
       publish_at: form.status === "Scheduled" ? fromLocalInput(form.publishAt) : null,
+      audience_mode: form.audienceMode, audience_values: form.audienceValues,
     };
     try {
       if (editId) { await apiUpdateContent(editId, body); toast.success(`“${body.title}” saved`); }
@@ -304,6 +326,34 @@ export default function ContentPage() {
       toast.error("Could not save the content", { description: memberError(err) });
     } finally {
       setSaving(false);
+    }
+  }
+
+  function useMediaAsCover(file: UploadedFile) {
+    setEditId(null);
+    setForm({ ...EMPTY_FORM, cover: file.url, type: "Media" });
+    setMediaOpen(false);
+    setAddOpen(true);
+  }
+
+  async function removeMedia(file: UploadedFile) {
+    const ok = await confirm({
+      title: `Remove “${file.original_name}”?`,
+      description: "The server first checks whether any content, profile, circle, event or shop item still uses it.",
+      confirmLabel: "Remove file",
+      danger: true,
+    });
+    if (!ok) return;
+    try {
+      await apiDeleteUpload(file.id);
+      setUploads((current) => current ? {
+        items: current.items.filter((item) => item.id !== file.id),
+        total: Math.max(0, current.total - 1),
+      } : current);
+      await refresh();
+      toast.success("File removed from the library");
+    } catch (err) {
+      toast.error("Could not remove that file", { description: memberError(err) });
     }
   }
 
@@ -599,6 +649,30 @@ export default function ContentPage() {
           )}
           <Input label="Slug" className="col-span-2" value={form.slug} onChange={(e) => setForm((f) => ({ ...f, slug: e.target.value }))} placeholder="Leave blank to make one from the title" />
           <Textarea label="Description" className="col-span-2" value={form.description} onChange={(e) => setForm((f) => ({ ...f, description: e.target.value }))} placeholder="Short description of this content…" />
+          <fieldset className="col-span-2 rounded-xl border border-line p-3">
+            <legend className="px-1 text-xsm font-medium text-ink-muted">Who should see this?</legend>
+            <div className="flex flex-wrap gap-2">
+              {([['everyone', 'Every member'], ['regions', 'Selected regions'], ['segments', 'Selected segments']] as const).map(([value, label]) => (
+                <button key={value} type="button" aria-pressed={form.audienceMode === value}
+                  className={`btn btn-sm ${form.audienceMode === value ? 'btn-primary' : 'btn-outline'}`}
+                  onClick={() => setForm((f) => ({ ...f, audienceMode: value, audienceValues: [] }))}>{label}</button>
+              ))}
+            </div>
+            {form.audienceMode !== "everyone" && (
+              <div className="mt-3 flex max-h-36 flex-wrap gap-2 overflow-y-auto" aria-label={`Choose ${form.audienceMode}`}>
+                {audienceChoices[form.audienceMode].map((value) => {
+                  const on = form.audienceValues.includes(value);
+                  return <button key={value} type="button" aria-pressed={on}
+                    className={`rounded-full border px-3 py-1.5 text-xs font-medium ${on ? 'border-violet-500 bg-violet-50 text-violet-800' : 'border-line-strong text-ink-muted'}`}
+                    onClick={() => setForm((f) => ({ ...f, audienceValues: on ? f.audienceValues.filter((x) => x !== value) : [...f.audienceValues, value] }))}>
+                    {on ? '✓ ' : ''}{value}
+                  </button>;
+                })}
+                {!audienceChoices[form.audienceMode].length && <p className="text-xs text-ink-subtle">No active {form.audienceMode} are available.</p>}
+              </div>
+            )}
+            <p className="mt-2 text-xs text-ink-subtle">Targeting is enforced by the member content feed and stored with every item.</p>
+          </fieldset>
           <ImageUpload className="col-span-2" variant="cover" kind="cover" label="Cover image" hint="Shown on the content list and detail view. JPG, PNG, WEBP or GIF up to 5 MB." value={form.cover || null} onChange={(url) => setForm((f) => ({ ...f, cover: url ?? "" }))} />
         </div>
       </Modal>
@@ -668,6 +742,7 @@ export default function ContentPage() {
               </div>
               <div><p className="text-ink-subtle">Author</p><p className="mt-1 flex items-center gap-2 font-medium text-ink-muted"><Avatar name={detailRow.author || "?"} size="xs" /> {detailRow.author || "Unknown"}</p></div>
               <div><p className="text-ink-subtle">Last Updated</p><p className="mt-1 font-medium text-ink-muted">{detailRow.updated}</p></div>
+              <div className="col-span-2"><p className="text-ink-subtle">Audience</p><p className="mt-1 font-medium text-ink-muted">{detailRow.audience_mode === "everyone" ? "Every member" : `${detailRow.audience_mode === "regions" ? "Regions" : "Segments"}: ${detailRow.audience_values.join(", ")}`}</p></div>
             </div>
           </div>
         )}
@@ -684,7 +759,30 @@ export default function ContentPage() {
         size="lg"
         footer={<button className="btn btn-outline" onClick={() => setMediaOpen(false)}>Close</button>}
       >
-        <p className="mb-3 text-xs text-ink-subtle">{stats?.storage_label ?? ""}. Upload new files from a content item&apos;s cover field.</p>
+        <p className="mb-3 text-xs text-ink-subtle">{stats?.storage_label ?? ""}. Search, preview, reuse or safely remove uploaded assets.</p>
+        <div className="mb-3 flex flex-wrap gap-2">
+          <div className="relative min-w-[220px] flex-1">
+            <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-ink-subtle" />
+            <input
+              value={mediaSearch}
+              onChange={(e) => setMediaSearch(e.target.value)}
+              placeholder="Search file names…"
+              aria-label="Search media files"
+              className="w-full rounded-lg border border-line-strong bg-surface py-2 pl-9 pr-3 text-sm text-ink outline-none focus:border-violet-300 focus:ring-4 focus:ring-violet-50"
+            />
+          </div>
+          <Select
+            aria-label="Filter media by kind"
+            value={mediaKind}
+            onChange={(e) => setMediaKind(e.target.value)}
+            options={[
+              { value: "", label: "All asset types" },
+              { value: "cover", label: "Covers" },
+              { value: "avatar", label: "Avatars" },
+              { value: "attachment", label: "Attachments" },
+            ]}
+          />
+        </div>
         {uploads === null ? (
           <p className="flex items-center gap-2 py-6 text-xs text-ink-subtle"><Loader2 className="h-4 w-4 animate-spin" /> Loading files…</p>
         ) : uploads.items.length === 0 ? (
@@ -703,7 +801,13 @@ export default function ContentPage() {
                   <p className="truncate font-medium text-ink">{u.original_name}</p>
                   <p className="text-xs text-ink-subtle">{u.size_label} · {u.kind} · {u.uploaded_by_name || "unknown"} · {u.uploaded}</p>
                 </div>
-                <a href={u.url} target="_blank" rel="noreferrer" className="btn btn-sm btn-ghost">Open</a>
+                {u.content_type.startsWith("image/") && (
+                  <button className="btn btn-sm btn-outline" onClick={() => useMediaAsCover(u)}>Use</button>
+                )}
+                <a href={u.url} target="_blank" rel="noreferrer" className="btn btn-sm btn-ghost">Preview</a>
+                <button className="btn btn-sm btn-ghost text-status-danger-ink" aria-label={`Remove ${u.original_name}`} onClick={() => void removeMedia(u)}>
+                  <Trash2 className="h-4 w-4" />
+                </button>
               </li>
             ))}
           </ul>

@@ -31,7 +31,7 @@ for (const w of [430, 390, 360]) {
     };
   });
   console.log(`  ${w}px  tabs [${m.tabs.join(", ")}]  ${m.widths[0]}px each  truncated:${m.truncated.length ? m.truncated.join("/") : "none"}  hub cards:${m.cards}  rail hidden:${m.railHidden}  overflow:${m.over}`);
-  if (w === 390) await p.screenshot({ path: `${OUT}/phone-earn.png` });
+  if (w === 390 && OUT) await p.screenshot({ path: `${OUT}/phone-earn.png` });
 }
 
 // The map must be reachable from a tab in one tap.

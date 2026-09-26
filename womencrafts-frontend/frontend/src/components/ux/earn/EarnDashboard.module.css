@@ -61,7 +61,7 @@
 .ways h2,.recommendations h2,.rail h2 { margin:0; font-size:16px; line-height:1.2; font-weight:700; }
 .wayGrid { margin-top:10px; display:grid; grid-template-columns:repeat(5,minmax(0,1fr)); gap:10px; }
 .way { position:relative; display:block; aspect-ratio:1.22; min-height:136px; overflow:hidden; border:1px solid var(--ed-border); border-radius:8px; background:#301e2b; color:#fff; text-decoration:none; }
-.wayArt { position:absolute; inset:0; background-image:url('/ux/art/earn-dashboard-cards.png'); background-size:200% 200%; opacity:.82; }
+.wayArt { position:absolute; inset:0; background-image:url('/ux/art/earn-dashboard-cards.webp'); background-size:200% 200%; opacity:.82; }
 .wayArt0 { background-position:left top; }.wayArt1 { background-position:right top; }.wayArt2 { background-image:url('/ux/art/work-dashboard-writing.webp'); background-size:cover; background-position:center; }.wayArt3 { background-image:url('/ux/art/circle-study-group.webp'); background-size:cover; background-position:center; }.wayArt4 { background-image:url('/ux/art/scene-two-women-support.webp'); background-size:cover; background-position:center; }
 .way::after { content:""; position:absolute; inset:20% 0 0; background:linear-gradient(transparent,#1d0e18 95%); }
 .wayText { position:absolute; z-index:1; inset:auto 10px 10px; display:flex; flex-direction:column; gap:4px; }

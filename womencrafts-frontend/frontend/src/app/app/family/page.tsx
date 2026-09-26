@@ -71,7 +71,7 @@ export default function FamilyPage() {
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img loading="lazy" decoding="async" src={WELLBEING_ART.family} alt=""
                  className="ux-float pointer-events-none absolute -bottom-3 -end-4 h-[100px] w-[100px] object-contain" />
-            <h3 className="relative w-[60%] text-sm font-semibold" style={{ color: "var(--ux-ink)" }}>{tr("family.workingWithABaby")}</h3>
+            <h2 className="relative w-[60%] text-sm font-semibold" style={{ color: "var(--ux-ink)" }}>{tr("family.workingWithABaby")}</h2>
             <p className="relative mt-2 w-[60%] text-xs leading-relaxed" style={{ color: "var(--ux-muted)" }}>{tr("family.whatMembersActuallyDoFromWomen")}</p>
           </div>
         </div>
@@ -152,9 +152,9 @@ export default function FamilyPage() {
                   </span>
                   <div className="flex min-w-0 flex-1 flex-col p-[16px]">
                     <div className="flex items-start gap-2">
-                      <h3 className="min-w-0 flex-1 text-base font-semibold" style={{ color: "var(--ux-ink)" }}>
+                      <h2 className="min-w-0 flex-1 text-base font-semibold" style={{ color: "var(--ux-ink)" }}>
                         {c.name}
-                      </h3>
+                      </h2>
                       {/* Free first, then how far. Those are the two questions. */}
                       {c.fee === "Free" && <Pill tone="green" size="sm">Free</Pill>}
                       <Pill tone={c.kind === "Government" ? "blue" : c.kind === "Private" ? "neutral" : "brand"} size="sm">
@@ -224,7 +224,7 @@ export default function FamilyPage() {
                 <IconTile icon="Sparkles" tint={FAMILY_TINTS[i % FAMILY_TINTS.length][0]}
                           ink={FAMILY_TINTS[i % FAMILY_TINTS.length][1]} size={44} radius={12} />
                 <div className="min-w-0 flex-1">
-                  <h3 className="text-sm font-semibold leading-snug" style={{ color: "var(--ux-ink)" }}>{f.label}</h3>
+                  <h2 className="text-sm font-semibold leading-snug" style={{ color: "var(--ux-ink)" }}>{f.label}</h2>
                   <p className="mt-1.5 text-xsm leading-relaxed" style={{ color: "var(--ux-muted)" }}>{f.note}</p>
                 </div>
               </div>

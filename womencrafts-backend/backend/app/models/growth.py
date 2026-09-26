@@ -262,6 +262,7 @@ class MentorshipRequestModel:
     STATUS_ACCEPTED = "accepted"
     STATUS_DECLINED = "declined"
     STATUS_CLOSED = "closed"
+    STATUS_WITHDRAWN = "withdrawn"
 
     @staticmethod
     def create_document(

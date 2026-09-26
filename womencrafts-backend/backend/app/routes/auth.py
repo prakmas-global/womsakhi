@@ -37,6 +37,7 @@ from app.core.security import (
 )
 from app.core.session import COOKIE_NAME, clear_session_cookie, set_session_cookie
 from app.routes.verification import send_verification_email
+from app.core.two_factor import decrypt_secret, recovery_digest, verify_code
 
 router = APIRouter(prefix="/auth", tags=["Authentication"])
 
@@ -203,6 +204,24 @@ async def signin(payload: SignInRequest, response: Response, request: Request):
 
     if not user.get("is_active", True):
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Account is deactivated")
+
+    two_factor = user.get("two_factor") or {}
+    if two_factor.get("enabled"):
+        code = payload.two_factor_code.strip()
+        if not code:
+            raise HTTPException(
+                status_code=status.HTTP_428_PRECONDITION_REQUIRED,
+                detail={"code": "two_factor_required", "message": "Enter the code from your authenticator app."},
+            )
+        secret = decrypt_secret(two_factor.get("secret", ""))
+        recovery = recovery_digest(code)
+        recovery_codes = list(two_factor.get("recovery_codes") or [])
+        if recovery in recovery_codes:
+            await collection.update_one(
+                {"_id": user["_id"]}, {"$pull": {"two_factor.recovery_codes": recovery}}
+            )
+        elif not verify_code(secret, code):
+            raise HTTPException(status.HTTP_401_UNAUTHORIZED, "That authentication code is not valid")
 
     # Successful sign-in clears the failure counter — and her rate-limit
     # budget. Otherwise a woman who mistypes four times and then gets it right

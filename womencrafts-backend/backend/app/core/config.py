@@ -170,6 +170,12 @@ class Settings(BaseSettings):
     # cookies over plain HTTP and accepting forged payment webhooks.
     ENVIRONMENT: str = "development"
 
+    # Demo catalogue/member data is useful on a developer laptop, but must
+    # never be written by a live process. `main.py` also gates this on
+    # `is_production`, so a stale production environment variable cannot turn
+    # seeding back on.
+    DEMO_SEED_ENABLED: bool = True
+
     # --- Shared state, for when there is more than one worker ----------------
     # Empty means "one worker, in-process state", which is right for a laptop.
     # Set it and the cache and the rate limiter become shared — see
@@ -211,6 +217,11 @@ class Settings(BaseSettings):
     def is_production(self) -> bool:
         return self.ENVIRONMENT.strip().lower() in {"production", "prod", "live"}
 
+    @property
+    def should_seed_demo_data(self) -> bool:
+        """Demo rows are reachable only outside a production environment."""
+        return self.DEMO_SEED_ENABLED and not self.is_production
+
     @model_validator(mode="after")
     def _harden_for_production(self) -> "Settings":
         """
@@ -249,6 +260,11 @@ class Settings(BaseSettings):
                 "PAYMENT_PROVIDER is 'sandbox'. Checkout, withdrawals and savings "
                 "circles move numbers in the database and no real money. Set it to "
                 "'razorpay' and supply RAZORPAY_KEY_ID / RAZORPAY_KEY_SECRET."
+            )
+        if self.PAYMENT_PROVIDER.strip().lower() not in {"sandbox", "razorpay"}:
+            problems.append(
+                f"PAYMENT_PROVIDER is '{self.PAYMENT_PROVIDER}', but no such adapter is installed. "
+                "Use 'razorpay' for launch or add and test the requested provider adapter."
             )
         if self.PAYMENT_PROVIDER.strip().lower() == "razorpay" and not (
             self.RAZORPAY_KEY_ID and self.RAZORPAY_KEY_SECRET
@@ -314,6 +330,31 @@ class Settings(BaseSettings):
             problems.append(
                 f"APP_BASE_URL is still {self.APP_BASE_URL}. Every emailed link — "
                 "verification, password reset — would point at a developer's laptop."
+            )
+        if self.MEDIA_BASE_URL.startswith(("http://localhost", "http://127.0.0.1")):
+            problems.append(
+                f"MEDIA_BASE_URL is still {self.MEDIA_BASE_URL}. Uploaded images would point at a developer machine."
+            )
+        if any("localhost" in origin or "127.0.0.1" in origin for origin in self.allowed_origins):
+            problems.append(
+                "ALLOWED_ORIGINS still contains a local development origin. Set it to the deployed app origins before launch."
+            )
+        if not self.ANTHROPIC_API_KEY:
+            problems.append(
+                "ANTHROPIC_API_KEY is empty, so Sakhi would use the local development simulator. "
+                "Provide the production key before launch; simulated assistant answers are never allowed in production."
+            )
+        if not self.ENGINES_ENABLED:
+            problems.append(
+                "ENGINES_ENABLED is false, so reminders and scheduled automation will never run. Enable it for launch."
+            )
+        if not self.ENGINES_TICK_SECRET:
+            problems.append(
+                "ENGINES_TICK_SECRET is empty, so the scheduler endpoint fails closed and no automation tick can run."
+            )
+        if not (self.VAPID_PUBLIC_KEY and self.VAPID_PRIVATE_KEY):
+            problems.append(
+                "VAPID_PUBLIC_KEY / VAPID_PRIVATE_KEY are empty, so reminders cannot reach members through web push."
             )
         return problems
 

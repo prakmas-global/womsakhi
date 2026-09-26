@@ -235,9 +235,7 @@ class QueueSummary(BaseModel):
     hidden: int
     removed: int
     muted_members: int
-    #: False until the member app can report a post. The screen reads this
-    #: rather than a hardcoded sentence, so the day it flips the copy follows.
-    reports_supported: bool = False
+    reports_supported: bool = True
 
 
 class ModerationQueue(BaseModel):
@@ -919,7 +917,7 @@ async def list_queue(
         summary=QueueSummary(
             posts=total_posts, replies=total_replies,
             hidden=hidden_n, removed=removed_n, muted_members=muted_n,
-            reports_supported=False,
+            reports_supported=True,
         ),
     )
 

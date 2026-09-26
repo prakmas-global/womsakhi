@@ -133,7 +133,12 @@ export default function MemberShell({
   */
   if (loading) {
     return (
-      <div className="ux grid min-h-screen place-items-center"><Spinner /></div>
+      <div className="ux grid min-h-screen place-items-center px-6">
+        <div role="status" className="text-center">
+          <Spinner />
+          <p className="mt-3 text-sm font-medium" style={{ color: "var(--ux-ink-2)" }}>{tr("common.loading")}</p>
+        </div>
+      </div>
     );
   }
 
@@ -161,7 +166,12 @@ export default function MemberShell({
   // screen: mounting it would fire data requests we already know will 403.
   if (!isMember || (!verified && !onVerifyScreen) || needsOnboarding) {
     return (
-      <div className="ux grid min-h-screen place-items-center"><Spinner /></div>
+      <div className="ux grid min-h-screen place-items-center px-6">
+        <div role="status" className="text-center">
+          <Spinner />
+          <p className="mt-3 text-sm font-medium" style={{ color: "var(--ux-ink-2)" }}>{tr("wait.opening")}</p>
+        </div>
+      </div>
     );
   }
 

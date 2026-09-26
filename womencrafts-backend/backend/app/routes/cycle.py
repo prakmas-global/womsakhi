@@ -27,6 +27,8 @@ from __future__ import annotations
 
 import asyncio
 from datetime import date, datetime, timedelta, timezone
+from statistics import mean, pstdev
+from uuid import uuid4
 from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
@@ -37,7 +39,14 @@ from app.core.rbac import require_active_member
 from app.db.mongodb import get_database
 from app.models.conversation import MemberNotificationModel
 from app.models.cycle import DEFAULT_REMINDERS, DEFAULT_TZ, CycleDayModel, CycleProfileModel
-from app.schemas.cycle import CycleDayUpdate, CycleReminders, CycleSettings, CycleSetup
+from app.schemas.cycle import (
+    CycleDayUpdate,
+    CycleMedicineCreate,
+    CycleMedicineUpdate,
+    CycleReminders,
+    CycleSettings,
+    CycleSetup,
+)
 
 router = APIRouter(prefix="/me/cycle", tags=["Member · Cycle"])
 
@@ -139,14 +148,31 @@ def _payload(profile: dict | None, rows: list[dict], today: date, month: str | N
         date(y, m, 1)
     except ValueError:
         y, m = today.year, today.month
-    marks = engine.marks_for_month(s, y, m)
+    predictions = {"period": True, "fertility": True, "phase": True, **(profile.get("predictions") or {})}
+    goal = profile.get("tracking_goal") or "understand-cycle"
+    def visible_marks(source: dict[date, list[str]]) -> dict[date, list[str]]:
+        result = source
+        if not predictions.get("fertility", True):
+            result = {d: [x for x in xs if x not in {"fertile", "ovulation"}] for d, xs in result.items()}
+        if not predictions.get("period", True):
+            result = {d: [x for x in xs if x != "predicted"] for d, xs in result.items()}
+        return result
 
+    marks = visible_marks(engine.marks_for_month(s, y, m))
+    # Fertility estimates are optional. Disabling them removes the marks rather
+    # than merely hiding their legend, so no client accidentally treats them as
+    # contraception after the member opted out.
     def cell(d: date) -> dict:
         r = by_date.get(d.isoformat())
         return {
             "date": d.isoformat(),
             "marks": marks_all.get(d, []),
-            "logged": bool(r and (r.get("period") is not None or r.get("mood") or r.get("symptoms"))),
+            "logged": bool(r and any([
+                r.get("period") is not None, r.get("mood"), r.get("symptoms"), r.get("flow"),
+                r.get("pain") is not None, r.get("energy") is not None, r.get("sleep_hours") is not None,
+                r.get("basal_temp_c") is not None, r.get("cervical_mucus"), r.get("ovulation_test"),
+                r.get("pregnancy_test"), r.get("medications_taken"), r.get("note"),
+            ])),
             "period": r.get("period") if r else None,
         }
 
@@ -154,9 +180,9 @@ def _payload(profile: dict | None, rows: list[dict], today: date, month: str | N
     marks_all = dict(marks)
     for d in (today - timedelta(days=today.weekday()), today + timedelta(days=6 - today.weekday())):
         if (d.year, d.month) != (y, m):
-            marks_all.update(engine.marks_for_month(s, d.year, d.month))
+            marks_all.update(visible_marks(engine.marks_for_month(s, d.year, d.month)))
     if (today.year, today.month) != (y, m):
-        marks_all.update(engine.marks_for_month(s, today.year, today.month))
+        marks_all.update(visible_marks(engine.marks_for_month(s, today.year, today.month)))
 
     first = date(y, m, 1)
     nxt = date(y + (m == 12), m % 12 + 1, 1)
@@ -183,6 +209,26 @@ def _payload(profile: dict | None, rows: list[dict], today: date, month: str | N
     ][:10]
     today_row = by_date.get(today.isoformat())
 
+    recent = [r for r in rows if 0 <= (today - _parse(r["date"])).days <= 90]
+    numeric = lambda key: [float(r[key]) for r in recent if r.get(key) is not None]
+    pain_values, sleep_values, energy_values = numeric("pain"), numeric("sleep_hours"), numeric("energy")
+    flow_counts: dict[str, int] = {}
+    for r in recent:
+        if r.get("flow"):
+            flow_counts[r["flow"]] = flow_counts.get(r["flow"], 0) + 1
+    bbt = [{"date": r["date"], "value": r["basal_temp_c"]} for r in recent if r.get("basal_temp_c") is not None]
+    body_signs = [{
+        "date": r["date"], "cervical_mucus": r.get("cervical_mucus"),
+        "ovulation_test": r.get("ovulation_test"), "pregnancy_test": r.get("pregnancy_test"),
+    } for r in recent if r.get("cervical_mucus") or r.get("ovulation_test") or r.get("pregnancy_test")]
+    if s.measured_cycles >= 3:
+        variation = round(pstdev(s.cycle_lengths), 1) if len(s.cycle_lengths) > 1 else 0.0
+        confidence = "high" if variation <= 2 else "medium" if variation <= 5 else "low"
+    elif s.measured_cycles >= 1:
+        variation, confidence = None, "learning"
+    else:
+        variation, confidence = None, "starting"
+
     return {
         "setup": True,
         "today": today.isoformat(),
@@ -191,6 +237,12 @@ def _payload(profile: dict | None, rows: list[dict], today: date, month: str | N
             "typical_cycle": profile.get("typical_cycle"),
             "typical_period": profile.get("typical_period"),
             "discreet": bool(profile.get("discreet")),
+            "tracking_goal": goal,
+            "conditions": list(profile.get("conditions") or []),
+            "predictions": predictions,
+            "care_sharing": {"phase": False, "mood": False, "support_tips": False,
+                             **(profile.get("care_sharing") or {})},
+            "medicines": list(profile.get("medicines") or []),
             "reminders": {**DEFAULT_REMINDERS, **(profile.get("reminders") or {})},
         },
         "log": CycleDayModel.to_response(today_row) if today_row else None,
@@ -202,18 +254,20 @@ def _payload(profile: dict | None, rows: list[dict], today: date, month: str | N
             "avg_period": s.avg_period,
             "measured_cycles": s.measured_cycles,
             "cycle_day": s.cycle_day,
-            "phase": s.phase,
-            "phase_label": engine.PHASE_LABEL.get(s.phase or "", ""),
+            "phase": s.phase if predictions.get("phase", True) else None,
+            "phase_label": engine.PHASE_LABEL.get(s.phase or "", "") if predictions.get("phase", True) else "",
             "last_start": _iso(s.last_start),
-            "next_start": _iso(s.next_start),
-            "days_until": s.days_until,
-            "ovulation": _iso(s.ovulation),
-            "fertile_start": _iso(s.fertile_start),
-            "fertile_end": _iso(s.fertile_end),
+            "next_start": _iso(s.next_start) if predictions.get("period", True) else None,
+            "days_until": s.days_until if predictions.get("period", True) else None,
+            "ovulation": _iso(s.ovulation) if predictions.get("fertility", True) else None,
+            "fertile_start": _iso(s.fertile_start) if predictions.get("fertility", True) else None,
+            "fertile_end": _iso(s.fertile_end) if predictions.get("fertility", True) else None,
             "long_level": s.long_level,
             "long_threshold": s.long_threshold,
             # Has she answered the one daily question yet?
             "checked_in": bool(today_row and today_row.get("period") is not None),
+            "prediction_confidence": confidence,
+            "cycle_variation": variation,
         },
         "phases": _phases(s),
         "calendar": {"month": f"{y:04d}-{m:02d}", "days": month_cells},
@@ -224,6 +278,15 @@ def _payload(profile: dict | None, rows: list[dict], today: date, month: str | N
         "moods": moods,
         "symptom_counts": counts,
         "notes": notes,
+        "health_metrics": {
+            "days_logged": len(recent),
+            "average_pain": round(mean(pain_values), 1) if pain_values else None,
+            "average_sleep": round(mean(sleep_values), 1) if sleep_values else None,
+            "average_energy": round(mean(energy_values), 1) if energy_values else None,
+            "flow_counts": flow_counts,
+            "bbt": bbt,
+            "body_signs": body_signs,
+        },
     }
 
 
@@ -250,6 +313,19 @@ async def my_cycle(
 
 
 # ── Writing ────────────────────────────────────────────────────────────────
+
+@router.get("/days/{on}", summary="Read one of my daily logs")
+async def get_day(on: str, me: dict = Depends(require_active_member)):
+    day = _parse(on)
+    uid = str(me["_id"])
+    profile = await _profiles().find_one({"user_id": uid})
+    if not profile:
+        raise HTTPException(status.HTTP_409_CONFLICT, "Start the tracker first.")
+    today = _local_now(profile.get("tz")).date()
+    if day > today or (today - day).days > EDIT_BACK_DAYS:
+        raise HTTPException(status.HTTP_422_UNPROCESSABLE_ENTITY, "That date cannot be opened.")
+    row = await _days().find_one({"user_id": uid, "date": day.isoformat()})
+    return CycleDayModel.to_response(row or CycleDayModel.blank(uid, day.isoformat()))
 
 @router.put("/setup", summary="Start tracking")
 async def setup(body: CycleSetup, me: dict = Depends(require_active_member)):
@@ -341,13 +417,72 @@ async def set_reminders(body: CycleReminders, me: dict = Depends(require_active_
 @router.put("/settings", summary="Discreet mode and her usual lengths")
 async def set_settings(body: CycleSettings, me: dict = Depends(require_active_member)):
     uid = str(me["_id"])
-    sent = {k: getattr(body, k) for k in body.model_fields_set}
+    sent = {}
+    nested = {
+        "period_predictions": "predictions.period",
+        "fertility_predictions": "predictions.fertility",
+        "phase_predictions": "predictions.phase",
+        "share_phase": "care_sharing.phase",
+        "share_mood": "care_sharing.mood",
+        "share_support_tips": "care_sharing.support_tips",
+    }
+    for key in body.model_fields_set:
+        sent[nested.get(key, key)] = getattr(body, key)
     if sent:
         res = await _profiles().update_one(
             {"user_id": uid}, {"$set": {**sent, "updated_at": datetime.now(timezone.utc)}},
         )
         if not res.matched_count:
             raise HTTPException(status.HTTP_409_CONFLICT, "Start the tracker first.")
+    return await my_cycle(month=None, tz="", me=me)
+
+
+@router.post("/medicines", summary="Add a medicine to my cycle care list")
+async def add_medicine(body: CycleMedicineCreate, me: dict = Depends(require_active_member)):
+    uid = str(me["_id"])
+    profile = await _profiles().find_one({"user_id": uid})
+    if not profile:
+        raise HTTPException(status.HTTP_409_CONFLICT, "Start the tracker first.")
+    medicine = {
+        "id": uuid4().hex,
+        "name": body.name.strip(),
+        "dose": body.dose.strip(),
+        "times": body.times,
+        "instructions": body.instructions.strip(),
+        "active": True,
+        "created_at": datetime.now(timezone.utc).isoformat(),
+    }
+    medicines = list(profile.get("medicines") or [])
+    if len([x for x in medicines if x.get("active", True)]) >= 30:
+        raise HTTPException(status.HTTP_422_UNPROCESSABLE_ENTITY, "You can keep up to 30 active medicines.")
+    medicines.append(medicine)
+    await _profiles().update_one({"_id": profile["_id"]}, {"$set": {
+        "medicines": medicines, "updated_at": datetime.now(timezone.utc),
+    }})
+    return await my_cycle(month=None, tz="", me=me)
+
+
+@router.patch("/medicines/{medicine_id}", summary="Update or pause one of my medicines")
+async def update_medicine(
+    medicine_id: str,
+    body: CycleMedicineUpdate,
+    me: dict = Depends(require_active_member),
+):
+    uid = str(me["_id"])
+    profile = await _profiles().find_one({"user_id": uid})
+    if not profile:
+        raise HTTPException(status.HTTP_409_CONFLICT, "Start the tracker first.")
+    medicines = list(profile.get("medicines") or [])
+    item = next((x for x in medicines if x.get("id") == medicine_id), None)
+    if not item:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "No such medicine.")
+    for key in body.model_fields_set:
+        value = getattr(body, key)
+        item[key] = value.strip() if isinstance(value, str) else value
+    item["updated_at"] = datetime.now(timezone.utc).isoformat()
+    await _profiles().update_one({"_id": profile["_id"]}, {"$set": {
+        "medicines": medicines, "updated_at": datetime.now(timezone.utc),
+    }})
     return await my_cycle(month=None, tz="", me=me)
 
 

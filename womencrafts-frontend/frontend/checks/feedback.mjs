@@ -210,7 +210,10 @@ for (const file of files) {
       new RegExp(`\\{\\s*\\(?\\s*${name}\\b`).test(src) ||
       new RegExp(`\\b${name}\\s*(&&|\\|\\||\\?)`).test(src) ||
       new RegExp(`\\|\\|\\s*${name}\\b`).test(src) ||
-      new RegExp(`\\{${name}\\}`).test(src);
+      new RegExp(`\\{${name}\\}`).test(src) ||
+      // A hook can delegate presentation to its callers. Returning the state
+      // is a real display path; the cycle screens render this error inline.
+      new RegExp(`return\\s*\\{[^}]*\\b${name}\\b[^}]*\\}`, "s").test(src);
     if (!shown) {
       problems.push({
         file, line: lineOf(src, m.index),

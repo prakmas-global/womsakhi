@@ -20,7 +20,11 @@ export type ModuleKey =
   | "community"
   | "growth"
   | "safety"
-  | "settings";
+  | "settings"
+  | "market"
+  | "money"
+  | "learning"
+  | "resources";
 
 /** Grantable modules shown in the Super Admin access editor. */
 export const MODULE_CATALOG: { key: ModuleKey; label: string }[] = [
@@ -40,6 +44,10 @@ export const MODULE_CATALOG: { key: ModuleKey; label: string }[] = [
   { key: "growth", label: "Growth & Work (events, mentors, jobs)" },
   { key: "safety", label: "Safety & Support fund" },
   { key: "settings", label: "Settings" },
+  { key: "market", label: "Market & Shops (listings, orders, group buys)" },
+  { key: "money", label: "Money & Payouts (payments, withdrawals, ledger)" },
+  { key: "learning", label: "Learning (assessments, certificates)" },
+  { key: "resources", label: "Resources catalogue (schemes, health, rights)" },
 ];
 
 /** Modules every role can always open. */
@@ -66,6 +74,10 @@ const SEGMENT_TO_MODULE: Record<string, string> = {
   mentors: "growth",
   safety: "safety",
   "support-fund": "safety",
+  market: "market",
+  money: "money",
+  learning: "learning",
+  resources: "resources",
   settings: "settings",
   notifications: "notifications",
   logout: "dashboard",

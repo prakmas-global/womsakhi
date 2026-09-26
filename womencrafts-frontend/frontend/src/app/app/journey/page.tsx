@@ -200,7 +200,7 @@ export default function JourneyPage() {
     <HomeShell active="/app/journey" rail={rail} loadFailed="your journey">
       <div className={styles.page} data-dashboard="journey">
         <section className={styles.hero} aria-labelledby="journey-title">
-          <Image src="/ux/journey/journey-hero-v1.png" alt={tr("journey.womenOfDifferentAgesAndBackgrounds")} fill priority sizes="(max-width: 760px) 100vw, 70vw" />
+          <Image src="/ux/journey/journey-hero-v1.webp" alt={tr("journey.womenOfDifferentAgesAndBackgrounds")} fill priority sizes="(max-width: 760px) 100vw, 70vw" />
           <div className={styles.heroShade} />
           <div className={styles.heroCopy}>
             <p>{tr("ch.journey.label")}</p>
@@ -214,7 +214,7 @@ export default function JourneyPage() {
         </nav>
 
         <div className={styles.featureGrid}>
-          <section className={styles.motivationCard}><Image src="/ux/journey/journey-motivation-v1.png" alt={tr("journey.womanLookingAcrossAMountainValley")} fill sizes="(max-width:760px) 100vw, 45vw"/><div className={styles.motivationShade}/><div><small>Today&apos;s motivation</small><blockquote>{tr("journey.everyStepYouTake")}<br/>{tr("journey.buildsTheStrongerYou")}</blockquote><cite>— WomSakhi</cite></div></section>
+          <section className={styles.motivationCard}><Image src="/ux/journey/journey-motivation-v1.webp" alt={tr("journey.womanLookingAcrossAMountainValley")} fill sizes="(max-width:760px) 100vw, 45vw"/><div className={styles.motivationShade}/><div><small>Today&apos;s motivation</small><blockquote>{tr("journey.everyStepYouTake")}<br/>{tr("journey.buildsTheStrongerYou")}</blockquote><cite>— WomSakhi</cite></div></section>
           <section className={styles.quick}><header><h2>{tr("journey.quickActions")}</h2><p>{tr("journey.jumpIntoWhatMattersMost")}</p></header><div>{[
             [BookOpen,'Explore Learning','/app/learn'],[BriefcaseBusiness,'Find Opportunities','/app/opportunities'],[Target,'Track Goals','/app/goals'],[UsersRound,'Join Circle','/app/circles'],[Heart,'Check Health','/app/wellness'],[MessageCircle,'Ask Sakhi','/app/sakhi'],
           ].map(([Icon,label,href])=><Link href={href as string} key={label as string}><span><Icon/></span>{label as string}</Link>)}</div></section>
@@ -224,7 +224,7 @@ export default function JourneyPage() {
           [BookOpen,facts.coursesDone,'Learning milestones','/app/learn'],[BriefcaseBusiness,facts.applications,'Opportunities','/app/work'],[IndianRupee,facts.earnedMinor>0?1:0,'Income sources','/app/earn'],[UsersRound,facts.circles,'Communities','/app/circle'],[Heart,`${Math.round(tally.done/steps.length*100)}%`,'Journey progress','/app/goals'],
         ].map(([Icon,value,label,href])=>{const MetricIcon=Icon as typeof BookOpen;return <Link href={href as string} key={label as string}><span><MetricIcon/></span><strong>{value as string | number}</strong><small>{label as string}</small><b>{tr("journey.exploreMore")} <ArrowRight/></b></Link>})}</div></section>
 
-        <section className={styles.recommended}><header><div><h2>{tr("journey.recommendedForYou")}</h2><p>Based on your current journey step: {shown.label}.</p></div><Link href="/app/programs">{tr("calendar.viewAll")} <ArrowRight/></Link></header><div>{recs.map((rec,index)=><Link href={rec.href} key={rec.id} className={styles.rec}><Image src={['/ux/art/learn-dashboard-finance.webp','/ux/art/work-dashboard-writing.webp','/ux/art/circle-study-group.webp','/ux/wellness/morning-yoga-v2.png'][index%4]} alt="" fill sizes="240px"/><span><small>{rec.kind}</small><strong>{rec.title}</strong><b>{rec.meta}</b><i>Explore <ArrowRight/></i></span></Link>)}</div></section>
+        <section className={styles.recommended}><header><div><h2>{tr("journey.recommendedForYou")}</h2><p>Based on your current journey step: {shown.label}.</p></div><Link href="/app/programs">{tr("calendar.viewAll")} <ArrowRight/></Link></header><div>{recs.map((rec,index)=><Link href={rec.href} key={rec.id} className={styles.rec}><Image src={['/ux/art/learn-dashboard-finance.webp','/ux/art/work-dashboard-writing.webp','/ux/art/circle-study-group.webp','/ux/wellness/morning-yoga-v2.webp'][index%4]} alt="" fill sizes="240px"/><span><small>{rec.kind}</small><strong>{rec.title}</strong><b>{rec.meta}</b><i>Explore <ArrowRight/></i></span></Link>)}</div></section>
 
         <div className="ux-toast rounded-[12px] px-5 py-3.5 text-xsm font-bold"
              data-on={note ? "true" : "false"} role="status" aria-live="polite"

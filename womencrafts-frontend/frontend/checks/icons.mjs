@@ -56,8 +56,7 @@ for (const f of files) {
       const line = src.slice(0, m.index).split("\n").length;
       // `name="Something"` also appears on real form fields and on props that
       // are not icons at all, so only flag it where the file imports the set.
-      if (re.source.startsWith("\\bname=") && !/from "@\/components\/ux\/icons"|from "\.\.?\/icons"/.test(src)
-          && !/\bI\s+name=/.test(lines[line - 1])) continue;
+      if (re.source.startsWith("\\bname=") && !/<I\s+[^>]*\bname=/.test(lines[line - 1])) continue;
       if (!missing.has(nm)) missing.set(nm, []);
       missing.get(nm).push(`${f}:${line}`);
     }

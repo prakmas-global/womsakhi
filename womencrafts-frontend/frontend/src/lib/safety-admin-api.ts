@@ -312,3 +312,43 @@ export function when(iso: string | undefined | null) {
     day: "numeric", month: "short", year: "numeric", hour: "numeric", minute: "2-digit",
   });
 }
+
+
+/* ---------------- assist links ---------------- */
+
+export interface AssistLinkRow {
+  id: string;
+  helper_id: string;
+  helper_name: string;
+  helper_code: string;
+  helped_name: string;
+  because: string;
+  owns_phone: boolean;
+  consented: boolean;
+  consent_on: string;
+  done_count: number;
+  last_did: string;
+  open_tasks: number;
+  created_at: string;
+  revoked_at: string;
+  revoked_reason: string;
+  revoked_by: string;
+}
+
+export interface AssistLinkList {
+  items: AssistLinkRow[];
+  total: number;
+  consented: number;
+  unconsented: number;
+  revoked: number;
+}
+
+export async function apiAssistLinks(params: { state?: string; q?: string } = {}) {
+  const { data } = await apiClient.get<AssistLinkList>("/admin/safety/assist-links", { params });
+  return data;
+}
+
+export async function apiRevokeAssistLink(id: string, reason: string) {
+  const { data } = await apiClient.post<AssistLinkRow>(`/admin/safety/assist-links/${id}/revoke`, { reason });
+  return data;
+}

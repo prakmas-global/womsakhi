@@ -196,7 +196,7 @@ export default function JourneyPage() {
     return (
       <HomeShell>
         <div className="space-y-4">
-          <SectionHead icon="MapPin" title={tr("journey.onTheWay")} sub={active.label} />
+          <SectionHead level={1} icon="MapPin" title={tr("journey.onTheWay")} sub={active.label} />
 
           <Card>
             <div className="flex flex-col items-center py-2 text-center">
@@ -319,7 +319,7 @@ export default function JourneyPage() {
   return (
     <HomeShell>
       <div className="space-y-4">
-        <SectionHead icon="MapPin" title={tr("journey.title")} sub={tr("journey.subtitle")} />
+        <SectionHead level={1} icon="MapPin" title={tr("journey.title")} sub={tr("journey.subtitle")} />
 
         <Card>
           {/*

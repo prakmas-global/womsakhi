@@ -68,6 +68,8 @@ class ContentItemModel:
         body: str = "",
         last_updated: str = "",
         cover: str = "",
+        audience_mode: str = "everyone",
+        audience_values: Optional[list[str]] = None,
         tone: Optional[str] = None,
         s_tone: Optional[str] = None,
         icon: Optional[str] = None,
@@ -84,6 +86,8 @@ class ContentItemModel:
             "body": body.strip(),
             "last_updated": last_updated,
             "cover": cover,
+            "audience_mode": audience_mode,
+            "audience_values": audience_values or [],
             # tone/s_tone/icon are derived from type & status unless supplied.
             "tone": tone or ContentItemModel.tone_for(type),
             "s_tone": s_tone or ContentItemModel.s_tone_for(status),
@@ -108,6 +112,8 @@ class ContentItemModel:
             "updated": doc.get("last_updated", ""),
             "icon": doc.get("icon", "FileText"),
             "cover": media_url(doc.get("cover", "")),
+            "audience_mode": doc.get("audience_mode", "everyone"),
+            "audience_values": doc.get("audience_values", []),
         }
 
 

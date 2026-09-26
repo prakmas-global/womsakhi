@@ -7,7 +7,7 @@
  * by being forgotten in a hand-written list.
  */
 import { createRequire } from "module";
-import { APP, launch, pageAs, staffToken, memberToken, measureContrast } from "./_shared.mjs";
+import { APP, launch, pageAs, staffToken, memberToken, seededMemberToken, measureContrast } from "./_shared.mjs";
 const require = createRequire(import.meta.url);
 const _fs = require("fs");
 
@@ -42,6 +42,7 @@ const walk = (dir, base) => {
 };
 const ADMIN = walk("src/app/dashboard", "/dashboard");
 const MEMBER = walk("src/app/app", "/app");
+const scope = process.env.CHECK_SCOPE || "all";
 
 const inspect = (page) => page.evaluate(() => {
   const vis = (el) => {
@@ -90,7 +91,9 @@ const inspect = (page) => page.evaluate(() => {
 });
 
 const staff = await staffToken();
-const member = await memberToken(staff);
+const member = process.env.MEMBER_FIXTURE === "seeded"
+  ? await seededMemberToken()
+  : await memberToken(staff);
 const problems = [];
 let checked = 0, contrastTotal = 0, revivals = 0;
 
@@ -98,6 +101,7 @@ let checked = 0, contrastTotal = 0, revivals = 0;
 // the tokens are derived separately per mode, so a value that reads on a pale
 // card says nothing about the same token on a dark one.
 for (const [mod, tok, list] of [["admin", staff, ADMIN], ["member", member, MEMBER]]) {
+  if (scope !== "all" && scope !== mod) continue;
   if (!tok) continue;
   for (const vp of [
     { width: 1600, height: 1000, name: "desktop", mode: "light" },
@@ -211,6 +215,7 @@ for (const [mod, tok, list] of [["admin", staff, ADMIN], ["member", member, MEMB
 }
 
 console.log(`\n  ${checked} screen×viewport combinations checked`);
+fs.writeFileSync("checks/_screens.json", JSON.stringify({ checked, contrastTotal, revivals, problems }, null, 2));
 // Reported, never hidden: a run that needed three browser restarts is
 // still a valid run, but you should know the machine was struggling.
 if (revivals) console.log(`  ${revivals} browser restart(s) after a crash`);
