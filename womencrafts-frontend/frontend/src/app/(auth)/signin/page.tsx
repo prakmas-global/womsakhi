@@ -250,6 +250,11 @@ export default function SignInPage() {
           <ArrowRight className="h-3.5 w-3.5" aria-hidden />
         </Link>
       </p>
+      <p className="mt-2 text-center">
+        <Link href="/tour" className="auth-link inline-flex min-h-[44px] items-center gap-1.5 px-2 text-xsm font-semibold">
+          See how WomSakhi works <ArrowRight className="h-3.5 w-3.5" aria-hidden />
+        </Link>
+      </p>
     </div>
   );
 }

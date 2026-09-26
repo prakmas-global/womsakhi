@@ -51,3 +51,24 @@ def test_template_escapes_member_supplied_content(monkeypatch) -> None:
     assert "<img src=x" not in message.html
     assert "&lt;script&gt;Asha&lt;/script&gt;" in message.html
     assert "&lt;img src=x onerror=alert(1)&gt;" in message.html
+
+
+def test_member_login_alert_uses_authenticated_admin_links(monkeypatch) -> None:
+    monkeypatch.setattr(email.settings, "APP_BASE_URL", "https://app.womsakhi.com")
+
+    message = email.member_login_alert_email(
+        "Admin",
+        "Asha",
+        "asha@example.com",
+        "pending_documents",
+        "27 Sep 2026, 01:00 UTC",
+        "member-123",
+    )
+
+    assert "Member sign-in alert" in message.html
+    assert "Pending Documents" in message.html
+    assert "/dashboard/users/verification?account=member-123" in message.html
+    assert "assign=member-123" in message.html
+    assert "Assign to an admin" in message.html
+    assert "/dashboard/users?account=member-123" in message.html
+    assert "activate" not in message.html.lower() or "deactivation" in message.html.lower()

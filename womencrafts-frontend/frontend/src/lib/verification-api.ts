@@ -39,6 +39,9 @@ export interface VerificationStatus {
   email: string;
   rejection_reason: string;
   can_use_app: boolean;
+  review_request_count: number;
+  review_requested_at: string;
+  next_review_request_at: string;
   documents: ApiDocument[];
 }
 
@@ -104,6 +107,17 @@ export async function apiMyVerification(): Promise<VerificationStatus> {
 
 export async function apiResendVerificationEmail(): Promise<{ message: string }> {
   const { data } = await apiClient.post("/verification/resend-email");
+  return data;
+}
+
+export interface ReviewRequestResult {
+  message: string;
+  request_number: number;
+  next_request_at: string;
+}
+
+export async function apiRequestMyVerificationReview(): Promise<ReviewRequestResult> {
+  const { data } = await apiClient.post<ReviewRequestResult>("/verification/request-review");
   return data;
 }
 
@@ -268,6 +282,8 @@ export type QueueCounts = Record<VerificationState, number>;
 export interface QueueRow extends QueueItem {
   rejection_reason: string;
   updated: string;
+  assigned_to_id: string;
+  assigned_to_name: string;
 }
 
 export interface ReviewQueue {
@@ -324,6 +340,9 @@ export interface ApplicantDetail {
   verified_at: string;
   updated_at: string;
   rejection_reason: string;
+  assigned_to_id: string;
+  assigned_to_name: string;
+  assigned_at: string;
   documents: ReviewedDocument[];
   history: DecisionRecord[];
 }
@@ -339,5 +358,22 @@ export async function apiRequestResubmission(
   reason: string,
 ): Promise<{ message: string }> {
   const { data } = await apiClient.post(`/verification/${userId}/request-resubmission`, { reason });
+  return data;
+}
+
+export interface VerificationAssignee {
+  id: string;
+  name: string;
+  email: string;
+  role: string;
+}
+
+export async function apiVerificationAssignees(): Promise<VerificationAssignee[]> {
+  const { data } = await apiClient.get<{ staff: VerificationAssignee[] }>("/verification/assignees");
+  return data.staff;
+}
+
+export async function apiAssignVerification(userId: string, adminId: string): Promise<{ message: string }> {
+  const { data } = await apiClient.post(`/verification/${userId}/assign`, { admin_id: adminId });
   return data;
 }

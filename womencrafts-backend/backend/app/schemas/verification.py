@@ -24,7 +24,16 @@ class VerificationStatusResponse(BaseModel):
     email: str
     rejection_reason: str
     can_use_app: bool
+    review_request_count: int = 0
+    review_requested_at: str = ""
+    next_review_request_at: str = ""
     documents: list[DocumentResponse]
+
+
+class ReviewRequestResponse(BaseModel):
+    message: str
+    request_number: int
+    next_request_at: str
 
 
 class VerificationQueueItem(BaseModel):

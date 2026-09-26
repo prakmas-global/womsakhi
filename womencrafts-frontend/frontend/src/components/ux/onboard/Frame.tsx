@@ -14,7 +14,7 @@ import { useT } from "@/i18n";
  * clear sense of how many steps are left, and no way to wander off mid-flow.
  */
 export function OnboardFrame({
-  step, total, title, sub, children, aside, footer, onBack, backTo,
+  step, total, title, sub, children, aside, footer, onBack, backTo, motionKey, motionDirection = "forward",
 }: {
   step: number;
   total: number;
@@ -34,6 +34,9 @@ export function OnboardFrame({
   onBack?: () => void;
   /** The step she goes back TO, named. See the note at the button. */
   backTo?: string;
+  /** Remount and animate the content when a multi-screen guide changes page. */
+  motionKey?: string | number;
+  motionDirection?: "forward" | "back";
 }) {
   const tr = useT();
   return (
@@ -41,6 +44,10 @@ export function OnboardFrame({
       {/* 16px from the screen edge on a phone, as everywhere else; the
           desktop's 32 was a third of a phone's margin budget on each side. */}
       <header className="flex items-center gap-2 px-4 pb-2 pt-6 lg:px-8">
+        {/* Brand stays first in the row on every step. Previously the back
+            button appeared before it from step two onwards and made the logo
+            visibly jump sideways between screens. */}
+        <Brand size="sm" href={null} tagline={false} />
         {onBack && (
           /*
             The destination is in the accessible name, not only in the arrow.
@@ -65,11 +72,6 @@ export function OnboardFrame({
             )}
           </button>
         )}
-        {/* No tagline: at `sm` it renders at 7.5px, which is well under this
-            project's 12px floor and simply cannot be read. `Shell` already
-            drops it at this size for the same reason — this was the only
-            place left still drawing it. */}
-        <Brand size="sm" href={null} tagline={false} />
         <p className="ms-auto shrink-0 text-xsm" style={{ color: "var(--ux-muted)" }}>
           {tr("onboard.stepOf", { step, total })}
         </p>
@@ -90,8 +92,8 @@ export function OnboardFrame({
         </div>
       </div>
 
-      <main id="content" className="mx-auto grid w-full max-w-[1080px] gap-[32px] px-4 py-6 lg:grid-cols-[minmax(0,1fr)_360px] lg:px-8 lg:py-[40px]">
-        <div className="min-w-0">
+      <main id="content" className={`ux-onboard-main mx-auto grid w-full max-w-[1080px] gap-[32px] px-4 py-6 lg:px-8 lg:py-[40px] ${aside ? "lg:grid-cols-[minmax(0,1fr)_360px]" : ""}`}>
+        <div key={motionKey} className={`ux-onboard-content min-w-0 ${motionKey !== undefined ? `ux-tour-slide ux-tour-slide--${motionDirection}` : ""}`}>
           {/* The large title on a phone — the one 34px line on the screen. */}
           <h1 className="ux-screen-title text-2xlm font-bold leading-tight" style={{ color: "var(--ux-ink)" }}>{title}</h1>
           {sub && (
@@ -99,8 +101,15 @@ export function OnboardFrame({
               {sub}
             </p>
           )}
-          <div className="mt-[24px]">{children}</div>
-          {footer && <div className="mt-[24px]">{footer}</div>}
+          <div className="ux-onboard-children mt-[24px]">{children}</div>
+          {footer && (
+            <div
+              className="ux-onboard-footer sticky bottom-0 z-10 -mx-4 mt-[24px] border-t px-4 py-3 backdrop-blur lg:static lg:mx-0 lg:border-0 lg:bg-transparent lg:p-0"
+              style={{ background: "color-mix(in srgb, var(--ux-canvas) 94%, transparent)", borderColor: "var(--ux-line)" }}
+            >
+              {footer}
+            </div>
+          )}
         </div>
 
         {aside && <div className="min-w-0">{aside}</div>}

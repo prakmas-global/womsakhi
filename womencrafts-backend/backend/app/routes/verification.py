@@ -18,12 +18,13 @@ import asyncio
 import re
 import uuid
 from html import escape
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import Optional
 
 from bson import ObjectId
-from fastapi import APIRouter, Depends, File, Form, HTTPException, Query, Request, UploadFile, status
+from pymongo import ReturnDocument
+from fastapi import APIRouter, BackgroundTasks, Depends, File, Form, HTTPException, Query, Request, UploadFile, status
 from fastapi.responses import Response
 from pydantic import BaseModel
 
@@ -33,8 +34,8 @@ from app.core.email import can_deliver
 from app.core.deps import get_current_user
 from app.core import email as mailer
 from app.core import docvault
-from app.core.permissions import require_permission
-from app.core.rbac import require_staff
+from app.core.permissions import has_permission, require_permission
+from app.core.rbac import MEMBER_ROLE, require_staff, require_super_admin
 from app.core.serializers import to_object_id
 from app.core.media import media_url
 from app.db.mongodb import get_database
@@ -46,6 +47,7 @@ from app.schemas.verification import (
     DocumentResponse,
     MessageResponse,
     RejectRequest,
+    ReviewRequestResponse,
     VerificationQueueItem,
     VerificationQueueResponse,
     VerificationStatusResponse,
@@ -95,9 +97,11 @@ async def issue_email_token(user_id: str, purpose: str = EmailTokenModel.PURPOSE
         {"user_id": user_id, "purpose": purpose, "used_at": None},
         {"$set": {"used_at": datetime.now(timezone.utc)}},
     )
-    doc = EmailTokenModel.create_document(user_id, purpose, settings.EMAIL_TOKEN_HOURS)
+    doc, raw_token = EmailTokenModel.create_document(
+        user_id, purpose, settings.EMAIL_TOKEN_HOURS
+    )
     await _tokens().insert_one(doc)
-    return doc["token"]
+    return raw_token
 
 
 async def send_verification_email(user: dict) -> None:
@@ -121,7 +125,83 @@ async def my_status(current_user: dict = Depends(get_current_user)):
         email=current_user.get("email", ""),
         rejection_reason=current_user.get("rejection_reason", ""),
         can_use_app=state in VerificationStatus.USABLE,
+        review_request_count=int(current_user.get("verification_reminder_count") or 0),
+        review_requested_at=_iso(current_user.get("verification_review_requested_at")),
+        next_review_request_at=_iso(current_user.get("verification_next_request_at")),
         documents=docs,
+    )
+
+
+@router.post(
+    "/request-review",
+    response_model=ReviewRequestResponse,
+    summary="Ask the verification team to review my application",
+)
+async def request_my_review(
+    background_tasks: BackgroundTasks,
+    request: Request,
+    current_user: dict = Depends(get_current_user),
+):
+    """Send one immediate alert, then schedule numbered follow-ups.
+
+    The 24-hour member cooldown prevents a frustrated applicant from turning
+    the review desk into an email flood. Follow-ups continue automatically
+    until an admin makes a decision.
+    """
+    if current_user.get("role") != MEMBER_ROLE:
+        raise HTTPException(status.HTTP_403_FORBIDDEN, "Only member applications can request review")
+    if _state_of(current_user) != VerificationStatus.IN_REVIEW:
+        raise HTTPException(status.HTTP_400_BAD_REQUEST, "Upload your documents before requesting a review.")
+    if not await _docs().find_one({"user_id": str(current_user["_id"]), **REVIEWABLE}):
+        raise HTTPException(status.HTTP_400_BAD_REQUEST, "Upload your documents before requesting a review.")
+
+    now = datetime.now(timezone.utc)
+    next_allowed = current_user.get("verification_next_request_at")
+    if isinstance(next_allowed, datetime) and next_allowed > now:
+        raise HTTPException(
+            status.HTTP_429_TOO_MANY_REQUESTS,
+            f"Your request is already with the team. You can follow up again after {next_allowed.isoformat()}.",
+        )
+
+    request_number = int(current_user.get("verification_reminder_count") or 0) + 1
+    next_request = now + timedelta(hours=24)
+    updated = await _users().find_one_and_update(
+        {
+            "_id": current_user["_id"],
+            "verification_status": VerificationStatus.IN_REVIEW,
+            "$or": [
+                {"verification_next_request_at": {"$exists": False}},
+                {"verification_next_request_at": {"$lte": now}},
+            ],
+        },
+        {"$set": {
+            "verification_reminder_count": request_number,
+            "verification_review_requested_at": now,
+            "verification_next_request_at": next_request,
+            "verification_next_reminder_at": next_request,
+            "updated_at": now,
+        }},
+        return_document=ReturnDocument.AFTER,
+    )
+    if not updated:
+        raise HTTPException(
+            status.HTTP_429_TOO_MANY_REQUESTS,
+            "Your request is already with the team. You can send another follow-up after 24 hours.",
+        )
+
+    from app.engines.verification_followups import send_review_alert
+    background_tasks.add_task(send_review_alert, updated, request_number)
+    await record(
+        current_user,
+        "member.request_review",
+        target=str(current_user["_id"]),
+        detail=f"Requested verification review (request #{request_number})",
+        request=request,
+    )
+    return ReviewRequestResponse(
+        message=f"Request #{request_number} sent to the verification team.",
+        request_number=request_number,
+        next_request_at=next_request.isoformat(),
     )
 
 
@@ -151,7 +231,7 @@ async def confirm_email(token: str = Query(..., description="Token from the emai
     device where she isn't signed in yet.
     """
     record = await _tokens().find_one(
-        {"token": token, "purpose": EmailTokenModel.PURPOSE_VERIFY}
+        EmailTokenModel.lookup(token, EmailTokenModel.PURPOSE_VERIFY)
     )
     if not EmailTokenModel.is_valid(record):
         raise HTTPException(
@@ -296,7 +376,16 @@ async def upload_document(
     now = datetime.now(timezone.utc)
     await _users().update_one(
         {"_id": current_user["_id"]},
-        {"$set": {"verification_status": VerificationStatus.IN_REVIEW, "updated_at": now}},
+        {
+            "$set": {"verification_status": VerificationStatus.IN_REVIEW, "updated_at": now},
+            "$unset": {
+                "verification_review_requested_at": "",
+                "verification_next_request_at": "",
+                "verification_next_reminder_at": "",
+                "verification_reminder_claimed_at": "",
+                "verification_reminder_count": "",
+            },
+        },
     )
     await mailer.send(
         mailer.submitted_email(current_user.get("full_name", "")), current_user["email"]
@@ -355,12 +444,16 @@ DECISION_ACTIONS = {
     "member.approve": "Approved",
     "member.reject": "Rejected",
     "member.resubmit": "Asked for a new document",
+    "member.assign_review": "Assigned verification",
+    "member.request_review": "Member requested review",
 }
 
 
 class ReviewQueueItem(VerificationQueueItem):
     rejection_reason: str = ""
     updated: str = ""
+    assigned_to_id: str = ""
+    assigned_to_name: str = ""
 
 
 class ReviewQueueResponse(BaseModel):
@@ -407,12 +500,19 @@ class ApplicantDetail(BaseModel):
     verified_at: str
     updated_at: str
     rejection_reason: str
+    assigned_to_id: str = ""
+    assigned_to_name: str = ""
+    assigned_at: str = ""
     documents: list[ReviewedDocument]
     history: list[DecisionRecord]
 
 
 class ResubmissionRequest(RejectRequest):
     """Same rule as a rejection: she is told why, so a reason is required."""
+
+
+class AssignmentRequest(BaseModel):
+    admin_id: str
 
 
 def _label(value) -> str:
@@ -529,6 +629,8 @@ async def review_queue(
                 documents=[DocumentModel.to_response(d) for d in user.get("_documents", [])],
                 rejection_reason=user.get("rejection_reason", "") or "",
                 updated=_label(user.get("updated_at")),
+                assigned_to_id=user.get("verification_assignee_id", "") or "",
+                assigned_to_name=user.get("verification_assignee_name", "") or "",
             )
         )
     return ReviewQueueResponse(items=items, total=len(items), counts=counts)
@@ -586,9 +688,67 @@ async def applicant_detail(user_id: str, _: dict = Depends(require_permission("u
         verified_at=_iso(user.get("verified_at")),
         updated_at=_iso(user.get("updated_at")),
         rejection_reason=user.get("rejection_reason", "") or "",
+        assigned_to_id=user.get("verification_assignee_id", "") or "",
+        assigned_to_name=user.get("verification_assignee_name", "") or "",
+        assigned_at=_iso(user.get("verification_assigned_at")),
         documents=[ReviewedDocument(**d) for d in docs],
         history=history,
     )
+
+
+@router.get("/assignees", summary="Admins eligible to review identity documents")
+async def verification_assignees(_: dict = Depends(require_super_admin)):
+    eligible = []
+    async for staff in _users().find(
+        {"role": {"$ne": MEMBER_ROLE}, "is_active": {"$ne": False}},
+        {"full_name": 1, "email": 1, "role": 1, "extra_permissions": 1, "denied_permissions": 1},
+    ).sort("full_name", 1):
+        if await has_permission(staff, "users.approve"):
+            eligible.append({
+                "id": str(staff["_id"]),
+                "name": staff.get("full_name", "") or staff.get("email", ""),
+                "email": staff.get("email", ""),
+                "role": staff.get("role", ""),
+            })
+    return {"staff": eligible}
+
+
+@router.post("/{user_id}/assign", summary="Assign an application to an admin")
+async def assign_verification(
+    user_id: str,
+    body: AssignmentRequest,
+    request: Request,
+    me: dict = Depends(require_super_admin),
+):
+    applicant = await _users().find_one({"_id": to_object_id(user_id), "role": MEMBER_ROLE})
+    if not applicant:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "Applicant not found")
+    assignee = await _users().find_one({"_id": to_object_id(body.admin_id), "role": {"$ne": MEMBER_ROLE}})
+    if not assignee or not assignee.get("is_active", True):
+        raise HTTPException(status.HTTP_400_BAD_REQUEST, "Choose an active admin account")
+    if not await has_permission(assignee, "users.approve"):
+        raise HTTPException(status.HTTP_400_BAD_REQUEST, "That admin cannot review member documents")
+
+    now = datetime.now(timezone.utc)
+    assignee_name = assignee.get("full_name", "") or assignee.get("email", "")
+    await _users().update_one(
+        {"_id": applicant["_id"]},
+        {"$set": {
+            "verification_assignee_id": str(assignee["_id"]),
+            "verification_assignee_name": assignee_name,
+            "verification_assigned_by": str(me["_id"]),
+            "verification_assigned_at": now,
+            "updated_at": now,
+        }},
+    )
+    await record(
+        me,
+        "member.assign_review",
+        target=str(applicant["_id"]),
+        detail=f"Assigned {applicant.get('full_name', 'member')} to {assignee_name}",
+        request=request,
+    )
+    return {"message": f"Verification assigned to {assignee_name}."}
 
 
 @router.get("/documents/{document_id}/file", summary="Open an identity document (audited)")
@@ -682,12 +842,20 @@ async def approve(
     now = datetime.now(timezone.utc)
     await _users().update_one(
         {"_id": user["_id"]},
-        {"$set": {
-            "verification_status": VerificationStatus.ACTIVE,
-            "verified_at": now,
-            "rejection_reason": "",
-            "updated_at": now,
-        }},
+        {
+            "$set": {
+                "verification_status": VerificationStatus.ACTIVE,
+                "verified_at": now,
+                "rejection_reason": "",
+                "updated_at": now,
+            },
+            "$unset": {
+                "verification_review_requested_at": "",
+                "verification_next_request_at": "",
+                "verification_next_reminder_at": "",
+                "verification_reminder_claimed_at": "",
+            },
+        },
     )
     await _docs().update_many(
         {"user_id": str(user["_id"]), "status": DocumentModel.STATUS_PENDING},
@@ -730,11 +898,19 @@ async def reject(
     now = datetime.now(timezone.utc)
     await _users().update_one(
         {"_id": user["_id"]},
-        {"$set": {
-            "verification_status": VerificationStatus.REJECTED,
-            "rejection_reason": payload.reason,
-            "updated_at": now,
-        }},
+        {
+            "$set": {
+                "verification_status": VerificationStatus.REJECTED,
+                "rejection_reason": payload.reason,
+                "updated_at": now,
+            },
+            "$unset": {
+                "verification_review_requested_at": "",
+                "verification_next_request_at": "",
+                "verification_next_reminder_at": "",
+                "verification_reminder_claimed_at": "",
+            },
+        },
     )
     await _docs().update_many(
         {"user_id": str(user["_id"]), "status": DocumentModel.STATUS_PENDING},
@@ -798,14 +974,22 @@ async def request_resubmission(
     now = datetime.now(timezone.utc)
     await _users().update_one(
         {"_id": user["_id"]},
-        {"$set": {
-            "verification_status": VerificationStatus.PENDING_DOCUMENTS,
-            # Read back by `/verification/status`, so her status screen can
-            # carry the note as well as the email.
-            "rejection_reason": payload.reason,
-            "resubmission_requested_at": now,
-            "updated_at": now,
-        }},
+        {
+            "$set": {
+                "verification_status": VerificationStatus.PENDING_DOCUMENTS,
+                # Read back by `/verification/status`, so her status screen can
+                # carry the note as well as the email.
+                "rejection_reason": payload.reason,
+                "resubmission_requested_at": now,
+                "updated_at": now,
+            },
+            "$unset": {
+                "verification_review_requested_at": "",
+                "verification_next_request_at": "",
+                "verification_next_reminder_at": "",
+                "verification_reminder_claimed_at": "",
+            },
+        },
     )
     await _docs().update_many(
         {"user_id": str(user["_id"]), "status": DocumentModel.STATUS_PENDING},

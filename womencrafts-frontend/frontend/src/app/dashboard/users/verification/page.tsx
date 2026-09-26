@@ -15,6 +15,7 @@ import {
   RefreshCw,
   ShieldCheck,
   UserCheck,
+  UserX,
   X,
 } from "lucide-react";
 
@@ -29,6 +30,7 @@ import {
   MenuItem,
   Modal,
   SearchInput,
+  Select,
   SkeletonTable,
   Spinner,
   StatCard,
@@ -42,11 +44,13 @@ import {
   REVIEW_STATE_LABEL,
   REVIEW_STATE_TONE,
   apiApplicantDetail,
+  apiAssignVerification,
   apiApproveApplicant,
   apiDocumentObjectUrl,
   apiRejectApplicant,
   apiRequestResubmission,
   apiReviewQueue,
+  apiVerificationAssignees,
   verificationErrorMessage,
   type ApiDocument,
   type ApplicantDetail,
@@ -54,7 +58,10 @@ import {
   type QueueRow,
   type ReviewedDocument,
   type VerificationState,
+  type VerificationAssignee,
 } from "@/lib/verification-api";
+import { useAuth } from "@/context/AuthContext";
+import { apiRestoreMember, apiSuspendMember } from "@/lib/members-admin-api";
 
 /**
  * The admission desk.
@@ -109,6 +116,7 @@ type Target = { user_id: string; full_name: string; documents: number };
 export default function VerificationQueuePage() {
   const toast = useToast();
   const confirm = useConfirm();
+  const { isSuperAdmin } = useAuth();
 
   const [tab, setTab] = useState<VerificationState>("in_review");
   const [query, setQuery] = useState("");
@@ -128,6 +136,12 @@ export default function VerificationQueuePage() {
   const [askingAgain, setAskingAgain] = useState<Target | null>(null);
   const [reason, setReason] = useState("");
   const [working, setWorking] = useState("");
+  const [assigning, setAssigning] = useState("");
+  const [assignees, setAssignees] = useState<VerificationAssignee[]>([]);
+  const [selectedAdmin, setSelectedAdmin] = useState("");
+  const [accountAction, setAccountAction] = useState<"deactivate" | "reactivate" | null>(null);
+  const [accountReason, setAccountReason] = useState("");
+  const deepLinkHandled = useRef(false);
 
   // The search box waits for her to stop typing before it asks the server.
   const qRef = useRef("");
@@ -179,6 +193,27 @@ export default function VerificationQueuePage() {
       toast.error("Could not open that submission", { description: verificationErrorMessage(err) });
     }
   }, [toast]);
+
+  const openAssignment = useCallback(async (userId: string, current = "") => {
+    setAssigning(userId);
+    setSelectedAdmin(current);
+    if (assignees.length > 0) return;
+    try {
+      setAssignees(await apiVerificationAssignees());
+    } catch (err) {
+      setAssigning("");
+      toast.error("Could not load eligible admins", { description: verificationErrorMessage(err) });
+    }
+  }, [assignees.length, toast]);
+
+  useEffect(() => {
+    if (deepLinkHandled.current || typeof window === "undefined") return;
+    deepLinkHandled.current = true;
+    const params = new URLSearchParams(window.location.search);
+    const account = params.get("account") || params.get("assign") || "";
+    if (account) void openDetail(account);
+    if (params.get("assign") && isSuperAdmin) void openAssignment(account);
+  }, [isSuperAdmin, openAssignment, openDetail]);
 
   const closeDetail = useCallback(() => {
     setOpenFor("");
@@ -273,6 +308,45 @@ export default function VerificationQueuePage() {
       setWorking("");
     }
   }, [afterDecision, askingAgain, reason, toast]);
+
+  const confirmAssignment = useCallback(async () => {
+    if (!assigning || !selectedAdmin) return;
+    setWorking(assigning);
+    try {
+      const res = await apiAssignVerification(assigning, selectedAdmin);
+      toast.success(res.message);
+      const id = assigning;
+      setAssigning("");
+      setSelectedAdmin("");
+      await afterDecision(id);
+    } catch (err) {
+      toast.error("Could not assign this verification", { description: verificationErrorMessage(err) });
+    } finally {
+      setWorking("");
+    }
+  }, [afterDecision, assigning, selectedAdmin, toast]);
+
+  const confirmAccountAction = useCallback(async () => {
+    if (!detail?.member_id || !accountAction || !accountReason.trim()) return;
+    setWorking(detail.user_id);
+    try {
+      if (accountAction === "deactivate") {
+        await apiSuspendMember(detail.member_id, accountReason.trim());
+        toast.success(`${detail.full_name}'s account is deactivated.`);
+      } else {
+        await apiRestoreMember(detail.member_id, accountReason.trim());
+        toast.success(`${detail.full_name}'s account is active again.`);
+      }
+      const id = detail.user_id;
+      setAccountAction(null);
+      setAccountReason("");
+      await afterDecision(id);
+    } catch (err) {
+      toast.error("Could not update account access", { description: verificationErrorMessage(err) });
+    } finally {
+      setWorking("");
+    }
+  }, [accountAction, accountReason, afterDecision, detail, toast]);
 
   const asTarget = (r: { user_id: string; full_name: string; documents: unknown[] }): Target => ({
     user_id: r.user_id,
@@ -409,6 +483,11 @@ export default function VerificationQueuePage() {
                       ) : (
                         <Menu trigger={<span className="btn btn-sm btn-ghost"><MoreHorizontal className="h-4 w-4" /></span>}>
                           <MenuItem icon={Eye} onClick={() => void openDetail(r.user_id)}>Open submission</MenuItem>
+                          {isSuperAdmin && (
+                            <MenuItem icon={UserCheck} onClick={() => void openAssignment(r.user_id, r.assigned_to_id)}>
+                              {r.assigned_to_name ? `Reassign from ${r.assigned_to_name}` : "Assign to an admin…"}
+                            </MenuItem>
+                          )}
                           {canApprove(r.status) && (
                             <MenuItem icon={UserCheck} onClick={() => void approve(asTarget(r))}>Approve</MenuItem>
                           )}
@@ -470,6 +549,16 @@ export default function VerificationQueuePage() {
                   Approve
                 </button>
               )}
+              {detail.member_id && detailStatus === "active" && (
+                <button className="btn btn-danger" disabled={detailBusy} onClick={() => { setAccountReason(""); setAccountAction("deactivate"); }}>
+                  <UserX className="h-4 w-4" /> Deactivate account
+                </button>
+              )}
+              {detail.member_id && detailStatus === "suspended" && (
+                <button className="btn btn-primary" disabled={detailBusy} onClick={() => { setAccountReason(""); setAccountAction("reactivate"); }}>
+                  <UserCheck className="h-4 w-4" /> Reactivate account
+                </button>
+              )}
             </>
           ) : undefined
         }
@@ -502,6 +591,10 @@ export default function VerificationQueuePage() {
               <div>
                 <dt className="text-2xs font-semibold uppercase tracking-wide text-ink-subtle">Verified</dt>
                 <dd className="mt-1 text-ink-muted">{formatWhen(detail.verified_at) || "Not yet"}</dd>
+              </div>
+              <div>
+                <dt className="text-2xs font-semibold uppercase tracking-wide text-ink-subtle">Assigned reviewer</dt>
+                <dd className="mt-1 text-ink-muted">{detail.assigned_to_name || "Not assigned"}</dd>
               </div>
             </dl>
 
@@ -593,6 +686,65 @@ export default function VerificationQueuePage() {
             </section>
           </div>
         )}
+      </Modal>
+
+      <Modal
+        open={assigning !== ""}
+        onClose={() => { setAssigning(""); setSelectedAdmin(""); }}
+        title="Assign verification"
+        description="Choose an active admin who has permission to review identity documents. The assignment is recorded in the audit history."
+        icon={UserCheck}
+        iconTone="violet"
+        footer={
+          <>
+            <button className="btn btn-outline" onClick={() => { setAssigning(""); setSelectedAdmin(""); }}>Cancel</button>
+            <button className="btn btn-primary" disabled={!selectedAdmin || working === assigning} onClick={() => void confirmAssignment()}>
+              {working === assigning ? <Loader2 className="h-4 w-4 animate-spin" /> : <UserCheck className="h-4 w-4" />}
+              Assign reviewer
+            </button>
+          </>
+        }
+      >
+        <Select
+          label="Reviewer"
+          value={selectedAdmin}
+          onChange={(e) => setSelectedAdmin(e.target.value)}
+          placeholder="Choose an eligible admin"
+          searchable
+          options={assignees.map((admin) => ({ value: admin.id, label: `${admin.name} · ${admin.role}` }))}
+        />
+      </Modal>
+
+      <Modal
+        open={accountAction !== null}
+        onClose={() => { setAccountAction(null); setAccountReason(""); }}
+        title={accountAction === "deactivate" ? `Deactivate ${detail?.full_name ?? "this account"}?` : `Reactivate ${detail?.full_name ?? "this account"}?`}
+        description={accountAction === "deactivate"
+          ? "Access stops immediately. The reason is recorded in the audit trail."
+          : "Access returns immediately. The reason is recorded in the audit trail."}
+        icon={accountAction === "deactivate" ? UserX : UserCheck}
+        iconTone={accountAction === "deactivate" ? "rose" : "brand"}
+        footer={
+          <>
+            <button className="btn btn-outline" onClick={() => { setAccountAction(null); setAccountReason(""); }}>Cancel</button>
+            <button
+              className={accountAction === "deactivate" ? "btn btn-danger" : "btn btn-primary"}
+              disabled={!accountReason.trim() || !!working}
+              onClick={() => void confirmAccountAction()}
+            >
+              {working ? <Loader2 className="h-4 w-4 animate-spin" /> : accountAction === "deactivate" ? <UserX className="h-4 w-4" /> : <UserCheck className="h-4 w-4" />}
+              {accountAction === "deactivate" ? "Deactivate" : "Reactivate"}
+            </button>
+          </>
+        }
+      >
+        <Textarea
+          label="Reason"
+          required
+          value={accountReason}
+          onChange={(e) => setAccountReason(e.target.value)}
+          placeholder={accountAction === "deactivate" ? "Why is access being paused?" : "Why is access being restored?"}
+        />
       </Modal>
 
       {/* ── document viewer — the file is streamed, never linked publicly ── */}
