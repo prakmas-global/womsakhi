@@ -192,9 +192,22 @@ async def _email(intent: dict) -> dict:
         raise RuntimeError("no_email_address")
 
     title, body = await render(intent)
+    recipient_name = (user or {}).get("full_name", "")
+    app_url = settings.APP_BASE_URL.rstrip("/")
     ok = await send_mail(
-        EmailMessageSpec(to=address, subject=title,
-                         html=_wrap(title, f"<p>{html.escape(body)}</p>"), text=f"{title}\n\n{body}"),
+        EmailMessageSpec(
+            to=address,
+            subject=title,
+            html=_wrap(
+                title,
+                f"<p>{html.escape(body)}</p>",
+                "Open WomSakhi",
+                app_url,
+                recipient_name=recipient_name,
+                next_step="Open WomSakhi to review this update.",
+            ),
+            text=f"{title}\n\n{body}",
+        ),
         address)
     if not ok:
         raise RuntimeError("smtp_send_failed")
