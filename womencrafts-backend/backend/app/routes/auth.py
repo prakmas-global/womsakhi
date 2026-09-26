@@ -458,10 +458,9 @@ async def reset_password(payload: ResetPasswordRequest, request: Request):
     await db[UserModel.collection_name].update_one(
         {"_id": user["_id"]},
         {
-            "$set": {"password": await hash_password_async(payload.password), "updated_at": now},
-            # Bumped here so that the day `_token_for` starts reading it, a
-            # reset ends every other session by itself. Inert until then — see
-            # `core/security.py`.
+            "$set": {"hashed_password": await hash_password_async(payload.password), "updated_at": now},
+            # End every other session after a password reset. `_token_for`
+            # includes this version and `core/deps.py` rejects older tokens.
             "$inc": {"token_version": 1},
         },
     )
