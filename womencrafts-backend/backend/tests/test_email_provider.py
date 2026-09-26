@@ -22,3 +22,26 @@ def test_file_adapter_is_not_deliverable(monkeypatch) -> None:
 
     assert email.get_provider().name == "file"
     assert email.can_deliver() is False
+
+
+def test_branded_template_has_logo_action_fallback_and_support_links(monkeypatch) -> None:
+    monkeypatch.setattr(email.settings, "APP_BASE_URL", "https://app.womsakhi.com")
+
+    message = email.approved_email("Asha", "https://app.womsakhi.com/signin")
+
+    assert 'src="https://app.womsakhi.com/womsakhi-email-logo.png"' in message.html
+    assert message.html.count('href="https://app.womsakhi.com/signin"') == 2
+    assert 'href="https://app.womsakhi.com/contact"' in message.html
+    assert 'href="https://app.womsakhi.com/privacy"' in message.html
+    assert "Your WomSakhi membership is approved and ready." in message.html
+
+
+def test_template_escapes_member_supplied_content(monkeypatch) -> None:
+    monkeypatch.setattr(email.settings, "APP_BASE_URL", "https://app.womsakhi.com")
+
+    message = email.rejected_email("<script>Asha</script>", "<img src=x onerror=alert(1)>")
+
+    assert "<script>" not in message.html
+    assert "<img src=x" not in message.html
+    assert "&lt;script&gt;Asha&lt;/script&gt;" in message.html
+    assert "&lt;img src=x onerror=alert(1)&gt;" in message.html

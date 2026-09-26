@@ -129,7 +129,7 @@ async def signup(payload: SignUpRequest, response: Response, request: Request):
         email=email,
         phone=payload.phone or "",
         role="Member",
-        status="Active",
+        status="Pending",
         code=await _next_member_code(db),
     )
     member_result = await db[MemberModel.collection_name].insert_one(member_doc)

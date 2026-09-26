@@ -42,7 +42,7 @@ from app.core import mongosafe
 from app.core.audit import record
 from app.core.config import settings
 from app.core.deps import get_current_user
-from app.core.email import EmailMessageSpec, can_deliver, get_provider, is_sandbox_domain, send
+from app.core.email import EmailMessageSpec, _wrap, can_deliver, get_provider, is_sandbox_domain, send
 from app.core.permissions import require_permission
 from app.core.serializers import page_meta, to_object_id
 from app.db.mongodb import get_database
@@ -302,7 +302,16 @@ async def test_email(request: Request, me: dict = Depends(get_current_user)):
     spec = EmailMessageSpec(
         to=to,
         subject="WomSakhi test message",
-        html=f"<p>This is a test from the WomSakhi dashboard, sent {html.escape(stamp)}.</p>",
+        html=_wrap(
+            "Your email connection is working",
+            f"<p>This test was sent from the WomSakhi admin dashboard on "
+            f"<strong>{html.escape(stamp)}</strong>.</p>"
+            "<p>Transactional messages can now reach members through the configured provider.</p>",
+            "Open WomSakhi",
+            settings.APP_BASE_URL.rstrip("/"),
+            preheader="WomSakhi email delivery test completed successfully.",
+            footer_note="This test was requested by an authorised WomSakhi administrator.",
+        ),
         text=f"This is a test from the WomSakhi dashboard, sent {stamp}.",
     )
     sent = await send(spec, to)
@@ -803,8 +812,16 @@ async def support_reply(
         spec = EmailMessageSpec(
             to=to,
             subject=f"Reply to your ticket {ref}: {doc.get('subject', '')}",
-            html=f"<p>{html.escape(by)} replied to <b>{html.escape(ref)}</b>:</p>"
-                 f"<blockquote>{html.escape(body.body).replace(chr(10), '<br>')}</blockquote>",
+            html=_wrap(
+                f"A reply to your support ticket {ref}",
+                f"<p>{html.escape(by)} replied to <strong>{html.escape(ref)}</strong>:</p>"
+                f"<div style='border-left:3px solid #c21868;padding:2px 0 2px 16px;margin:18px 0;color:#514658;'>"
+                f"{html.escape(body.body).replace(chr(10), '<br>')}</div>",
+                "Open WomSakhi support",
+                f"{settings.APP_BASE_URL.rstrip('/')}/app/help",
+                preheader=f"WomSakhi replied to support ticket {ref}.",
+                footer_note="You received this because you contacted WomSakhi support.",
+            ),
             text=f"{by} replied to {ref}:\n\n{body.body}",
         )
         sent = await send(spec, to)
