@@ -290,18 +290,18 @@ def _wrap(
 
     cta = (
         f"""
-        <tr><td align="center" class="content-pad" bgcolor="#ffffff" style="background:#ffffff;padding:12px 42px 6px;border-left:1px solid #eadde6;border-right:1px solid #eadde6;">
+        <tr><td align="center" class="content-pad cta-pad" bgcolor="#ffffff" style="background:#ffffff;padding:12px 42px 6px;border-left:1px solid #eadde6;border-right:1px solid #eadde6;">
           <table role="presentation" cellpadding="0" cellspacing="0" style="margin:0 auto;"><tr><td bgcolor="#bd1765" style="border:1px solid #a90c58;border-radius:15px;background:#bd1765;background-image:linear-gradient(100deg,#a60058 0%,#cf176d 46%,#ef4386 100%);box-shadow:0 12px 27px rgba(201,31,111,.28);">
             <a href="{safe_cta_url}" class="action-button" style="display:inline-block;padding:14px 27px;border-radius:15px;color:#ffffff;text-decoration:none;font-size:15px;line-height:20px;font-weight:700;letter-spacing:.1px;"><img src="{icons_url}/mail-white.png" width="21" height="21" alt="" style="display:inline-block;width:21px;height:21px;border:0;vertical-align:-6px;margin-right:9px;">{safe_cta_label}&nbsp;&nbsp; →</a>
           </td></tr></table>
-          <div style="margin-top:9px;font-size:10px;line-height:15px;color:#8b7c8e;">Secure action for your WomSakhi account.</div>
+          <div class="cta-note" style="margin-top:9px;font-size:10px;line-height:15px;color:#8b7c8e;">Secure action for your WomSakhi account.</div>
         </td></tr>"""
         if cta_label and cta_url
         else ""
     )
     next_step_html = (
         f"""
-        <tr><td align="center" class="content-pad" bgcolor="#ffffff" style="background:#ffffff;padding:7px 42px 12px;border-left:1px solid #eadde6;border-right:1px solid #eadde6;">
+        <tr><td align="center" class="content-pad step-pad" bgcolor="#ffffff" style="background:#ffffff;padding:7px 42px 12px;border-left:1px solid #eadde6;border-right:1px solid #eadde6;">
           <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#fff5fa;border:1px solid #e9c9da;border-radius:12px;">
             <tr>
               <td width="35" valign="middle" style="padding:9px 0 9px 12px;"><img src="{icons_url}/user-check.png" width="27" height="27" alt="" style="display:block;width:27px;height:27px;border:0;"></td>
@@ -317,7 +317,7 @@ def _wrap(
 <html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>{safe_title}</title>
   <style>
     @media only screen and (max-width:620px) {{.page-pad{{padding-left:0!important;padding-right:0!important}}.email-shell{{width:100%!important;border-radius:0!important}}.content-pad{{padding-left:20px!important;padding-right:20px!important}}.reveal-animation{{width:190px!important;height:190px!important}}.email-title{{font-size:30px!important;line-height:35px!important}}.lotus-animation{{width:100%!important;height:auto!important}}}}
-    @media only screen and (max-width:380px) {{.content-pad{{padding-left:15px!important;padding-right:15px!important}}.reveal-animation{{width:168px!important;height:168px!important}}.email-title{{font-size:27px!important;line-height:32px!important}}.action-button{{display:block!important;padding-left:18px!important;padding-right:18px!important}}.footer-link{{padding-left:5px!important;padding-right:5px!important}}}}
+    @media only screen and (max-width:380px) {{.page-pad{{padding-top:0!important;padding-bottom:0!important}}.content-pad{{padding-left:12px!important;padding-right:12px!important}}.header-pad{{padding-top:4px!important;padding-bottom:4px!important}}.reveal-animation{{width:108px!important;height:108px!important;border-radius:12px!important}}.main-pad{{padding-top:7px!important;padding-bottom:4px!important}}.email-title{{font-size:25px!important;line-height:28px!important;margin-top:4px!important}}.body-copy{{font-size:12px!important;line-height:16px!important;margin-top:4px!important}}.cta-pad{{padding-top:4px!important;padding-bottom:2px!important}}.action-button{{padding:9px 14px!important;font-size:13px!important;line-height:18px!important}}.cta-note{{margin-top:3px!important;font-size:8px!important;line-height:10px!important}}.step-pad{{padding-top:3px!important;padding-bottom:4px!important}}.step-pad td{{padding-top:5px!important;padding-bottom:5px!important;font-size:9px!important;line-height:12px!important}}.lotus-pad{{padding-top:1px!important;padding-bottom:1px!important}}.lotus-animation{{width:260px!important}}.footer-pad{{padding-top:5px!important;padding-bottom:5px!important}}.footer-note{{margin-bottom:3px!important;font-size:8px!important;line-height:10px!important}}.social-icon{{width:20px!important;height:20px!important}}.footer-link{{padding-left:4px!important;padding-right:4px!important}}}}
   </style>
 </head><body style="margin:0;padding:0;background:#f8f0f5;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Arial,sans-serif;color:#38283d;">
   <div style="display:none;max-height:0;overflow:hidden;opacity:0;color:transparent;">{safe_preheader}</div>
@@ -325,26 +325,26 @@ def _wrap(
     <tr><td align="center" class="page-pad" style="padding:14px 10px;">
       <table role="presentation" width="570" cellpadding="0" cellspacing="0" class="email-shell" style="width:570px;max-width:570px;background:#ffffff;border:1px solid #eadde6;border-radius:22px;box-shadow:0 16px 48px rgba(76,27,72,.1);overflow:hidden;">
         <tr><td bgcolor="#571451" style="height:6px;background:#571451;font-size:0;line-height:0;">&nbsp;</td></tr>
-        <tr><td align="center" class="content-pad" bgcolor="#fffafd" style="padding:12px 34px 10px;background:#fffafd;">
+        <tr><td align="center" class="content-pad header-pad" bgcolor="#fffafd" style="padding:12px 34px 10px;background:#fffafd;">
           <img src="{reveal_url}" width="218" height="218" class="reveal-animation" alt="Animated WomSakhi logo reveal" style="display:block;width:218px;height:218px;max-width:100%;margin:0 auto;border:1px solid #56304f;border-radius:18px;box-shadow:0 16px 34px rgba(106,25,91,.2);">
         </td></tr>
-        <tr><td align="center" class="content-pad" bgcolor="#ffffff" style="background:#ffffff;padding:15px 42px 8px;border-left:1px solid #eadde6;border-right:1px solid #eadde6;">
+        <tr><td align="center" class="content-pad main-pad" bgcolor="#ffffff" style="background:#ffffff;padding:15px 42px 8px;border-left:1px solid #eadde6;border-right:1px solid #eadde6;">
           {greeting}
           <h1 class="email-title" style="margin:{'9px' if greeting else '0'} 0 0;font-family:Georgia,'Times New Roman',serif;font-size:38px;line-height:43px;font-weight:700;letter-spacing:-.75px;color:#40113f;">{heading}</h1>
-          <div style="margin:9px auto 0;max-width:445px;font-size:14px;line-height:21px;color:#6f6273;">{body_html}</div>
+          <div class="body-copy" style="margin:9px auto 0;max-width:445px;font-size:14px;line-height:21px;color:#6f6273;">{body_html}</div>
         </td></tr>
         {cta}
         {next_step_html}
-        <tr><td align="center" class="content-pad" bgcolor="#fffafd" style="padding:5px 34px 6px;background:#fffafd;border-left:1px solid #eadde6;border-right:1px solid #eadde6;border-top:1px solid #f5e8ef;">
+        <tr><td align="center" class="content-pad lotus-pad" bgcolor="#fffafd" style="padding:5px 34px 6px;background:#fffafd;border-left:1px solid #eadde6;border-right:1px solid #eadde6;border-top:1px solid #f5e8ef;">
           <img src="{lotus_url}" width="455" height="92" class="lotus-animation" alt="Animated WomSakhi lotus" style="display:block;width:455px;max-width:100%;height:auto;margin:0 auto;border:0;">
         </td></tr>
-        <tr><td align="center" class="content-pad" bgcolor="#fff8fc" style="padding:10px 34px 12px;background:#fff8fc;border:1px solid #efdee8;border-top:0;border-radius:0 0 22px 22px;">
-          <div style="font-size:9px;line-height:13px;color:#8f8291;margin-bottom:7px;">{safe_footer}</div>
+        <tr><td align="center" class="content-pad footer-pad" bgcolor="#fff8fc" style="padding:10px 34px 12px;background:#fff8fc;border:1px solid #efdee8;border-top:0;border-radius:0 0 22px 22px;">
+          <div class="footer-note" style="font-size:9px;line-height:13px;color:#8f8291;margin-bottom:7px;">{safe_footer}</div>
           <table role="presentation" cellpadding="0" cellspacing="0" style="margin:0 auto;"><tr>
-            <td style="padding:0 4px;"><img src="{icons_url}/instagram.png" width="26" height="26" alt="Instagram" style="display:block;width:26px;height:26px;border:0;"></td>
-            <td style="padding:0 4px;"><img src="{icons_url}/facebook.png" width="26" height="26" alt="Facebook" style="display:block;width:26px;height:26px;border:0;"></td>
-            <td style="padding:0 4px;"><img src="{icons_url}/linkedin.png" width="26" height="26" alt="LinkedIn" style="display:block;width:26px;height:26px;border:0;"></td>
-            <td style="padding:0 4px;"><img src="{icons_url}/youtube.png" width="26" height="26" alt="YouTube" style="display:block;width:26px;height:26px;border:0;"></td>
+            <td style="padding:0 4px;"><img src="{icons_url}/instagram.png" width="26" height="26" class="social-icon" alt="Instagram" style="display:block;width:26px;height:26px;border:0;"></td>
+            <td style="padding:0 4px;"><img src="{icons_url}/facebook.png" width="26" height="26" class="social-icon" alt="Facebook" style="display:block;width:26px;height:26px;border:0;"></td>
+            <td style="padding:0 4px;"><img src="{icons_url}/linkedin.png" width="26" height="26" class="social-icon" alt="LinkedIn" style="display:block;width:26px;height:26px;border:0;"></td>
+            <td style="padding:0 4px;"><img src="{icons_url}/youtube.png" width="26" height="26" class="social-icon" alt="YouTube" style="display:block;width:26px;height:26px;border:0;"></td>
           </tr></table>
           <p style="margin:7px 0 0;font-size:10px;line-height:15px;"><a href="{safe_app_url}" class="footer-link" style="padding:3px 7px;color:#842866;text-decoration:underline;font-weight:700;">WomSakhi</a><a href="{safe_app_url}/contact" class="footer-link" style="padding:3px 7px;color:#842866;text-decoration:underline;font-weight:600;">Support</a><a href="{safe_app_url}/privacy" class="footer-link" style="padding:3px 7px;color:#842866;text-decoration:underline;font-weight:600;">Privacy</a></p>
           <p style="margin:3px 0 0;font-size:9px;line-height:13px;color:#aa9bab;">WomSakhi · India</p>
