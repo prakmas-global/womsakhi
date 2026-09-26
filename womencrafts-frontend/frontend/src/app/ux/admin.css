@@ -240,3 +240,9 @@
 .ux-admin .wc-rail-floating {
   box-shadow: var(--ux-shadow-pop);
 }
+
+/* The document itself, so nothing outside the root — a taller scroller, a
+   portal — shows the theme engine's canvas around the dashboard. Literal hex
+   because `--ux-canvas` is declared on `.ux`, which body is outside of. */
+body:has(.ux-admin) { background: #fcf8f7; }
+.dark body:has(.ux-admin) { background: #14122a; }
