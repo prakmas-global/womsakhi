@@ -38,6 +38,7 @@ from __future__ import annotations
 
 import base64
 import binascii
+import errno
 import os
 from pathlib import Path
 from typing import Optional
@@ -136,6 +137,25 @@ def decrypt_bytes(blob: bytes) -> bytes:
         ) from exc
 
 
+def _restrict_permissions(path: Path) -> None:
+    """Make local files owner-only when the storage supports POSIX modes.
+
+    Cloud Run's GCS FUSE mount is protected by bucket IAM rather than Unix
+    mode bits and returns EPERM/ENOTSUP for chmod even after a successful
+    write. Treat those two storage semantics as equivalent security controls;
+    keep raising every other chmod error so a normal disk cannot silently
+    become more permissive.
+    """
+    try:
+        path.chmod(0o600)
+    except OSError as exc:
+        unsupported = {errno.EPERM, errno.ENOTSUP}
+        if hasattr(errno, "EOPNOTSUPP"):
+            unsupported.add(errno.EOPNOTSUPP)
+        if exc.errno not in unsupported:
+            raise
+
+
 def encrypt_file(path: Path) -> bool:
     """
     Encrypt one file in place. Returns False if it already was.
@@ -150,7 +170,7 @@ def encrypt_file(path: Path) -> bool:
     tmp = path.with_suffix(path.suffix + ".enc-tmp")
     sealed = encrypt_bytes(blob)
     tmp.write_bytes(sealed)
-    tmp.chmod(0o600)
+    _restrict_permissions(tmp)
     try:
         tmp.replace(path)
     except OSError:
@@ -160,7 +180,7 @@ def encrypt_file(path: Path) -> bool:
         # upload. Keep the atomic path for normal disks and use a verified
         # direct write only on mounts that reject rename.
         path.write_bytes(sealed)
-        path.chmod(0o600)
+        _restrict_permissions(path)
         tmp.unlink(missing_ok=True)
     if not is_encrypted(path.read_bytes()[: len(MAGIC)]):
         path.unlink(missing_ok=True)
