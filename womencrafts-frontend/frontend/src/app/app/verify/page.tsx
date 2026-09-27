@@ -74,7 +74,6 @@ export default function VerifyPage() {
   const liveVideo = useRef<HTMLVideoElement | null>(null);
   const liveStream = useRef<MediaStream | null>(null);
   const pickingFor = useRef<string>("aadhaar");
-  const pickingMultiple = useRef(false);
   const [cameraFor, setCameraFor] = useState<{ docType: string; facing: string } | null>(null);
   const [cameraError, setCameraError] = useState("");
   const cameraCapable = useSyncExternalStore(
@@ -196,10 +195,9 @@ export default function VerifyPage() {
    * on whichever side the previous row asked for. React never rendered a
    * `capture` prop on that input, so it has no value of its own to put back.
    */
-  function choose(docType: string, how: "camera" | "files", facing = "environment", multiple = false) {
+  function choose(docType: string, how: "camera" | "files", facing = "environment") {
     setProblem("");
     pickingFor.current = docType;
-    pickingMultiple.current = multiple;
     if (how === "files") { files.current?.click(); return; }
     if (!handheld && cameraCapable) {
       setCameraError("");
@@ -308,7 +306,7 @@ export default function VerifyPage() {
 
   /** Both ways in. `pickingFor` says which of the two documents it is for. */
   const take = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const selected = Array.from(e.target.files ?? []).slice(0, pickingMultiple.current ? undefined : 1);
+    const selected = Array.from(e.target.files ?? []).slice(0, 1);
     // Cleared before we do anything with it, so choosing the SAME file again —
     // after a rejection, or a retake she was not happy with — still fires.
     e.target.value = "";
@@ -331,7 +329,6 @@ export default function VerifyPage() {
       <input
         ref={files}
         type="file"
-        multiple
         accept={ACCEPTED_DOCUMENT_TYPES.join(",")}
         className="hidden"
         aria-label={tr("verify.chooseAPhotoOfYourId")}
@@ -352,6 +349,8 @@ export default function VerifyPage() {
       total={3}
       onBack={back?.go}
       backTo={back?.to}
+      onExit={() => void signOut()}
+      exitLabel="Sign out"
       title={
         stage === "email" ? "Confirm your email"
         : stage === "documents" ? "Show us it is you"
@@ -477,24 +476,25 @@ export default function VerifyPage() {
               </div>
               <div className="grid gap-2 sm:grid-cols-2">
                 {currentDocuments.map((document) => (
-                  <div key={document.id} className="flex min-w-0 items-center gap-3 rounded-[14px] border p-3" style={{ borderColor: "var(--ux-line)", background: "var(--ux-surface-2)" }}>
-                    <IconTile icon={document.content_type === "application/pdf" ? "FileText" : "Image"} tint="--ux-tint-violet" ink="--ux-violet" size={40} radius={11} />
-                    <div className="min-w-0 flex-1">
-                      <p className="truncate text-xs font-semibold" style={{ color: "var(--ux-ink)" }}>{document.original_name}</p>
-                      <p className="mt-0.5 text-[11px]" style={{ color: "var(--ux-muted)" }}>{(document.size / 1024 / 1024).toFixed(1)} MB</p>
+                  <div key={document.id} className="min-w-0 rounded-[14px] border p-3" style={{ borderColor: "var(--ux-line)", background: "var(--ux-surface-2)" }}>
+                    <div className="flex min-w-0 items-center gap-3">
+                      <IconTile icon={document.content_type === "application/pdf" ? "FileText" : "Image"} tint="--ux-tint-violet" ink="--ux-violet" size={40} radius={11} />
+                      <div className="min-w-0 flex-1">
+                        <p className="truncate text-xs font-semibold" style={{ color: "var(--ux-ink)" }}>{document.original_name}</p>
+                        <p className="mt-0.5 text-[11px]" style={{ color: "var(--ux-muted)" }}>{(document.size / 1024 / 1024).toFixed(1)} MB</p>
+                      </div>
                     </div>
-                    <button type="button" onClick={() => void openPreview(document)} disabled={busy === `preview-${document.id}`} className="grid h-10 w-10 shrink-0 place-items-center rounded-xl" style={{ color: "var(--ux-violet)", background: "var(--ux-tint-violet)" }} aria-label={`Preview ${document.original_name}`}>
-                      <Icons.Eye className="h-4 w-4" />
-                    </button>
-                    <button type="button" onClick={() => void removeDocument(document)} disabled={deleting === document.id} className="grid h-10 w-10 shrink-0 place-items-center rounded-xl" style={{ color: "var(--ux-orange-ink)", background: "var(--ux-tint-orange)" }} aria-label={`Delete ${document.original_name}`}>
-                      {deleting === document.id ? <Icons.Loader className="h-4 w-4 animate-spin" /> : <Icons.Trash2 className="h-4 w-4" />}
-                    </button>
+                    <div className="mt-3 grid grid-cols-2 gap-2">
+                      <button type="button" onClick={() => void openPreview(document)} disabled={busy === `preview-${document.id}`} className="ux-press inline-flex min-h-10 items-center justify-center gap-2 rounded-xl px-3 text-xs font-semibold" style={{ color: "var(--ux-violet)", background: "var(--ux-tint-violet)" }} aria-label={`Preview ${document.original_name}`}>
+                        <Icons.Eye className="h-4 w-4" /> Preview
+                      </button>
+                      <button type="button" onClick={() => void removeDocument(document)} disabled={deleting === document.id} className="ux-press inline-flex min-h-10 items-center justify-center gap-2 rounded-xl px-3 text-xs font-semibold" style={{ color: "var(--ux-orange-ink)", background: "var(--ux-tint-orange)" }} aria-label={`Remove ${document.original_name}`}>
+                        {deleting === document.id ? <Icons.Loader className="h-4 w-4 animate-spin" /> : <Icons.X className="h-4 w-4" />} Remove
+                      </button>
+                    </div>
                   </div>
                 ))}
               </div>
-              {currentDocuments.length < MAX_VERIFICATION_DOCUMENTS && (
-                <Btn variant="outline" icon="Files" className="mt-3 min-h-[44px] w-full sm:w-auto" onClick={() => choose("supporting", "files", "environment", true)}>Add supporting documents</Btn>
-              )}
             </Card>
           )}
 
@@ -592,7 +592,6 @@ export default function VerifyPage() {
                         : "Ask the team to review now"}
                 </Btn>
                 <Btn variant="outline" icon="Files" className={phoneSecondary} onClick={() => setAdvanced("documents")}>Review or replace documents</Btn>
-                <Btn variant="outline" icon="LogOut" className={phoneSecondary} onClick={() => signOut()}>{tr("verify.signOutForNow")}</Btn>
                 <Btn variant="ghost" className={phoneSecondary} onClick={() => setAdvanced("rejected")}>{tr("verify.seeWhatHappensIfSomethingIs")}</Btn>
               </div>
               {requestReview.error && (

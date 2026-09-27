@@ -8,6 +8,7 @@ import { CircleAlert, CircleCheck, Loader2 } from "lucide-react";
 import { LogoWordmark } from "@/components/brand/Logo";
 import { Btn } from "@/components/ux/kit";
 import { apiConfirmEmail, verificationErrorMessage } from "@/lib/verification-api";
+import { useAuth } from "@/context/AuthContext";
 
 /**
  * Where the link in the confirmation email lands.
@@ -71,6 +72,7 @@ function Sub({ children }: { children: React.ReactNode }) {
 }
 
 function Confirm() {
+  const { signOut, user } = useAuth();
   const params = useSearchParams();
   const token = params.get("token") ?? "";
 
@@ -127,6 +129,24 @@ function Confirm() {
               Continue
             </Btn>
           </div>
+          {user ? (
+            <button
+              type="button"
+              onClick={() => void signOut()}
+              className="ux-hov mt-3.5 inline-flex min-h-11 items-center justify-center text-xsm font-semibold"
+              style={{ color: "var(--ux-brand)" }}
+            >
+              Sign out and return to sign in
+            </button>
+          ) : (
+            <Link
+              href="/signin"
+              className="ux-hov mt-3.5 inline-flex min-h-11 items-center text-xsm font-semibold"
+              style={{ color: "var(--ux-brand)" }}
+            >
+              Return to sign in
+            </Link>
+          )}
         </>
       )}
 

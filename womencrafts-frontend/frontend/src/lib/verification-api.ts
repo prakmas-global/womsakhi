@@ -68,7 +68,7 @@ export const DOCUMENT_TYPES = [
 ] as const;
 
 export const MAX_DOCUMENT_MB = 10;
-export const MAX_VERIFICATION_DOCUMENTS = 5;
+export const MAX_VERIFICATION_DOCUMENTS = 2;
 export const ACCEPTED_DOCUMENT_TYPES = [
   "image/jpeg",
   "image/jpg",

@@ -14,7 +14,7 @@ import { useT } from "@/i18n";
  * clear sense of how many steps are left, and no way to wander off mid-flow.
  */
 export function OnboardFrame({
-  step, total, title, sub, children, aside, footer, onBack, backTo, motionKey, motionDirection = "forward",
+  step, total, title, sub, children, aside, footer, onBack, backTo, onExit, exitLabel = "Sign out", motionKey, motionDirection = "forward",
 }: {
   step: number;
   total: number;
@@ -34,6 +34,9 @@ export function OnboardFrame({
   onBack?: () => void;
   /** The step she goes back TO, named. See the note at the button. */
   backTo?: string;
+  /** Always-visible escape from a gated flow such as account verification. */
+  onExit?: () => void;
+  exitLabel?: string;
   /** Remount and animate the content when a multi-screen guide changes page. */
   motionKey?: string | number;
   motionDirection?: "forward" | "back";
@@ -75,6 +78,17 @@ export function OnboardFrame({
         <p className="ms-auto shrink-0 text-xsm" style={{ color: "var(--ux-muted)" }}>
           {tr("onboard.stepOf", { step, total })}
         </p>
+        {onExit && (
+          <button
+            type="button"
+            onClick={onExit}
+            className="ux-press ux-sq ms-1 inline-flex min-h-[44px] shrink-0 items-center gap-1.5 rounded-[12px] px-2.5 text-xsm font-semibold"
+            style={{ color: "var(--ux-brand)", background: "var(--ux-tint-pink)" }}
+          >
+            <Icons.LogOut className="h-4 w-4" aria-hidden="true" />
+            <span className="max-[360px]:sr-only">{exitLabel}</span>
+          </button>
+        )}
       </header>
 
       {/* One bar rather than dots. Five dashes with "Step 4 of 6" beside them is
