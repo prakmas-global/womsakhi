@@ -20,10 +20,11 @@ type DocumentFieldProps = {
   file: File | null;
   accept: string;
   facing: "user" | "environment";
+  error?: string;
   onChange: (file: File | null) => void;
 };
 
-function DocumentField({ title, note, file, accept, facing, onChange }: DocumentFieldProps) {
+function DocumentField({ title, note, file, accept, facing, error, onChange }: DocumentFieldProps) {
   const camera = useRef<HTMLInputElement>(null);
   const files = useRef<HTMLInputElement>(null);
   const preview = useMemo(
@@ -39,7 +40,7 @@ function DocumentField({ title, note, file, accept, facing, onChange }: Document
   };
 
   return (
-    <div className="auth-application-document rounded-[16px] border p-3.5">
+    <div className={`auth-application-document rounded-[16px] border p-3.5${error ? " auth-document-invalid" : ""}`}>
       <input ref={camera} type="file" accept="image/*" capture={facing} className="sr-only" onChange={take} aria-label={`Take ${title}`} />
       <input ref={files} type="file" accept={accept} className="sr-only" onChange={take} aria-label={`Choose ${title}`} />
       <div className="flex items-start gap-3">
@@ -71,8 +72,26 @@ function DocumentField({ title, note, file, accept, facing, onChange }: Document
           <Upload className="h-4 w-4" /> {file ? "Replace" : "Choose file"}
         </button>
       </div>
+      {error && <p role="alert" className="auth-field-message mt-2">{error}</p>}
     </div>
   );
+}
+
+type SignupErrors = Partial<Record<
+  "fullName" | "email" | "country" | "phone" | "password" | "identityDocument" | "selfie",
+  string
+>>;
+
+const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+function passwordIssue(value: string): string {
+  if (!value) return "Create a password.";
+  if (value.length < 8) return "Use at least 8 characters.";
+  if (new TextEncoder().encode(value).length > 72) return "Use a password shorter than 72 bytes.";
+  if (!/\p{L}/u.test(value) || !/\d/.test(value) || !/[^\p{L}\d\s]/u.test(value)) {
+    return "Include at least one letter, one number and one symbol.";
+  }
+  return "";
 }
 
 export default function SignUpPage() {
@@ -86,8 +105,7 @@ export default function SignUpPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [identityDocument, setIdentityDocument] = useState<File | null>(null);
   const [selfie, setSelfie] = useState<File | null>(null);
-  const [phoneError, setPhoneError] = useState("");
-  const [documentError, setDocumentError] = useState("");
+  const [errors, setErrors] = useState<SignupErrors>({});
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
@@ -100,12 +118,14 @@ export default function SignUpPage() {
   const strengthInk = strength >= 70 ? "var(--a-ok)" : strength >= 40 ? "var(--a-warn)" : "var(--a-bad)";
 
   const setDocument = (kind: "id" | "selfie", file: File | null) => {
-    setDocumentError("");
+    const key = kind === "id" ? "identityDocument" : "selfie";
+    setErrors((current) => ({ ...current, [key]: undefined }));
     if (file) {
       const issue = validateDocument(file);
-      if (issue) { setDocumentError(issue); return; }
-      if (kind === "selfie" && !file.type.startsWith("image/")) {
-        setDocumentError("Your selfie must be a JPG, PNG, WEBP or HEIC image.");
+      if (issue) { setErrors((current) => ({ ...current, [key]: issue })); return; }
+      const imageByName = /\.(?:jpe?g|png|webp|heic|heif)$/i.test(file.name);
+      if (kind === "selfie" && !file.type.startsWith("image/") && !imageByName) {
+        setErrors((current) => ({ ...current, selfie: "Your selfie must be a JPG, PNG, WEBP or HEIC image." }));
         return;
       }
     }
@@ -115,19 +135,57 @@ export default function SignUpPage() {
   const submit = async (event: FormEvent) => {
     event.preventDefault();
     setError("");
+    const nextErrors: SignupErrors = {};
+    if (!fullName.trim()) nextErrors.fullName = "Enter your full name.";
+    if (!email.trim()) nextErrors.email = "Enter your email address.";
+    else if (!EMAIL_PATTERN.test(email.trim())) nextErrors.email = "Enter a valid email address.";
+    if (!country) nextErrors.country = "Select your country.";
     const normalizedPhone = normalizePhone(phone, country);
-    if (!country) { setPhoneError("Select your country first."); return; }
-    if (!normalizedPhone) { setPhoneError("Enter a valid mobile number for the selected country."); return; }
-    if (!identityDocument || !selfie) { setDocumentError("Add your photo ID and selfie before creating the account."); return; }
-    setPhoneError(""); setDocumentError(""); setLoading(true);
+    if (!phone.trim()) nextErrors.phone = "Enter your mobile number.";
+    else if (country && !normalizedPhone) nextErrors.phone = "Enter a valid mobile number for the selected country.";
+    const passwordError = passwordIssue(password);
+    if (passwordError) nextErrors.password = passwordError;
+    if (!identityDocument) nextErrors.identityDocument = "Add one clear photo of your government ID.";
+    if (!selfie) nextErrors.selfie = "Add a clear selfie while holding the same ID.";
+    if (Object.keys(nextErrors).length) {
+      setErrors(nextErrors);
+      setError("Please complete the highlighted fields before submitting.");
+      const first = Object.keys(nextErrors)[0] as keyof SignupErrors;
+      const ids: Record<keyof SignupErrors, string> = {
+        fullName: "su-name", email: "su-email", country: "su-country", phone: "su-phone",
+        password: "su-password", identityDocument: "su-id-section", selfie: "su-selfie-section",
+      };
+      window.requestAnimationFrame(() => document.getElementById(ids[first])?.focus());
+      return;
+    }
+    setErrors({}); setLoading(true);
     try {
       await apiSubmitSignupApplication({
-        full_name: fullName, email, password, phone: normalizedPhone,
-        country, locale, identity_document: identityDocument, selfie,
+        full_name: fullName.trim(), email: email.trim().toLowerCase(), password, phone: normalizedPhone!,
+        country, locale, identity_document: identityDocument!, selfie: selfie!,
       });
       window.location.assign("/app/verify?submitted=1");
     } catch (cause) {
-      setError(apiErrorMessage(cause, "We could not create your account. Check the details and try again."));
+      const message = apiErrorMessage(cause, "We could not create your account. Check the details and try again.");
+      const lower = message.toLowerCase();
+      if (lower.includes("email") || lower.includes("account") && lower.includes("exists")) {
+        setErrors((current) => ({ ...current, email: message }));
+        document.getElementById("su-email")?.focus();
+      } else if (lower.includes("full name")) {
+        setErrors((current) => ({ ...current, fullName: message }));
+        document.getElementById("su-name")?.focus();
+      } else if (lower.includes("password")) {
+        setErrors((current) => ({ ...current, password: message }));
+        document.getElementById("su-password")?.focus();
+      } else if (lower.includes("mobile") || lower.includes("phone")) {
+        setErrors((current) => ({ ...current, phone: message }));
+        document.getElementById("su-phone")?.focus();
+      } else if (lower.includes("country")) {
+        setErrors((current) => ({ ...current, country: message }));
+        document.getElementById("su-country")?.focus();
+      } else {
+        setError(message);
+      }
     } finally { setLoading(false); }
   };
 
@@ -152,15 +210,15 @@ export default function SignUpPage() {
 
       {error && <p role="alert" className="auth-application-error mt-4 rounded-xl px-3.5 py-3 text-xs leading-relaxed">{error}</p>}
 
-      <form onSubmit={submit} className="mt-3">
+      <form onSubmit={submit} className="mt-3" noValidate>
         <div className="auth-application-columns grid gap-4">
           <section className="auth-application-section rounded-[18px] border p-4">
             <div className="mb-3 flex items-center gap-2"><UserRound className="h-4 w-4" /><h2 className="text-sm font-bold">Account details</h2></div>
             <div className="grid gap-3">
-              <div><label htmlFor="su-name" className={label}>Full name</label><div className="relative"><UserRound className={icon} /><input id="su-name" required autoFocus autoComplete="name" value={fullName} onChange={(e) => setFullName(e.target.value)} className={field} placeholder="Your name" /></div></div>
-              <div><label htmlFor="su-email" className={label}>Email address *</label><div className="relative"><Mail className={icon} /><input id="su-email" type="email" required autoComplete="email" value={email} onChange={(e) => setEmail(e.target.value)} className={field} placeholder="you@example.com" /></div></div>
-              <div><label className={label}>Country and mobile number *</label><div className="grid gap-3 sm:grid-cols-[0.9fr_1.1fr] lg:grid-cols-1 2xl:grid-cols-[0.9fr_1.1fr]"><CountryPicker value={country} onChange={(value) => { setCountry(value); setPhoneError(""); }} describedBy={phoneError ? "su-phone-error" : "su-phone-help"} /><div className="relative"><Phone className={icon} /><input id="su-phone" type="tel" required autoComplete="tel" value={phone} onChange={(e) => { setPhone(e.target.value); setPhoneError(""); }} className={field} placeholder={country ? `Mobile number (${PHONE_COUNTRIES.find((item) => item.code === country)?.dial})` : "Select country first"} aria-invalid={!!phoneError} /></div></div>{phoneError && <p id="su-phone-error" role="alert" className="auth-application-danger mt-1 text-[11px]">{phoneError}</p>}</div>
-              <div><label htmlFor="su-password" className={label}>Create a password</label><div className="relative"><Lock className={icon} /><input id="su-password" type={showPassword ? "text" : "password"} required minLength={8} autoComplete="new-password" value={password} onChange={(e) => setPassword(e.target.value)} className={`${field} pe-12`} placeholder="Use 8+ characters with a number and symbol" /><button type="button" onClick={() => setShowPassword((value) => !value)} className="absolute end-2 top-1/2 grid h-10 w-10 -translate-y-1/2 place-items-center rounded-xl" aria-label={showPassword ? "Hide password" : "Show password"}>{showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}</button></div>{strengthLabel && <div className="mt-2 flex items-center gap-2"><span className="auth-application-track h-1 flex-1 overflow-hidden rounded-full"><span className="block h-full rounded-full" style={{ width: `${strength}%`, background: strengthInk }} /></span><span className="text-[10px] font-bold" style={{ color: strengthInk }}>{strengthLabel}</span></div>}</div>
+              <div><label htmlFor="su-name" className={label}>Full name *</label><div className="relative"><UserRound className={icon} /><input id="su-name" autoFocus autoComplete="name" value={fullName} onChange={(e) => { setFullName(e.target.value); setErrors((current) => ({ ...current, fullName: undefined })); setError(""); }} className={`${field}${errors.fullName ? " auth-field-invalid" : ""}`} placeholder="Your full name" aria-invalid={!!errors.fullName} aria-describedby={errors.fullName ? "su-name-error" : undefined} /></div>{errors.fullName && <p id="su-name-error" role="alert" className="auth-field-message">{errors.fullName}</p>}</div>
+              <div><label htmlFor="su-email" className={label}>Email address *</label><div className="relative"><Mail className={icon} /><input id="su-email" type="email" autoComplete="email" value={email} onChange={(e) => { setEmail(e.target.value); setErrors((current) => ({ ...current, email: undefined })); setError(""); }} className={`${field}${errors.email ? " auth-field-invalid" : ""}`} placeholder="you@example.com" aria-invalid={!!errors.email} aria-describedby={errors.email ? "su-email-error" : undefined} /></div>{errors.email && <p id="su-email-error" role="alert" className="auth-field-message">{errors.email}</p>}</div>
+              <div><label htmlFor="su-country" className={label}>Country and mobile number *</label><div className="grid gap-3 sm:grid-cols-[0.9fr_1.1fr] lg:grid-cols-1 2xl:grid-cols-[0.9fr_1.1fr]"><div><CountryPicker value={country} onChange={(value) => { setCountry(value); setErrors((current) => ({ ...current, country: undefined, phone: undefined })); setError(""); }} describedBy={errors.country ? "su-country-error" : undefined} invalid={!!errors.country} />{errors.country && <p id="su-country-error" role="alert" className="auth-field-message">{errors.country}</p>}</div><div><div className="relative"><Phone className={icon} /><input id="su-phone" type="tel" autoComplete="tel" inputMode="tel" value={phone} onChange={(e) => { setPhone(e.target.value); setErrors((current) => ({ ...current, phone: undefined })); setError(""); }} className={`${field}${errors.phone ? " auth-field-invalid" : ""}`} placeholder={country ? `Mobile number (${PHONE_COUNTRIES.find((item) => item.code === country)?.dial})` : "Select country first"} aria-invalid={!!errors.phone} aria-describedby={errors.phone ? "su-phone-error" : undefined} /></div>{errors.phone && <p id="su-phone-error" role="alert" className="auth-field-message">{errors.phone}</p>}</div></div></div>
+              <div><label htmlFor="su-password" className={label}>Create a password *</label><div className="relative"><Lock className={icon} /><input id="su-password" type={showPassword ? "text" : "password"} autoComplete="new-password" value={password} onChange={(e) => { setPassword(e.target.value); setErrors((current) => ({ ...current, password: undefined })); setError(""); }} className={`${field} pe-12${errors.password ? " auth-field-invalid" : ""}`} placeholder="8+ characters, number and symbol" aria-invalid={!!errors.password} aria-describedby={errors.password ? "su-password-error" : "su-password-help"} /><button type="button" onClick={() => setShowPassword((value) => !value)} className="absolute end-2 top-1/2 grid h-10 w-10 -translate-y-1/2 place-items-center rounded-xl" aria-label={showPassword ? "Hide password" : "Show password"}>{showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}</button></div>{errors.password && <p id="su-password-error" role="alert" className="auth-field-message">{errors.password}</p>}{strengthLabel && <div id="su-password-help" className="mt-2 flex items-center gap-2"><span className="auth-application-track h-1 flex-1 overflow-hidden rounded-full"><span className="block h-full rounded-full" style={{ width: `${strength}%`, background: strengthInk }} /></span><span className="text-[10px] font-bold" style={{ color: strengthInk }}>{strengthLabel}</span></div>}</div>
             </div>
           </section>
 
@@ -168,10 +226,9 @@ export default function SignUpPage() {
             <div className="mb-1 flex items-center gap-2"><ShieldCheck className="h-4 w-4" /><h2 className="text-sm font-bold">Identity check</h2></div>
             <p className="mb-3 text-[11px] leading-relaxed" style={{ color: "var(--a-muted)" }}>Only authorised reviewers can open these encrypted files. Maximum {MAX_DOCUMENT_MB} MB each.</p>
             <div className="grid gap-3">
-              <DocumentField title="Photo ID" note="Aadhaar, voter card or driving licence" file={identityDocument} accept="image/jpeg,image/png,image/webp,image/heic,application/pdf" facing="environment" onChange={(file) => setDocument("id", file)} />
-              <DocumentField title="Selfie with the same ID" note="Keep your face and the ID clear in the frame" file={selfie} accept="image/jpeg,image/png,image/webp,image/heic" facing="user" onChange={(file) => setDocument("selfie", file)} />
+              <div id="su-id-section" tabIndex={-1}><DocumentField title="Photo ID" note="Aadhaar, voter card or driving licence" file={identityDocument} accept="image/jpeg,image/png,image/webp,image/heic,application/pdf" facing="environment" error={errors.identityDocument} onChange={(file) => { setDocument("id", file); setError(""); }} /></div>
+              <div id="su-selfie-section" tabIndex={-1}><DocumentField title="Selfie with the same ID" note="Keep your face and the ID clear in the frame" file={selfie} accept="image/jpeg,image/png,image/webp,image/heic" facing="user" error={errors.selfie} onChange={(file) => { setDocument("selfie", file); setError(""); }} /></div>
             </div>
-            {documentError && <p role="alert" className="auth-application-danger mt-2 text-[11px] leading-relaxed">{documentError}</p>}
           </section>
         </div>
 

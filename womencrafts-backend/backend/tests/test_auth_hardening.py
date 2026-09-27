@@ -49,6 +49,22 @@ def test_signup_normalizes_phone_and_checks_selected_country() -> None:
         )
 
 
+@pytest.mark.parametrize(
+    ("password", "message"),
+    [
+        ("12345678!", "at least one letter"),
+        ("Password!", "at least one number"),
+        ("Password1", "at least one symbol"),
+    ],
+)
+def test_new_passwords_require_letter_number_and_symbol(password: str, message: str) -> None:
+    with pytest.raises(ValidationError, match=message):
+        SignUpRequest(
+            full_name="Asha", email="asha@example.com", password=password,
+            country="IN", phone="+919876543210",
+        )
+
+
 class _Request:
     def __init__(self, token: str):
         self.cookies = {"access_token": token}

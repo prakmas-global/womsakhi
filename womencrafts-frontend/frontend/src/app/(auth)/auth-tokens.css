@@ -537,6 +537,9 @@
 .auth-application-remove { color:var(--a-danger-ink); background:var(--a-tint-rose-2); }
 .auth-application-error { color:var(--a-danger-ink); border:1px solid var(--a-edge-rose); background:var(--a-tint-rose-2); }
 .auth-application-danger { color:var(--a-danger-ink); }
+.auth-field-invalid { border-color:var(--a-danger-ink) !important; box-shadow:0 0 0 2px color-mix(in srgb,var(--a-danger-ink) 13%,transparent); }
+.auth-document-invalid { border-color:var(--a-danger-ink) !important; background:color-mix(in srgb,var(--a-tint-rose-2) 70%,var(--a-glass)) !important; }
+.auth-field-message { margin-top:5px; color:var(--a-danger-ink); font-size:11px; font-weight:600; line-height:1.35; }
 .auth-application-track { background:var(--a-track); }
 .auth-application-trust { display:flex; align-items:flex-start; gap:10px; color:var(--a-ink-2); border:1px solid var(--a-edge-violet); background:var(--a-tint-violet); }
 .auth-application-trust svg { color:var(--a-lilac); }
