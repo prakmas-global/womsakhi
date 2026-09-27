@@ -185,11 +185,14 @@ export async function apiSubmitSignupApplication(input: {
   form.append("locale", input.locale);
   form.append("identity_document", input.identity_document);
   form.append("selfie", input.selfie);
-  const { data } = await apiClient.post<AuthPayload>("/auth/signup-application", form, expected({
+  // Do not use apiClient here: it deliberately defaults every request to
+  // application/json. Keeping that header on FormData prevents the browser
+  // from adding the multipart boundary, so FastAPI sees an empty form and
+  // reports `full_name: Field required` even though the field is visible.
+  const { data } = await axios.post<AuthPayload>(`${API_URL}/auth/signup-application`, form, {
+    withCredentials: true,
     timeout: 120_000,
-    // A duplicate email or rejected field is a form answer, not an outage.
-    // The signup screen renders it beside the relevant control.
-  }));
+  });
   return data;
 }
 

@@ -167,7 +167,7 @@ export default function SignUpPage() {
       window.location.assign("/app/verify?submitted=1");
     } catch (cause) {
       const message = apiErrorMessage(cause, "We could not create your account. Check the details and try again.");
-      const lower = message.toLowerCase();
+      const lower = message.toLowerCase().replaceAll("_", " ");
       if (lower.includes("email") || lower.includes("account") && lower.includes("exists")) {
         setErrors((current) => ({ ...current, email: message }));
         document.getElementById("su-email")?.focus();
