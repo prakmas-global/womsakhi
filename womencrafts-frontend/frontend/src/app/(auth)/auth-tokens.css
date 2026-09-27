@@ -525,6 +525,35 @@
   .auth-kindness,.auth-principles { display:none; }
 }
 
+/* One-screen application: account details and evidence share one submission. */
+.auth-application-section,
+.auth-application-document { border-color:var(--a-edge); background:var(--a-glass); color:var(--a-ink); }
+.auth-application-step { border:1px solid var(--a-edge-violet); background:var(--a-tint-violet); color:var(--a-ink-2); }
+.auth-application-step span { color:#fff; background:var(--a-fill); }
+.auth-application-one-step,.auth-application-added { color:var(--a-ok); background:color-mix(in srgb,var(--a-ok) 12%,transparent); }
+.auth-application-thumb { color:var(--a-rose); background:var(--a-tint-rose); }
+.auth-application-secondary { border:1px solid var(--a-edge); color:var(--a-ink-2); background:var(--a-well); }
+.auth-application-secondary:hover { border-color:var(--a-rose); color:var(--a-rose); }
+.auth-application-remove { color:var(--a-danger-ink); background:var(--a-tint-rose-2); }
+.auth-application-error { color:var(--a-danger-ink); border:1px solid var(--a-edge-rose); background:var(--a-tint-rose-2); }
+.auth-application-danger { color:var(--a-danger-ink); }
+.auth-application-track { background:var(--a-track); }
+.auth-application-trust { display:flex; align-items:flex-start; gap:10px; color:var(--a-ink-2); border:1px solid var(--a-edge-violet); background:var(--a-tint-violet); }
+.auth-application-trust svg { color:var(--a-lilac); }
+@media(min-width:1051px) {
+  .auth-signup .auth-story { width:50%; }
+  .auth-signup .auth-form-zone { width:50%; min-width:650px; padding-left:1.5vw; }
+  .auth-signup .auth-panel { max-height:calc(100dvh - 126px); }
+}
+@media(min-width:601px) and (max-width:1050px) {
+  .auth-signup .auth-panel { max-width:760px; }
+}
+@media(max-width:600px) {
+  .auth-application { padding-bottom:8px; }
+  .auth-application-section { padding:13px; }
+  .auth-application-document { padding:12px; }
+}
+
 .auth-panel-content { animation:auth-panel-in 220ms ease-out both; }
 @keyframes auth-panel-in {
   from { opacity:0; transform:translateX(8px); }
@@ -786,6 +815,50 @@
   .auth-signup .auth-panel { padding-top:14px; }
   .auth-signup h1 { margin-top:0 !important; }
   .auth-signup form { margin-top:10px !important; }
+}
+
+/* Signup is an application workspace, not the narrow sign-in card. Its
+   information hierarchy stays vertical while fields use the available width. */
+.auth-signup form label:not(:has(input)) {
+  position:static;
+  width:auto;
+  height:auto;
+  overflow:visible;
+  clip:auto;
+}
+.auth-signup .auth-application-section {
+  background:linear-gradient(145deg,rgba(255,255,255,.82),rgba(255,249,252,.58));
+  box-shadow:0 10px 28px -24px rgba(74,24,61,.42);
+}
+.auth-signup .auth-application-document {
+  min-width:0;
+  background:rgba(255,255,255,.76);
+}
+
+@media(min-width:1051px) {
+  .auth-signup { --auth-frame-h:min(820px,calc(100dvh - 32px)); }
+  .auth-signup .auth-story {
+    width:calc(var(--auth-frame-w)*.42 - 8px);
+  }
+  .auth-signup .auth-form-zone {
+    width:calc(var(--auth-frame-w)*.58 - 8px);
+    min-width:0;
+    padding:56px 28px 14px;
+  }
+  .auth-signup .auth-panel {
+    max-width:none;
+    max-height:calc(var(--auth-frame-h) - 68px);
+    padding-top:4px;
+  }
+  .auth-signup .auth-panel-content { width:100%; }
+  .auth-signup .auth-field { min-height:46px; }
+  .auth-signup .auth-application-section { padding:13px; }
+  .auth-signup .auth-application-document { padding:11px; }
+  .auth-signup .auth-application-columns {
+    grid-template-columns:minmax(0,1.08fr) minmax(0,.92fr);
+    align-items:start;
+  }
+  .auth-signup .auth-note { margin-top:10px; }
 }
 
 /* ── DARK: the violet night the design was drawn in ────────────────────────── */

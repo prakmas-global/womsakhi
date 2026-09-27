@@ -27,7 +27,7 @@ export function Tabs({
 }) {
   const norm = tabs.map((t) => (typeof t === "string" ? { value: t, label: t, count: undefined } : t));
   return (
-    <div className={`flex flex-wrap items-center gap-1 border-b border-line ${className}`} role="tablist">
+    <div className={`flex flex-nowrap items-center gap-1 overflow-x-auto border-b border-line [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden ${className}`} role="tablist">
       {norm.map((t) => {
         const active = t.value === value;
         return (
@@ -36,7 +36,7 @@ export function Tabs({
             role="tab"
             aria-selected={active}
             onClick={() => onChange(t.value)}
-            className={`relative -mb-px flex items-center gap-2 border-b-2 px-3.5 py-2.5 text-sm font-semibold transition ${
+            className={`relative -mb-px flex shrink-0 items-center gap-2 whitespace-nowrap border-b-2 px-3.5 py-2.5 text-sm font-semibold transition ${
               active
                 ? "border-brand-600 text-brand-ink"
                 : "border-transparent text-ink-subtle hover:text-ink"

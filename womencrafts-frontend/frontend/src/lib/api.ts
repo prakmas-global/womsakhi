@@ -166,6 +166,31 @@ export async function apiSignUp(
   return data;
 }
 
+export async function apiSubmitSignupApplication(input: {
+  full_name: string;
+  email: string;
+  password: string;
+  phone: string;
+  country: string;
+  locale: string;
+  identity_document: File;
+  selfie: File;
+}): Promise<AuthPayload> {
+  const form = new FormData();
+  form.append("full_name", input.full_name);
+  form.append("email", input.email);
+  form.append("password", input.password);
+  form.append("phone", input.phone);
+  form.append("country", input.country);
+  form.append("locale", input.locale);
+  form.append("identity_document", input.identity_document);
+  form.append("selfie", input.selfie);
+  const { data } = await apiClient.post<AuthPayload>("/auth/signup-application", form, {
+    timeout: 120_000,
+  });
+  return data;
+}
+
 export async function apiSignIn(
   email: string,
   password: string,

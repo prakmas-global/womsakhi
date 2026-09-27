@@ -76,6 +76,24 @@ MAX_IDENTITY_DOCUMENTS = 2
 REQUIRED_IDENTITY_DOCUMENTS = 2
 
 
+def document_signature_matches(content_type: str, header: bytes) -> bool:
+    """Reject a file whose bytes do not match its claimed safe media type."""
+    kind = (content_type or "").lower()
+    if kind in {"image/jpeg", "image/jpg"}:
+        return header.startswith(b"\xff\xd8\xff")
+    if kind == "image/png":
+        return header.startswith(b"\x89PNG\r\n\x1a\n")
+    if kind == "image/webp":
+        return len(header) >= 12 and header[:4] == b"RIFF" and header[8:12] == b"WEBP"
+    if kind == "application/pdf":
+        return header.startswith(b"%PDF-")
+    if kind == "image/heic":
+        return len(header) >= 12 and header[4:8] == b"ftyp" and header[8:12] in {
+            b"heic", b"heix", b"hevc", b"hevx", b"mif1", b"msf1"
+        }
+    return False
+
+
 def _users():
     return get_database()[UserModel.collection_name]
 
@@ -110,6 +128,76 @@ async def send_verification_email(user: dict) -> None:
     token = await issue_email_token(str(user["_id"]))
     url = f"{settings.APP_BASE_URL.rstrip('/')}/verify-email?token={token}"
     await mailer.send(mailer.verification_email(user.get("full_name", ""), url), user["email"])
+
+
+def application_is_ready(state: str, email_confirmed: bool, document_count: int) -> bool:
+    """One rule for the member-to-admin hand-off, shared by both arrival paths."""
+    return (
+        state in {VerificationStatus.PENDING_EMAIL, VerificationStatus.PENDING_DOCUMENTS}
+        and email_confirmed
+        and document_count >= REQUIRED_IDENTITY_DOCUMENTS
+    )
+
+
+async def _submit_ready_application(
+    user_id: ObjectId,
+    background_tasks: BackgroundTasks,
+    request: Request | None = None,
+) -> bool:
+    """Move a complete application to the admin queue without another member action.
+
+    Email confirmation and the second document can arrive in either order. Both
+    call this function, and the conditional update ensures that only one of
+    them sends the initial notifications when the requests race.
+    """
+    user = await _users().find_one({"_id": user_id, "role": MEMBER_ROLE})
+    if not user:
+        return False
+    state = _state_of(user)
+    document_count = await _docs().count_documents(
+        {"user_id": str(user_id), "status": DocumentModel.STATUS_PENDING}
+    )
+    email_confirmed = bool(user.get("email_verified_at")) or state != VerificationStatus.PENDING_EMAIL
+    if not application_is_ready(state, email_confirmed, document_count):
+        return False
+
+    now = datetime.now(timezone.utc)
+    next_reminder = now + timedelta(hours=24)
+    updated = await _users().find_one_and_update(
+        {
+            "_id": user_id,
+            "verification_status": {
+                "$in": [VerificationStatus.PENDING_EMAIL, VerificationStatus.PENDING_DOCUMENTS]
+            },
+        },
+        {"$set": {
+            "verification_status": VerificationStatus.IN_REVIEW,
+            "verification_reminder_count": 1,
+            "verification_review_requested_at": now,
+            "verification_next_request_at": next_reminder,
+            "verification_next_reminder_at": next_reminder,
+            "updated_at": now,
+        }},
+        return_document=ReturnDocument.AFTER,
+    )
+    if not updated:
+        return False
+
+    from app.engines.verification_followups import send_review_alert
+    background_tasks.add_task(send_review_alert, updated, 1)
+    background_tasks.add_task(
+        mailer.send,
+        mailer.submitted_email(updated.get("full_name", "")),
+        updated["email"],
+    )
+    await record(
+        updated,
+        "member.auto_submit_review",
+        target=str(user_id),
+        detail="Application automatically submitted after email and both identity photos were received",
+        request=request,
+    )
+    return True
 
 
 # --- applicant ---------------------------------------------------------------
@@ -236,7 +324,11 @@ async def resend_email(current_user: dict = Depends(get_current_user)):
 
 
 @router.post("/confirm-email", response_model=MessageResponse, summary="Confirm an email address")
-async def confirm_email(token: str = Query(..., description="Token from the emailed link")):
+async def confirm_email(
+    background_tasks: BackgroundTasks,
+    request: Request,
+    token: str = Query(..., description="Token from the emailed link"),
+):
     """
     Public on purpose — she clicks this straight from her inbox, possibly on a
     device where she isn't signed in yet.
@@ -259,15 +351,19 @@ async def confirm_email(token: str = Query(..., description="Token from the emai
 
     # Only advance if she is still waiting on this step.
     if user.get("verification_status") == VerificationStatus.PENDING_EMAIL:
-        await _users().update_one(
+        updated = await _users().find_one_and_update(
             {"_id": user["_id"]},
             {"$set": {
                 "verification_status": VerificationStatus.PENDING_DOCUMENTS,
                 "email_verified_at": now,
                 "updated_at": now,
             }},
+            return_document=ReturnDocument.AFTER,
         )
-    return MessageResponse(message="Email confirmed. Next, upload your ID so we can verify you.")
+        queued = await _submit_ready_application(updated["_id"], background_tasks, request)
+        if queued:
+            return MessageResponse(message="Email confirmed. Your application is now with our review team.")
+    return MessageResponse(message="Email confirmed. Add your ID photo and selfie to complete your application.")
 
 
 
@@ -316,6 +412,13 @@ async def save_document_file(file, user: dict) -> tuple[str, str, int]:
         destination.unlink(missing_ok=True)
         raise HTTPException(status.HTTP_500_INTERNAL_SERVER_ERROR, f"Could not save the file: {exc}")
 
+    if size == 0 or not document_signature_matches(file.content_type or "", destination.read_bytes()[:16]):
+        destination.unlink(missing_ok=True)
+        raise HTTPException(
+            status.HTTP_415_UNSUPPORTED_MEDIA_TYPE,
+            "That file does not appear to be a valid photo or PDF. Choose the original file and try again.",
+        )
+
     # Encrypt at rest, if a key is configured.
     #
     # The web path around this file is careful — private directory, uuid in the
@@ -357,6 +460,8 @@ async def save_document_file(file, user: dict) -> tuple[str, str, int]:
     summary="Submit an identity document",
 )
 async def upload_document(
+    background_tasks: BackgroundTasks,
+    request: Request,
     file: UploadFile = File(..., description="Photo or scan of a government ID"),
     doc_type: str = Form("other", description="aadhaar | pan | passport | voter_id | driving_licence | national_id | selfie | supporting | other"),
     current_user: dict = Depends(get_current_user),
@@ -364,10 +469,10 @@ async def upload_document(
     state = current_user.get("verification_status")
     if state == VerificationStatus.ACTIVE:
         raise HTTPException(status.HTTP_400_BAD_REQUEST, "Your account is already verified.")
-    if state == VerificationStatus.PENDING_EMAIL:
+    if state == VerificationStatus.IN_REVIEW:
         raise HTTPException(
             status.HTTP_400_BAD_REQUEST,
-            "Please confirm your email address first — check your inbox.",
+            "Your application is already with the review team.",
         )
 
     user_id = str(current_user["_id"])
@@ -404,11 +509,16 @@ async def upload_document(
         (PRIVATE_ROOT / replaced.get("stored_name", "")).unlink(missing_ok=True)
 
     now = datetime.now(timezone.utc)
+    next_state = (
+        VerificationStatus.PENDING_EMAIL
+        if state == VerificationStatus.PENDING_EMAIL
+        else VerificationStatus.PENDING_DOCUMENTS
+    )
     await _users().update_one(
         {"_id": current_user["_id"]},
         {
             "$set": {
-                "verification_status": VerificationStatus.PENDING_DOCUMENTS,
+                "verification_status": next_state,
                 "updated_at": now,
             },
             "$unset": {
@@ -420,6 +530,7 @@ async def upload_document(
             },
         },
     )
+    await _submit_ready_application(current_user["_id"], background_tasks, request)
     return DocumentResponse(**DocumentModel.to_response(doc))
 
 
@@ -913,6 +1024,21 @@ async def approve(
         # Not an error worth a stack trace, but not a silent second "You're
         # in" email and a duplicate audit row either.
         raise HTTPException(status.HTTP_400_BAD_REQUEST, "She is already verified.")
+    if was != VerificationStatus.IN_REVIEW:
+        raise HTTPException(
+            status.HTTP_409_CONFLICT,
+            "This application is not ready for approval. Both identity photos must be submitted first.",
+        )
+    evidence = await _docs().find(
+        {"user_id": str(user["_id"]), "status": DocumentModel.STATUS_PENDING},
+        {"doc_type": 1},
+    ).to_list(REQUIRED_IDENTITY_DOCUMENTS + 1)
+    evidence_types = {row.get("doc_type") for row in evidence}
+    if len(evidence) != REQUIRED_IDENTITY_DOCUMENTS or "selfie" not in evidence_types:
+        raise HTTPException(
+            status.HTTP_409_CONFLICT,
+            "Approval requires one government ID and one selfie. Ask the member to complete her application.",
+        )
 
     now = datetime.now(timezone.utc)
     await _users().update_one(

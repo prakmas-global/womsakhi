@@ -89,7 +89,7 @@ const EMPTY_COUNTS: QueueCounts = {
 
 /** Who can be acted on, and how. The server enforces the same rules. */
 function canApprove(state: VerificationState) {
-  return state === "in_review" || state === "pending_documents" || state === "rejected";
+  return state === "in_review";
 }
 function canReject(state: VerificationState) {
   return state === "in_review" || state === "pending_documents";
@@ -260,10 +260,7 @@ export default function VerificationQueuePage() {
   const approve = useCallback(async (t: Target) => {
     const ok = await confirm({
       title: `Approve ${t.full_name}?`,
-      description:
-        t.documents === 0
-          ? "She has not sent a document. Approving admits her anyway — only do this if you have verified her another way. She is emailed that she is in, and the app opens for her immediately."
-          : "She is admitted immediately, emailed that she is in, and the app opens for her.",
+      description: "Confirm that the government ID and matching selfie belong to this applicant. She is admitted immediately, emailed that she is in, and the app opens for her.",
       confirmLabel: "Approve",
     });
     if (!ok) return;
@@ -430,7 +427,7 @@ export default function VerificationQueuePage() {
             }
           />
         ) : (
-          <div className="overflow-x-auto">
+          <div className="hidden overflow-x-auto sm:block">
             <table className="w-full text-left">
               <thead>
                 <tr className="border-b border-line text-2xs font-semibold uppercase tracking-wide text-ink-subtle">
@@ -514,6 +511,34 @@ export default function VerificationQueuePage() {
             </table>
           </div>
         )}
+
+        {!loading && !loadError && rows.length > 0 && (
+          <ul className="space-y-3 sm:hidden" aria-label="Applications">
+            {rows.map((r) => (
+              <li key={r.user_id} className="rounded-2xl border border-line bg-surface p-3.5 shadow-sm">
+                <button type="button" onClick={() => void openDetail(r.user_id)} className="flex w-full items-start gap-3 text-left">
+                  <Avatar name={r.full_name} size="md" />
+                  <span className="min-w-0 flex-1">
+                    <span className="block truncate text-sm font-semibold text-ink">{r.full_name || "—"}</span>
+                    <span className="block truncate text-xs text-ink-subtle">{r.email}</span>
+                    <span className="mt-1 block text-2xs text-ink-subtle">{r.member_id || "Member ID pending"} · {r.applied || "Date pending"}</span>
+                  </span>
+                  <Badge tone={REVIEW_STATE_TONE[r.status] ?? "slate"}>{REVIEW_STATE_LABEL[r.status] ?? r.status}</Badge>
+                </button>
+                <div className="mt-3 flex items-center justify-between gap-2 border-t border-line pt-3">
+                  <span className="flex min-w-0 flex-wrap gap-1">
+                    {r.documents.length ? r.documents.map((d) => (
+                      <Badge key={d.id} tone={d.status === "approved" ? "emerald" : d.status === "rejected" ? "rose" : "slate"}>{d.doc_type_label}</Badge>
+                    )) : <span className="text-xs text-ink-subtle">No photos yet</span>}
+                  </span>
+                  <button type="button" className="btn btn-primary btn-sm shrink-0" onClick={() => void openDetail(r.user_id)}>
+                    <Eye className="h-3.5 w-3.5" /> Review
+                  </button>
+                </div>
+              </li>
+            ))}
+          </ul>
+        )}
       </Card>
 
       {/* ── the submission ─────────────────────────────────────────────── */}
@@ -578,7 +603,7 @@ export default function VerificationQueuePage() {
               </div>
               <div>
                 <dt className="text-2xs font-semibold uppercase tracking-wide text-ink-subtle">Member id</dt>
-                <dd className="mt-1 text-ink-muted">{detail.member_id || "Not assigned"}</dd>
+                <dd className="mt-1 break-all text-ink-muted">{detail.member_id || "Not assigned"}</dd>
               </div>
               <div>
                 <dt className="text-2xs font-semibold uppercase tracking-wide text-ink-subtle">Phone</dt>
@@ -621,11 +646,22 @@ export default function VerificationQueuePage() {
                   She has not sent a document yet.
                 </p>
               ) : (
-                <ul className="space-y-2">
+                <ul className="grid gap-3 sm:grid-cols-2">
                   {detail.documents.map((doc: ReviewedDocument) => {
                     const last = doc.access_log.length > 0 ? doc.access_log[doc.access_log.length - 1] : null;
                     return (
-                      <li key={doc.id} className="rounded-xl border border-line px-3 py-2.5">
+                      <li key={doc.id} className="overflow-hidden rounded-2xl border border-line bg-surface">
+                        <button
+                          type="button"
+                          onClick={() => void openDocument(doc)}
+                          disabled={opening === doc.id}
+                          className="flex min-h-28 w-full flex-col items-center justify-center gap-2 bg-surface-inset px-3 py-4 text-center text-brand-ink transition hover:bg-brand-tint"
+                        >
+                          {opening === doc.id ? <Loader2 className="h-7 w-7 animate-spin" /> : <Eye className="h-7 w-7" />}
+                          <span className="text-xs font-semibold">Preview {doc.doc_type_label}</span>
+                          <span className="text-2xs text-ink-subtle">Secure view · access is logged</span>
+                        </button>
+                        <div className="p-3">
                         <div className="flex items-center gap-3">
                           <div className="min-w-0 flex-1">
                             <p className="flex flex-wrap items-center gap-2 text-sm font-medium text-ink">
@@ -638,14 +674,6 @@ export default function VerificationQueuePage() {
                               {doc.original_name} · {formatSize(doc.size)} · sent {doc.submitted}
                             </p>
                           </div>
-                          <button
-                            onClick={() => void openDocument(doc)}
-                            disabled={opening === doc.id}
-                            className="btn btn-outline btn-sm"
-                          >
-                            {opening === doc.id ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Eye className="h-3.5 w-3.5" />}
-                            View
-                          </button>
                         </div>
                         {(doc.review_note || doc.reviewed_by_name) && (
                           <p className="mt-2 text-xs text-ink-muted">
@@ -659,6 +687,7 @@ export default function VerificationQueuePage() {
                             ? "Nobody has opened this yet."
                             : `Opened ${doc.access_count} ${doc.access_count === 1 ? "time" : "times"}${last ? `, last by ${last.name || "a staff member"} on ${formatWhen(last.at)}` : ""}.`}
                         </p>
+                        </div>
                       </li>
                     );
                   })}

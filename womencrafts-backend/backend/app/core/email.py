@@ -375,21 +375,25 @@ def verification_email(name: str, url: str) -> EmailMessageSpec:
 
 def submitted_email(name: str) -> EmailMessageSpec:
     first = (name or "").strip().split(" ")[0] or "there"
+    status_url = f"{settings.APP_BASE_URL.rstrip('/')}/app/verify"
     html = _wrap(
-        "We've received your documents",
-        "Thank you. Our team is reviewing your application now. Because WomSakhi is "
+        "Your application is received",
+        "Your account details and both identity photos arrived safely. Because WomSakhi is "
         "a women-only community, every account is checked by a real person. This "
         "usually takes 1–2 working days.",
         "View application status",
-        f"{settings.APP_BASE_URL.rstrip('/')}/app/verify",
-        preheader="Your documents reached the WomSakhi review team.",
+        status_url,
+        preheader="Your secure application reached the WomSakhi review team.",
         footer_note="This is a status update for your WomSakhi application.",
         recipient_name=name,
-        title_accent="documents",
-        next_step="We will email you as soon as the review is complete.",
+        title_accent="received",
+        next_step="Nothing else is needed now. We will email you as soon as the review is complete.",
     )
-    text = f"Hi {first},\n\nWe've received your documents. Our team reviews every account by hand; this usually takes 1-2 working days."
-    return EmailMessageSpec(to="", subject="WomSakhi — your application is being reviewed", html=html, text=text)
+    text = (
+        f"Hi {first},\n\nYour WomSakhi application is being reviewed. "
+        f"Nothing else is needed now. View status: {status_url}"
+    )
+    return EmailMessageSpec(to="", subject="WomSakhi — application received", html=html, text=text)
 
 
 def approved_email(name: str, url: str) -> EmailMessageSpec:
@@ -413,19 +417,20 @@ def approved_email(name: str, url: str) -> EmailMessageSpec:
 def rejected_email(name: str, reason: str) -> EmailMessageSpec:
     first = (name or "").strip().split(" ")[0] or "there"
     detail = f"<br><strong style='color:#8f2b68;'>Reason:</strong> {escape(reason)}" if reason else ""
+    application_url = f"{settings.APP_BASE_URL.rstrip('/')}/app/verify"
     html = _wrap(
         "We couldn't verify your account",
         "We weren't able to verify your account with the documents provided."
         f"{detail}",
-        "Contact support",
-        f"{settings.APP_BASE_URL.rstrip('/')}/contact",
+        "Fix my application",
+        application_url,
         preheader="An update about your WomSakhi application.",
         footer_note="This is a status update for your WomSakhi application.",
         recipient_name=name,
         title_accent="account",
-        next_step="Contact support and our team will help you resolve the issue.",
+        next_step="Sign in, replace the requested photo, and it will return to the review team automatically.",
     )
-    text = f"Hi {first},\n\nWe couldn't verify your account. {reason}"
+    text = f"Hi {first},\n\nWe couldn't verify your account. {reason}\n\nFix your application: {application_url}"
     return EmailMessageSpec(to="", subject="WomSakhi — about your application", html=html, text=text)
 
 

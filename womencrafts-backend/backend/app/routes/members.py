@@ -839,6 +839,21 @@ async def approve_member(
 
     user = await _linked_user(member)
     if user:
+        if user.get("verification_status") != VerificationStatus.IN_REVIEW:
+            raise HTTPException(
+                status.HTTP_409_CONFLICT,
+                "Open the identity review first. This account is not ready for approval.",
+            )
+        evidence = await db[DocumentModel.collection_name].find(
+            {"user_id": str(user["_id"]), "status": DocumentModel.STATUS_PENDING},
+            {"doc_type": 1},
+        ).to_list(3)
+        evidence_types = {row.get("doc_type") for row in evidence}
+        if len(evidence) != 2 or "selfie" not in evidence_types:
+            raise HTTPException(
+                status.HTTP_409_CONFLICT,
+                "Approval requires one government ID and one selfie in the secure review screen.",
+            )
         await _users().update_one(
             {"_id": user["_id"]},
             {"$set": {

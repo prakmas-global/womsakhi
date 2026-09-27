@@ -179,8 +179,16 @@ export function AuthProvider({
     setUser(payload.user);
   };
 
-  // Members and staff share one login but land in different apps.
-  const homeFor = (u: User) => (u.audience === "member" ? "/app" : "/dashboard");
+  // One redirect, to the screen that can actually help this account now.
+  // Sending every member through `/app` made pending applications flash the
+  // home loader before the gate sent them to verification, and made a newly
+  // approved member bounce once more before onboarding.
+  const homeFor = (u: User) => {
+    if (u.audience !== "member") return "/dashboard";
+    if (u.verification_status !== "active") return "/app/verify";
+    if (!u.onboarding_complete) return "/app/welcome";
+    return "/app";
+  };
 
   const signUp = useCallback(
     async (

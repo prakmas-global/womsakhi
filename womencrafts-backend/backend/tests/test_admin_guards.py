@@ -71,7 +71,7 @@ def _module_gated() -> set[str]:
 #: Endpoints that must stay reachable without a role check, and why.
 EXEMPT = {
     # Signed out by definition — this is how you get a session at all.
-    "auth.signup", "auth.signin", "auth.refresh", "auth.session",
+    "auth.signup", "auth.signup_application", "auth.signin", "auth.refresh", "auth.session",
     "auth.get_me", "auth.signout", "auth.signout_everywhere",
     "auth.forgot_password", "auth.reset_password",
     # She has no account to sign in with yet; the token is the credential.

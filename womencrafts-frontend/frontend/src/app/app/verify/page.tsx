@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState, useSyncExternalStore } from "react";
 
-import { ACCEPTED_DOCUMENT_TYPES, MAX_DOCUMENT_MB, MAX_VERIFICATION_DOCUMENTS, apiDeleteMyDocument, apiMyDocumentObjectUrl, apiMyVerification, apiRequestMyVerificationReview, apiResendVerificationEmail, apiUploadDocument, validateDocument, type ApiDocument, type VerificationStatus } from "@/lib/verification-api";
+import { ACCEPTED_DOCUMENT_TYPES, MAX_DOCUMENT_MB, MAX_VERIFICATION_DOCUMENTS, apiDeleteMyDocument, apiMyDocumentObjectUrl, apiMyVerification, apiResendVerificationEmail, apiUploadDocument, validateDocument, type ApiDocument, type VerificationStatus } from "@/lib/verification-api";
 import { useAuth } from "@/context/AuthContext";
 import { useResource } from "@/lib/use-resource";
 import { messageFrom, useAction } from "@/lib/use-action";
@@ -11,9 +11,8 @@ import * as Icons from "@/components/ux/icons";
 import { Btn, Card, IconTile, Pill } from "@/components/ux/kit";
 import { OnboardAside, OnboardFrame } from "@/components/ux/onboard/Frame";
 import { useT } from "@/i18n";
-import { phonePrimary, phoneSecondary } from "@/components/ux/PhoneParts";
 
-type Stage = "email" | "documents" | "review" | "rejected";
+type Stage = "documents" | "review" | "rejected";
 
 const DOCS = [
   /*
@@ -57,7 +56,6 @@ export default function VerifyPage() {
     useCallback(() => apiMyVerification(), []),
     null as VerificationStatus | null,
   );
-  const [advanced, setAdvanced] = useState<Stage | null>(null);
   const [problem, setProblem] = useState("");
   /*
     Two inputs, because they are two different questions to the phone.
@@ -141,13 +139,22 @@ export default function VerifyPage() {
     };
   }, [cameraFor]);
 
-  /** The server's word, unless she has stepped forward within this visit. */
-  const stage: Stage = advanced ?? (
-    status?.status === "pending_email" ? "email"
-    : status?.status === "rejected" ? "rejected"
+  /** One member task: add the evidence. Everything after that belongs to admin. */
+  const stage: Stage = (
+    status?.status === "rejected" ? "rejected"
     : status?.status === "in_review" || status?.status === "active" ? "review"
     : "documents"
   );
+
+  useEffect(() => {
+    const refresh = () => { void refetch(); };
+    window.addEventListener("focus", refresh);
+    document.addEventListener("visibilitychange", refresh);
+    return () => {
+      window.removeEventListener("focus", refresh);
+      document.removeEventListener("visibilitychange", refresh);
+    };
+  }, [refetch]);
 
   // Her documents, as the server holds them — not a list of ids she clicked.
   const sent = status?.documents ?? [];
@@ -174,17 +181,6 @@ export default function VerifyPage() {
       fallbackError: "Could not send it again just now. Try in a moment.",
     },
   );
-  const requestReview = useAction(
-    () => apiRequestMyVerificationReview(),
-    {
-      onDone: () => { setAdvanced("review"); void refetch(); },
-      fallbackError: "Could not notify the verification team just now. Try again in a moment.",
-    },
-  );
-  const nextRequestAt = status?.next_review_request_at
-    ? new Date(status.next_review_request_at)
-    : null;
-  const canRequestReview = !nextRequestAt || Number.isNaN(nextRequestAt.getTime()) || nextRequestAt <= new Date();
 
   /**
    * Open the camera, or the files, for one of the two documents.
@@ -236,7 +232,7 @@ export default function VerifyPage() {
     setProblem("");
     try {
       await apiUploadDocument(file, pickingFor.current);
-      refetch();
+      await refetch();
     } catch (e) {
       setProblem(messageFrom(e, "That did not go through. Nothing has been sent — try again in a moment."));
     } finally {
@@ -279,30 +275,7 @@ export default function VerifyPage() {
       setProblem(messageFrom(e, "We could not delete that document. Try again."));
     } finally { setDeleting(null); }
   }
-  const stepOf: Record<Stage, number> = { email: 1, documents: 2, review: 3, rejected: 2 };
-
-  /*
-    The way back, from step 2 onwards.
-
-    Step 2 asks for an ID, and the step behind it is the one holding her email
-    — which is exactly where a woman goes when the link has not arrived, or
-    when she wants to check she confirmed the right address before handing over
-    a document. Without this she could only get there by signing out.
-
-    It moves the stage rather than calling `history.back()`: she may have
-    arrived on this screen straight from the confirmation email, with no
-    history in the tab for a back to pop.
-
-    Step 3 gets one only when she reached it in this visit — `advanced` is set
-    and the server has not yet said `in_review`. Once the review has actually
-    begun there is nothing to go back and change, so no control is drawn.
-  */
-  const back =
-    stage === "documents" || stage === "rejected"
-      ? { to: "Your email", go: () => setAdvanced("email") }
-      : stage === "review" && advanced === "review"
-        ? { to: "Your photos", go: () => setAdvanced("documents") }
-        : null;
+  const stepOf: Record<Stage, number> = { documents: 1, review: 2, rejected: 1 };
 
   /** Both ways in. `pickingFor` says which of the two documents it is for. */
   const take = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -346,20 +319,16 @@ export default function VerifyPage() {
   return (
     <OnboardFrame
       step={stepOf[stage]}
-      total={3}
-      onBack={back?.go}
-      backTo={back?.to}
+      total={2}
       onExit={() => void signOut()}
       exitLabel="Sign out"
       title={
-        stage === "email" ? "Confirm your email"
-        : stage === "documents" ? "Show us it is you"
-        : stage === "review" ? tr("verify.aPersonIsLookingAtThis")
+        stage === "documents" ? "Complete your application"
+        : stage === "review" ? "Application received"
               : tr("verify.weCouldNotConfirmThat")
       }
       sub={
-        stage === "email" ? tr("verify.weSentALinkTo", { email: user?.email ?? "" })
-        : stage === "documents" ? "WomSakhi is for women only, and a person checks every account by hand. This is the part that keeps it that way."
+        stage === "documents" ? "Add the required photos below. As soon as everything is ready, we submit it to the admin team automatically."
         : stage === "review" ? undefined
         : "The photo was too blurred to read. It happens — try once more."
       }
@@ -376,32 +345,22 @@ export default function VerifyPage() {
         />
       }
     >
-      {stage === "email" && (
-        <Card>
-          {/* On a phone the picture sits above the words, so the buttons get
-              the card's full width rather than what is left beside it. */}
-          <div className="flex items-start gap-4 max-lg:flex-col">
-            <IconTile icon="Mail" tint="--ux-tint-violet" ink="--ux-violet" size={52} radius={14} />
-            <div className="min-w-0 flex-1">
-              <h2 className="text-base font-semibold" style={{ color: "var(--ux-ink)" }}>{tr("verify.checkYourInbox")}</h2>
-              <p className="mt-1.5 text-xsm leading-relaxed" style={{ color: "var(--ux-ink-2)" }}>
-                {tr("verify.theLinkIsGoodFor24Hours")}
-              </p>
-              <div className="mt-4 flex flex-col gap-2.5 lg:flex-row lg:flex-wrap lg:items-center">
-                <Btn variant="primary" iconEnd="ArrowRight" className={phonePrimary} onClick={() => setAdvanced("documents")}>{tr("verify.iHaveConfirmedIt")}</Btn>
-                <Btn variant="outline" icon={resent ? "Check" : "RotateCcw"} disabled={resend.busy} className={phoneSecondary}
-                     onClick={() => void resend.run()}>
-                  {resend.busy ? "Sending…" : resent ? tr("verify.sentAgain")
-              : tr("verify.sendItAgain")}
-                </Btn>
-              </div>
-            </div>
-          </div>
-        </Card>
-      )}
-
       {(stage === "documents" || stage === "rejected") && (
         <>
+          {status?.status === "pending_email" && (
+            <Card className="mb-3">
+              <div className="flex items-start gap-3.5">
+                <IconTile icon="Mail" tint="--ux-tint-violet" ink="--ux-violet" size={46} radius={13} />
+                <div className="min-w-0 flex-1">
+                  <p className="text-sm font-semibold" style={{ color: "var(--ux-ink)" }}>Confirm {user?.email}</p>
+                  <p className="mt-1 text-xs leading-relaxed" style={{ color: "var(--ux-muted)" }}>You can add both photos now. Open the email whenever it arrives; we submit automatically after confirmation.</p>
+                  <Btn variant="outline" icon={resent ? "Check" : "RotateCcw"} disabled={resend.busy} size="sm" className="mt-3" onClick={() => void resend.run()}>
+                    {resend.busy ? "Sending…" : resent ? "Email sent again" : "Resend confirmation email"}
+                  </Btn>
+                </div>
+              </div>
+            </Card>
+          )}
           {stage === "rejected" && (
             <Card className="mb-[16px]" style={{ borderColor: "var(--ux-orange)" }}>
               <div className="flex items-start gap-3.5">
@@ -500,12 +459,11 @@ export default function VerifyPage() {
 
           <div className="mt-[24px] flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between lg:gap-4">
             <p className="text-[13px] lg:text-xs" style={{ color: "var(--ux-faint)" }}>
-              {allUploaded ? "That is everything we need." : `${DOCS.length - requiredAdded} still to add.`}
+              {allUploaded
+                ? status?.status === "pending_email" ? "Photos ready. Confirm your email and we submit automatically." : "Everything is ready and has been sent to the review team."
+                : `${DOCS.length - requiredAdded} still to add. We submit automatically when both are ready.`}
             </p>
-            <Btn variant="primary" iconEnd="ArrowRight"
-                 disabled={!allUploaded || requestReview.busy}
-                 className={phonePrimary}
-                 onClick={() => allUploaded && void requestReview.run()}>{requestReview.busy ? "Sending securely…" : tr("verify.sendForReview")}</Btn>
+            {allUploaded && <Pill tone="green">No extra verification step</Pill>}
           </div>
           {filePicker}
           {cameraFor && (
@@ -569,41 +527,14 @@ export default function VerifyPage() {
             <img loading="lazy" decoding="async" src="/ux/art/scene-woman-reading-document.webp" alt=""
                  className="h-[92px] w-[92px] shrink-0 object-contain" />
             <div className="min-w-0 flex-1">
-              <h2 className="text-base font-semibold" style={{ color: "var(--ux-ink)" }}>{tr("verify.usuallyDoneWithinADay")}</h2>
+              <h2 className="text-base font-semibold" style={{ color: "var(--ux-ink)" }}>Your part is complete</h2>
               {/* Never a bare "pending". Say who, and roughly how long. */}
               <p className="mt-2 text-xsm leading-relaxed" style={{ color: "var(--ux-ink-2)" }}>
-                Two people review new accounts, Monday to Saturday. You will get an email the moment it is
-                done — you do not need to keep this open.
+                The authorised admin team has your application. You will receive an email after approval or if a clearer image is needed. You do not need to request verification again or keep this screen open.
               </p>
-              <div className="mt-4 flex flex-col gap-2.5 lg:flex-row lg:flex-wrap">
-                <Btn
-                  variant="primary"
-                  icon={requestReview.busy ? "Loader" : "BellRing"}
-                  className={phonePrimary}
-                  disabled={requestReview.busy || !canRequestReview}
-                  onClick={() => void requestReview.run()}
-                >
-                  {requestReview.busy
-                    ? "Notifying the team…"
-                    : !canRequestReview
-                      ? `Request #${status?.review_request_count || 1} is with the team`
-                      : status?.review_request_count
-                        ? "Send another follow-up"
-                        : "Ask the team to review now"}
-                </Btn>
-                <Btn variant="outline" icon="Files" className={phoneSecondary} onClick={() => setAdvanced("documents")}>Review or replace documents</Btn>
-                <Btn variant="ghost" className={phoneSecondary} onClick={() => setAdvanced("rejected")}>{tr("verify.seeWhatHappensIfSomethingIs")}</Btn>
+              <div className="mt-4 flex items-center gap-2 rounded-[14px] px-3 py-2.5" style={{ background: "var(--ux-tint-green)", color: "var(--ux-green-ink)" }}>
+                <Icons.CheckCircle2 className="h-4 w-4" /><span className="text-xs font-semibold">Submitted automatically to admin review</span>
               </div>
-              {requestReview.error && (
-                <p role="alert" className="mt-3 text-xsm leading-relaxed" style={{ color: "var(--ux-orange-ink)" }}>
-                  {requestReview.error}
-                </p>
-              )}
-              {!canRequestReview && nextRequestAt && (
-                <p className="mt-3 text-xs leading-relaxed" style={{ color: "var(--ux-muted)" }}>
-                  The team has been notified. You can send another follow-up after {nextRequestAt.toLocaleString("en-IN", { day: "numeric", month: "short", hour: "numeric", minute: "2-digit" })}.
-                </p>
-              )}
             </div>
           </div>
         </Card>
