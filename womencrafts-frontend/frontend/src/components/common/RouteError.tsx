@@ -1,7 +1,7 @@
 "use client";
 
 import { usePathname } from "next/navigation";
-import { AlertTriangle, RefreshCw } from "lucide-react";
+import { AlertTriangle, Home, RefreshCw, ShieldCheck } from "lucide-react";
 
 /**
  * The error boundary body shared by every route outside the member app —
@@ -41,32 +41,39 @@ export default function RouteError({
   const backHref  = home ?? area.href;
   const backLabel = homeLabel ?? area.label;
   return (
-    <div role="alert" className="flex min-h-[60vh] flex-col items-center justify-center px-6 text-center">
-      <span className="flex h-16 w-16 items-center justify-center rounded-2xl bg-status-warn-bg text-status-warn-ink">
-        <AlertTriangle className="h-8 w-8" strokeWidth={1.8} />
-      </span>
+    <div role="alert" className="grid min-h-[60vh] place-items-center px-4 py-8 sm:px-6">
+      <div className="relative isolate w-full max-w-xl overflow-hidden rounded-3xl border border-line bg-surface px-6 py-9 text-center shadow-[var(--wc-shadow-overlay)] sm:px-10">
+        <span aria-hidden className="pointer-events-none absolute left-1/2 top-0 -z-10 h-44 w-44 -translate-x-1/2 -translate-y-1/3 rounded-full bg-status-warn-bg blur-3xl" />
+        <span className="mx-auto flex h-[72px] w-[72px] items-center justify-center rounded-[22px] border border-status-warn-border bg-status-warn-bg text-status-warn-ink shadow-sm">
+          <AlertTriangle className="h-8 w-8" strokeWidth={1.7} aria-hidden />
+        </span>
 
-      <h1 className="mt-4 font-display text-xl font-bold text-ink">
+      <h1 className="mt-5 font-display text-2xl font-bold tracking-tight text-ink">
         We could not load {what}
       </h1>
-      <p className="mt-1.5 max-w-[44ch] text-sm leading-relaxed text-ink-subtle">
+      <p className="mx-auto mt-2 max-w-[44ch] text-sm leading-6 text-ink-subtle">
         This is a problem on our side, not something you did. Trying again usually works — the
         connection may simply have dropped.
       </p>
 
-      <div className="mt-5 flex flex-wrap justify-center gap-3">
+      <p className="mx-auto mt-4 flex w-fit items-center gap-2 rounded-xl bg-status-ok-bg px-3 py-2 text-xs font-medium text-status-ok-ink">
+        <ShieldCheck className="h-4 w-4" aria-hidden /> Your saved work is safe.
+      </p>
+
+      <div className="mt-6 flex flex-wrap justify-center gap-3">
         {reset && (
           <button type="button" onClick={reset} className="btn btn-primary">
             <RefreshCw className="h-4 w-4" aria-hidden />
             Try again
           </button>
         )}
-        <a href={backHref} className="btn btn-secondary">{backLabel}</a>
+        <a href={backHref} className="btn btn-secondary"><Home className="h-4 w-4" aria-hidden />{backLabel}</a>
       </div>
 
-      {digest && (
+        {digest && (
         <p className="mt-5 text-2xs text-ink-faint">Reference: {digest}</p>
-      )}
+        )}
+      </div>
     </div>
   );
 }

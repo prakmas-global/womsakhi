@@ -318,11 +318,15 @@ export function Btn({ children, variant = "primary", size = "md", icon, iconEnd,
   // Two refs on one node: the pointer hook writes --px/--py for the magnet, the
   // ripple hook appends ink on press. Merged rather than nested so the button
   // stays a single element and keeps its own hit area.
-  const point = usePointer<HTMLElement>();
-  const ink = useRipple<HTMLElement>();
+  const pointRef = usePointer<HTMLElement>();
+  const inkRef = useRipple<HTMLElement>();
   const setRef = (n: HTMLElement | null) => {
-    (point as React.MutableRefObject<HTMLElement | null>).current = n;
-    (ink as React.MutableRefObject<HTMLElement | null>).current = n;
+    // These hooks intentionally expose DOM refs so one interactive element can
+    // share pointer position and ripple behavior without adding wrapper nodes.
+    // eslint-disable-next-line react-hooks/immutability
+    (pointRef as React.MutableRefObject<HTMLElement | null>).current = n;
+    // eslint-disable-next-line react-hooks/immutability
+    (inkRef as React.MutableRefObject<HTMLElement | null>).current = n;
   };
 
   if (href) {
@@ -388,14 +392,20 @@ export function EmptyState({ title, body, icon = "Inbox", action }: {
   title: string; body: string; icon?: string; action?: React.ReactNode;
 }) {
   return (
-    <div className="flex flex-col items-center px-6 py-10 text-center">
-      <span className="grid h-[64px] w-[64px] place-items-center rounded-full"
-            style={{ background: "var(--ux-brand-tint)" }}>
-        <I name={icon} className="h-7 w-7" style={{ color: "var(--ux-brand)" }} />
+    <div className="relative isolate flex min-h-[210px] flex-col items-center justify-center overflow-hidden px-5 py-9 text-center sm:px-6">
+      <span aria-hidden className="pointer-events-none absolute left-1/2 top-1/2 -z-10 h-[150px] w-[150px] -translate-x-1/2 -translate-y-1/2 rounded-full blur-3xl"
+            style={{ background: "var(--ux-brand-tint)" }} />
+      <span className="relative grid h-[72px] w-[72px] place-items-center rounded-[22px] border shadow-[var(--ux-shadow-glow)]"
+            style={{ background: "linear-gradient(145deg, var(--ux-surface), var(--ux-brand-tint-2))", borderColor: "var(--ux-line)" }}>
+        <span aria-hidden className="absolute -right-1.5 -top-1.5 grid h-6 w-6 place-items-center rounded-full border"
+              style={{ background: "var(--ux-surface)", borderColor: "var(--ux-line)", color: "var(--ux-brand)" }}>
+          <I name="Sparkles" className="h-3.5 w-3.5" sw={1.9} />
+        </span>
+        <I name={icon} className="h-8 w-8" style={{ color: "var(--ux-brand)" }} sw={1.7} />
       </span>
-      <h2 className="mt-4 text-sm font-semibold" style={{ color: "var(--ux-ink)" }}>{title}</h2>
-      <p className="mt-1.5 max-w-[320px] text-xsm leading-relaxed" style={{ color: "var(--ux-muted)" }}>{body}</p>
-      {action && <div className="mt-4">{action}</div>}
+      <h2 className="mt-4 text-[17px] font-bold tracking-[-0.01em]" style={{ color: "var(--ux-ink)" }}>{title}</h2>
+      <p className="mt-1.5 max-w-[42ch] text-xsm leading-6" style={{ color: "var(--ux-muted)" }}>{body}</p>
+      {action && <div className="mt-5 flex flex-wrap justify-center gap-2">{action}</div>}
     </div>
   );
 }

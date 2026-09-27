@@ -1,5 +1,6 @@
 from typing import Optional
 from pydantic import BaseModel, EmailStr, field_validator
+import phonenumbers
 
 
 def _valid_password(value: str, label: str = "Password") -> str:
@@ -14,7 +15,8 @@ class SignUpRequest(BaseModel):
     full_name: str
     email: EmailStr
     password: str
-    phone: str = ""
+    country: str
+    phone: str
     locale: str = "en"  # the language she signed up in
 
     @field_validator("full_name")
@@ -29,6 +31,28 @@ class SignUpRequest(BaseModel):
     @classmethod
     def password_min_length(cls, v: str) -> str:
         return _valid_password(v)
+
+    @field_validator("country")
+    @classmethod
+    def country_is_required(cls, value: str) -> str:
+        value = value.strip().upper()
+        if len(value) != 2 or value not in phonenumbers.SUPPORTED_REGIONS:
+            raise ValueError("Select a valid country")
+        return value
+
+    @field_validator("phone")
+    @classmethod
+    def phone_matches_country(cls, value: str, info) -> str:
+        country = info.data.get("country", "")
+        if not value.strip():
+            raise ValueError("Mobile number is required")
+        try:
+            parsed = phonenumbers.parse(value, country or None)
+        except phonenumbers.NumberParseException as exc:
+            raise ValueError("Enter a valid mobile number for the selected country") from exc
+        if not phonenumbers.is_valid_number(parsed) or phonenumbers.region_code_for_number(parsed) != country:
+            raise ValueError("Enter a valid mobile number for the selected country")
+        return phonenumbers.format_number(parsed, phonenumbers.PhoneNumberFormat.E164)
 
 
 class SignInRequest(BaseModel):

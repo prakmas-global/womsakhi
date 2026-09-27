@@ -6,7 +6,7 @@ import {
 } from "lucide-react";
 
 import {
-  Badge, Card, Menu, MenuItem, Pagination, Spinner, StatCard, Tabs, useToast,
+  Badge, Card, ErrorState, Menu, MenuItem, NoResults, Pagination, SkeletonTable, StatCard, Tabs, useToast,
 } from "@/design-system";
 import { useAuth } from "@/context/AuthContext";
 import ReasonModal from "@/components/admin/community/ReasonModal";
@@ -96,7 +96,10 @@ export default function ReviewsPage() {
     }
   }, [filters]);
 
-  useEffect(() => { void load(); }, [load]);
+  useEffect(() => {
+    const timer = window.setTimeout(() => void load(), 0);
+    return () => window.clearTimeout(timer);
+  }, [load]);
 
   useEffect(() => {
     let alive = true;
@@ -188,27 +191,12 @@ export default function ReviewsPage() {
         </div>
 
         {error ? (
-          <div className="px-6 py-14 text-center">
-            <p className="text-sm font-semibold text-ink">Could not load the reviews</p>
-            <p className="mx-auto mt-1 max-w-sm text-xs text-ink-subtle">{error}</p>
-            <button className="btn btn-outline mt-4" onClick={() => void load()}>Try again</button>
-          </div>
+          <ErrorState title="Could not load reviews" description={error} onRetry={() => void load()} />
         ) : loading ? (
-          <div className="flex items-center justify-center py-16"><Spinner /></div>
+          <div className="px-5 py-4"><SkeletonTable rows={6} cols={4} /></div>
         ) : data.items.length === 0 ? (
-          <div className="px-6 py-14 text-center">
-            <span className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-brand-tint text-brand-ink">
-              <StarOff className="h-6 w-6" />
-            </span>
-            <p className="mt-3 text-sm font-semibold text-ink">
-              {state === "hidden" ? "Nothing is hidden" : filtered ? "Nothing matches that" : "No reviews yet"}
-            </p>
-            <p className="mx-auto mt-1 max-w-sm text-xs text-ink-subtle">
-              {state === "hidden"
-                ? "Anything you hide lands here with its reason, and can be restored."
-                : filtered ? "Try a different search or rating." : "Reviews appear here as buyers write them."}
-            </p>
-          </div>
+          <NoResults icon={StarOff} filtered={filtered} thing="reviews" onClear={filtered ? () => { setQ(""); setTerm(""); setState(""); setStars(0); setPage(1); } : undefined}
+            description={state === "hidden" ? "Anything you hide appears here with its reason and can be restored." : filtered ? "Try a different search or rating." : "Reviews appear here as buyers write them."} />
         ) : (
           <ul className="divide-y divide-line">
             {data.items.map((r) => (

@@ -153,13 +153,14 @@ export async function apiSignUp(
   full_name: string,
   email: string,
   password: string,
-  extra: { phone?: string; locale?: string } = {}
+  extra: { phone?: string; country?: string; locale?: string } = {}
 ): Promise<AuthPayload> {
   const { data } = await apiClient.post<AuthPayload>("/auth/signup", {
     full_name,
     email,
     password,
     phone: extra.phone ?? "",
+    country: extra.country ?? "",
     locale: extra.locale ?? "en",
   });
   return data;

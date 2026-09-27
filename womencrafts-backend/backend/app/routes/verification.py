@@ -8,8 +8,8 @@ Two audiences share this module:
 Security posture, deliberately:
   • ID documents are written to PRIVATE_MEDIA_DIR, which is NOT statically
     served. There is no public URL for them, ever.
-  • The only way to read one is an admin-authenticated streaming endpoint that
-    records who opened it.
+  • A member may preview only her own file; a reviewer may open review files
+    through the separately permission-gated and audited endpoint.
   • A member can only ever see her OWN status and documents; the user id comes
     from the token, never from the request body.
 """
@@ -72,6 +72,8 @@ ALLOWED_DOC_TYPES = {
 }
 
 CHUNK = 1024 * 1024
+MAX_IDENTITY_DOCUMENTS = 5
+REQUIRED_IDENTITY_DOCUMENTS = 2
 
 
 def _users():
@@ -117,7 +119,7 @@ async def my_status(current_user: dict = Depends(get_current_user)):
     state = current_user.get("verification_status") or VerificationStatus.ACTIVE
     docs = [
         DocumentModel.to_response(d)
-        async for d in _docs().find({"user_id": str(current_user["_id"])}).sort("created_at", -1)
+        async for d in _docs().find({"user_id": str(current_user["_id"]), "status": {"$ne": DocumentModel.STATUS_STORED}}).sort("created_at", -1)
     ]
     return VerificationStatusResponse(
         status=state,
@@ -150,10 +152,12 @@ async def request_my_review(
     """
     if current_user.get("role") != MEMBER_ROLE:
         raise HTTPException(status.HTTP_403_FORBIDDEN, "Only member applications can request review")
-    if _state_of(current_user) != VerificationStatus.IN_REVIEW:
+    current_state = _state_of(current_user)
+    if current_state not in {VerificationStatus.PENDING_DOCUMENTS, VerificationStatus.IN_REVIEW}:
         raise HTTPException(status.HTTP_400_BAD_REQUEST, "Upload your documents before requesting a review.")
-    if not await _docs().find_one({"user_id": str(current_user["_id"]), **REVIEWABLE}):
-        raise HTTPException(status.HTTP_400_BAD_REQUEST, "Upload your documents before requesting a review.")
+    document_count = await _docs().count_documents({"user_id": str(current_user["_id"]), "status": DocumentModel.STATUS_PENDING})
+    if document_count < REQUIRED_IDENTITY_DOCUMENTS:
+        raise HTTPException(status.HTTP_400_BAD_REQUEST, f"Upload at least {REQUIRED_IDENTITY_DOCUMENTS} documents before requesting a review.")
 
     now = datetime.now(timezone.utc)
     next_allowed = current_user.get("verification_next_request_at")
@@ -168,7 +172,7 @@ async def request_my_review(
     updated = await _users().find_one_and_update(
         {
             "_id": current_user["_id"],
-            "verification_status": VerificationStatus.IN_REVIEW,
+            "verification_status": {"$in": [VerificationStatus.PENDING_DOCUMENTS, VerificationStatus.IN_REVIEW]},
             "$or": [
                 {"verification_next_request_at": {"$exists": False}},
                 {"verification_next_request_at": {"$lte": now}},
@@ -176,6 +180,7 @@ async def request_my_review(
         },
         {"$set": {
             "verification_reminder_count": request_number,
+            "verification_status": VerificationStatus.IN_REVIEW,
             "verification_review_requested_at": now,
             "verification_next_request_at": next_request,
             "verification_next_reminder_at": next_request,
@@ -191,6 +196,12 @@ async def request_my_review(
 
     from app.engines.verification_followups import send_review_alert
     background_tasks.add_task(send_review_alert, updated, request_number)
+    if current_state == VerificationStatus.PENDING_DOCUMENTS:
+        background_tasks.add_task(
+            mailer.send,
+            mailer.submitted_email(current_user.get("full_name", "")),
+            current_user["email"],
+        )
     await record(
         current_user,
         "member.request_review",
@@ -347,7 +358,7 @@ async def save_document_file(file, user: dict) -> tuple[str, str, int]:
 )
 async def upload_document(
     file: UploadFile = File(..., description="Photo or scan of a government ID"),
-    doc_type: str = Form("other", description="aadhaar | pan | passport | voter_id | driving_licence | national_id | other"),
+    doc_type: str = Form("other", description="aadhaar | pan | passport | voter_id | driving_licence | national_id | selfie | supporting | other"),
     current_user: dict = Depends(get_current_user),
 ):
     state = current_user.get("verification_status")
@@ -359,10 +370,21 @@ async def upload_document(
             "Please confirm your email address first — check your inbox.",
         )
 
+    user_id = str(current_user["_id"])
+    existing_count = await _docs().count_documents({"user_id": user_id, "status": DocumentModel.STATUS_PENDING})
+    replaced = None
+    if doc_type not in {"other", "supporting"}:
+        replaced = await _docs().find_one({"user_id": user_id, "doc_type": doc_type, "status": DocumentModel.STATUS_PENDING})
+    if existing_count >= MAX_IDENTITY_DOCUMENTS and not replaced:
+        raise HTTPException(
+            status.HTTP_400_BAD_REQUEST,
+            f"You can upload up to {MAX_IDENTITY_DOCUMENTS} verification documents. Delete one before adding another.",
+        )
+
     stored_name, _extension, size = await save_document_file(file, current_user)
 
     doc = DocumentModel.create_document(
-        user_id=str(current_user["_id"]),
+        user_id=user_id,
         member_id=current_user.get("member_id") or "",
         doc_type=doc_type,
         original_name=file.filename or stored_name,
@@ -370,14 +392,25 @@ async def upload_document(
         content_type=file.content_type or "",
         size=size,
     )
-    result = await _docs().insert_one(doc)
+    try:
+        result = await _docs().insert_one(doc)
+    except Exception:
+        (PRIVATE_ROOT / stored_name).unlink(missing_ok=True)
+        raise
     doc["_id"] = result.inserted_id
+
+    if replaced:
+        await _docs().delete_one({"_id": replaced["_id"], "user_id": user_id})
+        (PRIVATE_ROOT / replaced.get("stored_name", "")).unlink(missing_ok=True)
 
     now = datetime.now(timezone.utc)
     await _users().update_one(
         {"_id": current_user["_id"]},
         {
-            "$set": {"verification_status": VerificationStatus.IN_REVIEW, "updated_at": now},
+            "$set": {
+                "verification_status": VerificationStatus.PENDING_DOCUMENTS,
+                "updated_at": now,
+            },
             "$unset": {
                 "verification_review_requested_at": "",
                 "verification_next_request_at": "",
@@ -387,10 +420,52 @@ async def upload_document(
             },
         },
     )
-    await mailer.send(
-        mailer.submitted_email(current_user.get("full_name", "")), current_user["email"]
-    )
     return DocumentResponse(**DocumentModel.to_response(doc))
+
+
+def _member_document_query(document_id: str, current_user: dict) -> dict:
+    return {
+        "_id": to_object_id(document_id),
+        "user_id": str(current_user["_id"]),
+        "status": {"$ne": DocumentModel.STATUS_STORED},
+    }
+
+
+@router.get("/documents/{document_id}/mine", summary="Preview my verification document")
+async def preview_my_document(document_id: str, current_user: dict = Depends(get_current_user)):
+    doc = await _docs().find_one(_member_document_query(document_id, current_user))
+    if not doc:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "Document not found")
+    target = (PRIVATE_ROOT / doc["stored_name"]).resolve()
+    if PRIVATE_ROOT.resolve() not in target.parents or not target.is_file():
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "Document file is missing")
+    try:
+        payload = docvault.read_file(target)
+    except docvault.VaultUnavailable as exc:
+        raise HTTPException(status.HTTP_500_INTERNAL_SERVER_ERROR, str(exc))
+    return Response(
+        content=payload,
+        media_type=doc.get("content_type") or "application/octet-stream",
+        headers={"Content-Disposition": "inline", "Cache-Control": "no-store, private"},
+    )
+
+
+@router.delete("/documents/{document_id}", response_model=MessageResponse, summary="Delete my verification document")
+async def delete_my_document(document_id: str, current_user: dict = Depends(get_current_user)):
+    if current_user.get("verification_status") == VerificationStatus.ACTIVE:
+        raise HTTPException(status.HTTP_400_BAD_REQUEST, "Verified documents can no longer be changed.")
+    doc = await _docs().find_one(_member_document_query(document_id, current_user))
+    if not doc:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "Document not found")
+    await _docs().delete_one({"_id": doc["_id"], "user_id": str(current_user["_id"])})
+    (PRIVATE_ROOT / doc.get("stored_name", "")).unlink(missing_ok=True)
+    remaining = await _docs().count_documents({"user_id": str(current_user["_id"]), "status": DocumentModel.STATUS_PENDING})
+    if remaining < REQUIRED_IDENTITY_DOCUMENTS:
+        await _users().update_one(
+            {"_id": current_user["_id"]},
+            {"$set": {"verification_status": VerificationStatus.PENDING_DOCUMENTS, "updated_at": datetime.now(timezone.utc)}},
+        )
+    return MessageResponse(message="Document deleted. You can upload another one now.")
 
 
 # --- reviewer (approvers only) -----------------------------------------------

@@ -29,26 +29,9 @@ platform becomes unreadable, discovered months later by an admin trying to open
 one. Encryption whose key can be rotated away by an unrelated routine change is
 worse than none, because it is believed.
 
-**This is not switched on yet, and here is exactly why.** The write happens in
-`routes/verification.py::save_document_file` and the read in that module's
-`read_document`; both are owned by another agent and neither may be edited from
-here. Encrypting the files without changing those two functions would make
-every existing document unreadable through the only endpoint that reads them —
-breaking a live surface to improve a threat model, which is the wrong trade in
-that order.
-
-So the primitives are here, tested, and inert. Turning it on is:
-
-  1. set `DOCUMENT_ENCRYPTION_KEY` (see `generate_key`)
-  2. in `save_document_file`, wrap each chunk write — or simplest, call
-     `docvault.encrypt_file(destination)` once the file is closed
-  3. in `read_document`, stream `docvault.decrypt_bytes(target.read_bytes())`
-     through a `Response` instead of `FileResponse`
-  4. walk PRIVATE_MEDIA_DIR calling `encrypt_file` on what is already there —
-     `decrypt_bytes` passes plaintext through, so this can run gradually
-     rather than as a flag day
-
-Steps 2 and 3 have to land together, and step 4 only after both.
+The verification write and read paths use these primitives whenever a valid
+key is configured. Plaintext legacy files still open during migration; the
+`backfill` command seals them in place after the read path is deployed.
 """
 
 from __future__ import annotations
@@ -165,9 +148,23 @@ def encrypt_file(path: Path) -> bool:
     if is_encrypted(blob):
         return False
     tmp = path.with_suffix(path.suffix + ".enc-tmp")
-    tmp.write_bytes(encrypt_bytes(blob))
+    sealed = encrypt_bytes(blob)
+    tmp.write_bytes(sealed)
     tmp.chmod(0o600)
-    tmp.replace(path)
+    try:
+        tmp.replace(path)
+    except OSError:
+        # Some production object-storage mounts support reads and writes but do
+        # not implement an atomic rename. The old implementation surfaced this
+        # as "Could not store that document securely" after a successful
+        # upload. Keep the atomic path for normal disks and use a verified
+        # direct write only on mounts that reject rename.
+        path.write_bytes(sealed)
+        path.chmod(0o600)
+        tmp.unlink(missing_ok=True)
+    if not is_encrypted(path.read_bytes()[: len(MAGIC)]):
+        path.unlink(missing_ok=True)
+        raise VaultUnavailable("The encrypted document could not be verified after storage.")
     return True
 
 

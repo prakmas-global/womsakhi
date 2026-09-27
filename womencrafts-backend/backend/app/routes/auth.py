@@ -163,6 +163,7 @@ async def signup(payload: SignUpRequest, response: Response, request: Request):
         full_name=payload.full_name,
         email=email,
         phone=payload.phone or "",
+        country=payload.country,
         role="Member",
         status="Pending",
         code=await _next_member_code(db),
@@ -177,6 +178,7 @@ async def signup(payload: SignUpRequest, response: Response, request: Request):
         member_id=str(member_result.inserted_id),
         locale=payload.locale or "en",
         phone=payload.phone or "",
+        country=payload.country,
     )
     result = await collection.insert_one(doc)
     doc["_id"] = result.inserted_id

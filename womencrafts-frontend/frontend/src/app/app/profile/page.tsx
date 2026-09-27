@@ -6,7 +6,7 @@ import * as Icons from "@/components/ux/icons";
 import { apiMeProfile, type MeProfile } from "@/lib/member-api";
 import { useResource } from "@/lib/use-resource";
 import { useAuth } from "@/context/AuthContext";
-import { Btn, Card, Chip, I, Pill, Progress, SectionHead, Stat, Tabs } from "@/components/ux/kit";
+import { Avatar, Btn, Card, Chip, I, Pill, Progress, SectionHead, Stat, Tabs } from "@/components/ux/kit";
 import { ListGroup } from "@/components/ux/mobile/ListRow";
 import { GroupLabel, PhoneRow } from "@/components/ux/PhoneParts";
 import { HomeShell } from "@/components/ux/home/HomeShell";
@@ -66,7 +66,7 @@ export default function Profile() {
 
   const name = profile?.full_name || user?.full_name || ME.name;
   const verified = profile?.verification_status === "active";
-  const avatar = profile?.avatar || ME.avatar;
+  const avatar = profile?.avatar;
 
   // Settled credits dated inside this calendar month. The card said ₹24,350
   // to everybody, including a woman who has never been paid through WomSakhi.
@@ -127,11 +127,7 @@ export default function Profile() {
         */}
         <div className="flex items-start gap-3.5 lg:gap-5">
           <div className="relative shrink-0">
-            <span className="ux-hov block h-[72px] w-[72px] overflow-hidden rounded-full lg:h-[92px] lg:w-[92px]"
-                  style={{ background: "var(--ux-brand-tint)" }}>
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img loading="lazy" decoding="async" src={avatar} alt="" className="ux-art h-full w-full object-cover" />
-            </span>
+            <Avatar src={avatar} name={name} size={92} className="ux-hov h-[72px] w-[72px] lg:h-[92px] lg:w-[92px]" />
             {/* Was a <button> with no handler at all. It goes where the photo
                 is actually changed. */}
             {/*

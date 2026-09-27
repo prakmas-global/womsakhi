@@ -1,12 +1,11 @@
 "use client";
 
 import { memo, useState } from "react";
+import { monogram, monogramTone } from "@/lib/monogram";
 
 /**
- * Avatar: shows a real placeholder photo by default (deterministic per name) so
- * image slots look populated. Pass `src` to use an uploaded/real image — that's
- * what a future upload flow will set. Falls back to colored initials if the
- * image fails to load (e.g. offline).
+ * Uploaded photos are shown as-is. Missing or failed photos become a stable,
+ * branded two-letter monogram — never a stock stranger or a broken image.
  */
 
 const PALETTE = [
@@ -19,16 +18,7 @@ const PALETTE = [
   "bg-violet-tint text-violet-ink",
 ];
 
-function initials(name: string) {
-  const parts = name.trim().split(/\s+/).filter(Boolean);
-  if (!parts.length) return "?";
-  return (parts[0][0] + (parts[1]?.[0] ?? "")).toUpperCase();
-}
-function colorFor(name: string) {
-  let h = 0;
-  for (let i = 0; i < name.length; i++) h = (h * 31 + name.charCodeAt(i)) >>> 0;
-  return PALETTE[h % PALETTE.length];
-}
+function colorFor(name: string) { return PALETTE[monogramTone(name)]; }
 
 const SIZES: Record<string, string> = {
   xs: "h-7 w-7 text-2xs",
@@ -37,11 +27,6 @@ const SIZES: Record<string, string> = {
   lg: "h-12 w-12 text-base",
   xl: "h-16 w-16 text-lg",
 };
-
-/** Deterministic placeholder photo for a given name. */
-export function placeholderPhoto(name: string) {
-  return `https://i.pravatar.cc/160?u=${encodeURIComponent(name.trim().toLowerCase())}`;
-}
 
 function Avatar({
   name,
@@ -58,9 +43,9 @@ function Avatar({
 }) {
   const [failed, setFailed] = useState(false);
   const ringCls = ring ? "ring-2 ring-white" : "";
-  const photo = src || placeholderPhoto(name);
+  const photo = src?.trim();
 
-  if (!failed) {
+  if (photo && !failed) {
     // eslint-disable-next-line @next/next/no-img-element
     return (
       <img loading="lazy" decoding="async"
@@ -73,11 +58,13 @@ function Avatar({
   }
   return (
     <span
-      className={`inline-flex shrink-0 select-none items-center justify-center rounded-full font-semibold ${colorFor(
+      role="img"
+      aria-label={`${name || "WomSakhi"} — no photo uploaded`}
+      className={`relative inline-flex shrink-0 select-none items-center justify-center rounded-full border border-current/10 font-bold tracking-[0.04em] shadow-[inset_0_1px_0_var(--ux-sheen)] ${colorFor(
         name
       )} ${SIZES[size]} ${ringCls} ${className}`}
     >
-      {initials(name)}
+      {monogram(name, "person")}
     </span>
   );
 }

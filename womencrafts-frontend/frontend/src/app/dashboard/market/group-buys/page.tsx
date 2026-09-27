@@ -7,7 +7,7 @@ import {
 } from "lucide-react";
 
 import {
-  Badge, Card, Input, Menu, MenuItem, Modal, Pagination, ProgressBar, Spinner, StatCard, Tabs, Textarea, useToast,
+  Badge, Card, EmptyState, ErrorState, Input, Menu, MenuItem, Modal, NoResults, Pagination, ProgressBar, SkeletonTable, Spinner, StatCard, Tabs, Textarea, useToast,
 } from "@/design-system";
 import { useAuth } from "@/context/AuthContext";
 import ReasonModal from "@/components/admin/community/ReasonModal";
@@ -134,7 +134,10 @@ export default function GroupBuysPage() {
     }
   }, [page, status, term]);
 
-  useEffect(() => { void load(); }, [load]);
+  useEffect(() => {
+    const timer = window.setTimeout(() => void load(), 0);
+    return () => window.clearTimeout(timer);
+  }, [load]);
 
   useEffect(() => {
     let alive = true;
@@ -342,26 +345,13 @@ export default function GroupBuysPage() {
         </div>
 
         {error ? (
-          <div className="px-6 py-14 text-center">
-            <p className="text-sm font-semibold text-ink">Could not load the group buys</p>
-            <p className="mx-auto mt-1 max-w-sm text-xs text-ink-subtle">{error}</p>
-            <button className="btn btn-outline mt-4" onClick={() => void load()}>Try again</button>
-          </div>
+          <ErrorState title="Could not load group buys" description={error} onRetry={() => void load()} />
         ) : loading ? (
-          <div className="flex items-center justify-center py-16"><Spinner /></div>
+          <div className="px-5 py-4"><SkeletonTable rows={6} cols={6} /></div>
         ) : data.items.length === 0 ? (
-          <div className="px-6 py-14 text-center">
-            <span className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-brand-tint text-brand-ink">
-              <Package className="h-6 w-6" />
-            </span>
-            <p className="mt-3 text-sm font-semibold text-ink">{filtered ? "Nothing matches that" : "No group buys yet"}</p>
-            <p className="mx-auto mt-1 max-w-sm text-xs text-ink-subtle">
-              {filtered ? "Try a different search or tab." : "Open one: name the item, both prices, how many need to join and when it closes."}
-            </p>
-            {!filtered && can("create") && (
-              <button className="btn btn-primary mt-4" onClick={() => openEditor("new")}><Plus className="h-4 w-4" /> Open a group buy</button>
-            )}
-          </div>
+          filtered
+            ? <NoResults icon={Package} filtered thing="group buys" onClear={() => { setQ(""); setTerm(""); setStatus(""); setPage(1); }} />
+            : <EmptyState icon={Package} title="No group buys yet" description="Open one with the item, both prices, the required group size, and a closing date." action={can("create") ? <button className="btn btn-primary" onClick={() => openEditor("new")}><Plus className="h-4 w-4" /> Open a group buy</button> : undefined} />
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full text-left">

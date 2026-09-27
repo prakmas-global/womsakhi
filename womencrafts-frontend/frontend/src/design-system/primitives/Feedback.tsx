@@ -1,7 +1,7 @@
 "use client";
 
 import type { ReactNode } from "react";
-import { AlertTriangle, CheckCircle2, Info, XCircle } from "lucide-react";
+import { AlertTriangle, CheckCircle2, Info, RefreshCw, Sparkles, XCircle } from "lucide-react";
 
 import Button from "./Button";
 
@@ -125,15 +125,19 @@ export function EmptyState({
   className?: string;
 }) {
   return (
-    <div className={`flex flex-col items-center justify-center px-6 py-14 text-center ${className}`}>
+    <div className={`relative isolate flex min-h-52 flex-col items-center justify-center overflow-hidden px-6 py-12 text-center ${className}`}>
+      <span aria-hidden className="pointer-events-none absolute left-1/2 top-1/2 -z-10 h-40 w-40 -translate-x-1/2 -translate-y-1/2 rounded-full bg-brand-tint/55 blur-3xl" />
       {Icon && (
-        <span className="mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-linear-to-br from-brand-50 to-violet-50 text-brand-500">
-          <Icon className="h-7 w-7" strokeWidth={1.8} />
+        <span className="relative mb-4 grid h-[72px] w-[72px] place-items-center rounded-[22px] border border-brand-200/70 bg-linear-to-br from-surface via-brand-tint to-surface-inset text-brand-600 shadow-[var(--wc-shadow-raised)]">
+          <span aria-hidden className="absolute -right-1.5 -top-1.5 grid h-6 w-6 place-items-center rounded-full border border-brand-200 bg-surface text-brand-500 shadow-sm">
+            <Sparkles className="h-3.5 w-3.5" strokeWidth={1.9} />
+          </span>
+          <Icon className="h-8 w-8" strokeWidth={1.65} aria-hidden />
         </span>
       )}
-      <p className="font-display text-base font-bold text-ink">{title}</p>
-      {description && <p className="mt-1 max-w-sm text-sm text-ink-subtle">{description}</p>}
-      {action && <div className="mt-5">{action}</div>}
+      <p className="font-display text-lg font-bold tracking-[-0.01em] text-ink">{title}</p>
+      {description && <p className="mt-1.5 max-w-[42ch] text-sm leading-6 text-ink-subtle">{description}</p>}
+      {action && <div className="mt-5 flex flex-wrap justify-center gap-2">{action}</div>}
     </div>
   );
 }
@@ -178,10 +182,11 @@ export function NoResults({
       : `When there are ${thing}, they will appear here.`);
 
   return (
-    <div className={`flex flex-col items-center justify-center text-center ${compact ? "px-4 py-8" : "px-6 py-12"}`}>
+    <div className={`relative isolate flex flex-col items-center justify-center overflow-hidden text-center ${compact ? "min-h-36 px-4 py-7" : "min-h-48 px-6 py-10"}`}>
+      <span aria-hidden className="pointer-events-none absolute left-1/2 top-1/2 -z-10 h-32 w-32 -translate-x-1/2 -translate-y-1/2 rounded-full bg-brand-tint/45 blur-3xl" />
       {Icon && (
-        <span className="mb-3 flex h-12 w-12 items-center justify-center rounded-2xl bg-surface-inset text-ink-faint">
-          <Icon className="h-5 w-5" strokeWidth={1.8} />
+        <span className="mb-3 flex h-12 w-12 items-center justify-center rounded-2xl border border-line bg-linear-to-br from-surface to-brand-tint text-brand-ink shadow-sm">
+          <Icon className="h-5 w-5" strokeWidth={1.75} aria-hidden />
         </span>
       )}
       <p className="text-sm font-semibold text-ink">{title}</p>
@@ -213,14 +218,15 @@ export function ErrorState({
   className?: string;
 }) {
   return (
-    <div className={`flex flex-col items-center justify-center px-6 py-14 text-center ${className}`}>
-      <span className="mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-status-danger-bg text-status-danger-ink">
-        <XCircle className="h-7 w-7" strokeWidth={1.8} />
+    <div role="alert" className={`relative isolate flex min-h-52 flex-col items-center justify-center overflow-hidden px-6 py-12 text-center ${className}`}>
+      <span aria-hidden className="pointer-events-none absolute left-1/2 top-1/2 -z-10 h-40 w-40 -translate-x-1/2 -translate-y-1/2 rounded-full bg-status-danger-bg blur-3xl" />
+      <span className="mb-4 flex h-[72px] w-[72px] items-center justify-center rounded-[22px] border border-status-danger-border bg-status-danger-bg text-status-danger-ink shadow-[var(--wc-shadow-raised)]">
+        <XCircle className="h-8 w-8" strokeWidth={1.65} aria-hidden />
       </span>
-      <p className="font-display text-base font-bold text-ink">{title}</p>
-      <p className="mt-1 max-w-sm text-sm text-ink-subtle">{description}</p>
+      <p className="font-display text-lg font-bold tracking-[-0.01em] text-ink">{title}</p>
+      <p className="mt-1.5 max-w-[42ch] text-sm leading-6 text-ink-subtle">{description}</p>
       {onRetry && (
-        <Button variant="outline" size="sm" className="mt-5" onClick={onRetry}>
+        <Button variant="primary" size="sm" className="mt-5" icon={RefreshCw} onClick={onRetry}>
           Try again
         </Button>
       )}

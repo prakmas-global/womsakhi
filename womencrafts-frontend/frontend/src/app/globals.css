@@ -216,15 +216,15 @@ summary:focus-visible,
   }
 }
 
-/*
-  Brand lockup theme swap.
-
-  `BrandLockup` renders both files and lets CSS pick, so the correct one is on
-  screen at first paint. The selectors carry `img` to out-specify the layout
-  rules the callers put on the same element (`.auth-main-lockup` sets width and
-  height with !important); a bare class here would lose to them and both
-  lockups would stack.
-*/
-img.brand-lockup-dark { display: none; }
-.dark img.brand-lockup-light { display: none; }
-.dark img.brand-lockup-dark { display: block; }
+/* Keep the official transparent artwork unchanged while retaining its fine
+   gold outline on pale and dark surfaces. */
+.brand-lockup,
+.brand-wordmark,
+.ux-wordmark {
+  filter: drop-shadow(0 2px 5px rgb(83 20 58 / 0.12));
+}
+.dark .brand-lockup,
+.dark .brand-wordmark,
+.dark .ux-wordmark {
+  filter: brightness(1.28) saturate(1.06) drop-shadow(0 2px 9px rgb(255 184 211 / 0.24));
+}

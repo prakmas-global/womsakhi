@@ -87,6 +87,7 @@ EXEMPT = {
     "users.get_me", "users.update_profile", "users.change_password",
     "verification.my_status", "verification.resend_email",
     "verification.confirm_email", "verification.upload_document",
+    "verification.preview_my_document", "verification.delete_my_document",
     # A member escalating her own in-review application; the target id comes
     # from the authenticated session and cannot name another applicant.
     "verification.request_my_review",

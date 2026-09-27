@@ -8,6 +8,7 @@ import AuthShowcase from "@/components/auth/AuthShowcase";
 import LanguageMenu from "@/components/auth/LanguageMenu";
 import { useTheme } from "@/context/ThemeContext";
 import "./auth-tokens.css";
+import "flag-icons/css/flag-icons.min.css";
 
 type InfoPanel = "terms" | "privacy" | "help" | "contact";
 
@@ -81,7 +82,7 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
   }, [infoPanel]);
 
   return (
-    <main className="auth-scene auth-entry">
+    <main className={`auth-scene auth-entry${pathname === "/signup" ? " auth-signup" : ""}`}>
       <div className="auth-canvas" aria-hidden />
 
       <section className="auth-story" aria-label={tr("layout.womsakhiCommunity")}>

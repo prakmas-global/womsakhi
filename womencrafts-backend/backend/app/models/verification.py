@@ -113,6 +113,8 @@ class DocumentModel:
         "voter_id",
         "driving_licence",
         "national_id",
+        "selfie",
+        "supporting",
         "other",
     ]
 
@@ -123,6 +125,8 @@ class DocumentModel:
         "voter_id": "Voter ID",
         "driving_licence": "Driving licence",
         "national_id": "National ID",
+        "selfie": "Photo holding ID",
+        "supporting": "Supporting document",
         "other": "Other government ID",
     }
 

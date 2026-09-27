@@ -24,7 +24,7 @@ interface AuthContextValue {
     full_name: string,
     email: string,
     password: string,
-    extra?: { phone?: string; locale?: string }
+    extra?: { phone?: string; country?: string; locale?: string }
   ) => Promise<void>;
   signIn: (email: string, password: string, twoFactorCode?: string) => Promise<void>;
   signOut: () => Promise<void>;
@@ -187,7 +187,7 @@ export function AuthProvider({
       full_name: string,
       email: string,
       password: string,
-      extra: { phone?: string; locale?: string } = {}
+      extra: { phone?: string; country?: string; locale?: string } = {}
     ) => {
       setHandoff({ kind: "in", torn: false });
       try {

@@ -53,10 +53,10 @@ export function Brand({
       <span className="flex items-center">
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
-          src="/womsakhi-wordmark.webp"
+          src="/womsakhi-main-text-logo.png"
           alt="WomSakhi"
-          width={900}
-          height={183}
+          width={2171}
+          height={724}
           decoding="async"
           /*
             `maxWidth`, not just `width`.
