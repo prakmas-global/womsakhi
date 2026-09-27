@@ -73,6 +73,13 @@ const nextConfig: NextConfig = {
         source: "/:file*.webp",
         headers: [{ key: "Cache-Control", value: "public, max-age=86400, stale-while-revalidate=604800" }],
       },
+      {
+        // Transactional emails request these on every open. A one-day fresh
+        // window avoids repeatedly downloading and decoding the same animation
+        // while still allowing a design update to reach inboxes promptly.
+        source: "/:file*.gif",
+        headers: [{ key: "Cache-Control", value: "public, max-age=86400, stale-while-revalidate=604800" }],
+      },
     ];
   },
 

@@ -176,7 +176,7 @@ export default function SettingsPage() {
               <h2 className="font-display text-base font-semibold text-ink">Your account</h2>
               <div className="mt-4 grid grid-cols-1 gap-2 sm:grid-cols-2 xl:grid-cols-4">
                 {tiles.map((t) => (
-                  <Link key={t.href} href={t.href} className="flex items-center gap-3 rounded-xl border border-line p-3 transition hover:bg-surface-hover">
+                  <Link key={`${t.href}-${t.label}`} href={t.href} className="flex items-center gap-3 rounded-xl border border-line p-3 transition hover:bg-surface-hover">
                     <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-violet-tint text-violet-ink">
                       <t.icon className="h-4.5 w-4.5" />
                     </span>

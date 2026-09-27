@@ -8,6 +8,8 @@ import { ArrowRight, Eye, EyeOff, Loader2, Lock, Mail, Phone, ShieldCheck, UserR
 import { useAuth, getAuthError } from "@/context/AuthContext";
 import { useI18n } from "@/i18n";
 import { BrandLockup } from "@/components/brand/BrandLockup";
+import { normalizePhone, PHONE_COUNTRIES } from "@/lib/phone";
+import { CountryPicker } from "@/components/auth/CountryPicker";
 
 /**
  * Joining.
@@ -31,6 +33,8 @@ export default function SignUpPage() {
   const [fullName, setFullName] = useState("");
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
+  const [country, setCountry] = useState("");
+  const [phoneError, setPhoneError] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState("");
@@ -56,6 +60,16 @@ export default function SignUpPage() {
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
     setError("");
+    const normalizedPhone = normalizePhone(phone, country);
+    if (!country) {
+      setPhoneError("Select your country first.");
+      return;
+    }
+    if (!normalizedPhone) {
+      setPhoneError("Enter a valid mobile number for the selected country.");
+      return;
+    }
+    setPhoneError("");
     setLoading(true);
     try {
       // The phone goes with it. It used to be collected here and dropped.
@@ -63,7 +77,7 @@ export default function SignUpPage() {
       // than left in a cookie — `apiSignUp` defaulted it to "en", so a woman
       // who set Telugu before filling the form had an English account from the
       // moment she created it, and got English on every other device.
-      await signUp(fullName, email, password, { phone: phone.trim() || undefined, locale });
+      await signUp(fullName, email, password, { phone: normalizedPhone, country, locale });
     } catch (err) {
       setError(getAuthError(err));
     } finally {
@@ -135,20 +149,30 @@ export default function SignUpPage() {
         </div>
 
         <div>
-          <label htmlFor="su-phone" className={labelCls} style={labelStyle}>
-            Phone <span style={{ color: "var(--a-faint)" }}>— optional</span>
-          </label>
-          <div className="relative">
-            <Phone className={iconCls} style={iconStyle} aria-hidden />
-            <input
-              id="su-phone" type="tel" autoComplete="tel"
-              value={phone} onChange={(e) => setPhone(e.target.value)}
-              placeholder="+91 98765 43210" className={field} style={fieldPad}
-            />
+          <label htmlFor="su-country" className={labelCls} style={labelStyle}>Country and mobile number</label>
+          <div className="grid gap-2 sm:grid-cols-[minmax(0,1fr)_minmax(0,1.15fr)]">
+            <CountryPicker value={country} onChange={(code) => { setCountry(code); setPhoneError(""); }} describedBy={phoneError ? "su-phone-error" : "su-phone-help"} />
+            <div className="relative">
+              <Phone className={iconCls} style={iconStyle} aria-hidden />
+              <input
+                id="su-phone" type="tel" required autoComplete="tel"
+                value={phone} onChange={(e) => { setPhone(e.target.value); setPhoneError(""); }}
+                onBlur={() => {
+                  if (country && phone && !normalizePhone(phone, country)) setPhoneError("Enter a valid mobile number for the selected country.");
+                }}
+                placeholder={country ? `Mobile number (${PHONE_COUNTRIES.find((item) => item.code === country)?.dial})` : "Select country first"}
+                className={field} style={fieldPad}
+                aria-invalid={Boolean(phoneError)} aria-describedby={phoneError ? "su-phone-error" : "su-phone-help"}
+              />
+            </div>
           </div>
-          <p className="mt-1 text-2xs leading-snug" style={{ color: "var(--a-faint)" }}>
-            {tr("page.onlyToReachYouAboutYour")}
-          </p>
+          {phoneError ? (
+            <p id="su-phone-error" role="alert" className="mt-1 text-2xs leading-snug" style={{ color: "var(--a-danger-ink)" }}>{phoneError}</p>
+          ) : (
+            <p id="su-phone-help" className="mt-1 text-2xs leading-snug" style={{ color: "var(--a-faint)" }}>
+              We validate the number for your selected country before creating the account.
+            </p>
+          )}
         </div>
 
         <div>

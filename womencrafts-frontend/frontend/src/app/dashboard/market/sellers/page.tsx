@@ -8,7 +8,7 @@ import {
 } from "lucide-react";
 
 import {
-  Badge, Card, Menu, MenuItem, Modal, Pagination, Spinner, StatCard, useToast,
+  Badge, Card, ErrorState, Menu, MenuItem, Modal, NoResults, Pagination, SkeletonTable, Spinner, StatCard, useToast,
 } from "@/design-system";
 import { useAuth } from "@/context/AuthContext";
 import ReasonModal from "@/components/admin/community/ReasonModal";
@@ -103,7 +103,10 @@ function SellersInner() {
     }
   }, [filters]);
 
-  useEffect(() => { void load(); }, [load]);
+  useEffect(() => {
+    const timer = window.setTimeout(() => void load(), 0);
+    return () => window.clearTimeout(timer);
+  }, [load]);
 
   useEffect(() => {
     let alive = true;
@@ -238,23 +241,12 @@ function SellersInner() {
         </div>
 
         {error ? (
-          <div className="px-6 py-14 text-center">
-            <p className="text-sm font-semibold text-ink">Could not load the sellers</p>
-            <p className="mx-auto mt-1 max-w-sm text-xs text-ink-subtle">{error}</p>
-            <button className="btn btn-outline mt-4" onClick={() => void load()}>Try again</button>
-          </div>
+          <ErrorState title="Could not load sellers" description={error} onRetry={() => void load()} />
         ) : loading ? (
-          <div className="flex items-center justify-center py-16"><Spinner /></div>
+          <div className="px-5 py-4"><SkeletonTable rows={6} cols={6} /></div>
         ) : data.items.length === 0 ? (
-          <div className="px-6 py-14 text-center">
-            <span className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-brand-tint text-brand-ink">
-              <Users className="h-6 w-6" />
-            </span>
-            <p className="mt-3 text-sm font-semibold text-ink">{filtered ? "Nobody matches that" : "No sellers yet"}</p>
-            <p className="mx-auto mt-1 max-w-sm text-xs text-ink-subtle">
-              {filtered ? "Try a different search, or clear the filter." : "A member becomes a seller the moment she lists something."}
-            </p>
-          </div>
+          <NoResults icon={Users} filtered={filtered} thing="sellers" onClear={filtered ? () => { setQ(""); setTerm(""); setState(""); setPage(1); } : undefined}
+            description={filtered ? "Try a different name or account state." : "A member appears here when she publishes her first listing."} />
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full text-left">

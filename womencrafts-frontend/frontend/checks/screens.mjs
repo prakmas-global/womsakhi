@@ -106,6 +106,7 @@ for (const [mod, tok, list] of [["admin", staff, ADMIN], ["member", member, MEMB
   for (const vp of [
     { width: 1600, height: 1000, name: "desktop", mode: "light" },
     { width: 1600, height: 1000, name: "desktop-dark", mode: "dark" },
+    { width: 820, height: 1180, name: "tablet", mode: "light" },
     { width: 390, height: 844, name: "phone", mode: "light" },
   ]) {
     // A fresh browser per pass. One Chrome across 228 page loads exhausts

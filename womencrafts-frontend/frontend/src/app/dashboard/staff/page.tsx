@@ -7,7 +7,7 @@ import {
   Search, ShieldAlert, ShieldCheck, SlidersHorizontal, UserCog, UserPlus, Users,
 } from "lucide-react";
 import {
-  Badge, Card, Input, Menu, MenuItem, Modal, Select, StatCard, Spinner, useConfirm, useToast,
+  Badge, Card, EmptyState, Input, Menu, MenuItem, Modal, NoResults, Select, SkeletonTable, StatCard, useConfirm, useToast,
 } from "@/design-system";
 import {
   STATE_LABEL, STATE_NOTE, STATE_TONE,
@@ -309,21 +309,11 @@ export default function StaffPage() {
         </div>
 
         {loading ? (
-          <div className="flex items-center justify-center py-16"><Spinner /></div>
+          <div className="px-5 py-4"><SkeletonTable rows={6} cols={5} /></div>
         ) : shown.length === 0 ? (
-          <div className="px-6 py-14 text-center">
-            <span className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-brand-tint text-brand-ink">
-              <Users className="h-6 w-6" />
-            </span>
-            <p className="mt-3 text-sm font-semibold text-ink">
-              {query || stateFilter !== "All" ? "Nobody matches that" : "No staff yet"}
-            </p>
-            <p className="mx-auto mt-1 max-w-sm text-xs text-ink-subtle">
-              {query || stateFilter !== "All"
-                ? "Try a different search, or clear the filter."
-                : "Invite a colleague and choose what she can reach. She sets her own password from the link you send her."}
-            </p>
-          </div>
+          query || stateFilter !== "All"
+            ? <NoResults icon={Users} filtered thing="staff accounts" onClear={() => { setQuery(""); setStateFilter("All"); }} />
+            : <EmptyState icon={Users} title="No staff yet" description="Invite a colleague, choose what she can reach, and let her set a private password from the invitation." />
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full text-left">

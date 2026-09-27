@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { Archive, MapPin, MoreHorizontal, Pencil, Plus, Search, ShieldCheck, Users } from "lucide-react";
 
-import { Badge, Card, Input, Menu, MenuItem, Modal, Select, Spinner, StatCard, Textarea, useConfirm, useToast } from "@/design-system";
+import { Badge, Card, EmptyState, ErrorState, Input, Menu, MenuItem, Modal, NoResults, Select, SkeletonTable, StatCard, Textarea, useConfirm, useToast } from "@/design-system";
 import { memberError } from "@/lib/member-api";
 import { apiArchiveRegion, apiCreateRegion, apiRegions, apiUpdateRegion, type AdminRegion } from "@/lib/regions-admin-api";
 
@@ -27,7 +27,10 @@ export default function RegionsPage() {
     catch (e) { setError(memberError(e)); }
     finally { setLoading(false); }
   }, []);
-  useEffect(() => { void load(); }, [load]);
+  useEffect(() => {
+    const timer = window.setTimeout(() => void load(), 0);
+    return () => window.clearTimeout(timer);
+  }, [load]);
 
   const shown = useMemo(() => rows.filter((row) => {
     if (state !== "All" && row.status !== state) return false;
@@ -83,9 +86,10 @@ export default function RegionsPage() {
           <label className="relative min-w-56 flex-1"><Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-ink-subtle" /><input aria-label="Search regions" value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Search regions…" className="w-full rounded-lg border border-line-strong bg-surface py-2 pl-9 pr-3 text-sm text-ink outline-none focus:border-violet-300" /></label>
           <Select aria-label="Region status" value={state} onChange={(e) => setState(e.target.value as typeof state)} options={["All", "Active", "Inactive"]} />
         </div>
-        {loading ? <div className="flex justify-center py-14"><Spinner /></div>
-          : error ? <div className="py-12 text-center"><p className="text-sm font-semibold text-status-danger-ink">Could not load regions</p><p className="mt-1 text-xs text-ink-subtle">{error}</p><button className="btn btn-sm btn-outline mt-3" onClick={() => void load()}>Try again</button></div>
-          : shown.length === 0 ? <div className="py-14 text-center"><MapPin className="mx-auto h-7 w-7 text-ink-subtle" /><p className="mt-2 text-sm font-semibold text-ink">No regions match</p></div>
+        {loading ? <SkeletonTable rows={5} cols={4} />
+          : error ? <ErrorState title="Could not load regions" description={error} onRetry={() => void load()} />
+          : shown.length === 0 && (query || state !== "All") ? <NoResults icon={MapPin} filtered thing="regions" onClear={() => { setQuery(""); setState("All"); }} />
+          : shown.length === 0 ? <EmptyState icon={MapPin} title="No regions yet" description="Create the first region so members and administrators can be assigned to the right place." action={<button className="btn btn-primary" onClick={openNew}><Plus className="h-4 w-4" /> Add region</button>} />
           : <div className="overflow-x-auto"><table className="w-full text-left"><thead><tr className="border-b border-line text-2xs uppercase tracking-wide text-ink-subtle"><th className="px-3 py-2.5">Region</th><th className="px-3 py-2.5">Members</th><th className="px-3 py-2.5">Admins</th><th className="px-3 py-2.5">State</th><th className="px-3 py-2.5" /></tr></thead><tbody>{shown.map((row) => <tr key={row.id} className="border-b border-line last:border-0"><td className="px-3 py-3"><p className="text-sm font-semibold text-ink">{row.name}</p><p className="max-w-lg text-xs text-ink-subtle">{row.description || "No description yet"}</p></td><td className="px-3 py-3 text-sm text-ink-muted">{row.member_count}</td><td className="px-3 py-3 text-sm text-ink-muted">{row.admin_count}</td><td className="px-3 py-3"><Badge tone={row.status === "Active" ? "emerald" : "slate"}>{row.status}</Badge></td><td className="px-3 py-3 text-right"><Menu trigger={<span className="btn btn-sm btn-ghost"><MoreHorizontal className="h-4 w-4" /></span>}><MenuItem icon={Pencil} onClick={() => openEdit(row)}>Edit</MenuItem>{row.status === "Active" && <MenuItem icon={Archive} danger onClick={() => void archive(row)}>Archive</MenuItem>}</Menu></td></tr>)}</tbody></table></div>}
       </Card>
 

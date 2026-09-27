@@ -68,6 +68,7 @@ export const DOCUMENT_TYPES = [
 ] as const;
 
 export const MAX_DOCUMENT_MB = 10;
+export const MAX_VERIFICATION_DOCUMENTS = 5;
 export const ACCEPTED_DOCUMENT_TYPES = [
   "image/jpeg",
   "image/jpg",
@@ -166,6 +167,17 @@ export async function apiUploadDocument(
     },
   });
   return data;
+}
+
+export async function apiMyDocumentObjectUrl(documentId: string): Promise<string> {
+  const { data } = await uploadClient.get(`/verification/documents/${documentId}/mine`, {
+    responseType: "blob",
+  });
+  return URL.createObjectURL(data);
+}
+
+export async function apiDeleteMyDocument(documentId: string): Promise<void> {
+  await uploadClient.delete(`/verification/documents/${documentId}`);
 }
 
 // --- staff ---

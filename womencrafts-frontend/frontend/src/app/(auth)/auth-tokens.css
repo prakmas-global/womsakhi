@@ -76,7 +76,6 @@
   background: var(--a-night);
 }
 
-/* ── DARK: the violet night the design was drawn in ────────────────────────── */
 .dark .auth-scene,
 .auth-scene.dark {
   --a-night: #150c0f;
@@ -505,10 +504,10 @@
 .auth-principles { position:absolute; bottom:12px; left:64%; margin:0; font-size:9px; letter-spacing:.38em; color:#875084; }
 
 @media(max-width:1050px) {
-  .auth-entry { overflow:auto; }
+  .auth-entry { min-height:100dvh; height:100dvh; overflow:hidden; }
   .auth-canvas { position:fixed; background:#f8eef2; }
   .auth-canvas::after { background:radial-gradient(circle at 10% 0,rgba(239,188,211,.38),transparent 38%); }
-  .auth-story { display:block; width:calc(100% - 32px); min-height:250px; height:250px; margin:16px 16px 0; overflow:hidden; border-radius:22px; background:linear-gradient(90deg,rgba(45,15,40,.18),transparent),url('/ux/brand/auth-community-panel-v1.webp') center 30%/cover no-repeat; box-shadow:0 14px 34px rgba(70,27,56,.12); }
+  .auth-story { display:none; }
   .auth-story::after { content:""; position:absolute; inset:0; background:linear-gradient(180deg,rgba(33,10,29,.05),rgba(33,10,29,.28)); pointer-events:none; }
   .auth-promise { top:20px; left:20px; color:#fff; font-size:25px; line-height:1.05; text-shadow:0 2px 12px rgba(29,6,25,.55); }
   .auth-promise span { font-size:16px; font-family:Arial,sans-serif; font-style:normal; }
@@ -519,10 +518,10 @@
   .auth-video-toggle:hover { transform:none; }
   .auth-video-toggle:focus-visible { outline:2px solid #fff; outline-offset:2px; }
   .auth-video-toggle svg { width:12px; height:12px; }
-  .auth-form-zone { position:relative; width:100%; min-width:0; min-height:0; padding:64px 16px 24px; }
+  .auth-form-zone { position:relative; width:100%; min-width:0; min-height:0; height:100dvh; padding:64px 16px 16px; }
   .auth-language-wrap { top:20px; right:20px; }
   .auth-theme-toggle { top:20px; right:164px; }
-  .auth-entry .auth-panel { max-width:520px; max-height:none; overflow:visible; border-radius:22px; }
+  .auth-entry .auth-panel { max-width:520px; max-height:calc(100dvh - 80px); overflow-y:auto; border-radius:22px; }
   .auth-kindness,.auth-principles { display:none; }
 }
 
@@ -581,10 +580,6 @@
 .auth-info-action { display:flex; align-items:center; justify-content:center; margin-top:20px; text-decoration:none; }
 @media(prefers-reduced-motion:reduce) { .auth-panel-content { animation:none; } }
 @media(max-width:540px) {
-  .auth-story { width:calc(100% - 24px); height:218px; min-height:218px; margin:12px 12px 0; border-radius:20px; }
-  .auth-promise { top:17px; left:17px; font-size:22px; }
-  .auth-promise span { font-size:14px; }
-  .auth-video-wrap { right:14px; bottom:14px; width:112px; border-radius:13px; }
   .auth-form-zone { align-items:flex-start; padding:58px 12px 18px; }
   .auth-language-wrap { top:10px; right:14px; }
   .auth-language { min-height:40px; padding:0 14px; }
@@ -593,6 +588,16 @@
   .auth-entry .auth-brand>.auth-main-lockup { width:96px !important; height:96px !important; }
   .auth-entry h1 { font-size:28px !important; }
   .auth-entry .auth-note { gap:18px; margin-top:22px; }
+}
+
+@media(max-width:540px) and (max-height:650px) {
+  .auth-form-zone { padding-top:52px; padding-bottom:8px; }
+  .auth-entry .auth-panel { max-height:calc(100dvh - 60px); padding:8px 18px 6px; }
+  .auth-entry .auth-brand>.auth-main-lockup { width:56px !important; height:56px !important; }
+  .auth-entry h1 { font-size:24px !important; }
+  .auth-entry .auth-sub { margin-top:2px !important; font-size:12px; }
+  .auth-entry .auth-note { gap:14px; margin-top:6px; }
+  .auth-entry .auth-note button { min-height:32px; font-size:12px; }
 }
 
 /*
@@ -752,3 +757,35 @@
   }
   .auth-kindness,.auth-principles { display:none; }
 }
+
+/* Sign-up carries more controls than sign-in. On phones the form becomes the
+   whole screen so every required field and its action stay together instead
+   of sitting below a decorative hero. */
+@media(max-width:1050px) {
+  .auth-signup .auth-story { display:none; }
+  .auth-signup .auth-form-zone { padding-top:58px; }
+}
+@media(max-width:600px) {
+  .auth-signup .auth-brand { display:none; }
+  .auth-signup .auth-panel { padding-top:16px; }
+  .auth-signup h1 { margin-top:0 !important; }
+}
+@media(max-width:600px) and (max-height:700px) {
+  .auth-signup .auth-sub,
+  .auth-signup .auth-note { display:none; }
+  .auth-signup .auth-panel { padding:10px 14px 12px; }
+  .auth-signup .auth-form-zone { padding:52px 12px 0; }
+  .auth-signup h1 { font-size:23px !important; }
+  .auth-signup form { margin-top:8px !important; }
+  .auth-signup .auth-field { min-height:44px; }
+  .auth-signup .auth-go { min-height:46px; }
+}
+@media(min-width:601px) and (max-width:1050px) and (max-height:800px) {
+  .auth-signup .auth-brand,
+  .auth-signup .auth-sub { display:none; }
+  .auth-signup .auth-panel { padding-top:14px; }
+  .auth-signup h1 { margin-top:0 !important; }
+  .auth-signup form { margin-top:10px !important; }
+}
+
+/* ── DARK: the violet night the design was drawn in ────────────────────────── */

@@ -1,13 +1,12 @@
 "use client";
 
-import Link from "next/link";
 import * as Icons from "@/components/ux/icons";
 
 import { useCallback } from "react";
 
 import { apiMeProfile, type MeProfile } from "@/lib/member-api";
 import { useResource } from "@/lib/use-resource";
-import {Back, Btn, Card, IconTile, Pill, Rating, SectionHead } from "@/components/ux/kit";
+import { Avatar, Back, Btn, Card, IconTile, Pill, Rating, SectionHead } from "@/components/ux/kit";
 import { HomeShell } from "@/components/ux/home/HomeShell";
 import { useCertificates, useCircles, useProgress } from "@/components/ux/live";
 import { useBusiness } from "@/components/ux/business";
@@ -125,11 +124,7 @@ export default function ProfilePreview() {
 
       <Card className="mb-[16px]">
         <div className="flex items-start gap-4">
-          <span className="h-[86px] w-[86px] shrink-0 overflow-hidden rounded-full"
-                style={{ background: "var(--ux-brand-tint)" }}>
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img loading="lazy" decoding="async" src={profile?.avatar || ME.avatar} alt="" className="h-full w-full object-cover" />
-          </span>
+          <Avatar src={profile?.avatar || ME.avatar} name={name} size={86} />
           <div className="min-w-0 flex-1">
             <h1 className="ux-screen-title flex items-center gap-2 text-xl font-bold" style={{ color: "var(--ux-ink)" }}>
               {name}
@@ -225,7 +220,12 @@ export default function ProfilePreview() {
               <span className="h-[46px] w-[46px] shrink-0 overflow-hidden rounded-[12px]"
                     style={{ background: "var(--ux-tint-orange)" }}>
                 {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img loading="lazy" decoding="async" src={SHOP.art} alt="" className="ux-art h-full w-full object-cover" />
+                {SHOP.art ? (
+                  <img loading="lazy" decoding="async" src={SHOP.art} alt="" className="ux-art h-full w-full object-cover" />
+                ) : (
+                  <span aria-hidden className="grid h-full w-full place-items-center text-lg font-bold"
+                        style={{ color: "var(--ux-brand)", background: "var(--ux-brand-tint)" }}>WS</span>
+                )}
               </span>
               <div className="min-w-0 flex-1">
                 <p className="truncate text-sm font-semibold" style={{ color: "var(--ux-ink)" }}>{SHOP.name}</p>

@@ -13,6 +13,7 @@ import {
   Command,
 } from "lucide-react";
 import { useTheme } from "@/context/ThemeContext";
+import { NoResults } from "@/design-system";
 import { TONE_CHIP } from "@/lib/notifications";
 import {
   QUICK_ACTIONS,
@@ -132,11 +133,13 @@ export default function CommandPalette({ open, onClose }: { open: boolean; onClo
     if (!open) return;
     // Remember who opened us so we can hand focus back on close (dialog contract).
     const opener = document.activeElement as HTMLElement | null;
-    setQuery("");
-    setActive(0);
-    setRecent(getRecent());
     const prevOverflow = document.body.style.overflow;
     document.body.style.overflow = "hidden";
+    const resetId = window.setTimeout(() => {
+      setQuery("");
+      setActive(0);
+      setRecent(getRecent());
+    }, 0);
     const focusId = window.setTimeout(() => inputRef.current?.focus(), 20);
     PREFETCH_ON_OPEN.forEach((h) => {
       try {
@@ -146,6 +149,7 @@ export default function CommandPalette({ open, onClose }: { open: boolean; onClo
       }
     });
     return () => {
+      window.clearTimeout(resetId);
       window.clearTimeout(focusId);
       document.body.style.overflow = prevOverflow;
       opener?.focus?.();
@@ -154,7 +158,8 @@ export default function CommandPalette({ open, onClose }: { open: boolean; onClo
 
   // New query resets the highlighted row to the top.
   useEffect(() => {
-    setActive(0);
+    const timer = window.setTimeout(() => setActive(0), 0);
+    return () => window.clearTimeout(timer);
   }, [query]);
 
   // Keep the active row in view and warm its route for an instant click.
@@ -326,13 +331,7 @@ export default function CommandPalette({ open, onClose }: { open: boolean; onClo
           );
         })
       ) : (
-        <div className="flex flex-col items-center justify-center gap-2 px-6 py-14 text-center">
-          <span className="flex h-12 w-12 items-center justify-center rounded-2xl bg-surface-inset text-ink-subtle dark:bg-white/10">
-            <Search className="h-5 w-5" />
-          </span>
-          <p className="text-sm font-semibold text-ink-muted">No results for “{query}”</p>
-          <p className="text-xs text-ink-subtle">Try a page, a person, or an action.</p>
-        </div>
+        <NoResults icon={Search} filtered thing={`results for “${query}”`} compact description="Try a page, a person, or an action." />
       )
     ) : (
       view.emptySections.map((sec) => {

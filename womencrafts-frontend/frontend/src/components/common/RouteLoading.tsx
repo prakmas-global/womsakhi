@@ -20,7 +20,8 @@ export default function RouteLoading({
   title?: boolean;
 }) {
   return (
-    <div className="space-y-6" role="status" aria-label="Loading">
+    <div className="space-y-6 motion-safe:animate-[fade-in_180ms_ease-out]" role="status" aria-live="polite" aria-label="Loading page">
+      <span className="sr-only">Loading page…</span>
       {title && (
         <div className="space-y-2">
           <Skeleton className="h-6 w-52" />

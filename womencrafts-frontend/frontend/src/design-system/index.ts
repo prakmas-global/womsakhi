@@ -43,7 +43,7 @@ export type { ConfirmOptions } from "./feedback/ConfirmProvider";
 /* ---- Data display ---- */
 export { default as Badge, TONE_CLASSES, TONE_DOTS } from "./primitives/Badge";
 export type { Tone } from "./primitives/Badge";
-export { default as Avatar, placeholderPhoto } from "./primitives/Avatar";
+export { default as Avatar } from "./primitives/Avatar";
 export { default as Thumb } from "./primitives/Thumb";
 export { default as StatCard } from "./primitives/StatCard";
 export { Tabs, Pagination, Tooltip, ProgressBar } from "./primitives/Navigation";

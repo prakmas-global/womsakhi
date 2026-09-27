@@ -32,6 +32,7 @@ class UserModel:
         locale: str = "en",
         theme_id: str = "womsakhi",
         phone: str = "",
+        country: str = "",
         avatar: str = "",
         verification_status: str = VerificationStatus.PENDING_EMAIL,
     ) -> dict:
@@ -53,6 +54,7 @@ class UserModel:
             "onboarding_done": [],
             "onboarding_complete": False,
             "phone": phone,
+            "country": country,
             "avatar": avatar,
             "is_active": True,
             # Where this account is on the admission path (see models/verification).

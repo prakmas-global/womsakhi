@@ -45,7 +45,17 @@ let checked = 0;
       await p.goto(`${APP}${route}`, { waitUntil: "domcontentloaded", timeout: 15000 });
     } catch { /* aborted requests are the point */ }
     await new Promise((r) => setTimeout(r, 2500));
-    const told = await p.evaluate(() => !!document.querySelector("[data-connection-banner]"));
+    let told = false;
+    // A failed request can trigger a same-route refresh/redirect while the
+    // browser is being inspected. That destroys Puppeteer's old execution
+    // context even though the new page is healthy; wait for it and read once
+    // more instead of turning a browser race into an app failure.
+    try { told = await p.evaluate(() => !!document.querySelector("[data-connection-banner]")); }
+    catch (e) {
+      if (!/Execution context was destroyed|navigation/i.test(String(e))) throw e;
+      await p.waitForNavigation({ waitUntil: "domcontentloaded", timeout: 3000 }).catch(() => {});
+      told = await p.evaluate(() => !!document.querySelector("[data-connection-banner]"));
+    }
     checked++;
     if (!told) problems.push(`${route}: request failed and the app said nothing — the empty state looks like real data`);
   }
@@ -65,7 +75,25 @@ let checked = 0;
     for (const route of routes) {
       if (route.endsWith("/logout")) continue;
       try {
-        await p.goto(`${APP}${route}`, { waitUntil: "domcontentloaded", timeout: 15000 });
+        let loaded = false;
+        for (let attempt = 0; attempt < 2 && !loaded; attempt++) {
+          try {
+            await p.goto(`${APP}${route}`, { waitUntil: "domcontentloaded", timeout: attempt ? 30000 : 15000 });
+            loaded = true;
+          } catch (error) {
+            if (attempt === 1) {
+              // Next can finish the route and then keep a background request
+              // alive past Puppeteer's navigation timer. If the requested
+              // pathname and a real document are already present, inspect it
+              // instead of calling a healthy screen a navigation failure.
+              const atRequestedRoute = new URL(p.url()).pathname === route;
+              const hasDocument = await p.evaluate(() => !!document.documentElement).catch(() => false);
+              if (atRequestedRoute && hasDocument) { loaded = true; break; }
+              throw error;
+            }
+            await new Promise((r) => setTimeout(r, 350));
+          }
+        }
         await p.waitForFunction(() => ![...document.querySelectorAll(
           '.wc-skeleton,[class*="animate-pulse"],[class*="animate-spin"]')]
           .some((el) => { const r = el.getBoundingClientRect(); return r.width > 0 && r.height > 0; }),
@@ -89,7 +117,14 @@ let checked = 0;
               && !/clear filter|try|add|create|browse|explore|get started/i.test(text),
           };
         });
-        let d = await readState();
+        let d;
+        for (let readAttempt = 0; readAttempt < 3 && !d; readAttempt++) {
+          try { d = await readState(); }
+          catch (error) {
+            if (!/Execution context was destroyed|navigation/i.test(String(error)) || readAttempt === 2) throw error;
+            await p.waitForNavigation({ waitUntil: "domcontentloaded", timeout: 3000 }).catch(() => {});
+          }
+        }
         // A cold API call can outlive the ordinary skeleton timeout. Re-read a
         // nearly blank screen once so a slow response is not reported as a
         // permanently blank route.

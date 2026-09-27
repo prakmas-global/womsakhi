@@ -41,6 +41,7 @@ import { useAuth } from "@/context/AuthContext";
 import { apiOrgSettings } from "@/lib/org-api";
 import { isModuleAllowed } from "@/lib/modules";
 import { apiModuleCounts, type ModuleCounts } from "@/lib/admin-modules-api";
+import { Avatar } from "@/design-system";
 
 type NavChild = { label: string; href: string };
 type NavItem = {
@@ -349,9 +350,12 @@ export default function Sidebar({
   }, [canSeeCounts]);
 
   useEffect(() => {
-    void loadCounts();
+    const initial = window.setTimeout(() => void loadCounts(), 0);
     const timer = setInterval(() => void loadCounts(), 120_000);
-    return () => clearInterval(timer);
+    return () => {
+      window.clearTimeout(initial);
+      clearInterval(timer);
+    };
   }, [loadCounts]);
 
   /** Badge for a group: the number of things needing attention inside it. */
@@ -400,8 +404,7 @@ export default function Sidebar({
         {iconOnly ? (
           <Link href="/dashboard/settings/profile" aria-label="My profile" className="mx-auto block h-9 w-9 overflow-hidden rounded-full"
                 style={{ border: "2px solid var(--ux-surface)", background: "var(--ux-brand-tint-2)" }}>
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            {user?.avatar ? <img src={user.avatar} alt="" className="h-full w-full object-cover" /> : null}
+            <Avatar name={user?.full_name || "WomSakhi staff"} src={user?.avatar} size="sm" className="h-full w-full" />
           </Link>
         ) : (
           <Link href="/dashboard/settings/profile" className="ux-sq block overflow-hidden rounded-[16px]"
@@ -410,8 +413,7 @@ export default function Sidebar({
             <span className="block px-3.5 pb-3.5">
               <span className="-mt-6 block h-[46px] w-[46px] overflow-hidden rounded-full"
                     style={{ border: "3px solid var(--ux-surface)", background: "var(--ux-brand-tint-2)" }}>
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                {user?.avatar ? <img src={user.avatar} alt="" aria-hidden className="h-full w-full object-cover" /> : null}
+                <Avatar name={user?.full_name || "WomSakhi staff"} src={user?.avatar} size="lg" className="h-full w-full" />
               </span>
               <b className="mt-2 block truncate text-xsm font-bold" style={{ color: "var(--ux-ink)" }}>{user?.full_name || "Staff"}</b>
               <span className="mt-0.5 block truncate text-2xs" style={{ color: "var(--ux-muted)" }}>

@@ -21,6 +21,7 @@ import { type ConvBubble, type ConvDetail, type ConvRow, type InboxSummary, type
 import { useT } from "@/i18n";
 import { bubbleRadius, ChatDock, ChatFrame, ChatInput, ChatLog, JumpToLatest, Says, SendButton, Stamp, useChatScroll } from "@/components/ux/sakhi/chat";
 import { ListGroup, ListRow } from "@/components/ux/mobile/ListRow";
+import { monogram } from "@/lib/monogram";
 
 /**
  * Messages.
@@ -219,7 +220,7 @@ export function NewMessage({ rows, onPick, full = false }: {
             <button key={r.id} type="button" role="menuitem"
                     onClick={() => { setOpen(false); onPick(r.id); }}
                     className="ux-row flex min-h-[48px] w-full items-center gap-2.5 rounded-[12px] px-2 py-2 text-start">
-              <Avatar src={r.avatar} kind={r.kind} size={30} />
+              <Avatar src={r.avatar} name={r.name} kind={r.kind} size={30} />
               <span className="min-w-0 flex-1">
                 <span className="block truncate text-xsm font-semibold" style={{ color: "var(--ux-ink)" }}>{r.name}</span>
                 <span className="block truncate text-[12px] lg:text-2xs" style={{ color: "var(--ux-muted)" }}>{TAG[r.kind].label}</span>
@@ -243,12 +244,19 @@ export function Ico({ name, className }: { name: string; className?: string }) {
   return <C className={className} strokeWidth={1.9} />;
 }
 
-export function Avatar({ src, kind, size = 42, online }: { src: string; kind: PartyKind; size?: number; online?: boolean }) {
+export function Avatar({ src, name, kind, size = 42, online }: { src: string; name?: string; kind: PartyKind; size?: number; online?: boolean }) {
   return (
     <span className="relative block shrink-0 rounded-full p-[2px]" style={{ background: RING[kind] }}>
-      {/* eslint-disable-next-line @next/next/no-img-element */}
-      <img loading="lazy" decoding="async" src={src || "/ux/brand/womsakhi-emblem.webp"} alt=""
-           className="block rounded-full object-cover" style={{ width: size, height: size }} />
+      {src ? (
+        // eslint-disable-next-line @next/next/no-img-element
+        <img loading="lazy" decoding="async" src={src} alt=""
+             className="block rounded-full object-cover" style={{ width: size, height: size }} />
+      ) : (
+        <span aria-hidden className="grid rounded-full place-items-center font-bold uppercase"
+              style={{ width: size, height: size, background: "var(--ux-surface)", color: "var(--ux-brand)", fontSize: Math.max(10, size * 0.34) }}>
+          {monogram(name || TAG[kind].label)}
+        </span>
+      )}
       {online && (
         <i className="absolute bottom-[2px] right-[1px] block h-[11px] w-[11px] rounded-full"
            style={{ background: "var(--ux-green)", border: "2px solid var(--ux-surface)" }} />
@@ -437,7 +445,7 @@ export function Inbox({
 function PhoneRow({ row, onOpen }: { row: ConvRow; onOpen: (id: string) => void }) {
   return (
     <ListRow
-      avatar={<Avatar src={row.avatar} kind={row.kind} size={40} online={row.online} />}
+      avatar={<Avatar src={row.avatar} name={row.name} kind={row.kind} size={40} online={row.online} />}
       title={row.name}
       subtitle={
         row.waiting_since
@@ -468,7 +476,7 @@ export function Row({ row, on, onOpen }: { row: ConvRow; on: boolean; onOpen: (i
       <span aria-hidden className="absolute inset-y-0 left-0 w-[3px]"
             style={{ background: on ? "linear-gradient(var(--ux-rib-2), var(--ux-rib-3))"
                                     : row.waiting_since ? "var(--ux-amber)" : "transparent" }} />
-      <Avatar src={row.avatar} kind={row.kind} online={row.online} />
+      <Avatar src={row.avatar} name={row.name} kind={row.kind} online={row.online} />
       <span className="min-w-0 flex-1">
         <span className="flex items-baseline gap-2">
           <b className="min-w-0 flex-1 truncate text-sm font-bold" style={{ color: "var(--ux-ink)" }}>{row.name}</b>
@@ -586,7 +594,7 @@ export function Thread({
                 style={{ color: "var(--ux-ink)", transform: "none" }}>
           <Icons.ChevronLeft className="h-[24px] w-[24px] rtl:rotate-180" />
         </button>
-        <Avatar src={conv.avatar} kind={conv.kind} size={38} online={conv.online} />
+        <Avatar src={conv.avatar} name={conv.name} kind={conv.kind} size={38} online={conv.online} />
         <div className="min-w-0 flex-1 ps-1">
           <b className="block truncate text-[17px] font-bold leading-tight lg:text-base" style={{ color: "var(--ux-ink)" }}>{conv.name}</b>
           <span className="mt-0.5 flex items-center gap-1.5 text-[13px] leading-tight lg:text-xs"
@@ -823,9 +831,7 @@ export function Bubble({ bubble, first, conv, day }: {
       )}
       <li className={`flex items-end gap-2 ${first ? "mt-2" : "mt-[3px]"} ${out ? "flex-row-reverse" : ""}`}>
         <span className="w-[26px] shrink-0" style={{ visibility: first && !out ? "visible" : "hidden" }}>
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img loading="lazy" decoding="async" src={conv.avatar || "/ux/brand/womsakhi-emblem.webp"} alt=""
-               className="h-[26px] w-[26px] rounded-full object-cover" />
+          <Avatar src={conv.avatar} name={conv.name} kind={conv.kind} size={22} />
         </span>
         {bubble.order ? (
           <OrderCard order={bubble.order} />
@@ -917,7 +923,7 @@ export function About({ conv, onStar, onDraft }: {
            style={{ background: "var(--ux-surface)", border: "1px solid var(--ux-line)",
                     boxShadow: "var(--ux-shadow-card)" }}>
       <div className="p-4 text-center">
-        <span className="mx-auto inline-block"><Avatar src={conv.avatar} kind={conv.kind} size={64} /></span>
+        <span className="mx-auto inline-block"><Avatar src={conv.avatar} name={conv.name} kind={conv.kind} size={64} /></span>
         <h2 className="mt-2.5 text-base font-bold" style={{ color: "var(--ux-ink)" }}>{conv.name}</h2>
         <p className="mt-0.5 text-xs" style={{ color: "var(--ux-muted)" }}>
           {[p.role, p.since].filter(Boolean).join(" · ")}

@@ -348,8 +348,7 @@ export function ModeRail({ path, footer }: { path: string; footer?: React.ReactN
         <span className="block px-3.5 pb-3.5">
           <span className="-mt-6 block h-[46px] w-[46px] overflow-hidden rounded-full"
                 style={{ border: "3px solid var(--ux-surface)", background: "var(--ux-brand-tint-2)" }}>
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            {me.avatar && <img src={me.avatar} alt="" aria-hidden className="h-full w-full object-cover" />}
+            <Avatar src={me.avatar} name={me.name || "WomSakhi member"} size={46} className="h-full w-full" />
           </span>
           <b className="mt-2 block text-xsm font-bold" style={{ color: "var(--ux-ink)" }}>{me.name}</b>
           <span className="mt-0.5 block text-2xs" style={{ color: "var(--ux-muted)" }}>

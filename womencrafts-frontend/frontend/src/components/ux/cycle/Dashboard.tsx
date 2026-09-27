@@ -17,6 +17,7 @@ import { shortDate, shiftMonth, type useCycle } from "./use-cycle";
 import { useTranslated } from "@/i18n/data";
 import { EngineNudge } from "@/components/ux/reminders/EngineNudge";
 import { CycleDesktopNav } from "./AdvancedDailyLog";
+import { Avatar } from "@/components/ux/kit";
 
 /**
  * The laptop view of the tracker — the owner's second reference, one screen.
@@ -308,10 +309,7 @@ export function CycleDashboard({ cycle }: { cycle: ReturnType<typeof useCycle> &
           </div>
           {mentor ? (
             <div className="flex items-center gap-3">
-              <span className="h-[64px] w-[64px] shrink-0 overflow-hidden rounded-full" style={{ background: "var(--cy-predicted)" }}>
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                {mentor.photo ? <img src={mentor.photo} alt="" className="h-full w-full object-cover object-top" /> : null}
-              </span>
+              <Avatar src={mentor.photo} name={mentor.name} size={64} />
               <span className="min-w-0">
                 <b className="block text-[15px] font-semibold" style={{ color: "var(--ux-ink)" }}>{mentor.name}</b>
                 <span className="block text-[13px]" style={{ color: "var(--ux-muted)" }}>{mentor.headline}</span>
@@ -339,7 +337,7 @@ export function CycleDashboard({ cycle }: { cycle: ReturnType<typeof useCycle> &
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img src="/ux/art/scene-two-women-support.webp" alt="" aria-hidden className="pointer-events-none absolute -bottom-2 end-0 h-[200px] w-auto object-contain" />
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src="/womsakhi-wordmark.webp" alt="" aria-hidden className="absolute bottom-4 start-5 z-[1] h-[22px] w-auto opacity-80" />
+          <img src="/womsakhi-main-text-logo.png" alt="" aria-hidden className="brand-wordmark absolute bottom-4 start-5 z-[1] h-[22px] w-auto opacity-80" />
         </section>
       </A>
 

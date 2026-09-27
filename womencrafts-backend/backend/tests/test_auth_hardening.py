@@ -24,7 +24,8 @@ def test_email_tokens_are_stored_as_one_way_digests() -> None:
     "payload",
     [
         lambda password: SignUpRequest(
-            full_name="Asha", email="asha@example.com", password=password
+            full_name="Asha", email="asha@example.com", password=password,
+            country="IN", phone="+919876543210",
         ),
         lambda password: ResetPasswordRequest(token="token", password=password),
     ],
@@ -32,6 +33,20 @@ def test_email_tokens_are_stored_as_one_way_digests() -> None:
 def test_new_passwords_cannot_cross_bcrypts_72_byte_boundary(payload) -> None:
     with pytest.raises(ValidationError, match="at most 72 bytes"):
         payload("श" * 25)  # 75 UTF-8 bytes, despite being only 25 characters.
+
+
+def test_signup_normalizes_phone_and_checks_selected_country() -> None:
+    payload = SignUpRequest(
+        full_name="Asha", email="asha@example.com", password="Strong@123",
+        country="IN", phone="98765 43210",
+    )
+    assert payload.phone == "+919876543210"
+
+    with pytest.raises(ValidationError, match="selected country"):
+        SignUpRequest(
+            full_name="Asha", email="asha@example.com", password="Strong@123",
+            country="US", phone="+919876543210",
+        )
 
 
 class _Request:

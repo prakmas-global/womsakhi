@@ -12,7 +12,7 @@ import { useAction } from "@/lib/use-action";
 type Field = "name" | "phone" | "place" | "born" | "about";
 
 import { useAuth } from "@/context/AuthContext";
-import { Btn, Pill } from "@/components/ux/kit";
+import { Avatar, Btn, Pill } from "@/components/ux/kit";
 import { Field, SettingsPage, TextInput } from "@/components/ux/settings/Frame";
 import { phonePrimary, phoneSecondary } from "@/components/ux/PhoneParts";
 import { Group, SaveBar } from "../_parts/Group";
@@ -128,13 +128,7 @@ export default function AccountSettings() {
     >
       <Group inset="form">
         <div className="flex items-center gap-4">
-          <span className="h-[76px] w-[76px] shrink-0 overflow-hidden rounded-full"
-                style={{ background: "var(--ux-brand-tint)" }}>
-            {/* Hers, from her profile — not the fixture face, which is what
-                every woman saw here. */}
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img loading="lazy" decoding="async" src={profile?.avatar || ME.avatar} alt="" className="h-full w-full object-cover" />
-          </span>
+          <Avatar src={profile?.avatar || ME.avatar} name={form.name || ME.name} size={76} />
           <div className="min-w-0 flex-1">
             <p className="text-sm font-semibold" style={{ color: "var(--ux-ink)" }}>{tr("settingsAccount.yourPhoto")}</p>
             <p className="mt-1 text-[13px] leading-snug lg:text-xs" style={{ color: "var(--ux-muted)" }}>

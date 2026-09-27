@@ -11,6 +11,7 @@ import { useI18n } from "@/i18n";
 import { SECTIONS, type NavNode } from "../nav-tree";
 import { useMe } from "../me";
 import { useNavLabel } from "../use-nav-label";
+import { Avatar } from "../kit";
 
 /**
  * Everything the app can do, on a phone.
@@ -100,7 +101,11 @@ export function MoreSheet({ open, onClose }: { open: boolean; onClose: () => voi
   }, [open, onClose]);
 
   // A fresh sheet is a fresh search.
-  useEffect(() => { if (open) setQ(""); }, [open]);
+  useEffect(() => {
+    if (!open) return;
+    const timer = window.setTimeout(() => setQ(""), 0);
+    return () => window.clearTimeout(timer);
+  }, [open]);
 
   /** Typed text narrows both levels: a section stays if it or a screen matches. */
   const needle = q.trim().toLowerCase();
@@ -134,10 +139,7 @@ export function MoreSheet({ open, onClose }: { open: boolean; onClose: () => voi
 
           <div className="flex items-center gap-3 px-5 pb-3.5 pt-1.5">
             <Link href="/app/profile" onClick={onClose} className="ux-press flex min-w-0 flex-1 items-center gap-3">
-              <span className="h-[44px] w-[44px] shrink-0 overflow-hidden rounded-full" style={{ background: "var(--ux-brand-tint-2)" }}>
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                {me.avatar ? <img src={me.avatar} alt="" className="h-full w-full object-cover" /> : null}
-              </span>
+              <Avatar src={me.avatar} name={me.name || me.first || "WomSakhi member"} size={44} />
               <span className="min-w-0">
                 <b className="block truncate text-[16.5px] font-semibold leading-tight" style={{ color: "var(--ux-ink)" }}>
                   {me.name || me.first}

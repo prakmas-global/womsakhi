@@ -1,8 +1,8 @@
 "use client";
 
-import { useCallback, useRef, useState, useSyncExternalStore } from "react";
+import { useCallback, useEffect, useRef, useState, useSyncExternalStore } from "react";
 
-import { ACCEPTED_DOCUMENT_TYPES, apiMyVerification, apiRequestMyVerificationReview, apiResendVerificationEmail, apiUploadDocument, validateDocument, type VerificationStatus } from "@/lib/verification-api";
+import { ACCEPTED_DOCUMENT_TYPES, MAX_DOCUMENT_MB, MAX_VERIFICATION_DOCUMENTS, apiDeleteMyDocument, apiMyDocumentObjectUrl, apiMyVerification, apiRequestMyVerificationReview, apiResendVerificationEmail, apiUploadDocument, validateDocument, type ApiDocument, type VerificationStatus } from "@/lib/verification-api";
 import { useAuth } from "@/context/AuthContext";
 import { useResource } from "@/lib/use-resource";
 import { messageFrom, useAction } from "@/lib/use-action";
@@ -26,7 +26,7 @@ const DOCS = [
   */
   { id: "d1", docType: "aadhaar", label: "A photo ID", note: "Aadhaar, voter card or driving licence — any one",
     icon: "IdCard", tint: "--ux-tint-violet", ink: "--ux-violet", facing: "environment", required: true },
-  { id: "d2", docType: "other", label: "A photo of you", note: "Holding the same ID, so we know it is yours",
+  { id: "d2", docType: "selfie", label: "A photo of you", note: "Holding the same ID, so we know it is yours",
     icon: "Camera", tint: "--ux-tint-blue", ink: "--ux-blue", facing: "user", required: true },
 ];
 
@@ -71,8 +71,21 @@ export default function VerifyPage() {
   */
   const camera = useRef<HTMLInputElement | null>(null);
   const files = useRef<HTMLInputElement | null>(null);
+  const liveVideo = useRef<HTMLVideoElement | null>(null);
+  const liveStream = useRef<MediaStream | null>(null);
   const pickingFor = useRef<string>("aadhaar");
+  const pickingMultiple = useRef(false);
+  const [cameraFor, setCameraFor] = useState<{ docType: string; facing: string } | null>(null);
+  const [cameraError, setCameraError] = useState("");
+  const cameraCapable = useSyncExternalStore(
+    () => () => {},
+    () => Boolean(navigator.mediaDevices?.getUserMedia),
+    () => false,
+  );
   const [busy, setBusy] = useState<string | null>(null);
+  const [deleting, setDeleting] = useState<string | null>(null);
+  const [preview, setPreview] = useState<{ document: ApiDocument; url: string } | null>(null);
+  useEffect(() => () => { if (preview?.url) URL.revokeObjectURL(preview.url); }, [preview]);
   /*
     Does this device have a camera the browser will open?
 
@@ -98,6 +111,37 @@ export default function VerifyPage() {
     () => false,
   );
 
+  const closeLiveCamera = useCallback(() => {
+    liveStream.current?.getTracks().forEach((track) => track.stop());
+    liveStream.current = null;
+    if (liveVideo.current) liveVideo.current.srcObject = null;
+    setCameraFor(null);
+    setCameraError("");
+  }, []);
+
+  useEffect(() => {
+    if (!cameraFor) return;
+    let cancelled = false;
+    void navigator.mediaDevices.getUserMedia({
+      audio: false,
+      video: { facingMode: { ideal: cameraFor.facing } },
+    }).then(async (stream) => {
+      if (cancelled) { stream.getTracks().forEach((track) => track.stop()); return; }
+      liveStream.current = stream;
+      if (liveVideo.current) {
+        liveVideo.current.srcObject = stream;
+        await liveVideo.current.play();
+      }
+    }).catch(() => {
+      if (!cancelled) setCameraError("Camera access is unavailable. Allow camera permission, or choose a file instead.");
+    });
+    return () => {
+      cancelled = true;
+      liveStream.current?.getTracks().forEach((track) => track.stop());
+      liveStream.current = null;
+    };
+  }, [cameraFor]);
+
   /** The server's word, unless she has stepped forward within this visit. */
   const stage: Stage = advanced ?? (
     status?.status === "pending_email" ? "email"
@@ -108,6 +152,7 @@ export default function VerifyPage() {
 
   // Her documents, as the server holds them — not a list of ids she clicked.
   const sent = status?.documents ?? [];
+  const currentDocuments = sent.filter((document) => document.status === "pending");
   /*
     The server's kinds — "aadhaar", "other" — NOT the row ids above.
 
@@ -116,8 +161,9 @@ export default function VerifyPage() {
     sent both photographs was still shown two empty rows saying "Add photo",
     with no Added tick and no way to tell the upload had worked.
   */
-  const uploaded = sent.map((d) => d.doc_type);
-  const allUploaded = sent.length >= DOCS.length;
+  const uploaded = currentDocuments.map((d) => d.doc_type);
+  const allUploaded = DOCS.every((item) => uploaded.includes(item.docType) || (item.docType === "selfie" && uploaded.includes("other")));
+  const requiredAdded = DOCS.filter((item) => uploaded.includes(item.docType) || (item.docType === "selfie" && uploaded.includes("other"))).length;
 
   const [resent, setResent] = useState(false);
   const resend = useAction(
@@ -132,7 +178,7 @@ export default function VerifyPage() {
   const requestReview = useAction(
     () => apiRequestMyVerificationReview(),
     {
-      onDone: () => refetch(),
+      onDone: () => { setAdvanced("review"); void refetch(); },
       fallbackError: "Could not notify the verification team just now. Try again in a moment.",
     },
   );
@@ -150,12 +196,39 @@ export default function VerifyPage() {
    * on whichever side the previous row asked for. React never rendered a
    * `capture` prop on that input, so it has no value of its own to put back.
    */
-  function choose(docType: string, how: "camera" | "files", facing = "environment") {
+  function choose(docType: string, how: "camera" | "files", facing = "environment", multiple = false) {
     setProblem("");
     pickingFor.current = docType;
+    pickingMultiple.current = multiple;
     if (how === "files") { files.current?.click(); return; }
+    if (!handheld && cameraCapable) {
+      setCameraError("");
+      setCameraFor({ docType, facing });
+      return;
+    }
     camera.current?.setAttribute("capture", facing);
     camera.current?.click();
+  }
+
+  function captureLivePhoto() {
+    const video = liveVideo.current;
+    if (!video || video.readyState < 2 || !cameraFor) {
+      setCameraError("The camera is still starting. Wait a moment and try again.");
+      return;
+    }
+    const canvas = document.createElement("canvas");
+    canvas.width = video.videoWidth;
+    canvas.height = video.videoHeight;
+    const context = canvas.getContext("2d");
+    if (!context) { setCameraError("Could not capture that photo. Choose a file instead."); return; }
+    context.drawImage(video, 0, 0, canvas.width, canvas.height);
+    canvas.toBlob((blob) => {
+      if (!blob) { setCameraError("Could not capture that photo. Try again."); return; }
+      pickingFor.current = cameraFor.docType;
+      const file = new File([blob], `womsakhi-${cameraFor.docType}-${Date.now()}.jpg`, { type: "image/jpeg" });
+      closeLiveCamera();
+      void sendMany([file]);
+    }, "image/jpeg", 0.9);
   }
 
   async function send(file: File) {
@@ -171,6 +244,42 @@ export default function VerifyPage() {
     } finally {
       setBusy(null);
     }
+  }
+
+  async function sendMany(selected: File[]) {
+    const room = MAX_VERIFICATION_DOCUMENTS - currentDocuments.length;
+    if (selected.length > room) {
+      setProblem(`You can add ${room} more ${room === 1 ? "document" : "documents"}. The limit is ${MAX_VERIFICATION_DOCUMENTS}.`);
+      return;
+    }
+    for (const file of selected) await send(file);
+    await refetch();
+  }
+
+  async function openPreview(document: ApiDocument) {
+    setBusy(`preview-${document.id}`);
+    setProblem("");
+    try {
+      const url = await apiMyDocumentObjectUrl(document.id);
+      setPreview((current) => {
+        if (current?.url) URL.revokeObjectURL(current.url);
+        return { document, url };
+      });
+    } catch (e) {
+      setProblem(messageFrom(e, "We could not open that document. Try again."));
+    } finally { setBusy(null); }
+  }
+
+  async function removeDocument(document: ApiDocument) {
+    setDeleting(document.id);
+    setProblem("");
+    try {
+      await apiDeleteMyDocument(document.id);
+      if (preview?.document.id === document.id) setPreview(null);
+      await refetch();
+    } catch (e) {
+      setProblem(messageFrom(e, "We could not delete that document. Try again."));
+    } finally { setDeleting(null); }
   }
   const stepOf: Record<Stage, number> = { email: 1, documents: 2, review: 3, rejected: 2 };
 
@@ -199,11 +308,11 @@ export default function VerifyPage() {
 
   /** Both ways in. `pickingFor` says which of the two documents it is for. */
   const take = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
+    const selected = Array.from(e.target.files ?? []).slice(0, pickingMultiple.current ? undefined : 1);
     // Cleared before we do anything with it, so choosing the SAME file again —
     // after a rejection, or a retake she was not happy with — still fires.
     e.target.value = "";
-    if (file) void send(file);
+    if (selected.length) void sendMany(selected);
   };
   const filePicker = (
     <>
@@ -222,6 +331,7 @@ export default function VerifyPage() {
       <input
         ref={files}
         type="file"
+        multiple
         accept={ACCEPTED_DOCUMENT_TYPES.join(",")}
         className="hidden"
         aria-label={tr("verify.chooseAPhotoOfYourId")}
@@ -314,11 +424,11 @@ export default function VerifyPage() {
                 <p className="text-xs font-bold uppercase tracking-[0.16em]" style={{ color: "var(--ux-brand)" }}>Secure identity check</p>
                 <h2 className="mt-1.5 text-lg font-bold" style={{ color: "var(--ux-ink)" }}>Two clear photos, then a person reviews them</h2>
                 <p className="mt-2 text-xsm leading-relaxed" style={{ color: "var(--ux-ink-2)" }}>
-                  Use bright light, keep every corner visible, and make sure the name can be read. Your files stay private and never appear on your profile.
+                  JPG, PNG, WEBP, HEIC or PDF · up to {MAX_DOCUMENT_MB} MB each · maximum {MAX_VERIFICATION_DOCUMENTS} files. Your files stay private and never appear on your profile.
                 </p>
-                <div className="mt-3 flex items-center gap-2" aria-label={`${Math.min(sent.length, DOCS.length)} of ${DOCS.length} items added`}>
-                  {DOCS.map((d) => <span key={d.id} className="h-2 flex-1 rounded-full" style={{ background: uploaded.includes(d.docType) ? "var(--ux-green)" : "var(--ux-track)" }} />)}
-                  <span className="shrink-0 text-xs font-semibold" style={{ color: "var(--ux-muted)" }}>{Math.min(sent.length, DOCS.length)}/{DOCS.length}</span>
+                <div className="mt-3 flex items-center gap-2" aria-label={`${Math.min(currentDocuments.length, DOCS.length)} of ${DOCS.length} items added`}>
+                  {DOCS.map((d) => <span key={d.id} className="h-2 flex-1 rounded-full" style={{ background: uploaded.includes(d.docType) || (d.docType === "selfie" && uploaded.includes("other")) ? "var(--ux-green)" : "var(--ux-track)" }} />)}
+                  <span className="shrink-0 text-xs font-semibold" style={{ color: "var(--ux-muted)" }}>{Math.min(currentDocuments.length, DOCS.length)}/{DOCS.length}</span>
                 </div>
               </div>
               {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -342,7 +452,7 @@ export default function VerifyPage() {
                     </div>
                   </div>
                   <div className="mt-4 grid grid-cols-1 gap-2 sm:grid-cols-2">
-                    {handheld && (
+                    {(handheld || cameraCapable) && (
                       <Btn variant={done ? "outline" : "primary"} size="sm" icon="Camera" disabled={busy === d.docType} className="min-h-[44px]" onClick={() => choose(d.docType, "camera", d.facing)}>
                         {busy === d.docType ? "Sending…" : done ? "Retake" : "Take photo"}
                       </Btn>
@@ -356,15 +466,97 @@ export default function VerifyPage() {
             })}
           </div>
 
+          {currentDocuments.length > 0 && (
+            <Card className="mt-3">
+              <div className="mb-3 flex items-center justify-between gap-3">
+                <div>
+                  <h2 className="text-sm font-semibold" style={{ color: "var(--ux-ink)" }}>Your uploaded documents</h2>
+                  <p className="mt-0.5 text-xs" style={{ color: "var(--ux-muted)" }}>{currentDocuments.length} of {MAX_VERIFICATION_DOCUMENTS} files used</p>
+                </div>
+                <Pill tone="green" size="sm">Private</Pill>
+              </div>
+              <div className="grid gap-2 sm:grid-cols-2">
+                {currentDocuments.map((document) => (
+                  <div key={document.id} className="flex min-w-0 items-center gap-3 rounded-[14px] border p-3" style={{ borderColor: "var(--ux-line)", background: "var(--ux-surface-2)" }}>
+                    <IconTile icon={document.content_type === "application/pdf" ? "FileText" : "Image"} tint="--ux-tint-violet" ink="--ux-violet" size={40} radius={11} />
+                    <div className="min-w-0 flex-1">
+                      <p className="truncate text-xs font-semibold" style={{ color: "var(--ux-ink)" }}>{document.original_name}</p>
+                      <p className="mt-0.5 text-[11px]" style={{ color: "var(--ux-muted)" }}>{(document.size / 1024 / 1024).toFixed(1)} MB</p>
+                    </div>
+                    <button type="button" onClick={() => void openPreview(document)} disabled={busy === `preview-${document.id}`} className="grid h-10 w-10 shrink-0 place-items-center rounded-xl" style={{ color: "var(--ux-violet)", background: "var(--ux-tint-violet)" }} aria-label={`Preview ${document.original_name}`}>
+                      <Icons.Eye className="h-4 w-4" />
+                    </button>
+                    <button type="button" onClick={() => void removeDocument(document)} disabled={deleting === document.id} className="grid h-10 w-10 shrink-0 place-items-center rounded-xl" style={{ color: "var(--ux-orange-ink)", background: "var(--ux-tint-orange)" }} aria-label={`Delete ${document.original_name}`}>
+                      {deleting === document.id ? <Icons.Loader className="h-4 w-4 animate-spin" /> : <Icons.Trash2 className="h-4 w-4" />}
+                    </button>
+                  </div>
+                ))}
+              </div>
+              {currentDocuments.length < MAX_VERIFICATION_DOCUMENTS && (
+                <Btn variant="outline" icon="Files" className="mt-3 min-h-[44px] w-full sm:w-auto" onClick={() => choose("supporting", "files", "environment", true)}>Add supporting documents</Btn>
+              )}
+            </Card>
+          )}
+
           <div className="mt-[24px] flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between lg:gap-4">
             <p className="text-[13px] lg:text-xs" style={{ color: "var(--ux-faint)" }}>
-              {allUploaded ? "That is everything we need." : `${Math.max(0, DOCS.length - sent.length)} still to add.`}
+              {allUploaded ? "That is everything we need." : `${DOCS.length - requiredAdded} still to add.`}
             </p>
             <Btn variant="primary" iconEnd="ArrowRight"
-                 className={`${phonePrimary} ${allUploaded ? "" : "pointer-events-none opacity-50"}`}
-                 onClick={() => allUploaded && setAdvanced("review")}>{tr("verify.sendForReview")}</Btn>
+                 disabled={!allUploaded || requestReview.busy}
+                 className={phonePrimary}
+                 onClick={() => allUploaded && void requestReview.run()}>{requestReview.busy ? "Sending securely…" : tr("verify.sendForReview")}</Btn>
           </div>
           {filePicker}
+          {cameraFor && (
+            <div className="fixed inset-0 z-[90] grid place-items-end p-0 sm:place-items-center sm:p-6"
+                 style={{ background: "var(--ux-scrim)" }} role="dialog" aria-modal="true" aria-label="Take a verification photo">
+              <div className="w-full overflow-hidden rounded-t-[24px] border bg-black shadow-2xl sm:max-w-xl sm:rounded-[24px]"
+                   style={{ borderColor: "var(--ux-line)" }}>
+                <div className="flex items-center justify-between gap-3 px-4 py-3" style={{ background: "var(--ux-surface)" }}>
+                  <div>
+                    <p className="text-sm font-semibold" style={{ color: "var(--ux-ink)" }}>
+                      {cameraFor.docType === "selfie" ? "Take your selfie" : "Photograph your ID"}
+                    </p>
+                    <p className="text-xs" style={{ color: "var(--ux-muted)" }}>
+                      {cameraFor.docType === "selfie" ? "Keep your face and the ID clearly inside the frame." : "Keep all four corners visible and avoid glare."}
+                    </p>
+                  </div>
+                  <button type="button" onClick={closeLiveCamera} className="grid h-11 w-11 shrink-0 place-items-center rounded-xl"
+                          style={{ color: "var(--ux-ink)", background: "var(--ux-surface-2)" }} aria-label="Close camera">
+                    <Icons.X className="h-5 w-5" />
+                  </button>
+                </div>
+                <div className="relative aspect-[3/4] max-h-[68dvh] bg-black sm:aspect-[4/3]">
+                  <video ref={liveVideo} autoPlay playsInline muted className={`h-full w-full object-cover ${cameraFor.facing === "user" ? "-scale-x-100" : ""}`} />
+                  <div aria-hidden className="pointer-events-none absolute inset-5 rounded-[24px] border-2 border-white/70 shadow-[0_0_0_999px_rgba(0,0,0,.12)]" />
+                </div>
+                <div className="p-4" style={{ background: "var(--ux-surface)" }}>
+                  {cameraError && <p role="alert" className="mb-3 text-center text-xs" style={{ color: "var(--ux-orange-ink)" }}>{cameraError}</p>}
+                  <div className="flex gap-2">
+                    <Btn variant="outline" className="min-h-[48px] flex-1" onClick={() => { closeLiveCamera(); choose(cameraFor.docType, "files"); }}>Choose file</Btn>
+                    <Btn variant="primary" icon="Camera" className="min-h-[48px] flex-1" disabled={!!cameraError} onClick={captureLivePhoto}>Use photo</Btn>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+          {preview && (
+            <div className="fixed inset-0 z-[80] grid place-items-center p-3 sm:p-6" style={{ background: "var(--ux-scrim)" }} role="dialog" aria-modal="true" aria-label={`Preview ${preview.document.original_name}`} onClick={() => setPreview(null)}>
+              <div className="flex max-h-[92dvh] w-full max-w-3xl flex-col overflow-hidden rounded-[20px] bg-white shadow-2xl" onClick={(event) => event.stopPropagation()}>
+                <div className="flex items-center justify-between gap-3 border-b px-4 py-3">
+                  <p className="min-w-0 truncate text-sm font-semibold" style={{ color: "var(--ux-ink)" }}>{preview.document.original_name}</p>
+                  <button type="button" onClick={() => setPreview(null)} className="grid h-10 w-10 place-items-center rounded-xl" aria-label="Close preview"><Icons.X className="h-5 w-5" /></button>
+                </div>
+                {preview.document.content_type === "application/pdf" ? (
+                  <iframe src={preview.url} title={preview.document.original_name} className="min-h-[65dvh] w-full flex-1" />
+                ) : (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img src={preview.url} alt={`Preview of ${preview.document.original_name}`} className="min-h-0 w-full flex-1 object-contain p-3" />
+                )}
+              </div>
+            </div>
+          )}
         </>
       )}
 
@@ -399,6 +591,7 @@ export default function VerifyPage() {
                         ? "Send another follow-up"
                         : "Ask the team to review now"}
                 </Btn>
+                <Btn variant="outline" icon="Files" className={phoneSecondary} onClick={() => setAdvanced("documents")}>Review or replace documents</Btn>
                 <Btn variant="outline" icon="LogOut" className={phoneSecondary} onClick={() => signOut()}>{tr("verify.signOutForNow")}</Btn>
                 <Btn variant="ghost" className={phoneSecondary} onClick={() => setAdvanced("rejected")}>{tr("verify.seeWhatHappensIfSomethingIs")}</Btn>
               </div>

@@ -56,7 +56,13 @@ export async function memberToken(staff) {
   const email = `check.${Date.now()}@example.com`, pw = "TestMember!2345";
   const su = await fetch(`${API}/auth/signup`, {
     method: "POST", headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ full_name: "Check Member", email, password: pw }),
+    body: JSON.stringify({
+      full_name: "Check Member",
+      email,
+      password: pw,
+      country: "IN",
+      phone: "+919876543210",
+    }),
   }).then((r) => r.json()).catch(() => null);
   const id = su?.user?.id || su?.user?._id;
   if (id) await fetch(`${API}/verification/${id}/approve`, {

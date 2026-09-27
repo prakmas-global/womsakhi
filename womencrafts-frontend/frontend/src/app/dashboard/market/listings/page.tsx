@@ -9,7 +9,7 @@ import {
 } from "lucide-react";
 
 import {
-  Badge, Card, Menu, MenuItem, Modal, Pagination, Spinner, StatCard, Tabs, Thumb, useToast,
+  Badge, Card, ErrorState, Menu, MenuItem, Modal, NoResults, Pagination, SkeletonTable, Spinner, StatCard, Tabs, Thumb, useToast,
 } from "@/design-system";
 import { useAuth } from "@/context/AuthContext";
 import ReasonModal from "@/components/admin/community/ReasonModal";
@@ -114,7 +114,10 @@ function ListingsInner() {
     }
   }, [filters]);
 
-  useEffect(() => { void load(); }, [load]);
+  useEffect(() => {
+    const timer = window.setTimeout(() => void load(), 0);
+    return () => window.clearTimeout(timer);
+  }, [load]);
 
   useEffect(() => {
     let alive = true;
@@ -247,27 +250,12 @@ function ListingsInner() {
         </div>
 
         {error ? (
-          <div className="px-6 py-14 text-center">
-            <p className="text-sm font-semibold text-ink">Could not load the listings</p>
-            <p className="mx-auto mt-1 max-w-sm text-xs text-ink-subtle">{error}</p>
-            <button className="btn btn-outline mt-4" onClick={() => void load()}>Try again</button>
-          </div>
+          <ErrorState title="Could not load listings" description={error} onRetry={() => void load()} />
         ) : loading ? (
-          <div className="flex items-center justify-center py-16"><Spinner /></div>
+          <div className="px-5 py-4"><SkeletonTable rows={6} cols={6} /></div>
         ) : data.items.length === 0 ? (
-          <div className="px-6 py-14 text-center">
-            <span className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-brand-tint text-brand-ink">
-              <Store className="h-6 w-6" />
-            </span>
-            <p className="mt-3 text-sm font-semibold text-ink">
-              {status === "hidden" ? "Nothing is hidden" : filtered ? "Nothing matches that" : "No listings yet"}
-            </p>
-            <p className="mx-auto mt-1 max-w-sm text-xs text-ink-subtle">
-              {status === "hidden"
-                ? "Anything you hide or remove lands here with its reason, and can be restored."
-                : filtered ? "Try a different search, or clear the filter." : "Listings appear here as members add them to their shops."}
-            </p>
-          </div>
+          <NoResults icon={Store} filtered={filtered} thing="listings" onClear={filtered && !seller ? () => { setQ(""); setTerm(""); setStatus(""); setKind(""); setPage(1); } : undefined}
+            description={status === "hidden" ? "Hidden or removed listings appear here with their reason and can be restored." : filtered ? "Try a different search or filter." : "Listings appear here as members add them to their shops."} />
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full text-left">

@@ -3,14 +3,9 @@ import Link from "next/link";
 /**
  * WomSakhi brand lockup.
  *
- * Two real assets, both cut out with transparency:
- *   • /womsakhi-emblem.webp   — the "WS" monogram (two women shaking hands)
- *   • /womsakhi-wordmark.webp — the "WomSakhi" gradient wordmark
- *
- * The emblem is the owner's final artwork, cut off its flat #f7f7f7 backing.
- * The cut is seeded only from regions that are already that exact colour, so
- * the white saree — eight levels away from the backing and the thing a naive
- * "remove white" destroys — survives intact.
+ * Two official transparent assets supplied by the owner:
+ *   • /womsakhi-main-logo.png      — the complete square brand lockup
+ *   • /womsakhi-main-text-logo.png — the wide WomSakhi name treatment
  *
  * The monogram is ~1.8:1, so it is sized by HEIGHT with `w-auto` and never
  * boxed into a square — cropping or letterboxing it would hide the handshake
@@ -24,7 +19,7 @@ import Link from "next/link";
 export function LogoMark({
   className = "h-10",
   glow = true,
-  src = "/womsakhi-emblem.webp",
+  src = "/womsakhi-main-logo.png",
   alt = "WomSakhi",
 }: {
   className?: string;
@@ -54,7 +49,7 @@ export function LogoMark({
 
 export function LogoWordmark({
   className = "h-8",
-  src = "/womsakhi-wordmark-transparent.webp",
+  src = "/womsakhi-main-text-logo.png",
   alt = "WomSakhi",
 }: {
   className?: string;
@@ -70,7 +65,7 @@ export function LogoWordmark({
     <img loading="lazy" decoding="async"
       src={src}
       alt={alt}
-      className={`block w-auto dark:brightness-[1.55] dark:saturate-125 dark:drop-shadow-[0_0_8px_rgba(240,94,157,0.22)] ${className}`}
+      className={`brand-wordmark block w-auto ${className}`}
       draggable={false}
     />
   );

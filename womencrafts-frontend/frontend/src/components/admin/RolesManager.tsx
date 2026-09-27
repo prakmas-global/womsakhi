@@ -1,13 +1,13 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { createElement, useCallback, useEffect, useMemo, useState } from "react";
 import {
   ChevronRight, Circle, CircleCheck, Copy, Crown, Eye, Headset, KeyRound, Loader2, Lock,
   MoreHorizontal, Pencil, Plus, Presentation, Search, ShieldCheck, SlidersHorizontal,
   Trash2, User, UserCheck, UserCog, Users, UsersRound,
 } from "lucide-react";
 import {
-  Badge, Card, Input, Menu, MenuItem, Modal, Select, Spinner, StatCard, Textarea,
+  Badge, Card, EmptyState, ErrorState, Input, Menu, MenuItem, Modal, NoResults, Select, SkeletonTable, StatCard, Textarea,
   useConfirm, useToast,
 } from "@/design-system";
 import { useAuth } from "@/context/AuthContext";
@@ -48,6 +48,10 @@ const ICON_MAP: Record<string, React.ElementType> = {
   Crown, UserCog, Presentation, UserCheck, User, Headset, Pencil, Eye, ShieldCheck,
 };
 const iconFor = (name: string): React.ElementType => ICON_MAP[name] ?? ShieldCheck;
+
+function RoleIcon({ name, className }: { name: string; className: string }) {
+  return createElement(iconFor(name), { className });
+}
 
 const STATE_LABEL: Record<string, string> = {
   invited: "invited", active: "active", suspended: "suspended",
@@ -236,18 +240,30 @@ export default function RolesManager() {
 
   // The draft follows the selection; the holder list too.
   useEffect(() => {
-    setDraft(new Set(selected?.permissions ?? []));
+    const timer = window.setTimeout(
+      () => setDraft(new Set(selected?.permissions ?? [])),
+      0,
+    );
+    return () => window.clearTimeout(timer);
   }, [selected]);
 
   useEffect(() => {
-    if (!selected) { setHolders(null); return; }
     let alive = true;
-    setHoldersLoading(true);
-    apiRoleHolders(selected.id)
-      .then((h) => { if (alive) setHolders(h); })
-      .catch(() => { if (alive) setHolders(null); })
-      .finally(() => { if (alive) setHoldersLoading(false); });
-    return () => { alive = false; };
+    const timer = window.setTimeout(() => {
+      if (!selected) {
+        setHolders(null);
+        return;
+      }
+      setHoldersLoading(true);
+      apiRoleHolders(selected.id)
+        .then((h) => { if (alive) setHolders(h); })
+        .catch(() => { if (alive) setHolders(null); })
+        .finally(() => { if (alive) setHoldersLoading(false); });
+    }, 0);
+    return () => {
+      alive = false;
+      window.clearTimeout(timer);
+    };
   }, [selected]);
 
   const shown = useMemo(() => {
@@ -376,8 +392,6 @@ export default function RolesManager() {
 
   /* ── render ──────────────────────────────────────────────────────────── */
 
-  const SelectedIcon = selected ? iconFor(selected.icon) : ShieldCheck;
-
   return (
     <div>
       <div className="mb-6 flex flex-wrap items-start justify-between gap-4">
@@ -388,7 +402,7 @@ export default function RolesManager() {
           <div>
             <h1 className="font-display text-2xl font-bold tracking-tight text-ink">Roles</h1>
             <p className="mt-1 text-sm text-ink-subtle">
-              What each kind of staff account may open and do. A person's role is the starting point;
+              What each kind of staff account may open and do. A person&apos;s role is the starting point;
               anything granted or withheld for her alone lives on the Staff screen.
             </p>
           </div>
@@ -448,29 +462,13 @@ export default function RolesManager() {
           </div>
 
           {loading ? (
-            <div className="flex items-center justify-center py-16"><Spinner /></div>
+            <div className="px-5 py-4"><SkeletonTable rows={6} cols={4} /></div>
           ) : loadError ? (
-            <div className="px-6 py-14 text-center">
-              <span className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-status-danger-bg text-status-danger-ink">
-                <Lock className="h-6 w-6" />
-              </span>
-              <p className="mt-3 text-sm font-semibold text-ink">Could not load the roles</p>
-              <p className="mx-auto mt-1 max-w-sm text-xs text-ink-subtle">{loadError}</p>
-            </div>
+            <ErrorState title="Could not load roles" description={loadError} />
           ) : shown.length === 0 ? (
-            <div className="px-6 py-14 text-center">
-              <span className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-brand-tint text-brand-ink">
-                <ShieldCheck className="h-6 w-6" />
-              </span>
-              <p className="mt-3 text-sm font-semibold text-ink">
-                {query || typeFilter !== "All" ? "No role matches that" : "No roles yet"}
-              </p>
-              <p className="mx-auto mt-1 max-w-sm text-xs text-ink-subtle">
-                {query || typeFilter !== "All"
-                  ? "Try a different search, or clear the filter."
-                  : "Create one and choose exactly what it may open and do."}
-              </p>
-            </div>
+            query || typeFilter !== "All"
+              ? <NoResults icon={ShieldCheck} filtered thing="roles" onClear={() => { setQuery(""); setTypeFilter("All"); }} />
+              : <EmptyState icon={ShieldCheck} title="No roles yet" description="Create a role and choose exactly what it may open and do." />
           ) : (
             <div className="overflow-x-auto">
               <table className="w-full text-left">
@@ -566,7 +564,7 @@ export default function RolesManager() {
             <>
               <div className="flex items-start gap-3">
                 <span className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-violet-tint text-violet-ink">
-                  <SelectedIcon className="h-7 w-7" />
+                  <RoleIcon name={selected.icon} className="h-7 w-7" />
                 </span>
                 <div className="min-w-0">
                   <div className="flex flex-wrap items-center gap-2">
@@ -647,7 +645,7 @@ export default function RolesManager() {
                   </>
                 ) : (
                   <p className="text-xs text-ink-subtle">
-                    The permission catalogue could not be loaded, so this role's {selected.perms} permissions
+                    The permission catalogue could not be loaded, so this role&apos;s {selected.perms} permissions
                     cannot be shown here.
                   </p>
                 )}

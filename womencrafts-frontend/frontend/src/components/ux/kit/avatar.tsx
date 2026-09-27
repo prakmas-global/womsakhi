@@ -1,5 +1,8 @@
 "use client";
 
+import { useState } from "react";
+import { monogram, monogramTone } from "@/lib/monogram";
+
 /**
  * A face, at the size it is actually drawn.
  *
@@ -39,21 +42,23 @@ export function Avatar({ src, name, size = 40, className = "", ring }: {
   className?: string;
   ring?: string;
 }) {
+  const [failed, setFailed] = useState(false);
   const style: React.CSSProperties = {
     width: size, height: size,
     ...(ring ? { boxShadow: `0 0 0 2px var(${ring})` } : {}),
   };
 
-  if (!src) {
+  if (!src?.trim() || failed) {
+    const tints = ["--ux-brand-tint-2", "--ux-tint-lilac", "--ux-tint-pink", "--ux-tint-blue", "--ux-tint-green", "--ux-tint-amber"];
     return (
       <span
-        className={`grid shrink-0 place-items-center rounded-full font-bold ${className}`}
-        style={{ ...style, background: "var(--ux-brand-tint-2)", color: "var(--ux-brand)",
-                 fontSize: Math.max(10, Math.round(size * 0.38)) }}
-        aria-label={name}
+        className={`grid shrink-0 select-none place-items-center rounded-full border font-bold tracking-[0.04em] shadow-[inset_0_1px_0_var(--ux-sheen)] ${className}`}
+        style={{ ...style, background: `linear-gradient(145deg, var(${tints[monogramTone(name)]}), var(--ux-surface))`, borderColor: "var(--ux-line)", color: "var(--ux-brand)",
+                 fontSize: Math.max(9, Math.round(size * 0.31)) }}
+        aria-label={`${name || "WomSakhi"} — no photo uploaded`}
         role="img"
       >
-        {name.trim().charAt(0).toUpperCase() || "?"}
+        {monogram(name, "person")}
       </span>
     );
   }
@@ -67,6 +72,7 @@ export function Avatar({ src, name, size = 40, className = "", ring }: {
       decoding="async"
       width={size}
       height={size}
+      onError={() => setFailed(true)}
       className={`shrink-0 rounded-full object-cover ${className}`}
       style={style}
     />

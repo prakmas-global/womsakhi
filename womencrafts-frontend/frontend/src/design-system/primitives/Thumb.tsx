@@ -1,6 +1,7 @@
 "use client";
 
 import { memo, useState } from "react";
+import { monogram, monogramTone } from "@/lib/monogram";
 
 /**
  * Image thumbnail for content/program/media slots. Shows a deterministic
@@ -19,14 +20,17 @@ function Thumb({
   className?: string;
 }) {
   const [failed, setFailed] = useState(false);
-  const photo = src || `https://picsum.photos/seed/${encodeURIComponent(seed)}/120/120`;
+  const photo = src?.trim();
 
-  if (failed) {
+  if (!photo || failed) {
+    const tone = monogramTone(seed);
+    const tones = ["from-brand-100 to-violet-tint text-brand-ink", "from-status-info-bg to-brand-tint text-status-info-ink", "from-status-ok-bg to-brand-tint text-status-ok-ink", "from-status-warn-bg to-violet-tint text-status-warn-ink", "from-violet-tint to-brand-tint text-violet-ink", "from-surface-inset to-brand-tint text-brand-ink"];
     return (
       <span
-        className={`inline-block shrink-0 bg-linear-to-br from-brand-100 to-violet-tint ${className}`}
-        aria-label={alt}
-      />
+        role="img"
+        className={`inline-grid shrink-0 place-items-center border border-current/10 bg-linear-to-br font-bold tracking-[0.05em] shadow-[inset_0_1px_0_var(--ux-sheen)] ${tones[tone]} ${className}`}
+        aria-label={alt ? `${alt} — no image uploaded` : `${seed} — no image uploaded`}
+      >{monogram(seed, "label")}</span>
     );
   }
   // eslint-disable-next-line @next/next/no-img-element

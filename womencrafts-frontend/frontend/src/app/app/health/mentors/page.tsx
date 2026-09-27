@@ -13,6 +13,7 @@ import { apiRequestMentor } from "@/lib/growth-api";
 import { useResource } from "@/lib/use-resource";
 import { messageFrom } from "@/lib/use-action";
 import { useTranslated } from "@/i18n/data";
+import { Avatar } from "@/components/ux/kit";
 
 /**
  * "You're not alone. Talk to our expert mentors."
@@ -104,10 +105,7 @@ export default function HealthMentors() {
           )}
           {shown.map((m) => (
             <li key={m.id} className="flex items-start gap-3.5 rounded-[16px] p-3.5" style={{ background: "var(--ux-surface)", border: "1px solid var(--ux-line)" }}>
-              <span className="h-[60px] w-[60px] shrink-0 overflow-hidden rounded-full" style={{ background: "var(--cy-predicted)" }}>
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                {m.photo ? <img src={m.photo} alt="" className="h-full w-full object-cover object-top" /> : null}
-              </span>
+              <Avatar src={m.photo} name={m.name} size={60} />
               <span className="min-w-0 flex-1">
                 <b className="block text-[15px] font-semibold" style={{ color: "var(--ux-ink)" }}>{m.name}</b>
                 <span className="block text-[13px]" style={{ color: "var(--ux-ink-2)" }}>{m.headline}</span>

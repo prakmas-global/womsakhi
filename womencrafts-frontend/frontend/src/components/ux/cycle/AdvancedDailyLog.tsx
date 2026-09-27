@@ -147,19 +147,18 @@ export default function AdvancedDailyLog() {
   const [error, setError] = useState<string | null>(null);
   const [saved, setSaved] = useState(false);
   const [showSensitive, setShowSensitive] = useState(false);
+  const selectedDate = date || state?.today || "";
 
-  useEffect(() => { if (state?.today && !date) setDate(state.today); }, [state?.today, date]);
   useEffect(() => {
-    if (!date || !state) return;
+    if (!selectedDate || !state) return;
     const ctl = new AbortController();
-    setLoading(true); setError(null); setSaved(false);
-    apiCycleDay(date, ctl.signal).then(setLog).catch((e) => {
+    apiCycleDay(selectedDate, ctl.signal).then(setLog).catch((e) => {
       if (!ctl.signal.aborted) setError(messageFrom(e, "We could not open that day."));
     }).finally(() => { if (!ctl.signal.aborted) setLoading(false); });
     return () => ctl.abort();
-  }, [date, state]);
+  }, [selectedDate, state]);
 
-  const set = <K extends keyof CycleLog>(key: K, value: CycleLog[K]) => setLog((v) => ({ ...(v ?? empty(date)), [key]: value }));
+  const set = <K extends keyof CycleLog>(key: K, value: CycleLog[K]) => setLog((v) => ({ ...(v ?? empty(selectedDate)), [key]: value }));
   const activeMedicines = useMemo(() => state?.profile.medicines.filter((m) => m.active) ?? [], [state]);
   const toggleSymptom = (symptom: Symptom) => {
     if (!log || symptom === "none") return;
@@ -177,14 +176,29 @@ export default function AdvancedDailyLog() {
   };
   const save = async () => {
     if (!log) return;
-    const { date: _, ...body } = log;
-    const result = await act(() => apiCycleLog(date, body));
+    const { date: loggedDate, ...body } = log;
+    void loggedDate;
+    const result = await act(() => apiCycleLog(selectedDate, body));
     if (result) { setSaved(true); setError(null); }
     else setError("That did not save. Check your connection and try again.");
   };
 
   if (data && !data.setup) return (
-    <HomeShell immersive bare><div className="mx-auto max-w-[980px] py-12 text-center"><Link href="/app/health/cycle/start" className="font-semibold underline">Set up Cycle first</Link></div></HomeShell>
+    <HomeShell immersive bare>
+      <div className="mx-auto flex min-h-[65dvh] max-w-[560px] flex-col items-center justify-center px-5 py-12 text-center">
+        <span className="grid h-16 w-16 place-items-center rounded-[20px]" style={{ background: "var(--ux-tint-pink)", color: "var(--ux-pink-ink)" }}>
+          <Icons.CalendarDays className="h-8 w-8" aria-hidden />
+        </span>
+        <h1 className="ux-screen-title mt-5 text-[28px] font-bold" style={{ color: "var(--ux-ink)" }}>Start your private cycle tracker</h1>
+        <p className="mt-2 max-w-[440px] text-sm leading-relaxed" style={{ color: "var(--ux-muted)" }}>
+          Tell us where you are in your cycle first, then your daily health log will be ready.
+        </p>
+        <Link href="/app/health/cycle/start" className="ux-press mt-5 inline-flex min-h-12 items-center gap-2 rounded-[12px] px-5 text-sm font-semibold"
+              style={{ background: "var(--ux-brand)", color: "var(--ux-on-brand)" }}>
+          Set up Cycle <Icons.ArrowRight className="h-4 w-4" aria-hidden />
+        </Link>
+      </div>
+    </HomeShell>
   );
 
   return (
@@ -198,7 +212,9 @@ export default function AdvancedDailyLog() {
           </div>
           <label className="rounded-[14px] px-4 py-2" style={{ background: "var(--ux-surface)", border: "1px solid var(--ux-line)" }}>
             <span className="me-3 text-[13px] font-medium" style={{ color: "var(--ux-muted)" }}>Log date</span>
-            <input type="date" aria-label="Log date" value={date} max={state?.today ?? undefined} onChange={(e) => setDate(e.target.value)}
+            <input type="date" aria-label="Log date" value={selectedDate} max={state?.today ?? undefined} onChange={(e) => {
+              setLoading(true); setError(null); setSaved(false); setDate(e.target.value);
+            }}
                    className="bg-transparent text-[14px] font-semibold outline-none" style={{ color: "var(--ux-ink)" }} />
           </label>
         </header>

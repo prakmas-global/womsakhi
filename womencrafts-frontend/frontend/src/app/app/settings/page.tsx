@@ -5,7 +5,7 @@ import * as Icons from "@/components/ux/icons";
 
 import { useAuth } from "@/context/AuthContext";
 import { useTheme } from "@/context/ThemeContext";
-import { Btn, Card, IconTile, Pill, SectionHead } from "@/components/ux/kit";
+import { Avatar, Btn, Card, IconTile, Pill, SectionHead } from "@/components/ux/kit";
 import { HomeShell } from "@/components/ux/home/HomeShell";
 import { useMe } from "@/components/ux/me";
 import { useT } from "@/i18n";
@@ -152,11 +152,7 @@ export default function MorePage() {
           <ListRow
             href="/app/settings/account"
             avatar={
-              <span className="h-[44px] w-[44px] shrink-0 overflow-hidden rounded-full"
-                    style={{ background: "var(--ux-brand-tint)" }}>
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img loading="lazy" decoding="async" src={ME.avatar} alt="" className="h-full w-full object-cover" />
-              </span>
+              <Avatar src={ME.avatar} name={name} size={44} />
             }
             title={name}
             // Her address or nothing. The fallback here was a fixture address,
@@ -198,11 +194,7 @@ export default function MorePage() {
       <div className="hidden lg:block">
       <Card className="ux-onscroll mb-[24px]">
         <div className="flex items-center gap-4">
-          <span className="h-[62px] w-[62px] shrink-0 overflow-hidden rounded-full"
-                style={{ background: "var(--ux-brand-tint)" }}>
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img loading="lazy" decoding="async" src={ME.avatar} alt="" className="h-full w-full object-cover" />
-          </span>
+          <Avatar src={ME.avatar} name={name} size={62} />
           <div className="min-w-0 flex-1">
             <h2 className="flex items-center gap-2 text-lg font-semibold" style={{ color: "var(--ux-ink)" }}>
               {name}
