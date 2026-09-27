@@ -55,7 +55,7 @@ async def test_reset_updates_hashed_password_used_by_signin(monkeypatch) -> None
     monkeypatch.setattr(auth, "hash_password_async", _hash)
 
     result = await auth.reset_password(
-        ResetPasswordRequest(token="valid-reset-token", password="new-password"),
+        ResetPasswordRequest(token="valid-reset-token", password="New-password1"),
         request=None,
     )
 

@@ -8,6 +8,12 @@ def _valid_password(value: str, label: str = "Password") -> str:
         raise ValueError(f"{label} must be at least 8 characters")
     if len(value.encode("utf-8")) > 72:
         raise ValueError(f"{label} must be at most 72 bytes")
+    if not any(character.isalpha() for character in value):
+        raise ValueError(f"{label} must include at least one letter")
+    if not any(character.isdigit() for character in value):
+        raise ValueError(f"{label} must include at least one number")
+    if not any(not character.isalnum() and not character.isspace() for character in value):
+        raise ValueError(f"{label} must include at least one symbol")
     return value
 
 

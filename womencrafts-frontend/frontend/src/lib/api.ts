@@ -185,9 +185,11 @@ export async function apiSubmitSignupApplication(input: {
   form.append("locale", input.locale);
   form.append("identity_document", input.identity_document);
   form.append("selfie", input.selfie);
-  const { data } = await apiClient.post<AuthPayload>("/auth/signup-application", form, {
+  const { data } = await apiClient.post<AuthPayload>("/auth/signup-application", form, expected({
     timeout: 120_000,
-  });
+    // A duplicate email or rejected field is a form answer, not an outage.
+    // The signup screen renders it beside the relevant control.
+  }));
   return data;
 }
 

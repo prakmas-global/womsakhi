@@ -10,6 +10,7 @@ interface CountryPickerProps {
   value: string;
   onChange: (country: string) => void;
   describedBy?: string;
+  invalid?: boolean;
 }
 
 function CountryFlag({ code, large = false }: { code: string; large?: boolean }) {
@@ -21,7 +22,7 @@ function CountryFlag({ code, large = false }: { code: string; large?: boolean })
   return <span className={`fi fi-${lower} ${size} shrink-0 rounded-[5px] shadow-sm`} aria-hidden />;
 }
 
-export function CountryPicker({ value, onChange, describedBy }: CountryPickerProps) {
+export function CountryPicker({ value, onChange, describedBy, invalid = false }: CountryPickerProps) {
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState("");
   const search = useRef<HTMLInputElement>(null);
@@ -69,11 +70,13 @@ export function CountryPicker({ value, onChange, describedBy }: CountryPickerPro
       <button
         id="su-country"
         type="button"
-        className="auth-field flex min-h-[46px] w-full items-center gap-2.5 rounded-[12px] px-3 text-start text-sm"
+        role="combobox"
+        className={`auth-field flex min-h-[46px] w-full items-center gap-2.5 rounded-[12px] px-3 text-start text-sm${invalid ? " auth-field-invalid" : ""}`}
         aria-haspopup="listbox"
         aria-expanded={open}
         aria-controls={open ? listId : undefined}
         aria-describedby={describedBy}
+        aria-invalid={invalid || undefined}
         onClick={() => setOpen(true)}
       >
         {selected ? (
