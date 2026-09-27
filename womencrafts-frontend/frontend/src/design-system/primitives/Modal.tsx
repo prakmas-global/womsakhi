@@ -84,7 +84,7 @@ export default function Modal({
         className={`wc-page-enter wc-modal relative z-10 w-full ${sizeCls} max-h-[92vh] overflow-hidden rounded-3xl`}
       >
         {/* header */}
-        <div className="relative flex items-start gap-3.5 border-b border-line px-6 py-5">
+        <div className="wc-modal-header relative flex items-start gap-3.5 border-b border-line px-6 py-5">
           <span
             className="pointer-events-none absolute -right-10 -top-10 h-32 w-32 rounded-full bg-brand-500/10 blur-2xl"
             aria-hidden
@@ -110,11 +110,11 @@ export default function Modal({
         </div>
 
         {/* body */}
-        <div className="max-h-[calc(92vh-9rem)] overflow-y-auto px-6 py-5">{children}</div>
+        <div className="wc-modal-body max-h-[calc(92vh-9rem)] overflow-y-auto px-6 py-5">{children}</div>
 
         {/* footer */}
         {footer && (
-          <div className="flex justify-end gap-3 border-t border-line bg-surface-inset/60 px-6 py-4 dark:bg-white/3">
+          <div className="wc-modal-footer flex justify-end gap-3 border-t border-line bg-surface-inset/60 px-6 py-4 dark:bg-white/3">
             {footer}
           </div>
         )}

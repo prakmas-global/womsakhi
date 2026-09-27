@@ -1,243 +1,186 @@
 "use client";
 
-import { useState, type FormEvent } from "react";
-import { useT } from "@/i18n";
+import { useEffect, useMemo, useRef, useState, type FormEvent } from "react";
 import Link from "next/link";
-import { ArrowRight, Eye, EyeOff, Loader2, Lock, Mail, Phone, ShieldCheck, UserRound } from "lucide-react";
+import {
+  ArrowRight, Camera, Check, Eye, EyeOff, FileImage, Loader2,
+  Lock, Mail, Phone, ShieldCheck, Sparkles, Upload, UserRound, X,
+} from "lucide-react";
 
-import { useAuth, getAuthError } from "@/context/AuthContext";
-import { useI18n } from "@/i18n";
 import { BrandLockup } from "@/components/brand/BrandLockup";
-import { normalizePhone, PHONE_COUNTRIES } from "@/lib/phone";
 import { CountryPicker } from "@/components/auth/CountryPicker";
+import { useI18n, useT } from "@/i18n";
+import { apiErrorMessage, apiSubmitSignupApplication } from "@/lib/api";
+import { normalizePhone, PHONE_COUNTRIES } from "@/lib/phone";
+import { MAX_DOCUMENT_MB, validateDocument } from "@/lib/verification-api";
 
-/**
- * Joining.
- *
- * Ordered by her trust. Name and email are what she expects to be asked. The
- * password comes with a meter that measures rather than flatters. The photo ID
- * — the part a woman is entitled to hesitate over — is explained above the
- * button, before she commits, not sprung on her on the next screen.
- *
- * **Her phone number used to be discarded.** The field was here and labelled
- * optional, and `signUp(fullName, email, password)` dropped it — though
- * `signUp` takes a phone and `POST /auth/signup` accepts one. She typed it and
- * it went nowhere. For a woman whose phone is how she is reached, that is not
- * a small thing to lose in silence.
- */
+type DocumentFieldProps = {
+  title: string;
+  note: string;
+  file: File | null;
+  accept: string;
+  facing: "user" | "environment";
+  onChange: (file: File | null) => void;
+};
+
+function DocumentField({ title, note, file, accept, facing, onChange }: DocumentFieldProps) {
+  const camera = useRef<HTMLInputElement>(null);
+  const files = useRef<HTMLInputElement>(null);
+  const preview = useMemo(
+    () => file && file.type.startsWith("image/") ? URL.createObjectURL(file) : "",
+    [file],
+  );
+  useEffect(() => () => { if (preview) URL.revokeObjectURL(preview); }, [preview]);
+
+  const take = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const selected = event.target.files?.[0] ?? null;
+    event.target.value = "";
+    if (selected) onChange(selected);
+  };
+
+  return (
+    <div className="auth-application-document rounded-[16px] border p-3.5">
+      <input ref={camera} type="file" accept="image/*" capture={facing} className="sr-only" onChange={take} aria-label={`Take ${title}`} />
+      <input ref={files} type="file" accept={accept} className="sr-only" onChange={take} aria-label={`Choose ${title}`} />
+      <div className="flex items-start gap-3">
+        <div className="auth-application-thumb grid h-12 w-12 shrink-0 place-items-center overflow-hidden rounded-[14px]">
+          {preview ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img src={preview} alt="" className="h-full w-full object-cover" />
+          ) : file ? <FileImage className="h-5 w-5" aria-hidden /> : <Camera className="h-5 w-5" aria-hidden />}
+        </div>
+        <div className="min-w-0 flex-1">
+          <div className="flex items-center gap-2">
+            <p className="text-sm font-semibold" style={{ color: "var(--a-ink)" }}>{title}</p>
+            {file && <span className="auth-application-added inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-bold"><Check className="h-3 w-3" /> Added</span>}
+          </div>
+          <p className="mt-0.5 text-[11px] leading-relaxed" style={{ color: "var(--a-muted)" }}>{note}</p>
+          {file && <p className="mt-1 truncate text-[11px] font-medium" style={{ color: "var(--a-ink-2)" }}>{file.name}</p>}
+        </div>
+        {file && (
+          <button type="button" onClick={() => onChange(null)} className="auth-application-remove grid h-9 w-9 shrink-0 place-items-center rounded-xl" aria-label={`Remove ${title}`}>
+            <X className="h-4 w-4" />
+          </button>
+        )}
+      </div>
+      <div className="mt-3 grid grid-cols-2 gap-2">
+        <button type="button" onClick={() => camera.current?.click()} className="auth-application-secondary inline-flex min-h-10 items-center justify-center gap-2 rounded-xl px-2 text-xs font-semibold">
+          <Camera className="h-4 w-4" /> {file ? "Retake" : "Take photo"}
+        </button>
+        <button type="button" onClick={() => files.current?.click()} className="auth-application-secondary inline-flex min-h-10 items-center justify-center gap-2 rounded-xl px-2 text-xs font-semibold">
+          <Upload className="h-4 w-4" /> {file ? "Replace" : "Choose file"}
+        </button>
+      </div>
+    </div>
+  );
+}
+
 export default function SignUpPage() {
   const tr = useT();
-  const { signUp } = useAuth();
-
   const { locale } = useI18n();
   const [fullName, setFullName] = useState("");
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
   const [country, setCountry] = useState("");
-  const [phoneError, setPhoneError] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
+  const [identityDocument, setIdentityDocument] = useState<File | null>(null);
+  const [selfie, setSelfie] = useState<File | null>(null);
+  const [phoneError, setPhoneError] = useState("");
+  const [documentError, setDocumentError] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
-  // Cheap, honest strength meter — length plus variety, nothing pretending to
-  // be an entropy calculation.
-  const strength = Math.min(
-    100,
+  const strength = Math.min(100,
     (password.length >= 8 ? 40 : password.length * 5) +
-      (/[A-Z]/.test(password) ? 20 : 0) +
-      (/[0-9]/.test(password) ? 20 : 0) +
-      (/[^A-Za-z0-9]/.test(password) ? 20 : 0),
-  );
-  const strengthLabel =
-    password.length === 0 ? ""
-      : strength >= 70 ? "Strong"
-      : strength >= 40 ? "Getting there"
-      : "Too weak";
-  const strengthInk =
-    strength >= 70 ? "var(--a-ok)" : strength >= 40 ? "var(--a-warn)" : "var(--a-bad)";
+    (/[A-Z]/.test(password) ? 20 : 0) +
+    (/[0-9]/.test(password) ? 20 : 0) +
+    (/[^A-Za-z0-9]/.test(password) ? 20 : 0));
+  const strengthLabel = !password ? "" : strength >= 70 ? "Strong" : strength >= 40 ? "Getting there" : "Too weak";
+  const strengthInk = strength >= 70 ? "var(--a-ok)" : strength >= 40 ? "var(--a-warn)" : "var(--a-bad)";
 
-  const handleSubmit = async (e: FormEvent) => {
-    e.preventDefault();
+  const setDocument = (kind: "id" | "selfie", file: File | null) => {
+    setDocumentError("");
+    if (file) {
+      const issue = validateDocument(file);
+      if (issue) { setDocumentError(issue); return; }
+      if (kind === "selfie" && !file.type.startsWith("image/")) {
+        setDocumentError("Your selfie must be a JPG, PNG, WEBP or HEIC image.");
+        return;
+      }
+    }
+    if (kind === "id") setIdentityDocument(file); else setSelfie(file);
+  };
+
+  const submit = async (event: FormEvent) => {
+    event.preventDefault();
     setError("");
     const normalizedPhone = normalizePhone(phone, country);
-    if (!country) {
-      setPhoneError("Select your country first.");
-      return;
-    }
-    if (!normalizedPhone) {
-      setPhoneError("Enter a valid mobile number for the selected country.");
-      return;
-    }
-    setPhoneError("");
-    setLoading(true);
+    if (!country) { setPhoneError("Select your country first."); return; }
+    if (!normalizedPhone) { setPhoneError("Enter a valid mobile number for the selected country."); return; }
+    if (!identityDocument || !selfie) { setDocumentError("Add your photo ID and selfie before creating the account."); return; }
+    setPhoneError(""); setDocumentError(""); setLoading(true);
     try {
-      // The phone goes with it. It used to be collected here and dropped.
-      // The language she chose on this screen, saved with the account rather
-      // than left in a cookie — `apiSignUp` defaulted it to "en", so a woman
-      // who set Telugu before filling the form had an English account from the
-      // moment she created it, and got English on every other device.
-      await signUp(fullName, email, password, { phone: normalizedPhone, country, locale });
-    } catch (err) {
-      setError(getAuthError(err));
-    } finally {
-      setLoading(false);
-    }
+      await apiSubmitSignupApplication({
+        full_name: fullName, email, password, phone: normalizedPhone,
+        country, locale, identity_document: identityDocument, selfie,
+      });
+      window.location.assign("/app/verify?submitted=1");
+    } catch (cause) {
+      setError(apiErrorMessage(cause, "We could not create your account. Check the details and try again."));
+    } finally { setLoading(false); }
   };
 
   const field = "auth-field min-h-[46px] w-full rounded-[12px] pe-4 ps-11 text-sm";
-  const fieldPad = { paddingBlock: "clamp(0.5625rem,1.5vh,0.875rem)" } as const;
-  const labelCls = "mb-1.5 block text-xsm font-medium";
-  const labelStyle = { color: "var(--a-ink-2)" } as const;
-  const iconCls = "pointer-events-none absolute start-4 top-1/2 h-[17px] w-[17px] -translate-y-1/2";
-  const iconStyle = { color: "var(--a-faint)" } as const;
+  const label = "mb-1.5 block text-xs font-semibold";
+  const icon = "pointer-events-none absolute start-4 top-1/2 h-[17px] w-[17px] -translate-y-1/2";
 
   return (
-    <div>
-      {/* ── Brand ── */}
-      <div className="auth-brand">
-        <BrandLockup
-          alt={tr("waitScreen.womsakhiStrongerWomenBrighterTomorrows")}
-          className="auth-main-lockup object-contain"
-        />
+    <div className="auth-application">
+      <div className="flex items-center justify-between gap-4">
+        <BrandLockup alt={tr("waitScreen.womsakhiStrongerWomenBrighterTomorrows")} className="h-12 w-[92px] object-contain" />
+        <div className="auth-application-one-step rounded-full px-3 py-1.5 text-[11px] font-bold"><Sparkles className="me-1 inline h-3.5 w-3.5" />One secure application</div>
+      </div>
+      <h1 className="mt-1 text-start font-bold leading-tight tracking-tight" style={{ color: "var(--a-ink)", fontSize: "clamp(1.55rem,2.5vw,2.1rem)" }}>Create your WomSakhi account</h1>
+      <p className="mt-1 text-xs leading-relaxed" style={{ color: "var(--a-muted)" }}>Enter your details and add two clear photos. One tap submits everything to our authorised review team.</p>
+
+      <div className="mt-3 grid grid-cols-3 gap-2" aria-label="Application requirements">
+        {[["1","Your details"],["2","Photo ID"],["3","Selfie"]].map(([number, text]) => (
+          <div key={number} className="auth-application-step flex min-h-10 items-center justify-center gap-2 rounded-xl px-2 py-1.5 text-center"><span className="grid h-5 w-5 shrink-0 place-items-center rounded-full text-[10px] font-bold">{number}</span><p className="text-[10px] font-semibold">{text}</p></div>
+        ))}
       </div>
 
-      <h1 className="font-bold leading-tight tracking-tight" style={{ color: "var(--a-ink)", fontSize: "clamp(1.35rem, 3.4vh, 2.1rem)", marginTop: "clamp(0.625rem,2.2vh,1.75rem)" }}>
-        {tr("page.join1")} <span className="auth-shine">{tr("page.join2")}</span>
-      </h1>
-      <p className="auth-sub text-xsm" style={{ color: "var(--a-muted)", marginTop: "clamp(0.25rem,0.8vh,0.375rem)" }}>
-        {tr("page.womenOnlyAndFreeNobodyHere")}
-      </p>
+      {error && <p role="alert" className="auth-application-error mt-4 rounded-xl px-3.5 py-3 text-xs leading-relaxed">{error}</p>}
 
-      {error && (
-        <p
-          role="alert"
-          className="mt-5 rounded-[12px] px-3.5 py-3 text-xsm leading-relaxed"
-          style={{
-            background: "var(--a-tint-rose-2)",
-            border: "1px solid var(--a-edge-rose)",
-            color: "var(--a-danger-ink)",
-          }}
-        >
-          {error}
-        </p>
-      )}
-
-      <form onSubmit={handleSubmit} style={{ marginTop: "clamp(0.625rem,2vh,1.5rem)" }} className="space-y-[clamp(0.4375rem,1.2vh,0.875rem)]">
-        <div>
-          <label htmlFor="su-name" className={labelCls} style={labelStyle}>{tr("settingsAccount.yourName")}</label>
-          <div className="relative">
-            <UserRound className={iconCls} style={iconStyle} aria-hidden />
-            <input
-              id="su-name" type="text" required autoComplete="name" autoFocus
-              value={fullName} onChange={(e) => setFullName(e.target.value)}
-              placeholder={tr("page.theNameYouWantToBe")} className={field} style={fieldPad}
-            />
-          </div>
-        </div>
-
-        <div>
-          <label htmlFor="su-email" className={labelCls} style={labelStyle}>Email</label>
-          <div className="relative">
-            <Mail className={iconCls} style={iconStyle} aria-hidden />
-            <input
-              id="su-email" type="email" required autoComplete="email"
-              value={email} onChange={(e) => setEmail(e.target.value)}
-              placeholder={tr("page.youExampleCom")} className={field} style={fieldPad}
-            />
-          </div>
-        </div>
-
-        <div>
-          <label htmlFor="su-country" className={labelCls} style={labelStyle}>Country and mobile number</label>
-          <div className="grid gap-2 sm:grid-cols-[minmax(0,1fr)_minmax(0,1.15fr)]">
-            <CountryPicker value={country} onChange={(code) => { setCountry(code); setPhoneError(""); }} describedBy={phoneError ? "su-phone-error" : "su-phone-help"} />
-            <div className="relative">
-              <Phone className={iconCls} style={iconStyle} aria-hidden />
-              <input
-                id="su-phone" type="tel" required autoComplete="tel"
-                value={phone} onChange={(e) => { setPhone(e.target.value); setPhoneError(""); }}
-                onBlur={() => {
-                  if (country && phone && !normalizePhone(phone, country)) setPhoneError("Enter a valid mobile number for the selected country.");
-                }}
-                placeholder={country ? `Mobile number (${PHONE_COUNTRIES.find((item) => item.code === country)?.dial})` : "Select country first"}
-                className={field} style={fieldPad}
-                aria-invalid={Boolean(phoneError)} aria-describedby={phoneError ? "su-phone-error" : "su-phone-help"}
-              />
+      <form onSubmit={submit} className="mt-3">
+        <div className="auth-application-columns grid gap-4">
+          <section className="auth-application-section rounded-[18px] border p-4">
+            <div className="mb-3 flex items-center gap-2"><UserRound className="h-4 w-4" /><h2 className="text-sm font-bold">Account details</h2></div>
+            <div className="grid gap-3">
+              <div><label htmlFor="su-name" className={label}>Full name</label><div className="relative"><UserRound className={icon} /><input id="su-name" required autoFocus autoComplete="name" value={fullName} onChange={(e) => setFullName(e.target.value)} className={field} placeholder="Your name" /></div></div>
+              <div><label htmlFor="su-email" className={label}>Email address *</label><div className="relative"><Mail className={icon} /><input id="su-email" type="email" required autoComplete="email" value={email} onChange={(e) => setEmail(e.target.value)} className={field} placeholder="you@example.com" /></div></div>
+              <div><label className={label}>Country and mobile number *</label><div className="grid gap-3 sm:grid-cols-[0.9fr_1.1fr] lg:grid-cols-1 2xl:grid-cols-[0.9fr_1.1fr]"><CountryPicker value={country} onChange={(value) => { setCountry(value); setPhoneError(""); }} describedBy={phoneError ? "su-phone-error" : "su-phone-help"} /><div className="relative"><Phone className={icon} /><input id="su-phone" type="tel" required autoComplete="tel" value={phone} onChange={(e) => { setPhone(e.target.value); setPhoneError(""); }} className={field} placeholder={country ? `Mobile number (${PHONE_COUNTRIES.find((item) => item.code === country)?.dial})` : "Select country first"} aria-invalid={!!phoneError} /></div></div>{phoneError && <p id="su-phone-error" role="alert" className="auth-application-danger mt-1 text-[11px]">{phoneError}</p>}</div>
+              <div><label htmlFor="su-password" className={label}>Create a password</label><div className="relative"><Lock className={icon} /><input id="su-password" type={showPassword ? "text" : "password"} required minLength={8} autoComplete="new-password" value={password} onChange={(e) => setPassword(e.target.value)} className={`${field} pe-12`} placeholder="Use 8+ characters with a number and symbol" /><button type="button" onClick={() => setShowPassword((value) => !value)} className="absolute end-2 top-1/2 grid h-10 w-10 -translate-y-1/2 place-items-center rounded-xl" aria-label={showPassword ? "Hide password" : "Show password"}>{showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}</button></div>{strengthLabel && <div className="mt-2 flex items-center gap-2"><span className="auth-application-track h-1 flex-1 overflow-hidden rounded-full"><span className="block h-full rounded-full" style={{ width: `${strength}%`, background: strengthInk }} /></span><span className="text-[10px] font-bold" style={{ color: strengthInk }}>{strengthLabel}</span></div>}</div>
             </div>
-          </div>
-          {phoneError ? (
-            <p id="su-phone-error" role="alert" className="mt-1 text-2xs leading-snug" style={{ color: "var(--a-danger-ink)" }}>{phoneError}</p>
-          ) : (
-            <p id="su-phone-help" className="mt-1 text-2xs leading-snug" style={{ color: "var(--a-faint)" }}>
-              We validate the number for your selected country before creating the account.
-            </p>
-          )}
-        </div>
+          </section>
 
-        <div>
-          <label htmlFor="su-password" className={labelCls} style={labelStyle}>Password</label>
-          <div className="relative">
-            <Lock className={iconCls} style={iconStyle} aria-hidden />
-            <input
-              id="su-password" type={showPassword ? "text" : "password"} required
-              autoComplete="new-password" minLength={8}
-              value={password} onChange={(e) => setPassword(e.target.value)}
-              placeholder={tr("page.atLeast8Characters")} className={`${field} pe-12`} style={fieldPad}
-            />
-            <button
-              type="button" onClick={() => setShowPassword((v) => !v)}
-              aria-label={showPassword ? "Hide password" : "Show password"}
-              className="absolute end-2.5 top-1/2 grid h-10 w-10 -translate-y-1/2 place-items-center rounded-[12px]"
-              style={{ color: "var(--a-muted)" }}
-            >
-              {showPassword ? <EyeOff className="h-[17px] w-[17px]" /> : <Eye className="h-[17px] w-[17px]" />}
-            </button>
-          </div>
-          {strengthLabel && (
-            <div className="mt-2 flex items-center gap-2.5">
-              <span className="h-[4px] flex-1 overflow-hidden rounded-full" style={{ background: "var(--a-track)" }}>
-                <span
-                  className="block h-full rounded-full transition-all duration-300"
-                  style={{ width: `${strength}%`, background: strengthInk }}
-                />
-              </span>
-              <span className="text-2xs font-medium" style={{ color: strengthInk }}>{strengthLabel}</span>
+          <section className="auth-application-section rounded-[18px] border p-4">
+            <div className="mb-1 flex items-center gap-2"><ShieldCheck className="h-4 w-4" /><h2 className="text-sm font-bold">Identity check</h2></div>
+            <p className="mb-3 text-[11px] leading-relaxed" style={{ color: "var(--a-muted)" }}>Only authorised reviewers can open these encrypted files. Maximum {MAX_DOCUMENT_MB} MB each.</p>
+            <div className="grid gap-3">
+              <DocumentField title="Photo ID" note="Aadhaar, voter card or driving licence" file={identityDocument} accept="image/jpeg,image/png,image/webp,image/heic,application/pdf" facing="environment" onChange={(file) => setDocument("id", file)} />
+              <DocumentField title="Selfie with the same ID" note="Keep your face and the ID clear in the frame" file={selfie} accept="image/jpeg,image/png,image/webp,image/heic" facing="user" onChange={(file) => setDocument("selfie", file)} />
             </div>
-          )}
+            {documentError && <p role="alert" className="auth-application-danger mt-2 text-[11px] leading-relaxed">{documentError}</p>}
+          </section>
         </div>
 
-        {/* Said before she commits, not sprung on her on the next screen. */}
-        <div
-          className="flex items-start gap-2.5 rounded-[12px]"
-          style={{
-            padding: "clamp(0.625rem,1.6vh,0.875rem)",
-            background: "var(--a-tint-violet)", border: "1px solid var(--a-edge-violet)",
-          }}
-        >
-          <ShieldCheck className="mt-[1px] h-[17px] w-[17px] shrink-0" style={{ color: "var(--a-lilac)" }} aria-hidden />
-          <p className="text-2xs leading-snug" style={{ color: "var(--a-ink-2)" }}>
-            Next we ask for one photo ID. Only our review team can open it, and it
-            is how this stays a space for women.
-          </p>
-        </div>
-
-        <button
-          type="submit"
-          disabled={loading}
-          className="auth-go flex min-h-[50px] w-full items-center justify-center gap-2 rounded-[12px] text-sm font-semibold"
-          style={{ paddingBlock: "clamp(0.6875rem,1.8vh,1rem)" }}
-        >
-          {loading ? <Loader2 className="h-[18px] w-[18px] animate-spin" aria-hidden /> : null}
-          {loading ? "Creating your account…" : "Create my account"}
-          {loading ? null : <ArrowRight className="h-[18px] w-[18px]" aria-hidden />}
+        <div className="auth-application-trust mt-4 rounded-[14px] p-3"><ShieldCheck className="h-4 w-4 shrink-0" /><p className="text-[11px] leading-relaxed"><strong>Admin review only.</strong> Your application is submitted automatically; there is no second verification request to send.</p></div>
+        <button type="submit" disabled={loading} className="auth-go mt-3 flex min-h-[52px] w-full items-center justify-center gap-2 rounded-[14px] px-4 text-sm font-bold">
+          {loading ? <Loader2 className="h-5 w-5 animate-spin" /> : <ShieldCheck className="h-5 w-5" />}{loading ? "Encrypting and submitting…" : "Create account & submit application"}{!loading && <ArrowRight className="h-5 w-5" />}
         </button>
       </form>
-
-      <p className="text-center text-xsm" style={{ color: "var(--a-muted)", marginTop: "clamp(0.625rem,2vh,1.5rem)" }}>
-        Already have an account?{" "}
-        <Link href="/signin" className="auth-link font-semibold">{tr("page.signIn")}</Link>
-      </p>
+      <p className="mt-4 text-center text-xs" style={{ color: "var(--a-muted)" }}>Already have an account? <Link href="/signin" className="auth-link font-bold">Sign in</Link></p>
     </div>
   );
 }

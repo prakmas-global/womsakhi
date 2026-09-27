@@ -246,3 +246,61 @@
    because `--ux-canvas` is declared on `.ux`, which body is outside of. */
 body:has(.ux-admin) { background: #fcf8f7; }
 .dark body:has(.ux-admin) { background: #14122a; }
+
+/* Phone admin workspace: actions stay reachable and wide data stays inside
+   its own surface instead of widening the entire application. */
+.ux-admin,
+.ux-admin #content,
+.ux-admin #content > div {
+  min-width: 0;
+  max-width: 100%;
+}
+.ux-admin :is(.overflow-x-auto, .overflow-auto) {
+  overscroll-behavior-inline: contain;
+  scrollbar-gutter: stable;
+}
+
+@media (max-width: 639px) {
+  body:has(.ux-admin) { overflow-x: hidden; }
+  .ux-admin .wc-card { border-radius: 16px; }
+  .ux-admin .wc-modal {
+    display: flex;
+    flex-direction: column;
+    max-height: calc(100dvh - 16px);
+    border-radius: 20px;
+  }
+  .ux-admin .wc-modal-header { gap: 10px; padding: 14px 14px 12px; }
+  .ux-admin .wc-modal-header > span:not(.pointer-events-none) {
+    width: 38px;
+    height: 38px;
+    border-radius: 12px;
+  }
+  .ux-admin .wc-modal-header h2 { font-size: 1rem; line-height: 1.25; }
+  .ux-admin .wc-modal-header p { font-size: .75rem; line-height: 1.45; }
+  .ux-admin .wc-modal-body {
+    flex: 1 1 auto;
+    min-height: 0;
+    max-height: none;
+    padding: 14px;
+  }
+  .ux-admin .wc-modal-footer {
+    flex: 0 0 auto;
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px;
+    padding: 10px 14px max(10px, env(safe-area-inset-bottom));
+  }
+  .ux-admin .wc-modal-footer > :is(button, a) {
+    width: 100%;
+    min-height: 44px;
+    justify-content: center;
+    white-space: normal;
+    text-align: center;
+  }
+  .ux-admin .wc-modal-footer > :only-child,
+  .ux-admin .wc-modal-footer > :last-child:nth-child(odd) { grid-column: 1 / -1; }
+  .ux-admin table { font-size: .75rem; }
+  .ux-admin table :is(th, td) { white-space: nowrap; }
+  .ux-admin .btn { min-height: 40px; }
+  .ux-admin .btn-sm { min-height: 36px; }
+}

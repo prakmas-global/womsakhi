@@ -52,7 +52,6 @@ export default function SignInPage() {
   const [twoFactorCode, setTwoFactorCode] = useState("");
   const [needsTwoFactor, setNeedsTwoFactor] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
-  const [remember, setRemember] = useState(true);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   // Which social sign-ins actually work. Empty today — this backend knows only
@@ -173,18 +172,7 @@ export default function SignInPage() {
           </div>
         </div>
 
-        <div className="flex items-center justify-between gap-3">
-          {/* The row is the target, not the box — a 17px checkbox is under the
-              24px minimum on a phone. */}
-          <label className="-my-2 flex min-h-[44px] cursor-pointer select-none items-center gap-2.5 py-2">
-            <input
-              type="checkbox" checked={remember}
-              onChange={(e) => setRemember(e.target.checked)}
-              className="h-[18px] w-[18px] rounded-[8px]"
-              style={{ accentColor: "var(--a-magenta)" }}
-            />
-            <span className="text-xsm" style={{ color: "var(--a-ink-2)" }}>{tr("page.keepMeSignedIn")}</span>
-          </label>
+        <div className="flex justify-end">
           <Link href="/forgot-password" className="auth-link -my-2 flex min-h-[44px] items-center text-xsm font-medium">
             {tr("page.forgotPassword")}
           </Link>

@@ -45,7 +45,7 @@ function StatCard({
           <Icon className="h-6 w-6" strokeWidth={2} />
         </span>
         <div className="min-w-0">
-          <p className="truncate text-xsm font-medium text-ink-subtle">{label}</p>
+          <p className="text-xsm font-medium leading-tight text-ink-subtle">{label}</p>
           <p className={`truncate font-display font-bold text-ink ${valueClassName}`} title={value}>
             {value}
           </p>

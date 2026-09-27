@@ -106,7 +106,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       */}
       <div className="lg:pl-[var(--wc-sidebar-width)]">
         <Topbar onMenu={() => setNavOpen(true)} />
-        <main id="content" tabIndex={-1} className="px-5 pb-24 pt-[calc(var(--ux-topbar-h)+18px)]">
+        <main id="content" tabIndex={-1} className="px-3 pb-24 pt-[calc(var(--ux-topbar-h)+14px)] sm:px-5 sm:pt-[calc(var(--ux-topbar-h)+18px)]">
           <div key={pathname} className="wc-page-enter">
             {allowed ? children : <AccessDenied />}
           </div>

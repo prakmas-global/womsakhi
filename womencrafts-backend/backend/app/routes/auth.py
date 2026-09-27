@@ -1,7 +1,8 @@
 from datetime import datetime, timedelta, timezone
 
 from bson import ObjectId
-from fastapi import APIRouter, BackgroundTasks, HTTPException, Request, Response, status, Depends
+from fastapi import APIRouter, BackgroundTasks, File, Form, HTTPException, Request, Response, UploadFile, status, Depends
+from pydantic import ValidationError
 
 from app.core.deps import get_current_user
 from app.core.rbac import (
@@ -15,7 +16,7 @@ from app.core import ratelimit
 from app.core.config import settings
 from app.models.member import MemberModel
 from app.models.user import UserModel
-from app.models.verification import VerificationStatus
+from app.models.verification import DocumentModel, VerificationStatus
 from app.schemas.auth import (
     AuthResponse,
     ForgotPasswordRequest,
@@ -36,7 +37,9 @@ from app.core.security import (
     token_version_in,
 )
 from app.core.session import COOKIE_NAME, clear_session_cookie, set_session_cookie
-from app.routes.verification import send_verification_email
+from app.routes.verification import PRIVATE_ROOT, save_document_file, send_verification_email
+from app.core import email as mailer
+from app.core.audit import record
 from app.core.two_factor import decrypt_secret, recovery_digest, verify_code
 
 router = APIRouter(prefix="/auth", tags=["Authentication"])
@@ -194,6 +197,154 @@ async def signup(payload: SignUpRequest, response: Response, request: Request):
     token = _token_for(doc)
     set_session_cookie(response, token)
     return AuthResponse(access_token=token, user=await _user_response(doc))
+
+
+@router.post(
+    "/signup-application",
+    response_model=AuthResponse,
+    status_code=status.HTTP_201_CREATED,
+    summary="Create a member account and submit its identity application",
+)
+async def signup_application(
+    response: Response,
+    request: Request,
+    background_tasks: BackgroundTasks,
+    full_name: str = Form(...),
+    email: str = Form(...),
+    password: str = Form(...),
+    country: str = Form(...),
+    phone: str = Form(...),
+    locale: str = Form("en"),
+    identity_document: UploadFile = File(...),
+    selfie: UploadFile = File(...),
+):
+    """One member action: account, two encrypted files, then the admin queue.
+
+    The ordinary JSON signup endpoint remains for older clients. The current
+    web journey uses this multipart endpoint so it never creates a half-finished
+    account and then asks the member to find a separate verification screen.
+    """
+    try:
+        payload = SignUpRequest(
+            full_name=full_name,
+            email=email,
+            password=password,
+            country=country,
+            phone=phone,
+            locale=locale,
+        )
+    except ValidationError as exc:
+        first = exc.errors()[0]
+        raise HTTPException(status.HTTP_422_UNPROCESSABLE_ENTITY, first.get("msg", "Check your details and try again.")) from exc
+
+    if not (selfie.content_type or "").lower().startswith("image/"):
+        raise HTTPException(
+            status.HTTP_415_UNSUPPORTED_MEDIA_TYPE,
+            "Your selfie must be a JPG, PNG, WEBP or HEIC image.",
+        )
+
+    await ratelimit.check(request, "signup", payload.email, ratelimit.SIGN_UP, ratelimit.SIGN_UP_IP)
+    db = get_database()
+    users = db[UserModel.collection_name]
+    members = db[MemberModel.collection_name]
+    documents = db[DocumentModel.collection_name]
+    normalized_email = payload.email.lower().strip()
+    if await users.find_one({"email": normalized_email}):
+        raise HTTPException(status.HTTP_409_CONFLICT, "An account with this email already exists")
+
+    member_doc = MemberModel.create_document(
+        full_name=payload.full_name,
+        email=normalized_email,
+        phone=payload.phone,
+        country=payload.country,
+        role="Member",
+        status="Pending",
+        code=await _next_member_code(db),
+    )
+    member_result = await members.insert_one(member_doc)
+    user = UserModel.create_document(
+        full_name=payload.full_name,
+        email=normalized_email,
+        hashed_password=await hash_password_async(payload.password),
+        role=MEMBER_ROLE,
+        member_id=str(member_result.inserted_id),
+        locale=payload.locale or "en",
+        phone=payload.phone,
+        country=payload.country,
+    )
+    try:
+        user_result = await users.insert_one(user)
+    except Exception:
+        await members.delete_one({"_id": member_result.inserted_id})
+        raise
+    user["_id"] = user_result.inserted_id
+    stored_names: list[str] = []
+    inserted_document_ids: list[ObjectId] = []
+    try:
+        for upload, doc_type in ((identity_document, "aadhaar"), (selfie, "selfie")):
+            stored_name, _extension, size = await save_document_file(upload, user)
+            stored_names.append(stored_name)
+            document = DocumentModel.create_document(
+                user_id=str(user["_id"]),
+                member_id=str(member_result.inserted_id),
+                doc_type=doc_type,
+                original_name=upload.filename or stored_name,
+                stored_name=stored_name,
+                content_type=upload.content_type or "",
+                size=size,
+            )
+            inserted = await documents.insert_one(document)
+            inserted_document_ids.append(inserted.inserted_id)
+
+        now = datetime.now(timezone.utc)
+        next_reminder = now + timedelta(hours=24)
+        await users.update_one(
+            {"_id": user["_id"]},
+            {"$set": {
+                "verification_status": VerificationStatus.IN_REVIEW,
+                "verification_reminder_count": 1,
+                "verification_review_requested_at": now,
+                "verification_next_request_at": next_reminder,
+                "verification_next_reminder_at": next_reminder,
+                "application_submitted_at": now,
+                "updated_at": now,
+            }},
+        )
+        user.update({
+            "verification_status": VerificationStatus.IN_REVIEW,
+            "verification_reminder_count": 1,
+            "verification_review_requested_at": now,
+            "verification_next_request_at": next_reminder,
+            "verification_next_reminder_at": next_reminder,
+            "application_submitted_at": now,
+            "updated_at": now,
+        })
+    except Exception:
+        for stored_name in stored_names:
+            (PRIVATE_ROOT / stored_name).unlink(missing_ok=True)
+        if inserted_document_ids:
+            await documents.delete_many({"_id": {"$in": inserted_document_ids}})
+        await users.delete_one({"_id": user["_id"]})
+        await members.delete_one({"_id": member_result.inserted_id})
+        raise
+
+    from app.engines.verification_followups import send_review_alert
+    background_tasks.add_task(send_review_alert, user, 1)
+    background_tasks.add_task(
+        mailer.send,
+        mailer.submitted_email(user.get("full_name", "")),
+        user["email"],
+    )
+    await record(
+        user,
+        "member.submit_application",
+        target=str(user["_id"]),
+        detail="Created account and submitted both identity images in one application",
+        request=request,
+    )
+    token = _token_for(user)
+    set_session_cookie(response, token)
+    return AuthResponse(access_token=token, user=await _user_response(user))
 
 
 @router.post("/signin", response_model=AuthResponse)

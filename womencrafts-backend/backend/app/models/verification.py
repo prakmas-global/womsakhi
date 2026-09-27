@@ -12,9 +12,9 @@ the final call:
     rejected       → declined, with a reason she is told
     suspended      → previously active, access withdrawn
 
-Only `active` accounts can use the member app. Everything else lands on a status
-screen that tells her exactly where she is and what happens next — never a dead
-end, never a silent failure.
+Only `active` accounts can use the member app. A new applicant submits account
+details and evidence together; everything else lands on one concise application
+screen while the admin team handles the decision.
 """
 
 import secrets

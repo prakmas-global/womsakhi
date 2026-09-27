@@ -865,9 +865,9 @@ function MembersScreen() {
                             <Link href="/dashboard/users/deletions" className="font-semibold underline">Open the queue</Link>
                           </p>
                         )}
-                        {profile.account.verification_status === "in_review" && (
-                          <Link href="/dashboard/users/verification" className="flex items-center gap-1 font-semibold text-brand-ink">
-                            Open her documents in the review queue <ExternalLink className="h-3 w-3" />
+                        {profile.account.verification_status !== "pending_email" && (
+                          <Link href={`/dashboard/users/verification?account=${encodeURIComponent(profile.account.id)}`} className="flex min-h-10 items-center gap-1 rounded-lg bg-brand-tint px-3 font-semibold text-brand-ink">
+                            Open identity photos and review <ExternalLink className="h-3 w-3" />
                           </Link>
                         )}
                       </div>
