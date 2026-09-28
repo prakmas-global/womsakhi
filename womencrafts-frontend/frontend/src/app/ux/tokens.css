@@ -1813,6 +1813,14 @@
   background: var(--ux-brand-tint);
   box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--ux-brand) 22%, transparent), 0 4px 12px color-mix(in srgb, var(--ux-brand) 8%, transparent);
 }
+.ux-rail-link:hover {
+  border-color: var(--ux-brand);
+  background: var(--ux-brand-tint);
+  color: var(--ux-brand) !important;
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--ux-brand) 22%, transparent), 0 4px 12px color-mix(in srgb, var(--ux-brand) 8%, transparent);
+}
+.ux-rail-link:hover > span:not([aria-hidden]) { font-weight: 700 !important; }
+.ux-rail-link:hover .ux-ico { color: var(--ux-brand); }
 
 @media (prefers-reduced-motion: reduce) {
   .ux-card:hover, .ux-tile:hover, .ux-btn-g:hover { transform: none; }
