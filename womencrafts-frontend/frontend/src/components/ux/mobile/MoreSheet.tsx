@@ -7,7 +7,6 @@ import { useEffect, useMemo, useState } from "react";
 
 import * as Icons from "@/components/ux/icons";
 import { useTheme } from "@/context/ThemeContext";
-import { useI18n } from "@/i18n";
 import { SECTIONS, type NavNode } from "../nav-tree";
 import { useMe } from "../me";
 import { useNavLabel } from "../use-nav-label";
@@ -83,7 +82,6 @@ export function MoreSheet({ open, onClose }: { open: boolean; onClose: () => voi
   const me = useMe();
   const { label, note } = useNavLabel();
   const { theme, setTheme } = useTheme();
-  const { spec } = useI18n();
   const [q, setQ] = useState("");
   const here = useMemo(
     () => SECTIONS.find((s) => s.href === path || path.startsWith(s.href + "/"))?.id ?? "home",
@@ -261,24 +259,6 @@ export function MoreSheet({ open, onClose }: { open: boolean; onClose: () => voi
               Nothing here matches &ldquo;{q}&rdquo;.
             </p>
           )}
-
-          {/* ── Language ───────────────────────────────────────────────────
-              The bar at the top of a phone has no room for a fifth icon, so
-              the globe that sits beside the theme toggle on a laptop is this
-              row instead. It shows her language in her own script and opens
-              the full picker — a woman changing language needs to recognise
-              where she is going, and eighteen names do not belong in a sheet
-              that is already a directory of forty-one screens. */}
-          <Link href="/app/settings/language" onClick={onClose}
-                className="ux-press mx-5 mb-1 mt-4 flex items-center gap-3 rounded-[18px] px-4 py-3.5"
-                style={{ background: "var(--ux-surface)", border: "1px solid var(--ux-line)" }}>
-            <Icon name="Globe" className="h-[18px] w-[18px] shrink-0" />
-            <span className="min-w-0 flex-1 text-[15px] font-semibold" style={{ color: "var(--ux-ink)" }}>Language</span>
-            <span className="truncate text-[14px]" lang={spec.code} dir={spec.dir}
-                  style={{ color: "var(--ux-muted)" }}>{spec.nativeName}</span>
-            <Icons.ChevronRight className="h-[17px] w-[17px] shrink-0 rtl:rotate-180"
-                                style={{ color: "var(--ux-faint)" }} aria-hidden="true" />
-          </Link>
 
           {/* ── Appearance, because it is a setting and not a place ── */}
           <div className="mx-5 mb-1 mt-4 flex items-center gap-3 rounded-[18px] px-4 py-3.5"

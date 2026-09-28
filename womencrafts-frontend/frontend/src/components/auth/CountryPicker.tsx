@@ -25,6 +25,9 @@ function CountryFlag({ code, large = false }: { code: string; large?: boolean })
 export function CountryPicker({ value, onChange, describedBy, invalid = false }: CountryPickerProps) {
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState("");
+  const [position, setPosition] = useState({ left: 12, top: 12, width: 320, maxHeight: 360 });
+  const trigger = useRef<HTMLButtonElement>(null);
+  const popover = useRef<HTMLDivElement>(null);
   const search = useRef<HTMLInputElement>(null);
   const list = useRef<HTMLDivElement>(null);
   const listId = useId();
@@ -47,15 +50,37 @@ export function CountryPicker({ value, onChange, describedBy, invalid = false }:
 
   useEffect(() => {
     if (!open) return;
-    const previous = document.body.style.overflow;
-    document.body.style.overflow = "hidden";
-    const timer = window.setTimeout(() => search.current?.focus(), 30);
+    const place = () => {
+      const rect = trigger.current?.getBoundingClientRect();
+      if (!rect) return;
+      const margin = 12;
+      const gap = 6;
+      const width = Math.min(Math.max(rect.width, 300), window.innerWidth - margin * 2);
+      const left = Math.min(Math.max(rect.left, margin), window.innerWidth - width - margin);
+      const below = window.innerHeight - rect.bottom - gap - margin;
+      const above = rect.top - gap - margin;
+      const useAbove = below < 260 && above > below;
+      const maxHeight = Math.max(220, Math.min(380, useAbove ? above : below));
+      const top = useAbove ? Math.max(margin, rect.top - gap - maxHeight) : rect.bottom + gap;
+      setPosition({ left, top, width, maxHeight });
+    };
+    const closeOutside = (event: PointerEvent) => {
+      const node = event.target as Node;
+      if (!trigger.current?.contains(node) && !popover.current?.contains(node)) setOpen(false);
+    };
     const escape = (event: KeyboardEvent) => { if (event.key === "Escape") setOpen(false); };
+    place();
+    const timer = window.setTimeout(() => search.current?.focus(), 30);
+    window.addEventListener("resize", place);
+    window.addEventListener("scroll", place, true);
+    document.addEventListener("pointerdown", closeOutside);
     window.addEventListener("keydown", escape);
     return () => {
       window.clearTimeout(timer);
+      window.removeEventListener("resize", place);
+      window.removeEventListener("scroll", place, true);
+      document.removeEventListener("pointerdown", closeOutside);
       window.removeEventListener("keydown", escape);
-      document.body.style.overflow = previous;
     };
   }, [open]);
 
@@ -68,6 +93,7 @@ export function CountryPicker({ value, onChange, describedBy, invalid = false }:
   return (
     <div className="relative min-w-0">
       <button
+        ref={trigger}
         id="su-country"
         type="button"
         role="combobox"
@@ -77,7 +103,7 @@ export function CountryPicker({ value, onChange, describedBy, invalid = false }:
         aria-controls={open ? listId : undefined}
         aria-describedby={describedBy}
         aria-invalid={invalid || undefined}
-        onClick={() => setOpen(true)}
+        onClick={() => setOpen((current) => !current)}
       >
         {selected ? (
           <CountryFlag code={selected.code} />
@@ -92,17 +118,12 @@ export function CountryPicker({ value, onChange, describedBy, invalid = false }:
       </button>
 
       {open && typeof document !== "undefined" && createPortal(
-        <div className="auth-scene fixed inset-0 z-[90] flex items-end justify-center sm:items-center sm:p-6" style={{ background: "transparent" }} role="presentation">
-          <button type="button" className="absolute inset-0 bg-transparent" style={{ background: "var(--a-scrim)" }} aria-label="Close country picker" onClick={() => setOpen(false)} />
-          <div className="relative flex max-h-[82dvh] w-full flex-col overflow-hidden rounded-t-[24px] border shadow-2xl sm:max-h-[520px] sm:max-w-[430px] sm:rounded-[18px]" style={{ borderColor: "var(--a-edge)", background: "var(--a-night)" }}>
-            <div className="flex items-center justify-between gap-3 px-4 pb-2 pt-4 sm:hidden">
-              <div>
-                <p className="text-base font-semibold" style={{ color: "var(--a-ink)" }}>Choose your country</p>
-                <p className="mt-0.5 text-xs" style={{ color: "var(--a-muted)" }}>Your dial code and number format update automatically.</p>
-              </div>
-              <button type="button" onClick={() => setOpen(false)} className="grid h-11 w-11 shrink-0 place-items-center rounded-xl" style={{ background: "var(--a-tint-violet)", color: "var(--a-ink)" }} aria-label="Close country picker"><X className="h-5 w-5" /></button>
-            </div>
-            <div className="p-3 sm:p-3">
+        <div
+          ref={popover}
+          className="auth-scene fixed z-[100] flex flex-col overflow-hidden rounded-[16px] border shadow-2xl"
+          style={{ left: position.left, top: position.top, width: position.width, maxHeight: position.maxHeight, borderColor: "var(--a-edge)", background: "var(--a-night)" }}
+        >
+            <div className="p-3">
               <div className="relative">
                 <Search className="pointer-events-none absolute start-3.5 top-1/2 h-4 w-4 -translate-y-1/2" style={{ color: "var(--a-faint)" }} aria-hidden />
                 <input ref={search} value={query} onChange={(event) => setQuery(event.target.value)} onKeyDown={(event) => {
@@ -114,7 +135,7 @@ export function CountryPicker({ value, onChange, describedBy, invalid = false }:
                 {query && <button type="button" onClick={() => setQuery("")} className="absolute end-1 top-1/2 grid h-10 w-10 -translate-y-1/2 place-items-center rounded-lg" aria-label="Clear country search"><X className="h-4 w-4" /></button>}
               </div>
             </div>
-            <div ref={list} id={listId} role="listbox" aria-label="Countries" className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-2 pb-[max(12px,env(safe-area-inset-bottom))] sm:pb-2">
+            <div ref={list} id={listId} role="listbox" aria-label="Countries" className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-2 pb-2">
               {options.map((country) => {
                 const active = country.code === value;
                 return (
@@ -134,7 +155,6 @@ export function CountryPicker({ value, onChange, describedBy, invalid = false }:
               })}
               {!options.length && <p className="px-4 py-8 text-center text-sm" style={{ color: "var(--a-muted)" }}>No country matches that search.</p>}
             </div>
-          </div>
         </div>,
         document.body,
       )}

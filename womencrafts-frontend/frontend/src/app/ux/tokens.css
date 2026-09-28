@@ -1802,6 +1802,17 @@
 /* A row in a panel or the rail: the ground lifts, nothing moves. */
 .ux-row { border-radius: 10px; transition: background-color var(--ux-t) var(--ux-ease); }
 .ux-row:hover { background: color-mix(in srgb, var(--ux-brand) 7%, var(--ux-surface-2)); }
+.ux-rail-link {
+  border: 1px solid transparent;
+  background: transparent;
+  transition: background-color var(--ux-t) var(--ux-ease), border-color var(--ux-t) var(--ux-ease), box-shadow var(--ux-t) var(--ux-ease), color var(--ux-t) var(--ux-ease);
+}
+.ux-rail-link[data-active="true"],
+.ux-rail-link[data-on="true"] {
+  border-color: var(--ux-brand);
+  background: var(--ux-brand-tint);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--ux-brand) 22%, transparent), 0 4px 12px color-mix(in srgb, var(--ux-brand) 8%, transparent);
+}
 
 @media (prefers-reduced-motion: reduce) {
   .ux-card:hover, .ux-tile:hover, .ux-btn-g:hover { transform: none; }
