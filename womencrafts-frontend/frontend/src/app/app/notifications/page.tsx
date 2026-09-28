@@ -14,7 +14,6 @@ import {
 import { apiNotificationPrefs, type NotificationPrefs } from "@/lib/member-api";
 import { useT } from "@/i18n";
 import { apiActOnOccurrence, apiAnswerFollowUp, apiWhy, type ReminderAction, type WhyAnswer } from "@/lib/engines-api";
-import { SegmentedControl } from "@/components/ux/mobile/SegmentedControl";
 
 /**
  * Notifications — the day as a line.
@@ -72,9 +71,6 @@ const CATEGORIES: { id: string; label: string; icon: string; kinds: string[] }[]
   { id: "system", label: "System",      icon: "Settings",     kinds: ["safety", "account"] },
 ];
 
-/** Types that expect something of her, rather than just telling her. */
-const ACTIONABLE = new Set(["booking", "event", "message", "mentorship", "safety"]);
-
 /** One row on the line: a notification, plus any identical ones folded under it. */
 type Bundle = { head: UxNotification; rest: UxNotification[] };
 
@@ -107,9 +103,7 @@ function clockOf(iso?: string): string {
 export default function NotificationsPage() {
   const tr = useT();
   const { data: allRows, refetch } = useNotifications();
-  const [mode, setMode] = useState<"day" | "one">("day");
   const [read, setRead] = useState<Set<string>>(new Set());
-  const [at, setAt] = useState(0);
 
   const isUnread = useCallback(
     (n: UxNotification) => n.unread && !read.has(n.id), [read]);
@@ -142,8 +136,6 @@ export default function NotificationsPage() {
   }, [allRows, category]);
 
   const unread = rows.filter(isUnread);
-  const queue = unread.filter((n) => ACTIONABLE.has(n.kind)).slice(0, 8);
-
   /**
    * Only the newest few are drawn loud.
    *
@@ -219,7 +211,9 @@ export default function NotificationsPage() {
             <span>Small updates. A brighter you.</span>
           </div>
         </section>
-        <header className={styles.controls}>
+        <div className="grid grid-cols-1 gap-6 xl:grid-cols-[minmax(0,1fr)_274px]">
+          <div className="flex min-w-0 flex-col gap-4">
+          <header className={styles.controls}>
 
         {/* Categories. Only shown when there is more than one thing to choose
             between — a single chip row that never changes anything is noise. */}
@@ -259,41 +253,15 @@ export default function NotificationsPage() {
           </div>
         )}
 
-          {/* On a phone: the two ways of reading as a segmented control, and
-              "Mark all read" full width under it. */}
-          <div className="flex w-full flex-col gap-2.5 lg:w-auto lg:flex-row lg:items-center">
-            <SegmentedControl className="lg:hidden" label={tr("notifications.howToReadThem")} value={mode}
-              onChange={(m) => { setMode(m); setAt(0); }}
-              options={[{ value: "day" as const, label: tr("notifications.yourDay"), icon: "List" },
-                        { value: "one" as const, label: tr("notifications.oneAtATime"), icon: "Target" }]} />
-            <div className="hidden gap-1 rounded-full p-1 lg:flex"
-                 style={{ background: "var(--ux-surface)", border: "1px solid var(--ux-line)" }}>
-              {([["day", "Your day", "List"], ["one", "One at a time", "Target"]] as const).map(([m, label, icon]) => (
-                <button key={m} type="button" onClick={() => { setMode(m); setAt(0); }} aria-pressed={mode === m}
-                        className="ux-press flex items-center gap-2 rounded-full px-4 py-2.5 text-xsm font-bold"
-                        style={mode === m
-                          ? { background: "linear-gradient(96deg, var(--ux-rib-2), var(--ux-rib-3))", color: "var(--ux-on-brand)" }
-                          : { color: "var(--ux-muted)" }}>
-                  <Ico name={icon} className="h-[14px] w-[14px]" /> {label}
-                </button>
-              ))}
-            </div>
-            <button type="button" onClick={markAll} disabled={unread.length === 0}
-                    className="ux-press flex min-h-[44px] items-center gap-2 rounded-full px-4 text-xsm font-bold disabled:opacity-40 max-lg:justify-center"
-                    style={{ background: "var(--ux-surface)", border: "1px solid var(--ux-line)", color: "var(--ux-ink-2)" }}>
-              <Icons.CheckCheck className="h-4 w-4" />{tr("notifications.markAllRead")}</button>
-          </div>
-        </header>
+          </header>
 
-        <div className={`grid grid-cols-1 gap-7 ${mode === "day" ? "xl:grid-cols-[minmax(0,1fr)_274px]" : ""}`}>
-          {mode === "day" ? (
-            <>
-              <Timeline days={days} isUnread={isUnread} onRead={markOne} loudIds={loudIds} />
-              <Rail counts={counts} unread={unread.length} />
-            </>
-          ) : (
-            <Focus queue={queue} at={at} setAt={setAt} onRead={markOne} onDone={() => setMode("day")} />
-          )}
+          <div className={styles.feedHeading}>
+            <h2>Today</h2>
+            <button type="button" onClick={markAll} disabled={unread.length === 0}><Icons.Check />{tr("notifications.markAllRead")}</button>
+          </div>
+            <Timeline days={days} isUnread={isUnread} onRead={markOne} loudIds={loudIds} />
+          </div>
+          <Rail counts={counts} unread={unread.length} />
         </div>
       </div>
     </HomeShell>
@@ -328,24 +296,7 @@ function Timeline({
     <div className={`${styles.timeline} ux-tl`}>
       {days.map(([day, items], di) => (
         <div key={day}>
-          {di === 0 ? (
-            /* Where she is in the day — only ever on the newest group. */
-            <div className="ux-tl-row items-center py-1">
-              <span className="pe-0 text-end text-xs font-semibold" style={{ color: "var(--ux-muted)" }}>
-                {clockOf(new Date().toISOString())}
-              </span>
-              <span className="flex items-center" style={{ paddingInlineStart: 14.5 }}>
-                <i className="block h-[11px] w-[11px] rounded-full"
-                   style={{ background: "var(--ux-rib-3)", boxShadow: "0 0 0 4px var(--ux-tint-pink)" }} />
-              </span>
-              <span className="flex items-center gap-2.5 text-2xs font-bold uppercase tracking-[0.2em]"
-                    style={{ color: "var(--ux-pink-ink)" }}>
-                Now
-                <span className="h-px flex-1"
-                      style={{ background: "linear-gradient(90deg, var(--ux-pink), transparent)" }} />
-              </span>
-            </div>
-          ) : (
+          {di > 0 && (
             <div className="ux-tl-row my-5 items-center">
               <span />
               <span className="col-span-2 flex items-center gap-3 text-2xs font-bold uppercase tracking-[0.18em]"
@@ -590,6 +541,10 @@ function Event({
               </span>
             )}
           </h2>
+          <details className={styles.cardMenu}>
+            <summary aria-label="Notification options"><Icons.MoreHorizontal /></summary>
+            <div><button type="button" onClick={readAll}>{unreadInBundle > 0 ? "Mark as read" : "Already read"}</button></div>
+          </details>
           {unreadInBundle > 0 && (
             <span className="h-[7px] w-[7px] shrink-0 rounded-full" style={{ background: "var(--ux-rib-3)" }} />
           )}
@@ -638,107 +593,24 @@ function Event({
               <Icons.ArrowRight className="h-[13px] w-[13px]" />
             </Link>
           )}
-          {n.occurrenceId && (
-            <ReminderActions occurrenceId={n.occurrenceId} onActed={readAll} />
-          )}
-          {/*
-            A follow-up row asks its question instead of offering the four
-            actions: "Done" on "did your session happen?" is not an answer.
-          */}
-          {n.occurrenceId && n.kind === "booking" && (
-            <DidItHappen occurrenceId={n.occurrenceId} onAnswered={readAll} />
-          )}
-          {n.intentId && <WhyThis intentId={n.intentId} />}
-          {unreadInBundle > 0 && (
-            <button type="button" onClick={readAll}
-                    className="ux-press flex min-h-[36px] items-center gap-2 rounded-[12px] px-3.5 text-xs font-bold"
-                    style={{ background: "var(--ux-surface)", border: "1px solid var(--ux-line-strong)", color: "var(--ux-muted)" }}>
-              <Icons.Check className="h-[13px] w-[13px]" />
-              {folded > 0 ? `Mark all ${unreadInBundle} read` : "Mark read"}
-            </button>
+          {(n.occurrenceId || n.intentId || unreadInBundle > 0) && (
+            <details className={styles.actionMenu}>
+              <summary>More actions</summary>
+              <div>
+                {n.occurrenceId && <ReminderActions occurrenceId={n.occurrenceId} onActed={readAll} />}
+                {n.occurrenceId && n.kind === "booking" && <DidItHappen occurrenceId={n.occurrenceId} onAnswered={readAll} />}
+                {n.intentId && <WhyThis intentId={n.intentId} />}
+                {unreadInBundle > 0 && (
+                  <button type="button" onClick={readAll} className="ux-press flex min-h-[36px] items-center gap-2 rounded-[12px] px-3.5 text-xs font-bold" style={{ background: "var(--ux-surface)", border: "1px solid var(--ux-line-strong)", color: "var(--ux-muted)" }}>
+                    <Icons.Check className="h-[13px] w-[13px]" />{folded > 0 ? `Mark all ${unreadInBundle} read` : "Mark read"}
+                  </button>
+                )}
+              </div>
+            </details>
           )}
         </div>
       </div>
     </div>
-  );
-}
-
-/* ── one at a time ──────────────────────────────────────────────────────── */
-
-function Focus({
-  queue, at, setAt, onRead, onDone,
-}: {
-  queue: UxNotification[]; at: number; setAt: (n: number) => void;
-  onRead: (id: string) => void; onDone: () => void;
-}) {
-  const tr = useT();
-  const n = queue[at];
-
-  if (queue.length === 0 || !n) {
-    return (
-      <section className="mx-auto w-full max-w-[620px] rounded-[24px] p-12 text-center max-lg:rounded-[16px] max-lg:p-8"
-               style={{ background: "var(--ux-surface)", border: "1px solid var(--ux-line-strong)" }}>
-        <Icons.CheckCheck className="mx-auto h-[40px] w-[40px]" style={{ color: "var(--ux-green-ink)" }} />
-        <h2 className="mt-4 text-2xl font-extrabold tracking-[-0.02em]" style={{ color: "var(--ux-ink)" }}>{tr("notifications.thatIsEverything")}</h2>
-        <p className="mt-2 text-sm" style={{ color: "var(--ux-muted)" }}>{tr("notifications.nothingElseNeedsYouTheRest")}</p>
-        <button type="button" onClick={onDone}
-                className="ux-press ux-btn-g mx-auto mt-6 flex min-h-[44px] items-center gap-2 rounded-[12px] px-5 text-xsm font-bold"
-                style={{ background: "linear-gradient(96deg, var(--ux-rib-2), var(--ux-rib-3))", color: "var(--ux-on-brand)" }}>{tr("notifications.backToYourDay")}<Icons.ArrowRight className="h-4 w-4" />
-        </button>
-      </section>
-    );
-  }
-
-  const l = look(n.kind);
-  const next = () => { onRead(n.id); setAt(at + 1); };
-
-  return (
-    <section className="mx-auto w-full max-w-[620px]">
-      <div className="mb-6 flex gap-1.5">
-        {queue.map((q, i) => (
-          <i key={q.id} className="h-[4px] flex-1 rounded-full"
-             style={{ background: i < at
-               ? "linear-gradient(90deg, var(--ux-rib-2), var(--ux-rib-3))" : "var(--ux-track)" }} />
-        ))}
-      </div>
-
-      <div className="rounded-[24px] p-8 text-center max-lg:rounded-[16px] max-lg:p-6"
-           style={{ background: "var(--ux-surface)", border: "1px solid var(--ux-line-strong)",
-                    boxShadow: "var(--ux-shadow-card)" }}>
-        <span className="mx-auto grid h-[56px] w-[56px] place-items-center rounded-[20px]"
-              style={{ background: `var(${l.tint})`, color: `var(${l.ink})` }}>
-          <Ico name={n.icon} className="h-[26px] w-[26px]" />
-        </span>
-        <h2 className="mt-5 text-xl font-extrabold leading-[1.25] tracking-[-0.025em]" style={{ color: "var(--ux-ink)" }}>
-          {n.title}
-        </h2>
-        {n.body && <p className="mt-3 text-sm" style={{ color: "var(--ux-muted)" }}>{n.body}</p>}
-        <div className="mt-7 flex flex-wrap justify-center gap-2.5">
-          {n.href && (
-            <Link href={n.href} onClick={() => onRead(n.id)}
-                  className="ux-press flex min-h-[46px] items-center gap-2 rounded-[12px] px-6 text-xsm font-bold"
-                  style={{ background: "linear-gradient(96deg, var(--ux-rib-2), var(--ux-rib-3))", color: "var(--ux-on-brand)" }}>
-              {l.label} <Icons.ArrowRight className="h-4 w-4" />
-            </Link>
-          )}
-          {/* Skipping is a choice, not a failure — so it is offered plainly. */}
-          <button type="button" onClick={next}
-                  className="ux-press flex min-h-[46px] items-center gap-2 rounded-[12px] px-5 text-xsm font-bold"
-                  style={{ background: "var(--ux-surface-2)", border: "1px solid var(--ux-line-strong)", color: "var(--ux-ink)" }}>
-            <Icons.Check className="h-4 w-4" />{tr("notifications.doneWithThis")}</button>
-        </div>
-      </div>
-
-      <div className="mt-5 flex items-center justify-between text-xs" style={{ color: "var(--ux-muted)" }}>
-        <button type="button" onClick={() => setAt(Math.max(0, at - 1))} disabled={at === 0}
-                className="ux-press flex items-center gap-1.5 font-bold disabled:opacity-40">
-          <Icons.ChevronLeft className="h-4 w-4" /> Back
-        </button>
-        <span>{at + 1} of {queue.length}</span>
-        <button type="button" onClick={() => setAt(at + 1)} className="ux-press flex items-center gap-1.5 font-bold">{tr("notifications.skipForNow")}<Icons.ChevronRight className="h-4 w-4" />
-        </button>
-      </div>
-    </section>
   );
 }
 

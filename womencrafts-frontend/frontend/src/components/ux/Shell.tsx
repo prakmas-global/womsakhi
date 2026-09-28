@@ -170,7 +170,7 @@ const RailSection = memo(function RailSection({
         }}
         aria-current={onHub ? "page" : undefined}
         aria-expanded={kids.length ? isOpen : undefined}
-        data-active={isOpen ? "true" : "false"}
+        data-active={onHub ? "true" : "false"}
         /* `ux-hov` so the section's icon leans into the hover the way the
            topbar's bell does — the app has one gesture for "this responds to
            you" and the rail was the only surface not speaking it. */
@@ -809,6 +809,14 @@ export function Shell({
   immersive?: boolean;
 }) {
   const pathname = usePathname();
+  const effectiveSidebarFooter = pathname === "/app/notifications" ? (
+    <TransitionLink href="/app/circles" className="ux-press relative block min-h-[126px] overflow-hidden rounded-[16px] p-4"
+      style={{ background:"linear-gradient(145deg,var(--ux-tint-pink),var(--ux-tint-violet))",border:"1px solid var(--ux-line)" }}>
+      <strong className="block max-w-[7ch] text-xl leading-tight" style={{ color:"var(--ux-brand)",fontFamily:"var(--font-display)" }}>Together we grow</strong>
+      <span className="mt-5 grid h-9 w-9 place-items-center rounded-full" style={{ background:"var(--ux-fill)",color:"var(--ux-on-brand)" }}><Icons.ArrowRight className="h-4 w-4" /></span>
+      <Icons.Sprout className="absolute -bottom-2 -end-1 h-20 w-20" style={{ color:"var(--ux-rib-3)",opacity:.72 }} />
+    </TransitionLink>
+  ) : sidebarFooter;
   /* Mounted by the Shell rather than the bar: a `fixed` panel inside the
      header takes the header's stacking context, and the tab bar would paint
      over it. */
@@ -841,7 +849,7 @@ export function Shell({
           * bottom of the viewport, and the scroller's top padding keeps the
           * first card clear of the bar it now passes under.
           */}
-        {!wide && <ModeRail path={pathname} footer={sidebarFooter} />}
+        {!wide && <ModeRail path={pathname} footer={effectiveSidebarFooter} />}
 
         <div className={`relative flex min-w-0 flex-1 flex-col overflow-hidden ${
                immersive ? "lg:mt-[calc(var(--ux-topbar-h)*-1)] lg:h-[calc(100%+var(--ux-topbar-h))]" : ""}`}
