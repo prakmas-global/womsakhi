@@ -153,8 +153,8 @@ export default function NotificationsPage() {
    * the rest stay lines, and are still one tap from the same actions.
    */
   const loudIds = useMemo(
-    () => new Set(unread.filter((n) => ACTIONABLE.has(n.kind)).slice(0, 3).map((n) => n.id)),
-    [unread],
+    () => new Set(rows.map((n) => n.id)),
+    [rows],
   );
 
   /**
@@ -208,15 +208,15 @@ export default function NotificationsPage() {
     <HomeShell active="/app/notifications" bare>
       <div className={`${styles.page} flex flex-col gap-4`}>
         <section className={styles.hero}>
-          <div className={styles.heroIcon} aria-hidden><Icons.Bell /></div>
           <div className={styles.heroCopy}>
-            <p>{new Intl.DateTimeFormat("en-GB", { weekday: "long", day: "numeric", month: "long" }).format(new Date())}</p>
-            <h1>{unread.length > 0 ? `${unread.length} updates for you` : "You’re all caught up"}</h1>
-            <span>{queue.length > 0 ? `${queue.length} ${queue.length === 1 ? "item needs" : "items need"} your attention. Everything else can wait.` : unread.length > 0 ? "Nothing is urgent. Read these when it suits you." : "Your inbox is clear. New updates will appear here."}</span>
+            <p><Link href="/app">Home</Link><Icons.ChevronRight />What is new</p>
+            <h1>Notifications</h1>
+            <span>Stay updated with what matters to you.</span>
           </div>
-          <div className={styles.heroActions}>
-            <Link href="/app/reminders" className="ux-press"><Icons.Bell />{tr("rem.title")}</Link>
-            <Link href="/app/settings/delivery" className="ux-press"><Icons.Send />Delivery settings</Link>
+          <div className={styles.heroIcon} aria-hidden><Icons.Bell /></div>
+          <div className={styles.heroSummary}>
+            <strong>{unread.length > 0 ? `${unread.length} updates` : "All caught up"}<br />{unread.length > 0 && "for you today"}</strong>
+            <span>Small updates. A brighter you.</span>
           </div>
         </section>
         <header className={styles.controls}>
@@ -226,7 +226,7 @@ export default function NotificationsPage() {
         {(
           /* `ux-chiprow` turns this into one sideways-scrolling row on a phone. */
           <div className="ux-chiprow flex flex-wrap gap-2" role="group" aria-label={tr("notifications.filterNotifications")}>
-            {CATEGORIES.map((c) => {
+            {CATEGORIES.slice(0, 5).map((c) => {
               const on = category === c.id;
               const n = catCounts[c.id] ?? 0;
               return (
@@ -250,6 +250,12 @@ export default function NotificationsPage() {
                 </button>
               );
             })}
+            <details className={styles.moreFilters}>
+              <summary aria-label="More notification filters"><Icons.MoreVertical /></summary>
+              <div>
+                {CATEGORIES.slice(5).map((c) => <button key={c.id} type="button" onClick={() => setCategory(c.id)} aria-pressed={category === c.id}><Ico name={c.icon} />{c.label}</button>)}
+              </div>
+            </details>
           </div>
         )}
 
@@ -738,16 +744,6 @@ function Focus({
 
 /* ── the rail ───────────────────────────────────────────────────────────── */
 
-const DOT: Record<string, string> = {
-  safety: "--ux-pink", booking: "--ux-amber", mentorship: "--ux-violet",
-  event: "--ux-amber", program: "--ux-blue", message: "--ux-blue",
-  money: "--ux-green", circle: "--ux-pink", account: "--ux-violet",
-};
-const NAME: Record<string, string> = {
-  safety: "Safety", booking: "Bookings", mentorship: "Mentors", event: "Events",
-  program: "Learning", message: "Messages", money: "Money", circle: "Circles", account: "Account",
-};
-
 /**
  * How she is told — the real delivery toggles.
  *
@@ -861,8 +857,6 @@ function QuietCard() {
 }
 
 function Rail({ counts, unread }: { counts: Record<string, number>; unread: number }) {
-  const tr = useT();
-  const rows = Object.entries(counts).sort((a, b) => b[1] - a[1]);
   const card = "ux-sq rounded-[20px] p-4 max-lg:rounded-[16px]";
   const style = { background: "var(--ux-surface)", border: "1px solid var(--ux-line)",
                   boxShadow: "var(--ux-shadow-card)" } as const;
@@ -870,29 +864,44 @@ function Rail({ counts, unread }: { counts: Record<string, number>; unread: numb
   return (
     <div className={`${styles.rail} flex flex-col gap-4`}>
       <section className={card} style={style}>
-        <h2 className="mb-3 flex items-center gap-2 text-sm font-bold" style={{ color: "var(--ux-ink)" }}>
-          <Icons.Bell className="h-[15px] w-[15px]" style={{ color: "var(--ux-brand)" }} />
-          Unread
-          <b className="ms-auto text-base font-extrabold tabular-nums">{unread}</b>
-        </h2>
-        {rows.length === 0 ? (
-          <p className="text-xsm" style={{ color: "var(--ux-muted)" }}>{tr("notifications.nothingUnread")}</p>
-        ) : (
-          <div className="flex flex-col gap-2">
-            {rows.map(([kind, n]) => (
-              <div key={kind} className="flex items-center gap-2.5 text-xsm" style={{ color: "var(--ux-muted)" }}>
-                <span className="h-[8px] w-[8px] shrink-0 rounded-full" style={{ background: `var(${DOT[kind] ?? "--ux-violet"})` }} />
-                {NAME[kind] ?? kind}
-                <b className="ms-auto font-bold" style={{ color: "var(--ux-ink)" }}>{n}</b>
-              </div>
-            ))}
-          </div>
-        )}
+        <Link href="/app/settings/notifications" className="flex items-center gap-3">
+          <span className="grid h-10 w-10 place-items-center rounded-full" style={{ color:"var(--ux-brand)",background:"var(--ux-brand-tint)" }}><Icons.Bell className="h-5 w-5" /></span>
+          <span><b className="block text-sm">Notification settings</b><small style={{ color:"var(--ux-muted)" }}>Manage what you receive</small></span>
+          <Icons.ChevronRight className="ms-auto h-4 w-4" />
+        </Link>
       </section>
 
-      <QuietCard />
+      <section className={card} style={style}>
+        <h2 className="mb-3 text-base font-extrabold">Quick actions</h2>
+        <div className={styles.quickGrid}>
+          {[
+            ["/app/opportunities","Briefcase","Explore opportunities","--ux-tint-pink","--ux-pink-ink"],
+            ["/app/learn","BookOpen","Continue learning","--ux-tint-violet","--ux-violet-ink"],
+            ["/app/circles","UsersRound","Join a community","--ux-tint-blue","--ux-blue-ink"],
+            ["/app/goals","Target","Track my goals","--ux-tint-green","--ux-green-ink"],
+          ].map(([href, icon, label, tint, ink]) => (
+            <Link key={href} href={href} className="ux-press">
+              <span style={{ background:`var(${tint})`,color:`var(${ink})` }}><Ico name={icon} /></span>
+              {label}
+            </Link>
+          ))}
+        </div>
+      </section>
 
-      <Channels card={card} style={style} />
+      <section className={card} style={style}>
+        <h2 className="flex items-center gap-2 text-base font-extrabold"><Icons.Settings className="h-5 w-5" style={{ color:"var(--ux-brand)" }} />You&apos;re in control</h2>
+        <p className="mt-2 text-xsm leading-relaxed" style={{ color:"var(--ux-muted)" }}>Get only the updates that matter to you.</p>
+        <Link href="/app/settings/notifications" className="ux-press mt-4 flex min-h-10 items-center justify-center gap-2 rounded-xl border text-xs font-bold" style={{ borderColor:"var(--ux-line-strong)",color:"var(--ux-brand)" }}>Manage preferences<Icons.ArrowRight className="h-4 w-4" /></Link>
+      </section>
+
+      <section className={styles.quoteCard}>
+        <Icons.Sprout className="h-12 w-12" />
+        <blockquote>Every update is a step towards a brighter you.</blockquote>
+        <p>— WomSakhi</p>
+      </section>
+
+      <div className="sr-only" aria-live="polite">{unread} unread notifications. {Object.keys(counts).length} categories.</div>
+      <div className="hidden"><QuietCard /><Channels card={card} style={style} /></div>
     </div>
   );
 }
