@@ -2,7 +2,6 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
-import Image from "next/image";
 import * as Icons from "@/components/ux/icons";
 import styles from "./notifications.module.css";
 
@@ -16,7 +15,6 @@ import { apiNotificationPrefs, type NotificationPrefs } from "@/lib/member-api";
 import { useT } from "@/i18n";
 import { apiActOnOccurrence, apiAnswerFollowUp, apiWhy, type ReminderAction, type WhyAnswer } from "@/lib/engines-api";
 import { SegmentedControl } from "@/components/ux/mobile/SegmentedControl";
-import { PhoneTitle } from "@/components/ux/PhoneParts";
 
 /**
  * Notifications — the day as a line.
@@ -209,66 +207,19 @@ export default function NotificationsPage() {
   return (
     <HomeShell active="/app/notifications" bare>
       <div className={`${styles.page} flex flex-col gap-4`}>
-        <h1 className="hidden lg:block sr-only">Notifications</h1>
         <section className={styles.hero}>
-          <Image
-            src="/ux/notifications/whats-new-hero-v1.webp"
-            alt={tr("notifications.womanCalmlyReviewingHelpfulUpdates")}
-            fill
-            priority
-            unoptimized
-            sizes="100vw"
-          />
+          <div className={styles.heroIcon} aria-hidden><Icons.Bell /></div>
           <div className={styles.heroCopy}>
-            <p>WHAT&apos;S NEW</p>
-            <h2>{unread.length > 0 ? `${unread.length} updates for you` : "You’re all caught up!"}</h2>
-            <span>{unread.length > 0 ? "Here’s everything new that matters to you." : "Nothing needs your attention right now."}</span>
+            <p>{new Intl.DateTimeFormat("en-GB", { weekday: "long", day: "numeric", month: "long" }).format(new Date())}</p>
+            <h1>{unread.length > 0 ? `${unread.length} updates for you` : "You’re all caught up"}</h1>
+            <span>{queue.length > 0 ? `${queue.length} ${queue.length === 1 ? "item needs" : "items need"} your attention. Everything else can wait.` : unread.length > 0 ? "Nothing is urgent. Read these when it suits you." : "Your inbox is clear. New updates will appear here."}</span>
           </div>
-          <p className={styles.heroNote}>{tr("notifications.newOpportunities")}<br/>{tr("notifications.newStories")}<br/>{tr("journeyviews.aBrighterYou")}</p>
+          <div className={styles.heroActions}>
+            <Link href="/app/reminders" className="ux-press"><Icons.Bell />{tr("rem.title")}</Link>
+            <Link href="/app/settings/delivery" className="ux-press"><Icons.Send />Delivery settings</Link>
+          </div>
         </section>
-        {/* On a phone the screen's name is the large title; the sentence that
-            says what needs her follows it, and the date is the quiet line. */}
-        <PhoneTitle
-          title="Notifications"
-          sub={queue.length > 0
-            ? <>{queue.length === 1 ? "One thing needs" : `${queue.length} things need`} you{unread.length > queue.length && <>, and <span style={{ color: "var(--ux-amber-ink)" }}>{unread.length - queue.length} to read</span></>}.</>
-            : unread.length > 0 ? <>{unread.length} to read, nothing urgent.</> : tr("notifications.youAreAllCaughtUp")}
-          note={new Intl.DateTimeFormat("en-GB", { weekday: "long", day: "numeric", month: "long" }).format(new Date())} />
-        {/*
-          Added: the inbox is where engine reminders arrive, so it points at
-          the screen where she can change or stop them.
-        */}
-        <div className="mb-3 flex flex-wrap gap-2">
-          <Link href="/app/reminders"
-                className="ux-press flex min-h-[36px] items-center gap-2 rounded-[12px] px-3.5 text-xs font-bold"
-                style={{ background: "var(--ux-surface)", border: "1px solid var(--ux-line-strong)", color: "var(--ux-ink-2)" }}>
-            <Icons.Bell className="h-[13px] w-[13px]" />
-            {tr("rem.title")}
-          </Link>
-          <Link href="/app/settings/delivery"
-                className="ux-press flex min-h-[36px] items-center gap-2 rounded-[12px] px-3.5 text-xs font-bold"
-                style={{ background: "var(--ux-surface)", border: "1px solid var(--ux-line-strong)", color: "var(--ux-muted)" }}>
-            <Icons.Send className="h-[13px] w-[13px]" />
-            {tr("deliv.title")}
-          </Link>
-        </div>
-        <header className={`${styles.controls} flex flex-wrap items-end gap-5 max-lg:-mt-2`}>
-          <div className="hidden min-w-0 flex-1 lg:block">
-            <p className="text-2xs font-bold uppercase tracking-[0.2em]" style={{ color: "var(--ux-brand)" }}>
-              {new Intl.DateTimeFormat("en-GB", { weekday: "long", day: "numeric", month: "long" }).format(new Date())}
-            </p>
-            <h1 className="mt-2 max-w-[20ch] text-[clamp(1.5rem,3.2vw,2.25rem)] font-extrabold leading-[1.1] tracking-[-0.035em]"
-                style={{ color: "var(--ux-ink)" }}>
-              {queue.length > 0 ? (
-                <>
-                  {queue.length === 1 ? "One thing needs" : `${queue.length} things need`} you
-                  {unread.length > queue.length && (
-                    <>, and <span style={{ color: "var(--ux-amber-ink)" }}>{unread.length - queue.length} to read</span></>
-                  )}.
-                </>
-              ) : unread.length > 0 ? <>{unread.length} to read, nothing urgent.</> : <>{tr("notifications.youAreAllCaughtUp")}</>}
-            </h1>
-          </div>
+        <header className={styles.controls}>
 
         {/* Categories. Only shown when there is more than one thing to choose
             between — a single chip row that never changes anything is noise. */}

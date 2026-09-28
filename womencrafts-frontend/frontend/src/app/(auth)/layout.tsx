@@ -5,7 +5,6 @@ import { useT } from "@/i18n";
 import { usePathname } from "next/navigation";
 import { ArrowLeft, Mail, Moon, ShieldCheck, Sun } from "lucide-react";
 import AuthShowcase from "@/components/auth/AuthShowcase";
-import LanguageMenu from "@/components/auth/LanguageMenu";
 import { useTheme } from "@/context/ThemeContext";
 import "./auth-tokens.css";
 import "flag-icons/css/flag-icons.min.css";
@@ -97,11 +96,6 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
           onClick={() => setTheme(isDark ? "light" : "dark")}>
           {isDark ? <Sun aria-hidden /> : <Moon aria-hidden />}
         </button>
-        {/* Was a pill that said "English" and did nothing. The one screen a
-            woman who does not read English has to get through is the one
-            screen that was written only in English. */}
-        <LanguageMenu />
-
         <div className="auth-panel" ref={panelRef}>
           <div className="auth-panel-content" key={infoPanel ?? pathname}>
             {infoPanel ? <InformationPanel panel={infoPanel} onBack={() => setInfoPanel(null)} /> : children}

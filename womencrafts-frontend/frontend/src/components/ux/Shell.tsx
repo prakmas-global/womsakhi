@@ -12,7 +12,6 @@ import { TransitionLink } from "./TransitionLink";
 
 import { useAuth } from "@/context/AuthContext";
 import { useTheme } from "@/context/ThemeContext";
-import { TopLanguageBtn } from "@/components/ux/LanguageMenu";
 import { useMe } from "./me";
 import { useNavLabel } from "./use-nav-label";
 import { SECTIONS, isTabRoot, trailFor, type NavNode, type Section } from "./nav-tree";
@@ -171,12 +170,12 @@ const RailSection = memo(function RailSection({
         }}
         aria-current={onHub ? "page" : undefined}
         aria-expanded={kids.length ? isOpen : undefined}
+        data-active={isOpen ? "true" : "false"}
         /* `ux-hov` so the section's icon leans into the hover the way the
            topbar's bell does — the app has one gesture for "this responds to
            you" and the rail was the only surface not speaking it. */
-        className="ux-row ux-hov ux-sq relative flex items-center gap-3 rounded-[12px] py-2 pe-2 ps-2.5"
-        style={{ background: onHub ? "var(--ux-brand-tint)" : "transparent",
-                 color: isOpen ? "var(--ux-brand)" : "var(--ux-ink)" }}
+        className="ux-rail-link ux-row ux-hov ux-sq relative flex items-center gap-3 rounded-[12px] py-2 pe-2 ps-2.5"
+        style={{ color: isOpen ? "var(--ux-brand)" : "var(--ux-ink)" }}
       >
         {/* The bar that says "you are in here" — the one signal that survives
             at a glance, and the thing 95% of sites get wrong according to
@@ -214,9 +213,8 @@ const RailSection = memo(function RailSection({
                     tabIndex={isOpen ? undefined : -1}
                     aria-current={on ? "page" : undefined}
                     data-on={on ? "true" : "false"}
-                    className="ux-twig ux-row ux-sq relative mb-0.5 flex min-h-[34px] items-center gap-2.5 rounded-[10px] px-2.5 py-1.5"
-                    style={{ background: on ? "var(--ux-brand-tint)" : "transparent",
-                             color: on ? "var(--ux-brand)" : "var(--ux-ink-2)" }}
+                    className="ux-rail-link ux-twig ux-row ux-sq relative mb-0.5 flex min-h-[34px] items-center gap-2.5 rounded-[10px] px-2.5 py-1.5"
+                    style={{ color: on ? "var(--ux-brand)" : "var(--ux-ink-2)" }}
                   >
                     <Icon name={c.icon} className="ux-ico h-[15px] w-[15px] shrink-0" />
                     <span className="min-w-0 flex-1 truncate text-xsm"
@@ -601,12 +599,6 @@ export function Topbar({ user, onMore }: { user: { name: string; avatar: string;
             duplicate goes on a phone where the row has no room for it. */}
         <span className="hidden sm:contents">
           <ThemeToggle />
-          {/* Beside the theme toggle rather than behind Settings: a woman
-              reading the wrong language is the last person who can be asked to
-              navigate three screens of it to reach the setting. On a phone the
-              row has no width for a fifth icon, so it is a row in the All
-              sections sheet instead — the same place Appearance lives. */}
-          <TopLanguageBtn />
           <TopIconBtn icon="Sparkles" label={tr("nav.sakhi")} href="/app/sakhi" ink="--ux-brand" />
         </span>
         {/* Help is not a tab because five is the ceiling for a bottom bar —
