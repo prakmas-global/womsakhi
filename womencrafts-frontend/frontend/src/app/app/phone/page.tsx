@@ -38,7 +38,8 @@ const CAPTION = {
 export default function PhonePage() {
   const { user, signOut, updateUser } = useAuth();
   const router = useRouter();
-  const [options, setOptions] = useState<AuthOptions | null>(null);
+  /** undefined while loading, null when the settings could not be fetched. */
+  const [options, setOptions] = useState<AuthOptions | null | undefined>(undefined);
   const [step, setStep] = useState<Step>("enter");
   const [digits, setDigits] = useState("");
   const [code, setCode] = useState("");
@@ -113,7 +114,14 @@ export default function PhonePage() {
 
   async function save(e?: React.FormEvent) {
     e?.preventDefault();
-    if (!ready || busy) return;
+    if (!ready || busy || options === undefined) return;
+    // Without the settings we cannot tell whether to send an SMS; saving blind
+    // would bounce her straight back here with no word why.
+    if (options === null) {
+      setError("We couldn't reach WomSakhi just now. Check your connection and try again.");
+      apiAuthOptions().then(setOptions).catch(() => setOptions(null));
+      return;
+    }
     setError("");
     const phone = `+91${digits}`;
     // She went back, left the number as it was, and the code already sent is still good.
@@ -185,7 +193,7 @@ export default function PhonePage() {
           </div>
           {error && <p id="phone-error" role="alert" className="ac-err">{error}</p>}
 
-          <button type="submit" className="ac-btn ac-go" disabled={!ready || smsOut || busy}>
+          <button type="submit" className="ac-btn ac-go" disabled={!ready || smsOut || busy || options === undefined}>
             {busy ? <Loader className="ac-spin" aria-hidden /> : null}
             {smsOn ? "Send code by SMS" : "Save and continue"}
             {!busy && <ArrowRight aria-hidden />}
