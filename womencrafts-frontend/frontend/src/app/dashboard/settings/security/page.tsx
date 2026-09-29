@@ -1,78 +1,26 @@
 "use client";
 
-import { useCallback, useEffect, useId, useState } from "react";
-import {
-  Activity, Check, Copy, Eye, EyeOff, KeyRound, Lock, LogOut, ShieldCheck,
-} from "lucide-react";
+import { useCallback, useEffect, useState } from "react";
+import { Activity, Check, Copy, KeyRound, LogOut, Mail, ShieldCheck, Smartphone } from "lucide-react";
 import Link from "next/link";
-import { Alert, Badge, Card, ProgressBar, Spinner, useConfirm, useToast } from "@/design-system";
-import { useAuth } from "@/context/AuthContext";
+import { Alert, Badge, Card, Spinner, useToast } from "@/design-system";
 import {
-  apiChangeMyPassword, apiDisableTwoFactor, apiEnableTwoFactor, apiMyAccount,
-  apiSignOutEverywhere, apiStaffActivity, apiStartTwoFactor, formatWhen,
-  type TwoFactorSetup,
-  type ActivityItem, type MyAccount,
+  apiEnableTwoFactor, apiMyAccount, apiStaffActivity, apiStartTwoFactor, formatWhen,
+  type ActivityItem, type MyAccount, type TwoFactorSetup,
 } from "@/lib/staff-api";
 import { memberError } from "@/lib/member-api";
 import { ResizableColumns } from "@/layout-engine";
+import MyDevicesCard, { useSignOutEverywhere } from "@/components/admin/MyDevicesCard";
 
 /**
  * Security — the controls that exist, and only those.
  *
- * ── What was here before ────────────────────────────────────────────────────
- * A 2FA switch with nothing behind it, a "Login alerts" toggle nothing read,
- * "3 trusted devices", "Account recovery: configured", a Delete Account
- * button that toasted "Account deleted" and deleted nothing, two fixed
- * sessions, five fixed login-history rows, and a checklist that said
- * "Two-factor authentication is enabled" to every account.
- *
- * ── What is here now ────────────────────────────────────────────────────────
- * A password change that also ends every other session; TOTP authenticator
- * sign-in with one-time recovery codes; "sign out everywhere", which is real;
- * and the facts the account actually carries — last sign-in,
- * when the password was last changed, failed attempts, lock state — plus the
- * last few audited actions with the address they came from.
+ * There are no passwords. Staff sign in with a code sent to their email AND a
+ * code from an authenticator app; the authenticator is required, so there is
+ * no "turn it off". What she can do here is move it to a new phone, see every
+ * device signed in to the account, sign any of them out, or sign out
+ * everywhere at once.
  */
-
-function scorePassword(pw: string) {
-  let score = 0;
-  if (pw.length >= 8) score += 40;
-  if (pw.length >= 12) score += 15;
-  if (/[A-Z]/.test(pw)) score += 15;
-  if (/[0-9]/.test(pw)) score += 15;
-  if (/[^A-Za-z0-9]/.test(pw)) score += 15;
-  return Math.min(score, 100);
-}
-
-function PasswordField({
-  label, value, onChange, autoComplete,
-}: { label: string; value: string; onChange: (v: string) => void; autoComplete: string }) {
-  const [visible, setVisible] = useState(false);
-  const id = useId();
-  return (
-    <div>
-      <label htmlFor={id} className="mb-1.5 block text-sm font-medium text-ink-muted">{label}</label>
-      <div className="relative">
-        <input
-          id={id}
-          type={visible ? "text" : "password"}
-          autoComplete={autoComplete}
-          value={value}
-          onChange={(e) => onChange(e.target.value)}
-          className="w-full rounded-lg border border-line-strong bg-surface py-2.5 pl-3 pr-10 text-sm tracking-widest text-ink-muted outline-none focus:border-violet-300 focus:ring-4 focus:ring-violet-50"
-        />
-        <button
-          type="button"
-          onClick={() => setVisible((v) => !v)}
-          aria-label={visible ? "Hide password" : "Show password"}
-          className="absolute right-3 top-1/2 -translate-y-1/2 text-ink-subtle hover:text-ink-muted"
-        >
-          {visible ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-        </button>
-      </div>
-    </div>
-  );
-}
 
 function Fact({ label, value, tone }: { label: string; value: string; tone?: "warn" | "danger" }) {
   const cls = tone === "danger" ? "text-status-danger-ink" : tone === "warn" ? "text-status-warn-ink" : "text-ink";
@@ -84,63 +32,63 @@ function Fact({ label, value, tone }: { label: string; value: string; tone?: "wa
   );
 }
 
+type Step = "idle" | "current" | "scan" | "codes";
+
+function CodeInput({ value, onChange, id, allowRecovery = false }: {
+  value: string; onChange: (v: string) => void; id: string; allowRecovery?: boolean;
+}) {
+  return (
+    <input
+      id={id} value={value} autoFocus autoComplete="one-time-code"
+      inputMode={allowRecovery ? "text" : "numeric"}
+      placeholder={allowRecovery ? "123456 or a recovery code" : "123456"}
+      onChange={(e) => onChange(allowRecovery
+        ? e.target.value.toUpperCase().replace(/[^A-Z0-9-]/g, "").slice(0, 20)
+        : e.target.value.replace(/\D/g, "").slice(0, 6))}
+      className="min-w-48 flex-1 rounded-lg border border-line-strong bg-surface px-3 py-2.5 font-mono text-sm tracking-[0.2em] text-ink outline-none focus:border-violet-300 focus:ring-4 focus:ring-violet-50"
+    />
+  );
+}
+
 export default function SecuritySettingsPage() {
   const toast = useToast();
-  const confirm = useConfirm();
-  const { signOut } = useAuth();
+  const everywhere = useSignOutEverywhere();
 
   const [account, setAccount] = useState<MyAccount | null>(null);
   const [recent, setRecent] = useState<ActivityItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState("");
-  /** When the facts were fetched — the clock the lock state is judged against. */
-  const [loadedAt, setLoadedAt] = useState(0);
 
-  const [currentPw, setCurrentPw] = useState("");
-  const [newPw, setNewPw] = useState("");
-  const [confirmPw, setConfirmPw] = useState("");
-  const [pwError, setPwError] = useState("");
-  const [changing, setChanging] = useState(false);
-  const [ending, setEnding] = useState(false);
-  const [twoFactorPassword, setTwoFactorPassword] = useState("");
-  const [twoFactorCode, setTwoFactorCode] = useState("");
-  const [twoFactorSetup, setTwoFactorSetup] = useState<TwoFactorSetup | null>(null);
+  const [step, setStep] = useState<Step>("idle");
+  const [code, setCode] = useState("");
+  const [setup, setSetup] = useState<TwoFactorSetup | null>(null);
   const [recoveryCodes, setRecoveryCodes] = useState<string[]>([]);
-  const [twoFactorBusy, setTwoFactorBusy] = useState(false);
-  const [twoFactorError, setTwoFactorError] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [tfError, setTfError] = useState("");
+  const [copied, setCopied] = useState(false);
 
   const fetchAll = useCallback(async () => {
     const [acc, acts] = await Promise.all([
       apiMyAccount(),
       apiStaffActivity({ mine: true, limit: 5 }).catch(() => [] as ActivityItem[]),
     ]);
-    return { acc, acts, at: Date.now() };
+    return { acc, acts };
   }, []);
 
   const load = useCallback(async () => {
     try {
-      const { acc, acts, at } = await fetchAll();
-      setAccount(acc);
-      setRecent(acts);
-      setLoadedAt(at);
-      setLoadError("");
-    } catch (e) {
-      setLoadError(memberError(e));
-    }
+      const { acc, acts } = await fetchAll();
+      setAccount(acc); setRecent(acts); setLoadError("");
+    } catch (e) { setLoadError(memberError(e)); }
   }, [fetchAll]);
 
-  // One wave on mount, the way the reference screen does it: state is set only
-  // after the request answers, never synchronously in the effect body.
   useEffect(() => {
     let alive = true;
     void (async () => {
       try {
-        const { acc, acts, at } = await fetchAll();
+        const { acc, acts } = await fetchAll();
         if (!alive) return;
-        setAccount(acc);
-        setRecent(acts);
-        setLoadedAt(at);
-        setLoadError("");
+        setAccount(acc); setRecent(acts); setLoadError("");
       } catch (e) {
         if (alive) setLoadError(memberError(e));
       } finally {
@@ -150,89 +98,39 @@ export default function SecuritySettingsPage() {
     return () => { alive = false; };
   }, [fetchAll]);
 
-  const strength = scorePassword(newPw);
-  const strengthColor = strength >= 70 ? "var(--status-ok-solid)" : strength >= 40 ? "var(--status-warn-solid)" : "var(--status-danger-solid)";
-  const strengthLabel = strength >= 70 ? "Strong password" : strength >= 40 ? "Medium strength" : "Weak password";
-  const strengthTextClass = strength >= 70 ? "text-status-ok-ink" : strength >= 40 ? "text-status-warn-ink" : "text-status-danger-ink";
+  const cancel = () => { setStep("idle"); setCode(""); setSetup(null); setTfError(""); };
 
-  const changePassword = useCallback(async () => {
-    if (!currentPw || !newPw || !confirmPw) { setPwError("All three fields are needed."); return; }
-    if (newPw.length < 8) { setPwError("Use at least 8 characters."); return; }
-    if (newPw !== confirmPw) { setPwError("The new password and its confirmation do not match."); return; }
-    setPwError("");
-    setChanging(true);
+  const start = useCallback(async () => {
+    if (!code.trim()) { setTfError("Enter the code your current authenticator shows."); return; }
+    setBusy(true); setTfError("");
     try {
-      const res = await apiChangeMyPassword(currentPw, newPw);
-      toast.success("Password changed", {
-        description: res.other_sessions_ended
-          ? "Every other session on this account was signed out. This one carries on."
-          : res.message,
-      });
-      setCurrentPw(""); setNewPw(""); setConfirmPw("");
+      setSetup(await apiStartTwoFactor(code.trim()));
+      setCode(""); setStep("scan");
+    } catch (e) { setTfError(memberError(e)); }
+    finally { setBusy(false); }
+  }, [code]);
+
+  const confirmNew = useCallback(async () => {
+    if (code.length !== 6) { setTfError("Enter the six-digit code the new phone shows."); return; }
+    setBusy(true); setTfError("");
+    try {
+      const res = await apiEnableTwoFactor(code);
+      setRecoveryCodes(res.recovery_codes);
+      setSetup(null); setCode(""); setCopied(false); setStep("codes");
+      toast.success("Authenticator moved", { description: "The old phone's codes no longer work." });
       await load();
-    } catch (err) {
-      setPwError(memberError(err));
-    } finally {
-      setChanging(false);
-    }
-  }, [confirmPw, currentPw, load, newPw, toast]);
+    } catch (e) { setTfError(memberError(e)); }
+    finally { setBusy(false); }
+  }, [code, load, toast]);
 
-  const endEverywhere = useCallback(async () => {
-    const ok = await confirm({
-      title: "End every session, including this one?",
-      description: "Every device signed in to this account is signed out on its next request, and so is this one. You will be taken to the sign-in screen.",
-      confirmLabel: "Sign out everywhere",
-      danger: true,
-    });
-    if (!ok) return;
-    setEnding(true);
-    try {
-      await apiSignOutEverywhere();
-      toast.success("Every session was ended", { description: "Sign in again to carry on." });
-      await signOut();
-    } catch (e) {
-      toast.error("Could not end the sessions", { description: memberError(e) });
-      setEnding(false);
-    }
-  }, [confirm, signOut, toast]);
+  const copyCodes = () => {
+    navigator.clipboard?.writeText(recoveryCodes.join("\n")).then(
+      () => { setCopied(true); toast.success("Recovery codes copied"); },
+      () => toast.error("Could not copy — write them down by hand"),
+    );
+  };
 
-  const beginTwoFactor = useCallback(async () => {
-    if (!twoFactorPassword) { setTwoFactorError("Enter your current password first."); return; }
-    setTwoFactorBusy(true); setTwoFactorError("");
-    try {
-      setTwoFactorSetup(await apiStartTwoFactor(twoFactorPassword));
-      setTwoFactorCode("");
-    } catch (e) { setTwoFactorError(memberError(e)); }
-    finally { setTwoFactorBusy(false); }
-  }, [twoFactorPassword]);
-
-  const enableTwoFactor = useCallback(async () => {
-    if (!twoFactorCode.trim()) { setTwoFactorError("Enter the six-digit code shown in your app."); return; }
-    setTwoFactorBusy(true); setTwoFactorError("");
-    try {
-      const result = await apiEnableTwoFactor(twoFactorCode.trim());
-      setRecoveryCodes(result.recovery_codes);
-      setTwoFactorSetup(null); setTwoFactorCode(""); setTwoFactorPassword("");
-      toast.success("Two-factor sign-in is on");
-      await load();
-    } catch (e) { setTwoFactorError(memberError(e)); }
-    finally { setTwoFactorBusy(false); }
-  }, [load, toast, twoFactorCode]);
-
-  const disableTwoFactor = useCallback(async () => {
-    if (!twoFactorPassword || !twoFactorCode.trim()) { setTwoFactorError("Enter your password and a current code."); return; }
-    setTwoFactorBusy(true); setTwoFactorError("");
-    try {
-      await apiDisableTwoFactor(twoFactorPassword, twoFactorCode.trim());
-      setTwoFactorPassword(""); setTwoFactorCode(""); setRecoveryCodes([]);
-      toast.success("Two-factor sign-in is off");
-      await load();
-    } catch (e) { setTwoFactorError(memberError(e)); }
-    finally { setTwoFactorBusy(false); }
-  }, [load, toast, twoFactorCode, twoFactorPassword]);
-
-  const lockedUntil = account?.locked_until ? new Date(account.locked_until) : null;
-  const isLocked = !!lockedUntil && lockedUntil.getTime() > loadedAt;
+  const enabled = !!account?.two_factor.enabled;
 
   return (
     <div>
@@ -243,7 +141,7 @@ export default function SecuritySettingsPage() {
         <div>
           <h1 className="font-display text-2xl font-bold tracking-tight text-ink">Security</h1>
           <p className="mt-1 text-sm text-ink-subtle">
-            Your password, your sessions, and what the account actually records about them.
+            How you sign in, the devices signed in to this account, and the switch that ends them all.
           </p>
         </div>
       </div>
@@ -252,115 +150,131 @@ export default function SecuritySettingsPage() {
 
       <ResizableColumns id="settings-security" defaultSize={0.66} className="gap-6">
         <div className="space-y-6">
-          {/* change password */}
-          <Card>
-            <div className="mb-5 flex items-start gap-3">
-              <span className="flex h-11 w-11 items-center justify-center rounded-xl bg-violet-tint text-violet-ink">
-                <Lock className="h-5 w-5" />
-              </span>
-              <div>
-                <h2 className="font-display text-base font-bold text-ink">Change password</h2>
-                <p className="mt-0.5 text-sm text-ink-subtle">
-                  Changing it ends every other session on this account. The one you change it from carries on.
-                </p>
-              </div>
-            </div>
-            <div className="grid grid-cols-1 gap-5 lg:grid-cols-3">
-              <PasswordField label="Current password" value={currentPw} onChange={setCurrentPw} autoComplete="current-password" />
-              <div>
-                <PasswordField label="New password" value={newPw} onChange={setNewPw} autoComplete="new-password" />
-                {newPw && (
-                  <div className="mt-2">
-                    <ProgressBar value={strength} color={strengthColor} />
-                    <p className={`mt-1.5 flex items-center gap-1.5 text-xs font-medium ${strengthTextClass}`}>
-                      <Check className="h-3.5 w-3.5" /> {strengthLabel}
-                    </p>
-                  </div>
-                )}
-              </div>
-              <PasswordField label="Confirm new password" value={confirmPw} onChange={setConfirmPw} autoComplete="new-password" />
-            </div>
-            <div className="mt-6 flex flex-wrap items-center justify-end gap-3">
-              {pwError && <span className="text-sm font-medium text-status-danger-ink">{pwError}</span>}
-              <button className="btn btn-primary" onClick={() => void changePassword()} disabled={changing}>
-                {changing ? "Changing…" : "Change password"}
-              </button>
-            </div>
-          </Card>
-
-          {/* two-factor */}
+          {/* how she signs in */}
           <Card>
             <div className="flex flex-wrap items-start justify-between gap-3">
               <div className="flex items-start gap-3">
                 <span className="flex h-11 w-11 items-center justify-center rounded-xl bg-violet-tint text-violet-ink">
-                  <ShieldCheck className="h-5 w-5" />
+                  <Smartphone className="h-5 w-5" />
                 </span>
                 <div>
-                  <h2 className="font-display text-base font-bold text-ink">Two-factor sign-in</h2>
-                  <p className="mt-0.5 text-sm text-ink-subtle">A code from an authenticator app at sign-in.</p>
+                  <h2 className="font-display text-base font-bold text-ink">Authenticator app</h2>
+                  <p className="mt-0.5 text-sm text-ink-subtle">
+                    Every staff sign-in needs a code sent to your email and a code from this app.
+                  </p>
                 </div>
               </div>
-              <Badge tone={account?.two_factor.enabled ? "emerald" : "slate"}>
-                {account?.two_factor.enabled ? "On" : "Off"}
-              </Badge>
+              <div className="flex gap-2">
+                <Badge tone="slate">Required</Badge>
+                {account && <Badge tone={enabled ? "emerald" : "amber"}>{enabled ? "Enabled" : "Not set up"}</Badge>}
+              </div>
             </div>
-            <p className="mt-4 text-sm leading-relaxed text-ink-muted">
-              {account?.two_factor.note ?? "Use any TOTP authenticator app."}
-            </p>
 
-            {recoveryCodes.length > 0 ? (
-              <div className="mt-4 rounded-xl border border-amber-200 bg-amber-50 p-4">
-                <p className="text-sm font-semibold text-amber-900">Save these recovery codes now</p>
-                <p className="mt-1 text-xs text-amber-800">Each code works once. They will not be shown again.</p>
-                <div className="mt-3 grid grid-cols-2 gap-2 font-mono text-sm text-amber-950">
-                  {recoveryCodes.map((code) => <span key={code}>{code}</span>)}
-                </div>
-                <button className="btn btn-sm btn-outline mt-3" onClick={() => void navigator.clipboard.writeText(recoveryCodes.join("\n"))}>
-                  <Copy className="h-3.5 w-3.5" /> Copy codes
-                </button>
+            <div className="mt-4 grid gap-3 sm:grid-cols-2">
+              <div className="flex items-start gap-2.5 rounded-xl border border-line bg-surface-2 p-3">
+                <Mail className="mt-0.5 h-4 w-4 shrink-0 text-violet-ink" />
+                <p className="text-xs leading-relaxed text-ink-muted">
+                  <b className="text-ink">No password.</b> A six-digit code is sent to {account?.email || "your work email"} each time you sign in.
+                </p>
               </div>
-            ) : account?.two_factor.enabled ? (
-              <div className="mt-4 grid gap-3 sm:grid-cols-2">
-                <PasswordField label="Current password" value={twoFactorPassword} onChange={setTwoFactorPassword} autoComplete="current-password" />
-                <div>
-                  <label className="mb-1.5 block text-sm font-medium text-ink-muted">Current authenticator or recovery code</label>
-                  <input value={twoFactorCode} onChange={(e) => setTwoFactorCode(e.target.value.toUpperCase())} autoComplete="one-time-code"
-                    className="w-full rounded-lg border border-line-strong bg-surface px-3 py-2.5 font-mono text-sm text-ink outline-none focus:border-violet-300" />
-                </div>
-                <div className="sm:col-span-2 flex justify-end">
-                  <button className="btn btn-outline" disabled={twoFactorBusy} onClick={() => void disableTwoFactor()}>
-                    {twoFactorBusy ? "Turning off…" : "Turn off two-factor sign-in"}
-                  </button>
-                </div>
+              <div className="flex items-start gap-2.5 rounded-xl border border-line bg-surface-2 p-3">
+                <KeyRound className="mt-0.5 h-4 w-4 shrink-0 text-violet-ink" />
+                <p className="text-xs leading-relaxed text-ink-muted">
+                  <b className="text-ink">Lost your phone?</b> Use a recovery code, or ask another Super Admin to reset your authenticator.
+                </p>
               </div>
-            ) : twoFactorSetup ? (
-              <div className="mt-4 space-y-3 rounded-xl border border-line bg-surface-2 p-4">
-                <p className="text-sm font-semibold text-ink">1. Add WomSakhi to your authenticator app</p>
-                <p className="text-xs text-ink-subtle">Choose “enter setup key” and use this secret:</p>
-                <div className="flex items-center gap-2 rounded-lg border border-line-strong bg-surface p-3">
-                  <code className="min-w-0 flex-1 break-all text-sm font-semibold tracking-wider text-ink">{twoFactorSetup.secret}</code>
-                  <button aria-label="Copy setup key" className="btn btn-sm btn-ghost" onClick={() => void navigator.clipboard.writeText(twoFactorSetup.secret)}><Copy className="h-4 w-4" /></button>
-                </div>
-                <label className="block text-sm font-medium text-ink-muted">2. Enter the six-digit code it shows</label>
-                <div className="flex flex-wrap gap-2">
-                  <input value={twoFactorCode} onChange={(e) => setTwoFactorCode(e.target.value.replace(/\D/g, "").slice(0, 6))}
-                    inputMode="numeric" autoComplete="one-time-code" placeholder="123456"
-                    className="min-w-40 flex-1 rounded-lg border border-line-strong bg-surface px-3 py-2.5 font-mono text-sm tracking-[0.3em] text-ink outline-none focus:border-violet-300" />
-                  <button className="btn btn-primary" disabled={twoFactorBusy || twoFactorCode.length !== 6} onClick={() => void enableTwoFactor()}>
-                    {twoFactorBusy ? "Checking…" : "Verify and turn on"}
-                  </button>
-                </div>
-              </div>
-            ) : (
-              <div className="mt-4 flex flex-wrap items-end gap-3">
-                <div className="min-w-64 flex-1"><PasswordField label="Current password" value={twoFactorPassword} onChange={setTwoFactorPassword} autoComplete="current-password" /></div>
-                <button className="btn btn-primary" disabled={twoFactorBusy} onClick={() => void beginTwoFactor()}>
-                  {twoFactorBusy ? "Starting…" : "Set up authenticator"}
+            </div>
+
+            {step === "idle" && (
+              <div className="mt-5 flex flex-wrap items-center justify-between gap-3 border-t border-line pt-4">
+                <p className="text-sm text-ink-muted">Got a new phone? Move the authenticator before you wipe the old one.</p>
+                <button className="btn btn-outline" onClick={() => { setStep("current"); setTfError(""); }}>
+                  <Smartphone className="h-4 w-4" /> Move to a new phone
                 </button>
               </div>
             )}
-            {twoFactorError && <p className="mt-3 text-sm font-medium text-status-danger-ink">{twoFactorError}</p>}
+
+            {step === "current" && (
+              <div className="mt-5 space-y-3 rounded-xl border border-line bg-surface-2 p-4">
+                <p className="text-sm font-semibold text-ink">Step 1 of 3 · Prove it is you</p>
+                <label htmlFor="tf-current" className="block text-xs text-ink-subtle">
+                  Enter the code your <b>current</b> authenticator shows, or one of your recovery codes.
+                </label>
+                <div className="flex flex-wrap gap-2">
+                  <CodeInput id="tf-current" value={code} onChange={setCode} allowRecovery />
+                  <button className="btn btn-primary" disabled={busy || code.length < 6} onClick={() => void start()}>
+                    {busy ? "Checking…" : "Continue"}
+                  </button>
+                  <button className="btn btn-ghost" onClick={cancel}>Cancel</button>
+                </div>
+              </div>
+            )}
+
+            {step === "scan" && setup && (
+              <div className="mt-5 space-y-4 rounded-xl border border-line bg-surface-2 p-4">
+                <p className="text-sm font-semibold text-ink">Step 2 of 3 · Scan with the new phone</p>
+                <div className="flex flex-wrap items-start gap-5">
+                  <div
+                    aria-label="QR code for your authenticator app" role="img"
+                    className="h-56 w-56 max-w-full shrink-0 rounded-2xl border border-line bg-white p-1 [&_svg]:block [&_svg]:h-full [&_svg]:w-full"
+                    // Generated by our own server from the provisioning URI.
+                    dangerouslySetInnerHTML={{ __html: setup.qr_svg }}
+                  />
+                  <div className="min-w-60 flex-1 space-y-2">
+                    <p className="text-xs text-ink-subtle">
+                      Open your authenticator app on the new phone and scan this code. Cannot scan? Choose
+                      “enter a setup key” and type this:
+                    </p>
+                    <div className="flex items-center gap-2 rounded-lg border border-line-strong bg-surface p-2.5">
+                      <code className="min-w-0 flex-1 break-all text-sm font-semibold tracking-wider text-ink">{setup.secret}</code>
+                      <button aria-label="Copy setup key" className="btn btn-sm btn-ghost"
+                              onClick={() => void navigator.clipboard?.writeText(setup.secret)}>
+                        <Copy className="h-4 w-4" />
+                      </button>
+                    </div>
+                    <label htmlFor="tf-new" className="block pt-2 text-sm font-semibold text-ink">
+                      Step 3 of 3 · Enter the code the new phone shows
+                    </label>
+                    <div className="flex flex-wrap gap-2">
+                      <CodeInput id="tf-new" value={code} onChange={setCode} />
+                      <button className="btn btn-primary" disabled={busy || code.length !== 6} onClick={() => void confirmNew()}>
+                        {busy ? "Checking…" : "Confirm new phone"}
+                      </button>
+                      <button className="btn btn-ghost" onClick={cancel}>Cancel</button>
+                    </div>
+                    <p className="text-xs text-ink-subtle">Your old phone keeps working until this step succeeds.</p>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {step === "codes" && (
+              <div className="mt-5 rounded-xl border border-amber-200 bg-amber-50 p-4">
+                <p className="flex items-center gap-2 text-sm font-semibold text-amber-900">
+                  <Check className="h-4 w-4" /> Authenticator moved. Save these recovery codes now.
+                </p>
+                <p className="mt-1 text-xs text-amber-800">
+                  Each code works once, in place of the app, if you lose your phone. They will not be shown again,
+                  and your old codes have stopped working.
+                </p>
+                <div className="mt-3 grid grid-cols-2 gap-2 font-mono text-sm text-amber-950 sm:grid-cols-4">
+                  {recoveryCodes.map((c) => <span key={c} className="rounded-md bg-white/70 px-2 py-1 text-center">{c}</span>)}
+                </div>
+                <div className="mt-3 flex flex-wrap gap-2">
+                  <button className="btn btn-sm btn-outline" onClick={copyCodes}>
+                    {copied ? <><Check className="h-3.5 w-3.5" /> Copied</> : <><Copy className="h-3.5 w-3.5" /> Copy codes</>}
+                  </button>
+                  <button className="btn btn-sm btn-primary" onClick={() => { setRecoveryCodes([]); setStep("idle"); }}>
+                    I have saved them
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {tfError && <p role="alert" className="mt-3 text-sm font-medium text-status-danger-ink">{tfError}</p>}
           </Card>
+
+          <MyDevicesCard compact />
 
           {/* sign out everywhere */}
           <Card className="border-status-danger-border">
@@ -376,8 +290,8 @@ export default function SecuritySettingsPage() {
                   </p>
                 </div>
               </div>
-              <button className="btn btn-danger shrink-0" onClick={() => void endEverywhere()} disabled={ending}>
-                <LogOut className="h-4 w-4" /> {ending ? "Ending…" : "Sign out everywhere"}
+              <button className="btn btn-danger shrink-0" onClick={() => void everywhere.run()} disabled={everywhere.ending}>
+                <LogOut className="h-4 w-4" /> {everywhere.ending ? "Ending…" : "Sign out everywhere"}
               </button>
             </div>
             <p className="mt-4 text-xs text-ink-subtle">
@@ -388,7 +302,6 @@ export default function SecuritySettingsPage() {
         </div>
 
         <div className="space-y-6">
-          {/* status facts */}
           <Card>
             <h2 className="mb-4 font-display text-base font-bold text-ink">What the account records</h2>
             {loading ? (
@@ -396,25 +309,17 @@ export default function SecuritySettingsPage() {
             ) : account && (
               <div className="space-y-2.5">
                 <Fact label="Last signed in" value={formatWhen(account.last_login_at) || "Not recorded"} />
-                <Fact label="Password last changed" value={formatWhen(account.password_changed_at) || "Not recorded"} />
-                <Fact label="Failed sign-in attempts" value={String(account.failed_logins)} tone={account.failed_logins > 0 ? "warn" : undefined} />
-                <Fact label="Sign-in lock" value={isLocked ? `Locked until ${formatWhen(account.locked_until)}` : "None"} tone={isLocked ? "danger" : undefined} />
-                <Fact label="Sessions ended everywhere" value={account.sessions_ended_at ? `${account.token_version} · last ${formatWhen(account.sessions_ended_at)}` : String(account.token_version)} />
+                <Fact label="Sign-in method" value="Email code + authenticator" />
+                <Fact label="Authenticator" value={enabled ? "Enabled" : "Not set up"} tone={enabled ? undefined : "warn"} />
+                <Fact label="Signed out everywhere" value={account.sessions_ended_at ? formatWhen(account.sessions_ended_at) : "Never"} />
                 <Fact label="This session started" value={formatWhen(account.this_session.started_at) || "Unknown"} />
-                <Fact label="Two-factor sign-in" value={account.two_factor.enabled ? "Enabled" : "Off"} />
               </div>
-            )}
-            {!loading && account && !account.password_changed_at && (
-              <p className="mt-4 text-xs leading-relaxed text-ink-subtle">
-                A password change made before this was tracked has no date. The next one will.
-              </p>
             )}
             <Link href="/dashboard/settings/sessions" className="mt-4 inline-flex items-center gap-1.5 text-xs font-semibold text-violet-ink hover:underline">
               <KeyRound className="h-3.5 w-3.5" /> Sessions and where this account has acted from
             </Link>
           </Card>
 
-          {/* recent actions */}
           <Card>
             <div className="mb-4 flex items-center justify-between">
               <h2 className="font-display text-base font-bold text-ink">Your last actions</h2>
@@ -433,9 +338,7 @@ export default function SecuritySettingsPage() {
                     </span>
                     <div className="min-w-0 flex-1">
                       <p className="truncate font-medium text-ink-muted">{a.detail || a.action}</p>
-                      <p className="text-xs text-ink-subtle">
-                        {a.when}{a.ip ? ` · from ${a.ip}` : ""}
-                      </p>
+                      <p className="text-xs text-ink-subtle">{a.when}{a.ip ? ` · from ${a.ip}` : ""}</p>
                     </div>
                   </li>
                 ))}

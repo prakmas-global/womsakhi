@@ -30,9 +30,40 @@ export const apiClient = axios.create({
  * sure the failure is *known*, so `<ConnectionBanner>` can say so. Screens that
  * want a scoped retry still render their own `ErrorState`.
  */
+/**
+ * One renewal at a time. Several requests failing together with an expired
+ * token (a laptop waking up, a tab left open overnight) all wait for the same
+ * `/auth/refresh` instead of each spending the refresh cookie in turn.
+ */
+let renewing: Promise<boolean> | null = null;
+
+function renewOnce(): Promise<boolean> {
+  renewing ??= axios
+    .post(`${API_URL}/auth/refresh`, null, { withCredentials: true, timeout: 10_000 })
+    .then(() => true)
+    .catch(() => false)
+    .finally(() => {
+      setTimeout(() => (renewing = null), 0);
+    });
+  return renewing;
+}
+
 apiClient.interceptors.response.use(
   (response) => response,
-  (error) => {
+  async (error) => {
+    // An expired access token is not a signed-out user: the device session
+    // behind it lasts a month. Renew once and replay the request. Sign-in
+    // endpoints are exempt — a 401 there is an answer, not an expiry.
+    const config = error?.config as (typeof error.config & { _renewed?: boolean }) | undefined;
+    if (
+      error?.response?.status === 401 &&
+      config &&
+      !config._renewed &&
+      !String(config.url ?? "").startsWith("/auth/")
+    ) {
+      config._renewed = true;
+      if (await renewOnce()) return apiClient.request(config);
+    }
     const path = (error?.config?.url as string | undefined) ?? "unknown";
     // No response at all means the API is unreachable — the most important
     // case to surface, and the one a status-code check would miss entirely.
@@ -116,6 +147,8 @@ export function apiErrorMessage(
 
 export interface AuthPayload {
   access_token: string;
+  /** Only the mobile app keeps this; the browser uses its httpOnly cookie. */
+  refresh_token?: string;
   token_type: string;
   user: {
     id: string;
@@ -129,6 +162,15 @@ export interface AuthPayload {
     member_id: string; // set for members — their row in the members directory
     locale: string;
     phone: string;
+    /** Mobile numbers are required; confirmed once phone codes are switched on. */
+    phone_verified: boolean;
+    /** Stop her to add (or confirm) a mobile number before carrying on. */
+    phone_action_required: boolean;
+    email_verified: boolean;
+    /** Rejected applicants may apply again from this moment (ISO). */
+    reapply_after: string;
+    /** Staff: whether the authenticator app is set up. */
+    two_factor_enabled: boolean;
     avatar: string;
     /** Colour theme — two seeds; every shade is derived client-side. */
     theme_id: string;
@@ -149,65 +191,8 @@ export interface AuthPayload {
   };
 }
 
-export async function apiSignUp(
-  full_name: string,
-  email: string,
-  password: string,
-  extra: { phone?: string; country?: string; locale?: string } = {}
-): Promise<AuthPayload> {
-  const { data } = await apiClient.post<AuthPayload>("/auth/signup", {
-    full_name,
-    email,
-    password,
-    phone: extra.phone ?? "",
-    country: extra.country ?? "",
-    locale: extra.locale ?? "en",
-  });
-  return data;
-}
-
-export async function apiSubmitSignupApplication(input: {
-  full_name: string;
-  email: string;
-  password: string;
-  phone: string;
-  country: string;
-  locale: string;
-  identity_document: File;
-  selfie: File;
-}): Promise<AuthPayload> {
-  const form = new FormData();
-  form.append("full_name", input.full_name);
-  form.append("email", input.email);
-  form.append("password", input.password);
-  form.append("phone", input.phone);
-  form.append("country", input.country);
-  form.append("locale", input.locale);
-  form.append("identity_document", input.identity_document);
-  form.append("selfie", input.selfie);
-  // Do not use apiClient here: it deliberately defaults every request to
-  // application/json. Keeping that header on FormData prevents the browser
-  // from adding the multipart boundary, so FastAPI sees an empty form and
-  // reports `full_name: Field required` even though the field is visible.
-  const { data } = await axios.post<AuthPayload>(`${API_URL}/auth/signup-application`, form, {
-    withCredentials: true,
-    timeout: 120_000,
-  });
-  return data;
-}
-
-export async function apiSignIn(
-  email: string,
-  password: string,
-  two_factor_code = "",
-): Promise<AuthPayload> {
-  const { data } = await apiClient.post<AuthPayload>("/auth/signin", {
-    email,
-    password,
-    two_factor_code,
-  });
-  return data;
-}
+// Sign-up and sign-in live in `auth-api.ts`: they are one-time codes now, and
+// there is no password anywhere in the platform.
 
 /**
  * "Is there a session?" — 200 either way, so a signed-out visitor's console
@@ -324,15 +309,14 @@ export async function apiDeleteMember(id: string): Promise<void> {
 }
 
 /**
- * Staff-initiated password reset.
- *
- * Emails the member a single-use link — we never set or reveal a password on
- * someone's behalf, so no staff member ever knows a member's credentials.
+ * Sign a member out of every device — for an account someone else may be
+ * using. There is no password to reset: she signs back in with a code sent
+ * to her own email.
  */
-export async function apiResetMemberPassword(
+export async function apiEndMemberSessions(
   id: string,
-): Promise<{ message: string; delivered: boolean }> {
-  const { data } = await apiClient.post(`/members/${id}/reset-password`);
+): Promise<{ message: string; sessions_ended: number }> {
+  const { data } = await apiClient.post(`/members/${id}/end-sessions`);
   return data;
 }
 

@@ -35,7 +35,7 @@ export default function RouteError({
   const pathname = usePathname() ?? "";
   const area =
     pathname.startsWith("/dashboard") ? { href: "/dashboard", label: "Back to dashboard" }
-    : /^\/(signin|signup|forgot-password|reset-password)/.test(pathname)
+    : /^\/(signin|signup|accept-invite|h(\/|$))/.test(pathname)
                                       ? { href: "/signin",   label: "Back to sign in" }
     :                                   { href: "/",         label: "Back to the home page" };
   const backHref  = home ?? area.href;

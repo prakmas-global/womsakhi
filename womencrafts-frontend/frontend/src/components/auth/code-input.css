@@ -1,0 +1,38 @@
+/* ── One-time codes (components/auth/CodeInput.tsx) ─────────────────────────
+   One real input laid over six drawn boxes, so paste, "fill from Messages"
+   and autofill all land in one place. */
+.auth-code { position: relative; width: 100%; max-width: 360px; margin-inline: auto; }
+.auth-code-input {
+  position: absolute; inset: 0; width: 100%; height: 100%;
+  opacity: 0; color: transparent; caret-color: transparent;
+  font-size: 16px; /* no iOS zoom on focus */
+  letter-spacing: 2.2em; z-index: 1; cursor: text;
+}
+.auth-code-cells { display: grid; grid-template-columns: repeat(6, 1fr); gap: clamp(6px, 2vw, 10px); }
+.auth-code-cell {
+  display: grid; place-items: center; aspect-ratio: 5 / 6; min-height: 52px;
+  border-radius: 14px; border: 1.5px solid var(--a-edge, var(--ux-line-strong, #dccfdb));
+  background: var(--a-well, var(--ux-surface, #fff)); color: var(--a-ink, var(--ux-ink, #2d1a63));
+  font-size: clamp(1.35rem, 5.4vw, 1.7rem); font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  transition: border-color 140ms ease, box-shadow 140ms ease, background 140ms ease;
+}
+.auth-code-cell.is-filled { background: var(--a-fill, var(--ux-surface-2, #f6eef4)); border-color: var(--a-edge-violet, var(--ux-line-strong, #cdb8e6)); }
+.auth-code-input:focus + .auth-code-cells .auth-code-cell.is-active {
+  border-color: var(--a-magenta, #d21f7c); box-shadow: 0 0 0 4px var(--a-ring, rgba(210,31,124,.18));
+}
+.auth-code.is-invalid .auth-code-cell { border-color: var(--a-bad, var(--ux-danger-solid, #b4233a)); background: var(--a-tint-rose-2, var(--ux-danger-soft, #fbe4e7)); }
+.auth-code.is-disabled .auth-code-cell { opacity: 0.55; }
+@media (prefers-reduced-motion: no-preference) {
+  .auth-code.is-invalid .auth-code-cells { animation: auth-code-shake 320ms ease; }
+}
+@keyframes auth-code-shake {
+  0%, 100% { transform: translateX(0); }
+  25% { transform: translateX(-6px); }
+  75% { transform: translateX(6px); }
+}
+.auth-resend { margin-top: 14px; text-align: center; font-size: 0.8125rem; color: var(--a-muted, var(--ux-muted, #6f6582)); }
+.auth-resend strong { color: var(--a-ink-2, var(--ux-ink-2, #3b3150)); font-variant-numeric: tabular-nums; }
+
+.auth-resend .auth-link { color: var(--a-lilac, #a3267f); font-weight: 600; }
+.auth-resend .auth-link:hover { color: var(--a-rose, #d21f7c); }

@@ -22,7 +22,7 @@ from pydantic import BaseModel, Field
 
 from app.core.config import settings
 from app.core.deps import get_current_user
-from app.core.rbac import require_active_member, require_member
+from app.core.rbac import require_active_member, require_member, require_member_account
 from app.core import semantic
 from app.core.matching import NEEDS, rank
 from app.core.rbac import is_member
@@ -61,7 +61,6 @@ from app.schemas.me import (
     SendMessageRequest,
     UnreadCounts,
     Achievement,
-    ChangePasswordBody,
     DeleteAccountRequest,
     FeedbackRequest,
     LibraryItem,
@@ -257,7 +256,7 @@ async def journey(me: dict = Depends(require_active_member)):
 # --- profile -----------------------------------------------------------------
 
 @router.get("/profile", response_model=MeProfileResponse, summary="My profile")
-async def my_profile(me: dict = Depends(require_active_member)):
+async def my_profile(me: dict = Depends(require_member_account)):
     profile = None
     if me.get("member_id"):
         profile = await get_database()[MemberModel.collection_name].find_one(
@@ -274,7 +273,7 @@ async def my_profile(me: dict = Depends(require_active_member)):
 
 
 @router.patch("/profile", response_model=MeProfileResponse, summary="Update my profile")
-async def update_my_profile(payload: MeProfileUpdate, me: dict = Depends(require_active_member)):
+async def update_my_profile(payload: MeProfileUpdate, me: dict = Depends(require_member_account)):
     now = datetime.now(timezone.utc)
     user_updates: dict = {"updated_at": now}
     member_updates: dict = {"updated_at": now}
@@ -555,7 +554,7 @@ async def cancel_booking(
 @router.get("/programs", response_model=list[EnrollmentResponse], summary="Programs I've joined")
 async def my_programs(
     state: Optional[str] = Query(None, description="active | completed | withdrawn"),
-    me: dict = Depends(require_active_member),
+    me: dict = Depends(require_member_account),
 ):
     query: dict = {"user_id": str(me["_id"])}
     if state in EnrollmentModel.STATUSES:
@@ -853,7 +852,7 @@ async def my_notifications(me: dict = Depends(require_active_member)):
 
 
 @router.get("/unread", response_model=UnreadCounts, summary="Unread badges")
-async def unread_counts(me: dict = Depends(require_active_member)):
+async def unread_counts(me: dict = Depends(require_member_account)):
     """
     Two badge numbers, one round trip.
 
@@ -1100,23 +1099,6 @@ async def set_voice_prefs(payload: VoicePrefs, me: dict = Depends(require_active
     return payload
 
 
-@router.post("/settings/password", response_model=MessageResponse, summary="Change my password")
-async def change_my_password(payload: ChangePasswordBody, me: dict = Depends(require_active_member)):
-    from app.core.security import hash_password, verify_password, hash_password_async, verify_password_async
-
-    if not await verify_password_async(payload.current_password, me["hashed_password"]):
-        raise HTTPException(status.HTTP_400_BAD_REQUEST, "That isn't your current password")
-    if payload.current_password == payload.new_password:
-        raise HTTPException(status.HTTP_400_BAD_REQUEST, "Please choose a different password")
-
-    await get_database()[UserModel.collection_name].update_one(
-        {"_id": me["_id"]},
-        {"$set": {"hashed_password": await hash_password_async(payload.new_password),
-                  "updated_at": datetime.now(timezone.utc)}},
-    )
-    return MessageResponse(message="Your password has been changed.")
-
-
 @router.post("/settings/delete-account", response_model=MessageResponse, summary="Ask us to delete my account")
 async def request_deletion(payload: DeleteAccountRequest, me: dict = Depends(require_active_member)):
     """
@@ -1222,7 +1204,7 @@ def _progress_response(
 
 
 @router.get("/progress", response_model=ProgressResponse, summary="How far I've come")
-async def my_progress(me: dict = Depends(require_active_member)):
+async def my_progress(me: dict = Depends(require_member_account)):
     """
     Her journey so far, in two queries.
 
@@ -1349,7 +1331,7 @@ async def program_detail(program_id: str, me: dict = Depends(require_active_memb
 # --- certificates ------------------------------------------------------------
 
 @router.get("/certificates", response_model=list[CertificateResponse], summary="My certificates")
-async def my_certificates(me: dict = Depends(require_active_member)):
+async def my_certificates(me: dict = Depends(require_member_account)):
     docs = (
         await get_database()[CertificateModel.collection_name]
         .find({"user_id": str(me["_id"]), "revoked": {"$ne": True}})

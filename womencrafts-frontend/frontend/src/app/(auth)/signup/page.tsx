@@ -1,236 +1,255 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState, type FormEvent } from "react";
+import { useCallback, useState, type FormEvent } from "react";
 import Link from "next/link";
-import {
-  ArrowRight, Camera, Check, Eye, EyeOff, FileImage, Loader2,
-  Lock, Mail, Phone, ShieldCheck, Sparkles, Upload, UserRound, X,
-} from "lucide-react";
 
-import { BrandLockup } from "@/components/brand/BrandLockup";
-import { CountryPicker } from "@/components/auth/CountryPicker";
-import { useI18n, useT } from "@/i18n";
-import { apiErrorMessage, apiSubmitSignupApplication } from "@/lib/api";
-import { normalizePhone, PHONE_COUNTRIES } from "@/lib/phone";
-import { MAX_DOCUMENT_MB, validateDocument } from "@/lib/verification-api";
+import { useI18n } from "@/i18n";
+import { useAuth } from "@/context/AuthContext";
+import { CodeInput, useCountdown } from "@/components/auth/CodeInput";
+import { AuthIcon, AuthResend, AuthShell, AuthStepsBar, MEMBER_CAPTION, Spinner, formatMobile, useStepHistory } from "@/components/auth-shell";
+import { apiSignupComplete, apiSignupStart, apiSignupVerify, authError, type CodeSent } from "@/lib/auth-api";
 
-type DocumentFieldProps = {
-  title: string;
-  note: string;
-  file: File | null;
-  accept: string;
-  facing: "user" | "environment";
-  error?: string;
-  onChange: (file: File | null) => void;
-};
+/**
+ * Joining WomSakhi — three short screens, no password. The approved screens:
+ *
+ *   B1  mobile + email          →  a code goes to her email
+ *   B2  the 6-digit code        →  proves the email is hers
+ *   B3  name + "woman, 18+"     →  the account exists
+ *
+ * Her selfie and ID come NEXT, on /app/verify, once the account exists: the ID
+ * upload is where most sign-ups are abandoned, and a woman who stops there now
+ * comes back to a half-finished application instead of an empty form.
+ *
+ * The mobile number is required and Indian (+91) for now. It is saved
+ * unconfirmed; she confirms it by SMS after this.
+ */
 
-function DocumentField({ title, note, file, accept, facing, error, onChange }: DocumentFieldProps) {
-  const camera = useRef<HTMLInputElement>(null);
-  const files = useRef<HTMLInputElement>(null);
-  const preview = useMemo(
-    () => file && file.type.startsWith("image/") ? URL.createObjectURL(file) : "",
-    [file],
-  );
-  useEffect(() => () => { if (preview) URL.revokeObjectURL(preview); }, [preview]);
+type Step = "contact" | "code" | "about";
 
-  const take = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const selected = event.target.files?.[0] ?? null;
-    event.target.value = "";
-    if (selected) onChange(selected);
-  };
-
-  return (
-    <div className={`auth-application-document rounded-[16px] border p-3.5${error ? " auth-document-invalid" : ""}`}>
-      <input ref={camera} type="file" accept="image/*" capture={facing} className="sr-only" onChange={take} aria-label={`Take ${title}`} />
-      <input ref={files} type="file" accept={accept} className="sr-only" onChange={take} aria-label={`Choose ${title}`} />
-      <div className="flex items-start gap-3">
-        <div className="auth-application-thumb grid h-12 w-12 shrink-0 place-items-center overflow-hidden rounded-[14px]">
-          {preview ? (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img src={preview} alt="" className="h-full w-full object-cover" />
-          ) : file ? <FileImage className="h-5 w-5" aria-hidden /> : <Camera className="h-5 w-5" aria-hidden />}
-        </div>
-        <div className="min-w-0 flex-1">
-          <div className="flex items-center gap-2">
-            <p className="text-sm font-semibold" style={{ color: "var(--a-ink)" }}>{title}</p>
-            {file && <span className="auth-application-added inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-bold"><Check className="h-3 w-3" /> Added</span>}
-          </div>
-          <p className="mt-0.5 text-[11px] leading-relaxed" style={{ color: "var(--a-muted)" }}>{note}</p>
-          {file && <p className="mt-1 truncate text-[11px] font-medium" style={{ color: "var(--a-ink-2)" }}>{file.name}</p>}
-        </div>
-        {file && (
-          <button type="button" onClick={() => onChange(null)} className="auth-application-remove grid h-9 w-9 shrink-0 place-items-center rounded-xl" aria-label={`Remove ${title}`}>
-            <X className="h-4 w-4" />
-          </button>
-        )}
-      </div>
-      <div className="mt-3 grid grid-cols-2 gap-2">
-        <button type="button" onClick={() => camera.current?.click()} className="auth-application-secondary inline-flex min-h-10 items-center justify-center gap-2 rounded-xl px-2 text-xs font-semibold">
-          <Camera className="h-4 w-4" /> {file ? "Retake" : "Take photo"}
-        </button>
-        <button type="button" onClick={() => files.current?.click()} className="auth-application-secondary inline-flex min-h-10 items-center justify-center gap-2 rounded-xl px-2 text-xs font-semibold">
-          <Upload className="h-4 w-4" /> {file ? "Replace" : "Choose file"}
-        </button>
-      </div>
-      {error && <p role="alert" className="auth-field-message mt-2">{error}</p>}
-    </div>
-  );
-}
-
-type SignupErrors = Partial<Record<
-  "fullName" | "email" | "country" | "phone" | "password" | "identityDocument" | "selfie",
-  string
->>;
-
-const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-
-function passwordIssue(value: string): string {
-  if (!value) return "Create a password.";
-  if (value.length < 8) return "Use at least 8 characters.";
-  if (new TextEncoder().encode(value).length > 72) return "Use a password shorter than 72 bytes.";
-  if (!/\p{L}/u.test(value) || !/\d/.test(value) || !/[^\p{L}\d\s]/u.test(value)) {
-    return "Include at least one letter, one number and one symbol.";
-  }
-  return "";
-}
+const TEN_DIGITS = /^[6-9]\d{9}$/;
 
 export default function SignUpPage() {
-  const tr = useT();
   const { locale } = useI18n();
-  const [fullName, setFullName] = useState("");
+  const { completeSignIn } = useAuth();
+
+  const [step, setStep] = useState<Step>("contact");
   const [email, setEmail] = useState("");
-  const [phone, setPhone] = useState("");
-  const [country, setCountry] = useState("");
-  const [password, setPassword] = useState("");
-  const [showPassword, setShowPassword] = useState(false);
-  const [identityDocument, setIdentityDocument] = useState<File | null>(null);
-  const [selfie, setSelfie] = useState<File | null>(null);
-  const [errors, setErrors] = useState<SignupErrors>({});
+  const [mobile, setMobile] = useState("");
+  const [sent, setSent] = useState<CodeSent | null>(null);
+  const [code, setCode] = useState("");
+  const [ticket, setTicket] = useState("");
+  const [fullName, setFullName] = useState("");
+  const [declared, setDeclared] = useState(false);
+
   const [error, setError] = useState("");
-  const [loading, setLoading] = useState(false);
+  const [fieldErrors, setFieldErrors] = useState<{ email?: string; mobile?: string; name?: string; declared?: string }>({});
+  const [invalid, setInvalid] = useState(false);
+  const [busy, setBusy] = useState(false);
+  const [resendIn, setResendIn] = useCountdown();
 
-  const strength = Math.min(100,
-    (password.length >= 8 ? 40 : password.length * 5) +
-    (/[A-Z]/.test(password) ? 20 : 0) +
-    (/[0-9]/.test(password) ? 20 : 0) +
-    (/[^A-Za-z0-9]/.test(password) ? 20 : 0));
-  const strengthLabel = !password ? "" : strength >= 70 ? "Strong" : strength >= 40 ? "Getting there" : "Too weak";
-  const strengthInk = strength >= 70 ? "var(--a-ok)" : strength >= 40 ? "var(--a-warn)" : "var(--a-bad)";
+  const stepNumber = step === "contact" ? 1 : step === "code" ? 2 : 3;
 
-  const setDocument = (kind: "id" | "selfie", file: File | null) => {
-    const key = kind === "id" ? "identityDocument" : "selfie";
-    setErrors((current) => ({ ...current, [key]: undefined }));
-    if (file) {
-      const issue = validateDocument(file);
-      if (issue) { setErrors((current) => ({ ...current, [key]: issue })); return; }
-      const imageByName = /\.(?:jpe?g|png|webp|heic|heif)$/i.test(file.name);
-      if (kind === "selfie" && !file.type.startsWith("image/") && !imageByName) {
-        setErrors((current) => ({ ...current, selfie: "Your selfie must be a JPG, PNG, WEBP or HEIC image." }));
-        return;
-      }
-    }
-    if (kind === "id") setIdentityDocument(file); else setSelfie(file);
-  };
-
-  const submit = async (event: FormEvent) => {
-    event.preventDefault();
+  // Browser/phone Back walks the steps. Step 3 replaces the spent code, so
+  // Back from it goes to step 1 (and drops the ticket); what she typed stays.
+  const back = useStepHistory<Step>(step, (to) => {
+    if (to === "about" && !ticket) to = "contact";
+    if (to === "contact") setTicket("");
+    setStep(to);
+    setCode("");
     setError("");
-    const nextErrors: SignupErrors = {};
-    if (!fullName.trim()) nextErrors.fullName = "Enter your full name.";
-    if (!email.trim()) nextErrors.email = "Enter your email address.";
-    else if (!EMAIL_PATTERN.test(email.trim())) nextErrors.email = "Enter a valid email address.";
-    if (!country) nextErrors.country = "Select your country.";
-    const normalizedPhone = normalizePhone(phone, country);
-    if (!phone.trim()) nextErrors.phone = "Enter your mobile number.";
-    else if (country && !normalizedPhone) nextErrors.phone = "Enter a valid mobile number for the selected country.";
-    const passwordError = passwordIssue(password);
-    if (passwordError) nextErrors.password = passwordError;
-    if (!identityDocument) nextErrors.identityDocument = "Add one clear photo of your government ID.";
-    if (!selfie) nextErrors.selfie = "Add a clear selfie while holding the same ID.";
-    if (Object.keys(nextErrors).length) {
-      setErrors(nextErrors);
-      setError("Please complete the highlighted fields before submitting.");
-      const first = Object.keys(nextErrors)[0] as keyof SignupErrors;
-      const ids: Record<keyof SignupErrors, string> = {
-        fullName: "su-name", email: "su-email", country: "su-country", phone: "su-phone",
-        password: "su-password", identityDocument: "su-id-section", selfie: "su-selfie-section",
-      };
-      window.requestAnimationFrame(() => document.getElementById(ids[first])?.focus());
+    setInvalid(false);
+  }, { replace: (to) => to === "about" });
+
+  const sendCode = async (e?: FormEvent) => {
+    e?.preventDefault();
+    const problems: typeof fieldErrors = {};
+    if (!TEN_DIGITS.test(mobile)) problems.mobile = "Enter your 10-digit mobile number";
+    if (!/^\S+@\S+\.\S+$/.test(email.trim())) problems.email = "Enter your email address, like name@gmail.com";
+    setFieldErrors(problems);
+    if (Object.keys(problems).length) {
+      document.getElementById(problems.mobile ? "su-mobile" : "su-email")?.focus();
       return;
     }
-    setErrors({}); setLoading(true);
+    setError("");
+    setBusy(true);
     try {
-      await apiSubmitSignupApplication({
-        full_name: fullName.trim(), email: email.trim().toLowerCase(), password, phone: normalizedPhone!,
-        country, locale, identity_document: identityDocument!, selfie: selfie!,
-      });
-      window.location.assign("/app/verify?submitted=1");
-    } catch (cause) {
-      const message = apiErrorMessage(cause, "We could not create your account. Check the details and try again.");
-      const lower = message.toLowerCase().replaceAll("_", " ");
-      if (lower.includes("email") || lower.includes("account") && lower.includes("exists")) {
-        setErrors((current) => ({ ...current, email: message }));
-        document.getElementById("su-email")?.focus();
-      } else if (lower.includes("full name")) {
-        setErrors((current) => ({ ...current, fullName: message }));
-        document.getElementById("su-name")?.focus();
-      } else if (lower.includes("password")) {
-        setErrors((current) => ({ ...current, password: message }));
-        document.getElementById("su-password")?.focus();
-      } else if (lower.includes("mobile") || lower.includes("phone")) {
-        setErrors((current) => ({ ...current, phone: message }));
-        document.getElementById("su-phone")?.focus();
-      } else if (lower.includes("country")) {
-        setErrors((current) => ({ ...current, country: message }));
-        document.getElementById("su-country")?.focus();
+      const result = await apiSignupStart(email.trim(), `+91${mobile}`, locale || "en");
+      setSent(result);
+      setResendIn(result.resend_in);
+      setCode("");
+      setInvalid(false);
+      setStep("code");
+    } catch (err) {
+      const problem = authError(err);
+      if (problem.code === "resend_too_soon") setResendIn(Number(problem.extra.retry_after) || 30);
+      if (step === "contact" && problem.status === 422 && /mobile|number/i.test(problem.message)) {
+        setFieldErrors({ mobile: problem.message });
+      } else if (step === "contact" && problem.status === 422 && /email/i.test(problem.message)) {
+        setFieldErrors({ email: "Enter a real email address you can open" });
       } else {
-        setError(message);
+        setError(problem.message);
       }
-    } finally { setLoading(false); }
+    } finally {
+      setBusy(false);
+    }
   };
 
-  const field = "auth-field min-h-[46px] w-full rounded-[12px] pe-4 ps-11 text-sm";
-  const label = "mb-1.5 block text-xs font-semibold";
-  const icon = "pointer-events-none absolute start-4 top-1/2 h-[17px] w-[17px] -translate-y-1/2";
+  const verify = useCallback(
+    async (value: string) => {
+      if (value.length !== 6 || busy) return;
+      setError("");
+      setInvalid(false);
+      setBusy(true);
+      try {
+        const result = await apiSignupVerify(email.trim(), value);
+        if (result.signed_in) {
+          // She already had an account; the code she was sent signs her in.
+          completeSignIn(result);
+          return;
+        }
+        setTicket(result.ticket);
+        setStep("about");
+      } catch (err) {
+        const problem = authError(err);
+        if (problem.code === "phone_taken") {
+          back("contact");
+          setFieldErrors({ mobile: problem.message });
+        } else if (problem.code === "email_taken") {
+          setError(problem.message);
+        } else {
+          setInvalid(true);
+          setError(problem.message);
+          if (problem.code === "code_voided" || problem.code === "code_expired") setCode("");
+        }
+      } finally {
+        setBusy(false);
+      }
+    },
+    [back, busy, email, completeSignIn],
+  );
+
+  const create = async (e: FormEvent) => {
+    e.preventDefault();
+    const problems: typeof fieldErrors = {};
+    if (fullName.trim().replace(/\s+/g, " ").length < 2) problems.name = "Enter your full name";
+    if (!declared) problems.declared = "Please confirm to continue";
+    setFieldErrors(problems);
+    if (Object.keys(problems).length) return;
+    setError("");
+    setBusy(true);
+    try {
+      const payload = await apiSignupComplete({ ticket, full_name: fullName.trim(), is_woman_18_plus: true, locale: locale || "en" });
+      completeSignIn(payload);
+    } catch (err) {
+      const problem = authError(err);
+      if (problem.code === "ticket_expired") {
+        back("contact");
+        setError("That took a little too long. Please ask for a new code.");
+      } else {
+        setError(problem.message);
+      }
+      setBusy(false);
+    }
+  };
 
   return (
-    <div className="auth-application">
-      <div className="flex items-center justify-between gap-4">
-        <BrandLockup alt={tr("waitScreen.womsakhiStrongerWomenBrighterTomorrows")} className="h-12 w-[92px] object-contain" />
-        <div className="auth-application-one-step rounded-full px-3 py-1.5 text-[11px] font-bold"><Sparkles className="me-1 inline h-3.5 w-3.5" />One secure application</div>
-      </div>
-      <h1 className="mt-1 text-start font-bold leading-tight tracking-tight" style={{ color: "var(--a-ink)", fontSize: "clamp(1.55rem,2.5vw,2.1rem)" }}>Create your WomSakhi account</h1>
-      <p className="mt-1 text-xs leading-relaxed" style={{ color: "var(--a-muted)" }}>Complete one secure form with your contact details, one photo ID and one selfie. We submit it directly to our authorised review team.</p>
-
-      {error && <p role="alert" className="auth-application-error mt-4 rounded-xl px-3.5 py-3 text-xs leading-relaxed">{error}</p>}
-
-      <form onSubmit={submit} className="mt-3" noValidate>
-        <div className="auth-application-columns grid gap-4">
-          <section className="auth-application-section auth-application-account rounded-[18px] border p-4">
-            <div className="mb-3 flex items-center gap-2"><span className="auth-section-icon grid h-8 w-8 place-items-center rounded-xl"><UserRound className="h-4 w-4" /></span><div><h2 className="text-sm font-bold">Your account details</h2><p className="text-[11px]" style={{ color: "var(--a-muted)" }}>The essentials we need to create your secure account.</p></div></div>
-            <div className="auth-account-grid grid gap-3">
-              <div><label htmlFor="su-name" className={label}>Full name *</label><div className="relative"><UserRound className={icon} /><input id="su-name" autoFocus autoComplete="name" value={fullName} onChange={(e) => { setFullName(e.target.value); setErrors((current) => ({ ...current, fullName: undefined })); setError(""); }} className={`${field}${errors.fullName ? " auth-field-invalid" : ""}`} placeholder="Your full name" aria-invalid={!!errors.fullName} aria-describedby={errors.fullName ? "su-name-error" : undefined} /></div>{errors.fullName && <p id="su-name-error" role="alert" className="auth-field-message">{errors.fullName}</p>}</div>
-              <div><label htmlFor="su-email" className={label}>Email address *</label><div className="relative"><Mail className={icon} /><input id="su-email" type="email" autoComplete="email" value={email} onChange={(e) => { setEmail(e.target.value); setErrors((current) => ({ ...current, email: undefined })); setError(""); }} className={`${field}${errors.email ? " auth-field-invalid" : ""}`} placeholder="you@example.com" aria-invalid={!!errors.email} aria-describedby={errors.email ? "su-email-error" : undefined} /></div>{errors.email && <p id="su-email-error" role="alert" className="auth-field-message">{errors.email}</p>}</div>
-              <div><label htmlFor="su-country" className={label}>Country and mobile number *</label><div className="grid gap-3 sm:grid-cols-[0.9fr_1.1fr]"><div><CountryPicker value={country} onChange={(value) => { setCountry(value); setErrors((current) => ({ ...current, country: undefined, phone: undefined })); setError(""); }} describedBy={errors.country ? "su-country-error" : undefined} invalid={!!errors.country} />{errors.country && <p id="su-country-error" role="alert" className="auth-field-message">{errors.country}</p>}</div><div><div className="relative"><Phone className={icon} /><input id="su-phone" type="tel" autoComplete="tel" inputMode="tel" value={phone} onChange={(e) => { setPhone(e.target.value); setErrors((current) => ({ ...current, phone: undefined })); setError(""); }} className={`${field}${errors.phone ? " auth-field-invalid" : ""}`} placeholder={country ? `Mobile number (${PHONE_COUNTRIES.find((item) => item.code === country)?.dial})` : "Select country first"} aria-invalid={!!errors.phone} aria-describedby={errors.phone ? "su-phone-error" : undefined} /></div>{errors.phone && <p id="su-phone-error" role="alert" className="auth-field-message">{errors.phone}</p>}</div></div></div>
-              <div><label htmlFor="su-password" className={label}>Create a password *</label><div className="relative"><Lock className={icon} /><input id="su-password" type={showPassword ? "text" : "password"} autoComplete="new-password" value={password} onChange={(e) => { setPassword(e.target.value); setErrors((current) => ({ ...current, password: undefined })); setError(""); }} className={`${field} pe-12${errors.password ? " auth-field-invalid" : ""}`} placeholder="8+ chars, number & symbol" aria-invalid={!!errors.password} aria-describedby={errors.password ? "su-password-error" : "su-password-help"} /><button type="button" onClick={() => setShowPassword((value) => !value)} className="absolute end-2 top-1/2 grid h-10 w-10 -translate-y-1/2 place-items-center rounded-xl" aria-label={showPassword ? "Hide password" : "Show password"}>{showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}</button></div>{errors.password && <p id="su-password-error" role="alert" className="auth-field-message">{errors.password}</p>}{strengthLabel && <div id="su-password-help" className="mt-2 flex items-center gap-2"><span className="auth-application-track h-1 flex-1 overflow-hidden rounded-full"><span className="block h-full rounded-full" style={{ width: `${strength}%`, background: strengthInk }} /></span><span className="text-[10px] font-bold" style={{ color: strengthInk }}>{strengthLabel}</span></div>}</div>
+    <AuthShell
+      photo={step === "code" ? "email" : "join"}
+      caption={MEMBER_CAPTION}
+      showTrust={step === "contact"}
+      screen={`b${stepNumber}`}
+      flow="member-join"
+    >
+      {/* B1 · mobile first, then email */}
+      {step === "contact" && (
+        <>
+          <Link href="/signin" className="wsa-back"><AuthIcon name="back" /> Back to sign in</Link>
+          <span className="wsa-join-eyebrow">Become a member</span>
+          <h1 className="wsa-t">Join WomSakhi</h1>
+          <p className="wsa-s wsa-join-intro">Create your secure account with a mobile number and an email you can open.</p>
+          <AuthStepsBar step={stepNumber} total={3} />
+          {error && <p role="alert" className="wsa-err">{error}</p>}
+          <form onSubmit={sendCode} noValidate className="wsa-field">
+            <label htmlFor="su-mobile" className="wsa-lbl">Mobile number</label>
+            <div className={`wsa-phone${fieldErrors.mobile ? " is-bad" : ""}`}>
+              <span className="wsa-cc" aria-hidden><span className="wsa-flag" />+91</span>
+              <input id="su-mobile" type="tel" enterKeyHint="next" inputMode="numeric" autoComplete="tel-national" maxLength={11} autoFocus
+                value={formatMobile(mobile)} placeholder="98765 43210" aria-invalid={!!fieldErrors.mobile}
+                aria-describedby={fieldErrors.mobile ? "su-mobile-error" : undefined}
+                onChange={(e) => { setMobile(e.target.value.replace(/\D/g, "").replace(/^(91|0)(?=\d{10}$)/, "").slice(0, 10)); setFieldErrors((f) => ({ ...f, mobile: undefined })); setError(""); }} />
             </div>
-          </section>
+            {fieldErrors.mobile && <p id="su-mobile-error" role="alert" className="wsa-ferr">{fieldErrors.mobile}</p>}
 
-          <section className="auth-application-section auth-application-identity rounded-[18px] border p-4">
-            <div className="mb-1 flex items-center gap-2"><span className="auth-section-icon grid h-8 w-8 place-items-center rounded-xl"><ShieldCheck className="h-4 w-4" /></span><div><h2 className="text-sm font-bold">Identity check</h2><p className="text-[11px] leading-relaxed" style={{ color: "var(--a-muted)" }}>Two clear images complete your application. Maximum {MAX_DOCUMENT_MB} MB each.</p></div></div>
-            <div className="auth-document-grid mt-3 grid gap-3">
-              <div id="su-id-section" tabIndex={-1}><DocumentField title="Photo ID" note="Aadhaar, voter card or driving licence" file={identityDocument} accept="image/jpeg,image/png,image/webp,image/heic,application/pdf" facing="environment" error={errors.identityDocument} onChange={(file) => { setDocument("id", file); setError(""); }} /></div>
-              <div id="su-selfie-section" tabIndex={-1}><DocumentField title="Selfie with the same ID" note="Keep your face and the ID clear in the frame" file={selfie} accept="image/jpeg,image/png,image/webp,image/heic" facing="user" error={errors.selfie} onChange={(file) => { setDocument("selfie", file); setError(""); }} /></div>
+            <label htmlFor="su-email" className="wsa-lbl">Email</label>
+            <div className={`wsa-in${fieldErrors.email ? " is-bad" : ""}`}>
+              <AuthIcon name="mail" />
+              <input id="su-email" type="email" enterKeyHint="go" autoComplete="email" inputMode="email"
+                value={email} onChange={(e) => { setEmail(e.target.value); setFieldErrors((f) => ({ ...f, email: undefined })); setError(""); }}
+                placeholder="name@gmail.com" aria-invalid={!!fieldErrors.email} aria-describedby={fieldErrors.email ? "su-email-error" : undefined} />
             </div>
-          </section>
-        </div>
+            {fieldErrors.email && <p id="su-email-error" role="alert" className="wsa-ferr">{fieldErrors.email}</p>}
 
-        <div className="auth-application-trust mt-4 rounded-[14px] p-3"><ShieldCheck className="h-4 w-4 shrink-0" /><p className="text-[11px] leading-relaxed"><strong>Admin review only.</strong> Your application is submitted automatically; there is no second verification request to send.</p></div>
-        <button type="submit" disabled={loading} className="auth-go mt-3 flex min-h-[52px] w-full items-center justify-center gap-2 rounded-[14px] px-4 text-sm font-bold">
-          {loading ? <Loader2 className="h-5 w-5 animate-spin" /> : <ShieldCheck className="h-5 w-5" />}{loading ? "Encrypting and submitting…" : "Create account & submit application"}{!loading && <ArrowRight className="h-5 w-5" />}
-        </button>
-      </form>
-      <p className="mt-4 text-center text-xs" style={{ color: "var(--a-muted)" }}>Already have an account? <Link href="/signin" className="auth-link font-bold">Sign in</Link></p>
-    </div>
+            <button type="submit" disabled={busy} className="wsa-btn wsa-go">
+              {busy ? <><Spinner /> Sending your code…</> : <>Continue <AuthIcon name="arrow" /></>}
+            </button>
+          </form>
+          <p className="wsa-link">Already a member? <Link href="/signin">Sign in</Link></p>
+        </>
+      )}
+
+      {/* B2 · the email code */}
+      {step === "code" && (
+        <>
+          <button type="button" className="wsa-back" onClick={() => back("contact")}>
+            <AuthIcon name="back" /> Change email or number
+          </button>
+          <AuthStepsBar step={stepNumber} total={3} />
+          <h1 className="wsa-t">Check your email</h1>
+          <p className="wsa-s" id="su-code-help">We sent a 6-digit code to <b>{sent?.destination ?? email}</b></p>
+          <CodeInput id="su-code" value={code} onChange={(v) => { setCode(v); setInvalid(false); setError(""); }}
+            onComplete={verify} disabled={busy} invalid={invalid} describedBy="su-code-help" label="6-digit code from your email" />
+          {error && <p role="alert" className="wsa-err">{error}</p>}
+          {busy && <p className="wsa-muted" role="status">Checking…</p>}
+          <AuthResend seconds={resendIn} onResend={() => void sendCode()} busy={busy} />
+          <p className="wsa-note"><AuthIcon name="mail" /><span>Already have an account? The code we sent signs you in.</span></p>
+        </>
+      )}
+
+      {/* B3 · name + declaration */}
+      {step === "about" && (
+        <>
+          <button type="button" className="wsa-back" onClick={() => back("contact")}><AuthIcon name="back" /> Start again</button>
+          <AuthStepsBar step={stepNumber} total={3} />
+          <h1 className="wsa-t">Almost done</h1>
+          {error && <p role="alert" className="wsa-err">{error}</p>}
+          <form onSubmit={create} noValidate className="wsa-field">
+            <label htmlFor="su-name" className="wsa-lbl">Full name</label>
+            <div className={`wsa-in${fieldErrors.name ? " is-bad" : ""}`}>
+              <AuthIcon name="user" />
+              <input id="su-name" enterKeyHint="done" autoComplete="name" autoFocus autoCapitalize="words" maxLength={80}
+                value={fullName} onChange={(e) => { setFullName(e.target.value); setFieldErrors((f) => ({ ...f, name: undefined })); }}
+                placeholder="As on your ID card" aria-invalid={!!fieldErrors.name} aria-describedby={fieldErrors.name ? "su-name-error" : undefined} />
+            </div>
+            {fieldErrors.name && <p id="su-name-error" role="alert" className="wsa-ferr">{fieldErrors.name}</p>}
+
+            <button type="button" role="checkbox" aria-checked={declared} aria-describedby={fieldErrors.declared ? "su-declare-error" : undefined}
+              className={`wsa-check${declared ? " is-on" : ""}${fieldErrors.declared ? " is-bad" : ""}`}
+              onClick={() => { setDeclared((v) => !v); setFieldErrors((f) => ({ ...f, declared: undefined })); }}>
+              <span className="wsa-bx">{declared && <AuthIcon name="check" />}</span>
+              <span>
+                <b>I am a woman, aged 18 or older</b>
+                <small>By continuing you agree to the Terms and Privacy policy.</small>
+              </span>
+            </button>
+            {fieldErrors.declared && <p id="su-declare-error" role="alert" className="wsa-ferr">{fieldErrors.declared}</p>}
+
+            <button type="submit" disabled={busy} className="wsa-btn wsa-go">
+              {busy ? <><Spinner /> Creating your account…</> : <>Create my account <AuthIcon name="arrow" /></>}
+            </button>
+          </form>
+          <p className="wsa-note"><AuthIcon name="shield" /><span><b>Next:</b> confirm your mobile, then a selfie and ID photo.</span></p>
+        </>
+      )}
+    </AuthShell>
   );
 }

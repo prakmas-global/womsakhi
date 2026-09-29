@@ -22,7 +22,7 @@ import {
   MapPin,
   Pencil,
   MessageSquare,
-  KeyRound,
+  LogOut,
   Activity,
   Ban,
   Trash2,
@@ -43,7 +43,7 @@ import {
 import DonutChart from "@/components/charts/DonutChart";
 import AreaTrend from "@/components/charts/AreaTrend";
 import RouteLoading from "@/components/common/RouteLoading";
-import { apiCreateMember, apiUpdateMember, apiResetMemberPassword, type ApiMember } from "@/lib/api";
+import { apiCreateMember, apiEndMemberSessions, apiUpdateMember, type ApiMember } from "@/lib/api";
 import {
   apiApproveMember,
   apiBulkMemberRegion,
@@ -427,20 +427,24 @@ function MembersScreen() {
     }
   }
 
-  async function resetPasswordFor(m: ApiMember) {
+  async function endSessionsFor(m: ApiMember) {
     const ok = await confirm({
-      title: `Send ${m.full_name} a reset link?`,
-      description: "A single-use link, valid 24 hours, goes to her email. Nobody here sees or sets her password.",
-      confirmLabel: "Send the link",
+      title: `Sign ${m.full_name} out everywhere?`,
+      description: "Every device she is signed in on is signed out now. She signs back in with a code sent to her own email — there is no password to reset, and nobody here sees her code.",
+      confirmLabel: "Sign her out everywhere",
+      danger: true,
     });
     if (!ok) return;
     try {
-      const res = await apiResetMemberPassword(m.id);
-      if (res.delivered) toast.success("Reset link sent", { description: res.message });
-      else toast.error("Link issued but not delivered", { description: res.message });
+      const res = await apiEndMemberSessions(m.id);
+      toast.success(
+        res.sessions_ended === 0 ? `${m.full_name} was not signed in anywhere`
+          : `Signed out of ${res.sessions_ended} device${res.sessions_ended === 1 ? "" : "s"}`,
+        { description: res.message },
+      );
       if (selectedId === m.id) void loadProfile(m.id);
     } catch (err) {
-      toast.error("Could not start a reset", { description: memberError(err) });
+      toast.error("Could not sign her out", { description: memberError(err) });
     }
   }
 
@@ -721,7 +725,7 @@ function MembersScreen() {
                                 {a.canReject && <MenuItem icon={X} onClick={() => askFor("reject", r)}>Reject…</MenuItem>}
                                 {a.canSuspend && <MenuItem icon={Ban} onClick={() => askFor("suspend", r)}>Suspend…</MenuItem>}
                                 {a.canRestore && <MenuItem icon={RotateCcw} onClick={() => askFor("restore", r)}>Restore</MenuItem>}
-                                <MenuItem icon={KeyRound} onClick={() => void resetPasswordFor(r)}>Send reset link</MenuItem>
+                                <MenuItem icon={LogOut} onClick={() => void endSessionsFor(r)}>Sign out everywhere</MenuItem>
                                 <MenuItem icon={MessageSquare} href="/dashboard/messages">Send message</MenuItem>
                                 <MenuItem icon={Trash2} danger onClick={() => askFor("delete", r)}>Delete…</MenuItem>
                               </Menu>
@@ -938,8 +942,8 @@ function MembersScreen() {
                         </button>
                       )}
                       {profile?.account && (
-                        <button onClick={() => void resetPasswordFor(member)} className="flex flex-col items-center gap-1.5 rounded-xl border border-line py-3 text-2xs font-medium text-ink-muted hover:bg-surface-hover">
-                          <KeyRound className="h-4 w-4" /> Reset link
+                        <button onClick={() => void endSessionsFor(member)} className="flex flex-col items-center gap-1.5 rounded-xl border border-line py-3 text-2xs font-medium text-ink-muted hover:bg-surface-hover">
+                          <LogOut className="h-4 w-4" /> Sign out all
                         </button>
                       )}
                       <Link href="/dashboard/messages" className="flex flex-col items-center gap-1.5 rounded-xl border border-line py-3 text-2xs font-medium text-ink-muted hover:bg-surface-hover">

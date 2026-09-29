@@ -103,7 +103,9 @@ class StaffAccountModel:
     def state(doc: dict) -> str:
         if not doc.get("is_active", True):
             return SUSPENDED
-        if not doc.get("hashed_password"):
+        # Invited until she accepts or signs in. `hashed_password` still marks
+        # accounts from before sign-in codes, which were all accepted.
+        if not (doc.get("hashed_password") or doc.get("invite_accepted_at") or doc.get("last_login_at")):
             return INVITED
         return ACTIVE
 

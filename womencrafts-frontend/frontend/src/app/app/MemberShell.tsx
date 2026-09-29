@@ -11,6 +11,8 @@ import { NavHistory } from "@/components/ux/kit";
 import { ChromeProvider } from "@/components/ux/chrome";
 import { ChromeShell } from "@/components/ux/home/ChromeShell";
 import SkipToContent from "@/components/layout/SkipToContent";
+import { Brand } from "@/components/ux/Brand";
+import * as Icons from "@/components/ux/icons";
 import { useAuth } from "@/context/AuthContext";
 import { apiUpdateMeProfile } from "@/lib/member-api";
 import { takePreSignInChoice, useI18n, useT } from "@/i18n";
@@ -43,6 +45,16 @@ import "@/app/ux/mobile.css";
  * So `layout.tsx` is now a server component that fetches both, and this is what
  * it renders. Every guard is unchanged.
  */
+/** Admission states that are still open — she has applied and not been refused. */
+const WAITING = new Set(["pending_email", "pending_documents", "in_review"]);
+
+/** The member screens whose API calls `require_member_account` answers while she waits. */
+const WAITING_ROUTES = ["/app/verify", "/app/phone", "/app/learn", "/app/profile", "/app/settings/language", "/app/welcome"];
+
+function allowedWhileWaiting(pathname: string): boolean {
+  return WAITING_ROUTES.some((r) => pathname === r || pathname.startsWith(`${r}/`));
+}
+
 export default function MemberShell({
   children,
   initialShell,
@@ -61,9 +73,31 @@ export default function MemberShell({
   // otherwise the gate below would bounce her off its own destination.
   const onVerifyScreen = pathname.startsWith("/app/verify");
   const onWelcomeScreen = pathname.startsWith("/app/welcome");
+  const onPhoneScreen = pathname.startsWith("/app/phone");
   const verified = user?.verification_status === "active";
+  /*
+    The verify screen is exempt from the tour redirect for one reason: the
+    moment she is approved while waiting on it, it shows her C6 — "You're in",
+    with the tour and home as two buttons. Both of those lead back through this
+    gate, so the tour is still where "home" sends her until she has done it.
+  */
   const needsOnboarding =
-    verified && user?.onboarding_complete === false && !onWelcomeScreen;
+    verified && user?.onboarding_complete === false && !onWelcomeScreen && !onVerifyScreen;
+  /*
+    Where she may be, by admission state — mirroring the backend, which is the
+    real gate (`require_member_account` vs `require_active_member`):
+      · no mobile number saved → /app/phone first, whatever her state;
+      · waiting (email / documents / review) → her status screen plus the few
+        screens the API serves her: learning, profile, language, the tour;
+      · rejected / suspended → the status screen only.
+    `redirectTo` is null when she is already somewhere she is allowed to be.
+  */
+  const waiting = user ? WAITING.has(user.verification_status) : false;
+  const redirectTo = !user ? null
+    : user.phone_action_required ? (onPhoneScreen ? null : "/app/phone")
+    : verified ? (needsOnboarding ? "/app/welcome" : null)
+    : waiting ? (allowedWhileWaiting(pathname) ? null : "/app/verify")
+    : onVerifyScreen ? null : "/app/verify";
 
   /*
     Her account is the source of truth for language — the cookie only exists so
@@ -117,9 +151,8 @@ export default function MemberShell({
     if (loading) return;
     if (!user) router.replace("/signin");
     else if (!isMember) router.replace("/dashboard");
-    else if (!verified && !onVerifyScreen) router.replace("/app/verify");
-    else if (needsOnboarding) router.replace("/app/welcome");
-  }, [loading, user, isMember, verified, onVerifyScreen, needsOnboarding, router]);
+    else if (redirectTo) router.replace(redirectTo);
+  }, [loading, user, isMember, redirectTo, router]);
 
   /*
     A spinner is the right thing while we are still asking. It is the WRONG
@@ -164,7 +197,7 @@ export default function MemberShell({
 
   // While a redirect is pending, render nothing rather than the destination
   // screen: mounting it would fire data requests we already know will 403.
-  if (!isMember || (!verified && !onVerifyScreen) || needsOnboarding) {
+  if (!isMember || redirectTo) {
     return (
       <div className="ux grid min-h-screen place-items-center px-6">
         <div role="status" className="text-center">
@@ -177,8 +210,45 @@ export default function MemberShell({
 
   // Verification and onboarding run outside the shell — they are full-screen
   // flows, and wrapping them in navigation invites her to skip the gate.
-  const bare = onVerifyScreen || onWelcomeScreen;
-  if (bare) return <div className="ux min-h-screen">{children}</div>;
+  //
+  // Verify and phone are the approved auth screens (Version 11): each draws a
+  // full-page `AuthShell` of its own — photo panel, cream side, logo, card — in
+  // the fixed berry-on-cream palette, so nothing of the app's frame (or its
+  // themed `.ux` canvas) goes around them. The tour keeps the app's canvas.
+  if (onVerifyScreen || onPhoneScreen) return <>{children}</>;
+  if (onWelcomeScreen) return <div className="ux min-h-screen">{children}</div>;
+
+  /*
+    A member still waiting to be admitted gets the few screens she may use
+    WITHOUT the app's navigation, bell, Sakhi and the shell's live counters:
+    every one of those leads to (or polls) something that 403s until she is
+    admitted. One way back to her application instead.
+  */
+  if (waiting) {
+    return (
+      <div className="ux min-h-screen">
+        <SkipToContent />
+        <header className="sticky top-0 z-30 flex items-center gap-3 border-b px-4 py-2.5 backdrop-blur lg:px-8"
+                style={{ background: "color-mix(in srgb, var(--ux-canvas) 92%, transparent)", borderColor: "var(--ux-line)" }}>
+          <Brand size="sm" href={null} tagline={false} />
+          <a href="/app/verify"
+             className="ux-press ms-auto inline-flex min-h-[44px] items-center gap-1.5 rounded-[12px] px-3 text-sm font-semibold"
+             style={{ color: "var(--ux-brand)", background: "var(--ux-tint-pink)" }}>
+            <Icons.ChevronLeft className="h-4 w-4 rtl:rotate-180" strokeWidth={2.4} aria-hidden="true" />
+            My application
+          </a>
+        </header>
+        {/* The shell payload the server already has: without it, screens
+            fall back to their own calls, and some of those 403. */}
+        <ShellProvider initial={initialShell}>
+          <ChromeProvider>
+            {/* ChromeShell normally supplies the page gutter. */}
+            <div className="mx-auto w-full max-w-[1180px] px-4 pb-10 pt-4 lg:px-8 lg:pt-6">{children}</div>
+          </ChromeProvider>
+        </ShellProvider>
+      </div>
+    );
+  }
 
   // Mounted here and nowhere higher: it is behind `require_active_member`, so
   // it belongs inside the gate that has just established she is one. Everything

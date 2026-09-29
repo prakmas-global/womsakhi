@@ -10,7 +10,8 @@ import {
   ReactNode,
 } from "react";
 import { usePathname, useRouter } from "next/navigation";
-import { apiSignIn, apiSignOut, apiSignUp, apiGetSession, AuthPayload, apiErrorMessage, apiRefreshSession } from "@/lib/api";
+import { apiSignOut, apiGetSession, AuthPayload, apiErrorMessage, apiRefreshSession } from "@/lib/api";
+import { homeFor } from "@/lib/auth-api";
 import { useToast } from "@/design-system/feedback/ToastProvider";
 import { WaitScreen } from "@/components/ux/WaitScreen";
 import { useT } from "@/i18n";
@@ -20,13 +21,12 @@ type User = AuthPayload["user"];
 interface AuthContextValue {
   user: User | null;
   loading: boolean;
-  signUp: (
-    full_name: string,
-    email: string,
-    password: string,
-    extra?: { phone?: string; country?: string; locale?: string }
-  ) => Promise<void>;
-  signIn: (email: string, password: string, twoFactorCode?: string) => Promise<void>;
+  /**
+   * Finish any way in — a signup, an email code, an authenticator, a QR scan,
+   * an "open on web" link. The API has already set the cookies; this adopts
+   * the user and walks her to where she belongs (or to `destination`).
+   */
+  completeSignIn: (payload: AuthPayload, destination?: string) => void;
   signOut: () => Promise<void>;
   updateUser: (updated: User) => void;
   /** RBAC — can the signed-in user open this module? */
@@ -183,56 +183,14 @@ export function AuthProvider({
   // Sending every member through `/app` made pending applications flash the
   // home loader before the gate sent them to verification, and made a newly
   // approved member bounce once more before onboarding.
-  const homeFor = (u: User) => {
-    if (u.audience !== "member") return "/dashboard";
-    if (u.verification_status !== "active") return "/app/verify";
-    if (!u.onboarding_complete) return "/app/welcome";
-    return "/app";
-  };
-
-  const signUp = useCallback(
-    async (
-      full_name: string,
-      email: string,
-      password: string,
-      extra: { phone?: string; country?: string; locale?: string } = {}
-    ) => {
-      setHandoff({ kind: "in", torn: false });
-      try {
-        const payload = await apiSignUp(full_name, email, password, extra);
-        persistAuth(payload);
-        setHandoff({ kind: "in", torn: true });
-        // The session cookie was created by a different-origin API response.
-        // A client push can reuse an /app RSC payload prefetched while signed
-        // out, leaving the member shell without its new session until a manual
-        // refresh. A document navigation makes the first app request with the
-        // established cookie and boots user + shell data together.
-        window.location.assign(homeFor(payload.user));
-      } catch (e) {
-        // The form says what went wrong, in the field it went wrong in. A
-        // curtain over that message would hide the only thing worth reading.
-        setHandoff(null);
-        throw e;
-      }
-    },
-    []
-  );
-
-  const signIn = useCallback(
-    async (email: string, password: string, twoFactorCode = "") => {
-      setHandoff({ kind: "in", torn: false });
-      try {
-        const payload = await apiSignIn(email, password, twoFactorCode);
-        persistAuth(payload);
-        setHandoff({ kind: "in", torn: true });
-        window.location.assign(homeFor(payload.user));
-      } catch (e) {
-        setHandoff(null);   // see signUp
-        throw e;
-      }
-    },
-    []
-  );
+  const completeSignIn = useCallback((payload: AuthPayload, destination?: string) => {
+    setHandoff({ kind: "in", torn: false });
+    persistAuth(payload);
+    setHandoff({ kind: "in", torn: true });
+    // A full navigation, not router.push: the server layout reads the new
+    // session cookie and renders the right shell on the first paint.
+    window.location.assign(destination || homeFor(payload.user));
+  }, []);
 
   /**
    * Signing out, said out loud.
@@ -286,8 +244,7 @@ export function AuthProvider({
       value={{
         user,
         loading,
-        signUp,
-        signIn,
+        completeSignIn,
         signOut,
         updateUser,
         canAccess,

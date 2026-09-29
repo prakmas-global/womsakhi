@@ -36,6 +36,10 @@ class VerificationStatus:
     # The only state that may use the member app.
     USABLE = {ACTIVE}
 
+    # Still applying: may read learning content and manage her own profile
+    # while she waits (see `rbac.require_member_account`), nothing social.
+    WAITING = {PENDING_EMAIL, PENDING_DOCUMENTS, IN_REVIEW}
+
     LABELS = {
         PENDING_EMAIL: "Confirm your email",
         PENDING_DOCUMENTS: "Upload your ID",

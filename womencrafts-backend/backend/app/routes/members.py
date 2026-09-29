@@ -913,6 +913,7 @@ async def reject_member(
             {"$set": {
                 "verification_status": VerificationStatus.REJECTED,
                 "rejection_reason": payload.reason,
+                "reapply_after": now + timedelta(days=settings.REAPPLY_AFTER_DAYS),
                 "updated_at": now,
             }},
         )
@@ -927,7 +928,13 @@ async def reject_member(
             }},
         )
         cache.forget_user(str(user["_id"]))
-        await mailer.send(mailer.rejected_email(user.get("full_name", ""), payload.reason), user["email"])
+        await mailer.send(
+            mailer.rejected_email(
+                user.get("full_name", ""), payload.reason,
+                (now + timedelta(days=settings.REAPPLY_AFTER_DAYS)).strftime("%d %b %Y"),
+            ),
+            user["email"],
+        )
 
     doc = await _members().find_one_and_update(
         {"_id": member["_id"]},
@@ -990,55 +997,34 @@ async def delete_member(
 
 
 @router.post(
-    "/{member_id}/reset-password",
+    "/{member_id}/end-sessions",
     response_model=dict,
-    summary="Start a password reset for a member",
+    summary="Sign a member out of every device",
     dependencies=[Depends(require_permission("users.edit"))],
 )
-async def start_password_reset(member_id: str, request: Request, me: dict = Depends(get_current_user)):
+async def end_member_sessions(member_id: str, request: Request, me: dict = Depends(get_current_user)):
     """
-    Staff-initiated password reset.
-
-    We never set a password on someone's behalf and we never reveal one — that
-    would mean a staff member briefly knowing a member's credentials. Instead
-    this issues a single-use, 24-hour link and emails it to her.
+    For an account somebody else may be using. There are no passwords to reset:
+    every sign-in is a code sent to her own email, so ending the sessions that
+    exist is what locks an intruder out. She signs back in with a fresh code.
     """
-    from app.models.verification import EmailTokenModel
+    from app.core import sessions
 
-    db = get_database()
     member = await _member_or_404(member_id)
     require_member_in_scope(member, me)
     user = await _linked_user(member)
     if not user:
-        raise HTTPException(
-            status.HTTP_404_NOT_FOUND, "That member has no sign-in account to reset"
-        )
-
-    # Retire any earlier unused reset link, so only the newest one works.
-    await db[EmailTokenModel.collection_name].delete_many(
-        {"user_id": str(user["_id"]), "purpose": EmailTokenModel.PURPOSE_RESET, "used_at": None}
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "That member has no sign-in account")
+    await _users().update_one(
+        {"_id": user["_id"]},
+        {"$inc": {"token_version": 1}, "$set": {"updated_at": datetime.now(timezone.utc)}},
     )
-    token_doc, raw_token = EmailTokenModel.create_document(
-        str(user["_id"]), EmailTokenModel.PURPOSE_RESET, hours=24
-    )
-    await db[EmailTokenModel.collection_name].insert_one(token_doc)
-
-    url = f"{settings.APP_BASE_URL}/reset-password?token={raw_token}"
-    delivered = await mailer.send(
-        mailer.reset_email(user.get("full_name", ""), url, by_staff=True), user["email"]
-    )
-
+    ended = await sessions.revoke_all(str(user["_id"]), reason="ended_by_staff")
+    cache.forget_user(str(user["_id"]))
     await record(
-        me, "member.reset_password", target=str(member["_id"]),
-        detail=f"Started a password reset for {_name(member)}"
-               + ("" if delivered else " (email could not be delivered)"),
+        me, "member.end_sessions", target=str(member["_id"]),
+        detail=f"Signed {_name(member)} out of every device ({ended} session{'s' if ended != 1 else ''})",
         request=request,
     )
-    return {
-        "message": (
-            f"A reset link has been sent to {user['email']}. It expires in 24 hours."
-            if delivered
-            else f"A reset link was issued for {user['email']}, but email is not set up to deliver it yet."
-        ),
-        "delivered": delivered,
-    }
+    return {"message": f"{_name(member)} has been signed out everywhere. She can sign back in with a code.",
+            "sessions_ended": ended}

@@ -71,9 +71,17 @@ def _module_gated() -> set[str]:
 #: Endpoints that must stay reachable without a role check, and why.
 EXEMPT = {
     # Signed out by definition — this is how you get a session at all.
-    "auth.signup", "auth.signup_application", "auth.signin", "auth.refresh", "auth.session",
-    "auth.get_me", "auth.signout", "auth.signout_everywhere",
-    "auth.forgot_password", "auth.reset_password",
+    "auth.auth_options", "auth.signup_start", "auth.signup_verify", "auth.signup_complete",
+    "auth.signin_start", "auth.signin_verify", "auth.two_factor_verify", "auth.two_factor_enroll",
+    "auth.refresh", "auth.session", "auth.get_me", "auth.signout", "auth.signout_everywhere",
+    # Her own devices and her own mobile number: the object is always the caller.
+    "auth.my_sessions", "auth.end_session", "auth.set_phone", "auth.phone_start",
+    "auth.phone_verify", "auth.phone_firebase", "auth.signin_firebase", "auth.sms_allowance", "auth.phone_later",
+    # The app as her key: signed-out halves are guarded by a nonce or a
+    # one-time code; the app halves by `require_app_session` (members only).
+    "auth_app.create_app_key", "auth_app.signin_with_app_code", "auth_app.qr_start",
+    "auth_app.qr_context", "auth_app.qr_answer", "auth_app.qr_poll",
+    "auth_app.handoff_start", "auth_app.handoff_redeem",
     # She has no account to sign in with yet; the token is the credential.
     "staff.accept_invite",
     # Called by the payment provider, not by a person. Guarded by signature
@@ -84,7 +92,7 @@ EXEMPT = {
     "safety.helplines",
     # Her own account and her own device settings. Both apps use these, and
     # the object they act on is always the caller herself.
-    "users.get_me", "users.update_profile", "users.change_password",
+    "users.get_me", "users.update_profile",
     "verification.my_status", "verification.resend_email",
     "verification.confirm_email", "verification.upload_document",
     "verification.preview_my_document", "verification.delete_my_document",

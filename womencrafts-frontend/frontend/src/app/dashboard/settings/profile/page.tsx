@@ -202,7 +202,7 @@ export default function ProfilePage() {
                   <div className="mt-5 grid grid-cols-1 gap-x-8 gap-y-4 sm:grid-cols-2">
                     <Fact label="Joined" value={formatWhen(account.created_at, false) || "Not recorded"} />
                     <Fact label="Last signed in" value={formatWhen(account.last_login_at) || "Not recorded"} />
-                    <Fact label="Password last changed" value={formatWhen(account.password_changed_at) || "Not recorded"} />
+                    <Fact label="Sign-in" value={account.two_factor.enabled ? "Email code + authenticator" : "Email code (authenticator not set up)"} />
                     <Fact label="Account id" value={<code className="text-xs">{account.id}</code>} />
                     <div className="sm:col-span-2">
                       <p className="text-xs text-ink-subtle">Can open ({account.modules.length} sections)</p>

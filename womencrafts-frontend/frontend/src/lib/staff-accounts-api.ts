@@ -12,14 +12,15 @@
  * her profile, her notification preferences, the platform config. This file is
  * about WHO the staff are and what each may do.
  *
- * ── A password is never chosen for her ──────────────────────────────────────
- * Creating an account issues an invitation, not a password. The raw token
+ * ── Nothing secret is ever chosen for her ───────────────────────────────────
+ * Creating an account issues an invitation, not a password (there are none:
+ * staff sign in with an email code plus an authenticator app). The raw token
  * comes back exactly once, at creation, and is stored only as a digest — so
  * the screen must show it there and then, and say plainly that it will not be
  * shown again.
  */
 
-import { apiClient } from "./api";
+import { apiClient, expected } from "./api";
 
 export type StaffState = "invited" | "active" | "suspended";
 
@@ -91,8 +92,10 @@ export const apiResendInvite = (id: string) =>
     `/staff/${id}/resend`,
   ).then((r) => r.data);
 
-export const apiAcceptInvite = (body: { token: string; password: string }) =>
-  apiClient.post<{ ok: boolean; email: string }>("/staff/accept", body).then((r) => r.data);
+/** No password: accepting just marks the invitation used. She then signs in
+ *  with a code sent to her email and sets up an authenticator on that sign-in. */
+export const apiAcceptInvite = (body: { token: string }) =>
+  apiClient.post<{ ok: boolean; email: string }>("/staff/accept", body, expected()).then((r) => r.data);
 
 export const apiChangeStaffRole = (id: string, role: string) =>
   apiClient.patch<StaffAccount>(`/staff/${id}/role`, { role }).then((r) => r.data);
@@ -119,6 +122,11 @@ export const apiSuspendStaff = (id: string) =>
 export const apiRestoreStaff = (id: string) =>
   apiClient.post<StaffAccount>(`/staff/${id}/restore`).then((r) => r.data);
 
+/** Super Admin: remove someone's authenticator and sign her out everywhere.
+ *  She sets up a new one at her next sign-in. */
+export const apiResetStaffTwoFactor = (id: string) =>
+  apiClient.post<{ message: string }>(`/staff/${id}/two-factor/reset`).then((r) => r.data);
+
 /* ── words the screens share, so they cannot describe a state differently ── */
 
 export const STATE_LABEL: Record<StaffState, string> = {
@@ -135,7 +143,7 @@ export const STATE_TONE: Record<StaffState, "amber" | "emerald" | "rose"> = {
 
 /** What each state actually means, for the row that explains itself. */
 export const STATE_NOTE: Record<StaffState, string> = {
-  invited: "Has not set a password yet and cannot sign in.",
+  invited: "Has not accepted her invitation yet and cannot sign in.",
   active: "Can sign in and use everything her role allows.",
   suspended: "Signed out everywhere and refused at sign-in.",
 };

@@ -39,7 +39,7 @@ export const DIGITAL_STEPS = [
   { id: "d5", label: "Spotting a scam message", mins: 15, done: false,
     note: "The five kinds that reach members most, with real examples" },
   { id: "d6", label: "Keeping your account safe", mins: 15, done: false,
-    note: "Passwords, OTPs, and what to do if you think somebody is in" },
+    note: "Sign-in codes, and what to do if you think somebody is in" },
 ];
 
 /* ── Insurance & Pension ──────────────────────────────────────────────── */

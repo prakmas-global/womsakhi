@@ -109,6 +109,28 @@ async def require_active_member(user: dict = Depends(get_current_user)) -> dict:
     return user
 
 
+async def require_member_account(user: dict = Depends(get_current_user)) -> dict:
+    """
+    A member who is admitted OR still waiting to be — never a refused one.
+
+    While her application is open she may read learning content, set her
+    language and profile, and take the app tour, so the wait is not a blank
+    screen. She still cannot message, post, see other members, join circles or
+    touch money: every one of those stays behind `require_active_member`, so a
+    stranger who has not been checked cannot reach the women who have.
+
+    Rejected and suspended accounts get only their status screen.
+    """
+    from app.models.verification import VerificationStatus  # local: avoids a cycle
+
+    if not is_member(user):
+        raise HTTPException(status.HTTP_403_FORBIDDEN, "This area is for member accounts")
+    state = user.get("verification_status") or VerificationStatus.ACTIVE
+    if state not in VerificationStatus.USABLE | VerificationStatus.WAITING:
+        raise HTTPException(status.HTTP_403_FORBIDDEN, "Your account is not active.")
+    return user
+
+
 async def modules_for_role(name: str) -> list[str]:
     if name == SUPER_ADMIN:
         return list(ALL_MODULES)

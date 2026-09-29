@@ -1,12 +1,11 @@
 from datetime import datetime, timezone
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends
 
 from app.core.deps import get_current_user
-from app.core.security import hash_password, verify_password, hash_password_async, verify_password_async
 from app.db.mongodb import get_database
 from app.models.user import UserModel
-from app.schemas.auth import ChangePasswordRequest, UpdateProfileRequest, UserResponse
+from app.schemas.auth import UpdateProfileRequest, UserResponse
 
 router = APIRouter(prefix="/users", tags=["Account"])
 
@@ -38,29 +37,5 @@ async def update_profile(
     return UserResponse(**UserModel.to_response(updated))
 
 
-@router.put("/me/change-password", status_code=status.HTTP_200_OK)
-async def change_password(
-    payload: ChangePasswordRequest,
-    current_user: dict = Depends(get_current_user),
-):
-    if not await verify_password_async(payload.current_password, current_user["hashed_password"]):
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Current password is incorrect",
-        )
-
-    if payload.current_password == payload.new_password:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="New password must be different from current password",
-        )
-
-    db = get_database()
-    await db[UserModel.collection_name].update_one(
-        {"_id": current_user["_id"]},
-        {"$set": {
-            "hashed_password": await hash_password_async(payload.new_password),
-            "updated_at": datetime.now(timezone.utc),
-        }},
-    )
-    return {"message": "Password updated successfully"}
+# There is no password to change: every sign-in is a one-time code (see
+# routes/auth.py). `/users/me/change-password` was removed with passwords.

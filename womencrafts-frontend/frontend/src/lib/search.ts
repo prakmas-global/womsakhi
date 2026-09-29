@@ -153,7 +153,7 @@ const PAGES: SearchItem[] = [
 
   { id: "pg-settings", title: "Settings", subtitle: "General settings", group: "Settings", kind: "page", href: "/dashboard/settings", icon: Settings, tone: "slate", keywords: ["general", "preferences", "configuration"] },
   { id: "pg-settings-profile", title: "Profile", subtitle: "Your profile & details", group: "Settings", kind: "page", href: "/dashboard/settings/profile", icon: User, tone: "slate", keywords: ["account", "me", "avatar", "personal"] },
-  { id: "pg-settings-security", title: "Security", subtitle: "Password & 2FA", group: "Settings", kind: "page", href: "/dashboard/settings/security", icon: ShieldCheck, tone: "slate", keywords: ["password", "2fa", "privacy", "authentication"] },
+  { id: "pg-settings-security", title: "Security", subtitle: "Authenticator & devices", group: "Settings", kind: "page", href: "/dashboard/settings/security", icon: ShieldCheck, tone: "slate", keywords: ["password", "2fa", "privacy", "authentication"] },
   { id: "pg-settings-notifications", title: "Notification Settings", subtitle: "Email & push preferences", group: "Settings", kind: "page", href: "/dashboard/settings/notifications", icon: Bell, tone: "slate", keywords: ["email", "push", "alerts", "preferences"] },
   { id: "pg-settings-integrations", title: "Integrations", subtitle: "Connected apps", group: "Settings", kind: "page", href: "/dashboard/settings/integrations", icon: Plug, tone: "slate", keywords: ["apps", "api", "webhooks", "connect"] },
   { id: "pg-settings-backup", title: "Backup & Restore", subtitle: "Data backups", group: "Settings", kind: "page", href: "/dashboard/settings/backup", icon: DatabaseBackup, tone: "slate", keywords: ["restore", "export", "data", "snapshot"] },

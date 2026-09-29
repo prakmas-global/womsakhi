@@ -19,7 +19,7 @@ from app.db.mongodb import get_database
 from app.models.enrollment import EnrollmentModel
 from app.models.program import ProgramModel
 from app.models.service import ServiceModel
-from app.routes.me import require_active_member
+from app.core.rbac import require_member_account
 from app.schemas.catalog import CatalogProgram, CatalogService
 
 router = APIRouter(prefix="/catalog", tags=["Member"])
@@ -43,7 +43,7 @@ OPEN_PROGRAM_STATUSES = ["Ongoing", "Upcoming", "Active", "Published", "Running"
 async def list_services(
     q: Optional[str] = Query(None, description="Search name or description"),
     type: Optional[str] = Query(None, description="Filter by service type"),
-    me: dict = Depends(require_active_member),
+    me: dict = Depends(require_member_account),
 ):
     query: dict = {"status": {"$in": OPEN_SERVICE_STATUSES}}
     filtered = False
@@ -67,7 +67,7 @@ async def list_services(
 
 
 @router.get("/services/{service_id}", response_model=CatalogService, summary="One service")
-async def get_service(service_id: str, me: dict = Depends(require_active_member)):
+async def get_service(service_id: str, me: dict = Depends(require_member_account)):
     doc = await get_database()[ServiceModel.collection_name].find_one(
         {"_id": to_object_id(service_id), "status": {"$in": OPEN_SERVICE_STATUSES}}
     )
@@ -80,7 +80,7 @@ async def get_service(service_id: str, me: dict = Depends(require_active_member)
 async def list_programs(
     q: Optional[str] = Query(None, description="Search name or description"),
     category: Optional[str] = Query(None, description="Filter by category"),
-    me: dict = Depends(require_active_member),
+    me: dict = Depends(require_member_account),
 ):
     query: dict = {"status": {"$in": OPEN_PROGRAM_STATUSES}}
     filtered = False
@@ -130,7 +130,7 @@ async def list_programs(
 
 
 @router.get("/programs/{program_id}", response_model=CatalogProgram, summary="One program")
-async def get_program(program_id: str, me: dict = Depends(require_active_member)):
+async def get_program(program_id: str, me: dict = Depends(require_member_account)):
     doc = await get_database()[ProgramModel.collection_name].find_one(
         {"_id": to_object_id(program_id), "status": {"$in": OPEN_PROGRAM_STATUSES}}
     )

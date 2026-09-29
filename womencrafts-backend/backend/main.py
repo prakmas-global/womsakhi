@@ -20,6 +20,7 @@ from app.db.indexes import ensure_indexes
 from app.db.mongodb import connect_db, close_db
 from app.routes.public import router as public_router
 from app.routes.auth import router as auth_router
+from app.routes.auth_app import router as auth_app_router
 from app.routes.users import router as users_router
 from app.routes.members import router as members_router
 from app.routes.roles import router as roles_router
@@ -279,6 +280,7 @@ def _mod(key: str):
 
 app.include_router(public_router, prefix="/api/v1")   # no session required
 app.include_router(auth_router, prefix="/api/v1")
+app.include_router(auth_app_router, prefix="/api/v1")  # the app as her key to the web
 app.include_router(users_router, prefix="/api/v1")  # /users/me — own profile
 # A member's own threads. Unguarded by module RBAC on purpose: these are
 # hers, and every query inside is scoped to her session.
