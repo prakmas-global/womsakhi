@@ -1,0 +1,52 @@
+/* ── S1 splash: the logo reveal on its own night-blue, app-wide ──
+   Hidden unless the pre-paint check marks <html data-app-splash="on">.
+   Plays in full for everyone, reduced motion included (the owner's call:
+   a slow logo reveal, not a moving interface). */
+.app-splash {
+  --u: clamp(1.2px, calc(100vw / 258), 1.5px);
+  --serif: var(--wsa-serif), Fraunces, Georgia, serif;
+  display: none;
+  position: fixed; inset: 0; z-index: 2147483000;
+  place-items: center;
+  background: #121724;
+}
+html[data-app-splash="on"] .app-splash,
+html[data-app-splash="leaving"] .app-splash { display: grid; }
+html[data-app-splash="leaving"] .app-splash { animation: app-splash-out .32s ease forwards; }
+@keyframes app-splash-out { to { opacity: 0; visibility: hidden; pointer-events: none; } }
+/* No page scroll behind it while it plays. */
+html[data-app-splash="on"] { overflow: hidden; }
+
+.app-splash-vid {
+  width: calc(240 * var(--u)); height: calc(240 * var(--u)); margin-top: calc(-60 * var(--u));
+  -webkit-mask: linear-gradient(90deg, transparent, #000 15%, #000 85%, transparent), linear-gradient(transparent, #000 12%, #000 88%, transparent);
+  -webkit-mask-composite: source-in;
+  mask: linear-gradient(90deg, transparent, #000 15%, #000 85%, transparent), linear-gradient(transparent, #000 12%, #000 88%, transparent);
+  mask-composite: intersect;
+}
+.app-splash-vid video { display: block; width: 100%; height: 100%; object-fit: contain; background: #121724; }
+.app-splash-foot { position: absolute; left: 0; right: 0; bottom: calc(env(safe-area-inset-bottom, 0px) + 70 * var(--u)); display: grid; justify-items: center; gap: calc(16 * var(--u)); }
+.app-splash-tagline { display: flex; align-items: center; gap: calc(6 * var(--u)); font: italic 500 calc(11.5 * var(--u)) var(--serif); color: #f5cb96; letter-spacing: .01em; white-space: nowrap; }
+.app-splash-tagline::before, .app-splash-tagline::after { content: ""; width: calc(12 * var(--u)); height: 1px; background: linear-gradient(90deg, rgba(245,203,150,0), #d99362); }
+.app-splash-tagline::after { transform: scaleX(-1); }
+.app-splash-loader { width: calc(72 * var(--u)); height: 2px; border-radius: 2px; background: rgba(245,203,150,.18); overflow: hidden; position: relative; }
+.app-splash-loader::after { content: ""; position: absolute; inset: 0; width: 40%; border-radius: 2px; background: linear-gradient(90deg, #c8894f, #f5cb96); left: 0; }
+
+@media (min-width: 640px) { .app-splash { --u: 1.5px; } }
+@media (min-width: 1024px) {
+  .app-splash-vid { width: calc(320 * var(--u)); height: calc(320 * var(--u)); margin-top: calc(-40 * var(--u)); }
+  .app-splash-foot { bottom: calc(64 * var(--u)); gap: calc(18 * var(--u)); }
+  .app-splash-tagline { font-size: calc(17 * var(--u)); gap: calc(8 * var(--u)); }
+  .app-splash-tagline::before, .app-splash-tagline::after { width: calc(16 * var(--u)); }
+}
+/* Sideways phones: the reveal fits the height, the tagline stays clear of it. */
+@media (orientation: landscape) and (max-height: 540px) and (max-width: 1023.98px) {
+  .app-splash { --u: 1.3px; }
+  .app-splash-vid { width: 56svh; height: 56svh; margin-top: -14svh; }
+  .app-splash-foot { bottom: calc(env(safe-area-inset-bottom, 0px) + 9svh); gap: calc(10 * var(--u)); }
+}
+/* Only the loader bar moves, and only for those who haven't asked for less. */
+@media (prefers-reduced-motion: no-preference) {
+  .app-splash-loader::after { animation: app-splash-load 1.6s ease-in-out infinite; }
+  @keyframes app-splash-load { 0% { left: -40%; } 100% { left: 100%; } }
+}

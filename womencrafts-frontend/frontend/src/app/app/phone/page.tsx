@@ -3,6 +3,8 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { ArrowRight, Loader, Smartphone } from "lucide-react";
+import { Controller, useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
 
 import { apiGetMe } from "@/lib/api";
 import {
@@ -13,6 +15,16 @@ import { useAuth } from "@/context/AuthContext";
 import { CodeInput, useCountdown } from "@/components/auth/CodeInput";
 import { AuthShell } from "@/components/auth-shell";
 import { BackLink, useBackStep } from "@/components/auth-cards";
+import { PREVIEW_MOBILE, PREVIEW_OPTIONS, PREVIEW_STATES, readPreview, type PhonePreview } from "@/lib/auth-preview";
+import { PreviewPill } from "@/components/auth-shell/PreviewPill";
+import { phoneSchema } from "@/lib/validation";
+
+/**
+ * The local preview switch (see lib/auth-preview), written out here rather
+ * than imported: the build replaces NODE_ENV in this file, so every branch it
+ * guards is stripped from production. An imported constant is not.
+ */
+const AUTH_PREVIEW = process.env.NODE_ENV !== "production";
 
 /**
  * Her mobile number: add it, and — once SMS codes are switched on — confirm it.
@@ -41,7 +53,12 @@ export default function PhonePage() {
   /** undefined while loading, null when the settings could not be fetched. */
   const [options, setOptions] = useState<AuthOptions | null | undefined>(undefined);
   const [step, setStep] = useState<Step>("enter");
+  /** The number last saved / sent a code (the field itself lives in `form`). */
   const [digits, setDigits] = useState("");
+  // The error shows when she leaves the field or presses submit, and clears as
+  // soon as the number is right (lib/validation).
+  const form = useForm({ resolver: zodResolver(phoneSchema), mode: "onTouched", reValidateMode: "onChange", defaultValues: { mobile: "" } });
+  const fieldError = form.formState.errors.mobile?.message;
   const [code, setCode] = useState("");
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
@@ -51,26 +68,44 @@ export default function PhonePage() {
   const confirmation = useRef<SmsConfirmation | null>(null);
   /** The number the last code went to — back on the number step, the same number goes straight back to its code. */
   const sentTo = useRef("");
+  /** Local-only `?preview=`: fixtures instead of the API (see lib/auth-preview). */
+  const [preview, setPreview] = useState<PhonePreview | null>(null);
 
   // Firebase sends and checks its own SMS in the browser; the other providers
   // (Brevo, MSG91) are sent and checked by our server.
   const viaFirebase = !!options?.phone_codes && !!options.firebase;
   const smsOn = !!options?.phone_codes;
   const locale = user?.locale || "en";
-  const ready = digits.length === 10;
 
   useEffect(() => {
+    if (AUTH_PREVIEW) {
+      const p = readPreview(PREVIEW_STATES.phone);
+      if (p) {
+        const t = window.setTimeout(() => {
+          setPreview(p);
+          setOptions(PREVIEW_OPTIONS);
+          if (p === "enter") return;
+          setDigits(PREVIEW_MOBILE);
+          form.setValue("mobile", PREVIEW_MOBILE);
+          if (p === "confirm") { setResendIn(90); setStep("confirm"); }
+          else { setSmsOut(true); setError("We can't send SMS codes right now. You can carry on and confirm your number tomorrow."); }
+        });
+        return () => window.clearTimeout(t);
+      }
+    }
     apiAuthOptions().then(setOptions).catch(() => setOptions(null));
-  }, []);
+  }, [setResendIn, form]);
 
   const finish = useCallback(async () => {
+    if (AUTH_PREVIEW && preview) return;
     const fresh = await apiGetMe();
     updateUser(fresh);
     router.replace(homeFor(fresh));
-  }, [router, updateUser]);
+  }, [router, updateUser, preview]);
 
   const sendSms = useCallback(async (phoneE164: string) => {
     if (!options?.phone_codes) return;
+    if (AUTH_PREVIEW && preview) { setResendIn(options.resend_seconds || 90); setCode(""); setInvalid(false); setStep("confirm"); return; }
     setError("");
     setBusy(true);
     try {
@@ -96,15 +131,17 @@ export default function PhonePage() {
     } finally {
       setBusy(false);
     }
-  }, [options, setResendIn, locale]);
+  }, [options, setResendIn, locale, preview]);
 
   // Already has a number but it isn't confirmed, and SMS is on: go straight to confirming it.
   useEffect(() => {
     if (!smsOn || !user?.phone || user.phone_verified || step !== "enter" || busy) return;
     // Only into an empty field: coming back from the code step keeps what she typed.
-    const t = window.setTimeout(() => { setDigits((d) => d || user.phone.replace(/^\+91/, "")); });
+    const t = window.setTimeout(() => {
+      if (!form.getValues("mobile")) form.setValue("mobile", user.phone.replace(/^\+91/, ""));
+    });
     return () => window.clearTimeout(t);
-  }, [smsOn, user, step, busy]);
+  }, [smsOn, user, step, busy, form]);
 
   /*
     The code step is its own history entry: the phone's back button — and
@@ -112,9 +149,8 @@ export default function PhonePage() {
   */
   const backToNumber = useBackStep(step === "confirm", () => { setStep("enter"); setError(""); setCode(""); }, "step", "code");
 
-  async function save(e?: React.FormEvent) {
-    e?.preventDefault();
-    if (!ready || busy || options === undefined) return;
+  async function save({ mobile }: { mobile: string }) {
+    if (busy || options === undefined) return;
     // Without the settings we cannot tell whether to send an SMS; saving blind
     // would bounce her straight back here with no word why.
     if (options === null) {
@@ -123,7 +159,9 @@ export default function PhonePage() {
       return;
     }
     setError("");
-    const phone = `+91${digits}`;
+    setDigits(mobile);
+    const phone = `+91${mobile}`;
+    if (AUTH_PREVIEW && preview) { await sendSms(phone); return; }
     // She went back, left the number as it was, and the code already sent is still good.
     if (smsOn && sentTo.current === phone && resendIn > 0) { setStep("confirm"); return; }
     setBusy(true);
@@ -137,15 +175,17 @@ export default function PhonePage() {
       await finish();
     } catch (err) {
       const problem = authError(err, "Could not save your number. Please try again.");
-      setError(problem.code === "phone_taken"
-        ? "This number is already used by another account. Please use a different number."
-        : problem.message);
+      if (problem.code === "phone_taken") {
+        form.setError("mobile", { type: "server", message: "This number is already used by another account. Please use a different number." }, { shouldFocus: true });
+      } else {
+        setError(problem.message);
+      }
       setBusy(false);
     }
   }
 
   const confirm = useCallback(async (value: string) => {
-    if (busy || value.length !== 6 || (viaFirebase && !confirmation.current)) return;
+    if (busy || value.length !== 6 || (AUTH_PREVIEW && preview) || (viaFirebase && !confirmation.current)) return;
     setError("");
     setInvalid(false);
     setBusy(true);
@@ -162,7 +202,7 @@ export default function PhonePage() {
       setError(problem.status ? problem.message : smsErrorMessage(err));
       setBusy(false);
     }
-  }, [busy, finish, viaFirebase]);
+  }, [busy, finish, viaFirebase, preview]);
 
   const shown = `+91 ${digits.replace(/(\d{5})(\d{5})/, "$1 $2")}`;
   const m = Math.floor(resendIn / 60);
@@ -171,7 +211,7 @@ export default function PhonePage() {
   return (
     <AuthShell photo="join" caption={CAPTION} screen="b4" flow="member-join">
       {step === "enter" ? (
-        <form onSubmit={save} noValidate className="ac">
+        <form onSubmit={(e) => void form.handleSubmit(save)(e)} noValidate className="ac">
           <h1 className="ac-t">{user?.phone && smsOn ? "Confirm your mobile" : "Add your mobile number"}</h1>
           <p className="ac-s">
             We use it to keep your account safe. We never share it.
@@ -179,28 +219,32 @@ export default function PhonePage() {
           </p>
 
           <label className="ac-lbl" htmlFor="phone-number">Mobile number</label>
-          <div className={`ac-phone${error ? " bad" : ""}`}>
+          <div className={`ac-phone${error || fieldError ? " bad" : ""}`}>
             <span className="cc"><span className="ac-flag" aria-hidden />+91</span>
-            <input
-              id="phone-number"
-              value={digits.replace(/^(\d{5})(\d)/, "$1 $2")}
-              onChange={(e) => { setDigits(e.target.value.replace(/\D/g, "").slice(0, 10)); setError(""); }}
-              type="tel" inputMode="numeric" autoComplete="tel-national" enterKeyHint="send" maxLength={11}
-              placeholder="98765 43210"
-              aria-invalid={Boolean(error)}
-              aria-describedby={error ? "phone-error" : undefined}
-            />
+            <Controller name="mobile" control={form.control} render={({ field }) => (
+              <input
+                id="phone-number"
+                ref={field.ref} name={field.name} onBlur={field.onBlur}
+                value={field.value.replace(/^(\d{5})(\d)/, "$1 $2")}
+                onChange={(e) => { field.onChange(e.target.value.replace(/\D/g, "").slice(0, 10)); setError(""); }}
+                type="tel" inputMode="numeric" autoComplete="tel-national" enterKeyHint="send" maxLength={11}
+                placeholder="98765 43210"
+                aria-invalid={Boolean(error || fieldError)}
+                aria-describedby={[fieldError && "phone-number-error", error && "phone-error"].filter(Boolean).join(" ") || undefined}
+              />
+            )} />
           </div>
+          {fieldError && <p id="phone-number-error" role="alert" className="ac-err">{fieldError}</p>}
           {error && <p id="phone-error" role="alert" className="ac-err">{error}</p>}
 
-          <button type="submit" className="ac-btn ac-go" disabled={!ready || smsOut || busy || options === undefined}>
+          <button type="submit" className="ac-btn ac-go" disabled={smsOut || busy || options === undefined}>
             {busy ? <Loader className="ac-spin" aria-hidden /> : null}
             {smsOn ? "Send code by SMS" : "Save and continue"}
             {!busy && <ArrowRight aria-hidden />}
           </button>
           {smsOut && (
             <button type="button" className="ac-btn ac-soft"
-              onClick={() => { void apiPhoneLater().then(finish).catch(() => setError("Please try again in a moment.")); }}>
+              onClick={() => { if (AUTH_PREVIEW && preview) return; void apiPhoneLater().then(finish).catch(() => setError("Please try again in a moment.")); }}>
               Carry on — confirm tomorrow <ArrowRight aria-hidden />
             </button>
           )}
@@ -226,6 +270,7 @@ export default function PhonePage() {
           <div id={RECAPTCHA_ID} />
         </div>
       )}
+      {AUTH_PREVIEW && <PreviewPill state={preview} />}
     </AuthShell>
   );
 }

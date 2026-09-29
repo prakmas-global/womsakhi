@@ -1,5 +1,14 @@
 import { NextRequest, NextResponse } from "next/server";
 
+import { PREVIEW_ROUTE_STATES } from "@/lib/auth-preview";
+
+/**
+ * The local preview switch (see lib/auth-preview), written out here rather
+ * than imported: the build replaces NODE_ENV in this file, so every branch it
+ * guards is stripped from production. An imported constant is not.
+ */
+const AUTH_PREVIEW = process.env.NODE_ENV !== "production";
+
 /**
  * Route guard + audience routing + keeping a month-long session alive.
  *
@@ -108,6 +117,14 @@ function withCookies(response: NextResponse, setCookies: string[]): NextResponse
 
 export async function proxy(request: NextRequest) {
   const { pathname, search } = request.nextUrl;
+
+  // Local development only: `?preview=` draws an auth screen from fixtures
+  // (see lib/auth-preview), so it needs no session and must not be redirected.
+  // `AUTH_PREVIEW` is false in a production build and this is stripped.
+  if (AUTH_PREVIEW && PREVIEW_ROUTE_STATES[pathname]?.includes(request.nextUrl.searchParams.get("preview") ?? "")) {
+    return NextResponse.next();
+  }
+
   let token = request.cookies.get("access_token")?.value;
   let setCookies: string[] = [];
 

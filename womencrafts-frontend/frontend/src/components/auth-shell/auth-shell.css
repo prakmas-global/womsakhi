@@ -1265,6 +1265,10 @@ html:has(body .wsa), body:has(.wsa) { background: #fcf8f6; }
 }
 .wsa-phone input::placeholder { color: #7e6975; opacity: 1; font-weight: 500; }
 .wsa-ferr { margin: calc(-4 * var(--u)) 0 0; font-size: calc(10.5 * var(--u)); color: #b4233a; }
+/* A field's hint ("Did you mean …?"): placed like a field error, but not red — it never blocks. */
+.wsa .wsa-hint { color: #6d6268; overflow-wrap: anywhere; }
+.wsa .wsa-hint .wsa-inline { padding: 4px 0; min-height: 24px; text-align: left; font: inherit; color: inherit; font-weight: 500; }
+.wsa .wsa-hint .wsa-inline b { color: #9b1d50; font-weight: 700; }
 
 .wsa-btn {
   width: 100%; height: calc(46 * var(--u)); min-height: 44px; flex: none;
@@ -1417,59 +1421,6 @@ html:has(body .wsa), body:has(.wsa) { background: #fcf8f6; }
 .wsa .auth-code-cell.is-filled { background: #fbf1f4; border-color: #e2c3cf; }
 .wsa .auth-code-input:focus + .auth-code-cells .auth-code-cell.is-active { border-color: #9b1d50; box-shadow: 0 0 0 3px rgba(155,29,80,.13); }
 .wsa .auth-code.is-invalid .auth-code-cell { border-color: #b4233a; background: #fdecef; color: #b4233a; }
-
-/* ── splash (S1 video · S1b light) ── */
-.wsa-splash {
-  position: fixed; inset: 0; z-index: 100; display: grid; place-items: center; cursor: pointer;
-  animation: wsa-splash-out .32s ease 2.5s forwards;
-}
-html[data-wsa-splash="seen"] .wsa-splash { display: none; }
-.wsa-splash.is-leaving { animation: wsa-splash-out .32s ease forwards; }
-@keyframes wsa-splash-out { to { opacity: 0; visibility: hidden; pointer-events: none; } }
-.wsa-splash-video { background: #121724; }
-.wsa-splash-vid {
-  width: calc(240 * var(--u)); height: calc(240 * var(--u)); margin-top: calc(-60 * var(--u));
-  -webkit-mask: linear-gradient(90deg, transparent, #000 15%, #000 85%, transparent), linear-gradient(transparent, #000 12%, #000 88%, transparent);
-  -webkit-mask-composite: source-in;
-  mask: linear-gradient(90deg, transparent, #000 15%, #000 85%, transparent), linear-gradient(transparent, #000 12%, #000 88%, transparent);
-  mask-composite: intersect;
-}
-.wsa-splash-vid video { display: block; width: 100%; height: 100%; object-fit: contain; background: #121724; }
-.wsa-splash-foot { position: absolute; left: 0; right: 0; bottom: calc(env(safe-area-inset-bottom, 0px) + 70 * var(--u)); display: grid; justify-items: center; gap: calc(16 * var(--u)); }
-.wsa-tagline { display: flex; align-items: center; gap: calc(6 * var(--u)); font: italic 500 calc(11.5 * var(--u)) var(--serif); color: #f5cb96; letter-spacing: .01em; white-space: nowrap; }
-.wsa-tagline::before, .wsa-tagline::after { content: ""; width: calc(12 * var(--u)); height: 1px; background: linear-gradient(90deg, rgba(245,203,150,0), #d99362); }
-.wsa-tagline::after { transform: scaleX(-1); }
-.wsa-loader { width: calc(72 * var(--u)); height: 2px; border-radius: 2px; background: rgba(245,203,150,.18); overflow: hidden; position: relative; }
-.wsa-loader::after { content: ""; position: absolute; inset: 0; width: 40%; border-radius: 2px; background: linear-gradient(90deg, #c8894f, #f5cb96); left: 0; }
-.wsa-splash-light { background: #fffafd; }
-.wsa-splash-light .wsa-loader::after { background: linear-gradient(90deg, #a92c62, #d99362); }
-.wsa-splash-stack { display: grid; justify-items: center; gap: calc(26 * var(--u)); transform: translateY(-4%); }
-.wsa-splash-lock { width: calc(244 * var(--u)); height: auto; }
-.wsa-splash-gif { width: calc(196 * var(--u)); height: auto; }
-@media (min-width: 1024px) {
-  .wsa-splash-vid { width: calc(320 * var(--u)); height: calc(320 * var(--u)); margin-top: calc(-40 * var(--u)); }
-  .wsa-splash-foot { bottom: calc(64 * var(--u)); gap: calc(18 * var(--u)); }
-  .wsa-tagline { font-size: calc(17 * var(--u)); gap: calc(8 * var(--u)); }
-  .wsa-tagline::before, .wsa-tagline::after { width: calc(16 * var(--u)); }
-  .wsa-splash-lock { width: calc(392 * var(--u)); }
-  .wsa-splash-gif { width: calc(228 * var(--u)); }
-}
-@media (prefers-reduced-motion: no-preference) {
-  .wsa-loader::after { animation: wsa-load 1.6s ease-in-out infinite; }
-  @keyframes wsa-load { 0% { left: -40%; } 100% { left: 100%; } }
-}
-/* Sideways phones: the reveal fits the height, the tagline stays clear of it. */
-@media (orientation: landscape) and (max-height: 540px) and (max-width: 1023.98px) {
-  .wsa-splash-vid { width: 56svh; height: 56svh; margin-top: -14svh; }
-  .wsa-splash-foot { bottom: calc(env(safe-area-inset-bottom, 0px) + 9svh); gap: calc(10 * var(--u)); }
-}
-/* Reduced motion: the final frame (the poster), held for 600 ms. */
-@media (prefers-reduced-motion: reduce) {
-  .wsa-splash { animation-delay: .6s; animation-duration: .01s; }
-  .wsa-splash.is-leaving { animation-delay: 0s; }
-  .wsa-splash-vid video { visibility: hidden; }
-  .wsa-splash-vid { background: #121724 url(/womsakhi-reveal.jpg) center / contain no-repeat; }
-}
 
 /* only where it can work: "open in your authenticator app" on a phone */
 @media (min-width: 1024px) { .wsa-only-phone { display: none; } }

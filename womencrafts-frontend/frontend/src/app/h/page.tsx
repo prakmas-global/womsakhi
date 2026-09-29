@@ -7,6 +7,15 @@ import { ArrowRight, Loader2 } from "lucide-react";
 import { apiHandoffRedeem, homeFor } from "@/lib/auth-api";
 import { AuthShell } from "@/components/auth-shell";
 import "@/components/auth-cards";
+import { PREVIEW_STATES, readPreview, type HandoffPreview } from "@/lib/auth-preview";
+import { PreviewPill } from "@/components/auth-shell/PreviewPill";
+
+/**
+ * The local preview switch (see lib/auth-preview), written out here rather
+ * than imported: the build replaces NODE_ENV in this file, so every branch it
+ * guards is stripped from production. An imported constant is not.
+ */
+const AUTH_PREVIEW = process.env.NODE_ENV !== "production";
 
 /**
  * "Open on web" — the app hands her over to the website already signed in.
@@ -34,8 +43,17 @@ function redeemOnce(): Promise<string> {
 
 export default function HandoffPage() {
   const [failed, setFailed] = useState(false);
+  /** Local-only `?preview=`: no code is redeemed (see lib/auth-preview). */
+  const [preview, setPreview] = useState<HandoffPreview | null>(null);
 
   useEffect(() => {
+    if (AUTH_PREVIEW) {
+      const p = readPreview(PREVIEW_STATES.handoff);
+      if (p) {
+        const t = window.setTimeout(() => { setPreview(p); setFailed(p === "expired"); });
+        return () => window.clearTimeout(t);
+      }
+    }
     let alive = true;
     redeemOnce().then(
       (home) => window.location.assign(home),
@@ -60,6 +78,7 @@ export default function HandoffPage() {
           </div>
         )}
       </div>
+      {AUTH_PREVIEW && <PreviewPill state={preview} />}
     </AuthShell>
   );
 }

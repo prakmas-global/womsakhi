@@ -4,7 +4,7 @@ import { AuthShell } from "@/components/auth-shell";
  *  screen replaces it without a jump. */
 export default function Loading() {
   return (
-    <AuthShell photo="signin" splash={false}>
+    <AuthShell photo="signin">
       <p className="wsa-muted" role="status" style={{ padding: "2rem 0" }}>Loading…</p>
     </AuthShell>
   );

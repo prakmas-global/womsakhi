@@ -1,12 +1,21 @@
 "use client";
 
-import { Suspense, useState } from "react";
+import { Suspense, useEffect, useState } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 
 import { apiAcceptInvite } from "@/lib/staff-accounts-api";
 import { memberError } from "@/lib/member-api";
 import { AuthIcon, AuthShell, STAFF_CAPTION, Spinner, StaffAside } from "@/components/auth-shell";
+import { PREVIEW_EMAIL, PREVIEW_STATES, readPreview, type InvitePreview } from "@/lib/auth-preview";
+import { PreviewPill } from "@/components/auth-shell/PreviewPill";
+
+/**
+ * The local preview switch (see lib/auth-preview), written out here rather
+ * than imported: the build replaces NODE_ENV in this file, so every branch it
+ * guards is stripped from production. An imported constant is not.
+ */
+const AUTH_PREVIEW = process.env.NODE_ENV !== "production";
 
 /**
  * Where a staff invitation lands.
@@ -35,14 +44,31 @@ function Shell({ children }: { children: React.ReactNode }) {
 }
 
 function Accept() {
-  const token = (useSearchParams().get("token") ?? "").trim();
+  const realToken = (useSearchParams().get("token") ?? "").trim();
 
   const [done, setDone] = useState(false);
   const [email, setEmail] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
+  /** Local-only `?preview=`: fixtures instead of the API (see lib/auth-preview). */
+  const [preview, setPreview] = useState<InvitePreview | null>(null);
+  useEffect(() => {
+    if (!AUTH_PREVIEW) return;
+    const p = readPreview(PREVIEW_STATES.invite);
+    if (!p) return;
+    const t = window.setTimeout(() => {
+      setPreview(p);
+      if (p === "invalid") setError("This invitation is no longer valid");
+      if (p === "accepted") { setEmail(PREVIEW_EMAIL); setDone(true); }
+    });
+    return () => window.clearTimeout(t);
+  }, []);
+  const token = AUTH_PREVIEW && preview ? (preview === "incomplete" ? "" : "preview-token") : realToken;
+  const pill = AUTH_PREVIEW ? <PreviewPill state={preview} /> : null;
+
   const accept = async () => {
+    if (AUTH_PREVIEW && preview) { setEmail(PREVIEW_EMAIL); setDone(true); return; }
     setError("");
     setLoading(true);
     try {
@@ -67,6 +93,7 @@ function Accept() {
           address. Ask whoever invited you to send a fresh one.
         </p>
         <Link href="/signin" className="wsa-btn wsa-go">Go to sign in <AuthIcon name="arrow" /></Link>
+        {pill}
       </Shell>
     );
   }
@@ -84,6 +111,7 @@ function Accept() {
         <Link href={email ? `/signin?email=${encodeURIComponent(email)}` : "/signin"} className="wsa-btn wsa-go">
           Sign in <AuthIcon name="arrow" />
         </Link>
+        {pill}
       </Shell>
     );
   }
@@ -101,6 +129,7 @@ function Accept() {
         {loading ? <><Spinner /> Accepting…</> : <>Accept invitation <AuthIcon name="arrow" /></>}
       </button>
       <p className="wsa-link">Already accepted? <Link href="/signin">Sign in</Link></p>
+      {pill}
     </Shell>
   );
 }

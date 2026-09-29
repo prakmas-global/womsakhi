@@ -7,7 +7,6 @@ import { getImageProps } from "next/image";
 import { rememberPreSignInChoice, useI18n } from "@/i18n";
 import { authSans, authSerif } from "./fonts";
 import { AuthIcon, type AuthIconName } from "./icons";
-import { Splash } from "./Splash";
 import { websiteUrl } from "@/lib/site";
 import "./auth-shell.css";
 
@@ -257,7 +256,6 @@ export function AuthShell({
   showTrust = false,
   tag,
   aside,
-  splash = true,
   screen,
   flow,
 }: {
@@ -270,8 +268,6 @@ export function AuthShell({
   tag?: string;
   /** Plain panel only: extra content under the caption on the web (feature rows). */
   aside?: ReactNode;
-  /** Loading and error states pass false so they never start the splash. */
-  splash?: boolean;
   /** Stable visual hook for a screen-specific composition. It never affects auth state or behaviour. */
   screen?: string;
   /** Shared visual family for screens that use the same responsive shell. */
@@ -296,8 +292,6 @@ export function AuthShell({
       data-flow={flow}
       style={vars}
     >
-      {splash && <Splash />}
-
       {plain ? (
         <>
           <header className="wsa-top">

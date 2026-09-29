@@ -23,6 +23,15 @@ import { useAuth } from "@/context/AuthContext";
 import { AuthShell } from "@/components/auth-shell";
 import { BackLink, CAMERA_PHOTO, SignOutLink, useBackStep } from "@/components/auth-cards";
 import { useI18n } from "@/i18n";
+import { PREVIEW_STATES, PREVIEW_THUMBS, previewVerification, readPreview, type VerifyPreview } from "@/lib/auth-preview";
+import { PreviewPillFromUrl } from "@/components/auth-shell/PreviewPill";
+
+/**
+ * The local preview switch (see lib/auth-preview), written out here rather
+ * than imported: the build replaces NODE_ENV in this file, so every branch it
+ * guards is stripped from production. An imported constant is not.
+ */
+const AUTH_PREVIEW = process.env.NODE_ENV !== "production";
 
 /**
  * Verify — her application, from first photo to "you're in" (approved screens
@@ -119,7 +128,19 @@ function useNow(): number {
 
 // ── the screen ───────────────────────────────────────────────────────────────
 
+/** Local-only `?preview=<state>` (see lib/auth-preview); always null in production. */
+const verifyPreview = () => (AUTH_PREVIEW ? readPreview(PREVIEW_STATES.verify) : null);
+
 export default function VerifyPage() {
+  return (
+    <>
+      <VerifyScreen />
+      {AUTH_PREVIEW && <PreviewPillFromUrl allowed={PREVIEW_STATES.verify} />}
+    </>
+  );
+}
+
+function VerifyScreen() {
   const { user, signOut, updateUser } = useAuth();
   const { locale } = useI18n();
   const router = useRouter();
@@ -131,6 +152,7 @@ export default function VerifyPage() {
   const [justSent, setJustSent] = useState(false);
   /** Approved while she was on this screen — the lotus, not a silent jump. */
   const [welcomed, setWelcomed] = useState(false);
+  const [preview, setPreview] = useState<VerifyPreview | null>(null);
 
   /*
     Kept by hand rather than with `useResource`: that hook resets to its
@@ -140,6 +162,7 @@ export default function VerifyPage() {
   const load = useCallback(async () => {
     // A refresh must reach the server: the shared client holds GETs for 10s,
     // and uploads go through a separate client that does not clear that hold.
+    if (AUTH_PREVIEW && verifyPreview()) return null;
     invalidateReads();
     try {
       const s = await apiMyVerification();
@@ -153,6 +176,17 @@ export default function VerifyPage() {
   }, []);
 
   useEffect(() => {
+    if (AUTH_PREVIEW) {
+      const p = verifyPreview();
+      if (p) {
+        const t = window.setTimeout(() => {
+          setPreview(p);
+          setStatus(previewVerification(p));
+          if (p === "approved") setWelcomed(true);
+        });
+        return () => window.clearTimeout(t);
+      }
+    }
     let alive = true;
     apiMyVerification()
       .then((s) => { if (alive) setStatus(s); })
@@ -170,6 +204,7 @@ export default function VerifyPage() {
   // back to the tab — so approval appears without her pressing anything.
   const state = status?.status;
   useEffect(() => {
+    if (AUTH_PREVIEW && verifyPreview()) return;
     const refresh = () => { if (document.visibilityState !== "hidden") void load(); };
     window.addEventListener("focus", refresh);
     document.addEventListener("visibilitychange", refresh);
@@ -192,7 +227,7 @@ export default function VerifyPage() {
     forward — rather than being moved without a word.
   */
   useEffect(() => {
-    if (!state || !user) return;
+    if (!state || !user || (AUTH_PREVIEW && preview)) return;
     if (state === "active") {
       if (user.verification_status === "active" && welcomed) return;
       void apiGetMe()
@@ -205,7 +240,7 @@ export default function VerifyPage() {
       return;
     }
     if (user.verification_status !== state) updateUser({ ...user, verification_status: state, rejection_reason: status?.rejection_reason ?? "" });
-  }, [state, user, updateUser, router, status?.rejection_reason, welcomed]);
+  }, [state, user, updateUser, router, status?.rejection_reason, welcomed, preview]);
 
   const exit = () => void signOut();
 
@@ -338,6 +373,10 @@ function InReview({ status, now, locale, justSent, onChanged, onExit }: {
   const late = Boolean(status.expected_by) && parseIso(status.expected_by).getTime() < now;
 
   async function requestActivation() {
+    if (AUTH_PREVIEW && verifyPreview()) {
+      setAsked({ next: new Date(Date.now() + 86_400_000).toISOString() });
+      return;
+    }
     setProblem("");
     setSending(true);
     try {
@@ -450,6 +489,10 @@ function Uploader({ status, fixing, onChanged }: { status: VerificationStatus; f
   const thumbKey = [selfie, idDoc].filter(Boolean).map((d) => d!.id).join(",");
   useEffect(() => {
     const wanted = [selfie, idDoc].filter((d): d is ApiDocument => Boolean(d) && d!.content_type.startsWith("image/"));
+    if (AUTH_PREVIEW && wanted.length && wanted.every((d) => d.id in PREVIEW_THUMBS)) {
+      const t = window.setTimeout(() => setThumbs(Object.fromEntries(wanted.map((d) => [d.id, PREVIEW_THUMBS[d.id]]))));
+      return () => window.clearTimeout(t);
+    }
     let alive = true;
     const made: string[] = [];
     void Promise.all(wanted.map(async (d) => {
@@ -464,6 +507,7 @@ function Uploader({ status, fixing, onChanged }: { status: VerificationStatus; f
   }, [thumbKey]);
 
   async function upload(slot: Slot, file: File) {
+    if (AUTH_PREVIEW && verifyPreview()) return;
     const wrong = validateDocument(file);
     if (wrong) { setProblem((p) => ({ ...p, [slot]: wrong })); return; }
     setProblem((p) => ({ ...p, [slot]: "" }));
@@ -483,6 +527,7 @@ function Uploader({ status, fixing, onChanged }: { status: VerificationStatus; f
   }
 
   async function remove(d: ApiDocument, slot: Slot) {
+    if (AUTH_PREVIEW && verifyPreview()) return;
     setRemoving(d.id);
     try { await apiDeleteMyDocument(d.id); }
     catch (e) { setProblem((p) => ({ ...p, [slot]: authError(e, "Could not remove it. Try again.").message })); }
