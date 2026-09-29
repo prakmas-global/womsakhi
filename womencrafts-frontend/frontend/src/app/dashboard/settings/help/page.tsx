@@ -32,10 +32,10 @@ type Guide = {
 };
 
 const GUIDES: Guide[] = [
-  { title: "Change my password", group: "Your account", icon: ShieldCheck, tone: "violet", href: "/dashboard/settings/security",
-    steps: ["Open Security.", "Enter your current password and the new one twice.", "Every other session on your account is signed out; this one carries on."] },
+  { title: "Move my authenticator to a new phone", group: "Your account", icon: ShieldCheck, tone: "violet", href: "/dashboard/settings/security",
+    steps: ["Open Security and choose Move to a new phone.", "Enter the code your current authenticator shows (or a recovery code), then scan the new QR code.", "Enter the new phone's code and save the recovery codes it gives you."] },
   { title: "Sign out of every device", group: "Your account", icon: MonitorSmartphone, tone: "rose", href: "/dashboard/settings/sessions",
-    steps: ["Open Sessions.", "Choose Sign out everywhere.", "Every device, including this one, is signed out on its next request."] },
+    steps: ["Open Sessions.", "Choose Sign out everywhere.", "Every device, including this one, is signed out now. To end just one device, use Sign out on its row."] },
   { title: "Change my name, phone or photo", group: "Your account", icon: UserCircle, tone: "brand", href: "/dashboard/settings/profile",
     steps: ["Open My profile.", "Click the photo to upload a new one, or Edit profile for name and phone.", "Your email is how you sign in, so a Super Admin changes that."] },
   { title: "Choose my colours and language", group: "Your account", icon: Palette, tone: "amber", href: "/dashboard/settings/appearance",
@@ -43,7 +43,7 @@ const GUIDES: Guide[] = [
   { title: "Decide what I am notified about", group: "Your account", icon: Bell, tone: "sky", href: "/dashboard/settings/notifications",
     steps: ["Open Notifications.", "Switch channels per event and save.", "Choices are stored now and applied once staff notifications are sent by channel."] },
   { title: "Invite a colleague to the dashboard", group: "People and access", icon: UserCog, tone: "violet", href: "/dashboard/staff",
-    steps: ["Open Staff (Super Admin only).", "Invite someone and choose a role.", "Send her the one-time link; she sets her own password."] },
+    steps: ["Open Staff (Super Admin only).", "Invite someone and choose a role.", "She accepts from the one-time link, then signs in with an email code and sets up her authenticator."] },
   { title: "Change what a role can do", group: "People and access", icon: ShieldCheck, tone: "emerald", href: "/dashboard/users/roles",
     steps: ["Open Roles & Permissions.", "Pick the role and tick the actions per section.", "Anyone holding the role gets the change on her next request."] },
   { title: "Admit a woman who has signed up", group: "People and access", icon: Users, tone: "brand", href: "/dashboard/applications",
@@ -119,7 +119,7 @@ export default function HelpCenterPage() {
             <input
               value={query}
               onChange={(e) => setQuery(e.target.value)}
-              placeholder="Search the notes — password, invite, appointment…"
+              placeholder="Search the notes — authenticator, invite, appointment…"
               className="w-full rounded-lg border border-line-strong bg-surface py-2 pl-9 pr-9 text-sm text-ink-muted placeholder-ink-subtle outline-none focus:border-violet-300 focus:ring-4 focus:ring-violet-50"
             />
             {query && (

@@ -454,27 +454,6 @@ export async function apiSaveNotificationPrefs(prefs: NotificationPrefs) {
   return data;
 }
 
-export async function apiChangePassword(current_password: string, new_password: string) {
-  const { data } = await apiClient.post<{ message: string }>("/me/settings/password", {
-    current_password,
-    new_password,
-  });
-  return data;
-}
-
-/**
- * End every session on every device, now.
- *
- * Bumps the account's token version server-side, which invalidates every token
- * minted before this moment — including the one making this call. So the caller
- * must send her to sign in again rather than leaving her on a screen whose next
- * request will 401.
- */
-export async function apiSignOutEverywhere() {
-  const { data } = await apiClient.post<{ message: string }>("/auth/signout-everywhere");
-  return data;
-}
-
 export async function apiRequestDeletion(reason: string, confirm: string) {
   const { data } = await apiClient.post<{ message: string }>("/me/settings/delete-account", {
     reason,
@@ -512,6 +491,10 @@ export async function apiMyProgress() {
 
 export function memberError(err: unknown): string {
   if (axios.isAxiosError(err)) {
+    // The API's own envelope is `{error: {message}}`; `detail` is FastAPI's
+    // default and still appears on a few routes. Read both.
+    const message = err.response?.data?.error?.message;
+    if (typeof message === "string" && message) return message;
     const detail = err.response?.data?.detail;
     if (typeof detail === "string") return detail;
   }

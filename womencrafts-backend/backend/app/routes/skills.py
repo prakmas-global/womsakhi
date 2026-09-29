@@ -14,7 +14,7 @@ import asyncio
 from fastapi import APIRouter, Depends, HTTPException, status
 
 from app.core import cache
-from app.core.rbac import require_active_member
+from app.core.rbac import require_active_member, require_member_account
 from app.core.serializers import to_object_id
 from app.db.mongodb import get_database
 from app.models.skills import AssessmentModel, AttemptModel, DigitalStepModel
@@ -130,7 +130,7 @@ async def submit(
 # ── Using a phone ──────────────────────────────────────────────────────────
 
 @router.get("/digital", response_model=list[DigitalStepResponse], summary="Getting confident with a phone")
-async def list_steps(me: dict = Depends(require_active_member)):
+async def list_steps(me: dict = Depends(require_member_account)):
     async def _load() -> list[dict]:
         return await _steps().find({}).sort("n", 1).to_list(50)
 

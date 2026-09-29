@@ -52,9 +52,12 @@ export default function Profile() {
   );
   const { data: progress } = useProgress();
   const { data: CERTIFICATES } = useCertificates();
-  const { data: circles } = useCircles();
+  // Circles and money are for admitted members only; a woman still waiting
+  // for approval sees her profile without them (and without a 403 banner).
+  const admitted = user?.verification_status === "active";
+  const { data: circles } = useCircles(admitted);
   const { data: GOALS } = useGoals();
-  const { data: money } = useMoney();
+  const { data: money } = useMoney(admitted);
 
   // Derived from the fetched profile, never held in state. `useState(x ?? [])`
   // runs before the fetch answers, so it would freeze on the fallback and the

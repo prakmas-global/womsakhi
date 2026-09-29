@@ -79,9 +79,11 @@ export interface Money {
   txns: Txn[];
 }
 
-export function useMoney(): Resource<Money> {
+/** `enabled = false` answers with an empty wallet and sends nothing (a member still waiting for approval). */
+export function useMoney(enabled = true): Resource<Money> {
   return useResource<Money>(
     useCallback(async (signal: AbortSignal) => {
+      if (!enabled) return { balanceMinor: 0, pendingMinor: 0, txns: [] };
       const w = await apiWallet(signal);
       const txns = w.transactions.map(toTxn);
       return {
@@ -94,7 +96,7 @@ export function useMoney(): Resource<Money> {
           .reduce((a, t) => a + t.amount_minor, 0),
         txns,
       };
-    }, []),
+    }, [enabled]),
     { balanceMinor: 0, pendingMinor: 0, txns: [] },
   );
 }

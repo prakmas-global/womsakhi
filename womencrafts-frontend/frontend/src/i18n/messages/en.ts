@@ -1738,7 +1738,7 @@ const screens = {
   "settings.yourAccountHowTheAppBehaves": "Your account, how the app behaves, and where to get help.",
   "settings.verifiedMember": "Verified member",
   "settings.signOut": "Sign out",
-  "settings.youWillNeedYourPasswordTo": "You will need your password to come back in.",
+  "settings.youWillNeedYourPasswordTo": "You can come back in with a code sent to your email.",
   "settings.signOut2": "Sign out",
   "settings.changesStraightAway": "Changes straight away",
   "settingsPayments.howYouGetPaid": "How you get paid",

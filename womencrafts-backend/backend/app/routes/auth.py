@@ -1,132 +1,81 @@
+"""
+Authentication — no passwords.
+
+Every way in is a six-digit code sent to something she controls:
+
+    Join        email + mobile  →  code to email  →  name + "I am a woman, 18+"
+    Sign in     email           →  code to email  →  signed in for 30 days
+    Staff       email → code → authenticator app (required; set up on first sign-in)
+
+Mobile numbers are required at signup and stored unverified until phone codes
+are switched on (PHONE_CODES_ENABLED + a provider's keys). From then on a new
+member confirms her number during signup and an existing one confirms it once,
+the next time she signs in. Nothing in this file changes when that happens.
+
+Sessions — one per device, 30 days for members, a working day for staff — live
+in `app/core/sessions.py`. The codes themselves live in `app/core/codes.py`.
+"""
+
 from datetime import datetime, timedelta, timezone
+from typing import Optional
 
+import phonenumbers
 from bson import ObjectId
-from fastapi import APIRouter, BackgroundTasks, File, Form, HTTPException, Request, Response, UploadFile, status, Depends
-from pydantic import ValidationError
+from fastapi import APIRouter, BackgroundTasks, Body, Depends, HTTPException, Request, Response, status
+from jose import JWTError, jwt
+from pydantic import BaseModel, EmailStr, Field, field_validator
+from pymongo.errors import DuplicateKeyError
 
-from app.core.deps import get_current_user
-from app.core.rbac import (
-    MEMBER_ROLE,
-    audience_for_role,
-    current_user_modules,
-    role_name,
-)
-from app.db.mongodb import get_database
-from app.core import ratelimit
-from app.core.config import settings
-from app.models.member import MemberModel
-from app.models.user import UserModel
-from app.models.verification import DocumentModel, VerificationStatus
-from app.schemas.auth import (
-    AuthResponse,
-    ForgotPasswordRequest,
-    ResetPasswordRequest,
-    SignInRequest,
-    SignUpRequest,
-    UserResponse,
-)
-from app.core.security import (
-    TOKEN_VERSION_CLAIM,
-    create_access_token,
-    decode_access_token,
-    hash_password,
-    token_version_of,
-    verify_password,
-    hash_password_async,
-    verify_password_async,
-    token_version_in,
-)
-from app.core.session import COOKIE_NAME, clear_session_cookie, set_session_cookie
-from app.routes.verification import PRIVATE_ROOT, save_document_file, send_verification_email
+from app.core import cache, codes, ratelimit, sessions
 from app.core import email as mailer
 from app.core.audit import record
-from app.core.two_factor import decrypt_secret, recovery_digest, verify_code
+from app.core.config import settings
+from app.core.deps import get_current_user
+from app.core.rbac import MEMBER_ROLE, current_user_modules, role_name
+from app.core.security import (
+    TOKEN_VERSION_CLAIM,
+    decode_access_token,
+    token_version_in,
+    token_version_of,
+)
+from app.core.session import COOKIE_NAME
+from app.core.two_factor import (
+    decrypt_secret,
+    encrypt_secret,
+    new_recovery_codes,
+    new_secret,
+    provisioning_qr_svg,
+    provisioning_uri,
+    recovery_digest,
+    verify_code,
+)
+from app.db.mongodb import get_database
+from app.models.member import MemberModel
+from app.models.user import UserModel
+from app.models.verification import VerificationStatus
+from app.schemas.auth import AuthResponse, UserResponse
 
 router = APIRouter(prefix="/auth", tags=["Authentication"])
 
 
+# ── helpers ─────────────────────────────────────────────────────────────────
+
+
+def _users():
+    return get_database()[UserModel.collection_name]
+
+
 async def _user_response(doc: dict) -> UserResponse:
-    """
-    Serialize a user plus the module keys their role can access.
+    """A user plus the module keys her role opens. The one serialiser for sign-in."""
+    return UserResponse(**UserModel.to_response(doc), modules=await current_user_modules(doc))
 
-    `audience` used to be supplied here and nowhere else, which meant sign-in
-    reported it correctly and `/users/me` fell back to the schema default of
-    "staff". Members were therefore told they were staff on every reload, and
-    the member shell redirected them away from their own app.
 
-    It is now derived inside `UserModel.to_response`, so every endpoint that
-    serialises a user agrees — which is the only way this stays fixed.
-    """
-    return UserResponse(
-        **UserModel.to_response(doc),
-        modules=await current_user_modules(doc),
+async def _auth_response(user: dict, tokens: dict) -> AuthResponse:
+    return AuthResponse(
+        access_token=tokens["access_token"],
+        refresh_token=tokens["refresh_token"],
+        user=await _user_response(user),
     )
-
-
-def _token_for(doc: dict) -> str:
-    """
-    Issue the session token.
-
-    `role` is embedded so the frontend proxy can send an account to the right
-    app without a round-trip. It is a routing hint only — every endpoint still
-    checks the role server-side, so a tampered token buys nothing.
-
-    **`tv` is what makes "sign out everywhere" mean anything.** It carries the
-    account's token version at the moment the session began, and
-    `core/deps.py` refuses any token whose version is behind the account's. The
-    machinery has been in place on both sides for a while and was inert purely
-    because nothing minted this claim — so bumping `token_version` did nothing
-    at all, on a platform where a woman may urgently need to end a session
-    somebody else is holding.
-
-    Old tokens carry no `tv` and keep working until they expire, because the
-    check only fires on a token that HAS the claim. That is the safe direction:
-    the alternative rejects every pre-existing session immediately, including
-    the one belonging to whoever is deploying.
-    """
-    return create_access_token(
-        {
-            "sub": str(doc["_id"]),
-            "email": doc["email"],
-            "role": role_name(doc),
-            TOKEN_VERSION_CLAIM: token_version_of(doc),
-        }
-    )
-
-
-async def _notify_super_admins_of_member_login(user: dict, occurred_at: datetime) -> None:
-    """Send after the login response; notification failure never blocks access."""
-    if role_name(user) != MEMBER_ROLE:
-        return
-    try:
-        from app.core.email import member_login_alert_email, send
-
-        admins = await get_database()[UserModel.collection_name].find(
-            {
-                "role": "Super Admin",
-                "is_active": {"$ne": False},
-                "email": {"$type": "string", "$ne": ""},
-            },
-            {"email": 1, "full_name": 1},
-        ).limit(20).to_list(length=20)
-        stamp = occurred_at.strftime("%d %b %Y, %H:%M UTC")
-        for admin in admins:
-            address = (admin.get("email") or "").strip()
-            if not address:
-                continue
-            await send(
-                member_login_alert_email(
-                    admin.get("full_name", ""),
-                    user.get("full_name", ""),
-                    user.get("email", ""),
-                    user.get("verification_status", ""),
-                    stamp,
-                    str(user["_id"]),
-                ),
-                address,
-            )
-    except Exception as exc:  # noqa: BLE001 - a notice must never break login
-        print(f"⚠️  Could not send member login notice: {exc}")
 
 
 async def _next_member_code(db) -> str:
@@ -139,368 +88,542 @@ async def _next_member_code(db) -> str:
     return f"WC-{highest + 1}"
 
 
-@router.post("/signup", response_model=AuthResponse, status_code=status.HTTP_201_CREATED)
-async def signup(payload: SignUpRequest, response: Response, request: Request):
-    await ratelimit.check(request, "signup", payload.email, ratelimit.SIGN_UP, ratelimit.SIGN_UP_IP)
-
+def normalise_phone(value: str) -> str:
     """
-    Public sign-up — always creates a MEMBER account, never staff.
+    An Indian mobile number in E.164 (`+919876543210`), or ValueError.
 
-    Alongside the credential row it creates the member's profile in the
-    'members' collection, so a real sign-up appears in the admin directory
-    immediately and every member has a profile to hang bookings off.
+    India only at launch: SMS to other countries costs many times more, and the
+    platform's safety and payment rails are Indian. Widen PHONE_ALLOWED_REGIONS
+    when that changes.
     """
-    db = get_database()
-    collection = db[UserModel.collection_name]
-    email = payload.email.lower().strip()
-
-    existing = await collection.find_one({"email": email})
-    if existing:
-        raise HTTPException(
-            status_code=status.HTTP_409_CONFLICT,
-            detail="An account with this email already exists",
-        )
-
-    # Profile first, so the credential row can point at it.
-    member_doc = MemberModel.create_document(
-        full_name=payload.full_name,
-        email=email,
-        phone=payload.phone or "",
-        country=payload.country,
-        role="Member",
-        status="Pending",
-        code=await _next_member_code(db),
-    )
-    member_result = await db[MemberModel.collection_name].insert_one(member_doc)
-
-    doc = UserModel.create_document(
-        full_name=payload.full_name,
-        email=email,
-        hashed_password=await hash_password_async(payload.password),
-        role=MEMBER_ROLE,
-        member_id=str(member_result.inserted_id),
-        locale=payload.locale or "en",
-        phone=payload.phone or "",
-        country=payload.country,
-    )
-    result = await collection.insert_one(doc)
-    doc["_id"] = result.inserted_id
-
-    # She is signed in immediately, but the account is only an APPLICATION until
-    # her email is confirmed, her ID is checked and a human approves it. Signing
-    # her in anyway is deliberate: she needs somewhere to see her own progress.
+    raw = (value or "").strip()
+    if not raw:
+        raise ValueError("Enter your mobile number")
+    allowed = {r.strip().upper() for r in settings.PHONE_ALLOWED_REGIONS.split(",") if r.strip()} or {"IN"}
     try:
-        await send_verification_email(doc)
-    except Exception as exc:  # noqa: BLE001 - a mail outage must not fail the signup
-        print(f"⚠️  Could not send the verification email: {exc}")
+        parsed = phonenumbers.parse(raw, "IN")
+    except phonenumbers.NumberParseException as exc:
+        raise ValueError("Enter a valid 10-digit mobile number") from exc
+    if not phonenumbers.is_valid_number(parsed):
+        raise ValueError("Enter a valid 10-digit mobile number")
+    if phonenumbers.region_code_for_number(parsed) not in allowed:
+        raise ValueError("Only Indian mobile numbers (+91) can be used for now")
+    if phonenumbers.number_type(parsed) not in {
+        phonenumbers.PhoneNumberType.MOBILE, phonenumbers.PhoneNumberType.FIXED_LINE_OR_MOBILE,
+    }:
+        raise ValueError("Enter a mobile number, not a landline")
+    return phonenumbers.format_number(parsed, phonenumbers.PhoneNumberFormat.E164)
 
-    token = _token_for(doc)
-    set_session_cookie(response, token)
-    return AuthResponse(access_token=token, user=await _user_response(doc))
+
+async def _phone_taken(phone: str, except_user_id: Optional[ObjectId] = None) -> bool:
+    query: dict = {"phone": phone}
+    if except_user_id is not None:
+        query["_id"] = {"$ne": except_user_id}
+    return await _users().find_one(query, {"_id": 1}) is not None
 
 
-@router.post(
-    "/signup-application",
-    response_model=AuthResponse,
-    status_code=status.HTTP_201_CREATED,
-    summary="Create a member account and submit its identity application",
-)
-async def signup_application(
-    response: Response,
-    request: Request,
-    background_tasks: BackgroundTasks,
-    full_name: str = Form(...),
-    email: str = Form(...),
-    password: str = Form(...),
-    country: str = Form(...),
-    phone: str = Form(...),
-    locale: str = Form("en"),
-    identity_document: UploadFile = File(...),
-    selfie: UploadFile = File(...),
-):
-    """One member action: account, two encrypted files, then the admin queue.
+# Short-lived signed tickets that carry one step of a flow to the next (signup
+# after the email is proved; staff sign-in between the email code and the
+# authenticator). Signed with a key DERIVED from the JWT secret, so a ticket can
+# never be presented as a session token — `get_current_user` would not even
+# decode it.
 
-    The ordinary JSON signup endpoint remains for older clients. The current
-    web journey uses this multipart endpoint so it never creates a half-finished
-    account and then asks the member to find a separate verification screen.
+
+def _ticket_key() -> str:
+    return f"{settings.JWT_SECRET_KEY}:auth-ticket"
+
+
+def _make_ticket(purpose: str, minutes: int, **claims) -> str:
+    now = datetime.now(timezone.utc)
+    body = {**claims, "purpose": purpose, "iat": now, "exp": now + timedelta(minutes=minutes)}
+    return jwt.encode(body, _ticket_key(), algorithm=settings.JWT_ALGORITHM)
+
+
+def _read_ticket(token: str, purpose: str) -> dict:
+    expired = HTTPException(
+        status.HTTP_400_BAD_REQUEST,
+        {"code": "ticket_expired", "message": "This step took too long. Please start again."},
+    )
+    try:
+        body = jwt.decode(token or "", _ticket_key(), algorithms=[settings.JWT_ALGORITHM])
+    except JWTError:
+        raise expired
+    if body.get("purpose") != purpose:
+        raise expired
+    return body
+
+
+async def _notify_super_admins_of_member_login(user: dict, occurred_at: datetime) -> None:
+    """Send after the login response; notification failure never blocks access."""
+    if role_name(user) != MEMBER_ROLE:
+        return
+    try:
+        admins = await _users().find(
+            {"role": "Super Admin", "is_active": {"$ne": False}, "email": {"$type": "string", "$ne": ""}},
+            {"email": 1, "full_name": 1},
+        ).limit(20).to_list(length=20)
+        stamp = occurred_at.strftime("%d %b %Y, %H:%M UTC")
+        for admin in admins:
+            address = (admin.get("email") or "").strip()
+            if address:
+                await mailer.send(
+                    mailer.member_login_alert_email(
+                        admin.get("full_name", ""), user.get("full_name", ""), user.get("email", ""),
+                        user.get("verification_status", ""), stamp, str(user["_id"]),
+                    ),
+                    address,
+                )
+    except Exception as exc:  # noqa: BLE001 - a notice must never break login
+        print(f"⚠️  Could not send member login notice: {exc}")
+
+
+# ── what the screens need to know ───────────────────────────────────────────
+
+
+@router.get("/options", summary="Which ways in are switched on")
+async def auth_options():
+    """Lets the screens offer phone sign-in the day it is switched on, with no release."""
+    return {
+        "phone_codes": settings.phone_codes_live,
+        "phone_provider": settings.PHONE_PROVIDER.strip().lower() if settings.phone_codes_live else "",
+        "firebase_project_id": settings.FIREBASE_PROJECT_ID if settings.phone_codes_live else "",
+        # Public web config for Google's SDK, only when Firebase is the provider.
+        "firebase": (
+            {
+                "apiKey": settings.FIREBASE_WEB_API_KEY,
+                "authDomain": settings.FIREBASE_AUTH_DOMAIN or f"{settings.FIREBASE_PROJECT_ID}.firebaseapp.com",
+                "projectId": settings.FIREBASE_PROJECT_ID,
+                "appId": settings.FIREBASE_APP_ID,
+            }
+            if settings.phone_codes_live and settings.PHONE_PROVIDER.strip().lower() == "firebase" else None
+        ),
+        "code_length": 6,
+        "code_ttl_seconds": settings.AUTH_CODE_TTL_MINUTES * 60,
+        "resend_seconds": settings.AUTH_CODE_RESEND_SECONDS,
+        "phone_regions": [r.strip() for r in settings.PHONE_ALLOWED_REGIONS.split(",") if r.strip()],
+    }
+
+
+# ── join ────────────────────────────────────────────────────────────────────
+
+
+class SignupStart(BaseModel):
+    email: EmailStr
+    phone: str
+    locale: str = Field("en", max_length=8)
+
+    @field_validator("phone")
+    @classmethod
+    def _phone(cls, value: str) -> str:
+        return normalise_phone(value)
+
+
+class CodeCheck(BaseModel):
+    email: EmailStr
+    code: str = Field(min_length=4, max_length=12)
+
+
+class SignupComplete(BaseModel):
+    ticket: str
+    full_name: str = Field(max_length=80)
+    is_woman_18_plus: bool
+    locale: str = Field("en", max_length=8)
+
+    @field_validator("full_name")
+    @classmethod
+    def _name(cls, value: str) -> str:
+        value = " ".join((value or "").split())
+        if len(value) < 2:
+            raise ValueError("Enter your full name")
+        return value
+
+
+@router.post("/signup/start", summary="Join: send a code to her email")
+async def signup_start(payload: SignupStart, request: Request):
     """
-    try:
-        payload = SignUpRequest(
-            full_name=full_name,
-            email=email,
-            password=password,
-            country=country,
-            phone=phone,
-            locale=locale,
+    The same answer for every address, whether or not it already has an account.
+
+    A new address gets a code. An address that already has an account gets an
+    email saying so, with a sign-in link, and no code — so this endpoint cannot
+    be used to find out who is a member, and a woman who forgot she joined is
+    told how to get back in rather than seeing an error.
+    """
+    email = codes.normalise_email(payload.email)
+    existing = await _users().find_one({"email": email}, {"full_name": 1, "is_active": 1})
+    if existing and existing.get("is_active", True):
+        # She already has an account: send a SIGN-IN code, worded for this
+        # situation. Typed into the same "check your email" box it signs her
+        # in (see `signup_verify`), so a woman who forgot she joined gets in
+        # instead of hitting "code expired". The screen's answer is identical
+        # either way, so nobody else learns that this address is a member.
+        issued = await codes.issue(
+            request, purpose=codes.SIGNIN, channel=codes.EMAIL, destination=email,
+            user_id=str(existing["_id"]), name=existing.get("full_name", ""), template="existing_member",
         )
-    except ValidationError as exc:
-        first = exc.errors()[0]
-        raise HTTPException(status.HTTP_422_UNPROCESSABLE_ENTITY, first.get("msg", "Check your details and try again.")) from exc
-
-    if not (selfie.content_type or "").lower().startswith("image/"):
-        raise HTTPException(
-            status.HTTP_415_UNSUPPORTED_MEDIA_TYPE,
-            "Your selfie must be a JPG, PNG, WEBP or HEIC image.",
+    elif existing:
+        issued = await codes.issue(request, purpose=codes.SIGNUP, channel=codes.EMAIL,
+                                   destination=email, send=False)
+    else:
+        issued = await codes.issue(
+            request, purpose=codes.SIGNUP, channel=codes.EMAIL, destination=email,
+            payload={"phone": payload.phone, "locale": payload.locale},
         )
+    return {
+        "message": f"We've sent a 6-digit code to {issued.destination}.",
+        "channel": issued.channel,
+        "destination": issued.destination,
+        "expires_in": issued.expires_in,
+        "resend_in": issued.resend_in,
+    }
 
-    await ratelimit.check(request, "signup", payload.email, ratelimit.SIGN_UP, ratelimit.SIGN_UP_IP)
-    db = get_database()
-    users = db[UserModel.collection_name]
-    members = db[MemberModel.collection_name]
-    documents = db[DocumentModel.collection_name]
-    normalized_email = payload.email.lower().strip()
-    if await users.find_one({"email": normalized_email}):
-        raise HTTPException(status.HTTP_409_CONFLICT, "An account with this email already exists")
 
-    member_doc = MemberModel.create_document(
-        full_name=payload.full_name,
-        email=normalized_email,
-        phone=payload.phone,
-        country=payload.country,
-        role="Member",
-        status="Pending",
-        code=await _next_member_code(db),
-    )
-    member_result = await members.insert_one(member_doc)
-    user = UserModel.create_document(
-        full_name=payload.full_name,
-        email=normalized_email,
-        hashed_password=await hash_password_async(payload.password),
-        role=MEMBER_ROLE,
-        member_id=str(member_result.inserted_id),
-        locale=payload.locale or "en",
-        phone=payload.phone,
-        country=payload.country,
-    )
-    try:
-        user_result = await users.insert_one(user)
-    except Exception:
-        await members.delete_one({"_id": member_result.inserted_id})
-        raise
-    user["_id"] = user_result.inserted_id
-    stored_names: list[str] = []
-    inserted_document_ids: list[ObjectId] = []
-    try:
-        for upload, doc_type in ((identity_document, "aadhaar"), (selfie, "selfie")):
-            stored_name, _extension, size = await save_document_file(upload, user)
-            stored_names.append(stored_name)
-            document = DocumentModel.create_document(
-                user_id=str(user["_id"]),
-                member_id=str(member_result.inserted_id),
-                doc_type=doc_type,
-                original_name=upload.filename or stored_name,
-                stored_name=stored_name,
-                content_type=upload.content_type or "",
-                size=size,
-            )
-            inserted = await documents.insert_one(document)
-            inserted_document_ids.append(inserted.inserted_id)
+@router.post("/signup/verify", summary="Join: check the email code")
+async def signup_verify(payload: CodeCheck, request: Request, response: Response, background: BackgroundTasks):
+    """
+    Spend the code and hand back a 20-minute ticket for the last step.
 
+    If the address already has an account, the code she was sent is a sign-in
+    code (see `signup_start`): it signs her in here, and the answer carries
+    `signed_in: true` with her session instead of a ticket.
+    """
+    email = codes.normalise_email(payload.email)
+    if not await codes.has_live(codes.SIGNUP, email) and await codes.has_live(codes.SIGNIN, email):
+        spent = await codes.verify(request, purpose=codes.SIGNIN, destination=email, code=payload.code)
+        user = await _users().find_one({"_id": ObjectId(spent["user_id"])}) if spent.get("user_id") else None
+        if not user or not user.get("is_active", True):
+            raise HTTPException(status.HTTP_400_BAD_REQUEST,
+                                {"code": "code_expired", "message": "That code has expired. Ask for a new one."})
+        if role_name(user) != MEMBER_ROLE:
+            raise HTTPException(status.HTTP_409_CONFLICT, {
+                "code": "email_taken",
+                "message": "This email belongs to a staff account. Use Sign in — staff also need their authenticator app.",
+            })
+        user = await _finish_member_email_proof(user, request, background)
         now = datetime.now(timezone.utc)
-        next_reminder = now + timedelta(hours=24)
-        await users.update_one(
-            {"_id": user["_id"]},
-            {"$set": {
-                "verification_status": VerificationStatus.IN_REVIEW,
-                "verification_reminder_count": 1,
-                "verification_review_requested_at": now,
-                "verification_next_request_at": next_reminder,
-                "verification_next_reminder_at": next_reminder,
-                "application_submitted_at": now,
-                "updated_at": now,
-            }},
-        )
-        user.update({
-            "verification_status": VerificationStatus.IN_REVIEW,
-            "verification_reminder_count": 1,
-            "verification_review_requested_at": now,
-            "verification_next_request_at": next_reminder,
-            "verification_next_reminder_at": next_reminder,
-            "application_submitted_at": now,
-            "updated_at": now,
-        })
-    except Exception:
-        for stored_name in stored_names:
-            (PRIVATE_ROOT / stored_name).unlink(missing_ok=True)
-        if inserted_document_ids:
-            await documents.delete_many({"_id": {"$in": inserted_document_ids}})
-        await users.delete_one({"_id": user["_id"]})
-        await members.delete_one({"_id": member_result.inserted_id})
-        raise
-
-    from app.engines.verification_followups import send_review_alert
-    background_tasks.add_task(send_review_alert, user, 1)
-    background_tasks.add_task(
-        mailer.send,
-        mailer.submitted_email(user.get("full_name", "")),
-        user["email"],
-    )
-    await record(
-        user,
-        "member.submit_application",
-        target=str(user["_id"]),
-        detail="Created account and submitted both identity images in one application",
-        request=request,
-    )
-    token = _token_for(user)
-    set_session_cookie(response, token)
-    return AuthResponse(access_token=token, user=await _user_response(user))
-
-
-@router.post("/signin", response_model=AuthResponse)
-async def signin(
-    payload: SignInRequest,
-    response: Response,
-    request: Request,
-    background_tasks: BackgroundTasks,
-):
-    # Before touching the database: an attacker guessing passwords should cost
-    # us a dictionary lookup, not a round trip to Atlas for every guess.
-    await ratelimit.check(request, "signin", payload.email, ratelimit.SIGN_IN, ratelimit.SIGN_IN_IP)
-
-    db = get_database()
-    collection = db[UserModel.collection_name]
-
-    user = await collection.find_one({"email": payload.email.lower().strip()})
-
-    # Wrong email and wrong password give the SAME answer — never reveal which
-    # addresses have accounts.
-    if not user:
+        await _users().update_one({"_id": user["_id"]}, {"$set": {"last_login_at": now}})
+        tokens = await sessions.start(response, user, request, method="email_code")
+        auth = await _auth_response(user, tokens)
+        return {"signed_in": True, **auth.model_dump()}
+    spent = await codes.verify(request, purpose=codes.SIGNUP, destination=email, code=payload.code)
+    if await _users().find_one({"email": email}, {"_id": 1}):
+        raise HTTPException(status.HTTP_409_CONFLICT,
+                            {"code": "email_taken", "message": "This email already has an account. Sign in instead."})
+    phone = (spent.get("payload") or {}).get("phone", "")
+    if not phone:
+        raise HTTPException(status.HTTP_400_BAD_REQUEST,
+                            {"code": "ticket_expired", "message": "Please start again."})
+    if await _phone_taken(phone):
         raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Invalid email or password",
+            status.HTTP_409_CONFLICT,
+            {"code": "phone_taken",
+             "message": "This mobile number is already linked to another account. Use a different number, "
+                        "or sign in with the email you used before."},
         )
+    ticket = _make_ticket("signup", 20, email=email, phone=phone,
+                          locale=(spent.get("payload") or {}).get("locale", "en"))
+    return {"ticket": ticket, "expires_in": 20 * 60}
+
+
+@router.post("/signup/complete", response_model=AuthResponse, status_code=status.HTTP_201_CREATED,
+             summary="Join: name and declaration; creates the account")
+async def signup_complete(payload: SignupComplete, request: Request, response: Response):
+    """
+    Create the member account and sign her in on this device.
+
+    Her email is proved by the code. Her account starts at `pending_documents`:
+    the next screen asks for a selfie and an ID photo, and a person reviews
+    them. Until then she can read learning content and set up her profile —
+    nothing social, nothing with money (see `rbac.require_member_account`).
+    """
+    body = _read_ticket(payload.ticket, "signup")
+    if not payload.is_woman_18_plus:
+        raise HTTPException(
+            status.HTTP_422_UNPROCESSABLE_ENTITY,
+            {"code": "declaration_required",
+             "message": "WomSakhi is a community for women aged 18 and over. Please confirm to continue."},
+        )
+    email, phone = body["email"], body["phone"]
+    locale = payload.locale or body.get("locale") or "en"
+    db = get_database()
+    if await _phone_taken(phone):
+        raise HTTPException(status.HTTP_409_CONFLICT,
+                            {"code": "phone_taken", "message": "This mobile number is already linked to another account."})
 
     now = datetime.now(timezone.utc)
-    locked_until = user.get("locked_until")
-    if isinstance(locked_until, datetime):
-        if locked_until.tzinfo is None:
-            locked_until = locked_until.replace(tzinfo=timezone.utc)
-        if locked_until > now:
-            minutes = max(1, int((locked_until - now).total_seconds() // 60) + 1)
-            raise HTTPException(
-                status_code=status.HTTP_429_TOO_MANY_REQUESTS,
-                detail=f"Too many failed attempts. Try again in {minutes} minute(s).",
-            )
-
-    if not await verify_password_async(payload.password, user["hashed_password"]):
-        failed = int(user.get("failed_logins") or 0) + 1
-        updates: dict = {"failed_logins": failed}
-        if failed >= settings.MAX_FAILED_LOGINS:
-            updates["locked_until"] = now + timedelta(minutes=settings.LOCKOUT_MINUTES)
-            updates["failed_logins"] = 0
-        await collection.update_one({"_id": user["_id"]}, {"$set": updates})
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Invalid email or password",
-        )
-
-    if not user.get("is_active", True):
-        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Account is deactivated")
-
-    two_factor = user.get("two_factor") or {}
-    if two_factor.get("enabled"):
-        code = payload.two_factor_code.strip()
-        if not code:
-            raise HTTPException(
-                status_code=status.HTTP_428_PRECONDITION_REQUIRED,
-                detail={"code": "two_factor_required", "message": "Enter the code from your authenticator app."},
-            )
-        secret = decrypt_secret(two_factor.get("secret", ""))
-        recovery = recovery_digest(code)
-        recovery_codes = list(two_factor.get("recovery_codes") or [])
-        if recovery in recovery_codes:
-            await collection.update_one(
-                {"_id": user["_id"]}, {"$pull": {"two_factor.recovery_codes": recovery}}
-            )
-        elif not verify_code(secret, code):
-            raise HTTPException(status.HTTP_401_UNAUTHORIZED, "That authentication code is not valid")
-
-    # Successful sign-in clears the failure counter — and her rate-limit
-    # budget. Otherwise a woman who mistypes four times and then gets it right
-    # is two tries from being locked out for a minute, punished for eventually
-    # succeeding.
-    await ratelimit.forget("signin", payload.email)
-    await collection.update_one(
-        {"_id": user["_id"]},
-        {"$set": {"failed_logins": 0, "locked_until": None, "last_login_at": now}},
+    member_doc = MemberModel.create_document(
+        full_name=payload.full_name, email=email, phone=phone, country="IN",
+        role="Member", status="Pending", code=await _next_member_code(db),
     )
-    token = _token_for(user)
-    set_session_cookie(response, token)
-    background_tasks.add_task(_notify_super_admins_of_member_login, dict(user), now)
-    return AuthResponse(access_token=token, user=await _user_response(user))
+    member_result = await db[MemberModel.collection_name].insert_one(member_doc)
+    user = UserModel.create_document(
+        full_name=payload.full_name, email=email, hashed_password="", role=MEMBER_ROLE,
+        member_id=str(member_result.inserted_id), locale=locale, phone=phone, country="IN",
+        verification_status=VerificationStatus.PENDING_DOCUMENTS,
+    )
+    user.update({"email_verified_at": now, "phone_verified_at": None, "declared_woman_18_plus_at": now})
+    try:
+        result = await _users().insert_one(user)
+    except DuplicateKeyError:
+        await db[MemberModel.collection_name].delete_one({"_id": member_result.inserted_id})
+        raise HTTPException(status.HTTP_409_CONFLICT,
+                            {"code": "email_taken", "message": "This email already has an account. Sign in instead."})
+    user["_id"] = result.inserted_id
+
+    tokens = await sessions.start(response, user, request, method="signup")
+    await record(user, "member.signup", target=str(user["_id"]),
+                 detail="Created an account with an email code", request=request)
+    return await _auth_response(user, tokens)
+
+
+# ── sign in ─────────────────────────────────────────────────────────────────
+
+
+class SigninStart(BaseModel):
+    email: Optional[EmailStr] = None
+    phone: Optional[str] = None
+
+
+class SigninVerify(BaseModel):
+    email: Optional[EmailStr] = None
+    phone: Optional[str] = None
+    code: str = Field(min_length=4, max_length=12)
+
+
+def _identifier(email: Optional[str], phone: Optional[str]) -> tuple[str, str]:
+    """(field, value) to look her up by. Phone only once phone codes are live."""
+    if phone and not email:
+        if not settings.server_sends_sms:
+            raise HTTPException(status.HTTP_400_BAD_REQUEST,
+                                {"code": "phone_codes_off", "message": "Sign in with your email for now."})
+        try:
+            return "phone", normalise_phone(phone)
+        except ValueError as exc:
+            raise HTTPException(status.HTTP_422_UNPROCESSABLE_ENTITY, str(exc))
+    if not email:
+        raise HTTPException(status.HTTP_422_UNPROCESSABLE_ENTITY, "Enter your email address")
+    return "email", codes.normalise_email(email)
+
+
+@router.post("/signin/start", summary="Sign in: send a code")
+async def signin_start(payload: SigninStart, request: Request):
+    """
+    The same answer whether or not the address has an account — a stranger
+    cannot use this to ask "is she a member here?". Only a real, active account
+    is actually sent a code.
+    """
+    field, value = _identifier(payload.email, payload.phone)
+    user = await _users().find_one({field: value})
+    live = bool(user and user.get("is_active", True))
+    if field == "phone" and live and not user.get("phone_verified_at"):
+        live = False  # an unconfirmed number cannot be a way in
+    channel = codes.SMS if field == "phone" else codes.EMAIL
+    issued = await codes.issue(
+        request, purpose=codes.SIGNIN, channel=channel, destination=value,
+        user_id=str(user["_id"]) if live else "", name=(user or {}).get("full_name", ""), send=live,
+    )
+    return {
+        "message": f"If {issued.destination} has a WomSakhi account, we've sent it a 6-digit code.",
+        "channel": issued.channel,
+        "destination": issued.destination,
+        "expires_in": issued.expires_in,
+        "resend_in": issued.resend_in,
+    }
+
+
+async def _finish_member_email_proof(user: dict, request: Request, background: BackgroundTasks) -> dict:
+    """
+    A code to her inbox proves the address. An account that joined under the
+    old flow and never clicked its confirmation link is moved on here, so it is
+    not stuck on "confirm your email" when she has just done exactly that.
+    """
+    if role_name(user) != MEMBER_ROLE or user.get("verification_status") != VerificationStatus.PENDING_EMAIL:
+        return user
+    from app.routes.verification import _submit_ready_application
+
+    now = datetime.now(timezone.utc)
+    await _users().update_one(
+        {"_id": user["_id"], "verification_status": VerificationStatus.PENDING_EMAIL},
+        {"$set": {"verification_status": VerificationStatus.PENDING_DOCUMENTS,
+                  "email_verified_at": now, "updated_at": now}},
+    )
+    await _submit_ready_application(user["_id"], background, request)
+    cache.forget_user(str(user["_id"]))
+    return await _users().find_one({"_id": user["_id"]}) or user
+
+
+@router.post("/signin/verify", response_model=AuthResponse, summary="Sign in: check the code")
+async def signin_verify(payload: SigninVerify, request: Request, response: Response, background: BackgroundTasks):
+    """
+    Members are in. Staff go on to their authenticator: this answers 428 with a
+    short ticket and either `two_factor_required` (enter the app's code) or
+    `two_factor_setup_required` (scan this, then enter the app's code), and the
+    next call is `/auth/two-factor/verify` or `/auth/two-factor/enroll`.
+    """
+    field, value = _identifier(payload.email, payload.phone)
+    spent = await codes.verify(request, purpose=codes.SIGNIN, destination=value, code=payload.code)
+    user = await _users().find_one({"_id": ObjectId(spent["user_id"])}) if spent.get("user_id") else None
+    if not user or not user.get("is_active", True):
+        raise HTTPException(status.HTTP_400_BAD_REQUEST,
+                            {"code": "code_expired", "message": "That code has expired. Ask for a new one."})
+
+    test_login = field == "email" and codes.is_test_login(codes.EMAIL, value)
+    if role_name(user) != MEMBER_ROLE and not test_login:
+        two_factor = user.get("two_factor") or {}
+        if two_factor.get("enabled"):
+            ticket = _make_ticket("mfa", 10, sub=str(user["_id"]), tv=token_version_of(user))
+            raise HTTPException(status.HTTP_428_PRECONDITION_REQUIRED, {
+                "code": "two_factor_required",
+                "message": "Enter the 6-digit code from your authenticator app.",
+                "ticket": ticket,
+            })
+        secret = new_secret()
+        await _users().update_one({"_id": user["_id"]},
+                                  {"$set": {"two_factor_pending_secret": encrypt_secret(secret)}})
+        ticket = _make_ticket("mfa_setup", 15, sub=str(user["_id"]), tv=token_version_of(user))
+        raise HTTPException(status.HTTP_428_PRECONDITION_REQUIRED, {
+            "code": "two_factor_setup_required",
+            "message": "Staff accounts need an authenticator app. Scan the code, then enter the 6 digits it shows.",
+            "ticket": ticket,
+            "secret": secret,
+            "provisioning_uri": provisioning_uri(secret, user.get("email", "")),
+            "qr_svg": provisioning_qr_svg(provisioning_uri(secret, user.get("email", ""))),
+        })
+
+    if field == "email":
+        user = await _finish_member_email_proof(user, request, background)
+    now = datetime.now(timezone.utc)
+    await _users().update_one({"_id": user["_id"]}, {"$set": {"last_login_at": now}})
+    tokens = await sessions.start(response, user, request, method="test_code" if test_login else f"{field}_code")
+    background.add_task(_notify_super_admins_of_member_login, dict(user), now)
+    return await _auth_response(user, tokens)
+
+
+class TwoFactorStep(BaseModel):
+    ticket: str
+    code: str = Field(min_length=6, max_length=20)
+
+
+async def _staff_from_ticket(body: dict) -> dict:
+    user = await _users().find_one({"_id": ObjectId(body["sub"])})
+    if not user or not user.get("is_active", True) or token_version_of(user) != int(body.get("tv") or 0):
+        raise HTTPException(status.HTTP_400_BAD_REQUEST,
+                            {"code": "ticket_expired", "message": "Please sign in again."})
+    return user
+
+
+@router.post("/two-factor/verify", response_model=AuthResponse, summary="Staff sign-in: authenticator code")
+async def two_factor_verify(payload: TwoFactorStep, request: Request, response: Response):
+    body = _read_ticket(payload.ticket, "mfa")
+    await ratelimit.check(request, "mfa", body["sub"], (6, 900.0), (60, 900.0))
+    user = await _staff_from_ticket(body)
+    config = user.get("two_factor") or {}
+    code = payload.code.strip()
+    digest = recovery_digest(code)
+    if digest in (config.get("recovery_codes") or []):
+        await _users().update_one({"_id": user["_id"]}, {"$pull": {"two_factor.recovery_codes": digest}})
+        method = "recovery_code"
+    elif verify_code(decrypt_secret(config.get("secret", "")), code):
+        method = "authenticator"
+    else:
+        raise HTTPException(status.HTTP_400_BAD_REQUEST,
+                            {"code": "code_wrong", "message": "That code isn't right. Check your authenticator app."})
+    await ratelimit.forget("mfa", body["sub"])
+    now = datetime.now(timezone.utc)
+    await _users().update_one({"_id": user["_id"]}, {"$set": {"last_login_at": now}})
+    tokens = await sessions.start(response, user, request, method=f"email_code+{method}")
+    await record(user, "security.signin", target=str(user["_id"]),
+                 detail=f"Signed in with an email code and {method.replace('_', ' ')}", request=request)
+    return await _auth_response(user, tokens)
+
+
+@router.post("/two-factor/enroll", summary="Staff sign-in: finish authenticator setup")
+async def two_factor_enroll(payload: TwoFactorStep, request: Request, response: Response):
+    """Confirm the app works, turn it on, hand back recovery codes, and sign in."""
+    body = _read_ticket(payload.ticket, "mfa_setup")
+    await ratelimit.check(request, "mfa", body["sub"], (6, 900.0), (60, 900.0))
+    user = await _staff_from_ticket(body)
+    secret = decrypt_secret(user.get("two_factor_pending_secret", ""))
+    if not secret:
+        raise HTTPException(status.HTTP_400_BAD_REQUEST,
+                            {"code": "ticket_expired", "message": "Please sign in again."})
+    if not verify_code(secret, payload.code):
+        raise HTTPException(status.HTTP_400_BAD_REQUEST,
+                            {"code": "code_wrong",
+                             "message": "That code isn't right. Make sure your phone's time is set automatically."})
+    recovery = new_recovery_codes()
+    now = datetime.now(timezone.utc)
+    await _users().update_one(
+        {"_id": user["_id"]},
+        {"$set": {"two_factor": {"enabled": True, "secret": encrypt_secret(secret),
+                                 "recovery_codes": [recovery_digest(c) for c in recovery], "enabled_at": now},
+                  "last_login_at": now, "updated_at": now},
+         "$unset": {"two_factor_pending_secret": ""}},
+    )
+    cache.forget_user(str(user["_id"]))
+    user = await _users().find_one({"_id": user["_id"]})
+    tokens = await sessions.start(response, user, request, method="email_code+authenticator_setup")
+    await record(user, "security.two_factor_enabled", target=str(user["_id"]),
+                 detail="Authenticator set up at sign-in", request=request)
+    auth = await _auth_response(user, tokens)
+    return {**auth.model_dump(), "recovery_codes": recovery}
+
+
+# ── staying signed in ───────────────────────────────────────────────────────
+
+
+class RefreshBody(BaseModel):
+    refresh_token: str = ""
 
 
 @router.post("/refresh", summary="Keep this session alive")
-async def refresh(request: Request, response: Response):
+async def refresh(request: Request, response: Response, body: Optional[RefreshBody] = Body(None)):
     """
-    A sliding session: a woman who is using the app is not signed out of it.
+    Swap a refresh token for a fresh pair.
 
-    Tokens last 30 minutes and there was nothing to renew them, so a woman who
-    left the app open while she cooked came back to a session that had quietly
-    died — and, because `/me/shell` then answered 401, to a blank white screen
-    with no message on it. Thirty minutes is a short leash for an app somebody
-    opens between one job and the next.
+    The browser sends its refresh cookie (path-scoped to /api/v1/auth, so no
+    other request ever carries it). The mobile app has no cookie jar and sends
+    the token in the body; it gets the new pair back in the body too.
 
-    This is deliberately NOT a refresh token. It renews a session that is still
-    valid, nothing more: present a live cookie and get a fresh one, 30 minutes
-    from now. An expired session cannot be renewed here and she signs in again,
-    which is the behaviour we want — the long-lived credential that would avoid
-    that is also the one worth stealing, and this app holds identity documents.
-
-    The client calls it on a timer while a screen is open and when the tab is
-    focused again, so the leash only runs out after she has genuinely stopped.
+    A browser still holding a session from before devices existed — a live
+    access token and no refresh cookie — is moved onto a device session here
+    rather than signed out mid-task.
     """
-    token = request.cookies.get(COOKIE_NAME)
-    if not token:
-        raise HTTPException(status.HTTP_401_UNAUTHORIZED, "No session to refresh")
-    payload = decode_access_token(token)
-    if not payload:
-        raise HTTPException(status.HTTP_401_UNAUTHORIZED, "Session has expired")
+    from_body = bool(body and body.refresh_token)
+    token = body.refresh_token if from_body else request.cookies.get(sessions.REFRESH_COOKIE, "")
+    if token:
+        user, tokens = await sessions.rotate(request, None if from_body else response, token)
+        out = {"ok": True, "expires_in": settings.ACCESS_TOKEN_EXPIRE_MINUTES * 60}
+        if from_body:
+            # An empty refresh token means "keep the one you have" (a race
+            # inside the rotation grace window; see core/sessions.py).
+            out.update(access_token=tokens["access_token"], refresh_token=tokens["refresh_token"])
+        return out
 
-    user = await get_database()[UserModel.collection_name].find_one(
-        {"_id": ObjectId(payload["sub"])}
-    )
-    # A disabled account stops being a session immediately, not in 30 minutes.
-    if not user or not user.get("is_active", True):
-        clear_session_cookie(response)
-        raise HTTPException(status.HTTP_401_UNAUTHORIZED, "This account is no longer active")
-    # A session that was ended ("sign out everywhere", a password change) must
-    # not be able to renew itself into a fresh one. `get_current_user` refuses
-    # a stale generation on every request; this path used to mint a new token
-    # without asking, so a browser that kept refreshing outlived the revocation.
-    if TOKEN_VERSION_CLAIM in payload and token_version_in(payload) < token_version_of(user):
-        clear_session_cookie(response)
-        raise HTTPException(status.HTTP_401_UNAUTHORIZED, "This session was ended. Please sign in again.")
-
-    # The same helper sign-in uses, so a refreshed token carries every claim
-    # the original did — including the version claim that revokes sessions.
-    fresh = _token_for(user)
-    set_session_cookie(response, fresh)
-    return {"ok": True, "expires_in": settings.ACCESS_TOKEN_EXPIRE_MINUTES * 60}
+    legacy = decode_access_token(request.cookies.get(COOKIE_NAME, ""))
+    if legacy and not legacy.get(sessions.SID_CLAIM):
+        user = await _users().find_one({"_id": ObjectId(legacy["sub"])})
+        if user and user.get("is_active", True) and not (
+            TOKEN_VERSION_CLAIM in legacy and token_version_in(legacy) < token_version_of(user)
+        ):
+            await sessions.start(response, user, request, method="legacy_upgrade")
+            return {"ok": True, "expires_in": settings.ACCESS_TOKEN_EXPIRE_MINUTES * 60}
+    sessions.clear_cookies(response)
+    raise HTTPException(status.HTTP_401_UNAUTHORIZED, {"code": "session_ended", "message": "Please sign in again."})
 
 
 @router.get("/session", summary="Am I signed in?")
 async def session(request: Request):
-    """
-    Answers "is there a session?" with 200 either way.
-
-    `/auth/me` 401s when signed out, which is correct REST but means every
-    signed-out page load logs a console error. The app boots against this
-    instead, so a visitor's console stays clean.
-    """
-    token = request.cookies.get(COOKIE_NAME)
-    if not token:
-        return {"user": None}
-    payload = decode_access_token(token)
+    """200 either way, so a signed-out page load logs no console error."""
+    payload = decode_access_token(request.cookies.get(COOKIE_NAME, ""))
     if not payload:
         return {"user": None}
-    user = await get_database()[UserModel.collection_name].find_one(
-        {"_id": ObjectId(payload["sub"])}
-    )
+    user = await _users().find_one({"_id": ObjectId(payload["sub"])})
     if not user or not user.get("is_active", True):
         return {"user": None}
     if TOKEN_VERSION_CLAIM in payload and token_version_in(payload) < token_version_of(user):
+        return {"user": None}
+    sid = payload.get(sessions.SID_CLAIM)
+    if sid and not await sessions.is_live(str(sid)):
         return {"user": None}
     return {"user": await _user_response(user)}
 
@@ -510,162 +633,222 @@ async def get_me(current_user: dict = Depends(get_current_user)):
     return await _user_response(current_user)
 
 
-@router.post("/signout", summary="End the session")
-async def signout(response: Response):
-    """
-    Clears the httpOnly cookie. The client cannot delete it itself — that is the
-    point of httpOnly — so signing out has to go through the server.
-    """
-    clear_session_cookie(response)
+@router.post("/signout", summary="Sign out of this device")
+async def signout(request: Request, response: Response, body: Optional[RefreshBody] = Body(None)):
+    """Ends this device's session on the server as well as clearing its cookies."""
+    sid = sessions.sid_from_request(request)
+    if sid:
+        await sessions.revoke(sid, reason="signed_out")
+    sessions.clear_cookies(response)
     return {"message": "Signed out"}
 
 
-@router.post("/signout-everywhere", summary="End every session on every device")
-async def signout_everywhere(response: Response, me: dict = Depends(get_current_user)):
+@router.post("/signout-everywhere", summary="Sign out of every device")
+async def signout_everywhere(request: Request, response: Response, me: dict = Depends(get_current_user)):
     """
-    End every session this account has, on every device, now.
-
-    **Why this needs to exist here and not just in settings.** Signing out on
-    one phone has never touched the others, so a woman whose account was opened
-    on somebody else's device — a shared phone, a husband's tablet, a cybercafé
-    — had no way to close it. She could change her password, and the other
-    session carried on regardless for the rest of its life.
-
-    Bumping `token_version` invalidates every token minted before this moment,
-    because each one carries the version it was issued under and
-    `core/deps.py` rejects anything behind. Her CURRENT session goes too: that
-    is deliberate, and the honest reading of "everywhere" — a control that
-    quietly spares the device you are holding is one you cannot trust when the
-    device you are holding is the problem.
+    End every session this account has, on every device, now — including this
+    one. A control that quietly spares the device you are holding is one you
+    cannot trust when the device you are holding is the problem.
     """
-    db = get_database()
-    await db[UserModel.collection_name].update_one(
+    await _users().update_one(
         {"_id": ObjectId(str(me["_id"]))},
         {"$inc": {"token_version": 1}, "$set": {"updated_at": datetime.now(timezone.utc)}},
     )
-    clear_session_cookie(response)
+    await sessions.revoke_all(str(me["_id"]))
+    cache.forget_user(str(me["_id"]))
+    sessions.clear_cookies(response)
+    await record(me, "security.signout_everywhere", target=str(me["_id"]),
+                 detail="Signed out of every device", request=request)
     return {"message": "Every session has been ended. Sign in again to carry on."}
 
 
-# ─────────────────────────────────────────────────────────────────────────────
-# Getting back in
-#
-# Until now the ONLY way to reset a password was for a staff member to trigger
-# one (`members.py::start_password_reset`), and the link it emailed pointed at
-# a `/reset-password` page that did not exist. A woman who forgot her password
-# could not get back into her own account by any route at all — she had to find
-# a human, and then the link she was sent led to a 404.
-#
-# Both halves are below. They reuse the same single-use `email_tokens` record
-# the staff flow issues, so a staff-issued link and a self-service one are the
-# same object and land on the same page.
-# ─────────────────────────────────────────────────────────────────────────────
-
-#: Said for every address, found or not. Telling a stranger which emails have
-#: accounts is an account-enumeration oracle, and on a women-only platform that
-#: is not an abstract concern: it answers "is she a member here?" for anyone
-#: who wants to know.
-_RESET_SENT = (
-    "If that address has an account, a link to set a new password is on its "
-    "way. It expires in 24 hours."
-)
-
-#: What to say when no mail provider is configured.
-#:
-#: The sentence above was being returned over a file adapter that writes to
-#: `outbox/` and delivers nothing, so a woman locked out was told to wait for a
-#: link that would never arrive. This says what is true without answering "is
-#: she a member here?" — it is returned for every address, exactly like the one
-#: above, so it still leaks nothing.
-_RESET_NO_EMAIL = (
-    "We cannot send email yet, so no link is coming. Write to "
-    "support@womsakhi.com from this address and a person will reset it for you."
-)
+@router.get("/sessions", summary="My signed-in devices")
+async def my_sessions(request: Request, me: dict = Depends(get_current_user)):
+    return {"sessions": await sessions.list_for(str(me["_id"]), sessions.sid_from_request(request))}
 
 
-@router.post("/forgot-password", summary="Ask for a password reset link")
-async def forgot_password(payload: ForgotPasswordRequest, request: Request):
-    """Issue a single-use reset link and email it to her."""
-    from app.core.email import can_deliver, reset_email, send
-    from app.models.verification import EmailTokenModel
-
-    await ratelimit.check(
-        request, "forgot", payload.email,
-        ratelimit.PASSWORD_RESET, ratelimit.PASSWORD_RESET_IP,
-    )
-
-    db = get_database()
-    user = await db[UserModel.collection_name].find_one({"email": payload.email.lower()})
-
-    # Deliberately the same answer, and the same amount of work, either way.
-    if user:
-        # Retire any earlier unused link so only the newest one opens.
-        await db[EmailTokenModel.collection_name].delete_many(
-            {
-                "user_id": str(user["_id"]),
-                "purpose": EmailTokenModel.PURPOSE_RESET,
-                "used_at": None,
-            }
-        )
-        token_doc, raw_token = EmailTokenModel.create_document(
-            str(user["_id"]), EmailTokenModel.PURPOSE_RESET, hours=24
-        )
-        await db[EmailTokenModel.collection_name].insert_one(token_doc)
-        url = f"{settings.APP_BASE_URL}/reset-password?token={raw_token}"
-        await send(reset_email(user.get("full_name", ""), url), user["email"])
-
-    # The token is still minted and still stored either way — the moment a
-    # provider is configured the link she already asked for starts working,
-    # and staff can read it out of `outbox/` meanwhile.
-    deliverable = can_deliver()
-    return {
-        "message": _RESET_SENT if deliverable else _RESET_NO_EMAIL,
-        "can_email": deliverable,
-    }
+@router.delete("/sessions/{sid}", summary="Sign out one device")
+async def end_session(sid: str, request: Request, me: dict = Depends(get_current_user)):
+    owned = await get_database()[sessions.COLLECTION].find_one({"sid": sid, "user_id": str(me["_id"])})
+    if not owned:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "Device not found")
+    await sessions.revoke(sid, reason="removed_by_owner")
+    await record(me, "security.remove_device", target=str(me["_id"]),
+                 detail=f"Signed out {owned.get('label', 'a device')}", request=request)
+    return {"message": f"Signed out {owned.get('label', 'that device')}."}
 
 
-@router.post("/reset-password", summary="Set a new password from a reset link")
-async def reset_password(payload: ResetPasswordRequest, request: Request):
-    """Spend the token and set the new password."""
-    from app.models.verification import EmailTokenModel
+# ── her mobile number ───────────────────────────────────────────────────────
 
-    # Keyed on the token, so guessing tokens is rate limited as well as
-    # unguessable — `secrets.token_urlsafe(32)` is 256 bits.
-    await ratelimit.check(
-        request, "reset", payload.token,
-        ratelimit.PASSWORD_RESET, ratelimit.PASSWORD_RESET_IP,
-    )
 
-    db = get_database()
-    record = await db[EmailTokenModel.collection_name].find_one(
-        EmailTokenModel.lookup(payload.token, EmailTokenModel.PURPOSE_RESET)
-    )
-    if not EmailTokenModel.is_valid(record):
-        raise HTTPException(
-            status.HTTP_400_BAD_REQUEST,
-            "That link has expired or has already been used. Ask for a new one.",
-        )
+class PhoneIn(BaseModel):
+    phone: str
 
-    user = await db[UserModel.collection_name].find_one({"_id": ObjectId(record["user_id"])})
-    if not user:
-        raise HTTPException(status.HTTP_400_BAD_REQUEST, "That account no longer exists.")
+    @field_validator("phone")
+    @classmethod
+    def _phone(cls, value: str) -> str:
+        return normalise_phone(value)
 
+
+class PhoneCode(BaseModel):
+    code: str = Field(min_length=4, max_length=12)
+
+
+class FirebasePhone(BaseModel):
+    id_token: str = Field(min_length=20)
+
+
+@router.post("/phone", summary="Add or change my mobile number")
+async def set_phone(payload: PhoneIn, request: Request, me: dict = Depends(get_current_user)):
+    """
+    Saved unconfirmed. When phone codes are switched on the screen follows up
+    with `/auth/phone/start`; until then an admin checks it during review.
+    """
+    if payload.phone == me.get("phone") :
+        return {"phone": payload.phone, "phone_verified": bool(me.get("phone_verified_at"))}
+    if await _phone_taken(payload.phone, except_user_id=me["_id"]):
+        raise HTTPException(status.HTTP_409_CONFLICT,
+                            {"code": "phone_taken", "message": "This mobile number is already linked to another account."})
     now = datetime.now(timezone.utc)
-    await db[UserModel.collection_name].update_one(
-        {"_id": user["_id"]},
-        {
-            "$set": {"hashed_password": await hash_password_async(payload.password), "updated_at": now},
-            # End every other session after a password reset. `_token_for`
-            # includes this version and `core/deps.py` rejects older tokens.
-            "$inc": {"token_version": 1},
-        },
-    )
-    # Single use: spent whether or not anything else goes wrong after this.
-    await db[EmailTokenModel.collection_name].update_one(
-        {"_id": record["_id"]}, {"$set": {"used_at": now}}
-    )
-    # She has proved control of the mailbox, so let her straight in rather than
-    # making her retype what she just chose.
-    await ratelimit.forget("signin", user["email"])
+    await _users().update_one({"_id": me["_id"]},
+                              {"$set": {"phone": payload.phone, "phone_verified_at": None, "updated_at": now}})
+    if me.get("member_id"):
+        try:
+            await get_database()[MemberModel.collection_name].update_one(
+                {"_id": ObjectId(me["member_id"])}, {"$set": {"phone": payload.phone}})
+        except Exception:  # noqa: BLE001 - the directory row is a mirror, not the record
+            pass
+    cache.forget_user(str(me["_id"]))
+    await record(me, "security.phone_changed", target=str(me["_id"]), detail="Mobile number updated", request=request)
+    return {"phone": payload.phone, "phone_verified": False}
 
-    return {"message": "Your password has been changed. You can sign in with it now."}
+
+@router.post("/phone/start", summary="Send a code to my mobile number")
+async def phone_start(request: Request, me: dict = Depends(get_current_user)):
+    if not settings.server_sends_sms:
+        raise HTTPException(status.HTTP_400_BAD_REQUEST,
+                            {"code": "phone_codes_off", "message": "Phone confirmation isn't switched on yet."})
+    if not me.get("phone"):
+        raise HTTPException(status.HTTP_400_BAD_REQUEST, "Add your mobile number first.")
+    issued = await codes.issue(request, purpose=codes.PHONE_VERIFY, channel=codes.SMS,
+                               destination=me["phone"], user_id=str(me["_id"]), name=me.get("full_name", ""))
+    return {"message": f"We've sent a code to {issued.destination}.", "destination": issued.destination,
+            "expires_in": issued.expires_in, "resend_in": issued.resend_in}
+
+
+async def _mark_phone_verified(me: dict, request: Request) -> dict:
+    now = datetime.now(timezone.utc)
+    await _users().update_one({"_id": me["_id"]}, {"$set": {"phone_verified_at": now, "updated_at": now}})
+    cache.forget_user(str(me["_id"]))
+    await record(me, "security.phone_verified", target=str(me["_id"]), detail="Mobile number confirmed", request=request)
+    return {"phone": me.get("phone", ""), "phone_verified": True}
+
+
+@router.post("/phone/verify", summary="Confirm my mobile number with its code")
+async def phone_verify(payload: PhoneCode, request: Request, me: dict = Depends(get_current_user)):
+    if not me.get("phone"):
+        raise HTTPException(status.HTTP_400_BAD_REQUEST, "Add your mobile number first.")
+    await codes.verify(request, purpose=codes.PHONE_VERIFY, destination=me["phone"], code=payload.code)
+    return await _mark_phone_verified(me, request)
+
+
+@router.post("/phone/firebase", summary="Confirm my mobile number with Firebase")
+async def phone_firebase(payload: FirebasePhone, request: Request, me: dict = Depends(get_current_user)):
+    """
+    Firebase sends and checks the SMS itself; the app hands us the ID token it
+    got back. We check Google's signature and that the number inside it is the
+    number on her account — and never use Firebase for the session itself.
+    """
+    if not settings.phone_codes_live or settings.PHONE_PROVIDER.strip().lower() != "firebase":
+        raise HTTPException(status.HTTP_400_BAD_REQUEST,
+                            {"code": "phone_codes_off", "message": "Phone confirmation isn't switched on yet."})
+    await ratelimit.check(request, "firebase_phone", str(me["_id"]), (10, 3600.0), (60, 3600.0))
+    phone = await codes.verify_firebase_phone(payload.id_token)
+    if not phone or phone != me.get("phone"):
+        raise HTTPException(status.HTTP_400_BAD_REQUEST,
+                            {"code": "phone_mismatch", "message": "That confirmation doesn't match the number on your account."})
+    return await _mark_phone_verified(me, request)
+
+
+class FirebaseSignin(BaseModel):
+    id_token: str = Field(min_length=20)
+
+
+@router.post("/signin/firebase", response_model=AuthResponse, summary="Sign in with a confirmed mobile number")
+async def signin_firebase(payload: FirebaseSignin, request: Request, response: Response, background: BackgroundTasks):
+    """
+    Firebase has already sent and checked the SMS; the browser hands us the ID
+    token it got back. We check Google's signature and read the number from it.
+
+    Only a number she has CONFIRMED on her account is a way in — an unconfirmed
+    one could have been typed by anybody. Members only: staff sign in with an
+    email code and their authenticator.
+    """
+    if not settings.phone_codes_live or settings.PHONE_PROVIDER.strip().lower() != "firebase":
+        raise HTTPException(status.HTTP_400_BAD_REQUEST,
+                            {"code": "phone_codes_off", "message": "Sign in with your email for now."})
+    await ratelimit.check(request, "firebase_signin", sessions._client_ip(request) or "unknown", (20, 3600.0))
+    phone = await codes.verify_firebase_phone(payload.id_token)
+    if not phone:
+        raise HTTPException(status.HTTP_400_BAD_REQUEST,
+                            {"code": "code_wrong", "message": "We couldn't confirm that code. Please try again."})
+    user = await _users().find_one({"phone": phone, "phone_verified_at": {"$ne": None}})
+    if not user or not user.get("is_active", True):
+        raise HTTPException(status.HTTP_404_NOT_FOUND, {
+            "code": "phone_unknown",
+            "message": "No account is linked to this number yet. Sign in with your email, then confirm your number.",
+        })
+    if role_name(user) != MEMBER_ROLE:
+        raise HTTPException(status.HTTP_403_FORBIDDEN, {
+            "code": "staff_use_email",
+            "message": "Staff sign in with their email and authenticator app.",
+        })
+    now = datetime.now(timezone.utc)
+    await _users().update_one({"_id": user["_id"]}, {"$set": {"last_login_at": now}})
+    tokens = await sessions.start(response, user, request, method="phone_code")
+    background.add_task(_notify_super_admins_of_member_login, dict(user), now)
+    return await _auth_response(user, tokens)
+
+
+class SmsAllowanceIn(BaseModel):
+    phone: str
+    purpose: str = Field("signin", pattern="^(signin|phone_verify)$")
+
+    @field_validator("phone")
+    @classmethod
+    def _phone(cls, value: str) -> str:
+        return normalise_phone(value)
+
+
+@router.post("/sms/allowance", summary="Ask before Firebase sends an SMS code")
+async def sms_allowance(payload: SmsAllowanceIn, request: Request):
+    """
+    Firebase sends its SMS from the browser, where we cannot count it — so the
+    screen asks here first. Refused with `sms_limit` once today's allowance is
+    used (SMS_DAILY_LIMIT; 10 = Firebase's free tier), and the screen offers the
+    email code instead. Also rate-limited per IP so it cannot be used to burn
+    the allowance for everyone.
+    """
+    if not settings.phone_codes_live:
+        raise HTTPException(status.HTTP_400_BAD_REQUEST,
+                            {"code": "phone_codes_off", "message": "Sign in with your email for now."})
+    await ratelimit.check(request, "sms_allowance", payload.phone, (5, 3600.0), (15, 3600.0))
+    await codes.reserve_sms(payload.phone, payload.purpose)
+    return {"ok": True}
+
+
+@router.post("/phone/later", summary="Confirm my number tomorrow (SMS allowance used up)")
+async def phone_later(me: dict = Depends(get_current_user)):
+    """
+    Only when today's SMS allowance really is used up — otherwise confirming
+    now is the answer. Postpones the "confirm your number" step by a day.
+    """
+    ist = timezone(timedelta(hours=5, minutes=30))
+    day = datetime.now(ist).strftime("%Y-%m-%d")
+    used = await get_database()[codes.SMS_LEDGER].count_documents({"day": day})
+    if settings.SMS_DAILY_LIMIT <= 0 or used < settings.SMS_DAILY_LIMIT:
+        raise HTTPException(status.HTTP_400_BAD_REQUEST, "SMS codes are available — confirm your number now.")
+    until = datetime.now(timezone.utc) + timedelta(days=1)
+    await _users().update_one({"_id": me["_id"]}, {"$set": {"phone_confirm_deferred_until": until}})
+    cache.forget_user(str(me["_id"]))
+    return {"deferred_until": until.isoformat()}

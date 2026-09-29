@@ -53,3 +53,6 @@ DEPLOYMENT.local.md
 
 # Local credential reference. Never committed.
 CREDENTIALS.local.env
+
+# Local one-off setup scripts and the configs they save.
+scripts-local/

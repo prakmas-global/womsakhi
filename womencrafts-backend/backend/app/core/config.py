@@ -97,6 +97,63 @@ class Settings(BaseSettings):
     MAX_FAILED_LOGINS: int = 5      # attempts before a temporary lockout
     LOCKOUT_MINUTES: int = 15
 
+    # --- One-time sign-in codes (see app/core/codes.py) ----------------------
+    # There are no passwords. Every sign-in, and every signup, proves control of
+    # an email address (and, once phone codes are switched on, a mobile number)
+    # with a six-digit code.
+    AUTH_CODE_TTL_MINUTES: int = 5
+    AUTH_CODE_MAX_ATTEMPTS: int = 5
+    AUTH_CODE_RESEND_SECONDS: int = 90
+    AUTH_CODE_MAX_PER_HOUR: int = 5
+
+    # --- Test accounts (development only) ------------------------------------
+    # While the app is in development, a short list of test accounts (a member,
+    # an admin, a super admin) signs in with their email and one fixed code —
+    # no email is sent and staff skip the authenticator. Both values come from
+    # Secret Manager, never the repo. Empty either one and the door is shut;
+    # empty both before launch.
+    TEST_LOGIN_EMAILS: str = ""
+    TEST_LOGIN_CODE: str = ""
+
+    # --- Sessions (see app/core/sessions.py) ---------------------------------
+    # The access token stays short; the session behind it is what lasts. A
+    # member stays signed in on her own phone for a month; a staff session,
+    # which can open identity documents, lasts a working day.
+    MEMBER_SESSION_DAYS: int = 30
+    STAFF_SESSION_HOURS: int = 12
+
+    # --- Phone codes: built, and OFF until keys exist -------------------------
+    # Mobile numbers are collected (required, +91) from day one and stored as
+    # unverified. Setting PHONE_CODES_ENABLED with a provider and its keys turns
+    # on SMS codes with no code change; each member then confirms her number
+    # once at her next sign-in.
+    PHONE_CODES_ENABLED: bool = False
+    PHONE_PROVIDER: str = ""            # "brevo" | "msg91" | "firebase" | "file" (dev only)
+    PHONE_ALLOWED_REGIONS: str = "IN"
+    # Brevo transactional SMS (same account as email; needs an API v3 key and,
+    # for India, a DLT-registered 6-letter sender ID set up in Brevo).
+    BREVO_API_KEY: str = ""
+    BREVO_SMS_SENDER: str = ""
+    MSG91_AUTH_KEY: str = ""
+    MSG91_TEMPLATE_ID: str = ""
+    FIREBASE_PROJECT_ID: str = ""
+    # The Firebase WEB config (public by design — it identifies the project to
+    # Google's SDK; it grants nothing). Sent to the browser by /auth/options.
+    FIREBASE_WEB_API_KEY: str = ""
+    FIREBASE_APP_ID: str = ""
+    FIREBASE_AUTH_DOMAIN: str = ""      # defaults to <project>.firebaseapp.com
+
+    # How many SMS codes may go out per day across the whole platform. Firebase
+    # gives 10 a day free; keeping this at 10 during development means SMS
+    # costs nothing. Raise it before launch. After the limit, the screens offer
+    # the email code instead. 0 = no limit.
+    SMS_DAILY_LIMIT: int = 10
+    # Per mobile number per day, whatever the platform limit.
+    SMS_PER_NUMBER_DAILY: int = 5
+
+    # A rejected applicant may apply again after this many days.
+    REAPPLY_AFTER_DAYS: int = 7
+
     # Payments. "sandbox" needs no account and runs the full journey locally;
     # switch to "razorpay" (or another adapter) once keys exist.
     PAYMENT_PROVIDER: str = "sandbox"
@@ -216,6 +273,38 @@ class Settings(BaseSettings):
     @property
     def is_production(self) -> bool:
         return self.ENVIRONMENT.strip().lower() in {"production", "prod", "live"}
+
+    @property
+    def phone_provider_ready(self) -> bool:
+        """True when the chosen phone-code provider has what it needs to send."""
+        provider = self.PHONE_PROVIDER.strip().lower()
+        if provider == "file":
+            # Development only: codes land in outbox/ instead of a phone.
+            return not self.is_production
+        if provider == "brevo":
+            return bool(self.BREVO_API_KEY and self.BREVO_SMS_SENDER)
+        if provider == "msg91":
+            return bool(self.MSG91_AUTH_KEY and self.MSG91_TEMPLATE_ID)
+        if provider == "firebase":
+            return bool(self.FIREBASE_PROJECT_ID and self.FIREBASE_WEB_API_KEY)
+        return False
+
+    @property
+    def phone_codes_live(self) -> bool:
+        return self.PHONE_CODES_ENABLED and self.phone_provider_ready
+
+    @property
+    def server_sends_sms(self) -> bool:
+        """True when OUR server sends the SMS code (Brevo, MSG91) — not Firebase."""
+        return self.phone_codes_live and self.PHONE_PROVIDER.strip().lower() in {"brevo", "msg91", "file"}
+
+    @property
+    def test_login_emails(self) -> set:
+        """The fixed-code test accounts, or nothing when the door is shut."""
+        code = self.TEST_LOGIN_CODE.strip()
+        if len(code) != 6 or not code.isdigit():
+            return set()
+        return {e.strip().lower() for e in self.TEST_LOGIN_EMAILS.split(",") if e.strip()}
 
     @property
     def should_seed_demo_data(self) -> bool:
@@ -351,6 +440,11 @@ class Settings(BaseSettings):
         if not self.ENGINES_TICK_SECRET:
             problems.append(
                 "ENGINES_TICK_SECRET is empty, so the scheduler endpoint fails closed and no automation tick can run."
+            )
+        if self.PHONE_CODES_ENABLED and not self.phone_provider_ready:
+            problems.append(
+                f"PHONE_CODES_ENABLED is on but PHONE_PROVIDER '{self.PHONE_PROVIDER}' has no keys, "
+                "so every phone code would fail to send. Add the keys or switch phone codes off."
             )
         if not (self.VAPID_PUBLIC_KEY and self.VAPID_PRIVATE_KEY):
             problems.append(

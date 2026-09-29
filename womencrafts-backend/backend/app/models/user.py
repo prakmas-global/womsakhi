@@ -5,6 +5,10 @@ from app.models.verification import VerificationStatus
 from app.core.media import media_url
 
 
+def _iso(value) -> str:
+    return value.isoformat() if isinstance(value, datetime) else ""
+
+
 class UserModel:
     """
     The 'users' collection — every account that can sign in, staff and members
@@ -71,6 +75,32 @@ class UserModel:
         }
 
     @staticmethod
+    def phone_action_required(document: dict) -> bool:
+        """
+        Should the screens stop her to add or confirm a mobile number?
+
+        Members only. A missing number always counts — it is required. An
+        unconfirmed one counts only once phone codes are live; before that
+        there is nothing she could do about it.
+        """
+        from app.core.config import settings  # local: config is heavy to import here
+
+        if (document.get("role") or "Super Admin") != "Member":
+            return False
+        if not document.get("phone"):
+            return True
+        if not settings.phone_codes_live or document.get("phone_verified_at"):
+            return False
+        # Postponed because today's SMS allowance ran out: ask again tomorrow.
+        deferred = document.get("phone_confirm_deferred_until")
+        if isinstance(deferred, datetime):
+            if deferred.tzinfo is None:
+                deferred = deferred.replace(tzinfo=timezone.utc)
+            if deferred > datetime.now(timezone.utc):
+                return False
+        return True
+
+    @staticmethod
     def to_response(document: dict) -> dict:
         """Strip sensitive fields before returning to client."""
         created = document.get("created_at")
@@ -99,6 +129,13 @@ class UserModel:
             "onboarding_done": document.get("onboarding_done") or [],
             "onboarding_complete": bool(document.get("onboarding_complete", False)),
             "phone": document.get("phone", ""),
+            "phone_verified": bool(document.get("phone_verified_at")),
+            "phone_action_required": UserModel.phone_action_required(document),
+            # Accounts from before email codes, and staff made by an admin,
+            # have no stamp; only an open "confirm your email" step is unproved.
+            "email_verified": document.get("verification_status") != VerificationStatus.PENDING_EMAIL,
+            "reapply_after": _iso(document.get("reapply_after")),
+            "two_factor_enabled": bool((document.get("two_factor") or {}).get("enabled")),
             "avatar": media_url(document.get("avatar", "")),
             "is_active": document.get("is_active", True),
             # Staff accounts are created by an admin and are active on sight;

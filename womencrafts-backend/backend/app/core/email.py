@@ -373,6 +373,59 @@ def verification_email(name: str, url: str) -> EmailMessageSpec:
     return EmailMessageSpec(to="", subject="Confirm your WomSakhi email", html=html, text=text)
 
 
+def code_email(name: str, code: str, purpose: str) -> EmailMessageSpec:
+    """
+    The six-digit code, large enough to read at a glance on a small phone.
+
+    The digits are spaced for reading and also sit in the plain-text part and
+    the subject line unspaced, so a mail app's "copy code" chip finds them.
+    Nothing to click: a code email with a button trains women to click links
+    in emails that claim to be from us, which is how phishing works.
+    """
+    first = (name or "").strip().split(" ")[0] or "there"
+    minutes = settings.AUTH_CODE_TTL_MINUTES
+    if purpose == "signup":
+        title, lead = "Your code to join", "Enter this code to confirm your email and create your WomSakhi account."
+        subject = f"{code} is your WomSakhi code"
+    elif purpose == "existing_member":
+        title, lead = "You already have an account", (
+            "Someone tried to join WomSakhi with this email, and you already have an account. "
+            "If it was you, enter this code on the same screen and you'll be signed in."
+        )
+        subject = f"{code} is your WomSakhi sign-in code"
+    elif purpose == "phone_verify":
+        title, lead = "Your confirmation code", "Enter this code to confirm your details."
+        subject = f"{code} is your WomSakhi code"
+    else:
+        title, lead = "Your sign-in code", "Enter this code to sign in to WomSakhi."
+        subject = f"{code} is your WomSakhi sign-in code"
+    spaced = " ".join(code)
+    body = (
+        f"{escape(lead)}"
+        "<div style=\"margin:18px auto 6px;padding:14px 10px;max-width:300px;border-radius:16px;"
+        "background:#fbeef5;border:1px solid #ecc9da;text-align:center;font-family:'Courier New',monospace;"
+        "font-size:32px;line-height:40px;font-weight:700;letter-spacing:6px;color:#8e1a5c;\">"
+        f"{escape(spaced)}</div>"
+        f"<div style=\"text-align:center;font-size:12px;color:#8b7c8e;\">It works once and expires in {minutes} minutes.</div>"
+    )
+    html = _wrap(
+        title,
+        body,
+        preheader=f"{code} is your code. It expires in {minutes} minutes.",
+        footer_note="If you didn't ask for this code, ignore this email. Nobody can sign in without it. "
+                    "WomSakhi will never ask you to share this code.",
+        recipient_name=name,
+        title_accent="code",
+        next_step="Never share this code with anyone, including anyone who says they work at WomSakhi.",
+    )
+    text = (
+        f"Hi {first},\n\n{lead}\n\nYour WomSakhi code is {code}\n\n"
+        f"It works once and expires in {minutes} minutes. If you didn't ask for it, ignore this email.\n"
+        "Never share this code with anyone."
+    )
+    return EmailMessageSpec(to="", subject=subject, html=html, text=text)
+
+
 def submitted_email(name: str) -> EmailMessageSpec:
     first = (name or "").strip().split(" ")[0] or "there"
     status_url = f"{settings.APP_BASE_URL.rstrip('/')}/app/verify"
@@ -414,23 +467,27 @@ def approved_email(name: str, url: str) -> EmailMessageSpec:
     return EmailMessageSpec(to="", subject="Your WomSakhi account is approved", html=html, text=text)
 
 
-def rejected_email(name: str, reason: str) -> EmailMessageSpec:
+def rejected_email(name: str, reason: str, reapply_on: str = "") -> EmailMessageSpec:
     first = (name or "").strip().split(" ")[0] or "there"
     detail = f"<br><strong style='color:#8f2b68;'>Reason:</strong> {escape(reason)}" if reason else ""
     application_url = f"{settings.APP_BASE_URL.rstrip('/')}/app/verify"
+    when = f"from {reapply_on}" if reapply_on else f"after {settings.REAPPLY_AFTER_DAYS} days"
     html = _wrap(
         "We couldn't verify your account",
         "We weren't able to verify your account with the documents provided."
         f"{detail}",
-        "Fix my application",
+        "View my application",
         application_url,
         preheader="An update about your WomSakhi application.",
         footer_note="This is a status update for your WomSakhi application.",
         recipient_name=name,
         title_accent="account",
-        next_step="Sign in, replace the requested photo, and it will return to the review team automatically.",
+        next_step=f"You can apply again {when}. Sign in with a code sent to this email, then send a new selfie and ID photo.",
     )
-    text = f"Hi {first},\n\nWe couldn't verify your account. {reason}\n\nFix your application: {application_url}"
+    text = (
+        f"Hi {first},\n\nWe couldn't verify your account. {reason}\n\n"
+        f"You can apply again {when}: {application_url}"
+    )
     return EmailMessageSpec(to="", subject="WomSakhi — about your application", html=html, text=text)
 
 

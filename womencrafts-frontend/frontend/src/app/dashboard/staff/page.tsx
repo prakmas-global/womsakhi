@@ -1,10 +1,9 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
-import Image from "next/image";
 import {
   AlertTriangle, Check, Copy, KeyRound, Mail, MoreHorizontal,
-  Search, ShieldAlert, ShieldCheck, SlidersHorizontal, UserCog, UserPlus, Users,
+  Search, ShieldAlert, ShieldCheck, SlidersHorizontal, Smartphone, UserCog, UserPlus, Users,
 } from "lucide-react";
 import {
   Badge, Card, EmptyState, Input, Menu, MenuItem, Modal, NoResults, Select, SkeletonTable, StatCard, useConfirm, useToast,
@@ -12,7 +11,7 @@ import {
 import {
   STATE_LABEL, STATE_NOTE, STATE_TONE,
   apiAssignableRoles, apiChangeStaffRole, apiInviteStaff, apiResendInvite,
-  apiRestoreStaff, apiStaffList, apiSuspendStaff,
+  apiResetStaffTwoFactor, apiRestoreStaff, apiStaffList, apiSuspendStaff,
   type AssignableRole, type StaffAccount, type StaffList, type StaffState,
 } from "@/lib/staff-accounts-api";
 import { useAuth } from "@/context/AuthContext";
@@ -28,10 +27,9 @@ import StaffAccessPanel from "@/components/admin/StaffAccessPanel";
  * a colleague narrower access. This is that screen.
  *
  * ── The invitation is shown once ────────────────────────────────────────────
- * Creating an account does not set a password — it issues a single-use link
- * the invitee uses to choose her own. An admin who types a colleague's first
- * password knows that password, and on a platform holding women's ID
- * documents that is not a footnote.
+ * Creating an account sets nothing secret — there are no passwords. It issues
+ * a single-use link; once she accepts it she signs in with a code sent to her
+ * email and sets up an authenticator app on that first sign-in.
  *
  * The server stores only a digest, so the raw link is readable exactly once,
  * in the response to the create call. The dialog below therefore refuses to
@@ -196,6 +194,23 @@ export default function StaffPage() {
     }
   }, [confirm, refresh, toast]);
 
+  const resetAuthenticator = useCallback(async (s: StaffAccount) => {
+    const ok = await confirm({
+      title: `Reset ${s.full_name}'s authenticator?`,
+      description: "Her authenticator app is removed and she is signed out of every device now. At her next sign-in she sets up a new one. Do this only when she has lost her phone and her recovery codes, and you have confirmed it is really her asking.",
+      confirmLabel: "Reset authenticator",
+      danger: true,
+    });
+    if (!ok) return;
+    try {
+      const res = await apiResetStaffTwoFactor(s.id);
+      toast.success(res.message);
+      await refresh();
+    } catch (e) {
+      toast.error("Could not reset the authenticator", { description: memberError(e) });
+    }
+  }, [confirm, refresh, toast]);
+
   const restore = useCallback(async (s: StaffAccount) => {
     try {
       await apiRestoreStaff(s.id);
@@ -228,15 +243,14 @@ export default function StaffPage() {
       </div>
 
       <div className="relative mb-6 min-h-52 overflow-hidden rounded-2xl border border-line bg-[#fff8f2] sm:min-h-60">
-        <Image
-          src="/images/admin/staff-scope-v1.webp"
-          alt="Illustration of a diverse group of fictional women administrators planning together"
-          fill priority sizes="(max-width: 1024px) 100vw, 1180px"
-          className="object-cover object-center sm:object-right"
-        />
+        {/* Brand placeholder where the illustration will go (owner rule: no
+            image files until the final art is approved). Same box, same size. */}
+        <div aria-hidden className="absolute inset-0 bg-[linear-gradient(120deg,#fdeef6_0%,#f3e9fb_45%,#d21f7c_78%,#7440a6_100%)]">
+          <UserCog className="absolute right-[12%] top-1/2 hidden h-24 w-24 -translate-y-1/2 text-white/80 sm:block" strokeWidth={1.4} />
+        </div>
         <div className="absolute inset-0 bg-gradient-to-r from-[#fffaf5] via-[#fffaf5]/90 to-transparent sm:via-[#fffaf5]/55" />
         <div className="relative flex min-h-52 max-w-lg flex-col justify-center p-5 sm:min-h-60 sm:p-7">
-          <Badge tone="violet">Secure responsibility</Badge>
+          <span className="self-start"><Badge tone="violet">Secure responsibility</Badge></span>
           <h2 className="mt-3 max-w-sm font-display text-xl font-bold text-ink sm:text-2xl">
             Give each administrator the people and work she is responsible for
           </h2>
@@ -252,14 +266,14 @@ export default function StaffPage() {
         <StatCard label="Active" value={String(data.by_state.active)} icon={ShieldCheck} tone="violet"
                   deltaNote="Can sign in now" />
         <StatCard label="Waiting to accept" value={String(data.by_state.invited)} icon={Mail} tone="amber"
-                  deltaNote="Invited, no password yet" />
+                  deltaNote="Invited, not accepted yet" />
         <StatCard label="Super Admins" value={String(data.super_admins)} icon={ShieldAlert}
                   tone={data.super_admins < 2 ? "amber" : "brand"}
                   deltaNote={data.super_admins < 2 ? "Only one — add a second" : "Full control"} />
       </div>
 
-      {/* A single Super Admin is one forgotten password away from nobody being
-          able to manage roles at all. Said here rather than in a runbook. */}
+      {/* A single Super Admin is one lost phone away from nobody being able to
+          manage roles at all. Said here rather than in a runbook. */}
       {data.super_admins < 2 && !loading && (
         <div className="mt-4 flex items-start gap-3 rounded-xl border border-amber-200 bg-amber-50 p-4">
           <AlertTriangle className="mt-0.5 h-5 w-5 shrink-0 text-amber-600" />
@@ -313,7 +327,7 @@ export default function StaffPage() {
         ) : shown.length === 0 ? (
           query || stateFilter !== "All"
             ? <NoResults icon={Users} filtered thing="staff accounts" onClear={() => { setQuery(""); setStateFilter("All"); }} />
-            : <EmptyState icon={Users} title="No staff yet" description="Invite a colleague, choose what she can reach, and let her set a private password from the invitation." />
+            : <EmptyState icon={Users} title="No staff yet" description="Invite a colleague and choose what she can reach. She signs in with an email code and her own authenticator app." />
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full text-left">
@@ -390,6 +404,9 @@ export default function StaffPage() {
                             {s.state === "invited" && (
                               <MenuItem onClick={() => void resend(s)}>Issue a fresh invite link</MenuItem>
                             )}
+                            {!isMe && s.state === "active" && (
+                              <MenuItem icon={Smartphone} onClick={() => void resetAuthenticator(s)}>Reset authenticator</MenuItem>
+                            )}
                             {s.state === "suspended"
                               ? <MenuItem onClick={() => void restore(s)}>Let her back in</MenuItem>
                               : !isMe && <MenuItem onClick={() => void suspend(s)}>Suspend</MenuItem>}
@@ -409,7 +426,8 @@ export default function StaffPage() {
       <Modal open={inviting} onClose={() => setInviting(false)} title="Invite someone to the dashboard">
         <div className="space-y-4">
           <p className="rounded-lg bg-surface-2 px-3 py-2.5 text-xs leading-relaxed text-ink-muted">
-            She sets her own password from a link — you never type it, and you never see it.
+            She accepts from a link, then signs in with a code sent to her email and sets up an
+            authenticator app on her first sign-in. There is no password for anyone to know.
           </p>
           <Input label="Her name" value={form.full_name}
                  onChange={(e) => setForm({ ...form, full_name: e.target.value })}
@@ -449,7 +467,7 @@ export default function StaffPage() {
               {issued.emailSent ? (
                 <>We emailed <b className="text-ink">{issued.name}</b> at <b className="text-ink">{issued.email}</b>.</>
               ) : (
-                <><b className="text-ink">{issued.name}</b> can set her password with this link.</>
+                <><b className="text-ink">{issued.name}</b> accepts her invitation with this link, then signs in with a code sent to her email.</>
               )}{" "}It works once and expires in three days.
             </p>
             <div className="flex items-start gap-3 rounded-xl border border-amber-200 bg-amber-50 p-3">

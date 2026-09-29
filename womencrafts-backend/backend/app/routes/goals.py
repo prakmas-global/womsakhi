@@ -28,7 +28,7 @@ from bson.errors import InvalidId
 from fastapi import APIRouter, Depends, HTTPException, status
 from pydantic import BaseModel, Field
 
-from app.core.rbac import require_active_member
+from app.core.rbac import require_active_member, require_member_account
 from app.core.serializers import aware
 from app.db.mongodb import get_database
 from app.models.books import BookEntryModel
@@ -124,7 +124,7 @@ def _after(when, since) -> bool:
 
 
 @router.get("", summary="Everything she is working towards")
-async def list_goals(me: dict = Depends(require_active_member)):
+async def list_goals(me: dict = Depends(require_member_account)):
     return await _all(str(me["_id"]))
 
 

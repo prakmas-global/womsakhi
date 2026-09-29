@@ -304,12 +304,17 @@ const toCircle = (c: ApiCircle): Circle => ({
 
 export interface UxCircles { mine: Circle[]; discover: Circle[] }
 
-export const useCircles = (): Resource<UxCircles> =>
+/**
+ * `enabled = false` answers with no circles and sends nothing — for a member
+ * still waiting for approval, whom the API (rightly) refuses circles.
+ */
+export const useCircles = (enabled = true): Resource<UxCircles> =>
   useResource(
     useCallback(async (s: AbortSignal) => {
+      if (!enabled) return { mine: [], discover: [] };
       const all = (await apiCircles(s)).map(toCircle);
       return { mine: all.filter((c) => c.joined), discover: all.filter((c) => !c.joined) };
-    }, []),
+    }, [enabled]),
     { mine: [], discover: [] },
   );
 

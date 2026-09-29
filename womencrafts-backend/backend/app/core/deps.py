@@ -58,10 +58,9 @@ async def get_current_user(
     # Has this session been revoked wholesale? See `security.token_version_of`
     # for why "sign out everywhere" has to mean something on this platform.
     #
-    # NOTE, and this is the part that matters: the check only fires on a token
-    # that CARRIES a `tv` claim, and nothing mints one yet — `routes/auth.py::
-    # _token_for` has to add `TOKEN_VERSION_CLAIM` for this to do any work.
-    # Until it does, bumping `token_version` on a user document has NO effect.
+    # The check only fires on a token that CARRIES a `tv` claim. Every token
+    # minted by `app/core/sessions.py` does; only a token from before the claim
+    # existed does not, and those have long since expired.
     #
     # It is written this way round on purpose. The alternative — reject any
     # token whose claim is behind the account — locks a woman out permanently
@@ -79,4 +78,16 @@ async def get_current_user(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="This session was ended. Please sign in again.",
         )
+    # A token minted for a signed-in device carries its `sid`; the device can
+    # be signed out from her list of devices, and that has to take effect now,
+    # not when this token would have expired. See `app/core/sessions.py`.
+    sid = payload.get("sid")
+    if sid:
+        from app.core import sessions  # local: sessions imports rbac, which imports this module
+
+        if not await sessions.is_live(str(sid)):
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="This session was ended. Please sign in again.",
+            )
     return user

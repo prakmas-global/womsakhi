@@ -27,6 +27,14 @@ class VerificationStatusResponse(BaseModel):
     review_request_count: int = 0
     review_requested_at: str = ""
     next_review_request_at: str = ""
+    #: When she sent her application (ISO) and when she should hear back by.
+    submitted_at: str = ""
+    expected_by: str = ""
+    #: A reviewer asked for something to be fixed; `rejection_reason` says what.
+    needs_info: bool = False
+    #: Rejected applicants may apply again from this moment (ISO), '' otherwise.
+    reapply_after: str = ""
+    can_reapply: bool = False
     documents: list[DocumentResponse]
 
 

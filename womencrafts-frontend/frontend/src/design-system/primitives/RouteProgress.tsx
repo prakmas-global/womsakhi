@@ -88,8 +88,13 @@ export default function RouteProgress() {
     }, 280);
   };
 
+  /** The path the bar last settled on: Back/Forward inside one page (a
+   *  multi-step screen's `?step=`) changes no route, so it must not start it. */
+  const settledPath = useRef("");
+
   // complete whenever the resolved route changes
   useEffect(() => {
+    settledPath.current = pathname ?? "";
     done();
     return clearTimers;
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -122,7 +127,10 @@ export default function RouteProgress() {
       if (url.pathname === window.location.pathname && url.search === window.location.search) return;
       start();
     };
-    const onPop = () => start();
+    const onPop = () => {
+      if (window.location.pathname === settledPath.current) return;
+      start();
+    };
     document.addEventListener("click", onClick, true);
     window.addEventListener("popstate", onPop);
     return () => {

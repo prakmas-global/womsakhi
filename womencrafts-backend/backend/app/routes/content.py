@@ -34,7 +34,7 @@ from app.core import mongosafe
 from app.core.audit import record
 from app.core.deps import get_current_user
 from app.core.permissions import require_permission
-from app.core.rbac import require_active_member
+from app.core.rbac import require_active_member, require_member_account
 from app.core.serializers import to_object_id
 from app.db.mongodb import get_database
 from app.models.content import ContentItemModel
@@ -396,7 +396,7 @@ async def _doc_or_404(item_id: str) -> dict:
 
 
 @member_router.get("", response_model=list[ContentResponse], summary="Published content for this member")
-async def member_content_feed(me: dict = Depends(require_active_member)):
+async def member_content_feed(me: dict = Depends(require_member_account)):
     """Apply the audience chosen by staff when member screens request content."""
     await _publish_due()
     member = {}

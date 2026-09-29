@@ -209,6 +209,11 @@ async def my_status(current_user: dict = Depends(get_current_user)):
         DocumentModel.to_response(d)
         async for d in _docs().find({"user_id": str(current_user["_id"]), "status": {"$ne": DocumentModel.STATUS_STORED}}).sort("created_at", -1)
     ]
+    submitted = current_user.get("application_submitted_at") or current_user.get("verification_review_requested_at")
+    reapply_after = current_user.get("reapply_after")
+    now = datetime.now(timezone.utc)
+    if isinstance(reapply_after, datetime) and reapply_after.tzinfo is None:
+        reapply_after = reapply_after.replace(tzinfo=timezone.utc)
     return VerificationStatusResponse(
         status=state,
         label=VerificationStatus.LABELS.get(state, state),
@@ -218,6 +223,16 @@ async def my_status(current_user: dict = Depends(get_current_user)):
         review_request_count=int(current_user.get("verification_reminder_count") or 0),
         review_requested_at=_iso(current_user.get("verification_review_requested_at")),
         next_review_request_at=_iso(current_user.get("verification_next_request_at")),
+        submitted_at=_iso(submitted) if state == VerificationStatus.IN_REVIEW else "",
+        expected_by=(
+            _iso(submitted + timedelta(hours=24))
+            if state == VerificationStatus.IN_REVIEW and isinstance(submitted, datetime) else ""
+        ),
+        needs_info=state == VerificationStatus.PENDING_DOCUMENTS and bool(current_user.get("resubmission_requested_at")),
+        reapply_after=_iso(reapply_after) if state == VerificationStatus.REJECTED else "",
+        can_reapply=state == VerificationStatus.REJECTED and (
+            not isinstance(reapply_after, datetime) or reapply_after <= now
+        ),
         documents=docs,
     )
 
@@ -249,6 +264,11 @@ async def request_my_review(
 
     now = datetime.now(timezone.utc)
     next_allowed = current_user.get("verification_next_request_at")
+    # Mongo hands datetimes back without a timezone; comparing one with `now`
+    # raised TypeError, so this button answered every applicant in review with
+    # a 500 instead of "you can follow up after …".
+    if isinstance(next_allowed, datetime) and next_allowed.tzinfo is None:
+        next_allowed = next_allowed.replace(tzinfo=timezone.utc)
     if isinstance(next_allowed, datetime) and next_allowed > now:
         raise HTTPException(
             status.HTTP_429_TOO_MANY_REQUESTS,
@@ -469,6 +489,22 @@ async def upload_document(
     state = current_user.get("verification_status")
     if state == VerificationStatus.ACTIVE:
         raise HTTPException(status.HTTP_400_BAD_REQUEST, "Your account is already verified.")
+    if state == VerificationStatus.SUSPENDED:
+        raise HTTPException(status.HTTP_403_FORBIDDEN, "This account is suspended.")
+    if state == VerificationStatus.REJECTED:
+        # A refusal is for a real problem, so a fresh application waits a week
+        # (REAPPLY_AFTER_DAYS). Small, fixable problems never land here — they
+        # are "Ask for more", which reopens the upload straight away.
+        reapply_after = current_user.get("reapply_after")
+        if isinstance(reapply_after, datetime) and reapply_after.tzinfo is None:
+            reapply_after = reapply_after.replace(tzinfo=timezone.utc)
+        if isinstance(reapply_after, datetime) and reapply_after > datetime.now(timezone.utc):
+            raise HTTPException(
+                status.HTTP_403_FORBIDDEN,
+                {"code": "reapply_locked",
+                 "message": f"You can apply again from {reapply_after.strftime('%d %b %Y')}.",
+                 "reapply_after": reapply_after.isoformat()},
+            )
     if state == VerificationStatus.IN_REVIEW:
         raise HTTPException(
             status.HTTP_400_BAD_REQUEST,
@@ -514,12 +550,16 @@ async def upload_document(
         if state == VerificationStatus.PENDING_EMAIL
         else VerificationStatus.PENDING_DOCUMENTS
     )
+    fresh_start: dict = {}
+    if state == VerificationStatus.REJECTED:
+        fresh_start = {"rejection_reason": "", "reapply_started_at": now}
     await _users().update_one(
         {"_id": current_user["_id"]},
         {
             "$set": {
                 "verification_status": next_state,
                 "updated_at": now,
+                **fresh_start,
             },
             "$unset": {
                 "verification_review_requested_at": "",
@@ -1103,6 +1143,7 @@ async def reject(
             "$set": {
                 "verification_status": VerificationStatus.REJECTED,
                 "rejection_reason": payload.reason,
+                "reapply_after": now + timedelta(days=settings.REAPPLY_AFTER_DAYS),
                 "updated_at": now,
             },
             "$unset": {
@@ -1129,7 +1170,11 @@ async def reject(
         )
 
     await mailer.send(
-        mailer.rejected_email(user.get("full_name", ""), payload.reason), user["email"]
+        mailer.rejected_email(
+            user.get("full_name", ""), payload.reason,
+            (now + timedelta(days=settings.REAPPLY_AFTER_DAYS)).strftime("%d %b %Y"),
+        ),
+        user["email"],
     )
     await record(
         staff, "member.reject", target=str(user["_id"]),

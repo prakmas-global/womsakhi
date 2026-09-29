@@ -137,7 +137,7 @@ export default function SettingsPage() {
 
   const tiles: { icon: React.ElementType; label: string; href: string; fact: string }[] = account ? [
     { icon: UserCircle, label: "My profile", href: "/dashboard/settings/profile", fact: `${account.full_name} · ${account.role}` },
-    { icon: ShieldCheck, label: "Security", href: "/dashboard/settings/security", fact: account.password_changed_at ? `Password changed ${formatWhen(account.password_changed_at, false)}` : "Password change date not recorded" },
+    { icon: ShieldCheck, label: "Security", href: "/dashboard/settings/security", fact: account.two_factor.enabled ? "Email code + authenticator" : "Authenticator not set up" },
     { icon: MonitorSmartphone, label: "Sessions", href: "/dashboard/settings/sessions", fact: account.this_session.started_at ? `This one started ${formatWhen(account.this_session.started_at)}` : "Sign out everywhere lives here" },
     { icon: Bell, label: "Notifications", href: "/dashboard/settings/notifications", fact: account.prefs_applied ? "Applied" : "Stored, not applied yet" },
     { icon: Palette, label: "Appearance", href: "/dashboard/settings/appearance", fact: "Colours and language, saved to your account" },

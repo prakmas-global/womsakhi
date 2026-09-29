@@ -43,7 +43,6 @@ from app.core.rbac import (
     require_super_admin,
     role_name,
 )
-from app.core.security import hash_password_async
 from app.core.staff_scope import SCOPE_ASSIGNED, normalise_scope
 from app.db.mongodb import get_database
 from app.models.member import MemberModel
@@ -86,7 +85,6 @@ class ScopeChange(BaseModel):
 
 class AcceptInvite(BaseModel):
     token: str = Field(min_length=10, max_length=200)
-    password: str = Field(min_length=8, max_length=200)
 
 
 def _users():
@@ -262,8 +260,9 @@ async def create_staff(body: StaffCreate, me: dict = Depends(require_super_admin
     doc = UserModel.create_document(
         full_name=body.full_name,
         email=email,
-        # Empty until she accepts. `StaffAccountModel.state` reads this as
-        # `invited`, and `/auth/signin` refuses an account with no password.
+        # Nobody has a password; staff sign in with an email code and an
+        # authenticator app. She reads as `invited` until she accepts or first
+        # signs in (see `StaffAccountModel.state`).
         hashed_password="",
         role=body.role,
         member_id=member_id,
@@ -305,8 +304,8 @@ async def _next_code(db) -> str:
 @router.post("/{staff_id}/resend", summary="Issue a fresh invitation (Super Admin only)")
 async def resend_invite(staff_id: str, me: dict = Depends(require_super_admin)):
     doc = await _load(staff_id)
-    if doc.get("hashed_password"):
-        raise HTTPException(status.HTTP_400_BAD_REQUEST, "She has already set a password")
+    if StaffAccountModel.state(doc) != "invited":
+        raise HTTPException(status.HTTP_400_BAD_REQUEST, "She has already accepted her invitation")
 
     # The previous token stops working the moment a new one is issued.
     await _invites().delete_many({"user_id": staff_id, "accepted_at": None})
@@ -329,11 +328,12 @@ async def resend_invite(staff_id: str, me: dict = Depends(require_super_admin)):
 
 # ── accepting one ───────────────────────────────────────────────────────────
 
-@router.post("/accept", summary="Set a password with an invitation token")
+@router.post("/accept", summary="Accept an invitation")
 async def accept_invite(body: AcceptInvite):
     """
-    Public on purpose — she has no account to sign in with yet. The token is
-    the credential, it is single-use, and it expires.
+    Public on purpose — she has not signed in yet. The token is single-use and
+    expires. Accepting sets nothing secret: she then signs in with a code sent
+    to this email and sets up her authenticator app on that first sign-in.
     """
     invite = await _invites().find_one({"token_hash": hash_token(body.token)})
     if not StaffInviteModel.is_live(invite):
@@ -344,11 +344,35 @@ async def accept_invite(body: AcceptInvite):
     now = datetime.now(timezone.utc)
     await _users().update_one(
         {"_id": _oid(invite["user_id"])},
-        {"$set": {"hashed_password": await hash_password_async(body.password),
+        {"$set": {"invite_accepted_at": now, "email_verified_at": now,
                   "is_active": True, "updated_at": now}},
     )
     await _invites().update_one({"_id": invite["_id"]}, {"$set": {"accepted_at": now}})
     return {"ok": True, "email": invite.get("email", "")}
+
+
+@router.post("/{staff_id}/two-factor/reset", summary="Reset someone's authenticator (Super Admin only)")
+async def reset_two_factor(staff_id: str, me: dict = Depends(require_super_admin)):
+    """
+    For a lost or replaced phone with no recovery codes left. Her authenticator
+    is removed and every session she has is ended; the next time she signs in
+    with an email code she is walked through setting up a new one.
+    """
+    from app.core import cache, sessions
+
+    doc = await _load(staff_id)
+    _guard_not_self(doc, me, "reset the authenticator of")
+    await _users().update_one(
+        {"_id": doc["_id"]},
+        {"$unset": {"two_factor": "", "two_factor_pending_secret": ""},
+         "$inc": {"token_version": 1},
+         "$set": {"updated_at": datetime.now(timezone.utc)}},
+    )
+    await sessions.revoke_all(str(doc["_id"]), reason="two_factor_reset")
+    cache.forget_user(str(doc["_id"]))
+    await record(me, "staff.two_factor_reset", target=str(doc["_id"]),
+                 detail=f"Reset the authenticator of {doc.get('email', '')}")
+    return {"message": f"Authenticator reset. {doc.get('full_name') or 'She'} will set up a new one at her next sign-in."}
 
 
 # ── changing what she can do ────────────────────────────────────────────────

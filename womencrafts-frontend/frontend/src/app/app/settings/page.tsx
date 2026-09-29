@@ -10,6 +10,7 @@ import { HomeShell } from "@/components/ux/home/HomeShell";
 import { useMe } from "@/components/ux/me";
 import { useT } from "@/i18n";
 import { ListGroup, ListRow } from "@/components/ux/mobile/ListRow";
+import { websiteUrl } from "@/lib/site";
 
 /**
  * More — the hub behind the last item in the nav.
@@ -55,7 +56,7 @@ const GROUPS = [
         icon: "Mic", tint: "--ux-tint-orange", ink: "--ux-orange" },
       { href: "/app/settings/offline", label: "Working without signal", note: "What stays on your phone",
         icon: "WifiOff", tint: "--ux-tint-green", ink: "--ux-green" },
-      { href: "/app/settings/security", label: "Password and sign-in", note: "Change your password, see your sessions",
+      { href: "/app/settings/security", label: "Sign-in and devices", note: "Where you are signed in, sign out anywhere",
         icon: "Lock", tint: "--ux-tint-green", ink: "--ux-green" },
     ],
   },
@@ -125,8 +126,8 @@ export default function MorePage() {
               ))}
             </div>
             <div className="mt-4 flex flex-wrap gap-2 border-t pt-3.5" style={{ borderColor: "var(--ux-line)" }}>
-              <Btn href="/terms" variant="ghost" size="sm">Terms</Btn>
-              <Btn href="/privacy" variant="ghost" size="sm">Privacy</Btn>
+              <Btn href={websiteUrl("/terms")} variant="ghost" size="sm">Terms</Btn>
+              <Btn href={websiteUrl("/privacy")} variant="ghost" size="sm">Privacy</Btn>
             </div>
           </Card>
         </div>
@@ -182,9 +183,9 @@ export default function MorePage() {
         <div className="px-4 pb-2 text-[12px]" style={{ color: "var(--ux-muted)" }}>
           <p>Version 1.0.0 · Member since March 2025 · WS-4471</p>
           <p className="-ms-2 mt-0.5 flex">
-            <Link href="/terms" className="inline-flex min-h-[44px] min-w-[44px] items-center justify-center px-2 text-[13px] font-semibold"
+            <Link href={websiteUrl("/terms")} className="inline-flex min-h-[44px] min-w-[44px] items-center justify-center px-2 text-[13px] font-semibold"
                   style={{ color: "var(--ux-brand)" }}>Terms</Link>
-            <Link href="/privacy" className="inline-flex min-h-[44px] min-w-[44px] items-center justify-center px-2 text-[13px] font-semibold"
+            <Link href={websiteUrl("/privacy")} className="inline-flex min-h-[44px] min-w-[44px] items-center justify-center px-2 text-[13px] font-semibold"
                   style={{ color: "var(--ux-brand)" }}>Privacy</Link>
           </p>
         </div>

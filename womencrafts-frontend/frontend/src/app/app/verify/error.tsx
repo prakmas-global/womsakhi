@@ -14,8 +14,12 @@ import { useT } from "@/i18n";
 export default function Error({ error, reset }: { error: Error & { digest?: string }; reset: () => void }) {
   const tr = useT();
   return (
-    <div className="mx-auto w-full max-w-[1080px] px-8 py-[40px]">
-      <ScreenError what={tr("verify.thisStep")} reset={reset} detail={error.digest} />
+    // `.ux` here: the verify screen no longer sits inside the app's themed
+    // wrapper (it draws its own AuthShell), and ScreenError is drawn in `--ux-*`.
+    <div className="ux min-h-screen">
+      <div className="mx-auto w-full max-w-[1080px] px-8 py-[40px]">
+        <ScreenError what={tr("verify.thisStep")} reset={reset} detail={error.digest} />
+      </div>
     </div>
   );
 }

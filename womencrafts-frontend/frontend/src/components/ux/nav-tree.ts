@@ -285,7 +285,7 @@ export const SECTIONS: Section[] = [
         { id: "verify", label: "Getting verified", k: "ch.verify", icon: "BadgeCheck", href: "/app/verify", note: "So people know it is you", },
         { id: "settings", label: "Settings", icon: "Settings", href: "/app/settings", note: "How the app behaves",
           children: [
-            { id: "settings-account", label: "Your account", k: "ch.settings-account", icon: "UserRound", href: "/app/settings/account", note: "Name, number, password", },
+            { id: "settings-account", label: "Your account", k: "ch.settings-account", icon: "UserRound", href: "/app/settings/account", note: "Name, number, email", },
             { id: "settings-language", label: "Language", k: "ch.settings-language", icon: "Languages", href: "/app/settings/language", note: "What you read in", },
             { id: "settings-notifications", label: "What we tell you", k: "ch.settings-notifications", icon: "Bell", href: "/app/settings/notifications", note: "And how", },
             { id: "settings-quiet-hours", label: "Quiet hours", k: "ch.settings-quiet-hours", icon: "Moon", href: "/app/settings/quiet-hours", note: "When not to disturb you", },

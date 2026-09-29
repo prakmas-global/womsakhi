@@ -63,3 +63,23 @@ def new_recovery_codes(count: int = 8) -> list[str]:
 def recovery_digest(code: str) -> str:
     clean = str(code).strip().upper().replace(" ", "")
     return hmac.new(settings.JWT_SECRET_KEY.encode(), clean.encode(), hashlib.sha256).hexdigest()
+
+
+def provisioning_qr_svg(uri: str) -> str:
+    """
+    The provisioning URI as an inline SVG QR code.
+
+    `omitsize` gives the SVG a viewBox and no fixed width/height, so it SCALES
+    to whatever box the screen puts it in. With a fixed size it was cropped to
+    the box instead — and a QR code with its edges cut off cannot be scanned.
+    Black on white with the standard 4-module quiet zone: the most reliable
+    combination for every authenticator app's camera.
+    """
+    import io
+
+    import segno
+
+    buffer = io.BytesIO()
+    segno.make(uri, error="m").save(buffer, kind="svg", border=4, dark="#000000", light="#ffffff",
+                                    xmldecl=False, svgns=True, nl=False, omitsize=True)
+    return buffer.getvalue().decode("utf-8")

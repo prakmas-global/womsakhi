@@ -79,6 +79,11 @@ INDEXES: dict[str, list[IndexModel]] = {
             sparse=True,
         ),
         IndexModel([("member_id", ASCENDING)], name="member_id", sparse=True),
+        # One account per mobile number is enforced in `routes/auth.py`, not
+        # here: live data already holds duplicates (demo rows), and a unique
+        # index that fails to build would take every other index on `users`
+        # down with it (`create_indexes` is all-or-nothing per collection).
+        IndexModel([("phone", ASCENDING)], name="phone", sparse=True),
         # Her shop's public handle. UNIQUE because the index is what decides a
         # collision — `handle_for` simply takes the next number when this
         # refuses — and SPARSE because most accounts never have one, and a
@@ -278,6 +283,34 @@ INDEXES: dict[str, list[IndexModel]] = {
     "verification_documents": [
         IndexModel([("user_id", ASCENDING), ("created_at", DESCENDING)], name="user_recent"),
         IndexModel([("status", ASCENDING)], name="status"),
+    ],
+    # --- sign-in codes and devices (app/core/codes.py, app/core/sessions.py) ---
+    "auth_codes": [
+        # "The newest live code for this address" is the only query codes run.
+        IndexModel([("purpose", ASCENDING), ("destination", ASCENDING), ("created_at", DESCENDING)],
+                   name="purpose_destination_recent"),
+        # Codes live five minutes; the rows go a day later, so a burst of abuse
+        # can still be looked at the morning after.
+        IndexModel([("expires_at", ASCENDING)], expireAfterSeconds=86400, name="ttl"),
+    ],
+    "auth_sessions": [
+        IndexModel([("sid", ASCENDING)], unique=True, name="sid_unique"),
+        IndexModel([("refresh_hash", ASCENDING)], unique=True, name="refresh_unique"),
+        IndexModel([("prev_refresh_hash", ASCENDING)], sparse=True, name="prev_refresh"),
+        IndexModel([("user_id", ASCENDING), ("last_used_at", DESCENDING)], name="user_recent"),
+        # An ended or expired device lingers a month for her history, then goes.
+        IndexModel([("expires_at", ASCENDING)], expireAfterSeconds=30 * 86400, name="ttl"),
+    ],
+    "sms_ledger": [
+        IndexModel([("day", ASCENDING), ("destination", ASCENDING)], name="day_destination"),
+        # Kept 90 days: enough to reconcile against the SMS bill.
+        IndexModel([("created_at", ASCENDING)], expireAfterSeconds=90 * 86400, name="ttl"),
+    ],
+    "auth_links": [
+        IndexModel([("kind", ASCENDING), ("qid", ASCENDING)], sparse=True, name="kind_qid"),
+        IndexModel([("kind", ASCENDING), ("code_hash", ASCENDING)], sparse=True, name="kind_code"),
+        # QR codes live two minutes and handoff links one; the rows go an hour later.
+        IndexModel([("expires_at", ASCENDING)], expireAfterSeconds=3600, name="ttl"),
     ],
     "email_tokens": [
         IndexModel([("token", ASCENDING)], unique=True, name="token_unique"),

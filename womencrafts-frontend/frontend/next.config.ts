@@ -58,6 +58,27 @@ const nextConfig: NextConfig = {
     return [{ source: "/api/v1/:path*", destination: `${api}/:path*` }];
   },
 
+  /**
+   * The public pages live on the marketing website only.
+   *
+   * Terms, Privacy, Contact, Help and About were once pages in this app; they
+   * are now served solely by www.womsakhi.com. Old links — in emails already
+   * sent, bookmarks, app-store listings — keep working by landing on the same
+   * path there. Temporary (307) so the destination can move without browsers
+   * caching the old one forever. Sources are exact paths, so in-app routes such
+   * as /app/help are never caught. Like `rewrites()`, this is resolved at build
+   * time: `NEXT_PUBLIC_WEBSITE_URL` must be set for `next build`. The same
+   * value is exported for components from `src/lib/site.ts`.
+   */
+  async redirects() {
+    const site = (process.env.NEXT_PUBLIC_WEBSITE_URL || "https://www.womsakhi.com").replace(/\/+$/, "");
+    return ["/terms", "/privacy", "/contact", "/help", "/about"].map((path) => ({
+      source: path,
+      destination: `${site}${path}`,
+      permanent: false,
+    }));
+  },
+
   /** Reuse static artwork while always checking immediately for a new worker. */
   async headers() {
     return [

@@ -17,7 +17,7 @@ from bson import ObjectId
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 
 from app.core import mongosafe
-from app.core.rbac import require_active_member
+from app.core.rbac import require_active_member, require_member_account
 from app.core.serializers import to_object_id
 from app.core import cache
 from app.db.mongodb import get_database
@@ -308,7 +308,7 @@ async def request_mentor(
     response_model=list[MentorshipRequestResponse],
     summary="My mentorship requests",
 )
-async def my_mentor_requests(me: dict = Depends(require_active_member)):
+async def my_mentor_requests(me: dict = Depends(require_member_account)):
     docs = await _requests().find({"user_id": str(me["_id"])}).sort("created_at", -1).to_list(100)
     return [MentorshipRequestModel.to_response(d) for d in docs]
 

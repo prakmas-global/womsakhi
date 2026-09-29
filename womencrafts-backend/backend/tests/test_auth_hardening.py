@@ -6,7 +6,6 @@ import pytest
 
 from app.models.verification import EmailTokenModel
 from app.routes import auth
-from app.schemas.auth import ResetPasswordRequest, SignUpRequest
 
 
 def test_email_tokens_are_stored_as_one_way_digests() -> None:
@@ -21,48 +20,53 @@ def test_email_tokens_are_stored_as_one_way_digests() -> None:
 
 
 @pytest.mark.parametrize(
-    "payload",
+    ("raw", "expected"),
     [
-        lambda password: SignUpRequest(
-            full_name="Asha", email="asha@example.com", password=password,
-            country="IN", phone="+919876543210",
-        ),
-        lambda password: ResetPasswordRequest(token="token", password=password),
+        ("98765 43210", "+919876543210"),
+        ("+91 98765-43210", "+919876543210"),
+        ("09876543210", "+919876543210"),
     ],
 )
-def test_new_passwords_cannot_cross_bcrypts_72_byte_boundary(payload) -> None:
-    with pytest.raises(ValidationError, match="at most 72 bytes"):
-        payload("श" * 25)  # 75 UTF-8 bytes, despite being only 25 characters.
-
-
-def test_signup_normalizes_phone_and_checks_selected_country() -> None:
-    payload = SignUpRequest(
-        full_name="Asha", email="asha@example.com", password="Strong@123",
-        country="IN", phone="98765 43210",
-    )
-    assert payload.phone == "+919876543210"
-
-    with pytest.raises(ValidationError, match="selected country"):
-        SignUpRequest(
-            full_name="Asha", email="asha@example.com", password="Strong@123",
-            country="US", phone="+919876543210",
-        )
+def test_mobile_numbers_are_stored_as_indian_e164(raw: str, expected: str) -> None:
+    assert auth.normalise_phone(raw) == expected
 
 
 @pytest.mark.parametrize(
-    ("password", "message"),
+    ("raw", "message"),
     [
-        ("12345678!", "at least one letter"),
-        ("Password!", "at least one number"),
-        ("Password1", "at least one symbol"),
+        ("", "Enter your mobile number"),
+        ("12345", "valid 10-digit"),
+        ("+1 415 555 2671", "Only Indian mobile numbers"),
+        ("+91 11 2345 6789", "not a landline"),
     ],
 )
-def test_new_passwords_require_letter_number_and_symbol(password: str, message: str) -> None:
-    with pytest.raises(ValidationError, match=message):
-        SignUpRequest(
-            full_name="Asha", email="asha@example.com", password=password,
-            country="IN", phone="+919876543210",
-        )
+def test_mobile_numbers_outside_india_or_landlines_are_refused(raw: str, message: str) -> None:
+    with pytest.raises(ValueError, match=message):
+        auth.normalise_phone(raw)
+
+
+def test_signup_start_normalises_the_phone_it_is_given() -> None:
+    payload = auth.SignupStart(email="asha@example.com", phone="98765 43210")
+    assert payload.phone == "+919876543210"
+    with pytest.raises(ValidationError):
+        auth.SignupStart(email="asha@example.com", phone="+1 415 555 2671")
+
+
+def test_signup_needs_a_real_name() -> None:
+    assert auth.SignupComplete(ticket="t", full_name="  Asha   Devi ", is_woman_18_plus=True).full_name == "Asha Devi"
+    with pytest.raises(ValidationError, match="full name"):
+        auth.SignupComplete(ticket="t", full_name=" A ", is_woman_18_plus=True)
+
+
+def test_signup_tickets_cannot_be_used_as_sessions_or_for_another_step() -> None:
+    from app.core.security import decode_access_token
+
+    ticket = auth._make_ticket("signup", 5, email="asha@example.com", phone="+919876543210")
+    # Signed with a derived key: the session decoder does not accept it.
+    assert decode_access_token(ticket) is None
+    assert auth._read_ticket(ticket, "signup")["email"] == "asha@example.com"
+    with pytest.raises(Exception):
+        auth._read_ticket(ticket, "mfa")
 
 
 class _Request:

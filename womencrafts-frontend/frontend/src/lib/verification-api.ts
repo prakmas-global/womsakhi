@@ -41,7 +41,17 @@ export interface VerificationStatus {
   can_use_app: boolean;
   review_request_count: number;
   review_requested_at: string;
+  /** ISO. When "Request activation" unlocks again — once every 24 hours. */
   next_review_request_at: string;
+  /** ISO. When the application reached the review queue ("" unless in_review). */
+  submitted_at: string;
+  /** ISO. When she can expect an answer — submitted_at + 24h ("" unless in_review). */
+  expected_by: string;
+  /** A reviewer sent it back asking for more; `rejection_reason` says what. */
+  needs_info: boolean;
+  /** ISO. Rejected applicants may apply again from this moment. */
+  reapply_after: string;
+  can_reapply: boolean;
   documents: ApiDocument[];
 }
 
@@ -106,11 +116,6 @@ export async function apiMyVerification(): Promise<VerificationStatus> {
   return data;
 }
 
-export async function apiResendVerificationEmail(): Promise<{ message: string }> {
-  const { data } = await apiClient.post("/verification/resend-email");
-  return data;
-}
-
 export interface ReviewRequestResult {
   message: string;
   request_number: number;
@@ -129,27 +134,6 @@ export async function apiConfirmEmail(token: string): Promise<{ message: string 
     null,
     { params: { token } }
   );
-  return data;
-}
-
-/**
- * Ask for a reset link.
- *
- * Public, and answers identically whether or not the address has an account —
- * telling a stranger which emails are members is an enumeration oracle, and on
- * a women-only platform that answers "is she here?" for anyone who asks.
- */
-export async function apiForgotPassword(email: string): Promise<{ message: string; can_email?: boolean }> {
-  const { data } = await axios.post(`${API_URL}/auth/forgot-password`, { email });
-  return data;
-}
-
-/** Spend the token from the emailed link and set the new password. */
-export async function apiResetPassword(
-  token: string,
-  password: string,
-): Promise<{ message: string }> {
-  const { data } = await axios.post(`${API_URL}/auth/reset-password`, { token, password });
   return data;
 }
 

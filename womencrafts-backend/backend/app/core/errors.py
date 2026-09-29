@@ -70,11 +70,19 @@ class RequestIdMiddleware(BaseHTTPMiddleware):
         return response
 
 
-def _envelope(message: str, rid: str, status_code: int) -> JSONResponse:
+def _envelope(message: str, rid: str, status_code: int, extra: dict | None = None,
+              headers: dict | None = None) -> JSONResponse:
+    body = {"message": message, "request_id": rid}
+    # A few flows do branch: the sign-in screen has to tell "wrong code" from
+    # "authenticator needed" from "set up your authenticator". Those raise a
+    # dict with a `code` and a `message`; the extra keys ride alongside the
+    # sentence rather than replacing it, so every other screen keeps working.
+    if extra:
+        body.update({k: v for k, v in extra.items() if k not in body})
     return JSONResponse(
         status_code=status_code,
-        content={"error": {"message": message, "request_id": rid}},
-        headers={HEADER: rid},
+        content={"error": body},
+        headers={HEADER: rid, **(headers or {})},
     )
 
 
@@ -87,7 +95,12 @@ def install(app: FastAPI) -> None:
         # `detail` on a raised HTTPException is written for a person — every
         # `raise HTTPException(…, "You already have a request with us")` in this
         # codebase is a sentence, not a code — so it passes straight through.
-        return _envelope(str(exc.detail), rid, exc.status_code)
+        detail = exc.detail
+        if isinstance(detail, dict) and "message" in detail:
+            return _envelope(str(detail["message"]), rid, exc.status_code,
+                             extra={k: v for k, v in detail.items() if k != "message"},
+                             headers=getattr(exc, "headers", None))
+        return _envelope(str(detail), rid, exc.status_code, headers=getattr(exc, "headers", None))
 
     @app.exception_handler(RequestValidationError)
     async def _validation(request: Request, exc: RequestValidationError):

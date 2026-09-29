@@ -281,65 +281,8 @@ async def update_my_profile(
     return await my_profile(fresh)
 
 
-class PasswordChanged(BaseModel):
-    message: str
-    #: True when every OTHER session was ended by the change (always, now).
-    other_sessions_ended: bool
-    #: A fresh token for the device that made the change. The browser gets it
-    #: as the cookie; this is for header-based clients whose old token has
-    #: just stopped working.
-    access_token: str
-
-
-@router.post("/profile/password", response_model=PasswordChanged, summary="Change my password")
-async def change_password(
-    body: dict, request: Request, response: Response, me: dict = Depends(require_staff)
-):
-    """
-    Set a new password, and end every other session on the account.
-
-    Changing the password used to leave every existing session running — the
-    one thing a woman does when she suspects somebody else is in her account
-    did nothing about that somebody. Bumping `token_version` ends them all;
-    this device is then re-issued a token under the new version so she is not
-    thrown out of the screen she is standing on.
-    """
-    from app.routes.auth import _token_for  # local: auth imports a lot
-
-    current = (body or {}).get("current_password") or ""
-    new = (body or {}).get("new_password") or ""
-    if len(new) < 8:
-        raise HTTPException(status.HTTP_400_BAD_REQUEST, "Use at least 8 characters")
-    if not await verify_password_async(current, me.get("hashed_password", "")):
-        raise HTTPException(status.HTTP_400_BAD_REQUEST, "Your current password is not right")
-    if await verify_password_async(new, me.get("hashed_password", "")):
-        raise HTTPException(status.HTTP_400_BAD_REQUEST, "That's the same as your current password")
-
-    now = datetime.now(timezone.utc)
-    fresh = await _users().find_one_and_update(
-        {"_id": me["_id"]},
-        {
-            "$set": {
-                "hashed_password": await hash_password_async(new),
-                "password_changed_at": now,
-                "updated_at": now,
-            },
-            "$inc": {"token_version": 1},
-        },
-        return_document=True,
-    )
-    cache.forget_user(str(me["_id"]))
-    token = _token_for(fresh)
-    set_session_cookie(response, token)
-    await record(
-        me, "settings.password", target=str(me["_id"]),
-        detail="Changed own password; every other session was ended", request=request,
-    )
-    return PasswordChanged(
-        message="Password changed. Every other session on this account has been signed out.",
-        other_sessions_ended=True,
-        access_token=token,
-    )
+# There is no password to change: staff sign in with an email code and their
+# authenticator app (routes/auth.py). `/staff/profile/password` went with passwords.
 
 
 @router.get("/profile/stats", response_model=StaffStats, summary="My activity tiles")
@@ -687,22 +630,34 @@ async def my_account(request: Request, me: dict = Depends(require_staff)):
 
 
 class TwoFactorSetupIn(BaseModel):
-    current_password: str
+    #: The code her CURRENT authenticator shows (or a recovery code). Needed to
+    #: move the authenticator to a new phone, so a borrowed laptop with an open
+    #: session cannot quietly swap in someone else's app.
+    code: str = ""
 
 
 class TwoFactorCodeIn(BaseModel):
     code: str
 
 
-class TwoFactorDisableIn(BaseModel):
-    current_password: str
-    code: str
+def _current_factor_ok(me: dict, code: str) -> bool:
+    config = me.get("two_factor") or {}
+    if not config.get("enabled"):
+        return True
+    return verify_code(decrypt_secret(config.get("secret", "")), code) or (
+        recovery_digest(code) in (config.get("recovery_codes") or [])
+    )
 
 
-@router.post("/me/two-factor/setup", summary="Start authenticator setup")
+@router.post("/me/two-factor/setup", summary="Move my authenticator to a new phone")
 async def start_two_factor(body: TwoFactorSetupIn, request: Request, me: dict = Depends(require_staff)):
-    if not await verify_password_async(body.current_password, me.get("hashed_password", "")):
-        raise HTTPException(status.HTTP_400_BAD_REQUEST, "Current password is incorrect")
+    """
+    Staff sign-in requires an authenticator, so this does not turn it on or off —
+    it starts replacing it. The current one keeps working until the new one is
+    confirmed with `/me/two-factor/enable`.
+    """
+    if not _current_factor_ok(me, body.code.strip()):
+        raise HTTPException(status.HTTP_400_BAD_REQUEST, "Enter the code your current authenticator shows")
     secret = new_secret()
     await _users().update_one(
         {"_id": me["_id"]},
@@ -710,11 +665,14 @@ async def start_two_factor(body: TwoFactorSetupIn, request: Request, me: dict = 
                   "updated_at": datetime.now(timezone.utc)}},
     )
     await record(me, "security.two_factor_setup", target=str(me["_id"]),
-                 detail="Authenticator setup started", request=request)
-    return {"secret": secret, "provisioning_uri": provisioning_uri(secret, me.get("email", ""))}
+                 detail="Authenticator replacement started", request=request)
+    uri = provisioning_uri(secret, me.get("email", ""))
+    from app.core.two_factor import provisioning_qr_svg
+
+    return {"secret": secret, "provisioning_uri": uri, "qr_svg": provisioning_qr_svg(uri)}
 
 
-@router.post("/me/two-factor/enable", summary="Confirm and enable authenticator sign-in")
+@router.post("/me/two-factor/enable", summary="Confirm the new authenticator")
 async def enable_two_factor(body: TwoFactorCodeIn, request: Request, me: dict = Depends(require_staff)):
     fresh = await _users().find_one({"_id": me["_id"]}) or me
     secret = decrypt_secret(fresh.get("two_factor_pending_secret", ""))
@@ -733,28 +691,16 @@ async def enable_two_factor(body: TwoFactorCodeIn, request: Request, me: dict = 
         }, "updated_at": datetime.now(timezone.utc)},
          "$unset": {"two_factor_pending_secret": ""}},
     )
+    cache.forget_user(str(me["_id"]))
     await record(me, "security.two_factor_enabled", target=str(me["_id"]),
-                 detail="Authenticator sign-in enabled", request=request)
+                 detail="Authenticator confirmed on a new phone", request=request)
     return {"enabled": True, "recovery_codes": recovery}
 
 
-@router.post("/me/two-factor/disable", summary="Disable authenticator sign-in")
-async def disable_two_factor(body: TwoFactorDisableIn, request: Request, me: dict = Depends(require_staff)):
-    if not await verify_password_async(body.current_password, me.get("hashed_password", "")):
-        raise HTTPException(status.HTTP_400_BAD_REQUEST, "Current password is incorrect")
-    config = me.get("two_factor") or {}
-    secret = decrypt_secret(config.get("secret", ""))
-    digest = recovery_digest(body.code)
-    if not verify_code(secret, body.code) and digest not in (config.get("recovery_codes") or []):
-        raise HTTPException(status.HTTP_400_BAD_REQUEST, "That authentication code is not valid")
-    await _users().update_one(
-        {"_id": me["_id"]},
-        {"$unset": {"two_factor": "", "two_factor_pending_secret": ""},
-         "$set": {"updated_at": datetime.now(timezone.utc)}},
-    )
-    await record(me, "security.two_factor_disabled", target=str(me["_id"]),
-                 detail="Authenticator sign-in disabled", request=request)
-    return {"enabled": False}
+# There is no "disable": staff can open identity documents, so the
+# authenticator is required. A lost phone is handled by a recovery code, or by
+# a Super Admin resetting it (`POST /staff/{id}/two-factor/reset`), after which
+# the next sign-in sets up a new one.
 
 
 class SessionsEnded(BaseModel):
@@ -783,12 +729,15 @@ async def sign_out_everywhere(request: Request, response: Response, me: dict = D
         {"$inc": {"token_version": 1}, "$set": {"sessions_ended_at": now, "updated_at": now}},
         return_document=True,
     )
+    from app.core import sessions  # local: sessions imports rbac
+
+    await sessions.revoke_all(str(me["_id"]), reason="signed_out_everywhere")
     cache.forget_user(str(me["_id"]))
     await record(
         me, "settings.sign_out_everywhere", target=str(me["_id"]),
         detail="Ended every session on every device", request=request,
     )
-    clear_session_cookie(response)
+    sessions.clear_cookies(response)
     return SessionsEnded(
         message="Every session has been ended. Sign in again to carry on.",
         generation=token_version_of(fresh or {}),
