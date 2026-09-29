@@ -7,7 +7,7 @@ import { AuthShell } from "@/components/auth-shell";
  *  shell (the layout above it is now a thin wrapper), with a way forward. */
 export default function Error({ error, reset }: { error: Error & { digest?: string }; reset: () => void }) {
   return (
-    <AuthShell photo="plain" splash={false}>
+    <AuthShell photo="plain">
       <RouteError what="the sign-in page" reset={reset} digest={error.digest} />
     </AuthShell>
   );

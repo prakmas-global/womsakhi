@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
 
 import SakhiLauncher from "@/components/sakhi/SakhiLauncher";
@@ -17,9 +17,17 @@ import { useAuth } from "@/context/AuthContext";
 import { apiUpdateMeProfile } from "@/lib/member-api";
 import { takePreSignInChoice, useI18n, useT } from "@/i18n";
 import Spinner from "@/design-system/primitives/Spinner";
+import { previewActive } from "@/lib/auth-preview";
 import "@/app/ux/tokens.css";
 // After tokens.css on purpose: both are unlayered, so the later import wins.
 import "@/app/ux/mobile.css";
+
+/**
+ * The local preview switch (see lib/auth-preview), written out here rather
+ * than imported: the build replaces NODE_ENV in this file, so every branch it
+ * guards is stripped from production. An imported constant is not.
+ */
+const AUTH_PREVIEW = process.env.NODE_ENV !== "production";
 
 /**
  * The member app shell — redesigned.
@@ -50,6 +58,16 @@ const WAITING = new Set(["pending_email", "pending_documents", "in_review"]);
 
 /** The member screens whose API calls `require_member_account` answers while she waits. */
 const WAITING_ROUTES = ["/app/verify", "/app/phone", "/app/learn", "/app/profile", "/app/settings/language", "/app/welcome"];
+
+/**
+ * Her devices and "sign out everywhere" are about keeping her account safe, so
+ * they are open in every admission state — waiting, asked for more, rejected.
+ */
+const ALWAYS_ROUTES = ["/app/settings/security"];
+
+function isAlwaysOpen(pathname: string): boolean {
+  return ALWAYS_ROUTES.some((r) => pathname === r || pathname.startsWith(`${r}/`));
+}
 
 function allowedWhileWaiting(pathname: string): boolean {
   return WAITING_ROUTES.some((r) => pathname === r || pathname.startsWith(`${r}/`));
@@ -96,6 +114,7 @@ export default function MemberShell({
   const redirectTo = !user ? null
     : user.phone_action_required ? (onPhoneScreen ? null : "/app/phone")
     : verified ? (needsOnboarding ? "/app/welcome" : null)
+    : isAlwaysOpen(pathname) ? null
     : waiting ? (allowedWhileWaiting(pathname) ? null : "/app/verify")
     : onVerifyScreen ? null : "/app/verify";
 
@@ -128,7 +147,7 @@ export default function MemberShell({
   */
   const appliedAccount = useRef<string | null>(null);
   useEffect(() => {
-    if (!user) return;
+    if (!user || (AUTH_PREVIEW && previewActive(pathname))) return;
     const chosen = takePreSignInChoice();
     if (chosen) {
       appliedAccount.current = chosen;
@@ -145,14 +164,28 @@ export default function MemberShell({
     if (!account || appliedAccount.current === account) return;
     appliedAccount.current = account;
     if (account !== locale) setLocale(account);
-  }, [user, locale, setLocale, updateUser]);
+  }, [user, locale, setLocale, updateUser, pathname]);
+
+  /*
+    Local development only: a `?preview=` screen (see lib/auth-preview) is
+    drawn for a fixture user, so no guard redirects it, and it gets a plain
+    frame instead of the app chrome, whose requests all need a real session.
+  */
+  const [preview, setPreview] = useState(false);
+  useEffect(() => {
+    if (!AUTH_PREVIEW) return;
+    const on = previewActive(pathname);
+    const t = window.setTimeout(() => setPreview(on));
+    return () => window.clearTimeout(t);
+  }, [pathname]);
 
   useEffect(() => {
+    if (AUTH_PREVIEW && previewActive(pathname)) return;
     if (loading) return;
     if (!user) router.replace("/signin");
     else if (!isMember) router.replace("/dashboard");
     else if (redirectTo) router.replace(redirectTo);
-  }, [loading, user, isMember, redirectTo, router]);
+  }, [loading, user, isMember, redirectTo, router, pathname]);
 
   /*
     A spinner is the right thing while we are still asking. It is the WRONG
@@ -216,6 +249,15 @@ export default function MemberShell({
   // the fixed berry-on-cream palette, so nothing of the app's frame (or its
   // themed `.ux` canvas) goes around them. The tour keeps the app's canvas.
   if (onVerifyScreen || onPhoneScreen) return <>{children}</>;
+  if (AUTH_PREVIEW && preview) {
+    return (
+      <div className="ux min-h-screen">
+        <ChromeProvider>
+          <div className="mx-auto w-full max-w-[1180px] px-4 pb-10 pt-4 lg:px-8 lg:pt-6">{children}</div>
+        </ChromeProvider>
+      </div>
+    );
+  }
   if (onWelcomeScreen) return <div className="ux min-h-screen">{children}</div>;
 
   /*
@@ -224,7 +266,7 @@ export default function MemberShell({
     every one of those leads to (or polls) something that 403s until she is
     admitted. One way back to her application instead.
   */
-  if (waiting) {
+  if (waiting || (!verified && isAlwaysOpen(pathname))) {
     return (
       <div className="ux min-h-screen">
         <SkipToContent />

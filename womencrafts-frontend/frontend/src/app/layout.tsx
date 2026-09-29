@@ -25,6 +25,7 @@ import LayoutEngineBridge from "@/components/layout/LayoutEngineBridge";
 import ConnectionBanner from "@/components/layout/ConnectionBanner";
 import ToastProvider from "@/design-system/feedback/ToastProvider";
 import ConfirmProvider from "@/design-system/feedback/ConfirmProvider";
+import AppSplash from "@/components/app-splash/AppSplash";
 
 const poppins = Poppins({
   subsets: ["latin"],
@@ -218,6 +219,9 @@ export default async function RootLayout({
             phones open the home-screen icon in a Safari tab with chrome —
             which is the one thing installing was meant to remove. */}
         <meta name="apple-mobile-web-app-capable" content="yes" />
+        {/* First in the body: it decides before the page paints whether this
+            is an app open, and covers everything while the logo plays. */}
+        <AppSplash />
         <ServiceWorkerRegistrar />
         {/* Rendered inside <body>, not in an explicit <head>.
             React 19 hoists <style> for us, and an explicit <head> in the root

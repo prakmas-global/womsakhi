@@ -1,3 +1,5 @@
+import { email as emailRule, suggestEmail } from "@/lib/validation";
+
 import { AuthIcon } from "./icons";
 
 /** Small pieces the auth screens share, drawn the approved way. */
@@ -58,4 +60,22 @@ export const MEMBER_CAPTION = {
 /** A small spinner for busy buttons. */
 export function Spinner() {
   return <span className="wsa-spin" aria-hidden />;
+}
+
+/**
+ * "Did you mean name@gmail.com?" under a valid address whose provider looks
+ * mistyped. A hint, not an error: it never blocks the form. Tapping it fills
+ * the corrected address.
+ */
+export function EmailTypoHint({ value, onPick, id }: { value: string; onPick: (fixed: string) => void; id?: string }) {
+  if (!emailRule.safeParse(value).success) return null;
+  const fixed = suggestEmail(value.trim());
+  if (!fixed) return null;
+  return (
+    <p id={id} className="wsa-ferr wsa-hint" aria-live="polite">
+      <button type="button" className="wsa-inline" onClick={() => onPick(fixed)}>
+        Did you mean <b>{fixed}</b>?
+      </button>
+    </p>
+  );
 }

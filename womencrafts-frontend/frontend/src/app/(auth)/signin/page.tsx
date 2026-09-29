@@ -2,11 +2,14 @@
 
 import { useCallback, useEffect, useRef, useState, type FormEvent } from "react";
 import Link from "next/link";
+import { Controller, useForm, useWatch } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
 
 import { useAuth } from "@/context/AuthContext";
 import { CodeInput, useCountdown } from "@/components/auth/CodeInput";
 import {
-  AuthIcon, AuthResend, AuthShell, MEMBER_CAPTION, STAFF_CAPTION, Spinner, StaffAside, formatMobile, useStepHistory, type AuthPhoto,
+  AuthIcon, AuthResend, AuthShell, EmailTypoHint, MEMBER_CAPTION, STAFF_CAPTION, Spinner, StaffAside, formatMobile, useStepHistory, type AuthPhoto,
 } from "@/components/auth-shell";
 import {
   apiAuthOptions, apiSigninFirebase, apiSigninStart, apiSmsAllowance, apiSigninVerify, apiTwoFactorEnroll, apiTwoFactorVerify, authError,
@@ -14,6 +17,18 @@ import {
 } from "@/lib/auth-api";
 import { confirmSmsCode, sendSmsCode, smsErrorMessage, type SmsConfirmation } from "@/lib/firebase-phone";
 import type { AuthPayload } from "@/lib/api";
+import {
+  PREVIEW_MOBILE, PREVIEW_OPTIONS, PREVIEW_RECOVERY_CODES, PREVIEW_SENT_EMAIL, PREVIEW_SETUP, PREVIEW_STAFF_PAYLOAD, PREVIEW_STATES, PREVIEW_WRONG_CODE, readPreview, type SigninPreview,
+} from "@/lib/auth-preview";
+import { PreviewPill } from "@/components/auth-shell/PreviewPill";
+import { codeSchema, recoveryCode, signinEmailSchema, signinMobileSchema } from "@/lib/validation";
+
+/**
+ * The local preview switch (see lib/auth-preview), written out here rather
+ * than imported: the build replaces NODE_ENV in this file, so every branch it
+ * guards is stripped from production. An imported constant is not.
+ */
+const AUTH_PREVIEW = process.env.NODE_ENV !== "production";
 
 /**
  * Signing in — with a code, never a password. The approved screens:
@@ -48,6 +63,14 @@ function safeNext(raw: string | null): string {
   return raw;
 }
 
+const recoverySchema = z.object({ recovery: recoveryCode });
+
+/** Mobile as she types it: digits only, a pasted +91 / 0 dropped, at most 10. */
+const typedMobile = (raw: string) => raw.replace(/\D/g, "").replace(/^(91|0)(?=\d{10}$)/, "").slice(0, 10);
+
+/** "Enter all 6 digits" when a code is sent short; "" when it is whole. */
+const codeProblem = (value: string) => codeSchema.safeParse({ code: value }).error?.issues[0]?.message ?? "";
+
 const PHOTO: Record<Step, AuthPhoto> = {
   phone: "signin", sms: "signin", email: "signin", code: "email", mfa: "plain", setup: "plain", recovery: "plain",
 };
@@ -68,7 +91,8 @@ export default function SignInPage() {
 
   const [mfaTicket, setMfaTicket] = useState("");
   const [useRecovery, setUseRecovery] = useState(false);
-  const [recoveryInput, setRecoveryInput] = useState("");
+  /** The client-side check on a code sent short (Enter / Verify before 6 digits). */
+  const [codeError, setCodeError] = useState("");
   const [setup, setSetup] = useState<SetupInfo | null>(null);
   const [recovery, setRecovery] = useState<{ codes: string[]; payload: AuthPayload } | null>(null);
   const [saved, setSaved] = useState(false);
@@ -78,12 +102,25 @@ export default function SignInPage() {
   const [options, setOptions] = useState<AuthOptions | null>(null);
   const [mobile, setMobile] = useState("");
   const smsConfirmation = useRef<SmsConfirmation | null>(null);
+  /** Local-only `?preview=`: fixtures instead of the API (see lib/auth-preview). */
+  const [preview, setPreview] = useState<SigninPreview | null>(null);
   const smsOn = !!options?.phone_codes;
   const viaFirebase = smsOn && !!options?.firebase;
+
+  // One form per field set. Errors show when she leaves a field or presses
+  // submit, and clear as soon as the value is right (lib/validation).
+  const mobileForm = useForm({ resolver: zodResolver(signinMobileSchema), mode: "onTouched", reValidateMode: "onChange", defaultValues: { mobile: "" } });
+  const emailForm = useForm({ resolver: zodResolver(signinEmailSchema), mode: "onTouched", reValidateMode: "onChange", defaultValues: { email: "" } });
+  const recoveryForm = useForm({ resolver: zodResolver(recoverySchema), mode: "onTouched", reValidateMode: "onChange", defaultValues: { recovery: "" } });
+  const mobileError = mobileForm.formState.errors.mobile?.message;
+  const emailError = emailForm.formState.errors.email?.message;
+  const recoveryError = recoveryForm.formState.errors.recovery?.message;
+  const typedEmail = useWatch({ control: emailForm.control, name: "email" });
 
   const goTo = (s: Step) => {
     setStep(s);
     setCode("");
+    setCodeError("");
     setError("");
     setInvalid(false);
     setUseRecovery(false);
@@ -104,11 +141,31 @@ export default function SignInPage() {
   // Read the URL after mount (the server render has no URL), then ask the API
   // whether SMS codes are on: that decides which screen she lands on.
   useEffect(() => {
+    if (AUTH_PREVIEW) {
+      const p = readPreview(PREVIEW_STATES.signin);
+      if (p) {
+        const t = window.setTimeout(() => {
+          setPreview(p);
+          setOptions(PREVIEW_OPTIONS);
+          setMobile(PREVIEW_MOBILE);
+          mobileForm.setValue("mobile", PREVIEW_MOBILE);
+          setSent(PREVIEW_SENT_EMAIL);
+          setMfaTicket(PREVIEW_SETUP.ticket);
+          setSetup(PREVIEW_SETUP);
+          setRecovery({ codes: PREVIEW_RECOVERY_CODES, payload: PREVIEW_STAFF_PAYLOAD });
+          setSmsLimited(p === "sms-busy");
+          if (p === "sms" || p === "code") setResendIn(30);
+          if (p === "sms-wrong") { setCode("123456"); setInvalid(true); setError(PREVIEW_WRONG_CODE); }
+          setStep(p === "sms-busy" ? "email" : p === "sms-wrong" ? "sms" : p);
+        });
+        return () => window.clearTimeout(t);
+      }
+    }
     let alive = true;
     const params = new URLSearchParams(window.location.search);
     const preset = params.get("email");
     const t = window.setTimeout(() => {
-      if (preset) setEmail(preset);
+      if (preset) { setEmail(preset); emailForm.setValue("email", preset); }
       setNext(safeNext(params.get("next")));
     });
     apiAuthOptions()
@@ -126,19 +183,24 @@ export default function SignInPage() {
       alive = false;
       window.clearTimeout(t);
     };
-  }, []);
+  }, [setResendIn, mobileForm, emailForm]);
 
   const finish = useCallback(
-    (payload: AuthPayload) => completeSignIn(payload, next || undefined),
-    [completeSignIn, next],
+    (payload: AuthPayload) => {
+      if (AUTH_PREVIEW && preview) return;
+      completeSignIn(payload, next || undefined);
+    },
+    [completeSignIn, next, preview],
   );
 
-  const sendCode = async (e?: FormEvent) => {
-    e?.preventDefault();
+  /** Send a code to `address` (already checked) — the email step's submit, and "Send a new code". */
+  const sendCode = async (address: string) => {
+    if (AUTH_PREVIEW && preview) { setSent(PREVIEW_SENT_EMAIL); setResendIn(30); setStep("code"); return; }
     setError("");
     setBusy(true);
     try {
-      const result = await apiSigninStart({ email: email.trim() });
+      const result = await apiSigninStart({ email: address });
+      setEmail(address);
       setSent(result);
       setResendIn(result.resend_in);
       setCode("");
@@ -157,7 +219,7 @@ export default function SignInPage() {
 
   const verify = useCallback(
     async (value: string) => {
-      if (value.length !== 6 || busy) return;
+      if (value.length !== 6 || busy || (AUTH_PREVIEW && preview)) return;
       setError("");
       setInvalid(false);
       setBusy(true);
@@ -187,12 +249,12 @@ export default function SignInPage() {
         setBusy(false);
       }
     },
-    [busy, email, finish],
+    [busy, email, finish, preview],
   );
 
   const verifyAuthenticator = useCallback(
     async (value: string) => {
-      if (busy) return;
+      if (busy || (AUTH_PREVIEW && preview)) return;
       setError("");
       setInvalid(false);
       setBusy(true);
@@ -207,12 +269,13 @@ export default function SignInPage() {
         setBusy(false);
       }
     },
-    [back, busy, finish, mfaTicket],
+    [back, busy, finish, mfaTicket, preview],
   );
 
   const enroll = useCallback(
     async (value: string) => {
       if (!setup || value.length !== 6 || busy) return;
+      if (AUTH_PREVIEW && preview) { setStep("recovery"); return; }
       setError("");
       setInvalid(false);
       setBusy(true);
@@ -228,24 +291,26 @@ export default function SignInPage() {
         setBusy(false);
       }
     },
-    [busy, setup],
+    [busy, setup, preview],
   );
 
-  const sendSms = async (e?: FormEvent) => {
-    e?.preventDefault();
-    if (!options?.phone_codes || !/^[6-9]\d{9}$/.test(mobile)) {
-      setError("Enter your 10-digit mobile number");
+  /** Send an SMS code to `digits` (10 digits, already checked) — the mobile step's submit, and "Send a new code". */
+  const sendSms = async (digits: string) => {
+    if (!options?.phone_codes) {
+      setError("Sign in with a mobile number isn't available right now. Please use email.");
       return;
     }
+    setMobile(digits);
+    if (AUTH_PREVIEW && preview) { setResendIn(30); setCode(""); setInvalid(false); setStep("sms"); return; }
     setError("");
     setBusy(true);
     try {
       if (options.firebase) {
-        await apiSmsAllowance(`+91${mobile}`, "signin");
-        smsConfirmation.current = await sendSmsCode(options.firebase, `+91${mobile}`, RECAPTCHA_ID);
+        await apiSmsAllowance(`+91${digits}`, "signin");
+        smsConfirmation.current = await sendSmsCode(options.firebase, `+91${digits}`, RECAPTCHA_ID);
         setResendIn(options.resend_seconds || 90);
       } else {
-        const sentTo = await apiSigninStart({ phone: `+91${mobile}` });
+        const sentTo = await apiSigninStart({ phone: `+91${digits}` });
         setResendIn(sentTo.resend_in);
       }
       setCode("");
@@ -269,7 +334,7 @@ export default function SignInPage() {
 
   const verifySms = useCallback(
     async (value: string) => {
-      if (value.length !== 6 || busy || (viaFirebase && !smsConfirmation.current)) return;
+      if (value.length !== 6 || busy || (AUTH_PREVIEW && preview) || (viaFirebase && !smsConfirmation.current)) return;
       setError("");
       setInvalid(false);
       setBusy(true);
@@ -291,7 +356,7 @@ export default function SignInPage() {
         setBusy(false);
       }
     },
-    [busy, finish, mobile, viaFirebase],
+    [busy, finish, mobile, viaFirebase, preview],
   );
 
   const copy = async (text: string, what: string) => {
@@ -304,7 +369,23 @@ export default function SignInPage() {
     }
   };
 
-  const onCode = (v: string) => { setCode(v); setInvalid(false); setError(""); };
+  const onCode = (v: string) => {
+    setCode(v);
+    setInvalid(false);
+    setError("");
+    if (codeError && !codeProblem(v)) setCodeError("");
+  };
+  /** A submit before all six digits are in: say so under the boxes. Returns whether the code is whole. */
+  const checkCode = (value: string) => {
+    const problem = codeProblem(value);
+    setCodeError(problem);
+    if (problem) document.getElementById(step === "sms" ? "si-sms" : step === "mfa" ? "si-mfa" : "si-code")?.focus();
+    return !problem;
+  };
+  const submitCode = (e: FormEvent, run: (value: string) => unknown) => {
+    e.preventDefault();
+    if (checkCode(code)) void run(code);
+  };
   const staff = step === "mfa" || step === "setup" || step === "recovery";
   const screen = step === "phone" ? "a1"
     : step === "sms" ? (invalid ? "a3" : "a2")
@@ -341,17 +422,21 @@ export default function SignInPage() {
           <p className="wsa-eyebrow">Welcome back</p>
           <h1 className="wsa-t">Sign in with your mobile</h1>
           <p className="wsa-s">We&apos;ll send a 6-digit code by SMS. No password needed.</p>
-          <form onSubmit={sendSms} noValidate className="wsa-field">
+          <form onSubmit={(e) => void mobileForm.handleSubmit(({ mobile: digits }) => sendSms(digits))(e)} noValidate className="wsa-field">
             <label htmlFor="si-mobile" className="wsa-lbl">Mobile number</label>
-            <div className={`wsa-phone${error ? " is-bad" : ""}`}>
+            <div className={`wsa-phone${error || mobileError ? " is-bad" : ""}`}>
               <span className="wsa-cc" aria-hidden><span className="wsa-flag" />+91</span>
-              <input id="si-mobile" type="tel" enterKeyHint="send" inputMode="numeric" autoComplete="tel-national" maxLength={11} autoFocus
-                value={formatMobile(mobile)} placeholder="98765 43210" aria-invalid={!!error || undefined}
-                aria-describedby={error ? "si-mobile-error" : undefined}
-                onChange={(e) => { setMobile(e.target.value.replace(/\D/g, "").replace(/^(91|0)(?=\d{10}$)/, "").slice(0, 10)); setError(""); }} />
+              <Controller name="mobile" control={mobileForm.control} render={({ field }) => (
+                <input id="si-mobile" type="tel" enterKeyHint="send" inputMode="numeric" autoComplete="tel-national" maxLength={11} autoFocus
+                  ref={field.ref} name={field.name} onBlur={field.onBlur}
+                  value={formatMobile(field.value)} placeholder="98765 43210" aria-invalid={!!(error || mobileError) || undefined}
+                  aria-describedby={[mobileError && "si-mobile-error", error && "si-mobile-server-error"].filter(Boolean).join(" ") || undefined}
+                  onChange={(e) => { field.onChange(typedMobile(e.target.value)); setError(""); }} />
+              )} />
             </div>
-            {error && <p id="si-mobile-error" role="alert" className="wsa-err">{error}</p>}
-            <button type="submit" disabled={busy || mobile.length !== 10} className="wsa-btn wsa-go">
+            {mobileError && <p id="si-mobile-error" role="alert" className="wsa-ferr">{mobileError}</p>}
+            {error && <p id="si-mobile-server-error" role="alert" className="wsa-err">{error}</p>}
+            <button type="submit" disabled={busy} className="wsa-btn wsa-go">
               {busy ? <><Spinner /> Sending your code…</> : <>Send code <AuthIcon name="arrow" /></>}
             </button>
           </form>
@@ -370,12 +455,15 @@ export default function SignInPage() {
           <p className="wsa-eyebrow">{invalid ? "Check your code" : "SMS verification"}</p>
           <h1 className="wsa-t">Enter the code</h1>
           {!invalid && <p className="wsa-s" id="si-sms-help">Sent by SMS to <b>+91 {formatMobile(mobile)}</b></p>}
-          <CodeInput id="si-sms" value={code} onChange={onCode} onComplete={verifySms} disabled={busy} invalid={invalid}
-            describedBy={invalid ? "si-sms-error" : "si-sms-help"} label="6-digit code from the SMS" />
+          <form onSubmit={(e) => submitCode(e, verifySms)} noValidate style={{ display: "contents" }}>
+            <CodeInput id="si-sms" value={code} onChange={onCode} onComplete={verifySms} disabled={busy} invalid={invalid || !!codeError}
+              describedBy={codeError ? "si-sms-field-error" : invalid ? "si-sms-error" : "si-sms-help"} label="6-digit code from the SMS" />
+          </form>
+          {codeError && <p id="si-sms-field-error" role="alert" className="wsa-ferr">{codeError}</p>}
           {invalid ? (
             <>
               <p id="si-sms-error" role="alert" className="wsa-err">{error}</p>
-              <AuthResend seconds={resendIn} onResend={() => void sendSms()} busy={busy} />
+              <AuthResend seconds={resendIn} onResend={() => void sendSms(mobile)} busy={busy} />
               <p className="wsa-link">Trouble with SMS?{" "}
                 <button type="button" className="wsa-inline" onClick={() => { setSmsLimited(false); goTo("email"); }}>Use email instead</button>
               </p>
@@ -383,9 +471,9 @@ export default function SignInPage() {
           ) : (
             <>
               {error && <p role="alert" className="wsa-err">{error}</p>}
-              <AuthResend seconds={resendIn} onResend={() => void sendSms()} busy={busy} />
+              <AuthResend seconds={resendIn} onResend={() => void sendSms(mobile)} busy={busy} />
               <p className="wsa-note"><AuthIcon name="msg" /><span>On Android the code fills in by itself when the SMS arrives.</span></p>
-              <button type="button" className="wsa-btn wsa-go" disabled={busy || code.length !== 6} onClick={() => void verifySms(code)}>
+              <button type="button" className="wsa-btn wsa-go" disabled={busy} onClick={() => { if (checkCode(code)) void verifySms(code); }}>
                 {busy ? <><Spinner /> Checking…</> : "Verify"}
               </button>
             </>
@@ -413,16 +501,21 @@ export default function SignInPage() {
           )}
           <h1 className="wsa-t">Sign in with email</h1>
           {!smsLimited && <p className="wsa-s">We&apos;ll send a 6-digit code to your inbox.</p>}
-          <form onSubmit={sendCode} className="wsa-field">
+          <form onSubmit={(e) => void emailForm.handleSubmit(({ email: address }) => sendCode(address))(e)} noValidate className="wsa-field">
             {!smsLimited && <label htmlFor="si-email" className="wsa-lbl">Email</label>}
-            <div className={`wsa-in${error ? " is-bad" : ""}`}>
+            <div className={`wsa-in${error || emailError ? " is-bad" : ""}`}>
               <AuthIcon name="mail" />
-              <input id="si-email" type="email" enterKeyHint="send" required autoComplete="email" autoFocus inputMode="email"
-                aria-label={smsLimited ? "Email" : undefined} aria-invalid={!!error || undefined}
-                value={email} onChange={(e) => { setEmail(e.target.value); setError(""); }} placeholder="name@gmail.com" />
+              <input id="si-email" type="email" enterKeyHint="send" autoComplete="email" autoFocus inputMode="email"
+                aria-label={smsLimited ? "Email" : undefined} aria-invalid={!!(error || emailError) || undefined}
+                aria-describedby={[emailError && "si-email-error", error && "si-email-server-error"].filter(Boolean).join(" ") || undefined}
+                {...emailForm.register("email", { onChange: () => setError("") })} placeholder="name@gmail.com" />
             </div>
-            {error && <p role="alert" className="wsa-err">{error}</p>}
-            <button type="submit" disabled={busy || !email.trim()} className="wsa-btn wsa-go">
+            {emailError && <p id="si-email-error" role="alert" className="wsa-ferr">{emailError}</p>}
+            {!emailError && (
+              <EmailTypoHint value={typedEmail} onPick={(fixed) => emailForm.setValue("email", fixed, { shouldValidate: true })} />
+            )}
+            {error && <p id="si-email-server-error" role="alert" className="wsa-err">{error}</p>}
+            <button type="submit" disabled={busy} className="wsa-btn wsa-go">
               {busy ? <><Spinner /> Sending your code…</> : <>Send code <AuthIcon name="arrow" /></>}
             </button>
           </form>
@@ -438,11 +531,14 @@ export default function SignInPage() {
           <p className="wsa-eyebrow">Email verification</p>
           <h1 className="wsa-t">Check your email</h1>
           <p className="wsa-s" id="si-code-help">If <b>{sent?.destination ?? email}</b> has an account, a code is on its way.</p>
-          <CodeInput id="si-code" value={code} onChange={onCode} onComplete={verify} disabled={busy} invalid={invalid}
-            describedBy="si-code-help" label="6-digit code from your email" />
+          <form onSubmit={(e) => submitCode(e, verify)} noValidate style={{ display: "contents" }}>
+            <CodeInput id="si-code" value={code} onChange={onCode} onComplete={verify} disabled={busy} invalid={invalid || !!codeError}
+              describedBy={codeError ? "si-code-help si-code-error" : "si-code-help"} label="6-digit code from your email" />
+          </form>
+          {codeError && <p id="si-code-error" role="alert" className="wsa-ferr">{codeError}</p>}
           {error && <p role="alert" className="wsa-err">{error}</p>}
           {busy && <p className="wsa-muted" role="status">Checking…</p>}
-          <AuthResend seconds={resendIn} onResend={() => void sendCode()} busy={busy} />
+          <AuthResend seconds={resendIn} onResend={() => void sendCode(email)} busy={busy} />
           <p className="wsa-note"><AuthIcon name="mail" /><span>Can&apos;t find it? Look in Spam or Promotions. The code expires in 5 minutes.</span></p>
         </>
       )}
@@ -457,18 +553,29 @@ export default function SignInPage() {
             {useRecovery ? "Enter one of the recovery codes you saved." : "Enter the 6-digit code from your authenticator app."}
           </p>
           {!useRecovery ? (
-            <CodeInput id="si-mfa" value={code} onChange={onCode} onComplete={verifyAuthenticator} disabled={busy} invalid={invalid}
-              describedBy="si-mfa-help" label="Authenticator code" />
+            <>
+              <form onSubmit={(e) => submitCode(e, verifyAuthenticator)} noValidate style={{ display: "contents" }}>
+                <CodeInput id="si-mfa" value={code} onChange={onCode} onComplete={verifyAuthenticator} disabled={busy} invalid={invalid || !!codeError}
+                  describedBy={codeError ? "si-mfa-help si-mfa-error" : "si-mfa-help"} label="Authenticator code" />
+              </form>
+              {codeError && <p id="si-mfa-error" role="alert" className="wsa-ferr">{codeError}</p>}
+            </>
           ) : (
-            <form className="wsa-field" onSubmit={(e) => { e.preventDefault(); void verifyAuthenticator(recoveryInput.trim()); }}>
+            <form className="wsa-field" noValidate onSubmit={(e) => void recoveryForm.handleSubmit(({ recovery: value }) => verifyAuthenticator(value))(e)}>
               <label htmlFor="si-recovery" className="wsa-lbl">Recovery code</label>
-              <div className={`wsa-in${error ? " is-bad" : ""}`}>
+              <div className={`wsa-in${error || recoveryError ? " is-bad" : ""}`}>
                 <AuthIcon name="key" />
-                <input id="si-recovery" enterKeyHint="go" autoFocus autoComplete="off" autoCapitalize="characters" spellCheck={false}
-                  value={recoveryInput} onChange={(e) => { setRecoveryInput(e.target.value.toUpperCase()); setError(""); }}
-                  placeholder="ABCD-1234" />
+                <Controller name="recovery" control={recoveryForm.control} render={({ field }) => (
+                  <input id="si-recovery" enterKeyHint="go" autoFocus autoComplete="off" autoCapitalize="characters" spellCheck={false}
+                    ref={field.ref} name={field.name} onBlur={field.onBlur} value={field.value}
+                    onChange={(e) => { field.onChange(e.target.value.toUpperCase()); setError(""); }}
+                    aria-invalid={!!(error || recoveryError) || undefined}
+                    aria-describedby={recoveryError ? "si-recovery-error" : "si-mfa-help"}
+                    placeholder="ABCD-1234" />
+                )} />
               </div>
-              <button type="submit" disabled={busy || recoveryInput.trim().length < 8} className="wsa-btn wsa-go">
+              {recoveryError && <p id="si-recovery-error" role="alert" className="wsa-ferr">{recoveryError}</p>}
+              <button type="submit" disabled={busy} className="wsa-btn wsa-go">
                 {busy ? <><Spinner /> Checking…</> : "Sign in"}
               </button>
             </form>
@@ -476,7 +583,7 @@ export default function SignInPage() {
           {error && <p role="alert" className="wsa-err">{error}</p>}
           <p className="wsa-link">
             {useRecovery ? "Found your phone? " : "Lost your phone? "}
-            <button type="button" className="wsa-inline" onClick={() => { setUseRecovery((v) => !v); setError(""); setInvalid(false); }}>
+            <button type="button" className="wsa-inline" onClick={() => { setUseRecovery((v) => !v); setError(""); setInvalid(false); setCodeError(""); recoveryForm.clearErrors(); }}>
               {useRecovery ? "Use the authenticator app" : "Use a recovery code"}
             </button>
           </p>
@@ -522,6 +629,7 @@ export default function SignInPage() {
           </button>
         </>
       )}
+      {AUTH_PREVIEW && <PreviewPill state={preview} />}
     </AuthShell>
   );
 }

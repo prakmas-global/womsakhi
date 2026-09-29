@@ -15,6 +15,14 @@ import { homeFor } from "@/lib/auth-api";
 import { useToast } from "@/design-system/feedback/ToastProvider";
 import { WaitScreen } from "@/components/ux/WaitScreen";
 import { useT } from "@/i18n";
+import { previewUser } from "@/lib/auth-preview";
+
+/**
+ * The local preview switch (see lib/auth-preview), written out here rather
+ * than imported: the build replaces NODE_ENV in this file, so every branch it
+ * guards is stripped from production. An imported constant is not.
+ */
+const AUTH_PREVIEW = process.env.NODE_ENV !== "production";
 
 type User = AuthPayload["user"];
 
@@ -132,8 +140,27 @@ export function AuthProvider({
   // the same request: asking again would get the same answer a round trip
   // later. It still runs when the server could not reach the API, so an API
   // blip degrades to the old behaviour rather than to a false sign-out.
+  /*
+    Local development only: an /app screen opened with `?preview=` (see
+    lib/auth-preview) is drawn for a fixture user. The session is never asked
+    for, renewed or ended while it shows. Stripped from a production build.
+  */
+  const previewing = useRef(false);
+  useEffect(() => {
+    if (!AUTH_PREVIEW) return;
+    const fixture = previewUser(pathname);
+    if (!fixture) return;
+    previewing.current = true;
+    const t = window.setTimeout(() => {
+      setUser(fixture);
+      setLoading(false);
+    });
+    return () => window.clearTimeout(t);
+  }, [pathname]);
+
   useEffect(() => {
     if (sessionResolved) return;
+    if (AUTH_PREVIEW && previewUser(window.location.pathname)) return;
     apiGetSession()
       .then((u) => setUser(u))
       .catch(() => setUser(null))
@@ -153,7 +180,7 @@ export function AuthProvider({
     already gone, and the ordinary signed-out path handles that.
   */
   useEffect(() => {
-    if (!user) return;
+    if (!user || (AUTH_PREVIEW && previewing.current)) return;
     let alive = true;
     const renew = () => {
       if (document.visibilityState === "hidden") return;
@@ -211,6 +238,7 @@ export function AuthProvider({
    *      one operation that never said it had worked.
    */
   const signOut = useCallback(async () => {
+    if (AUTH_PREVIEW && previewing.current) return;
     setHandoff({ kind: "out", torn: false });
     // Only the server can clear an httpOnly cookie — that is the point of it.
     try {

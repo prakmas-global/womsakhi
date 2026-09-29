@@ -241,12 +241,15 @@ async def issue(
         raise ValueError(f"unknown code purpose/channel: {purpose}/{channel}")
 
     now = _now()
+    # A team test account sends nothing, so the send limits (which protect
+    # inboxes and cost) do not apply; the wrong-code limits in verify() do.
+    fixed = is_test_login(channel, destination)
     latest = await _codes().find_one(
         {"purpose": purpose, "destination": destination, "consumed_at": None},
         sort=[("created_at", -1)],
     )
     created = _aware((latest or {}).get("created_at"))
-    if created and (now - created).total_seconds() < settings.AUTH_CODE_RESEND_SECONDS:
+    if not fixed and created and (now - created).total_seconds() < settings.AUTH_CODE_RESEND_SECONDS:
         wait = settings.AUTH_CODE_RESEND_SECONDS - int((now - created).total_seconds())
         raise HTTPException(
             status.HTTP_429_TOO_MANY_REQUESTS,
@@ -255,10 +258,11 @@ async def issue(
             headers={"Retry-After": str(wait)},
         )
 
-    await ratelimit.check(
-        request, f"code:{purpose}", destination,
-        (settings.AUTH_CODE_MAX_PER_HOUR, 3600.0), SEND_LIMIT_IP,
-    )
+    if not fixed:
+        await ratelimit.check(
+            request, f"code:{purpose}", destination,
+            (settings.AUTH_CODE_MAX_PER_HOUR, 3600.0), SEND_LIMIT_IP,
+        )
 
     issued = Issued(
         channel=channel,
@@ -274,7 +278,6 @@ async def issue(
         {"purpose": purpose, "destination": destination, "consumed_at": None},
         {"$set": {"consumed_at": now, "superseded": True}},
     )
-    fixed = is_test_login(channel, destination)
     code = settings.TEST_LOGIN_CODE.strip() if fixed else new_code()
     record = {
         "purpose": purpose,
@@ -351,7 +354,13 @@ async def has_live(purpose: str, destination: str) -> bool:
 
 # ── verify ──────────────────────────────────────────────────────────────────
 
-_EXPIRED = {"code": "code_expired", "message": "That code has expired. Ask for a new one."}
+# One message for "expired", "never sent" and "sent to a different address", so
+# a stranger cannot tell which — while still pointing her at the likely slip.
+CODE_MISMATCH_MESSAGE = (
+    "That code doesn't match, or it has expired. "
+    "Check the email or mobile number and the code, or ask for a new one."
+)
+_EXPIRED = {"code": "code_expired", "message": CODE_MISMATCH_MESSAGE}
 
 
 async def verify(request: Request, *, purpose: str, destination: str, code: str) -> dict:

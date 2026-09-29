@@ -13,6 +13,15 @@ import { AlertTriangle, Check, Laptop, RefreshCw, Smartphone, Trash2 } from "luc
 import { SettingsPage, TextInput } from "@/components/ux/settings/Frame";
 import "@/components/auth-cards";
 import { useT } from "@/i18n";
+import { PREVIEW_STATES, previewDevices, readPreview } from "@/lib/auth-preview";
+import { PreviewPill } from "@/components/auth-shell/PreviewPill";
+
+/**
+ * The local preview switch (see lib/auth-preview), written out here rather
+ * than imported: the build replaces NODE_ENV in this file, so every branch it
+ * guards is stripped from production. An imported constant is not.
+ */
+const AUTH_PREVIEW = process.env.NODE_ENV !== "production";
 
 /**
  * Sign-in and devices.
@@ -57,8 +66,11 @@ export default function SecuritySettings() {
   const [now, setNow] = useState(0);
   const [removed, setRemoved] = useState("");
   const [asking, setAsking] = useState(false);
+  /** Local-only `?preview=`: sample devices instead of the API (see lib/auth-preview). */
+  const [preview, setPreview] = useState<string | null>(null);
 
   const fetchDevices = useCallback(async () => {
+    if (AUTH_PREVIEW && readPreview(PREVIEW_STATES.security)) return;
     try {
       const list = await apiMyDevices();
       // The one she is holding first, then most recently used.
@@ -73,6 +85,13 @@ export default function SecuritySettings() {
   }, []);
 
   useEffect(() => {
+    if (AUTH_PREVIEW) {
+      const p = readPreview(PREVIEW_STATES.security);
+      if (p) {
+        const t = window.setTimeout(() => { setPreview(p); setDevices(previewDevices()); setNow(Date.now()); });
+        return () => window.clearTimeout(t);
+      }
+    }
     let alive = true;
     void (async () => {
       try {
@@ -92,6 +111,11 @@ export default function SecuritySettings() {
   const remove = useAction(
     async (id: string, label: string) => {
       setRemoved("");
+      if (AUTH_PREVIEW && preview) {
+        setDevices((list) => list?.filter((d) => d.id !== id) ?? null);
+        setRemoved(`Signed out ${label}.`);
+        return;
+      }
       const res = await apiRemoveDevice(id);
       setRemoved(res.message || `Signed out ${label}.`);
       await fetchDevices();
@@ -107,7 +131,11 @@ export default function SecuritySettings() {
    * alive would spend the next few seconds 401ing on every request it makes.
    */
   const endEverywhere = useAction(
-    async () => { await apiSignOutEverywhere(); window.location.assign("/signin"); },
+    async () => {
+      if (AUTH_PREVIEW && preview) return;
+      await apiSignOutEverywhere();
+      window.location.assign("/signin");
+    },
     { fallbackError: "Could not end your sessions just now. Try again in a moment." },
   );
 
@@ -115,7 +143,7 @@ export default function SecuritySettings() {
   const [confirm, setConfirm] = useState("");
   const [closed, setClosed] = useState(false);
   const close = useAction(
-    async () => { await apiRequestDeletion("", confirm); },
+    async () => { if (!(AUTH_PREVIEW && preview)) await apiRequestDeletion("", confirm); },
     {
       onDone: () => setClosed(true),
       fallbackError: "That did not go through. Your account is untouched — try again in a moment.",
@@ -236,6 +264,7 @@ export default function SecuritySettings() {
           <button type="button" className="ac-btn ac-danger" onClick={() => setDeleting(true)}><Trash2 aria-hidden /> {tr("settingsSecurity.closeMyAccount")}</button>
         )}
       </section>
+      {AUTH_PREVIEW && <PreviewPill state={preview} />}
     </SettingsPage>
   );
 }

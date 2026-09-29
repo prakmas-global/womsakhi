@@ -16,6 +16,7 @@ Sessions — one per device, 30 days for members, a working day for staff — li
 in `app/core/sessions.py`. The codes themselves live in `app/core/codes.py`.
 """
 
+import unicodedata
 from datetime import datetime, timedelta, timezone
 from typing import Optional
 
@@ -86,6 +87,28 @@ async def _next_member_code(db) -> str:
         if code.startswith("WC-") and code[3:].isdigit():
             highest = max(highest, int(code[3:]))
     return f"WC-{highest + 1}"
+
+
+_NAME_JOINERS = set(" .'\u2019-")
+
+
+def clean_person_name(value: str) -> str:
+    """
+    Her name as she writes it, in any script — letters (and the marks Indic
+    scripts need), with spaces, dots, apostrophes and hyphens between words.
+    No digits, links or symbols. The web form applies the same rule
+    (src/lib/validation/fields.ts).
+    """
+    value = " ".join((value or "").split())
+    if len(value) < 2:
+        raise ValueError("Enter your full name")
+    if len(value) > 80:
+        raise ValueError("Keep your name under 80 characters")
+    if not unicodedata.category(value[0]).startswith("L") or not all(
+        unicodedata.category(ch)[0] in "LM" or ch in _NAME_JOINERS for ch in value
+    ):
+        raise ValueError("Use letters only — no numbers or symbols")
+    return value
 
 
 def normalise_phone(value: str) -> str:
@@ -232,10 +255,7 @@ class SignupComplete(BaseModel):
     @field_validator("full_name")
     @classmethod
     def _name(cls, value: str) -> str:
-        value = " ".join((value or "").split())
-        if len(value) < 2:
-            raise ValueError("Enter your full name")
-        return value
+        return clean_person_name(value)
 
 
 @router.post("/signup/start", summary="Join: send a code to her email")
@@ -292,7 +312,7 @@ async def signup_verify(payload: CodeCheck, request: Request, response: Response
         user = await _users().find_one({"_id": ObjectId(spent["user_id"])}) if spent.get("user_id") else None
         if not user or not user.get("is_active", True):
             raise HTTPException(status.HTTP_400_BAD_REQUEST,
-                                {"code": "code_expired", "message": "That code has expired. Ask for a new one."})
+                                {"code": "code_expired", "message": codes.CODE_MISMATCH_MESSAGE})
         if role_name(user) != MEMBER_ROLE:
             raise HTTPException(status.HTTP_409_CONFLICT, {
                 "code": "email_taken",
@@ -464,7 +484,7 @@ async def signin_verify(payload: SigninVerify, request: Request, response: Respo
     user = await _users().find_one({"_id": ObjectId(spent["user_id"])}) if spent.get("user_id") else None
     if not user or not user.get("is_active", True):
         raise HTTPException(status.HTTP_400_BAD_REQUEST,
-                            {"code": "code_expired", "message": "That code has expired. Ask for a new one."})
+                            {"code": "code_expired", "message": codes.CODE_MISMATCH_MESSAGE})
 
     test_login = field == "email" and codes.is_test_login(codes.EMAIL, value)
     if role_name(user) != MEMBER_ROLE and not test_login:

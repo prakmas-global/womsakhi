@@ -8,6 +8,7 @@ import { ALL_ENABLED, UNHIDEABLE } from "@/layout-engine/types";
 import type { Layout, LayoutFeatures } from "@/layout-engine/types";
 import type { PersistHandlers } from "@/layout-engine/LayoutEngineProvider";
 import { apiMeShell, type MeShell } from "@/lib/shell-api";
+import { isPreviewUser } from "@/lib/auth-preview";
 import {
   apiMyFeatures,
   apiMyLayout,
@@ -21,6 +22,13 @@ import {
   apiSaveSidebar,
   apiSaveWidgets,
 } from "@/lib/layout-api";
+
+/**
+ * The local preview switch (see lib/auth-preview), written out here rather
+ * than imported: the build replaces NODE_ENV in this file, so every branch it
+ * guards is stripped from production. An imported constant is not.
+ */
+const AUTH_PREVIEW = process.env.NODE_ENV !== "production";
 
 /**
  * Connects the portable layout engine to this app's account system.
@@ -78,6 +86,8 @@ export default function LayoutEngineBridge({
     }
     // The server already answered with the same cookie on the same request.
     if (initialShell) return;
+    // A local `?preview=` screen's fixture user has no session to ask with.
+    if (AUTH_PREVIEW && isPreviewUser(user)) return;
     let cancelled = false;
     void (async () => {
       try {
