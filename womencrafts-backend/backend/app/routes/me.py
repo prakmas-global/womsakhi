@@ -17,13 +17,14 @@ from datetime import datetime, timedelta, timezone
 from typing import Optional
 
 from bson import ObjectId
-from fastapi import APIRouter, Depends, File, Form, HTTPException, Query, UploadFile, status
+from fastapi import APIRouter, Depends, File, Form, HTTPException, Query, Request, UploadFile, status
 from pydantic import BaseModel, Field
 
 from app.core.config import settings
 from app.core.deps import get_current_user
 from app.core.rbac import require_active_member, require_member, require_member_account
-from app.core import semantic
+from app.core import cache, semantic, sessions
+from app.core.audit import record
 from app.core.matching import NEEDS, rank
 from app.core.rbac import is_member
 from app.core.serializers import to_object_id
@@ -186,8 +187,10 @@ async def shell(me: dict = Depends(require_member)):
     if me.get("member_id"):
         member_doc = await db[MemberModel.collection_name].find_one(
             {"_id": ObjectId(me["member_id"])},
-            {"location": 1, "bio": 1, "dob": 1},
+            {"location": 1, "display_location": 1, "bio": 1, "dob": 1},
         )
+        if member_doc and member_doc.get("display_location"):
+            member_doc["location"] = member_doc["display_location"]
 
     return MeShell(
         user=user,
@@ -265,15 +268,47 @@ async def my_profile(me: dict = Depends(require_member_account)):
     return MeProfileResponse(
         **UserModel.to_response(me),
         code=(profile or {}).get("code", ""),
-        location=(profile or {}).get("location", ""),
+        location=(profile or {}).get("display_location") or (profile or {}).get("location", ""),
         segment=(profile or {}).get("segment", ""),
         dob=(profile or {}).get("dob", ""),
         bio=(profile or {}).get("bio", ""),
     )
 
 
+async def profile_phone(raw: Optional[str], me: dict) -> Optional[str]:
+    """
+    The number a profile form sent, checked the way `POST /auth/phone` checks it.
+
+    Returns None when the number is unchanged (or not sent), "" when she clears
+    it, and otherwise the number in E.164. Refuses an invalid number with 422
+    and a number another account already holds with 409 `phone_taken`, the
+    same body `/auth/phone` answers with — otherwise a profile form would be a
+    side door around both rules. Shared with `PUT /staff/profile`.
+    """
+    from app.routes.auth import _phone_taken, normalise_phone
+
+    if raw is None:
+        return None
+    raw = raw.strip()
+    if not raw:
+        return None if not (me.get("phone") or "") else ""
+    try:
+        phone = normalise_phone(raw)
+    except ValueError as exc:
+        raise HTTPException(status.HTTP_422_UNPROCESSABLE_ENTITY, str(exc))
+    if phone == (me.get("phone") or ""):
+        return None
+    if await _phone_taken(phone, except_user_id=me["_id"]):
+        raise HTTPException(status.HTTP_409_CONFLICT,
+                            {"code": "phone_taken",
+                             "message": "This mobile number is already linked to another account."})
+    return phone
+
+
 @router.patch("/profile", response_model=MeProfileResponse, summary="Update my profile")
-async def update_my_profile(payload: MeProfileUpdate, me: dict = Depends(require_member_account)):
+async def update_my_profile(
+    payload: MeProfileUpdate, request: Request, me: dict = Depends(require_member_account),
+):
     now = datetime.now(timezone.utc)
     user_updates: dict = {"updated_at": now}
     member_updates: dict = {"updated_at": now}
@@ -281,16 +316,26 @@ async def update_my_profile(payload: MeProfileUpdate, me: dict = Depends(require
     if payload.full_name is not None:
         user_updates["full_name"] = payload.full_name.strip()
         member_updates["full_name"] = payload.full_name.strip()
-    if payload.phone is not None:
-        user_updates["phone"] = payload.phone.strip()
-        member_updates["phone"] = payload.phone.strip()
+    # Checked before anything is written, so a refused number saves nothing.
+    new_phone = await profile_phone(payload.phone, me)
+    phone_changed = new_phone is not None
+    if phone_changed:
+        user_updates["phone"] = new_phone
+        member_updates["phone"] = new_phone
+        # Confirmation belongs to the number, not the account: a new number
+        # starts unconfirmed, exactly as it does through POST /auth/phone.
+        user_updates["phone_verified_at"] = None
     if payload.avatar is not None:
         user_updates["avatar"] = payload.avatar
         member_updates["avatar"] = payload.avatar
     if payload.locale is not None:
         user_updates["locale"] = payload.locale
     if payload.location is not None:
-        member_updates["location"] = payload.location.strip()
+        # Display only. The directory's `location` decides which regional
+        # staff can see and act on her (app/core/staff_scope.py), so it is set
+        # by staff through PATCH /members/{id}, never by her. What she types
+        # is kept beside it and shown back to her.
+        member_updates["display_location"] = payload.location.strip()[:120]
     if payload.dob is not None:
         member_updates["dob"] = payload.dob
     if payload.bio is not None:
@@ -303,6 +348,16 @@ async def update_my_profile(payload: MeProfileUpdate, me: dict = Depends(require
         await get_database()[MemberModel.collection_name].update_one(
             {"_id": ObjectId(me["member_id"])}, {"$set": member_updates}
         )
+
+    if phone_changed:
+        # Same rule as POST /auth/phone: a new number signs out every other
+        # device and keeps this one.
+        cache.forget_user(str(me["_id"]))
+        ended = await sessions.revoke_all(str(me["_id"]), reason="phone_changed",
+                                          keep_sid=sessions.sid_from_request(request))
+        await record(me, "security.phone_changed", target=str(me["_id"]),
+                     detail=f"Mobile number updated; signed out {ended} other device{'s' if ended != 1 else ''}",
+                     request=request)
 
     fresh = await get_database()[UserModel.collection_name].find_one({"_id": me["_id"]})
     return await my_profile(fresh)

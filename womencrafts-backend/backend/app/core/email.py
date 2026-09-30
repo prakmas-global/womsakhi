@@ -13,6 +13,7 @@ adapter takes over with no code change.
 
 from __future__ import annotations
 
+import asyncio
 import json
 import smtplib
 import ssl
@@ -91,19 +92,25 @@ class SmtpEmailProvider(EmailProvider):
         msg.set_content(message.text)
         msg.add_alternative(message.html, subtype="html")
 
-        try:
+        def _send_blocking() -> None:
             if settings.SMTP_USE_SSL:
                 server = smtplib.SMTP_SSL(
-                    settings.SMTP_HOST, settings.SMTP_PORT, context=ssl.create_default_context()
+                    settings.SMTP_HOST, settings.SMTP_PORT, context=ssl.create_default_context(),
+                    timeout=20,
                 )
             else:
-                server = smtplib.SMTP(settings.SMTP_HOST, settings.SMTP_PORT)
+                server = smtplib.SMTP(settings.SMTP_HOST, settings.SMTP_PORT, timeout=20)
             with server:
                 if settings.SMTP_USE_TLS and not settings.SMTP_USE_SSL:
                     server.starttls(context=ssl.create_default_context())
                 if settings.SMTP_USER:
                     server.login(settings.SMTP_USER, settings.SMTP_PASSWORD)
                 server.send_message(msg)
+
+        try:
+            # smtplib blocks. Run on a worker thread so one slow mail server
+            # does not stall every other request on this event loop.
+            await asyncio.to_thread(_send_blocking)
             return True
         except Exception as exc:  # noqa: BLE001 - a mail outage must not 500 a signup
             print(f"⚠️  Email to {message.to} failed: {exc}")

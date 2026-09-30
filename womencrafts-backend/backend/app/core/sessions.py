@@ -54,6 +54,10 @@ REFRESH_PATH = "/"
 #: (several tabs or prefetches renewing at once), not theft: it gets a fresh
 #: access token and no new refresh token. After the window it ends the session.
 ROTATION_GRACE_SECONDS = 30
+#: How many spent refresh generations a session remembers. Presenting any of
+#: them (outside the grace above) is reuse and ends the session. At one
+#: rotation per 30-minute access token that is two days of non-stop use.
+SPENT_HISTORY = 100
 SID_CLAIM = "sid"
 
 KIND_WEB = "web"
@@ -124,12 +128,15 @@ def device_label(user_agent: str) -> str:
 
 
 def _client_ip(request: Optional[Request]) -> str:
-    if request is None:
-        return ""
-    forwarded = request.headers.get("x-forwarded-for", "")
-    if forwarded:
-        return forwarded.split(",")[0].strip()
-    return request.client.host if request.client else ""
+    """The caller's address — one rule for the whole app; see `ratelimit.client_ip`."""
+    from app.core.ratelimit import client_ip
+
+    return client_ip(request)
+
+
+def is_app_request(request: Optional[Request]) -> bool:
+    """Does this request come from the mobile app (which has no cookie jar)?"""
+    return request is not None and request.headers.get(APP_CLIENT_HEADER, "").lower() == "app"
 
 
 def access_token_for(user: dict, sid: str) -> str:
@@ -178,7 +185,7 @@ async def start(
     # The mobile app announces itself; only an app session can later approve a
     # browser sign-in (see routes/auth_app.py). A header is enough to *label*
     # a session — it grants nothing until the app has signed in with a code.
-    if request is not None and request.headers.get(APP_CLIENT_HEADER, "").lower() == "app":
+    if is_app_request(request):
         kind = KIND_APP
     now = _now()
     sid = secrets.token_urlsafe(18)
@@ -196,6 +203,7 @@ async def start(
         "token_version": token_version_of(user),
         "refresh_hash": _digest(refresh),
         "prev_refresh_hash": None,
+        "spent_refresh_hashes": [],
         "created_at": now,
         "last_used_at": now,
         "expires_at": now + lifetime,
@@ -207,7 +215,7 @@ async def start(
         set_session_cookie(response, access)
         _set_refresh_cookie(response, refresh, int(lifetime.total_seconds()))
     return {"access_token": access, "refresh_token": refresh, "sid": sid,
-            "expires_at": doc["expires_at"].isoformat()}
+            "expires_at": doc["expires_at"].isoformat(), "kind": kind}
 
 
 async def _revoke_where(query: dict, reason: str) -> int:
@@ -270,11 +278,14 @@ async def rotate(request: Request, response: Optional[Response], refresh_token: 
     digest = _digest(refresh_token)
     row = await _sessions().find_one({"refresh_hash": digest})
     if not row:
-        reused = await _sessions().find_one({"prev_refresh_hash": digest, "revoked_at": None})
-        if not reused:
+        reused = await _find_spent(digest)
+        if not reused or reused.get("revoked_at"):
             raise ended
+        # Only the IMMEDIATELY previous token gets the race grace; any older
+        # generation is a second holder, however recently it rotated.
         rotated = _aware(reused.get("rotated_at"))
-        if rotated and (_now() - rotated).total_seconds() <= ROTATION_GRACE_SECONDS:
+        if (reused.get("prev_refresh_hash") == digest and rotated
+                and (_now() - rotated).total_seconds() <= ROTATION_GRACE_SECONDS):
             return await _grace_access(reused, response)
         await revoke(reused["sid"], reason="refresh_reuse")
         raise ended
@@ -301,7 +312,14 @@ async def rotate(request: Request, response: Optional[Response], refresh_token: 
     }
     if is_member_account(user):
         updates["expires_at"] = now + lifetime_for(user)
-    result = await _sessions().update_one({"_id": row["_id"], "refresh_hash": digest}, {"$set": updates})
+    result = await _sessions().update_one(
+        {"_id": row["_id"], "refresh_hash": digest},
+        {"$set": updates,
+         # Every spent generation is remembered (the last SPENT_HISTORY), not
+         # just the one before: a thief who rotates twice has moved the real
+         # device two generations back, and that must still be caught.
+         "$push": {"spent_refresh_hashes": {"$each": [digest], "$slice": -SPENT_HISTORY}}},
+    )
     if result.modified_count != 1:
         # Lost a race with another refresh of the same generation.
         raise ended
@@ -313,6 +331,43 @@ async def rotate(request: Request, response: Optional[Response], refresh_token: 
         _set_refresh_cookie(response, fresh, max(60, int((new_expiry - now).total_seconds())))
     return user, {"access_token": access, "refresh_token": fresh, "sid": row["sid"],
                   "expires_at": new_expiry.isoformat()}
+
+
+_spent_index_ready = False
+
+
+async def _ensure_spent_index() -> None:
+    """
+    The spent-hash lookup needs an index or it scans every session. Created
+    here, once per process, because app/db/indexes.py belongs to another
+    change; it is idempotent, and harmless to add there too.
+    """
+    global _spent_index_ready
+    if _spent_index_ready:
+        return
+    try:
+        await _sessions().create_index("spent_refresh_hashes", name="spent_refresh", sparse=True)
+        _spent_index_ready = True
+    except Exception:  # noqa: BLE001 - a missing index is slow, not wrong
+        pass
+
+
+async def _find_spent(digest: str) -> Optional[dict]:
+    """The session that once issued this (since-rotated) refresh token, if any."""
+    await _ensure_spent_index()
+    return await _sessions().find_one(
+        {"$or": [{"prev_refresh_hash": digest}, {"spent_refresh_hashes": digest}]})
+
+
+async def sid_for_refresh(refresh_token: str) -> str:
+    """The session a refresh token — current or already spent — belongs to, or ''."""
+    if not refresh_token:
+        return ""
+    digest = _digest(refresh_token)
+    row = await _sessions().find_one({"refresh_hash": digest}, {"sid": 1})
+    if not row:
+        row = await _find_spent(digest)
+    return str((row or {}).get("sid") or "")
 
 
 async def _grace_access(row: dict, response: Optional[Response]) -> tuple[dict, dict]:

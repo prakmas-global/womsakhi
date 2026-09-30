@@ -64,3 +64,42 @@ def _no_database_client():
     assert mongodb._client is None, (
         "a test opened a MongoDB client; this suite must stay offline")
     yield
+
+
+# ── the throwaway local mongod, for the few tests that need a real one ──────
+#
+# Never the URI from `.env`: that is the live cluster. These tests talk only to
+# a mongod started by hand on 127.0.0.1:27099, and skip cleanly when it is not
+# running, so the suite stays green (and offline) everywhere else.
+LOCAL_MONGO_HOST = "127.0.0.1"
+LOCAL_MONGO_PORT = 27099
+LOCAL_MONGO_DB = "womsakhi_authtest"
+
+
+def local_mongo_reachable() -> bool:
+    import socket
+
+    try:
+        with socket.create_connection((LOCAL_MONGO_HOST, LOCAL_MONGO_PORT), timeout=0.3):
+            return True
+    except OSError:
+        return False
+
+
+@pytest.fixture
+async def local_mongo():
+    """A motor client on the local test mongod, or a skip."""
+    if not local_mongo_reachable():
+        pytest.skip(f"no local mongod on {LOCAL_MONGO_HOST}:{LOCAL_MONGO_PORT}")
+    from motor.motor_asyncio import AsyncIOMotorClient
+
+    client = AsyncIOMotorClient(
+        f"mongodb://{LOCAL_MONGO_HOST}:{LOCAL_MONGO_PORT}", serverSelectionTimeoutMS=1500,
+    )
+    try:
+        await client.admin.command("ping")
+    except Exception as exc:  # noqa: BLE001
+        client.close()
+        pytest.skip(f"local mongod did not answer: {exc}")
+    yield client
+    client.close()

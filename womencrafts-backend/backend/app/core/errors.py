@@ -86,6 +86,29 @@ def _envelope(message: str, rid: str, status_code: int, extra: dict | None = Non
     )
 
 
+def safe_validation_summary(errors) -> list[dict]:
+    """
+    What a validation failure may put in a log: where, what kind, and the
+    sentence. Never `input` or `ctx`.
+
+    Under pydantic v2 each error carries the value that failed (`input`) and
+    often the constraint with the value echoed back (`ctx`). On the auth routes
+    that is her email, her phone number, the one-time code she typed; on a body
+    that failed to parse, the whole body. Logs are kept longer and read by more
+    people than the database, so none of it goes there.
+    """
+    out = []
+    for err in errors or ():
+        if not isinstance(err, dict):
+            continue
+        out.append({
+            "loc": [str(p) for p in err.get("loc", ())],
+            "type": str(err.get("type", "")),
+            "msg": str(err.get("msg", "")),
+        })
+    return out
+
+
 def install(app: FastAPI) -> None:
     """Register the handlers. Called once from `main`."""
 
@@ -111,7 +134,7 @@ def install(app: FastAPI) -> None:
         first = (exc.errors() or [{}])[0]
         where = " → ".join(str(p) for p in first.get("loc", ()) if p != "body")
         message = first.get("msg", "That request was not valid")
-        log.warning("validation %s %s — %s", request.method, request.url.path, exc.errors())
+        log.warning("validation %s %s — %s", request.method, request.url.path, safe_validation_summary(exc.errors()))
         return _envelope(f"{where}: {message}" if where else message, rid, 422)
 
     @app.exception_handler(Exception)

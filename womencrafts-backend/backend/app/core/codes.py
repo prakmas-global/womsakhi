@@ -217,6 +217,37 @@ def is_test_login(channel: str, destination: str) -> bool:
     return channel == EMAIL and normalise_email(destination) in settings.test_login_emails
 
 
+#: Wrong fixed-code tries per test address are counted in this bucket, per UTC day.
+TEST_CODE_FAIL_BUCKET = "test_code_fail"
+TEST_CODE_FAIL_WINDOW = 86400.0
+
+
+async def test_code_locked(destination: str) -> bool:
+    """Has this test address had too many wrong fixed-code tries today?"""
+    cap = int(settings.TEST_LOGIN_MAX_FAILURES_PER_DAY or 0)
+    if cap <= 0:
+        return False
+    return await ratelimit.failures(TEST_CODE_FAIL_BUCKET, destination, TEST_CODE_FAIL_WINDOW) >= cap
+
+
+def _background_send(background, channel: str, destination: str, code: str, purpose: str,
+                     name: str, template: str, row_id) -> None:
+    """Deliver after the answer has gone; a failed send frees the address to ask again."""
+
+    async def _run() -> None:
+        try:
+            ok = await _deliver(channel, destination, code, purpose, name, template)
+        except Exception:  # noqa: BLE001 - a send is never allowed to crash the worker
+            logger.exception("codes: background send failed")
+            ok = False
+        if not ok:
+            logger.warning("codes: could not send a %s %s code", purpose, channel)
+            await _codes().update_one({"_id": row_id, "consumed_at": None},
+                                      {"$set": {"consumed_at": _now(), "failed": True}})
+
+    background.add_task(_run)
+
+
 async def issue(
     request: Request,
     *,
@@ -228,22 +259,35 @@ async def issue(
     payload: Optional[dict] = None,
     send: bool = True,
     template: str = "",
+    allow_fixed: bool = False,
+    background=None,
 ) -> Issued:
     """
     Mint a code, retire any earlier one for the same address, and send it.
 
-    `send=False` still enforces the cooldown and the rate limits and returns the
-    same answer, without minting anything. Sign-in uses it for an address that
-    has no account: the response, the timing budget and the limits are
-    identical, so the endpoint cannot be used to ask "is she a member here?".
+    `send=False` goes through the SAME steps — cooldown, rate limits, retiring
+    the earlier code, writing a row — but the row holds the digest of a secret
+    nobody is ever told, and nothing is sent. Sign-in uses it for an address
+    that has no account, so the answer, the second-call cooldown (429
+    `resend_too_soon`) and the wrong-code replies are identical, and the
+    endpoint cannot be used to ask "is she a member here?".
+
+    `allow_fixed`: the caller has checked the account may use the fixed test
+    code (a listed MEMBER, or staff with TEST_LOGIN_ALLOW_STAFF). Otherwise a
+    listed address gets a real code like anyone else.
+
+    `background`: a FastAPI BackgroundTasks. When given, delivery happens
+    after the response, so the time to answer does not depend on whether a
+    message was really sent (a slow SMTP handshake used to say "member").
     """
     if purpose not in PURPOSES or channel not in CHANNELS:
         raise ValueError(f"unknown code purpose/channel: {purpose}/{channel}")
 
     now = _now()
     # A team test account sends nothing, so the send limits (which protect
-    # inboxes and cost) do not apply; the wrong-code limits in verify() do.
-    fixed = is_test_login(channel, destination)
+    # inboxes and cost) do not apply; the wrong-code limits in verify() do,
+    # and so does a daily cap on wrong fixed-code tries.
+    fixed = send and allow_fixed and is_test_login(channel, destination)
     latest = await _codes().find_one(
         {"purpose": purpose, "destination": destination, "consumed_at": None},
         sort=[("created_at", -1)],
@@ -270,20 +314,23 @@ async def issue(
         expires_in=settings.AUTH_CODE_TTL_MINUTES * 60,
         resend_in=settings.AUTH_CODE_RESEND_SECONDS,
     )
-    if not send:
-        return issued
+    if not send and channel == SMS:
+        # Same refusal a real send would get once today's allowance is gone.
+        await reserve_sms(destination, purpose, dry_run=True)
 
     # Only the newest code for an address is ever live.
     await _codes().update_many(
         {"purpose": purpose, "destination": destination, "consumed_at": None},
         {"$set": {"consumed_at": now, "superseded": True}},
     )
-    code = settings.TEST_LOGIN_CODE.strip() if fixed else new_code()
+    # No account (send=False): a code nobody knows, so the row behaves like a
+    # real one — cooldown, tries left, voided — and can never be spent.
+    code = settings.TEST_LOGIN_CODE.strip() if fixed else (new_code() if send else secrets.token_hex(16))
     record = {
         "purpose": purpose,
         "channel": channel,
         "destination": destination,
-        "user_id": user_id,
+        "user_id": user_id if send else "",
         "code_digest": digest(purpose, destination, code),
         "attempts": 0,
         "payload": payload or {},
@@ -291,12 +338,20 @@ async def issue(
         "expires_at": now + timedelta(minutes=settings.AUTH_CODE_TTL_MINUTES),
         "consumed_at": None,
     }
+    if fixed:
+        record["fixed"] = True
+    if not send:
+        record["decoy"] = True
     inserted = await _codes().insert_one(record)
 
-    if fixed:
-        return issued  # a test account: the code is known, nothing is sent
+    if fixed or not send:
+        return issued  # a test account or no account: nothing is sent
     if channel == SMS:
         await reserve_sms(destination, purpose)
+    if background is not None:
+        _background_send(background, channel, destination, code, purpose, name, template,
+                         inserted.inserted_id)
+        return issued
     if not await _deliver(channel, destination, code, purpose, name, template):
         await _codes().update_one({"_id": inserted.inserted_id}, {"$set": {"consumed_at": now, "failed": True}})
         raise HTTPException(
@@ -316,7 +371,22 @@ SMS_LIMIT_REACHED = {
 }
 
 
-async def reserve_sms(destination: str, purpose: str) -> None:
+def _ist_day() -> str:
+    ist = timezone(timedelta(hours=5, minutes=30))
+    return datetime.now(ist).strftime("%Y-%m-%d")
+
+
+#: Ledger rows that spend the platform allowance. Rows written with
+#: `counts: False` (an allowance asked for a number no account can use) only
+#: count against that number, so the answer looks the same without the cost.
+SPENDS_ALLOWANCE = {"counts": {"$ne": False}}
+
+
+async def sms_used_today() -> int:
+    return await get_database()[SMS_LEDGER].count_documents({"day": _ist_day(), **SPENDS_ALLOWANCE})
+
+
+async def reserve_sms(destination: str, purpose: str, *, dry_run: bool = False, counts: bool = True) -> None:
     """
     Count one SMS against today's allowance, or refuse (429 `sms_limit`).
 
@@ -326,11 +396,10 @@ async def reserve_sms(destination: str, purpose: str) -> None:
     day (10 = Firebase's free tier) or more than SMS_PER_NUMBER_DAILY to one
     number. The day is counted in India time.
     """
-    ist = timezone(timedelta(hours=5, minutes=30))
-    day = datetime.now(ist).strftime("%Y-%m-%d")
+    day = _ist_day()
     ledger = get_database()[SMS_LEDGER]
     if settings.SMS_DAILY_LIMIT > 0:
-        sent_today = await ledger.count_documents({"day": day})
+        sent_today = await ledger.count_documents({"day": day, **SPENDS_ALLOWANCE})
         if sent_today >= settings.SMS_DAILY_LIMIT:
             raise HTTPException(status.HTTP_429_TOO_MANY_REQUESTS, SMS_LIMIT_REACHED)
     if settings.SMS_PER_NUMBER_DAILY > 0:
@@ -340,8 +409,13 @@ async def reserve_sms(destination: str, purpose: str) -> None:
                 "code": "sms_limit",
                 "message": "Too many SMS codes to this number today. Please use the code we send to your email.",
             })
-    await ledger.insert_one({"day": day, "destination": destination, "purpose": purpose,
-                             "provider": settings.PHONE_PROVIDER, "created_at": _now()})
+    if dry_run:
+        return
+    row = {"day": day, "destination": destination, "purpose": purpose,
+           "provider": settings.PHONE_PROVIDER, "created_at": _now()}
+    if not counts:
+        row["counts"] = False
+    await ledger.insert_one(row)
 
 
 async def has_live(purpose: str, destination: str) -> bool:
@@ -370,6 +444,12 @@ async def verify(request: Request, *, purpose: str, destination: str, code: str)
     Wrong answers count against the code (five voids it) and against the
     address (fifteen an hour), so neither "guess five, ask again" nor a slow
     spread of guesses gets anywhere near a million.
+
+    **Every try is paid for before it is judged.** The attempt is taken with
+    one conditional `$inc` (`attempts < MAX`, unspent) and only then is the
+    digest compared. Reading the count and incrementing it separately let a
+    burst of parallel guesses all read "0 tries used" and get far more than
+    five goes at one code.
     """
     await ratelimit.check(request, f"verify:{purpose}", destination, VERIFY_LIMIT, VERIFY_LIMIT_IP)
 
@@ -382,18 +462,26 @@ async def verify(request: Request, *, purpose: str, destination: str, code: str)
     expires = _aware((record or {}).get("expires_at"))
     if not record or not expires or expires <= now:
         raise HTTPException(status.HTTP_400_BAD_REQUEST, _EXPIRED)
-    if int(record.get("attempts") or 0) >= settings.AUTH_CODE_MAX_ATTEMPTS:
+    fixed = bool(record.get("fixed"))
+    if fixed and await test_code_locked(destination):
         raise HTTPException(status.HTTP_400_BAD_REQUEST, _EXPIRED)
 
-    if len(clean) != 6 or not hmac.compare_digest(record["code_digest"], digest(purpose, destination, clean)):
-        updated = await _codes().find_one_and_update(
-            {"_id": record["_id"]},
-            {"$inc": {"attempts": 1}},
-            return_document=ReturnDocument.AFTER,
-        )
-        left = settings.AUTH_CODE_MAX_ATTEMPTS - int((updated or record).get("attempts") or 0)
+    claimed = await _codes().find_one_and_update(
+        {"_id": record["_id"], "consumed_at": None,
+         "attempts": {"$lt": settings.AUTH_CODE_MAX_ATTEMPTS}},
+        {"$inc": {"attempts": 1}},
+        return_document=ReturnDocument.AFTER,
+    )
+    if not claimed:
+        raise HTTPException(status.HTTP_400_BAD_REQUEST, _EXPIRED)
+
+    if len(clean) != 6 or not hmac.compare_digest(claimed["code_digest"], digest(purpose, destination, clean)):
+        if fixed:
+            await ratelimit.record_failure(TEST_CODE_FAIL_BUCKET, destination, TEST_CODE_FAIL_WINDOW)
+        left = settings.AUTH_CODE_MAX_ATTEMPTS - int(claimed.get("attempts") or 0)
         if left <= 0:
-            await _codes().update_one({"_id": record["_id"]}, {"$set": {"consumed_at": now, "voided": True}})
+            await _codes().update_one({"_id": record["_id"], "consumed_at": None},
+                                      {"$set": {"consumed_at": now, "voided": True}})
             raise HTTPException(
                 status.HTTP_400_BAD_REQUEST,
                 {"code": "code_voided", "message": "Too many wrong tries. Ask for a new code."},

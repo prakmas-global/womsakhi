@@ -342,11 +342,21 @@ async def accept_invite(body: AcceptInvite):
         raise HTTPException(status.HTTP_400_BAD_REQUEST, "This invitation is no longer valid")
 
     now = datetime.now(timezone.utc)
-    await _users().update_one(
-        {"_id": _oid(invite["user_id"])},
-        {"$set": {"invite_accepted_at": now, "email_verified_at": now,
-                  "is_active": True, "updated_at": now}},
+    # Accepting an invitation proves she owns the address. It is NOT a way
+    # back in: a suspended account stays suspended, and only a Super Admin's
+    # `restore` lifts that. So the write matches an ACTIVE staff account only
+    # and never sets `is_active` — an invitation that outlived a suspension
+    # (or any other stale token) gets the same generic answer as a bad one.
+    try:
+        user_id = ObjectId(invite["user_id"])
+    except (InvalidId, TypeError, KeyError):
+        raise HTTPException(status.HTTP_400_BAD_REQUEST, "This invitation is no longer valid")
+    done = await _users().update_one(
+        {"_id": user_id, "is_active": {"$ne": False}, "role": {"$ne": MEMBER_ROLE}},
+        {"$set": {"invite_accepted_at": now, "email_verified_at": now, "updated_at": now}},
     )
+    if not done.matched_count:
+        raise HTTPException(status.HTTP_400_BAD_REQUEST, "This invitation is no longer valid")
     await _invites().update_one({"_id": invite["_id"]}, {"$set": {"accepted_at": now}})
     return {"ok": True, "email": invite.get("email", "")}
 
@@ -467,8 +477,15 @@ async def suspend(staff_id: str, me: dict = Depends(require_super_admin)):
         {"$set": {"is_active": False, "updated_at": datetime.now(timezone.utc)},
          "$inc": {"token_version": 1}},
     )
+    # An open invitation must not outlive the suspension: it is a way in that
+    # was issued to the person we have just shut out. `accept_invite` also
+    # refuses a suspended account, so this is the second of two locks.
+    voided = await _invites().delete_many({"user_id": str(doc["_id"]), "accepted_at": None})
     doc["is_active"] = False
-    await record(me, "staff.suspend", target=staff_id, detail=doc.get("email", ""))
+    await record(me, "staff.suspend", target=staff_id,
+                 detail=doc.get("email", "")
+                        + (f" (voided {voided.deleted_count} open invitation"
+                           f"{'s' if voided.deleted_count != 1 else ''})" if voided.deleted_count else ""))
     return await _shaped(doc)
 
 

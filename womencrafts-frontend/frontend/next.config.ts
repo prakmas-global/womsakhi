@@ -79,9 +79,40 @@ const nextConfig: NextConfig = {
     }));
   },
 
-  /** Reuse static artwork while always checking immediately for a new worker. */
+  /**
+   * Security headers on every route, then caching for static artwork and an
+   * always-fresh service worker.
+   *
+   * - HSTS: two years, subdomains included (app. and api. are both HTTPS-only).
+   *   Browsers ignore it over plain http://localhost, so development is unaffected.
+   * - Framing: nobody may frame this app (clickjacking on the sign-in and
+   *   money screens). `X-Frame-Options` for old browsers, `frame-ancestors`
+   *   for current ones. Under `next dev` only, same-origin framing stays
+   *   allowed, because /dev/auth-screens (a dev-only page, 404 in production)
+   *   draws each auth screen in an iframe.
+   * - Permissions-Policy: camera (the verify selfie), microphone (Sakhi's voice
+   *   input) and geolocation (the safety page shares her location) for this
+   *   origin only; the rest off.
+   * - No script-src CSP on purpose: Firebase phone sign-in loads gstatic and a
+   *   reCAPTCHA frame from www.google.com, and Next inlines its bootstrap
+   *   scripts. An enforced script policy would break sign-in; the CSP here
+   *   carries only `frame-ancestors`.
+   */
   async headers() {
+    const dev = process.env.NODE_ENV === "development";
+    const security = [
+      { key: "Strict-Transport-Security", value: "max-age=63072000; includeSubDomains" },
+      { key: "X-Content-Type-Options", value: "nosniff" },
+      { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
+      { key: "X-Frame-Options", value: dev ? "SAMEORIGIN" : "DENY" },
+      { key: "Content-Security-Policy", value: dev ? "frame-ancestors 'self'" : "frame-ancestors 'none'" },
+      {
+        key: "Permissions-Policy",
+        value: "camera=(self), microphone=(self), geolocation=(self), payment=(), usb=(), serial=(), hid=(), midi=(), browsing-topics=()",
+      },
+    ];
     return [
+      { source: "/:path*", headers: security },
       {
         source: "/sw.js",
         headers: [{ key: "Cache-Control", value: "no-cache, no-store, must-revalidate" }],
