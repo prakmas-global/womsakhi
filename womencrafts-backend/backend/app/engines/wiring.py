@@ -757,6 +757,16 @@ async def add_shopping_item(*, user_id: str, item: str,
 
 # ── the hourly pass ─────────────────────────────────────────────────────────
 
+async def purge_rejected_onboarding() -> int:
+    """
+    Onboarding answers of women refused longer ago than the reapply window,
+    unless she asked to keep her work profile. See core/onboarding.py.
+    """
+    from app.core.onboarding import purge_rejected
+
+    return await purge_rejected()
+
+
 async def run_sync() -> dict:
     """
     Every sweep, once an hour, each failing alone.
@@ -774,7 +784,8 @@ async def run_sync() -> dict:
                      ("habits", sync_health_habits),
                      ("jobs", sync_job_deadlines),
                      ("applications", sync_applications),
-                     ("circle_digests", sync_circle_digests)):
+                     ("circle_digests", sync_circle_digests),
+                     ("onboarding_retention", purge_rejected_onboarding)):
         try:
             out[name] = await fn()
         except Exception as exc:  # noqa: BLE001

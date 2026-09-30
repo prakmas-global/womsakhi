@@ -457,6 +457,7 @@ async def home(me: dict = Depends(require_active_member)):
         unread_counts,
     )
     from app.routes.wallet import insights as wallet_insights
+    from app.core.onboarding import home_personal
 
     uid = str(me["_id"])
     missing: list[str] = []
@@ -468,7 +469,7 @@ async def home(me: dict = Depends(require_active_member)):
     # reason this endpoint exists.
     (
         profile, unread, summary, insights, progress_rows, course,
-        catalogue, opportunities, events, circles, stories, notifications,
+        catalogue, opportunities, events, circles, stories, notifications, personal,
     ) = await asyncio.gather(
         _block("profile", my_profile(me), None, missing),
         _block("unread", unread_counts(me), UnreadCounts(notifications=0, messages=0), missing),
@@ -491,6 +492,7 @@ async def home(me: dict = Depends(require_active_member)):
         _block("circles", list_circles(q="", mine=True, me=me), [], missing),
         _block("stories", list_stories(mine=False, me=me), [], missing),
         _block("notifications", my_notifications(me), [], missing),
+        _block("personal", home_personal(me), None, missing),
     )
 
     journey, next_step = _journey(course)
@@ -537,6 +539,7 @@ async def home(me: dict = Depends(require_active_member)):
         stories=stories[:STORIES],
         notifications=notifications[:NOTIFICATIONS],
         unavailable=missing,
+        personal=personal,
     )
 
 

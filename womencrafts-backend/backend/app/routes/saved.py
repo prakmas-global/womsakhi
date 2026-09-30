@@ -52,6 +52,15 @@ def _saved():
     return get_database()[SavedModel.collection_name]
 
 
+def _private_to_someone_else(subject: dict, uid: str) -> bool:
+    """
+    A listing still in draft is hers alone. A bookmark made from its id — which
+    nobody else should ever have seen — must not read its title back out.
+    """
+    return (subject.get("status") == ListingModel.STATUS_DRAFT
+            and subject.get("user_id") != uid)
+
+
 @router.get("", response_model=list[SavedResponse], summary="Everything I saved")
 async def list_saved(
     kind: Optional[str] = Query(None, description=" | ".join(SavedModel.KINDS)),
@@ -81,8 +90,10 @@ async def list_saved(
         for collection, ids in by_kind.items()
     ])
     subjects: dict[str, dict] = {}
-    for docs in fetched:
+    for collection, docs in zip(by_kind.keys(), fetched):
         for d in docs:
+            if collection == ListingModel.collection_name and _private_to_someone_else(d, str(me["_id"])):
+                continue
             subjects[str(d["_id"])] = d
 
     return [SavedResponse(**SavedModel.to_response(r, subjects.get(r.get("ref_id", "")))) for r in rows]
@@ -111,6 +122,8 @@ async def save(body: SaveRequest, me: dict = Depends(require_active_member)):
         try:
             subject = await get_database()[collection].find_one({"_id": ObjectId(body.ref_id)})
         except Exception:  # noqa: BLE001
+            subject = None
+        if subject and collection == ListingModel.collection_name and _private_to_someone_else(subject, uid):
             subject = None
     return SavedResponse(**SavedModel.to_response(doc, subject))
 

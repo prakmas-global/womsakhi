@@ -235,7 +235,8 @@ async def sisters(me: dict = Depends(require_active_member)):
     # per woman.
     trades: dict[str, str] = {}
     async for row in db["shop_listings"].aggregate([
-        {"$match": {"user_id": {"$in": others}}},
+        # A private draft says nothing about her trade to anyone else yet.
+        {"$match": {"user_id": {"$in": others}, "status": {"$ne": "draft"}}},
         {"$group": {"_id": {"u": "$user_id", "c": "$category"}, "n": {"$sum": 1}}},
         {"$sort": {"n": -1}},
     ]):

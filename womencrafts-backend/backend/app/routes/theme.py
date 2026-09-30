@@ -189,12 +189,20 @@ async def set_member_theme(
 
 ONBOARDING_STEPS = ["welcome", "appearance", "language", "needs"]
 
+#: The product tour's slides. `ProductTour.tsx` saves `tour-<n>` as she moves
+#: through it, and until these were accepted every one of those saves was a
+#: 422 the client swallowed — so tour progress never survived a reload. They are
+#: kept apart from `ONBOARDING_STEPS` so they cannot change `next_step`.
+TOUR_STEPS = [f"tour-{n}" for n in range(1, 8)]
+
 
 class OnboardingState(BaseModel):
     steps: list[str]
     done: list[str]
     complete: bool
     next_step: str | None
+    #: Which tour slides she has moved past, in order.
+    tour_done: list[str] = []
 
 
 class OnboardingStep(BaseModel):
@@ -203,13 +211,14 @@ class OnboardingStep(BaseModel):
     @field_validator("step")
     @classmethod
     def known_step(cls, v: str) -> str:
-        if v not in ONBOARDING_STEPS:
+        if v not in ONBOARDING_STEPS and v not in TOUR_STEPS:
             raise ValueError("Unknown onboarding step")
         return v
 
 
 def _onboarding_of(doc: dict) -> OnboardingState:
-    done = [s for s in (doc.get("onboarding_done") or []) if s in ONBOARDING_STEPS]
+    stored = doc.get("onboarding_done") or []
+    done = [s for s in stored if s in ONBOARDING_STEPS]
     complete = bool(doc.get("onboarding_complete", False))
     remaining = [s for s in ONBOARDING_STEPS if s not in done]
     return OnboardingState(
@@ -217,6 +226,7 @@ def _onboarding_of(doc: dict) -> OnboardingState:
         done=done,
         complete=complete,
         next_step=None if complete or not remaining else remaining[0],
+        tour_done=[s for s in TOUR_STEPS if s in stored],
     )
 
 

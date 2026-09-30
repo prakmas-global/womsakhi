@@ -1,11 +1,16 @@
 "use client";
 
+import { Fragment } from "react";
 import Image from "next/image";
 import { useT } from "@/i18n";
 import { TransitionLink } from "@/components/ux/TransitionLink";
 import { I, formatRupees } from "@/components/ux/kit";
 import { useHome } from "@/components/ux/live";
 import { HomeCycleCard } from "@/components/ux/cycle/HomeCycleCard";
+import { FirstSteps, PersonalCards, ShopFeed, WhyLine, orderBlocks } from "./Personal";
+
+/** The blocks under the greeting, in the order this screen has always had. */
+const BASE_ORDER = ["earnings", "sakhi", "journey", "opportunities", "recommended"] as const;
 
 /**
  * Home, on a phone.
@@ -76,6 +81,7 @@ export function MobileHome() {
   if (!data) return <HomeSkeleton />;
 
   const { me, journey, earnings, opportunities, recommended, unavailable } = data;
+  const personal = data.personal ?? null;
   /*
     `unavailable` names the blocks whose server-side fetch timed out. The
     endpoint gathers eleven of them in parallel and returns whatever arrived
@@ -91,64 +97,15 @@ export function MobileHome() {
   const lost = (b: string) => unavailable?.includes(b) ?? false;
   const balanceUnknown = !earnings || lost("summary");
 
-  return (
-    <div className="lg:hidden" style={{ paddingBottom: 8 }}>
-      {/*
-        The greeting only — no avatar, no bell.
-
-        Both were here first and both are in the top bar, which persists across
-        every screen. Two avatars and two notification icons stacked 60px apart
-        is not richness, it is the same control twice; the top bar wins because
-        it is the one that is always there.
-      */}
-      {/*
-        No side inset of its own. The shell already pads the content column,
-        and this screen added a second 16px inside it, so Home sat 36px from
-        the edge while every other screen sat at the shell's inset — the one
-        screen whose edges did not line up with the rest. Now it uses the
-        shell's inset, whatever that is.
-      */}
-      {/*
-        The banner, at the owner's instruction.
-
-        This screen carried no image at all — the note above explains why, and
-        the reasoning still holds for a hero that spends a whole viewport on an
-        announcement. What the owner is asking for is different and fair: this
-        is the first screen a woman lands on, the laptop opens with the
-        banner, and the phone opened with a grey line of text.
-
-        So it is the same composition as the laptop's, sized for a phone: the
-        photograph at its own 2.8:1, her greeting on the plum bar under it,
-        196px in total against a 844px screen. Everything she can act on still
-        begins in the first viewport.
-      */}
-      <header className="-mt-1 mb-3.5 overflow-hidden rounded-[18px]"
-              style={{ background: "var(--ux-brand-900)", border: "1px solid var(--ux-line)" }}>
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img src="/ux/art/home-banner.webp"
-             alt={tr("mobileHome.sixWomenWorkingTogetherAtA")}
-             decoding="async" fetchPriority="high" width={1900} height={760}
-             className="block w-full object-cover object-center"
-             style={{ aspectRatio: "2.8 / 1" }} />
-        <div className="px-4 py-3"
-             style={{ background: "linear-gradient(102deg, var(--ux-brand-900) 0%, var(--ux-fill) 78%, var(--ux-rib-2) 130%)" }}>
-          <p className="text-[12.5px] font-semibold" style={{ color: "var(--ux-on-brand-2)" }}>{greeting()},</p>
-          {/* Her name is still the one large title on the screen — it has
-              moved onto the plum, not shrunk. */}
-          <h1 className="ux-screen-title mt-0.5 text-[28px] leading-none" style={{ color: "var(--ux-on-brand)" }}>
-            {me.first}
-          </h1>
-          <p className="mt-1.5 text-[12.5px] font-bold leading-tight" style={{ color: "var(--ux-on-brand)" }}>
-            {tr("mobileHome.connectLearnEarnGrow")} <span style={{ color: "var(--ux-rib-5)" }}>Together.</span>
-          </p>
-        </div>
-      </header>
-
-      {/* Her cycle, first — the owner's mockup puts it straight under her
-          name. When she does not track it is one quiet invitation line, and
-          discreet mode removes it entirely. See HomeCycleCard. */}
-      <div className="mb-4"><HomeCycleCard /></div>
-
+  /*
+    ── her order ──────────────────────────────────────────────────────────
+    Each block is drawn exactly as before; her onboarding answers only decide
+    which come first. With no answers (`personal` null) the order below is the
+    order this screen has always had, and nothing else on it changes.
+  */
+  const why = (b: string) => (personal ? personal.reasons[b] : undefined);
+  const blocks: Record<string, React.ReactNode> = {
+    earnings: <>
       {/* ── the number she actually opens the app for ───────────────────── */}
       {balanceUnknown ? (
         /*
@@ -215,6 +172,8 @@ export function MobileHome() {
       </TransitionLink>
       )}
 
+      </>,
+    sakhi: <>
       {/*
         ── what used to be a six-tile launcher ──────────────────────────────
 
@@ -258,6 +217,8 @@ export function MobileHome() {
 
 
 
+      </>,
+    journey: <>
       {/*
         Only when there is something to pick up.
 
@@ -267,7 +228,7 @@ export function MobileHome() {
         every other number on the screen less believable.
       */}
       {journey && (
-        <Section title={tr("certificates.keepGoing")}>
+        <Section title={tr("certificates.keepGoing")} why={why("journey")}>
           <TransitionLink href={journey.href}
             className="ux-sq flex items-center gap-3 rounded-[12px] p-4"
             style={{ background: "var(--ux-surface)", border: "1px solid var(--ux-line)" }}>
@@ -299,8 +260,10 @@ export function MobileHome() {
         </Section>
       )}
 
+      </>,
+    opportunities: <>
       {/* ── work waiting for her ────────────────────────────────────────── */}
-      <Section title={tr("mobileHome.workForYou")}>
+      <Section title={tr("mobileHome.workForYou")} why={why("opportunities")}>
         <div className="ux-hscroll flex gap-3">
           {opportunities.slice(0, 6).map((o: Record<string, unknown>, i: number) => (
             <TransitionLink key={String(o.id ?? i)} href={`/app/opportunities/${String(o.id ?? "")}`}
@@ -317,8 +280,10 @@ export function MobileHome() {
         </div>
       </Section>
 
+      </>,
+    recommended: <>
       {/* ── something to learn next ─────────────────────────────────────── */}
-      <Section title={tr("mobileHome.suggestedForYou")}>
+      <Section title={tr("mobileHome.suggestedForYou")} why={why("recommended")}>
         <div className="ux-hscroll flex gap-3">
           {recommended.slice(0, 6).map((r: Record<string, unknown>, i: number) => (
             <TransitionLink key={String(r.id ?? i)} href={`/app/programs/${String(r.id ?? "")}`}
@@ -337,7 +302,7 @@ export function MobileHome() {
                   </span>}
               <div className="p-4">
                 <p className="truncate text-[15px] font-bold" style={{ color: "var(--ux-ink)" }}>
-                  {String(r.title ?? "")}
+                  {String(r.title ?? r.name ?? "")}
                 </p>
                 {/* The server sends WHY it is here. The mock showed a star
                     rating and a review count; this platform collects neither,
@@ -350,6 +315,91 @@ export function MobileHome() {
           ))}
         </div>
       </Section>
+      </>,
+    shop_feed: personal?.shop_feed ? (
+      <Section title="From the market" why={why("shop_feed")}>
+        <ShopFeed size="phone" />
+      </Section>
+    ) : null,
+  };
+  const { mine, rest } = orderBlocks(BASE_ORDER, personal, ["shop_feed"]);
+  const order = [...mine, ...rest];
+
+  return (
+    <div className="lg:hidden" style={{ paddingBottom: 8 }}>
+      {/*
+        The greeting only — no avatar, no bell.
+
+        Both were here first and both are in the top bar, which persists across
+        every screen. Two avatars and two notification icons stacked 60px apart
+        is not richness, it is the same control twice; the top bar wins because
+        it is the one that is always there.
+      */}
+      {/*
+        No side inset of its own. The shell already pads the content column,
+        and this screen added a second 16px inside it, so Home sat 36px from
+        the edge while every other screen sat at the shell's inset — the one
+        screen whose edges did not line up with the rest. Now it uses the
+        shell's inset, whatever that is.
+      */}
+      {/*
+        The banner, at the owner's instruction.
+
+        This screen carried no image at all — the note above explains why, and
+        the reasoning still holds for a hero that spends a whole viewport on an
+        announcement. What the owner is asking for is different and fair: this
+        is the first screen a woman lands on, the laptop opens with the
+        banner, and the phone opened with a grey line of text.
+
+        So it is the same composition as the laptop's, sized for a phone: the
+        photograph at its own 2.8:1, her greeting on the plum bar under it,
+        196px in total against a 844px screen. Everything she can act on still
+        begins in the first viewport.
+      */}
+      <header className="-mt-1 mb-3.5 overflow-hidden rounded-[18px]"
+              style={{ background: "var(--ux-brand-900)", border: "1px solid var(--ux-line)" }}>
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img src="/ux/art/home-banner.webp"
+             alt={tr("mobileHome.sixWomenWorkingTogetherAtA")}
+             decoding="async" fetchPriority="high" width={1900} height={760}
+             className="block w-full object-cover object-center"
+             style={{ aspectRatio: "2.8 / 1" }} />
+        <div className="px-4 py-3"
+             style={{ background: "linear-gradient(102deg, var(--ux-brand-900) 0%, var(--ux-fill) 78%, var(--ux-rib-2) 130%)" }}>
+          <p className="text-[12.5px] font-semibold" style={{ color: "var(--ux-on-brand-2)" }}>{greeting()},</p>
+          {/* Her name is still the one large title on the screen — it has
+              moved onto the plum, not shrunk. */}
+          <h1 className="ux-screen-title mt-0.5 text-[28px] leading-none" style={{ color: "var(--ux-on-brand)" }}>
+            {me.first}
+          </h1>
+          <p className="mt-1.5 text-[12.5px] font-bold leading-tight" style={{ color: "var(--ux-on-brand)" }}>
+            {tr("mobileHome.connectLearnEarnGrow")} <span style={{ color: "var(--ux-rib-5)" }}>Together.</span>
+          </p>
+        </div>
+      </header>
+
+      {/* Her cycle, first — the owner's mockup puts it straight under her
+          name. When she does not track it is one quiet invitation line, and
+          discreet mode removes it entirely. See HomeCycleCard. */}
+      <div className="mb-4"><HomeCycleCard /></div>
+
+      {personal && (
+        <div className="mb-4 flex flex-col gap-4">
+          <FirstSteps items={personal.checklist} size="phone" />
+          <PersonalCards personal={personal} size="phone" />
+        </div>
+      )}
+
+      {order.map((b, i) => (
+        <Fragment key={b}>
+          {/* The balance tile has no top margin of its own — it always sat
+              first. Moved down by her order, it takes a section's gap. */}
+          {b === "earnings" && i > 0 ? <div className="mt-6">{blocks[b]}</div> : blocks[b]}
+          {b === "earnings" && why("earnings") && (
+            <div className="mt-1.5 px-1"><WhyLine reason={why("earnings")} size="phone" /></div>
+          )}
+        </Fragment>
+      ))}
     </div>
   );
 }
@@ -391,8 +441,10 @@ function HomeSkeleton() {
  * screen has ONE title and everything below it is a group. Repeating heading
  * weight down the page is what makes a phone screen read as a dashboard.
  */
-function Section({ title, href, cta, children }: {
+function Section({ title, href, cta, why, children }: {
   title: string;
+  /** "Why this? · Change" — only on a block her answers brought forward. */
+  why?: string;
   /*
     Optional, and usually absent now.
 
@@ -434,6 +486,7 @@ function Section({ title, href, cta, children }: {
         </TransitionLink>
         )}
       </div>
+      {why && <div className="-mt-1 mb-2 px-4"><WhyLine reason={why} size="phone" /></div>}
       {children}
     </section>
   );

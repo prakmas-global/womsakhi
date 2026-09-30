@@ -104,6 +104,18 @@ INDEXES: dict[str, list[IndexModel]] = {
         IndexModel([("status", ASCENDING), ("created_at", DESCENDING)], name="status_created"),
     ],
     # ── Her business ───────────────────────────────────────────────────
+    # ── Onboarding ─────────────────────────────────────────────────────
+    # One profile and one setup record per woman: the setup's re-run safety
+    # depends on these being unique. See app/core/onboarding.py.
+    "onboarding_profiles": [
+        IndexModel([("user_id", ASCENDING)], name="user_unique", unique=True),
+    ],
+    "onboarding_setups": [
+        IndexModel([("user_id", ASCENDING)], name="user_unique", unique=True),
+    ],
+    "saved_searches": [
+        IndexModel([("user_id", ASCENDING), ("onboarding_key", ASCENDING)], name="user_onboarding_key"),
+    ],
     "shop_listings": [
         IndexModel([("user_id", ASCENDING), ("updated_at", DESCENDING)], name="user_updated"),
         IndexModel([("user_id", ASCENDING), ("kind", ASCENDING)], name="user_kind"),

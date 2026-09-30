@@ -25,6 +25,7 @@ import { BackLink, CAMERA_PHOTO, SignOutLink, useBackStep } from "@/components/a
 import { useI18n } from "@/i18n";
 import { PREVIEW_STATES, PREVIEW_THUMBS, previewVerification, readPreview, type VerifyPreview } from "@/lib/auth-preview";
 import { PreviewPillFromUrl } from "@/components/auth-shell/PreviewPill";
+import { OnboardingInvite } from "@/components/onboarding-flow/OnboardingInvite";
 
 /**
  * The local preview switch (see lib/auth-preview), written out here rather
@@ -418,6 +419,9 @@ function InReview({ status, now, locale, justSent, onChanged, onExit }: {
             </ol>
           </>
         )}
+
+        {/* M0 (Post-Auth Flow): the questions, offered while she waits. */}
+        <OnboardingInvite preview={AUTH_PREVIEW && Boolean(verifyPreview())} />
 
         <button type="button" className={`ac-btn ac-fit ${locked ? "ac-line" : "ac-go"}`} disabled={locked || sending}
                 onClick={requestActivation} title={locked && nextWhen ? `Available ${nextWhen}` : undefined}>

@@ -198,6 +198,11 @@ const NAV: NavItem[] = [
     href: "/dashboard/analytics",
     icon: BarChart3,
     module: "analytics",
+    children: [
+      { label: "Overview", href: "/dashboard/analytics" },
+      // Anonymous counts from the onboarding answers. Same module gate.
+      { label: "What women want", href: "/dashboard/analytics/what-women-want" },
+    ],
   },
   {
     label: "Reports",

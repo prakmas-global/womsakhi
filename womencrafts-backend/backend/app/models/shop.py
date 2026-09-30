@@ -34,6 +34,12 @@ class ListingModel:
 
     STATUS_LIVE = "live"
     STATUS_PAUSED = "paused"
+    #: Private to her. Made for her by onboarding (`/me/onboarding/setup`) from
+    #: the skill she named, and never shown to anyone else until she publishes
+    #: it: the market, the public pages and every buyer-facing query ask for
+    #: `live` explicitly, and the few that asked "not paused" now ask the same.
+    STATUS_DRAFT = "draft"
+    STATUSES = (STATUS_LIVE, STATUS_PAUSED, STATUS_DRAFT)
 
     @staticmethod
     def create_document(
@@ -103,7 +109,7 @@ class ListingModel:
             "travels_km": int(travels_km),
             "photo": photo or (photos[0] if photos else ""),
             "photos": list(photos or ([photo] if photo else [])),
-            "status": status if status in (ListingModel.STATUS_LIVE, ListingModel.STATUS_PAUSED) else ListingModel.STATUS_LIVE,
+            "status": status if status in ListingModel.STATUSES else ListingModel.STATUS_LIVE,
             "views": 0,
             "created_at": now,
             "updated_at": now,
