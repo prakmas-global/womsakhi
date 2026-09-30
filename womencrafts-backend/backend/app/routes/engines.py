@@ -106,6 +106,46 @@ async def engines_health(x_engines_key: str | None = Header(default=None)):
 
 # ── her reminders ───────────────────────────────────────────────────────────
 
+# Browsers report whatever name their OS uses. Chrome on Windows sends the
+# pre-2008 "Asia/Calcutta"; Debian's slim images ship the backward links only
+# in tzdata-legacy, so the old name can be missing even when the zone exists.
+# Store the canonical name, so every later ZoneInfo() — the tick, the retune —
+# resolves it too. The `tzdata` wheel in requirements.txt is what makes any of
+# this work in a container that has no /usr/share/zoneinfo at all.
+TZ_ALIASES = {
+    "Asia/Calcutta": "Asia/Kolkata",
+    "Asia/Katmandu": "Asia/Kathmandu",
+    "Asia/Saigon": "Asia/Ho_Chi_Minh",
+    "Asia/Rangoon": "Asia/Yangon",
+    "Asia/Dacca": "Asia/Dhaka",
+    "Asia/Thimbu": "Asia/Thimphu",
+    "Asia/Ujung_Pandang": "Asia/Makassar",
+    "Asia/Ulan_Bator": "Asia/Ulaanbaatar",
+    "America/Buenos_Aires": "America/Argentina/Buenos_Aires",
+    "Europe/Kiev": "Europe/Kyiv",
+    "Pacific/Truk": "Pacific/Chuuk",
+    "Atlantic/Faeroe": "Atlantic/Faroe",
+    "US/Eastern": "America/New_York",
+    "US/Central": "America/Chicago",
+    "US/Mountain": "America/Denver",
+    "US/Pacific": "America/Los_Angeles",
+    "GMT": "UTC",
+    "Etc/UTC": "UTC",
+    "Etc/GMT": "UTC",
+}
+
+
+def canonical_timezone(value: str) -> str:
+    """The canonical IANA name for `value`, or ValueError if it is no zone."""
+    name = (value or "").strip()
+    name = TZ_ALIASES.get(name, name)
+    try:
+        ZoneInfo(name)
+    except (ZoneInfoNotFoundError, ValueError):
+        raise ValueError("Choose a valid IANA timezone")
+    return name
+
+
 class ReminderIn(BaseModel):
     title_key: str = Field(min_length=1, max_length=120)
     schedule_type: Literal["once", "recurring", "event_relative"] = "once"
@@ -129,11 +169,7 @@ class ReminderIn(BaseModel):
     @field_validator("tz")
     @classmethod
     def valid_timezone(cls, value):
-        try:
-            ZoneInfo(value)
-        except (ZoneInfoNotFoundError, ValueError):
-            raise ValueError("Choose a valid IANA timezone")
-        return value
+        return canonical_timezone(value)
 
     @field_validator("at", "anchor_at", "ends_at")
     @classmethod
@@ -359,6 +395,11 @@ class PrefsIn(BaseModel):
     discretionary_per_day: int | None = None
     min_gap_minutes: int | None = None
     paused_until: datetime | None = None
+
+    @field_validator("tz")
+    @classmethod
+    def valid_timezone(cls, value):
+        return None if value is None else canonical_timezone(value)
 
 
 @router.get("/preferences", summary="How she is told")

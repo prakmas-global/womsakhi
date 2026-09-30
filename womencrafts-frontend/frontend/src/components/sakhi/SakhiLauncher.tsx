@@ -48,10 +48,20 @@ export default function SakhiLauncher() {
         covered the "All work" link on the home screen and clipped "Message" to
         "Mess" on the shop.
       */}
+      {/*
+        One position per layout, all in classes. It used to be `md:bottom-20`
+        plus an inline `bottom: 72px`, and the inline style always won — so
+        the class was dead and on a laptop, where there is no tab bar to clear,
+        the button hovered 72px up the window over the last row of content.
+
+        Below `lg` the phone tab bar is mounted, so she sits 72px up, clear of
+        it. From `lg` there is no tab bar and she docks into the corner, 24px
+        in; the shell reserves 96px under the right-hand column for her, and
+        fixed-height boards get the same room as scroll clearance.
+      */}
       <div
         data-float="sakhi"
-        className="fixed end-4 z-40 md:bottom-20 md:end-6"
-        style={{ bottom: "calc(72px + env(safe-area-inset-bottom, 0px))" }}
+        className="fixed bottom-[calc(72px+env(safe-area-inset-bottom,0px))] end-4 z-40 md:end-6 lg:bottom-6"
       >
         {open ? null : (
           <button

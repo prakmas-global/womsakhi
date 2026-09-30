@@ -47,6 +47,8 @@ export interface ConvOrder {
 }
 
 export interface ConvBubble {
+  /** Stable per message; the mirrored copy in the other member's thread shares it. */
+  id: string;
   dir: "in" | "out";
   text: string;
   file: { name: string; url: string; kind: string } | null;
@@ -54,6 +56,9 @@ export interface ConvBubble {
   order: ConvOrder | null;
   at: string | null;
   read: boolean;
+  /** Set when she corrected it; the bubble then says "(edited)". */
+  edited_at?: string | null;
+  pinned?: boolean;
 }
 
 export interface ConvRow {
@@ -75,7 +80,14 @@ export interface ConvRow {
 
 export interface ConvDetail extends ConvRow {
   messages: ConvBubble[];
+  /** Ids of pinned messages, oldest pin first. At most `MAX_PINS`. */
+  pinned?: string[];
 }
+
+/** The server's limits — `SendMessage`/`EditMessage` and `MemberConversationModel`. */
+export const MESSAGE_MAX = 4000;
+export const EDIT_WINDOW_MS = 15 * 60_000;
+export const MAX_PINS = 3;
 
 export interface InboxSummary {
   waiting: number;
@@ -117,4 +129,15 @@ export async function apiMarkUnread(id: string): Promise<ConvDetail> {
 
 export async function apiDeleteConversation(id: string): Promise<void> {
   await apiClient.delete(`/me/conversations/${id}`);
+}
+
+export async function apiEditMessage(id: string, messageId: string, text: string): Promise<ConvDetail> {
+  const { data } = await apiClient.patch<ConvDetail>(`/me/conversations/${id}/messages/${messageId}`, { text });
+  return data;
+}
+
+export async function apiPinMessage(id: string, messageId: string, pinned: boolean): Promise<ConvDetail> {
+  const url = `/me/conversations/${id}/messages/${messageId}/pin`;
+  const { data } = pinned ? await apiClient.post<ConvDetail>(url) : await apiClient.delete<ConvDetail>(url);
+  return data;
 }

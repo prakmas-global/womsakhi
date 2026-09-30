@@ -7,12 +7,15 @@ from pydantic import BaseModel, Field
 
 
 class Bubble(BaseModel):
+    id: str = ""
     dir: str
     text: str = ""
     file: Optional[dict] = None
     order: Optional[dict] = None
     at: Optional[datetime] = None
     read: bool = False
+    edited_at: Optional[datetime] = None
+    pinned: bool = False
 
 
 class ConversationRow(BaseModel):
@@ -34,9 +37,15 @@ class ConversationRow(BaseModel):
 
 class ConversationDetail(ConversationRow):
     messages: list[Bubble] = []
+    # Ids of the messages she pinned, oldest pin first. At most three.
+    pinned: list[str] = []
 
 
 class SendMessage(BaseModel):
+    text: str = Field(..., min_length=1, max_length=4000)
+
+
+class EditMessage(BaseModel):
     text: str = Field(..., min_length=1, max_length=4000)
 
 

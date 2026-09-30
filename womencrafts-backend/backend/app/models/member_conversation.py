@@ -14,7 +14,8 @@ this is the decision to revisit first.
 
 from __future__ import annotations
 
-from datetime import datetime, timezone
+import uuid
+from datetime import datetime, timedelta, timezone
 from typing import Any, Optional
 
 from app.core.media import media_url
@@ -41,11 +42,27 @@ class MemberConversationModel:
     KIND_TEAM = "team"
     KINDS = (KIND_BUYER, KIND_SELLER, KIND_MENTOR, KIND_CIRCLE, KIND_TEAM)
 
+    #: How long after sending she may still correct a message. Long enough to
+    #: catch a typo in a price; short enough that a buyer who already acted on
+    #: "₹280" is not quietly shown "₹380" a day later.
+    EDIT_WINDOW = timedelta(minutes=15)
+    #: Pins are a shortlist — the address, the agreed price, the delivery date.
+    #: More than three and the strip above the thread is the thread again.
+    MAX_PINS = 3
+
+    @staticmethod
+    def new_id() -> str:
+        return uuid.uuid4().hex
+
     @staticmethod
     def bubble(*, direction: str, text: str = "", file: Optional[dict] = None,
                order: Optional[dict] = None, at: Optional[datetime] = None,
-               read: bool = False) -> dict:
+               read: bool = False, bubble_id: Optional[str] = None) -> dict:
         return {
+            # A stable handle for one message, so it can be edited or pinned.
+            # The mirror in the other woman's copy carries the SAME id, which is
+            # what lets an edit reach both sides.
+            "id": bubble_id or MemberConversationModel.new_id(),
             "dir": "out" if direction == "out" else "in",
             "text": text,
             "file": file,
@@ -56,7 +73,44 @@ class MemberConversationModel:
             "at": at or _now(),
             # Only meaningful on an outgoing bubble: whether *she* has been read.
             "read": bool(read),
+            # Set when she corrects it; the bubble then says "(edited)".
+            "edited_at": None,
         }
+
+    @staticmethod
+    def missing_ids(rows: list[dict]) -> dict[str, str]:
+        """
+        Ids for bubbles written before bubbles had them, as a `$set` document.
+
+        Threads seeded or written before ids existed are backfilled lazily, on
+        the read that first needs them, and the ids are assigned in memory too
+        so the response carries them. The keys are positional
+        (`messages.4.id`): a thread is only ever appended to, never spliced, so
+        a position is stable between the read and this write.
+        """
+        patch: dict[str, str] = {}
+        for i, b in enumerate(rows):
+            if not b.get("id"):
+                b["id"] = MemberConversationModel.new_id()
+                patch[f"messages.{i}.id"] = b["id"]
+        return patch
+
+    @staticmethod
+    def aware(at: Optional[datetime]) -> Optional[datetime]:
+        """Motor hands back naive UTC datetimes; comparisons need aware ones."""
+        if at is None:
+            return None
+        return at if at.tzinfo else at.replace(tzinfo=timezone.utc)
+
+    @staticmethod
+    def editable(b: dict, now: Optional[datetime] = None) -> bool:
+        """Her own plain-text message, still inside the edit window."""
+        if b.get("dir") != "out" or b.get("order") or not (b.get("text") or "").strip():
+            return False
+        at = MemberConversationModel.aware(b.get("at"))
+        if at is None:
+            return False
+        return (now or _now()) - at <= MemberConversationModel.EDIT_WINDOW
 
     @staticmethod
     def create_document(
@@ -169,14 +223,19 @@ class MemberConversationModel:
             "party": doc.get("party") or {},
         }
         if with_messages:
+            pinned = [p for p in (doc.get("pinned") or []) if p]
+            out["pinned"] = pinned
             out["messages"] = [
                 {
+                    "id": b.get("id") or "",
                     "dir": b.get("dir", "in"),
                     "text": b.get("text", ""),
                     "file": b.get("file"),
                     "order": b.get("order"),
                     "at": b.get("at"),
                     "read": bool(b.get("read")),
+                    "edited_at": b.get("edited_at"),
+                    "pinned": bool(b.get("id")) and b.get("id") in pinned,
                 }
                 for b in rows
             ]

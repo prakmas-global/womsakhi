@@ -17,10 +17,45 @@ import { apiClient, expected } from "./api";
 
 export function zone(): string {
   try {
-    return Intl.DateTimeFormat().resolvedOptions().timeZone || "Asia/Kolkata";
+    return canonicalZone(Intl.DateTimeFormat().resolvedOptions().timeZone || "Asia/Kolkata");
   } catch {
     return "Asia/Kolkata";
   }
+}
+
+/**
+ * Old names for zones that still exist.
+ *
+ * Chrome on Windows reports India as "Asia/Calcutta" — the name before 2008.
+ * The production API once refused it with a 422, so nobody on Windows in
+ * India could set a reminder. The server now maps these too; sending the
+ * canonical name as well means an older API build still accepts it.
+ */
+const ZONE_ALIASES: Record<string, string> = {
+  "Asia/Calcutta": "Asia/Kolkata",
+  "Asia/Katmandu": "Asia/Kathmandu",
+  "Asia/Saigon": "Asia/Ho_Chi_Minh",
+  "Asia/Rangoon": "Asia/Yangon",
+  "Asia/Dacca": "Asia/Dhaka",
+  "Asia/Thimbu": "Asia/Thimphu",
+  "Asia/Ujung_Pandang": "Asia/Makassar",
+  "Asia/Ulan_Bator": "Asia/Ulaanbaatar",
+  "America/Buenos_Aires": "America/Argentina/Buenos_Aires",
+  "Europe/Kiev": "Europe/Kyiv",
+  "Pacific/Truk": "Pacific/Chuuk",
+  "Atlantic/Faeroe": "Atlantic/Faroe",
+  "US/Eastern": "America/New_York",
+  "US/Central": "America/Chicago",
+  "US/Mountain": "America/Denver",
+  "US/Pacific": "America/Los_Angeles",
+  "GMT": "UTC",
+  "Etc/UTC": "UTC",
+  "Etc/GMT": "UTC",
+};
+
+export function canonicalZone(name: string): string {
+  const trimmed = name.trim();
+  return ZONE_ALIASES[trimmed] ?? trimmed;
 }
 
 /* ── shapes ─────────────────────────────────────────────────────────────── */
@@ -237,7 +272,7 @@ export async function apiSetEnginePreferences(
 ): Promise<EnginePreferences> {
   const { data } = await apiClient.put<EnginePreferences>("/engines/preferences", {
     ...body,
-    tz: body.tz ?? zone(),
+    tz: body.tz ? canonicalZone(body.tz) : zone(),
   });
   return data;
 }

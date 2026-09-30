@@ -13,6 +13,7 @@ import { formatRupees, Skeleton } from "@/components/ux/kit";
 import { apiDismissNextStep, type ApiHome } from "@/lib/me-api";
 import { EngineNudge } from "@/components/ux/reminders/EngineNudge";
 import { FirstSteps, PersonalCards, ShopFeed, WhyLine, orderBlocks } from "./Personal";
+import { QuickAccessGrid } from "./QuickAccess";
 
 /** A reason line under a panel's heading, only on a panel her answers brought forward. */
 function Why({ reason }: { reason?: string }) {
@@ -538,33 +539,7 @@ function Stats({ h }: { h: ApiHome }) {
 
 /* ── quick access ──────────────────────────────────────────────────────── */
 
-/**
- * Navigation, not data — which is why it is a constant and stays one.
- *
- * These six are destinations the app has whether or not she has used them; a
- * request to find out that /app/wallet exists would be a request for nothing.
- */
-const TILES = [
-  { icon: "UsersRound", label: "My Circles", sub: "Your people, your strength", tint: "--ux-tint-pink", ink: "--ux-pink-ink", href: "/app/circles" },
-  { icon: "PiggyBank", label: "Savings Pot", sub: "Save small, dream big", tint: "--ux-tint-violet", ink: "--ux-violet-ink", href: "/app/circles" },
-  { icon: "HeartHandshake", label: "Care Circle", sub: "Support when you need it", tint: "--ux-tint-blue", ink: "--ux-blue-ink", href: "/app/family" },
-  { icon: "Store", label: "My Shop", sub: "Sell your products", tint: "--ux-tint-amber", ink: "--ux-amber-ink", href: "/app/documents" },
-  { icon: "ShoppingBasket", label: "Market", sub: "Buy & sell in your community", tint: "--ux-tint-green", ink: "--ux-green-ink", href: "/app/market" },
-  { icon: "Wallet", label: "Wallet", sub: "Your money, your control", tint: "--ux-tint-lilac", ink: "--ux-violet-ink", href: "/app/wallet" },
-  /*
-    The two the reminder engine gave her, added rather than swapped in — the
-    six above are unchanged.
-
-    They carry `k`/`ks` catalogue keys because these tiles render their label
-    raw, so every one of the originals is English whatever language she reads
-    in. Rather than rewrite six lines that are not mine to touch, the render
-    below prefers a key when a tile has one; the originals have none and are
-    left exactly as they were.
-  */
-  { icon: "MapPin", label: "On your way", sub: "Tell someone, and check in",
-    k: "ch.travel-journey.label", ks: "ch.travel-journey.note",
-    tint: "--ux-tint-green", ink: "--ux-green-ink", href: "/app/travel/journey" },
-] as const;
+/* The tiles and the grid live in ./QuickAccess, shared with the phone home. */
 
 function QuickAccess() {
   const tr = useT();
@@ -579,36 +554,13 @@ function QuickAccess() {
             {tr("dashboard.viewAll30Modules")}
             <Icons.ChevronRight className="h-[14px] w-[14px]" />
           </Link>
-          <Link href="/app/settings/appearance"
-                className="ux-hov -my-2.5 flex min-h-[44px] items-center gap-1.5 rounded-[12px] px-3 py-2.5 text-xs font-semibold"
-                style={{ background: "var(--ux-surface-2)", border: "1px solid var(--ux-line)", color: "var(--ux-muted)" }}>
-            <Icons.LayoutGrid className="h-[14px] w-[14px]" />
-            Customize
-            <Icons.ChevronDown className="h-[13px] w-[13px]" />
-          </Link>
+          {/* "Customize" used to sit here and opened the appearance
+              settings, which change the theme and nothing on this grid. A
+              button that promises one thing and does another is removed
+              until there is something for it to do. */}
         </div>
       </div>
-      <div className="@container">
-      <div className="grid grid-cols-2 gap-3 @lg:grid-cols-3 @3xl:grid-cols-6">
-        {TILES.map((t) => (
-          <Link key={t.label} href={t.href}
-                className="ux-card ux-tile ux-sq flex min-h-[132px] flex-col rounded-[16px] p-4"
-                style={{ background: "var(--ux-surface)", border: "1px solid var(--ux-line)",
-                         ["--ux-glow" as string]: `color-mix(in oklab, var(${t.ink}) 26%, transparent)` }}>
-            <span className="ux-tile-ic grid h-[44px] w-[44px] place-items-center rounded-[12px]"
-                  style={{ background: `var(${t.tint})`, color: `var(${t.ink})` }}>
-              <Ico name={t.icon} className="h-[21px] w-[21px]" />
-            </span>
-            <span className="mt-auto block pt-3 text-sm font-bold" style={{ color: "var(--ux-ink)" }}>
-              {"k" in t ? tr(t.k as Parameters<typeof tr>[0]) : t.label}
-            </span>
-            <span className="mt-0.5 block text-2xs leading-snug" style={{ color: "var(--ux-muted)" }}>
-              {"ks" in t ? tr(t.ks as Parameters<typeof tr>[0]) : t.sub}
-            </span>
-          </Link>
-        ))}
-      </div>
-      </div>
+      <QuickAccessGrid size="desk" />
     </section>
   );
 }

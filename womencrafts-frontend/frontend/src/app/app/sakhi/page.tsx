@@ -454,6 +454,33 @@ export default function SakhiPage() {
    */
   const scroll = useChatScroll(`${conversationId ?? "new"}:${bubbles.length}:${streaming.length}:${busy ? 1 : 0}`);
 
+  /*
+    The screen fills the window on a laptop.
+    The welcome card was as tall as its content, so on a 900px window a third
+    of the screen under it was empty canvas (QA 09). The frame's floor is the
+    scroller's height minus the column's own padding — read from the page, not
+    guessed, because the shell owns that padding and changes it. Written to a
+    custom property rather than state, so a resize is not a React render.
+    From `xl` the conversations rail stands beside the page and is often the
+    taller column; `xl:h-full` lets the frame take the row's full height, so
+    the card ends where the rail does instead of stopping short of it.
+  */
+  const fillRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    const scroller = document.getElementById("ux-scroll");
+    const column = scroller?.firstElementChild as HTMLElement | null;
+    const host = fillRef.current;
+    if (!scroller || !column || !host) return;
+    const measure = () => {
+      const cs = getComputedStyle(column);
+      const h = scroller.clientHeight - parseFloat(cs.paddingTop) - parseFloat(cs.paddingBottom);
+      if (h > 0) host.style.setProperty("--sakhi-fill", `${Math.floor(h)}px`);
+    };
+    const ro = new ResizeObserver(measure);
+    ro.observe(scroller);
+    return () => ro.disconnect();
+  }, []);
+
   const switcher = (
     <ModeSwitch value={view} onPick={goTo}
                 canTalk={bubbles.length > 0 || history.length > 0}
@@ -475,7 +502,9 @@ export default function SakhiPage() {
         one long page with the composer at the end of it, so tapping the field
         put the keyboard over the thing she had just tapped.
       */}
-      <ChatFrame label={tr("nav.sakhi")} className={`${styles.page} flex flex-col gap-3 lg:gap-4`}>
+      <div ref={fillRef} className="contents">
+      <ChatFrame label={tr("nav.sakhi")}
+                 className={`${styles.page} flex flex-col gap-3 lg:gap-4 lg:min-h-[var(--sakhi-fill,calc(100dvh-var(--ux-topbar-h)-50px))] xl:h-full`}>
         <header data-sakhi-header className="flex shrink-0 items-center gap-2.5 border-b pb-2.5 lg:flex-wrap lg:gap-3 lg:border-0 lg:pb-0"
                 style={{ borderColor: "var(--ux-line)" }}>
           {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -535,6 +564,10 @@ export default function SakhiPage() {
               switcher={switcher}
             />
           ) : empty ? (
+            /* On a laptop the card grows to the bottom of the frame and centres
+               its content; below `lg` this wrapper has no box at all. */
+            <div className="max-lg:contents lg:flex lg:flex-1 lg:flex-col lg:[&>section]:flex lg:[&>section]:flex-1
+                            lg:[&>section]:flex-col lg:[&>section]:justify-center">
             <Welcome first={first} onPick={ask} canVoice={canVoice} switcher={switcher}>
               <Composer
                 value={draft} onChange={setDraft} onSend={() => ask(draft)}
@@ -545,6 +578,7 @@ export default function SakhiPage() {
               />
               <Disclosure text={disclosure} />
             </Welcome>
+            </div>
           ) : (
             <>
               <div className="pb-1">{switcher}</div>
@@ -590,7 +624,11 @@ export default function SakhiPage() {
           inside the welcome card.
         */}
         {!voiceMode && (
-          <ChatDock>
+          /* `lg:mt-auto`: a short thread keeps its composer at the bottom of
+             the window instead of floating under the last message. On a
+             laptop the welcome view has nothing in the dock, so it takes no
+             room at all rather than a gap under the card. */
+          <ChatDock className={empty ? "lg:hidden" : "lg:mt-auto"}>
             <JumpToLatest scroll={scroll} label="Latest" />
             <div className="lg:hidden">
               <PhoneComposer
@@ -660,6 +698,7 @@ export default function SakhiPage() {
           />
         </Sheet>
       </ChatFrame>
+      </div>
     </HomeShell>
   );
 }

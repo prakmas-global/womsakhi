@@ -46,15 +46,57 @@ export const ACCEPTED_IMAGE_TYPES = [
   "image/gif",
   "image/avif",
 ];
+/** What the server takes per file — the size that has to leave the device. */
 export const MAX_UPLOAD_MB = 5;
+/**
+ * What she may pick. A phone camera JPEG or HEIC is routinely 6–12 MB, and it
+ * never goes up at that size: `optimiseImage` shrinks it (640px for a photo of
+ * her) first, and `apiUploadImage` checks the result against MAX_UPLOAD_MB.
+ */
+export const MAX_PICK_MB = 25;
+
+/**
+ * Formats a phone camera produces that the server does not take as-is. They are
+ * accepted here because `optimiseImage` re-encodes them to webp before upload;
+ * if this browser cannot decode them, the upload stops with `UNSUPPORTED_PHOTO`.
+ */
+const REENCODE_TYPES = ["image/heic", "image/heif", "image/heic-sequence", "image/heif-sequence"];
+
+const EXT_TYPES: Record<string, string> = {
+  jpg: "image/jpeg", jpeg: "image/jpeg", jfif: "image/jpeg", png: "image/png", webp: "image/webp",
+  gif: "image/gif", avif: "image/avif", heic: "image/heic", heif: "image/heif",
+};
+
+export const UNSUPPORTED_PHOTO = "This photo format isn't supported — choose a JPG or PNG.";
+const TOO_BIG_AFTER_SHRINK = `That image is still larger than ${MAX_UPLOAD_MB} MB after resizing — choose a smaller photo.`;
+
+/**
+ * The file's image type, falling back to its extension.
+ *
+ * Android's camera hands the browser a file with a BLANK `type` (and some
+ * gallery apps send `application/octet-stream`), so trusting `file.type` alone
+ * refused a photo she had just taken.
+ */
+export function imageTypeOf(file: File): string {
+  const t = (file.type || "").toLowerCase();
+  if (t && t !== "application/octet-stream") return t === "image/jpg" ? "image/jpeg" : t;
+  const ext = (file.name.split(".").pop() || "").toLowerCase();
+  return EXT_TYPES[ext] ?? t;
+}
 
 /** Human-readable reason this file can't be uploaded, or null if it's fine. */
 export function validateImage(file: File): string | null {
-  if (!ACCEPTED_IMAGE_TYPES.includes(file.type.toLowerCase())) {
-    return "That's not a supported image (use JPG, PNG, WEBP, GIF or AVIF).";
+  const type = imageTypeOf(file);
+  if (!ACCEPTED_IMAGE_TYPES.includes(type) && !REENCODE_TYPES.includes(type)) {
+    return type ? UNSUPPORTED_PHOTO : "That's not a photo we can use — choose a JPG or PNG.";
   }
-  if (file.size > MAX_UPLOAD_MB * 1024 * 1024) {
-    return `That image is larger than the ${MAX_UPLOAD_MB} MB limit.`;
+  // Every image is shrunk before upload, so the original's size is not what
+  // reaches the server; a 9 MB camera photo is routinely under 200 KB after.
+  // GIFs are sent as they are (resizing would drop the animation), so they
+  // still have to fit the server's limit as picked.
+  const limit = type === "image/gif" ? MAX_UPLOAD_MB : MAX_PICK_MB;
+  if (file.size > limit * 1024 * 1024) {
+    return `That image is larger than the ${limit} MB limit.`;
   }
   return null;
 }
@@ -65,31 +107,52 @@ export function validateImage(file: File): string | null {
  * and the server still applies its normal type and size checks.
  */
 async function optimiseImage(file: File, kind: UploadKind): Promise<File> {
-  if (file.type.toLowerCase() === "image/gif" || typeof document === "undefined") return file;
+  const type = imageTypeOf(file);
+  const mustReencode = REENCODE_TYPES.includes(type);
+  if (type === "image/gif" || typeof document === "undefined") return file;
+  let bitmap: ImageBitmap;
   try {
-    const bitmap = await createImageBitmap(file);
+    bitmap = await createImageBitmap(file);
+  } catch {
+    // A HEIC this browser cannot decode would only be refused by the server
+    // after the whole upload — say so now instead.
+    if (mustReencode) throw new Error(UNSUPPORTED_PHOTO);
+    return withType(file, type);
+  }
+  try {
     const limit = kind === "avatar" ? 640 : kind === "cover" ? 1600 : 2000;
     const scale = Math.min(1, limit / Math.max(bitmap.width, bitmap.height));
     const width = Math.max(1, Math.round(bitmap.width * scale));
     const height = Math.max(1, Math.round(bitmap.height * scale));
-    if (scale === 1 && file.type === "image/webp" && file.size < 600 * 1024) {
-      bitmap.close();
-      return file;
+    if (!mustReencode && scale === 1 && type === "image/webp" && file.size < 600 * 1024) {
+      return withType(file, type);
     }
     const canvas = document.createElement("canvas");
     canvas.width = width;
     canvas.height = height;
     const context = canvas.getContext("2d", { alpha: true });
-    if (!context) { bitmap.close(); return file; }
+    if (!context) {
+      if (mustReencode) throw new Error(UNSUPPORTED_PHOTO);
+      return withType(file, type);
+    }
     context.drawImage(bitmap, 0, 0, width, height);
-    bitmap.close();
     const blob = await new Promise<Blob | null>((resolve) => canvas.toBlob(resolve, "image/webp", 0.84));
-    if (!blob || blob.size >= file.size) return file;
+    if (!blob || (!mustReencode && blob.size >= file.size)) {
+      if (mustReencode) throw new Error(UNSUPPORTED_PHOTO);
+      return withType(file, type);
+    }
     const stem = file.name.replace(/\.[^.]+$/, "") || "image";
     return new File([blob], `${stem}.webp`, { type: "image/webp", lastModified: file.lastModified });
-  } catch {
-    return file;
+  } finally {
+    bitmap.close();
   }
+}
+
+/** A blank-typed camera file, relabelled with the type its extension names so
+ *  the server's content-type check sees what it is. */
+function withType(file: File, type: string): File {
+  if (!type || file.type === type) return file;
+  return new File([file], file.name || "photo.jpg", { type, lastModified: file.lastModified });
 }
 
 export async function apiUploadImage(
@@ -98,6 +161,12 @@ export async function apiUploadImage(
   onProgress?: (percent: number) => void
 ): Promise<ApiUpload> {
   const uploadFile = await optimiseImage(file, kind);
+  // The shrink is what makes a 25 MB pick acceptable; if it could not happen
+  // (a browser that cannot decode the file) say so here rather than sending
+  // megabytes the server will refuse.
+  if (uploadFile.size > MAX_UPLOAD_MB * 1024 * 1024) {
+    throw new Error(TOO_BIG_AFTER_SHRINK);
+  }
   const form = new FormData();
   form.append("file", uploadFile);
   form.append("kind", kind);
@@ -132,6 +201,7 @@ export async function apiDeleteUpload(id: string): Promise<void> {
 
 /** Turn an axios error into the message the API sent, with a sane fallback. */
 export function uploadErrorMessage(err: unknown): string {
+  if (err instanceof Error && (err.message === UNSUPPORTED_PHOTO || err.message === TOO_BIG_AFTER_SHRINK)) return err.message;
   if (axios.isAxiosError(err)) {
     const detail = err.response?.data?.detail;
     if (typeof detail === "string") return detail;
