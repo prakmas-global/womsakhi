@@ -58,6 +58,27 @@ const GROUPS: Group[] = [
     ],
   },
   {
+    title: "Onboarding",
+    route: "/app/onboarding",
+    note: "The Post-Auth Flow. The M0 invitation is drawn on the In review screen.",
+    cards: [
+      { state: "invite", code: "M0", label: "While you wait: the invitation", href: q("/app/verify", "in-review") },
+      { state: "welcome", code: "Q0", label: "Welcome and consent", href: q("/app/onboarding", "welcome") },
+      { state: "language", code: "Q1", label: "How to talk to you", href: q("/app/onboarding", "language") },
+      { state: "goals", code: "Q2", label: "What brings you here", href: q("/app/onboarding", "goals") },
+      { state: "skills", code: "Q3", label: "Skills", href: q("/app/onboarding", "skills") },
+      { state: "learn", code: "Q4", label: "What to learn", href: q("/app/onboarding", "learn") },
+      { state: "meet", code: "Q4", label: "Who to meet", href: q("/app/onboarding", "meet") },
+      { state: "time", code: "Q5", label: "When you're free", href: q("/app/onboarding", "time") },
+      { state: "phone", code: "Q6", label: "Shared phone", href: q("/app/onboarding", "phone") },
+      { state: "helper-handback", label: "Helper hands the phone back", href: q("/app/onboarding", "helper-handback") },
+      { state: "thanks-waiting", label: "Thank you, while waiting", href: q("/app/onboarding", "thanks-waiting") },
+      { state: "setting-up", label: "Setting up", href: q("/app/onboarding", "setting-up") },
+      { state: "review", label: "Here's what we prepared", href: q("/app/onboarding", "review") },
+      { state: "circle-sheet", label: "A circle: who will see you", href: q("/app/onboarding", "circle-sheet") },
+    ],
+  },
+  {
     title: "Staff invite",
     route: "/accept-invite",
     cards: [

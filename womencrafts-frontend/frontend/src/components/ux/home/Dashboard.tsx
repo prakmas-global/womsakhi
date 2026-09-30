@@ -12,6 +12,13 @@ import { useHome } from "@/components/ux/live";
 import { formatRupees, Skeleton } from "@/components/ux/kit";
 import { apiDismissNextStep, type ApiHome } from "@/lib/me-api";
 import { EngineNudge } from "@/components/ux/reminders/EngineNudge";
+import { FirstSteps, PersonalCards, ShopFeed, WhyLine, orderBlocks } from "./Personal";
+
+/** A reason line under a panel's heading, only on a panel her answers brought forward. */
+function Why({ reason }: { reason?: string }) {
+  if (!reason) return null;
+  return <div className="-mt-1.5 mb-3"><WhyLine reason={reason} size="desk" /></div>;
+}
 
 /**
  * Home, built to the approved dashboard design — and, since this pass, drawn
@@ -148,7 +155,7 @@ function PanelHead({ title, action, href }: { title: string; action: string; hre
     <div className="mb-3 flex items-center justify-between gap-3">
       <h2 className="text-sm font-bold tracking-tight" style={{ color: "var(--ux-ink)" }}>{title}</h2>
       <Link href={href}
-            className="ux-hov -mx-2.5 -my-2 flex min-h-[40px] shrink-0 items-center gap-1 rounded-[10px] px-2.5 py-2 text-xs font-semibold"
+            className="ux-hov -mx-2.5 -my-2.5 flex min-h-[44px] shrink-0 items-center gap-1 rounded-[10px] px-2.5 py-2.5 text-xs font-semibold"
             style={{ color: "var(--ux-brand)" }}>
         {action}
         <Icons.ChevronRight className="h-[14px] w-[14px]" />
@@ -311,7 +318,7 @@ function NextUp({ h, onDismiss }: { h: ApiHome; onDismiss: () => void }) {
  * server does carry a duration for a specific lesson it is printed beside that
  * lesson, and nowhere else.
  */
-function Journey({ h }: { h: ApiHome }) {
+function Journey({ h, why }: { h: ApiHome; why?: string }) {
   const tr = useT();
   const j = h.journey;
 
@@ -320,6 +327,7 @@ function Journey({ h }: { h: ApiHome }) {
       <section className="ux-sq rounded-[16px] p-5"
                style={{ background: "var(--ux-surface)", border: "1px solid var(--ux-line)" }}>
         <PanelHead title={tr("dashboard.whatYouAreLearning")} action={tr("dashboard.allProgrammes")} href="/app/programs" />
+        <Why reason={why} />
         <Gone what="your course" />
       </section>
     );
@@ -330,12 +338,13 @@ function Journey({ h }: { h: ApiHome }) {
       <section className="ux-sq rounded-[16px] p-5"
                style={{ background: "var(--ux-surface)", border: "1px solid var(--ux-line)" }}>
         <PanelHead title={tr("dashboard.whatYouAreLearning")} action={tr("dashboard.allProgrammes")} href="/app/programs" />
+        <Why reason={why} />
         <p className="text-xsm leading-relaxed" style={{ color: "var(--ux-muted)" }}>
           You have not joined a programme yet. They are free, they run in Hindi and
           English, and most women finish one in six weeks.
         </p>
         <Link href="/app/programs"
-              className="ux-press ux-btn-g mt-3.5 inline-flex min-h-[42px] items-center gap-2 rounded-[12px] px-4 text-xsm font-bold"
+              className="ux-press ux-btn-g mt-3.5 inline-flex min-h-[44px] items-center gap-2 rounded-[12px] px-4 text-xsm font-bold"
               style={{ background: "linear-gradient(96deg, var(--ux-rib-2), var(--ux-rib-3))", color: "var(--ux-on-brand)" }}>
           {tr("dashboard.findAProgramme")}
           <Icons.ArrowRight className="h-4 w-4" />
@@ -348,6 +357,7 @@ function Journey({ h }: { h: ApiHome }) {
     <section className="ux-sq rounded-[16px] p-5"
              style={{ background: "var(--ux-surface)", border: "1px solid var(--ux-line)" }}>
       <PanelHead title={tr("dashboard.whatYouAreLearning")} action={tr("dashboard.allProgrammes")} href="/app/programs" />
+        <Why reason={why} />
 
       <div className="flex flex-wrap items-end justify-between gap-x-4 gap-y-1.5">
         <div className="min-w-0">
@@ -390,7 +400,7 @@ function Journey({ h }: { h: ApiHome }) {
       )}
 
       <Link href={j.href}
-            className="ux-hov mt-3.5 inline-flex min-h-[40px] items-center gap-1.5 text-xs font-semibold"
+            className="ux-hov mt-3.5 inline-flex min-h-[44px] items-center gap-1.5 text-xs font-semibold"
             style={{ color: "var(--ux-brand)" }}>
         {tr("dashboard.openTheCourse")}
         <Icons.ChevronRight className="h-[14px] w-[14px]" />
@@ -564,13 +574,13 @@ function QuickAccess() {
         <h2 className="text-base font-bold tracking-tight" style={{ color: "var(--ux-ink)" }}>{tr("dashboard.quickAccess")}</h2>
         <div className="flex items-center gap-2">
           <Link href="/app/explore"
-                className="ux-hov -my-2 flex min-h-[40px] items-center gap-1.5 py-2 text-xs font-semibold"
+                className="ux-hov -my-2.5 flex min-h-[44px] items-center gap-1.5 py-2.5 text-xs font-semibold"
                 style={{ color: "var(--ux-brand)" }}>
             {tr("dashboard.viewAll30Modules")}
             <Icons.ChevronRight className="h-[14px] w-[14px]" />
           </Link>
           <Link href="/app/settings/appearance"
-                className="ux-hov -my-2 flex min-h-[40px] items-center gap-1.5 rounded-[12px] px-3 py-2 text-xs font-semibold"
+                className="ux-hov -my-2.5 flex min-h-[44px] items-center gap-1.5 rounded-[12px] px-3 py-2.5 text-xs font-semibold"
                 style={{ background: "var(--ux-surface-2)", border: "1px solid var(--ux-line)", color: "var(--ux-muted)" }}>
             <Icons.LayoutGrid className="h-[14px] w-[14px]" />
             Customize
@@ -714,7 +724,7 @@ function Activities({ h }: { h: ApiHome }) {
  * a card whose subject IS the members. Both stacks drew the same six
  * illustrations from two hand-copied arrays, and a copied array drifts.
  */
-function Pot({ h }: { h: ApiHome }) {
+function Pot({ h, why }: { h: ApiHome; why?: string }) {
   const tr = useT();
   const pot = rowsOf<HomeCircle>(h.circles).find((c) => c.joined && c.is_savings);
 
@@ -722,6 +732,7 @@ function Pot({ h }: { h: ApiHome }) {
     return (
       <Panel>
         <PanelHead title={tr("dashboard.yourSavingsPot")} action={tr("dashboard.allCircles")} href="/app/circles" />
+        <Why reason={why} />
         <Gone what="your circles" />
       </Panel>
     );
@@ -731,12 +742,13 @@ function Pot({ h }: { h: ApiHome }) {
     return (
       <Panel>
         <PanelHead title={tr("dashboard.yourSavingsPot")} action={tr("dashboard.allCircles")} href="/app/circles" />
+        <Why reason={why} />
         <p className="text-xsm leading-relaxed" style={{ color: "var(--ux-muted)" }}>
           A pot is a group of women who each put in the same amount every month, and
           take turns receiving it. Join one, or start one with women you trust.
         </p>
         <Link href="/app/circles"
-              className="ux-press mt-auto flex min-h-[42px] items-center justify-center gap-2 rounded-[12px] pt-0 text-xsm font-bold"
+              className="ux-press mt-auto flex min-h-[44px] items-center justify-center gap-2 rounded-[12px] pt-0 text-xsm font-bold"
               style={{ background: "linear-gradient(96deg, var(--ux-fill), var(--ux-fill-2))", color: "var(--ux-on-brand)" }}>
           {tr("stories.findACircle")}
           <Icons.ArrowRight className="h-4 w-4" />
@@ -752,6 +764,7 @@ function Pot({ h }: { h: ApiHome }) {
   return (
     <Panel>
       <PanelHead title={tr("dashboard.yourSavingsPot")} action={tr("dashboard.allCircles")} href="/app/circles" />
+        <Why reason={why} />
       <div className="flex items-start gap-3">
         <span className="grid h-[34px] w-[34px] shrink-0 place-items-center rounded-[12px]"
               style={{ background: "var(--ux-tint-green)", color: "var(--ux-green-ink)" }}>
@@ -799,7 +812,7 @@ function Pot({ h }: { h: ApiHome }) {
           real chit needs and this database does not store yet — so they are not
           claimed. */}
       <Link href={`/app/circles/${pot.id}`}
-            className="ux-press ux-btn-g mt-auto flex min-h-[42px] items-center justify-center gap-2 rounded-[12px] text-xsm font-bold"
+            className="ux-press ux-btn-g mt-auto flex min-h-[44px] items-center justify-center gap-2 rounded-[12px] text-xsm font-bold"
             style={{ background: "linear-gradient(96deg, var(--ux-rib-2), var(--ux-rib-3))", color: "var(--ux-on-brand)" }}>
         {tr("dashboard.openThisCircle")}
         <Icons.ArrowRight className="h-4 w-4" />
@@ -810,7 +823,7 @@ function Pot({ h }: { h: ApiHome }) {
 
 /* ── panel 3 · community feed ──────────────────────────────────────────── */
 
-function Feed({ h }: { h: ApiHome }) {
+function Feed({ h, why }: { h: ApiHome; why?: string }) {
   const tr = useT();
   const stories = rowsOf<HomeStory>(h.stories);
   const [lead, ...rest] = stories;
@@ -819,6 +832,7 @@ function Feed({ h }: { h: ApiHome }) {
     return (
       <Panel>
         <PanelHead title={tr("dashboard.communityFeed")} action={tr("dashboard.viewAll")} href="/app/stories" />
+        <Why reason={why} />
         <Gone what="the community feed" />
       </Panel>
     );
@@ -827,6 +841,7 @@ function Feed({ h }: { h: ApiHome }) {
   return (
     <Panel>
       <PanelHead title={tr("dashboard.communityFeed")} action={tr("dashboard.viewAll")} href="/app/stories" />
+        <Why reason={why} />
       {!lead ? (
         <p className="py-5 text-xsm" style={{ color: "var(--ux-muted)" }}>
           {tr("dashboard.storiesFromWomenInYourCircles")}
@@ -899,6 +914,97 @@ function Feed({ h }: { h: ApiHome }) {
           )}
         </>
       )}
+    </Panel>
+  );
+}
+
+/* ── panels only her answers bring onto this screen ────────────────────── */
+
+/*
+  The phone home has always carried "Work for you" and "Suggested for you";
+  the desktop did not. For a woman who said she came to find work or to learn,
+  those are the first thing she should see, so they are drawn here — from the
+  same `/me/home` rows the phone uses — only when her answers ask for them.
+*/
+
+interface HomeOpening { id: string; title: string; org?: string; pay?: string; location?: string }
+/** `/me/home` names a catalogue programme `name`; `title` is kept for rows that carry one. */
+interface HomeCourse { id: string; title?: string; name?: string; reason?: string; category?: string; cover?: string }
+
+function WorkPanel({ h, why }: { h: ApiHome; why?: string }) {
+  const rows = rowsOf<HomeOpening>(h.opportunities).slice(0, 4);
+  return (
+    <Panel>
+      <PanelHead title="Work for you" action="All work" href="/app/opportunities" />
+      <Why reason={why} />
+      {lost(h, "opportunities") ? <Gone what="work for you" /> : rows.length === 0 ? (
+        <p className="py-3 text-xsm" style={{ color: "var(--ux-muted)" }}>
+          No openings match yet. New work shows up here as it is posted.
+        </p>
+      ) : (
+        <ul className="-mx-1.5 space-y-0.5">
+          {rows.map((o) => (
+            <li key={o.id}>
+              <Link href={`/app/opportunities/${o.id}`} className="ux-row flex min-h-[44px] items-center gap-3 rounded-[12px] p-2.5">
+                <span className="grid h-[34px] w-[34px] shrink-0 place-items-center rounded-[12px]"
+                      style={{ background: "var(--ux-tint-blue)", color: "var(--ux-blue-ink)" }}>
+                  <Icons.Briefcase className="h-[16px] w-[16px]" />
+                </span>
+                <span className="min-w-0 flex-1">
+                  <span className="block truncate text-xsm font-semibold" style={{ color: "var(--ux-ink)" }}>{o.title || "Opening"}</span>
+                  <span className="mt-0.5 block truncate text-2xs" style={{ color: "var(--ux-muted)" }}>
+                    {[o.org, o.pay, o.location].filter(Boolean).join(" · ")}
+                  </span>
+                </span>
+              </Link>
+            </li>
+          ))}
+        </ul>
+      )}
+    </Panel>
+  );
+}
+
+function LearnPanel({ h, why }: { h: ApiHome; why?: string }) {
+  const rows = rowsOf<HomeCourse>(h.recommended).slice(0, 4);
+  return (
+    <Panel>
+      <PanelHead title="Suggested for you" action="All courses" href="/app/programs" />
+      <Why reason={why} />
+      {lost(h, "recommended") ? <Gone what="suggestions" /> : rows.length === 0 ? (
+        <p className="py-3 text-xsm" style={{ color: "var(--ux-muted)" }}>
+          You have seen everything open right now. New courses show up here first.
+        </p>
+      ) : (
+        <ul className="-mx-1.5 space-y-0.5">
+          {rows.map((r) => (
+            <li key={r.id}>
+              <Link href={`/app/programs/${r.id}`} className="ux-row flex min-h-[44px] items-center gap-3 rounded-[12px] p-2.5">
+                <span className="grid h-[34px] w-[34px] shrink-0 place-items-center rounded-[12px]"
+                      style={{ background: "var(--ux-tint-violet)", color: "var(--ux-violet-ink)" }}>
+                  <Icons.GraduationCap className="h-[16px] w-[16px]" />
+                </span>
+                <span className="min-w-0 flex-1">
+                  <span className="block truncate text-xsm font-semibold" style={{ color: "var(--ux-ink)" }}>{r.title || r.name || "Course"}</span>
+                  {(r.reason || r.category) && (
+                    <span className="mt-0.5 block truncate text-2xs" style={{ color: "var(--ux-muted)" }}>{r.reason || r.category}</span>
+                  )}
+                </span>
+              </Link>
+            </li>
+          ))}
+        </ul>
+      )}
+    </Panel>
+  );
+}
+
+function MarketPanel({ why }: { why?: string }) {
+  return (
+    <Panel>
+      <PanelHead title="From the market" action="Market" href="/app/market" />
+      <Why reason={why} />
+      <ShopFeed size="desk" />
     </Panel>
   );
 }
@@ -1021,13 +1127,60 @@ function LoadFailed({ onRetry }: { onRetry: () => void }) {
         failing to fetch them, not anything changing.
       </p>
       <button type="button" onClick={onRetry}
-              className="ux-press ux-btn-g mt-4 inline-flex min-h-[42px] items-center gap-2 rounded-[12px] px-5 text-xsm font-bold"
+              className="ux-press ux-btn-g mt-4 inline-flex min-h-[44px] items-center gap-2 rounded-[12px] px-5 text-xsm font-bold"
               style={{ background: "linear-gradient(96deg, var(--ux-rib-2), var(--ux-rib-3))", color: "var(--ux-on-brand)" }}>
         <Icons.RefreshCw className="h-4 w-4" />
         {tr("common.retry")}
       </button>
     </section>
   );
+}
+
+/* ── her blocks, first ─────────────────────────────────────────────────── */
+
+/** What this screen draws that her answers can bring forward, in its usual order. */
+const DESK_BLOCKS = ["journey", "earnings", "circles", "stories"] as const;
+/** Drawn only when her answers ask for them. */
+const DESK_EXTRA = ["opportunities", "recommended", "shop_feed"] as const;
+
+/**
+ * The blocks her answers put first, in her order. The two wide ones (her
+ * course, her figures) keep their full width; the panels sit two to a row.
+ */
+function Mine({ h, mine }: { h: ApiHome; mine: string[] }) {
+  if (!mine.length) return null;
+  const r = h.personal?.reasons ?? {};
+  const panel = (b: string) => {
+    switch (b) {
+      case "opportunities": return <WorkPanel key={b} h={h} why={r[b]} />;
+      case "recommended": return <LearnPanel key={b} h={h} why={r[b]} />;
+      case "circles": return <Pot key={b} h={h} why={r[b]} />;
+      case "stories": return <Feed key={b} h={h} why={r[b]} />;
+      case "shop_feed": return <MarketPanel key={b} why={r[b]} />;
+      default: return null;
+    }
+  };
+  const out: React.ReactNode[] = [];
+  let run: React.ReactNode[] = [];
+  const flush = () => {
+    if (!run.length) return;
+    out.push(<div key={`g${out.length}`} className="grid grid-cols-1 gap-4 xl:grid-cols-2">{run}</div>);
+    run = [];
+  };
+  for (const b of mine) {
+    if (b === "journey") { flush(); out.push(<Journey key={b} h={h} why={r[b]} />); }
+    else if (b === "earnings") {
+      flush();
+      out.push(
+        <div key={b} className="flex flex-col gap-2">
+          <WhyLine reason={r[b]} size="desk" />
+          <Stats h={h} />
+        </div>,
+      );
+    } else run.push(panel(b));
+  }
+  flush();
+  return <>{out}</>;
 }
 
 /* ── the screen ────────────────────────────────────────────────────────── */
@@ -1059,6 +1212,10 @@ export function Dashboard() {
   // greeting is right in the first frame rather than a beat later.
   const first = home?.me.first || (user?.full_name || "").trim().split(" ")[0] || "";
 
+  // Her blocks first. `personal` null leaves `mine` empty and `rest` whole —
+  // the screen exactly as it was.
+  const { mine, rest } = orderBlocks(DESK_BLOCKS, home?.personal, DESK_EXTRA);
+
   return (
     <div className="flex flex-col gap-4" data-dashboard="home">
       {/*
@@ -1081,8 +1238,14 @@ export function Dashboard() {
           {home.next_step && aside !== home.next_step.href && (
             <NextUp h={home} onDismiss={() => putAside(home.next_step!.href)} />
           )}
-          <Journey h={home} />
-          <Stats h={home} />
+          {/* Below xl the rail sits under the page, so the checklist comes up here. */}
+          {home.personal?.checklist.length ? (
+            <div className="xl:hidden"><FirstSteps items={home.personal.checklist} size="desk" /></div>
+          ) : null}
+          {home.personal && <PersonalCards personal={home.personal} size="desk" />}
+          <Mine h={home} mine={mine} />
+          {rest.includes("journey") && <Journey h={home} />}
+          {rest.includes("earnings") && <Stats h={home} />}
           {/* The same row the module dashboards carry, in home's own radius.
               Added between two existing children of this column; neither is
               touched, and deleting this line restores the screen exactly. */}
@@ -1090,11 +1253,21 @@ export function Dashboard() {
             icon="AlarmClock" tint="--ux-brand-tint" ink="--ux-brand"
             labelKey="nudge.home.label" noteKey="nudge.home.note" />
           <QuickAccess />
-          <div className="grid grid-cols-1 gap-4 xl:grid-cols-3">
-            <Activities h={home} />
-            <Pot h={home} />
-            <Feed h={home} />
-          </div>
+          {/* With no answers all three are here, exactly as before. A panel
+              her answers moved up is drawn there instead, and the grid closes
+              up behind it rather than leaving a hole. */}
+          {(() => {
+            const left = [
+              <Activities key="a" h={home} />,
+              rest.includes("circles") && <Pot key="c" h={home} />,
+              rest.includes("stories") && <Feed key="s" h={home} />,
+            ].filter(Boolean);
+            return (
+              <div className={`grid grid-cols-1 gap-4 ${left.length === 3 ? "xl:grid-cols-3" : left.length === 2 ? "xl:grid-cols-2" : ""}`}>
+                {left}
+              </div>
+            );
+          })()}
           <Strip />
         </>
       )}

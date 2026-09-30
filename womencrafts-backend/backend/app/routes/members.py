@@ -356,6 +356,10 @@ async def create_member(payload: MemberCreate, request: Request, me: dict = Depe
         code=await _next_code(),
         verified_on="Awaiting review" if payload.status == "Pending" else "",
     )
+    # Staff named her segment, so onboarding must not overwrite it. When the
+    # form left it at its default, nobody decided anything and her own
+    # answers may set it later (see app/core/onboarding.py).
+    doc["segment_source"] = "staff" if "segment" in payload.model_fields_set else ""
     require_member_in_scope(doc, me)
     result = await _members().insert_one(doc)
     doc["_id"] = result.inserted_id
@@ -788,6 +792,9 @@ async def update_member(
             raise HTTPException(status.HTTP_409_CONFLICT,
                                 {"code": "phone_taken",
                                  "message": "This mobile number is already linked to another account."})
+    if "segment" in updates:
+        # A segment a person chose outranks one derived from her answers.
+        updates["segment_source"] = "staff"
     updates["updated_at"] = datetime.now(timezone.utc)
     doc = await _members().find_one_and_update({"_id": oid}, {"$set": updates}, return_document=True)
     if not doc:

@@ -210,6 +210,52 @@ class HomeRecommendation(CatalogProgram):
 
 # --- the whole screen --------------------------------------------------------
 
+class HomeChecklistItem(BaseModel):
+    """One step of her first-week list. `done` is read from real data every time."""
+
+    key: str
+    label: str
+    done: bool
+    href: str
+
+
+class HomeJobMatch(BaseModel):
+    id: str
+    title: str
+    org: str = ""
+    location: str = ""
+
+
+class HomeJobMatches(BaseModel):
+    """What her private saved job search found since she saved it."""
+
+    count: int = 0
+    items: list[HomeJobMatch] = []
+
+
+class HomePersonal(BaseModel):
+    """
+    Home shaped by her onboarding answers — HINTS for the screen, not a new
+    layout. Nothing else in `MeHome` changes because of them.
+
+    Null when she has never opened the flow, and home is exactly as before.
+    """
+
+    goals: list[str] = []
+    #: MeHome block names (plus `shop_feed`) to bring forward, in order.
+    order: list[str] = []
+    #: Show a feed of the market on home.
+    shop_feed: bool = False
+    #: block name -> "Because you chose Earn · Tailoring".
+    reasons: dict[str, str] = {}
+    checklist: list[HomeChecklistItem] = []
+    #: She skipped, or answered only part, and has not hidden the card.
+    make_it_yours: bool = False
+    #: 90 days since she last changed or confirmed her answers.
+    checkin_due: bool = False
+    new_job_matches: HomeJobMatches = HomeJobMatches()
+
+
 class MeHome(BaseModel):
     """
     Everything `/app` shows, in one request.
@@ -251,3 +297,5 @@ class MeHome(BaseModel):
     #: identical to the screen, and it would cheerfully tell a woman who is in
     #: three savings circles that she is in none.
     unavailable: list[str] = []
+    #: Her onboarding answers turned into hints. Null without answers.
+    personal: Optional[HomePersonal] = None

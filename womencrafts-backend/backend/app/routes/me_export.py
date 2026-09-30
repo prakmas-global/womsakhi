@@ -72,6 +72,9 @@ LABELS = {
     "health_habits": "health_habits",
     "skill_swaps": "skill_swaps",
     "feedback": "feedback_you_gave",
+    "onboarding_profiles": "your_onboarding_answers_and_consents",
+    "onboarding_setups": "what_we_prepared_for_you",
+    "saved_searches": "saved_job_searches",
 }
 
 #: Collections NOT exported, and why. Everything else she has a row in is.

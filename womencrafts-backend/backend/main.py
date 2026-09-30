@@ -95,6 +95,11 @@ from app.routes.theme import router as theme_router
 from app.routes.layout import router as layout_router
 from app.routes.sakhi import router as sakhi_router
 from app.routes.org import router as org_router
+from app.routes.onboarding import (
+    admin_router as onboarding_admin_router,
+    router as onboarding_router,
+    skills_router as onboarding_skills_router,
+)
 
 
 # Descriptions for the Swagger UI tag groups.
@@ -407,6 +412,13 @@ app.include_router(cycle_router, prefix="/api/v1")   # her cycle — personal, m
 # rather than another thousand lines in routes/me.py, and it carries the same
 # `/me` prefix so the screen's call sits with the rest of her data.
 app.include_router(home_router, prefix="/api/v1")
+# Post-signup onboarding: her answers and consents (answerable while she
+# waits), setting up her own app (admitted only), and the skills picker.
+# Guarded per endpoint — see app/routes/onboarding.py.
+app.include_router(onboarding_router, prefix="/api/v1")
+app.include_router(onboarding_skills_router, prefix="/api/v1")
+# "What women want": anonymous counts, staff with analytics.view or users.view.
+app.include_router(onboarding_admin_router, prefix="/api/v1")
 app.include_router(catalog_router, prefix="/api/v1")
 app.include_router(payments_router, prefix="/api/v1")
 # The rest of the member app. Each of these routers depends on

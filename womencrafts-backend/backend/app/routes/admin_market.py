@@ -266,7 +266,8 @@ async def summary():
         gb_open, gb_met, gb_ordered, gb_closed,
         seller_ids, suspended,
     ) = await asyncio.gather(
-        _listings().count_documents({}),
+        # Her private onboarding drafts are not market listings until published.
+        _listings().count_documents({"status": {"$ne": ListingModel.STATUS_DRAFT}}),
         _listings().count_documents({"status": ListingModel.STATUS_LIVE, "hidden": {"$ne": True}}),
         _listings().count_documents({"status": ListingModel.STATUS_PAUSED, "hidden": {"$ne": True}}),
         _listings().count_documents({"hidden": True}),
@@ -295,7 +296,9 @@ async def summary():
 # ── listings ───────────────────────────────────────────────────────────────
 
 def _listing_query(q: str, status_: str, kind: str, seller: str) -> dict:
-    query: dict = {}
+    # Her private drafts are not on the market, so they are not the
+    # moderators' to review either; they become visible here when published.
+    query: dict = {"status": {"$ne": ListingModel.STATUS_DRAFT}}
     if status_ == "hidden":
         query["hidden"] = True
     elif status_ in (ListingModel.STATUS_LIVE, ListingModel.STATUS_PAUSED):

@@ -135,7 +135,7 @@ class ListingCreate(BaseModel):
     travels_km: int = Field(0, ge=0, le=200)
     photo: MediaRef = Field("", max_length=400)
     photos: list[MediaRef] = Field(default_factory=list, max_length=4)
-    status: str = Field("live", pattern="^(live|paused)$")
+    status: str = Field("live", pattern="^(live|paused|draft)$")
     price_mode: Literal["fixed", "range", "quote"] = "fixed"
     price_high_minor: int = Field(0, ge=0)
     compare_at_minor: int = Field(0, ge=0)

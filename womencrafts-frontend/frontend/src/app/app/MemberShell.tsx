@@ -18,6 +18,7 @@ import { apiUpdateMeProfile } from "@/lib/member-api";
 import { takePreSignInChoice, useI18n, useT } from "@/i18n";
 import Spinner from "@/design-system/primitives/Spinner";
 import { previewActive } from "@/lib/auth-preview";
+import { apiOnboarding, isOnboardingSettled, markOnboardingSettled, onboardingDestination } from "@/lib/onboarding-api";
 import "@/app/ux/tokens.css";
 // After tokens.css on purpose: both are unlayered, so the later import wins.
 import "@/app/ux/mobile.css";
@@ -57,7 +58,7 @@ const AUTH_PREVIEW = process.env.NODE_ENV !== "production";
 const WAITING = new Set(["pending_email", "pending_documents", "in_review"]);
 
 /** The member screens whose API calls `require_member_account` answers while she waits. */
-const WAITING_ROUTES = ["/app/verify", "/app/phone", "/app/learn", "/app/profile", "/app/settings/language", "/app/welcome"];
+const WAITING_ROUTES = ["/app/verify", "/app/phone", "/app/learn", "/app/profile", "/app/settings/language", "/app/welcome", "/app/onboarding"];
 
 /**
  * Her devices and "sign out everywhere" are about keeping her account safe, so
@@ -92,15 +93,43 @@ export default function MemberShell({
   const onVerifyScreen = pathname.startsWith("/app/verify");
   const onWelcomeScreen = pathname.startsWith("/app/welcome");
   const onPhoneScreen = pathname.startsWith("/app/phone");
+  const onOnboardingScreen = pathname.startsWith("/app/onboarding");
   const verified = user?.verification_status === "active";
   /*
-    The verify screen is exempt from the tour redirect for one reason: the
-    moment she is approved while waiting on it, it shows her C6 — "You're in",
-    with the tour and home as two buttons. Both of those lead back through this
-    gate, so the tour is still where "home" sends her until she has done it.
+    The Post-Auth Flow replaces the forced tour. An approved member who has
+    not finished the questions, or said "Not now" to them, is sent to
+    /app/onboarding — or straight to its setting-up step when she answered
+    while she waited and nothing has been prepared yet. The server decides
+    (`offered`, `completed`, `setup.last_run_at`); the tour stays at
+    /app/welcome for anyone who wants it, but nobody is sent there.
+
+    Asked once per visit and only for a member whose account still says
+    `onboarding_complete: false` (everyone admitted before this flow existed
+    has it true). The verify screen (C6, "You're in") and the flow itself are
+    exempt, or the gate would bounce her off her own destination.
   */
-  const needsOnboarding =
-    verified && user?.onboarding_complete === false && !onWelcomeScreen && !onVerifyScreen;
+  const askOnboarding = Boolean(
+    verified && user?.onboarding_complete === false && !(AUTH_PREVIEW && previewActive(pathname)),
+  );
+  const [onboardingRoute, setOnboardingRoute] = useState<{ uid: string; to: string | null } | null>(null);
+  useEffect(() => {
+    if (!askOnboarding || !user) return;
+    let alive = true;
+    const uid = user.id;
+    void Promise.resolve(isOnboardingSettled(uid) ? null : apiOnboarding().then(onboardingDestination))
+      .catch(() => null)
+      .then((to) => {
+        if (!to) markOnboardingSettled(uid);
+        if (alive) setOnboardingRoute({ uid, to });
+      });
+    return () => { alive = false; };
+  }, [askOnboarding, user]);
+  const exemptFromOnboarding = onOnboardingScreen || onWelcomeScreen || onVerifyScreen;
+  const onboardingKnown = !askOnboarding || (onboardingRoute?.uid === user?.id);
+  const onboardingTo =
+    askOnboarding && onboardingRoute && user && onboardingRoute.uid === user.id && !isOnboardingSettled(user.id)
+      ? onboardingRoute.to : null;
+  const needsOnboarding = verified && !exemptFromOnboarding && Boolean(onboardingTo);
   /*
     Where she may be, by admission state — mirroring the backend, which is the
     real gate (`require_member_account` vs `require_active_member`):
@@ -113,7 +142,7 @@ export default function MemberShell({
   const waiting = user ? WAITING.has(user.verification_status) : false;
   const redirectTo = !user ? null
     : user.phone_action_required ? (onPhoneScreen ? null : "/app/phone")
-    : verified ? (needsOnboarding ? "/app/welcome" : null)
+    : verified ? (needsOnboarding ? onboardingTo : null)
     : isAlwaysOpen(pathname) ? null
     : waiting ? (allowedWhileWaiting(pathname) ? null : "/app/verify")
     : onVerifyScreen ? null : "/app/verify";
@@ -230,7 +259,7 @@ export default function MemberShell({
 
   // While a redirect is pending, render nothing rather than the destination
   // screen: mounting it would fire data requests we already know will 403.
-  if (!isMember || redirectTo) {
+  if (!isMember || redirectTo || (verified && !exemptFromOnboarding && !onboardingKnown)) {
     return (
       <div className="ux grid min-h-screen place-items-center px-6">
         <div role="status" className="text-center">
@@ -248,7 +277,7 @@ export default function MemberShell({
   // full-page `AuthShell` of its own — photo panel, cream side, logo, card — in
   // the fixed berry-on-cream palette, so nothing of the app's frame (or its
   // themed `.ux` canvas) goes around them. The tour keeps the app's canvas.
-  if (onVerifyScreen || onPhoneScreen) return <>{children}</>;
+  if (onVerifyScreen || onPhoneScreen || onOnboardingScreen) return <>{children}</>;
   if (AUTH_PREVIEW && preview) {
     return (
       <div className="ux min-h-screen">

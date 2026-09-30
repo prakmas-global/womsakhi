@@ -179,3 +179,44 @@ def test_view_is_offered_wherever_anything_else_is(module):
     _, actions = CATALOGUE[module]
     if actions and actions != ["view"]:
         assert "view" in actions, f"{module} offers {actions} but not view"
+
+
+#: Onboarding's endpoints and the guard each one must carry. `member_account`
+#: means she may use it while her application is still open; `active_member`
+#: means only once admitted — the only paths that create anything in another
+#: module. The insights are staff-only and additionally need analytics.view or
+#: users.view (checked by `_can_view_insights`).
+ONBOARDING_GUARDS = {
+    "get_onboarding": "require_member_account",
+    "put_onboarding": "require_member_account",
+    "set_consents": "require_member_account",
+    "skip_onboarding": "require_member_account",
+    "checkin": "require_member_account",
+    "dismiss_card": "require_member_account",
+    "delete_onboarding": "require_member_account",
+    "list_items": "require_member_account",
+    "my_data": "require_member_account",
+    "find_skills": "require_member_account",
+    "setup": "require_active_member",
+    "keep_item": "require_active_member",
+    "remove_item": "require_active_member",
+    "insights": "require_staff",
+}
+
+
+def test_onboarding_endpoints_carry_the_right_guard():
+    src = (ROUTES / "onboarding.py").read_text()
+    found = {m.group(3): m.group(2) + m.group(4) for m in DECORATOR.finditer(src)}
+    assert set(found) == set(ONBOARDING_GUARDS), (
+        "onboarding.py's endpoints changed — update ONBOARDING_GUARDS with the guard each needs")
+    wrong = []
+    for name, guard in ONBOARDING_GUARDS.items():
+        blob = found[name]
+        if guard == "require_member_account":
+            ok = "require_member_account" in blob and "require_active_member" not in blob
+        else:
+            ok = guard in blob
+        if not ok:
+            wrong.append(f"{name}: expected {guard}")
+    assert not wrong, "\n".join(wrong)
+    assert "_can_view_insights" in found["insights"]

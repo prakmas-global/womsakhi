@@ -30,6 +30,11 @@ export const PREVIEW_STATES = {
   invite: ["valid", "invalid", "accepted", "incomplete"],
   security: ["devices"],
   handoff: ["opening", "expired"],
+  /** The post-auth questions. `invite` is the M0 card, drawn on /app/verify (in-review). */
+  onboarding: [
+    "invite", "welcome", "language", "goals", "skills", "learn", "meet", "time", "phone",
+    "thanks-waiting", "setting-up", "review", "circle-sheet", "helper-handback",
+  ],
 } as const;
 
 export type SigninPreview = (typeof PREVIEW_STATES.signin)[number];
@@ -38,9 +43,17 @@ export type PhonePreview = (typeof PREVIEW_STATES.phone)[number];
 export type VerifyPreview = (typeof PREVIEW_STATES.verify)[number];
 export type InvitePreview = (typeof PREVIEW_STATES.invite)[number];
 export type HandoffPreview = (typeof PREVIEW_STATES.handoff)[number];
+export type OnboardingPreview = (typeof PREVIEW_STATES.onboarding)[number];
+
+/** The onboarding states drawn by /app/onboarding itself (`invite` lives on /app/verify). */
+export const ONBOARDING_FLOW_PREVIEWS = PREVIEW_STATES.onboarding.filter(
+  (s): s is Exclude<OnboardingPreview, "invite"> => s !== "invite",
+);
+/** The onboarding previews that belong to an approved member (the rest are drawn while she waits). */
+const ONBOARDING_APPROVED: readonly string[] = ["setting-up", "review", "circle-sheet"];
 
 /** The /app screens the route guard lets through with `?preview=` and no session. */
-export const PREVIEW_APP_ROUTES = ["/app/verify", "/app/phone", "/app/settings/security"] as const;
+export const PREVIEW_APP_ROUTES = ["/app/verify", "/app/phone", "/app/settings/security", "/app/onboarding"] as const;
 
 /** The preview states each guarded route accepts (the route guard checks the value too). */
 export const PREVIEW_ROUTE_STATES: Record<string, readonly string[]> = {
@@ -49,6 +62,7 @@ export const PREVIEW_ROUTE_STATES: Record<string, readonly string[]> = {
   "/app/verify": PREVIEW_STATES.verify,
   "/app/phone": PREVIEW_STATES.phone,
   "/app/settings/security": PREVIEW_STATES.security,
+  "/app/onboarding": ONBOARDING_FLOW_PREVIEWS,
 };
 
 /** The raw `?preview=` value, or null (always null in production and on the server). */
@@ -221,6 +235,10 @@ export function previewUser(pathname: string): User | null {
   if (route === "/app/verify") {
     const s = readPreview(PREVIEW_STATES.verify);
     return s ? user({ verification_status: VERIFY_USER_STATUS[s], onboarding_complete: s !== "approved" }) : null;
+  }
+  if (route === "/app/onboarding") {
+    const s = readPreview(ONBOARDING_FLOW_PREVIEWS);
+    return s ? user({ verification_status: ONBOARDING_APPROVED.includes(s) ? "active" : "in_review", onboarding_complete: false }) : null;
   }
   if (route === "/app/phone") {
     const s = readPreview(PREVIEW_STATES.phone);

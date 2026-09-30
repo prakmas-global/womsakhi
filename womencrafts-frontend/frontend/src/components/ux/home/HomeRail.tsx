@@ -10,6 +10,7 @@ import {
   clock, lost, rowsOf, blockOf, Gone,
   type HomeCircle, type HomeProgress,
 } from "./Dashboard";
+import { FirstSteps } from "./Personal";
 
 /**
  * The Home rail — her profile, Upcoming Events, Your Balance, Your Progress and
@@ -51,7 +52,7 @@ function Head({ title, action, href }: { title: string; action: string; href: st
     <div className="mb-3 flex items-center justify-between gap-3">
       <h3 className="text-sm font-bold tracking-tight" style={{ color: "var(--ux-ink)" }}>{title}</h3>
       <Link href={href}
-            className="ux-hov -my-2 flex min-h-[40px] shrink-0 items-center gap-1 py-2 text-xs font-semibold"
+            className="ux-hov -my-2.5 flex min-h-[44px] shrink-0 items-center gap-1 py-2.5 text-xs font-semibold"
             style={{ color: "var(--ux-brand)" }}>
         {action}
         <Icons.ChevronRight className="h-[14px] w-[14px]" />
@@ -147,6 +148,13 @@ export function HomeRail() {
 
   return (
     <div className="flex flex-col gap-4">
+      {/* Her first steps, from her onboarding answers — the rail is where the
+          approved web home puts them. Absent without answers. Only while the
+          rail is a column beside the page (xl): below that it drops under the
+          page, and the page itself carries the checklist near the top. */}
+      {home.personal?.checklist?.length ? (
+        <div className="hidden xl:block"><FirstSteps items={home.personal.checklist} size="desk" /></div>
+      ) : null}
       {/* Her profile sat in the side menu until navigation moved to the top.
           It is the one card there that was doing work rather than decorating,
           so it lands here rather than being dropped. */}
@@ -173,7 +181,7 @@ export function HomeRail() {
             </div>
           </div>
           <Link href={nextField?.href || "/app/profile"}
-                className="ux-press ux-btn-g mt-3 flex min-h-[40px] items-center justify-center gap-2 rounded-[12px] text-xsm font-bold"
+                className="ux-press ux-btn-g mt-3 flex min-h-[44px] items-center justify-center gap-2 rounded-[12px] text-xsm font-bold"
                 style={{ background: "linear-gradient(96deg, var(--ux-rib-2), var(--ux-rib-3))", color: "var(--ux-on-brand)" }}>
             {tr("homeRail.continueNow")}
             <Icons.ArrowRight className="h-4 w-4" />
@@ -264,7 +272,7 @@ export function HomeRail() {
             </p>
           )}
           <Link href="/app/wallet/withdraw"
-                className="ux-press ux-btn-g mt-3.5 inline-flex min-h-[40px] items-center gap-2 rounded-[12px] px-4 text-xsm font-bold"
+                className="ux-press ux-btn-g mt-3.5 inline-flex min-h-[44px] items-center gap-2 rounded-[12px] px-4 text-xsm font-bold"
                 style={{ background: "var(--ux-on-brand-btn)", color: "var(--ux-on-brand-btn-ink)" }}>
             {tr("opportunities.takeMoneyOut")}
             <Icons.ArrowRight className="h-4 w-4" />
@@ -320,7 +328,7 @@ export function HomeRail() {
           </>
         )}
         <Link href="/app/circles"
-              className="ux-press mt-3 flex min-h-[42px] w-full items-center justify-center gap-2 rounded-[12px] text-xsm font-bold"
+              className="ux-press mt-3 flex min-h-[44px] w-full items-center justify-center gap-2 rounded-[12px] text-xsm font-bold"
               style={{ background: "var(--ux-surface-2)", border: "1px solid var(--ux-line)", color: "var(--ux-ink)" }}>
           <Icons.UserRoundPlus className="h-4 w-4" />
           {tr("homeRail.inviteMembers")}

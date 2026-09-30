@@ -33,7 +33,7 @@ export function SettingsPage({
            /app/wallet/withdraw and the shop's item screens, where "More"
            sent her to SETTINGS. The top bar's back uses the real parent. */
         className="ux-back-inpage ux-hov -ms-2 -my-1 mb-2 inline-flex min-h-[44px] items-center gap-1 py-1 pe-3 ps-2 text-[15px] font-semibold
-                   lg:-ms-0 lg:mb-3.5 lg:min-h-0 lg:gap-1.5 lg:p-0 lg:py-1 lg:text-xsm lg:font-medium"
+                   lg:-ms-0 lg:-mt-3 lg:mb-1.5 lg:min-h-[44px] lg:gap-1.5 lg:p-0 lg:py-1 lg:text-xsm lg:font-medium"
         style={{ color: "var(--ux-brand)" }}
       >
         <Icons.ChevronLeft className="ux-ico h-[20px] w-[20px] rtl:rotate-180 lg:hidden" />
@@ -94,8 +94,14 @@ export function TextInput(props: React.InputHTMLAttributes<HTMLInputElement>) {
  * setting is always on screen.
  */
 export function Toggle({
-  on, onChange, label, whenOn, whenOff,
-}: { on: boolean; onChange: (v: boolean) => void; label: string; whenOn: string; whenOff: string }) {
+  on, onChange, label, whenOn, whenOff, disabled = false, busy = false,
+}: {
+  on: boolean; onChange: (v: boolean) => void; label: string; whenOn: string; whenOff: string;
+  /** Can't be changed right now; `whenOff`/`whenOn` should say why. */
+  disabled?: boolean;
+  /** A change is being saved. */
+  busy?: boolean;
+}) {
   return (
     <div className="flex min-h-[52px] items-start justify-between gap-4 py-3">
       <div className="min-w-0 flex-1">
@@ -108,18 +114,26 @@ export function Toggle({
         role="switch"
         aria-checked={on}
         aria-label={label}
+        aria-disabled={disabled || undefined}
+        aria-busy={busy || undefined}
+        disabled={disabled || busy}
         onClick={() => onChange(!on)}
         /*
           The track stays 26px and the TARGET becomes 44. A transparent 9px
           border on each edge grows the hit area without growing the switch,
           which is how a 26px control clears the 44px floor without looking
-          like a toy. `bg-clip-padding` keeps the colour off the border — and
+          like a toy. `min-h-0` because the touch tier's 44px floor
+          (tokens.css, pointer: coarse) applies to the CONTENT box of a
+          `box-content` button — it made the track 44px tall, a plum blob on
+          every phone. `bg-clip-padding` keeps the colour off the border — and
           the style below sets `backgroundColor`, not `background`: the
           shorthand would reset `background-clip` back to `border-box` and the
           track would paint the full 44px after all.
         */
-        className="ux-press ux-tap-exempt relative mt-0.5 box-content h-[26px] w-[46px] shrink-0 rounded-full border-y-[9px] border-solid border-transparent bg-clip-padding transition-colors lg:border-y-0"
-        style={{ backgroundColor: on ? "var(--ux-fill)" : "var(--ux-track)" }}
+        className="ux-press ux-tap-exempt relative mt-0.5 box-content h-[26px] min-h-0 w-[46px] shrink-0 rounded-full border-y-[9px] border-solid border-transparent bg-clip-padding transition-colors lg:-my-[9px]"
+        style={{ backgroundColor: on ? "var(--ux-fill)" : "var(--ux-track)",
+                 opacity: disabled ? 0.45 : busy ? 0.7 : undefined,
+                 cursor: disabled ? "not-allowed" : undefined }}
       >
         <span
           className="absolute top-[3px] h-[20px] w-[20px] rounded-full bg-white"

@@ -1,0 +1,32 @@
+/* ── M0 · the invitation on her In review screen (verify page, auth card) ──
+   The approved hero: the "wait" illustration fading into plum, Sakhi, a white
+   pill button. Colours from tokens.css only. */
+
+.wso-invite { display: flex; flex-direction: column; gap: 8px; width: 100%; }
+.wso-invite-hero {
+  position: relative; overflow: hidden; isolation: isolate;
+  display: flex; flex-direction: column; justify-content: flex-end;
+  min-height: max(240px, calc(210 * var(--u)));
+  border-radius: calc(18 * var(--u)); background: var(--wso-plum);
+}
+.wso-invite-img { position: absolute; inset: 0; z-index: -2; }
+.wso-invite-hero::before { content: ""; position: absolute; inset: 0; z-index: -1; background: var(--wso-hero-grad); }
+.wso-invite-in { display: flex; flex-direction: column; gap: 10px; padding: calc(84 * var(--u)) calc(14 * var(--u)) calc(14 * var(--u)); }
+.wso-invite-row { display: flex; align-items: center; gap: 12px; }
+.wso-invite h2 { flex: 1; min-width: 0; font: 600 max(19px, calc(16 * var(--u))) / 1.2 var(--wso-serif); color: var(--wso-on-berry); text-wrap: balance; }
+.wso-invite-in p { font-size: max(14px, calc(11.5 * var(--u))); line-height: 1.45; color: var(--wso-on-hero-sub); }
+.wso-invite-go {
+  display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+  min-height: 48px; padding: 0 20px; border-radius: 999px;
+  background: var(--wso-surface); color: var(--wso-berry);
+  font: 700 max(15px, calc(12.5 * var(--u))) / 1.2 var(--wso-sans); text-decoration: none;
+  transition: background var(--wso-fast) ease, transform var(--wso-fast) ease;
+}
+.wso-invite-go svg { width: 18px; height: 18px; }
+.wso-invite-go:focus-visible { outline: 2px solid var(--wso-on-berry); outline-offset: 3px; }
+@media (hover: hover) { .wso-invite-go:hover { background: var(--wso-berry-tint); transform: translateY(-1px); } }
+.wso-invite-later { font-size: max(13px, calc(10.5 * var(--u))); color: var(--wso-muted); text-align: center; }
+@media (min-width: 1024px) {
+  .wso-invite-hero { min-height: 230px; }
+  .wso-invite-in { padding-top: 90px; }
+}

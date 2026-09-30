@@ -140,7 +140,10 @@ async def public_listing(listing_id: str) -> dict:
         except (InvalidId, TypeError):
             raise HTTPException(status.HTTP_404_NOT_FOUND, "That page is not here")
         doc = await db[ListingModel.collection_name].find_one({"_id": oid})
-        if not doc or doc.get("status") == ListingModel.STATUS_PAUSED:
+        # Only `live` is for a stranger's eyes. This used to refuse only
+        # `paused`, which would have published a private onboarding draft to
+        # anyone holding its id.
+        if not doc or doc.get("status") != ListingModel.STATUS_LIVE or doc.get("hidden"):
             raise HTTPException(status.HTTP_404_NOT_FOUND, "That page is not here")
 
         row = ListingModel.to_response(doc)

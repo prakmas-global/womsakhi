@@ -35,6 +35,19 @@ const GROUPS = [
     ],
   },
   {
+    /*
+      Her onboarding answers and her data choices. Their own group so they are
+      findable in the same place, in the same number of taps, as she gave them.
+    */
+    title: "Your answers and data",
+    items: [
+      { href: "/app/settings/answers", label: "My answers", note: "What you told us, and what we prepared",
+        icon: "ListChecks", tint: "--ux-tint-pink", ink: "--ux-pink" },
+      { href: "/app/settings/data", label: "My data", note: "Job choices, work profile, delete",
+        icon: "ShieldCheck", tint: "--ux-tint-green", ink: "--ux-green" },
+    ],
+  },
+  {
     title: "How the app behaves",
     items: [
       { href: "/app/settings/language", label: "Language", note: "For the whole app, and for Sakhi",

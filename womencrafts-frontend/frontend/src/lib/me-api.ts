@@ -1,4 +1,5 @@
 import { apiClient } from "./api";
+import type { ApiHomePersonal } from "./personal-api";
 
 /**
  * The `/me/*` endpoints the redesigned screens read.
@@ -255,6 +256,12 @@ export interface ApiHome {
   streak: Record<string, unknown> | null;
   /** Blocks that failed server-side. Missing, not empty. */
   unavailable: string[];
+  /**
+   * Her onboarding answers turned into hints for this screen (see
+   * `lib/personal-api`). Null — or absent, from an older API — when she has
+   * never opened the questions, and Home is then exactly as it was.
+   */
+  personal?: ApiHomePersonal | null;
 }
 
 export const apiHome = (s?: AbortSignal) => get<ApiHome>("/me/home", s);
