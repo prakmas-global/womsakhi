@@ -172,6 +172,7 @@ export function MobileBack() {
             is room for one word, which had better be the useful one.
           */
           aria-label={t("ch.back.to", { name })}
+          title={t("ch.back.to", { name })}
           className="ux-press ux-sq ux-backbtn"
         >
           <Icons.ChevronLeft

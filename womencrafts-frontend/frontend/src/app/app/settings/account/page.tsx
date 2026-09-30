@@ -1,10 +1,9 @@
 "use client";
 
-import { useCallback, useRef, useState } from "react";
+import { useCallback, useState } from "react";
 import { COPY } from "@/components/ux/copy";
 
 import { apiMeProfile, apiUpdateMeProfile, type MeProfile } from "@/lib/member-api";
-import { apiUploadImage, uploadErrorMessage, validateImage } from "@/lib/uploads-api";
 import { useResource } from "@/lib/use-resource";
 import { useAction } from "@/lib/use-action";
 
@@ -18,6 +17,7 @@ import { phonePrimary, phoneSecondary } from "@/components/ux/PhoneParts";
 import { Group, SaveBar } from "../_parts/Group";
 import { useMe } from "@/components/ux/me";
 import { useT } from "@/i18n";
+import { PhotoSheet } from "@/components/ux/profile/PhotoSheet";
 
 /**
  * Your details.
@@ -80,37 +80,13 @@ export default function AccountSettings() {
    * Her photograph.
    *
    * "Change" said "Choosing a photo…" and opened nothing; "Remove" said "Photo
-   * removed" and removed nothing — she came back to the same picture with no
-   * idea why. Both are real now: the file goes to POST /uploads and the URL it
-   * returns is written to her profile, and removing clears the same field.
+   * removed" and removed nothing. Both are real now, and live in the shared
+   * photo sheet (take / choose / remove) that the profile screen opens too —
+   * which also writes the new photo into the session so the rail card and the
+   * top bar change without a reload.
    */
-  const file = useRef<HTMLInputElement>(null);
-  const [photoBusy, setPhotoBusy] = useState("");
-  const [photoError, setPhotoError] = useState("");
-
-  async function choosePhoto(chosen: File | undefined) {
-    if (!chosen) return;
-    setPhotoError("");
-    // Said before the upload, not after it. A woman on a metered connection
-    // should not pay in data for a refusal we could see coming.
-    const no = validateImage(chosen);
-    if (no) { setPhotoError(no); return; }
-    setPhotoBusy("Uploading…");
-    try {
-      const up = await apiUploadImage(chosen, "avatar");
-      await apiUpdateMeProfile({ avatar: up.url });
-      refetch();
-    } catch (e) {
-      setPhotoError(uploadErrorMessage(e));
-    } finally {
-      setPhotoBusy("");
-    }
-  }
-
-  const removePhoto = useAction(
-    async () => { await apiUpdateMeProfile({ avatar: "" }); },
-    { onDone: refetch, fallbackError: "That did not go through. Your photo is as it was." },
-  );
+  const [photoOpen, setPhotoOpen] = useState(false);
+  const avatar = (user ? user.avatar : profile?.avatar) || "";
 
   return (
     <SettingsPage
@@ -128,7 +104,10 @@ export default function AccountSettings() {
     >
       <Group inset="form">
         <div className="flex items-center gap-4">
-          <Avatar src={profile?.avatar || ME.avatar} name={form.name || ME.name} size={76} />
+          <button type="button" onClick={() => setPhotoOpen(true)} aria-haspopup="dialog"
+                  aria-label={avatar ? "Change your photo" : "Add a photo"} className="ux-press shrink-0 rounded-full">
+            <Avatar src={avatar} name={form.name || ME.name} size={76} />
+          </button>
           <div className="min-w-0 flex-1">
             <p className="text-sm font-semibold" style={{ color: "var(--ux-ink)" }}>{tr("settingsAccount.yourPhoto")}</p>
             <p className="mt-1 text-[13px] leading-snug lg:text-xs" style={{ color: "var(--ux-muted)" }}>
@@ -136,29 +115,16 @@ export default function AccountSettings() {
               replies than a logo.
             </p>
             <div className="mt-3 flex items-center gap-2">
-              <input ref={file} type="file" accept="image/*" className="hidden"
-                     aria-hidden tabIndex={-1}
-                     onChange={(e) => { void choosePhoto(e.target.files?.[0]); e.target.value = ""; }} />
-              <Btn variant="outline" size="sm" icon={photoBusy ? "Loader" : "Upload"}
-                   disabled={!!photoBusy} onClick={() => file.current?.click()}>
-                {photoBusy || "Change"}
+              <Btn variant="outline" size="sm" icon="Camera" onClick={() => setPhotoOpen(true)}>
+                {avatar ? "Change photo" : "Add a photo"}
               </Btn>
-              {(profile?.avatar || "") !== "" && (
-                <Btn variant="ghost" size="sm" disabled={removePhoto.busy}
-                     onClick={() => void removePhoto.run()}>
-                  {removePhoto.busy ? "Removing…" : "Remove"}
-                </Btn>
-              )}
             </div>
-            {(photoError || removePhoto.error) && (
-              <p role="alert" className="ux-slide-up mt-2 text-xs leading-snug"
-                 style={{ color: "var(--ux-orange-ink)" }}>
-                {photoError || removePhoto.error}
-              </p>
-            )}
           </div>
         </div>
       </Group>
+
+      <PhotoSheet open={photoOpen} onClose={() => setPhotoOpen(false)}
+                  name={form.name || ME.name} avatar={avatar} onChanged={refetch} />
 
       <Group title={tr("settingsAccount.shownToEveryone")} chip="Public" inset="form">
         <div className="space-y-4">

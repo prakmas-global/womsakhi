@@ -94,6 +94,8 @@ export async function apiSignupComplete(input: {
   full_name: string;
   is_woman_18_plus: boolean;
   locale: string;
+  /** The invite code from `/signup?ref=`; the server ignores one it does not know. */
+  ref?: string;
 }): Promise<AuthPayload> {
   const { data } = await apiClient.post<AuthPayload>("/auth/signup/complete", input, ANSWER);
   return data;

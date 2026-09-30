@@ -1,18 +1,20 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useSearchParams } from "next/navigation";
 
 import { useT } from "@/i18n";
 import { HomeShell } from "@/components/ux/home/HomeShell";
 import { Btn, Card, EmptyState, SectionHead, v, I } from "@/components/ux/kit";
 import { PRESETS, QUICK_TIMES } from "@/components/ux/reminders/data";
+import { apiErrorMessage } from "@/lib/api";
 import {
   apiAddShoppingItem, apiCreateReminder, apiListReminders,
   apiStopReminder, type Reminder,
   apiChannelAvailability, type ChannelAvailability,
 } from "@/lib/engines-api";
 import { ReminderComposer, ReminderRow, type DraftReminder } from "./reminder-views";
+import { ReminderModal } from "./reminder-modal";
 
 /**
  * Her reminders.
@@ -56,6 +58,10 @@ function RemindersContent({ presetKey }: { presetKey: string }) {
   const [draft, setDraft] = useState<DraftReminder>({
     preset: initialPreset, repeat: "everyDay", time: initialPreset?.suggest || QUICK_TIMES[3], days: [],
   });
+  /** Why the server said no, in its own words — shown inside the dialog. */
+  const [saveError, setSaveError] = useState("");
+  const [justAdded, setJustAdded] = useState("");
+  const newButton = useRef<HTMLDivElement>(null);
 
   const load = useCallback(async () => {
     try {
@@ -74,21 +80,39 @@ function RemindersContent({ presetKey }: { presetKey: string }) {
     return () => { active = false; };
   }, []);
 
+  /*
+    The server's reason travels to the screen.
+    This used to catch everything and say only "That did not save" — so when
+    production refused every Windows browser's "Asia/Calcutta", nobody could
+    tell a timezone refusal from a dropped connection. The API writes a sentence
+    for each refusal; she, and whoever she sends a screenshot to, should see it.
+  */
   const save = useCallback(async () => {
     if (!draft.preset) return;
     setBusy(true);
-    setActionFailed(false);
+    setSaveError("");
     try {
-      await apiCreateReminder({ title_key: draft.preset.key, ...scheduleFor(draft) });
+      const made = await apiCreateReminder({ title_key: draft.preset.key, ...scheduleFor(draft) });
       setComposing(false);
+      setJustAdded(made?.id ?? "");
       setDraft({ preset: null, repeat: "everyDay", time: QUICK_TIMES[3], days: [] });
       await load();
-    } catch {
-      setActionFailed(true);
+      // The dialog hands focus back to what opened it; when that was the
+      // empty state's button, it is gone now, so the list's own button takes it.
+      requestAnimationFrame(() => {
+        if (!document.activeElement || document.activeElement === document.body) {
+          newButton.current?.querySelector("button")?.focus();
+        }
+      });
+    } catch (err) {
+      setSaveError(reasonFrom(err));
     } finally {
       setBusy(false);
     }
   }, [draft, load]);
+
+  const openComposer = useCallback(() => { setSaveError(""); setComposing(true); }, []);
+  const closeComposer = useCallback(() => { setSaveError(""); setComposing(false); }, []);
 
   const stop = useCallback(async (id: string) => {
     setBusy(true);
@@ -153,18 +177,27 @@ function RemindersContent({ presetKey }: { presetKey: string }) {
           carries the same button — two identical calls to action a thumb apart
           is a screen arguing with itself about where to start.
         */}
-        {!composing && rows !== null && (mine.length > 0 || forHer.length > 0) && (
-          <Btn icon="Plus" onClick={() => setComposing(true)}>{tr("rem.newOne")}</Btn>
+        {rows !== null && (mine.length > 0 || forHer.length > 0) && (
+          <div ref={newButton} className="contents">
+            <Btn icon="Plus" onClick={openComposer}>{tr("rem.newOne")}</Btn>
+          </div>
         )}
 
-        {composing && (
-          <>
-            <ReminderComposer draft={draft} setDraft={setDraft} onSave={save} saving={busy} />
-            <Btn variant="ghost" size="sm" disabled={busy} onClick={() => setComposing(false)}>
+        <ReminderModal open={composing} onClose={closeComposer} title={tr("rem.newOne")} busy={busy}>
+          <ReminderComposer draft={draft} setDraft={setDraft} onSave={save} saving={busy} bare />
+          {saveError && (
+            <div role="alert" className="mt-4 rounded-xl px-3.5 py-3"
+                 style={{ background: v("--ux-danger-tint"), border: `1px solid ${v("--ux-line-strong")}` }}>
+              <p className="text-xsm font-medium" style={{ color: v("--ux-danger-ink") }}>{tr("rem.saveFailed")}</p>
+              <p className="mt-1 text-xsm" style={{ color: v("--ux-ink-2") }}>{saveError}</p>
+            </div>
+          )}
+          <div className="mt-3">
+            <Btn variant="ghost" size="sm" className="min-h-[44px]" disabled={busy} onClick={closeComposer}>
               {tr("common.cancel")}
             </Btn>
-          </>
-        )}
+          </div>
+        </ReminderModal>
 
         {/*
           Something to pick up.
@@ -173,7 +206,7 @@ function RemindersContent({ presetKey }: { presetKey: string }) {
           the reminder composer, and it becomes an ordinary reminder for the
           next morning rather than a list she has to come back and read.
         */}
-        {!composing && <ShoppingAdd onAdded={() => void load()} />}
+        <ShoppingAdd onAdded={() => void load()} />
 
         {(actionFailed || (failed && rows !== null)) && (
           <Card pad={14}>
@@ -181,12 +214,12 @@ function RemindersContent({ presetKey }: { presetKey: string }) {
           </Card>
         )}
 
-        {rows !== null && mine.length === 0 && forHer.length === 0 && !composing && (
+        {rows !== null && mine.length === 0 && forHer.length === 0 && (
           <EmptyState
             icon="Bell"
             title={tr("rem.emptyTitle")}
             body={tr("rem.emptyBody")}
-            action={<Btn icon="Plus" onClick={() => setComposing(true)}>{tr("rem.newOne")}</Btn>}
+            action={<Btn icon="Plus" onClick={openComposer}>{tr("rem.newOne")}</Btn>}
           />
         )}
 
@@ -194,7 +227,9 @@ function RemindersContent({ presetKey }: { presetKey: string }) {
           <section className="space-y-2.5">
             <SectionHead title={tr("rem.yoursTitle")} />
             {mine.map((r) => (
-              <ReminderRow key={r.id} reminder={r} onStop={stop} onChanged={() => void load()} busy={busy} />
+              <div key={r.id} data-just-added={r.id === justAdded || undefined}>
+                <ReminderRow reminder={r} onStop={stop} onChanged={() => void load()} busy={busy} />
+              </div>
             ))}
           </section>
         )}
@@ -217,6 +252,17 @@ function RemindersContent({ presetKey }: { presetKey: string }) {
       </div>
     </HomeShell>
   );
+}
+
+/**
+ * The API's own sentence for a refusal.
+ *
+ * A 422 arrives as "tz: Value error, Choose a valid IANA timezone" — the field
+ * name is for developers and "Value error," is pydantic's, so both come off.
+ */
+function reasonFrom(err: unknown): string {
+  const raw = apiErrorMessage(err, "");
+  return raw.replace(/^\w+(?: → \w+)*:\s*/, "").replace(/^Value error,\s*/i, "").trim();
 }
 
 /** One short field, and it becomes a reminder for tomorrow morning. */

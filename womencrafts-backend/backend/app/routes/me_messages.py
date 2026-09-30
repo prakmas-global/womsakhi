@@ -20,6 +20,7 @@ from app.models.member_conversation import MemberConversationModel as Conv
 from app.schemas.me_messages import (
     ConversationDetail,
     ConversationRow,
+    EditMessage,
     InboxSummary,
     MessageResponse,
     SendMessage,
@@ -41,7 +42,19 @@ async def _mine(conversation_id: str, member_id: str) -> dict:
     doc = await _col().find_one({"_id": oid, "member_id": member_id})
     if not doc:
         raise HTTPException(status.HTTP_404_NOT_FOUND, "Conversation not found")
+    # Bubbles written before bubbles had ids get them here, once, so every
+    # response carries an id that edit and pin can name.
+    patch = Conv.missing_ids(doc.get("messages") or [])
+    if patch:
+        await _col().update_one({"_id": doc["_id"]}, {"$set": patch})
     return doc
+
+
+def _bubble(doc: dict, message_id: str) -> dict:
+    for b in doc.get("messages") or []:
+        if b.get("id") == message_id:
+            return b
+    raise HTTPException(status.HTTP_404_NOT_FOUND, "Message not found")
 
 
 @router.get("/conversations", response_model=list[ConversationRow], summary="My conversations")
@@ -224,10 +237,11 @@ async def send(conversation_id: str, body: SendMessage, me: dict = Depends(requi
     if other:
         try:
             # Her "out" is the other woman's "in", unread until she opens it.
+            # Same id on both copies, so an edit can find its twin.
             await _col().update_one(
                 {"_id": ObjectId(other)},
                 {"$push": {"messages": Conv.bubble(
-                    direction="in", text=bubble["text"], at=bubble["at"],
+                    direction="in", text=bubble["text"], at=bubble["at"], bubble_id=bubble["id"],
                 )}, "$set": {"updated_at": bubble["at"]}},
             )
         except Exception as exc:  # noqa: BLE001
@@ -236,4 +250,108 @@ async def send(conversation_id: str, body: SendMessage, me: dict = Depends(requi
             print(f"⚠️  Could not mirror a message into {other}: {exc}")
 
     doc.setdefault("messages", []).append(bubble)
+    return ConversationDetail(**Conv.to_response(doc, with_messages=True))
+
+
+@router.patch(
+    "/conversations/{conversation_id}/messages/{message_id}",
+    response_model=ConversationDetail,
+    summary="Correct a message I sent",
+)
+async def edit_message(
+    conversation_id: str, message_id: str, body: EditMessage,
+    me: dict = Depends(require_active_member),
+):
+    """
+    Her own words, within fifteen minutes of sending them.
+
+    Only an outgoing text bubble: a buyer's message is not hers to rewrite, and
+    an order card is a record of what was agreed. After the window the message
+    stands — a buyer may already have acted on it. The edit is marked, on both
+    sides, so nobody is shown a changed price without being told it changed.
+    """
+    text = body.text.strip()
+    if not text:
+        raise HTTPException(status.HTTP_422_UNPROCESSABLE_ENTITY, "Write something first")
+    doc = await _mine(conversation_id, str(me["_id"]))
+    b = _bubble(doc, message_id)
+    if b.get("dir") != "out" or b.get("order"):
+        raise HTTPException(status.HTTP_403_FORBIDDEN, "You can only edit messages you sent")
+    if not Conv.editable(b):
+        raise HTTPException(status.HTTP_403_FORBIDDEN, "Messages can be edited for 15 minutes after sending")
+
+    old_text = b.get("text") or ""
+    edited_at = datetime.now(timezone.utc)
+    await _col().update_one(
+        {"_id": doc["_id"]},
+        {"$set": {"messages.$[b].text": text, "messages.$[b].edited_at": edited_at}},
+        array_filters=[{"b.id": message_id, "b.dir": "out"}],
+    )
+
+    other = doc.get("counterpart_id")
+    if other:
+        try:
+            twin = await _col().find_one({"_id": ObjectId(other)}, {"messages": 1})
+            rows = (twin or {}).get("messages") or []
+            # The same id when the message was mirrored with one; otherwise the
+            # bubble that arrived at the same moment with the same words.
+            match = next((i for i, m in enumerate(rows)
+                          if m.get("id") == message_id and m.get("dir") == "in"), None)
+            if match is None:
+                match = next((i for i, m in enumerate(rows)
+                              if m.get("dir") == "in" and m.get("text") == old_text
+                              and Conv.aware(m.get("at")) == Conv.aware(b.get("at"))), None)
+            if match is not None:
+                await _col().update_one(
+                    {"_id": ObjectId(other)},
+                    {"$set": {f"messages.{match}.text": text, f"messages.{match}.edited_at": edited_at}},
+                )
+        except Exception as exc:  # noqa: BLE001
+            print(f"⚠️  Could not mirror an edit into {other}: {exc}")
+
+    b["text"] = text
+    b["edited_at"] = edited_at
+    return ConversationDetail(**Conv.to_response(doc, with_messages=True))
+
+
+@router.post(
+    "/conversations/{conversation_id}/messages/{message_id}/pin",
+    response_model=ConversationDetail,
+    summary="Pin a message to the top of the thread",
+)
+async def pin_message(conversation_id: str, message_id: str, me: dict = Depends(require_active_member)):
+    """
+    Pins are hers — the other side's view of the thread is untouched.
+
+    The cap is enforced in the write itself (`pinned.2` must not exist), so two
+    taps racing each other cannot make a fourth.
+    """
+    doc = await _mine(conversation_id, str(me["_id"]))
+    _bubble(doc, message_id)
+    pinned = [p for p in (doc.get("pinned") or []) if p]
+    if message_id in pinned:
+        return ConversationDetail(**Conv.to_response(doc, with_messages=True))
+    if len(pinned) >= Conv.MAX_PINS:
+        raise HTTPException(status.HTTP_409_CONFLICT,
+                            f"You can pin up to {Conv.MAX_PINS} messages. Unpin one first.")
+    res = await _col().update_one(
+        {"_id": doc["_id"], f"pinned.{Conv.MAX_PINS - 1}": {"$exists": False}},
+        {"$addToSet": {"pinned": message_id}},
+    )
+    if res.matched_count == 0:
+        raise HTTPException(status.HTTP_409_CONFLICT,
+                            f"You can pin up to {Conv.MAX_PINS} messages. Unpin one first.")
+    doc["pinned"] = pinned + [message_id]
+    return ConversationDetail(**Conv.to_response(doc, with_messages=True))
+
+
+@router.delete(
+    "/conversations/{conversation_id}/messages/{message_id}/pin",
+    response_model=ConversationDetail,
+    summary="Unpin a message",
+)
+async def unpin_message(conversation_id: str, message_id: str, me: dict = Depends(require_active_member)):
+    doc = await _mine(conversation_id, str(me["_id"]))
+    await _col().update_one({"_id": doc["_id"]}, {"$pull": {"pinned": message_id}})
+    doc["pinned"] = [p for p in (doc.get("pinned") or []) if p and p != message_id]
     return ConversationDetail(**Conv.to_response(doc, with_messages=True))

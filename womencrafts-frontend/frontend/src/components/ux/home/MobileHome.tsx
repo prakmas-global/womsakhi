@@ -8,6 +8,7 @@ import { I, formatRupees } from "@/components/ux/kit";
 import { useHome } from "@/components/ux/live";
 import { HomeCycleCard } from "@/components/ux/cycle/HomeCycleCard";
 import { FirstSteps, PersonalCards, ShopFeed, WhyLine, orderBlocks } from "./Personal";
+import { QuickAccessGrid } from "./QuickAccess";
 
 /** The blocks under the greeting, in the order this screen has always had. */
 const BASE_ORDER = ["earnings", "sakhi", "journey", "opportunities", "recommended"] as const;
@@ -390,6 +391,31 @@ export function MobileHome() {
         </div>
       )}
 
+      {/*
+        Quick Access — the laptop's eight tiles, on the phone too.
+
+        This screen once dropped its launcher on the argument that the tab bar
+        already reaches those places. The tab bar reaches five SECTIONS; the
+        tiles reach the page inside them — the market, her wallet, the journey
+        check-in — a tap earlier, by picture. The owner asked for the same
+        grid on every device, so the two homes now share one component and
+        one list. It sits above her ordered blocks and does not change them.
+      */}
+      <section className="mb-6" aria-labelledby="m-quick">
+        <div className="mb-2 flex items-center justify-between gap-3 ps-1">
+          <h2 id="m-quick" className="text-[12px] font-semibold uppercase tracking-[0.07em]" style={{ color: "var(--ux-muted)" }}>
+            {tr("dashboard.quickAccess")}
+          </h2>
+          <TransitionLink href="/app/explore"
+                          className="-me-2 inline-flex min-h-[44px] items-center gap-1 px-2 text-[13px] font-semibold"
+                          style={{ color: "var(--ux-brand)" }}>
+            {tr("dashboard.viewAll30Modules")}
+            <I name="ChevronRight" className="h-[14px] w-[14px]" />
+          </TransitionLink>
+        </div>
+        <QuickAccessGrid size="phone" />
+      </section>
+
       {order.map((b, i) => (
         <Fragment key={b}>
           {/* The balance tile has no top margin of its own — it always sat
@@ -421,6 +447,11 @@ function HomeSkeleton() {
       {/* Matches the banner the loaded screen opens with — 139px of photograph
           and a 57px plum bar — so nothing jumps when the data lands. */}
       <div className="-mt-1 mb-3.5 ux-shimmer h-[196px]" style={{ ...bar, borderRadius: 18 }} />
+      <div className="mb-6 grid grid-cols-2 gap-2.5 sm:grid-cols-4">
+        {Array.from({ length: 8 }, (_, i) => (
+          <div key={i} className="ux-shimmer h-[104px]" style={{ ...bar, borderRadius: 16 }} />
+        ))}
+      </div>
       <div className="ux-shimmer h-[86px]" style={{ ...bar, borderRadius: 16 }} />
       {/* The Ask Sakhi row. This was still an eight-tile grid — the launcher
           that was taken off Home — so the screen jumped from one layout to

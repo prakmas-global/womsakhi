@@ -16,6 +16,7 @@ Sessions — one per device, 30 days for members, a working day for staff — li
 in `app/core/sessions.py`. The codes themselves live in `app/core/codes.py`.
 """
 
+import re
 import secrets
 import unicodedata
 from datetime import datetime, timedelta, timezone
@@ -110,6 +111,30 @@ async def _next_member_code(db) -> str:
         if code.startswith("WC-") and code[3:].isdigit():
             highest = max(highest, int(code[3:]))
     return f"WC-{highest + 1}"
+
+
+_REF_SHAPE = re.compile(r"^[A-Z0-9-]{3,20}$")
+
+
+async def _referrer_code(db, ref: Optional[str], email: str, phone: str) -> str:
+    """
+    The invite code to store as `referred_by`, or '' to ignore it.
+
+    It is stored exactly as `me._referrals` counts it: the referrer's member
+    `code`, matched on `users.referred_by`. A code no member holds, or one whose
+    member row is this same woman (same email or number), is dropped silently —
+    a bad link must never stop her joining, and the answer must not tell a
+    stranger which codes exist.
+    """
+    code = (ref or "").strip().upper()
+    if not code or not _REF_SHAPE.match(code):
+        return ""
+    referrer = await db[MemberModel.collection_name].find_one({"code": code}, {"code": 1, "email": 1, "phone": 1})
+    if not referrer:
+        return ""
+    if (referrer.get("email") or "").lower() == email.lower() or (phone and referrer.get("phone") == phone):
+        return ""
+    return referrer["code"]
 
 
 _NAME_JOINERS = set(" .'\u2019-")
@@ -282,11 +307,20 @@ class SignupComplete(BaseModel):
     full_name: str = Field(max_length=80)
     is_woman_18_plus: bool
     locale: str = Field("en", max_length=8)
+    #: The invite code from `/signup?ref=CODE` — another member's code. Optional;
+    #: an unknown or malformed one is dropped, never an error.
+    ref: Optional[str] = None
 
     @field_validator("full_name")
     @classmethod
     def _name(cls, value: str) -> str:
         return clean_person_name(value)
+
+    @field_validator("ref", mode="before")
+    @classmethod
+    def _ref(cls, value):
+        # Dropped, not refused: a mangled link must never stop her joining.
+        return value if isinstance(value, str) and len(value) <= 40 else None
 
 
 @router.post("/signup/start", summary="Join: send a code to her email")
@@ -405,6 +439,7 @@ async def signup_complete(payload: SignupComplete, request: Request, response: R
                             {"code": "phone_taken", "message": "This mobile number is already linked to another account."})
 
     now = datetime.now(timezone.utc)
+    referred_by = await _referrer_code(db, payload.ref, email, phone)
     member_doc = MemberModel.create_document(
         full_name=payload.full_name, email=email, phone=phone, country="IN",
         role="Member", status="Pending", code=await _next_member_code(db),
@@ -416,6 +451,10 @@ async def signup_complete(payload: SignupComplete, request: Request, response: R
         verification_status=VerificationStatus.PENDING_DOCUMENTS,
     )
     user.update({"email_verified_at": now, "phone_verified_at": None, "declared_woman_18_plus_at": now})
+    if referred_by and referred_by != member_doc.get("code"):
+        # Written once, here, as the account is created. No other route sets
+        # it, so a code cannot be applied to an account a second time.
+        user["referred_by"] = referred_by
     try:
         result = await _users().insert_one(user)
     except DuplicateKeyError:

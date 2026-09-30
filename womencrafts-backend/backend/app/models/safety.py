@@ -183,6 +183,10 @@ class SafetyReportModel:
         "Fake or impersonating account",
         "Money or fraud",
         "Something in a circle or post",
+        # Named by the Report-a-person screen in Messages. Added, never
+        # renamed: reports already filed keep the category they were filed under.
+        "Inappropriate or sexual content",
+        "Threats or safety concern",
         "Something else",
     ]
 

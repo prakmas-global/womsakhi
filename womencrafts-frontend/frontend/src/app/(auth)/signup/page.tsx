@@ -38,6 +38,34 @@ const AUTH_PREVIEW = process.env.NODE_ENV !== "production";
 
 type Step = "contact" | "code" | "about";
 
+/**
+ * The invite code from `/signup?ref=CODE` (Refer a friend). It is kept in
+ * sessionStorage so it survives the code step, the browser's Back button and a
+ * reload of this tab, and is sent once with `signup/complete`. The server
+ * checks it; here it is only shape-checked so a mangled link shows nothing.
+ */
+const REF_KEY = "ws.signup.ref";
+const REF_SHAPE = /^[A-Za-z0-9-]{3,20}$/;
+
+function readRef(params: URLSearchParams): string {
+  const fromLink = (params.get("ref") || "").trim();
+  try {
+    if (REF_SHAPE.test(fromLink)) {
+      window.sessionStorage.setItem(REF_KEY, fromLink.toUpperCase());
+      return fromLink.toUpperCase();
+    }
+    const kept = window.sessionStorage.getItem(REF_KEY) || "";
+    return REF_SHAPE.test(kept) ? kept : "";
+  } catch {
+    // Storage blocked (private mode): the link itself still carries it.
+    return REF_SHAPE.test(fromLink) ? fromLink.toUpperCase() : "";
+  }
+}
+
+function forgetRef() {
+  try { window.sessionStorage.removeItem(REF_KEY); } catch { /* storage blocked */ }
+}
+
 /** Mobile as she types it: digits only, a pasted +91 / 0 dropped, at most 10. */
 const typedMobile = (raw: string) => raw.replace(/\D/g, "").replace(/^(91|0)(?=\d{10}$)/, "").slice(0, 10);
 
@@ -73,6 +101,21 @@ export default function SignUpPage() {
   const [resendIn, setResendIn] = useCountdown();
   /** Local-only `?preview=`: fixtures instead of the API (see lib/auth-preview). */
   const [preview, setPreview] = useState<SignupPreview | null>(null);
+  /** The friend's invite code, if she came from a referral link. */
+  const [invitedBy, setInvitedBy] = useState("");
+
+  // `?ref=` (kept for the whole join) and `?email=` (from sign-in's "Join
+  // WomSakhi" link). Read after mount, like the preview switch below: the
+  // server render has no URL to read.
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const t = window.setTimeout(() => {
+      setInvitedBy(readRef(params));
+      const preset = (params.get("email") || "").trim();
+      if (preset && !contactForm.getValues("email")) contactForm.setValue("email", preset);
+    });
+    return () => window.clearTimeout(t);
+  }, [contactForm]);
 
   useEffect(() => {
     if (!AUTH_PREVIEW) return;
@@ -146,6 +189,7 @@ export default function SignUpPage() {
         const result = await apiSignupVerify(email.trim(), value);
         if (result.signed_in) {
           // She already had an account; the code she was sent signs her in.
+          forgetRef();
           completeSignIn(result);
           return;
         }
@@ -175,7 +219,10 @@ export default function SignUpPage() {
     setError("");
     setBusy(true);
     try {
-      const payload = await apiSignupComplete({ ticket, full_name: fullName, is_woman_18_plus: true, locale: locale || "en" });
+      const payload = await apiSignupComplete({
+        ticket, full_name: fullName, is_woman_18_plus: true, locale: locale || "en", ...(invitedBy ? { ref: invitedBy } : {}),
+      });
+      forgetRef();
       completeSignIn(payload);
     } catch (err) {
       const problem = authError(err);
@@ -241,6 +288,11 @@ export default function SignUpPage() {
               {busy ? <><Spinner /> Sending your code…</> : <>Continue <AuthIcon name="arrow" /></>}
             </button>
           </form>
+          {invitedBy && (
+            <p className="wsa-note" data-testid="invited-note">
+              <AuthIcon name="user" /><span><b>Invited by a friend</b> · <span style={{ whiteSpace: "nowrap" }}>code {invitedBy}</span></span>
+            </p>
+          )}
           <p className="wsa-link">Already a member? <Link href="/signin">Sign in</Link></p>
         </>
       )}

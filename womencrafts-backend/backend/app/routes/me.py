@@ -1547,6 +1547,38 @@ async def _count_referrals(code: str) -> tuple[int, int]:
     return int(row.get("invited", 0)), int(row.get("joined", 0))
 
 
+async def _ensure_member_code(member_oid) -> str:
+    """
+    Her member code, minted now if the row has none, in the directory's own
+    'WC-#####' format (`members._next_code`).
+
+    Set only while the row still has no code, so two of her own requests at
+    once cannot give her two codes: the loser reads back the winner's. There is
+    no unique index on `members.code`, so two *different* members minting at
+    the same instant could draw the same number; after setting, if anyone else
+    holds it, the later row (higher `_id`) gives it back and draws again.
+    """
+    from app.routes.members import _next_code  # local: only this path needs the members router
+
+    members = get_database()[MemberModel.collection_name]
+    missing = {"$or": [{"code": {"$exists": False}}, {"code": None}, {"code": ""}]}
+    for _ in range(5):
+        candidate = await _next_code()
+        await members.update_one({"_id": member_oid, **missing},
+                                 {"$set": {"code": candidate, "updated_at": datetime.now(timezone.utc)}})
+        row = await members.find_one({"_id": member_oid}, {"code": 1})
+        code = (row or {}).get("code") or ""
+        if not code:
+            return ""
+        holder = await members.find_one({"code": code, "_id": {"$ne": member_oid}}, {"_id": 1},
+                                        sort=[("_id", 1)])
+        if holder is None or holder["_id"] > member_oid:
+            return code
+        # Someone older already holds this number: hand it back and draw again.
+        await members.update_one({"_id": member_oid, "code": code}, {"$set": {"code": ""}})
+    return ""
+
+
 async def _referrals(me: dict) -> ReferralResponse:
     """
     Her invite code and how far it has travelled, normally in one query.
@@ -1595,23 +1627,27 @@ async def _referrals(me: dict) -> ReferralResponse:
     if code:
         tally = ((rows[0].get("_referred") or [{}])[0]) or {}
         invited, joined = int(tally.get("invited", 0)), int(tally.get("joined", 0))
+    elif rows:
+        # Her member row has no code yet. Give her a real one now — the old
+        # stand-in (her id's tail) matched no member, so a friend who used it
+        # was never counted. Nobody can have used a code that did not exist
+        # until this moment, so there is nothing to count yet.
+        code = await _ensure_member_code(rows[0]["_id"])
+        invited, joined = await _count_referrals(code) if code else (0, 0)
     else:
-        # No member row, or one with no code yet. Her user id's tail is the
-        # stand-in, and it needs its own count — a second round trip, on a path
-        # that should not exist once every member has a code.
-        code = me.get("member_id", "")[-6:].upper()
-        invited, joined = await _count_referrals(code)
+        # No member row at all: nothing to invite with. Never a made-up code.
+        invited = joined = 0
 
     return ReferralResponse(
         code=code,
-        link=f"{settings.APP_BASE_URL}/signup?ref={code}",
+        link=f"{settings.APP_BASE_URL}/signup?ref={code}" if code else "",
         invited=invited,
         joined=joined,
         credit_per_join_label="",  # set once the referral reward is agreed
         message=(
             f"I'm learning with WomSakhi — it's women only, and it's free to join. "
             f"Use my code {code} when you sign up."
-        ),
+        ) if code else "",
     )
 
 

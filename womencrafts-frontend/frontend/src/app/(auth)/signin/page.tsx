@@ -534,6 +534,13 @@ export default function SignInPage() {
           {codeError && <p id="si-code-error" role="alert" className="wsa-ferr">{codeError}</p>}
           {error && <p role="alert" className="wsa-err">{error}</p>}
           {busy && <p className="wsa-muted" role="status">Checking…</p>}
+          {/* The server answers "if it has an account" for every address, so a
+              stranger cannot learn who is a member. This line is how a woman
+              who never joined finds out what to do instead of waiting. */}
+          <p className="wsa-link" data-testid="no-account-hint">
+            No code after a minute? You may not have an account yet —{" "}
+            <Link href={`/signup${email ? `?email=${encodeURIComponent(email)}` : ""}`}>Join WomSakhi</Link>
+          </p>
           <AuthResend seconds={resendIn} onResend={() => void sendCode(email)} busy={busy} />
           <p className="wsa-note"><AuthIcon name="mail" /><span>Can&apos;t find it? Look in Spam or Promotions. The code expires in 5 minutes.</span></p>
         </>

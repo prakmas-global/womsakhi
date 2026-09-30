@@ -207,7 +207,7 @@ class SendMessageRequest(BaseModel):
         v = (v or "").strip()
         if not v:
             raise ValueError("Write something first")
-        return v[:2000]
+        return v[:4000]  # same limit as member messages (me_messages)
 
 
 class MemberNotification(BaseModel):

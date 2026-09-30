@@ -92,3 +92,19 @@ export function useMe(): Me {
     unread: extra.unread,
   };
 }
+
+/**
+ * Put a new photograph (or none) on her everywhere at once.
+ *
+ * The rail card, the top-bar avatar and every other `useMe()` reader take her
+ * photo from the session record in `AuthContext`, which nothing updated after
+ * an upload — so the new face appeared only after a reload. Writing it into
+ * the session here is what makes all of them change on the same frame.
+ * Call it after the server has accepted the change, never before.
+ */
+export function useSetMyAvatar(): (avatar: string) => void {
+  const { user, updateUser } = useAuth();
+  return useCallback((avatar: string) => {
+    if (user) updateUser({ ...user, avatar });
+  }, [user, updateUser]);
+}

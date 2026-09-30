@@ -8,9 +8,8 @@ import * as Icons from "@/components/ux/icons";
 import { HomeShell } from "@/components/ux/home/HomeShell";
 import { useConfirm } from "@/design-system/feedback/ConfirmProvider";
 import { useToast } from "@/design-system/feedback/ToastProvider";
-import { About, EmptyThread, Header, Inbox, Thread } from "./views";
-import Link from "next/link";
-import { apiConversation, apiConversations, apiDeleteConversation, apiMarkUnread, apiStarConversation, apiInboxSummary, apiSendToConversation, type ConvBubble, type ConvDetail, type ConvRow, type InboxSummary, type PartyKind } from "@/lib/me-messages-api";
+import { EmptyThread, Header, Inbox, Thread } from "./views";
+import { apiConversation, apiConversations, apiDeleteConversation, apiMarkUnread, apiStarConversation, apiInboxSummary, apiSendToConversation, MESSAGE_MAX, type ConvDetail, type ConvRow, type InboxSummary, type PartyKind } from "@/lib/me-messages-api";
 
 /**
  * Messages.
@@ -64,53 +63,88 @@ export default function MessagesPage() {
    */
   const [onThread, setOnThread] = useState(false);
 
-  const load = useCallback(async () => {
-    try {
-      const list = await apiConversations();
-      setRows(list);
-      setOpenId((id) => id ?? list[0]?.id ?? null);
-      // Cleared on success. A message that stays after the problem is gone is
-      // the app lying about its own state.
-      setError("");
-    } catch { setError("Your messages could not be loaded."); }
-    try { setSummary(await apiInboxSummary()); } catch { /* the strip simply stays empty */ }
-  }, []);
-  useEffect(() => { void load(); }, [load]);
+  /**
+   * `load()` asks for a fresh list; the effect below is what fetches it. The
+   * setters run in the promise callbacks, never synchronously in the effect.
+   */
+  const [tick, setTick] = useState(0);
+  const load = useCallback(() => setTick((t) => t + 1), []);
+  useEffect(() => {
+    let alive = true;
+    apiConversations()
+      .then((list) => {
+        if (!alive) return;
+        setRows(list);
+        // Cleared on success. A message that stays after the problem is gone is
+        // the app lying about its own state.
+        setError("");
+      })
+      .catch(() => { if (alive) setError("Your messages could not be loaded."); });
+    apiInboxSummary()
+      .then((s) => { if (alive) setSummary(s); })
+      .catch(() => { /* the strip simply stays empty */ });
+    return () => { alive = false; };
+  }, [tick]);
+
+  const shown = useMemo(() => {
+    const q = search.trim().toLowerCase();
+    return rows.filter((r) =>
+      (filter === "all" || r.kind === filter)
+      && (!q || r.name.toLowerCase().includes(q) || (r.preview || "").toLowerCase().includes(q)));
+  }, [rows, filter, search]);
+
+  /**
+   * The open conversation always sits inside the filter.
+   *
+   * Filtering to Mentors while a buyer was open left her reading Fatima's
+   * thread beside a list that did not contain Fatima. The selection is now
+   * derived: what she picked if the list still shows it, else the first row.
+   */
+  const activeId = openId && shown.some((r) => r.id === openId) ? openId : (shown[0]?.id ?? null);
 
   useEffect(() => {
-    if (!openId) { setThread(null); return; }
+    if (!activeId) return;
     let alive = true;
-    apiConversation(openId)
+    apiConversation(activeId)
       .then((d) => { if (alive) { setThread(d); setError(""); } })
       .catch(() => { if (alive) setError(COPY.threadFailed); });
     return () => { alive = false; };
-  }, [openId]);
+  }, [activeId]);
+
+  // Only the thread that is actually selected — never a stale one from before a filter change.
+  const current = thread && thread.id === activeId ? thread : null;
 
   async function send() {
     const text = draft.trim();
-    if (!text || !openId || sending) return;
+    if (!text || !activeId || sending) return;
+    if (text.length > MESSAGE_MAX) { setError(`A message can be up to ${MESSAGE_MAX} characters.`); return; }
     setSending(true);
     setDraft("");
     try {
-      setThread(await apiSendToConversation(openId, text));
+      setThread(await apiSendToConversation(activeId, text));
       void load();
-    } catch { setError("That did not send. Try again."); }
+    } catch {
+      // Her words come back: a failed send must not cost her what she wrote.
+      setDraft((d) => d || text);
+      setError("That did not send. Try again.");
+    }
     finally { setSending(false); }
   }
 
   async function toggleStar() {
-    if (!thread) return;
-    try { setThread(await apiStarConversation(thread.id, !thread.starred)); void load(); }
+    if (!current) return;
+    try { setThread(await apiStarConversation(current.id, !current.starred)); void load(); }
     catch { setError("That could not be saved."); }
   }
 
   async function markUnread() {
-    if (!thread) return;
-    try { await apiMarkUnread(thread.id); setOpenId(null); void load(); }
+    if (!current) return;
+    try { await apiMarkUnread(current.id); setOpenId(null); void load(); }
     catch { setError("That could not be marked unread."); }
   }
 
   async function removeConversation() {
+    const thread = current;
     if (!thread) return;
     /**
      * The app's dialog, not the browser's.
@@ -139,29 +173,8 @@ export default function MessagesPage() {
     } catch { setError("That could not be deleted."); }
   }
 
-  const shown = useMemo(() => {
-    const q = search.trim().toLowerCase();
-    return rows.filter((r) =>
-      (filter === "all" || r.kind === filter)
-      && (!q || r.name.toLowerCase().includes(q) || (r.preview || "").toLowerCase().includes(q)));
-  }, [rows, filter, search]);
-
   const waitingRows = shown.filter((r) => r.waiting_since);
   const restRows = shown.filter((r) => !r.waiting_since);
-
-  /**
-   * Keep the open conversation inside the filter.
-   *
-   * Filtering to Mentors while a buyer was open left her reading Fatima's
-   * thread beside a list that did not contain Fatima — the panels disagreed
-   * about what she was looking at. Narrowing the list now moves the selection
-   * to the first thing in it, and clears it when the filter matches nothing.
-   */
-  useEffect(() => {
-    if (rows.length === 0) return;
-    if (openId && shown.some((r) => r.id === openId)) return;
-    setOpenId(shown[0]?.id ?? null);
-  }, [shown, openId, rows.length]);
 
   return (
     <HomeShell active="/app/messages" bare>
@@ -172,7 +185,7 @@ export default function MessagesPage() {
         the thread, the title, her three figures and the whole conversation list
         went off the top — she could no longer see who she was even talking to.
         The screen is now exactly the height of what is left of the viewport,
-        and each of the three panels scrolls inside itself. Nothing that tells
+        and each panel scrolls inside itself. Nothing that tells
         her where she is can leave the screen.
 
         The height subtracts the topbar, the scroller's own top padding, and the
@@ -198,20 +211,27 @@ export default function MessagesPage() {
           <Inbox
             waiting={waitingRows} rest={restRows} counts={summary?.counts ?? {}}
             filter={filter} setFilter={setFilter} search={search} setSearch={setSearch}
-            openId={openId} onOpen={(id) => { setOpenId(id); setOnThread(true); }} total={rows.length}
+            openId={activeId} onOpen={(id) => { setOpenId(id); setOnThread(true); }} total={rows.length}
             rows={rows} onPick={(id) => { setOpenId(id); setOnThread(true); }} onThread={onThread}
           />
-          {thread
-            ? <Thread conv={thread} draft={draft} setDraft={setDraft} onSend={send} sending={sending}
+          {current
+            ? <Thread conv={current} draft={draft} setDraft={setDraft} onSend={send} sending={sending}
                       className={onThread ? "flex" : "hidden lg:flex"} onBack={() => setOnThread(false)}
-                      onStar={toggleStar} onUnread={markUnread} onDelete={removeConversation} />
+                      onStar={toggleStar} onUnread={markUnread} onDelete={removeConversation}
+                      onChanged={(d) => { setThread(d); void load(); }} />
             : <EmptyThread className={onThread ? "grid" : "hidden lg:grid"} />}
-          {thread && (
-            <div className="hidden wide:block">
-              <About conv={thread} onStar={toggleStar} onDraft={setDraft} />
-            </div>
-          )}
         </div>
+
+        {/*
+          The floating "Ask Sakhi" button sits bottom-right at 80px, which —
+          now that the conversation runs to the right edge instead of a third
+          column — is exactly where the Send button is. Measured: a click on
+          Send landed on Sakhi's face. On a phone the chat frame already sits
+          above her (z 45 over 40); on a desktop inbox she steps aside too.
+        */}
+        <style href="ux-inbox-float" precedence="ux-mobile">
+          {`.ux:has(.ux-inbox-grid) [data-float="sakhi"] { display: none !important; }`}
+        </style>
 
         {error && (
           <p className="flex items-center gap-2 text-xsm" style={{ color: "var(--ux-pink-ink)" }}>

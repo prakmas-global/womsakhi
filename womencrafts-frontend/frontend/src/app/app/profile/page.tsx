@@ -17,6 +17,7 @@ import { useGoals } from "@/components/ux/business";
 import { useMoney } from "@/components/ux/money/live";
 import { formatMoney } from "@/components/ux/kit/money";
 import { useT } from "@/i18n";
+import { PhotoSheet } from "@/components/ux/profile/PhotoSheet";
 
 /**
  * The five things this profile is actually made of.
@@ -45,8 +46,9 @@ export default function Profile() {
   const ME = useMe();
   const { user } = useAuth();
   const [tab, setTab] = useState("Overview");
+  const [photoOpen, setPhotoOpen] = useState(false);
 
-  const { data: profile, source } = useResource(
+  const { data: profile, source, refetch } = useResource(
     useCallback(() => apiMeProfile(), []),
     null as MeProfile | null,
   );
@@ -69,7 +71,10 @@ export default function Profile() {
 
   const name = profile?.full_name || user?.full_name || ME.name;
   const verified = profile?.verification_status === "active";
-  const avatar = profile?.avatar;
+  // The session's copy first: the photo sheet writes it the moment the server
+  // accepts a change, so this face updates with the rail's and the top bar's
+  // instead of waiting on the profile refetch.
+  const avatar = (user ? user.avatar : profile?.avatar) || "";
 
   // Settled credits dated inside this calendar month. The card said ₹24,350
   // to everybody, including a woman who has never been paid through WomSakhi.
@@ -130,28 +135,25 @@ export default function Profile() {
         */}
         <div className="flex items-start gap-3.5 lg:gap-5">
           <div className="relative shrink-0">
-            <Avatar src={avatar} name={name} size={92} className="ux-hov h-[72px] w-[72px] lg:h-[92px] lg:w-[92px]" />
-            {/* Was a <button> with no handler at all. It goes where the photo
-                is actually changed. */}
-            {/*
-              Measured 33x44 — under the floor, and the 44px it needs does not
-              fit on the corner of a 72px photograph without hanging off it.
-              On a phone it goes: it links to `/app/settings/account`, which is
-              exactly where "Edit profile" below already goes, so nothing is
-              lost but a duplicate. It stays from `lg`, where the photograph is
-              92px and there is room for a badge on it.
-            */}
-            {/* The `hidden lg:inline-flex` version of this did not hide: `Btn`
-                carries `inline-flex` of its own, and two display utilities in
-                the same layer are settled by Tailwind's emit order rather than
-                by the class list. A wrapper has nothing to argue with. */}
-            <span className="hidden lg:block">
-              <Btn href="/app/settings/account" variant="soft" size="sm" icon="Camera"
-                   ariaLabel={tr("profile.changePhoto2")}
-                   className="absolute -bottom-1 -end-1 !rounded-full !px-2 !py-2">
-                <span className="sr-only">{tr("profile.changePhoto")}</span>
-              </Btn>
-            </span>
+            {/* The photo and its camera badge open the photo sheet — take one,
+                pick one, or go back to initials — where they used to leave for
+                the settings form. */}
+            <button type="button" onClick={() => setPhotoOpen(true)}
+                    aria-label={avatar ? tr("profile.changePhoto2") : "Add a photo"} aria-haspopup="dialog"
+                    className="ux-press block rounded-full">
+              <Avatar src={avatar} name={name} size={92} className="ux-hov h-[72px] w-[72px] lg:h-[92px] lg:w-[92px]" />
+            </button>
+            {/* The badge is drawn at 30px on the photo's corner; its tap area
+                is the 44px square around it, so the whole corner answers. */}
+            <button type="button" onClick={() => setPhotoOpen(true)} aria-label={tr("profile.changePhoto")}
+                    aria-haspopup="dialog" data-photo-badge
+                    className="ux-press absolute -bottom-2.5 -end-2.5 grid h-[44px] w-[44px] place-items-center rounded-full">
+              <span className="grid h-[30px] w-[30px] place-items-center rounded-full"
+                    style={{ background: "var(--ux-brand-tint)", color: "var(--ux-brand)",
+                             border: "2px solid var(--ux-surface)", boxShadow: "var(--ux-shadow-card)" }}>
+                <Icons.Camera className="h-[15px] w-[15px]" />
+              </span>
+            </button>
           </div>
           <div className="min-w-0 flex-1">
             <h1 className="ux-screen-title flex items-center gap-2 text-xl font-bold" style={{ color: "var(--ux-ink)" }}>
@@ -258,7 +260,9 @@ export default function Profile() {
                               <span className="sr-only">{s.done ? "Done" : "Not done yet"}</span>
                             </span>
                           }
-                          trailing={!s.done ? <Btn href="/app/settings/account" variant="soft" size="sm">Add</Btn> : undefined} />
+                          trailing={!s.done ? (s.id === "photo"
+                            ? <Btn onClick={() => setPhotoOpen(true)} variant="soft" size="sm">Add</Btn>
+                            : <Btn href="/app/settings/account" variant="soft" size="sm">Add</Btn>) : undefined} />
               ))}
             </ListGroup>
           </div>
@@ -285,7 +289,9 @@ export default function Profile() {
                     {s.label}
                   </span>
                   <span className="sr-only">{s.done ? "Done" : "Not done yet"}</span>
-                  {!s.done && <Btn href="/app/settings/account" variant="soft" size="sm">Add</Btn>}
+                  {!s.done && (s.id === "photo"
+                    ? <Btn onClick={() => setPhotoOpen(true)} variant="soft" size="sm">Add</Btn>
+                    : <Btn href="/app/settings/account" variant="soft" size="sm">Add</Btn>)}
                 </li>
               ))}
             </ul>
@@ -363,6 +369,9 @@ export default function Profile() {
       {tab === "What you made" && <PortfolioTab />}
       {tab === "Helping others" && <ContributionTab />}
       {tab === "Documents" && <DocumentsTab />}
+
+      <PhotoSheet open={photoOpen} onClose={() => setPhotoOpen(false)}
+                  name={name} avatar={avatar} onChanged={refetch} />
     </HomeShell>
   );
 }

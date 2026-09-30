@@ -65,14 +65,22 @@ export function ReminderRow({
           ? tr("rem.beforeIt", { minutes: Math.abs(s.offset_minutes) })
           : spokenTime(s.local_time, tr);
 
+  /*
+    One tint for every row, and one colour for every icon.
+    The rows were plain white cards on a near-white canvas — the edge of each
+    one was guesswork — and each icon tile took its preset's own colour, so a
+    list of five reminders read as five unrelated things. The icon still says
+    what it is; the colour now only says "a reminder".
+  */
   return (
-    <Card pad={14}>
+    <Card pad={14} className="reminder-row" style={ROW_SURFACE}>
       <div className="flex items-start gap-3">
         <IconTile
           icon={preset?.icon ?? "Bell"}
-          tint={preset?.tint ?? "--ux-brand-tint"}
-          ink={preset?.ink ?? "--ux-brand"}
+          tint="--ux-surface"
+          ink="--ux-brand"
           size={40}
+          radius={20}
         />
         <div className="min-w-0 flex-1">
           <h3 className="text-sm font-semibold leading-tight" style={{ color: v("--ux-ink") }}>
@@ -94,7 +102,7 @@ export function ReminderRow({
       </div>
 
       <div className="mt-3 flex flex-wrap items-center gap-2">
-        <Btn size="sm" variant="ghost" icon={open ? "ChevronUp" : "CalendarDays"}
+        <Btn size="sm" variant="ghost" className="min-h-[44px]" icon={open ? "ChevronUp" : "CalendarDays"}
              onClick={() => setOpen((o) => !o)}>
           {open ? tr("rem.hideDates") : tr("rem.showDates")}
         </Btn>
@@ -109,19 +117,19 @@ export function ReminderRow({
           "move it" there is a different question than "what time of day".
         */}
         {s.type === "recurring" && (
-          <Btn size="sm" variant="ghost" icon="Clock" disabled={busy || editing}
+          <Btn size="sm" variant="ghost" className="min-h-[44px]" icon="Clock" disabled={busy || editing}
                onClick={() => setEditing((e) => !e)}>
             {tr("rem.changeTime")}
           </Btn>
         )}
-        <Btn size="sm" variant="ghost" icon="CircleSlash"
+        <Btn size="sm" variant="ghost" className="min-h-[44px]" icon="CircleSlash"
              onClick={() => onStop(reminder.id)} disabled={busy || saving}>
           {tr("rem.stopSeries")}
         </Btn>
       </div>
 
       {editing && (
-        <div className="mt-3 rounded-xl px-3 py-2.5" style={{ background: v("--ux-surface-2") }}>
+        <div className="mt-3 rounded-xl px-3 py-2.5" style={{ background: v("--ux-surface") }}>
           <p className="text-2xs" style={{ color: v("--ux-muted") }}>{tr("rem.pickANewTime")}</p>
           <div className="mt-2 flex flex-wrap gap-1.5">
             {QUICK_TIMES.map((hhmm) => (
@@ -152,8 +160,8 @@ export function ReminderRow({
                 }}
                 className="min-h-[44px] rounded-lg px-3 text-2xs font-medium transition-colors hover:ring-1 hover:ring-[var(--ux-brand)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--ux-brand)] disabled:opacity-50"
                 style={{
-                  background: s.local_time === hhmm ? v("--ux-brand") : v("--ux-surface"),
-                  color: s.local_time === hhmm ? "#fff" : v("--ux-ink"),
+                  background: s.local_time === hhmm ? v("--ux-brand") : v("--ux-surface-2"),
+                  color: s.local_time === hhmm ? v("--ux-ink-on-brand") : v("--ux-ink"),
                 }}
               >
                 {spokenTime(hhmm, tr)}
@@ -169,7 +177,7 @@ export function ReminderRow({
       )}
 
       {open && (
-        <div className="mt-3 rounded-xl px-3 py-2.5" style={{ background: v("--ux-surface-2") }}>
+        <div className="mt-3 rounded-xl px-3 py-2.5" style={{ background: v("--ux-surface") }}>
           {failed ? (
             <p className="text-xsm" style={{ color: v("--ux-muted") }}>{tr("rem.datesFailed")}</p>
           ) : !next ? (
@@ -195,6 +203,12 @@ export function ReminderRow({
     </Card>
   );
 }
+
+const ROW_SURFACE: React.CSSProperties = {
+  background: v("--ux-surface-2"),
+  border: `1px solid ${v("--ux-line-strong")}`,
+  boxShadow: "none",
+};
 
 /* ── the four answers ───────────────────────────────────────────────────── */
 
@@ -266,24 +280,30 @@ export interface DraftReminder {
  * whoever set it up happened to use.
  */
 export function ReminderComposer({
-  draft, setDraft, onSave, saving,
+  draft, setDraft, onSave, saving, bare = false,
 }: {
   draft: DraftReminder;
   setDraft: (d: DraftReminder) => void;
   onSave: () => void | Promise<void>;
   saving: boolean;
+  /** Inside a dialog: no card of its own, the dialog is the frame. */
+  bare?: boolean;
 }) {
   const tr = useT();
   const [allTimes, setAllTimes] = useState(false);
   const [suggesting, setSuggesting] = useState(false);
   const [why, setWhy] = useState("");
   const times = allTimes ? ALL_TIMES : QUICK_TIMES;
+  const Head = bare ? "h3" : "h2";
 
-  return (
-    <Card>
-      <h2 className="text-base font-semibold" style={{ color: v("--ux-ink") }}>
+  // A wrapper chosen here, not a component declared in render — one declared
+  // in render is a new type every keystroke, and React would remount the
+  // whole form and drop focus on every tap.
+  const body = (
+    <>
+      <Head className="text-base font-semibold" style={{ color: v("--ux-ink") }}>
         {tr("rem.whatShallIRemindYou")}
-      </h2>
+      </Head>
 
       {/* 1 · the picture */}
       <div className="mt-3 grid grid-cols-3 gap-2 sm:grid-cols-4">
@@ -324,10 +344,10 @@ export function ReminderComposer({
               type="button"
               onClick={() => setDraft({ ...draft, time: hhmm })}
               aria-pressed={on}
-              className="min-h-[38px] rounded-full px-3 text-xsm font-medium transition"
+              className="min-h-[44px] rounded-full px-3 text-xsm font-medium transition"
               style={{
                 background: on ? v("--ux-brand") : v("--ux-surface-2"),
-                color: on ? "#fff" : v("--ux-ink"),
+                color: on ? v("--ux-ink-on-brand") : v("--ux-ink"),
               }}
             >
               {spokenTime(hhmm, tr)}
@@ -337,7 +357,7 @@ export function ReminderComposer({
         <button
           type="button"
           onClick={() => setAllTimes((a) => !a)}
-          className="min-h-[38px] rounded-full px-3 text-xsm font-medium"
+          className="min-h-[44px] rounded-full px-3 text-xsm font-medium"
           style={{ color: v("--ux-brand") }}
         >
           {allTimes ? tr("rem.fewerTimes") : tr("rem.otherTime")}
@@ -353,7 +373,7 @@ export function ReminderComposer({
       */}
       {draft.preset && (
         <div className="mt-2.5 flex items-center gap-2">
-          <Btn size="sm" variant="ghost" icon="Sparkles" loading={suggesting}
+          <Btn size="sm" variant="ghost" className="min-h-[44px]" icon="Sparkles" loading={suggesting}
                onClick={async () => {
                  if (!draft.preset) return;
                  setSuggesting(true);
@@ -390,10 +410,10 @@ export function ReminderComposer({
               type="button"
               onClick={() => setDraft({ ...draft, repeat })}
               aria-pressed={on}
-              className="min-h-[38px] rounded-full px-3.5 text-xsm font-medium transition"
+              className="min-h-[44px] rounded-full px-3.5 text-xsm font-medium transition"
               style={{
                 background: on ? v("--ux-brand") : v("--ux-surface-2"),
-                color: on ? "#fff" : v("--ux-ink"),
+                color: on ? v("--ux-ink-on-brand") : v("--ux-ink"),
               }}
             >
               {tr(label)}
@@ -417,7 +437,7 @@ export function ReminderComposer({
                     days: on ? draft.days.filter((x) => x !== d.value) : [...draft.days, d.value],
                   })
                 }
-                className="min-h-[38px] min-w-[46px] rounded-full px-2 text-xsm font-medium transition"
+                className="min-h-[44px] min-w-[46px] rounded-full px-2 text-xsm font-medium transition"
                 style={{
                   background: on ? v("--ux-brand-tint") : v("--ux-surface-2"),
                   color: on ? v("--ux-brand") : v("--ux-ink"),
@@ -440,6 +460,7 @@ export function ReminderComposer({
       <div className="mt-5 flex items-center gap-3">
         <Btn
           icon="Bell"
+          className="min-h-[44px]"
           onClick={onSave}
           loading={saving}
           disabled={!draft.preset || (draft.repeat === "someDays" && draft.days.length === 0)}
@@ -448,6 +469,7 @@ export function ReminderComposer({
         </Btn>
         <p className="text-2xs" style={{ color: v("--ux-muted") }}>{tr("rem.nothingSavedYet")}</p>
       </div>
-    </Card>
+    </>
   );
+  return bare ? body : <Card>{body}</Card>;
 }

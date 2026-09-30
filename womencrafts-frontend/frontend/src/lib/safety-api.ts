@@ -66,6 +66,8 @@ export const REPORT_CATEGORIES = [
   "Fake or impersonating account",
   "Money or fraud",
   "Something in a circle or post",
+  "Inappropriate or sexual content",
+  "Threats or safety concern",
   "Something else",
 ] as const;
 

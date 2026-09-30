@@ -1,6 +1,6 @@
 "use client";
 
-import { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { memo, useCallback, useEffect, useId, useMemo, useRef, useState } from "react";
 import { useT } from "@/i18n";
 import dynamic from "next/dynamic";
 import { usePathname, useRouter } from "next/navigation";
@@ -21,6 +21,7 @@ import { MobileNav, SafetyPin } from "./MobileNav";
 import { PageTransition } from "./mobile/PageTransition";
 import { MobileBack } from "./mobile/BackButton";
 import { MoreSheet } from "./mobile/MoreSheet";
+import { NotificationsPopover } from "./NotificationsPopover";
 
 /**
  * The search panel is a ⌘K surface — most sessions never open it, and it drags
@@ -390,9 +391,10 @@ export function ModeRail({ path, footer }: { path: string; footer?: React.ReactN
 
 
 function TopIconBtn({
-  icon, label, href, onClick, badge, ink = "--ux-ink-2",
+  icon, label, href, onClick, badge, ink = "--ux-ink-2", btnRef, expanded, haspopup, controls,
 }: {
   icon: string; label: string; href?: string; onClick?: () => void; badge?: number; ink?: string;
+  btnRef?: React.Ref<HTMLButtonElement>; expanded?: boolean; haspopup?: "dialog" | "menu"; controls?: string;
 }) {
   const inner = (
     /* The badge is positioned against the glyph, not against the 44px tap
@@ -422,15 +424,18 @@ function TopIconBtn({
       )}
     </span>
   );
-  /* 44px on a phone — the smallest square a thumb hits reliably — and the
-     tighter 42px where a cursor does the aiming. */
+  /* 44px everywhere — the smallest square a thumb hits reliably, and one
+     size so every icon in the bar sits on the same grid with the same gap. */
   const cls =
-    "ux-press ux-hov ux-sq relative grid h-[44px] w-[44px] place-items-center rounded-[12px] transition-colors hover:bg-[var(--ux-surface-2)] sm:h-[42px] sm:w-[42px]";
+    "ux-press ux-hov ux-sq relative grid h-[44px] w-[44px] shrink-0 place-items-center rounded-[12px] transition-colors hover:bg-[var(--ux-surface-2)] aria-expanded:bg-[var(--ux-surface-2)]";
   const style = { color: `var(${ink})` };
+  const named = badge ? `${label}, ${badge} unread` : label;
   return href ? (
-    <Link href={href} aria-label={badge ? `${label}, ${badge} unread` : label} title={label} className={cls} style={style}>{inner}</Link>
+    <Link href={href} aria-label={named} title={label} className={cls} style={style}>{inner}</Link>
   ) : (
-    <button type="button" aria-label={label} title={label} onClick={onClick} className={cls} style={style}>{inner}</button>
+    <button ref={btnRef} type="button" aria-label={named} title={label} onClick={onClick}
+            aria-expanded={expanded} aria-haspopup={haspopup} aria-controls={expanded ? controls : undefined}
+            className={cls} style={style}>{inner}</button>
   );
 }
 
@@ -497,6 +502,19 @@ export function Topbar({ user, onMore }: { user: { name: string; avatar: string;
   const [search, setSearch] = useState(false);
   const [menu, setMenu] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
+  const [bell, setBell] = useState(false);
+  const bellWrap = useRef<HTMLDivElement>(null);
+  const bellBtn = useRef<HTMLButtonElement>(null);
+  const bellPanelId = useId();
+  const closeBell = useCallback((refocus: boolean) => {
+    setBell(false);
+    if (refocus) bellBtn.current?.focus();
+  }, []);
+  // A navigation closes it too — "View more" and every item are links.
+  useEffect(() => {
+    const t = window.setTimeout(() => setBell(false));
+    return () => window.clearTimeout(t);
+  }, [here]);
   const { theme, setTheme } = useTheme();
   const { signOut } = useAuth();
 
@@ -543,7 +561,8 @@ export function Topbar({ user, onMore }: { user: { name: string; avatar: string;
           61px wide at 390, which is most of the room a back control needs.
           `contents` rather than `block` so that above lg the wrapper vanishes
           from the flex row and the bar is laid out exactly as before. */}
-      <span className={backControl ? "hidden lg:contents" : "contents"}>
+      {/* The wordmark link gets the same 44px-tall target as every icon. */}
+      <span className={`${backControl ? "hidden lg:contents" : "contents"} [&>a]:inline-flex [&>a]:min-h-[44px] [&>a]:items-center`}>
         <Brand size="sm" tagline={false} />
       </span>
       <MobileBack />
@@ -566,7 +585,7 @@ export function Topbar({ user, onMore }: { user: { name: string; avatar: string;
         <button
           type="button"
           onClick={openSearch}
-          className="ux-hov ux-sq flex h-[42px] w-full items-center gap-2.5 rounded-[12px] border px-3.5 text-start transition-colors hover:border-[var(--ux-brand)]"
+          className="ux-hov ux-sq flex h-[44px] w-full items-center gap-2.5 rounded-[12px] border px-3.5 text-start transition-colors hover:border-[var(--ux-brand)]"
           style={{ borderColor: "var(--ux-line-strong)", background: "var(--ux-surface-2)" }}
         >
           <Icons.Search className="ux-ico h-4 w-4 shrink-0" style={{ color: "var(--ux-faint)" }} strokeWidth={2} />
@@ -586,15 +605,9 @@ export function Topbar({ user, onMore }: { user: { name: string; avatar: string;
       <div className="relative ms-auto flex items-center gap-1 sm:ms-0">
         {/* Phone only: the box above is hidden there, and search is the one
             thing a person looks for at the top of a screen. */}
-        <button
-          type="button"
-          onClick={openSearch}
-          aria-label="Search"
-          className="ux-press ux-sq grid h-[40px] w-[40px] place-items-center rounded-[12px] sm:hidden"
-          style={{ color: "var(--ux-ink-2)" }}
-        >
-          <Icons.Search className="h-[19px] w-[19px]" strokeWidth={2} />
-        </button>
+        <span className="contents sm:hidden">
+          <TopIconBtn icon="Search" label="Search" onClick={openSearch} />
+        </span>
         {/* Sakhi has a floating launcher of her own on every screen, so this
             duplicate goes on a phone where the row has no room for it. */}
         <span className="hidden sm:contents">
@@ -610,7 +623,7 @@ export function Topbar({ user, onMore }: { user: { name: string; avatar: string;
           <TopIconBtn icon="Menu" label={tr("shell.allSections")} onClick={onMore} />
         </span>
         <span className="hidden sm:contents">
-          <TopIconBtn icon="LifeBuoy" label="Help" href="/app/helpdesk" />
+          <TopIconBtn icon="Headphones" label="Help desk" href="/app/helpdesk" />
           <TopIconBtn icon="MessageCircle" label="Messages" href="/app/messages" />
         </span>
         {/*
@@ -625,25 +638,32 @@ export function Topbar({ user, onMore }: { user: { name: string; avatar: string;
           picture — the bell is what arrived, this is what she set.
         */}
         <TopIconBtn icon="AlarmClock" label={tr("rem.title")} href="/app/reminders" />
-        <TopIconBtn icon="Bell" label="Notifications" href="/app/notifications" badge={user.unread} />
+        {/* The bell opens a popup of the latest six, not a page. The full inbox
+            is its "View more". */}
+        <div ref={bellWrap} className="relative">
+          <TopIconBtn icon="Bell" label="Notifications" badge={user.unread}
+                      btnRef={bellBtn} expanded={bell} haspopup="dialog" controls={bellPanelId}
+                      onClick={() => { setMenu(false); setBell((v) => !v); }} />
+          {bell && <NotificationsPopover onClose={closeBell} wrapRef={bellWrap} panelId={bellPanelId} />}
+        </div>
 
-        <div ref={menuRef} className="relative ms-2">
+        <div ref={menuRef} className="relative ms-1">
+          {/* The face alone. Testers read "Hi, Priya" in the bar as clutter;
+              the photo identifies the menu, and the name is one tap away. */}
           <button
             type="button"
-            onClick={() => setMenu((v) => !v)}
+            onClick={() => { setBell(false); setMenu((v) => !v); }}
             aria-haspopup="menu"
             aria-expanded={menu}
-            className="ux-press flex items-center gap-2.5 rounded-[12px] py-1 pe-2 ps-1 transition-colors hover:bg-[var(--ux-surface-2)]"
+            aria-label="Your account"
+            title="Your account"
+            data-account-button
+            className="ux-press flex h-[44px] min-w-[44px] items-center justify-center gap-1 rounded-[12px] px-[3px] transition-colors hover:bg-[var(--ux-surface-2)] lg:pe-1.5"
           >
-            <Avatar src={user.avatar} name={user.name || "You"} size={38} />
-            {/* Cut to "Hi, Priy…" at 390px. The avatar identifies the menu
-                perfectly well; the greeting is a nicety with room only on a
-                laptop. */}
-            <span className="hidden text-sm font-medium lg:inline" style={{ color: "var(--ux-ink)" }}>
-              Hi, {user.name}
-            </span>
+            <Avatar src={user.avatar} name={user.name || "You"} size={36} />
             <Icons.ChevronDown
-              className="hidden h-4 w-4 transition-transform lg:block"
+              aria-hidden
+              className="hidden h-3.5 w-3.5 transition-transform lg:block"
               style={{ color: "var(--ux-muted)", transform: menu ? "rotate(180deg)" : "none" }}
             />
           </button>
@@ -811,7 +831,7 @@ export function Shell({
   const pathname = usePathname();
   const effectiveSidebarFooter = pathname === "/app/notifications" ? (
     <TransitionLink href="/app/circles" className="ux-press relative block min-h-[126px] overflow-hidden rounded-[16px] p-4"
-      style={{ background:"linear-gradient(145deg,var(--ux-tint-pink),var(--ux-tint-violet))",border:"1px solid var(--ux-line)" }}>
+      style={{ background:"var(--ux-tint-pink)",border:"1px solid var(--ux-line)" }}>
       <strong className="block max-w-[7ch] text-xl leading-tight" style={{ color:"var(--ux-brand)",fontFamily:"var(--font-display)" }}>Together we grow</strong>
       <span className="mt-5 grid h-9 w-9 place-items-center rounded-full" style={{ background:"var(--ux-fill)",color:"var(--ux-on-brand)" }}><Icons.ArrowRight className="h-4 w-4" /></span>
       <Icons.Sprout className="absolute -bottom-2 -end-1 h-20 w-20" style={{ color:"var(--ux-rib-3)",opacity:.72 }} />
@@ -856,8 +876,6 @@ export function Shell({
              style={immersive ? undefined
                : { marginTop: `calc(${TOPBAR_H_VAR} * -1)`, height: `calc(100% + ${TOPBAR_H_VAR})` }}>
           <div id="ux-scroll" className="min-h-0 flex-1 overflow-y-auto">
-            {/* pb-24: Sakhi floats over the bottom-right corner, so the last card
-                in the rail would otherwise sit underneath her. */}
             {/* pb: the floating assistant on a laptop, and on a phone the
                 bottom bar as well — 56px of bar plus the home indicator. */}
             {/*
@@ -884,7 +902,7 @@ export function Shell({
                    immersive ? "pb-[calc(24px+env(safe-area-inset-bottom,0px))] pt-[env(safe-area-inset-top,0px)] lg:pb-24 lg:pt-[calc(var(--ux-topbar-h)+18px)]"
                    : wide ? "pb-[20px]"
                    : fit ? "pb-[calc(96px+env(safe-area-inset-bottom,0px))] xl:h-full xl:pb-[18px]"
-                   : "pb-[calc(96px+env(safe-area-inset-bottom,0px))] lg:pb-24"}`}
+                   : "pb-[calc(96px+env(safe-area-inset-bottom,0px))] lg:pb-8"}`}
                  /* 18px on every screen, `fit` included.
                     It was 12 on a fit board, to buy back six pixels for a
                     design that had to end at the bottom of the window — and
@@ -903,7 +921,26 @@ export function Shell({
                   leaving and the destination then never rendered at all —
                   clicking Your shop → Your wallet left "Turn your skills into
                   income" under the wallet's URL, indefinitely. */}
-              <main id="content" className="ux-swap min-w-0 flex-1">
+              {/*
+                Bottom clearance on a laptop: 32px under the page, and the
+                floating Sakhi button's clearance only where it floats — the
+                right-hand column. From `lg` it docks 24px up and is 64px tall,
+                so the column beneath it needs 96px (32 + 64) to end above it.
+                A page with no rail runs under the button itself, so there the
+                main column carries it; with a rail beside it, it does not.
+              */}
+              {/* A fixed-height board (`fit`) ends at the bottom of the window,
+                  which is where the docked button sits, and several of them
+                  are taller than the window and overflow this column — so
+                  padding here would sit behind the overflow. A 96px box drawn
+                  after the page's own content is placed after the overflow
+                  and counts toward the scroll — the row's own padding does
+                  not, once the board overflows it — so the last row can always
+                  be scrolled above the button, and the board keeps its fitted
+                  height. */}
+              <main id="content" className={`ux-swap min-w-0 flex-1 ${
+                !rail && !wide && !fit && !immersive ? "lg:pb-[64px]"
+                : fit && !immersive ? "xl:after:block xl:after:h-[96px] xl:after:content-['']" : ""}`}>
                 {/* The rail carrying these is `hidden lg:flex`, so on a phone
                     every sub-page — Your journey, Your calendar, Saved — was
                     reachable only by whatever happened to link to it. */}
@@ -928,7 +965,7 @@ export function Shell({
                 on a narrow screen. Above `xl` nothing changes.
               */}
               {rail && (
-                <div data-rail className="ux-swap w-full shrink-0 pb-24 xl:w-[320px]">
+                <div data-rail className="ux-swap w-full shrink-0 pb-24 lg:pb-[64px] xl:w-[320px]">
                   <div className="mb-4 border-t pt-4 xl:hidden" style={{ borderColor: "var(--ux-line)" }} aria-hidden />
                   {rail}
                 </div>
