@@ -19,6 +19,14 @@ from app.db.mongodb import get_database
 
 # collection -> indexes it needs
 INDEXES: dict[str, list[IndexModel]] = {
+    # ── The shared rate limiter (app/core/ratelimit.py) ───────────────────
+    "rate_limits": [
+        # One row per key per fixed window; `expires_at` is the window's end,
+        # so each row deletes itself once it can no longer be counted against.
+        IndexModel([("expires_at", ASCENDING)], expireAfterSeconds=0, name="ttl"),
+        # `forget()` clears every live window of one key after a success.
+        IndexModel([("key", ASCENDING)], name="key"),
+    ],
     # ── Collections the admin rebuild added (2026-09-26) ──────────────────
     "member_threads": [
         # One state document per member: assignee, resolved flag.
@@ -293,10 +301,16 @@ INDEXES: dict[str, list[IndexModel]] = {
         # can still be looked at the morning after.
         IndexModel([("expires_at", ASCENDING)], expireAfterSeconds=86400, name="ttl"),
     ],
+    # Wrong app codes per account per day (app sign-in lockout); rows expire.
+    "app_code_failures": [
+        IndexModel([("expires_at", ASCENDING)], expireAfterSeconds=0, name="expires_ttl"),
+    ],
     "auth_sessions": [
         IndexModel([("sid", ASCENDING)], unique=True, name="sid_unique"),
         IndexModel([("refresh_hash", ASCENDING)], unique=True, name="refresh_unique"),
         IndexModel([("prev_refresh_hash", ASCENDING)], sparse=True, name="prev_refresh"),
+        # Every refresh token already spent: presenting one again ends the session.
+        IndexModel([("spent_refresh_hashes", ASCENDING)], sparse=True, name="spent_refresh"),
         IndexModel([("user_id", ASCENDING), ("last_used_at", DESCENDING)], name="user_recent"),
         # An ended or expired device lingers a month for her history, then goes.
         IndexModel([("expires_at", ASCENDING)], expireAfterSeconds=30 * 86400, name="ttl"),

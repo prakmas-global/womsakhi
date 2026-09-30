@@ -109,11 +109,30 @@ class Settings(BaseSettings):
     # --- Test accounts (development only) ------------------------------------
     # While the app is in development, a short list of test accounts (a member,
     # an admin, a super admin) signs in with their email and one fixed code —
-    # no email is sent and staff skip the authenticator. Both values come from
+    # no email is sent (staff only with TEST_LOGIN_ALLOW_STAFF). Both values come from
     # Secret Manager, never the repo. Empty either one and the door is shut;
     # empty both before launch.
     TEST_LOGIN_EMAILS: str = ""
     TEST_LOGIN_CODE: str = ""
+    # Off: the fixed code works only for MEMBER accounts on the list. A staff
+    # account on the list gets the normal flow — a real emailed code, then the
+    # authenticator — because a staff session can open identity documents.
+    TEST_LOGIN_ALLOW_STAFF: bool = False
+    # Wrong fixed-code tries per test address per (UTC) day before the fixed
+    # code stops working for that address until tomorrow.
+    TEST_LOGIN_MAX_FAILURES_PER_DAY: int = 10
+
+    # The WomSakhi app as a sign-in key (app code, QR, open-on-web handoff) —
+    # off until the mobile app ships; every route answers 404 while off.
+    APP_KEY_ENABLED: bool = False
+
+    # --- Client IP behind proxies --------------------------------------------
+    # How many proxies in front of the app APPEND to X-Forwarded-For. Cloud Run's
+    # Google front end appends the real client address, so with 1 the LAST entry
+    # is the client and anything a client puts in front of it is ignored. Behind
+    # an external HTTPS load balancer in front of Cloud Run use 2. 0 = trust no
+    # header and use the socket peer.
+    TRUSTED_PROXY_HOPS: int = 1
 
     # --- Sessions (see app/core/sessions.py) ---------------------------------
     # The access token stays short; the session behind it is what lasts. A
@@ -404,17 +423,9 @@ class Settings(BaseSettings):
             )
         if self.JWT_SECRET_KEY in {"", "change-me", "secret", "dev"}:
             problems.append("JWT_SECRET_KEY is unset or a placeholder — anyone can mint a session.")
-        # More than one worker without shared state is not a slow app — it is a
-        # rate limiter that no longer limits. Each worker counts to
-        # MAX_FAILED_LOGINS on its own, so the real allowance is that number
-        # times the worker count, and nothing anywhere reports it.
-        if self.WORKERS > 1 and not self.REDIS_URL:
-            problems.append(
-                f"WORKERS is {self.WORKERS} but REDIS_URL is empty. The rate limiter "
-                f"counts per process, so the {self.MAX_FAILED_LOGINS}-attempt lockout "
-                f"becomes {self.WORKERS * self.MAX_FAILED_LOGINS} attempts. Set REDIS_URL, "
-                "or run one worker."
-            )
+        # (More than one worker without REDIS_URL used to be listed here: the
+        # rate limiter counted per process. It now counts in MongoDB when Redis
+        # is absent — see app/core/ratelimit.py — so that is no longer unsafe.)
         if self.APP_BASE_URL.startswith("http://localhost"):
             problems.append(
                 f"APP_BASE_URL is still {self.APP_BASE_URL}. Every emailed link — "

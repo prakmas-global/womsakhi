@@ -12,6 +12,7 @@ import {
 import { usePathname, useRouter } from "next/navigation";
 import { apiSignOut, apiGetSession, AuthPayload, apiErrorMessage, apiRefreshSession } from "@/lib/api";
 import { homeFor } from "@/lib/auth-api";
+import { safeNext } from "@/lib/safe-next";
 import { useToast } from "@/design-system/feedback/ToastProvider";
 import { WaitScreen } from "@/components/ux/WaitScreen";
 import { useT } from "@/i18n";
@@ -216,7 +217,10 @@ export function AuthProvider({
     setHandoff({ kind: "in", torn: true });
     // A full navigation, not router.push: the server layout reads the new
     // session cookie and renders the right shell on the first paint.
-    window.location.assign(destination || homeFor(payload.user));
+    // `destination` can come from `?next=` in the address bar, so it is
+    // re-checked here, at the one place that navigates: a same-origin path
+    // or nothing (see lib/safe-next).
+    window.location.assign(safeNext(destination) || homeFor(payload.user));
   }, []);
 
   /**

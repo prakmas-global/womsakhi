@@ -16,6 +16,7 @@ Sessions — one per device, 30 days for members, a working day for staff — li
 in `app/core/sessions.py`. The codes themselves live in `app/core/codes.py`.
 """
 
+import secrets
 import unicodedata
 from datetime import datetime, timedelta, timezone
 from typing import Optional
@@ -23,6 +24,7 @@ from typing import Optional
 import phonenumbers
 from bson import ObjectId
 from fastapi import APIRouter, BackgroundTasks, Body, Depends, HTTPException, Request, Response, status
+from fastapi.security import HTTPAuthorizationCredentials
 from jose import JWTError, jwt
 from pydantic import BaseModel, EmailStr, Field, field_validator
 from pymongo.errors import DuplicateKeyError
@@ -43,12 +45,12 @@ from app.core.session import COOKIE_NAME
 from app.core.two_factor import (
     decrypt_secret,
     encrypt_secret,
+    matched_step,
     new_recovery_codes,
     new_secret,
     provisioning_qr_svg,
     provisioning_uri,
     recovery_digest,
-    verify_code,
 )
 from app.db.mongodb import get_database
 from app.models.member import MemberModel
@@ -72,11 +74,32 @@ async def _user_response(doc: dict) -> UserResponse:
 
 
 async def _auth_response(user: dict, tokens: dict) -> AuthResponse:
+    """
+    The refresh token goes in the body only to the mobile app (it sent
+    `X-WomSakhi-Client: app`, so `sessions.start` opened an app session). A
+    browser has it in an httpOnly cookie, where page script cannot read it;
+    putting it in the JSON too handed a month-long credential to any script
+    that can see the response.
+    """
     return AuthResponse(
         access_token=tokens["access_token"],
-        refresh_token=tokens["refresh_token"],
+        refresh_token=tokens["refresh_token"] if tokens.get("kind") == sessions.KIND_APP else "",
         user=await _user_response(user),
     )
+
+
+def _fixed_code_allowed(user: Optional[dict]) -> bool:
+    """May this account use the fixed test code (if its address is on the list)?"""
+    return bool(user) and (role_name(user) == MEMBER_ROLE or settings.TEST_LOGIN_ALLOW_STAFF)
+
+
+async def _record_test_signin(user: dict, request: Request) -> None:
+    """Every fixed-code sign-in is written down, like any other staff sign-in."""
+    staff = role_name(user) != MEMBER_ROLE
+    await record(user, "security.signin", target=str(user["_id"]),
+                 detail=("Signed in with the fixed test code (method: test_code"
+                         + (", authenticator skipped: TEST_LOGIN_ALLOW_STAFF)" if staff else ")")),
+                 request=request)
 
 
 async def _next_member_code(db) -> str:
@@ -139,7 +162,15 @@ def normalise_phone(value: str) -> str:
 
 
 async def _phone_taken(phone: str, except_user_id: Optional[ObjectId] = None) -> bool:
-    query: dict = {"phone": phone}
+    """
+    Is this number CONFIRMED on another account?
+
+    Only a confirmed number counts. An unconfirmed one is a claim anybody can
+    type, and counting it let a stranger block the real owner from joining by
+    getting there first. Two accounts may hold the same unconfirmed number;
+    only one of them can ever confirm it (see `_mark_phone_verified`).
+    """
+    query: dict = {"phone": phone, "phone_verified_at": {"$ne": None}}
     if except_user_id is not None:
         query["_id"] = {"$ne": except_user_id}
     return await _users().find_one(query, {"_id": 1}) is not None
@@ -259,7 +290,7 @@ class SignupComplete(BaseModel):
 
 
 @router.post("/signup/start", summary="Join: send a code to her email")
-async def signup_start(payload: SignupStart, request: Request):
+async def signup_start(payload: SignupStart, request: Request, background: BackgroundTasks):
     """
     The same answer for every address, whether or not it already has an account.
 
@@ -269,7 +300,7 @@ async def signup_start(payload: SignupStart, request: Request):
     told how to get back in rather than seeing an error.
     """
     email = codes.normalise_email(payload.email)
-    existing = await _users().find_one({"email": email}, {"full_name": 1, "is_active": 1})
+    existing = await _users().find_one({"email": email}, {"full_name": 1, "is_active": 1, "role": 1})
     if existing and existing.get("is_active", True):
         # She already has an account: send a SIGN-IN code, worded for this
         # situation. Typed into the same "check your email" box it signs her
@@ -279,6 +310,7 @@ async def signup_start(payload: SignupStart, request: Request):
         issued = await codes.issue(
             request, purpose=codes.SIGNIN, channel=codes.EMAIL, destination=email,
             user_id=str(existing["_id"]), name=existing.get("full_name", ""), template="existing_member",
+            allow_fixed=_fixed_code_allowed(existing), background=background,
         )
     elif existing:
         issued = await codes.issue(request, purpose=codes.SIGNUP, channel=codes.EMAIL,
@@ -286,7 +318,7 @@ async def signup_start(payload: SignupStart, request: Request):
     else:
         issued = await codes.issue(
             request, purpose=codes.SIGNUP, channel=codes.EMAIL, destination=email,
-            payload={"phone": payload.phone, "locale": payload.locale},
+            payload={"phone": payload.phone, "locale": payload.locale}, background=background,
         )
     return {
         "message": f"We've sent a 6-digit code to {issued.destination}.",
@@ -321,7 +353,10 @@ async def signup_verify(payload: CodeCheck, request: Request, response: Response
         user = await _finish_member_email_proof(user, request, background)
         now = datetime.now(timezone.utc)
         await _users().update_one({"_id": user["_id"]}, {"$set": {"last_login_at": now}})
-        tokens = await sessions.start(response, user, request, method="email_code")
+        test_login = bool(spent.get("fixed"))
+        tokens = await sessions.start(response, user, request, method="test_code" if test_login else "email_code")
+        if test_login:
+            await _record_test_signin(user, request)
         auth = await _auth_response(user, tokens)
         return {"signed_in": True, **auth.model_dump()}
     spent = await codes.verify(request, purpose=codes.SIGNUP, destination=email, code=payload.code)
@@ -425,21 +460,28 @@ def _identifier(email: Optional[str], phone: Optional[str]) -> tuple[str, str]:
 
 
 @router.post("/signin/start", summary="Sign in: send a code")
-async def signin_start(payload: SigninStart, request: Request):
+async def signin_start(payload: SigninStart, request: Request, background: BackgroundTasks):
     """
     The same answer whether or not the address has an account — a stranger
     cannot use this to ask "is she a member here?". Only a real, active account
     is actually sent a code.
+
+    "The same" covers the second call too (both get 429 `resend_too_soon`: an
+    unknown address gets a row whose code nobody knows) and the time taken
+    (the message is sent after the answer, so a slow mail server no longer
+    says "member").
     """
     field, value = _identifier(payload.email, payload.phone)
-    user = await _users().find_one({field: value})
+    query: dict = {field: value}
+    if field == "phone":
+        query["phone_verified_at"] = {"$ne": None}  # an unconfirmed number cannot be a way in
+    user = await _users().find_one(query)
     live = bool(user and user.get("is_active", True))
-    if field == "phone" and live and not user.get("phone_verified_at"):
-        live = False  # an unconfirmed number cannot be a way in
     channel = codes.SMS if field == "phone" else codes.EMAIL
     issued = await codes.issue(
         request, purpose=codes.SIGNIN, channel=channel, destination=value,
-        user_id=str(user["_id"]) if live else "", name=(user or {}).get("full_name", ""), send=live,
+        user_id=str(user["_id"]) if live else "", name=(user or {}).get("full_name", "") if live else "",
+        send=live, allow_fixed=live and _fixed_code_allowed(user), background=background,
     )
     return {
         "message": f"If {issued.destination} has a WomSakhi account, we've sent it a 6-digit code.",
@@ -486,11 +528,16 @@ async def signin_verify(payload: SigninVerify, request: Request, response: Respo
         raise HTTPException(status.HTTP_400_BAD_REQUEST,
                             {"code": "code_expired", "message": codes.CODE_MISMATCH_MESSAGE})
 
-    test_login = field == "email" and codes.is_test_login(codes.EMAIL, value)
+    # The fixed test code, and only when the code actually spent WAS the fixed
+    # one (marked at issue) and this account may use it: a listed staff
+    # account without TEST_LOGIN_ALLOW_STAFF was sent a real code and goes on
+    # to its authenticator like everyone else.
+    test_login = bool(spent.get("fixed")) and _fixed_code_allowed(user)
     if role_name(user) != MEMBER_ROLE and not test_login:
         two_factor = user.get("two_factor") or {}
         if two_factor.get("enabled"):
-            ticket = _make_ticket("mfa", 10, sub=str(user["_id"]), tv=token_version_of(user))
+            ticket = _make_ticket("mfa", 10, sub=str(user["_id"]), tv=token_version_of(user),
+                                  jti=secrets.token_urlsafe(16))
             raise HTTPException(status.HTTP_428_PRECONDITION_REQUIRED, {
                 "code": "two_factor_required",
                 "message": "Enter the 6-digit code from your authenticator app.",
@@ -514,6 +561,8 @@ async def signin_verify(payload: SigninVerify, request: Request, response: Respo
     now = datetime.now(timezone.utc)
     await _users().update_one({"_id": user["_id"]}, {"$set": {"last_login_at": now}})
     tokens = await sessions.start(response, user, request, method="test_code" if test_login else f"{field}_code")
+    if test_login:
+        await _record_test_signin(user, request)
     background.add_task(_notify_super_admins_of_member_login, dict(user), now)
     return await _auth_response(user, tokens)
 
@@ -531,22 +580,68 @@ async def _staff_from_ticket(body: dict) -> dict:
     return user
 
 
+#: Tickets spent at /two-factor/verify, newest last. A ticket lives ten
+#: minutes, so the last few are all that can still be presented.
+_SPENT_TICKETS = "two_factor_spent_tickets"
+
+
+async def _spend_second_factor(user: dict, jti: str, code: str) -> str:
+    """
+    Check the authenticator or recovery code and spend it — and the ticket —
+    in ONE conditional write, so nothing here can be used twice:
+
+      · the ticket: its `jti` is pushed to the account; a ticket already there
+        is refused, so an intercepted ticket is worthless after the sign-in;
+      · an authenticator code: the time-step it belongs to must be LATER than
+        the last one accepted, so the same code cannot be replayed within its
+        minute of validity (and neither can an older one);
+      · a recovery code: `$pull` it on the condition that it is still there,
+        and trust only `modified_count == 1` — two parallel requests with one
+        code cannot both spend it.
+
+    Returns the method used, or raises 400.
+    """
+    config = user.get("two_factor") or {}
+    ticket_free = {_SPENT_TICKETS: {"$ne": jti}}
+    spend_ticket = {_SPENT_TICKETS: {"$each": [jti], "$slice": -20}}
+    wrong = HTTPException(status.HTTP_400_BAD_REQUEST,
+                          {"code": "code_wrong", "message": "That code isn't right. Check your authenticator app."})
+    digest = recovery_digest(code)
+    if digest in (config.get("recovery_codes") or []):
+        result = await _users().update_one(
+            {"_id": user["_id"], "two_factor.recovery_codes": digest, **ticket_free},
+            {"$pull": {"two_factor.recovery_codes": digest}, "$push": spend_ticket},
+        )
+        if result.modified_count != 1:
+            raise wrong
+        return "recovery_code"
+    step = matched_step(decrypt_secret(config.get("secret", "")), code)
+    if step is None:
+        raise wrong
+    result = await _users().update_one(
+        {"_id": user["_id"], **ticket_free,
+         "$or": [{"two_factor.last_step": {"$exists": False}}, {"two_factor.last_step": {"$lt": step}}]},
+        {"$set": {"two_factor.last_step": step}, "$push": spend_ticket},
+    )
+    if result.modified_count != 1:
+        raise HTTPException(status.HTTP_400_BAD_REQUEST, {
+            "code": "code_wrong",
+            "message": "That code has already been used. Wait for the next one in your authenticator app.",
+        })
+    return "authenticator"
+
+
 @router.post("/two-factor/verify", response_model=AuthResponse, summary="Staff sign-in: authenticator code")
 async def two_factor_verify(payload: TwoFactorStep, request: Request, response: Response):
     body = _read_ticket(payload.ticket, "mfa")
     await ratelimit.check(request, "mfa", body["sub"], (6, 900.0), (60, 900.0))
     user = await _staff_from_ticket(body)
-    config = user.get("two_factor") or {}
-    code = payload.code.strip()
-    digest = recovery_digest(code)
-    if digest in (config.get("recovery_codes") or []):
-        await _users().update_one({"_id": user["_id"]}, {"$pull": {"two_factor.recovery_codes": digest}})
-        method = "recovery_code"
-    elif verify_code(decrypt_secret(config.get("secret", "")), code):
-        method = "authenticator"
-    else:
+    jti = str(body.get("jti") or "")
+    if not jti or jti in (user.get(_SPENT_TICKETS) or []):
         raise HTTPException(status.HTTP_400_BAD_REQUEST,
-                            {"code": "code_wrong", "message": "That code isn't right. Check your authenticator app."})
+                            {"code": "ticket_expired", "message": "Please sign in again."})
+    method = await _spend_second_factor(user, jti, payload.code.strip())
+    cache.forget_user(str(user["_id"]))
     await ratelimit.forget("mfa", body["sub"])
     now = datetime.now(timezone.utc)
     await _users().update_one({"_id": user["_id"]}, {"$set": {"last_login_at": now}})
@@ -566,7 +661,8 @@ async def two_factor_enroll(payload: TwoFactorStep, request: Request, response: 
     if not secret:
         raise HTTPException(status.HTTP_400_BAD_REQUEST,
                             {"code": "ticket_expired", "message": "Please sign in again."})
-    if not verify_code(secret, payload.code):
+    step = matched_step(secret, payload.code)
+    if step is None:
         raise HTTPException(status.HTTP_400_BAD_REQUEST,
                             {"code": "code_wrong",
                              "message": "That code isn't right. Make sure your phone's time is set automatically."})
@@ -574,8 +670,11 @@ async def two_factor_enroll(payload: TwoFactorStep, request: Request, response: 
     now = datetime.now(timezone.utc)
     await _users().update_one(
         {"_id": user["_id"]},
+        # `last_step`: the code she just typed to set it up cannot be replayed
+        # at /two-factor/verify.
         {"$set": {"two_factor": {"enabled": True, "secret": encrypt_secret(secret),
-                                 "recovery_codes": [recovery_digest(c) for c in recovery], "enabled_at": now},
+                                 "recovery_codes": [recovery_digest(c) for c in recovery], "enabled_at": now,
+                                 "last_step": step},
                   "last_login_at": now, "updated_at": now},
          "$unset": {"two_factor_pending_secret": ""}},
     )
@@ -655,9 +754,19 @@ async def get_me(current_user: dict = Depends(get_current_user)):
 
 @router.post("/signout", summary="Sign out of this device")
 async def signout(request: Request, response: Response, body: Optional[RefreshBody] = Body(None)):
-    """Ends this device's session on the server as well as clearing its cookies."""
-    sid = sessions.sid_from_request(request)
-    if sid:
+    """
+    Ends this device's session on the server as well as clearing its cookies.
+
+    The session is found from the access token AND from the refresh token
+    (cookie, or the app's body). After a long idle the access token has
+    expired, so it names no session — and the refresh token, a month-long key,
+    used to stay live on the server after she pressed "sign out".
+    """
+    sids = {sessions.sid_from_request(request)}
+    refresh_token = (body.refresh_token if body and body.refresh_token
+                     else request.cookies.get(sessions.REFRESH_COOKIE, ""))
+    sids.add(await sessions.sid_for_refresh(refresh_token))
+    for sid in sids - {""}:
         await sessions.revoke(sid, reason="signed_out")
     sessions.clear_cookies(response)
     return {"message": "Signed out"}
@@ -739,7 +848,14 @@ async def set_phone(payload: PhoneIn, request: Request, me: dict = Depends(get_c
         except Exception:  # noqa: BLE001 - the directory row is a mirror, not the record
             pass
     cache.forget_user(str(me["_id"]))
-    await record(me, "security.phone_changed", target=str(me["_id"]), detail="Mobile number updated", request=request)
+    # A new number is a new way in, so every OTHER device is signed out: if
+    # someone else holds her session, changing the number must not leave them
+    # signed in. This device — the one making the change — stays signed in.
+    ended = await sessions.revoke_all(str(me["_id"]), reason="phone_changed",
+                                      keep_sid=sessions.sid_from_request(request))
+    await record(me, "security.phone_changed", target=str(me["_id"]),
+                 detail=f"Mobile number updated; signed out {ended} other device{'s' if ended != 1 else ''}",
+                 request=request)
     return {"phone": payload.phone, "phone_verified": False}
 
 
@@ -756,9 +872,32 @@ async def phone_start(request: Request, me: dict = Depends(get_current_user)):
             "expires_in": issued.expires_in, "resend_in": issued.resend_in}
 
 
+_PHONE_TAKEN = {"code": "phone_taken",
+                "message": "This mobile number is already confirmed on another account."}
+
+
 async def _mark_phone_verified(me: dict, request: Request) -> dict:
+    """
+    Confirm her number — unless another account has already confirmed it.
+
+    Several accounts may hold one unconfirmed number, so this is where
+    uniqueness is enforced. Checked before the write and again after it: if two
+    accounts confirm the same number at the same moment, each sees the other
+    and both step back (she simply tries again), so two can never both end up
+    confirmed. (A partial unique index on confirmed numbers in
+    app/db/indexes.py would make this a database guarantee.)
+    """
+    phone = me.get("phone", "")
+    if not phone or await _phone_taken(phone, except_user_id=me["_id"]):
+        raise HTTPException(status.HTTP_409_CONFLICT, _PHONE_TAKEN)
     now = datetime.now(timezone.utc)
-    await _users().update_one({"_id": me["_id"]}, {"$set": {"phone_verified_at": now, "updated_at": now}})
+    await _users().update_one({"_id": me["_id"], "phone": phone},
+                              {"$set": {"phone_verified_at": now, "updated_at": now}})
+    if await _phone_taken(phone, except_user_id=me["_id"]):
+        await _users().update_one({"_id": me["_id"], "phone_verified_at": now},
+                                  {"$set": {"phone_verified_at": None}})
+        cache.forget_user(str(me["_id"]))
+        raise HTTPException(status.HTTP_409_CONFLICT, _PHONE_TAKEN)
     cache.forget_user(str(me["_id"]))
     await record(me, "security.phone_verified", target=str(me["_id"]), detail="Mobile number confirmed", request=request)
     return {"phone": me.get("phone", ""), "phone_verified": True}
@@ -768,7 +907,11 @@ async def _mark_phone_verified(me: dict, request: Request) -> dict:
 async def phone_verify(payload: PhoneCode, request: Request, me: dict = Depends(get_current_user)):
     if not me.get("phone"):
         raise HTTPException(status.HTTP_400_BAD_REQUEST, "Add your mobile number first.")
-    await codes.verify(request, purpose=codes.PHONE_VERIFY, destination=me["phone"], code=payload.code)
+    spent = await codes.verify(request, purpose=codes.PHONE_VERIFY, destination=me["phone"], code=payload.code)
+    if spent.get("user_id") and spent["user_id"] != str(me["_id"]):
+        # Another account asked for a code to this same (unconfirmed) number.
+        raise HTTPException(status.HTTP_400_BAD_REQUEST,
+                            {"code": "code_expired", "message": codes.CODE_MISMATCH_MESSAGE})
     return await _mark_phone_verified(me, request)
 
 
@@ -840,20 +983,53 @@ class SmsAllowanceIn(BaseModel):
         return normalise_phone(value)
 
 
+async def _optional_user(request: Request) -> Optional[dict]:
+    """The signed-in caller, or None — for endpoints open to both."""
+    header = request.headers.get("authorization", "")
+    creds = (HTTPAuthorizationCredentials(scheme="Bearer", credentials=header[7:])
+             if header.lower().startswith("bearer ") else None)
+    try:
+        return await get_current_user(request, creds)
+    except HTTPException:
+        return None
+
+
 @router.post("/sms/allowance", summary="Ask before Firebase sends an SMS code")
 async def sms_allowance(payload: SmsAllowanceIn, request: Request):
     """
     Firebase sends its SMS from the browser, where we cannot count it — so the
     screen asks here first. Refused with `sms_limit` once today's allowance is
     used (SMS_DAILY_LIMIT; 10 = Firebase's free tier), and the screen offers the
-    email code instead. Also rate-limited per IP so it cannot be used to burn
-    the allowance for everyone.
+    email code instead. Also rate-limited per IP.
+
+    Only a number that can really USE the SMS spends a unit of the platform
+    allowance:
+      · sign-in — an active member account with that number confirmed;
+      · phone_verify — needs a session, and the number must be hers.
+    Any other number gets the same answer (`ok`, or `sms_limit` when the day
+    is used up) and a ledger row that counts only against that number, so ten
+    made-up numbers from one IP can no longer spend everybody's ten a day, and
+    the answer still does not say whether the number has an account.
     """
     if not settings.phone_codes_live:
         raise HTTPException(status.HTTP_400_BAD_REQUEST,
                             {"code": "phone_codes_off", "message": "Sign in with your email for now."})
     await ratelimit.check(request, "sms_allowance", payload.phone, (5, 3600.0), (15, 3600.0))
-    await codes.reserve_sms(payload.phone, payload.purpose)
+    if payload.purpose == codes.PHONE_VERIFY:
+        me = await _optional_user(request)
+        if not me:
+            raise HTTPException(status.HTTP_401_UNAUTHORIZED, "Not authenticated")
+        if me.get("phone") != payload.phone:
+            raise HTTPException(status.HTTP_400_BAD_REQUEST, {
+                "code": "phone_mismatch", "message": "Save this number on your account first."})
+        await codes.reserve_sms(payload.phone, payload.purpose)
+        return {"ok": True}
+    user = await _users().find_one(
+        {"phone": payload.phone, "phone_verified_at": {"$ne": None}},
+        {"role": 1, "is_active": 1},
+    )
+    usable = bool(user and user.get("is_active", True) and role_name(user) == MEMBER_ROLE)
+    await codes.reserve_sms(payload.phone, payload.purpose, counts=usable)
     return {"ok": True}
 
 
@@ -863,9 +1039,7 @@ async def phone_later(me: dict = Depends(get_current_user)):
     Only when today's SMS allowance really is used up — otherwise confirming
     now is the answer. Postpones the "confirm your number" step by a day.
     """
-    ist = timezone(timedelta(hours=5, minutes=30))
-    day = datetime.now(ist).strftime("%Y-%m-%d")
-    used = await get_database()[codes.SMS_LEDGER].count_documents({"day": day})
+    used = await codes.sms_used_today()
     if settings.SMS_DAILY_LIMIT <= 0 or used < settings.SMS_DAILY_LIMIT:
         raise HTTPException(status.HTTP_400_BAD_REQUEST, "SMS codes are available — confirm your number now.")
     until = datetime.now(timezone.utc) + timedelta(days=1)

@@ -43,12 +43,28 @@ def code_at(secret: str, timestamp: int | None = None) -> str:
     return f"{number:06d}"
 
 
-def verify_code(secret: str, code: str, timestamp: int | None = None) -> bool:
+def matched_step(secret: str, code: str, timestamp: int | None = None) -> int | None:
+    """
+    The 30-second time-step (counter) this code belongs to, or None.
+
+    One step either side of now is accepted for clock drift. The caller stores
+    the step it accepted and refuses the same or an earlier one next time, so a
+    code seen over her shoulder cannot be typed in again within its minute.
+    """
     clean = "".join(ch for ch in str(code) if ch.isdigit())
     if len(clean) != 6 or not secret:
-        return False
+        return None
     now = int(timestamp if timestamp is not None else time.time())
-    return any(hmac.compare_digest(code_at(secret, now + step * 30), clean) for step in (-1, 0, 1))
+    found = None
+    for step in (-1, 0, 1):
+        at = now + step * 30
+        if hmac.compare_digest(code_at(secret, at), clean) and found is None:
+            found = at // 30
+    return found
+
+
+def verify_code(secret: str, code: str, timestamp: int | None = None) -> bool:
+    return matched_step(secret, code, timestamp) is not None
 
 
 def provisioning_uri(secret: str, email: str) -> str:

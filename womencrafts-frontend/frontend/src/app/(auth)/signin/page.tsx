@@ -22,6 +22,7 @@ import {
 } from "@/lib/auth-preview";
 import { PreviewPill } from "@/components/auth-shell/PreviewPill";
 import { codeSchema, recoveryCode, signinEmailSchema, signinMobileSchema } from "@/lib/validation";
+import { safeNext } from "@/lib/safe-next";
 
 /**
  * The local preview switch (see lib/auth-preview), written out here rather
@@ -57,11 +58,6 @@ interface SetupInfo {
   qr_svg: string;
 }
 
-/** Only same-site paths: `?next=` must never be a way to send her elsewhere. */
-function safeNext(raw: string | null): string {
-  if (!raw || !raw.startsWith("/") || raw.startsWith("//") || raw.startsWith("/\\")) return "";
-  return raw;
-}
 
 const recoverySchema = z.object({ recovery: recoveryCode });
 

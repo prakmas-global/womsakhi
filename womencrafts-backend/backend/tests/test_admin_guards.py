@@ -81,7 +81,7 @@ EXEMPT = {
     # one-time code; the app halves by `require_app_session` (members only).
     "auth_app.create_app_key", "auth_app.signin_with_app_code", "auth_app.qr_start",
     "auth_app.qr_context", "auth_app.qr_answer", "auth_app.qr_poll",
-    "auth_app.handoff_start", "auth_app.handoff_redeem",
+    "auth_app.handoff_start", "auth_app.handoff_peek", "auth_app.handoff_redeem",
     # She has no account to sign in with yet; the token is the credential.
     "staff.accept_invite",
     # Called by the payment provider, not by a person. Guarded by signature

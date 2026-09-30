@@ -28,3 +28,24 @@ def test_door_shut_without_a_valid_code(monkeypatch):
 
 def test_door_shut_by_default():
     assert settings.test_login_emails == set() or settings.TEST_LOGIN_CODE
+
+
+def test_staff_do_not_get_the_fixed_code_by_default(monkeypatch):
+    """TEST_LOGIN_ALLOW_STAFF is off unless set: a listed staff account gets the
+    real flow (emailed code, then authenticator). End-to-end proof lives in
+    tests/test_auth_security_fixes.py."""
+    from app.routes.auth import _fixed_code_allowed
+
+    assert settings.model_fields["TEST_LOGIN_ALLOW_STAFF"].default is False
+    monkeypatch.setattr(settings, "TEST_LOGIN_ALLOW_STAFF", False)
+    assert _fixed_code_allowed({"role": "Member"})
+    assert not _fixed_code_allowed({"role": "Super Admin"})
+    assert not _fixed_code_allowed({"role": "Admin"})
+    assert not _fixed_code_allowed(None)
+    monkeypatch.setattr(settings, "TEST_LOGIN_ALLOW_STAFF", True)
+    assert _fixed_code_allowed({"role": "Super Admin"})
+
+
+def test_wrong_fixed_code_tries_are_capped_per_day():
+    assert settings.model_fields["TEST_LOGIN_MAX_FAILURES_PER_DAY"].default == 10
+    assert codes.TEST_CODE_FAIL_WINDOW == 86400.0

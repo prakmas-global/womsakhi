@@ -11,11 +11,13 @@ about it.
 """
 
 from datetime import date, datetime, timedelta, timezone
+from html import escape
 
 from fastapi import APIRouter, Depends, HTTPException, Query, Request, Response, status
 from pydantic import BaseModel
 
-from app.core import cache
+from app.core import cache, ratelimit
+from app.core import email as mailer
 from app.core.audit import record
 from app.core.deps import get_current_user
 from app.core.permissions import require_permission
@@ -255,7 +257,18 @@ async def my_profile(me: dict = Depends(require_staff)):
 async def update_my_profile(
     body: StaffProfileUpdate, request: Request, me: dict = Depends(require_staff)
 ):
+    from app.routes.me import profile_phone
+
     updates = {k: v for k, v in body.model_dump().items() if v is not None}
+    # Normalised and checked for another holder exactly as `/auth/phone` does;
+    # re-sending the number she already has is not a change.
+    new_phone = await profile_phone(updates.pop("phone", None), me)
+    if new_phone is not None:
+        updates["phone"] = new_phone
+    phone_changed = "phone" in updates
+    if phone_changed:
+        # Confirmation belongs to the number: a new one starts unconfirmed.
+        updates["phone_verified_at"] = None
     if updates:
         updates["updated_at"] = datetime.now(timezone.utc)
         # The write hands back the updated document, so the re-read that used
@@ -267,7 +280,16 @@ async def update_my_profile(
         # Her record is cached per request for a few seconds; without this the
         # shell kept showing the old name until the TTL ran out.
         cache.forget_user(str(me["_id"]))
-        changed = sorted(k for k in updates if k != "updated_at")
+        if phone_changed:
+            # A new number is a new way in: sign out every other device, keep this one.
+            from app.core import sessions
+
+            ended = await sessions.revoke_all(str(me["_id"]), reason="phone_changed",
+                                              keep_sid=sessions.sid_from_request(request))
+            await record(me, "security.phone_changed", target=str(me["_id"]),
+                         detail=f"Mobile number updated; signed out {ended} other device{'s' if ended != 1 else ''}",
+                         request=request)
+        changed = sorted(k for k in updates if k not in ("updated_at", "phone_verified_at"))
         if changed == ["avatar"]:
             action = "settings.avatar_remove" if not updates["avatar"] else "settings.avatar"
         else:
@@ -640,13 +662,25 @@ class TwoFactorCodeIn(BaseModel):
     code: str
 
 
-def _current_factor_ok(me: dict, code: str) -> bool:
+async def _current_factor_ok(me: dict, code: str) -> bool:
+    """
+    Her current authenticator code, or one of her recovery codes. A recovery
+    code is spent here exactly as at sign-in: removed atomically, and only the
+    request that actually removed it counts, so it can never be used twice.
+    """
     config = me.get("two_factor") or {}
     if not config.get("enabled"):
         return True
-    return verify_code(decrypt_secret(config.get("secret", "")), code) or (
-        recovery_digest(code) in (config.get("recovery_codes") or [])
+    if verify_code(decrypt_secret(config.get("secret", "")), code):
+        return True
+    digest = recovery_digest(code)
+    if digest not in (config.get("recovery_codes") or []):
+        return False
+    spent = await _users().update_one(
+        {"_id": me["_id"], "two_factor.recovery_codes": digest},
+        {"$pull": {"two_factor.recovery_codes": digest}},
     )
+    return spent.modified_count == 1
 
 
 @router.post("/me/two-factor/setup", summary="Move my authenticator to a new phone")
@@ -656,8 +690,13 @@ async def start_two_factor(body: TwoFactorSetupIn, request: Request, me: dict = 
     it starts replacing it. The current one keeps working until the new one is
     confirmed with `/me/two-factor/enable`.
     """
-    if not _current_factor_ok(me, body.code.strip()):
+    # Same budget and bucket as the sign-in step (`/auth/two-factor/verify`):
+    # six tries per account per 15 minutes, sixty per IP. Sharing the bucket
+    # means a stolen session cannot guess here to add to the guesses there.
+    await ratelimit.check(request, "mfa", str(me["_id"]), (6, 900.0), (60, 900.0))
+    if not await _current_factor_ok(me, body.code.strip()):
         raise HTTPException(status.HTTP_400_BAD_REQUEST, "Enter the code your current authenticator shows")
+    await ratelimit.forget("mfa", str(me["_id"]))
     secret = new_secret()
     await _users().update_one(
         {"_id": me["_id"]},
@@ -694,7 +733,44 @@ async def enable_two_factor(body: TwoFactorCodeIn, request: Request, me: dict = 
     cache.forget_user(str(me["_id"]))
     await record(me, "security.two_factor_enabled", target=str(me["_id"]),
                  detail="Authenticator confirmed on a new phone", request=request)
+    # Tell her. If it was not her, this email is how she finds out that
+    # someone else's phone now opens her account.
+    await _send_quietly(_authenticator_changed_email(me.get("full_name", "")), me.get("email", ""))
     return {"enabled": True, "recovery_codes": recovery}
+
+
+def _authenticator_changed_email(name: str) -> mailer.EmailMessageSpec:
+    """Security notice built on the shared shell, like verification's resubmission email."""
+    when = datetime.now(timezone.utc).strftime("%d %b %Y, %H:%M UTC")
+    first = (name or "").strip().split(" ")[0] or "there"
+    html = mailer._wrap(  # noqa: SLF001 — the one branded shell every email uses
+        "Your authenticator was changed",
+        f"The authenticator app on your WomSakhi staff account was moved to a new phone on "
+        f"<strong>{escape(when)}</strong>. Your old recovery codes no longer work.",
+        preheader="Your WomSakhi authenticator was moved to a new phone.",
+        footer_note="If you did not do this, contact a WomSakhi Super Admin now so they can reset it and end every session.",
+        recipient_name=name,
+        title_accent="authenticator",
+        next_step="If this was you, there is nothing more to do.",
+    )
+    text = (
+        f"Hi {first},\n\nThe authenticator app on your WomSakhi staff account was moved to a new "
+        f"phone on {when}. Your old recovery codes no longer work.\n\n"
+        "If you did not do this, contact a WomSakhi Super Admin now."
+    )
+    return mailer.EmailMessageSpec(
+        to="", subject="WomSakhi — your authenticator was changed", html=html, text=text
+    )
+
+
+async def _send_quietly(message: "mailer.EmailMessageSpec", to: str) -> None:
+    """A notice must never undo the change it reports."""
+    if not to:
+        return
+    try:
+        await mailer.send(message, to)
+    except Exception as exc:  # noqa: BLE001
+        print(f"⚠️  Could not send security notice: {exc}")
 
 
 # There is no "disable": staff can open identity documents, so the

@@ -325,10 +325,25 @@ async def create_member(payload: MemberCreate, request: Request, me: dict = Depe
     if await _members().find_one({"email": email}):
         raise HTTPException(status.HTTP_409_CONFLICT, "A member with this email already exists")
 
+    # The same phone rules as the member edit below: E.164, and never a number
+    # a login already holds.
+    phone = (payload.phone or "").strip()
+    if phone:
+        from app.routes.auth import _phone_taken, normalise_phone
+
+        try:
+            phone = normalise_phone(phone)
+        except ValueError as exc:
+            raise HTTPException(status.HTTP_422_UNPROCESSABLE_ENTITY, str(exc))
+        if await _phone_taken(phone):
+            raise HTTPException(status.HTTP_409_CONFLICT,
+                                {"code": "phone_taken",
+                                 "message": "This mobile number is already linked to another account."})
+
     doc = MemberModel.create_document(
         full_name=payload.full_name,
         email=email,
-        phone=payload.phone,
+        phone=phone,
         role=payload.role,
         status=payload.status,
         location=payload.location,
@@ -752,6 +767,27 @@ async def update_member(
 
     before = await _member_or_404(member_id)
     require_member_in_scope(before, me)
+    user = await _linked_user(before)
+    if isinstance(updates.get("phone"), str):
+        # The same rules as POST /auth/phone and the profile forms: E.164, and
+        # never a number another login already holds — two logins on one
+        # number make phone sign-in pick whichever the database returns first.
+        from app.routes.auth import _phone_taken, normalise_phone
+
+        raw = updates["phone"].strip()
+        if raw:
+            try:
+                updates["phone"] = normalise_phone(raw)
+            except ValueError as exc:
+                raise HTTPException(status.HTTP_422_UNPROCESSABLE_ENTITY, str(exc))
+        else:
+            updates["phone"] = ""
+        if (updates["phone"] and updates["phone"] != ((user or {}).get("phone") or "")
+                and await _phone_taken(updates["phone"],
+                                       except_user_id=user["_id"] if user else None)):
+            raise HTTPException(status.HTTP_409_CONFLICT,
+                                {"code": "phone_taken",
+                                 "message": "This mobile number is already linked to another account."})
     updates["updated_at"] = datetime.now(timezone.utc)
     doc = await _members().find_one_and_update({"_id": oid}, {"$set": updates}, return_document=True)
     if not doc:
@@ -759,13 +795,38 @@ async def update_member(
 
     # Keep the login's name, phone and avatar in step, so what she sees on her
     # own profile is what the admin just typed.
-    user = await _linked_user(before)
+    contact_changed: list[str] = []
     if user:
         mirrored = {k: updates[k] for k in ("full_name", "phone", "avatar", "email") if k in updates}
+        # Re-saving the address or number she already has is not a change.
+        contact_changed = [k for k in ("email", "phone")
+                           if k in mirrored and (mirrored[k] or "") != (user.get(k) or "")]
+        if "phone" in contact_changed:
+            # Confirmation belongs to the number: a new one starts unconfirmed.
+            mirrored["phone_verified_at"] = None
         if mirrored:
             mirrored["updated_at"] = updates["updated_at"]
-            await _users().update_one({"_id": user["_id"]}, {"$set": mirrored})
+            if contact_changed:
+                # Invalidate every access token she holds, not just the rows.
+                await _users().update_one({"_id": user["_id"]},
+                                          {"$set": mirrored, "$inc": {"token_version": 1}})
+            else:
+                await _users().update_one({"_id": user["_id"]}, {"$set": mirrored})
             cache.forget_user(str(user["_id"]))
+    if user and contact_changed:
+        # Staff changed how she signs in. Whoever is holding her sessions —
+        # her, or someone the change is meant to lock out — signs in again
+        # with a code sent to the new address or number. ALL sessions end:
+        # none of them belongs to the admin making the change.
+        from app.core import sessions
+
+        ended = await sessions.revoke_all(str(user["_id"]), reason="contact_changed_by_staff")
+        await record(
+            me, "member.end_sessions", target=str(oid),
+            detail=f"Changed {_name(doc)}'s {' and '.join(contact_changed)}; "
+                   f"signed out of every device ({ended} session{'s' if ended != 1 else ''})",
+            request=request,
+        )
 
     fields = ", ".join(k for k in updates if k != "updated_at")
     await record(

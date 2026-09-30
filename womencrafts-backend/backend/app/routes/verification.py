@@ -17,6 +17,7 @@ Security posture, deliberately:
 import asyncio
 import re
 import uuid
+from urllib.parse import quote
 from html import escape
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
@@ -37,6 +38,7 @@ from app.core import docvault
 from app.core.permissions import has_permission, require_permission
 from app.core.rbac import MEMBER_ROLE, require_staff, require_super_admin
 from app.core.serializers import to_object_id
+from app.core.staff_scope import member_in_scope, member_scope_query
 from app.core.media import media_url
 from app.db.mongodb import get_database
 from app.models.member import MemberModel
@@ -761,10 +763,11 @@ def _state_filter(state: str) -> dict:
     return {"verification_status": state}
 
 
-async def _state_counts() -> dict[str, int]:
+async def _state_counts(scope: Optional[dict] = None) -> dict[str, int]:
     counts = {s: 0 for s in VerificationStatus.ALL}
     async for row in _users().aggregate([
-        {"$match": {"role": "Member"}},
+        # The tab counts obey the reviewer's scope too: a count is a disclosure.
+        {"$match": {"role": "Member", **(scope or {})}},
         {"$group": {"_id": "$verification_status", "n": {"$sum": 1}}},
     ]):
         key = row["_id"] if row["_id"] in counts else VerificationStatus.ACTIVE
@@ -800,6 +803,60 @@ def _resubmission_email(name: str, reason: str, url: str) -> mailer.EmailMessage
     )
 
 
+# ── reviewer scope ───────────────────────────────────────────────────────────
+# A staff member with an assigned scope (regions, categories, named members…)
+# reviews only the applicants inside it — the same rule members.py applies to
+# the directory. The scope is defined on the member DIRECTORY row, so an
+# applicant is judged by the directory row her login points at (`member_id`).
+# An applicant with no directory row is outside every assigned scope. Super
+# Admin and unscoped staff (`mode: all`) are unaffected.
+
+
+async def _scoped_member_ids(staff: dict) -> Optional[list[str]]:
+    """Directory ids this reviewer may see, or None when she sees everyone."""
+    predicate = member_scope_query(staff)
+    if not predicate:
+        return None
+    members = get_database()[MemberModel.collection_name]
+    return [str(row["_id"]) async for row in members.find(predicate, {"_id": 1})]
+
+
+async def _applicant_in_scope(user: dict, staff: dict) -> bool:
+    if not member_scope_query(staff):
+        return True
+    member_id = str(user.get("member_id") or "")
+    if not ObjectId.is_valid(member_id):
+        return False
+    member = await get_database()[MemberModel.collection_name].find_one({"_id": ObjectId(member_id)})
+    return bool(member) and member_in_scope(member, staff)
+
+
+async def _require_applicant_in_scope(user: dict, staff: dict) -> None:
+    # 404, not 403, and the same words as a missing applicant: an out-of-scope
+    # reviewer must not be able to confirm that she exists.
+    if not await _applicant_in_scope(user, staff):
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "Applicant not found")
+
+
+def _attachment_disposition(filename: str) -> str:
+    """
+    `Content-Disposition: attachment` that survives any filename (RFC 6266/5987).
+
+    Headers are Latin-1, so a Telugu or Hindi filename used to make the
+    response itself fail. The real name goes in `filename*` percent-encoded as
+    UTF-8; `filename` carries a plain-ASCII fallback for old clients, with
+    quotes, backslashes and control characters removed so it cannot break out
+    of the header.
+    """
+    name = filename or "document"
+    suffix = Path(name).suffix
+    fallback = "".join(ch for ch in name if 32 <= ord(ch) < 127 and ch not in '"\\')
+    if not Path(fallback).stem.strip(" ."):
+        safe_suffix = "".join(ch for ch in suffix if ch.isascii() and (ch.isalnum() or ch == "."))
+        fallback = f"document{safe_suffix}"
+    return f"attachment; filename=\"{fallback}\"; filename*=UTF-8''{quote(name, safe='')}"
+
+
 @router.get("/queue", response_model=ReviewQueueResponse, summary="Applications, by state")
 async def review_queue(
     state: Optional[str] = Query(None, description="One verification status, or `all`"),
@@ -807,6 +864,9 @@ async def review_queue(
     _: dict = Depends(require_permission("users.approve")),
 ):
     query: dict = {"role": "Member"}
+    in_scope = await _scoped_member_ids(_)
+    if in_scope is not None:
+        query["member_id"] = {"$in": in_scope}
     if state != "all":
         query.update(_state_filter(state if state in VerificationStatus.ALL else VerificationStatus.IN_REVIEW))
     if q and q.strip():
@@ -838,7 +898,7 @@ async def review_queue(
                 "as": "_documents",
             }},
         ]).to_list(500),
-        _state_counts(),
+        _state_counts(None if in_scope is None else {"member_id": {"$in": in_scope}}),
     )
 
     items = []
@@ -873,6 +933,7 @@ async def applicant_detail(user_id: str, _: dict = Depends(require_permission("u
     user = await _users().find_one({"_id": to_object_id(user_id), "role": "Member"})
     if not user:
         raise HTTPException(status.HTTP_404_NOT_FOUND, "Applicant not found")
+    await _require_applicant_in_scope(user, _)
 
     uid = str(user["_id"])
     docs = [
@@ -954,6 +1015,10 @@ async def assign_verification(
         raise HTTPException(status.HTTP_400_BAD_REQUEST, "Choose an active admin account")
     if not await has_permission(assignee, "users.approve"):
         raise HTTPException(status.HTTP_400_BAD_REQUEST, "That admin cannot review member documents")
+    await _require_applicant_in_scope(applicant, me)
+    if not await _applicant_in_scope(applicant, assignee):
+        # She would be handed a case she is not allowed to open.
+        raise HTTPException(status.HTTP_400_BAD_REQUEST, "That admin's scope does not include this applicant")
 
     now = datetime.now(timezone.utc)
     assignee_name = assignee.get("full_name", "") or assignee.get("email", "")
@@ -988,6 +1053,11 @@ async def read_document(document_id: str, staff: dict = Depends(require_permissi
     # side cannot even confirm that one exists.
     if not doc or doc.get("status") == DocumentModel.STATUS_STORED:
         raise HTTPException(status.HTTP_404_NOT_FOUND, "Document not found")
+    if member_scope_query(staff):
+        owner_id = str(doc.get("user_id") or "")
+        owner = await _users().find_one({"_id": ObjectId(owner_id)}) if ObjectId.is_valid(owner_id) else None
+        if not owner or not await _applicant_in_scope(owner, staff):
+            raise HTTPException(status.HTTP_404_NOT_FOUND, "Document not found")
 
     target = (PRIVATE_ROOT / doc["stored_name"]).resolve()
     # Defence in depth: the resolved path must still sit inside private storage.
@@ -1030,17 +1100,20 @@ async def read_document(document_id: str, staff: dict = Depends(require_permissi
         headers={
             # Same disposition `FileResponse(filename=...)` produced, so nothing
             # that opens these changes behaviour.
-            "Content-Disposition": f'attachment; filename="{filename}"',
+            # RFC 5987: a non-Latin-1 name (Telugu, Hindi…) used to 500 here.
+            "Content-Disposition": _attachment_disposition(filename),
             # Never let a browser or CDN keep a copy of an ID document.
             "Cache-Control": "no-store, private",
         },
     )
 
 
-async def _applicant(user_id: str) -> dict:
+async def _applicant(user_id: str, staff: dict) -> dict:
+    """The applicant, if she exists AND sits inside this reviewer's scope."""
     user = await _users().find_one({"_id": to_object_id(user_id), "role": "Member"})
     if not user:
         raise HTTPException(status.HTTP_404_NOT_FOUND, "Applicant not found")
+    await _require_applicant_in_scope(user, staff)
     return user
 
 
@@ -1058,7 +1131,7 @@ async def approve(
     request: Request,
     staff: dict = Depends(require_permission("users.approve")),
 ):
-    user = await _applicant(user_id)
+    user = await _applicant(user_id, staff)
     was = _state_of(user)
     if was == VerificationStatus.ACTIVE:
         # Not an error worth a stack trace, but not a silent second "You're
@@ -1133,7 +1206,7 @@ async def reject(
     request: Request,
     staff: dict = Depends(require_permission("users.approve")),
 ):
-    user = await _applicant(user_id)
+    user = await _applicant(user_id, staff)
     was = _state_of(user)
 
     now = datetime.now(timezone.utc)
@@ -1202,7 +1275,7 @@ async def request_resubmission(
     upload step with a note saying what to change; the app stays closed
     until a person has looked again.
     """
-    user = await _applicant(user_id)
+    user = await _applicant(user_id, staff)
     was = _state_of(user)
     if was == VerificationStatus.PENDING_EMAIL:
         raise HTTPException(
@@ -1282,8 +1355,14 @@ from app.schemas.verification import (  # noqa: E402
 
 @router.get("/threads", response_model=list[SupportThread], summary="Member support threads")
 async def support_threads(staff: dict = Depends(require_staff)):
-    """Every member who has written in, most recently active first."""
+    """Every member who has written in, most recently active first.
+
+    Scoped like the review queue: a staff member with an assigned scope sees
+    only the threads of members inside it.
+    """
     db = get_database()
+    in_scope = await _scoped_member_ids(staff)
+    visible = None if in_scope is None else set(in_scope)
     threads: dict[str, dict] = {}
     async for m in db[MemberMessageModel.collection_name].find({}).sort("created_at", 1):
         uid = m["user_id"]
@@ -1317,6 +1396,8 @@ async def support_threads(staff: dict = Depends(require_staff)):
         user = users.get(uid)
         if not user:
             continue
+        if visible is not None and str(user.get("member_id") or "") not in visible:
+            continue
         out.append(
             SupportThread(
                 user_id=uid,
@@ -1346,7 +1427,8 @@ async def reply_to_member(
 ):
     db = get_database()
     member = await db[UserModel.collection_name].find_one({"_id": to_object_id(user_id)})
-    if not member:
+    # Out of her scope reads exactly like no such member.
+    if not member or not await _applicant_in_scope(member, staff):
         raise HTTPException(status.HTTP_404_NOT_FOUND, "Member not found")
 
     doc = MemberMessageModel.create_document(

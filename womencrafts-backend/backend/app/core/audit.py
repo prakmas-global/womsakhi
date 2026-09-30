@@ -98,9 +98,9 @@ async def record(
 def _client_ip(request: Request | None) -> str:
     if request is None:
         return ""
-    # Behind the load balancer the real address is the first hop in
-    # X-Forwarded-For; `request.client` is the balancer itself.
-    fwd = request.headers.get("x-forwarded-for", "")
-    if fwd:
-        return fwd.split(",")[0].strip()[:64]
-    return (request.client.host if request.client else "")[:64]
+    # The same rule as the rate limiter: Google's front end APPENDS the real
+    # address to X-Forwarded-For, so the first entry is whatever the client
+    # sent. Trusting it would let anyone write a fake IP into the audit log.
+    from app.core.ratelimit import client_ip
+
+    return client_ip(request)[:64]

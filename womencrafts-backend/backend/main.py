@@ -1,3 +1,4 @@
+import os
 import threading
 from contextlib import asynccontextmanager
 from pathlib import Path
@@ -141,8 +142,8 @@ async def lifespan(app: FastAPI):
         else:
             print("⚠️  REDIS_URL is set but Redis is NOT reachable. Falling back to per-process "
                   "counters: the login lockout will be enforced separately by each worker.")
-    elif settings.WORKERS > 1:
-        print(f"⚠️  {settings.WORKERS} workers with no REDIS_URL — the login lockout is per process.")
+    else:
+        print("✅ Shared state: rate limits are counted in MongoDB (`rate_limits`), shared by every server")
 
     try:
         await connect_db()
@@ -199,6 +200,21 @@ async def lifespan(app: FastAPI):
     await close_db()
 
 
+# ── Interactive API docs: a developer's machine only ────────────────────────
+#
+# `/docs`, `/redoc` and `/openapi.json` hand anyone the full map of every
+# route, parameter and response shape. They are for a laptop. `is_production`
+# alone is not enough to decide that: ENVIRONMENT defaults to "development",
+# and the deployed service has been seen running with it unset — which would
+# read as "development" and publish the docs. So they are on only when
+# ENVIRONMENT explicitly says development AND this is not a Cloud Run
+# container (Cloud Run always sets K_SERVICE). Anywhere else, off.
+DOCS_ENABLED = (
+    settings.ENVIRONMENT.strip().lower() in {"development", "dev", "local"}
+    and not settings.is_production
+    and not os.environ.get("K_SERVICE")
+)
+
 app = FastAPI(
     title="WomSakhi API",
     version="1.1.0",
@@ -209,6 +225,9 @@ app = FastAPI(
     ),
     lifespan=lifespan,
     openapi_tags=tags_metadata,
+    docs_url="/docs" if DOCS_ENABLED else None,
+    redoc_url="/redoc" if DOCS_ENABLED else None,
+    openapi_url="/openapi.json" if DOCS_ENABLED else None,
 )
 
 # Order matters: middleware wraps outward-in, so timing must be added LAST to
@@ -256,6 +275,52 @@ app.add_middleware(
     # a timing header nobody can read is a timing header nobody looks at.
     expose_headers=["Server-Timing", "X-Query-Count", "X-Request-Id"],
 )
+
+# ── Cross-site request refusal (defence in depth behind SameSite=lax) ───────
+#
+# A browser always sends `Origin` on a cross-site POST/PUT/PATCH/DELETE. If it
+# is present and is not one of our own origins, the request came from somebody
+# else's page and is refused before any route runs. A request with NO Origin
+# is let through on purpose: the native app, the Next.js server calling the
+# API (proxy.ts, server-api.ts), payment webhooks and curl never send one. The
+# browser's own calls arrive through the Next `/api/v1` rewrite, which passes
+# the browser's `Origin` along unchanged — the app's own origin, which is in
+# ALLOWED_ORIGINS, so they pass.
+#
+# Added after CORS (so it sits outside it) and before RequestId (so it sits
+# inside that, and the refusal carries a request id like every other error).
+_UNSAFE_METHODS = frozenset({"POST", "PUT", "PATCH", "DELETE"})
+
+
+def _origin_key(origin: str) -> str:
+    return origin.strip().rstrip("/").lower()
+
+
+class OriginCheckMiddleware:
+    def __init__(self, app, allowed: list[str]):
+        self.app = app
+        self.allowed = frozenset(_origin_key(o) for o in allowed)
+
+    async def __call__(self, scope, receive, send):
+        if scope["type"] == "http" and scope.get("method", "").upper() in _UNSAFE_METHODS:
+            origin = next((v.decode("latin-1") for k, v in scope.get("headers", ())
+                           if k == b"origin"), None)
+            if origin is not None and _origin_key(origin) not in self.allowed:
+                state = scope.get("state") or {}
+                rid = state.get("request_id", "") if isinstance(state, dict) else ""
+                response = JSONResponse(
+                    status_code=status.HTTP_403_FORBIDDEN,
+                    content={"error": {
+                        "message": "This request came from a site that is not WomSakhi, so it was refused.",
+                        "request_id": rid,
+                    }},
+                )
+                await response(scope, receive, send)
+                return
+        await self.app(scope, receive, send)
+
+
+app.add_middleware(OriginCheckMiddleware, allowed=settings.allowed_origins)
 
 app.add_middleware(TimingMiddleware)
 
