@@ -80,8 +80,10 @@ class UserModel:
         Should the screens stop her to add or confirm a mobile number?
 
         Members only. A missing number always counts — it is required. An
-        unconfirmed one counts only once phone codes are live; before that
-        there is nothing she could do about it.
+        unconfirmed one counts only once phone codes are live (before that
+        there is nothing she could do about it), and never when her email is
+        proved: ONE verified channel is enough to be a member, so a woman who
+        joined with the email code is not stopped to confirm her mobile too.
         """
         from app.core.config import settings  # local: config is heavy to import here
 
@@ -90,6 +92,8 @@ class UserModel:
         if not document.get("phone"):
             return True
         if not settings.phone_codes_live or document.get("phone_verified_at"):
+            return False
+        if document.get("email_verified_at"):
             return False
         # Postponed because today's SMS allowance ran out: ask again tomorrow.
         deferred = document.get("phone_confirm_deferred_until")
@@ -133,7 +137,10 @@ class UserModel:
             "phone_action_required": UserModel.phone_action_required(document),
             # Accounts from before email codes, and staff made by an admin,
             # have no stamp; only an open "confirm your email" step is unproved.
-            "email_verified": document.get("verification_status") != VerificationStatus.PENDING_EMAIL,
+            # An account that joined with an SMS code has a typed, unproved
+            # email until a code to that inbox is used.
+            "email_verified": document.get("verification_status") != VerificationStatus.PENDING_EMAIL
+            and not (document.get("signup_proof") == "phone" and not document.get("email_verified_at")),
             "reapply_after": _iso(document.get("reapply_after")),
             "two_factor_enabled": bool((document.get("two_factor") or {}).get("enabled")),
             "avatar": media_url(document.get("avatar", "")),

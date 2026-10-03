@@ -281,11 +281,7 @@ async def rotate(request: Request, response: Optional[Response], refresh_token: 
         reused = await _find_spent(digest)
         if not reused or reused.get("revoked_at"):
             raise ended
-        # Only the IMMEDIATELY previous token gets the race grace; any older
-        # generation is a second holder, however recently it rotated.
-        rotated = _aware(reused.get("rotated_at"))
-        if (reused.get("prev_refresh_hash") == digest and rotated
-                and (_now() - rotated).total_seconds() <= ROTATION_GRACE_SECONDS):
+        if _in_grace(reused, digest):
             return await _grace_access(reused, response)
         await revoke(reused["sid"], reason="refresh_reuse")
         raise ended
@@ -321,7 +317,14 @@ async def rotate(request: Request, response: Optional[Response], refresh_token: 
          "$push": {"spent_refresh_hashes": {"$each": [digest], "$slice": -SPENT_HISTORY}}},
     )
     if result.modified_count != 1:
-        # Lost a race with another refresh of the same generation.
+        # Lost a race with another refresh of the same generation (two tabs,
+        # or focus + visibilitychange firing together). The winner has just
+        # rotated THIS token, so it is now the immediately previous one: serve
+        # the grace path like any other late arrival instead of signing her
+        # out. Anything else (revoked meanwhile, rotated twice) is refused.
+        fresh_row = await _sessions().find_one({"_id": row["_id"]})
+        if fresh_row and not fresh_row.get("revoked_at") and _in_grace(fresh_row, digest):
+            return await _grace_access(fresh_row, response)
         raise ended
 
     new_expiry = _aware(updates.get("expires_at")) or expires
@@ -331,6 +334,17 @@ async def rotate(request: Request, response: Optional[Response], refresh_token: 
         _set_refresh_cookie(response, fresh, max(60, int((new_expiry - now).total_seconds())))
     return user, {"access_token": access, "refresh_token": fresh, "sid": row["sid"],
                   "expires_at": new_expiry.isoformat()}
+
+
+def _in_grace(row: dict, digest: str) -> bool:
+    """
+    Is `digest` the IMMEDIATELY previous refresh token of this session, rotated
+    within the grace window? Only that one gets the race grace; any older
+    generation is a second holder, however recently it rotated.
+    """
+    rotated = _aware(row.get("rotated_at"))
+    return bool(row.get("prev_refresh_hash") == digest and rotated
+                and (_now() - rotated).total_seconds() <= ROTATION_GRACE_SECONDS)
 
 
 _spent_index_ready = False

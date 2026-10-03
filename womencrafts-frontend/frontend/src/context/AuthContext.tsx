@@ -177,27 +177,36 @@ export function AuthProvider({
     ten minutes while the tab is open, and once whenever she comes back to it,
     means the leash only runs out after she has genuinely stopped.
 
-    A failed refresh is not an error to show her: it means the session had
-    already gone, and the ordinary signed-out path handles that.
+    A failed refresh is not an error to show her. Only the API saying the
+    session is OVER (401 `session_ended`) signs her out here; no answer, a
+    timeout or a 5xx keeps her signed in — the next try, or the 401
+    interceptor on her next request, settles it.
+
+    One listener (`visibilitychange` → visible). Listening to `focus` as well
+    fired two refreshes for every tab switch, and the loser of that race was
+    told its token had been spent: "You have been signed out" for a woman who
+    had only looked at another tab. Every renewal shares one in-flight request
+    (lib/api `renewSession`), and coming back within a minute of the last one
+    asks nothing at all.
   */
   useEffect(() => {
     if (!user || (AUTH_PREVIEW && previewing.current)) return;
     let alive = true;
     const renew = () => {
       if (document.visibilityState === "hidden") return;
-      void apiRefreshSession().then((ok) => {
-        if (alive && !ok) setUser(null);
+      void apiRefreshSession({ recentMs: 60_000 }).then((result) => {
+        if (alive && result === "ended") setUser(null);
       });
     };
     const timer = window.setInterval(renew, 10 * 60 * 1000);
-    const onFocus = () => renew();
-    window.addEventListener("focus", onFocus);
-    document.addEventListener("visibilitychange", onFocus);
+    const onVisible = () => {
+      if (document.visibilityState === "visible") renew();
+    };
+    document.addEventListener("visibilitychange", onVisible);
     return () => {
       alive = false;
       window.clearInterval(timer);
-      window.removeEventListener("focus", onFocus);
-      document.removeEventListener("visibilitychange", onFocus);
+      document.removeEventListener("visibilitychange", onVisible);
     };
   }, [user]);
 

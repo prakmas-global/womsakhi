@@ -44,7 +44,7 @@ function stepsFor(p: MeProfile | null) {
 export default function Profile() {
   const tr = useT();
   const ME = useMe();
-  const { user } = useAuth();
+  const { user, signOut } = useAuth();
   const [tab, setTab] = useState("Overview");
   const [photoOpen, setPhotoOpen] = useState(false);
 
@@ -369,6 +369,21 @@ export default function Profile() {
       {tab === "What you made" && <PortfolioTab />}
       {tab === "Helping others" && <ContributionTab />}
       {tab === "Documents" && <DocumentsTab />}
+
+      {/* A member still waiting for approval has no account menu (the app's
+          chrome is hidden until she is admitted), and the verify and phone
+          screens no longer carry a "Sign out" — so it lives here for her. */}
+      {!admitted && (
+        <Card className="mt-4">
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <p className="min-w-0 text-xsm" style={{ color: "var(--ux-muted)" }}>
+              {user?.email ? <>Signed in as <span className="font-medium [overflow-wrap:anywhere]" style={{ color: "var(--ux-ink)" }}>{user.email}</span></> : "Signed in"}
+            </p>
+            {/* `signOut()`, not `void signOut()`: Btn shows its busy state while the promise runs. */}
+            <Btn variant="outline" size="sm" icon="LogOut" onClick={() => signOut()}>{tr("common.signOut")}</Btn>
+          </div>
+        </Card>
+      )}
 
       <PhotoSheet open={photoOpen} onClose={() => setPhotoOpen(false)}
                   name={name} avatar={avatar} onChanged={refetch} />

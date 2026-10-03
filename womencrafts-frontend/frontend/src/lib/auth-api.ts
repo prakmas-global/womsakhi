@@ -1,7 +1,8 @@
 /**
  * Sign-up and sign-in with one-time codes. There are no passwords.
  *
- *   Join     email + mobile → code to email → name + "I am a woman, 18+"
+ *   Join     email + mobile → code to email (or, with Firebase SMS live, to the
+ *            mobile instead) → name + "I am a woman, 18+"
  *   Sign in  email → code → in (members); staff then add their authenticator
  *
  * Every error the API raises here carries a machine `code` alongside the
@@ -32,6 +33,12 @@ export interface CodeSent {
   destination: string;
   expires_in: number;
   resend_in: number;
+  /**
+   * Sign-in only: the OTHER place this account's code can go, masked, when
+   * both her email and her mobile are proved — for "Send code by SMS / email
+   * instead" on the code step. Null when there is no other choice.
+   */
+  alternate?: { channel: "email" | "sms"; destination: string } | null;
 }
 
 export interface AuthError {
@@ -71,6 +78,15 @@ export async function apiAuthOptions(): Promise<AuthOptions> {
 
 // ── join ────────────────────────────────────────────────────────────────────
 
+/**
+ * Join, first screen: is this email and number free, and where can the code
+ * go? Sends nothing. 409 `already_registered` / `phone_taken` = sign in instead.
+ */
+export async function apiSignupCheck(email: string, phone: string): Promise<{ ok: true; channels: ("email" | "sms")[] }> {
+  const { data } = await apiClient.post("/auth/signup/check", { email, phone, locale: "en" }, ANSWER);
+  return data;
+}
+
 export async function apiSignupStart(email: string, phone: string, locale: string): Promise<CodeSent> {
   const { data } = await apiClient.post<CodeSent>("/auth/signup/start", { email, phone, locale }, ANSWER);
   return data;
@@ -89,6 +105,24 @@ export async function apiSignupVerify(email: string, code: string): Promise<Sign
   return data;
 }
 
+/**
+ * Join with the mobile proved instead of the email: Firebase checked the SMS
+ * code and gave us `idToken`. Answers the same ticket as `apiSignupVerify`.
+ */
+export async function apiSignupFirebase(input: {
+  email: string;
+  phone: string;
+  idToken: string;
+  locale: string;
+}): Promise<{ ticket: string; expires_in: number }> {
+  const { data } = await apiClient.post(
+    "/auth/signup/firebase",
+    { email: input.email, phone: input.phone, id_token: input.idToken, locale: input.locale },
+    ANSWER,
+  );
+  return data;
+}
+
 export async function apiSignupComplete(input: {
   ticket: string;
   full_name: string;
@@ -103,12 +137,13 @@ export async function apiSignupComplete(input: {
 
 // ── sign in ─────────────────────────────────────────────────────────────────
 
-export async function apiSigninStart(input: { email?: string; phone?: string }): Promise<CodeSent> {
+/** `via: "email"` with a phone: she entered her number but wants the code by email. */
+export async function apiSigninStart(input: { email?: string; phone?: string; via?: "email" }): Promise<CodeSent> {
   const { data } = await apiClient.post<CodeSent>("/auth/signin/start", input, ANSWER);
   return data;
 }
 
-export async function apiSigninVerify(input: { email?: string; phone?: string; code: string }): Promise<AuthPayload> {
+export async function apiSigninVerify(input: { email?: string; phone?: string; via?: "email"; code: string }): Promise<AuthPayload> {
   const { data } = await apiClient.post<AuthPayload>("/auth/signin/verify", input, ANSWER);
   return data;
 }
@@ -175,10 +210,16 @@ export async function apiPhoneVerify(code: string): Promise<{ phone: string; pho
 
 /**
  * Ask before Firebase sends an SMS (it sends from the browser, where we can't
- * count it). Refused with code `sms_limit` once today's allowance is used.
+ * count it). Refused with code `sms_limit` once today's allowance is used,
+ * `not_registered` (sign-in) for a number with no account, and `phone_taken`
+ * (signup) for a number that already has one.
  */
-export async function apiSmsAllowance(phone: string, purpose: "signin" | "phone_verify"): Promise<void> {
-  await apiClient.post("/auth/sms/allowance", { phone, purpose }, ANSWER);
+export async function apiSmsAllowance(
+  phone: string,
+  purpose: "signin" | "signup" | "phone_verify",
+): Promise<{ ok: boolean; alternate?: CodeSent["alternate"] }> {
+  const { data } = await apiClient.post("/auth/sms/allowance", { phone, purpose }, ANSWER);
+  return data ?? { ok: true };
 }
 
 /** Today's SMS allowance is used up: confirm the number tomorrow instead. */

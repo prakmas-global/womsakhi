@@ -71,7 +71,7 @@ def _module_gated() -> set[str]:
 #: Endpoints that must stay reachable without a role check, and why.
 EXEMPT = {
     # Signed out by definition — this is how you get a session at all.
-    "auth.auth_options", "auth.signup_start", "auth.signup_verify", "auth.signup_complete",
+    "auth.auth_options", "auth.signup_start", "auth.signup_check", "auth.signup_verify", "auth.signup_firebase", "auth.signup_complete",
     "auth.signin_start", "auth.signin_verify", "auth.two_factor_verify", "auth.two_factor_enroll",
     "auth.refresh", "auth.session", "auth.get_me", "auth.signout", "auth.signout_everywhere",
     # Her own devices and her own mobile number: the object is always the caller.

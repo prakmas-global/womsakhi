@@ -69,6 +69,15 @@ export async function sendSmsCode(
   phoneE164: string,
   containerId: string,
   languageCode = "en",
+  /**
+   * Where Google draws its badge. "bottomright" (the default) is
+   * `position: fixed` — and any ancestor with `transform`/`filter`/
+   * `backdrop-filter` turns that into "the corner of that ancestor", which is
+   * how it ended up over the phone card. "inline" keeps it in the container's
+   * own flow, so the page decides where it goes (and may hide it, provided
+   * Google's notice is shown instead).
+   */
+  options: { badge?: "bottomright" | "bottomleft" | "inline" } = {},
 ): Promise<SmsConfirmation> {
   const a = await auth(config);
   a.languageCode = languageCode;
@@ -93,7 +102,7 @@ export async function sendSmsCode(
   // codes. On app.womsakhi.com the full check runs and real SMS goes out.
   const local = isLocalhost();
   a.settings.appVerificationDisabledForTesting = local;
-  verifier = new window.firebase.auth.RecaptchaVerifier(slot, { size: "invisible" });
+  verifier = new window.firebase.auth.RecaptchaVerifier(slot, { size: "invisible", badge: options.badge ?? "bottomright" });
   try {
     return await a.signInWithPhoneNumber(phoneE164, verifier);
   } catch (err) {

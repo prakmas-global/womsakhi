@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState, useSyncExternalStore } from "react";
+import { createPortal } from "react-dom";
 import { useRouter } from "next/navigation";
 import {
   ArrowRight, Bell, BookOpen, Camera, Check, Clock, FileText, IdCard, Image as ImageIcon, Loader, RotateCcw, Trash2, UserRound, X,
@@ -21,7 +22,8 @@ import { apiGetMe, invalidateReads } from "@/lib/api";
 import { authError } from "@/lib/auth-api";
 import { useAuth } from "@/context/AuthContext";
 import { AuthShell } from "@/components/auth-shell";
-import { BackLink, CAMERA_PHOTO, SignOutLink, useBackStep } from "@/components/auth-cards";
+import { BackLink, CAMERA_PHOTO, useBackStep } from "@/components/auth-cards";
+import { authSans, authSerif } from "@/components/auth-shell/fonts";
 import { useI18n } from "@/i18n";
 import { PREVIEW_STATES, PREVIEW_THUMBS, previewVerification, readPreview, type VerifyPreview } from "@/lib/auth-preview";
 import { PreviewPillFromUrl } from "@/components/auth-shell/PreviewPill";
@@ -142,7 +144,7 @@ export default function VerifyPage() {
 }
 
 function VerifyScreen() {
-  const { user, signOut, updateUser } = useAuth();
+  const { user, updateUser } = useAuth();
   const { locale } = useI18n();
   const router = useRouter();
   const now = useNow();
@@ -243,7 +245,13 @@ function VerifyScreen() {
     if (user.verification_status !== state) updateUser({ ...user, verification_status: state, rejection_reason: status?.rejection_reason ?? "" });
   }, [state, user, updateUser, router, status?.rejection_reason, welcomed, preview]);
 
-  const exit = () => void signOut();
+  /*
+    No "Sign out" on these screens (testers read it as the main action and
+    tapped it by mistake). A waiting member signs out from My profile; a
+    refused or paused one, who cannot open her profile, from "Sign-in and
+    devices" — the one settings screen open in every admission state.
+  */
+  const devicesLink = <p className="ac-link"><a href="/app/settings/security">Sign-in and devices</a></p>;
 
   // "Start again" after a refusal is a step of its own: back (on screen or the
   // phone's button) returns to the refusal, not out of the app.
@@ -278,7 +286,7 @@ function VerifyScreen() {
               <h1 className="ac-t">Could not load</h1>
               <p role="alert" className="ac-err">{loadError}</p>
               <button type="button" className="ac-btn ac-go" onClick={() => void load()}><RotateCcw aria-hidden /> Try again</button>
-              <SignOutLink onClick={exit} />
+              {devicesLink}
             </>
           ) : (
             <div role="status" className="ac-wait">
@@ -302,7 +310,7 @@ function VerifyScreen() {
             <small>CONTACT SUPPORT</small>
             <b>{SUPPORT_EMAIL}</b>
           </div>
-          <SignOutLink onClick={exit} />
+          {devicesLink}
         </div>
       </AuthShell>
     );
@@ -330,7 +338,7 @@ function VerifyScreen() {
             </div>
           )}
           <p className="ac-link">Questions? {SUPPORT_EMAIL}</p>
-          <SignOutLink onClick={exit} />
+          {devicesLink}
         </div>
       </AuthShell>
     );
@@ -338,7 +346,7 @@ function VerifyScreen() {
 
   // ── C2 / C3 · in review ──
   if (state === "in_review") {
-    return <InReview status={status} now={now} locale={locale} justSent={justSent} onChanged={load} onExit={exit} />;
+    return <InReview status={status} now={now} locale={locale} justSent={justSent} onChanged={load} />;
   }
 
   // ── C1 / C4 · pending_email / pending_documents (fresh, or sent back), or a fresh start after a refusal ──
@@ -350,9 +358,9 @@ function VerifyScreen() {
         <Uploader status={status} fixing={fixing} onChanged={afterUpload} />
         {/* The approved "Not now?" line, with the way out beside it rather than under it. */}
         {fixing ? (
-          <p className="ac-link">While you wait: <a href="/app/learn">Learn</a> · <span className="ac-nw"><a href="/app/profile">My profile</a> · <button type="button" onClick={exit}>Sign out</button></span></p>
+          <p className="ac-link">While you wait: <a href="/app/learn">Learn</a> · <span className="ac-nw"><a href="/app/profile">My profile</a></span></p>
         ) : (
-          <p className="ac-link">Not now? <a href="/app/learn">Learn something while you wait</a> <span className="ac-nw">· <button type="button" onClick={exit}>Sign out</button></span></p>
+          <p className="ac-link">Not now? <a href="/app/learn">Learn something while you wait</a> <span className="ac-nw">· <a href="/app/profile">My profile</a></span></p>
         )}
       </div>
     </AuthShell>
@@ -361,9 +369,9 @@ function VerifyScreen() {
 
 // ── in review ────────────────────────────────────────────────────────────────
 
-function InReview({ status, now, locale, justSent, onChanged, onExit }: {
+function InReview({ status, now, locale, justSent, onChanged }: {
   status: VerificationStatus; now: number; locale: string; justSent: boolean;
-  onChanged: () => Promise<unknown>; onExit: () => void;
+  onChanged: () => Promise<unknown>;
 }) {
   const [asked, setAsked] = useState<{ next: string } | null>(null);
   const [problem, setProblem] = useState("");
@@ -415,7 +423,7 @@ function InReview({ status, now, locale, justSent, onChanged, onExit }: {
             <ol className="ac-steps" aria-label="Your progress">
               <li><i className="ok"><Check aria-hidden strokeWidth={3} /></i>Account created</li>
               <li><i className="ok"><Check aria-hidden strokeWidth={3} /></i>Photos sent</li>
-              <li aria-current="step"><i className="now" />Our team checks</li>
+              <li aria-current="step"><i className="now"><ArrowRight aria-hidden strokeWidth={3} /></i>Our team checks</li>
             </ol>
           </>
         )}
@@ -439,7 +447,6 @@ function InReview({ status, now, locale, justSent, onChanged, onExit }: {
           <a href="/app/learn"><BookOpen aria-hidden />Learn</a>
           <a href="/app/profile"><UserRound aria-hidden />My profile</a>
         </nav>
-        <SignOutLink onClick={onExit} />
       </div>
     </AuthShell>
   );
@@ -736,7 +743,41 @@ function LiveCamera({ facing, title, onClose, onFallback, onShot }: {
   onClose: () => void; onFallback: () => void; onShot: (file: File) => void;
 }) {
   const video = useRef<HTMLVideoElement | null>(null);
+  const dialog = useRef<HTMLDivElement | null>(null);
   const [error, setError] = useState("");
+  const closeRef = useRef(onClose);
+  useEffect(() => { closeRef.current = onClose; });
+
+  /*
+    A real modal: the page behind cannot scroll, Esc closes it, Tab stays
+    inside it, and focus goes back to the button that opened it.
+  */
+  useEffect(() => {
+    const opener = document.activeElement as HTMLElement | null;
+    const root = document.documentElement;
+    const prevOverflow = root.style.overflow;
+    root.style.overflow = "hidden";
+    const box = dialog.current;
+    const focusables = () => Array.from(box?.querySelectorAll<HTMLElement>("button:not([disabled]), a[href], [tabindex]:not([tabindex='-1'])") ?? []);
+    (box?.querySelector<HTMLElement>(".ac-go:not([disabled])") ?? focusables()[0])?.focus();
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") { e.preventDefault(); closeRef.current(); return; }
+      if (e.key !== "Tab") return;
+      const list = focusables();
+      if (!list.length) return;
+      const first = list[0];
+      const last = list[list.length - 1];
+      const active = document.activeElement as HTMLElement | null;
+      if (e.shiftKey && (active === first || !box?.contains(active))) { e.preventDefault(); last.focus(); }
+      else if (!e.shiftKey && (active === last || !box?.contains(active))) { e.preventDefault(); first.focus(); }
+    };
+    document.addEventListener("keydown", onKey);
+    return () => {
+      document.removeEventListener("keydown", onKey);
+      root.style.overflow = prevOverflow;
+      if (opener && document.contains(opener)) opener.focus();
+    };
+  }, []);
 
   useEffect(() => {
     let stream: MediaStream | null = null;
@@ -766,8 +807,15 @@ function LiveCamera({ facing, title, onClose, onFallback, onShot }: {
     }, "image/jpeg", 0.9);
   }
 
-  return (
-    <div className="ac ac-cam" role="dialog" aria-modal="true" aria-label={title}>
+  /*
+    Portalled to <body>: inside the card it was trapped by the card's
+    `backdrop-filter` (a containing block for `position: fixed`), so the
+    "full-screen" camera was squeezed into the card with the page footer over
+    its buttons. Out here it really covers the viewport. The auth fonts'
+    variable classes travel with it; auth-cards.css gives .ac-cam the rest.
+  */
+  return createPortal(
+    <div ref={dialog} className={`ac ac-cam ${authSerif.variable} ${authSans.variable}`} role="dialog" aria-modal="true" aria-label={title}>
       <div className="box">
         <div className="bar">
           <p>{title}</p>
@@ -788,6 +836,7 @@ function LiveCamera({ facing, title, onClose, onFallback, onShot }: {
           </div>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body,
   );
 }

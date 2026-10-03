@@ -930,6 +930,13 @@ async def approve_member(
                 "rejection_reason": "",
                 "is_active": True,
                 "updated_at": now,
+            },
+             # Same as the verification approve: no follow-up is due any more.
+             "$unset": {
+                "verification_review_requested_at": "",
+                "verification_next_request_at": "",
+                "verification_next_reminder_at": "",
+                "verification_reminder_claimed_at": "",
             }},
         )
         await db[DocumentModel.collection_name].update_many(
