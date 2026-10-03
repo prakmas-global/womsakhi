@@ -253,13 +253,23 @@ def _wrap(
     recipient_name: str = "",
     title_accent: str = "",
     next_step: str = "",
+    top_html: str = "",
 ) -> str:
-    """Render the shared, responsive WomSakhi transactional-email shell."""
+    """
+    Render the shared, responsive WomSakhi transactional-email shell.
+
+    `top_html` goes ABOVE the logo, first thing in the card — a code email
+    puts its six digits there, so they show before any image has loaded.
+
+    The images are stills (a 23 KB logo, a 6 KB lotus). They were animated
+    GIFs, ~590 KB together, and on the phones this is read on that held the
+    whole message back.
+    """
     app_url = settings.APP_BASE_URL.rstrip("/")
     safe_app_url = escape(app_url, quote=True)
-    reveal_url = f"{safe_app_url}/womsakhi-email-reveal.gif"
-    lotus_url = f"{safe_app_url}/womsakhi-lotus-airflow.gif"
     icons_url = f"{safe_app_url}/email-icons"
+    logo_url = f"{icons_url}/logo-still.jpg"
+    lotus_url = f"{icons_url}/lotus-still.png"
     safe_title = escape(title)
     safe_preheader = escape(preheader)
     safe_footer = escape(footer_note)
@@ -323,8 +333,8 @@ def _wrap(
     return f"""<!doctype html>
 <html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>{safe_title}</title>
   <style>
-    @media only screen and (max-width:620px) {{.page-pad{{padding-left:0!important;padding-right:0!important}}.email-shell{{width:100%!important;border-radius:0!important}}.content-pad{{padding-left:20px!important;padding-right:20px!important}}.reveal-animation{{width:190px!important;height:190px!important}}.email-title{{font-size:30px!important;line-height:35px!important}}.lotus-animation{{width:100%!important;height:auto!important}}}}
-    @media only screen and (max-width:380px) {{.page-pad{{padding-top:0!important;padding-bottom:0!important}}.content-pad{{padding-left:12px!important;padding-right:12px!important}}.header-pad{{padding-top:4px!important;padding-bottom:4px!important}}.reveal-animation{{width:108px!important;height:108px!important;border-radius:12px!important}}.main-pad{{padding-top:7px!important;padding-bottom:4px!important}}.email-title{{font-size:25px!important;line-height:28px!important;margin-top:4px!important}}.body-copy{{font-size:12px!important;line-height:16px!important;margin-top:4px!important}}.cta-pad{{padding-top:4px!important;padding-bottom:2px!important}}.action-button{{padding:9px 14px!important;font-size:13px!important;line-height:18px!important}}.cta-note{{margin-top:3px!important;font-size:8px!important;line-height:10px!important}}.step-pad{{padding-top:3px!important;padding-bottom:4px!important}}.step-pad td{{padding-top:5px!important;padding-bottom:5px!important;font-size:9px!important;line-height:12px!important}}.lotus-pad{{padding-top:1px!important;padding-bottom:1px!important}}.lotus-animation{{width:260px!important}}.footer-pad{{padding-top:5px!important;padding-bottom:5px!important}}.footer-note{{margin-bottom:3px!important;font-size:8px!important;line-height:10px!important}}.social-icon{{width:20px!important;height:20px!important}}.footer-link{{padding-left:4px!important;padding-right:4px!important}}}}
+    @media only screen and (max-width:620px) {{.page-pad{{padding-left:0!important;padding-right:0!important}}.email-shell{{width:100%!important;border-radius:0!important}}.content-pad{{padding-left:20px!important;padding-right:20px!important}}.reveal-animation{{width:120px!important;height:120px!important}}.email-title{{font-size:30px!important;line-height:35px!important}}.lotus-animation{{width:100%!important;height:auto!important}}}}
+    @media only screen and (max-width:380px) {{.page-pad{{padding-top:0!important;padding-bottom:0!important}}.content-pad{{padding-left:12px!important;padding-right:12px!important}}.header-pad{{padding-top:4px!important;padding-bottom:4px!important}}.reveal-animation{{width:96px!important;height:96px!important;border-radius:12px!important}}.main-pad{{padding-top:7px!important;padding-bottom:4px!important}}.email-title{{font-size:25px!important;line-height:28px!important;margin-top:4px!important}}.body-copy{{font-size:12px!important;line-height:16px!important;margin-top:4px!important}}.cta-pad{{padding-top:4px!important;padding-bottom:2px!important}}.action-button{{padding:9px 14px!important;font-size:13px!important;line-height:18px!important}}.cta-note{{margin-top:3px!important;font-size:8px!important;line-height:10px!important}}.step-pad{{padding-top:3px!important;padding-bottom:4px!important}}.step-pad td{{padding-top:5px!important;padding-bottom:5px!important;font-size:9px!important;line-height:12px!important}}.lotus-pad{{padding-top:1px!important;padding-bottom:1px!important}}.lotus-animation{{width:260px!important}}.footer-pad{{padding-top:5px!important;padding-bottom:5px!important}}.footer-note{{margin-bottom:3px!important;font-size:8px!important;line-height:10px!important}}.social-icon{{width:20px!important;height:20px!important}}.footer-link{{padding-left:4px!important;padding-right:4px!important}}}}
   </style>
 </head><body style="margin:0;padding:0;background:#f8f0f5;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Arial,sans-serif;color:#38283d;">
   <div style="display:none;max-height:0;overflow:hidden;opacity:0;color:transparent;">{safe_preheader}</div>
@@ -332,8 +342,9 @@ def _wrap(
     <tr><td align="center" class="page-pad" style="padding:14px 10px;">
       <table role="presentation" width="570" cellpadding="0" cellspacing="0" class="email-shell" style="width:570px;max-width:570px;background:#ffffff;border:1px solid #eadde6;border-radius:22px;box-shadow:0 16px 48px rgba(76,27,72,.1);overflow:hidden;">
         <tr><td bgcolor="#571451" style="height:6px;background:#571451;font-size:0;line-height:0;">&nbsp;</td></tr>
+        {f'<tr><td align="center" class="content-pad" bgcolor="#ffffff" style="background:#ffffff;padding:16px 34px 4px;">{top_html}</td></tr>' if top_html else ''}
         <tr><td align="center" class="content-pad header-pad" bgcolor="#fffafd" style="padding:12px 34px 10px;background:#fffafd;">
-          <img src="{reveal_url}" width="218" height="218" class="reveal-animation" alt="Animated WomSakhi logo reveal" style="display:block;width:218px;height:218px;max-width:100%;margin:0 auto;border:1px solid #56304f;border-radius:18px;box-shadow:0 16px 34px rgba(106,25,91,.2);">
+          <img src="{logo_url}" width="140" height="140" class="reveal-animation" alt="WomSakhi logo" style="display:block;width:140px;height:140px;max-width:100%;margin:0 auto;border:1px solid #56304f;border-radius:16px;box-shadow:0 12px 26px rgba(106,25,91,.18);">
         </td></tr>
         <tr><td align="center" class="content-pad main-pad" bgcolor="#ffffff" style="background:#ffffff;padding:15px 42px 8px;border-left:1px solid #eadde6;border-right:1px solid #eadde6;">
           {greeting}
@@ -343,7 +354,7 @@ def _wrap(
         {cta}
         {next_step_html}
         <tr><td align="center" class="content-pad lotus-pad" bgcolor="#fffafd" style="padding:5px 34px 6px;background:#fffafd;border-left:1px solid #eadde6;border-right:1px solid #eadde6;border-top:1px solid #f5e8ef;">
-          <img src="{lotus_url}" width="455" height="92" class="lotus-animation" alt="Animated WomSakhi lotus" style="display:block;width:455px;max-width:100%;height:auto;margin:0 auto;border:0;">
+          <img src="{lotus_url}" width="455" height="92" class="lotus-animation" alt="WomSakhi lotus" style="display:block;width:455px;max-width:100%;height:auto;margin:0 auto;border:0;">
         </td></tr>
         <tr><td align="center" class="content-pad footer-pad" bgcolor="#fff8fc" style="padding:10px 34px 12px;background:#fff8fc;border:1px solid #efdee8;border-top:0;border-radius:0 0 22px 22px;">
           <div class="footer-note" style="font-size:9px;line-height:13px;color:#8f8291;margin-bottom:7px;">{safe_footer}</div>
@@ -384,8 +395,10 @@ def code_email(name: str, code: str, purpose: str) -> EmailMessageSpec:
     """
     The six-digit code, large enough to read at a glance on a small phone.
 
-    The digits are spaced for reading and also sit in the plain-text part and
-    the subject line unspaced, so a mail app's "copy code" chip finds them.
+    The digits are spread for reading with CSS letter-spacing — the text itself is
+    the six digits, so copying it gives exactly the code — and they also sit in
+    the plain-text part and the subject line, so a mail app's "copy code" chip
+    finds them.
     Nothing to click: a code email with a button trains women to click links
     in emails that claim to be from us, which is how phishing works.
     """
@@ -406,15 +419,20 @@ def code_email(name: str, code: str, purpose: str) -> EmailMessageSpec:
     else:
         title, lead = "Your sign-in code", "Enter this code to sign in to WomSakhi."
         subject = f"{code} is your WomSakhi sign-in code"
-    spaced = " ".join(code)
-    body = (
-        f"{escape(lead)}"
-        "<div style=\"margin:18px auto 6px;padding:14px 10px;max-width:300px;border-radius:16px;"
+    # The gaps between digits are letter-spacing, never spaces: a copied
+    # "3 9 0 1 2 3" pasted into a six-character field used to keep "390".
+    # It sits at the very top of the card (`top_html`), above the logo, so it
+    # is readable before a single image has loaded.
+    code_block = (
+        "<div style=\"font-size:12px;line-height:16px;font-weight:700;letter-spacing:.6px;color:#8e2b69;"
+        "text-transform:uppercase;\">Your WomSakhi code</div>"
+        "<div style=\"margin:8px auto 6px;padding:14px 10px;max-width:300px;border-radius:16px;"
         "background:#fbeef5;border:1px solid #ecc9da;text-align:center;font-family:'Courier New',monospace;"
-        "font-size:32px;line-height:40px;font-weight:700;letter-spacing:6px;color:#8e1a5c;\">"
-        f"{escape(spaced)}</div>"
+        "font-size:32px;line-height:40px;font-weight:700;letter-spacing:12px;text-indent:12px;color:#8e1a5c;\">"
+        f"{escape(code)}</div>"
         f"<div style=\"text-align:center;font-size:12px;color:#8b7c8e;\">It works once and expires in {minutes} minutes.</div>"
     )
+    body = escape(lead)
     html = _wrap(
         title,
         body,
@@ -424,6 +442,7 @@ def code_email(name: str, code: str, purpose: str) -> EmailMessageSpec:
         recipient_name=name,
         title_accent="code",
         next_step="Never share this code with anyone, including anyone who says they work at WomSakhi.",
+        top_html=code_block,
     )
     text = (
         f"Hi {first},\n\n{lead}\n\nYour WomSakhi code is {code}\n\n"
@@ -550,55 +569,6 @@ def staff_invitation_email(name: str, role: str, url: str) -> EmailMessageSpec:
         f"Set your password within 72 hours: {url}"
     )
     return EmailMessageSpec(to="", subject="You’re invited to the WomSakhi team", html=html, text=text)
-
-
-def member_login_alert_email(
-    admin_name: str,
-    member_name: str,
-    member_email: str,
-    verification_status: str,
-    occurred_at: str,
-    member_id: str,
-) -> EmailMessageSpec:
-    """Security notice for super admins after a member signs in."""
-    safe_member = escape(member_name or "Member")
-    safe_email = escape(member_email)
-    safe_status = escape((verification_status or "unknown").replace("_", " ").title())
-    safe_time = escape(occurred_at)
-    base = settings.APP_BASE_URL.rstrip("/")
-    review_url = f"{base}/dashboard/users/verification?account={escape(member_id, quote=True)}"
-    assign_url = f"{base}/dashboard/users/verification?account={escape(member_id, quote=True)}&assign={escape(member_id, quote=True)}"
-    manage_url = f"{base}/dashboard/users?account={escape(member_id, quote=True)}"
-    body = (
-        f"<strong style='color:#4b1645;'>{safe_member}</strong> "
-        f"(<a href='mailto:{safe_email}' style='color:#9a286d;'>{safe_email}</a>) signed in at "
-        f"<strong>{safe_time}</strong>."
-        "<table role='presentation' width='100%' cellpadding='0' cellspacing='0' "
-        "style='margin-top:10px;background:#fff5fa;border:1px solid #ebcede;border-radius:10px;'>"
-        "<tr><td style='padding:9px 12px;font-size:11px;line-height:16px;color:#655568;'>"
-        f"Current account state: <strong style='color:#a51e67;'>{safe_status}</strong><br>"
-        f"<a href='{assign_url}' style='color:#8c246a;font-weight:700;'>Assign to an admin</a>"
-        "&nbsp;&nbsp;·&nbsp;&nbsp;"
-        f"<a href='{manage_url}' style='color:#8c246a;font-weight:700;'>Manage activation or deactivation</a>"
-        "</td></tr></table>"
-    )
-    html = _wrap(
-        "Member sign-in alert",
-        body,
-        "Review documents",
-        review_url,
-        preheader=f"{member_name or 'A member'} signed in to WomSakhi.",
-        footer_note="This security notice was sent to an authorised WomSakhi super administrator.",
-        recipient_name=admin_name,
-        title_accent="sign-in",
-        next_step="Review the documents yourself or assign this verification task to another eligible admin.",
-    )
-    text = (
-        f"{member_name or 'Member'} ({member_email}) signed in at {occurred_at}. "
-        f"Account state: {verification_status or 'unknown'}. Review: {review_url}. "
-        f"Assign: {assign_url}. Manage: {manage_url}"
-    )
-    return EmailMessageSpec(to="", subject=f"WomSakhi sign-in: {member_name or member_email}", html=html, text=text)
 
 
 def verification_review_alert_email(

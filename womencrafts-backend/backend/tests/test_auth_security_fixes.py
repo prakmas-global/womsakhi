@@ -10,7 +10,7 @@ deletes only rows this module wrote, by id or by those random values.
         a daily cap on wrong fixed-code tries
     M1  client IP from the END of X-Forwarded-For; atomic code attempts
     M4  every spent refresh token is remembered
-    M6  unknown addresses answer like real ones (cooldown, no timing tell)
+    M6  unknown addresses are told so (owner decision, Oct 2026) and sent nothing
     L2  SMS allowance spent only by numbers that can use it
     L3  only a CONFIRMED number is "taken"
     L4  refresh token in JSON only for the app
@@ -306,29 +306,30 @@ async def test_the_grace_window_is_only_for_the_previous_token(api):
     assert len(row["spent_refresh_hashes"]) == 2
 
 
-# ── M6: unknown addresses look like real ones ──────────────────────────────
+# ── M6 (replaced Oct 2026): unknown addresses are told so ─────────────────
+#
+# Owner decision: an email or number with no account answers 404
+# `not_registered` and is sent nothing (the old "same answer for everybody"
+# left women waiting for codes that were never coming). The cooldown still
+# holds for real accounts; the per-IP lookup cap is in test_auth_owner_rules.
 
 
-async def test_second_signin_start_is_429_for_real_and_unknown_alike(api):
+async def test_unknown_signin_is_told_and_sent_nothing(api):
     client, db, made, sent = api
     her = await _user(db, made)
     stranger = f"sec-nobody-{_tag()}@example.com"
     made["addresses"].append(stranger)
     first_real = await client.post("/auth/signin/start", json={"email": her["email"]})
     first_unknown = await client.post("/auth/signin/start", json={"email": stranger})
-    assert first_real.status_code == first_unknown.status_code == 200
-    assert set(first_real.json()) == set(first_unknown.json())
+    assert first_real.status_code == 200
+    assert "has a WomSakhi account" not in first_real.json()["message"]
+    assert first_unknown.status_code == 404
+    assert first_unknown.json()["error"]["code"] == "not_registered"
+    assert first_unknown.json()["error"]["message"] == "This is a new email for WomSakhi. Please sign up first."
+    assert await db[codes.COLLECTION].count_documents({"destination": stranger}) == 0
     again_real = await client.post("/auth/signin/start", json={"email": her["email"]})
-    again_unknown = await client.post("/auth/signin/start", json={"email": stranger})
-    assert again_real.status_code == again_unknown.status_code == 429
-    assert again_real.json()["error"]["code"] == again_unknown.json()["error"]["code"] == "resend_too_soon"
+    assert again_real.status_code == 429 and again_real.json()["error"]["code"] == "resend_too_soon"
     assert [s[1] for s in sent] == [her["email"]]  # the stranger was sent nothing
-    # And a wrong guess answers the same way too.
-    g_real = await client.post("/auth/signin/verify", json={"email": her["email"], "code": "999999"})
-    g_unknown = await client.post("/auth/signin/verify", json={"email": stranger, "code": "999999"})
-    if sent[-1][2] != "999999":
-        strip = lambda r: {k: v for k, v in r.json()["error"].items() if k != "request_id"}  # noqa: E731
-        assert g_real.status_code == g_unknown.status_code and strip(g_real) == strip(g_unknown)
 
 
 async def test_issue_sends_after_the_answer_when_given_background_tasks(api):
@@ -498,7 +499,7 @@ async def test_one_recovery_code_cannot_be_spent_twice_in_parallel(api):
 # ── L2: the SMS allowance ───────────────────────────────────────────────────
 
 
-async def test_unknown_numbers_do_not_spend_the_allowance(api):
+async def test_unknown_numbers_are_told_and_spend_nothing(api):
     client, db, made, _ = api
     before = await codes.sms_used_today()
     for _ in range(10):
@@ -506,20 +507,21 @@ async def test_unknown_numbers_do_not_spend_the_allowance(api):
         made["addresses"].append(number)
         r = await client.post("/auth/sms/allowance", json={"phone": number, "purpose": "signin"},
                               headers={"X-Forwarded-For": _ip()})
-        assert r.status_code == 200 and r.json() == {"ok": True}
+        assert r.status_code == 404 and r.json()["error"]["code"] == "not_registered"
+        assert r.json()["error"]["message"] == "This is a new mobile number for WomSakhi. Please sign up first."
     assert await codes.sms_used_today() == before
     her = await _user(db, made)
     real = await client.post("/auth/sms/allowance", json={"phone": her["phone"], "purpose": "signin"})
-    assert real.status_code == 200 and real.json() == {"ok": True}  # same answer
+    assert real.status_code == 200 and real.json()["ok"] is True
     assert await codes.sms_used_today() == before + 1
 
 
-async def test_an_unconfirmed_number_does_not_spend_it_either(api):
+async def test_an_unconfirmed_number_is_not_a_way_in(api):
     client, db, made, _ = api
     her = await _user(db, made, verified_phone=False)
     before = await codes.sms_used_today()
     r = await client.post("/auth/sms/allowance", json={"phone": her["phone"], "purpose": "signin"})
-    assert r.status_code == 200 and await codes.sms_used_today() == before
+    assert r.status_code == 404 and await codes.sms_used_today() == before
 
 
 async def test_phone_verify_allowance_needs_her_session(api):
@@ -537,8 +539,7 @@ async def test_phone_verify_allowance_needs_her_session(api):
 async def test_the_per_number_cap_still_holds(api, monkeypatch):
     client, db, made, _ = api
     monkeypatch.setattr(settings, "SMS_PER_NUMBER_DAILY", 2)
-    number = _phone()
-    made["addresses"].append(number)
+    number = (await _user(db, made))["phone"]
     answers = [await client.post("/auth/sms/allowance", json={"phone": number, "purpose": "signin"},
                                  headers={"X-Forwarded-For": _ip()}) for _ in range(3)]
     assert [a.status_code for a in answers] == [200, 200, 429]
@@ -572,9 +573,10 @@ async def test_a_confirmed_number_is_taken(api):
     await _user(db, made, phone=number, verified_phone=True)
     email = f"sec-late-{_tag()}@example.com"
     made["addresses"].append(email)
-    await client.post("/auth/signup/start", json={"email": email, "phone": number})
-    r = await client.post("/auth/signup/verify", json={"email": email, "code": sent[-1][2]})
+    # Told at the first step now, before any code is sent.
+    r = await client.post("/auth/signup/start", json={"email": email, "phone": number})
     assert r.status_code == 409 and r.json()["error"]["code"] == "phone_taken"
+    assert not [x for x in sent if x[1] == email]
 
 
 async def test_two_unconfirmed_holders_cannot_both_confirm(api):

@@ -173,7 +173,8 @@
 .ac .ac-steps i { width: calc(18 * var(--u)); height: calc(18 * var(--u)); border-radius: 999px; display: grid; place-items: center; font-style: normal; flex: none; }
 .ac .ac-steps i svg { width: 60%; height: 60%; }
 .ac .ac-steps i.ok { background: var(--ac-ok); color: #fff; }
-.ac .ac-steps i.now { border: 2px solid var(--ac-berry); background: #fff; box-shadow: 0 0 0 3px rgba(155, 29, 80, 0.12); }
+/* The current step: a filled berry circle with a white arrow — the same disc as the green ticks. */
+.ac .ac-steps i.now { background: var(--ac-berry); color: #fff; }
 
 /* while-you-wait tiles */
 .ac .ac-tiles { display: grid; grid-template-columns: 1fr 1fr; gap: calc(8 * var(--u)); }
@@ -226,19 +227,39 @@
 @media (prefers-reduced-motion: reduce) { .ac-spin { animation-duration: 2.4s; } }
 
 /* the live camera (laptop) */
-.ac-cam { --u: 1.5px; position: fixed; inset: 0; z-index: 90; display: grid; place-items: end center; background: rgba(20, 20, 39, 0.55); }
-@media (min-width: 640px) { .ac-cam { place-items: center; padding: 24px; } }
-.ac-cam .box { width: 100%; overflow: hidden; background: #000; border-radius: 24px 24px 0 0; box-shadow: 0 30px 60px rgba(0, 0, 0, 0.35); }
+/* The live camera. Portalled to <body> (verify/page.tsx), so it sits outside
+   .wsa: everything it reads from the shell — the unit, the fonts, the box
+   model, the light scheme — is set here on its own root. */
+.ac-cam {
+  --u: 1.5px;
+  --serif: var(--wsa-serif), Fraunces, Georgia, serif;
+  --sans: var(--wsa-sans), "Plus Jakarta Sans", system-ui, sans-serif;
+  position: fixed; inset: 0; z-index: 1000;
+  display: flex; flex-direction: column; justify-content: flex-end; align-items: center;
+  background: rgba(20, 20, 39, 0.62);
+  font-family: var(--sans); font-size: 15px; line-height: 1.5; color: var(--ac-ink);
+  color-scheme: light; overscroll-behavior: contain;
+  gap: 0;
+}
+.ac-cam *, .ac-cam *::before, .ac-cam *::after { box-sizing: border-box; }
+@media (min-width: 640px) { .ac-cam { justify-content: center; padding: 24px; } }
+.ac-cam .box {
+  width: 100%; max-height: 100%; display: flex; flex-direction: column; overflow: hidden;
+  background: #000; border-radius: 24px 24px 0 0; box-shadow: 0 30px 60px rgba(0, 0, 0, 0.35);
+}
 @media (min-width: 640px) { .ac-cam .box { max-width: 36rem; border-radius: 24px; } }
-.ac-cam .bar { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 12px 16px; background: #fff; }
-.ac-cam .bar p { margin: 0; font: 600 18px var(--ac-display); color: var(--ac-ink); }
-.ac-cam .x { width: 44px; height: 44px; border-radius: 12px; display: grid; place-items: center; background: #fbf1f4; color: var(--ac-ink); border: 0; cursor: pointer; }
-.ac-cam .view { position: relative; aspect-ratio: 3 / 4; max-height: 68dvh; background: #000; }
+.ac-cam .bar { flex: none; display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 10px 12px 10px 20px; background: #fff; }
+.ac-cam .bar p { margin: 0; font: 600 18px/1.25 var(--ac-display); color: var(--ac-ink); }
+.ac-cam .x { width: 44px; height: 44px; border-radius: 12px; display: grid; place-items: center; background: #fbf1f4; color: var(--ac-ink); border: 0; cursor: pointer; flex: none; }
+.ac-cam .x svg { width: 20px; height: 20px; }
+.ac-cam .view { position: relative; flex: 0 1 auto; min-height: 120px; aspect-ratio: 3 / 4; max-height: 68dvh; background: #000; }
 @media (min-width: 640px) { .ac-cam .view { aspect-ratio: 4 / 3; } }
 .ac-cam video { width: 100%; height: 100%; object-fit: cover; display: block; }
-.ac-cam .foot { padding: 16px; background: #fff; display: grid; gap: 12px; }
-.ac-cam .row { display: flex; gap: 8px; }
-.ac-cam .row .ac-btn { min-height: 52px; font-size: 15px; }
+.ac-cam .foot { flex: none; padding: 16px 16px calc(16px + env(safe-area-inset-bottom, 0px)); background: #fff; display: grid; gap: 12px; }
+@media (min-width: 640px) { .ac-cam .foot { padding: 20px; } }
+.ac-cam .row { display: flex; gap: 10px; }
+.ac-cam .row .ac-btn { flex: 1 1 0; min-width: 0; min-height: 52px; padding: 0 12px; gap: 8px; font-size: 15px; white-space: nowrap; }
+@media (max-width: 359.98px) { .ac-cam .row .ac-btn { font-size: 14px; padding: 0 10px; } }
 
 /* Shared interaction geometry for verification, phone and device cards. */
 .ac :is(.ac-btn, .ac-chips button, .ac-dev .out, .ac-link a, .ac-link button, .ac-timer button, .ac-tiles a) {
@@ -338,3 +359,14 @@
 }
 /* One line on the narrowest phones ("Request activation · after 24 h"). */
 .ac .ac-fit { white-space: nowrap; font-size: min(calc(13 * var(--u)), 4.2vw); }
+
+/* Google's reCAPTCHA notice, under the card on /app/phone. The host sits in
+   AuthShell's footer slot — outside the card, whose backdrop-filter used to
+   pin Google's fixed badge onto it — and the badge itself is hidden: Google
+   allows that when this notice is shown instead. */
+.ac-recaptcha { width: 100%; max-width: 560px; margin: 0 auto; padding: 4px 8px 0; text-align: center; }
+.ac-recaptcha > div:first-child { height: 0; overflow: hidden; }
+.ac-recaptcha .grecaptcha-badge { visibility: hidden !important; }
+.ac-recaptcha p { margin: 0; font-size: 11px; line-height: 1.5; color: #6d6268; text-wrap: pretty; }
+.ac-recaptcha a { color: inherit; text-decoration: underline; text-underline-offset: 2px; }
+.ac-recaptcha a:hover { color: #9b1d50; }

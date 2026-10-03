@@ -35,6 +35,13 @@ async def _recipients(applicant: dict) -> list[dict]:
 
 
 async def send_review_alert(applicant: dict, reminder_number: int) -> int:
+    # Re-read right before sending: an approval (or rejection) that lands
+    # between the claim and the send must not produce one more follow-up.
+    fresh = await _users().find_one(
+        {"_id": applicant["_id"]}, {"verification_status": 1, "is_active": 1})
+    if (not fresh or fresh.get("verification_status") != VerificationStatus.IN_REVIEW
+            or fresh.get("is_active") is False):
+        return 0
     recipients = await _recipients(applicant)
     results = await asyncio.gather(*[
         send(

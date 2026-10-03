@@ -32,9 +32,14 @@ const AUTH_PREVIEW = process.env.NODE_ENV !== "production";
  *   enter    +91 and ten digits → saved (unconfirmed)
  *   confirm  a 6-digit SMS code (sent by Firebase) → confirmed
  *
- * Every member needs a number. Before SMS is switched on the confirm step is
- * skipped and an admin checks the number during review; after, each member
- * confirms hers once and can then sign in with it.
+ * Optional: one confirmed way in (her email) is enough, so "Skip for now" is
+ * always there. A confirmed number lets her sign in with an SMS code.
+ *
+ * The reCAPTCHA host lives in AuthShell's footer slot, OUTSIDE the card: the
+ * card has `backdrop-filter`, which makes it the containing block for
+ * `position: fixed`, and Google's badge ended up pinned over the card. The
+ * badge is hidden (auth-cards.css) and Google's required notice is shown in
+ * its place, under the card.
  *
  * Drawn as the approved screen B4 (Version 11) on AuthShell's "join" photo.
  */
@@ -48,7 +53,7 @@ const CAPTION = {
 };
 
 export default function PhonePage() {
-  const { user, signOut, updateUser } = useAuth();
+  const { user, updateUser } = useAuth();
   const router = useRouter();
   /** undefined while loading, null when the settings could not be fetched. */
   const [options, setOptions] = useState<AuthOptions | null | undefined>(undefined);
@@ -96,6 +101,34 @@ export default function PhonePage() {
     apiAuthOptions().then(setOptions).catch(() => setOptions(null));
   }, [setResendIn, form]);
 
+  /**
+   * "Skip for now". The mobile is optional; `/auth/phone/later` records that
+   * she postponed it (the server may refuse when it has nothing to postpone —
+   * that is fine, the fresh account below decides where she goes).
+   */
+  const [skipping, setSkipping] = useState(false);
+  async function skip() {
+    if (skipping) return;
+    if (AUTH_PREVIEW && preview) return;
+    setError("");
+    setSkipping(true);
+    try {
+      await apiPhoneLater().catch(() => undefined);
+      const fresh = await apiGetMe();
+      updateUser(fresh);
+      const next = homeFor(fresh);
+      if (next === "/app/phone") {
+        setError("We still need your mobile number to go on. Please add it above.");
+        setSkipping(false);
+        return;
+      }
+      router.replace(next);
+    } catch {
+      setError("Please try again in a moment.");
+      setSkipping(false);
+    }
+  }
+
   const finish = useCallback(async () => {
     if (AUTH_PREVIEW && preview) return;
     const fresh = await apiGetMe();
@@ -111,7 +144,7 @@ export default function PhonePage() {
     try {
       if (options.firebase) {
         await apiSmsAllowance(phoneE164, "phone_verify");
-        confirmation.current = await sendSmsCode(options.firebase, phoneE164, RECAPTCHA_ID, locale);
+        confirmation.current = await sendSmsCode(options.firebase, phoneE164, RECAPTCHA_ID, locale, { badge: "inline" });
       } else {
         await apiPhoneStart();
       }
@@ -204,17 +237,35 @@ export default function PhonePage() {
     }
   }, [busy, finish, viaFirebase, preview]);
 
+  /*
+    Google's invisible robot check attaches to this element before each SMS —
+    outside the card, so nothing on the card can trap its badge. One element
+    for both steps: firebase-phone gives each attempt a fresh child.
+  */
+  const recaptcha = (
+    <div className="ac-recaptcha">
+      <div id={RECAPTCHA_ID} />
+      {(viaFirebase || (AUTH_PREVIEW && preview)) && (
+        <p>
+          This site is protected by reCAPTCHA and the Google{" "}
+          <a href="https://policies.google.com/privacy" target="_blank" rel="noopener noreferrer">Privacy Policy</a> and{" "}
+          <a href="https://policies.google.com/terms" target="_blank" rel="noopener noreferrer">Terms of Service</a> apply.
+        </p>
+      )}
+    </div>
+  );
+
   const shown = `+91 ${digits.replace(/(\d{5})(\d{5})/, "$1 $2")}`;
   const m = Math.floor(resendIn / 60);
   const sec = String(resendIn % 60).padStart(2, "0");
 
   return (
-    <AuthShell photo="join" caption={CAPTION} screen="b4" flow="member-join">
+    <AuthShell photo="join" caption={CAPTION} screen="b4" flow="member-join" footer={recaptcha}>
       {step === "enter" ? (
         <form onSubmit={(e) => void form.handleSubmit(save)(e)} noValidate className="ac">
           <h1 className="ac-t">{user?.phone && smsOn ? "Confirm your mobile" : "Add your mobile number"}</h1>
           <p className="ac-s">
-            We use it to keep your account safe. We never share it.
+            Add your mobile to sign in with SMS — optional. We never share it.
             {smsOn && " We'll send a code by SMS to confirm it."}
           </p>
 
@@ -242,16 +293,12 @@ export default function PhonePage() {
             {smsOn ? "Send code by SMS" : "Save and continue"}
             {!busy && <ArrowRight aria-hidden />}
           </button>
-          {smsOut && (
-            <button type="button" className="ac-btn ac-soft"
-              onClick={() => { if (AUTH_PREVIEW && preview) return; void apiPhoneLater().then(finish).catch(() => setError("Please try again in a moment.")); }}>
-              Carry on — confirm tomorrow <ArrowRight aria-hidden />
-            </button>
-          )}
+          <button type="button" className="ac-btn ac-line ac-skip" onClick={() => void skip()} disabled={skipping || busy}>
+            {skipping ? <Loader className="ac-spin" aria-hidden /> : null}
+            Skip for now
+          </button>
           {smsOn && !smsOut && <p className="ac-note"><Smartphone aria-hidden /><span>Once confirmed, you can sign in with just your mobile.</span></p>}
-          <p className="ac-link">{user?.email && <>Signed in as <span className="ac-email">{user.email}</span> </>}<span className="ac-nw">{user?.email && "· "}<button type="button" onClick={() => void signOut()}>Sign out</button></span></p>
-          {/* Google's invisible robot check attaches here before each SMS. */}
-          <div id={RECAPTCHA_ID} />
+          {user?.email && <p className="ac-link">Signed in as <span className="ac-email">{user.email}</span></p>}
         </form>
       ) : (
         <div className="ac">
@@ -267,7 +314,6 @@ export default function PhonePage() {
             )}
           </p>
           <p className="ac-note"><Smartphone aria-hidden /><span>Once confirmed, you can sign in with just your mobile.</span></p>
-          <div id={RECAPTCHA_ID} />
         </div>
       )}
       {AUTH_PREVIEW && <PreviewPill state={preview} />}

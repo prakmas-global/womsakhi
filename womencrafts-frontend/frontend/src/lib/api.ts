@@ -31,19 +31,41 @@ export const apiClient = axios.create({
  * want a scoped retry still render their own `ErrorState`.
  */
 /**
- * One renewal at a time. Several requests failing together with an expired
- * token (a laptop waking up, a tab left open overnight) all wait for the same
- * `/auth/refresh` instead of each spending the refresh cookie in turn.
+ * One renewal at a time — for the WHOLE tab.
+ *
+ * Several requests failing together with an expired token (a laptop waking
+ * up, a tab left open overnight), the ten-minute timer and "she came back to
+ * this tab" all wait for the same `/auth/refresh` instead of each spending the
+ * refresh cookie in turn. Two refreshes racing was how switching tabs showed
+ * "You have been signed out": the loser presented a token the winner had just
+ * rotated.
+ *
+ * The answer is three-way, because only one of them means "signed out":
+ *   "ok"      renewed (or renewed a moment ago — see `recentMs`)
+ *   "ended"   the API said 401 `session_ended`: the session really is over
+ *   "unknown" no answer, a timeout or a 5xx — keep her signed in and try later
  */
-let renewing: Promise<boolean> | null = null;
+export type RenewResult = "ok" | "ended" | "unknown";
 
-function renewOnce(): Promise<boolean> {
-  renewing ??= axios
+let renewing: Promise<RenewResult> | null = null;
+let renewedAt = 0;
+
+export function renewSession({ recentMs = 0 }: { recentMs?: number } = {}): Promise<RenewResult> {
+  if (renewing) return renewing;
+  if (recentMs > 0 && Date.now() - renewedAt < recentMs) return Promise.resolve("ok");
+  renewing = axios
     .post(`${API_URL}/auth/refresh`, null, { withCredentials: true, timeout: 10_000 })
-    .then(() => true)
-    .catch(() => false)
+    .then((): RenewResult => {
+      renewedAt = Date.now();
+      return "ok";
+    })
+    .catch((err): RenewResult => {
+      const status = err?.response?.status;
+      const code = err?.response?.data?.error?.code;
+      return status === 401 && code === "session_ended" ? "ended" : "unknown";
+    })
     .finally(() => {
-      setTimeout(() => (renewing = null), 0);
+      renewing = null;
     });
   return renewing;
 }
@@ -62,7 +84,9 @@ apiClient.interceptors.response.use(
       !String(config.url ?? "").startsWith("/auth/")
     ) {
       config._renewed = true;
-      if (await renewOnce()) return apiClient.request(config);
+      // A renewal finished a moment ago (this request was already in flight
+      // when it landed): just replay with the new cookie.
+      if ((await renewSession({ recentMs: 5_000 })) === "ok") return apiClient.request(config);
     }
     const path = (error?.config?.url as string | undefined) ?? "unknown";
     // No response at all means the API is unreachable — the most important
@@ -566,15 +590,11 @@ for (const verb of ["post", "put", "patch", "delete"] as const) {
  * to a blank page rather than a sign-in screen. Called on a timer and on
  * focus, so an app she is actually using never runs out.
  *
- * Resolves false rather than throwing when the session has already gone: the
- * caller's job then is to let the normal signed-out path take over, not to
- * show her an error about a background request she never made.
+ * Never throws. Resolves "ended" only when the API said the session is over;
+ * a network error or a server fault is "unknown" and must NOT sign her out.
+ * Shares the one in-flight renewal with the 401 interceptor, and skips the
+ * call entirely when the tab renewed less than `recentMs` ago.
  */
-export async function apiRefreshSession(): Promise<boolean> {
-  try {
-    await apiClient.post("/auth/refresh", null, expected());
-    return true;
-  } catch {
-    return false;
-  }
+export function apiRefreshSession({ recentMs = 60_000 }: { recentMs?: number } = {}): Promise<RenewResult> {
+  return renewSession({ recentMs });
 }
