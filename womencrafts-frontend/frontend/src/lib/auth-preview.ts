@@ -116,7 +116,7 @@ export const PREVIEW_OPTIONS: AuthOptions = {
   firebase_project_id: "",
   code_length: 6,
   code_ttl_seconds: 300,
-  resend_seconds: 90,
+  resend_seconds: 300,
   phone_regions: ["IN"],
   firebase: null,
 };

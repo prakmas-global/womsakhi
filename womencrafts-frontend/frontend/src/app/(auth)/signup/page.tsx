@@ -222,6 +222,9 @@ export default function SignUpPage() {
       if (problem.code === "already_registered" || problem.code === "phone_taken") {
         const kind = problem.code === "phone_taken" ? "phone" : "email";
         setKnown({ kind, value: kind === "phone" ? to.mobile : to.email, message: problem.message });
+      } else if (problem.code === "email_unreachable") {
+        // The domain doesn't exist / takes no mail, or is a throwaway inbox: the server says which.
+        contactForm.setError("email", { type: "server", message: problem.message }, { shouldFocus: true });
       } else if (problem.status === 422 && /mobile|number/i.test(problem.message)) {
         contactForm.setError("mobile", { type: "server", message: problem.message }, { shouldFocus: true });
       } else if (problem.status === 422 && /email/i.test(problem.message)) {
@@ -261,6 +264,9 @@ export default function SignUpPage() {
         const kind = problem.code === "phone_taken" ? "phone" : "email";
         setKnown({ kind, value: kind === "phone" ? to.mobile : to.email, message: problem.message });
         if (step !== "contact") back("contact");
+      } else if (problem.code === "email_unreachable") {
+        if (step !== "contact") back("contact");
+        contactForm.setError("email", { type: "server", message: problem.message }, { shouldFocus: true });
       } else if (step === "contact" && problem.status === 422 && /mobile|number/i.test(problem.message)) {
         contactForm.setError("mobile", { type: "server", message: problem.message }, { shouldFocus: true });
       } else if (step === "contact" && problem.status === 422 && /email/i.test(problem.message)) {
@@ -320,7 +326,7 @@ export default function SignUpPage() {
       // account (then she should sign in, and no SMS is sent).
       await apiSmsAllowance(`+91${mobile}`, "signup");
       smsConfirmation.current = await sendSmsCode(options.firebase, `+91${mobile}`, RECAPTCHA_ID, locale || "en", { badge: "inline" });
-      setSmsResendIn(options.resend_seconds || 90);
+      setSmsResendIn(options.resend_seconds || 300);
       setCode("");
       setStep("sms");
     } catch (err) {
@@ -359,6 +365,9 @@ export default function SignUpPage() {
           const kind = problem.code === "phone_taken" ? "phone" : "email";
           setKnown({ kind, value: kind === "phone" ? mobile : email, message: problem.message });
           back("contact");
+        } else if (problem.code === "email_unreachable") {
+          back("contact");
+          contactForm.setError("email", { type: "server", message: problem.message }, { shouldFocus: true });
         } else {
           setInvalid(true);
           setError(problem.status ? problem.message : smsErrorMessage(err));
@@ -367,7 +376,7 @@ export default function SignUpPage() {
         setBusy(false);
       }
     },
-    [back, busy, email, mobile, locale],
+    [back, busy, email, mobile, locale, contactForm],
   );
 
   const create = async ({ fullName }: { fullName: string }) => {

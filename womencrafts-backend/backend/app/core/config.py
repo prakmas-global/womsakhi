@@ -103,7 +103,7 @@ class Settings(BaseSettings):
     # with a six-digit code.
     AUTH_CODE_TTL_MINUTES: int = 5
     AUTH_CODE_MAX_ATTEMPTS: int = 5
-    AUTH_CODE_RESEND_SECONDS: int = 90
+    AUTH_CODE_RESEND_SECONDS: int = 300
     AUTH_CODE_MAX_PER_HOUR: int = 5
 
     # --- Test accounts (development only) ------------------------------------
@@ -121,6 +121,10 @@ class Settings(BaseSettings):
     # Wrong fixed-code tries per test address per (UTC) day before the fixed
     # code stops working for that address until tomorrow.
     TEST_LOGIN_MAX_FAILURES_PER_DAY: int = 10
+
+    # Join looks up the email's domain (MX / A record) and turns away one that
+    # cannot receive mail. Off only for offline tests.
+    EMAIL_DOMAIN_CHECK: bool = True
 
     # The WomSakhi app as a sign-in key (app code, QR, open-on-web handoff) —
     # off until the mobile app ships; every route answers 404 while off.

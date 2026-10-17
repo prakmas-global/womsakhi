@@ -355,7 +355,7 @@ export default function SignInPage() {
         const allowed = await apiSmsAllowance(`+91${digits}`, "signin");
         setAlternate(allowed.alternate ?? null);
         smsConfirmation.current = await sendSmsCode(options.firebase, `+91${digits}`, RECAPTCHA_ID, "en", { badge: "inline" });
-        setResendIn(options.resend_seconds || 90);
+        setResendIn(options.resend_seconds || 300);
       } else {
         const sentTo = await apiSigninStart({ phone: `+91${digits}` });
         setAlternate(sentTo.alternate ?? null);

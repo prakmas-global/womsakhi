@@ -8,6 +8,7 @@ import { rememberPreSignInChoice, useI18n } from "@/i18n";
 import { authSans, authSerif } from "./fonts";
 import { AuthIcon, type AuthIconName } from "./icons";
 import { websiteUrl } from "@/lib/site";
+import { AuthThemeToggle } from "./AuthThemeToggle";
 import "./auth-shell.css";
 
 export type AuthPhoto = "signin" | "join" | "email" | "review" | "approved" | "upload" | "camera" | "plain";
@@ -292,6 +293,9 @@ export function AuthShell({
       data-flow={flow}
       style={vars}
     >
+      <aside className="wsa-theme-corner" aria-label="Theme selection">
+        <AuthThemeToggle />
+      </aside>
       {plain ? (
         <>
           <header className="wsa-top">

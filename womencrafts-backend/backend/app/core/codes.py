@@ -9,7 +9,7 @@ whatever channel carries it, so the rules below are the same everywhere:
     six random digits          `secrets`, never `random`
     five minutes to live       AUTH_CODE_TTL_MINUTES
     five wrong tries           then the code is void and she asks for another
-    thirty seconds between     AUTH_CODE_RESEND_SECONDS, so "resend" cannot flood
+    five minutes between       AUTH_CODE_RESEND_SECONDS, so "resend" cannot flood
     five an hour               AUTH_CODE_MAX_PER_HOUR per address
 
 **Only a keyed digest is stored.** The code exists long enough to be sent and is
