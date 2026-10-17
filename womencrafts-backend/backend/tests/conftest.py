@@ -31,6 +31,8 @@ if str(REPO_ROOT) not in sys.path:
 os.environ["MONGODB_URI"] = "mongodb://127.0.0.1:1/womencrafts_test_never_connected"
 os.environ.setdefault("JWT_SECRET_KEY", "test-only-not-a-real-secret")
 os.environ.setdefault("DB_NAME", "womencrafts_test")
+# No DNS from tests: join's email-domain lookup is off (app.core.email_domain).
+os.environ["EMAIL_DOMAIN_CHECK"] = "false"
 
 import pytest  # noqa: E402
 

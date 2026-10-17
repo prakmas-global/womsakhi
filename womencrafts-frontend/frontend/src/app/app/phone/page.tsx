@@ -138,7 +138,7 @@ export default function PhonePage() {
 
   const sendSms = useCallback(async (phoneE164: string) => {
     if (!options?.phone_codes) return;
-    if (AUTH_PREVIEW && preview) { setResendIn(options.resend_seconds || 90); setCode(""); setInvalid(false); setStep("confirm"); return; }
+    if (AUTH_PREVIEW && preview) { setResendIn(options.resend_seconds || 300); setCode(""); setInvalid(false); setStep("confirm"); return; }
     setError("");
     setBusy(true);
     try {
@@ -149,7 +149,7 @@ export default function PhonePage() {
         await apiPhoneStart();
       }
       sentTo.current = phoneE164;
-      setResendIn(options.resend_seconds || 90);
+      setResendIn(options.resend_seconds || 300);
       setCode("");
       setInvalid(false);
       setStep("confirm");

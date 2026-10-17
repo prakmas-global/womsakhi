@@ -39,7 +39,7 @@ from jose import JWTError, jwt
 from pydantic import BaseModel, EmailStr, Field, field_validator
 from pymongo.errors import DuplicateKeyError
 
-from app.core import cache, codes, ratelimit, sessions
+from app.core import cache, codes, email_domain, ratelimit, sessions
 from app.core.audit import record
 from app.core.config import settings
 from app.core.deps import get_current_user
@@ -344,6 +344,13 @@ async def _refuse_known(request: Request, email: str, phone: str) -> None:
                                    "This mobile number already has a WomSakhi account. Please sign in.")
 
 
+async def _refuse_unreachable(email: str) -> None:
+    """422 `email_unreachable` if no mail can reach this address (see app.core.email_domain)."""
+    reason = await email_domain.refusal(email)
+    if reason:
+        raise HTTPException(status.HTTP_422_UNPROCESSABLE_ENTITY, {"code": "email_unreachable", "message": reason})
+
+
 def _sms_signup_live() -> bool:
     return settings.phone_codes_live and settings.PHONE_PROVIDER.strip().lower() == "firebase"
 
@@ -355,7 +362,9 @@ async def signup_check(payload: SignupStart, request: Request):
     where her code goes (email or SMS). Sends nothing. 409
     `already_registered` / `phone_taken` when she should sign in instead.
     """
-    await _refuse_known(request, codes.normalise_email(payload.email), payload.phone)
+    email = codes.normalise_email(payload.email)
+    await _refuse_known(request, email, payload.phone)
+    await _refuse_unreachable(email)
     return {"ok": True, "channels": ["email", "sms"] if _sms_signup_live() else ["email"]}
 
 
@@ -371,6 +380,7 @@ async def signup_start(payload: SignupStart, request: Request, background: Backg
     """
     email = codes.normalise_email(payload.email)
     await _refuse_known(request, email, payload.phone)
+    await _refuse_unreachable(email)
     issued = await codes.issue(
         request, purpose=codes.SIGNUP, channel=codes.EMAIL, destination=email,
         payload={"phone": payload.phone, "locale": payload.locale}, background=background,
@@ -477,6 +487,7 @@ async def signup_firebase(payload: SignupFirebase, request: Request):
         raise HTTPException(status.HTTP_409_CONFLICT,
                             {"code": "phone_taken",
                              "message": "This mobile number already has a WomSakhi account. Please sign in."})
+    await _refuse_unreachable(email)
     ticket = _make_ticket("signup", 20, email=email, phone=phone, locale=payload.locale or "en", proof="phone")
     return {"ticket": ticket, "expires_in": 20 * 60}
 

@@ -1,5 +1,7 @@
 import { z } from "zod";
 
+import { emailDomainProblem } from "./email-domains";
+
 /**
  * The field rules every form in the app shares. The server checks the same
  * things (app/routes/auth.py); these are here so she hears about a slip next
@@ -12,7 +14,11 @@ export const email = z
   .min(1, "Enter your email address")
   .max(254, "That email address is too long")
   .pipe(z.email("Enter a valid email address, like name@gmail.com"))
-  .transform((v) => v.toLowerCase());
+  .transform((v) => v.toLowerCase())
+  .superRefine((v, ctx) => {
+    const problem = emailDomainProblem(v);
+    if (problem) ctx.addIssue({ code: "custom", message: problem });
+  });
 
 /** 10 digits, Indian mobile (starts 6–9). Spaces and a +91 / 0 prefix are forgiven. */
 export const indianMobile = z
