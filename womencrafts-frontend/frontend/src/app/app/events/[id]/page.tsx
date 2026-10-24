@@ -11,7 +11,8 @@ import { useResource } from "@/lib/use-resource";
 import { Back, Btn, Card, EmptyState, IconTile, mapsHref, Pill, Progress, RailSkeleton, ScreenSkeleton, SectionHead } from "@/components/ux/kit";
 import { HomeShell } from "@/components/ux/home/HomeShell";
 import { toEvent, useEvents } from "@/components/ux/growth";
-import { rupees, type Ev } from "@/components/ux/events/data";
+import { EVENTS as SAMPLE_EVENTS, rupees, type Ev } from "@/components/ux/events/data";
+import { artFor } from "@/components/ux/media/art";
 import { useT } from "@/i18n";
 
 /**
@@ -181,9 +182,11 @@ export default function EventDetail({ params }: { params: Promise<{ id: string }
       <Back to="/app/events" label={tr("events.allEvents2")} className="mb-4" />
 
       <Card className="mb-[16px] overflow-hidden" pad={0}>
-        <div className="relative h-[210px] overflow-hidden" style={{ background: `var(${e.tint})` }}>
+        <div className="relative h-[240px] overflow-hidden lg:h-[300px]" style={{ background: `var(${e.tint})` }}>
+          {/* Its own cover, else the picture of what happens there. */}
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img loading="lazy" decoding="async" src={e.art} alt="" className="h-full w-full object-cover" />
+          <img loading="lazy" decoding="async" src={artFor([e.title, e.kind, e.blurb], "event", e.art !== SAMPLE_EVENTS[0]?.art ? e.art : null, e.id)}
+               alt="" className="h-full w-full object-cover" />
           <span aria-hidden className="absolute inset-0"
                 style={{ background: "linear-gradient(0deg, rgba(0,0,0,0.5), transparent 58%)" }} />
           <span className="absolute start-4 top-4 grid h-[62px] w-[56px] place-items-center rounded-[12px]"

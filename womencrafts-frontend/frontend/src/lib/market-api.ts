@@ -25,6 +25,12 @@ export interface MarketSeller {
   id: string;
   name: string;
   avatar: string;
+  /** Her store's name (Store settings), or "<first name>'s shop". */
+  shop_name?: string;
+  shop_logo?: string;
+  /** False while she has closed her shop — ordering is refused until it opens. */
+  open?: boolean;
+  away_line?: string;
   /**
    * How close she is to the buyer: `circle` | `bought-before` | `new`.
    * Computed server-side from real circle memberships and her real order

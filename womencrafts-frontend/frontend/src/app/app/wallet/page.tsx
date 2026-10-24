@@ -28,7 +28,12 @@ import { NeedAHuman } from "@/components/ux/support/NeedAHuman";
  * withdraw. History last: it matters, but not before the answer does.
  */
 export default function WalletPage() {
-  const TXN_FILTERS = useTranslated(RAW_TXN_FILTERS);
+  // `filter` holds the stable English key; only the labels translate. It used
+  // to hold the translated label, so in Hindi "Money in" never matched and
+  // every tab but the first showed nothing.
+  const TXN_LABELS = useTranslated(RAW_TXN_FILTERS);
+  const labelOf = (key: string) => TXN_LABELS[RAW_TXN_FILTERS.indexOf(key as (typeof RAW_TXN_FILTERS)[number])] ?? key;
+  const keyOfLabel = (label: string) => RAW_TXN_FILTERS[TXN_LABELS.indexOf(label as never)] ?? "All";
   const MONEY_ART = useTranslated(RAW_MONEY_ART);
   const tr = useT();
   const [filter, setFilter] = useState<string>("All");
@@ -264,10 +269,10 @@ export default function WalletPage() {
           </p>
         </div>
         <div className="hidden lg:flex">
-          <Tabs items={[...TXN_FILTERS]} active={filter} onChange={setFilter} />
+          <Tabs items={[...TXN_LABELS]} active={labelOf(filter)} onChange={(l) => setFilter(keyOfLabel(l))} />
         </div>
         <SegmentedControl className="lg:hidden" label={tr("wallet.everyRupee")} value={filter} onChange={setFilter}
-                          options={TXN_FILTERS.map((t) => ({ value: t as string, label: t as string }))} />
+                          options={RAW_TXN_FILTERS.map((t) => ({ value: t as string, label: labelOf(t) }))} />
       </div>
 
       {groups.length ? (
@@ -302,7 +307,7 @@ export default function WalletPage() {
         <Card>
           <EmptyState
             icon="Receipt"
-            title={`No ${filter.toLowerCase()} yet`}
+            title={`No ${labelOf(filter).toLowerCase()} yet`}
             body={tr("wallet.everyPaymentInOrOutOf")}
             action={<Btn onClick={() => setFilter("All")} variant="soft">{tr("wallet.showEverything")}</Btn>}
           />

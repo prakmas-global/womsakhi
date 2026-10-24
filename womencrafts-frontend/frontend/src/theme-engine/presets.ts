@@ -15,19 +15,18 @@ export const PRESETS: (ThemeChoice & { name: string; description: string })[] = 
   {
     id: "womsakhi",
     name: "WomSakhi",
-    description: "Our own — berry and lavender",
+    description: "Our own — the logo's magenta and violet",
     /*
-      The brand kit's Primary, exactly. Berry carries white text at 9.60:1 and
-      reads as text on the cream at 9.10:1, so one colour does both jobs and
-      the generated ramp does not need a second one to fall back on.
+      The logo's two colours (design-system/brand.css). Primary is the logo
+      magenta one step deeper — #f00078 carries white text at only 4.22:1,
+      #c80066 at 5.76:1. Secondary is the logo violet exactly (7.10:1).
 
-      Lavender is the secondary because the kit assigns it to interactive and
-      AI surfaces — it is the one deliberately cool note in a warm palette, and
-      giving it the secondary slot keeps it where it belongs instead of letting
-      a second berry flatten the whole system.
+      `normaliseTheme` (apply.ts) maps every saved "womsakhi" choice to these
+      values, so an account that picked this preset before the rebrand follows
+      the brand instead of keeping the old berry it stored then.
     */
-    primary: "#742a4f",
-    secondary: "#8b5cf6",
+    primary: "#c80066",
+    secondary: "#4830f0",
   },
   {
     id: "indigo",
@@ -85,8 +84,8 @@ export const DEFAULT_THEME: ThemeChoice = {
   // The same pair as the `womsakhi` preset above, and it has to stay that way:
   // this is the value used before a stored choice is read, so a mismatch shows
   // as the brand changing colour one frame after the app opens.
-  primary: "#742a4f",
-  secondary: "#8b5cf6",
+  primary: "#c80066",
+  secondary: "#4830f0",
 };
 
 export function presetById(id: string) {

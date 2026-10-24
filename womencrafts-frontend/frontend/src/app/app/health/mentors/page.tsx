@@ -13,7 +13,8 @@ import { apiRequestMentor } from "@/lib/growth-api";
 import { useResource } from "@/lib/use-resource";
 import { messageFrom } from "@/lib/use-action";
 import { useTranslated } from "@/i18n/data";
-import { Avatar } from "@/components/ux/kit";
+import { MediaCard, MediaGrid, Fact } from "@/components/ux/media/MediaCard";
+import { artFor } from "@/components/ux/media/art";
 
 /**
  * "You're not alone. Talk to our expert mentors."
@@ -23,12 +24,16 @@ import { Avatar } from "@/components/ux/kit";
  * with a doctor, and the screen does not pretend it is — a question about
  * heavy bleeding needs an examination, which the guides say plainly.
  */
+const hasTag = (tags: readonly string[], e: string) => tags.some((t) => t.toLowerCase() === e.toLowerCase());
+
 export default function HealthMentors() {
+  // Labels are translated; the filtering is not. Expertise comes from the
+  // server in English, so comparing it with TRANSLATED tags emptied this list
+  // in every other language. Filter on the raw (English) tags, case-blind.
   const MENTOR_TABS = useTranslated(RAW_MENTOR_TABS);
-  const HEALTH_TAGS = useTranslated(RAW_HEALTH_TAGS);
   const tr = useT();
   const { data, refetch, source } = useResource(
-    useCallback(async (s: AbortSignal) => (await apiMentors(s)).filter((m) => m.expertise.some((e) => HEALTH_TAGS.includes(e))), [HEALTH_TAGS]),
+    useCallback(async (s: AbortSignal) => (await apiMentors(s)).filter((m) => m.expertise.some((e) => hasTag(RAW_HEALTH_TAGS, e))), []),
     [] as ApiMentor[],
   );
   const [tab, setTab] = useState<(typeof MENTOR_TABS)[number]["key"]>("womens");
@@ -38,8 +43,8 @@ export default function HealthMentors() {
   const [error, setError] = useState<string | null>(null);
   const [sent, setSent] = useState<string | null>(null);
 
-  const tags = MENTOR_TABS.find((t) => t.key === tab)?.tags ?? [];
-  const shown = tags.length ? data.filter((m) => m.expertise.some((e) => (tags as readonly string[]).includes(e))) : data;
+  const tags = RAW_MENTOR_TABS.find((t) => t.key === tab)?.tags ?? [];
+  const shown = tags.length ? data.filter((m) => m.expertise.some((e) => hasTag(tags as readonly string[], e))) : data;
 
   const send = async () => {
     if (!asking || goal.trim().length < 5) return;
@@ -94,35 +99,46 @@ export default function HealthMentors() {
           </p>
         )}
 
-        <ul className="mt-4 space-y-2.5">
-          {source === "loading" && shown.length === 0 && [0, 1, 2].map((i) => (
-            <li key={i} className="h-[96px] animate-pulse rounded-[16px]" style={{ background: "var(--ux-surface-2)" }} />
-          ))}
-          {source !== "loading" && shown.length === 0 && (
-            <li className="rounded-[16px] px-4 py-6 text-center text-[15px]" style={{ background: "var(--ux-surface)", color: "var(--ux-muted)", border: "1px solid var(--ux-line)" }}>
-              {tr("healthMentors.noMentorsHereYetWeAre")}
-            </li>
+        <div className="mt-4">
+          {source === "loading" && shown.length === 0 && (
+            <MediaGrid cols={2}>
+              {[0, 1].map((i) => <div key={i} className="h-[300px] animate-pulse rounded-[16px]" style={{ background: "var(--ux-surface-2)" }} />)}
+            </MediaGrid>
           )}
-          {shown.map((m) => (
-            <li key={m.id} className="flex items-start gap-3.5 rounded-[16px] p-3.5" style={{ background: "var(--ux-surface)", border: "1px solid var(--ux-line)" }}>
-              <Avatar src={m.photo} name={m.name} size={60} />
-              <span className="min-w-0 flex-1">
-                <b className="block text-[15px] font-semibold" style={{ color: "var(--ux-ink)" }}>{m.name}</b>
-                <span className="block text-[13px]" style={{ color: "var(--ux-ink-2)" }}>{m.headline}</span>
-                <span className="mt-0.5 block text-[13px] leading-snug" style={{ color: "var(--ux-muted)" }}>{m.focus || m.bio}</span>
-              </span>
-              {m.requested ? (
-                <span className="shrink-0 rounded-full px-3 py-1.5 text-[12px] font-semibold" style={{ background: "var(--ux-tint-green)", color: "var(--ux-green-ink)" }}>Asked</span>
-              ) : (
-                <button type="button" onClick={() => { setAsking(m); setGoal(""); setError(null); }}
-                        className="ux-press h-[36px] shrink-0 rounded-[10px] px-4 text-[13px] font-semibold"
-                        style={{ background: "linear-gradient(90deg, var(--cy-period), var(--ux-fill))", color: "var(--ux-on-brand)" }}>
-                  Ask
-                </button>
-              )}
-            </li>
-          ))}
-        </ul>
+          {source !== "loading" && shown.length === 0 && (
+            <p className="rounded-[16px] px-4 py-6 text-center text-[15px]" style={{ background: "var(--ux-surface)", color: "var(--ux-muted)", border: "1px solid var(--ux-line)" }}>
+              {tr("healthMentors.noMentorsHereYetWeAre")}
+            </p>
+          )}
+          {/* Her face first when she has a photo — you are choosing a person. */}
+          <MediaGrid cols={2}>
+            {shown.map((m) => (
+              <MediaCard key={m.id} ratio="4/3"
+                image={artFor([m.expertise.join(" "), m.headline, m.focus], "health", m.photo, m.id)} alt={m.name}
+                topLeft={m.expertise[0] ? { text: m.expertise[0] } : null}
+                topRight={m.requested ? { text: "Asked", tone: "green" } : m.rating ? { text: `★ ${m.rating.toFixed(1)}`, tone: "dark" } : null}
+                title={m.name}
+                subtitle={m.headline}
+                avatar={m.photo ? null : { name: m.name }}
+                meta={<>
+                  {m.experience_years > 0 && <Fact icon="Briefcase">{m.experience_years} years</Fact>}
+                  {m.languages.length > 0 && <Fact icon="Languages">{m.languages.slice(0, 2).join(", ")}</Fact>}
+                </>}
+                footer={m.requested ? (
+                  <span className="flex min-h-[38px] items-center justify-center rounded-[10px] text-[13px] font-semibold"
+                        style={{ background: "var(--ux-tint-green)", color: "var(--ux-green-ink)" }}>Asked — we will introduce you</span>
+                ) : (
+                  <button type="button" onClick={() => { setAsking(m); setGoal(""); setError(null); }}
+                          className="ux-press h-[40px] w-full rounded-[10px] px-4 text-[14px] font-semibold"
+                          style={{ background: "linear-gradient(90deg, var(--cy-period), var(--ux-fill))", color: "var(--ux-on-brand)" }}>
+                    Ask {m.name.split(" ")[0]}
+                  </button>
+                )}>
+                {(m.focus || m.bio) && <p className="line-clamp-2 text-[13px] leading-snug" style={{ color: "var(--ux-muted)" }}>{m.focus || m.bio}</p>}
+              </MediaCard>
+            ))}
+          </MediaGrid>
+        </div>
 
         <div className="mt-4 flex items-center gap-3 rounded-[16px] px-4 py-3.5" style={{ background: "var(--cy-predicted)", border: "1px solid var(--ux-line)" }}>
           <Icons.HeartHandshake className="h-5 w-5 shrink-0" style={{ color: "var(--cy-period-ink)" }} aria-hidden />

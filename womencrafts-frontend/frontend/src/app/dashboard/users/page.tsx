@@ -230,6 +230,9 @@ function MembersScreen() {
   const [form, setForm] = useState<MemberForm>(EMPTY_FORM);
   const [ask, setAsk] = useState<ReasonAsk | null>(null);
   const [reason, setReason] = useState("");
+  // Approve only: her name exactly as printed on her ID. It becomes the name
+  // she cannot change herself (she picks a username instead).
+  const [idName, setIdName] = useState("");
   const [busy, setBusy] = useState(false);
   const [exporting, setExporting] = useState(false);
   const [regions, setRegions] = useState<AdminRegion[]>([]);
@@ -383,6 +386,7 @@ function MembersScreen() {
 
   function askFor(kind: ReasonKind, member?: ApiMember, ids?: string[]) {
     setReason("");
+    setIdName(member?.full_name ?? "");
     setAsk({ kind, member, ids });
   }
 
@@ -390,6 +394,10 @@ function MembersScreen() {
     if (!ask) return;
     const copy = REASON_COPY[ask.kind];
     const why = reason.trim();
+    if (ask.kind === "approve" && !idName.trim()) {
+      toast.error("Her name is needed", { description: "Type it exactly as it is printed on her ID card." });
+      return;
+    }
     if (copy.required && !why) {
       toast.error("A reason is needed", { description: "It is recorded, and where it is hers to know, she is told." });
       return;
@@ -399,7 +407,7 @@ function MembersScreen() {
       const m = ask.member;
       const name = m?.full_name ?? "";
       switch (ask.kind) {
-        case "approve": if (m) { await apiApproveMember(m.id, why); toast.success(`${name} approved`); } break;
+        case "approve": if (m) { await apiApproveMember(m.id, why, idName.trim()); toast.success(`${idName.trim() || name} approved`); } break;
         case "reject": if (m) { await apiRejectMember(m.id, why); toast.success(`${name} rejected`, { description: "She has been told why." }); } break;
         case "suspend": if (m) { await apiSuspendMember(m.id, why); toast.success(`${name} suspended`, { description: "She cannot sign in until restored." }); } break;
         case "restore": if (m) { await apiRestoreMember(m.id, why); toast.success(`${name} can sign in again`); } break;
@@ -1163,6 +1171,15 @@ function MembersScreen() {
         {ask && (
           <div className="space-y-3">
             <p className="text-sm text-ink-muted">{REASON_COPY[ask.kind].body}</p>
+            {ask.kind === "approve" && (
+              <Input
+                label="Name as printed on her ID"
+                required
+                value={idName}
+                onChange={(e) => setIdName(e.target.value)}
+                hint="This becomes her verified name. She cannot change it; she can pick a username."
+              />
+            )}
             <Textarea
               label={REASON_COPY[ask.kind].required ? "Reason" : "Reason (optional)"}
               required={REASON_COPY[ask.kind].required}

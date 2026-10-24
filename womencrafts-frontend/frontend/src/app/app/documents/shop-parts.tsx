@@ -3,6 +3,7 @@
 import { memo, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import * as Icons from "@/components/ux/icons";
+import { artFor } from "@/components/ux/media/art";
 
 import type { Listing, ShopOrder, ShopSummary } from "@/lib/shop-api";
 import { validateImage } from "@/lib/uploads-api";
@@ -191,7 +192,7 @@ export const ListingCard = memo(function ListingCard({
   return (
     <article className="ux-rise overflow-hidden rounded-[16px] transition-transform hover:-translate-y-[3px] lg:rounded-[20px]"
              style={card}>
-      <div className="relative h-[150px] overflow-hidden" style={{ background: "var(--ux-surface-2)" }}>
+      <div className="relative aspect-[4/3] overflow-hidden" style={{ background: "var(--ux-surface-2)" }}>
         <span className="absolute start-2.5 top-2.5 z-[2] rounded-full px-2.5 py-1 text-2xs font-extrabold uppercase tracking-[0.05em] lg:rounded-[8px]"
               style={{ background: "var(--ux-surface)", color: `var(${TONE[tone][1]})`,
                        boxShadow: "var(--ux-shadow-card)" }}>
@@ -217,18 +218,27 @@ export const ListingCard = memo(function ListingCard({
             </button>
           </>
         ) : (
-          <button type="button" data-over={over}
-                  onClick={() => file.current?.click()}
-                  onDragOver={(e) => { e.preventDefault(); setOver(true); }}
-                  onDragLeave={() => setOver(false)}
-                  onDrop={(e) => { e.preventDefault(); setOver(false); take(e.dataTransfer.files[0]); }}
-                  className="ux-drop absolute inset-0 grid place-content-center justify-items-center gap-1.5 px-3 text-center"
-                  style={{ color: "var(--ux-brand)" }}>
-            {busy ? <Icons.Loader2 className="h-[26px] w-[26px] animate-spin" />
-                  : <Icons.Camera className="h-[26px] w-[26px]" />}
-            <b className="text-xsm font-extrabold">{busy ? "Adding…" : "Add a photo"}</b>
-            <span className="text-2xs leading-snug" style={{ color: "var(--ux-faint)" }}>{tr("documents.takeOneOrChooseFromYour")}</span>
-          </button>
+          <>
+            {/* No photo of hers yet: a picture of the kind of work, so the
+                card still says what it is — and a clear invitation to add
+                her own on top of it. */}
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img loading="lazy" decoding="async" alt=""
+                 src={artFor([l.title, l.category, l.kind], l.kind === "service" ? "service" : "product", null, l.id)}
+                 className="absolute inset-0 h-full w-full object-cover opacity-60" />
+            <button type="button" data-over={over}
+                    onClick={() => file.current?.click()}
+                    onDragOver={(e) => { e.preventDefault(); setOver(true); }}
+                    onDragLeave={() => setOver(false)}
+                    onDrop={(e) => { e.preventDefault(); setOver(false); take(e.dataTransfer.files[0]); }}
+                    className="ux-drop absolute inset-0 grid place-content-center justify-items-center gap-1.5 px-3 text-center"
+                    style={{ color: "var(--ux-brand)", background: "color-mix(in srgb, var(--ux-surface) 55%, transparent)" }}>
+              {busy ? <Icons.Loader2 className="h-[26px] w-[26px] animate-spin" />
+                    : <Icons.Camera className="h-[26px] w-[26px]" />}
+              <b className="text-xsm font-extrabold">{busy ? "Adding…" : "Add your photo"}</b>
+              <span className="text-2xs font-semibold leading-snug" style={{ color: "var(--ux-ink-2)" }}>{tr("documents.takeOneOrChooseFromYour")}</span>
+            </button>
+          </>
         )}
         <input ref={file} type="file" accept="image/*" className="hidden"
                onChange={(e) => take(e.target.files?.[0])} />
@@ -329,11 +339,16 @@ export const Storefront = memo(function Storefront(
                                                       boxShadow: "var(--ux-shadow-card)" }}>
         <div className="overflow-hidden rounded-[20px]" style={{ background: "var(--ux-surface)" }}>
           <div className="relative overflow-hidden p-4"
-               style={{ background: "linear-gradient(112deg, var(--ux-brand-900), var(--ux-fill) 46%, var(--ux-rib-3))",
+               style={{ background: summary?.cover
+                          ? `linear-gradient(180deg, rgba(20,6,30,.25), rgba(20,6,30,.75)), url("${summary.cover}") center/cover`
+                          : "linear-gradient(112deg, var(--ux-brand-900), var(--ux-fill) 46%, var(--ux-rib-3))",
                         color: "var(--ux-on-brand)" }}>
-            <span className="grid h-[50px] w-[50px] place-items-center rounded-[16px] text-lg font-extrabold"
+            <span className="grid h-[50px] w-[50px] place-items-center overflow-hidden rounded-[16px] text-lg font-extrabold"
                   style={{ background: "rgba(255,255,255,.2)", boxShadow: "inset 0 0 0 1px rgba(255,255,255,.3)" }}>
-              {(summary?.name ?? "S").slice(0, 2).toUpperCase()}
+              {summary?.logo
+                // eslint-disable-next-line @next/next/no-img-element
+                ? <img src={summary.logo} alt="" className="h-full w-full object-cover" />
+                : (summary?.name ?? "S").split(/\s+/).map((w) => w[0]).join("").slice(0, 2).toUpperCase()}
             </span>
             <h2 className="mt-3 text-lg font-extrabold tracking-[-0.02em]">{summary?.name ?? "Your shop"}</h2>
             <p className="mt-1 text-xs" style={{ color: "var(--ux-on-brand-2)" }}>
@@ -342,7 +357,7 @@ export const Storefront = memo(function Storefront(
             <div className="mt-3 flex flex-wrap gap-1.5">
               {[["ShieldCheck", "Verified"],
                 ["Star", summary?.rating ? summary.rating.toFixed(1) : "New"],
-                ["Store", `${live.length} live`]].map(([icon, text]) => (
+                summary?.open === false ? ["Moon", "Closed for now"] : ["Store", `${live.length} live`]].map(([icon, text]) => (
                 <span key={text as string} className="inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-2xs font-extrabold uppercase tracking-[0.04em]"
                       style={{ background: "rgba(255,255,255,.2)" }}>
                   <Ico name={icon as string} className="h-[11px] w-[11px]" /> {text}

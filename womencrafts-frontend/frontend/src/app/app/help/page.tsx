@@ -7,6 +7,25 @@ import Link from "next/link";
 import { ArrowRight, BookOpen, Bus, ChevronRight, CircleHelp, FileText, HeartPulse, Landmark, MessageCircle, Mic2, Phone, Scale, Search, ShieldAlert, ShieldCheck, Siren, Users } from "lucide-react";
 import { HomeShell } from "@/components/ux/home/HomeShell";
 import styles from "./help.module.css";
+import { MediaCard, MediaGrid } from "@/components/ux/media/MediaCard";
+
+/**
+ * A picture per topic, chosen by hand: each one has to say what is behind the
+ * tile before the words are read, and the safety and rights ones stay calm.
+ */
+const ART: Record<string, string> = {
+  "/app/helpdesk": "/ux/art/work-dashboard-community.webp",
+  "/app/safety": "/ux/art/onboarding-help-safety-v2.webp",
+  "/app/safe-money": "/ux/art/course-counting-coins-calculator.webp",
+  "/app/bringing": "/ux/art/circle-sharing-help.webp",
+  "/app/school": "/ux/art/work-dashboard-support.webp",
+  "/app/incase": "/ux/art/course-writing-notebook.webp",
+  "/app/rights": "/ux/art/scene-woman-reading-document.webp",
+  "/app/health": "/ux/wellness/morning-yoga-v2.webp",
+  "/app/family": "/ux/art/onboarding-wellbeing-all-ages-v2.webp",
+  "/app/travel": "/ux/help/safe-travel-v2.webp",
+  "/app/voice": "/ux/art/course-confident-microphone.webp",
+};
 
 const topics = [
   [MessageCircle,"What has gone wrong","Answers, or a person","/app/helpdesk","coral"],
@@ -22,16 +41,21 @@ const topics = [
   [Mic2,"Reading it out to you","Any screen read aloud, in your language","/app/voice","violet"],
 ] as const;
 
+// Each goes where it says. "Download guides" led to the helpdesk inbox,
+// "Government schemes" to Discover, and "Legal templates" to a page with no
+// templates on it — so they now name what is actually behind them.
 const resources = [
-  [FileText,"Download guides","/app/helpdesk"], [Phone,"Important contacts","/app/safety"],
-  [Landmark,"Government schemes","/app/discover"], [Scale,"Legal templates","/app/rights"],
+  [Landmark,"Government schemes — what you are owed","/app/haq"],
+  [FileText,"My papers — Aadhaar, ration card, certificates","/app/haq/papers"],
+  [Scale,"Free legal help, and your rights","/app/rights"],
+  [Phone,"Emergency and helpline numbers","/app/safety"],
 ] as const;
 
 export default function HelpPage(){
   const tr = useT();
   const [query,setQuery]=useState("");
   const shown=useMemo(()=>{const q=query.trim().toLowerCase();return q?topics.filter(([,title,copy])=>`${title} ${copy}`.toLowerCase().includes(q)):topics},[query]);
-  return <HomeShell><div className={styles.page} data-dashboard="help">
+  return <HomeShell columns><div className={styles.page} data-dashboard="help">
     <main className={styles.main}>
       <section className={styles.hero}>
         <Image src="/ux/help/help-hero-v2.webp" alt={tr("help.fiveWomenSupportingAndListeningTo")} fill priority sizes="(max-width: 900px) 100vw, 70vw" />
@@ -41,7 +65,8 @@ export default function HelpPage(){
       </section>
 
       <section className={styles.topics}><header><div><h2>{tr("help.browseHelpTopics")}</h2><p>{tr("help.findGuidanceToolsAndSupportFor")}</p></div>{query?<button onClick={()=>setQuery("")}>{tr("help.clearSearch")}</button>:<Link href="/app/explore">{tr("calendar.viewAll")} <ArrowRight/></Link>}</header>
-        {shown.length?<div className={styles.topicGrid}>{shown.map(([Icon,title,copy,href,tone])=><Link href={href} key={title} className={styles.topic}><span className={styles[tone]}><Icon/></span><span><b>{title}</b><small>{copy}</small></span><ChevronRight/></Link>)}</div>:<div className={styles.noResults}><CircleHelp/><b>{tr("help.noMatchingTopicYet")}</b><p>{tr("help.tryADifferentPhraseOrContact")}</p><Link href="/app/helpdesk">{tr("help.contactSupport")} <ArrowRight/></Link></div>}
+        {shown.length?<MediaGrid>{shown.map(([Icon,title,copy,href])=><MediaCard key={title} href={href} image={ART[href] ?? "/ux/art/circle-hands-together.webp"} alt="" ratio="16/10"
+          overlay={<><Icon className="h-[14px] w-[14px]" /> Open</>} title={title} subtitle={copy} />)}</MediaGrid>:<div className={styles.noResults}><CircleHelp/><b>{tr("help.noMatchingTopicYet")}</b><p>{tr("help.tryADifferentPhraseOrContact")}</p><Link href="/app/helpdesk">{tr("help.contactSupport")} <ArrowRight/></Link></div>}
       </section>
 
       <section className={styles.features}>
@@ -54,7 +79,7 @@ export default function HelpPage(){
     <aside className={styles.rail}>
       <section className={styles.immediate}><header><div><h2>{tr("help.needImmediateHelp")}</h2><p>You&apos;re not alone. Reach out anytime.</p></div><CircleHelp/></header>
         <a href="tel:181"><span><Phone/></span><b>{tr("help.callHelpline")}<small>Women&apos;s support line</small></b><ChevronRight/></a>
-        <Link href="/app/helpdesk"><span><MessageCircle/></span><b>{tr("help.liveChat")}<small>{tr("help.chatWithACounselor")}</small></b><ChevronRight/></Link>
+        <Link href="/app/helpdesk"><span><MessageCircle/></span><b>Message the WomSakhi team<small>A real person replies, usually within a day</small></b><ChevronRight/></Link>
         <Link href="/app/safety"><span><ShieldCheck/></span><b>{tr("help.reportAConcern")}<small>Safety &amp; emergency</small></b><ChevronRight/></Link>
       </section>
       <blockquote>{tr("help.aProblemShared")}<br/>{tr("help.isAProblemHalved")}<cite>— WomSakhi</cite></blockquote>

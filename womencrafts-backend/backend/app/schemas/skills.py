@@ -35,6 +35,16 @@ class AttemptResponse(BaseModel):
     score: int
     passed: bool
     taken_on: str
+    #: Her certificate for this skill, once she has passed it (Certificates, /verify/<code>).
+    certificate_code: str = ""
+
+
+class VerifiedSkill(BaseModel):
+    """A skill she proved by passing its test — shown wherever someone decides to trust her."""
+    skill: str
+    title: str
+    score: int
+    code: str = ""
 
 
 class DigitalStepResponse(BaseModel):

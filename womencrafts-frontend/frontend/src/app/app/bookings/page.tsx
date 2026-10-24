@@ -5,8 +5,8 @@ import { COPY } from "@/components/ux/copy";
 import * as Icons from "@/components/ux/icons";
 
 import {
-  ActionBtn, Btn, Card, EmptyState, NoteBtn, Pill,
-  SectionHead, SourceNote, Tabs, copy, plural
+  Btn, Card, EmptyState, NoteBtn, Pill,
+  SectionHead, SourceNote, Tabs, plural
 } from "@/components/ux/kit";
 import { HomeShell } from "@/components/ux/home/HomeShell";
 import { useBookings } from "@/components/ux/live";
@@ -207,12 +207,16 @@ export default function BookingsPage() {
                         <Btn variant="ghost" size="sm" onClick={() => setCancelling(b.id)}>Cancel</Btn>
                       </>
                     )}
-                    {b.state === "Confirmed" && b.kind === "Mentor" && (
-                      <ActionBtn variant="primary" size="sm" icon="Video" doneIcon="Copy"
-                                 done={tr("bookings.linkCopied")}
-                                 act={() => copy(`https://meet.womsakhi.com/${b.id}`, "Link copied", "meet.womsakhi.com/" + b.id)}>
-                        Join
-                      </ActionBtn>
+                    {/* "Join" copied meet.womsakhi.com/<id> — a meeting service
+                        that does not exist. It is the link the team actually
+                        wrote now (or the place), and nothing until they do. */}
+                    {b.state === "Confirmed" && /^https:\/\//i.test(b.meeting ?? "") && (
+                      <Btn href={b.meeting} variant="primary" size="sm" icon="Video">Join</Btn>
+                    )}
+                    {b.state === "Confirmed" && !!b.meeting && !/^https:\/\//i.test(b.meeting) && (
+                      <span className="inline-flex items-center gap-1 text-xs font-semibold" style={{ color: "var(--ux-ink-2)" }}>
+                        <Icons.MapPin className="h-3.5 w-3.5" /> {b.meeting}
+                      </span>
                     )}
                     {/* The words went nowhere and the box promised other
                         women would read them. /me/feedback puts them in front

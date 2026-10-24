@@ -73,10 +73,12 @@ EXEMPT = {
     # Signed out by definition — this is how you get a session at all.
     "auth.auth_options", "auth.signup_start", "auth.signup_check", "auth.signup_verify", "auth.signup_firebase", "auth.signup_complete",
     "auth.signin_start", "auth.signin_verify", "auth.two_factor_verify", "auth.two_factor_enroll",
+    "auth.auth_start", "auth.auth_verify", "auth.auth_verify_firebase",
     "auth.refresh", "auth.session", "auth.get_me", "auth.signout", "auth.signout_everywhere",
     # Her own devices and her own mobile number: the object is always the caller.
     "auth.my_sessions", "auth.end_session", "auth.set_phone", "auth.phone_start",
     "auth.phone_verify", "auth.phone_firebase", "auth.signin_firebase", "auth.sms_allowance", "auth.phone_later",
+    "auth.email_start", "auth.email_verify",
     # The app as her key: signed-out halves are guarded by a nonce or a
     # one-time code; the app halves by `require_app_session` (members only).
     "auth_app.create_app_key", "auth_app.signin_with_app_code", "auth_app.qr_start",
@@ -112,7 +114,7 @@ EXEMPT = {
 
 #: Prefixes whose whole file is member-facing. These sit behind the member
 #: gate in their own way and are not part of the admin surface.
-MEMBER_FILES = {"engines", "layout", "notifications", "me", "me_export", "public"}
+MEMBER_FILES = {"engines", "layout", "notifications", "me", "me_export", "public", "public_share"}
 
 # `@router.` and any sub-router (`@services_router.`, `@integrations_router.`):
 # a file that mounts two prefixes on one router used to hide every write on

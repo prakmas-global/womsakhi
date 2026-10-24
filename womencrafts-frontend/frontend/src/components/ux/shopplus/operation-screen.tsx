@@ -14,6 +14,7 @@ import {
   type ShopOperationStatus,
 } from "@/lib/shop-api";
 import { useResource } from "@/lib/use-resource";
+import { More, Picks } from "@/components/ux/kit/form";
 
 export interface OperationScreenConfig {
   kind: ShopOperationKind;
@@ -28,12 +29,34 @@ export interface OperationScreenConfig {
   amountLabel: string;
   noteLabel: string;
   examples: string[];
+  /** Fixed answers for the contact field (a channel, a language) instead of names. */
+  contactOptions?: string[];
+  /** Usual amounts, one tap each. */
+  amountPresets?: number[];
+  /** Phrases she can tap to build the note without typing. */
+  notePicks?: string[];
   initialStatus: ShopOperationStatus;
   statuses: { value: ShopOperationStatus; label: string }[];
   empty: string;
 }
 
 const emptyRows: ShopOperation[] = [];
+
+/** `datetime-local` value for a day from now, at a sensible hour. */
+function dayFrom(days: number, hour = 10) {
+  const d = new Date();
+  d.setDate(d.getDate() + days);
+  d.setHours(hour, 0, 0, 0);
+  const p = (n: number) => String(n).padStart(2, "0");
+  return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}T${p(d.getHours())}:00`;
+}
+const DATE_PICKS: { label: string; at: () => string }[] = [
+  { label: "Today", at: () => dayFrom(0, Math.min(20, new Date().getHours() + 2)) },
+  { label: "Tomorrow", at: () => dayFrom(1) },
+  { label: "This Saturday", at: () => dayFrom(((6 - new Date().getDay() + 7) % 7) || 7) },
+  { label: "In a week", at: () => dayFrom(7) },
+  { label: "In a month", at: () => dayFrom(30) },
+];
 
 export function OperationScreen({ config }: { config: OperationScreenConfig }) {
   const load = useCallback((signal: AbortSignal) => apiShopOperations(config.kind, signal), [config.kind]);
@@ -45,6 +68,15 @@ export function OperationScreen({ config }: { config: OperationScreenConfig }) {
   const [amount, setAmount] = useState("");
   const [dueOn, setDueOn] = useState("");
   const [note, setNote] = useState("");
+  const [datePick, setDatePick] = useState("");
+
+  // Names she has already written down, newest first — picked, not retyped.
+  const known = config.contactOptions
+    ?? Array.from(new Set(rows.data.map((r) => r.contact.trim()).filter(Boolean))).slice(0, 8);
+  const toggleNote = (phrase: string) => setNote((n) => {
+    const parts = n.split(". ").map((x) => x.trim()).filter(Boolean);
+    return (parts.includes(phrase) ? parts.filter((x) => x !== phrase) : [...parts, phrase]).join(". ");
+  });
 
   const submit = async (e: FormEvent) => {
     e.preventDefault();
@@ -56,7 +88,7 @@ export function OperationScreen({ config }: { config: OperationScreenConfig }) {
         amount_minor: Math.round((Number(amount) || 0) * 100), status: config.initialStatus,
         due_on: dueOn, note: note.trim(), details: {},
       });
-      setTitle(""); setContact(""); setAmount(""); setDueOn(""); setNote(""); setOpen(false);
+      setTitle(""); setContact(""); setAmount(""); setDueOn(""); setNote(""); setDatePick(""); setOpen(false);
       rows.refetch();
       toast("Saved to your shop", { tone: "success" });
     } catch {
@@ -83,7 +115,7 @@ export function OperationScreen({ config }: { config: OperationScreenConfig }) {
   return (
     <HomeShell active="/app/shop">
       <div className="flex flex-col gap-5">
-        <Back to="/app/shop" label="Back to ways to sell" />
+        <Back to="/app/shop" label="Back to selling tools" />
         <header className="flex flex-wrap items-end justify-between gap-4">
           <div>
             <p className={EYEBROW}>{config.eyebrow}</p>
@@ -95,18 +127,39 @@ export function OperationScreen({ config }: { config: OperationScreenConfig }) {
 
         {open && (
           <Card pad={20}>
-            <form onSubmit={submit} className="grid gap-4 md:grid-cols-2">
+            <form onSubmit={submit} className="grid gap-5 md:grid-cols-2">
               <div className="md:col-span-2">
                 <Input label={config.titleLabel} required value={title} maxLength={120} placeholder={config.titlePlaceholder} onChange={(e) => setTitle(e.target.value)} />
-                <div className="mt-2 flex flex-wrap gap-2" aria-label="Quick choices">
-                  {config.examples.map((x) => <button key={x} type="button" onClick={() => setTitle(x)} className="rounded-full border px-3 py-1.5 text-xs font-semibold" style={{ borderColor: v("--ux-line"), color: v("--ux-ink-2") }}>{x}</button>)}
-                </div>
+                <Picks options={config.examples} value={title} onPick={setTitle} label="Quick choices" />
               </div>
-              <Input label={config.contactLabel} value={contact} maxLength={120} onChange={(e) => setContact(e.target.value)} />
-              <Input label={config.dateLabel} type="datetime-local" value={dueOn} onChange={(e) => setDueOn(e.target.value)} />
-              <Input label={config.amountLabel} type="number" min="0" step="1" inputMode="numeric" value={amount} onChange={(e) => setAmount(e.target.value)} />
-              <Textarea label={config.noteLabel} value={note} maxLength={2000} onChange={(e) => setNote(e.target.value)} />
-              <div className="md:col-span-2 flex justify-end"><Btn type="submit" loading={saving} disabled={title.trim().length < 2}>{config.createLabel}</Btn></div>
+              <div>
+                <Input label={config.contactLabel} value={contact} maxLength={120}
+                       placeholder={known.length ? "Tap one below, or type" : undefined}
+                       onChange={(e) => setContact(e.target.value)} />
+                <Picks options={known} value={contact} onPick={(c) => setContact(contact === c ? "" : c)} label={config.contactLabel} />
+              </div>
+              <div>
+                <Input label={config.dateLabel} type="datetime-local" value={dueOn}
+                       onChange={(e) => { setDueOn(e.target.value); setDatePick(""); }} />
+                <Picks options={DATE_PICKS.map((d) => d.label)} value={datePick}
+                       onPick={(l) => { setDatePick(l); setDueOn(DATE_PICKS.find((d) => d.label === l)!.at()); }}
+                       label={config.dateLabel} />
+              </div>
+              <div>
+                <Input label={config.amountLabel} type="number" min="0" step="1" inputMode="numeric" value={amount} onChange={(e) => setAmount(e.target.value)} />
+                {config.amountPresets && (
+                  <Picks options={config.amountPresets.map((n) => `₹${n.toLocaleString("en-IN")}`)}
+                         value={amount ? `₹${Number(amount).toLocaleString("en-IN")}` : ""}
+                         onPick={(x) => setAmount(x.replace(/[^\d]/g, ""))} label={config.amountLabel} />
+                )}
+              </div>
+              <div className="md:col-span-2">
+                <More label={`${config.noteLabel} (optional)`} open={!!note}>
+                  {config.notePicks && <Picks options={config.notePicks} value={note.split(". ")} onPick={toggleNote} multi label={config.noteLabel} />}
+                  <div className="mt-3"><Textarea label="Or in your own words" value={note} maxLength={2000} onChange={(e) => setNote(e.target.value)} /></div>
+                </More>
+              </div>
+              <div className="md:col-span-2 flex justify-end"><Btn type="submit" loading={saving} disabled={title.trim().length < 2} className="max-md:w-full">{config.createLabel}</Btn></div>
             </form>
           </Card>
         )}

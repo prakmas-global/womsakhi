@@ -150,6 +150,7 @@ export default function ItemPage({ params }: { params: Promise<{ id: string }> }
 
   const look = lookOf(item);
   const soldOut = item.out_of_stock;
+  const away = item.seller.open === false;
   const needsQuote = item.price_mode === "quote" || item.price_mode === "range";
 
   const smallRow = (l: MarketListing) => {
@@ -237,9 +238,18 @@ export default function ItemPage({ params }: { params: Promise<{ id: string }> }
             </p>
           </div>
 
+          {/* She closed her shop in Store settings: say so, and do not take an
+              order the server would refuse. Asking her a question still works. */}
+          {away && (
+            <div role="status" className="mx-5 mt-4 flex items-start gap-2.5 rounded-[12px] p-3 text-xsm font-semibold"
+                 style={{ background: v("--ux-tint-amber"), color: v("--ux-amber-ink") }}>
+              <I name="Moon" className="mt-[2px] h-4 w-4 shrink-0" />
+              {item.seller.away_line || `${item.seller.name} is not taking orders right now.`}
+            </div>
+          )}
           <div className="flex flex-wrap gap-2 px-5 py-4">
-            <Btn disabled={soldOut} onClick={needsQuote ? () => setAsking(true) : order}>
-              {soldOut ? "None left just now" : needsQuote ? "Ask for a quote"
+            <Btn disabled={soldOut || away} onClick={needsQuote ? () => setAsking(true) : order}>
+              {away ? "Shop closed for now" : soldOut ? "None left just now" : needsQuote ? "Ask for a quote"
                 : item.kind === "service" ? "Book her"
                 : orders.length > 0 ? "Order it again" : "Order it"}
             </Btn>
@@ -329,13 +339,16 @@ export default function ItemPage({ params }: { params: Promise<{ id: string }> }
           <SectionHead title={tr("market.whoMakesIt")} icon="User" />
           <Card pad={20}>
             <div className="flex flex-wrap items-start gap-4">
-              <span className="grid h-[54px] w-[54px] shrink-0 place-items-center rounded-full text-xl font-bold"
+              <span className="grid h-[54px] w-[54px] shrink-0 place-items-center overflow-hidden rounded-full text-xl font-bold"
                     style={{ background: v("--ux-brand-tint-2"), color: v("--ux-brand") }}>
-                {item.seller.name.charAt(0)}
+                {item.seller.shop_logo
+                  // eslint-disable-next-line @next/next/no-img-element
+                  ? <img src={item.seller.shop_logo} alt="" className="h-full w-full rounded-full object-cover" />
+                  : item.seller.name.charAt(0)}
               </span>
               <div className="min-w-0 flex-1">
                 <div className="flex flex-wrap items-center gap-2">
-                  <p className="text-base font-bold" style={{ color: v("--ux-ink") }}>{item.seller.name}</p>
+                  <p className="text-base font-bold" style={{ color: v("--ux-ink") }}>{item.seller.shop_name || item.seller.name}</p>
                   <span className="rounded-full px-2.5 py-[3px] text-2xs font-bold"
                         style={{
                           background: v(item.seller.tie === "circle" ? "--ux-tint-pink" : "--ux-surface-2"),
@@ -344,6 +357,9 @@ export default function ItemPage({ params }: { params: Promise<{ id: string }> }
                     {item.seller.tie_label}
                   </span>
                 </div>
+                {item.seller.shop_name && item.seller.shop_name !== item.seller.name && (
+                  <p className="text-xs" style={{ color: v("--ux-ink-2") }}>by {item.seller.name}</p>
+                )}
                 {(item.category || item.seller.place) && (
                   <p className="mt-1 text-xsm" style={{ color: v("--ux-muted") }}>
                     {[item.category, item.seller.place].filter(Boolean).join(" · ")}

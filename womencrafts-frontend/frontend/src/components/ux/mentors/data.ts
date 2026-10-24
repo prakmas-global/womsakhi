@@ -30,6 +30,10 @@ export type Mentor = {
   fee_minor: number;
   tint: string;
   ink: string;
+  session_mode?: string;
+  is_mine?: boolean;
+  owner_kind?: string;
+  verified_skills?: { skill: string; title: string; score: number; code: string }[];
 };
 
 export const MENTORS: Mentor[] = [

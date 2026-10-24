@@ -27,7 +27,7 @@ export function PreviewPill({ state }: { state: string | null }) {
         position: "fixed", right: 10, bottom: 10, zIndex: 2147483647,
         display: "inline-flex", alignItems: "center", gap: 6,
         padding: "5px 11px", borderRadius: 999,
-        background: "#9b1d50", color: "#fff",
+        background: "var(--ws-magenta-600)", color: "#fff",
         font: "700 11px/1.2 ui-sans-serif, system-ui, sans-serif", letterSpacing: ".06em",
         textDecoration: "none", boxShadow: "0 4px 14px rgba(70, 24, 47, .28)",
       }}

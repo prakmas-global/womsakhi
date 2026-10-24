@@ -94,14 +94,14 @@ export const SECTIONS: Section[] = [
             { id: "progress", label: "What has changed", k: "ch.progress", icon: "TrendingUp", href: "/app/progress", note: "Month by month", },
           ],
         },
-        { id: "schedule", label: "Your calendar", k: "ch.schedule", icon: "CalendarDays", href: "/app/schedule", note: "Sessions, classes and events",
+        { id: "schedule", label: "My calendar", k: "ch.schedule", icon: "CalendarDays", href: "/app/schedule", note: "Sessions, classes and events",
           children: [
             { id: "bookings", label: "Times you have booked", k: "ch.bookings", icon: "CalendarCheck", href: "/app/bookings", note: "Classes and sessions", },
           ],
         },
         { id: "saved", label: "Saved", k: "ch.saved", icon: "Bookmark", href: "/app/saved", note: "Things you kept", },
         { id: "notifications", label: "What is new", k: "ch.notifications", icon: "Bell", href: "/app/notifications", note: "Everything you were told", },
-        { id: "reminders", label: "Your reminders", k: "ch.reminders", icon: "Bell", href: "/app/reminders", note: "Set one without typing", },
+        { id: "reminders", label: "My reminders", k: "ch.reminders", icon: "Bell", href: "/app/reminders", note: "Set one without typing", },
         { id: "sakhi", label: "Ask Sakhi", k: "ch.sakhi", icon: "Sparkles", href: "/app/sakhi", note: "Anything, in your own words", },
       ],
     },
@@ -118,8 +118,12 @@ export const SECTIONS: Section[] = [
     { tab: true, id: "work", label: "Work", k: "ch.mode.work", icon: "Briefcase", href: "/app/work", note: "Find it, win it, prove it",
       children: [
         { id: "opportunities", label: "Find work", k: "ch.opportunities", icon: "Search", href: "/app/opportunities", note: "Jobs, orders and freelance", },
+        { id: "work-profile", label: "My work profile", icon: "IdCard", href: "/app/work/profile", note: "Your skills, and who can find you", },
+        { id: "work-find", label: "Find people to hire", icon: "UserSearch", href: "/app/work/find", note: "By skill — only women who opted in", },
+        { id: "work-post", label: "Post a job", icon: "Plus", href: "/app/work/post", note: "Find the right women for your work", },
+        { id: "work-posts", label: "My job posts", icon: "ClipboardList", href: "/app/work/posts", note: "Who applied, and what you decided", },
         { id: "verified", label: "Did they pay her?", k: "ch.verified", icon: "BadgeCheck", href: "/app/verified", note: "Before you take the work", },
-        { id: "applications", label: "Your applications", k: "ch.applications", icon: "ClipboardList", href: "/app/applications", note: "Where each one stands",
+        { id: "applications", label: "My applications", k: "ch.applications", icon: "ClipboardList", href: "/app/applications", note: "Where each one stands",
           children: [
             { id: "intake", label: "Tell us what you can do", k: "ch.intake", icon: "FileText", href: "/app/intake", note: "So the right work finds you", },
           ],
@@ -134,64 +138,61 @@ export const SECTIONS: Section[] = [
     },
     { tab: true, id: "earn", label: "Earn", k: "ch.mode.earn", icon: "BadgeIndianRupee", href: "/app/earn", note: "Sell it, and get paid",
       children: [
-        { id: "documents", label: "Your shop", k: "ch.documents", icon: "Store", href: "/app/documents", note: "What you sell, and your orders",
-          children: [
-            { id: "documents-listings", label: "Everything you sell", k: "ch.documents-listings", icon: "LayoutGrid", href: "/app/documents/listings", note: "One row per thing", },
-            { id: "documents-new", label: "Add something to sell", k: "ch.documents-new", icon: "Plus", href: "/app/documents/new", note: "Four steps", },
-            { id: "documents-vault", label: "Your shop papers", k: "ch.documents-vault", icon: "FileText", href: "/app/documents/vault", note: "Licences and proof", },
-          ],
-        },
         /*
-          Ways to sell: two children, not nine.
-
-          Seven of these hints were promises the screens could not keep —
-          "Speak, and it becomes a listing" pointed at a microphone that never
-          recorded anything, "Customers pick an hour themselves" at a diary
-          nobody can book. Those screens still exist and now say so, but the
-          sidebar is not the place to advertise them: a menu of nine features
-          of which seven are unbuilt is itself the false claim. They are
-          reachable from `/app/shop`, under a heading that says what they are.
-
-          The `note` is dropped from the two that stay rather than reworded,
-          because `k` makes the hint come from the message catalogue in nine
-          languages — and "What women near you ask" is exactly the thing the
-          pricing screen now says it cannot do. No hint is better than a
-          translated one that lies.
+          My services is the one home for earning from what she can do —
+          selling, teaching, mentoring. "My shop" used to sit beside it as a
+          second front door to the same shop, with six sub-items and two more
+          shop pages ("My link", "Selling food from home") loose in Earn. The
+          shop's own pages are now reached from inside My shop and its Selling
+          tools; they stay in the tree, `unlisted`, so their breadcrumbs and
+          Back still say where they live.
         */
-        { id: "shop", label: "Ways to sell", k: "ch.shop", icon: "Sparkles", href: "/app/shop",
+        { id: "services", label: "My services", icon: "Sparkles", href: "/app/services", note: "Sell, teach or mentor — switch them on yourself",
           children: [
-            { id: "shop-pricing", label: "What should you charge", k: "ch.shop.pricing", icon: "Tag", href: "/app/shop/pricing", },
-            { id: "shop-buyers", label: "Who buys from you", k: "ch.shop-buyers", icon: "Users", href: "/app/shop/buyers", note: "Folded out of the orders you write down", },
+            { id: "documents", label: "My shop", k: "ch.documents", icon: "Store", href: "/app/documents", note: "What you sell, and your orders",
+              children: [
+                { id: "documents-listings", label: "Everything you sell", k: "ch.documents-listings", icon: "LayoutGrid", href: "/app/documents/listings", note: "One row per thing", unlisted: true, },
+                { id: "documents-new", label: "Add something to sell", k: "ch.documents-new", icon: "Plus", href: "/app/documents/new", note: "Four steps", unlisted: true, },
+                { id: "documents-store", label: "Store settings", icon: "Settings", href: "/app/documents/store", note: "Name, pictures, open or closed", unlisted: true, },
+                { id: "documents-vault", label: "My shop papers", k: "ch.documents-vault", icon: "FileText", href: "/app/documents/vault", note: "Licences and proof", unlisted: true, },
+                { id: "shop", label: "Selling tools", k: "ch.shop", icon: "Sparkles", href: "/app/shop", note: "Advances, monthly customers, appointments", unlisted: true,
+                  children: [
+                    { id: "shop-buyers", label: "Who buys from you", k: "ch.shop-buyers", icon: "Users", href: "/app/shop/buyers", note: "Folded out of the orders you write down", unlisted: true, },
+                    { id: "shop-pricing", label: "What should you charge", k: "ch.shop.pricing", icon: "Tag", href: "/app/shop/pricing", unlisted: true, },
+                  ],
+                },
+                { id: "collect", label: "My link, and getting paid", k: "ch.collect", icon: "QrCode", href: "/app/collect", note: "Sell to people not on WomSakhi", unlisted: true, },
+                { id: "kitchen", label: "Selling food from home", k: "ch.kitchen", icon: "ChefHat", href: "/app/kitchen", note: "The licence is Rs 100 a year", unlisted: true, },
+              ],
+            },
+            { id: "teach", label: "Create a course", icon: "Presentation", href: "/app/teach", note: "Teach what you know — free, or at your price", },
+            { id: "mentoring", label: "My mentoring", icon: "HeartHandshake", href: "/app/mentoring", note: "Guide women one to one", },
           ],
         },
-        { id: "collect", label: "Your link, and getting paid", k: "ch.collect", icon: "QrCode", href: "/app/collect", note: "Sell to people not on WomSakhi", },
         { id: "market", label: "The market", k: "ch.market", icon: "ShoppingBasket", href: "/app/market", note: "Buy from women you know",
           children: [
             { id: "group-buy", label: "Buy together", k: "ch.group-buy", icon: "Boxes", href: "/app/group-buy", note: "Cheaper by the dozen", },
         { id: "checkout", label: "Paying for an order", k: "ch.checkout", icon: "CreditCard", href: "/app/checkout", note: "What you are buying, and how you pay", unlisted: true, },
           ],
         },
-        { id: "kitchen", label: "Selling food from home", k: "ch.kitchen", icon: "ChefHat", href: "/app/kitchen", note: "The licence is Rs 100 a year", },
         { id: "books", label: "Who owes you money", k: "ch.books", icon: "BookOpen", href: "/app/books", note: "And proof of what you earn",
           children: [
             { id: "books-proof", label: "Proof you earn", k: "ch.books.proof", icon: "Receipt", href: "/app/books/proof", note: "A statement a landlord will take", },
-            { id: "books-season", label: "Your busy months", k: "ch.books-season", icon: "TrendingUp", href: "/app/books/season", note: "When the money comes", },
+            { id: "books-season", label: "My busy months", k: "ch.books-season", icon: "TrendingUp", href: "/app/books/season", note: "When the money comes", },
           ],
         },
-        { id: "money", label: "Your money", k: "ch.money", icon: "PiggyBank", href: "/app/money", note: "Is there enough for what cannot wait",
+        { id: "money", label: "My money", k: "ch.money", icon: "PiggyBank", href: "/app/money", note: "Is there enough for what cannot wait",
           children: [
             { id: "payments", label: "What you paid", k: "ch.payments", icon: "Receipt", href: "/app/payments", note: "Every rupee out", },
-            { id: "cover", label: "If something goes wrong", k: "ch.cover", icon: "ShieldCheck", href: "/app/cover", note: "Cover that costs little", },
-            { id: "support-fund", label: "Help from other women", k: "ch.support-fund", icon: "HeartHandshake", href: "/app/support-fund", note: "When you are short", },
           ],
         },
-        { id: "wallet", label: "Your wallet", k: "ch.wallet", icon: "Wallet", href: "/app/wallet", note: "Your balance, and taking it out",
+        { id: "wallet", label: "My wallet", k: "ch.wallet", icon: "Wallet", href: "/app/wallet", note: "Your balance, and taking it out",
           children: [
-            { id: "wallet-statement", label: "Your statement", k: "ch.wallet-statement", icon: "FileText", href: "/app/wallet/statement", note: "Every entry, printable", },
+            { id: "wallet-statement", label: "My statement", k: "ch.wallet-statement", icon: "FileText", href: "/app/wallet/statement", note: "Every entry, printable", },
             { id: "wallet-withdraw", label: "Take money out", k: "ch.wallet-withdraw", icon: "Landmark", href: "/app/wallet/withdraw", note: "To your bank", },
           ],
         },
-        { id: "vault", label: "Your locker", k: "ch.vault", icon: "Lock", href: "/app/vault", note: "Money kept aside, and quiet",
+        { id: "vault", label: "My locker", k: "ch.vault", icon: "Lock", href: "/app/vault", note: "Money kept aside, and quiet",
           children: [
             { id: "vault-rules", label: "Save without thinking", k: "ch.vault.rules", icon: "Repeat", href: "/app/vault/rules", note: "Money moved for you, every week", },
             { id: "vault-history", label: "What you put aside", k: "ch.vault-history", icon: "History", href: "/app/vault/history", note: "And when", },
@@ -201,15 +202,23 @@ export const SECTIONS: Section[] = [
         },
         { id: "haq", label: "What you are owed", k: "ch.haq", icon: "Landmark", href: "/app/haq", note: "Government money in your name",
           children: [
-            { id: "haq-papers", label: "Your papers", k: "ch.haq.papers", icon: "FileText", href: "/app/haq/papers", note: "Held once, reused everywhere", },
+            { id: "haq-papers", label: "My papers", k: "ch.haq.papers", icon: "FileText", href: "/app/haq/papers", note: "Held once, reused everywhere", },
             { id: "haq-recover", label: "What you can recover", k: "ch.haq.recover", icon: "Undo2", href: "/app/haq/recover", note: "Money you were wrongly removed from", },
           ],
         },
       ],
     },
-    { tab: true, id: "circle", label: "Circle", k: "ch.mode.circle", icon: "UsersRound", href: "/app/circle", note: "The women around you",
+    /* Community: a Facebook-style feed with friends, and circles that work
+       like WhatsApp groups. The id stays "circle" so saved trails and the
+       bottom bar keep their place; the old /app/circle home redirects here. */
+    { tab: true, id: "circle", label: "Community", k: "ch.mode.circle", icon: "UsersRound", href: "/app/community", note: "Friends, posts and groups",
       children: [
-        { id: "circles", label: "Circles", k: "ch.circles", icon: "UsersRound", href: "/app/circles", note: "Save and grow together",
+        { id: "community-friends", label: "Friends", icon: "UserPlus", href: "/app/community/friends", note: "Requests and people you may know",
+          children: [
+            { id: "community-person", label: "Profile", icon: "User", href: "/app/community/u", note: "A member's page", unlisted: true },
+          ],
+        },
+        { id: "circles", label: "Circles", k: "ch.circles", icon: "MessagesSquare", href: "/app/circles", note: "Group chats you belong to",
           children: [
             { id: "circles-create", label: "Start a circle", k: "ch.circles-create", icon: "Plus", href: "/app/circles/create", note: "Bring women together", },
             { id: "circles-new", label: "Start a savings circle", k: "ch.circles-new", icon: "Coins", href: "/app/circles/new", note: "Everyone pays in monthly", },
@@ -220,7 +229,7 @@ export const SECTIONS: Section[] = [
         { id: "together", label: "Helping each other", k: "ch.together", icon: "Handshake", href: "/app/together", note: "Teach, learn, and move house",
           children: [
             { id: "together-assist", label: "Doing it for her", k: "ch.together-assist", icon: "HeartHandshake", href: "/app/together/assist", note: "With her permission, on her screen", },
-            { id: "together-move", label: "Moving house", k: "ch.together-move", icon: "Truck", href: "/app/together/move", note: "Hands, and a vehicle", },
+            { id: "together-move", label: "Moving house", k: "ch.together-move", icon: "Truck", href: "/app/together/move", note: "A checklist so you keep what you built", },
             { id: "together-learn", label: "Learn from each other", k: "ch.together-learn", icon: "BookOpen", href: "/app/together/learn", note: "What one knows, another needs", },
           ],
         },
@@ -235,7 +244,7 @@ export const SECTIONS: Section[] = [
         { id: "cycle", label: "Cycle Tracker", icon: "Heart", href: "/app/health/cycle", note: "One tap a day",
           children: [
             { id: "cycle-log", label: "Log today", k: "ch.cycle-log", icon: "CalendarCheck", href: "/app/health/cycle/log", note: "Are you on your period today?", unlisted: true },
-            { id: "cycle-period", label: "Your period", k: "ch.cycle-period", icon: "Droplet", href: "/app/health/cycle/period", note: "Today's care", unlisted: true },
+            { id: "cycle-period", label: "My period", k: "ch.cycle-period", icon: "Droplet", href: "/app/health/cycle/period", note: "Today's care", unlisted: true },
             { id: "cycle-symptoms", label: "Symptoms", k: "ch.cycle-symptoms", icon: "Activity", href: "/app/health/cycle/symptoms", note: "What you are feeling", unlisted: true },
             { id: "cycle-mood", label: "Mood", k: "ch.cycle-mood", icon: "Smile", href: "/app/health/cycle/mood", note: "How you are today", unlisted: true },
             { id: "cycle-today", label: "For you today", k: "ch.cycle-today", icon: "Sparkles", href: "/app/health/cycle/today", note: "Food, rest and mind", unlisted: true },
@@ -247,6 +256,7 @@ export const SECTIONS: Section[] = [
         },
         { id: "cycle-insights", label: "Health Insights", k: "ch.cycle-insights", icon: "FileText", href: "/app/health/cycle/insights", note: "Your patterns, in plain words", },
         { id: "nutrition", label: "Nutrition", k: "ch.nutrition", icon: "Salad", href: "/app/health/nutrition", note: "What to eat this week", },
+        { id: "health-games", label: "Calm games", icon: "Smile", href: "/app/health/games", note: "A few quiet minutes — no scores", },
         { id: "mind", label: "Mental Wellness", k: "ch.mind", icon: "Flower2", href: "/app/health/mind", note: "For the harder days", },
         { id: "workouts", label: "Workouts", k: "ch.workouts", icon: "PersonStanding", href: "/app/health/workouts", note: "Gentle, at home", },
         { id: "health-mentors", label: "Consult a Mentor", k: "ch.health-mentors", icon: "UserRound", href: "/app/health/mentors", note: "Doctors and coaches", },
@@ -261,7 +271,7 @@ export const SECTIONS: Section[] = [
         { id: "bringing", label: "When home is not sure", k: "ch.bringing", icon: "MessageCircle", href: "/app/bringing", note: "Something to show them", },
         { id: "school", label: "The school year", k: "ch.school", icon: "GraduationCap", href: "/app/school", note: "Fees, forms and dates, per child", },
         { id: "incase", label: "If something happens to me", k: "ch.incase", icon: "ShieldCheck", href: "/app/incase", note: "Written down while you can", },
-        { id: "rights", label: "Your rights", k: "ch.rights", icon: "Scale", href: "/app/rights", note: "And a free lawyer", },
+        { id: "rights", label: "My rights", k: "ch.rights", icon: "Scale", href: "/app/rights", note: "And a free lawyer", },
         { id: "health", label: "Health", k: "ch.health", icon: "HeartPulse", href: "/app/health", note: "What is free, and what is due",
           children: [
             { id: "health-strength", label: "Staying strong", k: "ch.health.strength", icon: "HeartPulse", href: "/app/health/strength", note: "What is free at a government centre", },
@@ -277,7 +287,7 @@ export const SECTIONS: Section[] = [
     },
     { tab: false, id: "account", label: "You", icon: "UserRound", href: "/app/you", note: "Your account and how the app behaves",
       children: [
-        { id: "profile", label: "Your profile", icon: "UserRound", href: "/app/profile", note: "What others see",
+        { id: "profile", label: "My profile", icon: "UserRound", href: "/app/profile", note: "What others see",
           children: [
             { id: "profile-preview", label: "How you look to others", k: "ch.profile-preview", icon: "Eye", href: "/app/profile/preview", note: "Exactly what a buyer sees", },
           ],
@@ -285,7 +295,7 @@ export const SECTIONS: Section[] = [
         { id: "verify", label: "Getting verified", k: "ch.verify", icon: "BadgeCheck", href: "/app/verify", note: "So people know it is you", },
         { id: "settings", label: "Settings", icon: "Settings", href: "/app/settings", note: "How the app behaves",
           children: [
-            { id: "settings-account", label: "Your account", k: "ch.settings-account", icon: "UserRound", href: "/app/settings/account", note: "Name, number, email", },
+            { id: "settings-account", label: "My account", k: "ch.settings-account", icon: "UserRound", href: "/app/settings/account", note: "Name, number, email", },
             { id: "settings-language", label: "Language", k: "ch.settings-language", icon: "Languages", href: "/app/settings/language", note: "What you read in", },
             { id: "settings-notifications", label: "What we tell you", k: "ch.settings-notifications", icon: "Bell", href: "/app/settings/notifications", note: "And how", },
             { id: "settings-quiet-hours", label: "Quiet hours", k: "ch.settings-quiet-hours", icon: "Moon", href: "/app/settings/quiet-hours", note: "When not to disturb you", },
@@ -321,7 +331,7 @@ export function allNodes(roots: NavNode[] = SECTIONS): NavNode[] {
  * The chain from section down to the page, for a path.
  *
  * Longest-prefix at every level, so `/app/shop/pricing` returns
- * [Earn, Ways to sell, What should you charge] and a detail route like
+ * [Earn, My shop, What should you charge] and a detail route like
  * `/app/circles/abc123` returns [Circle, Circles] — the deepest node that
  * genuinely owns it, never a guess.
  */

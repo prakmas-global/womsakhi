@@ -57,9 +57,9 @@ export default function PricingPage() {
   const unpriced = useMemo(() => rows.filter((l) => l.price_minor <= 0), [rows]);
 
   return (
-    <HomeShell active="/app/shop">
+    <HomeShell active="/app/shop/pricing">
       <div className="flex flex-col gap-6 lg:gap-5">
-        <Back to="/app/shop" label={tr("shopBuyers.backToWaysToSell")} />
+        <Back to="/app/documents" label={tr("shopBuyers.backToWaysToSell")} />
 
         <header>
           <p className={EYEBROW}>{tr("shopPricing.yourPrices")}</p>

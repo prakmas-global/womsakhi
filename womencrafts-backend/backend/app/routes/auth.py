@@ -1,7 +1,12 @@
 """
 Authentication — no passwords.
 
-Every way in is a six-digit code sent to something she controls:
+Every way in is a six-digit code sent to something she controls.
+
+The web app uses ONE screen for both (`/auth/start`, `/auth/verify`, end of
+this file): mobile OR email → code → signed in, or, if she is new, one "about
+you" step (`/signup/complete`). The two-door endpoints below remain for the
+mobile app:
 
     Join        email + mobile  →  code to email (or SMS)  →  name + "I am a woman, 18+"
     Sign in     email           →  code to email  →  signed in for 30 days
@@ -140,7 +145,7 @@ async def _referrer_code(db, ref: Optional[str], email: str, phone: str) -> str:
     referrer = await db[MemberModel.collection_name].find_one({"code": code}, {"code": 1, "email": 1, "phone": 1})
     if not referrer:
         return ""
-    if (referrer.get("email") or "").lower() == email.lower() or (phone and referrer.get("phone") == phone):
+    if (email and (referrer.get("email") or "").lower() == email.lower()) or (phone and referrer.get("phone") == phone):
         return ""
     return referrer["code"]
 
@@ -321,11 +326,21 @@ class SignupComplete(BaseModel):
     #: The invite code from `/signup?ref=CODE` — another member's code. Optional;
     #: an unknown or malformed one is dropped, never an error.
     ref: Optional[str] = None
+    #: The one-screen sign-in proves ONE of email / mobile before the account
+    #: exists, so its ticket carries only that one. She types the other here.
+    #: Ignored when the ticket already holds it (the older two-field join).
+    email: Optional[EmailStr] = None
+    phone: Optional[str] = None
 
     @field_validator("full_name")
     @classmethod
     def _name(cls, value: str) -> str:
         return clean_person_name(value)
+
+    @field_validator("phone")
+    @classmethod
+    def _phone(cls, value: Optional[str]) -> Optional[str]:
+        return normalise_phone(value) if value else None
 
     @field_validator("ref", mode="before")
     @classmethod
@@ -500,7 +515,14 @@ async def signup_complete(payload: SignupComplete, request: Request, response: R
             {"code": "declaration_required",
              "message": "WomSakhi is a community for women aged 18 and over. Please confirm to continue."},
         )
-    email, phone = body["email"], body["phone"]
+    email = body.get("email") or (codes.normalise_email(payload.email) if payload.email else "")
+    phone = body.get("phone") or payload.phone or ""
+    if not email:
+        raise HTTPException(status.HTTP_422_UNPROCESSABLE_ENTITY,
+                            {"code": "email_required", "message": "Enter your email address"})
+    if not phone:
+        raise HTTPException(status.HTTP_422_UNPROCESSABLE_ENTITY,
+                            {"code": "phone_required", "message": "Enter your mobile number"})
     by_phone = body.get("proof") == "phone"
     locale = payload.locale or body.get("locale") or "en"
     db = get_database()
@@ -690,8 +712,11 @@ async def _finish_member_email_proof(user: dict, request: Request, background: B
     if role_name(user) != MEMBER_ROLE:
         return user
     if user.get("verification_status") != VerificationStatus.PENDING_EMAIL:
-        if _email_unproved(user):
-            # Joined by SMS; a code to this inbox has now proved the email too.
+        if _email_unproved(user) or not user.get("email_verified_at"):
+            # Joined by SMS, or joined before email codes and never stamped: a
+            # code to this inbox has now proved the email. Without the stamp she
+            # was stopped at "confirm your mobile" on every sign-in, although
+            # one proved channel is enough.
             now = datetime.now(timezone.utc)
             await _users().update_one({"_id": user["_id"]},
                                       {"$set": {"email_verified_at": now, "updated_at": now}})
@@ -724,6 +749,16 @@ async def signin_verify(payload: SigninVerify, request: Request, response: Respo
     else:
         field, value = _identifier(payload.email, payload.phone)
     spent = await codes.verify(request, purpose=codes.SIGNIN, destination=value, code=payload.code)
+    return await _finish_code_signin(field, spent, request, response, background)
+
+
+async def _finish_code_signin(field: str, spent: dict, request: Request, response: Response,
+                              background: BackgroundTasks) -> AuthResponse:
+    """
+    The rest of a sign-in once a SIGN-IN code has been spent: members are in;
+    staff get the 428 authenticator step. Shared by `/signin/verify` and the
+    one-screen `/auth/verify`, so the two can never disagree about who may in.
+    """
     user = await _users().find_one({"_id": ObjectId(spent["user_id"])}) if spent.get("user_id") else None
     if not user or not user.get("is_active", True):
         raise HTTPException(status.HTTP_400_BAD_REQUEST,
@@ -1120,6 +1155,72 @@ async def phone_verify(payload: PhoneCode, request: Request, me: dict = Depends(
     return await _mark_phone_verified(me, request)
 
 
+# ── adding an email later ───────────────────────────────────────────────────
+#
+# A member who joined with her mobile has no email. The "complete your
+# profile" reminder asks for one: a code to the new address proves it, and
+# only then is it written. ADD only — changing an address she already signs
+# in with stays a support request, so a stolen session cannot take the account.
+
+
+class EmailAdd(BaseModel):
+    email: EmailStr
+
+
+class EmailAddCode(BaseModel):
+    email: EmailStr
+    code: str = Field(min_length=4, max_length=12)
+
+
+async def _email_addable(me: dict, email: str) -> None:
+    if role_name(me) != MEMBER_ROLE:
+        raise HTTPException(status.HTTP_403_FORBIDDEN, "Staff email addresses are set by an administrator.")
+    if me.get("email"):
+        raise HTTPException(status.HTTP_409_CONFLICT, {
+            "code": "email_present",
+            "message": "Your account already has an email. To change it, ask us through Help."})
+    if await _users().find_one({"email": email, "_id": {"$ne": me["_id"]}}, {"_id": 1}):
+        raise HTTPException(status.HTTP_409_CONFLICT, {
+            "code": "email_taken", "message": "This email is already on another WomSakhi account."})
+
+
+@router.post("/email/start", summary="Add an email: send a code to it")
+async def email_start(payload: EmailAdd, request: Request, background: BackgroundTasks,
+                      me: dict = Depends(get_current_user)):
+    email = codes.normalise_email(payload.email)
+    await _email_addable(me, email)
+    issued = await codes.issue(request, purpose=codes.EMAIL_VERIFY, channel=codes.EMAIL, destination=email,
+                               user_id=str(me["_id"]), name=me.get("full_name", ""), background=background)
+    return {"destination": issued.destination, "expires_in": issued.expires_in, "resend_in": issued.resend_in}
+
+
+@router.post("/email/verify", summary="Add an email: check its code")
+async def email_verify(payload: EmailAddCode, request: Request, me: dict = Depends(get_current_user)):
+    email = codes.normalise_email(payload.email)
+    await _email_addable(me, email)
+    spent = await codes.verify(request, purpose=codes.EMAIL_VERIFY, destination=email, code=payload.code)
+    if spent.get("user_id") != str(me["_id"]):
+        raise HTTPException(status.HTTP_400_BAD_REQUEST,
+                            {"code": "code_expired", "message": codes.CODE_MISMATCH_MESSAGE})
+    now = datetime.now(timezone.utc)
+    try:
+        # `email: ""` in the filter: two tabs cannot both add one.
+        done = await _users().update_one({"_id": me["_id"], "email": {"$in": ["", None]}},
+                                         {"$set": {"email": email, "email_verified_at": now, "updated_at": now}})
+    except DuplicateKeyError:
+        raise HTTPException(status.HTTP_409_CONFLICT, {
+            "code": "email_taken", "message": "This email is already on another WomSakhi account."})
+    if not done.modified_count:
+        raise HTTPException(status.HTTP_409_CONFLICT, {
+            "code": "email_present", "message": "Your account already has an email."})
+    if me.get("member_id"):
+        await get_database()[MemberModel.collection_name].update_one(
+            {"_id": ObjectId(me["member_id"])}, {"$set": {"email": email, "updated_at": now}})
+    cache.forget_user(str(me["_id"]))
+    await record(me, "security.email_added", target=str(me["_id"]), detail="Email added and confirmed", request=request)
+    return {"email": email, "email_verified": True}
+
+
 @router.post("/phone/firebase", summary="Confirm my mobile number with Firebase")
 async def phone_firebase(payload: FirebasePhone, request: Request, me: dict = Depends(get_current_user)):
     """
@@ -1267,3 +1368,266 @@ async def phone_later(me: dict = Depends(get_current_user)):
     await _users().update_one({"_id": me["_id"]}, {"$set": {"phone_confirm_deferred_until": until}})
     cache.forget_user(str(me["_id"]))
     return {"deferred_until": until.isoformat()}
+
+
+# ── one screen: her mobile or her email, then the code ──────────────────────
+#
+# The sign-in page is ONE field. She types a mobile number or an email, gets a
+# code, and the code decides the rest:
+#
+#     known, member        → signed in; the app sends her where her status says
+#                            (home, verification, waiting, or the rejected page)
+#     known, staff         → the authenticator step (email only)
+#     new                  → the account is created there and then, signed in,
+#                            and she goes straight to verification
+#
+# Nothing else is asked at the door. Her NAME is entered by the verification
+# team from her ID card when they approve her; the OTHER contact (an email if
+# she joined with her mobile, a mobile if with her email) is asked later, by
+# the "complete your profile" reminder in the app. The "woman, 18+" declaration
+# is the line under "Send code" — continuing is agreeing — and arrives here as
+# `agreed`. The older two-door endpoints above stay for the mobile app.
+
+
+class AuthStart(BaseModel):
+    email: Optional[EmailStr] = None
+    phone: Optional[str] = None
+    locale: str = Field("en", max_length=8)
+
+
+class AuthVerify(BaseModel):
+    email: Optional[EmailStr] = None
+    phone: Optional[str] = None
+    code: str = Field(min_length=4, max_length=12)
+    locale: str = Field("en", max_length=8)
+    # "By continuing you confirm you are a woman, 18 or older" — needed only
+    # when the code creates an account.
+    agreed: bool = False
+    ref: Optional[str] = Field(None, max_length=32)
+
+
+class AuthVerifyFirebase(BaseModel):
+    id_token: str = Field(min_length=20)
+    locale: str = Field("en", max_length=8)
+    agreed: bool = False
+    ref: Optional[str] = Field(None, max_length=32)
+
+
+_PHONE_UNCONFIRMED = (
+    "This mobile number is on an account but isn't confirmed yet. "
+    "Sign in with your email instead, then confirm your number."
+)
+
+
+def _one_identifier(email: Optional[str], phone: Optional[str]) -> tuple[str, str]:
+    """("phone", "+91…") or ("email", "…"): exactly one of them, normalised."""
+    if email and phone:
+        raise HTTPException(status.HTTP_422_UNPROCESSABLE_ENTITY,
+                            {"code": "one_identifier", "message": "Enter your mobile number or your email, not both."})
+    if phone:
+        try:
+            return "phone", normalise_phone(phone)
+        except ValueError as exc:
+            raise HTTPException(status.HTTP_422_UNPROCESSABLE_ENTITY, {"code": "phone_invalid", "message": str(exc)})
+    if email:
+        return "email", codes.normalise_email(email)
+    raise HTTPException(status.HTTP_422_UNPROCESSABLE_ENTITY,
+                        {"code": "identifier_required", "message": "Enter your mobile number or email"})
+
+
+async def _account_for(field: str, value: str) -> Optional[dict]:
+    """The account this address opens. A number counts only once confirmed."""
+    if field == "phone":
+        return await _users().find_one({"phone": value, "phone_verified_at": {"$ne": None}})
+    return await _users().find_one({"email": value})
+
+
+async def _refuse_dead_ends(request: Request, field: str, value: str, user: Optional[dict]) -> None:
+    """
+    Addresses that belong to an account but cannot open it — said BEFORE a code
+    is sent, so she is never asked for a code that leads nowhere.
+    """
+    if field == "email" and user and _email_unproved(user):
+        raise HTTPException(status.HTTP_409_CONFLICT, {
+            "code": "email_unconfirmed",
+            "message": "This email hasn't been confirmed yet. Sign in with your mobile number instead.",
+        })
+    if field == "phone" and user and role_name(user) != MEMBER_ROLE:
+        raise HTTPException(status.HTTP_403_FORBIDDEN, {
+            "code": "staff_use_email", "message": "Staff sign in with their email and authenticator app."})
+    if field == "phone" and not user and await _users().find_one({"phone": value}, {"_id": 1}):
+        # Typed on an account but never confirmed: joining with it would make a
+        # second account she cannot finish (her email is already taken).
+        raise await _lookup_answer(request, status.HTTP_409_CONFLICT, "phone_unconfirmed", _PHONE_UNCONFIRMED)
+
+
+async def _create_member(field: str, value: str, *, agreed: bool, locale: str, ref: Optional[str],
+                         request: Request, response: Response) -> dict:
+    """
+    The code proved an address with no account: create the member, sign her in.
+
+    Only the address she proved is stored. Her name is "" until the
+    verification team enters it from her ID card; the other contact is "" until
+    she adds it. She starts at `pending_documents`, so the app sends her
+    straight to the selfie and ID step.
+    """
+    if not agreed:
+        raise HTTPException(status.HTTP_422_UNPROCESSABLE_ENTITY, {
+            "code": "declaration_required",
+            "message": "WomSakhi is a community for women aged 18 and over. Please confirm to continue.",
+        })
+    email = value if field == "email" else ""
+    phone = value if field == "phone" else ""
+    if email and await _users().find_one({"email": email}, {"_id": 1}):
+        raise HTTPException(status.HTTP_409_CONFLICT, {
+            "code": "already_registered", "message": "This email already has an account. Ask for a new code to sign in."})
+    if phone and await _phone_taken(phone):
+        raise HTTPException(status.HTTP_409_CONFLICT, {
+            "code": "phone_taken", "message": "This mobile number already has an account. Ask for a new code to sign in."})
+
+    db = get_database()
+    now = datetime.now(timezone.utc)
+    referred_by = await _referrer_code(db, ref, email, phone)
+    member_doc = MemberModel.create_document(
+        full_name="", email=email, phone=phone, country="IN",
+        role="Member", status="Pending", code=await _next_member_code(db),
+    )
+    member_result = await db[MemberModel.collection_name].insert_one(member_doc)
+    user = UserModel.create_document(
+        full_name="", email=email, hashed_password="", role=MEMBER_ROLE,
+        member_id=str(member_result.inserted_id), locale=locale or "en", phone=phone, country="IN",
+        verification_status=VerificationStatus.PENDING_DOCUMENTS,
+    )
+    user.update({
+        "email_verified_at": now if email else None,
+        "phone_verified_at": now if phone else None,
+        "declared_woman_18_plus_at": now,
+        "signup_proof": field,
+    })
+    if referred_by and referred_by != member_doc.get("code"):
+        user["referred_by"] = referred_by
+    try:
+        result = await _users().insert_one(user)
+    except DuplicateKeyError:
+        await db[MemberModel.collection_name].delete_one({"_id": member_result.inserted_id})
+        raise HTTPException(status.HTTP_409_CONFLICT, {
+            "code": "already_registered", "message": "This email already has an account. Ask for a new code to sign in."})
+    user["_id"] = result.inserted_id
+    if phone and await _phone_taken(phone, except_user_id=user["_id"]):
+        # Another account confirmed this number in the same moment: step back.
+        await _users().delete_one({"_id": user["_id"]})
+        await db[MemberModel.collection_name].delete_one({"_id": member_result.inserted_id})
+        raise HTTPException(status.HTTP_409_CONFLICT, {
+            "code": "phone_taken", "message": "This mobile number already has an account. Ask for a new code to sign in."})
+
+    tokens = await sessions.start(response, user, request, method="signup_sms" if phone else "signup")
+    await record(user, "member.signup", target=str(user["_id"]),
+                 detail=f"Created an account with {'an SMS' if phone else 'an email'} code", request=request)
+    auth = await _auth_response(user, tokens)
+    return {"status": "created", **auth.model_dump()}
+
+
+@router.post("/start", summary="One screen: send a code to her mobile or her email")
+async def auth_start(payload: AuthStart, request: Request, background: BackgroundTasks):
+    """
+    Send the code, whether or not she has an account yet. `mode` says which it
+    will be — "signin" or "signup" — so the code screen can greet her rightly.
+    New addresses count against the same per-IP lookup cap as before.
+
+    A mobile number with Firebase as the SMS provider: nothing is sent from
+    here. Today's allowance is reserved and the browser asks Firebase to send
+    (`provider: "firebase"`); the code then goes to `/auth/verify/firebase`.
+    """
+    field, value = _one_identifier(payload.email, payload.phone)
+    user = await _account_for(field, value)
+    await _refuse_dead_ends(request, field, value, user)
+    if not user:
+        await ratelimit.check(request, "account_lookup", sessions._client_ip(request) or "unknown",
+                              LOOKUP_ANSWERS_PER_IP)
+    mode = "signin" if user else "signup"
+    purpose = codes.SIGNIN if user else codes.SIGNUP
+
+    if field == "phone":
+        if not settings.phone_codes_live:
+            raise HTTPException(status.HTTP_400_BAD_REQUEST, {
+                "code": "phone_codes_off", "message": "Mobile codes are off right now. Please use your email."})
+        if settings.PHONE_PROVIDER.strip().lower() == "firebase":
+            await ratelimit.check(request, "sms_allowance", value, (5, 3600.0), (15, 3600.0))
+            await codes.reserve_sms(value, purpose)
+            return {
+                "mode": mode, "channel": codes.SMS, "provider": "firebase",
+                "destination": codes.mask(codes.SMS, value),
+                "expires_in": settings.AUTH_CODE_TTL_MINUTES * 60,
+                "resend_in": settings.AUTH_CODE_RESEND_SECONDS,
+            }
+
+    live = bool(user) and user.get("is_active", True)
+    issued = await codes.issue(
+        request, purpose=purpose, channel=codes.SMS if field == "phone" else codes.EMAIL, destination=value,
+        user_id=str(user["_id"]) if live else "", name=user.get("full_name", "") if live else "",
+        # A switched-off account gets the ordinary answer and a code nobody knows.
+        send=live if user else True,
+        allow_fixed=live and _fixed_code_allowed(user),
+        payload=None if user else {"locale": payload.locale},
+        background=background,
+    )
+    return {
+        "mode": mode, "channel": issued.channel, "provider": "server",
+        "destination": issued.destination, "expires_in": issued.expires_in, "resend_in": issued.resend_in,
+    }
+
+
+@router.post("/verify", summary="One screen: check the code — signs her in, or starts her account")
+async def auth_verify(payload: AuthVerify, request: Request, response: Response, background: BackgroundTasks):
+    """
+    `status: "signed_in"` with her session (staff: the 428 authenticator step,
+    exactly as `/signin/verify`), or `status: "created"` with her session when
+    the address had no account and this code created it.
+    """
+    field, value = _one_identifier(payload.email, payload.phone)
+    if field == "phone" and not settings.server_sends_sms:
+        raise HTTPException(status.HTTP_400_BAD_REQUEST, {
+            "code": "phone_codes_off", "message": "Mobile codes are off right now. Please use your email."})
+    # The sign-in code wins if both are somehow live (she joined in another tab).
+    # With neither live, verifying as sign-in gives the ordinary "expired" answer.
+    if await codes.has_live(codes.SIGNIN, value) or not await codes.has_live(codes.SIGNUP, value):
+        spent = await codes.verify(request, purpose=codes.SIGNIN, destination=value, code=payload.code)
+        auth = await _finish_code_signin(field, spent, request, response, background)
+        return {"status": "signed_in", **auth.model_dump()}
+    spent = await codes.verify(request, purpose=codes.SIGNUP, destination=value, code=payload.code)
+    return await _create_member(
+        field, value, agreed=payload.agreed, ref=payload.ref, request=request, response=response,
+        locale=(spent.get("payload") or {}).get("locale") or payload.locale,
+    )
+
+
+@router.post("/verify/firebase", summary="One screen: the SMS code Firebase checked")
+async def auth_verify_firebase(payload: AuthVerifyFirebase, request: Request, response: Response):
+    """Same answers as `/auth/verify`, for a code Firebase sent and checked in the browser."""
+    if not settings.phone_codes_live or settings.PHONE_PROVIDER.strip().lower() != "firebase":
+        raise HTTPException(status.HTTP_400_BAD_REQUEST, {
+            "code": "phone_codes_off", "message": "Mobile codes are off right now. Please use your email."})
+    await ratelimit.check(request, "firebase_signin", sessions._client_ip(request) or "unknown", (20, 3600.0))
+    phone = await codes.verify_firebase_phone(payload.id_token)
+    if not phone:
+        raise HTTPException(status.HTTP_400_BAD_REQUEST,
+                            {"code": "code_wrong", "message": "We couldn't confirm that code. Please try again."})
+    user = await _account_for("phone", phone)
+    if user:
+        if not user.get("is_active", True):
+            raise HTTPException(status.HTTP_400_BAD_REQUEST,
+                                {"code": "code_expired", "message": codes.CODE_MISMATCH_MESSAGE})
+        if role_name(user) != MEMBER_ROLE:
+            raise HTTPException(status.HTTP_403_FORBIDDEN, {
+                "code": "staff_use_email", "message": "Staff sign in with their email and authenticator app."})
+        now = datetime.now(timezone.utc)
+        await _users().update_one({"_id": user["_id"]}, {"$set": {"last_login_at": now}})
+        tokens = await sessions.start(response, user, request, method="phone_code")
+        await record(user, "security.signin", target=str(user["_id"]),
+                     detail="Signed in with an SMS code", request=request)
+        auth = await _auth_response(user, tokens)
+        return {"status": "signed_in", **auth.model_dump()}
+    if await _users().find_one({"phone": phone}, {"_id": 1}):
+        raise HTTPException(status.HTTP_409_CONFLICT, {"code": "phone_unconfirmed", "message": _PHONE_UNCONFIRMED})
+    return await _create_member("phone", phone, agreed=payload.agreed, ref=payload.ref, locale=payload.locale,
+                                request=request, response=response)

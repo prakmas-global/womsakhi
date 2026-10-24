@@ -21,12 +21,13 @@ from bson import ObjectId
 from bson.errors import InvalidId
 from fastapi import APIRouter, HTTPException, status
 
-from app.core import cache
+from app.core import cache, store
 from app.core.media import media_url
 from app.db.mongodb import get_database
 from app.models.certificate import CertificateModel
 from app.models.shop import ListingModel
 from app.schemas.shop import ListingCard, PublicShop
+from app.core.skill_proof import verified_skills
 
 router = APIRouter(prefix="/public", tags=["Public"])
 
@@ -216,7 +217,7 @@ async def public_shop(handle: str) -> PublicShop:
         # URL a stranger controls, and a regex built from it would let one
         # request read every shop at once.
         owner = await db["users"].find_one(
-            {"shop_handle": slug}, {"full_name": 1, "shop_handle": 1},
+            {"shop_handle": slug}, {"full_name": 1, "shop_handle": 1, "store": 1},
         ) if slug else None
         if not owner:
             raise HTTPException(status.HTTP_404_NOT_FOUND, "This shop is not here")
@@ -254,11 +255,20 @@ async def public_shop(handle: str) -> PublicShop:
             place=commonest("place"),
             listings=rows,
             listing_count=len(rows),
+            verified_skills=(await verified_skills([str(owner["_id"])])).get(str(owner["_id"]), []),
+            **_store_fields(owner),
         )
 
     # Short, because a price or a stock count half a minute stale is fine and a
     # page a stranger can hammer must not be a free query.
     return await cache.cached(f"public:shop:{handle}", 30.0, produce)
+
+
+def _store_fields(owner: dict) -> dict:
+    """Her store's name, pictures and opening (app/core/store.py)."""
+    v = store.view(owner)
+    return {"shop_name": v["display_name"], "tagline": v["tagline"], "logo": v["logo"],
+            "cover": v["cover"], "open": v["open"], "away_line": store.away_line(owner)}
 
 
 # ── an alert somebody was sent ───────────────────────────────────────────────

@@ -15,6 +15,7 @@ from datetime import date, datetime, timedelta, timezone
 
 from bson import ObjectId
 from fastapi import APIRouter, Depends, HTTPException, Query, status
+from pydantic import BaseModel, Field
 
 from app.core import mongosafe
 from app.core.rbac import require_active_member, require_member_account
@@ -215,6 +216,11 @@ async def list_mentors(
     me: dict = Depends(require_active_member),
 ):
     user_id = str(me["_id"])
+    from app.routes import mentor_reviews
+
+    # Ratings and session counts are counted from real sessions and reviews;
+    # this clears any figure stored before they were (once per process).
+    await mentor_reviews.refresh_all_once()
 
     query: dict = {"status": "active"}
     filtered = False
@@ -240,7 +246,14 @@ async def list_mentors(
         ).to_list(200),
     )
     requested = {r["mentor_id"] for r in open_requests}
-    return [MentorModel.to_response(d, str(d["_id"]) in requested) for d in docs]
+    from app.core.skill_proof import verified_skills
+
+    skills = await verified_skills([d["owner_id"] for d in docs if d.get("owner_id")])
+    return [
+        {**MentorModel.to_response(d, str(d["_id"]) in requested), "is_mine": d.get("owner_id") == user_id,
+         "verified_skills": skills.get(d.get("owner_id", ""), [])}
+        for d in docs
+    ]
 
 
 @router.get("/mentors/{mentor_id}", response_model=MentorResponse, summary="One mentor")
@@ -254,7 +267,11 @@ async def get_mentor(mentor_id: str, me: dict = Depends(require_active_member)):
     )
     if not doc:
         raise HTTPException(status.HTTP_404_NOT_FOUND, "That mentor isn't available")
-    return MentorModel.to_response(doc, bool(req))
+    from app.core.skill_proof import verified_skills
+
+    skills = await verified_skills([doc["owner_id"]]) if doc.get("owner_id") else {}
+    return {**MentorModel.to_response(doc, bool(req)), "is_mine": doc.get("owner_id") == str(me["_id"]),
+            "verified_skills": skills.get(doc.get("owner_id", ""), [])}
 
 
 @router.post(
@@ -272,6 +289,8 @@ async def request_mentor(
     mentor = await _mentors().find_one({"_id": to_object_id(mentor_id), "status": "active"})
     if not mentor:
         raise HTTPException(status.HTTP_404_NOT_FOUND, "That mentor isn't available")
+    if mentor.get("owner_id") == user_id:
+        raise HTTPException(status.HTTP_409_CONFLICT, "This is your own mentor profile.")
 
     open_req = await _requests().find_one(
         {"user_id": user_id, "mentor_id": mentor_id, "status": {"$in": ["pending", "accepted"]}}
@@ -290,16 +309,30 @@ async def request_mentor(
         goal=body.goal,
         preferred_time=body.preferred_time,
     )
+    if mentor.get("owner_id"):
+        # A member mentor answers it herself; the price is fixed when asked.
+        doc["owner_id"] = mentor["owner_id"]
+        doc["price_minor"] = int(mentor.get("price_minor") or 0)
     result = await _requests().insert_one(doc)
     doc["_id"] = result.inserted_id
 
     db = get_database()
-    await notify(
-        db, user_id,
-        "We've passed your request on",
-        f"You asked {mentor.get('name', 'a mentor')} for time. We'll introduce you once she confirms.",
-        "mentorship", "/app/mentors",
-    )
+    if mentor.get("owner_id"):
+        await notify(
+            db, user_id, "Your request is with her",
+            f"{mentor.get('name', 'Your mentor')} will reply with a time.", "mentorship", "/app/mentors",
+        )
+        await notify(
+            db, mentor["owner_id"], f"{me.get('full_name') or 'A member'} asked you for a session",
+            body.goal[:140], "mentorship", "/app/mentoring",
+        )
+    else:
+        await notify(
+            db, user_id,
+            "We've passed your request on",
+            f"You asked {mentor.get('name', 'a mentor')} for time. We'll introduce you once she confirms.",
+            "mentorship", "/app/mentors",
+        )
     return MentorshipRequestModel.to_response(doc)
 
 
@@ -310,7 +343,53 @@ async def request_mentor(
 )
 async def my_mentor_requests(me: dict = Depends(require_member_account)):
     docs = await _requests().find({"user_id": str(me["_id"])}).sort("created_at", -1).to_list(100)
-    return [MentorshipRequestModel.to_response(d) for d in docs]
+    upi = {}
+    ids = {d.get("mentor_id") for d in docs if d.get("owner_id")}
+    if ids:
+        upi = {str(m["_id"]): m.get("upi_id", "") for m in await _mentors().find(
+            {"_id": {"$in": [to_object_id(i) for i in ids]}}, {"upi_id": 1}).to_list(None)}
+    return [_learner_view(d, upi.get(d.get("mentor_id", ""), "")) for d in docs]
+
+
+def _learner_view(doc: dict, upi_id: str = "") -> dict:
+    """
+    Her request, as she may see it. How to meet is shown once the session is
+    accepted — and, on a paid session, once the mentor has confirmed payment.
+    The mentor's UPI id is shown only while an accepted paid session is unpaid.
+    """
+    out = MentorshipRequestModel.to_response(doc)
+    accepted = doc.get("status") in (MentorshipRequestModel.STATUS_ACCEPTED, MentorshipRequestModel.STATUS_CLOSED)
+    pay = (doc.get("payment") or {}).get("status", "")
+    paid_or_free = not int(doc.get("price_minor") or 0) or pay == "paid"
+    out["meeting"] = doc.get("meeting", "") if accepted and paid_or_free else ""
+    out["upi_id"] = upi_id if doc.get("status") == MentorshipRequestModel.STATUS_ACCEPTED and pay in ("awaiting", "claimed") else ""
+    return out
+
+
+class SessionPaid(BaseModel):
+    reference: str = Field("", max_length=40)
+
+
+@router.post("/mentors/requests/{request_id}/paid", response_model=MentorshipRequestResponse,
+             summary="I've paid my mentor for the session")
+async def mentor_session_paid(request_id: str, body: SessionPaid, me: dict = Depends(require_active_member)):
+    now = datetime.now(timezone.utc)
+    doc = await _requests().find_one_and_update(
+        {"_id": to_object_id(request_id), "user_id": str(me["_id"]),
+         "status": MentorshipRequestModel.STATUS_ACCEPTED, "payment.status": "awaiting"},
+        {"$set": {"payment.status": "claimed", "payment.reference": body.reference.strip(),
+                  "payment.claimed_at": now, "updated_at": now}},
+        return_document=True,
+    )
+    if not doc:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "There is no payment waiting on this session.")
+    await notify(
+        get_database(), doc["owner_id"],
+        f"{me.get('full_name') or 'A member'} says she paid for your session",
+        "Check your UPI app, then confirm it under Mentoring.", "money", "/app/mentoring",
+    )
+    mentor = await _mentors().find_one({"_id": to_object_id(doc["mentor_id"])}, {"upi_id": 1})
+    return _learner_view(doc, (mentor or {}).get("upi_id", ""))
 
 
 @router.post(
@@ -338,6 +417,30 @@ async def withdraw_mentor_request(request_id: str, me: dict = Depends(require_ac
 
 # --- opportunities -----------------------------------------------------------
 
+async def _saved_job_ids(me: dict) -> set[str]:
+    """
+    The jobs she bookmarked — from the ONE saved list (`saved`, kind "job").
+
+    Find work used to keep its own list on the user (`saved_opportunities`)
+    while Home → Saved and Discover used `saved`, so a job saved in one place
+    never showed in the other. Anything still in the old list is moved across
+    the first time it is read.
+    """
+    from app.models.saved import SavedModel
+
+    uid = str(me["_id"])
+    col = get_database()[SavedModel.collection_name]
+    legacy = [i for i in (me.get("saved_opportunities") or []) if i]
+    if legacy:
+        for ref in legacy:
+            await col.update_one(
+                {"user_id": uid, "kind": SavedModel.KIND_JOB, "ref_id": ref},
+                {"$setOnInsert": SavedModel.create_document(user_id=uid, kind=SavedModel.KIND_JOB, ref_id=ref)},
+                upsert=True)
+        await get_database()["users"].update_one({"_id": me["_id"]}, {"$unset": {"saved_opportunities": ""}})
+    return {d["ref_id"] async for d in col.find({"user_id": uid, "kind": SavedModel.KIND_JOB}, {"ref_id": 1})}
+
+
 @router.get("/opportunities", response_model=list[OpportunityResponse], summary="Work I can apply for")
 async def list_opportunities(
     q: str = Query("", max_length=80),
@@ -356,6 +459,9 @@ async def list_opportunities(
         "recent", pattern="^(recent|pay_high|pay_low)$",
         description="recent (default) | pay_high | pay_low",
     ),
+    category: str = Query("", max_length=64, description="Work category key (the work masters)"),
+    skills: str = Query("", max_length=800, description="Comma-separated skill keys"),
+    for_me: bool = Query(False, description="Only work needing a skill on her work profile, best match first"),
     me: dict = Depends(require_active_member),
 ):
     """
@@ -371,7 +477,7 @@ async def list_opportunities(
     — or the other way about. Better to ask which one she means.
     """
     user_id = str(me["_id"])
-    saved_ids = set(me.get("saved_opportunities", []) or [])
+    saved_ids = await _saved_job_ids(me)
 
     if sort != "recent" and not period:
         raise HTTPException(
@@ -395,8 +501,30 @@ async def list_opportunities(
         if not saved_ids:
             return []
         query["_id"] = {"$in": [ObjectId(o) for o in saved_ids]}
+    # A listing past its last date is not a listing: leave it out here rather
+    # than send it for the screen to hide (and count, and search).
+    live = {"$or": [{"deadline": {"$in": ["", None]}}, {"deadline": {"$exists": False}},
+                    {"deadline": {"$gte": _today()}}]}
+    query.setdefault("$and", []).append(live)
     if q.strip():
-        query.update(mongosafe.any_of(q, ["title", "org", "skills"]))
+        # Search reaches everything she can read on the card.
+        query["$and"].append(mongosafe.any_of(q, ["title", "org", "skills", "location", "desc"]))
+
+    # The work masters: by category, by skill, or by HER skills.
+    from app.routes import work_talent as wt
+    await wt.backfill_job_skill_keys()
+    mine = await wt.my_skill_map(user_id)
+    wanted = [k for k in (x.strip() for x in skills.split(",")) if k]
+    if for_me:
+        if not mine:
+            return []
+        wanted = list(mine)
+        # Work that fits HER — never her own job post.
+        query["owner_id"] = {"$ne": user_id}
+    if wanted:
+        query["skill_keys"] = {"$in": wanted}
+    elif category:
+        query["category"] = category
 
     order = {
         "recent": [("created_at", -1)],
@@ -415,10 +543,21 @@ async def list_opportunities(
         _opportunities().find(query).sort(order).to_list(100),
     )
     applied = {a["opportunity_id"] for a in apps}
-    return [
-        OpportunityModel.to_response(d, str(d["_id"]) in applied, str(d["_id"]) in saved_ids)
-        for d in docs
-    ]
+    cats = await wt.category_names()
+    rows = [_with_match(d, applied, saved_ids, mine, cats, user_id) for d in docs]
+    if for_me:
+        # Most of her skills first; recency breaks ties (the sort above).
+        rows.sort(key=lambda r: -len(r["match"]["have"]))
+    return rows
+
+
+def _with_match(d: dict, applied: set, saved_ids: set, mine: dict, cats: dict, user_id: str) -> dict:
+    from app.routes import work_talent as wt
+    row = OpportunityModel.to_response(d, str(d["_id"]) in applied, str(d["_id"]) in saved_ids)
+    row["category_name"] = cats.get(row["category"], "")
+    row["is_mine"] = d.get("owner_id", "") == user_id
+    row["match"] = wt.match_for(row["skill_keys"], row["skills"], mine) if row["skill_keys"] else {}
+    return row
 
 
 @router.get("/opportunities/{opp_id}", response_model=OpportunityResponse, summary="One opportunity")
@@ -435,8 +574,11 @@ async def get_opportunity(opp_id: str, me: dict = Depends(require_active_member)
     )
     if not doc:
         raise HTTPException(status.HTTP_404_NOT_FOUND, "That opportunity doesn't exist")
-    saved_ids = set(me.get("saved_opportunities", []) or [])
-    return OpportunityModel.to_response(doc, bool(applied), opp_id in saved_ids)
+    from app.routes import work_talent as wt
+    saved_ids = await _saved_job_ids(me)
+    uid = str(me["_id"])
+    return _with_match(doc, {opp_id} if applied else set(), saved_ids,
+                       await wt.my_skill_map(uid), await wt.category_names(), uid)
 
 
 @router.post("/opportunities/{opp_id}/save", response_model=MessageResponse, summary="Save or unsave")
@@ -445,12 +587,17 @@ async def toggle_saved(opp_id: str, me: dict = Depends(require_active_member)):
     if not doc:
         raise HTTPException(status.HTTP_404_NOT_FOUND, "That opportunity doesn't exist")
 
-    users = get_database()["users"]
-    saved = opp_id in set(me.get("saved_opportunities", []) or [])
-    await users.update_one(
-        {"_id": me["_id"]},
-        {"$pull" if saved else "$addToSet": {"saved_opportunities": opp_id}},
-    )
+    from app.models.saved import SavedModel
+
+    uid = str(me["_id"])
+    col = get_database()[SavedModel.collection_name]
+    saved = opp_id in await _saved_job_ids(me)
+    key = {"user_id": uid, "kind": SavedModel.KIND_JOB, "ref_id": opp_id}
+    if saved:
+        await col.delete_one(key)
+    else:
+        await col.update_one(key, {"$setOnInsert": SavedModel.create_document(
+            user_id=uid, kind=SavedModel.KIND_JOB, ref_id=opp_id)}, upsert=True)
     return {"message": "Removed from saved" if saved else "Saved"}
 
 
@@ -470,6 +617,8 @@ async def apply(opp_id: str, body: ApplicationCreate, me: dict = Depends(require
         raise HTTPException(status.HTTP_400_BAD_REQUEST, "Applications for this have closed")
     if opp.get("deadline") and opp["deadline"] < _today():
         raise HTTPException(status.HTTP_400_BAD_REQUEST, "The deadline for this has passed")
+    if opp.get("owner_id") == user_id:
+        raise HTTPException(status.HTTP_400_BAD_REQUEST, "That is your own job post.")
 
     existing = await _applications().find_one({"user_id": user_id, "opportunity_id": opp_id})
     if existing and existing.get("status") != ApplicationModel.STATUS_WITHDRAWN:
@@ -487,6 +636,7 @@ async def apply(opp_id: str, body: ApplicationCreate, me: dict = Depends(require
         org=opp.get("org", ""),
         note=body.note,
         phone=body.phone or me.get("phone", ""),
+        skills=await _matching_skills(user_id, opp),
     )
     result = await _applications().insert_one(doc)
     doc["_id"] = result.inserted_id
@@ -499,7 +649,22 @@ async def apply(opp_id: str, body: ApplicationCreate, me: dict = Depends(require
         f"{opp.get('title', '')} at {opp.get('org', '')}. We'll tell you the moment it moves.",
         "opportunity", "/app/applications",
     )
+    if opp.get("owner_kind") == "member" and opp.get("owner_id"):
+        # A member who posted it hears straight away; staff see it on the dashboard.
+        await notify(
+            db, opp["owner_id"],
+            f"{(me.get('full_name') or 'Someone').split()[0]} applied: {opp.get('title', '')}",
+            ", ".join(s["name"] for s in doc["skills"]) or "Open your job post to see her skills.",
+            "opportunity", "/app/work/posts",
+        )
     return ApplicationModel.to_response(doc)
+
+
+async def _matching_skills(user_id: str, opp: dict) -> list[dict]:
+    """Her skills this job needs — name, level, verified — kept on the application."""
+    from app.routes import work_talent as wt
+    mine = await wt.my_skill_map(user_id)
+    return [mine[k] for k in opp.get("skill_keys") or [] if k in mine]
 
 
 @router.get("/applications", response_model=list[ApplicationResponse], summary="My applications")
@@ -636,15 +801,15 @@ async def seed() -> None:
 
     mentors = _mentors()
     if await mentors.count_documents({}) == 0:
-        for i, (name, headline, expertise, languages, years, location, availability, bio) in enumerate(_SEED_MENTORS):
+        for name, headline, expertise, languages, years, location, availability, bio in _SEED_MENTORS:
             doc = MentorModel.create_document(
                 name=name, headline=headline, bio=bio, expertise=expertise,
                 languages=languages, experience_years=years, location=location,
                 availability=availability,
             )
-            doc["rating"] = round(4.6 + (i % 4) * 0.1, 1)
-            doc["rating_count"] = 12 + i * 9
-            doc["sessions_done"] = 20 + i * 17
+            # No invented ratings or session counts: those come only from
+            # sessions that happened and the reviews learners left
+            # (routes/mentor_reviews.py).
             await mentors.insert_one(doc)
 
     opportunities = _opportunities()

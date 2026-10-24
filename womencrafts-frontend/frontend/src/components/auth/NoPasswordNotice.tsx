@@ -7,8 +7,8 @@ import { AuthIcon, AuthShell } from "@/components/auth-shell";
  *
  * WomSakhi has no passwords any more — every sign-in is a one-time code — but
  * links from before still sit in inboxes. They should land somewhere that says
- * so and takes her straight to signing in, not on a 404. Plain panel, no
- * people photo: this is a calm refusal, not a welcome.
+ * so and takes her straight to signing in, not on a 404. A calm refusal,
+ * not a welcome.
  */
 export default function NoPasswordNotice() {
   return (

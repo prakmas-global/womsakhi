@@ -150,17 +150,6 @@ export const SCAMS: ScamPattern[] = [
   },
 ];
 
-/** Checks run against a buyer before she ships. Not a score — reasons. */
-export type BuyerCheck = { id: string; what: string; ok: boolean; note: string };
-
-export const BUYER_CHECKS: BuyerCheck[] = [
-  { id: "bc1", what: "Has bought from a woman here before", ok: false, note: "First time. Not a problem by itself" },
-  { id: "bc2", what: "Asked you to pay them anything", ok: true, note: "No. Good" },
-  { id: "bc3", what: "Wants the goods before paying", ok: false, note: "Yes — ask for the cloth money first" },
-  { id: "bc4", what: "Reported by another woman", ok: true, note: "Never" },
-  { id: "bc5", what: "In a hurry", ok: false, note: "Wants it couriered today. Slow it down" },
-];
-
 /* ── 6. Bringing them along ───────────────────────────────────────────────── */
 
 /**
@@ -226,6 +215,3 @@ export const SPEAKERS: Speaker[] = [
   { id: "sp3", name: "Radha Menon", trade: "Tuition", years: 5, note: "Speaks to fathers about daughters finishing school", done: 4 },
 ];
 
-/* ── derived ─────────────────────────────────────────────────────────────── */
-
-export const riskCount = (rows: BuyerCheck[]) => rows.filter((c) => !c.ok).length;

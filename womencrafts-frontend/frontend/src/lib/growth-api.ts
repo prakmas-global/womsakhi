@@ -49,6 +49,25 @@ export interface Opportunity {
   saved: boolean;
   applied: boolean;
   status: string;
+  /** Work masters (routes/work_talent.py): the category and its name, the skill keys. */
+  category?: string;
+  category_name?: string;
+  skill_keys?: string[];
+  /** "staff" — the WomSakhi team; "member" — a verified member who is hiring. */
+  owner_kind?: "staff" | "member";
+  /** She posted it. */
+  is_mine?: boolean;
+  /** Her work-profile skills against this job's. `{}` when the job has no skill keys. */
+  match?: OpportunityMatch | Record<string, never>;
+}
+
+export interface OpportunityMatch {
+  have: string[];
+  missing: string[];
+  /** Of `have`, the ones she proved in a WomSakhi skill test. */
+  verified: string[];
+  /** How many skills the job asks for. */
+  of: number;
 }
 
 export interface Application {
@@ -72,12 +91,33 @@ export interface Application {
   steps?: number;
   staff_note?: string;
   applied_on: string;
+  /** Her matching skills, as they were sent with the application. */
+  skills?: { key: string; name: string; level: string; verified: boolean }[];
 }
 
-export const apiOpportunities = (
-  s?: AbortSignal,
-  params?: { q?: string; kind?: string; mode?: string },
-) => get<Opportunity[]>("/growth/opportunities", s, params);
+export interface OpportunityQuery {
+  q?: string; kind?: string; mode?: string;
+  /** Category key from the work masters. */
+  category?: string;
+  /** Skill keys; sent comma-separated. */
+  skills?: string[];
+  /** Only work needing a skill on her work profile, best match first. */
+  for_me?: boolean;
+  /** Only the openings she bookmarked. */
+  saved?: boolean;
+}
+
+export const apiOpportunities = (s?: AbortSignal, params?: OpportunityQuery) =>
+  get<Opportunity[]>("/growth/opportunities", s, params && {
+    ...params,
+    skills: params.skills?.length ? params.skills.join(",") : undefined,
+    for_me: params.for_me || undefined,
+    saved: params.saved || undefined,
+    q: params.q?.trim() || undefined,
+    kind: params.kind || undefined,
+    mode: params.mode || undefined,
+    category: params.category || undefined,
+  });
 
 export const apiOpportunity = (id: string, s?: AbortSignal) =>
   get<Opportunity>(`/growth/opportunities/${id}`, s);
@@ -86,7 +126,7 @@ export const apiApplications = (s?: AbortSignal) =>
   get<Application[]>("/growth/applications", s);
 
 export async function apiApply(id: string, note = "") {
-  const { data } = await apiClient.post(`/growth/opportunities/${id}/apply`, { note });
+  const { data } = await apiClient.post<Application>(`/growth/opportunities/${id}/apply`, { note });
   return data;
 }
 
@@ -146,6 +186,22 @@ export interface ApiMentorDetail {
 export interface MentorRequest {
   id: string; mentor_id: string; mentor_name: string;
   goal: string; preferred_time: string; status: string; when: string;
+  /** Set by a member mentor when she accepts. */
+  scheduled_for?: string;
+  mentor_note?: string;
+  /** "" | awaiting | claimed | paid */
+  payment_status?: string;
+  price_minor?: number;
+  /** How to meet — once accepted, and (if paid) once she confirmed payment. */
+  meeting?: string;
+  /** Her UPI id — only while an accepted paid session is unpaid. */
+  upi_id?: string;
+}
+
+/** "I've paid" for an accepted paid session. */
+export async function apiMentorSessionPaid(id: string, reference = "") {
+  const { data } = await apiClient.post<MentorRequest>(`/growth/mentors/requests/${id}/paid`, { reference });
+  return data;
 }
 
 export const apiMyMentorRequests = (s?: AbortSignal) =>
@@ -189,9 +245,17 @@ export interface Enrollment {
   mode: string;
   progress: number;
   sessions_attended: number;
+  /** active | completed | withdrawn | pending (a paid course waiting for the teacher to confirm). */
   status: string;
   joined: string;
+  /** "" | awaiting | claimed | paid | declined */
+  payment_status: string;
+  price_minor: number;
+  teacher_name: string;
+  owner_kind: string;
 }
+
+export interface LessonOutline { title: string; detail: string; duration: string; preview?: boolean }
 
 export interface CatalogProgramRow {
   id: string; name: string; desc: string; category: string;
@@ -199,11 +263,23 @@ export interface CatalogProgramRow {
   cap: number; enrolled: number; seats_left: number | null;
   is_full: boolean; joined: boolean; pct: number; bar: string;
   cat_tone: string; note: string; status: string;
+  curriculum: LessonOutline[];
+  /** staff | member — who wrote it. */
+  owner_kind: string;
+  owner_id: string;
+  teacher_name: string;
+  /** 0 = free. Paise. */
+  price_minor: number;
+  /** "" | pending | active | completed | withdrawn — her enrolment. */
+  my_status: string;
+  is_mine: boolean;
 }
 
 export const apiMyPrograms = (s?: AbortSignal) => get<Enrollment[]>("/me/programs", s);
 export const apiCatalogPrograms = (s?: AbortSignal, params?: { q?: string; category?: string }) =>
   get<CatalogProgramRow[]>("/catalog/programs", s, params);
+export const apiCatalogProgram = (id: string, s?: AbortSignal) =>
+  get<CatalogProgramRow>(`/catalog/programs/${id}`, s);
 
 /** One item of a course's curriculum, as the server keeps it. */
 export interface ApiLesson {
@@ -211,6 +287,11 @@ export interface ApiLesson {
   detail: string;
   duration: string;
   done: boolean;
+  /** The lesson itself — present once the course is open to her, or on a free preview. */
+  body?: string;
+  video_url?: string;
+  /** A free preview the teacher opened to everyone. */
+  preview?: boolean;
 }
 
 /**
@@ -239,13 +320,46 @@ export interface ApiProgramDetail {
   joined_on: string;
   curriculum: ApiLesson[];
   certificate_code: string;
+  owner_kind: string;
+  teacher_name: string;
+  /** 0 = free. Paise. */
+  price_minor: number;
+  is_owner: boolean;
+  /** "" | awaiting | claimed | paid | declined */
+  payment_status: string;
+  /** The teacher's UPI id, only while she has asked to join and is not yet confirmed. */
+  upi_id: string;
+  /** Lessons open to her: joined, or her own course. */
+  can_learn: boolean;
 }
 
 export const apiProgramDetail = (id: string, s?: AbortSignal) =>
   get<ApiProgramDetail>(`/me/programs/${id}/detail`, s);
 
 export async function apiEnroll(programId: string) {
-  const { data } = await apiClient.post(`/me/programs/${programId}/enroll`);
+  const { data } = await apiClient.post<Enrollment>(`/me/programs/${programId}/enroll`);
+  return data;
+}
+
+/** "I've paid the teacher" — on a paid course, after paying her by UPI. */
+export async function apiClaimPaid(programId: string, reference = "") {
+  const { data } = await apiClient.post<Enrollment>(`/me/programs/${programId}/paid`, { reference });
+  return data;
+}
+
+/** Leave a course — or withdraw a request to join a paid one. */
+export async function apiLeaveProgram(programId: string) {
+  await apiClient.post(`/me/programs/${programId}/leave`);
+}
+
+/** One lesson finished. Answers with the course, so progress is the server's. */
+export async function apiCompleteLesson(programId: string, n: number) {
+  const { data } = await apiClient.post<ApiProgramDetail>(`/me/programs/${programId}/lessons/${n}/complete`);
+  return data;
+}
+
+export async function apiClaimCertificate(programId: string) {
+  const { data } = await apiClient.post<{ code: string }>(`/me/programs/${programId}/certificate`);
   return data;
 }
 

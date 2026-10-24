@@ -3,6 +3,7 @@
 import { useCallback } from "react";
 
 import { apiCircles, apiHome, apiMentors } from "@/lib/me-api";
+import { apiOpportunities } from "@/lib/growth-api";
 import { apiGoals, type Goal } from "@/lib/money-api";
 import { useResource, type Resource } from "@/lib/use-resource";
 
@@ -85,6 +86,10 @@ export interface DiscoverItem {
   tags?: string[];
   /** Opportunities only: the server tracks this bookmark and can toggle it. */
   saved?: boolean;
+  /** Where it is, as written on the record — for "Nearby", matched to her town. */
+  place?: string;
+  /** Work paid per piece or per job (freelance, orders to make) — "Earning". */
+  earning?: boolean;
 }
 
 export interface DiscoverRails {
@@ -107,7 +112,7 @@ export interface DiscoverRails {
 interface WorkRow {
   id: string; title: string; org: string; mode: string; location: string;
   pay: string; deadline_label: string; applied: boolean; saved: boolean;
-  openings: number;
+  openings: number; kind?: string;
 }
 
 interface CourseRow {
@@ -131,6 +136,8 @@ const toWork = (o: WorkRow): DiscoverItem => ({
   // True, and about her: the server knows whether she has applied.
   badge: o.applied ? "You applied" : undefined,
   saved: Boolean(o.saved),
+  place: o.mode === "Remote" ? "" : o.location,
+  earning: o.kind === "Freelance" || o.kind === "Craft order",
   href: `/app/opportunities/${o.id}`,
   icon: "Briefcase",
   tint: "--ux-tint-green",
@@ -156,11 +163,11 @@ const toCourse = (c: CourseRow): DiscoverItem => ({
 export function useDiscoverRails(): Resource<DiscoverRails> {
   return useResource(
     useCallback(async (s: AbortSignal): Promise<DiscoverRails> => {
-      const [home, mentors, circles] = await Promise.all([
-        apiHome(s), apiMentors(s), apiCircles(s),
+      const [home, mentors, circles, jobs] = await Promise.all([
+        apiHome(s), apiMentors(s), apiCircles(s), apiOpportunities(s).catch(() => null),
       ]);
       return {
-        women: mentors.slice(0, 4).map((m) => ({
+        women: mentors.slice(0, 8).map((m) => ({
           id: m.id,
           kind: "woman" as const,
           title: m.name,
@@ -168,6 +175,7 @@ export function useDiscoverRails(): Resource<DiscoverRails> {
           // Where she is, in her own words on her own profile — never a
           // distance. Nothing in this database can measure one.
           meta: join([m.location, m.availability]),
+          place: m.location,
           tags: (m.expertise ?? []).slice(0, 3),
           photo: m.photo || undefined,
           href: `/app/mentors/${m.id}`,
@@ -175,7 +183,9 @@ export function useDiscoverRails(): Resource<DiscoverRails> {
           tint: "--ux-tint-pink",
           ink: "--ux-pink-ink",
         })),
-        work: (home.opportunities as unknown as WorkRow[]).slice(0, 4).map(toWork),
+        // The whole open board when it loads (so Work, Earning and Nearby are
+        // each a real slice of it); the home digest otherwise.
+        work: ((jobs ?? (home.opportunities as unknown as WorkRow[])) as WorkRow[]).slice(0, 24).map(toWork),
         learn: (home.recommended as unknown as CourseRow[]).slice(0, 4).map(toCourse),
         circles: circles
           // The ones she is not already in. A "you could join this" card for a

@@ -15,9 +15,12 @@ import { apiClient } from "./api";
  * undefined and throws on render.
  *
  * `seller` is the other direction from `buyer`: a woman SHE is buying from,
- * which is what the market's "Ask her something" opens.
+ * which is what the market's "Ask her something" opens. `work` is a member
+ * hiring and a woman who can do the work, opened from "Find people"
+ * (`party.role` says which side she is on).
  */
-export type PartyKind = "buyer" | "seller" | "mentor" | "circle" | "team";
+/** `member`: two members about anything — "Message her" (POST /me/conversations/start). */
+export type PartyKind = "buyer" | "seller" | "mentor" | "circle" | "team" | "work" | "member";
 
 export interface ConvContext {
   kind: string;
@@ -76,6 +79,8 @@ export interface ConvRow {
   starred: boolean;
   context: ConvContext | null;
   party: ConvParty;
+  /** Set when she said "not interested" to a work chat: nothing more can be sent. */
+  closed?: boolean;
 }
 
 export interface ConvDetail extends ConvRow {
@@ -108,6 +113,12 @@ export async function apiInboxSummary(): Promise<InboxSummary> {
 
 export async function apiConversation(id: string): Promise<ConvDetail> {
   const { data } = await apiClient.get<ConvDetail>(`/me/conversations/${id}`);
+  return data;
+}
+
+/** "Message her": open (or continue) a thread with one member. `about` shows under her name. */
+export async function apiStartConversation(userId: string, text: string, about = ""): Promise<ConvDetail> {
+  const { data } = await apiClient.post<ConvDetail>("/me/conversations/start", { user_id: userId, text, about });
   return data;
 }
 

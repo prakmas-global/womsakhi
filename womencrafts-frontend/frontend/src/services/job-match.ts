@@ -1,23 +1,20 @@
-import { SKILLS } from "@/components/ux/profile/data";
+import type { Job } from "@/components/ux/work/data";
 
 /**
  * Why a job fits her — not just how much.
  *
- * ── The problem with the ring alone ─────────────────────────────────────────
- * A job row drew "92%" in a dial that looks measured. Nothing was measured:
- * the number came from mock data, and `toJob` hardcodes `match: 0` for live
- * listings because nothing ever compared a listing against her profile.
- *
- * A precise-looking number with no derivation is exactly what this product
- * refuses everywhere else — the market shows "no complaints, ever" instead of
- * stars, and the trust record shows counts instead of a score, for the same
- * reason. So the match is computed here from something checkable, and the
- * screen says what produced it.
+ * ── Where the match comes from now ──────────────────────────────────────────
+ * The server works it out: her skills on My work profile against the skill
+ * keys the job was posted with, both from the same work masters
+ * (routes/work_talent.py `match_for`). This used to compare the listing's
+ * typed skills against a FIXTURE list of skills (`components/ux/profile/data`),
+ * so every member saw the same "92% match" against Blouse stitching and
+ * Mehendi whatever she could actually do. It is now hers or it is nothing.
  *
  * ── Why the missing skill is the useful half ────────────────────────────────
- * "92% match" tells her nothing she can act on. "You have 4 of 5 — you have not
- * done Analytics" tells her whether to apply anyway, and what to learn if she
- * does not. §55 asks for the number; the sentence is the part that helps.
+ * "92% match" tells her nothing she can act on. "You have 2 of 3 — the one you
+ * are missing is Embroidery" tells her whether to apply anyway, and what to
+ * learn if she does not.
  */
 
 export interface Match {
@@ -25,44 +22,34 @@ export interface Match {
   pct: number | null;
   have: string[];
   missing: string[];
+  /** Of `have`, the skills she proved in a WomSakhi skill test. */
+  verified: string[];
   /** One sentence, in her words. Empty when nothing was computed. */
   because: string;
 }
 
-/** Loose comparison — "Social media" should match "social media marketing". */
-const norm = (s: string) => s.toLowerCase().replace(/[^a-z0-9 ]/g, "").trim();
-const covers = (mine: string, needed: string) => {
-  const a = norm(mine), b = norm(needed);
-  return a === b || a.includes(b) || b.includes(a);
-};
+const NONE: Match = { pct: null, have: [], missing: [], verified: [], because: "" };
 
-export function matchFor(needed: string[], mySkills: string[] = SKILLS.map((s) => s.name)): Match {
-  if (!needed?.length) {
-    return { pct: null, have: [], missing: [], because: "" };
-  }
+export function matchFor(job: Pick<Job, "fit"> | null | undefined): Match {
+  const fit = job?.fit;
+  if (!fit?.of) return NONE;
+  const { have, missing, verified, of } = fit;
+  const pct = Math.round((have.length / of) * 100);
 
-  const have = needed.filter((n) => mySkills.some((m) => covers(m, n)));
-  const missing = needed.filter((n) => !have.includes(n));
-  const pct = Math.round((have.length / needed.length) * 100);
-
-  // Written the way a person would say it, and always leading with what she
-  // HAS. Leading with the gap is how a woman who is qualified talks herself
-  // out of applying.
+  // Always leading with what she HAS. Leading with the gap is how a woman who
+  // is qualified talks herself out of applying.
   let because: string;
   if (missing.length === 0) {
-    because = `You have all ${needed.length} skills they asked for.`;
+    because = of === 1 ? "You have the skill they asked for." : `You have all ${of} skills they asked for.`;
   } else if (have.length === 0) {
-    // "You cannot do this" is almost never what a zero overlap means. It far
-    // more often means her profile is short — most women here have not listed
-    // half of what they can do, because listing it feels like boasting. So the
-    // sentence points at the profile, not at her.
-    because = `Asks for ${needed.join(", ")}. If you can do any of these, add them to your profile — most women list far less than they can do.`;
+    // Zero overlap far more often means her profile is short than that she
+    // cannot do the work — so the sentence points at the profile, not at her.
+    because = `Asks for ${missing.join(", ")}. If you can do any of these, add them to My work profile.`;
   } else {
-    because = `You have ${have.length} of the ${needed.length} skills they asked for. ` +
+    because = `You have ${have.length} of the ${of} skills they asked for. ` +
       `${missing.length === 1 ? "The one you are missing is" : "The ones you are missing are"} ${missing.join(" and ")}.`;
   }
-
-  return { pct, have, missing, because };
+  return { pct, have, missing, verified, because };
 }
 
 /** For the ring's colour and label — a fit is not a grade. */

@@ -312,12 +312,12 @@ export function GrowBanner() {
 /* ------------------------------------------------------------------ */
 
 export const ACTIONS = [
-  { label: "Add product",     icon: "Package",       tint: "--ux-tint-pink",   ink: "--ux-pink-ink",   href: "/app/documents/new" },
-  { label: "Add service",     icon: "Sparkles",      tint: "--ux-tint-blue",   ink: "--ux-blue-ink",   href: "/app/documents/new" },
+  { label: "Add to my shop",  icon: "Package",       tint: "--ux-tint-pink",   ink: "--ux-pink-ink",   href: "/app/documents/new" },
+  { label: "Selling tools",   icon: "Sparkles",      tint: "--ux-tint-blue",   ink: "--ux-blue-ink",   href: "/app/shop" },
   { label: "Manage orders",   icon: "ClipboardList", tint: "--ux-tint-amber",  ink: "--ux-amber-ink",  href: "/app/documents#orders" },
   { label: "View earnings",   icon: "Wallet",        tint: "--ux-tint-blue",   ink: "--ux-blue-ink",   href: "/app/wallet" },
-  { label: "Edit my store",   icon: "Store",         tint: "--ux-tint-green",  ink: "--ux-green-ink",  href: "/app/documents/listings" },
-  { label: "Share my profile", icon: "Share2",       tint: "--ux-tint-violet", ink: "--ux-violet-ink", href: "/app/collect" },
+  { label: "Edit my store",   icon: "Store",         tint: "--ux-tint-green",  ink: "--ux-green-ink",  href: "/app/documents/store" },
+  { label: "My shop link", icon: "QrCode",       tint: "--ux-tint-violet", ink: "--ux-violet-ink", href: "/app/collect" },
 ] as const;
 
 export function QuickActions() {

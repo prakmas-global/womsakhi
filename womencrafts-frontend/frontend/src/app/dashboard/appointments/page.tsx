@@ -13,7 +13,7 @@ import {
 import {
   apiAddAppointmentNote, apiAdminAppointmentStats, apiAdminAppointments, apiCancelAppointment,
   apiCompleteAppointment, apiConfirmAppointment, apiCreateStaffAppointment, apiDeleteAppointment,
-  apiNoShowAppointment, apiRescheduleAppointment,
+  apiNoShowAppointment, apiRescheduleAppointment, apiSetAppointmentMeeting,
   type AdminAppointment, type AdminAppointmentList, type AdminAppointmentStats, type AdminApptStatus,
   type ApptScope, type ApptSource, type StaffAppointmentInput,
 } from "@/lib/appointments-api";
@@ -167,6 +167,8 @@ function AppointmentsInner() {
   const [cancelling, setCancelling] = useState<AdminAppointment | null>(null);
   const [cancelReason, setCancelReason] = useState("");
   const [noteText, setNoteText] = useState("");
+  // The drawer's "How she joins" box; null = showing what is saved.
+  const [meetingText, setMeetingText] = useState<string | null>(null);
   const [creating, setCreating] = useState(false);
   const [form, setForm] = useState<StaffAppointmentInput>(BLANK_FORM);
   const [busy, setBusy] = useState(false);
@@ -377,6 +379,21 @@ function AppointmentsInner() {
     }
   }, [detail, noteText, toast]);
 
+  const saveMeeting = useCallback(async () => {
+    if (!detail || meetingText === null) return;
+    setBusy(true);
+    try {
+      const r = await apiSetAppointmentMeeting(detail.ref, meetingText.trim());
+      setMeetingText(null);
+      setDetail(r);
+      toast.success(meetingText.trim() ? (detail.source === "member" ? "Saved — she has been told how to join" : "Saved") : "Removed");
+    } catch (e) {
+      toast.error("Could not save how she joins", { description: memberError(e) });
+    } finally {
+      setBusy(false);
+    }
+  }, [detail, meetingText, toast]);
+
   const openCreate = useCallback(() => {
     setForm({ ...BLANK_FORM, service: stats?.services[0] ?? "" });
     setCreating(true);
@@ -406,7 +423,7 @@ function AppointmentsInner() {
     const open = a.status === "booked" || a.status === "confirmed";
     return (
       <Menu trigger={<span className="btn btn-sm btn-ghost"><MoreHorizontal className="h-4 w-4" /></span>}>
-        <MenuItem icon={CalendarClock} onClick={() => { setNoteText(""); setDetail(a); }}>Open</MenuItem>
+        <MenuItem icon={CalendarClock} onClick={() => { setNoteText(""); setMeetingText(null); setDetail(a); }}>Open</MenuItem>
         {a.status === "booked" && <MenuItem icon={ShieldCheck} onClick={() => void doConfirm(a)}>Confirm</MenuItem>}
         {open && <MenuItem icon={RefreshCw} onClick={() => openMove(a)}>Reschedule</MenuItem>}
         {open && <MenuItem icon={CalendarCheck} onClick={() => void doComplete(a)}>Mark completed</MenuItem>}
@@ -552,7 +569,7 @@ function AppointmentsInner() {
                     <tr
                       key={a.ref}
                       className="cursor-pointer border-b border-line last:border-0 hover:bg-surface-2"
-                      onClick={() => { setNoteText(""); setDetail(a); }}
+                      onClick={() => { setNoteText(""); setMeetingText(null); setDetail(a); }}
                     >
                       <td className="px-3 py-3">
                         <div className="flex items-center gap-3">
@@ -741,6 +758,23 @@ function AppointmentsInner() {
               <div className="rounded-xl bg-surface-2 px-4 py-3 text-sm">
                 <p className="text-xs font-semibold text-ink-subtle">{detail.source === "member" ? "Her note when booking" : "Note when entered"}</p>
                 <p className="mt-0.5 whitespace-pre-wrap text-ink-muted">{detail.note}</p>
+              </div>
+            )}
+
+            {(detail.status === "booked" || detail.status === "confirmed") && (
+              <div>
+                <p className="flex items-center gap-1.5 text-xs font-semibold text-ink-subtle">
+                  <CalendarCheck className="h-3.5 w-3.5" /> How she joins
+                  <span className="font-normal">· {detail.source === "member" ? "she sees this, with a Join button for a link" : "on record"}</span>
+                </p>
+                <div className="mt-2 flex items-start gap-2">
+                  <Input className="flex-1" placeholder="https://meet.google.com/… or “Room 2, WomSakhi centre, Kukatpally”"
+                         value={meetingText ?? detail.meeting ?? ""} onChange={(e) => setMeetingText(e.target.value)} />
+                  <button className="btn btn-outline" disabled={busy || meetingText === null || meetingText.trim() === (detail.meeting ?? "")}
+                          onClick={() => void saveMeeting()}>
+                    Save
+                  </button>
+                </div>
               </div>
             )}
 

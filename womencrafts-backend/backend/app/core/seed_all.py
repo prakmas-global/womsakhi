@@ -29,6 +29,9 @@ from app.routes.shop import seed as seed_shop
 from app.routes.reference import seed as seed_reference
 from app.routes.skills import seed as seed_skills
 from app.routes.cycle import seed as seed_cycle
+from app.core.seed_courses import seed as seed_courses
+from app.core.seed_skill_tests import seed as seed_skill_tests
+from app.routes.haq_catalogue import seed as seed_haq_catalogue
 
 _SEEDERS = [
     ("users (members/roles/segments)", seed_if_empty),
@@ -57,6 +60,10 @@ _SEEDERS = [
     ("skill exchange", seed_exchange),
     ("assessments/digital", seed_skills),
     ("health mentors", seed_cycle),
+    # after "users": member courses are taught by demo members
+    ("learn courses", seed_courses),
+    ("skill tests", seed_skill_tests),
+    ("haq schemes", seed_haq_catalogue),
 ]
 
 

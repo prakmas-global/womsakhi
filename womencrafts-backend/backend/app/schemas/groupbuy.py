@@ -21,6 +21,8 @@ class GroupBuyResponse(BaseModel):
     closes: str
     closed: bool
     joined_by_me: bool
+    #: She asked to be told when the next round of this item opens.
+    watching: bool = False
 
 
 class JoinRequest(BaseModel):

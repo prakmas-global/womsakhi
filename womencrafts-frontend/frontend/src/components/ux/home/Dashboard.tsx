@@ -14,6 +14,7 @@ import { apiDismissNextStep, type ApiHome } from "@/lib/me-api";
 import { EngineNudge } from "@/components/ux/reminders/EngineNudge";
 import { FirstSteps, PersonalCards, ShopFeed, WhyLine, orderBlocks } from "./Personal";
 import { QuickAccessGrid } from "./QuickAccess";
+import { artFor } from "@/components/ux/media/art";
 
 /** A reason line under a panel's heading, only on a panel her answers brought forward. */
 function Why({ reason }: { reason?: string }) {
@@ -898,10 +899,10 @@ function WorkPanel({ h, why }: { h: ApiHome; why?: string }) {
           {rows.map((o) => (
             <li key={o.id}>
               <Link href={`/app/opportunities/${o.id}`} className="ux-row flex min-h-[44px] items-center gap-3 rounded-[12px] p-2.5">
-                <span className="grid h-[34px] w-[34px] shrink-0 place-items-center rounded-[12px]"
-                      style={{ background: "var(--ux-tint-blue)", color: "var(--ux-blue-ink)" }}>
-                  <Icons.Briefcase className="h-[16px] w-[16px]" />
-                </span>
+                {/* A picture of the work itself, not one briefcase for every job. */}
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src={artFor([o.title, o.org], "job", null, o.id)} alt="" loading="lazy" decoding="async"
+                     className="h-[52px] w-[72px] shrink-0 rounded-[10px] object-cover" style={{ background: "var(--ux-surface-2)" }} />
                 <span className="min-w-0 flex-1">
                   <span className="block truncate text-xsm font-semibold" style={{ color: "var(--ux-ink)" }}>{o.title || "Opening"}</span>
                   <span className="mt-0.5 block truncate text-2xs" style={{ color: "var(--ux-muted)" }}>
@@ -932,10 +933,9 @@ function LearnPanel({ h, why }: { h: ApiHome; why?: string }) {
           {rows.map((r) => (
             <li key={r.id}>
               <Link href={`/app/programs/${r.id}`} className="ux-row flex min-h-[44px] items-center gap-3 rounded-[12px] p-2.5">
-                <span className="grid h-[34px] w-[34px] shrink-0 place-items-center rounded-[12px]"
-                      style={{ background: "var(--ux-tint-violet)", color: "var(--ux-violet-ink)" }}>
-                  <Icons.GraduationCap className="h-[16px] w-[16px]" />
-                </span>
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src={artFor([r.title || r.name, r.category], "course", r.cover, r.id)} alt="" loading="lazy" decoding="async"
+                     className="h-[52px] w-[72px] shrink-0 rounded-[10px] object-cover" style={{ background: "var(--ux-surface-2)" }} />
                 <span className="min-w-0 flex-1">
                   <span className="block truncate text-xsm font-semibold" style={{ color: "var(--ux-ink)" }}>{r.title || r.name || "Course"}</span>
                   {(r.reason || r.category) && (

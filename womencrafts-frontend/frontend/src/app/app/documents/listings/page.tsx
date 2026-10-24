@@ -10,7 +10,7 @@ import { GROUP, GROUP_ROW } from "@/components/ux/earn/phone";
 import { useResource } from "@/lib/use-resource";
 import { apiListings, type Listing } from "@/lib/shop-api";
 import { useT } from "@/i18n";
-import { monogram } from "@/lib/monogram";
+import { artFor } from "@/components/ux/media/art";
 
 const STATUS: Record<string, { label: string; tint: string; ink: string }> = {
   live:   { label: "Live",   tint: "--ux-tint-green",  ink: "--ux-green-ink" },
@@ -258,17 +258,12 @@ function Row({ l }: { l: Listing }) {
          style={{ borderColor: v("--ux-line") }}>
       {/* What it is */}
       <div className="flex min-w-0 items-center gap-3 max-lg:basis-full max-lg:pe-12">
-        {l.photo ? (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img src={l.photo} alt="" loading="lazy" decoding="async"
-               className="h-[52px] w-[52px] shrink-0 rounded-[10px] object-cover"
-               style={{ background: v("--ux-surface-2") }} />
-        ) : (
-          <span aria-hidden className="grid h-[52px] w-[52px] shrink-0 place-items-center rounded-[10px] text-sm font-extrabold"
-                style={{ background: v("--ux-tint-pink"), color: v("--ux-pink-ink") }}>
-            {monogram(l.title, "label")}
-          </span>
-        )}
+        {/* Her photo, or a picture of that kind of work — never initials. */}
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img src={artFor([l.title, l.category], l.kind === "service" ? "service" : "product", l.photo, l.id)}
+             alt="" loading="lazy" decoding="async"
+             className="h-[64px] w-[84px] shrink-0 rounded-[12px] object-cover"
+             style={{ background: v("--ux-surface-2"), opacity: l.photo ? 1 : 0.85 }} />
         <div className="min-w-0">
           <Link href={`/app/documents/${l.kind}/${l.id}`}
                 className="ux-sq block text-xsm font-bold leading-snug" style={{ color: v("--ux-ink") }}>

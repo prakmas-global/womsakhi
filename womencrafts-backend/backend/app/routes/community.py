@@ -24,6 +24,7 @@ from app.core.serializers import to_object_id
 from app.core.media import media_url
 from app.db.mongodb import get_database
 from app.models.wallet import WalletTxnModel
+from app.models.circle_chat import post_system, who
 from app.routes.wallet import balance_minor, symbol
 from app.models.community import (
     CircleContributionModel,
@@ -303,6 +304,8 @@ async def _create_circle(body: CircleCreate, me: dict):
         )
     )
     await _circles().update_one({"_id": result.inserted_id}, {"$set": {"member_count": 1}})
+    # The chat starts with the line every group chat starts with.
+    await post_system(get_database(), circle_id, f'{who(me)} created the group "{doc["name"]}"', actor_id=uid)
 
     invites = []
     seen = set()
@@ -499,6 +502,7 @@ async def join_circle(circle_id: str, me: dict = Depends(require_active_member))
         )
         await _circles().update_one({"_id": circle["_id"]}, {"$inc": {"member_count": 1}})
         circle["member_count"] = circle.get("member_count", 0) + 1
+        await post_system(get_database(), circle_id, f"{who(me)} joined", actor_id=user_id)
     return CircleModel.to_response(circle, True)
 
 
@@ -514,6 +518,7 @@ async def leave_circle(circle_id: str, me: dict = Depends(require_active_member)
             {"_id": circle["_id"], "member_count": {"$gt": 0}}, {"$inc": {"member_count": -1}}
         )
         circle["member_count"] = max(circle.get("member_count", 1) - 1, 0)
+        await post_system(get_database(), circle_id, f"{who(me)} left", actor_id=user_id)
     return CircleModel.to_response(circle, False)
 
 

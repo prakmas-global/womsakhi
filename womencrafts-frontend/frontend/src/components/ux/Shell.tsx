@@ -1,5 +1,6 @@
 "use client";
 
+import { DefaultRail, MoreForYou } from "./fill/MoreForYou";
 import { memo, useCallback, useEffect, useId, useMemo, useRef, useState } from "react";
 import { useT } from "@/i18n";
 import dynamic from "next/dynamic";
@@ -261,7 +262,20 @@ export function ModeRail({ path, footer }: { path: string; footer?: React.ReactN
   }, [here]);
 
   const trailKey = trail.map((t) => t.id).join("/");
+  // The open section, readable from the handler without making the handler
+  // new on every change (which would re-render every memoised section).
+  const openRef = useRef(open);
+  useEffect(() => { openRef.current = open; }, [open]);
+  /**
+   * Tap a closed section: open it and go to its home. Tap the open one again:
+   * fold it away and stay where she is — the rail is hers to tidy, and a
+   * second tap that only re-opened the same list gave her no way to.
+   */
   const openSection = useCallback((id: string, href: string) => {
+    if (openRef.current === id) {
+      setOpen(undefined);
+      return;
+    }
     setOpen(id);
     requestAnimationFrame(() => router.push(href));
   }, [router, setOpen]);
@@ -578,7 +592,7 @@ export function Topbar({ user, onMore }: { user: { name: string; avatar: string;
 
       {/* The full search box needs ~300px. On a phone it is an icon, and the
           palette it opens is the same palette. */}
-      <div className={`ms-auto hidden min-w-0 flex-1 justify-end sm:flex ${here === "/app/circle" ? "max-w-[590px]" : "max-w-[300px]"}`}>
+      <div className={`ms-auto hidden min-w-0 flex-1 justify-end sm:flex ${here === "/app/community" ? "max-w-[590px]" : "max-w-[300px]"}`}>
         <div className="w-full">
         {/* A button, not an input: typing happens in the palette, which has the
             results, the keyboard handling and somewhere to put focus. */}
@@ -655,8 +669,8 @@ export function Topbar({ user, onMore }: { user: { name: string; avatar: string;
             onClick={() => { setBell(false); setMenu((v) => !v); }}
             aria-haspopup="menu"
             aria-expanded={menu}
-            aria-label="Your account"
-            title="Your account"
+            aria-label="My account"
+            title="My account"
             data-account-button
             className="ux-press flex h-[44px] min-w-[44px] items-center justify-center gap-1 rounded-[12px] px-[3px] transition-colors hover:bg-[var(--ux-surface-2)] lg:pe-1.5"
           >
@@ -785,6 +799,8 @@ export function Shell({
   wide,
   fit,
   immersive,
+  fill = true,
+  columns = false,
 }: {
   /** Accepted and ignored — kept so callers need not all change at once. */
   nav?: unknown;
@@ -793,6 +809,14 @@ export function Shell({
   user: { name: string; avatar: string; unread?: number };
   children: React.ReactNode;
   rail?: React.ReactNode;
+  /**
+   * No empty screen: end every page with "More for you" (other modules as
+   * pictures, and a quote), and give a page with no column of its own the
+   * default one on a wide screen. Off for chats, boards and full-screen pages.
+   */
+  fill?: boolean;
+  /** The page draws its own columns — a module home — so no default side column. */
+  columns?: boolean;
   /**
    * Drop the side rail and give the screen the whole width.
    *
@@ -952,7 +976,13 @@ export function Shell({
                     rides on the element the router inserts. Nothing about it
                     sits between the tap and the navigation. */}
                 <PageTransition>{children}</PageTransition>
+                {fill && !fit && !immersive && <MoreForYou quoteHiddenXl={!rail && !wide && !columns} />}
               </main>
+              {fill && !rail && !wide && !columns && !fit && !immersive && (
+                <div className="ux-swap hidden w-[320px] shrink-0 pb-[64px] xl:block">
+                  <div className="sticky top-[calc(var(--ux-topbar-h,72px)+18px)]"><DefaultRail /></div>
+                </div>
+              )}
               {/*
                 ── The rail is not desktop-only any more ────────────────────
                 It held the helplines on Health, Rights and Travel — 112, 181,

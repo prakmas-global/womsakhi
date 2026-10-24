@@ -5,11 +5,52 @@ import { Tag } from "@/components/ux/work/native";
 import { useT } from "@/i18n";
 import Link from "next/link";
 import * as Icons from "@/components/ux/icons";
-import { matchFor, matchTone } from "@/services/job-match";
+import { matchFor, matchTone, type Match } from "@/services/job-match";
 
 import { Btn, I, IconTile, Progress, SectionHead, Card } from "../kit";
 import { usePointer } from "../kit/motion";
 import { payLabel, type Job } from "./data";
+
+/* ── how her skills meet the job's ─────────────────────────────────────── */
+
+/**
+ * "You have 2 of 3 skills: Blouse stitching ✓ Verified, Alterations ✓ ·
+ * Missing: Embroidery" — from her work profile, never a guess. Nothing at all
+ * when the job names no skills from the masters.
+ */
+export function FitLine({ fit, className = "" }: { fit: Match; className?: string }) {
+  if (fit.pct === null) return null;
+  const of = fit.have.length + fit.missing.length;
+  return (
+    <p className={`flex flex-wrap items-center gap-x-1.5 gap-y-1 text-[13px] leading-snug lg:text-xs ${className}`}
+       style={{ color: "var(--ux-ink-2)" }}>
+      <span className="font-semibold" style={{ color: "var(--ux-ink)" }}>
+        {fit.have.length ? `You have ${fit.have.length} of ${of} ${of === 1 ? "skill" : "skills"}:` : "None of your skills yet."}
+      </span>
+      {fit.have.map((s) => (
+        <span key={s} className="inline-flex items-center gap-1 font-semibold" style={{ color: "var(--ux-green-ink)" }}>
+          {s} <Icons.Check className="h-[12px] w-[12px]" />
+          {fit.verified.includes(s) && (
+            <span className="rounded-full px-1.5 py-[1px] text-[11px] font-bold"
+                  style={{ background: "var(--ux-tint-green)", color: "var(--ux-green-ink)" }}>Verified</span>
+          )}
+        </span>
+      ))}
+      {fit.missing.length > 0 && (
+        <span style={{ color: "var(--ux-muted)" }}>
+          {fit.have.length ? "· Missing: " : "They ask for "}{fit.missing.join(", ")}
+        </span>
+      )}
+    </p>
+  );
+}
+
+/** "Posted by Meera · WomSakhi member", or the employer's name for the team's own listings. */
+export function PostedBy({ job }: { job: Job }) {
+  return job.ownerKind === "member"
+    ? <span className="font-semibold" style={{ color: "var(--ux-ink-2)" }}>Posted by {job.org} · WomSakhi member</span>
+    : <span className="font-semibold" style={{ color: "var(--ux-ink-2)" }}>{job.org}</span>;
+}
 
 /* ── the row that appears everywhere work is listed ───────────────────── */
 
@@ -47,9 +88,8 @@ export function JobRow({
 }: { job: Job; i: number; saved: boolean; onSave: (id: string) => void }) {
   const tr = useT();
   const point = usePointer<HTMLDivElement>();
-  // Computed from her skills against the ones the listing asks for, rather than
-  // read from a `match` field that live listings never populate.
-  const fit = matchFor(job.skills);
+  // From the server: her work-profile skills against the listing's skill keys.
+  const fit = matchFor(job);
   return (
     <div ref={point}
          className="ux-i ux-sq ux-spot ux-onscroll relative rounded-[12px] border p-[16px]"

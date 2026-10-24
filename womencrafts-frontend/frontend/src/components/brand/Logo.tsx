@@ -5,7 +5,7 @@ import Link from "next/link";
  *
  * Two official transparent assets supplied by the owner:
  *   • /womsakhi-main-logo.png      — the complete square brand lockup
- *   • /womsakhi-main-text-logo.png — the wide WomSakhi name treatment
+ *   • /ux/brand/womsakhi-wordmark.webp — the wide WomSakhi name treatment
  *
  * The monogram is ~1.8:1, so it is sized by HEIGHT with `w-auto` and never
  * boxed into a square — cropping or letterboxing it would hide the handshake
@@ -49,7 +49,7 @@ export function LogoMark({
 
 export function LogoWordmark({
   className = "h-8",
-  src = "/womsakhi-main-text-logo.png",
+  src = "/ux/brand/womsakhi-wordmark.webp",
   alt = "WomSakhi",
 }: {
   className?: string;

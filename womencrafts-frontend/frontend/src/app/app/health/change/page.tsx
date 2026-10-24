@@ -1,7 +1,6 @@
 "use client";
 
-import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { useCallback, useState } from "react";
 
 import { HomeShell } from "@/components/ux/home/HomeShell";
 import { Back, Btn, Card, I, IconTile, SectionHead, Stat, v } from "@/components/ux/kit";
@@ -10,6 +9,17 @@ import { useT } from "@/i18n";
 import { ListGroup } from "@/components/ux/mobile/ListRow";
 import { GroupLabel, PhoneTitle, phoneFull, phonePrimary } from "@/components/ux/PhoneParts";
 import { useTranslated } from "@/i18n/data";
+import { Picks } from "@/components/ux/kit/form";
+import { toast } from "@/components/ux/mobile/Toast";
+import { useCircleRoom } from "@/components/ux/health/use-circle-room";
+import { useResource } from "@/lib/use-resource";
+import { apiChecklist, apiSaveChecklist, type Checklist } from "@/lib/my-records-api";
+
+/** What women most often need to say — tapped, not typed. */
+const THINGS = [
+  "Hot flushes, day or night", "Broken sleep", "Aching joints", "Heavy or irregular bleeding",
+  "Feeling low or irritable", "Forgetting things", "Dryness or pain", "Tired all the time",
+];
 
 /**
  * The change — the segment nobody in India serves.
@@ -35,9 +45,27 @@ export default function ChangePage() {
   const RAW_CHANGE_TOPICS = useTranslated(RAW_RAW_CHANGE_TOPICS);
   const CHANGE_TOPICS = useTranslated(RAW_CHANGE_TOPICS);
   const tr = useT();
-  const router = useRouter();
   const [open, setOpen] = useState<string | null>("cg1");
   const [note, setNote] = useState<string | null>(null);
+
+  // "The room": a real circle about this, joined for real — or none yet.
+  const room = useCircleRoom(/menopaus|midlife|mid-life|women'?s health|perimenopaus/i);
+
+  // "My three things": kept on the server, ready to show the doctor.
+  const list = useResource(useCallback((s: AbortSignal) => apiChecklist("doctor", s), []), null as Checklist | null);
+  const [things, setThings] = useState<string[] | null>(null);
+  const mine = things ?? list.data?.items ?? [];
+  const [writing, setWriting] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const saveThings = async () => {
+    setSaving(true);
+    try {
+      const got = await apiSaveChecklist("doctor", { items: mine.slice(0, 3) });
+      setThings(got.items); setWriting(false);
+      toast("Saved — show it to the doctor", { tone: "success" });
+    } catch { toast("That did not save. Try again.", { tone: "error" }); }
+    finally { setSaving(false); }
+  };
 
   return (
     <HomeShell active="/app/health">
@@ -151,11 +179,23 @@ export default function ChangePage() {
             <div className="min-w-0 flex-1">
               <p className="text-base font-bold" style={{ color: v("--ux-ink") }}>{tr("healthChange.otherWomenGoingThroughItNow")}</p>
               <p className="mt-1.5 max-w-[52ch] text-xsm leading-relaxed" style={{ color: v("--ux-ink-2") }}>
-                A quiet room in your circle. Nobody outside it sees who is in there, and nothing you
-                say is kept anywhere after you leave.
+                {room.room
+                  ? <>{room.room.name} · {room.room.member_count} {room.room.member_count === 1 ? "woman" : "women"}{room.room.is_private ? " · private circle" : ""}. Ask anything — other women answer from experience.</>
+                  : "There is no circle for this yet. Start one and other women going through it can find it."}
               </p>
             </div>
-            <Btn className={phonePrimary} onClick={() => setNote("You are in. Nine women, all around your age, and nothing said there leaves.")}>{tr("healthChange.joinTheRoom")}</Btn>
+            {room.loading ? null : !room.room ? (
+              <Btn className={phonePrimary} variant="outline" href="/app/circles/create">Start a room</Btn>
+            ) : room.joined ? (
+              <Btn className={phonePrimary} href={`/app/circles/${room.room.id}`} iconEnd="ArrowRight">Open the room</Btn>
+            ) : (
+              <Btn className={phonePrimary} loading={room.busy}
+                   onClick={async () => {
+                     const ok = await room.join();
+                     setNote(ok ? `You joined ${room.room!.name}. ${room.room!.member_count + 1} women are in it.` : null);
+                     if (!ok) toast("Could not join just now. Try again.", { tone: "error" });
+                   }}>{tr("healthChange.joinTheRoom")}</Btn>
+            )}
           </div>
         </Card>
 
@@ -167,17 +207,40 @@ export default function ChangePage() {
               Most women are told &ldquo;it is your age&rdquo; and sent home. Go with the three things that
               bother you most, written down — it changes the conversation completely.
             </p>
-            <Btn size="sm" variant="outline" full className={`mt-3 ${phoneFull}`}
-                 onClick={() => setNote("A short list you can hand over. Bring it with you.")}>{tr("healthChange.writeMyThreeThings")}</Btn>
+            {mine.length > 0 && !writing && (
+              <ol className="mt-3 space-y-1.5">
+                {mine.map((t, i) => (
+                  <li key={t} className="flex items-start gap-2 text-xsm" style={{ color: v("--ux-ink") }}>
+                    <span className="grid h-[20px] w-[20px] shrink-0 place-items-center rounded-full text-2xs font-bold"
+                          style={{ background: v("--ux-tint-green"), color: v("--ux-green-ink") }}>{i + 1}</span>{t}
+                  </li>
+                ))}
+              </ol>
+            )}
+            {writing ? (
+              <div className="mt-3">
+                <p className="text-xs" style={{ color: v("--ux-muted") }}>Tap up to three.</p>
+                <Picks options={THINGS} value={mine} multi label="What bothers you most"
+                       onPick={(t) => setThings(mine.includes(t) ? mine.filter((x) => x !== t) : mine.length < 3 ? [...mine, t] : mine)} />
+                <div className="mt-3 flex gap-2">
+                  <Btn size="sm" loading={saving} disabled={!mine.length} onClick={() => void saveThings()}>Save my list</Btn>
+                  <Btn size="sm" variant="ghost" onClick={() => { setThings(null); setWriting(false); }}>Cancel</Btn>
+                </div>
+              </div>
+            ) : (
+              <Btn size="sm" variant="outline" full className={`mt-3 ${phoneFull}`} onClick={() => setWriting(true)}>
+                {mine.length ? "Change my list" : tr("healthChange.writeMyThreeThings")}
+              </Btn>
+            )}
           </Card>
           <Card pad={16}>
             <IconTile icon="Briefcase" tint="--ux-tint-blue" ink="--ux-blue-ink" size={40} />
             <p className="mt-3 text-sm font-bold" style={{ color: v("--ux-ink") }}>{tr("healthChange.workingThroughIt")}</p>
             <p className="mt-1.5 text-xsm leading-relaxed" style={{ color: v("--ux-muted") }}>
-              Broken sleep and aching joints cost the most days. Cover for a bad day is already
-              built — use it without explaining yourself to anyone.
+              Broken sleep and aching joints cost the most days. Know what health cover you have,
+              so a bad month does not also cost your savings.
             </p>
-            <Btn size="sm" variant="outline" full className={`mt-3 ${phoneFull}`} href="/app/health/cover">{tr("healthChange.arrangeCover")}</Btn>
+            <Btn size="sm" variant="outline" full className={`mt-3 ${phoneFull}`} href="/app/health/cover">See my health cover</Btn>
           </Card>
         </div>
       </div>

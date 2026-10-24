@@ -2,6 +2,18 @@ import { STEPS, darkVariant, generateScale, readableOn } from "./palette";
 import { categoricalVariables } from "./categorical";
 import { surfaceVariables } from "./surfaces";
 import { DEFAULT_TOKEN_NAMES, type ColorMode, type ThemeChoice, type TokenNames } from "./types";
+import { DEFAULT_THEME } from "./presets";
+
+/**
+ * The brand preset is defined by the brand, not by what was saved: a cookie or
+ * an account that stored "womsakhi" with the old berry seeds is drawn with the
+ * current ones. Any other preset or custom colour is left exactly as chosen.
+ */
+export function normaliseTheme(theme: ThemeChoice): ThemeChoice {
+  return theme.id === DEFAULT_THEME.id
+    ? { ...theme, primary: DEFAULT_THEME.primary, secondary: DEFAULT_THEME.secondary }
+    : theme;
+}
 
 /**
  * Writing a theme onto the document.
@@ -19,6 +31,7 @@ export function themeToVariables(
   names: TokenNames = DEFAULT_TOKEN_NAMES,
 ): Record<string, string> {
   const vars: Record<string, string> = {};
+  theme = normaliseTheme(theme);
 
   for (const [seed, prefix] of [
     [theme.primary, names.primary],

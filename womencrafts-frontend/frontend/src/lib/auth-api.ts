@@ -130,8 +130,66 @@ export async function apiSignupComplete(input: {
   locale: string;
   /** The invite code from `/signup?ref=`; the server ignores one it does not know. */
   ref?: string;
+  /** One-screen sign-in: the contact the code did NOT prove (the ticket's `needs`). */
+  email?: string;
+  phone?: string;
 }): Promise<AuthPayload> {
   const { data } = await apiClient.post<AuthPayload>("/auth/signup/complete", input, ANSWER);
+  return data;
+}
+
+// ── one screen: her mobile or her email, then the code ──────────────────────
+
+/**
+ * Where the code went, and whether it will sign her in or start a new account.
+ * `provider: "firebase"` means nothing was sent yet: the browser asks Firebase
+ * to send the SMS, then hands the result to `apiAuthVerifyFirebase`.
+ */
+export interface AuthStarted extends CodeSent {
+  mode: "signin" | "signup";
+  provider: "server" | "firebase";
+}
+
+/**
+ * Signed in (staff get the 428 authenticator step instead), or `created`: the
+ * code was for a new address, and the account now exists and is signed in.
+ */
+export type AuthVerified = { status: "signed_in" | "created" } & AuthPayload;
+
+/** What a code needs besides itself when it may create an account. */
+interface NewAccountTerms {
+  /** "By continuing you confirm you are a woman, 18 or older" — shown under Send code. */
+  agreed: boolean;
+  /** The invite code from `?ref=`; the server ignores one it does not know. */
+  ref?: string;
+}
+
+export async function apiAuthStart(input: { email?: string; phone?: string; locale: string }): Promise<AuthStarted> {
+  const { data } = await apiClient.post<AuthStarted>("/auth/start", input, ANSWER);
+  return data;
+}
+
+export async function apiAuthVerify(
+  input: { email?: string; phone?: string; code: string; locale: string } & NewAccountTerms,
+): Promise<AuthVerified> {
+  const { data } = await apiClient.post<AuthVerified>("/auth/verify", input, ANSWER);
+  return data;
+}
+
+export async function apiAuthVerifyFirebase(idToken: string, locale: string, terms: NewAccountTerms): Promise<AuthVerified> {
+  const { data } = await apiClient.post<AuthVerified>("/auth/verify/firebase", { id_token: idToken, locale, ...terms }, ANSWER);
+  return data;
+}
+
+// ── adding an email later (a member who joined with her mobile) ─────────────
+
+export async function apiEmailAddStart(email: string): Promise<CodeSent> {
+  const { data } = await apiClient.post<CodeSent>("/auth/email/start", { email }, ANSWER);
+  return data;
+}
+
+export async function apiEmailAddVerify(email: string, code: string): Promise<{ email: string; email_verified: boolean }> {
+  const { data } = await apiClient.post("/auth/email/verify", { email, code }, ANSWER);
   return data;
 }
 

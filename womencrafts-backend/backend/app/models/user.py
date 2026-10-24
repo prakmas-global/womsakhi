@@ -79,18 +79,20 @@ class UserModel:
         """
         Should the screens stop her to add or confirm a mobile number?
 
-        Members only. A missing number always counts — it is required. An
-        unconfirmed one counts only once phone codes are live (before that
-        there is nothing she could do about it), and never when her email is
-        proved: ONE verified channel is enough to be a member, so a woman who
-        joined with the email code is not stopped to confirm her mobile too.
+        Members only. A MISSING number never stops her: a woman who joined with
+        her email is asked for it later, by the "complete your profile"
+        reminder in the app. An unconfirmed one counts only once phone codes
+        are live (before that there is nothing she could do about it), and
+        never when her email is proved: ONE verified channel is enough to be a
+        member, so a woman who joined with the email code is not stopped to
+        confirm her mobile too.
         """
         from app.core.config import settings  # local: config is heavy to import here
 
         if (document.get("role") or "Super Admin") != "Member":
             return False
         if not document.get("phone"):
-            return True
+            return False
         if not settings.phone_codes_live or document.get("phone_verified_at"):
             return False
         if document.get("email_verified_at"):
@@ -111,6 +113,13 @@ class UserModel:
         return {
             "id": str(document["_id"]),
             "full_name": document.get("full_name", ""),
+            # Her chosen username (app/core/usernames.py), and the name other
+            # members see: the username if set, else the account name.
+            "username": document.get("username") or "",
+            "display_name": document.get("username") or document.get("full_name", ""),
+            # A verified member's name came off her ID and only staff change it.
+            "name_locked": (document.get("role") or "") == "Member"
+            and document.get("verification_status") == "active",
             "email": document.get("email", ""),
             # Legacy admin accounts predate the role field; they stay Super Admin.
             "role": document.get("role") or "Super Admin",

@@ -13,63 +13,63 @@
 
 .wso {
   /* surfaces */
-  --wso-cream: #fcf8f6;
-  --wso-cream-2: #f4ece9;
+  --wso-cream: var(--ws-canvas);
+  --wso-cream-2: var(--ws-surface-2);
   --wso-surface: #ffffff;
-  --wso-surface-2: #f6ecef;
-  --wso-surface-3: #fbf7f6;
+  --wso-surface-2: var(--ws-surface-2);
+  --wso-surface-3: var(--ws-canvas);
   /* text */
-  --wso-ink: #141427;
-  --wso-body: #514d55;
-  --wso-muted: #6d6268;
-  --wso-placeholder: #7e6975;
+  --wso-ink: var(--ws-ink);
+  --wso-body: var(--ws-ink-2);
+  --wso-muted: var(--ws-muted);
+  --wso-placeholder: var(--ws-muted);
   --wso-on-berry: #ffffff;
   --wso-on-hero-sub: #f3d6c0;
   /* lines */
-  --wso-line: #eadfe1;
-  --wso-line-2: #dfd1d6;
-  --wso-line-3: #c8b8bf;
-  --wso-grab: #d9c9cf;
+  --wso-line: var(--ws-line);
+  --wso-line-2: var(--ws-line-strong);
+  --wso-line-3: var(--ws-line-strong);
+  --wso-grab: var(--ws-line-strong);
   /* brand */
-  --wso-berry: #9b1d50;
-  --wso-berry-deep: #77163f;
-  --wso-berry-ink: #952450;
-  --wso-berry-soft: #f8e3eb;
-  --wso-berry-tint: #fdf3f7;
-  --wso-berry-tint-2: #fbf1f4;
-  --wso-plum: #43142f;
-  --wso-plum-2: #a92c62;
-  --wso-gold: #c8894f;
+  --wso-berry: var(--ws-magenta-600);
+  --wso-berry-deep: var(--ws-magenta-800);
+  --wso-berry-ink: var(--ws-magenta-700);
+  --wso-berry-soft: var(--ws-magenta-100);
+  --wso-berry-tint: var(--ws-magenta-50);
+  --wso-berry-tint-2: var(--ws-magenta-50);
+  --wso-plum: var(--ws-deep);
+  --wso-plum-2: var(--ws-magenta-600);
+  --wso-gold: var(--ws-gold);
   --wso-gold-2: #f5cb96;
-  --wso-gold-soft: #fbeedd;
-  --wso-gold-ink: #7a4b00;
+  --wso-gold-soft: var(--ws-warning-tint);
+  --wso-gold-ink: var(--ws-warning-ink);
   /* status */
-  --wso-ok: #16734a;
-  --wso-ok-soft: #e2f2e9;
-  --wso-bad: #b4233a;
-  --wso-bad-soft: #fdecef;
+  --wso-ok: var(--ws-success-ink);
+  --wso-ok-soft: var(--ws-success-tint);
+  --wso-bad: var(--ws-danger-ink);
+  --wso-bad-soft: var(--ws-danger-tint);
   --wso-bad-line: #f4c7cf;
   /* translucency, shadows, gradients */
-  --wso-scrim: rgba(20, 20, 39, .45);
-  --wso-veil: rgba(252, 248, 246, .55);
+  --wso-scrim: rgba(27, 18, 56, .45);
+  --wso-veil: rgba(251, 249, 253, .55);
   --wso-glass: rgba(255, 255, 255, .92);
-  --wso-hero-grad: linear-gradient(180deg, rgba(67, 20, 47, .12) 0%, rgba(67, 20, 47, .9) 60%);
-  --wso-hero-grad-wide: linear-gradient(90deg, rgba(67, 20, 47, .94) 38%, rgba(67, 20, 47, .18));
-  --wso-sakhi-grad: radial-gradient(circle at 35% 30%, #f5cb96, #c8894f);
+  --wso-hero-grad: linear-gradient(180deg, rgba(27, 18, 56, .12) 0%, rgba(27, 18, 56, .9) 60%);
+  --wso-hero-grad-wide: linear-gradient(90deg, rgba(27, 18, 56, .94) 38%, rgba(27, 18, 56, .18));
+  --wso-sakhi-grad: radial-gradient(circle at 35% 30%, #f5cb96, var(--ws-gold));
   --wso-halo: 0 0 0 4px rgba(245, 203, 150, .38);
   --wso-halo-lg: 0 0 0 6px rgba(245, 203, 150, .42);
-  --wso-ring: 0 0 0 3px rgba(155, 29, 80, .16);
-  --wso-shadow-card: 0 1px 2px rgba(65, 22, 43, .04), 0 6px 18px rgba(104, 34, 64, .06);
-  --wso-shadow-go: 0 8px 18px rgba(155, 29, 80, .24);
-  --wso-shadow-go-hover: 0 12px 26px rgba(119, 22, 63, .28);
-  --wso-shadow-sheet: 0 -12px 40px rgba(67, 20, 47, .22);
-  --wso-shadow-modal: 0 28px 70px rgba(67, 20, 47, .26), 0 2px 6px rgba(67, 20, 47, .06);
-  --wso-shadow-tile-on: 0 6px 16px rgba(155, 29, 80, .14);
-  --wso-page-glow: radial-gradient(circle at 92% 6%, rgba(232, 178, 200, .32), transparent 30%),
+  --wso-ring: 0 0 0 3px rgba(200, 0, 102, .16);
+  --wso-shadow-card: 0 1px 2px rgba(27, 18, 56, .04), 0 6px 18px rgba(27, 18, 56, .06);
+  --wso-shadow-go: 0 8px 18px rgba(200, 0, 102, .24);
+  --wso-shadow-go-hover: 0 12px 26px rgba(125, 0, 71, .28);
+  --wso-shadow-sheet: 0 -12px 40px rgba(27, 18, 56, .22);
+  --wso-shadow-modal: 0 28px 70px rgba(27, 18, 56, .26), 0 2px 6px rgba(27, 18, 56, .06);
+  --wso-shadow-tile-on: 0 6px 16px rgba(200, 0, 102, .14);
+  --wso-page-glow: radial-gradient(circle at 92% 6%, rgba(255, 194, 221, .32), transparent 30%),
                    radial-gradient(circle at 6% 96%, rgba(244, 212, 191, .36), transparent 34%);
-  --wso-switch-off: #8c7a83;
-  --wso-fade: linear-gradient(180deg, rgba(252, 248, 246, 0), #fcf8f6);
-  --wso-plum-grad: linear-gradient(160deg, #a92c62 0%, #43142f 100%);
+  --wso-switch-off: var(--ws-muted);
+  --wso-fade: linear-gradient(180deg, rgba(251, 249, 253, 0), var(--ws-canvas));
+  --wso-plum-grad: linear-gradient(160deg, var(--ws-magenta-600) 0%, var(--ws-deep) 100%);
   --wso-hero-light: rgba(255, 255, 255, .16);
   --wso-hero-line: rgba(255, 255, 255, .42);
   --wso-check-mark: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='3.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M5 12l5 5L20 7'/%3E%3C/svg%3E");

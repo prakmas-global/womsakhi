@@ -3,6 +3,7 @@
 import { useMemo, useState } from "react";
 
 import { apiCreateCircle, type ApiCircleDetail } from "@/lib/growth-api";
+import { apiCircleInviteCode } from "@/lib/share-api";
 import { messageFrom } from "@/lib/use-action";
 import { settled, useAttemptKey } from "@/lib/idempotency";
 import * as Icons from "@/components/ux/icons";
@@ -14,6 +15,7 @@ import { rupees } from "@/components/ux/circles/data";
 import { useT } from "@/i18n";
 import { ListGroup } from "@/components/ux/mobile/ListRow";
 import { PhoneRow, phonePrimary, phoneSecondary } from "@/components/ux/PhoneParts";
+import { Picks, Stepper } from "@/components/ux/kit/form";
 
 const KINDS = [
   { id: "Savings", label: "A savings circle", note: "Everyone pays in monthly; one member takes the pot each month",
@@ -23,6 +25,24 @@ const KINDS = [
   { id: "Community", label: "A community circle", note: "Somewhere to ask questions and know people",
     icon: "UsersRound", tint: "--ux-tint-pink", ink: "--ux-pink" },
 ];
+
+/** Names, places, amounts and purposes most circles start with — one tap each. */
+const NAME_IDEAS: Record<string, string[]> = {
+  Savings: ["Monthly savings circle", "Our kitty", "Neighbourhood savings"],
+  Trade: ["Tailors' group", "Home bakers' group", "Mehendi artists"],
+  Community: ["Women of our area", "Mothers' circle", "Learning together"],
+};
+const PLACE_IDEAS = ["My neighbourhood", "My village", "My workplace", "Online"];
+const MONTHLY_IDEAS = [200, 500, 1000, 2000];
+const ABOUT_IDEAS = [
+  "Saving together every month", "For women we know and trust", "Pay by the 5th of every month",
+  "Sharing big orders", "Help and advice", "Meet once a month",
+];
+const togglePhrase = (text: string, phrase: string) => {
+  const parts = text.split(". ").map((x) => x.trim().replace(/\.$/, "")).filter(Boolean);
+  const next = parts.includes(phrase) ? parts.filter((x) => x !== phrase) : [...parts, phrase];
+  return next.length ? `${next.join(". ")}.` : "";
+};
 
 /**
  * Starting a circle.
@@ -39,7 +59,9 @@ export default function NewCircle() {
   const tr = useT();
   const [step, setStep] = useState(1);
   const [kind, setKind] = useState<string | null>(null);
-  const [form, setForm] = useState({ name: "", place: "Jaipur", members: "10", monthly: "500", about: "" });
+  // "Where" used to start as "Jaipur" for every woman; it is now hers to pick.
+  const [form, setForm] = useState({ name: "", place: "", members: "10", monthly: "500", about: "" });
+  const put = (k: keyof typeof form) => (val: string) => setForm((f) => ({ ...f, [k]: val }));
   // The circle the server actually made, not a flag saying we asked it to.
   const [created, setCreated] = useState<ApiCircleDetail | null>(null);
   const [making, setMaking] = useState(false);
@@ -105,8 +127,12 @@ export default function NewCircle() {
             </p>
             <div className="mt-5 flex flex-wrap justify-center gap-2.5">
               <ActionBtn variant="primary" icon="Share2" doneIcon="Copy" done={tr("circlesNew.inviteLinkCopiedSendItOn")}
-                         act={() => copy(`https://womsakhi.com/join/${created.id}`,
-                                         "Invite link copied — send it on WhatsApp", "Copy it by hand from your circle page")}>{tr("circlesNew.inviteWomenYouTrust")}</ActionBtn>
+                         act={async () => {
+                           // A real invite: a code that lets her in, even to a private circle.
+                           const { path } = await apiCircleInviteCode(created.id);
+                           return copy(`${window.location.origin}${path}`,
+                                       "Invite link copied — send it on WhatsApp", "Copy it by hand from your circle page");
+                         }}>{tr("circlesNew.inviteWomenYouTrust")}</ActionBtn>
               <Btn href={`/app/circles/${created.id}`} variant="outline" iconEnd="ArrowRight">{tr("circlesNew.openIt")}</Btn>
             </div>
           </div>
@@ -232,18 +258,31 @@ export default function NewCircle() {
           <div className="space-y-4">
             <Field label={tr("circlesNew.whatIsItCalled")} hint={tr("circlesNew.somethingTheWomenYouInviteWill")}>
               <TextInput value={form.name} onChange={set("name")} placeholder={tr("circlesNew.jaipurTailorsCircle")} />
+              <Picks options={kind ? NAME_IDEAS[kind] ?? [] : []} value={form.name} onPick={put("name")} label="Name ideas" />
             </Field>
             <Field label="Where" hint={tr("circlesNew.aCityOrANeighbourhoodOnline")}>
               <TextInput value={form.place} onChange={set("place")} placeholder="Jaipur" />
+              <Picks options={PLACE_IDEAS} value={form.place} onPick={put("place")} label="Where" />
             </Field>
 
             {savings && (
               <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
-                <Field label={tr("circlesNew.howManyWomen")} hint={tr("circlesNew.eachOneGetsThePotOnce")}>
-                  <TextInput value={form.members} onChange={set("members")} inputMode="numeric" placeholder="10" />
-                </Field>
+                {/* Not a `Field`: that is a <label>, and a click on its words would
+                    press the stepper's first button. Three is the least a circle
+                    can run with, so the stepper will not go under it. */}
+                <div>
+                  <span className="block text-[15px] font-semibold lg:text-xsm" style={{ color: "var(--ux-ink)" }}>{tr("circlesNew.howManyWomen")}</span>
+                  <span className="mt-1 block text-[13px] lg:text-xs" style={{ color: "var(--ux-muted)" }}>{tr("circlesNew.eachOneGetsThePotOnce")}</span>
+                  <span className="mt-2 block">
+                    <Stepper value={form.members} onChange={put("members")} label={tr("circlesNew.howManyWomen")}
+                             min={3} presets={[5, 10, 12, 20]} />
+                  </span>
+                </div>
                 <Field label={tr("circlesNew.howMuchEachMonth")} hint={tr("circlesNew.inRupeesPickAnAmountEveryone")}>
                   <TextInput value={form.monthly} onChange={set("monthly")} inputMode="numeric" placeholder="500" />
+                  <Picks options={MONTHLY_IDEAS.map((x) => `₹${x.toLocaleString("en-IN")}`)}
+                         value={`₹${(Number(form.monthly) || 0).toLocaleString("en-IN")}`}
+                         onPick={(x) => put("monthly")(x.replace(/[^\d]/g, ""))} label={tr("circlesNew.howMuchEachMonth")} />
                 </Field>
               </div>
             )}
@@ -257,6 +296,8 @@ export default function NewCircle() {
                 className="ux-sq w-full resize-y rounded-[12px] border p-3.5 text-sm leading-relaxed outline-none max-lg:p-4 max-lg:text-[17px]"
                 style={{ borderColor: "var(--ux-line-strong)", background: "var(--ux-surface)", color: "var(--ux-ink)" }}
               />
+              <Picks options={ABOUT_IDEAS} value={form.about.split(". ").map((x) => x.replace(/\.$/, ""))} multi
+                     label="Tap to describe it" onPick={(x) => put("about")(togglePhrase(form.about, x))} />
             </Field>
           </div>
         </Card>

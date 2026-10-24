@@ -67,6 +67,18 @@ from app.routes.swap import router as swap_router
 from app.routes.together import router as together_router
 from app.routes.employers import router as employers_router
 from app.routes.catalog import router as catalog_router
+from app.routes.teach import router as teach_router
+from app.routes.mentoring import router as mentoring_router
+from app.routes.course_qa import router as course_qa_router
+from app.routes.work_talent import router as work_talent_router, admin_router as work_admin_router
+from app.routes.portfolio import router as portfolio_router
+from app.routes.my_records import router as my_records_router
+from app.routes.mentor_reviews import router as mentor_reviews_router
+from app.routes.people import router as people_router
+from app.routes.social import router as social_router
+from app.routes.circle_chat import router as circle_chat_router
+from app.routes.haq_catalogue import router as haq_catalogue_router
+from app.routes.public_share import router as public_share_router, member_router as share_member_router
 from app.routes.payments import router as payments_router
 from app.routes.community import router as community_router
 from app.routes.growth import router as growth_router
@@ -370,6 +382,15 @@ app.include_router(haq_router, prefix="/api/v1")
 app.include_router(school_router, prefix="/api/v1")
 app.include_router(kitchen_router, prefix="/api/v1")
 app.include_router(swap_router, prefix="/api/v1")
+app.include_router(teach_router, prefix="/api/v1")
+app.include_router(mentoring_router, prefix="/api/v1")
+app.include_router(course_qa_router, prefix="/api/v1")
+app.include_router(work_talent_router, prefix="/api/v1")
+app.include_router(portfolio_router, prefix="/api/v1")
+app.include_router(my_records_router, prefix="/api/v1")
+app.include_router(haq_catalogue_router, prefix="/api/v1")
+app.include_router(public_share_router, prefix="/api/v1")
+app.include_router(share_member_router, prefix="/api/v1")
 app.include_router(together_router, prefix="/api/v1")
 # "Did they pay her?" — counted from reports, never seeded.
 app.include_router(employers_router, prefix="/api/v1")
@@ -425,6 +446,10 @@ app.include_router(payments_router, prefix="/api/v1")
 # core.deps.require_active_member, so admission is enforced in one place.
 app.include_router(community_router, prefix="/api/v1")
 app.include_router(growth_router, prefix="/api/v1")
+app.include_router(mentor_reviews_router, prefix="/api/v1")
+app.include_router(people_router, prefix="/api/v1")
+app.include_router(social_router, prefix="/api/v1")
+app.include_router(circle_chat_router, prefix="/api/v1")
 app.include_router(reference_router, prefix="/api/v1")
 app.include_router(group_buy_router, prefix="/api/v1")
 app.include_router(shop_router, prefix="/api/v1")
@@ -442,6 +467,7 @@ app.include_router(money_overview_router, prefix="/api/v1")
 # The staff side of those same modules, each behind its own RBAC module key.
 app.include_router(admin_community_router, prefix="/api/v1", dependencies=_mod("community"))
 app.include_router(admin_growth_router, prefix="/api/v1", dependencies=_mod("growth"))
+app.include_router(work_admin_router, prefix="/api/v1", dependencies=_mod("growth"))
 app.include_router(admin_safety_router, prefix="/api/v1", dependencies=_mod("safety"))
 app.include_router(admin_market_router, prefix="/api/v1", dependencies=_mod("market"))
 app.include_router(admin_money_router, prefix="/api/v1", dependencies=_mod("money"))

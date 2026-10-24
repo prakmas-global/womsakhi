@@ -9,7 +9,7 @@ lives with the rest of the copy, on the client.
 What stands where — receiving, at risk, stopped, applied and waiting — is hers
 alone, and is the only thing stored here.
 
-── Why the default is "can-claim" and never anything else ──────────────────
+── Why the default is "unknown" ("not checked yet") ───────────────────────
 The screen used to ship with its statuses written in: "Ladki Bahin · at risk ·
 finish e-KYC · 9 days", a second scheme "stopped", one "receiving" and one
 "waiting". Every woman who opened it read that.
@@ -20,8 +20,11 @@ not have is *at risk in nine days* is frightened into a queue at an office for
 nothing — and these are women for whom a wasted day at a government office is
 a day's earnings gone.
 
-So an entitlement she has never touched reads "you may be able to claim this",
-which is the one thing that is true of everybody.
+So an entitlement she has never touched reads "not checked yet". It used to
+read "you qualify" — which is not true of everybody either: a widow pension
+told every woman she qualified for it. Whether a scheme may fit her is worked
+out from her own answers (`profile.tags`) against the scheme's eligibility,
+and shown as a suggestion, never as her status.
 """
 
 from datetime import datetime, timezone
@@ -41,10 +44,18 @@ COLLECTION = "haq_status"
 #: receiving  — money arriving now
 #: at-risk    — arriving, with a deadline that will stop it
 #: stopped    — already stopped; this is the appeal queue
-#: can-claim  — she qualifies and has not applied (the default)
+#: can-claim  — she has checked: she qualifies and has not applied
 #: waiting    — applied, waiting on the department
-STATUSES = ("receiving", "at-risk", "stopped", "can-claim", "waiting")
-DEFAULT = "can-claim"
+#: unknown    — not checked yet (the default; never stored)
+STATUSES = ("receiving", "at-risk", "stopped", "can-claim", "waiting", "unknown")
+DEFAULT = "unknown"
+
+
+class HaqProfileIn(BaseModel):
+    #: Which state's schemes to show; "" = all-India only.
+    state: str = Field(default="", max_length=60)
+    #: Her answers to the tap questions (haq_catalogue.ELIGIBILITY keys).
+    tags: list[str] = Field(default_factory=list, max_length=20)
 
 
 class HaqIn(BaseModel):
@@ -81,6 +92,20 @@ def _days_until(iso: str) -> int | None:
     return delta.days
 
 
+async def _guess_state(me: dict) -> str:
+    """Her state from the location on her member record, when it names one."""
+    from app.routes.haq_catalogue import state_from
+
+    if not me.get("member_id"):
+        return ""
+    try:
+        m = await get_database()["members"].find_one(
+            {"_id": ObjectId(me["member_id"])}, {"location": 1, "display_location": 1})
+    except (InvalidId, TypeError):
+        return ""
+    return state_from(" ".join(filter(None, [(m or {}).get("display_location"), (m or {}).get("location")])))
+
+
 @router.get("", summary="Where each of her claims stands")
 async def get_haq(me: dict = Depends(require_active_member)):
     doc = await _col().find_one({"user_id": str(me["_id"])}) or {}
@@ -88,13 +113,34 @@ async def get_haq(me: dict = Depends(require_active_member)):
         k: {**v, "due_days": _days_until(v.get("due_on", ""))}
         for k, v in doc.get("states", {}).items()
     }
+    profile = doc.get("profile") or {}
     return {
-        # Keyed by scheme id. Anything absent is `can-claim` on the client,
-        # which is what a woman who has never applied actually is.
+        # Keyed by scheme key. Anything absent is `unknown` — not checked yet.
         "states": states,
         "default": DEFAULT,
         "tracked": len(states),
+        "profile": {
+            "state": profile.get("state") if "state" in profile else await _guess_state(me),
+            "tags": profile.get("tags") or [],
+            "answered": "tags" in profile,
+        },
     }
+
+
+@router.put("/profile", summary="Her state, and her answers to the who-is-it-for questions")
+async def set_profile(body: HaqProfileIn, me: dict = Depends(require_active_member)):
+    from app.routes.haq_catalogue import ELIGIBILITY, STATES
+
+    state = next((x for x in STATES if x.casefold() == body.state.strip().casefold()), "")
+    tags = [t for t in dict.fromkeys(body.tags) if t in ELIGIBILITY]
+    uid = str(me["_id"])
+    now = datetime.now(timezone.utc)
+    await _col().update_one(
+        {"user_id": uid},
+        {"$set": {"profile": {"state": state, "tags": tags}, "updated_at": now},
+         "$setOnInsert": {"user_id": uid, "created_at": now}},
+        upsert=True)
+    return await get_haq(me)
 
 
 @router.put("/{scheme_id}", summary="Say where one of them stands")
