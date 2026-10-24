@@ -25,6 +25,7 @@ from app.schemas.me_messages import (
     MessageResponse,
     SendMessage,
     StarRequest,
+    StartConversation,
 )
 
 router = APIRouter(prefix="/me", tags=["Member"])
@@ -137,6 +138,89 @@ async def inbox_summary(me: dict = Depends(require_active_member)):
     )
 
 
+#: New member-to-member threads one woman may open in a day. Plenty to reach
+#: a mentor, a swap and a circle-mate; too few to message a whole city.
+NEW_THREADS_PER_DAY = 30
+
+
+@router.post(
+    "/conversations/start",
+    response_model=ConversationDetail,
+    status_code=status.HTTP_201_CREATED,
+    summary="Message a member",
+)
+async def start_conversation(body: StartConversation, me: dict = Depends(require_active_member)):
+    """
+    "Message her", for real.
+
+    About ten buttons across the app ("Message her", "Ask her for it", "Ask
+    her") opened the inbox and stopped there — there was no endpoint that could
+    start a thread with one particular woman, only the market's ask-the-seller
+    and the work search. This is that endpoint: a PAIR of documents, as every
+    member-to-member thread is, upserted so asking twice continues the thread.
+
+    If either of them already has a thread with the other — a market or work
+    thread — that one is continued rather than a second opened beside it.
+    A thread she closed stays closed.
+    """
+    from app.models.conversation import MemberNotificationModel, notify
+
+    uid = str(me["_id"])
+    if body.user_id == uid:
+        raise HTTPException(status.HTTP_400_BAD_REQUEST, "That is you.")
+    try:
+        other = await get_database()["users"].find_one(
+            {"_id": ObjectId(body.user_id), "verification_status": "active", "role": "Member"},
+            {"full_name": 1, "avatar": 1})
+    except Exception:  # noqa: BLE001
+        other = None
+    if not other:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "That member is not available to message.")
+    other_id = str(other["_id"])
+
+    ours = await _col().find_one({"member_id": uid, "with_user_id": other_id}, sort=[("updated_at", -1)])
+    if ours and ours.get("closed"):
+        raise HTTPException(status.HTTP_403_FORBIDDEN, "This conversation is closed.")
+    if not ours:
+        since = datetime.now(timezone.utc).replace(hour=0, minute=0, second=0, microsecond=0)
+        opened = await _col().count_documents({"member_id": uid, "kind": Conv.KIND_MEMBER, "created_at": {"$gte": since}})
+        if opened >= NEW_THREADS_PER_DAY:
+            raise HTTPException(status.HTTP_429_TOO_MANY_REQUESTS,
+                                "You have started a lot of new conversations today. Try again tomorrow.")
+        about = body.about.strip()
+        theirs = await _col().find_one_and_update(
+            {"member_id": other_id, "with_user_id": uid, "kind": Conv.KIND_MEMBER},
+            {"$setOnInsert": Conv.create_document(
+                member_id=other_id, kind=Conv.KIND_MEMBER, name=me.get("full_name", "") or "A WomSakhi member",
+                avatar=me.get("avatar", "") or "", subtitle=about, with_user_id=uid,
+            )}, upsert=True, return_document=True)
+        ours = await _col().find_one_and_update(
+            {"member_id": uid, "with_user_id": other_id, "kind": Conv.KIND_MEMBER},
+            {"$setOnInsert": Conv.create_document(
+                member_id=uid, kind=Conv.KIND_MEMBER, name=other.get("full_name") or "A WomSakhi member",
+                avatar=other.get("avatar", "") or "", subtitle=about, with_user_id=other_id,
+                counterpart_id=str(theirs["_id"]),
+            )}, upsert=True, return_document=True)
+        await _col().update_one({"_id": theirs["_id"]}, {"$set": {"counterpart_id": str(ours["_id"])}})
+        ours["counterpart_id"] = str(theirs["_id"])
+
+    text = body.text.strip()
+    bubble = Conv.bubble(direction="out", text=text)
+    await _col().update_one({"_id": ours["_id"]}, {"$push": {"messages": bubble}, "$set": {"updated_at": bubble["at"]}})
+    if ours.get("counterpart_id"):
+        await _col().update_one(
+            {"_id": ObjectId(ours["counterpart_id"])},
+            {"$push": {"messages": Conv.bubble(direction="in", text=text, at=bubble["at"], bubble_id=bubble["id"])},
+             "$set": {"updated_at": bubble["at"]}})
+    await notify(
+        get_database(), other_id,
+        title=f"{(me.get('full_name') or 'A member').split()[0]} sent you a message",
+        body=text[:140], ntype=MemberNotificationModel.TYPE_MESSAGE, href=f"/app/messages",
+    )
+    doc = await _col().find_one({"_id": ours["_id"]})
+    return ConversationDetail(**Conv.to_response(doc, with_messages=True))
+
+
 @router.get("/conversations/{conversation_id}", response_model=ConversationDetail, summary="One conversation")
 async def one_conversation(
     conversation_id: str,
@@ -227,6 +311,8 @@ async def send(conversation_id: str, body: SendMessage, me: dict = Depends(requi
     through here exactly as it did before.
     """
     doc = await _mine(conversation_id, str(me["_id"]))
+    if doc.get("closed"):
+        raise HTTPException(status.HTTP_409_CONFLICT, "This conversation is closed.")
     bubble = Conv.bubble(direction="out", text=body.text.strip())
     await _col().update_one(
         {"_id": doc["_id"]},

@@ -23,7 +23,7 @@ from datetime import datetime, timezone
 #: How she was actually paid, and where the sale happened. Not a payment
 #: method: "whatsapp" is where the conversation was, and that is the fact she
 #: remembers when she is entering it a week later.
-VIA = ("whatsapp", "shop", "person", "circle")
+VIA = ("whatsapp", "shop", "person", "circle", "course", "mentoring")
 
 #: paid  — the money arrived
 #: owed  — she delivered and is waiting

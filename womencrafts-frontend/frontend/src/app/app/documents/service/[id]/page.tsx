@@ -16,6 +16,7 @@ import {
 } from "@/components/ux/shop/data";
 import { useT } from "@/i18n";
 import { useTranslated } from "@/i18n/data";
+import { Picks, Select } from "@/components/ux/kit/form";
 
 const BLANK = {
   id: "new", name: "", category: "Tailoring", rate_minor: 0, rateKind: "per visit" as RateKind,
@@ -24,6 +25,30 @@ const BLANK = {
 };
 
 const WHERES = ["At her place", "At your place", "Either", "Online"] as const;
+
+/** Tapped, not typed. */
+const NAME_PICKS = [
+  "Blouse stitched to measure", "Alterations", "Mehendi for both hands", "Threading and facial",
+  "Home tuition, class 1 to 5", "Tiffin delivered daily", "Cake to order", "Childcare at home",
+];
+const ABOUT_PHRASES = [
+  "Bring your own cloth", "Material included", "One fitting included", "I come to your home",
+  "Book a day ahead", "Same-day work possible", "Pay after the work is done",
+];
+const RATE_PICKS = [200, 300, 500, 1000];
+const MINUTES = [
+  { value: "30", label: "30 minutes" }, { value: "45", label: "45 minutes" }, { value: "60", label: "1 hour" },
+  { value: "90", label: "1½ hours" }, { value: "120", label: "2 hours" }, { value: "180", label: "3 hours" },
+  { value: "240", label: "Half a day" }, { value: "480", label: "A full day" },
+];
+const KMS = ["2", "5", "10", "15", "25"];
+const togglePhrase = (note: string, phrase: string) => {
+  const parts = note.split(". ").map((x) => x.trim().replace(/\.$/, "")).filter(Boolean);
+  return (parts.includes(phrase) ? parts.filter((x) => x !== phrase) : [...parts, phrase]).join(". ");
+};
+/** A saved value the list does not have is kept as a choice, never silently replaced. */
+const withCurrent = <T extends string | { value: string; label: string }>(list: T[], value: string, make: (v: string) => T) =>
+  list.some((o) => (typeof o === "string" ? o : o.value) === value) || !value ? list : [...list, make(value)];
 
 /**
  * Listing a service — her time and skill, rather than a thing in a box.
@@ -87,10 +112,8 @@ export default function ServiceEditor({ params }: { params: Promise<{ id: string
   const attempt = useAttemptKey("service");
 
 
-  const set = (k: keyof typeof form) => (e: React.ChangeEvent<HTMLInputElement>) => {
-    setForm((f) => ({ ...f, [k]: e.target.value }));
-    setSaved(false);
-  };
+  const put = (k: keyof typeof form, value: string) => { setForm((f) => ({ ...f, [k]: value })); setSaved(false); };
+  const set = (k: keyof typeof form) => (e: React.ChangeEvent<HTMLInputElement>) => put(k, e.target.value);
 
   /** Rupees in, paise out — converted once, at the point of entry. */
   const rate_minor = useMemo(() => {
@@ -262,6 +285,7 @@ export default function ServiceEditor({ params }: { params: Promise<{ id: string
           <Field label={tr("documentsService.nameItTheWaySomeoneWould")}
                  hint={tr("documentsService.blouseStitchedToMeasureNotTailorin")}>
             <TextInput value={form.name} onChange={set("name")} placeholder={tr("documentsService.blouseStitchedToMeasure")} />
+            {!form.name.trim() && <Picks options={NAME_PICKS} value={form.name} onPick={(x) => put("name", x)} label="Quick names" />}
           </Field>
 
           <div>
@@ -277,6 +301,9 @@ export default function ServiceEditor({ params }: { params: Promise<{ id: string
           </div>
 
           <Field label={tr("documentsService.describeIt")} hint={tr("documentsService.whatIsIncludedAndWhatA")}>
+            <Picks options={ABOUT_PHRASES} value={form.about.split(". ")} multi label="Tap to add to the description"
+                   onPick={(x) => put("about", togglePhrase(form.about, x))} />
+            <div className="mt-2.5" />
             <textarea
               value={form.about}
               onChange={(e) => { setForm((f) => ({ ...f, about: e.target.value })); setSaved(false); }}
@@ -291,9 +318,12 @@ export default function ServiceEditor({ params }: { params: Promise<{ id: string
 
       <Card className="mb-[16px]">
         <SectionHead title={tr("documentsService.whatYouCharge")} sub={tr("documentsService.buyersSeeThisExactlyNothingIs")} />
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid gap-4 sm:grid-cols-2">
           <Field label={tr("documentsService.yourRate")} hint={tr("documentsService.inRupees")}>
             <TextInput value={form.rupees} onChange={set("rupees")} placeholder="450" inputMode="numeric" />
+            <Picks options={RATE_PICKS.map((n) => `₹${n.toLocaleString("en-IN")}`)}
+                   value={form.rupees ? `₹${Number(form.rupees).toLocaleString("en-IN")}` : ""}
+                   onPick={(x) => put("rupees", x.replace(/[^\d]/g, ""))} label="Usual rates" />
           </Field>
           <div>
             <span className="block text-xsm font-semibold" style={{ color: "var(--ux-ink)" }}>Charged</span>
@@ -308,7 +338,8 @@ export default function ServiceEditor({ params }: { params: Promise<{ id: string
           </div>
         </div>
         <Field label={tr("documentsService.howLongItUsuallyTakes")} hint={tr("documentsService.inMinutesBuyersPlanTheirDay")}>
-          <TextInput value={form.mins} onChange={set("mins")} placeholder="60" inputMode="numeric" />
+          <Select value={form.mins} onChange={(x) => put("mins", x)} label={tr("documentsService.howLongItUsuallyTakes")}
+                  options={withCurrent(MINUTES, form.mins, (v) => ({ value: v, label: `${v} minutes` }))} />
         </Field>
       </Card>
 
@@ -351,7 +382,8 @@ export default function ServiceEditor({ params }: { params: Promise<{ id: string
         {travels && (
           <div className="ux-slide-up mt-4">
             <Field label={tr("documentsService.howFarWillYouTravel")} hint={tr("documentsService.inKilometresFromWhereYouLive")}>
-              <TextInput value={form.travelKm} onChange={set("travelKm")} placeholder="5" inputMode="numeric" />
+              <Select value={form.travelKm} onChange={(x) => put("travelKm", x)} label={tr("documentsService.howFarWillYouTravel")}
+                      options={withCurrent(KMS, form.travelKm, (v) => v).map((k) => ({ value: k, label: `Up to ${k} km` }))} />
             </Field>
           </div>
         )}

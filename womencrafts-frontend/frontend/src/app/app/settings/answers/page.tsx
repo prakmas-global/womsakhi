@@ -98,7 +98,7 @@ const STATE_WORDS: Record<string, { text: string; tone: "brand" | "green" | "neu
 
 function whereItLives(i: PreparedItem): string | null {
   switch (i.type) {
-    case "listing": return "/app/shop";
+    case "listing": return "/app/documents/listings";
     case "saved_search": return "/app/opportunities";
     case "goal": return "/app/goals";
     case "reminder": return "/app/reminders";

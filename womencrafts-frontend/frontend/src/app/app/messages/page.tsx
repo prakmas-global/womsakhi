@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState, useSyncExternalStore } from "react";
 import { useT } from "@/i18n";
 import { COPY } from "@/components/ux/copy";
 import * as Icons from "@/components/ux/icons";
@@ -39,11 +39,19 @@ import { apiConversation, apiConversations, apiDeleteConversation, apiMarkUnread
 
 /* ── the shell ──────────────────────────────────────────────────────────── */
 
+const noSubscribe = () => () => {};
+
 export default function MessagesPage() {
   const tr = useT();
   const [rows, setRows] = useState<ConvRow[]>([]);
   const [summary, setSummary] = useState<InboxSummary | null>(null);
-  const [openId, setOpenId] = useState<string | null>(null);
+  // `/app/messages?c=<id>` opens that conversation — "Continue chat" on Find
+  // people. Read as an external store so the server render (no URL) and the
+  // first client render agree, then the thread opens.
+  const linked = useSyncExternalStore(noSubscribe,
+    () => new URLSearchParams(window.location.search).get("c"), () => null);
+  const [picked, setOpenId] = useState<string | null>(null);
+  const openId = picked ?? linked;
   const [thread, setThread] = useState<ConvDetail | null>(null);
   const [filter, setFilter] = useState<PartyKind | "all">("all");
   const [search, setSearch] = useState("");
@@ -61,7 +69,8 @@ export default function MessagesPage() {
    * inbox *or* the conversation, with a back arrow, which is what every
    * messaging app on a phone does and for this reason.
    */
-  const [onThread, setOnThread] = useState(false);
+  const [threadView, setOnThread] = useState<boolean | null>(null);
+  const onThread = threadView ?? !!linked;
 
   /**
    * `load()` asks for a fresh list; the effect below is what fetches it. The

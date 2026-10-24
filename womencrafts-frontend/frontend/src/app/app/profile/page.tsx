@@ -18,6 +18,7 @@ import { useMoney } from "@/components/ux/money/live";
 import { formatMoney } from "@/components/ux/kit/money";
 import { useT } from "@/i18n";
 import { PhotoSheet } from "@/components/ux/profile/PhotoSheet";
+import { UsernameSheet } from "@/components/ux/profile/UsernameSheet";
 
 /**
  * The five things this profile is actually made of.
@@ -47,6 +48,7 @@ export default function Profile() {
   const { user, signOut } = useAuth();
   const [tab, setTab] = useState("Overview");
   const [photoOpen, setPhotoOpen] = useState(false);
+  const [nameOpen, setNameOpen] = useState(false);
 
   const { data: profile, source, refetch } = useResource(
     useCallback(() => apiMeProfile(), []),
@@ -69,8 +71,15 @@ export default function Profile() {
   const pct = Math.round((done / steps.length) * 100);
   const left = steps.filter((s) => !s.done);
 
-  const name = profile?.full_name || user?.full_name || ME.name;
+  // Her verified account name, and the username she chose. Other women see
+  // the username when there is one (app/core/usernames.py); so does she, here.
+  const fullName = profile?.full_name || user?.full_name || ME.name;
+  const username = profile?.username ?? user?.username ?? "";
+  const name = username || fullName;
   const verified = profile?.verification_status === "active";
+  const nextChange = profile?.username_next_change_at
+    ? new Date(profile.username_next_change_at).toLocaleDateString(undefined, { day: "numeric", month: "short", year: "numeric" })
+    : "";
   // The session's copy first: the photo sheet writes it the moment the server
   // accepts a change, so this face updates with the rail's and the top bar's
   // instead of waiting on the profile refetch.
@@ -141,7 +150,7 @@ export default function Profile() {
             <button type="button" onClick={() => setPhotoOpen(true)}
                     aria-label={avatar ? tr("profile.changePhoto2") : "Add a photo"} aria-haspopup="dialog"
                     className="ux-press block rounded-full">
-              <Avatar src={avatar} name={name} size={92} className="ux-hov h-[72px] w-[72px] lg:h-[92px] lg:w-[92px]" />
+              <Avatar src={avatar} name={fullName} size={92} className="ux-hov h-[72px] w-[72px] lg:h-[92px] lg:w-[92px]" />
             </button>
             {/* The badge is drawn at 30px on the photo's corner; its tap area
                 is the 44px square around it, so the whole corner answers. */}
@@ -162,6 +171,20 @@ export default function Profile() {
                   the server says it means. */}
               {verified && <Icons.BadgeCheck className="h-5 w-5" style={{ color: "var(--ux-blue)" }} />}
             </h1>
+            {/* The verified name under the username, so she knows both — and
+                the one place she picks or changes it. */}
+            <p className="mt-0.5 flex flex-wrap items-center gap-x-2 gap-y-1 text-xs" style={{ color: "var(--ux-muted)" }}>
+              {username && <span>{fullName}</span>}
+              {nextChange ? (
+                <span className="inline-flex items-center gap-1"><Icons.CalendarClock className="h-3.5 w-3.5" />Username can change on {nextChange}</span>
+              ) : (
+                <button type="button" onClick={() => setNameOpen(true)} data-username-edit
+                        className="ux-press inline-flex min-h-[30px] items-center gap-1 rounded-full px-2.5 font-bold"
+                        style={{ background: "var(--ux-brand-tint)", color: "var(--ux-brand)" }}>
+                  <Icons.AtSign className="h-3.5 w-3.5" />{username ? "Change username" : "Pick a username"}
+                </button>
+              )}
+            </p>
             <p className="mt-1 text-[15px] leading-snug lg:text-xsm" style={{ color: profile?.bio ? "var(--ux-muted)" : "var(--ux-faint)" }}>
               {profile?.bio || "You have not written a line about yourself yet."}
             </p>
@@ -356,7 +379,7 @@ export default function Profile() {
                   mean something.
                 </p>
                 <div className="mt-3">
-                  <Btn href="/app/wallet" variant="soft" size="sm" iconEnd="ArrowRight">{tr("profile.setAGoal")}</Btn>
+                  <Btn href="/app/goals" variant="soft" size="sm" iconEnd="ArrowRight">{tr("profile.setAGoal")}</Btn>
                 </div>
               </>
             )}
@@ -385,8 +408,10 @@ export default function Profile() {
         </Card>
       )}
 
+      <UsernameSheet key={nameOpen ? "open" : "shut"} open={nameOpen} onClose={() => setNameOpen(false)} current={username}
+                     fullName={fullName} onSaved={refetch} />
       <PhotoSheet open={photoOpen} onClose={() => setPhotoOpen(false)}
-                  name={name} avatar={avatar} onChanged={refetch} />
+                  name={fullName} avatar={avatar} onChanged={refetch} />
     </HomeShell>
   );
 }

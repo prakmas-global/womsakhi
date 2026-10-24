@@ -21,7 +21,7 @@ import {
 
 import { Saying, Tips } from "./wizard-views";
 import {
-  Area, Check, Choice, Label, Select, Steps, Text, Toggle,
+  Area, Check, Choice, Label, More, Picks, Select, Stepper, Steps, Text, Toggle,
 } from "@/components/ux/kit/form";
 
 /** What the four steps of adding a listing are called. */
@@ -41,6 +41,21 @@ type PriceMode = "fixed" | "range" | "quote";
 type Delivery = "physical" | "digital" | "service";
 
 const money = (n: number) => `₹${n.toLocaleString("en-IN")}`;
+
+/** Sentences sellers write again and again — tapped, not typed. */
+const DELIVERY_PHRASES = [
+  "Wrapped in cloth, not plastic", "Hand delivery in my area", "Cash or UPI on delivery",
+  "Pick up from my home", "Sent by post with tracking", "Ready in 2–3 days",
+];
+const QUOTE_PHRASES = [
+  "Tell me the size", "Tell me the colour", "Send a photo of what you want",
+  "Say when you need it", "Bulk orders welcome",
+];
+/** Add or remove one phrase in a ". "-joined note. */
+const togglePhrase = (note: string, phrase: string) => {
+  const parts = note.split(". ").map((x) => x.trim()).filter(Boolean);
+  return (parts.includes(phrase) ? parts.filter((x) => x !== phrase) : [...parts, phrase]).join(". ");
+};
 
 const TIPS: Record<number, { title: string; items: string[] }> = {
   1: { title: "Making it findable", items: [
@@ -147,6 +162,18 @@ export default function AddListingPage() {
 
   const subs = useMemo(() => CATEGORIES.find((c) => c.label === cat)?.subs ?? [], [cat, CATEGORIES]);
 
+  /** Written for her when she leaves the one-liner empty: "Blouses — handmade, made to order". */
+  const autoLine = useMemo(() => {
+    const what = sub || cat;
+    if (!what) return "";
+    const how = picked.slice(0, 3).join(", ").toLowerCase();
+    return how ? `${what} — ${how}` : what;
+  }, [sub, cat, picked]);
+  const tagIdeas = useMemo(
+    () => Array.from(new Set([sub, cat, ...picked].filter(Boolean))).slice(0, 8), [sub, cat, picked]);
+  const tagList = tags.split(",").map((x) => x.trim()).filter(Boolean);
+
+
   const [saveError, setSaveError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const [photos, setPhotos] = useState<string[]>([]);
@@ -225,7 +252,7 @@ export default function AddListingPage() {
       await apiSaveListing({
         kind: kind === "service" ? "service" : "product",
         title: title.trim(),
-        desc: [short.trim(), long.trim()].filter(Boolean).join("\n\n"),
+        desc: [short.trim() || autoLine, long.trim()].filter(Boolean).join("\n\n"),
         price_minor: mode === "quote" ? 0 : Math.round(effectivePrice * 100),
         rate: mode === "quote" ? "By quote" : priceType,
         stock: kind === "service" || mode === "quote" || !trackStock
@@ -236,7 +263,8 @@ export default function AddListingPage() {
         status: asDraft ? "paused" : "live",
         price_mode: mode,
         price_high_minor: mode === "range" && band ? Math.round(band.high * 100) : 0,
-        compare_at_minor: Math.round((Number(was.replace(/[^\d.]/g, "")) || 0) * 100),
+        // "Run a discount" is the one way to show a saving: the old price is her price.
+        compare_at_minor: discountOn && discount ? Math.round((Number(price.replace(/[^\d.]/g, "")) || 0) * 100) : 0,
         min_quantity: Math.max(1, Number(minQty.replace(/[^\d]/g, "")) || 1),
         low_stock_at: Math.max(0, Number(lowAt.replace(/[^\d]/g, "")) || 0),
         continue_when_out: whenOut === "continue",
@@ -246,7 +274,7 @@ export default function AddListingPage() {
         free_shipping: freeShip,
         delivery_note: deliveryNote.trim(),
         highlights: picked,
-        tags: tags.split(",").map((x) => x.trim()).filter(Boolean).slice(0, 12),
+        tags: (tagList.length ? tagList : tagIdeas).slice(0, 12),
         quote_fields: mode === "quote" ? quoteAsk : [],
         quote_message: mode === "quote" ? quoteMsg.trim() : "",
         response_time: mode === "quote" ? respondIn : "",
@@ -259,14 +287,15 @@ export default function AddListingPage() {
       setSaving(false);
     }
   }, [kind, title, short, long, mode, price, priceType, trackStock, stock, sub, cat, router,
-      saving, uploading, photos, band, discountOn, discount, was, minQty, lowAt, whenOut,
-      delivery, prep, ships, freeShip, deliveryNote, picked, tags, quoteAsk, quoteMsg, respondIn, clearDraft]);
+      saving, uploading, photos, band, discountOn, discount, minQty, lowAt, whenOut,
+      delivery, prep, ships, freeShip, deliveryNote, picked, quoteAsk, quoteMsg, respondIn, clearDraft,
+      autoLine, tagList, tagIdeas]);
 
   const toggleIn = useCallback((list: string[], set: (v: string[]) => void, id: string) => {
     set(list.includes(id) ? list.filter((x) => x !== id) : [...list, id]);
   }, []);
 
-  const step1Ok = title.trim().length > 2 && cat && short.trim().length > 5;
+  const step1Ok = title.trim().length > 2 && !!cat;
   const step2Ok = mode === "quote" ? quoteOn : mode === "range" ? Boolean(band && band.low > 0)
     : Number(price.replace(/[^\d.]/g, "")) > 0;
 
@@ -277,7 +306,7 @@ export default function AddListingPage() {
   }, []);
 
   const priceNum = Number(price.replace(/[^\d.]/g, "")) || 0;
-  const wasNum = Number(was.replace(/[^\d.]/g, "")) || 0;
+  const wasNum = discountOn ? Number(price.replace(/[^\d.]/g, "")) || 0 : 0;
   const discNum = Number(discount.replace(/[^\d.]/g, "")) || 0;
   const shownPrice = discountOn && discNum ? discNum : priceNum;
   const off = wasNum > shownPrice && shownPrice > 0
@@ -334,7 +363,7 @@ export default function AddListingPage() {
                   </p>
                 )}
                 <p className="mt-2 line-clamp-2 text-2xs leading-snug" style={{ color: v("--ux-muted") }}>
-                  {short.trim() || "Your short description shows here."}
+                  {short.trim() || autoLine || "Your short description shows here."}
                 </p>
               </div>
             </div>
@@ -381,16 +410,8 @@ export default function AddListingPage() {
                     on={kind === "both"} onClick={() => setKind("both")} />
           </div>
 
-          <div className="mt-5">
-            <Label need>{tr("circlesNew.whatIsItCalled")}</Label>
-            <Text value={title} onChange={setTitle} max={100} label="Title"
-                  placeholder={tr("documentsNew.handmadeCottonKurta")} />
-            <span className="mt-1 block text-end text-2xs" style={{ color: v("--ux-faint") }}>
-              {title.length}/100
-            </span>
-          </div>
-
-          <div className="mt-4 grid gap-4 sm:grid-cols-2">
+          {/* Category first: once she has picked it, the name is one tap. */}
+          <div className="mt-5 grid gap-4 sm:grid-cols-2">
             <div>
               <Label need>Category</Label>
               <Select value={cat} onChange={(c) => { setCat(c); setSub(""); }} label="Category"
@@ -398,21 +419,18 @@ export default function AddListingPage() {
             </div>
             <div>
               <Label>Kind of {cat ? "it" : "thing"}</Label>
-              <Select value={sub} onChange={setSub} label="Subcategory"
-                      placeholder={cat ? "Choose one" : "Pick a category first"} options={subs} />
+              <Select value={sub} onChange={(x) => { setSub(x); if (!title.trim() || subs.includes(title)) setTitle(x); }}
+                      label="Subcategory" placeholder={cat ? "Choose one" : "Pick a category first"} options={subs} />
             </div>
           </div>
 
           <div className="mt-4">
-            <Label need>{tr("documentsNew.inOneLine")}</Label>
-            <Area value={short} onChange={setShort} max={200} rows={2} label={tr("circlesCreate.shortDescription")}
-                  placeholder={tr("documentsNew.handStitchedCottonKurtaAvailableIn")} />
-          </div>
-
-          <div className="mt-3">
-            <Label>{tr("messages.everythingElse")}</Label>
-            <Area value={long} onChange={setLong} max={1000} rows={5} label={tr("documentsNew.detailedDescription")}
-                  placeholder={tr("documentsNew.materialSizesHowItIsMade")} />
+            <Label need>{tr("circlesNew.whatIsItCalled")}</Label>
+            <Text value={title} onChange={setTitle} max={100} label="Title"
+                  placeholder={tr("documentsNew.handmadeCottonKurta")} />
+            {cat && !title.trim() && (
+              <Picks options={subs} value={title} onPick={(x) => { setTitle(x); setSub(x); }} label="Quick names" />
+            )}
           </div>
 
           <div className="mt-4">
@@ -434,14 +452,31 @@ export default function AddListingPage() {
             </div>
           </div>
 
-          <div className="mt-4">
-            <Label>{tr("documentsNew.wordsPeopleMightSearch")}</Label>
-            <Text value={tags} onChange={setTags} label="Tags"
-                  placeholder={tr("documentsNew.cottonKurtaHandmadeFestival")} />
-            <p className="mt-1 text-2xs" style={{ color: v("--ux-faint") }}>
-              {tr("documentsNew.separateWithCommasTheseHelpBuyers")}
+          {autoLine && !short.trim() && (
+            <p className="mt-4 rounded-[12px] px-4 py-3 text-xsm leading-relaxed" style={{ background: v("--ux-surface-2"), color: v("--ux-ink-2") }}>
+              <Icons.Sparkles className="me-1.5 inline h-[14px] w-[14px] align-[-2px]" style={{ color: v("--ux-brand") }} />
+              Buyers will read: <b style={{ color: v("--ux-ink") }}>{autoLine}</b>
             </p>
-          </div>
+          )}
+
+          <More label="Add your own words (optional)" open={!!(short || long || tags)}>
+            <Label>{tr("documentsNew.inOneLine")}</Label>
+            <Area value={short} onChange={setShort} max={200} rows={2} label={tr("circlesCreate.shortDescription")}
+                  placeholder={autoLine || tr("documentsNew.handStitchedCottonKurtaAvailableIn")} />
+            <div className="mt-3">
+              <Label>{tr("messages.everythingElse")}</Label>
+              <Area value={long} onChange={setLong} max={1000} rows={4} label={tr("documentsNew.detailedDescription")}
+                    placeholder={tr("documentsNew.materialSizesHowItIsMade")} />
+            </div>
+            <div className="mt-3">
+              <Label>{tr("documentsNew.wordsPeopleMightSearch")}</Label>
+              <Picks options={tagIdeas} value={tagList} multi label="Search words"
+                     onPick={(t) => setTags((tagList.includes(t) ? tagList.filter((x) => x !== t) : [...tagList, t]).join(", "))} />
+              <p className="mt-1.5 text-2xs" style={{ color: v("--ux-faint") }}>
+                Tap to add. If you add none, we use your category and highlights.
+              </p>
+            </div>
+          </More>
 
           <div className={`mt-6 flex flex-wrap items-center justify-between gap-3 border-t pt-4 ${STEP_NAV}`}
                style={{ borderColor: v("--ux-line") }}>
@@ -494,7 +529,7 @@ export default function AddListingPage() {
 
             {mode !== "quote" ? (
               <>
-                <div className="mt-5 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                <div className="mt-5 grid gap-4 sm:grid-cols-2">
                   <div>
                     <Label need>{tr("documentsNew.yourPrice")}</Label>
                     <Text value={price} onChange={setPrice} label="Price" prefix="₹" type="number"
@@ -504,14 +539,6 @@ export default function AddListingPage() {
                         Within {money(band.low)} – {money(band.high)}
                       </p>
                     )}
-                  </div>
-                  <div>
-                    <Label>{tr("documentsNew.whatItUsedToBe")}</Label>
-                    <Text value={was} onChange={setWas} label={tr("documentsNew.compareAtPrice")} prefix="₹" type="number"
-                          placeholder="2000" />
-                    <p className="mt-1 text-2xs" style={{ color: v("--ux-faint") }}>
-                      {tr("documentsNew.shownStruckThroughSoTheSaving")}
-                    </p>
                   </div>
                   <div>
                     <Label>{tr("documentsNew.soldBy")}</Label>
@@ -532,9 +559,9 @@ export default function AddListingPage() {
                   )}
                 </div>
 
-                <div className="mt-4 max-w-[240px]">
+                <div className="mt-4">
                   <Label>{tr("documentsNew.smallestOrderYouWillTake")}</Label>
-                  <Text value={minQty} onChange={setMinQty} label={tr("documentsNew.minimumOrderQuantity")} type="number" />
+                  <Stepper value={minQty} onChange={setMinQty} label={tr("documentsNew.minimumOrderQuantity")} min={1} presets={[1, 2, 5, 10]} />
                 </div>
               </>
             ) : (
@@ -558,9 +585,13 @@ export default function AddListingPage() {
 
                       <div className="mt-4">
                         <Label>{tr("documentsNew.anythingYouWantToSayFirst")}</Label>
-                        <Area value={quoteMsg} onChange={setQuoteMsg} max={300} rows={3}
-                              label={tr("documentsNew.messageToBuyers")}
-                              placeholder={tr("documentsNew.tellMeTheSizeTheColour")} />
+                        <Picks options={QUOTE_PHRASES} value={quoteMsg.split(". ")} multi label={tr("documentsNew.messageToBuyers")}
+                               onPick={(x) => setQuoteMsg(togglePhrase(quoteMsg, x))} />
+                        <div className="mt-2.5">
+                          <Area value={quoteMsg} onChange={setQuoteMsg} max={300} rows={2}
+                                label={tr("documentsNew.messageToBuyers")}
+                                placeholder={tr("documentsNew.tellMeTheSizeTheColour")} />
+                        </div>
                       </div>
 
                       <div className="mt-3 max-w-[280px]">
@@ -622,16 +653,16 @@ export default function AddListingPage() {
               </div>
 
               {trackStock && (
-                <div className="mt-4 grid gap-4 lg:grid-cols-[160px_160px_minmax(0,1fr)]">
+                <div className="mt-4 grid gap-4 sm:grid-cols-2">
                   <div>
                     <Label need>{tr("documentsNew.howManyNow")}</Label>
-                    <Text value={stock} onChange={setStock} label={tr("documentsNew.totalStock")} type="number" placeholder="50" />
+                    <Stepper value={stock} onChange={setStock} label={tr("documentsNew.totalStock")} presets={[1, 5, 10, 25, 50]} />
                   </div>
                   <div>
                     <Label>{tr("documentsNew.warnMeAt")}</Label>
-                    <Text value={lowAt} onChange={setLowAt} label={tr("documentsNew.lowStockAlert")} type="number" />
+                    <Stepper value={lowAt} onChange={setLowAt} label={tr("documentsNew.lowStockAlert")} presets={[2, 5, 10]} />
                   </div>
-                  <div className="rounded-[12px] p-4 lg:p-3.5" style={{ background: v("--ux-surface-2") }}>
+                  <div className="rounded-[12px] p-4 sm:col-span-2 lg:p-3.5" style={{ background: v("--ux-surface-2") }}>
                     <span className="mb-2 block text-xsm font-bold" style={{ color: v("--ux-ink") }}>
                       {tr("documentsNew.whenItRunsOut")}
                     </span>
@@ -726,12 +757,16 @@ export default function AddListingPage() {
               </div>
             )}
 
-            <div className="mt-4">
-              <Label>{tr("documentsNew.anythingElseTheyShouldKnow")}</Label>
-              <Area value={deliveryNote} onChange={setDeliveryNote} max={300} rows={2}
-                    label={tr("documentsNew.additionalDeliveryInformation")}
-                    placeholder={tr("documentsNew.wrappedInClothNotPlasticUsually")} />
-            </div>
+            <More label={`${tr("documentsNew.anythingElseTheyShouldKnow")} (optional)`} open={!!deliveryNote}>
+              <Picks options={DELIVERY_PHRASES} value={deliveryNote.split(". ")} multi
+                     label={tr("documentsNew.additionalDeliveryInformation")}
+                     onPick={(x) => setDeliveryNote(togglePhrase(deliveryNote, x))} />
+              <div className="mt-2.5">
+                <Area value={deliveryNote} onChange={setDeliveryNote} max={300} rows={2}
+                      label={tr("documentsNew.additionalDeliveryInformation")}
+                      placeholder={tr("documentsNew.wrappedInClothNotPlasticUsually")} />
+              </div>
+            </More>
 
             <div className={`mt-5 flex flex-wrap items-center justify-between gap-3 border-t pt-4 ${STEP_NAV}`}
                  style={{ borderColor: v("--ux-line") }}>

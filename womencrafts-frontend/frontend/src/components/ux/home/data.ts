@@ -152,9 +152,9 @@ const CONTENT_HITS: SearchHit[] = [
     icon: "UsersRound", tint: "--ux-tint-pink", ink: "--ux-pink", href: "/app/circles" },
 
   { id: "s14", title: "Mudra Loan for small business", sub: "Government scheme · Up to ₹10 lakh", kind: "Scheme",
-    icon: "Landmark", tint: "--ux-tint-green", ink: "--ux-green", href: "/app/support-fund" },
+    icon: "Landmark", tint: "--ux-tint-green", ink: "--ux-green", href: "/app/haq" },
   { id: "s15", title: "Mahila Samman Savings Certificate", sub: "Government scheme · 7.5% interest", kind: "Scheme",
-    icon: "Landmark", tint: "--ux-tint-green", ink: "--ux-green", href: "/app/support-fund" },
+    icon: "Landmark", tint: "--ux-tint-green", ink: "--ux-green", href: "/app/haq" },
 
 ];
 

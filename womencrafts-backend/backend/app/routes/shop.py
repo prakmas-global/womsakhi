@@ -18,9 +18,12 @@ from datetime import datetime, timedelta, timezone
 from typing import Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Query, Request, status
+from pydantic import BaseModel, Field
 from pymongo import ReturnDocument
 from pymongo.errors import DuplicateKeyError
 
+from app.core import cache, store
+from app.core.media import MediaRefOptional
 from app.core.rbac import require_active_member
 from app.core.serializers import to_object_id
 from app.db.mongodb import get_database
@@ -143,6 +146,100 @@ async def handle_for(me: dict) -> str:
     return f"{base}-{str(me['_id'])[-6:]}"
 
 
+# ── her store: name, pictures, open or closed (rules in app/core/store.py) ──
+
+class StoreView(BaseModel):
+    name: str = ""
+    #: What buyers see: her name for it, or "<first name>'s shop".
+    display_name: str
+    tagline: str = ""
+    logo: str = ""
+    cover: str = ""
+    open: bool = True
+    away_reason: str = ""
+    back_on: str = ""
+    #: Her public shop address, e.g. "priya-sharma" for /s/priya-sharma.
+    handle: str = ""
+    away_reasons: list[str] = []
+    live_listings: int = 0
+
+
+class StoreUpdate(BaseModel):
+    name: Optional[str] = Field(None, max_length=40)
+    tagline: Optional[str] = Field(None, max_length=90)
+    logo: MediaRefOptional = None
+    cover: MediaRefOptional = None
+
+
+class Availability(BaseModel):
+    open: bool
+    #: YYYY-MM-DD she is back; on that day the shop opens again by itself.
+    back_on: str = ""
+    away_reason: str = Field("", max_length=60)
+
+
+async def _store_view(me: dict) -> StoreView:
+    fresh = await _users().find_one({"_id": me["_id"]}, {"store": 1, "full_name": 1, "shop_handle": 1}) or me
+    live = await get_database()[ListingModel.collection_name].count_documents(
+        {"user_id": str(me["_id"]), "status": ListingModel.STATUS_LIVE})
+    return StoreView(**store.view(fresh), handle=await handle_for({**me, **fresh}),
+                     away_reasons=store.AWAY_REASONS, live_listings=live)
+
+
+@router.get("/store", response_model=StoreView, summary="My store's name, pictures and opening")
+async def my_store(me: dict = Depends(require_active_member)):
+    return await _store_view(me)
+
+
+@router.put("/store", response_model=StoreView, summary="Name my store and set its pictures")
+async def update_store(body: StoreUpdate, me: dict = Depends(require_active_member)):
+    now = datetime.now(timezone.utc)
+    sets: dict = {"store.updated_at": now}
+    if body.name is not None:
+        sets["store.name"] = " ".join(body.name.split())
+    if body.tagline is not None:
+        sets["store.tagline"] = " ".join(body.tagline.split())
+    if body.logo is not None:
+        sets["store.logo"] = body.logo
+    if body.cover is not None:
+        sets["store.cover"] = body.cover
+    await _users().update_one({"_id": me["_id"]}, {"$set": sets})
+    await record(me, "store.update", detail=", ".join(k.split(".")[1] for k in sets if k != "store.updated_at"))
+    _forget_public(me)
+    return await _store_view(me)
+
+
+@router.put("/store/availability", response_model=StoreView, summary="Open or close my store for orders")
+async def set_availability(body: Availability, me: dict = Depends(require_active_member)):
+    now = datetime.now(timezone.utc)
+    if body.open:
+        sets = {"store.open": True, "store.back_on": "", "store.away_reason": "", "store.updated_at": now}
+    else:
+        back = body.back_on.strip()[:10]
+        if back:
+            try:
+                day = datetime.strptime(back, "%Y-%m-%d").date()
+            except ValueError:
+                raise HTTPException(status.HTTP_422_UNPROCESSABLE_ENTITY, "Pick the day you are back.")
+            if day <= store._today():
+                raise HTTPException(status.HTTP_422_UNPROCESSABLE_ENTITY, "The day you are back must be after today.")
+            if day > store._today() + timedelta(days=180):
+                raise HTTPException(status.HTTP_422_UNPROCESSABLE_ENTITY, "Pick a day within the next six months.")
+        sets = {"store.open": False, "store.back_on": back, "store.away_reason": body.away_reason.strip(),
+                "store.closed_at": now, "store.updated_at": now}
+    await _users().update_one({"_id": me["_id"]}, {"$set": sets})
+    await record(me, "store.open" if body.open else "store.close",
+                 detail="" if body.open else f"back {body.back_on or 'when she opens it'}; {body.away_reason}")
+    _forget_public(me)
+    return await _store_view(me)
+
+
+def _forget_public(me: dict) -> None:
+    # The public shop page is cached for 30s; her change should show at once.
+    if me.get("shop_handle"):
+        cache.forget(f"public:shop:{me['shop_handle']}")
+
+
 @router.get("/summary", response_model=ShopSummary, summary="My business at a glance")
 async def summary(me: dict = Depends(require_active_member)):
     uid = str(me["_id"])
@@ -191,8 +288,13 @@ async def summary(me: dict = Depends(require_active_member)):
     repeat = round(sum(1 for n in buyers.values() if n > 1) * 100 / len(buyers)) if buyers else 0
 
     stars = [int(r.get("stars", 0)) for r in reviews if r.get("stars")]
+    # Her store's name and pictures from Store settings (app/core/store.py).
+    shop = store.view(me)
     return ShopSummary(
-        name=me.get("full_name", "") + "'s work",
+        name=shop["display_name"],
+        logo=shop["logo"],
+        cover=shop["cover"],
+        open=shop["open"],
         # The bare handle, which `/s/<handle>` resolves and
         # `GET /public/shop/<handle>` serves. See `handle_for`.
         handle=await handle_for(me),

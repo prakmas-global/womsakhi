@@ -43,7 +43,7 @@ export interface NoteContents {
  */
 export function NoteBtn({
   label, title, to, placeholder, stars = false, sent, sentBody, sentLink,
-  send, choices, choiceDefault = "", choiceLabel = "What is this about?",
+  send, choices, choiceDefault = "", choiceLabel = "What is this about?", phrases, onSentClosed,
   variant = "soft", size = "sm", icon = "MessageCircle", full,
 }: {
   /** What the button says. */
@@ -78,6 +78,17 @@ export function NoteBtn({
    */
   choiceDefault?: string;
   choiceLabel?: string;
+  /**
+   * Sentences she can tap into the box instead of typing — "I want help with
+   * pricing". Each tap adds or removes one; the box stays for her own words.
+   */
+  phrases?: readonly string[];
+  /**
+   * Called when she closes the box AFTER it was sent — the moment to refresh
+   * the screen behind it. Refreshing straight after the send unmounted the
+   * box before she ever saw "Sent".
+   */
+  onSentClosed?: () => void;
   variant?: "primary" | "soft" | "outline" | "ghost" | "on-brand";
   size?: "sm" | "md" | "lg";
   icon?: string;
@@ -112,7 +123,9 @@ export function NoteBtn({
   }, [open]);
 
   const close = () => {
+    const wasSent = done;
     setOpen(false); setDone(false); setText(""); setRating(0); setChoice(choiceDefault); setProblem("");
+    if (wasSent) onSentClosed?.();
   };
 
   /**
@@ -228,6 +241,26 @@ export function NoteBtn({
                         </button>
                       ))}
                     </div>
+                  </div>
+                )}
+
+                {phrases && phrases.length > 0 && (
+                  <div className="mb-2.5 flex flex-wrap gap-2" role="group" aria-label="Tap to add">
+                    {phrases.map((ph) => {
+                      const parts = text.split(". ").map((x) => x.trim().replace(/\.$/, "")).filter(Boolean);
+                      const on = parts.includes(ph);
+                      return (
+                        <button key={ph} type="button" aria-pressed={on}
+                                onClick={() => setText(
+                                  (on ? parts.filter((x) => x !== ph) : [...parts, ph]).join(". "))}
+                                className="ux-press ux-sq flex min-h-[34px] items-center gap-1.5 rounded-full px-3 text-xs font-semibold"
+                                style={{ background: on ? "var(--ux-brand-tint)" : "var(--ux-surface-2)",
+                                         color: on ? "var(--ux-brand)" : "var(--ux-ink-2)" }}>
+                          {on ? <Icons.Check className="h-[12px] w-[12px]" /> : <Icons.Plus className="h-[12px] w-[12px]" />}
+                          {ph}
+                        </button>
+                      );
+                    })}
                   </div>
                 )}
 

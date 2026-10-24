@@ -41,15 +41,15 @@ const AUTH_PREVIEW = process.env.NODE_ENV !== "production";
  * badge is hidden (auth-cards.css) and Google's required notice is shown in
  * its place, under the card.
  *
- * Drawn as the approved screen B4 (Version 11) on AuthShell's "join" photo.
+ * Drawn as screen B4 inside AuthShell.
  */
 type Step = "enter" | "confirm";
 
 const RECAPTCHA_ID = "phone-recaptcha";
 
 const CAPTION = {
-  title: "A safe space for women to learn, work and grow",
-  text: "Women only. Every member is checked by a real person.",
+  title: "One more way to reach you",
+  text: "Your number stays private. It keeps your account yours if you lose your email.",
 };
 
 export default function PhonePage() {

@@ -38,7 +38,7 @@ export type Entry = {
   state: "paid" | "owed" | "promised";
   on: string;
   /** Where the sale actually happened. Most of it is not on the platform. */
-  via: "whatsapp" | "shop" | "person" | "circle";
+  via: "whatsapp" | "shop" | "person" | "circle" | "course";
   /** Days since it was due, when it is owed. */
   lateDays?: number;
 };
@@ -60,6 +60,8 @@ export const VIA_LABEL: Record<Entry["via"], string> = {
   shop: "A shop",
   person: "In person",
   circle: "Your circle",
+  // A learner's payment for a course she teaches, confirmed in Teach.
+  course: "A course you teach",
 };
 
 /* ── proof of income ─────────────────────────────────────────────────────── */

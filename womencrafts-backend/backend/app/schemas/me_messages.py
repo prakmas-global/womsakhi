@@ -33,6 +33,7 @@ class ConversationRow(BaseModel):
     starred: bool = False
     context: Optional[dict] = None
     party: dict[str, Any] = {}
+    closed: bool = False
 
 
 class ConversationDetail(ConversationRow):
@@ -43,6 +44,14 @@ class ConversationDetail(ConversationRow):
 
 class SendMessage(BaseModel):
     text: str = Field(..., min_length=1, max_length=4000)
+
+
+class StartConversation(BaseModel):
+    """'Message her' — open (or continue) a thread with one member."""
+    user_id: str = Field(..., min_length=1, max_length=40)
+    text: str = Field(..., min_length=2, max_length=2000)
+    #: What it is about, shown under her name in both inboxes: "Swap: school uniform".
+    about: str = Field("", max_length=120)
 
 
 class EditMessage(BaseModel):

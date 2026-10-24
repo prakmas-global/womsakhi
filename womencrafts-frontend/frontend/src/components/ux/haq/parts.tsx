@@ -1,13 +1,14 @@
 "use client";
 
-import { useMemo } from "react";
 
 import { useT } from "@/i18n";
 import * as Icons from "@/components/ux/icons";
 import { Btn, Card, I, IconTile, Pill, Progress, v } from "@/components/ux/kit";
 import { formatMoney as formatRupees } from "@/components/ux/kit/money";
-import { COMPANIONS as RAW_COMPANIONS, STATUS_LABEL as RAW_STATUS_LABEL, STATUS_TONE as RAW_STATUS_TONE, type Companion, type Haq, type Late, type Paper } from "./data";
+import { STATUS_LABEL as RAW_STATUS_LABEL, STATUS_TONE as RAW_STATUS_TONE, type Haq, type Paper } from "./data";
 import { useTranslated } from "@/i18n/data";
+import { MediaCard } from "@/components/ux/media/MediaCard";
+import { artFor } from "@/components/ux/media/art";
 
 /* ── the lead ────────────────────────────────────────────────────────────── */
 
@@ -19,10 +20,29 @@ import { useTranslated } from "@/i18n/data";
  * may be eligible for 12 schemes!" — and the trial evidence says that framing
  * converts almost nobody. She is not browsing. She is about to be cut off.
  */
-export function AtRisk({ monthlyMinor, count, soonestDays }: {
+export function AtRisk({ monthlyMinor, count, soonestDays, tracked = 1 }: {
   monthlyMinor: number; count: number; soonestDays: number;
+  /** How many schemes she has marked. Zero: we know nothing, so say so. */
+  tracked?: number;
 }) {
   const tr = useT();
+  if (count === 0 && tracked === 0) {
+    // "Nothing is about to stop" is only true once she has told us what she gets.
+    return (
+      <Card pad={20} style={{ background: v("--ux-brand-tint"), borderColor: "transparent" }}>
+        <div className="flex items-center gap-3.5">
+          <IconTile icon="ListChecks" tint="--ux-surface" ink="--ux-brand" size={44} />
+          <div className="min-w-0">
+            <p className="text-base font-bold" style={{ color: v("--ux-ink") }}>Tell us what you already get</p>
+            <p className="mt-0.5 text-xsm leading-relaxed" style={{ color: v("--ux-ink-2") }}>
+              Open any scheme below and tap where it stands for you. We will warn you before
+              a payment stops, and remind you of every date.
+            </p>
+          </div>
+        </div>
+      </Card>
+    );
+  }
   if (count === 0) {
     return (
       <Card pad={20} style={{ background: v("--ux-tint-green"), borderColor: "transparent" }}>
@@ -97,63 +117,54 @@ export function Countdown({ days }: { days: number }) {
 /* ── one benefit ─────────────────────────────────────────────────────────── */
 
 /** `className` lets a screen fold the row into a grouped list on a phone. */
-export function HaqRow({ h, onOpen, className = "" }: { h: Haq; onOpen: (id: string) => void; className?: string }) {
+export function HaqRow({ h }: { h: Haq; onOpen?: (id: string) => void; className?: string }) {
   const STATUS_LABEL = useTranslated(RAW_STATUS_LABEL);
   const STATUS_TONE = useTranslated(RAW_STATUS_TONE);
   const tone = STATUS_TONE[h.status];
+  const badgeTone = h.status === "receiving" ? "green" : h.status === "stopped" || h.status === "at-risk" ? "orange" : "light";
+  const amount = h.amountMinor > 0 ? formatRupees(h.amountMinor) : h.amountLabel || "";
   return (
-    <button
-      type="button"
-      onClick={() => onOpen(h.id)}
-      className={`ux-press ux-sq flex w-full items-start gap-3.5 rounded-[12px] border p-3.5 text-left transition-colors max-lg:p-4 ${className}`}
-      style={{ borderColor: v("--ux-line"), background: v("--ux-surface") }}
+    <MediaCard
+      href={`/app/haq/${h.id}`}
+      // What the scheme pays for, at a glance: pension → coins, gas → the
+      // kitchen, maternity → health, papers → the woman reading her form.
+      image={artFor([h.name, h.gives, h.body], "scheme", null, h.id)}
+      alt={h.name}
+      topLeft={{ text: STATUS_LABEL[h.status], tone: badgeTone }}
+      topRight={amount ? { text: amount, tone: "dark" } : null}
+      overlay={h.cadence ? <span>{h.cadence}</span> : null}
+      title={h.name}
+      subtitle={h.body}
     >
-      <IconTile icon={h.icon} tint={h.tint} ink={h.ink} size={42} />
-      <div className="min-w-0 flex-1">
-        <div className="flex flex-wrap items-center gap-2">
-          <p className="truncate text-sm font-bold" style={{ color: v("--ux-ink") }}>{h.name}</p>
-          <span className="rounded-full px-2 py-[2px] text-2xs font-bold uppercase tracking-[0.07em]"
-                style={{ background: v(tone.tint), color: v(tone.ink) }}>
-            {STATUS_LABEL[h.status]}
+      {h.status === "unknown" && h.fits && h.eligibility.length > 0 && (
+        <p className="inline-flex items-center gap-1 rounded-full px-2 py-[2px] text-2xs font-bold"
+           style={{ background: v("--ux-tint-green"), color: v("--ux-green-ink") }}>
+          <I name="Sparkles" className="h-[11px] w-[11px]" />From your answers, this may be for you
+        </p>
+      )}
+      {h.action && (
+        <div className="mt-2 flex flex-wrap items-center gap-2">
+          <span className="inline-flex items-center gap-1.5 text-xsm font-semibold" style={{ color: v("--ux-ink-2") }}>
+            <I name="ArrowRight" className="h-[13px] w-[13px]" style={{ color: v("--ux-brand") }} />
+            {h.action}
           </span>
+          {typeof h.dueDays === "number" && <Countdown days={h.dueDays} />}
         </div>
-        <p className="mt-1 truncate text-xs" style={{ color: v("--ux-muted") }}>{h.body}</p>
-
-        {h.action && (
-          <div className="mt-2.5 flex flex-wrap items-center gap-2">
-            <span className="inline-flex items-center gap-1.5 text-xsm font-semibold"
-                  style={{ color: v("--ux-ink-2") }}>
-              <I name="ArrowRight" className="h-[13px] w-[13px]" style={{ color: v("--ux-brand") }} />
-              {h.action}
-            </span>
-            {typeof h.dueDays === "number" && <Countdown days={h.dueDays} />}
-          </div>
-        )}
-
-        {h.stoppedBecause && (
-          <p className="mt-2 rounded-[12px] px-2.5 py-2 text-xs leading-relaxed lg:rounded-[8px]"
-             style={{ background: v("--ux-danger-tint"), color: v("--ux-ink-2") }}>
-            {h.stoppedBecause}
-          </p>
-        )}
-
-        {!h.openNow && h.openNote && (
-          <p className="mt-2 flex items-start gap-1.5 text-xs leading-relaxed"
-             style={{ color: v("--ux-muted") }}>
-            <I name="Info" className="mt-[2px] h-[13px] w-[13px] shrink-0" />
-            {h.openNote}
-          </p>
-        )}
-      </div>
-      <div className="shrink-0 text-right">
-        {h.amountMinor > 0 && (
-          <p className="text-base font-extrabold tabular-nums" style={{ color: v("--ux-ink") }}>
-            {formatRupees(h.amountMinor)}
-          </p>
-        )}
-        <p className="mt-0.5 text-2xs" style={{ color: v("--ux-muted") }}>{h.cadence}</p>
-      </div>
-    </button>
+      )}
+      {h.stoppedBecause && (
+        <p className="mt-2 rounded-[12px] px-2.5 py-2 text-xs leading-relaxed lg:rounded-[8px]"
+           style={{ background: v("--ux-danger-tint"), color: v("--ux-ink-2") }}>
+          {h.stoppedBecause}
+        </p>
+      )}
+      {!h.openNow && h.openNote && (
+        <p className="mt-2 flex items-start gap-1.5 text-xs leading-relaxed" style={{ color: v("--ux-muted") }}>
+          <I name="Info" className="mt-[2px] h-[13px] w-[13px] shrink-0" />
+          {h.openNote}
+        </p>
+      )}
+      <span className="sr-only" style={{ color: v(tone.ink) }}>{STATUS_LABEL[h.status]}</span>
+    </MediaCard>
   );
 }
 
@@ -196,63 +207,6 @@ export function PaperRow({ p, onFix, className = "" }: { p: Paper; onFix: (id: s
 }
 
 /* ── accompany ───────────────────────────────────────────────────────────── */
-
-/**
- * The trial arm that worked.
- *
- * Note what is deliberately absent: a rating, a price, a "top rated" badge.
- * She is not hiring a service. She is asking a woman she already knows, who
- * has stood in that particular queue, to come with her. What is shown instead
- * is what that woman has actually done.
- */
-export function CompanionCard({ c, chosen, onChoose }: {
-  c: Companion; chosen: boolean; onChoose: (id: string) => void;
-}) {
-  return (
-    <button
-      type="button"
-      onClick={() => onChoose(c.id)}
-      aria-pressed={chosen}
-      className="ux-press ux-sq flex w-full items-start gap-3.5 rounded-[12px] border p-4 text-left transition-colors"
-      style={{
-        borderColor: chosen ? v("--ux-brand") : v("--ux-line"),
-        background: chosen ? v("--ux-brand-tint") : v("--ux-surface"),
-      }}
-    >
-      <span className="grid h-[42px] w-[42px] shrink-0 place-items-center rounded-full text-base font-bold"
-            style={{ background: v("--ux-brand-tint-2"), color: v("--ux-brand") }}>
-        {c.name.charAt(0)}
-      </span>
-      <div className="min-w-0 flex-1">
-        <p className="text-sm font-bold" style={{ color: v("--ux-ink") }}>{c.name}</p>
-        <p className="mt-1 text-xsm leading-relaxed" style={{ color: v("--ux-ink-2") }}>{c.did}</p>
-        <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs"
-             style={{ color: v("--ux-muted") }}>
-          <span className="inline-flex items-center gap-1.5">
-            <I name="MapPin" className="h-[12px] w-[12px]" />{c.knows}
-          </span>
-          <span className="inline-flex items-center gap-1.5">
-            <I name="CalendarDays" className="h-[12px] w-[12px]" />Free {c.free}
-          </span>
-        </div>
-      </div>
-      {chosen && (
-        <span className="grid h-[22px] w-[22px] shrink-0 place-items-center rounded-full"
-              style={{ background: v("--ux-brand"), color: v("--ux-on-brand-btn-ink") }}>
-          <I name="Check" className="h-[13px] w-[13px]" sw={3} />
-        </span>
-      )}
-    </button>
-  );
-}
-
-export function useCompanionsFor(office: string): Companion[] {
-  const COMPANIONS = useTranslated(RAW_COMPANIONS);
-  return useMemo(() => {
-    const exact = COMPANIONS.filter((c) => c.knows.toLowerCase().includes(office.toLowerCase()));
-    return exact.length ? [...exact, ...COMPANIONS.filter((c) => !exact.includes(c))] : COMPANIONS;
-  }, [office, COMPANIONS]);
-}
 
 /* ── recover ─────────────────────────────────────────────────────────────── */
 

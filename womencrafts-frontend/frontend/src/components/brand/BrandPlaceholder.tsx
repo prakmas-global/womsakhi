@@ -30,10 +30,10 @@ export function BrandPlaceholder({
 }) {
   const background =
     tone === "soft"
-      ? "linear-gradient(135deg, #fbe7f1 0%, #efe3f8 100%)"
+      ? "linear-gradient(135deg, var(--ws-magenta-50) 0%, var(--ws-violet-50) 100%)"
       : tone === "night"
-        ? "linear-gradient(145deg, #2d1a63 0%, #5b2a86 55%, #a3226f 100%)"
-        : "linear-gradient(135deg, #d21f7c 0%, #a3267f 45%, #7440a6 100%)";
+        ? "linear-gradient(145deg, var(--ws-violet-900) 0%, var(--ws-violet-700) 55%, var(--ws-magenta-800) 100%)"
+        : "var(--ws-gradient)";
   return (
     <div
       role="img"

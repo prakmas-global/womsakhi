@@ -1,16 +1,20 @@
 "use client";
 
 import { useCallback, useMemo, useState } from "react";
-import { useRouter } from "next/navigation";
+import Link from "next/link";
 
 import { HomeShell } from "@/components/ux/home/HomeShell";
-import { Btn, Card, Chip, EmptyState, I, Stat, v } from "@/components/ux/kit";
-import { EYEBROW, GROUP, GROUP_ROW, Section } from "@/components/ux/earn/phone";
+import { Btn, Card, Chip, EmptyState, I, ScreenSkeleton, Stat, v } from "@/components/ux/kit";
+import { EYEBROW, Section } from "@/components/ux/earn/phone";
 import { formatRupees } from "@/components/ux/kit";
-import { HAQ as RAW_HAQ, PAPERS as RAW_PAPERS, atRisk, atRiskMonthlyMinor, claimable, receiving, stopped, type Haq } from "@/components/ux/haq/data";
+import { Select } from "@/components/ux/kit/form";
+import { PAPERS as RAW_PAPERS, atRisk, atRiskMonthlyMinor, fromScheme, mayFitHer, receiving, stopped, type Haq } from "@/components/ux/haq/data";
 import { AtRisk, HaqRow } from "@/components/ux/haq/parts";
+import { MediaGrid } from "@/components/ux/media/MediaCard";
 import { useResource } from "@/lib/use-resource";
-import { apiHaq, apiLate, apiPapers, type HaqStates, type LatePayments, type PaperStates } from "@/lib/life-api";
+import { apiHaq, apiLate, apiPapers, type LatePayments, type PaperStates } from "@/lib/life-api";
+import { apiSaveHaqProfile, apiSchemes, type HaqStatesWithProfile, type SchemeList } from "@/lib/haq-api";
+import { toast } from "@/components/ux/mobile/Toast";
 import { useT } from "@/i18n";
 import { useTranslated } from "@/i18n/data";
 
@@ -25,47 +29,34 @@ import { useTranslated } from "@/i18n/data";
  *
  * What is not solved anywhere is that women who are ALREADY receiving money
  * lose it for paperwork. So the first thing on this screen is the rupee figure
- * that stops arriving if she does nothing, and the catalogue is four scrolls
- * down where it belongs.
+ * that stops arriving if she does nothing, and the catalogue is below it.
+ *
+ * ── Where the catalogue comes from ──────────────────────────────────────────
+ * The server (GET /haq/schemes?state=…), staff-managed: schemes for all of
+ * India plus her state's. It used to be seven constants — Maharashtra's Ladki
+ * Bahin shown to every woman in every state. Her state comes from her profile
+ * and she can change it here; a few tap answers ("I am a widow", "I have a
+ * daughter under ten") mark what may be for her. A scheme she has not marked
+ * reads "Not checked yet" — never "you qualify".
  */
 
-type Filter = "all" | "risk" | "getting" | "claim";
+type Filter = "all" | "risk" | "getting" | "fits";
 
 const FILTERS: { id: Filter; label: string; icon: string }[] = [
   { id: "all", label: "Everything", icon: "LayoutGrid" },
   { id: "risk", label: "Needs you now", icon: "AlertTriangle" },
   { id: "getting", label: "Arriving", icon: "CircleCheck" },
-  { id: "claim", label: "You qualify", icon: "Sparkles" },
+  { id: "fits", label: "May be for me", icon: "Sparkles" },
 ];
 
 export default function HaqPage() {
-  const CATALOGUE = useTranslated(RAW_HAQ);
   const PAPER_TYPES = useTranslated(RAW_PAPERS);
   const tr = useT();
-  const router = useRouter();
   const [filter, setFilter] = useState<Filter>("all");
 
-  /**
-   * Which schemes exist, what they pay and which papers they need is reference
-   * material about real government programmes — the same for everybody, and it
-   * stays with the copy above.
-   *
-   * Where each of HER claims stands is not. This screen used to ship with its
-   * statuses written in: "Ladki Bahin · at risk · finish e-KYC · 9 days", one
-   * scheme stopped, one arriving, one waiting. Five of seven papers held.
-   * ₹152 owed in late payments.
-   *
-   * Both directions of that hurt her. Told she is *receiving* something she
-   * has never had, she does not go and claim it. Told a benefit she does not
-   * have is *at risk in nine days*, she queues at an office for nothing — and
-   * a wasted day at a government office is a day's earnings gone.
-   *
-   * So an entitlement she has never touched now reads "you may be able to
-   * claim this", which is the one thing that is true of everybody.
-   */
-  const haqState = useResource<HaqStates>(
-    useCallback((sig: AbortSignal) => apiHaq(sig), []),
-    { states: {}, default: "can-claim", tracked: 0 },
+  const haqState = useResource<HaqStatesWithProfile>(
+    useCallback((sig: AbortSignal) => apiHaq(sig) as Promise<HaqStatesWithProfile>, []),
+    { states: {}, default: "unknown", tracked: 0 },
   );
   const paperState = useResource<PaperStates>(
     useCallback((sig: AbortSignal) => apiPapers(sig), []),
@@ -76,21 +67,34 @@ export default function HaqPage() {
     { late: [], owed_minor: 0, count: 0 },
   );
 
+  // Her state and answers: the server's, until she changes them here.
+  const profile = haqState.data.profile;
+  const [state, setState] = useState<string | null>(null);
+  const [tags, setTags] = useState<string[] | null>(null);
+  const myState = state ?? profile?.state ?? "";
+  const myTags = useMemo(() => tags ?? profile?.tags ?? [], [tags, profile]);
+  const profileLoaded = haqState.source !== "loading";
+
+  const catalogue = useResource<SchemeList | null>(
+    useCallback((sig: AbortSignal) => apiSchemes(myState, sig), [myState]),
+    null,
+  );
+
+  const saveProfile = useCallback(async (nextState: string, nextTags: string[]) => {
+    try { await apiSaveHaqProfile(nextState, nextTags); }
+    catch { toast("That did not save. Check your connection.", { tone: "error" }); }
+  }, []);
+  const pickState = (st: string) => { setState(st); void saveProfile(st, myTags); };
+  const toggleTag = (t: string) => {
+    const next = myTags.includes(t) ? myTags.filter((x) => x !== t) : [...myTags, t];
+    setTags(next); void saveProfile(myState, next);
+  };
+
   /** The catalogue with her own status laid over it. */
-  const HAQ: Haq[] = useMemo(() => CATALOGUE.map((h) => {
-    const mine = haqState.data.states[h.id];
-    if (!mine) return { ...h, status: "can-claim" as const, action: undefined, dueDays: undefined, stoppedBecause: undefined };
-    return {
-      ...h,
-      status: mine.status,
-      action: mine.action || undefined,
-      // Counted on the server. Doing it here meant calling Date.now() during
-      // render — impure, and the number could differ between two renders of
-      // the same frame.
-      dueDays: mine.due_days ?? undefined,
-      stoppedBecause: mine.stopped_because || undefined,
-    };
-  }), [CATALOGUE, haqState.data.states]);
+  const HAQ: Haq[] = useMemo(
+    () => (catalogue.data?.schemes ?? []).map((sc) => fromScheme(sc, haqState.data.states[sc.key], myTags)),
+    [catalogue.data, haqState.data.states, myTags],
+  );
 
   const PAPERS = useMemo(() => PAPER_TYPES.map((x) => {
     const mine = paperState.data.states[x.id];
@@ -100,7 +104,7 @@ export default function HaqPage() {
   const risk = useMemo(() => atRisk(HAQ), [HAQ]);
   const halted = useMemo(() => stopped(HAQ), [HAQ]);
   const getting = useMemo(() => receiving(HAQ), [HAQ]);
-  const canClaim = useMemo(() => claimable(HAQ), [HAQ]);
+  const fits = useMemo(() => mayFitHer(HAQ).filter((h) => h.eligibility.length > 0), [HAQ]);
 
   const monthly = useMemo(() => atRiskMonthlyMinor(HAQ), [HAQ]);
   // `Math.min` of an empty list is Infinity, which would render as a deadline.
@@ -119,13 +123,15 @@ export default function HaqPage() {
   const shown: Haq[] = useMemo(() => {
     if (filter === "risk") return [...risk, ...halted];
     if (filter === "getting") return getting;
-    if (filter === "claim") return canClaim;
-    // Everything, in the order that matters: urgent, stopped, arriving, possible.
-    return [...risk, ...halted, ...getting.filter((h) => h.status === "receiving"),
-            ...HAQ.filter((h) => h.status === "waiting"), ...canClaim];
-  }, [filter, risk, halted, getting, canClaim, HAQ]);
+    if (filter === "fits") return fits;
+    // Everything, in the order that matters: urgent, stopped, arriving, waiting,
+    // what may be for her, then the rest.
+    const seen = new Set<string>();
+    return [...risk, ...halted, ...getting, ...HAQ.filter((h) => h.status === "waiting"),
+            ...HAQ.filter((h) => h.status === "can-claim"), ...fits, ...HAQ]
+      .filter((h) => (seen.has(h.id) ? false : (seen.add(h.id), true)));
+  }, [filter, risk, halted, getting, fits, HAQ]);
 
-  const open = useCallback((id: string) => router.push(`/app/haq/${id}`), [router]);
 
   return (
     <HomeShell active="/app/haq">
@@ -147,7 +153,32 @@ export default function HaqPage() {
           <Btn variant="outline" icon="FileText" href="/app/haq/papers" className="max-lg:w-full">{tr("haq.yourPapers")}</Btn>
         </header>
 
-        <AtRisk monthlyMinor={monthly} count={risk.length} soonestDays={soonest} />
+        <AtRisk monthlyMinor={monthly} count={risk.length} soonestDays={soonest} tracked={haqState.data.tracked} />
+
+        {/* Where she lives, and who she is — so the list is hers. */}
+        <Card>
+          <div className="grid gap-4 lg:grid-cols-[260px_minmax(0,1fr)]">
+            <div>
+              <p className="mb-1.5 text-xsm font-bold" style={{ color: v("--ux-ink") }}>Your state</p>
+              <Select value={myState} onChange={pickState} label="Your state" placeholder="All of India only"
+                      options={(catalogue.data?.states ?? []).map((x) => ({ value: x, label: x }))} />
+              <p className="mt-1.5 text-2xs leading-relaxed" style={{ color: v("--ux-muted") }}>
+                Schemes for all of India, plus {myState || "your state, once you pick it"}.
+              </p>
+            </div>
+            <div>
+              <p className="mb-1.5 text-xsm font-bold" style={{ color: v("--ux-ink") }}>Tap what is true for you</p>
+              <div className="flex flex-wrap gap-2">
+                {(catalogue.data?.eligibility ?? []).map((e) => (
+                  <Chip key={e.key} selected={myTags.includes(e.key)} onClick={() => toggleTag(e.key)}>{e.label}</Chip>
+                ))}
+              </div>
+              <p className="mt-1.5 text-2xs leading-relaxed" style={{ color: v("--ux-muted") }}>
+                Kept private. It only marks which schemes may be for you — it never decides for you.
+              </p>
+            </div>
+          </div>
+        </Card>
 
         {/* The three numbers that matter, and nothing else. */}
         <Card>
@@ -190,7 +221,20 @@ export default function HaqPage() {
             ))}
           </div>
 
-          {shown.length === 0 ? (
+          {!profileLoaded || (catalogue.source === "loading" && !catalogue.data) ? (
+            <ScreenSkeleton shape="list" />
+          ) : catalogue.source === "error" ? (
+            <Card>
+              <EmptyState icon="WifiOff" title="The list could not load" body="Check your connection and try again."
+                          action={<Btn size="sm" onClick={catalogue.refetch}>Try again</Btn>} />
+            </Card>
+          ) : HAQ.length === 0 ? (
+            <Card>
+              <EmptyState icon="Landmark" title="No schemes listed yet"
+                          body="Our team is adding the schemes for your state. Your papers and late payments still work below."
+                          action={<Btn size="sm" variant="outline" href="/app/haq/papers">My papers</Btn>} />
+            </Card>
+          ) : shown.length === 0 ? (
             <Card>
               <EmptyState
                 icon="SearchX"
@@ -200,9 +244,9 @@ export default function HaqPage() {
               />
             </Card>
           ) : (
-            <div className={`flex flex-col gap-2.5 ${GROUP}`}>
-              {shown.map((h) => <HaqRow key={h.id} h={h} onOpen={open} className={GROUP_ROW} />)}
-            </div>
+            <MediaGrid>
+              {shown.map((h) => <HaqRow key={h.id} h={h} />)}
+            </MediaGrid>
           )}
         </div>
 
@@ -213,8 +257,8 @@ export default function HaqPage() {
             <I name="Info" className="mt-[2px] h-[16px] w-[16px] shrink-0"
                style={{ color: v("--ux-muted") }} />
             <p className="text-xsm leading-relaxed" style={{ color: v("--ux-ink-2") }}>{tr("haq.remindersOnTheirOwnDoNot")}<b>with</b> someone does.
-              When a benefit needs an office visit, we will offer to find a woman in your circle
-              who has already been to that counter.
+              When a benefit needs an office visit, ask a woman from your circle to come along —{" "}
+              <Link href="/app/circles" className="font-bold underline" style={{ color: v("--ux-brand") }}>open your circles</Link>.
             </p>
           </div>
         </Card>

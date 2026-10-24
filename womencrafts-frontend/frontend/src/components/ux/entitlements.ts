@@ -4,13 +4,12 @@ import { useCallback } from "react";
 
 import { useResource, type Resource } from "@/lib/use-resource";
 import {
-  apiAssessments, apiCover, apiDigitalSteps, apiFamily, apiGroupBuys,
-  apiGuidance, apiHealth, apiHelplines, apiRights, apiSaved, apiSchemes, apiTravel,
+  apiAssessments, apiDigitalSteps, apiFamily, apiGroupBuys,
+  apiGuidance, apiHealth, apiHelplines, apiRights, apiSaved, apiTravel,
   type Assessment, type DigitalStep, type GroupBuy, type Reference, type SavedItem,
 } from "@/lib/entitlements-api";
 
 import { ASSESSMENTS, DIGITAL_STEPS, GROUP_BUYS } from "./more/data";
-import { type Scheme } from "./schemes/data";
 import {
   CRECHES, HEALTH_CHECKS, RIGHTS, ROUTES,
 } from "./wellbeing/data";
@@ -39,75 +38,6 @@ function tintFor(seed: string) {
 }
 
 const str = (v: unknown, fallback = "") => (typeof v === "string" && v ? v : fallback);
-const list = (v: unknown): string[] => (Array.isArray(v) ? v.filter((x) => typeof x === "string") : []);
-
-/* ── Schemes ─────────────────────────────────────────────────────────── */
-
-const SCHEME_ICONS: Record<string, string> = {
-  Loan: "Landmark", Savings: "PiggyBank", Training: "GraduationCap",
-  Grant: "Gift", Insurance: "ShieldCheck",
-};
-
-function toScheme(r: Reference): Scheme {
-  const p = r.payload;
-  const category = (str(p.category, "Grant") as Scheme["category"]);
-  return {
-    id: r.id,
-    name: r.title,
-    body: str(p.body_name, "Government of India"),
-    who: r.who,
-    gives: r.body,
-    amount: str(p.amount, r.cost_label),
-    category,
-    // The API does not decide who qualifies — that depends on her documents and
-    // her business, and asserting it would send her to a counter to be turned
-    // away. So the screen says what the scheme is FOR, and `reason` is the
-    // scheme's own wording rather than a verdict about her.
-    eligible: true,
-    reason: r.who,
-    needs: list(p.needs),
-    deadline: str(p.deadline, "Check before you go"),
-    icon: SCHEME_ICONS[category] ?? "Landmark",
-    ...tintFor(r.id),
-    applied: r.mine?.state === "applied" || r.mine?.state === "active",
-  };
-}
-
-export const useSchemes = (): Resource<Scheme[]> =>
-  useResource(useCallback(async (s: AbortSignal) => (await apiSchemes(s)).map(toScheme), []), []);
-
-/* ── Insurance & pension ─────────────────────────────────────────────── */
-
-export interface UxCover {
-  id: string; name: string; kind: string; pays: string; costs: string;
-  who: string; have: boolean; renews: string | null;
-  icon: string; tint: string; ink: string; steps: string[];
-}
-
-const COVER_ICONS: Record<string, string> = {
-  Accident: "ShieldCheck", Life: "HeartHandshake", Pension: "PiggyBank", Health: "Stethoscope",
-};
-
-const toCover = (r: Reference): UxCover => {
-  const p = r.payload;
-  const kind = str(p.kind, "Cover");
-  return {
-    id: r.id,
-    name: r.title,
-    kind,
-    pays: str(p.pays, r.body),
-    costs: r.cost_label || (r.free ? "Free" : ""),
-    who: r.who,
-    have: r.mine?.state === "active",
-    renews: str(p.renews) || null,
-    icon: COVER_ICONS[kind] ?? "ShieldCheck",
-    ...tintFor(r.id),
-    steps: list(p.steps),
-  };
-};
-
-export const useCover = (): Resource<UxCover[]> =>
-  useResource(useCallback(async (s: AbortSignal) => (await apiCover(s)).map(toCover), []), []);
 
 /* ── Wellbeing ───────────────────────────────────────────────────────── */
 
@@ -299,6 +229,8 @@ export interface UxGroupBuy {
   full?: boolean;
   note?: string;
   saving_label?: string;
+  /** She asked "tell me next time" for this item. */
+  watching?: boolean;
 }
 
 const toGroupBuy = (g: GroupBuy): UxGroupBuy => ({
@@ -317,6 +249,7 @@ const toGroupBuy = (g: GroupBuy): UxGroupBuy => ({
   full: g.full,
   note: g.note,
   saving_label: g.saving_label,
+  watching: Boolean(g.watching),
 });
 
 export const useGroupBuys = (): Resource<UxGroupBuy[]> =>

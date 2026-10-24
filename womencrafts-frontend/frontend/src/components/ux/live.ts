@@ -22,7 +22,7 @@ import {
 } from "./account/data";
 import { MY_CIRCLES, type Circle } from "./circles/data";
 import { NOTIFICATIONS } from "./home/data";
-import { MENTORS, type Mentor } from "./mentors/data";
+import type { Mentor } from "./mentors/data";
 
 
 /**
@@ -134,6 +134,7 @@ const toBooking = (b: ApiBooking): UxBooking => ({
   ref: `WS-B-${b.id.slice(-6).toUpperCase()}`,
   art: BOOKINGS[0].art,
   cost: b.price ? `₹${Number(b.price).toLocaleString("en-IN")}` : "Free",
+  meeting: b.meeting || "",
 });
 
 export const useBookings = (): Resource<UxBooking[]> =>
@@ -389,15 +390,35 @@ export const useStories = (): Resource<UxStory[]> =>
 
 /* ── Mentors ───────────────────────────────────────────────────────────── */
 
+/**
+ * Her initials, as a picture — for a mentor with no photo.
+ *
+ * Every mentor without a photo used to get the SAME stock photograph of one
+ * woman, so a list of eight looked like one person eight times, and a learner
+ * could not tell them apart. An SVG data URI keeps every `<img src>` that
+ * reads `photo` working, with no network request.
+ */
+const AVATAR_COLOURS = [["#fde7f1", "#b0105e"], ["#ece8fd", "#5b3fc4"], ["#e3f4ea", "#1d7a45"],
+  ["#fdf0dc", "#9a5b00"], ["#e2f0fb", "#1f5f99"], ["#fce8e4", "#a8382a"]];
+export function initialsPhoto(name: string, seed = name): string {
+  const letters = name.split(/\s+/).filter(Boolean).slice(0, 2).map((w) => w[0]).join("").toUpperCase() || "W";
+  let h = 0;
+  for (let i = 0; i < seed.length; i++) h = (h * 31 + seed.charCodeAt(i)) | 0;
+  const [bg, ink] = AVATAR_COLOURS[Math.abs(h) % AVATAR_COLOURS.length];
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120"><rect width="120" height="120" fill="${bg}"/>`
+    + `<text x="60" y="60" dy=".35em" text-anchor="middle" font-family="Plus Jakarta Sans,Arial,sans-serif" `
+    + `font-size="44" font-weight="700" fill="${ink}">${letters.replace(/[<>&"]/g, "")}</text></svg>`;
+  return `data:image/svg+xml;charset=utf-8,${encodeURIComponent(svg)}`;
+}
+
 const toMentor = (m: ApiMentor): Mentor => ({
   ...m,
-  photo: m.photo || MENTORS[0].photo,
+  photo: m.photo || initialsPhoto(m.name, m.id),
   ...tintFor(m.id),
-  // Neither of these is in the API yet. Defaulted to the UNflattering answer:
-  // promising a free first session the server never agreed to is a promise
-  // made in her name.
-  free_first: false,
-  fee_minor: 0,
+  // A member mentor sets her own price (0 = free). Staff-listed mentors carry
+  // none, and are free — the team arranges them.
+  free_first: !(m.price_minor ?? 0),
+  fee_minor: m.price_minor ?? 0,
 });
 
 export const useMentors = (): Resource<Mentor[]> =>

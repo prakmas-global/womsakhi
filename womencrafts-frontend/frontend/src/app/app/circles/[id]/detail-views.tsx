@@ -14,6 +14,7 @@ import { useResource } from "@/lib/use-resource";
 import { toast } from "@/components/ux/mobile/Toast";
 import { apiUploadImage, uploadErrorMessage, validateImage } from "@/lib/uploads-api";
 import { members as niceCount, readPost, topicOf } from "@/components/ux/circle/data";
+import { Picks } from "@/components/ux/kit/form";
 
 /* ------------------------------------------------------------------ */
 /*  The banner                                                         */
@@ -634,6 +635,8 @@ export function EventsRail({ rows, busy, onGo }: {
 /* ------------------------------------------------------------------ */
 
 const EMPTY_RESOURCES: ApiCircleResource[] = [];
+/** What most shared links are — so only the link itself has to be pasted. */
+const RESOURCE_NAMES = ["Video lesson", "Price list", "Pricing worksheet", "Government scheme", "Recipe", "Design ideas"];
 
 export function ResourcesRail({ circleId }: { circleId: string }) {
   const tr = useT();
@@ -679,6 +682,7 @@ export function ResourcesRail({ circleId }: { circleId: string }) {
             <input value={name} onChange={(e) => setName(e.target.value)} maxLength={120} placeholder="Pricing worksheet"
                    className="mt-1 w-full rounded-lg border px-3 py-2 text-sm" style={{ borderColor: v("--ux-line"), background: v("--ux-surface") }} />
           </label>
+          <Picks options={RESOURCE_NAMES} value={name} onPick={setName} label="Resource name" />
           <label className="block text-xs font-semibold" style={{ color: v("--ux-ink-2") }}>Link
             <input value={url} onChange={(e) => setUrl(e.target.value)} type="url" placeholder="https://…"
                    className="mt-1 w-full rounded-lg border px-3 py-2 text-sm" style={{ borderColor: v("--ux-line"), background: v("--ux-surface") }} />

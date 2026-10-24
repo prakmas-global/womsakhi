@@ -191,7 +191,13 @@
   animation: wc-shimmer 1.5s infinite;
 }
 
-/* Content fade/slide-in on every route change. */
+/* Content fade/slide-in on every route change.
+   Fill mode is `backwards`, never `both`/`forwards`: a held last frame keeps a
+   transform on the page wrapper (even translateY(0) or `none` computes to a
+   matrix), and ANY transform makes that wrapper the containing block for
+   `position: fixed` inside it. Every modal and sheet on the page was then
+   centred in the tall, scroll-locked page instead of the window, and could
+   not be scrolled to its fields or its Save button. */
 @keyframes wc-page-enter {
   from {
     opacity: 0;
@@ -203,7 +209,7 @@
   }
 }
 .wc-page-enter {
-  animation: wc-page-enter 0.32s cubic-bezier(0.22, 1, 0.36, 1) both;
+  animation: wc-page-enter 0.32s cubic-bezier(0.22, 1, 0.36, 1) backwards;
 }
 
 /* Bottom sheets rise from the edge they're anchored to. */

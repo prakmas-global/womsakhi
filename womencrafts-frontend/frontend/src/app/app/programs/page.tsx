@@ -1,34 +1,30 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useSyncExternalStore } from "react";
 import * as Icons from "@/components/ux/icons";
 
 import {
-  ActionBtn, Btn, Card, Chip, EmptyState, IconTile,
+  ActionBtn, Btn, Card, Chip, EmptyState,
   SectionHead, SourceNote, copy, plural, printCertificate
 } from "@/components/ux/kit";
 import { HomeShell } from "@/components/ux/home/HomeShell";
 import { useMe } from "@/components/ux/me";
 
-import { CourseCard, CourseRow, ResumeCard } from "@/components/ux/learning/parts";
-import { ChipRow, RowGroup, ScreenHead, Segments } from "@/components/ux/learning/native";
+import { CourseCard, ResumeCard } from "@/components/ux/learning/parts";
+import { ChipRow, ScreenHead, Segments } from "@/components/ux/learning/native";
 import { ListGroup, ListRow } from "@/components/ux/mobile/ListRow";
-import {
-  ACHIEVEMENTS as RAW_ACHIEVEMENTS, CATEGORIES as RAW_CATEGORIES, SKILLS as RAW_SKILLS, STREAK as RAW_STREAK,
-} from "@/components/ux/learning/data";
 import { useLearning } from "@/components/ux/growth";
 import { useCertificates } from "@/components/ux/live";
 import { AlsoHere } from "@/components/ux/AlsoHere";
 import { COPY } from "@/components/ux/copy";
 import { useT } from "@/i18n";
-import { useTranslated } from "@/i18n/data";
 
 // "Paths" is gone. It showed four learning paths from a constant — "Career
 // Growth Path · 8 courses · 32 lessons · 60% complete" — with progress nothing
 // had measured, and every row linked to `/ux/learning/paths/{id}`, a route
 // that never existed in this app. There is no learning-path feature on the
 // server at all, so the tab is removed rather than left claiming one.
-const TABS = ["Keep going", "Explore", "Finished"] as const;
+const TABS = ["All courses", "Keep going", "Finished"] as const;
 
 const ALSO = [
   { href: "/app/assess", label: "Test your skills", note: "Twenty minutes on your phone, and a result an employer can check.", icon: "BadgeCheck" },
@@ -39,46 +35,44 @@ const ALSO = [
 /**
  * Learning — what she is part-way through, and what to take next.
  *
- * "Keep going" is the default tab, not "Explore". A course abandoned at 60% is
- * worth more to her than a fifth course started, and a catalogue on open
- * quietly suggests otherwise.
+ * "All courses" is every live course in Learn — from the WomSakhi team and
+ * from other members — including the ones she is taking (with her progress).
+ * Her own courses are not here: a catalogue is for learning, and she manages
+ * what she teaches in Earn → Create a course (with "See it as a learner").
+ * "Keep going" is what she is part-way through; "Finished" is her certificates.
  */
 export default function LearningPage() {
-  const ACHIEVEMENTS = useTranslated(RAW_ACHIEVEMENTS);
-  const SKILLS = useTranslated(RAW_SKILLS);
-  const STREAK = useTranslated(RAW_STREAK);
-  const CATEGORIES = useTranslated(RAW_CATEGORIES);
   const tr = useT();
   const { data: learning, source } = useLearning();
   const CONTINUING = learning.continuing;
-  const TOP_PICKS = learning.picks;
+  const ALL = learning.all.filter((c) => !c.mine);
   const { data: CERTIFICATES } = useCertificates();
   const ME = useMe();
-  const [tab, setTab] = useState<string>("Keep going");
+  const [tab, setTab] = useState<string>("All courses");
   const [cat, setCat] = useState("All");
+  const [q, setQ] = useState("");
+  /*
+    `?cat=A,B&path=Name` — a learning path from the Learn home (Career & Jobs,
+    Money & Finance…) is a group of categories. The path tiles used to link
+    here with no filter at all, so every path opened the same full list.
+    Read as an external store so the server and first client render agree.
+  */
+  const linked = useSyncExternalStore(noSubscribe, () => window.location.search, () => "");
+  const [pathOff, setPathOff] = useState(false);
+  const pathCats = pathOff ? [] : (new URLSearchParams(linked).get("cat") || "").split(",").map((x) => x.trim()).filter(Boolean);
+  const pathName = new URLSearchParams(linked).get("path") || pathCats.join(", ");
 
-  // No `useMemo`, and `TOP_PICKS` was missing from its dependency list — so
-  // this was computed once from the mock fallback and never again, and the
-  // course list showed invented courses for the whole session. The compiler
-  // memoizes this component itself.
-  const picks = cat === "All" ? TOP_PICKS : TOP_PICKS.filter((c) => c.category === cat);
+  // The categories come from the courses themselves — never a chip that can
+  // only lead to an empty list. "Free" and "Paid" come first.
+  const categories = ["All", "Free", "Paid", ...Array.from(new Set(ALL.map((c) => c.category))).sort()];
+  const needle = q.trim().toLowerCase();
+  const picks = ALL.filter((c) =>
+    (!pathCats.length || pathCats.includes(c.category)) &&
+    (cat === "All" || (cat === "Free" ? !c.priceMinor : cat === "Paid" ? !!c.priceMinor : c.category === cat))
+    && (!needle || `${c.title} ${c.teacher ?? ""} ${c.category}`.toLowerCase().includes(needle)));
 
-  /**
-   * The categories come from the courses, not from a hand-written list.
-   *
-   * The fixed list offered "Money", which had no courses behind it — a chip
-   * whose only possible outcome was an empty state. Deriving it makes a dead
-   * filter structurally impossible, and keeps the chips honest once this is
-   * reading real catalogue data.
-   */
-  const categories = (() => {
-    const counts = new Map<string, number>();
-    for (const c of TOP_PICKS) counts.set(c.category, (counts.get(c.category) ?? 0) + 1);
-    return ["All", ...CATEGORIES.filter((c) => c !== "All" && counts.has(c))];
-  })();
-
-  const avg = Math.round(CONTINUING.reduce((a, c) => a + (c.pct ?? 0), 0) / CONTINUING.length);
-  const hoursLeft = CONTINUING.reduce((a, c) => a + Math.round((parseInt(c.hours ?? "0") * (100 - (c.pct ?? 0))) / 100), 0);
+  const avg = CONTINUING.length ? Math.round(CONTINUING.reduce((a, c) => a + (c.pct ?? 0), 0) / CONTINUING.length) : 0;
+  const yours = learning.all.filter((c) => c.mine).length;
 
   return (
     <HomeShell
@@ -86,67 +80,60 @@ export default function LearningPage() {
       rail={
         <div className="space-y-[16px]">
           <Card className="ux-onscroll-soft">
-            <SectionHead title={tr("programs.yourWeek")} sub={`${STREAK.days}-day streak`} />
-            <div className="flex items-center justify-between">
-              {STREAK.marks.map((on, i) => (
-                <div key={i} className="flex flex-col items-center gap-1.5">
-                  <span className="ux-pop grid h-[30px] w-[30px] place-items-center rounded-full text-2xs font-semibold"
-                        style={{
-                          background: on ? "var(--ux-brand-600)" : "var(--ux-surface-2)",
-                          color: on ? "var(--ux-on-brand)" : "var(--ux-faint)",
-                          ["--i" as string]: i,
-                        }}>
-                    {on ? <Icons.Check className="h-[13px] w-[13px]" strokeWidth={3} /> : "·"}
-                  </span>
-                  <span className="text-2xs" style={{ color: "var(--ux-faint)" }}>
-                    {["M", "T", "W", "T", "F", "S", "S"][i]}
-                  </span>
+            <SectionHead title="Your learning" />
+            <div className="grid grid-cols-3 gap-2 text-center">
+              {([
+                [String(CONTINUING.length), "on the go"],
+                [`${avg}%`, "average"],
+                [String(CERTIFICATES.length), plural("certificate", CERTIFICATES.length)],
+              ] as const).map(([v, l]) => (
+                <div key={l} className="rounded-[12px] py-2.5" style={{ background: "var(--ux-surface-2)" }}>
+                  <p className="text-lg font-bold tabular-nums" style={{ color: "var(--ux-ink)" }}>{v}</p>
+                  <p className="text-2xs" style={{ color: "var(--ux-muted)" }}>{l}</p>
                 </div>
               ))}
             </div>
-            <p className="mt-3.5 text-xs leading-relaxed" style={{ color: "var(--ux-muted)" }}>
-              Fifteen minutes today keeps it going. About {hoursLeft} hours left across everything you started.
-            </p>
+            {learning.pending.length > 0 && (
+              <p className="mt-3 text-xs" style={{ color: "var(--ux-orange-ink)" }}>
+                {learning.pending.length} paid {plural("course", learning.pending.length)} waiting for the teacher to confirm your payment.
+              </p>
+            )}
           </Card>
 
           <Card className="ux-onscroll-soft">
-            <SectionHead title={tr("programs.skillsYouAreBuilding")} />
-            <ul className="ux-stagger space-y-2.5">
-              {SKILLS.slice(0, 5).map((s) => (
-                <li key={s.name} className="ux-hov flex items-center gap-3">
-                  <IconTile icon={s.icon} tint={s.tint} ink={s.ink} size={34} radius={10} />
-                  <span className="min-w-0 flex-1 truncate text-xsm" style={{ color: "var(--ux-ink-2)" }}>
-                    {s.name}
-                  </span>
-                  <span className="shrink-0 text-2xs" style={{ color: "var(--ux-faint)" }}>{s.level}</span>
-                </li>
-              ))}
-            </ul>
-          </Card>
-
-          <Card className="ux-onscroll-soft">
-            <SectionHead title={tr("programs.whatYouHaveEarned")} action={tr("circles.seeAll")} onAction={() => setTab("Finished")} />
-            <div className="ux-stagger space-y-2.5">
-              {ACHIEVEMENTS.slice(0, 3).map((a, i) => (
-                <div key={a.name} className="ux-hov flex items-center gap-3">
-                  <span className="ux-metal ux-sq grid h-[36px] w-[36px] shrink-0 place-items-center rounded-[12px]">
-                    <Icons.Award className="ux-ico h-[17px] w-[17px]" strokeWidth={1.9}
-                                 style={{ ["--i" as string]: i }} />
-                  </span>
-                  <div className="min-w-0">
-                    <p className="truncate text-xsm font-medium" style={{ color: "var(--ux-ink)" }}>{a.name}</p>
-                    <p className="mt-0.5 truncate text-2xs" style={{ color: "var(--ux-muted)" }}>{a.body}</p>
+            <SectionHead title={tr("programs.whatYouHaveEarned")} action={CERTIFICATES.length ? tr("circles.seeAll") : undefined} onAction={() => setTab("Finished")} />
+            {CERTIFICATES.length ? (
+              <div className="ux-stagger space-y-2.5">
+                {CERTIFICATES.slice(0, 3).map((c) => (
+                  <div key={c.id} className="flex items-center gap-3">
+                    <span className="ux-metal ux-sq grid h-[36px] w-[36px] shrink-0 place-items-center rounded-[12px]">
+                      <Icons.Award className="ux-ico h-[17px] w-[17px]" strokeWidth={1.9} />
+                    </span>
+                    <div className="min-w-0">
+                      <p className="truncate text-xsm font-medium" style={{ color: "var(--ux-ink)" }}>{c.title}</p>
+                      <p className="mt-0.5 truncate text-2xs" style={{ color: "var(--ux-muted)" }}>Issued {c.issued}</p>
+                    </div>
                   </div>
-                </div>
-              ))}
-            </div>
+                ))}
+              </div>
+            ) : (
+              <p className="text-xsm" style={{ color: "var(--ux-muted)" }}>Finish a course and your certificate appears here.</p>
+            )}
+          </Card>
+
+          <Card className="ux-onscroll-soft">
+            <SectionHead title="Teach what you know" icon="Presentation" />
+            <p className="text-xsm leading-relaxed" style={{ color: "var(--ux-muted)" }}>
+              {yours ? `You teach ${yours} ${plural("course", yours)} here.` : "Make a course from what you do well — free, or at your price."}
+            </p>
+            <div className="mt-3"><Btn href="/app/teach" variant="soft" size="sm" iconEnd="ArrowRight">{yours ? "My courses" : "Create a course"}</Btn></div>
           </Card>
         </div>
       }
     >
       <ScreenHead
         title="Courses"
-        sub={`${CONTINUING.length} ${plural("course", CONTINUING.length)} on the go, ${avg}% through on average.`}
+        sub={`${ALL.length} ${plural("course", ALL.length)} from the WomSakhi team and from women who teach here.`}
         note={<SourceNote source={source} what="courses" />}
       >
         <Segments items={[...TABS]} active={tab} onChange={setTab} label={tr("programs.whichCourses")} />
@@ -161,13 +148,34 @@ export default function LearningPage() {
           <Card>
             <EmptyState icon="BookOpen" title={tr("programs.nothingStartedYet")}
                         body={tr("programs.pickSomethingFromExploreAndIt")}
-                        action={<Btn onClick={() => setTab("Explore")} variant="primary">{tr("programs.exploreCourses")}</Btn>} />
+                        action={<Btn onClick={() => setTab("All courses")} variant="primary">{tr("programs.exploreCourses")}</Btn>} />
           </Card>
         )
       )}
 
-      {tab === "Explore" && (
+      {tab === "All courses" && (
         <>
+          <input
+            value={q}
+            onChange={(e) => setQ(e.target.value)}
+            placeholder="Search courses or teachers"
+            aria-label="Search courses"
+            className="ux-sq mb-3 min-h-[46px] w-full rounded-[12px] border px-4 text-xsm outline-none"
+            style={{ borderColor: "var(--ux-line-strong)", background: "var(--ux-surface)", color: "var(--ux-ink)" }}
+          />
+          {pathCats.length > 0 && (
+            <div className="mb-3 flex flex-wrap items-center gap-2 rounded-[12px] px-3.5 py-2.5"
+                 style={{ background: "var(--ux-brand-tint)" }}>
+              <Icons.Route className="h-4 w-4" style={{ color: "var(--ux-brand)" }} />
+              <span className="flex-1 text-xsm font-semibold" style={{ color: "var(--ux-ink)" }}>
+                Learning path: {pathName}
+              </span>
+              <button type="button" onClick={() => setPathOff(true)}
+                      className="inline-flex items-center gap-1 text-xs font-bold" style={{ color: "var(--ux-brand)" }}>
+                <Icons.X className="h-3.5 w-3.5" /> Show all courses
+              </button>
+            </div>
+          )}
           <ChipRow className="mb-4">
             {categories.map((c) => (
               <Chip key={c} selected={cat === c} onClick={() => setCat(c)}>{c}</Chip>
@@ -175,19 +183,16 @@ export default function LearningPage() {
           </ChipRow>
           {picks.length ? (
             <>
-              {/* One inset group of rows on a phone; the poster grid from `lg`. */}
-              <RowGroup className="lg:hidden">
-                {picks.map((c) => <CourseRow key={c.id} c={c} />)}
-              </RowGroup>
-              <div className="ux-deck hidden grid-cols-3 gap-[16px] lg:grid">
+              {/* The same card everywhere: two across on a phone, three from `lg`. */}
+              <div className="ux-stagger grid grid-cols-2 gap-3 lg:grid-cols-3 lg:gap-[16px]">
                 {picks.map((c) => <CourseCard key={c.id} c={c} />)}
               </div>
             </>
           ) : (
             <Card>
-              <EmptyState icon="SearchX" title={`Nothing in ${cat} yet`}
+              <EmptyState icon="SearchX" title={needle ? `Nothing matches “${q.trim()}”` : `Nothing in ${cat} yet`}
                           body={tr("programs.moreIsAddedEveryMonthTry")}
-                          action={<Btn onClick={() => setCat("All")} variant="soft">{tr("programs.showEverything")}</Btn>} />
+                          action={<Btn onClick={() => { setCat("All"); setQ(""); }} variant="soft">{tr("programs.showEverything")}</Btn>} />
             </Card>
           )}
         </>
@@ -244,3 +249,5 @@ export default function LearningPage() {
     </HomeShell>
   );
 }
+
+const noSubscribe = () => () => {};

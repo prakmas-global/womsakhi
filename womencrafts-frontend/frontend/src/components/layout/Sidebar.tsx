@@ -129,6 +129,7 @@ const NAV: NavItem[] = [
     children: [
       { label: "Opportunities", href: "/dashboard/opportunities" },
       { label: "Applications", href: "/dashboard/applications" },
+      { label: "Work skills", href: "/dashboard/work-skills" },
       { label: "Events", href: "/dashboard/events" },
       { label: "Mentors", href: "/dashboard/mentors" },
       { label: "Mentor requests", href: "/dashboard/mentors/requests" },

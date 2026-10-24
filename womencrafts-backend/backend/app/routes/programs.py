@@ -612,6 +612,14 @@ async def archive_program(program_id: str, request: Request, me: dict = Depends(
 )
 async def set_modules(program_id: str, payload: ModulesUpdate, request: Request, me: dict = Depends(get_current_user)):
     before = await _get_or_404(program_id)
+    if before.get("owner_kind") == "member":
+        # Her lessons carry text and video this outline editor does not have;
+        # replacing them here would quietly delete her work. Staff can still
+        # hide the course (archive) — she edits its lessons herself, in Teach.
+        raise HTTPException(
+            status.HTTP_409_CONFLICT,
+            "A member wrote this course, so she edits its lessons in Teach. You can still archive it.",
+        )
     modules = [m.model_dump() for m in payload.modules]
     doc = await _programs().find_one_and_update(
         {"_id": before["_id"]},

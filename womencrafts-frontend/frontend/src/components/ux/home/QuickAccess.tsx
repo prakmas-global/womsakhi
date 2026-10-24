@@ -30,7 +30,7 @@ export const QUICK_TILES = [
   { icon: "UsersRound", label: "My Circles", sub: "Your people", tint: "--ux-tint-pink", ink: "--ux-pink-ink", href: "/app/circles" },
   { icon: "PiggyBank", label: "Savings Pot", sub: "Save small, grow", tint: "--ux-tint-violet", ink: "--ux-violet-ink", href: "/app/circles" },
   { icon: "HeartHandshake", label: "Care Circle", sub: "Help when needed", tint: "--ux-tint-blue", ink: "--ux-blue-ink", href: "/app/family" },
-  { icon: "Store", label: "My Shop", sub: "Sell your work", tint: "--ux-tint-amber", ink: "--ux-amber-ink", href: "/app/shop" },
+  { icon: "Store", label: "My Shop", sub: "Sell your work", tint: "--ux-tint-amber", ink: "--ux-amber-ink", href: "/app/documents" },
   { icon: "ShoppingBasket", label: "Market", sub: "Buy & sell nearby", tint: "--ux-tint-green", ink: "--ux-green-ink", href: "/app/market" },
   { icon: "Wallet", label: "Wallet", sub: "Your money", tint: "--ux-tint-lilac", ink: "--ux-violet-ink", href: "/app/wallet" },
   /* The reminder engine's tile keeps its catalogue key, so its label reads in

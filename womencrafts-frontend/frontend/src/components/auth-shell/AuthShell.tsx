@@ -1,7 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState, type ReactNode, type RefObject } from "react";
-import Link from "next/link";
+import { useEffect, useRef, useState, useSyncExternalStore, type ReactNode, type RefObject } from "react";
 import { getImageProps } from "next/image";
 
 import { rememberPreSignInChoice, useI18n } from "@/i18n";
@@ -10,31 +9,87 @@ import { AuthIcon, type AuthIconName } from "./icons";
 import { websiteUrl } from "@/lib/site";
 import "./auth-shell.css";
 
+/** Which photo fills the visual side. "plain" is the logo's moving gradient instead. */
 export type AuthPhoto = "signin" | "join" | "email" | "review" | "approved" | "upload" | "camera" | "plain";
 
 interface Pic { src: string; w: number; h: number }
 
 /**
- * Every photo, its web crop (the approved `object-position` for the split
- * panel) and its phone band: the band height, how tall the picture is drawn
- * inside it, how far it is pulled up, and its position — all in design units
- * (1u = one pixel of the approved 258-px phone frame), copied from the mockup.
- * `band` swaps in a wider picture for the phone header (sign-in uses the
- * terrace of five on phones, the three generations on the web).
+ * Each journey photo, with its crop on the web (the left half, full height)
+ * and on the phone band. `band` swaps in a wider picture for the band where
+ * the portrait one would be all forehead.
  */
-const PHOTOS: Record<Exclude<AuthPhoto, "plain">, {
-  web: Pic; band?: Pic; webPos: string;
-  mh: number; mih: number; moff: number; mpos: string; mtop: number; tpos?: string;
-}> = {
-  signin: { web: { src: "/ux/auth/signin.webp", w: 1122, h: 1402 }, band: { src: "/ux/auth/signin-band.webp", w: 1448, h: 1086 },
-    webPos: "50% 40%", mh: 262, mih: 262, moff: 0, mpos: "30% 0%", mtop: 170, tpos: "30% 30%" },
-  join: { web: { src: "/ux/auth/join.webp", w: 1448, h: 1086 }, webPos: "22% 50%", mh: 224, mih: 264, moff: 0, mpos: "21% 0%", mtop: 184, tpos: "21% 30%" },
-  email: { web: { src: "/ux/auth/email.webp", w: 1448, h: 1086 }, webPos: "30% 50%", mh: 214, mih: 236, moff: 0, mpos: "22% 0%", mtop: 176, tpos: "22% 30%" },
-  review: { web: { src: "/ux/auth/review.webp", w: 870, h: 1086 }, webPos: "46% 50%", mh: 214, mih: 362, moff: -16, mpos: "0% 0%", mtop: 176, tpos: "0% 22%" },
-  approved: { web: { src: "/ux/auth/approved.webp", w: 1448, h: 1086 }, webPos: "48% 50%", mh: 300, mih: 322, moff: 0, mpos: "47% 0%", mtop: 262, tpos: "47% 20%" },
-  upload: { web: { src: "/ux/auth/upload.webp", w: 620, h: 1086 }, webPos: "52% 50%", mh: 214, mih: 452, moff: -29, mpos: "50% 0%", mtop: 176, tpos: "50% 22%" },
-  camera: { web: { src: "/ux/auth/camera.webp", w: 700, h: 886 }, webPos: "30% 40%", mh: 214, mih: 327, moff: -20, mpos: "30% 0%", mtop: 176, tpos: "30% 25%" },
+const PHOTOS: Record<Exclude<AuthPhoto, "plain">, { web: Pic; band?: Pic; webPos: string; bandPos: string }> = {
+  // The wide terrace of five on every screen: it fills a laptop without cropping faces.
+  signin: { web: { src: "/ux/auth/signin-band.webp", w: 1448, h: 1086 }, webPos: "40% 35%", bandPos: "30% 30%" },
+  join: { web: { src: "/ux/auth/join.webp", w: 1448, h: 1086 }, webPos: "22% 50%", bandPos: "21% 30%" },
+  email: { web: { src: "/ux/auth/email.webp", w: 1448, h: 1086 }, webPos: "30% 50%", bandPos: "22% 30%" },
+  review: { web: { src: "/ux/auth/review.webp", w: 870, h: 1086 }, webPos: "46% 50%", bandPos: "0% 22%" },
+  approved: { web: { src: "/ux/auth/approved.webp", w: 1448, h: 1086 }, webPos: "48% 50%", bandPos: "47% 20%" },
+  upload: { web: { src: "/ux/auth/upload.webp", w: 620, h: 1086 }, webPos: "52% 50%", bandPos: "50% 22%" },
+  camera: { web: { src: "/ux/auth/camera.webp", w: 700, h: 886 }, webPos: "30% 40%", bandPos: "30% 25%" },
 };
+
+/** The photo, art-directed: one `<picture>`, so a phone never downloads the web crop. */
+function Photo({ photo }: { photo: Exclude<AuthPhoto, "plain"> }) {
+  const p = PHOTOS[photo];
+  const common = { alt: "", quality: 75, fetchPriority: "high" as const, loading: "eager" as const };
+  const { props: { srcSet: webSet, ...rest } } = getImageProps({
+    ...common, src: p.web.src, width: p.web.w, height: p.web.h, sizes: "(min-width: 1024px) 55vw, 100vw",
+  });
+  const bandSet = p.band
+    ? getImageProps({ ...common, src: p.band.src, width: p.band.w, height: p.band.h, sizes: "100vw" }).props.srcSet
+    : undefined;
+  // A portrait photo cannot fill a wide screen without cutting faces: on a
+  // laptop it stands on the left, sharp, over a blurred copy filling the rest.
+  const portrait = p.web.h > p.web.w;
+  return (
+    <>
+      {portrait && <span className="wsa-img-bed" style={{ backgroundImage: `url(${rest.src})` }} aria-hidden />}
+      <picture>
+        {bandSet && <source media="(max-width: 1023.98px)" srcSet={bandSet} />}
+        <source srcSet={webSet} />
+        {/* eslint-disable-next-line jsx-a11y/alt-text -- decorative; alt="" comes from getImageProps */}
+        <img {...rest} className={`wsa-img${portrait ? " is-portrait" : ""}`} />
+      </picture>
+    </>
+  );
+}
+
+/**
+ * On a laptop the sign-in photo becomes a slow slideshow of the community —
+ * every slide stacked, cross-faded every few seconds. Phones (data) and
+ * reduced motion keep the one photo.
+ */
+const SLIDES: Exclude<AuthPhoto, "plain">[] = ["signin", "join", "approved", "email"];  // all landscape
+const SLIDE_MS = 7000;
+const SLIDE_QUERY = "(min-width: 1024px) and (prefers-reduced-motion: no-preference)";
+
+function subscribeSlides(change: () => void) {
+  const mq = window.matchMedia(SLIDE_QUERY);
+  mq.addEventListener("change", change);
+  return () => mq.removeEventListener("change", change);
+}
+
+function Slideshow() {
+  const run = useSyncExternalStore(subscribeSlides, () => window.matchMedia(SLIDE_QUERY).matches, () => false);
+  const [at, setAt] = useState(0);
+  useEffect(() => {
+    if (!run) return;
+    const t = window.setInterval(() => setAt((i) => (i + 1) % SLIDES.length), SLIDE_MS);
+    return () => window.clearInterval(t);
+  }, [run]);
+  return (
+    <>
+      {(run ? SLIDES : SLIDES.slice(0, 1)).map((p, i) => (
+        <div key={p} className={`wsa-photo wsa-slide${i === (run ? at : 0) ? " is-on" : ""}`}
+          style={{ "--wpos": PHOTOS[p].webPos, "--bpos": PHOTOS[p].bandPos } as React.CSSProperties}>
+          <Photo photo={p} />
+        </div>
+      ))}
+    </>
+  );
+}
 
 type InfoPanel = "terms" | "privacy" | "help" | "contact";
 
@@ -137,26 +192,6 @@ function InformationPanel({ panel, onBack }: { panel: InfoPanel; onBack: () => v
   );
 }
 
-/** The photo, art-directed: one `<picture>`, so a phone never downloads the web crop. */
-function Photo({ photo }: { photo: Exclude<AuthPhoto, "plain"> }) {
-  const p = PHOTOS[photo];
-  const common = { alt: "", quality: 75, fetchPriority: "high" as const, loading: "eager" as const };
-  const { props: { srcSet: webSet, ...rest } } = getImageProps({
-    ...common, src: p.web.src, width: p.web.w, height: p.web.h, sizes: "(min-width: 1024px) 52vw, (orientation: landscape) and (max-height: 540px) 40vw, 100vw",
-  });
-  const bandSet = p.band
-    ? getImageProps({ ...common, src: p.band.src, width: p.band.w, height: p.band.h, sizes: "(orientation: landscape) and (max-height: 540px) 40vw, 100vw" }).props.srcSet
-    : undefined;
-  return (
-    <picture>
-      {bandSet && <source media="(max-width: 1023.98px)" srcSet={bandSet} />}
-      <source srcSet={webSet} />
-      {/* eslint-disable-next-line jsx-a11y/alt-text -- decorative; alt="" comes from getImageProps */}
-      <img {...rest} className="wsa-img" />
-    </picture>
-  );
-}
-
 /**
  * When the phone's keyboard opens (or she taps a field), keep the field she is
  * typing in AND the button that sends it on screen: scroll just enough to
@@ -204,17 +239,39 @@ function useKeepFormInView(root: RefObject<HTMLElement | null>) {
   }, [root]);
 }
 
-const TRUST: { icon: "shield" | "check" | "lock"; text: string }[] = [
-  { icon: "shield", text: "Women only" },
-  { icon: "check", text: "Every member verified" },
-  { icon: "lock", text: "Number stays private" },
+const TRUST: { icon: "shield" | "check" | "lock"; text: string; sub: string }[] = [
+  { icon: "shield", text: "Women only", sub: "A safe space" },
+  { icon: "check", text: "Verified", sub: "By a real person" },
+  { icon: "lock", text: "Private", sub: "Your number stays yours" },
 ];
 
 export function TrustChips() {
   return (
     <ul className="wsa-trust" aria-label="Why WomSakhi is safe">
-      {TRUST.map((c) => <li key={c.text}><AuthIcon name={c.icon} />{c.text}</li>)}
+      {TRUST.map((c) => (
+        <li key={c.text}>
+          <span className="wsa-trust-ic"><AuthIcon name={c.icon} /></span>
+          <b>{c.text}</b>
+          <small>{c.sub}</small>
+        </li>
+      ))}
     </ul>
+  );
+}
+
+/** Two frosted badges that drift over the photo on the web — what the community promises. */
+function FloatingBadges() {
+  return (
+    <div className="wsa-floats" aria-hidden>
+      <span className="wsa-float wsa-float-a">
+        <span className="wsa-float-ic"><AuthIcon name="shield" /></span>
+        <span><b>Women-only community</b><small>Every member checked by a real person</small></span>
+      </span>
+      <span className="wsa-float wsa-float-b">
+        <span className="wsa-float-ic is-gold"><AuthIcon name="check" /></span>
+        <span><b>Learn · Work · Earn</b><small>From home, at your pace</small></span>
+      </span>
+    </div>
   );
 }
 
@@ -233,23 +290,23 @@ function LanguageSwitch() {
   );
 }
 
+
 /**
- * The one layout every auth screen sits in (sign-in, join, verify, staff).
+ * The one layout every auth screen sits in (sign-in, verification, confirm
+ * mobile, staff invite, the no-password notice, route errors).
  *
- *  ≥1024 px  the approved split: the journey's photo (43 %) with a caption
- *            card | cream side with the full logo, the white card, the footer.
- *  640–1023  the photo becomes a wide header band fading into cream, the card
- *            (web width) overlapping it, the wordmark on a white pill.
- *   <640     the phone frames: the same band, the card edge to edge minus
- *            10u, thumb-sized controls, safe areas respected.
+ * Full screen, no margins. On a laptop: the journey's photo fills the left
+ * half top to bottom with its caption, and the form fills the right half —
+ * logo and language at the top, the step centred, the links at the foot. On
+ * a phone: the photo is a band with the logo on frosted glass, and the form
+ * is a sheet rising over it to the bottom of the screen.
  *
- * Everything is sized in design units (`--u`), so each breakpoint is the
- * approved frame scaled, not re-invented. `photo="plain"` swaps the photo for
- * a white panel with the logo (staff, refusals): on the web it can carry a
- * `tag`, the caption as a heading, and `aside` rows under it.
+ * `photo="plain"` (staff, refusals) shows the logo's moving gradient instead.
+ * `stepKey` re-keys the step so its content rises in when the step changes;
+ * a new photo cross-fades in on its own.
  */
 export function AuthShell({
-  photo,
+  photo = "signin",
   caption,
   children,
   footer,
@@ -258,100 +315,93 @@ export function AuthShell({
   aside,
   screen,
   flow,
+  stepKey,
 }: {
-  photo: AuthPhoto;
+  photo?: AuthPhoto;
+  /** Over the photo on the web (a heading and a line). */
   caption?: { title: string; text: string };
   children: ReactNode;
+  /** Rendered under the step, outside it (the reCAPTCHA host). */
   footer?: ReactNode;
   showTrust?: boolean;
-  /** Plain panel only: a small label such as "Staff" (web panel and phone header). */
+  /** A small label such as "Staff", by the logo and on the caption. */
   tag?: string;
-  /** Plain panel only: extra content under the caption on the web (feature rows). */
+  /** Extra rows under the caption on the web (the staff panel). */
   aside?: ReactNode;
   /** Stable visual hook for a screen-specific composition. It never affects auth state or behaviour. */
   screen?: string;
-  /** Shared visual family for screens that use the same responsive shell. */
+  /** Shared visual family for screens that use the same shell. */
   flow?: string;
+  /** Changes when the step changes, so the new step animates in. */
+  stepKey?: string;
 }) {
   const [panel, setPanel] = useState<InfoPanel | null>(null);
   const rootRef = useRef<HTMLDivElement>(null);
   useKeepFormInView(rootRef);
   const plain = photo === "plain";
-  const usesHorizontalWordmark = flow === "member-signin" || flow === "member-join" || flow === "member-verify";
   const p = plain ? null : PHOTOS[photo];
-  const vars = p
-    ? ({ "--mh": p.mh, "--mih": p.mih, "--moff": p.moff, "--mpos": p.mpos, "--mtop": p.mtop, "--wpos": p.webPos, "--tpos": p.tpos ?? p.mpos } as React.CSSProperties)
-    : undefined;
+  const vars = p ? ({ "--wpos": p.webPos, "--bpos": p.bandPos } as React.CSSProperties) : undefined;
 
   return (
     <div
       ref={rootRef}
-      className={`wsa ${authSerif.variable} ${authSans.variable}${plain ? " wsa-plain" : " wsa-photo-led"}`}
+      className={`wsa ${authSerif.variable} ${authSans.variable}${plain ? " wsa-plain" : ""}`}
       data-photo={photo}
       data-screen={screen}
       data-flow={flow}
       style={vars}
     >
-      {plain ? (
-        <>
-          <header className="wsa-top">
-            <Link href="/signin" className="wsa-top-mark" aria-label="WomSakhi">
+      <aside className="wsa-visual" aria-label={caption?.title} aria-hidden={!caption || undefined}>
+        {plain ? (
+          <>
+            <div className="wsa-mesh" />
+            <div className="wsa-mesh-mark">
               {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src="/ux/auth/wordmark.webp" alt="WomSakhi" width={720} height={144} />
-            </Link>
-            {tag && <span className="wsa-top-tag">{tag}</span>}
-          </header>
-          <aside className="wsa-info" aria-label={caption?.title ?? "WomSakhi"}>
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src="/ux/auth/logo.webp" alt="WomSakhi — Stronger women, brighter tomorrows" className="wsa-info-lock" width={800} height={817} />
-            {tag && <span className="wsa-tag">{tag}</span>}
-            {caption && (
-              <>
-                <h2>{caption.title}</h2>
-                <div className="wsa-rg" />
-                <p>{caption.text}</p>
-              </>
-            )}
-            {aside}
-          </aside>
-        </>
-      ) : (
-        <div className="wsa-photo" aria-hidden={!caption}>
-          <div className="wsa-photo-frame"><Photo photo={photo as Exclude<AuthPhoto, "plain">} /></div>
-          <div className="wsa-pill">
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src="/ux/auth/wordmark.webp" alt="WomSakhi" width={720} height={144} />
-          </div>
-          {caption && (
-            <div className="wsa-cap">
-              <b>{caption.title}</b>
-              <span>{caption.text}</span>
+              <img src="/ux/brand/womsakhi-emblem.webp" alt="" width={600} height={373} />
             </div>
-          )}
-        </div>
-      )}
-
-      <main className="wsa-side">
-        {!plain && (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img
-            src={usesHorizontalWordmark ? "/ux/auth/wordmark.webp" : "/ux/auth/logo.webp"}
-            alt="WomSakhi — Stronger women, brighter tomorrows"
-            className="wsa-lock"
-            width={usesHorizontalWordmark ? 720 : 800}
-            height={usesHorizontalWordmark ? 144 : 817}
-          />
+          </>
+        ) : (
+          <>
+            {photo === "signin"
+              ? <><Slideshow /><FloatingBadges /></>
+              : <div className="wsa-photo" key={photo}><Photo photo={photo as Exclude<AuthPhoto, "plain">} /></div>}
+          </>
         )}
-        <section className="wsa-card" key={panel ?? "content"}>
+        <div className="wsa-pill">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src="/ux/brand/wordmark-brand.png" alt="WomSakhi" width={720} height={144} />
+          {tag && <span className="wsa-tag">{tag}</span>}
+        </div>
+        {caption && (
+          <div className="wsa-cap">
+            {tag && <span className="wsa-tag">{tag}</span>}
+            <h2>{caption.title}</h2>
+            <p>{caption.text}</p>
+            {aside}
+          </div>
+        )}
+      </aside>
+
+      <main className="wsa-main">
+        <div className="wsa-aurora" aria-hidden />
+        <header className="wsa-head">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src="/ux/brand/wordmark-brand.png" alt="WomSakhi" width={720} height={144} />
+          {tag && <span className="wsa-tag">{tag}</span>}
+          <LanguageSwitch />
+        </header>
+        <section className="wsa-card" key={panel ?? stepKey ?? "content"}>
           {panel ? <InformationPanel panel={panel} onBack={() => setPanel(null)} /> : children}
           {!panel && showTrust && <TrustChips />}
         </section>
         {footer}
         <footer className="wsa-foot">
-          <button type="button" aria-pressed={panel === "privacy"} onClick={() => setPanel("privacy")}>Privacy</button>
-          <button type="button" aria-pressed={panel === "terms"} onClick={() => setPanel("terms")}>Terms</button>
-          <button type="button" aria-pressed={panel === "help"} onClick={() => setPanel("help")}>Help</button>
-          <button type="button" aria-pressed={panel === "contact"} onClick={() => setPanel("contact")}>Contact</button>
+          <nav aria-label="About WomSakhi">
+            <button type="button" aria-pressed={panel === "privacy"} onClick={() => setPanel("privacy")}>Privacy</button>
+            <button type="button" aria-pressed={panel === "terms"} onClick={() => setPanel("terms")}>Terms</button>
+            <button type="button" aria-pressed={panel === "help"} onClick={() => setPanel("help")}>Help</button>
+            <button type="button" aria-pressed={panel === "contact"} onClick={() => setPanel("contact")}>Contact</button>
+          </nav>
           <LanguageSwitch />
         </footer>
       </main>

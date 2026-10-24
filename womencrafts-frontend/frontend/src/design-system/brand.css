@@ -1,0 +1,188 @@
+/* ==================================================================
+   WomSakhi BRAND — the one source for colour, type and shape.
+   ------------------------------------------------------------------
+   Every other token file maps onto this one:
+     design-system/tokens.css   (shared, staff dashboard)  → --ws-*
+     app/ux/tokens.css          (member app, --ux-*)       → --ws-*
+     components/auth-shell/*    (sign-in, verification)    → --ws-*
+     theme-engine/presets.ts    the "WomSakhi" theme seeds  = the two 600s below
+
+   The palette is taken from the logo, measured from the emblem and the
+   wordmark (public/ux/brand/): an indigo-violet (#4830f0), an orchid
+   (#a860f0) and a magenta-pink (#f00078), with a gold leaf.
+
+     magenta-600  #c80066  primary: buttons, links, active states, focus.
+                           The logo's #f00078 carries white text at only
+                           4.22:1, so the action colour is one step deeper
+                           (5.76:1). #f00078 stays as magenta-500, for
+                           gradients and graphics.
+     violet-600   #4830f0  secondary: the logo's violet, exact (7.10:1 with
+                           white). Icon chips, secondary emphasis, AI.
+     gradient              violet → orchid → magenta, the logo's own sweep.
+                           Brand moments only (splash, hero, badges), never
+                           behind body text.
+
+   Type: ONE family, Plus Jakarta Sans. Headings differ by weight and size,
+   not by typeface. Indic and Arabic scripts fall through, letter by letter,
+   to their Noto faces (--font-scripts in tokens.css).
+
+   Ratios in comments are measured WCAG contrast; text needs 4.5:1.
+================================================================== */
+
+:root {
+  /* ── Magenta (primary) ─────────────────────────────────────────── */
+  --ws-magenta-50:  #fff0f7;
+  --ws-magenta-100: #ffe3f0;
+  --ws-magenta-200: #ffc2dd;
+  --ws-magenta-300: #ff8fc0;
+  --ws-magenta-400: #f74a9b;
+  --ws-magenta-500: #f00078;   /* the logo's magenta: graphics, gradient */
+  --ws-magenta-600: #c80066;   /* PRIMARY · white text 5.76:1 */
+  --ws-magenta-700: #a3005a;   /* hover / pressed · 7.76:1 */
+  --ws-magenta-800: #7d0047;   /* deep brand slabs */
+  --ws-magenta-900: #560032;
+
+  /* ── Violet (secondary) ────────────────────────────────────────── */
+  --ws-violet-50:  #f4f2ff;
+  --ws-violet-100: #efecff;
+  --ws-violet-200: #d9d2ff;
+  --ws-violet-300: #b3a6ff;
+  --ws-violet-400: #8a77fa;
+  --ws-violet-500: #6048f0;
+  --ws-violet-600: #4830f0;   /* the logo's violet · white text 7.10:1 */
+  --ws-violet-700: #3d27c9;
+  --ws-violet-800: #2f1f99;
+  --ws-violet-900: #21166b;
+
+  --ws-orchid: #a860f0;       /* the logo's middle tone: gradient, graphics only */
+  --ws-gold:   #f2a33a;       /* the emblem's leaf: celebration, decorative only */
+
+  --ws-gradient: linear-gradient(120deg, #4830f0 0%, #a860f0 52%, #f00078 100%);
+  /* A button-safe version: both ends carry white text above 5:1. */
+  --ws-gradient-action: linear-gradient(120deg, #4830f0 0%, #c80066 100%);
+
+  /* ── Text ──────────────────────────────────────────────────────── */
+  --ws-ink:    #1b1238;   /* headings and body · 16.9:1 on canvas */
+  --ws-ink-2:  #3a2f55;   /* secondary headings · 12.2:1 on white */
+  --ws-muted:  #5f5873;   /* meta, hints · ≥5.6:1 on every tint below */
+  --ws-faint:  #8a839b;   /* decorative only (3:1) — never a sentence */
+  --ws-on-brand: #ffffff;
+
+  /* ── Grounds and lines ─────────────────────────────────────────── */
+  --ws-canvas:      #fbf9fd;   /* the page */
+  --ws-surface:     #ffffff;   /* cards, sheets, inputs */
+  --ws-surface-2:   #f5f2fa;   /* quiet panels, hover rows */
+  --ws-line:        #ece7f3;   /* hairlines */
+  --ws-line-strong: #dcd4e8;   /* dividers that must be seen, input borders */
+  --ws-deep:        #1b1238;   /* statement panels, the bed behind video */
+
+  /* ── Status (meaning, not brand: the same in every theme) ──────── */
+  --ws-success-ink:  #007d38;  --ws-success-tint: #e8f4ec;
+  --ws-warning-ink:  #856200;  --ws-warning-tint: #f6efdf;
+  --ws-info-ink:     #006dbd;  --ws-info-tint:    #e8f0f8;
+  --ws-danger-ink:   #b3261e;  --ws-danger-tint:  #fbe9e7;  --ws-danger-solid: #b91c1c;
+
+  --ws-focus: var(--ws-magenta-600);
+
+  /* ── Type ──────────────────────────────────────────────────────── */
+  --ws-font: var(--font-jakarta), var(--font-scripts, sans-serif), ui-sans-serif, system-ui,
+    -apple-system, "Segoe UI", Roboto, sans-serif;
+
+  /* One scale. 12px is the floor: nothing in WomSakhi is smaller. */
+  --ws-fs-display: 40px;   /* hero numbers, splash-level headlines */
+  --ws-fs-title:   32px;   /* page titles */
+  --ws-fs-section: 24px;   /* section titles */
+  --ws-fs-card:    18px;   /* card and sheet titles */
+  --ws-fs-body:    16px;   /* reading text, inputs, buttons */
+  --ws-fs-small:   14px;   /* secondary text, labels */
+  --ws-fs-caption: 12px;   /* captions, badges, meta */
+
+  --ws-fw-regular:  400;
+  --ws-fw-medium:   500;
+  --ws-fw-semibold: 600;
+  --ws-fw-bold:     700;
+
+  --ws-lh-tight: 1.2;      /* headings */
+  --ws-lh-body:  1.5;      /* reading text */
+
+  /* ── Shape ─────────────────────────────────────────────────────── */
+  --ws-space-1: 4px;  --ws-space-2: 8px;   --ws-space-3: 12px; --ws-space-4: 16px;
+  --ws-space-5: 20px; --ws-space-6: 24px;  --ws-space-8: 32px; --ws-space-10: 40px;
+  --ws-space-12: 48px; --ws-space-16: 64px;
+
+  --ws-radius-sm: 8px;      /* chips, small tiles */
+  --ws-radius-md: 12px;     /* inputs, buttons, list rows */
+  --ws-radius-lg: 16px;     /* cards */
+  --ws-radius-xl: 24px;     /* sheets, hero panels */
+  --ws-radius-pill: 999px;
+
+  --ws-control-h: 48px;     /* inputs and buttons: one height everywhere */
+  --ws-hit-min: 44px;       /* smallest tap target */
+
+  --ws-shadow-card: 0 1px 2px rgba(27, 18, 56, 0.05), 0 6px 18px -8px rgba(27, 18, 56, 0.12);
+  --ws-shadow-pop:  0 4px 10px -4px rgba(27, 18, 56, 0.10), 0 24px 56px -20px rgba(27, 18, 56, 0.30);
+  --ws-shadow-action: 0 10px 24px -12px rgba(200, 0, 102, 0.55);
+
+  /*
+    The other families the app used to load (Fraunces, Poppins, Inter,
+    Caveat) are no longer downloaded. These aliases keep every older
+    reference — a stylesheet that still says var(--font-fraunces) — drawing
+    in the one family instead of silently falling back to Georgia.
+  */
+  --font-fraunces: var(--font-jakarta);
+  --font-poppins:  var(--font-jakarta);
+  --font-inter:    var(--font-jakarta);
+  --font-script:   var(--font-jakarta);
+}
+
+/* Dark: grounds go indigo-plum (never grey — a grey dark mode under a
+   magenta brand reads as a different product); the brand lightens to keep
+   contrast and its fills take dark text. Status keeps its meaning. */
+.dark {
+  --ws-ink:    #f7f4fc;   /* 16.3:1 on surface */
+  --ws-ink-2:  #e2dcef;
+  --ws-muted:  #b3aac6;   /* 7.3:1 on surface-2 */
+  --ws-faint:  #a49bb9;
+  --ws-on-brand: #2a0016; /* 7.9:1 on the dark-mode brand fill */
+
+  --ws-brand-dark: #ff7ab6;   /* 7.4:1 on surface */
+  --ws-violet-dark: #a99bff;  /* 7.4:1 on surface */
+
+  --ws-canvas:      #110c1d;
+  --ws-surface:     #1b1529;
+  --ws-surface-2:   #251d36;
+  --ws-line:        #342a48;
+  --ws-line-strong: #46395f;
+  --ws-deep:        #0c0816;
+
+  --ws-success-ink: #51c890;  --ws-success-tint: #17302a;
+  --ws-warning-ink: #d3a445;  --ws-warning-tint: #33291a;
+  --ws-info-ink:    #5fa2e0;  --ws-info-tint:    #182634;
+  --ws-danger-ink:  #f28b82;  --ws-danger-tint:  #3a1c1f;  --ws-danger-solid: #f28ba0;
+
+  --ws-focus: var(--ws-brand-dark);
+}
+
+/* Light-only compositions — sign-in (.wsa), onboarding (.wso) and the
+   verification cards (.ac) are drawn on a light card in every theme, so they
+   keep the light brand values even when the app around them is dark.
+   (The cards' own dark overrides read --ux-* tokens, which are resolved on
+   .ux before they reach here, so they still follow the member app.) */
+.wsa, .wso, .ac {
+  --ws-ink: #1b1238;
+  --ws-ink-2: #3a2f55;
+  --ws-muted: #5f5873;
+  --ws-faint: #8a839b;
+  --ws-on-brand: #ffffff;
+  --ws-canvas: #fbf9fd;
+  --ws-surface: #ffffff;
+  --ws-surface-2: #f5f2fa;
+  --ws-line: #ece7f3;
+  --ws-line-strong: #dcd4e8;
+  --ws-deep: #1b1238;
+  --ws-success-ink: #007d38;  --ws-success-tint: #e8f4ec;
+  --ws-warning-ink: #856200;  --ws-warning-tint: #f6efdf;
+  --ws-info-ink: #006dbd;     --ws-info-tint: #e8f0f8;
+  --ws-danger-ink: #b3261e;   --ws-danger-tint: #fbe9e7;  --ws-danger-solid: #b91c1c;
+  --ws-focus: var(--ws-magenta-600);
+}

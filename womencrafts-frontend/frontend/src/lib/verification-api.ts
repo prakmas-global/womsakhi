@@ -174,8 +174,12 @@ export async function apiVerificationQueue(state?: VerificationState): Promise<{
   return data;
 }
 
-export async function apiApproveApplicant(userId: string): Promise<{ message: string }> {
-  const { data } = await apiClient.post(`/verification/${userId}/approve`);
+/**
+ * Admit her. `fullName` is her name exactly as printed on the ID she sent:
+ * members do not type a name when they join, the reviewer reads it off the card.
+ */
+export async function apiApproveApplicant(userId: string, fullName: string): Promise<{ message: string }> {
+  const { data } = await apiClient.post(`/verification/${userId}/approve`, { full_name: fullName });
   return data;
 }
 

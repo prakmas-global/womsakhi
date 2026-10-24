@@ -765,9 +765,12 @@ async def list_opportunities(
 async def create_opportunity(
     body: OpportunityUpsert, request: Request, me: dict = Depends(get_current_user)
 ):
+    from app.routes import work_talent as wt
+    category, keys, names = await wt.resolve_job_skills(body.category, body.skill_keys)
     doc = OpportunityModel.create_document(
         title=body.title, org=body.org, kind=body.kind, desc=body.desc,
-        location=body.location, mode=body.mode, pay=body.pay, skills=body.skills,
+        location=body.location, mode=body.mode, pay=body.pay, skills=names or body.skills,
+        category=category, skill_keys=keys,
         openings=body.openings, deadline=body.deadline, experience=body.experience,
         contact_note=body.contact_note, status=body.status,
         pay_low_minor=body.pay_low_minor, pay_high_minor=body.pay_high_minor,
@@ -775,6 +778,8 @@ async def create_opportunity(
     )
     result = await _opportunities().insert_one(doc)
     doc["_id"] = result.inserted_id
+    if doc["status"] == "open":
+        await wt.notify_matching_women(doc)
     await record(
         me, "growth.opportunity.create", target=str(result.inserted_id),
         detail=f"Posted {body.kind.lower()} '{body.title}' at {body.org or 'an unnamed employer'} ({body.openings} openings, {body.status})",
@@ -794,6 +799,10 @@ async def update_opportunity(
 ):
     updates = body.model_dump()
     updates["updated_at"] = datetime.now(timezone.utc)
+    from app.routes import work_talent as wt
+    updates["category"], updates["skill_keys"], names = await wt.resolve_job_skills(body.category, body.skill_keys)
+    if names:
+        updates["skills"] = names
 
     # `model_dump()` includes the three pay overrides, and they are None unless
     # the caller set them — `$set`ting that straight in would null the figures
@@ -881,7 +890,7 @@ def _history(d: dict) -> list[HistoryEntry]:
     return out
 
 
-def _application_row(d: dict, members: dict[str, dict]) -> ApplicationRow:
+def _application_row(d: dict, members: dict[str, dict], skills: dict | None = None) -> ApplicationRow:
     u = members.get(d.get("user_id", ""), {})
     base = ApplicationModel.to_response(d)
     return ApplicationRow(
@@ -899,6 +908,8 @@ def _application_row(d: dict, members: dict[str, dict]) -> ApplicationRow:
         member_phone=d.get("phone") or u.get("phone", ""),
         member_code=u.get("member_id", ""),
         history=_history(d),
+        verified_skills=(skills or {}).get(d.get("user_id", ""), []),
+        matching_skills=d.get("skills") or [],
     )
 
 
@@ -917,7 +928,10 @@ async def list_applications(
         query["status"] = status_filter
     docs = await _applications().find(query).sort("created_at", -1).to_list(500)
     members = await _member_map([d["user_id"] for d in docs])
-    return [_application_row(d, members) for d in docs]
+    from app.core.skill_proof import verified_skills
+
+    skills = await verified_skills([d["user_id"] for d in docs])
+    return [_application_row(d, members, skills) for d in docs]
 
 
 @router.patch(
@@ -974,7 +988,9 @@ async def decide_application(
                + (f": {body.staff_note[:160]}" if body.staff_note else ""),
         request=request,
     )
-    return _application_row(doc, members)
+    from app.core.skill_proof import verified_skills
+
+    return _application_row(doc, members, await verified_skills([doc["user_id"]]))
 
 
 # --- the numbers on the tiles -----------------------------------------------------

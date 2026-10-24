@@ -1,6 +1,7 @@
 "use client";
 /* eslint-disable @next/next/no-img-element */
 
+import { artFor } from "@/components/ux/media/art";
 import { useMemo, useRef, useState } from "react";
 import { useT } from "@/i18n";
 import { HomeShell } from "@/components/ux/home/HomeShell";
@@ -19,19 +20,9 @@ const FILTERS = ["For You", "Remote", "Part-time", "Full-time", "Freelance", "Wo
 type Filter = (typeof FILTERS)[number];
 const SKILLS = ["Social Media", "UI/UX Design", "Content Writing", "Virtual Assistance", "Data Entry", "Customer Support"];
 
+/** The picture of the work itself — shared with Find work, so a job looks the same everywhere. */
 function imageFor(job: Job) {
-  const role = `${job.title} ${job.skills.join(" ")}`.toLowerCase();
-  if (/kitchen|tiffin|baker|cook/.test(role)) return "kitchen";
-  if (/solar/.test(role)) return "solar";
-  if (/anganwadi|support worker/.test(role)) return "support";
-  if (/embroid/.test(role)) return "embroidery";
-  if (/beaut|salon/.test(role)) return "beauty";
-  if (/data entry/.test(role)) return "data";
-  if (/tailor|stitch/.test(role)) return "tailoring";
-  if (/design|ux/.test(role)) return "design";
-  if (/content|writ/.test(role)) return "writing";
-  if (/social|marketing/.test(role)) return "social";
-  return "community";
+  return artFor([job.title, job.skills.join(" "), job.categoryName], "job", undefined, job.id);
 }
 
 const money = (minor: number) => new Intl.NumberFormat("en-IN", { style: "currency", currency: "INR", maximumFractionDigits: 0 }).format(minor / 100);
@@ -44,7 +35,7 @@ function JobTile({ job, image, saved, onSave }: { job: Job; image: string; saved
   const tr = useT();
   return <article className={styles.job}>
     <div className={styles.jobImage}>
-      <img src={`${ART}${image}.webp`} alt="" loading="lazy" />
+      <img src={image} alt={job.title} loading="lazy" />
       <span className={styles.jobBadge}>{job.womenLed ? "Women-led" : job.mode === "Remote" ? "Remote" : job.kind}</span>
       <button type="button" onClick={onSave} aria-label={saved ? `Unsave ${job.title}` : `Save ${job.title}`} aria-pressed={saved} className={styles.save}><I name="Heart" style={saved ? { fill: "currentColor" } : undefined} /></button>
     </div>
@@ -164,7 +155,7 @@ export function WorkDashboard() {
       <aside className={styles.rail} aria-label={tr("workDashboard.workOverview")}>
         <blockquote className={styles.quote}><span aria-hidden="true">“</span><p>{tr("workDashboard.independentWomenCreateStrongerFamiliesAnd")}</p><cite>— WomSakhi</cite></blockquote>
         <section className={styles.railPanel}><PanelHeading title={tr("homeRail.upcomingEvents")} href="/app/schedule" action={tr("workDashboard.viewCalendar")} /><div className={styles.schedule}>{events.upcoming.slice(0, 4).map(event => <TransitionLink href={`/app/events/${event.id}`} key={event.id}><time>{event.day} {event.month}</time><span>{event.title}<small>{event.time || event.when}</small></span></TransitionLink>)}{!events.upcoming.length && <p>{tr("workDashboard.noUpcomingEventsYet")}</p>}</div></section>
-        <section className={styles.railPanel}><PanelHeading title={tr("homeRail.yourProgress")} href="/app/profile" /><div className={styles.progressTop}><div className={styles.ring} style={{ background: `conic-gradient(var(--ux-brand) ${me.profilePct}%, var(--ux-brand-tint-2) 0)` }}><span>{me.profilePct}%</span></div><div><strong>{tr("workDashboard.yourProfileStrength")}</strong><p>{me.profilePct === 100 ? "Your profile is complete." : "Complete a few more items to get better opportunities."}</p></div></div><div className={styles.tasks}><TransitionLink href="/app/profile"><I name={me.profilePct === 100 ? "CheckCircle2" : "Circle"} /> {tr("earnhome.completeProfile")} <I name="ChevronRight" /></TransitionLink><TransitionLink href="/app/profile"><I name="Circle" /> {tr("workDashboard.addPortfolio")} <I name="ChevronRight" /></TransitionLink><TransitionLink href="/app/trust"><I name="Circle" /> {tr("workDashboard.getVerifiedReviews")} <I name="ChevronRight" /></TransitionLink><TransitionLink href="/app/intake"><I name="Circle" /> {tr("workDashboard.linkYourSkills")} <I name="ChevronRight" /></TransitionLink><TransitionLink href="/app/settings"><I name="Circle" /> {tr("workDashboard.enableAvailability")} <I name="ChevronRight" /></TransitionLink></div></section>
+        <section className={styles.railPanel}><PanelHeading title={tr("homeRail.yourProgress")} href="/app/profile" /><div className={styles.progressTop}><div className={styles.ring} style={{ background: `conic-gradient(var(--ux-brand) ${me.profilePct}%, var(--ux-brand-tint-2) 0)` }}><span>{me.profilePct}%</span></div><div><strong>{tr("workDashboard.yourProfileStrength")}</strong><p>{me.profilePct === 100 ? "Your profile is complete." : "Complete a few more items to get better opportunities."}</p></div></div><div className={styles.tasks}><TransitionLink href="/app/profile"><I name={me.profilePct === 100 ? "CheckCircle2" : "Circle"} /> {tr("earnhome.completeProfile")} <I name="ChevronRight" /></TransitionLink><TransitionLink href="/app/profile"><I name="Circle" /> {tr("workDashboard.addPortfolio")} <I name="ChevronRight" /></TransitionLink><TransitionLink href="/app/trust"><I name="Circle" /> {tr("workDashboard.getVerifiedReviews")} <I name="ChevronRight" /></TransitionLink><TransitionLink href="/app/work/profile"><I name="Circle" /> {tr("workDashboard.linkYourSkills")} <I name="ChevronRight" /></TransitionLink><TransitionLink href="/app/work/profile"><I name="Circle" /> {tr("workDashboard.enableAvailability")} <I name="ChevronRight" /></TransitionLink></div></section>
         <section className={styles.reputation}><I name="Trophy" /><div><h2>{tr("workDashboard.buildYourReputation")}</h2><p>{tr("workDashboard.completeProjectsGetVerifiedReviewsAnd")}</p><TransitionLink href="/app/trust">{tr("workDashboard.seeHowItWorks")} <I name="ArrowRight" /></TransitionLink></div></section>
       </aside>
     </div>

@@ -20,7 +20,7 @@ import { usePageChrome } from "../chrome";
  * now only registers the parts that differ per page. See `ux/chrome.tsx`.
  */
 export function HomeShell({
-  children, rail, name, bare, wide, fit, immersive, skeleton = "list", loadFailed,
+  children, rail, name, bare, wide, fit, immersive, columns, skeleton = "list", loadFailed,
 }: {
   /** Optional and ignored — Shell derives the mode and section from the URL. */
   active?: string; children: React.ReactNode; rail?: React.ReactNode; name?: string;
@@ -28,6 +28,8 @@ export function HomeShell({
   bare?: boolean;
   /** Hands the whole width to a screen that is already made of columns. */
   wide?: boolean;
+  /** A module home with its own right-hand column: keep the sidebar, skip the default side column. */
+  columns?: boolean;
   /** This screen is sized to the window; drop the scroller's bottom clearance. */
   fit?: boolean;
   /** Phone only: no top bar or tab bar — the screen draws its own header. */
@@ -37,7 +39,7 @@ export function HomeShell({
   /** What could not be loaded, in her words: "your orders", "this course". */
   loadFailed?: string;
 }) {
-  usePageChrome({ rail, wide, bare, fit, name, immersive });
+  usePageChrome({ rail, wide, bare, fit, name, immersive, columns });
 
   /**
    * `?state=loading` and `?state=error` render those states on any screen.

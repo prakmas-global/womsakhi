@@ -34,7 +34,7 @@ const AUTH_PREVIEW = process.env.NODE_ENV !== "production";
  * tells a stranger holding a stale link that it was once real.
  */
 
-/** The staff panel: the plain logo side with the same three rows as staff sign-in. */
+/** The staff shell: the same page as staff sign-in, tagged "Staff". */
 function Shell({ children }: { children: React.ReactNode }) {
   return (
     <AuthShell photo="plain" tag="Staff" caption={STAFF_CAPTION} aside={<StaffAside />}>

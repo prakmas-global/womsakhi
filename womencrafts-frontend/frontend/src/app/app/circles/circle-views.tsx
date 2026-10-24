@@ -8,6 +8,7 @@ import { Btn, Card, I, IconTile, v } from "@/components/ux/kit";
 import type { Circle } from "@/lib/community-api";
 import { ALL_TOPICS as RAW_ALL_TOPICS, CIRCLE_ART as RAW_CIRCLE_ART, members, readPost, topicOf, type Topic } from "@/components/ux/circle/data";
 import { useTranslated } from "@/i18n/data";
+import { artFor } from "@/components/ux/media/art";
 
 /* ------------------------------------------------------------------ */
 /*  The banner, and the box she types her question into                */
@@ -389,12 +390,11 @@ export function PopularGroups({ rows, busy, onJoin }: {
             <div key={c.id} className="flex items-center gap-2.5">
               <Link href={`/app/circles/${c.id}`} className="ux-sq shrink-0"
                     aria-label={`Open ${c.name}`}>
-                <span className="grid h-[40px] w-[40px] place-items-center overflow-hidden rounded-[12px]"
+                <span className="grid h-[52px] w-[52px] place-items-center overflow-hidden rounded-[12px]"
                       style={{ background: v(t.tint) }}>
                   {/* eslint-disable-next-line @next/next/no-img-element */}
-                  {c.cover ? <img src={c.cover} alt="" aria-hidden loading="lazy" decoding="async"
-                                  className="h-full w-full object-cover" />
-                           : <I name={t.icon} className="h-[17px] w-[17px]" style={{ color: v(t.ink) }} />}
+                  <img src={artFor([c.name, c.topic, c.desc], "circle", c.cover, c.id)} alt="" aria-hidden loading="lazy" decoding="async"
+                       className="h-full w-full object-cover" />
                 </span>
               </Link>
               <Link href={`/app/circles/${c.id}`} className="ux-sq min-w-0 flex-1">

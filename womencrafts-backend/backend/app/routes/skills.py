@@ -17,12 +17,14 @@ from app.core import cache
 from app.core.rbac import require_active_member, require_member_account
 from app.core.serializers import to_object_id
 from app.db.mongodb import get_database
+from app.core.skill_proof import issue_certificate, verified_skills
 from app.models.skills import AssessmentModel, AttemptModel, DigitalStepModel
 from app.schemas.skills import (
     AssessmentResponse,
     AttemptRequest,
     AttemptResponse,
     DigitalStepResponse,
+    VerifiedSkill,
 )
 
 router = APIRouter(tags=["Member · Learn"])
@@ -124,7 +126,18 @@ async def submit(
     )
     result = await _attempts().insert_one(attempt)
     attempt["_id"] = result.inserted_id
-    return AttemptResponse(**AttemptModel.to_response(attempt))
+    code = ""
+    if passed:
+        # A pass is worth something outside this page: a certificate she can
+        # share, and a "Verified skill" badge on her profile, shop and
+        # applications (app/core/skill_proof.py).
+        code = await issue_certificate(me, doc, score)
+    return AttemptResponse(**AttemptModel.to_response(attempt), certificate_code=code)
+
+
+@router.get("/me/skills", response_model=list[VerifiedSkill], summary="Skills I have proved")
+async def my_skills(me: dict = Depends(require_member_account)):
+    return (await verified_skills([str(me["_id"])])).get(str(me["_id"]), [])
 
 
 # ── Using a phone ──────────────────────────────────────────────────────────

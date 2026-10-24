@@ -292,6 +292,7 @@ def _shape(source: str, doc: dict, people: dict[str, dict]) -> dict:
         "status_label": STATUS_LABEL[st],
         "note": doc.get("note") or doc.get("notes") or "",
         "cancelled_reason": doc.get("cancelled_reason") or "",
+        "meeting": doc.get("meeting") or "",
         "no_show": bool(doc.get("no_show")),
         "rescheduled_count": int(doc.get("rescheduled_count") or legacy_rescheduled),
         "confirmed_at": _iso(doc.get("confirmed_at")),
@@ -559,6 +560,21 @@ class CancelBody(BaseModel):
         return v[:300]
 
 
+class MeetingBody(BaseModel):
+    #: A video link (https://…) or where to come, in words. "" removes it.
+    meeting: str
+
+    @field_validator("meeting")
+    @classmethod
+    def tidy(cls, v: str) -> str:
+        v = " ".join((v or "").split())
+        if len(v) > 300:
+            raise ValueError("Keep it under 300 characters")
+        if v.lower().startswith("http") and not v.lower().startswith("https://"):
+            raise ValueError("Video links must start with https://")
+        return v
+
+
 class NoteBody(BaseModel):
     text: str
 
@@ -762,6 +778,34 @@ async def no_show_appointment(ref: str, request: Request, me: dict = Depends(get
     shaped = await _shape_one(source, new)
     await record(me, "appointment.no_show", target=str(doc["_id"]),
                  detail=f'{shaped["name"]} · {shaped["service"]} · {_when_label(new)}', request=request)
+    return shaped
+
+
+@router.post(
+    "/{ref}/meeting", summary="Set how she joins — a video link or a place",
+    dependencies=[Depends(require_permission("appointments.edit"))],
+)
+async def set_meeting(ref: str, body: MeetingBody, request: Request, me: dict = Depends(get_current_user)):
+    """
+    The member app's "Join" button used to copy `meet.womsakhi.com/<id>` — a
+    link to a meeting service that does not exist. Now there is a Join only
+    when whoever runs the session has written how to join, here; and she is
+    told the moment it is added.
+    """
+    source, doc = await _load_one(ref)
+    _must_be_open(doc, "given a meeting link")
+    new = await _apply(source, doc, me, action="meeting", detail=body.meeting or "removed",
+                       set_fields={"meeting": body.meeting})
+    if source == SOURCE_MEMBER and body.meeting and doc.get("user_id"):
+        from app.models.conversation import notify
+        await notify(
+            get_database(), doc["user_id"],
+            title=f"How to join: {doc.get('service_name', 'your session')}",
+            body=body.meeting[:140], ntype="booking", href=f"/app/bookings/{doc['_id']}",
+        )
+    shaped = await _shape_one(source, new)
+    await record(me, "appointment.meeting", target=str(doc["_id"]),
+                 detail=f'{shaped["name"]} · {shaped["service"]}: {body.meeting[:120] or "removed"}', request=request)
     return shaped
 
 

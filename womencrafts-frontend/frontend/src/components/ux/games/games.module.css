@@ -1,0 +1,92 @@
+/* Calm games — shared motion. Everything here is decoration: with reduced
+   motion the games still work, they just stop moving. */
+
+.stage {
+  position: relative;
+  overflow: hidden;
+  border-radius: var(--ux-r-lg, 20px);
+  border: 1px solid var(--ux-line);
+  background:
+    radial-gradient(120% 90% at 20% 0%, var(--ux-tint-lilac, #f1e9fb) 0%, transparent 60%),
+    radial-gradient(120% 90% at 100% 100%, var(--ux-tint-pink, #fde9f1) 0%, transparent 55%),
+    var(--ux-surface);
+}
+
+/* Breathe */
+.breathWrap { display: grid; place-items: center; min-height: 380px; padding: 28px 16px; }
+.breathRing {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: min(68vw, 300px);
+  aspect-ratio: 1;
+  border-radius: 50%;
+}
+.breathGlow {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  background: radial-gradient(circle at 35% 30%, #fff 0%, var(--ux-tint-pink, #fde9f1) 35%, var(--ux-brand-tint, #f6dceb) 70%);
+  box-shadow: 0 0 0 10px color-mix(in srgb, var(--ux-brand) 10%, transparent), 0 20px 60px -18px color-mix(in srgb, var(--ux-brand) 45%, transparent);
+  transform: scale(0.55);
+  transition-property: transform;
+  transition-timing-function: cubic-bezier(.45, .05, .55, .95);
+}
+.breathWord { position: relative; text-align: center; color: var(--ux-ink); }
+
+/* Bubbles */
+.pond { height: min(62vh, 520px); touch-action: manipulation; user-select: none; }
+.bubble {
+  position: absolute;
+  bottom: -90px;
+  border: 0;
+  padding: 0;
+  border-radius: 50%;
+  cursor: pointer;
+  background: radial-gradient(circle at 30% 28%, rgba(255,255,255,.95) 0 12%, rgba(255,255,255,.35) 22%, var(--b, #f8c8dc) 70%);
+  box-shadow: inset -6px -8px 16px rgba(0,0,0,.06), 0 6px 18px -8px rgba(80,20,60,.35);
+  animation: rise var(--d, 9s) linear forwards, sway 3.2s ease-in-out infinite alternate;
+  -webkit-tap-highlight-color: transparent;
+}
+.paused .bubble { animation-play-state: paused; }
+@keyframes rise { to { transform: translateY(calc(-1 * (min(62vh, 520px) + 140px))); } }
+@keyframes sway { from { margin-left: -8px; } to { margin-left: 8px; } }
+.burst {
+  position: absolute;
+  border-radius: 50%;
+  pointer-events: none;
+  border: 3px solid var(--b, #f8c8dc);
+  animation: burst .45s ease-out forwards;
+}
+@keyframes burst { from { opacity: .9; transform: scale(.6); } to { opacity: 0; transform: scale(1.6); } }
+
+/* Pairs */
+.pairGrid { display: grid; gap: 10px; }
+.pairCard { display: block; width: 100%; perspective: 900px; aspect-ratio: 3 / 4; border: 0; padding: 0; background: none; cursor: pointer; -webkit-tap-highlight-color: transparent; }
+/* A <span>, so it must be told to be a box — inline, it had no size and the board was blank. */
+.pairInner { display: block; position: relative; width: 100%; height: 100%; transform-style: preserve-3d; transition: transform .45s cubic-bezier(.3,.7,.3,1); }
+.flipped .pairInner { transform: rotateY(180deg); }
+.pairFace, .pairBack {
+  display: block; position: absolute; inset: 0; border-radius: 14px; overflow: hidden; backface-visibility: hidden;
+  border: 1px solid var(--ux-line);
+}
+.pairBack {
+  display: grid !important; place-items: center;
+  background: linear-gradient(140deg, var(--ux-fill, #b0105f), var(--ux-fill-2, #d14a8b));
+  color: #fff;
+}
+.pairFace { transform: rotateY(180deg); background: var(--ux-surface-2); }
+.pairFace img { width: 100%; height: 100%; object-fit: cover; }
+.matched .pairFace { box-shadow: 0 0 0 3px #43b581, 0 0 22px rgba(67,181,129,.45); }
+
+/* Rangoli */
+.paper { width: 100%; max-width: 520px; aspect-ratio: 1; display: block; margin: 0 auto; touch-action: manipulation; }
+.seg { cursor: pointer; transition: fill .18s ease; }
+.seg:hover { filter: brightness(.97); }
+
+@media (prefers-reduced-motion: reduce) {
+  .breathGlow { transition: none; }
+  .bubble { animation-duration: var(--d, 9s), 0s; }
+  .pairInner { transition: none; }
+  .burst { animation: none; display: none; }
+}

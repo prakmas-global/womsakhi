@@ -124,8 +124,9 @@ export interface MemberProfile {
 export const apiMemberProfile = (id: string) =>
   apiClient.get<MemberProfile>(`/members/${id}/profile`).then((r) => r.data);
 
-export const apiApproveMember = (id: string, reason = "") =>
-  apiClient.post<ApiMember>(`/members/${id}/approve`, { reason }).then((r) => r.data);
+/** `fullName`: her name as printed on her ID — it becomes her locked, verified name. */
+export const apiApproveMember = (id: string, reason = "", fullName = "") =>
+  apiClient.post<ApiMember>(`/members/${id}/approve`, { reason, full_name: fullName }).then((r) => r.data);
 
 export const apiRejectMember = (id: string, reason: string) =>
   apiClient.post<ApiMember>(`/members/${id}/reject`, { reason }).then((r) => r.data);

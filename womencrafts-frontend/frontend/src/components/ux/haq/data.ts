@@ -32,8 +32,14 @@
  * RECOVER   — delay compensation is a legal right that is essentially never
  *             paid.
  *
- * Mock data. Every figure here is illustrative, not hers.
+ * The catalogue itself is NOT here any more: which schemes exist, for whom
+ * and in which state comes from the server (lib/haq-api.ts, staff-managed),
+ * and `fromScheme` below lays her own status over it. What stays here is the
+ * vocabulary — statuses, the paper types — and the arithmetic.
  */
+
+import type { HaqState } from "@/lib/life-api";
+import { lookFor, mayFit, type Scheme } from "@/lib/haq-api";
 
 export type HaqStatus =
   /** Money arriving now. */
@@ -45,7 +51,9 @@ export type HaqStatus =
   /** She qualifies and has not applied. */
   | "can-claim"
   /** Applied, waiting on the department. */
-  | "waiting";
+  | "waiting"
+  /** She has not said — the default. Never "you qualify" by assumption. */
+  | "unknown";
 
 export type Haq = {
   id: string;
@@ -74,125 +82,39 @@ export type Haq = {
    *  state has not sanctioned since January 2024 is worse than saying nothing. */
   openNow: boolean;
   openNote?: string;
+  /** Catalogue extras (from the server). */
+  key: string;
+  state: string;
+  link: string;
+  helpline: string;
+  where: string;
+  steps: string[];
+  /** Documents in words (papers she can track are in `needs`). */
+  needsText: string[];
+  amountLabel: string;
+  eligibility: string[];
+  /** Her own answers say this may be for her. A suggestion, not a status. */
+  fits: boolean;
 };
 
-export const HAQ: Haq[] = [
-  {
-    id: "h1",
-    name: "Ladki Bahin",
-    body: "Government of Maharashtra",
-    gives: "A monthly payment for women in the household",
-    amountMinor: 150000,
-    cadence: "every month",
-    status: "at-risk",
-    action: "Finish e-KYC",
-    dueDays: 9,
-    needs: ["aadhaar", "bank"],
-    online: true,
-    icon: "HeartHandshake",
-    tint: "--ux-tint-pink",
-    ink: "--ux-pink-ink",
-    openNow: true,
-  },
-  {
-    id: "h2",
-    name: "Widow pension",
-    body: "State social welfare",
-    gives: "A monthly pension",
-    amountMinor: 90000,
-    cadence: "every month",
-    status: "stopped",
-    stoppedBecause:
-      "The yearly life certificate was not submitted. This is the most common reason, and it can be undone.",
-    needs: ["aadhaar", "life-cert", "bank"],
-    online: false,
-    icon: "ShieldCheck",
-    tint: "--ux-tint-violet",
-    ink: "--ux-violet",
-    openNow: true,
-  },
-  {
-    id: "h3",
-    name: "Maternity benefit",
-    body: "PMMVY · Ministry of Women & Child Development",
-    gives: "₹5,000 for a first child, in two parts",
-    amountMinor: 500000,
-    cadence: "once",
-    status: "waiting",
-    action: "Second instalment after the first vaccination",
-    dueDays: 41,
-    needs: ["aadhaar", "bank", "mcp-card"],
-    online: true,
-    icon: "Baby",
-    tint: "--ux-tint-amber",
-    ink: "--ux-amber-ink",
-    openNow: true,
-  },
-  {
-    id: "h4",
-    name: "Free gas refill",
-    body: "Ujjwala",
-    gives: "A subsidy on each cylinder",
-    amountMinor: 30000,
-    cadence: "each refill",
-    status: "receiving",
-    needs: ["aadhaar", "bank"],
-    online: true,
-    icon: "Flame",
-    tint: "--ux-tint-orange",
-    ink: "--ux-orange-ink",
-    openNow: true,
-  },
-  {
-    id: "h5",
-    name: "Ration card food grain",
-    body: "Public Distribution System",
-    gives: "Monthly grain for the household",
-    amountMinor: 0,
-    cadence: "every month",
-    status: "at-risk",
-    action: "Re-verify the family list",
-    dueDays: 24,
-    needs: ["aadhaar", "ration"],
-    online: false,
-    icon: "Wheat",
-    tint: "--ux-tint-green",
-    ink: "--ux-green-ink",
-    openNow: true,
-  },
-  {
-    id: "h6",
-    name: "Girl child savings",
-    body: "Sukanya Samriddhi · Post Office",
-    gives: "A high-interest account in your daughter's name",
-    amountMinor: 25000,
-    cadence: "you choose",
-    status: "can-claim",
-    needs: ["aadhaar", "birth-cert"],
-    online: false,
-    icon: "PiggyBank",
-    tint: "--ux-tint-blue",
-    ink: "--ux-blue-ink",
-    openNow: true,
-  },
-  {
-    id: "h7",
-    name: "Old age pension",
-    body: "State social welfare",
-    gives: "A monthly pension for a parent living with you",
-    amountMinor: 60000,
-    cadence: "every month",
-    status: "can-claim",
-    needs: ["aadhaar", "age-proof", "bank"],
-    online: false,
-    icon: "Users",
-    tint: "--ux-tint-lilac",
-    ink: "--ux-violet",
-    openNow: false,
-    openNote:
-      "Your district has not sanctioned a new pension since January 2024. You can prepare the papers, but do not expect a decision yet.",
-  },
-];
+
+/** One catalogue row, with her own status laid over it. */
+export function fromScheme(s: Scheme, mine: HaqState | undefined, tags: string[]): Haq {
+  const look = lookFor(s.category);
+  return {
+    id: s.key, key: s.key, name: s.name, body: s.body_name, gives: s.gives,
+    amountMinor: s.amount_minor, amountLabel: s.amount, cadence: s.cadence,
+    status: (mine?.status as HaqStatus) ?? "unknown",
+    action: mine?.action || undefined,
+    dueDays: mine?.due_days ?? undefined,
+    stoppedBecause: mine?.stopped_because || undefined,
+    needs: s.papers, needsText: s.needs, online: s.online,
+    icon: look.icon, tint: look.tint, ink: look.ink,
+    openNow: s.open_now, openNote: s.open_note || undefined,
+    state: s.state, link: s.link, helpline: s.helpline, where: s.where, steps: s.steps,
+    eligibility: s.eligibility, fits: mayFit(s, tags),
+  };
+}
 
 /* ── Papers ──────────────────────────────────────────────────────────────── */
 
@@ -228,34 +150,6 @@ export const PAPERS: Paper[] = [
   { id: "age-proof", name: "Age proof", note: "For your mother-in-law", state: "missing", from: "Municipal office", unlocks: 1 },
 ];
 
-/* ── Accompany ───────────────────────────────────────────────────────────── */
-
-/**
- * The +70% arm.
- *
- * Haqdarshak pays field agents a salary to do this. You have groups of eight to
- * twelve women who already meet and already vouch for each other — so the
- * expensive arm of the trial is the cheap one here. Matched on who has done
- * *this* office before, because that is the knowledge that matters.
- */
-export type Companion = {
-  id: string;
-  name: string;
-  avatar: string;
-  /** What she has actually done, not a rating. */
-  did: string;
-  /** Which office she knows. */
-  knows: string;
-  circle: string;
-  free: string;
-};
-
-export const COMPANIONS: Companion[] = [
-  { id: "c1", name: "Sunita Devi", avatar: "", did: "Restored her own widow pension last year", knows: "Block office", circle: "Tailoring & Stitching Sisters", free: "Tuesday morning" },
-  { id: "c2", name: "Kavita Rao", avatar: "", did: "Finished e-KYC for four women in the circle", knows: "CSC on the main road", circle: "Tailoring & Stitching Sisters", free: "Any morning" },
-  { id: "c3", name: "Ananya Sharma", avatar: "", did: "Got her ration family list corrected", knows: "Ration office", circle: "Near you", free: "Thursday" },
-];
-
 /* ── Recover ─────────────────────────────────────────────────────────────── */
 
 /**
@@ -274,12 +168,6 @@ export type Late = {
   filed: boolean;
 };
 
-export const LATE: Late[] = [
-  { id: "l1", what: "Ladki Bahin — March", dueOn: "5 March", paidOn: "2 April", daysLate: 28, owedMinor: 4200, filed: false },
-  { id: "l2", what: "Ladki Bahin — April", dueOn: "5 April", paidOn: "19 April", daysLate: 14, owedMinor: 2100, filed: false },
-  { id: "l3", what: "Widow pension — January", dueOn: "7 January", daysLate: 61, owedMinor: 9150, filed: true },
-];
-
 /* ── Derived helpers ─────────────────────────────────────────────────────── */
 
 export const atRisk = (rows: Haq[]) => rows.filter((h) => h.status === "at-risk");
@@ -287,6 +175,8 @@ export const stopped = (rows: Haq[]) => rows.filter((h) => h.status === "stopped
 export const receiving = (rows: Haq[]) =>
   rows.filter((h) => h.status === "receiving" || h.status === "at-risk");
 export const claimable = (rows: Haq[]) => rows.filter((h) => h.status === "can-claim");
+/** Not checked yet, but her answers say it may be for her. */
+export const mayFitHer = (rows: Haq[]) => rows.filter((h) => h.status === "unknown" && h.fits);
 
 /** What stops arriving if nothing is done. The number that should lead. */
 export const atRiskMonthlyMinor = (rows: Haq[]) =>
@@ -298,8 +188,9 @@ export const STATUS_LABEL: Record<HaqStatus, string> = {
   receiving: "Arriving",
   "at-risk": "Will stop",
   stopped: "Stopped",
-  "can-claim": "You qualify",
+  "can-claim": "I qualify",
   waiting: "Waiting on them",
+  unknown: "Not checked yet",
 };
 
 export const STATUS_TONE: Record<HaqStatus, { tint: string; ink: string }> = {
@@ -308,4 +199,5 @@ export const STATUS_TONE: Record<HaqStatus, { tint: string; ink: string }> = {
   stopped: { tint: "--ux-danger-tint", ink: "--ux-danger-solid" },
   "can-claim": { tint: "--ux-tint-blue", ink: "--ux-blue-ink" },
   waiting: { tint: "--ux-tint-lilac", ink: "--ux-violet-ink" },
+  unknown: { tint: "--ux-surface-2", ink: "--ux-muted" },
 };

@@ -1,17 +1,17 @@
 "use client";
 
 import { useState } from "react";
-import { COPY } from "@/components/ux/copy";
 import * as Icons from "@/components/ux/icons";
 
 import {
-  ActionBtn, Btn, Card, EmptyState, IconTile, Progress, SectionHead, SourceNote, copy
+  Btn, Card, EmptyState, Progress, SectionHead, SourceNote,
 } from "@/components/ux/kit";
 import { HomeShell } from "@/components/ux/home/HomeShell";
 import { ScreenHead, Segments, Tag } from "@/components/ux/work/native";
 import { RailStat, StageTrack } from "@/components/ux/work/parts";
 import { STAGES as RAW_STAGES, WORK_ART as RAW_WORK_ART } from "@/components/ux/work/data";
 import { useApplications, workStats } from "@/components/ux/growth";
+import { artFor } from "@/components/ux/media/art";
 import { useT } from "@/i18n";
 import { useTranslated } from "@/i18n/data";
 
@@ -112,10 +112,14 @@ export default function Applications() {
             const closed = a.step === 0;
             return (
               <Card key={a.id} className="ux-i ux-onscroll" style={{ ["--i" as string]: i }}>
-                <div className="flex items-start gap-3.5">
-                  <IconTile icon={closed ? "CircleSlash" : "Briefcase"}
-                            tint={closed ? "--ux-surface-2" : a.tone}
-                            ink={closed ? "--ux-muted" : a.ink} size={46} radius={12} />
+                <div className="flex flex-col gap-3.5 sm:flex-row sm:items-start">
+                  {/* The work itself, big — the same picture as in Find work. */}
+                  <span className="relative block aspect-[16/10] w-full shrink-0 overflow-hidden rounded-[12px] sm:w-[190px]"
+                        style={{ background: "var(--ux-surface-2)" }}>
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img src={artFor(a.title, "job", undefined, a.jobId)} alt={a.title} loading="lazy" decoding="async"
+                         className="h-full w-full object-cover" style={{ filter: closed ? "grayscale(.85)" : undefined }} />
+                  </span>
                   <div className="min-w-0 flex-1">
                     <div className="flex items-start gap-2">
                       <h2 className="min-w-0 flex-1 truncate text-sm font-semibold"
@@ -143,11 +147,12 @@ export default function Applications() {
                   <StageTrack step={a.step} stages={STAGES} />
                   <span className="flex items-center gap-2 [&>*]:flex-1 lg:[&>*]:flex-none">
                     <Btn href={`/app/opportunities/${a.jobId}`} variant="outline" size="sm">{tr("applications.theListing")}</Btn>
-                    {a.stage === "Interview" && (
-                      <ActionBtn variant="primary" size="sm" icon="Video" doneIcon="Copy"
-                                 done={COPY.linkCopied}
-                                 act={() => copy(`https://meet.womsakhi.com/${a.id}`, COPY.linkCopied, "Copy it by hand: meet.womsakhi.com/" + a.id)}>{tr("applications.joinTheCall")}</ActionBtn>
-                    )}
+                    {/* "Join the call" copied meet.womsakhi.com/<id>, a meeting
+                        that never existed. The interview is what the hirer
+                        wrote (shown above); a link in it becomes the button. */}
+                    {a.stage === "Interview" && (/https:\/\/\S+/i.exec(a.when)?.[0]
+                      ? <Btn href={/https:\/\/\S+/i.exec(a.when)![0]} variant="primary" size="sm" icon="Video">{tr("applications.joinTheCall")}</Btn>
+                      : <Btn href="/app/messages" variant="soft" size="sm" icon="MessageCircle">Ask about the interview</Btn>)}
                     {closed && <Btn href="/app/opportunities" variant="soft" size="sm">{tr("applications.findSimilar")}</Btn>}
                   </span>
                 </div>

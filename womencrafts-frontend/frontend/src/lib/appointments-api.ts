@@ -48,6 +48,8 @@ export interface AdminAppointment {
   status_label: string;
   note: string; // what she (or the staff who entered it) wrote
   cancelled_reason: string;
+  /** How she joins — a video link or a place, written by staff. "" until set. */
+  meeting?: string;
   no_show: boolean;
   rescheduled_count: number;
   confirmed_at: string | null;
@@ -157,6 +159,12 @@ export async function apiNoShowAppointment(ref: string): Promise<AdminAppointmen
 
 export async function apiAddAppointmentNote(ref: string, text: string): Promise<AdminAppointment> {
   const { data } = await apiClient.post<AdminAppointment>(`/appointments/${ref}/notes`, { text });
+  return data;
+}
+
+/** How she joins: an https:// video link or a place in words. "" removes it; she is told when it is set. */
+export async function apiSetAppointmentMeeting(ref: string, meeting: string): Promise<AdminAppointment> {
+  const { data } = await apiClient.post<AdminAppointment>(`/appointments/${ref}/meeting`, { meeting });
   return data;
 }
 

@@ -4,18 +4,19 @@ import { useState } from "react";
 import * as Icons from "@/components/ux/icons";
 
 import {
-  Btn, Card, IconTile, Progress, SectionHead,
+  Btn, Card, Progress, SectionHead,
   SourceNote
 } from "@/components/ux/kit";
 import { HomeShell } from "@/components/ux/home/HomeShell";
 import { ScreenHead } from "@/components/ux/learning/native";
-import { Tag } from "@/components/ux/learning/native";
 import { MORE_ART as RAW_MORE_ART } from "@/components/ux/more/data";
 import { useAssessmentList } from "@/components/ux/entitlements";
 import { apiAssessment, apiSubmitAttempt, type Assessment } from "@/lib/entitlements-api";
 import { messageFrom } from "@/lib/use-action";
 import { useT } from "@/i18n";
 import { useTranslated } from "@/i18n/data";
+import { MediaCard, MediaGrid } from "@/components/ux/media/MediaCard";
+import { artFor } from "@/components/ux/media/art";
 
 /**
  * Skill Assessment — proof of what she can already do.
@@ -47,7 +48,7 @@ export default function AssessPage() {
   const [answers, setAnswers] = useState<number[]>([]);
   const [at, setAt] = useState(0);
   const [sending, setSending] = useState(false);
-  const [result, setResult] = useState<{ score: number; passed: boolean } | null>(null);
+  const [result, setResult] = useState<{ score: number; passed: boolean; code?: string } | null>(null);
 
   const done = ASSESSMENTS.filter((a) => a.taken);
   const badges = ASSESSMENTS.filter((a) => a.badge).length;
@@ -84,7 +85,7 @@ export default function AssessPage() {
     setProblem("");
     try {
       const got = await apiSubmitAttempt(paper.id, answers);
-      setResult({ score: got.score, passed: got.passed });
+      setResult({ score: got.score, passed: got.passed, code: got.certificate_code });
       // The list behind carries her best score and her badge, both of which
       // this attempt may have just changed.
       refetch();
@@ -128,11 +129,14 @@ export default function AssessPage() {
               </h2>
               <p className="mt-2 max-w-[40ch] text-sm leading-relaxed" style={{ color: "var(--ux-ink-2)" }}>
                 {result.passed
-                  ? `Passed. It is on your profile as a ${paper.skill} badge, and employers hiring through WomSakhi can filter by it.`
+                  ? `Passed. You now have a "Verified: ${paper.skill}" badge — it shows on your profile, your shop, your mentor card and your job applications — and a certificate anyone can check.`
                   : `The pass mark is ${paper.pass_mark}%. Nothing is lost — only your best result ever counts, so try again whenever you like.`}
               </p>
               <div className="mt-5 flex flex-wrap justify-center gap-2.5">
-                <Btn onClick={leave} variant="primary" iconEnd="ArrowRight">{tr("assess.backToTheTests")}</Btn>
+                {result.passed && result.code && (
+                  <Btn href="/app/certificates" variant="primary" icon="Award">See your certificate</Btn>
+                )}
+                <Btn onClick={leave} variant={result.passed ? "outline" : "primary"} iconEnd="ArrowRight">{tr("assess.backToTheTests")}</Btn>
                 {!result.passed && (
                   <Btn variant="outline" icon="RotateCcw"
                        onClick={() => { setResult(null); setAnswers(new Array(paper.questions.length).fill(-1)); setAt(0); }}>{tr("assess.takeItAgain")}</Btn>
@@ -268,65 +272,42 @@ export default function AssessPage() {
         </p>
       )}
 
-      <div className="ux-deck ux-stagger space-y-[12px]">
-        {ASSESSMENTS.map((a, i) => (
-          <Card key={a.id} className="ux-i ux-onscroll" style={{ ["--i" as string]: i }}>
-            <div className="flex items-start gap-3.5">
-              <IconTile icon={a.icon} tint={a.tint} ink={a.ink} size={48} radius={13} />
-              <div className="min-w-0 flex-1">
-                <div className="flex items-start gap-2">
-                  <h2 className="min-w-0 flex-1 text-base font-semibold" style={{ color: "var(--ux-ink)" }}>
-                    {a.skill}
-                  </h2>
-                  {a.badge && <Tag tone="green" size="sm">{tr("assess.onYourProfile")}</Tag>}
-                  {a.level && !a.badge && <Tag tone="neutral" size="sm">{a.level}</Tag>}
-                </div>
-
-                {a.taken ? (
-                  <>
-                    <div className="mt-2.5 flex items-center gap-3">
-                      <Progress pct={a.pct} track="--ux-track"
-                                tone={a.pct >= 70 ? "--ux-green" : "--ux-amber"} />
-                      <span className="shrink-0 text-xsm font-bold tabular-nums" style={{ color: "var(--ux-ink)" }}>
-                        {a.pct}%
-                      </span>
-                    </div>
-                    <p className="mt-1.5 text-[13px] lg:text-xs" style={{ color: "var(--ux-muted)" }}>
-                      Taken {a.taken} · {a.level}
-                    </p>
-                  </>
-                ) : (
-                  <p className="mt-1.5 text-xsm" style={{ color: "var(--ux-ink-2)" }}>{a.note}</p>
-                )}
-
-                <p className="mt-2 flex flex-wrap items-center gap-x-3 text-[13px] lg:text-xs" style={{ color: "var(--ux-faint)" }}>
-                  <span className="inline-flex items-center gap-1"><Icons.Clock className="h-3.5 w-3.5" /> {a.mins} min</span>
-                  <span>{a.questions} questions</span>
+      <MediaGrid>
+        {ASSESSMENTS.map((a) => (
+          <MediaCard
+            key={a.id}
+            image={artFor([a.skill, a.title, a.note], "course", null, a.id)}
+            topLeft={a.badge ? { text: `Passed ✓ ${a.pct}%`, tone: "green" } : a.taken ? { text: `Best ${a.pct}%`, tone: "light" } : { text: "Skill test", tone: "light" }}
+            topRight={a.badge ? { text: tr("assess.onYourProfile"), tone: "dark" } : null}
+            overlay={<><Icons.Clock className="h-[13px] w-[13px]" /> {a.mins} min · {a.questions} questions</>}
+            title={a.title || a.skill}
+            subtitle={[a.title ? a.skill : "", a.taken ? `Taken ${a.taken}` : "", a.level].filter(Boolean).join(" · ") || undefined}
+            footer={
+              <>
+                <p className="mb-2 text-xs" style={{ color: "var(--ux-faint)" }}>
+                  {a.taken ? tr("assess.aSecondTryCanOnlyImprove") : tr("assess.youCanStopAndComeBack")}
                 </p>
+                <Btn className="w-full" variant={a.taken ? "outline" : "primary"} size="sm" full
+                     icon={opening === a.id ? "Loader" : undefined}
+                     iconEnd={opening === a.id ? undefined : "ArrowRight"}
+                     disabled={!!opening}
+                     onClick={() => void start(a.id)}>
+                  {opening === a.id ? "Opening…" : a.taken ? tr("assess.tryAgain") : tr("assess.takeTheTest")}
+                </Btn>
+              </>
+            }
+          >
+            {a.taken ? (
+              <div className="flex items-center gap-3">
+                <Progress pct={a.pct} track="--ux-track" tone={a.pct >= 70 ? "--ux-green" : "--ux-amber"} />
+                <span className="shrink-0 text-xsm font-bold tabular-nums" style={{ color: "var(--ux-ink)" }}>{a.pct}%</span>
               </div>
-            </div>
-
-            {/* Stacked on a phone with the action full width at the foot of the
-                card, where a thumb reaches; the row it always was from `lg`. */}
-            <div className="mt-4 flex flex-col gap-3 border-t pt-4 lg:mt-3.5 lg:flex-row lg:items-center lg:justify-between lg:gap-4 lg:pt-3.5"
-                 style={{ borderColor: "var(--ux-line)" }}>
-              {/* Said before she starts, not buried in terms. */}
-              <span className="text-[13px] lg:text-xs" style={{ color: "var(--ux-faint)" }}>
-                {a.taken ? tr("assess.aSecondTryCanOnlyImprove")
-              : tr("assess.youCanStopAndComeBack")}
-              </span>
-              <Btn className="ux-action-primary" variant={a.taken ? "outline" : "primary"} size="sm"
-                   icon={opening === a.id ? "Loader" : undefined}
-                   iconEnd={opening === a.id ? undefined : "ArrowRight"}
-                   disabled={!!opening}
-                   onClick={() => void start(a.id)}>
-                {opening === a.id ? "Opening…" : a.taken ? tr("assess.tryAgain")
-              : tr("assess.takeTheTest")}
-              </Btn>
-            </div>
-          </Card>
+            ) : (
+              <p className="line-clamp-2 text-xsm" style={{ color: "var(--ux-ink-2)" }}>{a.note}</p>
+            )}
+          </MediaCard>
         ))}
-      </div>
+      </MediaGrid>
     </HomeShell>
   );
 }

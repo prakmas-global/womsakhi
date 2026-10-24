@@ -27,6 +27,7 @@ export {
   ArrowRightCircle,
   ArrowUp,
   ArrowUpRight,
+  AtSign,
   AudioLines,
   Award,
   Baby,
@@ -241,6 +242,8 @@ export {
   User,
   UserCheck,
   UserPlus,
+  UserX,
+  UserMinus,
   UserRound,
   UserRoundCheck,
   UserRoundCog,
@@ -272,6 +275,15 @@ export {
   ScanFace,
   Smile,
   Timer,
+  // circle group chats
+  Link,
+  LogIn,
+  ClipboardPaste,
+  ShieldOff,
+  Reply,
+  ArrowDown,
+  Ban,
+  SendHorizontal,
   // the phone's More sheet
   Menu,
 } from "lucide-react";

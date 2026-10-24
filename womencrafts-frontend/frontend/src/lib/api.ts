@@ -177,6 +177,12 @@ export interface AuthPayload {
   user: {
     id: string;
     full_name: string;
+    /** Her chosen username; "" until she picks one. */
+    username?: string;
+    /** The name other members see: username, else her verified account name. */
+    display_name?: string;
+    /** Verified member: her name came off her ID and only staff change it. */
+    name_locked?: boolean;
     email: string;
     role: string;
     is_active: boolean;

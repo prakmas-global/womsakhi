@@ -22,6 +22,7 @@ from pydantic import BaseModel, Field
 
 from app.core.config import settings
 from app.core.deps import get_current_user
+from app.core.usernames import name_locked, next_change_at as username_next_change
 from app.core.rbac import require_active_member, require_member, require_member_account
 from app.core import cache, semantic, sessions
 from app.core.audit import record
@@ -29,6 +30,7 @@ from app.core.matching import NEEDS, rank
 from app.core.rbac import is_member
 from app.core.serializers import to_object_id
 from app.core.media import media_url
+from app.core.skill_proof import verified_skills
 from app.db.mongodb import get_database
 from app.models.goal import GoalModel
 from app.models.wallet import WalletTxnModel
@@ -265,6 +267,7 @@ async def my_profile(me: dict = Depends(require_member_account)):
         profile = await get_database()[MemberModel.collection_name].find_one(
             {"_id": ObjectId(me["member_id"])}
         )
+    next_change = username_next_change(me)
     return MeProfileResponse(
         **UserModel.to_response(me),
         code=(profile or {}).get("code", ""),
@@ -272,6 +275,8 @@ async def my_profile(me: dict = Depends(require_member_account)):
         segment=(profile or {}).get("segment", ""),
         dob=(profile or {}).get("dob", ""),
         bio=(profile or {}).get("bio", ""),
+        verified_skills=(await verified_skills([str(me["_id"])])).get(str(me["_id"]), []),
+        username_next_change_at=next_change.isoformat() if next_change else "",
     )
 
 
@@ -313,7 +318,13 @@ async def update_my_profile(
     user_updates: dict = {"updated_at": now}
     member_updates: dict = {"updated_at": now}
 
-    if payload.full_name is not None:
+    if payload.full_name is not None and payload.full_name.strip() != (me.get("full_name") or ""):
+        if name_locked(me):
+            raise HTTPException(status.HTTP_409_CONFLICT, {
+                "code": "name_locked",
+                "message": "Your name was checked against your ID when you were verified, so only WomSakhi "
+                           "can change it. You can change your username instead.",
+            })
         user_updates["full_name"] = payload.full_name.strip()
         member_updates["full_name"] = payload.full_name.strip()
     # Checked before anything is written, so a refused number saves nothing.
@@ -662,54 +673,124 @@ async def my_programs(
     summary="Join a program",
 )
 async def enroll(program_id: str, me: dict = Depends(require_active_member)):
-    program = await _programs().find_one({"_id": to_object_id(program_id)})
-    if not program:
-        raise HTTPException(status.HTTP_404_NOT_FOUND, "That program is no longer available")
+    """
+    Join a course. A FREE course opens at once. A PAID course (one a member
+    teaches, with a price) opens as `pending`: she pays the teacher directly by
+    UPI, taps "I've paid", and the teacher confirms it — then the lessons open.
+    WomSakhi never holds the money (routes/market.py explains why).
+    """
+    from app.routes.catalog import OPEN_PROGRAM_STATUSES
 
-    existing = await _enrollments().find_one({"user_id": str(me["_id"]), "program_id": program_id})
-    if existing:
-        if existing.get("status") == EnrollmentModel.STATUS_WITHDRAWN:
-            # Re-joining after leaving is fine; pick up where the record is.
-            fresh = await _enrollments().find_one_and_update(
-                {"_id": existing["_id"]},
-                {"$set": {"status": EnrollmentModel.STATUS_ACTIVE, "updated_at": datetime.now(timezone.utc)}},
-                return_document=True,
-            )
-            return EnrollmentResponse(**EnrollmentModel.to_response(fresh, program))
-        raise HTTPException(status.HTTP_409_CONFLICT, "You've already joined this program.")
+    uid = str(me["_id"])
+    program = await _programs().find_one(
+        {"_id": to_object_id(program_id), "status": {"$in": OPEN_PROGRAM_STATUSES}}
+    )
+    if not program:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "That course is no longer available")
+    if program.get("owner_id") == uid:
+        raise HTTPException(status.HTTP_409_CONFLICT, "This is your own course — open it from Teach.")
+
+    paid = ProgramModel.is_paid(program)
+    now = datetime.now(timezone.utc)
+    joining: dict = {
+        "status": EnrollmentModel.STATUS_PENDING if paid else EnrollmentModel.STATUS_ACTIVE,
+        "updated_at": now,
+    }
+    if paid:
+        joining["payment"] = {"status": EnrollmentModel.PAY_AWAITING, "amount_minor": int(program["price_minor"])}
 
     cap = int(program.get("cap") or 0)
     enrolled = int(program.get("enrolled") or 0)
+    existing = await _enrollments().find_one({"user_id": uid, "program_id": program_id})
+    if existing and existing.get("status") != EnrollmentModel.STATUS_WITHDRAWN:
+        raise HTTPException(status.HTTP_409_CONFLICT, "You've already joined this course.")
     if cap and enrolled >= cap:
-        raise HTTPException(status.HTTP_409_CONFLICT, "This program is full.")
+        raise HTTPException(status.HTTP_409_CONFLICT, "This course is full.")
 
-    doc = EnrollmentModel.create_document(
-        user_id=str(me["_id"]),
-        member_id=me.get("member_id") or "",
-        program_id=program_id,
-        program_name=program.get("name", ""),
-    )
-    result = await _enrollments().insert_one(doc)
-    doc["_id"] = result.inserted_id
+    if existing:
+        # Re-joining after leaving: same record, her progress kept.
+        doc = await _enrollments().find_one_and_update(
+            {"_id": existing["_id"]}, {"$set": joining}, return_document=True,
+        )
+    else:
+        doc = EnrollmentModel.create_document(
+            user_id=uid, member_id=me.get("member_id") or "",
+            program_id=program_id, program_name=program.get("name", ""),
+            status=joining["status"],
+        )
+        if paid:
+            doc["payment"] = joining["payment"]
+        doc["_id"] = (await _enrollments().insert_one(doc)).inserted_id
 
-    # Keep the admin-facing counter honest.
+    # A seat is held while she pays, and given back if the payment is declined.
     await _programs().update_one({"_id": program["_id"]}, {"$inc": {"enrolled": 1}})
+    cache.forget_prefix("catalog:")
 
-    await notify(
-        get_database(), str(me["_id"]),
-        title="You joined a program",
-        body=program.get("name", ""),
-        ntype=MemberNotificationModel.TYPE_PROGRAM,
-        href="/app/programs",
+    name = program.get("name", "")
+    who = me.get("full_name") or "A member"
+    price = _rupees(int(program.get("price_minor") or 0))
+    teacher = program.get("teacher_name") or "the teacher"
+    db = get_database()
+    if paid:
+        await notify(db, uid, f"Pay {teacher} {price} to start", name,
+                     MemberNotificationModel.TYPE_PROGRAM, f"/app/programs/{program_id}")
+    else:
+        await notify(db, uid, "You joined a course", name,
+                     MemberNotificationModel.TYPE_PROGRAM, f"/app/programs/{program_id}")
+    if program.get("owner_id"):
+        await notify(
+            db, program["owner_id"],
+            f"{who} wants to join — waiting for her payment" if paid else f"{who} joined your course",
+            name, MemberNotificationModel.TYPE_PROGRAM, f"/app/teach/{program_id}",
+        )
+    return EnrollmentResponse(**EnrollmentModel.to_response(doc, program))
+
+
+def _rupees(minor: int) -> str:
+    return f"₹{minor // 100:,}" if minor % 100 == 0 else f"₹{minor / 100:,.2f}"
+
+
+class PaidClaim(BaseModel):
+    #: The UPI reference (UTR) from her payment app, if she has it. Optional:
+    #: many women will not know where to find it, and the teacher checks her
+    #: own account either way.
+    reference: str = Field("", max_length=40)
+
+
+@router.post("/programs/{program_id}/paid", response_model=EnrollmentResponse, summary="I've paid the teacher")
+async def claim_paid(program_id: str, payload: PaidClaim, me: dict = Depends(require_active_member)):
+    uid = str(me["_id"])
+    now = datetime.now(timezone.utc)
+    doc = await _enrollments().find_one_and_update(
+        {"user_id": uid, "program_id": program_id, "status": EnrollmentModel.STATUS_PENDING},
+        {"$set": {
+            "payment.status": EnrollmentModel.PAY_CLAIMED,
+            "payment.reference": payload.reference.strip(),
+            "payment.claimed_at": now,
+            "updated_at": now,
+        }},
+        return_document=True,
     )
+    if not doc:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "There is no payment waiting on this course.")
+    program = await _programs().find_one({"_id": to_object_id(program_id)})
+    if program and program.get("owner_id"):
+        amount = _rupees(int((doc.get("payment") or {}).get("amount_minor") or 0))
+        await notify(
+            get_database(), program["owner_id"],
+            f"{me.get('full_name') or 'A member'} says she paid you {amount}",
+            f"{program.get('name', '')} — check your UPI app, then confirm it in Teach.",
+            MemberNotificationModel.TYPE_MONEY, f"/app/teach/{program_id}",
+        )
     return EnrollmentResponse(**EnrollmentModel.to_response(doc, program))
 
 
 @router.post("/programs/{program_id}/leave", response_model=MessageResponse, summary="Leave a program")
 async def leave_program(program_id: str, me: dict = Depends(require_active_member)):
-    existing = await _enrollments().find_one(
-        {"user_id": str(me["_id"]), "program_id": program_id, "status": EnrollmentModel.STATUS_ACTIVE}
-    )
+    existing = await _enrollments().find_one({
+        "user_id": str(me["_id"]), "program_id": program_id,
+        "status": {"$in": [EnrollmentModel.STATUS_ACTIVE, EnrollmentModel.STATUS_PENDING]},
+    })
     if not existing:
         raise HTTPException(status.HTTP_404_NOT_FOUND, "You're not enrolled in this program")
 
@@ -720,6 +801,7 @@ async def leave_program(program_id: str, me: dict = Depends(require_active_membe
     await _programs().update_one(
         {"_id": to_object_id(program_id), "enrolled": {"$gt": 0}}, {"$inc": {"enrolled": -1}}
     )
+    cache.forget_prefix("catalog:")
     return MessageResponse(message="You've left this program.")
 
 
@@ -1284,7 +1366,9 @@ def _module_count(program: dict) -> int:
     return len(_curriculum_for(program, 0))
 
 
-def _curriculum_for(program: dict, sessions_attended: int) -> list[dict]:
+def _curriculum_for(
+    program: dict, sessions_attended: int, *, done: Optional[set[int]] = None, with_content: bool = False,
+) -> list[dict]:
     """
     The week-by-week outline.
 
@@ -1300,6 +1384,11 @@ def _curriculum_for(program: dict, sessions_attended: int) -> list[dict]:
                 "title": (m or {}).get("title", ""),
                 "detail": (m or {}).get("detail", ""),
                 "duration": (m or {}).get("duration", ""),
+                "preview": bool((m or {}).get("preview")),
+                # The lesson itself: once the course is open to her — or now,
+                # if the teacher made it a free preview.
+                **({"body": (m or {}).get("body", ""), "video_url": (m or {}).get("video_url", "")}
+                   if with_content or (m or {}).get("preview") else {}),
             }
             for m in raw
         ]
@@ -1314,9 +1403,10 @@ def _curriculum_for(program: dict, sessions_attended: int) -> list[dict]:
             {"title": f"Week {n}", "detail": "", "duration": ""} for n in range(1, weeks + 1)
         ]
 
-    # Mark off what she has actually attended — no guessing beyond the count.
+    # Mark off what she has done: the lessons she completed, one by one, when
+    # the course records them; otherwise the older count.
     for i, m in enumerate(modules):
-        m["done"] = i < sessions_attended
+        m["done"] = (i + 1) in done if done is not None else i < sessions_attended
     return modules
 
 
@@ -1342,10 +1432,8 @@ def _reached(progress: int, sessions_attended: int, total: int) -> int:
 @router.get("/programs/{program_id}/detail", response_model=ProgramDetail, summary="One programme, in full")
 async def program_detail(program_id: str, me: dict = Depends(require_active_member)):
     uid = str(me["_id"])
-    # Three independent lookups, awaited one after another, cost three round
-    # trips to Atlas — about 75ms of the 84ms this endpoint took. Neither the
-    # enrolment nor the certificate needs the programme: both are keyed on her
-    # id and the path parameter, which are known before any of them run.
+    # Three independent lookups, awaited together: neither the enrolment nor
+    # the certificate needs the programme to be found first.
     program, enrollment, certificate = await asyncio.gather(
         _programs().find_one({"_id": to_object_id(program_id)}),
         _enrollments().find_one({"user_id": uid, "program_id": program_id}),
@@ -1356,8 +1444,14 @@ async def program_detail(program_id: str, me: dict = Depends(require_active_memb
     if not program:
         raise HTTPException(status.HTTP_404_NOT_FOUND, "That programme doesn't exist")
 
-    joined_at = enrollment.get("created_at") if enrollment else None
-    attended = int((enrollment or {}).get("sessions_attended") or 0)
+    e = enrollment or {}
+    state = e.get("status", "")
+    learning = state in EnrollmentModel.LEARNING
+    is_owner = bool(program.get("owner_id")) and program.get("owner_id") == uid
+    joined_at = e.get("created_at")
+    attended = int(e.get("sessions_attended") or 0)
+    lessons = e.get("completed_lessons")
+    pending = state == EnrollmentModel.STATUS_PENDING
 
     return ProgramDetail(
         id=str(program["_id"]),
@@ -1370,17 +1464,71 @@ async def program_detail(program_id: str, me: dict = Depends(require_active_memb
         days=program.get("days", ""),
         cover=media_url(program.get("cover", "")),
         seats=int(program.get("cap") or 0),
-        enrolled=bool(enrollment and enrollment.get("status") != EnrollmentModel.STATUS_WITHDRAWN),
-        progress=int((enrollment or {}).get("progress") or 0),
+        enrolled=learning,
+        progress=int(e.get("progress") or 0),
         sessions_attended=attended,
-        status=(enrollment or {}).get("status", ""),
+        status=state,
         joined_on=joined_at.strftime("%b %d, %Y") if isinstance(joined_at, datetime) else "",
         curriculum=_curriculum_for(
             program,
-            _reached(int((enrollment or {}).get("progress") or 0), attended, _module_count(program)),
+            _reached(int(e.get("progress") or 0), attended, _module_count(program)),
+            done=set(lessons) if isinstance(lessons, list) else None,
+            with_content=learning or is_owner,
         ),
         certificate_code=(certificate or {}).get("code", ""),
+        owner_kind=program.get("owner_kind") or "staff",
+        teacher_name=program.get("teacher_name") or "WomSakhi team",
+        price_minor=int(program.get("price_minor") or 0),
+        is_owner=is_owner,
+        payment_status=(e.get("payment") or {}).get("status", ""),
+        upi_id=program.get("upi_id", "") if pending else "",
+        can_learn=learning or is_owner,
     )
+
+
+@router.post(
+    "/programs/{program_id}/lessons/{n}/complete",
+    response_model=ProgramDetail,
+    summary="I've finished this lesson",
+)
+async def complete_lesson(program_id: str, n: int, me: dict = Depends(require_active_member)):
+    """
+    One lesson done. Progress is the share of lessons she has finished — kept
+    as the list of lesson numbers, so finishing lesson 3 twice or out of order
+    can never push it past what she has actually done. All of them: the course
+    is complete and her certificate can be claimed.
+    """
+    uid = str(me["_id"])
+    program, enrollment = await asyncio.gather(
+        _programs().find_one({"_id": to_object_id(program_id)}),
+        _enrollments().find_one({"user_id": uid, "program_id": program_id}),
+    )
+    if not program:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "That programme doesn't exist")
+    if not enrollment or enrollment.get("status") not in EnrollmentModel.LEARNING:
+        raise HTTPException(status.HTTP_403_FORBIDDEN, "Join the course first.")
+    total = _module_count(program)
+    if n < 1 or n > total:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "That lesson is not in this course.")
+
+    done = sorted(set(enrollment.get("completed_lessons") or []) | {n})
+    now = datetime.now(timezone.utc)
+    updates: dict = {
+        "completed_lessons": done,
+        "progress": round(len(done) / total * 100),
+        "sessions_attended": max(int(enrollment.get("sessions_attended") or 0), len(done)),
+        "last_activity_at": now,
+        "updated_at": now,
+    }
+    finished = len(done) >= total and enrollment.get("status") != EnrollmentModel.STATUS_COMPLETED
+    if finished:
+        updates.update(status=EnrollmentModel.STATUS_COMPLETED, completed_at=now, progress=100)
+    await _enrollments().update_one({"_id": enrollment["_id"]}, {"$set": updates})
+    if finished:
+        await notify(get_database(), uid, "You finished the course",
+                     f"{program.get('name', '')} — claim your certificate.",
+                     MemberNotificationModel.TYPE_PROGRAM, f"/app/programs/{program_id}")
+    return await program_detail(program_id, me)
 
 
 # --- certificates ------------------------------------------------------------

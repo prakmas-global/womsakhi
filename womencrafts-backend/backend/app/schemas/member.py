@@ -121,6 +121,12 @@ class ReasonRequest(BaseModel):
         return (v or "").strip()[:400]
 
 
+class ApproveMemberRequest(ReasonRequest):
+    """Approve from her profile. `full_name` is her name as printed on her ID;
+    it becomes her verified name, which she cannot change herself."""
+    full_name: str = ""
+
+
 class RequiredReasonRequest(ReasonRequest):
     @field_validator("reason")
     @classmethod

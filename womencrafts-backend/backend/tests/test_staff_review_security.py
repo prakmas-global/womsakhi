@@ -285,7 +285,7 @@ async def test_scoped_reviewer_cannot_decide_outside_her_scope(review_setup):
     client, db = s["client"], s["db"]
     out_id = s["outside"]["_id"]
     reason = {"reason": "Photo is blurred, please take it again"}
-    for path, body in (("approve", None), ("reject", reason), ("request-resubmission", reason)):
+    for path, body in (("approve", {"full_name": "Asha Verma"}), ("reject", reason), ("request-resubmission", reason)):
         got = await client.post(f"/verification/{out_id}/{path}", json=body, headers=_bearer(s["scoped_t"]))
         assert got.status_code == 404, (path, got.text)
     fresh = await db["users"].find_one({"_id": out_id})
@@ -384,7 +384,7 @@ async def test_member_profile_refuses_a_number_another_account_holds(api):
     user = await _user(db, created, full_name="Before Name")
     tokens = await sessions.start(None, user)
     other_device = await sessions.start(None, user)
-    got = await client.patch("/me/profile", json={"phone": taken, "full_name": "After Name"},
+    got = await client.patch("/me/profile", json={"phone": taken, "bio": "After bio"},
                              headers=_bearer(tokens))
     assert got.status_code == 409
     error = got.json()["error"]
@@ -392,6 +392,8 @@ async def test_member_profile_refuses_a_number_another_account_holds(api):
     assert error["message"] == "This mobile number is already linked to another account."
     fresh = await db["users"].find_one({"_id": user["_id"]})
     assert fresh["phone"] == "" and fresh["full_name"] == "Before Name"  # nothing saved
+    member_row = await db["members"].find_one({"_id": ObjectId(fresh["member_id"])}) if fresh.get("member_id") else None
+    assert not (member_row or {}).get("bio")
     me = await client.get("/auth/me", headers=_bearer(other_device))
     assert me.status_code == 200  # and nobody signed out
 
@@ -533,3 +535,26 @@ async def test_a_member_cannot_move_herself_into_another_scope(api):
                                 headers=_bearer(await sessions.start(None, admin)))
     assert edited.status_code == 200, edited.text
     assert (await db["members"].find_one({"_id": member["_id"]}))["location"] == "Staff Town"
+
+
+async def test_approving_writes_the_name_from_her_id_card(review_setup):
+    s = review_setup
+    client, db = s["client"], s["db"]
+    her = s["inside"]
+    now = datetime.now(timezone.utc)
+    selfie = await db["verification_documents"].insert_one({
+        "user_id": str(her["_id"]), "doc_type": "selfie", "status": "pending", "created_at": now, "access_log": []})
+    try:
+        url = f"/verification/{her['_id']}/approve"
+        missing = await client.post(url, json={}, headers=_bearer(s["admin_t"]))
+        assert missing.status_code == 422
+        bad = await client.post(url, json={"full_name": "A1"}, headers=_bearer(s["admin_t"]))
+        assert bad.status_code == 422 and bad.json()["error"]["code"] == "name_invalid"
+        ok = await client.post(url, json={"full_name": "  Asha   Verma "}, headers=_bearer(s["admin_t"]))
+        assert ok.status_code == 200, ok.text
+        fresh = await db["users"].find_one({"_id": her["_id"]})
+        assert fresh["full_name"] == "Asha Verma" and fresh["verification_status"] == "active"
+        member = await db["members"].find_one({"_id": ObjectId(fresh["member_id"])})
+        assert member["full_name"] == "Asha Verma"
+    finally:
+        await db["verification_documents"].delete_one({"_id": selfie.inserted_id})

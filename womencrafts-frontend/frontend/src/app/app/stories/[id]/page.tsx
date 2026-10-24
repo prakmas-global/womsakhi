@@ -8,6 +8,8 @@ import { Back, ActionBtn, Btn, Card, copy, EmptyState, Pill, RailSkeleton, Scree
 import { HomeShell } from "@/components/ux/home/HomeShell";
 import { apiLikeStory, apiStories, apiStory, type Story } from "@/lib/community-api";
 import { useResource } from "@/lib/use-resource";
+import { apiStoryAuthor } from "@/lib/share-api";
+import { MessageHer } from "@/components/ux/MessageHer";
 import { useT } from "@/i18n";
 
 
@@ -41,6 +43,12 @@ export default function StoryDetail({ params }: { params: Promise<{ id: string }
   const { data: STORIES } = useResource(
     useCallback(() => apiStories(), []),
     [] as Story[],
+  );
+
+  // Who wrote it — only when she put her name to it and the story is published.
+  const { data: author } = useResource(
+    useCallback((sig: AbortSignal) => apiStoryAuthor(id, sig).catch(() => ({ user_id: "", name: "" })), [id]),
+    { user_id: "", name: "" },
   );
 
   const [like, setLike] = useState<{ n: number; mine: boolean } | null>(null);
@@ -117,12 +125,20 @@ export default function StoryDetail({ params }: { params: Promise<{ id: string }
 
           <Card>
             <SectionHead title={tr("stories.gettingInTouch")} />
-            <p className="text-xsm leading-relaxed" style={{ color: "var(--ux-ink-2)" }}>
-              WomSakhi has no direct messages between members yet. Ask the team about
-              {" "}{s.author_name.split(" ")[0]} and they will answer you in Messages.
-            </p>
-            <div className="mt-3.5 flex gap-2">
-              <Btn href="/app/messages" variant="soft" size="sm" icon="MessageCircle">{tr("stories.askTheTeam")}</Btn>
+            {author.user_id ? (
+              <p className="text-xsm leading-relaxed" style={{ color: "var(--ux-ink-2)" }}>
+                {s.author_name.split(" ")[0]} put her name to this story. Write to her — she sees it in her messages.
+              </p>
+            ) : (
+              <p className="text-xsm leading-relaxed" style={{ color: "var(--ux-ink-2)" }}>
+                She shared this without her name, so it cannot reach her directly. The team can pass a message on.
+              </p>
+            )}
+            <div className="mt-3.5 flex flex-wrap gap-2">
+              {author.user_id
+                ? <MessageHer userId={author.user_id} name={s.author_name} about={`Your story: ${s.title}`} variant="soft"
+                              phrases={["Your story gave me courage", "How did you get started?", "Can I learn from you?"]} />
+                : <Btn href="/app/messages" variant="soft" size="sm" icon="MessageCircle">{tr("stories.askTheTeam")}</Btn>}
               <Btn href="/app/circles" variant="outline" size="sm">{tr("stories.findACircle")}</Btn>
             </div>
           </Card>
@@ -203,7 +219,7 @@ export default function StoryDetail({ params }: { params: Promise<{ id: string }
                 {likeCount}
               </button>
               <ActionBtn variant="outline" size="sm" icon="Share2" doneIcon="Copy" done={tr("stories.linkCopied")}
-                        act={() => copy(`https://womsakhi.com/story/${s.id}`, "Link copied — send it to anyone", "Copy it by hand from the address bar")}>
+                        act={() => copy(`${window.location.origin}/story/${s.id}`, "Link copied — anyone can open it", "Copy it by hand from the address bar")}>
                 Share
               </ActionBtn>
             </span>

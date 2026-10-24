@@ -3,6 +3,7 @@ import { Suspense } from "react";
 import MemberShell from "./MemberShell";
 import { serverBoot } from "@/lib/server-api";
 import { AppShellSkeleton } from "@/components/ux/home/AppSkeleton";
+import { ToastHost } from "@/components/ux/mobile/Toast";
 import "@/app/ux/tokens.css";
 // After tokens.css on purpose: both are unlayered, so the later import wins.
 import "@/app/ux/mobile.css";
@@ -59,6 +60,12 @@ export default function MemberLayout({ children }: { children: React.ReactNode }
   return (
     <Suspense fallback={<AppShellSkeleton />}>
       <Boot>{children}</Boot>
+      {/* Where `toast()` from the mobile kit shows — twenty-odd member screens
+          call it, and until this was mounted none of their messages appeared.
+          Inside the boundary on purpose: it portals into the shell's `.ux`
+          root, so it must not mount before that root has hydrated (outside,
+          it did, and every page logged a hydration mismatch). */}
+      <ToastHost />
     </Suspense>
   );
 }

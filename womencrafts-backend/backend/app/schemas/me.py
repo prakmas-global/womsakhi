@@ -12,6 +12,11 @@ from app.core.media import MediaRef, MediaRefOptional
 class MeProfileResponse(BaseModel):
     id: str
     full_name: str
+    username: str = ""
+    display_name: str = ""
+    name_locked: bool = False
+    #: ISO date she may change her username again; "" when she may now.
+    username_next_change_at: str = ""
     email: str
     role: str
     member_id: str
@@ -31,6 +36,8 @@ class MeProfileResponse(BaseModel):
     #: field; until now it had nowhere to go, so it showed a sentence somebody
     #: else wrote — "I sew, and I am learning to sell online."
     bio: str = ""
+    #: Skills she proved by passing a test (app/core/skill_proof.py).
+    verified_skills: list[dict] = []
 
 
 class MeProfileUpdate(BaseModel):
@@ -63,6 +70,8 @@ class BookingResponse(BaseModel):
     note: str
     status: str
     cancelled_reason: str
+    #: How to join (a video link or a place), set by the team. "" until then.
+    meeting: str = ""
     booked_on: str
     created_at: str
 
@@ -109,6 +118,10 @@ class EnrollmentResponse(BaseModel):
     days: str = ""
     desc: str = ""
     cover: str = ""
+    payment_status: str = ""
+    price_minor: int = 0
+    teacher_name: str = ""
+    owner_kind: str = ""
 
 
 class ProgressUpdate(BaseModel):

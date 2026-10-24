@@ -1,29 +1,32 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState, type FormEvent } from "react";
-import Link from "next/link";
-import { Controller, useForm, useWatch } from "react-hook-form";
+import { Controller, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 
+import { useI18n } from "@/i18n";
 import { useAuth } from "@/context/AuthContext";
 import { CodeInput, useCountdown } from "@/components/auth/CodeInput";
 import {
-  AuthIcon, AuthResend, AuthShell, EmailTypoHint, MEMBER_CAPTION, STAFF_CAPTION, Spinner, StaffAside, formatMobile, useStepHistory, type AuthPhoto,
+  AuthIcon, AuthResend, AuthShell, EmailTypoHint, MEMBER_CAPTION, STAFF_CAPTION, Spinner, StaffAside, formatMobile, useStepHistory,
+  type AuthPhoto,
 } from "@/components/auth-shell";
 import {
-  apiAuthOptions, apiSigninFirebase, apiSigninStart, apiSmsAllowance, apiSigninVerify, apiTwoFactorEnroll, apiTwoFactorVerify, authError,
-  type AuthOptions, type CodeSent,
+  apiAuthOptions, apiAuthStart, apiAuthVerify, apiAuthVerifyFirebase, apiTwoFactorEnroll, apiTwoFactorVerify, authError,
+  type AuthOptions, type AuthStarted,
 } from "@/lib/auth-api";
 import { confirmSmsCode, sendSmsCode, smsErrorMessage, type SmsConfirmation } from "@/lib/firebase-phone";
 import type { AuthPayload } from "@/lib/api";
 import {
-  PREVIEW_MOBILE, PREVIEW_OPTIONS, PREVIEW_RECOVERY_CODES, PREVIEW_SENT_EMAIL, PREVIEW_SETUP, PREVIEW_STAFF_PAYLOAD, PREVIEW_STATES, PREVIEW_WRONG_CODE, readPreview, type SigninPreview,
+  PREVIEW_EMAIL, PREVIEW_MOBILE, PREVIEW_OPTIONS, PREVIEW_RECOVERY_CODES, PREVIEW_SETUP, PREVIEW_STAFF_PAYLOAD, PREVIEW_STATES,
+  PREVIEW_WRONG_CODE, readPreview, type SigninPreview,
 } from "@/lib/auth-preview";
 import { PreviewPill } from "@/components/auth-shell/PreviewPill";
 // `.ac-recaptcha`: Google's badge inline and hidden, its notice shown instead (as on /app/phone).
 import "@/components/auth-cards/auth-cards.css";
-import { codeSchema, recoveryCode, signinEmailSchema, signinMobileSchema } from "@/lib/validation";
+import { codeSchema, email as emailField, indianMobile, recoveryCode } from "@/lib/validation";
+import { websiteUrl } from "@/lib/site";
 import { safeNext } from "@/lib/safe-next";
 
 /**
@@ -34,31 +37,27 @@ import { safeNext } from "@/lib/safe-next";
 const AUTH_PREVIEW = process.env.NODE_ENV !== "production";
 
 /**
- * Signing in — with a code, never a password. The approved screens:
+ * The one way in — for a woman who is new AND for one who is coming back.
  *
- *   A1 mobile  →  A2 SMS code (A3 wrong code)  →  in
- *   A4 email   →  A5 email code                →  in
- *   A6 today's SMS allowance is used up → email, with the reason
+ *   1  one field: her mobile number or her email. Digits turn it into a mobile
+ *      field (+91, Indian flag, 10 digits); letters turn it into an email field.
+ *   2  the 6-digit code, sent by SMS or email
  *
- * Mobile comes first whenever SMS codes are switched on (`options.phone_codes`);
- * otherwise the screen opens on email. Staff go one step further, to their
- * authenticator app (D3); the first time, the same screen sets it up (D1) and
- * hands over the recovery codes (D2).
+ * That is all. She never picks between "Sign in" and "Join": the code decides.
+ * A known member is signed in and sent where her status says (`homeFor`):
+ * home, the selfie-and-ID step, the waiting screen or the rejected screen. A
+ * NEW address is made into an account by that same code and goes straight to
+ * the selfie-and-ID step. Nothing else is asked at the door: her name is
+ * entered by the verification team from her ID card, and the other contact is
+ * asked later by the "complete your profile" reminder. "I am a woman, 18 or
+ * older" is the line under Send code — continuing is agreeing. Staff go on to
+ * their authenticator app (setup, codes, recovery codes) as before.
  *
- * `?email=` pre-fills the address (links from invitation emails and from
- * join's "you already have an account") and opens on email; `?phone=` does the
- * same for the mobile step; `?next=` is where to land afterwards.
- *
- * Where the code goes is her choice: one entry field, and when her account
- * has BOTH a proved email and a confirmed mobile, the code step offers the
- * other one — "Send code by SMS instead" / "Send code by email instead".
- *
- * An email or number with no account is told so on the spot (the API answers
- * 404 `not_registered` and sends nothing): the message sits under the field
- * with a "Join WomSakhi" button that carries what she typed to /signup.
+ * `?email=` / `?phone=` pre-fill the field, `?next=` is where to land after,
+ * and `?ref=` (a friend's invite code) is kept for the whole visit.
  */
 
-type Step = "phone" | "sms" | "email" | "code" | "mfa" | "setup" | "recovery";
+type Step = "enter" | "code" | "mfa" | "setup" | "recovery";
 
 const RECAPTCHA_ID = "signin-recaptcha";
 
@@ -69,40 +68,62 @@ interface SetupInfo {
   qr_svg: string;
 }
 
-
 const recoverySchema = z.object({ recovery: recoveryCode });
+
+/** The photo beside each step. Staff steps get the logo's gradient. */
+const PHOTO: Record<Step, AuthPhoto> = { enter: "signin", code: "email", mfa: "plain", setup: "plain", recovery: "plain" };
 
 /** Mobile as she types it: digits only, a pasted +91 / 0 dropped, at most 10. */
 const typedMobile = (raw: string) => raw.replace(/\D/g, "").replace(/^(91|0)(?=\d{10}$)/, "").slice(0, 10);
 
+/** Digits, spaces, dashes, brackets and a leading + — a phone number being typed. */
+const looksLikePhone = (raw: string) => /\d/.test(raw) && /^\+?[\d\s()-]*$/.test(raw.trim());
+
 /** "Enter all 6 digits" when a code is sent short; "" when it is whole. */
 const codeProblem = (value: string) => codeSchema.safeParse({ code: value }).error?.issues[0]?.message ?? "";
 
-const PHOTO: Record<Step, AuthPhoto> = {
-  phone: "signin", sms: "signin", email: "signin", code: "email", mfa: "plain", setup: "plain", recovery: "plain",
-};
+/**
+ * The friend's invite code from `?ref=` (Refer a friend), kept in
+ * sessionStorage so it survives the code step, Back and a reload, and sent once
+ * when a new account is created. The server checks it; here it is only shape-checked.
+ */
+const REF_KEY = "ws.signup.ref";
+const REF_SHAPE = /^[A-Za-z0-9-]{3,20}$/;
+
+function readRef(params: URLSearchParams): string {
+  const fromLink = (params.get("ref") || "").trim();
+  try {
+    if (REF_SHAPE.test(fromLink)) {
+      window.sessionStorage.setItem(REF_KEY, fromLink.toUpperCase());
+      return fromLink.toUpperCase();
+    }
+    const kept = window.sessionStorage.getItem(REF_KEY) || "";
+    return REF_SHAPE.test(kept) ? kept : "";
+  } catch {
+    return REF_SHAPE.test(fromLink) ? fromLink.toUpperCase() : "";
+  }
+}
+
+function forgetRef() {
+  try { window.sessionStorage.removeItem(REF_KEY); } catch { /* storage blocked */ }
+}
 
 export default function SignInPage() {
+  const { locale } = useI18n();
   const { completeSignIn } = useAuth();
 
-  const [step, setStep] = useState<Step | null>(null);
-  const [email, setEmail] = useState("");
+  const [step, setStep] = useState<Step>("enter");
+  /** What she typed: digits for a mobile, the text for an email. */
+  const [entry, setEntry] = useState("");
+  const [entryTouched, setEntryTouched] = useState(false);
   const [next, setNext] = useState("");
-  const [sent, setSent] = useState<CodeSent | null>(null);
+  const [invitedBy, setInvitedBy] = useState("");
+  const [sent, setSent] = useState<AuthStarted | null>(null);
   const [code, setCode] = useState("");
   const [error, setError] = useState("");
   const [invalid, setInvalid] = useState(false);
   const [busy, setBusy] = useState(false);
   const [resendIn, setResendIn] = useCountdown();
-  const [smsLimited, setSmsLimited] = useState(false);
-  /** The API said this email / number has no account: offer to join with it. */
-  const [unknown, setUnknown] = useState<null | { kind: "email" | "phone"; value: string }>(null);
-  /** The other channel her account can take the code on (both proved), or null. */
-  const [alternate, setAlternate] = useState<CodeSent["alternate"]>(null);
-  /** She entered her mobile, then chose "by email instead": the email code is checked against her number. */
-  const [emailViaPhone, setEmailViaPhone] = useState(false);
-  /** "ending 3210" after "Send code by SMS instead", so she knows which number. */
-  const [phoneHint, setPhoneHint] = useState("");
 
   const [mfaTicket, setMfaTicket] = useState("");
   const [useRecovery, setUseRecovery] = useState(false);
@@ -113,24 +134,22 @@ export default function SignInPage() {
   const [saved, setSaved] = useState(false);
   const [copied, setCopied] = useState("");
 
-  // Phone sign-in, offered only once SMS codes are switched on.
   const [options, setOptions] = useState<AuthOptions | null>(null);
-  const [mobile, setMobile] = useState("");
   const smsConfirmation = useRef<SmsConfirmation | null>(null);
   /** Local-only `?preview=`: fixtures instead of the API (see lib/auth-preview). */
   const [preview, setPreview] = useState<SigninPreview | null>(null);
-  const smsOn = !!options?.phone_codes;
-  const viaFirebase = smsOn && !!options?.firebase;
+  const viaFirebase = !!options?.phone_codes && !!options?.firebase;
 
-  // One form per field set. Errors show when she leaves a field or presses
-  // submit, and clear as soon as the value is right (lib/validation).
-  const mobileForm = useForm({ resolver: zodResolver(signinMobileSchema), mode: "onTouched", reValidateMode: "onChange", defaultValues: { mobile: "" } });
-  const emailForm = useForm({ resolver: zodResolver(signinEmailSchema), mode: "onTouched", reValidateMode: "onChange", defaultValues: { email: "" } });
+  const isPhone = looksLikePhone(entry);
+  const kind: "phone" | "email" | "empty" = !entry.trim() ? "empty" : isPhone ? "phone" : "email";
+  const digits = isPhone ? typedMobile(entry) : "";
+  const entryProblem = kind === "empty" ? "Enter your mobile number or email"
+    : kind === "phone" ? (indianMobile.safeParse(digits).error?.issues[0]?.message ?? "")
+      : (emailField.safeParse(entry).error?.issues[0]?.message ?? "");
+  const showEntryProblem = entryTouched && !!entryProblem;
+
   const recoveryForm = useForm({ resolver: zodResolver(recoverySchema), mode: "onTouched", reValidateMode: "onChange", defaultValues: { recovery: "" } });
-  const mobileError = mobileForm.formState.errors.mobile?.message;
-  const emailError = emailForm.formState.errors.email?.message;
   const recoveryError = recoveryForm.formState.errors.recovery?.message;
-  const typedEmail = useWatch({ control: emailForm.control, name: "email" });
 
   const goTo = (s: Step) => {
     setStep(s);
@@ -139,23 +158,22 @@ export default function SignInPage() {
     setError("");
     setInvalid(false);
     setUseRecovery(false);
-    setUnknown(null);
   };
 
-  // Browser/phone Back walks the steps. The code she just used is replaced by
-  // what it unlocked (so Back from the authenticator lands on email sign-in),
-  // and the once-only recovery codes hold their ground.
+  // Browser/phone Back walks the steps. A spent code is replaced by what it
+  // unlocked, so Back from the authenticator lands on the field;
+  // the once-only recovery codes hold their ground.
   const back = useStepHistory<Step>(step, (to) => {
-    if ((to === "setup" && !setup) || (to === "recovery" && !recovery) || (to === "mfa" && !mfaTicket)) to = "email";
-    if (to === "phone") setSmsLimited(false);
+    if ((to === "setup" && !setup) || (to === "recovery" && !recovery) || (to === "mfa" && !mfaTicket)
+      || (to === "code" && !sent)) to = "enter";
     goTo(to);
   }, {
     replace: (to) => to === "mfa" || to === "setup" || to === "recovery",
     lock: (at) => at === "recovery",
   });
 
-  // Read the URL after mount (the server render has no URL), then ask the API
-  // whether SMS codes are on: that decides which screen she lands on.
+  // Read the URL after mount (the server render has no URL), and ask the API
+  // whether SMS codes are on and who sends them.
   useEffect(() => {
     if (AUTH_PREVIEW) {
       const p = readPreview(PREVIEW_STATES.signin);
@@ -163,98 +181,117 @@ export default function SignInPage() {
         const t = window.setTimeout(() => {
           setPreview(p);
           setOptions(PREVIEW_OPTIONS);
-          setMobile(PREVIEW_MOBILE);
-          mobileForm.setValue("mobile", PREVIEW_MOBILE);
-          setSent(PREVIEW_SENT_EMAIL);
+          const phoneFirst = p !== "enter-email";
+          setEntry(p === "enter" ? "" : phoneFirst ? PREVIEW_MOBILE : PREVIEW_EMAIL);
+          setSent({
+            mode: p === "code-new" ? "signup" : "signin", provider: "server",
+            channel: phoneFirst ? "sms" : "email", destination: phoneFirst ? "+91 ******3210" : "p****@gmail.com",
+            message: "", expires_in: 300, resend_in: 30,
+          });
           setMfaTicket(PREVIEW_SETUP.ticket);
           setSetup(PREVIEW_SETUP);
           setRecovery({ codes: PREVIEW_RECOVERY_CODES, payload: PREVIEW_STAFF_PAYLOAD });
-          setSmsLimited(p === "sms-busy");
-          if (p === "sms" || p === "code") setResendIn(30);
-          if (p === "sms-wrong") { setCode("123456"); setInvalid(true); setError(PREVIEW_WRONG_CODE); }
-          setStep(p === "sms-busy" ? "email" : p === "sms-wrong" ? "sms" : p);
+          if (p === "code" || p === "code-new") setResendIn(30);
+          if (p === "code-wrong") { setCode("123456"); setInvalid(true); setError(PREVIEW_WRONG_CODE); }
+          setStep(p.startsWith("enter") ? "enter" : p.startsWith("code") ? "code" : (p as Step));
         });
         return () => window.clearTimeout(t);
       }
     }
     let alive = true;
     const params = new URLSearchParams(window.location.search);
-    const preset = params.get("email");
+    const presetEmail = (params.get("email") || "").trim();
     const presetPhone = typedMobile(params.get("phone") ?? "");
     const t = window.setTimeout(() => {
-      if (preset) { setEmail(preset); emailForm.setValue("email", preset); }
-      if (presetPhone.length === 10) { setMobile(presetPhone); mobileForm.setValue("mobile", presetPhone); }
+      if (presetPhone.length === 10) setEntry(presetPhone);
+      else if (presetEmail) setEntry(presetEmail);
       setNext(safeNext(params.get("next")));
+      setInvitedBy(readRef(params));
     });
     apiAuthOptions()
-      .then((o) => {
-        if (!alive) return;
-        setOptions(o);
-        setStep((s) => s ?? (o.phone_codes && (!preset || presetPhone.length === 10) ? "phone" : "email"));
-      })
-      .catch(() => {
-        if (!alive) return;
-        setOptions(null);
-        setStep((s) => s ?? "email");
-      });
+      .then((o) => { if (alive) setOptions(o); })
+      .catch(() => { if (alive) setOptions(null); });
     return () => {
       alive = false;
       window.clearTimeout(t);
     };
-  }, [setResendIn, mobileForm, emailForm]);
+  }, [setResendIn]);
 
   const finish = useCallback(
     (payload: AuthPayload) => {
       if (AUTH_PREVIEW && preview) return;
+      forgetRef();
       completeSignIn(payload, next || undefined);
     },
     [completeSignIn, next, preview],
   );
 
-  /** Send a code to `address` (already checked) — the email step's submit, and "Send a new code". */
-  const sendCode = async (address: string) => {
-    if (AUTH_PREVIEW && preview) { setSent(PREVIEW_SENT_EMAIL); setResendIn(30); setStep("code"); return; }
+  /** The address the code goes to, in the shape the API takes. */
+  const target = (): { email?: string; phone?: string } =>
+    kind === "phone" ? { phone: `+91${digits}` } : { email: entry.trim().toLowerCase() };
+
+  /** Step 1's submit (already checked), and "Send a new code". */
+  const sendCode = async () => {
+    if (AUTH_PREVIEW && preview) { setResendIn(30); goTo("code"); return; }
+    if (kind === "phone" && !options?.phone_codes) {
+      setError("Mobile codes are off right now. Please use your email.");
+      return;
+    }
     setError("");
-    setUnknown(null);
     setBusy(true);
     try {
-      const result = await apiSigninStart({ email: address });
-      setEmail(address);
+      const result = await apiAuthStart({ ...target(), locale: locale || "en" });
+      if (result.provider === "firebase") {
+        if (!options?.firebase) throw new Error("firebase-off");
+        smsConfirmation.current = await sendSmsCode(options.firebase, `+91${digits}`, RECAPTCHA_ID, locale || "en", { badge: "inline" });
+      }
       setSent(result);
-      setAlternate(result.alternate ?? null);
-      setEmailViaPhone(false);
       setResendIn(result.resend_in);
-      setCode("");
-      setInvalid(false);
-      setStep("code");
+      if (step !== "code") goTo("code");
+      else { setCode(""); setInvalid(false); }
     } catch (err) {
       const problem = authError(err);
-      if (problem.code === "resend_too_soon" && step === "code") {
-        setResendIn(Number(problem.extra.retry_after) || 30);
+      if (problem.code === "resend_too_soon") setResendIn(Number(problem.extra.retry_after) || 30);
+      if (problem.code === "sms_limit") {
+        setError("We can't send SMS codes right now. Please type your email instead.");
+        if (step !== "enter") back("enter");
+      } else {
+        setError(problem.status ? problem.message : smsErrorMessage(err));
       }
-      if (problem.code === "not_registered") setUnknown({ kind: "email", value: address });
-      setError(problem.message);
     } finally {
       setBusy(false);
     }
   };
 
+  const submitEntry = (e: FormEvent) => {
+    e.preventDefault();
+    setEntryTouched(true);
+    if (entryProblem) {
+      document.getElementById("si-id")?.focus();
+      return;
+    }
+    void sendCode();
+  };
+
   const verify = useCallback(
     async (value: string) => {
-      if (value.length !== 6 || busy || (AUTH_PREVIEW && preview)) return;
+      if (value.length !== 6 || busy || (AUTH_PREVIEW && preview) || !sent) return;
+      if (sent.provider === "firebase" && !smsConfirmation.current) return;
       setError("");
       setInvalid(false);
       setBusy(true);
       try {
-        finish(await apiSigninVerify(emailViaPhone
-          ? { phone: `+91${mobile}`, via: "email", code: value }
-          : { email: email.trim(), code: value }));
+        // `agreed`: the line under Send code. Only a code that creates an account reads it.
+        const terms = { agreed: true, ...(invitedBy ? { ref: invitedBy } : {}) };
+        const result = sent.provider === "firebase" && smsConfirmation.current
+          ? await apiAuthVerifyFirebase(await confirmSmsCode(smsConfirmation.current, value), locale || "en", terms)
+          : await apiAuthVerify({ ...target(), code: value, locale: locale || "en", ...terms });
+        finish(result);
       } catch (err) {
         const problem = authError(err);
         if (problem.code === "two_factor_required") {
           setMfaTicket(String(problem.extra.ticket ?? ""));
-          setCode("");
-          setStep("mfa");
+          goTo("mfa");
         } else if (problem.code === "two_factor_setup_required") {
           setSetup({
             ticket: String(problem.extra.ticket ?? ""),
@@ -262,38 +299,19 @@ export default function SignInPage() {
             provisioning_uri: String(problem.extra.provisioning_uri ?? ""),
             qr_svg: String(problem.extra.qr_svg ?? ""),
           });
-          setCode("");
-          setStep("setup");
+          goTo("setup");
         } else {
           setInvalid(true);
-          setError(problem.message);
+          setError(problem.status ? problem.message : smsErrorMessage(err));
           if (problem.code === "code_voided" || problem.code === "code_expired") setCode("");
         }
-      } finally {
         setBusy(false);
       }
     },
-    [busy, email, emailViaPhone, finish, mobile, preview],
+    // `target` reads `kind`, `digits` and `entry`, all fixed while the code step is open.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [busy, finish, locale, preview, sent, entry, invitedBy],
   );
-
-  /** "Send code by email instead" on the SMS step: same account, found by her number. */
-  const sendEmailInstead = async () => {
-    setError("");
-    setInvalid(false);
-    setBusy(true);
-    try {
-      const result = await apiSigninStart({ phone: `+91${mobile}`, via: "email" });
-      setSent(result);
-      setAlternate(null);
-      setEmailViaPhone(true);
-      setResendIn(result.resend_in);
-      goTo("code");
-    } catch (err) {
-      setError(authError(err).message);
-    } finally {
-      setBusy(false);
-    }
-  };
 
   const verifyAuthenticator = useCallback(
     async (value: string) => {
@@ -307,7 +325,7 @@ export default function SignInPage() {
         const problem = authError(err);
         setInvalid(true);
         setError(problem.message);
-        if (problem.code === "ticket_expired") back("email");
+        if (problem.code === "ticket_expired") back("enter");
       } finally {
         setBusy(false);
       }
@@ -337,79 +355,6 @@ export default function SignInPage() {
     [busy, setup, preview],
   );
 
-  /** Send an SMS code to `digits` (10 digits, already checked) — the mobile step's submit, and "Send a new code". */
-  const sendSms = async (digits: string) => {
-    if (!options?.phone_codes) {
-      setError("Sign in with a mobile number isn't available right now. Please use email.");
-      return;
-    }
-    setMobile(digits);
-    if (AUTH_PREVIEW && preview) { setResendIn(30); setCode(""); setInvalid(false); setStep("sms"); return; }
-    setError("");
-    setUnknown(null);
-    setBusy(true);
-    try {
-      if (options.firebase) {
-        // Asked BEFORE Firebase sends: a number with no account is told so
-        // here (404 not_registered) and no SMS goes out.
-        const allowed = await apiSmsAllowance(`+91${digits}`, "signin");
-        setAlternate(allowed.alternate ?? null);
-        smsConfirmation.current = await sendSmsCode(options.firebase, `+91${digits}`, RECAPTCHA_ID, "en", { badge: "inline" });
-        setResendIn(options.resend_seconds || 90);
-      } else {
-        const sentTo = await apiSigninStart({ phone: `+91${digits}` });
-        setAlternate(sentTo.alternate ?? null);
-        setResendIn(sentTo.resend_in);
-      }
-      setCode("");
-      setInvalid(false);
-      setEmailViaPhone(false);
-      setPhoneHint("");
-      setStep("sms");
-    } catch (err) {
-      const problem = authError(err);
-      if (problem.code === "sms_limit") {
-        // Out of SMS for today: over to email, with the reason (A6).
-        setSmsLimited(true);
-        setCode("");
-        setInvalid(false);
-        setStep("email");
-        return;
-      }
-      if (problem.code === "not_registered") setUnknown({ kind: "phone", value: digits });
-      setError(problem.status ? problem.message : smsErrorMessage(err));
-    } finally {
-      setBusy(false);
-    }
-  };
-
-  const verifySms = useCallback(
-    async (value: string) => {
-      if (value.length !== 6 || busy || (AUTH_PREVIEW && preview) || (viaFirebase && !smsConfirmation.current)) return;
-      setError("");
-      setInvalid(false);
-      setBusy(true);
-      try {
-        if (viaFirebase && smsConfirmation.current) {
-          finish(await apiSigninFirebase(await confirmSmsCode(smsConfirmation.current, value)));
-        } else {
-          finish(await apiSigninVerify({ phone: `+91${mobile}`, code: value }));
-        }
-      } catch (err) {
-        const problem = authError(err);
-        if (problem.code === "sms_limit") {
-          setSmsLimited(true);
-          setStep("email");
-        } else {
-          setInvalid(true);
-          setError(problem.status ? problem.message : smsErrorMessage(err));
-        }
-        setBusy(false);
-      }
-    },
-    [busy, finish, mobile, viaFirebase, preview],
-  );
-
   const copy = async (text: string, what: string) => {
     try {
       await navigator.clipboard.writeText(text);
@@ -430,52 +375,28 @@ export default function SignInPage() {
   const checkCode = (value: string) => {
     const problem = codeProblem(value);
     setCodeError(problem);
-    if (problem) document.getElementById(step === "sms" ? "si-sms" : step === "mfa" ? "si-mfa" : "si-code")?.focus();
+    if (problem) document.getElementById(step === "mfa" ? "si-mfa" : "si-code")?.focus();
     return !problem;
   };
   const submitCode = (e: FormEvent, run: (value: string) => unknown) => {
     e.preventDefault();
     if (checkCode(code)) void run(code);
   };
-  /** "Join WomSakhi" under the "This is a new email/mobile number" message. */
-  const joinLink = unknown && (
-    <Link className="wsa-btn wsa-line" data-testid="join-from-signin"
-      href={`/signup?${unknown.kind}=${encodeURIComponent(unknown.value)}`}>
-      Join WomSakhi <AuthIcon name="arrow" />
-    </Link>
-  );
-  const switchToEmail = alternate?.channel === "email" && (
-    <p className="wsa-link">Prefer email?{" "}
-      <button type="button" className="wsa-inline" data-testid="switch-to-email" disabled={busy} onClick={() => void sendEmailInstead()}>
-        Send code by email instead ({alternate.destination})
-      </button>
-    </p>
-  );
-  const switchToSms = alternate?.channel === "sms" && !emailViaPhone && (
-    <p className="wsa-link">Prefer SMS?{" "}
-      <button type="button" className="wsa-inline" data-testid="switch-to-sms" disabled={busy}
-        onClick={() => { setPhoneHint(alternate.destination.slice(-4)); setMobile(""); mobileForm.setValue("mobile", ""); goTo("phone"); }}>
-        Send code by SMS instead
-      </button>
-    </p>
-  );
+
   const staff = step === "mfa" || step === "setup" || step === "recovery";
-  const screen = step === "phone" ? "a1"
-    : step === "sms" ? (invalid ? "a3" : "a2")
-      : step === "email" ? (smsLimited ? "a6" : "a4")
-        : step === "code" ? "a5"
-          : step === "setup" ? "d1"
-            : step === "recovery" ? "d2"
-              : step === "mfa" ? "d3"
-                : undefined;
+  const isNew = sent?.mode === "signup";
+  const bySms = sent?.channel === "sms";
+  const screen = step === "enter" ? "a1" : step === "code" ? (invalid ? "a3" : "a2")
+    : step === "setup" ? "d1" : step === "recovery" ? "d2" : step === "mfa" ? "d3" : undefined;
 
   return (
     <AuthShell
-      photo={step ? PHOTO[step] : "signin"}
+      photo={PHOTO[step]}
       caption={staff ? STAFF_CAPTION : MEMBER_CAPTION}
-      tag={staff ? "Staff" : undefined}
       aside={staff ? <StaffAside /> : undefined}
-      showTrust={step === "phone"}
+      stepKey={step}
+      tag={staff ? "Staff" : undefined}
+      showTrust={step === "enter"}
       screen={screen}
       flow={staff ? "staff-signin" : "member-signin"}
       // Google's invisible robot check attaches here before each SMS.
@@ -484,168 +405,98 @@ export default function SignInPage() {
           <div id={RECAPTCHA_ID} />
           {viaFirebase && (
             <p>
-          This site is protected by reCAPTCHA and the Google{" "}
-          <a href="https://policies.google.com/privacy" target="_blank" rel="noopener noreferrer">Privacy Policy</a> and{" "}
-          <a href="https://policies.google.com/terms" target="_blank" rel="noopener noreferrer">Terms of Service</a> apply.
-        </p>
+              This site is protected by reCAPTCHA and the Google{" "}
+              <a href="https://policies.google.com/privacy" target="_blank" rel="noopener noreferrer">Privacy Policy</a> and{" "}
+              <a href="https://policies.google.com/terms" target="_blank" rel="noopener noreferrer">Terms of Service</a> apply.
+            </p>
           )}
         </div>
       }
     >
-      {step === null && (
-        <p className="wsa-muted" role="status" style={{ padding: "2rem 0" }}>Opening sign in…</p>
-      )}
-
-      {/* A1 · mobile first */}
-      {step === "phone" && (
+      {/* 1 · her mobile or her email, in one field */}
+      {step === "enter" && (
         <>
-          <div className="wsa-methods" role="tablist" aria-label="Choose how to sign in">
-            <button type="button" role="tab" aria-selected="true"><AuthIcon name="phone" /> Mobile</button>
-            <button type="button" role="tab" aria-selected="false" onClick={() => { setSmsLimited(false); goTo("email"); }}><AuthIcon name="mail" /> Email</button>
-          </div>
-          <p className="wsa-eyebrow">Welcome back</p>
-          <h1 className="wsa-t">Sign in with your mobile</h1>
-          <p className="wsa-s">
-            {phoneHint ? <>Enter your mobile number ending <b>{phoneHint}</b> and we&apos;ll send the code by SMS.</>
-              : <>We&apos;ll send a 6-digit code by SMS. No password needed.</>}
-          </p>
-          <form onSubmit={(e) => void mobileForm.handleSubmit(({ mobile: digits }) => sendSms(digits))(e)} noValidate className="wsa-field">
-            <label htmlFor="si-mobile" className="wsa-lbl">Mobile number</label>
-            <div className={`wsa-phone${error || mobileError ? " is-bad" : ""}`}>
-              <span className="wsa-cc" aria-hidden><span className="wsa-flag" />+91</span>
-              <Controller name="mobile" control={mobileForm.control} render={({ field }) => (
-                <input id="si-mobile" type="tel" enterKeyHint="send" inputMode="numeric" autoComplete="tel-national" maxLength={11} autoFocus
-                  ref={field.ref} name={field.name} onBlur={field.onBlur}
-                  value={formatMobile(field.value)} placeholder="98765 43210" aria-invalid={!!(error || mobileError) || undefined}
-                  aria-describedby={[mobileError && "si-mobile-error", error && "si-mobile-server-error"].filter(Boolean).join(" ") || undefined}
-                  onChange={(e) => { field.onChange(typedMobile(e.target.value)); setError(""); setUnknown(null); }} />
-              )} />
+          <h1 className="wsa-t">Sign in or <span className="wsa-grad">join</span></h1>
+          <p className="wsa-s">Enter your mobile number or email. We&apos;ll send you a 6-digit code. No password needed.</p>
+          <form onSubmit={submitEntry} noValidate className="wsa-field">
+            <label htmlFor="si-id" className="wsa-lbl">Mobile number or email</label>
+            <div className={`${kind === "phone" ? "wsa-phone" : "wsa-in"}${error || showEntryProblem ? " is-bad" : ""}`} data-kind={kind}>
+              {kind === "phone"
+                ? <span className="wsa-cc" aria-hidden><AuthIcon name="phone" /><span className="wsa-flag" />+91</span>
+                : <AuthIcon name={kind === "email" ? "mail" : "user"} />}
+              <input id="si-id" key="si-id" type="text" enterKeyHint="send" autoFocus spellCheck={false} autoCapitalize="none"
+                inputMode={kind === "phone" ? "numeric" : kind === "email" ? "email" : "text"}
+                autoComplete={kind === "phone" ? "tel-national" : "username"}
+                maxLength={kind === "phone" ? 13 : 254}
+                value={kind === "phone" ? formatMobile(digits) : entry}
+                placeholder="98765 43210 or name@gmail.com"
+                aria-invalid={!!(error || showEntryProblem) || undefined}
+                aria-describedby={[showEntryProblem && "si-id-error", error && "si-id-server-error", kind === "phone" && "si-id-kind"].filter(Boolean).join(" ") || undefined}
+                onBlur={() => { if (entry.trim()) setEntryTouched(true); }}
+                onChange={(e) => {
+                  const raw = e.target.value;
+                  setEntry(looksLikePhone(raw) ? typedMobile(raw) : raw);
+                  setError("");
+                }} />
             </div>
-            {mobileError && <p id="si-mobile-error" role="alert" className="wsa-ferr">{mobileError}</p>}
-            {error && <p id="si-mobile-server-error" role="alert" className="wsa-err">{error}</p>}
-            {unknown?.kind === "phone" ? joinLink : (
-              <button type="submit" disabled={busy} className="wsa-btn wsa-go">
-                {busy ? <><Spinner /> Sending your code…</> : <>Send code <AuthIcon name="arrow" /></>}
-              </button>
+            {kind === "phone" && <span id="si-id-kind" className="sr-only">Indian mobile number, +91</span>}
+            {showEntryProblem && <p id="si-id-error" role="alert" className="wsa-ferr">{entryProblem}</p>}
+            {kind === "email" && !showEntryProblem && (
+              <EmailTypoHint value={entry} onPick={(fixed) => setEntry(fixed)} />
             )}
-          </form>
-          <div className="wsa-or wsa-member-alt">or</div>
-          <button type="button" className="wsa-btn wsa-line wsa-member-alt" onClick={() => { setSmsLimited(false); goTo("email"); }}>
-            <AuthIcon name="mail" /> Sign in with email
-          </button>
-          <p className="wsa-link">New to WomSakhi? <Link href="/signup">Join now</Link></p>
-        </>
-      )}
-
-      {/* A2 · SMS code, A3 · wrong code */}
-      {step === "sms" && (
-        <>
-          <button type="button" className="wsa-back" onClick={() => back("phone")}><AuthIcon name="back" /> Change number</button>
-          <p className="wsa-eyebrow">{invalid ? "Check your code" : "SMS verification"}</p>
-          <h1 className="wsa-t">Enter the code</h1>
-          {!invalid && <p className="wsa-s" id="si-sms-help">Sent by SMS to <b>+91 {formatMobile(mobile)}</b></p>}
-          <form onSubmit={(e) => submitCode(e, verifySms)} noValidate style={{ display: "contents" }}>
-            <CodeInput id="si-sms" value={code} onChange={onCode} onComplete={verifySms} disabled={busy} invalid={invalid || !!codeError}
-              describedBy={codeError ? "si-sms-field-error" : invalid ? "si-sms-error" : "si-sms-help"} label="6-digit code from the SMS" />
-          </form>
-          {codeError && <p id="si-sms-field-error" role="alert" className="wsa-ferr">{codeError}</p>}
-          {invalid ? (
-            <>
-              <p id="si-sms-error" role="alert" className="wsa-err">{error}</p>
-              <AuthResend seconds={resendIn} onResend={() => void sendSms(mobile)} busy={busy} />
-              {alternate?.channel === "email" ? switchToEmail : (
-                <p className="wsa-link">Trouble with SMS?{" "}
-                  <button type="button" className="wsa-inline" onClick={() => { setSmsLimited(false); goTo("email"); }}>Use email instead</button>
-                </p>
-              )}
-            </>
-          ) : (
-            <>
-              {error && <p role="alert" className="wsa-err">{error}</p>}
-              <AuthResend seconds={resendIn} onResend={() => void sendSms(mobile)} busy={busy} />
-              {alternate?.channel === "email" && switchToEmail}
-              <p className="wsa-note"><AuthIcon name="msg" /><span>On Android the code fills in by itself when the SMS arrives.</span></p>
-              <button type="button" className="wsa-btn wsa-go" disabled={busy} onClick={() => { if (checkCode(code)) void verifySms(code); }}>
-                {busy ? <><Spinner /> Checking…</> : "Verify"}
-              </button>
-            </>
-          )}
-        </>
-      )}
-
-      {/* A4 · email, A6 · SMS allowance used up */}
-      {step === "email" && (
-        <>
-          {smsOn && (
-            <button type="button" className={`wsa-back${smsLimited ? "" : " wsa-method-back"}`} onClick={() => back("phone")}>
-              <AuthIcon name="back" /> {smsLimited ? "Change number" : "Use mobile instead"}
+            {error && <p id="si-id-server-error" role="alert" className="wsa-err">{error}</p>}
+            <button type="submit" disabled={busy} className="wsa-btn wsa-go">
+              {busy ? <><Spinner /> Sending your code…</> : <>Send code <AuthIcon name="arrow" /></>}
             </button>
-          )}
-          {!smsLimited && smsOn && (
-            <div className="wsa-methods" role="tablist" aria-label="Choose how to sign in">
-              <button type="button" role="tab" aria-selected="false" onClick={() => back("phone")}><AuthIcon name="phone" /> Mobile</button>
-              <button type="button" role="tab" aria-selected="true"><AuthIcon name="mail" /> Email</button>
-            </div>
-          )}
-          <p className="wsa-eyebrow">{smsLimited ? "Secure email fallback" : "Passwordless access"}</p>
-          {smsLimited && (
-            <p className="wsa-warn" role="status"><b>SMS is busy right now.</b> We&apos;ll send your code by email instead. It&apos;s just as safe.</p>
-          )}
-          <h1 className="wsa-t">Sign in with email</h1>
-          {!smsLimited && <p className="wsa-s">We&apos;ll send a 6-digit code to your inbox.</p>}
-          <form onSubmit={(e) => void emailForm.handleSubmit(({ email: address }) => sendCode(address))(e)} noValidate className="wsa-field">
-            {!smsLimited && <label htmlFor="si-email" className="wsa-lbl">Email</label>}
-            <div className={`wsa-in${error || emailError ? " is-bad" : ""}`}>
-              <AuthIcon name="mail" />
-              <input id="si-email" type="email" enterKeyHint="send" autoComplete="email" autoFocus inputMode="email"
-                aria-label={smsLimited ? "Email" : undefined} aria-invalid={!!(error || emailError) || undefined}
-                aria-describedby={[emailError && "si-email-error", error && "si-email-server-error"].filter(Boolean).join(" ") || undefined}
-                {...emailForm.register("email", { onChange: () => { setError(""); setUnknown(null); } })} placeholder="name@gmail.com" />
-            </div>
-            {emailError && <p id="si-email-error" role="alert" className="wsa-ferr">{emailError}</p>}
-            {!emailError && (
-              <EmailTypoHint value={typedEmail} onPick={(fixed) => emailForm.setValue("email", fixed, { shouldValidate: true })} />
-            )}
-            {error && <p id="si-email-server-error" role="alert" className="wsa-err">{error}</p>}
-            {unknown?.kind === "email" ? joinLink : (
-              <button type="submit" disabled={busy} className="wsa-btn wsa-go">
-                {busy ? <><Spinner /> Sending your code…</> : <>Send code <AuthIcon name="arrow" /></>}
-              </button>
-            )}
+            <p className="wsa-agree" id="si-agree">
+              By continuing you confirm you are a woman, 18 or older, and agree to the{" "}
+              <a href={websiteUrl("/terms")} target="_blank" rel="noopener noreferrer">Terms</a> and{" "}
+              <a href={websiteUrl("/privacy")} target="_blank" rel="noopener noreferrer">Privacy policy</a>.
+            </p>
           </form>
-          {!smsLimited && <p className="wsa-note"><AuthIcon name="lock" /><span>Staff always sign in with email and their authenticator app.</span></p>}
-          <p className="wsa-link">New to WomSakhi? <Link href="/signup">Join now</Link></p>
+          {invitedBy && (
+            <p className="wsa-note" data-testid="invited-note">
+              <AuthIcon name="user" /><span><b>Invited by a friend</b> · <span style={{ whiteSpace: "nowrap" }}>code {invitedBy}</span></span>
+            </p>
+          )}
+          <p className="wsa-note"><AuthIcon name="lock" /><span>New to WomSakhi? The same code creates your account. Staff sign in with email and their authenticator app.</span></p>
         </>
       )}
 
-      {/* A5 · email code */}
-      {step === "code" && (
+      {/* 2 · the code */}
+      {step === "code" && sent && (
         <>
-          {emailViaPhone ? (
-            <button type="button" className="wsa-back" onClick={() => back("phone")}><AuthIcon name="back" /> Use a different number</button>
-          ) : (
-            <button type="button" className="wsa-back" onClick={() => back("email")}><AuthIcon name="back" /> Use a different email</button>
-          )}
-          <p className="wsa-eyebrow">Email verification</p>
-          <h1 className="wsa-t">Check your email</h1>
-          <p className="wsa-s" id="si-code-help">We sent a code to <b>{sent?.destination ?? email}</b></p>
+          <button type="button" className="wsa-back" onClick={() => back("enter")}>
+            <AuthIcon name="back" /> {bySms ? "Change number" : "Change email"}
+          </button>
+          <p className="wsa-eyebrow">{invalid ? "Check your code" : isNew ? "Welcome to WomSakhi" : "Welcome back"}</p>
+          <h1 className="wsa-t">Enter the <span className="wsa-grad">code</span></h1>
+          <p className="wsa-s" id="si-code-help">
+            {bySms ? <>Sent by SMS to <b>+91 {formatMobile(digits) || sent.destination}</b></> : <>Sent to <b>{sent.destination}</b></>}
+          </p>
           <form onSubmit={(e) => submitCode(e, verify)} noValidate style={{ display: "contents" }}>
             <CodeInput id="si-code" value={code} onChange={onCode} onComplete={verify} disabled={busy} invalid={invalid || !!codeError}
-              describedBy={codeError ? "si-code-help si-code-error" : "si-code-help"} label="6-digit code from your email" />
+              describedBy={codeError ? "si-code-help si-code-field-error" : invalid ? "si-code-help si-code-error" : "si-code-help"}
+              label={bySms ? "6-digit code from the SMS" : "6-digit code from your email"} />
           </form>
-          {codeError && <p id="si-code-error" role="alert" className="wsa-ferr">{codeError}</p>}
-          {error && <p role="alert" className="wsa-err">{error}</p>}
-          {busy && <p className="wsa-muted" role="status">Checking…</p>}
-          <AuthResend seconds={resendIn} onResend={() => void (emailViaPhone ? sendEmailInstead() : sendCode(email))} busy={busy} />
-          {switchToSms}
-          <p className="wsa-note"><AuthIcon name="mail" /><span>Can&apos;t find it? Look in Spam or Promotions. The code expires in 5 minutes.</span></p>
+          {codeError && <p id="si-code-field-error" role="alert" className="wsa-ferr">{codeError}</p>}
+          {error && <p id="si-code-error" role="alert" className="wsa-err">{error}</p>}
+          <AuthResend seconds={resendIn} onResend={() => void sendCode()} busy={busy} />
+          <p className="wsa-note">
+            {bySms
+              ? <><AuthIcon name="msg" /><span>On Android the code fills in by itself when the SMS arrives.</span></>
+              : <><AuthIcon name="mail" /><span>Can&apos;t find it? Look in Spam or Promotions. The code expires in 5 minutes.</span></>}
+          </p>
+          <button type="button" className="wsa-btn wsa-go" disabled={busy} onClick={() => { if (checkCode(code)) void verify(code); }}>
+            {busy ? <><Spinner /> Checking…</> : isNew ? "Continue" : "Sign in"}
+          </button>
         </>
       )}
 
       {/* D3 · authenticator code */}
       {step === "mfa" && (
         <>
-          <button type="button" className="wsa-back" onClick={() => back("email")}><AuthIcon name="back" /> Back to sign in</button>
+          <button type="button" className="wsa-back" onClick={() => back("enter")}><AuthIcon name="back" /> Back to sign in</button>
           <div className="wsa-okhero"><span><AuthIcon name="shield" /></span></div>
           <h1 className="wsa-t wsa-center">One more step</h1>
           <p className="wsa-s wsa-center" id="si-mfa-help">
@@ -692,7 +543,7 @@ export default function SignInPage() {
       {/* D1 · authenticator setup, the first staff sign-in */}
       {step === "setup" && setup && (
         <>
-          <button type="button" className="wsa-back" onClick={() => back("email")}><AuthIcon name="back" /> Back to sign in</button>
+          <button type="button" className="wsa-back" onClick={() => back("enter")}><AuthIcon name="back" /> Back to sign in</button>
           <h1 className="wsa-t">Protect your staff account</h1>
           <p className="wsa-s wsa-steps-line"><span>1 · Install Google Authenticator</span> <span>2 · Scan</span> <span>3 · Enter the code</span></p>
           {setup.qr_svg && (

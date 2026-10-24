@@ -94,29 +94,29 @@
   --text-4xlm: 2.75rem;
 
   /* ---- Brand — magenta / cerise (primary actions, section titles) ---- */
-  --color-brand-50: #f8f4f6;
-  --color-brand-100: #eee5ea;
-  --color-brand-200: #dbc8d1;
-  --color-brand-300: #d4abb7;
-  --color-brand-400: #bc7e8f;
-  --color-brand-500: #a55168;
-  --color-brand-600: #742a4f;
-  --color-brand-700: #642544;
-  --color-brand-800: #54213b;
-  --color-brand-900: #461c31;
-  --color-brand: #742a4f;
+  --color-brand-50: #fff0f7;
+  --color-brand-100: #ffe3f0;
+  --color-brand-200: #ffc2dd;
+  --color-brand-300: #ff8fc0;
+  --color-brand-400: #f74a9b;
+  --color-brand-500: #f00078;
+  --color-brand-600: #c80066;
+  --color-brand-700: #a3005a;
+  --color-brand-800: #7d0047;
+  --color-brand-900: #560032;
+  --color-brand: #c80066;
 
   /* ---- Violet — royal purple (secondary actions, icon circles) ---- */
-  --color-violet-50: #f3ecfa;
-  --color-violet-100: #e6d7f3;
-  --color-violet-200: #ccb0e6;
-  --color-violet-300: #b088d7;
-  --color-violet-400: #9866c7;
-  --color-violet-500: #834fb6;
-  --color-violet-600: #7440a6;
-  --color-violet-700: #5f338a;
-  --color-violet-800: #4a286d;
-  --color-violet-900: #382053;
+  --color-violet-50: #f4f2ff;
+  --color-violet-100: #efecff;
+  --color-violet-200: #d9d2ff;
+  --color-violet-300: #b3a6ff;
+  --color-violet-400: #8a77fa;
+  --color-violet-500: #6048f0;
+  --color-violet-600: #4830f0;
+  --color-violet-700: #3d27c9;
+  --color-violet-800: #2f1f99;
+  --color-violet-900: #21166b;
 
   /* ---- Ink — deep indigo / navy (display headings, body titles) ---- */
   --color-ink-50: #eeecf5;
@@ -129,7 +129,7 @@
   --color-ink-700: #251551;
   --color-ink-800: #1d1140;
   --color-ink-900: #150c30;
-  --color-ink: #2d1a63;
+  --color-ink: #1b1238;
 
   /* ---- Text scale ----------------------------------------------------
      Four steps for text, in decreasing emphasis. These replace the raw
@@ -152,9 +152,9 @@
      `ink-faint` is not for text a person has to read. If you are about to
      use it on a sentence, use `ink-subtle`.
      ------------------------------------------------------------------ */
-  --color-ink-muted: #4a5568;
-  --color-ink-subtle: #56607a;
-  --color-ink-faint: #8b93a7;
+  --color-ink-muted: #3a2f55;
+  --color-ink-subtle: #5f5873;
+  --color-ink-faint: #8a839b;
 
   /* ---- Status badges -------------------------------------------------
      Semantic, not themed: green means good and red means stop whatever
@@ -186,15 +186,15 @@
 
   /* Brand text on a brand tint — `text-brand-600` on `bg-brand-50` was
      4.22:1, just under. Pair these two, never brand-600 on brand-50. */
-  --color-brand-tint: #f9f5f7;
-  --color-brand-ink: #692748;
+  --color-brand-tint: #fff0f7;
+  --color-brand-ink: #a3005a;
 
   /* Keyboard focus outline. Only the no-theme fallback — the theme engine
      replaces it with that theme's brand ink, which is already solved for
      contrast against every surface it can land on. */
-  --color-focus: #a3125c;
-  --color-violet-tint: #f6f1fd;
-  --color-violet-ink: #5b2f8f;
+  --color-focus: #c80066;
+  --color-violet-tint: #f4f2ff;
+  --color-violet-ink: #3d27c9;
 
   /* ---- Surfaces & lines ----------------------------------------------
      These existed as CSS variables but were never registered as Tailwind
@@ -213,12 +213,12 @@
      Values here are only the no-theme fallback; the real ones are derived
      per theme in `theme-engine/surfaces.ts`.
      ------------------------------------------------------------------ */
-  --color-canvas: #ece0ea;
-  --color-surface: #fbf8fa;
-  --color-surface-hover: #f3edf1;
-  --color-surface-inset: #f0e9ee;
-  --color-line: #e6dce4;
-  --color-line-strong: #d5c7d2;
+  --color-canvas: #fbf9fd;
+  --color-surface: #ffffff;
+  --color-surface-hover: #f5f2fa;
+  --color-surface-inset: #f5f2fa;
+  --color-line: #ece7f3;
+  --color-line-strong: #dcd4e8;
 
   /* ---- Learned conventions -------------------------------------------
      A rating star is gold and a favourite heart is red everywhere; those
@@ -240,10 +240,17 @@
     Hindi and Urdu silently used whatever the device happened to have. Loading a
     font and never naming it in a stack is the same as not loading it.
   */
-  --font-scripts: var(--font-devanagari), var(--font-arabic), var(--font-tamil),
-    var(--font-bengali), var(--font-telugu), var(--font-gujarati),
-    var(--font-kannada), var(--font-malayalam), var(--font-gurmukhi),
-    var(--font-odia);
+  /*
+    Family NAMES, not var()s. These were var(--font-devanagari) and nine
+    siblings that nothing ever defined — and one undefined var() makes the
+    whole font list invalid, so --font-sans resolved to nothing and every
+    screen that relied on it drew in the phone's system font. Names cannot
+    fail that way: a face the device has is used, one it lacks is skipped.
+  */
+  --font-scripts: "Noto Sans Devanagari", "Noto Naskh Arabic", "Noto Sans Tamil",
+    "Noto Sans Bengali", "Noto Sans Telugu", "Noto Sans Gujarati",
+    "Noto Sans Kannada", "Noto Sans Malayalam", "Noto Sans Gurmukhi",
+    "Noto Sans Oriya";
   /*
     The brand pair, matching the marketing site: Fraunces over Plus Jakarta
     Sans. `--font-display` used to resolve to Poppins here, which quietly beat
@@ -258,10 +265,11 @@
     Devanagari, so a Devanagari headline falls through to Noto on its own,
     which is the behaviour the wrong order was trying to hand-build.
   */
-  --font-sans: var(--font-jakarta), var(--font-inter), var(--font-scripts),
+  /* One family (design-system/brand.css): headings differ by weight, not face. */
+  --font-sans: var(--font-jakarta), var(--font-scripts),
     ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
-  --font-display: var(--font-fraunces), var(--font-scripts), var(--font-poppins),
-    var(--font-jakarta), ui-serif, Georgia, serif;
+  --font-display: var(--font-jakarta), var(--font-scripts),
+    ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
 }
 
 /* ==================================================================
@@ -276,14 +284,14 @@
   --wc-sidebar-width: 253px;
 
   /* Page canvas. Kept a step deeper than --surface so panels lift off it. */
-  --background: #f6eeec;
-  --foreground: #29141f;
+  --background: #fbf9fd;
+  --foreground: #1b1238;
 
   /* Panel colour. Warm bone rather than pure white — softer on the eye.
      Every white surface in the app resolves to this one token. */
-  --surface: #f5f5f0;
-  --surface-hover: #efefe8; /* hover / active step on a surface */
-  --surface-inset: #ebebe3; /* pressed wells, inputs */
+  --surface: #ffffff;
+  --surface-hover: #f5f2fa; /* hover / active step on a surface */
+  --surface-inset: #f5f2fa; /* pressed wells, inputs */
 
   /* Radii — the app's rounding scale */
   --wc-radius-sm: 0.6rem;
@@ -311,7 +319,7 @@
 
   /* Hairlines */
   --wc-border-subtle: #e4e0ec;
-  --wc-ring-focus: rgba(210, 31, 124, 0.4);
+  --wc-ring-focus: rgba(200, 0, 102, 0.4);
 
   /* Charts (read by the Recharts wrappers via useChartTheme) */
   --chart-grid: #eceaf3;

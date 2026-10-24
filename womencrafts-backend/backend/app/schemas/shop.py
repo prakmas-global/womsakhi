@@ -79,6 +79,18 @@ class PublicShop(BaseModel):
     place: str
     listings: list[ListingCard] = []
     listing_count: int
+    #: Skills she proved by passing a WomSakhi skill test — the test, her best
+    #: score and the certificate code a buyer can check. Nothing personal.
+    verified_skills: list[dict] = []
+    #: Her store, as she set it up (app/core/store.py). `shop_name` falls back
+    #: to "<first name>'s shop"; the pictures are "" until she adds them.
+    shop_name: str = ""
+    tagline: str = ""
+    logo: str = ""
+    cover: str = ""
+    #: False while she has closed her store; the page says so above her things.
+    open: bool = True
+    away_line: str = ""
 
 
 class ListingResponse(BaseModel):
@@ -189,6 +201,11 @@ class ShopSummary(BaseModel):
     """Everything the My Business screen needs, in one request."""
 
     name: str
+    #: From Store settings; "" until she adds them.
+    logo: str = ""
+    cover: str = ""
+    #: False while she has closed her store for now.
+    open: bool = True
     #: Her shop's handle — the bare slug, and nothing else. `/s/<handle>`
     #: resolves it and `GET /public/shop/<handle>` serves it. It used to be
     #: "womsakhi.in/<member_id>": a domain-and-path shape that matched no route

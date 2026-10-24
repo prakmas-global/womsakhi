@@ -397,7 +397,7 @@ const mr: Catalog = {
   "ch.documents.note": "तुम्ही काय विकता, आणि तुमच्या ऑर्डर",
   "ch.collect.label": "तुमची लिंक, आणि पैसे मिळवणं",
   "ch.collect.note": "WomSakhi वर नसलेल्यांना विका",
-  "ch.shop.label": "विकण्याचे मार्ग",
+  "ch.shop.label": "विक्रीची साधने",
   "ch.shop.note": "आधीच ऑर्डर, नियमित ग्राहक, मोठ्या ऑर्डर",
   "ch.market.label": "बाजार",
   "ch.market.note": "ओळखीच्या महिलांकडून खरेदी करा",

@@ -69,6 +69,9 @@ def _row(doc: dict, uid: str) -> dict:
         "taken": bool(doc.get("taken", False)),
         # So the screen can offer "remove" on her own rows and nobody else's.
         "mine": doc.get("user_id") == uid,
+        # Who to message for it ("Ask her for it" -> POST /me/conversations/start).
+        # Only ever a circle-mate's account id; never a phone or an address.
+        "owner_id": doc.get("user_id", ""),
     }
 
 
