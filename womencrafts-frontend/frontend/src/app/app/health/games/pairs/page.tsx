@@ -77,6 +77,7 @@ export default function PairsPage() {
 
   return (
     <GameFrame title="Match the pairs" sub="Turn two cards. If the pictures match, they stay."
+               game="pairs" result={() => ({ score: moves, scoreLabel: done ? `${pairs} pairs in ${moves} turns` : `${found.length} of ${pairs} pairs` })}
                feel={feel} setFeel={setFeel} again={() => fresh()}
                tools={<SoundToggle on={sound} onChange={setSound} />}>
       <div className="mb-3 flex flex-wrap items-center justify-between gap-3">

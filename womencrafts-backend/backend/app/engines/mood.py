@@ -54,7 +54,7 @@ def _oid(v):
 
 
 async def check_in(*, user_id: str, mood: str, note: str = "",
-                   style: str | None = None) -> dict:
+                   style: str | None = None, feelings: list[str] | None = None) -> dict:
     """
     One tap. Written to the day she already has, not to a new collection.
 
@@ -68,12 +68,16 @@ async def check_in(*, user_id: str, mood: str, note: str = "",
     tz = zone(await _tz(user_id))
     today = datetime.now(timezone.utc).astimezone(tz).date().isoformat()
 
+    sets = {"mood": mood, "note": note or "", "updated_at": datetime.now(timezone.utc)}
+    on_insert = {"created_at": datetime.now(timezone.utc), "period": False, "symptoms": [], "feelings": []}
+    if feelings is not None:
+        # The cycle tracker's own feelings list, so both screens read the same words.
+        from app.models.cycle import FEELINGS
+        sets["feelings"] = [f for f in dict.fromkeys(feelings) if f in FEELINGS]
+        on_insert.pop("feelings")
     await _db()["cycle_days"].update_one(
         {"user_id": user_id, "date": today},
-        {"$set": {"mood": mood, "note": note or "",
-                  "updated_at": datetime.now(timezone.utc)},
-         "$setOnInsert": {"created_at": datetime.now(timezone.utc),
-                          "period": False, "symptoms": [], "feelings": []}},
+        {"$set": sets, "$setOnInsert": on_insert},
         upsert=True)
 
     if style:
@@ -327,3 +331,30 @@ async def _tz(user_id: str) -> str:
     prefs = await _db()["preference_versions"].find_one(
         {"user_id": user_id}, sort=[("version", -1)])
     return (prefs or {}).get("tz") or "Asia/Kolkata"
+
+
+async def history(*, user_id: str, days: int = 60) -> list[dict]:
+    """
+    Her check-ins, newest first — read from `cycle_days`, the one place a day's
+    mood lives. Both vocabularies appear here: the cycle tracker's
+    (happy, calm, tired, irritable, sad) and this module's (MOODS).
+    """
+    tz = zone(await _tz(user_id))
+    today = datetime.now(timezone.utc).astimezone(tz).date()
+    since = (today - timedelta(days=max(1, days) - 1)).isoformat()
+    rows = _db()["cycle_days"].find(
+        {"user_id": user_id, "date": {"$gte": since, "$lte": today.isoformat()},
+         "$or": [{"mood": {"$nin": [None, ""]}}, {"feelings.0": {"$exists": True}}]},
+        {"date": 1, "mood": 1, "feelings": 1, "note": 1},
+    ).sort("date", -1)
+    return [{"date": r["date"], "mood": r.get("mood") or "", "feelings": r.get("feelings") or [],
+             "note": r.get("note") or ""} async for r in rows]
+
+
+async def clear(*, user_id: str, date: str) -> bool:
+    """Take back a day's check-in: the mood and feelings go; the rest of her day stays."""
+    res = await _db()["cycle_days"].update_one(
+        {"user_id": user_id, "date": date},
+        {"$unset": {"mood": "", "feelings": ""}, "$set": {"updated_at": datetime.now(timezone.utc)}})
+    return res.matched_count > 0
+

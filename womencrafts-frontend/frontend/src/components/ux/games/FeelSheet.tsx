@@ -5,6 +5,7 @@ import { useEffect, useState } from "react";
 import * as Icons from "@/components/ux/icons";
 import { Btn } from "@/components/ux/kit";
 import { apiMoodCheckIn, MOODS, type Mood, type SupportCard } from "@/lib/engines-api";
+import { MoodFace } from "@/components/ux/health/mind/parts";
 
 /**
  * "How do you feel now?" — after a calm game, one tap.
@@ -13,20 +14,23 @@ import { apiMoodCheckIn, MOODS, type Mood, type SupportCard } from "@/lib/engine
  * breathing counts the way any check-in does. If the app has something kind
  * to say back, it is shown here, gently. Nothing here blocks leaving.
  */
-const LOOK: Record<Mood, { face: string; label: string }> = {
-  good: { face: "😌", label: "Calmer" },
-  tired: { face: "😴", label: "Tired" },
-  low: { face: "😔", label: "Low" },
-  anxious: { face: "😟", label: "Still anxious" },
-  angry: { face: "😤", label: "Upset" },
-  unwell: { face: "🤒", label: "Unwell" },
+// Drawn faces (MoodFace), not emoji: emoji differ per phone. The mood is also
+// handed to `onMood`, which adds it to the game session just saved.
+const LOOK: Record<Mood, { label: string }> = {
+  good: { label: "Calmer" },
+  tired: { label: "Tired" },
+  low: { label: "Low" },
+  anxious: { label: "Still anxious" },
+  angry: { label: "Upset" },
+  unwell: { label: "Unwell" },
 };
 
-export function FeelSheet({ open, onClose, again }: {
+export function FeelSheet({ open, onClose, again, onMood }: {
   open: boolean;
   onClose: () => void;
   /** "Play another" restarts this game when given; otherwise goes to the games. */
   again?: () => void;
+  onMood?: (m: Mood) => void;
 }) {
   const [sent, setSent] = useState<Mood | null>(null);
   const [card, setCard] = useState<SupportCard | null>(null);
@@ -45,6 +49,7 @@ export function FeelSheet({ open, onClose, again }: {
   const pick = async (m: Mood) => {
     if (busy) return;
     setBusy(true); setErr("");
+    onMood?.(m);
     try {
       const r = await apiMoodCheckIn(m);
       setSent(m); setCard(r.card);
@@ -82,7 +87,7 @@ export function FeelSheet({ open, onClose, again }: {
                 <button key={m} type="button" disabled={busy} onClick={() => void pick(m)}
                         className="ux-press flex min-h-[84px] flex-col items-center justify-center gap-1 rounded-[16px] text-xs font-semibold"
                         style={{ background: "var(--ux-surface-2)", color: "var(--ux-ink-2)", border: "1px solid var(--ux-line)" }}>
-                  <span className="text-[28px] leading-none" aria-hidden>{LOOK[m].face}</span>
+                  <MoodFace mood={m} size={34} />
                   {LOOK[m].label}
                 </button>
               ))}
@@ -91,7 +96,7 @@ export function FeelSheet({ open, onClose, again }: {
         ) : (
           <div className="mt-3">
             <p className="text-xsm" style={{ color: "var(--ux-ink-2)" }}>
-              {LOOK[sent].face} You said: <b>{LOOK[sent].label}</b>.{" "}
+              You said: <b>{LOOK[sent].label}</b>.{" "}
               {sent === "good" ? "Keep this feeling with you for a while." : "Be gentle with yourself today."}
             </p>
             {err && <p className="mt-2 text-xs" style={{ color: "var(--ux-orange-ink)" }}>{err}</p>}
@@ -109,7 +114,7 @@ export function FeelSheet({ open, onClose, again }: {
             ? <Btn variant="primary" icon="RefreshCw" onClick={() => { close(); again(); }}>Play again</Btn>
             : <Btn variant="primary" icon="Sparkles" href="/app/health/games">Play another</Btn>}
           {again && <Btn variant="outline" href="/app/health/games">Other games</Btn>}
-          <Btn variant="ghost" href="/app/health" iconEnd="ArrowRight">Back to Health</Btn>
+          <Btn variant="ghost" href="/app/health/games?tab=activity" iconEnd="ArrowRight">Your activity</Btn>
         </div>
       </div>
     </div>

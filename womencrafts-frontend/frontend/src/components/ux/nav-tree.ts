@@ -236,31 +236,50 @@ export const SECTIONS: Section[] = [
         { id: "swap", label: "Pass it on", k: "ch.swap", icon: "Gift", href: "/app/swap", note: "Things other women no longer need", },
       ],
     },
-    /* Her body, day to day — the cycle tracker and what it leads to. Not a
-       tab: five is the bottom bar's ceiling. On a phone she reaches it from
-       the cycle card on Home and from the sheet; on a laptop it is here. */
-    { tab: false, id: "wellness", label: "Health & Wellness", icon: "Heart", href: "/app/wellness", note: "Your cycle, your body, your mind",
+    /* Health & Wellness — thirteen sections, after the approved Health &
+       Wellness design. Not a tab: five is the bottom bar's ceiling. Each
+       section is one route with its tabs in the URL (?tab=…), drawn by
+       components/ux/health/kit.tsx. Older pages stay as unlisted children so
+       their breadcrumbs and Back still say where they live. */
+    { tab: false, id: "wellness", label: "Health & Wellness", icon: "Heart", href: "/app/wellness", note: "Your body, your mind, your care",
       children: [
-        { id: "cycle", label: "Cycle Tracker", icon: "Heart", href: "/app/health/cycle", note: "One tap a day",
+        { id: "fitness", label: "Fitness", icon: "Dumbbell", href: "/app/health/fitness", note: "Move and feel stronger",
           children: [
-            { id: "cycle-log", label: "Log today", k: "ch.cycle-log", icon: "CalendarCheck", href: "/app/health/cycle/log", note: "Are you on your period today?", unlisted: true },
-            { id: "cycle-period", label: "My period", k: "ch.cycle-period", icon: "Droplet", href: "/app/health/cycle/period", note: "Today's care", unlisted: true },
-            { id: "cycle-symptoms", label: "Symptoms", k: "ch.cycle-symptoms", icon: "Activity", href: "/app/health/cycle/symptoms", note: "What you are feeling", unlisted: true },
-            { id: "cycle-mood", label: "Mood", k: "ch.cycle-mood", icon: "Smile", href: "/app/health/cycle/mood", note: "How you are today", unlisted: true },
-            { id: "cycle-today", label: "For you today", k: "ch.cycle-today", icon: "Sparkles", href: "/app/health/cycle/today", note: "Food, rest and mind", unlisted: true },
-            { id: "cycle-reminders", label: "Reminders", k: "ch.cycle-reminders", icon: "Bell", href: "/app/health/cycle/reminders", note: "When we remind you", unlisted: true },
-            { id: "cycle-check", label: "Period check", k: "ch.cycle-check", icon: "AlertCircle", href: "/app/health/cycle/check", note: "When it runs long", unlisted: true },
-            { id: "cycle-start", label: "Start tracking", k: "ch.cycle-start", icon: "Sparkles", href: "/app/health/cycle/start", note: "Your cycle, your power", unlisted: true },
-            { id: "cycle-learn", label: "Guides", k: "ch.cycle-learn", icon: "BookOpen", href: "/app/health/cycle/learn", note: "Written with doctors' sources", unlisted: true },
+            { id: "workouts", label: "Workouts", k: "ch.workouts", icon: "PersonStanding", href: "/app/health/workouts", note: "Gentle, at home", unlisted: true },
           ],
         },
-        { id: "cycle-insights", label: "Health Insights", k: "ch.cycle-insights", icon: "FileText", href: "/app/health/cycle/insights", note: "Your patterns, in plain words", },
-        { id: "nutrition", label: "Nutrition", k: "ch.nutrition", icon: "Salad", href: "/app/health/nutrition", note: "What to eat this week", },
-        { id: "health-games", label: "Calm games", icon: "Smile", href: "/app/health/games", note: "A few quiet minutes — no scores", },
-        { id: "mind", label: "Mental Wellness", k: "ch.mind", icon: "Flower2", href: "/app/health/mind", note: "For the harder days", },
-        { id: "workouts", label: "Workouts", k: "ch.workouts", icon: "PersonStanding", href: "/app/health/workouts", note: "Gentle, at home", },
-        { id: "health-mentors", label: "Consult a Mentor", k: "ch.health-mentors", icon: "UserRound", href: "/app/health/mentors", note: "Doctors and coaches", },
-        { id: "health-today", label: "How are you today?", k: "ch.health-today", icon: "HeartPulse", href: "/app/health/today", note: "One tap, if you want to", },
+        { id: "nutrition", label: "Nutrition & Diet", icon: "Apple", href: "/app/health/nutrition", note: "Eat well, every day", },
+        { id: "sleep", label: "Sleep", icon: "Moon", href: "/app/health/sleep", note: "Rest better, live brighter", },
+        { id: "mind", label: "Mental Wellness", k: "ch.mind", icon: "Brain", href: "/app/health/mind", note: "A calmer mind",
+          children: [
+            { id: "health-today", label: "How are you today?", k: "ch.health-today", icon: "HeartPulse", href: "/app/health/today", note: "One tap, if you want to", unlisted: true },
+          ],
+        },
+        { id: "health-games", label: "Games & Stress Relief", icon: "Gamepad2", href: "/app/health/games", note: "A mindful break", },
+        { id: "health-videos", label: "Videos", icon: "PlayCircle", href: "/app/health/videos", note: "Workout, yoga and calm", },
+        { id: "fertility", label: "Fertility", icon: "Flower2", href: "/app/health/fertility", note: "Know your cycle",
+          children: [
+            { id: "cycle", label: "Cycle Tracker", icon: "Heart", href: "/app/health/cycle", note: "One tap a day", unlisted: true,
+              children: [
+                { id: "cycle-log", label: "Log today", k: "ch.cycle-log", icon: "CalendarCheck", href: "/app/health/cycle/log", note: "Are you on your period today?", unlisted: true },
+                { id: "cycle-period", label: "My period", k: "ch.cycle-period", icon: "Droplet", href: "/app/health/cycle/period", note: "Today's care", unlisted: true },
+                { id: "cycle-symptoms", label: "Symptoms", k: "ch.cycle-symptoms", icon: "Activity", href: "/app/health/cycle/symptoms", note: "What you are feeling", unlisted: true },
+                { id: "cycle-mood", label: "Mood", k: "ch.cycle-mood", icon: "Smile", href: "/app/health/cycle/mood", note: "How you are today", unlisted: true },
+                { id: "cycle-today", label: "For you today", k: "ch.cycle-today", icon: "Sparkles", href: "/app/health/cycle/today", note: "Food, rest and mind", unlisted: true },
+                { id: "cycle-reminders", label: "Reminders", k: "ch.cycle-reminders", icon: "Bell", href: "/app/health/cycle/reminders", note: "When we remind you", unlisted: true },
+                { id: "cycle-check", label: "Period check", k: "ch.cycle-check", icon: "AlertCircle", href: "/app/health/cycle/check", note: "When it runs long", unlisted: true },
+                { id: "cycle-start", label: "Start tracking", k: "ch.cycle-start", icon: "Sparkles", href: "/app/health/cycle/start", note: "Your cycle, your power", unlisted: true },
+                { id: "cycle-learn", label: "Guides", k: "ch.cycle-learn", icon: "BookOpen", href: "/app/health/cycle/learn", note: "Written with doctors' sources", unlisted: true },
+              ],
+            },
+            { id: "cycle-insights", label: "Health Insights", k: "ch.cycle-insights", icon: "FileText", href: "/app/health/cycle/insights", note: "Your patterns, in plain words", unlisted: true },
+          ],
+        },
+        { id: "pregnancy", label: "Pregnancy", icon: "Baby", href: "/app/health/pregnancy", note: "Week by week", },
+        { id: "health-records", label: "Health Records", icon: "FileHeart", href: "/app/health/records", note: "Safe in one place", },
+        { id: "health-reminders", label: "Appointments & Reminders", icon: "CalendarClock", href: "/app/health/reminders", note: "Never miss one", },
+        { id: "health-mentors", label: "Mentor Connect", icon: "Users", href: "/app/health/mentors", note: "Women who've been there", },
+        { id: "health-doctors", label: "Doctor Consultation", icon: "Stethoscope", href: "/app/health/doctors", note: "Talk to a doctor", },
       ],
     },
     { tab: false, id: "help", label: "Help", k: "ch.mode.help", icon: "LifeBuoy", href: "/app/helpdesk", note: "When something is wrong",

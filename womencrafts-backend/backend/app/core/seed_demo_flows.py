@@ -526,6 +526,317 @@ async def main(force: bool = False, only: set[str] | None = None) -> None:
                     await call("N", "POST", f"/community/circles/{tech}/invites", "Neha invites RR Apps by username",
                                json={"user_id": uid["R"]})
 
+        on = want("health_nutrition_sleep")
+        if on:
+            print("Health: meals, water, meal plans and sleep (last 10 days)")
+            meal_days = [
+                [("Breakfast", "Vegetable poha", 280, 6, "poha"), ("Lunch", "Dal, rice and sabzi", 500, 16, ""), ("Dinner", "2 roti with sabzi", 350, 10, "")],
+                [("Breakfast", "2 idli with sambar", 250, 8, ""), ("Lunch", "Rajma bowl", 450, 17, "rajma"), ("Evening snack", "Roasted chana chaat", 180, 9, "chana"), ("Dinner", "Vegetable khichdi", 380, 13, "khichdi")],
+                [("Breakfast", "Moong dal chilla", 260, 14, "chilla"), ("Lunch", "Palak dal with rice", 420, 16, "palak"), ("Dinner", "Paneer bhurji with roti", 430, 22, "paneer")],
+                [("Breakfast", "Tea with milk", 80, 3, ""), ("Lunch", "Curd rice with pomegranate", 330, 9, "curdrice"), ("Evening snack", "Fruit", 80, 1, ""), ("Dinner", "Dal, rice and sabzi", 500, 16, "")],
+            ]
+            nights = [("22:30", "06:30", "Good", []), ("23:15", "06:15", "Fair", ["Screen in bed"]), ("22:00", "06:00", "Great", []),
+                      ("23:45", "06:30", "Poor", ["Stress", "Caffeine late"]), ("22:45", "06:45", "Good", []),
+                      ("22:15", "06:30", "Good", ["Exercise today"]), ("00:10", "07:00", "Fair", ["Late meal"])]
+            for who, n_days in (("R", 10), ("P", 8), ("A", 6)):
+                have = await get(who, "/me/health/entries", params={"kind": "sleep", "from": _day(-11)}) or []
+                if have:
+                    print(f"  · {who} already has sleep entries — skipped")
+                    continue
+                for i in range(n_days):
+                    d = _day(-i)
+                    for mt, food, kcal, protein, recipe in meal_days[i % len(meal_days)]:
+                        if i == 0 and mt == "Dinner":
+                            continue  # today's dinner is still ahead
+                        await call(who, "POST", "/me/health/entries", f"{who} {d} {mt.lower()}: {food}",
+                                   json={"kind": "meal", "date": d, "data": {"mealType": mt, "food": food, "kcal": kcal, "protein": protein, "recipe": recipe}})
+                    for ml in ([750, 500, 500] if i % 3 else [500, 500, 250]) + ([500] if i % 2 else []):
+                        await call(who, "POST", "/me/health/entries", f"{who} {d} water {ml} ml",
+                                   json={"kind": "water", "date": d, "data": {"ml": ml}})
+                    bed, wake, quality, factors = nights[i % len(nights)]
+                    await call(who, "POST", "/me/health/entries", f"{who} {d} sleep {bed}–{wake}",
+                               json={"kind": "sleep", "date": d, "data": {"bed": bed, "wake": wake, "quality": quality, "factors": factors}})
+                for j, (mt, food, recipe) in enumerate([("Breakfast", "Ragi porridge", "ragi"), ("Lunch", "Palak dal with rice", "palak"),
+                                                        ("Dinner", "Vegetable khichdi", "khichdi"), ("Breakfast", "Moong dal chilla", "chilla")]):
+                    await call(who, "POST", "/me/health/entries", f"{who} plans {food}",
+                               json={"kind": "plan", "date": _day(j // 2 + 1), "data": {"mealType": mt, "food": food, "recipe": recipe}})
+            await call("R", "PUT", "/me/health/settings", "RR Apps sets nutrition and sleep goals",
+                       json={"diet": "Vegetarian", "kcalGoal": 1800, "proteinGoal": 55, "waterGoal": 8, "sleepGoal": 8, "bedtime": "22:30",
+                             "healthGoal": "More protein"})
+            await call("P", "PUT", "/me/health/settings", "Priya sets her bedtime routine",
+                       json={"bedtime": "22:00", "sleepGoal": 7.5, "sleepRoutine": ["Dim the lights", "Put my phone away", "Herbal tea", "Breathing for 2 minutes"]})
+            rems = await get("P", "/me/health/entries", params={"kind": "reminder"}) or []
+            if not any(r["data"].get("title") == "Time for bed" for r in rems):
+                await call("P", "POST", "/me/health/entries", "Priya's bedtime reminder",
+                           json={"kind": "reminder", "date": _day(0), "data": {"title": "Time for bed", "category": "Other", "time": "22:00",
+                                                                               "repeat": "Every day", "note": "Start your wind-down routine"}})
+
+        on = want("health_mind_games")
+        if on:
+            print("Health: mood check-ins, journal, calm activities and game sessions (last 10 days)")
+            # Mood lives on her day in cycle_days (app/engines/mood.py); the
+            # check-in API only writes today, so past days are set directly.
+            moods = [("good", ["calm"]), ("tired", ["tired"]), ("anxious", ["anxious", "emotional"]), ("good", ["energetic", "confident"]),
+                     ("low", ["low"]), ("good", ["calm"]), ("tired", []), ("good", ["confident"]), ("angry", ["irritable"]), ("good", ["calm", "energetic"])]
+            journal = [("Gratitude", "Three things I'm grateful for today: my daughter's laugh, a quiet cup of tea, and a new order for two blouses."),
+                       ("Reflection", "What went well today? I finished the course module I kept putting off. Small steps still count."),
+                       ("Affirmation", "I am doing my best, and that is enough."),
+                       ("Reflection", "What is one thing I want to let go of? Worrying about what the neighbours say."),
+                       ("Gratitude", "Someone who made my day better: Kavita, who called just to ask how I was.")]
+            acts = [("Meditation", 5), ("Breathing exercise", 3), ("Walk outdoors", 10), ("Journaling", 3), ("Yoga", 15)]
+            games = [("breathe", 180, 0, "Calm breathing", "good"), ("pairs", 150, 14, "6 pairs in 14 turns", "good"),
+                     ("numbers", 120, 3, "3 boards · 1–9", "tired"), ("garden", 120, 7, "7 flowers planted", "good"),
+                     ("bubbles", 95, 31, "31 popped", ""), ("puzzle", 210, 46, "Solved 3×3 in 46 moves", "good")]
+            for who, n_days in (("R", 10), ("P", 8), ("A", 6)):
+                have = await get(who, "/me/health/entries", params={"kind": "journal,game", "from": _day(-11)}) or []
+                if have:
+                    print(f"  · {who} already has journal or game entries — skipped")
+                    continue
+                for i in range(n_days):
+                    d = _day(-i)
+                    mood, feelings = moods[i % len(moods)]
+                    if not await db["cycle_days"].find_one({"user_id": uid[who], "date": d, "mood": {"$nin": [None, ""]}}):
+                        await db["cycle_days"].update_one(
+                            {"user_id": uid[who], "date": d},
+                            {"$set": {"mood": mood, "feelings": feelings, "updated_at": datetime.now(timezone.utc)},
+                             "$setOnInsert": {"created_at": datetime.now(timezone.utc), "period": False, "symptoms": []}},
+                            upsert=True)
+                        ok += 1
+                        print(f"  ✓ {who} {d} feels {mood}")
+                    if i % 2 == 0:
+                        jt, text = journal[(i // 2) % len(journal)]
+                        await call(who, "POST", "/me/health/entries", f"{who} {d} journal ({jt})",
+                                   json={"kind": "journal", "date": d, "data": {"type": jt, "text": text}})
+                    if i % 3 != 2:
+                        at, mins = acts[i % len(acts)]
+                        await call(who, "POST", "/me/health/entries", f"{who} {d} {at.lower()} {mins} min",
+                                   json={"kind": "activity", "date": d, "data": {"type": at, "minutes": mins}})
+                    if i % 2 == 1 or i == 0:
+                        g, sec, score, label, gm = games[i % len(games)]
+                        await call(who, "POST", "/me/health/entries", f"{who} {d} played {g}",
+                                   json={"kind": "game", "date": d, "data": {"game": g, "seconds": sec, "score": score, "scoreLabel": label, "mood": gm}})
+            await call("R", "PUT", "/me/health/settings", "RR Apps keeps two favourite games",
+                       json={"favoriteGames": ["breathe", "garden"]})
+
+        on = want("health_fertility_pregnancy")
+        if on:
+            print("Health: fertility and pregnancy")
+            # RR Apps: three past periods, so the cycle has real averages — and
+            # she is not pregnant (Fertility and Pregnancy must not both claim her).
+            await call("R", "PUT", "/me/health/settings", "RR Apps is not tracking a pregnancy", json={"pregnancy": None})
+            cyc = await get("R", "/me/cycle", params={"tz": "Asia/Kolkata"})
+            if not cyc or not cyc.get("setup"):
+                await call("R", "PUT", "/me/cycle/setup", "RR Apps sets up cycle tracking",
+                           json={"adult": True, "last_start": _day(-29), "typical_cycle": 28, "typical_period": 5, "tz": "Asia/Kolkata"})
+            for start, length in ((-86, 5), (-57, 5), (-29, 4)):
+                for k in range(length):
+                    body = {"period": True, "flow": ["medium", "heavy", "medium", "light", "light"][k], "tz": "Asia/Kolkata"}
+                    if k == 0:
+                        body["symptoms"] = ["cramps", "back-pain"]
+                    elif k == 1:
+                        body["symptoms"] = ["fatigue", "bloating"]
+                    await call("R", "PUT", f"/me/cycle/days/{_day(start + k)}", f"RR Apps period day {k + 1} ({_day(start)})", json=body)
+            await call("R", "PUT", f"/me/cycle/days/{_day(-3)}", "RR Apps logs a headache",
+                       json={"symptoms": ["headache", "mood-swings"], "tz": "Asia/Kolkata"})
+
+            # Aisha: about 22 weeks pregnant, with a few symptoms, kick counts
+            # and her antenatal visits.
+            lmp = _day(-(22 * 7 + 2))
+            await call("A", "PUT", "/me/health/settings", "Aisha starts pregnancy tracking", json={
+                "pregnancy": {"basis": "lmp", "date": lmp, "doctor": "Dr. Farida Begum", "hospital": "Govt Maternity Hospital, Koti"},
+                "checks": {"anc": ["anc1"], "preg-care": ["t1-book", "t1-supp", "t1-card", "t2-scan"], "bag": ["bag-0", "bag-1"],
+                           "preg-questions": ["q-tests"]}})
+            have = await get("A", "/me/health/entries", params={"kind": "pregsym,kick,reminder"}) or []
+            kinds = {r["kind"] for r in have}
+            if "pregsym" not in kinds:
+                for d, syms, sev, note in ((-6, ["Back pain", "Tiredness"], "Mild", "After standing at the stall"),
+                                           (-3, ["Heartburn"], "Moderate", "After dinner"),
+                                           (-1, ["Trouble sleeping", "Swelling"], "Mild", "")):
+                    await call("A", "POST", "/me/health/entries", f"Aisha logs {', '.join(syms).lower()}",
+                               json={"kind": "pregsym", "date": _day(d), "data": {"symptoms": syms, "severity": sev, "note": note}})
+            if "kick" not in kinds:
+                for d, count, secs in ((-2, 10, 1680), (-1, 12, 1420)):
+                    await call("A", "POST", "/me/health/entries", f"Aisha counts {count} kicks",
+                               json={"kind": "kick", "date": _day(d), "data": {"count": count, "seconds": secs}})
+            if not any(r["kind"] == "reminder" and r["data"].get("category") == "Pregnancy visit" for r in have):
+                await call("A", "POST", "/me/health/entries", "Aisha's last check-up (done)",
+                           json={"kind": "reminder", "date": _day(-20), "data": {
+                               "title": "Ultrasound scan", "category": "Pregnancy visit", "time": "10:00", "repeat": "Once",
+                               "where": "Govt Maternity Hospital, Koti", "done": [_day(-20)]}})
+                await call("A", "POST", "/me/health/entries", "Aisha books her next check-up",
+                           json={"kind": "reminder", "date": _day(6), "data": {
+                               "title": "Antenatal check-up", "category": "Pregnancy visit", "time": "10:00", "repeat": "Once",
+                               "where": "Govt Maternity Hospital, Koti"}})
+
+        on = want("health_home_fitness")
+        if on:
+            print("Health: workouts, a fitness plan and challenges (last 12 days)")
+            # (activity, minutes, steps, intensity, routine) per day, newest first.
+            weeks = [
+                [("Walking", 30, 4200, "Moderate", "walk")],
+                [("Yoga", 15, 0, "Easy", "yoga")],
+                [("Walking", 25, 3600, "Moderate", ""), ("Stretching", 8, 0, "Easy", "desk")],
+                [],
+                [("Strength training", 20, 0, "Moderate", "strength")],
+                [("Walking", 35, 5100, "Moderate", "walk")],
+                [("Dance", 20, 0, "Hard", "dance")],
+                [("Yoga", 15, 0, "Easy", "yoga")],
+                [],
+                [("Walking", 30, 4500, "Moderate", "")],
+                [("Pilates", 12, 0, "Moderate", "pilates")],
+                [("Walking", 20, 2900, "Easy", "")],
+            ]
+            for who, n_days in (("R", 12), ("P", 10), ("A", 6)):
+                have = await get(who, "/me/health/entries", params={"kind": "workout", "from": _day(-13)}) or []
+                if have:
+                    print(f"  · {who} already has workouts — skipped")
+                    continue
+                for i in range(n_days):
+                    for act, mins, steps, intensity, routine in weeks[i % len(weeks)]:
+                        if who == "A" and act in ("Strength training", "Dance"):
+                            act, routine, intensity = "Walking", "", "Easy"  # gentle while pregnant
+                        await call(who, "POST", "/me/health/entries", f"{who} {_day(-i)} {act.lower()} {mins} min",
+                                   json={"kind": "workout", "date": _day(-i), "data": {
+                                       "activity": act, "minutes": mins, "steps": steps, "intensity": intensity, "routine": routine}})
+            await call("R", "PUT", "/me/health/settings", "RR Apps picks a plan and joins two challenges",
+                       json={"fitnessPlan": "gentle", "activeGoal": 30, "stepsGoal": 6000,
+                             "challenges": [f"walk5:{_day(-3)}", f"stretch:{_day(-5)}"]})
+            await call("P", "PUT", "/me/health/settings", "Priya joins the 7-day yoga streak",
+                       json={"fitnessPlan": "flex", "challenges": [f"yoga:{_day(-2)}"]})
+
+        on = want("health_doctors_mentors")
+        if on:
+            print("Health: doctors (demo directory) and mentors")
+            # Doctors are added by staff in the dashboard; for the local demo a
+            # few are written straight in, marked demo: true. Never in production
+            # (main() refuses to run there).
+            hours = lambda days, start, end, step=20: [{"day": d, "start": start, "end": end, "slot_minutes": step} for d in days]
+            demo_doctors = [
+                {"name": "Dr. Shalini Rao (demo)", "speciality": "Gynaecologist", "qualifications": "MBBS, MS (OBG)",
+                 "registration_no": "DEMO-TS-1021", "languages": ["Telugu", "Hindi", "English"], "experience_years": 14,
+                 "fee_minor": 40000, "modes": ["Video", "Clinic"], "clinic": "Rainbow Women's Clinic", "city": "Hyderabad",
+                 "bio": "Periods, PCOS, pregnancy care and menopause. Explains things slowly, in your language.",
+                 "availability": hours(["Mon", "Tue", "Wed", "Thu", "Fri"], "10:00", "13:00") + hours(["Sat"], "16:00", "19:00")},
+                {"name": "Dr. Imran Qureshi (demo)", "speciality": "General physician", "qualifications": "MBBS, MD",
+                 "registration_no": "DEMO-MH-2290", "languages": ["Hindi", "Urdu", "English"], "experience_years": 11,
+                 "fee_minor": 25000, "modes": ["Video", "Phone"], "clinic": "City Care Polyclinic", "city": "Pune",
+                 "bio": "Fever, tiredness, sugar and BP check-ups, and what your test reports mean.",
+                 "availability": hours(["Mon", "Wed", "Fri", "Sun"], "18:00", "21:00", 15)},
+                {"name": "Dr. Kavya Menon (demo)", "speciality": "Paediatrician", "qualifications": "MBBS, DCH",
+                 "registration_no": "DEMO-KL-3307", "languages": ["Malayalam", "English", "Hindi"], "experience_years": 9,
+                 "fee_minor": 30000, "modes": ["Video", "Clinic"], "clinic": "Little Steps Children's Clinic", "city": "Kochi",
+                 "bio": "Babies and children: vaccines, growth, feeding and the fevers that worry you at night.",
+                 "availability": hours(["Tue", "Thu", "Sat"], "09:30", "12:30")},
+                {"name": "Ms. Ritu Agarwal (demo)", "speciality": "Nutritionist", "qualifications": "MSc Food & Nutrition",
+                 "registration_no": "DEMO-RD-4410", "languages": ["Hindi", "English"], "experience_years": 7,
+                 "fee_minor": 0, "modes": ["Video", "Phone"], "clinic": "", "city": "Delhi",
+                 "bio": "Iron-rich home food, eating well in pregnancy, PCOS diet — on a household budget.",
+                 "availability": hours(["Mon", "Tue", "Wed", "Thu", "Fri", "Sat"], "11:00", "14:00", 30)},
+                {"name": "Ms. Deepa Iyer (demo)", "speciality": "Counsellor", "qualifications": "MA Psychology, RCI registered",
+                 "registration_no": "DEMO-RCI-5521", "languages": ["Tamil", "English", "Hindi"], "experience_years": 12,
+                 "fee_minor": 0, "modes": ["Video", "Phone"], "clinic": "", "city": "Chennai",
+                 "bio": "Stress, sadness, family pressure and feeling alone. A safe, private hour to talk.",
+                 "availability": hours(["Mon", "Wed", "Fri"], "15:00", "18:00", 45)},
+            ]
+            now = datetime.now(timezone.utc)
+            ids = {}
+            for d in demo_doctors:
+                res = await db["doctors"].find_one_and_update(
+                    {"name": d["name"], "demo": True},
+                    {"$set": {**d, "active": True, "demo": True, "photo": "", "updated_at": now},
+                     "$setOnInsert": {"verified_at": now, "created_at": now}},
+                    upsert=True, return_document=True)
+                ids[d["speciality"]] = str(res["_id"])
+                ok += 1
+                print(f"  ✓ demo doctor {d['name']}")
+
+            mine = await get("R", "/doctors/consultations/mine") or []
+            if not any(c["status"] in ("requested", "confirmed") for c in mine):
+                gyn = ids["Gynaecologist"]
+                for k in range(1, 8):
+                    day = await get("R", f"/doctors/{gyn}/slots", params={"date": _day(k)})
+                    if day and day.get("slots"):
+                        await call("R", "POST", f"/doctors/{gyn}/book", "RR Apps books a gynaecologist",
+                                   json={"start": day["slots"][1], "mode": "Video", "reason": "Irregular or painful periods",
+                                         "symptoms": ["Cramps", "Fatigue"]})
+                        break
+            if not any(c["status"] == "completed" for c in mine):
+                gp = ids["General physician"]
+                start = (now - timedelta(days=12)).replace(hour=13, minute=0, second=0, microsecond=0)
+                await db["doctor_consultations"].insert_one({
+                    "user_id": uid["R"], "member_name": users["R"].get("full_name", ""), "doctor_id": gp,
+                    "doctor_name": "Dr. Imran Qureshi (demo)", "speciality": "General physician", "doctor_photo": "",
+                    "fee_minor": 25000, "clinic": "City Care Polyclinic", "city": "Pune", "start": start, "mode": "Video",
+                    "reason": "Tiredness or weakness", "symptoms": ["Fatigue", "Headache"], "status": "completed",
+                    "join_info": "Video link sent on WhatsApp by the clinic",
+                    "prescription": {"text": "1. Iron + folic acid tablet — 1 a day after lunch — 60 days\n"
+                                             "2. Vitamin D3 60,000 IU — 1 a week with milk — 8 weeks\n"
+                                             "Eat: green leafy vegetables, jaggery with roasted chana, a lemon with meals.\n"
+                                             "Repeat haemoglobin test after 2 months.",
+                                     "file": "", "at": start + timedelta(minutes=30), "by": "demo"},
+                    "demo": True, "created_at": start - timedelta(days=2), "updated_at": start + timedelta(minutes=30)})
+                ok += 1
+                print("  ✓ RR Apps has a completed consultation with a prescription")
+
+            # Mentor Connect groups our real mentors by topic; make sure Fitness
+            # has at least one (the wellbeing mentor also teaches gentle yoga).
+            if not await db["mentors"].find_one({"status": "active", "expertise": {"$in": ["Fitness", "Yoga"]}}):
+                await db["mentors"].update_one({"status": "active", "expertise": {"$in": ["Wellbeing", "Mental Wellness"]}},
+                                               {"$addToSet": {"expertise": {"$each": ["Yoga", "Fitness"]}}})
+                print("  ✓ a wellbeing mentor now lists yoga and fitness")
+
+        on = want("health_records_reminders")
+        if on:
+            print("Health: records (readings, allergies, medicines, history, a report) and reminders")
+            for who in ("R", "P"):
+                have = await get(who, "/me/health/entries", params={"kind": "measure"}) or []
+                if have:
+                    print(f"  · {who} already has readings — skipped records")
+                else:
+                    readings = [("Weight", ["61.2", "60.8", "60.5", "60.1"]), ("Blood pressure", ["128/84", "124/82", "122/80", "118/78"]),
+                                ("Blood sugar", ["112", "104", "98", "96"]), ("Haemoglobin", ["10.8", "11.2", "11.9"])]
+                    for typ, values in readings:
+                        for i, v in enumerate(values):
+                            await call(who, "POST", "/me/health/entries", f"{who} {typ} {v}",
+                                       json={"kind": "measure", "date": _day(-(len(values) - 1 - i) * 14), "data": {"type": typ, "value": v}})
+                    for name, sev, reaction in (("Dust", "Mild", "Sneezing"), ("Penicillin", "Severe", "Rash")):
+                        await call(who, "POST", "/me/health/entries", f"{who} allergy {name}",
+                                   json={"kind": "allergy", "data": {"name": name, "severity": sev, "reaction": reaction}})
+                    for name, dose, sched, reason, taken in (("Iron", "1 tablet", "After lunch", "Low haemoglobin", [_day(-2), _day(-1)]),
+                                                             ("Vitamin D", "1 tablet", "After breakfast", "", [_day(-1)])):
+                        await call(who, "POST", "/me/health/entries", f"{who} medicine {name}",
+                                   json={"kind": "medication", "data": {"name": name, "dose": dose, "schedule": sched, "reason": reason,
+                                                                        "status": "Taking now", "taken": taken}})
+                    await call(who, "POST", "/me/health/entries", f"{who} stopped medicine",
+                               json={"kind": "medication", "data": {"name": "Paracetamol", "dose": "1 tablet", "schedule": "After dinner",
+                                                                    "status": "Stopped"}})
+                    for cat, cond, since in (("Previous condition", "Anaemia", "2024"), ("Surgery", "C-section", "2019"),
+                                             ("Family history", "Mother: diabetes", "")):
+                        await call(who, "POST", "/me/health/entries", f"{who} history {cond}",
+                                   json={"kind": "history", "data": {"cat": cat, "condition": cond, "since": since}})
+                    await call(who, "POST", "/me/health/entries", f"{who} report (no file)",
+                               json={"kind": "document", "date": _day(-12), "data": {"title": "Complete blood count", "type": "Lab report",
+                                                                                     "provider": "City Diagnostics", "shareable": True}})
+
+                rems = await get(who, "/me/health/entries", params={"kind": "reminder"}) or []
+                titles = {r["data"].get("title") for r in rems}
+                plan = [
+                    ("Thyroid check-up", "Doctor appointment", _day(3), "10:30", "Once", [], "City Hospital, OPD 2"),
+                    ("Take iron tablet", "Medicine", _day(-14), "14:00", "Every day", [_day(-2), _day(-1)], ""),
+                    ("Blood test before breakfast", "Doctor appointment", _day(-1), "08:00", "Once", [], "City Diagnostics"),
+                    ("Evening walk", "Workout", _day(-7), "18:00", "Every week", [], ""),
+                    ("Dental cleaning", "Doctor appointment", _day(-5), "11:00", "Once", [_day(-5)], ""),
+                    ("Refill medicines", "Medicine", _day(0), "23:30", "Once", [], ""),
+                ]
+                for title, cat, day, time_, rep, done, where in plan:
+                    if title in titles:
+                        continue
+                    await call(who, "POST", "/me/health/entries", f"{who} reminder {title}",
+                               json={"kind": "reminder", "date": day, "data": {"title": title, "category": cat, "time": time_,
+                                                                               "repeat": rep, "done": done, "where": where}})
+            await call("R", "PUT", "/me/health/settings", "RR Apps fills her health card",
+                       json={"bloodGroup": "B+", "heightCm": 158, "emergencyContact": "Sister — 98480 12345", "reminderLead": 30})
+
     await db["demo_seed"].update_one({"_id": MARKER}, {"$set": {"at": datetime.now(timezone.utc), "ok": ok,
                                                                 "failed": len(bad)}}, upsert=True)
     print(f"\n{ok} steps done, {len(bad)} failed.")

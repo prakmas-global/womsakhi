@@ -113,6 +113,7 @@ export default function BreathePage() {
 
   return (
     <GameFrame title="Breathe with me" sub="Follow the circle. Let your shoulders drop."
+               game="breathe" result={() => ({ scoreLabel: `${pattern} breathing` })}
                feel={feel} setFeel={setFeel} again={() => { reset(); setTimeout(start, 50); }}
                tools={<SoundToggle on={sound} onChange={setSound} />}>
       <div className="grid gap-[16px] lg:grid-cols-[minmax(0,1fr)_300px]">

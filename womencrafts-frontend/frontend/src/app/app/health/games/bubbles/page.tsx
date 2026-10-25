@@ -71,6 +71,7 @@ export default function BubblesPage() {
 
   return (
     <GameFrame title="Pop the bubbles" sub="Tap them as they float up. Miss as many as you like."
+               game="bubbles" result={() => ({ score: popped, scoreLabel: `${popped} popped` })}
                feel={feel} setFeel={setFeel}
                again={() => { setBubbles([]); setPopped(0); }}
                tools={<SoundToggle on={sound} onChange={setSound} />}>

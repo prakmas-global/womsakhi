@@ -82,6 +82,11 @@ const NAV: NavItem[] = [
     href: "/dashboard/appointments",
     icon: CalendarClock,
     module: "appointments",
+    children: [
+      { label: "All appointments", href: "/dashboard/appointments" },
+      { label: "Doctors", href: "/dashboard/doctors" },
+      { label: "Doctor consultations", href: "/dashboard/doctors/consultations" },
+    ],
   },
   {
     label: "Services & Types",
@@ -216,6 +221,10 @@ const NAV: NavItem[] = [
     href: "/dashboard/content",
     icon: LayoutList,
     module: "content",
+    children: [
+      { label: "Content library", href: "/dashboard/content" },
+      { label: "Health videos", href: "/dashboard/health-videos" },
+    ],
   },
   {
     label: "Feedback",

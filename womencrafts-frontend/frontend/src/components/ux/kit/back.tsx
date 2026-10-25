@@ -89,7 +89,9 @@ export function Back({ to, label, className = "" }: {
       style={{ color: "var(--ux-muted)" }}
     >
       <Icons.ArrowLeft className="h-[15px] w-[15px]" />
-      {prev ? `Back to ${name.charAt(0).toLowerCase()}${name.slice(1)}` : label}
+      {/* "Back to my shop", but "Back to Games & Stress Relief": a name that is
+          already in Title Case is a proper name and keeps its capital. */}
+      {prev ? `Back to ${/\s[A-Z]/.test(name) ? name : `${name.charAt(0).toLowerCase()}${name.slice(1)}`}` : label}
     </Link>
   );
 }

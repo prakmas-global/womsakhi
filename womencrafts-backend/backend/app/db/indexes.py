@@ -355,6 +355,36 @@ INDEXES: dict[str, list[IndexModel]] = {
         IndexModel([("kind", ASCENDING), ("created_at", DESCENDING)], name="kind_recent"),
     ],
 
+    # --- health & wellness (routes/health_hub.py) ---------------------------
+    "health_entries": [
+        # Every read is "her entries of these kinds, newest first, in a range".
+        IndexModel([("user_id", ASCENDING), ("kind", ASCENDING), ("date", DESCENDING)], name="user_kind_date"),
+        # The daily write cap counts her recent writes.
+        IndexModel([("user_id", ASCENDING), ("updated_at", DESCENDING)], name="user_recent"),
+    ],
+    # Doctor Consultation (routes/doctors.py).
+    "doctors": [
+        IndexModel([("active", ASCENDING), ("speciality", ASCENDING)], name="active_speciality"),
+    ],
+    "doctor_consultations": [
+        IndexModel([("user_id", ASCENDING), ("start", DESCENDING)], name="user_start"),
+        IndexModel([("doctor_id", ASCENDING), ("start", ASCENDING)], name="doctor_start"),
+        IndexModel([("status", ASCENDING), ("start", ASCENDING)], name="status_start"),
+        # One live consultation per slot: the key is set only while requested
+        # or confirmed, and removed on cancel or completion.
+        IndexModel([("slot_key", ASCENDING)], unique=True, sparse=True, name="slot_key_unique"),
+    ],
+    "health_settings": [
+        IndexModel([("user_id", ASCENDING)], unique=True, name="user_unique"),
+    ],
+    "health_files": [
+        IndexModel([("user_id", ASCENDING), ("created_at", DESCENDING)], name="user_recent"),
+    ],
+    "health_videos": [
+        # The member library: active videos in staff's order.
+        IndexModel([("active", ASCENDING), ("order", ASCENDING)], name="active_order"),
+    ],
+
     # --- community -----------------------------------------------------------
     # Friends and the feed (routes/social.py). One row per pair, whoever asked.
     "friendships": [

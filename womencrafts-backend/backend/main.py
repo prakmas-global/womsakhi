@@ -75,6 +75,10 @@ from app.routes.portfolio import router as portfolio_router
 from app.routes.my_records import router as my_records_router
 from app.routes.mentor_reviews import router as mentor_reviews_router
 from app.routes.people import router as people_router
+from app.routes.health_hub import router as health_hub_router
+from app.routes.health_files import router as health_files_router
+from app.routes.doctors import router as doctors_router, admin_router as doctors_admin_router
+from app.routes.health_videos import router as health_videos_router, admin_router as health_videos_admin_router
 from app.routes.social import router as social_router
 from app.routes.circle_chat import router as circle_chat_router
 from app.routes.haq_catalogue import router as haq_catalogue_router
@@ -448,6 +452,12 @@ app.include_router(community_router, prefix="/api/v1")
 app.include_router(growth_router, prefix="/api/v1")
 app.include_router(mentor_reviews_router, prefix="/api/v1")
 app.include_router(people_router, prefix="/api/v1")
+app.include_router(health_hub_router, prefix="/api/v1")
+app.include_router(health_files_router, prefix="/api/v1")  # her private health papers
+app.include_router(doctors_router, prefix="/api/v1")
+app.include_router(doctors_admin_router, prefix="/api/v1", dependencies=_mod("appointments"))
+app.include_router(health_videos_router, prefix="/api/v1")
+app.include_router(health_videos_admin_router, prefix="/api/v1", dependencies=_mod("content"))
 app.include_router(social_router, prefix="/api/v1")
 app.include_router(circle_chat_router, prefix="/api/v1")
 app.include_router(reference_router, prefix="/api/v1")
