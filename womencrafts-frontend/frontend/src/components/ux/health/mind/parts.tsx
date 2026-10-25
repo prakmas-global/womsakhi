@@ -7,8 +7,10 @@ import * as Icons from "@/components/ux/icons";
 import { Btn } from "@/components/ux/kit";
 import { toast } from "@/components/ux/mobile/Toast";
 import { apiErrorMessage } from "@/lib/api";
+import { Area } from "@/components/ux/kit/form";
 import { apiClearMood, apiMoodCheckIn, apiMoodHistory, type Mood, type MoodDay } from "@/lib/engines-api";
 import { I, Panel } from "../kit";
+import { Dial, PicChoice, Review, StepSheet, type FlowStep } from "../StepFlow";
 
 /**
  * Mental Wellness — the shared parts.
@@ -391,7 +393,170 @@ export function RoutineCard({ r, onStart }: { r: Routine; onStart: () => void })
   );
 }
 
-export function QuickCalm({ items }: { items: { icon: string; label: string; href?: string; onClick?: () => void }[] }) {
+/* ── step flows ───────────────────────────────────────────────────────── */
+/*
+ * The three forms of this section, each a short sheet that asks one thing at
+ * a time (StepFlow.tsx). A flow is mounted only while it is open, so it starts
+ * fresh every time, and it closes itself only when the save worked.
+ */
+
+const PICK_DELAY = 180;
+
+/** Pictures for the cycle tracker's feelings: the nearest face or sign. */
+const FEELING_ART: Record<string, string> = {
+  calm: "Feel less stressed", energetic: "Strength", confident: "Star", tired: "Tiredness",
+  anxious: "Low", irritable: "Fire", emotional: "Mood swings", low: "Very low",
+};
+
+function MoodBadge({ mood }: { mood: string }) {
+  return (
+    <span className="inline-flex items-center gap-2">
+      <MoodFace mood={mood} size={22} /> {lookOf(mood).label}
+    </span>
+  );
+}
+
+/** Mood → feelings → a note → check. Hands back what to save; the screen saves it. */
+export function CheckInFlow({ onClose, onSave, initial, startAt = 0 }: {
+  onClose: () => void;
+  onSave: (mood: Mood, feelings: string[], note: string) => Promise<boolean>;
+  /** Today's check-in, if she has one, so the flow edits it rather than starting blank. */
+  initial?: { mood?: string; feelings?: string[]; note?: string };
+  startAt?: number;
+}) {
+  const first = CHECK_IN.includes(initial?.mood as Mood) ? (initial?.mood as Mood) : null;
+  const [step, setStep] = useState(first ? startAt : 0);
+  const [mood, setMood] = useState<Mood | null>(first);
+  const [feelings, setFeelings] = useState<string[]>(initial?.feelings ?? []);
+  const [note, setNote] = useState(initial?.note ?? "");
+  const [busy, setBusy] = useState(false);
+  const save = async () => {
+    if (!mood) return;
+    setBusy(true);
+    const ok = await onSave(mood, feelings, note);
+    setBusy(false);
+    if (ok) onClose();
+  };
+  const flow: FlowStep[] = [
+    { id: "mood", title: "How are you feeling today?", hint: "Tap the face that fits best.", valid: !!mood,
+      body: <FaceRow narrow value={mood ?? undefined} busy={busy}
+                     onPick={(m) => { setMood(m); window.setTimeout(() => setStep(1), PICK_DELAY); }} /> },
+    { id: "feelings", title: "What else are you feeling?", hint: "Tap all that apply. Skip if nothing else fits.",
+      valid: feelings.length > 0, optional: true,
+      body: <PicChoice label="Feelings" hue="blue" multi columns={4} value={feelings}
+                       onChange={(f) => setFeelings((x) => (x.includes(f) ? x.filter((y) => y !== f) : [...x, f]))}
+                       options={FEELINGS.map((f) => ({ value: f.value, label: f.label, art: FEELING_ART[f.value] }))} /> },
+    { id: "note", title: "Anything on your mind?", hint: "Optional. A line or two, just for you.",
+      valid: !!note.trim(), optional: true,
+      body: <Area label="A note for yourself" value={note} onChange={setNote} max={300} rows={4} placeholder="What's on your mind? (optional)" /> },
+    { id: "check", title: "Check, then save", valid: !!mood,
+      body: <>
+        <Review rows={[
+          ["Mood", mood ? <MoodBadge mood={mood} /> : ""],
+          ["Feelings", feelings.length ? feelings.map(feelingLabel).join(", ") : "None added"],
+          ["Note", note.trim()],
+          ["Day", "Today"],
+        ]} />
+        <PrivateNote />
+      </> },
+  ];
+  return <StepSheet open onClose={onClose} icon="Smile" title="Check in" hue="blue" steps={flow} step={step} setStep={setStep}
+                    onSubmit={save} busy={busy} submitLabel="Save check-in" />;
+}
+
+export type JournalType = "Reflection" | "Gratitude" | "Affirmation";
+export type JournalDraft = { type: JournalType; text: string; id?: string };
+
+const JOURNAL_TYPES: { value: JournalType; label: string; sub: string }[] = [
+  { value: "Reflection", label: "Reflection", sub: "Look back on your day" },
+  { value: "Gratitude", label: "Gratitude", sub: "Notice what is good" },
+  { value: "Affirmation", label: "Affirmation", sub: "Kind words to yourself" },
+];
+
+/** Type → write freely, with prompts to tap → check. Edits an entry when the draft has an id. */
+export function JournalFlow({ onClose, onSave, initial, startAt = 0 }: {
+  onClose: () => void;
+  onSave: (d: JournalDraft) => Promise<boolean>;
+  initial: JournalDraft;
+  startAt?: number;
+}) {
+  const [step, setStep] = useState(startAt);
+  const [type, setType] = useState<JournalType>(initial.type);
+  const [text, setText] = useState(initial.text);
+  const [busy, setBusy] = useState(false);
+  const editing = !!initial.id;
+  const words = text.trim() ? text.trim().split(/\s+/).length : 0;
+  const save = async () => {
+    if (!text.trim()) return;
+    setBusy(true);
+    const ok = await onSave({ type, text, id: initial.id });
+    setBusy(false);
+    if (ok) onClose();
+  };
+  const flow: FlowStep[] = [
+    { id: "type", title: "What would you like to write?", hint: "Pick one. You can change it later.",
+      body: <PicChoice label="Type of entry" hue="blue" options={JOURNAL_TYPES} value={type}
+                       onChange={(v) => setType(v as JournalType)} onPicked={() => setStep(1)} /> },
+    { id: "write", title: editing ? "Change your entry" : "Write freely", hint: "Tap a prompt to begin, or just start writing. Nobody else will read this.",
+      valid: !!text.trim(),
+      body: <>
+        <div className="flex flex-col gap-1.5" role="group" aria-label="Prompts">
+          {PROMPTS[type].map((p) => (
+            <button key={p} type="button" onClick={() => setText((x) => (x ? `${x}\n${p} ` : `${p} `))}
+                    className="ux-press flex min-h-[44px] items-center gap-2 rounded-[12px] px-3 text-start text-[13.5px] font-semibold"
+                    style={{ background: "var(--ux-surface-2)", color: "var(--ux-ink-2)" }}>
+              <Icons.Plus className="h-3.5 w-3.5 shrink-0" style={{ color: "var(--ux-blue-ink)" }} /> {p}
+            </button>
+          ))}
+        </div>
+        <div>
+          <Area label="Write freely" value={text} onChange={setText} max={2000} rows={7} placeholder="Write freely. Nobody else will read this." />
+        </div>
+      </> },
+    { id: "check", title: "Check, then save", valid: !!text.trim(),
+      body: <>
+        <Review rows={[["Type", type], ["Length", `${words} ${words === 1 ? "word" : "words"}`], ["Day", editing ? "Keeps its date" : "Today"]]} />
+        <p className="line-clamp-6 whitespace-pre-wrap rounded-[16px] border p-4 text-[14.5px] leading-relaxed"
+           style={{ borderColor: "var(--ux-line)", color: "var(--ux-ink)" }}>{text.trim()}</p>
+        <PrivateNote />
+      </> },
+  ];
+  return <StepSheet open onClose={onClose} icon="BookOpen" title={editing ? "Edit journal entry" : "New journal entry"} hue="blue"
+                    steps={flow} step={step} setStep={setStep} onSubmit={save} busy={busy}
+                    submitLabel={editing ? "Save changes" : "Save entry"} />;
+}
+
+/** Calming activities she can log by hand. */
+export const CALM_ACTIVITIES = ["Meditation", "Breathing exercise", "Yoga", "Journaling", "Walk outdoors", "Calming music"] as const;
+
+/** Activity → minutes → check. */
+export function ActivityFlow({ onClose, onSave }: {
+  onClose: () => void;
+  onSave: (type: string, minutes: number) => Promise<boolean>;
+}) {
+  const [step, setStep] = useState(0);
+  const [type, setType] = useState("");
+  const [minutes, setMinutes] = useState(10);
+  const [busy, setBusy] = useState(false);
+  const save = async () => {
+    setBusy(true);
+    const ok = await onSave(type, minutes);
+    setBusy(false);
+    if (ok) onClose();
+  };
+  const flow: FlowStep[] = [
+    { id: "what", title: "What did you do?", valid: !!type,
+      body: <PicChoice label="Activity" hue="blue" options={CALM_ACTIVITIES} value={type} onChange={setType} onPicked={() => setStep(1)} /> },
+    { id: "long", title: "For how long?", hint: "Up to 3 hours.", valid: minutes >= 1 && minutes <= 180,
+      body: <Dial label="minutes" unit="min" hue="blue" value={minutes} onChange={setMinutes} min={1} max={180} presets={[5, 10, 15, 20, 30, 45]} /> },
+    { id: "check", title: "Check, then save", valid: !!type && minutes >= 1,
+      body: <Review rows={[["Activity", type], ["Time", `${minutes} min`], ["Day", "Today"]]} /> },
+  ];
+  return <StepSheet open onClose={onClose} icon="Leaf" title="Log a calming activity" hue="blue" steps={flow} step={step} setStep={setStep}
+                    onSubmit={save} busy={busy} submitLabel="Save activity" />;
+}
+
+export function QuickCalm({ items }:{ items: { icon: string; label: string; href?: string; onClick?: () => void }[] }) {
   return (
     <div className="grid gap-2.5" style={{ gridTemplateColumns: "repeat(auto-fit, minmax(104px, 1fr))" }}>
       {items.map((t) => {

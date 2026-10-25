@@ -394,7 +394,9 @@ async def _sync_reminder(uid: str, doc: dict | None, *, entry_id: str = "") -> N
 
 # ── her settings ─────────────────────────────────────────────────────────────
 
-DIETS = ("Vegetarian", "Eggetarian", "Non-vegetarian", "Vegan", "Jain")
+DIETS = ("Vegetarian", "Eggetarian", "Non-vegetarian", "Vegan")
+#: Diets no longer offered, and what a saved one now reads as.
+RETIRED_DIETS = {"Jain": "Vegetarian"}
 
 
 class Pregnancy(_K):
@@ -431,6 +433,21 @@ class HealthSettings(_K):
     #: Her bedtime routine, in her words (Sleep → Bedtime). Ticks for tonight
     #: are kept in `checks["bedtime"]` as "YYYY-MM-DD:<index>".
     sleepRoutine: list[str] = Field(default_factory=list, max_length=12)
+    #: Show Fertility / Pregnancy in her menu and on the Health home.
+    trackCycle: bool = True
+    trackPreg: bool = True
+    #: The first-visit setup (four short steps) is done or skipped.
+    onboarded: bool = False
+    dob: str = Field("", pattern=r"^(\d{4}-\d{2}-\d{2})?$")
+    #: What she wants from Health & Wellness, the movement she enjoys, and food she avoids.
+    goals: list[str] = Field(default_factory=list, max_length=10)
+    exercise: list[str] = Field(default_factory=list, max_length=10)
+    restrictions: list[str] = Field(default_factory=list, max_length=12)
+
+    @field_validator("goals", "exercise", "restrictions")
+    @classmethod
+    def short_choices(cls, v: list[str]) -> list[str]:
+        return list(dict.fromkeys(str(x).strip()[:40] for x in v if str(x).strip()))
 
     @field_validator("sleepRoutine")
     @classmethod
@@ -452,6 +469,7 @@ class HealthSettings(_K):
     @field_validator("diet")
     @classmethod
     def known_diet(cls, v: str) -> str:
+        v = RETIRED_DIETS.get(v, v)
         if v and v not in DIETS:
             raise ValueError(f"Pick one of: {', '.join(DIETS)}")
         return v
@@ -486,6 +504,40 @@ async def put_settings(patch: dict[str, Any], me: dict = Depends(require_active_
         upsert=True,
     )
     return merged
+
+
+# ── her data: take it all with her, or delete it all ─────────────────────────
+
+@router.get("/export", summary="Everything Health & Wellness keeps about me")
+async def export_all(me: dict = Depends(require_active_member)):
+    """Her settings, every entry and the list of papers she kept (names only; she opens each one herself)."""
+    from app.routes.health_files import FILES
+    uid = str(me["_id"])
+    entries = [_out(d).model_dump() async for d in _db()[ENTRIES].find({"user_id": uid}).sort([("date", 1), ("created_at", 1)])]
+    files = [{"name": f.get("original_name", ""), "type": f.get("content_type", ""), "size": int(f.get("size") or 0),
+              "kept_on": f["created_at"].isoformat() if isinstance(f.get("created_at"), datetime) else ""}
+             async for f in _db()[FILES].find({"user_id": uid})]
+    return {"exported_at": datetime.now(timezone.utc).isoformat(), "settings": (await get_settings(me)).model_dump(),
+            "entries": entries, "files": files}
+
+
+@router.delete("", status_code=status.HTTP_204_NO_CONTENT, summary="Delete all my Health & Wellness data")
+async def delete_all(me: dict = Depends(require_active_member)):
+    """Every entry, her settings and her kept papers (the files too). Reminders leave the scheduler with them."""
+    from app.routes.health_files import FILES
+    from app.routes.verification import PRIVATE_ROOT
+    uid = str(me["_id"])
+    reminders = [str(d["_id"]) async for d in _db()[ENTRIES].find({"user_id": uid, "kind": "reminder"}, {"_id": 1})]
+    await _db()[ENTRIES].delete_many({"user_id": uid})
+    for rid in reminders:
+        await _sync_reminder(uid, None, entry_id=rid)
+    root = PRIVATE_ROOT.resolve()
+    async for f in _db()[FILES].find({"user_id": uid}, {"stored_name": 1}):
+        target = (PRIVATE_ROOT / f.get("stored_name", "")).resolve()
+        if root in target.parents:
+            target.unlink(missing_ok=True)
+    await _db()[FILES].delete_many({"user_id": uid})
+    await _db()[SETTINGS].delete_one({"user_id": uid})
 
 
 # ── a week at a glance, for the Health home ─────────────────────────────────

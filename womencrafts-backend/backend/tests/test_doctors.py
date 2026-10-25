@@ -163,3 +163,57 @@ async def test_open_booking_limit(api):
     for s in slots[:3]:
         assert (await client.post(f"/doctors/{doc['id']}/book", json={"start": s, "mode": "Video", "reason": "a b"}, headers=h)).status_code == 201
     assert (await client.post(f"/doctors/{doc['id']}/book", json={"start": slots[4], "mode": "Video", "reason": "a b"}, headers=h)).status_code == 429
+
+
+async def test_share_records_with_consent_then_stop(api):
+    """She shares only what she ticks and agrees to; staff see it, never her notes; she can stop sharing before the visit."""
+    client, db, made = api
+    _, sh = await _member(db, made, "Staff One", role="Super Admin")
+    _, h = await _member(db, made, "Asha")
+    doc = await _doctor(client, sh)
+    slots = (await client.get(f"/doctors/{doc['id']}/slots", params={"date": _tomorrow()}, headers=h)).json()["slots"]
+    shared = [{"kind": "allergy", "label": "Penicillin", "detail": "Severe"},
+              {"kind": "reading", "label": "Haemoglobin: 10.2 g/dL", "detail": "2026-10-01"}]
+    body = {"start": slots[1], "mode": "Video", "reason": "Tiredness", "shared": shared}
+    # Ticked without agreeing: refused.
+    assert (await client.post(f"/doctors/{doc['id']}/book", json=body, headers=h)).status_code == 422
+    got = await client.post(f"/doctors/{doc['id']}/book", json={**body, "share_consent": True}, headers=h)
+    assert got.status_code == 201, got.text
+    c = got.json()
+    assert [x["label"] for x in c["shared"]] == ["Penicillin", "Haemoglobin: 10.2 g/dL"] and c["shared_at"]
+
+    noted = await client.post(f"/doctors/consultations/{c['id']}/notes", json={"notes": "Ask about iron tablets"}, headers=h)
+    assert noted.json()["member_notes"] == "Ask about iron tablets"
+    staff = (await client.get("/admin/doctors/consultations", headers=sh)).json()
+    row = next(x for x in staff if x["id"] == c["id"])
+    assert len(row["shared"]) == 2 and row["member_notes"] == ""
+
+    # Stop sharing one, then adding a new one again needs consent.
+    less = await client.post(f"/doctors/consultations/{c['id']}/shared", json={"shared": shared[:1]}, headers=h)
+    assert [x["label"] for x in less.json()["shared"]] == ["Penicillin"]
+    more = shared[:1] + [{"kind": "medication", "label": "Iron", "detail": ""}]
+    assert (await client.post(f"/doctors/consultations/{c['id']}/shared", json={"shared": more}, headers=h)).status_code == 422
+    assert (await client.post(f"/doctors/consultations/{c['id']}/shared", json={"shared": [], "share_consent": False}, headers=h)).json()["shared"] == []
+    # Someone else cannot touch it.
+    _, h2 = await _member(db, made, "Bina")
+    assert (await client.post(f"/doctors/consultations/{c['id']}/notes", json={"notes": "x"}, headers=h2)).status_code == 404
+
+
+async def test_reschedule_frees_the_old_slot(api):
+    client, db, made = api
+    _, sh = await _member(db, made, "Staff One", role="Super Admin")
+    _, h = await _member(db, made, "Asha")
+    doc = await _doctor(client, sh)
+    slots = (await client.get(f"/doctors/{doc['id']}/slots", params={"date": _tomorrow()}, headers=h)).json()["slots"]
+    c = (await client.post(f"/doctors/{doc['id']}/book", json={"start": slots[2], "mode": "Video", "reason": "Check-up"}, headers=h)).json()
+    await client.post(f"/admin/doctors/consultations/{c['id']}/confirm", json={"join_info": "https://meet.example/abc"}, headers=sh)
+    moved = await client.post(f"/doctors/consultations/{c['id']}/reschedule", json={"start": slots[6]}, headers=h)
+    assert moved.status_code == 200, moved.text
+    m = moved.json()
+    # Back to the team to confirm; the old joining details no longer hold.
+    assert m["status"] == "requested" and m["join_info"] == "" and m["rescheduled_from"]
+    free = (await client.get(f"/doctors/{doc['id']}/slots", params={"date": _tomorrow()}, headers=h)).json()["slots"]
+    assert slots[2] in free and slots[6] not in free
+    # A time that is not free is refused.
+    bad = (datetime.now(IST) + _td(days=1)).replace(hour=9, minute=7, second=0, microsecond=0).isoformat()
+    assert (await client.post(f"/doctors/consultations/{c['id']}/reschedule", json={"start": bad}, headers=h)).status_code == 409

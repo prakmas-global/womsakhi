@@ -10,8 +10,9 @@ import {
   BarChart, Chips, Cols, Disclaimer, Empty, HUE, I, Metric, MetricGrid, Panel, lastDays, type useEntries, type useHealthSettings,
 } from "@/components/ux/health/kit";
 import { addDays, daysBetween, fmtDay, today, type Entry, type KindData } from "@/lib/health-api";
-import { DEFAULT_ROUTINE, FACTORS, SLEEP_TIPS } from "@/components/ux/health/nutrition/data";
-import { Field, HBar, HistoryRow, StepNum, TimePick, fmt12 } from "@/components/ux/health/nutrition/parts";
+import { DEFAULT_ROUTINE, FACTORS, FACTOR_ART, QUALITY_TILES, SLEEP_TIPS } from "@/components/ux/health/nutrition/data";
+import { Field, FlowNote, HBar, HistoryRow, StepNum, TimeFace, TimePick, fmt12 } from "@/components/ux/health/nutrition/parts";
+import { FormLauncher, PicChoice, Review, StepSheet, type FlowStep } from "@/components/ux/health/StepFlow";
 
 /**
  * Sleep — Overview, Sleep Log, Bedtime, Insights.
@@ -181,15 +182,18 @@ function Consistency({ ss, days }: { ss: Entry<"sleep">[]; days: { day: string; 
 
 export function LogTab({ store }: { store: SleepStore }) {
   const ss = nights(store);
-  const [editing, setEditing] = useState<Entry<"sleep"> | null>(null);
-  // The form comes first on a phone — logging last night is why she came —
+  // The open sleep flow: a new night (`editing` null) or one being changed.
+  const [flow, setFlow] = useState<{ editing: Entry<"sleep"> | null } | null>(null);
+  const editing = flow?.editing ?? null;
+  const last = ss[0];
+  // The card comes first on a phone (logging last night is why she came)
   // and sits on the right on a wide screen, beside her history.
   return (
     <div className="grid items-start gap-5 xl:grid-cols-[minmax(0,1fr)_360px]">
       <div className="order-2 flex min-w-0 flex-col gap-5 xl:order-1">
         <Panel title="Sleep history" sub={ss.length ? `${ss.length} night${ss.length === 1 ? "" : "s"} logged` : undefined}>
           {ss.length === 0 ? (
-            <Empty icon="Moon" title="Nothing logged yet" body="Your nights will show here. Log last night with the form — it takes two taps." />
+            <Empty icon="Moon" title="Nothing logged yet" body="Your nights will show here. Tap Start on “Log your sleep”: it takes a few taps." />
           ) : (
             <ul className="flex flex-col" data-sleep-history>
               {ss.map((x) => {
@@ -198,7 +202,7 @@ export function LogTab({ store }: { store: SleepStore }) {
                   <HistoryRow key={x.id} editing={editing?.id === x.id} when={fmtDay(x.date)}
                               title={`${hm(m)} of sleep`}
                               meta={[`${fmt12(x.data.bed)} to ${fmt12(x.data.wake)}`, x.data.quality, ...(x.data.factors || [])].filter(Boolean).join(" · ")}
-                              onEdit={() => { setEditing(x); document.getElementById("sl-form")?.scrollIntoView({ behavior: "smooth", block: "center" }); }}
+                              onEdit={() => setFlow({ editing: x })}
                               onDelete={() => store.remove(x.id, "Night deleted")} />
                 );
               })}
@@ -207,15 +211,29 @@ export function LogTab({ store }: { store: SleepStore }) {
         </Panel>
       </div>
       <div className="order-1 flex min-w-0 flex-col gap-5 xl:order-2">
-        <SleepForm key={editing?.id ?? "new"} store={store} editing={editing} onDone={() => setEditing(null)} />
+        <FormLauncher id="sl-form" art="Sleep" hue="violet" steps={SLEEP_STEPS} title="Log your sleep"
+                      sub={last ? `${SLEEP_STEPS} quick steps · last logged ${fmtDay(last.date)}, ${hm(sleepMin(last.data.bed, last.data.wake))}`
+                                : `${SLEEP_STEPS} quick steps · tap your times and how you slept`}
+                      onStart={() => setFlow({ editing: null })} />
       </div>
+      {flow && <SleepLogFlow key={flow.editing?.id ?? "new"} store={store} editing={flow.editing} onClose={() => setFlow(null)} />}
     </div>
   );
 }
 
-function SleepForm({ store, editing, onDone }: { store: SleepStore; editing: Entry<"sleep"> | null; onDone: () => void }) {
+const SLEEP_STEPS = 6;
+
+/**
+ * "Log your sleep" and "Change this night", one question at a time: which
+ * night, bedtime, wake-up (with the duration checked right there), how it
+ * felt, what affected it (optional, with a note), then what will be saved.
+ * The saved night is the same shape as before; editing opens filled in.
+ */
+function SleepLogFlow({ store, editing, onClose }: { store: SleepStore; editing: Entry<"sleep"> | null; onClose: () => void }) {
+  const hue = "violet" as const;
   const ss = nights(store);
   const usual = ss[0]?.data;
+  const [step, setStep] = useState(0);
   const [date, setDate] = useState(editing?.date ?? today());
   const [bed, setBed] = useState(editing?.data.bed ?? usual?.bed ?? "22:30");
   const [wake, setWake] = useState(editing?.data.wake ?? usual?.wake ?? "06:30");
@@ -226,46 +244,73 @@ function SleepForm({ store, editing, onDone }: { store: SleepStore; editing: Ent
   const m = sleepMin(bed, wake);
   const bad = m < 60 || m > 960;
   const already = !editing && ss.some((x) => x.date === date);
+  const t = today(), y = addDays(today(), -1);
+  const nightName = date === t ? "Last night" : date === y ? "The night before" : `Night before ${fmtDay(date)}`;
 
   const save = async () => {
     setBusy(true);
     const data: KindData["sleep"] = { bed, wake, quality, factors, note: note.trim() };
     const ok = editing ? await store.edit(editing.id, { data, date }, "Night updated") : await store.add("sleep", data, date, "Sleep saved");
     setBusy(false);
-    if (ok) { setFactors([]); setNote(""); onDone(); }
+    if (ok) onClose();
   };
 
-  return (
-    <Panel id="sl-form" title={editing ? "Change this night" : "Log your sleep"} sub="Dated on the morning you woke up" hue="violet">
-      <Field label="Which night?">
-        <Chips label="Which night" hue="violet" value={date} onChange={setDate}
-               options={[{ value: today(), label: "Last night" }, { value: addDays(today(), -1), label: "The night before" },
-                         ...(date !== today() && date !== addDays(today(), -1) ? [{ value: date, label: fmtDay(date) }] : [])]} />
-        <input type="date" value={date} max={today()} onChange={(e) => e.target.value && setDate(e.target.value)} aria-label="Wake-up date"
-               className="min-h-[40px] w-fit rounded-full border-[1.5px] px-3 text-[13.5px] font-bold"
-               style={{ borderColor: "var(--ux-line-strong)", background: "var(--ux-surface)", color: "var(--ux-ink)" }} />
-      </Field>
-      <Field label="Went to bed at"><TimePick label="Bedtime" value={bed} onChange={setBed} presets={BED_PRESETS} /></Field>
-      <Field label="Woke up at"><TimePick label="Wake-up time" value={wake} onChange={setWake} presets={WAKE_PRESETS} /></Field>
-      <p className="rounded-[12px] px-3 py-2 text-sm font-bold" data-sleep-duration
-         style={bad ? { background: "var(--ux-danger-tint)", color: "var(--ux-danger-ink)" } : { background: HUE.violet.tint, color: HUE.violet.ink }}>
-        {bad ? "Sleep should be between 1 and 16 hours. Check both times." : `${hm(m)} of sleep`}
-      </p>
-      <Field label="How did you sleep?">
-        <Chips label="Sleep quality" hue="violet" options={QUALITIES} value={quality} onChange={setQuality} />
-      </Field>
-      <Field label="Anything that affected it? (optional)">
-        <Chips label="Factors" hue="violet" options={FACTORS} value={factors}
-               onChange={(f) => setFactors((xs) => (xs.includes(f) ? xs.filter((x) => x !== f) : [...xs, f]))} />
-      </Field>
-      <Field label="Note (optional)"><Text label="Note" value={note} onChange={setNote} max={200} placeholder="Anything to remember" /></Field>
-      {already && <p className="text-xs" style={{ color: "var(--ux-amber-ink)" }}>You already logged this night. Saving adds a second entry (a nap, or a broken night).</p>}
-      <div className="flex flex-wrap gap-2">
-        <Btn icon="Check" disabled={bad} loading={busy} onClick={save}>{editing ? "Save changes" : "Save sleep"}</Btn>
-        {editing && <Btn variant="ghost" onClick={onDone}>Cancel</Btn>}
-      </div>
-    </Panel>
+  const alreadyNote = already && (
+    <FlowNote tone="warn">You already logged this night. Saving adds a second entry (a nap, or a broken night).</FlowNote>
   );
+
+  const flow: FlowStep[] = [
+    { id: "night", title: "Which night?", hint: "It is dated on the morning you woke up.",
+      body: <>
+        <PicChoice label="Which night" hue={hue} value={date} onChange={setDate} onPicked={() => setStep(1)}
+                   options={[
+                     { value: t, label: "Last night", art: "Night", sub: `Woke ${fmtDay(t)}` },
+                     { value: y, label: "The night before", art: "Calendar", sub: `Woke ${fmtDay(y)}` },
+                     ...(date !== t && date !== y ? [{ value: date, label: fmtDay(date), art: "Calendar", sub: "Chosen date" }] : []),
+                   ]} />
+        <label className="flex flex-wrap items-center gap-2 text-[13.5px] font-bold" style={{ color: "var(--ux-ink-2)" }}>
+          Another morning
+          <input type="date" value={date} max={today()} onChange={(e) => e.target.value && setDate(e.target.value)} aria-label="Wake-up date"
+                 className="min-h-[40px] w-fit rounded-full border-[1.5px] px-3 text-[13.5px] font-bold"
+                 style={{ borderColor: "var(--ux-line-strong)", background: "var(--ux-surface)", color: "var(--ux-ink)" }} />
+        </label>
+        {alreadyNote}
+      </> },
+    { id: "bed", title: "When did you go to bed?", hint: "Tap a time, or set the exact one.",
+      body: <>
+        <TimeFace value={bed} hue={hue} caption="Went to bed" />
+        <TimePick label="Bedtime" value={bed} onChange={setBed} presets={BED_PRESETS} />
+      </> },
+    { id: "wake", title: "When did you wake up?", hint: "We work out how long you slept.", valid: !bad,
+      body: <>
+        <TimeFace value={wake} hue={hue} caption="Woke up" />
+        <TimePick label="Wake-up time" value={wake} onChange={setWake} presets={WAKE_PRESETS} />
+        <FlowNote data-sleep-duration tone={bad ? "error" : "info"} hue={hue} icon={bad ? undefined : "Moon"}>
+          {bad ? "Sleep should be between 1 and 16 hours. Check both times." : `${hm(m)} of sleep`}
+        </FlowNote>
+      </> },
+    { id: "how", title: "How did you sleep?",
+      body: <PicChoice label="Sleep quality" hue={hue} options={QUALITY_TILES} value={quality} columns={4}
+                       onChange={(v) => setQuality(v as KindData["sleep"]["quality"])} onPicked={() => setStep(4)} /> },
+    { id: "why", title: "Anything that affected it?", hint: "Optional. Tap any that fit, and add a note if you like.",
+      optional: true, valid: factors.length > 0 || !!note.trim(),
+      body: <>
+        <PicChoice label="Factors" hue={hue} multi columns={4} value={factors}
+                   options={FACTORS.map((f) => ({ value: f, label: f, art: FACTOR_ART[f] }))}
+                   onChange={(f) => setFactors((xs) => (xs.includes(f) ? xs.filter((x) => x !== f) : [...xs, f]))} />
+        <Field label="Note (optional)"><Text label="Note" value={note} onChange={setNote} max={200} placeholder="Anything to remember" /></Field>
+      </> },
+    { id: "check", title: editing ? "Save these changes?" : "Save this night?", hint: "Check it, then save. Go back to change anything.", valid: !bad,
+      body: <>
+        <Review rows={[
+          ["Night", nightName], ["Bed", fmt12(bed)], ["Woke", fmt12(wake)], ["Sleep", hm(m)], ["Felt", quality],
+          ["Affected by", factors.join(", ")], ["Note", note.trim()],
+        ]} />
+        {alreadyNote}
+      </> },
+  ];
+  return <StepSheet open onClose={onClose} icon="Moon" title={editing ? "Change this night" : "Log your sleep"} hue={hue} steps={flow} step={step} setStep={setStep}
+                    onSubmit={save} busy={busy} submitLabel={editing ? "Save changes" : "Save sleep"} />;
 }
 
 /* ── Bedtime ───────────────────────────────────────────────────────── */
@@ -417,7 +462,7 @@ function BedReminder({ store, bedtime }: { store: SleepStore; bedtime: string })
         <>
           <p className="text-sm" style={{ color: "var(--ux-ink-2)" }}>A gentle nudge each night at your bedtime.</p>
           <div>
-            <Btn size="sm" icon="Bell" onClick={() => store.add("reminder", { title: BED_REMINDER, category: "Other", time: bedtime, repeat: "Every day", note: "Start your wind-down routine" }, today(), `We'll remind you at ${fmt12(bedtime)}`)}>
+            <Btn size="sm" icon="Bell" onClick={() => store.add("reminder", { title: BED_REMINDER, category: "Sleep", time: bedtime, repeat: "Every day", note: "Start your wind-down routine" }, today(), `We'll remind you at ${fmt12(bedtime)}`)}>
               Remind me every night at {fmt12(bedtime)}
             </Btn>
           </div>

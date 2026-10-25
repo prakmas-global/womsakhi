@@ -7,9 +7,11 @@ active ones. What she has watched, saved or finished is hers, in the Health
 store as `vwatch` entries (routes/health_hub.py) — nothing about her viewing
 is kept on the video.
 
-No video is ever seeded: a library of invented links would be the kind of
-placeholder that looks real and plays nothing. Until staff add some, the
-member screen says exactly that.
+Nothing is seeded on start-up: a library of invented links would be the kind
+of placeholder that looks real and plays nothing. A starter set of real,
+checked public videos can be loaded on purpose with
+`python -m app.core.seed_health_videos` (see that file); until staff or that
+script add some, the member screen says so.
 """
 
 from __future__ import annotations
@@ -33,7 +35,7 @@ router = APIRouter(prefix="/health/videos", tags=["Member · Health"])
 admin_router = APIRouter(prefix="/admin/health/videos", tags=["Admin · Health videos"])
 
 VIDEOS = "health_videos"
-CATEGORIES = ("Workout", "Yoga", "Meditation", "Pregnancy", "Nutrition", "Sleep")
+CATEGORIES = ("Workout", "Yoga", "Meditation", "Pregnancy", "Nutrition", "Sleep", "Fertility", "Mentoring", "Health talks")
 LEVELS = ("All levels", "Beginner", "Intermediate", "Gentle")
 
 _YT_ID = re.compile(r"^[A-Za-z0-9_-]{11}$")
@@ -75,7 +77,7 @@ def _check_url(url: str) -> str:
 
 class VideoIn(BaseModel):
     title: str = Field(..., min_length=2, max_length=100)
-    category: Literal["Workout", "Yoga", "Meditation", "Pregnancy", "Nutrition", "Sleep"]
+    category: Literal["Workout", "Yoga", "Meditation", "Pregnancy", "Nutrition", "Sleep", "Fertility", "Mentoring", "Health talks"]
     url: str = Field(..., max_length=400)
     duration_sec: int = Field(..., ge=10, le=4 * 3600)
     level: Literal["All levels", "Beginner", "Intermediate", "Gentle"] = "All levels"
@@ -94,7 +96,7 @@ class VideoIn(BaseModel):
 
 class VideoPatch(BaseModel):
     title: Optional[str] = Field(None, min_length=2, max_length=100)
-    category: Optional[Literal["Workout", "Yoga", "Meditation", "Pregnancy", "Nutrition", "Sleep"]] = None
+    category: Optional[Literal["Workout", "Yoga", "Meditation", "Pregnancy", "Nutrition", "Sleep", "Fertility", "Mentoring", "Health talks"]] = None
     url: Optional[str] = Field(None, max_length=400)
     duration_sec: Optional[int] = Field(None, ge=10, le=4 * 3600)
     level: Optional[Literal["All levels", "Beginner", "Intermediate", "Gentle"]] = None

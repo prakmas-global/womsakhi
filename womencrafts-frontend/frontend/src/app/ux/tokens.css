@@ -140,7 +140,8 @@
   --ux-tint-blue:   var(--ws-info-tint);
   --ux-tint-green:  var(--ws-success-tint);
   --ux-tint-pink:   var(--ws-magenta-50);
-  --ux-tint-lilac:  var(--ws-violet-100);
+  --ux-tint-lilac:  #f3ebfc;                  /* Pregnancy: its own purple, apart from Sleep's violet */
+  --ux-tint-magenta: var(--ws-magenta-50);   /* Health home and Reminders: the brand itself */
   --ux-tint-amber:  var(--ws-warning-tint);   /* ink clears AA at 4.60:1 */
 
   /* graphics — measured 3.01 to 3.03 on the worst surface each lands on */
@@ -211,6 +212,8 @@
   --ux-blue-ink:   var(--ws-info-ink);
   --ux-green-ink:  var(--ws-success-ink);
   --ux-pink-ink:   var(--ws-magenta-700);
+  --ux-lilac-ink:  #7a3fc7;   /* 5.6:1 on its tint */
+  --ux-magenta-ink: var(--ws-magenta-600);   /* 5.2:1 on its tint */
   --ux-amber-ink:  var(--ws-warning-ink);
   /* Error text. Sits on a surface, not on the danger fill — `--ux-danger-solid`
      is the bed white text sits on, and using it for type on white was the bug
@@ -532,7 +535,8 @@
   --ux-tint-blue:   var(--ws-info-tint);
   --ux-tint-green:  var(--ws-success-tint);
   --ux-tint-pink:   #2a1630;
-  --ux-tint-lilac:  #231d45;
+  --ux-tint-lilac:  #2b1d40;
+  --ux-tint-magenta: #2a1630;
   --ux-tint-amber:  var(--ws-warning-tint);   /* ink clears AA at 4.68:1; #332a18 was 4.42 */
 
   /* Dark mode needs only one strength. Solving for 4.5:1 here lands around
@@ -551,6 +555,8 @@
   --ux-blue-ink:   var(--ws-info-ink);
   --ux-green-ink:  var(--ws-success-ink);
   --ux-pink-ink: var(--ws-brand-dark);
+  --ux-lilac-ink: #c79bff;
+  --ux-magenta-ink: var(--ws-brand-dark);
   --ux-amber-ink:  var(--ws-warning-ink);
   --ux-danger-ink: var(--ws-danger-ink);
 

@@ -99,6 +99,39 @@ export function Field({ label, children, hint }: { label: string; children: Reac
   );
 }
 
+/**
+ * A one-line message inside a step of a step flow: the sleep duration, a
+ * check that failed, a "you already logged this" warning. Errors are
+ * announced, so a screen reader hears why Next is off.
+ */
+export function FlowNote({ tone = "info", hue = "violet", icon, children, ...rest }: {
+  tone?: "info" | "warn" | "error"; hue?: Hue; icon?: string; children: React.ReactNode; [data: `data-${string}`]: string | boolean | undefined;
+}) {
+  const h = HUE[hue];
+  const style = tone === "error" ? { background: "var(--ux-danger-tint)", color: "var(--ux-danger-ink)" }
+    : tone === "warn" ? { background: "var(--ux-tint-amber)", color: "var(--ux-amber-ink)" }
+    : { background: h.tint, color: h.ink };
+  return (
+    <p {...rest} role={tone === "error" ? "alert" : undefined} aria-live={tone === "error" ? undefined : "polite"}
+       className="flex items-start gap-2 rounded-[12px] px-3 py-2.5 text-sm font-bold" style={style}>
+      <I name={icon ?? (tone === "error" ? "AlertCircle" : tone === "warn" ? "Info" : "Check")} className="mt-0.5 h-4 w-4 shrink-0" />
+      <span className="min-w-0">{children}</span>
+    </p>
+  );
+}
+
+/** The chosen time, large, above the time taps — so the step reads at a glance. */
+export function TimeFace({ value, hue = "violet", caption }: { value: string; hue?: Hue; caption?: string }) {
+  const h = HUE[hue];
+  return (
+    <div className="flex flex-col items-center gap-1 rounded-[18px] px-4 py-4"
+         style={{ background: `linear-gradient(160deg, ${h.tint}, var(--ux-surface))` }} aria-hidden>
+      <span className="text-[40px] font-extrabold leading-none tabular-nums" style={{ color: h.ink }}>{value ? fmt12(value) : "–"}</span>
+      {caption && <span className="text-xs font-bold" style={{ color: "var(--ux-muted)" }}>{caption}</span>}
+    </div>
+  );
+}
+
 /** A horizontal bar row — "Restful ▇▇▇▇ 4". */
 export function HBar({ label, value, max, hue }: { label: string; value: number; max: number; hue: Hue }) {
   const h = HUE[hue];

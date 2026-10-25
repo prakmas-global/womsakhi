@@ -4,20 +4,26 @@ import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 
 import { Btn } from "@/components/ux/kit";
-import { Sheet } from "@/components/ux/kit/sheet";
-import { MonthCalendar, Legend, PhaseBar, InsightRow } from "@/components/ux/cycle/parts";
+import { Area } from "@/components/ux/kit/form";
+import { toast } from "@/components/ux/mobile/Toast";
+import { MonthCalendar, Legend, InsightRow } from "@/components/ux/cycle/parts";
+import { CycleWheel } from "@/components/ux/cycle/CycleWheel";
 import { SYMPTOMS, symptomLabel } from "@/components/ux/cycle/data";
 import { useCycle } from "@/components/ux/cycle/use-cycle";
 import {
-  BarChart, Chips, Cols, Disclaimer, Empty, HealthFrame, HUE, I, Metric, MetricGrid, Panel,
+  BarChart, Chips, Cols, Disclaimer, Empty, HealthFrame, HUE, I, Metric, MetricGrid, Panel, useEntries,
 } from "@/components/ux/health/kit";
+import { ReminderSheet } from "@/components/ux/health/ReminderSheet";
+import { PicChoice, Review, StepSheet, type FlowStep } from "@/components/ux/health/StepFlow";
+import { ReminderRow } from "@/app/app/health/reminders/reminder-parts";
 import { FERT_QUESTIONS, GOAL_LABEL, PRECONCEPTION } from "@/components/ux/health/pregnancy-data";
 import { Checklist, ConsultCard, useChecks } from "@/components/ux/health/checklist";
 import {
   apiCycleDay, apiCycleLog, apiCycleSettings,
   type CycleLog, type CycleState, type Flow, type Symptom, type TrackingGoal,
 } from "@/lib/cycle-api";
-import { addDays, fmtDay } from "@/lib/health-api";
+import { addDays, fmtDay, nowHHMM, today as ymdToday, type Entry, type KindData } from "@/lib/health-api";
+import { WatchListen } from "@/components/ux/health/WatchListen";
 
 /**
  * Fertility — the cycle tracker, laid out the way the Health module is.
@@ -33,8 +39,10 @@ const TABS = [
   { id: "cycle", label: "Cycle" },
   { id: "calendar", label: "Calendar" },
   { id: "insights", label: "Insights" },
+  { id: "reminders", label: "Reminders" },
   { id: "plan", label: "Plan" },
   { id: "consultation", label: "Consultation" },
+  { id: "watch", label: "Watch & listen" },
 ];
 
 const FLOWS: { value: Flow; label: string }[] = [
@@ -57,12 +65,19 @@ export default function FertilityPage() {
   const today = data?.today ?? "";
   const loggedToday = !!state?.log?.period;
 
-  const periodToday = () => act(() => apiCycleLog(today, { period: true }));
+  const periodToday = async () => {
+    const before = state?.log?.period ?? null;
+    const ok = await act(() => apiCycleLog(today, { period: true }));
+    if (ok) toast("Period logged for today", {
+      tone: "success", duration: 7000,
+      action: { label: "Undo", onPress: () => void act(() => apiCycleLog(today, { period: before })) },
+    });
+  };
 
   return (
     <HealthFrame active="/app/health/fertility" hue="pink" icon="Flower2" eyebrow="Fertility"
                  title="Fertility" sub="Understand your cycle and plan your future. Everything here is private to you."
-                 art="/ux/art/learn-dashboard-mindfulness.webp" tabs={TABS}
+                 art="/ux/health/ill/hero-fertility.webp" tabs={TABS}
                  actions={state ? (
                    <>
                      {loggedToday
@@ -82,11 +97,13 @@ export default function FertilityPage() {
               {error} <button type="button" className="underline" onClick={reload}>Try again</button>
             </p>
           )}
-          {notSetUp ? <SetUp /> : !state ? <Loading /> : (
+          {tab === "watch" ? <WatchListen section="fertility" hue="pink" sub="Your cycle, PCOS and planning a pregnancy, explained." />
+            : notSetUp ? <SetUp /> : !state ? <Loading /> : (
             <>
               {tab === "cycle" && <CycleTab s={state} onPeriod={periodToday} busy={busy} act={act} />}
               {tab === "calendar" && <CalendarTab s={state} month={month} setMonth={setMonth} act={act} />}
               {tab === "insights" && <InsightsTab s={state} />}
+              {tab === "reminders" && <RemindersTab s={state} />}
               {tab === "plan" && <PlanTab s={state} act={act} />}
               {tab === "consultation" && <ConsultTab s={state} />}
             </>
@@ -110,6 +127,111 @@ function SetUp() {
              body="Tell us when your last period started and how long your cycle usually is. It takes a minute, and your estimates get better each month."
              action={<Btn icon="ArrowRight" href="/app/health/cycle/start">Set up cycle tracking</Btn>} />
     </Panel>
+  );
+}
+
+/* ── Reminders ─────────────────────────────────────────────────────────── */
+
+/** The Reminders type these are saved under, so they also show in Appointments & Reminders. */
+const FERT = "Period & fertility";
+
+type Smart = { key: string; icon: string; title: string; when: string; date?: string; time: string; repeat: KindData["reminder"]["repeat"] };
+
+function RemindersTab({ s }: { s: CycleState }) {
+  const rem = useEntries("reminder");
+  const [sheet, setSheet] = useState<null | { entry?: Entry<"reminder">; data?: Partial<KindData["reminder"]> }>(null);
+  const t = ymdToday();
+  const now = nowHHMM();
+  const ahead = predictions(s, 3);
+  const soon = ahead.map((x) => addDays(x.start, -2)).find((d) => d >= t);
+  const fertile = ahead.map((x) => x.fs).find((d) => d >= t);
+  const day = (d: string) => fmtDay(d, { weekday: "short", day: "numeric", month: "short" });
+
+  const smart: Smart[] = [
+    { key: "soon", icon: "Droplet", title: "Your period may start soon", time: "09:00", repeat: "Once", date: soon,
+      when: soon ? `${day(soon)}, 9:00 am · two days before it is due` : "Log a period first, so we can estimate the next one" },
+    { key: "fertile", icon: "Sparkles", title: "Your fertile window begins", time: "09:00", repeat: "Once", date: fertile,
+      when: fertile ? `${day(fertile)}, 9:00 am` : "Log a period first, so we can estimate it" },
+    { key: "log", icon: "PenLine", title: "Log my symptoms", time: "21:00", repeat: "Every day", date: t, when: "Every day at 9:00 pm" },
+    { key: "supp", icon: "Pill", title: "Take my supplement", time: "09:00", repeat: "Every day", date: t, when: "Every day at 9:00 am" },
+  ];
+  const mine = rem.rows.filter((r) => r.data.category === FERT && !r.data.cancelled).sort((a, b) => a.date.localeCompare(b.date));
+  const onFor = (x: Smart) => mine.find((r) => r.data.title === x.title && (x.repeat !== "Once" || r.date >= t));
+
+  const toggle = (x: Smart) => {
+    const on = onFor(x);
+    if (on) return rem.remove(on.id, "Reminder turned off");
+    if (!x.date) return;
+    return rem.add("reminder", { title: x.title, category: FERT, time: x.time, repeat: x.repeat, done: [], snooze: "" }, x.date, "Reminder turned on");
+  };
+  const saveRem = async (data: KindData["reminder"], date: string, id?: string) => {
+    const ok = id ? await rem.edit(id, { data, date }, "Reminder saved") : await rem.add("reminder", data, date, "Reminder added");
+    if (ok) setSheet(null);
+  };
+
+  return (
+    <Cols
+      main={<>
+        <Panel title="Smart reminders" sub="One tap turns each on or off. Dates follow your cycle estimates.">
+          <div className="grid gap-2.5 sm:grid-cols-2">
+            {smart.map((x) => {
+              const on = !!onFor(x);
+              return (
+                <div key={x.key} className="flex items-start gap-3 rounded-[14px] border p-3.5"
+                     style={{ borderColor: on ? HUE.pink.ink : "var(--ux-line)", background: on ? HUE.pink.tint : "var(--ux-surface)" }}>
+                  <span className="grid h-9 w-9 shrink-0 place-items-center rounded-[10px]" style={{ background: HUE.pink.tint, color: HUE.pink.ink }}>
+                    <I name={x.icon} className="h-[18px] w-[18px]" />
+                  </span>
+                  <div className="min-w-0 flex-1">
+                    <b className="block text-sm" style={{ color: "var(--ux-ink)" }}>{x.title}</b>
+                    <span className="block text-xs" style={{ color: "var(--ux-muted)" }}>{x.when}</span>
+                    <div className="mt-2">
+                      <Btn size="sm" variant={on ? "outline" : undefined} icon={on ? "BellOff" : "Bell"} disabled={!on && !x.date}
+                           onClick={() => void toggle(x)}>{on ? "Turn off" : "Turn on"}</Btn>
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+          <Disclaimer>Period and fertile-window dates are estimates from your logged cycles, never a method of contraception.</Disclaimer>
+        </Panel>
+
+        <Panel title="Your fertility reminders" sub={rem.loading ? "Loading…" : `${mine.length} on`}
+               action={<Btn size="sm" icon="Plus" onClick={() => setSheet({ data: { category: FERT, title: "Log my symptoms" } })}>Add</Btn>}>
+          {mine.length ? (
+            <div className="grid gap-2">
+              {mine.map((r) => (
+                <ReminderRow key={r.id} r={r} today={t} now={now}
+                             onDone={(x, d, done) => {
+                               const list = new Set(x.data.done || []);
+                               if (done) list.add(d); else list.delete(d);
+                               void rem.edit(x.id, { data: { done: [...list].sort().slice(-200), snooze: "" } }, done ? "Marked done" : "Marked not done");
+                             }}
+                             onSnooze={(x, _d, to) => void rem.edit(x.id, { data: { snooze: to } }, `Snoozed to ${to.slice(11)}`)}
+                             onEdit={(x) => setSheet({ entry: x })}
+                             onDelete={(x) => void rem.remove(x.id, "Reminder deleted")} />
+              ))}
+            </div>
+          ) : (
+            <Empty icon="Bell" title="No fertility reminders yet"
+                   body="Turn one on above, or add your own: a supplement, a test, a check-up." />
+          )}
+          <p className="text-xs" style={{ color: "var(--ux-muted)" }}>
+            They also show in <Link href="/app/health/reminders" className="font-bold underline">Appointments &amp; Reminders</Link>.
+          </p>
+        </Panel>
+        {sheet && <ReminderSheet key={sheet.entry?.id || "new"} open onClose={() => setSheet(null)} initial={sheet} onSave={saveRem} />}
+      </>}
+      side={
+        <Panel title="When these reach you" hue="pink" tint>
+          <p className="text-sm" style={{ color: "var(--ux-ink-2)" }}>
+            Reminders arrive in your WomSakhi notifications at the time you set. Change how early you hear in{" "}
+            <Link href="/app/health/reminders?tab=settings" className="font-bold underline">Reminder settings</Link>.
+          </p>
+        </Panel>
+      }
+    />
   );
 }
 
@@ -144,14 +266,11 @@ function CycleTab({ s, onPeriod, busy, act }: { s: CycleState; onPeriod: () => v
         <>
           <Panel title="Cycle overview" sub={st.phase_label ? `You are in your ${st.phase_label.toLowerCase()}` : undefined}>
             {st.cycle_day ? (
-              <div className="flex flex-wrap items-end gap-x-6 gap-y-2">
-                <p className="text-[44px] font-extrabold leading-none tabular-nums" style={{ color: HUE.pink.ink }} data-cycle-day>
-                  Day {st.cycle_day}
-                </p>
-                <p className="pb-1 text-sm" style={{ color: "var(--ux-muted)" }}>of about {len} days{st.on_period && st.period_day ? ` · period day ${st.period_day}` : ""}</p>
-              </div>
+              <CycleWheel phases={s.phases} day={st.cycle_day} length={len} today={s.today}
+                          fertileStart={fertileOn ? st.fertile_start : null} fertileEnd={fertileOn ? st.fertile_end : null}
+                          ovulation={fertileOn ? st.ovulation : null} nextStart={st.next_start} daysUntil={st.days_until}
+                          onPeriod={st.on_period} periodDay={st.period_day} />
             ) : <p className="text-sm" style={{ color: "var(--ux-muted)" }}>Log your period to see where you are in your cycle.</p>}
-            {st.cycle_day && <PhaseBar phases={s.phases} day={st.cycle_day} length={len} />}
             <MetricGrid>
               <Metric hue="pink" icon="Droplet" label="Next period" value={st.next_start ? (st.days_until != null && st.days_until < 0 ? "Late" : fmtDay(st.next_start)) : "—"}
                       sub={st.days_until != null ? (st.days_until < 0 ? `Expected around ${fmtDay(st.next_start!)}` : st.days_until === 0 ? "Expected today" : `In ${st.days_until} days`) : undefined} />
@@ -281,50 +400,86 @@ function CalendarTab({ s, month, setMonth, act }: { s: CycleState; month?: strin
   );
 }
 
+/** Pictures for the flow and symptom choices (art.ts names). */
+const FLOW_ART: Record<Flow, { art: string; sub: string }> = {
+  spotting: { art: "Spotting", sub: "A few drops" }, light: { art: "Light", sub: "Less than usual" },
+  medium: { art: "Medium", sub: "A usual day" }, heavy: { art: "Heavy", sub: "More than usual" },
+};
+const SYMPTOM_ART: Partial<Record<Symptom, string>> = {
+  cramps: "Cramps", headache: "Headache", bloating: "Bloating", "back-pain": "Back pain", acne: "Acne",
+  "mood-swings": "Mood swings", fatigue: "Tiredness", "breast-tenderness": "Breast tenderness",
+  "food-cravings": "Cravings", "trouble-sleeping": "Trouble sleeping", nausea: "Nausea",
+};
+const PICK_DELAY = 180;
+
+/**
+ * One day, step by step: period and flow → symptoms → a note → check. The
+ * day's log is read first, so the steps open on what she already saved; the
+ * note is sent only when she changed it, so the full daily log's note is
+ * never wiped by accident.
+ */
 function DaySheet({ date, onClose, act }: { date: string; onClose: () => void; act: Act }) {
   const [log, setLog] = useState<CycleLog | null>(null);
   const [period, setPeriod] = useState<boolean | null>(null);
   const [flow, setFlow] = useState<Flow | null>(null);
   const [symptoms, setSymptoms] = useState<Symptom[]>([]);
+  const [note, setNote] = useState("");
+  const [step, setStep] = useState(0);
   const [saving, setSaving] = useState(false);
   useEffect(() => {
     const ctl = new AbortController();
     apiCycleDay(date, ctl.signal).then((l) => {
-      setLog(l); setPeriod(l.period); setFlow(l.flow); setSymptoms((l.symptoms ?? []).filter((x) => x !== "none"));
+      setLog(l); setPeriod(l.period); setFlow(l.flow); setSymptoms((l.symptoms ?? []).filter((x) => x !== "none")); setNote(l.note ?? "");
     }).catch(() => setLog({} as CycleLog));
     return () => ctl.abort();
   }, [date]);
   const save = async () => {
     setSaving(true);
-    const ok = await act(() => apiCycleLog(date, { period, flow: period ? flow : null, symptoms }));
+    const body: Partial<Omit<CycleLog, "date">> = { period, flow: period ? flow : null, symptoms };
+    if (note.trim() !== (log?.note ?? "").trim()) body.note = note.trim();
+    const ok = await act(() => apiCycleLog(date, body));
     setSaving(false);
     if (ok) onClose();
   };
-  return (
-    <Sheet open onClose={onClose} icon="CalendarDays" title={fmtDay(date, { weekday: "long", day: "numeric", month: "long" })}
-           description="Log your period and how you felt that day."
-           footer={<Btn full icon="Check" loading={saving} disabled={!log} onClick={save}>Save this day</Btn>}>
-      {!log ? <Loading /> : (
-        <div className="flex flex-col gap-5">
-          <div>
-            <p className="mb-2 text-xs font-bold" style={{ color: "var(--ux-ink-2)" }}>Were you on your period?</p>
-            <Chips label="Period" hue="pink" options={[{ value: "yes", label: "Yes" }, { value: "no", label: "No" }]}
-                   value={period == null ? "" : period ? "yes" : "no"} onChange={(v) => setPeriod(v === "yes")} />
+  const ready = !!log;
+  const flowOpts = FLOWS.map((f) => ({ value: f.value, label: f.label, ...FLOW_ART[f.value] }));
+  const steps: FlowStep[] = [
+    { id: "period", title: "Were you on your period?", hint: period ? "How heavy was the flow? Tap one." : "Tap Yes or No.",
+      valid: ready && period != null, optional: ready,
+      body: !ready ? <Loading /> : <>
+        <PicChoice label="Were you on your period?" hue="pink" value={period == null ? "" : period ? "yes" : "no"}
+                   options={[{ value: "yes", label: "Yes", art: "Medium", sub: "I had my period" }, { value: "no", label: "No", art: "Heart", sub: "No bleeding" }]}
+                   onChange={(v) => { setPeriod(v === "yes"); if (v === "no") window.setTimeout(() => setStep(1), PICK_DELAY); }} />
+        {period && (
+          <div className="ux-swap flex flex-col gap-2">
+            <p className="text-sm font-bold" style={{ color: "var(--ux-ink)" }}>Flow</p>
+            <PicChoice label="Flow" hue="pink" columns={4} options={flowOpts} value={flow ?? ""}
+                       onChange={(v) => setFlow(v as Flow)} onPicked={() => setStep(1)} />
           </div>
-          {period && (
-            <div>
-              <p className="mb-2 text-xs font-bold" style={{ color: "var(--ux-ink-2)" }}>Flow</p>
-              <Chips label="Flow" hue="pink" options={FLOWS} value={flow ?? ""} onChange={(v) => setFlow(v as Flow)} />
-            </div>
-          )}
-          <div>
-            <p className="mb-2 text-xs font-bold" style={{ color: "var(--ux-ink-2)" }}>Symptoms</p>
-            <Chips label="Symptoms" hue="pink" options={QUICK_SYMPTOMS.map((x) => ({ value: x.key, label: x.label }))} value={symptoms}
+        )}
+      </> },
+    { id: "symptoms", title: "Any symptoms that day?", hint: "Tap all that apply. Skip if you felt fine.",
+      valid: ready && symptoms.length > 0, optional: ready,
+      body: !ready ? <Loading /> : (
+        <PicChoice label="Symptoms" hue="pink" multi columns={4} value={symptoms}
+                   options={QUICK_SYMPTOMS.map((x) => ({ value: x.key, label: x.label, art: SYMPTOM_ART[x.key] ?? x.label }))}
                    onChange={(k) => setSymptoms((cur) => (cur.includes(k as Symptom) ? cur.filter((x) => x !== k) : [...cur, k as Symptom]))} />
-          </div>
-        </div>
-      )}
-    </Sheet>
+      ) },
+    { id: "note", title: "A note for this day", hint: "Optional. Anything you want to remember or tell your doctor.",
+      valid: ready && !!note.trim(), optional: ready,
+      body: <Area label="A note for this day" value={note} onChange={setNote} max={500} rows={4} placeholder="How did the day feel? (optional)" /> },
+    { id: "check", title: "Check, then save", valid: ready,
+      body: <Review rows={[
+        ["Day", fmtDay(date, { weekday: "short", day: "numeric", month: "short" })],
+        ["Period", period == null ? "Not set" : period ? "Yes" : "No"],
+        ["Flow", period && flow ? FLOWS.find((f) => f.value === flow)?.label ?? "" : ""],
+        ["Symptoms", symptoms.length ? symptoms.map(symptomLabel).join(", ") : "None"],
+        ["Note", note.trim()],
+      ]} /> },
+  ];
+  return (
+    <StepSheet open onClose={onClose} icon="CalendarDays" title={fmtDay(date, { weekday: "long", day: "numeric", month: "long" })}
+               hue="pink" steps={steps} step={step} setStep={setStep} onSubmit={save} busy={saving} submitLabel="Save this day" />
   );
 }
 

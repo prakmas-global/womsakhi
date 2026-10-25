@@ -51,8 +51,8 @@ DAYS_AHEAD = 30
 OPEN_LIMIT = 3      # live consultations a member may hold at once
 DAILY_LIMIT = 5     # bookings a day
 
-SPECIALITIES = ("Gynaecologist", "General physician", "Paediatrician", "Nutritionist", "Counsellor",
-                "Dermatologist", "Physiotherapist", "Other")
+SPECIALITIES = ("Gynaecologist", "Fertility specialist", "General physician", "Paediatrician", "Nutritionist",
+                "Counsellor", "Endocrinologist", "Dermatologist", "Physiotherapist", "Other")
 MODES = ("Video", "Phone", "Clinic")
 WEEKDAYS = ("Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun")
 LIVE = ("requested", "confirmed")
@@ -94,8 +94,8 @@ class Hours(BaseModel):
 
 class DoctorUpsert(BaseModel):
     name: str = Field(..., min_length=2, max_length=80)
-    speciality: Literal["Gynaecologist", "General physician", "Paediatrician", "Nutritionist", "Counsellor",
-                        "Dermatologist", "Physiotherapist", "Other"]
+    speciality: Literal["Gynaecologist", "Fertility specialist", "General physician", "Paediatrician", "Nutritionist",
+                        "Counsellor", "Endocrinologist", "Dermatologist", "Physiotherapist", "Other"]
     qualifications: str = Field("", max_length=120)
     registration_no: str = Field("", max_length=40)
     languages: list[str] = Field(default_factory=list, max_length=10)
@@ -147,6 +147,13 @@ def _doctor_out(d: dict, next_slot: str = "", done: int = 0) -> DoctorOut:
     )
 
 
+class SharedItem(BaseModel):
+    """One thing from her Health Records she chose to show the doctor — a copy, taken when she shared it."""
+    kind: Literal["medication", "allergy", "reading", "document", "history"]
+    label: str = Field(..., min_length=1, max_length=120)
+    detail: str = Field("", max_length=200)
+
+
 class Consultation(BaseModel):
     id: str
     doctor_id: str
@@ -171,6 +178,13 @@ class Consultation(BaseModel):
     cancel_reason: str = ""
     cancelled_by: str = ""
     created_at: str = ""
+    #: What she chose to share from her records, with her consent; she can stop sharing until it happens.
+    shared: list[SharedItem] = []
+    shared_at: str = ""
+    #: Her own notes for this visit. Private: never sent to staff.
+    member_notes: str = ""
+    #: The earlier time, when she moved it.
+    rescheduled_from: str = ""
 
 
 class AdminConsultation(Consultation):
@@ -192,6 +206,9 @@ def _consult_out(c: dict, admin: bool = False) -> Consultation:
         fee_minor=int(c.get("fee_minor") or 0), clinic=c.get("clinic", ""), city=c.get("city", ""),
         doctor_photo=media_url(c.get("doctor_photo") or ""), cancel_reason=c.get("cancel_reason", ""),
         cancelled_by=c.get("cancelled_by", ""), created_at=_iso(c.get("created_at")),
+        shared=[SharedItem(**x) for x in (c.get("shared") or [])], shared_at=_iso(c.get("shared_at")),
+        member_notes="" if admin else c.get("member_notes", ""),
+        rescheduled_from=_iso(c.get("rescheduled_from")),
     )
     if admin:
         return AdminConsultation(**base, user_id=c.get("user_id", ""), member_name=c.get("member_name", ""),
@@ -287,6 +304,76 @@ async def cancel_mine(consult_id: str, me: dict = Depends(require_active_member)
     return _consult_out(c)
 
 
+async def _mine(consult_id: str, me: dict) -> dict:
+    c = await _db()[CONSULTS].find_one({"_id": _oid(consult_id), "user_id": str(me["_id"])})
+    if not c:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "Not found")
+    return c
+
+
+class ShareIn(BaseModel):
+    shared: list[SharedItem] = Field(default_factory=list, max_length=30)
+    share_consent: bool = False
+
+
+@router.post("/consultations/{consult_id}/shared", response_model=Consultation,
+             summary="Change what I share with the doctor (empty stops sharing)")
+async def set_shared(consult_id: str, body: ShareIn, me: dict = Depends(require_active_member)):
+    c = await _mine(consult_id, me)
+    if c.get("status") not in LIVE:
+        raise HTTPException(status.HTTP_409_CONFLICT, "Sharing can only change before the consultation.")
+    before = {(x.get("kind"), x.get("label")) for x in c.get("shared") or []}
+    added = [x for x in body.shared if (x.kind, x.label) not in before]
+    _need_consent(added, body.share_consent)
+    now = datetime.now(timezone.utc)
+    sets = {"shared": [x.model_dump() for x in body.shared], "updated_at": now}
+    if added:
+        sets["shared_at"] = now
+    await _db()[CONSULTS].update_one({"_id": c["_id"]}, {"$set": sets})
+    c.update(sets)
+    return _consult_out(c)
+
+
+class NotesIn(BaseModel):
+    notes: str = Field("", max_length=2000)
+
+
+@router.post("/consultations/{consult_id}/notes", response_model=Consultation, summary="My private notes for a visit")
+async def set_notes(consult_id: str, body: NotesIn, me: dict = Depends(require_active_member)):
+    c = await _mine(consult_id, me)
+    await _db()[CONSULTS].update_one({"_id": c["_id"]}, {"$set": {"member_notes": body.notes.strip()}})
+    c["member_notes"] = body.notes.strip()
+    return _consult_out(c)
+
+
+class RescheduleIn(BaseModel):
+    start: str = Field(..., max_length=40)
+
+
+@router.post("/consultations/{consult_id}/reschedule", response_model=Consultation, summary="Move my consultation")
+async def reschedule(consult_id: str, body: RescheduleIn, me: dict = Depends(require_active_member)):
+    c = await _mine(consult_id, me)
+    if c.get("status") not in LIVE:
+        raise HTTPException(status.HTTP_409_CONFLICT, "Only a consultation that has not happened can be moved.")
+    doc = await _active_doctor(c["doctor_id"])
+    start_utc = await _free_start(doc, c["doctor_id"], body.start)
+    now = datetime.now(timezone.utc)
+    # A new time goes back to the team to confirm with the doctor, so the old joining details no longer hold.
+    sets = {"start": start_utc, "slot_key": f"{c['doctor_id']}|{_iso(start_utc)}", "status": "requested",
+            "join_info": "", "rescheduled_from": c.get("start"), "updated_at": now}
+    try:
+        await _db()[CONSULTS].update_one({"_id": c["_id"]}, {"$set": sets})
+    except DuplicateKeyError:
+        raise HTTPException(status.HTTP_409_CONFLICT, {"code": "slot_taken",
+                            "message": "Someone took that time a moment ago. Pick another one."})
+    c.update(sets)
+    when = start_utc.astimezone(IST).strftime("%a %d %b, %I:%M %p")
+    await notify(_db(), str(me["_id"]), "New time requested",
+                 f"{c.get('doctor_name')} · {when}. We will confirm it and tell you how to join.",
+                 "health", "/app/health/doctors?tab=consultations")
+    return _consult_out(c)
+
+
 @router.get("/{doctor_id}", response_model=DoctorOut, summary="One doctor")
 async def one_doctor(doctor_id: str, me: dict = Depends(require_active_member)):
     doc = await _active_doctor(doctor_id)
@@ -319,17 +406,21 @@ class BookIn(BaseModel):
     mode: Literal["Video", "Phone", "Clinic"]
     reason: str = Field(..., min_length=2, max_length=300)
     symptoms: list[str] = Field(default_factory=list, max_length=12)
+    #: Records she ticks to show the doctor. Nothing is shared unless she ticks it and agrees.
+    shared: list[SharedItem] = Field(default_factory=list, max_length=30)
+    share_consent: bool = False
 
 
-@router.post("/{doctor_id}/book", response_model=Consultation, status_code=status.HTTP_201_CREATED,
-             summary="Ask for a consultation")
-async def book(doctor_id: str, body: BookIn, me: dict = Depends(require_active_member)):
-    uid = str(me["_id"])
-    doc = await _active_doctor(doctor_id)
-    if body.mode not in (doc.get("modes") or []):
-        raise HTTPException(status.HTTP_422_UNPROCESSABLE_ENTITY, f"{doc.get('name')} does not offer {body.mode} consultations.")
+def _need_consent(shared: list[SharedItem], consent: bool) -> None:
+    if shared and not consent:
+        raise HTTPException(status.HTTP_422_UNPROCESSABLE_ENTITY,
+                            "Tick that you agree to share these with the doctor, or untick them.")
+
+
+async def _free_start(doc: dict, doctor_id: str, raw: str) -> datetime:
+    """The UTC start for `raw`, if it is one of the doctor's free slots now."""
     try:
-        start = datetime.fromisoformat(body.start.replace("Z", "+00:00"))
+        start = datetime.fromisoformat(raw.replace("Z", "+00:00"))
     except ValueError:
         raise HTTPException(status.HTTP_422_UNPROCESSABLE_ENTITY, "Pick a time from the list.")
     if start.tzinfo is None:
@@ -343,6 +434,20 @@ async def book(doctor_id: str, body: BookIn, me: dict = Depends(require_active_m
     if start_utc not in free:
         raise HTTPException(status.HTTP_409_CONFLICT, {"code": "slot_taken",
                             "message": "That time is no longer free. Pick another one."})
+    return start_utc
+
+
+@router.post("/{doctor_id}/book", response_model=Consultation, status_code=status.HTTP_201_CREATED,
+             summary="Ask for a consultation")
+async def book(doctor_id: str, body: BookIn, me: dict = Depends(require_active_member)):
+    uid = str(me["_id"])
+    doc = await _active_doctor(doctor_id)
+    if body.mode not in (doc.get("modes") or []):
+        raise HTTPException(status.HTTP_422_UNPROCESSABLE_ENTITY, f"{doc.get('name')} does not offer {body.mode} consultations.")
+    _need_consent(body.shared, body.share_consent)
+    start_utc = await _free_start(doc, doctor_id, body.start)
+    start = start_utc
+    now = datetime.now(timezone.utc)
     db = _db()
     if await db[CONSULTS].count_documents({"user_id": uid, "status": {"$in": list(LIVE)}}) >= OPEN_LIMIT:
         raise HTTPException(status.HTTP_429_TOO_MANY_REQUESTS,
@@ -359,6 +464,8 @@ async def book(doctor_id: str, body: BookIn, me: dict = Depends(require_active_m
         "status": "requested", "slot_key": f"{doctor_id}|{_iso(start_utc)}",
         "created_at": now, "updated_at": now,
     }
+    if body.shared:
+        c.update(shared=[x.model_dump() for x in body.shared], shared_at=now)
     try:
         c["_id"] = (await db[CONSULTS].insert_one(c)).inserted_id
     except DuplicateKeyError:

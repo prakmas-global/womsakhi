@@ -11,9 +11,11 @@ import {
 import {
   CHALLENGES, PLANS, ROUTINES, challengeState, joinedOn, routineMinutes, streak, type Routine,
 } from "@/components/ux/health/fitness-data";
-import { WorkoutForm } from "@/components/ux/health/QuickForms";
+import { WorkoutFlow } from "@/components/ux/health/QuickForms";
+import { FormLauncher } from "@/components/ux/health/StepFlow";
 import { WorkoutPlayer } from "@/components/ux/health/WorkoutPlayer";
 import { addDays, fmtDay, today, type Entry } from "@/lib/health-api";
+import { WatchListen } from "@/components/ux/health/WatchListen";
 
 /**
  * Fitness — guided routines, a manual log, four-week plans, progress and
@@ -28,6 +30,7 @@ const TABS = [
   { id: "plans", label: "Plans" },
   { id: "progress", label: "Progress" },
   { id: "challenges", label: "Challenges" },
+  { id: "watch", label: "Watch & listen" },
 ];
 
 type W = Entry<"workout">;
@@ -37,6 +40,7 @@ export default function FitnessPage() {
   const { rows, loading, add, edit, remove } = useEntries("workout", { from: addDays(t, -90) });
   const { settings, save } = useHealthSettings();
   const [playing, setPlaying] = useState<Routine | null>(null);
+  const [logging, setLogging] = useState(false);
 
   const startRoutine = (r: Routine) => setPlaying(r);
   const logWorkout = (data: W["data"], date: string) => add("workout", data, date, "Workout saved");
@@ -44,12 +48,19 @@ export default function FitnessPage() {
   return (
     <HealthFrame active="/app/health/fitness" hue="orange" icon="Dumbbell" eyebrow="Fitness"
                  title="Move your body" sub="Move your body, feel stronger and more confident." tabs={TABS}
-                 art="/ux/wellness/morning-yoga-v2.webp"
+                 art="/ux/health/ill/hero-fitness.webp"
                  actions={<>
                    <Btn icon="Play" href="/app/health/fitness?tab=workouts">Start a workout</Btn>
                    <Btn variant="outline" icon="Plus" href="/app/health/fitness?tab=workouts#log">Log workout</Btn>
                  </>}>
-      {(tab) => {
+      {(tab) => <>
+        <WorkoutFlow open={logging} onClose={() => setLogging(false)} onSave={logWorkout} />
+        {renderTab(tab)}
+      </>}
+    </HealthFrame>
+  );
+
+  function renderTab(tab: string) {
         const player = playing && (
           <WorkoutPlayer routine={playing} onClose={() => setPlaying(null)} onFinish={logWorkout} />
         );
@@ -59,15 +70,10 @@ export default function FitnessPage() {
             <Cols
               main={<>
                 <RoutineGrid onStart={startRoutine} />
-                <Panel title="Workout videos" sub="Follow along with a demo"
-                       action={<Btn variant="ghost" size="sm" iconEnd="ArrowRight" href="/app/health/videos?cat=Workout">All videos</Btn>}>
-                  <p className="text-sm" style={{ color: "var(--ux-muted)" }}>Yoga, strength and stretching videos are in the Videos section.</p>
-                </Panel>
+                <WatchListen section="fitness" hue="orange" title="Workout videos" compact allHref="/app/health/fitness?tab=watch" />
                 <RecentList rows={rows} loading={loading} onEdit={edit} onDelete={remove} />
               </>}
-              side={<Panel title="Log a workout" sub="Did something else? Add it here." id="log">
-                <WorkoutForm onSave={logWorkout} />
-              </Panel>}
+              side={<FormLauncher id="log" art="Fitness" title="Log a workout" sub="Did something else? 4 quick steps, mostly taps." steps={4} hue="orange" onStart={() => setLogging(true)} />}
             />
           </>
         );
@@ -85,6 +91,7 @@ export default function FitnessPage() {
             </Panel>
           </>
         );
+        if (tab === "watch") return <WatchListen section="fitness" hue="orange" sub="Yoga, strength and stretching to follow along with." />;
         if (tab === "progress") return <Progress rows={rows} stepsGoal={settings.stepsGoal} activeGoal={settings.activeGoal} onDelete={remove} onEdit={edit} />;
         if (tab === "challenges") return (
           <Challenges rows={rows} joined={settings.challenges} stepsGoal={settings.stepsGoal}
@@ -93,9 +100,7 @@ export default function FitnessPage() {
         );
         return <Overview rows={rows} loading={loading} activeGoal={settings.activeGoal} stepsGoal={settings.stepsGoal}
                          planId={settings.fitnessPlan} player={player} onStart={startRoutine} />;
-      }}
-    </HealthFrame>
-  );
+  }
 }
 
 /* ── overview ───────────────────────────────────────────────────────── */

@@ -1,7 +1,7 @@
 "use client";
 
 import { DefaultRail, MoreForYou } from "./fill/MoreForYou";
-import { memo, useCallback, useEffect, useId, useMemo, useRef, useState } from "react";
+import { Fragment, memo, useCallback, useEffect, useId, useMemo, useRef, useState } from "react";
 import { useT } from "@/i18n";
 import dynamic from "next/dynamic";
 import { usePathname, useRouter } from "next/navigation";
@@ -23,6 +23,7 @@ import { PageTransition } from "./mobile/PageTransition";
 import { MobileBack } from "./mobile/BackButton";
 import { MoreSheet } from "./mobile/MoreSheet";
 import { NotificationsPopover } from "./NotificationsPopover";
+import { useHiddenHealth } from "@/components/ux/health/nav-prefs";
 
 /**
  * The search panel is a ⌘K surface — most sessions never open it, and it drags
@@ -139,7 +140,8 @@ const RailSection = memo(function RailSection({
   label: (n: Pick<NavNode, "label" | "k">) => string;
   onOpen: (id: string, href: string) => void;
 }) {
-  const kids = (s.children ?? []).filter((c) => !c.unlisted);
+  const hiddenHealth = useHiddenHealth();
+  const kids = (s.children ?? []).filter((c) => !c.unlisted && !(hiddenHealth && hiddenHealth.split(",").includes(c.id)));
   const onPath = useMemo(() => new Set(trailKey.split("/")), [trailKey]);
 
   return (
@@ -206,11 +208,16 @@ const RailSection = memo(function RailSection({
         <div className="ux-reveal" data-open={isOpen ? "true" : "false"}>
           <div>
             <div className="ux-branch mb-1 ms-[18px] mt-0.5">
-              {kids.map((c) => {
+              {kids.map((c, i) => {
                 const on = onPath.has(c.id);
+                const heading = c.group && c.group !== kids[i - 1]?.group ? c.group : null;
                 return (
+                  <Fragment key={c.id}>
+                  {heading && (
+                    <p className="mb-0.5 mt-2 px-2.5 text-[10.5px] font-extrabold uppercase tracking-[0.12em]"
+                       style={{ color: "var(--ux-muted)" }}>{heading}</p>
+                  )}
                   <TransitionLink
-                    key={c.id}
                     href={c.href}
                     tabIndex={isOpen ? undefined : -1}
                     aria-current={on ? "page" : undefined}
@@ -224,6 +231,7 @@ const RailSection = memo(function RailSection({
                       {label(c)}
                     </span>
                   </TransitionLink>
+                  </Fragment>
                 );
               })}
             </div>
@@ -271,8 +279,16 @@ export function ModeRail({ path, footer }: { path: string; footer?: React.ReactN
    * fold it away and stay where she is — the rail is hers to tidy, and a
    * second tap that only re-opened the same list gave her no way to.
    */
+  const pathRef = useRef(path);
+  useEffect(() => { pathRef.current = path; }, [path]);
   const openSection = useCallback((id: string, href: string) => {
     if (openRef.current === id) {
+      // Health & Wellness: from inside one of its sections, the name goes back
+      // to its dashboard rather than folding the list away.
+      if (id === "wellness" && pathRef.current !== href) {
+        requestAnimationFrame(() => router.push(href));
+        return;
+      }
       setOpen(undefined);
       return;
     }
@@ -699,6 +715,7 @@ export function Topbar({ user, onMore }: { user: { name: string; avatar: string;
                 { label: tr("rem.title"), icon: "AlarmClock", href: "/app/reminders" },
                 { label: "Notifications", icon: "Bell", href: "/app/notifications" },
                 { label: "Saved", icon: "Bookmark", href: "/app/saved" },
+                { label: "Health settings", icon: "HeartPulse", href: "/app/wellness?tab=settings" },
                 { label: "Settings", icon: "Settings", href: "/app/settings" },
                 { label: "Questions", icon: "HelpCircle", href: "/app/help" },
                 { label: tr("refer.referAFriend"), icon: "Gift", href: "/app/refer" },
