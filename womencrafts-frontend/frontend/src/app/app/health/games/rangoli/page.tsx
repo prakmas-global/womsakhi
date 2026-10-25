@@ -129,6 +129,7 @@ export default function RangoliPage() {
 
   return (
     <GameFrame title="Colour the rangoli" sub="Pick a colour, then tap the petals. There is no wrong way."
+               game="rangoli" result={() => ({ score: Object.keys(fills).length, scoreLabel: `${Object.keys(fills).length} petals coloured` })}
                feel={feel} setFeel={setFeel} again={() => { setHistory([]); keep({}); }}>
       <div className="grid gap-[16px] lg:grid-cols-[minmax(0,1fr)_300px]">
         <section className={`${s.stage} p-3 sm:p-5`}>

@@ -84,9 +84,19 @@
 .seg { cursor: pointer; transition: fill .18s ease; }
 .seg:hover { filter: brightness(.97); }
 
+/* Mindful Garden */
+.garden { display: block; width: 100%; height: auto; border-radius: 14px; touch-action: manipulation; cursor: pointer; }
+.sun { transform-box: fill-box; transform-origin: center; transition-property: transform; transition-timing-function: cubic-bezier(.45, .05, .55, .95); }
+.flower { transform-box: fill-box; transform-origin: 50% 100%; animation: grow .7s cubic-bezier(.2, .7, .2, 1) both; }
+@keyframes grow { from { transform: scale(0); } to { transform: scale(1); } }
+.cloud { animation: drift 38s ease-in-out infinite alternate; }
+@keyframes drift { from { transform: translateX(-30px); } to { transform: translateX(60px); } }
+
 @media (prefers-reduced-motion: reduce) {
   .breathGlow { transition: none; }
   .bubble { animation-duration: var(--d, 9s), 0s; }
   .pairInner { transition: none; }
   .burst { animation: none; display: none; }
+  .sun { transition: none; }
+  .flower, .cloud { animation: none; }
 }

@@ -33,8 +33,7 @@ import {
   LifeBuoy,
   Headset,
   Tag,
-  MapPin,
-} from "lucide-react";
+  MapPin, Clapperboard } from "lucide-react";
 
 /* ------------------------------------------------------------------
    Global search index — a curated, static, MODULE-WISE dataset that
@@ -114,7 +113,10 @@ const PAGES: SearchItem[] = [
   { id: "pg-circles-moderation", title: "Moderation", subtitle: "Posts and replies across circles", group: "Community", kind: "page", href: "/dashboard/circles/moderation", icon: ShieldCheck, tone: "amber", keywords: ["moderate", "hide", "post", "reply"] },
   { id: "pg-stories", title: "Success stories", subtitle: "Stories members submitted", group: "Community", kind: "page", href: "/dashboard/stories", icon: Layers, tone: "brand", keywords: ["story", "stories", "approve"] },
   { id: "pg-opportunities", title: "Opportunities", subtitle: "Jobs and craft orders", group: "Growth & Work", kind: "page", href: "/dashboard/opportunities", icon: Briefcase, tone: "amber", keywords: ["job", "opportunity", "work", "craft order"] },
+  { id: "pg-doctors", title: "Doctors", subtitle: "The doctors members can book in Health → Doctor Consultation", group: "Appointments", kind: "page", href: "/dashboard/doctors", icon: Briefcase, tone: "emerald", keywords: ["doctor", "consultation", "health", "prescription", "clinic"] },
+  { id: "pg-doctor-consultations", title: "Doctor consultations", subtitle: "Confirm bookings and add prescriptions", group: "Appointments", kind: "page", href: "/dashboard/doctors/consultations", icon: Briefcase, tone: "emerald", keywords: ["doctor", "consultation", "booking", "prescription"] },
   { id: "pg-work-skills", title: "Work skills", subtitle: "Categories and skills members pick and search by", group: "Growth & Work", kind: "page", href: "/dashboard/work-skills", icon: Briefcase, tone: "amber", keywords: ["skill", "category", "master", "taxonomy", "work profile"] },
+  { id: "pg-health-videos", title: "Health videos", subtitle: "Workout, yoga and meditation videos members watch", group: "Content", kind: "page", href: "/dashboard/health-videos", icon: Clapperboard, tone: "violet", keywords: ["video", "youtube", "yoga", "workout", "health", "wellness"] },
   { id: "pg-applications", title: "Applications", subtitle: "Who applied to what", group: "Growth & Work", kind: "page", href: "/dashboard/applications", icon: Briefcase, tone: "amber", keywords: ["application", "applied", "shortlist"] },
   { id: "pg-events", title: "Events", subtitle: "Events and attendees", group: "Growth & Work", kind: "page", href: "/dashboard/events", icon: Layers, tone: "sky", keywords: ["event", "attendee", "register"] },
   { id: "pg-mentors", title: "Mentors", subtitle: "The mentor roster", group: "Growth & Work", kind: "page", href: "/dashboard/mentors", icon: UserRound, tone: "violet", keywords: ["mentor", "mentorship"] },

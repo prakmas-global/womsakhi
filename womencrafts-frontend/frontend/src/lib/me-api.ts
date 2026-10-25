@@ -146,6 +146,8 @@ export interface ApiMentor {
   requested: boolean;
   /** staff | member — a member mentor runs her own sessions. */
   owner_kind?: string;
+  /** A member mentor's account id — she can be messaged directly. "" for staff mentors. */
+  owner_id?: string;
   /** Per session, paise. 0 = free. */
   price_minor?: number;
   session_mode?: string;
