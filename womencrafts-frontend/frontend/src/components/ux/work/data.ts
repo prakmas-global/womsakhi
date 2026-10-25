@@ -55,6 +55,16 @@ export type Job = {
   saved?: boolean;
   /** Whether she has already applied. From the server, not local state. */
   applied?: boolean;
+  /**
+   * Her work-profile skills against this job's, worked out by the server from
+   * skill keys. Absent when the job names no skills from the masters.
+   */
+  fit?: { have: string[]; missing: string[]; verified: string[]; of: number };
+  /** Who posted it: the WomSakhi team or a verified member who is hiring. */
+  ownerKind?: "staff" | "member";
+  /** She posted it herself. */
+  isMine?: boolean;
+  categoryName?: string;
 };
 
 export const JOBS: Job[] = [

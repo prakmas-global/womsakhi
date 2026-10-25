@@ -52,8 +52,8 @@ export default function manifest(): MetadataRoute.Manifest {
     display_override: ["standalone", "minimal-ui"],
     orientation: "portrait",
 
-    background_color: "#fcf8f7", // --ux-canvas, light — Warm Cream
-    theme_color: "#742a4f", // --ux-brand — WomSakhi Berry
+    background_color: "#fbf9fd", // --ws-canvas (design-system/brand.css)
+    theme_color: "#c80066", // --ws-magenta-600, the logo magenta
 
     lang: "en-IN",
     dir: "ltr",
@@ -116,7 +116,7 @@ export default function manifest(): MetadataRoute.Manifest {
         name: "Circle",
         short_name: "Circle",
         description: "The women around you",
-        url: "/app/circle",
+        url: "/app/community",
         icons: [{ src: "/icons/icon-96.png", sizes: "96x96", type: "image/png" }],
       },
     ],

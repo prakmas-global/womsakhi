@@ -1,5 +1,6 @@
 "use client";
 
+import { artFor } from "@/components/ux/media/art";
 import { useCallback, useMemo, useState } from "react";
 
 import { HomeShell } from "@/components/ux/home/HomeShell";
@@ -165,7 +166,7 @@ export default function ContractsPage() {
               action={<Btn href="/app/opportunities" icon="Search">{tr("contracts.seeAllTheWork")}</Btn>}
             />
           ) : (
-            <div className="flex flex-col gap-4">
+            <div className="grid gap-4 lg:grid-cols-2">
               {open.map((o) => (
                 <OrderCard key={o.id} o={o} closed={false}
                            busy={apply.busyWith === o.id}
@@ -179,7 +180,7 @@ export default function ContractsPage() {
           <div>
             <SectionLabel title="Closed" sub={tr("contracts.keptHereSoYouCanSee")}
                           icon="Archive" chip={String(closed.length)} />
-            <div className="flex flex-col gap-4">
+            <div className="grid gap-4 lg:grid-cols-2">
               {closed.map((o) => (
                 <OrderCard key={o.id} o={o} closed onApply={() => {}} busy={false} />
               ))}
@@ -296,6 +297,25 @@ function OrderCard({ o, closed, busy, onApply }: {
 
   return (
     <Card pad={0} style={{ overflow: "hidden", opacity: closed ? 0.72 : 1 }}>
+      {/* The work itself, big — what the order is, before a word of it. */}
+      <div className="relative h-[170px] w-full overflow-hidden sm:h-[200px]" style={{ background: v("--ux-surface-2") }}>
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img src={artFor([o.title, o.skills.join(" "), o.desc], "product", undefined, o.id)} alt={o.title}
+             loading="lazy" decoding="async" className="h-full w-full object-cover"
+             style={{ filter: closed ? "grayscale(.85)" : undefined }} />
+        <span aria-hidden className="absolute inset-0"
+              style={{ background: "linear-gradient(180deg, rgba(16,6,24,.12), rgba(16,6,24,0) 40%, rgba(16,6,24,.55))" }} />
+        <span className="absolute start-3 top-3 rounded-full px-2.5 py-1 text-2xs font-bold shadow-sm"
+              style={{ background: "rgba(255,255,255,.92)", color: "#2a1a24" }}>
+          {o.openings > 1 ? `${o.openings} women needed` : "One woman"}
+        </span>
+        {(o.applied || closed) && (
+          <span className="absolute end-3 top-3 rounded-full px-2.5 py-1 text-2xs font-bold shadow-sm"
+                style={closed ? { background: "rgba(24,10,34,.8)", color: "#fff" } : { background: "#0f7a43", color: "#fff" }}>
+            {closed ? "Closed" : "You applied"}
+          </span>
+        )}
+      </div>
       <div className="flex flex-wrap items-start gap-4 px-4 pt-4 lg:px-5 lg:pt-5">
         <div className="min-w-0 flex-1">
           <div className="flex flex-wrap items-center gap-2">

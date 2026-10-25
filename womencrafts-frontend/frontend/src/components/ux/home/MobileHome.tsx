@@ -9,6 +9,7 @@ import { useHome } from "@/components/ux/live";
 import { HomeCycleCard } from "@/components/ux/cycle/HomeCycleCard";
 import { FirstSteps, PersonalCards, ShopFeed, WhyLine, orderBlocks } from "./Personal";
 import { QuickAccessGrid } from "./QuickAccess";
+import { artFor } from "@/components/ux/media/art";
 
 /** The blocks under the greeting, in the order this screen has always had. */
 const BASE_ORDER = ["earnings", "sakhi", "journey", "opportunities", "recommended"] as const;
@@ -268,14 +269,20 @@ export function MobileHome() {
         <div className="ux-hscroll flex gap-3">
           {opportunities.slice(0, 6).map((o: Record<string, unknown>, i: number) => (
             <TransitionLink key={String(o.id ?? i)} href={`/app/opportunities/${String(o.id ?? "")}`}
-              className="ux-sq flex w-[76vw] max-w-[300px] shrink-0 flex-col gap-1 rounded-[12px] p-4"
+              className="ux-sq flex w-[76vw] max-w-[300px] shrink-0 flex-col overflow-hidden rounded-[12px]"
               style={{ background: "var(--ux-surface)", border: "1px solid var(--ux-line)" }}>
-              <p className="truncate text-[15px] font-bold" style={{ color: "var(--ux-ink)" }}>
-                {String(o.title ?? "Opportunity")}
-              </p>
-              <p className="truncate text-[13px]" style={{ color: "var(--ux-muted)" }}>
-                {[o.org, o.pay].filter(Boolean).map(String).join(" · ")}
-              </p>
+              {/* A picture of the work itself — tailoring, a kitchen, a laptop. */}
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src={artFor([String(o.title ?? ""), String(o.org ?? "")], "job", null, String(o.id ?? i))} alt="" loading="lazy"
+                   className="h-[128px] w-full object-cover" style={{ background: "var(--ux-surface-2)" }} />
+              <span className="flex flex-col gap-1 p-4">
+                <span className="truncate text-[15px] font-bold" style={{ color: "var(--ux-ink)" }}>
+                  {String(o.title ?? "Opportunity")}
+                </span>
+                <span className="truncate text-[13px]" style={{ color: "var(--ux-muted)" }}>
+                  {[o.org, o.pay].filter(Boolean).map(String).join(" · ")}
+                </span>
+              </span>
             </TransitionLink>
           ))}
         </div>
@@ -297,10 +304,9 @@ export function MobileHome() {
               {r.cover
                 ? <Image src={String(r.cover)} alt="" width={480} height={270}
                          className="h-[112px] w-full object-cover" sizes="(max-width: 767px) 50vw, (max-width: 1023px) 33vw, 240px" />
-                : <span className="grid h-[112px] w-full place-items-center"
-                        style={{ background: "var(--ux-brand-tint-2)" }}>
-                    <I name="GraduationCap" className="h-7 w-7" style={{ color: "var(--ux-brand)" }} />
-                  </span>}
+                // eslint-disable-next-line @next/next/no-img-element
+                : <img src={artFor([String(r.title ?? r.name ?? ""), String(r.category ?? "")], "course", null, String(r.id ?? i))} alt=""
+                       loading="lazy" className="h-[112px] w-full object-cover" style={{ background: "var(--ux-surface-2)" }} />}
               <div className="p-4">
                 <p className="truncate text-[15px] font-bold" style={{ color: "var(--ux-ink)" }}>
                   {String(r.title ?? r.name ?? "")}

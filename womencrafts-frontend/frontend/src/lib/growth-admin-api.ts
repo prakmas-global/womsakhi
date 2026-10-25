@@ -211,7 +211,13 @@ export interface OpportunityRow {
   pay_low_minor: number;
   pay_high_minor: number;
   pay_period: string;
+  /** Skill names. Filled from `skill_keys` on save when keys are picked. */
   skills: string[];
+  /** Work masters: category key and skill keys (routes/work_talent.py). */
+  category?: string;
+  skill_keys?: string[];
+  /** "staff" (the WomSakhi team) or "member" (a verified member hiring). */
+  owner_kind?: string;
   openings: number;
   deadline: string;
   deadline_label: string;
@@ -225,7 +231,7 @@ export interface OpportunityRow {
 
 export type OpportunityInput = Omit<
   OpportunityRow,
-  "id" | "deadline_label" | "applicant_count" | "posted" | "pay_low_minor" | "pay_high_minor" | "pay_period"
+  "id" | "deadline_label" | "applicant_count" | "posted" | "pay_low_minor" | "pay_high_minor" | "pay_period" | "owner_kind"
 >;
 
 export const apiGrowthOpportunities = (params: { q?: string; kind?: string; status?: string } = {}) =>
@@ -268,6 +274,10 @@ export interface ApplicationRow {
   applied_on: string;
   updated_on: string;
   history: HistoryEntry[];
+  /** Skills the applicant proved by passing a WomSakhi skill test. */
+  verified_skills?: { skill: string; title: string; score: number; code: string }[];
+  /** Her skills that match the job, as they were when she applied. */
+  matching_skills?: { key: string; name: string; level: string; verified: boolean }[];
 }
 
 export const apiGrowthApplications = (params: { opportunity_id?: string; status?: string } = {}) =>

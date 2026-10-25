@@ -416,6 +416,9 @@ def code_email(name: str, code: str, purpose: str) -> EmailMessageSpec:
     elif purpose == "phone_verify":
         title, lead = "Your confirmation code", "Enter this code to confirm your details."
         subject = f"{code} is your WomSakhi code"
+    elif purpose == "email_verify":
+        title, lead = "Confirm your email", "Enter this code in WomSakhi to add this email to your account."
+        subject = f"{code} is your WomSakhi code"
     else:
         title, lead = "Your sign-in code", "Enter this code to sign in to WomSakhi."
         subject = f"{code} is your WomSakhi sign-in code"
@@ -624,6 +627,9 @@ def verification_review_alert_email(
 
 
 async def send(message: EmailMessageSpec, to: str) -> bool:
-    """Send a templated message to an address."""
+    """Send a templated message to an address. No address, nothing sent."""
+    if not (to or "").strip():
+        # A member who joined with her mobile has no email until she adds one.
+        return False
     message.to = to
     return await get_provider().send(message)

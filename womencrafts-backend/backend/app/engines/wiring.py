@@ -767,6 +767,12 @@ async def purge_rejected_onboarding() -> int:
     return await purge_rejected()
 
 
+async def _sweep_health_reminders() -> int:
+    # Her own Health reminders (routes/health_hub.py) — see engines/health_reminders.py.
+    from app.engines import health_reminders
+    return await health_reminders.sweep()
+
+
 async def run_sync() -> dict:
     """
     Every sweep, once an hour, each failing alone.
@@ -782,6 +788,7 @@ async def run_sync() -> dict:
                      ("school", sync_school_fees), ("care", sync_care_tasks),
                      ("benefits", sync_benefit_claims),
                      ("habits", sync_health_habits),
+                     ("health_reminders", _sweep_health_reminders),
                      ("jobs", sync_job_deadlines),
                      ("applications", sync_applications),
                      ("circle_digests", sync_circle_digests),

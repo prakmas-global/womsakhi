@@ -30,8 +30,11 @@ export const v = (t: string) => `var(${t})`;
  * `${kind}s` put "Opportunitys" on the search screen. English is irregular
  * enough that the -y and -s/-x/-ch endings have to be handled explicitly.
  */
+const IRREGULAR: Record<string, string> = { woman: "women", man: "men", person: "people", child: "children" };
+
 export function plural(word: string, n?: number) {
   if (n === 1) return word;
+  if (IRREGULAR[word.toLowerCase()]) return word[0] + IRREGULAR[word.toLowerCase()].slice(1);
   if (/[^aeiou]y$/i.test(word)) return word.slice(0, -1) + "ies";
   if (/(s|x|z|ch|sh)$/i.test(word)) return word + "es";
   return word + "s";

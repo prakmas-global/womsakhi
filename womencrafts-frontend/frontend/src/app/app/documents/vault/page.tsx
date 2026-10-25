@@ -316,7 +316,7 @@ export default function VaultPage() {
                            onClick={() => choose(d.id, d.docType ?? "other")}>
                         {busy === d.id ? "Sending…" : "Replace it"}
                       </Btn>
-                      <Btn variant="ghost" size="sm" icon="Share2" href="/app/support-fund">{tr("documentsVault.useItForAScheme")}</Btn>
+                      <Btn variant="ghost" size="sm" icon="Share2" href="/app/haq">{tr("documentsVault.useItForAScheme")}</Btn>
                     </div>
                   </div>
                 )}

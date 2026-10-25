@@ -1,144 +1,239 @@
 "use client";
 
-import { Btn, Card, EmptyState, I, IconTile, Pill, SectionHead, formatRupees, v } from "@/components/ux/kit";
+import { useCallback, useMemo, useRef, useState } from "react";
+
+import * as Icons from "@/components/ux/icons";
+import { Btn, Card, EmptyState, I, IconTile, Pill, ScreenSkeleton, SectionHead, v } from "@/components/ux/kit";
+import { Label, Picks, Toggle } from "@/components/ux/kit/form";
+import { toast } from "@/components/ux/mobile/Toast";
+import { useBusiness } from "@/components/ux/business";
+import { useApplications } from "@/components/ux/growth";
+import { useCertificates } from "@/components/ux/live";
+import { apiMyPrograms, type Enrollment } from "@/lib/growth-api";
 import {
-  CONTRIBUTION as RAW_CONTRIBUTION, LEARNING as RAW_LEARNING, PORTFOLIO as RAW_PORTFOLIO, SKILLS as RAW_SKILLS, WORK as RAW_WORK,
-} from "@/components/ux/profile/data";
-import { COPY } from "@/components/ux/copy";
-import { useT } from "@/i18n";
-import { useTranslated } from "@/i18n/data";
+  PORTFOLIO_MAX, apiAddPortfolio, apiDeletePortfolio, apiEditPortfolio, apiMyImpact, apiMyPortfolio,
+  apiMyVerifiedSkills, type Impact, type PortfolioItem, type VerifiedSkillRow,
+} from "@/lib/portfolio-api";
+import { apiMyWorkProfile, type ProfileSkill, type WorkProfile } from "@/lib/work-api";
+import { ACCEPTED_IMAGE_TYPES, apiUploadImage, uploadErrorMessage, validateImage } from "@/lib/uploads-api";
+import { apiErrorMessage } from "@/lib/api";
+import { useResource } from "@/lib/use-resource";
 
 /**
- * The profile tabs that used to be one "coming soon" card.
+ * The profile tabs — every one of them hers.
  *
- * Every tab here answers a question a stranger actually asks before trusting
- * her with money or an order: what can you do, what have you done, what does it
- * look like, and who says so. That ordering is the design — a CV's ordering
- * (education first) is wrong for a woman whose skill did not come from a
- * classroom.
+ * These were fixtures: "Blouse stitching, 11 years — 87 finished, 11 buyers
+ * came back", a boutique job in Jaipur, a mother who was unwell, "Women you
+ * taught: 4". Every member's profile showed the same invented woman, on the
+ * screen a buyer or an employer reads before trusting her. Now:
+ *
+ *   Skills         My work profile (levels, verified, who can see them) and
+ *                  the skill tests she passed
+ *   Experience     how long she has done each skill, what she did on WomSakhi
+ *                  (orders delivered, work offered, courses taught), and what
+ *                  she learned (certificates, courses in progress)
+ *   What you made  her portfolio — photos she adds, each shown or kept private
+ *   Helping others counted from real records (routes/portfolio.py `impact`)
+ *   Documents      where her papers actually live
  */
+
+const workProfile = (s: AbortSignal) => apiMyWorkProfile(s).catch(() => null);
 
 /* ── skills ───────────────────────────────────────────────────────────────── */
 
-/**
- * Skills with evidence attached, never a self-rated bar.
- *
- * A five-star self-assessment is the standard pattern and it is worthless here
- * twice over: a woman with eleven years of stitching will rate herself three,
- * and a stranger has no reason to believe the number anyway. "87 finished, 11
- * buyers came back" is checkable and cannot be talked up.
- */
+function byCategory(skills: ProfileSkill[]) {
+  const m = new Map<string, ProfileSkill[]>();
+  for (const s of skills) m.set(s.category_name, [...(m.get(s.category_name) ?? []), s]);
+  return [...m.entries()];
+}
+
+const LEVEL: Record<string, string> = { learning: "Learning", "1-2": "1–2 years", "3-5": "3–5 years", "5+": "5+ years" };
+
 export function SkillsTab() {
-  const SKILLS = useTranslated(RAW_SKILLS);
-  const tr = useT();
+  const prof = useResource(useCallback((s: AbortSignal) => workProfile(s), []), null as WorkProfile | null);
+  const tests = useResource(useCallback((s: AbortSignal) => apiMyVerifiedSkills(s).catch(() => []), []), [] as VerifiedSkillRow[]);
+  if (prof.source === "loading") return <ScreenSkeleton shape="list" />;
+  const skills = prof.data?.skills ?? [];
+
   return (
     <div className="flex flex-col gap-4">
       <div>
-        <SectionHead title={tr("profile.whatYouCanDo")} sub={tr("profile.withWhatYouDidWithIt")}
-                     icon="Sparkles" action={tr("tabs.addASkill")} />
-        <div className="grid gap-3 sm:grid-cols-2">
-          {SKILLS.map((s) => (
-            <Card key={s.id} pad={16}>
-              <div className="flex items-start gap-3.5">
-                <IconTile icon={s.icon} tint={s.tint} ink={s.ink} size={40} />
-                <div className="min-w-0 flex-1">
-                  <div className="flex flex-wrap items-center gap-2">
-                    <p className="text-smd font-bold" style={{ color: v("--ux-ink") }}>{s.name}</p>
-                    <Pill tone="neutral" size="sm">{s.years} years</Pill>
-                  </div>
-                  <p className="mt-1 flex items-start gap-1.5 text-xsm leading-snug"
-                     style={{ color: v("--ux-green-ink") }}>
-                    <I name="Check" className="mt-[2px] h-[0.75rem] w-[0.75rem] shrink-0" sw={3} />
-                    {s.proof}
-                  </p>
-                </div>
-              </div>
-            </Card>
-          ))}
-        </div>
+        <SectionHead title="What you can do" sub="From My work profile — how long, and who can see it" icon="Sparkles" />
+        {skills.length ? (
+          <div className="flex flex-col gap-3">
+            {byCategory(skills).map(([cat, list]) => (
+              <Card key={cat} pad={16}>
+                <p className="text-2xs font-bold uppercase tracking-[0.08em]" style={{ color: v("--ux-faint") }}>{cat}</p>
+                <ul className="mt-2 divide-y" style={{ borderColor: v("--ux-line") }}>
+                  {list.map((s) => (
+                    <li key={s.key} className="flex flex-wrap items-center gap-2 py-2.5">
+                      <span className="min-w-0 flex-1 text-sm font-bold" style={{ color: v("--ux-ink") }}>{s.name}</span>
+                      {s.level && <Pill tone="neutral" size="sm">{LEVEL[s.level] ?? s.level}</Pill>}
+                      {s.verified && <Pill tone="green" size="sm">Verified</Pill>}
+                      <span className="inline-flex items-center gap-1 text-2xs font-semibold"
+                            style={{ color: v(s.visible ? "--ux-brand" : "--ux-muted") }}>
+                        {s.visible ? <Icons.Eye className="h-[12px] w-[12px]" /> : <Icons.EyeOff className="h-[12px] w-[12px]" />}
+                        {s.visible ? "People hiring can find you" : "Only you"}
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+              </Card>
+            ))}
+            <div><Btn href="/app/work/profile" size="sm" variant="outline" icon="Pencil">Edit my skills</Btn></div>
+          </div>
+        ) : (
+          <Card>
+            <EmptyState icon="Sparkles" title="No skills added yet"
+                        body="Pick what you can do — tailoring, cooking, beauty, teaching — in a minute, mostly by tapping. Work that needs it finds you."
+                        action={<Btn href="/app/work/profile" size="sm" variant="primary" iconEnd="ArrowRight">Add my skills</Btn>} />
+          </Card>
+        )}
       </div>
 
-      <Card pad={16} style={{ background: v("--ux-surface-2"), borderColor: "transparent" }}>
-        <div className="flex items-start gap-3">
-          <I name="Info" className="mt-[2px] h-[1rem] w-[1rem] shrink-0" style={{ color: v("--ux-muted") }} />
-          <p className="text-xsm leading-relaxed" style={{ color: v("--ux-ink-2") }}>
-            There are no stars here and no levels. What is written beside each skill is what you
-            actually did with it, which is the part a buyer can check.
-          </p>
-        </div>
-      </Card>
+      <div>
+        <SectionHead title="Skills you proved" sub="Tests you passed on WomSakhi — anyone can check the certificate" icon="BadgeCheck" />
+        {tests.data.length ? (
+          <Card pad={0} style={{ overflow: "hidden" }}>
+            {tests.data.map((t, i) => (
+              <div key={t.code || t.title} className="flex flex-wrap items-center gap-3 px-5 py-3.5"
+                   style={{ borderTop: i ? `1px solid ${v("--ux-line")}` : "none" }}>
+                <IconTile icon="BadgeCheck" tint="--ux-tint-green" ink="--ux-green-ink" size={36} radius={10} />
+                <div className="min-w-0 flex-1">
+                  <p className="text-sm font-bold" style={{ color: v("--ux-ink") }}>{t.title}</p>
+                  <p className="text-xs" style={{ color: v("--ux-muted") }}>{t.skill} · passed with {t.score}%</p>
+                </div>
+                {t.code && <Btn size="sm" variant="ghost" href={`/verify/${t.code}`} icon="ExternalLink">Certificate</Btn>}
+              </div>
+            ))}
+          </Card>
+        ) : (
+          <Card pad={16} style={{ background: v("--ux-surface-2"), borderColor: "transparent" }}>
+            <div className="flex flex-wrap items-center gap-3">
+              <p className="min-w-0 flex-1 text-xsm leading-relaxed" style={{ color: v("--ux-ink-2") }}>
+                A passed skill test puts a green &ldquo;Verified&rdquo; badge on your profile, your shop and your job applications.
+              </p>
+              <Btn href="/app/assess" size="sm" variant="soft" iconEnd="ArrowRight">Take a test</Btn>
+            </div>
+          </Card>
+        )}
+      </div>
     </div>
   );
 }
 
 /* ── experience ───────────────────────────────────────────────────────────── */
 
-/**
- * Work and learning, with the gaps left visible.
- *
- * Most CV tools quietly encourage hiding a break. This one lets her name it —
- * "my mother was unwell and I looked after her" — because for the women this is
- * built for, a gap is the norm rather than a flaw, and a timeline that pretends
- * otherwise teaches her that the truth is a problem.
- */
 export function ExperienceTab() {
-  const LEARNING = useTranslated(RAW_LEARNING);
-  const WORK = useTranslated(RAW_WORK);
-  const tr = useT();
+  const prof = useResource(useCallback((s: AbortSignal) => workProfile(s), []), null as WorkProfile | null);
+  const { data: certs } = useCertificates();
+  const courses = useResource(useCallback((s: AbortSignal) => apiMyPrograms(s).catch(() => []), []), [] as Enrollment[]);
+  const impact = useResource(useCallback((s: AbortSignal) => apiMyImpact(s).catch(() => null), []), null as Impact | null);
+  const { data: biz } = useBusiness();
+  const { data: apps } = useApplications();
+
+  const levelled = (prof.data?.skills ?? []).filter((s) => s.level);
+  const delivered = biz.orders.filter((o) => o.state === "Done").length;
+  const offers = apps.filter((a) => a.stage === "Offer");
+  const learning = courses.data.filter((c) => c.status === "active");
+
+  const done = [
+    delivered > 0 && { icon: "Package", text: `${delivered} ${delivered === 1 ? "order" : "orders"} delivered from your shop`, href: "/app/documents" },
+    ...offers.map((o) => ({ icon: "Briefcase", text: `Offered work: ${o.title}${o.org ? ` — ${o.org}` : ""}`, href: "/app/applications" })),
+    impact.data?.courses && { icon: "Presentation", text: `Teaches ${impact.data.courses} ${impact.data.courses === 1 ? "course" : "courses"} — ${impact.data.learners} learners`, href: "/app/teach" },
+    impact.data?.mentoring_sessions && { icon: "HeartHandshake", text: `${impact.data.mentoring_sessions} mentoring sessions given`, href: "/app/mentoring" },
+  ].filter(Boolean) as { icon: string; text: string; href: string }[];
+
   return (
     <div className="flex flex-col gap-4">
       <div>
-        <SectionHead title={tr("profile.whatYouHaveDone")} sub={tr("profile.includingTheTimeYouWereNot")} icon="Briefcase"
-                     action="Add" />
-        <Card pad={0} style={{ overflow: "hidden" }}>
-          <ol className="px-5 py-2">
-            {WORK.map((w, i) => (
-              <li key={w.id} className="relative flex gap-4 py-4">
-                {i < WORK.length - 1 && (
-                  <span className="absolute left-[0.5rem] top-[1.75rem] bottom-0 w-[2px]"
-                        style={{ background: v("--ux-line") }} />
-                )}
-                <span className="relative z-[1] mt-1.5 h-[1rem] w-[1rem] shrink-0 rounded-full border-2"
-                      style={{ background: v(w.until === null ? "--ux-green-ink" : "--ux-surface"),
-                               borderColor: v(w.until === null ? "--ux-green-ink" : "--ux-line-strong") }} />
-                <div className="min-w-0 flex-1">
-                  <div className="flex flex-wrap items-center gap-2">
-                    <p className="text-smd font-bold" style={{ color: v("--ux-ink") }}>{w.what}</p>
-                    {w.until === null && <Pill tone="green" size="sm">Now</Pill>}
-                  </div>
-                  <p className="mt-0.5 text-xs" style={{ color: v("--ux-muted") }}>
-                    {[w.where, `${w.when}${w.until ? ` – ${w.until}` : " – now"}`].filter(Boolean).join(" · ")}
-                  </p>
-                  <p className="mt-1.5 text-xsm leading-relaxed" style={{ color: v("--ux-ink-2") }}>
-                    {w.detail}
-                  </p>
-                </div>
-              </li>
+        <SectionHead title="How long you have done it" sub="The experience you set on each skill" icon="Briefcase" />
+        {levelled.length ? (
+          <Card pad={0} style={{ overflow: "hidden" }}>
+            {levelled.map((s, i) => (
+              <div key={s.key} className="flex items-center gap-3 px-5 py-3.5" style={{ borderTop: i ? `1px solid ${v("--ux-line")}` : "none" }}>
+                <span className="min-w-0 flex-1 text-sm font-bold" style={{ color: v("--ux-ink") }}>{s.name}</span>
+                <Pill tone={s.level === "learning" ? "neutral" : "brand"} size="sm">{LEVEL[s.level]}</Pill>
+                {s.verified && <Icons.BadgeCheck className="h-[16px] w-[16px]" style={{ color: v("--ux-green-ink") }} />}
+              </div>
             ))}
-          </ol>
-        </Card>
+          </Card>
+        ) : (
+          <Card pad={16}>
+            <div className="flex flex-wrap items-center gap-3">
+              <p className="min-w-0 flex-1 text-xsm" style={{ color: v("--ux-muted") }}>
+                Tap how long you have done each skill on My work profile — Learning, 1–2, 3–5 or 5+ years.
+              </p>
+              <Btn href="/app/work/profile" size="sm" variant="soft" iconEnd="ArrowRight">Set it</Btn>
+            </div>
+          </Card>
+        )}
       </div>
 
       <div>
-        <SectionHead title={tr("profile.whatYouLearned")} sub={tr("profile.aCertificateIsNotTheOnly")}
-                     icon="GraduationCap" action="Add" />
-        <Card pad={0} style={{ overflow: "hidden" }}>
-          {LEARNING.map((l, i) => (
-            <div key={l.id} className="flex flex-wrap items-center gap-3.5 px-5 py-4"
-                 style={{ borderTop: i === 0 ? "none" : `1px solid ${v("--ux-line")}` }}>
-              <span className="grid h-[2.25rem] w-[2.25rem] shrink-0 place-items-center rounded-[12px]"
-                    style={{ background: v(l.certificate ? "--ux-tint-green" : "--ux-surface-2"),
-                             color: v(l.certificate ? "--ux-green-ink" : "--ux-muted") }}>
-                <I name={l.certificate ? "Award" : "BookOpen"} className="h-[1rem] w-[1rem]" />
-              </span>
-              <div className="min-w-0 flex-1">
-                <p className="text-sm font-bold" style={{ color: v("--ux-ink") }}>{l.what}</p>
-                <p className="text-xs" style={{ color: v("--ux-muted") }}>{l.where} · {l.when}</p>
+        <SectionHead title="What you did on WomSakhi" sub="Counted from your shop, your applications and your teaching" icon="CheckCircle2" />
+        {done.length ? (
+          <Card pad={0} style={{ overflow: "hidden" }}>
+            {done.map((d, i) => (
+              <a key={d.text} href={d.href} className="ux-hov flex items-center gap-3 px-5 py-3.5"
+                 style={{ borderTop: i ? `1px solid ${v("--ux-line")}` : "none" }}>
+                <IconTile icon={d.icon} tint="--ux-tint-violet" ink="--ux-violet-ink" size={34} radius={10} />
+                <span className="min-w-0 flex-1 text-xsm font-semibold" style={{ color: v("--ux-ink") }}>{d.text}</span>
+                <Icons.ChevronRight className="h-4 w-4" style={{ color: v("--ux-faint") }} />
+              </a>
+            ))}
+          </Card>
+        ) : (
+          <Card pad={16}>
+            <p className="text-xsm" style={{ color: v("--ux-muted") }}>
+              Nothing yet. Orders you deliver, work you are offered and courses you teach appear here by themselves.
+            </p>
+          </Card>
+        )}
+      </div>
+
+      <div>
+        <SectionHead title="What you learned" sub="Certificates you earned and courses you are taking" icon="GraduationCap" />
+        {certs.length || learning.length ? (
+          <Card pad={0} style={{ overflow: "hidden" }}>
+            {certs.map((c, i) => (
+              <div key={c.id} className="flex flex-wrap items-center gap-3.5 px-5 py-3.5"
+                   style={{ borderTop: i ? `1px solid ${v("--ux-line")}` : "none" }}>
+                <span className="grid h-[2.25rem] w-[2.25rem] shrink-0 place-items-center rounded-[12px]"
+                      style={{ background: v("--ux-tint-green"), color: v("--ux-green-ink") }}>
+                  <I name="Award" className="h-[1rem] w-[1rem]" />
+                </span>
+                <div className="min-w-0 flex-1">
+                  <p className="text-sm font-bold" style={{ color: v("--ux-ink") }}>{c.title}</p>
+                  <p className="text-xs" style={{ color: v("--ux-muted") }}>WomSakhi · {c.issued} · {c.code}</p>
+                </div>
+                <Btn size="sm" variant="ghost" href={`/verify/${c.code}`} icon="ExternalLink">Check</Btn>
               </div>
-              {l.certificate && <Btn size="sm" variant="ghost" icon="Download" href="/app/certificates">{tr("profile.getIt")}</Btn>}
+            ))}
+            {learning.map((c, i) => (
+              <a key={c.id} href={`/app/programs/${c.program_id}`} className="ux-hov flex items-center gap-3.5 px-5 py-3.5"
+                 style={{ borderTop: certs.length || i ? `1px solid ${v("--ux-line")}` : "none" }}>
+                <span className="grid h-[2.25rem] w-[2.25rem] shrink-0 place-items-center rounded-[12px]"
+                      style={{ background: v("--ux-surface-2"), color: v("--ux-muted") }}>
+                  <I name="BookOpen" className="h-[1rem] w-[1rem]" />
+                </span>
+                <div className="min-w-0 flex-1">
+                  <p className="text-sm font-bold" style={{ color: v("--ux-ink") }}>{c.program_name}</p>
+                  <p className="text-xs" style={{ color: v("--ux-muted") }}>In progress · {Math.round(c.progress || 0)}%</p>
+                </div>
+              </a>
+            ))}
+          </Card>
+        ) : (
+          <Card pad={16}>
+            <div className="flex flex-wrap items-center gap-3">
+              <p className="min-w-0 flex-1 text-xsm" style={{ color: v("--ux-muted") }}>
+                Finish a course or pass a skill test and the certificate appears here — with a code anyone can check.
+              </p>
+              <Btn href="/app/programs" size="sm" variant="soft" iconEnd="ArrowRight">Find a course</Btn>
             </div>
-          ))}
-        </Card>
+          </Card>
+        )}
       </div>
     </div>
   );
@@ -146,113 +241,270 @@ export function ExperienceTab() {
 
 /* ── portfolio ────────────────────────────────────────────────────────────── */
 
-/** Work she can point at. The thing a buyer asks for before an order. */
+const MADE_FOR = ["A wedding", "A shop order", "A school", "A neighbour", "My own shop", "A festival"];
+
+function AddPiece({ suggestions, onAdded, onCancel }: {
+  suggestions: string[]; onAdded: () => void; onCancel: () => void;
+}) {
+  const now = new Date().getFullYear();
+  const [photo, setPhoto] = useState("");
+  const [uploading, setUploading] = useState(false);
+  const [title, setTitle] = useState("");
+  const [madeFor, setMadeFor] = useState("");
+  const [year, setYear] = useState<number | null>(now);
+  const [visible, setVisible] = useState(true);
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState("");
+  const input = useRef<HTMLInputElement>(null);
+
+  const pick = async (file?: File) => {
+    if (!file) return;
+    const bad = validateImage(file);
+    if (bad) { setError(bad); return; }
+    setError(""); setUploading(true);
+    try { setPhoto((await apiUploadImage(file)).url); }
+    catch (e) { setError(uploadErrorMessage(e)); }
+    finally { setUploading(false); }
+  };
+
+  const save = async () => {
+    setBusy(true); setError("");
+    try {
+      await apiAddPortfolio({ title: title.trim(), photo, made_for: madeFor.trim(), year, visible });
+      toast("Added to What you made", { tone: "success" });
+      onAdded();
+    } catch (e) {
+      setError(apiErrorMessage(e, "That did not save. Try again in a moment."));
+    } finally { setBusy(false); }
+  };
+
+  return (
+    <Card pad={18}>
+      <div className="grid gap-4 md:grid-cols-[180px_minmax(0,1fr)]">
+        <button type="button" onClick={() => input.current?.click()}
+                className="ux-press grid aspect-square w-full place-items-center overflow-hidden rounded-[14px] border-2 border-dashed"
+                style={{ borderColor: v("--ux-line-strong"), background: v("--ux-surface-2") }}
+                aria-label={photo ? "Change the photo" : "Add a photo"}>
+          {photo ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img src={photo} alt="" className="h-full w-full object-cover" />
+          ) : (
+            <span className="grid justify-items-center gap-1.5 text-xs font-semibold" style={{ color: v("--ux-muted") }}>
+              <Icons.Camera className="h-7 w-7" style={{ color: v("--ux-brand") }} />
+              {uploading ? "Uploading…" : "Add a photo"}
+            </span>
+          )}
+        </button>
+        <input ref={input} type="file" accept={ACCEPTED_IMAGE_TYPES.join(",")} className="hidden"
+               onChange={(e) => void pick(e.target.files?.[0])} />
+
+        <div className="flex flex-col gap-3">
+          <div>
+            <Label need>What is it?</Label>
+            <input value={title} onChange={(e) => setTitle(e.target.value)} maxLength={80} aria-label="What is it"
+                   placeholder="Bridal blouse with mirror work"
+                   className="ux-sq min-h-[46px] w-full rounded-[12px] border px-4 text-xsm outline-none"
+                   style={{ borderColor: v("--ux-line"), background: v("--ux-surface"), color: v("--ux-ink") }} />
+            <Picks options={suggestions} value={title} onPick={setTitle} label="Quick names" />
+          </div>
+          <div>
+            <Label>Who was it for? <span style={{ color: v("--ux-faint") }}>(optional)</span></Label>
+            <Picks options={MADE_FOR} value={madeFor} onPick={(x) => setMadeFor(madeFor === x ? "" : x)} label="Made for" />
+          </div>
+          <div>
+            <Label>When?</Label>
+            <Picks options={[String(now), String(now - 1), String(now - 2), "Earlier"]} label="Year"
+                   value={year ? String(year) : "Earlier"} onPick={(x) => setYear(x === "Earlier" ? null : Number(x))} />
+          </div>
+          <Toggle on={visible} onChange={setVisible} label="Show it on my profile"
+                  sub={visible ? "Members who look at your profile can see it." : "Only you can see it."} />
+          {error && <p role="alert" className="text-xs" style={{ color: v("--ux-danger-ink") }}>{error}</p>}
+          <div className="flex flex-wrap gap-2">
+            <Btn variant="primary" icon="Check" loading={busy} disabled={!photo || title.trim().length < 2 || uploading}
+                 onClick={() => void save()}>Add it</Btn>
+            <Btn variant="ghost" onClick={onCancel}>Cancel</Btn>
+          </div>
+        </div>
+      </div>
+    </Card>
+  );
+}
+
 export function PortfolioTab() {
-  const PORTFOLIO = useTranslated(RAW_PORTFOLIO);
-  const tr = useT();
+  const items = useResource(useCallback((s: AbortSignal) => apiMyPortfolio(s), []), [] as PortfolioItem[]);
+  const prof = useResource(useCallback((s: AbortSignal) => workProfile(s), []), null as WorkProfile | null);
+  const [adding, setAdding] = useState(false);
+  const [busy, setBusy] = useState("");
+  const suggestions = useMemo(() => (prof.data?.skills ?? []).slice(0, 5).map((s) => s.name), [prof.data]);
+  const full = items.data.length >= PORTFOLIO_MAX;
+
+  const act = async (id: string, run: () => Promise<unknown>, msg: string) => {
+    setBusy(id);
+    try { await run(); items.refetch(); toast(msg, { tone: "success" }); }
+    catch (e) { toast(apiErrorMessage(e, "That did not work. Try again."), { tone: "error" }); }
+    finally { setBusy(""); }
+  };
+
   return (
     <div className="flex flex-col gap-4">
-      <div>
-        <SectionHead title={tr("profile.workYouCanShowSomeone")}
-                     sub={tr("profile.theThingABuyerAsksFor")} icon="Camera" action={tr("shopVoice.addAPhoto")} />
-        {PORTFOLIO.length === 0 ? (
-          <Card>
-            <EmptyState icon="Camera" title={COPY.nothingHereYet}
-                        body={tr("tabs.photographTheNextThingYouFinish")}
-                        action={<Btn size="sm" icon="Camera">{tr("profile.addYourFirst")}</Btn>} />
-          </Card>
-        ) : (
-          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-            {PORTFOLIO.map((p) => (
-              <Card key={p.id} pad={16}>
-                <IconTile icon={p.icon} tint={p.tint} ink={p.ink} size={44} radius={12} />
-                <p className="mt-3 text-smd font-bold" style={{ color: v("--ux-ink") }}>{p.title}</p>
-                <p className="mt-1 text-xsm leading-relaxed" style={{ color: v("--ux-muted") }}>{p.detail}</p>
-                {p.minor !== null && (
-                  <p className="mt-2.5 text-sm font-bold tabular-nums" style={{ color: v("--ux-green-ink") }}>
-                    Sold for {formatRupees(p.minor)}
-                  </p>
-                )}
-              </Card>
-            ))}
-          </div>
+      <div className="flex flex-wrap items-end justify-between gap-3">
+        <div>
+          <h2 className="text-lg font-extrabold" style={{ color: v("--ux-ink") }}>Work you can show someone</h2>
+          <p className="text-xs" style={{ color: v("--ux-muted") }}>
+            The thing a buyer asks for before an order. {items.data.length} of {PORTFOLIO_MAX}.
+          </p>
+        </div>
+        {!adding && items.data.length > 0 && (
+          <Btn size="sm" icon="Camera" disabled={full} onClick={() => setAdding(true)}>Add a piece</Btn>
         )}
       </div>
+
+      {adding && <AddPiece suggestions={suggestions} onCancel={() => setAdding(false)}
+                           onAdded={() => { setAdding(false); items.refetch(); }} />}
+
+      {items.source === "loading" ? (
+        <ScreenSkeleton shape="list" />
+      ) : items.data.length === 0 && !adding ? (
+        <Card>
+          <EmptyState icon="Camera" title="Nothing here yet"
+                      body="Photograph the next thing you finish — in daylight, near a window — and add it here. A buyer believes a photo."
+                      action={<Btn size="sm" icon="Camera" onClick={() => setAdding(true)}>Add your first piece</Btn>} />
+        </Card>
+      ) : (
+        <div className="grid grid-cols-2 gap-3 lg:grid-cols-3">
+          {items.data.map((p) => (
+            <Card key={p.id} pad={0} className="overflow-hidden">
+              <div className="relative aspect-square" style={{ background: v("--ux-surface-2") }}>
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src={p.photo} alt={p.title} loading="lazy" className="h-full w-full object-cover" />
+                {!p.visible && (
+                  <span className="absolute start-2 top-2 inline-flex items-center gap-1 rounded-full px-2 py-1 text-2xs font-bold"
+                        style={{ background: "rgba(24,10,34,.72)", color: "#fff" }}>
+                    <Icons.EyeOff className="h-[11px] w-[11px]" /> Only you
+                  </span>
+                )}
+              </div>
+              <div className="p-3">
+                <p className="line-clamp-2 text-xsm font-bold" style={{ color: v("--ux-ink") }}>{p.title}</p>
+                <p className="mt-0.5 truncate text-2xs" style={{ color: v("--ux-muted") }}>
+                  {[p.made_for, p.year].filter(Boolean).join(" · ") || p.added}
+                </p>
+                <div className="mt-2 flex items-center gap-1">
+                  <Btn size="sm" variant="ghost" icon={p.visible ? "EyeOff" : "Eye"} loading={busy === p.id}
+                       onClick={() => void act(p.id, () => apiEditPortfolio(p.id, { visible: !p.visible }),
+                         p.visible ? "Now only you can see it" : "Now shown on your profile")}>
+                    {p.visible ? "Hide" : "Show"}
+                  </Btn>
+                  <Btn size="sm" variant="ghost" icon="Trash2" ariaLabel={`Remove ${p.title}`}
+                       onClick={() => { if (window.confirm(`Remove "${p.title}"?`)) void act(p.id, () => apiDeletePortfolio(p.id), "Removed"); }}>
+                    Remove
+                  </Btn>
+                </div>
+              </div>
+            </Card>
+          ))}
+        </div>
+      )}
     </div>
   );
 }
 
 /* ── contribution ─────────────────────────────────────────────────────────── */
 
-/**
- * What she has done for other women.
- *
- * Counted, never ranked. The research on this product is explicit that follower
- * counts measure the wrong thing — "mentored 12 women" and "helped 4 women find
- * work" are what mean something in a trust network. A leaderboard would also
- * turn helping into a way of climbing, which is the opposite of the point.
- */
 export function ContributionTab() {
-  const CONTRIBUTION = useTranslated(RAW_CONTRIBUTION);
-  const tr = useT();
-  const total = CONTRIBUTION.reduce((n, c) => n + c.value, 0);
+  const res = useResource(useCallback((s: AbortSignal) => apiMyImpact(s), []), null as Impact | null);
+  if (res.source === "loading") return <ScreenSkeleton shape="list" />;
+  const m = res.data;
+  if (!m) {
+    return <Card><EmptyState icon="WifiOff" title="This did not load" body="Check your connection and try again."
+                             action={<Btn size="sm" onClick={res.refetch}>Try again</Btn>} /></Card>;
+  }
+
+  const rows = [
+    { icon: "GraduationCap", tint: "--ux-tint-violet", ink: "--ux-violet", value: m.learners,
+      label: "Women learning from your courses", detail: m.courses ? `${m.courses} ${m.courses === 1 ? "course" : "courses"} · ${m.finished_course} finished` : "",
+      empty: "Teach what you know", href: "/app/teach" },
+    { icon: "HeartHandshake", tint: "--ux-tint-pink", ink: "--ux-pink-ink", value: m.mentees,
+      label: "Women you mentored", detail: m.mentoring_sessions ? `${m.mentoring_sessions} sessions given` : "",
+      empty: "Become a mentor", href: "/app/mentoring" },
+    { icon: "CheckCircle2", tint: "--ux-tint-green", ink: "--ux-green-ink", value: m.verified_answers,
+      label: "Answers marked right by a teacher", detail: m.answers ? `${m.answers} answers in course questions` : "",
+      empty: "Answer a question in a course", href: "/app/programs" },
+    { icon: "UsersRound", tint: "--ux-tint-blue", ink: "--ux-blue-ink", value: m.circle_members,
+      label: "Women in circles you host", detail: m.circles_hosted ? `${m.circles_hosted} ${m.circles_hosted === 1 ? "circle" : "circles"}` : "",
+      empty: "Start a circle", href: "/app/circles/new" },
+    { icon: "Briefcase", tint: "--ux-tint-amber", ink: "--ux-amber-ink", value: m.women_hired,
+      label: "Women you offered work to", detail: "",
+      empty: "Post a job", href: "/app/work/post" },
+  ];
+
   return (
     <div className="flex flex-col gap-4">
       <Card pad={0} style={{ overflow: "hidden" }}>
-        <div className="px-6 py-7"
-             style={{ background: `linear-gradient(140deg, ${v("--ux-tint-pink")}, ${v("--ux-surface")})` }}>
-          <p className="text-[12px] lg:text-2xs font-extrabold uppercase tracking-[0.18em]" style={{ color: v("--ux-pink-ink") }}>{tr("profile.womenHelpingWomen")}</p>
-          <p className="mt-2 text-[clamp(1.5rem,3vw,2.25rem)] font-extrabold leading-tight tracking-[-0.03em]"
-             style={{ color: v("--ux-ink") }}>
-            {total} women are further along because of you
+        <div className="px-6 py-7" style={{ background: `linear-gradient(140deg, ${v("--ux-tint-pink")}, ${v("--ux-surface")})` }}>
+          <p className="text-[12px] font-extrabold uppercase tracking-[0.18em] lg:text-2xs" style={{ color: v("--ux-pink-ink") }}>
+            Women helping women
+          </p>
+          <p className="mt-2 text-[clamp(1.5rem,3vw,2.25rem)] font-extrabold leading-tight tracking-[-0.03em]" style={{ color: v("--ux-ink") }}>
+            {m.women_helped
+              ? `${m.women_helped} ${m.women_helped === 1 ? "woman is" : "women are"} further along because of you`
+              : "Your first woman helped is one step away"}
           </p>
           <p className="mt-2 max-w-[52ch] text-sm leading-relaxed" style={{ color: v("--ux-ink-2") }}>
-            This is not a score and there is no ranking. It is a count of things you actually did,
-            and nobody else can see it unless you show them.
+            Counted from what really happened on WomSakhi — learners, mentoring, work you offered. Each woman once.
+            There is no score and no ranking.
           </p>
         </div>
       </Card>
 
       <div className="grid gap-3 sm:grid-cols-2">
-        {CONTRIBUTION.map((c) => (
-          <Card key={c.id} pad={16}>
+        {rows.map((r) => (
+          <Card key={r.label} pad={16}>
             <div className="flex items-center gap-3.5">
-              <IconTile icon={c.icon} tint={c.tint} ink={c.ink} size={42} />
+              <IconTile icon={r.icon} tint={r.tint} ink={r.ink} size={42} />
               <div className="min-w-0 flex-1">
-                <p className="text-2xl font-extrabold leading-none tabular-nums" style={{ color: v("--ux-ink") }}>
-                  {c.value}
-                </p>
-                <p className="mt-1 text-xsm font-semibold" style={{ color: v("--ux-ink-2") }}>{c.label}</p>
-                <p className="text-xs" style={{ color: v("--ux-muted") }}>{c.detail}</p>
+                <p className="text-2xl font-extrabold leading-none tabular-nums" style={{ color: v("--ux-ink") }}>{r.value}</p>
+                <p className="mt-1 text-xsm font-semibold" style={{ color: v("--ux-ink-2") }}>{r.label}</p>
+                {r.detail ? (
+                  <p className="text-xs" style={{ color: v("--ux-muted") }}>{r.detail}</p>
+                ) : r.value === 0 ? (
+                  <a href={r.href} className="text-xs font-bold" style={{ color: v("--ux-brand") }}>{r.empty} →</a>
+                ) : null}
               </div>
             </div>
           </Card>
         ))}
       </div>
-
-      <Card pad={16}>
-        <div className="flex flex-wrap items-center justify-between gap-3">
-          <p className="text-sm leading-relaxed" style={{ color: v("--ux-ink-2") }}>{tr("profile.thereIsAlwaysAnotherWomanA")}</p>
-          <Btn size="sm" href="/app/together" icon="Handshake">{tr("profile.helpSomeone")}</Btn>
-        </div>
-      </Card>
     </div>
   );
 }
 
 /* ── documents ────────────────────────────────────────────────────────────── */
 
-/** Points at the vault rather than copying it — one place, not two. */
+/** Where her papers really are — two places, named for what they hold. */
 export function DocumentsTab() {
-  const tr = useT();
   return (
-    <Card>
-      <EmptyState
-        icon="FolderLock"
-        title={tr("profile.yourPapersLiveInYourLocker")}
-        body={tr("tabs.aadhaarPanBankDetailsAndRegistrations")}
-        action={<Btn size="sm" href="/app/vault" icon="Lock">{tr("profile.openYourLocker")}</Btn>}
-      />
-    </Card>
+    <div className="grid gap-3 sm:grid-cols-2">
+      {[
+        { href: "/app/haq/papers", icon: "IdCard", title: "My papers", tint: "--ux-tint-blue", ink: "--ux-blue-ink",
+          body: "Aadhaar, ration card, bank passbook and the other papers schemes ask for — kept once, used everywhere." },
+        { href: "/app/documents/vault", icon: "FileText", title: "My shop papers", tint: "--ux-tint-amber", ink: "--ux-amber-ink",
+          body: "Food licence, Udyam registration and the other papers your shop needs." },
+      ].map((d) => (
+        <a key={d.href} href={d.href} className="ux-card ux-hov flex items-start gap-3.5 p-4">
+          <IconTile icon={d.icon} tint={d.tint} ink={d.ink} size={42} />
+          <div className="min-w-0 flex-1">
+            <p className="text-sm font-bold" style={{ color: v("--ux-ink") }}>{d.title}</p>
+            <p className="mt-1 text-xs leading-relaxed" style={{ color: v("--ux-muted") }}>{d.body}</p>
+            <p className="mt-2 inline-flex items-center gap-1 text-xs font-bold" style={{ color: v("--ux-brand") }}>
+              Open <Icons.ArrowRight className="h-3.5 w-3.5" />
+            </p>
+          </div>
+        </a>
+      ))}
+      <p className="text-2xs sm:col-span-2" style={{ color: v("--ux-faint") }}>
+        Your papers are never shown on your profile. Only you can open them.
+      </p>
+    </div>
   );
 }

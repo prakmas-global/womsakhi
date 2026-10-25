@@ -1,6 +1,7 @@
 "use client";
 
-import { memo, useCallback, useEffect, useId, useMemo, useRef, useState } from "react";
+import { DefaultRail, MoreForYou } from "./fill/MoreForYou";
+import { Fragment, memo, useCallback, useEffect, useId, useMemo, useRef, useState } from "react";
 import { useT } from "@/i18n";
 import dynamic from "next/dynamic";
 import { usePathname, useRouter } from "next/navigation";
@@ -22,6 +23,7 @@ import { PageTransition } from "./mobile/PageTransition";
 import { MobileBack } from "./mobile/BackButton";
 import { MoreSheet } from "./mobile/MoreSheet";
 import { NotificationsPopover } from "./NotificationsPopover";
+import { useHiddenHealth } from "@/components/ux/health/nav-prefs";
 
 /**
  * The search panel is a ⌘K surface — most sessions never open it, and it drags
@@ -138,7 +140,8 @@ const RailSection = memo(function RailSection({
   label: (n: Pick<NavNode, "label" | "k">) => string;
   onOpen: (id: string, href: string) => void;
 }) {
-  const kids = (s.children ?? []).filter((c) => !c.unlisted);
+  const hiddenHealth = useHiddenHealth();
+  const kids = (s.children ?? []).filter((c) => !c.unlisted && !(hiddenHealth && hiddenHealth.split(",").includes(c.id)));
   const onPath = useMemo(() => new Set(trailKey.split("/")), [trailKey]);
 
   return (
@@ -205,11 +208,16 @@ const RailSection = memo(function RailSection({
         <div className="ux-reveal" data-open={isOpen ? "true" : "false"}>
           <div>
             <div className="ux-branch mb-1 ms-[18px] mt-0.5">
-              {kids.map((c) => {
+              {kids.map((c, i) => {
                 const on = onPath.has(c.id);
+                const heading = c.group && c.group !== kids[i - 1]?.group ? c.group : null;
                 return (
+                  <Fragment key={c.id}>
+                  {heading && (
+                    <p className="mb-0.5 mt-2 px-2.5 text-[10.5px] font-extrabold uppercase tracking-[0.12em]"
+                       style={{ color: "var(--ux-muted)" }}>{heading}</p>
+                  )}
                   <TransitionLink
-                    key={c.id}
                     href={c.href}
                     tabIndex={isOpen ? undefined : -1}
                     aria-current={on ? "page" : undefined}
@@ -223,6 +231,7 @@ const RailSection = memo(function RailSection({
                       {label(c)}
                     </span>
                   </TransitionLink>
+                  </Fragment>
                 );
               })}
             </div>
@@ -261,7 +270,28 @@ export function ModeRail({ path, footer }: { path: string; footer?: React.ReactN
   }, [here]);
 
   const trailKey = trail.map((t) => t.id).join("/");
+  // The open section, readable from the handler without making the handler
+  // new on every change (which would re-render every memoised section).
+  const openRef = useRef(open);
+  useEffect(() => { openRef.current = open; }, [open]);
+  /**
+   * Tap a closed section: open it and go to its home. Tap the open one again:
+   * fold it away and stay where she is — the rail is hers to tidy, and a
+   * second tap that only re-opened the same list gave her no way to.
+   */
+  const pathRef = useRef(path);
+  useEffect(() => { pathRef.current = path; }, [path]);
   const openSection = useCallback((id: string, href: string) => {
+    if (openRef.current === id) {
+      // Health & Wellness: from inside one of its sections, the name goes back
+      // to its dashboard rather than folding the list away.
+      if (id === "wellness" && pathRef.current !== href) {
+        requestAnimationFrame(() => router.push(href));
+        return;
+      }
+      setOpen(undefined);
+      return;
+    }
     setOpen(id);
     requestAnimationFrame(() => router.push(href));
   }, [router, setOpen]);
@@ -578,7 +608,7 @@ export function Topbar({ user, onMore }: { user: { name: string; avatar: string;
 
       {/* The full search box needs ~300px. On a phone it is an icon, and the
           palette it opens is the same palette. */}
-      <div className={`ms-auto hidden min-w-0 flex-1 justify-end sm:flex ${here === "/app/circle" ? "max-w-[590px]" : "max-w-[300px]"}`}>
+      <div className={`ms-auto hidden min-w-0 flex-1 justify-end sm:flex ${here === "/app/community" ? "max-w-[590px]" : "max-w-[300px]"}`}>
         <div className="w-full">
         {/* A button, not an input: typing happens in the palette, which has the
             results, the keyboard handling and somewhere to put focus. */}
@@ -655,8 +685,8 @@ export function Topbar({ user, onMore }: { user: { name: string; avatar: string;
             onClick={() => { setBell(false); setMenu((v) => !v); }}
             aria-haspopup="menu"
             aria-expanded={menu}
-            aria-label="Your account"
-            title="Your account"
+            aria-label="My account"
+            title="My account"
             data-account-button
             className="ux-press flex h-[44px] min-w-[44px] items-center justify-center gap-1 rounded-[12px] px-[3px] transition-colors hover:bg-[var(--ux-surface-2)] lg:pe-1.5"
           >
@@ -685,6 +715,7 @@ export function Topbar({ user, onMore }: { user: { name: string; avatar: string;
                 { label: tr("rem.title"), icon: "AlarmClock", href: "/app/reminders" },
                 { label: "Notifications", icon: "Bell", href: "/app/notifications" },
                 { label: "Saved", icon: "Bookmark", href: "/app/saved" },
+                { label: "Health settings", icon: "HeartPulse", href: "/app/wellness?tab=settings" },
                 { label: "Settings", icon: "Settings", href: "/app/settings" },
                 { label: "Questions", icon: "HelpCircle", href: "/app/help" },
                 { label: tr("refer.referAFriend"), icon: "Gift", href: "/app/refer" },
@@ -785,6 +816,8 @@ export function Shell({
   wide,
   fit,
   immersive,
+  fill = true,
+  columns = false,
 }: {
   /** Accepted and ignored — kept so callers need not all change at once. */
   nav?: unknown;
@@ -793,6 +826,14 @@ export function Shell({
   user: { name: string; avatar: string; unread?: number };
   children: React.ReactNode;
   rail?: React.ReactNode;
+  /**
+   * No empty screen: end every page with "More for you" (other modules as
+   * pictures, and a quote), and give a page with no column of its own the
+   * default one on a wide screen. Off for chats, boards and full-screen pages.
+   */
+  fill?: boolean;
+  /** The page draws its own columns — a module home — so no default side column. */
+  columns?: boolean;
   /**
    * Drop the side rail and give the screen the whole width.
    *
@@ -952,7 +993,13 @@ export function Shell({
                     rides on the element the router inserts. Nothing about it
                     sits between the tap and the navigation. */}
                 <PageTransition>{children}</PageTransition>
+                {fill && !fit && !immersive && <MoreForYou quoteHiddenXl={!rail && !wide && !columns} />}
               </main>
+              {fill && !rail && !wide && !columns && !fit && !immersive && (
+                <div className="ux-swap hidden w-[320px] shrink-0 pb-[64px] xl:block">
+                  <div className="sticky top-[calc(var(--ux-topbar-h,72px)+18px)]"><DefaultRail /></div>
+                </div>
+              )}
               {/*
                 ── The rail is not desktop-only any more ────────────────────
                 It held the helplines on Health, Rights and Travel — 112, 181,

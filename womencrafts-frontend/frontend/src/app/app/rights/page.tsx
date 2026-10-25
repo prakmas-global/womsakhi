@@ -2,15 +2,26 @@
 
 import { useState } from "react";
 
-import { Btn, Card, IconTile, SectionHead, SourceNote, Tabs } from "@/components/ux/kit";
+import { Btn, Card, SectionHead, SourceNote, Tabs } from "@/components/ux/kit";
 import { HomeShell } from "@/components/ux/home/HomeShell";
 import { useGuidance, useHelplines, useRights } from "@/components/ux/entitlements";
 import { WELLBEING_ART as RAW_WELLBEING_ART } from "@/components/ux/wellbeing/data";
 import { useT } from "@/i18n";
-import { ListGroup } from "@/components/ux/mobile/ListRow";
 import { SegmentedControl } from "@/components/ux/mobile/SegmentedControl";
-import { PhoneRow, phonePrimary } from "@/components/ux/PhoneParts";
+import { phonePrimary } from "@/components/ux/PhoneParts";
 import { useTranslated } from "@/i18n/data";
+import { MediaCard, MediaGrid } from "@/components/ux/media/MediaCard";
+import { artFor } from "@/components/ux/media/art";
+
+/** A calm, respectful picture for a right — money, home, family, work, safety. */
+function rightArt(text: string, id: string): string {
+  if (/wage|pay|salary|earn|bank|money|pension/i.test(text)) return "/ux/art/course-counting-coins-calculator.webp";
+  if (/propert|inherit|land|home|house/i.test(text)) return "/ux/art/scene-woman-reading-document.webp";
+  if (/matern|pregnan|baby|child|mother/i.test(text)) return "/ux/art/onboarding-wellbeing-all-ages-v2.webp";
+  if (/harass|workplace|employer|job|work/i.test(text)) return "/ux/art/work-dashboard-community.webp";
+  if (/violen|abuse|safe|police|complain|dowry/i.test(text)) return "/ux/art/onboarding-help-safety-v2.webp";
+  return artFor(text, "generic", null, id);
+}
 
 /**
  * Legal Aid & Rights.
@@ -107,58 +118,32 @@ export default function RightsPage() {
       </div>
 
       {tab === "What you are owed" && (
-        <ListGroup className="lg:hidden">
+        /* One calm picture per right, so the list reads at a glance — and the
+           sentence she can repeat under it. The Act stays one tap away. */
+        <MediaGrid cols={2}>
           {RIGHTS.map((r) => {
             const on = open === r.id;
             return (
-              <PhoneRow key={r.id} icon={r.icon} tint={r.tint} ink={r.ink} title={r.title} body={r.body}>
+              <MediaCard key={r.id} image={rightArt(`${r.title} ${r.body}`, r.id)} alt=""
+                         topLeft={{ text: "Your right" }}
+                         title={r.title}
+                         footer={
+                           <Btn variant="ghost" size="sm" iconEnd={on ? "ChevronUp" : "ChevronDown"}
+                                onClick={() => setOpen(on ? null : r.id)}>
+                             {on ? "Less" : "Which law"}
+                           </Btn>
+                         }>
+                <p className="text-xsm leading-relaxed" style={{ color: "var(--ux-ink-2)" }}>{r.body}</p>
                 {on && (
-                  <span className="ux-slide-up mt-2.5 block rounded-[12px] p-3 text-[13px] leading-relaxed"
-                        style={{ background: "var(--ux-surface-2)", color: "var(--ux-muted)" }}>
+                  <p className="ux-slide-up mt-2.5 rounded-[12px] p-3 text-xs leading-relaxed"
+                     style={{ background: "var(--ux-surface-2)", color: "var(--ux-muted)" }}>
                     {r.law}
-                  </span>
+                  </p>
                 )}
-                <span className="-ms-3 mt-1 flex">
-                  <Btn variant="ghost" size="sm" iconEnd={on ? "ChevronUp" : "ChevronDown"}
-                       onClick={() => setOpen(on ? null : r.id)}>
-                    {on ? "Less" : "Which law"}
-                  </Btn>
-                </span>
-              </PhoneRow>
+              </MediaCard>
             );
           })}
-        </ListGroup>
-      )}
-      {tab === "What you are owed" && (
-        <div className="ux-deck ux-stagger hidden space-y-[12px] lg:block">
-          {RIGHTS.map((r, i) => {
-            const on = open === r.id;
-            return (
-              <Card key={r.id} className="ux-i ux-onscroll" style={{ ["--i" as string]: i }}>
-                <div className="flex items-start gap-3.5">
-                  <IconTile icon={r.icon} tint={r.tint} ink={r.ink} size={46} radius={12} />
-                  <div className="min-w-0 flex-1">
-                    {/* The sentence she can repeat comes first. The Act comes second. */}
-                    <h2 className="text-base font-semibold" style={{ color: "var(--ux-ink)" }}>{r.title}</h2>
-                    <p className="mt-1.5 text-xsm leading-relaxed" style={{ color: "var(--ux-ink-2)" }}>{r.body}</p>
-                    {on && (
-                      <p className="ux-slide-up mt-2.5 rounded-[12px] p-3 text-xs leading-relaxed"
-                         style={{ background: "var(--ux-surface-2)", color: "var(--ux-muted)" }}>
-                        {r.law}
-                      </p>
-                    )}
-                  </div>
-                </div>
-                <div className="mt-3 flex items-center justify-end gap-2">
-                  <Btn variant="ghost" size="sm" iconEnd={on ? "ChevronUp" : "ChevronDown"}
-                       onClick={() => setOpen(on ? null : r.id)}>
-                    {on ? "Less" : "Which law"}
-                  </Btn>
-                </div>
-              </Card>
-            );
-          })}
-        </div>
+        </MediaGrid>
       )}
 
       {tab === "If something is wrong" && (

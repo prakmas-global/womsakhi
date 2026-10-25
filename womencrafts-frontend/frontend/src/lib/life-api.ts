@@ -107,6 +107,8 @@ export interface SwapItem {
   ink: string;
   taken: boolean;
   mine: boolean;
+  /** Her account, for "Ask her for it" (a real thread, not the inbox). */
+  owner_id?: string;
 }
 
 export interface Swaps {
@@ -201,7 +203,7 @@ export const apiRemoveLesson = (id: string) =>
 
 /* ── her entitlements ─────────────────────────────────────────────────────── */
 
-export type HaqStatus = "receiving" | "at-risk" | "stopped" | "can-claim" | "waiting";
+export type HaqStatus = "receiving" | "at-risk" | "stopped" | "can-claim" | "waiting" | "unknown";
 
 export interface HaqState {
   status: HaqStatus;
@@ -215,7 +217,7 @@ export interface HaqState {
 export interface HaqStates {
   /** Keyed by scheme id. Anything absent is `default`. */
   states: Record<string, HaqState>;
-  /** "can-claim" — what a woman who has never applied actually is. */
+  /** "unknown" — not checked yet; nothing is assumed about her. */
   default: HaqStatus;
   tracked: number;
 }

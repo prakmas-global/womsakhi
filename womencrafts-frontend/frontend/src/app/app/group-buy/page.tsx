@@ -2,17 +2,20 @@
 
 import { useState } from "react";
 
-import { apiJoinBuy, apiLeaveBuy } from "@/lib/entitlements-api";
+import { apiJoinBuy, apiLeaveBuy, apiWatchBuy } from "@/lib/entitlements-api";
+import { toast } from "@/components/ux/mobile/Toast";
 import { useAction } from "@/lib/use-action";
 
 import {
-  ActionBtn, Btn, Card, EmptyState, Pill, Progress,
+  Btn, Card, EmptyState, Progress,
   SectionHead, SourceNote
 } from "@/components/ux/kit";
 import { HomeShell } from "@/components/ux/home/HomeShell";
 import { useGroupBuys } from "@/components/ux/entitlements";
 import { MORE_ART as RAW_MORE_ART, rupees } from "@/components/ux/more/data";
 import { useT } from "@/i18n";
+import { MediaCard, MediaGrid } from "@/components/ux/media/MediaCard";
+import { artFor } from "@/components/ux/media/art";
 import { useTranslated } from "@/i18n/data";
 
 /**
@@ -60,6 +63,23 @@ export default function GroupBuyPage() {
   );
 
   const open = GROUP_BUYS.filter((g) => g.joined < g.need);
+
+  // "Tell me next time" — a real row on the server; the next round of this
+  // item notifies her. It used to say "We will tell you" and record nothing.
+  const [watch, setWatch] = useState<Record<string, boolean>>({});
+  const watching = (g: { id: string; watching?: boolean }) => watch[g.id] ?? !!g.watching;
+  const notifyMe = useAction(
+    async (id: string, on: boolean) => {
+      await apiWatchBuy(id, on);
+      toast(on ? "We will tell you when the next round opens" : "Okay — no reminder for this one", { tone: "success" });
+    },
+    {
+      onDone: refetch,
+      optimistic: (id, on) => setWatch((w) => ({ ...w, [id]: on })),
+      rollback: (id) => setWatch((w) => { const n = { ...w }; delete n[id]; return n; }),
+      fallbackError: "That did not save. Try again in a moment.",
+    },
+  );
 
   return (
     <HomeShell
@@ -115,82 +135,61 @@ export default function GroupBuyPage() {
       )}
 
       {GROUP_BUYS.length ? (
-        <div className="ux-deck ux-stagger space-y-[12px]">
-          {GROUP_BUYS.map((g, i) => {
+        <MediaGrid cols={2}>
+          {GROUP_BUYS.map((g) => {
             const full = g.need > 0 && g.joined >= g.need;
             const on = joined.includes(g.id);
             const busy = membership.busyWith === g.id;
             const save = g.alone_minor - g.together_minor;
             const pct = g.need > 0 ? Math.round((g.joined / g.need) * 100) : 0;
             return (
-              <Card key={g.id} className="ux-i ux-onscroll" style={{ ["--i" as string]: i }} pad={0}>
-                {/* Picture on top on a phone. Beside the words it left them a
-                    140px column, and a price, a saving and a progress line in
-                    140px is three wraps and a squint. */}
-                <div className="flex max-lg:flex-col">
-                  <span className="h-[164px] w-[176px] shrink-0 overflow-hidden max-lg:h-[140px] max-lg:w-full" style={{ background: "var(--ux-tint-orange)" }}>
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img loading="lazy" decoding="async" src={g.art} alt="" className="ux-art h-full w-full object-cover" />
-                  </span>
-                  <div className="flex min-w-0 flex-1 flex-col p-[16px]">
-                    <div className="flex items-start gap-2">
-                      <h2 className="min-w-0 flex-1 text-base font-semibold" style={{ color: "var(--ux-ink)" }}>
-                        {g.what}
-                      </h2>
-                      {full && <Pill tone="green" size="sm">{tr("groupbuy.goingAhead")}</Pill>}
-                    </div>
-                    <p className="mt-1 text-xs" style={{ color: "var(--ux-muted)" }}>Organised by {g.by}</p>
-
-                    {/* The saving as a number she can check, not "great value".
-                        Wraps: three prices on one unbreakable row need 186px and
-                        the column beside the photo is 140px on a phone, so
-                        "…less per 20-metre roll" — the part that says what the
-                        saving is measured against — ran off the card edge. */}
-                    <div className="mt-3 flex flex-wrap items-baseline gap-x-3 gap-y-1">
-                      <span className="text-xl font-bold tabular-nums" style={{ color: "var(--ux-ink)" }}>
-                        {rupees(g.together_minor)}
-                      </span>
-                      <span className="text-xsm line-through tabular-nums" style={{ color: "var(--ux-faint)" }}>
-                        {rupees(g.alone_minor)}
-                      </span>
-                      <span className="text-xsm font-semibold" style={{ color: "var(--ux-green-ink)" }}>
-                        {rupees(save)} less {g.unit}
-                      </span>
-                    </div>
-
-                    <div className="mt-3">
-                      <div className="mb-1.5 flex items-center justify-between text-xs">
-                        <span style={{ color: full ? "var(--ux-green-ink)" : "var(--ux-muted)" }}>
-                          {full ? "Enough women — this is happening" : `${g.need - g.joined} more women needed`}
-                        </span>
-                        <span className="font-semibold tabular-nums" style={{ color: "var(--ux-ink)" }}>
-                          {g.joined} of {g.need}
-                        </span>
-                      </div>
-                      <Progress pct={pct} track="--ux-track" tone={full ? "--ux-green" : "--ux-brand-600"} h={6} />
-                    </div>
-
-                    <div className="mt-auto flex items-center justify-between gap-3 pt-3.5">
-                      <span className="text-xs" style={{ color: "var(--ux-faint)" }}>{g.closes}</span>
-                      {full && !on ? (
-                        <ActionBtn variant="outline" size="sm" icon="Bell" done={tr("groupbuy.weWillTellYouWhenIt")}>{tr("groupbuy.tellMeNextTime")}</ActionBtn>
-                      ) : (
-                        <Btn variant={on ? "outline" : "primary"} size="sm"
-                             icon={busy ? "Loader" : on ? "Check" : undefined}
-                             iconEnd={busy || on ? undefined : "ArrowRight"}
-                             disabled={busy}
-                             onClick={() => void membership.run(g.id, on ? "leave" : "join")}>
-                          {busy ? "Sending…" : on ? tr("groupbuy.youAreIn")
-              : tr("groupbuy.joinThisBuy")}
-                        </Btn>
-                      )}
-                    </div>
+              <MediaCard
+                key={g.id}
+                // Every buy used to show the same stock picture; this is the
+                // thing itself — cloth, thread, tiffin boxes, a gas cylinder.
+                image={artFor([g.what, g.unit], "product", null, g.id)}
+                alt={g.what}
+                topLeft={full ? { text: tr("groupbuy.goingAhead"), tone: "green" } : { text: `${g.joined} of ${g.need} joined`, tone: "light" }}
+                topRight={{ text: rupees(g.together_minor), tone: "dark" }}
+                overlay={<span>{rupees(save)} less {g.unit}</span>}
+                title={g.what}
+                subtitle={<>Organised by {g.by}</>}
+                meta={<span className="inline-flex items-center gap-2">
+                  <span className="line-through tabular-nums" style={{ color: "var(--ux-faint)" }}>{rupees(g.alone_minor)} alone</span>
+                  <span className="font-semibold" style={{ color: "var(--ux-green-ink)" }}>{rupees(g.together_minor)} together</span>
+                </span>}
+                footer={
+                  <div className="flex items-center justify-between gap-3">
+                    <span className="text-xs" style={{ color: "var(--ux-faint)" }}>{g.closes}</span>
+                    {full && !on ? (
+                      <Btn variant={watching(g) ? "soft" : "outline"} size="sm" icon={watching(g) ? "Check" : "Bell"}
+                           loading={notifyMe.busyWith === g.id}
+                           onClick={() => void notifyMe.run(g.id, !watching(g))}>
+                        {watching(g) ? tr("groupbuy.weWillTellYouWhenIt") : tr("groupbuy.tellMeNextTime")}
+                      </Btn>
+                    ) : (
+                      <Btn variant={on ? "outline" : "primary"} size="sm"
+                           icon={busy ? "Loader" : on ? "Check" : undefined}
+                           iconEnd={busy || on ? undefined : "ArrowRight"}
+                           disabled={busy}
+                           onClick={() => void membership.run(g.id, on ? "leave" : "join")}>
+                        {busy ? "Sending…" : on ? tr("groupbuy.youAreIn") : tr("groupbuy.joinThisBuy")}
+                      </Btn>
+                    )}
                   </div>
+                }
+              >
+                <div className="mb-1.5 flex items-center justify-between text-xs">
+                  <span style={{ color: full ? "var(--ux-green-ink)" : "var(--ux-muted)" }}>
+                    {full ? "Enough women — this is happening" : `${g.need - g.joined} more women needed`}
+                  </span>
+                  <span className="font-semibold tabular-nums" style={{ color: "var(--ux-ink)" }}>{g.joined} of {g.need}</span>
                 </div>
-              </Card>
+                <Progress pct={pct} track="--ux-track" tone={full ? "--ux-green" : "--ux-brand-600"} h={6} />
+              </MediaCard>
             );
           })}
-        </div>
+        </MediaGrid>
       ) : (
         <Card>
           <EmptyState icon="ShoppingBasket" title={tr("groupbuy.nothingOpenRightNow")}

@@ -75,8 +75,11 @@ INDEXES: dict[str, list[IndexModel]] = {
     ],
     "users": [
         # Sign-in looks up by email on every attempt; unique also stops two
-        # accounts racing to claim the same address.
-        IndexModel([("email", ASCENDING)], unique=True, name="email_unique"),
+        # accounts racing to claim the same address. PARTIAL, because a member
+        # who joined with her mobile has no email ("") until she adds one, and
+        # every such account would otherwise collide on the empty string.
+        IndexModel([("email", ASCENDING)], unique=True, name="email_unique_present",
+                   partialFilterExpression={"email": {"$type": "string", "$gt": ""}}),
         # The verification queue: "members awaiting review".
         IndexModel([("role", ASCENDING), ("verification_status", ASCENDING)], name="role_status"),
         # The minute tick claims only requested reviews whose follow-up is due.
@@ -97,6 +100,10 @@ INDEXES: dict[str, list[IndexModel]] = {
         # refuses — and SPARSE because most accounts never have one, and a
         # plain unique index would make every one of those collide on null.
         IndexModel([("shop_handle", ASCENDING)], unique=True, sparse=True, name="shop_handle_unique"),
+        # Usernames (app/core/usernames.py): unique like Instagram's, stored
+        # lower-case. PARTIAL — most accounts have none yet.
+        IndexModel([("username", ASCENDING)], unique=True, name="username_unique",
+                   partialFilterExpression={"username": {"$type": "string", "$gt": ""}}),
     ],
     "members": [
         IndexModel([("email", ASCENDING)], name="email"),
@@ -348,9 +355,63 @@ INDEXES: dict[str, list[IndexModel]] = {
         IndexModel([("kind", ASCENDING), ("created_at", DESCENDING)], name="kind_recent"),
     ],
 
+    # --- health & wellness (routes/health_hub.py) ---------------------------
+    "health_entries": [
+        # Every read is "her entries of these kinds, newest first, in a range".
+        IndexModel([("user_id", ASCENDING), ("kind", ASCENDING), ("date", DESCENDING)], name="user_kind_date"),
+        # The daily write cap counts her recent writes.
+        IndexModel([("user_id", ASCENDING), ("updated_at", DESCENDING)], name="user_recent"),
+    ],
+    # Doctor Consultation (routes/doctors.py).
+    "doctors": [
+        IndexModel([("active", ASCENDING), ("speciality", ASCENDING)], name="active_speciality"),
+    ],
+    "doctor_consultations": [
+        IndexModel([("user_id", ASCENDING), ("start", DESCENDING)], name="user_start"),
+        IndexModel([("doctor_id", ASCENDING), ("start", ASCENDING)], name="doctor_start"),
+        IndexModel([("status", ASCENDING), ("start", ASCENDING)], name="status_start"),
+        # One live consultation per slot: the key is set only while requested
+        # or confirmed, and removed on cancel or completion.
+        IndexModel([("slot_key", ASCENDING)], unique=True, sparse=True, name="slot_key_unique"),
+    ],
+    "health_settings": [
+        IndexModel([("user_id", ASCENDING)], unique=True, name="user_unique"),
+    ],
+    "health_files": [
+        IndexModel([("user_id", ASCENDING), ("created_at", DESCENDING)], name="user_recent"),
+    ],
+    "health_videos": [
+        # The member library: active videos in staff's order.
+        IndexModel([("active", ASCENDING), ("order", ASCENDING)], name="active_order"),
+    ],
+
     # --- community -----------------------------------------------------------
+    # Friends and the feed (routes/social.py). One row per pair, whoever asked.
+    "friendships": [
+        IndexModel([("users", ASCENDING)], name="users"),
+        IndexModel([("users.0", ASCENDING), ("users.1", ASCENDING)], unique=True, name="pair_unique"),
+        IndexModel([("requester", ASCENDING), ("created_at", DESCENDING)], name="requester_recent"),
+    ],
+    "feed_posts": [
+        IndexModel([("created_at", DESCENDING), ("_id", DESCENDING)], name="recent"),
+        IndexModel([("author_id", ASCENDING), ("created_at", DESCENDING)], name="author_newest"),
+        # Circle posts copied in once — the source decides "already copied".
+        IndexModel([("source.circle_post", ASCENDING)], unique=True, name="source_circle_post",
+                   partialFilterExpression={"source.circle_post": {"$type": "string"}}),
+    ],
+    "feed_comments": [
+        IndexModel([("post_id", ASCENDING), ("created_at", ASCENDING)], name="post_order"),
+        IndexModel([("source.reply", ASCENDING)], unique=True, name="source_reply",
+                   partialFilterExpression={"source.reply": {"$type": "string"}}),
+    ],
+    "feed_reports": [
+        IndexModel([("post_id", ASCENDING), ("reporter_id", ASCENDING)], unique=True, name="one_per_reporter"),
+    ],
     "circles": [
         IndexModel([("status", ASCENDING), ("member_count", DESCENDING)], name="status_popular"),
+        # Invite links (routes/public_share.py) — only circles that have one.
+        IndexModel([("invite_code", ASCENDING)], unique=True,
+                   partialFilterExpression={"invite_code": {"$type": "string"}}, name="invite_code_unique"),
     ],
     "circle_members": [
         # "am I in this circle?" — the permission check on every private read
@@ -364,6 +425,13 @@ INDEXES: dict[str, list[IndexModel]] = {
     "circle_invites": [
         IndexModel([("circle_id", ASCENDING), ("target_normalized", ASCENDING)], unique=True, name="circle_target_unique"),
         IndexModel([("target_normalized", ASCENDING), ("status", ASCENDING)], name="target_status"),
+        # "Invites for you" — username invites (routes/circle_chat.py).
+        IndexModel([("to_id", ASCENDING), ("status", ASCENDING)], name="to_status", sparse=True),
+    ],
+    # A circle's group chat: newest page, polling by id, and the list's last line.
+    "circle_messages": [
+        IndexModel([("circle_id", ASCENDING), ("_id", DESCENDING)], name="circle_recent"),
+        IndexModel([("circle_id", ASCENDING), ("created_at", ASCENDING)], name="circle_time"),
     ],
     "circle_resources": [
         IndexModel([("circle_id", ASCENDING), ("archived", ASCENDING), ("created_at", DESCENDING)], name="circle_active_recent"),
@@ -699,6 +767,46 @@ INDEXES: dict[str, list[IndexModel]] = {
         IndexModel([("occurrence_id", ASCENDING)], unique=True, name="occurrence_unique"),
         IndexModel([("user_id", ASCENDING), ("at", DESCENDING)], name="user_at"),
     ],
+    # Her private health records and checklists (routes/my_records.py).
+    "health_records": [
+        IndexModel([("user_id", ASCENDING)], unique=True, name="user_unique"),
+    ],
+    "my_checklists": [
+        IndexModel([("user_id", ASCENDING), ("key", ASCENDING)], unique=True, name="user_key"),
+    ],
+    # A member's portfolio (routes/portfolio.py), newest first.
+    "portfolio_items": [
+        IndexModel([("user_id", ASCENDING), ("created_at", DESCENDING)], name="user_created"),
+    ],
+    # Session ratings (routes/mentor_reviews.py): one per session.
+    "mentor_reviews": [
+        IndexModel([("request_id", ASCENDING)], unique=True, name="request_unique"),
+        IndexModel([("mentor_id", ASCENDING), ("created_at", DESCENDING)], name="mentor_created"),
+        IndexModel([("user_id", ASCENDING)], name="user"),
+    ],
+    # "Tell me next time" on a group buy (routes/group_buy.py).
+    "group_buy_watchers": [
+        IndexModel([("user_id", ASCENDING), ("item_key", ASCENDING)], unique=True, name="user_item_unique"),
+        IndexModel([("item_key", ASCENDING)], name="item_key"),
+    ],
+    # Work by skill (app/routes/work_talent.py): the two masters keyed by a
+    # stable key, and the profiles search runs over — by skill, switched on.
+    "work_categories": [
+        IndexModel([("key", ASCENDING)], unique=True, name="key_unique"),
+    ],
+    "work_skills": [
+        IndexModel([("key", ASCENDING)], unique=True, name="key_unique"),
+        IndexModel([("category", ASCENDING), ("sort", ASCENDING)], name="category_sort"),
+    ],
+    "work_profiles": [
+        IndexModel([("user_id", ASCENDING)], unique=True, name="user_unique"),
+        IndexModel([("skills.key", ASCENDING), ("skills.visible", ASCENDING)], name="skill_visible"),
+    ],
+    "course_questions": [
+        # A course's questions, newest first — and those about one lesson.
+        IndexModel([("program_id", ASCENDING), ("created_at", DESCENDING)], name="program_created"),
+        IndexModel([("program_id", ASCENDING), ("lesson", ASCENDING)], name="program_lesson"),
+    ],
     "audit_events": [
         IndexModel([("user_id", ASCENDING), ("at", DESCENDING)], name="user_at"),
         IndexModel([("actor", ASCENDING), ("at", DESCENDING)], name="actor_at"),
@@ -717,10 +825,26 @@ REPLACED: dict[str, list[str]] = {
 }
 
 
+# Indexes that were replaced under a NEW name and must be dropped, or the old
+# rule keeps applying beside the new one.
+RETIRED: dict[str, list[str]] = {
+    # was unique on every email, "" included — see users.email_unique_present.
+    "users": ["email_unique"],
+}
+
+
 async def ensure_indexes() -> None:
     """Create every index. Safe to call on each boot; logs rather than crashes."""
     db = get_database()
     created = 0
+    for collection, names in RETIRED.items():
+        for name in names:
+            try:
+                if name in await db[collection].index_information():
+                    await db[collection].drop_index(name)
+                    print(f"↻ Retired index {collection}.{name}")
+            except Exception as exc:  # noqa: BLE001 - never block startup
+                print(f"⚠️  Could not retire {collection}.{name}: {exc}")
     for collection, names in REPLACED.items():
         for name in names:
             try:

@@ -27,6 +27,7 @@ export {
   ArrowRightCircle,
   ArrowUp,
   ArrowUpRight,
+  AtSign,
   AudioLines,
   Award,
   Baby,
@@ -241,6 +242,8 @@ export {
   User,
   UserCheck,
   UserPlus,
+  UserX,
+  UserMinus,
   UserRound,
   UserRoundCheck,
   UserRoundCog,
@@ -272,6 +275,39 @@ export {
   ScanFace,
   Smile,
   Timer,
+  // circle group chats
+  Link,
+  LogIn,
+  ClipboardPaste,
+  ShieldOff,
+  Reply,
+  ArrowDown,
+  Ban,
+  SendHorizontal,
+  // Health & Wellness sections
+  Apple,
+  Dumbbell,
+  FileHeart,
+  Gamepad2,
+  SkipBack,
+  SlidersHorizontal,
+  // Nutrition & Sleep
+  Bed,
+  Coffee,
+  Utensils,
+  Wind,
+  // Mental Wellness and Games
+  Cloud,
+  Grid3x3,
+  Puzzle,
+  Shuffle,
+  SkipForward,
+  // Fertility & Pregnancy
+  ArrowLeftRight,
+  CalendarHeart,
+  // Health Records
+  FileCheck,
+  Ruler,
   // the phone's More sheet
   Menu,
 } from "lucide-react";

@@ -9,6 +9,8 @@
    normal rule, which would silently take the whole theme with them.
 ------------------------------------------------------------------- */
 @import "tailwindcss";
+/* The brand (logo palette, one font, one scale) first: every token file below maps onto it. */
+@import "../design-system/brand.css";
 @import "../design-system/tokens.css";
 @import "../design-system/styles.css";
 
@@ -44,9 +46,9 @@ body {
   background: transparent;
 }
 
-/* Brand gradient wordmark (magenta -> purple) */
+/* Brand gradient wordmark: the logo's violet → orchid → magenta (brand.css) */
 .text-brand-gradient {
-  background: linear-gradient(90deg, #742a4f 0%, #a55168 52%, #8b5cf6 100%);
+  background: var(--ws-gradient);
   -webkit-background-clip: text;
   background-clip: text;
   -webkit-text-fill-color: transparent;

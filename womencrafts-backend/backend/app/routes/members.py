@@ -60,6 +60,7 @@ from app.schemas.member import (
     MemberStatsResponse,
     MemberStatusUpdate,
     MemberUpdate,
+    ApproveMemberRequest,
     ReasonRequest,
     RequiredReasonRequest,
 )
@@ -890,7 +891,7 @@ async def restore_member(
     dependencies=[Depends(require_permission("users.approve"))],
 )
 async def approve_member(
-    member_id: str, payload: ReasonRequest, request: Request, me: dict = Depends(get_current_user),
+    member_id: str, payload: ApproveMemberRequest, request: Request, me: dict = Depends(get_current_user),
 ):
     """
     The same transition the verification queue makes, reachable from her
@@ -906,6 +907,16 @@ async def approve_member(
     db = get_database()
 
     user = await _linked_user(member)
+    verified_name = ""
+    if user:
+        # Same rule as the verification queue: the reviewer types her name off
+        # the ID card, and that is the name she keeps (app/routes/me.py locks it).
+        from app.routes.auth import clean_person_name  # local: auth imports half the app
+        try:
+            verified_name = clean_person_name(payload.full_name or "")
+        except ValueError as exc:
+            raise HTTPException(status.HTTP_422_UNPROCESSABLE_ENTITY,
+                                {"code": "name_invalid", "message": f"{exc} — as it is printed on her ID card."})
     if user:
         if user.get("verification_status") != VerificationStatus.IN_REVIEW:
             raise HTTPException(
@@ -925,6 +936,7 @@ async def approve_member(
         await _users().update_one(
             {"_id": user["_id"]},
             {"$set": {
+                "full_name": verified_name,
                 "verification_status": VerificationStatus.ACTIVE,
                 "verified_at": now,
                 "rejection_reason": "",
@@ -950,13 +962,14 @@ async def approve_member(
         )
         cache.forget_user(str(user["_id"]))
         await mailer.send(
-            mailer.approved_email(user.get("full_name", ""), f"{settings.APP_BASE_URL.rstrip('/')}/signin"),
-            user["email"],
+            mailer.approved_email(verified_name, f"{settings.APP_BASE_URL.rstrip('/')}/signin"),
+            user.get("email", ""),
         )
 
     doc = await _members().find_one_and_update(
         {"_id": member["_id"]},
-        {"$set": {"status": "Active", "verified_on": now.strftime("%b %d, %Y"), "updated_at": now}},
+        {"$set": {"status": "Active", "verified_on": now.strftime("%b %d, %Y"), "updated_at": now,
+                  **({"full_name": verified_name} if verified_name else {})}},
         return_document=True,
     )
     why = f" — {payload.reason}" if payload.reason else ""
@@ -1008,7 +1021,7 @@ async def reject_member(
                 user.get("full_name", ""), payload.reason,
                 (now + timedelta(days=settings.REAPPLY_AFTER_DAYS)).strftime("%d %b %Y"),
             ),
-            user["email"],
+            user.get("email", ""),
         )
 
     doc = await _members().find_one_and_update(

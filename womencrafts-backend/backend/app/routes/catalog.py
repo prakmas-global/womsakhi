@@ -105,28 +105,25 @@ async def list_programs(
     docs, joined_rows = await asyncio.gather(
         _load() if filtered else cache.cached(f"{CATALOG_PREFIX}programs", cache.SHARED_TTL, _load),
         get_database()[EnrollmentModel.collection_name]
-        .find(
-            {"user_id": str(me["_id"]), "status": EnrollmentModel.STATUS_ACTIVE},
-            {"program_id": 1},
-        )
+        .find({"user_id": str(me["_id"])}, {"program_id": 1, "status": 1})
         .to_list(500),
     )
-    joined = {r.get("program_id") for r in joined_rows}
+    mine = {r.get("program_id"): r.get("status", "") for r in joined_rows}
+    return [_row(doc, mine.get(str(doc["_id"]), ""), me) for doc in docs]
 
-    out = []
-    for doc in docs:
-        payload = ProgramModel.to_response(doc)
-        cap = int(payload.get("cap") or 0)
-        enrolled = int(payload.get("enrolled") or 0)
-        out.append(
-            CatalogProgram(
-                **payload,
-                joined=payload["id"] in joined,
-                seats_left=max(0, cap - enrolled) if cap else None,
-                is_full=bool(cap and enrolled >= cap),
-            )
-        )
-    return out
+
+def _row(doc: dict, my_status: str, me: dict) -> CatalogProgram:
+    payload = ProgramModel.to_response(doc)
+    cap = int(payload.get("cap") or 0)
+    enrolled = int(payload.get("enrolled") or 0)
+    return CatalogProgram(
+        **payload,
+        joined=my_status in EnrollmentModel.LEARNING,
+        my_status=my_status,
+        is_mine=bool(payload.get("owner_id")) and payload["owner_id"] == str(me["_id"]),
+        seats_left=max(0, cap - enrolled) if cap else None,
+        is_full=bool(cap and enrolled >= cap),
+    )
 
 
 @router.get("/programs/{program_id}", response_model=CatalogProgram, summary="One program")
@@ -137,17 +134,7 @@ async def get_program(program_id: str, me: dict = Depends(require_member_account
     if not doc:
         raise HTTPException(status.HTTP_404_NOT_FOUND, "Program not found")
 
-    payload = ProgramModel.to_response(doc)
-    joined = await get_database()[EnrollmentModel.collection_name].find_one({
-        "user_id": str(me["_id"]),
-        "program_id": program_id,
-        "status": EnrollmentModel.STATUS_ACTIVE,
-    })
-    cap = int(payload.get("cap") or 0)
-    enrolled = int(payload.get("enrolled") or 0)
-    return CatalogProgram(
-        **payload,
-        joined=bool(joined),
-        seats_left=max(0, cap - enrolled) if cap else None,
-        is_full=bool(cap and enrolled >= cap),
+    row = await get_database()[EnrollmentModel.collection_name].find_one(
+        {"user_id": str(me["_id"]), "program_id": program_id}, {"status": 1}
     )
+    return _row(doc, (row or {}).get("status", ""), me)

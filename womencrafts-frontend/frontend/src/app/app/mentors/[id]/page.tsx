@@ -1,6 +1,6 @@
 "use client";
 
-import { use, useState } from "react";
+import { use, useCallback, useMemo, useState } from "react";
 
 import { apiRequestMentor } from "@/lib/growth-api";
 import { useAction } from "@/lib/use-action";
@@ -11,15 +11,35 @@ import { Back, Btn, Card, EmptyState, IconTile, RailSkeleton, Rating, ScreenSkel
 import { HomeShell } from "@/components/ux/home/HomeShell";
 import { Tag } from "@/components/ux/learning/native";
 import { useMentors } from "@/components/ux/live";
-import { rupees , PAST_SESSIONS as RAW_PAST_SESSIONS, REVIEWS as RAW_REVIEWS, reviewStats } from "@/components/ux/mentors/data";
+import { useMentorSessions } from "@/components/ux/growth";
+import { rupees } from "@/components/ux/mentors/data";
+import { apiMentorReviews, type MentorReviewPage } from "@/lib/mentor-reviews-api";
+import { useResource } from "@/lib/use-resource";
 import { useT } from "@/i18n";
-import { useTranslated } from "@/i18n/data";
+import { SkillBadges } from "@/components/ux/SkillBadges";
+import { Picks } from "@/components/ux/kit/form";
+import { artFor } from "@/components/ux/media/art";
 
-const SLOTS = [
-  { day: "Mon 26 May", times: ["11:00 AM", "5:30 PM"] },
-  { day: "Tue 27 May", times: ["6:00 PM"] },
-  { day: "Thu 29 May", times: ["11:00 AM", "4:00 PM", "6:30 PM"] },
-];
+const isRealPhoto = (src?: string) => !!src && !src.startsWith("data:") && !src.includes("/ux/art/avatar-");
+
+/**
+ * When suits HER, over the next six days — sent as her preferred time, which
+ * the mentor confirms or changes. These used to be three fixed dates in May
+ * ("Mon 26 May, 11:00 AM") offered as if they were the mentor's free slots,
+ * on every mentor, in every month.
+ */
+const PARTS = [["Morning", "11 am"], ["Afternoon", "3 pm"], ["Evening", "6 pm"]] as const;
+function nextDays(n = 6): string[] {
+  const out: string[] = [];
+  const d = new Date();
+  for (let i = 1; i <= n; i++) {
+    const x = new Date(d.getFullYear(), d.getMonth(), d.getDate() + i);
+    out.push(x.toLocaleDateString("en-IN", { weekday: "short", day: "numeric", month: "short" }));
+  }
+  return out;
+}
+
+const EMPTY_REVIEWS: MentorReviewPage = { rating: 0, rating_count: 0, sessions_done: 0, learners: 0, came_back: 0, reviews: [] };
 
 /**
  * One mentor, and the way to ask her for time.
@@ -30,12 +50,16 @@ const SLOTS = [
  * person's evening.
  */
 export default function MentorDetail({ params }: { params: Promise<{ id: string }> }) {
-  const REVIEWS = useTranslated(RAW_REVIEWS);
-  const PAST_SESSIONS = useTranslated(RAW_PAST_SESSIONS);
   const tr = useT();
   const { id } = use(params);
   const { data: MENTORS, source, refetch } = useMentors();
   const m = MENTORS.find((x) => x.id === id);
+  const days = useMemo(() => nextDays(), []);
+  // Her own sessions with this mentor, and what women said — both real.
+  const { data: mySessions } = useMentorSessions();
+  const PAST_SESSIONS = mySessions.filter((x) => x.mentorId === id);
+  const record = useResource(
+    useCallback((s: AbortSignal) => apiMentorReviews(id, s).catch(() => EMPTY_REVIEWS), [id]), EMPTY_REVIEWS).data;
   const [slot, setSlot] = useState<string | null>(null);
   /**
    * What she wants help with — required by the server, and rightly so: a
@@ -92,8 +116,13 @@ export default function MentorDetail({ params }: { params: Promise<{ id: string 
       rail={
         <div className="space-y-[16px]">
           <Card>
-            <SectionHead title={tr("mentors.askForASession")} />
-            {asked ? (
+            <SectionHead title={m.is_mine ? "This is you" : tr("mentors.askForASession")} />
+            {m.is_mine ? (
+              <div className="space-y-2.5">
+                <p className="text-xsm" style={{ color: "var(--ux-muted)" }}>This is how members see your mentor profile.</p>
+                <Btn href="/app/mentoring" variant="primary" full iconEnd="ArrowRight">My mentoring</Btn>
+              </div>
+            ) : asked ? (
               <div className="ux-slide-up rounded-[12px] p-3.5" style={{ background: "var(--ux-tint-green)" }}>
                 <p className="flex items-center gap-2 text-xsm font-semibold" style={{ color: "var(--ux-ink)" }}>
                   <Icons.CheckCheck className="h-[16px] w-[16px]" style={{ color: "var(--ux-green-ink)" }} />
@@ -108,15 +137,19 @@ export default function MentorDetail({ params }: { params: Promise<{ id: string 
               </div>
             ) : (
               <>
-                <p className="mb-3 text-xs" style={{ color: "var(--ux-muted)" }}>{tr("mentors.pickATimeThatSuitsYou")}</p>
+                <p className="mb-3 text-xs leading-relaxed" style={{ color: "var(--ux-muted)" }}>
+                  When suits you? She confirms a time or suggests another.
+                  {m.availability ? ` She is usually free: ${m.availability}.` : ""}
+                </p>
                 <div className="space-y-3">
-                  {SLOTS.map((d) => (
-                    <div key={d.day}>
+                  {days.map((day) => (
+                    <div key={day}>
                       <p className="ux-group-label mb-1.5 text-2xs font-semibold uppercase tracking-[0.07em]"
-                         style={{ color: "var(--ux-faint)" }}>{d.day}</p>
+                         style={{ color: "var(--ux-faint)" }}>{day}</p>
                       <div className="flex flex-wrap gap-2">
-                        {d.times.map((t) => {
-                          const v = `${d.day}, ${t}`;
+                        {PARTS.map(([part, at]) => {
+                          const t = `${part} (${at})`;
+                          const v = `${day}, ${part.toLowerCase()} around ${at}`;
                           const on = slot === v;
                           return (
                             <button
@@ -140,6 +173,15 @@ export default function MentorDetail({ params }: { params: Promise<{ id: string 
                 </div>
                 <div className="mt-4">
                   <label className="mb-1.5 block text-xs font-medium" style={{ color: "var(--ux-ink-2)" }}>{tr("mentors.whatDoYouWantHelpWith")}</label>
+                  {/* Her topics as sentences to tap — the box below is only
+                      for anything they do not cover. */}
+                  <Picks options={[...m.expertise.map((e) => `I want help with ${e.toLowerCase()}`), "I am just starting out", "I want more customers"]}
+                         value={goal.split(". ")} multi label={tr("mentors.whatDoYouWantHelpWith")}
+                         onPick={(x) => setGoal((g) => {
+                           const parts = g.split(". ").map((p) => p.trim()).filter(Boolean);
+                           return (parts.includes(x) ? parts.filter((p) => p !== x) : [...parts, x]).join(". ");
+                         })} />
+                  <div className="mt-2" />
                   <textarea
                     value={goal}
                     onChange={(e) => setGoal(e.target.value)}
@@ -172,7 +214,7 @@ export default function MentorDetail({ params }: { params: Promise<{ id: string 
                   </p>
                 )}
                 <p className="mt-2.5 text-xs" style={{ color: "var(--ux-faint)" }}>
-                  {m.free_first ? "Your first session with her is free." : `${rupees(m.fee_minor)} a session.`}
+                  {m.free_first ? "Free" : `${rupees(m.fee_minor)} a session, paid to her by UPI once she accepts`} · {m.session_mode ?? "Video call"}.
                 </p>
               </>
             )}
@@ -198,7 +240,16 @@ export default function MentorDetail({ params }: { params: Promise<{ id: string 
     >
       <Back to="/app/mentors" label={tr("mentors.allMentors2")} className="mb-4" />
 
-      <Card className="mb-[16px]">
+      {/* The wide picture: her own photo when she uploaded one, otherwise the
+          work she guides in — so the page opens on what she helps with. */}
+      <div className="relative mb-[-44px] overflow-hidden rounded-[var(--ux-r-card)]" style={{ aspectRatio: "21/8", background: "var(--ux-surface-2)" }}>
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img src={artFor([...m.expertise, m.headline], "mentor", isRealPhoto(m.photo) ? m.photo : null, m.id)} alt=""
+             className="h-full w-full object-cover" />
+        <span aria-hidden className="absolute inset-0" style={{ background: "linear-gradient(180deg, rgba(16,6,24,0) 40%, rgba(16,6,24,.55))" }} />
+      </div>
+
+      <Card className="relative mx-3 mb-[16px] lg:mx-5">
         <div className="flex items-start gap-4">
           <span className="h-[92px] w-[92px] shrink-0 overflow-hidden rounded-[20px]"
                 style={{ background: `var(${m.tint})` }}>
@@ -208,14 +259,17 @@ export default function MentorDetail({ params }: { params: Promise<{ id: string 
           <div className="min-w-0 flex-1">
             <h1 className="text-[24px] font-bold leading-tight lg:text-xl" style={{ color: "var(--ux-ink)" }}>{m.name}</h1>
             <p className="mt-1 text-sm" style={{ color: "var(--ux-ink-2)" }}>{m.headline}</p>
+            {!!m.verified_skills?.length && <div className="mt-2"><SkillBadges skills={m.verified_skills} /></div>}
             <p className="mt-2.5 flex flex-wrap items-center gap-x-3 gap-y-1 text-xsm" style={{ color: "var(--ux-muted)" }}>
               <span className="inline-flex items-center gap-1"><Icons.MapPin className="h-4 w-4" /> {m.location}</span>
               <span className="inline-flex items-center gap-1"><Icons.Briefcase className="h-4 w-4" /> {m.experience_years} years</span>
               <span className="inline-flex items-center gap-1"><Icons.Languages className="h-4 w-4" /> {m.languages.join(", ")}</span>
             </p>
             <div className="mt-2.5 flex flex-wrap items-center gap-2">
-              <Rating value={m.rating} count={`${m.rating_count} notes`} />
-              {m.free_first && <Tag tone="green" size="sm">{tr("mentors.firstSessionFree")}</Tag>}
+              {record.rating_count > 0
+                ? <Rating value={record.rating} count={`${record.rating_count} ${record.rating_count === 1 ? "rating" : "ratings"}`} />
+                : <Tag tone="neutral" size="sm">New — no ratings yet</Tag>}
+              {m.free_first ? <Tag tone="green" size="sm">Free</Tag> : <Tag tone="orange" size="sm">{rupees(m.fee_minor)} a session</Tag>}
             </div>
           </div>
         </div>
@@ -244,9 +298,10 @@ export default function MentorDetail({ params }: { params: Promise<{ id: string 
           <SectionHead title={tr("mentors.herRecord")} />
           <div className="space-y-3.5">
             {[
-              [`${m.sessions_done}`, "Sessions given", "MessageSquare", "--ux-tint-violet", "--ux-violet"],
-              [`${m.rating}`, "Average note", "Star", "--ux-tint-orange", "--ux-amber"],
-              [m.availability, "Usually free", "Clock", "--ux-tint-blue", "--ux-blue"],
+              [`${record.sessions_done}`, "Sessions given on WomSakhi", "MessageSquare", "--ux-tint-violet", "--ux-violet"],
+              [record.rating_count ? `${record.rating} from ${record.rating_count}` : "Not rated yet", "Average rating", "Star", "--ux-tint-orange", "--ux-amber"],
+              [record.learners ? `${record.came_back} of ${record.learners}` : "—", "Women who came back", "Repeat", "--ux-tint-green", "--ux-green"],
+              [m.availability || "Ask her", "Usually free", "Clock", "--ux-tint-blue", "--ux-blue"],
             ].map(([val, label, icon, tint, ink]) => (
               <div key={label} className="ux-hov flex items-center gap-3">
                 <IconTile icon={icon} tint={tint} ink={ink} size={36} />
@@ -268,61 +323,64 @@ export default function MentorDetail({ params }: { params: Promise<{ id: string 
           <SectionHead title={tr("mentors.yourSessionsWithHer")} icon="History"
                        chip={String(PAST_SESSIONS.length)} />
           <Card pad={0} style={{ overflow: "hidden" }}>
-            {PAST_SESSIONS.map((ps, i) => (
-              <div key={ps.id} className="flex flex-wrap items-start gap-3.5 px-5 py-4"
-                   style={{ borderTop: i === 0 ? "none" : "1px solid var(--ux-line)" }}>
-                <IconTile icon={ps.done ? "CheckCircle2" : "Clock"}
-                          tint={ps.done ? "--ux-tint-green" : "--ux-tint-amber"}
-                          ink={ps.done ? "--ux-green-ink" : "--ux-amber-ink"} size={36} />
-                <div className="min-w-0 flex-1">
-                  <p className="text-sm font-bold" style={{ color: "var(--ux-ink)" }}>{ps.about}</p>
-                  <p className="mt-0.5 text-xs" style={{ color: "var(--ux-muted)" }}>
-                    {ps.when} · {ps.minutes} minutes
-                  </p>
-                  {ps.agreed && (
-                    <p className="mt-2 flex items-start gap-2 rounded-[8px] px-3 py-2 text-xs leading-snug"
-                       style={{ background: "var(--ux-surface-2)", color: "var(--ux-ink-2)" }}>
-                      <Icons.Flag className="mt-[2px] h-[0.75rem] w-[0.75rem] shrink-0"
-                                  style={{ color: `var(${ps.done ? "--ux-green-ink" : "--ux-amber-ink"})` }} />
-                      <span>
-                        <b style={{ color: "var(--ux-ink)" }}>{ps.done ? tr("mentors.youDidThis")
-              : tr("mentors.stillToDo")}</b>{" "}
-                        {ps.agreed}
-                      </span>
-                    </p>
-                  )}
+            {PAST_SESSIONS.map((ps, i) => {
+              const done = ps.state === "Done";
+              return (
+                <div key={ps.id} className="flex flex-wrap items-start gap-3.5 px-5 py-4"
+                     style={{ borderTop: i === 0 ? "none" : "1px solid var(--ux-line)" }}>
+                  <IconTile icon={done ? "CheckCircle2" : "Clock"}
+                            tint={done ? "--ux-tint-green" : "--ux-tint-amber"}
+                            ink={done ? "--ux-green-ink" : "--ux-amber-ink"} size={36} />
+                  <div className="min-w-0 flex-1">
+                    <p className="text-sm font-bold" style={{ color: "var(--ux-ink)" }}>{ps.topic}</p>
+                    <p className="mt-0.5 text-xs" style={{ color: "var(--ux-muted)" }}>{ps.when} · {ps.state}</p>
+                    {ps.note && (
+                      <p className="mt-2 flex items-start gap-2 rounded-[8px] px-3 py-2 text-xs leading-snug"
+                         style={{ background: "var(--ux-surface-2)", color: "var(--ux-ink-2)" }}>
+                        <Icons.Flag className="mt-[2px] h-[0.75rem] w-[0.75rem] shrink-0" style={{ color: "var(--ux-violet)" }} />
+                        <span><b style={{ color: "var(--ux-ink)" }}>She said:</b> {ps.note}</span>
+                      </p>
+                    )}
+                  </div>
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </Card>
         </div>
       )}
 
-      {/* What women said afterwards. Words, not stars — see the note in the
-          data file for why a 4.8 average separates nobody. */}
+      {/* What women said after a session with her — real ratings, left by
+          learners whose session happened (routes/mentor_reviews.py). */}
       <div className="mt-[16px]">
         <SectionHead title={tr("mentors.whatWomenSaidAfterAnHour")}
-                     sub={`${reviewStats(REVIEWS).wentBack} of ${reviewStats(REVIEWS).total} came back for another`}
+                     sub={record.learners ? `${record.came_back} of ${record.learners} came back for another session` : undefined}
                      icon="MessageSquare" />
-        <div className="grid gap-3 lg:grid-cols-2">
-          {REVIEWS.map((r) => (
-            <Card key={r.id} pad={18}>
-              <p className="text-sm italic leading-relaxed" style={{ color: "var(--ux-ink)" }}>
-                &ldquo;{r.said}&rdquo;
-              </p>
-              <div className="mt-3 flex flex-wrap items-center gap-2">
-                <span className="text-xsm font-bold" style={{ color: "var(--ux-ink-2)" }}>{r.by}</span>
-                <span className="text-xs" style={{ color: "var(--ux-muted)" }}>· {r.who} · {r.when}</span>
-              </div>
-              <p className="mt-2 inline-flex items-center gap-1.5 text-xs font-semibold"
-                 style={{ color: `var(${r.wentBack ? "--ux-green-ink" : "--ux-muted"})` }}>
-                <Icons.Repeat className="h-[0.75rem] w-[0.75rem]" />
-                {r.wentBack ? tr("mentors.sheBookedAnother")
-              : tr("mentors.sheDidNotBookAgain")}
-              </p>
-            </Card>
-          ))}
-        </div>
+        {record.reviews.length ? (
+          <div className="grid gap-3 lg:grid-cols-2">
+            {record.reviews.map((r, i) => (
+              <Card key={`${r.first_name}-${i}`} pad={18}>
+                <p className="flex items-center gap-0.5" aria-label={`${r.rating} out of 5`}>
+                  {[1, 2, 3, 4, 5].map((n) => (
+                    <Icons.Star key={n} className="h-[14px] w-[14px]" strokeWidth={1.8}
+                                fill={n <= r.rating ? "currentColor" : "none"}
+                                style={{ color: n <= r.rating ? "var(--ux-amber-ink)" : "var(--ux-faint)" }} />
+                  ))}
+                </p>
+                {r.text && (
+                  <p className="mt-2 text-sm italic leading-relaxed" style={{ color: "var(--ux-ink)" }}>&ldquo;{r.text}&rdquo;</p>
+                )}
+                <p className="mt-2.5 text-xs" style={{ color: "var(--ux-muted)" }}>
+                  <b style={{ color: "var(--ux-ink-2)" }}>{r.first_name}</b> · {r.date}
+                </p>
+              </Card>
+            ))}
+          </div>
+        ) : (
+          <Card>
+            <EmptyState icon="MessageSquare" title="No ratings yet"
+                        body={`Women rate a session after it happens. ${m.is_mine ? "Yours will show here." : `Be one of the first to learn from ${m.name.split(" ")[0]}.`}`} />
+          </Card>
+        )}
       </div>
 
       {others.length > 0 && (

@@ -4,7 +4,7 @@ import { Suspense, useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import {
-  Award, Briefcase, Check, History, Loader2, Mail, MessagesSquare, MoreHorizontal, Phone, Send,
+  Award, BadgeCheck, Briefcase, Check, History, Loader2, Mail, MessagesSquare, MoreHorizontal, Phone, Send,
   Sparkles, Star, X, XCircle,
 } from "lucide-react";
 import {
@@ -188,6 +188,30 @@ function ApplicationsInner() {
                     <tr key={a.id} className="border-b border-line last:border-0 hover:bg-surface-2">
                       <td className="px-3 py-3">
                         <p className="text-sm font-semibold text-ink">{a.member_name}</p>
+                        {!!a.verified_skills?.length && (
+                          <p className="mt-1 flex flex-wrap gap-1">
+                            {a.verified_skills.map((s) => (
+                              <a key={s.title} href={`/verify/${s.code}`} target="_blank" rel="noopener noreferrer"
+                                 title={`${s.title} — passed with ${s.score}%`}
+                                 className="inline-flex items-center gap-1 rounded-full bg-status-ok-bg px-2 py-0.5 text-2xs font-semibold text-status-ok-ink hover:underline">
+                                <BadgeCheck className="h-3 w-3" /> Verified: {s.skill}
+                              </a>
+                            ))}
+                          </p>
+                        )}
+                        {/* Her skills this job needs, as they were when she applied. */}
+                        {!!a.matching_skills?.length && (
+                          <p className="mt-1 flex flex-wrap items-center gap-1">
+                            <span className="text-2xs font-semibold text-ink-subtle">Matching skills:</span>
+                            {a.matching_skills.map((s) => (
+                              <span key={s.key}
+                                    className="inline-flex items-center gap-1 rounded-full border border-line bg-surface-2 px-2 py-0.5 text-2xs font-medium text-ink-muted">
+                                {s.verified && <BadgeCheck className="h-3 w-3 text-status-ok-ink" aria-label="Verified" />}
+                                {s.name}{s.level ? ` · ${s.level}` : ""}
+                              </span>
+                            ))}
+                          </p>
+                        )}
                         <p className="flex flex-wrap items-center gap-x-3 text-xs text-ink-subtle">
                           <span className="flex items-center gap-1"><Mail className="h-3 w-3" />{a.member_email}</span>
                           {a.member_phone && <span className="flex items-center gap-1"><Phone className="h-3 w-3" />{a.member_phone}</span>}

@@ -129,7 +129,7 @@ async def issue_email_token(user_id: str, purpose: str = EmailTokenModel.PURPOSE
 async def send_verification_email(user: dict) -> None:
     token = await issue_email_token(str(user["_id"]))
     url = f"{settings.APP_BASE_URL.rstrip('/')}/verify-email?token={token}"
-    await mailer.send(mailer.verification_email(user.get("full_name", ""), url), user["email"])
+    await mailer.send(mailer.verification_email(user.get("full_name", ""), url), user.get("email", ""))
 
 
 def application_is_ready(state: str, email_confirmed: bool, document_count: int) -> bool:
@@ -310,7 +310,7 @@ async def request_my_review(
         background_tasks.add_task(
             mailer.send,
             mailer.submitted_email(current_user.get("full_name", "")),
-            current_user["email"],
+            current_user.get("email", ""),
         )
     await record(
         current_user,
@@ -1125,12 +1125,26 @@ def _who(user: dict) -> str:
     return f"{user.get('full_name', '') or 'Applicant'} ({', '.join(b for b in bits if b)})"
 
 
+class ApproveIn(BaseModel):
+    """Her name exactly as it is printed on the ID she sent. Members do not
+    type their name when they join; the reviewer reads it off the card."""
+    full_name: str
+
+
 @router.post("/{user_id}/approve", response_model=MessageResponse, summary="Approve an applicant")
 async def approve(
     user_id: str,
+    payload: ApproveIn,
     request: Request,
     staff: dict = Depends(require_permission("users.approve")),
 ):
+    from app.routes.auth import clean_person_name  # local: auth imports half the app
+
+    try:
+        full_name = clean_person_name(payload.full_name)
+    except ValueError as exc:
+        raise HTTPException(status.HTTP_422_UNPROCESSABLE_ENTITY,
+                            {"code": "name_invalid", "message": f"{exc} — as it is printed on her ID card."})
     user = await _applicant(user_id, staff)
     was = _state_of(user)
     if was == VerificationStatus.ACTIVE:
@@ -1158,6 +1172,7 @@ async def approve(
         {"_id": user["_id"]},
         {
             "$set": {
+                "full_name": full_name,
                 "verification_status": VerificationStatus.ACTIVE,
                 "verified_at": now,
                 "rejection_reason": "",
@@ -1184,19 +1199,20 @@ async def approve(
     if user.get("member_id"):
         await get_database()[MemberModel.collection_name].update_one(
             {"_id": ObjectId(user["member_id"])},
-            {"$set": {"status": "Active", "verified_on": now.strftime("%b %d, %Y")}},
+            {"$set": {"full_name": full_name, "status": "Active", "verified_on": now.strftime("%b %d, %Y")}},
         )
+    user["full_name"] = full_name
 
     await mailer.send(
-        mailer.approved_email(user.get("full_name", ""), f"{settings.APP_BASE_URL.rstrip('/')}/signin"),
-        user["email"],
+        mailer.approved_email(full_name, f"{settings.APP_BASE_URL.rstrip('/')}/signin"),
+        user.get("email", ""),
     )
     await record(
         staff, "member.approve", target=str(user["_id"]),
         detail=f"Approved {_who(user)}; was {VerificationStatus.LABELS.get(was, was)}",
         request=request,
     )
-    return MessageResponse(message=f"{user.get('full_name', 'Applicant')} approved.")
+    return MessageResponse(message=f"{full_name} approved.")
 
 
 @router.post("/{user_id}/reject", response_model=MessageResponse, summary="Reject an applicant")
@@ -1247,7 +1263,7 @@ async def reject(
             user.get("full_name", ""), payload.reason,
             (now + timedelta(days=settings.REAPPLY_AFTER_DAYS)).strftime("%d %b %Y"),
         ),
-        user["email"],
+        user.get("email", ""),
     )
     await record(
         staff, "member.reject", target=str(user["_id"]),
@@ -1330,7 +1346,7 @@ async def request_resubmission(
             user.get("full_name", ""), payload.reason,
             f"{settings.APP_BASE_URL.rstrip('/')}/app/verify",
         ),
-        user["email"],
+        user.get("email", ""),
     )
     await record(
         staff, "member.resubmit", target=str(user["_id"]),

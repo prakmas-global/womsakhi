@@ -1,15 +1,21 @@
 "use client";
 
-import { useCallback, useMemo, useState } from "react";
-import { useRouter } from "next/navigation";
+import { useCallback, useState } from "react";
 
 import { HomeShell } from "@/components/ux/home/HomeShell";
-import { Back, Btn, Card, I, IconTile, Pill, SectionHead, v } from "@/components/ux/kit";
-import { CHECKS as RAW_CHECKS, IRON_WEEKS as RAW_IRON_WEEKS, TIRED_SIGNS as RAW_TIRED_SIGNS, dueNow, freeCount, ironStreak, type Check } from "@/components/ux/wellness/data";
+import { Back, Btn, Card, I, IconTile, Pill, SectionHead, ScreenSkeleton, v } from "@/components/ux/kit";
+import { Picks } from "@/components/ux/kit/form";
+import { TIRED_SIGNS as RAW_TIRED_SIGNS } from "@/components/ux/wellness/data";
+import { toast } from "@/components/ux/mobile/Toast";
 import { useT } from "@/i18n";
-import { ListGroup } from "@/components/ux/mobile/ListRow";
-import { GroupLabel, PhoneRow, PhoneTitle, phonePrimary } from "@/components/ux/PhoneParts";
 import { useTranslated } from "@/i18n/data";
+import { PhoneTitle, phonePrimary } from "@/components/ux/PhoneParts";
+import { useResource } from "@/lib/use-resource";
+import { apiHealth, type Reference } from "@/lib/entitlements-api";
+import { apiCreateReminder } from "@/lib/engines-api";
+import {
+  TEST_RESULT_LABEL, apiRecordStrengthTest, apiStrength, apiTickIron, type Strength, type TestResult,
+} from "@/lib/my-records-api";
 
 /**
  * Tiredness, treated as a money problem.
@@ -17,265 +23,264 @@ import { useTranslated } from "@/i18n/data";
  * ── The number that justifies this screen ───────────────────────────────────
  * Among 138 women tea pluckers in Darjeeling, anaemia predicted **9.1% less tea
  * picked and 4.0% lower wages per three-hour shift** — controlling for physical
- * effort. That is a measured wage elasticity, in Indian women, in piece-rate
- * work, and it is the only study in the entire health review that measures the
- * right thing in the right population in the right units.
+ * effort. For a woman paid by the piece, feeling weak is a pay cut she takes
+ * home the same day.
  *
- * For a salaried worker, feeling weak is presenteeism and invisible. For a woman
- * paid by the piece it is a direct pay cut she takes home the same day.
+ * ── What is real here ───────────────────────────────────────────────────────
+ * This screen used to keep everything in the browser: "I took it" filled a bar
+ * that was gone on reload, "Last: 8 months ago" was the same fixture for every
+ * woman, and "Remind me Tuesday" set a flag and reminded nobody. Now:
  *
- * ── Why it is careful about the diagnosis ───────────────────────────────────
- * Prevalence in Indian women is genuinely contested — 57% by the NFHS capillary
- * method, about 41% by venous blood, mostly mild, with iron deficiency
- * explaining under a third of it. And NFHS-6 dropped the indicator entirely,
- * so there is no current national figure at all. So this screen does not tell
- * her she is anaemic. It tells her the test is free, takes ten minutes, and
- * that a woman will be there — because "no female provider" is one of the most
- * common reasons Indian women give for not seeking care.
+ *   - the weekly tablet is ticked on the server (`/me/health/strength/iron`),
+ *     one tick per week, shown as the last eight weeks — her record, not a score;
+ *   - her last strength test is what SHE records (date + what they told her);
+ *   - "Remind me" creates a real reminder in her reminders (the clinic preset);
+ *   - the free checks come from the staff-managed health catalogue
+ *     (`/wellbeing/health`), not a constant with made-up camp dates.
  *
- * Stored: "I took the tablet." A boolean. Nothing else.
+ * It still never tells her she is anaemic. Signs are a prompt to get the free
+ * test, explicitly not a diagnosis.
  */
+
+const RESULTS: TestResult[] = ["normal", "low", "very_low", "not_told"];
+
+function ymd(d: Date) {
+  const p = (n: number) => String(n).padStart(2, "0");
+  return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}`;
+}
+const WHEN_PICKS = [
+  { label: "This week", days: 0 }, { label: "Last month", days: 30 },
+  { label: "3 months ago", days: 90 }, { label: "6 months ago", days: 180 }, { label: "A year ago", days: 365 },
+];
+
+/** The next Tuesday at 10am, local — when the Anganwadi usually tests. */
+function nextTuesday10() {
+  const d = new Date();
+  const add = ((2 - d.getDay() + 7) % 7) || 7;
+  d.setDate(d.getDate() + add);
+  d.setHours(10, 0, 0, 0);
+  return d.toISOString();
+}
+
+function since(date: string, now: number) {
+  const days = Math.floor((now - new Date(`${date}T00:00:00`).getTime()) / 86_400_000);
+  if (days < 1) return "today";
+  if (days < 31) return `${days} day${days === 1 ? "" : "s"} ago`;
+  const months = Math.round(days / 30);
+  return months < 12 ? `${months} month${months === 1 ? "" : "s"} ago` : `${Math.round(months / 12)} year${months >= 18 ? "s" : ""} ago`;
+}
+
 export default function StrengthPage() {
   const TIRED_SIGNS = useTranslated(RAW_TIRED_SIGNS);
-  const CHECKS = useTranslated(RAW_CHECKS);
-  const IRON_WEEKS = useTranslated(RAW_IRON_WEEKS);
   const tr = useT();
-  const router = useRouter();
-  const [weeks, setWeeks] = useState(IRON_WEEKS);
-  const [signs, setSigns] = useState<string[]>([]);
-  const [booked, setBooked] = useState(false);
-  const [note, setNote] = useState<string | null>(null);
+  const rec = useResource(useCallback((s: AbortSignal) => apiStrength(s), []), null as Strength | null);
+  const checks = useResource(useCallback((s: AbortSignal) => apiHealth(s).catch(() => []), []), [] as Reference[]);
+  const [view, setView] = useState<Strength | null>(null);
+  const data = view ?? rec.data;
 
-  const streak = useMemo(() => ironStreak(weeks), [weeks]);
-  const test = useMemo(() => CHECKS.find((c) => c.id === "ch1")!, [CHECKS]);
+  const [signs, setSigns] = useState<string[]>([]);
+  const [recording, setRecording] = useState(false);
+  const [when, setWhen] = useState("");
+  const [result, setResult] = useState<TestResult | "">("");
+  const [busy, setBusy] = useState<"" | "iron" | "test" | "remind">("");
+  const [reminded, setReminded] = useState(false);
+  // "Now", fixed once per visit — the quick date picks are relative to it.
+  const [now] = useState(() => Date.now());
+  const ago = (days: number) => ymd(new Date(now - days * 86_400_000));
   const many = signs.length >= 3;
 
-  const took = useCallback(() => {
-    setWeeks((w) => w.map((x, i) => (i === w.length - 1 ? { ...x, took: x.of } : x)));
-    setNote("Marked. That is all we keep — not how you feel, not anything else.");
-  }, []);
+  const tick = async (took: boolean) => {
+    setBusy("iron");
+    try { setView(await apiTickIron(took)); toast(took ? "Ticked for this week" : "Tick removed", { tone: "success" }); }
+    catch { toast("That did not save. Try again.", { tone: "error" }); }
+    finally { setBusy(""); }
+  };
+  const saveTest = async () => {
+    if (!when || !result) return;
+    setBusy("test");
+    try {
+      setView(await apiRecordStrengthTest(when, result));
+      setRecording(false); setWhen(""); setResult("");
+      toast("Saved — only you can see it", { tone: "success" });
+    } catch { toast("That did not save. Try again.", { tone: "error" }); }
+    finally { setBusy(""); }
+  };
+  const remind = async () => {
+    setBusy("remind");
+    try {
+      await apiCreateReminder({ title_key: "rem.preset.clinic", schedule_type: "once", at: nextTuesday10(), category: "health" });
+      setReminded(true);
+      toast("We will remind you on Tuesday morning", { tone: "success" });
+    } catch { toast("The reminder did not save. Try again.", { tone: "error" }); }
+    finally { setBusy(""); }
+  };
 
-  const toggleSign = (s: string) =>
-    setSigns((r) => (r.includes(s) ? r.filter((x) => x !== s) : [...r, s]));
+  const last = data?.last_test ?? null;
+  const hbCheck = checks.data.find((c) => /haemoglobin|hemoglobin|blood test/i.test(c.title));
+  const ironInfo = checks.data.find((c) => /iron/i.test(c.title));
+  const others = checks.data.filter((c) => c !== hbCheck && c !== ironInfo);
+  const tookWeeks = data?.weeks.filter((w) => w.took).length ?? 0;
 
   return (
     <HomeShell active="/app/health">
       <div className="flex flex-col gap-5">
-        {/* The top bar carries the way back on a phone; this one is the desktop's. */}
         <div className="hidden lg:flex">
           <Back to="/app/health" label={tr("healthStrength.backToHealth")} />
         </div>
 
         <PhoneTitle title="Strength" sub={tr("healthStrength.tiredIsNotJustTired")}
                     note={<>When you are paid for what you finish, feeling weak is money. Women doing piece work
-                      with low iron finished about <b>9% less in a shift</b> {tr("healthStrength.andEarnedAbout")} <b>4% less</b> —
-                      without ever taking a day off.</>} />
+                      with low iron finished about <b>9% less in a shift</b> {tr("healthStrength.andEarnedAbout")} <b>4% less</b>.</>} />
         <header className="hidden lg:block">
-          <p className="text-2xs font-extrabold uppercase tracking-[0.2em]" style={{ color: v("--ux-brand") }}>
-            Strength
-          </p>
+          <p className="text-2xs font-extrabold uppercase tracking-[0.2em]" style={{ color: v("--ux-brand") }}>Strength</p>
           <h1 className="mt-2 text-[clamp(1.5rem,3.2vw,2.125rem)] font-extrabold leading-[1.1] tracking-[-0.035em]"
               style={{ color: v("--ux-ink") }}>{tr("healthStrength.tiredIsNotJustTired")}</h1>
           <p className="mt-1.5 max-w-[58ch] text-sm leading-relaxed" style={{ color: v("--ux-muted") }}>
-            When you are paid for what you finish, feeling weak is money. Women doing piece work
-            with low iron finished about <b>9% less in a shift</b> {tr("healthStrength.andEarnedAbout")} <b>4% less</b> —
-            without ever taking a day off.
+            When you are paid for what you finish, feeling weak is money. Women doing piece work with low iron
+            finished about <b>9% less in a shift</b> {tr("healthStrength.andEarnedAbout")} <b>4% less</b> — without ever taking a day off.
           </p>
         </header>
 
-        {/* Free test */}
-        <Card pad={0} style={{ overflow: "hidden", borderColor: v("--ux-brand") }}>
-          <div className="flex flex-wrap items-start gap-4 p-5 max-lg:p-4" style={{ background: v("--ux-brand-tint") }}>
-            <IconTile icon="Droplet" tint="--ux-surface" ink="--ux-brand" size={48} radius={14} />
-            <div className="min-w-0 flex-1">
-              <p className="text-base font-bold" style={{ color: v("--ux-ink") }}>{test.what}</p>
-              <p className="mt-1.5 max-w-[52ch] text-xsm leading-relaxed" style={{ color: v("--ux-ink-2") }}>
-                {test.why}. It costs <b>nothing</b>, takes <b>{tr("healthStrength.tenMinutes")}</b>, and a woman does it.
-                Most women skip it because nobody ever told them those three things.
-              </p>
-              <div className="mt-2.5 flex flex-wrap gap-x-4 gap-y-1 text-xs" style={{ color: v("--ux-ink-2") }}>
-                <span className="inline-flex items-center gap-1.5">
-                  <I name="MapPin" className="h-[13px] w-[13px]" />{test.where}
-                </span>
-                {test.lastOn && (
-                  <span className="inline-flex items-center gap-1.5">
-                    <I name="History" className="h-[13px] w-[13px]" />Last: {test.lastOn}
-                  </span>
-                )}
-              </div>
-            </div>
-            <Btn disabled={booked} className={phonePrimary} onClick={() => { setBooked(true); setNote("We will remind you on Monday evening, and again on the morning."); }}>
-              {booked ? tr("healthStrength.reminderSet")
-              : tr("healthStrength.remindMeTuesday")}
-            </Btn>
-          </div>
-        </Card>
-
-        {note && (
-          <Card pad={16} style={{ background: v("--ux-tint-green"), borderColor: "transparent" }}>
-            <p className="flex items-center gap-2 text-xsm font-semibold" style={{ color: v("--ux-green-ink") }}>
-              <I name="CheckCircle2" className="h-[16px] w-[16px]" />{note}
-            </p>
-          </Card>
-        )}
-
-        {/* Signs — a prompt, explicitly not a diagnosis */}
-        <div>
-          <GroupLabel sub={tr("healthStrength.thisIsNotADiagnosisOnly")}>{tr("healthStrength.doesAnyOfThisSoundLike")}</GroupLabel>
-          <div className="hidden lg:block">
-            <SectionHead title={tr("healthStrength.doesAnyOfThisSoundLike")}
-                         sub={tr("healthStrength.thisIsNotADiagnosisOnly")} icon="ListChecks" />
-          </div>
-          {/* A checklist: on a phone, rows of one grouped list, the tick box
-              leading each. */}
-          <ListGroup className="lg:hidden">
-            {TIRED_SIGNS.map((s) => {
-              const on = signs.includes(s);
-              return (
-                <PhoneRow key={s} onClick={() => toggleSign(s)} pressed={on} sepInset={50}
-                          lead={
-                            <span className="mt-0.5 grid h-[22px] w-[22px] shrink-0 place-items-center rounded-[8px] border-2"
-                                  style={{
-                                    borderColor: v(on ? "--ux-brand" : "--ux-line-strong"),
-                                    background: v(on ? "--ux-brand" : "--ux-surface"),
-                                    color: v("--ux-on-brand-btn-ink"),
-                                  }}>
-                              {on && <I name="Check" className="h-[13px] w-[13px]" sw={3} />}
-                            </span>
-                          }
-                          title={<span className="font-normal">{s}</span>} />
-              );
-            })}
-          </ListGroup>
-          {many && (
-            <div className="mt-3 rounded-[12px] p-4 lg:hidden" style={{ background: v("--ux-tint-amber") }}>
-              <p className="text-[15px] leading-relaxed" style={{ color: v("--ux-ink-2") }}>
-                That is worth ten minutes on a Tuesday. It might be iron, it might be something
-                else — the point is that a free test tells you, and guessing does not.
-              </p>
-            </div>
-          )}
-          <div className="hidden lg:block">
-          <Card pad={16}>
-            <div className="flex flex-col gap-2">
-              {TIRED_SIGNS.map((s) => {
-                const on = signs.includes(s);
-                return (
-                  <button key={s} type="button" onClick={() => toggleSign(s)} aria-pressed={on}
-                          className="ux-press ux-sq flex items-center gap-3 rounded-[12px] border p-3 text-left"
-                          style={{
-                            borderColor: v(on ? "--ux-brand" : "--ux-line"),
-                            background: v(on ? "--ux-brand-tint" : "--ux-surface"),
-                          }}>
-                    <span className="grid h-[22px] w-[22px] shrink-0 place-items-center rounded-[8px] border-2"
-                          style={{
-                            borderColor: v(on ? "--ux-brand" : "--ux-line-strong"),
-                            background: v(on ? "--ux-brand" : "--ux-surface"),
-                            color: v("--ux-on-brand-btn-ink"),
-                          }}>
-                      {on && <I name="Check" className="h-[13px] w-[13px]" sw={3} />}
+        {rec.source === "loading" && !data ? <ScreenSkeleton shape="list" /> : (
+          <>
+            {/* The free test, and her own record of it */}
+            <Card pad={0} style={{ overflow: "hidden", borderColor: v("--ux-brand") }}>
+              <div className="flex flex-wrap items-start gap-4 p-5 max-lg:p-4" style={{ background: v("--ux-brand-tint") }}>
+                <IconTile icon="Droplet" tint="--ux-surface" ink="--ux-brand" size={48} radius={14} />
+                <div className="min-w-0 flex-1">
+                  <p className="text-base font-bold" style={{ color: v("--ux-ink") }}>{hbCheck?.title || "Blood test for strength (haemoglobin)"}</p>
+                  <p className="mt-1.5 max-w-[52ch] text-xsm leading-relaxed" style={{ color: v("--ux-ink-2") }}>
+                    It tells you if tiredness has a cause you can fix. It costs <b>nothing</b>, takes <b>{tr("healthStrength.tenMinutes")}</b>, and a woman usually does it.
+                  </p>
+                  <div className="mt-2.5 flex flex-wrap gap-x-4 gap-y-1 text-xs" style={{ color: v("--ux-ink-2") }}>
+                    <span className="inline-flex items-center gap-1.5">
+                      <I name="MapPin" className="h-[13px] w-[13px]" />
+                      {String(hbCheck?.payload?.where || "Primary Health Centre or an Anganwadi camp")}
                     </span>
-                    <span className="text-xsm" style={{ color: v("--ux-ink") }}>{s}</span>
-                  </button>
-                );
-              })}
-            </div>
-            {many && (
-              <div className="mt-3.5 rounded-[12px] px-3.5 py-3" style={{ background: v("--ux-tint-amber") }}>
-                <p className="text-xsm leading-relaxed" style={{ color: v("--ux-ink-2") }}>
-                  That is worth ten minutes on a Tuesday. It might be iron, it might be something
-                  else — the point is that a free test tells you, and guessing does not.
-                </p>
-              </div>
-            )}
-          </Card>
-          </div>
-        </div>
-
-        {/* Iron — weekly, which beats a monthly ritual */}
-        <div>
-          <GroupLabel sub={tr("healthStrength.freeFromTheAnganwadiOneA")} count={streak > 0 ? `${streak} weeks running` : undefined}>
-            {tr("healthStrength.theWeeklyTablet")}
-          </GroupLabel>
-          <div className="hidden lg:block">
-            <SectionHead title={tr("healthStrength.theWeeklyTablet")} sub={tr("healthStrength.freeFromTheAnganwadiOneA")}
-                         icon="Pill" chip={streak > 0 ? `${streak} weeks running` : undefined} />
-          </div>
-          <Card pad={16}>
-            <div className="flex items-end gap-2" style={{ height: 76 }}>
-              {weeks.map((w) => (
-                <div key={w.week} className="flex flex-1 flex-col items-center justify-end gap-1.5">
-                  <div className="w-full rounded-t-[6px]"
-                       style={{
-                         height: w.took >= w.of ? "100%" : "18%",
-                         background: v(w.took >= w.of ? "--ux-green-ink" : "--ux-surface-2"),
-                       }} />
-                  <span className="text-2xs leading-tight" style={{ color: v("--ux-muted") }}>
-                    {w.week.replace(" weeks ago", "w").replace("Last week", "now")}
-                  </span>
-                </div>
-              ))}
-            </div>
-            <div className="mt-4 flex flex-wrap items-center gap-2 border-t pt-3.5" style={{ borderColor: v("--ux-line") }}>
-              <p className="flex-1 text-xsm" style={{ color: v("--ux-ink-2") }}>{tr("healthStrength.aWeeklyTabletIsEasierTo")}</p>
-              <Btn size="sm" onClick={took}>{tr("healthStrength.iTookIt")}</Btn>
-            </div>
-          </Card>
-        </div>
-
-        {/* Other free checks */}
-        <div>
-          <GroupLabel sub={`${freeCount(CHECKS)} free · ${dueNow(CHECKS)} due soon`}>{tr("healthStrength.otherThingsThatCostNothing")}</GroupLabel>
-          <div className="hidden lg:block">
-            <SectionHead title={tr("healthStrength.otherThingsThatCostNothing")}
-                         sub={`${freeCount(CHECKS)} free · ${dueNow(CHECKS)} due soon`} icon="Stethoscope"
-                         action={tr("healthStrength.allOfHealth")} onAction={() => router.push("/app/health")} />
-          </div>
-          <ListGroup className="lg:hidden">
-            {CHECKS.filter((c) => c.id !== "ch1").map((c) => (
-              <PhoneRow key={c.id} icon={c.icon} tint="--ux-tint-green" ink="--ux-green-ink"
-                        title={
-                          <span className="flex flex-wrap items-center gap-2">
-                            {c.what}
-                            {c.womanThere && <Pill tone="pink" size="sm">{tr("healthStrength.aWomanDoesIt")}</Pill>}
-                          </span>
-                        }
-                        meta={<><b>{c.costs}</b> · {c.takes} · {c.where}</>}
-                        body={c.why} />
-            ))}
-            {/* The desktop heading's "All of health", as the list's last row. */}
-            <PhoneRow href="/app/health" icon="Stethoscope" title={tr("healthStrength.allOfHealth")} />
-          </ListGroup>
-          <div className="hidden gap-3 sm:grid-cols-2 lg:grid">
-            {CHECKS.filter((c) => c.id !== "ch1").map((c) => (
-              <Card key={c.id} pad={16}>
-                <div className="flex items-start gap-3.5">
-                  <IconTile icon={c.icon} tint="--ux-tint-green" ink="--ux-green-ink" size={40} />
-                  <div className="min-w-0 flex-1">
-                    <div className="flex flex-wrap items-center gap-2">
-                      <p className="text-sm font-bold" style={{ color: v("--ux-ink") }}>{c.what}</p>
-                      {c.womanThere && <Pill tone="pink" size="sm">{tr("healthStrength.aWomanDoesIt")}</Pill>}
-                    </div>
-                    <p className="mt-1 text-xs leading-relaxed" style={{ color: v("--ux-muted") }}>{c.why}</p>
-                    <p className="mt-1.5 text-xs" style={{ color: v("--ux-ink-2") }}>
-                      <b>{c.costs}</b> · {c.takes} · {c.where}
-                    </p>
+                    <span className="inline-flex items-center gap-1.5">
+                      <I name="History" className="h-[13px] w-[13px]" />
+                      {last ? <>Your last test: <b>{since(last.date, now)}</b> · {TEST_RESULT_LABEL[last.result]}</> : "You have not added a test yet"}
+                    </span>
                   </div>
                 </div>
-              </Card>
-            ))}
-          </div>
-        </div>
+                <div className="flex w-full flex-col gap-2 sm:w-auto">
+                  <Btn className={phonePrimary} icon={reminded ? "Check" : "Bell"} disabled={reminded} loading={busy === "remind"} onClick={() => void remind()}>
+                    {reminded ? tr("healthStrength.reminderSet") : tr("healthStrength.remindMeTuesday")}
+                  </Btn>
+                  <Btn variant="outline" icon="Plus" onClick={() => setRecording((x) => !x)}>
+                    {recording ? "Close" : "I had a test"}
+                  </Btn>
+                </div>
+              </div>
+              {recording && (
+                <div className="border-t p-5 max-lg:p-4" style={{ borderColor: v("--ux-line") }}>
+                  <p className="text-xsm font-bold" style={{ color: v("--ux-ink") }}>When was it?</p>
+                  <Picks options={WHEN_PICKS.map((w) => w.label)}
+                         value={WHEN_PICKS.find((w) => ago(w.days) === when)?.label ?? ""}
+                         onPick={(l) => setWhen(ago(WHEN_PICKS.find((x) => x.label === l)!.days))}
+                         label="When" />
+                  <input type="date" value={when} max={ago(0)} onChange={(e) => setWhen(e.target.value)}
+                         aria-label="Date of the test"
+                         className="ux-sq mt-2 min-h-[44px] rounded-[12px] border px-3 text-xsm outline-none"
+                         style={{ borderColor: v("--ux-line"), background: v("--ux-surface"), color: v("--ux-ink") }} />
+                  <p className="mt-4 text-xsm font-bold" style={{ color: v("--ux-ink") }}>What did they tell you?</p>
+                  <Picks options={RESULTS.map((r) => TEST_RESULT_LABEL[r])} value={result ? TEST_RESULT_LABEL[result] : ""}
+                         onPick={(l) => setResult(RESULTS.find((r) => TEST_RESULT_LABEL[r] === l)!)} label="Result" />
+                  <div className="mt-4 flex gap-2">
+                    <Btn disabled={!when || !result} loading={busy === "test"} onClick={() => void saveTest()}>Save</Btn>
+                    <Btn variant="ghost" onClick={() => setRecording(false)}>Cancel</Btn>
+                  </div>
+                </div>
+              )}
+            </Card>
 
-        <Card pad={16} style={{ background: v("--ux-surface-2"), borderColor: "transparent" }}>
-          <div className="flex items-start gap-3">
-            <I name="Lock" className="mt-[2px] h-[16px] w-[16px] shrink-0" style={{ color: v("--ux-muted") }} />
-            <p className="text-xsm leading-relaxed" style={{ color: v("--ux-ink-2") }}>
-              We keep whether you took a tablet and whether you had a test. Not your cycle, not your
-              symptoms, not how you feel. Nothing here is ever shown to your circle or sent anywhere.
-            </p>
-          </div>
-        </Card>
+            {last && last.result !== "normal" && last.result !== "not_told" && (
+              <Card pad={16} style={{ background: v("--ux-tint-amber"), borderColor: "transparent" }}>
+                <p className="text-xsm leading-relaxed" style={{ color: v("--ux-ink-2") }}>
+                  A low result is common and usually fixable. The weekly iron tablet below is free at your Anganwadi —
+                  ask there, and get tested again in three months.
+                </p>
+              </Card>
+            )}
+
+            {/* Signs — a prompt, explicitly not a diagnosis */}
+            <div>
+              <SectionHead title={tr("healthStrength.doesAnyOfThisSoundLike")} sub={tr("healthStrength.thisIsNotADiagnosisOnly")} icon="ListChecks" />
+              <Card pad={16}>
+                <Picks options={TIRED_SIGNS} value={signs} multi label="Signs"
+                       onPick={(s) => setSigns(signs.includes(s) ? signs.filter((x) => x !== s) : [...signs, s])} />
+                {many && (
+                  <p className="mt-3.5 rounded-[12px] px-3.5 py-3 text-xsm leading-relaxed" style={{ background: v("--ux-tint-amber"), color: v("--ux-ink-2") }}>
+                    That is worth ten minutes at a free test. It might be iron, it might be something else — a test tells you,
+                    and guessing does not. Nothing you tick here is saved.
+                  </p>
+                )}
+              </Card>
+            </div>
+
+            {/* Iron — weekly, ticked on the server */}
+            <div>
+              <SectionHead title={tr("healthStrength.theWeeklyTablet")}
+                           sub={String(ironInfo?.payload?.where ? `Free at ${ironInfo.payload.where}` : tr("healthStrength.freeFromTheAnganwadiOneA"))}
+                           icon="Pill" chip={tookWeeks ? `${tookWeeks} of ${data?.weeks.length ?? 8} weeks` : undefined} />
+              <Card pad={16}>
+                <div className="flex items-end gap-2" style={{ height: 80 }}>
+                  {(data?.weeks ?? []).map((w) => (
+                    <div key={w.week} className="flex flex-1 flex-col items-center justify-end gap-1.5" title={w.starts}>
+                      <div className="w-full rounded-t-[6px]"
+                           style={{ height: w.took ? "100%" : "16%", background: v(w.took ? "--ux-green-ink" : "--ux-surface-2") }} />
+                      <span className="text-center text-[10px] leading-tight" style={{ color: v("--ux-muted") }}>{w.label}</span>
+                    </div>
+                  ))}
+                </div>
+                <div className="mt-4 flex flex-wrap items-center gap-2 border-t pt-3.5" style={{ borderColor: v("--ux-line") }}>
+                  <p className="flex-1 text-xsm" style={{ color: v("--ux-ink-2") }}>
+                    {data?.took_this_week ? "Ticked for this week. Well done." : tr("healthStrength.aWeeklyTabletIsEasierTo")}
+                  </p>
+                  {data?.took_this_week
+                    ? <Btn size="sm" variant="ghost" loading={busy === "iron"} onClick={() => void tick(false)}>Undo</Btn>
+                    : <Btn size="sm" icon="Check" loading={busy === "iron"} onClick={() => void tick(true)}>{tr("healthStrength.iTookIt")}</Btn>}
+                </div>
+              </Card>
+            </div>
+
+            {/* Other free checks, from the staff-managed catalogue */}
+            {others.length > 0 && (
+              <div>
+                <SectionHead title={tr("healthStrength.otherThingsThatCostNothing")} sub={`${others.length} free checks`} icon="Stethoscope" />
+                <div className="grid gap-3 sm:grid-cols-2">
+                  {others.map((c) => (
+                    <Card key={c.id} pad={16}>
+                      <div className="flex items-start gap-3.5">
+                        <IconTile icon="Stethoscope" tint="--ux-tint-green" ink="--ux-green-ink" size={40} />
+                        <div className="min-w-0 flex-1">
+                          <div className="flex flex-wrap items-center gap-2">
+                            <p className="text-sm font-bold" style={{ color: v("--ux-ink") }}>{c.title}</p>
+                            {c.free && <Pill tone="green" size="sm">Free</Pill>}
+                          </div>
+                          {c.body && <p className="mt-1 text-xs leading-relaxed" style={{ color: v("--ux-muted") }}>{c.body}</p>}
+                          <p className="mt-1.5 text-xs" style={{ color: v("--ux-ink-2") }}>
+                            {[c.payload?.every, c.payload?.where].filter(Boolean).map(String).join(" · ")}
+                          </p>
+                        </div>
+                      </div>
+                    </Card>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            <Card pad={16} style={{ background: v("--ux-surface-2"), borderColor: "transparent" }}>
+              <div className="flex items-start gap-3">
+                <I name="Lock" className="mt-[2px] h-[16px] w-[16px] shrink-0" style={{ color: v("--ux-muted") }} />
+                <p className="text-xsm leading-relaxed" style={{ color: v("--ux-ink-2") }}>
+                  We keep which weeks you ticked and the tests you add. Not your symptoms, not how you feel.
+                  Nothing here is ever shown to your circle or to anyone else.
+                </p>
+              </div>
+            </Card>
+          </>
+        )}
       </div>
     </HomeShell>
   );

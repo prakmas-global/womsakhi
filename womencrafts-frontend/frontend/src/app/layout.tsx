@@ -1,11 +1,5 @@
 import type { Metadata, Viewport } from "next";
-import {
-  Caveat,
-  Fraunces,
-  Poppins,
-  Inter,
-  Plus_Jakarta_Sans,
-} from "next/font/google";
+import { Plus_Jakarta_Sans } from "next/font/google";
 import "./globals.css";
 import { AuthProvider } from "@/context/AuthContext";
 import { ThemeProvider } from "@/context/ThemeContext";
@@ -27,83 +21,14 @@ import ToastProvider from "@/design-system/feedback/ToastProvider";
 import ConfirmProvider from "@/design-system/feedback/ConfirmProvider";
 import AppSplash from "@/components/app-splash/AppSplash";
 
-const poppins = Poppins({
-  subsets: ["latin"],
-  weight: ["400", "500", "600", "700", "800"],
-  variable: "--font-poppins",
-  display: "swap",
-});
-
 /**
- * The display face — headlines and figures only.
+ * The one typeface (design-system/brand.css): Plus Jakarta Sans, everywhere.
+ * Headings differ by weight and size, never by family. Fraunces, Poppins,
+ * Inter and Caveat are no longer downloaded; brand.css aliases their old
+ * variables to this one, so nothing still naming them falls back to Georgia.
  *
- * Poppins is a fine interface sans and a poor magazine voice: at 56px a
- * geometric sans reads as an app header, not a cover line. Fraunces is a
- * variable serif with a `SOFT`/`WONK` axis, which is what gives the Home
- * masthead and the money figure their editorial weight without importing a
- * second static family per weight.
- *
- * Latin only, and deliberately: every non-Latin script already has a Noto
- * face below, and those keep their own headline rendering rather than being
- * forced through a serif that has no glyphs for them.
- */
-const fraunces = Fraunces({
-  subsets: ["latin"],
-  // No `weight` list on purpose: Fraunces is a variable font, and next/font
-  // rejects `axes` alongside pinned static weights. Omitting weight ships the
-  // whole variable range, which is what lets one file cover 400 body italics
-  // and the 900 cover line without a second download.
-  axes: ["SOFT", "WONK", "opsz"],
-  /*
-    `--font-fraunces`, not `--font-display`.
-
-    It was `--font-display`, and `design-system/tokens.css` also declares a
-    `--font-display` — so the two collided and the token file won. Fraunces was
-    downloaded on every request and never drawn anywhere. Naming the face after
-    itself and letting the token compose the STACK is the only arrangement
-    where that cannot happen again.
-  */
-  variable: "--font-fraunces",
-  display: "swap",
-});
-
-/**
- * The hand-written voice — annotations only.
- *
- * The Learn board carries two pieces of handwriting from the supplied art:
- * "Small Steps Big Changes" and the WomSakhi quote, both baked into
- * `hero-learn-banner.webp`. The third, "You can do this" over the How-it-works
- * strip, is live text — it sits beside content that changes and had to stay
- * selectable and translatable rather than becoming a picture of a sentence.
- *
- * `preload: false` because exactly one line on one screen uses it. It is
- * fetched when that screen renders and never sits in the critical path of the
- * other hundred and twenty-eight routes.
- */
-const caveat = Caveat({
-  subsets: ["latin"],
-  weight: ["600", "700"],
-  variable: "--font-script",
-  display: "swap",
-  preload: false,
-});
-
-const inter = Inter({
-  subsets: ["latin"],
-  variable: "--font-inter",
-  display: "swap",
-});
-
-/**
- * The reading face, and the reason it is not Inter any more.
- *
- * The marketing site is Fraunces over Plus Jakarta Sans. A woman who reads the
- * site and then signs in should not meet a different typeface on the other
- * side of the door — the brand is the pair, not the colours alone. Jakarta is
- * also a slightly warmer, rounder humanist than Inter, which suits a berry and
- * cream palette better than Inter's neutrality does.
- *
- * Variable, so the whole weight range is one file.
+ * Variable, so the whole weight range is one file. Indic and Arabic text falls
+ * through, letter by letter, to the Noto faces named in `--font-scripts`.
  */
 const jakarta = Plus_Jakarta_Sans({
   subsets: ["latin"],
@@ -127,8 +52,8 @@ export const viewport: Viewport = {
      is the most common accessibility failure on mobile web, and this app is
      built for women who may well need to pinch a form field larger. */
   themeColor: [
-    { media: "(prefers-color-scheme: light)", color: "#fcf8f7" },  /* Warm Cream */
-    { media: "(prefers-color-scheme: dark)", color: "#150c0f" },   /* Deep Plum, deepened */
+    { media: "(prefers-color-scheme: light)", color: "#fbf9fd" },  /* --ws-canvas */
+    { media: "(prefers-color-scheme: dark)", color: "#110c1d" },   /* --ws-canvas, dark */
   ],
 };
 
@@ -209,7 +134,7 @@ export default async function RootLayout({
       lang={lang}
       dir={dir}
       suppressHydrationWarning
-      className={`${poppins.variable} ${inter.variable} ${jakarta.variable} ${fraunces.variable} ${caveat.variable} h-full${isDark ? " dark" : ""}`}
+      className={`${jakarta.variable} h-full${isDark ? " dark" : ""}`}
       data-text-size={textSize}
       style={{ fontSize: `${rootSize}px`, ["--ux-fs-scale" as string]: String(rootSize / 16) }}
     >

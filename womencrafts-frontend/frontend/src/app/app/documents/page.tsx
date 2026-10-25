@@ -14,6 +14,7 @@ import {
 } from "@/lib/shop-api";
 import { apiUploadImage } from "@/lib/uploads-api";
 import { ListingCard, OrderCard, Storefront } from "./shop-parts";
+import { StoreBar } from "@/components/ux/shop/StoreBar";
 import {
   Activity, EarnHero, Figure, GrowBanner, Head, Journey, NeedHelp, QuickActions,
   SellTips, SuccessStory, WaysToEarn, type Happening, type Step,
@@ -254,6 +255,7 @@ export default function ShopPage() {
     <HomeShell active="/app/documents" rail={rail} loadFailed="your shop">
       <div className="flex flex-col">
         <EarnHero />
+        <StoreBar />
 
         <div className={`mb-6 grid gap-3.5 lg:mb-5 ${GROUP}`}
              style={{ gridTemplateColumns: "repeat(auto-fit, minmax(190px, 1fr))" }}>

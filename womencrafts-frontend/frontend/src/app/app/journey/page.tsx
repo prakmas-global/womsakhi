@@ -210,7 +210,7 @@ export default function JourneyPage() {
           <p className={styles.heroWords}>Learn<br />Earn<br />Connect<br />Grow<br />Together <Heart /></p>
         </section>
         <nav className={styles.tabs} aria-label={tr("journey.journeyAreas")}>
-          {[['Overview','Sparkles','/app/journey'],['Learning','BookOpen','/app/learn'],['Work','Briefcase','/app/work'],['Earn','IndianRupee','/app/earn'],['Circle','Users','/app/circle'],['Health & Wellness','Heart','/app/wellness'],['Goals','Target','/app/goals']].map(([label,icon,href],index)=><Link href={href} key={label} aria-current={index===0?'page':undefined}><span>{icon==='BookOpen'?<BookOpen/>:icon==='Briefcase'?<BriefcaseBusiness/>:icon==='IndianRupee'?<IndianRupee/>:icon==='Users'?<UsersRound/>:icon==='Heart'?<Heart/>:icon==='Target'?<Target/>:<Target/>}</span>{label}</Link>)}
+          {[['Overview','Sparkles','/app/journey'],['Learning','BookOpen','/app/learn'],['Work','Briefcase','/app/work'],['Earn','IndianRupee','/app/earn'],['Community','Users','/app/community'],['Health & Wellness','Heart','/app/wellness'],['Goals','Target','/app/goals']].map(([label,icon,href],index)=><Link href={href} key={label} aria-current={index===0?'page':undefined}><span>{icon==='BookOpen'?<BookOpen/>:icon==='Briefcase'?<BriefcaseBusiness/>:icon==='IndianRupee'?<IndianRupee/>:icon==='Users'?<UsersRound/>:icon==='Heart'?<Heart/>:icon==='Target'?<Target/>:<Target/>}</span>{label}</Link>)}
         </nav>
 
         <div className={styles.featureGrid}>

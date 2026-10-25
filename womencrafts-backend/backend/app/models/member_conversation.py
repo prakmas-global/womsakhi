@@ -40,7 +40,13 @@ class MemberConversationModel:
     KIND_MENTOR = "mentor"
     KIND_CIRCLE = "circle"
     KIND_TEAM = "team"
-    KINDS = (KIND_BUYER, KIND_SELLER, KIND_MENTOR, KIND_CIRCLE, KIND_TEAM)
+    #: A verified member who wants to hire her, and she who can do the work —
+    #: opened from "Find people" (app/routes/work_talent.py), both sides "work".
+    KIND_WORK = "work"
+    #: Two members, about anything — "Message her" from a mentor's page, a swap,
+    #: a story, a circle (routes/me_messages.py `start_conversation`).
+    KIND_MEMBER = "member"
+    KINDS = (KIND_BUYER, KIND_SELLER, KIND_MENTOR, KIND_CIRCLE, KIND_TEAM, KIND_WORK, KIND_MEMBER)
 
     #: How long after sending she may still correct a message. Long enough to
     #: catch a typo in a price; short enough that a buyer who already acted on
@@ -221,6 +227,9 @@ class MemberConversationModel:
             "starred": bool(doc.get("starred")),
             "context": doc.get("context"),
             "party": doc.get("party") or {},
+            # Set on both copies when she says "not interested": nothing more
+            # can be sent into it from either side.
+            "closed": bool(doc.get("closed")),
         }
         if with_messages:
             pinned = [p for p in (doc.get("pinned") or []) if p]

@@ -36,7 +36,7 @@ export function formatMobile(digits: string): string {
   return digits.length > 5 ? `${digits.slice(0, 5)} ${digits.slice(5)}` : digits;
 }
 
-/** The staff panel's three rows (web, `photo="plain"`), as approved in D1–D3. */
+/** The staff panel's three rows, under the caption on the web. */
 export function StaffAside() {
   return (
     <>

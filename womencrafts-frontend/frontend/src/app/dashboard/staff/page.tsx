@@ -245,7 +245,7 @@ export default function StaffPage() {
       <div className="relative mb-6 min-h-52 overflow-hidden rounded-2xl border border-line bg-[#fff8f2] sm:min-h-60">
         {/* Brand placeholder where the illustration will go (owner rule: no
             image files until the final art is approved). Same box, same size. */}
-        <div aria-hidden className="absolute inset-0 bg-[linear-gradient(120deg,#fdeef6_0%,#f3e9fb_45%,#d21f7c_78%,#7440a6_100%)]">
+        <div aria-hidden className="absolute inset-0 bg-[linear-gradient(120deg,#fff0f7_0%,#f4f2ff_45%,#c80066_78%,#4830f0_100%)]">
           <UserCog className="absolute right-[12%] top-1/2 hidden h-24 w-24 -translate-y-1/2 text-white/80 sm:block" strokeWidth={1.4} />
         </div>
         <div className="absolute inset-0 bg-gradient-to-r from-[#fffaf5] via-[#fffaf5]/90 to-transparent sm:via-[#fffaf5]/55" />

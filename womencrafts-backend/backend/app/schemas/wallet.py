@@ -123,3 +123,13 @@ class ProgramDetail(BaseModel):
     joined_on: str
     curriculum: list[dict]
     certificate_code: str = ""
+    owner_kind: str = "staff"
+    teacher_name: str = "WomSakhi team"
+    price_minor: int = 0
+    is_owner: bool = False
+    #: Her enrolment payment on a paid course: "" | awaiting | claimed | paid | declined.
+    payment_status: str = ""
+    #: The teacher's UPI id — only while she has asked to join and not yet been confirmed.
+    upi_id: str = ""
+    #: Whether the lessons' text and video are open to her (joined, or her own course).
+    can_learn: bool = False

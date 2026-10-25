@@ -4,7 +4,7 @@ import { useCallback, useState } from "react";
 import Link from "next/link";
 import * as Icons from "@/components/ux/icons";
 
-import { Btn, Card, EmptyState, IconTile, NoteBtn, Pill, SectionHead, SourceNote, Tabs, plural } from "@/components/ux/kit";
+import { Btn, Card, EmptyState, IconTile, NoteBtn, SectionHead, SourceNote, Tabs, plural } from "@/components/ux/kit";
 import { apiMeProfile, apiSendMessage, type MeProfile } from "@/lib/member-api";
 import { apiLikeStory, apiStories, type Story } from "@/lib/community-api";
 import { useResource } from "@/lib/use-resource";
@@ -13,10 +13,13 @@ import { useCircles } from "@/components/ux/live";
 import { useHelplines } from "@/components/ux/entitlements";
 import { LOCAL_ART as RAW_LOCAL_ART } from "@/components/ux/local/data";
 import { useT } from "@/i18n";
-import { ListGroup } from "@/components/ux/mobile/ListRow";
 import { SegmentedControl } from "@/components/ux/mobile/SegmentedControl";
-import { PhoneRow } from "@/components/ux/PhoneParts";
 import { useTranslated } from "@/i18n/data";
+import { MediaCard, MediaGrid, Fact } from "@/components/ux/media/MediaCard";
+import { artFor } from "@/components/ux/media/art";
+
+/** A circle's own uploaded cover, never the shared library fallback. */
+const ownCover = (src?: string) => (src && !src.startsWith("/ux/") ? src : null);
 
 /**
  * Sakhi Local — her city, not the country.
@@ -103,7 +106,9 @@ export default function LocalPage() {
                   <Link href={`/app/circles/${g.id}`}
                      className="ux-i ux-sq flex items-center gap-3 rounded-[12px] border p-2.5"
                      style={{ borderColor: "var(--ux-line)", ["--i" as string]: i }}>
-                    <IconTile icon={g.icon} tint={g.tint} ink={g.ink} size={36} radius={10} />
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img src={artFor([g.name, g.place, g.blurb], "circle", ownCover(g.art), g.id)} alt="" loading="lazy"
+                         className="h-[48px] w-[64px] shrink-0 rounded-[10px] object-cover" />
                     <span className="min-w-0 flex-1">
                       <span className="block truncate text-xsm font-semibold" style={{ color: "var(--ux-ink)" }}>
                         {g.name}
@@ -178,16 +183,16 @@ export default function LocalPage() {
       )}
 
       {tab === "Women near you" && (
-        <div className="ux-deck ux-stagger space-y-[16px]">
+        <div className="ux-stagger grid gap-[16px] lg:grid-cols-2">
           {STORIES.map((s, i) => {
             const on = likes[s.id]?.mine ?? s.liked_by_me;
             return (
               <Card key={s.id} className="ux-i ux-onscroll overflow-hidden" style={{ ["--i" as string]: i }} pad={0}>
-                <div className="relative h-[160px] overflow-hidden" style={{ background: "var(--ux-tint-lilac)" }}>
-                  {s.cover && (
-                    /* eslint-disable-next-line @next/next/no-img-element */
-                    <img loading="lazy" decoding="async" src={s.cover} alt="" className="ux-art h-full w-full object-cover" />
-                  )}
+                <div className="relative aspect-[16/10] overflow-hidden" style={{ background: "var(--ux-tint-lilac)" }}>
+                  {/* Her own cover, else a picture of what the story is about. */}
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img loading="lazy" decoding="async" src={artFor([s.title, s.program, s.body], "story", s.cover, s.id)} alt=""
+                       className="ux-art h-full w-full object-cover" />
                   {/* The scrim belongs on the text's own container, not on a
                       sibling: as a sibling, white text over a cover that failed
                       to load would sit on a pale tint at 1.09:1. */}
@@ -273,46 +278,20 @@ export default function LocalPage() {
 
       {tab === "Groups" && (
         GROUPS.length ? (
-          <>
-          {/* Destinations, so on a phone they are rows of one grouped list. */}
-          <ListGroup className="lg:hidden">
+          <MediaGrid>
             {GROUPS.map((g) => (
-              <PhoneRow key={g.id} href={`/app/circles/${g.id}`} icon={g.icon} tint={g.tint} ink={g.ink}
-                        title={
-                          <span className="flex flex-wrap items-center gap-2">
-                            {g.name}
-                            {g.joined && <Pill tone="brand" size="sm">{tr("stories.youAreInThis")}</Pill>}
-                          </span>
-                        }
-                        meta={`${g.members} ${plural("member", g.members)} · ${g.place} · ${g.activity}`}
-                        body={g.blurb || undefined} />
+              <MediaCard key={g.id} href={`/app/circles/${g.id}`}
+                image={artFor([g.name, g.place, g.blurb], "circle", ownCover(g.art), g.id)} alt={g.name}
+                topLeft={{ text: g.kind }}
+                topRight={g.joined ? { text: tr("stories.youAreInThis"), tone: "green" } : null}
+                overlay={<><Icons.UsersRound className="h-[13px] w-[13px]" /> {g.members} {plural("member", g.members)}</>}
+                title={g.name}
+                subtitle={g.blurb || g.place}
+                meta={<><Fact icon="Tag">{g.place}</Fact><Fact icon="MessagesSquare">{g.activity}</Fact></>}
+                highlight={g.joined}
+                footer={<Btn href={`/app/circles/${g.id}`} variant={g.joined ? "outline" : "soft"} size="sm" full iconEnd="ArrowRight">{g.joined ? "Open" : "See the circle"}</Btn>} />
             ))}
-          </ListGroup>
-          <div className="ux-deck hidden grid-cols-2 gap-[16px] lg:grid">
-            {GROUPS.map((g, i) => (
-              <Card key={g.id} className="ux-i ux-onscroll" style={{ ["--i" as string]: i }}>
-                <div className="flex items-start gap-3.5">
-                  <IconTile icon={g.icon} tint={g.tint} ink={g.ink} size={48} radius={13} />
-                  <div className="min-w-0 flex-1">
-                    <div className="flex items-start gap-2">
-                      <h3 className="min-w-0 flex-1 truncate text-sm font-semibold" style={{ color: "var(--ux-ink)" }}>
-                        {g.name}
-                      </h3>
-                      {g.joined && <Pill tone="brand" size="sm">{tr("stories.youAreInThis")}</Pill>}
-                    </div>
-                    <p className="mt-1 text-xs" style={{ color: "var(--ux-muted)" }}>
-                      {g.members} {plural("member", g.members)} · {g.place} · {g.activity}
-                    </p>
-                    {g.blurb && <p className="mt-2 text-xsm" style={{ color: "var(--ux-ink-2)" }}>{g.blurb}</p>}
-                  </div>
-                </div>
-                <div className="mt-3.5 flex justify-end border-t pt-3.5" style={{ borderColor: "var(--ux-line)" }}>
-                  <Btn href={`/app/circles/${g.id}`} variant="soft" size="sm" iconEnd="ArrowRight">Open</Btn>
-                </div>
-              </Card>
-            ))}
-          </div>
-          </>
+          </MediaGrid>
         ) : (
           <Card>
             <EmptyState icon="UsersRound" title={tr("stories.noGroupsYet")}

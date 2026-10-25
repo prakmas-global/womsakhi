@@ -1,5 +1,6 @@
 "use client";
 
+import { artFor } from "@/components/ux/media/art";
 import { useCallback } from "react";
 
 import { apiSearch, type SearchHit as ApiHit } from "@/lib/entitlements-api";
@@ -10,18 +11,19 @@ import {
   type ApiProgramDetail,
   apiCircleSavings,
   type ApiCircleSavings,
-  apiApplications, apiCatalogPrograms, apiEvents, apiMyPrograms, apiOpportunities,
+  apiApplications, apiCatalogPrograms, apiEvents, apiMyPrograms, apiOpportunities, apiOpportunity,
   apiCircle, apiCirclePosts, apiMyMentorRequests,
   type Application, type CatalogProgramRow, type Enrollment,
-  type CirclePost, type GrowthEvent, type MentorRequest, type Opportunity,
+  type CirclePost, type GrowthEvent, type MentorRequest, type Opportunity, type OpportunityMatch, type OpportunityQuery,
 } from "@/lib/growth-api";
 
 import { EVENTS, type Ev, type EventKind } from "./events/data";
 import { CIRCLE_POSTS, MY_CIRCLES, type Circle } from "./circles/data";
 import { type Find } from "./discover/data";
 import { MY_SESSIONS } from "./mentors/data";
+import { initialsPhoto } from "./live";
 import { type SearchHit } from "./home/data";
-import { CONTINUING, TOP_PICKS, type Course } from "./learning/data";
+import { normCategory, realDuration, type Course } from "./learning/data";
 import { APPLICATIONS, type Job, type WorkKind, type WorkMode } from "./work/data";
 
 /**
@@ -76,6 +78,10 @@ const MODE: Record<string, WorkMode> = {
   Remote: "Remote", Hybrid: "Hybrid", "On-site": "On-site",
 };
 
+/** The server's match, when the job names skills from the masters. */
+const fitOf = (o: Opportunity): OpportunityMatch | undefined =>
+  o.match && "of" in o.match && o.match.of ? (o.match as OpportunityMatch) : undefined;
+
 export function toJob(o: Opportunity): Job {
   const [low, high] = parsePay(o.pay);
   return {
@@ -99,10 +105,13 @@ export function toJob(o: Opportunity): Job {
     verified: false,
     womenLed: false,
     applicants: o.applicant_count,
-    // A match score needs her profile and a model to compare it against.
-    // Zero, and the screen hides the badge, rather than a number that looks
-    // computed and is not.
-    match: 0,
+    // From the server: her work-profile skills against the job's skill keys.
+    // Zero when there is nothing to compare, and the screen hides the badge.
+    match: fitOf(o) ? Math.round((fitOf(o)!.have.length / fitOf(o)!.of) * 100) : 0,
+    fit: fitOf(o),
+    ownerKind: o.owner_kind ?? "staff",
+    isMine: Boolean(o.is_mine),
+    categoryName: o.category_name || undefined,
     about: o.desc,
     responsibilities: [],
     needs: o.experience ? [o.experience] : [],
@@ -115,7 +124,8 @@ export function toJob(o: Opportunity): Job {
     // Compared against the START of today, not the instant: a listing closing
     // "today" is open all day, and marking it shut at 00:01 would lose her a
     // day of a job she could still have applied for.
-    closed: isPast(o.deadline),
+    // Or taken down by whoever posted it — a member's post, or the team's.
+    closed: isPast(o.deadline) || o.status === "closed",
   };
 }
 
@@ -132,11 +142,31 @@ function isPast(deadline: string | undefined): boolean {
 export const useJobs = (): Resource<Job[]> =>
   useResource(useCallback(async (s: AbortSignal) => (await apiOpportunities(s)).map(toJob), []), []);
 
+/**
+ * The board, narrowed on the server — "for my skills", a category, or skills
+ * from the work masters. `key` is the query as a string so the fetch reruns
+ * when (and only when) the filters change.
+ */
+export function useJobsFor(query: OpportunityQuery): Resource<Job[]> {
+  const key = JSON.stringify(query);
+  return useResource(
+    useCallback(async (s: AbortSignal) => (await apiOpportunities(s, JSON.parse(key))).map(toJob), [key]),
+    [],
+  );
+}
+
+/** One opening, fetched by id — so a closed one, or her own post, still opens. */
+export const useJob = (id: string): Resource<Job | null> =>
+  useResource(useCallback(async (s: AbortSignal) => toJob(await apiOpportunity(id, s)), [id]), null);
+
 export type UxApplication = (typeof APPLICATIONS)[number];
 
+// The server's words (models/growth.py ApplicationModel): offered, closed.
+// "offer" and "rejected" were never sent, so Offers stayed at 0 for ever and
+// a closed application read as still "Applied".
 const STAGE: Record<string, string> = {
   applied: "Applied", shortlisted: "Shortlisted", interview: "Interview",
-  offer: "Offer", rejected: "Closed", withdrawn: "Closed",
+  offered: "Offer", closed: "Closed", withdrawn: "Closed",
 };
 
 const STAGE_LOOK: Record<string, { tone: string; ink: string; step: number }> = {
@@ -166,7 +196,8 @@ const toApplication = (a: Application): UxApplication => {
     // What is actually happening, in her words. The API gives a status word;
     // the screen needs a sentence, and a blank line here reads as "nothing is
     // happening" — which is the one thing she is worried about.
-    when: a.note?.trim() || WAITING[stage] || "",
+    // The hirer's last word on it — never her own application note.
+    when: a.staff_note?.trim() || WAITING[stage] || "",
     at: a.applied_on,
     ...(STAGE_LOOK[stage] ?? STAGE_LOOK.Applied),
   };
@@ -281,11 +312,23 @@ export const useEvents = (): Resource<EventLists> =>
 
 /* ── Mentor sessions ─────────────────────────────────────────────────── */
 
-export type UxSession = (typeof MY_SESSIONS)[number];
+export type UxSession = (typeof MY_SESSIONS)[number] & {
+  /** How to meet, once she may see it: a link, a number to call, or a place. */
+  meeting?: string;
+  priceMinor?: number;
+  /** "" | awaiting | claimed | paid */
+  paymentStatus?: string;
+  upiId?: string;
+  note?: string;
+  /** The server's word — "closed" is a session that happened (and can be rated). */
+  status?: string;
+  /** ISO time, when a member mentor set one — for calendars. */
+  scheduledFor?: string;
+};
 
 const SESSION_STATE: Record<string, UxSession["state"]> = {
   pending: "Requested", accepted: "Upcoming",
-  completed: "Done", declined: "Done", cancelled: "Done", withdrawn: "Done",
+  completed: "Done", closed: "Done", declined: "Done", cancelled: "Done", withdrawn: "Done",
 };
 
 /**
@@ -300,14 +343,22 @@ const toSession = (r: MentorRequest): UxSession => ({
   id: r.id,
   mentorId: r.mentor_id,
   mentor: r.mentor_name,
-  photo: MY_SESSIONS[0].photo,
+  // Her initials, not one stock photo shared by every session.
+  photo: initialsPhoto(r.mentor_name || "Mentor", r.mentor_id),
   topic: r.goal,
   // What she asked for, not a time anybody confirmed. Printing a confirmed
   // time for a pending request is how a woman ends up waiting on a call
   // nobody agreed to.
-  when: r.preferred_time || `Asked ${r.when}`,
+  when: r.scheduled_for || r.preferred_time || `Asked ${r.when}`,
   state: SESSION_STATE[String(r.status).toLowerCase()] ?? "Requested",
   mode: "Video call",
+  meeting: r.meeting || "",
+  priceMinor: r.price_minor || 0,
+  paymentStatus: r.payment_status || "",
+  upiId: r.upi_id || "",
+  note: r.mentor_note || "",
+  status: String(r.status || "").toLowerCase(),
+  scheduledFor: r.scheduled_for || "",
 });
 
 export const useMentorSessions = (): Resource<UxSession[]> =>
@@ -328,41 +379,68 @@ const toContinuing = (e: Enrollment): Course => ({
   rating: "—",
   count: "",
   pct: Math.round(e.progress || 0),
-  thumb: e.cover || CONTINUING[0].thumb,
-  category: e.category || "Course",
-  hours: e.duration,
+  thumb: artFor([e.program_name, e.category], "course", e.cover, e.program_id || e.id),
+  category: normCategory(e.category || "Course"),
+  hours: realDuration(e.duration),
+  teacher: e.teacher_name || "WomSakhi team",
+  byMember: e.owner_kind === "member",
+  priceMinor: e.price_minor || 0,
+  myStatus: e.status,
+  paymentStatus: e.payment_status,
 });
 
 const toPick = (p: CatalogProgramRow): Course => ({
   id: p.id,
   title: p.name,
-  lessons: 0,
+  lessons: p.curriculum?.length ?? 0,
   level: p.mode || "Beginner",
   rating: "—",
-  count: "",
-  thumb: TOP_PICKS[0].thumb,
-  category: p.category || "Course",
-  hours: p.duration,
+  count: p.enrolled ? `${p.enrolled} learning` : "",
+  // What the course is about, not just its category — so two cooking courses
+  // and a tailoring one do not share one picture.
+  thumb: artFor([p.name, p.category], "course", undefined, p.id),
+  category: normCategory(p.category || "Course"),
+  hours: realDuration(p.duration),
   tag: p.is_full ? undefined : "New",
+  teacher: p.teacher_name || "WomSakhi team",
+  byMember: p.owner_kind === "member",
+  priceMinor: p.price_minor || 0,
+  mine: p.is_mine,
+  myStatus: p.my_status,
 });
 
 export interface Learning {
+  /** Part-way through. */
   continuing: Course[];
+  /** Asked to join a paid course; waiting on the teacher to confirm her payment. */
+  pending: Course[];
+  /** Everything she could start — not hers, not already joined. */
   picks: Course[];
+  /** Every live course in Learn — hers and joined ones included, marked. */
+  all: Course[];
 }
 
 export const useLearning = (): Resource<Learning> =>
   useResource(
     useCallback(async (s: AbortSignal) => {
       const [mine, catalog] = await Promise.all([apiMyPrograms(s), apiCatalogPrograms(s)]);
+      const progress = new Map(mine.map((e) => [e.program_id, e]));
       return {
+        all: catalog.map((p) => {
+          const c = toPick(p);
+          const e = progress.get(p.id);
+          // Her progress on the ones she is learning; nothing invented on the rest.
+          return e && (e.status === "active" || e.status === "completed")
+            ? { ...c, pct: Math.round(e.progress || 0), tag: undefined } : { ...c, tag: undefined };
+        }),
         // Only what she is actually part-way through. A finished course on the
         // "keep going" shelf is a screen telling her to do something twice.
         continuing: mine.filter((e) => e.status === "active").map(toContinuing),
-        picks: catalog.filter((p) => !p.joined).map(toPick),
+        pending: mine.filter((e) => e.status === "pending").map(toContinuing),
+        picks: catalog.filter((p) => !p.my_status || p.my_status === "withdrawn").filter((p) => !p.is_mine).map(toPick),
       };
     }, []),
-    { continuing: [], picks: [] },
+    { continuing: [], pending: [], picks: [], all: [] },
   );
 
 /* ── Search ──────────────────────────────────────────────────────────── */

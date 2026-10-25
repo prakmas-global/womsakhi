@@ -62,10 +62,14 @@ export function MatchCard({ fit, job }: { fit: Match; job: Job }) {
               You have {fit.have.length} of {job.skills.length} skills they ask for
             </span>
           </li>
-          {fit.have.slice(0, 2).map((s) => (
+          {fit.have.slice(0, 3).map((s) => (
             <li key={s} className="flex items-start gap-1.5 text-xs" style={{ color: v("--ux-muted") }}>
               <Icons.Check className="mt-[2px] h-[13px] w-[13px] shrink-0" style={{ color: v("--ux-green-ink") }} />
               <span className="truncate">{s}</span>
+              {fit.verified.includes(s) && (
+                <span className="shrink-0 rounded-full px-1.5 text-[11px] font-bold"
+                      style={{ background: v("--ux-tint-green"), color: v("--ux-green-ink") }}>Verified</span>
+              )}
             </li>
           ))}
         </ul>
@@ -81,6 +85,13 @@ export function MatchCard({ fit, job }: { fit: Match; job: Job }) {
       {fit.missing.length > 0 && (
         <p className="mt-2 text-xs leading-relaxed" style={{ color: v("--ux-muted") }}>
           Not needed to apply: {fit.missing.slice(0, 3).join(", ")}
+        </p>
+      )}
+
+      {fit.pct === null && (
+        <p className="mt-2 text-xs leading-relaxed" style={{ color: v("--ux-muted") }}>
+          Add your skills on <Link href="/app/work/profile" className="font-bold underline" style={{ color: v("--ux-brand") }}>My work profile</Link> to
+          see how well work fits you.
         </p>
       )}
     </Card>

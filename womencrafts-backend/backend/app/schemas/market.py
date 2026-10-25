@@ -25,6 +25,13 @@ class MarketSeller(BaseModel):
     id: str
     name: str
     avatar: str = ""
+    #: Her store's name (app/core/store.py) — "Priya's shop" until she names it.
+    shop_name: str = ""
+    shop_logo: str = ""
+    #: False while she has closed her store; ordering is refused until it opens.
+    open: bool = True
+    #: The sentence a buyer reads while she is away, e.g. "… back on 02 Nov."
+    away_line: str = ""
     #: circle | bought-before | wider. How close she is to the buyer — this is
     #: what the ordering is built on, and it is computed, never stored.
     tie: str

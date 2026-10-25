@@ -72,12 +72,12 @@ const ID_MORE = [
 const MORE_VALUES: readonly string[] = ID_MORE.map((t) => t.value);
 
 const SUPPORT_EMAIL = "hello@womsakhi.com";
-const POLL_MS = 30_000;
 
 const CAPTION = {
   title: "Your application",
   text: "Every account is checked by a real person, usually within a day. You can learn while you wait.",
 };
+const POLL_MS = 30_000;
 
 // ── time, in her words ───────────────────────────────────────────────────────
 

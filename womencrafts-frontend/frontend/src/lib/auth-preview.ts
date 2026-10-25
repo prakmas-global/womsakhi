@@ -23,8 +23,7 @@ export const AUTH_PREVIEW = process.env.NODE_ENV !== "production";
 
 /** Every previewable state, by screen. The gallery is built from this list. */
 export const PREVIEW_STATES = {
-  signin: ["phone", "sms", "sms-wrong", "email", "code", "mfa", "setup", "recovery", "sms-busy"],
-  signup: ["contact", "code", "about"],
+  signin: ["enter", "enter-phone", "enter-email", "code", "code-new", "code-wrong", "mfa", "setup", "recovery"],
   phone: ["enter", "confirm", "sms-out"],
   verify: ["upload", "picked", "in-review", "in-review-24h", "needs-info", "rejected-locked", "rejected-can-reapply", "approved"],
   invite: ["valid", "invalid", "accepted", "incomplete"],
@@ -38,7 +37,6 @@ export const PREVIEW_STATES = {
 } as const;
 
 export type SigninPreview = (typeof PREVIEW_STATES.signin)[number];
-export type SignupPreview = (typeof PREVIEW_STATES.signup)[number];
 export type PhonePreview = (typeof PREVIEW_STATES.phone)[number];
 export type VerifyPreview = (typeof PREVIEW_STATES.verify)[number];
 export type InvitePreview = (typeof PREVIEW_STATES.invite)[number];
@@ -58,7 +56,6 @@ export const PREVIEW_APP_ROUTES = ["/app/verify", "/app/phone", "/app/settings/s
 /** The preview states each guarded route accepts (the route guard checks the value too). */
 export const PREVIEW_ROUTE_STATES: Record<string, readonly string[]> = {
   "/signin": PREVIEW_STATES.signin,
-  "/signup": PREVIEW_STATES.signup,
   "/app/verify": PREVIEW_STATES.verify,
   "/app/phone": PREVIEW_STATES.phone,
   "/app/settings/security": PREVIEW_STATES.security,

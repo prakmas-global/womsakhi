@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
 
 import SakhiLauncher from "@/components/sakhi/SakhiLauncher";
+import { CompleteProfile } from "@/components/ux/CompleteProfile";
 import InstallPrompt from "@/components/ux/mobile/InstallPrompt";
 import { ShellProvider } from "@/components/ux/ShellProvider";
 import type { MeShell } from "@/lib/shell-api";
@@ -341,6 +342,8 @@ export default function MemberShell({
           <ChromeShell>{children}</ChromeShell>
         </ChromeProvider>
         <SakhiLauncher />
+        {/* The contact she did not join with: asked here, later, not at the door. */}
+        <CompleteProfile />
         {/* Asked only after she has an account — a prompt to keep the icon
             means nothing before there is anything to come back to. */}
         <InstallPrompt />

@@ -5,7 +5,7 @@ import { useCallback, useState } from "react";
 import { HomeShell } from "@/components/ux/home/HomeShell";
 import { Btn, Card, EmptyState, I, IconTile, Pill, SourceNote, formatRupees, v } from "@/components/ux/kit";
 import { Sheet } from "@/components/ux/kit/sheet";
-import { Label, Select, Text } from "@/components/ux/kit/form";
+import { Label, More, Picks, Select, Text } from "@/components/ux/kit/form";
 import { EYEBROW, GROUP, GROUP_ROW, Section } from "@/components/ux/earn/phone";
 import { ReadAloud } from "@/components/ux/reach/ReadAloud";
 import { useResource } from "@/lib/use-resource";
@@ -64,6 +64,38 @@ const ICONS = [
   { value: "Wrench", label: "Tools or repairs" },
   { value: "Zap", label: "A bill" },
   { value: "Circle", label: "Something else" },
+];
+
+/**
+ * The payments most women have to keep, one tap each — and the picture comes
+ * with the pick, so there is one choice to make instead of two.
+ */
+const WHAT_IDEAS: { what: string; icon: string }[] = [
+  { what: "School fee", icon: "GraduationCap" }, { what: "Rent", icon: "Home" },
+  { what: "Circle payment", icon: "Coins" }, { what: "Loan repayment", icon: "Coins" },
+  { what: "Electricity bill", icon: "Zap" }, { what: "Gas cylinder", icon: "Zap" },
+  { what: "Medicine", icon: "HeartPulse" }, { what: "Phone recharge", icon: "Zap" },
+];
+const AMOUNT_IDEAS = [500, 1000, 2000, 5000];
+const MISSED_IDEAS = [
+  "A late fee", "The electricity is cut", "I lose my turn in the circle",
+  "She cannot sit the exam", "The landlord asks us to leave",
+];
+const rupee = (n: number) => `₹${n.toLocaleString("en-IN")}`;
+const dayFrom = (days: number) => {
+  const d = new Date();
+  d.setDate(d.getDate() + days);
+  const p = (n: number) => String(n).padStart(2, "0");
+  return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}`;
+};
+const DUE_IDEAS: { label: string; at: () => string }[] = [
+  { label: "Tomorrow", at: () => dayFrom(1) },
+  { label: "In a week", at: () => dayFrom(7) },
+  { label: "In 2 weeks", at: () => dayFrom(14) },
+  { label: "End of the month", at: () => {
+    const d = new Date(); const last = new Date(d.getFullYear(), d.getMonth() + 1, 0).getDate();
+    return dayFrom(last - d.getDate());
+  } },
 ];
 
 export default function MoneyPage() {
@@ -358,26 +390,35 @@ export default function MoneyPage() {
             <Label need>What is it for</Label>
             <Text value={what} onChange={setWhat} label="What the payment is for"
                   placeholder="School fee" max={120} />
+            <Picks options={WHAT_IDEAS.map((w) => w.what)} value={what} label="Usual payments"
+                   onPick={(x) => { setWhat(x); setIcon(WHAT_IDEAS.find((w) => w.what === x)?.icon ?? "Circle"); }} />
           </div>
           <div>
             <Label need>How much</Label>
             <Text value={amount} onChange={setAmount} label="How much, in rupees"
                   placeholder="1800" prefix="₹" />
+            <Picks options={AMOUNT_IDEAS.map(rupee)} value={amount ? rupee(Number(amount.replace(/[^0-9]/g, "")) || 0) : ""}
+                   onPick={(x) => setAmount(x.replace(/[^0-9]/g, ""))} label="Usual amounts" />
           </div>
           <div>
             <Label hint="Leave it blank if there is no date">By when</Label>
             <Text value={due} onChange={setDue} label="The date it is due" type="date" />
+            <Picks options={DUE_IDEAS.map((d) => d.label)} value={DUE_IDEAS.find((d) => d.at() === due)?.label ?? ""}
+                   onPick={(l) => setDue(DUE_IDEAS.find((d) => d.label === l)!.at())} label="By when" />
           </div>
           <div>
             <Label need hint="This decides the order">How hard is it to miss</Label>
             <Select value={weight} onChange={(s) => setWeight(s as Weight)} label="How hard it is to miss"
                     options={(Object.keys(WEIGHT_LABEL) as Weight[]).map((k) => ({ value: k, label: WEIGHT_LABEL[k] }))} />
           </div>
-          <div>
-            <Label hint="Only if something really does">What happens if you miss it</Label>
-            <Text value={ifMissed} onChange={setIfMissed} label="What happens if it is missed"
-                  placeholder="She cannot sit the term test" max={160} />
-          </div>
+          <More label="What happens if you miss it (optional)" open={!!ifMissed}>
+            <Picks options={MISSED_IDEAS} value={ifMissed} label="What happens if it is missed"
+                   onPick={(x) => setIfMissed(ifMissed === x ? "" : x)} />
+            <div className="mt-2.5">
+              <Text value={ifMissed} onChange={setIfMissed} label="What happens if it is missed"
+                    placeholder="She cannot sit the term test" max={160} />
+            </div>
+          </More>
           <div>
             <Label>Picture</Label>
             <Select value={icon} onChange={setIcon} label="A picture for it" options={ICONS} />

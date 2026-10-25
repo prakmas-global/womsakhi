@@ -47,6 +47,8 @@ export type Booking = {
   ref: string;
   art: string;
   cost: string;
+  /** How to join — a video link or a place, written by whoever runs it. "" until then. */
+  meeting?: string;
 };
 
 export const BOOKINGS: Booking[] = [

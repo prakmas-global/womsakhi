@@ -36,6 +36,11 @@ uvloop==0.22.1
 watchfiles==1.2.0
 websockets==16.0
 anthropic==1.0.0
+# Imported directly by Firebase phone-code checks, Razorpay, Mailgun and the
+# engines. It used to arrive only as a dependency of anthropic, which now
+# depends on httpx2 instead — so a fresh install had no httpx, and every
+# Firebase SMS code was answered "We couldn't confirm that code".
+httpx==0.28.1
 sentence-transformers
 redis>=5.0
 

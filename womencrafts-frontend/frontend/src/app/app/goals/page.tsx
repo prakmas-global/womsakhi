@@ -18,6 +18,7 @@ import {
 } from "./goal-views";
 import { useTranslated } from "@/i18n/data";
 import { EngineNudge } from "@/components/ux/reminders/EngineNudge";
+import { Picks } from "@/components/ux/kit/form";
 
 /**
  * My goals.
@@ -51,6 +52,25 @@ import { EngineNudge } from "@/components/ux/reminders/EngineNudge";
  */
 
 const ALL = "All goals";
+
+/**
+ * The goals, amounts and deadlines women write most — one tap each, so the
+ * keyboard is only for the goal that is hers alone. `by` stays words, not a
+ * date (see AddGoal): these are the words most women would have typed.
+ */
+const GOAL_IDEAS: Record<Goal["kind"], string[]> = {
+  money: ["Sewing machine", "Children's school fees", "Emergency fund", "Gold", "Start a shop", "My own phone"],
+  skill: ["Finish a course", "Spoken English", "Learn to use UPI", "Pass a skill test"],
+  count: ["New customers", "Sarees sold", "Orders delivered", "Weeks of saving"],
+};
+const TARGET_IDEAS: Record<Goal["kind"], number[]> = {
+  money: [1000, 5000, 10000, 25000, 50000],
+  skill: [1, 3, 5, 10],
+  count: [5, 10, 25, 50],
+};
+const UNIT_IDEAS = ["customers", "sarees", "orders", "weeks"];
+const BY_IDEAS = ["In 3 months", "In 6 months", "In a year", "Before Diwali", "Before school starts"];
+const asRupees = (n: number) => `₹${n.toLocaleString("en-IN")}`;
 
 /** Only a goal she moves herself can be marked by hand. See GoalCard. */
 const manual = (g: Goal) => g.manual || g.kind === "count";
@@ -247,14 +267,22 @@ function EditGoal({ goal, busy, onCancel, onSave }: {
           <input type="number" min={0} value={target} onChange={(e) => setTarget(Number(e.target.value))}
                  className="mt-1 w-full rounded-xl border px-3 py-2.5 text-sm" style={{ borderColor: v("--ux-line") }} />
         </label>
-        <label className="text-xs font-bold">By when
-          <input value={by} onChange={(e) => setBy(e.target.value)} maxLength={40}
-                 className="mt-1 w-full rounded-xl border px-3 py-2.5 text-sm" style={{ borderColor: v("--ux-line") }} />
-        </label>
-        <label className="text-xs font-bold">Unit
-          <input value={unit} onChange={(e) => setUnit(e.target.value)} maxLength={24}
-                 className="mt-1 w-full rounded-xl border px-3 py-2.5 text-sm" style={{ borderColor: v("--ux-line") }} />
-        </label>
+        <div>
+          <label className="text-xs font-bold">By when
+            <input value={by} onChange={(e) => setBy(e.target.value)} maxLength={40}
+                   className="mt-1 w-full rounded-xl border px-3 py-2.5 text-sm" style={{ borderColor: v("--ux-line") }} />
+          </label>
+          <Picks options={BY_IDEAS} value={by} onPick={setBy} label="By when" />
+        </div>
+        {goal.kind === "count" && (
+          <div>
+            <label className="text-xs font-bold">Unit
+              <input value={unit} onChange={(e) => setUnit(e.target.value)} maxLength={20}
+                     className="mt-1 w-full rounded-xl border px-3 py-2.5 text-sm" style={{ borderColor: v("--ux-line") }} />
+            </label>
+            <Picks options={UNIT_IDEAS} value={unit} onPick={setUnit} label="Unit" />
+          </div>
+        )}
         <label className="text-xs font-bold sm:col-span-2">Note (optional)
           <textarea value={note} onChange={(e) => setGoalNote(e.target.value)} maxLength={500} rows={3}
                     placeholder="Why this matters or the next small step"
@@ -297,7 +325,11 @@ function AddGoal({ busy, onCancel, onSave }: {
   const [by, setBy] = useState("");
 
   const n = Number(target.replace(/[^\d.]/g, ""));
-  const ready = label.trim().length > 1 && Number.isFinite(n) && n > 0;
+  // The server's own limits: a name of three letters or more, and a "by when"
+  // of two. The old check let a two-letter name and an empty deadline through
+  // to a refusal she was never told the reason for.
+  const ready = label.trim().length > 2 && Number.isFinite(n) && n > 0 && by.trim().length > 1;
+  const targetLabel = (x: number) => (kind === "money" ? asRupees(x) : String(x));
 
   const field = "w-full rounded-[12px] px-3.5 py-3 text-smd";
   const fieldStyle = {
@@ -320,6 +352,7 @@ function AddGoal({ busy, onCancel, onSave }: {
                  onChange={(e) => setLabel(e.target.value)}
                  placeholder={tr("goals.sayItInYourOwnWords")} />
         </label>
+        <Picks options={GOAL_IDEAS[kind]} value={label} onPick={setLabel} label="Common goals" />
 
         <fieldset className="flex flex-col gap-1.5">
           <legend className="mb-1.5 text-xs font-bold" style={{ color: v("--ux-ink-2") }}>
@@ -342,22 +375,29 @@ function AddGoal({ busy, onCancel, onSave }: {
         </fieldset>
 
         <div className="flex flex-wrap gap-3">
-          <label className="flex min-w-[9rem] flex-1 flex-col gap-1.5">
-            <span className="text-xs font-bold" style={{ color: v("--ux-ink-2") }}>
-              {kind === "money" ? "How much, in ₹" : "How many"}
-            </span>
-            <input className={field} style={fieldStyle} value={target} inputMode="numeric"
-                   onChange={(e) => setTarget(e.target.value)} placeholder="0" />
-          </label>
+          <div className="min-w-[9rem] flex-1">
+            <label className="flex flex-col gap-1.5">
+              <span className="text-xs font-bold" style={{ color: v("--ux-ink-2") }}>
+                {kind === "money" ? "How much, in ₹" : "How many"}
+              </span>
+              <input className={field} style={fieldStyle} value={target} inputMode="numeric"
+                     onChange={(e) => setTarget(e.target.value)} placeholder="0" />
+            </label>
+            <Picks options={TARGET_IDEAS[kind].map(targetLabel)} value={n > 0 ? targetLabel(n) : ""}
+                   onPick={(x) => setTarget(x.replace(/[^\d]/g, ""))} label={kind === "money" ? "Amounts" : "Numbers"} />
+          </div>
 
           {kind === "count" && (
-            <label className="flex min-w-[9rem] flex-1 flex-col gap-1.5">
-              <span className="text-xs font-bold" style={{ color: v("--ux-ink-2") }}>
-                {tr("goals.howManyWhat")}
-              </span>
-              <input className={field} style={fieldStyle} value={unit} maxLength={24}
-                     onChange={(e) => setUnit(e.target.value)} placeholder={tr("goals.clientsSareesWeeks")} />
-            </label>
+            <div className="min-w-[9rem] flex-1">
+              <label className="flex flex-col gap-1.5">
+                <span className="text-xs font-bold" style={{ color: v("--ux-ink-2") }}>
+                  {tr("goals.howManyWhat")}
+                </span>
+                <input className={field} style={fieldStyle} value={unit} maxLength={20}
+                       onChange={(e) => setUnit(e.target.value)} placeholder={tr("goals.clientsSareesWeeks")} />
+              </label>
+              <Picks options={UNIT_IDEAS} value={unit} onPick={setUnit} label="Units" />
+            </div>
           )}
         </div>
 
@@ -368,6 +408,7 @@ function AddGoal({ busy, onCancel, onSave }: {
           <input className={field} style={fieldStyle} value={by} maxLength={40}
                  onChange={(e) => setBy(e.target.value)} placeholder={tr("goals.beforeDiwali")} />
         </label>
+        <Picks options={BY_IDEAS} value={by} onPick={setBy} label="By when" />
       </div>
 
       <div className="mt-4 flex flex-wrap gap-2">

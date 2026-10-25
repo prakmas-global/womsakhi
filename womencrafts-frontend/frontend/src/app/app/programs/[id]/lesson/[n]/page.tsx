@@ -2,87 +2,61 @@
 
 import { use, useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import * as Icons from "@/components/ux/icons";
 
 import {
   Btn, Card, EmptyState, Progress, RailSkeleton, ScreenSkeleton, SectionHead,
 } from "@/components/ux/kit";
 import { HomeShell } from "@/components/ux/home/HomeShell";
-import { useLearning } from "@/components/ux/growth";
 import { useProgramDetail } from "@/components/ux/growth";
-import { apiSetProgress } from "@/lib/growth-api";
+import { courseArt } from "@/components/ux/learning/data";
+import { CourseQA } from "@/components/ux/learning/CourseQA";
+import { apiCompleteLesson } from "@/lib/growth-api";
 import { useAction } from "@/lib/use-action";
 import { useT } from "@/i18n";
 
+/**
+ * A YouTube link, as an embed that loads only when she presses play.
+ * Anything else is opened in her browser — we do not frame other sites.
+ */
+function youtubeId(url: string): string | null {
+  const m = url.match(/(?:youtube\.com\/(?:watch\?v=|embed\/|shorts\/)|youtu\.be\/)([\w-]{6,})/);
+  return m ? m[1] : null;
+}
 
 /**
  * A lesson.
  *
- * Two decisions shape this screen, and both come from who uses it: a woman on a
- * cheap Android with expensive data, between other work.
+ * The lesson's own words come first and are always open — reading is free,
+ * video is not, and a noisy room makes audio useless. A video, if the teacher
+ * added one, waits behind a play button so nothing downloads uninvited.
  *
- * The transcript is not an afterthought — it is beside the video, always open.
- * Reading is free, video is not, and a noisy room makes audio useless. And
- * "Done, next lesson" is one button, because finishing a lesson and starting
- * the next are the same intention.
+ * "Done — next lesson" is one button, because finishing a lesson and starting
+ * the next are the same intention. Each lesson is recorded on its own, so the
+ * progress bar is exactly the lessons she has finished.
  */
 export default function LessonPage({ params }: { params: Promise<{ id: string; n: string }> }) {
   const tr = useT();
+  const router = useRouter();
   const { id, n } = use(params);
-  const { data: learning, source } = useLearning();
-  const ALL = [...learning.continuing, ...learning.picks];
-  const course = ALL.find((c) => c.id === id);
   const num = Number(n);
-
-  /**
-   * The course's own lessons, and how far through she is.
-   *
-   * `CURRICULUM` was a constant: the same weeks, with the same titles and the
-   * same `done` flags, under every course in the app. Marking a lesson
-   * finished called `setDone(true)` and nothing else, so a woman working
-   * through a course closed the app and came back to find she had not started
-   * — and the certificate at the end counts the same lessons.
-   */
-  const { data: detail, refetch } = useProgramDetail(id);
-  const flat = (detail?.curriculum ?? []).map((c, i) => ({
-    n: i + 1,
-    title: c.title,
-    mins: c.duration || "",
-    done: c.done,
-  }));
-  const lesson = flat.find((l) => l.n === num);
-  const idx = flat.findIndex((l) => l.n === num);
-  const prev = idx > 0 ? flat[idx - 1] : null;
-  const next = idx >= 0 && idx < flat.length - 1 ? flat[idx + 1] : null;
-
-  // Marked just now, or already marked on the server.
-  const [markedNow, setMarkedNow] = useState(false);
-  const done = markedNow || (lesson?.done ?? false);
-
-  /**
-   * Mark this lesson finished.
-   *
-   * The server keeps one number — how far through the course she is — so a
-   * lesson is recorded by moving that number to cover it. Sending the highest
-   * lesson she has reached rather than a count means going back to an earlier
-   * one cannot undo the ones after it.
-   */
-  const finish = useAction(
-    async () => {
-      const total = flat.length || 1;
-      const reached = Math.max(num, Math.round(((detail?.progress ?? 0) / 100) * total));
-      await apiSetProgress(id, Math.min(100, Math.round((reached / total) * 100)));
-    },
-    { onDone: () => { setMarkedNow(true); refetch(); },
-      fallbackError: "That did not save. This lesson is not marked finished yet — try again in a moment." },
-  );
+  const { data: detail, source, refetch } = useProgramDetail(id);
+  const lessons = detail?.curriculum ?? [];
+  const lesson = lessons[num - 1];
+  const hasNext = num < lessons.length;
   const [playing, setPlaying] = useState(false);
   const [notes, setNotes] = useState("");
 
-  // "Not here" is a claim, and it cannot be made while the answer is still on
-  // its way — saying it during the fetch makes the screen flash "that is not
-  // here" before showing itself.
-  if (!course && source === "loading") {
+  const finish = useAction(() => apiCompleteLesson(id, num), {
+    onDone: () => {
+      refetch();
+      router.push(hasNext ? `/app/programs/${id}/lesson/${num + 1}` : `/app/programs/${id}`);
+    },
+    fallbackError: "That did not save. This lesson is not marked finished yet — try again in a moment.",
+  });
+
+  if (!detail && source === "loading") {
     return (
       <HomeShell skeleton="detail" rail={<RailSkeleton />}>
         <ScreenSkeleton shape="detail" />
@@ -90,7 +64,7 @@ export default function LessonPage({ params }: { params: Promise<{ id: string; n
     );
   }
 
-  if (!course || !lesson) {
+  if (!detail || !lesson) {
     return (
       <HomeShell>
         <Card>
@@ -105,48 +79,72 @@ export default function LessonPage({ params }: { params: Promise<{ id: string; n
     );
   }
 
-  const completed = flat.filter((l) => l.done).length + (done && !lesson.done ? 1 : 0);
-  const pct = flat.length ? Math.round((completed / flat.length) * 100) : 0;
+  // Not joined yet (or a paid course still waiting on the teacher): the
+  // lesson's text is not sent, so say why, and send her where she can join —
+  // unless the teacher made this lesson a free preview.
+  const previewing = !detail.can_learn && !!lesson.preview;
+  if (!detail.can_learn && !previewing) {
+    return (
+      <HomeShell>
+        <Card>
+          <EmptyState
+            icon="Lock"
+            title="Join the course to open this lesson"
+            body={detail.status === "pending"
+              ? `The lessons open as soon as ${detail.teacher_name} confirms your payment.`
+              : "It takes one tap, and your progress is saved as you go."}
+            action={<Btn href={`/app/programs/${id}`} variant="primary" iconEnd="ArrowRight">Go to the course</Btn>}
+          />
+        </Card>
+      </HomeShell>
+    );
+  }
+
+  const owner = detail.is_owner;
+  const done = lessons.filter((l) => l.done).length;
+  const pct = lessons.length ? Math.round((done / lessons.length) * 100) : 0;
+  const yt = lesson.video_url ? youtubeId(lesson.video_url) : null;
+  const paragraphs = (lesson.body || "").split(/\n\s*\n/).map((p) => p.trim()).filter(Boolean);
 
   return (
     <HomeShell
       rail={
         <div className="space-y-[16px]">
           <Card>
-            <SectionHead title={tr("programsLesson.thisCourse")} sub={`${completed} of ${flat.length} lessons`} />
-            <Progress pct={pct} track="--ux-track" />
+            <SectionHead title={tr("programsLesson.thisCourse")}
+                         sub={owner ? "Preview — as a learner sees it" : previewing ? "Free preview — join to open every lesson" : `${done} of ${lessons.length} lessons`} />
+            {!owner && !previewing && <Progress pct={pct} track="--ux-track" />}
             <div className="mt-3.5 max-h-[380px] space-y-1 overflow-y-auto">
-              {/* The course's own lessons, flat. The server keeps no sections,
-                  and inventing them here is how the mock got in. */}
-              <div>
-                <>
-                  {flat.map((l) => {
-                    const here = l.n === num;
-                    return (
-                      <Link
-                        key={l.n}
-                        href={`/app/programs/${course.id}/lesson/${l.n}`}
+              {lessons.map((l, i) => {
+                const here = i + 1 === num;
+                if (previewing && !l.preview) {
+                  return (
+                    <div key={i} className="flex items-center gap-2.5 px-2 py-2">
+                      <span className="grid h-[20px] w-[20px] shrink-0 place-items-center rounded-full" style={{ background: "var(--ux-track)" }}>
+                        <Icons.Lock className="h-[10px] w-[10px]" style={{ color: "var(--ux-muted)" }} />
+                      </span>
+                      <span className="min-w-0 flex-1 truncate text-xs" style={{ color: "var(--ux-muted)" }}>{l.title}</span>
+                    </div>
+                  );
+                }
+                return (
+                  <Link key={i} href={`/app/programs/${id}/lesson/${i + 1}`}
                         className="ux-hov flex items-center gap-2.5 rounded-[8px] px-2 py-2 transition-colors hover:bg-[var(--ux-surface-2)]"
-                        style={{ background: here ? "var(--ux-brand-tint)" : "transparent" }}
-                      >
-                        <span className="grid h-[20px] w-[20px] shrink-0 place-items-center rounded-full"
-                              style={{ background: l.done || (here && done) ? "var(--ux-green-ink)" : here ? "var(--ux-brand-600)" : "var(--ux-track)" }}>
-                          {l.done || (here && done)
-                            ? <Icons.Check className="h-[11px] w-[11px] text-white" strokeWidth={3} />
-                            : <span className="text-2xs font-bold" style={{ color: here ? "var(--ux-on-brand)" : "var(--ux-muted)" }}>{l.n}</span>}
-                        </span>
-                        <span className="min-w-0 flex-1 truncate text-xs"
-                              style={{ color: here ? "var(--ux-brand)" : "var(--ux-ink-2)", fontWeight: here ? 600 : 400 }}>
-                          {l.title}
-                        </span>
-                        {l.mins && (
-                          <span className="shrink-0 text-[13px] lg:text-2xs" style={{ color: "var(--ux-faint)" }}>{l.mins}</span>
-                        )}
-                      </Link>
-                    );
-                  })}
-                </>
-              </div>
+                        style={{ background: here ? "var(--ux-brand-tint)" : "transparent" }}>
+                    <span className="grid h-[20px] w-[20px] shrink-0 place-items-center rounded-full"
+                          style={{ background: l.done ? "var(--ux-green-ink)" : here ? "var(--ux-brand-600)" : "var(--ux-track)" }}>
+                      {l.done
+                        ? <Icons.Check className="h-[11px] w-[11px] text-white" strokeWidth={3} />
+                        : <span className="text-2xs font-bold" style={{ color: here ? "var(--ux-on-brand)" : "var(--ux-muted)" }}>{i + 1}</span>}
+                    </span>
+                    <span className="min-w-0 flex-1 truncate text-xs"
+                          style={{ color: here ? "var(--ux-brand)" : "var(--ux-ink-2)", fontWeight: here ? 600 : 400 }}>
+                      {l.title}
+                    </span>
+                    {l.duration && <span className="shrink-0 text-[13px] lg:text-2xs" style={{ color: "var(--ux-faint)" }}>{l.duration}</span>}
+                  </Link>
+                );
+              })}
             </div>
           </Card>
 
@@ -165,119 +163,80 @@ export default function LessonPage({ params }: { params: Promise<{ id: string; n
         </div>
       }
     >
-      <Link href={`/app/programs/${course.id}`}
+      <Link href={`/app/programs/${id}`}
             className="ux-hov -my-1 mb-3.5 inline-flex items-center gap-1.5 py-1 text-xsm font-medium"
             style={{ color: "var(--ux-brand)" }}>
-        <Icons.ArrowLeft className="ux-ico h-4 w-4" /> {course.title}
+        <Icons.ArrowLeft className="ux-ico h-4 w-4" /> {detail.name}
       </Link>
 
       <Card className="mb-[16px] overflow-hidden" pad={0}>
-        {/* The player. A poster and one button until she asks for it — data is
-            expensive, and nothing should start downloading uninvited. */}
-        <div className="relative aspect-video w-full overflow-hidden" style={{ background: "var(--ux-brand-900)" }}>
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img loading="lazy" decoding="async" src={course.thumb} alt="" className="h-full w-full object-cover"
-               style={{ opacity: playing ? 0.28 : 0.6 }} />
-          <div className="absolute inset-0 grid place-items-center">
-            {playing ? (
-              <div className="text-center">
-                <Icons.Loader className="mx-auto h-[30px] w-[30px] animate-spin text-white" strokeWidth={1.8} />
-                <p className="mt-3 text-xsm" style={{ color: "rgba(255,255,255,0.86)" }}>{tr("programsLesson.loadingTheVideo")}</p>
-              </div>
+        {lesson.video_url && (
+          <div className="relative aspect-video w-full overflow-hidden" style={{ background: "var(--ux-brand-900)" }}>
+            {playing && yt ? (
+              <iframe
+                src={`https://www.youtube-nocookie.com/embed/${yt}?autoplay=1&rel=0`}
+                title={lesson.title}
+                className="absolute inset-0 h-full w-full"
+                allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture"
+                allowFullScreen
+              />
             ) : (
-              <button
-                onClick={() => setPlaying(true)}
-                aria-label={`Play lesson ${lesson.n}`}
-                className="ux-press ux-hov grid h-[74px] w-[74px] place-items-center rounded-full"
-                style={{ background: "rgba(255,255,255,0.92)", boxShadow: "var(--ux-shadow-pop)" }}
-              >
-                <Icons.Play className="ux-ico ms-1 h-[28px] w-[28px]" style={{ color: "var(--ux-brand)" }} fill="currentColor" />
-              </button>
+              <>
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img loading="lazy" decoding="async" src={courseArt(detail.category, detail.cover)} alt=""
+                     className="h-full w-full object-cover" style={{ opacity: 0.55 }} />
+                <div className="absolute inset-0 grid place-items-center">
+                  {yt ? (
+                    <button onClick={() => setPlaying(true)} aria-label={`Play lesson ${num}`}
+                            className="ux-press ux-hov grid h-[74px] w-[74px] place-items-center rounded-full"
+                            style={{ background: "rgba(255,255,255,0.92)", boxShadow: "var(--ux-shadow-pop)" }}>
+                      <Icons.Play className="ux-ico ms-1 h-[28px] w-[28px]" style={{ color: "var(--ux-brand)" }} fill="currentColor" />
+                    </button>
+                  ) : (
+                    <Btn href={lesson.video_url} variant="primary" icon="PlayCircle">Watch the video</Btn>
+                  )}
+                </div>
+              </>
             )}
           </div>
-          <span className="absolute bottom-3 end-3 rounded-full px-2.5 py-1 text-[13px] font-medium text-white lg:text-2xs"
-                style={{ background: "rgba(0,0,0,0.55)" }}>
-            {lesson.mins} min
-          </span>
-        </div>
+        )}
 
         <div className="p-[20px]">
           <p className="text-xs font-semibold uppercase tracking-[0.08em]" style={{ color: "var(--ux-faint)" }}>
-            Lesson {lesson.n} of {flat.length}
+            Lesson {num} of {lessons.length}{lesson.duration ? ` · ${lesson.duration}` : ""}
           </p>
-          <h1 className="mt-1.5 text-[24px] font-bold leading-tight lg:text-xl" style={{ color: "var(--ux-ink)" }}>
-            {lesson.title}
-          </h1>
+          <h1 className="mt-1.5 text-[24px] font-bold leading-tight lg:text-xl" style={{ color: "var(--ux-ink)" }}>{lesson.title}</h1>
+          {lesson.detail && <p className="mt-1.5 text-xsm" style={{ color: "var(--ux-muted)" }}>{lesson.detail}</p>}
 
-          {/* Previous and Next: stacked and full width on a phone — the pair
-              was a 90px pill at one edge and a 170px pill at the other, with
-              260px of nothing between them. Next comes first in the source so
-              it is the first thing a screen reader and a thumb both reach; on
-              desktop `order` puts Previous back on the left. */}
-          <div className="mt-4 flex flex-col-reverse gap-2 border-t pt-4 lg:flex-row lg:items-center lg:justify-between lg:gap-4" style={{ borderColor: "var(--ux-line)" }}>
+          {paragraphs.length > 0 && (
+            <div className="mt-4 space-y-3.5 text-smd leading-relaxed lg:text-sm" style={{ color: "var(--ux-ink-2)" }}>
+              {paragraphs.map((p, i) => <p key={i} className="whitespace-pre-line">{p}</p>)}
+            </div>
+          )}
+
+          <div className="mt-5 flex flex-col-reverse gap-2 border-t pt-4 lg:flex-row lg:items-center lg:justify-between lg:gap-4" style={{ borderColor: "var(--ux-line)" }}>
             <span className="flex items-center gap-2 [&>*]:w-full lg:[&>*]:w-auto">
-              {prev && (
-                <Btn href={`/app/programs/${course.id}/lesson/${prev.n}`} variant="outline" size="sm" icon="ArrowLeft">
-                  Previous
-                </Btn>
+              {num > 1 && !previewing && (
+                <Btn href={`/app/programs/${id}/lesson/${num - 1}`} variant="outline" size="sm" icon="ArrowLeft">Previous</Btn>
               )}
             </span>
-            {/* Finishing this and starting the next are one intention. */}
-            {next ? (
-              <Btn href={`/app/programs/${course.id}/lesson/${next.n}`} variant="primary" iconEnd="ArrowRight"
-                   onClick={() => void finish.run()}>
-                {finish.busy ? "Saving…" : done ? `Next: lesson ${next.n}` : "Done — next lesson"}
+            {previewing ? (
+              <Btn href={`/app/programs/${id}`} variant="primary" iconEnd="ArrowRight">
+                {detail.price_minor ? `Join to keep learning · ₹${(detail.price_minor / 100).toLocaleString("en-IN")}` : "Join free to keep learning"}
               </Btn>
+            ) : owner ? (
+              hasNext && <Btn href={`/app/programs/${id}/lesson/${num + 1}`} variant="primary" iconEnd="ArrowRight">Next lesson</Btn>
             ) : (
-              <Btn href="/app/certificates" variant="primary" iconEnd="Award"
-                   onClick={() => void finish.run()}>
-                {finish.busy ? "Saving…" : "Finish the course"}
+              <Btn variant="primary" iconEnd={hasNext ? "ArrowRight" : "Award"} loading={finish.busy} onClick={() => void finish.run()}>
+                {hasNext ? (lesson.done ? `Next: lesson ${num + 1}` : "Done — next lesson") : lesson.done ? "Back to the course" : "Finish the course"}
               </Btn>
             )}
           </div>
+          {finish.error && <p role="alert" className="mt-2 text-xs" style={{ color: "var(--ux-danger-ink)" }}>{finish.error}</p>}
         </div>
       </Card>
 
-      <Card>
-        <SectionHead
-          title={tr("programsLesson.whatSheSaysInWords")}
-          sub={tr("programsLesson.readItInsteadOfWatchingNo")}
-          action={tr("programsLesson.keepOffline")}
-          onAction={() => { window.location.href = "/app/settings/offline"; }}
-        />
-        {/* Always open, never behind a toggle. Reading is free; video is not. */}
-        <div className="space-y-3.5 text-sm leading-relaxed" style={{ color: "var(--ux-ink-2)" }}>
-          <p>
-            <span className="me-2 font-mono text-[13px] lg:text-2xs" style={{ color: "var(--ux-faint)" }}>0:00</span>
-            Most women I meet think a strategy is a big word for something complicated. It is not. A strategy is
-            deciding, before you post anything, who you are talking to and what you want them to do.
-          </p>
-          <p>
-            <span className="me-2 font-mono text-[13px] lg:text-2xs" style={{ color: "var(--ux-faint)" }}>1:24</span>
-            Take three minutes now and write down one sentence: who buys from you, and why they chose you over
-            the shop down the road. If you cannot answer the second part, that is the first thing to fix — not
-            your posting schedule.
-          </p>
-          <p>
-            <span className="me-2 font-mono text-[13px] lg:text-2xs" style={{ color: "var(--ux-faint)" }}>4:10</span>
-            Post twice a week, not twice a day. Twice a week for six months beats twice a day for two weeks,
-            every single time, and it is the schedule you can actually keep alongside your work.
-          </p>
-          <p>
-            <span className="me-2 font-mono text-[13px] lg:text-2xs" style={{ color: "var(--ux-faint)" }}>8:52</span>
-            When somebody messages you, reply the same day even if the answer is &ldquo;let me check and come back to
-            you&rdquo;. A reply that is slow is forgivable. Silence is not.
-          </p>
-        </div>
-
-        <div className="mt-5 flex items-center gap-3 rounded-[12px] p-3.5" style={{ background: "var(--ux-surface-2)" }}>
-          <Icons.PenLine className="h-[18px] w-[18px] shrink-0" style={{ color: "var(--ux-brand)" }} />
-          <p className="min-w-0 flex-1 text-xsm" style={{ color: "var(--ux-ink-2)" }}>
-            <strong style={{ color: "var(--ux-ink)" }}>{tr("programsLesson.tryThisBeforeTheNextLesson")}</strong> write the one
-            sentence from 1:24 and keep it where you can see it.
-          </p>
-        </div>
-      </Card>
+      {!previewing && <CourseQA programId={id} lesson={num} />}
     </HomeShell>
   );
 }

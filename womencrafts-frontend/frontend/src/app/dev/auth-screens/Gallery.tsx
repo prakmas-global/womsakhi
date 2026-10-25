@@ -11,27 +11,19 @@ const q = (route: string, state: string) => `${route}?preview=${state}`;
 
 const GROUPS: Group[] = [
   {
-    title: "Sign in",
+    title: "Sign in or join",
     route: "/signin",
+    note: "One screen for everyone: the code decides whether she is new.",
     cards: [
-      { state: "phone", code: "A1", label: "Mobile number", href: q("/signin", "phone") },
-      { state: "sms", code: "A2", label: "SMS code", href: q("/signin", "sms") },
-      { state: "sms-wrong", code: "A3", label: "Wrong SMS code", href: q("/signin", "sms-wrong") },
-      { state: "email", code: "A4", label: "Email", href: q("/signin", "email") },
-      { state: "code", code: "A5", label: "Email code", href: q("/signin", "code") },
-      { state: "sms-busy", code: "A6", label: "SMS busy, email instead", href: q("/signin", "sms-busy") },
+      { state: "enter", code: "A1", label: "Mobile or email, empty", href: q("/signin", "enter") },
+      { state: "enter-phone", code: "A1", label: "Mobile typed (+91)", href: q("/signin", "enter-phone") },
+      { state: "enter-email", code: "A1", label: "Email typed", href: q("/signin", "enter-email") },
+      { state: "code", code: "A2", label: "Code, welcome back", href: q("/signin", "code") },
+      { state: "code-new", code: "A2", label: "Code, new member", href: q("/signin", "code-new") },
+      { state: "code-wrong", code: "A3", label: "Wrong code", href: q("/signin", "code-wrong") },
       { state: "setup", code: "D1", label: "Staff: set up authenticator", href: q("/signin", "setup") },
       { state: "recovery", code: "D2", label: "Staff: recovery codes", href: q("/signin", "recovery") },
       { state: "mfa", code: "D3", label: "Staff: authenticator code", href: q("/signin", "mfa") },
-    ],
-  },
-  {
-    title: "Join",
-    route: "/signup",
-    cards: [
-      { state: "contact", code: "B1", label: "Mobile and email", href: q("/signup", "contact") },
-      { state: "code", code: "B2", label: "Email code", href: q("/signup", "code") },
-      { state: "about", code: "B3", label: "Name and declaration", href: q("/signup", "about") },
     ],
   },
   {

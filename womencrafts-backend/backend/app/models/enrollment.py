@@ -20,7 +20,19 @@ class EnrollmentModel:
     STATUS_ACTIVE = "active"
     STATUS_COMPLETED = "completed"
     STATUS_WITHDRAWN = "withdrawn"
-    STATUSES = [STATUS_ACTIVE, STATUS_COMPLETED, STATUS_WITHDRAWN]
+    #: A paid course she has asked to join: she pays the teacher by UPI, and the
+    #: teacher confirms it. No lessons until then.
+    STATUS_PENDING = "pending"
+    STATUSES = [STATUS_ACTIVE, STATUS_COMPLETED, STATUS_WITHDRAWN, STATUS_PENDING]
+    #: Statuses that open the lessons.
+    LEARNING = [STATUS_ACTIVE, STATUS_COMPLETED]
+
+    # `payment.status` on a paid course: awaiting → claimed (she says she paid)
+    # → paid (the teacher confirmed) | declined (the teacher did not receive it).
+    PAY_AWAITING = "awaiting"
+    PAY_CLAIMED = "claimed"
+    PAY_PAID = "paid"
+    PAY_DECLINED = "declined"
 
     @staticmethod
     def create_document(
@@ -55,6 +67,10 @@ class EnrollmentModel:
             "status": doc.get("status", "active"),
             "progress": doc.get("progress", 0),
             "sessions_attended": doc.get("sessions_attended", 0),
+            "payment_status": (doc.get("payment") or {}).get("status", ""),
+            "price_minor": int((doc.get("payment") or {}).get("amount_minor") or 0),
+            "teacher_name": "",
+            "owner_kind": "",
             "joined": created.strftime("%b %d, %Y") if isinstance(created, datetime) else "",
             "created_at": created.isoformat() if isinstance(created, datetime) else "",
             # Filled from the program document when available, so the member app
@@ -77,6 +93,8 @@ class EnrollmentModel:
                 days=program.get("days", ""),
                 desc=program.get("desc", ""),
                 cover=program.get("cover", ""),
+                teacher_name=program.get("teacher_name") or "WomSakhi team",
+                owner_kind=program.get("owner_kind") or "staff",
             )
         return out
 
@@ -186,6 +204,9 @@ class BookingModel:
             "note": doc.get("note", ""),
             "status": doc.get("status", "upcoming"),
             "cancelled_reason": doc.get("cancelled_reason", ""),
+            # How to join, as whoever runs the session wrote it — a video link
+            # or a place. Empty until they add one; the app never invents one.
+            "meeting": doc.get("meeting", "") or "",
             "booked_on": created.strftime("%b %d, %Y") if isinstance(created, datetime) else "",
             "created_at": created.isoformat() if isinstance(created, datetime) else "",
         }

@@ -26,6 +26,7 @@ import {
   Card,
   EmptyState,
   ErrorState,
+  Input,
   Menu,
   MenuItem,
   Modal,
@@ -129,6 +130,8 @@ export default function VerificationQueuePage() {
   /** The submission panel: which applicant is open, and what came back. */
   const [openFor, setOpenFor] = useState("");
   const [detail, setDetail] = useState<ApplicantDetail | null>(null);
+  /** Her name as printed on the ID card — typed by the reviewer, sent with Approve. */
+  const [idName, setIdName] = useState("");
 
   const [viewing, setViewing] = useState<{ doc: ApiDocument; url: string } | null>(null);
   const [opening, setOpening] = useState("");
@@ -186,8 +189,11 @@ export default function VerificationQueuePage() {
   const openDetail = useCallback(async (userId: string) => {
     setOpenFor(userId);
     setDetail(null);
+    setIdName("");
     try {
-      setDetail(await apiApplicantDetail(userId));
+      const got = await apiApplicantDetail(userId);
+      setDetail(got);
+      setIdName(got.full_name || "");
     } catch (err) {
       setOpenFor("");
       toast.error("Could not open that submission", { description: verificationErrorMessage(err) });
@@ -257,16 +263,21 @@ export default function VerificationQueuePage() {
     if (openFor) void apiApplicantDetail(openFor).then(setDetail).catch(() => undefined);
   }
 
-  const approve = useCallback(async (t: Target) => {
+  const approve = useCallback(async (t: Target, fullName: string) => {
+    const name = fullName.trim().replace(/\s+/g, " ");
+    if (name.length < 2) {
+      document.getElementById("vf-id-name")?.focus();
+      return;
+    }
     const ok = await confirm({
-      title: `Approve ${t.full_name}?`,
-      description: "Confirm that the government ID and matching selfie belong to this applicant. She is admitted immediately, emailed that she is in, and the app opens for her.",
+      title: `Approve ${name}?`,
+      description: "Confirm that the government ID and matching selfie belong to this applicant, and that the name is exactly as printed on her ID. She is admitted immediately, emailed that she is in, and the app opens for her.",
       confirmLabel: "Approve",
     });
     if (!ok) return;
     setWorking(t.user_id);
     try {
-      const res = await apiApproveApplicant(t.user_id);
+      const res = await apiApproveApplicant(t.user_id, name);
       toast.success(res.message);
       await afterDecision(t.user_id);
     } catch (err) {
@@ -450,8 +461,8 @@ export default function VerificationQueuePage() {
                       >
                         <Avatar name={r.full_name} size="md" />
                         <span className="min-w-0">
-                          <span className="block truncate text-sm font-semibold text-ink hover:text-brand-ink">{r.full_name || "—"}</span>
-                          <span className="block truncate text-xs text-ink-subtle">{r.email}</span>
+                          <span className="block truncate text-sm font-semibold text-ink hover:text-brand-ink">{r.full_name || "Name not entered yet"}</span>
+                          <span className="block truncate text-xs text-ink-subtle">{r.email || r.phone}</span>
                           {r.phone && (
                             <span className="mt-0.5 flex items-center gap-1 text-xs text-ink-subtle">
                               <Phone className="h-3 w-3" /> {r.phone}
@@ -490,7 +501,7 @@ export default function VerificationQueuePage() {
                             </MenuItem>
                           )}
                           {canApprove(r.status) && (
-                            <MenuItem icon={UserCheck} onClick={() => void approve(asTarget(r))}>Approve</MenuItem>
+                            <MenuItem icon={UserCheck} onClick={() => void openDetail(r.user_id)}>Approve…</MenuItem>
                           )}
                           {canAskAgain(r.status) && (
                             <MenuItem icon={RefreshCw} onClick={() => { setReason(""); setAskingAgain(asTarget(r)); }}>
@@ -519,8 +530,8 @@ export default function VerificationQueuePage() {
                 <button type="button" onClick={() => void openDetail(r.user_id)} className="flex w-full items-start gap-3 text-left">
                   <Avatar name={r.full_name} size="md" />
                   <span className="min-w-0 flex-1">
-                    <span className="block truncate text-sm font-semibold text-ink">{r.full_name || "—"}</span>
-                    <span className="block truncate text-xs text-ink-subtle">{r.email}</span>
+                    <span className="block truncate text-sm font-semibold text-ink">{r.full_name || "Name not entered yet"}</span>
+                    <span className="block truncate text-xs text-ink-subtle">{r.email || r.phone}</span>
                     <span className="mt-1 block text-2xs text-ink-subtle">{r.member_id || "Member ID pending"} · {r.applied || "Date pending"}</span>
                   </span>
                   <Badge tone={REVIEW_STATE_TONE[r.status] ?? "slate"}>{REVIEW_STATE_LABEL[r.status] ?? r.status}</Badge>
@@ -545,8 +556,8 @@ export default function VerificationQueuePage() {
       <Modal
         open={openFor !== ""}
         onClose={closeDetail}
-        title={detail?.full_name || "Submission"}
-        description={detail ? detail.email : "Loading her submission…"}
+        title={detail?.full_name || "New applicant"}
+        description={detail ? (detail.email || detail.phone) : "Loading her submission…"}
         icon={ShieldCheck}
         iconTone="brand"
         size="lg"
@@ -573,7 +584,8 @@ export default function VerificationQueuePage() {
                 </button>
               )}
               {detailStatus && canApprove(detailStatus) && (
-                <button className="btn btn-primary" disabled={detailBusy} onClick={() => void approve(asTarget(detail))}>
+                <button className="btn btn-primary" disabled={detailBusy || idName.trim().length < 2}
+                  onClick={() => void approve(asTarget(detail), idName)}>
                   {detailBusy ? <Loader2 className="h-4 w-4 animate-spin" /> : <BadgeCheck className="h-4 w-4" />}
                   Approve
                 </button>
@@ -626,6 +638,19 @@ export default function VerificationQueuePage() {
                 <dd className="mt-1 text-ink-muted">{detail.assigned_to_name || "Not assigned"}</dd>
               </div>
             </dl>
+
+            {detailStatus && canApprove(detailStatus) && (
+              <Input
+                id="vf-id-name"
+                label="Name as printed on her ID card"
+                value={idName}
+                onChange={(e) => setIdName(e.target.value)}
+                placeholder="Open the ID photo below and type the name exactly"
+                hint="She does not type her name when she joins. This is the name her account, certificates and payouts will use."
+                maxLength={80}
+                autoComplete="off"
+              />
+            )}
 
             {detail.rejection_reason && detail.status !== "active" && (
               <div className="flex items-start gap-3 rounded-xl border border-amber-200 bg-amber-50 p-3">
