@@ -5,16 +5,19 @@ import { useRouter } from "next/navigation";
 
 import * as Icons from "@/components/ux/icons";
 import { Btn } from "@/components/ux/kit";
-import { Area, Stepper } from "@/components/ux/kit/form";
 import {
-  BarChart, Chips, Cols, Disclaimer, Empty, HealthFrame, Metric, MetricGrid, Panel, lastDays, useEntries, useHealthSettings,
+  BarChart, Cols, Disclaimer, Empty, HealthFrame, Metric, MetricGrid, Panel, lastDays, useEntries, useHealthSettings,
 } from "@/components/ux/health/kit";
 import {
-  AffirmationCard, CHECK_IN, CrisisCard, FEELINGS, FaceRow, LOOK, MoodFace, PROMPTS, PrivateNote, QuickCalm, ROUTINES,
-  RoutineCard, RoutinePlayer, feelingLabel, lookOf, streakOf, useMoodHistory, useMounted, type Routine,
+  ActivityFlow, AffirmationCard, CHECK_IN, CheckInFlow, CrisisCard, FaceRow, JournalFlow, LOOK, MoodFace, PROMPTS, PrivateNote,
+  QuickCalm, ROUTINES, RoutineCard, RoutinePlayer, feelingLabel, lookOf, streakOf, useMoodHistory, useMounted,
+  type JournalDraft, type JournalType, type Routine,
 } from "@/components/ux/health/mind/parts";
+import { FormLauncher } from "@/components/ux/health/StepFlow";
 import { fmtDay, today, type Entry } from "@/lib/health-api";
 import type { Mood } from "@/lib/engines-api";
+import { WatchListen } from "@/components/ux/health/WatchListen";
+import { Sounds } from "@/components/ux/health/Sounds";
 
 /**
  * Mental Wellness — a calmer mind. Everything here is private.
@@ -32,10 +35,10 @@ const TABS = [
   { id: "journal", label: "Journal" },
   { id: "activities", label: "Activities" },
   { id: "insights", label: "Insights" },
+  { id: "listen", label: "Meditate & listen" },
 ];
 
-const ACTIVITY_TYPES = ["Meditation", "Breathing exercise", "Yoga", "Journaling", "Walk outdoors", "Calming music"] as const;
-type JournalType = "Reflection" | "Gratitude" | "Affirmation";
+type Card = { title: string; body: string } | null;
 
 export default function MentalWellnessPage() {
   const router = useRouter();
@@ -45,11 +48,31 @@ export default function MentalWellnessPage() {
   const calm = useEntries(["activity", "game"]);
   const { settings, save } = useHealthSettings();
   const [playing, setPlaying] = useState<Routine | null>(null);
-  const [draft, setDraft] = useState<{ type: JournalType; text: string; id?: string }>({ type: "Reflection", text: "" });
+  // Each flow is mounted only while open: null is closed.
+  const [checking, setChecking] = useState<{ step: number; mood?: string } | null>(null);
+  const [writing, setWriting] = useState<{ draft: JournalDraft; step: number } | null>(null);
+  const [card, setCard] = useState<Card>(null);
 
   const go = (tab: string) => router.replace(`/app/health/mind${tab === "overview" ? "" : `?tab=${tab}`}`, { scroll: false });
   const start = (r: Routine) => { setPlaying(r); go("activities"); };
-  const writeJournal = (type: JournalType, text = "") => { setDraft({ type, text }); go("journal"); };
+  /** Opens the journal sheet. With words already in it, it opens on the writing step. */
+  const writeJournal = (type: JournalType, text = "") => setWriting({ draft: { type, text }, step: text ? 1 : 0 });
+  const editJournal = (j: Entry<"journal">) => setWriting({ draft: { type: j.data.type, text: j.data.text, id: j.id }, step: 1 });
+  const checkIn = (step = 0, mood?: string) => setChecking({ step, mood });
+
+  const saveCheckIn = async (m: Mood, feelings: string[], note: string) => {
+    const r = await moods.checkIn(m, { feelings, note, msg: feelings.length || note.trim() ? "Feelings saved" : undefined });
+    if (r) setCard(r.card ? { title: r.card.title, body: r.card.body } : null);
+    return !!r;
+  };
+  const saveJournal = async (d: JournalDraft) => {
+    const text = d.text.trim();
+    if (!text) return false;
+    const ok = d.id
+      ? await journal.edit(d.id, { data: { type: d.type, text } }, "Journal entry updated")
+      : await journal.add("journal", { type: d.type, text }, today(), "Saved to your journal");
+    return !!ok;
+  };
 
   const todayMood = moods.rows.find((d) => d.date === t);
   const streak = streakOf(moods.rows.filter((d) => d.mood).map((d) => d.date), t);
@@ -66,23 +89,39 @@ export default function MentalWellnessPage() {
     <HealthFrame active="/app/health/mind" hue="blue" icon="Brain" eyebrow="Mental Wellness"
                  title="A calmer mind, a happier you"
                  sub="Check in with yourself, write it down, and take a few quiet minutes. Everything here is private."
-                 art="/ux/art/scene-woman-meditating.webp" tabs={TABS}
+                 art="/ux/health/ill/hero-mental.webp" tabs={TABS}
                  actions={<>
-                   <Btn icon="Smile" onClick={() => go("mood")}>Check in</Btn>
+                   <Btn icon="Smile" onClick={() => checkIn(0)}>Check in</Btn>
                    <Btn variant="outline" icon="Wind" href="/app/health/games/breathe">Breathing break</Btn>
                  </>}>
-      {(tab) => {
-        if (tab === "mood") return <MoodTab moods={moods} priv={priv} />;
-        if (tab === "journal") return <JournalTab journal={journal} draft={draft} setDraft={setDraft} priv={priv}
+      {(tab) => <>
+        {checking && (
+          <CheckInFlow onClose={() => setChecking(null)} onSave={saveCheckIn} startAt={checking.step}
+                       initial={{ ...(todayMood ?? {}), mood: checking.mood ?? todayMood?.mood }} />
+        )}
+        {writing && <JournalFlow onClose={() => setWriting(null)} onSave={saveJournal} initial={writing.draft} startAt={writing.step} />}
+        {renderTab(tab)}
+      </>}
+    </HealthFrame>
+  );
+
+  function renderTab(tab: string) {
+        if (tab === "mood") return <MoodTab moods={moods} priv={priv} card={card} onCard={setCard} onCheckIn={checkIn} />;
+        if (tab === "journal") return <JournalTab journal={journal} priv={priv} onWrite={writeJournal} onEdit={editJournal}
                                                   setPriv={(v) => save({ privateMode: v }, v ? "Private view on" : "Private view off")} />;
         if (tab === "activities") return <ActivitiesTab calm={calm} playing={playing} setPlaying={setPlaying} onLog={logRoutine}
                                                         onAffirmation={(a) => writeJournal("Affirmation", a)} />;
         if (tab === "insights") return <InsightsTab moods={moods.rows} journal={journal.rows} calm={calm.rows} />;
+        if (tab === "listen") return (
+          <Cols main={<WatchListen section="mental" hue="blue" title="Guided meditations" />}
+                side={<Sounds hue="blue" title="Calming sounds" defaultTimer="15" />} />
+        );
         return (
           <Cols
             main={<>
-              <Panel title="How are you feeling today?" sub={mounted ? fmtDay(t, { weekday: "long", day: "numeric", month: "long" }) : "Today"}>
-                <CheckIn moods={moods} current={todayMood?.mood} compact />
+              <Panel title="How are you feeling today?" sub={mounted ? fmtDay(t, { weekday: "long", day: "numeric", month: "long" }) : "Today"}
+                     action={<Btn size="sm" variant="ghost" icon="Plus" onClick={() => checkIn(todayMood?.mood ? 1 : 0)}>Feelings &amp; note</Btn>}>
+                <CheckIn moods={moods} current={todayMood?.mood} card={card} onCard={setCard} compact />
               </Panel>
               <Panel title="Your last 14 days" action={<Btn size="sm" variant="ghost" iconEnd="ArrowRight" onClick={() => go("mood")}>Mood tracker</Btn>}>
                 <MoodStrip days={14} rows={moods.rows} />
@@ -133,9 +172,7 @@ export default function MentalWellnessPage() {
             </>}
           />
         );
-      }}
-    </HealthFrame>
-  );
+  }
 }
 
 function calmMinutes(rows: Entry<"activity" | "game">[], days: number) {
@@ -146,19 +183,22 @@ function calmMinutes(rows: Entry<"activity" | "game">[], days: number) {
 
 /* ── check-in ─────────────────────────────────────────────────────────── */
 
-function CheckIn({ moods, current, compact = false }: { moods: ReturnType<typeof useMoodHistory>; current?: string; compact?: boolean }) {
+/** One tap on a face saves the day's mood. Feelings and a note are a separate, step-by-step sheet. */
+function CheckIn({ moods, current, card, onCard, onMore, compact = false }: {
+  moods: ReturnType<typeof useMoodHistory>; current?: string; card: Card; onCard: (c: Card) => void;
+  /** Opens the feelings-and-note sheet for the mood she just tapped. */
+  onMore?: (m: Mood) => void;
+  compact?: boolean;
+}) {
   const [picked, setPicked] = useState<Mood | null>(null);
-  const [feelings, setFeelings] = useState<string[]>([]);
-  const [note, setNote] = useState("");
   const [busy, setBusy] = useState(false);
-  const [card, setCard] = useState<{ title: string; body: string } | null>(null);
   const shown = picked ?? (CHECK_IN.includes(current as Mood) ? current : undefined);
 
-  const send = async (m: Mood, more = false) => {
+  const send = async (m: Mood) => {
     setBusy(true);
-    const r = await moods.checkIn(m, more ? { feelings, note, msg: "Feelings saved" } : {});
+    const r = await moods.checkIn(m, {});
     setBusy(false);
-    if (r) setCard(r.card ? { title: r.card.title, body: r.card.body } : null);
+    if (r) onCard(r.card ? { title: r.card.title, body: r.card.body } : null);
   };
 
   return (
@@ -167,14 +207,8 @@ function CheckIn({ moods, current, compact = false }: { moods: ReturnType<typeof
       <p className="text-sm" style={{ color: "var(--ux-muted)" }}>
         {current ? `You checked in as ${lookOf(current).label.toLowerCase()} today. Tap again to change it.` : "Tap a face to save today's mood."}
       </p>
-      {picked && !compact && (
-        <div className="flex flex-col gap-3 rounded-[14px] p-3.5" style={{ background: "var(--ux-surface-2)" }}>
-          <p className="text-xs font-bold" style={{ color: "var(--ux-ink-2)" }}>What else are you feeling? (optional)</p>
-          <Chips hue="blue" label="Feelings" options={FEELINGS} value={feelings}
-                 onChange={(f) => setFeelings((x) => (x.includes(f) ? x.filter((y) => y !== f) : [...x, f]))} />
-          <Area label="A note for yourself" value={note} onChange={setNote} max={300} rows={2} placeholder="What's on your mind? (optional)" />
-          <div><Btn size="sm" icon="Check" loading={busy} onClick={() => send(picked, true)}>Save feelings</Btn></div>
-        </div>
+      {picked && !compact && onMore && (
+        <div><Btn size="sm" variant="soft" icon="Plus" onClick={() => onMore(picked)}>Add feelings and a note</Btn></div>
       )}
       {card && (
         <div className="rounded-[14px] p-4" style={{ background: "var(--ux-tint-blue)" }}>
@@ -215,7 +249,10 @@ function MoodStrip({ days, rows }: { days: number; rows: { date: string; mood: s
 
 /* ── mood tracker ─────────────────────────────────────────────────────── */
 
-function MoodTab({ moods, priv }: { moods: ReturnType<typeof useMoodHistory>; priv: boolean }) {
+function MoodTab({ moods, priv, card, onCard, onCheckIn }: {
+  moods: ReturnType<typeof useMoodHistory>; priv: boolean; card: Card; onCard: (c: Card) => void;
+  onCheckIn: (step?: number, mood?: string) => void;
+}) {
   const mounted = useMounted();
   const [month, setMonth] = useState(() => today().slice(0, 7));
   const [confirm, setConfirm] = useState("");
@@ -285,9 +322,12 @@ function MoodTab({ moods, priv }: { moods: ReturnType<typeof useMoodHistory>; pr
         </Panel>
       </>}
       side={<>
-        <Panel title="Check in now">
-          <CheckIn moods={moods} current={moods.rows.find((d) => d.date === t)?.mood} />
+        <Panel title="Check in now" sub="One tap saves today's mood.">
+          <CheckIn moods={moods} current={moods.rows.find((d) => d.date === t)?.mood} card={card} onCard={onCard}
+                   onMore={(m) => onCheckIn(1, m)} />
         </Panel>
+        <FormLauncher art="Mood" title="Check in with feelings" sub="Mood, feelings and a note · 4 quick steps" steps={4} hue="blue"
+                      onStart={() => onCheckIn(0)} />
         <Panel title="Faces and what they mean">
           <div className="grid grid-cols-2 gap-2">
             {Object.entries(LOOK).filter(([k]) => CHECK_IN.includes(k as Mood) || ["happy", "calm", "sad", "irritable"].includes(k)).map(([k, l]) => (
@@ -306,28 +346,17 @@ function MoodTab({ moods, priv }: { moods: ReturnType<typeof useMoodHistory>; pr
 
 /* ── journal ─────────────────────────────────────────────────────────── */
 
-function JournalTab({ journal, draft, setDraft, priv, setPriv }: {
+function JournalTab({ journal, priv, setPriv, onWrite, onEdit }: {
   journal: ReturnType<typeof useEntries<"journal">>;
-  draft: { type: JournalType; text: string; id?: string };
-  setDraft: (d: { type: JournalType; text: string; id?: string }) => void;
   priv: boolean;
   setPriv: (v: boolean) => void;
+  onWrite: (type: JournalType, text?: string) => void;
+  onEdit: (j: Entry<"journal">) => void;
 }) {
   const [q, setQ] = useState("");
-  const [busy, setBusy] = useState(false);
   const [confirm, setConfirm] = useState("");
   const [peek, setPeek] = useState<string[]>([]);
   const rows = q.trim() ? journal.rows.filter((j) => `${j.data.type} ${j.data.text}`.toLowerCase().includes(q.toLowerCase())) : journal.rows;
-
-  const save = async () => {
-    const text = draft.text.trim();
-    if (!text) return;
-    setBusy(true);
-    if (draft.id) await journal.edit(draft.id, { data: { type: draft.type, text } }, "Journal entry updated");
-    else await journal.add("journal", { type: draft.type, text }, today(), "Saved to your journal");
-    setBusy(false);
-    setDraft({ type: draft.type, text: "" });
-  };
 
   return (
     <Cols
@@ -347,7 +376,8 @@ function JournalTab({ journal, draft, setDraft, priv, setPriv }: {
           {journal.loading ? <p className="text-sm" style={{ color: "var(--ux-muted)" }}>Loading…</p>
             : rows.length === 0 ? (q
               ? <p className="text-sm" style={{ color: "var(--ux-muted)" }}>No entries match &ldquo;{q}&rdquo;.</p>
-              : <Empty icon="BookOpen" title="Your journal is empty" body="Pick a prompt on the right and write a few lines. There is no wrong way to do it." />)
+              : <Empty icon="BookOpen" title="Your journal is empty" body="Pick a prompt and write a few lines. There is no wrong way to do it."
+                       action={<Btn size="sm" icon="PenLine" onClick={() => onWrite("Reflection")}>Write your first entry</Btn>} />)
             : (
               <ul className="flex flex-col" data-journal>
                 {rows.map((j) => {
@@ -361,7 +391,7 @@ function JournalTab({ journal, draft, setDraft, priv, setPriv }: {
                         </span>
                         <span className="flex gap-1">
                           {hidden && <Btn size="sm" variant="ghost" icon="Eye" onClick={() => setPeek((p) => [...p, j.id])}>Show</Btn>}
-                          <Btn size="sm" variant="ghost" icon="Pencil" ariaLabel="Edit" onClick={() => setDraft({ type: j.data.type, text: j.data.text, id: j.id })}>{""}</Btn>
+                          <Btn size="sm" variant="ghost" icon="Pencil" ariaLabel="Edit" onClick={() => onEdit(j)}>{""}</Btn>
                           <Btn size="sm" variant={confirm === j.id ? "outline" : "ghost"} icon="Trash2" ariaLabel={confirm === j.id ? "Tap again to delete" : "Delete"}
                                onClick={() => (confirm === j.id ? (setConfirm(""), journal.remove(j.id, "Entry deleted")) : setConfirm(j.id))}>
                             {confirm === j.id ? "Delete?" : ""}
@@ -379,23 +409,24 @@ function JournalTab({ journal, draft, setDraft, priv, setPriv }: {
         </Panel>
       </>}
       side={<>
-        <Panel title={draft.id ? "Edit entry" : "Write"} sub={draft.id ? "Change it, then save." : "Tap a prompt to begin."}>
-          <Chips hue="blue" label="Type of entry" options={["Reflection", "Gratitude", "Affirmation"] as const} value={draft.type}
-                 onChange={(type) => setDraft({ ...draft, type })} />
-          <div className="flex flex-col gap-1.5">
-            {PROMPTS[draft.type].map((p) => (
-              <button key={p} type="button" onClick={() => setDraft({ ...draft, text: draft.text ? `${draft.text}\n${p} ` : `${p} ` })}
-                      className="ux-press flex min-h-[40px] items-center gap-2 rounded-[10px] px-3 text-start text-[13.5px] font-semibold"
-                      style={{ background: "var(--ux-surface-2)", color: "var(--ux-ink-2)" }}>
-                <Icons.Plus className="h-3.5 w-3.5 shrink-0" style={{ color: "var(--ux-blue-ink)" }} /> {p}
+        <FormLauncher art="Journaling" title="New journal entry" sub="Pick a type, then write freely · 3 quick steps" steps={3} hue="blue"
+                      onStart={() => onWrite("Reflection")} cta="Write" />
+        <Panel title="Start from a prompt" sub="Tap one to begin writing.">
+          <div className="flex flex-col gap-1.5" data-journal-prompts>
+            {(Object.keys(PROMPTS) as JournalType[]).map((type) => (
+              <button key={type} type="button" onClick={() => onWrite(type, `${PROMPTS[type][0]} `)}
+                      className="ux-press ux-hov flex min-h-[52px] items-center gap-3 rounded-[12px] px-3 text-start"
+                      style={{ background: "var(--ux-surface-2)", color: "var(--ux-ink)" }}>
+                <span className="grid h-8 w-8 shrink-0 place-items-center rounded-full" style={{ background: "var(--ux-tint-blue)", color: "var(--ux-blue-ink)" }}>
+                  <Icons.PenLine className="h-4 w-4" />
+                </span>
+                <span className="min-w-0 flex-1">
+                  <b className="block text-[11.5px] font-extrabold uppercase tracking-[0.08em]" style={{ color: "var(--ux-blue-ink)" }}>{type}</b>
+                  <span className="block text-[13.5px] font-semibold">{PROMPTS[type][0]}</span>
+                </span>
+                <Icons.ChevronRight className="h-4 w-4 shrink-0" style={{ color: "var(--ux-muted)" }} />
               </button>
             ))}
-          </div>
-          <Area label="Write freely" value={draft.text} onChange={(text) => setDraft({ ...draft, text })} max={2000} rows={6}
-                placeholder="Write freely. Nobody else will read this." />
-          <div className="flex flex-wrap gap-2">
-            <Btn icon="Check" disabled={!draft.text.trim()} loading={busy} onClick={save}>{draft.id ? "Save changes" : "Save entry"}</Btn>
-            {(draft.id || draft.text) && <Btn variant="ghost" onClick={() => setDraft({ type: draft.type, text: "" })}>Cancel</Btn>}
           </div>
           <PrivateNote />
         </Panel>
@@ -413,14 +444,16 @@ function ActivitiesTab({ calm, playing, setPlaying, onLog, onAffirmation }: {
   onLog: (minutes: number) => void;
   onAffirmation: (a: string) => void;
 }) {
-  const [type, setType] = useState<string>("Meditation");
-  const [mins, setMins] = useState("10");
+  const [logging, setLogging] = useState(false);
   const [confirm, setConfirm] = useState("");
   const acts = calm.rows.filter((r) => r.kind === "activity") as Entry<"activity">[];
+  const logActivity = async (type: string, mins: number) =>
+    !!(await calm.add("activity", { type, minutes: Math.min(180, mins) }, today(), `${type} saved · ${mins} min`));
 
   return (
     <Cols
       main={<>
+        {logging && <ActivityFlow onClose={() => setLogging(false)} onSave={logActivity} />}
         {playing && <RoutinePlayer key={playing.id} routine={playing} onDone={onLog} onClose={() => setPlaying(null)} />}
         <Panel title="Mindfulness sessions" sub="Guided, step by step. Press start and follow along.">
           <div className="grid gap-3.5" style={{ gridTemplateColumns: "repeat(auto-fill, minmax(220px, 1fr))" }}>
@@ -437,19 +470,8 @@ function ActivitiesTab({ calm, playing, setPlaying, onLog, onAffirmation }: {
         </Panel>
       </>}
       side={<>
-        <Panel title="Log a calming activity" sub="Did something on your own? Note it here.">
-          <Chips hue="blue" label="Activity" options={ACTIVITY_TYPES} value={type} onChange={setType} />
-          <div>
-            <p className="mb-1.5 text-xs font-bold" style={{ color: "var(--ux-ink-2)" }}>Minutes</p>
-            <Stepper label="minutes" value={mins} onChange={setMins} min={1} presets={[5, 10, 15, 30]} />
-          </div>
-          <div>
-            <Btn icon="Check" disabled={!Number(mins)}
-                 onClick={() => calm.add("activity", { type, minutes: Math.min(180, Number(mins)) }, today(), `${type} saved · ${mins} min`)}>
-              Save activity
-            </Btn>
-          </div>
-        </Panel>
+        <FormLauncher art="Meditation" title="Log a calming activity" sub="Did something on your own? 3 quick steps, mostly taps." steps={3} hue="blue"
+                      onStart={() => setLogging(true)} />
         <Panel title="Calming activities">
           {acts.length === 0 ? <p className="text-sm" style={{ color: "var(--ux-muted)" }}>Nothing logged yet.</p> : (
             <ul className="flex flex-col" data-activities>

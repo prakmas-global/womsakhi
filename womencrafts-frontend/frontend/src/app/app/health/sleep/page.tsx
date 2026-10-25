@@ -2,8 +2,10 @@
 
 import { useSyncExternalStore } from "react";
 import { Btn } from "@/components/ux/kit";
-import { HealthFrame, useEntries, useHealthSettings } from "@/components/ux/health/kit";
+import { Cols, HealthFrame, useEntries, useHealthSettings } from "@/components/ux/health/kit";
 import { BedtimeTab, InsightsTab, LogTab, OverviewTab } from "@/components/ux/health/sleep/SleepTabs";
+import { WatchListen } from "@/components/ux/health/WatchListen";
+import { Sounds } from "@/components/ux/health/Sounds";
 
 /**
  * Sleep — after the approved Health & Wellness design: a night hero, and
@@ -21,6 +23,7 @@ const TABS = [
   { id: "log", label: "Sleep Log" },
   { id: "bedtime", label: "Bedtime" },
   { id: "insights", label: "Insights" },
+  { id: "sounds", label: "Sounds & stories" },
 ];
 
 export default function SleepPage() {
@@ -30,7 +33,7 @@ export default function SleepPage() {
   return (
     <HealthFrame night active="/app/health/sleep" hue="violet" icon="Moon" eyebrow="Rest better, live brighter"
                  title="Sleep" sub="Track your nights and build a calm bedtime routine."
-                 art="/ux/art/scene-woman-meditating.webp" tabs={TABS}
+                 art="/ux/health/ill/hero-sleep.webp" tabs={TABS}
                  actions={<>
                    <Btn size="sm" variant="on-brand" icon="Plus" href="/app/health/sleep?tab=log">Log sleep</Btn>
                    <Btn size="sm" variant="outline" icon="Bed" href="/app/health/sleep?tab=bedtime">Bedtime routine</Btn>
@@ -40,6 +43,10 @@ export default function SleepPage() {
           : tab === "log" ? <LogTab store={store} />
           : tab === "bedtime" ? <BedtimeTab store={store} s={s} />
           : tab === "insights" ? <InsightsTab store={store} s={s} />
+          : tab === "sounds" ? (
+            <Cols main={<WatchListen section="sleep" hue="violet" title="Stories and wind-down videos" />}
+                  side={<Sounds hue="violet" title="Sleep sounds" />} />
+          )
           : <OverviewTab store={store} s={s} />
       )}
     </HealthFrame>

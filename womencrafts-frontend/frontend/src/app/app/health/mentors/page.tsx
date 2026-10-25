@@ -21,6 +21,8 @@ import {
 } from "@/lib/growth-api";
 import { apiMentorReviews, apiMyReviewedSessions, apiReviewSession, type MentorReviewPage } from "@/lib/mentor-reviews-api";
 import { useResource } from "@/lib/use-resource";
+import { WatchListen } from "@/components/ux/health/WatchListen";
+import { FormLauncher, PicChoice, Review, StepSheet, useFlow, type FlowStep } from "@/components/ux/health/StepFlow";
 
 /**
  * Mentor Connect — guidance from women who have been there.
@@ -40,6 +42,7 @@ const TABS = [
   { id: "discover", label: "Discover" },
   { id: "match", label: "Find my match" },
   { id: "sessions", label: "My sessions" },
+  { id: "watch", label: "Watch & listen" },
 ];
 
 const GOALS = [
@@ -49,7 +52,31 @@ const GOALS = [
   "I want to grow my business",
   "I need someone to talk to",
 ];
+/** The goal lines as picture tiles: a short name, and the line it starts her request with. */
+const GOAL_TILES = [
+  { value: GOALS[0], label: "My health", art: "Wellness Coaching" },
+  { value: GOALS[1], label: "Earning from home", art: "Career Development" },
+  { value: GOALS[2], label: "Money and savings", art: "Finance Education" },
+  { value: GOALS[3], label: "Growing my business", art: "Business" },
+  { value: GOALS[4], label: "Someone to talk to", art: "Chat" },
+  { value: "other", label: "Something else", art: "Sparkles" },
+];
 const WHEN = ["Weekday mornings", "Weekday evenings", "Weekends", "Any time"];
+
+/** Pictures for the match questions. */
+const TOPIC_ART: Record<string, string> = {
+  "Women's health": "Heart", Pregnancy: "Pregnancy", Fertility: "Fertility", Nutrition: "Nutrition",
+  "Mental wellness": "Mental health professional", Fitness: "Fitness Coaching", Career: "Career Development",
+  Money: "Finance Education", Business: "Business", "Crafts & skills": "Bag", "Rights & family": "Parenting",
+};
+/** How a mentor meets: the values mentors pick on their own profile. */
+const FORMATS = [
+  { value: "", label: "Any way", art: "Mentor session" },
+  { value: "Video call", label: "Video call", art: "Video" },
+  { value: "Phone call", label: "Phone call", art: "Audio" },
+  { value: "In person", label: "In person", art: "In person" },
+];
+const BEST_TIMES = ["Any", "Mornings", "Evenings", "Weekends"];
 
 const STATUS: Record<string, { label: string; tone: string; ink: string }> = {
   pending: { label: "Waiting for her", tone: "var(--ux-tint-amber)", ink: "var(--ux-amber-ink)" },
@@ -75,7 +102,7 @@ export default function MentorConnect() {
 
   return (
     <HealthFrame active="/app/health/mentors" hue="orange" icon="Users" eyebrow="Mentor Connect"
-                 title="Mentor Connect" art="/ux/art/course-video-call-mentor.webp"
+                 title="Mentor Connect" art="/ux/health/ill/mentor.webp"
                  sub="Guidance from women who've been there: health, career, money, family and growth."
                  tabs={TABS}
                  actions={<>
@@ -88,6 +115,7 @@ export default function MentorConnect() {
           {tab === "discover" && <Discover {...ctx} />}
           {tab === "match" && <Match {...ctx} />}
           {tab === "sessions" && <Sessions {...ctx} />}
+          {tab === "watch" && <WatchListen section="mentor" hue="orange" sub="Women who have been there, on work, money and family." />}
           <AskSheet mentor={asking} onClose={() => setAsking(null)} onSent={refresh} />
           <ProfileSheet mentor={viewing} onClose={() => setViewing(null)} onAsk={(m) => { setViewing(null); setAsking(m); }} />
         </>
@@ -198,7 +226,7 @@ function Dashboard({ mentors, loading, requests, ask, view }: Ctx) {
       side={<>
         <Panel title="Next session">
           {next ? <SessionLine r={next} /> : (
-            <Empty icon="CalendarClock" title="No sessions booked" body="Answer four quick questions and we will suggest the mentors who fit you."
+            <Empty icon="CalendarClock" title="No sessions booked" body="Answer a few quick questions and we will suggest the mentors who fit you."
                    action={<Btn size="sm" href="/app/health/mentors?tab=match" icon="Sparkles">Find my match</Btn>} />
           )}
         </Panel>
@@ -261,23 +289,57 @@ function Discover({ mentors, loading, ask, view }: Ctx) {
 
 function Match({ mentors, loading, ask, view }: Ctx) {
   const [quiz, setQuiz] = useState<MatchQuiz>({ topics: [], language: "", time: "", freeOnly: false });
+  // How she would like to meet: a gentle preference. Mentors who meet that way come first.
+  const [format, setFormat] = useState("");
   const [shown, setShown] = useState(false);
+  const flow = useFlow();
   const languages = useMemo(() => [...new Set(mentors.flatMap((m) => m.languages))].sort(), [mentors]);
-  const results = useMemo(() => scoreMentors(mentors, quiz).slice(0, 6), [mentors, quiz]);
+  const results = useMemo(() => {
+    const scored = scoreMentors(mentors, quiz);
+    if (!format) return scored.slice(0, 6);
+    const fits = (m: ApiMentor) => (m.session_mode || "Video call") === format;
+    return [...scored.filter((x) => fits(x.m)).map((x) => ({ ...x, why: [...x.why.slice(0, 1), `Meets by ${format.toLowerCase()}`, ...x.why.slice(1)] })),
+            ...scored.filter((x) => !fits(x.m))].slice(0, 6);
+  }, [mentors, quiz, format]);
   const toggle = (t: string) => setQuiz((q) => ({ ...q, topics: q.topics.includes(t) ? q.topics.filter((x) => x !== t) : [...q.topics, t] }));
 
-  // On a phone the questions come first and the results follow; on a wide
-  // screen the results sit left and the questions stay beside them.
+  // On a phone the launcher comes first and the results follow; on a wide
+  // screen the results sit left and the launcher stays beside them.
   const find = () => {
+    if (!quiz.topics.length) return;
+    flow.close();
     setShown(true);
     window.setTimeout(() => document.getElementById("match-results")?.scrollIntoView({ behavior: "smooth", block: "start" }), 50);
   };
+
+  const steps: FlowStep[] = [
+    { id: "help", title: "What would you like help with?", hint: "Tap one or more.", valid: quiz.topics.length > 0,
+      body: <PicChoice label="Topics" hue="orange" multi value={quiz.topics} onChange={toggle}
+                       options={TOPICS.map((t) => ({ value: t.label, label: t.label, art: TOPIC_ART[t.label] ?? "Mentor" }))} /> },
+    { id: "lang", title: "Which language are you most comfortable in?",
+      body: <Chips label="Language" hue="orange" options={["Any", ...languages.slice(0, 8)]} value={quiz.language || "Any"}
+                   onChange={(v) => setQuiz((q) => ({ ...q, language: v === "Any" ? "" : v }))} /> },
+    { id: "format", title: "How would you like to meet?",
+      body: <PicChoice label="How you meet" hue="orange" columns={4} options={FORMATS} value={format} onChange={setFormat} onPicked={() => flow.setStep(3)} /> },
+    { id: "time", title: "When suits you best?",
+      body: <Chips label="Best time" hue="orange" options={BEST_TIMES} value={quiz.time || "Any"}
+                   onChange={(v) => setQuiz((q) => ({ ...q, time: v === "Any" ? "" : (v as BestTime) }))} /> },
+    { id: "find", title: "Ready to find your matches", hint: "Choose free sessions only if you like, then press Find matches.", valid: quiz.topics.length > 0,
+      body: <>
+        <Chips label="Budget" hue="orange" options={["Free or paid", "Free only"]} value={quiz.freeOnly ? "Free only" : "Free or paid"}
+               onChange={(v) => setQuiz((q) => ({ ...q, freeOnly: v === "Free only" }))} />
+        <Review rows={[["Help with", quiz.topics.join(", ")], ["Language", quiz.language || "Any"], ["Meet by", format || "Any way"],
+                       ["Best time", quiz.time || "Any"], ["Sessions", quiz.freeOnly ? "Free only" : "Free or paid"]]} />
+      </> },
+  ];
+
   return (
     <div className="grid items-start gap-5 xl:grid-cols-[minmax(0,1fr)_360px]">
       <div className="order-2 min-w-0 xl:order-1" id="match-results" style={{ scrollMarginTop: "calc(var(--ux-topbar-h, 72px) + 12px)" }}>
         <Panel title="Your matches" sub={shown ? `${results.length} ${results.length === 1 ? "mentor fits" : "mentors fit"} your answers` : "Answer the questions, then press Find matches."}>
           {!shown ? (
-            <Empty icon="Sparkles" title="Tell us what you need" body="Pick at least one topic. We look through every mentor on WomSakhi and show who fits best, and why." />
+            <Empty icon="Sparkles" title="Tell us what you need" body="Pick at least one topic. We look through every mentor on WomSakhi and show who fits best, and why."
+                   action={<Btn size="sm" icon="Play" onClick={flow.start}>Start</Btn>} />
           ) : loading ? <Skeletons /> : results.length ? (
             <MediaGrid cols={2}>{results.map(({ m, why }) => <MentorCard key={m.id} m={m} ask={ask} view={view} why={why} />)}</MediaGrid>
           ) : (
@@ -287,29 +349,12 @@ function Match({ mentors, loading, ask, view }: Ctx) {
         </Panel>
       </div>
       <div className="order-1 min-w-0 xl:order-2">
-        <Panel title="Find my match" hue="orange" tint>
-          <div>
-            <p className="mb-2 text-sm font-bold" style={{ color: "var(--ux-ink)" }}>1. What would you like help with?</p>
-            <Chips label="Topics" hue="orange" options={TOPICS.map((t) => t.label)} value={quiz.topics} onChange={toggle} />
-          </div>
-          <div>
-            <p className="mb-2 text-sm font-bold" style={{ color: "var(--ux-ink)" }}>2. Language you are most comfortable in</p>
-            <Chips label="Language" hue="orange" options={["Any", ...languages.slice(0, 8)]} value={quiz.language || "Any"}
-                   onChange={(v) => setQuiz((q) => ({ ...q, language: v === "Any" ? "" : v }))} />
-          </div>
-          <div>
-            <p className="mb-2 text-sm font-bold" style={{ color: "var(--ux-ink)" }}>3. Best time for you</p>
-            <Chips label="Best time" hue="orange" options={["Any", "Mornings", "Evenings", "Weekends"]} value={quiz.time || "Any"}
-                   onChange={(v) => setQuiz((q) => ({ ...q, time: v === "Any" ? "" : (v as BestTime) }))} />
-          </div>
-          <div>
-            <p className="mb-2 text-sm font-bold" style={{ color: "var(--ux-ink)" }}>4. Sessions</p>
-            <Chips label="Budget" hue="orange" options={["Free or paid", "Free only"]} value={quiz.freeOnly ? "Free only" : "Free or paid"}
-                   onChange={(v) => setQuiz((q) => ({ ...q, freeOnly: v === "Free only" }))} />
-          </div>
-          <Btn full icon="Sparkles" disabled={!quiz.topics.length} onClick={find}>Find matches</Btn>
-        </Panel>
+        <FormLauncher art="Mentor" hue="orange" steps={steps.length} onStart={flow.start}
+                      title={shown ? "Change my answers" : "Find my match"} cta={shown ? "Change" : "Start"}
+                      sub={shown ? `${quiz.topics.join(", ")}${quiz.language ? ` · ${quiz.language}` : ""}` : `${steps.length} quick questions · mostly taps`} />
       </div>
+      <StepSheet open={flow.open} onClose={flow.close} icon="Sparkles" title="Find my match" hue="orange"
+                 steps={steps} step={flow.step} setStep={flow.setStep} onSubmit={find} submitLabel="Find matches" />
     </div>
   );
 }
@@ -413,48 +458,63 @@ function Sessions({ requests, mentors, refresh }: Ctx) {
 /* ── sheets ──────────────────────────────────────────────────────────── */
 
 function AskSheet({ mentor, onClose, onSent }: { mentor: ApiMentor | null; onClose: () => void; onSent: () => void }) {
+  // A fresh flow for each mentor she asks.
+  return mentor ? <AskFlow key={mentor.id} mentor={mentor} onClose={onClose} onSent={onSent} /> : null;
+}
+
+function AskFlow({ mentor, onClose, onSent }: { mentor: ApiMentor; onClose: () => void; onSent: () => void }) {
+  const [step, setStep] = useState(0);
+  const [topic, setTopic] = useState("");
   const [goal, setGoal] = useState("");
   const [when, setWhen] = useState("Any time");
   const [busy, setBusy] = useState(false);
+  const first = mentor.name.split(" ")[0];
+  const short = goal.trim().length > 0 && goal.trim().length < 5;
+  const pickTopic = (v: string) => {
+    setTopic(v);
+    // Start her request with the line she tapped, unless she has written her own.
+    if (!goal.trim() || GOALS.includes(goal)) setGoal(v === "other" ? "" : v);
+  };
   const send = async () => {
-    if (!mentor || goal.trim().length < 5) return;
+    if (goal.trim().length < 5) return;
     setBusy(true);
     try {
       await apiRequestMentor(mentor.id, goal.trim(), when === "Any time" ? "" : when);
-      toast(`Sent to ${mentor.name.split(" ")[0]} — her reply will show in My sessions`, { tone: "success" });
+      toast(`Sent to ${first} — her reply will show in My sessions`, { tone: "success" });
       setGoal(""); onSent(); onClose();
     } catch (e) {
       toast(apiErrorMessage(e), { tone: "error" });
     } finally { setBusy(false); }
   };
-  return (
-    <Sheet open={!!mentor} onClose={onClose} icon="MessageCircle" title={mentor ? `Ask ${mentor.name}` : ""}
-           description="Say what you would like to talk about. Tap a line to start, then change any word."
-           footer={<Btn full icon="Send" loading={busy} disabled={goal.trim().length < 5} onClick={send}>Send my request</Btn>}>
-      <div className="flex flex-wrap gap-2">
-        {GOALS.map((g) => (
-          <button key={g} type="button" onClick={() => setGoal(g)} aria-pressed={goal === g}
-                  className="ux-press min-h-[38px] rounded-full px-3 text-[13px] font-semibold"
-                  style={goal === g ? { background: HUE.orange.tint, color: "var(--ux-ink)", outline: `1.5px solid ${HUE.orange.ink}` } : { background: "var(--ux-surface-2)", color: "var(--ux-ink-2)" }}>
-            {g}
-          </button>
-        ))}
-      </div>
-      <textarea value={goal} onChange={(e) => setGoal(e.target.value.slice(0, 400))} rows={4} aria-label="What you want to talk about"
-                placeholder="For example: I make pickles and want to sell to shops."
-                className="mt-3 w-full resize-none rounded-[12px] border p-3 text-sm"
-                style={{ borderColor: "var(--ux-line-strong)", background: "var(--ux-surface)", color: "var(--ux-ink)" }} />
-      <p className="mb-2 mt-3 text-xs font-bold" style={{ color: "var(--ux-muted)" }}>When suits you?</p>
-      <Chips label="When suits you" hue="orange" options={WHEN} value={when} onChange={setWhen} />
-      {mentor && (
-        <p className="mt-4 text-xs leading-relaxed" style={{ color: "var(--ux-muted)" }}>
+  const steps: FlowStep[] = [
+    { id: "topic", title: `What would you like to talk to ${first} about?`, hint: "Tap the closest one.", valid: !!topic,
+      body: <PicChoice label="Topic" hue="orange" options={GOAL_TILES} value={topic} onChange={pickTopic} onPicked={() => setStep(1)} /> },
+    { id: "goal", title: "Say it in your words", hint: "We started it for you. Change any word.", valid: goal.trim().length >= 5,
+      body: <>
+        <textarea value={goal} onChange={(e) => setGoal(e.target.value.slice(0, 400))} rows={4} aria-label="What you want to talk about"
+                  aria-invalid={short || undefined} placeholder="For example: I make pickles and want to sell to shops."
+                  className="w-full resize-none rounded-[12px] border-[1.5px] p-3 text-sm"
+                  style={{ borderColor: short ? "var(--ux-danger-ink)" : "var(--ux-line-strong)", background: "var(--ux-surface)", color: "var(--ux-ink)" }} />
+        <p className="text-xs font-semibold" style={{ color: short ? "var(--ux-danger-ink)" : "var(--ux-muted)" }} aria-live="polite">
+          {short ? "Write a little more, so she knows how to help." : `${goal.length} / 400`}
+        </p>
+      </> },
+    { id: "when", title: "When suits you?",
+      body: <Chips label="When suits you" hue="orange" options={WHEN} value={when} onChange={setWhen} /> },
+    { id: "check", title: "Check, then send", valid: goal.trim().length >= 5,
+      body: <>
+        <Review rows={[["To", mentor.name], ["About", goal.trim()], ["When", when]]} />
+        <p className="text-xs leading-relaxed" style={{ color: "var(--ux-muted)" }}>
           {mentor.owner_kind === "member"
-            ? `${mentor.name.split(" ")[0]} replies herself with a time. ${mentor.price_minor ? `Her session costs ${rupees(mentor.price_minor)}, paid to her directly.` : "Her sessions are free."}`
+            ? `${first} replies herself with a time. ${mentor.price_minor ? `Her session costs ${rupees(mentor.price_minor)}, paid to her directly.` : "Her sessions are free."}`
             : "Our team passes your request on and introduces you once she confirms."}
           {" "}For heavy bleeding, severe pain or feeling faint, go to a hospital — don&apos;t wait for a reply.
         </p>
-      )}
-    </Sheet>
+      </> },
+  ];
+  return (
+    <StepSheet open onClose={onClose} icon="MessageCircle" title={`Ask ${mentor.name}`} hue="orange"
+               steps={steps} step={step} setStep={setStep} onSubmit={send} busy={busy} submitLabel="Send my request" />
   );
 }
 

@@ -11,6 +11,7 @@ import { SECTIONS, type NavNode } from "../nav-tree";
 import { useMe } from "../me";
 import { useNavLabel } from "../use-nav-label";
 import { Avatar } from "../kit";
+import { useHiddenHealth } from "@/components/ux/health/nav-prefs";
 
 /**
  * Everything the app can do, on a phone.
@@ -107,14 +108,15 @@ export function MoreSheet({ open, onClose }: { open: boolean; onClose: () => voi
 
   /** Typed text narrows both levels: a section stays if it or a screen matches. */
   const needle = q.trim().toLowerCase();
+  const hiddenHealth = useHiddenHealth();
   const shown = useMemo(() => {
-    const kidsOf = (n: NavNode) => (n.children ?? []).filter((c) => !c.unlisted);
+    const kidsOf = (n: NavNode) => (n.children ?? []).filter((c) => !c.unlisted && !hiddenHealth.split(",").includes(c.id));
     if (!needle) return SECTIONS.map((s) => ({ s, kids: kidsOf(s) }));
     const hit = (n: NavNode) => `${label(n)} ${note(n) ?? ""}`.toLowerCase().includes(needle);
     return SECTIONS
       .map((s) => ({ s, kids: kidsOf(s).filter((c) => hit(c) || hit(s)) }))
       .filter(({ s, kids }) => hit(s) || kids.length > 0);
-  }, [needle, label, note]);
+  }, [needle, label, note, hiddenHealth]);
 
   const found = shown.reduce((n, { kids }) => n + kids.length, 0);
 

@@ -63,7 +63,7 @@ export interface HealthSettings {
   bedtime: string;
   kcalGoal: number;
   proteinGoal: number;
-  diet: "Vegetarian" | "Eggetarian" | "Non-vegetarian" | "Vegan" | "Jain";
+  diet: "Vegetarian" | "Eggetarian" | "Non-vegetarian" | "Vegan";
   healthGoal: string;
   heightCm: number;
   bloodGroup: string;
@@ -79,13 +79,28 @@ export interface HealthSettings {
   checks?: Record<string, string[]>;
   /** Her bedtime routine steps (Sleep → Bedtime); tonight's ticks live in checks.bedtime. */
   sleepRoutine?: string[];
+  /** Show Fertility / Pregnancy in her menu and on the Health home. */
+  trackCycle: boolean;
+  trackPreg: boolean;
+  /** The four-step first visit is done or skipped. */
+  onboarded: boolean;
+  dob: string;
+  goals: string[];
+  exercise: string[];
+  restrictions: string[];
 }
 
 export const DEFAULT_SETTINGS: HealthSettings = {
   name: "", waterGoal: 8, stepsGoal: 6000, activeGoal: 30, sleepGoal: 8, bedtime: "22:30", kcalGoal: 1800,
   proteinGoal: 55, diet: "Vegetarian", healthGoal: "", heightCm: 0, bloodGroup: "", emergencyContact: "",
   dashHidden: [], favoriteGames: [], fitnessPlan: "", challenges: [], privateMode: false, reminderLead: 30, pregnancy: null,
+  trackCycle: true, trackPreg: true, onboarded: false, dob: "", goals: [], exercise: [], restrictions: [],
 };
+
+/** Everything Health & Wellness keeps about her, as one JSON document. */
+export const apiHealthExport = () => apiClient.get<Record<string, unknown>>("/me/health/export").then((r) => r.data);
+/** Every entry, her settings and her kept papers. Cannot be undone. */
+export const apiHealthDeleteAll = () => apiClient.delete("/me/health").then(() => undefined);
 
 export interface DaySummary {
   date: string; water_ml: number; active_minutes: number; steps: number; kcal: number;

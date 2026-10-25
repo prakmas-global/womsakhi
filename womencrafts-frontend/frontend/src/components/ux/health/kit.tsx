@@ -12,6 +12,7 @@ import {
   DEFAULT_SETTINGS, apiAddEntry, apiDeleteEntry, apiEditEntry, apiEntries, apiHealthSettings, apiSaveHealthSettings,
   type Entry, type HealthKind, type HealthSettings, type KindData,
 } from "@/lib/health-api";
+import { hiddenFrom, setHiddenHealth } from "./nav-prefs";
 
 /**
  * The Health module's shared parts.
@@ -25,31 +26,30 @@ import {
  * a section's colour is always readable.
  */
 
-export type Hue = "pink" | "violet" | "green" | "blue" | "orange" | "amber" | "lilac";
+export type Hue = "pink" | "magenta" | "violet" | "green" | "blue" | "orange" | "amber" | "lilac";
 
 export const HUE: Record<Hue, { tint: string; ink: string }> = {
   pink: { tint: "var(--ux-tint-pink)", ink: "var(--ux-pink-ink)" },
+  magenta: { tint: "var(--ux-tint-magenta)", ink: "var(--ux-magenta-ink)" },
   violet: { tint: "var(--ux-tint-violet)", ink: "var(--ux-violet-ink)" },
-  lilac: { tint: "var(--ux-tint-lilac)", ink: "var(--ux-violet-ink)" },
+  lilac: { tint: "var(--ux-tint-lilac)", ink: "var(--ux-lilac-ink)" },
   green: { tint: "var(--ux-tint-green)", ink: "var(--ux-green-ink)" },
   blue: { tint: "var(--ux-tint-blue)", ink: "var(--ux-blue-ink)" },
   orange: { tint: "var(--ux-tint-orange)", ink: "var(--ux-orange-ink)" },
   amber: { tint: "var(--ux-tint-amber)", ink: "var(--ux-amber-ink)" },
 };
 
-/** The thirteen sections, in the order the module lists them. */
+/** The hub and ten sections, in the order the module lists them (Videos and Health Records are reached from inside other sections). */
 export const SECTIONS: { id: string; label: string; href: string; icon: string; hue: Hue; note: string }[] = [
-  { id: "home", label: "Health home", href: "/app/wellness", icon: "Heart", hue: "pink", note: "Your day at a glance" },
+  { id: "home", label: "Health home", href: "/app/wellness", icon: "Heart", hue: "magenta", note: "Your day at a glance" },
   { id: "fitness", label: "Fitness", href: "/app/health/fitness", icon: "Dumbbell", hue: "orange", note: "Move and feel stronger" },
   { id: "nutrition", label: "Nutrition & Diet", href: "/app/health/nutrition", icon: "Apple", hue: "green", note: "Eat well, every day" },
   { id: "sleep", label: "Sleep", href: "/app/health/sleep", icon: "Moon", hue: "violet", note: "Rest better" },
   { id: "mental", label: "Mental Wellness", href: "/app/health/mind", icon: "Brain", hue: "blue", note: "A calmer mind" },
   { id: "games", label: "Games & Stress Relief", href: "/app/health/games", icon: "Gamepad2", hue: "amber", note: "A mindful break" },
-  { id: "videos", label: "Videos", href: "/app/health/videos", icon: "PlayCircle", hue: "pink", note: "Workout, yoga, calm" },
   { id: "fertility", label: "Fertility", href: "/app/health/fertility", icon: "Flower2", hue: "pink", note: "Know your cycle" },
   { id: "pregnancy", label: "Pregnancy", href: "/app/health/pregnancy", icon: "Baby", hue: "lilac", note: "Week by week" },
-  { id: "records", label: "Health Records", href: "/app/health/records", icon: "FileHeart", hue: "blue", note: "Safe in one place" },
-  { id: "reminders", label: "Appointments & Reminders", href: "/app/health/reminders", icon: "CalendarClock", hue: "amber", note: "Never miss one" },
+  { id: "reminders", label: "Appointments & Reminders", href: "/app/health/reminders", icon: "CalendarClock", hue: "magenta", note: "Never miss one" },
   { id: "mentor", label: "Mentor Connect", href: "/app/health/mentors", icon: "Users", hue: "orange", note: "Women who've been there" },
   { id: "doctor", label: "Doctor Consultation", href: "/app/health/doctors", icon: "Stethoscope", hue: "green", note: "Talk to a doctor" },
 ];
@@ -95,6 +95,8 @@ export interface FrameProps {
   children: (tab: string) => React.ReactNode;
   /** A dark, starry hero — Sleep's. */
   night?: boolean;
+  /** Tabs that draw their own top (Health home's stage): no hero and no tab bar there. */
+  bare?: (tab: string) => boolean;
 }
 
 /** Wrap in Suspense: `useSearchParams` needs a boundary in the app router. */
@@ -102,9 +104,16 @@ export function HealthFrame(props: FrameProps) {
   return <Suspense><FrameInner {...props} /></Suspense>;
 }
 
-function FrameInner({ active, hue, icon, eyebrow, title, sub, actions, art, tabs = [], children, night }: FrameProps) {
+function FrameInner({ active, hue, icon, eyebrow, title, sub, actions, art, tabs = [], children, night, bare }: FrameProps) {
   const [tab, setTab] = useTab(tabs);
   const h = HUE[hue];
+  if (bare?.(tab)) {
+    return (
+      <HomeShell active={active} columns>
+        <div key={tab} className="ux-swap flex flex-col gap-5">{children(tab)}</div>
+      </HomeShell>
+    );
+  }
   return (
     <HomeShell active={active} columns>
       <section data-health-hero
@@ -316,13 +325,17 @@ export function Disclaimer({ children }: { children: React.ReactNode }) {
 
 /**
  * Her entries of some kinds, with add / edit / remove that update the list at
- * once and roll back if the server refuses.
+ * once and roll back if the server refuses. A delete offers Undo for seven
+ * seconds, which saves the entry again.
  */
 export function useEntries<K extends HealthKind>(kinds: K | K[], range: { from?: string; to?: string } = {}) {
   const key = `${Array.isArray(kinds) ? kinds.join(",") : kinds}|${range.from || ""}|${range.to || ""}`;
   const [rows, setRows] = useState<Entry<K>[] | null>(null);
   const [error, setError] = useState("");
   const [nonce, setNonce] = useState(0);
+  // The list as last rendered, so a delete knows what Undo should put back.
+  const latest = useRef<Entry<K>[] | null>(null);
+  useEffect(() => { latest.current = rows; }, [rows]);
 
   useEffect(() => {
     const ctl = new AbortController();
@@ -362,10 +375,16 @@ export function useEntries<K extends HealthKind>(kinds: K | K[], range: { from?:
 
   const remove = useCallback(async (id: string, msg = "Deleted") => {
     let before: Entry<K>[] | null = null;
+    const gone = latest.current?.find((x) => x.id === id);
     setRows((r) => { before = r; return (r ?? []).filter((x) => x.id !== id); });
     try {
       await apiDeleteEntry(id);
-      toast(msg, { tone: "success" });
+      const undo = gone && (() => {
+        apiAddEntry(gone.kind, gone.data, gone.date)
+          .then((made) => { setRows((r) => [made as unknown as Entry<K>, ...(r ?? [])]); toast("Put back", { tone: "success" }); })
+          .catch((e) => toast(apiErrorMessage(e), { tone: "error" }));
+      });
+      toast(msg, undo ? { tone: "success", duration: 7000, action: { label: "Undo", onPress: undo } } : { tone: "success" });
     } catch (e) {
       setRows(before);
       toast(apiErrorMessage(e), { tone: "error" });
@@ -380,13 +399,17 @@ export function useHealthSettings() {
   const [s, setS] = useState<HealthSettings | null>(null);
   useEffect(() => {
     const ctl = new AbortController();
-    apiHealthSettings(ctl.signal).then(setS).catch(() => { if (!ctl.signal.aborted) setS(DEFAULT_SETTINGS); });
+    apiHealthSettings(ctl.signal)
+      // Defaults under what the server sends, so a field an older server lacks still has its value.
+      .then((got) => { const full = { ...DEFAULT_SETTINGS, ...got }; setS(full); setHiddenHealth(hiddenFrom(full)); })
+      .catch(() => { if (!ctl.signal.aborted) setS(DEFAULT_SETTINGS); });
     return () => ctl.abort();
   }, []);
   const save = useCallback(async (patch: Partial<HealthSettings>, msg?: string) => {
     try {
-      const next = await apiSaveHealthSettings(patch);
+      const next = { ...DEFAULT_SETTINGS, ...(await apiSaveHealthSettings(patch)) };
       setS(next);
+      setHiddenHealth(hiddenFrom(next));
       if (msg) toast(msg, { tone: "success" });
       return next;
     } catch (e) {

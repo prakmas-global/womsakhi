@@ -1,18 +1,24 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 
 import { Btn } from "@/components/ux/kit";
 import {
   Chips, Cols, Disclaimer, Empty, HealthFrame, HUE, I, Metric, MetricGrid, Panel, useEntries,
 } from "@/components/ux/health/kit";
+import { artOf } from "@/components/ux/health/art";
+import { fmtTime } from "@/components/ux/health/QuickForms";
+import { FormLauncher, PicChoice, Review, StepSheet, type FlowStep } from "@/components/ux/health/StepFlow";
 import { Checklist, ConsultCard, useChecks } from "@/components/ux/health/checklist";
 import {
   ANC_VISITS, APPT_TITLES, BABY, BAG, CARE_CHECKS, DANGER_SIGNS, MILESTONES, PREG_QUESTIONS, PREG_SYMPTOMS, SEVERITY,
   TRIMESTER_TIPS, babyFor, nextPmsma, pregInfo, type PregInfo,
 } from "@/components/ux/health/pregnancy-data";
 import { addDays, daysBetween, fmtDay, today, type Entry, type Pregnancy } from "@/lib/health-api";
+import { WatchListen } from "@/components/ux/health/WatchListen";
+import { TrendChart } from "@/app/app/health/records/record-parts";
+import { readingProblem } from "@/components/ux/health/records-data";
 
 /**
  * Pregnancy — week by week, with support at every step.
@@ -21,7 +27,7 @@ import { addDays, daysBetween, fmtDay, today, type Entry, type Pregnancy } from 
  * of her last period, or the due date her doctor gave). Symptoms, kick counts,
  * contraction timings and antenatal appointments are entries in the Health
  * store (`pregsym`, `kick`, `contraction`, `reminder` with category
- * "Pregnancy visit"), so appointments also show in Appointments & Reminders.
+ * "Prenatal checkup", the Reminders type), so appointments also show in Appointments & Reminders.
  *
  * Weeks and the due date are estimates and say so; danger signs are shown on
  * every tab that could be read as advice, with 108 to call.
@@ -34,56 +40,69 @@ const TABS = [
   { id: "care", label: "Care Plan" },
   { id: "tools", label: "Tools" },
   { id: "consultation", label: "Consultation" },
+  { id: "watch", label: "Watch & listen" },
 ];
 
 const TRI = ["", "First", "Second", "Third"];
-const VISIT = "Pregnancy visit";
+const VISIT = "Prenatal checkup";
+/** What appointments were saved as before they took the Reminders type's name. */
+const OLD_VISIT = "Pregnancy visit";
 
 export default function PregnancyPage() {
   const ck = useChecks();
   const { settings, ready, save } = ck;
   const info = pregInfo(settings.pregnancy);
-  const entries = useEntries(["pregsym", "kick", "contraction", "reminder"]);
+  const entries = useEntries(["pregsym", "kick", "contraction", "reminder", "measure"]);
+  // The setup sheet (start, or change dates) and the appointment sheet: mounted only while open.
   const [editing, setEditing] = useState(false);
+  const [adding, setAdding] = useState(false);
 
   const sub = info
     ? `Week ${info.week}${info.day ? ` + ${info.day} day${info.day > 1 ? "s" : ""}` : ""} · ${TRI[info.trimester]} trimester · ${info.overdue ? "due date has passed" : `${info.daysLeft} days to go`}`
     : "Your journey, week by week, with support at every step.";
+  const setupFlow = editing && (
+    <SetupFlow current={settings.pregnancy} editing={!!info} onClose={() => setEditing(false)}
+               onSave={async (p) => !!(await save({ pregnancy: p }, "Pregnancy tracking is on"))} />
+  );
 
   return (
     <HealthFrame active="/app/health/pregnancy" hue="lilac" icon="Baby" eyebrow="Pregnancy" title="Pregnancy" sub={sub}
-                 art="/ux/art/scene-mother-baby-laptop.webp" tabs={info ? TABS : []}
+                 art="/ux/health/ill/hero-pregnancy.webp" tabs={info ? TABS : []}
                  actions={info ? (
                    <>
-                     <Btn icon="Plus" href="/app/health/pregnancy?tab=care#appointment">Add appointment</Btn>
+                     <Btn icon="Plus" onClick={() => setAdding(true)}>Add appointment</Btn>
                      <Btn variant="outline" icon="Footprints" href="/app/health/pregnancy?tab=tools">Kick counter</Btn>
                    </>
                  ) : null}>
-      {(tab) => !ready ? <Loading /> : !info || editing ? (
-        <SetupPanel current={settings.pregnancy} editing={editing}
-                    onSave={async (p) => { const ok = await save({ pregnancy: p }, "Pregnancy tracking is on"); if (ok) setEditing(false); }}
-                    onCancel={editing ? () => setEditing(false) : undefined} />
+      {(tab) => !ready ? <Loading /> : !info ? (
+        <>
+          <SetupPanel onStart={() => setEditing(true)} />
+          {setupFlow}
+        </>
       ) : (
         <>
+          {setupFlow}
+          {adding && <AppointmentFlow entries={entries} hospital={settings.pregnancy?.hospital ?? ""} onClose={() => setAdding(false)} />}
           {tab === "overview" && (
-            <Overview info={info} preg={settings.pregnancy!} reminders={entries.rows.filter(isVisit)}
+            <Overview info={info} preg={settings.pregnancy!} reminders={entries.rows.filter(isVisit)} onAdd={() => setAdding(true)}
                       onEdit={() => setEditing(true)} onEnd={() => save({ pregnancy: null }, "Pregnancy tracking has ended")} />
           )}
           {tab === "baby" && <BabyGrowth info={info} />}
           {tab === "symptoms" && <Symptoms entries={entries} />}
-          {tab === "care" && <CarePlan info={info} ck={ck} entries={entries} hospital={settings.pregnancy?.hospital ?? ""} />}
+          {tab === "care" && <CarePlan info={info} ck={ck} entries={entries} onAdd={() => setAdding(true)} />}
           {tab === "tools" && <Tools info={info} ck={ck} entries={entries} />}
           {tab === "consultation" && <Consultation ck={ck} preg={settings.pregnancy!} save={save} />}
+          {tab === "watch" && <WatchListen section="pregnancy" hue="lilac" sub="Prenatal yoga, care tips and what to expect, week by week." />}
         </>
       )}
     </HealthFrame>
   );
 }
 
-type Entries = ReturnType<typeof useEntries<"pregsym" | "kick" | "contraction" | "reminder">>;
+type Entries = ReturnType<typeof useEntries<"pregsym" | "kick" | "contraction" | "reminder" | "measure">>;
 type Checks = ReturnType<typeof useChecks>;
 
-const isVisit = (e: Entry) => e.kind === "reminder" && (e.data as { category?: string }).category === VISIT;
+const isVisit = (e: Entry) => e.kind === "reminder" && [VISIT, OLD_VISIT].includes((e.data as { category?: string }).category ?? "");
 
 function Loading() {
   return <div className="h-[300px] animate-pulse rounded-[20px]" style={{ background: "var(--ux-surface-2)" }} />;
@@ -94,59 +113,49 @@ function Loading() {
 const inputCls = "min-h-[46px] w-full rounded-[12px] border-[1.5px] px-3 text-[15px]";
 const inputStyle: React.CSSProperties = { borderColor: "var(--ux-line-strong)", background: "var(--ux-surface)", color: "var(--ux-ink)" };
 
-function SetupPanel({ current, editing, onSave, onCancel }: {
-  current: Pregnancy | null; editing: boolean; onSave: (p: Pregnancy) => Promise<void>; onCancel?: () => void;
+const PICK_DELAY = 180;
+const long = { day: "numeric", month: "long", year: "numeric" } as const;
+
+/** A labelled text field for a step: the words above, the box below. */
+function Field({ label, value, onChange, placeholder, max = 80 }: {
+  label: string; value: string; onChange: (v: string) => void; placeholder: string; max?: number;
 }) {
-  const [basis, setBasis] = useState<"lmp" | "due">(current?.basis ?? "lmp");
-  const [date, setDate] = useState(current?.date ?? "");
-  const [busy, setBusy] = useState(false);
-  const t = today();
-  const min = basis === "lmp" ? addDays(t, -300) : t;
-  const max = basis === "lmp" ? t : addDays(t, 300);
-  const presets = basis === "lmp"
-    ? [[6, "About 6 weeks ago"], [10, "About 10 weeks ago"], [16, "About 16 weeks ago"], [24, "About 24 weeks ago"]] as const
-    : [[8, "In 2 months"], [16, "In 4 months"], [24, "In 6 months"]] as const;
-  const preview = date && date >= min && date <= max ? pregInfo({ basis, date }) : null;
+  return (
+    <label className="flex flex-col gap-1.5 text-[13px] font-bold" style={{ color: "var(--ux-ink-2)" }}>
+      {label}
+      <input value={value} maxLength={max} onChange={(e) => onChange(e.target.value)} placeholder={placeholder}
+             className={inputCls} style={inputStyle} />
+    </label>
+  );
+}
+
+/** Before tracking starts: what it gives her, and one card that opens the setup sheet. */
+function SetupPanel({ onStart }: { onStart: () => void }) {
   return (
     <Cols
       main={
-        <Panel title={editing ? "Change your dates" : "Start pregnancy tracking"}
-               sub="Add the first day of your last period, or the due date your doctor gave you. You can change it any time.">
-          <div>
-            <p className="mb-2 text-xs font-bold" style={{ color: "var(--ux-ink-2)" }}>I know my</p>
-            <Chips label="What do you know" hue="lilac" value={basis}
-                   options={[{ value: "lmp", label: "First day of my last period" }, { value: "due", label: "Due date from my doctor" }]}
-                   onChange={(v) => { setBasis(v as "lmp" | "due"); setDate(""); }} />
-          </div>
-          <div>
-            <p className="mb-2 text-xs font-bold" style={{ color: "var(--ux-ink-2)" }}>{basis === "lmp" ? "When did your last period start?" : "Your due date"}</p>
-            <div className="mb-2.5 flex flex-wrap gap-2">
-              {presets.map(([w, label]) => {
-                const d = basis === "lmp" ? addDays(t, -w * 7) : addDays(t, w * 7);
-                return (
-                  <button key={label} type="button" aria-pressed={date === d} onClick={() => setDate(d)}
-                          className="ux-press min-h-[38px] rounded-full border-[1.5px] px-3 text-[13px] font-bold"
-                          style={date === d ? { borderColor: HUE.lilac.ink, background: HUE.lilac.tint, color: "var(--ux-ink)" }
-                                            : { borderColor: "var(--ux-line-strong)", color: "var(--ux-ink-2)" }}>{label}</button>
-                );
-              })}
-            </div>
-            <input type="date" aria-label="Date" value={date} min={min} max={max} onChange={(e) => setDate(e.target.value)}
-                   className={`${inputCls} max-w-[260px]`} style={inputStyle} />
-          </div>
-          {preview && (
-            <p className="rounded-[12px] p-3 text-sm" style={{ background: HUE.lilac.tint, color: "var(--ux-ink)" }} data-preg-preview>
-              That makes you about <b>week {preview.week}</b> — estimated due date <b>{fmtDay(preview.due, { day: "numeric", month: "long", year: "numeric" })}</b>.
-            </p>
-          )}
-          <div className="flex flex-wrap gap-2">
-            <Btn icon="Check" disabled={!preview} loading={busy}
-                 onClick={async () => { setBusy(true); await onSave({ ...(current ?? {}), basis, date }); setBusy(false); }}>
-              {editing ? "Save dates" : "Start tracking"}
-            </Btn>
-            {onCancel && <Btn variant="ghost" onClick={onCancel}>Cancel</Btn>}
-          </div>
-        </Panel>
+        <>
+          <FormLauncher art="Pregnancy" title="Start your pregnancy journey" hue="lilac" steps={4} cta="Start"
+                        sub="One date, and your doctor if you like · 4 quick steps" onStart={onStart} />
+          <Panel title="How it works">
+            <ol className="flex flex-col gap-3">
+              {([["Calendar", "Tell us one date", "The first day of your last period, or the due date your doctor gave you."],
+                 ["Pregnancy", "See your week", "Your week, trimester and estimated due date, with baby's growth."],
+                 ["Prenatal checkup", "Get a care plan", "Check-ups, reminders, a kick counter and a hospital bag list."]] as const).map(([art, title, body], i) => (
+                <li key={title} className="flex items-start gap-3">
+                  <span className="grid h-8 w-8 shrink-0 place-items-center rounded-full text-sm font-extrabold tabular-nums"
+                        style={{ background: HUE.lilac.tint, color: HUE.lilac.ink }} aria-hidden>{i + 1}</span>
+                  <span className="min-w-0 flex-1">
+                    <b className="block text-sm" style={{ color: "var(--ux-ink)" }}>{title}</b>
+                    <span className="text-[13px]" style={{ color: "var(--ux-muted)" }}>{body}</span>
+                  </span>
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img src={artOf(art)} alt="" className="h-9 w-9 shrink-0" />
+                </li>
+              ))}
+            </ol>
+          </Panel>
+        </>
       }
       side={
         <>
@@ -163,6 +172,88 @@ function SetupPanel({ current, editing, onSave, onCancel }: {
       }
     />
   );
+}
+
+const BASIS = [
+  { value: "lmp", label: "First day of my last period", sub: "The usual way to count" },
+  { value: "due", label: "Due date from my doctor", sub: "From a scan or check-up" },
+] as const;
+
+/** "I know my…" → the date → doctor and hospital (optional) → check. Also changes the dates later. */
+function SetupFlow({ current, editing, onSave, onClose }: {
+  current: Pregnancy | null; editing: boolean; onSave: (p: Pregnancy) => Promise<boolean>; onClose: () => void;
+}) {
+  const [step, setStep] = useState(0);
+  const [basis, setBasis] = useState<"lmp" | "due">(current?.basis ?? "lmp");
+  const [date, setDate] = useState(current?.date ?? "");
+  const [doctor, setDoctor] = useState(current?.doctor ?? "");
+  const [hospital, setHospital] = useState(current?.hospital ?? "");
+  const [busy, setBusy] = useState(false);
+  const t = today();
+  const min = basis === "lmp" ? addDays(t, -300) : t;
+  const max = basis === "lmp" ? t : addDays(t, 300);
+  const presets = basis === "lmp"
+    ? [[6, "About 6 weeks ago"], [10, "About 10 weeks ago"], [16, "About 16 weeks ago"], [24, "About 24 weeks ago"]] as const
+    : [[8, "In 2 months"], [16, "In 4 months"], [24, "In 6 months"]] as const;
+  const preview = date && date >= min && date <= max ? pregInfo({ basis, date }) : null;
+  const problem = date && !preview
+    ? basis === "lmp" ? "Pick a date from the last 300 days, not in the future." : "Pick a date from today up to 300 days ahead."
+    : "";
+  const save = async () => {
+    if (!preview) return;
+    setBusy(true);
+    const p: Pregnancy = { ...(current ?? {}), basis, date };
+    // Doctor and hospital are kept as they were unless she typed something here.
+    if (doctor.trim() || current?.doctor != null) p.doctor = doctor.trim();
+    if (hospital.trim() || current?.hospital != null) p.hospital = hospital.trim();
+    const ok = await onSave(p);
+    setBusy(false);
+    if (ok) onClose();
+  };
+  const steps: FlowStep[] = [
+    { id: "basis", title: "I know my…", hint: "Either one works. You can change it any time.",
+      body: <PicChoice label="What do you know" hue="lilac" options={BASIS} value={basis}
+                       onChange={(v) => { if (v !== basis) { setBasis(v as "lmp" | "due"); setDate(""); } }}
+                       onPicked={() => setStep(1)} /> },
+    { id: "date", title: basis === "lmp" ? "When did your last period start?" : "What is your due date?",
+      hint: "Tap a rough guess, or pick the exact date.", valid: !!preview,
+      body: <>
+        <Chips label={basis === "lmp" ? "When your last period started" : "Your due date"} hue="lilac" value={date} onChange={setDate}
+               options={presets.map(([w, label]) => ({ value: basis === "lmp" ? addDays(t, -w * 7) : addDays(t, w * 7), label }))} />
+        <label className="flex flex-col gap-1.5 text-[13px] font-bold" style={{ color: "var(--ux-ink-2)" }}>
+          Or pick the exact date
+          <input type="date" value={date} min={min} max={max} onChange={(e) => setDate(e.target.value)} aria-invalid={!!problem || undefined}
+                 className={`${inputCls} max-w-[260px]`} style={{ ...inputStyle, borderColor: problem ? "var(--ux-danger-ink)" : inputStyle.borderColor }} />
+        </label>
+        {problem && <p role="alert" className="text-sm font-semibold" style={{ color: "var(--ux-danger-ink)" }}>{problem}</p>}
+        {preview && (
+          <p className="rounded-[12px] p-3 text-sm" style={{ background: HUE.lilac.tint, color: "var(--ux-ink)" }} data-preg-preview>
+            That makes you about <b>week {preview.week}</b> — estimated due date <b>{fmtDay(preview.due, long)}</b>.
+          </p>
+        )}
+      </> },
+    { id: "care", title: "Your doctor and hospital", hint: "Optional. They are shown on your appointments.",
+      valid: !!(doctor.trim() || hospital.trim()), optional: true,
+      body: <>
+        <Field label="Doctor or ANM" value={doctor} onChange={setDoctor} placeholder="Doctor or ANM name" />
+        <Field label="Hospital or health centre" value={hospital} onChange={setHospital} placeholder="Hospital or health centre" />
+      </> },
+    { id: "check", title: "Check, then save", valid: !!preview,
+      body: <>
+        <Review rows={[
+          ["I know my", basis === "lmp" ? "First day of my last period" : "Due date from my doctor"],
+          [basis === "lmp" ? "Last period" : "Due date given", date ? fmtDay(date, long) : ""],
+          ["Your week", preview ? `About week ${preview.week}` : ""],
+          ["Due date", preview ? `${fmtDay(preview.due, long)} (estimate)` : ""],
+          ["Doctor", doctor.trim()],
+          ["Hospital", hospital.trim()],
+        ]} />
+        <Disclaimer>Weeks and the due date are <b>estimates</b> from the date you enter. Confirm them with your doctor or ANM.</Disclaimer>
+      </> },
+  ];
+  return <StepSheet open onClose={onClose} icon="Baby" title={editing ? "Change your dates" : "Start your pregnancy journey"} hue="lilac"
+                    steps={steps} step={step} setStep={setStep} onSubmit={save} busy={busy}
+                    submitLabel={editing ? "Save dates" : "Start tracking"} />;
 }
 
 /* ── overview ─────────────────────────────────────────────────────────── */
@@ -214,8 +305,8 @@ function nextVisit(rows: Entry[]) {
     .sort((a, b) => (a.date + ((a.data as { time?: string }).time ?? "")).localeCompare(b.date + ((b.data as { time?: string }).time ?? "")))[0];
 }
 
-function Overview({ info, preg, reminders, onEdit, onEnd }: {
-  info: PregInfo; preg: Pregnancy; reminders: Entry[]; onEdit: () => void; onEnd: () => void;
+function Overview({ info, preg, reminders, onAdd, onEdit, onEnd }: {
+  info: PregInfo; preg: Pregnancy; reminders: Entry[]; onAdd: () => void; onEdit: () => void; onEnd: () => void;
 }) {
   const b = babyFor(info.week);
   const up = nextVisit(reminders);
@@ -275,15 +366,15 @@ function Overview({ info, preg, reminders, onEdit, onEnd }: {
             ) : (
               <>
                 <p className="text-sm" style={{ color: "var(--ux-muted)" }}>No upcoming appointments.</p>
-                <Btn size="sm" icon="Plus" href="/app/health/pregnancy?tab=care#appointment">Add one</Btn>
+                <Btn size="sm" icon="Plus" onClick={onAdd}>Add one</Btn>
               </>
             )}
           </Panel>
-          <Panel title="Tools">
+          <Panel title="Quick actions">
             <div className="grid grid-cols-2 gap-2.5">
-              {([["Footprints", "Kick counter", "/app/health/pregnancy?tab=tools"], ["Timer", "Contraction timer", "/app/health/pregnancy?tab=tools"],
-                 ["ListChecks", "Checklist", "/app/health/pregnancy?tab=care"], ["Briefcase", "Hospital bag", "/app/health/pregnancy?tab=tools#bag"],
-                 ["Scale", "Weight tracker", "/app/health/records?tab=records"], ["Stethoscope", "Gynaecologist", "/app/health/doctors?speciality=Gynaecologist"]] as const).map(([ic, l, href]) => (
+              {([["Activity", "Log symptoms", "/app/health/pregnancy?tab=symptoms"], ["Footprints", "Count kicks", "/app/health/pregnancy?tab=tools"],
+                 ["Scale", "Log weight", "/app/health/pregnancy?tab=tools#weight"], ["CalendarPlus", "Add appointment", "/app/health/pregnancy?tab=care#appointment"],
+                 ["Briefcase", "Hospital bag", "/app/health/pregnancy?tab=tools#bag"], ["Stethoscope", "Talk to an OB-GYN", "/app/health/doctors?speciality=Gynaecologist"]] as const).map(([ic, l, href]) => (
                 <Link key={l} href={href} className="ux-card ux-press ux-hov flex min-h-[86px] flex-col items-center justify-center gap-2 p-2 text-center text-[13px] font-bold"
                       style={{ color: "var(--ux-ink)" }}>
                   <span className="grid h-9 w-9 place-items-center rounded-[10px]" style={{ background: HUE.lilac.tint, color: HUE.lilac.ink }}><I name={ic} className="h-[18px] w-[18px]" /></span>
@@ -325,9 +416,40 @@ function Overview({ info, preg, reminders, onEdit, onEnd }: {
 /* ── baby growth ──────────────────────────────────────────────────────── */
 
 function BabyGrowth({ info }: { info: PregInfo }) {
-  const cur = babyFor(info.week);
+  const first = BABY[0][0], last = BABY[BABY.length - 1][0];
+  const mine = Math.min(last, Math.max(first, info.week));
+  const [week, setWeek] = useState(mine);
+  const cur = babyFor(week);
+  const mark = MILESTONES.find(([w]) => w === week);
   return (
     <Panel title="Baby's journey, week by week" sub="General information with approximate size comparisons. Every pregnancy is different.">
+      <div className="flex flex-col gap-3 rounded-[16px] p-4" style={{ background: HUE.lilac.tint }} data-baby-explore>
+        <div className="flex flex-wrap items-end justify-between gap-3">
+          <div>
+            <p className="text-2xs font-extrabold uppercase tracking-[0.12em]" style={{ color: HUE.lilac.ink }}>
+              {week === mine ? "Your week" : "Exploring"}{mark ? ` · ${mark[1]}` : ""}
+            </p>
+            <p className="text-[34px] font-extrabold leading-none tabular-nums" style={{ color: HUE.lilac.ink }}>Week {week}</p>
+          </div>
+          {week !== mine && <Btn size="sm" variant="outline" onClick={() => setWeek(mine)}>Go to my week ({info.week})</Btn>}
+        </div>
+        <label className="flex flex-col gap-1 text-xs font-bold" style={{ color: "var(--ux-ink-2)" }}>
+          Explore weeks {first} to {last}
+          <input type="range" min={first} max={last} step={1} value={week} onChange={(e) => setWeek(Number(e.target.value))}
+                 aria-valuetext={`Week ${week}`} style={{ accentColor: HUE.lilac.ink }} />
+        </label>
+        <p className="text-sm" style={{ color: "var(--ux-ink)" }}><b>About the size of {cur[1]}.</b> {cur[2]}</p>
+        <div className="flex flex-wrap gap-1.5" aria-label="Milestones">
+          {MILESTONES.map(([w, l]) => (
+            <button key={w} type="button" aria-pressed={week === w} onClick={() => setWeek(w)}
+                    className="ux-press rounded-full border px-3 py-1 text-xs font-bold"
+                    style={week === w ? { borderColor: HUE.lilac.ink, background: "var(--ux-surface)", color: HUE.lilac.ink }
+                                      : { borderColor: "var(--ux-line-strong)", background: "var(--ux-surface)", color: "var(--ux-ink-2)" }}>
+              {w} · {l}
+            </button>
+          ))}
+        </div>
+      </div>
       <ol className="flex flex-col gap-1.5" data-baby-weeks>
         {BABY.map((b) => {
           const on = b[0] === cur[0];
@@ -340,7 +462,7 @@ function BabyGrowth({ info }: { info: PregInfo }) {
               <span>
                 <b className="block text-sm" style={{ color: "var(--ux-ink)" }}>About the size of {b[1]}</b>
                 <span className="text-[13px]" style={{ color: "var(--ux-muted)" }}>{b[2]}</span>
-                {on && <span className="mt-1.5 inline-flex rounded-full px-2.5 py-0.5 text-[11.5px] font-extrabold" style={{ background: "var(--ux-surface)", color: HUE.lilac.ink }}>You are around here</span>}
+                {on && week === mine && <span className="mt-1.5 inline-flex rounded-full px-2.5 py-0.5 text-[11.5px] font-extrabold" style={{ background: "var(--ux-surface)", color: HUE.lilac.ink }}>You are around here</span>}
               </span>
             </li>
           );
@@ -352,23 +474,62 @@ function BabyGrowth({ info }: { info: PregInfo }) {
 
 /* ── symptoms ─────────────────────────────────────────────────────────── */
 
-function Symptoms({ entries }: { entries: Entries }) {
+const SEVERITY_ART: Record<string, { art: string; sub: string }> = {
+  Mild: { art: "Mild", sub: "I notice it" }, Moderate: { art: "Moderate", sub: "Hard to ignore" }, Strong: { art: "Severe", sub: "Stops me in my day" },
+};
+
+function CrampsWarning() {
+  return <Disclaimer>Strong cramps in pregnancy can need care. If they don&rsquo;t ease, or come with bleeding, call your doctor or 108.</Disclaimer>;
+}
+
+/** Symptoms (several) → how strong → a note → check, with the day. */
+function SymptomFlow({ entries, onClose }: { entries: Entries; onClose: () => void }) {
+  const [step, setStep] = useState(0);
   const [picked, setPicked] = useState<string[]>([]);
   const [severity, setSeverity] = useState<string>("Mild");
   const [when, setWhen] = useState<"today" | "yesterday">("today");
   const [note, setNote] = useState("");
   const [busy, setBusy] = useState(false);
-  const rows = entries.rows.filter((r) => r.kind === "pregsym") as Entry<"pregsym">[];
+  const warn = picked.includes("Cramps") && severity === "Strong";
   const log = async () => {
     setBusy(true);
     const ok = await entries.add("pregsym", { symptoms: picked, severity, note: note.trim() }, when === "today" ? today() : addDays(today(), -1), "Saved to your symptom journal");
     setBusy(false);
-    if (ok) { setPicked([]); setNote(""); setSeverity("Mild"); }
+    if (ok) onClose();
   };
+  const steps: FlowStep[] = [
+    { id: "what", title: "What are you feeling?", hint: "Tap all that apply.", valid: picked.length > 0,
+      body: <PicChoice label="Symptoms" hue="lilac" multi columns={4} options={PREG_SYMPTOMS} value={picked}
+                       onChange={(v) => setPicked((c) => (c.includes(v) ? c.filter((x) => x !== v) : [...c, v]))} /> },
+    { id: "how", title: "How strong is it?",
+      body: <>
+        {/* Moves on by itself, except when the choice needs a warning she should read first. */}
+        <PicChoice label="Severity" hue="lilac" value={severity}
+                   onChange={(v) => { setSeverity(v); if (!(v === "Strong" && picked.includes("Cramps"))) window.setTimeout(() => setStep(2), PICK_DELAY); }}
+                   options={SEVERITY.map((v) => ({ value: v, label: v, ...SEVERITY_ART[v] }))} />
+        {warn && <CrampsWarning />}
+      </> },
+    { id: "note", title: "Anything to add?", hint: "Optional. A few words for your doctor.", valid: !!note.trim(), optional: true,
+      body: <Field label="A note" value={note} onChange={setNote} max={200} placeholder="A note (optional)" /> },
+    { id: "check", title: "Check, then save", valid: picked.length > 0,
+      body: <>
+        <Chips label="When" hue="lilac" options={[{ value: "today", label: "Today" }, { value: "yesterday", label: "Yesterday" }]} value={when} onChange={(v) => setWhen(v as "today" | "yesterday")} />
+        <Review rows={[["Symptoms", picked.join(", ")], ["How strong", severity], ["Note", note.trim()], ["Day", when === "today" ? "Today" : "Yesterday"]]} />
+        {warn && <CrampsWarning />}
+      </> },
+  ];
+  return <StepSheet open onClose={onClose} icon="Activity" title="Log how you feel" hue="lilac" steps={steps} step={step} setStep={setStep}
+                    onSubmit={log} busy={busy} submitLabel="Save" />;
+}
+
+function Symptoms({ entries }: { entries: Entries }) {
+  const [logging, setLogging] = useState(false);
+  const rows = entries.rows.filter((r) => r.kind === "pregsym") as Entry<"pregsym">[];
   return (
     <Cols
       main={
         <>
+          {logging && <SymptomFlow entries={entries} onClose={() => setLogging(false)} />}
           <DangerCard />
           <Panel title="Symptom journal" sub="What you felt, by day">
             {rows.length ? (
@@ -387,29 +548,14 @@ function Symptoms({ entries }: { entries: Entries }) {
                   </li>
                 ))}
               </ul>
-            ) : <Empty icon="NotebookPen" title="Nothing logged yet" body="Tap how you feel on the right. It helps you remember what to tell your doctor." />}
+            ) : <Empty icon="NotebookPen" title="Nothing logged yet" body="Log how you feel. It helps you remember what to tell your doctor."
+                       action={<Btn size="sm" icon="Plus" onClick={() => setLogging(true)}>Log symptoms</Btn>} />}
           </Panel>
         </>
       }
       side={
-        <Panel title="How are you feeling?" sub="Tap all that apply">
-          <Chips label="Symptoms" hue="lilac" options={PREG_SYMPTOMS} value={picked}
-                 onChange={(v) => setPicked((c) => (c.includes(v) ? c.filter((x) => x !== v) : [...c, v]))} />
-          <div>
-            <p className="mb-2 text-xs font-bold" style={{ color: "var(--ux-ink-2)" }}>How strong?</p>
-            <Chips label="Severity" hue="lilac" options={SEVERITY} value={severity} onChange={setSeverity} />
-          </div>
-          <div>
-            <p className="mb-2 text-xs font-bold" style={{ color: "var(--ux-ink-2)" }}>When?</p>
-            <Chips label="When" hue="lilac" options={[{ value: "today", label: "Today" }, { value: "yesterday", label: "Yesterday" }]} value={when} onChange={(v) => setWhen(v as "today" | "yesterday")} />
-          </div>
-          <input value={note} maxLength={200} onChange={(e) => setNote(e.target.value)} placeholder="A note (optional)" aria-label="Note"
-                 className={inputCls} style={inputStyle} />
-          <Btn icon="Check" disabled={!picked.length} loading={busy} onClick={log}>Save</Btn>
-          {picked.includes("Cramps") && severity === "Strong" && (
-            <Disclaimer>Strong cramps in pregnancy can need care. If they don&rsquo;t ease, or come with bleeding, call your doctor or 108.</Disclaimer>
-          )}
-        </Panel>
+        <FormLauncher art="Pregnancy care" title="How are you feeling?" sub="Log symptoms · 4 quick steps, mostly taps" steps={4} hue="lilac"
+                      onStart={() => setLogging(true)} cta="Log" />
       }
     />
   );
@@ -417,7 +563,7 @@ function Symptoms({ entries }: { entries: Entries }) {
 
 /* ── care plan ────────────────────────────────────────────────────────── */
 
-function CarePlan({ info, ck, entries, hospital }: { info: PregInfo; ck: Checks; entries: Entries; hospital: string }) {
+function CarePlan({ info, ck, entries, onAdd }: { info: PregInfo; ck: Checks; entries: Entries; onAdd: () => void }) {
   const visits = entries.rows.filter(isVisit) as Entry<"reminder">[];
   const t = today();
   const upcoming = visits.filter((v) => v.date >= t && !(v.data.done ?? []).includes(v.date)).sort((a, b) => a.date.localeCompare(b.date));
@@ -475,7 +621,8 @@ function CarePlan({ info, ck, entries, hospital }: { info: PregInfo; ck: Checks;
       }
       side={
         <>
-          <AppointmentForm entries={entries} hospital={hospital} />
+          <FormLauncher id="appointment" art="Prenatal checkup" title="Add a prenatal appointment" steps={5} hue="lilac"
+                        sub="We'll remind you the day before · 5 quick steps" onStart={onAdd} cta="Add" />
           <Panel title="Appointments">
             {upcoming.length + past.length === 0 ? (
               <p className="text-sm" style={{ color: "var(--ux-muted)" }}>Your check-ups will show here, and in Appointments &amp; Reminders.</p>
@@ -514,15 +661,25 @@ function CarePlan({ info, ck, entries, hospital }: { info: PregInfo; ck: Checks;
   );
 }
 
-function AppointmentForm({ entries, hospital }: { entries: Entries; hospital: string }) {
+/** Pictures for the appointment types (art.ts names); the saved title stays the type's own words. */
+const APPT_ART: Record<string, { art: string; sub?: string }> = {
+  "Antenatal check-up": { art: "Prenatal checkup" }, "Ultrasound scan": { art: "Ultrasound" }, "Blood test": { art: "Blood test" },
+  "Td injection": { art: "Vaccination" }, "PMSMA check-up": { art: "Doctor appointment", sub: "Free, on the 9th" },
+};
+const APPT_TIMES = ["09:00", "10:00", "11:30", "14:00", "16:00"];
+
+/** Type → day → time → where (optional) → check. Saved as a "Prenatal checkup" reminder. */
+function AppointmentFlow({ entries, hospital, onClose }: { entries: Entries; hospital: string; onClose: () => void }) {
   const t = today();
-  const dayOpts = useMemo(() => [
+  const pmsma = nextPmsma();
+  const dayOpts = [
     { value: addDays(t, 1), label: "Tomorrow" },
     { value: addDays(t, 7), label: "Next week" },
-    { value: nextPmsma(), label: `PMSMA day (${fmtDay(nextPmsma())})` },
+    { value: pmsma, label: `PMSMA day (${fmtDay(pmsma)})` },
     { value: "pick", label: "Pick a day" },
-  ], [t]);
-  const [title, setTitle] = useState(APPT_TITLES[0]);
+  ];
+  const [step, setStep] = useState(0);
+  const [title, setTitle] = useState("");
   const [day, setDay] = useState(dayOpts[0].value);
   const [picked, setPicked] = useState(addDays(t, 3));
   const [time, setTime] = useState("10:00");
@@ -531,29 +688,57 @@ function AppointmentForm({ entries, hospital }: { entries: Entries; hospital: st
   const date = day === "pick" ? picked : day;
   const add = async () => {
     setBusy(true);
-    await entries.add("reminder", { title, category: VISIT, time, repeat: "Once", where: where.trim() }, date, "Appointment added — we'll remind you");
+    const ok = await entries.add("reminder", { title, category: VISIT, time, repeat: "Once", where: where.trim() }, date, "Appointment added — we'll remind you");
     setBusy(false);
+    if (ok) onClose();
   };
-  return (
-    <Panel id="appointment" title="Add an appointment" sub="We'll remind you the day before">
-      <Chips label="What" hue="lilac" options={APPT_TITLES} value={title} onChange={setTitle} />
-      <div>
-        <p className="mb-2 text-xs font-bold" style={{ color: "var(--ux-ink-2)" }}>When?</p>
+  const steps: FlowStep[] = [
+    { id: "what", title: "What is the appointment for?", valid: !!title,
+      body: <PicChoice label="Appointment type" hue="lilac" value={title} onChange={setTitle} onPicked={() => setStep(1)}
+                       options={APPT_TITLES.map((v) => ({ value: v, label: v, ...APPT_ART[v] }))} /> },
+    { id: "day", title: "Which day?", hint: "PMSMA day is a free check-up at government health centres.", valid: !!date,
+      body: <>
         <Chips label="Day" hue="lilac" options={dayOpts} value={day} onChange={setDay} />
         {day === "pick" && (
-          <input type="date" aria-label="Appointment date" value={picked} min={t} onChange={(e) => setPicked(e.target.value)}
-                 className={`${inputCls} mt-2.5`} style={inputStyle} />
+          <label className="ux-swap flex flex-col gap-1.5 text-[13px] font-bold" style={{ color: "var(--ux-ink-2)" }}>
+            Appointment date
+            <input type="date" value={picked} min={t} onChange={(e) => setPicked(e.target.value)}
+                   className={`${inputCls} max-w-[260px]`} style={inputStyle} />
+          </label>
         )}
-      </div>
-      <div>
-        <p className="mb-2 text-xs font-bold" style={{ color: "var(--ux-ink-2)" }}>Time</p>
-        <Chips label="Time" hue="lilac" options={["09:00", "10:00", "11:30", "14:00", "16:00"]} value={time} onChange={setTime} />
-      </div>
-      <input value={where} maxLength={80} onChange={(e) => setWhere(e.target.value)} placeholder="Hospital or health centre (optional)"
-             aria-label="Where" className={inputCls} style={inputStyle} />
-      <Btn icon="Plus" loading={busy} disabled={!date} onClick={add}>Add appointment</Btn>
-    </Panel>
-  );
+        {date && (
+          <p className="rounded-[12px] p-3 text-sm font-bold" style={{ background: HUE.lilac.tint, color: "var(--ux-ink)" }}>
+            {fmtDay(date, { weekday: "long", day: "numeric", month: "long" })}
+          </p>
+        )}
+      </> },
+    { id: "time", title: "What time?", valid: !!time,
+      body: <>
+        <Chips label="Time" hue="lilac" options={APPT_TIMES.map((x) => ({ value: x, label: fmtTime(x) }))} value={time} onChange={setTime} />
+        <label className="flex flex-col gap-1.5 text-[13px] font-bold" style={{ color: "var(--ux-ink-2)" }}>
+          Or set the exact time
+          <input type="time" value={time} onChange={(e) => e.target.value && setTime(e.target.value)}
+                 className={`${inputCls} max-w-[200px]`} style={inputStyle} />
+        </label>
+      </> },
+    { id: "where", title: "Where is it?", hint: "Optional. The hospital or health centre.", valid: !!where.trim(), optional: true,
+      body: <>
+        {hospital && where.trim() !== hospital && (
+          <Chips label="Your hospital" hue="lilac" options={[hospital]} value={where} onChange={setWhere} />
+        )}
+        <Field label="Hospital or health centre" value={where} onChange={setWhere} placeholder="Hospital or health centre (optional)" />
+      </> },
+    { id: "check", title: "Check, then save", valid: !!title && !!date,
+      body: <Review rows={[
+        ["What", title],
+        ["Day", date ? fmtDay(date, { weekday: "short", day: "numeric", month: "short" }) : ""],
+        ["Time", fmtTime(time)],
+        ["Where", where.trim()],
+        ["Reminder", "The day before"],
+      ]} /> },
+  ];
+  return <StepSheet open onClose={onClose} icon="CalendarPlus" title="Add a prenatal appointment" hue="lilac" steps={steps} step={step} setStep={setStep}
+                    onSubmit={add} busy={busy} submitLabel="Add appointment" />;
 }
 
 /* ── tools ─────────────────────────────────────────────────────────────── */
@@ -669,13 +854,15 @@ function ContractionTimer({ entries }: { entries: Entries }) {
 function Tools({ info, ck, entries }: { info: PregInfo; ck: Checks; entries: Entries }) {
   const bag = BAG.map((text, i) => ({ id: `bag-${i}`, text }));
   useEffect(() => {
-    if (window.location.hash === "#bag") document.getElementById("bag")?.scrollIntoView({ block: "start" });
+    const id = window.location.hash.slice(1);
+    if (id === "bag" || id === "weight") document.getElementById(id)?.scrollIntoView({ block: "start" });
   }, []);
   return (
     <Cols
       main={
         <>
           <KickCounter info={info} entries={entries} />
+          <WeightTracker entries={entries} />
           <ContractionTimer entries={entries} />
         </>
       }
@@ -685,6 +872,46 @@ function Tools({ info, ck, entries }: { info: PregInfo; ck: Checks; entries: Ent
         </Panel>
       }
     />
+  );
+}
+
+/** Weight through the pregnancy — the same "Weight" readings Health Records keeps. */
+function WeightTracker({ entries }: { entries: Entries }) {
+  const rows = entries.rows.filter((r): r is Entry<"measure"> => r.kind === "measure" && (r.data as { type?: string }).type === "Weight");
+  const [value, setValue] = useState("");
+  const problem = value ? readingProblem("Weight", value) : "";
+  const recent = [...rows].sort((a, b) => b.date.localeCompare(a.date)).slice(0, 4);
+  const save = async () => {
+    const ok = await entries.add("measure", { type: "Weight", value: value.trim() }, today(), "Weight saved");
+    if (ok) setValue("");
+  };
+  return (
+    <Panel id="weight" title="Weight tracker" sub="Weigh at the same time of day, about once a week.">
+      <div className="flex flex-wrap items-end gap-2">
+        <label className="flex min-w-0 flex-1 basis-[160px] flex-col gap-1 text-xs font-bold" style={{ color: "var(--ux-ink-2)" }}>
+          Today&apos;s weight (kg)
+          <input inputMode="decimal" value={value} onChange={(e) => setValue(e.target.value.replace(/[^0-9.]/g, "").slice(0, 5))}
+                 placeholder="58.5" aria-invalid={!!problem || undefined}
+                 className="min-h-[44px] rounded-[12px] border px-3 text-base font-semibold tabular-nums"
+                 style={{ borderColor: problem ? "var(--ux-danger-ink)" : "var(--ux-line-strong)", background: "var(--ux-surface)", color: "var(--ux-ink)" }} />
+        </label>
+        <Btn icon="Plus" disabled={!value || !!problem} onClick={save}>Save</Btn>
+      </div>
+      {problem && <p role="alert" className="text-xs font-semibold" style={{ color: "var(--ux-danger-ink)" }}>{problem}</p>}
+      <TrendChart rows={rows} type="Weight" />
+      {recent.length > 0 && (
+        <ul className="flex flex-col gap-1.5">
+          {recent.map((r) => (
+            <li key={r.id} className="flex items-center gap-3 text-sm">
+              <span className="w-[92px] shrink-0 text-xs tabular-nums" style={{ color: "var(--ux-muted)" }}>{fmtDay(r.date, { day: "numeric", month: "short" })}</span>
+              <b className="flex-1 tabular-nums" style={{ color: "var(--ux-ink)" }}>{r.data.value} kg</b>
+              <Btn size="sm" variant="ghost" icon="Trash2" onClick={() => entries.remove(r.id, "Weight deleted")}>Delete</Btn>
+            </li>
+          ))}
+        </ul>
+      )}
+      <p className="text-xs" style={{ color: "var(--ux-muted)" }}>Healthy gain depends on your weight before pregnancy. Ask your doctor what is right for you.</p>
+    </Panel>
   );
 }
 

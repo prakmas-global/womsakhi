@@ -70,6 +70,11 @@ export interface NavNode {
    * name its Back should carry.
    */
   unlisted?: boolean;
+  /**
+   * A heading the rail draws above the first child of a run that shares it
+   * (Health & Wellness: "Wellness", "Women's health", "Care").
+   */
+  group?: string;
   children?: NavNode[];
 }
 
@@ -236,11 +241,13 @@ export const SECTIONS: Section[] = [
         { id: "swap", label: "Pass it on", k: "ch.swap", icon: "Gift", href: "/app/swap", note: "Things other women no longer need", },
       ],
     },
-    /* Health & Wellness — thirteen sections, after the approved Health &
-       Wellness design. Not a tab: five is the bottom bar's ceiling. Each
-       section is one route with its tabs in the URL (?tab=…), drawn by
-       components/ux/health/kit.tsx. Older pages stay as unlisted children so
-       their breadcrumbs and Back still say where they live. */
+    /* Health & Wellness — the hub and ten sections, listed without group headings, after the
+       approved Health & Wellness design. Not a tab: five is the bottom bar's
+       ceiling. Each section is one route with its tabs in the URL (?tab=…),
+       drawn by components/ux/health/kit.tsx. Older pages stay as unlisted
+       children so their breadcrumbs and Back still say where they live —
+       Videos and Health Records among them: the design folds videos into each
+       section and records into Pregnancy and Doctor Consultation. */
     { tab: false, id: "wellness", label: "Health & Wellness", icon: "Heart", href: "/app/wellness", note: "Your body, your mind, your care",
       children: [
         { id: "fitness", label: "Fitness", icon: "Dumbbell", href: "/app/health/fitness", note: "Move and feel stronger",
@@ -256,7 +263,7 @@ export const SECTIONS: Section[] = [
           ],
         },
         { id: "health-games", label: "Games & Stress Relief", icon: "Gamepad2", href: "/app/health/games", note: "A mindful break", },
-        { id: "health-videos", label: "Videos", icon: "PlayCircle", href: "/app/health/videos", note: "Workout, yoga and calm", },
+        { id: "health-videos", label: "Videos", icon: "PlayCircle", href: "/app/health/videos", note: "Workout, yoga and calm", unlisted: true, },
         { id: "fertility", label: "Fertility", icon: "Flower2", href: "/app/health/fertility", note: "Know your cycle",
           children: [
             { id: "cycle", label: "Cycle Tracker", icon: "Heart", href: "/app/health/cycle", note: "One tap a day", unlisted: true,
@@ -276,7 +283,7 @@ export const SECTIONS: Section[] = [
           ],
         },
         { id: "pregnancy", label: "Pregnancy", icon: "Baby", href: "/app/health/pregnancy", note: "Week by week", },
-        { id: "health-records", label: "Health Records", icon: "FileHeart", href: "/app/health/records", note: "Safe in one place", },
+        { id: "health-records", label: "Health Records", icon: "FileHeart", href: "/app/health/records", note: "Safe in one place", unlisted: true, },
         { id: "health-reminders", label: "Appointments & Reminders", icon: "CalendarClock", href: "/app/health/reminders", note: "Never miss one", },
         { id: "health-mentors", label: "Mentor Connect", icon: "Users", href: "/app/health/mentors", note: "Women who've been there", },
         { id: "health-doctors", label: "Doctor Consultation", icon: "Stethoscope", href: "/app/health/doctors", note: "Talk to a doctor", },

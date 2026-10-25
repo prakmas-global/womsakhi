@@ -118,3 +118,32 @@ async def test_settings_merge_and_pregnancy_clear(api):
     got = await client.put("/me/health/settings", json={"pregnancy": None}, headers=h)
     assert got.json()["pregnancy"] is None
     assert (await client.put("/me/health/settings", json={"diet": "Pizza"}, headers=h)).status_code == 422
+
+
+async def test_onboarding_settings_export_and_delete_all(api):
+    client, db, made = api
+    _, h = await _member(db, made, "Asha")
+    _, h2 = await _member(db, made, "Bina")
+    got = await client.put("/me/health/settings", headers=h, json={
+        "onboarded": True, "dob": "1994-05-02", "goals": ["Sleep better", "Sleep better", "Eat better"],
+        "exercise": ["Yoga"], "restrictions": ["No onion or garlic"], "trackPreg": False})
+    assert got.status_code == 200, got.text
+    s = got.json()
+    assert s["onboarded"] is True and s["goals"] == ["Sleep better", "Eat better"] and s["trackPreg"] is False and s["trackCycle"] is True
+    assert (await client.put("/me/health/settings", headers=h, json={"dob": "May 1994"})).status_code == 422
+
+    today = (await client.get("/me/health/summary", params={"days": 1}, headers=h)).json()[0]["date"]
+    for body in ({"kind": "water", "date": today, "data": {"ml": 250}},
+                 {"kind": "reminder", "date": today, "data": {"title": "Iron", "category": "Medicine", "time": "21:00", "repeat": "Every day"}}):
+        assert (await client.post("/me/health/entries", headers=h, json=body)).status_code == 201
+    await client.post("/me/health/entries", headers=h2, json={"kind": "water", "date": today, "data": {"ml": 500}})
+
+    out = (await client.get("/me/health/export", headers=h)).json()
+    assert {e["kind"] for e in out["entries"]} == {"water", "reminder"} and out["settings"]["dob"] == "1994-05-02"
+    assert all(e["data"].get("ml") != 500 for e in out["entries"])  # never someone else's
+
+    assert (await client.delete("/me/health", headers=h)).status_code == 204
+    assert (await client.get("/me/health/entries", params={"kind": "water"}, headers=h)).json() == []
+    assert (await client.get("/me/health/settings", headers=h)).json()["onboarded"] is False
+    # Hers only: Bina's water is still there.
+    assert len((await client.get("/me/health/entries", params={"kind": "water"}, headers=h2)).json()) == 1

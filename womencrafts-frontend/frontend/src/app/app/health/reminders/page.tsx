@@ -5,6 +5,7 @@ import { useEffect, useMemo, useState } from "react";
 import { Btn } from "@/components/ux/kit";
 import { Chips, Cols, Empty, HealthFrame, I, Panel, useEntries, useHealthSettings } from "@/components/ux/health/kit";
 import { ReminderSheet } from "@/components/ux/health/ReminderSheet";
+import { FormLauncher } from "@/components/ux/health/StepFlow";
 import { useAppointments, type Appointment } from "@/components/ux/health/appointments";
 import {
   LEADS, QUICK_REMINDERS, REM_CATS, fmtTime, isDoneOn, occDay, occursOn, statusOf, timeOn,
@@ -66,9 +67,9 @@ export default function RemindersPage() {
   };
 
   return (
-    <HealthFrame active="/app/health/reminders" hue="amber" icon="CalendarClock" eyebrow="Appointments & Reminders"
+    <HealthFrame active="/app/health/reminders" hue="magenta" icon="CalendarClock" eyebrow="Appointments & Reminders"
                  title="Appointments & Reminders" sub="Stay on track with check-ups, medicines and daily habits."
-                 art="/ux/art/scene-woman-planning-board.webp" tabs={TABS}
+                 art="/ux/health/ill/hero-reminders.webp" tabs={TABS}
                  actions={<>
                    <Btn icon="Plus" onClick={() => setSheet({})}>Add reminder</Btn>
                    <Btn variant="outline" icon="Stethoscope" href="/app/health/doctors">Book a consultation</Btn>
@@ -159,7 +160,7 @@ function Upcoming({ rows, appts, loading, now, actions, onAdd }: {
       main={
         <Panel title="Your reminders" sub="Overdue first, then today, then what is coming.">
           {/* Only the types she uses — eleven chips on a phone is a wall. */}
-          {used.length > 1 && <Chips label="Filter by type" hue="amber" value={filter} onChange={setFilter} options={["All", ...used]} />}
+          {used.length > 1 && <Chips label="Filter by type" hue="magenta" value={filter} onChange={setFilter} options={["All", ...used]} />}
           {loading ? <p className="text-sm" style={{ color: "var(--ux-muted)" }}>Loading your reminders…</p> : !anything ? (
             <Empty icon="Bell" title={filter === "All" ? "No reminders yet" : "Nothing in this type"}
                    body="Add one for a check-up, a medicine or a daily habit. It reaches your bell when it is due."
@@ -189,6 +190,8 @@ function Upcoming({ rows, appts, loading, now, actions, onAdd }: {
       }
       side={
         <>
+          <FormLauncher art="Reminder" title="Add a reminder" sub="A check-up, a medicine or a habit · a few quick taps" steps={6} hue="magenta"
+                        cta="Add" onStart={() => onAdd()} />
           <Panel title="Add in one tap" sub="Change the time later if you like.">
             <div className="flex flex-col gap-2">
               {QUICK_REMINDERS.map((q) => (
@@ -293,7 +296,7 @@ function AllTab({ rows, now, actions, onAdd }: { rows: Rem[]; now: Now; actions:
   const shown = rows.filter((r) => filter === "All" || (filter === "Cancelled" ? r.data.cancelled : r.data.category === filter && !r.data.cancelled));
   return (
     <Panel title="All reminders" sub={`${rows.length} in all`} action={<Btn size="sm" variant="soft" icon="Plus" onClick={onAdd}>Add</Btn>}>
-      <Chips label="Filter" hue="amber" value={filter} onChange={setFilter}
+      <Chips label="Filter" hue="magenta" value={filter} onChange={setFilter}
              options={["All", ...REM_CATS.filter((c) => rows.some((r) => r.data.category === c)), ...(rows.some((r) => r.data.cancelled) ? ["Cancelled"] : [])]} />
       {shown.length ? (
         <ul>{shown.map((r) => <ReminderRow key={r.id} r={r} today={now.day} now={now.time} {...actions} />)}</ul>
@@ -307,7 +310,7 @@ function SettingsTab({ lead, onLead }: { lead: number; onLead: (v: number) => vo
     <Cols
       main={
         <Panel title="When to remind you" sub="Applies to every reminder you set here.">
-          <Chips label="Alert timing" hue="amber" value={String(lead)} onChange={(v) => onLead(Number(v))}
+          <Chips label="Alert timing" hue="magenta" value={String(lead)} onChange={(v) => onLead(Number(v))}
                  options={LEADS.map((l) => ({ value: String(l.value), label: l.label }))} />
           <p className="text-sm" style={{ color: "var(--ux-muted)" }}>
             Reminders arrive in your bell. The message only says a reminder is due — never what it is about — so it is safe on a shared phone.

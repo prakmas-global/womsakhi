@@ -12,6 +12,7 @@ import {
 } from "@/components/ux/health/kit";
 import { ConsultCard } from "@/components/ux/health/checklist";
 import { ReminderSheet } from "@/components/ux/health/ReminderSheet";
+import { Dial, Review, StepSheet, useFlow, type FlowStep } from "@/components/ux/health/StepFlow";
 import { useAppointments } from "@/components/ux/health/appointments";
 import {
   BLOOD_GROUPS, MEAS, SCHEDULE_TIME, fmtTime, measOf, occDay, statusOf, timeOn, unitOf,
@@ -23,7 +24,7 @@ import {
 } from "@/lib/health-api";
 import { apiChecklist, apiSaveChecklist, type Checklist } from "@/lib/my-records-api";
 import {
-  AllergySheet, DocumentSheet, HistorySheet, Label, MedicineSheet, Private, ReadingSheet, Row, Trend, TrendChart, printSummary,
+  AllergySheet, DocumentSheet, HistorySheet, MedicineSheet, Private, ReadingSheet, Row, Trend, TrendChart, printSummary,
 } from "./record-parts";
 
 /**
@@ -80,7 +81,7 @@ export default function RecordsPage() {
   return (
     <HealthFrame active="/app/health/records" hue="blue" icon="FileHeart" eyebrow="Health Records" title="Health Records"
                  sub="Keep your health information safe and in one place. Only you can see it."
-                 art="/ux/art/scene-woman-reading-document.webp" tabs={TABS}
+                 art="/ux/health/ill/hero-records.webp" tabs={TABS}
                  actions={<>
                    <Btn icon="Plus" onClick={() => setSheet("reading")}>Add reading</Btn>
                    <Btn variant="outline" icon="FileText" onClick={() => setSheet("document")}>Add report</Btn>
@@ -223,15 +224,42 @@ function Overview({ by, hide, reminders, settings, save, onSheet, onShare, loadi
 function HealthCard({ settings, save, hide }: {
   settings: ReturnType<typeof useHealthSettings>["settings"]; save: ReturnType<typeof useHealthSettings>["save"]; hide: boolean;
 }) {
-  const [editing, setEditing] = useState(false);
+  const flow = useFlow();
   const [group, setGroup] = useState(settings.bloodGroup);
-  const [height, setHeight] = useState(settings.heightCm ? String(settings.heightCm) : "");
+  const [height, setHeight] = useState(settings.heightCm || 0);
   const [contact, setContact] = useState(settings.emergencyContact);
-  // Settings arrive after the first paint, so the form is filled when she opens it.
-  const toggle = () => {
-    if (!editing) { setGroup(settings.bloodGroup); setHeight(settings.heightCm ? String(settings.heightCm) : ""); setContact(settings.emergencyContact); }
-    setEditing((e) => !e);
+  const [busy, setBusy] = useState(false);
+  // Settings arrive after the first paint, so the flow is filled when she opens it.
+  const start = () => {
+    setGroup(settings.bloodGroup); setHeight(settings.heightCm || 0); setContact(settings.emergencyContact);
+    flow.start();
   };
+  const badHeight = !!height && (height < 50 || height > 250);
+  const submit = async () => {
+    const h = Number(height) || 0;
+    if (h && (h < 50 || h > 250)) { toast("Height should be between 50 and 250 cm.", { tone: "error" }); return; }
+    setBusy(true);
+    try {
+      if (await save({ bloodGroup: group, heightCm: h, emergencyContact: contact.trim() }, "Health card saved")) flow.close();
+    } finally { setBusy(false); }
+  };
+  const steps: FlowStep[] = [
+    { id: "group", title: "What is your blood group?", hint: "Skip if you do not know it yet. It is on most blood test reports.", optional: true, valid: !!group,
+      body: <Chips label="Blood group" hue="blue" value={group} onChange={setGroup} options={BLOOD_GROUPS} /> },
+    { id: "height", title: "How tall are you?", hint: "Optional. A doctor uses it to work out your BMI.", optional: !height, valid: !!height && !badHeight,
+      body: <>
+        <Dial label="height" unit="cm" hue="blue" value={height} onChange={setHeight} max={250} presets={[150, 155, 160, 165, 170]} />
+        {badHeight && (
+          <p role="alert" className="rounded-[12px] px-3 py-2 text-sm font-bold" style={{ background: "var(--ux-danger-tint)", color: "var(--ux-danger-ink)" }}>
+            Height should be between 50 and 250 cm.
+          </p>
+        )}
+      </> },
+    { id: "contact", title: "Who should we call in an emergency?", hint: "Optional. A name and a phone number.", optional: true, valid: !!contact.trim(),
+      body: <Text label="Emergency contact" value={contact} max={80} placeholder="Sister — 98xxxxxx10" onChange={setContact} /> },
+    { id: "check", title: "Check, then save", valid: !badHeight,
+      body: <Review rows={[["Blood group", group || "Not added"], ["Height", height ? `${height} cm` : "Not added"], ["Emergency contact", contact.trim() || "Not added"]]} /> },
+  ];
   const facts = [
     { icon: "Droplet", label: "Blood group", value: settings.bloodGroup || "Not added" },
     { icon: "Ruler", label: "Height", value: settings.heightCm ? `${settings.heightCm} cm` : "Not added" },
@@ -239,39 +267,22 @@ function HealthCard({ settings, save, hide }: {
   ];
   return (
     <Panel title="My health card" hue="blue" tint
-           action={<Btn size="sm" variant={editing ? "ghost" : "soft"} icon={editing ? "X" : "Pencil"} onClick={toggle}>{editing ? "Close" : "Edit"}</Btn>}>
-      {editing ? (
-        <div className="flex flex-col gap-4" data-health-card-form>
-          <div><Label>Blood group</Label><Chips label="Blood group" hue="blue" value={group} onChange={setGroup} options={BLOOD_GROUPS} /></div>
-          <div><Label>Height (cm)</Label>
-            <input value={height} inputMode="numeric" maxLength={3} aria-label="Height in centimetres" onChange={(e) => setHeight(e.target.value.replace(/\D/g, ""))}
-                   className="min-h-[46px] w-[140px] rounded-[12px] border px-4 text-base font-bold tabular-nums"
-                   style={{ borderColor: "var(--ux-line-strong)", background: "var(--ux-surface)", color: "var(--ux-ink)" }} />
+           action={<Btn size="sm" variant="soft" icon="Pencil" onClick={start}>Edit</Btn>}>
+      <div className="grid gap-3 sm:grid-cols-3" data-health-card>
+        {facts.map((f) => (
+          <div key={f.label} className="flex items-center gap-3 rounded-[14px] p-3" style={{ background: "var(--ux-surface)" }}>
+            <I name={f.icon} className="h-5 w-5 shrink-0" style={{ color: HUE.blue.ink }} />
+            <span className="min-w-0">
+              <span className="block text-xs font-bold" style={{ color: "var(--ux-muted)" }}>{f.label}</span>
+              <b className="block truncate text-sm" style={{ color: f.value === "Not added" ? "var(--ux-muted)" : "var(--ux-ink)" }}>
+                <Private on={hide && f.value !== "Not added"}>{f.value}</Private>
+              </b>
+            </span>
           </div>
-          <div><Label>Emergency contact</Label><Text label="Emergency contact" value={contact} max={80} placeholder="Sister — 98xxxxxx10" onChange={setContact} /></div>
-          <div>
-            <Btn icon="Check" onClick={async () => {
-              const h = Number(height) || 0;
-              if (h && (h < 50 || h > 250)) { toast("Height should be between 50 and 250 cm.", { tone: "error" }); return; }
-              if (await save({ bloodGroup: group, heightCm: h, emergencyContact: contact.trim() }, "Health card saved")) setEditing(false);
-            }}>Save</Btn>
-          </div>
-        </div>
-      ) : (
-        <div className="grid gap-3 sm:grid-cols-3" data-health-card>
-          {facts.map((f) => (
-            <div key={f.label} className="flex items-center gap-3 rounded-[14px] p-3" style={{ background: "var(--ux-surface)" }}>
-              <I name={f.icon} className="h-5 w-5 shrink-0" style={{ color: HUE.blue.ink }} />
-              <span className="min-w-0">
-                <span className="block text-xs font-bold" style={{ color: "var(--ux-muted)" }}>{f.label}</span>
-                <b className="block truncate text-sm" style={{ color: f.value === "Not added" ? "var(--ux-muted)" : "var(--ux-ink)" }}>
-                  <Private on={hide && f.value !== "Not added"}>{f.value}</Private>
-                </b>
-              </span>
-            </div>
-          ))}
-        </div>
-      )}
+        ))}
+      </div>
+      <StepSheet open={flow.open} onClose={flow.close} icon="IdCard" title="My health card" hue="blue"
+                 steps={steps} step={flow.step} setStep={flow.setStep} onSubmit={submit} busy={busy} submitLabel="Save health card" />
     </Panel>
   );
 }

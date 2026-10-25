@@ -10,8 +10,8 @@ import { apiClient } from "./api";
  */
 
 export const SPECIALITIES = [
-  "Gynaecologist", "General physician", "Paediatrician", "Nutritionist", "Counsellor",
-  "Dermatologist", "Physiotherapist", "Other",
+  "Gynaecologist", "Fertility specialist", "General physician", "Paediatrician", "Nutritionist", "Counsellor",
+  "Endocrinologist", "Dermatologist", "Physiotherapist", "Other",
 ] as const;
 export type Speciality = (typeof SPECIALITIES)[number];
 export const MODES = ["Video", "Phone", "Clinic"] as const;
@@ -69,7 +69,15 @@ export interface Consultation {
   cancel_reason: string;
   cancelled_by: string;
   created_at: string;
+  /** Copies of the records she chose to show the doctor; she can stop sharing until the visit. */
+  shared: SharedItem[];
+  shared_at: string;
+  /** Her own notes for the visit. Never sent to staff. */
+  member_notes: string;
+  rescheduled_from: string;
 }
+
+export interface SharedItem { kind: "medication" | "allergy" | "reading" | "document" | "history"; label: string; detail: string }
 
 export interface AdminConsultation extends Consultation { user_id: string; member_name: string; staff_note: string }
 
@@ -82,8 +90,15 @@ export const apiDoctor = (id: string, signal?: AbortSignal) =>
   apiClient.get<Doctor>(`/doctors/${id}`, { signal }).then((r) => r.data);
 export const apiDoctorSlots = (id: string, date: string, signal?: AbortSignal) =>
   apiClient.get<{ date: string; slots: string[] }>(`/doctors/${id}/slots`, { signal, params: { date } }).then((r) => r.data);
-export const apiBookDoctor = (id: string, body: { start: string; mode: Mode; reason: string; symptoms: string[] }) =>
-  apiClient.post<Consultation>(`/doctors/${id}/book`, body).then((r) => r.data);
+export const apiBookDoctor = (id: string, body: {
+  start: string; mode: Mode; reason: string; symptoms: string[]; shared?: SharedItem[]; share_consent?: boolean;
+}) => apiClient.post<Consultation>(`/doctors/${id}/book`, body).then((r) => r.data);
+export const apiShareConsultation = (id: string, shared: SharedItem[], share_consent = false) =>
+  apiClient.post<Consultation>(`/doctors/consultations/${id}/shared`, { shared, share_consent }).then((r) => r.data);
+export const apiConsultationNotes = (id: string, notes: string) =>
+  apiClient.post<Consultation>(`/doctors/consultations/${id}/notes`, { notes }).then((r) => r.data);
+export const apiRescheduleConsultation = (id: string, start: string) =>
+  apiClient.post<Consultation>(`/doctors/consultations/${id}/reschedule`, { start }).then((r) => r.data);
 export const apiMyConsultations = (signal?: AbortSignal) =>
   apiClient.get<Consultation[]>("/doctors/consultations/mine", { signal }).then((r) => r.data);
 export const apiCancelConsultation = (id: string) =>

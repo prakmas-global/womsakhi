@@ -51,7 +51,7 @@ export default function GamesHub() {
     <HealthFrame active="/app/health/games" hue="amber" icon="Gamepad2" eyebrow="Games & Stress Relief"
                  title="Take a mindful break"
                  sub="Small, quiet games for a heavy moment. Every game works with one tap, and nothing counts against you."
-                 art="/ux/art/scene-women-celebrating.webp" tabs={TABS}
+                 art="/ux/health/ill/hero-games.webp" tabs={TABS}
                  actions={<Btn icon="Play" href={suggest.href}>Start playing</Btn>}>
       {(tab) => {
         if (tab === "activity") return <Activity sessions={sessions.rows} loading={sessions.loading} favs={favs} onDelete={sessions.remove} />;

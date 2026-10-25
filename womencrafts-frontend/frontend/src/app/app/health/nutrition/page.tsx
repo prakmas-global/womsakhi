@@ -3,9 +3,9 @@
 import { useSyncExternalStore } from "react";
 import { Btn } from "@/components/ux/kit";
 import { HealthFrame, useEntries, useHealthSettings } from "@/components/ux/health/kit";
-import { FOOD_ART } from "@/components/ux/health/nutrition/data";
 import { GoalsTab, InsightsTab, PlanTab, RecipesTab, TodayTab } from "@/components/ux/health/nutrition/NutritionTabs";
 import { addDays, today } from "@/lib/health-api";
+import { WatchListen } from "@/components/ux/health/WatchListen";
 
 /**
  * Nutrition & Diet — after the approved Health & Wellness design.
@@ -25,6 +25,7 @@ const TABS = [
   { id: "recipes", label: "Recipes" },
   { id: "goals", label: "Goals" },
   { id: "insights", label: "Insights" },
+  { id: "watch", label: "Watch & listen" },
 ];
 
 export default function NutritionPage() {
@@ -34,7 +35,7 @@ export default function NutritionPage() {
   return (
     <HealthFrame active="/app/health/nutrition" hue="green" icon="Apple" eyebrow="Eat better, feel better"
                  title="Nutrition & Diet" sub="Eat better, feel better every day. Log meals and water in a tap, plan the week, and cook simple Indian recipes."
-                 art={FOOD_ART[0]} tabs={TABS}
+                 art="/ux/health/ill/hero-nutrition.webp" tabs={TABS}
                  actions={<>
                    <Btn size="sm" icon="Plus" href="/app/health/nutrition#nt-log">Log a meal</Btn>
                    <Btn size="sm" variant="outline" icon="CalendarDays" href="/app/health/nutrition?tab=plan">Plan my week</Btn>
@@ -45,6 +46,7 @@ export default function NutritionPage() {
           : tab === "recipes" ? <RecipesTab store={store} s={s} />
           : tab === "goals" ? <GoalsTab s={s} />
           : tab === "insights" ? <InsightsTab store={store} s={s} />
+          : tab === "watch" ? <WatchListen section="nutrition" hue="green" sub="Simple recipes and food tips, short enough to watch while you cook." />
           : <TodayTab store={store} s={s} />
       )}
     </HealthFrame>

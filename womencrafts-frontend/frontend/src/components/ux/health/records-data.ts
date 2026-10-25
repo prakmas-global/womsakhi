@@ -84,10 +84,10 @@ export const SCHEDULE_TIME: Record<string, string> = {
 
 /** Reminder types, as the design names them. */
 export const REM_CATS = ["Doctor appointment", "Mentor session", "Medicine", "Workout", "Sleep", "Hydration",
-  "Wellness activity", "Prenatal checkup", "Custom"] as const;
+  "Wellness activity", "Prenatal checkup", "Period & fertility", "Custom"] as const;
 export const REM_ICON: Record<string, string> = {
   "Doctor appointment": "Stethoscope", "Mentor session": "Users", Medicine: "Pill", Workout: "Dumbbell", Sleep: "Moon",
-  Hydration: "Droplet", "Wellness activity": "Flower2", "Prenatal checkup": "Baby", Custom: "Bell",
+  Hydration: "Droplet", "Wellness activity": "Flower2", "Prenatal checkup": "Baby", "Period & fertility": "Flower2", Custom: "Bell",
 };
 export const TIME_PRESETS = ["08:00", "09:00", "13:00", "18:00", "21:00", "22:00"];
 export const REPEATS = ["Once", "Every day", "Every week", "Every month"] as const;

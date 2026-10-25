@@ -132,6 +132,15 @@ export default function ConsultationsAdminPage() {
                   </div>
                   <p className="mt-0.5 text-sm text-ink-muted">{c.doctor_name} · {c.speciality} · {c.mode} · <b>{whenLabel(c.start)}</b></p>
                   <p className="mt-1 text-sm text-ink">About: {c.reason}{c.symptoms.length ? ` · ${c.symptoms.join(", ")}` : ""}</p>
+                  {c.shared.length > 0 && (
+                    <div className="mt-1.5 rounded-lg bg-surface-inset p-2 text-xs text-ink">
+                      <p className="font-semibold">She shared, for the doctor:</p>
+                      <ul className="mt-0.5 list-disc ps-4">
+                        {c.shared.map((x) => <li key={`${x.kind}|${x.label}`}>{x.label}{x.detail ? ` · ${x.detail}` : ""}</li>)}
+                      </ul>
+                    </div>
+                  )}
+                  {c.rescheduled_from && c.status === "requested" && <p className="mt-1 text-xs text-ink-subtle">She moved this from {whenLabel(c.rescheduled_from)}. Confirm the new time with the doctor.</p>}
                   <p className="mt-0.5 text-xs text-ink-subtle">Fee {feeLabel(c.fee_minor)}{c.fee_minor ? " (paid to the doctor)" : ""} · booked {whenLabel(c.created_at, { day: "numeric", month: "short" })}</p>
                   {c.join_info && <p className="mt-1 text-xs text-emerald-700">How to join: {c.join_info}</p>}
                   {c.prescription && <p className="mt-1 line-clamp-2 text-xs text-sky-700"><FileText className="mr-1 inline h-3.5 w-3.5" />{c.prescription}</p>}

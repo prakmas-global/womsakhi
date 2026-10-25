@@ -7,7 +7,8 @@ import { apiClient } from "./api";
  * watched, saved or finished is a `vwatch` entry in the Health store.
  */
 
-export const VIDEO_CATEGORIES = ["Workout", "Yoga", "Meditation", "Pregnancy", "Nutrition", "Sleep"] as const;
+/** Each Health & Wellness section shows its own categories in its Watch & listen tab (components/ux/health/WatchListen.tsx). */
+export const VIDEO_CATEGORIES = ["Workout", "Yoga", "Meditation", "Pregnancy", "Nutrition", "Sleep", "Fertility", "Mentoring", "Health talks"] as const;
 export type VideoCategory = (typeof VIDEO_CATEGORIES)[number];
 export const VIDEO_LEVELS = ["All levels", "Beginner", "Intermediate", "Gentle"] as const;
 
