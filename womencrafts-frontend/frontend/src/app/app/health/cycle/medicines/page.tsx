@@ -1,5 +1,6 @@
 "use client";
 
+import { PlaceMark } from "@/components/ux/nav/Place";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 
@@ -33,12 +34,15 @@ export default function CycleMedicinesPage() {
       <div className="mx-auto max-w-[1240px] px-5 py-7 lg:px-8">
         <header className="mb-5">
           <p className="text-[12px] font-bold uppercase tracking-[0.16em]" style={{ color: "var(--cy-period-ink)" }}>Cycle care</p>
-          <h1 className="ux-screen-title mt-1 text-[34px] font-bold" style={{ color: "var(--ux-ink)" }}>Medicines and supplements</h1>
+          <div className="mt-1 flex min-w-0 items-center gap-3">
+            <PlaceMark size={44} />
+            <h1 className="ux-screen-title text-[34px] font-bold min-w-0" style={{ color: "var(--ux-ink)" }}>Medicines and supplements</h1>
+          </div>
           <p className="mt-1 text-[14px]" style={{ color: "var(--ux-muted)" }}>Keep the list you chose, then mark each dose from your daily log.</p>
         </header>
         <CycleDesktopNav active="Medicines" />
 
-        <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_390px]">
+        <div className="ux-split-lg grid gap-5 lg:grid-cols-[minmax(0,1fr)_390px]">
           <section className="rounded-[22px] p-5" style={{ background: "var(--ux-surface)", border: "1px solid var(--ux-line)" }}>
             <div className="mb-4 flex items-center justify-between">
               <div><h2 className="text-[18px] font-semibold" style={{ color: "var(--ux-ink)" }}>Your list</h2><p className="text-[13px]" style={{ color: "var(--ux-muted)" }}>Pausing keeps its history.</p></div>

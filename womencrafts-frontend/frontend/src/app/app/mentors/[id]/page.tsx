@@ -18,7 +18,7 @@ import { useResource } from "@/lib/use-resource";
 import { useT } from "@/i18n";
 import { SkillBadges } from "@/components/ux/SkillBadges";
 import { Picks } from "@/components/ux/kit/form";
-import { artFor } from "@/components/ux/media/art";
+import { pictureOr, useMasterPictures } from "@/components/ux/media/MasterPictures";
 
 const isRealPhoto = (src?: string) => !!src && !src.startsWith("data:") && !src.includes("/ux/art/avatar-");
 
@@ -55,6 +55,7 @@ export default function MentorDetail({ params }: { params: Promise<{ id: string 
   const { data: MENTORS, source, refetch } = useMentors();
   const m = MENTORS.find((x) => x.id === id);
   const days = useMemo(() => nextDays(), []);
+  const topicPics = useMasterPictures("mentor_topics");
   // Her own sessions with this mentor, and what women said — both real.
   const { data: mySessions } = useMentorSessions();
   const PAST_SESSIONS = mySessions.filter((x) => x.mentorId === id);
@@ -244,7 +245,7 @@ export default function MentorDetail({ params }: { params: Promise<{ id: string 
           work she guides in — so the page opens on what she helps with. */}
       <div className="relative mb-[-44px] overflow-hidden rounded-[var(--ux-r-card)]" style={{ aspectRatio: "21/8", background: "var(--ux-surface-2)" }}>
         {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img src={artFor([...m.expertise, m.headline], "mentor", isRealPhoto(m.photo) ? m.photo : null, m.id)} alt=""
+        <img src={pictureOr(isRealPhoto(m.photo) ? m.photo : null, [...m.expertise, m.headline], topicPics.of(m.expertise[0] ?? ""))} alt=""
              className="h-full w-full object-cover" />
         <span aria-hidden className="absolute inset-0" style={{ background: "linear-gradient(180deg, rgba(16,6,24,0) 40%, rgba(16,6,24,.55))" }} />
       </div>
@@ -280,7 +281,7 @@ export default function MentorDetail({ params }: { params: Promise<{ id: string 
 
       {/* A fixed 300px second column inside a 350px content area leaves the
           first column 34px wide. One column below `lg`, the pair above it. */}
-      <div className="grid gap-[16px] lg:grid-cols-[minmax(0,1fr)_300px]">
+      <div className="ux-split-lg grid gap-[16px] lg:grid-cols-[minmax(0,1fr)_300px]">
         <Card>
           <SectionHead title={tr("mentors.whatSheCanHelpWith")} />
           <ul className="ux-stagger space-y-2.5">

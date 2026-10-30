@@ -8,13 +8,13 @@ import { Picks } from "@/components/ux/kit/form";
 import { HomeShell } from "@/components/ux/home/HomeShell";
 import { ScreenHead } from "@/components/ux/learning/native";
 import { Fact, MediaCard, MediaGrid } from "@/components/ux/media/MediaCard";
-import { artFor } from "@/components/ux/media/art";
+import { jobPicture, useWorkTaxonomy } from "@/components/ux/work/pictures";
 import { toast } from "@/components/ux/mobile/Toast";
 import { useConfirm } from "@/design-system/feedback/ConfirmProvider";
 import { apiErrorMessage } from "@/lib/api";
 import { useResource } from "@/lib/use-resource";
 import {
-  apiJobApplicants, apiMessageApplicant, apiMoveApplicant, apiMyJobPosts, apiSetJobOpen,
+  WORK_PRAISE, apiJobApplicants, apiMessageApplicant, apiMoveApplicant, apiMyJobPosts, apiSetJobOpen,
   type Applicant, type MyJobPost,
 } from "@/lib/work-api";
 
@@ -34,6 +34,7 @@ const STATUS: Record<string, { label: string; tone: "brand" | "green" | "orange"
   interview: { label: "Talking", tone: "orange" },
   offered: { label: "Offered", tone: "green" },
   closed: { label: "Not this time", tone: "neutral" },
+  completed: { label: "Work done", tone: "green" },
 };
 const NEXT: { status: "shortlisted" | "interview" | "offered"; label: string; icon: string }[] = [
   { status: "shortlisted", label: "Shortlist", icon: "Star" },
@@ -50,7 +51,26 @@ function ApplicantCard({ a, onChanged }: { a: Applicant; onChanged: () => void }
   const [saying, setSaying] = useState(false);
   const [reason, setReason] = useState("");
   const [extra, setExtra] = useState("");
+  // Work done: how it went, in stars and taps — it goes on her work profile.
+  const [finishing, setFinishing] = useState(false);
+  const [stars, setStars] = useState(0);
+  const [praise, setPraise] = useState<string[]>([]);
   const st = STATUS[a.status] ?? STATUS.applied;
+  const toConfirm = a.status === "offered" || (a.status === "completed" && a.done === "mine");
+
+  const confirmDone = async () => {
+    setBusy("completed");
+    try {
+      await apiMoveApplicant(a.application_id, "completed", extra.trim(), { rating: stars || null, praise });
+      toast(`Thank you — it is on ${a.first_name}'s work profile now`, { tone: "success" });
+      setFinishing(false);
+      onChanged();
+    } catch (e) {
+      toast(apiErrorMessage(e, "That did not save. Try again."), { tone: "error" });
+    } finally {
+      setBusy("");
+    }
+  };
 
   const move = async (status: "shortlisted" | "interview" | "offered" | "closed", note = "") => {
     setBusy(status);
@@ -80,7 +100,7 @@ function ApplicantCard({ a, onChanged }: { a: Applicant; onChanged: () => void }
         <div className="min-w-0 flex-1">
           <div className="flex flex-wrap items-center gap-2">
             <h3 className="text-base font-bold" style={{ color: "var(--ux-ink)" }}>{a.first_name}</h3>
-            <Pill tone={st.tone} size="sm">{st.label}</Pill>
+            <Pill tone={st.tone} size="sm">{a.status === "completed" && a.done === "mine" ? "She says it is done" : st.label}</Pill>
           </div>
           <p className="mt-0.5 flex flex-wrap items-center gap-x-2 text-xs" style={{ color: "var(--ux-muted)" }}>
             {(a.area || a.city) && <span className="inline-flex items-center gap-1"><Icons.MapPin className="h-3.5 w-3.5" />{[a.area, a.city].filter(Boolean).join(" · ")}</span>}
@@ -108,7 +128,31 @@ function ApplicantCard({ a, onChanged }: { a: Applicant; onChanged: () => void }
         </p>
       )}
 
-      {saying ? (
+      {finishing ? (
+        <div className="mt-4 border-t pt-3" style={{ borderColor: "var(--ux-line)" }}>
+          <p className="text-xsm font-semibold" style={{ color: "var(--ux-ink)" }}>How did it go? This goes on her work profile.</p>
+          <div className="mt-2 flex gap-1" role="radiogroup" aria-label="Stars">
+            {[1, 2, 3, 4, 5].map((n) => (
+              <button key={n} type="button" role="radio" aria-checked={stars === n} aria-label={`${n} star${n > 1 ? "s" : ""}`}
+                      onClick={() => setStars(stars === n ? 0 : n)} className="ux-press grid h-10 w-10 place-items-center rounded-full">
+                <Icons.Star className="h-7 w-7" style={{ color: n <= stars ? "#f5a524" : "var(--ux-line-strong)", fill: n <= stars ? "#f5a524" : "none" }} />
+              </button>
+            ))}
+          </div>
+          <Picks options={WORK_PRAISE} value={praise} multi label="What was good"
+                 onPick={(p) => setPraise((cur) => (cur.includes(p) ? cur.filter((x) => x !== p) : [...cur, p]))} />
+          <input value={extra} onChange={(e) => setExtra(e.target.value)} maxLength={300}
+                 placeholder="A few words about her work (optional)" aria-label="A few words about her work"
+                 className="ux-sq mt-2.5 min-h-[42px] w-full rounded-[12px] border px-3.5 text-xsm outline-none"
+                 style={{ borderColor: "var(--ux-line)", background: "var(--ux-surface)", color: "var(--ux-ink)" }} />
+          <div className="mt-3 flex flex-wrap gap-2">
+            <Btn size="sm" variant="primary" icon="BadgeCheck" loading={busy === "completed"} onClick={() => void confirmDone()}>
+              Confirm work done
+            </Btn>
+            <Btn size="sm" variant="ghost" onClick={() => setFinishing(false)}>Cancel</Btn>
+          </div>
+        </div>
+      ) : saying ? (
         <div className="mt-4 border-t pt-3" style={{ borderColor: "var(--ux-line)" }}>
           <p className="text-xsm font-semibold" style={{ color: "var(--ux-ink)" }}>Why not this time? She will see this.</p>
           <Picks options={REASONS} value={reason} label="Reason" onPick={(r) => setReason(reason === r ? "" : r)} />
@@ -139,11 +183,16 @@ function ApplicantCard({ a, onChanged }: { a: Applicant; onChanged: () => void }
                      sentLink={{ href: "/app/messages", label: "Open Messages" }}
                      onSentClosed={onChanged} />
           )}
-          {next[0] && (
+          {next[0] && a.status !== "completed" && (
             <Btn size="sm" variant="primary" icon={next[0].icon} loading={busy === next[0].status}
                  onClick={() => void move(next[0].status)}>{next[0].label}</Btn>
           )}
-          {a.status !== "closed" && a.status !== "offered" && (
+          {toConfirm && (
+            <Btn size="sm" variant="primary" icon="BadgeCheck" onClick={() => setFinishing(true)}>
+              {a.status === "completed" ? "Confirm work done" : "Mark work done"}
+            </Btn>
+          )}
+          {a.status !== "closed" && a.status !== "offered" && a.status !== "completed" && (
             <Btn size="sm" variant="ghost" icon="X" onClick={() => setSaying(true)}>Not this time</Btn>
           )}
         </div>
@@ -163,7 +212,7 @@ function Applicants({ job }: { job: MyJobPost }) {
       </Card>
     );
   }
-  const order = ["applied", "shortlisted", "interview", "offered", "closed"];
+  const order = ["applied", "shortlisted", "interview", "offered", "completed", "closed"];
   const rows = [...list.data].sort((x, y) => order.indexOf(x.status) - order.indexOf(y.status));
   return (
     <div className="grid gap-[12px] lg:grid-cols-2">
@@ -174,6 +223,7 @@ function Applicants({ job }: { job: MyJobPost }) {
 
 export default function MyJobPostsPage() {
   const confirm = useConfirm();
+  const workCats = useWorkTaxonomy();
   const posts = useResource(useCallback((s: AbortSignal) => apiMyJobPosts(s), []), [] as MyJobPost[]);
   const linked = useSyncExternalStore(noSubscribe,
     () => new URLSearchParams(window.location.search).get("job"), () => null);
@@ -248,7 +298,7 @@ export default function MyJobPostsPage() {
               const on = p.id === selectedId;
               return (
                 <MediaCard key={p.id} highlight={on}
-                  image={artFor([p.title, p.skills.join(" "), p.category_name], "job", undefined, p.id)}
+                  image={jobPicture({ ...p, categoryName: p.category_name, skillKeys: p.skill_keys }, workCats)}
                   alt={p.title}
                   topLeft={p.status === "open" ? { text: "Open", tone: "green" } : { text: "Closed", tone: "dark" }}
                   topRight={p.pay ? { text: p.pay, tone: "dark" } : null}

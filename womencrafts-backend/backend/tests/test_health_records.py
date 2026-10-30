@@ -151,6 +151,31 @@ def test_plan_past_once_and_snooze():
     assert p and p["at"] == datetime(2026, 10, 25, 6, 30, tzinfo=timezone.utc)
 
 
+@pytest.mark.parametrize("start, now, lead, expected", [
+    ("2026-10-30", datetime(2026, 10, 30, 6, 0, tzinfo=timezone.utc), 0,
+     datetime(2026, 11, 30, 4, 30, tzinfo=timezone.utc)),
+    ("2026-12-31", datetime(2026, 12, 31, 6, 0, tzinfo=timezone.utc), 0,
+     datetime(2027, 1, 31, 4, 30, tzinfo=timezone.utc)),
+    ("2026-01-31", datetime(2026, 2, 28, 6, 0, tzinfo=timezone.utc), 0,
+     datetime(2026, 3, 31, 4, 30, tzinfo=timezone.utc)),
+    ("2026-10-30", datetime(2026, 10, 30, 4, 0, tzinfo=timezone.utc), 60,
+     datetime(2026, 11, 30, 3, 30, tzinfo=timezone.utc)),
+])
+def test_monthly_reminder_advances_after_its_delivery_time(start, now, lead, expected):
+    entry = {"date": start, "data": {"title": "Check-up", "time": "10:00", "repeat": "Every month"}}
+    planned = hr.plan(entry, "Asia/Kolkata", lead, now)
+    assert planned and planned["at"] == expected
+
+
+def test_monthly_reminder_keeps_a_future_snooze():
+    now = datetime(2026, 10, 30, 6, 0, tzinfo=timezone.utc)
+    entry = {"date": "2026-10-30", "data": {
+        "title": "Check-up", "time": "10:00", "repeat": "Every month", "snooze": "2026-10-30T12:00",
+    }}
+    planned = hr.plan(entry, "Asia/Kolkata", 0, now)
+    assert planned and planned["at"] == datetime(2026, 10, 30, 6, 30, tzinfo=timezone.utc)
+
+
 async def test_sweep_restores_a_missing_rule(api):
     client, db, made = api
     me, h = await _member(db, made, "Asha")

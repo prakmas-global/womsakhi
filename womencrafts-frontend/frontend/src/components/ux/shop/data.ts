@@ -73,6 +73,8 @@ export type Service = {
   id: string;
   name: string;
   category: string;
+  /** Its sub-category in the staff-controlled tree (lib/shop-categories-api). */
+  subcategory_key?: string;
   rate_minor: number;
   rateKind: RateKind;
   where: "At her place" | "At your place" | "Either" | "Online";
@@ -100,9 +102,7 @@ export const SERVICES: Service[] = [
     art: A("scene-woman-teaching-children"), live: false, booked: 8, rating: "4.8" },
 ];
 
-export const SERVICE_CATEGORIES = [
-  "Tailoring", "Beauty", "Teaching", "Cooking", "Childcare", "Cleaning", "Repairs", "Other",
-];
+/* Service categories come from the staff-controlled tree (GET /shop/categories). */
 
 export const RATE_KINDS: RateKind[] = ["per hour", "per visit", "per piece", "per month"];
 

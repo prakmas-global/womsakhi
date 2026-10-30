@@ -1,5 +1,6 @@
 "use client";
 
+import { PlaceMark } from "@/components/ux/nav/Place";
 import { useState } from "react";
 import * as Icons from "@/components/ux/icons";
 
@@ -110,7 +111,10 @@ export default function AssessPage() {
                 style={{ color: "var(--ux-brand)" }}>
           <Icons.ArrowLeft className="ux-ico h-4 w-4" />{tr("assess.allTests")}</button>
 
-        <h1 className="ux-screen-title text-2xl font-bold" style={{ color: "var(--ux-ink)" }}>{paper.title}</h1>
+        <div className="flex min-w-0 items-center gap-3">
+          <PlaceMark size={44} />
+          <h1 className="ux-screen-title text-2xl font-bold min-w-0" style={{ color: "var(--ux-ink)" }}>{paper.title}</h1>
+        </div>
         <p className="mb-6 mt-2 text-xsm lg:mb-[20px] lg:mt-1.5" style={{ color: "var(--ux-muted)" }}>
           {paper.skill} · {paper.question_count} questions · pass mark {paper.pass_mark}%
         </p>

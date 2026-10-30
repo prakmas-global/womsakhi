@@ -183,7 +183,7 @@ export function HomeBodySkeleton() {
       <span className="sr-only">Loading your home screen…</span>
 
       {/* 1 — the hero: 408 */}
-      <section className="ux-sq relative isolate overflow-hidden rounded-[20px]"
+      <section data-banner="home" className="ux-sq relative isolate overflow-hidden rounded-[20px]"
                style={{ border: "1px solid var(--ux-line)" }}>
         <Bar h="auto" r={0} style={{ aspectRatio: "2.8 / 1" }} />
         {/* The real strip is a brand gradient. `--ux-surface` here, not

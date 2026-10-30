@@ -1,5 +1,6 @@
 "use client";
 
+import { PlaceMark } from "@/components/ux/nav/Place";
 /**
  * Everything the inbox draws, separated from everything it does.
  *
@@ -174,7 +175,10 @@ export function Header({ summary, className, rows, onPick }: {
   return (
     <header className={`flex-wrap items-end gap-4 ${className ?? "flex"}`}>
       <div className="min-w-0 flex-1">
-        <h1 className="ux-screen-title text-2xl font-bold tracking-[-0.03em]" style={{ color: "var(--ux-ink)" }}>Messages</h1>
+        <div className="flex min-w-0 items-center gap-3">
+          <PlaceMark size={44} />
+          <h1 className="ux-screen-title text-2xl font-bold tracking-[-0.03em] min-w-0" style={{ color: "var(--ux-ink)" }}>Messages</h1>
+        </div>
         <p className="mt-1 hidden text-xsm lg:block" style={{ color: "var(--ux-muted)" }}>{tr("messages.buyersMentorsAndYourCirclesAll")}</p>
         <p className="mt-1.5 text-[13px] lg:hidden" style={{ color: "var(--ux-muted)" }}>{line}</p>
       </div>

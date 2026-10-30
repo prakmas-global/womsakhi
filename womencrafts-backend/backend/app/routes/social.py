@@ -31,6 +31,7 @@ from pydantic import BaseModel, Field
 from pymongo.errors import DuplicateKeyError
 
 from app.core import usernames as un
+from app.core import masters
 from app.core.media import MediaRef, media_url
 from app.core.rbac import require_active_member
 from app.db.mongodb import get_database
@@ -44,6 +45,8 @@ router = APIRouter(tags=["Community"])
 DAILY_REQUESTS = 40
 DAILY_POSTS = 30
 PAGE = 10
+#: The starting values of the `feed_report_reasons` master (app/core/masters.py),
+#: which is what the screen shows and the server checks against.
 REPORT_REASONS = ["Rude or hurtful", "Spam or selling", "False information", "Not safe", "Something else"]
 
 
@@ -594,7 +597,7 @@ async def delete_comment(comment_id: str, me: dict = Depends(require_active_memb
 
 @router.get("/feed/report-reasons", response_model=list[str])
 async def report_reasons(me: dict = Depends(require_active_member)):
-    return REPORT_REASONS
+    return await masters.labels("feed_report_reasons")
 
 
 @router.post("/feed/posts/{post_id}/report", response_model=Done, summary="Report a post")
@@ -603,7 +606,15 @@ async def report(post_id: str, body: ReportIn, me: dict = Depends(require_active
     post = await _can_see(post_id, uid)
     if post["author_id"] == uid:
         raise HTTPException(status.HTTP_422_UNPROCESSABLE_ENTITY, "You cannot report your own post")
-    reason = body.reason if body.reason in REPORT_REASONS else "Something else"
+    # A reason from the master. Reporting must never fail for her, so an
+    # unknown or retired reason is filed as "Something else" while that exists.
+    try:
+        reason = await masters.check("feed_report_reasons", body.reason, field="reason")
+    except HTTPException:
+        fallback = [l for l in await masters.labels("feed_report_reasons") if l.lower() == "something else"]
+        if not fallback:
+            raise
+        reason = fallback[0]
     await _db()["feed_reports"].update_one(
         {"post_id": post_id, "reporter_id": uid},
         {"$set": {"reason": reason, "author_id": post["author_id"], "status": "open",

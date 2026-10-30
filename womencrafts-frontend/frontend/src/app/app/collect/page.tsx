@@ -1,5 +1,8 @@
 "use client";
 
+import { JourneyTrail } from "@/components/ux/home/JourneyTrail";
+
+import { PlaceMark } from "@/components/ux/nav/Place";
 import { useCallback, useMemo, useState } from "react";
 
 import { usePayoutMethods } from "@/components/ux/business";
@@ -144,10 +147,14 @@ export default function CollectPage() {
       </span>
       <div className="flex flex-col gap-6 lg:gap-5">
 
-        <header>
+        <JourneyTrail goal="sell" />
+      <header>
           <p className={EYEBROW}>{tr("collect.gettingPaid")}</p>
-          <h1 className="ux-screen-title mt-2 text-[clamp(1.5rem,3.2vw,2.125rem)] font-extrabold leading-[1.1] tracking-[-0.035em]"
-              style={{ color: v("--ux-ink") }}>{tr("collect.sellToPeopleWhoAreNot")}</h1>
+          <div className="mt-2 flex min-w-0 items-center gap-3">
+            <PlaceMark size={44} />
+            <h1 className="ux-screen-title text-[clamp(1.5rem,3.2vw,2.125rem)] font-extrabold leading-[1.1] tracking-[-0.035em] min-w-0"
+                style={{ color: v("--ux-ink") }}>{tr("collect.sellToPeopleWhoAreNot")}</h1>
+          </div>
           <p className="mt-1.5 max-w-[58ch] text-sm leading-relaxed" style={{ color: v("--ux-muted") }}>
             Your customers are already on WhatsApp. They are not going to install an app to buy a
             blouse. Send them this link instead — it opens on any phone and needs no account.

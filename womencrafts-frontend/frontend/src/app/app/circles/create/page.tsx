@@ -11,7 +11,9 @@ import { Area, Choice, Label, Picks, Select, Steps, Text, Toggle } from "@/compo
 import { apiCreateCircle } from "@/lib/growth-api";
 import { apiUploadImage } from "@/lib/uploads-api";
 import { settled, useAttemptKey } from "@/lib/idempotency";
-import { PRIVACY as RAW_PRIVACY, SUGGESTED_TAGS as RAW_SUGGESTED_TAGS, TOPICS as RAW_TOPICS } from "@/components/ux/circle/data";
+import { PRIVACY as RAW_PRIVACY, TOPICS as RAW_TOPICS } from "@/components/ux/circle/data";
+import { topicPicture, useCircleTags, useCircleTopicList } from "@/components/ux/circle/topics";
+import { PicTiles } from "@/components/ux/media/MasterPictures";
 import {
   Block, CircleTips, CoverPicker, CreateHero, LivePreview, SafePromise, TagField,
 } from "./create-views";
@@ -83,9 +85,12 @@ const togglePhrase = (text: string, phrase: string) => {
 const phrasesIn = (text: string) => text.split(". ").map((x) => x.trim().replace(/\.$/, ""));
 
 export default function CreateCirclePage() {
-  const SUGGESTED_TAGS = useTranslated(RAW_SUGGESTED_TAGS);
+  // Tags and topics are the staff-controlled masters; the built-in lists show
+  // until they load. Labels stay as the server keeps them, since that is what
+  // the server checks a new circle against.
+  const SUGGESTED_TAGS = useCircleTags();
   const PRIVACY = useTranslated(RAW_PRIVACY);
-  const TOPICS = useTranslated(RAW_TOPICS);
+  const TOPICS = useCircleTopicList();
   const tr = useT();
   const router = useRouter();
   const { user } = useAuth();
@@ -137,7 +142,8 @@ export default function CreateCirclePage() {
   );
 
   const step1Ok = name.trim().length > 2 && desc.trim().length > 9 && Boolean(category);
-  const topicId = TOPICS.find((t) => t.label === category)?.id ?? "";
+  // Name ideas are keyed by the built-in topic ids.
+  const topicId = RAW_TOPICS.find((t) => t.label === category)?.id ?? "";
 
   const go = useCallback((n: number) => {
     setAt(n);
@@ -225,14 +231,13 @@ export default function CreateCirclePage() {
         {at === 1 && (
           <Block icon="UsersRound" title={tr("circlesCreate.basicInformation")}
                  sub={tr("circlesCreate.whatItIsCalledWhoIt")}>
-            {/* Topic first: once it is picked, the name is one tap. */}
+            {/* Topic first, as pictures: once it is picked, the name is one tap. */}
+            <div className="mb-5">
+              <Label need>{tr("circlesCreate.whatItIsAbout")}</Label>
+              <PicTiles label="Category" size="sm" value={category} onPick={setCategory}
+                        tiles={TOPICS.map((t) => ({ value: t.label, label: t.label, src: topicPicture(t) }))} />
+            </div>
             <div className="mb-5 grid gap-4 sm:grid-cols-2">
-              <div>
-                <Label need>{tr("circlesCreate.whatItIsAbout")}</Label>
-                <Select value={category} onChange={setCategory} label="Category"
-                        placeholder={tr("circlesCreate.pickATopic")}
-                        options={TOPICS.map((t) => t.label)} />
-              </div>
               <div>
                 <Label need>{tr("circlesCreate.whoCanComeIn")}</Label>
                 <Select value={privacy} onChange={setPrivacy} label="Privacy"

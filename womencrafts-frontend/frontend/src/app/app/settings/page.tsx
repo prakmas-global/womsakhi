@@ -1,5 +1,6 @@
 "use client";
 
+import { PlaceMark } from "@/components/ux/nav/Place";
 import Link from "next/link";
 import * as Icons from "@/components/ux/icons";
 
@@ -146,7 +147,10 @@ export default function MorePage() {
         </div>
       }
     >
-      <h1 className="ux-screen-title text-2xl font-bold" style={{ color: "var(--ux-ink)" }}>More</h1>
+      <div className="flex min-w-0 items-center gap-3">
+        <PlaceMark size={44} />
+        <h1 className="ux-screen-title text-2xl font-bold min-w-0" style={{ color: "var(--ux-ink)" }}>More</h1>
+      </div>
       <p className="mb-[20px] mt-1.5 text-[15px] leading-snug lg:text-xsm" style={{ color: "var(--ux-muted)" }}>{tr("settings.yourAccountHowTheAppBehaves")}</p>
 
       {/*
@@ -255,7 +259,7 @@ export default function MorePage() {
       <Card className="ux-onscroll mt-[24px]">
         <div className="flex items-center justify-between gap-4">
           <div className="min-w-0">
-            <h3 className="text-sm font-semibold" style={{ color: "var(--ux-ink)" }}>{tr("settings.signOut")}</h3>
+            <h2 className="text-sm font-semibold" style={{ color: "var(--ux-ink)" }}>{tr("settings.signOut")}</h2>
             <p className="mt-1 text-xsm" style={{ color: "var(--ux-muted)" }}>{tr("settings.youWillNeedYourPasswordTo")}</p>
           </div>
           {/* `signOut()`, not `void signOut()`. `Btn` watches for a returned

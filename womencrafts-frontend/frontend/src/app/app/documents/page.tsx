@@ -15,6 +15,9 @@ import {
 import { apiUploadImage } from "@/lib/uploads-api";
 import { ListingCard, OrderCard, Storefront } from "./shop-parts";
 import { StoreBar } from "@/components/ux/shop/StoreBar";
+import { useShopCategories } from "@/components/ux/shop/categories";
+import { categoryErrorCode } from "@/lib/shop-categories-api";
+import { apiErrorMessage } from "@/lib/api";
 import {
   Activity, EarnHero, Figure, GrowBanner, Head, Journey, NeedHelp, QuickActions,
   SellTips, SuccessStory, WaysToEarn, type Happening, type Step,
@@ -45,6 +48,8 @@ export default function ShopPage() {
     useResource(useCallback((s?: AbortSignal) => apiListings(s), []), [] as Listing[]);
   const { data: orders, refetch: reOrders } =
     useResource(useCallback((s?: AbortSignal) => apiShopOrders(s), []), [] as ShopOrder[]);
+  // For the picture of a listing she has not photographed yet.
+  const shopCats = useShopCategories();
 
   /**
    * One line, in her words, then gone.
@@ -140,7 +145,9 @@ export default function ShopPage() {
   /** PATCH replaces the whole listing, so every field must be sent back. */
   const patch = useCallback((l: Listing, over: Partial<Listing>) => apiUpdateListing(l.id, {
     kind: l.kind, title: l.title, desc: l.desc, price_minor: l.price_minor,
-    rate: l.rate, stock: l.stock, category: l.category, place: l.place,
+    // No category here: sending it would re-file the listing; quick edits
+    // (stock, price, photo) leave its filing alone.
+    rate: l.rate, stock: l.stock, place: l.place,
     travels_km: l.travels_km, photo: l.photo,
     ...over,
   } as Parameters<typeof apiUpdateListing>[1]), []);
@@ -180,7 +187,11 @@ export default function ShopPage() {
       reListings(); reSummary();
       say(paused ? tr("documents.pausedBuyersCannotSeeItNow")
               : tr("documents.backInYourShop"));
-    } catch { setError("Could not change that listing."); }
+    } catch (e) {
+      // A paused listing outside her shop's category can't go back on sale;
+      // the server says why, in her words.
+      setError(categoryErrorCode(e) ? apiErrorMessage(e) : "Could not change that listing.");
+    }
     finally { setBusy(null); }
   }, [reListings, reSummary, say, tr]);
 
@@ -255,7 +266,7 @@ export default function ShopPage() {
     <HomeShell active="/app/documents" rail={rail} loadFailed="your shop">
       <div className="flex flex-col">
         <EarnHero />
-        <StoreBar />
+        <StoreBar categories={shopCats.data?.categories} />
 
         <div className={`mb-6 grid gap-3.5 lg:mb-5 ${GROUP}`}
              style={{ gridTemplateColumns: "repeat(auto-fit, minmax(190px, 1fr))" }}>
@@ -336,7 +347,7 @@ export default function ShopPage() {
 
             <div className="grid gap-3.5" style={{ gridTemplateColumns: "repeat(auto-fit, minmax(250px, 1fr))" }}>
               {listings.map((l) => (
-                <ListingCard key={l.id} l={l} busy={busy === l.id}
+                <ListingCard key={l.id} l={l} busy={busy === l.id} categories={shopCats.data?.categories}
                              onPhoto={onPhoto} onStock={onStock}
                              onPause={onPause} onShare={onShare}
                              onDelete={() => setConfirmDelete(l)} />

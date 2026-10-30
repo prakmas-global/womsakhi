@@ -1,0 +1,390 @@
+{
+  "batch": "module_showcase_v1",
+  "users": [
+    {
+      "name": "Paandu Kantipudi",
+      "id": "6acfa035903bbb2ce5d1c378"
+    },
+    {
+      "name": "Rani",
+      "id": "6ae4316f626f1f963f17f715"
+    },
+    {
+      "name": "Sahithi L",
+      "id": "6ad057c4fa9150be94ca41b9"
+    }
+  ],
+  "collections": {
+    "enrollments": {
+      "planned": 15,
+      "inserted": 0,
+      "retained": 15
+    },
+    "certificates": {
+      "planned": 3,
+      "inserted": 0,
+      "retained": 3
+    },
+    "mentorship_requests": {
+      "planned": 12,
+      "inserted": 0,
+      "retained": 12
+    },
+    "book_entries": {
+      "planned": 15,
+      "inserted": 3,
+      "retained": 12
+    },
+    "programs": {
+      "planned": 15,
+      "inserted": 0,
+      "retained": 15
+    },
+    "member_messages": {
+      "planned": 3,
+      "inserted": 0,
+      "retained": 3
+    },
+    "opportunities": {
+      "planned": 12,
+      "inserted": 0,
+      "retained": 12
+    },
+    "saved": {
+      "planned": 3,
+      "inserted": 0,
+      "retained": 3
+    },
+    "portfolio_items": {
+      "planned": 3,
+      "inserted": 0,
+      "retained": 3
+    },
+    "applications": {
+      "planned": 12,
+      "inserted": 0,
+      "retained": 12
+    },
+    "goals": {
+      "planned": 6,
+      "inserted": 0,
+      "retained": 6
+    },
+    "appointments": {
+      "planned": 3,
+      "inserted": 0,
+      "retained": 3
+    },
+    "bookings": {
+      "planned": 9,
+      "inserted": 0,
+      "retained": 9
+    },
+    "shop_listings": {
+      "planned": 9,
+      "inserted": 0,
+      "retained": 9
+    },
+    "member_threads": {
+      "planned": 3,
+      "inserted": 0,
+      "retained": 3
+    },
+    "shop_reviews": {
+      "planned": 9,
+      "inserted": 0,
+      "retained": 9
+    },
+    "shop_operations": {
+      "planned": 9,
+      "inserted": 0,
+      "retained": 9
+    },
+    "rental_items": {
+      "planned": 3,
+      "inserted": 0,
+      "retained": 3
+    },
+    "khata_entries": {
+      "planned": 9,
+      "inserted": 0,
+      "retained": 9
+    },
+    "rental_bookings": {
+      "planned": 3,
+      "inserted": 0,
+      "retained": 3
+    },
+    "money_commitments": {
+      "planned": 9,
+      "inserted": 0,
+      "retained": 9
+    },
+    "khata_notes": {
+      "planned": 3,
+      "inserted": 0,
+      "retained": 3
+    },
+    "vault_moves": {
+      "planned": 3,
+      "inserted": 0,
+      "retained": 3
+    },
+    "vault_pockets": {
+      "planned": 3,
+      "inserted": 0,
+      "retained": 3
+    },
+    "khata_chits": {
+      "planned": 3,
+      "inserted": 0,
+      "retained": 3
+    },
+    "circle_members": {
+      "planned": 6,
+      "inserted": 0,
+      "retained": 6
+    },
+    "circles": {
+      "planned": 3,
+      "inserted": 0,
+      "retained": 3
+    },
+    "circle_posts": {
+      "planned": 3,
+      "inserted": 0,
+      "retained": 3
+    },
+    "shop_orders": {
+      "planned": 36,
+      "inserted": 0,
+      "retained": 36
+    },
+    "event_registrations": {
+      "planned": 3,
+      "inserted": 0,
+      "retained": 3
+    },
+    "stories": {
+      "planned": 3,
+      "inserted": 0,
+      "retained": 3
+    },
+    "post_replies": {
+      "planned": 3,
+      "inserted": 0,
+      "retained": 3
+    },
+    "skill_exchanges": {
+      "planned": 3,
+      "inserted": 0,
+      "retained": 3
+    },
+    "skill_swaps": {
+      "planned": 3,
+      "inserted": 0,
+      "retained": 3
+    },
+    "events": {
+      "planned": 3,
+      "inserted": 0,
+      "retained": 3
+    },
+    "sakhi_conversations": {
+      "planned": 3,
+      "inserted": 0,
+      "retained": 3
+    },
+    "member_conversations": {
+      "planned": 3,
+      "inserted": 0,
+      "retained": 3
+    },
+    "member_notifications": {
+      "planned": 3,
+      "inserted": 0,
+      "retained": 3
+    },
+    "sakhi_messages": {
+      "planned": 3,
+      "inserted": 0,
+      "retained": 3
+    },
+    "reminder_definitions": {
+      "planned": 3,
+      "inserted": 0,
+      "retained": 3
+    },
+    "member_children": {
+      "planned": 3,
+      "inserted": 0,
+      "retained": 3
+    },
+    "school_tasks": {
+      "planned": 3,
+      "inserted": 0,
+      "retained": 3
+    },
+    "my_checklists": {
+      "planned": 3,
+      "inserted": 0,
+      "retained": 3
+    },
+    "health_entries": {
+      "planned": 3,
+      "inserted": 0,
+      "retained": 3
+    },
+    "safety_reports": {
+      "planned": 3,
+      "inserted": 0,
+      "retained": 3
+    },
+    "support_tickets": {
+      "planned": 3,
+      "inserted": 0,
+      "retained": 3
+    },
+    "feed_posts": {
+      "planned": 3,
+      "inserted": 0,
+      "retained": 3
+    },
+    "assessment_attempts": {
+      "planned": 3,
+      "inserted": 0,
+      "retained": 3
+    },
+    "group_buy_joiners": {
+      "planned": 3,
+      "inserted": 0,
+      "retained": 3
+    },
+    "doctor_consultations": {
+      "planned": 3,
+      "inserted": 0,
+      "retained": 3
+    },
+    "support_requests": {
+      "planned": 3,
+      "inserted": 0,
+      "retained": 3
+    },
+    "reference_mine": {
+      "planned": 3,
+      "inserted": 0,
+      "retained": 3
+    },
+    "digital_progress": {
+      "planned": 3,
+      "inserted": 0,
+      "retained": 3
+    },
+    "feedback": {
+      "planned": 3,
+      "inserted": 0,
+      "retained": 3
+    },
+    "content_items": {
+      "planned": 3,
+      "inserted": 0,
+      "retained": 3
+    },
+    "calendar_events": {
+      "planned": 3,
+      "inserted": 0,
+      "retained": 3
+    }
+  },
+  "examples": [
+    {
+      "name": "Paandu Kantipudi",
+      "user_id": "6acfa035903bbb2ce5d1c378",
+      "payments": "/app/payments",
+      "course": "/app/teach/ab17c4cb534adb89de9efed2?tab=learners"
+    },
+    {
+      "name": "Rani",
+      "user_id": "6ae4316f626f1f963f17f715",
+      "payments": "/app/payments",
+      "course": "/app/teach/4908229758271c1e65bd5c98?tab=learners"
+    },
+    {
+      "name": "Sahithi L",
+      "user_id": "6ad057c4fa9150be94ca41b9",
+      "payments": "/app/payments",
+      "course": "/app/teach/852701d2925659a0f34ce7e5?tab=learners"
+    }
+  ],
+  "excluded": [
+    "identities and verification",
+    "credentials and external deliveries",
+    "active SOS alerts",
+    "wallet credits, gateway orders and bank payouts",
+    "fabricated backups, security incidents and operational successes"
+  ],
+  "batch_totals": {
+    "records": 312,
+    "collections": 58,
+    "counts": {
+      "appointments": 3,
+      "circle_posts": 3,
+      "support_requests": 3,
+      "sakhi_conversations": 3,
+      "vault_pockets": 3,
+      "my_checklists": 3,
+      "reminder_definitions": 3,
+      "event_registrations": 3,
+      "member_messages": 3,
+      "opportunities": 12,
+      "khata_entries": 9,
+      "enrollments": 15,
+      "feedback": 3,
+      "portfolio_items": 3,
+      "khata_chits": 3,
+      "post_replies": 3,
+      "member_conversations": 3,
+      "khata_notes": 3,
+      "mentors": 3,
+      "skill_exchanges": 3,
+      "member_threads": 3,
+      "shop_orders": 36,
+      "group_buy_joiners": 3,
+      "mentorship_requests": 12,
+      "work_profiles": 3,
+      "skill_swaps": 3,
+      "circles": 3,
+      "shop_listings": 9,
+      "calendar_events": 3,
+      "reference_mine": 3,
+      "health_entries": 3,
+      "bookings": 9,
+      "member_children": 3,
+      "sakhi_messages": 3,
+      "programs": 15,
+      "saved": 3,
+      "events": 3,
+      "feed_posts": 3,
+      "applications": 12,
+      "support_tickets": 3,
+      "member_notifications": 3,
+      "vault_moves": 3,
+      "content_items": 3,
+      "money_commitments": 9,
+      "goals": 6,
+      "rental_bookings": 3,
+      "shop_operations": 9,
+      "digital_progress": 3,
+      "rental_items": 3,
+      "stories": 3,
+      "school_tasks": 3,
+      "shop_reviews": 9,
+      "book_entries": 15,
+      "certificates": 3,
+      "doctor_consultations": 3,
+      "assessment_attempts": 3,
+      "circle_members": 6,
+      "safety_reports": 3
+    }
+  }
+}

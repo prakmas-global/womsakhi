@@ -286,7 +286,7 @@ for (const file of files) {
       const name = m[1] || m[2];
       if (/^deleteBackup|Selected$/.test(name)) continue;
       const body = src.slice(m.index, m.index + 900);
-      const guarded = /await confirm\(|confirmOpen|setDelete|Modal/.test(body);
+      const guarded = /await confirm\(|confirmOpen|setDelete|Modal|if\s*\(\s*!askDelete\b/.test(body);
       if (!guarded) {
         problems.push({ file, line: lineOf(src, m.index), what: `${name}() destroys data with no confirmation` });
       }

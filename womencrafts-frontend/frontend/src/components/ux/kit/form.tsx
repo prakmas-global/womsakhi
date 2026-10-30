@@ -1,5 +1,7 @@
 "use client";
 
+import { useId } from "react";
+import type { InputHTMLAttributes, TextareaHTMLAttributes } from "react";
 import * as Icons from "@/components/ux/icons";
 import { IconTile, v } from "./index";
 
@@ -104,49 +106,46 @@ export function Label({ children, need, hint }: {
   );
 }
 
-/** A counted textarea. The count is a budget, not a warning. */
-export function Area({ value, onChange, placeholder, max, rows = 3, label }: {
+/** Shared writing controls: native semantics, descriptive errors and mobile keyboards. */
+export function Area({ value, onChange, placeholder, max, rows = 3, label, hint, error, required, id: givenId, ...props }: {
   value: string; onChange: (s: string) => void; placeholder: string;
-  max: number; rows?: number; label: string;
-}) {
+  max: number; rows?: number; label: string; hint?: string; error?: string; required?: boolean;
+} & Omit<TextareaHTMLAttributes<HTMLTextAreaElement>, "onChange" | "value" | "maxLength">) {
+  const autoId = useId();
+  const id = givenId || autoId;
+  const description = [props["aria-describedby"], `${id}-count`, (error || hint) && `${id}-help`].filter(Boolean).join(" ");
   return (
     <>
-      <textarea
-        value={value}
-        rows={rows}
-        aria-label={label}
-        maxLength={max}
-        onChange={(e) => onChange(e.target.value)}
-        placeholder={placeholder}
-        className="ux-sq w-full rounded-[12px] border px-4 py-3 text-xsm leading-relaxed outline-none lg:px-3.5"
-        style={{ borderColor: v("--ux-line"), background: v("--ux-surface"), color: v("--ux-ink") }}
-      />
-      <span className="mt-1 block text-end text-2xs" style={{ color: v("--ux-faint") }}>
-        {value.length}/{max}
-      </span>
+      <textarea {...props} id={id} value={value} rows={rows} required={required}
+        aria-label={label} aria-invalid={error ? true : props["aria-invalid"]} aria-describedby={description}
+        maxLength={max} onChange={(e) => onChange(e.target.value)} placeholder={placeholder}
+        className="wc-field ux-sq w-full resize-y rounded-[12px] px-4 py-3 text-xsm leading-relaxed lg:px-3.5" />
+      <span id={`${id}-count`} className="mt-1 block text-end text-2xs" style={{ color: v("--ux-muted") }}>{value.length}/{max}</span>
+      {(error || hint) && <span id={`${id}-help`} className="mt-1 block text-xs" style={{ color: v(error ? "--ux-danger-ink" : "--ux-muted") }}>{error || hint}</span>}
     </>
   );
 }
 
-export function Text({ value, onChange, placeholder, label, prefix, type = "text", max }: {
+export function Text({ value, onChange, placeholder, label, prefix, type = "text", max, maxDate, hint, error, required, id: givenId, ...props }: {
   value: string; onChange: (s: string) => void; placeholder?: string; label: string;
-  prefix?: string; type?: string; max?: number;
-}) {
+  prefix?: string; type?: string; max?: number; maxDate?: string; hint?: string; error?: string; required?: boolean;
+} & Omit<InputHTMLAttributes<HTMLInputElement>, "onChange" | "value" | "type" | "maxLength">) {
+  const autoId = useId();
+  const id = givenId || autoId;
+  const description = [props["aria-describedby"], (error || hint) && `${id}-help`].filter(Boolean).join(" ") || undefined;
   return (
-    <span className="flex min-w-0 flex-1 items-center gap-2 rounded-[12px] border px-4 lg:px-3.5"
-          style={{ borderColor: v("--ux-line"), background: v("--ux-surface") }}>
-      {prefix && <span className="shrink-0 text-xsm" style={{ color: v("--ux-muted") }}>{prefix}</span>}
-      <input
-        value={value}
-        type={type}
-        inputMode={type === "number" ? "numeric" : undefined}
-        maxLength={max}
-        aria-label={label}
-        onChange={(e) => onChange(e.target.value)}
-        placeholder={placeholder}
-        className="min-h-[46px] w-full bg-transparent text-xsm outline-none"
-        style={{ color: v("--ux-ink") }}
-      />
+    <span className="block min-w-0 flex-1">
+      <span data-field-shell className="flex min-w-0 items-center gap-2 px-4 lg:px-3.5">
+        {prefix && <span aria-hidden className="shrink-0 text-xsm" style={{ color: v("--ux-muted") }}>{prefix}</span>}
+        <input {...props} id={id} data-field-input value={value} type={type} required={required}
+          inputMode={props.inputMode ?? (type === "number" ? "decimal" : type === "tel" ? "tel" : type === "email" ? "email" : undefined)}
+          maxLength={max} max={maxDate} aria-label={prefix ? `${label} (${prefix})` : label}
+          aria-invalid={error ? true : props["aria-invalid"]} aria-describedby={description}
+          onChange={(e) => onChange(e.target.value)} placeholder={placeholder}
+          className="min-h-[46px] w-full min-w-0 bg-transparent text-xsm outline-none"
+          style={{ color: v("--ux-ink") }} />
+      </span>
+      {(error || hint) && <span id={`${id}-help`} className="mt-1 block text-xs" style={{ color: v(error ? "--ux-danger-ink" : "--ux-muted") }}>{error || hint}</span>}
     </span>
   );
 }
@@ -158,9 +157,8 @@ export function Select({ value, onChange, options, label, placeholder }: {
 }) {
   return (
     <select value={value} aria-label={label} onChange={(e) => onChange(e.target.value)}
-            className="ux-sq min-h-[46px] w-full rounded-[12px] border px-3 text-xsm outline-none"
-            style={{ borderColor: v("--ux-line"), background: v("--ux-surface"),
-                     color: v(value ? "--ux-ink" : "--ux-muted") }}>
+            className="wc-field ux-sq min-h-[46px] w-full rounded-[12px] px-3 text-xsm outline-none"
+            style={{ color: v(value ? "--ux-ink" : "--ux-muted") }}>
       {placeholder && <option value="">{placeholder}</option>}
       {options.map((o) => {
         const val = typeof o === "string" ? o : o.value;

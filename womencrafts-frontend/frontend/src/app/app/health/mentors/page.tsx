@@ -5,14 +5,15 @@ import { useSearchParams } from "next/navigation";
 
 import { Btn, Sheet } from "@/components/ux/kit";
 import { MediaCard, MediaGrid, Fact } from "@/components/ux/media/MediaCard";
-import { artFor } from "@/components/ux/media/art";
+import { artFor, topicArt } from "@/components/ux/media/art";
+import { PicChip } from "@/components/ux/media/MasterPictures";
 import { MessageHer } from "@/components/ux/MessageHer";
 import { toast } from "@/components/ux/mobile/Toast";
 import {
   Chips, Cols, Disclaimer, Empty, HealthFrame, HUE, I, Metric, MetricGrid, Panel,
 } from "@/components/ux/health/kit";
 import {
-  TOPICS, fitsTime, inTopic, scoreMentors, topicFrom, type BestTime, type MatchQuiz,
+  TOPICS, fitsTime, inTopic, scoreMentors, topicFrom, topicOf, useMentorTopics, type BestTime, type MatchQuiz,
 } from "@/components/ux/health/mentor-topics";
 import { apiErrorMessage } from "@/lib/api";
 import { apiMentors, type ApiMentor } from "@/lib/me-api";
@@ -89,6 +90,8 @@ const STATUS: Record<string, { label: string; tone: string; ink: string }> = {
 const rupees = (minor = 0) => (minor > 0 ? `₹${Math.round(minor / 100).toLocaleString("en-IN")}` : "Free");
 
 export default function MentorConnect() {
+  // Topic groups from the "mentor_topics" master; children re-render with it.
+  useMentorTopics();
   const mentors = useResource(useCallback((s: AbortSignal) => apiMentors(s), []), [] as ApiMentor[]);
   const requests = useResource(useCallback((s: AbortSignal) => apiMyMentorRequests(s), []), [] as MentorRequest[]);
   const [asking, setAsking] = useState<ApiMentor | null>(null);
@@ -135,10 +138,15 @@ interface Ctx {
 
 /* ── cards ───────────────────────────────────────────────────────────── */
 
+/** Her photo; else what her own words point to; else her topic's picture. */
+const mentorPicture = (m: ApiMentor) =>
+  m.photo || topicArt([m.expertise.join(" "), m.headline, m.focus]) || topicOf(m)?.pic
+  || artFor([m.expertise.join(" "), m.headline, m.focus], "health", null, m.id);
+
 function MentorCard({ m, ask, view, why }: { m: ApiMentor; ask: (m: ApiMentor) => void; view: (m: ApiMentor) => void; why?: string[] }) {
   return (
     <MediaCard ratio="4/3" onClick={() => view(m)} highlight={!!why}
-      image={artFor([m.expertise.join(" "), m.headline, m.focus], "health", m.photo, m.id)} alt={m.name}
+      image={mentorPicture(m)} alt={m.name}
       topLeft={m.expertise[0] ? { text: m.expertise[0] } : null}
       topRight={m.requested ? { text: "Asked", tone: "green" } : m.rating_count ? { text: `★ ${m.rating.toFixed(1)}`, tone: "dark" } : null}
       title={m.name}
@@ -200,20 +208,21 @@ function Dashboard({ mentors, loading, requests, ask, view }: Ctx) {
         </MetricGrid>
 
         <Panel title="Browse by topic" sub="Every mentor below is a real person on WomSakhi.">
-          <div className="grid gap-2.5" style={{ gridTemplateColumns: "repeat(auto-fill, minmax(150px, 1fr))" }}>
-            {counts.map((t, i) => {
-              const hue = HUE[(["orange", "pink", "violet", "green", "blue", "amber"] as const)[i % 6]];
-              return (
-                <a key={t.label} href={`/app/health/mentors?tab=discover&topic=${encodeURIComponent(t.label)}`}
-                   className="ux-card ux-hov ux-press flex flex-col items-start gap-2 p-3.5">
-                  <span className="grid h-10 w-10 place-items-center rounded-[12px]" style={{ background: hue.tint, color: hue.ink }}>
-                    <I name={t.icon} />
-                  </span>
-                  <b className="text-sm" style={{ color: "var(--ux-ink)" }}>{t.label}</b>
-                  <span className="text-xs" style={{ color: "var(--ux-muted)" }}>{t.n} {t.n === 1 ? "mentor" : "mentors"}</span>
-                </a>
-              );
-            })}
+          <div className="grid gap-2.5" style={{ gridTemplateColumns: "repeat(auto-fill, minmax(140px, 1fr))" }}>
+            {counts.map((t) => (
+              <a key={t.label} href={`/app/health/mentors?tab=discover&topic=${encodeURIComponent(t.label)}`}
+                 className="ux-press group relative flex aspect-[4/3] flex-col justify-end overflow-hidden rounded-[14px]">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src={t.pic} alt="" loading="lazy" decoding="async"
+                     className="absolute inset-0 h-full w-full object-cover transition-transform duration-500 group-hover:scale-[1.06]" />
+                <span aria-hidden className="absolute inset-0"
+                      style={{ background: "linear-gradient(180deg, rgba(16,6,24,0) 30%, rgba(16,6,24,.85))" }} />
+                <span className="relative p-3">
+                  <b className="block text-sm text-white">{t.label}</b>
+                  <span className="block text-xs text-white/80">{t.n} {t.n === 1 ? "mentor" : "mentors"}</span>
+                </span>
+              </a>
+            ))}
           </div>
         </Panel>
 
@@ -262,8 +271,12 @@ function Discover({ mentors, loading, ask, view }: Ctx) {
         <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search by name or what you need help with"
                aria-label="Search mentors" className="w-full bg-transparent text-sm outline-none" style={{ color: "var(--ux-ink)" }} />
       </label>
-      <Chips label="Topic" hue="orange" options={["All", ...topics.map((t) => t.label)]} value={topic || "All"}
-             onChange={(v) => setTopic(v === "All" ? "" : v)} />
+      <div role="group" aria-label="Topic" className="flex flex-wrap gap-2">
+        <PicChip src="/ux/art/course-video-call-mentor.webp" selected={!topic} onClick={() => setTopic("")}>All</PicChip>
+        {topics.map((t) => (
+          <PicChip key={t.label} src={t.pic} selected={topic === t.label} onClick={() => setTopic(topic === t.label ? "" : t.label)}>{t.label}</PicChip>
+        ))}
+      </div>
       <div className="flex flex-wrap gap-x-6 gap-y-3">
         <div className="min-w-0">
           <p className="mb-1.5 text-xs font-bold" style={{ color: "var(--ux-muted)" }}>Language</p>
@@ -334,7 +347,7 @@ function Match({ mentors, loading, ask, view }: Ctx) {
   ];
 
   return (
-    <div className="grid items-start gap-5 xl:grid-cols-[minmax(0,1fr)_360px]">
+    <div className="ux-split-xl grid items-start gap-5 xl:grid-cols-[minmax(0,1fr)_360px]">
       <div className="order-2 min-w-0 xl:order-1" id="match-results" style={{ scrollMarginTop: "calc(var(--ux-topbar-h, 72px) + 12px)" }}>
         <Panel title="Your matches" sub={shown ? `${results.length} ${results.length === 1 ? "mentor fits" : "mentors fit"} your answers` : "Answer the questions, then press Find matches."}>
           {!shown ? (
@@ -533,7 +546,7 @@ function ProfileSheet({ mentor, onClose, onAsk }: { mentor: ApiMentor | null; on
              ? <Btn full variant="soft" href="/app/health/mentors?tab=sessions">See my request</Btn>
              : <Btn full icon="MessageCircle" onClick={() => onAsk(m)}>Ask {m.name.split(" ")[0]} for time</Btn>}>
       {/* eslint-disable-next-line @next/next/no-img-element */}
-      <img src={artFor([m.expertise.join(" "), m.headline, m.focus], "health", m.photo, m.id)} alt={m.name}
+      <img src={mentorPicture(m)} alt={m.name}
            className="mb-4 aspect-[16/10] w-full rounded-[16px] object-cover" />
       <div className="mb-3 flex flex-wrap gap-1.5">
         {m.expertise.map((e) => (

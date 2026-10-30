@@ -9,6 +9,9 @@ import type { NextConfig } from "next";
  * at the bottom with the measurement, so nobody has to find out twice.
  */
 const nextConfig: NextConfig = {
+  // Both builders and standalone packaging must use the actual app root.
+  turbopack: { root: __dirname },
+  outputFileTracingRoot: __dirname,
 
   /**
    * Keep development and production output separate so a production build can

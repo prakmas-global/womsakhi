@@ -8,6 +8,7 @@ import {
   useConfirm, useToast,
 } from "@/design-system";
 import { memberError } from "@/lib/member-api";
+import { useMaster } from "@/lib/masters-api";
 import {
   VIDEO_CATEGORIES, VIDEO_LEVELS, apiAdminAddHealthVideo, apiAdminDeleteHealthVideo, apiAdminEditHealthVideo,
   apiAdminHealthVideos, fmtDuration, type HealthVideo, type HealthVideoInput, type VideoCategory,
@@ -37,6 +38,10 @@ export default function HealthVideosAdmin() {
   const [cat, setCat] = useState("");
   const [editing, setEditing] = useState<HealthVideo | "new" | null>(null);
   const [form, setForm] = useState<Form>(EMPTY);
+  // Shelves are the `health_video_categories` master (Settings → Masters). A
+  // video keeps a shelf that has since been disabled, so it stays in its form.
+  const shelves = useMaster("health_video_categories", [...VIDEO_CATEGORIES]);
+  const shelfOptions = form.category && !shelves.labels.includes(form.category) ? [form.category, ...shelves.labels] : shelves.labels;
   const [busy, setBusy] = useState(false);
 
   const load = useCallback(async () => {
@@ -111,7 +116,7 @@ export default function HealthVideosAdmin() {
         <StatCard label="Videos" value={String(rows.length)} icon={Clapperboard} tone="brand" deltaNote="In the library" />
         <StatCard label="Shown to members" value={String(live.length)} icon={Eye} tone="emerald" deltaNote="Active" />
         <StatCard label="Hidden" value={String(rows.length - live.length)} icon={EyeOff} tone="amber" deltaNote="Kept, not shown" />
-        <StatCard label="Categories used" value={String(new Set(live.map((v) => v.category)).size)} icon={PlayCircle} tone="violet" deltaNote={`of ${VIDEO_CATEGORIES.length}`} />
+        <StatCard label="Categories used" value={String(new Set(live.map((v) => v.category)).size)} icon={PlayCircle} tone="violet" deltaNote={`of ${shelves.labels.length}`} />
       </div>
 
       <Card className="mt-6">
@@ -123,7 +128,7 @@ export default function HealthVideosAdmin() {
           </label>
           <div className="min-w-48">
             <Select label="Category" value={cat} onChange={(e) => setCat(e.target.value)}
-                    options={[{ value: "", label: "All categories" }, ...VIDEO_CATEGORIES.map((c) => ({ value: c, label: c }))]} />
+                    options={[{ value: "", label: "All categories" }, ...shelves.labels.map((c) => ({ value: c, label: c }))]} />
           </div>
         </div>
 
@@ -167,7 +172,7 @@ export default function HealthVideosAdmin() {
                  hint="A YouTube link, or an https link to an .mp4 or .webm file." placeholder="https://www.youtube.com/watch?v=…" />
           <div className="grid grid-cols-2 gap-3">
             <Select label="Category" value={form.category} onChange={(e) => setForm({ ...form, category: e.target.value as VideoCategory })}
-                    options={VIDEO_CATEGORIES.map((c) => ({ value: c, label: c }))} />
+                    options={shelfOptions.map((c) => ({ value: c, label: c }))} />
             <Select label="Level" value={form.level} onChange={(e) => setForm({ ...form, level: e.target.value })}
                     options={VIDEO_LEVELS.map((c) => ({ value: c, label: c }))} />
           </div>

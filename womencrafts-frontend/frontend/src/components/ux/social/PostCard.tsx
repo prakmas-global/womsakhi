@@ -1,5 +1,8 @@
 "use client";
 
+import { useConfirm } from "@/design-system/feedback/ConfirmProvider";
+
+import { useMaster } from "@/lib/masters-api";
 import { useEffect, useState } from "react";
 import Link from "next/link";
 
@@ -123,6 +126,9 @@ function Comments({ post, onCount }: { post: FeedPost; onCount: (d: number) => v
 
 /** One post in the feed, Facebook-style: who, when, for whom; words, photos; like, comment, share. */
 export function PostCard({ post: initial, onRemoved }: { post: FeedPost; onRemoved?: (id: string) => void }) {
+  // Reasons are the staff-controlled master; the built-in five show until it loads.
+  const { labels: reasons } = useMaster("feed_report_reasons", REPORT_REASONS);
+  const confirm = useConfirm();
   const [post, setPost] = useState(initial);
   const [open, setOpen] = useState(false);
   const [more, setMore] = useState(false);
@@ -162,7 +168,7 @@ export function PostCard({ post: initial, onRemoved }: { post: FeedPost; onRemov
 
   const remove = async () => {
     setMenu(false);
-    if (!window.confirm("Delete this post? This cannot be undone.")) return;
+    if (!await confirm({ title: "Delete this post?", description: "This cannot be undone.", confirmLabel: "Delete post", danger: true })) return;
     try {
       await apiDeletePost(post.id);
       toast("Post deleted", { tone: "success" });
@@ -260,7 +266,7 @@ export function PostCard({ post: initial, onRemoved }: { post: FeedPost; onRemov
       <Sheet open={report} onClose={() => setReport(false)} title="Report this post" icon="Flag"
              description="Tell us what is wrong. You will not see this post again, and our team will look at it.">
         <div className="grid gap-2">
-          {REPORT_REASONS.map((r) => (
+          {reasons.map((r) => (
             <Btn key={r} variant="outline" full onClick={() => sendReport(r)}>{r}</Btn>
           ))}
         </div>

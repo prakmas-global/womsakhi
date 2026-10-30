@@ -15,7 +15,7 @@ from typing import Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 
-from app.core import mongosafe
+from app.core import masters, mongosafe
 from app.core.rbac import require_active_member
 from app.core.serializers import to_object_id
 from app.core.media import media_url
@@ -81,10 +81,17 @@ async def list_swaps(
     summary="Offer to teach something",
 )
 async def create_swap(body: SwapCreate, me: dict = Depends(require_active_member)):
+    data = body.model_dump()
+    # Tags are optional filters: kept only when they are active skill swap tags
+    # (app/core/masters.py, list "swap_skills"), spelled as the list spells them.
+    # An unknown tag is dropped rather than refused.
+    allowed = {t.lower(): t for t in await masters.labels("swap_skills")}
+    data["tags"] = list(dict.fromkeys(allowed[t.strip().lower()] for t in data.get("tags") or []
+                                      if t.strip().lower() in allowed))[:8]
     doc = SwapModel.create_document(
         user_id=str(me["_id"]), member_id=me.get("member_id", ""),
         who=me.get("full_name", ""), avatar=me.get("avatar", ""),
-        **body.model_dump(),
+        **data,
     )
     result = await _swaps().insert_one(doc)
     doc["_id"] = result.inserted_id

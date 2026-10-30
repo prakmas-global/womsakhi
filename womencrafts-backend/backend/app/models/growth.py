@@ -318,6 +318,8 @@ class OpportunityModel:
 
     collection_name = "opportunities"
 
+    #: The starting values of the `opportunity_types` master (app/core/masters.py),
+    #: which is what routes check against. Kept for the seeders.
     TYPES = ["Job", "Internship", "Freelance", "Craft order", "Training"]
 
     @staticmethod
@@ -361,7 +363,9 @@ class OpportunityModel:
         return {
             "title": title,
             "org": org,
-            "kind": kind if kind in OpportunityModel.TYPES else "Job",
+            # Checked against the `opportunity_types` master by the routes that
+            # write it (app/core/masters.py); staff can add types there.
+            "kind": (kind or "").strip() or "Job",
             "desc": desc,
             "location": location,
             "mode": mode,               # On-site | Remote | Hybrid
@@ -442,6 +446,8 @@ class ApplicationModel:
     STATUS_OFFERED = "offered"
     STATUS_CLOSED = "closed"
     STATUS_WITHDRAWN = "withdrawn"
+    #: The work was done — past the ladder's last rung (app/core/work_done.py).
+    STATUS_COMPLETED = "completed"
     LADDER = [STATUS_APPLIED, STATUS_SHORTLISTED, STATUS_INTERVIEW, STATUS_OFFERED]
 
     @staticmethod
@@ -485,9 +491,14 @@ class ApplicationModel:
             "org": doc.get("org", ""),
             "note": doc.get("note", ""),
             "status": status,
-            "step": ApplicationModel.LADDER.index(status) + 1 if status in ApplicationModel.LADDER else 0,
+            # Work done has climbed the whole ladder.
+            "step": (len(ApplicationModel.LADDER) if status == ApplicationModel.STATUS_COMPLETED
+                     else ApplicationModel.LADDER.index(status) + 1 if status in ApplicationModel.LADDER else 0),
             "steps": len(ApplicationModel.LADDER),
             "staff_note": doc.get("staff_note", ""),
             "applied_on": created.strftime("%b %d, %Y") if isinstance(created, datetime) else "",
             "skills": doc.get("skills", []) or [],
+            #: Work done: whether the poster has confirmed it ("" while not done).
+            "done": ("confirmed" if (doc.get("completion") or {}).get("confirmed") else "mine")
+                    if status == ApplicationModel.STATUS_COMPLETED else "",
         }

@@ -20,6 +20,7 @@ import {
 } from "@/lib/feedback-api";
 import { apiClient } from "@/lib/api";
 import { memberError } from "@/lib/member-api";
+import { useMaster } from "@/lib/masters-api";
 import { ResizableColumns } from "@/layout-engine";
 
 /**
@@ -62,6 +63,7 @@ const THEME_TONE: Record<string, string> = {
 };
 
 const TABS = ["All Feedback", "Unresolved", "Positive", "Negative", "Suggestions"] as const;
+/** What the type list shipped with; staff edit the `feedback_types` master. */
 const TYPES = ["Program Feedback", "Suggestion", "Complaint"];
 const RATINGS = ["5 Stars", "4 Stars", "3 Stars", "2 Stars", "1 Star"];
 const ALL_TIME = "All time";
@@ -109,6 +111,9 @@ export default function FeedbackPage() {
   const [search, setSearch] = useState("");
   const [q, setQ] = useState("");
   const [typeFilter, setTypeFilter] = useState("All Types");
+  // Every type in the `feedback_types` master, so member feedback ("An idea",
+  // "Something is broken" …) can be filtered too.
+  const { labels: typeLabels } = useMaster("feedback_types", TYPES);
   const [programFilter, setProgramFilter] = useState("All Programs");
   const [ratingFilter, setRatingFilter] = useState("All Ratings");
   const [dateRange, setDateRange] = useState(ALL_TIME);
@@ -359,7 +364,7 @@ export default function FeedbackPage() {
           </div>
           <Menu align="left" trigger={<button className={menuBtn}>{typeFilter} <ChevronDown className="h-3.5 w-3.5 text-ink-subtle" /></button>}>
             <MenuItem onClick={() => { setTypeFilter("All Types"); setPage(1); }}>All Types</MenuItem>
-            {TYPES.map((t) => <MenuItem key={t} onClick={() => { setTypeFilter(t); setPage(1); }}>{t}</MenuItem>)}
+            {typeLabels.map((t) => <MenuItem key={t} onClick={() => { setTypeFilter(t); setPage(1); }}>{t}</MenuItem>)}
           </Menu>
           <Menu align="left" trigger={<button className={menuBtn}>{programFilter} <ChevronDown className="h-3.5 w-3.5 text-ink-subtle" /></button>}>
             <MenuItem onClick={() => { setProgramFilter("All Programs"); setPage(1); }}>All Programs</MenuItem>

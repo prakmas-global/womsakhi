@@ -184,6 +184,7 @@ async def delete_upload(
         ("circles", "cover"), ("circles", "icon"), ("circle_posts", "image"),
         ("stories", "cover"), ("events", "cover"), ("opportunities", "cover"),
         ("shop_listings", "photo"), ("shop_listings", "photos"),
+        ("users", "store.logo"), ("users", "store.cover"), ("users", "store.gallery"),
     )
     used_by = 0
     db = get_database()

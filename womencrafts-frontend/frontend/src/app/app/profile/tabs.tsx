@@ -1,22 +1,19 @@
 "use client";
 
-import { useCallback, useMemo, useRef, useState } from "react";
+import { useCallback } from "react";
 
 import * as Icons from "@/components/ux/icons";
 import { Btn, Card, EmptyState, I, IconTile, Pill, ScreenSkeleton, SectionHead, v } from "@/components/ux/kit";
-import { Label, Picks, Toggle } from "@/components/ux/kit/form";
-import { toast } from "@/components/ux/mobile/Toast";
 import { useBusiness } from "@/components/ux/business";
 import { useApplications } from "@/components/ux/growth";
 import { useCertificates } from "@/components/ux/live";
 import { apiMyPrograms, type Enrollment } from "@/lib/growth-api";
 import {
-  PORTFOLIO_MAX, apiAddPortfolio, apiDeletePortfolio, apiEditPortfolio, apiMyImpact, apiMyPortfolio,
+  apiMyImpact, apiMyPortfolio,
   apiMyVerifiedSkills, type Impact, type PortfolioItem, type VerifiedSkillRow,
 } from "@/lib/portfolio-api";
 import { apiMyWorkProfile, type ProfileSkill, type WorkProfile } from "@/lib/work-api";
-import { ACCEPTED_IMAGE_TYPES, apiUploadImage, uploadErrorMessage, validateImage } from "@/lib/uploads-api";
-import { apiErrorMessage } from "@/lib/api";
+import { WorkGallery } from "@/components/ux/work/WorkGallery";
 import { useResource } from "@/lib/use-resource";
 
 /**
@@ -241,171 +238,13 @@ export function ExperienceTab() {
 
 /* ── portfolio ────────────────────────────────────────────────────────────── */
 
-const MADE_FOR = ["A wedding", "A shop order", "A school", "A neighbour", "My own shop", "A festival"];
-
-function AddPiece({ suggestions, onAdded, onCancel }: {
-  suggestions: string[]; onAdded: () => void; onCancel: () => void;
-}) {
-  const now = new Date().getFullYear();
-  const [photo, setPhoto] = useState("");
-  const [uploading, setUploading] = useState(false);
-  const [title, setTitle] = useState("");
-  const [madeFor, setMadeFor] = useState("");
-  const [year, setYear] = useState<number | null>(now);
-  const [visible, setVisible] = useState(true);
-  const [busy, setBusy] = useState(false);
-  const [error, setError] = useState("");
-  const input = useRef<HTMLInputElement>(null);
-
-  const pick = async (file?: File) => {
-    if (!file) return;
-    const bad = validateImage(file);
-    if (bad) { setError(bad); return; }
-    setError(""); setUploading(true);
-    try { setPhoto((await apiUploadImage(file)).url); }
-    catch (e) { setError(uploadErrorMessage(e)); }
-    finally { setUploading(false); }
-  };
-
-  const save = async () => {
-    setBusy(true); setError("");
-    try {
-      await apiAddPortfolio({ title: title.trim(), photo, made_for: madeFor.trim(), year, visible });
-      toast("Added to What you made", { tone: "success" });
-      onAdded();
-    } catch (e) {
-      setError(apiErrorMessage(e, "That did not save. Try again in a moment."));
-    } finally { setBusy(false); }
-  };
-
-  return (
-    <Card pad={18}>
-      <div className="grid gap-4 md:grid-cols-[180px_minmax(0,1fr)]">
-        <button type="button" onClick={() => input.current?.click()}
-                className="ux-press grid aspect-square w-full place-items-center overflow-hidden rounded-[14px] border-2 border-dashed"
-                style={{ borderColor: v("--ux-line-strong"), background: v("--ux-surface-2") }}
-                aria-label={photo ? "Change the photo" : "Add a photo"}>
-          {photo ? (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img src={photo} alt="" className="h-full w-full object-cover" />
-          ) : (
-            <span className="grid justify-items-center gap-1.5 text-xs font-semibold" style={{ color: v("--ux-muted") }}>
-              <Icons.Camera className="h-7 w-7" style={{ color: v("--ux-brand") }} />
-              {uploading ? "Uploading…" : "Add a photo"}
-            </span>
-          )}
-        </button>
-        <input ref={input} type="file" accept={ACCEPTED_IMAGE_TYPES.join(",")} className="hidden"
-               onChange={(e) => void pick(e.target.files?.[0])} />
-
-        <div className="flex flex-col gap-3">
-          <div>
-            <Label need>What is it?</Label>
-            <input value={title} onChange={(e) => setTitle(e.target.value)} maxLength={80} aria-label="What is it"
-                   placeholder="Bridal blouse with mirror work"
-                   className="ux-sq min-h-[46px] w-full rounded-[12px] border px-4 text-xsm outline-none"
-                   style={{ borderColor: v("--ux-line"), background: v("--ux-surface"), color: v("--ux-ink") }} />
-            <Picks options={suggestions} value={title} onPick={setTitle} label="Quick names" />
-          </div>
-          <div>
-            <Label>Who was it for? <span style={{ color: v("--ux-faint") }}>(optional)</span></Label>
-            <Picks options={MADE_FOR} value={madeFor} onPick={(x) => setMadeFor(madeFor === x ? "" : x)} label="Made for" />
-          </div>
-          <div>
-            <Label>When?</Label>
-            <Picks options={[String(now), String(now - 1), String(now - 2), "Earlier"]} label="Year"
-                   value={year ? String(year) : "Earlier"} onPick={(x) => setYear(x === "Earlier" ? null : Number(x))} />
-          </div>
-          <Toggle on={visible} onChange={setVisible} label="Show it on my profile"
-                  sub={visible ? "Members who look at your profile can see it." : "Only you can see it."} />
-          {error && <p role="alert" className="text-xs" style={{ color: v("--ux-danger-ink") }}>{error}</p>}
-          <div className="flex flex-wrap gap-2">
-            <Btn variant="primary" icon="Check" loading={busy} disabled={!photo || title.trim().length < 2 || uploading}
-                 onClick={() => void save()}>Add it</Btn>
-            <Btn variant="ghost" onClick={onCancel}>Cancel</Btn>
-          </div>
-        </div>
-      </div>
-    </Card>
-  );
-}
-
+/** "What you made" — the same gallery My work profile shows (components/ux/work/WorkGallery.tsx). */
 export function PortfolioTab() {
   const items = useResource(useCallback((s: AbortSignal) => apiMyPortfolio(s), []), [] as PortfolioItem[]);
   const prof = useResource(useCallback((s: AbortSignal) => workProfile(s), []), null as WorkProfile | null);
-  const [adding, setAdding] = useState(false);
-  const [busy, setBusy] = useState("");
-  const suggestions = useMemo(() => (prof.data?.skills ?? []).slice(0, 5).map((s) => s.name), [prof.data]);
-  const full = items.data.length >= PORTFOLIO_MAX;
-
-  const act = async (id: string, run: () => Promise<unknown>, msg: string) => {
-    setBusy(id);
-    try { await run(); items.refetch(); toast(msg, { tone: "success" }); }
-    catch (e) { toast(apiErrorMessage(e, "That did not work. Try again."), { tone: "error" }); }
-    finally { setBusy(""); }
-  };
-
   return (
-    <div className="flex flex-col gap-4">
-      <div className="flex flex-wrap items-end justify-between gap-3">
-        <div>
-          <h2 className="text-lg font-extrabold" style={{ color: v("--ux-ink") }}>Work you can show someone</h2>
-          <p className="text-xs" style={{ color: v("--ux-muted") }}>
-            The thing a buyer asks for before an order. {items.data.length} of {PORTFOLIO_MAX}.
-          </p>
-        </div>
-        {!adding && items.data.length > 0 && (
-          <Btn size="sm" icon="Camera" disabled={full} onClick={() => setAdding(true)}>Add a piece</Btn>
-        )}
-      </div>
-
-      {adding && <AddPiece suggestions={suggestions} onCancel={() => setAdding(false)}
-                           onAdded={() => { setAdding(false); items.refetch(); }} />}
-
-      {items.source === "loading" ? (
-        <ScreenSkeleton shape="list" />
-      ) : items.data.length === 0 && !adding ? (
-        <Card>
-          <EmptyState icon="Camera" title="Nothing here yet"
-                      body="Photograph the next thing you finish — in daylight, near a window — and add it here. A buyer believes a photo."
-                      action={<Btn size="sm" icon="Camera" onClick={() => setAdding(true)}>Add your first piece</Btn>} />
-        </Card>
-      ) : (
-        <div className="grid grid-cols-2 gap-3 lg:grid-cols-3">
-          {items.data.map((p) => (
-            <Card key={p.id} pad={0} className="overflow-hidden">
-              <div className="relative aspect-square" style={{ background: v("--ux-surface-2") }}>
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src={p.photo} alt={p.title} loading="lazy" className="h-full w-full object-cover" />
-                {!p.visible && (
-                  <span className="absolute start-2 top-2 inline-flex items-center gap-1 rounded-full px-2 py-1 text-2xs font-bold"
-                        style={{ background: "rgba(24,10,34,.72)", color: "#fff" }}>
-                    <Icons.EyeOff className="h-[11px] w-[11px]" /> Only you
-                  </span>
-                )}
-              </div>
-              <div className="p-3">
-                <p className="line-clamp-2 text-xsm font-bold" style={{ color: v("--ux-ink") }}>{p.title}</p>
-                <p className="mt-0.5 truncate text-2xs" style={{ color: v("--ux-muted") }}>
-                  {[p.made_for, p.year].filter(Boolean).join(" · ") || p.added}
-                </p>
-                <div className="mt-2 flex items-center gap-1">
-                  <Btn size="sm" variant="ghost" icon={p.visible ? "EyeOff" : "Eye"} loading={busy === p.id}
-                       onClick={() => void act(p.id, () => apiEditPortfolio(p.id, { visible: !p.visible }),
-                         p.visible ? "Now only you can see it" : "Now shown on your profile")}>
-                    {p.visible ? "Hide" : "Show"}
-                  </Btn>
-                  <Btn size="sm" variant="ghost" icon="Trash2" ariaLabel={`Remove ${p.title}`}
-                       onClick={() => { if (window.confirm(`Remove "${p.title}"?`)) void act(p.id, () => apiDeletePortfolio(p.id), "Removed"); }}>
-                    Remove
-                  </Btn>
-                </div>
-              </div>
-            </Card>
-          ))}
-        </div>
-      )}
-    </div>
+    <WorkGallery items={items.data} loading={items.source === "loading"} onChanged={items.refetch}
+                 skills={prof.data?.skills ?? []} title="Work you can show someone" />
   );
 }
 

@@ -153,3 +153,5 @@ class ApplicationResponse(BaseModel):
     staff_note: str
     applied_on: str
     skills: list[dict] = []
+    #: "" | mine (she said it is done) | confirmed (the poster confirmed it).
+    done: str = ""

@@ -9,11 +9,26 @@ import { apiClient } from "./api";
  * paid to the doctor or clinic.
  */
 
+/**
+ * What the speciality list shipped with. Staff edit the real list as the
+ * `doctor_specialities` master (lib/masters-api.ts); this is only what a
+ * screen shows until that answers.
+ */
 export const SPECIALITIES = [
   "Gynaecologist", "Fertility specialist", "General physician", "Paediatrician", "Nutritionist", "Counsellor",
   "Endocrinologist", "Dermatologist", "Physiotherapist", "Other",
 ] as const;
-export type Speciality = (typeof SPECIALITIES)[number];
+/** A label from the `doctor_specialities` master. */
+export type Speciality = string;
+
+const SPECIALITY_ICONS: Record<string, string> = {
+  paediatrician: "Baby", counsellor: "Brain", nutritionist: "Apple", gynaecologist: "Flower2",
+  "fertility specialist": "Sprout", endocrinologist: "Activity",
+};
+
+/** The icon for a speciality: the master's own `icon` first, then the built-in ones, then a stethoscope. */
+export const specialityIcon = (label: string, masterIcon?: string) =>
+  masterIcon || SPECIALITY_ICONS[label.toLowerCase()] || "Stethoscope";
 export const MODES = ["Video", "Phone", "Clinic"] as const;
 export type Mode = (typeof MODES)[number];
 export const WEEKDAYS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"] as const;

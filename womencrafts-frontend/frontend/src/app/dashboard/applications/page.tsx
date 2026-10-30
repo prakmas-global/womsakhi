@@ -26,10 +26,12 @@ import { memberError } from "@/lib/member-api";
 
 const TONE: Record<string, "brand" | "violet" | "amber" | "emerald" | "slate" | "rose"> = {
   applied: "brand", shortlisted: "violet", interview: "amber", offered: "emerald", closed: "rose", withdrawn: "slate",
+  completed: "emerald",
 };
 
 const LABEL: Record<string, string> = {
   applied: "New", shortlisted: "Shortlisted", interview: "Interview", offered: "Offered", closed: "Declined", withdrawn: "Withdrawn",
+  completed: "Work done",
 };
 
 const MOVE: Record<string, { title: string; verb: string; placeholder: string }> = {
@@ -38,15 +40,20 @@ const MOVE: Record<string, { title: string; verb: string; placeholder: string }>
   offered: { title: "Make her an offer", verb: "Offer and tell her", placeholder: "They'd like to offer you the position. We'll call to go through the details." },
   closed: { title: "Decline her application", verb: "Decline and tell her why", placeholder: "They've filled the position this time. Your application was strong — we'll tell you when something similar comes up." },
   applied: { title: "Put her back to New", verb: "Move back and tell her", placeholder: "We're reconsidering your application from the start." },
+  // The team listed this work, so the team confirms it was done — it then
+  // shows on her work profile with this note (backend: app/core/work_done.py).
+  completed: { title: "Confirm the work is done", verb: "Confirm and tell her", placeholder: "Delivered all 40 uniforms on time. The school was very happy." },
 };
 
 /** Where an application can go from where it is. */
-function nextSteps(status: string): string[] {
+function nextSteps(status: string, done = ""): string[] {
   switch (status) {
     case "applied": return ["shortlisted", "interview", "closed"];
     case "shortlisted": return ["interview", "offered", "closed", "applied"];
     case "interview": return ["offered", "closed", "shortlisted"];
-    case "offered": return ["closed"];
+    case "offered": return ["completed", "closed"];
+    // She said it is done; the team confirms it.
+    case "completed": return done === "mine" ? ["completed"] : [];
     default: return [];
   }
 }
@@ -113,6 +120,7 @@ function ApplicationsInner() {
     { value: "shortlisted", label: "Shortlisted", count: counts?.shortlisted },
     { value: "interview", label: "Interview", count: counts?.interview },
     { value: "offered", label: "Offered", count: counts?.offered },
+    { value: "completed", label: "Work done" },
     { value: "closed", label: "Declined", count: counts?.closed },
     { value: "withdrawn", label: "Withdrawn", count: counts?.withdrawn },
     { value: "all", label: "All" },
@@ -183,7 +191,7 @@ function ApplicationsInner() {
               </thead>
               <tbody>
                 {apps.map((a) => {
-                  const steps = nextSteps(a.status);
+                  const steps = nextSteps(a.status, a.done);
                   return (
                     <tr key={a.id} className="border-b border-line last:border-0 hover:bg-surface-2">
                       <td className="px-3 py-3">
@@ -222,7 +230,7 @@ function ApplicationsInner() {
                         <p className="truncate text-xs text-ink-subtle">{a.org}</p>
                       </td>
                       <td className="px-3 py-3 text-sm text-ink-subtle">{a.applied_on}</td>
-                      <td className="px-3 py-3"><Badge tone={TONE[a.status] ?? "slate"}>{LABEL[a.status] ?? a.status}</Badge></td>
+                      <td className="px-3 py-3"><Badge tone={TONE[a.status] ?? "slate"}>{a.status === "completed" && a.done === "mine" ? "Done · to confirm" : LABEL[a.status] ?? a.status}</Badge></td>
                       <td className="max-w-xs px-3 py-3">
                         <p className="line-clamp-2 text-xs text-ink-muted">{a.staff_note || <span className="text-ink-subtle">Nothing yet</span>}</p>
                       </td>
@@ -232,6 +240,9 @@ function ApplicationsInner() {
                           {steps.includes("shortlisted") && <MenuItem icon={Star} onClick={() => open(a, "shortlisted")}>Shortlist</MenuItem>}
                           {steps.includes("interview") && <MenuItem icon={MessagesSquare} onClick={() => open(a, "interview")}>Invite to interview</MenuItem>}
                           {steps.includes("offered") && <MenuItem icon={Award} onClick={() => open(a, "offered")}>Make an offer</MenuItem>}
+                          {steps.includes("completed") && <MenuItem icon={BadgeCheck} onClick={() => open(a, "completed")}>
+                            {a.done === "mine" ? "Confirm she finished the work" : "Mark the work done"}
+                          </MenuItem>}
                           {steps.includes("applied") && <MenuItem onClick={() => open(a, "applied")}>Back to New</MenuItem>}
                           {steps.includes("closed") && <MenuItem icon={X} danger onClick={() => open(a, "closed")}>Decline with a reason</MenuItem>}
                         </Menu>

@@ -1,5 +1,6 @@
 "use client";
 
+import { PlaceBadge } from "@/components/ux/nav/Place";
 import Link from "next/link";
 import { useT } from "@/i18n";
 import { usePathname } from "next/navigation";
@@ -7,7 +8,7 @@ import { useEffect, useMemo, useState } from "react";
 
 import * as Icons from "@/components/ux/icons";
 import { useTheme } from "@/context/ThemeContext";
-import { SECTIONS, type NavNode } from "../nav-tree";
+import { SECTIONS, nodeFor, type NavNode } from "../nav-tree";
 import { useMe } from "../me";
 import { useNavLabel } from "../use-nav-label";
 import { Avatar } from "../kit";
@@ -37,8 +38,8 @@ import { useHiddenHealth } from "@/components/ux/health/nav-prefs";
  * **This one** is the department directory the large retail apps settled on.
  * Every section is a card; every screen inside it is visible at once, two to a
  * row, so the whole map is one scroll rather than eight taps. Each section
- * carries its own tint, which is what makes a long list scannable — you learn
- * that Work is orange and stop reading headings. A search field at the top
+ * leads with its picture, which is what makes a long list scannable — you
+ * learn the pictures and stop reading headings. A search field at the top
  * filters both levels at once for anyone who already knows the name.
  *
  * Every row is at least 44px, the sheet closes on Escape, on the backdrop and
@@ -65,17 +66,8 @@ const QUICK = [
  * theme. Not decoration: a tint is how a list of forty-one rows becomes
  * findable without reading — the eye learns the colour before the word.
  */
-const TONE: Record<string, { tint: string; ink: string }> = {
-  home:     { tint: "--ux-tint-pink",   ink: "--ux-pink-ink" },
-  learn:    { tint: "--ux-tint-violet", ink: "--ux-violet-ink" },
-  work:     { tint: "--ux-tint-orange", ink: "--ux-orange-ink" },
-  earn:     { tint: "--ux-tint-green",  ink: "--ux-green-ink" },
-  circle:   { tint: "--ux-tint-lilac",  ink: "--ux-violet-ink" },
-  wellness: { tint: "--ux-tint-pink",   ink: "--ux-pink-ink" },
-  help:     { tint: "--ux-tint-blue",   ink: "--ux-blue-ink" },
-  account:  { tint: "--ux-tint-amber",  ink: "--ux-orange-ink" },
-};
-const toneOf = (id: string) => TONE[id] ?? { tint: "--ux-surface-2", ink: "--ux-ink-2" };
+/** The current row's tint: the brand's, like everywhere else in the app. */
+const TONE = { tint: "--ux-brand-tint", ink: "--ux-brand" };
 
 export function MoreSheet({ open, onClose }: { open: boolean; onClose: () => void }) {
   const tr = useT();
@@ -190,7 +182,7 @@ export function MoreSheet({ open, onClose }: { open: boolean; onClose: () => voi
                 <Link key={qk.href} href={qk.href} onClick={onClose}
                       className="ux-press flex h-[76px] flex-col items-center justify-center gap-2.5 rounded-[16px]"
                       style={{ background: "var(--ux-surface)", border: "1px solid var(--ux-line)", color: "var(--ux-brand)" }}>
-                  <Icon name={qk.icon} className="h-[21px] w-[21px]" />
+                  {(() => { const n = nodeFor(qk.href); return n ? <PlaceBadge node={n} size={34} radius={10} /> : <Icon name={qk.icon} className="h-[21px] w-[21px]" />; })()}
                   <span className="max-w-full truncate px-1 text-[12.5px] font-semibold leading-none" style={{ color: "var(--ux-ink)" }}>
                     {qk.label}
                   </span>
@@ -206,7 +198,7 @@ export function MoreSheet({ open, onClose }: { open: boolean; onClose: () => voi
           {/* ── Every section, with everything inside it ── */}
           <div className="grid gap-3 px-5">
             {shown.map(({ s, kids }) => {
-              const tone = toneOf(s.id);
+              const tone = TONE;
               const current = here === s.id;
               return (
                 <section key={s.id} className="overflow-hidden rounded-[18px]"
@@ -214,10 +206,7 @@ export function MoreSheet({ open, onClose }: { open: boolean; onClose: () => voi
                                   border: current ? "1.5px solid var(--ux-brand)" : "1px solid var(--ux-line)" }}>
                   <Link href={s.href} onClick={onClose}
                         className="ux-press flex min-h-[66px] items-center gap-3.5 px-4 py-3">
-                    <span className="grid h-[44px] w-[44px] shrink-0 place-items-center rounded-[14px]"
-                          style={{ background: `var(${tone.tint})`, color: `var(${tone.ink})` }}>
-                      <Icon name={s.icon} className="h-[22px] w-[22px]" />
-                    </span>
+                    <PlaceBadge node={s} size={46} radius={14} />
                     <span className="min-w-0 flex-1">
                       <b className="block truncate text-[16px] font-bold leading-tight" style={{ color: "var(--ux-ink)" }}>
                         {label(s)}
@@ -238,9 +227,9 @@ export function MoreSheet({ open, onClose }: { open: boolean; onClose: () => voi
                         return (
                           <li key={c.id}>
                             <Link href={c.href} onClick={onClose}
-                                  className="ux-press flex min-h-[46px] items-center gap-2.5 rounded-[12px] px-3"
+                                  className="ux-press flex min-h-[46px] items-center gap-2.5 rounded-[12px] px-2"
                                   style={{ background: on ? `var(${tone.tint})` : "var(--ux-surface-2)" }}>
-                              <Icon name={c.icon} className="h-[16px] w-[16px] shrink-0" />
+                              <PlaceBadge node={c} size={28} radius={8} />
                               <span className="min-w-0 flex-1 truncate text-[13px] leading-tight"
                                     style={{ color: on ? `var(${tone.ink})` : "var(--ux-ink-2)", fontWeight: on ? 700 : 550 }}>
                                 {label(c)}

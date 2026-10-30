@@ -1,5 +1,6 @@
 "use client";
 
+import { PlaceMark } from "@/components/ux/nav/Place";
 import { useCallback, useState } from "react";
 import Link from "next/link";
 
@@ -56,7 +57,10 @@ export default function FriendsPage() {
   return (
     <HomeShell active="/app/community/friends">
       <div className="mb-4">
-        <h1 className="ux-screen-title text-2xl font-extrabold" style={{ color: "var(--ux-ink)" }}>Friends</h1>
+        <div className="flex min-w-0 items-center gap-3">
+          <PlaceMark size={44} />
+          <h1 className="ux-screen-title text-2xl font-extrabold min-w-0" style={{ color: "var(--ux-ink)" }}>Friends</h1>
+        </div>
         <p className="text-xsm" style={{ color: "var(--ux-muted)" }}>Friends see each other&apos;s friends-only posts</p>
       </div>
       <div className="mb-4"><Tabs items={tabs} active={active} onChange={(t) => setTab(t.split(" (")[0])} /></div>

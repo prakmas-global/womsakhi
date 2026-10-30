@@ -83,8 +83,7 @@
   line-height: 1.25rem;
   white-space: nowrap;
   transition: background-color 0.15s ease, box-shadow 0.15s ease, color 0.15s ease;
-  cursor: url("/cur-pointer.png") 11 2, pointer;
-  cursor: image-set(url("/cur-pointer.png") 1x, url("/cur-pointer-2x.png") 2x) 11 2, pointer;
+  cursor: pointer;
 }
 .btn-sm {
   padding: 0.45rem 0.85rem;
@@ -105,9 +104,12 @@
 
 .btn-primary {
   background-color: var(--color-brand-600);
-  color: #fff;
+  color: var(--ws-on-brand);
   box-shadow: 0 8px 18px -8px color-mix(in srgb, var(--color-brand-600) 55%, transparent);
 }
+
+/* Brand fills lighten in dark mode; their foreground must change with them. */
+.bg-brand-600.text-white { color: var(--ws-on-brand); }
 .btn-primary:hover {
   background-color: var(--color-brand-700);
 }

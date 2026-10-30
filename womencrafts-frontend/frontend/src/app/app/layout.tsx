@@ -8,6 +8,7 @@ import "@/app/ux/tokens.css";
 // After tokens.css on purpose: both are unlayered, so the later import wins.
 import "@/app/ux/mobile.css";
 import "@/app/ux/dashboard-contract.css";
+import "@/app/ux/banners.css";
 
 /**
  * The member app's server entry point.

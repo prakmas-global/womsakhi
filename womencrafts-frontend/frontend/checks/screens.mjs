@@ -53,11 +53,12 @@ const inspect = (page) => page.evaluate(() => {
     } return true;
   };
   const unnamed = [...document.querySelectorAll("button,a[href]")].filter((el) =>
-    vis(el) && !(el.getAttribute("aria-label") || el.getAttribute("title") || el.textContent || "").trim()).length;
+    vis(el) && !el.closest('[aria-hidden="true"]') &&
+    !(el.getAttribute("aria-label") || el.getAttribute("title") || el.textContent || "").trim()).length;
   const unlabelled = [...document.querySelectorAll("input,select,textarea")].filter((el) => {
     if (!vis(el) || el.type === "hidden") return false;
     if (el.getAttribute("aria-label") || el.getAttribute("placeholder") || el.getAttribute("aria-labelledby")) return false;
-    return !(el.id && document.querySelector(`label[for="${CSS.escape(el.id)}"]`));
+    return !el.closest("label") && !(el.id && document.querySelector(`label[for="${CSS.escape(el.id)}"]`));
   }).length;
   const stuck = [...document.querySelectorAll('.wc-skeleton,[class*="animate-pulse"],[class*="animate-spin"]')].filter(vis).length;
 

@@ -82,6 +82,11 @@ export const apiDeleteComment = (id: string) => apiClient.delete(`/feed/comments
 export const apiReportPost = (id: string, reason: string) =>
   apiClient.post<{ ok: boolean; message: string }>(`/feed/posts/${id}/report`, { reason }).then((r) => r.data);
 
+/**
+ * The starting values of the `feed_report_reasons` master. Screens read the
+ * live list with `useMaster("feed_report_reasons", REPORT_REASONS)`; the
+ * server checks a report against the same master.
+ */
 export const REPORT_REASONS = ["Rude or hurtful", "Spam or selling", "False information", "Not safe", "Something else"];
 
 /** Where a member's page lives: by username, else by id. */

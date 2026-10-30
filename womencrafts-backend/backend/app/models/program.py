@@ -1,6 +1,8 @@
 from datetime import datetime, timezone
 from typing import Optional
 
+from app.core.media import media_url
+
 
 class ProgramModel:
     """
@@ -139,6 +141,8 @@ class ProgramModel:
             "owner_id": doc.get("owner_id", ""),
             "teacher_name": doc.get("teacher_name") or "WomSakhi team",
             "price_minor": int(doc.get("price_minor") or 0),
+            # Its thumbnail, when it has one; screens fall back to its category's.
+            "cover": media_url(doc.get("cover") or ""),
         }
 
     @staticmethod

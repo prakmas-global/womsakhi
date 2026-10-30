@@ -1,5 +1,6 @@
 "use client";
 
+import { PlaceMark } from "@/components/ux/nav/Place";
 import { useCallback, useMemo, useState } from "react";
 
 import { HomeShell } from "@/components/ux/home/HomeShell";
@@ -104,8 +105,11 @@ export default function VerifiedPage() {
 
         <header>
           <p className="text-[12px] font-extrabold uppercase tracking-[0.2em] lg:text-2xs" style={{ color: v("--ux-brand") }}>{tr("verified.beforeYouTakeTheWork")}</p>
-          <h1 className="ux-screen-title mt-1 lg:mt-2 text-[clamp(1.5rem,3.2vw,2.125rem)] font-extrabold leading-[1.1] tracking-[-0.035em]"
-              style={{ color: v("--ux-ink") }}>{tr("verified.didTheyActuallyPayHer")}</h1>
+          <div className="mt-1 lg:mt-2 flex min-w-0 items-center gap-3">
+            <PlaceMark size={44} />
+            <h1 className="ux-screen-title text-[clamp(1.5rem,3.2vw,2.125rem)] font-extrabold leading-[1.1] tracking-[-0.035em] min-w-0"
+                style={{ color: v("--ux-ink") }}>{tr("verified.didTheyActuallyPayHer")}</h1>
+          </div>
           <p className="mt-2 max-w-[58ch] text-[15px] leading-snug lg:mt-1.5 lg:text-sm lg:leading-relaxed" style={{ color: v("--ux-muted") }}>
             Every line below was written by a woman who did the work — not by the company, and not
             by us. There are plenty of places to find work. There is nowhere to find out whether

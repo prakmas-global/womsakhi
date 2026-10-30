@@ -1,5 +1,6 @@
 "use client";
 
+import { PlaceMark } from "@/components/ux/nav/Place";
 import { Suspense, useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
@@ -116,7 +117,7 @@ function FrameInner({ active, hue, icon, eyebrow, title, sub, actions, art, tabs
   }
   return (
     <HomeShell active={active} columns>
-      <section data-health-hero
+      <section data-banner data-health-hero
                className="relative mb-4 grid items-center gap-4 overflow-hidden rounded-[var(--ux-r-lg,20px)] p-5 sm:p-7 md:grid-cols-[minmax(0,1fr)_auto]"
                style={night
                  ? { background: "linear-gradient(125deg, var(--ux-deep) 0%, var(--ux-deep-2) 55%, var(--ux-brand-900) 100%)", color: "var(--ux-deep-ink)" }
@@ -126,8 +127,11 @@ function FrameInner({ active, hue, icon, eyebrow, title, sub, actions, art, tabs
              style={{ color: night ? "var(--ux-deep-ink-2)" : h.ink }}>
             <I name={icon} className="h-4 w-4" /> {eyebrow || "Health & Wellness"}
           </p>
-          <h1 className="ux-screen-title text-[28px] font-extrabold leading-tight sm:text-[34px]"
-              style={{ color: night ? "var(--ux-deep-ink)" : "var(--ux-ink)" }}>{title}</h1>
+          <div className="flex min-w-0 items-center gap-3">
+            <PlaceMark size={44} />
+            <h1 className="ux-screen-title text-[28px] font-extrabold leading-tight sm:text-[34px] min-w-0"
+                style={{ color: night ? "var(--ux-deep-ink)" : "var(--ux-ink)" }}>{title}</h1>
+          </div>
           <p className="mt-1.5 max-w-[60ch] text-[15px] leading-relaxed"
              style={{ color: night ? "var(--ux-deep-ink-3)" : "var(--ux-muted)" }}>{sub}</p>
           {actions && <div className="mt-4 flex flex-wrap items-center gap-2">{actions}</div>}
@@ -186,7 +190,7 @@ export function Panel({ title, sub, action, hue, tint, children, className = "",
 /** Main column and a side column on wide screens; one column below 1100px. */
 export function Cols({ main, side }: { main: React.ReactNode; side: React.ReactNode }) {
   return (
-    <div className="grid items-start gap-5 xl:grid-cols-[minmax(0,1fr)_360px]">
+    <div className="ux-split-xl grid items-start gap-5 xl:grid-cols-[minmax(0,1fr)_360px]">
       <div className="flex min-w-0 flex-col gap-5">{main}</div>
       <div className="flex min-w-0 flex-col gap-5">{side}</div>
     </div>

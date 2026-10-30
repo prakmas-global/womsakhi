@@ -1,5 +1,6 @@
 "use client";
 
+import { PlaceMark } from "@/components/ux/nav/Place";
 import { useCallback, useMemo, useState } from "react";
 import { useResource } from "@/lib/use-resource";
 import { apiShopOrders, type ShopOrder } from "@/lib/shop-api";
@@ -88,8 +89,11 @@ export default function SafeMoneyPage() {
 
         <header>
           <p className={EYEBROW}>{tr("safemoney.moneyTraps")}</p>
-          <h1 className="ux-screen-title mt-2 text-[clamp(1.5rem,3.2vw,2.125rem)] font-extrabold leading-[1.1] tracking-[-0.035em]"
-              style={{ color: v("--ux-ink") }}>{tr("safemoney.theTricksAimedAtWomenWorking")}</h1>
+          <div className="mt-2 flex min-w-0 items-center gap-3">
+            <PlaceMark size={44} />
+            <h1 className="ux-screen-title text-[clamp(1.5rem,3.2vw,2.125rem)] font-extrabold leading-[1.1] tracking-[-0.035em] min-w-0"
+                style={{ color: v("--ux-ink") }}>{tr("safemoney.theTricksAimedAtWomenWorking")}</h1>
+          </div>
           <p className="mt-1.5 max-w-[58ch] text-sm leading-relaxed" style={{ color: v("--ux-muted") }}>
             These are not general internet scams. Each one below is written for a woman who sews,
             cooks or does mehendi at home, and each is the exact message you will be sent.

@@ -189,7 +189,7 @@ export function LogTab({ store }: { store: SleepStore }) {
   // The card comes first on a phone (logging last night is why she came)
   // and sits on the right on a wide screen, beside her history.
   return (
-    <div className="grid items-start gap-5 xl:grid-cols-[minmax(0,1fr)_360px]">
+    <div className="ux-split-xl grid items-start gap-5 xl:grid-cols-[minmax(0,1fr)_360px]">
       <div className="order-2 flex min-w-0 flex-col gap-5 xl:order-1">
         <Panel title="Sleep history" sub={ss.length ? `${ss.length} night${ss.length === 1 ? "" : "s"} logged` : undefined}>
           {ss.length === 0 ? (

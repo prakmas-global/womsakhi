@@ -1,5 +1,6 @@
 "use client";
 
+import { PlaceMark } from "@/components/ux/nav/Place";
 import { useCallback, useMemo, useState } from "react";
 
 import { HomeShell } from "@/components/ux/home/HomeShell";
@@ -99,8 +100,11 @@ export default function KitchenPage() {
                style={{ background: `linear-gradient(120deg, ${v("--ux-tint-amber")}, ${v("--ux-surface")})` }}>
             <div className="min-w-0 flex-1">
               <p className="text-xs font-semibold uppercase tracking-[0.06em] text-[color:var(--ux-muted)] lg:text-2xs lg:font-extrabold lg:tracking-[0.2em] lg:text-[color:var(--ux-amber-ink)]">{tr("kitchen.sellingFoodFromHome")}</p>
-              <h1 className="ux-screen-title mt-2 max-w-[18ch] text-[clamp(1.5rem,3.4vw,2.25rem)] font-extrabold leading-[1.08] tracking-[-0.035em]"
-                  style={{ color: v("--ux-ink") }}>{tr("kitchen.theLicenceCostsOneHundredRupees")}</h1>
+              <div className="mt-2 flex min-w-0 items-center gap-3">
+                <PlaceMark size={44} />
+                <h1 className="ux-screen-title max-w-[18ch] text-[clamp(1.5rem,3.4vw,2.25rem)] font-extrabold leading-[1.08] tracking-[-0.035em] min-w-0"
+                    style={{ color: v("--ux-ink") }}>{tr("kitchen.theLicenceCostsOneHundredRupees")}</h1>
+              </div>
               <p className="mt-2.5 max-w-[52ch] text-sm leading-relaxed" style={{ color: v("--ux-ink-2") }}>
                 A year. That is the entire fee. Your own kitchen is allowed — you write down the
                 address yourself, and no landlord has to sign anything. Most women who could be

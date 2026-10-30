@@ -4,9 +4,10 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "next/navigation";
 
 import { Btn } from "@/components/ux/kit";
-import { Chips, Empty, HUE, HealthFrame, I, Panel, useEntries } from "@/components/ux/health/kit";
+import { Empty, HUE, HealthFrame, I, Panel, useEntries } from "@/components/ux/health/kit";
 import { useResource } from "@/lib/use-resource";
 import { VIDEO_CATEGORIES, apiHealthVideos, fmtDuration, type HealthVideo } from "@/lib/health-videos-api";
+import { PicTiles, useMasterPictures } from "@/components/ux/media/MasterPictures";
 import type { Entry } from "@/lib/health-api";
 
 /**
@@ -36,8 +37,12 @@ export default function VideosPage() {
 
 function Library({ tab }: { tab: string }) {
   const params = useSearchParams();
-  const first = params.get("cat") || "All";
-  const [cat, setCat] = useState<string>(VIDEO_CATEGORIES.includes(first as never) ? first : "All");
+  const first = (params.get("cat") || "").trim().toLowerCase();
+  // The shelves staff control (the `health_video_categories` master).
+  const shelves = useMasterPictures("health_video_categories", [...VIDEO_CATEGORIES]);
+  const [picked, setCat] = useState<string | null>(null);
+  // `?cat=` matches without regard to case, against whatever the list is now.
+  const cat = picked ?? (shelves.labels.find((l) => l.toLowerCase() === first) ?? "All");
   const { data: videos, source } = useResource(useCallback((s: AbortSignal) => apiHealthVideos(s), []), [] as HealthVideo[]);
   const watch = useEntries("vwatch");
   const [playing, setPlaying] = useState<HealthVideo | null>(null);
@@ -64,7 +69,10 @@ function Library({ tab }: { tab: string }) {
                 onDone={() => mark(playing, { completed: true }, "Marked as done")}
                 onFav={() => mark(playing, { favorite: !byVideo.get(playing.id)?.data.favorite }, byVideo.get(playing.id)?.data.favorite ? "Removed from favourites" : "Saved to favourites")} />
       )}
-      <Chips hue="pink" label="Category" value={cat} onChange={setCat} options={["All", ...VIDEO_CATEGORIES]} />
+      {/* Shelves as pictures; "All" is the whole library. */}
+      <PicTiles label="Category" size="sm" value={cat} onPick={(c) => setCat(c === cat && c !== "All" ? "All" : c)}
+                tiles={[{ value: "All", label: "All videos", src: "/ux/art/learn-dashboard-mindfulness.webp" },
+                        ...shelves.labels.map((l) => ({ value: l, label: l, src: shelves.pic(l) }))]} />
       {loading ? (
         <p className="text-sm" style={{ color: "var(--ux-muted)" }}>Loading videos…</p>
       ) : !videos.length ? (
@@ -93,7 +101,9 @@ function Library({ tab }: { tab: string }) {
                   {v.thumbnail
                     // eslint-disable-next-line @next/next/no-img-element
                     ? <img src={v.thumbnail} alt="" loading="lazy" className="h-full w-full object-cover" />
-                    : <span className="absolute inset-0" style={{ background: `linear-gradient(135deg, ${HUE.pink.ink}, var(--ux-violet))` }} />}
+                    // No thumbnail of its own: its shelf's picture, under the play button.
+                    // eslint-disable-next-line @next/next/no-img-element
+                    : <img src={shelves.pic(v.category)} alt="" loading="lazy" className="h-full w-full object-cover opacity-80" />}
                   <span className="absolute inset-0 grid place-items-center">
                     <span className="grid h-12 w-12 place-items-center rounded-full" style={{ background: "rgba(255,255,255,.92)", color: "var(--ux-deep)" }}>
                       <I name="Play" className="ms-0.5 h-5 w-5" />

@@ -1,3 +1,6 @@
+from app.core.operations import OperationalMetricsMiddleware
+from app.routes.operations import router as operations_router
+from app.routes.journeys import router as journeys_router
 import os
 import threading
 from contextlib import asynccontextmanager
@@ -54,6 +57,8 @@ from app.routes.me_messages import router as me_messages_router
 from app.routes.me_export import router as me_export_router
 from app.routes.books import router as books_router
 from app.routes.vault import router as vault_router
+from app.routes.khata import router as khata_router
+from app.routes.rentals import admin_router as rentals_admin_router, router as rentals_router
 from app.routes.money import router as money_router
 from app.routes.week import router as week_router
 from app.routes.incase import router as incase_router
@@ -76,6 +81,8 @@ from app.routes.my_records import router as my_records_router
 from app.routes.mentor_reviews import router as mentor_reviews_router
 from app.routes.people import router as people_router
 from app.routes.health_hub import router as health_hub_router
+from app.routes.market_categories import router as market_categories_router, admin_router as market_categories_admin_router
+from app.routes.masters import router as masters_router, admin_router as masters_admin_router
 from app.routes.health_files import router as health_files_router
 from app.routes.doctors import router as doctors_router, admin_router as doctors_admin_router
 from app.routes.health_videos import router as health_videos_router, admin_router as health_videos_admin_router
@@ -344,6 +351,7 @@ class OriginCheckMiddleware:
 app.add_middleware(OriginCheckMiddleware, allowed=settings.allowed_origins)
 
 app.add_middleware(TimingMiddleware)
+app.add_middleware(OperationalMetricsMiddleware)
 
 # Outermost, so every response — including one produced by an exception handler
 # below — carries the id, and so every log line inside the request can find it.
@@ -364,6 +372,8 @@ def _mod(key: str):
     return [Depends(module_guard(key))]
 
 
+app.include_router(operations_router)
+app.include_router(journeys_router, prefix="/api/v1")
 app.include_router(public_router, prefix="/api/v1")   # no session required
 app.include_router(auth_router, prefix="/api/v1")
 app.include_router(auth_app_router, prefix="/api/v1")  # the app as her key to the web
@@ -376,6 +386,8 @@ app.include_router(me_export_router, prefix="/api/v1")
 # Her ledger. Most of what she sells never touches an order record here.
 app.include_router(books_router, prefix="/api/v1")
 app.include_router(vault_router, prefix="/api/v1")
+app.include_router(khata_router, prefix="/api/v1")
+app.include_router(rentals_router, prefix="/api/v1")
 app.include_router(money_router, prefix="/api/v1")
 app.include_router(week_router, prefix="/api/v1")
 app.include_router(incase_router, prefix="/api/v1")
@@ -452,6 +464,10 @@ app.include_router(community_router, prefix="/api/v1")
 app.include_router(growth_router, prefix="/api/v1")
 app.include_router(mentor_reviews_router, prefix="/api/v1")
 app.include_router(people_router, prefix="/api/v1")
+app.include_router(market_categories_router, prefix="/api/v1")
+app.include_router(masters_router, prefix="/api/v1")
+# Each list is guarded by its own module's permissions inside the routes.
+app.include_router(masters_admin_router, prefix="/api/v1")
 app.include_router(health_hub_router, prefix="/api/v1")
 app.include_router(health_files_router, prefix="/api/v1")  # her private health papers
 app.include_router(doctors_router, prefix="/api/v1")
@@ -480,6 +496,8 @@ app.include_router(admin_growth_router, prefix="/api/v1", dependencies=_mod("gro
 app.include_router(work_admin_router, prefix="/api/v1", dependencies=_mod("growth"))
 app.include_router(admin_safety_router, prefix="/api/v1", dependencies=_mod("safety"))
 app.include_router(admin_market_router, prefix="/api/v1", dependencies=_mod("market"))
+app.include_router(rentals_admin_router, prefix="/api/v1", dependencies=_mod("market"))
+app.include_router(market_categories_admin_router, prefix="/api/v1", dependencies=_mod("market"))
 app.include_router(admin_money_router, prefix="/api/v1", dependencies=_mod("money"))
 app.include_router(admin_learning_router, prefix="/api/v1", dependencies=_mod("learning"))
 app.include_router(admin_resources_router, prefix="/api/v1", dependencies=_mod("resources"))

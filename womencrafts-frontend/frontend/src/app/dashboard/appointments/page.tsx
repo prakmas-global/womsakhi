@@ -502,7 +502,7 @@ function AppointmentsInner() {
       )}
 
       <div className="mt-6 grid gap-6 lg:grid-cols-[minmax(0,1fr)_300px]">
-        <Card>
+        <Card className="min-w-0">
           <Tabs
             value={scope}
             onChange={(v) => changeScope(v as ApptScope)}
@@ -622,7 +622,7 @@ function AppointmentsInner() {
           )}
         </Card>
 
-        <div className="space-y-6">
+        <div className="min-w-0 space-y-6">
           <Card>
             <h2 className="font-display text-sm font-bold text-ink">All time</h2>
             <p className="text-xs text-ink-subtle">{stats ? `${stats.total} sessions on record` : "…"}</p>

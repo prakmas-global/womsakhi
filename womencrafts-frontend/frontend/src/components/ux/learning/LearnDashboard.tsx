@@ -1,6 +1,7 @@
 "use client";
 /* eslint-disable @next/next/no-img-element */
 
+import { SectionPictures } from "@/components/ux/nav/Hub";
 import { useMemo, useState } from "react";
 import { useT } from "@/i18n";
 import { HomeShell } from "@/components/ux/home/HomeShell";
@@ -15,7 +16,7 @@ import { apiGoals, type Goal } from "@/lib/money-api";
 import { useCallback } from "react";
 import styles from "./LearnDashboard.module.css";
 import { DashboardNudge } from "@/components/ux/reminders/DashboardNudge";
-import { artFor } from "@/components/ux/media/art";
+import { pictureOr, useMasterPictures } from "@/components/ux/media/MasterPictures";
 
 const ART = "/ux/art/learn-dashboard-";
 /**
@@ -45,7 +46,12 @@ function statsFor(p: {
 /** "₹499" or "Free" — what a course costs her. */
 const priceLabel = (minor?: number) => (minor ? `₹${(minor / 100).toLocaleString("en-IN")}` : "Free");
 
-/** The four paths, each a group of course categories — counted from the real catalogue. */
+/**
+ * Learning paths, each a group of course categories — counted from the real
+ * catalogue. The paths and their categories are the "course_categories" master
+ * staff control (Masters → Course categories); this list is what shows until
+ * it loads, and if it can't.
+ */
 const PATHS = [
   { icon: "Briefcase", title: "Career & Jobs", sub: "Get job ready", cats: ["Digital Literacy", "Languages", "Personal Development"] },
   { icon: "TrendingUp", title: "Entrepreneurship", sub: "Start and grow", cats: ["Entrepreneurship", "Handicrafts", "Cooking & Food", "Beauty & Care", "Sustainability"] },
@@ -124,6 +130,7 @@ function CalendarPanel({ marks }: { marks: Date[] }) {
 }
 
 export function LearnDashboard() {
+  const courseCats = useMasterPictures("course_categories");
   const tr = useT();
   const { data: learning } = useLearning();
 
@@ -176,12 +183,16 @@ export function LearnDashboard() {
   // Free first, then by how many women are already learning it.
   const picks = [...learning.picks].sort((a, b) => Number(!!a.priceMinor) - Number(!!b.priceMinor)).slice(0, 4);
   const all = [...learning.continuing, ...learning.pending, ...learning.picks];
-  const paths = PATHS.map((p) => ({ ...p, count: all.filter((c) => p.cats.includes(c.category)).length }));
+  const fromMaster = courseCats.loaded
+    ? courseCats.items.map((p) => ({ icon: p.extra.icon || "BookOpen", title: p.label, sub: p.extra.note || "",
+                                     cats: (p.children ?? []).map((c) => c.label), pic: courseCats.pic(p.label) }))
+    : PATHS.map((p) => ({ ...p, pic: "" }));
+  const paths = fromMaster.map((p) => ({ ...p, count: all.filter((c) => p.cats.includes(c.category)).length }));
 
   return <HomeShell active="/app/learn" loadFailed="your learning" fit>
     <div className={styles.dashboard} data-dashboard="learn">
       <div className={styles.main}>
-        <section className={styles.hero}>
+        <section className={styles.hero} data-page-hero data-banner>
           <picture>
             {/* The wide banner is composed for a laptop and carries lettering in
               its own artwork; a phone-shaped crop of it cuts the subject or the
@@ -189,7 +200,7 @@ export function LearnDashboard() {
             <source media="(max-width: 1023px)" srcSet={`${ART}hero-mobile.webp`} />
             <img src={`${ART}hero.webp`} alt="" aria-hidden="true" />
           </picture>
-          <div className={styles.heroContent}>
+          <div className={styles.heroContent} data-banner-copy>
             <p className={styles.eyebrow}>Learn <span>•</span> Grow <span>•</span> Achieve</p>
             <h1>{tr("learnDashboard.learnWithoutLimits")}</h1>
             <p>{tr("learnDashboard.newSkillsBetterOpportunitiesABrighter")}</p>
@@ -197,12 +208,17 @@ export function LearnDashboard() {
               <TransitionLink className={styles.primaryAction} href={currentHref}>{tr("learnDashboard.continueLearning")} <I name="ArrowRight" /></TransitionLink>
               <TransitionLink className={styles.videoAction} href="/app/programs"><span><I name="Play" /></span> {tr("learnDashboard.watchYour")}<br />{tr("learnDashboard.learningJourney")}</TransitionLink>
             </div>
-            <div className={styles.heroBenefits}>
+
+          </div>
+        </section>
+            <div className={styles.heroBenefits} data-banner-details>
               <span><I name="BadgeCheck" /> {tr("learnDashboard.practicalSkills")}</span><span><I name="Users" /> {tr("learnDashboard.expertMentors")}</span>
               <span><I name="Award" /> {tr("learnDashboard.recognisedCertificates")}</span><span><I name="Briefcase" /> {tr("learnDashboard.realOpportunities")}</span>
             </div>
-          </div>
-        </section>
+
+        {/* Everything in this section as pictures in its colour — the map a
+            woman who cannot read the rail finds her way by. */}
+        <SectionPictures id="learn" className="" />
 
         <div className={styles.stats}>{stats.map(item => <TransitionLink className={styles.stat} href={item.href} key={item.label}>
           <span className={styles.statIcon}><I name={item.icon} /></span><span><strong>{item.value}<small>{item.unit}</small></strong><span>{item.label}</span></span>
@@ -226,7 +242,7 @@ export function LearnDashboard() {
           ) : mine.map(course => {
             const waiting = course.myStatus === "pending";
             return <div className={styles.continueCard} key={course.id} style={{ marginBottom: 12 }}>
-              <TransitionLink href={`/app/programs/${course.id}`} className={styles.continueImage}><img src={artFor([course.title, course.category], "course", null, course.id)} alt="" /><span><I name={waiting ? "Hourglass" : "Play"} /></span><b>{waiting ? "Waiting" : "In Progress"}</b></TransitionLink>
+              <TransitionLink href={`/app/programs/${course.id}`} className={styles.continueImage}><img src={course.ownCover ? course.thumb : pictureOr(null, [course.title], courseCats.of(course.category))} alt="" /><span><I name={waiting ? "Hourglass" : "Play"} /></span><b>{waiting ? "Waiting" : "In Progress"}</b></TransitionLink>
               <div className={styles.continueDetails}>
                 <h3>{course.title}</h3>
                 <p>{waiting
@@ -242,18 +258,18 @@ export function LearnDashboard() {
         <section className={styles.section}>
           <SectionTitle title={tr("journey.recommendedForYou")} detail="From the WomSakhi team and from women who teach here" href="/app/programs" />
           <div className={styles.recommendations}>{picks.map(course => <TransitionLink className={styles.course} href={`/app/programs/${course.id}`} key={course.id}>
-            <div className={styles.courseImage}><img src={artFor([course.title, course.category], "course", null, course.id)} alt="" /><b>{priceLabel(course.priceMinor)}</b></div>
+            <div className={styles.courseImage}><img src={course.ownCover ? course.thumb : pictureOr(null, [course.title], courseCats.of(course.category))} alt="" /><b>{priceLabel(course.priceMinor)}</b></div>
             <div className={styles.courseBody}><h3>{course.title}</h3><p>By {course.teacher}</p><span className={styles.courseMeta}><I name="BookOpenCheck" /> {course.lessons} lessons · <I name="Clock" /> {course.hours || "Own pace"}</span><span className={styles.rating}><I name={course.byMember ? "UserRound" : "Sparkles"} /> {course.byMember ? "Taught by a member" : "WomSakhi team"} <i><I name="Play" /></i></span></div>
           </TransitionLink>)}</div>
         </section>
 
         <section className={styles.section}>
           <SectionTitle title={tr("learnDashboard.learningPaths")} detail="Structured programs to help you achieve your goals" href="/app/programs" />
-          <div className={styles.paths}>{paths.map(path => <TransitionLink href={`/app/programs?cat=${encodeURIComponent(path.cats.join(","))}&path=${encodeURIComponent(path.title)}`} className={styles.path} key={path.title}><span><I name={path.icon} /></span><div><h3>{path.title}</h3><p>{path.sub}</p><small>{path.count} course{path.count === 1 ? "" : "s"}</small></div></TransitionLink>)}</div>
+          <div className={styles.paths}>{paths.map(path => <TransitionLink href={`/app/programs?cat=${encodeURIComponent(path.cats.join(","))}&path=${encodeURIComponent(path.title)}`} className={styles.path} key={path.title}><span>{path.pic ? <img src={path.pic} alt="" loading="lazy" decoding="async" /> : <I name={path.icon} />}</span><div><h3>{path.title}</h3><p>{path.sub}</p><small>{path.count} course{path.count === 1 ? "" : "s"}</small></div></TransitionLink>)}</div>
         </section>
       </div>
 
-      <aside className={styles.rightRail} aria-label={tr("learnDashboard.learningOverview")}>
+      <aside className={`${styles.rightRail} ux-sticky-col`} aria-label={tr("learnDashboard.learningOverview")}>
         <blockquote className={styles.quote}><span aria-hidden="true">“</span><p>{tr("learnDashboard.learningIsNotJustForToday")}</p><cite>— WomSakhi</cite></blockquote>
         <CalendarPanel marks={marks} />
         <section className={styles.railPanel}>

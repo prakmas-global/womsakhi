@@ -1,18 +1,4 @@
-/**
- * The front door carries the banner, whole.
- *
- * `bannermain.png` is a finished piece rather than a backdrop: the wordmark,
- * the quote, six women, the globe and the Charminar are composed into it, and
- * every one of them sits close to an edge. The art is 2.5:1 and the hero
- * crops it to 2.8:1, which leaves very little margin — "A Brighter Tomorrow"
- * begins at 7.5% of the height, the tallest head at 8%, the wordmark at 13%.
- * A crop tightened to 3.05:1 took the lettering's top off, and nothing about
- * the page looked wrong; it just quietly lost a piece of the picture.
- *
- * So this checks the ratio as a number, not the look — and that it is real
- * content with a real description, because a banner whose words are baked in
- * is not decoration and cannot be left to `alt=""`.
- */
+/** Home uses the shared banner geometry and preserves its complete artwork. */
 import puppeteer from "puppeteer-core";
 import { CHROME, APP, seededMemberToken } from "./_shared.mjs";
 
@@ -31,13 +17,13 @@ const say = (ok, msg) => { console.log(`  ${ok ? "ok  " : "FAIL"}  ${msg}`); if 
 
 const m = await p.evaluate(() => {
   const c = document.querySelector("#content");
-  const im = c.querySelector('img[src*="home-banner"]');
-  const box = im?.getBoundingClientRect();
-  const hrefs = [...c.querySelectorAll("a")].map(a => a.getAttribute("href"));
+  const im = [...c.querySelectorAll('img[src*="home-banner"]')].find((image) => image.getBoundingClientRect().width > 0);
+    const hrefs = [...c.querySelectorAll("a")].map(a => a.getAttribute("href"));
   return {
     there: !!im,
     decoded: !!im && im.naturalWidth > 0,
-    ratio: box ? +(box.width / box.height).toFixed(2) : 0,
+    bannerHeight: im?.closest("[data-banner]")?.getBoundingClientRect().height,
+    fit: im ? getComputedStyle(im).objectFit : "",
     natural: im ? +(im.naturalWidth / im.naturalHeight).toFixed(2) : 0,
     alt: im?.getAttribute("alt") ?? "",
     eager: im?.loading !== "lazy",
@@ -49,8 +35,8 @@ const m = await p.evaluate(() => {
 });
 
 say(m.there && m.decoded, "the banner is on the home page and decoded");
-say(m.ratio >= 2.7 && m.ratio <= 2.9,
-    `it is cropped to 2.8:1, not tighter (drawn at ${m.ratio}:1, art is ${m.natural}:1)`);
+say(m.bannerHeight === 320 && m.fit === "contain",
+    `desktop: shared 320px banner preserves the complete artwork (${m.bannerHeight}px, ${m.fit})`);
 say(m.alt.length > 40 && /Independent Women/.test(m.alt),
     "it has a real description — its words are baked in, so it is not decoration");
 say(m.eager, "it is not lazy-loaded; it is the first thing on the first screen");
@@ -61,13 +47,15 @@ say(m.explore && m.watch, "both actions survived the rebuild (Explore Opportunit
 await p.setViewport({ width: 390, height: 844, deviceScaleFactor: 1 });
 await new Promise(x => setTimeout(x, 1200));
 const phone = await p.evaluate(() => {
-  const im = document.querySelector('#content img[src*="home-banner"]');
+  const im = [...document.querySelectorAll('#content img[src*="home-banner"]')].find((image) => image.getBoundingClientRect().width > 0);
   const r = im.getBoundingClientRect();
   return { sideways: document.documentElement.scrollWidth - document.documentElement.clientWidth,
-           w: Math.round(r.width), h: Math.round(r.height) };
+           w: Math.round(r.width), h: Math.round(r.height),
+           bannerHeight: im.closest("[data-banner]")?.getBoundingClientRect().height,
+           fit: getComputedStyle(im).objectFit };
 });
 say(phone.sideways === 0, `390px: nothing runs off the side (${phone.sideways}px)`);
-say(phone.h > 90 && phone.h < 200, `390px: the banner is still legible, not a letterbox (${phone.w}x${phone.h})`);
+say(phone.bannerHeight === 360 && phone.fit === "contain", `390px: shared 360px banner preserves the complete artwork (${phone.bannerHeight}px)`);
 
 console.log(bad ? `\n FAIL  ${bad} of 9` : "\n PASS  the banner is whole, described, and hers underneath");
 await b.close();

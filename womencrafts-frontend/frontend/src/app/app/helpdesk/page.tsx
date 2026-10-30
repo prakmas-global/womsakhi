@@ -4,6 +4,7 @@ import { useCallback, useState } from "react";
 import Link from "next/link";
 import { Headphones, MessageCircle, RotateCw, ShieldAlert } from "lucide-react";
 import { HomeShell } from "@/components/ux/home/HomeShell";
+import { SectionPictures } from "@/components/ux/nav/Hub";
 import {
   bubbleRadius, ChatDock, ChatFrame, ChatInput, ChatLog, DayMark, JumpToLatest, Says, SendButton, Stamp, useChatScroll,
 } from "@/components/ux/sakhi/chat";
@@ -95,6 +96,13 @@ export default function HelpdeskPage() {
       <style href="ux-helpdesk-float" precedence="ux-mobile">
         {`.ux:has([data-helpdesk]) [data-float="sakhi"] { display: none !important; }`}
       </style>
+      {/* Help is the section a woman reaches for on her worst day, and this
+          page is its landing — so every kind of help is here first, as a
+          picture in Help's red: Get help now, rights, travel, money traps…
+          The conversation with the team follows, a full screen of its own. */}
+      <div className="mx-auto w-full max-w-[880px]">
+        <SectionPictures id="help" title="What do you need help with?" />
+      </div>
       <div data-helpdesk className="mx-auto flex w-full max-w-[880px] flex-col"
            style={{ height: "calc(100dvh - var(--ux-topbar-h) - 36px)" }}>
         <ChatFrame label="Your conversation with the WomSakhi team"

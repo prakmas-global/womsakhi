@@ -1,5 +1,6 @@
 "use client";
 
+import { PlaceMark } from "@/components/ux/nav/Place";
 import { useCallback, useState } from "react";
 
 import { HomeShell } from "@/components/ux/home/HomeShell";
@@ -85,8 +86,11 @@ export default function MovePage() {
                     note="Most women move at least once, and lose their customers, their circle and everyone who would vouch for them on the same day. These steps keep it with you." />
         <header className="hidden lg:block">
           <p className="text-2xs font-extrabold uppercase tracking-[0.2em]" style={{ color: v("--ux-brand") }}>{tr("togetherMove.ifYouMove")}</p>
-          <h1 className="mt-2 text-[clamp(1.5rem,3.2vw,2.125rem)] font-extrabold leading-[1.1] tracking-[-0.035em]"
-              style={{ color: v("--ux-ink") }}>Keep what you built</h1>
+          <div className="mt-2 flex min-w-0 items-center gap-3">
+            <PlaceMark size={44} />
+            <h1 className="text-[clamp(1.5rem,3.2vw,2.125rem)] font-extrabold leading-[1.1] tracking-[-0.035em] min-w-0"
+                style={{ color: v("--ux-ink") }}>Keep what you built</h1>
+          </div>
           <p className="mt-1.5 max-w-[56ch] text-sm leading-relaxed" style={{ color: v("--ux-muted") }}>
             Most women move at least once, and lose their customers, their circle and everyone who would vouch for
             them on the same day. These eight steps keep it with you — tick them off as you go.

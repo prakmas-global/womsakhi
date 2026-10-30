@@ -226,7 +226,7 @@ export default function BookingDetail({ params }: { params: Promise<{ id: string
         )}
       </Card>
 
-      <div className="grid grid-cols-[minmax(0,1fr)_300px] gap-[16px]">
+      <div className="ux-split-lg grid grid-cols-[minmax(0,1fr)_300px] gap-[16px]">
         <Card>
           <SectionHead title={tr("bookings.whatToExpect")} />
           <ol className="ux-stagger space-y-3.5">

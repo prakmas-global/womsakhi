@@ -116,7 +116,7 @@ export default function BreathePage() {
                game="breathe" result={() => ({ scoreLabel: `${pattern} breathing` })}
                feel={feel} setFeel={setFeel} again={() => { reset(); setTimeout(start, 50); }}
                tools={<SoundToggle on={sound} onChange={setSound} />}>
-      <div className="grid gap-[16px] lg:grid-cols-[minmax(0,1fr)_300px]">
+      <div className="ux-split-lg grid gap-[16px] lg:grid-cols-[minmax(0,1fr)_300px]">
         <section className={s.stage}>
           <div className={s.breathWrap}>
             <div className={s.breathRing}>

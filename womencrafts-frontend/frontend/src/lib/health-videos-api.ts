@@ -8,8 +8,14 @@ import { apiClient } from "./api";
  */
 
 /** Each Health & Wellness section shows its own categories in its Watch & listen tab (components/ux/health/WatchListen.tsx). */
+/**
+ * The shelves the library shipped with. Staff edit the real list as the
+ * `health_video_categories` master (lib/masters-api.ts); screens show this
+ * only until that answers.
+ */
 export const VIDEO_CATEGORIES = ["Workout", "Yoga", "Meditation", "Pregnancy", "Nutrition", "Sleep", "Fertility", "Mentoring", "Health talks"] as const;
-export type VideoCategory = (typeof VIDEO_CATEGORIES)[number];
+/** A label from the `health_video_categories` master. */
+export type VideoCategory = string;
 export const VIDEO_LEVELS = ["All levels", "Beginner", "Intermediate", "Gentle"] as const;
 
 export interface HealthVideo {

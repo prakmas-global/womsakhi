@@ -27,14 +27,19 @@ from fastapi import APIRouter, Depends, HTTPException, Query, Request, status
 from pydantic import BaseModel, Field
 
 from app.core import onboarding as ob
-from app.core import skills as taxonomy
+from app.core import skill_master, skills as taxonomy
 from app.core.audit import record
 from app.core.permissions import has_permission
 from app.core.rbac import require_active_member, require_member_account, require_staff
 from app.db.mongodb import get_database
 
-router = APIRouter(prefix="/me", tags=["Member · Onboarding"])
-skills_router = APIRouter(prefix="/onboarding", tags=["Member · Onboarding"])
+async def _fresh_skills() -> None:
+    """Every onboarding request reads skills from the Work skills master."""
+    await skill_master.refresh()
+
+
+router = APIRouter(prefix="/me", tags=["Member · Onboarding"], dependencies=[Depends(_fresh_skills)])
+skills_router = APIRouter(prefix="/onboarding", tags=["Member · Onboarding"], dependencies=[Depends(_fresh_skills)])
 admin_router = APIRouter(prefix="/admin/onboarding", tags=["Admin · Onboarding"])
 
 
@@ -457,8 +462,9 @@ async def my_data(me: dict = Depends(require_member_account)):
 
 @skills_router.get("/skills", summary="Find a skill")
 async def find_skills(q: str = Query("", max_length=40), me: dict = Depends(require_member_account)):
-    return {"skills": taxonomy.search(q, limit=20),
-            "groups": [{"key": k, "label": v[0]} for k, v in taxonomy.GROUPS.items()]}
+    # From the Work skills master, so a skill staff add is offered here too.
+    return {"skills": [{k: v for k, v in x.items() if k != "active"} for x in skill_master.search(q, limit=20)],
+            "groups": skill_master.groups()}
 
 
 # ── what women want (staff) ─────────────────────────────────────────────────

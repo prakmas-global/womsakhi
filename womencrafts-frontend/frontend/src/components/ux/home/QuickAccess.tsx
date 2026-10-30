@@ -3,6 +3,8 @@
 import { useT } from "@/i18n";
 import { TransitionLink } from "@/components/ux/TransitionLink";
 import { I } from "@/components/ux/kit";
+import { nodeFor } from "@/components/ux/nav-tree";
+import { PlaceBadge } from "@/components/ux/nav/Place";
 
 /**
  * Quick Access: the same eight doors on the laptop home and the phone home.
@@ -28,11 +30,13 @@ import { I } from "@/components/ux/kit";
  */
 export const QUICK_TILES = [
   { icon: "UsersRound", label: "My Circles", sub: "Your people", tint: "--ux-tint-pink", ink: "--ux-pink-ink", href: "/app/circles" },
-  { icon: "PiggyBank", label: "Savings Pot", sub: "Save small, grow", tint: "--ux-tint-violet", ink: "--ux-violet-ink", href: "/app/circles" },
+  // Pictured as "Start a savings circle", not as Circles: same page, but the
+  // picture should say "money pot", not "women talking".
+  { icon: "PiggyBank", label: "Savings Pot", sub: "Save small, grow", tint: "--ux-tint-violet", ink: "--ux-violet-ink", href: "/app/circles", place: "/app/circles/new" },
   { icon: "HeartHandshake", label: "Care Circle", sub: "Help when needed", tint: "--ux-tint-blue", ink: "--ux-blue-ink", href: "/app/family" },
   { icon: "Store", label: "My Shop", sub: "Sell your work", tint: "--ux-tint-amber", ink: "--ux-amber-ink", href: "/app/documents" },
   { icon: "ShoppingBasket", label: "Market", sub: "Buy & sell nearby", tint: "--ux-tint-green", ink: "--ux-green-ink", href: "/app/market" },
-  { icon: "Wallet", label: "Wallet", sub: "Your money", tint: "--ux-tint-lilac", ink: "--ux-violet-ink", href: "/app/wallet" },
+  { icon: "Receipt", label: "My Payments", sub: "UPI confirmations", tint: "--ux-tint-lilac", ink: "--ux-violet-ink", href: "/app/payments" },
   /* The reminder engine's tile keeps its catalogue key, so its label reads in
      her language; the others have always rendered raw English. */
   { icon: "MapPin", label: "On your way", k: "ch.travel-journey.label", sub: "Check in safely",
@@ -72,10 +76,18 @@ export function QuickAccessGrid({ size }: { size: "desk" | "phone" }) {
                            size === "desk" ? "min-h-[112px] p-3.5 @lg:min-h-[128px] @lg:p-4" : "min-h-[104px] p-3"}`}
               style={{ background: "var(--ux-surface)", border: "1px solid var(--ux-line)",
                        ["--ux-glow" as string]: `color-mix(in oklab, var(${t.ink}) 26%, transparent)` }}>
-          <span className="ux-tile-ic grid h-[44px] w-[44px] shrink-0 place-items-center rounded-full"
-                style={{ background: `var(${t.tint})`, color: `var(${t.ink})` }}>
-            <I name={t.icon} className="h-[20px] w-[20px]" />
-          </span>
+          {/* The place's picture in its module's colour (components/ux/nav/places.ts),
+              the same one the rail and its own page carry — so this tile
+              and the place it opens look alike. */}
+          {(() => {
+            const n = nodeFor("place" in t ? t.place : t.href);
+            return n ? <PlaceBadge node={n} size={48} radius={14} /> : (
+              <span className="ux-tile-ic grid h-[44px] w-[44px] shrink-0 place-items-center rounded-full"
+                    style={{ background: `var(${t.tint})`, color: `var(${t.ink})` }}>
+                <I name={t.icon} className="h-[20px] w-[20px]" />
+              </span>
+            );
+          })()}
           <span className="mt-auto block truncate pt-2.5 text-sm font-bold" style={{ color: "var(--ux-ink)" }}>
             {"k" in t ? tr(t.k as Parameters<typeof tr>[0]) : t.label}
           </span>

@@ -48,7 +48,7 @@ from pymongo import ReturnDocument
 from pymongo.errors import DuplicateKeyError
 
 from app.core import cache
-from app.core import skills as taxonomy
+from app.core import skill_master, skills as taxonomy
 from app.core.config import settings
 from app.db.mongodb import get_database
 
@@ -230,12 +230,14 @@ def clean_skills(raw: list[Any]) -> list[Any]:
     seen: set[str] = set()
     for item in raw:
         if isinstance(item, str):
-            if item not in taxonomy.SKILLS_BY_KEY:
+            # Any skill in the Work skills master (app/core/skill_master.py):
+            # one she chose before staff disabled it still counts.
+            if not skill_master.lookup(item):
                 raise ValueError(f"Unknown skill: {item[:40]}")
             key, value = item, item
         elif isinstance(item, dict) and set(item) == {"custom"} and isinstance(item["custom"], str):
             text = clean_custom_skill(item["custom"])
-            match = taxonomy.by_label(text)
+            match = skill_master.by_label(text)
             if match:
                 key, value = match["key"], match["key"]
             else:
@@ -324,8 +326,8 @@ def skill_entries(answers: dict) -> list[dict]:
     """Her skills as `{key, label, group, service_category, custom}`."""
     out = []
     for item in answers.get("skills") or []:
-        if isinstance(item, str) and item in taxonomy.SKILLS_BY_KEY:
-            s = taxonomy.SKILLS_BY_KEY[item]
+        s = skill_master.lookup(item) if isinstance(item, str) else None
+        if s:
             out.append({"key": s["key"], "label": s["label"], "group": s["group"],
                         "service_category": s["service_category"], "custom": False})
         elif isinstance(item, dict) and item.get("custom"):
@@ -823,10 +825,21 @@ async def _draft_listing(user: dict, skill: dict, key: str, city: str) -> dict:
     existing = await col.find_one({"user_id": uid, "onboarding_key": key})
     if existing:
         return existing
+    # Filed under the staff-controlled tree (app/core/market_categories.py).
+    # Her store takes this category if she has none yet; a draft from a second
+    # trade keeps its own filing and stays a draft until she chooses.
+    from app.core import market_categories
+    cat_key, sub_key = await market_categories.file_skill(skill["label"], skill.get("group", ""))
+    if cat_key:
+        await _db()["users"].update_one(
+            {"_id": user["_id"], "$or": [{"store.category_key": {"$exists": False}}, {"store.category_key": ""}]},
+            {"$set": {"store.category_key": cat_key}})
+    sub_row = await market_categories.by_key(sub_key) if sub_key else None
     doc = ListingModel.create_document(
         user_id=uid, member_id=user.get("member_id", ""), kind=ListingModel.KIND_SERVICE,
-        title=skill["label"], category=skill["service_category"], place=city,
+        title=skill["label"], category=(sub_row or {}).get("name") or skill["service_category"], place=city,
         status=ListingModel.STATUS_DRAFT, delivery="service", price_mode="quote",
+        category_key=cat_key, subcategory_key=sub_key,
     )
     doc["onboarding_key"] = key
     res = await col.insert_one(doc)
@@ -1051,6 +1064,7 @@ async def home_personal(user: dict) -> Optional[dict]:
     The `personal` block of `/me/home`, or None when she has never opened the
     flow — the home screen then stays exactly as it was.
     """
+    await skill_master.refresh()  # her skills read from the Work skills master
     from app.models.enrollment import EnrollmentModel
     from app.models.shop import ListingModel
 

@@ -65,6 +65,11 @@ export type Job = {
   /** She posted it herself. */
   isMine?: boolean;
   categoryName?: string;
+  /** Work masters: the category key and skill keys — they choose its picture (work/pictures.tsx). */
+  category?: string;
+  skillKeys?: string[];
+  /** Its own photo, when the poster added one. */
+  cover?: string;
 };
 
 export const JOBS: Job[] = [

@@ -1,6 +1,8 @@
 "use client";
 
+import { PlaceMark } from "@/components/ux/nav/Place";
 import { useCallback, useMemo, useState } from "react";
+import Link from "next/link";
 
 import { HomeShell } from "@/components/ux/home/HomeShell";
 import { Btn, Card, Chip, EmptyState, I, SectionHead, SourceNote, Stat, v } from "@/components/ux/kit";
@@ -149,8 +151,11 @@ export default function SwapPage() {
         <header className="hidden flex-wrap items-end gap-4 lg:flex">
           <div className="min-w-0 flex-1">
             <p className="text-2xs font-extrabold uppercase tracking-[0.2em]" style={{ color: v("--ux-brand") }}>{tr("swap.passItOn")}</p>
-            <h1 className="mt-2 text-[clamp(1.5rem,3.2vw,2.125rem)] font-extrabold leading-[1.1] tracking-[-0.035em]"
-                style={{ color: v("--ux-ink") }}>{tr("swap.whatSomeoneNearYouNoLonger")}</h1>
+            <div className="mt-2 flex min-w-0 items-center gap-3">
+              <PlaceMark size={44} />
+              <h1 className="text-[clamp(1.5rem,3.2vw,2.125rem)] font-extrabold leading-[1.1] tracking-[-0.035em] min-w-0"
+                  style={{ color: v("--ux-ink") }}>{tr("swap.whatSomeoneNearYouNoLonger")}</h1>
+            </div>
             <p className="mt-1.5 max-w-[56ch] text-sm leading-relaxed" style={{ color: v("--ux-muted") }}>
               Uniforms outgrown, baby things finished with, a lehenga worn once. Collected in
               person from a woman you know. No prices, no posting, no fee.
@@ -171,6 +176,21 @@ export default function SwapPage() {
                   tint="--ux-surface-2" ink="--ux-muted" />
           </div>
         </Card>
+
+        {/* Things she wants back — a lehenga, a pram — go on Rent & borrow, not here. */}
+        <Link href="/app/rent" className="ux-press ux-hov flex items-center gap-3 rounded-[18px] border p-3.5"
+              style={{ borderColor: v("--ux-line"), background: v("--ux-surface") }}>
+          <span className="grid h-11 w-11 shrink-0 place-items-center rounded-[14px] text-white" style={{ background: "var(--ux-pic-ground)" }}>
+            <I name="KeyRound" className="h-5 w-5" />
+          </span>
+          <span className="min-w-0 flex-1">
+            <b className="block text-sm" style={{ color: v("--ux-ink") }}>Want it back after?</b>
+            <span className="block text-xs" style={{ color: v("--ux-muted") }}>
+              Rent it out for a few days instead — or borrow something you need only once.
+            </span>
+          </span>
+          <I name="ChevronRight" className="h-5 w-5 shrink-0" style={{ color: v("--ux-brand") }} />
+        </Link>
 
         {note && (
           <Card pad={16} style={{ background: v("--ux-tint-green"), borderColor: "transparent" }}>

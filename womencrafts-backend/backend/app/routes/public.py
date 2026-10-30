@@ -17,11 +17,13 @@ to a promise rather than printing an unimpressive figure, so nothing has to be
 exaggerated to look respectable.
 """
 
+from typing import Optional
+
 from bson import ObjectId
 from bson.errors import InvalidId
 from fastapi import APIRouter, HTTPException, status
 
-from app.core import cache, store
+from app.core import cache, market_categories, store
 from app.core.media import media_url
 from app.db.mongodb import get_database
 from app.models.certificate import CertificateModel
@@ -246,12 +248,15 @@ async def public_shop(handle: str) -> PublicShop:
             return max(counts, key=counts.get) if counts else ""
 
         full = (owner.get("full_name") or "").strip()
+        cat = await _store_category(owner)
         return PublicShop(
             handle=owner.get("shop_handle", slug),
             # A first name only, exactly as `/public/listing` does. This link
             # gets forwarded to people she has never met.
             name=full.split(" ")[0] if full else "A WomSakhi member",
-            trade=commonest("category"),
+            # Her store's category when she has chosen one; else what her listings say.
+            trade=(cat or {}).get("name", "") or commonest("category"),
+            trade_image=media_url((cat or {}).get("image") or ""),
             place=commonest("place"),
             listings=rows,
             listing_count=len(rows),
@@ -264,11 +269,16 @@ async def public_shop(handle: str) -> PublicShop:
     return await cache.cached(f"public:shop:{handle}", 30.0, produce)
 
 
+async def _store_category(owner: dict) -> Optional[dict]:
+    key = ((owner.get("store") or {}).get("category_key") or "")
+    return await market_categories.by_key(key) if key else None
+
+
 def _store_fields(owner: dict) -> dict:
     """Her store's name, pictures and opening (app/core/store.py)."""
     v = store.view(owner)
     return {"shop_name": v["display_name"], "tagline": v["tagline"], "logo": v["logo"],
-            "cover": v["cover"], "open": v["open"], "away_line": store.away_line(owner)}
+            "cover": v["cover"], "gallery": v["gallery"], "open": v["open"], "away_line": store.away_line(owner)}
 
 
 # ── an alert somebody was sent ───────────────────────────────────────────────

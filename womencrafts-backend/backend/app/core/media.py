@@ -87,6 +87,10 @@ def to_media_path(value: Optional[str]) -> Optional[str]:
         return text
     if text.startswith(("data:", "blob:")):
         return text
+    # Art that ships inside the web app (a picture staff chose from the app's
+    # own library) keeps its leading slash: it is served by the app, not by us.
+    if text.startswith("/ux/"):
+        return text
     if text.startswith(("http://", "https://", "//")):
         parts = urlsplit(text if not text.startswith("//") else "http:" + text)
         if parts.path.startswith("/media/") and _is_our_host(parts.netloc):
@@ -113,8 +117,8 @@ def media_url(value: Optional[str]) -> str:
         return text
     # Art that ships inside the web app (`public/ux/...`) is served by the app
     # itself, from whatever host she loaded it on — never by the API.
-    if text.startswith("/ux/"):
-        return text
+    if text.startswith(("/ux/", "ux/")):
+        return "/" + text.lstrip("/")
     return f"{settings.MEDIA_BASE_URL.rstrip('/')}/{text.lstrip('/')}"
 
 

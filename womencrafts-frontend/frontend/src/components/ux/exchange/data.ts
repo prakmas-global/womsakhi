@@ -63,6 +63,7 @@ export const MY_SWAPS = [
     state: "She replied" as const, next: "She suggested three times — pick one" },
 ];
 
+/** What shows until the "swap_skills" master loads (Masters → Skill swap tags). */
 export const SKILL_TAGS = [
   "Tailoring", "English", "Photography", "Bookkeeping", "Baking", "Social media", "Mehendi", "Computer basics",
 ];

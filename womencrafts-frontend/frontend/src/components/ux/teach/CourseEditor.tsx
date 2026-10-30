@@ -1,11 +1,14 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 
 import * as Icons from "@/components/ux/icons";
 import { Btn, Card, SectionHead } from "@/components/ux/kit";
-import { Area, Choice, Label, More, Picks, Select, Text, Toggle } from "@/components/ux/kit/form";
+import { Area, Choice, Label, More, Picks, Text, Toggle } from "@/components/ux/kit/form";
 import { TEACH_CATEGORIES, type CourseInput, type TeachLesson } from "@/lib/teach-api";
+import { PicTiles, useMasterPictures } from "@/components/ux/media/MasterPictures";
+import { ART_LIBRARY, topicArt } from "@/components/ux/media/art";
+import { apiUploadImage, uploadErrorMessage, validateImage } from "@/lib/uploads-api";
 
 /**
  * The course form — the same for a new course and an existing one.
@@ -41,7 +44,7 @@ export const EMPTY_LESSON: TeachLesson = { title: "", detail: "", duration: "", 
 export const MAX_PREVIEWS = 2;
 
 export const EMPTY_COURSE: CourseInput = {
-  name: "", desc: "", category: "", duration: "", price_rupees: 0, upi_id: "", lessons: [{ ...EMPTY_LESSON }], publish: true,
+  name: "", desc: "", category: "", duration: "", price_rupees: 0, upi_id: "", lessons: [{ ...EMPTY_LESSON }], cover: "", publish: true,
 };
 
 /** What is missing, in her words — or "" when the course can be saved. */
@@ -74,6 +77,12 @@ export function CourseEditor({ value, onChange, paid, onPaid, problems }: {
   /** Shown only after she tries to save. */
   problems: Record<string, string>;
 }) {
+  // Staff control these (Masters → Course categories). A course already in a
+  // category staff have since retired keeps it on the list, so saving it
+  // doesn't force a change she didn't ask for.
+  const catPics = useMasterPictures("course_categories", TEACH_CATEGORIES);
+  const cats = catPics.labels;
+  const categoryOptions = value.category && !cats.includes(value.category) ? [value.category, ...cats] : cats;
   const set = <K extends keyof CourseInput>(k: K) => (v: CourseInput[K]) => onChange({ ...value, [k]: v });
   const [open, setOpen] = useState(0);
   const lessons = value.lessons;
@@ -108,13 +117,17 @@ export function CourseEditor({ value, onChange, paid, onPaid, problems }: {
                   placeholder="e.g. Blouse stitching from scratch" />
             <Err>{problems.name}</Err>
           </div>
-          <div className="grid gap-4 lg:grid-cols-2">
-            <div>
-              <Label need>Category</Label>
-              <Select value={value.category} onChange={set("category")} options={TEACH_CATEGORIES}
-                      label="Category" placeholder="Choose one" />
-              <Err>{problems.category}</Err>
-            </div>
+          {/* Categories as pictures: the one she taps is the picture her course gets until it has a cover. */}
+          <div>
+            <Label need>Category</Label>
+            <PicTiles label="Category" size="sm" value={value.category} onPick={set("category")}
+                      tiles={categoryOptions.map((c) => ({ value: c, label: c, src: catPics.pic(c) }))} />
+            <Err>{problems.category}</Err>
+          </div>
+          <CoverField value={value.cover} onChange={set("cover")}
+                      auto={value.category ? catPics.pic(value.category) : ""}
+                      about={`${value.name} ${value.category}`} />
+          <div>
             <div>
               <Label hint="optional">How long it takes</Label>
               <Text value={value.duration} onChange={set("duration")} label="How long it takes" max={40}
@@ -275,6 +288,119 @@ export function CourseEditor({ value, onChange, paid, onPaid, problems }: {
           <Btn variant="soft" icon="Plus" onClick={add} disabled={lessons.length >= 40}>Add a lesson</Btn>
         </div>
       </Card>
+    </div>
+  );
+}
+
+/**
+ * The course's thumbnail — the picture on its card in Learn.
+ *
+ * Her own photo first: of her work, her table, her hands at the machine —
+ * nothing tells a learner more about a course. Failing that, a picture from
+ * the app's library, the ones her title and category point to first. Left
+ * alone, the course shows its category's picture, as every course did before
+ * it could have its own. Two taps either way; nothing to type.
+ */
+function CoverField({ value, onChange, auto, about }: {
+  value: string; onChange: (src: string) => void; auto: string; about: string;
+}) {
+  const input = useRef<HTMLInputElement>(null);
+  const [busy, setBusy] = useState(0);
+  const [error, setError] = useState("");
+  const shown = value || auto;
+  const own = !!value && !value.startsWith("/ux/");
+
+  // What her words point to first, then the library's teaching and work pictures.
+  const suggested = [topicArt(about), auto, ...ART_LIBRARY
+    .filter((a) => /^\/ux\/art\/(course|work-dashboard|scene-woman)/.test(a.src)).map((a) => a.src)]
+    .filter((src, i, all) => src && all.indexOf(src) === i).slice(0, 10);
+
+  const upload = async (file?: File | null) => {
+    if (!file) return;
+    const problem = validateImage(file);
+    if (problem) { setError(problem); return; }
+    setError(""); setBusy(1);
+    try {
+      const saved = await apiUploadImage(file, "cover", (p) => setBusy(Math.max(1, p)));
+      onChange(saved.url);
+    } catch (e) {
+      setError(uploadErrorMessage(e));
+    } finally {
+      setBusy(0);
+      if (input.current) input.current.value = "";
+    }
+  };
+
+  return (
+    <div>
+      <Label hint="optional">Course picture</Label>
+      <div className="grid gap-3 sm:grid-cols-[minmax(0,1.25fr)_minmax(0,1fr)]">
+        {/* What learners will see on the card. */}
+        <div className="relative aspect-[16/10] overflow-hidden rounded-[14px]" style={{ background: "var(--ux-surface-2)" }}>
+          {shown ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img src={shown} alt="Your course picture" className="h-full w-full object-cover" />
+          ) : (
+            <span className="grid h-full place-items-center text-xs" style={{ color: "var(--ux-faint)" }}>
+              <Icons.Image className="mb-1 h-7 w-7" />
+            </span>
+          )}
+          <span className="absolute start-2 top-2 rounded-full px-2.5 py-1 text-2xs font-bold text-white"
+                style={{ background: "rgba(16,6,24,.62)" }}>
+            {own ? "Your photo" : value ? "Chosen picture" : auto ? "Category picture" : "Choose a category"}
+          </span>
+          {busy > 0 && (
+            <span className="absolute inset-0 grid place-items-center text-sm font-bold text-white" style={{ background: "rgba(16,6,24,.6)" }}>
+              <span className="flex flex-col items-center gap-1"><Icons.Loader2 className="h-6 w-6 animate-spin" />{busy}%</span>
+            </span>
+          )}
+        </div>
+
+        {/* Her own photo — the camera on a phone, a file on a laptop. */}
+        <div className="flex flex-col gap-2">
+          <label className="ux-press flex flex-1 cursor-pointer flex-col items-center justify-center gap-1.5 rounded-[14px] px-4 py-5 text-center"
+                 style={{ border: "1.5px dashed var(--ux-brand)", background: "var(--ux-brand-tint)" }}>
+            <input ref={input} type="file" accept="image/*" className="sr-only" aria-label="Add a photo for your course"
+                   onChange={(e) => void upload(e.target.files?.[0])} />
+            <span className="grid h-11 w-11 place-items-center rounded-full" style={{ background: "var(--ux-surface)", color: "var(--ux-brand)" }}>
+              <Icons.Camera className="h-5 w-5" />
+            </span>
+            <span className="text-xsm font-bold" style={{ color: "var(--ux-ink)" }}>{own ? "Change photo" : "Add your photo"}</span>
+            <span className="text-2xs" style={{ color: "var(--ux-muted)" }}>Your work, your hands, your table — wide works best.</span>
+          </label>
+          {value && (
+            <button type="button" onClick={() => onChange("")}
+                    className="ux-press flex min-h-[40px] items-center justify-center gap-1.5 rounded-full text-xs font-semibold"
+                    style={{ border: "1px solid var(--ux-line)", color: "var(--ux-ink-2)" }}>
+              <Icons.RotateCcw className="h-3.5 w-3.5" /> Use the category picture
+            </button>
+          )}
+        </div>
+      </div>
+      {error && <Err>{error}</Err>}
+
+      {/* Or one of ours. */}
+      <p className="mb-1.5 mt-3 text-2xs font-semibold" style={{ color: "var(--ux-muted)" }}>Or tap one of these</p>
+      <div className="-mx-1 flex snap-x gap-2 overflow-x-auto px-1 pb-1" role="radiogroup" aria-label="Pictures for your course">
+        {suggested.map((src) => {
+          const on = value === src;
+          return (
+            <button key={src} type="button" role="radio" aria-checked={on} onClick={() => onChange(on ? "" : src)}
+                    aria-label={on ? "Chosen picture" : "Use this picture"}
+                    className="ux-press relative h-[64px] w-[92px] shrink-0 snap-start overflow-hidden rounded-[10px]"
+                    style={{ border: `2px solid ${on ? "var(--ux-brand)" : "transparent"}` }}>
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src={src} alt="" loading="lazy" decoding="async" className="h-full w-full object-cover" />
+              {on && (
+                <span className="absolute end-1 top-1 grid h-[18px] w-[18px] place-items-center rounded-full"
+                      style={{ background: "var(--ux-fill)", color: "var(--ux-on-brand)" }}>
+                  <Icons.Check className="h-[11px] w-[11px]" strokeWidth={3} />
+                </span>
+              )}
+            </button>
+          );
+        })}
+      </div>
     </div>
   );
 }

@@ -11,7 +11,7 @@ import {
 } from "@/components/ux/health/kit";
 import { apiErrorMessage } from "@/lib/api";
 import {
-  SPECIALITIES, apiBookDoctor, apiCancelConsultation, apiConsultationNotes, apiDoctor, apiDoctorSlots, apiDoctors,
+  SPECIALITIES, specialityIcon, apiBookDoctor, apiCancelConsultation, apiConsultationNotes, apiDoctor, apiDoctorSlots, apiDoctors,
   apiMyConsultations, apiRescheduleConsultation, apiShareConsultation,
   feeLabel, timeLabel, whenLabel, type Consultation, type Doctor, type Mode, type SharedItem,
 } from "@/lib/doctors-api";
@@ -19,6 +19,7 @@ import type { Entry } from "@/lib/health-api";
 import { unitOf } from "@/components/ux/health/records-data";
 import { DocumentSheet } from "@/app/app/health/records/record-parts";
 import { useResource } from "@/lib/use-resource";
+import { useMasterPictures } from "@/components/ux/media/MasterPictures";
 import { WatchListen } from "@/components/ux/health/WatchListen";
 import { PicChoice, Review, StepSheet, type FlowStep } from "@/components/ux/health/StepFlow";
 
@@ -158,14 +159,19 @@ function DoctorCard({ d, onBook }: { d: Doctor; onBook: (d: Doctor) => void }) {
 
 function Find({ onBook, consults }: { onBook: (d: Doctor) => void; consults: Consultation[] }) {
   // Fertility, Pregnancy, Mental Wellness and Nutrition link here with ?speciality= already chosen.
-  const asked = useSearchParams().get("speciality") ?? "";
-  const [spec, setSpec] = useState((SPECIALITIES as readonly string[]).includes(asked) ? asked : "");
+  const asked = (useSearchParams().get("speciality") ?? "").trim().toLowerCase();
+  // The list staff control (the `doctor_specialities` master); the shipped list until it answers.
+  const master = useMasterPictures("doctor_specialities", [...SPECIALITIES]);
+  const [picked, setSpec] = useState<string | null>(null);
+  // A `?speciality=` link matches without regard to case, against whatever the list is now.
+  const spec = picked ?? (master.labels.find((l) => l.toLowerCase() === asked) ?? "");
   const [mode, setMode] = useState("");
   const [q, setQ] = useState("");
   const all = useResource(useCallback((s: AbortSignal) => apiDoctors({}, s), []), [] as Doctor[]);
   const loading = all.source === "loading";
   // The chosen kind stays on the list even before any doctor of that kind is added.
-  const specs = SPECIALITIES.filter((s) => s === spec || all.data.some((d) => d.speciality === s));
+  const specs = master.labels.filter((s) => s === spec || all.data.some((d) => d.speciality === s));
+  const iconOf = (s: string) => specialityIcon(s, master.items.find((i) => i.label === s)?.extra.icon);
   const shown = all.data.filter((d) => (!spec || d.speciality === spec) && (!mode || d.modes.includes(mode as Mode)) &&
     (!q.trim() || [d.name, d.speciality, d.bio, d.clinic, d.city, d.qualifications].join(" ").toLowerCase().includes(q.trim().toLowerCase())));
   const next = consults.filter((c) => c.status === "requested" || c.status === "confirmed").sort((a, b) => a.start.localeCompare(b.start))[0];
@@ -185,14 +191,25 @@ function Find({ onBook, consults }: { onBook: (d: Doctor) => void; consults: Con
                 {["", ...specs].map((s) => {
                   const on = spec === s;
                   return (
+                    // The speciality's picture (Masters → Doctor specialities), with
+                    // its icon on top so two that share a picture still differ.
                     <button key={s || "all"} type="button" aria-pressed={on} onClick={() => setSpec(s)}
-                            className="ux-press flex min-h-[86px] flex-col items-start justify-between gap-2 rounded-[14px] border-[1.5px] p-3 text-start text-[13px] font-bold"
-                            style={on ? { borderColor: HUE.green.ink, background: HUE.green.tint, color: "var(--ux-ink)" }
-                                      : { borderColor: "var(--ux-line)", background: "var(--ux-surface)", color: "var(--ux-ink)" }}>
-                      <span className="grid h-9 w-9 place-items-center rounded-[10px]" style={{ background: HUE.green.tint, color: HUE.green.ink }}>
-                        <I name={s === "Paediatrician" ? "Baby" : s === "Counsellor" ? "Brain" : s === "Nutritionist" ? "Apple" : s === "Gynaecologist" ? "Flower2" : s === "Fertility specialist" ? "Sprout" : s === "Endocrinologist" ? "Activity" : "Stethoscope"} className="h-[18px] w-[18px]" />
+                            className="ux-press group relative flex aspect-[4/3] flex-col items-start justify-between overflow-hidden rounded-[14px] p-2.5 text-start text-[13px] font-bold text-white"
+                            style={{ boxShadow: on ? `0 0 0 3px ${HUE.green.ink}` : "none" }}>
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img src={s ? master.pic(s) : "/ux/art/onboarding-wellbeing-all-ages-v2.webp"} alt="" loading="lazy" decoding="async"
+                           className="absolute inset-0 h-full w-full object-cover transition-transform duration-500 group-hover:scale-[1.06]" />
+                      <span aria-hidden className="absolute inset-0"
+                            style={{ background: "linear-gradient(180deg, rgba(16,6,24,.05) 20%, rgba(16,6,24,.85))" }} />
+                      <span className="relative grid h-8 w-8 place-items-center rounded-[10px]" style={{ background: HUE.green.tint, color: HUE.green.ink }}>
+                        <I name={s ? iconOf(s) : "Stethoscope"} className="h-[16px] w-[16px]" />
                       </span>
-                      {s || "All doctors"}
+                      <span className="relative">{s || "All doctors"}</span>
+                      {on && (
+                        <span className="absolute end-2 top-2 grid h-5 w-5 place-items-center rounded-full" style={{ background: HUE.green.ink, color: "#fff" }}>
+                          <I name="Check" className="h-3 w-3" />
+                        </span>
+                      )}
                     </button>
                   );
                 })}

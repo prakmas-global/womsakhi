@@ -1,5 +1,6 @@
 "use client";
 
+import { PlaceMark } from "@/components/ux/nav/Place";
 import { useCallback, useState } from "react";
 
 import { HomeShell } from "@/components/ux/home/HomeShell";
@@ -133,8 +134,11 @@ export default function StrengthPage() {
                       with low iron finished about <b>9% less in a shift</b> {tr("healthStrength.andEarnedAbout")} <b>4% less</b>.</>} />
         <header className="hidden lg:block">
           <p className="text-2xs font-extrabold uppercase tracking-[0.2em]" style={{ color: v("--ux-brand") }}>Strength</p>
-          <h1 className="mt-2 text-[clamp(1.5rem,3.2vw,2.125rem)] font-extrabold leading-[1.1] tracking-[-0.035em]"
-              style={{ color: v("--ux-ink") }}>{tr("healthStrength.tiredIsNotJustTired")}</h1>
+          <div className="mt-2 flex min-w-0 items-center gap-3">
+            <PlaceMark size={44} />
+            <h1 className="text-[clamp(1.5rem,3.2vw,2.125rem)] font-extrabold leading-[1.1] tracking-[-0.035em] min-w-0"
+                style={{ color: v("--ux-ink") }}>{tr("healthStrength.tiredIsNotJustTired")}</h1>
+          </div>
           <p className="mt-1.5 max-w-[58ch] text-sm leading-relaxed" style={{ color: v("--ux-muted") }}>
             When you are paid for what you finish, feeling weak is money. Women doing piece work with low iron
             finished about <b>9% less in a shift</b> {tr("healthStrength.andEarnedAbout")} <b>4% less</b> — without ever taking a day off.

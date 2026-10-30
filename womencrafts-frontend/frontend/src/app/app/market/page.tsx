@@ -1,6 +1,7 @@
 "use client";
 
-import { useCallback, useMemo, useState } from "react";
+import { PlaceMark } from "@/components/ux/nav/Place";
+import { useCallback, useEffect, useMemo, useState } from "react";
 
 import { HomeShell } from "@/components/ux/home/HomeShell";
 import {
@@ -12,11 +13,11 @@ import { formatRupees } from "@/components/ux/kit";
 import { useMarket } from "@/components/ux/live";
 import { tieTone } from "@/components/ux/market/data";
 import { MediaCard, MediaGrid, Fact } from "@/components/ux/media/MediaCard";
-import { artFor } from "@/components/ux/media/art";
 import { COPY } from "@/components/ux/copy";
 import { apiErrorMessage } from "@/lib/api";
 import { apiSave, apiUnsave } from "@/lib/entitlements-api";
-import type { MarketListing } from "@/lib/market-api";
+import { apiMarket, type MarketListing } from "@/lib/market-api";
+import { CatThumb, PictureChip, catPicture, listingPicture, subPicture, useShopCategories } from "@/components/ux/shop/categories";
 import { useT } from "@/i18n";
 
 /**
@@ -67,7 +68,27 @@ export default function MarketPage() {
   const [pressed, setPressed] = useState<Record<string, boolean>>({});
   const [problem, setProblem] = useState<string | null>(null);
 
-  const rows = market.data;
+  // Category filter from the staff-controlled tree: a category, then one of
+  // its sub-categories. Filtered on the server, so nothing beyond the first
+  // page is missed.
+  const cats = useShopCategories();
+  const [catKey, setCatKey] = useState("");
+  const [subKey, setSubKey] = useState("");
+  const catRow = cats.data?.categories.find((c) => c.key === catKey) ?? null;
+  const [byCat, setByCat] = useState<{ key: string; rows: MarketListing[] } | null>(null);
+  const want = subKey || catKey;
+  useEffect(() => {
+    if (!want) return;
+    const ctl = new AbortController();
+    apiMarket(ctl.signal, { category: want })
+      .then((r) => setByCat({ key: want, rows: r }))
+      .catch((e) => { if (!ctl.signal.aborted) setProblem(apiErrorMessage(e, "That category could not load.")); });
+    return () => ctl.abort();
+  }, [want]);
+  const catLoading = !!want && byCat?.key !== want;
+
+  const rows = useMemo(
+    () => (want ? (byCat?.key === want ? byCat.rows : []) : market.data), [want, byCat, market.data]);
   const isSaved = useCallback(
     (l: MarketListing) => pressed[l.id] ?? l.saved,
     [pressed],
@@ -112,10 +133,10 @@ export default function MarketPage() {
       <MediaCard
         key={l.id}
         href={`/app/market/${l.id}`}
-        image={artFor([l.title, l.category, l.desc], l.kind === "service" ? "service" : "product", l.photo || l.photos?.[0], l.id)}
+        image={listingPicture(l, cats.data?.categories)}
         alt={l.title}
         ratio="4/3"
-        topLeft={{ text: l.kind === "service" ? tr("market.someoneToDoIt") : (l.category || "Made by hand"), tone: "light" }}
+        topLeft={{ text: l.category || (l.kind === "service" ? tr("market.someoneToDoIt") : "Made by hand"), tone: "light" }}
         topRight={{ text: l.price_mode === "quote" ? "Ask her price" : formatRupees(l.price_minor), tone: "dark" }}
         overlay={l.out_of_stock ? <span>Sold out for now</span>
           : l.low_stock ? <span>Only {l.stock} left</span>
@@ -191,8 +212,11 @@ export default function MarketPage() {
         <header className="flex flex-wrap items-end gap-4">
           <div className="min-w-0 flex-1">
             <p className={EYEBROW}>{tr("market.theMarket")}</p>
-            <h1 className="ux-screen-title mt-2 text-[clamp(1.5rem,3.2vw,2.125rem)] font-extrabold leading-[1.1] tracking-[-0.035em]"
-                style={{ color: v("--ux-ink") }}>{tr("market.buyFromWomenYouKnow")}</h1>
+            <div className="mt-2 flex min-w-0 items-center gap-3">
+              <PlaceMark size={44} />
+              <h1 className="ux-screen-title text-[clamp(1.5rem,3.2vw,2.125rem)] font-extrabold leading-[1.1] tracking-[-0.035em] min-w-0"
+                  style={{ color: v("--ux-ink") }}>{tr("market.buyFromWomenYouKnow")}</h1>
+            </div>
             <p className="mt-1.5 max-w-[56ch] text-sm leading-relaxed" style={{ color: v("--ux-muted") }}>
               Your circle first, then women you have bought from, then everyone else. Everything
               here is listed by a WomSakhi member, and none of it is yours.
@@ -230,10 +254,61 @@ export default function MarketPage() {
             <Chip icon="Scissors" selected={filter === "service"} onClick={() => setFilter("service")}>{tr("market.someoneToDoIt")}</Chip>
           </div>
 
-          {shown.length === 0 ? (
+          {cats.data && cats.data.categories.length > 0 && (
+            <div className="mb-3.5 flex flex-col gap-2" data-market-categories>
+              <div className="ux-noscroll flex gap-2 overflow-x-auto pb-1" role="group" aria-label="Category">
+                <button type="button" aria-pressed={!catKey} onClick={() => { setCatKey(""); setSubKey(""); }}
+                        className="ux-press flex min-h-[40px] shrink-0 items-center gap-1.5 rounded-full border px-3.5 text-xs font-bold"
+                        style={!catKey ? { background: v("--ux-brand"), color: v("--ux-ink-on-brand"), borderColor: "transparent" }
+                                       : { background: v("--ux-surface"), color: v("--ux-ink-2"), borderColor: v("--ux-line") }}>
+                  All categories
+                </button>
+                {cats.data.categories.map((c) => {
+                  const on = c.key === catKey;
+                  return (
+                    <button key={c.key} type="button" aria-pressed={on} data-market-cat={c.key}
+                            onClick={() => { setCatKey(on ? "" : c.key); setSubKey(""); }}
+                            className="ux-press flex min-h-[40px] shrink-0 items-center gap-2 rounded-full border py-1 pe-3.5 ps-1 text-xs font-bold"
+                            style={on ? { background: v("--ux-brand"), color: v("--ux-ink-on-brand"), borderColor: "transparent" }
+                                      : { background: v("--ux-surface"), color: v("--ux-ink-2"), borderColor: v("--ux-line") }}>
+                      <CatThumb src={catPicture(c)} size={30} />{c.name}
+                    </button>
+                  );
+                })}
+              </div>
+              {catRow && (
+                /* The category she is in, as a picture — and its kinds, each with its own. */
+                <div key={catRow.key} className="ux-fade relative overflow-hidden rounded-[16px]" data-market-cat-head>
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img src={catPicture(catRow)} alt="" className="absolute inset-0 h-full w-full object-cover" />
+                  <span aria-hidden className="absolute inset-0"
+                        style={{ background: "linear-gradient(90deg, rgba(16,6,24,.86) 0%, rgba(16,6,24,.55) 55%, rgba(16,6,24,.15))" }} />
+                  <div className="relative p-3.5 sm:p-4">
+                    <p className="text-base font-extrabold text-white">{catRow.name}</p>
+                    <p className="text-xs text-white/80">
+                      {catLoading ? "Looking…" : `${shown.length} ${shown.length === 1 ? "listing" : "listings"}`}
+                      {catRow.description ? ` · ${catRow.description}` : ""}
+                    </p>
+                    {catRow.subcategories.length > 0 && (
+                      <div className="mt-3 flex flex-wrap gap-2" role="group" aria-label={`Kinds of ${catRow.name}`}>
+                        {catRow.subcategories.map((s) => (
+                          <PictureChip key={s.key} src={subPicture(s, catRow)} label={s.name} selected={s.key === subKey}
+                                       onClick={() => setSubKey(s.key === subKey ? "" : s.key)} />
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+
+          {catLoading ? (
+            <Card><p className="text-xsm" style={{ color: v("--ux-muted") }}>Finding {catRow?.name.toLowerCase() ?? "listings"}…</p></Card>
+          ) : shown.length === 0 ? (
             <Card><EmptyState icon="ShoppingBasket" title={COPY.nothingHereYet}
                               body={tr("market.tryAnotherFilterOrInviteA")}
-                              action={<Btn size="sm" variant="outline" onClick={() => setFilter("all")}>{tr("market.showEverything")}</Btn>} /></Card>
+                              action={<Btn size="sm" variant="outline" onClick={() => { setFilter("all"); setCatKey(""); setSubKey(""); }}>{tr("market.showEverything")}</Btn>} /></Card>
           ) : (
             <MediaGrid>{shown.map(card)}</MediaGrid>
           )}

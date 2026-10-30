@@ -109,13 +109,17 @@ export function StepFooter({
 
 /** A choice pill. `pressed` is her answer; the whole pill is the target. */
 export function Pill({
-  pressed, onClick, children, disabled, dashed, lang,
+  pressed, onClick, children, disabled, dashed, lang, img,
 }: {
   pressed: boolean; onClick: () => void; children: ReactNode; disabled?: boolean; dashed?: boolean; lang?: string;
+  /** A small round picture at the start — a skill's, say. */
+  img?: string;
 }) {
   return (
-    <button type="button" className={`wso-pill${dashed ? " is-dashed" : ""}`} aria-pressed={dashed ? undefined : pressed}
+    <button type="button" className={`wso-pill${dashed ? " is-dashed" : ""}${img ? " has-img" : ""}`} aria-pressed={dashed ? undefined : pressed}
             onClick={onClick} disabled={disabled} lang={lang}>
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      {img && <img className="wso-pill-img" src={img} alt="" loading="lazy" decoding="async" />}
       {pressed && !dashed && <Check className="wso-pill-check" aria-hidden strokeWidth={3} />}
       <span>{children}</span>
     </button>

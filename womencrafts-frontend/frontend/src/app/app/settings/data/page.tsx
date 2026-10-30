@@ -146,6 +146,7 @@ export default function MyDataPage() {
   };
 
   const deleteAll = async () => {
+    if (!askDelete || deleting) return;
     setDeleting(true);
     try {
       await apiDeleteAnswers();

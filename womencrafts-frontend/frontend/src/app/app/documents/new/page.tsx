@@ -1,7 +1,14 @@
 "use client";
 
+import { JourneyTrail } from "@/components/ux/home/JourneyTrail";
+
+import { PlaceMark } from "@/components/ux/nav/Place";
 import { useCallback, useMemo, useRef, useState } from "react";
 import { useT } from "@/i18n";
+import { CatThumb, StoreCategoryPicker, SubChips, catPicture, listingPicture, useShopCategories } from "@/components/ux/shop/categories";
+import { categoryErrorCode, subsFor } from "@/lib/shop-categories-api";
+import { apiErrorMessage } from "@/lib/api";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 
 import { HomeShell } from "@/components/ux/home/HomeShell";
@@ -15,7 +22,7 @@ import { CHOICES, FIELDS, STEP_NAV } from "@/components/ux/earn/phone";
 // `Sheet`, which is a drawer and the wrong shape for a choice like this.
 import Modal from "@/design-system/primitives/Modal";
 import {
-  CATEGORIES as RAW_CATEGORIES, HIGHLIGHTS as RAW_HIGHLIGHTS, PRICE_BANDS as RAW_PRICE_BANDS, PRICE_TYPES as RAW_PRICE_TYPES, PROCESSING_TIMES as RAW_PROCESSING_TIMES,
+  HIGHLIGHTS as RAW_HIGHLIGHTS, PRICE_BANDS as RAW_PRICE_BANDS, PRICE_TYPES as RAW_PRICE_TYPES, PROCESSING_TIMES as RAW_PROCESSING_TIMES,
   QUOTE_FIELDS as RAW_QUOTE_FIELDS, RESPONSE_TIMES as RAW_RESPONSE_TIMES,
 } from "@/components/ux/earn/data";
 
@@ -103,7 +110,6 @@ const TIPS: Record<number, { title: string; items: string[] }> = {
 export default function AddListingPage() {
   const PRICE_BANDS = useTranslated(RAW_PRICE_BANDS);
   const HIGHLIGHTS = useTranslated(RAW_HIGHLIGHTS);
-  const CATEGORIES = useTranslated(RAW_CATEGORIES);
   const RESPONSE_TIMES = useTranslated(RAW_RESPONSE_TIMES);
   const QUOTE_FIELDS = useTranslated(RAW_QUOTE_FIELDS);
   const PROCESSING_TIMES = useTranslated(RAW_PROCESSING_TIMES);
@@ -122,8 +128,12 @@ export default function AddListingPage() {
   // Step 1
   const [kind, setKind] = useState<Kind>("product");
   const [title, setTitle] = useState("");
-  const [cat, setCat] = useState("");
+  // Her shop's one category is fixed (Store settings); she picks the
+  // sub-category. `sub` is a sub-category key from the staff-controlled tree.
+  const cats = useShopCategories();
+  const storeCat = cats.storeCat;
   const [sub, setSub] = useState("");
+  const [catError, setCatError] = useState("");
   const [short, setShort] = useState("");
   const [long, setLong] = useState("");
   const [tags, setTags] = useState("");
@@ -160,17 +170,21 @@ export default function AddListingPage() {
   const [askOpen, setAskOpen] = useState(false);
   const [respondIn, setRespondIn] = useState(RESPONSE_TIMES[1]);
 
-  const subs = useMemo(() => CATEGORIES.find((c) => c.label === cat)?.subs ?? [], [cat, CATEGORIES]);
+  // "Both" is saved as a product, so it takes the sub-categories products can use.
+  const subRows = useMemo(() => subsFor(storeCat, kind === "service" ? "service" : "product"), [storeCat, kind]);
+  const subRow = subRows.find((x) => x.key === sub) ?? null;
+  const subs = useMemo(() => subRows.map((x) => x.name), [subRows]);
+  const cat = storeCat?.name ?? "";
 
   /** Written for her when she leaves the one-liner empty: "Blouses — handmade, made to order". */
   const autoLine = useMemo(() => {
-    const what = sub || cat;
+    const what = subRow?.name || cat;
     if (!what) return "";
     const how = picked.slice(0, 3).join(", ").toLowerCase();
     return how ? `${what} — ${how}` : what;
-  }, [sub, cat, picked]);
+  }, [subRow, cat, picked]);
   const tagIdeas = useMemo(
-    () => Array.from(new Set([sub, cat, ...picked].filter(Boolean))).slice(0, 8), [sub, cat, picked]);
+    () => Array.from(new Set([subRow?.name ?? "", cat, ...picked].filter(Boolean))).slice(0, 8), [subRow, cat, picked]);
   const tagList = tags.split(",").map((x) => x.trim()).filter(Boolean);
 
 
@@ -182,19 +196,19 @@ export default function AddListingPage() {
   const photoInput = useRef<HTMLInputElement>(null);
 
   const draft = useMemo(() => ({
-    at, done, kind, title, cat, sub, short, long, tags, picked,
+    at, done, kind, title, sub, short, long, tags, picked,
     mode, price, was, discountOn, discount, priceType, minQty, band,
     customLow, customHigh, trackStock, stock, lowAt, whenOut, delivery,
     prep, ships, freeShip, deliveryNote, quoteOn, quoteAsk, quoteMsg,
     respondIn, photos,
-  }), [at, done, kind, title, cat, sub, short, long, tags, picked,
+  }), [at, done, kind, title, sub, short, long, tags, picked,
     mode, price, was, discountOn, discount, priceType, minQty, band,
     customLow, customHigh, trackStock, stock, lowAt, whenOut, delivery,
     prep, ships, freeShip, deliveryNote, quoteOn, quoteAsk, quoteMsg,
     respondIn, photos]);
   const restoreDraft = useCallback((d: typeof draft) => {
     setAt(d.at || 1); setDone(d.done || 1); setKind(d.kind || "product");
-    setTitle(d.title || ""); setCat(d.cat || ""); setSub(d.sub || "");
+    setTitle(d.title || ""); setSub(d.sub || "");
     setShort(d.short || ""); setLong(d.long || ""); setTags(d.tags || "");
     setPicked(Array.isArray(d.picked) ? d.picked : []); setMode(d.mode || "fixed");
     setPrice(d.price || ""); setWas(d.was || ""); setDiscountOn(Boolean(d.discountOn));
@@ -257,7 +271,8 @@ export default function AddListingPage() {
         rate: mode === "quote" ? "By quote" : priceType,
         stock: kind === "service" || mode === "quote" || !trackStock
           ? null : Number(stock.replace(/[^\d]/g, "")) || 0,
-        category: sub || cat,
+        category_key: storeCat?.key ?? "",
+        subcategory_key: subRow?.key ?? "",
         photo: photos[0] || "",
         photos,
         status: asDraft ? "paused" : "live",
@@ -281,12 +296,19 @@ export default function AddListingPage() {
       });
       clearDraft();
       router.push("/app/documents/listings");
-    } catch {
-      setSaveError("That did not save. Nothing you typed is lost — try again in a moment.");
+    } catch (e) {
+      if (categoryErrorCode(e)) {
+        // A category rule: back to the step where she can fix it, in its words.
+        setCatError(apiErrorMessage(e));
+        setAt(1);
+        cats.reload();
+      } else {
+        setSaveError("That did not save. Nothing you typed is lost — try again in a moment.");
+      }
     } finally {
       setSaving(false);
     }
-  }, [kind, title, short, long, mode, price, priceType, trackStock, stock, sub, cat, router,
+  }, [kind, title, short, long, mode, price, priceType, trackStock, stock, subRow, storeCat, cats, router,
       saving, uploading, photos, band, discountOn, discount, minQty, lowAt, whenOut,
       delivery, prep, ships, freeShip, deliveryNote, picked, quoteAsk, quoteMsg, respondIn, clearDraft,
       autoLine, tagList, tagIdeas]);
@@ -295,7 +317,7 @@ export default function AddListingPage() {
     set(list.includes(id) ? list.filter((x) => x !== id) : [...list, id]);
   }, []);
 
-  const step1Ok = title.trim().length > 2 && !!cat;
+  const step1Ok = title.trim().length > 2 && !!storeCat && !!subRow;
   const step2Ok = mode === "quote" ? quoteOn : mode === "range" ? Boolean(band && band.low > 0)
     : Number(price.replace(/[^\d.]/g, "")) > 0;
 
@@ -330,9 +352,21 @@ export default function AddListingPage() {
               {tr("documentsNew.howItWillLook")}
             </h2>
             <div className="overflow-hidden rounded-[12px] border" style={{ borderColor: v("--ux-line") }}>
-              <div className="grid h-[132px] place-items-center" style={{ background: v("--ux-surface-2") }}>
+              <div className="relative grid h-[132px] place-items-center" style={{ background: v("--ux-surface-2") }}>
                 {photos[0] ? <img src={photos[0]} alt={title || "Listing photo"} className="h-full w-full object-contain" />
-                  : <Icons.Image className="h-[30px] w-[30px]" style={{ color: v("--ux-faint") }} />}
+                  : storeCat ? (
+                    /* No photo yet: what buyers see until she adds one — its kind's picture. */
+                    <>
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img src={listingPicture({ id: "new", title, kind: kind === "service" ? "service" : "product",
+                                                 category_key: storeCat.key, subcategory_key: subRow?.key }, cats.data?.categories)}
+                           alt="" className="absolute inset-0 h-full w-full object-cover opacity-80" />
+                      <span className="absolute bottom-2 start-2 rounded-full px-2 py-0.5 text-2xs font-semibold"
+                            style={{ background: "color-mix(in srgb, var(--ux-surface) 88%, transparent)", color: v("--ux-ink-2") }}>
+                        Until you add a photo
+                      </span>
+                    </>
+                  ) : <Icons.Image className="h-[30px] w-[30px]" style={{ color: v("--ux-faint") }} />}
               </div>
               <div className="p-3">
                 <p className="truncate text-xsm font-bold" style={{ color: v("--ux-ink") }}>
@@ -371,14 +405,18 @@ export default function AddListingPage() {
         </div>
       }
     >
+      <JourneyTrail goal="sell" />
       <Back to="/app/documents/listings" label={tr("documents.whatYouSell")} className="mb-4" />
 
       <div className="mb-6 flex flex-wrap items-start justify-between gap-4 lg:mb-4">
         <div className="min-w-0">
-          <h1 className="ux-screen-title text-3xl font-extrabold leading-[1.15] tracking-[-0.02em]"
-              style={{ color: v("--ux-ink") }}>
-            {tr("documents.addSomethingToSell")}
-          </h1>
+          <div className="flex min-w-0 items-center gap-3">
+            <PlaceMark size={44} />
+            <h1 className="ux-screen-title text-3xl font-extrabold leading-[1.15] tracking-[-0.02em] min-w-0"
+                style={{ color: v("--ux-ink") }}>
+              {tr("documents.addSomethingToSell")}
+            </h1>
+          </div>
           <p className="mt-1.5 max-w-[56ch] text-sm leading-relaxed" style={{ color: v("--ux-muted") }}>
             {tr("documentsNew.tellBuyersWhatYouMakeOr")}
           </p>
@@ -410,26 +448,42 @@ export default function AddListingPage() {
                     on={kind === "both"} onClick={() => setKind("both")} />
           </div>
 
-          {/* Category first: once she has picked it, the name is one tap. */}
-          <div className="mt-5 grid gap-4 sm:grid-cols-2">
-            <div>
-              <Label need>Category</Label>
-              <Select value={cat} onChange={(c) => { setCat(c); setSub(""); }} label="Category"
-                      placeholder={tr("documentsNew.chooseOne")} options={CATEGORIES.map((c) => c.label)} />
-            </div>
-            <div>
-              <Label>Kind of {cat ? "it" : "thing"}</Label>
-              <Select value={sub} onChange={(x) => { setSub(x); if (!title.trim() || subs.includes(title)) setTitle(x); }}
-                      label="Subcategory" placeholder={cat ? "Choose one" : "Pick a category first"} options={subs} />
-            </div>
+          {/* Category first: her shop's one category, then the kind of thing
+              inside it. Once she has picked, the name is one tap. */}
+          <div className="mt-5" data-wizard-category>
+            {!cats.data ? (
+              <p className="text-xsm" style={{ color: v("--ux-muted") }}>Loading what your shop sells…</p>
+            ) : !storeCat ? (
+              <>
+                <Label need>First, what does your shop sell?</Label>
+                <p className="mb-3 text-xs" style={{ color: v("--ux-muted") }}>
+                  Pick one category. Everything you list goes inside it.
+                </p>
+                <StoreCategoryPicker data={cats.data} onChanged={() => { setCatError(""); cats.reload(); }} />
+              </>
+            ) : (
+              <>
+                <div className="mb-2 flex flex-wrap items-center gap-2">
+                  <Label need>{`What kind of ${storeCat.name.toLowerCase()}?`}</Label>
+                  <Link href="/app/documents/store#category" className="ms-auto inline-flex items-center gap-1.5 text-xs font-bold" style={{ color: v("--ux-brand") }}>
+                    <CatThumb src={catPicture(storeCat)} size={20} /> Your shop sells {storeCat.name} · Change
+                  </Link>
+                </div>
+                <SubChips subs={subRows} value={sub} parent={storeCat}
+                          onPick={(x) => { setSub(x.key); setCatError(""); if (!title.trim() || subs.includes(title)) setTitle(x.name); }}
+                          empty={`Nothing in ${storeCat.name} can be listed as ${kind === "service" ? "a service" : "a product"}. Try the other kind.`} />
+              </>
+            )}
+            {catError && <p role="alert" className="mt-2 text-xsm font-semibold" style={{ color: v("--ux-danger-ink") }}>{catError}</p>}
           </div>
 
           <div className="mt-4">
             <Label need>{tr("circlesNew.whatIsItCalled")}</Label>
             <Text value={title} onChange={setTitle} max={100} label="Title"
                   placeholder={tr("documentsNew.handmadeCottonKurta")} />
-            {cat && !title.trim() && (
-              <Picks options={subs} value={title} onPick={(x) => { setTitle(x); setSub(x); }} label="Quick names" />
+            {storeCat && !title.trim() && subs.length > 0 && (
+              <Picks options={subs} value={title} label="Quick names"
+                     onPick={(x) => { setTitle(x); setSub(subRows.find((r) => r.name === x)?.key ?? sub); }} />
             )}
           </div>
 
@@ -871,7 +925,7 @@ export default function AddListingPage() {
           <dl className="mt-4 divide-y" style={{ borderColor: v("--ux-line") }}>
             {[
               { k: "What it is",   val: title.trim() || "—", step: 1 },
-              { k: "Category",     val: [cat, sub].filter(Boolean).join(" · ") || "—", step: 1 },
+              { k: "Category",     val: [cat, subRow?.name].filter(Boolean).join(" · ") || "—", step: 1 },
               { k: "In one line",  val: short.trim() || "—", step: 1 },
               { k: "Price",        val: mode === "quote" ? "Buyers ask for a price"
                                      : band ? `${money(band.low)} – ${money(band.high)}`

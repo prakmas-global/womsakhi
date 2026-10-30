@@ -37,6 +37,8 @@ export interface TeachCourseRow {
   lesson_count: number;
   updated_at: string;
   stats: CourseStats;
+  /** Its thumbnail: her upload or a library picture; "" = the category's picture. */
+  cover: string;
 }
 
 export interface TeachCourse extends TeachCourseRow {
@@ -54,6 +56,8 @@ export interface CourseInput {
   price_rupees: number;
   upi_id: string;
   lessons: TeachLesson[];
+  /** "" keeps the category's picture. */
+  cover: string;
   publish: boolean;
 }
 
@@ -79,7 +83,10 @@ export interface TeachSummary {
   month_minor: number;
 }
 
-/** The categories a member can teach in (backend: ProgramModel.CATEGORIES). */
+/**
+ * The categories a member can teach in, as the app shipped them. The live list
+ * is the "course_categories" master (`useMaster`); this shows until it loads.
+ */
 export const TEACH_CATEGORIES = [
   "Handicrafts",
   "Cooking & Food",

@@ -28,7 +28,10 @@ import { Sheet } from "@/components/ux/kit/sheet";
  */
 
 const LATER_DAYS = 3;
-const QUIET_ON = ["/app/phone", "/app/settings", "/app/verify", "/app/welcome", "/app/onboarding"];
+// Never on the help screens: nothing may stand between a woman in trouble and
+// a helpline number — least of all a request to add her phone number.
+const QUIET_ON = ["/app/phone", "/app/settings", "/app/verify", "/app/welcome", "/app/onboarding",
+                  "/app/safety", "/app/helpdesk", "/app/help"];
 
 const laterKey = (id: string) => `ws.complete-profile.later.${id}`;
 
@@ -123,7 +126,7 @@ export function CompleteProfile() {
         : "One more way to reach you keeps your account safe if you lose your phone or your inbox.";
 
   return (
-    <Sheet open={open} onClose={step === "done" ? () => setOpen(false) : later} title={title} description={description}
+    <Sheet open={open && !quiet} onClose={step === "done" ? () => setOpen(false) : later} title={title} description={description}
       icon={step === "done" ? "CircleCheck" : "UserRound"}
       footer={
         step === "ask" ? (

@@ -1,6 +1,6 @@
 from typing import Optional
 
-from pydantic import BaseModel, field_validator
+from pydantic import BaseModel, Field, field_validator
 
 
 class PaymentMethod(BaseModel):
@@ -72,3 +72,15 @@ class RefundResponse(BaseModel):
     status: str
     by_name: str
     created: str
+
+
+class PaymentReference(BaseModel):
+    reference: str = Field(..., min_length=1, max_length=40)
+
+    @field_validator("reference")
+    @classmethod
+    def transaction_reference(cls, value: str) -> str:
+        value = value.strip()
+        if not value:
+            raise ValueError("Add the transaction reference from your UPI app before submitting payment proof.")
+        return value

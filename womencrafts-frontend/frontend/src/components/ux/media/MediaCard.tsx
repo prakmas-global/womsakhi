@@ -36,7 +36,7 @@ function Chip({ b }: { b: Badge }) {
 
 export function MediaCard({
   href, image, alt = "", ratio = "16/10", topLeft, topRight, overlay, title, subtitle, avatar,
-  meta, children, footer, onClick, highlight,
+  meta, children, footer, onClick, highlight, headingLevel = 2,
 }: {
   /** Whole card is a link when set (footer buttons should then be links/buttons that stopPropagation). */
   href?: string;
@@ -48,6 +48,8 @@ export function MediaCard({
   /** Small text along the bottom of the picture — "12 lessons", "3 seats left". */
   overlay?: React.ReactNode;
   title: React.ReactNode;
+  /** Use 3 when the card belongs to an explicitly titled h2 section. */
+  headingLevel?: 2 | 3;
   /** Who it is from — "Posted by Priya", "Sri Lakshmi Traders". */
   subtitle?: React.ReactNode;
   /** A round picture or initials beside the subtitle. */
@@ -83,7 +85,9 @@ export function MediaCard({
   );
   const body = (
     <div className="flex flex-1 flex-col p-3.5 lg:p-4">
-      <h3 className="line-clamp-2 text-[15px] font-bold leading-snug" style={{ color: "var(--ux-ink)" }}>{title}</h3>
+      {headingLevel === 3
+        ? <h3 className="line-clamp-2 text-[15px] font-bold leading-snug" style={{ color: "var(--ux-ink)" }}>{title}</h3>
+        : <h2 className="line-clamp-2 text-[15px] font-bold leading-snug" style={{ color: "var(--ux-ink)" }}>{title}</h2>}
       {(subtitle || avatar) && (
         <p className="mt-1.5 flex min-w-0 items-center gap-1.5 text-xs" style={{ color: "var(--ux-ink-2)" }}>
           {avatar && (

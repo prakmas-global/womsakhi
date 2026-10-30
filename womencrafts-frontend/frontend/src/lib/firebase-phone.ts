@@ -85,7 +85,7 @@ export async function sendSmsCode(
   // `clear()`. So every attempt gets a brand-new child element; reusing the
   // old one made every retry on the same page fail.
   if (verifier) {
-    try { verifier.clear(); } catch { /* already gone */ }
+    try { verifier.clear(); } catch { /* The previous verifier is discarded before creating a fresh challenge. */ }
     verifier = null;
   }
   const host = document.getElementById(containerId);
@@ -108,7 +108,7 @@ export async function sendSmsCode(
   } catch (err) {
     // Log the real reason — the screen shows a sentence, the console the code.
     console.error("[sms] Firebase could not send the code:", err);
-    try { verifier.clear(); } catch { /* ignore */ }
+    try { verifier.clear(); } catch { /* The expired verifier is discarded and recreated on the next attempt. */ }
     verifier = null;
     if (local) throw Object.assign(new Error("localhost"), { code: "local/real-number-on-localhost" });
     throw err;
@@ -120,7 +120,7 @@ export async function confirmSmsCode(confirmation: SmsConfirmation, code: string
   const credential = await confirmation.confirm(code);
   const token = await credential.user.getIdToken();
   // Firebase was only a witness. Our API owns the session.
-  try { await window.firebase?.auth().signOut(); } catch { /* nothing to undo */ }
+  try { await window.firebase?.auth().signOut(); } catch { /* Firebase is only the SMS witness; the API owns the session. */ }
   return token;
 }
 

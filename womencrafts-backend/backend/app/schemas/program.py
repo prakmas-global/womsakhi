@@ -2,13 +2,9 @@ from typing import Literal, Optional
 
 from pydantic import BaseModel, field_validator
 
-Category = Literal[
-    "Digital Literacy",
-    "Entrepreneurship",
-    "Handicrafts",
-    "Personal Development",
-    "Sustainability",
-]
+#: Course categories are a staff-controlled master (app/core/masters.py,
+#: list "course_categories"); routes check values against it.
+Category = str
 Mode = Literal["Online", "Offline", "Hybrid"]
 ProgramStatus = Literal["Active", "Upcoming", "Completed", "Draft", "Archived"]
 

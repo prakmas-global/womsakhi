@@ -404,3 +404,26 @@ async def test_passing_a_skill_test_gives_a_certificate_and_a_badge(api):
     finally:
         await db["assessments"].delete_one({"_id": test["_id"]})
         await db["assessment_attempts"].delete_many({"assessment_id": tid})
+
+
+async def test_a_course_carries_its_cover_everywhere_it_shows(api):
+    """Her thumbnail is stored as a path and comes back as a URL — to her, to the catalogue, to a learner."""
+    client, db, made = api
+    _, t = await _member(db, made, "Asha Teacher")
+    _, l = await _member(db, made, "Meena Learner")
+    course = await _post(client, made, t, cover="http://localhost:8020/media/cover/blouse.png")
+    assert (await db["programs"].find_one({"_id": ObjectId(course["id"])}))["cover"] == "media/cover/blouse.png"
+    assert course["cover"].endswith("/media/cover/blouse.png")
+    mine = (await client.get("/teach/courses", headers=t)).json()
+    assert next(c for c in mine if c["id"] == course["id"])["cover"].endswith("/media/cover/blouse.png")
+    seen = (await client.get(f"/catalog/programs/{course['id']}", headers=l)).json()
+    assert seen["cover"].endswith("/media/cover/blouse.png")
+    await client.post(f"/me/programs/{course['id']}/enroll", headers=l)
+    detail = (await client.get(f"/me/programs/{course['id']}/detail", headers=l)).json()
+    assert detail["cover"].endswith("/media/cover/blouse.png")
+    # A picture from the app's library keeps its own path; "" goes back to the category's.
+    body = _course(cover="/ux/art/course-sewing-machine.webp")
+    got = await client.put(f"/teach/courses/{course['id']}", json=body, headers=t)
+    assert got.status_code == 200 and got.json()["cover"] == "/ux/art/course-sewing-machine.webp"
+    got = await client.put(f"/teach/courses/{course['id']}", json=_course(cover=""), headers=t)
+    assert got.json()["cover"] == ""

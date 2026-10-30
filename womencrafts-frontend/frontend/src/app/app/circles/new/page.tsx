@@ -1,6 +1,8 @@
 "use client";
 
+import { PlaceMark } from "@/components/ux/nav/Place";
 import { useMemo, useState } from "react";
+import Link from "next/link";
 
 import { apiCreateCircle, type ApiCircleDetail } from "@/lib/growth-api";
 import { apiCircleInviteCode } from "@/lib/share-api";
@@ -25,6 +27,9 @@ const KINDS = [
   { id: "Community", label: "A community circle", note: "Somewhere to ask questions and know people",
     icon: "UsersRound", tint: "--ux-tint-pink", ink: "--ux-pink" },
 ];
+
+/** The circle topic each kind files under (a synonym in the `circle_topics` master). */
+const KIND_TOPIC: Record<string, string> = { Savings: "savings", Trade: "business", Community: "family" };
 
 /** Names, places, amounts and purposes most circles start with — one tap each. */
 const NAME_IDEAS: Record<string, string[]> = {
@@ -80,8 +85,11 @@ export default function NewCircle() {
     try {
       const made = await apiCreateCircle({
         name: form.name.trim(),
-        topic: form.place.trim(),
-        desc: form.about.trim(),
+        // The topic comes from the circle topics master; these words are its
+        // synonyms, so they land on the right topic whatever staff call it.
+        // The place used to go here; it now opens the description instead.
+        topic: KIND_TOPIC[kind ?? "Community"] ?? "family",
+        desc: [form.place.trim() ? `Where: ${form.place.trim()}.` : "", form.about.trim()].filter(Boolean).join(" "),
         is_savings: savings,
         monthly_minor: savings ? Math.round(Number(form.monthly || 0) * 100) : 0,
       }, attempt.current());
@@ -196,14 +204,35 @@ export default function NewCircle() {
       </div>
 
       <p className="text-xsm max-lg:text-[13px]" style={{ color: "var(--ux-faint)" }}>Step {step} of 2</p>
-      <h1 className="ux-screen-title mt-1 text-2xl font-bold" style={{ color: "var(--ux-ink)" }}>
-        {step === 1 ? "What kind of circle?" : `Set up ${form.name || "your circle"}`}
-      </h1>
+      <div className="mt-1 flex min-w-0 items-center gap-3">
+        <PlaceMark size={44} />
+        <h1 className="ux-screen-title text-2xl font-bold min-w-0" style={{ color: "var(--ux-ink)" }}>
+          {step === 1 ? "What kind of circle?" : `Set up ${form.name || "your circle"}`}
+        </h1>
+      </div>
       <p className="mb-6 mt-1.5 text-xsm lg:mb-[20px]" style={{ color: "var(--ux-muted)" }}>
         {step === 1
           ? tr("circlesNew.threeKindsAndTheyWorkDifferently")
               : tr("circlesNew.nothingIsCommittedUntilWomenJoin")}
       </p>
+
+      {/* A chit (₹1 lakh, 20 women, auction or draw) is a different thing from
+          this group's monthly pot: its record — months, bids, who paid, who
+          took the pot — lives in My Money. Said here, where she would look. */}
+      <Link href="/app/khata/chits/new"
+            className="ux-press ux-sq mb-5 flex items-center gap-3 rounded-[16px] border p-3.5 lg:mb-[20px]"
+            style={{ borderColor: "var(--ux-brand)", background: "var(--ux-brand-tint)" }}>
+        <IconTile icon="Coins" tint="--ux-surface" ink="--ux-brand" size={42} radius={12} />
+        <span className="min-w-0 flex-1">
+          <span className="block text-xsm font-bold" style={{ color: "var(--ux-ink)" }}>
+            Running a chit (₹1 lakh, ₹5 lakh…)?
+          </span>
+          <span className="block text-xs" style={{ color: "var(--ux-muted)" }}>
+            Keep its record in My Chits — every month, who paid, who took the pot.
+          </span>
+        </span>
+        <Icons.ArrowRight className="h-4 w-4 shrink-0" style={{ color: "var(--ux-brand)" }} />
+      </Link>
 
       {step === 1 && (
         /* One of three: on a phone, a grouped list with a checkmark. */

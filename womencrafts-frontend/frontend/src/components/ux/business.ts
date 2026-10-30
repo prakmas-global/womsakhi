@@ -89,6 +89,7 @@ const toService = (l: Listing): (typeof SERVICES)[number] => ({
   id: l.id,
   name: l.title,
   category: l.category,
+  subcategory_key: l.subcategory_key ?? "",
   rate_minor: l.price_minor,
   rateKind: (l.rate || "per piece") as (typeof SERVICES)[number]["rateKind"],
   // Where she works is derived from how far she travels: a woman who will go

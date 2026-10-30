@@ -24,6 +24,8 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from pydantic import BaseModel, Field, field_validator, model_validator
 
 from app.core import cache
+from app.core import masters
+from app.core.media import MediaRefOptional, media_url
 from app.core.rbac import require_active_member
 from app.core.serializers import to_object_id
 from app.db.mongodb import get_database
@@ -83,6 +85,9 @@ class CourseIn(BaseModel):
     price_rupees: int = 0
     upi_id: str = Field("", max_length=300)
     lessons: list[LessonIn] = Field(min_length=1, max_length=40)
+    #: The course's thumbnail: her upload or a library picture ("" = her
+    #: category's picture, which is what every course showed before covers).
+    cover: MediaRefOptional = Field(default=None, max_length=500)
     #: Live in Learn now, or kept as a draft only she can see.
     publish: bool = False
 
@@ -94,9 +99,9 @@ class CourseIn(BaseModel):
     @field_validator("category")
     @classmethod
     def _category(cls, v: str) -> str:
-        if v not in ProgramModel.CATEGORIES:
-            raise ValueError("Choose one of the listed categories")
-        return v
+        # Checked against the course categories master in the route
+        # (app/core/masters.py): a validator cannot read the database.
+        return (v or "").strip()
 
     @model_validator(mode="after")
     def _price(self):
@@ -135,6 +140,7 @@ class CourseRow(BaseModel):
     lesson_count: int
     updated_at: str
     stats: CourseStats
+    cover: str = ""
 
 
 class CourseFull(CourseRow):
@@ -216,6 +222,7 @@ def _row(doc: dict, stats: CourseStats) -> dict:
         "lesson_count": len(doc.get("curriculum") or []),
         "updated_at": _iso(doc.get("updated_at")),
         "stats": stats,
+        "cover": media_url(doc.get("cover") or ""),
     }
 
 
@@ -255,6 +262,7 @@ def _fields(body: CourseIn, me: dict) -> dict:
         "price_minor": body.price_rupees * 100,
         "upi_id": body.upi_id if body.price_rupees else "",
         "curriculum": lessons,
+        "cover": body.cover or "",
         "teacher_name": me.get("full_name") or "A WomSakhi member",
         "updated_at": datetime.now(timezone.utc),
     }
@@ -293,6 +301,7 @@ async def my_courses(me: dict = Depends(require_active_member)):
 
 @router.post("/courses", response_model=CourseFull, status_code=status.HTTP_201_CREATED, summary="Teach a new course")
 async def create_course(body: CourseIn, me: dict = Depends(require_active_member)):
+    body.category = await masters.check("course_categories", body.category, level="child", field="category")
     doc = ProgramModel.create_document(
         name=body.name, desc=body.desc, category=body.category, mode="Online",
         cap=0, status="Active" if body.publish else "Draft",
@@ -315,6 +324,10 @@ async def get_course(course_id: str, me: dict = Depends(require_active_member)):
 @router.put("/courses/{course_id}", response_model=CourseFull, summary="Save my course")
 async def save_course(course_id: str, body: CourseIn, me: dict = Depends(require_active_member)):
     doc = await _mine(course_id, me)
+    # A course keeps a category staff have since disabled or renamed away from,
+    # as long as she doesn't change it; a new choice must be an active one.
+    if body.category != doc.get("category"):
+        body.category = await masters.check("course_categories", body.category, level="child", field="category")
     fields = _fields(body, me)
     # Archived by staff stays archived: she cannot re-publish what they hid.
     if doc.get("status") != "Archived":
@@ -409,7 +422,7 @@ async def confirm_payment(enrollment_id: str, me: dict = Depends(require_active_
     fresh = await _enrollments().find_one_and_update(
         {"_id": e["_id"], "status": EnrollmentModel.STATUS_PENDING},
         {"$set": {"status": EnrollmentModel.STATUS_ACTIVE, "payment.status": EnrollmentModel.PAY_PAID,
-                  "payment.amount_minor": amount, "payment.confirmed_at": now,
+                  "payment.amount_minor": amount, "payment.confirmed_at": now, "payment.confirmed_by": str(me["_id"]),
                   "last_activity_at": now, "updated_at": now}},
         return_document=True,
     )

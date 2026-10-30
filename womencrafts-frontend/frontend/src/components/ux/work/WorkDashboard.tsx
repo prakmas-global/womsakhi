@@ -1,71 +1,104 @@
 "use client";
 /* eslint-disable @next/next/no-img-element */
 
-import { artFor } from "@/components/ux/media/art";
-import { useMemo, useRef, useState } from "react";
+import { useCallback, useMemo, useRef, useState } from "react";
 import { useT } from "@/i18n";
 import { HomeShell } from "@/components/ux/home/HomeShell";
 import { TransitionLink } from "@/components/ux/TransitionLink";
 import { I } from "@/components/ux/kit";
-import { useMe } from "@/components/ux/me";
+import { artFor } from "@/components/ux/media/art";
+import { PlaceBadge } from "@/components/ux/nav/Place";
+import { allNodes, type NavNode } from "@/components/ux/nav-tree";
 import { useApplications, useEvents, useJobs } from "@/components/ux/growth";
-import { useWalletInsights } from "@/components/ux/business";
 import { apiToggleSaveOpportunity } from "@/lib/growth-api";
-import { payLabel, type Job } from "./data";
-import styles from "./WorkDashboard.module.css";
+import { useResource } from "@/lib/use-resource";
+import { apiMyWorkHistory, apiMyWorkProfile, type WorkDoneItem, type WorkProfile } from "@/lib/work-api";
 import { DashboardNudge } from "@/components/ux/reminders/DashboardNudge";
+import { payLabel, type Job } from "./data";
+import { jobPicture, useWorkTaxonomy, WorkThumb } from "./pictures";
+import { readinessOf, strengthOf } from "./readiness";
+import styles from "./WorkDashboard.module.css";
 
-const ART = "/ux/art/work-dashboard-";
-const FILTERS = ["For You", "Remote", "Part-time", "Full-time", "Freelance", "Women-led"] as const;
+/**
+ * Work — the dashboard.
+ *
+ * ── What it was, and why it changed ─────────────────────────────────────────
+ * It opened on a wall: nine near-identical picture tiles that repeated the
+ * menu beside them, then four numbers that said nothing to her ("18
+ * Companies"), an empty earnings chart that belongs in Earn, and four jobs
+ * squeezed into thin cards. On a phone the jobs were 1,600px down a 3,800px
+ * page, and the side column called a half-done profile "100% complete".
+ *
+ * ── One job per area, in the order she needs them ───────────────────────────
+ *   1. Find work      the search, and how people hiring see her
+ *   2. Right now      her applications, interviews, offers and finished work —
+ *                     with the ONE thing to do next lit up
+ *   3. Jobs for you   best matches first, one row of filters, cards with room
+ *   4. Two ways       "I want work" / "I want to hire": the section's map as
+ *                     two pictures with their places under them, not nine tiles
+ *   5. In demand      skills counted from the jobs actually posted
+ * The side column is her work profile (the same readiness as My work profile,
+ * so the two never disagree) and what is coming up.
+ */
+
+const FILTERS = ["For you", "Remote", "Part-time", "Full-time", "Freelance", "Women-led"] as const;
 type Filter = (typeof FILTERS)[number];
-const SKILLS = ["Social Media", "UI/UX Design", "Content Writing", "Virtual Assistance", "Data Entry", "Customer Support"];
 
-/** The picture of the work itself — shared with Find work, so a job looks the same everywhere. */
-function imageFor(job: Job) {
-  return artFor([job.title, job.skills.join(" "), job.categoryName], "job", undefined, job.id);
-}
+const NODES = new Map(allNodes().map((n) => [n.id, n]));
+const node = (id: string) => NODES.get(id) as NavNode;
 
-const money = (minor: number) => new Intl.NumberFormat("en-IN", { style: "currency", currency: "INR", maximumFractionDigits: 0 }).format(minor / 100);
+/** The section's places, by what she came to do. */
+const WAYS = [
+  { title: "I want work", sub: "Find jobs, orders and freelance work near you or from home.",
+    art: "/ux/art/onboarding-work-v2.webp", ids: ["opportunities", "applications", "work-profile", "verified"] },
+  { title: "I want to hire", sub: "Find women by skill, post a job, and choose who to talk to.",
+    art: "/ux/art/scene-women-business-handshake.webp", ids: ["work-find", "work-post", "work-posts", "contracts"] },
+] as const;
 
-function PanelHeading({ title, href, action = "View all" }: { title: string; href: string; action?: string }) {
-  return <div className={styles.panelHeading}><h2>{title}</h2><TransitionLink href={href}>{action} <I name="ArrowRight" /></TransitionLink></div>;
-}
-
-function JobTile({ job, image, saved, onSave }: { job: Job; image: string; saved: boolean; onSave: () => void }) {
-  const tr = useT();
-  return <article className={styles.job}>
-    <div className={styles.jobImage}>
-      <img src={image} alt={job.title} loading="lazy" />
-      <span className={styles.jobBadge}>{job.womenLed ? "Women-led" : job.mode === "Remote" ? "Remote" : job.kind}</span>
-      <button type="button" onClick={onSave} aria-label={saved ? `Unsave ${job.title}` : `Save ${job.title}`} aria-pressed={saved} className={styles.save}><I name="Heart" style={saved ? { fill: "currentColor" } : undefined} /></button>
-    </div>
-    <div className={styles.jobBody}>
-      <p className={styles.org}><span><I name={job.icon} /></span>{job.org}</p>
-      <h3>{job.title}</h3>
-      <p className={styles.jobMeta}><I name="MapPin" /> {job.mode} <span>·</span> <I name="Briefcase" /> {job.kind}</p>
-      <p className={styles.pay}><I name="Wallet" /> {payLabel(job)}</p>
-      <div className={styles.skills}>{job.skills.slice(0, 3).map(skill => <span key={skill}>{skill}</span>)}</div>
-      <TransitionLink href={`/app/opportunities/${job.id}`} className={styles.details}>{tr("workDashboard.viewDetails")} <I name="ArrowRight" /></TransitionLink>
-    </div>
-  </article>;
+function JobCard({ job, image, saved, onSave }: { job: Job; image: string; saved: boolean; onSave: () => void }) {
+  return (
+    <article className={styles.job}>
+      <TransitionLink href={`/app/opportunities/${job.id}`} className={styles.jobLink} aria-label={`${job.title}, ${job.org}`}>
+        <span className={styles.jobImage}>
+          <img src={image} alt="" loading="lazy" />
+          <span className={styles.jobBadge}>{job.womenLed ? "Women-led" : job.mode === "Remote" ? "Remote" : job.kind}</span>
+          {job.match >= 50 && <span className={styles.match}><I name="Sparkles" /> {job.match}% match</span>}
+        </span>
+        <span className={styles.jobBody}>
+          <b className={styles.jobTitle}>{job.title}</b>
+          <span className={styles.org}>{job.org}</span>
+          <span className={styles.pay}><I name="Wallet" /> {payLabel(job)}</span>
+          <span className={styles.jobMeta}><I name="MapPin" /> {job.place || job.mode}</span>
+        </span>
+      </TransitionLink>
+      <button type="button" onClick={onSave} aria-pressed={saved} aria-label={saved ? `Unsave ${job.title}` : `Save ${job.title}`} className={styles.save}>
+        <I name="Heart" style={saved ? { fill: "currentColor" } : undefined} />
+      </button>
+    </article>
+  );
 }
 
 export function WorkDashboard() {
   const tr = useT();
-  const { data: jobs } = useJobs();
+  const { data: jobs, source: jobsSource } = useJobs();
   const { data: applications } = useApplications();
   const { data: events } = useEvents();
-  const { data: insights } = useWalletInsights();
-  const me = useMe();
-  const [filter, setFilter] = useState<Filter>("For You");
+  const workCats = useWorkTaxonomy();
+  const profile = useResource(useCallback((s: AbortSignal) => apiMyWorkProfile(s).catch(() => null), []), null as WorkProfile | null);
+  const history = useResource(useCallback((s: AbortSignal) => apiMyWorkHistory(s).catch(() => ({ items: [], praise: [] })), []),
+    { items: [], praise: [] } as { items: WorkDoneItem[]; praise: string[] });
+
+  const [filter, setFilter] = useState<Filter>("For you");
   const [query, setQuery] = useState("");
   const [search, setSearch] = useState("");
   const [saved, setSaved] = useState<Record<string, boolean>>({});
   const [saveError, setSaveError] = useState("");
-  const [chartRange, setChartRange] = useState("6");
-  const resultsRef = useRef<HTMLElement>(null);
+  const jobsRef = useRef<HTMLElement>(null);
 
-  const results = useMemo(() => jobs.filter(job => {
+  // Best matches first, then the newest; closed and already-applied work drops out.
+  const open = useMemo(() => jobs.filter((j) => !j.closed && !j.applied)
+    .sort((a, b) => b.match - a.match || a.postedDays - b.postedDays), [jobs]);
+  const results = useMemo(() => open.filter((job) => {
     const q = search.toLowerCase();
     if (q && ![job.title, job.org, ...job.skills].join(" ").toLowerCase().includes(q)) return false;
     if (filter === "Remote") return job.mode === "Remote";
@@ -74,89 +107,216 @@ export function WorkDashboard() {
     if (filter === "Freelance") return job.kind === "Freelance";
     if (filter === "Women-led") return job.womenLed;
     return true;
-  }).slice(0, 4), [jobs, search, filter]);
+  }).slice(0, 6), [open, search, filter]);
 
-  const earnings = insights.monthly_minor.reduce((sum, amount) => sum + amount, 0);
-  const months = insights.monthly_minor.slice(-Number(chartRange));
-  const labels = insights.month_labels.slice(-Number(chartRange));
-  const max = Math.max(1, ...months);
-  const stats = [
-    { icon: "Briefcase", value: jobs.length.toLocaleString("en-IN"), label: "Opportunities", href: "/app/opportunities" },
-    { icon: "Users", value: new Set(jobs.map(job => job.org)).size.toLocaleString("en-IN"), label: "Companies", href: "/app/opportunities" },
-    { icon: "FileText", value: applications.length.toLocaleString("en-IN"), label: "Applications", href: "/app/applications" },
-    { icon: "Wallet", value: money(earnings), label: tr("workDashboard.totalEarnings"), href: "/app/wallet" },
+  // Skills asked for in the work actually posted — not a fixed list.
+  const inDemand = useMemo(() => {
+    const count = new Map<string, number>();
+    for (const j of open) for (const s of j.skills) count.set(s, (count.get(s) ?? 0) + 1);
+    return [...count.entries()].sort((a, b) => b[1] - a[1]).slice(0, 10);
+  }, [open]);
+
+  const p = profile.data;
+  const steps = p ? strengthOf(p.skills, p.work_types, p.days, p.city) : [];
+  const ready = readinessOf(steps);
+  const nextStep = steps.find((s) => !s.done);
+  const confirmed = history.data.items.filter((w) => w.confirmed).length;
+  const moving = applications.filter((a) => a.step > 0 && a.stage !== "Done");
+  const interviews = applications.filter((a) => a.stage === "Interview");
+  const offers = applications.filter((a) => a.stage === "Offer");
+
+  // The one thing to do next, most urgent first.
+  const next = offers[0]
+    ? { icon: "PartyPopper", title: `You have an offer: ${offers[0].title}`, sub: "When the work is done, tap “I finished this work” so it counts on your profile.", href: "/app/applications", cta: "Open it" }
+    : interviews[0]
+      ? { icon: "MessagesSquare", title: `Interview: ${interviews[0].title}`, sub: interviews[0].when, href: "/app/applications", cta: "See details" }
+      : p && nextStep
+        ? { icon: "IdCard", title: nextStep.label, sub: `Your work profile is ${ready}% ready. People hiring find women whose profile is complete.`, href: `/app/work/profile#${nextStep.to}`, cta: "Do it now" }
+        : null;
+
+  const status = [
+    { icon: "Send", value: moving.length, label: "Applied", href: "/app/applications" },
+    { icon: "MessagesSquare", value: interviews.length, label: "Interviews", href: "/app/applications" },
+    { icon: "PartyPopper", value: offers.length, label: "Offers", href: "/app/applications", hot: offers.length > 0 },
+    { icon: "BadgeCheck", value: confirmed, label: "Jobs done", href: "/app/work/profile#wp-work" },
   ];
 
-  const setTopic = (topic: string) => {
-    setQuery(topic);
-    setSearch(topic);
-    setFilter("For You");
-    resultsRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
-  };
+  const goJobs = () => jobsRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
   const toggleSave = async (job: Job) => {
-    const wasSaved = saved[job.id] ?? Boolean(job.saved);
-    setSaved(current => ({ ...current, [job.id]: !wasSaved }));
+    const was = saved[job.id] ?? Boolean(job.saved);
+    setSaved((c) => ({ ...c, [job.id]: !was }));
     setSaveError("");
     try { await apiToggleSaveOpportunity(job.id); }
-    catch {
-      setSaved(current => ({ ...current, [job.id]: wasSaved }));
-      setSaveError("That opportunity could not be saved. Please try again.");
-    }
+    catch { setSaved((c) => ({ ...c, [job.id]: was })); setSaveError("That job could not be saved. Please try again."); }
   };
 
   return <HomeShell active="/app/work" loadFailed="your work" fit>
     <div className={styles.dashboard} data-dashboard="work">
       <div className={styles.main}>
-        <section className={styles.hero}>
+        {/* 1 · Find work */}
+        <section className={styles.hero} data-page-hero data-banner>
           <picture>
-            {/* The wide banner is composed for a laptop and carries lettering in
-              its own artwork; a phone-shaped crop of it cuts the subject or the
-              words. The phone gets a crop made for its shape. */}
-            <source media="(max-width: 1023px)" srcSet={`${ART}hero-mobile.webp`} />
-            <img src={`${ART}hero.webp`} alt="" aria-hidden="true" />
+            {/* The wide banner carries its own composition; a phone gets a crop made for its shape. */}
+            <source media="(max-width: 1023px)" srcSet="/ux/art/work-dashboard-hero-mobile.webp" />
+            <img src="/ux/art/work-dashboard-hero.webp" alt="" aria-hidden="true" />
           </picture>
-          <div className={styles.heroContent}>
-            <p className={styles.eyebrow}>Work <span>·</span> Opportunities <span>·</span> Growth</p>
-            <h1>{tr("workDashboard.workOn")}<br /><em>{tr("workBoard.yourTerms")}</em></h1>
-            <p className={styles.heroSub}>{tr("workDashboard.discoverMeaningfulOpportunitiesBuildYourRepu")}</p>
-            <form className={styles.search} onSubmit={event => { event.preventDefault(); setSearch(query.trim()); resultsRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }); }}>
-              <I name="Search" /><input value={query} onChange={event => setQuery(event.target.value)} placeholder={tr("workDashboard.whatWorkAreYouLookingFor")} aria-label={tr("earnDashboard.searchOpportunities")} /><button type="submit">Search</button>
+          <div className={styles.heroContent} data-banner-copy>
+            <h1>{tr("workDashboard.workOn")} <em>{tr("workBoard.yourTerms")}</em></h1>
+            <p className={styles.heroSub}>Jobs, orders and freelance work from women and families you can trust.</p>
+            <form className={styles.search} onSubmit={(e) => { e.preventDefault(); setSearch(query.trim()); setFilter("For you"); goJobs(); }}>
+              <I name="Search" />
+              <input value={query} onChange={(e) => setQuery(e.target.value)} placeholder={tr("workDashboard.whatWorkAreYouLookingFor")} aria-label="Search work" />
+              <button type="submit">Search</button>
             </form>
-            <div className={styles.quickFilters}>{FILTERS.slice(1).map(option => <button type="button" key={option} onClick={() => { setFilter(option); setSearch(""); setQuery(""); resultsRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }); }}><I name={option === "Remote" ? "MapPin" : option === "Women-led" ? "Heart" : "Clock"} />{option}</button>)}</div>
+            {p && (
+              <TransitionLink href="/app/work/profile" className={styles.heroStatus}>
+                <I name={p.shown_for ? "Eye" : "EyeOff"} />
+                {p.shown_for
+                  ? `People hiring can find you for ${p.shown_for} ${p.shown_for === 1 ? "skill" : "skills"}`
+                  : "People hiring cannot find you yet — switch on a skill"}
+                <I name="ChevronRight" />
+              </TransitionLink>
+            )}
           </div>
         </section>
 
-        <div className={styles.stats}>{stats.map(stat => <TransitionLink href={stat.href} className={styles.stat} key={stat.label}><span><I name={stat.icon} /></span><div><strong>{stat.value}</strong><small>{stat.label}</small></div><I name="ChevronRight" /></TransitionLink>)}</div>
-
-        {/* Added to this dashboard, never in place of anything on it: the engine,
-            reachable from the module it belongs to. */}
-        <DashboardNudge
-          preset="rem.preset.deadline"
-          icon="Briefcase" tint="var(--ux-tint-orange)" ink="var(--ux-orange-ink)"
-          labelKey="nudge.work.label" noteKey="nudge.work.note" />
-
-        <section className={styles.panel} ref={resultsRef}>
-          <PanelHeading title={tr("workDashboard.recommendedOpportunities")} href="/app/opportunities" />
-          <div className={styles.tabs}>{FILTERS.map(option => <button type="button" key={option} onClick={() => setFilter(option)} aria-pressed={filter === option}>{option}</button>)}</div>
-          {saveError && <p className={styles.saveError} role="alert">{saveError}</p>}
-          {results.length ? <div className={styles.jobs}>{results.map(job => <JobTile key={job.id} job={job} image={imageFor(job)} saved={saved[job.id] ?? Boolean(job.saved)} onSave={() => toggleSave(job)} />)}</div>
-            : <div className={styles.empty}><I name="SearchX" /><p>{tr("workDashboard.noOpportunitiesMatchThisSearch")}</p><button type="button" onClick={() => { setFilter("For You"); setSearch(""); setQuery(""); }}>{tr("findwork.clearFilters")}</button></div>}
+        {/* 2 · Right now */}
+        <section className={styles.panel} aria-labelledby="work-now">
+          <div className={styles.panelHeading}><h2 id="work-now">Your work right now</h2>
+            <TransitionLink href="/app/applications">My applications <I name="ArrowRight" /></TransitionLink></div>
+          <div className={styles.status}>
+            {status.map((s) => (
+              <TransitionLink key={s.label} href={s.href} className={`${styles.statusTile} ${s.hot ? styles.hot : ""}`}>
+                <span><I name={s.icon} /></span>
+                <strong>{s.value}</strong>
+                <small>{s.label}</small>
+              </TransitionLink>
+            ))}
+          </div>
+          {next && (
+            <TransitionLink href={next.href} className={styles.next}>
+              <span className={styles.nextIcon}><I name={next.icon} /></span>
+              <span className={styles.nextText}><b>{next.title}</b><small>{next.sub}</small></span>
+              <span className={styles.nextCta}>{next.cta} <I name="ArrowRight" /></span>
+            </TransitionLink>
+          )}
         </section>
 
-        <div className={styles.bottom}>
-          <section className={styles.panel}>
-            <div className={styles.panelHeading}><h2>{tr("workDashboard.earningsOverview")}</h2><select value={chartRange} onChange={event => setChartRange(event.target.value)} aria-label={tr("workDashboard.earningsRange")}><option value="6">{tr("workDashboard.last6Months")}</option><option value="12">{tr("workDashboard.last12Months")}</option></select></div>
-            <div className={styles.earnings}><div><strong>{money(earnings)}</strong><span>{tr("workDashboard.totalEarnings")}</span><TransitionLink href="/app/wallet">{tr("workDashboard.viewWallet")} <I name="ArrowRight" /></TransitionLink></div><div className={styles.chart}>{months.length ? months.map((amount, i) => <div key={`${labels[i]}-${i}`}><span style={{ height: `${Math.max(8, amount / max * 58)}px` }} /><small>{labels[i] || ""}</small></div>) : <p>{tr("workDashboard.yourEarningsWillAppearHere")}</p>}</div></div>
-          </section>
-          <section className={styles.panel}><PanelHeading title={tr("workDashboard.topSkillsInDemand")} href="/app/opportunities" /><div className={styles.skillChips}>{SKILLS.map(skill => <button key={skill} type="button" onClick={() => setTopic(skill)}>{skill}</button>)}</div></section>
+        {/* 3 · Jobs for you */}
+        <section className={styles.panel} ref={jobsRef} aria-labelledby="work-jobs">
+          <div className={styles.panelHeading}>
+            <h2 id="work-jobs">{search ? `Jobs for “${search}”` : "Jobs for you"}</h2>
+            <TransitionLink href="/app/opportunities">All {open.length || ""} jobs <I name="ArrowRight" /></TransitionLink>
+          </div>
+          <div className={styles.filters} role="group" aria-label="Show jobs">
+            {FILTERS.map((f) => (
+              <button type="button" key={f} onClick={() => setFilter(f)} aria-pressed={filter === f}>
+                {filter === f && <I name="Check" />}{f}
+              </button>
+            ))}
+            {search && <button type="button" onClick={() => { setSearch(""); setQuery(""); }} className={styles.clear}><I name="X" /> {search}</button>}
+          </div>
+          {saveError && <p className={styles.saveError} role="alert">{saveError}</p>}
+          {jobsSource === "loading" && !jobs.length ? (
+            <div className={styles.jobs}>{[0, 1, 2].map((i) => <span key={i} className={`ux-skeleton ${styles.jobSkeleton}`} />)}</div>
+          ) : results.length ? (
+            <div className={styles.jobs}>
+              {results.map((job) => <JobCard key={job.id} job={job} image={jobPicture(job, workCats)}
+                                             saved={saved[job.id] ?? Boolean(job.saved)} onSave={() => void toggleSave(job)} />)}
+            </div>
+          ) : (
+            <div className={styles.empty}>
+              <I name="SearchX" />
+              <p>{tr("workDashboard.noOpportunitiesMatchThisSearch")}</p>
+              <button type="button" onClick={() => { setFilter("For you"); setSearch(""); setQuery(""); }}>{tr("findwork.clearFilters")}</button>
+            </div>
+          )}
+        </section>
+
+        {/* 4 · Two ways to use Work — the section's map, by what she came to do */}
+        <div className={styles.ways}>
+          {WAYS.map((w) => (
+            <section key={w.title} className={styles.way} aria-label={w.title}>
+              <div className={styles.wayHead}>
+                <img src={w.art} alt="" loading="lazy" />
+                <div><h2>{w.title}</h2><p>{w.sub}</p></div>
+              </div>
+              <ul>
+                {w.ids.map((id) => {
+                  const n = node(id);
+                  return n ? (
+                    <li key={id}>
+                      <TransitionLink href={n.href}>
+                        <PlaceBadge node={n} size={36} radius={11} />
+                        <span className={styles.wayText}><b>{n.label}</b><small>{n.note}</small></span>
+                        <I name="ChevronRight" />
+                      </TransitionLink>
+                    </li>
+                  ) : null;
+                })}
+              </ul>
+            </section>
+          ))}
         </div>
+
+        {/* 5 · In demand */}
+        {inDemand.length > 0 && (
+          <section className={styles.panel} aria-labelledby="work-demand">
+            <div className={styles.panelHeading}><h2 id="work-demand">Skills people are asking for</h2></div>
+            <div className={styles.skillChips}>
+              {inDemand.map(([skill, n]) => (
+                <button key={skill} type="button" onClick={() => { setQuery(skill); setSearch(skill); setFilter("For you"); goJobs(); }}>
+                  <WorkThumb src={artFor(skill, "job", undefined, skill)} size={24} />{skill}<small>{n}</small>
+                </button>
+              ))}
+            </div>
+          </section>
+        )}
       </div>
 
-      <aside className={styles.rail} aria-label={tr("workDashboard.workOverview")}>
-        <blockquote className={styles.quote}><span aria-hidden="true">“</span><p>{tr("workDashboard.independentWomenCreateStrongerFamiliesAnd")}</p><cite>— WomSakhi</cite></blockquote>
-        <section className={styles.railPanel}><PanelHeading title={tr("homeRail.upcomingEvents")} href="/app/schedule" action={tr("workDashboard.viewCalendar")} /><div className={styles.schedule}>{events.upcoming.slice(0, 4).map(event => <TransitionLink href={`/app/events/${event.id}`} key={event.id}><time>{event.day} {event.month}</time><span>{event.title}<small>{event.time || event.when}</small></span></TransitionLink>)}{!events.upcoming.length && <p>{tr("workDashboard.noUpcomingEventsYet")}</p>}</div></section>
-        <section className={styles.railPanel}><PanelHeading title={tr("homeRail.yourProgress")} href="/app/profile" /><div className={styles.progressTop}><div className={styles.ring} style={{ background: `conic-gradient(var(--ux-brand) ${me.profilePct}%, var(--ux-brand-tint-2) 0)` }}><span>{me.profilePct}%</span></div><div><strong>{tr("workDashboard.yourProfileStrength")}</strong><p>{me.profilePct === 100 ? "Your profile is complete." : "Complete a few more items to get better opportunities."}</p></div></div><div className={styles.tasks}><TransitionLink href="/app/profile"><I name={me.profilePct === 100 ? "CheckCircle2" : "Circle"} /> {tr("earnhome.completeProfile")} <I name="ChevronRight" /></TransitionLink><TransitionLink href="/app/profile"><I name="Circle" /> {tr("workDashboard.addPortfolio")} <I name="ChevronRight" /></TransitionLink><TransitionLink href="/app/trust"><I name="Circle" /> {tr("workDashboard.getVerifiedReviews")} <I name="ChevronRight" /></TransitionLink><TransitionLink href="/app/work/profile"><I name="Circle" /> {tr("workDashboard.linkYourSkills")} <I name="ChevronRight" /></TransitionLink><TransitionLink href="/app/work/profile"><I name="Circle" /> {tr("workDashboard.enableAvailability")} <I name="ChevronRight" /></TransitionLink></div></section>
-        <section className={styles.reputation}><I name="Trophy" /><div><h2>{tr("workDashboard.buildYourReputation")}</h2><p>{tr("workDashboard.completeProjectsGetVerifiedReviewsAnd")}</p><TransitionLink href="/app/trust">{tr("workDashboard.seeHowItWorks")} <I name="ArrowRight" /></TransitionLink></div></section>
+      <aside className={`${styles.rail} ux-sticky-col`} aria-label="Your work profile">
+        {/* Her work profile — the same readiness as My work profile, never a different number. */}
+        <section className={styles.profile}>
+          <div className={styles.profileTop}>
+            <div className={styles.ring} style={{ background: `conic-gradient(var(--ux-brand) ${ready}%, var(--ux-brand-tint-2) 0)` }}>
+              <span>{p ? `${ready}%` : "…"}</span>
+            </div>
+            <div>
+              <b>My work profile</b>
+              <small>{!p ? "Loading…" : ready === 100 ? "Ready — people hiring can find you." : `${ready}% ready`}</small>
+            </div>
+          </div>
+          {p && (
+            <ul className={styles.facts}>
+              <li><I name="Sparkles" /> {p.skills.length} {p.skills.length === 1 ? "skill" : "skills"}, {p.shown_for} shown to people hiring</li>
+              <li><I name="BadgeCheck" /> {confirmed} {confirmed === 1 ? "job" : "jobs"} done through WomSakhi</li>
+            </ul>
+          )}
+          {nextStep && <p className={styles.nextStep}><I name="Target" /> Next: {nextStep.label}</p>}
+          <TransitionLink href={nextStep ? `/app/work/profile#${nextStep.to}` : "/app/work/profile"} className={styles.profileCta}>
+            {nextStep ? "Finish my work profile" : "Open my work profile"} <I name="ArrowRight" />
+          </TransitionLink>
+        </section>
+
+        <section className={styles.railPanel}>
+          <div className={styles.panelHeading}><h2>Coming up</h2><TransitionLink href="/app/schedule">Calendar <I name="ArrowRight" /></TransitionLink></div>
+          <div className={styles.schedule}>
+            {interviews.slice(0, 2).map((a) => (
+              <TransitionLink href="/app/applications" key={a.id} className={styles.interview}>
+                <span><I name="MessagesSquare" /></span><span>Interview — {a.title}<small>{a.org}</small></span>
+              </TransitionLink>
+            ))}
+            {events.upcoming.slice(0, 3).map((e) => (
+              <TransitionLink href={`/app/events/${e.id}`} key={e.id}>
+                <time>{e.day}<small>{e.month}</small></time><span>{e.title}<small>{e.time || e.when}</small></span>
+              </TransitionLink>
+            ))}
+            {!interviews.length && !events.upcoming.length && <p>{tr("workDashboard.noUpcomingEventsYet")}</p>}
+          </div>
+        </section>
+
+        <DashboardNudge preset="rem.preset.deadline" icon="Bell" tint="var(--ux-brand-tint)" ink="var(--ux-brand)"
+                        labelKey="nudge.work.label" noteKey="nudge.work.note" />
       </aside>
     </div>
   </HomeShell>;

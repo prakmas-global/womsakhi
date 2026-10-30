@@ -17,6 +17,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query, Request, status
 from pymongo.errors import DuplicateKeyError
 
 from app.core import mongosafe
+from app.core import community_masters
 from app.core import cache
 from app.core import idempotency
 from app.core.rbac import require_active_member
@@ -274,9 +275,12 @@ async def create_circle(
 
 async def _create_circle(body: CircleCreate, me: dict):
     uid = str(me["_id"])
+    # Topic and tags come from the masters (app/core/community_masters.py).
+    topic = await community_masters.fold_topic(body.topic)
+    tags = await community_masters.clean_tags(body.tags)
     doc = CircleModel.create_document(
         name=body.name.strip(),
-        topic=body.topic.strip(),
+        topic=topic,
         desc=body.desc.strip(),
         is_private=body.is_private,
         created_by=uid,
@@ -286,7 +290,7 @@ async def _create_circle(body: CircleCreate, me: dict):
         monthly_minor=body.monthly_minor if body.is_savings else 0,
         cover=body.cover,
         icon=body.icon,
-        tags=[t.strip().lower().lstrip("#") for t in body.tags if t.strip()],
+        tags=tags,
         guidelines=body.guidelines.strip(),
         who_posts=body.who_posts,
         review_first=body.review_first,
@@ -363,11 +367,16 @@ async def update_circle(
     circle_id: str, body: CircleUpdate, me: dict = Depends(require_active_member),
 ):
     uid = str(me["_id"])
-    tags = list(dict.fromkeys(t.strip() for t in body.tags if t.strip()))[:5]
+    current = await _circles().find_one(
+        {"_id": to_object_id(circle_id), "status": "active", "created_by": uid}, {"topic": 1, "tags": 1})
+    if not current:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "Only the circle host can change its details")
+    topic = await community_masters.fold_topic(body.topic, current.get("topic", ""))
+    tags = await community_masters.clean_tags(body.tags, current.get("tags") or [])
     updated = await _circles().find_one_and_update(
         {"_id": to_object_id(circle_id), "status": "active", "created_by": uid},
         {"$set": {
-            "name": body.name.strip(), "topic": body.topic.strip(),
+            "name": body.name.strip(), "topic": topic,
             "desc": body.desc.strip(), "guidelines": body.guidelines.strip(),
             "tags": tags, "who_posts": body.who_posts,
             "review_first": body.review_first, "tell_me": body.tell_me,

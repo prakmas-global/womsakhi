@@ -1,5 +1,8 @@
 "use client";
 
+import { PlaceBadge } from "@/components/ux/nav/Place";
+import { QuoteCard } from "./inspiration/QuoteCard";
+import { SectionBanner } from "@/components/ux/nav/SectionBanner";
 import { DefaultRail, MoreForYou } from "./fill/MoreForYou";
 import { Fragment, memo, useCallback, useEffect, useId, useMemo, useRef, useState } from "react";
 import { useT } from "@/i18n";
@@ -188,7 +191,9 @@ const RailSection = memo(function RailSection({
               className="absolute inset-y-1.5 start-0 w-[3px] rounded-full"
               style={{ background: isOpen ? "var(--ux-brand)" : "transparent",
                        transition: "background var(--ux-t) var(--ux-ease)" }} />
-        <Icon name={s.icon} className="ux-ico h-[16px] w-[16px] shrink-0" />
+        {/* The section's picture in its colour, not a thin line icon: the
+            rail is read by the picture first (components/ux/nav/places.ts). */}
+        <PlaceBadge node={s} size={28} radius={9} />
         <span className="min-w-0 flex-1 truncate text-xsm"
               style={{ fontWeight: isOpen ? 700 : 500 }}>
           {label(s)}
@@ -225,7 +230,7 @@ const RailSection = memo(function RailSection({
                     className="ux-rail-link ux-twig ux-row ux-sq relative mb-0.5 flex min-h-[34px] items-center gap-2.5 rounded-[10px] px-2.5 py-1.5"
                     style={{ color: on ? "var(--ux-brand)" : "var(--ux-ink-2)" }}
                   >
-                    <Icon name={c.icon} className="ux-ico h-[15px] w-[15px] shrink-0" />
+                    <PlaceBadge node={c} size={24} radius={7} />
                     <span className="min-w-0 flex-1 truncate text-xsm"
                           style={{ fontWeight: on ? 700 : 500 }}>
                       {label(c)}
@@ -992,12 +997,17 @@ export function Shell({
                     to a custom property, so `.ux-swap`'s own animation still
                     rides on the element the router inserts. Nothing about it
                     sits between the tap and the navigation. */}
+                {/* The section's banner — its photo or a line on its colour —
+                    above every screen in the tree (components/ux/nav/banners.ts
+                    decides where, and is the one place a sponsor would go). */}
+                {!immersive && !fit && <SectionBanner />}
                 <PageTransition>{children}</PageTransition>
-                {fill && !fit && !immersive && <MoreForYou quoteHiddenXl={!rail && !wide && !columns} />}
+                <div className="mt-6 pb-2"><QuoteCard compact={fit || immersive} /></div>
+                {fill && !fit && !immersive && <MoreForYou />}
               </main>
               {fill && !rail && !wide && !columns && !fit && !immersive && (
                 <div className="ux-swap hidden w-[320px] shrink-0 pb-[64px] xl:block">
-                  <div className="sticky top-[calc(var(--ux-topbar-h,72px)+18px)]"><DefaultRail /></div>
+                  <div className="ux-sticky-col"><DefaultRail /></div>
                 </div>
               )}
               {/*
@@ -1014,7 +1024,8 @@ export function Shell({
               {rail && (
                 <div data-rail className="ux-swap w-full shrink-0 pb-24 lg:pb-[64px] xl:w-[320px]">
                   <div className="mb-4 border-t pt-4 xl:hidden" style={{ borderColor: "var(--ux-line)" }} aria-hidden />
-                  {rail}
+                  {/* Fixed beside the scrolling middle from `xl` (see .ux-sticky-col). */}
+                  <div className="ux-sticky-col">{rail}</div>
                 </div>
               )}
             </div>

@@ -8,8 +8,9 @@ import { apiClient } from "./api";
  * verified members who want to hire, and the work chat's two special actions.
  */
 
-export interface WorkSkillOption { key: string; name: string; popular: boolean }
-export interface WorkCategory { key: string; name: string; skills: WorkSkillOption[] }
+/** `image`: the picture staff set ("" = none; screens pick one with `artFor`). */
+export interface WorkSkillOption { key: string; name: string; popular: boolean; image?: string }
+export interface WorkCategory { key: string; name: string; image?: string; skills: WorkSkillOption[] }
 
 export interface ProfileSkill {
   key: string;
@@ -22,6 +23,8 @@ export interface ProfileSkill {
   visible: boolean;
   /** She passed a WomSakhi skill test in this category. */
   verified: boolean;
+  /** The skill's picture, else its category's; "" when staff set neither. */
+  image?: string;
 }
 
 export interface WorkProfile {
@@ -46,7 +49,7 @@ export interface WorkProfileInput {
   city: string;
 }
 
-export interface TalentSkill { key: string; name: string; level: string; verified: boolean }
+export interface TalentSkill { key: string; name: string; level: string; verified: boolean; image?: string }
 export interface Talent {
   user_id: string;
   first_name: string;
@@ -62,6 +65,13 @@ export interface Talent {
   verified: boolean;
   /** Set when the searcher already has a chat with her. */
   conversation_id: string;
+  /** Photos of work she finished and chose to show — the searched kind of work first, up to 4. */
+  work?: { photo: string; title: string }[];
+  /** How many pieces she shows in all. */
+  work_count?: number;
+  /** Work she finished through WomSakhi, and how much of it the poster confirmed. */
+  jobs_done?: number;
+  jobs_confirmed?: number;
 }
 
 export interface TalentSearch {
@@ -105,27 +115,28 @@ export const apiNotInterested = (conversationId: string) =>
 /* ── staff: the masters ─────────────────────────────────────────────── */
 
 export interface AdminWorkSkill {
-  key: string; name: string; active: boolean; popular: boolean; sort: number;
+  key: string; name: string; active: boolean; popular: boolean; sort: number; image: string;
   /** Members who listed it, and how many of them switched it on. */
   members: number; shown: number;
 }
 export interface AdminWorkCategory {
-  key: string; name: string; active: boolean; sort: number; members: number; skills: AdminWorkSkill[];
+  key: string; name: string; active: boolean; sort: number; image: string; members: number; skills: AdminWorkSkill[];
 }
 
 export const apiAdminWorkTaxonomy = () =>
   apiClient.get<{ categories: AdminWorkCategory[] }>("/admin/work/taxonomy").then((r) => r.data.categories);
-export const apiAdminAddWorkCategory = (name: string) =>
-  apiClient.post<{ key: string }>("/admin/work/categories", { name }).then((r) => r.data);
-export const apiAdminEditWorkCategory = (key: string, body: Partial<Pick<AdminWorkCategory, "name" | "active" | "sort">>) =>
+export const apiAdminAddWorkCategory = (name: string, image = "") =>
+  apiClient.post<{ key: string }>("/admin/work/categories", { name, image }).then((r) => r.data);
+export const apiAdminEditWorkCategory = (key: string, body: Partial<Pick<AdminWorkCategory, "name" | "active" | "sort" | "image">>) =>
   apiClient.patch(`/admin/work/categories/${key}`, body).then((r) => r.data);
-export const apiAdminAddWorkSkill = (category: string, name: string, popular = false) =>
-  apiClient.post<{ key: string }>("/admin/work/skills", { category, name, popular }).then((r) => r.data);
-export const apiAdminEditWorkSkill = (key: string, body: Partial<Pick<AdminWorkSkill, "name" | "active" | "popular" | "sort">> & { category?: string }) =>
+export const apiAdminAddWorkSkill = (category: string, name: string, popular = false, image = "") =>
+  apiClient.post<{ key: string }>("/admin/work/skills", { category, name, popular, image }).then((r) => r.data);
+export const apiAdminEditWorkSkill = (key: string, body: Partial<Pick<AdminWorkSkill, "name" | "active" | "popular" | "sort" | "image">> & { category?: string }) =>
   apiClient.patch(`/admin/work/skills/${key}`, body).then((r) => r.data);
 
 /* ── job posts by verified members (same collection as Find work) ───── */
 
+/** The starting values of the `opportunity_types` master; screens read the live list (components/ux/work/types.ts). */
 export const JOB_KINDS = ["Job", "Freelance", "Craft order", "Internship", "Training"] as const;
 export const JOB_MODES = ["On-site", "Remote", "Hybrid"] as const;
 
@@ -163,10 +174,12 @@ export interface Applicant {
   /** Her skills this job needs, when she applied. */
   skills: { key: string; name: string; level: string; verified: boolean }[];
   note: string;
-  /** applied | shortlisted | interview | offered | closed */
+  /** applied | shortlisted | interview | offered | closed | completed */
   status: string;
   applied_on: string;
   conversation_id: string;
+  /** Work done: "" | mine (she said so — confirm it) | confirmed. */
+  done?: "" | "mine" | "confirmed";
 }
 
 export const apiPostJob = (input: JobInput) =>
@@ -177,8 +190,39 @@ export const apiMyJobPosts = (s?: AbortSignal) => get<MyJobPost[]>("/work/jobs/m
 export const apiSetJobOpen = (id: string, open: boolean) =>
   apiClient.post<{ ok: boolean }>(`/work/jobs/${id}/${open ? "reopen" : "close"}`).then((r) => r.data);
 export const apiJobApplicants = (id: string, s?: AbortSignal) => get<Applicant[]>(`/work/jobs/${id}/applicants`, s);
-export const apiMoveApplicant = (applicationId: string, status: "shortlisted" | "interview" | "offered" | "closed", note = "") =>
-  apiClient.post<{ ok: boolean }>(`/work/applications/${applicationId}/move`, { status, note }).then((r) => r.data);
+export const apiMoveApplicant = (applicationId: string, status: "shortlisted" | "interview" | "offered" | "closed" | "completed",
+                                 note = "", done?: { rating?: number | null; praise?: string[] }) =>
+  apiClient.post<{ ok: boolean }>(`/work/applications/${applicationId}/move`, { status, note, ...(done ?? {}) }).then((r) => r.data);
+
+/* ── work done through WomSakhi (backend: app/core/work_done.py) ────── */
+
+export interface WorkDoneItem {
+  id: string;
+  title: string;
+  org: string;
+  kind: string;
+  category: string;
+  pay: string;
+  place: string;
+  /** staff — a job the WomSakhi team listed; member — another member's post. */
+  posted_by: "staff" | "member";
+  skills: string[];
+  /** "Oct 2026". */
+  done: string;
+  /** The poster confirmed it; otherwise it is hers to claim until they do. */
+  confirmed: boolean;
+  rating: number | null;
+  praise: string[];
+  note: string;
+}
+
+export const apiMyWorkHistory = (s?: AbortSignal) =>
+  get<{ items: WorkDoneItem[]; praise: string[] }>("/work/history", s);
+/** She says the work she was offered is done; the poster is asked to confirm. */
+export const apiIFinished = (applicationId: string) =>
+  apiClient.post<{ ok: boolean }>(`/work/my-applications/${applicationId}/done`).then((r) => r.data);
+/** What a poster can say about finished work, in taps (mirrors work_done.PRAISE). */
+export const WORK_PRAISE = ["On time", "Great quality", "Easy to work with", "Would hire again", "Went the extra mile"];
 export const apiMessageApplicant = (applicationId: string, text: string) =>
   apiClient.post<{ conversation_id: string; delivered_to: string }>(`/work/applications/${applicationId}/message`, { text })
     .then((r) => r.data);

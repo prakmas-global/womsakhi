@@ -1,11 +1,13 @@
 "use client";
 
+import { kindLook, useOpportunityTypePictures, useOpportunityTypes } from "@/components/ux/work/types";
+import { CategoryTiles, PictureChoice, SkillChip } from "@/components/ux/work/pictures";
 import { useCallback, useMemo, useState, useSyncExternalStore } from "react";
 import { useRouter } from "next/navigation";
 import * as Icons from "@/components/ux/icons";
 
 import { Back, Btn, Card, ScreenSkeleton } from "@/components/ux/kit";
-import { Choice, Label, More, Picks, Select, Stepper, Text } from "@/components/ux/kit/form";
+import { Label, More, Picks, Stepper, Text } from "@/components/ux/kit/form";
 import { HomeShell } from "@/components/ux/home/HomeShell";
 import { ScreenHead } from "@/components/ux/learning/native";
 import { toast } from "@/components/ux/mobile/Toast";
@@ -26,13 +28,7 @@ import {
  * everything is a tap; the title fills itself in from what she picked.
  */
 
-const KINDS = [
-  { key: "Job", title: "A job", sub: "Regular work", icon: "Briefcase" },
-  { key: "Freelance", title: "Freelance", sub: "Work as it comes", icon: "Sparkles" },
-  { key: "Craft order", title: "Order to make", sub: "Pieces made for you", icon: "Package" },
-  { key: "Internship", title: "Internship", sub: "Learn on the job", icon: "GraduationCap" },
-  { key: "Training", title: "Training", sub: "You teach the work", icon: "Presentation" },
-];
+
 const WHERE = [
   { key: "On-site", label: "At my place" },
   { key: "Remote", label: "From home" },
@@ -70,6 +66,9 @@ const togglePhrase = (note: string, phrase: string) => {
 const noSubscribe = () => () => {};
 
 export default function PostJobPage() {
+  // Types are the staff-controlled master; the built-in five show until it loads.
+  const KINDS = useOpportunityTypes().map((k) => ({ key: k, ...kindLook(k) }));
+  const kindPictures = useOpportunityTypePictures();
   const router = useRouter();
   // `?id=` edits one of her posts. Read as an external store so the server
   // render (no URL) and the first client render agree.
@@ -207,15 +206,17 @@ export default function PostJobPage() {
 
       <Card className="mb-[16px]">
         <Label need>What work is it?</Label>
-        <Select value={cat} onChange={setCat} label="Category" placeholder="Choose a kind of work"
-                options={tax.data.map((c) => ({ value: c.key, label: c.name }))} />
+        <CategoryTiles cats={tax.data} value={cat} onPick={setCat}
+                       count={(c) => c.skills.filter((s) => keys.includes(s.key)).length} />
         {category ? (
-          <>
-            <p className="mt-3 text-xs" style={{ color: "var(--ux-muted)" }}>Tap the skills you need — up to 10.</p>
-            <Picks options={[...category.skills].sort((a, b) => Number(b.popular) - Number(a.popular)).map((s) => s.name)}
-                   value={names} multi label="Skills"
-                   onPick={(name) => { const s = category.skills.find((x) => x.name === name); if (s) toggleSkill(s.key); }} />
-          </>
+          <div key={category.key} className="ux-fade mt-2 rounded-[14px] p-3" style={{ background: "var(--ux-surface-2)" }}>
+            <p className="text-xs font-semibold" style={{ color: "var(--ux-ink-2)" }}>{category.name} — tap the skills you need, up to 10</p>
+            <div className="mt-2 flex flex-wrap gap-2" role="group" aria-label="Skills">
+              {[...category.skills].sort((a, b) => Number(b.popular) - Number(a.popular)).map((sk, i) => (
+                <SkillChip key={sk.key} skill={sk} cat={category} index={i} on={keys.includes(sk.key)} onClick={() => toggleSkill(sk.key)} />
+              ))}
+            </div>
+          </div>
         ) : (
           <p className="mt-2 text-xs" style={{ color: "var(--ux-muted)" }}>Pick a kind of work to see its skills.</p>
         )}
@@ -251,7 +252,7 @@ export default function PostJobPage() {
         <Label>What kind of work</Label>
         <div className="mt-1 grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
           {KINDS.map((k) => (
-            <Choice key={k.key} icon={k.icon} title={k.title} sub={k.sub} on={kind === k.key} onClick={() => setKind(k.key)} />
+            <PictureChoice key={k.key} src={kindPictures[k.key] ?? ""} title={k.title} sub={k.sub} on={kind === k.key} onClick={() => setKind(k.key)} />
           ))}
         </div>
 

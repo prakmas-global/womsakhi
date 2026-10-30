@@ -1,5 +1,6 @@
 "use client";
 
+import { PlaceMark } from "@/components/ux/nav/Place";
 import Link from "next/link";
 import type { ReactNode } from "react";
 
@@ -52,7 +53,13 @@ export function ScreenHead({
   return (
     <div className={`mb-6 lg:mb-[20px] lg:flex lg:items-end lg:justify-between lg:gap-4 ${className}`}>
       <div className="min-w-0">
-        <h1 className="ux-screen-title text-2xl font-bold" style={{ color: "var(--ux-ink)" }}>{title}</h1>
+        {/* The screen's picture in its module's colour (components/ux/nav/places.ts):
+            where she is, before a word of the title is read. Beside the title;
+            the sentence under it runs the full width on a phone. */}
+        <div className="flex min-w-0 items-center gap-3 lg:gap-3.5">
+          <PlaceMark size={44} />
+          <h1 className="ux-screen-title min-w-0 text-2xl font-bold" style={{ color: "var(--ux-ink)" }}>{title}</h1>
+        </div>
         {sub && (
           <p className="mt-2 text-[15px] leading-snug lg:mt-1.5 lg:text-xsm" style={{ color: "var(--ux-muted)" }}>
             {sub}

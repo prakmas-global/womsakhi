@@ -32,14 +32,15 @@ from bson import ObjectId
 from fastapi import APIRouter, Depends, HTTPException, Query, Request, status
 from pydantic import BaseModel, Field
 
-from app.core import skills as taxonomy
+from app.core import masters
+from app.core import skill_master, skills as taxonomy, work_done
 from app.core.audit import record
 from app.core.deps import get_current_user
 from app.core.onboarding import PROFILES, answers_of
 from app.core.permissions import require_permission
 from app.core.rbac import require_active_member, require_member_account
 from app.core.skill_proof import verified_skills
-from app.core.media import media_url
+from app.core.media import MediaRefOptional, media_url
 from app.db.mongodb import get_database
 from app.models.conversation import MemberNotificationModel, notify
 from app.models.member_conversation import MemberConversationModel as Conv
@@ -62,6 +63,9 @@ MAX_SKILLS = 20
 NEW_CHATS_PER_DAY = 20
 
 #: A passed skill test (assessments.skill) vouches for a whole category.
+#: These are the tests whose names don't match a category; any other test is
+#: matched by name to a Work skill or category in the master (`_test_category`),
+#: so a new test staff add vouches without a code change.
 _TEST_TO_CATEGORY = {
     "tailoring": "tailoring_fashion",
     "beauty": "beauty_wellness",
@@ -118,7 +122,9 @@ async def _skill_index() -> dict[str, dict]:
     """Active skills whose category is also active, by key."""
     cats, skills = await _masters()
     live = {c["key"]: c for c in cats}
-    return {s["key"]: {**s, "category_name": live[s["category"]]["name"]}
+    return {s["key"]: {**s, "category_name": live[s["category"]]["name"],
+                       # Its own picture, else its category's; "" lets the screen choose.
+                       "picture": media_url(s.get("image") or live[s["category"]].get("image"))}
             for s in skills if s["category"] in live}
 
 
@@ -130,9 +136,10 @@ async def get_taxonomy(_: dict = Depends(require_member_account)):
     by_cat: dict[str, list[dict]] = {}
     for s in skills:
         by_cat.setdefault(s["category"], []).append(
-            {"key": s["key"], "name": s["name"], "popular": bool(s.get("popular"))})
+            {"key": s["key"], "name": s["name"], "popular": bool(s.get("popular")),
+             "image": media_url(s.get("image"))})
     return {"categories": [
-        {"key": c["key"], "name": c["name"], "skills": by_cat.get(c["key"], [])}
+        {"key": c["key"], "name": c["name"], "image": media_url(c.get("image")), "skills": by_cat.get(c["key"], [])}
         for c in cats if by_cat.get(c["key"])
     ]}
 
@@ -168,17 +175,32 @@ async def _profile_doc(uid: str) -> Optional[dict]:
     return await _db()[PROFILES_COL].find_one({"user_id": uid})
 
 
+def _test_category(skill: str) -> str:
+    """The Work category a passed test in `skill` vouches for, or ""."""
+    name = " ".join(skill.split()).casefold()
+    if name in _TEST_TO_CATEGORY:
+        return _TEST_TO_CATEGORY[name]
+    hit = skill_master.by_label(name)
+    if hit:
+        return hit["group"]
+    for g in skill_master.groups():
+        if g["label"].casefold() == name or g["key"] == name.replace(" ", "_"):
+            return g["key"]
+    return ""
+
+
 def _verified_categories(rows: list[dict]) -> dict[str, str]:
     """category key -> the test's skill name, for her passed tests."""
     out: dict[str, str] = {}
     for r in rows:
-        cat = _TEST_TO_CATEGORY.get((r.get("skill") or "").casefold())
+        cat = _test_category(r.get("skill") or "")
         if cat:
             out.setdefault(cat, r.get("code", ""))
     return out
 
 
 async def _profile_view(uid: str, user: dict, doc: Optional[dict]) -> dict:
+    await skill_master.refresh()
     index = await _skill_index()
     proofs = _verified_categories((await verified_skills([uid])).get(uid, []))
     if doc is None:
@@ -196,6 +218,7 @@ async def _profile_view(uid: str, user: dict, doc: Optional[dict]) -> dict:
             "key": meta["key"], "name": meta["name"], "category": meta["category"],
             "category_name": meta["category_name"], "level": s.get("level", ""),
             "visible": bool(s.get("visible")), "verified": meta["category"] in proofs,
+            "image": meta["picture"],
         })
     return {
         "skills": skills,
@@ -295,6 +318,7 @@ async def find_talent(
         {"with_user_id": 1})}
 
     results = []
+    await skill_master.refresh()
     for d in docs:
         u = users.get(d["user_id"])
         if not u:
@@ -308,7 +332,7 @@ async def find_talent(
             if min_rank >= 0 and _LEVEL_RANK.get(s.get("level", ""), -1) < min_rank:
                 continue
             matched.append({"key": meta["key"], "name": meta["name"], "level": LEVELS.get(s.get("level", ""), ""),
-                            "verified": meta["category"] in cats})
+                            "verified": meta["category"] in cats, "image": meta["picture"]})
         if not matched:
             continue
         if verified_only and not any(m["verified"] for m in matched):
@@ -331,7 +355,35 @@ async def find_talent(
         })
     results.sort(key=lambda r: (not r["verified"], -len(r["skills"])))
     size = 24
-    return {"total": len(results), "page": page, "results": results[(page - 1) * size: page * size]}
+    shown = results[(page - 1) * size: page * size]
+    await _attach_work(shown, {index[k]["category"] for k in wanted if k in index})
+    done = await work_done.counts_for([r["user_id"] for r in shown])
+    for r in shown:
+        r["jobs_done"] = done.get(r["user_id"], {}).get("done", 0)
+        r["jobs_confirmed"] = done.get(r["user_id"], {}).get("confirmed", 0)
+    return {"total": len(results), "page": page, "results": shown}
+
+
+async def _attach_work(rows: list[dict], categories: set[str]) -> None:
+    """
+    Her own photos of work she finished — the pieces she switched to shown in
+    her portfolio (routes/portfolio.py), never the hidden ones. Up to four per
+    card, the ones in the kind of work being searched for first: a photo of a
+    blouse she stitched says more to someone hiring a tailor than any stock
+    picture, and more than any line she could write.
+    """
+    if not rows:
+        return
+    from app.routes.portfolio import COLLECTION as PORTFOLIO
+    ids = [r["user_id"] for r in rows]
+    by_user: dict[str, list[dict]] = {}
+    async for d in _db()[PORTFOLIO].find({"user_id": {"$in": ids}, "visible": True},
+                                         {"user_id": 1, "photo": 1, "title": 1, "category": 1}).sort("created_at", -1):
+        by_user.setdefault(d["user_id"], []).append(d)
+    for r in rows:
+        pieces = sorted(by_user.get(r["user_id"], []), key=lambda d: d.get("category") not in categories)
+        r["work"] = [{"photo": media_url(d.get("photo", "")), "title": d.get("title", "")} for d in pieces[:4]]
+        r["work_count"] = len(pieces)
 
 
 class StartChat(BaseModel):
@@ -477,20 +529,26 @@ async def not_interested(conversation_id: str, me: dict = Depends(require_active
 
 # ── staff: the masters ─────────────────────────────────────────────────────
 
+# `image`: an upload or a picture from the app's own library; "" goes back to
+# the automatic one (members' screens pick it from the name).
+
 class CategoryIn(BaseModel):
     name: str = Field(min_length=2, max_length=60)
+    image: MediaRefOptional = Field(default=None, max_length=500)
 
 
 class CategoryPatch(BaseModel):
     name: Optional[str] = Field(default=None, min_length=2, max_length=60)
     active: Optional[bool] = None
     sort: Optional[int] = Field(default=None, ge=0, le=10000)
+    image: MediaRefOptional = Field(default=None, max_length=500)
 
 
 class SkillIn(BaseModel):
     category: str = Field(min_length=1, max_length=64)
     name: str = Field(min_length=2, max_length=60)
     popular: bool = False
+    image: MediaRefOptional = Field(default=None, max_length=500)
 
 
 class SkillPatch(BaseModel):
@@ -499,6 +557,7 @@ class SkillPatch(BaseModel):
     active: Optional[bool] = None
     popular: Optional[bool] = None
     sort: Optional[int] = Field(default=None, ge=0, le=10000)
+    image: MediaRefOptional = Field(default=None, max_length=500)
 
 
 def _exact(name: str) -> dict:
@@ -519,11 +578,12 @@ async def admin_taxonomy(_: dict = Depends(get_current_user)):
         u = use.get(s["key"], {})
         by_cat.setdefault(s["category"], []).append({
             "key": s["key"], "name": s["name"], "active": s.get("active", True),
-            "popular": bool(s.get("popular")), "sort": s.get("sort", 0),
+            "popular": bool(s.get("popular")), "sort": s.get("sort", 0), "image": media_url(s.get("image")),
             "members": u.get("members", 0), "shown": u.get("shown", 0),
         })
     return {"categories": [{
         "key": c["key"], "name": c["name"], "active": c.get("active", True), "sort": c.get("sort", 0),
+        "image": media_url(c.get("image")),
         "skills": by_cat.get(c["key"], []),
         "members": sum(s["members"] for s in by_cat.get(c["key"], [])),
     } for c in cats]}
@@ -540,8 +600,9 @@ async def add_category(body: CategoryIn, request: Request, user: dict = Depends(
         key += "_x"
     last = await _db()[CATEGORIES].find_one(sort=[("sort", -1)])
     await _db()[CATEGORIES].insert_one({"key": key, "name": name, "sort": (last or {}).get("sort", 0) + 1,
-                                        "active": True, "created_at": _now(), "updated_at": _now()})
+                                        "image": body.image or "", "active": True, "created_at": _now(), "updated_at": _now()})
     await record(user, "work.category.add", target=key, detail=name, request=request)
+    skill_master.forget()  # onboarding offers the change at once
     return {"key": key}
 
 
@@ -556,6 +617,7 @@ async def edit_category(key: str, body: CategoryPatch, request: Request, user: d
     if not res.matched_count:
         raise HTTPException(status.HTTP_404_NOT_FOUND, "Category not found")
     await record(user, "work.category.edit", target=key, detail=str(patch), request=request)
+    skill_master.forget()  # onboarding offers the change at once
     return {"ok": True}
 
 
@@ -573,8 +635,9 @@ async def add_skill(body: SkillIn, request: Request, user: dict = Depends(get_cu
     last = await _db()[SKILLS].find_one({"category": body.category}, sort=[("sort", -1)])
     await _db()[SKILLS].insert_one({"key": key, "name": name, "category": body.category,
                                     "sort": (last or {}).get("sort", 0) + 1, "popular": body.popular,
-                                    "active": True, "created_at": _now(), "updated_at": _now()})
+                                    "image": body.image or "", "active": True, "created_at": _now(), "updated_at": _now()})
     await record(user, "work.skill.add", target=key, detail=name, request=request)
+    skill_master.forget()  # onboarding offers the change at once
     return {"key": key}
 
 
@@ -594,6 +657,7 @@ async def edit_skill(key: str, body: SkillPatch, request: Request, user: dict = 
             {"skills.key": key}, {"$set": {"skills.$[s].category": patch["category"]}},
             array_filters=[{"s.key": key}])
     await record(user, "work.skill.edit", target=key, detail=str(patch), request=request)
+    skill_master.forget()  # onboarding offers the change at once
     return {"ok": True}
 
 
@@ -624,6 +688,7 @@ async def my_skill_map(uid: str) -> dict[str, dict]:
         doc = {"skills": [{"key": k, "level": ""} for k in (answers_of(onboarding).get("skills") or [])
                           if isinstance(k, str)]}
     index = await _skill_index()
+    await skill_master.refresh()
     proofs = _verified_categories((await verified_skills([uid])).get(uid, []))
     return {s["key"]: {"key": s["key"], "name": index[s["key"]]["name"],
                        "level": LEVELS.get(s.get("level", ""), ""),
@@ -704,7 +769,6 @@ class JobIn(BaseModel):
 
 
 MAX_OPEN_POSTS = 5
-_JOB_KINDS = ("Job", "Freelance", "Craft order", "Internship", "Training")
 _JOB_MODES = ("On-site", "Remote", "Hybrid")
 
 
@@ -718,14 +782,20 @@ async def _my_job(job_id: str, uid: str) -> dict:
     return doc
 
 
-async def _job_fields(body: JobIn) -> dict:
+async def _job_fields(body: JobIn, current: Optional[dict] = None) -> dict:
     category, keys, names = await resolve_job_skills(body.category, body.skill_keys)
+    # The type comes from the `opportunity_types` master. A post keeping the
+    # type it already has is not re-checked, so disabling a type never blocks
+    # editing what was posted under it.
+    kind = (body.kind or "Job").strip()
+    if not (current and kind.lower() == (current.get("kind") or "").lower()):
+        kind = await masters.check("opportunity_types", kind, field="type of work")
     if not keys:
         raise HTTPException(status.HTTP_422_UNPROCESSABLE_ENTITY, "Pick at least one skill from the list.")
     if body.deadline and not re.fullmatch(r"\d{4}-\d{2}-\d{2}", body.deadline):
         raise HTTPException(status.HTTP_422_UNPROCESSABLE_ENTITY, "Pick the last date from the calendar.")
     return {"title": " ".join(body.title.split()), "category": category, "skill_keys": keys, "skills": names,
-            "kind": body.kind if body.kind in _JOB_KINDS else "Job",
+            "kind": kind,
             "mode": body.mode if body.mode in _JOB_MODES else "On-site",
             "location": body.location.strip(), "pay": body.pay.strip(), "openings": body.openings,
             "deadline": body.deadline, "desc": body.desc.strip(), "experience": body.experience.strip()}
@@ -772,7 +842,7 @@ async def my_jobs(me: dict = Depends(require_active_member)):
 async def edit_job(job_id: str, body: JobIn, me: dict = Depends(require_active_member)):
     from app.models.growth import parse_pay
     doc = await _my_job(job_id, str(me["_id"]))
-    f = await _job_fields(body)
+    f = await _job_fields(body, doc)
     low, high, period = parse_pay(f["pay"])
     await _db()["opportunities"].update_one({"_id": doc["_id"]}, {"$set": {
         **f, "pay_low_minor": low, "pay_high_minor": high, "pay_period": period, "updated_at": _now()}})
@@ -815,6 +885,9 @@ async def job_applicants(job_id: str, me: dict = Depends(require_active_member))
             "first_name": (u.get("full_name") or "A member").split()[0], "avatar": media_url(u.get("avatar", "")),
             "area": pr.get("area", ""), "city": pr.get("city", ""),
             "skills": a.get("skills") or [], "note": a.get("note", ""), "status": a.get("status", "applied"),
+            # Work done: confirmed by this poster, or only said by her so far.
+            "done": ("confirmed" if (a.get("completion") or {}).get("confirmed") else "mine")
+                    if a.get("status") == work_done.COMPLETED else "",
             "applied_on": created.strftime("%b %d, %Y") if isinstance(created, datetime) else "",
             "conversation_id": threads.get(a["user_id"], ""),
         })
@@ -822,8 +895,11 @@ async def job_applicants(job_id: str, me: dict = Depends(require_active_member))
 
 
 class ApplicantMove(BaseModel):
-    status: str = Field(pattern="^(shortlisted|interview|offered|closed)$")
+    status: str = Field(pattern="^(shortlisted|interview|offered|closed|completed)$")
     note: str = Field(default="", max_length=500)
+    #: Work done only: how it went, in stars and taps (app/core/work_done.py).
+    rating: Optional[int] = Field(default=None, ge=1, le=5)
+    praise: list[str] = Field(default_factory=list, max_length=5)
 
 
 async def _my_application(app_id: str, uid: str) -> tuple[dict, dict]:
@@ -844,6 +920,15 @@ async def move_applicant(app_id: str, body: ApplicantMove, me: dict = Depends(re
         raise HTTPException(status.HTTP_400_BAD_REQUEST, "She withdrew this application.")
     if body.status == "closed" and not body.note.strip():
         raise HTTPException(status.HTTP_422_UNPROCESSABLE_ENTITY, "Say why, kindly — tap a reason.")
+    if body.status == work_done.COMPLETED:
+        if not work_done.can_finish(app):
+            raise HTTPException(status.HTTP_400_BAD_REQUEST, "Offer her the work first; mark it done once she has done it.")
+        await work_done.mark_done(app, by="employer", by_name=me.get("full_name", ""),
+                                  rating=body.rating, praise=body.praise, note=body.note)
+        await notify(_db(), app["user_id"], title="Your work was confirmed",
+                     body=f"{job.get('org') or job.get('title', '')} confirmed the work is done. It is on your work profile now.",
+                     ntype="opportunity", href="/app/work/profile")
+        return {"ok": True}
     at = _now()
     await _db()["applications"].update_one({"_id": app["_id"]}, {
         "$set": {"status": body.status, "staff_note": body.note.strip(), "updated_at": at},
@@ -854,6 +939,37 @@ async def move_applicant(app_id: str, body: ApplicantMove, me: dict = Depends(re
                  body=body.note.strip() or f"{job.get('title', '')} — posted by {job.get('org', '')}.",
                  ntype="opportunity", href="/app/applications")
     return {"ok": True}
+
+
+@router.post("/my-applications/{app_id}/done", summary="I finished this work")
+async def i_finished(app_id: str, me: dict = Depends(require_active_member)):
+    """
+    She says the work is done. It shows on her profile as hers to claim until
+    whoever posted the work confirms it — and they are asked to.
+    """
+    uid = str(me["_id"])
+    try:
+        app = await _db()["applications"].find_one({"_id": ObjectId(app_id), "user_id": uid})
+    except Exception:  # noqa: BLE001
+        app = None
+    if not app:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "Application not found")
+    if app.get("status") != "offered":
+        raise HTTPException(status.HTTP_400_BAD_REQUEST, "You can mark work done once you have been offered it.")
+    await work_done.mark_done(app, by="worker", by_name=me.get("full_name", ""))
+    job = await _db()["opportunities"].find_one({"_id": ObjectId(app["opportunity_id"])}, {"owner_id": 1, "title": 1}) \
+        if ObjectId.is_valid(app.get("opportunity_id", "")) else None
+    if job and job.get("owner_id"):
+        first = (me.get("full_name") or "She").split()[0]
+        await notify(_db(), job["owner_id"], title=f"{first} says the work is done",
+                     body=f"{job.get('title', 'Your job')}: confirm it, so it counts on her work profile.",
+                     ntype="opportunity", href="/app/work/posts")
+    return {"ok": True}
+
+
+@router.get("/history", summary="My work done through WomSakhi")
+async def my_work_history(me: dict = Depends(require_member_account)):
+    return {"items": await work_done.history_for(str(me["_id"])), "praise": list(work_done.PRAISE)}
 
 
 @router.post("/applications/{app_id}/message", status_code=201, summary="Message someone who applied")

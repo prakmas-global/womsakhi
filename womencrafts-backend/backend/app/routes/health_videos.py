@@ -25,6 +25,7 @@ from bson import ObjectId
 from fastapi import APIRouter, Depends, HTTPException, Query, Request, status
 from pydantic import BaseModel, Field, field_validator
 
+from app.core import masters
 from app.core.audit import record
 from app.core.media import MediaRefOptional, media_url
 from app.core.permissions import require_permission
@@ -35,6 +36,8 @@ router = APIRouter(prefix="/health/videos", tags=["Member · Health"])
 admin_router = APIRouter(prefix="/admin/health/videos", tags=["Admin · Health videos"])
 
 VIDEOS = "health_videos"
+#: The shelves the library shipped with. The list staff edit is the
+#: `health_video_categories` master (app/core/masters.py); this tuple only seeds it.
 CATEGORIES = ("Workout", "Yoga", "Meditation", "Pregnancy", "Nutrition", "Sleep", "Fertility", "Mentoring", "Health talks")
 LEVELS = ("All levels", "Beginner", "Intermediate", "Gentle")
 
@@ -77,7 +80,8 @@ def _check_url(url: str) -> str:
 
 class VideoIn(BaseModel):
     title: str = Field(..., min_length=2, max_length=100)
-    category: Literal["Workout", "Yoga", "Meditation", "Pregnancy", "Nutrition", "Sleep", "Fertility", "Mentoring", "Health talks"]
+    #: A label from the `health_video_categories` master, checked on save.
+    category: str = Field(..., min_length=1, max_length=80)
     url: str = Field(..., max_length=400)
     duration_sec: int = Field(..., ge=10, le=4 * 3600)
     level: Literal["All levels", "Beginner", "Intermediate", "Gentle"] = "All levels"
@@ -96,7 +100,7 @@ class VideoIn(BaseModel):
 
 class VideoPatch(BaseModel):
     title: Optional[str] = Field(None, min_length=2, max_length=100)
-    category: Optional[Literal["Workout", "Yoga", "Meditation", "Pregnancy", "Nutrition", "Sleep", "Fertility", "Mentoring", "Health talks"]] = None
+    category: Optional[str] = Field(None, min_length=1, max_length=80)
     url: Optional[str] = Field(None, max_length=400)
     duration_sec: Optional[int] = Field(None, ge=10, le=4 * 3600)
     level: Optional[Literal["All levels", "Beginner", "Intermediate", "Gentle"]] = None
@@ -151,12 +155,11 @@ def _oid(video_id: str) -> ObjectId:
 # ── member ───────────────────────────────────────────────────────────────────
 
 @router.get("", response_model=list[VideoOut], summary="Health videos to watch")
-async def list_videos(category: str = Query("", max_length=20), _: dict = Depends(require_active_member)):
+async def list_videos(category: str = Query("", max_length=80), _: dict = Depends(require_active_member)):
     query: dict = {"active": True}
     if category:
-        if category not in CATEGORIES:
-            raise HTTPException(status.HTTP_422_UNPROCESSABLE_ENTITY, "Unknown category")
-        query["category"] = category
+        # Any shelf name, matched without regard to case; an unknown one finds nothing.
+        query["category"] = {"$regex": f"^{re.escape(category.strip())}$", "$options": "i"}
     rows = _db()[VIDEOS].find(query).sort([("order", 1), ("created_at", -1)]).limit(300)
     return [_out(d) async for d in rows]
 
@@ -171,6 +174,7 @@ async def admin_list(_: dict = Depends(require_permission("content.view"))):
 
 @admin_router.post("", response_model=VideoOut, status_code=status.HTTP_201_CREATED, summary="Add a health video")
 async def admin_add(body: VideoIn, request: Request, staff: dict = Depends(require_permission("content.create"))):
+    body.category = await masters.check("health_video_categories", body.category, field="category")
     now = datetime.now(timezone.utc)
     doc = {**body.model_dump(), "created_at": now, "updated_at": now, "created_by": str(staff["_id"])}
     doc["_id"] = (await _db()[VIDEOS].insert_one(doc)).inserted_id
@@ -182,6 +186,10 @@ async def admin_add(body: VideoIn, request: Request, staff: dict = Depends(requi
 async def admin_edit(video_id: str, body: VideoPatch, request: Request,
                      staff: dict = Depends(require_permission("content.edit"))):
     patch = {k: v for k, v in body.model_dump(exclude_unset=True).items()}
+    if patch.get("category") is not None:
+        current = await _db()[VIDEOS].find_one({"_id": _oid(video_id)}, {"category": 1}) or {}
+        if patch["category"].strip().lower() != (current.get("category") or "").strip().lower():
+            patch["category"] = await masters.check("health_video_categories", patch["category"], field="category")
     if not patch:
         raise HTTPException(status.HTTP_422_UNPROCESSABLE_ENTITY, "Nothing to change")
     patch["updated_at"] = datetime.now(timezone.utc)

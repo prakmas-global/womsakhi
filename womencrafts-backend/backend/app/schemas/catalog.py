@@ -48,6 +48,8 @@ class CatalogProgram(BaseModel):
     owner_id: str = ""
     teacher_name: str = "WomSakhi team"
     price_minor: int = 0
+    #: The course's thumbnail ("" = none; the screen shows its category's picture).
+    cover: str = ""
     # member-specific extras
     joined: bool = False
     #: "" | pending | active | completed | withdrawn — her enrolment, if any.

@@ -12,6 +12,9 @@ import { useResource } from "@/lib/use-resource";
 import { apiFindTalent, apiMessageTalent, apiWorkTaxonomy, type Talent, type WorkCategory } from "@/lib/work-api";
 import { Fact, MediaCard, MediaGrid } from "@/components/ux/media/MediaCard";
 import { artFor } from "@/components/ux/media/art";
+import { WorkSheet } from "@/components/ux/work/WorkGallery";
+import { categoryArt, skillArt } from "@/components/ux/work/skill-art";
+import { SkillChip, WorkThumb } from "@/components/ux/work/pictures";
 
 /**
  * Find people to hire — for any verified member: a boutique owner looking for
@@ -34,21 +37,6 @@ const LEVELS = [
 ];
 const WORK_TYPES = ["Any", "Full-time", "Part-time", "From home", "Per order"];
 
-/**
- * Kinds of work whose names carry no keyword the shared picker knows — picked
- * by hand so every tile shows the work itself.
- */
-const CATEGORY_ART: Record<string, string> = {
-  farming_animals: "/ux/art/scene-woman-planting-sapling.webp",
-  home_services: "/ux/art/circle-sharing-help.webp",
-  care_work: "/ux/art/work-dashboard-support.webp",
-  arts_performance: "/ux/art/course-confident-microphone.webp",
-  events_hospitality: "/ux/art/circle-rooftop-evening.webp",
-};
-
-const categoryArt = (c: WorkCategory) =>
-  artFor([c.name, c.skills.map((s) => s.name).join(" ")], "service", CATEGORY_ART[c.key], c.key);
-
 function TalentCard({ t, skillKeys, onSent }: { t: Talent; skillKeys: string[]; onSent: () => void }) {
   const place = [t.area, t.city].filter(Boolean).join(" · ");
   const phrases = [
@@ -57,17 +45,31 @@ function TalentCard({ t, skillKeys, onSent }: { t: Talent; skillKeys: string[]; 
     "Paid per piece", "When can you start?",
   ];
   const top = t.skills[0];
+  const work = t.work ?? [];
+  const [seeWork, setSeeWork] = useState(false);
   return (
+    <>
     <MediaCard
-      image={artFor(t.skills.map((s) => s.name), "service", undefined, t.user_id)}
-      alt={top ? top.name : t.first_name}
+      // Her own photo of finished work, when she shows one — no stock picture
+      // says as much about whether to hire her.
+      image={work[0]?.photo || (top ? skillArt(top) : artFor(t.skills.map((s) => s.name), "service", undefined, t.user_id))}
+      alt={work[0]?.title || (top ? top.name : t.first_name)}
       topLeft={t.verified ? { text: "✓ Verified skill", tone: "green" } : top ? { text: top.name, tone: "light" } : null}
       topRight={top?.level ? { text: top.level, tone: "dark" } : null}
-      overlay={t.skills.length > 1 ? <><Icons.Sparkles className="h-[13px] w-[13px]" />{t.skills.length} of the skills you asked for</> : null}
+      overlay={work.length ? <><Icons.Images className="h-[13px] w-[13px]" />Her work · {work[0].title}</>
+        : t.skills.length > 1 ? <><Icons.Sparkles className="h-[13px] w-[13px]" />{t.skills.length} of the skills you asked for</> : null}
       title={t.first_name}
       subtitle={place || "Place not given"}
       avatar={{ src: t.avatar || undefined, name: t.first_name }}
       meta={<>
+        {/* Work she finished through WomSakhi that the poster confirmed — the
+            line someone hiring trusts most (backend: app/core/work_done.py). */}
+        {(t.jobs_confirmed ?? 0) > 0 && (
+          <span className="inline-flex items-center gap-1 font-bold" style={{ color: "var(--ux-green-ink)" }}>
+            <Icons.BadgeCheck className="h-3.5 w-3.5" />
+            {t.jobs_confirmed} {t.jobs_confirmed === 1 ? "job" : "jobs"} done through WomSakhi
+          </span>
+        )}
         {t.work_types.length > 0 && <Fact icon="Briefcase">{t.work_types.join(", ")}</Fact>}
         {t.days.length > 0 && <Fact icon="Clock">{t.days.join(", ")}</Fact>}
       </>}
@@ -104,7 +106,22 @@ function TalentCard({ t, skillKeys, onSent }: { t: Talent; skillKeys: string[]; 
       {t.also.length > 0 && (
         <p className="mt-2 text-xs" style={{ color: "var(--ux-muted)" }}>Also: {t.also.join(", ")}</p>
       )}
+      {work.length > 0 && (
+        <button type="button" onClick={() => setSeeWork(true)} aria-label={`See ${t.first_name}'s work`}
+                className="ux-press mt-2.5 flex w-full items-center gap-1.5 text-start">
+          {work.slice(1, 4).map((w) => (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img key={w.photo + w.title} src={w.photo} alt={w.title} loading="lazy" decoding="async"
+                 className="h-11 w-11 shrink-0 rounded-[9px] object-cover" />
+          ))}
+          <span className="ms-1 text-xs font-bold" style={{ color: "var(--ux-brand)" }}>
+            See her work{(t.work_count ?? 0) > 1 ? ` (${t.work_count})` : ""} →
+          </span>
+        </button>
+      )}
     </MediaCard>
+    <WorkSheet userId={t.user_id} name={t.first_name} open={seeWork} onClose={() => setSeeWork(false)} />
+    </>
   );
 }
 
@@ -162,7 +179,10 @@ export default function FindPeoplePage() {
       <Card className="mb-[16px]">
         <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
           <div>
-            <Label need>What work do you need done?</Label>
+            <span className="flex items-center gap-2">
+              {category && <span className="mb-1.5"><WorkThumb src={categoryArt(category)} size={24} /></span>}
+              <Label need>What work do you need done?</Label>
+            </span>
             <Select value={cat} onChange={pickCategory} label="Category" placeholder="Choose a kind of work"
                     options={cats.map((c) => ({ value: c.key, label: c.name }))} />
           </div>
@@ -183,8 +203,8 @@ export default function FindPeoplePage() {
             <div className="mt-4">
               <Label hint="tap any — none means all of them">Skills</Label>
               <div className="flex flex-wrap gap-2">
-                {category.skills.map((s) => (
-                  <Chip key={s.key} selected={picked.includes(s.key)} onClick={() => toggleSkill(s.key)}>{s.name}</Chip>
+                {category.skills.map((s, i) => (
+                  <SkillChip key={s.key} skill={s} cat={category} index={i} on={picked.includes(s.key)} onClick={() => toggleSkill(s.key)} />
                 ))}
               </div>
             </div>

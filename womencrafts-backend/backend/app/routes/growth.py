@@ -16,6 +16,7 @@ from datetime import date, datetime, timedelta, timezone
 from bson import ObjectId
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from pydantic import BaseModel, Field
+from app.schemas.payment import PaymentReference
 
 from app.core import mongosafe
 from app.core.rbac import require_active_member, require_member_account
@@ -366,8 +367,8 @@ def _learner_view(doc: dict, upi_id: str = "") -> dict:
     return out
 
 
-class SessionPaid(BaseModel):
-    reference: str = Field("", max_length=40)
+class SessionPaid(PaymentReference):
+    pass
 
 
 @router.post("/mentors/requests/{request_id}/paid", response_model=MentorshipRequestResponse,

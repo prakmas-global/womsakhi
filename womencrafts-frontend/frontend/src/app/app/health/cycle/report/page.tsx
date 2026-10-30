@@ -1,5 +1,6 @@
 "use client";
 
+import { PlaceMark } from "@/components/ux/nav/Place";
 import Link from "next/link";
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
@@ -27,7 +28,7 @@ export default function CycleReportPage() {
     <HomeShell immersive bare>
       <div className="mx-auto max-w-[1240px] px-5 py-7 lg:px-8 print:max-w-none print:p-0">
         <div className="print:hidden">
-          <header className="mb-5 flex flex-wrap items-end justify-between gap-4"><div><p className="text-[12px] font-bold uppercase tracking-[0.16em]" style={{ color: "var(--cy-period-ink)" }}>Private health summary</p><h1 className="ux-screen-title mt-1 text-[34px] font-bold" style={{ color: "var(--ux-ink)" }}>Your cycle report</h1><p className="mt-1 text-[14px]" style={{ color: "var(--ux-muted)" }}>A clear summary for you or a clinician you choose.</p></div><button type="button" onClick={() => window.print()} className="ux-press flex min-h-12 items-center gap-2 rounded-[13px] px-5 font-semibold" style={{ background: "linear-gradient(90deg, var(--cy-period), var(--ux-fill))", color: "var(--ux-on-brand)" }}><Icons.Printer className="h-4 w-4" /> Print or save PDF</button></header>
+          <header className="mb-5 flex flex-wrap items-end justify-between gap-4"><div><p className="text-[12px] font-bold uppercase tracking-[0.16em]" style={{ color: "var(--cy-period-ink)" }}>Private health summary</p><div className="mt-1 flex min-w-0 items-center gap-3"><PlaceMark size={44} /><h1 className="ux-screen-title min-w-0 text-[34px] font-bold" style={{ color: "var(--ux-ink)" }}>Your cycle report</h1></div><p className="mt-1 text-[14px]" style={{ color: "var(--ux-muted)" }}>A clear summary for you or a clinician you choose.</p></div><button type="button" onClick={() => window.print()} className="ux-press flex min-h-12 items-center gap-2 rounded-[13px] px-5 font-semibold" style={{ background: "linear-gradient(90deg, var(--cy-period), var(--ux-fill))", color: "var(--ux-on-brand)" }}><Icons.Printer className="h-4 w-4" /> Print or save PDF</button></header>
           <CycleDesktopNav active="Report" />
         </div>
 

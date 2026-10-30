@@ -1,5 +1,6 @@
 "use client";
 
+import { PlaceMark } from "@/components/ux/nav/Place";
 import { useMemo, useRef, useState } from "react";
 
 import { apiUploadDocument, validateDocument, ACCEPTED_DOC_TYPES } from "@/lib/uploads-api";
@@ -235,7 +236,10 @@ export default function VaultPage() {
 
       <div className="mb-6 flex flex-wrap items-end justify-between gap-4 lg:mb-[20px]">
         <div>
-          <h1 className="ux-screen-title text-2xl font-bold" style={{ color: "var(--ux-ink)" }}>{tr("documentsVault.yourPapers")}</h1>
+          <div className="flex min-w-0 items-center gap-3">
+            <PlaceMark size={44} />
+            <h1 className="ux-screen-title text-2xl font-bold min-w-0" style={{ color: "var(--ux-ink)" }}>{tr("documentsVault.yourPapers")}</h1>
+          </div>
           <p className="mt-1.5 text-xsm" style={{ color: "var(--ux-muted)" }}>{tr("documentsVault.openDownloadOrReplaceAnythingYou")}</p>
 
       <SourceNote source={source} what="papers" />

@@ -225,7 +225,7 @@ function useKeepFormInView(root: RefObject<HTMLElement | null>) {
       }
       if (Math.abs(delta) < 2) return;
       let smooth = true;
-      try { smooth = !window.matchMedia("(prefers-reduced-motion: reduce)").matches; } catch { /* old engines */ }
+      try { smooth = !window.matchMedia("(prefers-reduced-motion: reduce)").matches; } catch { /* Older engines use the default smooth scrolling behavior. */ }
       window.scrollBy({ top: delta, behavior: smooth ? "smooth" : "auto" });
     };
     const soon = () => { window.clearTimeout(timer); timer = window.setTimeout(fit, 260); };

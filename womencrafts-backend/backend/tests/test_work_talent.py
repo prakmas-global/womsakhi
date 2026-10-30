@@ -47,6 +47,7 @@ async def api(local_mongo, monkeypatch):
         await db["applications"].delete_many({"user_id": {"$in": uids}})
         await db["onboarding_profiles"].delete_many({"user_id": {"$in": uids}})
         await db["work_categories"].delete_many({"name": {"$regex": "^Test category"}})
+        await db["portfolio_items"].delete_many({"user_id": {"$in": uids}})
         cache.clear()
         mongodb._client, mongodb._db = None, None
 
@@ -220,6 +221,20 @@ def _job(**over):
     return body
 
 
+async def test_home_recommendations_include_open_work(api):
+    from app.models.growth import OpportunityModel
+
+    client, db, made = api
+    _, headers = await _member(db, made, "Home Reader")
+    job = OpportunityModel.create_document(title="Test job: home recommendation", category="tailoring")
+    job_id = str((await db["opportunities"].insert_one(job)).inserted_id)
+    response = await client.get("/me/home", headers=headers)
+    assert response.status_code == 200, response.text
+    home = response.json()
+    assert "opportunities" not in home["unavailable"]
+    assert any(row["id"] == job_id for row in home["opportunities"])
+
+
 async def test_member_posts_a_job_and_matching_women_find_and_apply(api):
     client, db, made = api
     boss, hb = await _member(db, made, "Meera Boutique")
@@ -344,3 +359,113 @@ async def test_saved_jobs_are_one_list(api):
     assert ids == {job["id"], job2["id"]}
     assert "saved_opportunities" not in await db["users"].find_one({"_id": m["_id"]})
     await db["saved"].delete_many({"user_id": str(m["_id"])})
+
+
+async def test_categories_and_skills_carry_a_picture(api):
+    """Staff set a picture (an upload or library art); a skill without one shows its category's."""
+    client, db, made = api
+    _, hadmin = await _member(db, made, "Staff Admin", role="Super Admin")
+    _, hm = await _member(db, made, "Member Pictures")
+    cat = (await client.post("/admin/work/categories", json={"name": "Test category Pictures", "image": "/ux/art/earn-shop.webp"},
+                             headers=hadmin)).json()["key"]
+    own = (await client.post("/admin/work/skills", json={"category": cat, "name": "Test skill with photo",
+                                                        "image": "http://localhost:8020/media/cover/x.png"}, headers=hadmin)).json()["key"]
+    plain = (await client.post("/admin/work/skills", json={"category": cat, "name": "Test skill plain"}, headers=hadmin)).json()["key"]
+    # Library art keeps the app's own path; an upload is stored as a path, sent back as a URL.
+    assert (await db["work_categories"].find_one({"key": cat}))["image"] == "/ux/art/earn-shop.webp"
+    assert (await db["work_skills"].find_one({"key": own}))["image"] == "media/cover/x.png"
+    tax = {c["key"]: c for c in (await client.get("/work/taxonomy", headers=hm)).json()["categories"]}
+    assert tax[cat]["image"] == "/ux/art/earn-shop.webp"
+    skills = {s["key"]: s for s in tax[cat]["skills"]}
+    assert skills[own]["image"].endswith("/media/cover/x.png") and skills[plain]["image"] == ""
+    # In her profile, the plain skill borrows the category's picture.
+    got = await client.put("/work/profile", json={"skills": [{"key": plain, "level": "", "visible": False}],
+                                                  "work_types": [], "days": [], "area": "", "city": ""}, headers=hm)
+    assert got.status_code == 200, got.text
+    assert got.json()["skills"][0]["image"] == "/ux/art/earn-shop.webp"
+    # "" goes back to automatic.
+    assert (await client.patch(f"/admin/work/categories/{cat}", json={"image": ""}, headers=hadmin)).status_code == 200
+    tax = {c["key"]: c for c in (await client.get("/work/taxonomy", headers=hm)).json()["categories"]}
+    assert tax[cat]["image"] == ""
+
+
+async def test_people_hiring_see_her_shown_work_first(api):
+    """Her portfolio's shown pieces ride on her card — matching work first, hidden ones never."""
+    client, db, made = api
+    lata, hl = await _member(db, made, "Lata Tailor")
+    _, hh = await _member(db, made, "Hiring Boutique")
+    await _save(client, hl, [{"key": "blouse_stitching", "level": "5+", "visible": True}])
+    for title, cat, shown in [("Cake for a birthday", "food_cooking", True), ("Bridal blouse", "tailoring_fashion", True),
+                              ("Secret sample", "tailoring_fashion", False)]:
+        got = await client.post("/me/portfolio", json={"title": title, "photo": "/media/cover/x.png", "category": cat,
+                                                       "visible": shown}, headers=hl)
+        assert got.status_code == 201, got.text
+    found = (await client.get("/work/talent", params={"skills": "blouse_stitching"}, headers=hh)).json()
+    row = next(r for r in found["results"] if r["user_id"] == str(lata["_id"]))
+    assert [w["title"] for w in row["work"]] == ["Bridal blouse", "Cake for a birthday"]   # tailoring first
+    assert row["work_count"] == 2 and "Secret sample" not in str(row)
+    assert row["work"][0]["photo"].endswith("/media/cover/x.png")
+
+
+async def test_work_done_through_womsakhi_from_offer_to_her_profile(api):
+    """Offered → she says done → the poster confirms with stars and praise → it is on her work profile and her card."""
+    client, db, made = api
+    _, hb = await _member(db, made, "Kavya Boutique")
+    asha, ha = await _member(db, made, "Asha Stitches")
+    await _save(client, ha, [{"key": "blouse_stitching", "level": "5+", "visible": True}])
+    job = (await client.post("/work/jobs", json=_job(), headers=hb)).json()
+    await client.post(f"/growth/opportunities/{job['id']}/apply", json={"note": "Ready"}, headers=ha)
+    app_id = (await client.get(f"/work/jobs/{job['id']}/applicants", headers=hb)).json()[0]["application_id"]
+
+    # Not done before it was offered — by either side.
+    assert (await client.post(f"/work/my-applications/{app_id}/done", headers=ha)).status_code == 400
+    early = await client.post(f"/work/applications/{app_id}/move", json={"status": "completed"}, headers=hb)
+    assert early.status_code == 400
+    assert (await client.post(f"/work/applications/{app_id}/move", json={"status": "offered"}, headers=hb)).status_code == 200
+
+    # She says it is done: hers, not yet confirmed; the poster is asked.
+    assert (await client.post(f"/work/my-applications/{app_id}/done", headers=ha)).status_code == 200
+    hist = (await client.get("/work/history", headers=ha)).json()
+    assert hist["items"][0]["title"] == job["title"] and hist["items"][0]["confirmed"] is False
+    assert hist["items"][0]["posted_by"] == "member" and "Blouse stitching" in hist["items"][0]["skills"]
+    assert (await client.get("/growth/applications", headers=ha)).json()[0]["done"] == "mine"
+
+    # The poster confirms, with stars and praise (an unknown word is dropped).
+    ok = await client.post(f"/work/applications/{app_id}/move", headers=hb, json={
+        "status": "completed", "rating": 5, "praise": ["On time", "Would hire again", "Bribed me"], "note": "Lovely finish"})
+    assert ok.status_code == 200, ok.text
+    item = (await client.get("/work/history", headers=ha)).json()["items"][0]
+    assert item["confirmed"] and item["rating"] == 5 and item["praise"] == ["On time", "Would hire again"]
+    assert item["note"] == "Lovely finish"
+    assert (await client.get("/growth/applications", headers=ha)).json()[0]["done"] == "confirmed"
+
+    # Her card says so to the next person hiring.
+    _, hh = await _member(db, made, "Next Hirer")
+    found = (await client.get("/work/talent", params={"skills": "blouse_stitching"}, headers=hh)).json()
+    row = next(r for r in found["results"] if r["user_id"] == str(asha["_id"]))
+    assert row["jobs_done"] == 1 and row["jobs_confirmed"] == 1
+    # Nobody else's history leaks into hers.
+    assert (await client.get("/work/history", headers=hh)).json()["items"] == []
+
+
+async def test_staff_confirm_work_done_on_a_job_the_team_listed(api):
+    client, db, made = api
+    _, hadmin = await _member(db, made, "Staff Confirmer", role="Super Admin")
+    meena, hm = await _member(db, made, "Meena Worker")
+    posted = await client.post("/admin/growth/opportunities", json={
+        "title": "Test job: uniform stitching", "org": "Govt School", "skill_keys": ["tailoring"]}, headers=hadmin)
+    assert posted.status_code in (200, 201), posted.text
+    opp = posted.json()["id"]
+    await db["opportunities"].update_one({"_id": __import__("bson").ObjectId(opp)}, {"$set": {"status": "open"}})
+    applied = await client.post(f"/growth/opportunities/{opp}/apply", json={}, headers=hm)
+    assert applied.status_code == 201, applied.text
+    app_id = applied.json()["id"]
+    early = await client.patch(f"/admin/growth/applications/{app_id}", json={"status": "completed"}, headers=hadmin)
+    assert early.status_code == 400
+    assert (await client.patch(f"/admin/growth/applications/{app_id}", json={"status": "offered"}, headers=hadmin)).status_code == 200
+    done = await client.patch(f"/admin/growth/applications/{app_id}", json={"status": "completed", "staff_note": "Delivered 40 uniforms"}, headers=hadmin)
+    assert done.status_code == 200, done.text
+    item = (await client.get("/work/history", headers=hm)).json()["items"][0]
+    assert item["confirmed"] and item["posted_by"] == "staff" and item["org"] == "Govt School"
+    assert item["note"] == "Delivered 40 uniforms"
+    await db["applications"].delete_many({"user_id": str(meena["_id"])})

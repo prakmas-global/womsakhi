@@ -4,6 +4,10 @@ import { useCallback, useMemo, useState } from "react";
 import { SkillBadges, type VerifiedSkill } from "@/components/ux/SkillBadges";
 
 import { Btn, Card, I, formatRupees, v } from "@/components/ux/kit";
+import { pictureFor } from "@/components/ux/media/art";
+import { CatThumb } from "@/components/ux/shop/categories";
+import { StoreGallery } from "@/components/ux/shop/StoreGallery";
+import { StoreCover } from "@/components/ux/shop/StoreBar";
 
 export type PublicListing = {
   id: string;
@@ -19,6 +23,8 @@ export type PublicShop = {
   handle: string;
   name: string;
   trade?: string;
+  /** The picture staff set for her store's category ("" = none; one is picked from `trade`). */
+  trade_image?: string;
   place?: string;
   listings: PublicListing[];
   /** Skills she proved by passing a WomSakhi skill test — checkable certificates. */
@@ -28,6 +34,7 @@ export type PublicShop = {
   tagline?: string;
   logo?: string;
   cover?: string;
+  gallery?: string[];
   /** False while she has closed her shop; nobody can ask her for anything. */
   open?: boolean;
   away_line?: string;
@@ -100,14 +107,14 @@ export function ShopView({ shop }: { shop: PublicShop }) {
     }
   }, [message]);
 
+  const tradeArt = shop.trade ? pictureFor({ key: shop.handle, image: shop.trade_image }, [shop.trade], null, "product") : "";
+
   return (
     <div className="flex flex-col gap-4">
       <Card pad={0} style={{ overflow: "hidden" }}>
-        {/* Her cover photo, when she has added one in Store settings. */}
-        {shop.cover && (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img src={shop.cover} alt="" className="block h-[140px] w-full object-cover" />
-        )}
+        {/* Her cover photo, when she has added one in Store settings; else a
+            picture of what her shop sells, so the page still says it. */}
+        {(shop.cover || tradeArt) && <StoreCover store={{ cover: shop.cover ?? "" }} height={140} fallback={tradeArt} />}
         <div
           className="px-5 pb-5 pt-6"
           style={{ background: `linear-gradient(150deg, ${v("--ux-brand-tint")}, ${v("--ux-surface")})` }}
@@ -137,7 +144,9 @@ export function ShopView({ shop }: { shop: PublicShop }) {
                   orders finished, buyers returning, years in business — would
                   be a claim to a stranger that nothing backs. */}
               {shop.trade && (
-                <p className="mt-0.5 text-xsm" style={{ color: v("--ux-ink-2") }}>{shop.trade}</p>
+                <p className="mt-1 inline-flex items-center gap-1.5 text-xsm" style={{ color: v("--ux-ink-2") }}>
+                  {tradeArt && <CatThumb src={tradeArt} size={20} />}{shop.trade}
+                </p>
               )}
               {shop.place && (
                 <p className="mt-0.5 text-xs" style={{ color: v("--ux-muted") }}>{shop.place}</p>
@@ -151,6 +160,8 @@ export function ShopView({ shop }: { shop: PublicShop }) {
           </div>
         </div>
       </Card>
+
+      {!!shop.gallery?.length && <Card><StoreGallery photos={shop.gallery} name={shop.shop_name || shop.name} /></Card>}
 
       {closed && (
         <div role="status" className="flex items-start gap-3 rounded-[16px] p-4"

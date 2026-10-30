@@ -19,6 +19,7 @@ from typing import Optional
 from bson import ObjectId
 from fastapi import APIRouter, Depends, File, Form, HTTPException, Query, Request, UploadFile, status
 from pydantic import BaseModel, Field
+from app.schemas.payment import PaymentReference
 
 from app.core.config import settings
 from app.core.deps import get_current_user
@@ -750,11 +751,8 @@ def _rupees(minor: int) -> str:
     return f"₹{minor // 100:,}" if minor % 100 == 0 else f"₹{minor / 100:,.2f}"
 
 
-class PaidClaim(BaseModel):
-    #: The UPI reference (UTR) from her payment app, if she has it. Optional:
-    #: many women will not know where to find it, and the teacher checks her
-    #: own account either way.
-    reference: str = Field("", max_length=40)
+class PaidClaim(PaymentReference):
+    pass
 
 
 @router.post("/programs/{program_id}/paid", response_model=EnrollmentResponse, summary="I've paid the teacher")
@@ -1168,6 +1166,9 @@ async def leave_feedback(payload: FeedbackRequest, me: dict = Depends(require_ac
     """Her rating lands in the same feedback module the team already reviews."""
     from app.models.feedback import FeedbackModel
 
+    # The type as the `feedback_types` master spells it (app/core/masters.py), or a 422.
+    from app.core import masters
+    ftype = await masters.check("feedback_types", payload.type or "Program Feedback", field="feedback type")
     db = get_database()
     seq = await db[FeedbackModel.collection_name].count_documents({}) + 1
     sentiment = "Positive" if payload.rating >= 4 else "Neutral" if payload.rating == 3 else "Negative"
@@ -1177,7 +1178,7 @@ async def leave_feedback(payload: FeedbackRequest, me: dict = Depends(require_ac
         text=payload.text,
         user_name=me.get("full_name", ""),
         user_email=me.get("email", ""),
-        type=payload.type,
+        type=ftype,
         program=payload.program,
         rating=payload.rating,
         sentiment=sentiment,

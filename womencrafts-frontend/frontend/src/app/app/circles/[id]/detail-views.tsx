@@ -1,5 +1,6 @@
 "use client";
 
+import { topicPicture, useCircleTopics } from "@/components/ux/circle/topics";
 import Link from "next/link";
 import { FormEvent, useCallback, useState } from "react";
 
@@ -28,8 +29,9 @@ export function CircleBanner({ c, posts, events }: {
   posts: number;
   events: number;
 }) {
+  const live = useCircleTopics();
   const tr = useT();
-  const t = topicOf(c.topic);
+  const t = topicOf(c.topic, live);
   const shownPosts = Math.max(posts, c.post_count);
 
   /** Four short claims a reader can check, in the wireframe's order. */
@@ -84,9 +86,10 @@ export function CircleBanner({ c, posts, events }: {
         </div>
 
         <div className="relative hidden lg:block">
-          {c.cover ? (
+          {/* Its cover; else its topic's picture (Masters → Circle topics). */}
+          {c.cover || t.pic ? (
             // eslint-disable-next-line @next/next/no-img-element
-            <img src={c.cover} alt="" aria-hidden loading="lazy" decoding="async"
+            <img src={c.cover || topicPicture(t)} alt="" aria-hidden loading="lazy" decoding="async"
                  className="h-full w-[260px] object-cover xl:w-[320px]"
                  style={{ maskImage: "linear-gradient(100deg, transparent, #000 28%)",
                           WebkitMaskImage: "linear-gradient(100deg, transparent, #000 28%)" }} />
@@ -452,8 +455,9 @@ function PostAct({ icon, label, onClick, on, tone = "--ux-muted", disabled }: {
 export function AboutCircle({ c, posts, onEdit }: {
   c: ApiCircleDetail; posts: number; onEdit: () => void;
 }) {
+  const live = useCircleTopics();
   const tr = useT();
-  const t = topicOf(c.topic);
+  const t = topicOf(c.topic, live);
   const facts = [
     { k: "What it is about", val: t.label,                                   icon: "Tag",      tint: "--ux-brand-tint-2", ink: "--ux-brand" },
     { k: "Who can come in",  val: c.is_private ? "Members only" : "Anyone",  icon: "Lock",     tint: "--ux-tint-violet",  ink: "--ux-violet-ink" },

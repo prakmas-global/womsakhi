@@ -1,5 +1,6 @@
 "use client";
 
+import { PlaceMark } from "@/components/ux/nav/Place";
 import { use, useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import { apiListings, apiSaveListing, apiUpdateListing, type Listing } from "@/lib/shop-api";
@@ -16,10 +17,9 @@ import { useBusiness } from "@/components/ux/business";
 import { rupees } from "@/components/ux/shop/data";
 import { useT } from "@/i18n";
 import { Picks, Select, Stepper } from "@/components/ux/kit/form";
-import { CATEGORIES } from "@/components/ux/earn/data";
+import { ChooseCategoryPrompt, SubChips, useShopCategories } from "@/components/ux/shop/categories";
+import { subsFor } from "@/lib/shop-categories-api";
 
-/** Tapped, not typed — the same vocabulary as the add-something wizard. */
-const NAME_PICKS = CATEGORIES.flatMap((c) => c.subs).filter((x) => !/service|care|help|class|tuition|alteration/i.test(x));
 const MAKE_TIMES = ["Ready now", "1 day", "2 days", "3 days", "1 week", "2 weeks"];
 const ABOUT_PHRASES = [
   "Handmade", "Pure cotton", "Made to order", "Can be washed at home",
@@ -104,6 +104,14 @@ export default function ProductEditor({ params }: { params: Promise<{ id: string
     useCallback(async (s: AbortSignal) => (await apiListings(s)).find((l) => l.id === id) ?? null, [id]),
     null as Listing | null,
   );
+  // Filed under her shop's one category: which kind of product this is.
+  // Tapped, not typed: the quick names are her category's own sub-categories.
+  const cats = useShopCategories();
+  const productSubs = useMemo(() => subsFor(cats.storeCat, "product"), [cats.storeCat]);
+  const NAME_PICKS = productSubs.map((x) => x.name);
+  const [subPick, setSubPick] = useState<string | null>(null);
+  const sub = subPick ?? raw.data?.subcategory_key ?? "";
+  const subOk = productSubs.some((x) => x.key === sub);
   const [photos, setPhotos] = useState<string[] | null>(null);
   const current = photos ?? (raw.data ? (raw.data.photos?.length ? raw.data.photos : raw.data.photo ? [raw.data.photo] : []) : []);
   const [photoBusy, setPhotoBusy] = useState(false);
@@ -116,7 +124,8 @@ export default function ProductEditor({ params }: { params: Promise<{ id: string
     setPhotoProblem("");
     if (isNew) return; // saved with the listing
     try {
-      await apiUpdateListing(id, { photo: next[0] ?? "", photos: next });
+      // PATCH takes the whole listing's identity; kind and title ride along.
+      await apiUpdateListing(id, { kind: "product", title: raw.data?.title || form.name.trim(), photo: next[0] ?? "", photos: next });
       refetch();
     } catch (e) {
       setPhotos(prev);
@@ -157,8 +166,9 @@ export default function ProductEditor({ params }: { params: Promise<{ id: string
     if (form.name.trim().length < 3) m.push("a name");
     if (price_minor <= 0) m.push("a price");
     if (form.about.trim().length < 20) m.push("a description buyers can read");
+    if (isNew && !subOk) m.push("what kind of product it is");
     return m;
-  }, [form, price_minor]);
+  }, [form, price_minor, isNew, subOk]);
 
   /** Save the product. This used to set a flag and send nothing. */
   async function save() {
@@ -171,6 +181,8 @@ export default function ProductEditor({ params }: { params: Promise<{ id: string
       price_minor,
       stock: Number(form.stock) || 0,
       ...(isNew ? { photo: current[0] ?? "", photos: current } : {}),
+      // Sent when she has chosen (or must choose): the server checks it sits in her shop's category.
+      ...(subOk && (isNew || subPick !== null) ? { category_key: cats.storeCat?.key ?? "", subcategory_key: sub } : {}),
     };
     try {
       if (isNew) await apiSaveListing(body);
@@ -301,9 +313,12 @@ export default function ProductEditor({ params }: { params: Promise<{ id: string
     >
       <Back to="/app/documents" label={tr("documentsProduct.yourShop")} className="mb-4" />
 
-      <h1 className="text-2xl font-bold" style={{ color: "var(--ux-ink)" }}>
-        {isNew ? "Add something you sell" : form.name || "Edit product"}
-      </h1>
+      <div className="flex min-w-0 items-center gap-3">
+        <PlaceMark size={44} />
+        <h1 className="text-2xl font-bold min-w-0" style={{ color: "var(--ux-ink)" }}>
+          {isNew ? "Add something you sell" : form.name || "Edit product"}
+        </h1>
+      </div>
       <p className="mb-[20px] mt-1.5 text-xsm" style={{ color: "var(--ux-muted)" }}>
         {isNew ? tr("documentsProduct.fourThingsAndItIsListed")
               : tr("documentsProduct.changesReachBuyersStraightAway")}
@@ -377,7 +392,17 @@ export default function ProductEditor({ params }: { params: Promise<{ id: string
         <div className="space-y-4">
           <Field label={tr("documentsProduct.whatIsItCalled")} hint={tr("documentsProduct.whatABuyerWouldSearchFor")}>
             <TextInput value={form.name} onChange={set("name")} placeholder={tr("documentsProduct.cottonKurta")} />
-            {!form.name.trim() && <Picks options={NAME_PICKS} value={form.name} onPick={(x) => put("name", x)} label="Quick names" />}
+            {!form.name.trim() && NAME_PICKS.length > 0 && (
+              <Picks options={NAME_PICKS} value={form.name} label="Quick names"
+                     onPick={(x) => { put("name", x); setSubPick(productSubs.find((r) => r.name === x)?.key ?? sub); }} />
+            )}
+          </Field>
+
+          <Field label={cats.storeCat ? `What kind of ${cats.storeCat.name.toLowerCase()}?` : "What kind of product?"}
+                 hint={cats.storeCat ? `Your shop sells ${cats.storeCat.name}.` : undefined}>
+            {cats.data && !cats.storeCat ? <ChooseCategoryPrompt compact />
+              : <SubChips subs={productSubs} value={sub} parent={cats.storeCat} onPick={(x) => { setSubPick(x.key); setSaved(false); }}
+                          empty={cats.storeCat ? `${cats.storeCat.name} doesn't take products. List it as a service instead.` : "Loading…"} />}
           </Field>
 
           <div className="grid gap-4 sm:grid-cols-2">

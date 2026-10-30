@@ -7,6 +7,7 @@ import { ShieldAlert } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
 import { isModuleAllowed, moduleForPath } from "@/lib/modules";
 import Sidebar from "@/components/layout/Sidebar";
+import { QuoteCard } from "@/components/ux/inspiration/QuoteCard";
 import Topbar from "@/components/layout/Topbar";
 import { CustomiseBar } from "@/layout-engine";
 import SkipToContent from "@/components/layout/SkipToContent";
@@ -109,6 +110,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         <main id="content" tabIndex={-1} className="px-3 pb-24 pt-[calc(var(--ux-topbar-h)+14px)] sm:px-5 sm:pt-[calc(var(--ux-topbar-h)+18px)]">
           <div key={pathname} className="wc-page-enter">
             {allowed ? children : <AccessDenied />}
+            {allowed && <div className="mt-6"><QuoteCard compact /></div>}
           </div>
         </main>
       </div>

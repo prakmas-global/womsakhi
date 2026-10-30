@@ -259,7 +259,7 @@ export default function Profile() {
       </div>
 
       {tab === "Overview" && (
-        <div className="grid grid-cols-1 gap-[16px] lg:grid-cols-[minmax(0,1fr)_320px]">
+        <div className="ux-split-lg grid grid-cols-1 gap-[16px] lg:grid-cols-[minmax(0,1fr)_320px]">
           {/* On a phone: the steps as one grouped list, each with its Add. */}
           <div className="lg:hidden">
             <GroupLabel sub={left.length ? `${left.length} still to fill in` : "Nothing left to do"}>

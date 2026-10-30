@@ -9,6 +9,8 @@ class Settings(BaseSettings):
     JWT_SECRET_KEY: str
     JWT_ALGORITHM: str = "HS256"
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 30
+    # Blank disables protected operational metrics; set through a secret manager.
+    MONITORING_TOKEN: str = ""
 
     # Which browser origins may call this API.
     #
@@ -175,6 +177,8 @@ class Settings(BaseSettings):
 
     # Payments. "sandbox" needs no account and runs the full journey locally;
     # switch to "razorpay" (or another adapter) once keys exist.
+    # Current release: pay the recipient externally by UPI and confirm receipt manually.
+    DIRECT_UPI_ONLY: bool = True
     PAYMENT_PROVIDER: str = "sandbox"
     PAYMENT_CURRENCY: str = "INR"
     PAYMENT_WEBHOOK_SECRET: str = "dev-webhook-secret-change-me"
@@ -356,30 +360,31 @@ class Settings(BaseSettings):
         """
         problems: list[str] = []
 
-        if self.PAYMENT_WEBHOOK_SECRET in {"", "dev-webhook-secret-change-me"}:
-            problems.append(
-                "PAYMENT_WEBHOOK_SECRET is unset or still the placeholder. Anyone "
-                "who can reach the webhook URL could forge a 'payment captured' "
-                "event and be given goods for free. Copy the signing secret from "
-                "the payment provider's dashboard."
-            )
-        if self.PAYMENT_PROVIDER.strip().lower() == "sandbox":
-            problems.append(
-                "PAYMENT_PROVIDER is 'sandbox'. Checkout, withdrawals and savings "
-                "circles move numbers in the database and no real money. Set it to "
-                "'razorpay' and supply RAZORPAY_KEY_ID / RAZORPAY_KEY_SECRET."
-            )
+        if not self.DIRECT_UPI_ONLY:
+            if self.PAYMENT_WEBHOOK_SECRET in {"", "dev-webhook-secret-change-me"}:
+                problems.append(
+                    "PAYMENT_WEBHOOK_SECRET is unset or still the placeholder. Anyone "
+                    "who can reach the webhook URL could forge a 'payment captured' "
+                    "event and be given goods for free. Copy the signing secret from "
+                    "the payment provider's dashboard."
+                )
+            if self.PAYMENT_PROVIDER.strip().lower() == "sandbox":
+                problems.append(
+                    "PAYMENT_PROVIDER is 'sandbox'. Checkout, withdrawals and savings "
+                    "circles move numbers in the database and no real money. Set it to "
+                    "'razorpay' and supply RAZORPAY_KEY_ID / RAZORPAY_KEY_SECRET."
+                )
+            if self.PAYMENT_PROVIDER.strip().lower() == "razorpay" and not (
+                self.RAZORPAY_KEY_ID and self.RAZORPAY_KEY_SECRET
+            ):
+                problems.append(
+                    "PAYMENT_PROVIDER is 'razorpay' but RAZORPAY_KEY_ID / "
+                    "RAZORPAY_KEY_SECRET are empty, so every payment will fail."
+                )
         if self.PAYMENT_PROVIDER.strip().lower() not in {"sandbox", "razorpay"}:
             problems.append(
                 f"PAYMENT_PROVIDER is '{self.PAYMENT_PROVIDER}', but no such adapter is installed. "
-                "Use 'razorpay' for launch or add and test the requested provider adapter."
-            )
-        if self.PAYMENT_PROVIDER.strip().lower() == "razorpay" and not (
-            self.RAZORPAY_KEY_ID and self.RAZORPAY_KEY_SECRET
-        ):
-            problems.append(
-                "PAYMENT_PROVIDER is 'razorpay' but RAZORPAY_KEY_ID / "
-                "RAZORPAY_KEY_SECRET are empty, so every payment will fail."
+                "Choose an installed adapter before enabling future gateway checkout."
             )
         # Deliberately asks "does mail REACH her?", not "is a provider set?".
         #

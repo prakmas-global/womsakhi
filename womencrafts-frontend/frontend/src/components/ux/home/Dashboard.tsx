@@ -14,6 +14,8 @@ import { apiDismissNextStep, type ApiHome } from "@/lib/me-api";
 import { EngineNudge } from "@/components/ux/reminders/EngineNudge";
 import { FirstSteps, PersonalCards, ShopFeed, WhyLine, orderBlocks } from "./Personal";
 import { QuickAccessGrid } from "./QuickAccess";
+import { StartFromHome } from "./StartFromHome";
+import { ModulePictures } from "./ModulePictures";
 import { artFor } from "@/components/ux/media/art";
 
 /** A reason line under a panel's heading, only on a panel her answers brought forward. */
@@ -200,7 +202,7 @@ function Hero({ first }: { first: string }) {
   const greeting = useGreeting();
 
   return (
-    <section className="ux-sq relative isolate overflow-hidden rounded-[20px]"
+    <section data-banner="home" className="ux-sq relative isolate overflow-hidden rounded-[20px]"
              style={{ border: "1px solid var(--ux-line)" }}>
       {/*
         `object-cover` at 2.8:1 against the art's own 2.5:1, which trims about
@@ -428,21 +430,6 @@ function Journey({ h, why }: { h: ApiHome; why?: string }) {
  */
 function Stats({ h }: { h: ApiHome }) {
   const tr = useT();
-  const money = h.earnings?.money;
-  const earned = money?.earned_this_month_minor ?? 0;
-
-  /**
-   * The month-on-month change, as the server computed it — shown only once
-   * there is something to compare.
-   *
-   * `delta_pct` is −100 for a woman who earned ₹3,000 last month and nothing
-   * yet this month, which is arithmetically true and reads, on the 2nd, as the
-   * news that her business has collapsed. A month that has not started is not a
-   * collapse, so the comparison waits until there is money on both sides of it.
-   */
-  const delta = h.earnings?.delta_pct ?? null;
-  const showDelta = delta !== null && earned > 0;
-
   const circles = rowsOf<HomeCircle>(h.circles).filter((c) => c.joined);
 
   type Tile = {
@@ -454,26 +441,6 @@ function Stats({ h }: { h: ApiHome }) {
   };
 
   const tiles: Tile[] = [
-    {
-      icon: "TrendingUp", tint: "--ux-tint-green", ink: "--ux-green-ink", label: "Earned",
-      // "₹0" reads two ways and only one of them is true — she earned nothing
-      // this month, or a formatter divided the paise twice. This screen has
-      // shipped the second bug before, so a legitimate zero is said in words.
-      value: earned > 0 ? formatRupees(earned) : "Nothing yet",
-      note: earned > 0 ? "This month" : "Ask to be paid",
-      delta: showDelta ? delta : null,
-      href: earned > 0 ? "/app/wallet" : "/app/collect",
-      gone: !money,
-    },
-    {
-      icon: "BadgeIndianRupee", tint: "--ux-tint-amber", ink: "--ux-amber-ink", label: tr("walletStatement.onItsWay"),
-      // Zero here is a real answer, not a missing one — so it is said in words
-      // rather than as "₹0", which reads like a formatter that ran twice.
-      value: (money?.pending_minor ?? 0) > 0 ? formatRupees(money?.pending_minor ?? 0) : "Nothing due",
-      note: tr("dashboard.moneyOwedToYou"),
-      href: "/app/wallet",
-      gone: !money,
-    },
     {
       icon: "UsersRound", tint: "--ux-tint-pink", ink: "--ux-pink-ink", label: tr("dashboard.myCircles"),
       value: String(circles.length),
@@ -1180,6 +1147,10 @@ export function Dashboard() {
       */}
       <h2 className="sr-only">Your WomSakhi home</h2>
       <Hero first={first} />
+      <StartFromHome />
+      {/* The whole app as eight pictures, before any of her numbers: it needs
+          no data, so it is here even when the rest of the page fails to load. */}
+      <ModulePictures />
 
       {!home ? (
         source === "loading" ? <BodySkeleton /> : <LoadFailed onRetry={refetch} />

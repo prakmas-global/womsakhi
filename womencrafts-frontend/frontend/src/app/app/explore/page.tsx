@@ -1,5 +1,9 @@
 "use client";
 
+import { PlaceBadge, PlaceMark, PlaceTile } from "@/components/ux/nav/Place";
+import { SECTIONS } from "@/components/ux/nav-tree";
+import { TransitionLink } from "@/components/ux/TransitionLink";
+import { useNavLabel } from "@/components/ux/use-nav-label";
 import { Suspense, useMemo, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import * as Icons from "@/components/ux/icons";
@@ -64,6 +68,41 @@ function FindCard({ f }: { f: Find }) {
 }
 
 /** A grid of finds, picture first, on every screen size. */
+/**
+ * Every part of WomSakhi as pictures — what "View all 30+ modules" on Home
+ * opens onto.
+ *
+ * One row per section in its colour, each place a picture tile with its name
+ * under it (components/ux/nav/places.ts). A woman who cannot read the rail
+ * still sees the whole app here: on a phone each row slides sideways so the
+ * page stays eight rows tall, not eighty tiles; from `lg` it is a grid.
+ */
+function AllPlaces() {
+  const nav = useNavLabel();
+  return (
+    <div className="mb-8 space-y-6" data-all-places>
+      {SECTIONS.map((s) => {
+        const kids = (s.children ?? []).filter((c) => !c.unlisted);
+        return (
+          <section key={s.id} aria-labelledby={`all-${s.id}`}>
+            <h2 id={`all-${s.id}`} className="mb-2.5 flex items-center gap-2.5 text-base font-bold" style={{ color: "var(--ux-ink)" }}>
+              <PlaceBadge node={s} size={32} />
+              <TransitionLink href={s.href} className="hover:underline">{nav.label(s)}</TransitionLink>
+            </h2>
+            <div className="-mx-1 flex snap-x gap-2.5 overflow-x-auto px-1 pb-1 [scrollbar-width:thin] lg:mx-0 lg:grid lg:grid-cols-5 lg:overflow-visible lg:px-0 xl:grid-cols-6">
+              {kids.map((c) => (
+                <div key={c.id} className="w-[108px] shrink-0 snap-start lg:w-auto">
+                  <PlaceTile node={c} size="sm" />
+                </div>
+              ))}
+            </div>
+          </section>
+        );
+      })}
+    </div>
+  );
+}
+
 function Finds({ items }: { items: Find[] }) {
   return <MediaGrid>{items.map((f) => <FindCard key={f.id} f={f} />)}</MediaGrid>;
 }
@@ -179,7 +218,10 @@ function Discover() {
         </div>
       }
     >
-      <h1 className="ux-screen-title text-2xl font-bold" style={{ color: "var(--ux-ink)" }}>Everything</h1>
+      <div className="flex min-w-0 items-center gap-3">
+        <PlaceMark size={44} />
+        <h1 className="ux-screen-title text-2xl font-bold min-w-0" style={{ color: "var(--ux-ink)" }}>Everything</h1>
+      </div>
       <p className="mt-2 text-xsm lg:mt-1.5" style={{ color: "var(--ux-muted)" }}>
         Courses, work, mentors, circles and events — {FINDS.length} things in one place.
       </p>
@@ -195,6 +237,9 @@ function Discover() {
           </p>
         </Card>
       )}
+
+      {/* The app itself, before what is in it: every part as a picture. */}
+      {!filtering && <div className="mt-5"><AllPlaces /></div>}
 
       <ChipRow className="mb-6 mt-4 items-center lg:mb-[16px] lg:mt-[20px]">
         {KINDS.map((k) => (

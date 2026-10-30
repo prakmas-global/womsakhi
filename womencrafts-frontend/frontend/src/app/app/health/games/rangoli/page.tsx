@@ -131,7 +131,7 @@ export default function RangoliPage() {
     <GameFrame title="Colour the rangoli" sub="Pick a colour, then tap the petals. There is no wrong way."
                game="rangoli" result={() => ({ score: Object.keys(fills).length, scoreLabel: `${Object.keys(fills).length} petals coloured` })}
                feel={feel} setFeel={setFeel} again={() => { setHistory([]); keep({}); }}>
-      <div className="grid gap-[16px] lg:grid-cols-[minmax(0,1fr)_300px]">
+      <div className="ux-split-lg grid gap-[16px] lg:grid-cols-[minmax(0,1fr)_300px]">
         <section className={`${s.stage} p-3 sm:p-5`}>
           <svg viewBox="-210 -210 420 420" className={s.paper} role="img" aria-label="A rangoli to colour">
             <rect x="-210" y="-210" width="420" height="420" rx="24" fill="#fffaf3" />

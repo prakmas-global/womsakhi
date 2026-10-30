@@ -6,7 +6,7 @@ import type { InputHTMLAttributes, TextareaHTMLAttributes } from "react";
 /** Shared control chrome — every text-like control in the app uses these. */
 export const labelClass = "mb-1.5 block text-sm font-semibold text-ink-muted";
 export const controlClass =
-  "wc-inset w-full rounded-xl px-4 py-2.5 text-sm text-ink placeholder-ink-subtle outline-none transition focus:ring-2 focus:ring-brand-500/40";
+  "wc-field min-h-11 w-full rounded-xl px-4 py-2.5 text-sm text-ink placeholder-ink-subtle outline-none transition-colors";
 export const errorClass = "mt-1 text-xs font-medium text-status-danger-ink";
 export const hintClass = "mt-1 text-xs text-ink-subtle";
 
@@ -57,7 +57,7 @@ export default function Input({
    */
   const autoId = useId();
   const id = props.id ?? autoId;
-  const describedBy = error ? `${id}-error` : hint ? `${id}-hint` : undefined;
+  const describedBy = [props["aria-describedby"], error ? `${id}-error` : hint ? `${id}-hint` : undefined].filter(Boolean).join(" ") || undefined;
 
   return (
     <div className={className}>
@@ -71,14 +71,15 @@ export default function Input({
           <Icon className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-ink-subtle" />
         )}
         <input
-          aria-invalid={error ? true : undefined}
           // Ties the hint or error to the control, so it is read out as part of
           // the field rather than being loose text nearby that never gets read.
-          aria-describedby={describedBy}
           {...props}
           id={id}
+          required={required}
+          aria-invalid={error ? true : props["aria-invalid"]}
+          aria-describedby={describedBy}
           className={`${controlClass} ${Icon ? "pl-11" : ""} ${
-            error ? "ring-2 ring-rose-400/50" : ""
+            error ? "is-invalid" : ""
           }`}
         />
       </div>
@@ -113,7 +114,7 @@ export function Textarea({
 } & TextareaHTMLAttributes<HTMLTextAreaElement>) {
   const autoId = useId();
   const id = props.id ?? autoId;
-  const describedBy = error ? `${id}-error` : hint ? `${id}-hint` : undefined;
+  const describedBy = [props["aria-describedby"], error ? `${id}-error` : hint ? `${id}-hint` : undefined].filter(Boolean).join(" ") || undefined;
 
   return (
     <div className={className}>
@@ -124,11 +125,12 @@ export function Textarea({
       )}
       <textarea
         rows={rows}
-        aria-invalid={error ? true : undefined}
-        aria-describedby={describedBy}
         {...props}
         id={id}
-        className={`${controlClass} resize-none ${error ? "ring-2 ring-rose-400/50" : ""}`}
+        required={required}
+        aria-invalid={error ? true : props["aria-invalid"]}
+        aria-describedby={describedBy}
+        className={`${controlClass} resize-y ${error ? "is-invalid" : ""}`}
       />
       {error ? (
         <p id={`${id}-error`} className={errorClass}>

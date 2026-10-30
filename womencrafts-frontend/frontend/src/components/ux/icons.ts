@@ -16,6 +16,25 @@
  */
 export {
   Activity,
+  // Get help: the helpline pictures
+  Ambulance,
+  Hand,
+  Venus,
+  // a member's work, as photos
+  Images,
+  // My Khata's PIN keypad
+  Delete,
+  // Rent & borrow
+  CookingPot,
+  Plug,
+  Luggage,
+  CalendarRange,
+  PackageCheck,
+  // My Khata's chits: how the pot is given, and closing a record
+  ListOrdered,
+  Dices,
+  ArchiveRestore,
+  ArrowUpDown,
   AlarmClock,
   AlertCircle,
   AlertTriangle,
@@ -308,6 +327,8 @@ export {
   // Health Records
   FileCheck,
   Ruler,
+  // Shop categories (staff pick these icons)
+  PartyPopper,
   // the phone's More sheet
   Menu,
 } from "lucide-react";

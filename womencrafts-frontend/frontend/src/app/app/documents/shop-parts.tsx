@@ -3,7 +3,8 @@
 import { memo, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import * as Icons from "@/components/ux/icons";
-import { artFor } from "@/components/ux/media/art";
+import { listingPicture } from "@/components/ux/shop/categories";
+import type { ShopCategory } from "@/lib/shop-categories-api";
 
 import type { Listing, ShopOrder, ShopSummary } from "@/lib/shop-api";
 import { validateImage } from "@/lib/uploads-api";
@@ -162,9 +163,11 @@ const LABEL: Record<string, string> = {
 /** Same as `OrderCard`: the listing comes back out, so the parent's four
  *  handlers can be stable and the memo can actually hit. */
 export const ListingCard = memo(function ListingCard({
-  l, onPhoto, onStock, onPause, onShare, onDelete, busy,
+  l, onPhoto, onStock, onPause, onShare, onDelete, busy, categories,
 }: {
   l: Listing;
+  /** The shop category tree, so a listing without a photo shows its sub-category's picture. */
+  categories?: ShopCategory[] | null;
   onPhoto: (l: Listing, file: File) => void;
   onStock: (l: Listing, next: number) => void;
   onPause: (l: Listing) => void;
@@ -224,7 +227,7 @@ export const ListingCard = memo(function ListingCard({
                 her own on top of it. */}
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img loading="lazy" decoding="async" alt=""
-                 src={artFor([l.title, l.category, l.kind], l.kind === "service" ? "service" : "product", null, l.id)}
+                 src={listingPicture({ ...l, photo: "" }, categories)}
                  className="absolute inset-0 h-full w-full object-cover opacity-60" />
             <button type="button" data-over={over}
                     onClick={() => file.current?.click()}

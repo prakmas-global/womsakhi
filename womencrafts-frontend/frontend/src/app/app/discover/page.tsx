@@ -1,5 +1,7 @@
 "use client";
 
+import { Img } from "@/components/ux/media/Img";
+import { PlaceMark } from "@/components/ux/nav/Place";
 import Image from "next/image";
 import { useT } from "@/i18n";
 import Link from "next/link";
@@ -110,9 +112,9 @@ export default function DiscoverPage() {
   const visible = opportunities.slice(0, 8);
 
   return <HomeShell columns active="/app/discover" skeleton="grid" loadFailed="your recommendations"><main className={styles.page} data-dashboard="discover">
-    <section className={styles.hero} aria-labelledby="chosen-title">
+    <section data-banner data-page-hero className={styles.hero} aria-labelledby="chosen-title">
       <Image src="/ux/discover/chosen-hero-v1.webp" alt={tr("discover.aConfidentWomanLookingTowardNew")} fill priority sizes="(max-width: 760px) 100vw, 80vw" />
-      <div className={styles.heroShade} /><div className={styles.heroCopy}><p><Link href="/app">Home</Link> / Chosen for you</p><h1 id="chosen-title">Chosen <em>{tr("discover.forYou2")}</em></h1><span>{tr("discover.curatedOpportunitiesPeopleAndResourcesThat")}</span></div>
+      <div className={styles.heroShade} /><div className={styles.heroCopy}><p><Link href="/app">Home</Link> / Chosen for you</p><div className="mb-2"><PlaceMark size={44} /></div><h1 id="chosen-title">Chosen <em>{tr("discover.forYou2")}</em></h1><span>{tr("discover.curatedOpportunitiesPeopleAndResourcesThat")}</span></div>
       <p className={styles.heroNote}>Opportunities<br />{tr("discover.findYouToo")}<br />Here <Heart /></p><blockquote>{tr("discover.theRightOpportunityAtTheRight")}<cite>— WomSakhi</cite></blockquote>
     </section>
 
@@ -123,12 +125,12 @@ export default function DiscoverPage() {
     </section>
 
     <section><SectionHead icon={UserRound} title={tr("discover.womenLikeYou2")} copy="Connect with women who share similar interests, skills or goals." href="/app/mentors" />
-      <div className={styles.peopleGrid}>{rails.data.women.slice(0, 4).map(woman => <article className={styles.person} key={woman.id}>{woman.photo ? <Image src={woman.photo} alt="" width={54} height={54} sizes="(max-width: 767px) 50vw, (max-width: 1023px) 33vw, 240px" /> : <span className={styles.initial}>{woman.title.charAt(0)}</span>}<div><h3>{woman.title}</h3><p>{woman.detail}</p><small><MapPin />{woman.meta || "WomSakhi community"}</small></div><div className={styles.tags}>{(woman.tags ?? []).slice(0, 3).map(tag => <span key={tag}>{tag}</span>)}</div><Link href={woman.href}>Connect</Link></article>)}</div>
+      <div className={styles.peopleGrid}>{rails.data.women.slice(0, 4).map(woman => <article className={styles.person} key={woman.id}>{woman.photo ? <Img src={woman.photo} width={54} height={54} /> : <span className={styles.initial}>{woman.title.charAt(0)}</span>}<div><h3>{woman.title}</h3><p>{woman.detail}</p><small><MapPin />{woman.meta || "WomSakhi community"}</small></div><div className={styles.tags}>{(woman.tags ?? []).slice(0, 3).map(tag => <span key={tag}>{tag}</span>)}</div><Link href={woman.href}>Connect</Link></article>)}</div>
     </section>
 
     <div className={styles.bottomGrid}>
-      <section className={styles.panel}><SectionHead icon={TrendingUp} title={tr("discover.trendingForYou")} copy="Popular learning resources from your network." href="/app/programs" /><div className={styles.trending}>{rails.data.learn.slice(0, 3).map((item) => <Link href={item.href} key={item.id}><Image src={pictureOf(item)} alt="" width={94} height={58} sizes="(max-width: 767px) 50vw, (max-width: 1023px) 33vw, 240px" /><span><b>{item.title}</b><small>{item.detail}</small></span><ArrowRight /></Link>)}</div></section>
-      <section className={styles.panel}><SectionHead icon={UsersRound} title={tr("discover.communitiesYouMayLike")} copy="Join conversations, ask questions, and grow together." href="/app/circles" /><div className={styles.communities}>{rails.data.circles.slice(0, 3).map((circle) => <article key={circle.id}><span className={styles.communityArt}><Image src={pictureOf(circle)} alt="" width={44} height={44} sizes="(max-width: 767px) 50vw, (max-width: 1023px) 33vw, 240px" /></span><h3>{circle.title}</h3><p>{circle.detail}</p><Link href={circle.href}>Join</Link></article>)}</div></section>
+      <section className={styles.panel}><SectionHead icon={TrendingUp} title={tr("discover.trendingForYou")} copy="Popular learning resources from your network." href="/app/programs" /><div className={styles.trending}>{rails.data.learn.slice(0, 3).map((item) => <Link href={item.href} key={item.id}><Img src={pictureOf(item)} width={94} height={58} /><span><b>{item.title}</b><small>{item.detail}</small></span><ArrowRight /></Link>)}</div></section>
+      <section className={styles.panel}><SectionHead icon={UsersRound} title={tr("discover.communitiesYouMayLike")} copy="Join conversations, ask questions, and grow together." href="/app/circles" /><div className={styles.communities}>{rails.data.circles.slice(0, 3).map((circle) => <article key={circle.id}><span className={styles.communityArt}><Img src={pictureOf(circle)} width={44} height={44} /></span><h3>{circle.title}</h3><p>{circle.detail}</p><Link href={circle.href}>Join</Link></article>)}</div></section>
       <aside className={styles.mantra}><Sparkles /><p>{tr("discover.smallSteps2")}<br />{tr("discover.createBig")}<br />futures.</p><Heart /></aside>
     </div>
   </main></HomeShell>;

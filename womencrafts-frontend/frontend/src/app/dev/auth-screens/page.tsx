@@ -1,6 +1,5 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
-import { Playfair_Display } from "next/font/google";
 
 import { authSans } from "@/components/auth-shell/fonts";
 
@@ -18,7 +17,6 @@ const AUTH_PREVIEW = process.env.NODE_ENV !== "production";
  * Not in a production build: `AUTH_PREVIEW` is false there, so this 404s.
  */
 
-const display = Playfair_Display({ subsets: ["latin"], weight: ["600", "700"], variable: "--gal-serif", display: "swap" });
 
 export const metadata: Metadata = {
   title: "Auth screens (local preview)",
@@ -28,7 +26,7 @@ export const metadata: Metadata = {
 export default function AuthScreensPage() {
   if (!AUTH_PREVIEW) notFound();
   return (
-    <div className={`${display.variable} ${authSans.variable}`}>
+    <div className={authSans.variable}>
       <Gallery />
     </div>
   );

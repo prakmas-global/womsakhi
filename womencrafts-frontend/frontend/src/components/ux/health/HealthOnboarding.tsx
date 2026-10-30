@@ -102,7 +102,7 @@ export function HealthOnboarding({ settings, first, save, onDone }: {
         <div className="flex gap-1.5" aria-hidden>
           {STEPS.map((s, i) => <span key={s} className="h-1.5 flex-1 rounded-full" style={{ background: i <= step ? HUE.magenta.ink : "var(--ux-surface-2)" }} />)}
         </div>
-        <h2 id="ob-h" className="text-[26px] font-extrabold leading-tight" style={{ color: "var(--ux-ink)" }}>{STEPS[step]}</h2>
+        <h1 id="ob-h" className="text-[26px] font-extrabold leading-tight" style={{ color: "var(--ux-ink)" }}>{STEPS[step]}</h1>
       </div>
 
       {step === 0 && (

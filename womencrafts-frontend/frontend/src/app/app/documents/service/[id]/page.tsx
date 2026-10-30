@@ -1,5 +1,6 @@
 "use client";
 
+import { PlaceMark } from "@/components/ux/nav/Place";
 import { use, useEffect, useMemo, useRef, useState } from "react";
 
 import { apiSaveListing, apiUpdateListing } from "@/lib/shop-api";
@@ -12,14 +13,16 @@ import { Field, TextInput, Toggle } from "@/components/ux/settings/Frame";
 import { HomeShell } from "@/components/ux/home/HomeShell";
 import { useBusiness } from "@/components/ux/business";
 import {
-  RATE_KINDS as RAW_RATE_KINDS, SERVICE_CATEGORIES as RAW_SERVICE_CATEGORIES, rupees, type RateKind,
+  RATE_KINDS as RAW_RATE_KINDS, rupees, type RateKind,
 } from "@/components/ux/shop/data";
+import { ChooseCategoryPrompt, SubChips, useShopCategories } from "@/components/ux/shop/categories";
+import { subsFor } from "@/lib/shop-categories-api";
 import { useT } from "@/i18n";
 import { useTranslated } from "@/i18n/data";
 import { Picks, Select } from "@/components/ux/kit/form";
 
 const BLANK = {
-  id: "new", name: "", category: "Tailoring", rate_minor: 0, rateKind: "per visit" as RateKind,
+  id: "new", name: "", category: "", subcategory_key: "", rate_minor: 0, rateKind: "per visit" as RateKind,
   where: "Either" as const, travelKm: 5, mins: 60, about: "",
   art: "/ux/art/scene-woman-vendor-handing-parcel.webp", live: false, booked: 0, rating: "—",
 };
@@ -65,7 +68,11 @@ const withCurrent = <T extends string | { value: string; label: string }>(list: 
  */
 export default function ServiceEditor({ params }: { params: Promise<{ id: string }> }) {
   const RATE_KINDS = useTranslated(RAW_RATE_KINDS);
-  const SERVICE_CATEGORIES = useTranslated(RAW_SERVICE_CATEGORIES);
+  // Filed under her shop's one category: which kind of service this is.
+  const cats = useShopCategories();
+  const serviceSubs = useMemo(() => subsFor(cats.storeCat, "service"), [cats.storeCat]);
+  // Quick names: her category's own services first, then the general ideas.
+  const namePicks = serviceSubs.length ? serviceSubs.map((x) => x.name) : NAME_PICKS;
   const tr = useT();
   const { id } = use(params);
   const { data: biz, refetch } = useBusiness();
@@ -77,7 +84,7 @@ export default function ServiceEditor({ params }: { params: Promise<{ id: string
   /** The form as it should read for a given service. */
   const shapeOf = (b: typeof base) => ({
     name: b?.name ?? "",
-    category: b?.category ?? "Tailoring",
+    sub: b?.subcategory_key ?? "",
     rupees: b && b.rate_minor ? String(Math.round(b.rate_minor / 100)) : "",
     rateKind: (b?.rateKind ?? "per visit") as RateKind,
     where: (b?.where ?? "Either") as (typeof WHERES)[number],
@@ -123,13 +130,16 @@ export default function ServiceEditor({ params }: { params: Promise<{ id: string
 
   const travels = form.where === "At your place" || form.where === "Either";
 
+  const subOk = serviceSubs.some((x) => x.key === form.sub);
+
   const missing = useMemo(() => {
     const m: string[] = [];
     if (form.name.trim().length < 3) m.push("a name");
     if (rate_minor <= 0) m.push("what you charge");
     if (form.about.trim().length < 20) m.push("a description buyers can read");
+    if (isNew && !subOk) m.push("what kind of work it is");
     return m;
-  }, [form, rate_minor]);
+  }, [form, rate_minor, isNew, subOk]);
 
   /**
    * Save the service.
@@ -147,7 +157,8 @@ export default function ServiceEditor({ params }: { params: Promise<{ id: string
       desc: form.about.trim(),
       price_minor: rate_minor,
       rate: form.rateKind,
-      category: form.category,
+      // Sent when it is filed (or must be): the server checks it sits in her shop's category.
+      ...(subOk && (isNew || form.sub !== (existing?.subcategory_key ?? "")) ? { category_key: cats.storeCat?.key ?? "", subcategory_key: form.sub } : {}),
       place: form.where,
       travels_km: travels ? Number(form.travelKm) || 0 : 0,
     };
@@ -270,9 +281,12 @@ export default function ServiceEditor({ params }: { params: Promise<{ id: string
     >
       <Back to="/app/documents" label={tr("documentsService.yourShop")} className="mb-4" />
 
-      <h1 className="text-2xl font-bold" style={{ color: "var(--ux-ink)" }}>
-        {isNew ? "Offer a service" : form.name || "Edit service"}
-      </h1>
+      <div className="flex min-w-0 items-center gap-3">
+        <PlaceMark size={44} />
+        <h1 className="text-2xl font-bold min-w-0" style={{ color: "var(--ux-ink)" }}>
+          {isNew ? "Offer a service" : form.name || "Edit service"}
+        </h1>
+      </div>
       <p className="mb-[20px] mt-1.5 text-xsm" style={{ color: "var(--ux-muted)" }}>
         {isNew
           ? tr("documentsService.anythingYouDoWithYourHands")
@@ -285,18 +299,18 @@ export default function ServiceEditor({ params }: { params: Promise<{ id: string
           <Field label={tr("documentsService.nameItTheWaySomeoneWould")}
                  hint={tr("documentsService.blouseStitchedToMeasureNotTailorin")}>
             <TextInput value={form.name} onChange={set("name")} placeholder={tr("documentsService.blouseStitchedToMeasure")} />
-            {!form.name.trim() && <Picks options={NAME_PICKS} value={form.name} onPick={(x) => put("name", x)} label="Quick names" />}
+            {!form.name.trim() && (
+              <Picks options={namePicks} value={form.name} label="Quick names"
+                     onPick={(x) => { put("name", x); const hit = serviceSubs.find((r) => r.name === x); if (hit) setForm((f) => ({ ...f, name: x, sub: hit.key })); }} />
+            )}
           </Field>
 
           <div>
             <span className="block text-xsm font-semibold" style={{ color: "var(--ux-ink)" }}>{tr("documentsService.whatKindOfWork")}</span>
             <div className="mt-2 flex flex-wrap gap-2">
-              {SERVICE_CATEGORIES.map((c) => (
-                <Chip key={c} selected={form.category === c}
-                      onClick={() => { setForm((f) => ({ ...f, category: c })); setSaved(false); }}>
-                  {c}
-                </Chip>
-              ))}
+              {cats.data && !cats.storeCat ? <ChooseCategoryPrompt compact />
+                : <SubChips subs={serviceSubs} value={form.sub} parent={cats.storeCat} onPick={(x) => { setForm((f) => ({ ...f, sub: x.key })); setSaved(false); }}
+                            empty={cats.storeCat ? `${cats.storeCat.name} doesn't take services. List it as a product instead.` : "Loading…"} />}
             </div>
           </div>
 

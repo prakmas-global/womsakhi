@@ -24,7 +24,7 @@ from datetime import datetime, timezone
 from fastapi import APIRouter, Depends, HTTPException, status
 from pydantic import BaseModel, Field, field_validator, model_validator
 
-from app.core import cache
+from app.core import cache, masters
 from app.core.rbac import require_active_member
 from app.core.serializers import to_object_id
 from app.db.mongodb import get_database
@@ -143,6 +143,24 @@ async def get_my_profile(me: dict = Depends(require_active_member)):
 
 @router.put("/mentoring/me", response_model=MentorProfile, summary="Become a mentor, or update my profile")
 async def save_my_profile(body: MentorIn, me: dict = Depends(require_active_member)):
+    # Languages as the `languages` master spells them (app/core/masters.py), or a
+    # 422. Ones already on her profile pass, so a language staff later disable
+    # never blocks her from saving the rest.
+    had = await _my_mentor(me)
+    have = {c.lower(): c for c in ((had or {}).get("languages") or [])}
+    langs: list[str] = []
+    for lang in body.languages:
+        c = have.get(lang.lower()) or await masters.check("languages", lang, field="language")
+        if c not in langs:
+            langs.append(c)
+    body.languages = langs
+    # What she helps with comes from the mentor topics master (a topic or a
+    # topic group). A tag already on her profile stays even if staff have since
+    # disabled it; a new one must be active.
+    before = await _my_mentor(me)
+    kept = {t.lower() for t in ((before or {}).get("expertise") or [])}
+    body.expertise = [t if t.lower() in kept else await masters.check("mentor_topics", t, field="topic")
+                      for t in body.expertise]
     now = datetime.now(timezone.utc)
     fields = {
         "name": me.get("full_name") or "A WomSakhi member",
@@ -312,7 +330,7 @@ async def payment_received(request_id: str, me: dict = Depends(require_active_me
     now = datetime.now(timezone.utc)
     doc = await _requests().find_one_and_update(
         {"_id": doc["_id"], "payment.status": {"$in": ["awaiting", "claimed"]}},
-        {"$set": {"payment.status": "paid", "payment.confirmed_at": now, "updated_at": now}},
+        {"$set": {"payment.status": "paid", "payment.confirmed_at": now, "payment.confirmed_by": str(me["_id"]), "updated_at": now}},
         return_document=True,
     )
     if not doc:

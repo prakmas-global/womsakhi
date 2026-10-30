@@ -1,5 +1,6 @@
 "use client";
 
+import { PlaceMark } from "@/components/ux/nav/Place";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -8,6 +9,8 @@ import * as Icons from "@/components/ux/icons";
 import { HomeShell } from "@/components/ux/home/HomeShell";
 import { Avatar, Btn, Card, EmptyState, Pill, Sheet, Skeleton } from "@/components/ux/kit";
 import { Picks, Text } from "@/components/ux/kit/form";
+import { topicOf } from "@/components/ux/circle/data";
+import { topicPicture, useCircleTopics } from "@/components/ux/circle/topics";
 import { useToast } from "@/design-system";
 import { apiErrorMessage } from "@/lib/api";
 import { useResource } from "@/lib/use-resource";
@@ -112,7 +115,10 @@ export default function CirclesPage() {
     <HomeShell active="/app/circles" rail={rail} loadFailed="your circles">
       <header className="mb-4 flex flex-wrap items-end justify-between gap-3">
         <div className="min-w-0">
-          <h1 className="ux-screen-title text-2xl font-extrabold" style={{ color: "var(--ux-ink)" }}>Circles</h1>
+          <div className="flex min-w-0 items-center gap-3">
+            <PlaceMark size={44} />
+            <h1 className="ux-screen-title text-2xl font-extrabold min-w-0" style={{ color: "var(--ux-ink)" }}>Circles</h1>
+          </div>
           <p className="text-xsm" style={{ color: "var(--ux-muted)" }}>
             {chats.data.length
               ? `${chats.data.length} ${chats.data.length === 1 ? "group" : "groups"}${unreadTotal ? ` · ${unreadTotal} with new messages` : ""}`
@@ -241,6 +247,7 @@ function ChatListRow({ c, last }: { c: ChatRow; last: boolean }) {
 function OpenCircles({ rows, busy, onJoin, searching }: {
   rows: Circle[]; busy: string | null; onJoin: (c: Circle) => void; searching: boolean;
 }) {
+  const live = useCircleTopics();
   return (
     <Card>
       <h2 className="flex items-center gap-2 text-sm font-extrabold" style={{ color: "var(--ux-ink)" }}>
@@ -251,7 +258,8 @@ function OpenCircles({ rows, busy, onJoin, searching }: {
         <ul className="mt-3 space-y-3">
           {rows.map((c) => (
             <li key={c.id} className="flex items-center gap-3">
-              <Avatar src={c.cover} name={c.name} size={40} />
+              {/* No cover: the picture of what it is about. */}
+              <Avatar src={c.cover || topicPicture(topicOf(c.topic, live))} name={c.name} size={40} />
               <span className="min-w-0 flex-1">
                 <span className="block truncate text-xsm font-bold" style={{ color: "var(--ux-ink)" }}>{c.name}</span>
                 <span className="block truncate text-2xs" style={{ color: "var(--ux-muted)" }}>

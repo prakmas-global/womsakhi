@@ -93,6 +93,8 @@ export interface Application {
   applied_on: string;
   /** Her matching skills, as they were sent with the application. */
   skills?: { key: string; name: string; level: string; verified: boolean }[];
+  /** Work done: "" | mine (she said so) | confirmed (the poster confirmed it). */
+  done?: "" | "mine" | "confirmed";
 }
 
 export interface OpportunityQuery {
@@ -273,6 +275,8 @@ export interface CatalogProgramRow {
   /** "" | pending | active | completed | withdrawn — her enrolment. */
   my_status: string;
   is_mine: boolean;
+  /** Its thumbnail; "" = none (screens show its category's picture). */
+  cover?: string;
 }
 
 export const apiMyPrograms = (s?: AbortSignal) => get<Enrollment[]>("/me/programs", s);

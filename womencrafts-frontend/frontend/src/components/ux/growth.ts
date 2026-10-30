@@ -17,7 +17,7 @@ import {
   type CirclePost, type GrowthEvent, type MentorRequest, type Opportunity, type OpportunityMatch, type OpportunityQuery,
 } from "@/lib/growth-api";
 
-import { EVENTS, type Ev, type EventKind } from "./events/data";
+import { EVENTS, eventLook, type Ev } from "./events/data";
 import { CIRCLE_POSTS, MY_CIRCLES, type Circle } from "./circles/data";
 import { type Find } from "./discover/data";
 import { MY_SESSIONS } from "./mentors/data";
@@ -112,6 +112,9 @@ export function toJob(o: Opportunity): Job {
     ownerKind: o.owner_kind ?? "staff",
     isMine: Boolean(o.is_mine),
     categoryName: o.category_name || undefined,
+    category: o.category || undefined,
+    skillKeys: o.skill_keys ?? [],
+    cover: o.cover || undefined,
     about: o.desc,
     responsibilities: [],
     needs: o.experience ? [o.experience] : [],
@@ -159,7 +162,10 @@ export function useJobsFor(query: OpportunityQuery): Resource<Job[]> {
 export const useJob = (id: string): Resource<Job | null> =>
   useResource(useCallback(async (s: AbortSignal) => toJob(await apiOpportunity(id, s)), [id]), null);
 
-export type UxApplication = (typeof APPLICATIONS)[number];
+export type UxApplication = (typeof APPLICATIONS)[number] & {
+  /** Work done: "" | mine (she said so) | confirmed (the poster confirmed it). */
+  done?: string;
+};
 
 // The server's words (models/growth.py ApplicationModel): offered, closed.
 // "offer" and "rejected" were never sent, so Offers stayed at 0 for ever and
@@ -167,6 +173,8 @@ export type UxApplication = (typeof APPLICATIONS)[number];
 const STAGE: Record<string, string> = {
   applied: "Applied", shortlisted: "Shortlisted", interview: "Interview",
   offered: "Offer", closed: "Closed", withdrawn: "Closed",
+  // The work was done — past the last rung (backend: app/core/work_done.py).
+  completed: "Done",
 };
 
 const STAGE_LOOK: Record<string, { tone: string; ink: string; step: number }> = {
@@ -174,6 +182,7 @@ const STAGE_LOOK: Record<string, { tone: string; ink: string; step: number }> = 
   Shortlisted: { tone: "--ux-tint-blue",   ink: "--ux-blue",   step: 2 },
   Interview:   { tone: "--ux-tint-violet", ink: "--ux-violet", step: 3 },
   Offer:       { tone: "--ux-tint-orange", ink: "--ux-orange", step: 4 },
+  Done:        { tone: "--ux-tint-green",  ink: "--ux-green",  step: 4 },
   Closed:      { tone: "--ux-surface-2",   ink: "--ux-muted",  step: 0 },
 };
 
@@ -181,7 +190,8 @@ const WAITING: Record<string, string> = {
   Applied: "Waiting to be reviewed",
   Shortlisted: "They have looked at your profile",
   Interview: "An interview is the next step",
-  Offer: "They have made you an offer",
+  Offer: "They have made you an offer. When the work is done, tap I finished this work.",
+  Done: "Work done — it is on your work profile.",
   Closed: "This one is closed",
 };
 
@@ -197,8 +207,11 @@ const toApplication = (a: Application): UxApplication => {
     // the screen needs a sentence, and a blank line here reads as "nothing is
     // happening" — which is the one thing she is worried about.
     // The hirer's last word on it — never her own application note.
-    when: a.staff_note?.trim() || WAITING[stage] || "",
+    when: stage === "Done"
+      ? (a.done === "confirmed" ? "The employer confirmed the work is done. It is on your work profile." : "You said it is done. Waiting for them to confirm.")
+      : a.staff_note?.trim() || WAITING[stage] || "",
     at: a.applied_on,
+    done: a.done ?? "",
     ...(STAGE_LOOK[stage] ?? STAGE_LOOK.Applied),
   };
 };
@@ -234,20 +247,9 @@ export const useApplications = (): Resource<UxApplication[]> =>
 
 /* ── Events ──────────────────────────────────────────────────────────── */
 
-const EVENT_KIND: Record<string, EventKind> = {
-  Mela: "Mela", Workshop: "Workshop", Webinar: "Webinar",
-  Meet: "Meet", Talk: "Webinar", Training: "Workshop",
-};
-
-const EVENT_LOOK: Record<EventKind, { icon: string; tint: string; ink: string }> = {
-  Mela: { icon: "Store", tint: "--ux-tint-pink", ink: "--ux-pink" },
-  Workshop: { icon: "Presentation", tint: "--ux-tint-violet", ink: "--ux-violet" },
-  Webinar: { icon: "Video", tint: "--ux-tint-blue", ink: "--ux-blue" },
-  Meet: { icon: "Users", tint: "--ux-tint-green", ink: "--ux-green" },
-};
-
 export function toEvent(e: GrowthEvent): Ev {
-  const kind = EVENT_KIND[e.category] ?? "Workshop";
+  // The staff-controlled category, as stored (backend masters).
+  const kind = e.category || "Workshop";
   const d = new Date(e.date);
   const ok = !Number.isNaN(d.getTime());
   return {
@@ -261,7 +263,7 @@ export function toEvent(e: GrowthEvent): Ev {
     place: e.venue || e.mode,
     online: /online|virtual/i.test(e.mode),
     art: e.cover || EVENTS[0].art,
-    ...EVENT_LOOK[kind],
+    ...(({ icon, tint, ink }) => ({ icon, tint, ink }))(eventLook(kind)),
     blurb: e.desc,
     // The API carries a plain rupee number; every amount in this app is minor
     // units, so it is converted here rather than at the four call sites.
@@ -380,6 +382,7 @@ const toContinuing = (e: Enrollment): Course => ({
   count: "",
   pct: Math.round(e.progress || 0),
   thumb: artFor([e.program_name, e.category], "course", e.cover, e.program_id || e.id),
+  ownCover: !!e.cover,
   category: normCategory(e.category || "Course"),
   hours: realDuration(e.duration),
   teacher: e.teacher_name || "WomSakhi team",
@@ -398,7 +401,8 @@ const toPick = (p: CatalogProgramRow): Course => ({
   count: p.enrolled ? `${p.enrolled} learning` : "",
   // What the course is about, not just its category — so two cooking courses
   // and a tailoring one do not share one picture.
-  thumb: artFor([p.name, p.category], "course", undefined, p.id),
+  thumb: artFor([p.name, p.category], "course", p.cover, p.id),
+  ownCover: !!p.cover,
   category: normCategory(p.category || "Course"),
   hours: realDuration(p.duration),
   tag: p.is_full ? undefined : "New",
